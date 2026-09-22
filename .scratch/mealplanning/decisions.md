@@ -2490,79 +2490,87 @@ Last extracted: 1dedc493
 
 > 2026-09-22 opened in wave 4 ticket 09
 
-## mp-553 · Dev hears grants but never a real prod purchase
+## mp-553 · The dev server takes Grants but drops real purchases
 - category: Pro and paywall
 - status: proposed
 - image: none
 - caption:
 - svg: docs/ssot/decisions/images/mealplanning/mp-553.svg
+- svg2: docs/ssot/decisions/images/mealplanning/mp-553-2.svg
 - screen: none (RevenueCat webhook)
 - source: Lee in the terminal 2026-09-22, after rejecting mp-533
 - linked: mp-510
 
-**Context.** mp-533 opened the dev webhook to every environment so grants could be tried on dev, and Lee rejected it: dev should not receive and handle prod purchases. But RevenueCat logs every grant (coach code, grace month, giveaway) as a PRODUCTION event on the PROMOTIONAL store, so a sandbox-only filter also shuts grants out, and Lee wants those tested on dev and written to the dev row.
+**Context.** mp-533 opened the dev webhook to every environment so Grants could be tried on dev, and Lee rejected it: dev should not receive and handle real purchases. But RevenueCat logs every Grant (a coach Code, Legacy grace, a giveaway) as a real production event from its promotional store, so letting only test events in would also shut Grants out, and Lee wants Grants tested on dev and written to the dev row.
 
-**Question.** How does dev take grants without taking real prod purchases?
+**Question.** How does the dev server take Grants without taking real purchases?
 
-**Decision.** 1. The dev integration takes every environment again.
-2. The dev webhook drops every PRODUCTION event whose store is not PROMOTIONAL before it touches anything, and says so in its answer. Sandbox events and grants go through as before.
-3. The switch is a dev-only secret, `REVENUECAT_SANDBOX_ONLY=true`. Prod never sets it and handles every event as today.
+**Decision.** The dev server's RevenueCat connection takes events from every environment again. The dev webhook throws away any real (production) event that did not come from RevenueCat's promotional store, before touching anything, and says so in its reply; test (sandbox) purchases and Grants go through as before. The switch is a secret set on dev only, so the live server handles every event as today. Example: on 22 September a one-day Grant on a throwaway dev account reached its dev row within three seconds, while a real store purchase would be dropped.
 
-**Why.** Only the store field tells a grant from a purchase; the integration's environment filter cannot.
+**Why.** Only the store an event names tells a Grant from a purchase; RevenueCat's per-environment filter cannot.
 
 **What else was considered.** Keeping dev sandbox-only and checking grants from the app alone, which leaves the dev row untested; handing grants to dev by hand.
 
 **What it touches.** revenuecat-webhook (handler, dev secret), RevenueCat integration `whintgre4c0c2670c`.
 
-**Details.** Deployed to dev 2026-09-22 (webhook v39, commit 51b6766a). A one-day grant on a throwaway dev account reached its dev row as PROMOTIONAL within three seconds. Handler tests: section I of `index.test.ts`.
+**Details.** Precisely:
+1. The dev integration takes every environment again.
+2. The dev webhook drops every PRODUCTION event whose store is not PROMOTIONAL before it touches anything, and says so in its answer. Sandbox events and grants go through as before.
+3. The switch is a dev-only secret, `REVENUECAT_SANDBOX_ONLY=true`. Prod never sets it and handles every event as today.
+
+Deployed to dev 2026-09-22 (webhook v39, commit 51b6766a). A one-day grant on a throwaway dev account reached its dev row as PROMOTIONAL within three seconds. Handler tests: section I of `index.test.ts`.
 
 > 2026-09-22 proposed after Lee's rejection of mp-533
+> 2026-09-22 rewritten in plain words (question, context, decision, why, details)
 
-## mp-554 · Who the grace claim is for
+## mp-554 · Only an account that was anonymous at the flip can claim the grace month
 - category: Pro and paywall
 - status: proposed
 - image: none
 - caption:
 - svg: docs/ssot/decisions/images/mealplanning/mp-554.svg
+- svg2: docs/ssot/decisions/images/mealplanning/mp-554-2.svg
 - screen: none (grace-claim function)
 - source: wave paywall 3 ticket 09
 
-**Context.** mp-455 gives the grace month to every account from before the flip: the flip-day script covers registered accounts, and a claim covers installs still anonymous when they open the new build. The claim function has to tell those installs apart after sign-up has linked them, when the user no longer looks anonymous.
+**Context.** The flip is the moment Lee switches the paywall on (mp-541). mp-455 gives Legacy grace to every account from before the flip: a flip-day run covers registered accounts, and a claim covers installs still anonymous when they first open the new build. Once sign-up has joined such an install to an account, it no longer looks anonymous, so the claim has to tell those installs apart another way.
 
-**Question.** Which accounts may claim the grace month after the flip?
+**Question.** Which accounts may claim the grace month after the paywall is switched on?
 
-**Decision.** 1. An account created before the flip that had no sign-in identity at the flip, and has one now. Accounts registered before the flip belong to the flip-day run and are refused.
-2. The claim is made after sign-up; a caller still anonymous is refused.
-3. A claim before the flip grants nothing. The account is registered at the flip, so the flip-day run covers it.
-4. The flip moment is a function secret, `GRACE_FLIP_AT`, the same value passed to the script's `--flip` (mp-541). Unset, the claim grants nothing.
+**Decision.** An account may claim only if it was created before the flip, had no sign-in at the flip (it was still anonymous) and has one now. An account registered before the flip gets its month from the flip-day run and is refused; a caller still anonymous is refused; and a claim made before the flip grants nothing, because that account is registered at the flip and the flip-day run covers it. The flip moment is a secret on the function, and until it is set the claim grants nothing. Example: with the flip on 1 October, an install still anonymous that day signs up on 3 October and its claim grants 30 days; an account that signed up in September is refused, because the flip-day run already covered it.
 
-**Why.** The sign-in identities are the only server-side trace left of "was anonymous" once the link is made; dev shows 891 anonymous users, all with no identity.
+**Why.** Sign-in identities are the only trace the server keeps of "was anonymous" once sign-up joins the install to an account; dev shows 891 anonymous users, all with no identity.
 
 **What else was considered.** Granting any account created before the flip; reading `users.is_anonymous`, which the link flips.
 
 **What it touches.** grace-claim function, `_shared/grace`.
 
-**Details.** 15 handler tests. Deployed to dev 2026-09-22 with `GRACE_FLIP_AT` unset, so it answers 503 until Lee sets the flip.
+**Details.** Precisely:
+1. An account created before the flip that had no sign-in identity at the flip, and has one now. Accounts registered before the flip belong to the flip-day run and are refused.
+2. The claim is made after sign-up; a caller still anonymous is refused.
+3. A claim before the flip grants nothing. The account is registered at the flip, so the flip-day run covers it.
+4. The flip moment is a function secret, `GRACE_FLIP_AT`, the same value passed to the script's `--flip` (mp-541). Unset, the claim grants nothing.
+
+15 handler tests. Deployed to dev 2026-09-22 with `GRACE_FLIP_AT` unset, so it answers 503 until Lee sets the flip.
 
 > 2026-09-22 proposed in wave 3 ticket 09
+> 2026-09-22 rewritten in plain words (question, context, decision, why, details)
 
-## mp-555 · An old anonymous install lands on sign-up with no way back
+## mp-555 · An old install with no account is sent to sign-up, with no way back
 - category: Pro and paywall
 - status: proposed
 - image: none
 - caption:
 - svg: docs/ssot/decisions/images/mealplanning/mp-555.svg
+- svg2: docs/ssot/decisions/images/mealplanning/mp-555-2.svg
 - screen: none (account screen, reached only from an old anonymous install)
 - source: wave paywall 3 ticket 09
 
-**Context.** An install left anonymous from before the flip opens the new build. mp-455 sends it to the account screen, where sign-up links onto its old user.
+**Context.** Before the paywall, the app could run without an account: it signed the install in as an anonymous user. An install still like that from before the flip now opens the new build. mp-455 sends it to the account screen, where signing up joins the new account to its old anonymous user.
 
-**Question.** How does an old anonymous install reach sign-up, and what does it keep?
+**Question.** How does an old install with no account reach sign-up, and what does it keep?
 
-**Decision.** 1. Every signed-in route sends an anonymous session to the account screen in its sign-up shape, before the paywall gate is asked.
-2. The account screen has no back button there: there is no onboarding behind it.
-3. Apple, Google and email sign-up link onto the old user and then claim; signing in to another account never claims.
-4. When the server has no profile for the old user, or the phone is offline, the phone's own profile is kept under the same user and queued for upload.
+**Decision.** Whatever screen such an install opens on, it is sent to the account screen, set up for sign-up, before the Gate is asked, and that screen has no back button because there is no onboarding behind it. Signing up with Apple, Google or email joins the new account to the old anonymous user, keeping its data, and then claims the Legacy grace; signing in to a different account claims nothing. If the server has no profile for the old user, or the phone is offline, the phone's own profile is kept and queued for upload. Example: an athlete who installed on 20 July without an account opens the new build on 2 October, lands on sign-up, signs up with Apple, and keeps their onboarding answers and a 30-day Grant.
 
 **Why.** An anonymous user on the paywall cannot buy. Clause 4 fixes a bug found in the build: linking wrote a blank profile over the phone's, so an install from before 29 July lost its answers.
 
@@ -2570,9 +2578,16 @@ Last extracted: 1dedc493
 
 **What it touches.** Router, account screen, auth migration.
 
-**Details.** Seam test `old_anonymous_install_link_test.dart`. After the claim the app clears RevenueCat's cached status, so the gate reads the grant at once.
+**Details.** Precisely:
+1. Every signed-in route sends an anonymous session to the account screen in its sign-up shape, before the paywall gate is asked.
+2. The account screen has no back button there: there is no onboarding behind it.
+3. Apple, Google and email sign-up link onto the old user and then claim; signing in to another account never claims.
+4. When the server has no profile for the old user, or the phone is offline, the phone's own profile is kept under the same user and queued for upload.
+
+Seam test `old_anonymous_install_link_test.dart`. After the claim the app clears RevenueCat's cached status, so the gate reads the grant at once.
 
 > 2026-09-22 proposed in wave 3 ticket 09
+> 2026-09-22 rewritten in plain words (question, context, decision, details)
 
 ## mp-556 · The plan-ended bar sits on top of every screen
 - category: Pro and paywall
@@ -2580,24 +2595,29 @@ Last extracted: 1dedc493
 - image: none
 - caption:
 - svg: docs/ssot/decisions/images/mealplanning/mp-556.svg
+- svg2: docs/ssot/decisions/images/mealplanning/mp-556-2.svg
 - screen: none (every screen, lapsed account only; no simulator account is lapsed yet)
 - source: wave paywall 3 ticket 11
 
 **Context.** mp-457 gives a lapsed account a bar on every screen saying the plan has ended, with a Subscribe button. mp-496 keeps the paywall full screen until the closable sheet ships.
 
-**Question.** Where does the bar sit, and what does Subscribe do?
+**Question.** Where does the plan-ended bar sit, and what does Subscribe do?
 
-**Decision.** 1. One strip at the top of every screen, pushed pages included, taking the status-bar area; the page starts below it.
-2. Subscribe pushes the paywall over the current screen, so back returns to the read-only data.
-3. The copy is two content keys under `plan_ended`; the widget is `PlanEndedBar` in `kyle_design`, spec PROPOSED and awaiting Xuan.
+**Decision.** A Lapsed account sees one strip at the top of every screen, pushed pages included, in the status-bar area, with the page starting below it. Its Subscribe button opens the paywall over the current screen, so back returns to the read-only data. The words come from two content entries, and the strip is a new shared design component whose spec awaits Xuan. Example: an athlete whose plan ended on 8 November opens a meal on 10 November; the strip sits above the meal, and Subscribe then back returns them to that meal.
 
-**Why.** "Every screen" includes pushed pages, which the tab shell never sees. A strip at the top never covers a header, the tab bar or the launcher.
+**Why.** "Every screen" includes pages pushed on top of the tabs, which the tab shell never sees. A strip at the top never covers a header, the tab bar or the Vana launcher.
 
 **What else was considered.** Above the tab bar; inside the tab shell only; replacing the screen with the paywall.
 
 **What it touches.** Root app widget, `kyle_design/feedback/plan_ended_bar.dart`, content system.
 
+**Details.** Precisely:
+1. One strip at the top of every screen, pushed pages included, taking the status-bar area; the page starts below it.
+2. Subscribe pushes the paywall over the current screen, so back returns to the read-only data.
+3. The copy is two content keys under `plan_ended`; the widget is `PlanEndedBar` in `kyle_design`, spec PROPOSED and awaiting Xuan.
+
 > 2026-09-22 proposed in wave 3 ticket 11
+> 2026-09-22 rewritten in plain words (question, decision, why, details)
 
 ## mp-557 · What counts as an AI action for a lapsed account
 - category: Pro and paywall
@@ -2605,33 +2625,39 @@ Last extracted: 1dedc493
 - image: none
 - caption:
 - svg: docs/ssot/decisions/images/mealplanning/mp-557.svg
+- svg2: docs/ssot/decisions/images/mealplanning/mp-557-2.svg
 - screen: none (router and the meal logging buttons)
 - source: wave paywall 3 ticket 11, and the wave's review
 
-**Context.** mp-457 clause 3: any AI action by a lapsed account opens the paywall instead of running.
+**Context.** mp-457 clause 3: any AI action by a Lapsed account opens the paywall instead of running.
 
-**Question.** Which entries open the paywall for a lapsed account?
+**Question.** Which buttons and screens open the paywall for a Lapsed account?
 
-**Decision.** 1. Routes: Vana and everything under it, Jade, meal photo and meal describe.
-2. Buttons on screens the router never sees: the log-meal Analyze (describe and photo) and the edit-meal photo re-scan.
-3. The Vana launcher opens the paywall instead of the sheet.
-4. Buying AI credits and Vana settings stay open: neither calls AI.
+**Decision.** For a Lapsed account these open the paywall instead of running: Vana and every screen under it, the old Jade chat, meal photo and meal describe, the Analyze button when logging a meal, the photo re-scan when editing one, and the Vana launcher. Buying AI credits and Vana settings stay open, since neither calls AI. Example: an athlete whose plan ended on 8 November types a meal and taps Analyze on 10 November; the paywall opens and no AI call is made, and they can still open Vana settings.
 
-**Why.** The review found the log-meal and edit-meal buttons still calling AI, since those screens are plain pushes.
+**Why.** The review found the log-meal and edit-meal buttons still calling AI, because those screens are opened without the router seeing them.
 
 **What else was considered.** Gating buy-credits too.
 
 **What it touches.** `pro_gate_redirect.dart`, `ai_action_guard.dart`, log-meal and edit-meal screens, the Vana launcher.
 
-**Details.** Test `log_meal_screen_lapsed_test.dart`: a lapsed tap opens the paywall and `describe-meal` is never called.
+**Details.** Precisely:
+1. Routes: Vana and everything under it, Jade, meal photo and meal describe.
+2. Buttons on screens the router never sees: the log-meal Analyze (describe and photo) and the edit-meal photo re-scan.
+3. The Vana launcher opens the paywall instead of the sheet.
+4. Buying AI credits and Vana settings stay open: neither calls AI.
+
+Test `log_meal_screen_lapsed_test.dart`: a lapsed tap opens the paywall and `describe-meal` is never called.
 
 > 2026-09-22 proposed in wave 3 ticket 11
+> 2026-09-22 rewritten in plain words (question, context, decision, why, details)
 
 ## mp-558 · Manage subscription shows only for a store subscription
 - category: Pro and paywall
 - status: proposed
 - image: test/features/subscription/presentation/goldens/paywall_light.png
 - caption:
+- svg2: docs/ssot/decisions/images/mealplanning/mp-558-2.svg
 - screen: Paywall
 - source: wave paywall 3 ticket 15
 
@@ -2639,7 +2665,7 @@ Last extracted: 1dedc493
 
 **Question.** When does the ⋯ menu show Manage subscription?
 
-**Decision.** When RevenueCat holds a `pro` entitlement, running or ended, from a store other than the promotional one. A grant alone never shows it. A restore asks again.
+**Decision.** Manage subscription shows when the account's `pro` came from a real store rather than RevenueCat's promotional one (where Grants live), whether that subscription is still running or has ended. Pro that comes only from a Grant, such as the Legacy grace month or a Code, never shows it. After a restore the app checks again. Example: an athlete on the 30-day Legacy grace from 1 October sees no Manage subscription in the ⋯ menu; they subscribe on 20 October and it appears, and it stays after they cancel and the plan ends.
 
 **Why.** A grant has no store page to manage; an ended store subscription still does.
 
@@ -2647,14 +2673,21 @@ Last extracted: 1dedc493
 
 **What it touches.** Subscription service, paywall controller.
 
+**Details.** Precisely:
+1. Manage subscription shows when RevenueCat holds a `pro` entitlement, running or ended, from a store other than the promotional one.
+2. A grant alone never shows it.
+3. A restore asks again.
+
 > 2026-09-22 proposed in wave 3 ticket 15
 > 2026-09-22 picture reused from test/features/subscription/presentation/goldens/paywall_light.png
+> 2026-09-22 rewritten in plain words (decision, details)
 
-## mp-559 · The plan cards: stacked, annual on top, one Continue
+## mp-559 · Two stacked plan cards, annual on top, over one Continue button
 - category: Pro and paywall
 - status: proposed
 - image: test/features/subscription/presentation/goldens/paywall_light.png
 - caption:
+- svg2: docs/ssot/decisions/images/mealplanning/mp-559-2.svg
 - screen: Paywall
 - source: wave paywall 3 ticket 15
 
@@ -2662,11 +2695,7 @@ Last extracted: 1dedc493
 
 **Question.** How are the plan cards laid out and labelled?
 
-**Decision.** 1. Two full-width cards stacked, annual on top; the billed price is larger than the per-month line.
-2. The saving is rounded down, against twelve months of the same offering's monthly price.
-3. The per-month price is worked out from the store price and currency.
-4. The button always reads Continue.
-5. The tray is glass; the cards stay solid. Terms and links stay in the scroll, not the tray.
+**Decision.** The two plan cards run full width, stacked, with annual on top, and the price actually billed is printed larger than the per-month figure. The saving is rounded down and measured against twelve months of the same Offering's monthly price; the per-month figure is worked out from the store's price and currency. The button always reads Continue. The pinned tray is glass while the cards stay solid, and the terms and links stay in the scroll. Example: at $199.99 a year against $24.99 a month the annual card says Save 33% and $16.67 a month; on the dev store ($69.00 a year, $9.95 a month) it showed Save 42% and $5.75 a month.
 
 **Why.** Stacked cards fit a struck-through founding price and the trial note on a narrow phone; Apple wants the billed amount most prominent; rounding down never overstates the saving.
 
@@ -2674,16 +2703,25 @@ Last extracted: 1dedc493
 
 **What it touches.** `kyle_design/cards/plan_card.dart` (spec PROPOSED, awaiting Xuan), paywall screen, content keys.
 
-**Details.** On the dev store ($69.00 a year, $9.95 a month) the device showed Save 42% and $5.75 a month. The ticket's "save 33%, $16.67" came from other prices.
+**Details.** Precisely:
+1. Two full-width cards stacked, annual on top; the billed price is larger than the per-month line.
+2. The saving is rounded down, against twelve months of the same offering's monthly price.
+3. The per-month price is worked out from the store price and currency.
+4. The button always reads Continue.
+5. The tray is glass; the cards stay solid. Terms and links stay in the scroll, not the tray.
+
+On the dev store ($69.00 a year, $9.95 a month) the device showed Save 42% and $5.75 a month. The ticket's "save 33%, $16.67" came from other prices.
 
 > 2026-09-22 proposed in wave 3 ticket 15
 > 2026-09-22 picture reused from test/features/subscription/presentation/goldens/paywall_light.png
+> 2026-09-22 rewritten in plain words (decision, details)
 
-## mp-560 · The ⋯ menu is a pull-down on glass
+## mp-560 · The ⋯ menu drops down from its button on glass
 - category: Pro and paywall
 - status: proposed
 - image: test/features/subscription/presentation/goldens/paywall_light.png
 - caption:
+- svg2: docs/ssot/decisions/images/mealplanning/mp-560-2.svg
 - screen: Paywall
 - source: wave paywall 3 ticket 15
 
@@ -2691,16 +2729,23 @@ Last extracted: 1dedc493
 
 **Question.** How does the ⋯ menu open and look?
 
-**Decision.** A pull-down from the button on the glass sheet material over the sheet scrim, cream text, Delete account in dragonfruit. The same menu serves the onboarding and lapsed shapes.
+**Decision.** Tapping ⋯ drops a menu down from the button, on the glass material the app uses for sheets, over the sheet's dimmed backdrop. The text is cream, and Delete account is in dragonfruit, the brand's pink. The same menu serves the Onboarding paywall and the Paywall sheet. Example: a Lapsed athlete taps ⋯ on 5 December and the menu drops from the corner over the dimmed paywall, with Delete account the one line in pink.
 
-**Why.** The tokens put glass on chrome and summoned surfaces; the scrim keeps it readable in light mode.
+**Why.** The design tokens put glass on the app's frame and on anything summoned over it, and the dimmed backdrop keeps the menu readable in light mode.
 
 **What else was considered.** A bottom action sheet.
 
 **What it touches.** `kyle_design/buttons/overflow_menu_button.dart` (spec PROPOSED, awaiting Xuan), paywall screen.
 
+**Details.** Precisely:
+1. A pull-down from the button on the glass sheet material over the sheet scrim, cream text, Delete account in dragonfruit.
+2. The same menu serves the onboarding and lapsed shapes.
+
+The widget is `kyle_design/buttons/overflow_menu_button.dart`, spec PROPOSED, awaiting Xuan.
+
 > 2026-09-22 proposed in wave 3 ticket 15
 > 2026-09-22 picture reused from test/features/subscription/presentation/goldens/paywall_light.png
+> 2026-09-22 rewritten in plain words (decision, why, details)
 
 ## mp-561 · A grace claim that fails is never retried
 - category: Pro and paywall

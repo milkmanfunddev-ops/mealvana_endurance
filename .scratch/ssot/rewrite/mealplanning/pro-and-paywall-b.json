@@ -1,0 +1,785 @@
+{
+ "cards": {
+  "mp-281": {
+   "title": "The subscription fills a monthly budget, and bought top-ups are spent after it",
+   "question": "What happens to credits once the app is a subscription?",
+   "context": "Before the paywall, six functions each took one credit from the wallet per call: general chat, planning chat, the coach insight, describe-meal, photo analysis, and the webhook that grants purchases. Credits were sold in packs of 50 and 250. mp-249 (rejected) had meal planning never debiting and general chat costing free users a credit; under one subscription there is no free user. This card follows from mp-267.",
+   "decision": "The subscription carries a monthly budget measured in what AI calls actually cost us, and every AI call draws it down by its real cost; nothing takes a flat credit per call. The budget is $4.00 a month on every plan, it lands in the same wallet as bought top-ups, and top-ups are spent only once the month's budget is empty. Unused monthly budget does not carry over; bought top-ups never expire, and the trial week starts with a quarter of the budget. Example: an athlete starts a trial on 1 October with $1.00 of budget, the renewal on 8 October puts $4.00 in, a $4.99 pack bought on 20 October is spent only after that $4.00 is gone, and what is left of the pack is still there after the 8 November refill.",
+   "why": "Lee chose to keep a top-up over removing credits. The monthly budget is what stops a trial of the whole app from saying \"out of credits\" on day three, and the packs stay for heavy use.",
+   "details": "Precisely:\n1. The subscription carries a monthly budget measured in what AI calls actually cost us (mp-430), granted into the same wallet that bought budget fills. Bought budget is spent only when the monthly budget is empty. Each AI call draws down its real cost; nothing debits a flat credit per call.\n2. The grant lands on each RevenueCat renewal event (initial purchase, renewal), so the reset follows the billing date. An annual subscription gets the same grant monthly, on the anniversary day.\n3. The trial week gets a quarter of the monthly budget on day one. A cancelled trial forfeits what is left of it; bought budget is never forfeited.\n4. Unused monthly budget does not roll over. Bought budget never expires.\n5. The monthly budget is $4.00 of model cost, the same for every plan (mp-430).",
+   "diagram": {
+    "kind": "timeline",
+    "title": "If credits stayed as they were (rejected)",
+    "steps": [
+     {
+      "at": "1 Oct",
+      "label": "Starts the seven-day trial of the whole app.\nWallet holds a handful of credits",
+      "tone": "ink"
+     },
+     {
+      "at": "3 Oct",
+      "label": "A few planning chats, one credit each.\nVana: \"out of credits\"",
+      "tone": "no"
+     },
+     {
+      "at": "3 Oct",
+      "label": "Two days into the trial the athlete\nmust buy a pack to keep planning",
+      "tone": "no"
+     }
+    ]
+   },
+   "diagram2": {
+    "kind": "timeline",
+    "title": "What we decided: a monthly budget, top-ups after",
+    "steps": [
+     {
+      "at": "1 Oct",
+      "label": "Starts the trial: a quarter of the budget,\n$1.00, lands in the wallet",
+      "tone": "ok"
+     },
+     {
+      "at": "8 Oct",
+      "label": "Trial renews into the $24.99 plan:\n$4.00 lands; each call takes its real cost",
+      "tone": "ok"
+     },
+     {
+      "at": "20 Oct",
+      "label": "The $4.00 is used up. Buys a $4.99 pack;\nit is spent only now",
+      "tone": "accent"
+     },
+     {
+      "at": "8 Nov",
+      "label": "Refill brings a fresh $4.00, no carry-over.\nWhat is left of the pack stays",
+      "tone": "ok"
+     }
+    ]
+   }
+  },
+  "mp-282": {
+   "title": "An empty wallet opens the top-up sheet, never the Gate",
+   "question": "What does the athlete see when their wallet runs out?",
+   "context": "Before this card an empty wallet came back from the server as a 402 (\"payment required\"), and each feature caught it its own way: a snackbar with a Buy Credits action on the formula screen, a push to the paywall elsewhere. mp-237, which carried \"out of credits opens the credits paywall\" inside a card about empty-state chips, was rejected with that card. This card follows from mp-281.",
+   "decision": "Running out never locks the athlete out: an empty wallet is not the Gate, and everything that uses no AI keeps working. The button that would spend opens the top-up sheet, which shows the monthly allowance, when it renews and the two packs. In Vana, pressing send opens it, with one line above the message box saying so; Vana never says \"out of credits\" in the conversation. Example: on 20 October an athlete whose month is used up taps Analyze on a meal photo; the top-up sheet opens with the 8 November renewal and the $4.99 and $19.99 packs, and their plan and logs stay open.",
+   "why": "The wallet and the Gate answer different questions. One handler keeps the six AI features from each inventing their own path.",
+   "details": "Precisely:\n1. An empty wallet is never the app gate. The person stays in the app with everything that does not debit.\n2. The button that would debit shows the top-up sheet: what the allowance is, when it renews, and the two packs. In Vana the composer's send shows it, with one line above the composer saying so; Vana never says \"out of credits\" mid-thread.\n3. The server keeps returning 402 and the client keeps one handler for it, in the shared layer, so a new debiting feature gets the sheet for free.",
+   "slot": 2,
+   "diagram": {
+    "kind": "flow",
+    "title": "One path for an empty wallet",
+    "rows": [
+     [
+      {
+       "id": "tap",
+       "label": "Athlete taps a button\nthat uses AI",
+       "tone": "ink"
+      },
+      {
+       "id": "srv",
+       "label": "Server: wallet empty\nanswers 402",
+       "tone": "no"
+      }
+     ],
+     [
+      {
+       "id": "h",
+       "label": "One shared handler\nin the app",
+       "tone": "accent"
+      }
+     ],
+     [
+      {
+       "id": "sheet",
+       "label": "Top-up sheet: allowance,\nrenewal date, two packs",
+       "tone": "ok"
+      },
+      {
+       "id": "app",
+       "label": "Rest of the app\nkeeps working",
+       "tone": "ok"
+      }
+     ]
+    ],
+    "edges": [
+     {
+      "from": "tap",
+      "to": "srv"
+     },
+     {
+      "from": "srv",
+      "to": "h"
+     },
+     {
+      "from": "h",
+      "to": "sheet"
+     },
+     {
+      "from": "h",
+      "to": "app",
+      "label": "never the Gate"
+     }
+    ],
+    "example": [
+     "20 Oct: month used up, taps Analyze on a photo.",
+     "Sheet: renews 8 Nov, packs $4.99 and $19.99."
+    ]
+   }
+  },
+  "mp-342": {
+   "title": "The top-up sheet shows the share of the month used, and Vana's strip clears itself",
+   "question": "What do the top-up sheet and the strip above Vana's message box say, and when does the strip go?",
+   "context": "mp-282 puts the top-up sheet on the button that would spend, with one line above Vana's message box and one handler for the server's 402 (\"payment required\") in the app. Ticket 20 built the sheet's allowance lines, the strip and the handler.",
+   "decision": "The sheet shows how much of this month's Vana budget is used, as a percentage with the renewal date, above the two packs; it never shows credits, tokens or dollars. When the budget is used up, a strip above Vana's message box says so with a Top up button, the typed message goes back into the field, and the strip goes away by itself once the budget rises or a message goes through. The AI coach chat takes a refused message back the same way, with no line left in the conversation. Example: on 20 October an athlete with nothing left types \"swap Thursday's dinner\" and taps send; the strip reads \"You've used this month's Vana budget. Top up to keep chatting · Top up\", the text is back in the field, and the sheet reads \"100% of this month's Vana budget used · renews 8 November\".",
+   "why": "One handler means a new AI feature gets the sheet without extra work. The sheet already watches the wallet row, so that is its one source. Moving the handler into the app's shared code would pull RevenueCat's purchase code in with it.",
+   "details": "Precisely:\n1. The sheet shows usage, never credits, tokens or dollars: \"N% of this month's Vana budget used · renews <date>\" above the two packs, reading the wallet row live rather than the 402 body.\n2. The one handler lives in the credits feature's presentation folder and every debiting call site imports it; a second sheet never stacks on the first.\n3. The strip above Vana's composer reads \"You've used this month's Vana budget. Top up to keep chatting · Top up\", the typed text goes back into the field, and the strip comes down on its own when the budget rises or a turn goes through.\n4. The AI coach chat rolls a 402 turn back with no line in the thread, as Vana does.\n\nThe sheet's allowance lines render only when `allowance_monthly` is above zero, so a subscriber whose grant has not landed sees the packs alone.\n\nThe handler is not under `lib/shared/`: that would pull RevenueCat into shared code.",
+   "slot": 2,
+   "diagram": {
+    "kind": "timeline",
+    "title": "The strip over Vana's message box",
+    "steps": [
+     {
+      "at": "20 Oct",
+      "label": "Month used up. Types a message, taps send:\nrefused, the text goes back in the field",
+      "tone": "no"
+     },
+     {
+      "at": "20 Oct",
+      "label": "Strip: \"You've used this month's Vana\nbudget. Top up to keep chatting · Top up\"",
+      "tone": "accent"
+     },
+     {
+      "at": "20 Oct",
+      "label": "Buys a pack; the budget rises.\nThe strip goes away by itself",
+      "tone": "ok"
+     },
+     {
+      "at": "20 Oct",
+      "label": "Sends again: the message goes through",
+      "tone": "ok"
+     }
+    ]
+   }
+  },
+  "mp-430": {
+   "title": "Every account gets the same $4.00 monthly Vana budget, counted in real cost",
+   "question": "How much Vana does a subscriber get each month, and what stops one account costing more than it pays?",
+   "context": "On 17 September Lee rejected mp-341 (one credit per action) and asked for a thorough look at cost and pricing: the most Vana we can give for the monthly price while keeping a healthy profit, and ways to cut cost. The research is in docs/research/vana-cost-and-pricing.md, re-measured on dev on 20 September. A planning message costs about 3.2 cents today, twice what mp-340 assumed; a typical athlete costs about $2.86 a month and a heavy one $6.85, falling to $1.64 and $3.93 after the cache fix. At Xuan's prices we keep $10.62 a month from a founding monthly subscriber and $7.08 from a founding annual one.",
+   "decision": "Every account gets the same monthly budget of $4.00, measured in what its AI calls actually cost us; each call draws it down by its real cost, nothing counts messages or actions, and there is no daily cap. The athlete never sees dollars, only the share of the month used and the refill date in Vana settings. At 100% Vana stops and the top-up sheet opens; packs keep their prices and add budget, $1.00 for $4.99 and $5.00 for $19.99. Example: a typical athlete on the founding monthly plan ($12.49) uses about $1.64 after the cache fix, so their bar reads about 40%; the most any subscriber can cost us in a month is $4.00, against the $10.62 we keep.",
+   "why": "Lee on 21 September: a cap is on usage, what the account actually cost, never on how many times it spoke; no daily caps; one cap for the month, the same for every account, and the athlete can see their usage in Vana settings. With a cost budget no subscriber can cost more than $4.00, against $10.62 kept from a founding monthly plan and $7.08 from a founding annual one. Under 600 credits the worst case was $19.20 today.",
+   "details": "Precisely:\n1. Every account gets the same monthly budget, measured in what its AI calls actually cost us. Each call draws the budget down by its real cost: a message to Vana, an opener, a described meal, a meal photo, a coach insight. Nothing counts turns or actions, and openers are no longer free. This replaces one credit per action. [to build]\n2. The budget is $4.00 of model cost a month, one setting, the same for monthly, annual and founding plans. It covers a heavy user after the cache fix ($3.93) and a typical user spends about 40% of it. The figure is confirmed in the spec. [to build: one setting]\n3. The trial week gets a quarter of the monthly budget, a week's share. More than half of cancelled trials cancel on day one. This amends mp-281 clause 3. [to build]\n4. Unused budget does not roll over. Bought budget never expires, which Apple requires. (mp-281, unchanged) [built]\n5. The monthly budget sits in the same wallet as bought budget and is spent first. Monthly plans refill on renewal. Annual plans refill each month on the anniversary day, checked when the app opens and before any AI call. A lapsed subscription forfeits what is left of the month; cancelling does not, until the period ends. This is mp-341's mechanism, live on dev; only the unit changes. Credits already in wallets convert at one fixed rate. [built; the unit is to build]\n6. At 100% the athlete gets the top-up sheet and Vana stops (mp-282). Later, once a cheaper model passes the voice test, general chat carries on with it and only planning stops. [built; the fallback is later]\n7. Top-up packs keep their prices and add budget, not credits: $4.99 adds a quarter of a month ($1.00) and $19.99 adds a month and a quarter ($5.00). Margin is 70% or better after the store's cut. The store text that names credits changes with it. [to build]\n8. Vana settings shows the usage: a bar with the share of this month used, the refill date, and any bought extra. The athlete sees a percentage, never dollars. [to build]\n9. There is no daily cap and no cap on turns or openers. The monthly budget is the only ceiling. A call is counted when it starts, so parallel requests cannot pass it. [to build]\n10. The old free grant of 20 credits a month ends when the paywall opens. Free credits already in wallets stay. (mp-343) [to build]\n11. When a subscription is transferred to another account the allowance stays where it was granted. Switching between monthly and annual grants nothing until the next refill. (mp-344) [built]\n\nDev, last 30 days, Haiku 4.5 through the Vercel AI Gateway (no markup): planning turn 21.3k tokens in, $0.032 average, $0.055 at p95; general turn about $0.011; planning opener $0.015; general opener $0.010; describe-meal (Sonnet 4.6) $0.007; meal photo $0.013; coach insight $0.002. Net after a 15% store cut: $24.99 -> $21.24, $12.49 -> $10.62, $199.99 a year -> $14.17 a month, $99.99 a year -> $7.08. Under the 09-20 proposal of 600 credits the worst case was $19.20 today and $6.96 after the cache fix; under the budget it is $4.00. Profiles are assumptions from 3 to 8 dev users; October traffic replaces them. Two wallet bugs to fix with the budget: the credit check passes when the database errors, and a balance that drains between check and debit serves one free call.",
+   "diagram": {
+    "kind": "timeline",
+    "title": "If each action cost a credit, 600 a month (rejected)",
+    "steps": [
+     {
+      "at": "1 Oct",
+      "label": "Heavy athlete subscribes at $12.49:\n600 credits, one per message",
+      "tone": "ink"
+     },
+     {
+      "at": "Oct",
+      "label": "Uses all 600 on long planning messages,\nabout 3.2 cents each to us",
+      "tone": "pending"
+     },
+     {
+      "at": "31 Oct",
+      "label": "They cost us $19.20 against the $10.62\nwe keep. The counter never saw it",
+      "tone": "no"
+     }
+    ]
+   },
+   "diagram2": {
+    "kind": "timeline",
+    "title": "What we decided: one $4.00 budget on real cost",
+    "steps": [
+     {
+      "at": "1 Oct",
+      "label": "Subscribes at $12.49: $4.00 of budget.\nVana settings shows 0% used",
+      "tone": "ok"
+     },
+     {
+      "at": "Oct",
+      "label": "Each call draws its real cost.\nNo daily cap, no count of messages",
+      "tone": "ink"
+     },
+     {
+      "at": "24 Oct",
+      "label": "Bar reaches 100%: Vana stops and\nthe top-up sheet opens",
+      "tone": "accent"
+     },
+     {
+      "at": "31 Oct",
+      "label": "The most they cost us: $4.00\nagainst the $10.62 we keep",
+      "tone": "ok"
+     }
+    ]
+   }
+  },
+  "mp-436": {
+   "question": "What happens to the call that crosses the budget, and to credits already in wallets?",
+   "decision": "A call that starts while there is budget left always finishes, even if it ends a few cents over; Vana never stops mid-answer, and the next call gets the top-up sheet. Credits already in wallets convert once at 2 cents each, the rate the packs imply. The app is never sent a dollar figure, only the share of the month used, the refill date and any bought extra. Example: an athlete with 2 cents left sends a planning message that costs about 3.2 cents, gets the whole answer, and their next message opens the top-up sheet; someone holding 250 credits from a $19.99 pack gets $5.00 of bought budget.",
+   "details": "Precisely:\n1. A call that starts inside the budget finishes, even if it ends a few cents over. Vana never stops mid-answer. The next call gets the top-up sheet.\n2. Credits already in wallets convert once at 2 cents a credit. That is the rate the packs imply: 50 credits were $4.99 and now add $1.00, 250 were $19.99 and now add $5.00.\n3. The app is never sent a dollar figure. It gets the share of the month used, the refill date and any bought extra.",
+   "diagram": {
+    "kind": "timeline",
+    "title": "If a call had to fit what is left (rejected)",
+    "steps": [
+     {
+      "at": "20 Oct",
+      "label": "2 cents of budget left. Asks Vana\nto plan the week",
+      "tone": "ink"
+     },
+     {
+      "at": "20 Oct",
+      "label": "The message would cost about 3.2 cents:\nrefused before it starts",
+      "tone": "no"
+     },
+     {
+      "at": "20 Oct",
+      "label": "Top-up sheet over a question that\nwas nearly free to answer",
+      "tone": "no"
+     }
+    ]
+   },
+   "diagram2": {
+    "kind": "timeline",
+    "title": "What we decided: a call that starts, finishes",
+    "steps": [
+     {
+      "at": "20 Oct",
+      "label": "2 cents of budget left. Asks Vana\nto plan the week",
+      "tone": "ink"
+     },
+     {
+      "at": "20 Oct",
+      "label": "The call starts inside the budget and\nfinishes, ending about 1 cent over",
+      "tone": "ok"
+     },
+     {
+      "at": "20 Oct",
+      "label": "Next message: the top-up sheet",
+      "tone": "accent"
+     }
+    ]
+   }
+  },
+  "mp-437": {
+   "question": "What does the athlete see when our own AI key has hit its spending limit?",
+   "decision": "Each of our AI keys has a hard monthly spending limit, and a key at its limit is refused with the same 402 (\"payment required\") an empty wallet gets. When that happens the athlete sees \"Vana is unavailable right now\", never the top-up sheet, because their own budget is not what ran out. The same message covers meal logging and the coach insight. Example: on 20 October our key reaches its monthly limit while an athlete with most of their budget left asks Vana a question; they see \"Vana is unavailable right now\" and are not offered a pack.",
+   "details": "Precisely:\n1. The athlete sees \"Vana is unavailable right now\". The top-up sheet never appears for this, because the athlete's own budget is not what ran out.\n2. The same message covers meal logging and the coach insight.",
+   "diagram": {
+    "kind": "timeline",
+    "title": "If the shared handler answered as usual (rejected)",
+    "steps": [
+     {
+      "at": "20 Oct",
+      "label": "Our AI key hits its monthly limit",
+      "tone": "no"
+     },
+     {
+      "at": "20 Oct",
+      "label": "Athlete with most of the month left\nasks Vana a question",
+      "tone": "ink"
+     },
+     {
+      "at": "20 Oct",
+      "label": "Top-up sheet: asked to pay\nfor our outage",
+      "tone": "no"
+     }
+    ]
+   },
+   "diagram2": {
+    "kind": "timeline",
+    "title": "What we decided: \"unavailable\", no sheet",
+    "steps": [
+     {
+      "at": "20 Oct",
+      "label": "Our AI key hits its monthly limit",
+      "tone": "no"
+     },
+     {
+      "at": "20 Oct",
+      "label": "Athlete with most of the month left\nasks Vana, logs a meal",
+      "tone": "ink"
+     },
+     {
+      "at": "20 Oct",
+      "label": "Both show \"Vana is unavailable\nright now\". No offer to buy",
+      "tone": "ok"
+     }
+    ]
+   }
+  },
+  "mp-509": {
+   "question": "What happens to answers saved before the account exists when the athlete signs up or signs in?",
+   "decision": "Before the account exists, onboarding keeps its answers on the phone under a temporary id, along with any training platform connected during onboarding. A new account takes all of it. Signing in to an account that is already set up keeps that account's settings, and the draft answers do not overwrite them. The temporary id is cleared only once its data has moved. Example: an athlete answers onboarding and connects their training platform, then creates an account on 1 October, and the account opens with their answers and the platform connected; someone who signs in to an account they set up before keeps their saved settings.",
+   "details": "Precisely:\n1. A new account takes the answers and anything connected under the temporary id.\n2. Signing in to an account that is already set up keeps that account's settings; the draft answers do not overwrite them.\n3. The temporary id is cleared only once its data has moved.",
+   "diagram": {
+    "kind": "flow",
+    "title": "Where the onboarding answers go",
+    "rows": [
+     [
+      {
+       "id": "tmp",
+       "label": "Answers and connected\nplatform, temporary id",
+       "tone": "muted"
+      }
+     ],
+     [
+      {
+       "id": "new",
+       "label": "Signs up:\nnew account takes all",
+       "tone": "ok"
+      },
+      {
+       "id": "old",
+       "label": "Signs in, set up:\nits settings stay",
+       "tone": "ok"
+      }
+     ],
+     [
+      {
+       "id": "clr",
+       "label": "Temporary id cleared\nonly once data moved",
+       "tone": "accent"
+      }
+     ]
+    ],
+    "edges": [
+     {
+      "from": "tmp",
+      "to": "new"
+     },
+     {
+      "from": "tmp",
+      "to": "old"
+     },
+     {
+      "from": "new",
+      "to": "clr"
+     },
+     {
+      "from": "old",
+      "to": "clr"
+     }
+    ],
+    "example": [
+     "1 Oct: answers onboarding, connects a platform,",
+     "creates an account: both are on it."
+    ]
+   }
+  },
+  "mp-528": {
+   "question": "When is the day-five reminder set or cancelled, and what does it say?",
+   "decision": "The reminder is set only once RevenueCat confirms the trial and when it ends, for 10:00 two days before the end; a trial too short for that gets none. It quotes the price of the plan the athlete bought, and tapping it opens the page where they manage the subscription. It is cancelled when the trial will not renew, at sign-out and when the account is deleted, while an athlete who converts to paid before day five keeps it. Example: an athlete starts a trial of the founding monthly plan on 1 October that ends on 8 October; at 10:00 on 6 October they read \"Your free week ends in two days\" and \"After that it's $12.49 a month. You can cancel any time. Tap to manage your subscription.\"",
+   "details": "Precisely:\n1. It is scheduled only once RevenueCat confirms the trial and its end date. A purchase still pending schedules nothing.\n2. A trial that ends too soon for a 10:00 reminder two days before it ends schedules nothing, instead of firing at once.\n3. The price is the one on the package the athlete bought, so during the founding months it quotes the founding price they will pay. It says \"a month\" or \"a year\" to match the plan.\n4. Title: \"Your free week ends in two days\". Body: \"After that it's {price} a month (a year). You can cancel any time. Tap to manage your subscription.\" Both live in the content system.\n5. Tapping it opens RevenueCat's subscription management page, or the App Store or Google Play page when RevenueCat has none. This is the same page \"Manage subscription\" opens.\n6. It is cancelled when RevenueCat says the trial will not renew, and also at sign-out and when the account is deleted, so it never reaches the next account on the phone.\n7. An athlete who converts to paid before day five keeps the reminder. mp-456 §4 cancels it only for a trial that will not renew.\n8. If scheduling fails, the purchase still counts, and the failure goes to Sentry.\n\nNotification slot 4201, payload `trial_ending:subscription`. Clause 6's sign-out and deletion case was added by the wave's code review, which found the reminder surviving sign-out. A paid intro offer would also count as a trial here, which is harmless while every intro offer is the free week (mp-279).",
+   "diagram": {
+    "kind": "timeline",
+    "title": "If set from the offer at purchase (rejected)",
+    "steps": [
+     {
+      "at": "1 Oct",
+      "label": "Buys the founding monthly plan. Had a\ntrial before, so no free week: pays $12.49",
+      "tone": "ink"
+     },
+     {
+      "at": "1 Oct",
+      "label": "The phone schedules the reminder\nfrom the offer's seven free days",
+      "tone": "no"
+     },
+     {
+      "at": "6 Oct",
+      "label": "\"Your free week ends in two days\"\nfor a trial they never had",
+      "tone": "no"
+     }
+    ]
+   },
+   "diagram2": {
+    "kind": "timeline",
+    "title": "What we decided: set only on RevenueCat's trial",
+    "steps": [
+     {
+      "at": "1 Oct",
+      "label": "Buys the founding monthly plan. Had a\ntrial before, so no free week: pays $12.49",
+      "tone": "ink"
+     },
+     {
+      "at": "1 Oct",
+      "label": "RevenueCat reports no trial:\nnothing is scheduled",
+      "tone": "ok"
+     },
+     {
+      "at": "6 Oct",
+      "label": "No reminder. An athlete whose trial\nends 8 Oct gets one at 10:00",
+      "tone": "ok"
+     }
+    ]
+   }
+  },
+  "mp-530": {
+   "question": "Which accounts get the grace month, and when is an account skipped?",
+   "context": "mp-455 gives 30 days of Pro and a founding-member mark in RevenueCat to every registered account created before the flip, through a script Lee runs that only lists what it would do unless told to write, and that skips anyone already granted. Ticket 06 built the script and a shared part ticket 09 will reuse. \"Registered\", \"already granted\" and the flip time each needed a rule.",
+   "decision": "Legacy grace goes to every account that is not anonymous, not deleted and was created before the flip, paid subscribers included. An account whose Grant already runs at least 30 days past the flip only gets the founding-member mark; one whose Grant ends sooner gets the full 30 days. \"Already granted\" is read from RevenueCat itself, so a second run grants nobody twice and a run that stops halfway is finished by running it again. Example: with the flip on 1 October, a coach comp that ends on 10 October is topped up to 31 October, while a Grant that already runs to 31 December is left alone and only marked.",
+   "why": "Clause 3 keeps a comp from being cut short and makes sure nobody gets fewer than 30 days. Reading RevenueCat means there is no second record to drift out of step.",
+   "details": "Precisely:\n1. An account qualifies when it is not anonymous, not deleted, and was created before the flip. Paid subscribers qualify too, since mp-429 says every account.\n2. An account RevenueCat has never seen is created there, then granted.\n3. An account holding a grant that already runs to at least 30 days past the flip is not granted again and is only marked `founding_member`. An account whose grant ends sooner, a short coach comp for example, gets the full 30 days.\n4. \"Already granted\" is read from RevenueCat itself: a live promotional `pro` grant to at least flip + 30 days, plus the attribute. A run that stops halfway is finished by running it again.\n5. The flip must be given as an exact time with a time zone, and the script refuses to write before it.\n6. The grant is written first and the attribute second, so a failure costs a missing attribute, which the next run fixes, never missing days.\n7. A write needs a named account (`--user`) or `--all`, and the key must belong to the project named, so a write can never run unfiltered or on the wrong project by mistake.\n\nThe script is `scripts/grace-grant.mjs`; the founding-member mark is the `founding_member` subscriber attribute.\n\nDry run on dev, 22 September, flip 2026-09-21T00:00Z: 968 accounts listed, 76 selected, 75 would be granted, 1 marked only. One filtered write on `test01@test.com` granted 30 days. A second run granted nobody. After the dev webhook change (mp-533) the account's row reads `PROMOTIONAL`, active until 2026-10-22. RevenueCat calls are retried three times on 429, 5xx and network errors. A lost response on a grant that did go through would grant again, and whether RevenueCat de-duplicates that has not been checked.",
+   "diagram": {
+    "kind": "timeline",
+    "title": "If any live Grant meant skip (rejected)",
+    "steps": [
+     {
+      "at": "25 Sep",
+      "label": "Coach comp: Pro to 10 Oct",
+      "tone": "ok"
+     },
+     {
+      "at": "1 Oct",
+      "label": "Flip. The run sees a live Grant\nand skips the account",
+      "tone": "no"
+     },
+     {
+      "at": "10 Oct",
+      "label": "Comp ends: the account is Lapsed,\n21 days short of everyone else",
+      "tone": "no"
+     }
+    ]
+   },
+   "diagram2": {
+    "kind": "timeline",
+    "title": "What we decided: nobody gets under 30 days",
+    "steps": [
+     {
+      "at": "25 Sep",
+      "label": "Coach comp: Pro to 10 Oct",
+      "tone": "ok"
+     },
+     {
+      "at": "1 Oct",
+      "label": "Flip. The Grant ends before 31 Oct,\nso the run grants the full 30 days",
+      "tone": "accent"
+     },
+     {
+      "at": "31 Oct",
+      "label": "Pro runs to here, like every\naccount made before the flip",
+      "tone": "ok"
+     }
+    ]
+   }
+  },
+  "mp-535": {
+   "title": "Each code works once per account, and only a coach code pairs an athlete",
+   "question": "How many times does a code work, what does each kind do, and what does a refused caller hear?",
+   "context": "mp-458 keeps coach, influencer and giveaway Codes in our own table, redeemed through one server function. Ticket 07 built both, on dev since 22 September. How many times a Code works, who it pairs with and what a refusal says each needed a rule.",
+   "decision": "Every Code works once per account, and a giveaway works once in total unless its row allows more; the days a Code grants are set on its row. A coach entering their own Code becomes a coach, and an athlete entering it gets a pending pairing with that coach; an influencer Code records who referred the account but never pairs, since an influencer is not a coach. A Code that is wrong, expired or already used gets a plain reason, and a Code is never spent when RevenueCat cannot be reached, so trying again works. Example: on dev on 22 September the coach Code DEVCOACH30 gave its owner exactly 30 days of Pro; a giveaway row grants 365.",
+   "why": "A Code must never be spent on nothing, and two people must not both win a single-use giveaway.",
+   "details": "Precisely:\n1. A code is stored upper case with spaces removed, 3 to 32 characters. What the caller types is read the same way.\n2. Every code works once per account. A giveaway works once in total unless its row sets a higher limit.\n3. The days a code grants are on its row: 30 on a coach code for its owner, 365 on a giveaway. They are not fixed in the function.\n4. The owner of a coach code entering it becomes a coach (an approved coach record, which is what the app reads). This includes a coach whose application was rejected, since Lee issues the codes.\n5. An athlete entering a coach code gets `coach_code` set and a pending pairing with the coach through the existing pairing path. A pairing that is pending or active is left alone; a declined or archived one goes back to pending.\n6. An influencer code sets `influencer_code` and never pairs, since an influencer is not a coach. It may have no owner, and an influencer entering their own code is refused.\n7. A wrong, not yet valid, expired, used or already-redeemed code gets a reason and a plain sentence. The app can map the reason to its own copy (ticket 18).\n8. An account RevenueCat has never seen, such as a coach who signed up on the web, is created there first. If RevenueCat still fails, the caller gets \"store unavailable\" and the code is not spent, so a retry works.\n9. Only a signed-in account can redeem. An anonymous session is refused.\n\nThe table is `codes` and the function `redeem-code`.\n\nThe code review changed clauses 6 and 8: influencer codes stopped pairing, and unknown customers are now created. A SQL function (`code_claim`) locks the code row so a giveaway cannot be claimed twice at once. Checked on dev 22 September: `DEVCOACH30` redeemed by curl answered `{\"ok\":true,\"kind\":\"coach\",\"pro_days\":30}`, and RevenueCat shows a new promotional grant of exactly 30 days. The second 30 days when a coach's first athlete pairs, and \"free while five are active\", stay by hand in the RevenueCat dashboard through November (mp-429 §4).",
+   "diagram": {
+    "kind": "timeline",
+    "title": "If influencer Codes paired (rejected)",
+    "steps": [
+     {
+      "at": "1 Oct",
+      "label": "Athlete enters an influencer's Code",
+      "tone": "ink"
+     },
+     {
+      "at": "1 Oct",
+      "label": "A pairing with the influencer is made,\nas if they were a coach",
+      "tone": "no"
+     },
+     {
+      "at": "2 Oct",
+      "label": "The influencer can see the athlete's\ndata. They are not a coach",
+      "tone": "no"
+     }
+    ]
+   },
+   "diagram2": {
+    "kind": "timeline",
+    "title": "What we decided: an influencer Code never pairs",
+    "steps": [
+     {
+      "at": "1 Oct",
+      "label": "Athlete enters an influencer's Code",
+      "tone": "ink"
+     },
+     {
+      "at": "1 Oct",
+      "label": "The account records who referred it.\nNo pairing is made",
+      "tone": "ok"
+     },
+     {
+      "at": "2 Oct",
+      "label": "The influencer sees none of\nthe athlete's data",
+      "tone": "ok"
+     }
+    ]
+   }
+  },
+  "mp-541": {
+   "question": "When exactly is the flip?",
+   "context": "mp-531 asked for the exact flip time. The grace script (mp-530) and ticket 09's claim for old anonymous installs both need one fixed instant: accounts created before it get Legacy grace.",
+   "decision": "The flip is the moment Lee actually switches the paywall on, not a date fixed in advance. Lee notes that moment, and the same instant goes to the grace script and to the claim old anonymous installs make, so every account made before the paywall appeared gets the grace month. Example: if Lee switches it on at 9:00 Central on 1 October, an account made at 8:00 pm Central on 30 September gets the 30 days, and one made at 9:15 that morning meets the paywall and its seven-day trial.",
+   "details": "Precisely:\n1. The flip is the moment Lee actually switches the paywall on, not a date fixed in advance.\n2. Lee notes that moment, and it is passed to the grace script as `--flip` and set as a fixed value for ticket 09's claim function.",
+   "diagram": {
+    "kind": "timeline",
+    "title": "If the flip were 1 Oct 00:00 UTC (rejected)",
+    "steps": [
+     {
+      "at": "30 Sep 7 pm",
+      "label": "Cut-off passes (7 pm Central).\nNo paywall yet",
+      "tone": "muted"
+     },
+     {
+      "at": "30 Sep 8 pm",
+      "label": "Athlete makes an account",
+      "tone": "ink"
+     },
+     {
+      "at": "1 Oct 9 am",
+      "label": "Lee switches the paywall on.\nThe athlete gets no grace month",
+      "tone": "no"
+     }
+    ]
+   },
+   "diagram2": {
+    "kind": "timeline",
+    "title": "What we decided: the moment Lee switches it on",
+    "steps": [
+     {
+      "at": "30 Sep 8 pm",
+      "label": "Athlete makes an account",
+      "tone": "ink"
+     },
+     {
+      "at": "1 Oct 9 am",
+      "label": "Lee switches the paywall on and\nnotes the time: that is the flip",
+      "tone": "accent"
+     },
+     {
+      "at": "1 Oct",
+      "label": "The 30 Sep account gets 30 days;\none made at 9:15 meets the trial",
+      "tone": "ok"
+     }
+    ]
+   }
+  },
+  "mp-543": {
+   "question": "When does prod's webhook start hearing every kind of event?",
+   "context": "mp-534 asked about prod's RevenueCat webhook, which fires only on purchases, renewals and one-off purchases. That is right today: prod has no Entitlement rows yet (checked 22 September), and its webhook only adds bought credits. After the cutover the server decides AI access from the Entitlement row's end date. A row still lapses on its own date, but a refund or a plan change only reaches the server through the event types prod does not hear.",
+   "decision": "At the prod cutover, the step that puts the new meal-planning server on production, in the same step that deploys the new webhook. Nothing changes on prod before then. Example: after the cutover an athlete on the $24.99 plan who renewed on 1 November is refunded on 5 November; prod hears the refund, and their AI access ends that day instead of on 1 December.",
+   "why": "Without it, a refunded athlete keeps AI access on the server until the old end date, and the monthly allowance is not forfeited when Pro ends.",
+   "details": "Precisely: At the prod cutover, in the same step that deploys the new `revenuecat-webhook`. Nothing changes on prod before then.\n\nProd has no `user_entitlements` table yet (checked 2026-09-22); after the cutover the server decides AI access from `active_until` in that table.",
+   "diagram": {
+    "kind": "timeline",
+    "title": "If prod kept three event types (rejected)",
+    "steps": [
+     {
+      "at": "1 Nov",
+      "label": "Athlete renews the $24.99 plan",
+      "tone": "ok"
+     },
+     {
+      "at": "5 Nov",
+      "label": "Refunded. Prod's webhook does not\nhear refunds",
+      "tone": "no"
+     },
+     {
+      "at": "to 1 Dec",
+      "label": "The server still allows AI calls\nand the monthly budget stays",
+      "tone": "no"
+     }
+    ]
+   },
+   "diagram2": {
+    "kind": "timeline",
+    "title": "What we decided: every event from the cutover",
+    "steps": [
+     {
+      "at": "1 Nov",
+      "label": "Athlete renews the $24.99 plan",
+      "tone": "ok"
+     },
+     {
+      "at": "5 Nov",
+      "label": "Refunded. The webhook hears it",
+      "tone": "accent"
+     },
+     {
+      "at": "5 Nov",
+      "label": "AI access ends that day and the\nmonth's budget is forfeited",
+      "tone": "ok"
+     }
+    ]
+   }
+  },
+  "mp-544": {
+   "question": "Does a giveaway Code leave a mark on the account?",
+   "context": "mp-536 asked whether giveaway Codes should leave a mark. Coach and influencer Codes each record the Code on the account in RevenueCat (mp-535). A giveaway grants 365 days and records nothing.",
+   "decision": "Yes. Redeeming a giveaway Code records the Code on the account in RevenueCat, the same way coach and influencer Codes do. That lets us count giveaway winners and see whether they later pay. Example: a winner who enters a giveaway Code on 1 October gets 365 days of Pro and carries that Code, so when the year ends we can see whether they subscribe.",
+   "details": "Precisely: Redeeming a giveaway sets `giveaway_code` to the code, the same way the other two work.\n\nCoach and influencer codes set `coach_code` and `influencer_code` on the RevenueCat customer (mp-535).",
+   "diagram": {
+    "kind": "timeline",
+    "title": "If giveaways left no mark (rejected)",
+    "steps": [
+     {
+      "at": "1 Oct",
+      "label": "Winner enters a giveaway Code:\n365 days of Pro",
+      "tone": "ok"
+     },
+     {
+      "at": "1 Oct",
+      "label": "Nothing records the Code",
+      "tone": "no"
+     },
+     {
+      "at": "next Oct",
+      "label": "The Grant ends. The winner looks like\nany Grant: did they pay? Unknown",
+      "tone": "no"
+     }
+    ]
+   },
+   "diagram2": {
+    "kind": "timeline",
+    "title": "What we decided: a giveaway tags the account",
+    "steps": [
+     {
+      "at": "1 Oct",
+      "label": "Winner enters a giveaway Code:\n365 days of Pro",
+      "tone": "ok"
+     },
+     {
+      "at": "1 Oct",
+      "label": "The account carries the Code",
+      "tone": "accent"
+     },
+     {
+      "at": "next Oct",
+      "label": "The Grant ends. We can count winners\nand see who subscribes",
+      "tone": "ok"
+     }
+    ]
+   }
+  },
+  "mp-556": {
+   "question": "Where does the plan-ended bar sit, and what does Subscribe do?",
+   "decision": "A Lapsed account sees one strip at the top of every screen, pushed pages included, in the status-bar area, with the page starting below it. Its Subscribe button opens the paywall over the current screen, so back returns to the read-only data. The words come from two content entries, and the strip is a new shared design component whose spec awaits Xuan. Example: an athlete whose plan ended on 8 November opens a meal on 10 November; the strip sits above the meal, and Subscribe then back returns them to that meal.",
+   "why": "\"Every screen\" includes pages pushed on top of the tabs, which the tab shell never sees. A strip at the top never covers a header, the tab bar or the Vana launcher.",
+   "details": "Precisely:\n1. One strip at the top of every screen, pushed pages included, taking the status-bar area; the page starts below it.\n2. Subscribe pushes the paywall over the current screen, so back returns to the read-only data.\n3. The copy is two content keys under `plan_ended`; the widget is `PlanEndedBar` in `kyle_design`, spec PROPOSED and awaiting Xuan.",
+   "diagram": {
+    "kind": "timeline",
+    "title": "If the bar lived in the tab shell (rejected)",
+    "steps": [
+     {
+      "at": "10 Nov",
+      "label": "Lapsed athlete on the Plan tab:\nthe bar shows",
+      "tone": "ink"
+     },
+     {
+      "at": "10 Nov",
+      "label": "Opens a meal, pushed over the tabs:\nno bar, nothing says the plan ended",
+      "tone": "no"
+     },
+     {
+      "at": "10 Nov",
+      "label": "Taps edit: the paywall appears\nwith no warning",
+      "tone": "no"
+     }
+    ]
+   },
+   "diagram2": {
+    "kind": "timeline",
+    "title": "What we decided: one strip on top of every screen",
+    "steps": [
+     {
+      "at": "10 Nov",
+      "label": "Lapsed athlete on the Plan tab:\nthe strip shows at the top",
+      "tone": "ink"
+     },
+     {
+      "at": "10 Nov",
+      "label": "Opens a meal: the strip is still there,\nthe page starts below it",
+      "tone": "ok"
+     },
+     {
+      "at": "10 Nov",
+      "label": "Subscribe opens the paywall over it;\nback returns to the meal",
+      "tone": "ok"
+     }
+    ]
+   }
+  },
+  "mp-557": {
+   "question": "Which buttons and screens open the paywall for a Lapsed account?",
+   "context": "mp-457 clause 3: any AI action by a Lapsed account opens the paywall instead of running.",
+   "decision": "For a Lapsed account these open the paywall instead of running: Vana and every screen under it, the old Jade chat, meal photo and meal describe, the Analyze button when logging a meal, the photo re-scan when editing one, and the Vana launcher. Buying AI credits and Vana settings stay open, since neither calls AI. Example: an athlete whose plan ended on 8 November types a meal and taps Analyze on 10 November; the paywall opens and no AI call is made, and they can still open Vana settings.",
+   "why": "The review found the log-meal and edit-meal buttons still calling AI, because those screens are opened without the router seeing them.",
+   "details": "Precisely:\n1. Routes: Vana and everything under it, Jade, meal photo and meal describe.\n2. Buttons on screens the router never sees: the log-meal Analyze (describe and photo) and the edit-meal photo re-scan.\n3. The Vana launcher opens the paywall instead of the sheet.\n4. Buying AI credits and Vana settings stay open: neither calls AI.\n\nTest `log_meal_screen_lapsed_test.dart`: a lapsed tap opens the paywall and `describe-meal` is never called.",
+   "diagram": {
+    "kind": "timeline",
+    "title": "If buying credits were gated too (rejected)",
+    "steps": [
+     {
+      "at": "10 Nov",
+      "label": "Lapsed athlete taps Analyze:\nthe paywall opens",
+      "tone": "ink"
+     },
+     {
+      "at": "10 Nov",
+      "label": "Taps Buy AI credits instead:\nthe paywall again",
+      "tone": "no"
+     },
+     {
+      "at": "10 Nov",
+      "label": "A screen that calls no AI is shut",
+      "tone": "no"
+     }
+    ]
+   },
+   "diagram2": {
+    "kind": "timeline",
+    "title": "What we decided: only AI calls are stopped",
+    "steps": [
+     {
+      "at": "10 Nov",
+      "label": "Lapsed athlete taps Analyze:\nthe paywall opens, no AI call",
+      "tone": "accent"
+     },
+     {
+      "at": "10 Nov",
+      "label": "Buy AI credits opens as normal",
+      "tone": "ok"
+     },
+     {
+      "at": "10 Nov",
+      "label": "Vana settings opens as normal",
+      "tone": "ok"
+     }
+    ]
+   }
+  }
+ },
+ "terms": [
+  {
+   "term": "Monthly budget",
+   "area": "Paying for the app",
+   "definition": "What a subscription puts in the wallet each month, measured in what AI calls actually cost us: $4.00, the same for every plan, a quarter of it in the trial week. The athlete sees only the share used and the refill date.",
+   "avoid": "Credits, tokens, quota, allowance of credits"
+  },
+  {
+   "term": "Wallet",
+   "area": "Paying for the app",
+   "definition": "The one place an account's AI spending comes from: the monthly budget, spent first, and any bought Top-ups. Every AI call draws from it.",
+   "avoid": "Balance, credits account"
+  },
+  {
+   "term": "Top-up sheet",
+   "area": "Paying for the app",
+   "definition": "The sheet that opens when an AI action finds the wallet empty: the share of the month used, the renewal date and the two packs. It never appears for an outage of ours.",
+   "avoid": "Credits paywall, out-of-credits screen"
+  },
+  {
+   "term": "Flip",
+   "area": "Paying for the app",
+   "definition": "The moment Lee switches the paywall on. Accounts created before it get Legacy grace.",
+   "avoid": "Launch, go-live, 1 October (the flip is not a fixed date)"
+  }
+ ]
+}

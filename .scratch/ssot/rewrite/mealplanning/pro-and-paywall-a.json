@@ -1,0 +1,816 @@
+{
+ "cards": {
+  "mp-266": {
+   "question": "What does a new account get before it pays, and what happens after?",
+   "decision": "Every new account gets seven free days of the whole app, then must buy. There is no free tier and no separate Pro tier: an account is on its Trial or it pays. Once the Trial has ended, tapping the launcher opens the paywall, through the one Gate that covers the whole app; Vana has no gate of her own. Example: an athlete who starts on 1 October has the whole app through 7 October; if they have not bought by 8 October, tapping the launcher opens the paywall.",
+   "details": "Precisely:\n1. Every new account gets a seven-day free trial of the whole app, then must buy. There is no free tier and no Pro tier, only trial and paid.\n2. Tapping the launcher after the trial has ended opens the paywall. Gating follows the one app gate. There is no Vana-specific gate.\n3. The move away from freemium is its own piece of work; see the open question beside this card.",
+   "diagram": {
+    "kind": "timeline",
+    "title": "What we decided: seven days, then buy",
+    "steps": [
+     {
+      "at": "1 Oct",
+      "label": "New account: the whole app, free",
+      "tone": "ok"
+     },
+     {
+      "at": "7 Oct",
+      "label": "Last free day. No free tier waits after it",
+      "tone": "ink"
+     },
+     {
+      "at": "8 Oct",
+      "label": "Not bought: tapping the launcher\nopens the paywall",
+      "tone": "accent"
+     },
+     {
+      "at": "After buying",
+      "label": "The whole app again, through the one Gate",
+      "tone": "ok"
+     }
+    ]
+   },
+   "slot": 2
+  },
+  "mp-270": {
+   "question": "Can meal planning reach the live app before the trial exists?",
+   "decision": "No. Meal planning does not ship until the seven-day trial and purchase are live. There is no dark launch, meaning no shipping it hidden behind a switch to turn on later. That makes the move to the trial part of the critical path for meal planning. Example: the paywall and its seven-day trial go live on 1 October, so meal planning cannot reach the live app before 1 October.",
+   "details": "Precisely:\n1. Meal planning does not ship until the seven-day trial and purchase model is live. No dark launch and no gate flag as the release plan.\n2. The trial move (see the open question beside the trial card) is therefore on the critical path for the meal-planning release.",
+   "diagram": {
+    "kind": "timeline",
+    "title": "What we decided: no meal planning without the trial",
+    "steps": [
+     {
+      "at": "Before 1 Oct",
+      "label": "Meal planning built but not shipped.\nNo hidden switch in the live app",
+      "tone": "muted"
+     },
+     {
+      "at": "1 Oct",
+      "label": "Seven-day trial and purchase go live",
+      "tone": "accent"
+     },
+     {
+      "at": "From 1 Oct",
+      "label": "Meal planning can ship to the live app",
+      "tone": "ok"
+     }
+    ]
+   },
+   "slot": 2
+  },
+  "mp-279": {
+   "question": "Who runs the free trial, the store or the app?",
+   "decision": "The store does. Every subscription product carries a seven-day free offer on both stores, set on Xuan's new products (mp-429). The athlete subscribes at the end of onboarding with a card on file, pays nothing for seven days and is charged on day eight unless they cancel; the store allows one trial per person, so a cancelled trial never comes back. Whether someone may use the app is RevenueCat's `pro` being live from day one, and neither the app nor the server keeps a trial clock. Example: an athlete subscribes to the monthly plan on 1 October at the Founding Month price, pays nothing that week, and is charged $12.49 on 8 October unless they cancel first.",
+   "details": "Precisely:\n1. The store runs it. Every subscription product carries a seven-day free introductory offer on both stores. The products are Xuan's new ones (mp-429), not the existing monthly and annual ids.\n2. The athlete subscribes at the end of onboarding with a payment method on file, pays nothing for seven days, and is charged on day eight unless they cancel. The store's own eligibility rule applies: one introductory offer per person per subscription group, so a cancelled trial is not repeated.\n3. RevenueCat's entitlement is the gate, active from day one. There is no trial clock and no trial state in the app or the server.",
+   "diagram": {
+    "kind": "timeline",
+    "title": "What we decided: the store runs the trial",
+    "steps": [
+     {
+      "at": "1 Oct",
+      "label": "Subscribes at the end of onboarding,\ncard on file. `pro` is live at once",
+      "tone": "ok"
+     },
+     {
+      "at": "1 to 7 Oct",
+      "label": "Whole app, nothing charged",
+      "tone": "ok"
+     },
+     {
+      "at": "8 Oct",
+      "label": "Charged $12.49 (Founding Month price)\nunless they cancelled",
+      "tone": "accent"
+     },
+     {
+      "at": "Later",
+      "label": "Cancelled and back? No second trial:\none per person per subscription group",
+      "tone": "muted"
+     }
+    ]
+   },
+   "slot": 2
+  },
+  "mp-280": {
+   "title": "A lapsed account sees its own data read-only under the paywall",
+   "question": "What can a Lapsed account still open?",
+   "context": "When a Trial ends unpaid or a subscription is cancelled, the account is Lapsed: RevenueCat's `pro` is not live, and the two cases look the same. mp-266 said there is one Gate and that the launcher opens the paywall after the Trial, but not what else a Lapsed account can reach. This follows from mp-267, and mp-429 clause 6 adjusted clause 1.",
+   "decision": "Its own data, read-only, with the paywall over it. Nothing that writes or calls AI runs until the account subscribes or restores a purchase, and the paywall offers Restore purchases, Manage subscription, Sign out and Delete account. The data is never touched and can be edited again the moment they subscribe or restore. Example: an athlete's Trial ends on 7 October unpaid; on 8 October they can still read their plan but cannot change it or ask Vana anything until they subscribe.",
+   "details": "Precisely:\n1. After sign-in an account with no access sees its own data read-only, with the paywall over it. Nothing that writes or calls AI runs until it subscribes or restores. (mp-429 clause 6)\n2. The paywall carries Restore purchases, Manage subscription, Sign out and Delete account.\n3. Their data is untouched and becomes editable again the moment they subscribe or restore.",
+   "diagram": {
+    "kind": "timeline",
+    "title": "What we decided: read-only behind the paywall",
+    "steps": [
+     {
+      "at": "7 Oct",
+      "label": "Trial ends unpaid. The account is Lapsed",
+      "tone": "ink"
+     },
+     {
+      "at": "8 Oct",
+      "label": "Opens the app: own data, read-only,\nunder the paywall",
+      "tone": "accent"
+     },
+     {
+      "at": "8 Oct",
+      "label": "Tries to edit or ask Vana: nothing runs",
+      "tone": "no"
+     },
+     {
+      "at": "Subscribes",
+      "label": "Same data, editable again at once",
+      "tone": "ok"
+     }
+    ]
+   },
+   "slot": 2
+  },
+  "mp-284": {
+   "title": "The phone's saved answer decides, and no answer at all means locked",
+   "question": "What does the Gate do when it cannot tell whether the account has paid?",
+   "context": "The app works offline, and the Gate reads RevenueCat. RevenueCat's code on the phone saves its last answer, so a subscriber who is offline still has a saved answer saying `pro` is live. The only case with no answer is a fresh install, or cleared app data, with no network. Follows from mp-279.",
+   "decision": "It trusts the copy of RevenueCat's answer saved on the phone whenever there is one, online or not, and RevenueCat refreshes that copy in the background. With no saved copy and no answer within a couple of seconds, the account counts as locked: it sees the paywall, where Restore purchases works as soon as the network is back. The server checks every paid call against its own record (mp-285), so a phone that fakes its saved copy gets nothing. Example: a subscriber on a plane opens the app and gets straight in from the saved copy; the same person on a fresh install with no signal sees the paywall until the network returns and Restore lets them in.",
+   "details": "Precisely:\n1. The cached entitlement is the answer whenever there is one, online or not. RevenueCat refreshes it in the background and the gate reacts when it changes.\n2. No cache and no answer within a couple of seconds counts as locked: the paywall, with Restore purchases, which succeeds as soon as the network is back.\n3. The server checks every debiting or Vana call itself against its own record of RevenueCat's status (mp-285), so a device that lies about its cache buys nothing.",
+   "why": "Locked when unknown is the only safe default for a paid app, and the saved copy means an honest subscriber never notices it.",
+   "diagram": {
+    "kind": "timeline",
+    "title": "If an unknown answer opened the app for a while (rejected)",
+    "steps": [
+     {
+      "at": "8 Oct",
+      "label": "A Lapsed athlete clears the app's data\nand turns off the network",
+      "tone": "ink"
+     },
+     {
+      "at": "8 Oct",
+      "label": "No saved answer, no reply.\nThe app opens anyway for a grace",
+      "tone": "no"
+     },
+     {
+      "at": "Every day",
+      "label": "Clears the data again: free use, again",
+      "tone": "no"
+     }
+    ]
+   },
+   "diagram2": {
+    "kind": "timeline",
+    "title": "What we decided: unknown means locked",
+    "steps": [
+     {
+      "at": "On a plane",
+      "label": "A subscriber opens the app: the saved\ncopy says `pro` is live, straight in",
+      "tone": "ok"
+     },
+     {
+      "at": "Fresh install",
+      "label": "No saved copy, no signal: after\na couple of seconds, the paywall",
+      "tone": "accent"
+     },
+     {
+      "at": "Signal back",
+      "label": "Restore purchases succeeds: in",
+      "tone": "ok"
+     },
+     {
+      "at": "Faked copy",
+      "label": "The server checks its own record:\nno paid call runs",
+      "tone": "no"
+     }
+    ]
+   }
+  },
+  "mp-285": {
+   "title": "The server keeps a small copy of RevenueCat's answer, written only by the webhook",
+   "question": "Does the server need its own record of who has paid?",
+   "context": "Lee said on the page that the app's own entitlements table goes away under the trial model. The server still needs its own check on paid calls, because it cannot take the phone's word. Asking RevenueCat on every call adds a wait to every Vana message, cannot be kept between calls in the server's short-lived functions, and stops every subscriber when RevenueCat is down. The webhook already wrote the table, the server already read it, and the monthly Allowance (mp-281) needs the webhook anyway. Follows from mp-284.",
+   "decision": "Yes, a small one: the Entitlement row, holding only the two fields the Gate reads (active until and period type), and written only by the webhook. When the row and RevenueCat disagree, RevenueCat wins: a purchase or Restore makes the app ask again, the next webhook call corrects the row, and an event older than the row is ignored. Nothing in the app ever gives anyone access. Example: if RevenueCat is down on 15 October, subscribers keep talking to Vana, because the server reads its own row instead of asking RevenueCat on every message.",
+   "details": "Precisely:\n1. The table stays, shrunk to a cache of RevenueCat: the two fields the gate reads, active until and period type, written only by the webhook.\n2. On any disagreement RevenueCat wins: Restore or a purchase tells the client to refetch, and the next webhook corrects the row. An event older than the row's event time is ignored.\n3. Nothing grants an entitlement from the app side, ever.\n\nThe table is `user_entitlements`; the Vana functions read it through `requirePro`.",
+   "why": "Code that already works beats an extra call on every Vana message and an outage that stops every subscriber. Lee's remark was against the app being a second system that grants access, and a copy only the webhook writes is not one.",
+   "diagram": {
+    "kind": "timeline",
+    "title": "If the server asked RevenueCat on every call (rejected)",
+    "steps": [
+     {
+      "at": "15 Oct",
+      "label": "RevenueCat is down",
+      "tone": "muted"
+     },
+     {
+      "at": "15 Oct",
+      "label": "A paying athlete messages Vana.\nThe server cannot reach RevenueCat",
+      "tone": "ink"
+     },
+     {
+      "at": "15 Oct",
+      "label": "Refused. Every subscriber is stopped\nuntil RevenueCat is back",
+      "tone": "no"
+     }
+    ]
+   },
+   "diagram2": {
+    "kind": "timeline",
+    "title": "What we decided: the server reads its own row",
+    "steps": [
+     {
+      "at": "1 Oct",
+      "label": "Athlete subscribes. The webhook writes\nthe row: active until, period type",
+      "tone": "ok"
+     },
+     {
+      "at": "15 Oct",
+      "label": "RevenueCat is down",
+      "tone": "muted"
+     },
+     {
+      "at": "15 Oct",
+      "label": "Athlete messages Vana. The server reads\nits row: live. Vana answers",
+      "tone": "ok"
+     },
+     {
+      "at": "Later",
+      "label": "RevenueCat disagrees? It wins: the next\nwebhook corrects the row",
+      "tone": "accent"
+     }
+    ]
+   }
+  },
+  "mp-317": {
+   "title": "The Entitlement row holds four fields, and each kind of event has one rule",
+   "question": "What is on the Entitlement row, and what does each kind of event do to it?",
+   "decision": "The row holds four things: the user, active until, period type and the time of the last event, and an event older than that time is ignored. A transfer, where a purchase moves to another account, closes the old account's row and writes the new one's; a test event from RevenueCat writes nothing; and signed-in users can only read the row. The precise rule for an expiration event is in Details. Example: an athlete restores their purchase onto a new account on 10 October; the old account's row closes on 10 October, and a late event for the old account that arrives on 11 October is ignored.",
+   "details": "Precisely:\n1. The row holds the user id, active until, period type and the event time. Every other column is dropped. The event time is what \"older than the row\" compares against.\n2. A transfer closes the old owner's row at the transfer time and writes the new owner's, so a late event for the old owner is stale and ignored.\n3. A test event writes nothing: a ping has no expiry and must not touch the cache.\n4. An expiration whose payload names a later expiry closes the row at the event time, so a clock-skewed payload cannot keep a lapsed subscriber active.\n5. Signed-in users may only read the table. No app-side insert or update is granted.\n\nMigration 20260916110000, applied to dev (11 columns and 0 rows before; 4 columns after). An insert as the authenticated role fails with 42501. Thirty handler test steps run against RevenueCat-shaped events.",
+   "diagram": {
+    "kind": "timeline",
+    "title": "What we decided: one rule per kind of event",
+    "steps": [
+     {
+      "at": "10 Oct",
+      "label": "Restores onto a new account (a transfer).\nOld row closes 10 Oct; new row written",
+      "tone": "accent"
+     },
+     {
+      "at": "11 Oct",
+      "label": "A late event for the old account:\nolder than the row, ignored",
+      "tone": "muted"
+     },
+     {
+      "at": "Any day",
+      "label": "RevenueCat test ping: nothing written",
+      "tone": "muted"
+     },
+     {
+      "at": "Any day",
+      "label": "The app tries to write the row: refused.\nSigned-in users only read it",
+      "tone": "no"
+     }
+    ]
+   }
+  },
+  "mp-318": {
+   "title": "No flag the app sets opens the server's check; testers subscribe in TestFlight",
+   "question": "Do testers still get past the server's paid check?",
+   "context": "The server's Pro check used to let in anyone whose users row said internal, a flag the app itself writes when a Tester marks the phone. mp-285 clause 3 says nothing in the app ever gives anyone access.",
+   "decision": "No. The server lets in only accounts RevenueCat shows as paid, reading active until and period type on the Entitlement row and nothing else; no flag the app writes counts. A Tester gets in by subscribing in TestFlight, where a purchase charges nothing, and that purchase reaches the row like any other. An Admin skips the paywall screen in the app only, and still needs a TestFlight subscription or a Grant for Vana to answer. Example: a Tester who marked their phone as internal but never subscribed is refused by Vana; after a $0 TestFlight subscription the webhook writes their row and Vana answers.",
+   "details": "Precisely:\n1. The server asks only whether RevenueCat shows the account as paid: it reads active until and period type and nothing else. No flag the app sets opens it.\n2. Testers get in by subscribing in TestFlight, which charges nothing; the purchase reaches the row through the webhook like any other. There is no per-tester setup and no list of testers.\n3. A team admin account skips the paywall screen in the app only (mp-416). For Vana to work it also needs a TestFlight subscription or a RevenueCat grant.\n4. The users column stays; the app still writes it for its own dev features.",
+   "why": "A flag the app writes is the app giving access, which mp-285 forbids. Keeping the users column (clause 4) kept the wave's other simulators working, since the dev table had no rows.",
+   "diagram": {
+    "kind": "timeline",
+    "title": "If dev builds kept the internal-flag bypass (rejected)",
+    "steps": [
+     {
+      "at": "Day 1",
+      "label": "Tester marks the phone as internal",
+      "tone": "ink"
+     },
+     {
+      "at": "Day 1",
+      "label": "Vana answers with no subscription:\nthe app's own flag gave access",
+      "tone": "no"
+     },
+     {
+      "at": "Later",
+      "label": "Two ways in to audit, and no test\never runs the real purchase path",
+      "tone": "no"
+     }
+    ]
+   },
+   "diagram2": {
+    "kind": "timeline",
+    "title": "What we decided: testers subscribe in TestFlight",
+    "steps": [
+     {
+      "at": "Day 1",
+      "label": "Tester marks the phone as internal.\nVana refuses: no paid row",
+      "tone": "ink"
+     },
+     {
+      "at": "Day 1",
+      "label": "Subscribes in TestFlight, charged $0",
+      "tone": "accent"
+     },
+     {
+      "at": "Day 1",
+      "label": "The webhook writes the row. Vana answers",
+      "tone": "ok"
+     }
+    ]
+   }
+  },
+  "mp-335": {
+   "title": "On a phone the Gate reads RevenueCat's saved copy, on the web the server's row",
+   "question": "How does the app decide whether to show the paywall, and when?",
+   "decision": "On a phone the Gate reads the copy of RevenueCat's answer saved on the device, so it answers at once after a purchase and works offline; the web build has no RevenueCat and reads the server's Entitlement row instead, which opens the coach portal on the web. Startup waits for the Gate, at most two seconds, so a subscriber never sees the paywall flash, and the saved copy counts only once it belongs to the signed-in account. The router is the one place that sends people to or from the paywall, so an account with access can never see it, and the old tester shortcuts and switches are gone. Example: an athlete buys the monthly plan on the paywall on 8 October; the saved copy updates at once and the router takes them into the app without the paywall moving itself.",
+   "details": "Precisely:\n1. On a phone the app reads RevenueCat's saved copy on the device: it answers at once after a purchase and works offline. The network is not on the path; the copy refreshes in the background.\n2. The web build has no RevenueCat, so it reads the server's entitlement table, which the RevenueCat webhook keeps. This opens the coach portal on the web and answers mp-337.\n3. Startup resolves the gate on the critical path, bounded by the two-second cap, so a subscriber's cold start never flashes the paywall.\n4. Before trusting the cache the app checks the SDK's identity: a different app user id logs in first, and if that cannot happen offline the answer is locked.\n5. The paywall route redirects to the app whenever the gate is unlocked, so a purchase, a restore or a background refresh moves the person in without the screen navigating. An entitled account can never view the paywall.\n6. The tester tap-grant, the `users.is_internal` mirror in the gate, the purchase-enabled flag and the gate flag are gone. Testers need a real entitlement: a TestFlight subscription or a RevenueCat grant (mp-318).\n7. The introductory offer shows unless the store says the person is ineligible. \"Manage subscription\" opens RevenueCat's management URL, else the platform's subscriptions page.\n8. A Pro-required answer from a Vana call warns and refreshes the status; the router alone moves onto the paywall.\n\nSeam tests: 17 through the status controller, 9 through the paywall controller, a router redirect test, light and dark goldens of the paywall. The Drift `user_entitlements` table stays in the schema unused until a schema bump.",
+   "diagram": {
+    "kind": "flow",
+    "title": "What we decided: where the Gate reads, who moves you",
+    "rows": [
+     [
+      {
+       "id": "phone",
+       "label": "Phone: RevenueCat's\nsaved copy",
+       "tone": "ink"
+      },
+      {
+       "id": "web",
+       "label": "Web: the server's\nEntitlement row",
+       "tone": "ink"
+      }
+     ],
+     [
+      {
+       "id": "gate",
+       "label": "Gate: open?\n(at most 2 s at startup)",
+       "tone": "accent"
+      }
+     ],
+     [
+      {
+       "id": "app",
+       "label": "Router: into the app",
+       "tone": "ok"
+      },
+      {
+       "id": "pay",
+       "label": "Router: the paywall",
+       "tone": "no"
+      }
+     ]
+    ],
+    "edges": [
+     {
+      "from": "phone",
+      "to": "gate"
+     },
+     {
+      "from": "web",
+      "to": "gate"
+     },
+     {
+      "from": "gate",
+      "to": "app",
+      "label": "yes"
+     },
+     {
+      "from": "gate",
+      "to": "pay",
+      "label": "no"
+     }
+    ],
+    "example": [
+     "8 Oct: buys on the paywall, the saved copy",
+     "updates, the router moves them into the app"
+    ]
+   },
+   "slot": 2
+  },
+  "mp-336": {
+   "title": "The ratifier checks purchase-then-Restore on TestFlight, because no agent can",
+   "question": "Who checks that Restore after a test purchase reopens the app?",
+   "decision": "The ratifier (Lee), on a TestFlight build signed into an Apple sandbox account, a test account that buys without being charged. A simulator cannot sign into a sandbox account, so no build agent, on this wave or a later one, can ever watch this happen. Ticket 19 is done on its code and the half of the check an agent could run, and the wave does not rebuild it. Example: an agent's simulator showed the paywall with Test Store prices and Restore leaving it locked; buying with a sandbox account and then tapping Restore is left for Lee on TestFlight.",
+   "details": "Precisely: the purchase-then-Restore check is the ratifier's, on a TestFlight build with a sandbox account. The ticket is done on the code and the first half of the check; the wave does not rebuild it for a criterion no agent can meet.",
+   "diagram": {
+    "kind": "flow",
+    "title": "What we decided: who checks which half",
+    "rows": [
+     [
+      {
+       "id": "a",
+       "label": "Agent, simulator: paywall\nshows, Restore stays locked",
+       "tone": "ok"
+      },
+      {
+       "id": "b",
+       "label": "Agent: sign into a\nsandbox account",
+       "tone": "no"
+      }
+     ],
+     [
+      {
+       "id": "c",
+       "label": "Lee, TestFlight: buy,\nthen Restore reopens the app",
+       "tone": "accent"
+      }
+     ]
+    ],
+    "edges": [
+     {
+      "from": "a",
+      "to": "b",
+      "label": "then"
+     },
+     {
+      "from": "b",
+      "to": "c",
+      "label": "impossible, so"
+     }
+    ]
+   },
+   "slot": 2
+  },
+  "mp-416": {
+   "question": "Does an Admin account meet the paywall?",
+   "context": "mp-279 makes RevenueCat's `pro` the only Gate, and mp-286 gives no one a branch. The team's own accounts (test@test.com and any other Admin) then met the paywall on every device without a purchase, which is what mp-415 hit on a test simulator. The Admin mark already existed for the meal review box (mp-144).",
+   "decision": "No. The Gate in the app opens for an Admin, an account the team marked by hand in the database, whatever its subscription says; there is no other exception, no build switch, no tester shortcut, no coach branch. The app checks for Admin only when the account has no access, and waits no longer than the same two seconds, so on a slow network it still lands on the paywall. The server still checks the subscription on every paid and Vana call, so an Admin skips only the paywall screen. Example: test@test.com signs in on a fresh simulator with no purchase and goes straight into the app, but Vana refuses it until it has a TestFlight subscription or a Grant (mp-318).",
+   "details": "Precisely:\n1. The app gate opens for an account whose `users.is_admin` is true, whatever the subscription status. No other exception: no build flag, no tester grant, no coach branch.\n2. The admin read runs only when the status is inactive, and is bounded by the same two-second answer window as the entitlement, so a slow network still lands on the paywall.\n3. The server keeps checking the entitlement on every debiting and Vana call (mp-285); the bypass is the client gate only.",
+   "diagram": {
+    "kind": "flow",
+    "title": "What we decided: Admins skip the paywall screen only",
+    "rows": [
+     [
+      {
+       "id": "in",
+       "label": "Signs in",
+       "tone": "ink"
+      }
+     ],
+     [
+      {
+       "id": "pro",
+       "label": "`pro` live?",
+       "tone": "accent"
+      },
+      {
+       "id": "adm",
+       "label": "Admin?\n(within 2 s)",
+       "tone": "accent"
+      }
+     ],
+     [
+      {
+       "id": "app",
+       "label": "The app",
+       "tone": "ok"
+      },
+      {
+       "id": "pay",
+       "label": "The paywall",
+       "tone": "no"
+      }
+     ],
+     [
+      {
+       "id": "srv",
+       "label": "Vana still asks the\nserver: paid row?",
+       "tone": "muted"
+      }
+     ]
+    ],
+    "edges": [
+     {
+      "from": "in",
+      "to": "pro"
+     },
+     {
+      "from": "pro",
+      "to": "app",
+      "label": "yes"
+     },
+     {
+      "from": "pro",
+      "to": "adm",
+      "label": "no"
+     },
+     {
+      "from": "adm",
+      "to": "app",
+      "label": "yes"
+     },
+     {
+      "from": "adm",
+      "to": "pay",
+      "label": "no"
+     },
+     {
+      "from": "app",
+      "to": "srv"
+     }
+    ],
+    "example": [
+     "test@test.com: into the app with no purchase;",
+     "Vana refuses until a TestFlight subscription or Grant"
+    ]
+   },
+   "slot": 2
+  },
+  "mp-417": {
+   "question": "How does onboarding end now that every account must pay?",
+   "context": "The account screen at the end of onboarding still offered \"Continue without signing in\". With every screen behind the one Gate, a guest would finish onboarding and meet the paywall at once, and could not buy, because a purchase is tied to the signed-in account (mp-279). The paywall then arrived as a lock screen with Sign out and Delete account beside the buy buttons, on an account made a moment ago, with nothing having warned the athlete a plan choice was coming.",
+   "decision": "Every athlete makes an account: there are no anonymous users, the app never starts an anonymous session, and onboarding answers stay on the phone until sign-up writes them to the account. The account screen says under its title what the Trial costs, from the store's prices, and right after sign-up the athlete lands on the paywall in its onboarding form: the app name, the two plans and Restore purchases only. An account that already has access skips it, because the router moves it on to the app. Example: with the base prices the account screen reads \"7 days free, then $24.99 a month or $199.99 a year. Cancel any time.\"",
+   "details": "Precisely:\n1. The account is required and there are no anonymous users. The app never starts an anonymous session; onboarding answers are kept on the phone until sign-up and written to the account then. The anonymous-session plumbing is archived. An install left anonymous from before the paywall registers to claim its grace (mp-429).\n2. The account screen's one line of copy under the title is the trial line, from store prices: \"{days} days free, then {monthly} a month or {annual} a year. Cancel any time.\" A price-free fallback shows while the store answers.\n3. After sign-up the athlete lands on the paywall in its onboarding shape: the app name, the two plans and Restore purchases only. Manage subscription, Sign out and Delete account belong to the lapsed shape (mp-280) and do not appear.\n4. The onboarding shape is the same route with a query; the gate's redirect still moves an unlocked account on to the app, so an admin (mp-416) or a restored account never sees it.",
+   "why": "The account has to come first because the purchase is stored against it; the fix is to say so before the account is made, and to make the plan screen read as the next step rather than a wall.",
+   "diagram": {
+    "kind": "flow",
+    "title": "What we decided: how onboarding ends",
+    "rows": [
+     [
+      {
+       "id": "q",
+       "label": "Onboarding answers,\nkept on the phone",
+       "tone": "ink"
+      },
+      {
+       "id": "acc",
+       "label": "Account screen:\nthe trial line",
+       "tone": "ink"
+      }
+     ],
+     [
+      {
+       "id": "su",
+       "label": "Sign up: answers\nwritten to the account",
+       "tone": "accent"
+      }
+     ],
+     [
+      {
+       "id": "pw",
+       "label": "Paywall: app name,\ntwo plans, Restore",
+       "tone": "ink"
+      },
+      {
+       "id": "app",
+       "label": "The app",
+       "tone": "ok"
+      }
+     ]
+    ],
+    "edges": [
+     {
+      "from": "q",
+      "to": "acc"
+     },
+     {
+      "from": "acc",
+      "to": "su"
+     },
+     {
+      "from": "su",
+      "to": "pw",
+      "label": "no access"
+     },
+     {
+      "from": "su",
+      "to": "app",
+      "label": "has access"
+     },
+     {
+      "from": "pw",
+      "to": "app",
+      "label": "buys"
+     }
+    ],
+    "example": [
+     "\"7 days free, then $24.99 a month or",
+     "$199.99 a year. Cancel any time.\""
+    ]
+   },
+   "slot": 2
+  },
+  "mp-429": {
+   "title": "We build the 1 October paywall to Xuan's RevenueCat spec",
+   "question": "Do we build the paywall to Xuan's RevenueCat spec, even where it changes earlier rulings?",
+   "decision": "Yes, whole, including the three places it changes what was ruled on 15 September. It sets $24.99 a month and $199.99 a year, with Founding Month prices of $12.49 and $99.99 to 30 November, each with the seven-day Trial, on new products; a coach gets 30 days of access from their own Code; every account that exists when the paywall switches on gets 30 days of Legacy grace; and a Lapsed account sees its data read-only instead of nothing. Every AI function checks the subscription on the server, and on day five of a Trial the phone reminds the athlete it ends in two days. Example: an athlete whose account already exists on 1 October gets 30 days free as a founding member, announced by email a week before; a new athlete signing up that day sees $12.49 a month after seven free days.",
+   "details": "Precisely:\n1. Prices: $24.99 a month and $199.99 a year. Founding Month prices, 1 October to 30 November: $12.49 and $99.99. Each with the seven-day free trial. These are new product ids (me_pro_…), which reverses mp-279 clause 1. [to build]\n2. Four products now (base and founding). The coach-discount products (15% and 30% off, 14-day trial) wait until mid-October because founding beats them until 30 November. [to build]\n3. RevenueCat shows the founding offering to everyone during the window. It is switched on by hand on 1 October and off on 30 November. [to build]\n4. A coach registers like anyone else and enters their own code. The server sees the code is theirs, marks the account as a coach and grants 30 days of access at once, so a coach never sees the paywall. Another 30 days when their first athlete pairs, then free for as long as five of their athletes are active. Through November this is done by hand in the RevenueCat dashboard. This answers mp-287 and replaces mp-286. [to build]\n5. Every account that exists when the paywall switches on gets 30 days of granted access and founding-member status, announced by email a week before. This reverses mp-283. [to build]\n6. An account with no access sees its data read-only with the paywall over it, rather than nothing at all. This adjusts mp-280. [to build]\n7. On day five of the trial the app sends a push: the trial ends in two days, the price after, and how to cancel. It is scheduled on the phone at purchase, so it needs no server work. [to build]\n8. Discount and coach codes are ours, in our own table. Apple's and Google's offer codes are not used. [to build, by 1 October]\n9. Before any product is created, RevenueCat support is asked one question: one subscription group for all eight products, or a separate group for the discounted ones. [you or Xuan]\n10. Cut order if time runs short: coach-discount products, then the coach cron, then giveaway grants, then the webhook-to-Mixpanel pipeline. Never cut: products, paywall, trial, the day-five reminder, the grace grant, Restore. [no work]\n11. Every AI function checks the subscription on the server, not only the four Vana ones. Today a lapsed account holding bought credits can still call describe-meal, meal photo, the coach insight and the old chat. (mp-320) Moved here from mp-430 on 2026-09-21: it is paywall plumbing, not cost cutting. [to build]\n\nYou rejected mp-319 (store offers by script) on 09-17 and asked for the store setup to be done through the browser instead. Apple gives one introductory offer per subscription group per person, so a lapsed seven-day trial cannot later get the 14-day coach trial. All eight products in one group would let any subscriber switch to a founding price from Apple's own Manage Subscriptions screen; removing founding products from sale on 30 November closes that.",
+   "diagram": {
+    "kind": "timeline",
+    "title": "What we decided: Xuan's spec, on the calendar",
+    "steps": [
+     {
+      "at": "~25 Sep",
+      "label": "Products go to the stores for review",
+      "tone": "muted"
+     },
+     {
+      "at": "A week before",
+      "label": "Email to every existing account:\n30 days of access are coming",
+      "tone": "ink"
+     },
+     {
+      "at": "1 Oct",
+      "label": "Paywall on. Existing accounts: 30 days\nand founding status. Founding offer on",
+      "tone": "accent"
+     },
+     {
+      "at": "Mid-Oct",
+      "label": "Coach-discount products (15% and 30% off)",
+      "tone": "ink"
+     },
+     {
+      "at": "30 Nov",
+      "label": "Founding offer off, founding products\nremoved from sale",
+      "tone": "muted"
+     }
+    ]
+   },
+   "slot": 2
+  },
+  "mp-505": {
+   "title": "All five AI functions refuse an unpaid account, even the ones that cost nothing",
+   "question": "Which AI calls does the server refuse when the account has not paid?",
+   "context": "mp-429 clause 11 has every AI function check the subscription on the server. Ticket 02 added the check to five functions: describing a meal, reading a meal photo, the testers' photo tool, the coach insight and the old chat. Two of them were not clearly paid AI: the testers' photo tool calls no model, and the coach insight answers from free rules before it ever calls one.",
+   "decision": "All five refuse an account with no live Entitlement row, the same way Vana does, even when it holds bought credits. That includes the testers' photo tool, where a Lapsed Tester is refused and a subscribed non-tester still gets the not-a-tester answer, and the coach insight's free rules answer. The check runs first, straight after sign-in, before the request is read, the wallet is touched or a model is called. Example: an athlete whose Trial ended on 7 October still holds bought credits on 8 October, but a coach insight is refused and costs nothing.",
+   "details": "Precisely:\n1. All five functions refuse an account with no active row with the same answer as Vana (403 `pro_required`), even when the account holds bought credits.\n2. meal-photo is covered: a lapsed tester is refused; a subscribed non-tester still gets the not-a-tester answer.\n3. The coach's free rules insight is covered too, so a lapsed or never-subscribed athlete no longer gets it.\n4. The check runs straight after sign-in, before the request is read, the wallet is touched or a model is called.\n\nThe five functions: describe-meal, analyze-meal-photo, meal-photo, ai-coach, jade-chat; the check lives in `_shared/vana/entitlement.ts`.",
+   "why": "The ticket named all five, and mp-318 says testers get in by subscribing. Checking first means a Lapsed caller costs nothing.",
+   "diagram": {
+    "kind": "timeline",
+    "title": "If the free answers stayed open (rejected)",
+    "steps": [
+     {
+      "at": "7 Oct",
+      "label": "Trial ends unpaid; bought credits remain",
+      "tone": "ink"
+     },
+     {
+      "at": "8 Oct",
+      "label": "Asks for a coach insight: the free\nrules answer still arrives",
+      "tone": "no"
+     },
+     {
+      "at": "8 Oct",
+      "label": "A Lapsed Tester still uses the photo tool",
+      "tone": "no"
+     }
+    ]
+   },
+   "diagram2": {
+    "kind": "timeline",
+    "title": "What we decided: all five refuse, first thing",
+    "steps": [
+     {
+      "at": "7 Oct",
+      "label": "Trial ends unpaid; bought credits remain",
+      "tone": "ink"
+     },
+     {
+      "at": "8 Oct",
+      "label": "Asks for a coach insight: refused\nright after sign-in, costs nothing",
+      "tone": "accent"
+     },
+     {
+      "at": "8 Oct",
+      "label": "Photo tool, meal description, old chat:\nrefused the same way as Vana",
+      "tone": "ok"
+     },
+     {
+      "at": "Subscribes",
+      "label": "Everything answers again",
+      "tone": "ok"
+     }
+    ]
+   }
+  },
+  "mp-553": {
+   "title": "The dev server takes Grants but drops real purchases",
+   "question": "How does the dev server take Grants without taking real purchases?",
+   "context": "mp-533 opened the dev webhook to every environment so Grants could be tried on dev, and Lee rejected it: dev should not receive and handle real purchases. But RevenueCat logs every Grant (a coach Code, Legacy grace, a giveaway) as a real production event from its promotional store, so letting only test events in would also shut Grants out, and Lee wants Grants tested on dev and written to the dev row.",
+   "decision": "The dev server's RevenueCat connection takes events from every environment again. The dev webhook throws away any real (production) event that did not come from RevenueCat's promotional store, before touching anything, and says so in its reply; test (sandbox) purchases and Grants go through as before. The switch is a secret set on dev only, so the live server handles every event as today. Example: on 22 September a one-day Grant on a throwaway dev account reached its dev row within three seconds, while a real store purchase would be dropped.",
+   "details": "Precisely:\n1. The dev integration takes every environment again.\n2. The dev webhook drops every PRODUCTION event whose store is not PROMOTIONAL before it touches anything, and says so in its answer. Sandbox events and grants go through as before.\n3. The switch is a dev-only secret, `REVENUECAT_SANDBOX_ONLY=true`. Prod never sets it and handles every event as today.\n\nDeployed to dev 2026-09-22 (webhook v39, commit 51b6766a). A one-day grant on a throwaway dev account reached its dev row as PROMOTIONAL within three seconds. Handler tests: section I of `index.test.ts`.",
+   "why": "Only the store an event names tells a Grant from a purchase; RevenueCat's per-environment filter cannot.",
+   "diagram": {
+    "kind": "timeline",
+    "title": "If dev took test events only (rejected)",
+    "steps": [
+     {
+      "at": "22 Sep",
+      "label": "Lee grants a throwaway dev account\none day of `pro`",
+      "tone": "ink"
+     },
+     {
+      "at": "22 Sep",
+      "label": "RevenueCat sends it as a real\n(production) event: dropped",
+      "tone": "no"
+     },
+     {
+      "at": "22 Sep",
+      "label": "The dev row never changes.\nGrants cannot be tried on dev",
+      "tone": "no"
+     }
+    ]
+   },
+   "diagram2": {
+    "kind": "timeline",
+    "title": "What we decided: Grants in, real purchases out",
+    "steps": [
+     {
+      "at": "22 Sep",
+      "label": "Lee grants a throwaway dev account\none day of `pro`",
+      "tone": "ink"
+     },
+     {
+      "at": "22 Sep",
+      "label": "Production event, promotional store:\nwritten to the dev row in 3 seconds",
+      "tone": "ok"
+     },
+     {
+      "at": "Any day",
+      "label": "A real store purchase reaches dev:\ndropped before anything is touched",
+      "tone": "accent"
+     }
+    ]
+   }
+  },
+  "mp-554": {
+   "title": "Only an account that was anonymous at the flip can claim the grace month",
+   "question": "Which accounts may claim the grace month after the paywall is switched on?",
+   "context": "The flip is the moment Lee switches the paywall on (mp-541). mp-455 gives Legacy grace to every account from before the flip: a flip-day run covers registered accounts, and a claim covers installs still anonymous when they first open the new build. Once sign-up has joined such an install to an account, it no longer looks anonymous, so the claim has to tell those installs apart another way.",
+   "decision": "An account may claim only if it was created before the flip, had no sign-in at the flip (it was still anonymous) and has one now. An account registered before the flip gets its month from the flip-day run and is refused; a caller still anonymous is refused; and a claim made before the flip grants nothing, because that account is registered at the flip and the flip-day run covers it. The flip moment is a secret on the function, and until it is set the claim grants nothing. Example: with the flip on 1 October, an install still anonymous that day signs up on 3 October and its claim grants 30 days; an account that signed up in September is refused, because the flip-day run already covered it.",
+   "details": "Precisely:\n1. An account created before the flip that had no sign-in identity at the flip, and has one now. Accounts registered before the flip belong to the flip-day run and are refused.\n2. The claim is made after sign-up; a caller still anonymous is refused.\n3. A claim before the flip grants nothing. The account is registered at the flip, so the flip-day run covers it.\n4. The flip moment is a function secret, `GRACE_FLIP_AT`, the same value passed to the script's `--flip` (mp-541). Unset, the claim grants nothing.\n\n15 handler tests. Deployed to dev 2026-09-22 with `GRACE_FLIP_AT` unset, so it answers 503 until Lee sets the flip.",
+   "why": "Sign-in identities are the only trace the server keeps of \"was anonymous\" once sign-up joins the install to an account; dev shows 891 anonymous users, all with no identity.",
+   "diagram": {
+    "kind": "timeline",
+    "title": "If the claim read the anonymous flag (rejected)",
+    "steps": [
+     {
+      "at": "1 Oct",
+      "label": "The flip. An install is still anonymous",
+      "tone": "ink"
+     },
+     {
+      "at": "3 Oct",
+      "label": "Signs up. Sign-up turns the\nanonymous flag off",
+      "tone": "ink"
+     },
+     {
+      "at": "3 Oct",
+      "label": "Claims: the flag says registered.\nRefused, no grace month",
+      "tone": "no"
+     }
+    ]
+   },
+   "diagram2": {
+    "kind": "timeline",
+    "title": "What we decided: no sign-in at the flip, one now",
+    "steps": [
+     {
+      "at": "1 Oct",
+      "label": "The flip. An install is still anonymous:\nno sign-in identity",
+      "tone": "ink"
+     },
+     {
+      "at": "3 Oct",
+      "label": "Signs up: it has a sign-in identity now",
+      "tone": "ink"
+     },
+     {
+      "at": "3 Oct",
+      "label": "Claims: 30 days of Legacy grace",
+      "tone": "ok"
+     },
+     {
+      "at": "3 Oct",
+      "label": "A September account claims: refused,\nthe flip-day run covered it",
+      "tone": "muted"
+     }
+    ]
+   }
+  }
+ },
+ "terms": [
+  {
+   "term": "Paywall",
+   "area": "Paying for the app",
+   "definition": "The screen that offers the plans. An account the Gate does not let in is sent there.",
+   "avoid": "Pro screen, lock screen"
+  },
+  {
+   "term": "Webhook",
+   "area": "Paying for the app",
+   "definition": "The server function RevenueCat calls whenever something happens to a customer's subscription. It is the only thing that writes the Entitlement row.",
+   "avoid": "callback"
+  },
+  {
+   "term": "Restore purchases",
+   "area": "Paying for the app",
+   "definition": "The paywall action that asks the store for purchases this person already made, and lets them back in if one is still live.",
+   "avoid": "Restore (unqualified), re-sync"
+  },
+  {
+   "term": "TestFlight",
+   "area": "Paying for the app",
+   "definition": "Apple's way of giving test builds to the team before release. A subscription bought in a TestFlight build is a test purchase and charges nothing.",
+   "avoid": "beta build"
+  }
+ ]
+}

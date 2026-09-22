@@ -174,6 +174,71 @@ _Avoid_: Context (overloaded), screen state
 
 ### Paying for the app
 
+**Gate**:
+The one check that decides whether an account may use the app. It answers yes for an account that
+holds Pro, for a Tester and for an Admin, and the app and the server ask it the same way. There is
+one Gate for the whole app; no feature has its own.
+_Avoid_: Pro gate, Vana gate, feature lock
+
+**Pro**:
+What an account holds when it may use the app: a trial, a paid subscription or a Grant. The app
+has no free tier, so an account either holds Pro or is Lapsed.
+_Avoid_: Premium, Pro tier, paid tier
+
+**Lapsed**:
+An account that does not hold Pro. It can open every screen and read everything it made, under a
+Subscribe bar, and can change nothing.
+_Avoid_: Expired, free user, locked out
+
+**Grant**:
+Pro given for a fixed time without a purchase, by us, through the subscription provider. Coach
+comps, giveaways and Legacy grace are all Grants.
+_Avoid_: Comp, promo, free access
+
+**pro**:
+The one entitlement id in RevenueCat, the subscription provider. Every way of holding Pro, a trial,
+a paid subscription or a Grant, shows up as `pro` being live for the customer, with one Expiry.
+_Avoid_: Pro (that is the product), entitlement (unqualified)
+
+**Expiry**:
+The date and time RevenueCat says `pro` stops being live for a customer: the later of every
+subscription and Grant they hold. The server copies it onto the Entitlement row as "active until".
+_Avoid_: Expiration date, active until (that is the column, not the fact)
+
+**Entitlement row**:
+The server's copy of RevenueCat's answer for one account: active until, period type and the time
+of the last event. Only the webhook writes it; the Gate reads it.
+_Avoid_: Entitlements table row, cache row
+
+**Trial**:
+The free first week of a subscription, started at the store. A Trial holds Pro. When it lapses the
+account is Lapsed unless a Grant still runs.
+_Avoid_: Free trial, trial period
+
+**Legacy grace**:
+The thirty-day Grant every account that existed before the paywall receives on the day it opens.
+_Avoid_: Grace period (the store's billing retry is a different thing)
+
+**Founding Month**:
+October 1 to November 30, when everyone is offered the founding price. A subscription started in it
+keeps that price for as long as it renews.
+_Avoid_: Launch discount, promo window
+
+**Code**:
+A word we issue to a coach, an influencer or a giveaway winner. Entering it records who referred
+the account, may pair an athlete with a coach, and may set a price or a Grant. The stores' own
+offer codes are never used.
+_Avoid_: Promo code, offer code, referral link
+
+**Tester**:
+An account that turned on the seven-tap switch in Settings. The Gate lets it in, and it sees test
+items. Anyone can become one.
+_Avoid_: Internal user, beta user
+
+**Admin**:
+A team account marked by hand in the database. The Gate lets it in, and it may review meals.
+_Avoid_: Staff, superuser
+
 **Allowance**:
 The credits a subscription grants into the wallet each billing period. Spent before any pack
 credits, forfeited when the period ends, and the only credits a trial has. The wallet does not
@@ -184,3 +249,51 @@ _Avoid_: Free credits, included credits, quota
 A pack of credits bought on its own, spent only once the Allowance is empty. Top-up credits never
 expire and are never forfeited, whatever happens to the subscription.
 _Avoid_: Bundle, pack (that is the store product, not the credits)
+
+**Paywall**:
+The screen that offers the plans. An account the Gate does not let in is sent there.
+_Avoid_: Pro screen, lock screen
+
+**Webhook**:
+The server function RevenueCat calls whenever something happens to a customer's subscription. It is the only thing that writes the Entitlement row.
+_Avoid_: callback
+
+**Restore purchases**:
+The paywall action that asks the store for purchases this person already made, and lets them back in if one is still live.
+_Avoid_: Restore (unqualified), re-sync
+
+**TestFlight**:
+Apple's way of giving test builds to the team before release. A subscription bought in a TestFlight build is a test purchase and charges nothing.
+_Avoid_: beta build
+
+**Monthly budget**:
+What a subscription puts in the wallet each month, measured in what AI calls actually cost us: $4.00, the same for every plan, a quarter of it in the trial week. The athlete sees only the share used and the refill date.
+_Avoid_: Credits, tokens, quota, allowance of credits
+
+**Wallet**:
+The one place an account's AI spending comes from: the monthly budget, spent first, and any bought Top-ups. Every AI call draws from it.
+_Avoid_: Balance, credits account
+
+**Top-up sheet**:
+The sheet that opens when an AI action finds the wallet empty: the share of the month used, the renewal date and the two packs. It never appears for an outage of ours.
+_Avoid_: Credits paywall, out-of-credits screen
+
+**Flip**:
+The moment Lee switches the paywall on. Accounts created before it get Legacy grace.
+_Avoid_: Launch, go-live, 1 October (the flip is not a fixed date)
+
+**Offering**:
+A set of plans RevenueCat holds for the paywall to sell. There are two, the regular `default` and the Founding Month's `founding`, and the paywall sells whichever one is marked current.
+_Avoid_: Current Offering, price list
+
+**Onboarding paywall**:
+The paywall as an account that never subscribed sees it, straight after sign-up: full screen, with no way to close it.
+_Avoid_: Onboarding shape, signup paywall
+
+**Paywall sheet**:
+The paywall as an account that held Pro once and lost it sees it: a sheet it can close, over its read-only app, opened from the plan-ended bar, from any edit or AI tap, or from Upgrade on the Subscription screen.
+_Avoid_: Lapsed shape, closable sheet
+
+**⋯ menu**:
+The one button in the paywall's top corner that holds everything secondary: Restore purchases, Redeem code, Manage subscription, Sign out and Delete account.
+_Avoid_: Overflow menu, more menu

@@ -1,0 +1,678 @@
+{
+ "cards": {
+  "mp-493": {
+   "title": "The paywall copies Bevel's layout in our branding and opens on a clip of our app",
+   "context": "Xuan liked the paywall in the Bevel app and asked for something like it. Ours today is a price list with a stack of text buttons under it. mp-453 says what the paywall shows (the plans on sale, founding prices, trial terms, links) but not its shape. Bevel has a free tier, so its paywall can always be closed; ours cannot be closed by an account that never subscribed.",
+   "question": "What does the paywall look like, and does everyone see it the same way?",
+   "decision": "The paywall follows Bevel's layout but wears our colours, type and copy. It opens on a silent clip of about four seconds of our own app in a phone frame, then slides over to the features, with the two plan cards and one Continue button pinned at the bottom the whole time and everything else behind the ⋯ menu. An account that never subscribed sees it full screen with no close button; an account whose Pro has ended sees it as a sheet it can close over its read-only app. Example: on 1 October a new athlete signs up, watches the fuelling timeline, Vana and the meal plan play, and finds the annual plan already picked at the founding $99.99 a year, shown as $8.33 a month and 33% off.",
+   "details": "Precisely:\n1. It opens on a short clip of our own app playing inside a phone frame, about four seconds, silent: the fuelling timeline, then Vana answering, then the meal plan. The clip is recorded from the simulator, so it shows the real app. When it ends, the page slides over to the features and plans, and the close and ⋯ buttons appear with that second page. With Reduce Motion on, it shows a still frame of the first screen and goes straight to the features.\n2. Scrolling shows four headline features, then an \"also includes\" divider and the rest. The AI features sit under one line (Vana), so a lapsed athlete reads one reason, not four refusals.\n3. The two plan cards stay pinned above one Continue button through the whole scroll. The annual card is selected by default and carries a saving badge and a per-month price.\n4. Everything secondary sits behind a ⋯ menu (mp-494).\n5. One layout, two presentations. An account that never subscribed sees it full screen with no close button. A lapsed account sees it as a closable sheet over the read-only app, opened from the \"plan ended\" bar or any edit or AI tap (mp-457).\n6. It follows Bevel's layout but wears our branding: our colours, type and copy from the token registry and the content system. It is built from the `kyle_design` widget library. Any new widget or animation it needs (the phone frame that plays the clip, the slide-over to the features, the pinned plan cards, the ⋯ menu, the sheet's entrance) is added to that library on the liquid glass materials, with a component spec, and the paywall composes it.\n7. It ships in the 25 September store build, since Apple reviews the paywall.\n\nAnnual saving and per-month price, from store prices: $199.99 a year against $24.99 a month is 33% off and $16.67 a month; founding $99.99 against $12.49 is 33% off and $8.33 a month. The clip is a video file played with `video_player` (already a dependency); Xuan or Kyle can swap it without a code change. The component spec is written app-side, \"PROPOSED, authored app-side, awaiting Xuan\".",
+   "diagram": {
+    "kind": "flow",
+    "title": "One paywall, two ways in",
+    "rows": [
+     [
+      {
+       "id": "clip",
+       "label": "About 4 s clip of our app\nin a phone frame",
+       "tone": "accent"
+      }
+     ],
+     [
+      {
+       "id": "feat",
+       "label": "Features, plans pinned\nabove one Continue",
+       "tone": "ink"
+      }
+     ],
+     [
+      {
+       "id": "new",
+       "label": "Never subscribed:\nfull screen, no close",
+       "tone": "no"
+      },
+      {
+       "id": "lap",
+       "label": "Lapsed: a sheet over\nthe app, can close",
+       "tone": "ok"
+      }
+     ]
+    ],
+    "edges": [
+     {
+      "from": "clip",
+      "to": "feat",
+      "label": "slides over"
+     },
+     {
+      "from": "feat",
+      "to": "new"
+     },
+     {
+      "from": "feat",
+      "to": "lap"
+     }
+    ],
+    "example": [
+     "1 Oct: annual picked, $99.99 a year, $8.33 a month, 33% off"
+    ]
+   },
+   "slot": 2
+  },
+  "mp-494": {
+   "title": "Restore, Redeem code, Manage, Sign out and Delete account all sit in one ⋯ menu",
+   "question": "Where do the paywall's secondary buttons go?",
+   "decision": "They all move into one ⋯ menu in the paywall's top corner: Restore purchases, Redeem code, Manage subscription (only when the account has a subscription to manage), Sign out and Delete account. The menu is the same for a new account and a Lapsed one, so a new account can also sign out or delete itself from the paywall. Redeem code opens our own Code entry only, never the App Store's offer-code sheet. Example: an athlete signs up on 3 October, decides not to start the trial, taps ⋯ and deletes the account without leaving the paywall.",
+   "details": "Precisely:\n1. The paywall has one ⋯ button in its top corner. Its menu holds Restore purchases, Redeem code, Manage subscription (only when the account has a subscription to manage), Sign out and Delete account.\n2. The same menu serves both presentations, so the onboarding paywall also offers Sign out and Delete account. This replaces mp-280 clause 2 and mp-417 clause 3.\n3. Redeem code opens our own code entry (mp-458) only. There is no App Store offer-code sheet. This replaces the \"Have a code?\" link in mp-458 clause 7; the Settings entry moves to the Subscription screen (mp-495).",
+   "diagram": {
+    "kind": "flow",
+    "title": "What the ⋯ menu holds",
+    "rows": [
+     [
+      {
+       "id": "m",
+       "label": "⋯ in the top corner",
+       "tone": "accent"
+      }
+     ],
+     [
+      {
+       "id": "r",
+       "label": "Restore\npurchases"
+      },
+      {
+       "id": "c",
+       "label": "Redeem code\n(our Code entry)"
+      },
+      {
+       "id": "g",
+       "label": "Manage subscription\n(only with one\nto manage)",
+       "tone": "muted"
+      }
+     ],
+     [
+      {
+       "id": "o",
+       "label": "Sign out"
+      },
+      {
+       "id": "d",
+       "label": "Delete account",
+       "tone": "no"
+      }
+     ]
+    ],
+    "edges": [
+     {
+      "from": "m",
+      "to": "r"
+     },
+     {
+      "from": "m",
+      "to": "c"
+     },
+     {
+      "from": "m",
+      "to": "g"
+     },
+     {
+      "from": "m",
+      "to": "o"
+     },
+     {
+      "from": "m",
+      "to": "d"
+     }
+    ],
+    "example": [
+     "The same menu for a new account and a Lapsed one"
+    ]
+   },
+   "slot": 2
+  },
+  "mp-495": {
+   "title": "Settings gets a Subscription screen that shows the plan and what Pro includes",
+   "question": "Where in the app does an athlete see and manage their plan?",
+   "decision": "Settings gets a Subscription row that opens a new Subscription screen. It says where the plan stands (a trial and when it ends, active and when it renews, founding member, or ended) and ticks off what Pro includes, with the AI features under one Vana line as on the paywall. It offers Upgrade when the plan has ended, Manage subscription when there is a subscription, and Redeem code. Example: an athlete whose trial started on 1 October opens Settings, taps Subscription and reads that the trial ends on 8 October.",
+   "details": "Precisely:\n1. Settings gets a Subscription row that opens a Subscription screen.\n2. The screen shows the plan status (trial with its end date, active with its renewal date, founding member, or ended) and a tick list of what Pro includes, with the AI features grouped under one Vana line as on the paywall.\n3. It carries Upgrade (opens the paywall sheet; shown when the plan has ended), Manage subscription (the store's own screen; shown when there is a subscription), and Redeem code (our code entry, mp-458).\n4. It is built from the same `kyle_design` widgets as the paywall, in our branding.\n5. It ships in the 25 September store build with the paywall.",
+   "diagram": {
+    "kind": "flow",
+    "title": "Settings > Subscription",
+    "rows": [
+     [
+      {
+       "id": "s",
+       "label": "Settings:\nSubscription row"
+      },
+      {
+       "id": "sc",
+       "label": "Plan status and\nwhat Pro includes",
+       "tone": "accent"
+      }
+     ],
+     [
+      {
+       "id": "u",
+       "label": "Upgrade\n(plan ended):\nthe paywall sheet"
+      },
+      {
+       "id": "m",
+       "label": "Manage subscription\n(has one):\nthe store's screen"
+      },
+      {
+       "id": "c",
+       "label": "Redeem code:\nour Code entry"
+      }
+     ]
+    ],
+    "edges": [
+     {
+      "from": "s",
+      "to": "sc"
+     },
+     {
+      "from": "sc",
+      "to": "u"
+     },
+     {
+      "from": "sc",
+      "to": "m"
+     },
+     {
+      "from": "sc",
+      "to": "c"
+     }
+    ],
+    "example": [
+     "Trial started 1 Oct: \"Trial, ends 8 October\""
+    ]
+   },
+   "slot": 2
+  },
+  "mp-506": {
+   "title": "A founding price strikes through the regular plan of the same length, only while founding is on sale",
+   "context": "RevenueCat holds two Offerings for us: the regular one and the founding one. mp-453 has the paywall sell whichever Offering is marked current and, while it is the founding one, show each founding price with the regular price struck through beside it and a \"Founding member\" line. Ticket 03 built it. Product ids differ between the stores, so a founding plan cannot find its regular price by id.",
+   "question": "Which regular price does a founding price strike through, and when?",
+   "decision": "Each founding plan strikes through the regular plan of the same length: founding monthly against regular monthly, founding annual against regular annual. The struck price, and one \"Founding member\" line at the top of the pricing card, show only while the founding Offering is the one on sale; any other Offering shows plain prices. A struck price is hidden when there is no regular plan of that length or it is not higher. Example: from 1 October to 30 November the monthly plan reads $12.49 with $24.99 struck through; from 1 December it reads $24.99 alone.",
+   "details": "Precisely:\n1. A founding plan's struck price is the `default` offering's package in the same slot (monthly with monthly, annual with annual).\n2. The struck price and the \"Founding member\" line show only while the current offering's id is `founding`. Any other offering shows plain prices.\n3. The struck price is hidden when `default` has no package in that slot or its price is not higher.\n4. One \"Founding member\" line sits at the top of the pricing card, not one per plan.\n5. With no offering marked current, the paywall sells `default`.",
+   "diagram": {
+    "kind": "timeline",
+    "title": "What the monthly plan shows",
+    "steps": [
+     {
+      "at": "1 Oct",
+      "label": "Founding Offering goes on sale.\n$12.49, with $24.99 struck through.\nOne \"Founding member\" line on top",
+      "tone": "accent"
+     },
+     {
+      "at": "Annual",
+      "label": "$99.99, with $199.99 struck through",
+      "tone": "ok"
+     },
+     {
+      "at": "1 Dec",
+      "label": "Regular Offering again.\n$24.99 alone, no line",
+      "tone": "ink"
+     }
+    ],
+    "example": [
+     "Matched by plan length, never by product id"
+    ]
+   },
+   "slot": 2
+  },
+  "mp-507": {
+   "title": "The trial terms and legal links show on the paywall a new account sees, too",
+   "question": "Does the paywall a new account sees carry the trial terms and legal links?",
+   "decision": "Yes. The trial terms, the price after the trial, the renewal terms and the links to terms and privacy show on both the Onboarding paywall and the Paywall sheet. mp-417 clause 3, which gives the Onboarding paywall only the app name, the two plans and Restore purchases, is read as listing its buttons, not its legal text. Example: a new athlete who signs up on 1 December reads, beside the plans, that the first seven days are free and it then renews at $24.99 a month, with the terms and privacy links below.",
+   "details": "Precisely:\n1. The trial terms, the price after the trial, the renewal terms and the terms and privacy links show in both the onboarding and the lapsed shape.\n2. mp-417 clause 3 is read as listing the controls, not the legal text.",
+   "diagram": {
+    "kind": "flow",
+    "title": "One terms block, both paywalls",
+    "rows": [
+     [
+      {
+       "id": "o",
+       "label": "Onboarding paywall"
+      },
+      {
+       "id": "s",
+       "label": "Paywall sheet"
+      }
+     ],
+     [
+      {
+       "id": "t",
+       "label": "Trial terms, price after the trial,\nrenewal terms, terms and privacy links",
+       "tone": "ok"
+      }
+     ]
+    ],
+    "edges": [
+     {
+      "from": "o",
+      "to": "t"
+     },
+     {
+      "from": "s",
+      "to": "t"
+     }
+    ],
+    "example": [
+     "1 Dec: 7 days free, then $24.99 a month"
+    ]
+   },
+   "slot": 2
+  },
+  "mp-508": {
+   "decision": "Settings no longer shows the guest card, so there is no Create Account, Log In or sign-out-without-an-account there. The sign-out dialog now says the athlete will need to sign in again to use the app. An install still without an account from before the paywall reaches sign-up through ticket 09's redirect, not through Settings, and until ticket 09 lands it has no way to register. Example: an athlete signed in with Apple taps Sign out on 2 October; the dialog says they will need to sign in again, and nothing offers to carry on as a guest.",
+   "details": "Precisely:\n1. The guest account card is gone from Settings: no Create Account, no Log In, no sign-out-without-account.\n2. The sign-out dialog says the athlete will need to sign in again to use the app.\n3. An install still anonymous from before the paywall reaches sign-up through ticket 09's redirect, not through Settings. Until 09 lands such an install has no way to register.",
+   "diagram": {
+    "kind": "flow",
+    "title": "Signing out now",
+    "rows": [
+     [
+      {
+       "id": "a",
+       "label": "Tap Sign out\nin Settings"
+      },
+      {
+       "id": "b",
+       "label": "Dialog: you will need to sign\nin again to use the app",
+       "tone": "accent"
+      }
+     ],
+     [
+      {
+       "id": "c",
+       "label": "Old install with\nno account"
+      },
+      {
+       "id": "d",
+       "label": "Ticket 09 redirect\nto sign-up",
+       "tone": "ok"
+      },
+      {
+       "id": "e",
+       "label": "Settings: no guest\ncard, no way in",
+       "tone": "no"
+      }
+     ]
+    ],
+    "edges": [
+     {
+      "from": "a",
+      "to": "b"
+     },
+     {
+      "from": "c",
+      "to": "d"
+     }
+    ],
+    "example": [
+     "No Create Account, no Log In, no guest sign-out in Settings"
+    ]
+   },
+   "slot": 2
+  },
+  "mp-537": {
+   "title": "The opening clip runs four seconds, can be tapped past, and never holds the paywall up",
+   "question": "What does the opening clip show, and what if it is skipped or fails?",
+   "decision": "The clip runs 4.0 seconds, silent: the fuelling timeline, Vana's answer arriving, then a week's meal plan, ending on that plan held still. A tap moves straight on to the features, and a clip that fails or never starts moves on by itself after 3 seconds, so the paywall never hangs. With Reduce Motion on, the paywall opens on the features with a small still of the clip's first frame at the top. Example: on a phone where the video fails to play, the athlete sees the phone frame for 3 seconds and then the page slides over to the features.",
+   "details": "Precisely:\n1. The clip is 4.0 seconds, silent: the fuelling timeline, Vana's answer arriving, then a week's meal plan. It is cut from one recording with short crossfades, and it ends on the settled plan held still.\n2. It shows a past confirmed plan, since the dev account has no current plan and making one would change Lee's dev data.\n3. A tap on the clip moves on to the features at once.\n4. A clip that fails or never starts moves on after 3 seconds, so the paywall never hangs.\n5. With Reduce Motion on, the paywall opens on the features page with a small still of the clip's first frame at its head. It reads the iOS Reduce Motion switch as well as Flutter's animations setting, since on iOS the switch reaches the app only through the first.\n6. The slide to the features takes 480 ms with ease-out, and the first page recedes a third as far under a dim.\n\n540×1174 H.264, 116 KB, plus a 53 KB first-frame JPEG. The device check found clause 5's bug (the switch was ignored) and it was fixed. `vana_moment_controller.dart` reads only Flutter's setting and probably has the same bug. The component specs for the frame and the slide-over are in `docs/ssot/spec/design/components/`, awaiting Xuan, with her open questions on the bezel and the motion curve.",
+   "diagram": {
+    "kind": "timeline",
+    "title": "The clip, second by second",
+    "steps": [
+     {
+      "at": "0 s",
+      "label": "Clip starts: fuelling timeline,\nVana's answer, a week's meal plan",
+      "tone": "ink"
+     },
+     {
+      "at": "Any time",
+      "label": "A tap moves on to the features",
+      "tone": "ok"
+     },
+     {
+      "at": "3 s",
+      "label": "Clip failed or never started:\nmoves on anyway",
+      "tone": "pending"
+     },
+     {
+      "at": "4.0 s",
+      "label": "Ends on the plan held still,\nthen slides over in 480 ms",
+      "tone": "accent"
+     }
+    ],
+    "example": [
+     "Reduce Motion on: opens on the features,",
+     "a small still of the first frame at the top"
+    ]
+   },
+   "slot": 2
+  },
+  "mp-538": {
+   "title": "The paywall leads with four features and puts the rest under \"also includes\"",
+   "question": "Which features does the paywall list, and in what order?",
+   "decision": "Four headlines lead: a fuel plan for every session, Vana as your nutrition coach, shopping lists from your plan, and your training already there from Garmin, TrainingPeaks and FinalSurge. Below an \"also includes\" divider come recipes with a cooking mode, brick and multi-leg workouts, hydration checks, your own fuel formulas, and daily calorie and macro targets. Kroger delivery is left off because it does not reach every athlete. Example: a Lapsed athlete opening the paywall reads \"Vana, your nutrition coach\" once, covering meal plans, questions and logging a meal from a photo, not four separate AI lines.",
+   "details": "Precisely:\n1. Headline: \"A fuel plan for every session\"; \"Vana, your nutrition coach\" (plans the week's meals, answers questions, logs a meal from a photo or a sentence); \"Shopping lists from your plan\"; \"Your training, already there\" (workouts from Garmin, TrainingPeaks and FinalSurge).\n2. Also includes: recipes with a step-by-step cooking mode, brick and multi-leg workouts, hydration checks for long sessions, your own fuel formulas, daily calorie and macro targets.\n3. Kroger delivery is not listed, because it does not reach every athlete.\n\nUntil the content system has these entries, the bundled defaults show. The keys are `paywall.features_divider`, `paywall.feature_fuel_title`/`_body`, `feature_vana_title`/`_body`, `feature_shopping_title`/`_body`, `feature_sync_title`/`_body`, `feature_recipes`, `feature_brick`, `feature_hydration`, `feature_formulas`, `feature_targets`, plus `clip_label`, `close_label`, `more_label`.",
+   "diagram": {
+    "kind": "flow",
+    "title": "The feature list, top to bottom",
+    "rows": [
+     [
+      {
+       "id": "a",
+       "label": "A fuel plan for\nevery session",
+       "tone": "accent"
+      },
+      {
+       "id": "b",
+       "label": "Vana, your\nnutrition coach",
+       "tone": "accent"
+      }
+     ],
+     [
+      {
+       "id": "c",
+       "label": "Shopping lists\nfrom your plan",
+       "tone": "accent"
+      },
+      {
+       "id": "d",
+       "label": "Your training,\nalready there",
+       "tone": "accent"
+      }
+     ],
+     [
+      {
+       "id": "e",
+       "label": "Also includes: recipes, brick,\nhydration, formulas, targets",
+       "tone": "muted"
+      }
+     ],
+     [
+      {
+       "id": "f",
+       "label": "Not listed:\nKroger delivery",
+       "tone": "no"
+      }
+     ]
+    ],
+    "edges": [],
+    "example": [
+     "Every AI feature sits under the one Vana line"
+    ]
+   },
+   "slot": 2
+  },
+  "mp-540": {
+   "title": "Once the free week starts, an athlete with notifications off gets one line asking to turn them on",
+   "question": "What does the athlete see at purchase if notifications are off?",
+   "decision": "Once the trial has started, an athlete whose notifications are off sees one line with a button to iOS Settings: \"Turn on notifications to get a reminder before your free week ends.\" An athlete with notifications on sees nothing extra. Example: an athlete who said no at first launch starts the trial on 1 October, sees the line, turns notifications on, and gets the reminder at 10:00 on 6 October, two days before the free week ends on 8 October.",
+   "details": "Precisely:\n1. Once the trial has started, if notifications are off, the app shows one line with a button to iOS Settings: \"Turn on notifications to get a reminder before your free week ends.\"\n2. If notifications are on, nothing is shown.",
+   "diagram": {
+    "kind": "timeline",
+    "title": "Catching the athlete who said no",
+    "steps": [
+     {
+      "at": "First launch",
+      "label": "Says no to notifications.\niOS never asks again",
+      "tone": "muted"
+     },
+     {
+      "at": "1 Oct",
+      "label": "Starts the trial. Notifications off,\nso one line and a Settings button",
+      "tone": "accent"
+     },
+     {
+      "at": "6 Oct",
+      "label": "Reminder at 10:00:\nthe free week ends in two days",
+      "tone": "ok"
+     },
+     {
+      "at": "8 Oct",
+      "label": "Free week ends",
+      "tone": "ink"
+     }
+    ],
+    "example": [
+     "Notifications already on: nothing is shown"
+    ]
+   },
+   "slot": 2
+  },
+  "mp-545": {
+   "title": "The 25 September build ships with the close and ⋯ buttons doing nothing yet",
+   "context": "mp-539 asked what the 25 September store build shows while the close and ⋯ buttons do nothing yet; tickets 16 and 17 give them their behaviour. The close button also shows on the Onboarding paywall, which must not close (mp-493 clause 5).",
+   "question": "Does the 25 September store build wait until the close and ⋯ buttons work?",
+   "decision": "No. The build goes to the stores on 25 September as it is, with both buttons showing but doing nothing, and it is not held for tickets 16 and 17. We accept the risk that Apple rejects it for a button that does nothing on a paywall that cannot close. Example: Apple's reviewer taps ⋯ in the 25 September build and nothing opens; the menu works once tickets 16 and 17 land.",
+   "details": "Precisely:\n1. It ships as it is, with both placeholders showing, and is not held for tickets 16 and 17.",
+   "diagram": {
+    "kind": "timeline",
+    "title": "Shipping with placeholders",
+    "steps": [
+     {
+      "at": "25 Sep",
+      "label": "Build submitted. Close and ⋯ show\nbut do nothing",
+      "tone": "accent"
+     },
+     {
+      "at": "Review",
+      "label": "Risk taken: Apple may reject a button\nthat does nothing",
+      "tone": "pending"
+     },
+     {
+      "at": "Later",
+      "label": "Tickets 16 and 17 land;\nclose and ⋯ work",
+      "tone": "ok"
+     }
+    ],
+    "example": [
+     "Not held for tickets 16 and 17"
+    ]
+   },
+   "slot": 2
+  },
+  "mp-555": {
+   "title": "An old install with no account is sent to sign-up, with no way back",
+   "context": "Before the paywall, the app could run without an account: it signed the install in as an anonymous user. An install still like that from before the flip now opens the new build. mp-455 sends it to the account screen, where signing up joins the new account to its old anonymous user.",
+   "question": "How does an old install with no account reach sign-up, and what does it keep?",
+   "decision": "Whatever screen such an install opens on, it is sent to the account screen, set up for sign-up, before the Gate is asked, and that screen has no back button because there is no onboarding behind it. Signing up with Apple, Google or email joins the new account to the old anonymous user, keeping its data, and then claims the Legacy grace; signing in to a different account claims nothing. If the server has no profile for the old user, or the phone is offline, the phone's own profile is kept and queued for upload. Example: an athlete who installed on 20 July without an account opens the new build on 2 October, lands on sign-up, signs up with Apple, and keeps their onboarding answers and a 30-day Grant.",
+   "details": "Precisely:\n1. Every signed-in route sends an anonymous session to the account screen in its sign-up shape, before the paywall gate is asked.\n2. The account screen has no back button there: there is no onboarding behind it.\n3. Apple, Google and email sign-up link onto the old user and then claim; signing in to another account never claims.\n4. When the server has no profile for the old user, or the phone is offline, the phone's own profile is kept under the same user and queued for upload.\n\nSeam test `old_anonymous_install_link_test.dart`. After the claim the app clears RevenueCat's cached status, so the gate reads the grant at once.",
+   "diagram": {
+    "kind": "timeline",
+    "title": "If only the app's root redirected (rejected)",
+    "steps": [
+     {
+      "at": "20 Jul",
+      "label": "Installs the app, never makes an account",
+      "tone": "muted"
+     },
+     {
+      "at": "2 Oct",
+      "label": "Opens the new build on a screen\nother than the root: no redirect",
+      "tone": "ink"
+     },
+     {
+      "at": "2 Oct",
+      "label": "The Gate sends them to the paywall.\nWith no account they cannot buy",
+      "tone": "no"
+     },
+     {
+      "at": "2 Oct",
+      "label": "Stuck: no plan, no grace month",
+      "tone": "no"
+     }
+    ]
+   },
+   "diagram2": {
+    "kind": "timeline",
+    "title": "What we decided: every screen sends it to sign-up",
+    "steps": [
+     {
+      "at": "20 Jul",
+      "label": "Installs the app, never makes an account",
+      "tone": "muted"
+     },
+     {
+      "at": "2 Oct",
+      "label": "Opens the new build on any screen:\nsign-up, with no back button",
+      "tone": "accent"
+     },
+     {
+      "at": "2 Oct",
+      "label": "Signs up with Apple. The old user's\nanswers are kept",
+      "tone": "ok"
+     },
+     {
+      "at": "2 Oct",
+      "label": "Grace claimed: Pro for 30 days",
+      "tone": "ok"
+     }
+    ]
+   }
+  },
+  "mp-558": {
+   "decision": "Manage subscription shows when the account's `pro` came from a real store rather than RevenueCat's promotional one (where Grants live), whether that subscription is still running or has ended. Pro that comes only from a Grant, such as the Legacy grace month or a Code, never shows it. After a restore the app checks again. Example: an athlete on the 30-day Legacy grace from 1 October sees no Manage subscription in the ⋯ menu; they subscribe on 20 October and it appears, and it stays after they cancel and the plan ends.",
+   "details": "Precisely:\n1. Manage subscription shows when RevenueCat holds a `pro` entitlement, running or ended, from a store other than the promotional one.\n2. A grant alone never shows it.\n3. A restore asks again.",
+   "diagram": {
+    "kind": "timeline",
+    "title": "When Manage subscription shows",
+    "steps": [
+     {
+      "at": "1 Oct",
+      "label": "Legacy grace Grant only:\nno Manage subscription",
+      "tone": "muted"
+     },
+     {
+      "at": "20 Oct",
+      "label": "Subscribes in the store:\nManage subscription appears",
+      "tone": "ok"
+     },
+     {
+      "at": "Later",
+      "label": "Cancels, plan ends: still shows,\nthe store page is still there",
+      "tone": "ok"
+     }
+    ],
+    "example": [
+     "A restore asks RevenueCat again"
+    ]
+   },
+   "slot": 2
+  },
+  "mp-559": {
+   "title": "Two stacked plan cards, annual on top, over one Continue button",
+   "decision": "The two plan cards run full width, stacked, with annual on top, and the price actually billed is printed larger than the per-month figure. The saving is rounded down and measured against twelve months of the same Offering's monthly price; the per-month figure is worked out from the store's price and currency. The button always reads Continue. The pinned tray is glass while the cards stay solid, and the terms and links stay in the scroll. Example: at $199.99 a year against $24.99 a month the annual card says Save 33% and $16.67 a month; on the dev store ($69.00 a year, $9.95 a month) it showed Save 42% and $5.75 a month.",
+   "details": "Precisely:\n1. Two full-width cards stacked, annual on top; the billed price is larger than the per-month line.\n2. The saving is rounded down, against twelve months of the same offering's monthly price.\n3. The per-month price is worked out from the store price and currency.\n4. The button always reads Continue.\n5. The tray is glass; the cards stay solid. Terms and links stay in the scroll, not the tray.\n\nOn the dev store ($69.00 a year, $9.95 a month) the device showed Save 42% and $5.75 a month. The ticket's \"save 33%, $16.67\" came from other prices.",
+   "diagram": {
+    "kind": "flow",
+    "title": "The pinned tray (glass)",
+    "rows": [
+     [
+      {
+       "id": "a",
+       "label": "Annual: $199.99 a year\n$16.67 a month · Save 33%",
+       "tone": "accent"
+      }
+     ],
+     [
+      {
+       "id": "m",
+       "label": "Monthly: $24.99 a month",
+       "tone": "ink"
+      }
+     ],
+     [
+      {
+       "id": "c",
+       "label": "Continue",
+       "tone": "ok"
+      }
+     ]
+    ],
+    "edges": [],
+    "example": [
+     "Saving rounded down: 33.3% shows as 33%",
+     "Terms and links stay in the scroll"
+    ]
+   },
+   "slot": 2
+  },
+  "mp-560": {
+   "title": "The ⋯ menu drops down from its button on glass",
+   "decision": "Tapping ⋯ drops a menu down from the button, on the glass material the app uses for sheets, over the sheet's dimmed backdrop. The text is cream, and Delete account is in dragonfruit, the brand's pink. The same menu serves the Onboarding paywall and the Paywall sheet. Example: a Lapsed athlete taps ⋯ on 5 December and the menu drops from the corner over the dimmed paywall, with Delete account the one line in pink.",
+   "why": "The design tokens put glass on the app's frame and on anything summoned over it, and the dimmed backdrop keeps the menu readable in light mode.",
+   "details": "Precisely:\n1. A pull-down from the button on the glass sheet material over the sheet scrim, cream text, Delete account in dragonfruit.\n2. The same menu serves the onboarding and lapsed shapes.\n\nThe widget is `kyle_design/buttons/overflow_menu_button.dart`, spec PROPOSED, awaiting Xuan.",
+   "diagram": {
+    "kind": "flow",
+    "title": "The ⋯ menu",
+    "rows": [
+     [
+      {
+       "id": "b",
+       "label": "⋯ button",
+       "tone": "accent"
+      }
+     ],
+     [
+      {
+       "id": "m",
+       "label": "Pull-down on glass, over\nthe dimmed sheet, cream text",
+       "tone": "ink"
+      }
+     ],
+     [
+      {
+       "id": "d",
+       "label": "Delete account\nin dragonfruit",
+       "tone": "no"
+      }
+     ]
+    ],
+    "edges": [
+     {
+      "from": "b",
+      "to": "m",
+      "label": "drops down"
+     },
+     {
+      "from": "m",
+      "to": "d"
+     }
+    ],
+    "example": [
+     "Same menu on both paywalls"
+    ]
+   },
+   "slot": 2
+  }
+ },
+ "terms": [
+  {
+   "term": "Offering",
+   "area": "Paying for the app",
+   "definition": "A set of plans RevenueCat holds for the paywall to sell. There are two, the regular `default` and the Founding Month's `founding`, and the paywall sells whichever one is marked current.",
+   "avoid": "Current Offering, price list"
+  },
+  {
+   "term": "Onboarding paywall",
+   "area": "Paying for the app",
+   "definition": "The paywall as an account that never subscribed sees it, straight after sign-up: full screen, with no way to close it.",
+   "avoid": "Onboarding shape, signup paywall"
+  },
+  {
+   "term": "Paywall sheet",
+   "area": "Paying for the app",
+   "definition": "The paywall as an account that held Pro once and lost it sees it: a sheet it can close, over its read-only app, opened from the plan-ended bar, from any edit or AI tap, or from Upgrade on the Subscription screen.",
+   "avoid": "Lapsed shape, closable sheet"
+  },
+  {
+   "term": "⋯ menu",
+   "area": "Paying for the app",
+   "definition": "The one button in the paywall's top corner that holds everything secondary: Restore purchases, Redeem code, Manage subscription, Sign out and Delete account.",
+   "avoid": "Overflow menu, more menu"
+  }
+ ]
+}
