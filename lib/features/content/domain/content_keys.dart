@@ -924,11 +924,38 @@ class ContentKeys {
   static const String krogerAllSkipped = 'kroger.all_skipped';
   static const String krogerRateLimited = 'kroger.rate_limited';
 
-  // AI credits — the top-up sheet's Allowance lines (mp-281, mp-282):
-  // what the allowance is, what is left and when it renews.
-  static const String aiCreditsAllowanceLine = 'ai_credits.allowance_line';
-  static const String aiCreditsAllowanceRenews = 'ai_credits.allowance_renews';
-  static const String aiCreditsAllowanceLeft = 'ai_credits.allowance_left';
+  // The monthly Vana budget as the athlete sees it (mp-430 clause 8, mp-436
+  // clause 3, mp-282): a share of the month, a refill date and any bought
+  // extra. Never dollars, never a count of turns or credits.
+  static const String aiCreditsUsageTitle = 'ai_credits.usage_title';
+  static const String aiCreditsUsageUsed = 'ai_credits.usage_used';
+  static const String aiCreditsUsageRefills = 'ai_credits.usage_refills';
+  static const String aiCreditsUsageNoWindow = 'ai_credits.usage_no_window';
+  static const String aiCreditsUsageBoughtExtra =
+      'ai_credits.usage_bought_extra';
+  static const String aiCreditsUsageSpent = 'ai_credits.usage_spent';
+
+  // The top-up sheet (mp-282 §2): what the month is, when it refills, and the
+  // two packs, worded in the new unit.
+  static const String aiCreditsTopUpTitle = 'ai_credits.top_up_title';
+  static const String aiCreditsTopUpTitleSpent =
+      'ai_credits.top_up_title_spent';
+  static const String aiCreditsTopUpBody = 'ai_credits.top_up_body';
+  static const String aiCreditsTopUpAction = 'ai_credits.top_up_action';
+  static const String aiCreditsPacksUnavailable =
+      'ai_credits.packs_unavailable';
+  static const String aiCreditsToppedUpTitle = 'ai_credits.topped_up_title';
+  static const String aiCreditsToppedUpBody = 'ai_credits.topped_up_body';
+  static const String aiCreditsLeftChip = 'ai_credits.left_chip';
+  static const String aiCreditsStartUsing = 'ai_credits.start_using';
+
+  // What a pack adds, as a share of a month (mp-430 clause 7). Keyed from
+  // `kPackContentKeyByProductId`, never from a credit count.
+  static const String aiCreditsPackQuarterMonth =
+      'ai_credits.pack_quarter_month';
+  static const String aiCreditsPackMonthAndQuarter =
+      'ai_credits.pack_month_and_quarter';
+  static const String aiCreditsPackSliver = 'ai_credits.pack_sliver';
 
   // Plan ended (mp-457): the bar a lapsed account sees on every screen —
   // lib/shared/widgets/kyle_design/feedback/plan_ended_bar.dart.

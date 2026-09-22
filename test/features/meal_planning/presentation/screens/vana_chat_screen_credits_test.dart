@@ -10,6 +10,7 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:mealvana_endurance/features/ai_credits/application/credits_controller.dart';
 import 'package:mealvana_endurance/features/ai_credits/application/purchase_controller.dart';
+import 'package:mealvana_endurance/features/ai_credits/data/credits_repository.dart';
 import 'package:mealvana_endurance/features/ai_credits/domain/credit_wallet.dart';
 import 'package:mealvana_endurance/features/ai_credits/domain/insufficient_credits_exception.dart';
 import 'package:mealvana_endurance/features/ai_credits/presentation/insufficient_credits_handler.dart';
@@ -33,6 +34,7 @@ import 'package:mealvana_endurance/features/meal_planning/presentation/screens/v
 
 import '../../helpers/container.dart';
 import '../helpers/test_content.dart';
+import '../../../ai_credits/helpers/counting_credits_repository.dart';
 
 /// Answers every turn with the 402 credits.ts sends for an empty wallet.
 class _EmptyWalletRepo extends Fake implements VanaChatRepository {
@@ -97,13 +99,14 @@ class _FakeFiler extends Fake implements WiredashFeedbackFiler {
   Future<void> file(TypedFeedback feedback) async {}
 }
 
-/// The wallet as the server left it: the Allowance spent, no packs.
+/// The wallet as the server left it: this month's budget spent, nothing
+/// bought. Whole micro-dollars of a $4.00 month (ai-cost ticket 09).
 class _EmptyCredits extends CreditsController {
   @override
   Future<CreditWallet> build() async => CreditWallet.fromMap(const {
     'balance': 0,
     'allowance': 0,
-    'allowance_monthly': 300,
+    'allowance_monthly': 4000000,
     'allowance_expires_at': '2026-10-15T12:00:00+00:00',
   });
 }
@@ -131,6 +134,11 @@ void main() {
           mealAiServiceProvider.overrideWithValue(_FakeMealAi()),
           wiredashFeedbackFilerProvider.overrideWithValue(_FakeFiler()),
           creditsControllerProvider.overrideWith(() => _EmptyCredits()),
+          // The top-up sheet is a budget screen and opens the wallet's live
+          // connection; give it a transport with no socket.
+          creditsRepositoryProvider.overrideWithValue(
+            CountingCreditsRepository(),
+          ),
           visibleCreditPackagesProvider.overrideWith((ref) async => const []),
         ],
         child: const MaterialApp(
@@ -176,10 +184,13 @@ void main() {
         findsOneWidget,
       );
 
-      // The top-up sheet is up, with the Allowance the server named.
+      // The top-up sheet is up, saying the month is used — a share, not a
+      // dollar figure and not a credit count (mp-430 clause 8).
       expect(find.byKey(const ValueKey('tokens.allowance')), findsOneWidget);
       expect(
-        find.text('Your plan includes 300 tokens a month'),
+        find.text(
+          content['ai_credits.usage_used']!.replaceAll('{percent}', '100'),
+        ),
         findsOneWidget,
       );
 

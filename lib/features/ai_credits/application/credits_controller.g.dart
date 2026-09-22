@@ -32,8 +32,8 @@ part of 'credits_controller.dart';
 ///
 /// [CreditsController.build] watches this so a session APPEARING (anonymous
 /// sign-in at the end of onboarding), CHANGING (log out → log in) or ENDING
-/// rebuilds the controller — which re-runs the monthly ensure/grant, rebinds
-/// the realtime channel to the right user, and re-reads the wallet. Before
+/// rebuilds the controller — which re-runs the monthly ensure/grant and
+/// re-reads the wallet (the live channel rebinds with its own provider). Before
 /// this existed the only thing that ever invalidated the controller was a
 /// purchase, which is why balances "reappeared after buying".
 
@@ -64,8 +64,8 @@ const creditsAuthUserIdProvider = CreditsAuthUserIdProvider._();
 ///
 /// [CreditsController.build] watches this so a session APPEARING (anonymous
 /// sign-in at the end of onboarding), CHANGING (log out → log in) or ENDING
-/// rebuilds the controller — which re-runs the monthly ensure/grant, rebinds
-/// the realtime channel to the right user, and re-reads the wallet. Before
+/// rebuilds the controller — which re-runs the monthly ensure/grant and
+/// re-reads the wallet (the live channel rebinds with its own provider). Before
 /// this existed the only thing that ever invalidated the controller was a
 /// purchase, which is why balances "reappeared after buying".
 
@@ -96,8 +96,8 @@ final class CreditsAuthUserIdProvider
   ///
   /// [CreditsController.build] watches this so a session APPEARING (anonymous
   /// sign-in at the end of onboarding), CHANGING (log out → log in) or ENDING
-  /// rebuilds the controller — which re-runs the monthly ensure/grant, rebinds
-  /// the realtime channel to the right user, and re-reads the wallet. Before
+  /// rebuilds the controller — which re-runs the monthly ensure/grant and
+  /// re-reads the wallet (the live channel rebinds with its own provider). Before
   /// this existed the only thing that ever invalidated the controller was a
   /// purchase, which is why balances "reappeared after buying".
   const CreditsAuthUserIdProvider._()
@@ -151,7 +151,7 @@ final class CreditsControllerProvider
   CreditsController create() => CreditsController();
 }
 
-String _$creditsControllerHash() => r'06c4e15ac418796577d39f35f838e25d1fd7e5e4';
+String _$creditsControllerHash() => r'0c1884b23cfa38f0f29b5b95bbdafcf012e84ff6';
 
 abstract class _$CreditsController extends $AsyncNotifier<CreditWallet> {
   FutureOr<CreditWallet> build();

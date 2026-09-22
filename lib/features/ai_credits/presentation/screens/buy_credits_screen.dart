@@ -7,6 +7,7 @@ import '../../../../shared/services/app_config.dart';
 import '../../../../shared/widgets/kyle_design/feedback/mealvana_snackbar.dart';
 import '../../application/credits_controller.dart';
 import '../../application/purchase_controller.dart';
+import '../../domain/budget_share.dart';
 import '../../domain/credit_packs.dart';
 import '../../domain/credit_wallet.dart';
 
@@ -215,8 +216,11 @@ class _BalanceHeader extends StatelessWidget {
             walletAsync.when(
               loading: () => const CircularProgressIndicator(),
               error: (_, __) => const Text('—'),
+              // A share of a month, never the wallet's micro-dollars
+              // (mp-430 clause 8, mp-436 clause 3).
               data: (wallet) => Text(
-                '${wallet.balance.clamp(0, double.maxFinite).toInt()} credits',
+                '${percentOf(budgetShareOf(wallet).shareLeft.clamp(0.0, 9.99))}% '
+                'of a month left',
                 style: Theme.of(context).textTheme.headlineMedium?.copyWith(
                   fontWeight: FontWeight.bold,
                 ),
@@ -244,19 +248,19 @@ class _PackageList extends StatelessWidget {
   final bool isBusy;
   final void Function(Package) onBuy;
 
-  /// Extract the credit count from a product identifier like `mealvana_credits_50`.
-  ///
-  /// Delegates to the shared map rather than repeating it — this screen used to
-  /// carry its own copy, which silently went stale when the packs were resized.
-  static int? _creditCount(String identifier) =>
-      creditsForProductId(identifier);
+  /// What a pack adds, as a share of a month — the unit since ai-cost ticket
+  /// 09 (mp-430 clause 7). Delegates to the shared map rather than repeating
+  /// it; this screen used to carry its own copy, which silently went stale
+  /// when the packs were resized.
+  static double? _packShare(String identifier) =>
+      packShareForProductId(identifier);
 
   @override
   Widget build(BuildContext context) {
     return Column(
       children: packages.map((pkg) {
         final product = pkg.storeProduct;
-        final credits = _creditCount(product.identifier);
+        final share = _packShare(product.identifier);
         return Card(
           margin: const EdgeInsets.only(bottom: 12),
           child: ListTile(
@@ -264,15 +268,13 @@ class _PackageList extends StatelessWidget {
               horizontal: 20,
               vertical: 12,
             ),
-            title: credits != null
+            title: share != null
                 ? Text(
-                    '$credits Credits',
+                    '${percentOf(share)}% of a month of Vana',
                     style: const TextStyle(fontWeight: FontWeight.bold),
                   )
                 : Text(product.title),
-            subtitle: credits != null
-                ? Text('${product.priceString} one-time purchase')
-                : Text(product.priceString),
+            subtitle: Text('${product.priceString} one-time purchase'),
             trailing: FilledButton(
               onPressed: isBusy ? null : () => onBuy(pkg),
               child: isBusy

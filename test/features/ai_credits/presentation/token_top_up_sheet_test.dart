@@ -1,9 +1,12 @@
-/// The top-up sheet and the one 402 handler (mp-282, ticket 20).
+/// The top-up sheet and the one 402 handler (mp-282, ticket 20; reworded for
+/// the monthly budget in ai-cost ticket 10).
 ///
-/// The sheet is what every empty-wallet 402 raises, so it must say what the
-/// Allowance is, what is left and when it renews, and offer the two packs.
-/// The wallet is fed as the server's `token_wallets` row; the packs as
-/// RevenueCat packages (never this code's own output).
+/// The sheet is what every spent-budget 402 raises, so it must say how much of
+/// this month's Vana is used, when it refills and any bought extra, and offer
+/// the two packs — worded as a share of a month, never a credit count and
+/// never dollars of budget (mp-430 clauses 7 and 8, mp-436 clause 3). The
+/// wallet is fed as the server's `token_wallets` row, in whole micro-dollars;
+/// the packs as RevenueCat packages (never this code's own output).
 library;
 
 import 'package:flutter/material.dart';
@@ -15,10 +18,12 @@ import 'package:mealvana_endurance/features/ai_credits/domain/credit_wallet.dart
 import 'package:mealvana_endurance/features/ai_credits/domain/insufficient_credits_exception.dart';
 import 'package:mealvana_endurance/features/ai_credits/presentation/insufficient_credits_handler.dart';
 import 'package:mealvana_endurance/features/ai_credits/presentation/sheets/token_top_up_sheet.dart';
+import 'package:mealvana_endurance/features/ai_credits/data/credits_repository.dart';
 import 'package:mealvana_endurance/features/content/application/content_service.dart';
 import 'package:purchases_flutter/purchases_flutter.dart';
 
 import '../../meal_planning/presentation/helpers/test_content.dart';
+import '../helpers/counting_credits_repository.dart';
 
 class _FakeStoreProduct extends Fake implements StoreProduct {
   _FakeStoreProduct(this.identifier, this.priceString, this.title);
@@ -54,11 +59,12 @@ final _twoPacks = <Package>[
   _FakePackage('mealvana_credits_250', r'$19.99'),
 ];
 
-/// The server's row for a subscriber who spent this month's Allowance.
+/// The server's row for a subscriber who spent this month's budget: whole
+/// micro-dollars, a $4.00 month, nothing left and nothing bought.
 const _spentAllowance = {
   'balance': 0,
   'allowance': 0,
-  'allowance_monthly': 300,
+  'allowance_monthly': 4000000,
   'allowance_expires_at': '2026-10-15T12:00:00+00:00',
 };
 
@@ -78,6 +84,11 @@ void main() {
         overrides: [
           contentServiceProvider.overrideWith(testContentService),
           creditsControllerProvider.overrideWith(() => _FixedCredits(wallet)),
+          // The sheet is a budget screen, so it opens the wallet's live
+          // connection: give it a transport that has no socket.
+          creditsRepositoryProvider.overrideWithValue(
+            CountingCreditsRepository(),
+          ),
           visibleCreditPackagesProvider.overrideWith((ref) async => packages),
         ],
         child: MaterialApp(
@@ -90,7 +101,7 @@ void main() {
 
   group('the top-up sheet', () {
     testWidgets(
-      'shows the Allowance, what is left, the renewal date and the two packs',
+      'shows the share used, the refill date and the two packs in the new unit',
       (tester) async {
         await pumpHost(
           tester,
@@ -106,27 +117,56 @@ void main() {
 
         expect(find.byKey(const ValueKey('tokens.allowance')), findsOneWidget);
         expect(
-          find.text('Your plan includes 300 tokens a month'),
+          find.text(
+            content['ai_credits.usage_used']!.replaceAll('{percent}', '100'),
+          ),
           findsOneWidget,
         );
         final renews = DateTime.utc(2026, 10, 15, 12).toLocal();
-        final expectedDetail = content['ai_credits.allowance_renews']!
-            .replaceAll('{left}', '0')
-            .replaceAll('{date}', '${_month(renews.month)} ${renews.day}');
-        expect(find.text(expectedDetail), findsOneWidget);
-        expect(find.text("You're out of tokens"), findsOneWidget);
-        expect(find.byKey(const ValueKey('tokens.pack_50')), findsOneWidget);
-        expect(find.byKey(const ValueKey('tokens.pack_250')), findsOneWidget);
+        expect(
+          find.text(
+            content['ai_credits.usage_refills']!.replaceAll(
+              '{date}',
+              '${_month(renews.month)} ${renews.day}',
+            ),
+          ),
+          findsOneWidget,
+        );
+        expect(
+          find.text(content['ai_credits.top_up_title_spent']!),
+          findsOneWidget,
+        );
+        expect(
+          find.byKey(const ValueKey('tokens.pack_mealvana_credits_50')),
+          findsOneWidget,
+        );
+        expect(
+          find.byKey(const ValueKey('tokens.pack_mealvana_credits_250')),
+          findsOneWidget,
+        );
         expect(find.byKey(const ValueKey('tokens.buy')), findsOneWidget);
+
+        // The new unit, and no dollar figure but the store's own prices.
+        expect(
+          find.text(content['ai_credits.pack_quarter_month']!),
+          findsOneWidget,
+        );
+        expect(
+          find.text(content['ai_credits.pack_month_and_quarter']!),
+          findsOneWidget,
+        );
+        expect(find.textContaining('token'), findsNothing);
+        expect(find.textContaining('credit'), findsNothing);
+        expect(find.textContaining('4000000'), findsNothing);
       },
     );
 
-    testWidgets('a wallet never granted an Allowance shows only the packs', (
+    testWidgets('a wallet with no budget window shows only the packs', (
       tester,
     ) async {
       await pumpHost(
         tester,
-        wallet: CreditWallet.fromMap(const {'balance': 12}),
+        wallet: CreditWallet.fromMap(const {'balance': 0}),
         packages: _twoPacks,
         child: (context) => TextButton(
           onPressed: () => showTokenTopUpSheet(context),
@@ -137,20 +177,24 @@ void main() {
       await tester.pumpAndSettle();
 
       expect(find.byKey(const ValueKey('tokens.allowance')), findsNothing);
-      expect(find.text('Refill tokens'), findsOneWidget);
-      expect(find.byKey(const ValueKey('tokens.pack_50')), findsOneWidget);
+      expect(find.text(content['ai_credits.top_up_title']!), findsOneWidget);
+      expect(
+        find.byKey(const ValueKey('tokens.pack_mealvana_credits_50')),
+        findsOneWidget,
+      );
     });
 
-    testWidgets('an Allowance with no open window says what is left, no date', (
+    testWidgets('bought budget is named as a share of a month, with no date', (
       tester,
     ) async {
       await pumpHost(
         tester,
+        // The month is spent; a $4.99 pack ($1.00) is left.
         wallet: CreditWallet.fromMap(const {
-          'balance': 50,
+          'balance': 1000000,
           'allowance': 0,
-          'allowance_monthly': 300,
-          'allowance_expires_at': null,
+          'allowance_monthly': 4000000,
+          'allowance_expires_at': '2026-10-15T12:00:00+00:00',
         }),
         packages: _twoPacks,
         child: (context) => TextButton(
@@ -161,7 +205,15 @@ void main() {
       await tester.tap(find.text('open'));
       await tester.pumpAndSettle();
 
-      expect(find.text('0 left'), findsOneWidget);
+      expect(
+        find.text(
+          content['ai_credits.usage_bought_extra']!.replaceAll(
+            '{percent}',
+            '25',
+          ),
+        ),
+        findsOneWidget,
+      );
     });
   });
 
@@ -193,7 +245,10 @@ void main() {
 
         expect(handled, isTrue);
         expect(find.byKey(const ValueKey('tokens.allowance')), findsOneWidget);
-        expect(find.byKey(const ValueKey('tokens.pack_250')), findsOneWidget);
+        expect(
+          find.byKey(const ValueKey('tokens.pack_mealvana_credits_250')),
+          findsOneWidget,
+        );
         // Never the old dialog, never a gate.
         expect(find.byType(AlertDialog), findsNothing);
         expect(find.text('Get credits'), findsNothing);

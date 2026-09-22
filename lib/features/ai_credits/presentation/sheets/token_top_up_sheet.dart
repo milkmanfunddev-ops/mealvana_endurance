@@ -9,22 +9,28 @@ import '../../../content/application/content_service.dart';
 import '../../../content/domain/content_keys.dart';
 import '../../application/credits_controller.dart';
 import '../../application/purchase_controller.dart';
+import '../../application/wallet_channel.dart';
+import '../../domain/budget_share.dart';
 import '../../domain/credit_packs.dart';
-import '../../domain/credit_wallet.dart';
 import '../widgets/token_pill.dart';
 
-/// Show the token top-up sheet.
+/// Show the top-up sheet.
 ///
-/// One sheet serves both entry points — tapping the balance pill ("Refill
-/// tokens") and being blocked at zero ("You're out of tokens") — because they
-/// are the same decision at different urgencies. It commits to a purchase and
-/// then celebrates in place rather than dismissing, so the user ends where
-/// they started with a balance they can see.
+/// One sheet serves both entry points — tapping the budget pill and being
+/// blocked at 100% — because they are the same decision at different
+/// urgencies. It commits to a purchase and then celebrates in place rather
+/// than dismissing, so the person ends where they started with a budget they
+/// can see.
 ///
 /// Since ticket 20 (mp-282 §2) it is also what every 402 raises
-/// (`handleInsufficientCredits`), so above the packs it says what the
-/// subscription's monthly Allowance is, what is left of it and when it
-/// renews — read from the wallet row, which the server keeps current.
+/// (`handleInsufficientCredits`), so above the packs it says how much of this
+/// month's Vana is used, when it refills and any bought extra — read from the
+/// wallet row, which the server keeps current.
+///
+/// Since ai-cost ticket 10 the unit is a share of a month, never a credit
+/// count and never dollars of budget (mp-430 clauses 7 and 8, mp-436 clause
+/// 3). Prices are the store's own localized strings, which is the one place a
+/// currency figure belongs.
 Future<void> showTokenTopUpSheet(BuildContext context) {
   return showModalBottomSheet<void>(
     context: context,
@@ -39,26 +45,35 @@ Future<void> showTokenTopUpSheet(BuildContext context) {
 /// Packs are *not* hardcoded. They previously were, under ids that matched
 /// nothing ever provisioned, so the sheet could never resolve a package and the
 /// buy button was permanently inert. Reading the offering keeps sizes, ids and
-/// localized prices in step with the store by construction — which is why
-/// resizing the packs (100/500/1200 → 50/250) needed no change here at all.
+/// localized prices in step with the store by construction.
 class _Pack {
-  const _Pack({required this.package, required this.tokens, required this.tag});
+  const _Pack({
+    required this.package,
+    required this.share,
+    required this.contentKey,
+    required this.tag,
+  });
 
   final Package package;
 
-  /// Credits granted, or null when this build doesn't recognise the SKU.
-  final int? tokens;
+  /// The share of a month this pack adds, or null when this build does not
+  /// know the SKU.
+  final double? share;
+
+  /// The content key naming what it adds, or null for an unknown SKU.
+  final String? contentKey;
 
   final String tag;
 
   StoreProduct get product => package.storeProduct;
 
-  /// Localized price straight from the store (never a hardcoded dollar value).
+  /// Localized price straight from the store (never a hardcoded value).
   String get price => product.priceString;
 
-  String get title => tokens != null
-      ? '$tokens ${tokens == 1 ? 'token' : 'tokens'}'
-      : product.title;
+  /// What the pack adds, in the athlete's unit. An unknown SKU falls back to
+  /// the store's own product title rather than inventing a unit.
+  String titleFrom(ContentService content) =>
+      contentKey == null ? product.title : content.getValue(contentKey!);
 }
 
 /// Build the display list from the visible packages, largest pack last and
@@ -68,20 +83,25 @@ List<_Pack> _packsFrom(List<Package> packages) {
       .map(
         (p) => _Pack(
           package: p,
-          tokens: creditsForProductId(p.storeProduct.identifier),
+          share: packShareForProductId(p.storeProduct.identifier),
+          contentKey: packContentKeyForProductId(p.storeProduct.identifier),
           tag: '',
         ),
       )
       .toList();
 
-  // Order by credits so "Best value" is unambiguous; unknown SKUs sort last.
-  packs.sort((a, b) => (a.tokens ?? 1 << 30).compareTo(b.tokens ?? 1 << 30));
+  // Order by what each adds so "Best value" is unambiguous; unknown SKUs sort
+  // last.
+  packs.sort(
+    (a, b) => (a.share ?? double.maxFinite).compareTo(b.share ?? double.maxFinite),
+  );
 
   return [
     for (var i = 0; i < packs.length; i++)
       _Pack(
         package: packs[i].package,
-        tokens: packs[i].tokens,
+        share: packs[i].share,
+        contentKey: packs[i].contentKey,
         tag: packs.length > 1 && i == 0
             ? 'Starter'
             : (packs.length > 1 && i == packs.length - 1 ? 'Best value' : ''),
@@ -105,30 +125,34 @@ class _TokenTopUpSheetState extends ConsumerState<_TokenTopUpSheet> {
   String? _error;
 
   /// Non-null once a purchase has landed — switches the sheet to its
-  /// celebration state and carries how many tokens were added.
-  int? _added;
+  /// celebration state and carries what was added, in the athlete's unit.
+  String? _added;
 
   /// Balance at the moment a purchase completed at the store but had not yet
-  /// been credited. While set, the sheet watches the live balance and flips
-  /// itself to the celebration state the instant the webhook lands — the
-  /// wallet row is realtime-subscribed, so a slow credit arrives on its own
-  /// rather than requiring the user to leave and come back.
+  /// been credited, with what was bought. While set, the sheet watches the
+  /// live wallet and flips itself to the celebration state the instant the
+  /// webhook lands.
   int? _awaitingCreditFrom;
+  String? _awaitingPack;
 
   @override
   Widget build(BuildContext context) {
-    // Late-credit watcher: the wallet row is realtime-subscribed, so when a
-    // purchase's webhook finally lands the balance rises on its own. If we are
-    // sitting in the "tokens on their way" state, complete the story the user
-    // started instead of leaving the reassurance text up forever.
+    // The sheet is a budget screen, so the wallet's live connection is open
+    // while it is showing and closes with it (ai-cost ticket 10).
+    ref.watch(walletChannelProvider);
+
+    // Late-credit watcher: when a purchase's webhook finally lands the balance
+    // rises on its own. If we are sitting in the "on their way" state,
+    // complete the story the person started.
     ref.listen(creditsControllerProvider, (_, next) {
       final from = _awaitingCreditFrom;
       final balance = next.value?.balance;
       if (from == null || balance == null || balance <= from) return;
       setState(() {
+        _added = _awaitingPack;
         _awaitingCreditFrom = null;
+        _awaitingPack = null;
         _error = null;
-        _added = balance - from;
       });
     });
 
@@ -169,11 +193,14 @@ class _TokenTopUpSheetState extends ConsumerState<_TokenTopUpSheet> {
   // ── Packs ────────────────────────────────────────────────────────────────
 
   Widget _packsView() {
+    final content = ref.read(contentServiceProvider);
     final isDark = Theme.of(context).brightness == Brightness.dark;
     final onSurface = isDark ? AppColors.cream : AppColors.blackberry;
     final wallet = ref.watch(creditsControllerProvider).value;
-    final balance = wallet?.balance ?? 0;
-    final out = balance <= 0;
+    final share = wallet == null ? null : budgetShareOf(wallet);
+    // A month that existed and is used up. A wallet with no window has no
+    // month to have spent.
+    final spent = (share?.hasWindow ?? false) && share!.isSpent;
     final packagesAsync = ref.watch(visibleCreditPackagesProvider);
 
     return Column(
@@ -187,7 +214,11 @@ class _TokenTopUpSheetState extends ConsumerState<_TokenTopUpSheet> {
             const SizedBox(width: 12),
             Expanded(
               child: Text(
-                out ? "You're out of tokens" : 'Refill tokens',
+                content.getValue(
+                  spent
+                      ? ContentKeys.aiCreditsTopUpTitleSpent
+                      : ContentKeys.aiCreditsTopUpTitle,
+                ),
                 style: AppTextStyles.sectionTitle.copyWith(color: onSurface),
               ),
             ),
@@ -195,14 +226,14 @@ class _TokenTopUpSheetState extends ConsumerState<_TokenTopUpSheet> {
         ),
         const SizedBox(height: 6),
         Text(
-          'Each analysis costs 1 token. Top up to keep going.',
+          content.getValue(ContentKeys.aiCreditsTopUpBody),
           style: AppTextStyles.bodySmall.copyWith(
             color: onSurface.withValues(alpha: 0.6),
           ),
         ),
-        if (wallet != null && wallet.hasAllowance) ...[
+        if (share != null && share.hasWindow) ...[
           const SizedBox(height: 14),
-          _AllowanceLines(wallet: wallet, onSurface: onSurface),
+          _BudgetLines(share: share, onSurface: onSurface),
         ],
         const SizedBox(height: 22),
         packagesAsync.when(
@@ -210,10 +241,10 @@ class _TokenTopUpSheetState extends ConsumerState<_TokenTopUpSheet> {
             padding: EdgeInsets.symmetric(vertical: 28),
             child: Center(child: CircularProgressIndicator()),
           ),
-          error: (_, __) => _unavailable(onSurface),
+          error: (_, __) => _unavailable(content, onSurface),
           data: (packages) {
             final packs = _packsFrom(packages);
-            if (packs.isEmpty) return _unavailable(onSurface);
+            if (packs.isEmpty) return _unavailable(content, onSurface);
 
             // Guard the selection: the offering can change under us between
             // builds (refresh, locale change), and a stale index would throw.
@@ -225,7 +256,7 @@ class _TokenTopUpSheetState extends ConsumerState<_TokenTopUpSheet> {
               children: [
                 for (var i = 0; i < packs.length; i++) ...[
                   if (i > 0) const SizedBox(height: 10),
-                  _packRow(packs[i], i, selected, onSurface),
+                  _packRow(content, packs[i], i, selected, onSurface),
                 ],
                 if (_error != null) ...[
                   const SizedBox(height: 14),
@@ -241,10 +272,9 @@ class _TokenTopUpSheetState extends ConsumerState<_TokenTopUpSheet> {
                 const SizedBox(height: 20),
                 KylePrimaryButton(
                   key: const ValueKey('tokens.buy'),
-                  text: packs[selected].tokens != null
-                      ? 'Get ${packs[selected].title} · '
-                            '${packs[selected].price}'
-                      : 'Buy · ${packs[selected].price}',
+                  text:
+                      '${packs[selected].titleFrom(content)} · '
+                      '${packs[selected].price}',
                   isLoading: _buying,
                   onPressed: _buying ? null : () => _buy(packs[selected]),
                 ),
@@ -260,10 +290,10 @@ class _TokenTopUpSheetState extends ConsumerState<_TokenTopUpSheet> {
   /// offering, or a fetch error. This is in-sheet on purpose: the old code
   /// raised a snackbar against the bottom-sheet context, which never became
   /// visible above the modal, so a failed tap looked like a dead button.
-  Widget _unavailable(Color onSurface) => Padding(
+  Widget _unavailable(ContentService content, Color onSurface) => Padding(
     padding: const EdgeInsets.symmetric(vertical: 22),
     child: Text(
-      "Token packs aren't available right now. Please try again later.",
+      content.getValue(ContentKeys.aiCreditsPacksUnavailable),
       key: const ValueKey('tokens.unavailable'),
       textAlign: TextAlign.center,
       style: AppTextStyles.bodySmall.copyWith(
@@ -272,10 +302,16 @@ class _TokenTopUpSheetState extends ConsumerState<_TokenTopUpSheet> {
     ),
   );
 
-  Widget _packRow(_Pack pack, int index, int selected, Color onSurface) {
+  Widget _packRow(
+    ContentService content,
+    _Pack pack,
+    int index,
+    int selected,
+    Color onSurface,
+  ) {
     final isSelected = index == selected;
     return GestureDetector(
-      key: ValueKey('tokens.pack_${pack.tokens ?? pack.product.identifier}'),
+      key: ValueKey('tokens.pack_${pack.product.identifier}'),
       onTap: _buying ? null : () => setState(() => _selected = index),
       child: AnimatedContainer(
         duration: const Duration(milliseconds: 160),
@@ -301,7 +337,7 @@ class _TokenTopUpSheetState extends ConsumerState<_TokenTopUpSheet> {
                 crossAxisAlignment: CrossAxisAlignment.start,
                 children: [
                   Text(
-                    pack.title,
+                    pack.titleFrom(content),
                     style: AppTextStyles.bodyLarge.copyWith(
                       fontWeight: FontWeight.w700,
                       color: onSurface,
@@ -333,11 +369,11 @@ class _TokenTopUpSheetState extends ConsumerState<_TokenTopUpSheet> {
   // ── Success ──────────────────────────────────────────────────────────────
 
   Widget _successView() {
+    final content = ref.read(contentServiceProvider);
     final isDark = Theme.of(context).brightness == Brightness.dark;
     final onSurface = isDark ? AppColors.cream : AppColors.blackberry;
-    final added = _added ?? 0;
-    final balance =
-        ref.watch(creditsControllerProvider).value?.balance ?? added;
+    final wallet = ref.watch(creditsControllerProvider).value;
+    final left = wallet == null ? null : budgetShareOf(wallet).shareLeft;
 
     return Column(
       key: const ValueKey('success'),
@@ -372,47 +408,57 @@ class _TokenTopUpSheetState extends ConsumerState<_TokenTopUpSheet> {
         ),
         const SizedBox(height: 4),
         Text(
-          "You're topped up!",
+          content.getValue(ContentKeys.aiCreditsToppedUpTitle),
           textAlign: TextAlign.center,
           style: AppTextStyles.sectionTitle.copyWith(color: onSurface),
         ),
         const SizedBox(height: 4),
         Text(
-          '$added ${added == 1 ? 'token' : 'tokens'} added to your balance.',
+          ContentKeys.format(
+            content.getValue(ContentKeys.aiCreditsToppedUpBody),
+            {'pack': _added ?? ''},
+          ),
+          key: const ValueKey('tokens.added'),
           textAlign: TextAlign.center,
           style: AppTextStyles.bodySmall.copyWith(
             color: onSurface.withValues(alpha: 0.6),
           ),
         ),
-        const SizedBox(height: 18),
-        Center(
-          child: Container(
-            padding: const EdgeInsets.fromLTRB(12, 9, 16, 9),
-            decoration: BoxDecoration(
-              color: onSurface.withValues(alpha: 0.07),
-              borderRadius: BorderRadius.circular(22),
-              border: Border.all(color: onSurface.withValues(alpha: 0.16)),
-            ),
-            child: Row(
-              mainAxisSize: MainAxisSize.min,
-              children: [
-                const TokenGlyph(size: 22),
-                const SizedBox(width: 8),
-                Text(
-                  '$balance tokens',
-                  style: AppTextStyles.bodyMedium.copyWith(
-                    fontWeight: FontWeight.w700,
-                    color: onSurface,
+        if (left != null) ...[
+          const SizedBox(height: 18),
+          Center(
+            child: Container(
+              padding: const EdgeInsets.fromLTRB(12, 9, 16, 9),
+              decoration: BoxDecoration(
+                color: onSurface.withValues(alpha: 0.07),
+                borderRadius: BorderRadius.circular(22),
+                border: Border.all(color: onSurface.withValues(alpha: 0.16)),
+              ),
+              child: Row(
+                mainAxisSize: MainAxisSize.min,
+                children: [
+                  const TokenGlyph(size: 22),
+                  const SizedBox(width: 8),
+                  Text(
+                    ContentKeys.format(
+                      content.getValue(ContentKeys.aiCreditsLeftChip),
+                      {'percent': percentOf(left)},
+                    ),
+                    key: const ValueKey('tokens.left_chip'),
+                    style: AppTextStyles.bodyMedium.copyWith(
+                      fontWeight: FontWeight.w700,
+                      color: onSurface,
+                    ),
                   ),
-                ),
-              ],
+                ],
+              ),
             ),
           ),
-        ),
+        ],
         const SizedBox(height: 22),
         KylePrimaryButton(
           key: const ValueKey('tokens.start_analyzing'),
-          text: 'Start analyzing',
+          text: content.getValue(ContentKeys.aiCreditsStartUsing),
           onPressed: () => Navigator.of(context).maybePop(),
         ),
       ],
@@ -430,6 +476,8 @@ class _TokenTopUpSheetState extends ConsumerState<_TokenTopUpSheet> {
   /// Nothing was charged." — telling a user who had just been charged that
   /// they hadn't been.
   Future<void> _buy(_Pack pack) async {
+    final content = ref.read(contentServiceProvider);
+    final packTitle = pack.titleFrom(content);
     final balanceBefore =
         ref.read(creditsControllerProvider).value?.balance ?? 0;
 
@@ -447,17 +495,12 @@ class _TokenTopUpSheetState extends ConsumerState<_TokenTopUpSheet> {
     switch (outcome) {
       case PurchaseOutcome.credited:
         // The wallet is credited server-side by the RevenueCat webhook, so the
-        // balance we want to show only exists after a refetch.
+        // budget we want to show only exists after a refetch.
         await ref.read(creditsControllerProvider.notifier).refresh();
         if (!mounted) return;
-        final balanceAfter =
-            ref.read(creditsControllerProvider).value?.balance ?? balanceBefore;
         setState(() {
           _buying = false;
-          // Report what the wallet really gained, not what the pack advertised.
-          _added = (balanceAfter - balanceBefore) > 0
-              ? balanceAfter - balanceBefore
-              : (pack.tokens ?? 0);
+          _added = packTitle;
         });
 
       case PurchaseOutcome.purchasedButNotCredited:
@@ -466,9 +509,10 @@ class _TokenTopUpSheetState extends ConsumerState<_TokenTopUpSheet> {
           // Arm the late-credit watcher (see build) so the sheet upgrades
           // itself to the celebration state when the webhook lands.
           _awaitingCreditFrom = balanceBefore;
+          _awaitingPack = packTitle;
           _error =
-              'Your purchase went through, but the tokens are still on their '
-              "way. They'll appear shortly — no need to buy again.";
+              'Your purchase went through, but the budget is still on its '
+              "way. It'll appear shortly — no need to buy again.";
         });
 
       case PurchaseOutcome.cancelled:
@@ -479,8 +523,7 @@ class _TokenTopUpSheetState extends ConsumerState<_TokenTopUpSheet> {
         // Anonymous session: the purchase was refused before the store was
         // contacted. Close the sheet and take the user straight to account
         // creation — the link-in-place upgrade keeps their user id, so all
-        // their data (and any future tokens) follow them. They can re-open
-        // the sheet once the account exists.
+        // their data (and any future budget) follows them.
         setState(() => _buying = false);
         // Grab the router before popping — the sheet's context is defunct
         // once the modal route is gone.
@@ -495,8 +538,8 @@ class _TokenTopUpSheetState extends ConsumerState<_TokenTopUpSheet> {
         setState(() {
           _buying = false;
           _error =
-              'Sign in to buy tokens — they are tied to your account so they '
-              'follow you to any device.';
+              'Sign in to top up — your Vana budget is tied to your account '
+              'so it follows you to any device.';
         });
 
       case PurchaseOutcome.failed:
@@ -508,31 +551,19 @@ class _TokenTopUpSheetState extends ConsumerState<_TokenTopUpSheet> {
   }
 }
 
-/// The Allowance lines above the packs (mp-282 §2): what the subscription
-/// includes, what is left of it this period and when it renews. Pack credits
-/// are the rest of the balance and never expire, so they need no date.
-class _AllowanceLines extends ConsumerWidget {
-  const _AllowanceLines({required this.wallet, required this.onSurface});
+/// The budget lines above the packs (mp-282 §2, mp-430 clause 8): how much of
+/// this month's Vana is used, when it refills, and any bought extra. Bought
+/// budget never expires, so it needs no date.
+class _BudgetLines extends ConsumerWidget {
+  const _BudgetLines({required this.share, required this.onSurface});
 
-  final CreditWallet wallet;
+  final BudgetShare share;
   final Color onSurface;
 
   @override
   Widget build(BuildContext context, WidgetRef ref) {
     final content = ref.read(contentServiceProvider);
-    final renews = wallet.allowanceRenewsAt;
-    final detail = renews == null
-        ? ContentKeys.format(
-            content.getValue(ContentKeys.aiCreditsAllowanceLeft),
-            {'left': wallet.allowance},
-          )
-        : ContentKeys.format(
-            content.getValue(ContentKeys.aiCreditsAllowanceRenews),
-            {
-              'left': wallet.allowance,
-              'date': DateFormat('MMM d').format(renews.toLocal()),
-            },
-          );
+    final refillAt = share.refillAt;
     return Container(
       key: const ValueKey('tokens.allowance'),
       padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 11),
@@ -545,22 +576,40 @@ class _AllowanceLines extends ConsumerWidget {
         children: [
           Text(
             ContentKeys.format(
-              content.getValue(ContentKeys.aiCreditsAllowanceLine),
-              {'n': wallet.allowanceMonthly},
+              content.getValue(ContentKeys.aiCreditsUsageUsed),
+              {'percent': percentOf(share.shareUsed ?? 0)},
             ),
             style: AppTextStyles.bodyMedium.copyWith(
               fontWeight: FontWeight.w600,
               color: onSurface,
             ),
           ),
-          const SizedBox(height: 2),
-          Text(
-            detail,
-            key: const ValueKey('tokens.allowance_detail'),
-            style: AppTextStyles.bodySmall.copyWith(
-              color: onSurface.withValues(alpha: 0.6),
+          if (refillAt != null) ...[
+            const SizedBox(height: 2),
+            Text(
+              ContentKeys.format(
+                content.getValue(ContentKeys.aiCreditsUsageRefills),
+                {'date': DateFormat('MMM d').format(refillAt.toLocal())},
+              ),
+              key: const ValueKey('tokens.allowance_detail'),
+              style: AppTextStyles.bodySmall.copyWith(
+                color: onSurface.withValues(alpha: 0.6),
+              ),
             ),
-          ),
+          ],
+          if (share.boughtExtraShare > 0) ...[
+            const SizedBox(height: 2),
+            Text(
+              ContentKeys.format(
+                content.getValue(ContentKeys.aiCreditsUsageBoughtExtra),
+                {'percent': percentOf(share.boughtExtraShare)},
+              ),
+              key: const ValueKey('tokens.bought_extra'),
+              style: AppTextStyles.bodySmall.copyWith(
+                color: onSurface.withValues(alpha: 0.6),
+              ),
+            ),
+          ],
         ],
       ),
     );

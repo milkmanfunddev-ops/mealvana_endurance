@@ -849,9 +849,24 @@
     "photos_photo_not_found": "That photo is no longer in this meal's history."
   },
   "ai_credits": {
-    "allowance_line": "Your plan includes {n} tokens a month",
-    "allowance_renews": "{left} left · renews {date}",
-    "allowance_left": "{left} left"
+    "usage_title": "This month's Vana",
+    "usage_used": "{percent}% used",
+    "usage_refills": "Refills {date}",
+    "usage_no_window": "Your month of Vana starts with your plan.",
+    "usage_bought_extra": "Plus {percent}% of a month you bought, which never expires.",
+    "usage_spent": "You've used all of this month's Vana.",
+    "top_up_title": "Top up Vana",
+    "top_up_title_spent": "You've used this month's Vana",
+    "top_up_body": "Vana draws on your monthly share. Top up to keep going.",
+    "top_up_action": "Top up Vana",
+    "pack_quarter_month": "A quarter of a month of Vana",
+    "pack_month_and_quarter": "A month and a quarter of Vana",
+    "pack_sliver": "A sliver of a month of Vana",
+    "packs_unavailable": "Top-ups aren't available right now. Please try again later.",
+    "topped_up_title": "You're topped up!",
+    "topped_up_body": "{pack} was added to your balance.",
+    "left_chip": "{percent}% of a month left",
+    "start_using": "Start using Vana"
   },
   "plan_ended": {
     "message": "Your plan has ended. Your data is read-only until you subscribe.",
