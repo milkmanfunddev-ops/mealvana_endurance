@@ -151,8 +151,15 @@ void main() {
       }
 
       // Unique email so repeated runs never collide on "account exists".
+      //
+      // MUST NOT be @example.com. Dev sends through Resend, which rejects
+      // reserved domains outright — GoTrue then 500s the whole signup:
+      //   550 "Invalid `to` field. Please use our testing email address
+      //        instead of domains like `example.com`."
+      // resend.dev is Resend's own sink: accepted, never actually delivered,
+      // so a test run costs no real mail and lands in nobody's inbox.
       final uniqueEmail =
-          'audit_${DateTime.now().millisecondsSinceEpoch}@example.com';
+          'delivered+audit${DateTime.now().millisecondsSinceEpoch}@resend.dev';
       const password = 'Test1234!';
 
       await _startOnboardingFromWelcome($);
@@ -195,13 +202,33 @@ void main() {
       // ---- Plan reveal: wait for the loader, then edit the long-run target
       await _waitForPlanReveal($);
 
+      // The pencil toggles an INLINE SLIDER on the card — there is no
+      // +/save pair. This block asserted `plan_reveal.edit_plus` and
+      // `plan_reveal.edit_save` until 2026-09-21; neither key has ever
+      // existed in lib/, so the flow failed here on every run and never
+      // reached the persistence assertions below.
       await _scrollIntoView($, const ValueKey('plan_reveal.edit_long_run'));
       await $(const ValueKey('plan_reveal.edit_long_run')).tap();
       await $(
-        const ValueKey('plan_reveal.edit_plus'),
+        const ValueKey('plan_reveal.slider_long_run'),
       ).waitUntilVisible(timeout: const Duration(seconds: 10));
-      await $(const ValueKey('plan_reveal.edit_plus')).tap();
-      await $(const ValueKey('plan_reveal.edit_save')).tap();
+
+      // Drag the thumb hard left: the Material Slider sets its value from the
+      // touch position, so this pins the target to the floor (30 g/hr, a
+      // multiple of the card's step) regardless of what was recommended.
+      await $.tester.drag(
+        find.byKey(const ValueKey('plan_reveal.slider_long_run')),
+        const Offset(-400, 0),
+      );
+      await $.pump(const Duration(milliseconds: 300));
+
+      // The reset link renders ONLY when value != recommended, so its
+      // appearance is the card's own proof that the edit committed — without
+      // it the run would sail on and fail later, opaquely, on a null
+      // `nutrition_target_overrides.duringRun`.
+      await $(
+        const ValueKey('plan_reveal.reset_long_run'),
+      ).waitUntilVisible(timeout: const Duration(seconds: 10));
 
       await $(const ValueKey('plan_reveal.continue_button')).tap();
 
