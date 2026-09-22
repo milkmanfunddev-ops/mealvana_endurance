@@ -340,6 +340,11 @@ verify_jwt = true
 [functions.upload-all-data]
 verify_jwt = true
 
+# Our own codes (mp-458): a signed-in caller only. The function also resolves the
+# caller from the token and refuses an anonymous session.
+[functions.redeem-code]
+verify_jwt = true
+
 # RevenueCat posts webhooks with a shared secret in the Authorization header
 # (not a Supabase JWT); disable gateway JWT verification and validate the
 # secret inside the function.
