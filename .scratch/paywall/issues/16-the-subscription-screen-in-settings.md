@@ -11,11 +11,11 @@
 
 **Touches:** lib/features/subscription/presentation/screens/subscription_screen.dart, lib/features/subscription/application/subscription_screen_controller.dart, lib/features/settings/presentation/screens/settings_screen.dart, lib/features/content/domain/content_keys.dart, test/features/subscription/application/subscription_screen_controller_test.dart, test/features/subscription/presentation/subscription_screen_test.dart, test/features/subscription/presentation/goldens/
 
-- [ ] Trial, active, founding and ended each show the right status and date from fake customer info (screen widget test).
-- [ ] Upgrade only when ended and opens the paywall; Manage only with a subscription.
-- [ ] Built from the `kyle_design` widgets 14 and 15 added; copy from the content system.
-- [ ] Goldens light and dark.
-- [ ] Settings opens it as a named push (route settings carry its name), so the router file is left to ticket 11.
-- [ ] Checked on the dev simulator from Settings.
+- [x] Trial, active, founding and ended each show the right status and date from fake customer info (screen widget test).
+- [x] Upgrade only when ended and opens the paywall; Manage only with a subscription.
+- [x] Built from the `kyle_design` widgets 14 and 15 added; copy from the content system.
+- [x] Goldens light and dark.
+- [x] Settings opens it as a named push (route settings carry its name), so the router file is left to ticket 11.
+- [x] Checked on the dev simulator from Settings.
 
 Next: /implement-lee paywall
