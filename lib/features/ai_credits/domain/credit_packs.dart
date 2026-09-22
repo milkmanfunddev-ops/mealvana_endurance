@@ -1,9 +1,10 @@
 /// The credit packs provisioned in the stores, keyed by store product id.
 ///
 /// This map is the single client-side source of truth for "how many credits
-/// does this SKU grant". It must stay in step with `RC_PRODUCT_CREDITS` in
-/// `supabase/functions/revenuecat-webhook/index.ts`, which performs the actual
-/// server-side grant — the client value is display-only.
+/// does this SKU grant". It must stay in step with `DEFAULT_PRODUCT_BUDGET` in
+/// `supabase/functions/_shared/ai/allowance.ts`, which the RevenueCat webhook
+/// grants from in micro-dollars (2 cents a credit since ai-cost ticket 09) —
+/// the client value is display-only.
 ///
 /// Anything not listed here is still purchasable; the UI simply falls back to
 /// the store's own product title rather than inventing a credit count.

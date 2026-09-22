@@ -276,24 +276,33 @@ Deno.test({
 });
 
 Deno.test({
-  name: 'budget — two reservations where one fits: the second sees the first (row lock), and a refusal writes nothing',
+  name: 'budget — two reservations where one fits: the second starts inside and takes what is left (row lock), the third is refused and writes nothing',
   ignore: !live,
   async fn() {
+    // mp-436 clause 1: a call that starts inside the budget runs even when its estimate is more than what is
+    // left. Only an empty wallet refuses.
     const out = await runScenario(scenario(`
       perform public.grant_allowance(u, ${ESTIMATE + 5000}, now() + interval '30 days', 'evt-1');
       j := public.ai_budget_reserve(u, 'vana-chat', ${ESTIMATE}, ${MONTH}, null, 'a');
       ${recordJson('first', 'j')}
       j := public.ai_budget_reserve(u, 'vana-chat', ${ESTIMATE}, ${MONTH}, null, 'b');
       ${recordJson('second', 'j')}
+      ${record('second_estimate', `(select estimate from public.token_reservations where user_id = u and ref = 'b')`)}
+      j := public.ai_budget_reserve(u, 'vana-chat', ${ESTIMATE}, ${MONTH}, null, 'c');
+      ${recordJson('third', 'j')}
       ${record('reservations', '(select count(*) from public.token_reservations where user_id = u)')}
       ${record('ledger_rows', `(select count(*) from public.token_ledger where user_id = u and reason = 'reserve_usage')`)}
     `));
     assertEquals((out.first as Record<string, unknown>).allowed, true);
     const second = out.second as Record<string, unknown>;
-    assertEquals(second.allowed, false);
-    assertEquals(second.balance, 5000, 'the refusal reports the wallet as the first reservation left it');
-    assertEquals(out.reservations, 1);
-    assertEquals(out.ledger_rows, 1);
+    assertEquals(second.allowed, true, 'the wallet had 5,000 left, so the call starts inside the budget');
+    assertEquals(second.balance, 0, 'it took what was left, not its whole estimate');
+    assertEquals(out.second_estimate, 5000, 'the reservation records what was actually taken');
+    const third = out.third as Record<string, unknown>;
+    assertEquals(third.allowed, false);
+    assertEquals(third.balance, 0, 'the refusal reports the wallet as the second reservation left it');
+    assertEquals(out.reservations, 2);
+    assertEquals(out.ledger_rows, 2);
   },
 });
 
