@@ -1485,7 +1485,7 @@ Last extracted: 1dedc493
 > 2026-09-16 opened in wave 6 ticket 31
 > 2026-09-20 answered by mp-428
 
-## mp-419 · Vana's memory: what was built after your rethink, and four loose ends
+## mp-419 · The memory build after mp-277 stands, and its four open questions are answered
 - category: Vana's memory
 - status: proposed
 - image: none
@@ -1498,9 +1498,18 @@ Last extracted: 1dedc493
 
 **Context.** On 09-14 you held six memory cards and asked for a rethink. On 09-15 you approved mp-277 (history in chunks, notes as they happen, one summary when a conversation goes idle). Tickets 13 to 15 built it. This card replaces the six held cards, ratifies what the tickets built, and answers the four questions the agents left.
 
-**Question.** Is the memory build that followed mp-277 right, and how do the four questions it raised get answered?
+**Question.** Is the memory build that followed mp-277 right, and how are its four open questions answered?
 
-**Decision.** 1. The five held cards about the 20-message replay and the mid-conversation episode are retired. mp-277 replaced them. (mp-032 to mp-036) [no work]
+**Decision.** Yes, what tickets 13 to 15 built stands, and the five held cards mp-277 replaced (mp-032 to mp-036) are retired. Past conversations reach Vana as a LAST TALKS line of what the athlete said, long chats are summarised in chunks of twenty messages, the server answers an idle signal at once and writes the summary in the background, and the context block is capped at 1,500 estimated tokens. The four answers: the conversation list previews each chat with its one-sentence summary, never the internal "Through message 20..." text; a chat that gains messages after its summary is summarised again at the next close; a home location, a thumbs vote or a profile edit made outside Vana waits for the next change made through Vana or the next day; and the "Remembered" card shows only when the athlete asked Vana to remember. Example: an athlete plans on the morning of 8 October, closes the sheet, and talks again that night; at the second close the conversation is summarised again, so its one summary covers the evening too.
+
+**Why.** One card instead of fourteen. Clauses 4, 6 and 9 are the only new work; the rest is already in the code and on dev.
+
+**What else was considered.** Ruling each of the fourteen cards separately.
+
+**What it touches.** vana-chat history and summary, the context block, the conversation list, the Remembered card.
+
+**Details.** Precisely:
+1. The five held cards about the 20-message replay and the mid-conversation episode are retired. mp-277 replaced them. (mp-032 to mp-036) [no work]
 2. Past conversations reach Vana as a LAST TALKS line: what the athlete said, not a read-out of their schedule. Memories hold only notes. (mp-038) [built]
 3. A long conversation is summarised in chunks of twenty messages and the summary is kept on the conversation. (mp-333) [built]
 4. The conversation list previews each conversation with its one-sentence summary. The internal "Through message 20…" text never shows on screen. (mp-334) [to build]
@@ -1510,21 +1519,17 @@ Last extracted: 1dedc493
 8. The context block is capped at 1,500 estimated tokens, and a test fails if it grows past that. (mp-314) [built]
 9. The "Remembered" card shows only when the athlete asked Vana to remember something. Notes she saves on her own stay silent, as mp-027 already says. (mp-351) [to build]
 
-**Why.** One card instead of fourteen. Clauses 4, 6 and 9 are the only new work; the rest is already in the code and on dev.
-
-**What else was considered.** Ruling each of the fourteen cards separately.
-
-**What it touches.** vana-chat history and summary, the context block, the conversation list, the Remembered card.
-
-**Details.** Summary boundaries are fixed multiples of twenty so the cached prefix changes once per chunk. Context budget constant CONTEXT_BLOCK_TOKEN_BUDGET = 1500, estimated as characters / 4. Idle is answered 202 and never charged a credit.
+Summary boundaries are fixed multiples of twenty so the cached prefix changes once per chunk. Context budget constant CONTEXT_BLOCK_TOKEN_BUDGET = 1500, estimated as characters / 4. Idle is answered 202 and never charged a credit.
 
 > 2026-09-20 folded from mp-032, mp-033, mp-034, mp-035, mp-036, mp-038, mp-313, mp-314, mp-333, mp-347; answers mp-315, mp-334, mp-349, mp-351
+> 2026-09-22 rewritten in plain words (question, decision, details)
 
-## mp-421 · Openers: what Vana says first, and where
+## mp-421 · Vana opens on a live moment first, then the screen underneath, then the personal opener
 - category: Vana's voice and openers
 - status: proposed
 - image: test/features/meal_planning/presentation/goldens/vana_sheet_open_light.png
 - caption:
+- svg2: docs/ssot/decisions/images/mealplanning/mp-421-2.svg
 - screen: Vana sheet
 - source: wave mealplanning 4 ticket 27; wave mealplanning 4 ticket 28
 - work: pending
@@ -1534,7 +1539,16 @@ Last extracted: 1dedc493
 
 **Question.** What does Vana open on in each place, and what happens when the athlete asks for a plan?
 
-**Decision.** 1. The order is: a live moment (a fuelling window) first, then the screen underneath, then the personal opener. (mp-364, mp-368) [built]
+**Decision.** Vana speaks first to a live moment (a fuelling window around a session), then to the screen underneath, then with the personal opener. A request for a plan is handed off, which means Vana shows a button that opens the meal-planning screen, and any constraint the athlete gave goes along; when an opener offers a meal plan, that offer is itself the button. The Plan tab with a plan in view opens on that plan, Ask Vana from the formula editor opens on the formula, and the full-screen chat asks for an opener the way the sheet does. Example: an athlete types "quick dinners this week"; Vana treats it as a plan request and hands off to the meal-planning screen with "quick dinners" carried along.
+
+**Why.** Each answer follows a ruling you already made: the screen underneath (mp-268), three launcher screens (mp-264), hand-offs for every flow the app owns (mp-265).
+
+**What else was considered.** Widening the launcher to event, meal and session screens (clause 8). Letting the screen underneath outrank a live moment (clause 1).
+
+**What it touches.** The opener path in vana-chat, the sheet, the full-screen chat, the Plan tab, the formula editor.
+
+**Details.** Precisely:
+1. The order is: a live moment (a fuelling window) first, then the screen underneath, then the personal opener. (mp-364, mp-368) [built]
 2. A request for a plan is a plan request even with a constraint ("quick dinners this week"). Vana hands off to the meal-planning screen and the constraint goes with it. (mp-363) [built]
 3. When the opener offers to start a meal plan, that offer is the hand-off button itself. No chip that then produces a button. (mp-377) [to build]
 4. The Plan tab with a plan in view opens on that plan. (mp-367) [to build]
@@ -1543,21 +1557,17 @@ Last extracted: 1dedc493
 7. Picking up last time in an offer chip counts. The opener's sentence does not have to say it as well. (mp-352) [no work]
 8. The launcher stays on its three screens (mp-264). mp-268's example of opening on an event is reached through the hand-off, not by putting the launcher on the event screen. (mp-384) [no work]
 
-**Why.** Each answer follows a ruling you already made: the screen underneath (mp-268), three launcher screens (mp-264), hand-offs for every flow the app owns (mp-265).
-
-**What else was considered.** Widening the launcher to event, meal and session screens (clause 8). Letting the screen underneath outrank a live moment (clause 1).
-
-**What it touches.** The opener path in vana-chat, the sheet, the full-screen chat, the Plan tab, the formula editor.
-
-**Details.** "The screen says something useful" is decided by resolving the Situation with and without the entity id: a different sentence means the athlete's own row was read. The opener logs which of the three paths fired.
+"The screen says something useful" is decided by resolving the Situation with and without the entity id: a different sentence means the athlete's own row was read. The opener logs which of the three paths fired.
 
 > 2026-09-20 folded from mp-363, mp-364; answers mp-352, mp-367, mp-368, mp-369, mp-377, mp-384, mp-394
+> 2026-09-22 rewritten in plain words (question, decision, details)
 
-## mp-422 · What Vana is told about the screen in view
+## mp-422 · Vana repeats the formula editor's carb total, and the editor sends its draft as fixed fields
 - category: Situation awareness
 - status: proposed
 - image: docs/ssot/decisions/images/mealplanning/formula-editor.png
 - caption:
+- svg2: docs/ssot/decisions/images/mealplanning/mp-422-2.svg
 - screen: Formula editor, Plan tab
 - source: wave mealplanning 5 ticket 17
 - work: pending
@@ -1565,14 +1575,9 @@ Last extracted: 1dedc493
 
 **Context.** mp-273 gives every entry point the same athlete context plus one short section for what is on screen. mp-274 lets the formula editor send its unsaved draft. Tickets 16 and 17 built both. On the simulator Vana said 142 g of carbs for a draft the editor showed as 133 g.
 
-**Question.** What does each screen tell Vana, and why did her carb total differ from the formula editor's?
+**Question.** What do the formula editor and the Plan tab tell Vana, and whose carb total does she use?
 
-**Decision.** 1. The formula editor sends its draft as fixed fields only: phase, sub-phase, durations, activities, component ids with quantities, and a name of at most 40 characters. A draft from any other screen is dropped without an error. (mp-385, mp-396) [built]
-2. The server looks the component names up from the athlete's own foods. The app sends ids, never names. (mp-385) [built]
-3. The formula section carries the editor's own carb total. Vana repeats that number and never adds it up herself, so the two can never disagree. (mp-386, mp-393) [to build]
-4. A draft that has a scope (a sub-phase, a duration or an activity) is described by that scope, not called empty. (mp-403) [to build]
-5. The Plan tab's section speaks for the day on screen, plus one line on the week's servings left. (mp-371) [to build]
-6. The persona names the in-view section in one sentence, the way it names the Situation. (mp-370) [to build]
+**Decision.** The formula editor sends its unsaved draft as a fixed set of fields with foods as ids, and the server looks the names up in the athlete's own foods. Vana is handed the editor's own carb total and repeats it, never adding it up herself, and a draft that only has its sub-phase, duration or activity set is described by those, not called empty. The Plan tab tells her about the day on screen plus one line on the week's servings left, and her standing instructions name that part of her notes in one sentence. Example: on the simulator the editor showed 133 g of carbs for an edited bagel formula and Vana said 142 g; with clause 3 built she says 133 g.
 
 **Why.** Clause 3 is a bug an athlete would see. Fuelling numbers never come from the model (mp-005), so the fix is to hand her the app's number.
 
@@ -1580,24 +1585,43 @@ Last extracted: 1dedc493
 
 **What it touches.** The Situation resolver, the formula editor, the Plan tab section, the persona.
 
+**Details.** Precisely:
+1. The formula editor sends its draft as fixed fields only: phase, sub-phase, durations, activities, component ids with quantities, and a name of at most 40 characters. A draft from any other screen is dropped without an error. (mp-385, mp-396) [built]
+2. The server looks the component names up from the athlete's own foods. The app sends ids, never names. (mp-385) [built]
+3. The formula section carries the editor's own carb total. Vana repeats that number and never adds it up herself, so the two can never disagree. (mp-386, mp-393) [to build]
+4. A draft that has a scope (a sub-phase, a duration or an activity) is described by that scope, not called empty. (mp-403) [to build]
+5. The Plan tab's section speaks for the day on screen, plus one line on the week's servings left. (mp-371) [to build]
+6. The persona names the in-view section in one sentence, the way it names the Situation. (mp-370) [to build]
+
 > 2026-09-20 folded from mp-385, mp-386; answers mp-370, mp-371, mp-393, mp-396, mp-403
 > 2026-09-21 picture captured at 1.27.0+3, 18e21789
+> 2026-09-22 rewritten in plain words (question, decision, details)
 
-## mp-423 · The sheet, the launcher and the hand-off button
+## mp-423 · The launcher, the sheet and Vana's screen buttons stand as built, with three gaps to close
 - category: The sheet and launcher
 - status: proposed
 - image: docs/ssot/decisions/images/mealplanning/timeline-launcher.png
 - caption:
+- svg2: docs/ssot/decisions/images/mealplanning/mp-423-2.svg
 - screen: Vana sheet
 - source: wave mealplanning 1 ticket 23; wave mealplanning 3 ticket 15; wave mealplanning 4 ticket 16; wave mealplanning 4 ticket 27; wave mealplanning 5 ticket 17
 - work: pending
 - linked: mp-350; mp-372; mp-373; mp-374; mp-375; mp-376
 
-**Context.** You approved mp-264 (Vana on three screens), mp-265 (one sheet height, every flow the app owns is a hand-off) and mp-275 (what continues the day's conversation). Tickets 15, 16, 17, 23 and 27 built them. This card ratifies the build and answers six questions from it.
+**Context.** mp-264 put the launcher on three screens, mp-265 gave the sheet one height and made every job the app has a screen for into a button to that screen, and mp-275 said which ways in continue the day's conversation. Tickets 15, 16, 17, 23 and 27 built them. This card confirms the build and answers six questions it raised.
 
-**Question.** How do the three-screen launcher, the one-height sheet and the hand-off button work in practice?
+**Question.** Does the build of the launcher, the sheet and Vana's screen buttons stand, and what is left?
 
-**Decision.** 1. The launcher shows on the main tabs, the meal-planning screen and the formula library, and hides whenever anything is pushed or popped over them. No screen has to name itself. (mp-326) [built]
+**Decision.** Yes, as built, with three things still to build. The launcher shows on the main tabs, the meal-planning screen and the formula library, and the sheet takes three quarters of the screen. Vana offers a button to another screen only when she can name what it is for: with no event named she asks which one, a carb-loading button opens that event's carb-loading picks, and a fuelling button edits the workout she named instead of adding a second one. Example: an athlete asks about carb loading without naming an event, so Vana asks which event first; once it is named, her button opens the carb-loading picks for that event.
+
+**Why.** Clauses 1 to 3 and 7 are in the code. Clauses 4 to 6 finish the hand-off so it never lands somewhere useless.
+
+**What else was considered.** Landing on a blank form when no entity is named. Keeping carb loading on the event screen.
+
+**What it touches.** The launcher rule, the sheet, the hand-off part, the ambient conversation controller, the carb-loading picks, the new-activity screen.
+
+**Details.** Precisely:
+1. The launcher shows on the main tabs, the meal-planning screen and the formula library, and hides whenever anything is pushed or popped over them. No screen has to name itself. (mp-326) [built]
 2. The sheet is three quarters of the screen. It closes by the platform's own rule, a drag past half or a flick. The grabber is only a handle. (mp-361) [built]
 3. A hand-off is a button Vana offers, labelled in the athlete's own words (60 characters at most), that opens the screen that owns the job: meal plan, new activity, event. It works in the full-screen chat too. (mp-362) [built]
 4. Vana offers a hand-off only when she can name the thing. With no event named she asks which one, instead of landing on a blank form or a bare list. (mp-374) [to build]
@@ -1607,21 +1631,17 @@ Last extracted: 1dedc493
 8. The app tells the server a conversation is idle when the sheet closes, the app goes to the background, a new conversation starts, or the athlete leaves the full-screen chat. At most once per opening. (mp-348, mp-350) [built, except leaving the full-screen chat]
 9. Closed as already done: two new conversations sharing one screen was fixed on 09-16 (761d4d6f), and the status chip question is gone because you had the chip deleted on 09-16. (mp-372, mp-376) [no work]
 
-**Why.** Clauses 1 to 3 and 7 are in the code. Clauses 4 to 6 finish the hand-off so it never lands somewhere useless.
-
-**What else was considered.** Landing on a blank form when no entity is named. Keeping carb loading on the event screen.
-
-**What it touches.** The launcher rule, the sheet, the hand-off part, the ambient conversation controller, the carb-loading picks, the new-activity screen.
-
-**Details.** Launcher rule test walks every route the router declares. Hand-off targets: meal plan -> meal-planning page, fuelling -> new-activity screen, event and carb loading -> event screen (today).
+Launcher rule test walks every route the router declares. Hand-off targets: meal plan -> meal-planning page, fuelling -> new-activity screen, event and carb loading -> event screen (today).
 
 > 2026-09-20 folded from mp-326, mp-348, mp-360, mp-361, mp-362, mp-387; answers mp-350, mp-372, mp-373, mp-374, mp-375, mp-376
+> 2026-09-22 rewritten in plain words (question, context, decision, details)
 
-## mp-424 · The planning period: start day and length
+## mp-424 · Each plan keeps the period it was made for, and periods follow one another
 - category: Plan tab
 - status: proposed
 - image: docs/ssot/decisions/images/mealplanning/settings.png
 - caption:
+- svg2: docs/ssot/decisions/images/mealplanning/mp-424-2.svg
 - screen: Vana settings
 - source: wave mealplanning 4 ticket 29; wave mealplanning 4 ticket 16
 - work: pending
@@ -1629,15 +1649,9 @@ Last extracted: 1dedc493
 
 **Context.** You approved mp-269: the week's start day and the period's length are the athlete's settings. Ticket 29 built them. Seven days from Sunday was the only shape the code knew, so a ten-day period raised five questions.
 
-**Question.** How do a start day and a period other than seven days behave?
+**Question.** How does a plan period behave when it is not seven days from Sunday?
 
-**Decision.** 1. The two settings sit in Vana settings: a popup of the seven days and a stepper from 3 to 14 days. Cooking labels use the athlete's own day ("Cook Monday"). (mp-366, mp-365) [built]
-2. Every place that works out a week or a cook day reads the athlete's period, never the Sunday default. (mp-358) [built]
-3. Periods follow each other with no overlap. A ten-day period is followed by the next ten-day period, starting where the last one ended. (mp-379) [to build]
-4. A plan records the period it was built for, so changing the setting never re-reads an old plan. (mp-380) [to build]
-5. Changing the start day mid-period leaves the current plan alone until it ends. The new setting applies from the next period. (mp-378) [to build]
-6. The reminder text names the athlete's own days. (mp-381) [to build]
-7. Vana can change both settings in conversation ("my week starts Monday"). (mp-382) [to build]
+**Decision.** The athlete sets the start day and a length of 3 to 14 days in Vana settings, and everything that works out a week or a cook day uses them. Periods run one after another with no overlap, and each plan records the period it was made for, so changing a setting never changes a plan already made; a new start day applies from the next period. Reminders name the athlete's own days, and Vana can change both settings when asked in chat. Example: on ten-day periods starting Sunday 4 October, the first runs to 13 October and the next starts 14 October; if the athlete switches to a Monday start on 18 October, the plan for 14 to 23 October stays as it is and Monday applies from the period after.
 
 **Why.** Clauses 3 to 5 are one fix: once a plan carries its own period, overlap and mid-period changes stop being problems.
 
@@ -1645,15 +1659,26 @@ Last extracted: 1dedc493
 
 **What it touches.** Vana settings, the Plan tab, the plan row (one new column), coverage, reminders, Vana's settings tool.
 
-**Details.** Length limited to 3 to 14 days: below three the three cooking sessions collapse onto one day. The period length travels on the coverage wire and the week part.
+**Details.** Precisely:
+1. The two settings sit in Vana settings: a popup of the seven days and a stepper from 3 to 14 days. Cooking labels use the athlete's own day ("Cook Monday"). (mp-366, mp-365) [built]
+2. Every place that works out a week or a cook day reads the athlete's period, never the Sunday default. (mp-358) [built]
+3. Periods follow each other with no overlap. A ten-day period is followed by the next ten-day period, starting where the last one ended. (mp-379) [to build]
+4. A plan records the period it was built for, so changing the setting never re-reads an old plan. (mp-380) [to build]
+5. Changing the start day mid-period leaves the current plan alone until it ends. The new setting applies from the next period. (mp-378) [to build]
+6. The reminder text names the athlete's own days. (mp-381) [to build]
+7. Vana can change both settings in conversation ("my week starts Monday"). (mp-382) [to build]
+
+Length limited to 3 to 14 days: below three the three cooking sessions collapse onto one day. The period length travels on the coverage wire and the week part.
 
 > 2026-09-20 folded from mp-365, mp-366, mp-358; answers mp-378, mp-379, mp-380, mp-381, mp-382
+> 2026-09-22 rewritten in plain words (question, decision, details)
 
-## mp-425 · Batches, servings and coverage
+## mp-425 · A batch is three meals per meal type, each sized to a third of the period
 - category: Plan tab
 - status: proposed
 - image: docs/ssot/decisions/images/mealplanning/plan-tab.png
 - caption:
+- svg2: docs/ssot/decisions/images/mealplanning/mp-425-2.svg
 - screen: Plan tab
 - source: wave mealplanning 5 ticket 30
 - work: pending
@@ -1661,9 +1686,18 @@ Last extracted: 1dedc493
 
 **Context.** You approved mp-231: a plan fills a cooking period, not fourteen fixed slots. Ticket 30 built it and left seven questions.
 
-**Question.** How big is a batch, what does coverage count, and where is "same as last time"?
+**Question.** How big is a batch, what is a plan counted against, and where is "same as last time"?
 
-**Decision.** 1. A batch is three meals per meal type. Servings are the period divided by three, rounded up: 7 days gives 3, 10 gives 4, 14 gives 5. A per-day planner gets one serving per pick. (mp-389) [built]
+**Decision.** In batch cooking the athlete cooks three meals per meal type, and each gives the period's days divided by three, rounded up, in servings: 3 for 7 days, 4 for 10, 5 for 14; someone who plans per day gets one serving per pick. Plan coverage counts the period's days times the meal types the athlete plans, and anyone who never chose keeps lunch and dinner. "Same as last time" copies last period's meals at the servings they were cooked at, from a button on an empty Plan tab or from Vana's planning opener. Example: a 10-day period with lunch and dinner is counted as 20 meals, and three lunches and three dinners at 4 servings each give 24 servings.
+
+**Why.** Clauses 1, 2, 5 and 9 are built. The rest finish mp-231 where ticket 30 stopped.
+
+**What else was considered.** Rescaling copied meals to the new period (invented numbers). Defaulting every pick to four servings.
+
+**What it touches.** The Plan tab, coverage on both sides, the planning conversation, Vana settings, suggestion ranking.
+
+**Details.** Precisely:
+1. A batch is three meals per meal type. Servings are the period divided by three, rounded up: 7 days gives 3, 10 gives 4, 14 gives 5. A per-day planner gets one serving per pick. (mp-389) [built]
 2. Coverage counts the period's days times the meal types the athlete plans. Someone who never chose keeps lunch and dinner, so existing plans' numbers do not move. (mp-390) [built]
 3. Choosing "every meal" counts four slots a day. (mp-398) [to build]
 4. A per-day planner cooking two servings covers two nights, not one. (mp-399) [to build]
@@ -1674,20 +1708,16 @@ Last extracted: 1dedc493
 9. A plan with no cooking mode on it means batch, in the app and on the server. (mp-392) [built]
 10. Where coverage is unknown the staples check says nothing, instead of assuming fourteen slots. The shared test fixture carries the inputs so both sides work the answer out themselves. (mp-402, mp-404) [to build]
 
-**Why.** Clauses 1, 2, 5 and 9 are built. The rest finish mp-231 where ticket 30 stopped.
-
-**What else was considered.** Rescaling copied meals to the new period (invented numbers). Defaulting every pick to four servings.
-
-**What it touches.** The Plan tab, coverage on both sides, the planning conversation, Vana settings, suggestion ranking.
-
 > 2026-09-20 folded from mp-389, mp-390, mp-391, mp-392; answers mp-397, mp-398, mp-399, mp-400, mp-401, mp-402, mp-404
 > 2026-09-21 picture captured at 1.27.0+3, 18e21789
+> 2026-09-22 rewritten in plain words (question, decision, details)
 
-## mp-426 · Pickers: named chips and Show more
+## mp-426 · Named chips replace only the two reply chips, and Show more holds up to 24 more meals
 - category: The planning conversation
 - status: proposed
 - image: test/features/meal_planning/presentation/goldens/vana_sheet_open_light.png
 - caption:
+- svg2: docs/ssot/decisions/images/mealplanning/mp-426-2.svg
 - screen: Planning conversation
 - source: wave mealplanning 6 ticket 31
 - work: pending
@@ -1697,12 +1727,7 @@ Last extracted: 1dedc493
 
 **Question.** Which chips can a turn name, and what sits behind Show more?
 
-**Decision.** 1. A turn's named chips replace only the two reply chips ("I like these", "Other options"). The doors and filters stay. Chips belong to a picker, so a turn without a picker names none. (mp-406, mp-409) [built]
-2. Both the server and the app trim the list to two to four chips. A broken list means the app shows its own set. (mp-408) [built]
-3. Show more opens the rest of the same search, up to 24 more meals, with no new query. (mp-407) [built]
-4. Meals behind Show more count as shown only if the athlete opened the sheet. (mp-410) [to build]
-5. When nothing is left behind Show more, the chip is not drawn. 24 is enough. (mp-411) [no work]
-6. A tick in the Show more sheet shows on the tiles behind it at once, and the other way round. (mp-412) [to build]
+**Decision.** Chips Vana names replace only "I like these" and "Other options"; the other chips and the filters stay, and a turn with no picker names none. The server and the app both cut her list to two to four chips, and a broken list falls back to the app's own. Show more opens the rest of the same search, up to 24 more meals with no new search, and is not drawn when nothing is left; those meals count as shown only if the athlete opened the sheet, and a tick in the sheet shows on the picker's meals at once, and the other way round. Example: an athlete never opens Show more, so the up to 24 meals behind it are not counted as shown and Other options can still offer them later.
 
 **Why.** Clauses 1 to 3 are built. Clause 6 is the one an athlete would notice.
 
@@ -1710,28 +1735,33 @@ Last extracted: 1dedc493
 
 **What it touches.** The picker part, the Show more sheet, the planning conversation.
 
-> 2026-09-20 folded from mp-406, mp-407, mp-408, mp-409; answers mp-410, mp-411, mp-412
+**Details.** Precisely:
+1. A turn's named chips replace only the two reply chips ("I like these", "Other options"). The doors and filters stay. Chips belong to a picker, so a turn without a picker names none. (mp-406, mp-409) [built]
+2. Both the server and the app trim the list to two to four chips. A broken list means the app shows its own set. (mp-408) [built]
+3. Show more opens the rest of the same search, up to 24 more meals, with no new query. (mp-407) [built]
+4. Meals behind Show more count as shown only if the athlete opened the sheet. (mp-410) [to build]
+5. When nothing is left behind Show more, the chip is not drawn. 24 is enough. (mp-411) [no work]
+6. A tick in the Show more sheet shows on the tiles behind it at once, and the other way round. (mp-412) [to build]
 
-## mp-427 · Meal reviews, recipe origin labels and typed feedback
+> 2026-09-20 folded from mp-406, mp-407, mp-408, mp-409; answers mp-410, mp-411, mp-412
+> 2026-09-22 rewritten in plain words (question, decision, details)
+
+## mp-427 · Admins review meals, every recipe names where its steps came from, and feedback to Vana goes to Wiredash
 - category: Meals tab and library
 - status: proposed
 - image: docs/ssot/decisions/images/mealplanning/meal-detail.png
 - caption:
+- svg2: docs/ssot/decisions/images/mealplanning/mp-427-2.svg
 - screen: Meal detail
 - source: wave mealplanning 1 ticket 25; wave mealplanning 2 ticket 32; wave mealplanning 1 ticket 26
 - work: pending
 - linked: mp-330; mp-346; mp-332
 
-**Context.** Tickets 25, 26 and 32 each built something you had already approved (mp-144 clause 3, mp-245 clause 6, mp-146) and each left one question.
+**Context.** Tickets 25, 26 and 32 each built something already approved (mp-144 clause 3, mp-245 clause 6, mp-146), and each left one question.
 
-**Question.** Are the three small builds from wave 1 and 2 right: admin meal reviews, origin labels on recipes, and typed feedback reaching Wiredash?
+**Question.** Are admin meal reviews, the recipe origin line and typed feedback reaching Wiredash built right?
 
-**Decision.** 1. An admin sees a review box on every meal: Good recipe or Not good, a reason, Send. Reviews wait for the server before saying sent. Only admins can read them. (mp-329) [built]
-2. The team reads reviews in the database for now. Each row gets the app version. No screen until there are enough reviews to need one. The table goes to production with the cutover. (mp-330) [to build: the version stamp]
-3. A recipe says where its steps came from in one line under Directions: "As published by X" with a link, "Steps from X", or "A simple assembly, no recipe needed". AI-written steps keep the sparkle. (mp-345) [built]
-4. A published recipe links the original once, from the new label. The older "See the original recipe" row goes, which also removes the overflow on narrow phones. (mp-346) [to build]
-5. Feedback typed to Vana is filed to the same Wiredash inbox as a shaken report, from the device, with the label "vana-chat" so the inbox can filter it. (mp-331, mp-332) [built, except the label]
-6. Wiredash has no public way to file an entry without its screen, so the app uses the SDK's internals with the version pinned. Ask Wiredash for a public call. Every Wiredash upgrade re-checks the filer. (mp-332) [no work]
+**Decision.** Admins get a review box on every meal (Good recipe or Not good, a reason, Send) that says sent only once the server has it; only admins can read reviews, the team reads them in the database, and each gets the app version. Every recipe says in one line under Directions where its steps came from, and that line is its only link to the original. Feedback typed to Vana lands in the same Wiredash inbox (the team's bug-report inbox) as a report sent by shaking the phone, labelled "vana-chat"; Wiredash has no public way to do this, so the app uses its internal code with the version pinned. Example: a recipe with published steps reads "As published by X" with a link under Directions, and the old "See the original recipe" row is gone.
 
 **Why.** All three are small and already on dev.
 
@@ -1739,16 +1769,26 @@ Last extracted: 1dedc493
 
 **What it touches.** Meal detail, the meal_reviews table, the recipe screen, Vana's feedback tool, Wiredash.
 
-**Details.** Review migration 20260916120000 on dev. Reason capped at 2,000 characters. Wiredash metadata: source vana_chat, sentiment, about, conversation id, user id and email.
+**Details.** Precisely:
+1. An admin sees a review box on every meal: Good recipe or Not good, a reason, Send. Reviews wait for the server before saying sent. Only admins can read them. (mp-329) [built]
+2. The team reads reviews in the database for now. Each row gets the app version. No screen until there are enough reviews to need one. The table goes to production with the cutover. (mp-330) [to build: the version stamp]
+3. A recipe says where its steps came from in one line under Directions: "As published by X" with a link, "Steps from X", or "A simple assembly, no recipe needed". AI-written steps keep the sparkle. (mp-345) [built]
+4. A published recipe links the original once, from the new label. The older "See the original recipe" row goes, which also removes the overflow on narrow phones. (mp-346) [to build]
+5. Feedback typed to Vana is filed to the same Wiredash inbox as a shaken report, from the device, with the label "vana-chat" so the inbox can filter it. (mp-331, mp-332) [built, except the label]
+6. Wiredash has no public way to file an entry without its screen, so the app uses the SDK's internals with the version pinned. Ask Wiredash for a public call. Every Wiredash upgrade re-checks the filer. (mp-332) [no work]
+
+Review migration 20260916120000 on dev. Reason capped at 2,000 characters. Wiredash metadata: source vana_chat, sentiment, about, conversation id, user id and email.
 
 > 2026-09-20 folded from mp-329, mp-345, mp-331; answers mp-330, mp-346, mp-332
+> 2026-09-22 rewritten in plain words (question, context, decision, details)
 
-## mp-428 · Housekeeping: fifteen questions that need no product ruling
+## mp-428 · Fifteen engineering questions are closed together, none of them a product ruling
 - category: Process and scope
 - status: proposed
 - image: docs/ssot/decisions/images/mealplanning/settings.png
 - caption:
-- svg: docs/ssot/decisions/images/mealplanning/mp-428.svg
+- svg: docs/ssot/decisions/images/mealplanning/mp-428-2.svg
+- svg2: docs/ssot/decisions/images/mealplanning/mp-428-2.svg
 - screen: none (algorithm/data)
 - source: wave mealplanning 1 ticket 24; wave mealplanning 5 ticket 17
 - work: pending
@@ -1758,7 +1798,16 @@ Last extracted: 1dedc493
 
 **Question.** Can the engineering loose ends the build agents raised be closed in one go?
 
-**Decision.** 1. The dev-tools switch sits in a "Dev build" card on Settings, remembered per device. The card moves up so the floating buttons do not cover it. (mp-327, mp-328) [built, except the move]
+**Decision.** Yes. Fifteen questions the build agents raised about process, tests and tidying are answered together in twelve clauses, and you tick any clause you disagree with. Only one changes what an athlete sees: the Show more sheet gets the same glass look as every other sheet that slides up. The rest settle where the dev-tools switch sits, which checks only a person with a phone can run, how team accounts get past the paywall, and what gets removed, deleted or rewritten. Example: the fuelling conformance test that turned red and green with no code change depends on the time, so it gets a fixed clock (mp-405).
+
+**Why.** None of these changes what an athlete sees, except the glass sheet. They were making the page look heavier than it is.
+
+**What else was considered.** Ruling each separately.
+
+**What it touches.** Settings, the release doc, the dev entitlement table, the design specs list for Xuan, the conformance suite, persona.ts.
+
+**Details.** Precisely:
+1. The dev-tools switch sits in a "Dev build" card on Settings, remembered per device. The card moves up so the floating buttons do not cover it. (mp-327, mp-328) [built, except the move]
 2. The coach-insight panel is gone and nothing writes insights any more. The old columns and their readers are removed with the production cutover. (mp-388, mp-395) [to build]
 3. A check only a person with a phone can do (a sandbox purchase, a second account) does not fail a ticket. The ticket closes on its tests and the check goes on your simulator and device list. (mp-322) [no work]
 4. You declined the sandbox wizard on 09-16. Purchase and Restore are checked by hand on TestFlight before a release (mp-336). The two wizard questions are closed. (mp-354, mp-355) [no work]
@@ -1771,15 +1820,10 @@ Last extracted: 1dedc493
 11. The persona is edited in this repo only. The note about keeping the prototype in step is deleted. (mp-413) [to build]
 12. The fuelling conformance test that goes red and green without a code change is time-dependent. It gets a fixed clock. (mp-405) [to build]
 
-**Why.** None of these changes what an athlete sees, except the glass sheet. They were making the page look heavier than it is.
-
-**What else was considered.** Ruling each separately.
-
-**What it touches.** Settings, the release doc, the dev entitlement table, the design specs list for Xuan, the conformance suite, persona.ts.
-
-**Details.** Dev-tools key dev.tools_visible. The eval entitlement row: user 37129f7e, period_type "eval", written 2026-09-15 19:05Z.
+Dev-tools key dev.tools_visible. The eval entitlement row: user 37129f7e, period_type "eval", written 2026-09-15 19:05Z.
 
 > 2026-09-20 folded from mp-327, mp-388; answers mp-322, mp-325, mp-328, mp-339, mp-354, mp-355, mp-356, mp-357, mp-383, mp-395, mp-405, mp-413, mp-414, mp-415, mp-338
+> 2026-09-22 rewritten in plain words (decision, details)
 
 ## mp-510 · How a hand grant reaches the dev webhook
 - category: Pro and paywall
@@ -1888,6 +1932,7 @@ Last extracted: 1dedc493
 - image: none
 - caption:
 - svg: docs/ssot/decisions/images/mealplanning/mp-515.svg
+- svg2: docs/ssot/decisions/images/mealplanning/mp-515-2.svg
 - screen: none (algorithm/data)
 - source: wave ai-cost 2 ticket 04
 - linked: mp-430
@@ -1896,13 +1941,7 @@ Last extracted: 1dedc493
 
 **Question.** What are the burst limits for each AI call, how large can one turn get, and what does the athlete read when refused?
 
-**Decision.** 
-1. Chat stays at 4 messages in 10 seconds.
-2. Openers get 6 a minute. The old figure of 3 was never enforced; 6 leaves room for a screen that opens a moment and a chat together.
-3. The fridge photo gets 3 a minute. The described meal and the meal photo get 6 a minute each. Each has its own bucket, so a photo never blocks a chat message.
-4. One Vana turn stops at 150,000 tokens as well as at its step limit. The count includes cached input.
-5. A refused meal analysis reads "Too many at once — try again in {n} seconds." from the content system. Chat keeps its own line.
-6. No limit is longer than a minute. The monthly budget stays the only ceiling on total use.
+**Decision.** Each AI feature has its own per-minute limit, set well above what a person does, to stop a loop or a script: chat keeps 4 messages in 10 seconds, openers get 6 a minute, the fridge photo 3 a minute, and the described meal and the meal photo 6 a minute each. Each keeps its own count, so a photo never blocks a chat message. One Vana turn also stops at 150,000 tokens, cached input included, as well as at its step limit; a refused meal analysis shows a "too many at once, try again in a few seconds" line from the content system, and chat keeps its own line. No limit is longer than a minute, so the monthly budget stays the only ceiling on total use. Example: on dev over 14 days a planning turn ran 22,000 tokens at the median and 85,000 at most, so the 150,000 ceiling stops none of them, where the first build's 60,000 would have cut off 6 of 52 real turns.
 
 **Why.** These are guards against a loop or a script, set well above what a person does. On dev over 14 days a planning turn ran 22,000 tokens at the median and 85,000 at most, so the first build's 60,000 would have cut off 6 of 52 real turns.
 
@@ -1910,15 +1949,25 @@ Last extracted: 1dedc493
 
 **What it touches.** The shared Vana rate limiter, the chat turn, the fridge photo action, describe-meal, analyze-meal-photo, the content defaults.
 
-**Details.** The database decides each reservation in one step (a lock on athlete and bucket, a count, an insert). On dev, eight reservations fired at once against a limit of four left four rows.
+**Details.** Precisely:
+1. Chat stays at 4 messages in 10 seconds.
+2. Openers get 6 a minute. The old figure of 3 was never enforced; 6 leaves room for a screen that opens a moment and a chat together.
+3. The fridge photo gets 3 a minute. The described meal and the meal photo get 6 a minute each. Each has its own bucket, so a photo never blocks a chat message.
+4. One Vana turn stops at 150,000 tokens as well as at its step limit. The count includes cached input.
+5. A refused meal analysis reads "Too many at once — try again in {n} seconds." from the content system. Chat keeps its own line.
+6. No limit is longer than a minute. The monthly budget stays the only ceiling on total use.
+
+The database decides each reservation in one step (a lock on athlete and bucket, a count, an insert). On dev, eight reservations fired at once against a limit of four left four rows.
 
 > 2026-09-21 proposed from wave 2 of ai-cost
+> 2026-09-22 rewritten in plain words (question, decision, details)
 
-## mp-516 · Which plan changes rewrite a day's note
+## mp-516 · Only the days a plan change touches get a new note
 - category: Plan tab
 - status: proposed
 - image: docs/ssot/decisions/images/mealplanning/plan-tab.png
 - caption:
+- svg2: docs/ssot/decisions/images/mealplanning/mp-516-2.svg
 - screen: Plan tab
 - source: wave ai-cost 2 ticket 13
 - linked: mp-432
@@ -1927,13 +1976,7 @@ Last extracted: 1dedc493
 
 **Question.** Which changes to a plan rewrite which days' notes?
 
-**Decision.** 
-1. A day's note is rewritten when that day's assigned meals, its workouts or its macro target change. Other days keep their notes.
-2. A day with nothing assigned is rewritten when any meal joins or leaves the plan, because its note may name any meal in the plan.
-3. Confirming a draft, or switching batch cooking, rewrites all seven.
-4. Marking a meal as eaten rewrites nothing.
-5. The note for a day with assigned meals is now written from those meals, not from the whole plan.
-6. Opening the Plan tab on an unchanged plan calls no model, and two requests at once share one call.
+**Decision.** A day's note is rewritten only when something it was written from changes: that day's meals, its workouts or its macro target. A day with no meals assigned is rewritten whenever a meal joins or leaves the plan, because its note may name any meal in the plan; confirming a draft or switching batch cooking rewrites all seven, and marking a meal eaten rewrites none. Opening the Plan tab on an unchanged plan calls no model. Example: swapping Thursday's dinner for another meal rewrites Thursday's note and the notes of days with nothing assigned, and leaves every other day's note alone.
 
 **Why.** The saving comes from writing fewer notes, and a note is only wrong when what it was written from has changed.
 
@@ -1941,17 +1984,27 @@ Last extracted: 1dedc493
 
 **What it touches.** The day-notes module and endpoint, the Plan tab's refresh, one new column and one claim table on meal plans.
 
-**Details.** An edit made while notes are being written is picked up on the next open. A request that loses the claim waits up to 25 seconds for the winner's notes, then shows the stored ones. The dev count after the change is owed after a day of use (ticket 13).
+**Details.** Precisely:
+1. A day's note is rewritten when that day's assigned meals, its workouts or its macro target change. Other days keep their notes.
+2. A day with nothing assigned is rewritten when any meal joins or leaves the plan, because its note may name any meal in the plan.
+3. Confirming a draft, or switching batch cooking, rewrites all seven.
+4. Marking a meal as eaten rewrites nothing.
+5. The note for a day with assigned meals is now written from those meals, not from the whole plan.
+6. Opening the Plan tab on an unchanged plan calls no model, and two requests at once share one call.
+
+An edit made while notes are being written is picked up on the next open. A request that loses the claim waits up to 25 seconds for the winner's notes, then shows the stored ones. The dev count after the change is owed after a day of use (ticket 13).
 
 > 2026-09-21 proposed from wave 2 of ai-cost
 > 2026-09-21 picture captured at 1.27.0+3, 0e20c2f0
+> 2026-09-22 rewritten in plain words (question, decision, details)
 
-## mp-517 · No cheaper model matched: the three background jobs stay on Haiku
+## mp-517 · No cheaper model matched, so the three background jobs stay on Haiku
 - category: Cutting costs
 - status: proposed
 - image: none
 - caption:
 - svg: docs/ssot/decisions/images/mealplanning/mp-517.svg
+- svg2: docs/ssot/decisions/images/mealplanning/mp-517-2.svg
 - screen: none (algorithm/data)
 - source: wave ai-cost 2 ticket 14
 - linked: mp-465
@@ -1960,10 +2013,7 @@ Last extracted: 1dedc493
 
 **Question.** Which model runs the three background jobs after the comparison?
 
-**Decision.** 
-1. The three jobs stay on Haiku 4.5. No candidate gave the same answers.
-2. They now read their model from one setting of their own, VANA_BACKGROUND_MODEL, so a later candidate is a rerun of the test script and one setting.
-3. The Formula Kit coach insight is removed and its function is undeployed from dev.
+**Decision.** The three background jobs stay on Haiku 4.5, because no cheaper model gave the same answers on the 20-conversation test. They now read their model from one setting of their own, so trying a later candidate is a rerun of the test script and a change to that one setting. The Formula Kit coach insight is removed and its function taken off dev. Example: on the 20 conversations Haiku wrote no memory, which is what the memory rules ask for, while Nova Micro invented 32 and the closest cheap model, Qwen 3.7 Flash, invented 7 and spent about 2,980 output tokens a call against Haiku's 105.
 
 **Why.** Haiku wrote no memory on any of the 20 conversations, which is what the memory rules ask for. The cheap models invented memories: Nova Micro 32, Nova Lite 26, Gemini 2.5 Flash Lite 14 with three broken answers, Qwen 3.7 Flash 7. Their ingredient lists differed in substance, and that list is what Kroger matches. Only the summary matched everywhere.
 
@@ -1971,9 +2021,15 @@ Last extracted: 1dedc493
 
 **What it touches.** The extraction, summary and saved-ingredients modules, the Vana settings, the removed ai-coach function, shared coach tools and Formula Kit client.
 
-**Details.** Prices were read from the gateway's catalogue on 2026-09-21. The comparison table is in ticket 14. The script is scripts/vana-eval/background-model.ts; the conversations are not committed.
+**Details.** Precisely:
+1. The three jobs stay on Haiku 4.5. No candidate gave the same answers.
+2. They now read their model from one setting of their own, VANA_BACKGROUND_MODEL, so a later candidate is a rerun of the test script and one setting.
+3. The Formula Kit coach insight is removed and its function is undeployed from dev.
+
+Prices were read from the gateway's catalogue on 2026-09-21. The comparison table is in ticket 14. The script is scripts/vana-eval/background-model.ts; the conversations are not committed.
 
 > 2026-09-21 proposed from wave 2 of ai-cost
+> 2026-09-22 rewritten in plain words (question, decision, details)
 
 ## mp-518 · Adding a saved meal to a plan calls a second model inside the Vana turn
 - category: Cutting costs
@@ -1992,24 +2048,21 @@ Last extracted: 1dedc493
 
 > 2026-09-21 opened from wave 2 of ai-cost
 
-## mp-519 · The plan an athlete is on is named in SQL from the two entitlement fields
+## mp-519 · The call log keeps the subscription's two raw fields and names the plan only when read
 - category: Cutting costs
 - status: proposed
 - image: none
 - caption:
 - svg: docs/ssot/decisions/images/mealplanning/mp-519.svg
+- svg2: docs/ssot/decisions/images/mealplanning/mp-519-2.svg
 - screen: none (algorithm/data)
 - source: wave ai-cost 3 ticket 05
 
-**Context.** Ticket 05 asks the weekly view for cost per athlete by plan. mp-285 cut `user_entitlements` down to `active_until` and `period_type`, so no table in the database says whether an athlete bought the month or the year. The call log had nowhere to copy a plan from.
+**Context.** Ticket 05 asks the weekly view for cost per athlete by plan. mp-285 cut the Entitlement row down to two fields, active until and period type, so nothing in the database says whether an athlete bought the month or the year. The call log had nowhere to copy a plan from.
 
 **Question.** Where does the call log get the subscriber's plan and trial state?
 
-**Decision.** 
-1. Every call row stores the two entitlement fields raw: `period_type` and `active_until` as they stood when the call finished. Nothing is stored as a plan name.
-2. A SQL function names the plan when the view is read: TRIAL, INTRO and PROMOTIONAL name themselves; NORMAL access running more than 45 days past the call is `annual`, otherwise `monthly`; no row is `none`.
-3. The read happens on the background task that finishes the call, never on the athlete's request path, and a read that fails logs nulls rather than losing the call.
-4. Logged meals (the described meal and the meal photo) carry the same two fields as a chat turn.
+**Decision.** Every call row stores the two fields of the Entitlement row as they stood when the call finished, the period type and the active-until date, and never a plan name. The saved weekly view names the plan when it is read: a trial, intro or promotional period names itself, paid access that runs more than 45 days past the call counts as annual and anything shorter as monthly, and a call with no row counts as none. The fields are read after the call finishes, never while the athlete waits, and a read that fails logs empty fields rather than losing the call; the described meal and the meal photo carry the same two fields as a chat turn. Example: a paid athlete who calls Vana on 1 October with access running to 1 October next year counts as annual; one whose access ends on 31 October, 30 days on, counts as monthly.
 
 **Why.** Storing the raw pair lets the label be re-cut in the view when the products change, with no backfill and no second copy of RevenueCat's truth. Re-adding a product id to a paywall-owned table while the paywall wave is live was not an option the ticket could take alone.
 
@@ -2017,9 +2070,16 @@ Last extracted: 1dedc493
 
 **What it touches.** The call log migration, the shared subscriber reader, chat.ts, describe-meal, analyze-meal-photo, the weekly view.
 
-**Details.** Two columns: `subscriber_period_type`, `subscriber_active_until`. The label function is `vana_plan_label(period_type, active_until, at)`. Live dev check: two turns, one typed and one tapped, both labelled from the same entitlement row.
+**Details.** Precisely:
+1. Every call row stores the two entitlement fields raw: `period_type` and `active_until` as they stood when the call finished. Nothing is stored as a plan name.
+2. A SQL function names the plan when the view is read: TRIAL, INTRO and PROMOTIONAL name themselves; NORMAL access running more than 45 days past the call is `annual`, otherwise `monthly`; no row is `none`.
+3. The read happens on the background task that finishes the call, never on the athlete's request path, and a read that fails logs nulls rather than losing the call.
+4. Logged meals (the described meal and the meal photo) carry the same two fields as a chat turn.
+
+Two columns: `subscriber_period_type`, `subscriber_active_until`. The label function is `vana_plan_label(period_type, active_until, at)`. Live dev check: two turns, one typed and one tapped, both labelled from the same entitlement row.
 
 > 2026-09-22 proposed from wave 3 of ai-cost
+> 2026-09-22 rewritten in plain words (question, context, decision, details)
 
 ## mp-520 · The 45-day cut misreads an annual subscriber in the last 45 days of the year
 - category: Cutting costs
@@ -2044,6 +2104,7 @@ Last extracted: 1dedc493
 - image: none
 - caption:
 - svg: docs/ssot/decisions/images/mealplanning/mp-521.svg
+- svg2: docs/ssot/decisions/images/mealplanning/mp-521-2.svg
 - screen: none (algorithm/data)
 - source: wave ai-cost 3 ticket 05
 - linked: mp-420
@@ -2052,13 +2113,7 @@ Last extracted: 1dedc493
 
 **Question.** How does the log measure the cache, the charge and the turn, and what does the weekly view do when a call has no charge?
 
-**Decision.** 
-1. The cache hit rate is the first step's alone: `first_step_input_tokens` and `first_step_cache_read_tokens` are their own columns. Later steps read what the same turn just wrote, so a whole-turn ratio flatters the cache.
-2. The gateway's charge is added up over every step of the turn. A turn where no step reported a charge stores null, never 0.
-3. Cost is the gateway's charge and nothing else. There is no price table in the log; the view shows `costed_calls` beside `calls` so a week whose cost is understated says so.
-4. `input_mode` is `tap`, `typed` or null. An older build that sends nothing, or a value the server does not know, logs null; the request is never refused over it.
-5. The two meal-logging functions write the same fields as a chat turn (charge, cached tokens, one step, debited, subscriber state), so cost per athlete includes logging a meal. Background jobs still write tokens only.
-6. Every night the complete weeks are frozen into `vana_weekly_rollup`, then raw rows strictly older than 90 days are deleted from `vana_calls`, `ai_usage` and `plan_generation_log`. A frozen week is overwritten only while every raw row of it is still there, so the week straddling the cutoff keeps its full figure. `plan_generation_log` has no user id, so it is swept but never counted per athlete.
+**Decision.** The call log counts the cache hit rate from a turn's first step alone, where a step is one call to the model inside a turn, because later steps read back what the same turn just wrote and would flatter it. Cost is the gateway's own charge, added up over every step, and nothing else: a turn where no step reported a charge stores no figure rather than zero, and the weekly view shows how many calls had a charge beside how many there were, so an understated week says so. Each turn records tap, typed or unknown, and an unknown never refuses the request; the two meal-logging functions write the same fields as a chat turn, while background jobs still write tokens only. Every night the finished weeks are frozen into a weekly rollup, then raw rows older than 90 days are deleted, and a frozen week is rewritten only while every raw row of it is still there. Example: on dev, one conversation's first turn wrote 10,436 tokens to the cache and cost $0.013358; the second turn read the same 10,436 tokens back and cost $0.0012916.
 
 **Why.** The log has to answer mp-420's question honestly: how much of a turn's prompt came from the cache, and what it really cost us. Pricing tokens belongs to the monthly budget (mp-436, ticket 09); two price tables would be two answers.
 
@@ -2066,9 +2121,18 @@ Last extracted: 1dedc493
 
 **What it touches.** `vana_calls`, `ai_usage`, the views `vana_call_facts` and `vana_weekly_cost`, `vana_weekly_rollup`, `ai_log_retention_sweep`, chat.ts, log.ts, describe-meal, analyze-meal-photo, `docs/database/ai-cost-log-and-weekly-view.md`.
 
-**Details.** Dev, one conversation, two turns: turn 1 cold, 10,436 cache-write tokens, $0.013358; turn 2 warm, 10,436 cache-read tokens, $0.0012916. The five figures: cost per athlete by plan, first-step cache hit rate, cost per confirmed plan, spend in planning conversations that never added a meal, share of athlete turns that were taps. Sweep at 03:41 UTC; a row exactly 90.0 days old is kept.
+**Details.** Precisely:
+1. The cache hit rate is the first step's alone: `first_step_input_tokens` and `first_step_cache_read_tokens` are their own columns. Later steps read what the same turn just wrote, so a whole-turn ratio flatters the cache.
+2. The gateway's charge is added up over every step of the turn. A turn where no step reported a charge stores null, never 0.
+3. Cost is the gateway's charge and nothing else. There is no price table in the log; the view shows `costed_calls` beside `calls` so a week whose cost is understated says so.
+4. `input_mode` is `tap`, `typed` or null. An older build that sends nothing, or a value the server does not know, logs null; the request is never refused over it.
+5. The two meal-logging functions write the same fields as a chat turn (charge, cached tokens, one step, debited, subscriber state), so cost per athlete includes logging a meal. Background jobs still write tokens only.
+6. Every night the complete weeks are frozen into `vana_weekly_rollup`, then raw rows strictly older than 90 days are deleted from `vana_calls`, `ai_usage` and `plan_generation_log`. A frozen week is overwritten only while every raw row of it is still there, so the week straddling the cutoff keeps its full figure. `plan_generation_log` has no user id, so it is swept but never counted per athlete.
+
+Dev, one conversation, two turns: turn 1 cold, 10,436 cache-write tokens, $0.013358; turn 2 warm, 10,436 cache-read tokens, $0.0012916. The five figures: cost per athlete by plan, first-step cache hit rate, cost per confirmed plan, spend in planning conversations that never added a meal, share of athlete turns that were taps. Sweep at 03:41 UTC; a row exactly 90.0 days old is kept.
 
 > 2026-09-22 proposed from wave 3 of ai-cost
+> 2026-09-22 rewritten in plain words (question, decision, details)
 
 ## mp-522 · Calls the gateway never prices: does the budget's price table fill the gap?
 - category: Cutting costs
@@ -2087,12 +2151,13 @@ Last extracted: 1dedc493
 
 > 2026-09-22 opened from wave 3 of ai-cost
 
-## mp-523 · The daily cost alert: one Sentry event per account per day, from a cron job
+## mp-523 · An account that costs over $1.50 in a day is reported to Sentry once for that day
 - category: Cutting costs
 - status: proposed
 - image: none
 - caption:
 - svg: docs/ssot/decisions/images/mealplanning/mp-523.svg
+- svg2: docs/ssot/decisions/images/mealplanning/mp-523-2.svg
 - screen: none (algorithm/data)
 - source: wave ai-cost 3 ticket 05
 - linked: mp-470
@@ -2101,11 +2166,7 @@ Last extracted: 1dedc493
 
 **Question.** How is an expensive day reported, and how often for the same account?
 
-**Decision.** 
-1. A `pg_cron` job at 06:23 UTC reads yesterday's spend per account from the call log and posts the accounts over the threshold, through `pg_net`, to a small edge function that reports each to Sentry. The path is the one the raw-retention alert already uses; the function address and token come from Vault, never from the migration.
-2. One Sentry event per account per day, fingerprinted on account and day. A week of the same athlete running hot is a week of issues, because each day's number is its own decision.
-3. The threshold, $1.50, is a default in SQL. Changing it is editing the cron command.
-4. Nothing on the athlete's request path reads the check. Absent secrets, the check still runs and raises a notice.
+**Decision.** Every morning at 06:23 UTC a scheduled database job reads yesterday's spend per account from the call log and sends each account over the threshold to Sentry, the error tracker Lee already reads, through the same path the raw-retention alert uses. Each account gets one Sentry event per day, so a week of the same athlete running hot is a week of issues, each day its own. The threshold, $1.50, is a default written in the job, and nothing the athlete does waits on the check; if its secrets are missing the check still runs and raises a notice. Example: an athlete who costs more than $1.50 on Saturday 3 October is reported at 06:23 UTC on Sunday 4 October, and nothing of theirs is refused; if they run hot every day that week, Lee sees a separate issue for each day.
 
 **Why.** Sentry is where Lee already looks; a per-day fingerprint keeps a runaway account visible each day without one issue swallowing a week.
 
@@ -2113,9 +2174,16 @@ Last extracted: 1dedc493
 
 **What it touches.** `vana_daily_cost_offenders`, `vana_daily_cost_alert`, the `ai-cost-alert` function, `supabase/config.toml`, dev secrets `AI_COST_ALERT_TOKEN` and the Vault entries.
 
-**Details.** Run end to end on dev: SQL to pg_net to the deployed function, `{"success":true,"reported":1}`, HTTP 200; a wrong token gets 401. Prod has none of the secrets and nothing was deployed there.
+**Details.** Precisely:
+1. A `pg_cron` job at 06:23 UTC reads yesterday's spend per account from the call log and posts the accounts over the threshold, through `pg_net`, to a small edge function that reports each to Sentry. The path is the one the raw-retention alert already uses; the function address and token come from Vault, never from the migration.
+2. One Sentry event per account per day, fingerprinted on account and day. A week of the same athlete running hot is a week of issues, because each day's number is its own decision.
+3. The threshold, $1.50, is a default in SQL. Changing it is editing the cron command.
+4. Nothing on the athlete's request path reads the check. Absent secrets, the check still runs and raises a notice.
+
+Run end to end on dev: SQL to pg_net to the deployed function, `{"success":true,"reported":1}`, HTTP 200; a wrong token gets 401. Prod has none of the secrets and nothing was deployed there.
 
 > 2026-09-22 proposed from wave 3 of ai-cost
+> 2026-09-22 rewritten in plain words (question, decision, details)
 
 ## mp-524 · The playbook says no cron job calls an edge function; two landed alerts do
 - category: Data, sync and backend
@@ -2148,7 +2216,15 @@ Last extracted: 1dedc493
 
 **Question.** How are the two meal-logging calls shaped, and what does the app get back?
 
-**Decision.** 
+**Decision.** Each meal-logging call, the described meal and the meal photo, sends its own fixed instructions first, cached for an hour, with the athlete's text or photo as the only message, so two different meals send identical instructions. The function adds up the items itself and ignores any total the model gives. A meal, described or photographed, that is not food comes back as a not-food code, never as the server's own words, and the app shows one short warning line from the content system; a missing meal slot or confidence gets a default (snack, medium) instead of an error. Photos are capped at 1,000 px on both sides when they are picked, and both calls stay on Sonnet. Example: on dev the same scene sent landscape at 1000×750 and portrait at 750×1000 both cost 2,368 input tokens; under the old width-only cap the portrait went at 1000×1333 and cost 2,960, 25% more.
+
+**Why.** The fixed instructions sit where the provider puts the cache marker anyway, and the SDK warns against putting them inside the messages. Shrinking the photo when it is picked avoids re-encoding it on the app's main thread and any risk of the photo turning the wrong way.
+
+**What else was considered.** A first system entry in `messages`. Dropping `totals` from the schema. A 200 with a not-food flag in the body. A `package:image` guard in the upload service.
+
+**What it touches.** describe-meal, analyze-meal-photo, `_shared/meal_analysis/{prompt,finalize,schema}.ts`, `meal_ai_service.dart`, `meal_photo_capture.dart`, the log-meal, edit-meal, photo-capture and Vana pickers, content key `meal_planning.analysis_not_food`.
+
+**Details.** Precisely:
 1. The fixed instructions go in the SDK's system slot with a one-hour cache marker; the athlete's text or photo is the only user message. Two different meals send byte-identical instructions.
 2. The model is asked not to compute totals. Its `totals` field stays optional and is ignored; the function sums the items.
 3. Not food is a code, `not_food`, at the same 422 status the functions already used, never prose from the server. The app's one line comes from the content system and shows as a warning, not an error. An older installed build shows its own line.
@@ -2156,15 +2232,10 @@ Last extracted: 1dedc493
 5. Photos are capped at 1,000 px on both axes at the picker, one shared constant, so portrait and landscape cost the same. The two Vana pickers (attach sheet, fridge photo) had the same width-only cap and got the same fix.
 6. Both models stay Sonnet.
 
-**Why.** The system slot is where the provider puts the cache breakpoint anyway, and the SDK warns against system text inside messages. Resizing at the picker avoids re-encoding bytes on the main isolate and any EXIF-orientation regression.
-
-**What else was considered.** A first system entry in `messages`. Dropping `totals` from the schema. A 200 with a not-food flag in the body. A `package:image` guard in the upload service.
-
-**What it touches.** describe-meal, analyze-meal-photo, `_shared/meal_analysis/{prompt,finalize,schema}.ts`, `meal_ai_service.dart`, `meal_photo_capture.dart`, the log-meal, edit-meal, photo-capture and Vana pickers, content key `meal_planning.analysis_not_food`.
-
-**Details.** Dev, Sonnet 4.6, one synthetic scene: landscape 1000×750 = 2,368 input tokens, portrait 750×1000 = 2,368 (0% apart); the old width-only cap sent portrait at 1000×1333 = 2,960, 25% more. Both functions answered 422 `not_food` live.
+Dev, Sonnet 4.6, one synthetic scene: landscape 1000×750 = 2,368 input tokens, portrait 750×1000 = 2,368 (0% apart); the old width-only cap sent portrait at 1000×1333 = 2,960, 25% more. Both functions answered 422 `not_food` live.
 
 > 2026-09-22 proposed from wave 3 of ai-cost
+> 2026-09-22 rewritten in plain words (question, decision, why, details)
 
 ## mp-526 · Does a photo that is not food draw the athlete's budget?
 - category: Cutting costs
@@ -2331,6 +2402,7 @@ Last extracted: 1dedc493
 - status: proposed
 - image: docs/ssot/decisions/images/mealplanning/vana-chat.png
 - caption:
+- svg2: docs/ssot/decisions/images/mealplanning/mp-546-2.svg
 - screen: Vana chat
 - source: wave ai-cost 4 ticket 06
 
@@ -2338,7 +2410,7 @@ Last extracted: 1dedc493
 
 **Question.** When Vana hands the athlete off to a screen, where does its one sentence go?
 
-**Decision.** Vana writes its one sentence, then calls the hand-off, and the turn ends there. Nothing is said after the call.
+**Decision.** Before the hand-off, which here means the button Vana shows that opens one of the app's own screens. Vana writes its one sentence, then calls the hand-off, and the turn ends there; nothing is said after the call. Example: an athlete asks for next week's meals; Vana writes one sentence and shows the button to the meal-planning screen, and the reply takes one model step instead of the two a hand-off used to take.
 
 **Why.** The call ends the turn; a sentence after it would never be written, and a second step to write it is what the ticket removes.
 
@@ -2346,14 +2418,20 @@ Last extracted: 1dedc493
 
 **What it touches.** Vana chat, the persona and the handOff tool description on the server.
 
+**Details.** Precisely:
+1. Vana writes its one sentence, then calls the hand-off, and the turn ends there.
+2. Nothing is said after the call.
+
 > 2026-09-22 proposed in wave 4 ticket 06
 > 2026-09-22 picture captured at 1.27.0+3, b7682f1b
+> 2026-09-22 rewritten in plain words (question, decision, details)
 
 ## mp-547 · A complaint that asks a question still gets an answer
 - category: Vana's voice and openers
 - status: proposed
 - image: docs/ssot/decisions/images/mealplanning/vana-chat.png
 - caption:
+- svg2: docs/ssot/decisions/images/mealplanning/mp-547-2.svg
 - screen: Vana chat
 - source: wave ai-cost 4 ticket 06
 
@@ -2361,7 +2439,7 @@ Last extracted: 1dedc493
 
 **Question.** When the athlete's message is both a complaint and a question, does Vana answer?
 
-**Decision.** The turn ends on saved feedback only when the feedback was the silent kind. A complaint with a question in it keeps the step that answers it.
+**Decision.** Yes. Saving feedback ends Vana's turn only when the feedback was the silent kind, a plain complaint. A complaint with a question in it keeps the step in which Vana answers. Example: an athlete writes "that curry was too spicy"; Vana saves it and the turn ends. Another writes "that curry was too spicy, is there a milder one?"; Vana saves it and then answers the question.
 
 **Why.** The spec ends the turn when Vana "saves feedback silently"; a question left unanswered would read as Vana ignoring the athlete.
 
@@ -2369,8 +2447,13 @@ Last extracted: 1dedc493
 
 **What it touches.** Vana chat, the stop rule in the chat module.
 
+**Details.** Precisely:
+1. The turn ends on saved feedback only when the feedback was the silent kind.
+2. A complaint with a question in it keeps the step that answers it.
+
 > 2026-09-22 proposed in wave 4 ticket 06
 > 2026-09-22 picture captured at 1.27.0+3, b7682f1b
+> 2026-09-22 rewritten in plain words (question, decision, details)
 
 ## mp-548 · Which token figure marks the picker win: per call or per step?
 - category: Cutting costs
@@ -2398,18 +2481,15 @@ Last extracted: 1dedc493
 - image: none
 - caption:
 - svg: docs/ssot/decisions/images/mealplanning/mp-549.svg
+- svg2: docs/ssot/decisions/images/mealplanning/mp-549-2.svg
 - screen: none (algorithm/data)
 - source: wave ai-cost 4 ticket 09
 
-**Context.** The wallet now holds whole micro-dollars. A call reserves an estimate for its kind before the model runs, in the one statement that also reads the balance under the wallet's row lock; when it finishes the reservation becomes the real cost. mp-436 says a call that starts inside the budget finishes, and that the app is never sent dollars. Four rules at the edges were not written down.
+**Context.** The wallet now counts in millionths of a dollar. Before the model runs, a call sets aside an estimate for its kind, in the same step that reads the balance, so two calls cannot both spend the last of it; when the call finishes, the amount set aside becomes the real cost. mp-436 says a call that starts inside the budget finishes, and that the app is never sent dollars. Four rules at the edges were not written down.
 
 **Question.** At the edges of the budget, what does a call take and what does it give back?
 
-**Decision.** 
-1. Only an empty wallet refuses a call. A call whose estimate is more than what is left takes what is left and runs; the next call gets the top-up sheet.
-2. A call that costs more than it reserved takes the difference, and the wallet stops at zero. The shortfall is absorbed: it is never carried into next month and never taken from a later pack.
-3. What comes back from a call that cost less than it reserved goes to the bought budget first; the monthly budget gets its share back only while the same month's window is still open.
-4. A call that ran but reported no usage is charged its estimate, never nothing.
+**Decision.** Only an empty wallet refuses a call: a call whose estimate is more than what is left takes what is left and runs, and the next call gets the top-up sheet. A call that costs more than it set aside takes the difference and the wallet stops at zero; the shortfall is absorbed, never carried into next month and never taken from a later pack. When a call costs less than it set aside, the change goes to the bought budget first, and the monthly budget gets its share back only while the same month is still open. A call that ran but reported no usage is charged its estimate, never nothing. Example: an athlete with 2 cents left sends a planning message that costs about 3.2 cents; it runs to the end, the wallet stops at zero, the missing 1.2 cents is never taken from a pack they buy later, and their next message opens the top-up sheet.
 
 **Why.** Clause 1 is mp-436 clause 1 applied at the reservation; the first build refused on the estimate, the alternative mp-436 rejected, and the review corrected it. Clauses 2 and 3 keep the monthly budget spent first (mp-430 clause 5) in both directions. Clause 4 stops an unpriced call from being free.
 
@@ -2417,32 +2497,48 @@ Last extracted: 1dedc493
 
 **What it touches.** The wallet SQL (reserve, settle, the hourly release of what nothing settled), every debiting function.
 
-**Details.** Estimates per kind are one setting each on the server. Real cost is the gateway's own charge, else the logged tokens priced from one table; a cache write is priced at the one-hour rate when the SDK does not say which it was. A reservation nothing settled within two hours is given back in full.
+**Details.** Precisely:
+1. Only an empty wallet refuses a call. A call whose estimate is more than what is left takes what is left and runs; the next call gets the top-up sheet.
+2. A call that costs more than it reserved takes the difference, and the wallet stops at zero. The shortfall is absorbed: it is never carried into next month and never taken from a later pack.
+3. What comes back from a call that cost less than it reserved goes to the bought budget first; the monthly budget gets its share back only while the same month's window is still open.
+4. A call that ran but reported no usage is charged its estimate, never nothing.
+
+Estimates per kind are one setting each on the server. Real cost is the gateway's own charge, else the logged tokens priced from one table; a cache write is priced at the one-hour rate when the SDK does not say which it was. A reservation nothing settled within two hours is given back in full.
 
 > 2026-09-22 proposed in wave 4 ticket 09
+> 2026-09-22 rewritten in plain words (question, context, decision, details)
 
 ## mp-550 · When the wallet cannot answer, Vana is unavailable, not out of budget
 - category: Cutting costs
 - status: proposed
 - image: docs/ssot/decisions/images/mealplanning/vana-chat.png
 - caption:
+- svg2: docs/ssot/decisions/images/mealplanning/mp-550-2.svg
 - screen: Vana chat
 - source: wave ai-cost 4 ticket 09
 
-**Context.** Every debiting call asks the database for a reservation before the model runs. The old code let the call through when that ask failed. mp-437 says a fault of ours shows "Vana is unavailable right now", never the top-up sheet.
+**Context.** Before any AI call that draws on the wallet, the server asks the database to set that call's cost aside (a reservation) before the model runs. The old code let the call through when that ask failed. mp-437 says a fault of ours shows "Vana is unavailable right now", never the top-up sheet.
 
 **Question.** What does the athlete see when the wallet itself cannot be read?
 
-**Decision.** A database error at the reservation refuses the call as "Vana is unavailable right now". The top-up sheet never shows for a fault of ours, and no call runs unmetered.
+**Decision.** When the database cannot answer that ask, the call is refused with "Vana is unavailable right now". The top-up sheet never shows for a fault of ours, because the athlete's budget is not what failed, and no call ever runs without being counted against the wallet. Example: on 20 October the database errors just as Lee sends Vana a message. He sees "Vana is unavailable right now", no top-up sheet opens, and the model never runs.
 
-**Why.** Letting the call through would run the model for free and hide the fault; blaming the athlete's budget would be wrong.
+**Why.** Letting the call through would run the model for free and hide the fault. Showing the top-up sheet would blame the athlete's budget for our fault.
 
 **What else was considered.** Failing open, as before (rejected: unmetered calls); the 402 top-up response (rejected: it blames the wallet).
 
 **What it touches.** Vana chat, the described meal, the meal photo, the pantry photo, the openers; the shared credits module.
 
+**Details.** Precisely:
+1. A database error at the reservation refuses the call as "Vana is unavailable right now".
+2. The top-up sheet never shows for a fault of ours.
+3. No call runs unmetered.
+
+It covers every call that draws on the wallet: Vana chat, the described meal, the meal photo, the pantry photo and the openers, through the shared credits module.
+
 > 2026-09-22 proposed in wave 4 ticket 09
 > 2026-09-22 picture captured at 1.27.0+3, b7682f1b
+> 2026-09-22 rewritten in plain words (context, decision, why, details)
 
 ## mp-551 · Bought extra is a share of a month, and no month means no share
 - category: Cutting costs
@@ -2450,25 +2546,31 @@ Last extracted: 1dedc493
 - image: none
 - caption:
 - svg: docs/ssot/decisions/images/mealplanning/mp-551.svg
+- svg2: docs/ssot/decisions/images/mealplanning/mp-551-2.svg
 - screen: none (server response, drawn by ticket 10)
 - source: wave ai-cost 4 ticket 09
 
-**Context.** mp-436 clause 3 sends the app a share of the month used, a refill date and any bought extra, never a dollar figure. The unit of "bought extra" and the answer for an account with no open month were not fixed. The Vana settings bar (ticket 10) reads this answer.
+**Context.** mp-436 clause 3 sends the app the share of the month used, the refill date and any bought extra, never a dollar figure. It did not fix what unit bought extra is sent in, or what an account with no open month gets. The usage bar in Vana settings (ticket 10) reads this answer.
 
 **Question.** In what unit is bought extra sent, and what does an account with no open month get?
 
-**Decision.** 
-1. Bought extra is sent as a share of one month's budget: the $4.99 pack is a quarter, the $19.99 pack a month and a quarter.
-2. An account with no open month (a lapsed subscription, the free grant after the paywall opens) gets no share and no refill date, so the bar has nothing to draw, rather than reading as a full month used.
-3. The refill date is also sent under the name today's sheet already reads, so the sheet's renewal line keeps working until ticket 10.
+**Decision.** Bought extra is sent as a share of one month's budget, the same unit as everything else the athlete sees: the $4.99 pack is a quarter of a month, the $19.99 pack a month and a quarter. An account with no open month, such as a lapsed subscription or an account on the old free credits once the paywall opens, is sent no share and no refill date, so the usage bar draws nothing instead of reading as a full month used. The refill date is also sent under the name the top-up sheet reads today, so its renewal line keeps working until ticket 10. Example: an athlete who bought one $4.99 pack is sent 0.25 of a month extra; after the subscription lapses, Vana settings shows no share and no date.
 
-**Why.** One unit for everything the athlete sees keeps dollars out of the app; a lapsed account showing a full bar with no date was found on the dev check and is wrong.
+**Why.** One unit for everything the athlete sees keeps dollars out of the app. A lapsed account showing a full bar with no date was found on the dev check, and it is wrong.
 
 **What else was considered.** Sending bought extra in credits (rejected, credits are gone); a full bar for a closed month (rejected, misleading).
 
 **What it touches.** The 402 body, the credits endpoint, the Vana settings bar (ticket 10).
 
+**Details.** Precisely:
+1. Bought extra is sent as a share of one month's budget: the $4.99 pack is a quarter, the $19.99 pack a month and a quarter.
+2. An account with no open month (a lapsed subscription, the free grant after the paywall opens) gets no share and no refill date, so the bar has nothing to draw, rather than reading as a full month used.
+3. The refill date is also sent under the name today's sheet already reads, so the sheet's renewal line keeps working until ticket 10.
+
+It touches the 402 body, the credits endpoint and the Vana settings bar (ticket 10).
+
 > 2026-09-22 proposed in wave 4 ticket 09
+> 2026-09-22 rewritten in plain words (question, context, decision, why, details)
 
 ## mp-552 · Does a sandbox purchase on production grant a real budget?
 - category: Cutting costs
@@ -2893,24 +2995,31 @@ The widget is `kyle_design/buttons/overflow_menu_button.dart`, spec PROPOSED, aw
 - image: none
 - caption:
 - svg: docs/ssot/decisions/images/mealplanning/mp-568.svg
+- svg2: docs/ssot/decisions/images/mealplanning/mp-568-2.svg
 - screen: none (the Vana server)
 - source: wave ai-cost 5 ticket 07
 
-**Context.** A cache read only pays when a turn's prompt begins with exactly the bytes the last turn sent. Until this wave two things were left out of the stored transcript: the line saying which screen the athlete was on, and the hidden instruction that made the opener speak first. Each new turn therefore missed the cache the last one had written.
+**Context.** Anthropic reads the start of a prompt from the prompt cache, at a fraction of the price, only when a turn's prompt begins with exactly the bytes the last turn sent. Until this wave two things were left out of the stored transcript: the line saying which screen the athlete was on, and the hidden instruction that made the opener speak first. So each new turn missed the cache the last one had written.
 
 **Question.** Where do the screen line and the opener's hidden instruction live between turns?
 
-**Decision.** They are saved with the conversation and put back on every turn exactly as first sent. The screen line stays with the athlete's message it came in on; the opener's instruction stays with the opener's own reply. The summary that shortens a long chat skips both, so an instruction never leaks into what Vana remembers. Example: Lee opens Vana from the Plan tab on Sept 22, and turn one carries "screen: Plan tab". On Sept 23 turn two sends turn one unchanged and adds its own screen line, so the 16,000 tokens before it are read from the cache instead of written again.
+**Decision.** Both are saved with the conversation and sent again on every turn exactly as they were first sent. The screen line stays with the athlete's message it came in on; the opener's instruction stays with the opener's own reply. The summary that shortens a long chat skips both, so an instruction never leaks into what Vana remembers. Example: Lee opens Vana from the Plan tab on Sept 22, and turn one carries "screen: Plan tab". On Sept 23 turn two sends turn one unchanged and adds its own screen line, so the 16,000 tokens before it are read from the prompt cache instead of written again.
 
-**Why.** Without a byte-identical replay the cache is written every turn and read never.
+**Why.** Unless each turn resends the last one byte for byte, the prompt cache is written every turn and never read.
 
 **What else was considered.** A hidden athlete message (the app would show it); a column on the conversation (loses its place for an opener mid-thread).
 
 **What it touches.** The Vana server (chat, opener, summariser) and stored transcripts. Nothing on screen.
 
-**Details.** The screen line is `metadata.situation` on the athlete's row, replayed as a second text part; the opener's instruction is `metadata.opener_prompt` on the opener's assistant row. `transcriptFromMessages` skips ids with the `opener:` prefix and text parts starting with the situation mark. Two tests replay an opener turn and an athlete turn and assert the sent prefix is equal.
+**Details.** Precisely:
+1. The screen line and the opener's hidden instruction are saved with the conversation and put back on every turn exactly as first sent.
+2. The screen line stays with the athlete's message it came in on; the opener's instruction stays with the opener's own reply.
+3. The summary that shortens a long chat skips both, so an instruction never leaks into what Vana remembers.
+
+The screen line is `metadata.situation` on the athlete's row, replayed as a second text part; the opener's instruction is `metadata.opener_prompt` on the opener's assistant row. `transcriptFromMessages` skips ids with the `opener:` prefix and text parts starting with the situation mark. Two tests replay an opener turn and an athlete turn and assert the sent prefix is equal.
 
 > 2026-09-22 proposed in wave 5 ticket 07
+> 2026-09-22 rewritten in plain words (context, decision, why, details)
 
 ## mp-569 · Vana's calls go to Anthropic only
 - category: Cutting costs
@@ -2918,24 +3027,30 @@ The widget is `kyle_design/buttons/overflow_menu_button.dart`, spec PROPOSED, aw
 - image: none
 - caption:
 - svg: docs/ssot/decisions/images/mealplanning/mp-569.svg
+- svg2: docs/ssot/decisions/images/mealplanning/mp-569-2.svg
 - screen: none (the Vana server)
 - source: wave ai-cost 5 ticket 07
 
-**Context.** The gateway can send a Claude call to Anthropic, Bedrock or Vertex. Each keeps its own cache, so a call that lands somewhere new starts cold and pays full price. Ticket 07 asked for calls pinned to Anthropic with a session id per conversation.
+**Context.** Our AI calls go through a gateway, a service that can send a Claude call to Anthropic, Bedrock or Vertex. Each keeps its own prompt cache, so a call that lands somewhere new starts cold and pays full price. Ticket 07 asked for calls pinned to Anthropic with a session id per conversation.
 
-**Question.** What happens when Anthropic is down?
+**Question.** Where do Vana's calls go, and what happens when Anthropic is down?
 
-**Decision.** Every Vana call goes to Anthropic and nowhere else. When Anthropic is down, Vana says it is unavailable right now, the same line as any other refusal, instead of answering from a cold cache somewhere else. Example: an Anthropic outage at 7pm on Oct 3. Lee taps send, sees "Vana is unavailable right now", and nothing is charged.
+**Decision.** Every Vana call goes to Anthropic and nowhere else. When Anthropic is down, Vana says it is unavailable right now, the same line as any other refusal, instead of answering from a cold cache at another provider. Example: Anthropic has an outage at 7pm on Oct 3. Lee taps send, sees "Vana is unavailable right now", and nothing is charged.
 
-**Why.** One provider is one cache. A fallback would make the cheap turn the exception.
+**Why.** One provider means one prompt cache. With a fallback, the cheap turn would become the exception.
 
 **What else was considered.** Keeping Bedrock and Vertex as fallbacks: every fallback turn would be a cold one at full price.
 
 **What it touches.** The Vana server; the unavailable line in Vana chat.
 
-**Details.** `gateway.only: ['anthropic']`; `x-session-affinity` carries the conversation id. The gateway does not echo the session header, so its effect could not be checked from outside; the pin is what the cache rests on.
+**Details.** Precisely:
+1. Every Vana call goes to Anthropic and nowhere else.
+2. When Anthropic is down, Vana says it is unavailable right now, the same line as any other refusal, instead of answering from a cold cache somewhere else.
+
+`gateway.only: ['anthropic']`; `x-session-affinity` carries the conversation id. The gateway does not echo the session header, so its effect could not be checked from outside; the pin is what the cache rests on.
 
 > 2026-09-22 proposed in wave 5 ticket 07
+> 2026-09-22 rewritten in plain words (question, context, decision, why, details)
 
 ## mp-570 · The shared start of every Vana prompt is kept warm for an hour
 - category: Cutting costs
@@ -2943,87 +3058,108 @@ The widget is `kyle_design/buttons/overflow_menu_button.dart`, spec PROPOSED, aw
 - image: none
 - caption:
 - svg: docs/ssot/decisions/images/mealplanning/mp-570.svg
+- svg2: docs/ssot/decisions/images/mealplanning/mp-570-2.svg
 - screen: none (the Vana server)
 - source: wave ai-cost 5 ticket 07
 
-**Context.** Anthropic keeps a cached prompt for five minutes unless asked for an hour, which costs twice as much to write once. The start of a planning turn (tools, persona, the athlete's context) is about 16,000 tokens and the same for every turn of a conversation. Ticket 07 asked for the hour if the setting survived the gateway.
+**Context.** Anthropic keeps a prompt in the prompt cache for five minutes unless asked for an hour, and the hour costs twice as much to write the first time. The start of a planning turn (the tools, Vana's persona, the athlete's context) is about 16,000 tokens and the same for every turn of a conversation. Ticket 07 asked for the hour if the gateway, the service our AI calls pass through, kept the setting.
 
-**Question.** Five minutes or an hour?
+**Question.** How long is the start of a Vana prompt kept in the prompt cache?
 
-**Decision.** An hour. The gateway passes the setting through, so an athlete who comes back to Vana forty minutes later still reads the start of the prompt from the cache. Measured on dev with ten planning turns in one conversation: 85% of the input read from the cache, against 43% before this wave, at about 0.8 cents a turn. Example: Lee's first turn on Sept 22 costs 3.2 cents, the hour's write; the nine turns after it cost 0.2 to 0.5 cents each.
+**Decision.** An hour. The gateway passes the setting through, so an athlete who comes back to Vana forty minutes later still reads the start of the prompt from the cache. Measured on dev with ten planning turns in one conversation, 85% of the input was read from the cache, against 43% before this wave, at about 0.8 cents a turn. Example: Lee's first turn on Sept 22 costs 3.2 cents, the hour's write; the nine turns after it cost 0.2 to 0.5 cents each.
 
-**Why.** A conversation is rarely ten turns inside five minutes; the hour is where the reads come from.
+**Why.** A conversation rarely fits ten turns inside five minutes; the savings come from the hour.
 
 **What else was considered.** Five minutes: a cheaper first turn, cold again after a pause.
 
 **What it touches.** The Vana server. Nothing on screen.
 
-**Details.** Read share 85.2% over ten turns, 93.9% over the nine follow-ups; the turns right after a context rebuild read 85.7, 83.2 and 79.2%. $0.0077 a turn on average; the cold turn $0.032 with the hour against $0.022 with five minutes. Measured against the gateway directly with a synthetic athlete, not on the deployed dev function. Raw runs in `.scratch/ai-cost/probe/`.
+**Details.** Precisely:
+1. The start of every Vana prompt is kept in the cache for an hour, not five minutes.
+2. The gateway passes the setting through.
+
+Read share 85.2% over ten turns, 93.9% over the nine follow-ups; the turns right after a context rebuild read 85.7, 83.2 and 79.2%. $0.0077 a turn on average; the cold turn $0.032 with the hour against $0.022 with five minutes. Measured against the gateway directly with a synthetic athlete, not on the deployed dev function. Raw runs in `.scratch/ai-cost/probe/`.
 
 > 2026-09-22 proposed in wave 5 ticket 07
+> 2026-09-22 rewritten in plain words (question, context, decision, why, details)
 
 ## mp-571 · The phone works out the share of the month from the wallet row
 - category: Cutting costs
 - status: proposed
 - image: none
 - caption:
+- svg2: docs/ssot/decisions/images/mealplanning/mp-571-2.svg
 - screen: Vana settings
 - source: wave ai-cost 5 ticket 10
 - linked: mp-576
 
-**Context.** When the app asks the server to check the wallet, the server answers with the share of the month used, the refill date and any bought extra. But the wallet row reaches the phone two other ways as well: a plain read when the app opens, and a live push when the row changes. Both carry the raw balance in micro-dollars and none of the three shares.
+**Context.** When the app asks the server to check the wallet, the server answers with the share of the month used, the refill date and any bought extra. But the wallet row reaches the phone two other ways as well: a plain read when the app opens, and a push over the live connection when the row changes. Both carry the raw balance in micro-dollars (millionths of a dollar) and none of the three shares.
 
 **Question.** Who turns the wallet row into what the athlete sees?
 
-**Decision.** The phone does, with the same arithmetic as the server, so the bar reads the same whichever way the row arrived. The screen never shows a dollar figure. Example: Lee's row on Sept 22 says balance $3.00, monthly grant $4.00, $2.00 of the grant left. The bar says 50% used, refills Oct 15, plus 25% of a month bought.
+**Decision.** The phone does, with the same arithmetic as the server, so the usage bar reads the same whichever of the three ways the row arrived. The screen never shows a dollar figure. Example: Lee's row on Sept 22 says balance $3.00, monthly grant $4.00, $2.00 of the grant left. The bar says 50% used, refills Oct 15, plus 25% of a month bought.
 
-**Why.** Three doors and one formula is the only way the bar cannot disagree with itself in the middle of a session.
+**Why.** The row comes in three ways and one formula reads it, so the bar cannot disagree with itself in the middle of a session.
 
 **What else was considered.** Carrying the server's three fields on the wallet and ignoring the other two doors; the bar would go stale after a live push.
 
 **What it touches.** Vana settings, the top-up sheet, the budget pill; `lib/features/ai_credits/domain/budget_share.dart`.
 
-**Details.** Mirrors `budgetStatus` in `allowance.ts`, with the unit test copying that file's cases. Bought extra is a share of `kMonthlyBudgetMicros` (4,000,000, a mirror of the server's default); the share used reads the grant the row carries, so a trial week reads right. The raw row still reaches the phone: mp-576.
+**Details.** Precisely:
+1. The phone turns the wallet row into the share used, the refill date and bought extra, with the same arithmetic as the server, so the bar reads the same whichever way the row arrived (the server's check, the plain read, the live push).
+2. The screen never shows a dollar figure.
+
+Mirrors `budgetStatus` in `allowance.ts`, with the unit test copying that file's cases. Bought extra is a share of `kMonthlyBudgetMicros` (4,000,000, a mirror of the server's default); the share used reads the grant the row carries, so a trial week reads right. The raw row still reaches the phone: mp-576. Touches Vana settings, the top-up sheet, the budget pill; `lib/features/ai_credits/domain/budget_share.dart`.
 
 > 2026-09-22 proposed in wave 5 ticket 10
+> 2026-09-22 rewritten in plain words (context, decision, why, details)
 
-## mp-572 · Price tags are gone, and the pill shows what is left as a percent
+## mp-572 · Price tags are gone, and the budget pill shows what is left as a percent
 - category: Cutting costs
 - status: proposed
 - image: none
 - caption:
+- svg2: docs/ssot/decisions/images/mealplanning/mp-572-2.svg
 - screen: Describe meal and Log meal
 - source: wave ai-cost 5 ticket 10
 
-**Context.** Beside Describe, Analyze and the photo pickers sat a small tag saying what the tap would cost, and the pill in the corner showed the wallet's balance. Since ticket 09 nothing counts turns or actions (mp-430 clause 1): a call costs what it costs, so the tags were a made-up price, and the balance is now in micro-dollars.
+**Context.** Beside Describe, Analyze and the photo pickers sat a small tag saying what the tap would cost, and the budget pill in the corner of the screen showed the wallet's balance. Since ticket 09 nothing counts turns or actions (mp-430 clause 1): a call costs what it costs, so the tags showed a made-up price, and the balance is now kept in micro-dollars (millionths of a dollar).
 
-**Question.** What do the tags and the pill say now?
+**Question.** What do the price tags and the budget pill say now?
 
-**Decision.** The tags say nothing: they draw nothing, and the buttons stay where they were. The pill shows how much of a month is left as a percentage, the rest of this month plus anything bought, and reads the wallet the app already holds without opening the live connection. The old buy-credits screen, still reachable by its route, speaks in the same shares. Example: Lee with half the month left and a quarter-month pack bought sees "75%" in the pill and no tag beside Analyze.
+**Decision.** The tags say nothing: they draw nothing, and the buttons stay where they were. The budget pill shows how much of a month is left as a percentage, the rest of this month plus anything bought. It reads the wallet the app already holds and does not open the live connection. The old buy-credits screen, still reachable by its route, speaks in the same shares. Example: Lee with half the month left and a quarter-month pack bought sees "75%" in the pill and no tag beside Analyze.
 
-**Why.** A tag can only lie when a turn has no fixed price, and a percentage is the one number the athlete may see.
+**Why.** A turn has no fixed price, so a tag could only be wrong. A percentage is the one number the athlete may see.
 
 **What else was considered.** Removing the tag widgets and their call sites: a bigger diff for the same screen.
 
 **What it touches.** Describe meal, Log meal, the legacy buy-credits screen.
 
-**Details.** `TokenCostTag` and `TokenCostChip` render `SizedBox.shrink()`; the pill shows `percentOf(shareLeft.clamp(0, 9.99))`.
+**Details.** Precisely:
+1. The tags draw nothing, and the buttons stay where they were.
+2. The pill shows how much of a month is left as a percentage: the rest of this month plus anything bought.
+3. The pill reads the wallet the app already holds, without opening the live connection.
+4. The old buy-credits screen, still reachable by its route, speaks in the same shares.
+
+`TokenCostTag` and `TokenCostChip` render `SizedBox.shrink()`; the pill shows `percentOf(shareLeft.clamp(0, 9.99))`. Touches Describe meal, Log meal and the legacy buy-credits screen.
 
 > 2026-09-22 proposed in wave 5 ticket 10
+> 2026-09-22 rewritten in plain words (question, context, decision, why, details)
 
 ## mp-573 · A cent left is not spent
 - category: Cutting costs
 - status: proposed
 - image: none
 - caption:
+- svg2: docs/ssot/decisions/images/mealplanning/mp-573-2.svg
 - screen: Vana settings
 - source: wave ai-cost 5 ticket 10, review
 
-**Context.** The bar rounds to whole percent, so a wallet with two cents of a $4 month left reads "100% used". The server still accepts that wallet's next call: a call that starts inside the budget runs (mp-436 clause 1). The first build of ticket 10 read "spent" off the rounded share, so the card said the month was used up and offered the top-up sheet while Vana would still have answered.
+**Context.** The usage bar rounds to whole percent, so a wallet with two cents of a $4 month left reads "100% used". The server still accepts that wallet's next call: a call that starts inside the budget runs (mp-436 clause 1). The first build of ticket 10 decided "spent" from the rounded share, so the usage card in Vana settings said the month was used up and offered the top-up sheet while Vana would still have answered.
 
-**Question.** When does the card say the month is used up?
+**Question.** When does Vana settings say the month is used up?
 
-**Decision.** Only when the wallet's balance is really zero. The bar may say 100% used while the card still lets the athlete carry on; the top-up sheet comes on the first call the server refuses. Example: Lee has one cent left on Sept 22. The bar says 100% used, the card does not say the month is gone, his next message goes through, and the one after that gets the sheet.
+**Decision.** Only when the wallet's balance is really zero. The bar may say 100% used while the card still lets the athlete carry on; the top-up sheet comes on the first call the server refuses. Example: Lee has one cent left on Sept 22. The bar says 100% used, the card does not say the month is gone, his next message goes through, and the one after that gets the top-up sheet.
 
 **Why.** The screen must not refuse before the server does.
 
@@ -3031,23 +3167,30 @@ The widget is `kyle_design/buttons/overflow_menu_button.dart`, spec PROPOSED, aw
 
 **What it touches.** Vana settings, the top-up sheet.
 
-**Details.** `BudgetShare.isSpent` reads the raw balance (`balance <= 0`), never the rounded shares. Unit test: a cent left reads 100% used and is still not spent.
+**Details.** Precisely:
+1. The card says the month is used up only when the wallet's balance is really zero.
+2. The bar may say 100% used while the card still lets the athlete carry on.
+3. The top-up sheet comes on the first call the server refuses.
+
+`BudgetShare.isSpent` reads the raw balance (`balance <= 0`), never the rounded shares. Unit test: a cent left reads 100% used and is still not spent.
 
 > 2026-09-22 proposed in wave 5 ticket 10
+> 2026-09-22 rewritten in plain words (question, context, decision, details)
 
-## mp-574 · The line above the composer says the month is used
+## mp-574 · The line above the message box says the month is used
 - category: Cutting costs
 - status: proposed
 - image: none
 - caption:
+- svg2: docs/ssot/decisions/images/mealplanning/mp-574-2.svg
 - screen: Vana chat
 - source: wave ai-cost 5 ticket 10, review
 
-**Context.** When the server refuses a Vana message for an empty wallet, one line appears above the composer and send opens the top-up sheet (mp-282 clause 2). The line said "Out of tokens for now — top up to keep chatting", the old unit, next to a sheet now worded in months.
+**Context.** When the server refuses a Vana message because the wallet is empty, one line appears above the message box and send opens the top-up sheet (mp-282 clause 2). The line said "Out of tokens for now — top up to keep chatting", the old unit, next to a sheet now worded in months.
 
-**Question.** What does the line say?
+**Question.** What does the line above the message box say when the month is used?
 
-**Decision.** "You've used this month's Vana — top up to keep chatting". Example: Lee, at 100% on Sept 30, taps send. The line appears, the sheet opens, and nothing on screen says tokens or credits.
+**Decision.** It says "You've used this month's Vana — top up to keep chatting", so it speaks in months like the top-up sheet beside it. Example: Lee, at 100% on Sept 30, taps send. The line appears, the top-up sheet opens, and nothing on screen says tokens or credits.
 
 **Why.** Text that names credits changes with the unit (mp-430 clause 7).
 
@@ -3055,7 +3198,13 @@ The widget is `kyle_design/buttons/overflow_menu_button.dart`, spec PROPOSED, aw
 
 **What it touches.** Vana chat; `meal_planning.out_of_credits_strip` in the content system.
 
+**Details.** Precisely:
+1. The line reads "You've used this month's Vana — top up to keep chatting".
+
+The text is `meal_planning.out_of_credits_strip` in the content system.
+
 > 2026-09-22 proposed in wave 5 ticket 10
+> 2026-09-22 rewritten in plain words (question, context, decision, why, details)
 
 ## mp-575 · The wallet's live connection follows the budget screens
 - category: Cutting costs
@@ -3063,24 +3212,32 @@ The widget is `kyle_design/buttons/overflow_menu_button.dart`, spec PROPOSED, aw
 - detail: yes
 - image: none
 - caption:
+- svg2: docs/ssot/decisions/images/mealplanning/mp-575-2.svg
 - screen: Vana settings
 - source: wave ai-cost 5 ticket 10
 
-**Context.** The app used to keep a live connection to the wallet open for the whole session so the balance stayed fresh. mp-475 says it is open only while a budget screen is showing.
+**Context.** The app used to keep the live connection to the wallet open for the whole session so the balance stayed fresh. mp-475 says it is open only while a budget screen is showing.
 
 **Question.** How does the connection know a budget screen is showing?
 
-**Decision.** A budget screen holds the connection open by watching it. When the last such screen goes away the connection closes a moment later, and it never opens on a screen that shows no budget. A pushed row still lands in the one wallet the session keeps. Example: Lee opens Vana settings (the connection opens), backs out (it closes two seconds later), sends three Vana messages (no connection), opens the top-up sheet (it opens again).
+**Decision.** A budget screen holds the connection open while it is showing. When the last such screen goes away the connection closes a moment later, and it never opens on a screen that shows no budget. A row pushed while it is open still lands in the one wallet the session keeps. Example: Lee opens Vana settings (the connection opens), backs out (it closes two seconds later), sends three Vana messages (no connection), opens the top-up sheet (it opens again).
 
-**Why.** Riverpod's own reference counting is the mechanism, so there is no counter to get wrong.
+**Why.** Riverpod, the app's state framework, already counts which screens are watching the connection and closes it when none are, so there is no counter of our own to get wrong.
 
 **What else was considered.** A retain/release counter on the wallet controller.
 
 **What it touches.** `credits_controller.dart` (the channel out of `build`, `applyRemoteWallet` in), `wallet_channel.dart`.
 
-**Details.** `walletChannelProvider` is `autoDispose`. A widget test over a counting transport asserts one subscribe on show, one remove on hide, none without a card, and that a pushed row reaches the bar through the real controller.
+**Details.** Precisely:
+1. A budget screen holds the connection open by watching it.
+2. When the last such screen goes away, the connection closes a moment later.
+3. It never opens on a screen that shows no budget.
+4. A pushed row still lands in the one wallet the session keeps.
+
+`walletChannelProvider` is `autoDispose`. A widget test over a counting transport asserts one subscribe on show, one remove on hide, none without a card, and that a pushed row reaches the bar through the real controller. Touches `credits_controller.dart` (the channel out of `build`, `applyRemoteWallet` in) and `wallet_channel.dart`.
 
 > 2026-09-22 proposed in wave 5 ticket 10
+> 2026-09-22 rewritten in plain words (context, decision, why, details)
 
 ## mp-576 · Should the wallet row stop reaching the phone in dollars?
 - category: Cutting costs
@@ -3142,70 +3299,79 @@ The widget is `kyle_design/buttons/overflow_menu_button.dart`, spec PROPOSED, aw
 
 > 2026-09-22 opened in wave 5 ticket 10
 
-## mp-579 · What a lapsed account can still do
+## mp-579 · A lapsed account can sign out, buy and disconnect, but every edit to its own data opens the paywall
 - category: Pro and paywall
 - status: proposed
 - image: none
 - caption:
 - svg: docs/ssot/decisions/images/mealplanning/mp-579.svg
+- svg2: docs/ssot/decisions/images/mealplanning/mp-579-2.svg
 - screen: none (write controllers)
 - source: wave paywall 4 ticket 12
 - linked: mp-491
 
-**Context.** mp-457 says every write controller checks the write-access provider before writing. Ticket 12 added the check to 36 controllers (208 write paths). It had to decide which actions count as a write the paywall should stop and which are account housekeeping the paywall itself depends on.
+**Context.** mp-457 says every write controller (the code behind each save in the app) checks whether writes are allowed before writing. Ticket 12 added that check to 36 controllers, 208 write paths in all. It had to decide which actions count as a write the paywall should stop, and which are account housekeeping the paywall itself depends on.
 
 **Question.** Which actions does a lapsed account keep, and which open the paywall?
 
-**Decision.** 
-1. Open the paywall: every edit to the athlete's own data (activities, bricks, events, calendar, carb loading, nutrition plan and macros, meal logs and drafts, templates, the race checklist, profile and sweat profile), meal planning (plans, days, votes, notes, photos, the shopping list, Vana settings), AI calls, Kroger cart and connect, connecting or importing from a training app, a Garmin backfill the athlete taps, and every coach-mode write.
-2. Keep working: sign-in and sign-out, account deletion, buying and restoring, the credits sheet, startup, uploading rows already queued, plans the server sends down, onboarding, analytics consent, Vana's quiet and moment settings, emailing a plan as a PDF, Kroger search and hand-off, and the Garmin backfill the app starts once per session.
-3. Disconnecting a training app stays open, like sign-out: revoking a third party's access is the account's right. It hides or deletes that app's imported activities, as it does today.
+**Decision.** Every edit to the athlete's own data, edits to meal planning, every AI call, the Kroger cart and connect, connecting or importing from a training app, a Garmin backfill the athlete taps and every coach write open the paywall instead of running. What the paywall relies on keeps working (signing in and out, deleting the account, buying and restoring), and so does whatever is not the athlete editing, such as uploading rows already queued, plans the server sends down, or emailing a plan as a PDF. Disconnecting a training app also keeps working, like sign-out, because taking back a third party's access is the account's right. Example: an athlete whose Trial ended unpaid on 8 October opens the app on 9 October. Editing a meal log opens the paywall, while disconnecting Garmin still works and hides or deletes Garmin's imported activities as it does today.
 
-**Why.** The paywall offers Restore, Sign out and Delete account (mp-280), so what it relies on cannot be behind it; what the server sends is not the athlete editing.
+**Why.** The paywall offers Restore purchases, Sign out and Delete account (mp-280), so nothing it relies on can sit behind it. What the server sends down is not the athlete editing.
 
 **What else was considered.** Gating disconnect too (Kroger disconnect is gated); gating the plan email, which also saves the sender's name to the profile.
 
 **What it touches.** Every write controller, `subscription/application/write_guard.dart`.
 
-**Details.** One seam test per controller write path, through the real notifier, with every repository set to fail if touched (`lapsed_writes_seam_test.dart` in each feature). The wave review found two gaps, fixed before merge: carb-loading food selection was ungated, and the session's Garmin backfill opened the paywall when a lapsed athlete merely opened Connected Apps. Kroger disconnect is gated while training-app disconnect is not; say which way both should go.
+**Details.** Precisely:
+1. Open the paywall: every edit to the athlete's own data (activities, bricks, events, calendar, carb loading, nutrition plan and macros, meal logs and drafts, templates, the race checklist, profile and sweat profile), meal planning (plans, days, votes, notes, photos, the shopping list, Vana settings), AI calls, Kroger cart and connect, connecting or importing from a training app, a Garmin backfill the athlete taps, and every coach-mode write.
+2. Keep working: sign-in and sign-out, account deletion, buying and restoring, the credits sheet, startup, uploading rows already queued, plans the server sends down, onboarding, analytics consent, Vana's quiet and moment settings, emailing a plan as a PDF, Kroger search and hand-off, and the Garmin backfill the app starts once per session.
+3. Disconnecting a training app stays open, like sign-out: revoking a third party's access is the account's right. It hides or deletes that app's imported activities, as it does today.
+
+One seam test per controller write path, through the real notifier, with every repository set to fail if touched (`lapsed_writes_seam_test.dart` in each feature). The wave review found two gaps, fixed before merge: carb-loading food selection was ungated, and the session's Garmin backfill opened the paywall when a lapsed athlete merely opened Connected Apps. Kroger disconnect is gated while training-app disconnect is not; say which way both should go. Touches every write controller and `subscription/application/write_guard.dart`.
 
 > 2026-09-22 proposed in wave 4 ticket 12
+> 2026-09-22 rewritten in plain words (context, decision, why, details)
 
-## mp-580 · The Subscription screen's status line
+## mp-580 · The Subscription screen shows one status: ended, then trial, then founding, then active
 - category: Pro and paywall
 - status: proposed
 - image: test/features/subscription/presentation/goldens/subscription_active_light.png
 - caption: Subscription screen, active plan (golden, light)
+- svg2: docs/ssot/decisions/images/mealplanning/mp-580-2.svg
 - screen: Subscription screen
 - source: wave paywall 4 ticket 16
 - linked: mp-495
 
-**Context.** mp-495 lists four states (trial, active, founding, ended) but not which one shows when two apply, such as a trial on a founding product, or a cancelled plan that still runs.
+**Context.** mp-495 lists four statuses for the Subscription screen (trial, active, founding, ended) but not which one shows when two apply, such as a Trial on a founding product, or a cancelled plan that still runs.
 
 **Question.** Which status shows when more than one applies, and how is founding recognised?
 
-**Decision.** 
-1. Ended, then trial, then founding, then active: the first that applies is shown.
-2. A plan that will not renew shows "Ends on {date}. It won't renew." instead of "Renews on {date}."
-3. Founding means the product this customer bought is a founding product, not whatever the paywall offers today.
-4. The list of what Pro includes is the paywall's own list, each feature ticked and the AI features under one Vana line with Vana's avatar.
+**Decision.** When more than one status applies, the screen shows the first that applies in this order: ended, trial, founding, active. A plan that will not renew says when it ends instead of when it renews. Founding means the product this customer bought is a founding product, not whatever the paywall offers today, and the list of what Pro includes is the paywall's own list. Example: an athlete starts a Trial on a founding plan on 1 October and reads trial, ending October 8, 2026; once it converts they read founding; if they cancel, the line reads "Ends on {date}. It won't renew." in place of "Renews on {date}."
 
-**Why.** During a trial the end date is what the athlete needs; a founding price is a fact about what they bought, which today's offering cannot tell.
+**Why.** During a Trial the end date is what the athlete needs. A founding price is a fact about what they bought, which today's Offering cannot tell.
 
 **What else was considered.** Showing founding over trial; reading founding from the current offering; a separate copy of the feature list for Settings.
 
 **What it touches.** Subscription screen, the paywall's feature list (now shared), `subscription.*` content keys.
 
-**Details.** Founding is a product id containing `_founding` (`me_pro_*_founding` and the `_prod` ones). Dates read "September 29, 2026". Goldens light and dark for active and ended; trial and founding are widget-tested.
+**Details.** Precisely:
+1. Ended, then trial, then founding, then active: the first that applies is shown.
+2. A plan that will not renew shows "Ends on {date}. It won't renew." instead of "Renews on {date}."
+3. Founding means the product this customer bought is a founding product, not whatever the paywall offers today.
+4. The list of what Pro includes is the paywall's own list, each feature ticked and the AI features under one Vana line with Vana's avatar.
+
+Founding is a product id containing `_founding` (`me_pro_*_founding` and the `_prod` ones). Dates read "September 29, 2026". Goldens light and dark for active and ended; trial and founding are widget-tested. Touches the Subscription screen, the paywall's feature list (now shared) and the `subscription.*` content keys.
 
 > 2026-09-22 proposed in wave 4 ticket 16
 > 2026-09-22 picture reused from test/features/subscription/presentation/goldens/subscription_active_light.png
+> 2026-09-22 rewritten in plain words (context, decision, why, details)
 
 ## mp-581 · Subscription is the first row in Settings
 - category: Pro and paywall
 - status: proposed
 - image: none
 - caption:
+- svg2: docs/ssot/decisions/images/mealplanning/mp-581-2.svg
 - screen: Settings
 - source: wave paywall 4 ticket 16
 - linked: mp-495
@@ -3214,7 +3380,7 @@ The widget is `kyle_design/buttons/overflow_menu_button.dart`, spec PROPOSED, aw
 
 **Question.** Where in Settings does the Subscription row go?
 
-**Decision.** First row of Settings' quick-links card, crown icon, title and subtitle from the content system.
+**Decision.** The Subscription row is the first row of the quick-links card in Settings, with a crown icon, and its title and subtitle come from the content system. Example: on 10 October an athlete who wants to check their plan opens Settings, taps the top row of the quick-links card, and lands on the Subscription screen.
 
 **Why.** It is where an athlete looks first to check or cancel a plan.
 
@@ -3222,7 +3388,11 @@ The widget is `kyle_design/buttons/overflow_menu_button.dart`, spec PROPOSED, aw
 
 **What it touches.** Settings screen.
 
+**Details.** Precisely:
+1. First row of Settings' quick-links card, crown icon, title and subtitle from the content system.
+
 > 2026-09-22 proposed in wave 4 ticket 16
+> 2026-09-22 rewritten in plain words (decision, details)
 
 ## mp-582 · What does an admin with no plan see on the Subscription screen?
 - category: Pro and paywall

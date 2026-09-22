@@ -1,0 +1,905 @@
+{
+ "cards": {
+  "mp-197": {
+   "question": "How much of the MealBuddy design comes into the app?",
+   "context": "MealBuddy is a Figma concept file that explored a meal-planning assistant with a mascot, a cream and navy palette, coloured outlines on chips and bars and controls drawn the iOS way. The app already had the Kyle design system and a working prototype styled with it.",
+   "decision": "Only how MealBuddy behaves comes in, not how it looks: no mascot, no cream and navy colours, no coloured outlines on chips and no iOS-only chrome (bars and controls drawn only the iPhone way). Colours come only from the Kyle design system, and any new designed widget gets a written spec first and is then built once in the shared widget library. When MealBuddy and the Kyle-styled prototype look different, the prototype wins. Example: a MealBuddy frame shows a chip with a coloured outline on cream; the app draws that chip the way the prototype does, in Kyle colours.",
+   "why": "MealBuddy is a concept file, not a finished look to copy, and the app ships on iOS, Android and Web, so iOS-only chrome would not fit.",
+   "details": "Precisely:\n1. No mascot, no cream and navy palette, no coloured chip outlines, no iOS-only chrome.\n2. Kyle tokens are the only registry.\n3. New design-bearing widgets are built once in the shared library with a spec written first.\n4. When MealBuddy and the Kyle prototype disagree visually, the prototype wins.",
+   "diagram": {
+    "kind": "flow",
+    "title": "What comes in from MealBuddy",
+    "rows": [
+     [
+      {
+       "id": "mb",
+       "label": "MealBuddy concept file\n(Figma)",
+       "tone": "muted"
+      }
+     ],
+     [
+      {
+       "id": "keep",
+       "label": "Kept: how it behaves",
+       "tone": "ok"
+      },
+      {
+       "id": "drop",
+       "label": "Dropped: mascot, cream and navy,\ncoloured chip outlines,\niOS-only chrome",
+       "tone": "no"
+      }
+     ],
+     [
+      {
+       "id": "spec",
+       "label": "Spec written first, then built\nonce in the shared library,\nKyle tokens only",
+       "tone": "accent"
+      }
+     ]
+    ],
+    "edges": [
+     {
+      "from": "mb",
+      "to": "keep"
+     },
+     {
+      "from": "mb",
+      "to": "drop"
+     },
+     {
+      "from": "keep",
+      "to": "spec"
+     }
+    ],
+    "example": [
+     "If MealBuddy and the Kyle prototype look different,",
+     "the prototype wins."
+    ]
+   },
+   "slot": 2
+  },
+  "mp-259": {
+   "title": "The Vana sheet and the Launcher are specced and built once, and the tokens beat the export",
+   "question": "How do the Vana sheet and the Launcher join the design system?",
+   "context": "Any widget that carries the look of the app is built once, named after its written spec, and takes its colours and sizes from one set of tokens. The design export for the Vana sheet (the numbers handed over with the design) drew its own corner radius and its own dimming behind the sheet, called the scrim. The tab bar spec already kept a bottom-right slot free for an AI companion.",
+   "decision": "Each gets a written component spec drawn from the glass-surface and tab-bar tokens the app already has, and is built once in the shared widget library for the app shell (the frame of tab bar and screens) to use. Where the export's numbers differ from the tokens, the tokens win. The Launcher's mark is a speech-bubble outline, the first brand symbol on the shell, and it sits in the slot the tab bar kept free, with the scrim taken from the calendar sheet. Example: the export drew the sheet's corners at 26 and its scrim at 45 percent; the app uses the tokens, 24 and 60 percent, and the Launcher is 52 px.",
+   "why": "One set of tokens and one build of each widget, and because the Launcher uses the slot the tab bar spec already kept, that spec does not need approving again.",
+   "details": "Precisely:\n1. A component spec is written from the existing glass surface and tab-bar tokens. The widget is implemented once under that spec name in the shared library and the app shell composes it.\n2. Token values beat the export where they disagree.\n3. The launcher mark is a speech-bubble outline drawn as a path, the first branded glyph on the shell.\n4. The launcher takes the tab bar's reserved utility slot and inherits the old floating button's clearance rule. The scrim comes from the calendar sheet.\n\nRadius token 24 not the export's 26. Scrim token 60 percent not 45. Launcher 52 px.",
+   "diagram": {
+    "kind": "flow",
+    "title": "Where the sheet's numbers come from",
+    "rows": [
+     [
+      {
+       "id": "tok",
+       "label": "Existing tokens:\nradius 24 (glass, tab bar),\nscrim 60% (calendar sheet)",
+       "tone": "ok"
+      },
+      {
+       "id": "exp",
+       "label": "Design export:\nradius 26, scrim 45%",
+       "tone": "no"
+      }
+     ],
+     [
+      {
+       "id": "spec",
+       "label": "Component spec\nwritten first",
+       "tone": "accent"
+      }
+     ],
+     [
+      {
+       "id": "lib",
+       "label": "Built once in the\nshared library",
+       "tone": "ink"
+      },
+      {
+       "id": "shell",
+       "label": "App shell uses it",
+       "tone": "ink"
+      }
+     ]
+    ],
+    "edges": [
+     {
+      "from": "tok",
+      "to": "spec",
+      "label": "wins"
+     },
+     {
+      "from": "exp",
+      "to": "spec",
+      "label": "loses where it differs"
+     },
+     {
+      "from": "spec",
+      "to": "lib"
+     },
+     {
+      "from": "lib",
+      "to": "shell"
+     }
+    ],
+    "example": [
+     "Launcher: 52 px, speech-bubble outline,",
+     "in the tab bar's reserved slot."
+    ]
+   },
+   "slot": 2
+  },
+  "mp-260": {
+   "title": "The selector and servings stepper are custom, and each meal slot keeps the prototype's colour",
+   "question": "Which meal-planning widgets are custom, and how are slots and meal icons coloured?",
+   "context": "The shared segmented control (a row of options with one selected) shows the code names of its options, and the shared plus-minus control stretches full width. The prototype gave each meal type a fixed colour and always tinted meal icons electrolyte, one of the Kyle colours. A build agent later proposed ink-coloured icons on cards.",
+   "decision": "The Plan, Meals, Shopping selector and the servings stepper are built for this feature, not taken from the shared library. Each meal slot keeps the prototype's colour: breakfast orange, lunch electrolyte dark, dinner purple and snack dragonfruit (Kyle colour names). Meal icons on cards are ink-coloured in the current code, against the prototype's rule of electrolyte icons; Lee has not ruled on that yet and will look at it on a device. Example: on the Plan tab a breakfast tile's slot chip is orange and a dinner tile's is purple.",
+   "why": "Every label has to come from the app's content system, which the shared selector could not do, and the shared stepper did not fit.",
+   "details": "Precisely:\n1. The Plan, Meals, Shopping selector and the servings stepper are custom feature widgets.\n2. Breakfast is orange, lunch electrolyte dark, dinner purple and snack dragonfruit, as ported from the prototype.\n3. Meal icons on cards are ink-tinted in the current code, against the prototype's electrolyte rule. Lee has not ruled and is to see it on a device.",
+   "diagram": {
+    "kind": "flow",
+    "title": "Slot colours and meal icons",
+    "rows": [
+     [
+      {
+       "id": "b",
+       "label": "Breakfast:\norange",
+       "tone": "ink"
+      },
+      {
+       "id": "l",
+       "label": "Lunch:\nelectrolyte dark",
+       "tone": "ink"
+      }
+     ],
+     [
+      {
+       "id": "d",
+       "label": "Dinner:\npurple",
+       "tone": "ink"
+      },
+      {
+       "id": "s",
+       "label": "Snack:\ndragonfruit",
+       "tone": "ink"
+      }
+     ],
+     [
+      {
+       "id": "i",
+       "label": "Meal icons on cards: ink in the code,\nprototype said electrolyte.\nLee to see it on a device",
+       "tone": "pending"
+      }
+     ]
+    ],
+    "edges": [],
+    "example": [
+     "Custom widgets: the Plan, Meals, Shopping selector",
+     "and the servings stepper."
+    ]
+   },
+   "slot": 2
+  },
+  "mp-261": {
+   "title": "Planning parts land after Vana's words, and the macro pills show four numbers",
+   "question": "How do planning parts appear in the chat, and which macros do the pills show?",
+   "context": "Cards and controls that arrived while Vana was still writing jumped into place. The planning chat's top bar had a subtitle. Meal cards, plan tiles, the plan bar and the review sheet all show macro pills.",
+   "decision": "The parts Vana puts in a planning chat wait behind the typing dots until her words arrive, then grow and fade in one after another, and the plan bar fades and slides in. The planning chat's top bar reads only \"New meal plan\". Macros show by default as four pills, kcal, carbs, protein and fat, while the Meal picker's tiles show kcal only. Example: Vana writes her sentence about the week, then the plan parts appear one after another over 520 ms, each plan tile showing kcal, carbs, protein and fat.",
+   "details": "Precisely:\n1. Planning parts wait behind the typing dots until prose arrives, then grow and fade in with a soft stagger. The plan bar fades and slides in.\n2. The planning app bar reads \"New meal plan\" only.\n3. Macros are on by default and show kcal, carbs, protein and fat only. The picker carousel tile stays kcal-only.\n\nStagger over 520 ms.",
+   "diagram": {
+    "kind": "timeline",
+    "title": "How a planning reply arrives",
+    "steps": [
+     {
+      "at": "Typing",
+      "label": "Vana is writing. Parts wait\nbehind the typing dots",
+      "tone": "muted"
+     },
+     {
+      "at": "Words",
+      "label": "Her sentence arrives",
+      "tone": "ink"
+     },
+     {
+      "at": "0-520 ms",
+      "label": "Parts grow and fade in,\none after another",
+      "tone": "accent"
+     },
+     {
+      "at": "Then",
+      "label": "The plan bar fades and slides in",
+      "tone": "ok"
+     }
+    ],
+    "example": [
+     "Pills: kcal, carbs, protein, fat.",
+     "The Meal picker's tiles: kcal only."
+    ]
+   },
+   "slot": 2
+  },
+  "mp-262": {
+   "title": "Either Lee or Xuan settles a decision, and the record runs from any laptop",
+   "question": "Who approves decisions, where do they live, and who else can run the page?",
+   "context": "The QA repo is Xuan's. The app wrote three component specs it needed before Xuan could approve them. The TanStack prototype, in its own repo, is the living reference and the source of the test fixtures. The earlier reading was that only Xuan approved, and only in the QA repo.",
+   "decision": "Lee and Xuan both ratify, which means approve, specs and decisions, and one approval on the page from either of them settles it. The specs and this record stay in the app's own repo for now, and the QA repo is not touched. The page, its files and its tools work from any laptop, so another person can open it, see the same record and run the skills; the prototype stays in its own repo and none of its TypeScript is copied into the app. Example: Xuan opens the page on her own laptop and approves one of the three app-written component specs; it is settled, even if Lee has not looked yet.",
+   "why": "Lee on 2026-09-14: both ratify, keep things in docs/ssot for now, and Xuan must be able to run this from another laptop.",
+   "details": "Precisely:\n1. Lee and Xuan both ratify. A spec or decision is settled when either has approved it on the page.\n2. Specs and the decision record stay in the app repo under docs/ssot for now. The QA repo is not touched.\n3. The decisions page, its files and its tooling are portable. Another person on another laptop can open the page, see the same record, and run the skills. Nothing depends on one machine.\n4. The prototype stays in its own repo. No TypeScript is copied into the app. SQL migrations live in the app repo.",
+   "diagram": {
+    "kind": "timeline",
+    "title": "If only Xuan ratified, in the QA repo (rejected)",
+    "steps": [
+     {
+      "at": "14 Sep",
+      "label": "The app needs three component\nspecs before it can build",
+      "tone": "ink"
+     },
+     {
+      "at": "Next",
+      "label": "The specs must go into Xuan's QA repo\nand wait for her there",
+      "tone": "no"
+     },
+     {
+      "at": "Meanwhile",
+      "label": "Lee's approval on the page\nsettles nothing",
+      "tone": "no"
+     }
+    ]
+   },
+   "diagram2": {
+    "kind": "timeline",
+    "title": "What we decided: either one settles it, from any laptop",
+    "steps": [
+     {
+      "at": "14 Sep",
+      "label": "The app writes the three specs\nin its own repo; QA repo untouched",
+      "tone": "ink"
+     },
+     {
+      "at": "Later",
+      "label": "Xuan opens the page on her own\nlaptop and sees the same record",
+      "tone": "accent"
+     },
+     {
+      "at": "Later",
+      "label": "She approves a spec: settled,\nwhether or not Lee has looked",
+      "tone": "ok"
+     }
+    ]
+   }
+  },
+  "mp-252": {
+   "title": "Vana runs as three Supabase edge functions that speak the app's existing stream format",
+   "question": "Where does Vana's server code run, and how does the app talk to it?",
+   "context": "The prototype ran its server on Vercel. The app already reads a stream of JSON lines (the NDJSON envelope) from the old chat function, and the prototype's saved example files, the fixtures, define what each message looks like.",
+   "decision": "Vana runs as three Supabase edge functions, small server programs beside the database: chat, action and day notes; there is no Vercel service. They answer in the stream format the app already reads, with status lines added, the prototype speaks the same format, and the saved fixture files are the one truth for how a message is shaped, for both clients. The functions read the database as the athlete who called them, so the database's own row rules decide what they see; the all-access service key is kept only for call logs, pair refresh and macro fills. Example: when Lee sends Vana a message, the chat function reads as Lee and sees only Lee's rows, and writing the call log is one of the three jobs allowed the service key.",
+   "why": "One backend and one message format, and the database itself decides who may read what.",
+   "details": "Precisely:\n1. Vana runs as three Supabase edge functions: chat, action and day notes. There is no Vercel service.\n2. The wire is the existing NDJSON envelope extended with status lines. The prototype speaks the same transport.\n3. The wire shape is camelCase and the frozen fixture files are the truth for both clients.\n4. The functions read as the caller so row-level security filters. The service key is kept only for call logs, pair refresh and macro fills.",
+   "diagram": {
+    "kind": "flow",
+    "title": "Where Vana runs",
+    "rows": [
+     [
+      {
+       "id": "app",
+       "label": "The app",
+       "tone": "ink"
+      },
+      {
+       "id": "proto",
+       "label": "The prototype",
+       "tone": "muted"
+      }
+     ],
+     [
+      {
+       "id": "fns",
+       "label": "Three Supabase edge functions:\nchat, action, day notes",
+       "tone": "accent"
+      }
+     ],
+     [
+      {
+       "id": "db",
+       "label": "Database, read as the caller:\nrow rules filter",
+       "tone": "ok"
+      },
+      {
+       "id": "key",
+       "label": "Service key only for call logs,\npair refresh, macro fills",
+       "tone": "pending"
+      }
+     ]
+    ],
+    "edges": [
+     {
+      "from": "app",
+      "to": "fns",
+      "label": "same stream format"
+     },
+     {
+      "from": "proto",
+      "to": "fns"
+     },
+     {
+      "from": "fns",
+      "to": "db"
+     },
+     {
+      "from": "fns",
+      "to": "key"
+     }
+    ],
+    "example": [
+     "No Vercel service. The frozen fixture files define",
+     "every message shape for both clients."
+    ]
+   }
+  },
+  "mp-253": {
+   "question": "Does the Opener get its own server function, and what happens to the old chat?",
+   "context": "App versions already in people's hands call the old chat address (route). General Openers used to be made up on the fly and never saved.",
+   "decision": "There is no separate function: a flag on the ordinary chat call makes Vana write the Opener, and general Openers are now saved. The old chat function becomes Vana in general mode under the old route, so apps already shipped keep working and keep their unsaved Opener, and the app's old chat path redirects there. The old route stays until the lowest app version we support is past 1.24, and the old tables are renamed to Vana names while the old names keep working. Example: an athlete still on app 1.24 opens chat and gets Vana in general mode through the old route, with an Opener that is not saved; on a newer app the Opener comes from the chat call and is saved.",
+   "why": "Apps already shipped keep working while the app moves over.",
+   "details": "Precisely:\n1. There is no separate opener function. An opener flag on the chat call runs it. General openers are persisted. The old chat route keeps its unstored opener for shipped clients.\n2. The old chat function becomes Vana in general mode under the old route, and the app's old chat path redirects there. The route stays until the minimum app version passes 1.24. The old tables are renamed to Vana names with compatibility views under the old names.",
+   "diagram": {
+    "kind": "flow",
+    "title": "Who reaches Vana which way",
+    "rows": [
+     [
+      {
+       "id": "old",
+       "label": "Shipped app:\nold chat route",
+       "tone": "muted"
+      },
+      {
+       "id": "new",
+       "label": "Current app:\nchat call + opener flag",
+       "tone": "ink"
+      }
+     ],
+     [
+      {
+       "id": "gen",
+       "label": "Vana in general mode;\nOpener not saved",
+       "tone": "pending"
+      },
+      {
+       "id": "chat",
+       "label": "Chat function;\ngeneral Opener saved",
+       "tone": "ok"
+      }
+     ],
+     [
+      {
+       "id": "tbl",
+       "label": "Old tables renamed to Vana names;\nold names kept as views",
+       "tone": "ink"
+      }
+     ]
+    ],
+    "edges": [
+     {
+      "from": "old",
+      "to": "gen"
+     },
+     {
+      "from": "new",
+      "to": "chat"
+     }
+    ],
+    "example": [
+     "The old route stays until the minimum",
+     "app version passes 1.24."
+    ]
+   },
+   "slot": 2
+  },
+  "mp-254": {
+   "title": "Small plan edits save on the phone first; changes the server builds on wait for it",
+   "question": "Which meal-plan changes save on the phone first, and which wait for the server?",
+   "decision": "Small edits save on the phone at once and upload later, and when two copies disagree the last one written wins: servings, remove, session, shopping ticks, day slots, settings, comments, memory delete and saved-meal notes. Changes the server works from wait for it: pick, swap, plan day, new plan, log-from-plan and confirm. If one of those fails, the plan goes back to how it was and a short message at the bottom of the screen says it needs a connection or needs Pro, and with no connection at all the app says so before it sends anything. Example: with no signal, an athlete ticks eggs on the shopping list and the tick stays, but tapping swap on a dinner shows the needs-connection message and the dinner is unchanged.",
+   "details": "Precisely:\n1. Servings, remove, session, shopping ticks, day slots, settings, comments, memory delete and saved-meal notes write locally first and upload later, last writer wins.\n2. Pick, swap, plan day, new plan, log-from-plan and confirm wait for the server.\n3. A failed server write restores the previous plan and throws a needs-connection or Pro-required error the screen catches with a snackbar. Offline is caught before any request is made.",
+   "diagram": {
+    "kind": "flow",
+    "title": "Two kinds of plan change",
+    "rows": [
+     [
+      {
+       "id": "local",
+       "label": "Saves on the phone first:\nservings, remove, ticks,\nnotes, settings and more",
+       "tone": "ok"
+      },
+      {
+       "id": "server",
+       "label": "Waits for the server:\npick, swap, plan day,\nnew plan, log, confirm",
+       "tone": "accent"
+      }
+     ],
+     [
+      {
+       "id": "up",
+       "label": "Uploads later;\nlast write wins",
+       "tone": "ok"
+      },
+      {
+       "id": "off",
+       "label": "Offline: stopped\nbefore any request",
+       "tone": "no"
+      }
+     ],
+     [
+      {
+       "id": "fail",
+       "label": "Server write fails:\nplan restored + message",
+       "tone": "no"
+      },
+      {
+       "id": "okk",
+       "label": "Server answers:\nplan updated",
+       "tone": "ok"
+      }
+     ]
+    ],
+    "edges": [
+     {
+      "from": "local",
+      "to": "up"
+     },
+     {
+      "from": "server",
+      "to": "off"
+     },
+     {
+      "from": "server",
+      "to": "fail"
+     },
+     {
+      "from": "server",
+      "to": "okk"
+     }
+    ],
+    "example": [
+     "The message says needs a connection, or needs Pro."
+    ]
+   },
+   "slot": 2
+  },
+  "mp-255": {
+   "title": "The meal library stays on the server, and plans and memories sync only when needed",
+   "question": "Which meal-planning data is copied to the phone, and when does it sync?",
+   "context": "The meal library is about 1,900 meals, each with an embedding, the numbers used to search meals by meaning. The app's rule is that each kind of data syncs when it is needed, never all at once at start-up. Entitlements are written only by the webhook.",
+   "decision": "The meal library is never copied to the phone: search and meal detail ask the server, keep answers in memory while the app is open, and fall back to a text search on the phone. Plans and Memories sync the first time the app loads them and when the athlete pulls down to refresh the Plan tab, and nothing syncs at start-up. There is no entitlements table: whether a person is in a Trial or paid is read from the store's subscription state, and nothing about it is copied or synced. Example: an athlete opens the app and nothing syncs; searching \"oats\" on the Meals tab asks the server, and pulling down on the Plan tab syncs the plans.",
+   "details": "Precisely:\n1. The meal library is never mirrored. Search and detail hit the server, with an in-memory cache for the session and a local text search as fallback.\n2. Plans and memories sync when their controller first builds and on pull-to-refresh on the Plan tab. Nothing syncs from startup.\n3. There is no entitlements table. Whether a person is in trial or paid is read from the store subscription state, and nothing about it is mirrored or synced.",
+   "diagram": {
+    "kind": "flow",
+    "title": "What syncs, and when",
+    "rows": [
+     [
+      {
+       "id": "lib",
+       "label": "Meal library, about 1,900:\nstays on the server",
+       "tone": "muted"
+      },
+      {
+       "id": "srch",
+       "label": "Search and detail ask the server;\nsession cache; local text\nsearch as fallback",
+       "tone": "ok"
+      }
+     ],
+     [
+      {
+       "id": "pm",
+       "label": "Plans and Memories",
+       "tone": "ink"
+      },
+      {
+       "id": "when",
+       "label": "Sync on first load and\non Plan tab pull-to-refresh",
+       "tone": "ok"
+      }
+     ],
+     [
+      {
+       "id": "start",
+       "label": "App start",
+       "tone": "ink"
+      },
+      {
+       "id": "none",
+       "label": "Nothing syncs",
+       "tone": "no"
+      }
+     ]
+    ],
+    "edges": [
+     {
+      "from": "lib",
+      "to": "srch"
+     },
+     {
+      "from": "pm",
+      "to": "when"
+     },
+     {
+      "from": "start",
+      "to": "none"
+     }
+    ],
+    "example": [
+     "Trial or paid is read from the store;",
+     "nothing about it is synced."
+    ]
+   },
+   "slot": 2
+  },
+  "mp-256": {
+   "question": "Which plan does a change hit when it does not name one?",
+   "context": "An action is a change to a plan sent to the server. Actions come from parts in the chat, from the Plan tab and from the Review sheet, and not all of them know which plan they are for.",
+   "decision": "An action that names a plan hits that plan. If it names none, it hits the draft of the conversation it came from, and if there is no draft, the week's active plan. Example: in a planning chat that holds a draft, the athlete taps a chat part that names no plan; the change goes into that draft, not into the week's active plan.",
+   "why": "One order for every caller, so each change lands on the plan it means.",
+   "details": "Precisely:\n1. An action that names a plan id hits that plan.\n2. Otherwise it hits the conversation's draft.\n3. Otherwise it hits the week's active plan.",
+   "diagram": {
+    "kind": "flow",
+    "title": "Which plan an action hits",
+    "rows": [
+     [
+      {
+       "id": "a",
+       "label": "Action arrives",
+       "tone": "ink"
+      }
+     ],
+     [
+      {
+       "id": "q1",
+       "label": "Names a plan id?",
+       "tone": "accent"
+      },
+      {
+       "id": "p",
+       "label": "That plan",
+       "tone": "ok"
+      }
+     ],
+     [
+      {
+       "id": "q2",
+       "label": "Conversation has\na draft?",
+       "tone": "accent"
+      },
+      {
+       "id": "d",
+       "label": "The draft",
+       "tone": "ok"
+      }
+     ],
+     [
+      {
+       "id": "w",
+       "label": "The week's active plan",
+       "tone": "ok"
+      }
+     ]
+    ],
+    "edges": [
+     {
+      "from": "a",
+      "to": "q1"
+     },
+     {
+      "from": "q1",
+      "to": "p",
+      "label": "yes"
+     },
+     {
+      "from": "q1",
+      "to": "q2",
+      "label": "no"
+     },
+     {
+      "from": "q2",
+      "to": "d",
+      "label": "yes"
+     },
+     {
+      "from": "q2",
+      "to": "w",
+      "label": "no"
+     }
+    ],
+    "example": [
+     "Same order for chat parts, the Plan tab",
+     "and the Review sheet."
+    ]
+   }
+  },
+  "mp-257": {
+   "question": "Where is the athlete's home kept, how is it set, and what uses it?",
+   "context": "Weather and the Kroger coverage check used the race venue because the app had nowhere to keep the athlete's home. No settings screen offered one.",
+   "decision": "Home is four fields on the athlete's record, each empty until set: city, latitude, longitude and timezone; the athlete tells Vana, her profile tool turns the place into coordinates and saves them, and no settings screen edits home. Weather and the Kroger coverage check use home once it is set, and the race venue while it is empty. Clearing nutrition overrides is one flag on the profile copy, not a rebuild field by field. Example: an athlete tells Vana she lives in Birmingham, Alabama; the four fields fill in, and from then on weather and the Kroger check use Birmingham instead of the race venue.",
+   "details": "Precisely:\n1. Home is four nullable columns on the user record: city, latitude, longitude and timezone. A profile tool geocodes what the athlete says in conversation and sets them. No settings screen edits home.\n2. When home is set, weather and Kroger coverage use it. When it is null they fall back to the race venue.\n3. Clearing nutrition overrides is one flag on the profile copy, not a field-by-field rebuild.\n\nDevice schema version 21.",
+   "diagram": {
+    "kind": "flow",
+    "title": "How home is set and used",
+    "rows": [
+     [
+      {
+       "id": "say",
+       "label": "Athlete tells Vana:\n\"I live in Birmingham, AL\"",
+       "tone": "ink"
+      }
+     ],
+     [
+      {
+       "id": "tool",
+       "label": "Profile tool finds the\ncoordinates and saves",
+       "tone": "accent"
+      }
+     ],
+     [
+      {
+       "id": "cols",
+       "label": "Record: city, latitude,\nlongitude, timezone",
+       "tone": "ok"
+      }
+     ],
+     [
+      {
+       "id": "wx",
+       "label": "Weather",
+       "tone": "ok"
+      },
+      {
+       "id": "kr",
+       "label": "Kroger coverage",
+       "tone": "ok"
+      }
+     ]
+    ],
+    "edges": [
+     {
+      "from": "say",
+      "to": "tool"
+     },
+     {
+      "from": "tool",
+      "to": "cols"
+     },
+     {
+      "from": "cols",
+      "to": "wx"
+     },
+     {
+      "from": "cols",
+      "to": "kr"
+     }
+    ],
+    "example": [
+     "Home empty: weather and Kroger use the race venue.",
+     "No settings screen edits home."
+    ]
+   }
+  },
+  "mp-258": {
+   "question": "What reaches production before the cutover, and what must the cutover do?",
+   "context": "Production's database has no pgvector, the add-on that stores the numbers for searching meals by meaning. The home-location change adds columns that every save of a user's record needs. The text bundled with the app was losing to an old cached copy.",
+   "decision": "Nothing from this work is pushed to the develop or release branches before the cutover, and the home-location database change goes out with it, because a build that reaches production before those columns exist fails every save of a user's record. The cutover's seed step recomputes the search numbers (embeddings) for the whole meal library, and it counts as done only when every meal has them. The text bundled with the app loads before the first screen and beats an old cached copy. Example: seeding production makes about 1,922 embedding calls, and the seed is not done while even one meal is still missing its embedding.",
+   "why": "A half-moved production would break sign-in for everyone.",
+   "details": "Precisely:\n1. Nothing is pushed to the develop or release branches. The home-location migration rides the cutover, whose schema target reads 21. A build that reaches prod before the columns exist fails every users upsert.\n2. The prod seed re-embeds the library. The verify step requires every row embedded before the seed counts as done.\n3. Bundled content defaults load before the first frame and win over a stale cache.\n\nAbout 1,922 embedding calls at seed time.",
+   "diagram": {
+    "kind": "timeline",
+    "title": "From dev-only to production",
+    "steps": [
+     {
+      "at": "Until then",
+      "label": "Dev only: nothing pushed to\nthe develop or release branches",
+      "tone": "muted"
+     },
+     {
+      "at": "Never",
+      "label": "A build in prod before the columns:\nevery user save fails",
+      "tone": "no"
+     },
+     {
+      "at": "Cutover",
+      "label": "Home-location migration goes out;\nschema target 21",
+      "tone": "accent"
+     },
+     {
+      "at": "Seed",
+      "label": "About 1,922 embedding calls\nre-embed the library",
+      "tone": "ink"
+     },
+     {
+      "at": "Verify",
+      "label": "Every meal embedded:\nonly then is the seed done",
+      "tone": "ok"
+     }
+    ],
+    "example": [
+     "Bundled text loads before the first screen",
+     "and beats an old cached copy."
+    ]
+   }
+  },
+  "mp-263": {
+   "title": "Tests sit in three places, and the costly live-model ones never run in CI",
+   "question": "Where do the tests sit, and which ones run only by hand?",
+   "context": "Server pure functions (code that only turns inputs into outputs), live checks against a real model and the app's controllers each need a different kind of test. Live checks cost money, and the plan-build flow talks to a real model.",
+   "decision": "Tests sit in three places: the server's pure functions, against a fake database; live checks of how well Vana personalises, run by hand against dev; and the app's controllers, through the real code plus saved reference screenshots. A test feeds in data shaped like what its real source sends and never checks Vana's prompt wording. The eval, lifecycle and personalisation scripts and the full plan-build test never run in CI, the automatic checks on every push, and the Gate test that does run checks that the tab and the routes (screen addresses) agree. Example: the personalisation eval pays for real model calls, so it runs only when someone starts it against dev, never on a push.",
+   "why": "Tests that cost money or need a live model are run on purpose, not on every push.",
+   "details": "Precisely:\n1. Three seams: server pure functions with a fake database, live personalisation evals by hand against dev, and client controller tests through the real notifier plus goldens. A test feeds producer-shaped rows and never asserts on prompt wording.\n2. The eval, lifecycle and personalisation scripts and the end-to-end plan-build test never run in CI. The Pro-gate flow that does run asserts that the tab and the routes agree.",
+   "diagram": {
+    "kind": "flow",
+    "title": "Where the tests sit",
+    "rows": [
+     [
+      {
+       "id": "srv",
+       "label": "Server pure functions,\nfake database",
+       "tone": "ink"
+      },
+      {
+       "id": "ev",
+       "label": "Live personalisation\nevals, by hand, dev",
+       "tone": "pending"
+      },
+      {
+       "id": "cl",
+       "label": "App controllers:\nreal notifier, goldens",
+       "tone": "ink"
+      }
+     ],
+     [
+      {
+       "id": "never",
+       "label": "Never in CI: eval, lifecycle,\npersonalisation scripts,\nend-to-end plan-build test",
+       "tone": "no"
+      },
+      {
+       "id": "ci",
+       "label": "In CI: the Pro-gate flow,\ntab and routes agree",
+       "tone": "ok"
+      }
+     ]
+    ],
+    "edges": [
+     {
+      "from": "ev",
+      "to": "never"
+     }
+    ],
+    "example": [
+     "Tests feed producer-shaped rows and never",
+     "assert on prompt wording."
+    ]
+   }
+  },
+  "mp-271": {
+   "title": "On the dev build, a Settings switch turns the accessibility buttons off",
+   "question": "Can someone using the dev build turn the floating accessibility buttons off?",
+   "context": "The dev build shows two floating buttons in the bottom right of every screen: the blue wrench (debug tools) and the red accessibility figure. They are always on. On the simulator they cover the Launcher and the tab bar, and they appear in every screenshot the record captures. Nothing in the dev build is hidden behind a build flag.",
+   "decision": "Yes, in Settings. The dev build still ships the buttons on, with no build-time flag to hide them, and a switch in Settings, shown only in dev mode, turns the accessibility buttons off and back on for that person on that device. The switch starts on and remembers its setting across launches. Example: on the simulator the floating buttons cover the Launcher; the person testing turns the switch off in Settings, the accessibility buttons go, and they are still off the next time the app opens.",
+   "why": "Lee on 2026-09-15: no build flag hides anything in dev; instead, whoever is on the dev build can turn the accessibility buttons on or off in Settings.",
+   "details": "Precisely:\n1. The dev build ships the buttons on, with no build-time flag.\n2. Settings gets a switch, shown in dev mode only, that turns the accessibility buttons off and on for that tester on that device.\n3. The switch defaults to on and is remembered across launches.",
+   "diagram": {
+    "kind": "timeline",
+    "title": "The switch on one device",
+    "steps": [
+     {
+      "at": "Install",
+      "label": "Dev build: buttons on,\nno build-time flag",
+      "tone": "ink"
+     },
+     {
+      "at": "Launch 1",
+      "label": "On the simulator the buttons\ncover the Launcher",
+      "tone": "no"
+     },
+     {
+      "at": "Settings",
+      "label": "Switch off (shown in dev mode only)",
+      "tone": "accent"
+     },
+     {
+      "at": "Launch 2",
+      "label": "Still off on this device;\nother devices unchanged",
+      "tone": "ok"
+     }
+    ]
+   },
+   "slot": 2
+  },
+  "mp-428": {
+   "title": "Fifteen engineering questions are closed together, none of them a product ruling",
+   "decision": "Yes. Fifteen questions the build agents raised about process, tests and tidying are answered together in twelve clauses, and you tick any clause you disagree with. Only one changes what an athlete sees: the Show more sheet gets the same glass look as every other sheet that slides up. The rest settle where the dev-tools switch sits, which checks only a person with a phone can run, how team accounts get past the paywall, and what gets removed, deleted or rewritten. Example: the fuelling conformance test that turned red and green with no code change depends on the time, so it gets a fixed clock (mp-405).",
+   "details": "Precisely:\n1. The dev-tools switch sits in a \"Dev build\" card on Settings, remembered per device. The card moves up so the floating buttons do not cover it. (mp-327, mp-328) [built, except the move]\n2. The coach-insight panel is gone and nothing writes insights any more. The old columns and their readers are removed with the production cutover. (mp-388, mp-395) [to build]\n3. A check only a person with a phone can do (a sandbox purchase, a second account) does not fail a ticket. The ticket closes on its tests and the check goes on your simulator and device list. (mp-322) [no work]\n4. You declined the sandbox wizard on 09-16. Purchase and Restore are checked by hand on TestFlight before a release (mp-336). The two wizard questions are closed. (mp-354, mp-355) [no work]\n5. Team accounts get in through the admin flag you approved (mp-416). An account that also needs Vana's server calls gets a promotional grant in RevenueCat, and the RevenueCat dashboard is the list. This also lets a wave simulator past the paywall. (mp-338, mp-415) [no work]\n6. The odd entitlement row on dev was written by hand by a build agent for the test user. It is deleted, and agents are told the webhook is the only writer. (mp-357) [to build]\n7. The internal-device flag is written again by the tester switch (meal photos, 09-16), so Mixpanel keeps excluding the team. (mp-339) [no work]\n8. The release doc still describes a dark launch behind a flag. It is rewritten to the trial-and-purchase release. (mp-356) [to build]\n9. Design specs the app changed (the sheet, the launcher section, the meal mosaic) are written app-side as \"proposed, awaiting Xuan\", which is the rule you set on 09-11. Xuan is sent the list. (mp-325, mp-383) [to build: the list]\n10. The Show more sheet takes the glass-sheet material like every other summoned sheet. (mp-414) [to build]\n11. The persona is edited in this repo only. The note about keeping the prototype in step is deleted. (mp-413) [to build]\n12. The fuelling conformance test that goes red and green without a code change is time-dependent. It gets a fixed clock. (mp-405) [to build]\n\nDev-tools key dev.tools_visible. The eval entitlement row: user 37129f7e, period_type \"eval\", written 2026-09-15 19:05Z.",
+   "diagram": {
+    "kind": "flow",
+    "title": "Fifteen questions, twelve clauses",
+    "rows": [
+     [
+      {
+       "id": "q",
+       "label": "15 questions from build agents",
+       "tone": "muted"
+      }
+     ],
+     [
+      {
+       "id": "c",
+       "label": "12 clauses; tick any you disagree with",
+       "tone": "accent"
+      }
+     ],
+     [
+      {
+       "id": "nw",
+       "label": "No work:\n3, 4, 5, 7",
+       "tone": "ok"
+      },
+      {
+       "id": "b",
+       "label": "Built, except\nthe move: 1",
+       "tone": "pending"
+      },
+      {
+       "id": "tb",
+       "label": "To build:\n2, 6, 8, 9 (the list),\n10, 11, 12",
+       "tone": "ink"
+      }
+     ]
+    ],
+    "edges": [
+     {
+      "from": "q",
+      "to": "c"
+     },
+     {
+      "from": "c",
+      "to": "nw"
+     },
+     {
+      "from": "c",
+      "to": "b"
+     },
+     {
+      "from": "c",
+      "to": "tb"
+     }
+    ],
+    "example": [
+     "Only clause 10, the glass Show more sheet,",
+     "changes what an athlete sees."
+    ]
+   },
+   "slot": 2
+  }
+ },
+ "terms": [
+  {
+   "term": "Prototype",
+   "area": "Building and shipping the app",
+   "definition": "The TanStack web app where meal planning was first built, kept in its own repo. It is the living reference for how the feature looks and behaves and the source of the test fixtures; none of its code is copied into the app.",
+   "avoid": "Web prototype, reference app, Kyle prototype"
+  },
+  {
+   "term": "Kyle design system",
+   "area": "Building and shipping the app",
+   "definition": "The app's one design system: a single set of named colours and sizes (the Kyle tokens) and a shared library where each designed widget is built once from its written component spec.",
+   "avoid": "Theme, skin, token registry"
+  },
+  {
+   "term": "Cutover",
+   "area": "Building and shipping the app",
+   "definition": "The one planned step that takes meal planning from the dev backend to production, following a runbook: its database changes go out, the meal library is seeded, and old columns are removed. Until then everything is dev-only.",
+   "avoid": "Prod launch, migration day"
+  },
+  {
+   "term": "Dev build",
+   "area": "Building and shipping the app",
+   "definition": "The app built against the dev backend rather than production, for the team. It ships every unfinished feature visible; nothing in it is hidden behind a build flag.",
+   "avoid": "Debug build, dev mode (that is the dev environment the build runs in)"
+  }
+ ]
+}

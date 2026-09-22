@@ -1,0 +1,736 @@
+{
+ "cards": {
+  "mp-020": {
+   "title": "Vana reads what she knows where it lives and keeps no copy",
+   "question": "Does Vana keep her own copy of what she knows about a person?",
+   "decision": "No. Each time she needs it, the server builds the Voodoo Doll from the records that already hold each Fact: the user record, the calendar, the events, the meal votes, the onboarding survey. The one record that belongs to the Doll itself is the memory table. What she is handed is short, only the facts that matter for this turn, and anything deeper she looks up with a tool. Example: an athlete switches their diet to vegetarian in the app on 3 October; Vana's next plan reads vegetarian from the user record, because there is no second copy left saying otherwise.",
+   "details": "Precisely:\n1. Everything Vana knows about a person is assembled on the server at request time from the records that already own it.\n2. Only the memory table belongs to the Doll.\n3. The assembled block is short: the most relevant facts for this turn, nothing the prompt does not use.\n4. Anything deeper is reached through tools, not carried in the block.",
+   "diagram": {
+    "kind": "timeline",
+    "title": "If Vana kept her own profile copy (rejected)",
+    "steps": [
+     {
+      "at": "1 Sep",
+      "label": "Vana's profile table copies the diet:\nomnivore",
+      "tone": "muted"
+     },
+     {
+      "at": "3 Oct",
+      "label": "Athlete switches to vegetarian in the app.\nThe user record changes; the copy does not",
+      "tone": "ink"
+     },
+     {
+      "at": "4 Oct",
+      "label": "Vana plans from the stale copy:\na chicken dinner",
+      "tone": "no"
+     }
+    ]
+   },
+   "diagram2": {
+    "kind": "timeline",
+    "title": "What we decided: Vana reads the record itself",
+    "steps": [
+     {
+      "at": "3 Oct",
+      "label": "Athlete switches to vegetarian in the app",
+      "tone": "ink"
+     },
+     {
+      "at": "4 Oct",
+      "label": "Server builds the Doll from the user\nrecord: vegetarian",
+      "tone": "accent"
+     },
+     {
+      "at": "4 Oct",
+      "label": "Vana plans vegetarian dinners",
+      "tone": "ok"
+     }
+    ]
+   }
+  },
+  "mp-021": {
+   "question": "Does Vana know the athlete as well in a general chat as when planning?",
+   "context": "Vana chat had two modes: planning, for building meals for the week, and general, for everything else. Planning conversations got the full context block; general ones got a first name and today's date, and the prompt opened by saying nothing was preloaded. So \"what's my workout tomorrow\" in the sheet needed a tool call the model might not make. That was the real \"she doesn't know me\".",
+   "decision": "Yes. General mode gets the same context block planning mode gets, plus three lines: LIKES from the athlete's Meal feedback, GOALS from the onboarding survey, and SITUATION for what is on screen. The general prompt no longer opens by telling Vana that nothing is preloaded. Example: an athlete asks in the sheet \"what's my workout tomorrow\"; tomorrow's workout is already in the block, so Vana can answer with no tool call.",
+   "details": "Precisely:\n1. General mode gets the same context block planning mode gets, plus LIKES from meal votes, GOALS from the onboarding survey and SITUATION for what is on screen.\n2. The general prompt's \"nothing is preloaded\" opening was removed.",
+   "diagram": {
+    "kind": "timeline",
+    "title": "What we decided: a general chat reads the full Doll",
+    "steps": [
+     {
+      "at": "Before",
+      "label": "General chat: first name and today's date.\n\"Nothing is preloaded\"",
+      "tone": "muted"
+     },
+     {
+      "at": "Now",
+      "label": "Same context block as planning",
+      "tone": "accent"
+     },
+     {
+      "at": "Plus",
+      "label": "LIKES from Meal feedback, GOALS from\nthe survey, SITUATION from the screen",
+      "tone": "accent"
+     },
+     {
+      "at": "Asked",
+      "label": "\"What's my workout tomorrow?\"\nAnswered from the block, no tool call",
+      "tone": "ok"
+     }
+    ]
+   },
+   "slot": 2
+  },
+  "mp-022": {
+   "question": "What counts as a Memory?",
+   "decision": "One sentence a good dietitian would write in the margin of the person's file, and only if it changes how Vana plans next time. What the athlete asked for, this week's plan and anything the app already records as a Fact are not Memories. Example: \"Wednesdays are long days\" is a Memory; \"asked for a pasta dinner tonight\" is not, and neither is an allergy, which is a Fact.",
+   "details": "Precisely:\n1. A Memory is one sentence a good dietitian would write in the margin of the person's file, and only if it changes how Vana plans next time.\n2. Not what was asked, not this week's plan, not anything already a Fact.",
+   "diagram": {
+    "kind": "timeline",
+    "title": "What we decided: the margin-note test",
+    "steps": [
+     {
+      "at": "Said",
+      "label": "\"Wednesdays are long days\"",
+      "tone": "ink"
+     },
+     {
+      "at": "Test",
+      "label": "Changes how Vana plans next time?\nNot a request, not this week's plan,\nnot already a Fact?",
+      "tone": "accent"
+     },
+     {
+      "at": "Yes",
+      "label": "Kept as one Memory sentence",
+      "tone": "ok"
+     },
+     {
+      "at": "No",
+      "label": "\"A pasta dinner tonight\", an allergy:\nnot kept as a Memory",
+      "tone": "no"
+     }
+    ]
+   },
+   "slot": 2
+  },
+  "mp-023": {
+   "question": "Where do Vana's meal likes come from?",
+   "decision": "From the thumbs votes athletes already give on a Meal's detail page. Those votes are Meal feedback, a Fact, and Vana reads them every turn as a LIKES line straight from the existing meal feedback table. There is no new preferences table, and the Formula Kit's fuelling-product preferences and their screens stay as they are. Example: an athlete gives a salmon bowl a thumbs down on 2 October; the vote is stored once, in the table that also drives search, and Vana reads it from there.",
+   "details": "Precisely:\n1. Thumbs votes on meals are Facts, read every turn as a LIKES line from the existing meal feedback table.\n2. There is no new preferences table.\n3. The fuelling-product preferences and their screens are untouched.",
+   "diagram": {
+    "kind": "timeline",
+    "title": "If votes were copied to a new table (rejected)",
+    "steps": [
+     {
+      "at": "2 Oct",
+      "label": "Athlete gives the salmon bowl\na thumbs down",
+      "tone": "ink"
+     },
+     {
+      "at": "2 Oct",
+      "label": "Written twice: meal feedback and a\nnew meal preferences table",
+      "tone": "muted"
+     },
+     {
+      "at": "Later",
+      "label": "The copies drift: search and Vana\ncan disagree about the salmon bowl",
+      "tone": "no"
+     }
+    ]
+   },
+   "diagram2": {
+    "kind": "timeline",
+    "title": "What we decided: Vana reads the vote where it is",
+    "steps": [
+     {
+      "at": "2 Oct",
+      "label": "Athlete gives the salmon bowl\na thumbs down",
+      "tone": "ink"
+     },
+     {
+      "at": "2 Oct",
+      "label": "Stored once, in meal feedback,\nwhich also drives search",
+      "tone": "accent"
+     },
+     {
+      "at": "Next plan",
+      "label": "Vana's LIKES line carries the vote.\nFormula Kit preferences unchanged",
+      "tone": "ok"
+     }
+    ]
+   }
+  },
+  "mp-024": {
+   "title": "Three writers save Memories: the athlete's ask, Vana herself, and a read of the finished chat",
+   "question": "Who writes Memories, and when?",
+   "decision": "Three writers. The athlete saying \"remember this\"; Vana on her own, when something meets the margin-note rule (mp-022: a sentence that changes how she plans next time); and a background extraction, Vana reading the conversation after it ends. Example: an athlete mentions in passing that they train before work and never asks Vana to keep it; if she did not save it during the chat, the read after the chat ends can still write it.",
+   "details": "Precisely:\n1. Memories are written three ways: by an explicit \"remember this\" from the athlete, by the model on its own when the margin-note rule is met, and by a background extraction after a conversation ends.",
+   "diagram": {
+    "kind": "timeline",
+    "title": "If extraction ran on every turn (rejected)",
+    "steps": [
+     {
+      "at": "Message 1",
+      "label": "\"I train before work\"\nAn extra model call reads the chat",
+      "tone": "ink"
+     },
+     {
+      "at": "Message 2",
+      "label": "Another extra call reads it all again",
+      "tone": "no"
+     },
+     {
+      "at": "Every message",
+      "label": "Each message pays for a second\nmodel call",
+      "tone": "no"
+     }
+    ]
+   },
+   "diagram2": {
+    "kind": "timeline",
+    "title": "What we decided: three writers",
+    "steps": [
+     {
+      "at": "08:00",
+      "label": "\"Remember Wednesdays are long days\"\nSaved: the athlete asked",
+      "tone": "ok"
+     },
+     {
+      "at": "08:05",
+      "label": "\"I train before work\"\nVana saves it on her own",
+      "tone": "ok"
+     },
+     {
+      "at": "08:20",
+      "label": "Chat ends. One read of the whole chat\ncatches anything she missed",
+      "tone": "accent"
+     }
+    ]
+   }
+  },
+  "mp-025": {
+   "question": "If the athlete says \"remember this\", does Vana always save it?",
+   "decision": "Yes. When the athlete asks outright, Vana calls her remember tool every time and lets the server decide whether the note is new or a refresh of one it holds. The margin-note rule, which tells her to skip a note that is already known, applies only to notes she takes on her own. Example: in testing, an athlete said \"remember Wednesdays are long days\" while a Wednesday note was already in Vana's context, so she skipped it and said nothing was saved; under this rule she calls the tool and the server decides.",
+   "details": "Precisely:\n1. When the athlete asks, Vana calls remember every time and lets the server decide whether it is new or a refresh.\n2. The margin-note rule applies only to notes she takes on her own.",
+   "diagram": {
+    "kind": "timeline",
+    "title": "What we decided: an ask always reaches the server",
+    "steps": [
+     {
+      "at": "Athlete",
+      "label": "\"Remember Wednesdays are long days\"",
+      "tone": "ink"
+     },
+     {
+      "at": "Vana",
+      "label": "Calls remember, although a Wednesday\nnote is already known",
+      "tone": "accent"
+     },
+     {
+      "at": "Server",
+      "label": "Decides: a new note, or a refresh\nof the old one",
+      "tone": "ok"
+     }
+    ]
+   },
+   "slot": 2
+  },
+  "mp-028": {
+   "title": "A near-repeat of a Memory refreshes the old one instead of adding a second",
+   "question": "What happens when the same note arrives twice in different words?",
+   "decision": "The old note stays and its confirmed date is refreshed; no second row is added. \"Near\" means a match of 0.95 or more between embeddings, numeric fingerprints of each sentence's meaning. If that comparison cannot be made, the note is saved anyway, because a repeat is better than a lost note; keyed Memories keep one row per key and episodes one per conversation. Example: on dev the debrief's learning was written twice; under this rule the second write only refreshes the first row's date.",
+   "details": "Precisely:\n1. A new sentence within 0.95 embedding similarity of an existing Memory refreshes that row's confirmed date instead of inserting.\n2. If the embedding call fails the note is written anyway.\n3. Settings keep one row per key and episodes one row per conversation.",
+   "diagram": {
+    "kind": "timeline",
+    "title": "If only exact words counted as a repeat (rejected)",
+    "steps": [
+     {
+      "at": "5 Oct",
+      "label": "\"No breakfast before a swim\"\nSaved as a Memory",
+      "tone": "ok"
+     },
+     {
+      "at": "12 Oct",
+      "label": "\"I never eat before swimming\"\nDifferent words: saved again",
+      "tone": "no"
+     },
+     {
+      "at": "13 Oct",
+      "label": "Vana settings lists the same note twice",
+      "tone": "no"
+     }
+    ]
+   },
+   "diagram2": {
+    "kind": "timeline",
+    "title": "What we decided: a near-repeat refreshes the old note",
+    "steps": [
+     {
+      "at": "5 Oct",
+      "label": "\"No breakfast before a swim\"\nSaved as a Memory",
+      "tone": "ok"
+     },
+     {
+      "at": "12 Oct",
+      "label": "\"I never eat before swimming\"\nMatch of 0.95 or more: the first\nnote's date is refreshed",
+      "tone": "accent"
+     },
+     {
+      "at": "13 Oct",
+      "label": "Vana settings lists the note once",
+      "tone": "ok"
+     }
+    ]
+   }
+  },
+  "mp-029": {
+   "question": "What happens when two Memories disagree?",
+   "decision": "Both stay. Nothing checks for contradictions: each Memory keeps its date, and Vana weighs how recent each one is when she reads them. Example: an athlete says on 3 March that they are vegetarian and on 9 June that they now eat fish; both sentences stay, dated, and Vana reads the June one as the newer.",
+   "details": "Precisely:\n1. There is no contradiction handling.\n2. Conflicting Memories both stay, each with its date, and the model weighs recency when it reads them.",
+   "diagram": {
+    "kind": "timeline",
+    "title": "If a newer note replaced the older (rejected)",
+    "steps": [
+     {
+      "at": "3 Mar",
+      "label": "\"I'm vegetarian\" saved",
+      "tone": "ink"
+     },
+     {
+      "at": "9 Jun",
+      "label": "\"I eat fish now\" saved;\nthe March note is marked replaced",
+      "tone": "muted"
+     },
+     {
+      "at": "Cost",
+      "label": "Contradiction checks built before any\nathlete had the problem",
+      "tone": "no"
+     }
+    ]
+   },
+   "diagram2": {
+    "kind": "timeline",
+    "title": "What we decided: both stay, dated",
+    "steps": [
+     {
+      "at": "3 Mar",
+      "label": "\"I'm vegetarian\" saved",
+      "tone": "ink"
+     },
+     {
+      "at": "9 Jun",
+      "label": "\"I eat fish now\" saved;\nthe March note stays too",
+      "tone": "ink"
+     },
+     {
+      "at": "10 Jun",
+      "label": "Vana reads both with their dates\nand weighs June as the newer",
+      "tone": "ok"
+     }
+    ]
+   }
+  },
+  "mp-030": {
+   "title": "Swaps, skips and repeats never write a Memory; only the debrief learns from behaviour",
+   "question": "Can what the athlete does, without saying anything, become a Memory?",
+   "decision": "No. Swapping a meal out, skipping one or logging the same one again and again never writes a Memory. The weekly debrief, where Vana asks how the week went, is the only writer that learns from what the athlete did. Example: an athlete swaps out the salmon three weeks running and no Memory is written; if they say \"I'm off salmon\" in the debrief, that answer can become one.",
+   "details": "Precisely:\n1. Swaps, skips and repeated logs never write Memories.\n2. The weekly debrief is the only behaviour-derived writer.",
+   "diagram": {
+    "kind": "timeline",
+    "title": "If swaps wrote Memories (rejected)",
+    "steps": [
+     {
+      "at": "Weeks 1-3",
+      "label": "Athlete swaps out the salmon",
+      "tone": "ink"
+     },
+     {
+      "at": "Week 3",
+      "label": "The app writes a note on its own:\ndislikes salmon",
+      "tone": "no"
+     },
+     {
+      "at": "Week 4",
+      "label": "Salmon is gone from the plan.\nThe athlete never learns why",
+      "tone": "no"
+     }
+    ]
+   },
+   "diagram2": {
+    "kind": "timeline",
+    "title": "What we decided: the debrief asks first",
+    "steps": [
+     {
+      "at": "Weeks 1-3",
+      "label": "Athlete swaps out the salmon.\nNo Memory is written",
+      "tone": "muted"
+     },
+     {
+      "at": "Debrief",
+      "label": "Vana: how did the week go?\nAthlete: \"I'm off salmon\"",
+      "tone": "accent"
+     },
+     {
+      "at": "After",
+      "label": "The answer can become a Memory\nthe athlete gave and can see",
+      "tone": "ok"
+     }
+    ]
+   }
+  },
+  "mp-031": {
+   "question": "Does the next plan change because of what the athlete said in the debrief?",
+   "decision": "Yes. Recording a debrief writes a debrief row and one to three Memories marked as coming from the debrief. The context block then carries a LAST WEEK line, so Vana's first proposal for the next week reacts to it. Example: an athlete repeated two meals and says the salmon did not work; the next first proposal opens \"kept the two you repeated, dropped the salmon\".",
+   "details": "Precisely:\n1. Recording a debrief writes a debrief row plus one to three Memories marked as from the debrief.\n2. A LAST WEEK line in the context makes the next first proposal react, for example \"kept the two you repeated, dropped the salmon\".",
+   "diagram": {
+    "kind": "timeline",
+    "title": "What we decided: the debrief feeds the next plan",
+    "steps": [
+     {
+      "at": "Week ends",
+      "label": "Vana's opener asks how it went",
+      "tone": "ink"
+     },
+     {
+      "at": "Debrief",
+      "label": "A debrief row, plus one to three\nMemories marked \"from the debrief\"",
+      "tone": "accent"
+     },
+     {
+      "at": "Next plan",
+      "label": "LAST WEEK line: the first proposal says\n\"kept the two you repeated,\ndropped the salmon\"",
+      "tone": "ok"
+     }
+    ]
+   },
+   "slot": 2
+  },
+  "mp-037": {
+   "title": "What Vana knows is one flat list; the kinds of Memory stay out of sight",
+   "question": "What does the athlete see of what Vana holds about them?",
+   "decision": "One flat list in Vana settings: every Memory, newest first, as a sentence with its source and date, with no tag for its kind, and any row can be deleted. Keyed Memories such as batch cooking show as plain sentences too. Episodes are left out, Facts such as allergies are changed on their own screens, and the old glossary word \"Decision\" for a kind of Memory is retired. Example: an athlete who told Vana they batch cook sees that as one sentence with its source and date among the rest, and can delete it like any other row.",
+   "details": "Precisely:\n1. Settings shows every Memory newest first as a sentence with its source and date, with no kind tag, and any row can be deleted.\n2. Keyed settings appear as sentences.\n3. Episodes are excluded.\n4. Facts are edited where they live.\n5. The glossary word \"Decision\" is retired.",
+   "diagram": {
+    "kind": "timeline",
+    "title": "What we decided: one list, no kinds shown",
+    "steps": [
+     {
+      "at": "Shown",
+      "label": "Every Memory, newest first:\nsentence, source, date",
+      "tone": "accent"
+     },
+     {
+      "at": "Also shown",
+      "label": "Keyed Memories (batch cooking,\ncoverage) as plain sentences",
+      "tone": "ok"
+     },
+     {
+      "at": "Any row",
+      "label": "Can be deleted",
+      "tone": "ok"
+     },
+     {
+      "at": "Not shown",
+      "label": "Episodes. Facts are edited on\ntheir own screens",
+      "tone": "muted"
+     }
+    ]
+   },
+   "slot": 2
+  },
+  "mp-039": {
+   "question": "Can Vana plan around the season, a budget and this week's grocery deals?",
+   "context": "The spec's headline moment was Vana planning around this week's grocery deals, and MealBuddy, the Figma concept for the assistant, showed a \"gathering coupons\" step. There is no source of grocery prices, and at the time the profile had no home location either. Season and budget could be done from what the app already has.",
+   "decision": "Season and budget, yes; deals, no. The context block carries a SEASON line from a fixed month-by-month table, and a BUDGET clause if the athlete ever said \"keep it under N dollars\". Grocery deals, coupons and an estimated cost of the shopping list are not built. Example: an athlete planning in October gets a SEASON line from the table's October row and a BUDGET clause from what they once said about spending, and never sees a \"gathering coupons\" step.",
+   "details": "Precisely:\n1. The context carries a SEASON line from a static month table and a BUDGET clause if the athlete ever said \"keep it under N dollars\".\n2. Grocery deals, coupons and a list cost estimate are not built.",
+   "diagram": {
+    "kind": "timeline",
+    "title": "If Vana showed a coupon step (rejected)",
+    "steps": [
+     {
+      "at": "Plan starts",
+      "label": "\"Gathering coupons...\"",
+      "tone": "ink"
+     },
+     {
+      "at": "Then",
+      "label": "Nothing to gather: the app has\nno grocery prices",
+      "tone": "no"
+     },
+     {
+      "at": "Result",
+      "label": "A step that shows nothing real",
+      "tone": "no"
+     }
+    ]
+   },
+   "diagram2": {
+    "kind": "timeline",
+    "title": "What we decided: season and budget only",
+    "steps": [
+     {
+      "at": "October plan",
+      "label": "SEASON line from the October row\nof the month table",
+      "tone": "ok"
+     },
+     {
+      "at": "If said once",
+      "label": "BUDGET clause from \"keep it under\nN dollars\"",
+      "tone": "ok"
+     },
+     {
+      "at": "Not built",
+      "label": "Deals, coupons, a shopping list\ncost estimate",
+      "tone": "muted"
+     }
+    ]
+   }
+  },
+  "mp-040": {
+   "title": "Vana finds Memories by meaning match, with no trained model of the athlete",
+   "question": "Does \"she knows me\" need a trained model of each athlete?",
+   "context": "In the Voodoo Doll design session on 09-09 the question was how far personalisation should go. Memories are already found by embedding similarity, comparing numeric fingerprints of each sentence's meaning, and that works. A trained model of each athlete's preferences would need many weeks of data per person.",
+   "decision": "No. Finding Memories by meaning match (embedding recall) already works, and it stays the only way Vana looks them up. There is no trained model of an athlete's preferences and no change to how the model calls are arranged. Example: an athlete who joined on 1 October has no weeks of history to train a model on, but on 2 October recall can already find the note they gave Vana on day one.",
+   "details": "Precisely:\n1. Embedding recall stays the only retrieval pattern.\n2. No trained preference model and no change to how the model is orchestrated.",
+   "diagram": {
+    "kind": "timeline",
+    "title": "If Vana needed a trained model (rejected)",
+    "steps": [
+     {
+      "at": "1 Oct",
+      "label": "New athlete: \"I like big breakfasts\"",
+      "tone": "ink"
+     },
+     {
+      "at": "Week 1",
+      "label": "Too little data to train on:\nthe model knows nothing yet",
+      "tone": "no"
+     },
+     {
+      "at": "Many weeks",
+      "label": "Only then could a trained model\nknow the athlete",
+      "tone": "no"
+     }
+    ]
+   },
+   "diagram2": {
+    "kind": "timeline",
+    "title": "What we decided: recall by meaning",
+    "steps": [
+     {
+      "at": "1 Oct",
+      "label": "\"I like big breakfasts\"\nsaved as a Memory",
+      "tone": "ink"
+     },
+     {
+      "at": "2 Oct",
+      "label": "Planning: recall finds the note\nby meaning",
+      "tone": "accent"
+     },
+     {
+      "at": "2 Oct",
+      "label": "The plan can use it from day two",
+      "tone": "ok"
+     }
+    ]
+   }
+  },
+  "mp-041": {
+   "question": "Can a coach's Vana see what Vana knows about an athlete?",
+   "decision": "No. Coach mode is out of scope for this work: when a coach talks to Vana, she does not see the athlete's Facts or Memories. Example: a coach asks Vana on 7 October how an athlete's week is going; Vana has none of that athlete's Facts or Memories to answer from.",
+   "details": "Precisely:\n1. Coach mode is out of scope.\n2. A coach's Vana does not see the athlete's Facts or Memories.",
+   "diagram": {
+    "kind": "timeline",
+    "title": "If the Doll reached coaches (rejected)",
+    "steps": [
+     {
+      "at": "6 Oct",
+      "label": "Athlete tells Vana about\na hard week at home",
+      "tone": "ink"
+     },
+     {
+      "at": "7 Oct",
+      "label": "Coach asks Vana about the athlete",
+      "tone": "ink"
+     },
+     {
+      "at": "7 Oct",
+      "label": "Vana answers from the athlete's\nMemories",
+      "tone": "no"
+     }
+    ]
+   },
+   "diagram2": {
+    "kind": "timeline",
+    "title": "What we decided: coaches' Vana cannot see it",
+    "steps": [
+     {
+      "at": "6 Oct",
+      "label": "Athlete tells Vana about\na hard week at home",
+      "tone": "ink"
+     },
+     {
+      "at": "7 Oct",
+      "label": "Coach asks Vana about the athlete",
+      "tone": "ink"
+     },
+     {
+      "at": "7 Oct",
+      "label": "Vana has none of the athlete's\nFacts or Memories",
+      "tone": "ok"
+     }
+    ]
+   }
+  },
+  "mp-042": {
+   "question": "Does onboarding gain a step asking what foods the athlete likes?",
+   "decision": "No. Onboarding stays as it is: Vana's LIKES line comes from Meal feedback and her GOALS line from the survey onboarding already runs. Vana never asks for likes. Example: a new athlete finishes the same survey as before, which gives Vana her GOALS line; their first thumbs up on a Meal's detail page starts the LIKES line.",
+   "details": "Precisely:\n1. Onboarding does not change.\n2. LIKES come from meal votes and GOALS from the existing survey.\n3. Vana never asks for likes.",
+   "diagram": {
+    "kind": "timeline",
+    "title": "If onboarding asked for likes (rejected)",
+    "steps": [
+     {
+      "at": "Sign-up",
+      "label": "Survey, then a new step:\n\"What foods do you like?\"",
+      "tone": "no"
+     },
+     {
+      "at": "Week 1",
+      "label": "The same likes arrive again\nas thumbs votes",
+      "tone": "muted"
+     },
+     {
+      "at": "Result",
+      "label": "A longer sign-up for a signal\nthe app already has",
+      "tone": "no"
+     }
+    ]
+   },
+   "diagram2": {
+    "kind": "timeline",
+    "title": "What we decided: onboarding stays as it is",
+    "steps": [
+     {
+      "at": "Sign-up",
+      "label": "Same survey as before:\nthe GOALS line",
+      "tone": "ok"
+     },
+     {
+      "at": "Week 1",
+      "label": "A thumbs up on a Meal:\nthe LIKES line",
+      "tone": "ok"
+     },
+     {
+      "at": "Always",
+      "label": "Vana never asks for likes",
+      "tone": "accent"
+     }
+    ]
+   }
+  },
+  "mp-218": {
+   "question": "How is Vana's context block kept short?",
+   "decision": "By a size limit that a test checks. The test builds the block for a set of typical athletes, counts its tokens (the units the model reads and is billed by), and fails when the count goes over the limit or when the block carries a field no prompt reads. The limit is set when the test lands and recorded on this card. Example: if a change left a LIKES line in the block after every prompt had stopped reading it, the test would fail even with the block under the limit.",
+   "details": "Precisely:\n1. The context block has a token budget.\n2. A test builds the block for representative athletes, counts the tokens, and fails when the count passes the budget or when the block carries a field no prompt reads.\n3. The budget number is set when the test lands and recorded here.",
+   "diagram": {
+    "kind": "timeline",
+    "title": "If the block were checked by eye (rejected)",
+    "steps": [
+     {
+      "at": "Feature 1",
+      "label": "Adds a line to the block",
+      "tone": "ink"
+     },
+     {
+      "at": "Feature 2",
+      "label": "Adds another; nobody counts",
+      "tone": "ink"
+     },
+     {
+      "at": "Later",
+      "label": "Every turn costs more, and some\nlines are never read",
+      "tone": "no"
+     }
+    ]
+   },
+   "diagram2": {
+    "kind": "timeline",
+    "title": "What we decided: a test with a budget",
+    "steps": [
+     {
+      "at": "A change",
+      "label": "Adds a line to the block",
+      "tone": "ink"
+     },
+     {
+      "at": "Test run",
+      "label": "Builds the block for typical athletes,\ncounts tokens, checks every field\nis read by a prompt",
+      "tone": "accent"
+     },
+     {
+      "at": "Result",
+      "label": "Over budget or an unread field:\nthe test fails",
+      "tone": "ok"
+     }
+    ]
+   }
+  },
+  "mp-419": {
+   "title": "The memory build after mp-277 stands, and its four open questions are answered",
+   "question": "Is the memory build that followed mp-277 right, and how are its four open questions answered?",
+   "decision": "Yes, what tickets 13 to 15 built stands, and the five held cards mp-277 replaced (mp-032 to mp-036) are retired. Past conversations reach Vana as a LAST TALKS line of what the athlete said, long chats are summarised in chunks of twenty messages, the server answers an idle signal at once and writes the summary in the background, and the context block is capped at 1,500 estimated tokens. The four answers: the conversation list previews each chat with its one-sentence summary, never the internal \"Through message 20...\" text; a chat that gains messages after its summary is summarised again at the next close; a home location, a thumbs vote or a profile edit made outside Vana waits for the next change made through Vana or the next day; and the \"Remembered\" card shows only when the athlete asked Vana to remember. Example: an athlete plans on the morning of 8 October, closes the sheet, and talks again that night; at the second close the conversation is summarised again, so its one summary covers the evening too.",
+   "details": "Precisely:\n1. The five held cards about the 20-message replay and the mid-conversation episode are retired. mp-277 replaced them. (mp-032 to mp-036) [no work]\n2. Past conversations reach Vana as a LAST TALKS line: what the athlete said, not a read-out of their schedule. Memories hold only notes. (mp-038) [built]\n3. A long conversation is summarised in chunks of twenty messages and the summary is kept on the conversation. (mp-333) [built]\n4. The conversation list previews each conversation with its one-sentence summary. The internal \"Through message 20…\" text never shows on screen. (mp-334) [to build]\n5. When the app says a conversation is idle, the server answers at once and writes the summary in the background. A repeat signal writes nothing. (mp-347) [built]\n6. If a conversation gains messages after its summary was written, the next close summarises it again. One summary per conversation, always the latest. (mp-349) [to build]\n7. Only a change the athlete makes through Vana, or a new day, rebuilds the cached context. Notes the server writes for itself do not. A home location, a thumb or a profile edit made outside Vana waits for the next of those. (mp-313, mp-315) [built]\n8. The context block is capped at 1,500 estimated tokens, and a test fails if it grows past that. (mp-314) [built]\n9. The \"Remembered\" card shows only when the athlete asked Vana to remember something. Notes she saves on her own stay silent, as mp-027 already says. (mp-351) [to build]\n\nSummary boundaries are fixed multiples of twenty so the cached prefix changes once per chunk. Context budget constant CONTEXT_BLOCK_TOKEN_BUDGET = 1500, estimated as characters / 4. Idle is answered 202 and never charged a credit.",
+   "diagram": {
+    "kind": "timeline",
+    "title": "What we decided: one day with Vana, as built",
+    "steps": [
+     {
+      "at": "8 Oct morning",
+      "label": "Athlete plans with Vana. Notes she\nsaves on her own show no card",
+      "tone": "ink"
+     },
+     {
+      "at": "Sheet closes",
+      "label": "Idle: the server answers at once,\nwrites the summary in the background",
+      "tone": "accent"
+     },
+     {
+      "at": "Midday",
+      "label": "A thumbs vote outside Vana waits\nfor a Vana change or the next day",
+      "tone": "muted"
+     },
+     {
+      "at": "Evening",
+      "label": "Talks again, closes the sheet:\nsummarised again, always the latest",
+      "tone": "ok"
+     },
+     {
+      "at": "9 Oct",
+      "label": "The list shows the one-sentence\nsummary; LAST TALKS reaches Vana",
+      "tone": "ok"
+     }
+    ]
+   }
+  }
+ },
+ "terms": [
+  {
+   "term": "Remember tool",
+   "area": "Vana and what she knows",
+   "definition": "The tool Vana calls to save a Memory during a conversation, whether the athlete asked her to or she judged it worth keeping. The server decides whether the sentence is new or refreshes a Memory it already holds.",
+   "avoid": "remember (unqualified)"
+  },
+  {
+   "term": "Extraction",
+   "area": "Vana and what she knows",
+   "definition": "Vana reading a finished conversation in the background to write its Episode and any Memories nobody asked her to keep. It never shows in the chat.",
+   "avoid": "Extractor, background extraction"
+  },
+  {
+   "term": "Debrief",
+   "area": "Vana and what she knows",
+   "definition": "The check-in Vana opens after a plan week ends, asking how the week went. Recording it writes a debrief row and one to three Memories marked as from the debrief; it is the only writer that learns from what the athlete did."
+  }
+ ]
+}

@@ -1,0 +1,720 @@
+{
+ "cards": {
+  "mp-550": {
+   "context": "Before any AI call that draws on the wallet, the server asks the database to set that call's cost aside (a reservation) before the model runs. The old code let the call through when that ask failed. mp-437 says a fault of ours shows \"Vana is unavailable right now\", never the top-up sheet.",
+   "decision": "When the database cannot answer that ask, the call is refused with \"Vana is unavailable right now\". The top-up sheet never shows for a fault of ours, because the athlete's budget is not what failed, and no call ever runs without being counted against the wallet. Example: on 20 October the database errors just as Lee sends Vana a message. He sees \"Vana is unavailable right now\", no top-up sheet opens, and the model never runs.",
+   "details": "Precisely:\n1. A database error at the reservation refuses the call as \"Vana is unavailable right now\".\n2. The top-up sheet never shows for a fault of ours.\n3. No call runs unmetered.\n\nIt covers every call that draws on the wallet: Vana chat, the described meal, the meal photo, the pantry photo and the openers, through the shared credits module.",
+   "why": "Letting the call through would run the model for free and hide the fault. Showing the top-up sheet would blame the athlete's budget for our fault.",
+   "diagram": {
+    "kind": "flow",
+    "title": "When the wallet cannot answer",
+    "rows": [
+     [
+      {
+       "id": "send",
+       "label": "Lee sends a message",
+       "tone": "ink"
+      }
+     ],
+     [
+      {
+       "id": "ask",
+       "label": "Server asks the database\nto set the cost aside",
+       "tone": "accent"
+      }
+     ],
+     [
+      {
+       "id": "yes",
+       "label": "Set aside:\nthe model runs",
+       "tone": "ok"
+      },
+      {
+       "id": "err",
+       "label": "Database error:\n\"Vana is unavailable\nright now\"",
+       "tone": "no"
+      }
+     ]
+    ],
+    "edges": [
+     {
+      "from": "send",
+      "to": "ask"
+     },
+     {
+      "from": "ask",
+      "to": "yes",
+      "label": "answers"
+     },
+     {
+      "from": "ask",
+      "to": "err",
+      "label": "errors"
+     }
+    ],
+    "example": [
+     "On an error: no top-up sheet, and the model never runs"
+    ]
+   },
+   "slot": 2
+  },
+  "mp-551": {
+   "context": "mp-436 clause 3 sends the app the share of the month used, the refill date and any bought extra, never a dollar figure. It did not fix what unit bought extra is sent in, or what an account with no open month gets. The usage bar in Vana settings (ticket 10) reads this answer.",
+   "question": "In what unit is bought extra sent, and what does an account with no open month get?",
+   "decision": "Bought extra is sent as a share of one month's budget, the same unit as everything else the athlete sees: the $4.99 pack is a quarter of a month, the $19.99 pack a month and a quarter. An account with no open month, such as a lapsed subscription or an account on the old free credits once the paywall opens, is sent no share and no refill date, so the usage bar draws nothing instead of reading as a full month used. The refill date is also sent under the name the top-up sheet reads today, so its renewal line keeps working until ticket 10. Example: an athlete who bought one $4.99 pack is sent 0.25 of a month extra; after the subscription lapses, Vana settings shows no share and no date.",
+   "details": "Precisely:\n1. Bought extra is sent as a share of one month's budget: the $4.99 pack is a quarter, the $19.99 pack a month and a quarter.\n2. An account with no open month (a lapsed subscription, the free grant after the paywall opens) gets no share and no refill date, so the bar has nothing to draw, rather than reading as a full month used.\n3. The refill date is also sent under the name today's sheet already reads, so the sheet's renewal line keeps working until ticket 10.\n\nIt touches the 402 body, the credits endpoint and the Vana settings bar (ticket 10).",
+   "why": "One unit for everything the athlete sees keeps dollars out of the app. A lapsed account showing a full bar with no date was found on the dev check, and it is wrong.",
+   "diagram": {
+    "kind": "timeline",
+    "title": "If credits and a full bar stayed (rejected)",
+    "steps": [
+     {
+      "at": "1 Oct",
+      "label": "Athlete subscribes; the month opens",
+      "tone": "ink"
+     },
+     {
+      "at": "10 Oct",
+      "label": "Buys the $4.99 pack. The app shows it\nin credits, a unit that is gone",
+      "tone": "no"
+     },
+     {
+      "at": "31 Oct",
+      "label": "Subscription lapses: no open month",
+      "tone": "ink"
+     },
+     {
+      "at": "2 Nov",
+      "label": "Opens Vana settings: the bar reads\n100% used, with no refill date",
+      "tone": "no"
+     }
+    ]
+   },
+   "diagram2": {
+    "kind": "timeline",
+    "title": "What we decided: shares, and no bar without a month",
+    "steps": [
+     {
+      "at": "1 Oct",
+      "label": "Athlete subscribes; the month opens",
+      "tone": "ink"
+     },
+     {
+      "at": "10 Oct",
+      "label": "Buys the $4.99 pack.\nSent as 0.25 of a month bought",
+      "tone": "ok"
+     },
+     {
+      "at": "31 Oct",
+      "label": "Subscription lapses: no open month",
+      "tone": "ink"
+     },
+     {
+      "at": "2 Nov",
+      "label": "Opens Vana settings: no share,\nno refill date, the bar draws nothing",
+      "tone": "ok"
+     }
+    ],
+    "example": [
+     "The $19.99 pack is sent as 1.25 of a month"
+    ]
+   }
+  },
+  "mp-568": {
+   "context": "Anthropic reads the start of a prompt from the prompt cache, at a fraction of the price, only when a turn's prompt begins with exactly the bytes the last turn sent. Until this wave two things were left out of the stored transcript: the line saying which screen the athlete was on, and the hidden instruction that made the opener speak first. So each new turn missed the cache the last one had written.",
+   "decision": "Both are saved with the conversation and sent again on every turn exactly as they were first sent. The screen line stays with the athlete's message it came in on; the opener's instruction stays with the opener's own reply. The summary that shortens a long chat skips both, so an instruction never leaks into what Vana remembers. Example: Lee opens Vana from the Plan tab on Sept 22, and turn one carries \"screen: Plan tab\". On Sept 23 turn two sends turn one unchanged and adds its own screen line, so the 16,000 tokens before it are read from the prompt cache instead of written again.",
+   "details": "Precisely:\n1. The screen line and the opener's hidden instruction are saved with the conversation and put back on every turn exactly as first sent.\n2. The screen line stays with the athlete's message it came in on; the opener's instruction stays with the opener's own reply.\n3. The summary that shortens a long chat skips both, so an instruction never leaks into what Vana remembers.\n\nThe screen line is `metadata.situation` on the athlete's row, replayed as a second text part; the opener's instruction is `metadata.opener_prompt` on the opener's assistant row. `transcriptFromMessages` skips ids with the `opener:` prefix and text parts starting with the situation mark. Two tests replay an opener turn and an athlete turn and assert the sent prefix is equal.",
+   "why": "Unless each turn resends the last one byte for byte, the prompt cache is written every turn and never read.",
+   "diagram": {
+    "kind": "timeline",
+    "title": "If the screen line were a hidden message (rejected)",
+    "steps": [
+     {
+      "at": "Sept 22",
+      "label": "Lee opens Vana from the Plan tab.\n\"screen: Plan tab\" is stored\nas a hidden athlete message",
+      "tone": "ink"
+     },
+     {
+      "at": "Sept 23",
+      "label": "Lee reopens the chat. The app shows\n\"screen: Plan tab\" as if he typed it",
+      "tone": "no"
+     }
+    ],
+    "example": [
+     "Also considered: a column on the conversation,",
+     "which loses its place for an opener mid-thread"
+    ]
+   },
+   "diagram2": {
+    "kind": "timeline",
+    "title": "What we decided: saved with the message it came on",
+    "steps": [
+     {
+      "at": "Sept 22",
+      "label": "Lee opens Vana from the Plan tab.\nTurn one carries \"screen: Plan tab\",\nsaved with his message",
+      "tone": "ok"
+     },
+     {
+      "at": "Sept 23",
+      "label": "Turn two sends turn one unchanged\nand adds its own screen line",
+      "tone": "ok"
+     },
+     {
+      "at": "Sept 23",
+      "label": "The 16,000 tokens before it are read\nfrom the prompt cache, not written again",
+      "tone": "accent"
+     }
+    ],
+    "example": [
+     "The chat summary skips both lines"
+    ]
+   }
+  },
+  "mp-569": {
+   "context": "Our AI calls go through a gateway, a service that can send a Claude call to Anthropic, Bedrock or Vertex. Each keeps its own prompt cache, so a call that lands somewhere new starts cold and pays full price. Ticket 07 asked for calls pinned to Anthropic with a session id per conversation.",
+   "question": "Where do Vana's calls go, and what happens when Anthropic is down?",
+   "decision": "Every Vana call goes to Anthropic and nowhere else. When Anthropic is down, Vana says it is unavailable right now, the same line as any other refusal, instead of answering from a cold cache at another provider. Example: Anthropic has an outage at 7pm on Oct 3. Lee taps send, sees \"Vana is unavailable right now\", and nothing is charged.",
+   "details": "Precisely:\n1. Every Vana call goes to Anthropic and nowhere else.\n2. When Anthropic is down, Vana says it is unavailable right now, the same line as any other refusal, instead of answering from a cold cache somewhere else.\n\n`gateway.only: ['anthropic']`; `x-session-affinity` carries the conversation id. The gateway does not echo the session header, so its effect could not be checked from outside; the pin is what the cache rests on.",
+   "why": "One provider means one prompt cache. With a fallback, the cheap turn would become the exception.",
+   "diagram": {
+    "kind": "timeline",
+    "title": "If Bedrock were the fallback (rejected)",
+    "steps": [
+     {
+      "at": "Oct 3, 7pm",
+      "label": "Anthropic has an outage",
+      "tone": "muted"
+     },
+     {
+      "at": "7:05pm",
+      "label": "Lee taps send. The call goes to Bedrock,\nwhich has none of his prompt cached",
+      "tone": "ink"
+     },
+     {
+      "at": "7:05pm",
+      "label": "Vana answers from a cold start,\nat full price",
+      "tone": "no"
+     }
+    ]
+   },
+   "diagram2": {
+    "kind": "timeline",
+    "title": "What we decided: Anthropic only",
+    "steps": [
+     {
+      "at": "Oct 3, 7pm",
+      "label": "Anthropic has an outage",
+      "tone": "muted"
+     },
+     {
+      "at": "7:05pm",
+      "label": "Lee taps send. The call is refused",
+      "tone": "ink"
+     },
+     {
+      "at": "7:05pm",
+      "label": "He sees \"Vana is unavailable\nright now\"; nothing is charged",
+      "tone": "ok"
+     }
+    ]
+   }
+  },
+  "mp-570": {
+   "context": "Anthropic keeps a prompt in the prompt cache for five minutes unless asked for an hour, and the hour costs twice as much to write the first time. The start of a planning turn (the tools, Vana's persona, the athlete's context) is about 16,000 tokens and the same for every turn of a conversation. Ticket 07 asked for the hour if the gateway, the service our AI calls pass through, kept the setting.",
+   "question": "How long is the start of a Vana prompt kept in the prompt cache?",
+   "decision": "An hour. The gateway passes the setting through, so an athlete who comes back to Vana forty minutes later still reads the start of the prompt from the cache. Measured on dev with ten planning turns in one conversation, 85% of the input was read from the cache, against 43% before this wave, at about 0.8 cents a turn. Example: Lee's first turn on Sept 22 costs 3.2 cents, the hour's write; the nine turns after it cost 0.2 to 0.5 cents each.",
+   "details": "Precisely:\n1. The start of every Vana prompt is kept in the cache for an hour, not five minutes.\n2. The gateway passes the setting through.\n\nRead share 85.2% over ten turns, 93.9% over the nine follow-ups; the turns right after a context rebuild read 85.7, 83.2 and 79.2%. $0.0077 a turn on average; the cold turn $0.032 with the hour against $0.022 with five minutes. Measured against the gateway directly with a synthetic athlete, not on the deployed dev function. Raw runs in `.scratch/ai-cost/probe/`.",
+   "why": "A conversation rarely fits ten turns inside five minutes; the savings come from the hour.",
+   "diagram": {
+    "kind": "timeline",
+    "title": "If the cache lasted five minutes (rejected)",
+    "steps": [
+     {
+      "at": "9:00",
+      "label": "Lee's first turn: 2.2 cents to write\nthe start of the prompt",
+      "tone": "ink"
+     },
+     {
+      "at": "9:02",
+      "label": "Next turn reads the start from the cache",
+      "tone": "ok"
+     },
+     {
+      "at": "9:40",
+      "label": "Lee comes back after a pause.\nThe copy is gone: written again",
+      "tone": "no"
+     }
+    ],
+    "example": [
+     "43% read from the cache before this wave"
+    ]
+   },
+   "diagram2": {
+    "kind": "timeline",
+    "title": "What we decided: an hour",
+    "steps": [
+     {
+      "at": "9:00",
+      "label": "Lee's first turn: 3.2 cents,\nthe hour's write",
+      "tone": "ink"
+     },
+     {
+      "at": "9:02",
+      "label": "Next turn reads the start from the cache",
+      "tone": "ok"
+     },
+     {
+      "at": "9:40",
+      "label": "Lee comes back forty minutes later.\nStill read from the cache",
+      "tone": "ok"
+     }
+    ],
+    "example": [
+     "Turns 2 to 10 cost 0.2 to 0.5 cents each,",
+     "0.8 cents a turn on average, 85% read"
+    ]
+   }
+  },
+  "mp-571": {
+   "context": "When the app asks the server to check the wallet, the server answers with the share of the month used, the refill date and any bought extra. But the wallet row reaches the phone two other ways as well: a plain read when the app opens, and a push over the live connection when the row changes. Both carry the raw balance in micro-dollars (millionths of a dollar) and none of the three shares.",
+   "decision": "The phone does, with the same arithmetic as the server, so the usage bar reads the same whichever of the three ways the row arrived. The screen never shows a dollar figure. Example: Lee's row on Sept 22 says balance $3.00, monthly grant $4.00, $2.00 of the grant left. The bar says 50% used, refills Oct 15, plus 25% of a month bought.",
+   "details": "Precisely:\n1. The phone turns the wallet row into the share used, the refill date and bought extra, with the same arithmetic as the server, so the bar reads the same whichever way the row arrived (the server's check, the plain read, the live push).\n2. The screen never shows a dollar figure.\n\nMirrors `budgetStatus` in `allowance.ts`, with the unit test copying that file's cases. Bought extra is a share of `kMonthlyBudgetMicros` (4,000,000, a mirror of the server's default); the share used reads the grant the row carries, so a trial week reads right. The raw row still reaches the phone: mp-576. Touches Vana settings, the top-up sheet, the budget pill; `lib/features/ai_credits/domain/budget_share.dart`.",
+   "why": "The row comes in three ways and one formula reads it, so the bar cannot disagree with itself in the middle of a session.",
+   "diagram": {
+    "kind": "flow",
+    "title": "Three ways in, one formula",
+    "rows": [
+     [
+      {
+       "id": "chk",
+       "label": "Server check"
+      },
+      {
+       "id": "read",
+       "label": "Plain read\nat app open"
+      },
+      {
+       "id": "push",
+       "label": "Live push\non change"
+      }
+     ],
+     [
+      {
+       "id": "f",
+       "label": "Same arithmetic\nas the server, on the phone",
+       "tone": "accent"
+      }
+     ],
+     [
+      {
+       "id": "bar",
+       "label": "50% used, refills Oct 15,\n+25% of a month bought",
+       "tone": "ok"
+      }
+     ]
+    ],
+    "edges": [
+     {
+      "from": "chk",
+      "to": "f"
+     },
+     {
+      "from": "read",
+      "to": "f"
+     },
+     {
+      "from": "push",
+      "to": "f"
+     },
+     {
+      "from": "f",
+      "to": "bar"
+     }
+    ],
+    "example": [
+     "Row: balance $3.00, grant $4.00, $2.00 of it left",
+     "The screen shows no dollar figure"
+    ]
+   },
+   "slot": 2
+  },
+  "mp-572": {
+   "title": "Price tags are gone, and the budget pill shows what is left as a percent",
+   "context": "Beside Describe, Analyze and the photo pickers sat a small tag saying what the tap would cost, and the budget pill in the corner of the screen showed the wallet's balance. Since ticket 09 nothing counts turns or actions (mp-430 clause 1): a call costs what it costs, so the tags showed a made-up price, and the balance is now kept in micro-dollars (millionths of a dollar).",
+   "question": "What do the price tags and the budget pill say now?",
+   "decision": "The tags say nothing: they draw nothing, and the buttons stay where they were. The budget pill shows how much of a month is left as a percentage, the rest of this month plus anything bought. It reads the wallet the app already holds and does not open the live connection. The old buy-credits screen, still reachable by its route, speaks in the same shares. Example: Lee with half the month left and a quarter-month pack bought sees \"75%\" in the pill and no tag beside Analyze.",
+   "details": "Precisely:\n1. The tags draw nothing, and the buttons stay where they were.\n2. The pill shows how much of a month is left as a percentage: the rest of this month plus anything bought.\n3. The pill reads the wallet the app already holds, without opening the live connection.\n4. The old buy-credits screen, still reachable by its route, speaks in the same shares.\n\n`TokenCostTag` and `TokenCostChip` render `SizedBox.shrink()`; the pill shows `percentOf(shareLeft.clamp(0, 9.99))`. Touches Describe meal, Log meal and the legacy buy-credits screen.",
+   "why": "A turn has no fixed price, so a tag could only be wrong. A percentage is the one number the athlete may see.",
+   "diagram": {
+    "kind": "compare",
+    "title": "Describe and Log meal",
+    "left": {
+     "head": "Before",
+     "lines": [
+      "a price tag beside Analyze",
+      "pill shows the balance"
+     ],
+     "tone": "muted"
+    },
+    "right": {
+     "head": "Now",
+     "lines": [
+      "no tag, button in place",
+      "pill shows 75% left"
+     ],
+     "tone": "ok"
+    },
+    "example": [
+     "Half the month left + a quarter-month pack = 75%"
+    ]
+   },
+   "slot": 2
+  },
+  "mp-573": {
+   "context": "The usage bar rounds to whole percent, so a wallet with two cents of a $4 month left reads \"100% used\". The server still accepts that wallet's next call: a call that starts inside the budget runs (mp-436 clause 1). The first build of ticket 10 decided \"spent\" from the rounded share, so the usage card in Vana settings said the month was used up and offered the top-up sheet while Vana would still have answered.",
+   "question": "When does Vana settings say the month is used up?",
+   "decision": "Only when the wallet's balance is really zero. The bar may say 100% used while the card still lets the athlete carry on; the top-up sheet comes on the first call the server refuses. Example: Lee has one cent left on Sept 22. The bar says 100% used, the card does not say the month is gone, his next message goes through, and the one after that gets the top-up sheet.",
+   "details": "Precisely:\n1. The card says the month is used up only when the wallet's balance is really zero.\n2. The bar may say 100% used while the card still lets the athlete carry on.\n3. The top-up sheet comes on the first call the server refuses.\n\n`BudgetShare.isSpent` reads the raw balance (`balance <= 0`), never the rounded shares. Unit test: a cent left reads 100% used and is still not spent.",
+   "diagram": {
+    "kind": "timeline",
+    "title": "One cent left",
+    "steps": [
+     {
+      "at": "Sept 22",
+      "label": "Lee has 1 cent left. The bar says\n100% used; the card says nothing is gone",
+      "tone": "accent"
+     },
+     {
+      "at": "Next",
+      "label": "He sends a message: it goes through",
+      "tone": "ok"
+     },
+     {
+      "at": "After",
+      "label": "The next message is refused:\nthe top-up sheet opens",
+      "tone": "ink"
+     }
+    ],
+    "example": [
+     "The screen never refuses before the server does"
+    ]
+   },
+   "slot": 2
+  },
+  "mp-574": {
+   "title": "The line above the message box says the month is used",
+   "context": "When the server refuses a Vana message because the wallet is empty, one line appears above the message box and send opens the top-up sheet (mp-282 clause 2). The line said \"Out of tokens for now — top up to keep chatting\", the old unit, next to a sheet now worded in months.",
+   "question": "What does the line above the message box say when the month is used?",
+   "decision": "It says \"You've used this month's Vana — top up to keep chatting\", so it speaks in months like the top-up sheet beside it. Example: Lee, at 100% on Sept 30, taps send. The line appears, the top-up sheet opens, and nothing on screen says tokens or credits.",
+   "details": "Precisely:\n1. The line reads \"You've used this month's Vana — top up to keep chatting\".\n\nThe text is `meal_planning.out_of_credits_strip` in the content system.",
+   "why": "Text that names credits changes with the unit (mp-430 clause 7).",
+   "diagram": {
+    "kind": "timeline",
+    "title": "Sept 30, at 100%",
+    "steps": [
+     {
+      "at": "Tap",
+      "label": "Lee taps send",
+      "tone": "ink"
+     },
+     {
+      "at": "Refused",
+      "label": "The server refuses: the wallet is empty",
+      "tone": "muted"
+     },
+     {
+      "at": "Line",
+      "label": "Above the message box:\n\"You've used this month's Vana —\ntop up to keep chatting\"",
+      "tone": "accent"
+     },
+     {
+      "at": "Sheet",
+      "label": "The top-up sheet opens.\nNo word of tokens or credits",
+      "tone": "ok"
+     }
+    ]
+   },
+   "slot": 2
+  },
+  "mp-575": {
+   "context": "The app used to keep the live connection to the wallet open for the whole session so the balance stayed fresh. mp-475 says it is open only while a budget screen is showing.",
+   "decision": "A budget screen holds the connection open while it is showing. When the last such screen goes away the connection closes a moment later, and it never opens on a screen that shows no budget. A row pushed while it is open still lands in the one wallet the session keeps. Example: Lee opens Vana settings (the connection opens), backs out (it closes two seconds later), sends three Vana messages (no connection), opens the top-up sheet (it opens again).",
+   "details": "Precisely:\n1. A budget screen holds the connection open by watching it.\n2. When the last such screen goes away, the connection closes a moment later.\n3. It never opens on a screen that shows no budget.\n4. A pushed row still lands in the one wallet the session keeps.\n\n`walletChannelProvider` is `autoDispose`. A widget test over a counting transport asserts one subscribe on show, one remove on hide, none without a card, and that a pushed row reaches the bar through the real controller. Touches `credits_controller.dart` (the channel out of `build`, `applyRemoteWallet` in) and `wallet_channel.dart`.",
+   "why": "Riverpod, the app's state framework, already counts which screens are watching the connection and closes it when none are, so there is no counter of our own to get wrong.",
+   "diagram": {
+    "kind": "timeline",
+    "title": "The connection follows the budget screens",
+    "steps": [
+     {
+      "at": "1",
+      "label": "Lee opens Vana settings:\nthe connection opens",
+      "tone": "accent"
+     },
+     {
+      "at": "2",
+      "label": "He backs out: it closes\ntwo seconds later",
+      "tone": "muted"
+     },
+     {
+      "at": "3",
+      "label": "He sends three Vana messages:\nno connection",
+      "tone": "muted"
+     },
+     {
+      "at": "4",
+      "label": "He opens the top-up sheet:\nit opens again",
+      "tone": "accent"
+     }
+    ]
+   },
+   "slot": 2
+  },
+  "mp-542": {
+   "context": "mp-532 asked whether the prod grace run should skip the team's own test and demo accounts. The grace run is the script Lee runs on flip day to give Legacy grace (mp-530), and it also marks each account it covers as a founding member in RevenueCat.",
+   "decision": "No. Every registered account created before the flip gets the grace month and the founding-member mark, the team's own accounts included. The selection stays as mp-530 built it, with no rule for internal accounts or test email addresses. Example: Lee flips on 1 October and runs the prod grace script. A team demo account made in August is selected like any athlete's account and gets 30 days of Pro, to 31 October, and the founding-member mark.",
+   "details": "Precisely:\n1. The grace run does not skip our own accounts: every registered account created before the flip gets the grace month and `founding_member`, ours included.\n2. The selection stays as built (mp-530): nothing skips accounts flagged internal or test email domains.",
+   "why": "A Grant on a test account costs nothing, internal accounts get past the paywall anyway, and a few extra founding members barely move the count.",
+   "diagram": {
+    "kind": "timeline",
+    "title": "If our own accounts were skipped (rejected)",
+    "steps": [
+     {
+      "at": "August",
+      "label": "The team makes a demo account",
+      "tone": "ink"
+     },
+     {
+      "at": "1 Oct",
+      "label": "Lee flips the paywall on",
+      "tone": "accent"
+     },
+     {
+      "at": "Grace run",
+      "label": "A rule for internal flags or\ntest email domains skips the demo",
+      "tone": "no"
+     },
+     {
+      "at": "Result",
+      "label": "It saves nothing: a Grant\non a test account costs nothing",
+      "tone": "muted"
+     }
+    ]
+   },
+   "diagram2": {
+    "kind": "timeline",
+    "title": "What we decided: ours are included",
+    "steps": [
+     {
+      "at": "August",
+      "label": "The team makes a demo account",
+      "tone": "ink"
+     },
+     {
+      "at": "1 Oct",
+      "label": "Lee flips the paywall on",
+      "tone": "accent"
+     },
+     {
+      "at": "Grace run",
+      "label": "The demo is selected like\nany athlete's account",
+      "tone": "ok"
+     },
+     {
+      "at": "Result",
+      "label": "30 days of Pro to 31 Oct and\nthe founding-member mark",
+      "tone": "ok"
+     }
+    ],
+    "example": [
+     "A few extra founding members barely move the count"
+    ]
+   }
+  },
+  "mp-579": {
+   "title": "A lapsed account can sign out, buy and disconnect, but every edit to its own data opens the paywall",
+   "context": "mp-457 says every write controller (the code behind each save in the app) checks whether writes are allowed before writing. Ticket 12 added that check to 36 controllers, 208 write paths in all. It had to decide which actions count as a write the paywall should stop, and which are account housekeeping the paywall itself depends on.",
+   "decision": "Every edit to the athlete's own data, edits to meal planning, every AI call, the Kroger cart and connect, connecting or importing from a training app, a Garmin backfill the athlete taps and every coach write open the paywall instead of running. What the paywall relies on keeps working (signing in and out, deleting the account, buying and restoring), and so does whatever is not the athlete editing, such as uploading rows already queued, plans the server sends down, or emailing a plan as a PDF. Disconnecting a training app also keeps working, like sign-out, because taking back a third party's access is the account's right. Example: an athlete whose Trial ended unpaid on 8 October opens the app on 9 October. Editing a meal log opens the paywall, while disconnecting Garmin still works and hides or deletes Garmin's imported activities as it does today.",
+   "details": "Precisely:\n1. Open the paywall: every edit to the athlete's own data (activities, bricks, events, calendar, carb loading, nutrition plan and macros, meal logs and drafts, templates, the race checklist, profile and sweat profile), meal planning (plans, days, votes, notes, photos, the shopping list, Vana settings), AI calls, Kroger cart and connect, connecting or importing from a training app, a Garmin backfill the athlete taps, and every coach-mode write.\n2. Keep working: sign-in and sign-out, account deletion, buying and restoring, the credits sheet, startup, uploading rows already queued, plans the server sends down, onboarding, analytics consent, Vana's quiet and moment settings, emailing a plan as a PDF, Kroger search and hand-off, and the Garmin backfill the app starts once per session.\n3. Disconnecting a training app stays open, like sign-out: revoking a third party's access is the account's right. It hides or deletes that app's imported activities, as it does today.\n\nOne seam test per controller write path, through the real notifier, with every repository set to fail if touched (`lapsed_writes_seam_test.dart` in each feature). The wave review found two gaps, fixed before merge: carb-loading food selection was ungated, and the session's Garmin backfill opened the paywall when a lapsed athlete merely opened Connected Apps. Kroger disconnect is gated while training-app disconnect is not; say which way both should go. Touches every write controller and `subscription/application/write_guard.dart`.",
+   "why": "The paywall offers Restore purchases, Sign out and Delete account (mp-280), so nothing it relies on can sit behind it. What the server sends down is not the athlete editing.",
+   "diagram": {
+    "kind": "timeline",
+    "title": "If disconnect and the plan email were gated (rejected)",
+    "steps": [
+     {
+      "at": "8 Oct",
+      "label": "Trial ends unpaid: the account is Lapsed",
+      "tone": "ink"
+     },
+     {
+      "at": "9 Oct",
+      "label": "Edits a meal log: the paywall opens",
+      "tone": "ink"
+     },
+     {
+      "at": "9 Oct",
+      "label": "Taps Disconnect on Garmin:\nthe paywall opens, Garmin stays connected",
+      "tone": "no"
+     },
+     {
+      "at": "9 Oct",
+      "label": "Emails a plan as a PDF:\nthe paywall opens",
+      "tone": "no"
+     }
+    ]
+   },
+   "diagram2": {
+    "kind": "timeline",
+    "title": "What we decided: housekeeping stays open",
+    "steps": [
+     {
+      "at": "8 Oct",
+      "label": "Trial ends unpaid: the account is Lapsed",
+      "tone": "ink"
+     },
+     {
+      "at": "9 Oct",
+      "label": "Edits a meal log: the paywall opens,\nnothing is written",
+      "tone": "accent"
+     },
+     {
+      "at": "9 Oct",
+      "label": "Taps Disconnect on Garmin: done;\nits imported activities hidden or deleted",
+      "tone": "ok"
+     },
+     {
+      "at": "9 Oct",
+      "label": "Emails a plan as a PDF: sent",
+      "tone": "ok"
+     }
+    ],
+    "example": [
+     "Sign out, Delete account and Restore always work"
+    ]
+   }
+  },
+  "mp-580": {
+   "title": "The Subscription screen shows one status: ended, then trial, then founding, then active",
+   "context": "mp-495 lists four statuses for the Subscription screen (trial, active, founding, ended) but not which one shows when two apply, such as a Trial on a founding product, or a cancelled plan that still runs.",
+   "decision": "When more than one status applies, the screen shows the first that applies in this order: ended, trial, founding, active. A plan that will not renew says when it ends instead of when it renews. Founding means the product this customer bought is a founding product, not whatever the paywall offers today, and the list of what Pro includes is the paywall's own list. Example: an athlete starts a Trial on a founding plan on 1 October and reads trial, ending October 8, 2026; once it converts they read founding; if they cancel, the line reads \"Ends on {date}. It won't renew.\" in place of \"Renews on {date}.\"",
+   "details": "Precisely:\n1. Ended, then trial, then founding, then active: the first that applies is shown.\n2. A plan that will not renew shows \"Ends on {date}. It won't renew.\" instead of \"Renews on {date}.\"\n3. Founding means the product this customer bought is a founding product, not whatever the paywall offers today.\n4. The list of what Pro includes is the paywall's own list, each feature ticked and the AI features under one Vana line with Vana's avatar.\n\nFounding is a product id containing `_founding` (`me_pro_*_founding` and the `_prod` ones). Dates read \"September 29, 2026\". Goldens light and dark for active and ended; trial and founding are widget-tested. Touches the Subscription screen, the paywall's feature list (now shared) and the `subscription.*` content keys.",
+   "why": "During a Trial the end date is what the athlete needs. A founding price is a fact about what they bought, which today's Offering cannot tell.",
+   "diagram": {
+    "kind": "flow",
+    "title": "The first status that applies",
+    "rows": [
+     [
+      {
+       "id": "e",
+       "label": "1. Ended",
+       "tone": "no"
+      },
+      {
+       "id": "t",
+       "label": "2. Trial",
+       "tone": "accent"
+      }
+     ],
+     [
+      {
+       "id": "f",
+       "label": "3. Founding\n(bought a founding\nproduct)",
+       "tone": "ok"
+      },
+      {
+       "id": "a",
+       "label": "4. Active",
+       "tone": "ink"
+      }
+     ]
+    ],
+    "edges": [
+     {
+      "from": "e",
+      "to": "t",
+      "label": "no"
+     },
+     {
+      "from": "t",
+      "to": "f",
+      "label": "no"
+     },
+     {
+      "from": "f",
+      "to": "a",
+      "label": "no"
+     }
+    ],
+    "example": [
+     "Trial on a founding plan from 1 Oct: trial,",
+     "ends October 8, 2026; then founding"
+    ]
+   },
+   "slot": 2
+  },
+  "mp-581": {
+   "decision": "The Subscription row is the first row of the quick-links card in Settings, with a crown icon, and its title and subtitle come from the content system. Example: on 10 October an athlete who wants to check their plan opens Settings, taps the top row of the quick-links card, and lands on the Subscription screen.",
+   "details": "Precisely:\n1. First row of Settings' quick-links card, crown icon, title and subtitle from the content system.",
+   "diagram": {
+    "kind": "flow",
+    "title": "Where Subscription sits",
+    "rows": [
+     [
+      {
+       "id": "s",
+       "label": "Settings"
+      }
+     ],
+     [
+      {
+       "id": "q",
+       "label": "Quick-links card,\nfirst row: Subscription\n(crown icon)",
+       "tone": "accent"
+      }
+     ],
+     [
+      {
+       "id": "sc",
+       "label": "Subscription screen",
+       "tone": "ok"
+      }
+     ]
+    ],
+    "edges": [
+     {
+      "from": "s",
+      "to": "q"
+     },
+     {
+      "from": "q",
+      "to": "sc",
+      "label": "tap"
+     }
+    ],
+    "example": [
+     "Not near Account at the bottom of Settings"
+    ]
+   },
+   "slot": 2
+  }
+ },
+ "terms": [
+  {
+   "term": "Live connection",
+   "area": "Paying for the app",
+   "definition": "The feed over which the server pushes the account's wallet row to the phone whenever it changes. It is open only while a screen that shows the budget is showing.",
+   "avoid": "Wallet channel, realtime subscription"
+  },
+  {
+   "term": "Usage bar",
+   "area": "Paying for the app",
+   "definition": "The bar in Vana settings that shows the share of this month's budget used, the refill date and any bought extra, as percentages and a date, never dollars.",
+   "avoid": "Budget bar, credits bar"
+  },
+  {
+   "term": "Bought extra",
+   "area": "Paying for the app",
+   "definition": "What is left of the budget bought in Top-ups, shown to the athlete as a share of one month's budget: the $4.99 pack adds a quarter of a month, the $19.99 pack a month and a quarter.",
+   "avoid": "Pack credits, bought credits"
+  }
+ ]
+}

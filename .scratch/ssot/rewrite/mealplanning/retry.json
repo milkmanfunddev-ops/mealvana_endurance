@@ -1,0 +1,230 @@
+{
+ "cards": {
+  "mp-027": {
+   "question": "Does Vana tell the athlete when she learns something quietly?",
+   "decision": "No. What the background extraction learns produces no card and no mention in the chat. The small \"remembered\" card in the chat stays only for when the athlete asked her to remember something, with the remember tool. The flat list in Vana settings is where the athlete can see everything she holds. Example: after a chat about a race weekend, the extraction saves \"prefers rice to pasta before long rides\"; nothing appears in the chat, and the sentence shows up in the list in Vana settings.",
+   "details": "Precisely:\n1. Extraction produces no card and no mention in the conversation.\n2. The in-chat \"remembered\" card stays only for the explicit remember tool, used when the athlete asked her to remember.\n3. The flat list in settings is the audit trail.",
+   "diagram": {
+    "kind": "timeline",
+    "title": "What we decided: learned quietly, listed openly",
+    "steps": [
+     {
+      "at": "Athlete asks",
+      "label": "\"Remember this\": saved with a\n\"remembered\" card in the chat",
+      "tone": "ok"
+     },
+     {
+      "at": "Extraction",
+      "label": "Saved with no card and no mention\nin the chat",
+      "tone": "muted"
+     },
+     {
+      "at": "Vana settings",
+      "label": "Both appear in the one flat list",
+      "tone": "accent"
+     }
+    ]
+   },
+   "slot": 2
+  },
+  "mp-269": {
+   "title": "The athlete sets the day a plan period starts and how long it runs",
+   "question": "Which day does a plan period start, and how long does it run?",
+   "context": "The plan week always started on Sunday, with cooking on fixed days after it: Sunday, Wednesday and Friday (mp-240). Athletes cook on different days and over different spans.",
+   "decision": "The athlete can change the day a plan period starts and how many days it runs; Sunday and seven days are the defaults. Cook days follow from those two settings instead of sitting on fixed days. The Plan tab, plan coverage, the review sheet and the check-in opener all read the settings. Example: an athlete who shops on Mondays sets the start day to Monday and keeps seven days, and the Plan tab, plan coverage, the review sheet and the check-in opener all work from a Monday start.",
+   "details": "Precisely:\n1. The start day and the length of a plan period are settings the athlete can change. Sunday and seven days are the defaults.\n2. Cook days derive from those settings, not from fixed offsets.\n3. The Plan tab, coverage, the review sheet and the check-in opener all read the settings.",
+   "diagram": {
+    "kind": "flow",
+    "title": "What we decided: two settings drive the rest",
+    "rows": [
+     [
+      {
+       "id": "set",
+       "label": "Settings: start day, length\n(defaults Sunday, 7 days)",
+       "tone": "accent"
+      }
+     ],
+     [
+      {
+       "id": "cook",
+       "label": "Cook days worked out\nfrom the settings",
+       "tone": "ok"
+      },
+      {
+       "id": "tab",
+       "label": "Plan tab",
+       "tone": "ink"
+      },
+      {
+       "id": "cov",
+       "label": "Plan coverage",
+       "tone": "ink"
+      }
+     ],
+     [
+      {
+       "id": "rev",
+       "label": "Review sheet",
+       "tone": "ink"
+      },
+      {
+       "id": "open",
+       "label": "Check-in opener",
+       "tone": "ink"
+      }
+     ]
+    ],
+    "edges": [
+     {
+      "from": "set",
+      "to": "cook"
+     },
+     {
+      "from": "set",
+      "to": "tab"
+     },
+     {
+      "from": "set",
+      "to": "cov"
+     },
+     {
+      "from": "set",
+      "to": "rev"
+     },
+     {
+      "from": "set",
+      "to": "open"
+     }
+    ],
+    "example": [
+     "Before: always Sunday, cooking Sun, Wed, Fri",
+     "(mp-240, rejected)"
+    ]
+   },
+   "slot": 2
+  },
+  "mp-273": {
+   "question": "What does Vana get told about the athlete from each place she is opened?",
+   "decision": "Every place Vana is opened from sends the same Voodoo Doll: a fixed digest, the same lines in the same order for everyone, every list capped. The only part that changes is the Situation: the app sends where the athlete is and which item is in view, and the server adds one short section about that item, only while it is in view. Anything deeper Vana looks up with a tool, and the Doll never grows to suit one screen. Example: an athlete asks Vana on the Plan tab and she gets the usual Doll plus a few lines with the day's plan; the same athlete asks from the formula screens and gets the same Doll plus a FORMULA section instead.",
+   "details": "Precisely:\n1. The Doll is a fixed-shape digest: the same lines in the same order for everyone, every list capped, nothing free-form. It is the constant, sent by every entry point. mp-218's budget test guards its size.\n2. The Situation is the only variable. The client sends a route and an id; the server adds one capped section for the entity in view, only while it is in view: a FORMULA section on the formula screens, an EVENTS AHEAD list on the events screens, the day's plan on the Plan tab. A section is a few lines, never a dump of the record.\n3. Anything deeper is a tool, never a line. The block says what exists; the tools (mp-212) give detail on demand.\n4. The Doll never grows to hold what one entry point might want. New entry points add a row to the server's screen table and nothing else.",
+   "diagram": {
+    "kind": "timeline",
+    "title": "If the Doll grew for every screen (rejected)",
+    "steps": [
+     {
+      "at": "3 Oct 07:00",
+      "label": "Athlete opens Vana on the Plan tab.\nThe Doll carries the plan, formulas\nand events ahead, needed or not",
+      "tone": "no"
+     },
+     {
+      "at": "07:05",
+      "label": "Asks about dinner. All of those\nlines go out again with this turn",
+      "tone": "no"
+     },
+     {
+      "at": "Later",
+      "label": "A new entry point is added.\nIts lines join the Doll\nfor every athlete, on every screen",
+      "tone": "no"
+     }
+    ],
+    "example": [
+     "A Doll that keeps growing fights mp-020 (short view)",
+     "and mp-218 (token budget)"
+    ]
+   },
+   "diagram2": {
+    "kind": "timeline",
+    "title": "What we decided: same Doll, one section for what is in view",
+    "steps": [
+     {
+      "at": "3 Oct 07:00",
+      "label": "Athlete opens Vana on the Plan tab.\nSame Doll as everywhere,\nplus a few lines: the day's plan",
+      "tone": "ok"
+     },
+     {
+      "at": "07:05",
+      "label": "Asks for more detail.\nVana calls a tool for it",
+      "tone": "ok"
+     },
+     {
+      "at": "12:00",
+      "label": "Opens Vana on a formula screen.\nSame Doll, plus a FORMULA section",
+      "tone": "ok"
+     }
+    ],
+    "example": [
+     "A new entry point adds one row to the server's screen table"
+    ]
+   }
+  },
+  "mp-277": {
+   "title": "Vana folds long chats into summaries, saves notes as they are said, and writes the Episode when a chat goes idle",
+   "question": "How does Vana remember, inside one conversation and from one to the next?",
+   "context": "The model remembers nothing between turns, so everything that looked like memory was machinery the app built: a 20-message sliding window, an Episode written mid-conversation from the opening half, a read-back of the previous conversation when the next one opened, a 3.5 second wait for it, an \"athlete's last words\" fallback, and two Episode writers racing each other. Lee held mp-032 to mp-036 and mp-038, rejected mp-009 and mp-026, and asked for a rethink. The research (docs/research/conversation-memory-strategies.md) found nobody ships \"summarise when the next one opens\": LangChain keeps the last 20 messages word for word and folds the rest into a rolling summary in chunks, Claude and Character.AI save notes during the chat, and OpenAI and Anthropic compact on the server at a threshold. This card replaces mp-032, mp-033, mp-034, mp-035 and mp-036, keeps mp-038, and answers mp-217.",
+   "decision": "Inside a conversation every message is kept word for word up to 40; at 40 the oldest 20 become one summary and the last 20 stay, and at 60 the same again. That summary is prepared in the background from message 30, so no reply waits. While the athlete talks, Vana saves anything lasting the moment it is said, with her remember tool; when the chat goes idle (the sheet closes, the app goes to the background, or a new chat starts) the server writes the conversation's Episode and any notes she missed, once, so the next opener reads what exists and never waits. Example: an athlete plans dinners on the evening of 6 October and closes the sheet; the Episode is written then, and the opener on the morning of 7 October reads it with no wait.",
+   "why": "Lee: \"If there is a new conversation, we should have summarised the earlier one sometime before that\", and machinery that exists only to cover a late summary should go. Folding the history in chunks keeps both the prompt cache (mp-276: the start of the prompt that does not change is cached) and the conversation's opening, which a sliding window would drop.",
+   "details": "Precisely:\n1. Within a conversation the history is chunked, never sliding. Every message stays verbatim up to 40. At 40 the oldest 20 become one summary message and the last 20 stay verbatim; at 60 the same again, rolling the previous summary in. The summary is written in the background when the count reaches 30 and applied at 40, so no turn waits and the cached prefix changes once per 20 turns. It lives on the conversation row, keyed by the message index it covers; no new table and no two-writer race.\n2. During the conversation the remember tool is the memory writer, as mp-024's second writer. The prompt is sharpened so a durable thing the athlete says is saved the moment they say it, and the eval tests that.\n3. At the end the client says when: when the sheet closes, the app goes to the background, or a new conversation starts, the client tells the server the conversation is idle, and the server writes its episode and any margin notes the tool missed, once. The summary exists before the next conversation opens.\n4. The opener reads what exists and never waits. No read-back on open, no wait, no last-words fallback, no mid-conversation episode from the opening half. Episodes and the LAST TALKS line stay (mp-038).\n\nHISTORY_CAP 20 becomes verbatim to 40, chunk 20, summary at 30. OPENER_READ_BACK_MS, readBackWithin, athleteWordsFrom and writeOpenEpisode are removed.",
+   "diagram": {
+    "kind": "timeline",
+    "title": "If a server sweep caught idle chats (deferred)",
+    "steps": [
+     {
+      "at": "6 Oct 19:00",
+      "label": "Athlete plans dinners. Lasting things\nsaved as they are said",
+      "tone": "ok"
+     },
+     {
+      "at": "19:20",
+      "label": "The app is killed mid-chat.\nNo idle signal reaches the server",
+      "tone": "muted"
+     },
+     {
+      "at": "19:50",
+      "label": "The chat has been idle 30 minutes",
+      "tone": "muted"
+     },
+     {
+      "at": "By 20:05",
+      "label": "A server job that runs every 15 minutes\nfinds it and writes the Episode",
+      "tone": "no"
+     }
+    ],
+    "example": [
+     "One more scheduled job to run and watch:",
+     "the kind of machinery mp-026 turned down"
+    ]
+   },
+   "diagram2": {
+    "kind": "timeline",
+    "title": "What we decided: the app says when a chat goes idle",
+    "steps": [
+     {
+      "at": "6 Oct 19:00",
+      "label": "Athlete plans dinners. Lasting things\nsaved as they are said",
+      "tone": "ok"
+     },
+     {
+      "at": "19:20",
+      "label": "The app is killed mid-chat.\nThe notes are already saved",
+      "tone": "ok"
+     },
+     {
+      "at": "Later",
+      "label": "The Episode for that chat waits\nuntil it is next opened",
+      "tone": "muted"
+     },
+     {
+      "at": "7 Oct morning",
+      "label": "A new chat: the opener reads\nwhat exists. No wait",
+      "tone": "ok"
+     }
+    ],
+    "example": [
+     "Normally the sheet closing tells the server,",
+     "and it writes the Episode and missed notes then, once"
+    ]
+   }
+  }
+ },
+ "terms": []
+}

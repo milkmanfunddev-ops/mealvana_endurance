@@ -1,0 +1,684 @@
+{
+ "cards": {
+  "mp-018": {
+   "question": "Which model runs Vana's chat, and how would we argue for changing it?",
+   "decision": "Vana's chat runs on Claude Haiku 4.5, the smaller and cheaper Claude model, through the AI Gateway, and embeddings (the number fingerprints used to compare pieces of text) come from text-embedding-3-small. Sonnet, the larger and dearer model, is used only when a setting on the server asks for it. Every eval case records how many tokens went in and came out, so a later switch is argued with numbers. Example: if someone proposes moving the chat to Sonnet, the eval run shows each case's input and output tokens on both models, and the cost per turn is a figure, not a feeling.",
+   "details": "Precisely:\n1. The default chat model is Claude Haiku 4.5 through the AI Gateway.\n2. Embeddings use text-embedding-3-small.\n3. Sonnet is only an environment override.\n4. Every eval case records its input and output tokens.",
+   "diagram": {
+    "kind": "timeline",
+    "title": "If the chat ran on Sonnet (rejected)",
+    "steps": [
+     {
+      "at": "3 Oct",
+      "label": "Athlete opens a planning conversation",
+      "tone": "ink"
+     },
+     {
+      "at": "Each turn",
+      "label": "Every reply comes from Sonnet,\nthe larger and dearer model",
+      "tone": "no"
+     },
+     {
+      "at": "Later",
+      "label": "No token counts per eval case:\na model change is argued on a feeling",
+      "tone": "no"
+     }
+    ]
+   },
+   "diagram2": {
+    "kind": "timeline",
+    "title": "What we decided: Haiku by default, cost recorded",
+    "steps": [
+     {
+      "at": "3 Oct",
+      "label": "Athlete opens a planning conversation",
+      "tone": "ink"
+     },
+     {
+      "at": "Each turn",
+      "label": "Every reply comes from Haiku 4.5\nthrough the AI Gateway",
+      "tone": "ok"
+     },
+     {
+      "at": "Embeddings",
+      "label": "From text-embedding-3-small",
+      "tone": "muted"
+     },
+     {
+      "at": "Eval run",
+      "label": "Each case records input and output tokens,\nso a switch to Sonnet is argued\nwith numbers",
+      "tone": "accent"
+     }
+    ],
+    "example": [
+     "Sonnet only when a server setting overrides the default"
+    ]
+   }
+  },
+  "mp-209": {
+   "question": "When do the last traces of the name Jade go?",
+   "decision": "Now. Every mention of Jade goes: the old server route and its functions, the prompts, the database names as soon as the shipped app no longer calls them, and the words a coach sees when giving feedback on a formula. Coach feedback on a formula becomes an ordinary Vana conversation, like any other way into Vana. Example: a coach opens an athlete's formula to leave feedback and talks to Vana, the same assistant the athlete meets in the chat, with no Jade anywhere on the screen.",
+   "details": "Precisely:\n1. Every mention of Jade goes: the route, the functions, the prompts, the database names once the shipped app no longer needs them, and the coach-facing copy in formula feedback.\n2. The coach formula feedback is a Vana conversation like any other entry point.",
+   "diagram": {
+    "kind": "flow",
+    "title": "What goes, and when",
+    "rows": [
+     [
+      {
+       "id": "r",
+       "label": "jade-chat route\nand its functions",
+       "tone": "no"
+      },
+      {
+       "id": "p",
+       "label": "Jade in the\nprompts",
+       "tone": "no"
+      },
+      {
+       "id": "c",
+       "label": "Coach copy in\nformula feedback",
+       "tone": "no"
+      }
+     ],
+     [
+      {
+       "id": "db",
+       "label": "jade_* database names:\nonce the shipped app\nno longer needs them",
+       "tone": "pending"
+      }
+     ],
+     [
+      {
+       "id": "v",
+       "label": "Coach formula feedback:\na Vana conversation",
+       "tone": "ok"
+      }
+     ]
+    ],
+    "edges": [
+     {
+      "from": "c",
+      "to": "v",
+      "label": "becomes"
+     }
+    ],
+    "example": [
+     "One assistant, one name: Vana"
+    ]
+   },
+   "slot": 2
+  },
+  "mp-212": {
+   "title": "Vana looks up the athlete's own records with tools before answering",
+   "question": "How much of the athlete's record can Vana look at when asked?",
+   "decision": "Vana gets a tool, a lookup she can call in the middle of a reply, for each record a question could need: the upcoming event list, activity history, macro targets, and food suggestions for a given session such as a long run. The app's own fixed calculations are offered to her as tools rather than rebuilt in her prompt. When one of those records can settle a question, she looks it up before she answers. Example: an athlete asks what races are coming up, and Vana reads their event list instead of asking them.",
+   "details": "Precisely:\n1. Vana gets a tool for each of the athlete's records that a question could need: the upcoming event list, activity history, macro targets, and food suggestions for a given session such as a long run.\n2. The deterministic functions behind the app are exposed as tools rather than rebuilt in the prompt.\n3. She calls a tool before answering a question those records can settle.",
+   "diagram": {
+    "kind": "flow",
+    "title": "A question the records can settle",
+    "rows": [
+     [
+      {
+       "id": "q",
+       "label": "\"What races are\ncoming up?\"",
+       "tone": "ink"
+      }
+     ],
+     [
+      {
+       "id": "t",
+       "label": "Vana calls a tool first",
+       "tone": "accent"
+      }
+     ],
+     [
+      {
+       "id": "e",
+       "label": "Event list",
+       "tone": "ink"
+      },
+      {
+       "id": "a",
+       "label": "Activity history",
+       "tone": "ink"
+      },
+      {
+       "id": "m",
+       "label": "Macro targets",
+       "tone": "ink"
+      }
+     ],
+     [
+      {
+       "id": "f",
+       "label": "Food suggestions\nfor a session",
+       "tone": "ink"
+      },
+      {
+       "id": "ans",
+       "label": "Answers from\nthe record",
+       "tone": "ok"
+      }
+     ]
+    ],
+    "edges": [
+     {
+      "from": "q",
+      "to": "t"
+     },
+     {
+      "from": "t",
+      "to": "e"
+     },
+     {
+      "from": "e",
+      "to": "ans"
+     }
+    ],
+    "example": [
+     "She never asks the athlete for what the app already stores"
+    ]
+   },
+   "slot": 2
+  },
+  "mp-213": {
+   "question": "What happens when the athlete asks something off the planning path?",
+   "decision": "Vana answers it in full and shows no meals. When that thread is done, she asks whether they are ready to pick meals, and the plan bar keeps the draft as it was. Example: halfway through planning the week, an athlete asks what the weather will be for Saturday's ride; Vana answers with no meal carousel, then asks if they are ready to get back to picking meals, and the dinners already chosen are still in the plan bar.",
+   "details": "Precisely:\n1. When the athlete asks something unrelated to planning, Vana answers it fully and shows no meals.\n2. When that thread is done, she asks whether they are ready to pick meals.\n3. The plan bar keeps the draft as it was.",
+   "diagram": {
+    "kind": "timeline",
+    "title": "A side question mid-plan",
+    "steps": [
+     {
+      "at": "Planning",
+      "label": "Athlete is picking meals for the week;\nthe plan bar holds the draft",
+      "tone": "ink"
+     },
+     {
+      "at": "Side question",
+      "label": "\"What's the weather for Saturday's ride?\"",
+      "tone": "accent"
+     },
+     {
+      "at": "Answer",
+      "label": "Vana answers in full.\nNo meals shown",
+      "tone": "ok"
+     },
+     {
+      "at": "Thread done",
+      "label": "Vana asks: ready to pick meals?\nThe draft is as it was",
+      "tone": "ok"
+     }
+    ]
+   },
+   "slot": 2
+  },
+  "mp-214": {
+   "question": "How do we keep Vana brief without counting sentences?",
+   "decision": "Vana gets to the point and leaves out anything that does not help. There is no sentence count and no rule that every turn must mention something about the athlete. A milestone may carry one exclamation mark, and emoji are banned everywhere; talking about food as minimums to reach, never talking about weight, and sending medical questions to a professional all stay. Example: under the rejected contract a picking turn was capped at two sentences; now Vana writes what the athlete needs to choose and stops, with no emoji.",
+   "details": "Precisely:\n1. Vana gets to the point and leaves out anything that does not help.\n2. No sentence counts and no required athlete fact per turn.\n3. A milestone may carry one exclamation.\n4. Emoji are banned everywhere.\n5. Minimums framing, no weight talk, and medical referrals stay.",
+   "diagram": {
+    "kind": "flow",
+    "title": "Vana's voice",
+    "rows": [
+     [
+      {
+       "id": "k",
+       "label": "Kept: to the point,\nminimums framing, no weight\ntalk, medical referrals",
+       "tone": "ok"
+      }
+     ],
+     [
+      {
+       "id": "x",
+       "label": "One exclamation\nat a milestone",
+       "tone": "ink"
+      },
+      {
+       "id": "e",
+       "label": "Emoji: banned\neverywhere",
+       "tone": "no"
+      }
+     ],
+     [
+      {
+       "id": "g",
+       "label": "Gone: sentence counts\nand a required athlete\nfact per turn",
+       "tone": "muted"
+      }
+     ]
+    ],
+    "edges": [],
+    "example": [
+     "Brief because nothing is padded, not because of a number"
+    ]
+   },
+   "slot": 2
+  },
+  "mp-274": {
+   "question": "How does the formula editor show Vana the draft on screen?",
+   "decision": "The formula editor sends the draft itself with the message, as set fields: phase, sub-phase, durations, activities, component ids with quantities, and a name of at most 40 characters. The server builds the FORMULA section from those fields, so Vana sees the draft exactly as it is on screen, unsaved edits included. Normally the app sends only ids and dates, never names or free text (mp-043); this screen is the one named exception, the server checks the shape, and no other free text travels with a message. Example: an athlete changes a component's quantity in a draft formula and asks Vana about it before saving; Vana sees the new quantity, and nothing was saved behind the athlete's back.",
+   "details": "Precisely:\n1. The Situation for the formula editor carries the draft as structured fields: phase, sub-phase, durations, activities, component ids with quantities, and a name capped at 40 characters. The server builds the FORMULA section from that.\n2. This is the one named exception to mp-043, for one screen, and the server validates the shape as it validates routes. No other free text travels with a message.",
+   "diagram": {
+    "kind": "flow",
+    "title": "The draft travels with the message",
+    "rows": [
+     [
+      {
+       "id": "d",
+       "label": "Draft on screen,\nunsaved edits included",
+       "tone": "ink"
+      }
+     ],
+     [
+      {
+       "id": "f",
+       "label": "Set fields: phase, sub-phase,\ndurations, activities,\ncomponent ids and quantities",
+       "tone": "accent"
+      },
+      {
+       "id": "n",
+       "label": "Name,\nat most 40 characters",
+       "tone": "accent"
+      }
+     ],
+     [
+      {
+       "id": "s",
+       "label": "Server checks the shape,\nbuilds the FORMULA section",
+       "tone": "ok"
+      }
+     ]
+    ],
+    "edges": [
+     {
+      "from": "d",
+      "to": "f"
+     },
+     {
+      "from": "d",
+      "to": "n"
+     },
+     {
+      "from": "f",
+      "to": "s"
+     },
+     {
+      "from": "n",
+      "to": "s"
+     }
+    ],
+    "example": [
+     "The one screen where more than ids and dates travel"
+    ]
+   },
+   "slot": 2
+  },
+  "mp-275": {
+   "title": "The launcher and the Plan tab's note card continue the day's conversation; New meal plan starts a new one",
+   "question": "Which ways into Vana continue a conversation, and which start a new one?",
+   "decision": "The launcher, its full-screen button, the Plan tab's note card and a tap on a moment all open the day's conversation, the one the launcher reopens all day. New meal plan and the plus button in the chat's top bar start a new conversation, and so will a future entry from the formula editor. A conversation started that way never takes over the launcher: close it, tap the launcher, and the day's conversation is back, while the new one stays in history. Example: an athlete chats from the launcher in the morning, taps New meal plan at lunch and plans the week, closes it, then taps the launcher again and finds the morning conversation; the meal plan conversation is in history.",
+   "details": "Precisely:\n1. The launcher, its full-screen button, the Plan tab's note card, and a moment tap all open the day's ambient conversation. The note card stops starting its own.\n2. New meal plan and the chat app bar's plus button start a new conversation. A future entry from the formula editor does the same.\n3. A conversation started that way never moves the launcher's pointer. Close it and tap the launcher, and the day's ambient conversation is back. The new one stays in history.",
+   "diagram": {
+    "kind": "timeline",
+    "title": "One day, two conversations",
+    "steps": [
+     {
+      "at": "08:00",
+      "label": "Athlete taps the launcher:\nthe day's conversation",
+      "tone": "ok"
+     },
+     {
+      "at": "12:30",
+      "label": "Taps New meal plan:\na new conversation",
+      "tone": "accent"
+     },
+     {
+      "at": "12:45",
+      "label": "Closes it. It stays in history",
+      "tone": "muted"
+     },
+     {
+      "at": "18:00",
+      "label": "Taps the launcher or the note card:\nthe morning conversation is back",
+      "tone": "ok"
+     }
+    ]
+   },
+   "slot": 2
+  },
+  "mp-276": {
+   "title": "The unchanged start of every prompt is cached, and the context block stays the same between turns",
+   "question": "Is sending the whole context every turn wasteful, and what do we do about it?",
+   "decision": "Every turn sends the whole prompt, because the model keeps nothing between calls. Anthropic charges a tenth of the price for the part of a prompt that has not changed since the last call, so caching is on, and each call logs how many tokens came from the cache so a zero shows. The context block is built once when a conversation opens and reused, rebuilt only when a tool writes something or the day changes, and the prompt keeps one order: tools, persona, context, messages. Example: a 40-turn planning session drops from about $0.40 to about $0.11.",
+   "details": "Precisely:\n1. Caching is on, through the gateway's automatic mode, and the cache-read token count is logged per call so a zero is visible.\n2. The context block is assembled once when a conversation opens and reused for its turns. It is refreshed only when a tool writes (plan, memory, pantry, home) or the day changes. Per-message memory recall leaves the block; the memories and last talks in it cover the person, and recall stays available as a tool.\n3. The prompt order is fixed: tools, persona, context, messages. The mp-218 budget test also asserts the block is byte-identical across two turns with no writes between them.\n\nToday about 8,800 input tokens a turn at full price, about $0.010 a turn; cached with a stable block about $0.0023. A 40-turn planning session from about $0.40 to about $0.11. Cache entries live five minutes; a reply after a longer gap pays one 1.25x write.",
+   "diagram": {
+    "kind": "timeline",
+    "title": "If the context were left out and fetched by tool (rejected)",
+    "steps": [
+     {
+      "at": "3 Oct 07:00",
+      "label": "Athlete opens a planning conversation.\nThe prompt carries no context block",
+      "tone": "ink"
+     },
+     {
+      "at": "07:01",
+      "label": "Asks for dinners this week.\nVana knows the athlete only\nif she thinks to call a tool",
+      "tone": "no"
+     },
+     {
+      "at": "07:02",
+      "label": "A reply that skipped the tool\nplans as if for a stranger",
+      "tone": "no"
+     }
+    ]
+   },
+   "diagram2": {
+    "kind": "timeline",
+    "title": "What we decided: cache the unchanged start",
+    "steps": [
+     {
+      "at": "3 Oct 07:00",
+      "label": "Athlete opens a planning conversation.\nThe context block is built once",
+      "tone": "ok"
+     },
+     {
+      "at": "07:01 to 07:30",
+      "label": "Each turn reuses the block:\nabout $0.0023 a turn, not $0.010",
+      "tone": "ok"
+     },
+     {
+      "at": "07:12",
+      "label": "A meal is saved to the plan:\nthe block is rebuilt once",
+      "tone": "accent"
+     },
+     {
+      "at": "Session end",
+      "label": "40 turns: about $0.11, not $0.40",
+      "tone": "ok"
+     }
+    ],
+    "example": [
+     "A reply after more than five minutes pays one 1.25x cache write"
+    ]
+   }
+  },
+  "mp-278": {
+   "question": "Does the opener wait for the last conversation to be read back?",
+   "decision": "No. The opener never waits on anything. It says the most relevant thing Vana already holds (mp-008), taken from her Memories and the newest episodes as they stand, and when the last conversation's episode is not written yet she leaves it out rather than stretch. Example: an athlete closes a chat about race week and taps New meal plan straight away; the opener goes out at once, and if that chat's episode is not written yet, Vana does not mention it.",
+   "details": "Precisely:\n1. The opener never waits on anything.\n2. It says the most relevant thing Vana already holds (mp-008) from the memory table and the newest episodes as they stand.\n3. When the previous conversation's episode does not exist yet, she leaves it out rather than stretch.",
+   "diagram": {
+    "kind": "timeline",
+    "title": "If the opener waited for the read-back (rejected)",
+    "steps": [
+     {
+      "at": "3 Oct 07:00",
+      "label": "Athlete closes a chat about race week",
+      "tone": "ink"
+     },
+     {
+      "at": "07:00",
+      "label": "Taps New meal plan straight away",
+      "tone": "ink"
+     },
+     {
+      "at": "Waiting",
+      "label": "The opener waits for the last chat\nto be read back",
+      "tone": "no"
+     },
+     {
+      "at": "Too late",
+      "label": "Falls back to the athlete's last words",
+      "tone": "no"
+     }
+    ]
+   },
+   "diagram2": {
+    "kind": "timeline",
+    "title": "What we decided: the opener never waits",
+    "steps": [
+     {
+      "at": "3 Oct 07:00",
+      "label": "Athlete closes a chat about race week",
+      "tone": "ink"
+     },
+     {
+      "at": "07:00",
+      "label": "Taps New meal plan straight away",
+      "tone": "ink"
+     },
+     {
+      "at": "At once",
+      "label": "Opener uses Memories and the newest\nepisodes as they stand",
+      "tone": "ok"
+     },
+     {
+      "at": "Not written yet",
+      "label": "The race-week episode is left out,\nnot stretched",
+      "tone": "muted"
+     }
+    ]
+   }
+  },
+  "mp-443": {
+   "question": "When does Vana draft a new opener, and when does the athlete see the one they already had?",
+   "decision": "Opening a conversation that already exists shows it as it was, including an opener nobody answered, and makes no model call. A new conversation always gets a new opener that Vana drafts, and New meal plan on the Plan tab always starts one. The launcher sheet and the Plan tab's Vana card reopen the day's conversation all day; the first sheet after midnight starts a new one. Example: an athlete opens the sheet at 07:00 on 3 October, Vana drafts an opener, and they close it without answering; at 12:00 they reopen it and see the same opener, with no model call, and the first sheet on 4 October starts a new conversation with a new opener.",
+   "details": "Precisely:\n1. Opening a conversation that already exists shows it as it was, the unanswered opener included. No model call is made. This is a rule of the app, not of the server. [built]\n2. A new conversation always gets a new opener, drafted by Vana. \"New meal plan\" on the Plan tab always starts a new conversation. [built]\n3. The launcher sheet and the Plan tab's Vana card reopen the day's conversation for the whole day. The first sheet after midnight starts a new one. [built]\n4. No opener is stored for reuse, none is templated (mp-007, mp-008), and no timer decides anything. [no work]",
+   "diagram": {
+    "kind": "timeline",
+    "title": "If an unanswered opener were stored for 30 minutes (rejected)",
+    "steps": [
+     {
+      "at": "3 Oct 07:00",
+      "label": "Athlete opens the sheet.\nVana drafts an opener; the server\nstores it for reuse",
+      "tone": "ink"
+     },
+     {
+      "at": "07:10",
+      "label": "Reopens: the stored opener is shown",
+      "tone": "ink"
+     },
+     {
+      "at": "07:40",
+      "label": "Reopens after 30 minutes:\nthe timer decides, a new opener",
+      "tone": "no"
+     }
+    ]
+   },
+   "diagram2": {
+    "kind": "timeline",
+    "title": "What we decided: same conversation, same opener",
+    "steps": [
+     {
+      "at": "3 Oct 07:00",
+      "label": "Athlete opens the sheet.\nVana drafts an opener. No answer",
+      "tone": "ink"
+     },
+     {
+      "at": "12:00",
+      "label": "Reopens: the same conversation,\nthe same opener. No model call",
+      "tone": "ok"
+     },
+     {
+      "at": "12:30",
+      "label": "Taps New meal plan:\na new conversation, a new opener",
+      "tone": "accent"
+     },
+     {
+      "at": "4 Oct 07:00",
+      "label": "First sheet after midnight:\na new conversation, a new opener",
+      "tone": "ok"
+     }
+    ],
+    "example": [
+     "No opener stored, none templated, no timer"
+    ]
+   }
+  },
+  "mp-421": {
+   "title": "Vana opens on a live moment first, then the screen underneath, then the personal opener",
+   "question": "What does Vana open on in each place, and what happens when the athlete asks for a plan?",
+   "decision": "Vana speaks first to a live moment (a fuelling window around a session), then to the screen underneath, then with the personal opener. A request for a plan is handed off, which means Vana shows a button that opens the meal-planning screen, and any constraint the athlete gave goes along; when an opener offers a meal plan, that offer is itself the button. The Plan tab with a plan in view opens on that plan, Ask Vana from the formula editor opens on the formula, and the full-screen chat asks for an opener the way the sheet does. Example: an athlete types \"quick dinners this week\"; Vana treats it as a plan request and hands off to the meal-planning screen with \"quick dinners\" carried along.",
+   "details": "Precisely:\n1. The order is: a live moment (a fuelling window) first, then the screen underneath, then the personal opener. (mp-364, mp-368) [built]\n2. A request for a plan is a plan request even with a constraint (\"quick dinners this week\"). Vana hands off to the meal-planning screen and the constraint goes with it. (mp-363) [built]\n3. When the opener offers to start a meal plan, that offer is the hand-off button itself. No chip that then produces a button. (mp-377) [to build]\n4. The Plan tab with a plan in view opens on that plan. (mp-367) [to build]\n5. Ask Vana from the formula editor opens on the formula. (mp-394) [to build]\n6. The full-screen chat asks for an opener the same way the sheet does, instead of opening empty. (mp-369) [to build]\n7. Picking up last time in an offer chip counts. The opener's sentence does not have to say it as well. (mp-352) [no work]\n8. The launcher stays on its three screens (mp-264). mp-268's example of opening on an event is reached through the hand-off, not by putting the launcher on the event screen. (mp-384) [no work]\n\n\"The screen says something useful\" is decided by resolving the Situation with and without the entity id: a different sentence means the athlete's own row was read. The opener logs which of the three paths fired.",
+   "diagram": {
+    "kind": "flow",
+    "title": "What the opener speaks to first",
+    "rows": [
+     [
+      {
+       "id": "m",
+       "label": "1. A live moment\n(a fuelling window)",
+       "tone": "accent"
+      }
+     ],
+     [
+      {
+       "id": "s",
+       "label": "2. The screen underneath,\nif it says something useful",
+       "tone": "ink"
+      }
+     ],
+     [
+      {
+       "id": "p",
+       "label": "3. The personal opener",
+       "tone": "ok"
+      }
+     ]
+    ],
+    "edges": [
+     {
+      "from": "m",
+      "to": "s",
+      "label": "none live"
+     },
+     {
+      "from": "s",
+      "to": "p",
+      "label": "nothing useful"
+     }
+    ],
+    "example": [
+     "Plan tab with a plan: the plan. Formula editor: the formula"
+    ]
+   },
+   "slot": 2
+  },
+  "mp-546": {
+   "question": "When Vana hands the athlete off to a screen, where does its one sentence go?",
+   "decision": "Before the hand-off, which here means the button Vana shows that opens one of the app's own screens. Vana writes its one sentence, then calls the hand-off, and the turn ends there; nothing is said after the call. Example: an athlete asks for next week's meals; Vana writes one sentence and shows the button to the meal-planning screen, and the reply takes one model step instead of the two a hand-off used to take.",
+   "details": "Precisely:\n1. Vana writes its one sentence, then calls the hand-off, and the turn ends there.\n2. Nothing is said after the call.",
+   "diagram": {
+    "kind": "timeline",
+    "title": "One sentence, then the hand-off",
+    "steps": [
+     {
+      "at": "Athlete",
+      "label": "\"Plan next week's meals\"",
+      "tone": "ink"
+     },
+     {
+      "at": "Vana",
+      "label": "Writes her one sentence",
+      "tone": "ok"
+     },
+     {
+      "at": "Then",
+      "label": "Calls handOff: the button to\nthe meal-planning screen",
+      "tone": "accent"
+     },
+     {
+      "at": "Turn ends",
+      "label": "Nothing after the call.\nOne model step, not two",
+      "tone": "ok"
+     }
+    ]
+   },
+   "slot": 2
+  },
+  "mp-547": {
+   "question": "When the athlete's message is both a complaint and a question, does Vana answer?",
+   "decision": "Yes. Saving feedback ends Vana's turn only when the feedback was the silent kind, a plain complaint. A complaint with a question in it keeps the step in which Vana answers. Example: an athlete writes \"that curry was too spicy\"; Vana saves it and the turn ends. Another writes \"that curry was too spicy, is there a milder one?\"; Vana saves it and then answers the question.",
+   "details": "Precisely:\n1. The turn ends on saved feedback only when the feedback was the silent kind.\n2. A complaint with a question in it keeps the step that answers it.",
+   "diagram": {
+    "kind": "flow",
+    "title": "After Vana saves feedback",
+    "rows": [
+     [
+      {
+       "id": "s",
+       "label": "Feedback saved",
+       "tone": "ink"
+      }
+     ],
+     [
+      {
+       "id": "q",
+       "label": "Plain complaint:\nthe silent kind",
+       "tone": "muted"
+      },
+      {
+       "id": "a",
+       "label": "Complaint with\na question in it",
+       "tone": "accent"
+      }
+     ],
+     [
+      {
+       "id": "e",
+       "label": "Turn ends",
+       "tone": "muted"
+      },
+      {
+       "id": "r",
+       "label": "Vana answers\nthe question",
+       "tone": "ok"
+      }
+     ]
+    ],
+    "edges": [
+     {
+      "from": "s",
+      "to": "q"
+     },
+     {
+      "from": "s",
+      "to": "a"
+     },
+     {
+      "from": "q",
+      "to": "e"
+     },
+     {
+      "from": "a",
+      "to": "r"
+     }
+    ],
+    "example": [
+     "\"Too spicy, is there a milder one?\" gets an answer"
+    ]
+   },
+   "slot": 2
+  }
+ },
+ "terms": [
+  {
+   "term": "Launcher",
+   "area": "Vana and what she knows",
+   "definition": "The Vana button on the three screens that have one: the main tabs, the meal-planning screen and coach formulas. Tapping it opens the Vana sheet on the day's conversation.",
+   "avoid": "Launcher sheet (that is the sheet it opens)"
+  },
+  {
+   "term": "Context block",
+   "area": "Vana and what she knows",
+   "definition": "The part of Vana's prompt that the server writes about the person and the moment: the Voodoo Doll digest plus the Situation's section. It says what exists; detail comes from tools.",
+   "avoid": "Context (unqualified), user context"
+  },
+  {
+   "term": "Tool",
+   "area": "Vana and what she knows",
+   "definition": "A named action Vana can call during a turn to read a record, write one (a Memory, the plan, feedback) or hand the athlete to one of the app's screens. The server runs it and gives her the result.",
+   "avoid": "Function (unqualified)"
+  }
+ ]
+}

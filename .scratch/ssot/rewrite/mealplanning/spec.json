@@ -1,0 +1,865 @@
+{
+ "cards": {
+  "mp-288": {
+   "question": "How does the app tell the server a conversation has gone quiet?",
+   "decision": "With a flag on the chat call the app already makes, the same way the opener flag travels, so there is no new server function. The app sends it when the Vana sheet closes, when the app goes to the background, or when a new conversation starts, and it never waits for an answer. The server writes the conversation's Episode only once; if the phone is offline the flag is lost, and the conversation is read back the next time it is opened. Example: an athlete closes the Vana sheet and sends the app to the background a minute later; the first flag writes the Episode, and the second finds it already written and writes nothing.",
+   "context": "When a conversation with Vana goes quiet, the server reads it back and writes its Episode (mp-277). Before that ruling, what looked like Vana remembering was work that only ran when the next conversation opened. mp-277 says the app tells the server when a conversation is idle; this card is the spec's Implementation Decisions paragraph on how that signal travels.",
+   "details": "Precisely:\n1. The idle signal is a flag on the existing chat call, the way the opener flag rides it (mp-253). No new function.\n2. The client sends it when the sheet closes, the app goes to the background, or a new conversation starts. It is fire-and-forget: nothing waits on the reply.\n3. The server is idempotent: a second signal for a conversation that already has its episode writes nothing.\n4. Offline, the signal is dropped. That conversation is read back the next time it is opened; its margin notes were already written by the remember tool in the hot path. No scheduled sweep yet.",
+   "diagram": {
+    "kind": "timeline",
+    "title": "If the idle signal had its own function (rejected)",
+    "steps": [
+     {
+      "at": "Chat",
+      "label": "Athlete plans her week with Vana",
+      "tone": "ink"
+     },
+     {
+      "at": "Close",
+      "label": "She closes the Vana sheet.\nThe app calls a second, separate function",
+      "tone": "ink"
+     },
+     {
+      "at": "Server",
+      "label": "That function needs its own sign-in check,\nlimits and logs, kept apart from chat",
+      "tone": "no"
+     }
+    ]
+   },
+   "diagram2": {
+    "kind": "timeline",
+    "title": "What we decided: a flag on the chat call",
+    "steps": [
+     {
+      "at": "Chat",
+      "label": "Athlete plans her week with Vana",
+      "tone": "ink"
+     },
+     {
+      "at": "Close",
+      "label": "She closes the Vana sheet. The flag rides\nthe chat call; the sheet closes at once",
+      "tone": "accent"
+     },
+     {
+      "at": "Server",
+      "label": "The server writes the Episode",
+      "tone": "ok"
+     },
+     {
+      "at": "+1 min",
+      "label": "App goes to the background: second flag.\nEpisode already written, nothing more",
+      "tone": "ok"
+     }
+    ]
+   }
+  },
+  "mp-289": {
+   "question": "How do we prove the Trial, the Gate and the Allowance work end to end?",
+   "decision": "By hand, with a fresh Sandbox account on each store. The account subscribes through the seven-day free offer, holds `pro` from day one, receives the Allowance, cancels, meets the paywall, and gets back in with Restore purchases. The run is written up with the release and never runs in CI (the automatic checks on every push); the webhook's own rules are tested separately on the server with fake events. Example: on the App Store a new Sandbox account starts the free week, sees its credits arrive on day one, cancels, is sent to the paywall, and taps Restore purchases to reopen the app.",
+   "context": "Meal planning cannot ship until the seven-day Trial exists. The stores run the Trial and RevenueCat decides whether `pro` is live (mp-279), and no test in the repo can drive either. This card is the spec's Testing Decisions paragraph on how the Trial is proven.",
+   "details": "Precisely:\n1. A fresh sandbox account on each store subscribes through the introductory offer. The entitlement is active on day one, the webhook lands the Allowance, the subscription is cancelled, the account meets the paywall, and Restore reopens it.\n2. The run is by hand, written up with the release, and never in CI. The webhook's own logic (grant on renewal, stale event ignored, transfer moves the row) is tested at the server seam with fake events.",
+   "diagram": {
+    "kind": "timeline",
+    "title": "If RevenueCat were faked end to end (rejected)",
+    "steps": [
+     {
+      "at": "Tests",
+      "label": "Every test passes against a fake store",
+      "tone": "ok"
+     },
+     {
+      "at": "Release",
+      "label": "The paywall ships. No real store\never ran a free week",
+      "tone": "ink"
+     },
+     {
+      "at": "Day 8",
+      "label": "The first person whose Trial ends\nis a paying customer, not a tester",
+      "tone": "no"
+     }
+    ]
+   },
+   "diagram2": {
+    "kind": "timeline",
+    "title": "What we decided: a hand run in Sandbox",
+    "steps": [
+     {
+      "at": "Day 1",
+      "label": "Fresh Sandbox account subscribes\nthrough the free week: `pro` is live",
+      "tone": "ok"
+     },
+     {
+      "at": "Day 1",
+      "label": "The webhook puts the Allowance\nin the wallet",
+      "tone": "ok"
+     },
+     {
+      "at": "Cancel",
+      "label": "The subscription is cancelled;\nthe account meets the paywall",
+      "tone": "accent"
+     },
+     {
+      "at": "Restore",
+      "label": "Restore purchases reopens the app.\nWritten up with the release",
+      "tone": "ok"
+     }
+    ]
+   }
+  },
+  "mp-290": {
+   "title": "Caching and history summaries are tested by what the prompt looks like, not by what it costs",
+   "question": "How do we test that caching and history summaries work?",
+   "decision": "By checking the shape of what is sent to the model, never its dollar cost. The Context block built twice for one athlete with nothing written in between must come out identical to the byte, and must change after a tool writes or the day changes. Long conversations are replayed to check that the oldest messages fold into summaries at the counts mp-277 sets and that a turn never waits for its summary, and the scripted test conversations run against the model (the eval) fail any case whose second turn reads nothing from the cache. Example: a conversation of 39 messages replays all 39 word for word, one of 40 replays as one summary plus the last 20, and one of 61 as one rolled summary plus the last 20.",
+   "context": "Every Turn used to pay full price for a prompt four fifths the same as the one before. mp-276 turns on caching, so the repeated start of the prompt is billed cheaply, and keeps the Context block unchanged for the whole conversation; mp-277 folds the oldest messages into a summary once a conversation reaches forty. No test can check either by what it costs. This card is the spec's Testing Decisions paragraph on what is checked instead.",
+   "why": "Whether the prompt stays the same is a matter of its bytes, and a cache hit is a number the model provider reports; neither needs a price. The eval catches a cache that silently stops working (a prompt start shorter than the model's minimum, or a change before the point where caching begins) on the day it happens.",
+   "details": "Precisely:\n1. The token-budget test (mp-218) also builds the block twice for one athlete with no writes between and asserts the two are byte-identical, and that a tool write or a day change produces a different block.\n2. The compaction test feeds conversations of thirty-nine, forty and sixty-one messages and asserts the replayed shape: all verbatim; one summary plus twenty; one rolled summary plus twenty. It asserts the summary is keyed to the index it covers and that the turn returns before the summary call does.\n3. The eval seam records cache-read tokens per case and fails a case whose second turn reads zero.",
+   "diagram": {
+    "kind": "timeline",
+    "title": "If tests checked the dollar cost of a turn (rejected)",
+    "steps": [
+     {
+      "at": "Week 1",
+      "label": "Test: each turn costs under a set amount.\nIt passes",
+      "tone": "ok"
+     },
+     {
+      "at": "Later",
+      "label": "A change early in the prompt stops the cache.\nEach turn pays full price",
+      "tone": "no"
+     },
+     {
+      "at": "Result",
+      "label": "The miss stays silent, or a price change\nbreaks the test with nothing wrong",
+      "tone": "no"
+     }
+    ]
+   },
+   "diagram2": {
+    "kind": "timeline",
+    "title": "What we decided: test the shape",
+    "steps": [
+     {
+      "at": "Block",
+      "label": "Built twice, nothing written between:\nidentical to the byte",
+      "tone": "ok"
+     },
+     {
+      "at": "Write",
+      "label": "A tool writes or the day changes:\nthe block changes",
+      "tone": "ok"
+     },
+     {
+      "at": "Replay",
+      "label": "39 messages: all verbatim. 40: summary + 20.\n61: rolled summary + 20",
+      "tone": "accent"
+     },
+     {
+      "at": "Eval",
+      "label": "A second turn that reads nothing\nfrom the cache fails that day",
+      "tone": "no"
+     }
+    ]
+   }
+  },
+  "mp-452": {
+   "title": "Four new products on each app, all in the one Mealvana Pro group",
+   "question": "Which subscriptions do the stores sell, and how are they set up?",
+   "decision": "Four new subscriptions on each store and each app, each with the seven-day free offer: monthly at $24.99, annual at $199.99, and founding monthly at $12.49 and founding annual at $99.99. A script makes them through the Apple and Google APIs, all four go into the existing \"Mealvana Pro\" group and count as `pro`, and the founding two come off sale on 30 November. The old monthly and annual products leave every Offering and are never sold again. Example: an athlete subscribing on 1 October can take the monthly plan at $12.49; one subscribing after 30 November can only take $24.99 a month or $199.99 a year.",
+   "why": "Apple refuses a product id that another app in our team already holds, which is why the production app sells its own copies of each id today. Store setup by script was rejected on 17 September (mp-319); this card replaces that ruling. One group keeps upgrades simple, and taking the founding products off sale closes the leak of subscribers switching onto them.",
+   "details": "Precisely:\n1. Four products on each store and each app: monthly $24.99, annual $199.99, founding monthly $12.49, founding annual $99.99, each with the seven-day introductory offer. They are created through the App Store Connect and Google Play APIs with the scripts in `scripts/store`, replacing the 09-17 ruling that store setup is done by hand (mp-319).\n2. The dev app sells `me_pro_monthly`, `me_pro_annual`, `me_pro_monthly_founding` and `me_pro_annual_founding`. The production app sells the same ids ending in `_prod`.\n3. All four go into the existing \"Mealvana Pro\" subscription group on each app and attach to `pro`. RevenueCat support is not asked; this reverses mp-429 clause 9. The founding products come off sale on 30 November.\n4. The old monthly and annual products leave every offering and are never sold again.\n5. The webhook's fallback list of `pro` product ids gains the eight new ids.",
+   "diagram": {
+    "kind": "timeline",
+    "title": "If the founding products had a group of their own (rejected)",
+    "steps": [
+     {
+      "at": "1 Oct",
+      "label": "Athlete buys founding monthly at $12.49,\nin a separate group",
+      "tone": "ink"
+     },
+     {
+      "at": "Later",
+      "label": "Moving between the two groups\nis not a simple upgrade",
+      "tone": "no"
+     },
+     {
+      "at": "Setup",
+      "label": "Waits on RevenueCat support\nwith no deadline",
+      "tone": "no"
+     }
+    ]
+   },
+   "diagram2": {
+    "kind": "timeline",
+    "title": "What we decided: one Mealvana Pro group",
+    "steps": [
+     {
+      "at": "1 Oct",
+      "label": "Athlete buys founding monthly at $12.49\nin the Mealvana Pro group",
+      "tone": "ok"
+     },
+     {
+      "at": "Later",
+      "label": "Any change of plan stays inside\none group",
+      "tone": "ok"
+     },
+     {
+      "at": "30 Nov",
+      "label": "Founding products come off sale",
+      "tone": "accent"
+     },
+     {
+      "at": "After",
+      "label": "New subscribers pay $24.99 a month\nor $199.99 a year",
+      "tone": "ink"
+     }
+    ]
+   }
+  },
+  "mp-453": {
+   "title": "The paywall sells the Offering marked current, with founding prices beside the struck-through regular ones",
+   "question": "Which plans does the paywall show, and how does a founding price look?",
+   "decision": "The paywall shows whichever Offering is marked current in RevenueCat, so the switch to the Founding Month plans on 1 October and back after 30 November needs no app release. While the founding Offering is current, each plan shows its founding price, the matching regular price struck through beside it, and a \"Founding member\" line; otherwise it shows the plain price. Every price and the trial line come from the store, the words come from the content system, and the paywall always carries the trial terms, the price after the trial, and links to terms and privacy. Example: on 1 October the monthly plan reads $12.49 with $24.99 struck through and \"Founding member\"; after the switch back it reads $24.99.",
+   "context": "The paywall opens on 1 October at Xuan's prices, with the Founding Month running to 30 November, and the store submission goes in around 25 September. Until now the paywall read one fixed Offering, the regular one, so Xuan switching the current Offering in RevenueCat's dashboard would change nothing on screen. This card is the \"What the paywall shows\" paragraph in the spec's Implementation Decisions.",
+   "details": "Precisely:\n1. The paywall reads RevenueCat's Current Offering, not a fixed id. Switching to `founding` on 1 October and back to `default` after 30 November needs no release.\n2. While the current offering is `founding`, each plan shows the founding price, the matching `default` price struck through beside it, and a \"Founding member\" line. While it is `default`, it shows the plain price.\n3. Every price and the trial line come from the store. The copy lives in the content system.\n4. The paywall carries the trial terms, the price after the trial, and links to terms and privacy.",
+   "diagram": {
+    "kind": "timeline",
+    "title": "The monthly plan on the paywall",
+    "steps": [
+     {
+      "at": "1 Oct",
+      "label": "Xuan marks the founding Offering current",
+      "tone": "accent"
+     },
+     {
+      "at": "Paywall",
+      "label": "$12.49, with $24.99 struck through,\nand \"Founding member\"",
+      "tone": "ok"
+     },
+     {
+      "at": "After 30 Nov",
+      "label": "Xuan marks the regular Offering current",
+      "tone": "accent"
+     },
+     {
+      "at": "Paywall",
+      "label": "$24.99. No app release either time",
+      "tone": "ok"
+     }
+    ]
+   },
+   "slot": 2
+  },
+  "mp-454": {
+   "question": "How does a Grant reach the server, and which end date wins when a Grant and a subscription overlap?",
+   "decision": "Every event about `pro`, bought or granted, updates the Entitlement row. On each one the webhook asks RevenueCat for the customer's Expiry and writes that; RevenueCat already takes the later of a Grant and a subscription. The webhook never drops an event because of which environment it says it came from. Example: an athlete on Legacy grace to 31 October starts a Trial on 5 October that ends on 12 October; RevenueCat still answers 31 October, so the row keeps 31 October and the Trial does not cut the grace short.",
+   "context": "The paywall opens on 1 October at Xuan's prices, and anyone given free access by hand is still refused by the server today, because the server never hears about a Grant. RevenueCat sends a Grant as a one-off promotional purchase that it labels as production even when it comes from Sandbox, and the webhook ignored that event for `pro`. This card is the webhook paragraph in the spec's Implementation Decisions.",
+   "why": "Legacy grace, free access for coaches and giveaways are all Grants. Without this the app opens (the phone sees the Grant) and every AI call is refused. Writing the event's own end date would let a Trial started during Legacy grace cut the grace short.",
+   "details": "Precisely:\n1. Every event for `pro`, bought or granted, updates the row.\n2. On each one the webhook asks RevenueCat's REST API for the customer's current `pro` expiry and writes that as active until. RevenueCat already takes the later of a grant and a subscription.\n3. The row keeps the two fields and the event time (mp-317). The webhook never filters by environment.\n4. The function holds a RevenueCat secret API key.\n\nRevenueCat sends a grant as a `NON_RENEWING_PURCHASE` with store and period type `PROMOTIONAL` and environment `PRODUCTION`, even from sandbox.",
+   "diagram": {
+    "kind": "timeline",
+    "title": "If the webhook kept ignoring Grants (rejected)",
+    "steps": [
+     {
+      "at": "1 Oct",
+      "label": "Athlete gets Legacy grace to 31 Oct",
+      "tone": "ok"
+     },
+     {
+      "at": "1 Oct",
+      "label": "The Grant event is ignored;\nthe row stays closed",
+      "tone": "no"
+     },
+     {
+      "at": "2 Oct",
+      "label": "The app opens (the phone sees the Grant)\nbut every AI call is refused",
+      "tone": "no"
+     }
+    ]
+   },
+   "diagram2": {
+    "kind": "timeline",
+    "title": "What we decided: the row copies RevenueCat's Expiry",
+    "steps": [
+     {
+      "at": "1 Oct",
+      "label": "Legacy grace to 31 Oct. The webhook asks\nRevenueCat: the row opens to 31 Oct",
+      "tone": "ok"
+     },
+     {
+      "at": "5 Oct",
+      "label": "Athlete starts a Trial (ends 12 Oct)",
+      "tone": "ink"
+     },
+     {
+      "at": "12 Oct",
+      "label": "Trial event. RevenueCat still answers\n31 Oct; the row keeps 31 Oct",
+      "tone": "accent"
+     },
+     {
+      "at": "13 Oct",
+      "label": "Athlete still uses Vana",
+      "tone": "ok"
+     }
+    ]
+   }
+  },
+  "mp-455": {
+   "title": "Legacy grace goes out in one script run at the Flip, and old anonymous installs claim it by signing up",
+   "question": "How does every existing account get its 30 days of Legacy grace, including installs that never made an account?",
+   "decision": "At the Flip a script gives 30 days of `pro` through RevenueCat to every registered account created before it, and marks each one as a founding member. Unless run with an explicit flag it only lists who would get it and how many; it skips anyone who already holds a Grant, and it runs on dev first and on production only with Lee's go. An install still anonymous (signed in with no account behind it) is sent to the account screen when it opens the new build; signing up keeps its data, and a server function gives the same 30 days if it predates the Flip and has no Grant yet. Example: with the Flip on 1 October, Lee reads the list first, then runs the script with the flag, every account made before the Flip holds `pro` to 31 October, and a second run gives nobody anything.",
+   "details": "Precisely:\n1. On flip day a script grants 30 days of `pro` through RevenueCat's REST API to every registered account created before the flip, and sets a `founding_member` subscriber attribute.\n2. It is a dry run by default: it prints the accounts and the count, and writes only with an explicit flag. It skips an account that already holds a grant, so a second run does nothing.\n3. It runs on dev first, then production with Lee's go.\n4. An install still anonymous when it opens the new build goes to the account screen. Sign-up links onto that anonymous user so the data survives, and a server function grants the same 30 days when the anonymous user predates the flip and has no grant yet.\n5. That link is the only place the app still meets an anonymous user. It never starts one.",
+   "diagram": {
+    "kind": "timeline",
+    "title": "If the app gave itself Legacy grace (rejected)",
+    "steps": [
+     {
+      "at": "1 Oct",
+      "label": "Athlete opens the new build",
+      "tone": "ink"
+     },
+     {
+      "at": "1 Oct",
+      "label": "The app grants its own account 30 days",
+      "tone": "no"
+     },
+     {
+      "at": "Result",
+      "label": "The phone decides its own access",
+      "tone": "no"
+     }
+    ]
+   },
+   "diagram2": {
+    "kind": "timeline",
+    "title": "What we decided: one script run, and a claim",
+    "steps": [
+     {
+      "at": "1 Oct",
+      "label": "Lee reads the list and the count\nfrom the dry run",
+      "tone": "accent"
+     },
+     {
+      "at": "1 Oct",
+      "label": "Run with the flag: every account made\nbefore the Flip holds `pro` to 31 Oct",
+      "tone": "ok"
+     },
+     {
+      "at": "Later",
+      "label": "An old anonymous install opens the build\nand is sent to the account screen",
+      "tone": "ink"
+     },
+     {
+      "at": "Sign-up",
+      "label": "Its data is kept, and the server\ngrants the same 30 days",
+      "tone": "ok"
+     }
+    ]
+   }
+  },
+  "mp-456": {
+   "question": "What warns an athlete before the first charge of a Trial, and when?",
+   "decision": "The phone itself. When a purchase starts a Trial, the app schedules a local notification (one the phone raises with no server involved) for 10:00 local time two days before the Trial ends, saying it ends in two days, the price after from the store, and that they can cancel any time. Tapping it opens the store's subscription page, the words live in the content system, and if the app opens and RevenueCat says the Trial will not renew, the notification is cancelled. Example: a Trial that ends on 8 October gets its reminder at 10:00 on 6 October; if the athlete cancelled on 4 October and opened the app since, no reminder comes.",
+   "details": "Precisely:\n1. When a purchase starts an introductory trial, the phone schedules a local notification through the existing notification service.\n2. It fires at 10:00 local time two days before the trial ends: the trial ends in two days, the price after from the store, and they can cancel any time.\n3. Tapping it opens the store's subscription page.\n4. When the app opens and RevenueCat says the trial will not renew, the notification is cancelled.\n5. The text lives in the content system.",
+   "diagram": {
+    "kind": "timeline",
+    "title": "If the server sent the reminder as a push (rejected)",
+    "steps": [
+     {
+      "at": "Start",
+      "label": "Athlete starts a Trial",
+      "tone": "ink"
+     },
+     {
+      "at": "Server",
+      "label": "The webhook has to trigger a push\nfrom the server",
+      "tone": "no"
+     },
+     {
+      "at": "Result",
+      "label": "Needs a server and a webhook;\nXuan ruled it out for Phase 1",
+      "tone": "no"
+     }
+    ]
+   },
+   "diagram2": {
+    "kind": "timeline",
+    "title": "What we decided: a notification set on the phone",
+    "steps": [
+     {
+      "at": "Start",
+      "label": "Trial starts, ending 8 Oct.\nThe phone schedules the reminder",
+      "tone": "accent"
+     },
+     {
+      "at": "6 Oct 10:00",
+      "label": "Ends in two days, the price after,\ncancel any time",
+      "tone": "ok"
+     },
+     {
+      "at": "Tap",
+      "label": "Opens the store's subscription page",
+      "tone": "ok"
+     },
+     {
+      "at": "Cancelled",
+      "label": "Once the app learns the Trial\nwill not renew, the reminder is removed",
+      "tone": "muted"
+     }
+    ]
+   }
+  },
+  "mp-457": {
+   "title": "An account whose Pro ran out opens read-only; one that never had it stays on the paywall",
+   "question": "How does the app tell an account whose Pro ended from one that never had it, and what does read-only mean?",
+   "decision": "The Gate gives one of three answers: open (Pro is live, or the account is an Admin), lapsed (the account held `pro` once and it has run out) or never (it never held `pro`). Never lands on the paywall and stays there. Lapsed opens the app read-only: every screen carries a bar saying the plan has ended, with a Subscribe button, and any edit or AI action opens the paywall instead of running; one check says whether writes are allowed, every write asks it first, and the server refuses AI calls for such an account on its own. Example: an athlete's Trial ends on 8 October unpaid; on 9 October they can still read their plan, but tapping to change it or to ask Vana opens the paywall.",
+   "details": "Precisely:\n1. The gate answers open (the entitlement is active, or the account is an admin), lapsed (the customer held `pro` once and it has expired) or never (no `pro` ever).\n2. Never lands on the paywall and stays there.\n3. Lapsed opens the app read-only. Every screen carries a bar saying the plan has ended, with a Subscribe button. Any edit or AI action opens the paywall instead of running.\n4. One write-access provider says whether writes are allowed, and every write controller checks it before writing.\n5. The server refuses AI calls for a lapsed account on its own (mp-429 clause 11).",
+   "diagram": {
+    "kind": "flow",
+    "title": "The Gate's three answers",
+    "rows": [
+     [
+      {
+       "id": "g",
+       "label": "The Gate",
+       "tone": "accent"
+      }
+     ],
+     [
+      {
+       "id": "o",
+       "label": "open\nPro live, or Admin",
+       "tone": "ok"
+      },
+      {
+       "id": "l",
+       "label": "lapsed\nheld pro once",
+       "tone": "pending"
+      },
+      {
+       "id": "n",
+       "label": "never\nno pro ever",
+       "tone": "no"
+      }
+     ],
+     [
+      {
+       "id": "oa",
+       "label": "The app",
+       "tone": "ok"
+      },
+      {
+       "id": "la",
+       "label": "Read-only app,\nbar + Subscribe",
+       "tone": "pending"
+      },
+      {
+       "id": "na",
+       "label": "Paywall,\nstays there",
+       "tone": "no"
+      }
+     ]
+    ],
+    "edges": [
+     {
+      "from": "g",
+      "to": "o"
+     },
+     {
+      "from": "g",
+      "to": "l"
+     },
+     {
+      "from": "g",
+      "to": "n"
+     },
+     {
+      "from": "o",
+      "to": "oa"
+     },
+     {
+      "from": "l",
+      "to": "la"
+     },
+     {
+      "from": "n",
+      "to": "na"
+     }
+    ],
+    "example": [
+     "Trial ends unpaid 8 Oct: on 9 Oct they read their plan;",
+     "an edit or a question to Vana opens the paywall"
+    ]
+   },
+   "slot": 2
+  },
+  "mp-458": {
+   "title": "Codes are ours: a coach's own Code gives 30 days, a giveaway Code a year, redeemed on our server",
+   "question": "Where do Codes live, who can use one, and what does each kind do?",
+   "decision": "Codes are kept in our own table, each with its kind (coach, influencer or giveaway), its owner, the dates it is valid and what it gives, and only a signed-in account can redeem one, through a server function. A coach entering their own Code is marked as a coach and gets 30 days of `pro`; an athlete entering a coach or influencer Code has that Code recorded on their RevenueCat customer and gets a pending pairing with the coach; a giveaway Code gives 365 days of `pro`, once; a wrong, expired or used Code gets a plain reason back. Codes are entered from a \"Have a code?\" link on the Onboarding paywall and a row in Settings, and the 24-hour pairing codes stay as they are. Example: a coach enters her own Code and gets `pro` for 30 days; her athlete enters the same Code and a pending pairing with her appears; a giveaway winner gets 365 days, and entering that Code again gets a plain reason back.",
+   "details": "Precisely:\n1. A `codes` table holds each code with its type (coach, influencer or giveaway), its owner, its validity window and its perk.\n2. A `redeem-code` function takes a code from a signed-in caller only.\n3. The owner of a coach code entering it marks the account as a coach and gets 30 days of `pro`.\n4. An athlete entering a coach or influencer code gets `coach_code` or `influencer_code` set as a subscriber attribute and a pending pairing with the coach through the existing pairing path.\n5. A giveaway code grants 365 days of `pro`, once.\n6. A wrong, expired or used code gets a plain reason back.\n7. The entry is a \"Have a code?\" link on the onboarding paywall and a row in Settings. The existing 24-hour pairing codes stay as they are.",
+   "diagram": {
+    "kind": "flow",
+    "title": "What a Code does",
+    "rows": [
+     [
+      {
+       "id": "e",
+       "label": "Signed-in account\nenters a Code",
+       "tone": "accent"
+      }
+     ],
+     [
+      {
+       "id": "c",
+       "label": "Coach, own Code:\nmarked coach,\n30 days of pro",
+       "tone": "ok"
+      },
+      {
+       "id": "a",
+       "label": "Athlete, coach or\ninfluencer Code:\nrecorded, pairing",
+       "tone": "ok"
+      },
+      {
+       "id": "g",
+       "label": "Giveaway Code:\n365 days of pro,\nonce",
+       "tone": "ok"
+      }
+     ],
+     [
+      {
+       "id": "x",
+       "label": "Wrong, expired or used:\na plain reason back",
+       "tone": "no"
+      }
+     ]
+    ],
+    "edges": [
+     {
+      "from": "e",
+      "to": "c"
+     },
+     {
+      "from": "e",
+      "to": "a"
+     },
+     {
+      "from": "e",
+      "to": "g"
+     },
+     {
+      "from": "e",
+      "to": "x",
+      "tone": "no"
+     }
+    ],
+    "example": [
+     "Entered from \"Have a code?\" on the Onboarding paywall",
+     "or a row in Settings. 24-hour pairing codes unchanged."
+    ]
+   },
+   "slot": 2
+  },
+  "mp-459": {
+   "question": "Where do onboarding answers wait before the account exists?",
+   "decision": "On the phone. The welcome screen no longer starts an anonymous session (a sign-in with no account behind it); onboarding answers are held on the phone and written to the account when it is made. The anonymous-session code in sign-in, onboarding and settings is archived, except the link that lets an old install keep its data when it signs up (mp-455). Example: an athlete answers every onboarding question, then signs up, and only at that moment are her answers written, to her new account.",
+   "details": "Precisely:\n1. The welcome screen no longer starts an anonymous session.\n2. Onboarding answers are held on the phone until the account exists and are written to it then.\n3. The anonymous-session code in auth, onboarding and settings is archived, except the link for old installs (mp-455).",
+   "diagram": {
+    "kind": "timeline",
+    "title": "If the anonymous session stayed as hidden plumbing (rejected)",
+    "steps": [
+     {
+      "at": "Open",
+      "label": "Athlete opens the app: an anonymous\nsession starts behind the scenes",
+      "tone": "ink"
+     },
+     {
+      "at": "Onboard",
+      "label": "Her answers are saved under\nthat anonymous user",
+      "tone": "ink"
+     },
+     {
+      "at": "Result",
+      "label": "Anonymous users still exist,\nthough mp-417 ruled there are none",
+      "tone": "no"
+     }
+    ]
+   },
+   "diagram2": {
+    "kind": "timeline",
+    "title": "What we decided: answers wait on the phone",
+    "steps": [
+     {
+      "at": "Open",
+      "label": "Athlete opens the app: no session starts",
+      "tone": "ok"
+     },
+     {
+      "at": "Onboard",
+      "label": "Her answers are held on the phone",
+      "tone": "ink"
+     },
+     {
+      "at": "Sign-up",
+      "label": "The account is made and the answers\nare written to it",
+      "tone": "ok"
+     }
+    ]
+   }
+  },
+  "mp-460": {
+   "title": "The store build carries what cannot be cut; read-only mode, Codes and account-only onboarding follow before 8 October",
+   "question": "What goes into the build sent on 25 September, and what can wait for an update?",
+   "decision": "The store build (the one sent to Apple and Google around 25 September) carries the new products, the paywall showing the Offering marked current with founding styling, the day-five reminder, the webhook fix and the server's subscription check on every AI function, and the Legacy grace script runs on 1 October. Read-only mode for an account whose Pro ended, Codes, and onboarding without an anonymous session follow in an update before 8 October; until then such an account meets the paywall as it does today. If time runs short, cut from the bottom of that update, never from the store build. Example: the first Trial, started on 1 October, cannot end before 8 October, and Legacy grace covers existing accounts to 31 October, so before the update only someone who cancels can lose Pro.",
+   "details": "Precisely:\n1. The store build carries the new products, the Current Offering paywall with founding styling, the day-five reminder, the webhook fix and the server check on every AI function.\n2. The grace script runs on 1 October.\n3. Read-only lapsed mode, codes and onboarding without an anonymous session follow in an update before 8 October. Until then a lapsed account meets the paywall as it does today.\n4. If time runs short, cut from the bottom of that update, never from the store build.",
+   "diagram": {
+    "kind": "timeline",
+    "title": "If everything went in one build (rejected)",
+    "steps": [
+     {
+      "at": "25 Sep",
+      "label": "One build with everything\nis not ready for review",
+      "tone": "no"
+     },
+     {
+      "at": "Result",
+      "label": "No room left for a rejection\nbefore 1 Oct",
+      "tone": "no"
+     }
+    ]
+   },
+   "diagram2": {
+    "kind": "timeline",
+    "title": "What we decided: the store build, then an update",
+    "steps": [
+     {
+      "at": "25 Sep",
+      "label": "Store build: products, paywall, reminder,\nwebhook fix, server check on AI",
+      "tone": "accent"
+     },
+     {
+      "at": "1 Oct",
+      "label": "Paywall opens; the grace script runs",
+      "tone": "ok"
+     },
+     {
+      "at": "Before 8 Oct",
+      "label": "Update: read-only mode, Codes,\nonboarding with no anonymous session",
+      "tone": "ok"
+     },
+     {
+      "at": "8 Oct",
+      "label": "The first Trial can end",
+      "tone": "ink"
+     }
+    ]
+   }
+  },
+  "mp-461": {
+   "title": "The server's functions are tested whole, through their real handlers, with fakes around them",
+   "question": "Where are the webhook, Code redemption and the Legacy grace claim tested?",
+   "decision": "Through each function's real request handler, with fake RevenueCat events, a fake RevenueCat server and a fake database, the way the webhook's tests already feed it fake events. The cases: a promotional Grant opens the Entitlement row; a Trial started during Legacy grace keeps the grace end; a lapsed Trial leaves a live Grant open; each kind of Code and each refusal; and the grace claim grants once, and only for an account that predates the Flip. The grace script picks its accounts with the same function the claim uses, so it is tested there. Example: a fake event says a Trial ended on 12 October while a Grant runs to 31 October, and the test checks the row stays open to 31 October.",
+   "details": "Precisely:\n1. Through their real handlers, with fake RevenueCat events, a fake RevenueCat REST client and a fake database, the way the webhook's tests feed fake events today.\n2. Cases: a promotional grant opens the row; a trial started during grace keeps the grace end; a lapsed trial leaves a live grant open; each code type and each refusal; the grace claim grants once and only for an account that predates the flip.\n3. The grace script's selection is the same function the claim uses, tested there.",
+   "diagram": {
+    "kind": "timeline",
+    "title": "If each helper were tested on its own (rejected)",
+    "steps": [
+     {
+      "at": "Tests",
+      "label": "Every helper passes its own test",
+      "tone": "ok"
+     },
+     {
+      "at": "Gap",
+      "label": "How the handler joins them\nis never run in a test",
+      "tone": "no"
+     },
+     {
+      "at": "Result",
+      "label": "A Grant that never opens the row\ncould pass every test",
+      "tone": "no"
+     }
+    ]
+   },
+   "diagram2": {
+    "kind": "timeline",
+    "title": "What we decided: through the real handler",
+    "steps": [
+     {
+      "at": "Event",
+      "label": "Fake event: Trial ended 12 Oct,\nGrant runs to 31 Oct",
+      "tone": "ink"
+     },
+     {
+      "at": "Handler",
+      "label": "The real webhook handler runs with\nfake RevenueCat and a fake database",
+      "tone": "accent"
+     },
+     {
+      "at": "Check",
+      "label": "The row stays open to 31 Oct",
+      "tone": "ok"
+     }
+    ]
+   }
+  },
+  "mp-463": {
+   "title": "Claude checks the stores and RevenueCat through their APIs; a person runs only what needs a real phone",
+   "question": "What is checked on the real stores before the paywall ships, and by whom?",
+   "decision": "The Sandbox run on both stores stays the gate for every release. Claude checks everything that needs no phone, through the App Store Connect, Google Play and RevenueCat APIs and the signed-in browser: the products, prices and free-week offers on both stores, the founding Offering holding the founding products, a hand-granted account showing `pro` in RevenueCat, and the webhook having written that account's row. A person runs only what needs a real phone, and no CI job runs any of it. Example: Claude confirms the founding products sit in the founding Offering; then a person buys through that Offering in Sandbox, moves the phone's clock forward to see the day-five reminder arrive, and taps Restore purchases.",
+   "details": "Precisely:\n1. The sandbox run on both stores stays the release gate.\n2. Claude runs every check that needs no phone, through the App Store Connect, Google Play and RevenueCat APIs and the signed-in browser: the products, prices and free-week offers exist on both stores; the founding offering holds the founding products; a hand-granted account shows `pro` in RevenueCat; the webhook wrote that account's row.\n3. A person runs only what needs a real phone: the sandbox purchase through the founding offering, the day-five reminder arriving on a device with its clock moved on, and Restore.\n4. No CI job runs any of it.",
+   "diagram": {
+    "kind": "timeline",
+    "title": "If the hand run stayed as it was (rejected)",
+    "steps": [
+     {
+      "at": "Run",
+      "label": "The Sandbox run covers the Trial\nand Restore purchases",
+      "tone": "ink"
+     },
+     {
+      "at": "1 Oct",
+      "label": "The paywall ships. Founding prices\nwere never checked on a store",
+      "tone": "no"
+     },
+     {
+      "at": "1 Oct",
+      "label": "A Grant reaching the row\nwas never checked either",
+      "tone": "no"
+     }
+    ]
+   },
+   "diagram2": {
+    "kind": "timeline",
+    "title": "What we decided: Claude, then a person",
+    "steps": [
+     {
+      "at": "Claude",
+      "label": "Products, prices and free weeks\non both stores; founding Offering",
+      "tone": "ok"
+     },
+     {
+      "at": "Claude",
+      "label": "Hand Grant shows pro in RevenueCat;\nthe webhook wrote its row",
+      "tone": "ok"
+     },
+     {
+      "at": "Person",
+      "label": "Sandbox purchase via founding Offering;\nreminder with the clock moved on; Restore",
+      "tone": "accent"
+     }
+    ]
+   }
+  },
+  "mp-496": {
+   "title": "The store build carries the Bevel paywall and the Subscription screen; the Paywall sheet and Redeem code wait for the update",
+   "question": "Which parts of the new paywall design go in the 25 September build, when read-only mode and Codes come a week later?",
+   "decision": "The store build (the one sent around 25 September) also carries the new paywall layout copied from the Bevel app (mp-493), with its opening clip, the plans pinned at the bottom and the ⋯ menu, and the Subscription screen in Settings. Until the update, an account whose Pro ended meets the paywall full screen, as one that never subscribed does; the Paywall sheet over the read-only app arrives with read-only mode. Redeem code appears in the ⋯ menu and on the Subscription screen only once Codes ship in the update, and if time runs short, the Subscription screen moves to the update before anything else in the store build is cut. Example: on 1 October a new athlete signs up, sees the clip and the pinned plans, and finds no Redeem code in the ⋯ menu; it appears with the update before 8 October.",
+   "context": "The paywall opens on 1 October, and the store submission goes in around 25 September. mp-460 put the paywall with founding styling in that store build, and read-only mode and Codes in an update before 8 October. Lee then put the paywall layout copied from the Bevel app (mp-493) and the Subscription screen (mp-495) in the store build as well. This card is the \"What ships when\" paragraph in the spec's Implementation Decisions.",
+   "details": "Precisely:\n1. The store build carries the new paywall layout with the clip, the pinned plans and the ⋯ menu, and the Subscription screen in Settings, on top of what mp-460 already puts there.\n2. Until the update, a lapsed account meets the paywall full screen, as a never-subscribed one does. The closable sheet over the read-only app arrives with read-only mode.\n3. Redeem code appears in the ⋯ menu and on the Subscription screen only once codes ship in the update. The store build shows neither entry.\n4. If time runs short, the Subscription screen moves to the update before anything else in the store build is cut.",
+   "diagram": {
+    "kind": "timeline",
+    "title": "If Codes and read-only mode went in the store build too (rejected)",
+    "steps": [
+     {
+      "at": "Week",
+      "label": "More work before 25 Sep\nthan the week allows",
+      "tone": "no"
+     },
+     {
+      "at": "25 Sep",
+      "label": "The store build is not ready\nto submit",
+      "tone": "no"
+     }
+    ]
+   },
+   "diagram2": {
+    "kind": "timeline",
+    "title": "What we decided: the Bevel paywall now, the rest later",
+    "steps": [
+     {
+      "at": "25 Sep",
+      "label": "Store build: Bevel paywall, ⋯ menu\nwith no Redeem code, Subscription screen",
+      "tone": "accent"
+     },
+     {
+      "at": "1 Oct",
+      "label": "New athlete: clip, pinned plans,\nfull-screen paywall",
+      "tone": "ok"
+     },
+     {
+      "at": "Before 8 Oct",
+      "label": "Update: Redeem code, and the Paywall\nsheet over the read-only app",
+      "tone": "ok"
+     }
+    ]
+   }
+  },
+  "mp-497": {
+   "question": "Where are the paywall's look and the Subscription screen tested?",
+   "decision": "As widget tests (tests that draw a real screen with no device), on the real paywall and Subscription screens, fed by the same fake subscription service as the Gate and paywall tests (mp-462). They check the clip, Reduce Motion (the phone setting that cuts animation), which entries the ⋯ menu lists in each state, that an account that never subscribed has no close button, and what the Subscription screen shows for trial, active, founding and ended. Saved screenshots of both paywall forms and the Subscription screen, light and dark, replace the 15 September ones, and each new widget in the app's design library gets its own test. Example: with fake details for a trial started on 1 October, the test opens the Subscription screen and checks it shows the trial.",
+   "context": "The paywall opens on 1 October in the layout copied from the Bevel app (mp-493), with a ⋯ menu (mp-494) and a Subscription screen (mp-495). The Gate and paywall tests (mp-462) drive the code behind the screens, which cannot see the clip, the menu or which buttons show. This card is the \"screen seam\" paragraph in the spec's Testing Decisions.",
+   "details": "Precisely:\n1. The paywall and the Subscription screen are tested as widget tests on the real screens, driven by the same fake subscription service the client seam uses.\n2. The cases: the clip plays and the page moves on to the features and plans, with close and ⋯ appearing then; Reduce Motion shows the still frame and goes straight to the features; the ⋯ menu lists exactly the entries each state allows; a never-subscribed account gets no close button; the Subscription screen shows trial, active, founding and ended from fake customer info.\n3. Goldens of both paywall presentations and the Subscription screen, light and dark, replace the 09-15 paywall goldens.\n4. The new `kyle_design` widgets each get their own widget test in the library, as the library's widgets do today.",
+   "diagram": {
+    "kind": "timeline",
+    "title": "If the shape were checked by a Patrol flow on the simulator (rejected)",
+    "steps": [
+     {
+      "at": "Run",
+      "label": "A scripted run on the simulator\ntaps through the paywall",
+      "tone": "ink"
+     },
+     {
+      "at": "Cost",
+      "label": "Slow, and Codemagic never runs it",
+      "tone": "no"
+     },
+     {
+      "at": "Result",
+      "label": "The shape is checked only\nwhen someone runs it by hand",
+      "tone": "no"
+     }
+    ]
+   },
+   "diagram2": {
+    "kind": "timeline",
+    "title": "What we decided: widget tests on the real screens",
+    "steps": [
+     {
+      "at": "Clip",
+      "label": "The clip plays; close and ⋯ appear\nwhen the features and plans show",
+      "tone": "ok"
+     },
+     {
+      "at": "Motion",
+      "label": "Reduce Motion: the still frame,\nstraight to the features",
+      "tone": "ok"
+     },
+     {
+      "at": "Never",
+      "label": "An account that never subscribed\nhas no close button",
+      "tone": "ok"
+     },
+     {
+      "at": "Screen",
+      "label": "Subscription screen: trial, active,\nfounding and ended",
+      "tone": "ok"
+     }
+    ]
+   }
+  }
+ },
+ "terms": [
+  {
+   "term": "Seam",
+   "area": "Building and testing",
+   "definition": "The place a test enters the real code, with fakes standing in for everything beyond it: the server's handlers, the app's notifiers, the screens, or the eval. A spec names its seams in its Testing Decisions.",
+   "avoid": "Test layer, test level"
+  },
+  {
+   "term": "Sandbox",
+   "area": "Paying for the app",
+   "definition": "The stores' test mode, where a test account buys a subscription without being charged. The hand runs before a release buy in it; a Grant made there still reaches the webhook labelled as production.",
+   "avoid": "Test store, staging"
+  }
+ ]
+}

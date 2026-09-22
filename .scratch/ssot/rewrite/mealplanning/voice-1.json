@@ -1,0 +1,951 @@
+{
+ "cards": {
+  "mp-001": {
+   "question": "What is the assistant called?",
+   "decision": "She is called Vana, from Meal-vana, and \"AI\" is not part of her name. The one name is used everywhere in the app and in the prototype. Example: where the Figma concept said MealBuddy and the shipped chat said Jade, both are to say Vana, and a label such as \"Mealvana AI\" is not used.",
+   "details": "Precisely:\n1. The assistant is named Vana, taken from Meal-vana, with no \"AI\" in the name.\n2. The one name is used across the app and the prototype.",
+   "diagram": {
+    "kind": "flow",
+    "title": "Three placeholder names, one name",
+    "rows": [
+     [
+      {
+       "id": "sage",
+       "label": "Sage\nearly canvas",
+       "tone": "muted"
+      },
+      {
+       "id": "mb",
+       "label": "MealBuddy\nFigma concept",
+       "tone": "muted"
+      },
+      {
+       "id": "jade",
+       "label": "Jade\nshipped chat",
+       "tone": "muted"
+      }
+     ],
+     [
+      {
+       "id": "vana",
+       "label": "Vana\nfrom Meal-vana, no \"AI\"",
+       "tone": "accent"
+      }
+     ],
+     [
+      {
+       "id": "app",
+       "label": "The app",
+       "tone": "ok"
+      },
+      {
+       "id": "proto",
+       "label": "The prototype",
+       "tone": "ok"
+      }
+     ]
+    ],
+    "edges": [
+     {
+      "from": "sage",
+      "to": "vana"
+     },
+     {
+      "from": "mb",
+      "to": "vana"
+     },
+     {
+      "from": "jade",
+      "to": "vana"
+     },
+     {
+      "from": "vana",
+      "to": "app"
+     },
+     {
+      "from": "vana",
+      "to": "proto"
+     }
+    ],
+    "example": [
+     "Not chosen: Mel, Endy, \"Mealvana AI\"."
+    ]
+   },
+   "slot": 2
+  },
+  "mp-002": {
+   "question": "Is there one assistant or several?",
+   "decision": "One. Jade is retired, and every place the athlete can reach Vana from talks to the same Vana with the same tools. She works out the Intent of each exchange from her own prompt, with no extra model call to sort the message first. Only the context she is handed changes with the screen, and it always includes the athlete's full Voodoo Doll. Example: the athlete who asks about a formula's coach feedback and later opens the Plan tab talks to the same Vana both times, and both times she has the whole Doll.",
+   "details": "Precisely:\n1. There is one Vana and no Jade.\n2. Every entry point, whether the sheet, the Plan tab, a formula's coach feedback, or the events page, talks to the same Vana with the same tools.\n3. She picks an intent per exchange from the prompt, and no classifier call runs before a turn.\n4. What differs by entry point is the context she is handed, never who she is.\n5. Every context always includes the athlete's full Doll.",
+   "diagram": {
+    "kind": "flow",
+    "title": "Four ways in, one Vana",
+    "rows": [
+     [
+      {
+       "id": "sheet",
+       "label": "Vana sheet\nor Plan tab",
+       "tone": "ink"
+      },
+      {
+       "id": "formula",
+       "label": "Formula coach feedback\nor events page",
+       "tone": "ink"
+      }
+     ],
+     [
+      {
+       "id": "ctx",
+       "label": "Context for that screen\n+ the full Doll",
+       "tone": "accent"
+      }
+     ],
+     [
+      {
+       "id": "vana",
+       "label": "One Vana\nsame tools",
+       "tone": "ok"
+      }
+     ],
+     [
+      {
+       "id": "intent",
+       "label": "Picks the intent from the prompt\nno classifier call first",
+       "tone": "ok"
+      }
+     ]
+    ],
+    "edges": [
+     {
+      "from": "sheet",
+      "to": "ctx"
+     },
+     {
+      "from": "formula",
+      "to": "ctx"
+     },
+     {
+      "from": "ctx",
+      "to": "vana"
+     },
+     {
+      "from": "vana",
+      "to": "intent"
+     }
+    ],
+    "example": [
+     "Jade is retired everywhere."
+    ]
+   },
+   "slot": 2
+  },
+  "mp-003": {
+   "title": "Each conversation is tagged general or meal-planning, and a new plan always starts a new one",
+   "question": "Do general and meal-planning conversations still differ?",
+   "decision": "Only by a tag. Each conversation is tagged general or meal-planning, and the history list and the opener read that tag. Tapping New meal plan, or asking Vana a fresh question from a button, always starts a new conversation rather than continuing an old one, and every past conversation stays in history. Example: an athlete taps New meal plan on Monday and asks Vana a question from a button on Wednesday; that makes two new conversations, one tagged meal-planning and one tagged general, and both stay listed in history.",
+   "details": "Precisely:\n1. General and meal-planning stay as a tag on each conversation, read by the history list and the opener.\n2. Tapping New meal plan, or asking Vana cold from a button, always starts a new conversation rather than continuing an old one.\n3. Every past conversation stays listed in history so the athlete can return to it.",
+   "diagram": {
+    "kind": "timeline",
+    "title": "If the two kinds were merged entirely (rejected)",
+    "steps": [
+     {
+      "at": "Mon",
+      "label": "Athlete taps New meal plan.\nA conversation starts",
+      "tone": "ink"
+     },
+     {
+      "at": "Wed",
+      "label": "Athlete asks Vana a question from a button.\nAnother conversation starts",
+      "tone": "ink"
+     },
+     {
+      "at": "Wed",
+      "label": "The opener cannot tell a question\nfrom a plan: no tag to read",
+      "tone": "no"
+     },
+     {
+      "at": "Later",
+      "label": "History lists both the same way.\nNothing says which one was the plan",
+      "tone": "no"
+     }
+    ]
+   },
+   "diagram2": {
+    "kind": "timeline",
+    "title": "What we decided: a tag on each conversation",
+    "steps": [
+     {
+      "at": "Mon",
+      "label": "Athlete taps New meal plan.\nNew conversation, tagged meal-planning",
+      "tone": "accent"
+     },
+     {
+      "at": "Wed",
+      "label": "Athlete asks a question from a button.\nNew conversation, tagged general;\nMonday's is not continued",
+      "tone": "accent"
+     },
+     {
+      "at": "Wed",
+      "label": "The opener reads the tag: general",
+      "tone": "ok"
+     },
+     {
+      "at": "Later",
+      "label": "History lists both. The athlete\ncan go back to Monday's plan",
+      "tone": "ok"
+     }
+    ]
+   }
+  },
+  "mp-004": {
+   "question": "What words does meal planning use?",
+   "decision": "Anything in the library, or entered by the athlete, is a \"meal\", never a \"plate\". The week of meals is a \"batch\". The words \"cooking session\" appear only when batch cooking is turned on. Example: the Plan tab lists this week's batch of meals, and with batch cooking off it never mentions a cooking session.",
+   "details": "Precisely:\n1. A library or user entry is a \"meal\", never a \"plate\".\n2. The week is a \"batch\".\n3. \"Cooking session\" appears only when batch cooking is on.",
+   "diagram": {
+    "kind": "flow",
+    "title": "One set of words",
+    "rows": [
+     [
+      {
+       "id": "entry",
+       "label": "A library or\nuser entry",
+       "tone": "ink"
+      },
+      {
+       "id": "week",
+       "label": "The week",
+       "tone": "ink"
+      }
+     ],
+     [
+      {
+       "id": "meal",
+       "label": "\"meal\"",
+       "tone": "ok"
+      },
+      {
+       "id": "plate",
+       "label": "never \"plate\"",
+       "tone": "no"
+      },
+      {
+       "id": "batch",
+       "label": "\"batch\"",
+       "tone": "ok"
+      }
+     ],
+     [
+      {
+       "id": "bc",
+       "label": "Batch cooking on",
+       "tone": "ink"
+      },
+      {
+       "id": "cs",
+       "label": "\"cooking session\"\nonly then",
+       "tone": "accent"
+      }
+     ]
+    ],
+    "edges": [
+     {
+      "from": "entry",
+      "to": "meal"
+     },
+     {
+      "from": "entry",
+      "to": "plate"
+     },
+     {
+      "from": "week",
+      "to": "batch"
+     },
+     {
+      "from": "bc",
+      "to": "cs"
+     }
+    ]
+   },
+   "slot": 2
+  },
+  "mp-005": {
+   "question": "Where do Vana's fuelling numbers come from?",
+   "decision": "From the app's own fuelling calculator, never from the model. The calculator works out pre, during and post race targets from the ratified nutrition specs and gives the same answer every time. Vana reaches it, and the athlete's own records, through tools: upcoming events, activity history, macro targets and food suggestions for a session; she shows what a tool returns and never makes up a number or a meal. Example: asked what races are coming up, Vana looks at the athlete's event list and answers from it.",
+   "details": "Precisely:\n1. Race-day fuelling numbers come from the deterministic module, never from the model.\n2. Vana reaches that module and the athlete's own records through tools: upcoming events, activity history, macro targets, and food suggestions for a session.\n3. She presents what a tool returns and never invents a number or a meal.",
+   "diagram": {
+    "kind": "timeline",
+    "title": "If the model owned race fuelling (rejected)",
+    "steps": [
+     {
+      "at": "Race week",
+      "label": "Athlete asks Vana what races are coming\nup and what to take on the day",
+      "tone": "ink"
+     },
+     {
+      "at": "Reply",
+      "label": "The model writes the fuelling targets\nitself, not from the ratified specs",
+      "tone": "no"
+     },
+     {
+      "at": "Seen",
+      "label": "June 2025 trials: tools called wrongly,\nwrong parameters passed",
+      "tone": "no"
+     }
+    ]
+   },
+   "diagram2": {
+    "kind": "timeline",
+    "title": "What we decided: tools, and the calculator",
+    "steps": [
+     {
+      "at": "Race week",
+      "label": "Athlete asks Vana what races are coming\nup and what to take on the day",
+      "tone": "ink"
+     },
+     {
+      "at": "Tool",
+      "label": "Vana looks at the event list\nand sees the race",
+      "tone": "ok"
+     },
+     {
+      "at": "Tool",
+      "label": "The fuelling calculator returns\npre, during and post targets",
+      "tone": "accent"
+     },
+     {
+      "at": "Reply",
+      "label": "Vana shows those numbers as returned.\nShe invents none",
+      "tone": "ok"
+     }
+    ]
+   }
+  },
+  "mp-006": {
+   "question": "Does Vana ask the athlete for what the app already knows?",
+   "decision": "No. Before asking anything, Vana uses what she is handed and her tools. She asks only about things the app cannot know, and only when they matter to the plan. Example: she never asks for the training schedule, goal, diet or allergies, which the app holds from onboarding, the calendar and the integrations, but she may ask who is eating this week or what is in the fridge.",
+   "details": "Precisely:\n1. Vana never asks for what the app already knows.\n2. Before asking anything she uses the context block and her tools.\n3. She may ask about things the app cannot know when they matter to the plan, such as who is eating this week or what is in the fridge.",
+   "diagram": {
+    "kind": "flow",
+    "title": "Look it up first, then ask",
+    "rows": [
+     [
+      {
+       "id": "need",
+       "label": "Vana needs to know\nsomething for the plan",
+       "tone": "ink"
+      }
+     ],
+     [
+      {
+       "id": "have",
+       "label": "On file or in a tool?\ne.g. schedule, diet, allergies",
+       "tone": "ink"
+      },
+      {
+       "id": "cant",
+       "label": "The app cannot know it\ne.g. who is eating this week",
+       "tone": "ink"
+      }
+     ],
+     [
+      {
+       "id": "use",
+       "label": "Use it.\nNever ask",
+       "tone": "ok"
+      },
+      {
+       "id": "ask",
+       "label": "Ask, when it\nmatters to the plan",
+       "tone": "accent"
+      }
+     ]
+    ],
+    "edges": [
+     {
+      "from": "need",
+      "to": "have"
+     },
+     {
+      "from": "need",
+      "to": "cant"
+     },
+     {
+      "from": "have",
+      "to": "use"
+     },
+     {
+      "from": "cant",
+      "to": "ask"
+     }
+    ]
+   },
+   "slot": 2
+  },
+  "mp-007": {
+   "question": "What does Vana's first turn show when a plan starts?",
+   "decision": "Two or three sentences about the athlete's week and one choice question whose chips carry labels only, with no meals. The first meal picker follows whatever the athlete answered, so it need not be dinners. A question that is not about planning gets an answer without meal suggestions, and once that is done Vana offers to start picking. Example: the athlete taps New meal plan and sees a short read of the week and one question, with no meals; the first picker then shows whichever meal the answer named, dinners or not.",
+   "details": "Precisely:\n1. The planning opener writes two or three context sentences and asks one question with label-only chips.\n2. No meals appear on the opener turn.\n3. The first picker follows whatever the athlete answered, so it need not be dinners.\n4. If the athlete asks something unrelated to planning, Vana answers it without recommending meals, and once that thread is done she offers to start picking.",
+   "diagram": {
+    "kind": "flow",
+    "title": "Question first, then fluid",
+    "rows": [
+     [
+      {
+       "id": "tap",
+       "label": "Athlete taps\nNew meal plan",
+       "tone": "ink"
+      }
+     ],
+     [
+      {
+       "id": "open",
+       "label": "2 or 3 sentences + one question\nlabel-only chips, no meals",
+       "tone": "accent"
+      }
+     ],
+     [
+      {
+       "id": "ans",
+       "label": "Athlete answers",
+       "tone": "ink"
+      },
+      {
+       "id": "side",
+       "label": "Athlete asks something\nnot about planning",
+       "tone": "ink"
+      }
+     ],
+     [
+      {
+       "id": "pick",
+       "label": "First picker follows\nthe answer, not always dinners",
+       "tone": "ok"
+      },
+      {
+       "id": "reply",
+       "label": "Answered without meals,\nthen offers to start picking",
+       "tone": "ok"
+      }
+     ]
+    ],
+    "edges": [
+     {
+      "from": "tap",
+      "to": "open"
+     },
+     {
+      "from": "open",
+      "to": "ans"
+     },
+     {
+      "from": "open",
+      "to": "side"
+     },
+     {
+      "from": "ans",
+      "to": "pick"
+     },
+     {
+      "from": "side",
+      "to": "reply"
+     }
+    ]
+   },
+   "slot": 2
+  },
+  "mp-008": {
+   "question": "What does every opener lead with?",
+   "decision": "The most relevant thing Vana knows right now, picked from everything she holds: the weather, the race schedule, holidays, what is on screen and what the athlete has said before. Something personal is welcome when it is the most relevant thing, but it is not required. An opener never greets. Example: on a day when the race schedule matters most, the opener starts with the race, not with a hello.",
+   "details": "Precisely:\n1. Every opener picks the most relevant thing to say from everything Vana holds: the weather, the race schedule, holidays, what is on screen, and what the athlete has said before.\n2. A personal reference is welcome when it is the most relevant thing, not required.\n3. An opener never greets.",
+   "diagram": {
+    "kind": "flow",
+    "title": "Weigh everything, lead with one",
+    "rows": [
+     [
+      {
+       "id": "w",
+       "label": "Weather",
+       "tone": "muted"
+      },
+      {
+       "id": "r",
+       "label": "Race schedule",
+       "tone": "muted"
+      },
+      {
+       "id": "h",
+       "label": "Holidays",
+       "tone": "muted"
+      }
+     ],
+     [
+      {
+       "id": "s",
+       "label": "What is on screen",
+       "tone": "muted"
+      },
+      {
+       "id": "p",
+       "label": "What the athlete\nhas said before",
+       "tone": "muted"
+      }
+     ],
+     [
+      {
+       "id": "pick",
+       "label": "The most relevant thing today",
+       "tone": "accent"
+      }
+     ],
+     [
+      {
+       "id": "open",
+       "label": "Opener leads with it.\nNever a greeting",
+       "tone": "ok"
+      }
+     ]
+    ],
+    "edges": [
+     {
+      "from": "r",
+      "to": "pick"
+     },
+     {
+      "from": "s",
+      "to": "pick"
+     },
+     {
+      "from": "p",
+      "to": "pick"
+     },
+     {
+      "from": "pick",
+      "to": "open"
+     }
+    ]
+   },
+   "slot": 2
+  },
+  "mp-010": {
+   "title": "The one-time intro card was removed; the opener does its job",
+   "question": "Does the planning chat start with a welcome card?",
+   "decision": "No. A one-time card saying \"Vana already did the homework\", with three example chips, was built and removed the same evening. Vana's opener does that job. Example: an athlete who taps New meal plan sees Vana's opener first, with no card above it.",
+   "details": "Precisely:\n1. The one-time \"Vana already did the homework\" card was built and removed the same evening.\n2. The opener does that job.",
+   "diagram": {
+    "kind": "timeline",
+    "title": "Built and removed the same day",
+    "steps": [
+     {
+      "at": "Same day",
+      "label": "The question-first opener lands",
+      "tone": "ink"
+     },
+     {
+      "at": "Same day",
+      "label": "A one-time card is built above it:\n\"Vana already did the homework\"\nand three example chips",
+      "tone": "muted"
+     },
+     {
+      "at": "That evening",
+      "label": "Lee: \"we don't need that block\".\nThe card is removed",
+      "tone": "no"
+     },
+     {
+      "at": "Now",
+      "label": "New meal plan opens on the opener alone",
+      "tone": "ok"
+     }
+    ]
+   },
+   "slot": 2
+  },
+  "mp-012": {
+   "title": "The server no longer cuts planning turns to two sentences",
+   "question": "Where is Vana kept brief?",
+   "decision": "In her prompt. The server no longer cuts each planning turn down to two sentences after it is written; only a guard against runaway turns of more than eight sentences remains. The cap on how much a turn may write went from 400 to 700 to 900 tokens (the units a model's output is counted and paid in), so longer turns have room. Example: a planning turn of three sentences used to reach the athlete, and the stored transcript, as two; now all three are shown and stored.",
+   "details": "Precisely:\n1. The server no longer trims planning turns to two sentences.\n2. Only an eight-sentence runaway guard remains.\n3. The output cap went from 400 to 700 to 900 tokens so the longer moments have room.",
+   "diagram": {
+    "kind": "timeline",
+    "title": "If the server kept the clamp (rejected)",
+    "steps": [
+     {
+      "at": "Vana writes",
+      "label": "A planning turn of three sentences.\nThe tokens are already paid for",
+      "tone": "ink"
+     },
+     {
+      "at": "Server",
+      "label": "Cuts it to two sentences",
+      "tone": "no"
+     },
+     {
+      "at": "Athlete sees",
+      "label": "Two sentences. The prompt's work\ndoes not show on screen",
+      "tone": "no"
+     },
+     {
+      "at": "Reopens",
+      "label": "The transcript holds the two.\nThe third is lost",
+      "tone": "no"
+     }
+    ]
+   },
+   "diagram2": {
+    "kind": "timeline",
+    "title": "What we decided: brevity in the prompt",
+    "steps": [
+     {
+      "at": "Vana writes",
+      "label": "A planning turn of three sentences,\nkept short by the prompt",
+      "tone": "accent"
+     },
+     {
+      "at": "Server",
+      "label": "No cut. Only a guard past\neight sentences remains",
+      "tone": "ok"
+     },
+     {
+      "at": "Athlete sees",
+      "label": "All three sentences",
+      "tone": "ok"
+     },
+     {
+      "at": "Reopens",
+      "label": "The transcript holds all three",
+      "tone": "ok"
+     }
+    ]
+   }
+  },
+  "mp-013": {
+   "question": "How much work may one Vana turn do?",
+   "decision": "A planning turn may run up to six tool steps before it answers, and a general turn up to eight; each step is another model call. Each athlete may send Vana at most four messages in any ten seconds. Her standing instructions (the system prompt) stay near 900 tokens, and what tools return is kept short. Example: an athlete who sends five messages within ten seconds has sent one more than the limit allows.",
+   "details": "Precisely:\n1. A planning turn may run six tool steps and a general turn eight.\n2. Chat is rate-limited to four requests per ten seconds per athlete.\n3. The system prompt is about 900 tokens and tool outputs are kept compact.",
+   "diagram": {
+    "kind": "flow",
+    "title": "The budget for each turn",
+    "rows": [
+     [
+      {
+       "id": "send",
+       "label": "Athlete sends a message",
+       "tone": "ink"
+      }
+     ],
+     [
+      {
+       "id": "rate",
+       "label": "At most 4 sends\nper 10 seconds",
+       "tone": "accent"
+      }
+     ],
+     [
+      {
+       "id": "plan",
+       "label": "Planning turn\nup to 6 tool steps",
+       "tone": "ink"
+      },
+      {
+       "id": "gen",
+       "label": "General turn\nup to 8 tool steps",
+       "tone": "ink"
+      }
+     ],
+     [
+      {
+       "id": "ans",
+       "label": "Vana answers",
+       "tone": "ok"
+      }
+     ]
+    ],
+    "edges": [
+     {
+      "from": "send",
+      "to": "rate"
+     },
+     {
+      "from": "rate",
+      "to": "plan"
+     },
+     {
+      "from": "rate",
+      "to": "gen"
+     },
+     {
+      "from": "plan",
+      "to": "ans"
+     },
+     {
+      "from": "gen",
+      "to": "ans"
+     }
+    ],
+    "example": [
+     "System prompt about 900 tokens.",
+     "Tool outputs kept compact."
+    ]
+   }
+  },
+  "mp-014": {
+   "question": "What must a turn that uses a tool look like?",
+   "decision": "A meal picker always comes with a sentence, and so does \"Other options\". A question about a particular day goes to the day-guidance tool, which reads that day's workouts, the macro budget and the library's rest-day and race-week rules, instead of getting a guess. Vana never says what she is about to do before calling a tool. Example: asked what to eat on a day in race week, Vana calls the day-guidance tool for that date and puts its answer in her own words, with no \"I need to check\" first.",
+   "details": "Precisely:\n1. A meal picker is never sent bare and \"Other options\" always carries text.\n2. For a question about a specific day, Vana calls the day-guidance tool rather than guessing.\n3. She never narrates before a tool call.",
+   "diagram": {
+    "kind": "flow",
+    "title": "A turn with a tool",
+    "rows": [
+     [
+      {
+       "id": "q",
+       "label": "Athlete asks about\na specific day",
+       "tone": "ink"
+      }
+     ],
+     [
+      {
+       "id": "narr",
+       "label": "\"I need to check...\"",
+       "tone": "no"
+      },
+      {
+       "id": "tool",
+       "label": "Day-guidance tool\nfor that date",
+       "tone": "accent"
+      }
+     ],
+     [
+      {
+       "id": "words",
+       "label": "Vana's sentence\nabout the day",
+       "tone": "ok"
+      },
+      {
+       "id": "picker",
+       "label": "Meal picker,\nnever bare",
+       "tone": "ok"
+      }
+     ]
+    ],
+    "edges": [
+     {
+      "from": "q",
+      "to": "narr",
+      "label": "never",
+      "tone": "no"
+     },
+     {
+      "from": "q",
+      "to": "tool"
+     },
+     {
+      "from": "tool",
+      "to": "words"
+     },
+     {
+      "from": "words",
+      "to": "picker"
+     }
+    ],
+    "example": [
+     "\"Other options\" always carries text too."
+    ]
+   },
+   "slot": 2
+  },
+  "mp-015": {
+   "question": "What does the athlete see while a tool runs?",
+   "decision": "A short line for that tool beside a small picture of Vana, such as \"Finding options that fit your week…\". Anything Vana wrote before the tool call is dropped from the stored transcript, and there is no progress ring with a percentage. Example: while Vana looks for meals, the athlete sees \"Finding options that fit your week…\" until the picker arrives, not a percentage like MealBuddy's ring.",
+   "details": "Precisely:\n1. While a tool runs, a short content line per tool sits beside a mini avatar, such as \"Finding options that fit your week…\".\n2. Pre-tool narration is dropped from the transcript.\n3. There is no percentage ring.",
+   "diagram": {
+    "kind": "timeline",
+    "title": "What the athlete sees during a tool call",
+    "steps": [
+     {
+      "at": "Tool starts",
+      "label": "Small Vana picture beside\n\"Finding options that fit your week…\"",
+      "tone": "accent"
+     },
+     {
+      "at": "Never",
+      "label": "A percentage ring,\nor Vana narrating what she will do",
+      "tone": "no"
+     },
+     {
+      "at": "Tool done",
+      "label": "The result arrives in the chat",
+      "tone": "ok"
+     },
+     {
+      "at": "Stored",
+      "label": "Pre-tool narration left out\nof the transcript",
+      "tone": "muted"
+     }
+    ]
+   },
+   "slot": 2
+  },
+  "mp-016": {
+   "question": "Is the text before a choice question kept when the chat is saved?",
+   "decision": "Yes. Text Vana writes before a tool call is normally dropped when the conversation is stored, but a step whose only tool is a choice question keeps its text. Without this, an opener's sentences showed while it streamed in and were gone after a reload. Example: Vana's opener writes two sentences and asks a choice question; the athlete closes and reopens the chat and still sees both sentences above the question.",
+   "details": "Precisely:\n1. A step whose only tool is a choice question keeps its text when the transcript is stored.",
+   "diagram": {
+    "kind": "flow",
+    "title": "Which text is kept when the transcript is stored",
+    "rows": [
+     [
+      {
+       "id": "step",
+       "label": "Vana writes text,\nthen calls a tool",
+       "tone": "ink"
+      }
+     ],
+     [
+      {
+       "id": "other",
+       "label": "Any other tool",
+       "tone": "muted"
+      },
+      {
+       "id": "choice",
+       "label": "Only a choice question",
+       "tone": "accent"
+      }
+     ],
+     [
+      {
+       "id": "drop",
+       "label": "Text dropped\nfrom the transcript",
+       "tone": "no"
+      },
+      {
+       "id": "keep",
+       "label": "Text kept.\nStill there on reload",
+       "tone": "ok"
+      }
+     ]
+    ],
+    "edges": [
+     {
+      "from": "step",
+      "to": "other"
+     },
+     {
+      "from": "step",
+      "to": "choice"
+     },
+     {
+      "from": "other",
+      "to": "drop"
+     },
+     {
+      "from": "choice",
+      "to": "keep"
+     }
+    ]
+   },
+   "slot": 2
+  },
+  "mp-017": {
+   "question": "What does an older app do with a message part it has never seen?",
+   "decision": "It skips that part and shows the rest of the message. The server sends each message in parts, such as text, a meal picker, a choice question or a receipt, and new kinds of part are added as features land while older app versions stay in use for months. The coach chat already works this way. Example: on an older app, a message holding a sentence, a picker and a kind of part added later shows the sentence and the picker, and the new part is simply left out.",
+   "details": "Precisely:\n1. The app ignores any message part kind it does not know and renders the rest of the message.\n2. This is the same rule the coach chat uses.",
+   "diagram": {
+    "kind": "flow",
+    "title": "An older app meets a new part",
+    "rows": [
+     [
+      {
+       "id": "t",
+       "label": "Text",
+       "tone": "ink"
+      },
+      {
+       "id": "p",
+       "label": "Meal picker",
+       "tone": "ink"
+      },
+      {
+       "id": "x",
+       "label": "New part kind",
+       "tone": "pending"
+      }
+     ],
+     [
+      {
+       "id": "app",
+       "label": "Older app",
+       "tone": "ink"
+      }
+     ],
+     [
+      {
+       "id": "show",
+       "label": "Shows the text\nand the picker",
+       "tone": "ok"
+      },
+      {
+       "id": "skip",
+       "label": "Skips the new part.\nNo error",
+       "tone": "muted"
+      }
+     ]
+    ],
+    "edges": [
+     {
+      "from": "t",
+      "to": "app"
+     },
+     {
+      "from": "p",
+      "to": "app"
+     },
+     {
+      "from": "x",
+      "to": "app"
+     },
+     {
+      "from": "app",
+      "to": "show"
+     },
+     {
+      "from": "app",
+      "to": "skip"
+     }
+    ]
+   },
+   "slot": 2
+  }
+ },
+ "terms": [
+  {
+   "term": "Tool",
+   "area": "Vana and what she knows",
+   "definition": "A server function Vana calls during a turn to read the athlete's records or to put something in the chat, such as the upcoming events, the day-guidance tool, a meal picker or a choice question. Each call is one tool step.",
+   "avoid": "function call"
+  },
+  {
+   "term": "Turn",
+   "area": "Vana and what she knows",
+   "definition": "One reply from Vana and everything she does to make it: the reading, tool calls and writing behind one answer to the athlete, or behind an opener she sends first."
+  },
+  {
+   "term": "Meal picker",
+   "area": "Vana and what she knows",
+   "definition": "The carousel of meals Vana puts in the chat for the athlete to choose from.",
+   "avoid": "carousel, meal cards"
+  },
+  {
+   "term": "Choice question",
+   "area": "Vana and what she knows",
+   "definition": "A question Vana asks with tappable chips as the answers. It is itself a tool, so it arrives as its own part of the message.",
+   "avoid": "quick replies"
+  },
+  {
+   "term": "Transcript",
+   "area": "Vana and what she knows",
+   "definition": "The stored copy of a conversation, which is what the athlete sees when they reopen it, as opposed to the live stream they watched.",
+   "avoid": "chat log"
+  }
+ ]
+}

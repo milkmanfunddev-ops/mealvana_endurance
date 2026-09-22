@@ -1,0 +1,686 @@
+{
+ "cards": {
+  "mp-051": {
+   "question": "What happens to the launcher when a dialog or bottom sheet opens?",
+   "decision": "The launcher hides while any dialog or bottom sheet is open, and that includes Vana's own sheet. It never floats on top of one. Example: on the Plan tab the athlete opens the calendar sheet, and the launcher is not shown while that sheet is up.",
+   "details": "Precisely:\n1. A navigator observer (VanaCompanionObserver) hides the launcher under any dialog or bottom sheet, Vana's own sheet included.",
+   "diagram": {
+    "kind": "flow",
+    "title": "What we decided: modals hide the launcher",
+    "rows": [
+     [
+      {
+       "id": "a",
+       "label": "Plan tab\nlauncher showing",
+       "tone": "ink"
+      },
+      {
+       "id": "b",
+       "label": "Calendar sheet\nopens",
+       "tone": "accent"
+      }
+     ],
+     [
+      {
+       "id": "c",
+       "label": "Launcher hidden\nwhile it is up",
+       "tone": "ok"
+      }
+     ]
+    ],
+    "edges": [
+     {
+      "from": "a",
+      "to": "b"
+     },
+     {
+      "from": "b",
+      "to": "c"
+     }
+    ],
+    "example": [
+     "The same holds for any dialog, and for Vana's own sheet."
+    ]
+   },
+   "slot": 2
+  },
+  "mp-058": {
+   "title": "The sheet continues one conversation all day, one per phone",
+   "question": "Does opening the sheet again start a new conversation?",
+   "decision": "Not on the same day. Every open of the sheet that day continues one general conversation, and the next day starts a new one. Each phone remembers its own day's conversation, so a second phone opens a separate one, and a conversation is kept even if the sheet was closed before Vana's first reply arrived. Example: an athlete opens the sheet on Monday morning, closes it, and opens it again at lunch; the morning's messages are still there. On Tuesday the sheet starts a new conversation.",
+   "context": "The Vana sheet opens a general conversation with Vana. An athlete may open it in the morning, close it, and open it again at lunch, and each open could either start fresh or continue. The note of which conversation is current could live on the phone or on the server, and a sheet closed before the first message arrives could lose its conversation.",
+   "details": "Precisely:\n1. The sheet continues the same general conversation all day and starts a new one the next day.\n2. The pointer is stored on the device, so a second phone opens its own conversation.\n3. The host adopts the server's id for the day's first conversation, so closing the sheet before the first event still keeps it.",
+   "diagram": {
+    "kind": "timeline",
+    "title": "What we decided: one conversation a day",
+    "steps": [
+     {
+      "at": "Mon morning",
+      "label": "Athlete opens the sheet, asks Vana,\ncloses it",
+      "tone": "ink"
+     },
+     {
+      "at": "Mon lunch",
+      "label": "Opens it again: the morning's\nmessages are still there",
+      "tone": "ok"
+     },
+     {
+      "at": "Tue",
+      "label": "Opens the sheet: a new conversation",
+      "tone": "accent"
+     },
+     {
+      "at": "Tue",
+      "label": "Second phone: its own conversation",
+      "tone": "muted"
+     }
+    ]
+   },
+   "slot": 2
+  },
+  "mp-061": {
+   "title": "The sheet opens on top of the app, and the screen underneath keeps its place",
+   "question": "When the sheet closes, is the screen underneath just as the athlete left it?",
+   "decision": "Yes. The sheet opens as a layer on top of the whole app, not drawn inside each screen, so the screen underneath keeps its scroll position and anything half filled in. Tapping the dimmed area around the sheet, or the phone's back gesture, closes it. Example: an athlete halfway down the Plan tab opens the sheet, asks Vana a question and taps the dimmed area; the Plan tab is still at the same place.",
+   "details": "Precisely:\n1. The sheet is a popup route on the root navigator (VanaSheetRoute).\n2. The page underneath keeps its state and scroll.\n3. A tap on the scrim (the dimmed area around the sheet) and the system back gesture both pop the sheet.",
+   "diagram": {
+    "kind": "timeline",
+    "title": "What we decided: the screen waits underneath",
+    "steps": [
+     {
+      "at": "1",
+      "label": "Athlete scrolls halfway down the Plan tab",
+      "tone": "ink"
+     },
+     {
+      "at": "2",
+      "label": "Opens the sheet on top of it",
+      "tone": "accent"
+     },
+     {
+      "at": "3",
+      "label": "Taps the dimmed area or swipes back",
+      "tone": "ink"
+     },
+     {
+      "at": "4",
+      "label": "Plan tab is at the same scroll place",
+      "tone": "ok"
+     }
+    ]
+   },
+   "slot": 2
+  },
+  "mp-062": {
+   "title": "Every close shrinks the sheet back into the launcher over about 470 ms",
+   "question": "What does the sheet look like when it closes?",
+   "decision": "However it is closed, the sheet shrinks back into the launcher, the button it came from, and never slides off the bottom of the screen. The shrink takes about 470 ms and the rise on opening takes 360 ms. Example: dragging the grabber down, the close button, tapping the dimmed area and the back gesture all look the same: the sheet folds into the launcher's centre in about half a second.",
+   "context": "The sheet can be closed four ways: dragging the grabber down, the close button, tapping the dimmed area around it, and the phone's back gesture. A bottom sheet usually slides off the bottom of the screen. The written spec said the sheet shrinks into \"the launcher's corner\", but the design file's numbers shrink it towards the launcher's centre.",
+   "details": "Precisely:\n1. Grabber, close button, scrim and system back all condense the sheet into the launcher over about 470 ms, with the origin at the launcher's centre.\n2. The rise on open is 360 ms.\n3. The sheet never slides off-screen.",
+   "diagram": {
+    "kind": "flow",
+    "title": "What we decided: four ways out, one motion",
+    "rows": [
+     [
+      {
+       "id": "g",
+       "label": "Drag grabber",
+       "tone": "ink"
+      },
+      {
+       "id": "x",
+       "label": "Close button",
+       "tone": "ink"
+      }
+     ],
+     [
+      {
+       "id": "s",
+       "label": "Tap dimmed area",
+       "tone": "ink"
+      },
+      {
+       "id": "b",
+       "label": "Back gesture",
+       "tone": "ink"
+      }
+     ],
+     [
+      {
+       "id": "c",
+       "label": "Sheet shrinks into\nthe launcher's centre\nabout 470 ms",
+       "tone": "accent"
+      }
+     ]
+    ],
+    "edges": [
+     {
+      "from": "g",
+      "to": "c"
+     },
+     {
+      "from": "x",
+      "to": "c"
+     },
+     {
+      "from": "s",
+      "to": "c"
+     },
+     {
+      "from": "b",
+      "to": "c"
+     }
+    ],
+    "example": [
+     "Opening is the reverse rise: 360 ms.",
+     "The sheet never slides off the screen."
+    ]
+   },
+   "slot": 2
+  },
+  "mp-220": {
+   "title": "The opener shows two quick replies, gone once the conversation starts",
+   "question": "How many answer buttons sit under Vana's first line, and when do they go?",
+   "decision": "Vana's opener ends with a choice, and its first two options show as buttons under it, called quick replies: the first filled, the second outlined. A third option is dropped. The buttons go as soon as anything is in the conversation, not when the athlete starts typing, and stay gone while the sheet is open. Example: the opener offers three options, so the athlete sees two buttons; they send a message, the buttons go at once, and they stay gone even if that send fails.",
+   "why": "The design file shows two buttons, and drawing the opener's choices twice would bring the replies back.",
+   "details": "Precisely:\n1. The opening's choice part becomes the quick replies. The first two options show, the first filled and the second outline. A third option is dropped.\n2. The replies vanish the moment the thread has anything in it, not when the athlete types a draft, and they stay gone for the sheet's life even if that first send fails.\n3. The opening's choices are drawn only as quick replies, never also inline. A choice part later in the thread renders as ordinary chips.",
+   "diagram": {
+    "kind": "timeline",
+    "title": "What we decided: two replies, gone on the first send",
+    "steps": [
+     {
+      "at": "Open",
+      "label": "Opener offers three options:\ntwo buttons show, the third is dropped",
+      "tone": "accent"
+     },
+     {
+      "at": "Typing",
+      "label": "Athlete types a draft: buttons stay",
+      "tone": "ink"
+     },
+     {
+      "at": "Send",
+      "label": "Message lands in the thread:\nbuttons go",
+      "tone": "ok"
+     },
+     {
+      "at": "Send fails",
+      "label": "Buttons stay gone while the sheet is open",
+      "tone": "muted"
+     }
+    ]
+   },
+   "slot": 2
+  },
+  "mp-221": {
+   "title": "The sheet follows its own design, not the full-screen chat's",
+   "question": "Do the sheet's messages and typing box look like the full-screen chat's?",
+   "decision": "No, the sheet follows its own design. Vana's messages sit on the left beside a small orange sparkle with no bubble, and the athlete's sit on the right in a soft cream bubble. The send button is grey when the box is empty or Vana is still replying, orange otherwise; Lee has not ruled on the grey while she replies. The typing box keeps a general hint, not the design's fuelling one. Example: while Vana is still writing an answer the send button is grey, and the empty box does not read \"Ask about your fueling\".",
+   "context": "The full-screen Vana chat draws her turns in an existing message card. The sheet is a newer, smaller surface with its own design file, its own typing indicator, and a typing box (the composer) with a send button and placeholder text.",
+   "details": "Precisely:\n1. Vana's messages sit flush left with a small filled orange sparkle avatar and no bubble. The athlete's turns are right-aligned in a soft cream bubble.\n2. The typing indicator is the in-flight turn with no prose yet, drawn in Vana's row. It never shows beside quick replies.\n3. Send is grey with an empty draft and grey while a turn is in flight, orange otherwise. Lee has not ruled on the in-flight grey.\n4. The composer keeps the general placeholder, not the export's \"Ask about your fueling\".",
+   "diagram": {
+    "kind": "timeline",
+    "title": "What we decided: when send is orange",
+    "steps": [
+     {
+      "at": "Empty box",
+      "label": "Send grey",
+      "tone": "muted"
+     },
+     {
+      "at": "Draft typed",
+      "label": "Send orange",
+      "tone": "accent"
+     },
+     {
+      "at": "Sent",
+      "label": "Vana replying: send grey\n(Lee has not ruled on this grey)",
+      "tone": "pending"
+     },
+     {
+      "at": "Reply done",
+      "label": "Draft typed again: send orange",
+      "tone": "accent"
+     }
+    ]
+   },
+   "slot": 2
+  },
+  "mp-222": {
+   "question": "How does a screen reader see the launcher?",
+   "decision": "As a button of its own, with its own label, separate from the screen around it. Before this, VoiceOver, the iPhone's screen reader, read the whole screen as one button called \"Ask Vana\". Example: on the Timeline tab VoiceOver reads the launcher as its own button and no longer reads the whole screen as that one button.",
+   "details": "Precisely:\n1. The launcher is its own accessibility node with its own label.\n2. Its semantics no longer merge into the app root (VanaLauncher).",
+   "diagram": {
+    "kind": "flow",
+    "title": "What we decided: two nodes, not one",
+    "rows": [
+     [
+      {
+       "id": "s",
+       "label": "Timeline tab\nread as a screen",
+       "tone": "ok"
+      },
+      {
+       "id": "l",
+       "label": "Launcher\nread as its own button",
+       "tone": "ok"
+      }
+     ]
+    ],
+    "edges": [],
+    "example": [
+     "Before: the whole screen read as one \"Ask Vana\" button."
+    ]
+   },
+   "slot": 2
+  },
+  "mp-264": {
+   "title": "The launcher shows on three screens only, for now",
+   "question": "Which screens show the launcher?",
+   "decision": "Only three: the main tabs, the meal-planning screen and coach formulas. Every other screen has no launcher at all, and any page opened on top of one of the three hides it, so no screen ever has to be listed as an exception. Adding more screens is a later decision. Example: on the main tabs the launcher shows; the athlete opens a form on top of them and it hides, though nobody named that form anywhere.",
+   "details": "Precisely:\n1. The launcher appears on three screens: the main tabs screen, the meal-planning screen and coach formulas. Every other screen has no launcher node at all.\n2. There is no everywhere rule, no flow-screen list and no auth-or-onboarding exclusion list. The rule is an allow-list of three routes.\n3. Any page pushed over one of the three hides the launcher, so a pushed form never needs to name itself.\n4. Widening to more screens is a later decision.",
+   "diagram": {
+    "kind": "flow",
+    "title": "What we decided: a list of three",
+    "rows": [
+     [
+      {
+       "id": "t",
+       "label": "Main tabs",
+       "tone": "ok"
+      },
+      {
+       "id": "m",
+       "label": "Meal planning",
+       "tone": "ok"
+      },
+      {
+       "id": "f",
+       "label": "Coach formulas",
+       "tone": "ok"
+      }
+     ],
+     [
+      {
+       "id": "p",
+       "label": "Any page opened on top\nhides the launcher",
+       "tone": "accent"
+      },
+      {
+       "id": "o",
+       "label": "Every other screen:\nno launcher",
+       "tone": "muted"
+      }
+     ]
+    ],
+    "edges": [
+     {
+      "from": "m",
+      "to": "p"
+     }
+    ],
+    "example": [
+     "No exclusion lists. More screens is a later decision."
+    ]
+   },
+   "slot": 2
+  },
+  "mp-265": {
+   "question": "How tall is the sheet, and when does the athlete go to full screen?",
+   "decision": "The sheet has one height and its contents scroll inside it; it never grows or shrinks on its own. It closes with the close button or an ordinary drag down. Full screen happens only when the athlete presses the full-screen button, and it is the same conversation, only bigger. When the athlete asks for something the app already has a screen for, Vana offers a button that takes them to that screen instead of doing it in the sheet. Example: the athlete asks Vana for a meal plan, and she offers a button to the meal-planning page rather than planning it in the sheet.",
+   "details": "Precisely:\n1. The sheet has one standard height. Contents scroll within it.\n2. The close button or a normal drag down dismisses it. There is no auto height, no growth on send, no resize while Vana streams, and no custom thresholds.\n3. Full screen happens only when the athlete presses the full-screen button. It opens the full-screen chat on the same conversation and is only a bigger view of the same thing. Nothing changes for Vana.\n4. Every deterministic action is a hand-off, not a chat. When Vana sees the athlete is trying to do something the app already has a screen for, she offers a button that takes them there instead of doing it in the sheet: a meal plan to the meal-planning page, fuelling an upcoming workout to the new-activity screen, planning an event to the event screen, carb loading to the carb-loading picks, and so on for every flow the app owns.\n5. Collapsing or dismissing the sheet drops the composer's focus so the keyboard never outlives it. The sheet keeps one widget tree shape so a change of height never remounts it.",
+   "diagram": {
+    "kind": "flow",
+    "title": "What we decided: where each ask goes",
+    "rows": [
+     [
+      {
+       "id": "q",
+       "label": "Question or chat",
+       "tone": "ink"
+      },
+      {
+       "id": "s",
+       "label": "Stays in the sheet\n(one height)",
+       "tone": "ok"
+      }
+     ],
+     [
+      {
+       "id": "p",
+       "label": "\"Plan my meals\"",
+       "tone": "ink"
+      },
+      {
+       "id": "b",
+       "label": "Button to the\nmeal-planning page",
+       "tone": "accent"
+      }
+     ],
+     [
+      {
+       "id": "f",
+       "label": "Full-screen button",
+       "tone": "ink"
+      },
+      {
+       "id": "c",
+       "label": "Same conversation,\nbigger",
+       "tone": "ok"
+      }
+     ]
+    ],
+    "edges": [
+     {
+      "from": "q",
+      "to": "s"
+     },
+     {
+      "from": "p",
+      "to": "b"
+     },
+     {
+      "from": "f",
+      "to": "c"
+     }
+    ],
+    "example": [
+     "Fuelling a workout: new-activity screen.",
+     "Planning an event: event screen."
+    ]
+   },
+   "slot": 2
+  },
+  "mp-423": {
+   "title": "The launcher, the sheet and Vana's screen buttons stand as built, with three gaps to close",
+   "question": "Does the build of the launcher, the sheet and Vana's screen buttons stand, and what is left?",
+   "decision": "Yes, as built, with three things still to build. The launcher shows on the main tabs, the meal-planning screen and the formula library, and the sheet takes three quarters of the screen. Vana offers a button to another screen only when she can name what it is for: with no event named she asks which one, a carb-loading button opens that event's carb-loading picks, and a fuelling button edits the workout she named instead of adding a second one. Example: an athlete asks about carb loading without naming an event, so Vana asks which event first; once it is named, her button opens the carb-loading picks for that event.",
+   "context": "mp-264 put the launcher on three screens, mp-265 gave the sheet one height and made every job the app has a screen for into a button to that screen, and mp-275 said which ways in continue the day's conversation. Tickets 15, 16, 17, 23 and 27 built them. This card confirms the build and answers six questions it raised.",
+   "details": "Precisely:\n1. The launcher shows on the main tabs, the meal-planning screen and the formula library, and hides whenever anything is pushed or popped over them. No screen has to name itself. (mp-326) [built]\n2. The sheet is three quarters of the screen. It closes by the platform's own rule, a drag past half or a flick. The grabber is only a handle. (mp-361) [built]\n3. A hand-off is a button Vana offers, labelled in the athlete's own words (60 characters at most), that opens the screen that owns the job: meal plan, new activity, event. It works in the full-screen chat too. (mp-362) [built]\n4. Vana offers a hand-off only when she can name the thing. With no event named she asks which one, instead of landing on a blank form or a bare list. (mp-374) [to build]\n5. A carb-loading hand-off opens the carb-loading picks for that event directly. (mp-373) [to build]\n6. A fuelling hand-off edits the workout Vana named and never creates a second one. This gets checked on the simulator. (mp-375) [to build]\n7. One controller decides which conversation is \"today's\". New meal plan, the plus button and Ask Vana in the formula editor each start a new conversation and never move that pointer. (mp-360, mp-387, mp-372) [built]\n8. The app tells the server a conversation is idle when the sheet closes, the app goes to the background, a new conversation starts, or the athlete leaves the full-screen chat. At most once per opening. (mp-348, mp-350) [built, except leaving the full-screen chat]\n9. Closed as already done: two new conversations sharing one screen was fixed on 09-16 (761d4d6f), and the status chip question is gone because you had the chip deleted on 09-16. (mp-372, mp-376) [no work]\n\nLauncher rule test walks every route the router declares. Hand-off targets: meal plan -> meal-planning page, fuelling -> new-activity screen, event and carb loading -> event screen (today).",
+   "diagram": {
+    "kind": "timeline",
+    "title": "What we decided: a button only for a named thing",
+    "steps": [
+     {
+      "at": "Ask",
+      "label": "Athlete: \"help me carb load\"\n(no event named)",
+      "tone": "ink"
+     },
+     {
+      "at": "Vana",
+      "label": "Asks which event, offers no button yet",
+      "tone": "accent"
+     },
+     {
+      "at": "Named",
+      "label": "Athlete names the event",
+      "tone": "ink"
+     },
+     {
+      "at": "Button",
+      "label": "Opens the carb-loading picks\nfor that event",
+      "tone": "ok"
+     }
+    ],
+    "example": [
+     "Fuelling button: edits the named workout, never adds one."
+    ]
+   },
+   "slot": 2
+  },
+  "mp-165": {
+   "title": "What's New shows when the content version goes up, with no new release",
+   "question": "How is a What's New announcement shown, and does it need a new build?",
+   "decision": "It needs no new build. The app's text lives in a content system on the server that changes without a release, and that content has a version number. When the number is higher than the one stored on the phone, a glass What's New sheet shows, on phones only, when the main tabs screen first builds. Example: to announce a change the team bumps the content version, and a phone that stored the older number shows What's New the next time its main tabs screen first builds, with no release shipped.",
+   "details": "Precisely:\n1. A glass What's New sheet shows when the content system's version number is higher than the one stored on the device.\n2. It shows on phones only, when the main tabs screen first builds.\n3. Announcing again means bumping the content version, not shipping a release.",
+   "diagram": {
+    "kind": "flow",
+    "title": "What we decided: the version number decides",
+    "rows": [
+     [
+      {
+       "id": "s",
+       "label": "Server content\nversion goes up",
+       "tone": "accent"
+      },
+      {
+       "id": "d",
+       "label": "Higher than the\nphone's stored one?",
+       "tone": "ink"
+      }
+     ],
+     [
+      {
+       "id": "y",
+       "label": "Yes: What's New\non the main tabs",
+       "tone": "ok"
+      },
+      {
+       "id": "n",
+       "label": "No: nothing shows",
+       "tone": "muted"
+      }
+     ]
+    ],
+    "edges": [
+     {
+      "from": "s",
+      "to": "d"
+     },
+     {
+      "from": "d",
+      "to": "y",
+      "label": "yes"
+     },
+     {
+      "from": "d",
+      "to": "n",
+      "label": "no"
+     }
+    ],
+    "example": [
+     "Phones only. No release needed."
+    ]
+   },
+   "slot": 2
+  },
+  "mp-245": {
+   "title": "Feedback typed to Vana is saved for the team in the athlete's own words",
+   "question": "Is telling Vana something the way athletes give feedback?",
+   "decision": "Yes. A complaint, praise or suggestion typed to Vana is saved for the team in the athlete's own words; a taste comment such as \"not those\" is not. Vana must actually save it before she says it is saved, and each saved item also goes to Wiredash, the bug-report tool, so typed and shaken reports end up in one place. How the phone files that Wiredash entry for the server is still open. Example: an athlete types \"you keep getting this wrong\"; that counts as feedback and is saved.",
+   "details": "Precisely:\n1. A complaint, praise or suggestion typed to Vana files a row in the athlete's own words, with a sentiment, an about-field and the conversation id. Taste comments such as \"not those\" write no row. The Wiredash card stays for anything that needs a screenshot.\n2. A message that is both a complaint and a question keeps Vana's answer. A pure vent gets the acknowledgement alone.\n3. \"I have told you\" and \"you keep getting this wrong\" count as feedback. The feedback rule sits at the top of the prompt's rules.\n4. A request for something new is filed as a suggestion. Praise or a complaint about Vana's meal ideas is about Vana, even when the athlete says \"the app\".\n5. Vana must call the tool before claiming feedback is saved, and the conversation id travels apart from the plan scope so general mode keeps it.\n6. Vana's feedback tool also files a Wiredash entry, so typed feedback and shaken reports land in one place. Wiredash entries are created on the device, so the server tool hands the row to the app to file. This is the reading; the device hand-off is the open detail.",
+   "diagram": {
+    "kind": "flow",
+    "title": "What we decided: what gets saved",
+    "rows": [
+     [
+      {
+       "id": "c",
+       "label": "Complaint, praise\nor suggestion",
+       "tone": "ink"
+      },
+      {
+       "id": "t",
+       "label": "Taste comment\n\"not those\"",
+       "tone": "ink"
+      }
+     ],
+     [
+      {
+       "id": "r",
+       "label": "Saved in their words\nand sent to Wiredash",
+       "tone": "ok"
+      },
+      {
+       "id": "x",
+       "label": "Nothing saved",
+       "tone": "muted"
+      }
+     ]
+    ],
+    "edges": [
+     {
+      "from": "c",
+      "to": "r"
+     },
+     {
+      "from": "t",
+      "to": "x"
+     }
+    ],
+    "example": [
+     "Complaint plus a question: Vana still answers it.",
+     "A pure vent: the acknowledgement alone."
+    ]
+   },
+   "slot": 2
+  },
+  "mp-246": {
+   "title": "After saving feedback Vana says nothing more, and a new athlete is told once they can type it",
+   "question": "What does Vana say after saving feedback, and how does a new athlete learn they can type it?",
+   "decision": "Nothing more: the \"Saved for the team\" row is the whole reply, and anything the model writes after it is thrown away, on screen and in the saved conversation. A brand-new athlete's first conversation shows one fixed line after Vana's opener, \"Have feedback for me? Just type it here.\", written by the server rather than by Vana, and it never appears again. Example: an athlete vents that the plan was wrong; they see \"Saved for the team\" and no apology or troubleshooting after it.",
+   "details": "Precisely:\n1. The \"Saved for the team\" row is the whole acknowledgement. Every later text delta from the model is dropped from the stream and the transcript.\n2. After the opener of a brand-new athlete's first conversation, the server appends a fixed \"Have feedback for me? Just type it here.\" part. The model never sees it. It never appears again.",
+   "diagram": {
+    "kind": "timeline",
+    "title": "What we decided: one row, one nudge",
+    "steps": [
+     {
+      "at": "First chat",
+      "label": "Opener, then the fixed line:\n\"Have feedback for me? Just type it here.\"",
+      "tone": "accent"
+     },
+     {
+      "at": "Later",
+      "label": "Athlete vents about a plan",
+      "tone": "ink"
+     },
+     {
+      "at": "Reply",
+      "label": "\"Saved for the team\" and nothing after",
+      "tone": "ok"
+     },
+     {
+      "at": "Next chats",
+      "label": "The fixed line never shows again",
+      "tone": "muted"
+     }
+    ]
+   },
+   "slot": 2
+  },
+  "mp-247": {
+   "title": "The praise test checks that praise reads as positive, not what it is about",
+   "question": "When the automated test sends Vana praise, what must the saved row get right?",
+   "decision": "Only that it is positive, with a rating. The test records what the praise was about but does not fail on it, because praise like \"this app planned my week perfectly\" names the app while describing Vana's planning, and either answer is fair. Example: the test sends \"this app planned my week perfectly\"; if the row is positive with a rating, the test passes whether the row says the praise is about the app or about Vana.",
+   "context": "Live evals are automated tests that send messages to Vana on the dev server and check the feedback row she saves. Praise such as \"this app planned my week perfectly\" names the app while describing Vana's planning.",
+   "details": "Precisely:\n1. The praise eval checks for positive sentiment and rating.\n2. It logs the about-field but does not assert on it.",
+   "diagram": {
+    "kind": "flow",
+    "title": "What the praise test checks",
+    "rows": [
+     [
+      {
+       "id": "m",
+       "label": "Test sends: \"this app\nplanned my week perfectly\"",
+       "tone": "ink"
+      }
+     ],
+     [
+      {
+       "id": "s",
+       "label": "Positive, with a rating?\nChecked: must pass",
+       "tone": "accent"
+      },
+      {
+       "id": "a",
+       "label": "About the app or Vana?\nLogged, not checked",
+       "tone": "muted"
+      }
+     ]
+    ],
+    "edges": [
+     {
+      "from": "m",
+      "to": "s"
+     },
+     {
+      "from": "m",
+      "to": "a"
+     }
+    ]
+   }
+  },
+  "mp-248": {
+   "question": "How does a problem that needs a screenshot reach the team?",
+   "decision": "Through Wiredash, the bug-report tool, reached two ways. When an athlete reports a problem to Vana, a card appears in the chat with a \"Send to the team\" button that opens Wiredash; Vana never says she sent anything herself. Shaking the phone twice opens a sheet and then a two-step Wiredash with no email asked and an optional screenshot. Example: an athlete shakes the phone twice (each shake 3.2 g or more), writes what went wrong and adds a screenshot in two steps; the text also lands in the app's own feedback table.",
+   "details": "Precisely:\n1. A problem report produces a card in the chat with a \"Send to the team\" button that opens Wiredash. Vana never claims to have sent anything and no longer mentions shaking.\n2. Two shakes open a Kyle sheet, then Wiredash cut down to two steps with no email prompt and an optional screenshot. The text also lands in the app's own feedback table.\n\nShake threshold 3.2 g or more, twice.",
+   "diagram": {
+    "kind": "flow",
+    "title": "What we decided: two ways into Wiredash",
+    "rows": [
+     [
+      {
+       "id": "c",
+       "label": "Problem told to Vana:\ncard with \"Send to the team\"",
+       "tone": "ink"
+      },
+      {
+       "id": "s",
+       "label": "Two shakes\n(3.2 g or more each)",
+       "tone": "ink"
+      }
+     ],
+     [
+      {
+       "id": "w",
+       "label": "Wiredash in two steps\nno email, screenshot optional",
+       "tone": "ok"
+      }
+     ],
+     [
+      {
+       "id": "t",
+       "label": "Text also saved in\nthe app's feedback table",
+       "tone": "muted"
+      }
+     ]
+    ],
+    "edges": [
+     {
+      "from": "c",
+      "to": "w"
+     },
+     {
+      "from": "s",
+      "to": "w"
+     },
+     {
+      "from": "w",
+      "to": "t"
+     }
+    ]
+   },
+   "slot": 2
+  }
+ },
+ "terms": [
+  {
+   "term": "Launcher",
+   "area": "Vana and what she knows",
+   "definition": "The small floating glass button at the bottom right of a screen that opens the Vana sheet. Which screens show it is a decision of its own.",
+   "avoid": "Vana button, FAB, companion"
+  },
+  {
+   "term": "Vana sheet",
+   "area": "Vana and what she knows",
+   "definition": "The panel that rises over the current screen when the Launcher is tapped, holding a conversation with Vana. Closing it leaves the screen underneath as it was.",
+   "avoid": "The sheet (unqualified; the Top-up sheet and the Paywall sheet are others), overlay, drawer"
+  },
+  {
+   "term": "Full-screen chat",
+   "area": "Vana and what she knows",
+   "definition": "Vana's conversation as a whole screen of its own rather than the Vana sheet. Opened from the sheet's full-screen button, it shows the same conversation, only bigger.",
+   "avoid": "Chat route, expanded sheet"
+  }
+ ]
+}

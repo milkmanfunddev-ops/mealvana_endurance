@@ -1,0 +1,772 @@
+{
+ "cards": {
+  "mp-139": {
+   "question": "When are the day notes written, and does anyone wait for them?",
+   "context": "The Plan tab opens with Vana's day note at the top. Writing it while the page loaded made every load take about five seconds. A note goes out of date when the plan is edited.",
+   "decision": "Vana writes the day notes for all seven days in one call when the athlete confirms a plan. An edit to the plan marks the notes out of date and rewrites them in the background, so nobody waits: the Plan tab shows the old note at once and asks again 7 seconds later. Only a day that has no note at all is written while the athlete waits. The numbers in a note come from the athlete's records; the model only puts them into words. Example: an athlete swaps a dinner and reopens the Plan tab; the old note shows straight away, and 7 seconds later the tab asks again for the rewritten one.",
+   "why": "Waiting for the note made every page load take about five seconds.",
+   "details": "Precisely:\n1. One Haiku call writes all seven day notes on confirm.\n2. A plan edit marks them stale and regenerates them in the background, never awaited.\n3. A stale note is served instantly and the Plan tab re-polls after 7 seconds.\n4. If a day has no note at all it is generated inline.\n5. Numbers come from context and the model only phrases.",
+   "diagram": {
+    "kind": "timeline",
+    "title": "What we decided: nobody waits for a note",
+    "steps": [
+     {
+      "at": "Confirm",
+      "label": "One call writes all seven day notes",
+      "tone": "ok"
+     },
+     {
+      "at": "Edit",
+      "label": "Athlete swaps a dinner. Notes marked\nout of date; the rewrite starts in the\nbackground, nobody waits for it",
+      "tone": "accent"
+     },
+     {
+      "at": "Open",
+      "label": "Plan tab shows the old note at once",
+      "tone": "ok"
+     },
+     {
+      "at": "+7 s",
+      "label": "Plan tab asks again for the new note",
+      "tone": "ink"
+     },
+     {
+      "at": "No note yet",
+      "label": "Only a day with no note at all is\nwritten while the athlete waits",
+      "tone": "muted"
+     }
+    ]
+   },
+   "slot": 2
+  },
+  "mp-238": {
+   "title": "Meal planning is part of the Food tab, and it opens on the plan, not the chat",
+   "question": "Where does meal planning live, and does the athlete land on the chat or on the plan?",
+   "context": "The Food tab holds Meals, Formulas and Shopping. An early concept, the Sage canvas, opened meal planning on a chat. Six live tests were run with real users, and research finding 6 says users land on a screen with structure and the assistant built into it.",
+   "decision": "Meal planning is one section of the Food tab, beside Meals, Formulas and Shopping; it is not a tab of its own. It opens on the plan itself, and Vana is reached from there: the chat is where the athlete goes for more, not where they start. The Vana message card at the top of the Plan tab opens her general conversation, not a planning one. Example: an athlete opens Food, picks the plan section and sees this week's meals; tapping Vana's card at the top opens the everyday conversation, not a new plan.",
+   "why": "Nobody opened with chat in the six live tests, and users skim chat. The day note at the top is about the day, not the plan.",
+   "details": "Precisely:\n1. Meal planning is a segment of the Food tab beside Meals, Formulas and Shopping. It is not its own tab.\n2. The Plan tab is the plan and Vana is reached from it. Chat is escalation, not the landing.\n3. The Vana message card at the top of the Plan tab opens the general conversation, not a planning one.",
+   "diagram": {
+    "kind": "flow",
+    "title": "What we decided: the plan first, Vana from it",
+    "rows": [
+     [
+      {
+       "id": "food",
+       "label": "Food tab",
+       "tone": "ink"
+      }
+     ],
+     [
+      {
+       "id": "others",
+       "label": "Meals, Formulas,\nShopping",
+       "tone": "muted"
+      },
+      {
+       "id": "plan",
+       "label": "Plan: the landing\n(no tab of its own)",
+       "tone": "accent"
+      }
+     ],
+     [
+      {
+       "id": "card",
+       "label": "Vana message card\nat the top",
+       "tone": "ink"
+      },
+      {
+       "id": "chat",
+       "label": "General conversation\n(not a planning one)",
+       "tone": "ok"
+      }
+     ]
+    ],
+    "edges": [
+     {
+      "from": "food",
+      "to": "others"
+     },
+     {
+      "from": "food",
+      "to": "plan"
+     },
+     {
+      "from": "plan",
+      "to": "card"
+     },
+     {
+      "from": "card",
+      "to": "chat",
+      "label": "tap"
+     }
+    ]
+   },
+   "slot": 2
+  },
+  "mp-239": {
+   "title": "The Plan tab lists each meal as a row you tap or swipe",
+   "question": "What does the Plan tab show, and what can the athlete do with each meal on it?",
+   "context": "The Plan tab shows the confirmed week. The prototype drew a \"Your day\" grid, a separate page per plan, a history of past plans and a settings gear in the header. The app's other lists already use rows you swipe. The dietitian will not recommend logging every day.",
+   "decision": "The Plan tab shows a message from Vana, then every plan meal as one row with its name, meal type and servings, and two buttons: Add meal and New meal plan. Tapping a row opens a sheet to change servings, swap, remove or mark it eaten; swiping right removes it with Undo, and swiping left swaps it. A swap keeps the row's identity, so changing servings afterwards changes the right one. Ate it waits for the server, logs the meal and takes one serving off, and nothing reminds the athlete to log each day. Example: a dinner row shows 2 servings; the athlete taps Ate it, the meal is logged from the plan and the row shows 1; after the last serving, Ate it no longer shows.",
+   "why": "Lee wanted the plan on its own, without a brief or shopping on the screen. Matching meals by name went wrong when two meals had the same name. A count of servings left does the logging job without a daily logging habit, which the dietitian will not recommend.",
+   "details": "Precisely:\n1. A message from Vana, then every meal as a tile with icon, name, slot chip and servings. The buttons are Add meal and New meal plan. No day grid, chevron, detail route, swipe hint, status tag, Edit button or gear.\n2. Tap opens a sheet with a servings stepper, Swap, Remove and Ate it. Swipe right removes with Undo. Swipe left swaps.\n3. A swap keeps the same plan-meal id, so a servings edit after a swap is exact.\n4. \"Ate it\" waits for the server, hides when no servings are left, writes a meal log with source plan and decrements servings. There are no daily logging reminders.\n5. Plan meal macros are stored per serving.",
+   "diagram": {
+    "kind": "flow",
+    "title": "What we decided: one row per meal",
+    "rows": [
+     [
+      {
+       "id": "row",
+       "label": "A plan meal row\nname, meal type, servings",
+       "tone": "ink"
+      }
+     ],
+     [
+      {
+       "id": "tap",
+       "label": "Tap: a sheet with\nservings, Swap,\nRemove, Ate it",
+       "tone": "ink"
+      },
+      {
+       "id": "sr",
+       "label": "Swipe right:\nremoved, with Undo",
+       "tone": "no"
+      },
+      {
+       "id": "sl",
+       "label": "Swipe left: swap\n(same plan-meal id)",
+       "tone": "ink"
+      }
+     ],
+     [
+      {
+       "id": "ate",
+       "label": "Ate it: waits for the server,\nlogs the meal from the plan,\none serving off",
+       "tone": "ok"
+      },
+      {
+       "id": "none",
+       "label": "No servings left:\nAte it hides",
+       "tone": "muted"
+      }
+     ]
+    ],
+    "edges": [
+     {
+      "from": "row",
+      "to": "tap"
+     },
+     {
+      "from": "row",
+      "to": "sr"
+     },
+     {
+      "from": "row",
+      "to": "sl"
+     },
+     {
+      "from": "tap",
+      "to": "ate"
+     },
+     {
+      "from": "ate",
+      "to": "none"
+     }
+    ]
+   },
+   "slot": 2
+  },
+  "mp-241": {
+   "question": "How do plans, drafts and conversations fit together, and what does \"New meal plan\" do?",
+   "context": "Plans used to be filed by the day their week starts, so a new conversation reopened the confirmed plan with three meals already in it. The Plan tab expects exactly one live plan for the week.",
+   "decision": "Every conversation with Vana builds its own draft plan, so an athlete can hold any number of drafts but only one confirmed plan per week. Confirming a draft archives every other plan for that week, drafts from other conversations included, and the Plan tab keeps the confirmed plan until a new one is confirmed. \"New meal plan\" archives the plan it is on and starts a fresh, empty draft. Example: an athlete starts a draft in Monday's conversation and another in Wednesday's; confirming Wednesday's archives Monday's draft and the week's old confirmed plan.",
+   "why": "Filing plans by week made a new conversation reopen the confirmed plan with meals already in it.",
+   "details": "Precisely:\n1. Each conversation keys its own draft. A partial unique index allows one confirmed plan per athlete-week and any number of drafts.\n2. Confirming archives every other non-archived plan for that week, drafts from other conversations included. The Plan tab keeps the confirmed plan until a new one is confirmed.\n3. \"New meal plan\" archives the scope's plan and returns a fresh empty draft.",
+   "diagram": {
+    "kind": "timeline",
+    "title": "What we decided: one draft per conversation",
+    "steps": [
+     {
+      "at": "Week start",
+      "label": "Last confirmed plan on the Plan tab",
+      "tone": "ok"
+     },
+     {
+      "at": "Monday",
+      "label": "Conversation A: its own draft",
+      "tone": "ink"
+     },
+     {
+      "at": "Wednesday",
+      "label": "Conversation B: another draft",
+      "tone": "ink"
+     },
+     {
+      "at": "Wednesday",
+      "label": "Athlete confirms B. A's draft and the old\nconfirmed plan are archived.\nThe Plan tab shows B",
+      "tone": "accent"
+     },
+     {
+      "at": "Later",
+      "label": "New meal plan: that plan is archived,\na fresh empty draft starts",
+      "tone": "muted"
+     }
+    ]
+   },
+   "slot": 2
+  },
+  "mp-418": {
+   "question": "Do the meals in a plan show a photo, and which one?",
+   "context": "A plan meal stores its name, meal type and icon key, and no picture. So the Plan tab, the plan bar and the review sheet had no photo to show, while the Meals tab and the recipe screen show a Meal's Dish photo (ADR 0003). mp-324 asked whether plan rows should ever show photos.",
+   "decision": "Wherever a plan shows a meal (the Plan tab, the plan bar pinned above the chat, and the review sheet) it shows the same Dish photo the Meals tab shows, or nothing. The photo is looked up from the library each time the plan is shown and never copied into the plan, so a photo a Tester adds, removes or restores later reaches plans already made. A meal that is in a plan twice shows its photo on both rows, and offline plan rows show no photos. Example: a Tester adds a Dish photo to a meal today; a plan confirmed last week that holds that meal shows the photo the next time it opens.",
+   "details": "Precisely:\n1. Plan tiles, the plan bar and the review sheet show the same Dish photo the Meal shows on the Meals tab, or nothing, with the same collapse-on-failure rule.\n2. The photo is looked up from the library Meal by meal id every time the plan is shown. It is never copied onto the plan row, and the add and swap paths are unchanged, so a photo a Tester adds, removes or restores later reaches plans already made.\n3. A Meal that appears twice in a plan shows its photo on both rows. The one-photo-per-list rule does not apply to plans.\n4. Offline, plan rows show no photos: nothing is mirrored to the phone.",
+   "diagram": {
+    "kind": "flow",
+    "title": "What we decided: look the photo up every time",
+    "rows": [
+     [
+      {
+       "id": "show",
+       "label": "Plan shown: Plan tab,\nplan bar, review sheet",
+       "tone": "ink"
+      }
+     ],
+     [
+      {
+       "id": "look",
+       "label": "Look up the library Meal\nby meal id, every time",
+       "tone": "accent"
+      }
+     ],
+     [
+      {
+       "id": "yes",
+       "label": "Dish photo: shown,\non every row it is on",
+       "tone": "ok"
+      },
+      {
+       "id": "no",
+       "label": "No photo, or it fails\nto load: nothing",
+       "tone": "muted"
+      },
+      {
+       "id": "off",
+       "label": "Offline: no photos",
+       "tone": "muted"
+      }
+     ]
+    ],
+    "edges": [
+     {
+      "from": "show",
+      "to": "look"
+     },
+     {
+      "from": "look",
+      "to": "yes"
+     },
+     {
+      "from": "look",
+      "to": "no"
+     },
+     {
+      "from": "show",
+      "to": "off"
+     }
+    ],
+    "example": [
+     "Never copied onto the plan row, so a later",
+     "photo change reaches plans already made"
+    ]
+   },
+   "slot": 2
+  },
+  "mp-424": {
+   "title": "Each plan keeps the period it was made for, and periods follow one another",
+   "question": "How does a plan period behave when it is not seven days from Sunday?",
+   "decision": "The athlete sets the start day and a length of 3 to 14 days in Vana settings, and everything that works out a week or a cook day uses them. Periods run one after another with no overlap, and each plan records the period it was made for, so changing a setting never changes a plan already made; a new start day applies from the next period. Reminders name the athlete's own days, and Vana can change both settings when asked in chat. Example: on ten-day periods starting Sunday 4 October, the first runs to 13 October and the next starts 14 October; if the athlete switches to a Monday start on 18 October, the plan for 14 to 23 October stays as it is and Monday applies from the period after.",
+   "details": "Precisely:\n1. The two settings sit in Vana settings: a popup of the seven days and a stepper from 3 to 14 days. Cooking labels use the athlete's own day (\"Cook Monday\"). (mp-366, mp-365) [built]\n2. Every place that works out a week or a cook day reads the athlete's period, never the Sunday default. (mp-358) [built]\n3. Periods follow each other with no overlap. A ten-day period is followed by the next ten-day period, starting where the last one ended. (mp-379) [to build]\n4. A plan records the period it was built for, so changing the setting never re-reads an old plan. (mp-380) [to build]\n5. Changing the start day mid-period leaves the current plan alone until it ends. The new setting applies from the next period. (mp-378) [to build]\n6. The reminder text names the athlete's own days. (mp-381) [to build]\n7. Vana can change both settings in conversation (\"my week starts Monday\"). (mp-382) [to build]\n\nLength limited to 3 to 14 days: below three the three cooking sessions collapse onto one day. The period length travels on the coverage wire and the week part.",
+   "diagram": {
+    "kind": "timeline",
+    "title": "What we decided: periods chain, plans keep theirs",
+    "steps": [
+     {
+      "at": "4 Oct",
+      "label": "Ten-day period starts (Sunday).\nIts plan records 4 to 13 Oct",
+      "tone": "ok"
+     },
+     {
+      "at": "14 Oct",
+      "label": "Next period starts where the last ended.\nNo overlap",
+      "tone": "ok"
+     },
+     {
+      "at": "18 Oct",
+      "label": "Athlete switches the start day to Monday",
+      "tone": "accent"
+     },
+     {
+      "at": "18 to 23 Oct",
+      "label": "The current plan stays as it is\nuntil its period ends",
+      "tone": "ok"
+     },
+     {
+      "at": "After 23 Oct",
+      "label": "The Monday start applies\nfrom the next period",
+      "tone": "ink"
+     }
+    ]
+   },
+   "slot": 2
+  },
+  "mp-425": {
+   "title": "A batch is three meals per meal type, each sized to a third of the period",
+   "question": "How big is a batch, what is a plan counted against, and where is \"same as last time\"?",
+   "decision": "In batch cooking the athlete cooks three meals per meal type, and each gives the period's days divided by three, rounded up, in servings: 3 for 7 days, 4 for 10, 5 for 14; someone who plans per day gets one serving per pick. Plan coverage counts the period's days times the meal types the athlete plans, and anyone who never chose keeps lunch and dinner. \"Same as last time\" copies last period's meals at the servings they were cooked at, from a button on an empty Plan tab or from Vana's planning opener. Example: a 10-day period with lunch and dinner is counted as 20 meals, and three lunches and three dinners at 4 servings each give 24 servings.",
+   "details": "Precisely:\n1. A batch is three meals per meal type. Servings are the period divided by three, rounded up: 7 days gives 3, 10 gives 4, 14 gives 5. A per-day planner gets one serving per pick. (mp-389) [built]\n2. Coverage counts the period's days times the meal types the athlete plans. Someone who never chose keeps lunch and dinner, so existing plans' numbers do not move. (mp-390) [built]\n3. Choosing \"every meal\" counts four slots a day. (mp-398) [to build]\n4. A per-day planner cooking two servings covers two nights, not one. (mp-399) [to build]\n5. \"Same as last time\" copies last period's meals at the servings they were cooked at and never doubles a meal already in the draft. (mp-391) [built]\n6. Its tap is a button on the Plan tab's empty week, and Vana offers it in the planning opener. (mp-400) [to build]\n7. Suggestions rank liked and already-cooked meals first, as mp-231 says. This gets its own ticket. (mp-401) [to build]\n8. Vana settings gets a meal-type picker, so the athlete can choose what they plan without asking Vana. (mp-397) [to build]\n9. A plan with no cooking mode on it means batch, in the app and on the server. (mp-392) [built]\n10. Where coverage is unknown the staples check says nothing, instead of assuming fourteen slots. The shared test fixture carries the inputs so both sides work the answer out themselves. (mp-402, mp-404) [to build]",
+   "diagram": {
+    "kind": "flow",
+    "title": "What we decided: a 10-day batch",
+    "rows": [
+     [
+      {
+       "id": "per",
+       "label": "Period: 10 days,\nlunch and dinner",
+       "tone": "ink"
+      },
+      {
+       "id": "den",
+       "label": "Counted against\n10 x 2 = 20 meals",
+       "tone": "ink"
+      }
+     ],
+     [
+      {
+       "id": "batch",
+       "label": "3 lunches + 3 dinners,\n10 / 3 rounded up = 4\nservings each",
+       "tone": "accent"
+      },
+      {
+       "id": "tot",
+       "label": "24 servings\nagainst 20 meals",
+       "tone": "ok"
+      }
+     ],
+     [
+      {
+       "id": "day",
+       "label": "Per-day planner: 1 serving\na pick; 2 servings cover\n2 nights",
+       "tone": "muted"
+      },
+      {
+       "id": "same",
+       "label": "Same as last time: last\nperiod's meals, same servings,\nno meal doubled",
+       "tone": "muted"
+      }
+     ]
+    ],
+    "edges": [
+     {
+      "from": "per",
+      "to": "den"
+     },
+     {
+      "from": "per",
+      "to": "batch"
+     },
+     {
+      "from": "batch",
+      "to": "tot"
+     },
+     {
+      "from": "den",
+      "to": "tot"
+     }
+    ]
+   },
+   "slot": 2
+  },
+  "mp-516": {
+   "title": "Only the days a plan change touches get a new note",
+   "question": "Which changes to a plan rewrite which days' notes?",
+   "decision": "A day's note is rewritten only when something it was written from changes: that day's meals, its workouts or its macro target. A day with no meals assigned is rewritten whenever a meal joins or leaves the plan, because its note may name any meal in the plan; confirming a draft or switching batch cooking rewrites all seven, and marking a meal eaten rewrites none. Opening the Plan tab on an unchanged plan calls no model. Example: swapping Thursday's dinner for another meal rewrites Thursday's note and the notes of days with nothing assigned, and leaves every other day's note alone.",
+   "details": "Precisely:\n1. A day's note is rewritten when that day's assigned meals, its workouts or its macro target change. Other days keep their notes.\n2. A day with nothing assigned is rewritten when any meal joins or leaves the plan, because its note may name any meal in the plan.\n3. Confirming a draft, or switching batch cooking, rewrites all seven.\n4. Marking a meal as eaten rewrites nothing.\n5. The note for a day with assigned meals is now written from those meals, not from the whole plan.\n6. Opening the Plan tab on an unchanged plan calls no model, and two requests at once share one call.\n\nAn edit made while notes are being written is picked up on the next open. A request that loses the claim waits up to 25 seconds for the winner's notes, then shows the stored ones. The dev count after the change is owed after a day of use (ticket 13).",
+   "diagram": {
+    "kind": "flow",
+    "title": "What we decided: rewrite only what changed",
+    "rows": [
+     [
+      {
+       "id": "day",
+       "label": "A day's meals, workouts\nor macro target change",
+       "tone": "ink"
+      },
+      {
+       "id": "join",
+       "label": "A meal joins or\nleaves the plan",
+       "tone": "ink"
+      },
+      {
+       "id": "all",
+       "label": "Confirm a draft, or\nswitch batch cooking",
+       "tone": "ink"
+      }
+     ],
+     [
+      {
+       "id": "dayn",
+       "label": "That day's note\nrewritten",
+       "tone": "accent"
+      },
+      {
+       "id": "empty",
+       "label": "Days with nothing\nassigned rewritten",
+       "tone": "accent"
+      },
+      {
+       "id": "seven",
+       "label": "All seven notes\nrewritten",
+       "tone": "accent"
+      }
+     ],
+     [
+      {
+       "id": "eat",
+       "label": "Meal marked eaten, or\nplan unchanged: no call",
+       "tone": "ok"
+      }
+     ]
+    ],
+    "edges": [
+     {
+      "from": "day",
+      "to": "dayn"
+     },
+     {
+      "from": "join",
+      "to": "empty"
+     },
+     {
+      "from": "all",
+      "to": "seven"
+     }
+    ],
+    "example": [
+     "Two requests at once share one call"
+    ]
+   },
+   "slot": 2
+  },
+  "mp-144": {
+   "question": "What does a thumbs vote on a meal do?",
+   "decision": "Each person has one vote per meal, up or down, and tapping the same vote again clears it; the screen shows the vote straight away. A thumbs down keeps the meal out of Vana's suggestions, and the screen says so, but the meal still shows when browsing; a thumbs up adds 0.10 to its search score. Admins also see a comment box on every meal page to say whether it is a good recipe and why, and each comment lands in a table the team reviews; athletes never see it. Example: an athlete gives a meal a thumbs down; the page says Vana will not suggest it again, and the meal is still on the Meals tab.",
+   "details": "Precisely:\n1. Meal feedback holds one vote per person per meal. Tapping the same vote twice clears it. The detail screen shows the thumbs optimistically, and a thumbs down shows a note that Vana will not suggest that meal again.\n2. A disliked meal is filtered out of suggestions but still visible when browsing. A thumbs up adds 0.10 to the meal's search score.\n3. A signed-in admin sees a comment box on every meal page. They can say whether it is a good recipe and why, and each comment lands in a table for the team to review. Athletes never see the box.",
+   "diagram": {
+    "kind": "flow",
+    "title": "What we decided: one vote, two effects",
+    "rows": [
+     [
+      {
+       "id": "down",
+       "label": "Thumbs down",
+       "tone": "no"
+      },
+      {
+       "id": "up",
+       "label": "Thumbs up",
+       "tone": "ok"
+      },
+      {
+       "id": "again",
+       "label": "Same thumb again",
+       "tone": "muted"
+      }
+     ],
+     [
+      {
+       "id": "sugg",
+       "label": "Out of Vana's suggestions,\nstill there when browsing",
+       "tone": "accent"
+      },
+      {
+       "id": "score",
+       "label": "+0.10 to the\nsearch score",
+       "tone": "ok"
+      },
+      {
+       "id": "clear",
+       "label": "Vote cleared",
+       "tone": "muted"
+      }
+     ],
+     [
+      {
+       "id": "admin",
+       "label": "Admins only: comment box,\nlands in a table the team reviews",
+       "tone": "ink"
+      }
+     ]
+    ],
+    "edges": [
+     {
+      "from": "down",
+      "to": "sugg"
+     },
+     {
+      "from": "up",
+      "to": "score"
+     },
+     {
+      "from": "again",
+      "to": "clear"
+     }
+    ],
+    "example": [
+     "One vote per person per meal"
+    ]
+   },
+   "slot": 2
+  },
+  "mp-145": {
+   "question": "Does a meal show an icon, and what shows when it has no photo?",
+   "context": "Every meal card and plan row showed a small icon beside the name, and the icon stood in when a meal had no photo. The fuel log already had a set of 12 food icons. The meal library needed finer distinctions, and many meals have no photo at all.",
+   "decision": "Each meal is still sorted into one of 23 icon kinds by a fixed rule, and the kind is saved on library, saved and plan meals and carried along when a meal is added or swapped, so it is there if it is wanted later. No icon is drawn: not on plan rows, meal cards, the plan bar or the review sheet. A meal with no photo shows nothing where the picture would be, neither a placeholder box nor an icon (ADR 0003). Example: a meal with no Dish photo shows as its name and details alone, with no empty box beside them.",
+   "details": "Precisely:\n1. The 23-key classifier stays and the key is stored on library, saved and plan meals, copied along on add and swap, so the data is there when it is wanted.\n2. Icons are not drawn on tiles, cards, the plan bar or the review sheet.\n3. A meal with no photo shows nothing where the picture would be: no placeholder box, no icon. The space is not drawn (ADR 0003).",
+   "diagram": {
+    "kind": "flow",
+    "title": "What we decided: kept, not drawn",
+    "rows": [
+     [
+      {
+       "id": "meal",
+       "label": "A meal",
+       "tone": "ink"
+      }
+     ],
+     [
+      {
+       "id": "kind",
+       "label": "Sorted into 1 of 23\nicon kinds and saved",
+       "tone": "muted"
+      },
+      {
+       "id": "photo",
+       "label": "Has a Dish photo?",
+       "tone": "ink"
+      }
+     ],
+     [
+      {
+       "id": "yes",
+       "label": "Yes: the photo",
+       "tone": "ok"
+      },
+      {
+       "id": "no",
+       "label": "No: nothing, no box,\nno icon",
+       "tone": "accent"
+      }
+     ]
+    ],
+    "edges": [
+     {
+      "from": "meal",
+      "to": "kind"
+     },
+     {
+      "from": "meal",
+      "to": "photo"
+     },
+     {
+      "from": "photo",
+      "to": "yes"
+     },
+     {
+      "from": "photo",
+      "to": "no"
+     }
+    ],
+    "example": [
+     "The icon is never drawn: not on rows, cards,",
+     "the plan bar or the review sheet"
+    ]
+   },
+   "slot": 2
+  },
+  "mp-242": {
+   "title": "The Meals tab is for looking; meals reach a plan from the plan",
+   "question": "What is the Meals tab for, how do search results look, and where do Recents come from?",
+   "context": "Meals is the catalog: the library of about 1,900 meals plus the athlete's own saved foods. Meals reach a plan through Vana's meal pickers or a swap on a plan row. The app keeps a fuel log on the phone, but many entries are just a typed name.",
+   "decision": "The Meals tab is for looking: four rows of cards, Recents, My Foods, Assemblies and Recipes in that order, with a search bar behind an icon and a filter by meal type and by recipe or not. Add and Swap buttons show only when the athlete arrived from a plan row to swap a meal. Search results use the same cards, meals the athlete's allergens rule out are greyed rather than hidden, and a Vana row at the bottom offers to build the week. Example: offline, Recents come from the logs on the phone and skip entries that are only a typed name; once online, the server's list of recent meals replaces them.",
+   "why": "Browsing should not be a second way to change the plan; adding belongs to the plan. One card, one look across the tab. Only the server can match a logged name to a library meal.",
+   "details": "Precisely:\n1. Four rails in this order: Recents, My Foods, Assemblies and Recipes. A search icon reveals a search bar and a filter popover narrows by meal type and by recipe or no-recipe. Add and Swap buttons appear only in swap mode from a plan tile.\n2. Search results reuse the rail card. Meals excluded by the athlete's allergens are greyed, not hidden. A Vana row at the bottom offers \"Want me to build the week instead?\".\n3. Offline, Recents come from local logs and skip name-only entries. Online, the server's recent meals list replaces the local one.\n\nSemantic search runs once a query reaches three characters, and the type filter is dropped while a query is active.",
+   "diagram": {
+    "kind": "flow",
+    "title": "What we decided: the Meals tab",
+    "rows": [
+     [
+      {
+       "id": "rec",
+       "label": "Recents",
+       "tone": "ink"
+      },
+      {
+       "id": "mine",
+       "label": "My Foods",
+       "tone": "ink"
+      }
+     ],
+     [
+      {
+       "id": "asm",
+       "label": "Assemblies",
+       "tone": "ink"
+      },
+      {
+       "id": "rcp",
+       "label": "Recipes",
+       "tone": "ink"
+      }
+     ],
+     [
+      {
+       "id": "search",
+       "label": "Search: same cards,\nallergens greyed,\nVana row at the bottom",
+       "tone": "accent"
+      },
+      {
+       "id": "swap",
+       "label": "From a plan row only:\nAdd and Swap buttons",
+       "tone": "muted"
+      }
+     ]
+    ],
+    "edges": [
+     {
+      "from": "rec",
+      "to": "mine"
+     },
+     {
+      "from": "mine",
+      "to": "asm"
+     },
+     {
+      "from": "asm",
+      "to": "rcp"
+     }
+    ],
+    "example": [
+     "Recents: phone logs offline, the server list online"
+    ]
+   },
+   "slot": 2
+  },
+  "mp-427": {
+   "title": "Admins review meals, every recipe names where its steps came from, and feedback to Vana goes to Wiredash",
+   "question": "Are admin meal reviews, the recipe origin line and typed feedback reaching Wiredash built right?",
+   "decision": "Admins get a review box on every meal (Good recipe or Not good, a reason, Send) that says sent only once the server has it; only admins can read reviews, the team reads them in the database, and each gets the app version. Every recipe says in one line under Directions where its steps came from, and that line is its only link to the original. Feedback typed to Vana lands in the same Wiredash inbox (the team's bug-report inbox) as a report sent by shaking the phone, labelled \"vana-chat\"; Wiredash has no public way to do this, so the app uses its internal code with the version pinned. Example: a recipe with published steps reads \"As published by X\" with a link under Directions, and the old \"See the original recipe\" row is gone.",
+   "context": "Tickets 25, 26 and 32 each built something already approved (mp-144 clause 3, mp-245 clause 6, mp-146), and each left one question.",
+   "details": "Precisely:\n1. An admin sees a review box on every meal: Good recipe or Not good, a reason, Send. Reviews wait for the server before saying sent. Only admins can read them. (mp-329) [built]\n2. The team reads reviews in the database for now. Each row gets the app version. No screen until there are enough reviews to need one. The table goes to production with the cutover. (mp-330) [to build: the version stamp]\n3. A recipe says where its steps came from in one line under Directions: \"As published by X\" with a link, \"Steps from X\", or \"A simple assembly, no recipe needed\". AI-written steps keep the sparkle. (mp-345) [built]\n4. A published recipe links the original once, from the new label. The older \"See the original recipe\" row goes, which also removes the overflow on narrow phones. (mp-346) [to build]\n5. Feedback typed to Vana is filed to the same Wiredash inbox as a shaken report, from the device, with the label \"vana-chat\" so the inbox can filter it. (mp-331, mp-332) [built, except the label]\n6. Wiredash has no public way to file an entry without its screen, so the app uses the SDK's internals with the version pinned. Ask Wiredash for a public call. Every Wiredash upgrade re-checks the filer. (mp-332) [no work]\n\nReview migration 20260916120000 on dev. Reason capped at 2,000 characters. Wiredash metadata: source vana_chat, sentiment, about, conversation id, user id and email.",
+   "diagram": {
+    "kind": "flow",
+    "title": "What we decided: three small builds",
+    "rows": [
+     [
+      {
+       "id": "rev",
+       "label": "Admin review:\nGood or Not good,\na reason, Send",
+       "tone": "ink"
+      },
+      {
+       "id": "org",
+       "label": "Recipe: one origin line\nunder Directions",
+       "tone": "ink"
+      },
+      {
+       "id": "fb",
+       "label": "Feedback typed\nto Vana",
+       "tone": "ink"
+      }
+     ],
+     [
+      {
+       "id": "db",
+       "label": "Server confirms, then\n\"sent\"; team reads the\ndatabase, app version",
+       "tone": "ok"
+      },
+      {
+       "id": "link",
+       "label": "The only link to\nthe original",
+       "tone": "ok"
+      },
+      {
+       "id": "wd",
+       "label": "Wiredash inbox with\nshake reports,\nlabel \"vana-chat\"",
+       "tone": "accent"
+      }
+     ]
+    ],
+    "edges": [
+     {
+      "from": "rev",
+      "to": "db"
+     },
+     {
+      "from": "org",
+      "to": "link"
+     },
+     {
+      "from": "fb",
+      "to": "wd"
+     }
+    ]
+   },
+   "slot": 2
+  }
+ },
+ "terms": [
+  {
+   "term": "Plan meal",
+   "area": "Planning meals",
+   "definition": "One meal in a plan: which library Meal, its meal type and how many servings are left. The Plan tab shows each plan meal as one row.",
+   "avoid": "Plan tile (a Tile is an ingredient photo)"
+  },
+  {
+   "term": "Meal type",
+   "area": "Planning meals",
+   "definition": "Which part of the day a meal is for, such as breakfast, lunch, dinner or a snack. An athlete plans only the meal types they choose.",
+   "avoid": "Slot"
+  },
+  {
+   "term": "Plan period",
+   "area": "Planning meals",
+   "definition": "The span one plan feeds: a start day and a number of days, both set by the athlete, Sunday and seven days by default.",
+   "avoid": "Week (unless it is seven days), cooking period"
+  },
+  {
+   "term": "Batch cooking",
+   "area": "Planning meals",
+   "definition": "Cooking a few meals at one sitting and eating them across the plan period, the default way a plan is filled. An athlete who does not batch cook plans per day instead.",
+   "avoid": "Meal prep"
+  },
+  {
+   "term": "Plan coverage",
+   "area": "Planning meals",
+   "definition": "How many of the period's meals a plan's servings fill, counted against the period's days times the meal types the athlete plans.",
+   "avoid": "Coverage (unqualified; that is whether a Kroger Location serves an area)"
+  },
+  {
+   "term": "Day note",
+   "area": "Planning meals",
+   "definition": "Vana's short note about one day of the plan, shown at the top of the Plan tab. A plan's notes are written ahead and kept, and rewritten in the background when the plan changes.",
+   "avoid": "Daily brief"
+  },
+  {
+   "term": "Review sheet",
+   "area": "Planning meals",
+   "definition": "The sheet that shows a draft plan before it is confirmed: what the period adds up to, every meal with its servings, and the Confirm button.",
+   "avoid": "Review plan screen, summary"
+  }
+ ]
+}

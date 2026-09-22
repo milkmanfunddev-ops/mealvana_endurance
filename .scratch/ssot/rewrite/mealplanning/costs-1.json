@@ -1,0 +1,444 @@
+{
+ "cards": {
+  "mp-432": {
+   "title": "Cost work runs in six steps, logging first, and three savings wait",
+   "context": "mp-430 carried the list of cost work beside the monthly budget, and on 2026-09-21 Lee asked for cost cutting to sit in one place on the page. The research is in docs/research/vana-cost-and-pricing.md and the seven ai-cost files beside it; the build notes sit in the ai-cost folder of the scratch area. mp-465 later put off the last step of the list, the 50-meal test, and keeps meal logging on Sonnet.",
+   "question": "What is done to bring the cost of a Vana turn down, and in what order?",
+   "decision": "Six pieces of cost work, in this order: log what is missing, fix the prompt cache, the monthly budget (mp-430), send a replayed conversation exactly as it was first sent, let openers fetch their data before they call the model, then a 50-meal test to move meal logging off Sonnet to the cheapest model that passes. Three savings are not taken now: Apple's on-device model, the batch API, and sending simple prompts to a cheaper model before it passes a test of Vana's voice. Example: the cache fix alone takes a typical athlete from $2.86 a month to $1.64, while Apple's on-device model would save under 5% and cannot run a Vana turn at all, because it holds only 4,096 tokens.",
+   "details": "Precisely:\n1. Cost work, in this order: log what is missing, the cache fix, the monthly budget (mp-430), byte-stable replay, openers that fetch their data before calling the model, then a 50-meal test to move meal logging off Sonnet to the cheapest model that passes. [to build]\n2. Not doing now: Apple's on-device model (a 4,096-token window, cannot run a Vana turn, would save under 5%), the batch API (a day's delay breaks the next opener), and routing simple prompts to a cheaper model until it passes a test of Vana's voice (about 6%). [no work]",
+   "diagram": {
+    "kind": "flow",
+    "title": "The cost work, in order",
+    "rows": [
+     [
+      {
+       "id": "a",
+       "label": "1. Log what\nis missing",
+       "tone": "accent"
+      },
+      {
+       "id": "b",
+       "label": "2. Cache fix",
+       "tone": "ok"
+      },
+      {
+       "id": "c",
+       "label": "3. Monthly\nbudget",
+       "tone": "ok"
+      }
+     ],
+     [
+      {
+       "id": "d",
+       "label": "4. Byte-stable\nreplay",
+       "tone": "ok"
+      },
+      {
+       "id": "e",
+       "label": "5. Openers fetch\ndata first",
+       "tone": "ok"
+      },
+      {
+       "id": "f",
+       "label": "6. 50-meal test\nfor meal logging",
+       "tone": "ok"
+      }
+     ],
+     [
+      {
+       "id": "g",
+       "label": "Not now: on-device\nmodel, batch API,\ncheaper-model routing",
+       "tone": "muted"
+      }
+     ]
+    ],
+    "edges": [
+     {
+      "from": "a",
+      "to": "b"
+     },
+     {
+      "from": "b",
+      "to": "c"
+     },
+     {
+      "from": "c",
+      "to": "d"
+     },
+     {
+      "from": "d",
+      "to": "e"
+     },
+     {
+      "from": "e",
+      "to": "f"
+     }
+    ],
+    "example": [
+     "Cache fix: a typical athlete $2.86 -> $1.64 a month.",
+     "On-device model: under 5%, and no room for a turn."
+    ]
+   }
+  },
+  "mp-464": {
+   "question": "Which chip taps skip the model, and what does the athlete see when one does?",
+   "decision": "Chips, the tappable answers under Vana's messages, whose next step is already fixed, such as \"Other options\", \"Draft my whole week\", \"Same as last time\" and \"Open shopping list\", now do that step straight away without calling the model; \"I like these\" and \"Next: <meal type>\" do so only when the next step is simply the next meal type's picker. The result appears with no line from Vana and nothing templated in her voice; the tap is stored in the conversation so she sees it on her next turn, and it draws nothing from the monthly budget. Chips Vana named herself, \"Different protein\", \"Adjust\", every opener and every typed message still go to her, and the call log records tap or typed for every turn. Example: an athlete taps \"Other options\" under a dinner picker; today that costs a full planning turn of about 21,000 tokens, now the next picker appears at once with no line from Vana and draws nothing from their monthly budget.",
+   "details": "Precisely:\n1. These chips act at once with no model turn: \"Other options\", \"Draft my whole week\", \"Same as last time\", \"No recipe only\", \"Under 20 min\", the batch-cooking answer, the coverage answer (\"Dinners only\", \"Dinners and lunches\", \"Every meal\"), \"Open shopping list\", \"Lay it across the week\", \"Use what I have\", and \"Use these\" on the pantry card. [to build]\n2. \"I like these\" and \"Next: <meal type>\" act at once when the next step is simply the next meal type's picker. When the next step is a question or the wrap-up, the tap goes to Vana as it does today. [to build]\n3. The result arrives with no written line from Vana. Nothing is templated in her voice. She speaks again on the next turn that reaches her. [to build]\n4. The tap and what it produced are stored in the conversation, so Vana sees them on her next turn. [to build]\n5. These taps draw nothing from the monthly budget (mp-430). [to build]\n6. Still Vana's: chips she named herself, \"Different protein\", \"Adjust\", every opener and every typed message. [no work]\n7. The call log records tap or typed for every turn, so the saving is measured. [to build]\n\nAlready on the no-model endpoint today: picking a meal, Show more, Browse, accepting a rule, Undo, Confirm, the fridge scan. \"Same as last time\" and the two settings are implemented there and unused by the chips. \"Different protein\" stays with Vana because it needs a choice of which protein.",
+   "diagram": {
+    "kind": "timeline",
+    "title": "If we logged taps two weeks first (rejected)",
+    "steps": [
+     {
+      "at": "Tap",
+      "label": "Athlete taps \"Other options\" under dinners",
+      "tone": "ink"
+     },
+     {
+      "at": "Then",
+      "label": "The tap goes to Vana as a typed message:\na full planning turn of about 21,000 tokens",
+      "tone": "no"
+     },
+     {
+      "at": "For two weeks",
+      "label": "Every such tap keeps costing a turn\nfrom the monthly budget",
+      "tone": "no"
+     }
+    ]
+   },
+   "diagram2": {
+    "kind": "timeline",
+    "title": "What we decided: the tap acts at once",
+    "steps": [
+     {
+      "at": "Tap",
+      "label": "Athlete taps \"Other options\" under dinners",
+      "tone": "ink"
+     },
+     {
+      "at": "At once",
+      "label": "The next picker appears, with no line\nfrom Vana. Nothing drawn from the budget",
+      "tone": "ok"
+     },
+     {
+      "at": "Next typed message",
+      "label": "Vana answers and sees the tap and\nthe picker it produced",
+      "tone": "accent"
+     }
+    ]
+   }
+  },
+  "mp-515": {
+   "question": "What are the burst limits for each AI call, how large can one turn get, and what does the athlete read when refused?",
+   "decision": "Each AI feature has its own per-minute limit, set well above what a person does, to stop a loop or a script: chat keeps 4 messages in 10 seconds, openers get 6 a minute, the fridge photo 3 a minute, and the described meal and the meal photo 6 a minute each. Each keeps its own count, so a photo never blocks a chat message. One Vana turn also stops at 150,000 tokens, cached input included, as well as at its step limit; a refused meal analysis shows a \"too many at once, try again in a few seconds\" line from the content system, and chat keeps its own line. No limit is longer than a minute, so the monthly budget stays the only ceiling on total use. Example: on dev over 14 days a planning turn ran 22,000 tokens at the median and 85,000 at most, so the 150,000 ceiling stops none of them, where the first build's 60,000 would have cut off 6 of 52 real turns.",
+   "details": "Precisely:\n1. Chat stays at 4 messages in 10 seconds.\n2. Openers get 6 a minute. The old figure of 3 was never enforced; 6 leaves room for a screen that opens a moment and a chat together.\n3. The fridge photo gets 3 a minute. The described meal and the meal photo get 6 a minute each. Each has its own bucket, so a photo never blocks a chat message.\n4. One Vana turn stops at 150,000 tokens as well as at its step limit. The count includes cached input.\n5. A refused meal analysis reads \"Too many at once — try again in {n} seconds.\" from the content system. Chat keeps its own line.\n6. No limit is longer than a minute. The monthly budget stays the only ceiling on total use.\n\nThe database decides each reservation in one step (a lock on athlete and bucket, a count, an insert). On dev, eight reservations fired at once against a limit of four left four rows.",
+   "diagram": {
+    "kind": "timeline",
+    "title": "If one turn stopped at 60,000 tokens (rejected)",
+    "steps": [
+     {
+      "at": "Planning",
+      "label": "Athlete plans a busy week with Vana",
+      "tone": "ink"
+     },
+     {
+      "at": "Mid-turn",
+      "label": "The turn passes 60,000 tokens\n(the largest real one ran 85,000)",
+      "tone": "no"
+     },
+     {
+      "at": "Cut off",
+      "label": "Vana stops before she finishes.\nOn dev, 6 of 52 real turns would stop",
+      "tone": "no"
+     }
+    ]
+   },
+   "diagram2": {
+    "kind": "timeline",
+    "title": "What we decided: a 150,000-token ceiling",
+    "steps": [
+     {
+      "at": "Planning",
+      "label": "Athlete plans a busy week with Vana",
+      "tone": "ink"
+     },
+     {
+      "at": "Mid-turn",
+      "label": "The turn reaches 85,000 tokens and\nfinishes as normal",
+      "tone": "ok"
+     },
+     {
+      "at": "Runaway only",
+      "label": "Only a loop past 150,000 tokens stops.\nThe monthly budget is the only total ceiling",
+      "tone": "accent"
+     }
+    ]
+   }
+  },
+  "mp-517": {
+   "title": "No cheaper model matched, so the three background jobs stay on Haiku",
+   "question": "Which model runs the three background jobs after the comparison?",
+   "decision": "The three background jobs stay on Haiku 4.5, because no cheaper model gave the same answers on the 20-conversation test. They now read their model from one setting of their own, so trying a later candidate is a rerun of the test script and a change to that one setting. The Formula Kit coach insight is removed and its function taken off dev. Example: on the 20 conversations Haiku wrote no memory, which is what the memory rules ask for, while Nova Micro invented 32 and the closest cheap model, Qwen 3.7 Flash, invented 7 and spent about 2,980 output tokens a call against Haiku's 105.",
+   "details": "Precisely:\n1. The three jobs stay on Haiku 4.5. No candidate gave the same answers.\n2. They now read their model from one setting of their own, VANA_BACKGROUND_MODEL, so a later candidate is a rerun of the test script and one setting.\n3. The Formula Kit coach insight is removed and its function is undeployed from dev.\n\nPrices were read from the gateway's catalogue on 2026-09-21. The comparison table is in ticket 14. The script is scripts/vana-eval/background-model.ts; the conversations are not committed.",
+   "diagram": {
+    "kind": "timeline",
+    "title": "If the summary alone moved (rejected)",
+    "steps": [
+     {
+      "at": "Test",
+      "label": "Only the rolling summary matched on\nall 20 conversations",
+      "tone": "ink"
+     },
+     {
+      "at": "Then",
+      "label": "The summary runs on a cheap model;\nthe other two jobs stay on Haiku",
+      "tone": "no"
+     },
+     {
+      "at": "Cost",
+      "label": "One setting split into two,\nto save a few cents a month",
+      "tone": "no"
+     }
+    ]
+   },
+   "diagram2": {
+    "kind": "timeline",
+    "title": "What we decided: all three stay on Haiku",
+    "steps": [
+     {
+      "at": "21 Sep",
+      "label": "Test on 20 dev conversations, about 25 cents.\nNo cheap model gave the same answers",
+      "tone": "ink"
+     },
+     {
+      "at": "After",
+      "label": "All three jobs stay on Haiku 4.5,\nread from one setting of their own",
+      "tone": "ok"
+     },
+     {
+      "at": "Later",
+      "label": "A new candidate is a rerun of the\nscript and one setting changed",
+      "tone": "accent"
+     }
+    ]
+   }
+  },
+  "mp-519": {
+   "title": "The call log keeps the subscription's two raw fields and names the plan only when read",
+   "context": "Ticket 05 asks the weekly view for cost per athlete by plan. mp-285 cut the Entitlement row down to two fields, active until and period type, so nothing in the database says whether an athlete bought the month or the year. The call log had nowhere to copy a plan from.",
+   "question": "Where does the call log get the subscriber's plan and trial state?",
+   "decision": "Every call row stores the two fields of the Entitlement row as they stood when the call finished, the period type and the active-until date, and never a plan name. The saved weekly view names the plan when it is read: a trial, intro or promotional period names itself, paid access that runs more than 45 days past the call counts as annual and anything shorter as monthly, and a call with no row counts as none. The fields are read after the call finishes, never while the athlete waits, and a read that fails logs empty fields rather than losing the call; the described meal and the meal photo carry the same two fields as a chat turn. Example: a paid athlete who calls Vana on 1 October with access running to 1 October next year counts as annual; one whose access ends on 31 October, 30 days on, counts as monthly.",
+   "details": "Precisely:\n1. Every call row stores the two entitlement fields raw: `period_type` and `active_until` as they stood when the call finished. Nothing is stored as a plan name.\n2. A SQL function names the plan when the view is read: TRIAL, INTRO and PROMOTIONAL name themselves; NORMAL access running more than 45 days past the call is `annual`, otherwise `monthly`; no row is `none`.\n3. The read happens on the background task that finishes the call, never on the athlete's request path, and a read that fails logs nulls rather than losing the call.\n4. Logged meals (the described meal and the meal photo) carry the same two fields as a chat turn.\n\nTwo columns: `subscriber_period_type`, `subscriber_active_until`. The label function is `vana_plan_label(period_type, active_until, at)`. Live dev check: two turns, one typed and one tapped, both labelled from the same entitlement row.",
+   "diagram": {
+    "kind": "timeline",
+    "title": "If the log stored a plan name (rejected)",
+    "steps": [
+     {
+      "at": "1 Oct",
+      "label": "Athlete talks to Vana; the row is\nwritten with the label \"annual\"",
+      "tone": "ink"
+     },
+     {
+      "at": "Later",
+      "label": "The products change",
+      "tone": "muted"
+     },
+     {
+      "at": "Then",
+      "label": "Every old row has to be rewritten\nto match (a backfill)",
+      "tone": "no"
+     }
+    ]
+   },
+   "diagram2": {
+    "kind": "timeline",
+    "title": "What we decided: raw fields, named when read",
+    "steps": [
+     {
+      "at": "1 Oct",
+      "label": "Athlete talks to Vana; the row keeps the\nperiod type and active-until as they stood",
+      "tone": "ok"
+     },
+     {
+      "at": "Weekly view",
+      "label": "Paid access past 45 days is annual,\nshorter is monthly",
+      "tone": "accent"
+     },
+     {
+      "at": "Later",
+      "label": "The products change: only the naming\nin the view changes, no backfill",
+      "tone": "ok"
+     }
+    ]
+   }
+  },
+  "mp-521": {
+   "question": "How does the log measure the cache, the charge and the turn, and what does the weekly view do when a call has no charge?",
+   "decision": "The call log counts the cache hit rate from a turn's first step alone, where a step is one call to the model inside a turn, because later steps read back what the same turn just wrote and would flatter it. Cost is the gateway's own charge, added up over every step, and nothing else: a turn where no step reported a charge stores no figure rather than zero, and the weekly view shows how many calls had a charge beside how many there were, so an understated week says so. Each turn records tap, typed or unknown, and an unknown never refuses the request; the two meal-logging functions write the same fields as a chat turn, while background jobs still write tokens only. Every night the finished weeks are frozen into a weekly rollup, then raw rows older than 90 days are deleted, and a frozen week is rewritten only while every raw row of it is still there. Example: on dev, one conversation's first turn wrote 10,436 tokens to the cache and cost $0.013358; the second turn read the same 10,436 tokens back and cost $0.0012916.",
+   "details": "Precisely:\n1. The cache hit rate is the first step's alone: `first_step_input_tokens` and `first_step_cache_read_tokens` are their own columns. Later steps read what the same turn just wrote, so a whole-turn ratio flatters the cache.\n2. The gateway's charge is added up over every step of the turn. A turn where no step reported a charge stores null, never 0.\n3. Cost is the gateway's charge and nothing else. There is no price table in the log; the view shows `costed_calls` beside `calls` so a week whose cost is understated says so.\n4. `input_mode` is `tap`, `typed` or null. An older build that sends nothing, or a value the server does not know, logs null; the request is never refused over it.\n5. The two meal-logging functions write the same fields as a chat turn (charge, cached tokens, one step, debited, subscriber state), so cost per athlete includes logging a meal. Background jobs still write tokens only.\n6. Every night the complete weeks are frozen into `vana_weekly_rollup`, then raw rows strictly older than 90 days are deleted from `vana_calls`, `ai_usage` and `plan_generation_log`. A frozen week is overwritten only while every raw row of it is still there, so the week straddling the cutoff keeps its full figure. `plan_generation_log` has no user id, so it is swept but never counted per athlete.\n\nDev, one conversation, two turns: turn 1 cold, 10,436 cache-write tokens, $0.013358; turn 2 warm, 10,436 cache-read tokens, $0.0012916. The five figures: cost per athlete by plan, first-step cache hit rate, cost per confirmed plan, spend in planning conversations that never added a meal, share of athlete turns that were taps. Sweep at 03:41 UTC; a row exactly 90.0 days old is kept.",
+   "diagram": {
+    "kind": "timeline",
+    "title": "If the rollup re-rolled every week nightly (rejected)",
+    "steps": [
+     {
+      "at": "Night 1",
+      "label": "A week straddles the 90-day cutoff.\nIts oldest day of raw rows is deleted",
+      "tone": "ink"
+     },
+     {
+      "at": "Night 2",
+      "label": "Every week is rolled up again from raw rows:\nthat week is now one day short",
+      "tone": "no"
+     },
+     {
+      "at": "Each night",
+      "label": "The straddling week shrinks by a day,\nand its cost reads lower than it was",
+      "tone": "no"
+     }
+    ]
+   },
+   "diagram2": {
+    "kind": "timeline",
+    "title": "What we decided: freeze, then sweep",
+    "steps": [
+     {
+      "at": "Night 1",
+      "label": "Finished weeks are frozen into the rollup\nwhile all their raw rows are still there",
+      "tone": "ok"
+     },
+     {
+      "at": "Then",
+      "label": "Raw rows older than 90 days are deleted",
+      "tone": "ink"
+     },
+     {
+      "at": "Each night",
+      "label": "A week missing raw rows is not rewritten:\nit keeps its full figure",
+      "tone": "accent"
+     }
+    ]
+   }
+  },
+  "mp-523": {
+   "title": "An account that costs over $1.50 in a day is reported to Sentry once for that day",
+   "question": "How is an expensive day reported, and how often for the same account?",
+   "decision": "Every morning at 06:23 UTC a scheduled database job reads yesterday's spend per account from the call log and sends each account over the threshold to Sentry, the error tracker Lee already reads, through the same path the raw-retention alert uses. Each account gets one Sentry event per day, so a week of the same athlete running hot is a week of issues, each day its own. The threshold, $1.50, is a default written in the job, and nothing the athlete does waits on the check; if its secrets are missing the check still runs and raises a notice. Example: an athlete who costs more than $1.50 on Saturday 3 October is reported at 06:23 UTC on Sunday 4 October, and nothing of theirs is refused; if they run hot every day that week, Lee sees a separate issue for each day.",
+   "details": "Precisely:\n1. A `pg_cron` job at 06:23 UTC reads yesterday's spend per account from the call log and posts the accounts over the threshold, through `pg_net`, to a small edge function that reports each to Sentry. The path is the one the raw-retention alert already uses; the function address and token come from Vault, never from the migration.\n2. One Sentry event per account per day, fingerprinted on account and day. A week of the same athlete running hot is a week of issues, because each day's number is its own decision.\n3. The threshold, $1.50, is a default in SQL. Changing it is editing the cron command.\n4. Nothing on the athlete's request path reads the check. Absent secrets, the check still runs and raises a notice.\n\nRun end to end on dev: SQL to pg_net to the deployed function, `{\"success\":true,\"reported\":1}`, HTTP 200; a wrong token gets 401. Prod has none of the secrets and nothing was deployed there.",
+   "diagram": {
+    "kind": "timeline",
+    "title": "If one issue per account re-opened (rejected)",
+    "steps": [
+     {
+      "at": "4 Oct",
+      "label": "Athlete ran over $1.50 on 3 Oct.\nOne Sentry issue opens",
+      "tone": "ink"
+     },
+     {
+      "at": "5 to 10 Oct",
+      "label": "They run hot every day; the same\nissue re-opens each morning",
+      "tone": "no"
+     },
+     {
+      "at": "11 Oct",
+      "label": "One issue holds the whole week;\nno day's number stands on its own",
+      "tone": "no"
+     }
+    ]
+   },
+   "diagram2": {
+    "kind": "timeline",
+    "title": "What we decided: one event per account per day",
+    "steps": [
+     {
+      "at": "4 Oct 06:23",
+      "label": "Athlete ran over $1.50 on 3 Oct.\nOne Sentry event for that day",
+      "tone": "accent"
+     },
+     {
+      "at": "5 to 10 Oct",
+      "label": "They run hot every day: one new\nevent for each day",
+      "tone": "ok"
+     },
+     {
+      "at": "All week",
+      "label": "Nothing the athlete does is refused\nor waits on the check",
+      "tone": "ok"
+     }
+    ]
+   }
+  },
+  "mp-549": {
+   "context": "The wallet now counts in millionths of a dollar. Before the model runs, a call sets aside an estimate for its kind, in the same step that reads the balance, so two calls cannot both spend the last of it; when the call finishes, the amount set aside becomes the real cost. mp-436 says a call that starts inside the budget finishes, and that the app is never sent dollars. Four rules at the edges were not written down.",
+   "question": "At the edges of the budget, what does a call take and what does it give back?",
+   "decision": "Only an empty wallet refuses a call: a call whose estimate is more than what is left takes what is left and runs, and the next call gets the top-up sheet. A call that costs more than it set aside takes the difference and the wallet stops at zero; the shortfall is absorbed, never carried into next month and never taken from a later pack. When a call costs less than it set aside, the change goes to the bought budget first, and the monthly budget gets its share back only while the same month is still open. A call that ran but reported no usage is charged its estimate, never nothing. Example: an athlete with 2 cents left sends a planning message that costs about 3.2 cents; it runs to the end, the wallet stops at zero, the missing 1.2 cents is never taken from a pack they buy later, and their next message opens the top-up sheet.",
+   "details": "Precisely:\n1. Only an empty wallet refuses a call. A call whose estimate is more than what is left takes what is left and runs; the next call gets the top-up sheet.\n2. A call that costs more than it reserved takes the difference, and the wallet stops at zero. The shortfall is absorbed: it is never carried into next month and never taken from a later pack.\n3. What comes back from a call that cost less than it reserved goes to the bought budget first; the monthly budget gets its share back only while the same month's window is still open.\n4. A call that ran but reported no usage is charged its estimate, never nothing.\n\nEstimates per kind are one setting each on the server. Real cost is the gateway's own charge, else the logged tokens priced from one table; a cache write is priced at the one-hour rate when the SDK does not say which it was. A reservation nothing settled within two hours is given back in full.",
+   "diagram": {
+    "kind": "timeline",
+    "title": "If a call had to fit its estimate (rejected)",
+    "steps": [
+     {
+      "at": "Message",
+      "label": "Athlete with 2 cents left sends a planning\nmessage that costs about 3.2 cents",
+      "tone": "ink"
+     },
+     {
+      "at": "Refused",
+      "label": "The estimate does not fit: the call is\nrefused and the top-up sheet opens",
+      "tone": "no"
+     },
+     {
+      "at": "Left",
+      "label": "2 cents stay in the wallet, unusable",
+      "tone": "no"
+     }
+    ]
+   },
+   "diagram2": {
+    "kind": "timeline",
+    "title": "What we decided: only an empty wallet refuses",
+    "steps": [
+     {
+      "at": "Message",
+      "label": "Athlete with 2 cents left sends a planning\nmessage that costs about 3.2 cents",
+      "tone": "ink"
+     },
+     {
+      "at": "Runs",
+      "label": "Vana answers in full. The wallet stops at 0;\nthe 1.2 cents short is absorbed",
+      "tone": "ok"
+     },
+     {
+      "at": "Next message",
+      "label": "The top-up sheet opens. A pack bought now\nis never charged the 1.2 cents",
+      "tone": "accent"
+     }
+    ]
+   }
+  }
+ },
+ "terms": [
+  {
+   "term": "Call log",
+   "area": "Paying for the app",
+   "definition": "The server's record of every AI call: who made it, the tokens it read, wrote and cached, and what the gateway charged for it. What each athlete costs is read from it.",
+   "avoid": "Usage log, ai_usage (that is one of its tables)"
+  },
+  {
+   "term": "Gateway",
+   "area": "Paying for the app",
+   "definition": "The Vercel AI Gateway, the one service every AI call goes through to reach a model. It adds no markup and reports its own charge for each call, which is what that call really cost us.",
+   "avoid": "Provider, proxy"
+  },
+  {
+   "term": "Token",
+   "area": "Paying for the app",
+   "definition": "The piece of text a model reads and writes in, a word or part of one. A model call is priced by the tokens it reads and writes; the monthly budget is counted in dollars, never in tokens.",
+   "avoid": "Credit (that was the old wallet unit)"
+  },
+  {
+   "term": "Prompt cache",
+   "area": "Vana and what she knows",
+   "definition": "The model provider's short-lived copy of the opening part of a prompt it has just seen. A later call that starts with exactly the same text reads that part back at a tenth of the price; anything that changes breaks the cache from that point on.",
+   "avoid": "Cache (unqualified), memory"
+  }
+ ]
+}

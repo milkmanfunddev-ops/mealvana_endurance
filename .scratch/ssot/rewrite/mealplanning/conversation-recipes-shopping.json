@@ -1,0 +1,794 @@
+{
+ "cards": {
+  "mp-121": {
+   "context": "MealBuddy, a meal-planning app we studied, lets the athlete edit an earlier message and run the conversation again from there. Our conversations are stored on the server. Meals picked after the edited message would be left behind, belonging to a conversation that no longer exists.",
+   "question": "What happens when the athlete edits an earlier message?",
+   "decision": "We adopt it: the conversation rewinds to the edited message. That message and everything after it are deleted, the Draft goes back to how it stood before it, and the edited message is sent again. Each of Vana's replies keeps a copy of the plan as it stood, which is what the rewind restores, and the rewind happens on the server. Example: an athlete asks for Thai food in their second message, then edits it to say Italian; the second message and every reply after it are deleted, picks made after it leave the Draft, and the Italian version goes to Vana.",
+   "details": "Precisely:\n1. Every assistant row stores a plan snapshot.\n2. Editing an athlete turn deletes messages from that turn on, restores the draft from the snapshot, and resends.\n3. A rewind past the first turn empties the draft.\n4. The endpoint is server-side.",
+   "diagram": {
+    "kind": "timeline",
+    "title": "What we decided: an edit rewinds the conversation",
+    "steps": [
+     {
+      "at": "Message 1",
+      "label": "Athlete: \"Plan my week\". Vana replies;\nher reply keeps a copy of the Draft",
+      "tone": "ink"
+     },
+     {
+      "at": "Message 2",
+      "label": "Athlete: \"Thai food please\"\nVana replies; the athlete ticks meals",
+      "tone": "ink"
+     },
+     {
+      "at": "Edit",
+      "label": "Athlete edits message 2 to \"Italian\"",
+      "tone": "accent"
+     },
+     {
+      "at": "Rewind",
+      "label": "Message 2 and every reply after it deleted.\nThe Draft goes back to the copy kept\nbefore message 2",
+      "tone": "ok"
+     },
+     {
+      "at": "Resend",
+      "label": "The Italian version goes to Vana",
+      "tone": "ok"
+     }
+    ],
+    "example": [
+     "A rewind past the first turn empties the Draft."
+    ]
+   },
+   "slot": 2
+  },
+  "mp-230": {
+   "title": "A picker's tick adds a meal, and the chips under it are the app's own",
+   "context": "In the planning chat Vana asks Choice questions and shows Meal pickers, carousels of suggested meals. Lee's walkthroughs on 09-03 and 09-04 found meals picked by accident and chip rows that did not earn their space. What the server sends the app for a turn had no field saying which meal type comes next.",
+   "question": "How does a meal picker work, and where do the chips under it come from?",
+   "decision": "A Choice question has two to four short answers; a Meal picker shows a handful of meals from a search of the meal library, the athlete's saved meals ranked up, with a Show more sheet for many more. Tapping a meal opens its detail page, and only the tick adds it to the Draft. The chips under a picker are always the app's own buttons: their words come from Vana when her turn names them (mp-272) and otherwise from the app's own set, and Other options never repeats a meal already in the Draft or already shown. Example: Vana's turn names no chips, so under her picker the athlete sees \"I like these\", then \"Next: …\" with a meal type or \"That's my week\" depending on how much of the week is covered, then \"Other options\" and \"Something else…\".",
+   "details": "Precisely:\n1. A choice question takes two to four options as plain strings, drawn as compact pills. Bigger sets go through the selectable chip grid.\n2. A picker shows a handful of meals from the semantic search over the library, with saved meals boosted. A \"Show more\" raises a sheet with many more options from the same search. The count is not fixed.\n3. Tapping a picker tile opens meal detail. Only the tick adds it to the draft. Picked tiles get a swap circle. Chat tiles have no overflow menu, title, \"tap to add\" or why blurb.\n4. The chips under a picker are widgets the app draws. Their labels come from the model when its turn names the choices it expects next (mp-272). When the turn names none, the app shows its own set: \"I like these\", then \"Next: type\" or \"That's my week\" by coverage, plus \"Other options\" and \"Something else…\". Filter chips appear once the plan has a meal. Tapping a chip sends its label.\n5. \"Other options\" never repeats a meal already in the draft or already shown in the conversation.\n\nThe tick sits top-left and the swap circle top-right on picked tiles. The shown set is parsed from stored picker and staples parts.",
+   "diagram": {
+    "kind": "flow",
+    "title": "What we decided: a picker and its chips",
+    "rows": [
+     [
+      {
+       "id": "p",
+       "label": "Vana's turn shows a picker",
+       "tone": "accent"
+      }
+     ],
+     [
+      {
+       "id": "tap",
+       "label": "Tap a meal:\ndetail opens, nothing added",
+       "tone": "muted"
+      },
+      {
+       "id": "tick",
+       "label": "Tick a meal:\nit joins the Draft,\nswap circle appears",
+       "tone": "ok"
+      }
+     ],
+     [
+      {
+       "id": "named",
+       "label": "Turn names chips:\nVana's words in\nthe app's buttons",
+       "tone": "ink"
+      },
+      {
+       "id": "own",
+       "label": "Turn names none:\nthe app's own set",
+       "tone": "ink"
+      }
+     ]
+    ],
+    "edges": [
+     {
+      "from": "p",
+      "to": "tap"
+     },
+     {
+      "from": "p",
+      "to": "tick"
+     },
+     {
+      "from": "p",
+      "to": "named"
+     },
+     {
+      "from": "p",
+      "to": "own"
+     }
+    ],
+    "example": [
+     "App's set: I like these, Next: <type> or That's my week,",
+     "Other options, Something else…. Tapping a chip sends its label."
+    ]
+   },
+   "slot": 2
+  },
+  "mp-231": {
+   "title": "A plan covers the meal types the athlete chooses, over a period they set, liked meals first",
+   "question": "Which meals get planned, over how many days, and what is suggested first?",
+   "decision": "The athlete plans only the meal types they want, in any order, over a cooking period that is a week unless they change it. With batch cooking on, a few meals cooked at one sitting are scaled to enough servings to last the period, and the plan counts servings against the period; without it, they plan day by day. Suggestions put meals they liked or already cooked first, one tap drafts the period from what they ate last time, and \"Draft it for me\" builds the plan by fixed rules, with Vana only presenting it. Example: an athlete who skips breakfast and snacks and batch cooks for a week is walked through lunches and dinners only, and the plan bar counts servings against that week, not against 14 fixed slots.",
+   "details": "Precisely:\n1. The order of meal types is not fixed. A person may skip breakfast, snacks or any type, and the walk only covers the types they plan.\n2. The plan spans a cooking period. A week is the default and the athlete can change it, so several days is fine.\n3. In batch mode the athlete cooks a few meals at one sitting and eats them across the period. Servings scale so the batch covers the days, and coverage counts servings against the period, not a fixed 14 slots.\n4. People who do not batch plan per day instead, and the walk, coverage and review follow that mode.\n5. Suggestions give the highest weight to meals the athlete has liked or already cooked. One tap drafts the period from what they ate last time.\n6. \"Draft it for me\" runs deterministically. The model selects nothing and only presents the result.",
+   "diagram": {
+    "kind": "flow",
+    "title": "What we decided: how a cooking period fills up",
+    "rows": [
+     [
+      {
+       "id": "period",
+       "label": "Cooking period:\na week unless the athlete\nchanges it",
+       "tone": "accent"
+      }
+     ],
+     [
+      {
+       "id": "batch",
+       "label": "Batch cooking on:\nservings scale to cover\nthe period",
+       "tone": "ok"
+      },
+      {
+       "id": "day",
+       "label": "Batch cooking off:\nplanned day by day",
+       "tone": "ok"
+      }
+     ],
+     [
+      {
+       "id": "cov",
+       "label": "Plan bar counts servings\nagainst the period",
+       "tone": "ink"
+      },
+      {
+       "id": "cov2",
+       "label": "Walk, coverage and review\nfollow the day-by-day mode",
+       "tone": "ink"
+      }
+     ]
+    ],
+    "edges": [
+     {
+      "from": "period",
+      "to": "batch"
+     },
+     {
+      "from": "period",
+      "to": "day"
+     },
+     {
+      "from": "batch",
+      "to": "cov"
+     },
+     {
+      "from": "day",
+      "to": "cov2"
+     }
+    ],
+    "example": [
+     "Only the meal types the athlete plans are walked, in no fixed order.",
+     "Liked or already cooked meals are suggested first."
+    ]
+   },
+   "slot": 2
+  },
+  "mp-232": {
+   "question": "When does Vana ask about batch cooking, and does a change during a plan stick?",
+   "decision": "Vana asks once, before she shows lunches, and only if the athlete has never chosen; the answer is saved as a keyed Memory, and Settings has the same switch. Off means no cooking sessions, and each meal is \"make the night of\". If the athlete switches it off in the middle of a plan, Vana first asks whether that is for good or just this week, and then whether to rebuild the plan or keep it. Example: an athlete who batch cooks switches it off halfway through planning a week and answers \"just this week\", so the saved setting stays on for their next plan, and Vana then asks whether to rebuild this plan or keep it.",
+   "details": "Precisely:\n1. Batch cooking is a keyed setting. When it has never been chosen, Vana asks before showing lunches and saves the answer. Settings has the same switch. Off means no cooking sessions and meals are \"make the night of\".\n2. Switching it off during a plan first asks whether the change is for good or just this week, then asks rebuild-or-keep.",
+   "diagram": {
+    "kind": "timeline",
+    "title": "What we decided: asked once, and a change asks first",
+    "steps": [
+     {
+      "at": "First plan",
+      "label": "Never chosen: Vana asks before lunches.\nThe answer is saved",
+      "tone": "accent"
+     },
+     {
+      "at": "Later plans",
+      "label": "No question. Settings has the same switch",
+      "tone": "ok"
+     },
+     {
+      "at": "Mid-plan",
+      "label": "Athlete switches it off.\nVana: for good, or just this week?",
+      "tone": "accent"
+     },
+     {
+      "at": "Then",
+      "label": "Vana: rebuild the plan, or keep it?",
+      "tone": "ok"
+     }
+    ],
+    "example": [
+     "Off: no cooking sessions, each meal is \"make the night of\"."
+    ]
+   },
+   "slot": 2
+  },
+  "mp-233": {
+   "question": "Where do suggestions, staples and day guidance come from, and what may Vana make up?",
+   "decision": "Nothing: Vana only puts into words what the app has worked out, and staples are suggested from the athlete's own logs and wait in the chat until the athlete ticks them. Guidance for rest days, carb-load days and race week is computed by the app from the athlete's numbers, workouts and library picks; a race-week rule may name a specific meal and is only offered when a race exists, and race day carries no carb number. The search drops anything that breaks the athlete's allergies or diet before it reaches Vana, ranks saved meals up, lifts common Assemblies and never pairs foods no athlete has been documented eating. Example: a vegetarian athlete never sees a meat dish in a picker, because the search removes it in the database before Vana sees the list.",
+   "details": "Precisely:\n1. Staples are suggested from the athlete's own logs and nothing enters the plan until the athlete ticks. The staples card is a chat part only.\n2. Day guidance for rest days, carb-load days and race week is computed from the budget, the workouts and the library's picks. The model only phrases it. A race-week rule can be a specific meal and is only proposed when a race exists. Race day carries no carb number.\n3. Search applies allergies and dietary preference as a hard filter in the database, returns saved and library rows together with saved boosted, nudges common assemblies up, and rejects pairs no athlete has been documented eating.",
+   "diagram": {
+    "kind": "flow",
+    "title": "What we decided: the app decides, Vana words it",
+    "rows": [
+     [
+      {
+       "id": "logs",
+       "label": "Athlete's own logs",
+       "tone": "muted"
+      },
+      {
+       "id": "lib",
+       "label": "Meal library +\nsaved meals",
+       "tone": "muted"
+      },
+      {
+       "id": "plan",
+       "label": "Athlete's numbers,\nworkouts, library picks",
+       "tone": "muted"
+      }
+     ],
+     [
+      {
+       "id": "st",
+       "label": "Staples card:\nnothing added\nuntil a tick",
+       "tone": "ok"
+      },
+      {
+       "id": "se",
+       "label": "Search: allergies and\ndiet filtered out,\nsaved ranked up",
+       "tone": "ok"
+      },
+      {
+       "id": "dg",
+       "label": "Day guidance\ncomputed",
+       "tone": "ok"
+      }
+     ],
+     [
+      {
+       "id": "v",
+       "label": "Vana phrases it.\nNo meal or number\nof her own",
+       "tone": "accent"
+      }
+     ]
+    ],
+    "edges": [
+     {
+      "from": "logs",
+      "to": "st"
+     },
+     {
+      "from": "lib",
+      "to": "se"
+     },
+     {
+      "from": "plan",
+      "to": "dg"
+     },
+     {
+      "from": "st",
+      "to": "v"
+     },
+     {
+      "from": "se",
+      "to": "v"
+     },
+     {
+      "from": "dg",
+      "to": "v"
+     }
+    ],
+    "example": [
+     "Race-week rule only when a race exists. Race day: no carb number."
+    ]
+   },
+   "slot": 2
+  },
+  "mp-234": {
+   "title": "The plan bar shows the Draft, and Confirm lives only in the Review sheet",
+   "question": "What does the plan bar show, where is Confirm, and which plan does it change?",
+   "decision": "The plan bar sits pinned above the message box and shows this conversation's Draft; the plan is never shown as a message in the chat. It starts at \"Your plan · 0 meals\" and folds shut on every turn; each meal in it can be removed (with Undo), shows its slot and has a servings stepper, and \"Review plan\" becomes the main button once there are three meals. Confirm is only in the Review sheet, never in the bar or in Vana's chips, and the bar never reads or changes the plan already active on the phone. Example: an athlete with a confirmed plan for this week starts a new meal plan; the bar opens at \"Your plan · 0 meals\", not on this week's meals, and removing a meal from it leaves this week's plan as it was.",
+   "details": "Precisely:\n1. A plan snapshot is never a message bubble. It updates the draft and the bar, and history rows have snapshots stripped on load.\n2. The bar opens as \"Your plan · 0 meals\" and collapses on every turn. Tiles carry remove with Undo, a slot chip and a servings stepper. \"Review plan\" is secondary until three meals, then primary.\n3. Confirm lives only in the Review sheet, grouped by cooking session when batch cooking is on. It is not in the bar or in Vana's chips.\n4. The bar and picks in chat read and write the conversation's draft, never the device's active week plan.",
+   "diagram": {
+    "kind": "timeline",
+    "title": "What we decided: the bar holds the Draft",
+    "steps": [
+     {
+      "at": "Start",
+      "label": "Bar reads \"Your plan · 0 meals\"",
+      "tone": "muted"
+     },
+     {
+      "at": "Picks 1-2",
+      "label": "Tiles: remove with Undo, a slot chip,\na servings stepper.\n\"Review plan\" is the secondary button",
+      "tone": "ink"
+     },
+     {
+      "at": "Pick 3",
+      "label": "\"Review plan\" becomes the main button",
+      "tone": "accent"
+     },
+     {
+      "at": "Review",
+      "label": "Review sheet, grouped by cooking session\nwhen batch cooking is on.\nConfirm is here and only here",
+      "tone": "ok"
+     }
+    ],
+    "example": [
+     "The bar never touches the plan already active on the phone."
+    ]
+   },
+   "slot": 2
+  },
+  "mp-235": {
+   "title": "Confirm lands on the shopping list, and laying meals across days stays optional",
+   "question": "What does confirming a plan give the athlete, and where do they land?",
+   "decision": "Confirm shows a \"you're set\" card with the week, the cooking sessions, the size of the list and where things live, plus a plain-text share and a \"remind me the night before cook day\" chip; no calendar, email or PDF in the first version. The athlete lands on the main screens with the Food tab's Shopping part open, so the tab bar is there. The chips after it are Open shopping list, Lay it across the week and Adjust; laying it across shows read-only day cards, and an athlete who never taps it keeps the plan as a set of meals with servings. Example: an athlete confirms, taps the reminder chip, lands on Food > Shopping with the tab bar showing, and never lays the plan across the week, so it stays a set of meals with no days attached.",
+   "details": "Precisely:\n1. Confirm shows a \"you're set\" card with the week, the sessions, the list size and where things live. It offers an OS share sheet for plain text and a \"remind me the night before cook day\" chip. No calendar, email or PDF in the first version.\n2. Confirm lands on the main shell with the Food tab's Shopping segment selected, so the tab bar is present.\n3. The chips after confirm are Open shopping list, Lay it across the week, and Adjust. Laying it across renders read-only day cards. Athletes who ignore it keep the collection-only plan.",
+   "diagram": {
+    "kind": "flow",
+    "title": "What we decided: after Confirm",
+    "rows": [
+     [
+      {
+       "id": "c",
+       "label": "Confirm",
+       "tone": "accent"
+      }
+     ],
+     [
+      {
+       "id": "card",
+       "label": "\"You're set\" card:\nshare as text,\nremind me the night before",
+       "tone": "ok"
+      },
+      {
+       "id": "shop",
+       "label": "Food tab, Shopping,\ntab bar present",
+       "tone": "ok"
+      }
+     ],
+     [
+      {
+       "id": "open",
+       "label": "Open shopping list",
+       "tone": "ink"
+      },
+      {
+       "id": "lay",
+       "label": "Lay it across the week:\nread-only day cards",
+       "tone": "ink"
+      },
+      {
+       "id": "adj",
+       "label": "Adjust",
+       "tone": "ink"
+      }
+     ]
+    ],
+    "edges": [
+     {
+      "from": "c",
+      "to": "card"
+     },
+     {
+      "from": "c",
+      "to": "shop"
+     },
+     {
+      "from": "card",
+      "to": "open"
+     },
+     {
+      "from": "card",
+      "to": "lay"
+     },
+     {
+      "from": "card",
+      "to": "adj"
+     }
+    ],
+    "example": [
+     "No calendar, email or PDF in the first version.",
+     "Ignore \"Lay it across\": the plan stays a set of meals."
+    ]
+   },
+   "slot": 2
+  },
+  "mp-236": {
+   "question": "How is the message box laid out, and what does its plus menu offer?",
+   "decision": "The composer, the message box at the bottom of the planning chat, is one pill: a plus on the left, a mic while it is empty and a send arrow once there is text; on the web there is no camera and no mic. The plus opens Snap my fridge, Choose a photo, Use what I have and Browse meals. Snap my fridge uses the same photo path as meal logging and is counted but costs no credits, because Pro already pays for it; Browse meals opens the catalog, where a tick on any meal adds it to the Draft. Example: an athlete taps Use what I have and gets up to eight chips drawn from their last 30 days of logs, their saved meals and their last plan; tapping \"Use these\" saves them as pantry items and marks those rows as had on the shopping list.",
+   "details": "Precisely:\n1. One pill with a flat plus on the left, a mic while empty and an up-arrow send when there is text. Web gets no camera and no mic.\n2. The plus sheet offers Snap my fridge, Choose a photo, Use what I have and Browse meals.\n3. The pantry question seeds a chip grid from the athlete's own 30-day logs, saved-meal components and the last plan's have or checked items, top 8. \"Use these\" writes pantry items and marks shopping rows as had.\n4. Snap my fridge reuses the meal-logging upload path and vision model. It is metered with no credit charge. Pro is the price.\n5. Browse meals opens the catalog tied to the conversation. Every card carries a tick that picks into the draft, and the chat refreshes its draft on return.",
+   "diagram": {
+    "kind": "flow",
+    "title": "What we decided: the composer's plus menu",
+    "rows": [
+     [
+      {
+       "id": "plus",
+       "label": "Plus in the composer",
+       "tone": "accent"
+      }
+     ],
+     [
+      {
+       "id": "snap",
+       "label": "Snap my fridge:\nno credit charge",
+       "tone": "ok"
+      },
+      {
+       "id": "use",
+       "label": "Use what I have:\ntop 8 of the\nathlete's own foods",
+       "tone": "ok"
+      },
+      {
+       "id": "br",
+       "label": "Browse meals:\na tick adds to\nthe Draft",
+       "tone": "ok"
+      }
+     ]
+    ],
+    "edges": [
+     {
+      "from": "plus",
+      "to": "snap"
+     },
+     {
+      "from": "plus",
+      "to": "use"
+     },
+     {
+      "from": "plus",
+      "to": "br"
+     }
+    ],
+    "example": [
+     "\"Use these\" writes pantry items and marks shopping rows as had.",
+     "Web: no camera, no mic."
+    ]
+   },
+   "slot": 2
+  },
+  "mp-268": {
+   "question": "What does Vana say first in the general conversation?",
+   "decision": "The general conversation (Vana's own chat, as opposed to a meal-planning one) opens with no example chips. Vana's first line reads the screen the athlete came from, such as \"I see you are planning an event\"; when that screen tells her nothing useful, she uses the personal Opener every conversation already carries. Being offline, hitting the rate limit and being out of the trial each keep the one outcome they already show. Example: an athlete on a carb-load day opens Vana and reads \"I see you are carb loading\" instead of three sample questions.",
+   "details": "Precisely:\n1. No example chips. The general conversation opens with a line that reads the screen underneath, such as \"I see you are planning an event\" or \"I see you are carb loading\".\n2. When the screen underneath says nothing useful, the opener falls back to the personal opener that every conversation already carries.\n3. Offline, rate limit and out-of-trial failures keep their one visible outcome each.",
+   "diagram": {
+    "kind": "flow",
+    "title": "What we decided: open on the screen underneath",
+    "rows": [
+     [
+      {
+       "id": "o",
+       "label": "General conversation opens.\nNo example chips",
+       "tone": "accent"
+      }
+     ],
+     [
+      {
+       "id": "y",
+       "label": "Screen says something:\n\"I see you are\ncarb loading\"",
+       "tone": "ok"
+      },
+      {
+       "id": "no",
+       "label": "Screen says nothing useful:\nthe personal Opener",
+       "tone": "ok"
+      }
+     ]
+    ],
+    "edges": [
+     {
+      "from": "o",
+      "to": "y"
+     },
+     {
+      "from": "o",
+      "to": "no"
+     }
+    ],
+    "example": [
+     "Offline, rate limit, out of trial: one visible outcome each."
+    ]
+   },
+   "slot": 2
+  },
+  "mp-272": {
+   "context": "The chips under a picker used to be drawn by the app with labels the app chose (mp-230 clause 4 as first written). Lee ruled on 2026-09-15 that Vana should be able to say which buttons she has in mind next, with the app's own set as the fallback. What the server sends the app for a turn had no field for this.",
+   "question": "How does Vana tell the app which chips to show under a picker?",
+   "decision": "Her turn may carry a short list of chip labels, two to four plain phrases. The app draws them under the picker in its own buttons and style; Vana never draws or styles a chip. With no list, or an empty one, the app shows its own set (mp-230), and tapping one of Vana's chips sends its label, exactly as an app chip does. Example: Vana's turn names \"Show me lunches\" and \"Something quicker\"; the athlete sees them as the app's usual chips, taps \"Something quicker\", and that phrase is sent as their message.",
+   "details": "Precisely:\n1. A Vana turn may carry an optional list of suggested chip labels: two to four plain strings.\n2. The app draws them as the chips under the picker, in the app's own widget and style. The model never draws or styles a chip.\n3. When the list is absent or empty, the app's own set applies (mp-230 clause 4).\n4. Tapping a suggested chip sends its label, the same as an app chip.",
+   "diagram": {
+    "kind": "flow",
+    "title": "What we decided: Vana names, the app draws",
+    "rows": [
+     [
+      {
+       "id": "t",
+       "label": "Vana's turn with a picker",
+       "tone": "accent"
+      }
+     ],
+     [
+      {
+       "id": "l",
+       "label": "Names 2 to 4 labels:\ndrawn in the app's\nown chips",
+       "tone": "ok"
+      },
+      {
+       "id": "none",
+       "label": "Names none, or empty:\nthe app's own set",
+       "tone": "ok"
+      }
+     ],
+     [
+      {
+       "id": "tap",
+       "label": "Tap a chip: its label\nis sent as the message",
+       "tone": "ink"
+      }
+     ]
+    ],
+    "edges": [
+     {
+      "from": "t",
+      "to": "l"
+     },
+     {
+      "from": "t",
+      "to": "none"
+     },
+     {
+      "from": "l",
+      "to": "tap"
+     },
+     {
+      "from": "none",
+      "to": "tap"
+     }
+    ],
+    "example": [
+     "Vana never draws or styles a chip."
+    ]
+   },
+   "slot": 2
+  },
+  "mp-426": {
+   "title": "Named chips replace only the two reply chips, and Show more holds up to 24 more meals",
+   "question": "Which chips can a turn name, and what sits behind Show more?",
+   "decision": "Chips Vana names replace only \"I like these\" and \"Other options\"; the other chips and the filters stay, and a turn with no picker names none. The server and the app both cut her list to two to four chips, and a broken list falls back to the app's own. Show more opens the rest of the same search, up to 24 more meals with no new search, and is not drawn when nothing is left; those meals count as shown only if the athlete opened the sheet, and a tick in the sheet shows on the picker's meals at once, and the other way round. Example: an athlete never opens Show more, so the up to 24 meals behind it are not counted as shown and Other options can still offer them later.",
+   "details": "Precisely:\n1. A turn's named chips replace only the two reply chips (\"I like these\", \"Other options\"). The doors and filters stay. Chips belong to a picker, so a turn without a picker names none. (mp-406, mp-409) [built]\n2. Both the server and the app trim the list to two to four chips. A broken list means the app shows its own set. (mp-408) [built]\n3. Show more opens the rest of the same search, up to 24 more meals, with no new query. (mp-407) [built]\n4. Meals behind Show more count as shown only if the athlete opened the sheet. (mp-410) [to build]\n5. When nothing is left behind Show more, the chip is not drawn. 24 is enough. (mp-411) [no work]\n6. A tick in the Show more sheet shows on the tiles behind it at once, and the other way round. (mp-412) [to build]",
+   "diagram": {
+    "kind": "timeline",
+    "title": "What we decided: Show more, counted only when opened",
+    "steps": [
+     {
+      "at": "Picker",
+      "label": "Vana shows a picker. Behind Show more:\nthe rest of the same search, up to 24 meals",
+      "tone": "ink"
+     },
+     {
+      "at": "Not opened",
+      "label": "Those meals do not count as shown.\nOther options can still offer them",
+      "tone": "ok"
+     },
+     {
+      "at": "Opened",
+      "label": "Now they count as shown",
+      "tone": "accent"
+     },
+     {
+      "at": "Tick",
+      "label": "A tick in the sheet shows on the picker\nat once, and the other way round",
+      "tone": "ok"
+     }
+    ],
+    "example": [
+     "Nothing left behind it: the Show more chip is not drawn."
+    ]
+   },
+   "slot": 2
+  },
+  "mp-146": {
+   "title": "Every meal's steps carry where they came from, and the meal page says so",
+   "question": "How does the athlete know where a meal's cooking steps came from?",
+   "decision": "Every meal in the library records where its steps came from: word for word from the source, from another source, a simple assembly, or written by AI. The meal page labels the steps by that origin: word-for-word steps read \"as published by X\" with a link to the original, and AI-written steps carry a sparkle with a tooltip. The macros sit in a fold-out marked approximate. Example: the library cites 247 source pages, but only 14 had steps a machine could read, so a meal from one of the other pages whose steps were written by AI shows the sparkle instead of \"as published by\".",
+   "details": "Precisely:\n1. Every library row records where its steps came from: the source verbatim, an alternate source, a simple assembly, or AI-generated.\n2. The detail screen labels steps by origin.\n3. AI-generated steps carry a sparkle with a tooltip.\n4. Verbatim steps read \"as published by X\" with a link to the original.\n5. Macros sit in a disclosure marked approximate.",
+   "diagram": {
+    "kind": "flow",
+    "title": "What we decided: steps say where they came from",
+    "rows": [
+     [
+      {
+       "id": "row",
+       "label": "Library row records\nthe steps' origin",
+       "tone": "accent"
+      }
+     ],
+     [
+      {
+       "id": "v",
+       "label": "Source, word for word:\n\"as published by X\"\n+ link",
+       "tone": "ok"
+      },
+      {
+       "id": "ai",
+       "label": "Written by AI:\nsparkle + tooltip",
+       "tone": "ok"
+      }
+     ],
+     [
+      {
+       "id": "alt",
+       "label": "Another source:\nlabelled by origin",
+       "tone": "ink"
+      },
+      {
+       "id": "as",
+       "label": "Simple assembly:\nlabelled by origin",
+       "tone": "ink"
+      }
+     ]
+    ],
+    "edges": [
+     {
+      "from": "row",
+      "to": "v"
+     },
+     {
+      "from": "row",
+      "to": "ai"
+     },
+     {
+      "from": "row",
+      "to": "alt"
+     },
+     {
+      "from": "row",
+      "to": "as"
+     }
+    ],
+    "example": [
+     "Macros sit in a fold-out marked approximate."
+    ]
+   },
+   "slot": 2
+  },
+  "mp-243": {
+   "title": "Cooking mode shows one step per screen, with timers read from the step",
+   "question": "How does cooking mode work on the phone?",
+   "decision": "Cooking mode has three parts: an overview, one big step per screen, and a done screen that asks for a thumbs up or down. The athlete moves by swiping, by tapping large zones or with Back and Next, and the screen stays awake only while they cook. Up to three timers per step are read from the step's own words, run side by side and keep running when the athlete moves on; a finished timer sends a notification and a vibration, with the ringing chip on screen as the fallback and no sound, and waving a hand over the phone to move on works only on phones. Example: a step reads \"simmer for 10 to 12 minutes\", so its chip sets a 12-minute timer, which keeps running while the athlete reads the next step and buzzes the phone when it ends.",
+   "details": "Precisely:\n1. Three phases: an overview, one big step per screen, then a done screen that asks for a thumb vote. Steps move by swipe, oversized tap zones, and Back and Next. The wake lock is held only during the cooking phase.\n2. Timer chips are parsed from each step's text, at most three per step. Timers run at the same time and keep running when the athlete moves on.\n3. A finished timer fires a local notification and a vibration. The ringing chip on screen is the fallback. No audio.\n4. Wave-to-advance over the proximity sensor exists only on phones.\n\nA duration must be between 5 seconds and 12 hours. A range takes its upper bound. Timers tick once a second.",
+   "diagram": {
+    "kind": "timeline",
+    "title": "What we decided: one step per screen, timers from the text",
+    "steps": [
+     {
+      "at": "Overview",
+      "label": "Screen may sleep",
+      "tone": "muted"
+     },
+     {
+      "at": "Step 3",
+      "label": "\"Simmer for 10 to 12 minutes\".\nChip sets 12 min (a range takes the top).\nScreen stays awake",
+      "tone": "accent"
+     },
+     {
+      "at": "Step 4",
+      "label": "Athlete moves on; the timer keeps running",
+      "tone": "ink"
+     },
+     {
+      "at": "12 min",
+      "label": "Notification + vibration, chip rings.\nNo sound",
+      "tone": "ok"
+     },
+     {
+      "at": "Done",
+      "label": "Done screen asks for a thumb vote",
+      "tone": "ok"
+     }
+    ],
+    "example": [
+     "At most three timers per step, 5 seconds to 12 hours each."
+    ]
+   },
+   "slot": 2
+  },
+  "mp-244": {
+   "title": "The server builds the shopping list at confirm and after every edit",
+   "question": "Where is the shopping list built, and what does the Shopping tab show?",
+   "decision": "The server adds up the list by fixed rules when the athlete confirms, Confirm waits until the server says it is done, and the list is rebuilt after every plan edit; the phone never works it out itself. The tab shows nine aisle groups, each row with a checkbox and a quantity, in imperial units unless Settings says metric; a row used by more than one meal carries a count that opens a list of those meals, which is also the way back to their recipes. Items marked as had are hidden and only Vana's \"Add back\" brings them back; there is no per-row \"have it\" switch and no pickup button, and Share sends plain text. Example: two meals in the plan both use onions, so the list shows one onion row with a count of 2 in imperial units, and tapping the count lists both meals and leads back to either recipe.",
+   "details": "Precisely:\n1. The list is aggregated deterministically on the server at confirm, and confirm waits for the server's acknowledgement. It is rebuilt after every plan edit. The device never computes it.\n2. Nine aisle groups. Each row has a checkbox and a quantity. A row from more than one meal carries a count badge that opens a sheet listing those meals. Share sends plain text. No pickup button.\n3. Quantities render imperial unless Settings says metric, on screen and in the shared text.\n4. Items marked as had are filtered out and only Vana's \"Add back\" restores them. There is no per-row \"have it\" toggle. That toggle is logged as an open question.\n5. Each row can tap back to the recipe or recipes it came from, through the count-badge sheet every multi-meal row already has, so no new control is added.\n\nPlans confirmed before a change keep their old quantities until reconfirmed. Always-have items match on whole phrases, and catalog rows with a blank quantity get a default.",
+   "diagram": {
+    "kind": "flow",
+    "title": "What we decided: one builder, on the server",
+    "rows": [
+     [
+      {
+       "id": "conf",
+       "label": "Confirm",
+       "tone": "accent"
+      },
+      {
+       "id": "edit",
+       "label": "Any plan edit",
+       "tone": "accent"
+      }
+     ],
+     [
+      {
+       "id": "srv",
+       "label": "Server builds the list.\nConfirm waits for it",
+       "tone": "ok"
+      }
+     ],
+     [
+      {
+       "id": "tab",
+       "label": "Shopping tab: 9 aisle groups,\ncheckbox + quantity,\nimperial unless metric",
+       "tone": "ink"
+      }
+     ],
+     [
+      {
+       "id": "badge",
+       "label": "Row from 2+ meals: count\nopens those meals\nand their recipes",
+       "tone": "ink"
+      }
+     ]
+    ],
+    "edges": [
+     {
+      "from": "conf",
+      "to": "srv"
+     },
+     {
+      "from": "edit",
+      "to": "srv",
+      "label": "rebuild"
+     },
+     {
+      "from": "srv",
+      "to": "tab"
+     },
+     {
+      "from": "tab",
+      "to": "badge"
+     }
+    ],
+    "example": [
+     "The phone never computes the list.",
+     "Had items hidden; only Vana's \"Add back\" restores them."
+    ]
+   },
+   "slot": 2
+  }
+ },
+ "terms": [
+  {
+   "term": "Draft",
+   "area": "Planning meals",
+   "definition": "The meal plan being built in a planning conversation, before it is confirmed. Ticked meals go into it, the plan bar shows it, and it becomes the athlete's plan only at Confirm.",
+   "avoid": "Draft plan; active week plan (that is the confirmed plan on the phone)"
+  },
+  {
+   "term": "Batch cooking",
+   "area": "Planning meals",
+   "definition": "Cooking a few meals at one sitting, a cooking session, and eating them across the plan's period. It is a setting Vana asks about once and Settings can change; when it is off, each meal is made the night it is eaten.",
+   "avoid": "Meal prep"
+  },
+  {
+   "term": "Staples",
+   "area": "Planning meals",
+   "definition": "Foods an athlete eats again and again, such as breakfast and snacks. They are suggested from the athlete's own logs and enter a plan only when the athlete ticks them."
+  }
+ ]
+}

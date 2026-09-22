@@ -1,0 +1,210 @@
+{
+ "cards": {
+  "mp-420": {
+   "title": "Vana's prompt is cached in two parts, so a plan change keeps the tools and persona",
+   "question": "How does Vana use the prompt cache, and should a brand-new conversation read from it too?",
+   "context": "Every turn sends Vana's whole prompt to the model: the tools, the persona, the Context block and the conversation so far. The prompt cache bills a part the model has already seen at a tenth of the price. Lee approved caching in mp-276 and ticket 13 built it; on dev, turn one of a conversation sent about 10,900 tokens and later turns about 6,000, most of it read from the cache. The first turn of every new conversation still reads nothing from the cache.",
+   "decision": "The prompt cache is on for every Vana call, and the Context block is kept on the conversation and rebuilt only on a new day or when the athlete changes something through Vana; anything that changes every message, such as the screen in view, rides on the athlete's message instead. Still to build: the tools and persona, which are the same for every athlete, get a cache marker of their own, so a new conversation can read them from the cache and a plan change no longer throws them away. A replayed conversation will be sent exactly as it was the first time, the call log will record what October's traffic needs to set the numbers, and the opener's 3.5-second start test stays as it is. Example: today a planning turn reads only 43% of its input from the cache, because every plan change rebuilds the Context block and discards the 12,000 tokens of tools and persona with it; with their own marker that turn drops from about 3.2 cents to about 1.2 cents.",
+   "details": "Precisely:\n1. Caching is switched on for every Vana call in Anthropic's automatic mode, and the call log records cached tokens. (mp-311) [built]\n2. The athlete context is stored on the conversation and rebuilt only on a new day or when the athlete changes something through Vana. (mp-311) [built]\n3. Anything that changes every message (the screen the athlete is on, the entity in view) rides on the athlete's message, never in the system prompt. A screen gets its \"in view\" section by adding one row to the server's screen table. (mp-312, mp-359) [built]\n4. The tools and persona, which are the same for every athlete, get their own cache breakpoint, and the athlete context gets a second one. Today a planning turn reads only 43% of its input from the cache, because every plan change rebuilds the context and throws away the 12,000 tokens of tools and persona with it. (mp-316) [to build]\n5. A replayed conversation is byte-for-byte what was sent the first time: the screen line and the opener's hidden first message are stored with the transcript. Today they are not, so each new turn misses the cache written by the last. [to build]\n6. The call log also records cache-write tokens, the number of model steps, the gateway's own charge and whether the turn cost a credit, so October's real traffic can set the numbers. [to build]\n7. The opener's start-time test stays at 3.5 seconds. The way to tighten it is a faster context build, not a looser test. (mp-353) [no work]\n\nAudit 2026-09-20, dev, last 30 days: cache read share 43% on planning turns, 65% on planning openers, 52% on general openers. Dev conversation 614dbee6: turn 1 input 10,886, cache read 4,980; turn 2 input 6,075, cache read 4,980; turn 3 input 6,123, cache read 6,072. Migration 20260915120000 added context, context_day and cache_read_tokens. The cost report of 2026-09-20 has the full audit.",
+   "diagram": {
+    "kind": "timeline",
+    "title": "What we decided: two cache markers per conversation",
+    "steps": [
+     {
+      "at": "Turn 1",
+      "label": "Athlete opens Vana. The Context block is\nbuilt and stored on the conversation",
+      "tone": "ink"
+     },
+     {
+      "at": "Every call",
+      "label": "Tools and persona sit under one cache\nmarker, the Context block under a second",
+      "tone": "accent"
+     },
+     {
+      "at": "Turn 2",
+      "label": "Athlete moves to another screen. The\nscreen line rides on their message; the\nsystem prompt does not change",
+      "tone": "ok"
+     },
+     {
+      "at": "Plan change",
+      "label": "Athlete swaps a dinner through Vana. Only\nthe Context block is rebuilt; the tools\nand persona marker stays",
+      "tone": "ok"
+     },
+     {
+      "at": "Next turn",
+      "label": "The conversation is replayed byte for byte,\nwith the stored screen line and the\nopener's hidden first message",
+      "tone": "ok"
+     },
+     {
+      "at": "Next day",
+      "label": "A new day: the Context block is rebuilt",
+      "tone": "muted"
+     }
+    ]
+   }
+  },
+  "mp-462": {
+   "title": "The Gate and the paywall are tested through the real code behind them, with a fake store and scheduler",
+   "question": "Where are the Gate's answers, the founding prices and the reminder tested?",
+   "decision": "Through the real Gate and paywall notifiers (the code that holds each screen's state and rules), with a fake subscription service and a fake notification scheduler, as their tests work today. The cases: open, lapsed (held `pro` once, now ended) and never, from fake customer details; the founding Offering shows both prices and the regular one a single price; a purchase that starts a Trial schedules the reminder at the right time, and a Trial that will not renew cancels it; a write while lapsed opens the paywall instead of writing. Example: fake customer details describe an account that held `pro` once and lost it; the test checks the Gate answers lapsed, and that saving a change opens the paywall and writes nothing.",
+   "details": "Precisely:\n1. Through the real gate and paywall notifiers, with a fake subscription service and a fake notification scheduler, the way the gate and paywall controller tests work today.\n2. Cases: open, lapsed and never from fake customer info; the founding offering shows both prices and the default offering one; a purchase that starts a trial schedules the reminder at the right time, and a trial that will not renew cancels it; a write while lapsed opens the paywall instead of writing.",
+   "diagram": {
+    "kind": "timeline",
+    "title": "If each paywall state had a saved-image test (rejected)",
+    "steps": [
+     {
+      "at": "Test",
+      "label": "The lapsed paywall matches its\nsaved screenshot",
+      "tone": "ok"
+     },
+     {
+      "at": "Gap",
+      "label": "Whether a write while lapsed opens\nthe paywall is never checked",
+      "tone": "no"
+     }
+    ]
+   },
+   "diagram2": {
+    "kind": "timeline",
+    "title": "What we decided: through the notifiers",
+    "steps": [
+     {
+      "at": "Setup",
+      "label": "Fake customer details:\nheld pro once, now ended",
+      "tone": "ink"
+     },
+     {
+      "at": "Gate",
+      "label": "The real Gate notifier answers lapsed",
+      "tone": "ok"
+     },
+     {
+      "at": "Write",
+      "label": "A save opens the paywall\nand writes nothing",
+      "tone": "ok"
+     }
+    ]
+   }
+  },
+  "mp-465": {
+   "question": "Which model runs which job, and which jobs move to the cheapest one?",
+   "decision": "Vana's conversation and openers stay on Haiku 4.5, and the described meal and the meal photo stay on Sonnet; the 50-meal test and the move of meal logging off Sonnet are not built now. Three background jobs move to the cheapest model in the gateway's catalogue that gives the same structured answer on 20 stored dev conversations, checked by hand: the Extraction when a conversation goes idle, the rolling conversation summary, and the ingredient list for a saved meal. Day notes stay on Haiku, the Formula Kit coach insight's route is removed because nothing in the app calls it, and no helper model is called from inside a Vana turn for now. Example: the Extraction averages 33 tokens out, so a cheaper model there changes nothing the athlete reads; the 50-meal test Lee put off was worth about 40 to 57 cents per athlete a month.",
+   "details": "Precisely:\n1. Vana's conversation and openers stay on Haiku 4.5. [no work]\n2. The described meal and the meal photo stay on Sonnet. The 50-meal test and the move off Sonnet are not built now. [no work]\n3. Three background jobs that write no words the athlete reads move to the cheapest model in the gateway's catalogue that returns the same structured answer on 20 stored dev conversations, checked by hand: the memory extraction when a conversation goes idle, the rolling conversation summary, and the ingredient list for a saved meal. [to build]\n4. The Formula Kit coach insight has no caller in the app. Its route is removed instead of moved to a cheaper model. [to build]\n5. Day notes stay on Haiku. They are in Vana's voice, and the saving there is running them less often, which the spec already covers. [no work]\n6. No helper model is called from inside a Vana turn for now. [no work]\n\nEach of the three jobs already has a seam where the model is passed in, and one setting names their model today (Haiku 4.5). Embeddings are already the cheapest call in the system (about $0.0000003 each) and stay.",
+   "diagram": {
+    "kind": "timeline",
+    "title": "If meal logging moved off Sonnet now (rejected)",
+    "steps": [
+     {
+      "at": "Now",
+      "label": "Build a 50-meal test to find a cheaper\nmodel for the described meal and photo",
+      "tone": "no"
+     },
+     {
+      "at": "Then",
+      "label": "Athlete describes a meal: the cheapest\nmodel that passed reads it",
+      "tone": "no"
+     },
+     {
+      "at": "Saving",
+      "label": "About 40 to 57 cents per athlete a month,\nfor a model the athlete's meals depend on",
+      "tone": "muted"
+     }
+    ]
+   },
+   "diagram2": {
+    "kind": "timeline",
+    "title": "What we decided: only jobs nobody reads move",
+    "steps": [
+     {
+      "at": "Chat",
+      "label": "Athlete talks to Vana: Haiku 4.5",
+      "tone": "ok"
+     },
+     {
+      "at": "Log a meal",
+      "label": "Athlete describes a meal or sends a photo:\nstill Sonnet",
+      "tone": "ok"
+     },
+     {
+      "at": "Long chat",
+      "label": "The rolling summary of older messages:\nthe cheapest model that matched",
+      "tone": "accent"
+     },
+     {
+      "at": "Saved meal",
+      "label": "A saved meal joins the plan. Its\ningredient list: the cheapest model\nthat matched",
+      "tone": "accent"
+     },
+     {
+      "at": "Goes idle",
+      "label": "The conversation goes idle. Extraction:\nthe cheapest model that matched",
+      "tone": "accent"
+     }
+    ],
+    "example": [
+     "Matched = the same structured answer",
+     "on 20 stored dev conversations, checked by hand"
+    ]
+   }
+  },
+  "mp-525": {
+   "question": "How are the two meal-logging calls shaped, and what does the app get back?",
+   "decision": "Each meal-logging call, the described meal and the meal photo, sends its own fixed instructions first, cached for an hour, with the athlete's text or photo as the only message, so two different meals send identical instructions. The function adds up the items itself and ignores any total the model gives. A meal, described or photographed, that is not food comes back as a not-food code, never as the server's own words, and the app shows one short warning line from the content system; a missing meal slot or confidence gets a default (snack, medium) instead of an error. Photos are capped at 1,000 px on both sides when they are picked, and both calls stay on Sonnet. Example: on dev the same scene sent landscape at 1000×750 and portrait at 750×1000 both cost 2,368 input tokens; under the old width-only cap the portrait went at 1000×1333 and cost 2,960, 25% more.",
+   "why": "The fixed instructions sit where the provider puts the cache marker anyway, and the SDK warns against putting them inside the messages. Shrinking the photo when it is picked avoids re-encoding it on the app's main thread and any risk of the photo turning the wrong way.",
+   "details": "Precisely:\n1. The fixed instructions go in the SDK's system slot with a one-hour cache marker; the athlete's text or photo is the only user message. Two different meals send byte-identical instructions.\n2. The model is asked not to compute totals. Its `totals` field stays optional and is ignored; the function sums the items.\n3. Not food is a code, `not_food`, at the same 422 status the functions already used, never prose from the server. The app's one line comes from the content system and shows as a warning, not an error. An older installed build shows its own line.\n4. A missing `suggested_slot` or `confidence` gets a default (snack, medium) rather than a 500.\n5. Photos are capped at 1,000 px on both axes at the picker, one shared constant, so portrait and landscape cost the same. The two Vana pickers (attach sheet, fridge photo) had the same width-only cap and got the same fix.\n6. Both models stay Sonnet.\n\nDev, Sonnet 4.6, one synthetic scene: landscape 1000×750 = 2,368 input tokens, portrait 750×1000 = 2,368 (0% apart); the old width-only cap sent portrait at 1000×1333 = 2,960, 25% more. Both functions answered 422 `not_food` live.",
+   "diagram": {
+    "kind": "flow",
+    "title": "What we decided: one meal analysis, end to end",
+    "rows": [
+     [
+      {
+       "id": "pick",
+       "label": "Athlete types a meal, or picks\na photo capped at 1,000 px\non both sides",
+       "tone": "ink"
+      }
+     ],
+     [
+      {
+       "id": "send",
+       "label": "The call's fixed instructions,\ncached 1 hour, then the text\nor photo as the only message",
+       "tone": "accent"
+      }
+     ],
+     [
+      {
+       "id": "food",
+       "label": "Sonnet lists the items; the\nfunction adds them up; a missing\nslot or confidence: snack, medium",
+       "tone": "ok"
+      },
+      {
+       "id": "nf",
+       "label": "Not food: code not_food\n(422); the app shows one\nwarning line",
+       "tone": "no"
+      }
+     ]
+    ],
+    "edges": [
+     {
+      "from": "pick",
+      "to": "send"
+     },
+     {
+      "from": "send",
+      "to": "food",
+      "label": "food"
+     },
+     {
+      "from": "send",
+      "to": "nf",
+      "label": "not food"
+     }
+    ],
+    "example": [
+     "Portrait 750×1000 and landscape 1000×750:",
+     "2,368 input tokens each on dev"
+    ]
+   }
+  }
+ },
+ "terms": []
+}

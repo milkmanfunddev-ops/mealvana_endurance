@@ -1,0 +1,651 @@
+{
+ "cards": {
+  "mp-043": {
+   "question": "How does the server learn what is on the athlete's screen?",
+   "context": "When the athlete opens Vana from a screen and asks \"is this enough\", \"this\" means whatever is on that screen: a ride, a meal, a day. The server has to learn what that is. Three ways were open: store the current screen on the server as the athlete moves, let the app write a sentence about it, or let the app send only ids.",
+   "decision": "The app sends only ids with each message: the route, meaning the name of the screen, plus the id of the main thing on it, the date and the meal slot. The server turns those ids into one sentence for Vana. The app never sends names or free text, and nothing is written to any table. Example: an athlete looking at a meal of two bagels asks Vana \"is this enough?\"; the message carries the meal detail route and that meal's id, the server looks the meal up and writes one sentence naming it, and nothing about the screen is saved.",
+   "details": "Precisely:\n1. The client sends the route plus the primary entity id, date and slot with each message.\n2. The server resolves those ids into one sentence.\n3. Clients never send names or free text, and nothing is written to any table.",
+   "why": "Vana answers about what is in front of the athlete, and the app neither leaks nor stores what is on the screen.",
+   "diagram": {
+    "kind": "timeline",
+    "title": "If the server stored the screen (rejected)",
+    "steps": [
+     {
+      "at": "12:00",
+      "label": "Opens the bagel meal. The server saves\n\"on screen: bagel meal\" in a table",
+      "tone": "ink"
+     },
+     {
+      "at": "12:01",
+      "label": "Phone offline. Moves to the Plan tab;\nthe saved row still says bagel meal",
+      "tone": "no"
+     },
+     {
+      "at": "12:02",
+      "label": "Asks \"is this enough?\" about the Plan tab.\nVana answers about the bagel meal",
+      "tone": "no"
+     }
+    ]
+   },
+   "diagram2": {
+    "kind": "timeline",
+    "title": "What we decided: ids with each message, nothing saved",
+    "steps": [
+     {
+      "at": "12:00",
+      "label": "Opens the bagel meal",
+      "tone": "ink"
+     },
+     {
+      "at": "12:01",
+      "label": "Asks \"is this enough?\". The message carries\nthe meal detail route and the meal's id",
+      "tone": "accent"
+     },
+     {
+      "at": "12:01",
+      "label": "The server looks the id up and writes\none sentence naming the meal. No table",
+      "tone": "ok"
+     },
+     {
+      "at": "12:01",
+      "label": "Vana answers about the bagel meal",
+      "tone": "ok"
+     }
+    ]
+   }
+  },
+  "mp-044": {
+   "question": "Which screens tell Vana what is on them, and which only say where the athlete is?",
+   "decision": "Fifteen screens name the thing in view: the Plan tab sends the date and the plan, meal detail the meal, the fuel log and the session plan the activity, the event screens the event, the meal-log screens the date and the meal slot, and the main tabs the date. Every other screen, Settings among them, sends its route alone. Example: asked from the fuel log of a ride, the message to Vana carries that ride's activity id; asked from Settings, it carries only the Settings route.",
+   "details": "Precisely:\n1. The Plan tab sends date and plan.\n2. Meal detail sends the meal.\n3. Fuel log and session plan send the activity.\n4. Event screens send the event.\n5. Meal-log screens send date and slot.\n6. The main tabs send the date.\n7. Every other screen sends its route alone.",
+   "diagram": {
+    "kind": "flow",
+    "title": "What each screen sends with a message",
+    "rows": [
+     [
+      {
+       "id": "plan",
+       "label": "Plan tab:\ndate + plan",
+       "tone": "ok"
+      },
+      {
+       "id": "meal",
+       "label": "Meal detail:\nthe meal",
+       "tone": "ok"
+      },
+      {
+       "id": "fuel",
+       "label": "Fuel log, session\nplan: the activity",
+       "tone": "ok"
+      }
+     ],
+     [
+      {
+       "id": "event",
+       "label": "Event screens:\nthe event",
+       "tone": "ok"
+      },
+      {
+       "id": "log",
+       "label": "Meal-log screens:\ndate + slot",
+       "tone": "ok"
+      },
+      {
+       "id": "tabs",
+       "label": "Main tabs:\nthe date",
+       "tone": "ok"
+      }
+     ],
+     [
+      {
+       "id": "rest",
+       "label": "Every other screen, e.g. Settings:\nits route alone",
+       "tone": "muted"
+      }
+     ]
+    ],
+    "edges": [],
+    "example": [
+     "Fifteen screens name what is in view; the rest send only their route."
+    ]
+   }
+  },
+  "mp-045": {
+   "question": "When a route says \"plan\", which plan does it mean?",
+   "decision": "Two things in the app are called a plan. The routes named plan and current plan belong to the session screen, so they point at the activity's fuel plan. The meal-planning Plan tab is the Food tab's route with its Plan segment selected. Example: an athlete on the session screen for a ride asks Vana a question, and Vana is told about that ride's fuel plan, not the week's meal plan.",
+   "details": "Precisely:\n1. The routes named `plan` and current plan resolve to an activity's fuel plan.\n2. The meal-planning Plan tab is the food route with the plan tab selected.\n3. This corrects the spec's screen table, which had the two routes the wrong way round.",
+   "diagram": {
+    "kind": "flow",
+    "title": "Which route means which plan",
+    "rows": [
+     [
+      {
+       "id": "r1",
+       "label": "Route plan or\ncurrent plan",
+       "tone": "ink"
+      },
+      {
+       "id": "s1",
+       "label": "Session screen:\nthe activity's fuel plan",
+       "tone": "ok"
+      }
+     ],
+     [
+      {
+       "id": "r2",
+       "label": "Food route with\nthe Plan tab selected",
+       "tone": "ink"
+      },
+      {
+       "id": "s2",
+       "label": "Plan tab:\nthe meal plan",
+       "tone": "ok"
+      }
+     ]
+    ],
+    "edges": [
+     {
+      "from": "r1",
+      "to": "s1"
+     },
+     {
+      "from": "r2",
+      "to": "s2"
+     }
+    ],
+    "example": [
+     "On a ride's session screen, Vana is told about the ride's fuel plan."
+    ]
+   }
+  },
+  "mp-046": {
+   "title": "A screen's report counts only while that screen is on top",
+   "question": "How long does what a screen told Vana keep counting?",
+   "decision": "Only while that screen is on top. The app keeps track of which screen is on top, and a screen's report of what is in view is used only then; anywhere else the Situation is the route alone. When the athlete comes back to a screen, it reports again. Example: an athlete opens meal A, then meal B, then goes back, and Vana is told about meal A again; from Settings, which reports nothing, she is told only the Settings route, not the fuel log the athlete just left.",
+   "details": "Precisely:\n1. The host tells the controller which route is on top.\n2. A scoped report is used only while that route is on top.\n3. Anywhere else the Situation is the route alone.\n4. A scope reports again when its route comes back, so meal A to meal B and back reads as A again.",
+   "diagram": {
+    "kind": "timeline",
+    "title": "What we decided: a report ends when its screen does",
+    "steps": [
+     {
+      "at": "First",
+      "label": "On a ride's fuel log.\nVana is told: this ride",
+      "tone": "ok"
+     },
+     {
+      "at": "Then",
+      "label": "Goes to Settings, which reports nothing.\nVana is told: the Settings route alone",
+      "tone": "accent"
+     },
+     {
+      "at": "Later",
+      "label": "Meal A, then meal B, then back.\nVana is told: meal A again",
+      "tone": "ok"
+     }
+    ]
+   },
+   "slot": 2
+  },
+  "mp-047": {
+   "title": "The frame around the main tabs reports each tab, and a tab's own report wins",
+   "question": "Who tells Vana which main tab the athlete is on?",
+   "context": "Timeline, Food, Learn and the other main tabs all share one route, and switching tabs does not change it. So the rule that a report counts only while its route is on top (mp-046) could not tell Food from Learn, and moving from Food to Learn left Food speaking.",
+   "decision": "The tab shell, the frame that holds the main tabs, reports each tab as the athlete switches to it. A tab that reports something of its own, such as the Plan tab, reports after the shell, and its report wins. Example: an athlete moves from Food to Learn and Vana is told Learn, where before Food kept speaking.",
+   "details": "Precisely:\n1. The tab shell reports for each main tab as the athlete switches.\n2. A tab with its own scope, such as the Plan tab, reports after the shell and wins.",
+   "diagram": {
+    "kind": "timeline",
+    "title": "What we decided: the shell reports, the tab's own report wins",
+    "steps": [
+     {
+      "at": "First",
+      "label": "On Food. The shell reports Food",
+      "tone": "ok"
+     },
+     {
+      "at": "Then",
+      "label": "Switches to Learn. The shell reports Learn;\nFood no longer speaks",
+      "tone": "accent"
+     },
+     {
+      "at": "Later",
+      "label": "Switches to the Plan tab. The shell reports,\nthen the Plan tab reports and wins",
+      "tone": "ok"
+     }
+    ]
+   },
+   "slot": 2
+  },
+  "mp-048": {
+   "title": "The last screen keeps speaking for 30 minutes, and Vana's own screens say nothing",
+   "question": "What happens to the Situation when the athlete opens Vana?",
+   "context": "Opening Vana means leaving the screen you want to ask about: the sheet and the full-screen chat are screens of their own. If Vana's screens reported themselves, every question would be about Vana. If a report lived forever, an hour-old screen could answer a question about today.",
+   "decision": "Opening Vana does not clear it. Vana's sheet and full-screen chat report nothing, so the screen the athlete opened Vana from keeps speaking. A report older than 30 minutes stops counting, so an hour-old screen cannot answer a question about today. Example: at 07:00 an athlete on a ride's fuel log opens the sheet and asks \"is this enough?\", and Vana is told about that ride; at 08:00, with no screen reporting since, that report no longer counts.",
+   "details": "Precisely:\n1. Opening a Vana route (the sheet or the full-screen chat) does not clear the Situation.\n2. Vana routes report nothing.\n3. A 30-minute staleness cut-off stops an hour-old screen answering.",
+   "diagram": {
+    "kind": "timeline",
+    "title": "If every screen change cleared it (rejected)",
+    "steps": [
+     {
+      "at": "07:00",
+      "label": "On a ride's fuel log",
+      "tone": "ink"
+     },
+     {
+      "at": "07:01",
+      "label": "Opens Vana's sheet: a screen change.\nThe ride's report is cleared",
+      "tone": "no"
+     },
+     {
+      "at": "07:01",
+      "label": "Asks \"is this enough?\".\nVana does not know which ride",
+      "tone": "no"
+     }
+    ]
+   },
+   "diagram2": {
+    "kind": "timeline",
+    "title": "What we decided: Vana says nothing, 30-minute limit",
+    "steps": [
+     {
+      "at": "07:00",
+      "label": "On a ride's fuel log",
+      "tone": "ink"
+     },
+     {
+      "at": "07:01",
+      "label": "Opens Vana's sheet. It reports nothing,\nso the ride keeps speaking",
+      "tone": "ok"
+     },
+     {
+      "at": "07:01",
+      "label": "Asks \"is this enough?\".\nVana answers about the ride",
+      "tone": "ok"
+     },
+     {
+      "at": "08:00",
+      "label": "No screen has reported since.\nThe hour-old report no longer counts",
+      "tone": "accent"
+     }
+    ]
+   }
+  },
+  "mp-422": {
+   "title": "Vana repeats the formula editor's carb total, and the editor sends its draft as fixed fields",
+   "question": "What do the formula editor and the Plan tab tell Vana, and whose carb total does she use?",
+   "decision": "The formula editor sends its unsaved draft as a fixed set of fields with foods as ids, and the server looks the names up in the athlete's own foods. Vana is handed the editor's own carb total and repeats it, never adding it up herself, and a draft that only has its sub-phase, duration or activity set is described by those, not called empty. The Plan tab tells her about the day on screen plus one line on the week's servings left, and her standing instructions name that part of her notes in one sentence. Example: on the simulator the editor showed 133 g of carbs for an edited bagel formula and Vana said 142 g; with clause 3 built she says 133 g.",
+   "details": "Precisely:\n1. The formula editor sends its draft as fixed fields only: phase, sub-phase, durations, activities, component ids with quantities, and a name of at most 40 characters. A draft from any other screen is dropped without an error. (mp-385, mp-396) [built]\n2. The server looks the component names up from the athlete's own foods. The app sends ids, never names. (mp-385) [built]\n3. The formula section carries the editor's own carb total. Vana repeats that number and never adds it up herself, so the two can never disagree. (mp-386, mp-393) [to build]\n4. A draft that has a scope (a sub-phase, a duration or an activity) is described by that scope, not called empty. (mp-403) [to build]\n5. The Plan tab's section speaks for the day on screen, plus one line on the week's servings left. (mp-371) [to build]\n6. The persona names the in-view section in one sentence, the way it names the Situation. (mp-370) [to build]",
+   "diagram": {
+    "kind": "flow",
+    "title": "What we decided: Vana repeats the editor's number",
+    "rows": [
+     [
+      {
+       "id": "d",
+       "label": "Draft: phase, sub-phase,\ndurations, activities,\nfood ids + amounts, name",
+       "tone": "ink"
+      },
+      {
+       "id": "s",
+       "label": "Server looks the\nnames up in the\nathlete's own foods",
+       "tone": "ink"
+      }
+     ],
+     [
+      {
+       "id": "f",
+       "label": "Formula section carries\nthe editor's carb total:\n133 g",
+       "tone": "accent"
+      },
+      {
+       "id": "v",
+       "label": "Vana says 133 g.\nShe never adds it up",
+       "tone": "ok"
+      }
+     ]
+    ],
+    "edges": [
+     {
+      "from": "d",
+      "to": "s"
+     },
+     {
+      "from": "s",
+      "to": "f"
+     },
+     {
+      "from": "f",
+      "to": "v"
+     }
+    ],
+    "example": [
+     "Simulator: editor 133 g, Vana 142 g. Clause 3 closes that gap."
+    ]
+   },
+   "slot": 2
+  },
+  "mp-223": {
+   "question": "What makes Vana speak first?",
+   "context": "A moment is Vana speaking first: the launcher rings, a pill shows a question, and the sheet opens on her already talking. Three sets of triggers were on the table. Meal-plan beats such as a cook check-in are decided on the server, which the launcher cannot ask without a call.",
+   "decision": "Only two windows: the pre-workout window before a planned workout today, and the recovery window after a finished endurance session of 60 minutes or more. The phone works both out from its own records, and meal-plan beats wait. Pre-workout speaks once its window has opened, while the workout has not started and no meal has been logged since the window opened; recovery speaks when nothing has been logged since the session, and never for strength or import-only sessions. Example: an athlete finishes an hour-long endurance run and logs nothing, so the pill asks \"Recovery fuel?\"; an hour of strength work raises nothing.",
+   "details": "Precisely:\n1. Only two windows raise a moment: the pre-workout window and the recovery window. Both are resolved on the device from local rows. Meal-plan beats and informational moments are deferred and the \"planning…\" pill is not built.\n2. Pre-workout raises for a planned, not-completed workout today whose window has opened and whose start has not passed, with no meal logged at or after the window opened. Import-only workouts raise nothing.\n3. Recovery raises for a completed endurance session of 60 minutes or more with nothing logged since. Strength and import-only sessions never do. The pill says \"Recovery fuel?\".\n4. The recovery moment stays live 4 hours when the next fuel-demanding session is under 8 hours away, else 2 hours. This is a reading of the SSOT's urgent and relaxed branches, not a ruling. Lee and Xuan have not ruled.",
+   "diagram": {
+    "kind": "timeline",
+    "title": "What we decided: two windows, worked out on the phone",
+    "steps": [
+     {
+      "at": "Before the run",
+      "label": "Window open, run not started,\nno meal logged: \"Fuel tonight's run?\"",
+      "tone": "accent"
+     },
+     {
+      "at": "Run starts",
+      "label": "Its start has passed:\nno pre-workout moment now",
+      "tone": "muted"
+     },
+     {
+      "at": "After the run",
+      "label": "An hour of endurance, nothing logged:\n\"Recovery fuel?\"",
+      "tone": "accent"
+     },
+     {
+      "at": "Any day",
+      "label": "Strength or import-only sessions:\nnothing",
+      "tone": "muted"
+     }
+    ]
+   },
+   "slot": 2
+  },
+  "mp-224": {
+   "title": "A workout's window comes from its own minutes or the app's default, and a session ends at start plus duration",
+   "question": "How long is a workout's window, and when did a session end?",
+   "context": "The pre-workout window's length varies by workout, and the app already has one place that owns it, the fuelling window authority. A session's end has to be worked out from a row where marking it done and Garmin write different things into the completed field.",
+   "decision": "The window is the workout's own stored pre-workout minutes, or else the default the fuelling window authority gives for its duration and intensity; a workout created close to its start has its window opening the minute it is created, and the phone sends the window to the server so Vana names the same one. A session ends at its actual start, else its scheduled start, plus its actual duration, else its planned one. The completed time is never read. Example: a ride scheduled for 07:00 and planned at 90 minutes that Garmin records as starting at 07:10 and lasting 100 minutes ends at 08:50.",
+   "details": "Precisely:\n1. The resolver reads the workout's stored pre-workout minutes and falls back to the authority's default from duration and intensity. A workout created close to its start is clamped so its window opens the minute it is created. The device sends the window to the server so Vana names the same one.\n2. A session's end is the actual start, else the scheduled start, plus the actual duration, else the planned duration. The completed timestamp is never read.",
+   "why": "The fuelling window authority already owns the number, and the completed field means different things depending on whether the athlete marked the session done or Garmin filled it.",
+   "diagram": {
+    "kind": "timeline",
+    "title": "If the end were the completed time (rejected)",
+    "steps": [
+     {
+      "at": "07:10",
+      "label": "Garmin: the ride starts, 100 minutes",
+      "tone": "ink"
+     },
+     {
+      "at": "08:50",
+      "label": "The ride really ends",
+      "tone": "ink"
+     },
+     {
+      "at": "Recovery",
+      "label": "End read from the completed field,\nwhich marking done and Garmin fill\ndifferently: may not be 08:50",
+      "tone": "no"
+     }
+    ]
+   },
+   "diagram2": {
+    "kind": "timeline",
+    "title": "What we decided: start plus duration",
+    "steps": [
+     {
+      "at": "07:00",
+      "label": "Scheduled start; planned 90 minutes",
+      "tone": "muted"
+     },
+     {
+      "at": "07:10",
+      "label": "Garmin: actual start, actual 100 minutes",
+      "tone": "ink"
+     },
+     {
+      "at": "08:50",
+      "label": "End = 07:10 + 100 minutes.\nThe completed field is never read",
+      "tone": "ok"
+     }
+    ]
+   }
+  },
+  "mp-225": {
+   "title": "The launcher rings, then the pill shows, then the launcher stays tinted",
+   "question": "In what order does the athlete see the ring, the pill and the tinted launcher?",
+   "decision": "One after another. The launcher rings, then the pill with Vana's question shows for a few seconds, then the launcher stays tinted orange until the moment ends; the pill never opens during the ring, and with reduced motion on it skips straight to tinted with the pill. While the pill shows, the tab bar shrinks to its home button, and the two must not overlap on an iPhone SE. Example: before tonight's run the launcher rings for about 2 seconds, the 240 px pill asks \"Fuel tonight's run?\" for 4 seconds, then the launcher stays orange.",
+   "details": "Precisely:\n1. The launcher rings, then the pill shows for a few seconds, then the launcher stays tinted until the moment retires. The pill never opens during the ring. Reduced motion skips straight to tinted with the pill.\n2. While the pill shows, the tab bar collapses to its home button, and the two must not overlap at iPhone SE width.\n3. Ring about 2 s, pill 240 px for 4 s, then orange with a cream top highlight and the mark in blackberry.",
+   "diagram": {
+    "kind": "timeline",
+    "title": "What we decided: ring, then pill, then tinted",
+    "steps": [
+     {
+      "at": "0 s",
+      "label": "The launcher rings. No pill yet",
+      "tone": "accent"
+     },
+     {
+      "at": "About 2 s",
+      "label": "Pill, 240 px: \"Fuel tonight's run?\"\nThe tab bar shrinks to its home button",
+      "tone": "ok"
+     },
+     {
+      "at": "About 6 s",
+      "label": "Pill gone. The launcher stays orange\nuntil the moment ends",
+      "tone": "ink"
+     },
+     {
+      "at": "Reduced motion",
+      "label": "No ring: straight to tinted, with the pill",
+      "tone": "muted"
+     }
+    ]
+   },
+   "slot": 2
+  },
+  "mp-226": {
+   "title": "Vana speaks first at most twice a day, and never twice for the same thing",
+   "question": "How many times a day can a moment ring?",
+   "decision": "At most twice, and never twice for the same workout and window; once two have rung, a new moment is not raised at all, though one that already rang stays live. The phone stores each ring per person per day, so reopening the app or Garmin correcting a session's start does not ring it again. When a pre-workout and a recovery window are open at once, the one that closes sooner speaks. Example: an athlete with a morning run and an evening ride hears Vana before the run and after it; by the evening two have rung, so neither of the ride's moments is raised.",
+   "details": "Precisely:\n1. \"Rang for this workout and window\" is stored on the device per user per day, so a restart does not ring again. A raised moment waits for a launcher on screen before ringing.\n2. A recovery moment is keyed on the activity alone, with no time in it, so Garmin refining a marked-done session's start does not ring it again.\n3. At most two rings a day. Once two have rung, an unrung moment is not raised at all. A moment that already rang stays live.\n4. When a pre-workout and a recovery window overlap, the one that closes sooner speaks.\n5. The controller re-resolves every minute while either window is open, because a window can close with no row changing.",
+   "diagram": {
+    "kind": "timeline",
+    "title": "If there were no daily limit (rejected)",
+    "steps": [
+     {
+      "at": "Before the run",
+      "label": "Rings: fuel the run",
+      "tone": "ink"
+     },
+     {
+      "at": "After the run",
+      "label": "Rings: recovery",
+      "tone": "ink"
+     },
+     {
+      "at": "Before the ride",
+      "label": "Rings again: fuel the ride",
+      "tone": "no"
+     },
+     {
+      "at": "After the ride",
+      "label": "Rings a fourth time: recovery",
+      "tone": "no"
+     }
+    ]
+   },
+   "diagram2": {
+    "kind": "timeline",
+    "title": "What we decided: two rings a day",
+    "steps": [
+     {
+      "at": "Before the run",
+      "label": "Rings: fuel the run (1 of 2)",
+      "tone": "ok"
+     },
+     {
+      "at": "After the run",
+      "label": "Rings: recovery (2 of 2)",
+      "tone": "ok"
+     },
+     {
+      "at": "Before the ride",
+      "label": "Two have rung: not raised",
+      "tone": "muted"
+     },
+     {
+      "at": "After the ride",
+      "label": "Two have rung: not raised",
+      "tone": "muted"
+     }
+    ]
+   }
+  },
+  "mp-227": {
+   "title": "A moment opens in today's conversation and ends on a reply, a meal or the workout",
+   "question": "What happens when the athlete taps a moment, and what ends it?",
+   "decision": "Tapping the pill or the tinted launcher opens today's one conversation, even one that already has messages, on Vana's opener naming the session, its time and the window and ending in a choice of two options. Closing the sheet keeps the launcher tinted without a second ring; any reply after that opener answers the moment, and a meal logged in the window or the workout starting ends it. A moment that ends unanswered stays in the conversation with its two options drawn in place. Example: an athlete taps \"Fuel tonight's run?\", closes the sheet without replying and then logs a meal in the window, so the moment ends and Vana's question stays in the day's conversation with its two options.",
+   "details": "Precisely:\n1. The client sends the moment kind and activity id as an opener into the existing conversation, even mid-thread. The opener names the session, its time and the window, and ends in a choice with two options. Landing mid-thread is not a first turn, so there is no second feedback tip and no read-back.\n2. A moment starts a new exchange explicitly, so its quick replies show and the chip reads \"Fuel plan · to do\" even mid-thread.\n3. Dismissing the sheet leaves the launcher tinted with no second ring. Any send in the moment's exchange answers it. A meal logged in the window or the workout starting retires it on the next resolve.\n4. A retired, unanswered moment leaves its turn in the thread with its options drawn inline.",
+   "diagram": {
+    "kind": "timeline",
+    "title": "What we decided: one conversation, three ways to end",
+    "steps": [
+     {
+      "at": "Tap",
+      "label": "Pill \"Fuel tonight's run?\": today's\nconversation opens on Vana's question",
+      "tone": "accent"
+     },
+     {
+      "at": "Close",
+      "label": "Sheet closed, no reply: the launcher\nstays tinted, no second ring",
+      "tone": "ink"
+     },
+     {
+      "at": "Ends",
+      "label": "A reply, a meal logged in the window,\nor the run starting",
+      "tone": "ok"
+     },
+     {
+      "at": "Afterwards",
+      "label": "Unanswered: the question stays in the\nconversation with its two options",
+      "tone": "muted"
+     }
+    ]
+   },
+   "slot": 2
+  },
+  "mp-228": {
+   "title": "Urgent recovery names the next session, relaxed recovery sets no deadline",
+   "question": "What does Vana say when the athlete taps a recovery moment?",
+   "context": "The nutrition rules for after a workout (the SSOT post-workout spec) have an urgent and a relaxed branch, and forbid presenting the 2-hour protein anchor as a window. The launcher's design spec gives the recovery moment the orange to-do look, while the SSOT's relaxed badge reads \"with your next meal\".",
+   "decision": "It follows the two branches of the nutrition rules. Urgent names the next session and says to keep carbs coming through the next 4 hours; relaxed says there is no rush and gives no deadline, and with a session 8 to 24 hours away it leans \"earlier rather than later today\". Both mention 20 to 30 g of protein within a couple of hours, and both use the same orange launcher and \"Recovery fuel?\" pill, which is the current reading and not yet ruled. Example: on the relaxed branch with the next session 12 hours away, Vana says there is no rush, eat earlier rather than later today, and 20 to 30 g of protein within a couple of hours.",
+   "details": "Precisely:\n1. Urgent names the next session and says to keep carbs coming through the next 4 hours. Relaxed says there is no rush and gives no deadline; with a session 8 to 24 hours away it leans \"earlier rather than later today\". Both mention 20 to 30 g protein within a couple of hours.\n2. Relaxed recovery uses the same orange to-do and \"Recovery fuel?\" pill as urgent. This is the current reading, not a ruling. It could raise nothing, or raise a calmer news tone.",
+   "diagram": {
+    "kind": "flow",
+    "title": "What we decided: two openers, one look",
+    "rows": [
+     [
+      {
+       "id": "t",
+       "label": "Recovery moment tapped",
+       "tone": "ink"
+      }
+     ],
+     [
+      {
+       "id": "u",
+       "label": "Urgent: names the next\nsession; carbs through\nthe next 4 hours",
+       "tone": "accent"
+      },
+      {
+       "id": "r",
+       "label": "Relaxed: no rush, no\ndeadline; 8 to 24 h away:\n\"earlier rather than later\"",
+       "tone": "ok"
+      }
+     ],
+     [
+      {
+       "id": "b",
+       "label": "Both: 20 to 30 g protein within\na couple of hours; orange pill\n\"Recovery fuel?\" (not yet ruled)",
+       "tone": "ink"
+      }
+     ]
+    ],
+    "edges": [
+     {
+      "from": "t",
+      "to": "u"
+     },
+     {
+      "from": "t",
+      "to": "r"
+     },
+     {
+      "from": "u",
+      "to": "b"
+     },
+     {
+      "from": "r",
+      "to": "b"
+     }
+    ]
+   },
+   "slot": 2
+  },
+  "mp-229": {
+   "title": "Cook check-ins and week debriefs come as the opener on the next app open, not as moments",
+   "question": "Does Vana speak first about the meal plan, and how?",
+   "decision": "Not as a moment yet: cook check-in and week debrief moments wait until the two fuelling moments have been lived with; still open are how often to ask the server, what happens offline, and whether a plan moment may take one of the day's two rings. Until then Vana brings them up as her opener the next time the app opens, marked so they never repeat: a prep-day check-in when a cook session is today or tomorrow, and a debrief for a finished week not yet debriefed, up to 14 days old. Local notifications at 18:00 exist but are off unless turned on. Example: an athlete with a cook session on Sunday opens the app on Saturday and Vana opens with a prep-day check-in; opening the app again does not bring it back.",
+   "details": "Precisely:\n1. Cook check-in and week debrief moments wait until the fuelling moments have been lived with. Open: how often to ask the server, what happens offline, and whether a plan moment may take one of the day's two rings.\n2. Meanwhile the two touchpoints arrive as the opener of the next app open, stamped so they never repeat: a prep-day check-in when a cook session is today or tomorrow, and a debrief for a finished undebriefed week up to 14 days old.\n3. Local notifications at 18:00 exist but default off.",
+   "diagram": {
+    "kind": "timeline",
+    "title": "What we decided: plan beats arrive as the opener",
+    "steps": [
+     {
+      "at": "Saturday",
+      "label": "Opens the app. Cook session tomorrow:\nVana opens with a prep-day check-in",
+      "tone": "accent"
+     },
+     {
+      "at": "Saturday, later",
+      "label": "Opens again: the check-in is stamped\nand does not repeat",
+      "tone": "ok"
+     },
+     {
+      "at": "Up to 14 days",
+      "label": "A finished week not yet debriefed:\ndebrief as the next opener",
+      "tone": "ok"
+     },
+     {
+      "at": "18:00",
+      "label": "Local notification exists, off by default",
+      "tone": "muted"
+     }
+    ]
+   },
+   "slot": 2
+  }
+ },
+ "terms": [
+  {
+   "term": "Route",
+   "area": "Vana and what she knows",
+   "definition": "The name of the screen the app is showing, such as meal detail or Settings. Every Situation carries one; Vana's own sheet and chat never report theirs.",
+   "avoid": "Page, path"
+  },
+  {
+   "term": "Moment",
+   "area": "Vana and what she knows",
+   "definition": "Vana speaking first: the launcher rings, a pill asks a question, and tapping it opens the sheet on her already talking. Only the pre-workout and recovery windows raise one.",
+   "avoid": "Nudge, notification, prompt"
+  },
+  {
+   "term": "Pill",
+   "area": "Vana and what she knows",
+   "definition": "The short question that shows beside the tab bar for a few seconds when a moment rings, such as \"Fuel tonight's run?\". Tapping it opens the sheet on that moment.",
+   "avoid": "Banner, toast, bubble"
+  },
+  {
+   "term": "Fuelling window",
+   "area": "Vana and what she knows",
+   "definition": "The pre-workout window before a planned workout or the recovery window after a finished session: the stretch of time in which a moment can raise. The pre-workout window's length comes from the fuelling window authority.",
+   "avoid": "Fueling window, meal window"
+  }
+ ]
+}

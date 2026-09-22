@@ -172,6 +172,72 @@ What the person is looking at and doing when they speak to Vana: the screen, the
 the date. It travels with each message and is never stored.
 _Avoid_: Context (overloaded), screen state
 
+**Tool**:
+A server function Vana calls during a turn to read the athlete's records or to put something in the chat, such as the upcoming events, the day-guidance tool, a meal picker or a choice question. Each call is one tool step.
+_Avoid_: function call
+
+**Turn**:
+One reply from Vana and everything she does to make it: the reading, tool calls and writing behind one answer to the athlete, or behind an opener she sends first.
+
+**Meal picker**:
+The carousel of meals Vana puts in the chat for the athlete to choose from.
+_Avoid_: carousel, meal cards
+
+**Choice question**:
+A question Vana asks with tappable chips as the answers. It is itself a tool, so it arrives as its own part of the message.
+_Avoid_: quick replies
+
+**Transcript**:
+The stored copy of a conversation, which is what the athlete sees when they reopen it, as opposed to the live stream they watched.
+_Avoid_: chat log
+
+**Launcher**:
+The Vana button on the three screens that have one: the main tabs, the meal-planning screen and coach formulas. Tapping it opens the Vana sheet on the day's conversation.
+_Avoid_: Launcher sheet (that is the sheet it opens)
+
+**Context block**:
+The part of Vana's prompt that the server writes about the person and the moment: the Voodoo Doll digest plus the Situation's section. It says what exists; detail comes from tools.
+_Avoid_: Context (unqualified), user context
+
+**Remember tool**:
+The tool Vana calls to save a Memory during a conversation, whether the athlete asked her to or she judged it worth keeping. The server decides whether the sentence is new or refreshes a Memory it already holds.
+_Avoid_: remember (unqualified)
+
+**Extraction**:
+Vana reading a finished conversation in the background to write its Episode and any Memories nobody asked her to keep. It never shows in the chat.
+_Avoid_: Extractor, background extraction
+
+**Debrief**:
+The check-in Vana opens after a plan week ends, asking how the week went. Recording it writes a debrief row and one to three Memories marked as from the debrief; it is the only writer that learns from what the athlete did.
+
+**Vana sheet**:
+The panel that rises over the current screen when the Launcher is tapped, holding a conversation with Vana. Closing it leaves the screen underneath as it was.
+_Avoid_: The sheet (unqualified; the Top-up sheet and the Paywall sheet are others), overlay, drawer
+
+**Full-screen chat**:
+Vana's conversation as a whole screen of its own rather than the Vana sheet. Opened from the sheet's full-screen button, it shows the same conversation, only bigger.
+_Avoid_: Chat route, expanded sheet
+
+**Route**:
+The name of the screen the app is showing, such as meal detail or Settings. Every Situation carries one; Vana's own sheet and chat never report theirs.
+_Avoid_: Page, path
+
+**Moment**:
+Vana speaking first: the launcher rings, a pill asks a question, and tapping it opens the sheet on her already talking. Only the pre-workout and recovery windows raise one.
+_Avoid_: Nudge, notification, prompt
+
+**Pill**:
+The short question that shows beside the tab bar for a few seconds when a moment rings, such as "Fuel tonight's run?". Tapping it opens the sheet on that moment.
+_Avoid_: Banner, toast, bubble
+
+**Fuelling window**:
+The pre-workout window before a planned workout or the recovery window after a finished session: the stretch of time in which a moment can raise. The pre-workout window's length comes from the fuelling window authority.
+_Avoid_: Fueling window, meal window
+
+**Prompt cache**:
+The model provider's short-lived copy of the opening part of a prompt it has just seen. A later call that starts with exactly the same text reads that part back at a tenth of the price; anything that changes breaks the cache from that point on.
+_Avoid_: Cache (unqualified), memory
+
 ### Paying for the app
 
 **Gate**:
@@ -297,3 +363,92 @@ _Avoid_: Lapsed shape, closable sheet
 **⋯ menu**:
 The one button in the paywall's top corner that holds everything secondary: Restore purchases, Redeem code, Manage subscription, Sign out and Delete account.
 _Avoid_: Overflow menu, more menu
+
+**Call log**:
+The server's record of every AI call: who made it, the tokens it read, wrote and cached, and what the gateway charged for it. What each athlete costs is read from it.
+_Avoid_: Usage log, ai_usage (that is one of its tables)
+
+**Gateway**:
+The Vercel AI Gateway, the one service every AI call goes through to reach a model. It adds no markup and reports its own charge for each call, which is what that call really cost us.
+_Avoid_: Provider, proxy
+
+**Token**:
+The piece of text a model reads and writes in, a word or part of one. A model call is priced by the tokens it reads and writes; the monthly budget is counted in dollars, never in tokens.
+_Avoid_: Credit (that was the old wallet unit)
+
+**Sandbox**:
+The stores' test mode, where a test account buys a subscription without being charged. The hand runs before a release buy in it; a Grant made there still reaches the webhook labelled as production.
+_Avoid_: Test store, staging
+
+**Live connection**:
+The feed over which the server pushes the account's wallet row to the phone whenever it changes. It is open only while a screen that shows the budget is showing.
+_Avoid_: Wallet channel, realtime subscription
+
+**Usage bar**:
+The bar in Vana settings that shows the share of this month's budget used, the refill date and any bought extra, as percentages and a date, never dollars.
+_Avoid_: Budget bar, credits bar
+
+**Bought extra**:
+What is left of the budget bought in Top-ups, shown to the athlete as a share of one month's budget: the $4.99 pack adds a quarter of a month, the $19.99 pack a month and a quarter.
+_Avoid_: Pack credits, bought credits
+
+### Planning meals
+
+**Draft**:
+The meal plan being built in a planning conversation, before it is confirmed. Ticked meals go into it, the plan bar shows it, and it becomes the athlete's plan only at Confirm.
+_Avoid_: Draft plan; active week plan (that is the confirmed plan on the phone)
+
+**Batch cooking**:
+Cooking a few meals at one sitting, a cooking session, and eating them across the plan's period. It is a setting Vana asks about once and Settings can change; when it is off, each meal is made the night it is eaten.
+_Avoid_: Meal prep
+
+**Staples**:
+Foods an athlete eats again and again, such as breakfast and snacks. They are suggested from the athlete's own logs and enter a plan only when the athlete ticks them.
+
+**Plan meal**:
+One meal in a plan: which library Meal, its meal type and how many servings are left. The Plan tab shows each plan meal as one row.
+_Avoid_: Plan tile (a Tile is an ingredient photo)
+
+**Meal type**:
+Which part of the day a meal is for, such as breakfast, lunch, dinner or a snack. An athlete plans only the meal types they choose.
+_Avoid_: Slot
+
+**Plan period**:
+The span one plan feeds: a start day and a number of days, both set by the athlete, Sunday and seven days by default.
+_Avoid_: Week (unless it is seven days), cooking period
+
+**Plan coverage**:
+How many of the period's meals a plan's servings fill, counted against the period's days times the meal types the athlete plans.
+_Avoid_: Coverage (unqualified; that is whether a Kroger Location serves an area)
+
+**Day note**:
+Vana's short note about one day of the plan, shown at the top of the Plan tab. A plan's notes are written ahead and kept, and rewritten in the background when the plan changes.
+_Avoid_: Daily brief
+
+**Review sheet**:
+The sheet that shows a draft plan before it is confirmed: what the period adds up to, every meal with its servings, and the Confirm button.
+_Avoid_: Review plan screen, summary
+
+### Building and shipping the app
+
+**Prototype**:
+The TanStack web app where meal planning was first built, kept in its own repo. It is the living reference for how the feature looks and behaves and the source of the test fixtures; none of its code is copied into the app.
+_Avoid_: Web prototype, reference app, Kyle prototype
+
+**Kyle design system**:
+The app's one design system: a single set of named colours and sizes (the Kyle tokens) and a shared library where each designed widget is built once from its written component spec.
+_Avoid_: Theme, skin, token registry
+
+**Cutover**:
+The one planned step that takes meal planning from the dev backend to production, following a runbook: its database changes go out, the meal library is seeded, and old columns are removed. Until then everything is dev-only.
+_Avoid_: Prod launch, migration day
+
+**Dev build**:
+The app built against the dev backend rather than production, for the team. It ships every unfinished feature visible; nothing in it is hidden behind a build flag.
+_Avoid_: Debug build, dev mode (that is the dev environment the build runs in)
+
+### Building and testing
+
+**Seam**:
+The place a test enters the real code, with fakes standing in for everything beyond it: the server's handlers, the app's notifiers, the screens, or the eval. A spec names its seams in its Testing Decisions.
+_Avoid_: Test layer, test level
