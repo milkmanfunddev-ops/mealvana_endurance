@@ -223,6 +223,10 @@ class ContentKeys {
   /// server named. Vana chat has its own, shorter line (`mpRateLimited`).
   static const String mpAnalysisRateLimited =
       'meal_planning.analysis_rate_limited';
+  /// The photo or the description is not food (422 `not_food` from
+  /// `describe-meal` / `analyze-meal-photo`, mp-473). One short line instead of
+  /// invented macros.
+  static const String mpAnalysisNotFood = 'meal_planning.analysis_not_food';
   static const String mpServerError = 'meal_planning.server_error';
   /// The AI Gateway refused US — our key's monthly budget hard-stopped, or
   /// the key is gone (mp-437). Never the top-up sheet: the athlete's own

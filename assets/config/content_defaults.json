@@ -432,6 +432,7 @@
     "pro_required": "Mealvana Pro required",
     "rate_limited": "Give me {n} seconds",
     "analysis_rate_limited": "Too many at once — try again in {n} seconds.",
+    "analysis_not_food": "That doesn't look like food — try another photo, or describe the meal instead.",
     "server_error": "Something went wrong. Try again.",
     "ai_unavailable": "Vana is unavailable right now",
     "confirmed_toast": "Plan confirmed — shopping list ready",

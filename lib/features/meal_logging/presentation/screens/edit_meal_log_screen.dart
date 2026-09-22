@@ -26,6 +26,7 @@ import '../providers/meal_log_providers.dart';
 import '../widgets/meal_analysis_skeleton.dart';
 import '../widgets/meal_component_editor.dart';
 import '../widgets/slot_chip_selector.dart' show OptionalSlotChipSelector;
+import '../../domain/meal_photo_capture.dart';
 
 /// Edit an existing [MealLog] entry.
 ///
@@ -192,7 +193,8 @@ class _EditMealLogScreenState extends ConsumerState<EditMealLogScreen> {
       file = await picker.pickImage(
         source: source,
         imageQuality: 85,
-        maxWidth: 1000,
+        maxWidth: kPhotoLongEdgeMaxPx,
+        maxHeight: kPhotoLongEdgeMaxPx,
       );
     } catch (_) {
       if (mounted) {

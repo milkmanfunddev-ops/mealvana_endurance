@@ -127,6 +127,12 @@ class MealAiService {
         : ContentKeys.format(template, {'n': seconds});
   }
 
+  /// "That doesn't look like food" — the photo or the description was not a
+  /// meal (422 `not_food`, mp-473). One short line, never invented macros.
+  String get _notFoodMessage =>
+      _content?.getValue(ContentKeys.mpAnalysisNotFood) ??
+      "That doesn't look like food — try another photo, or describe the meal instead.";
+
   /// Whether an edge-function error body is the limiter's refusal.
   bool _isRateLimited(dynamic data) =>
       data is Map && data['error'] == 'rate_limited';
@@ -320,14 +326,13 @@ class MealAiService {
     FunctionResponse response, {
     required String functionName,
   }) {
+    // 422 → the photo or the description is not food (mp-473). The server sends
+    // a code, never prose; the line comes from the content system.
     if (response.status == 422) {
-      final message =
-          _extractErrorMessage(response.data) ??
-          "The photo doesn't appear to contain food. Please try a different image.";
       throw MealAiException(
         kind: MealAiFailureKind.notFood,
-        userMessage: message,
-        debugMessage: '422 from $functionName',
+        userMessage: _notFoodMessage,
+        debugMessage: '422 not_food from $functionName',
       );
     }
 
@@ -423,9 +428,8 @@ class MealAiService {
     if (e.status == 422) {
       return MealAiException(
         kind: MealAiFailureKind.notFood,
-        userMessage:
-            "The photo doesn't appear to contain food. Please try a different image.",
-        debugMessage: 'FunctionException 422 from $functionName',
+        userMessage: _notFoodMessage,
+        debugMessage: 'FunctionException 422 not_food from $functionName',
       );
     }
 
