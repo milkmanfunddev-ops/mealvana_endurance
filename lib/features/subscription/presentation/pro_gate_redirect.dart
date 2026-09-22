@@ -5,6 +5,8 @@
 /// `app_router.dart` combines [gateRedirect] with `readAppGate(ref)`.
 library;
 
+import '../domain/entitlement.dart';
+
 /// Where a locked user is sent, and stays.
 const String kPaywallPath = '/paywall';
 
@@ -34,14 +36,37 @@ bool isUngatedPath(String path) {
   return false;
 }
 
-/// The redirect for [path] given whether the app is [unlocked]:
+/// The routes that call AI the moment they open: Vana's chat and
+/// everything under it, the legacy `/jade` alias (Vana general), and the
+/// meal-AI log screens (photo, describe). A lapsed account is sent to the
+/// paywall instead (mp-457 §3); Vana's own settings are not an AI call.
+const List<String> kAiRoutePrefixes = [
+  '/vana',
+  '/jade',
+  '/meal-log/photo',
+  '/meal-log/describe',
+];
+
+/// Whether [path] is one of [kAiRoutePrefixes] or under one.
+bool isAiPath(String path) => kAiRoutePrefixes.any(
+  (prefix) => path == prefix || path.startsWith('$prefix/'),
+);
+
+/// The redirect for [path] given the gate's [access] (mp-457):
 /// - an ungated path is never redirected;
-/// - the paywall renders while locked and yields to `/main` once unlocked,
-///   so a purchase, restore or background refresh moves the person in
-///   without the screen navigating itself;
-/// - every other route lands on the paywall while locked.
-String? gateRedirect({required String path, required bool unlocked}) {
+/// - the paywall renders unless the gate is open, and yields to `/main` once
+///   it is, so a purchase, restore or background refresh moves the person
+///   in without the screen navigating itself;
+/// - never: every other route lands on the paywall;
+/// - lapsed: app routes render (read-only, under the plan-ended bar), and an
+///   AI route opens the paywall instead;
+/// - open: everything renders.
+String? gateRedirect({required String path, required AppAccess access}) {
   if (isUngatedPath(path)) return null;
-  if (path == kPaywallPath) return unlocked ? '/main' : null;
-  return unlocked ? null : kPaywallPath;
+  if (path == kPaywallPath) return access == AppAccess.open ? '/main' : null;
+  return switch (access) {
+    AppAccess.open => null,
+    AppAccess.lapsed => isAiPath(path) ? kPaywallPath : null,
+    AppAccess.never => kPaywallPath,
+  };
 }

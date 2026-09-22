@@ -368,11 +368,11 @@ class _PostOnboardingAuthScreenState
     // (see settleAppGate); otherwise the navigation is dropped mid-redirect.
     final logger = ref.read(appExternalDepsProvider).logger;
     logger.info('Settling the app gate before /main', context: 'NAV');
-    final unlocked = await ref.read(appGateProvider.notifier).settle();
+    final access = await ref.read(appGateProvider.notifier).settle();
     logger.info(
       'App gate settled',
       context: 'NAV',
-      data: {'unlocked': unlocked, 'mounted': mounted},
+      data: {'access': access.name, 'mounted': mounted},
     );
     if (!mounted) return;
 

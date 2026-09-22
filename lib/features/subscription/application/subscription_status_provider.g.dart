@@ -124,6 +124,8 @@ String _$subscriptionAuthUserIdHash() =>
 /// Every answer it takes also settles the day-five reminder (mp-456 §4): an
 /// active trial that will not renew cancels it. That covers the app open
 /// (build) and the background refresh that follows a stale cache (the push).
+/// Sign-out and account deletion cancel it too, so it never reaches the next
+/// account on the phone.
 ///
 /// **[build] never throws.** A keepAlive provider whose first build errors
 /// would leave `.future` uncompleted for anyone awaiting it (the router
@@ -154,6 +156,8 @@ const subscriptionStatusProvider = SubscriptionStatusControllerProvider._();
 /// Every answer it takes also settles the day-five reminder (mp-456 §4): an
 /// active trial that will not renew cancels it. That covers the app open
 /// (build) and the background refresh that follows a stale cache (the push).
+/// Sign-out and account deletion cancel it too, so it never reaches the next
+/// account on the phone.
 ///
 /// **[build] never throws.** A keepAlive provider whose first build errors
 /// would leave `.future` uncompleted for anyone awaiting it (the router
@@ -186,6 +190,8 @@ final class SubscriptionStatusControllerProvider
   /// Every answer it takes also settles the day-five reminder (mp-456 §4): an
   /// active trial that will not renew cancels it. That covers the app open
   /// (build) and the background refresh that follows a stale cache (the push).
+  /// Sign-out and account deletion cancel it too, so it never reaches the next
+  /// account on the phone.
   ///
   /// **[build] never throws.** A keepAlive provider whose first build errors
   /// would leave `.future` uncompleted for anyone awaiting it (the router
@@ -211,7 +217,7 @@ final class SubscriptionStatusControllerProvider
 }
 
 String _$subscriptionStatusControllerHash() =>
-    r'eb2fc120783fad11b44ea5b6b3305abbf528c94f';
+    r'e1148ec41d4868e8b8199536d584dfc90b911a79';
 
 /// The current user's subscription status, from RevenueCat and nothing else
 /// (mp-279, mp-284).
@@ -234,6 +240,8 @@ String _$subscriptionStatusControllerHash() =>
 /// Every answer it takes also settles the day-five reminder (mp-456 §4): an
 /// active trial that will not renew cancels it. That covers the app open
 /// (build) and the background refresh that follows a stale cache (the push).
+/// Sign-out and account deletion cancel it too, so it never reaches the next
+/// account on the phone.
 ///
 /// **[build] never throws.** A keepAlive provider whose first build errors
 /// would leave `.future` uncompleted for anyone awaiting it (the router

@@ -15,12 +15,16 @@ import 'package:flutter_test/flutter_test.dart';
 import 'package:mocktail/mocktail.dart';
 import 'package:purchases_flutter/purchases_flutter.dart';
 
+import 'package:mealvana_endurance/features/subscription/application/pro_gate.dart';
 import 'package:mealvana_endurance/features/subscription/application/subscription_status_provider.dart';
 import 'package:mealvana_endurance/features/subscription/data/subscription_service.dart';
 import 'package:mealvana_endurance/features/subscription/data/user_entitlements_repository.dart';
 import 'package:mealvana_endurance/features/subscription/domain/entitlement.dart';
 import 'package:mealvana_endurance/features/subscription/domain/trial_reminder.dart';
+import 'package:mealvana_endurance/shared/providers/is_admin_provider.dart';
 import 'package:mealvana_endurance/shared/services/notification_service.dart';
+
+import '../customer_info_fixtures.dart';
 
 class _MockSubscriptionService extends Mock implements SubscriptionService {}
 
@@ -372,6 +376,114 @@ void main() {
       await resolve(container());
       await pumpEventQueue();
       expect(scheduler.cancelled, isEmpty);
+    });
+  });
+
+  group('open, lapsed or never from customer info (mp-457)', () {
+    ProviderContainer gateContainer({bool isAdmin = false}) {
+      final c = ProviderContainer(
+        overrides: [
+          subscriptionServiceProvider.overrideWithValue(service),
+          userEntitlementsRepositoryProvider.overrideWithValue(repo),
+          entitlementAnswerTimeoutProvider.overrideWithValue(_timeout),
+          localNotificationSchedulerProvider.overrideWithValue(scheduler),
+          isAdminProvider.overrideWith((_) async => isAdmin),
+        ],
+      );
+      addTearDown(c.dispose);
+      return c;
+    }
+
+    test('the service maps an expired pro to held-once, not active', () {
+      final lapsed = statusOf(customerInfoLapsed);
+      expect(lapsed.active, isFalse);
+      expect(lapsed.hadPro, isTrue);
+      expect(lapsed.expiresAt, DateTime.utc(2026, 9, 1, 10));
+
+      final never = statusOf(customerInfoNever);
+      expect(never.active, isFalse);
+      expect(never.hadPro, isFalse);
+
+      final open = statusOf(customerInfoOpen);
+      expect(open.active, isTrue);
+      expect(open.hadPro, isTrue);
+    });
+
+    test('an active pro answers open', () async {
+      when(
+        () => service.fetchStatus(),
+      ).thenAnswer((_) async => statusOf(customerInfoOpen));
+      final c = gateContainer();
+      expect(await c.read(appGateProvider.future), AppAccess.open);
+      expect(await c.read(writeAccessProvider.future), isTrue);
+    });
+
+    test('a pro that expired answers lapsed, and writes are refused',
+        () async {
+      when(
+        () => service.fetchStatus(),
+      ).thenAnswer((_) async => statusOf(customerInfoLapsed));
+      final c = gateContainer();
+      expect(await c.read(appGateProvider.future), AppAccess.lapsed);
+      expect(await c.read(writeAccessProvider.future), isFalse);
+    });
+
+    test('no pro ever answers never', () async {
+      when(
+        () => service.fetchStatus(),
+      ).thenAnswer((_) async => statusOf(customerInfoNever));
+      final c = gateContainer();
+      expect(await c.read(appGateProvider.future), AppAccess.never);
+      expect(await c.read(writeAccessProvider.future), isFalse);
+    });
+
+    test('no answer in time answers never (unknown is locked, mp-284)',
+        () async {
+      when(
+        () => service.fetchStatus(),
+      ).thenAnswer((_) => Completer<SubscriptionStatus?>().future);
+      final c = gateContainer();
+      expect(await c.read(appGateProvider.future), AppAccess.never);
+    });
+
+    test('a lapsed admin answers open (mp-416)', () async {
+      when(
+        () => service.fetchStatus(),
+      ).thenAnswer((_) async => statusOf(customerInfoLapsed));
+      final c = gateContainer(isAdmin: true);
+      expect(await c.read(appGateProvider.future), AppAccess.open);
+      expect(await c.read(writeAccessProvider.future), isTrue);
+    });
+
+    test('an expiry pushed mid-session turns open into lapsed', () async {
+      when(
+        () => service.fetchStatus(),
+      ).thenAnswer((_) async => statusOf(customerInfoOpen));
+      final c = gateContainer();
+      final sub = c.listen(appGateProvider, (_, _) {});
+      addTearDown(sub.close);
+      expect(await c.read(appGateProvider.future), AppAccess.open);
+
+      capturedListener!(statusOf(customerInfoLapsed));
+      await pumpEventQueue();
+
+      expect(await c.read(appGateProvider.future), AppAccess.lapsed);
+      expect(await c.read(writeAccessProvider.future), isFalse);
+    });
+
+    test('a resubscribe pushed while lapsed opens writes again', () async {
+      when(
+        () => service.fetchStatus(),
+      ).thenAnswer((_) async => statusOf(customerInfoLapsed));
+      final c = gateContainer();
+      final sub = c.listen(writeAccessProvider, (_, _) {});
+      addTearDown(sub.close);
+      expect(await c.read(writeAccessProvider.future), isFalse);
+
+      capturedListener!(statusOf(customerInfoOpen));
+      await pumpEventQueue();
+
+      expect(await c.read(writeAccessProvider.future), isTrue);
     });
   });
 }

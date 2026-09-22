@@ -8,15 +8,19 @@ import 'subscription_status_provider.dart';
 
 part 'pro_gate.g.dart';
 
-/// The rule for "may this user see the app": the resolved subscription
-/// status is active, or the signed-in user is a team admin (`users.is_admin`,
-/// set by hand in the database). There is no build flag, no tester grant and
-/// no coach branch (mp-279, mp-280, mp-286); the admin bypass is Lee's
-/// 2026-09-16 exception so the team's own accounts never meet the paywall.
-bool computeUnlocked(SubscriptionStatus status, {required bool isAdmin}) =>
-    status.active || isAdmin;
+/// The gate's rule (mp-457): open when the resolved subscription status is
+/// active or the signed-in user is a team admin (`users.is_admin`, set by
+/// hand in the database; mp-416); lapsed when the customer held `pro` once
+/// and it has expired; never otherwise, which includes an unknown answer
+/// (mp-284). There is no build flag, no tester grant and no coach branch
+/// (mp-279, mp-280, mp-286).
+AppAccess computeAccess(SubscriptionStatus status, {required bool isAdmin}) {
+  if (status.active || isAdmin) return AppAccess.open;
+  return status.hadPro ? AppAccess.lapsed : AppAccess.never;
+}
 
-/// The app gate, as the router reads it (mp-280: everything is behind it).
+/// The app gate, as the router reads it (mp-280: everything is behind it):
+/// open, lapsed or never (mp-457).
 ///
 /// Loading while the status is unresolved — the status controller bounds
 /// that wait (mp-284), so awaiting `.future` here answers within a couple of
@@ -27,14 +31,14 @@ bool computeUnlocked(SubscriptionStatus status, {required bool isAdmin}) =>
 @Riverpod(keepAlive: true)
 class AppGate extends _$AppGate {
   @override
-  FutureOr<bool> build() async {
+  FutureOr<AppAccess> build() async {
     final status = await ref.watch(subscriptionStatusProvider.future);
-    if (status.active) return true;
+    if (status.active) return AppAccess.open;
     final timeout = ref.read(entitlementAnswerTimeoutProvider);
     final isAdmin = await ref
         .watch(isAdminProvider.future)
         .timeout(timeout, onTimeout: () => false);
-    return computeUnlocked(status, isAdmin: isAdmin);
+    return computeAccess(status, isAdmin: isAdmin);
   }
 
   /// Sign-in's hand-off to the router (2026-09-16: the first login came back
@@ -54,8 +58,8 @@ class AppGate extends _$AppGate {
   /// answer before navigating leaves the redirect nothing to await: it
   /// resolves in the same parse, and a later refresh with the same value
   /// never fires. Bounded by twice the entitlement timeout; no answer means
-  /// locked, which the paywall then resolves the usual way.
-  Future<bool> settle() async {
+  /// never, which the paywall then resolves the usual way.
+  Future<AppAccess> settle() async {
     ref.invalidate(subscriptionStatusProvider);
     ref.invalidate(isAdminProvider);
     ref.invalidateSelf();
@@ -63,16 +67,25 @@ class AppGate extends _$AppGate {
     try {
       return await future.timeout(timeout);
     } catch (_) {
-      return false;
+      return AppAccess.never;
     }
   }
 }
 
-/// Whether the app is unlocked, for a non-widget caller (the GoRouter
-/// redirect). Answers from the settled value when there is one; otherwise
-/// waits for the status controller's bounded resolve.
-Future<bool> readAppGate(Ref ref) {
+/// The gate's answer, for a non-widget caller (the GoRouter redirect).
+/// Answers from the settled value when there is one; otherwise waits for the
+/// status controller's bounded resolve.
+Future<AppAccess> readAppGate(Ref ref) {
   final gate = ref.read(appGateProvider);
   if (gate.hasValue && !gate.isLoading) return Future.value(gate.value!);
   return ref.read(appGateProvider.future);
 }
+
+/// The one write-access rule (mp-457 §4): whether this account may write or
+/// call AI right now. True only when the gate is open; a lapsed account sees
+/// its data read-only, and an unresolved gate waits for the gate's bounded
+/// answer (an unknown answer is never, so no). A write controller awaits
+/// this before writing and opens the paywall instead when it says no.
+@Riverpod(keepAlive: true)
+Future<bool> writeAccess(Ref ref) async =>
+    (await ref.watch(appGateProvider.future)).canWrite;

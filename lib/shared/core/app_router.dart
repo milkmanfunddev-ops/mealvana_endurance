@@ -122,7 +122,7 @@ class AppRouter {
     // The app gate (mp-280, mp-284): when RevenueCat's answer changes — a
     // purchase, a restore, an expiry, the background refresh of a cached
     // answer — the current location is re-evaluated, so the paywall yields
-    // to /main and an expired account meets the paywall without a restart.
+    // to /main and an expiry turns the app read-only without a restart.
     // The root widget watches this provider, which keeps the subscription
     // active.
     ref.listen(appGateProvider, (previous, next) {
@@ -201,15 +201,17 @@ class AppRouter {
           if (supabase.auth.currentSession == null) {
             return '/welcome';
           }
-          // The app gate (mp-280): every signed-in route is behind the one
-          // subscription gate. `readAppGate` answers from the settled status
-          // at once, or waits for the status controller's bounded resolve
-          // (mp-284: no cache and no answer within a couple of seconds is
-          // locked). A locked account lands on the paywall and stays there;
-          // the paywall itself yields to /main once unlocked. The server
-          // checks every debiting or Vana call itself (mp-285); this is UX.
-          final unlocked = await readAppGate(ref);
-          return gateRedirect(path: currentPath, unlocked: unlocked);
+          // The app gate (mp-280, mp-457): every signed-in route is behind
+          // the one subscription gate. `readAppGate` answers open, lapsed or
+          // never from the settled status at once, or waits for the status
+          // controller's bounded resolve (mp-284: no cache and no answer
+          // within a couple of seconds is never). Never lands on the paywall
+          // and stays there; lapsed reaches the app read-only, except the AI
+          // routes, which open the paywall; the paywall yields to /main once
+          // open. The server checks every debiting or Vana call itself
+          // (mp-285); this is UX.
+          final access = await readAppGate(ref);
+          return gateRedirect(path: currentPath, access: access);
         }
 
         // For public routes, don't redirect (user is already where they should be)

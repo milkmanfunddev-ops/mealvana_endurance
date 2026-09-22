@@ -20,6 +20,27 @@ enum Entitlement {
 /// Which source vouched for the active entitlement. [none] when inactive.
 enum SubscriptionSource { none, revenuecat }
 
+/// The gate's answer (mp-457): what this account may do in the app.
+enum AppAccess {
+  /// The entitlement is active, or the account is a team admin (mp-416).
+  open,
+
+  /// The customer held `pro` once and it has expired: the app opens
+  /// read-only, with the plan-ended bar, and any edit or AI action opens the
+  /// paywall instead of running.
+  lapsed,
+
+  /// No `pro` ever (also an unknown answer, mp-284): the paywall and nothing
+  /// else.
+  never;
+
+  /// Whether the account's own screens render (read-only when [lapsed]).
+  bool get entersApp => this != never;
+
+  /// Whether writes and AI calls may run (the write-access rule, mp-457 §4).
+  bool get canWrite => this == open;
+}
+
 /// The resolved subscription status for the current user.
 class SubscriptionStatus {
   const SubscriptionStatus({
@@ -29,6 +50,7 @@ class SubscriptionStatus {
     this.isTrial = false,
     this.productId,
     this.willRenew = true,
+    this.hadPro = false,
   });
 
   /// Nobody is subscribed (also the safe fallback whenever a lookup fails
@@ -58,6 +80,13 @@ class SubscriptionStatus {
   /// reminder is cancelled on an active trial that will not renew (mp-456).
   final bool willRenew;
 
+  /// Whether RevenueCat has ever recorded `pro` for this customer: true
+  /// while it is active and after it has expired, false for a customer who
+  /// never held it. With [active] false it separates lapsed from never
+  /// (mp-457). An unknown answer ([none]) is false: unknown is locked
+  /// (mp-284), never read-only.
+  final bool hadPro;
+
   /// Whether [expiresAt] has passed as of [now]. False when there is no expiry.
   bool isExpiredAt(DateTime now) {
     final e = expiresAt;
@@ -71,6 +100,7 @@ class SubscriptionStatus {
     bool? isTrial,
     String? productId,
     bool? willRenew,
+    bool? hadPro,
   }) {
     return SubscriptionStatus(
       active: active ?? this.active,
@@ -79,6 +109,7 @@ class SubscriptionStatus {
       isTrial: isTrial ?? this.isTrial,
       productId: productId ?? this.productId,
       willRenew: willRenew ?? this.willRenew,
+      hadPro: hadPro ?? this.hadPro,
     );
   }
 
@@ -90,17 +121,25 @@ class SubscriptionStatus {
       other.source == source &&
       other.isTrial == isTrial &&
       other.productId == productId &&
-      other.willRenew == willRenew;
+      other.willRenew == willRenew &&
+      other.hadPro == hadPro;
 
   @override
-  int get hashCode =>
-      Object.hash(active, expiresAt, source, isTrial, productId, willRenew);
+  int get hashCode => Object.hash(
+    active,
+    expiresAt,
+    source,
+    isTrial,
+    productId,
+    willRenew,
+    hadPro,
+  );
 
   @override
   String toString() =>
       'SubscriptionStatus(active: $active, source: ${source.name}, '
       'expiresAt: $expiresAt, isTrial: $isTrial, productId: $productId, '
-      'willRenew: $willRenew)';
+      'willRenew: $willRenew, hadPro: $hadPro)';
 }
 
 /// A free introductory period the store attaches to a subscription product
