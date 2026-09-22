@@ -1,6 +1,6 @@
 # 06: The grace month, granted on flip day
 
-**Status:** ready-for-agent
+**Status:** in-progress (wave 2, 2026-09-22)
 **Blocked by:** 01.
 **Next:** `/implement-lee paywall`
 **Model:** opus
