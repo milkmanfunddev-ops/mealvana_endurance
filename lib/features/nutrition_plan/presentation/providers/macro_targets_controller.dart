@@ -573,6 +573,16 @@ class MacroTargetsController extends _$MacroTargetsController {
                   ((double.tryParse(paceParts[1]) ?? 30.0) / 60.0)
             : double.tryParse(paceString) ?? 8.5;
 
+        // A zero distance or pace is a real entry ("0", "0:00"), not a typo
+        // the defaults catch — and the edge function reads 0 as missing
+        // (`!run_distance`) and answers 400 (Sentry MEALVANA-ENDURANCE-BS).
+        // Reject it here with a message the athlete can act on.
+        if (distance <= 0 || paceMinutes <= 0) {
+          throw Exception(
+            'Distance and pace must be greater than zero to plan fuelling.',
+          );
+        }
+
         // Track plan generation started - entry point for North-Star metrics
         final user = await _authService.getCurrentUser();
         deviceId = user?.id ?? 'unknown';
@@ -792,6 +802,14 @@ class MacroTargetsController extends _$MacroTargetsController {
       String deviceId = 'unknown';
 
       try {
+        // Zero reads as "missing" to the edge function (see generateMacros) —
+        // reject it here with a message the athlete can act on.
+        if (distanceMiles <= 0 || speedMph <= 0) {
+          throw Exception(
+            'Distance and speed must be greater than zero to plan fuelling.',
+          );
+        }
+
         // Track plan generation started
         final user = await _authService.getCurrentUser();
         deviceId = user?.id ?? 'unknown';
@@ -1073,6 +1091,14 @@ class MacroTargetsController extends _$MacroTargetsController {
       String deviceId = 'unknown';
 
       try {
+        // Zero reads as "missing" to the edge function (see generateMacros) —
+        // reject it here with a message the athlete can act on.
+        if (distanceMeters <= 0 || paceSecondsper100m <= 0) {
+          throw Exception(
+            'Distance and pace must be greater than zero to plan fuelling.',
+          );
+        }
+
         // Track plan generation started
         final user = await _authService.getCurrentUser();
         deviceId = user?.id ?? 'unknown';

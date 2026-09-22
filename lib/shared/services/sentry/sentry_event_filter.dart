@@ -125,6 +125,23 @@ const List<String> _noiseNeedles = <String>[
   // reports this as AuthApiException(code: invalid_credentials); it's a user
   // mistake, not an app bug.
   'Invalid login credentials',
+  // --- Expected auth control flow (2026-09-22 audit) ---
+  // Signup success routes through an exception on purpose — the class doc on
+  // EmailVerificationRequiredException says "control-flow signal, not a
+  // failure". Same family: an OAuth identity already linked elsewhere is
+  // shown to the user as a message, and GoTrue's OAuthAccountNotFound fires
+  // during first-time sign-in on a fresh device.
+  'EmailVerificationRequiredException',
+  'AccountAlreadyExistsException',
+  'OAuthAccountNotFoundException',
+  // google_sign_in cancellation on Android surfaces as
+  // PlatformException(CANCELED, User canceled login) — the iOS spelling
+  // needles above miss this one.
+  'User canceled login',
+  // Pre-onboarding startup: userIdProvider throws while no profile exists
+  // (no session, no cached profile). Expected until onboarding completes;
+  // surfaces render signed-out/empty states meanwhile.
+  'No user profile found. User must complete onboarding',
   // --- Debug-only Flutter assertions (never fire in release builds) ---
   'ink splashes may be invisible',
   // --- Benign Flutter-web engine DOM teardown races (navigation/hot restart) ---

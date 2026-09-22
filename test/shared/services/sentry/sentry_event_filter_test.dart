@@ -175,6 +175,54 @@ void main() {
       },
     );
 
+    // --- 2026-09-22 audit: expected auth control flow ---
+    test('drops EmailVerificationRequiredException (signup success)', () {
+      final event = SentryEvent(
+        throwable: Exception(
+          'EmailVerificationRequiredException: verification code sent',
+        ),
+      );
+      expect(isSentryNoise(event), isTrue);
+    });
+
+    test('drops AccountAlreadyExistsException (user-facing message)', () {
+      final event = SentryEvent(
+        throwable: Exception(
+          'AccountAlreadyExistsException: This Google account is already '
+          'linked to another user.',
+        ),
+      );
+      expect(isSentryNoise(event), isTrue);
+    });
+
+    test('drops OAuthAccountNotFoundException (first-time sign-in)', () {
+      final event = SentryEvent(
+        throwable: Exception(
+          'OAuthAccountNotFoundException: no existing account for google',
+        ),
+      );
+      expect(isSentryNoise(event), isTrue);
+    });
+
+    test('drops Android user-cancelled Google login (DEV-85 family)', () {
+      final event = SentryEvent(
+        throwable: Exception(
+          'PlatformException(CANCELED, User canceled login, null, null)',
+        ),
+      );
+      expect(isSentryNoise(event), isTrue);
+    });
+
+    test('drops pre-onboarding userIdProvider throw (DEV-8G)', () {
+      final event = SentryEvent(
+        throwable: Exception(
+          'Exception: No user profile found. User must complete onboarding '
+          'first.',
+        ),
+      );
+      expect(isSentryNoise(event), isTrue);
+    });
+
     test(
       'does NOT drop an unrelated ClientException (e.g. 500 from an edge function)',
       () {
