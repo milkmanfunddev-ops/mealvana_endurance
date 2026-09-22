@@ -33,6 +33,7 @@ import 'package:mealvana_endurance/shared/database/app_database.dart' as db;
 import 'package:mealvana_endurance/shared/domain/activity_type.dart';
 
 import '../helpers/widget_test_harness.dart';
+import '../helpers/write_access.dart';
 
 // ---------------------------------------------------------------------------
 // Minimal seeded controllers
@@ -158,6 +159,7 @@ void main() {
           isNewActivity: false,
         ),
         overrides: [
+          writesAllowed(),
           activityDetailControllerProvider(
             activityId: activityId,
             isNewActivity: false,
@@ -184,6 +186,7 @@ void main() {
         tester,
         const FuelLogScreen(activityId: activityId, isNewActivity: false),
         overrides: [
+          writesAllowed(),
           activityDetailControllerProvider(
             activityId: activityId,
             isNewActivity: false,
@@ -247,6 +250,7 @@ void main() {
         tester,
         const CarbLoadingFoodSelectionScreen(dayId: dayId, mealType: mealType),
         overrides: [
+          writesAllowed(),
           carbLoadingFoodSelectionControllerProvider(
             params,
           ).overrideWith(() => _SeededCarbLoadingFoodSelectionController()),
@@ -301,6 +305,7 @@ void main() {
         tester,
         CarbLoadingDayDetailPage(carbLoadingDay: _minimalCarbLoadingDay()),
         overrides: [
+          writesAllowed(),
           carbLoadingDayDetailControllerProvider.overrideWith(
             _LoadingCarbLoadingDayDetailController.new,
           ),

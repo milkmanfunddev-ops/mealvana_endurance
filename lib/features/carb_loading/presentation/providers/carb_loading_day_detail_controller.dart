@@ -13,6 +13,7 @@ import '../../domain/carb_loading_user_food.dart';
 import '../../domain/carb_loading_day_meal.dart';
 import '../../domain/meal_type.dart';
 import 'carb_loading_controller.dart';
+import '../../../subscription/application/write_guard.dart';
 
 part 'carb_loading_day_detail_controller.g.dart';
 
@@ -151,6 +152,7 @@ class CarbLoadingDayDetailController extends _$CarbLoadingDayDetailController {
 
   /// Add a default food to a meal
   Future<void> addDefaultFood(MealType mealType, CarbLoadingFood food) async {
+    if (!await ref.canWrite()) return;
     final currentState = state.value;
     if (currentState == null) return;
 
@@ -175,6 +177,7 @@ class CarbLoadingDayDetailController extends _$CarbLoadingDayDetailController {
 
   /// Add a user food to a meal
   Future<void> addUserFood(MealType mealType, CarbLoadingUserFood food) async {
+    if (!await ref.canWrite()) return;
     final currentState = state.value;
     if (currentState == null) return;
 
@@ -199,6 +202,7 @@ class CarbLoadingDayDetailController extends _$CarbLoadingDayDetailController {
 
   /// Update quantity for a meal
   Future<void> updateQuantity(String mealId, int newQuantity) async {
+    if (!await ref.canWrite()) return;
     final currentState = state.value;
     if (currentState == null) return;
 
@@ -244,6 +248,7 @@ class CarbLoadingDayDetailController extends _$CarbLoadingDayDetailController {
 
   /// Remove a meal
   Future<void> removeMeal(String mealId) async {
+    if (!await ref.canWrite()) return;
     final currentState = state.value;
     if (currentState == null) return;
 
@@ -263,6 +268,7 @@ class CarbLoadingDayDetailController extends _$CarbLoadingDayDetailController {
 
   /// Clear all meals for a specific meal type
   Future<void> clearMealType(MealType mealType) async {
+    if (!await ref.canWrite()) return;
     final currentState = state.value;
     if (currentState == null) return;
 
@@ -285,6 +291,7 @@ class CarbLoadingDayDetailController extends _$CarbLoadingDayDetailController {
 
   /// Reset all progress for the day
   Future<void> resetDay() async {
+    if (!await ref.canWrite()) return;
     final currentState = state.value;
     if (currentState == null) return;
 
@@ -334,6 +341,7 @@ class CarbLoadingDayDetailController extends _$CarbLoadingDayDetailController {
     required double carbsPerKg,
     required int dailyTargetG,
   }) async {
+    if (!await ref.canWrite()) return;
     final currentState = state.value;
     if (currentState == null) return;
 

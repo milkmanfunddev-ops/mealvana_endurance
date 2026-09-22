@@ -33,6 +33,8 @@ import 'package:mealvana_endurance/shared/services/sentry/sentry_reporter.dart';
 import 'fakes/fake_supabase_client.dart';
 import 'responsive_test_harness.dart';
 
+import 'write_access.dart';
+
 export 'package:flutter_riverpod/src/internals.dart' show Override;
 export 'fakes/fake_supabase_client.dart';
 export 'responsive_test_harness.dart';
@@ -239,7 +241,9 @@ Future<void> smokeScreen(
     // kyleThemeModeProvider) don't throw UnimplementedError. Individual
     // tests that need custom prefs behaviour can pass their own override
     // in [overrides]; it will appear later in the list and take precedence.
-    if (withAppDeps) mockSharedPreferences(),
+    // An open account: every write controller asks the write guard first
+    // (mp-457 §4); a lapsed-account test passes writesRefused() in [overrides].
+    if (withAppDeps) writesAllowed(),
     ...overrides,
   ];
 

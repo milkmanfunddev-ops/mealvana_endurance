@@ -37,6 +37,7 @@ import '../../../events/data/events_repository.dart';
 import 'package:mealvana_endurance/core/utils/debug_logger.dart';
 import '../../../integrations/presentation/providers/tp_writeback_providers.dart';
 import '../../../coach_mode/presentation/providers/coach_activity_detail_controller.dart';
+import '../../../subscription/application/write_guard.dart';
 
 part 'macro_targets_controller.g.dart';
 
@@ -522,6 +523,7 @@ class MacroTargetsController extends _$MacroTargetsController {
     String?
     forUserId, // NEW: If provided, create activity for this user (coach creating for athlete)
   }) async {
+    if (!await ref.canWrite()) return;
     // CRITICAL FIX: Ensure state is loaded before proceeding
     // state.value can be null if build() hasn't completed yet
     final currentState = state.value;
@@ -544,7 +546,7 @@ class MacroTargetsController extends _$MacroTargetsController {
         sweatRateCat: sweatRateCat,
         temperatureC: temperatureC,
         humidityPct: humidityPct,
-          intensity: intensity,
+        intensity: intensity,
         activityTitle: activityTitle,
         activityId: activityId,
         eventId: eventId,
@@ -637,7 +639,7 @@ class MacroTargetsController extends _$MacroTargetsController {
             paceTargetMinutesPerMile: paceMinutes,
             intensityLevel: domain.IntensityLevel.moderate,
             timeBeforeMinutes: timeBeforeRunMinutes,
-              notes: 'Draft activity - nutrition plan being generated',
+            notes: 'Draft activity - nutrition plan being generated',
             status: domain.ActivityStatus.draft,
           );
           finalActivityId = createdActivity.id;
@@ -663,7 +665,7 @@ class MacroTargetsController extends _$MacroTargetsController {
                 durationMinutes: estimatedDurationMinutes,
                 paceTargetMinutesPerMile: paceMinutes,
                 timeBeforeMinutes: timeBeforeRunMinutes,
-                      // Keep whatever the user wrote. The "Draft activity…" note
+                // Keep whatever the user wrote. The "Draft activity…" note
                 // belongs to the create branch, where the row really is a
                 // placeholder; stamping it on an update overwrites real notes
                 // every time the plan is regenerated.
@@ -777,6 +779,7 @@ class MacroTargetsController extends _$MacroTargetsController {
     String? eventId,
     String? forUserId,
   }) async {
+    if (!await ref.canWrite()) return;
     final currentState = state.value;
     if (currentState == null) return;
 
@@ -870,7 +873,7 @@ class MacroTargetsController extends _$MacroTargetsController {
             intensityTarget: intensityTarget,
             intensityLevel: domain.IntensityLevel.moderate,
             timeBeforeMinutes: timeBeforeMinutes,
-              notes: 'Draft cycling activity - nutrition plan being generated',
+            notes: 'Draft cycling activity - nutrition plan being generated',
             status: domain.ActivityStatus.draft,
           );
           finalActivityId = createdActivity.id;
@@ -903,7 +906,7 @@ class MacroTargetsController extends _$MacroTargetsController {
                 cyclingSessionGoal: sessionGoal,
                 intensityTarget: intensityTarget,
                 timeBeforeMinutes: timeBeforeMinutes,
-                      // See the running branch: never clobber user notes on update.
+                // See the running branch: never clobber user notes on update.
                 notes: existingActivity.notes,
               ),
             );
@@ -1018,6 +1021,7 @@ class MacroTargetsController extends _$MacroTargetsController {
     String?
     forUserId, // NEW: If provided, create activity for this user (coach creating for athlete)
   }) async {
+    if (!await ref.canWrite()) return;
     // Delegate to the main generateMacros method
     await generateMacros(
       distanceText: distanceText,
@@ -1056,6 +1060,7 @@ class MacroTargetsController extends _$MacroTargetsController {
     String? eventId,
     String? forUserId,
   }) async {
+    if (!await ref.canWrite()) return;
     final currentState = state.value;
     if (currentState == null) return;
 
@@ -1285,6 +1290,7 @@ class MacroTargetsController extends _$MacroTargetsController {
     String?
     forUserId, // If provided, create activity for this user (coach creating for athlete)
   }) async {
+    if (!await ref.canWrite()) return;
     final currentState = state.value;
     if (currentState == null) return;
 
@@ -1387,7 +1393,7 @@ class MacroTargetsController extends _$MacroTargetsController {
             durationMinutes: totalDurationMinutes,
             brickMetadata: brickMetadata,
             timeBeforeMinutes: preActivityMinutes,
-              notes: 'Draft brick activity - nutrition plan being generated',
+            notes: 'Draft brick activity - nutrition plan being generated',
             status: domain.ActivityStatus.draft,
           );
           finalActivityId = createdActivity.id;
@@ -1437,7 +1443,7 @@ class MacroTargetsController extends _$MacroTargetsController {
                 brickMetadata: preservedMetadata,
                 durationMinutes: totalDurationMinutes,
                 timeBeforeMinutes: preActivityMinutes,
-                      // See the running branch: never clobber user notes on update.
+                // See the running branch: never clobber user notes on update.
                 notes: existingActivity.notes,
               ),
             );
@@ -1534,6 +1540,7 @@ class MacroTargetsController extends _$MacroTargetsController {
     required MacroField field,
     required double newValue,
   }) async {
+    if (!await ref.canWrite()) return;
     final repository = ref.read(macroRepositoryProvider);
     final currentStateSnapshot = state.value;
     final activityId = currentStateSnapshot?.activityId;
@@ -1610,6 +1617,7 @@ class MacroTargetsController extends _$MacroTargetsController {
 
   /// Reset all values to the original recommended values
   Future<void> resetToRecommended() async {
+    if (!await ref.canWrite()) return;
     final repository = ref.read(macroRepositoryProvider);
     final activityId = state.value?.activityId;
     final cachedTargets = activityId != null && activityId.isNotEmpty
@@ -1719,6 +1727,7 @@ class MacroTargetsController extends _$MacroTargetsController {
     required double postRunFluids,
     required double postRunSodium,
   }) async {
+    if (!await ref.canWrite()) return;
     try {
       // Update all values in sequence
       await updateMacroValue(
@@ -1801,6 +1810,7 @@ class MacroTargetsController extends _$MacroTargetsController {
   /// Create nutrition plan with adjusted values
   /// Returns the activityId of the created/updated activity
   Future<String?> createNutritionPlan() async {
+    await requireWriteAccess(ref);
     final appLogger = ref.read(appExternalDepsProvider).logger;
     final repository = ref.read(macroRepositoryProvider);
     final currentState = state.value;

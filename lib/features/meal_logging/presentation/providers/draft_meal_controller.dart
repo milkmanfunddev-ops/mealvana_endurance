@@ -11,6 +11,7 @@ import '../../domain/meal_log.dart';
 import '../../domain/meal_log_source.dart';
 import '../../domain/meal_slot.dart';
 import 'meal_log_providers.dart';
+import '../../../subscription/application/write_guard.dart';
 
 part 'draft_meal_controller.g.dart';
 
@@ -198,6 +199,10 @@ class DraftMealController extends _$DraftMealController {
   Future<bool> save({bool alsoSaveAsFavorite = false}) async {
     final current = state;
     if (current.isEmpty) return false;
+    // Refused before the delegate so the draft survives (mp-457 §4): the
+    // log controller's own refusal leaves its state as it was, which this
+    // method would otherwise read as a successful save.
+    if (!await ref.canWrite()) return false;
 
     final controller = ref.read(mealLogControllerProvider.notifier);
     final name = current.displayName();

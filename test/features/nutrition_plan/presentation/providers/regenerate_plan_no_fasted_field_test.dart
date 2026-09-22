@@ -17,6 +17,7 @@ import 'package:shared_preferences/shared_preferences.dart';
 import 'package:supabase_flutter/supabase_flutter.dart';
 
 import '../../../../helpers/fixtures/user_fixtures.dart';
+import '../../../../helpers/write_access.dart';
 
 // Tolerate-and-ignore guard for the fasted retirement (food-recommendation
 // §7 / D-001, Xuan 2026-09-03): the fasted product state is retired on the
@@ -120,6 +121,7 @@ void main() {
   ProviderContainer buildContainer(ActivityDetailState seed) {
     final container = ProviderContainer(
       overrides: [
+        writesAllowed(),
         authServiceProvider.overrideWithValue(authService),
         analyticsTrackerProvider.overrideWithValue(analytics),
         macroRepositoryProvider.overrideWithValue(macroRepository),

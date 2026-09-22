@@ -46,6 +46,7 @@ import 'package:mealvana_endurance/shared/services/app_config.dart';
 import 'package:mealvana_endurance/shared/services/preferences_service.dart';
 
 import '../../helpers/widget_test_harness.dart';
+import '../../helpers/write_access.dart';
 
 // ---------------------------------------------------------------------------
 // Canonical mock day (goldens manifest): verified 8:00 swim, planned 5:30 run,
@@ -521,6 +522,7 @@ void main() {
       const Scaffold(body: MacroDashboardScreen()),
       settle: true,
       overrides: [
+        writesAllowed(),
         ..._dayOverrides(),
         mealLogControllerProvider.overrideWith(_RecordingMealLogController.new),
       ],
@@ -564,6 +566,7 @@ void main() {
 
       final container = ProviderContainer(
         overrides: [
+          writesAllowed(),
           mockAppExternalDeps(),
           userRepositoryProvider.overrideWith((_) async => userRepo),
           mealLogRepositoryProvider.overrideWithValue(mealRepo),
@@ -629,6 +632,7 @@ void main() {
     await tester.pumpWidget(
       ProviderScope(
         overrides: [
+          writesAllowed(),
           mockAppExternalDeps(),
           appConfigProvider.overrideWithValue(AppConfig.forTesting()),
           inMemoryDatabaseOverride(db),

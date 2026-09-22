@@ -14,6 +14,7 @@ import 'package:mealvana_endurance/shared/services/sync/sync_coordinator.dart';
 import 'package:mocktail/mocktail.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 
+import '../../../helpers/write_access.dart';
 import 'fakes.dart';
 
 class _FakeAnalytics extends Fake implements AnalyticsTracker {}
@@ -68,6 +69,8 @@ List<Override> baseOverrides({
     connectivity ?? StubConnectivity(),
   ),
   syncCoordinatorProvider.overrideWith(() => sync ?? NoopSyncCoordinator()),
+  // An open account (mp-457 §4); a lapsed test adds writesRefused() after.
+  writesAllowed(),
 ];
 
 ProviderContainer testContainer(List<Override> overrides) {

@@ -14,6 +14,7 @@ import '../../../../shared/services/performance_telemetry.dart';
 import '../../../auth/application/supabase_auth_service.dart';
 import '../../../integrations/application/integration_sync_coordinator.dart';
 import '../../domain/brick_metadata.dart';
+import '../../../subscription/application/write_guard.dart';
 
 part 'activities_controller.g.dart';
 
@@ -175,6 +176,7 @@ class ActivitiesController extends _$ActivitiesController {
     BrickMetadata? brickMetadata,
     String? brickId,
   }) async {
+    await requireWriteAccess(ref);
     try {
       final priorCount = state.value?.length ?? 0;
       final deviceIdValue = await ref.read(userIdProvider.future);
@@ -251,6 +253,7 @@ class ActivitiesController extends _$ActivitiesController {
 
   /// Update an existing activity
   Future<void> updateActivity(Activity activity) async {
+    if (!await ref.canWrite()) return;
     try {
       final deviceIdValue = await ref.read(userIdProvider.future);
 
@@ -281,6 +284,7 @@ class ActivitiesController extends _$ActivitiesController {
   /// so any bar with an Undo action ignored its timeout. Fixed in
   /// `MealvanaSnackbar._show`. Provider churn was never involved.
   Future<void> deleteActivity(String activityId) async {
+    if (!await ref.canWrite()) return;
     final previous = state.value ?? const <Activity>[];
     // Optimistically drop the card so the UI updates immediately with no
     // loading flash.
@@ -308,6 +312,7 @@ class ActivitiesController extends _$ActivitiesController {
   /// untouched. Optimistic in-place update — same no-loading-flash
   /// reasoning as [deleteActivity].
   Future<void> markWorkoutDone(String activityId) async {
+    if (!await ref.canWrite()) return;
     final previous = state.value ?? const <Activity>[];
     state = AsyncData([
       for (final a in previous)
@@ -332,6 +337,7 @@ class ActivitiesController extends _$ActivitiesController {
   /// Mark a workout not-done (macro-dashboard G2): actual_time CLEARED to
   /// null so the card returns to planned_time.
   Future<void> markWorkoutUndone(String activityId) async {
+    if (!await ref.canWrite()) return;
     final previous = state.value ?? const <Activity>[];
     state = AsyncData([
       for (final a in previous)
@@ -354,6 +360,7 @@ class ActivitiesController extends _$ActivitiesController {
   /// planned_time untouched. Optimistic in-place update — the whole day
   /// recomputes in one frame (S-2) with no loading flash.
   Future<void> skipWorkout(String activityId) async {
+    if (!await ref.canWrite()) return;
     final previous = state.value ?? const <Activity>[];
     state = AsyncData([
       for (final a in previous)
@@ -374,6 +381,7 @@ class ActivitiesController extends _$ActivitiesController {
   /// Unskip a workout (macro-dashboard G5): status back to planned;
   /// planned_time untouched so the card returns to its time-ordered slot.
   Future<void> unskipWorkout(String activityId) async {
+    if (!await ref.canWrite()) return;
     final previous = state.value ?? const <Activity>[];
     state = AsyncData([
       for (final a in previous)
@@ -402,6 +410,7 @@ class ActivitiesController extends _$ActivitiesController {
   /// flashing the card back in. Writing the pre-delete [Activity] back clears
   /// the soft-delete because its `deletedAt` is null.
   Future<void> restoreActivity(Activity activity) async {
+    if (!await ref.canWrite()) return;
     final previous = state.value ?? const <Activity>[];
     // Optimistically re-add (guard against a duplicate) and keep the list
     // ordered by scheduled time so the card reappears in its original slot.

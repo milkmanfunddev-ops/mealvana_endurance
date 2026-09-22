@@ -24,6 +24,8 @@ import 'package:mealvana_endurance/shared/services/sync/sync_coordinator.dart';
 import 'package:mocktail/mocktail.dart';
 import 'package:riverpod/riverpod.dart';
 
+import '../../helpers/write_access.dart';
+
 class _MockEventsService extends Mock implements EventsService {}
 
 class _MockEventsRepository extends Mock implements EventsRepository {}
@@ -71,64 +73,69 @@ Event _event() => Event(
 void main() {
   setUpAll(() => registerFallbackValue(_event()));
 
-  test('updateEvent invalidates the activities cache the list renders from',
-      () async {
-    final service = _MockEventsService();
-    when(() => service.getAllEvents(any())).thenAnswer((_) async => [_event()]);
+  test(
+    'updateEvent invalidates the activities cache the list renders from',
+    () async {
+      final service = _MockEventsService();
+      when(
+        () => service.getAllEvents(any()),
+      ).thenAnswer((_) async => [_event()]);
 
-    // `build()`'s fire-and-forget background sync must find something inert;
-    // fresh data means it never invalidates itself behind the assertion.
-    final repository = _MockEventsRepository();
-    when(repository.isStale).thenAnswer((_) async => false);
-    when(
-      () => service.updateEvent(
-        deviceId: any(named: 'deviceId'),
-        event: any(named: 'event'),
-        currentUserId: any(named: 'currentUserId'),
-        consistency: any(named: 'consistency'),
-      ),
-    ).thenAnswer((_) async {});
-
-    // Count how many times the activities provider is (re)built. The events
-    // list watches this provider, so a rebuild here IS the screen refreshing.
-    var activityBuilds = 0;
-
-    final container = ProviderContainer(
-      overrides: [
-        eventsServiceProvider.overrideWithValue(service),
-        eventsRepositoryProvider.overrideWithValue(repository),
-        appLoggerProvider.overrideWithValue(NoopAppLogger()),
-        syncCoordinatorProvider.overrideWith(_NoopSyncCoordinator.new),
-        userIdProvider.overrideWith((ref) async => 'u1'),
-        allActivitiesProvider.overrideWith((ref) async => const []),
-        activitiesControllerProvider.overrideWith(
-          () => _CountingActivitiesController(() => activityBuilds++),
+      // `build()`'s fire-and-forget background sync must find something inert;
+      // fresh data means it never invalidates itself behind the assertion.
+      final repository = _MockEventsRepository();
+      when(repository.isStale).thenAnswer((_) async => false);
+      when(
+        () => service.updateEvent(
+          deviceId: any(named: 'deviceId'),
+          event: any(named: 'event'),
+          currentUserId: any(named: 'currentUserId'),
+          consistency: any(named: 'consistency'),
         ),
-      ],
-    );
-    addTearDown(container.dispose);
+      ).thenAnswer((_) async {});
 
-    // Keep both providers alive, as the events list screen does.
-    container.listen(activitiesControllerProvider, (_, __) {});
-    await container.read(eventsControllerProvider.future);
-    final buildsBeforeUpdate = activityBuilds;
+      // Count how many times the activities provider is (re)built. The events
+      // list watches this provider, so a rebuild here IS the screen refreshing.
+      var activityBuilds = 0;
 
-    await container
-        .read(eventsControllerProvider.notifier)
-        .updateEvent(_event().copyWith(startTime: '2026-09-30T07:30:00.000'));
+      final container = ProviderContainer(
+        overrides: [
+          eventsServiceProvider.overrideWithValue(service),
+          writesAllowed(),
+          eventsRepositoryProvider.overrideWithValue(repository),
+          appLoggerProvider.overrideWithValue(NoopAppLogger()),
+          syncCoordinatorProvider.overrideWith(_NoopSyncCoordinator.new),
+          userIdProvider.overrideWith((ref) async => 'u1'),
+          allActivitiesProvider.overrideWith((ref) async => const []),
+          activitiesControllerProvider.overrideWith(
+            () => _CountingActivitiesController(() => activityBuilds++),
+          ),
+        ],
+      );
+      addTearDown(container.dispose);
 
-    // Force the (re)build to materialise, then compare. If the provider was
-    // NOT invalidated, this read returns the cached value and the counter
-    // stays put — which is precisely the bug.
-    await Future<void>.delayed(Duration.zero);
-    container.read(activitiesControllerProvider);
+      // Keep both providers alive, as the events list screen does.
+      container.listen(activitiesControllerProvider, (_, __) {});
+      await container.read(eventsControllerProvider.future);
+      final buildsBeforeUpdate = activityBuilds;
 
-    expect(
-      activityBuilds,
-      greaterThan(buildsBeforeUpdate),
-      reason:
-          'the activities cache must be re-read after an event update, or the '
-          'events list keeps rendering the linked activity\'s OLD date',
-    );
-  });
+      await container
+          .read(eventsControllerProvider.notifier)
+          .updateEvent(_event().copyWith(startTime: '2026-09-30T07:30:00.000'));
+
+      // Force the (re)build to materialise, then compare. If the provider was
+      // NOT invalidated, this read returns the cached value and the counter
+      // stays put — which is precisely the bug.
+      await Future<void>.delayed(Duration.zero);
+      container.read(activitiesControllerProvider);
+
+      expect(
+        activityBuilds,
+        greaterThan(buildsBeforeUpdate),
+        reason:
+            'the activities cache must be re-read after an event update, or the '
+            'events list keeps rendering the linked activity\'s OLD date',
+      );
+    },
+  );
 }

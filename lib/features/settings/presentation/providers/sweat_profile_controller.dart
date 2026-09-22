@@ -2,6 +2,7 @@ import 'dart:async';
 import 'package:riverpod_annotation/riverpod_annotation.dart';
 import '../../../auth/data/user_repository.dart';
 import '../../../auth/domain/user_preferences.dart';
+import '../../../subscription/application/write_guard.dart';
 
 part 'sweat_profile_controller.g.dart';
 
@@ -141,6 +142,9 @@ class SweatProfileController extends _$SweatProfileController {
   Future<String?> save() async {
     final current = state.value;
     if (current == null) return 'Profile not loaded yet.';
+    // The paywall is up once this says no (mp-457 §4); the message keeps the
+    // screen from reporting a save that never happened.
+    if (!await ref.canWrite()) return 'Your plan has ended.';
 
     // Validate known sweat rate
     final rate = current.knownSweatRateMlPerHour;
