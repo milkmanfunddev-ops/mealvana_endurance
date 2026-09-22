@@ -662,15 +662,24 @@ describe('D. TRANSFER', () => {
 // ---------------------------------------------------------------------------
 
 describe('E. credit-pack grant path', () => {
-  it('NON_RENEWING_PURCHASE of a pack calls grant_credits and touches no entitlement row', async () => {
+  it('NON_RENEWING_PURCHASE of the $4.99 pack adds a quarter of a month ($1.00) through grant_credits and touches no entitlement row', async () => {
     const { db, handle } = setup();
     const res = await handle(rcRequest(body(creditPack())));
     assertEquals(res.status, 200);
     assertEquals(db.rpcCalls, [{
       fn: 'grant_credits',
-      args: { p_user_id: USER_ID, p_amount: 50, p_reason: 'grant_purchase', p_ref: 'evt-credits-001' },
+      args: { p_user_id: USER_ID, p_amount: 1_000_000, p_reason: 'grant_purchase', p_ref: 'evt-credits-001' },
     }]);
     assertEquals(db.writes.length, 0);
+  });
+
+  it('the $19.99 pack adds a month and a quarter ($5.00); the prod ids and the test pack map too (mp-430 clause 7)', async () => {
+    const { db, handle } = setup();
+    await handle(rcRequest(body(creditPack({ id: 'evt-250', product_id: 'mealvana_credits_250' }))));
+    await handle(rcRequest(body(creditPack({ id: 'evt-250p', product_id: 'mealvana_credits_250_prod' }))));
+    await handle(rcRequest(body(creditPack({ id: 'evt-50p', product_id: 'mealvana_credits_50_prod' }))));
+    await handle(rcRequest(body(creditPack({ id: 'evt-t1', product_id: 'mealvana_credits_test_1' }))));
+    assertEquals(db.rpcCalls.map((c) => c.args.p_amount), [5_000_000, 5_000_000, 1_000_000, 20_000]);
   });
 
   it('unmapped product and non-granting types are acked without a grant', async () => {
@@ -691,27 +700,28 @@ describe('E. credit-pack grant path', () => {
     assertEquals((await handle(rcRequest(body(creditPack())))).status, 500);
   });
 
-  it('RC_PRODUCT_CREDITS overrides the map; bad JSON falls back to defaults', async () => {
+  it('RC_PRODUCT_BUDGET overrides the map (micro-dollars); bad JSON falls back to defaults', async () => {
     const db = new FakeDb();
     const withMap = makeWebhookHandler({
-      env: envWith({ RC_PRODUCT_CREDITS: '{"mealvana_credits_50": 75}' }),
+      env: envWith({ RC_PRODUCT_BUDGET: '{"mealvana_credits_50": 75}' }),
       db: () => db as unknown as WebhookDb,
       revenueCat: noRevenueCat,
     });
     await withMap(rcRequest(body(creditPack())));
     assertEquals(db.rpcCalls[0].args.p_amount, 75);
     const bad = makeWebhookHandler({
-      env: envWith({ RC_PRODUCT_CREDITS: '{nope' }),
+      env: envWith({ RC_PRODUCT_BUDGET: '{nope' }),
       db: () => db as unknown as WebhookDb,
       revenueCat: noRevenueCat,
     });
     await bad(rcRequest(body(creditPack())));
-    assertEquals(db.rpcCalls[1].args.p_amount, 50);
+    assertEquals(db.rpcCalls[1].args.p_amount, 1_000_000);
   });
 });
 
 // ---------------------------------------------------------------------------
-// G. The monthly Allowance (mp-281, ticket 20)
+// G. The monthly budget (mp-281 ticket 20; mp-430 ai-cost ticket 09): $4.00 a
+//    month in micro-dollars, the trial week a quarter of it
 // ---------------------------------------------------------------------------
 
 describe('G. allowance grants', () => {
@@ -719,30 +729,46 @@ describe('G. allowance grants', () => {
   let handle: (req: Request) => Promise<Response>;
   beforeEach(() => {
     ({ db, handle } = setup());
-    db.rpcResult = { data: { granted: true, forfeited: 0, balance: 300, allowance: 300 } };
+    db.rpcResult = { data: { granted: true, forfeited: 0, balance: 1_000_000, allowance: 1_000_000 } };
   });
 
-  it('the trial’s INITIAL_PURCHASE grants the full Allowance, expiring with the trial, keyed on the event id', async () => {
+  it('the trial’s INITIAL_PURCHASE grants the trial week’s quarter ($1.00), expiring with the trial, keyed on the event id', async () => {
     const res = await handle(rcRequest(body(trialStart())));
     assertEquals(res.status, 200);
     assertEquals(db.rpcCalls, [{
       fn: 'grant_allowance',
-      args: { p_user_id: USER_ID, p_amount: 300, p_active_until: iso(T0 + 7 * DAY), p_ref: 'A1B2C3D4-0000-4000-8000-0000000000A1' },
+      args: { p_user_id: USER_ID, p_amount: 1_000_000, p_active_until: iso(T0 + 7 * DAY), p_ref: 'A1B2C3D4-0000-4000-8000-0000000000A1' },
     }]);
     // The entitlement row is written first, in the same delivery.
     assertEquals(db.rows.get(USER_ID)!.active_until, iso(T0 + 7 * DAY));
     const out = await res.json();
-    assertEquals(out.allowance, { granted: true, forfeited: 0, balance: 300, allowance: 300 });
+    assertEquals(out.allowance, { granted: true, forfeited: 0, balance: 1_000_000, allowance: 1_000_000 });
   });
 
-  it('RENEWAL grants again, keyed on its own event id, with the new period end', async () => {
+  it('RENEWAL grants the month ($4.00), keyed on its own event id, with the new period end', async () => {
     await handle(rcRequest(body(trialStart())));
     await handle(rcRequest(body(paidRenewal())));
     assertEquals(db.rpcCalls.length, 2);
     assertEquals(db.rpcCalls[1], {
       fn: 'grant_allowance',
-      args: { p_user_id: USER_ID, p_amount: 300, p_active_until: iso(T0 + 37 * DAY), p_ref: 'A1B2C3D4-0000-4000-8000-0000000000A2' },
+      args: { p_user_id: USER_ID, p_amount: 4_000_000, p_active_until: iso(T0 + 37 * DAY), p_ref: 'A1B2C3D4-0000-4000-8000-0000000000A2' },
     });
+  });
+
+  it('a paid INITIAL_PURCHASE with no trial grants the month; annual and founding plans get the same month (mp-430 clause 2)', async () => {
+    await handle(rcRequest(body(trialStart({ period_type: 'NORMAL', product_id: 'me_pro_annual_founding', expiration_at_ms: T0 + 365 * DAY }))));
+    assertEquals(db.rpcCalls[0].args.p_amount, 4_000_000);
+  });
+
+  it('a TRANSFER leaves the allowance where it was granted: no wallet RPC at all (mp-430 clause 11)', async () => {
+    await handle(rcRequest(body(trialStart())));
+    const before = db.rpcCalls.length;
+    await handle(rcRequest(body({
+      app_user_id: OTHER_USER, environment: 'SANDBOX', event_timestamp_ms: T0 + 3 * DAY, id: 'evt-transfer-1', store: 'APP_STORE',
+      transferred_from: [USER_ID], transferred_to: [OTHER_USER], type: 'TRANSFER',
+    })));
+    assertEquals(db.rpcCalls.length, before, 'the wallet is not touched by a transfer');
+    assertEquals(db.rows.get(OTHER_USER)!.period_type, 'TRIAL', 'the entitlement moved');
   });
 
   it('CANCELLATION touches the wallet not at all (access and the allowance run to the period end)', async () => {
@@ -758,7 +784,7 @@ describe('G. allowance grants', () => {
 
   it('EXPIRATION forfeits what is left of the allowance and grants nothing', async () => {
     await handle(rcRequest(body(trialStart())));
-    db.rpcResult = { data: { forfeited: 280, balance: 50, allowance: 0 } };
+    db.rpcResult = { data: { forfeited: 280_000, balance: 50_000, allowance: 0 } };
     const res = await handle(rcRequest(body(trialStart({
       id: 'A1B2C3D4-0000-4000-8000-0000000000A4',
       type: 'EXPIRATION',
@@ -771,7 +797,7 @@ describe('G. allowance grants', () => {
       args: { p_user_id: USER_ID, p_ref: 'A1B2C3D4-0000-4000-8000-0000000000A4' },
     });
     assertEquals(db.rpcCalls.length, 2);
-    assertEquals((await res.json()).allowance, { forfeited: 280, balance: 50, allowance: 0 });
+    assertEquals((await res.json()).allowance, { forfeited: 280_000, balance: 50_000, allowance: 0 });
   });
 
   it('a stale event grants nothing', async () => {
@@ -787,12 +813,14 @@ describe('G. allowance grants', () => {
     assertEquals((await res.json()).allowance, { skipped: 'not_active' });
   });
 
-  it('AI_MONTHLY_ALLOWANCE overrides the number per project', async () => {
+  it('AI_MONTHLY_BUDGET and AI_TRIAL_BUDGET override the numbers per project', async () => {
     const own = new FakeDb();
     own.rpcResult = { data: { granted: true } };
-    const { handle: withEnv } = withRevenueCat(envWith({ AI_MONTHLY_ALLOWANCE: '120' }), own, T0 + 60_000);
+    const { handle: withEnv } = withRevenueCat(envWith({ AI_MONTHLY_BUDGET: '120', AI_TRIAL_BUDGET: '30' }), own, T0 + 60_000);
     await withEnv(rcRequest(body(trialStart())));
-    assertEquals(own.rpcCalls[0].args.p_amount, 120);
+    assertEquals(own.rpcCalls[0].args.p_amount, 30);
+    await withEnv(rcRequest(body(paidRenewal())));
+    assertEquals(own.rpcCalls[1].args.p_amount, 120);
   });
 
   it('a redelivered grant (23505) is acked; any other grant failure is a 500 so RevenueCat retries', async () => {
@@ -805,7 +833,7 @@ describe('G. allowance grants', () => {
   });
 
   it('a credit-pack purchase still goes to grant_credits only', async () => {
-    db.rpcResult = { data: 350 };
+    db.rpcResult = { data: 5_000_000 };
     await handle(rcRequest(body(creditPack())));
     assertEquals(db.rpcCalls.map((c) => c.fn), ['grant_credits']);
   });

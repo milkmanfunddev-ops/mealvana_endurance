@@ -18,8 +18,8 @@
  *   - Storage: reads/writes `vana_conversations` / `vana_messages` directly through the caller's JWT client (RLS); the
  *     `jade_*` compatibility views still serve reads. `vana_calls` + `ai_usage` per model call.
  *   - Opener: still ephemeral (no conversation row, nothing persisted, x-conversation-id empty).
- *   - Credits: UNCHANGED — ensureAndCheckCredits before the call (402 when out), debitForUsage after. Pro users are
- *     free via the credit module's own rules; the Vana paths (`vana-chat`) never debit.
+ *   - Budget (mp-430, ticket 09): reserveBudget before the call (402 when the month is used up), settled to the real
+ *     cost after, refunded when the turn failed. The opener draws it too.
  *   - Pro gate (paywall ticket 02, mp-429 clause 11): 403 {error:'pro_required'} for a caller without an active
  *     subscription, the same refusal as vana-chat, before the credit check. Bought credits alone do not open it.
  *   - `location` is accepted and ignored (the Vana tools take a place name via getWeather).
@@ -28,7 +28,7 @@ import { serve } from 'https://deno.land/std@0.224.0/http/server.ts';
 import { corsHeaders } from '../_shared/cors.ts';
 import { errorResponse, jsonResponse, validationError, serverError } from '../_shared/responses.ts';
 import { initSentry, withSentry } from '../_shared/sentry.ts';
-import { ensureAndCheckCredits, debitForUsage, insufficientCreditsBody } from '../_shared/ai/credits.ts';
+import { reserveBudget } from '../_shared/ai/credits.ts';
 import { authenticate } from '../_shared/vana/auth.ts';
 import { refuseUnlessPro } from '../_shared/vana/entitlement.ts';
 import { runChat } from '../_shared/vana/chat.ts';
@@ -72,19 +72,24 @@ serve(withSentry(async (req: Request) => {
     const conversationId = typeof body.conversation_id === 'string' && body.conversation_id.trim().length > 0 ? body.conversation_id.trim() : null;
     const timezone = typeof body.timezone === 'string' && body.timezone.trim().length > 0 ? body.timezone.trim() : 'UTC';
 
-    // ── Credit check (unchanged) ────────────────────────────────────────────
-    const credit = await ensureAndCheckCredits(v.admin, v.userId, 'jade-chat');
-    if (!credit.allowed) return jsonResponse(insufficientCreditsBody(credit), 402);
+    // ── Budget (mp-430, ticket 09): every call draws it by its real cost, the opener included ──
+    const budget = await reserveBudget(v.admin, v.userId, 'jade-chat');
+    if (!budget.allowed) return jsonResponse(budget.body, budget.status);
+    const hold = budget.hold;
 
     // ── Run the Vana general chat ───────────────────────────────────────────
-    const run = await runChat(v, { kind: 'general', message: isOpener ? undefined : message, conversation_id: conversationId, timezone, opener: isOpener }, {
-      functionName: 'jade-chat',
-      persist: !isOpener,
-      // Debit credits for the successful AI call (opener included — same as before).
-      afterFinish: async () => { await debitForUsage(v.admin, v.userId, 'jade-chat'); },
-      debited: true,
-    });
+    let run;
+    try {
+      run = await runChat(v, { kind: 'general', message: isOpener ? undefined : message, conversation_id: conversationId, timezone, opener: isOpener }, {
+        functionName: 'jade-chat',
+        persist: !isOpener,
+        afterFinish: (usage) => hold.settle(usage),
+        onFailure: () => hold.refund(),
+        debited: true,
+      });
+    } catch (e) { await hold.refund(); throw e; }
     if (!run.ok) {
+      await hold.refund();
       if (run.status === 429) return jsonResponse(run.body, 429);
       return validationError(String(run.body.error ?? 'invalid request'));
     }

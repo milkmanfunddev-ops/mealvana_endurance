@@ -33,10 +33,11 @@
  *                                expiry; without it those events answer 500 and
  *                                RevenueCat redelivers. Credit packs do not need it.
  *   REVENUECAT_PROJECT_ID      — optional, defaults to proj77b3c48f
- *   RC_PRODUCT_CREDITS         — optional JSON map of store product id → credit amount,
- *                                e.g. {"mealvana_credits_50":50,"mealvana_credits_250":250}
- *                                NOTE: when set, this REPLACES the defaults in handler.ts — a
- *                                stale secret is enough to make every new SKU grant 0 credits.
+ *   RC_PRODUCT_BUDGET          — optional JSON map of store product id → micro-dollars added,
+ *                                e.g. {"mealvana_credits_50":1000000,"mealvana_credits_250":5000000}
+ *                                NOTE: when set, this REPLACES the defaults in _shared/ai/allowance.ts —
+ *                                a stale secret is enough to make every new SKU grant nothing.
+ *                                (RC_PRODUCT_CREDITS, the credit-era map, is read by nothing now.)
  *
  * IMPORTANT: the RevenueCat "App User ID" must be the Supabase auth user id
  * (set via Purchases.logIn(userId) in the app) so app_user_id maps to our user.

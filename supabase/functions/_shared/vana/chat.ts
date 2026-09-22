@@ -269,13 +269,17 @@ export interface ChatRunOpts {
   functionName: string;
   /** false = ephemeral turn: no conversation row, nothing written (the legacy jade-chat opener). Default true. */
   persist?: boolean;
-  /** Runs inside the onFinish persistence task after the usage rows are written (jade-chat's credit debit). */
-  afterFinish?: (usage: { inputTokens: number; outputTokens: number }) => Promise<void>;
-  /** Whether this turn draws the athlete's budget (mp-420 clause 6) — the function's own `charged` decision, recorded on
-   *  the call row so "what did the budget actually pay for" is answerable. The scripted opener is not charged today; the
-   *  column is what will show that changing (spec: every call draws it down). Default false. */
+  /** Runs inside the onFinish persistence task after the usage rows are written, with what the turn cost in the shape the
+   *  budget settles from (mp-436): the tokens both ways, the cache both directions, the gateway's own charge, the model. */
+  afterFinish?: (usage: FinishedUsage) => Promise<void>;
+  /** Runs when the stream fails before it finished: the turn's reservation comes back (mp-436, ticket 09). */
+  onFailure?: (error: unknown) => Promise<void>;
+  /** Whether this turn draws the athlete's budget (mp-420 clause 6) — recorded on the call row so "what did the budget
+   *  actually pay for" is answerable. Since ticket 09 every turn does, the scripted opener included (mp-430 clause 1). */
   debited?: boolean;
 }
+/** What a finished turn cost, as handed to `afterFinish`. */
+export interface FinishedUsage { inputTokens: number; outputTokens: number; cacheReadTokens: number | null; cacheWriteTokens: number | null; gatewayCostUsd: number | null; model: string }
 export type ChatOutcome = { ok: true; response: Response } | { ok: false; status: 400 | 429; body: Record<string, unknown> };
 
 /** The reply to an idle signal (schemas.ts IdleAckZ). Nothing waits on it (mp-288 clause 2). */
@@ -390,6 +394,9 @@ export async function runChat(v: VanaCtx, body: ChatBody, opts: ChatRunOpts): Pr
     // deno-lint-ignore no-explicit-any
     stopWhen: chatStopWhen(general) as any,
     providerOptions: CACHE_PROVIDER_OPTIONS,
+    // A stream that fails is a call the athlete did not get: its reservation goes back. The hold settles once, so an
+    // onFinish that follows an error changes nothing.
+    onError: ({ error }) => { console.error(`${tag} stream error:`, (error as Error)?.message ?? error); if (opts.onFailure) waitUntil(opts.onFailure(error).catch((e) => console.error(`${tag} onFailure threw:`, (e as Error).message))); },
     onFinish: ({ text, steps, usage, totalUsage }) => {
       const u = totalUsage ?? usage;
       const inputTokens = u?.inputTokens ?? 0; const outputTokens = u?.outputTokens ?? 0;
@@ -420,7 +427,7 @@ export async function runChat(v: VanaCtx, body: ChatBody, opts: ChatRunOpts): Pr
           else await logCall(v.admin, { userId: v.userId, conversationId: convId || null, functionName, model: CHAT_MODEL, inputTokens, outputTokens, ...cost });
           // `ai_usage.cost_usd` exists for exactly this and was never filled from chat; the gateway's charge goes in both logs.
           await logAiUsage(v.admin, { userId: v.userId, functionName: opts.functionName, model: CHAT_MODEL, inputTokens, outputTokens, costUsd: metrics.gatewayCostUsd ?? null });
-          await opts.afterFinish?.({ inputTokens, outputTokens });
+          await opts.afterFinish?.({ inputTokens, outputTokens, cacheReadTokens: metrics.cacheReadTokens ?? null, cacheWriteTokens: metrics.cacheWriteTokens ?? null, gatewayCostUsd: metrics.gatewayCostUsd ?? null, model: CHAT_MODEL });
           console.log(`${tag} onFinish user=${v.userId} conv=${convId || '(ephemeral)'} in=${inputTokens} cache_read=${cacheRead} out=${outputTokens} steps=${steps.length} ${Date.now() - started}ms`);
         } catch (e) { console.error(`${tag} onFinish task failed:`, (e as Error).message); }
       })();

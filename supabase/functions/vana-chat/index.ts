@@ -15,9 +15,10 @@
  *   503 {error:'ai_unavailable'} (the AI Gateway refused our key; mid-stream it is the error line's `code`).
  * Persistence: vana_conversations / vana_messages (content + parts + metadata), vana_calls + ai_usage per model call —
  *   all from onFinish under EdgeRuntime.waitUntil.
- * Credits (mp-281 §1, ticket 20): a message turn costs one credit — ensureAndCheckCredits before the call (402 when the
- *   wallet is empty, which the app's one handler turns into the top-up sheet), debitForUsage after it. The scripted
- *   opener is Vana speaking first, not the athlete asking: it is never charged.
+ * Budget (mp-430, mp-436; ai-cost ticket 09): every turn draws the monthly budget by its real cost, the scripted opener
+ *   included — reserveBudget before the call (402 when the month is used up, which the app's one handler turns into the
+ *   top-up sheet; 503 ai_unavailable when the wallet cannot be read), the hold settled to the real cost after it and
+ *   refunded when the turn failed. A turn that started inside the budget finishes even if it ends over.
  * Contract: docs/implement_mealplanning/02-contract.md · spec: 03-backend.md.
  */
 import { serve } from 'https://deno.land/std@0.224.0/http/server.ts';
@@ -29,7 +30,7 @@ import { requirePro } from '../_shared/vana/entitlement.ts';
 import { runChat, type ChatBody } from '../_shared/vana/chat.ts';
 import { RateLimitedError } from '../_shared/vana/rate-limit.ts';
 import { gatewayRefusalResponse } from '../_shared/ai/gateway_error.ts';
-import { debitForUsage, ensureAndCheckCredits, insufficientCreditsBody } from '../_shared/ai/credits.ts';
+import { reserveBudget } from '../_shared/ai/credits.ts';
 
 /** Maximum user-message length to prevent token abuse (same as jade-chat). */
 const MAX_MESSAGE_LENGTH = 4000;
@@ -58,23 +59,26 @@ serve(withSentry(async (req: Request) => {
   const pro = await requirePro(v.admin, v.userId);
   if (!pro.ok) return jsonResponse({ error: pro.reason }, 403);
 
-  // A turn the athlete sends is a debiting call; the opener (no message) is not.
-  const charged = body.opener !== true && typeof body.message === 'string' && body.message.trim().length > 0;
-  if (charged) {
-    const credit = await ensureAndCheckCredits(v.admin, v.userId, 'vana-chat');
-    if (!credit.allowed) return jsonResponse(insufficientCreditsBody(credit), 402);
-  }
+  // Every turn draws the budget, the opener included (mp-430 clause 1): a turn the athlete sends is a chat call, a
+  // request with no message is the scripted first turn. The reservation is taken here, before the limiter and the
+  // model, so a burst is counted when it starts; anything that stops the turn short of the model gives it back.
+  const opener = body.opener === true || typeof body.message !== 'string' || body.message.trim().length === 0;
+  const budget = await reserveBudget(v.admin, v.userId, opener ? 'vana-opener' : 'vana-chat');
+  if (!budget.allowed) return jsonResponse(budget.body, budget.status);
+  const hold = budget.hold;
 
   try {
     const run = await runChat(v, body, {
       functionName: 'vana-chat',
-      afterFinish: charged ? async () => { await debitForUsage(v.admin, v.userId, 'vana-chat'); } : undefined,
+      afterFinish: (usage) => hold.settle(usage),
+      onFailure: () => hold.refund(),
       // The call log records whether the turn drew the budget (mp-420 clause 6), so "what did the budget pay for" is answerable.
-      debited: charged,
+      debited: true,
     });
-    if (!run.ok) return jsonResponse(run.body, run.status);
+    if (!run.ok) { await hold.refund(); return jsonResponse(run.body, run.status); }
     return run.response;
   } catch (e) {
+    await hold.refund();
     if (e instanceof RateLimitedError) return jsonResponse({ error: 'rate_limited', retry_after_seconds: e.retryAfterSeconds }, 429);
     // A refusal before the first byte (an embedding while the context is built): 503 ai_unavailable, never a 402 (mp-437).
     const refused = gatewayRefusalResponse(e, 'vana-chat');

@@ -7,6 +7,7 @@ import * as plan from './plan.ts';
 import { setSetting, forgetMemory, listMemories, isCoverageScope, isDayKey, isPeriodDays, isMealTypes, PERIOD_DAYS_MIN, PERIOD_DAYS_MAX, type SettingValue } from './memory.ts';
 import { detectPantryFromPhoto, persistAssistantPart } from './pantry.ts';
 import { completeCall, reserveCallOrThrow } from './rate-limit.ts';
+import { reserveBudgetOrThrow } from '../ai/credits.ts';
 import { diagnoseStaples, dayGuidance, planDayPart } from './tools.ts';
 import { buildAthleteContext } from './context.ts';
 import { getMeal, saveLibraryMeal, getMealDetail, recentMeals, setSavedMealNotes, setMealFeedback } from './meals.ts';
@@ -88,10 +89,17 @@ export async function extraAction(v: VanaCtx, type: string, p: Record<string, an
     case 'same_as_last_time': { const conversationId = pick(p, 'conversationId', 'conversation_id'); const planId = pick(p, 'planId', 'plan_id'); const sc: plan.PlanScope | null = planId ? { planId: String(planId) } : conversationId ? { conversationId: String(conversationId) } : null; return { parts: [{ kind: 'batch', plan: await plan.draftFromLastTime(v, sc) }] }; }
     case 'set_pantry': { const conversationId = pick(p, 'conversationId', 'conversation_id'); const items = (Array.isArray(p.items) ? p.items : []).map((x: unknown) => String(x).trim()).filter(Boolean).slice(0, 40); const m = await setSetting(v, 'pantry_items', items, 'conversation'); const scope: plan.PlanScope | null = conversationId ? { conversationId: String(conversationId) } : null; const cur = await plan.resolvePlan(v, scope, false); if (cur && cur.meals.length) await plan.refreshShopping(v, cur.id); return { parts: [{ kind: 'memory_saved', memory: m }] }; }
     case 'pantry_photo': { const conversationId = String(pick(p, 'conversationId', 'conversation_id') ?? ''); if (!conversationId) throw new Error('conversationId required');
-      // A fridge photo is a vision call, limited by the same shared module as chat and counted when it starts
-      // (mp-469 criterion 3). A refusal throws; vana-action answers 429 rate_limited.
-      const callId = await reserveCallOrThrow(v.admin, v.userId, 'vana.pantry_photo', { model: TOOL_MODEL });
-      const part = await detectPantryFromPhoto(v, String(pick(p, 'photoPath', 'photo_path')), (t) => completeCall(v.admin, callId, { ...t, conversationId })); const messageId = await persistAssistantPart(v, conversationId, part, part.items.length ? 'Here is what I could see — untick anything that is wrong, add what I missed, then tap Use these.' : 'I could not spot food in that photo. Add what you have and tap Use these.'); return { parts: [part], messageId }; }
+      // A fridge photo is a vision call: it draws the monthly budget (mp-430, ticket 09) and is limited by the same shared
+      // module as chat, both counted when it starts (mp-469 criterion 3). A refusal throws; vana-action answers 402 / 503
+      // for the budget and 429 rate_limited for the limiter, and a reservation the limiter or the model failed goes back.
+      const hold = await reserveBudgetOrThrow(v.admin, v.userId, 'vana-pantry-photo');
+      let callId: string | null;
+      try { callId = await reserveCallOrThrow(v.admin, v.userId, 'vana.pantry_photo', { model: TOOL_MODEL }); } catch (e) { await hold.refund(); throw e; }
+      let part;
+      try {
+        part = await detectPantryFromPhoto(v, String(pick(p, 'photoPath', 'photo_path')), async (t) => { await completeCall(v.admin, callId, { inputTokens: t.inputTokens, outputTokens: t.outputTokens, cacheReadTokens: t.cacheReadTokens, cacheWriteTokens: t.cacheWriteTokens, gatewayCostUsd: t.gatewayCostUsd, steps: 1, debited: true, conversationId }); await hold.settle(t); });
+      } catch (e) { await hold.refund(); throw e; }
+      const messageId = await persistAssistantPart(v, conversationId, part, part.items.length ? 'Here is what I could see — untick anything that is wrong, add what I missed, then tap Use these.' : 'I could not spot food in that photo. Add what you have and tap Use these.'); return { parts: [part], messageId }; }
     case 'rewind': {
       // Drop the edited user turn and everything after it, then put the draft back to the snapshot the previous assistant turn stored.
       const conversationId = String(pick(p, 'conversationId', 'conversation_id') ?? ''); const messageId = String(pick(p, 'messageId', 'message_id') ?? '');

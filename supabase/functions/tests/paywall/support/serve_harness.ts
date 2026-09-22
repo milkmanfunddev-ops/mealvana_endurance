@@ -104,8 +104,10 @@ export interface World {
   userId: string;
   /** `public.user_entitlements` rows, as the RevenueCat webhook writes them. */
   entitlements: { user_id: string; active_until: string | null; period_type: string | null }[];
-  /** What `ensure_allowance` answers: the caller's credit balance. */
+  /** What `ai_budget_reserve` sees: the caller's budget in micro-dollars (ai-cost ticket 09). */
   balance: number;
+  /** When true the wallet RPCs answer 500: the database error that must refuse the call (ticket 09). */
+  budgetDown?: boolean;
   /** `public.users` rows (meal-photo reads `is_internal`). */
   users: { id: string; is_internal: boolean }[];
 }
@@ -134,7 +136,6 @@ function tableAnswer(url: URL, accept: string, rows: Record<string, unknown>[]):
 export async function withWorld<T>(world: World, body: (hits: Hits) => Promise<T>): Promise<T> {
   const realFetch = globalThis.fetch;
   const hits: Hits = [];
-  // deno-lint-ignore require-await
   globalThis.fetch = (async (input: Request | URL | string, init?: RequestInit) => {
     const req = input instanceof Request ? input : new Request(input, init);
     const url = new URL(req.url);
@@ -151,8 +152,15 @@ export async function withWorld<T>(world: World, body: (hits: Hits) => Promise<T
         return tableAnswer(url, accept, world.entitlements);
       case '/rest/v1/users':
         return tableAnswer(url, accept, world.users);
-      case '/rest/v1/rpc/ensure_allowance':
-        return json({ balance: world.balance, allowance: 0, allowance_monthly: 0, allowance_expires_at: null });
+      case '/rest/v1/rpc/ai_budget_reserve': {
+        if (world.budgetDown) return json({ code: '57P01', message: 'terminating connection' }, 500);
+        // The budget's one statement (ticket 09): allowed when the balance covers the estimate the function asked for.
+        const args = await req.clone().json().catch(() => ({})) as { p_estimate?: number };
+        const allowed = world.balance >= (args.p_estimate ?? 0);
+        return json({ allowed, reservation_id: allowed ? 'res-stub' : undefined, balance: world.balance, allowance: 0, allowance_monthly: 0, allowance_expires_at: null });
+      }
+      case '/rest/v1/rpc/ai_budget_settle':
+        return json({ settled: true });
       default:
         if (url.pathname.startsWith('/rest/v1/') && req.method === 'GET') return tableAnswer(url, accept, []);
         return json({ message: `stub: no route for ${req.method} ${url.pathname}` }, 404);

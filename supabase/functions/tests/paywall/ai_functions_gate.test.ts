@@ -54,9 +54,9 @@ const REQUESTS: Record<string, unknown> = {
 
 /** What each function does once past the gate, for an active account with an empty wallet. */
 const PAST_THE_GATE: Record<string, (hits: string[]) => boolean> = {
-  'describe-meal': (h) => h.includes('POST /rest/v1/rpc/ensure_allowance'),
-  'analyze-meal-photo': (h) => h.includes('POST /rest/v1/rpc/ensure_allowance'),
-  'jade-chat': (h) => h.includes('POST /rest/v1/rpc/ensure_allowance'),
+  'describe-meal': (h) => h.includes('POST /rest/v1/rpc/ai_budget_reserve'),
+  'analyze-meal-photo': (h) => h.includes('POST /rest/v1/rpc/ai_budget_reserve'),
+  'jade-chat': (h) => h.includes('POST /rest/v1/rpc/ai_budget_reserve'),
   'meal-photo': (h) => h.includes('GET /rest/v1/users'),
 };
 
@@ -97,7 +97,7 @@ for (const [label, world] of [['lapsed (expired row)', lapsed], ['never subscrib
         assertEquals(got, reference);
         assert(hits.includes('GET /rest/v1/user_entitlements'), `${fn} read the entitlement cache: ${hits.join(', ')}`);
         // Refused before anything costs: no wallet check, no model call, no tester read.
-        assertEquals(hits.filter((h) => h.includes('ensure_allowance') || h.startsWith('POST https://')), [], `${fn} stopped at the gate`);
+        assertEquals(hits.filter((h) => h.includes('ai_budget_reserve') || h.startsWith('POST https://')), [], `${fn} stopped at the gate`);
         assertEquals(hits.filter((h) => h === 'GET /rest/v1/users'), [], `${fn} stopped at the gate`);
       });
     });
