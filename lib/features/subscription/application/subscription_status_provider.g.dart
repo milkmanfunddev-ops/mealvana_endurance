@@ -121,6 +121,10 @@ String _$subscriptionAuthUserIdHash() =>
 /// 4. A cache that belongs to another RevenueCat identity than the signed-in
 ///    user is not an answer: locked until `logIn` has moved the identity.
 ///
+/// Every answer it takes also settles the day-five reminder (mp-456 §4): an
+/// active trial that will not renew cancels it. That covers the app open
+/// (build) and the background refresh that follows a stale cache (the push).
+///
 /// **[build] never throws.** A keepAlive provider whose first build errors
 /// would leave `.future` uncompleted for anyone awaiting it (the router
 /// redirect, the paywall after a purchase); anything unexpected degrades to
@@ -146,6 +150,10 @@ const subscriptionStatusProvider = SubscriptionStatusControllerProvider._();
 ///    status and the gate reacts.
 /// 4. A cache that belongs to another RevenueCat identity than the signed-in
 ///    user is not an answer: locked until `logIn` has moved the identity.
+///
+/// Every answer it takes also settles the day-five reminder (mp-456 §4): an
+/// active trial that will not renew cancels it. That covers the app open
+/// (build) and the background refresh that follows a stale cache (the push).
 ///
 /// **[build] never throws.** A keepAlive provider whose first build errors
 /// would leave `.future` uncompleted for anyone awaiting it (the router
@@ -175,6 +183,10 @@ final class SubscriptionStatusControllerProvider
   /// 4. A cache that belongs to another RevenueCat identity than the signed-in
   ///    user is not an answer: locked until `logIn` has moved the identity.
   ///
+  /// Every answer it takes also settles the day-five reminder (mp-456 §4): an
+  /// active trial that will not renew cancels it. That covers the app open
+  /// (build) and the background refresh that follows a stale cache (the push).
+  ///
   /// **[build] never throws.** A keepAlive provider whose first build errors
   /// would leave `.future` uncompleted for anyone awaiting it (the router
   /// redirect, the paywall after a purchase); anything unexpected degrades to
@@ -199,7 +211,7 @@ final class SubscriptionStatusControllerProvider
 }
 
 String _$subscriptionStatusControllerHash() =>
-    r'a89a9b1a6f761ef3be08ddd160ecc602b26dc3b2';
+    r'eb2fc120783fad11b44ea5b6b3305abbf528c94f';
 
 /// The current user's subscription status, from RevenueCat and nothing else
 /// (mp-279, mp-284).
@@ -218,6 +230,10 @@ String _$subscriptionStatusControllerHash() =>
 ///    status and the gate reacts.
 /// 4. A cache that belongs to another RevenueCat identity than the signed-in
 ///    user is not an answer: locked until `logIn` has moved the identity.
+///
+/// Every answer it takes also settles the day-five reminder (mp-456 §4): an
+/// active trial that will not renew cancels it. That covers the app open
+/// (build) and the background refresh that follows a stale cache (the push).
 ///
 /// **[build] never throws.** A keepAlive provider whose first build errors
 /// would leave `.future` uncompleted for anyone awaiting it (the router
