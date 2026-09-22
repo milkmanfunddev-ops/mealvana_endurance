@@ -79,6 +79,9 @@ class VanaSettingsController extends _$VanaSettingsController {
   @override
   FutureOr<VanaSettingsState> build() async {
     final userId = await ref.watch(userIdProvider.future);
+    // The await above can outlive this auto-dispose controller (the settings
+    // screen closes); every ref use below would throw UnmountedRefException.
+    if (!ref.mounted) return const VanaSettingsState();
     _userId = userId;
     ref.onDispose(() {
       _settingsSub?.cancel();
@@ -86,8 +89,10 @@ class VanaSettingsController extends _$VanaSettingsController {
     });
     unawaited(_ensureSynced(userId));
 
-    final settings = await _repo.watchSettings(userId).first;
-    final memories = await _repo.watchMemories(userId).first;
+    final repo = _repo;
+    final settings = await repo.watchSettings(userId).first;
+    final memories = await repo.watchMemories(userId).first;
+    if (!ref.mounted) return const VanaSettingsState();
     final initial = _fold(
       VanaSettingsState(
         remindersEnabled: ref
@@ -98,12 +103,12 @@ class VanaSettingsController extends _$VanaSettingsController {
       memories,
     );
 
-    _settingsSub = _repo.watchSettings(userId).listen((s) {
+    _settingsSub = repo.watchSettings(userId).listen((s) {
       final current = state.value;
       if (current == null || !ref.mounted) return;
       state = AsyncData(_fold(current, s, current.memories));
     });
-    _memoriesSub = _repo.watchMemories(userId).listen((m) {
+    _memoriesSub = repo.watchMemories(userId).listen((m) {
       final current = state.value;
       if (current == null || !ref.mounted) return;
       state = AsyncData(current.copyWith(memories: m));

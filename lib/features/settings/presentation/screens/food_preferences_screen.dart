@@ -304,11 +304,14 @@ class _FoodPreferencesScreenState extends ConsumerState<FoodPreferencesScreen> {
         error: e,
         stackTrace: stackTrace,
       );
-      setState(() {
-        _isLoading = false;
-      });
 
+      // The load can outlive the screen (user navigated away). setState on a
+      // disposed element dereferences _element! in release builds — the
+      // "Null check operator used on a null value" Sentry reports.
       if (mounted) {
+        setState(() {
+          _isLoading = false;
+        });
         MealvanaSnackbar.showError(
           context,
           'Error loading food preferences: ${e.toString()}',

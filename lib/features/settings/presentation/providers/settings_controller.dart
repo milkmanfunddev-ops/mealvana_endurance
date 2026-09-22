@@ -818,11 +818,18 @@ class SettingsController extends _$SettingsController {
   /// 2. Clear user's local data (with WHERE user_id filter)
   /// 3. Sign out to trigger auth state change which rebuilds UI
   Future<void> deleteAccount() async {
-    state = await AsyncValue.guard(() async {
-      final supabaseClient = ref.read(appExternalDepsProvider).supabaseClient;
-      final analytics = ref.read(appExternalDepsProvider).analytics;
-      final logger = ref.read(appExternalDepsProvider).logger;
-      final database = ref.read(appDatabaseProvider);
+    // Read everything the guarded body needs up front: the awaits below can
+    // outlive this notifier (the auth listener invalidates it as soon as
+    // signOut lands), and touching ref/state after that throws
+    // UnmountedRefException.
+    final supabaseClient = ref.read(appExternalDepsProvider).supabaseClient;
+    final analytics = ref.read(appExternalDepsProvider).analytics;
+    final logger = ref.read(appExternalDepsProvider).logger;
+    final database = ref.read(appDatabaseProvider);
+    final prefs = ref.read(sharedPreferencesProvider);
+    final previousState = state;
+
+    final result = await AsyncValue.guard(() async {
       final currentUserId = supabaseClient.auth.currentUser?.id;
 
       if (currentUserId == null) {
@@ -876,7 +883,6 @@ class SettingsController extends _$SettingsController {
 
       // Clear the temp user ID from SharedPreferences
       // This ensures a new user won't inherit the previous user's integration status
-      final prefs = ref.read(sharedPreferencesProvider);
       await prefs.remove(_onboardingTempUserIdKey);
 
       // The deleted account's onboarding snapshot must not survive to be
@@ -894,7 +900,12 @@ class SettingsController extends _$SettingsController {
       await Future.delayed(const Duration(milliseconds: 1000));
 
       // Return current state (will be refreshed)
-      return state.requireValue;
+      return previousState.requireValue;
     });
+
+    // The sign-out above invalidates this controller; if that already
+    // happened the assignment below would throw UnmountedRefException.
+    if (!ref.mounted) return;
+    state = result;
   }
 }

@@ -50,6 +50,9 @@ MealLoggingService mealLoggingService(Ref ref) {
 /// callers handle the empty-state UI).
 @riverpod
 Stream<List<MealLog>> mealLogsForDate(Ref ref, String date) async* {
+  // Repo read before the awaits: disposal during userRepo.getCurrentUser()
+  // would make a later ref.read throw UnmountedRefException.
+  final repo = ref.read(mealLogRepositoryProvider);
   final userRepo = await ref.read(userRepositoryProvider.future);
   final user = await userRepo.getCurrentUser();
   final userId = user?.id;
@@ -58,7 +61,6 @@ Stream<List<MealLog>> mealLogsForDate(Ref ref, String date) async* {
     return;
   }
 
-  final repo = ref.read(mealLogRepositoryProvider);
   yield* repo.watchLogsForDate(userId, date);
 }
 
@@ -68,6 +70,7 @@ Stream<List<MealLog>> mealLogsForDate(Ref ref, String date) async* {
 /// Empty when there is no authenticated user.
 @riverpod
 Stream<List<Activity>> completedActivitiesForDate(Ref ref, String date) async* {
+  final repo = ref.read(activitiesRepositoryProvider);
   final userRepo = await ref.read(userRepositoryProvider.future);
   final user = await userRepo.getCurrentUser();
   final userId = user?.id;
@@ -76,9 +79,7 @@ Stream<List<Activity>> completedActivitiesForDate(Ref ref, String date) async* {
     return;
   }
 
-  yield* ref
-      .read(activitiesRepositoryProvider)
-      .watchCompletedActivitiesForDate(userId, DateTime.parse(date));
+  yield* repo.watchCompletedActivitiesForDate(userId, DateTime.parse(date));
 }
 
 /// DURING-section consumed totals from a completed activity's fuel log.
@@ -150,12 +151,13 @@ Stream<ConsumedTotals> consumedTotalsForDate(Ref ref, String date) async* {
 /// (not a stream — recents don't need real-time updates within a session).
 @riverpod
 Future<List<MealLog>> recentMeals(Ref ref) async {
+  final repo = ref.read(mealLogRepositoryProvider);
   final userRepo = await ref.read(userRepositoryProvider.future);
   final user = await userRepo.getCurrentUser();
   final userId = user?.id;
   if (userId == null) return const [];
 
-  return ref.read(mealLogRepositoryProvider).getRecentLogs(userId);
+  return repo.getRecentLogs(userId);
 }
 
 // ============================================================================
@@ -168,6 +170,7 @@ Future<List<MealLog>> recentMeals(Ref ref) async {
 /// Used by the "My Meals" section of the meal picker.
 @riverpod
 Stream<List<SavedMeal>> savedMeals(Ref ref) async* {
+  final repo = ref.read(savedMealsRepositoryProvider);
   final userRepo = await ref.read(userRepositoryProvider.future);
   final user = await userRepo.getCurrentUser();
   final userId = user?.id;
@@ -176,7 +179,6 @@ Stream<List<SavedMeal>> savedMeals(Ref ref) async* {
     return;
   }
 
-  final repo = ref.read(savedMealsRepositoryProvider);
   yield* repo.watchSavedMeals(userId);
 }
 

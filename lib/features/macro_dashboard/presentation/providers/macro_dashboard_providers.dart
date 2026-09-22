@@ -8,6 +8,7 @@ import '../../../auth/data/user_repository.dart';
 import '../../../calendar/presentation/providers/calendar_selected_date_provider.dart';
 import '../../../daily_macros/domain/daily_macro_targets.dart';
 import '../../../daily_macros/presentation/providers/daily_macros_controller.dart';
+import '../../../meal_logging/domain/consumed_totals.dart';
 import '../../../meal_logging/presentation/providers/meal_log_providers.dart';
 import '../../application/dashboard_assembler.dart';
 import '../../application/dashboard_transient_telemetry.dart';
@@ -25,12 +26,19 @@ Future<DashboardData> macroDashboardDay(Ref ref) async {
   final selectedDate = ref.watch(calendarSelectedDateProvider);
   final dateStr = _ymd(selectedDate);
 
+  // Each awaited watch below can outlive this provider (date change, targets
+  // recompute) — the next ref.watch on a disposed element throws
+  // UnmountedRefException. Bail with a value nobody will render instead.
   final macrosState = await ref.watch(dailyMacrosControllerProvider.future);
+  if (!ref.mounted) return _discard(selectedDate);
   final meals = await ref.watch(mealLogsForDateProvider(dateStr).future);
+  if (!ref.mounted) return _discard(selectedDate);
   final consumed = await ref.watch(
     consumedTotalsForDateProvider(dateStr).future,
   );
+  if (!ref.mounted) return _discard(selectedDate);
   final allActivities = await ref.watch(activitiesControllerProvider.future);
+  if (!ref.mounted) return _discard(selectedDate);
 
   // S-1 "same pump" across a targets recompute: a skip / unskip / manual
   // profile edit invalidates the day's cached targets by design, and the
@@ -41,6 +49,7 @@ Future<DashboardData> macroDashboardDay(Ref ref) async {
   // showed for the SAME user+day while (and only while) a recompute is in
   // flight; a genuine "no targets" (error, never computed) still renders none.
   final userId = await ref.watch(userIdProvider.future);
+  if (!ref.mounted) return _discard(selectedDate);
   final targets = HeldTargets.resolve(
     userId,
     dateStr,
@@ -104,6 +113,22 @@ Future<DashboardData> macroDashboardDay(Ref ref) async {
     profileWeightKg: profileWeightKg,
     // Tracking is a DISPLAY mode gated by the screen from the view state —
     // toggling it must not recompute the day (intraday-display §5).
+    trackingOn: true,
+  );
+}
+
+/// Completion value for an assembly whose element was disposed mid-await.
+/// Riverpod discards the result of a disposed provider, so this only exists
+/// to unwind cleanly instead of throwing UnmountedRefException.
+DashboardData _discard(DateTime selectedDate) {
+  const assembler = MacroDashboardAssembler();
+  return assembler.assemble(
+    selectedDate: selectedDate,
+    now: DateTime.now(),
+    activities: const [],
+    meals: const [],
+    targets: null,
+    consumed: ConsumedTotals.zero,
     trackingOn: true,
   );
 }

@@ -135,9 +135,13 @@ class MealCatalogController extends _$MealCatalogController {
     ref.onDispose(() => _debounce?.cancel());
 
     final userId = await ref.watch(userIdProvider.future);
+    if (!ref.mounted) return const MealCatalogState();
     final local = await _loadLocalRails(userId);
 
-    // Online rails are a refinement, never a gate.
+    // Online rails are a refinement, never a gate. The controller can be
+    // disposed while the local rails load (tab closed); _loadServerRails
+    // reads ref synchronously, so guard the call itself.
+    if (!ref.mounted) return local;
     unawaited(_loadServerRails());
     return local;
   }
@@ -145,11 +149,14 @@ class MealCatalogController extends _$MealCatalogController {
   // ── Rails ──────────────────────────────────────────────────────────────────
 
   Future<MealCatalogState> _loadLocalRails(String userId) async {
-    final saved = await ref
-        .read(savedMealsRepositoryProvider)
-        .watchSavedMeals(userId)
-        .first;
-    final recents = await _localRecents(userId, saved);
+    // Repos are read up front: the awaits below can outlive a disposed
+    // controller, and a later ref.read would throw UnmountedRefException.
+    final savedMealsRepo = ref.read(savedMealsRepositoryProvider);
+    final planRepo = ref.read(mealPlanRepositoryProvider);
+    final logRepo = ref.read(mealLogRepositoryProvider);
+
+    final saved = await savedMealsRepo.watchSavedMeals(userId).first;
+    final recents = await _localRecents(userId, saved, planRepo, logRepo);
     return MealCatalogState(
       recents: recents,
       myFoods: saved.map(MealRefMapping.fromSavedMeal).toList(growable: false),
@@ -162,13 +169,12 @@ class MealCatalogController extends _$MealCatalogController {
   Future<List<RecentMeal>> _localRecents(
     String userId,
     List<SavedMeal> saved,
+    MealPlanRepository planRepo,
+    MealLogRepository logRepo,
   ) async {
-    final planRepo = ref.read(mealPlanRepositoryProvider);
     final planMeals = await planRepo.getRecentPlanMeals(userId);
     final createdAt = await planRepo.planMealCreatedAt(userId);
-    final logs = await ref
-        .read(mealLogRepositoryProvider)
-        .getRecentLogs(userId, limit: 60);
+    final logs = await logRepo.getRecentLogs(userId, limit: 60);
 
     final savedById = {for (final s in saved) s.id: s};
     final planById = {for (final p in planMeals) p.id: p};
