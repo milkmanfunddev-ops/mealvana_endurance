@@ -11,9 +11,9 @@
 
 **Touches:** lib/shared/services/notification_service.dart, lib/features/subscription/application/pro_paywall_controller.dart, lib/features/subscription/application/subscription_status_provider.dart, lib/features/content/domain/content_keys.dart, test/features/subscription/application/pro_paywall_controller_test.dart, test/shared/services
 
-- [ ] A purchase that starts a trial schedules one notification at the right local time (controller test with a fake scheduler).
-- [ ] A trial that will not renew cancels it on app open.
-- [ ] A purchase with no trial schedules nothing.
-- [ ] The text comes from the content system.
+- [x] A purchase that starts a trial schedules one notification at the right local time (controller test with a fake scheduler).
+- [x] A trial that will not renew cancels it on app open.
+- [x] A purchase with no trial schedules nothing.
+- [x] The text comes from the content system.
 
 Next: /implement-lee paywall
