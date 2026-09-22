@@ -1,6 +1,6 @@
 # 16: The Subscription screen in Settings
 
-**Status:** ready-for-agent
+**Status:** in-progress (wave 4, 2026-09-22)
 **Blocked by:** 03 (touches lib/features/content/domain/content_keys.dart), 04 (touches lib/features/content/domain/content_keys.dart), 15 (touches lib/features/content/domain/content_keys.dart).
 **Next:** `/implement-lee paywall`
 **Model:** opus
