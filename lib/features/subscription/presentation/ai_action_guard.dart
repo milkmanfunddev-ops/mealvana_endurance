@@ -9,12 +9,15 @@ library;
 
 import 'package:flutter/widgets.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
+import 'package:go_router/go_router.dart';
 
 import '../application/pro_gate.dart';
-import '../application/write_guard.dart';
+import 'open_paywall.dart';
 
 Future<bool> aiActionAllowed(BuildContext context, WidgetRef ref) async {
   if (await ref.read(writeAccessProvider.future)) return true;
-  if (context.mounted) openPaywall(context: context);
+  if (!context.mounted) return false;
+  final router = GoRouter.maybeOf(context);
+  if (router != null) openPaywall(router);
   return false;
 }

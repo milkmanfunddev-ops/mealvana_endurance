@@ -21,6 +21,8 @@ import 'package:mealvana_endurance/features/settings/domain/settings_state.dart'
 import 'package:mealvana_endurance/features/settings/presentation/providers/settings_controller.dart';
 import 'package:mealvana_endurance/features/settings/presentation/providers/sweat_profile_controller.dart';
 
+import 'package:mealvana_endurance/features/subscription/domain/write_access_denied.dart';
+
 import '../../helpers/write_access.dart';
 
 /// The settings state is content-heavy; a refused edit never reads it.
@@ -96,12 +98,13 @@ void main() {
     }
   });
 
-  test('SweatProfileController.save, lapsed: refused with a message', () async {
+  test('SweatProfileController.save, lapsed: refused, never a save', () async {
     await container.read(sweatProfileControllerProvider.future);
-    final error = await container
-        .read(sweatProfileControllerProvider.notifier)
-        .save();
-    expect(error, isNotNull, reason: 'the screen must not report a save');
+    await expectLater(
+      container.read(sweatProfileControllerProvider.notifier).save(),
+      throwsA(isA<WriteAccessDenied>()),
+      reason: 'the screen must not report a save',
+    );
     expect(opens.count, 1);
   });
 }

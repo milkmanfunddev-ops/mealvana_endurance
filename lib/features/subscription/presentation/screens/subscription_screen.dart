@@ -10,7 +10,7 @@ import '../../../../shared/widgets/kyle_design/kyle_design.dart';
 import '../../../content/application/content_service.dart';
 import '../../../content/domain/content_keys.dart';
 import '../../application/subscription_screen_controller.dart';
-import '../pro_gate_redirect.dart';
+import '../open_paywall.dart';
 import '../widgets/pro_feature_list.dart';
 import 'paywall_screen.dart';
 
@@ -113,8 +113,7 @@ class SubscriptionScreen extends ConsumerWidget {
                         text: t(ContentKeys.subscriptionUpgradeButton),
                         // The same way in as the plan-ended bar and the AI
                         // guard: the paywall pushed over this screen.
-                        onPressed: () =>
-                            unawaited(GoRouter.of(context).push(kPaywallPath)),
+                        onPressed: () => openPaywall(GoRouter.of(context)),
                       ),
                     ],
                     if (state.canManage) ...[

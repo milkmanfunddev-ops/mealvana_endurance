@@ -418,8 +418,10 @@ class ConnectTrainingController extends _$ConnectTrainingController {
       // Stamp the cooldown immediately (before the async work) so concurrent
       // rebuilds and hot restarts within the window don't each fire again.
       unawaited(_markGarminBackfillTriggered(prefs));
+      // Unguarded: asking Garmin to re-push is a background pull, not an
+      // edit, so a lapsed account opening this screen gets no paywall.
       Future<void>(() async {
-        await triggerGarminBackfill();
+        await _requestGarminBackfill();
       });
     }
 
@@ -896,8 +898,14 @@ class ConnectTrainingController extends _$ConnectTrainingController {
   /// auth failure / network error / Garmin refusal.
   Future<bool> triggerGarminBackfill() async {
     await requireWriteAccess(ref);
+    return _requestGarminBackfill();
+  }
+
+  /// [triggerGarminBackfill] without the write guard, for build()'s
+  /// session kick (background pulls stay outside the guard, mp-491).
+  Future<bool> _requestGarminBackfill() async {
     // This is invoked from build()'s fire-and-forget kick via
-    // `Future<void>(() async { await triggerGarminBackfill(); })`, which runs
+    // `Future<void>(() async { await _requestGarminBackfill(); })`, which runs
     // in a later microtask — by the time it executes, the controller may
     // already have been disposed (e.g. the user navigated away). Bail out
     // before touching `ref` at all rather than crashing with

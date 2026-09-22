@@ -17,6 +17,7 @@ import 'package:mocktail/mocktail.dart';
 import 'package:mealvana_endurance/features/content/application/content_service.dart';
 import 'package:mealvana_endurance/features/subscription/application/pro_gate.dart';
 import 'package:mealvana_endurance/features/subscription/application/subscription_status_provider.dart';
+import 'package:mealvana_endurance/features/subscription/application/write_guard.dart';
 import 'package:mealvana_endurance/features/subscription/data/subscription_service.dart';
 import 'package:mealvana_endurance/features/subscription/data/user_entitlements_repository.dart';
 import 'package:mealvana_endurance/features/subscription/domain/entitlement.dart';
@@ -170,6 +171,25 @@ void main() {
     await tester.pumpAndSettle();
     expect(find.text('settings'), findsOneWidget);
     expect(find.byType(PlanEndedBar), findsOneWidget);
+  });
+
+  testWidgets('a refused write in a controller opens the paywall over the '
+      'screen, once however many ask', (tester) async {
+    when(
+      () => service.fetchStatus(),
+    ).thenAnswer((_) async => statusOf(customerInfoLapsed));
+    final router = await pump(tester, initial: '/settings');
+    final c = ProviderScope.containerOf(tester.element(find.text('settings')));
+
+    c.read(paywallRequestsProvider.notifier).request();
+    await tester.pumpAndSettle();
+    c.read(paywallRequestsProvider.notifier).request();
+    await tester.pumpAndSettle();
+    expect(find.text('paywall'), findsOneWidget);
+
+    router.pop();
+    await tester.pumpAndSettle();
+    expect(find.text('settings'), findsOneWidget);
   });
 
   testWidgets('subscribing from the paywall removes the bar and lands on '

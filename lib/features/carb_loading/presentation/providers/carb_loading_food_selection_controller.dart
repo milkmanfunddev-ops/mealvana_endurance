@@ -18,6 +18,7 @@ import '../../../../shared/database/database_provider.dart';
 import '../../../../shared/providers/user_id_provider.dart';
 import '../../../../shared/services/sync/sync_coordinator.dart';
 import '../../../../shared/utils/search_strategy.dart';
+import '../../../subscription/application/write_guard.dart';
 
 part 'carb_loading_food_selection_controller.g.dart';
 
@@ -393,6 +394,7 @@ class CarbLoadingFoodSelectionController
   /// Handles importing from nutrition plan tables if needed
   /// Increments quantity if food already exists in the meal
   Future<void> addFoodToMeal() async {
+    if (!await ref.canWrite()) return;
     final currentState = state.value;
     if (currentState == null || currentState.selectedFood == null) return;
 
@@ -634,6 +636,7 @@ class CarbLoadingFoodSelectionController
   Future<CarbLoadingUserFood> addFromOpenFoodFacts(
     FoodSearchResult result,
   ) async {
+    await requireWriteAccess(ref);
     final deviceId = await ref.read(userIdProvider.future);
     final currentState = state.value;
     if (currentState == null) return Future.error('State not initialized');

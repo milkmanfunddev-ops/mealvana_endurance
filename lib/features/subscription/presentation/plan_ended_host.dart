@@ -1,6 +1,7 @@
 /// The read-only shell's one visible sign (mp-457 §3): while the gate
 /// answers lapsed, every signed-in screen carries the plan-ended bar at the
-/// top, and its Subscribe button opens the paywall over the screen.
+/// top, and its Subscribe button opens the paywall over the screen. It also
+/// opens the paywall whenever a controller's refused write asks for it.
 ///
 /// Sits above the router's Navigator (composed in `MaterialApp.builder`,
 /// root_app_widget.dart), so one bar covers every route — pushed pages,
@@ -18,7 +19,9 @@ import '../../../shared/widgets/kyle_design/feedback/plan_ended_bar.dart';
 import '../../content/application/content_service.dart';
 import '../../content/domain/content_keys.dart';
 import '../application/pro_gate.dart';
+import '../application/write_guard.dart';
 import '../domain/entitlement.dart';
+import 'open_paywall.dart';
 import 'pro_gate_redirect.dart';
 
 class PlanEndedHost extends ConsumerStatefulWidget {
@@ -64,6 +67,9 @@ class _PlanEndedHostState extends ConsumerState<PlanEndedHost> {
 
   @override
   Widget build(BuildContext context) {
+    // A refused write in a controller asks for the paywall here, since this
+    // is the one widget that always sits over the router (mp-491).
+    ref.listen(paywallRequestsProvider, (_, _) => openPaywall(widget.router));
     final access = ref.watch(appGateProvider).value;
     final shown = access == AppAccess.lapsed && planEndedBarShownOn(_path);
     final media = MediaQuery.of(context);
@@ -79,7 +85,7 @@ class _PlanEndedHostState extends ConsumerState<PlanEndedHost> {
             subscribeLabel: content.getValue(
               ContentKeys.planEndedSubscribeButton,
             ),
-            onSubscribe: () => widget.router.push(kPaywallPath),
+            onSubscribe: () => openPaywall(widget.router),
           ),
         Expanded(
           key: const ValueKey('plan_ended_host.page'),

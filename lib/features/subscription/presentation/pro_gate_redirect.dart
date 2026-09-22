@@ -89,3 +89,12 @@ void yieldPushedPaywall(GoRouter router, AppAccess? access) {
   if (topPathOf(config) != kPaywallPath) return;
   router.go('/main');
 }
+
+/// The location path of the route on top of [config]; a pushed route
+/// carries its own match list.
+String topPathOf(RouteMatchList config) {
+  if (config.matches.isEmpty) return '';
+  final last = config.last;
+  final list = last is ImperativeRouteMatch ? last.matches : config;
+  return list.uri.path;
+}

@@ -4,8 +4,6 @@
 /// router and the screens.
 library;
 
-import 'package:go_router/go_router.dart';
-
 /// Where a locked user is sent, and stays.
 const String kPaywallPath = '/paywall';
 
@@ -16,12 +14,3 @@ const String kPaywallPath = '/paywall';
 const String kOnboardingPaywallQuery = 'onboarding';
 const String kOnboardingPaywallLocation =
     '$kPaywallPath?$kOnboardingPaywallQuery=1';
-
-/// The location path of the route on top of [config]; a pushed route
-/// carries its own match list.
-String topPathOf(RouteMatchList config) {
-  if (config.matches.isEmpty) return '';
-  final last = config.last;
-  final list = last is ImperativeRouteMatch ? last.matches : config;
-  return list.uri.path;
-}

@@ -21,6 +21,12 @@ import 'package:mealvana_endurance/features/carb_loading/domain/carb_loading_use
 import 'package:mealvana_endurance/features/carb_loading/domain/meal_type.dart';
 import 'package:mealvana_endurance/features/carb_loading/presentation/providers/carb_loading_controller.dart';
 import 'package:mealvana_endurance/features/carb_loading/presentation/providers/carb_loading_day_detail_controller.dart';
+import 'package:mealvana_endurance/features/carb_loading/application/food_import_service.dart';
+import 'package:mealvana_endurance/features/carb_loading/presentation/providers/carb_loading_food_selection_controller.dart';
+import 'package:mealvana_endurance/features/barcode_scanning/application/open_food_facts_search_service.dart';
+import 'package:mealvana_endurance/features/nutrition_plan/data/food_repository.dart';
+import 'package:mealvana_endurance/shared/database/database_provider.dart';
+import 'package:mealvana_endurance/shared/providers/user_id_provider.dart';
 import 'package:mealvana_endurance/shared/database/app_database.dart' as db;
 
 import '../../helpers/write_access.dart';
@@ -38,6 +44,25 @@ class _FakeMeal extends Fake implements CarbLoadingDayMeal {
   String get id => 'm1';
   @override
   int get quantity => 1;
+}
+
+class _FakeSearchResult extends Fake implements FoodSearchResult {}
+
+const _selectionParams = CarbLoadingFoodSelectionParams(
+  carbLoadingDayId: 'd1',
+  mealType: MealType.breakfast,
+);
+
+/// A picker with a food already chosen, so addFoodToMeal reaches the write.
+class _SeededSelection extends CarbLoadingFoodSelectionController {
+  @override
+  Future<CarbLoadingFoodSelectionState> build(
+    CarbLoadingFoodSelectionParams params,
+  ) async => CarbLoadingFoodSelectionState(
+    carbLoadingDayId: params.carbLoadingDayId,
+    mealType: params.mealType,
+    selectedFood: _FakeFood(),
+  );
 }
 
 class _SeededPlans extends CarbLoadingController {
@@ -80,6 +105,13 @@ void main() {
         ),
         carbLoadingControllerProvider.overrideWith(_SeededPlans.new),
         carbLoadingDayDetailControllerProvider.overrideWith(_SeededDay.new),
+        foodImportServiceProvider.overrideWith(untouched('foodImportService')),
+        foodRepositoryProvider.overrideWith(untouched('foodRepository')),
+        appDatabaseProvider.overrideWith(untouched('appDatabase')),
+        userIdProvider.overrideWith(untouched('userId')),
+        carbLoadingFoodSelectionControllerProvider.overrideWith(
+          _SeededSelection.new,
+        ),
       ],
     );
     addTearDown(container.dispose);
@@ -133,6 +165,26 @@ void main() {
         await container.read(provider.future);
         await expectWriteRefused(opens, entry.value);
         expect(container.read(provider).value!.meals, hasLength(1));
+      });
+    }
+  });
+
+  group('CarbLoadingFoodSelectionController, lapsed', () {
+    final provider = carbLoadingFoodSelectionControllerProvider(
+      _selectionParams,
+    );
+    CarbLoadingFoodSelectionController ctrl() =>
+        container.read(provider.notifier);
+    final paths = <String, Future<Object?> Function()>{
+      'addFoodToMeal': () => ctrl().addFoodToMeal(),
+      'addFromOpenFoodFacts': () =>
+          ctrl().addFromOpenFoodFacts(_FakeSearchResult()),
+    };
+    for (final entry in paths.entries) {
+      test('${entry.key} opens the paywall and writes nothing', () async {
+        await container.read(provider.future);
+        await expectWriteRefused(opens, entry.value);
+        expect(container.read(provider).value!.selectedFood, isNotNull);
       });
     }
   });

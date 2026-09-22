@@ -60,14 +60,12 @@ void main() {
     });
   });
 
-  test('openPaywall without a widgets binding is a no-op', () {
-    // A bare controller test: no binding, no navigator. The default opener
-    // must return quietly rather than throw.
-    expect(openPaywall, returnsNormally);
-  });
-
-  testWidgets('openPaywall without a mounted navigator is a no-op', (_) async {
-    expect(openPaywall, returnsNormally);
+  test('the default opener records one paywall request per refusal', () async {
+    final c = ProviderContainer(overrides: [writesRefused()]);
+    addTearDown(c.dispose);
+    await c.read(_probeProvider.notifier).tryWrite();
+    await c.read(_probeProvider.notifier).tryWrite();
+    expect(c.read(paywallRequestsProvider), 2);
   });
 }
 

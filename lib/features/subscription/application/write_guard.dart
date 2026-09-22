@@ -9,45 +9,32 @@
 /// the entitlement refresh, and the upload of rows already queued.
 library;
 
-import 'dart:async';
-
-import 'package:flutter/widgets.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
-import 'package:go_router/go_router.dart';
 
-import '../../../main.dart' show sentryNavigatorKey;
 import '../domain/write_access_denied.dart';
-import 'paywall_location.dart';
 import 'pro_gate.dart';
 
-/// The one way a refused write opens the paywall. A provider so a controller
-/// test can count the opens without a widget tree; the app never overrides
-/// it.
-final paywallOpenerProvider = Provider<void Function()>((_) => openPaywall);
+/// Refused writes asking for the paywall, counted. A controller has no
+/// navigator and must not reach for one (FOA: application never navigates),
+/// so it records the request here; `PlanEndedHost`, which sits above the
+/// router's Navigator, listens and pushes the paywall over the screen.
+final paywallRequestsProvider = NotifierProvider<PaywallRequests, int>(
+  PaywallRequests.new,
+);
 
-/// Push the paywall over the current screen (mp-457 §3: an edit or AI
-/// action opens the paywall instead of running).
-///
-/// [context] is the caller's when it has one (a screen); a controller has
-/// none and falls back to the app router's navigator ([sentryNavigatorKey]),
-/// the same fallback the credits sheet uses. No navigator (a unit test, or
-/// nothing mounted yet) means nothing to push over, so this returns. A
-/// paywall already on top is left alone: a double tap, or two writes from
-/// one gesture, must not stack a second one.
-void openPaywall({BuildContext? context}) {
-  final GoRouter router;
-  try {
-    final ctx = context ?? sentryNavigatorKey.currentContext;
-    if (ctx == null || !ctx.mounted) return;
-    router = GoRouter.of(ctx);
-  } catch (_) {
-    return; // no navigator, or no router above this context (a test host)
-  }
-  if (topPathOf(router.routerDelegate.currentConfiguration) == kPaywallPath) {
-    return;
-  }
-  unawaited(router.push(kPaywallPath));
+class PaywallRequests extends Notifier<int> {
+  @override
+  int build() => 0;
+
+  void request() => state++;
 }
+
+/// The one way a refused write asks for the paywall. A provider so a
+/// controller test can count the opens without a widget tree; the app never
+/// overrides it.
+final paywallOpenerProvider = Provider<void Function()>(
+  (ref) => ref.read(paywallRequestsProvider.notifier).request,
+);
 
 extension WriteGuard on Ref {
   /// Whether this account may write right now (`writeAccessProvider`). True:
