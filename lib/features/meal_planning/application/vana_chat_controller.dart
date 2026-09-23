@@ -288,7 +288,9 @@ class VanaChatController extends _$VanaChatController {
   /// A chip tap. A fixed-label chip runs its step at once with no model turn
   /// ([actAtOnce]); every other label is the next user message (02 §6),
   /// marked as a tap so the log can tell it from typed turns.
-  Future<void> tapChip(String label) {
+  Future<void> tapChip(String label) async {
+    // A lapsed athlete meets the paywall before the label is even resolved.
+    if (!await ref.canWrite()) return;
     final chip = fixedChipFor(label);
     if (chip == null) return send(label, inputMode: VanaInputMode.tap);
     return actAtOnce(
