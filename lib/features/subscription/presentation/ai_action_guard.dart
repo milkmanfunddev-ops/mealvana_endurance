@@ -1,10 +1,9 @@
 /// The AI-action check for screens the router never sees (mp-457 §3).
 ///
-/// The router sends a lapsed account's AI routes to the paywall
-/// (`kAiRoutePrefixes`), but a screen reached by a plain page push, such as
-/// meal logging, calls AI from a button. Each such button asks here first:
-/// true runs the action; false has opened the paywall over the screen
-/// instead, so the account can subscribe and come back.
+/// The router sends a closed account to the full-screen paywall, but a
+/// screen reached by a plain page push, such as meal logging, calls AI from
+/// a button. Each such button asks here first: true runs the action; false
+/// has sent the app to the full-screen paywall instead (mp-611).
 library;
 
 import 'package:flutter/widgets.dart';

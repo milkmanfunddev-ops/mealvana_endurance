@@ -123,21 +123,15 @@ class AppRouter {
     // The app gate (mp-280, mp-284): when RevenueCat's answer changes — a
     // purchase, a restore, an expiry, the background refresh of a cached
     // answer — the current location is re-evaluated, so the paywall yields
-    // to /main and an expiry turns the app read-only without a restart.
-    // The root widget watches this provider, which keeps the subscription
-    // active.
-    late final GoRouter router;
-    // Each paywall page's presentation, decided on its first build.
-    final paywallPresentations = <LocalKey, PaywallPresentation>{};
+    // to /main and an expiry closes the app onto the paywall without a
+    // restart. The root widget watches this provider, which keeps the
+    // subscription active.
     ref.listen(appGateProvider, (previous, next) {
       if (!next.hasValue || next.isLoading) return;
       if (previous?.value == next.value) return;
       authChangeNotifier.notify();
-      // A paywall pushed over a lapsed account's read-only screen is not
-      // re-redirected by the refresh; move it on once open (mp-457).
-      yieldPushedPaywall(router, next.value);
     });
-    return router = GoRouter(
+    return GoRouter(
       initialLocation: '/',
       refreshListenable: authChangeNotifier,
       // Use Sentry navigator key for screenshot capture in feedback widget
@@ -219,13 +213,13 @@ class AppRouter {
           );
           if (oldInstall != null) return oldInstall;
           // The app gate (mp-280, mp-457): every signed-in route is behind
-          // the one subscription gate. `readAppGate` answers open, lapsed or
-          // never from the settled status at once, or waits for the status
+          // the one subscription gate. `readAppGate` answers open or closed
+          // from the settled status at once, or waits for the status
           // controller's bounded resolve (mp-284: no cache and no answer
-          // within a couple of seconds is never). Never lands on the paywall
-          // and stays there; lapsed reaches the app read-only, except the AI
-          // routes, which open the paywall; the paywall yields to /main once
-          // open. The server checks every debiting or Vana call itself
+          // within a couple of seconds is closed). Closed lands on the
+          // full-screen paywall and stays there, for a lapsed account and a
+          // never-subscribed one alike (mp-611); the paywall yields to /main
+          // once open. The server checks every debiting or Vana call itself
           // (mp-285); this is UX.
           final access = await readAppGate(ref);
           return gateRedirect(path: currentPath, access: access);
@@ -667,19 +661,12 @@ class AppRouter {
           },
         ),
 
-        // The paywall — where a locked account lands and stays (mp-280).
-        // A lapsed account's paywall, pushed over a read-only screen, is a
-        // closable glass sheet over it; every other is full screen
-        // (mp-493 §5).
+        // The paywall — where a closed account lands and stays, full
+        // screen with no close (mp-280, mp-611).
         GoRoute(
           path: kPaywallPath,
           name: 'paywall',
-          pageBuilder: (context, state) => paywallRoutePage(
-            state,
-            access: ref.read(appGateProvider).value,
-            current: router.routerDelegate.currentConfiguration,
-            decided: paywallPresentations,
-          ),
+          pageBuilder: (context, state) => paywallRoutePage(state),
         ),
 
         // AI Credits Paywall - purchase credit packs for AI features

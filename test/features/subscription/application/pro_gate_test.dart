@@ -104,10 +104,13 @@ void main() {
       expect(await c.read(appGateProvider.future), AppAccess.closed);
     });
 
-    test('a lapsed account is closed, the same as a never-subscribed one', () async {
-      final c = container(() => _FixedStatus(_lapsed));
-      expect(await c.read(appGateProvider.future), AppAccess.closed);
-    });
+    test(
+      'a lapsed account is closed, the same as a never-subscribed one',
+      () async {
+        final c = container(() => _FixedStatus(_lapsed));
+        expect(await c.read(appGateProvider.future), AppAccess.closed);
+      },
+    );
 
     test('an admin with no subscription is unlocked', () async {
       final c = container(

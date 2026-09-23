@@ -7,16 +7,14 @@
 /// the store says it is spent; the ⋯ menu listing exactly Restore, Redeem
 /// code, Manage (only with a subscription), Sign out and Delete account
 /// (mp-494); Redeem code opening our own Code entry, which sends the Code
-/// and says what it did or why it was refused (mp-458); the two presentations (mp-493 §5): no close
-/// button full screen, and for a lapsed account a closable glass sheet over
-/// the read-only app, opened by the plan-ended bar, an AI tap or an AI route,
-/// that closes back to the same screen, while a never-subscribed account
-/// stays full screen; each menu entry driving the right controller; the
-/// unavailable state; founding prices beside the struck-through normal ones
+/// and says what it did or why it was refused (mp-458), in its own glass
+/// sheet; one presentation for everyone without Pro (mp-280, mp-611): full
+/// screen with no close button and nothing under it, for a lapsed account
+/// and a never-subscribed one alike, however it was reached; each menu entry
+/// driving the right controller; the unavailable state; founding prices beside the struck-through normal ones
 /// (mp-453 §2); the trial terms, price after the trial and the terms and
 /// privacy links (mp-453 §4); the opening clip (mp-493 §1); and light/dark
-/// goldens of the full-screen paywall at phone size, plus the founding shape,
-/// and of the sheet over the read-only app, light and dark.
+/// goldens of the full-screen paywall at phone size, plus the founding shape.
 ///
 /// Fonts: widget tests render with the test font, so the goldens pin LAYOUT,
 /// COLOUR and STRUCTURE, not glyph shapes.
@@ -397,7 +395,7 @@ void main() {
     });
   });
 
-  group('the close button: only on the sheet (mp-493 §5)', () {
+  group('no close button, in any shape (mp-280, mp-611)', () {
     testWidgets('never subscribed: none', (tester) async {
       await smokeScreen(tester, const PaywallScreen(), overrides: _overrides());
       expect(find.byKey(_close), findsNothing);
@@ -413,35 +411,17 @@ void main() {
       expect(find.byKey(_close), findsNothing);
     });
 
-    testWidgets('lapsed full screen (the paywall as the base location): '
-        'none', (tester) async {
+    testWidgets('lapsed, with a subscription on record: none', (tester) async {
       await smokeScreen(
         tester,
         const PaywallScreen(),
-        overrides: _overrides(hasSubscription: true),
+        overrides: _overrides(
+          status: statusOf(customerInfoLapsed),
+          hasSubscription: true,
+        ),
       );
       expect(find.byKey(_close), findsNothing);
-    });
-
-    testWidgets('the sheet has one: a close beside ⋯, labelled Close', (
-      tester,
-    ) async {
-      await smokeScreen(
-        tester,
-        const PaywallScreen(presentation: PaywallPresentation.sheet),
-        overrides: _overrides(hasSubscription: true),
-      );
-      expect(find.byKey(_close), findsOneWidget);
-      expect(find.byTooltip(_content['paywall.close_label']!), findsOneWidget);
-      // Same row as ⋯, on the other side.
-      expect(
-        tester.getCenter(find.byKey(_close)).dy,
-        tester.getCenter(find.byKey(_more)).dy,
-      );
-      expect(
-        tester.getCenter(find.byKey(_close)).dx,
-        lessThan(tester.getCenter(find.byKey(_more)).dx),
-      );
+      expect(find.byIcon(Icons.close), findsNothing);
     });
   });
 
@@ -848,6 +828,14 @@ void main() {
         const CodeRedeemed(kind: RedeemedKind.attributed),
       );
       expect(find.byType(RedeemCodeSheet), findsOneWidget);
+      // Its own glass sheet over the paywall (the one sheet left, mp-611).
+      expect(
+        find.ancestor(
+          of: find.byType(RedeemCodeSheet),
+          matching: find.byType(GlassSheetSurface),
+        ),
+        findsOneWidget,
+      );
       expect(find.text(_content['redeem_code.title']!), findsOneWidget);
       expect(find.byKey(RedeemCodeSheet.fieldKey), findsOneWidget);
     });
@@ -1177,24 +1165,24 @@ void main() {
     );
   });
 
-  // The two presentations in the app (mp-493 §5, mp-457 §3): the router
-  // wired the way app_router.dart wires it (the gate's redirect, the
-  // paywall route's page from paywallRoutePage), the plan-ended host over
-  // it the way root_app_widget.dart composes it, and the gate answering
-  // from producer-shaped customer info through the real gate.
-  group('two presentations in the app (mp-493 §5)', () {
+  // One presentation in the app (mp-280, mp-611): the router wired the way
+  // app_router.dart wires it (the gate's redirect, the paywall route's page
+  // from paywallRoutePage), the plan-ended host over it the way
+  // root_app_widget.dart composes it until ticket 20 removes it, and the
+  // gate answering from producer-shaped customer info through the real
+  // gate.
+  group('one full-screen paywall in the app (mp-611)', () {
     const aiButton = ValueKey('test.ai_action');
-    const subscribe = ValueKey('plan_ended_bar.subscribe');
 
     Future<GoRouter> pumpApp(
       WidgetTester tester, {
       required SubscriptionStatus status,
       required String initial,
-      Brightness brightness = Brightness.light,
+      bool gated = true,
+      List<Override> extra = const [],
     }) async {
       tester.view.physicalSize = const Size(393, 852);
       tester.view.devicePixelRatio = 1;
-      // A status bar, so the sheet stops below it and the screen shows above.
       tester.view.padding = const FakeViewPadding(top: 59);
       addTearDown(tester.view.reset);
 
@@ -1203,12 +1191,11 @@ void main() {
           mockAppExternalDeps(),
           isAdminProvider.overrideWith((_) async => false),
           ..._overrides(status: status, hasSubscription: status.hadPro),
+          ...extra,
         ],
       );
       addTearDown(c.dispose);
 
-      late final GoRouter router;
-      final decided = <LocalKey, PaywallPresentation>{};
       Widget page(String label) => Scaffold(
         body: Center(
           child: Column(
@@ -1226,26 +1213,22 @@ void main() {
           ),
         ),
       );
-      router = GoRouter(
+      final router = GoRouter(
         initialLocation: initial,
-        redirect: (context, state) async {
-          final path = state.uri.path;
-          if (isUngatedPath(path)) return null;
-          final access = await c.read(appGateProvider.future);
-          return gateRedirect(path: path, access: access);
-        },
+        redirect: gated
+            ? (context, state) async {
+                final path = state.uri.path;
+                if (isUngatedPath(path)) return null;
+                final access = await c.read(appGateProvider.future);
+                return gateRedirect(path: path, access: access);
+              }
+            : null,
         routes: [
           GoRoute(path: '/main', builder: (_, _) => page('main')),
           GoRoute(path: '/settings', builder: (_, _) => page('settings')),
-          GoRoute(path: '/vana', builder: (_, _) => page('vana')),
           GoRoute(
             path: kPaywallPath,
-            pageBuilder: (_, state) => paywallRoutePage(
-              state,
-              access: c.read(appGateProvider).value,
-              current: router.routerDelegate.currentConfiguration,
-              decided: decided,
-            ),
+            pageBuilder: (_, state) => paywallRoutePage(state),
           ),
         ],
       );
@@ -1256,17 +1239,9 @@ void main() {
           container: c,
           child: MaterialApp.router(
             debugShowCheckedModeBanner: false,
-            theme: ThemeData(
-              brightness: brightness,
-              scaffoldBackgroundColor: brightness == Brightness.dark
-                  ? AppColors.blackberry
-                  : AppColors.cream,
-            ),
             routerConfig: router,
-            builder: (context, child) => RepaintBoundary(
-              key: const Key('golden'),
-              child: PlanEndedHost(router: router, child: child!),
-            ),
+            builder: (context, child) =>
+                PlanEndedHost(router: router, child: child!),
           ),
         ),
       );
@@ -1274,122 +1249,24 @@ void main() {
       return router;
     }
 
-    Finder sheetPaywall() => find.descendant(
-      of: find.byType(GlassSheetSurface),
-      matching: find.byKey(const ValueKey('paywall.screen')),
-    );
-
-    /// The sheet is up over [screen], then its close returns to [screen]
-    /// under the plan-ended bar.
-    Future<void> closesBackTo(
-      WidgetTester tester,
-      GoRouter router,
-      String screen,
-    ) async {
-      expect(sheetPaywall(), findsOneWidget);
-      expect(find.text(screen), findsOneWidget, reason: 'still under it');
-      expect(find.byKey(_close), findsOneWidget);
-
-      await tester.tap(find.byKey(_close));
-      await tester.pumpAndSettle();
-      expect(find.byKey(const ValueKey('paywall.screen')), findsNothing);
-      expect(find.text(screen), findsOneWidget);
-      expect(find.byType(PlanEndedBar), findsOneWidget);
-      expect(topPathOf(router.routerDelegate.currentConfiguration), '/$screen');
-    }
-
-    testWidgets('lapsed: the bar\'s Subscribe opens the sheet; close returns '
-        'to the same screen', (tester) async {
-      final router = await pumpApp(
-        tester,
-        status: statusOf(customerInfoLapsed),
-        initial: '/settings',
-      );
-      expect(find.byType(PlanEndedBar), findsOneWidget);
-
-      await tester.tap(find.byKey(subscribe));
-      await tester.pumpAndSettle();
-      await closesBackTo(tester, router, 'settings');
-    });
-
-    testWidgets('lapsed: an AI tap opens the sheet; close returns to the '
-        'same screen', (tester) async {
-      final router = await pumpApp(
-        tester,
-        status: statusOf(customerInfoLapsed),
-        initial: '/main',
-      );
-
-      await tester.tap(find.byKey(aiButton));
-      await tester.pumpAndSettle();
-      await closesBackTo(tester, router, 'main');
-    });
-
-    testWidgets('lapsed: an AI route opens the sheet over the screen it was '
-        'opened from', (tester) async {
-      final router = await pumpApp(
-        tester,
-        status: statusOf(customerInfoLapsed),
-        initial: '/settings',
-      );
-
-      unawaited(router.push('/vana'));
-      await tester.pumpAndSettle();
-      expect(find.text('vana'), findsNothing);
-      await closesBackTo(tester, router, 'settings');
-    });
-
-    testWidgets('lapsed: a refused edit opens the sheet; close returns to the '
-        'same screen', (tester) async {
-      final router = await pumpApp(
-        tester,
-        status: statusOf(customerInfoLapsed),
-        initial: '/settings',
-      );
-
-      // What a write controller's refused `canWrite()` does.
-      ProviderScope.containerOf(
-        tester.element(find.text('settings')),
-      ).read(paywallRequestsProvider.notifier).request();
-      await tester.pumpAndSettle();
-      await closesBackTo(tester, router, 'settings');
-    });
-
-    testWidgets('lapsed: the sheet stays a sheet when a route is pushed over '
-        'it and popped', (tester) async {
-      final router = await pumpApp(
-        tester,
-        status: statusOf(customerInfoLapsed),
-        initial: '/settings',
-      );
-      await tester.tap(find.byKey(subscribe));
-      await tester.pumpAndSettle();
-      expect(sheetPaywall(), findsOneWidget);
-
-      // The paywall's page is rebuilt while another route is on top of it.
-      final sheetState = tester.state(
+    /// The full-screen paywall, alone: no glass sheet, no close, no bar,
+    /// nothing under it to go back to.
+    void fullScreenAlone(WidgetTester tester, GoRouter router) {
+      final config = router.routerDelegate.currentConfiguration;
+      expect(config.uri.path, kPaywallPath);
+      expect(config.matches, hasLength(1));
+      expect(router.canPop(), isFalse);
+      expect(find.byKey(const ValueKey('paywall.screen')), findsOneWidget);
+      expect(find.byType(GlassSheetSurface), findsNothing);
+      expect(find.byKey(_close), findsNothing);
+      expect(find.byType(PlanEndedBar), findsNothing);
+      final scaffold = tester.widget<Scaffold>(
         find.byKey(const ValueKey('paywall.screen')),
       );
-      unawaited(router.push('/main'));
-      await tester.pumpAndSettle();
-      expect(
-        find.byType(GlassSheetSurface, skipOffstage: false),
-        findsOneWidget,
-        reason: 'the paywall under the pushed route is still the sheet',
-      );
-      router.pop();
-      await tester.pumpAndSettle();
-      expect(
-        tester.state(find.byKey(const ValueKey('paywall.screen'))),
-        same(sheetState),
-        reason: 'the same sheet, not a new one built on the pop',
-      );
-      await tester.pumpAndSettle();
+      expect(scaffold.backgroundColor, AppColors.cream);
+    }
 
-      await closesBackTo(tester, router, 'settings');
-    });
-
-    testWidgets('never: full screen, no close, nothing under it', (
+    testWidgets('never subscribed: full screen, no close, nothing under it', (
       tester,
     ) async {
       final router = await pumpApp(
@@ -1397,45 +1274,66 @@ void main() {
         status: statusOf(customerInfoNever),
         initial: '/main',
       );
-
-      expect(
-        topPathOf(router.routerDelegate.currentConfiguration),
-        kPaywallPath,
-      );
-      expect(find.byKey(const ValueKey('paywall.screen')), findsOneWidget);
-      expect(sheetPaywall(), findsNothing);
-      expect(find.byType(GlassSheetSurface), findsNothing);
-      expect(find.byKey(_close), findsNothing);
+      fullScreenAlone(tester, router);
       expect(find.text('main'), findsNothing);
-      expect(find.byType(PlanEndedBar), findsNothing);
-      final scaffold = tester.widget<Scaffold>(
-        find.byKey(const ValueKey('paywall.screen')),
-      );
-      expect(scaffold.backgroundColor, AppColors.cream);
     });
 
-    group('goldens: the sheet over the read-only app (mp-497 §3)', () {
-      Future<void> golden(WidgetTester tester, Brightness brightness) async {
-        await pumpApp(
-          tester,
-          status: statusOf(customerInfoLapsed),
-          initial: '/settings',
-          brightness: brightness,
-        );
-        await tester.tap(find.byKey(subscribe));
-        await tester.pumpAndSettle();
-        expect(tester.takeException(), isNull);
-        expect(sheetPaywall(), findsOneWidget);
+    testWidgets('lapsed: the same full screen, no close, nothing under it', (
+      tester,
+    ) async {
+      final router = await pumpApp(
+        tester,
+        status: statusOf(customerInfoLapsed),
+        initial: '/settings',
+      );
+      fullScreenAlone(tester, router);
+      expect(find.text('settings'), findsNothing);
+    });
 
-        final name = brightness == Brightness.dark ? 'dark' : 'light';
-        await expectLater(
-          find.byKey(const Key('golden')),
-          matchesGoldenFile('goldens/paywall_sheet_$name.png'),
-        );
-      }
+    testWidgets('a screen that asks for the paywall (an AI tap, a refused '
+        'edit) gets the full screen in place of the app, not a sheet over '
+        'it', (tester) async {
+      final router = await pumpApp(
+        tester,
+        status: statusOf(customerInfoLapsed),
+        initial: '/main',
+        gated: false,
+        extra: [writeAccessProvider.overrideWith((_) async => false)],
+      );
+      unawaited(router.push('/settings'));
+      await tester.pumpAndSettle();
 
-      testWidgets('light', (tester) => golden(tester, Brightness.light));
-      testWidgets('dark', (tester) => golden(tester, Brightness.dark));
+      await tester.tap(find.byKey(aiButton).hitTestable());
+      await tester.pumpAndSettle();
+      fullScreenAlone(tester, router);
+
+      // A second ask while it is up does not stack another.
+      ProviderScope.containerOf(
+        tester.element(find.byKey(const ValueKey('paywall.screen'))),
+      ).read(paywallRequestsProvider.notifier).request();
+      await tester.pumpAndSettle();
+      fullScreenAlone(tester, router);
+    });
+
+    testWidgets('Redeem code still opens its glass sheet over the paywall', (
+      tester,
+    ) async {
+      await pumpApp(
+        tester,
+        status: statusOf(customerInfoLapsed),
+        initial: '/main',
+      );
+      await _openMenu(tester);
+      await tester.tap(find.byKey(_redeem));
+      await tester.pumpAndSettle();
+
+      expect(
+        find.ancestor(
+          of: find.byType(RedeemCodeSheet),
+          matching: find.byType(GlassSheetSurface),
+        ),
+        findsOneWidget,
+      );
     });
   });
 }
