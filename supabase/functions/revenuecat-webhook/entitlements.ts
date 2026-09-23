@@ -79,8 +79,12 @@ export function isProEvent(event: RcEvent): boolean {
   const productId = String(event.product_id ?? '');
   if (PRO_PRODUCT_IDS.has(productId)) return true;
   // Play events sometimes carry the bare subscription id; the base plan is in
-  // `product_id`'s `:basePlan` suffix only on newer payloads.
-  return PRO_PRODUCT_IDS.has(`${productId}:monthly`) ||
+  // `product_id`'s `:basePlan` suffix only on newer payloads. The list holds the
+  // original Play SKUs with the suffix and the `me_pro_*` ones without it, so
+  // try both directions.
+  const subscriptionId = productId.split(':')[0];
+  return PRO_PRODUCT_IDS.has(subscriptionId) ||
+    PRO_PRODUCT_IDS.has(`${productId}:monthly`) ||
     PRO_PRODUCT_IDS.has(`${productId}:annual`);
 }
 

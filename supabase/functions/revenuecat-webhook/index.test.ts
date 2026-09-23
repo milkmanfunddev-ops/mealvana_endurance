@@ -1020,6 +1020,13 @@ describe('F. entitlements.ts', () => {
     }
   });
 
+  it('a Play event carrying `subscription:basePlan` for a new id is Pro', () => {
+    for (const id of ['me_pro_monthly_prod:monthly', 'me_pro_annual_prod:annual', 'me_pro_monthly_founding:monthly', 'me_pro_annual_founding_prod:annual']) {
+      assert(isProEvent({ product_id: id, entitlement_ids: null }), id);
+    }
+    assert(!isProEvent({ product_id: 'mealvana_credits_50:pack' }));
+  });
+
   it('takesProPath: every `pro` event but TEST and TRANSFER, whatever its type; packs never', () => {
     for (const t of ['INITIAL_PURCHASE', 'RENEWAL', 'CANCELLATION', 'UNCANCELLATION', 'EXPIRATION', 'BILLING_ISSUE', 'PRODUCT_CHANGE', 'SUBSCRIPTION_PAUSED', 'SUBSCRIPTION_EXTENDED', 'NON_RENEWING_PURCHASE', 'TEMPORARY_ENTITLEMENT_GRANT']) {
       assert(takesProPath(trialStart({ type: t })), t);
