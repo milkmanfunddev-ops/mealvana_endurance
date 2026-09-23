@@ -1,6 +1,6 @@
 # 05: The production products
 
-**Status:** blocked (held for Lee's go prod and the uncommitted store-script edits, 2026-09-21)
+**Status:** in-progress (wave 9, 2026-09-23)
 **Blocked by:** None (can start immediately).
 **Next:** `/implement-lee paywall`
 **Model:** opus
@@ -11,7 +11,7 @@
 
 **Touches:** scripts/store/asc.mjs, scripts/store/play.mjs, docs/implement_mealplanning/04-entitlement.md
 
-- [ ] Lee has said go in the terminal before anything is created.
+- [x] Lee has said go in the terminal before anything is created. (Lee, "ok go prod", 2026-09-23)
 - [ ] `asc.mjs list` and `play.mjs list` against production show the four products, prices and free week.
 - [ ] RevenueCat lists the production products on `pro` and in both offerings.
 - [ ] The ids and states are recorded in docs/implement_mealplanning/04-entitlement.md.
