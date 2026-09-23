@@ -1,0 +1,22 @@
+{
+  "kind": "flow",
+  "title": "Where an idea Finding goes at triage",
+  "rows": [
+    [{"id": "idea", "label": "Idea Finding: 'show the plan's cost per day'"}],
+    [{"id": "tri", "label": "Triage with Lee, after wave 3"}],
+    [{"id": "a", "label": "A: becomes a proposal card, Finding closed"},
+     {"id": "b", "label": "B: won't-fix unless Lee picks it"},
+     {"id": "c", "label": "C: stays triaged, loop ignores ideas"}],
+    [{"id": "end", "label": "Loop can finish once bugs and follow-ups are done", "tone": "ok"}]
+  ],
+  "edges": [
+    {"from": "idea", "to": "tri"},
+    {"from": "tri", "to": "a", "label": "A"},
+    {"from": "tri", "to": "b", "label": "B"},
+    {"from": "tri", "to": "c", "label": "C"},
+    {"from": "a", "to": "end"},
+    {"from": "b", "to": "end"},
+    {"from": "c", "to": "end"}
+  ],
+  "example": ["Today: 12 bugs closed, 1 idea at 'triaged' -> index exits 1, loop never ends.", "Any of A, B or C lets it exit 0."]
+}

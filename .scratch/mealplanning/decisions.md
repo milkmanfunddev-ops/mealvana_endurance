@@ -3051,3 +3051,23 @@ An edit made while notes are being written is picked up on the next open. A requ
 **What it touches.** Subscription screen, the paywall's ⋯ menu; `subscription_service.dart`.
 
 > 2026-09-23 opened in wave 7 review
+
+## mp-653 · When does an idea Finding stop holding the testing loop open?
+- category: Process and scope
+- kind: question
+- status: open
+- linked: mp-621
+- image: none
+- svg: docs/ssot/decisions/images/mealplanning/mp-653.svg
+- screen: none (testing-wave process)
+- source: wave testing-wave 1 ticket 01
+
+**Context.** A testing-wave agent writes an idea Finding when it sees something that could be better but isn't broken. The loop ends when every Finding is closed or won't-fix, and the spec only closes a Finding when a retest passes. An idea has no retest, so as the harness stands, an idea still waiting at triage keeps the loop running for good.
+
+**Question.** At triage, does an idea become a proposal card on the page and close (A), close as won't-fix unless Lee picks it up (B), or stop counting toward the end of the loop, whatever its status (C)?
+
+**Why.** Without a rule for ideas, the loop can never be declared finished, even with every bug fixed.
+
+**What it touches.** `scripts/testing-wave/findings.mjs` (what counts as finished), the spec's Triage section.
+
+> 2026-09-23 opened in wave 1 ticket 01
