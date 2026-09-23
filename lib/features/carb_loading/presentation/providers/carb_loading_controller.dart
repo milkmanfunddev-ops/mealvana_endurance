@@ -6,7 +6,6 @@ import '../../../../shared/database/app_database.dart' as db;
 import '../../../../shared/services/logging_service.dart';
 import '../../../../shared/services/sync/sync_coordinator.dart';
 import '../../../../shared/providers/user_id_provider.dart';
-import '../../../subscription/application/write_guard.dart';
 
 part 'carb_loading_controller.g.dart';
 
@@ -57,7 +56,6 @@ class CarbLoadingController extends _$CarbLoadingController {
     required double bodyWeightPounds,
     String? forUserId,
   }) async {
-    if (!await ref.canWrite()) return;
     try {
       final deviceIdValue = await ref.read(userIdProvider.future);
       final userId = deviceIdValue; // Device ID is used as user ID
@@ -84,7 +82,6 @@ class CarbLoadingController extends _$CarbLoadingController {
 
   /// Delete carb loading plan and associated days
   Future<void> deleteCarbLoadingPlan(String eventId) async {
-    if (!await ref.canWrite()) return;
     try {
       final deviceIdValue = await ref.read(userIdProvider.future);
 
@@ -105,7 +102,6 @@ class CarbLoadingController extends _$CarbLoadingController {
 
   /// Delete a single carb loading day
   Future<void> deleteCarbLoadingDay(String carbLoadingDayId) async {
-    if (!await ref.canWrite()) return;
     try {
       await _service.deleteCarbLoadingDay(carbLoadingDayId);
 
@@ -126,7 +122,6 @@ class CarbLoadingController extends _$CarbLoadingController {
     required DateTime raceDate,
     required double bodyWeightPounds,
   }) async {
-    if (!await ref.canWrite()) return;
     try {
       final deviceIdValue = await ref.read(userIdProvider.future);
       final userId = deviceIdValue;

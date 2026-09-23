@@ -44,7 +44,6 @@ import '../../../../shared/utils/food_display_utils.dart' as food_utils;
 import '../../../../shared/utils/category_matcher.dart';
 import '../../application/food_operations_service.dart';
 import '../utils/activity_detail_helpers.dart';
-import '../../../subscription/application/write_guard.dart';
 
 part 'activity_detail_controller.g.dart';
 
@@ -299,7 +298,6 @@ class ActivityDetailController extends _$ActivityDetailController {
   /// from the echo fields already stored on `DuringRunMacros` in the current
   /// `MacroTargets`. If not present (legacy plan), they default to null / false.
   Future<void> regeneratePlan() async {
-    if (!await ref.canWrite()) return;
     final currentState = state.value;
     if (currentState == null) return;
 
@@ -413,7 +411,6 @@ class ActivityDetailController extends _$ActivityDetailController {
 
   /// Save activity and any nutrition plan changes
   Future<void> saveActivity() async {
-    if (!await ref.canWrite()) return;
     final currentState = state.value;
     if (currentState == null || currentState.activity == null) return;
 
@@ -518,7 +515,6 @@ class ActivityDetailController extends _$ActivityDetailController {
   /// SNACK feeding — then persist plan + targets + answer in ONE atomic write
   /// to `activities.nutrition_plan_data` (deferred-ledger P2).
   Future<void> answerHydrationCheck(HydrationCheckAnswer answer) async {
-    if (!await ref.canWrite()) return;
     final current = state.value;
     final plan = current?.nutritionPlan;
     final targets = current?.macroTargets;
@@ -563,7 +559,6 @@ class ActivityDetailController extends _$ActivityDetailController {
   /// H-3 / H-4: Change answer — the target returns to its pre-answer value and
   /// the tagged water row is removed (even if edited, P3). Nothing else moves.
   Future<void> clearHydrationCheckAnswer() async {
-    if (!await ref.canWrite()) return;
     final current = state.value;
     final plan = current?.nutritionPlan;
     final targets = current?.macroTargets;
@@ -893,7 +888,6 @@ class ActivityDetailController extends _$ActivityDetailController {
     String? textNotes,
     int? nutritionRating,
   }) async {
-    if (!await ref.canWrite()) return;
     final currentState = state.value;
     if (currentState == null || currentState.activity == null) return;
 
@@ -951,7 +945,6 @@ class ActivityDetailController extends _$ActivityDetailController {
     CarbAdjustmentLevel level, {
     bool isEdit = false,
   }) async {
-    if (!await ref.canWrite()) return;
     // For first submit, "Just Right" keeps existing settings untouched.
     // In edit mode we do apply factor=1.0 to revert prior adjustments.
     if (level == CarbAdjustmentLevel.justRight && !isEdit) return;
@@ -1100,7 +1093,6 @@ class ActivityDetailController extends _$ActivityDetailController {
 
   /// Update workout notes for a completed activity
   Future<void> updateWorkoutNotes(String? notes) async {
-    if (!await ref.canWrite()) return;
     final currentState = state.value;
     if (currentState == null ||
         currentState.activity == null ||
@@ -1140,7 +1132,6 @@ class ActivityDetailController extends _$ActivityDetailController {
 
   /// Update completion rating for a completed activity
   Future<void> updateCompletionRating(int rating) async {
-    if (!await ref.canWrite()) return;
     final currentState = state.value;
     if (currentState == null ||
         currentState.activity == null ||
@@ -1182,7 +1173,6 @@ class ActivityDetailController extends _$ActivityDetailController {
     String? notes,
     CarbAdjustmentLevel? carbAdjustment,
   }) async {
-    if (!await ref.canWrite()) return;
     final currentState = state.value;
     if (currentState == null ||
         currentState.activity == null ||
@@ -1222,7 +1212,6 @@ class ActivityDetailController extends _$ActivityDetailController {
   /// Update scheduled date/time
   /// Auto-saves to database and invalidates activities list and calendar
   Future<void> updateScheduledDateTime(DateTime newDateTime) async {
-    if (!await ref.canWrite()) return;
     final currentState = state.value;
     if (currentState == null || currentState.activity == null) return;
 
@@ -1277,7 +1266,6 @@ class ActivityDetailController extends _$ActivityDetailController {
 
   /// Update reminder settings
   Future<void> updateReminder(ActivityReminder? reminder) async {
-    if (!await ref.canWrite()) return;
     final currentState = state.value;
     if (currentState == null || currentState.activity == null) return;
 
@@ -1721,7 +1709,6 @@ class ActivityDetailController extends _$ActivityDetailController {
     String category, {
     double? customAmount,
   }) async {
-    if (!await ref.canWrite()) return;
     _logger.info(
       'swapFoodItem ENTRY',
       context: 'ActivityDetailController',
@@ -1751,7 +1738,6 @@ class ActivityDetailController extends _$ActivityDetailController {
     String category, {
     double? customAmount,
   }) async {
-    if (!await ref.canWrite()) return;
     _logger.info(
       'addFoodItem ENTRY',
       context: 'ActivityDetailController',
@@ -1781,7 +1767,6 @@ class ActivityDetailController extends _$ActivityDetailController {
 
   /// Delete a food item from the nutrition plan
   Future<void> deleteFoodItem(String foodId, String category) async {
-    if (!await ref.canWrite()) return;
     _logger.info(
       'deleteFoodItem ENTRY',
       context: 'ActivityDetailController',
@@ -1801,7 +1786,6 @@ class ActivityDetailController extends _$ActivityDetailController {
     String category,
     double newQuantity,
   ) async {
-    if (!await ref.canWrite()) return;
     _logger.info(
       'updateFoodQuantity ENTRY',
       context: 'ActivityDetailController',
@@ -1891,7 +1875,6 @@ class ActivityDetailController extends _$ActivityDetailController {
     int foodIndex,
     double newQuantity,
   ) async {
-    if (!await ref.canWrite()) return;
     final currentState = state.value;
     if (currentState?.nutritionPlan == null) {
       _logger.warning(
@@ -2043,7 +2026,6 @@ class ActivityDetailController extends _$ActivityDetailController {
     TimeSlot sourceTimeSlot,
     TimeSlot newTimeSlot,
   ) async {
-    if (!await ref.canWrite()) return;
     final currentState = state.value;
     if (currentState?.nutritionPlan == null) return;
 
@@ -2095,7 +2077,6 @@ class ActivityDetailController extends _$ActivityDetailController {
     TimingCategory? timingCategory,
     bool isSipThroughout = false,
   }) async {
-    if (!await ref.canWrite()) return;
     final currentState = state.value;
     if (currentState?.nutritionPlan == null) return;
 
@@ -2139,7 +2120,6 @@ class ActivityDetailController extends _$ActivityDetailController {
     String category,
     TimeSlot sourceSlot,
   ) async {
-    if (!await ref.canWrite()) return;
     final currentState = state.value;
     if (currentState?.nutritionPlan == null) return;
 
@@ -2194,7 +2174,6 @@ class ActivityDetailController extends _$ActivityDetailController {
     double quantity, {
     TimingCategory? timingCategory,
   }) async {
-    if (!await ref.canWrite()) return;
     final currentState = state.value;
     if (currentState?.nutritionPlan == null) return;
 
@@ -2238,7 +2217,6 @@ class ActivityDetailController extends _$ActivityDetailController {
     TimeSlot slot,
     double delta,
   ) async {
-    if (!await ref.canWrite()) return;
     final currentState = state.value;
     if (currentState?.nutritionPlan == null) return;
 
@@ -2406,7 +2384,6 @@ class ActivityDetailController extends _$ActivityDetailController {
   /// Delete the current activity
   /// Returns true on success, false on failure
   Future<bool> deleteActivity() async {
-    await requireWriteAccess(ref);
     try {
       final user = await _authService.getCurrentUser();
       if (user == null) return false;
@@ -2627,7 +2604,6 @@ class ActivityDetailController extends _$ActivityDetailController {
     String? textNotes,
     int? nutritionRating,
   }) async {
-    if (!await ref.canWrite()) return;
     final currentState = state.value;
     if (currentState == null || currentState.activity == null) return;
     if (currentState.fuelLogData == null) return;
@@ -2738,7 +2714,6 @@ class ActivityDetailController extends _$ActivityDetailController {
     int? nutritionRating,
     String? textNotes,
   }) async {
-    if (!await ref.canWrite()) return;
     final currentState = state.value;
     if (currentState == null || currentState.activity == null) return;
     if (currentState.fuelLogData == null) return;

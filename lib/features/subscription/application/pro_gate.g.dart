@@ -90,29 +90,29 @@ abstract class _$AppGate extends $AsyncNotifier<AppAccess> {
   }
 }
 
-/// The one write-access rule (mp-457 §4): whether this account may write or
-/// call AI right now. True only when the gate is open; an unresolved gate
-/// waits for the gate's bounded answer (an unknown answer is closed, so no).
-/// A write controller awaits this before writing and opens the paywall
-/// instead when it says no (ticket 20 removes the check).
+/// Whether this account may start an AI action right now: true only when
+/// the gate is open; an unresolved gate waits for the gate's bounded answer
+/// (an unknown answer is closed, so no). Read by the AI-action checks on
+/// screens the router never sees (`aiActionAllowed`, the Vana launcher);
+/// no write asks it (mp-457, ticket 20).
 
 @ProviderFor(writeAccess)
 const writeAccessProvider = WriteAccessProvider._();
 
-/// The one write-access rule (mp-457 §4): whether this account may write or
-/// call AI right now. True only when the gate is open; an unresolved gate
-/// waits for the gate's bounded answer (an unknown answer is closed, so no).
-/// A write controller awaits this before writing and opens the paywall
-/// instead when it says no (ticket 20 removes the check).
+/// Whether this account may start an AI action right now: true only when
+/// the gate is open; an unresolved gate waits for the gate's bounded answer
+/// (an unknown answer is closed, so no). Read by the AI-action checks on
+/// screens the router never sees (`aiActionAllowed`, the Vana launcher);
+/// no write asks it (mp-457, ticket 20).
 
 final class WriteAccessProvider
     extends $FunctionalProvider<AsyncValue<bool>, bool, FutureOr<bool>>
     with $FutureModifier<bool>, $FutureProvider<bool> {
-  /// The one write-access rule (mp-457 §4): whether this account may write or
-  /// call AI right now. True only when the gate is open; an unresolved gate
-  /// waits for the gate's bounded answer (an unknown answer is closed, so no).
-  /// A write controller awaits this before writing and opens the paywall
-  /// instead when it says no (ticket 20 removes the check).
+  /// Whether this account may start an AI action right now: true only when
+  /// the gate is open; an unresolved gate waits for the gate's bounded answer
+  /// (an unknown answer is closed, so no). Read by the AI-action checks on
+  /// screens the router never sees (`aiActionAllowed`, the Vana launcher);
+  /// no write asks it (mp-457, ticket 20).
   const WriteAccessProvider._()
     : super(
         from: null,
@@ -138,4 +138,4 @@ final class WriteAccessProvider
   }
 }
 
-String _$writeAccessHash() => r'84d52de6ef4f79282609145ada359711caeacd76';
+String _$writeAccessHash() => r'c927de8de2037bd180644519393f934e718c71a4';

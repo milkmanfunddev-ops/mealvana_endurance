@@ -21,7 +21,6 @@ import '../domain/ui_action.dart';
 import '../domain/vana_part.dart';
 import '../domain/week_start.dart';
 import 'plan_reminder_service.dart';
-import '../../subscription/application/write_guard.dart';
 
 part 'meal_plan_controller.g.dart';
 
@@ -151,22 +150,18 @@ class MealPlanController extends _$MealPlanController {
   // ── Local-first edits ─────────────────────────────────────────────────────
 
   Future<void> setServings(String planMealId, int servings) async {
-    if (!await ref.canWrite()) return;
     await _localFirst(() => _repo.setServings(planMealId, servings));
   }
 
   Future<void> removeMeal(String planMealId) async {
-    if (!await ref.canWrite()) return;
     await _localFirst(() => _repo.removeMeal(planMealId));
   }
 
   Future<void> setSession(String planMealId, CookingSession? session) async {
-    if (!await ref.canWrite()) return;
     await _localFirst(() => _repo.setSession(planMealId, session));
   }
 
   Future<void> addComment(String planMealId, String text) async {
-    if (!await ref.canWrite()) return;
     await _localFirst(() => _repo.addComment(planMealId, text));
   }
 
@@ -176,7 +171,6 @@ class MealPlanController extends _$MealPlanController {
     ShoppingField field,
     bool value,
   ) async {
-    if (!await ref.canWrite()) return;
     final planId = state.value?.id;
     if (planId == null) return;
     await _localFirst(() => _repo.toggleShopping(planId, name, field, value));
@@ -185,14 +179,12 @@ class MealPlanController extends _$MealPlanController {
   /// Write a day-planner slot on the active plan. Requires a local plan —
   /// with none, use [planDay] / the server (which creates one).
   Future<void> setDaySlot(String date, MealType slot, DaySlotRef ref) async {
-    if (!await this.ref.canWrite()) return; // `ref` here is the slot
     final planId = state.value?.id;
     if (planId == null) throw const NeedsConnectionException('set_day_slot');
     await _localFirst(() => _repo.setDaySlot(planId, date, slot, ref));
   }
 
   Future<void> clearDaySlot(String date, MealType slot) async {
-    if (!await ref.canWrite()) return;
     final planId = state.value?.id;
     if (planId == null) return;
     await _localFirst(() => _repo.setDaySlot(planId, date, slot, null));
@@ -252,7 +244,6 @@ class MealPlanController extends _$MealPlanController {
     String? conversationId,
     String? planId,
   }) async {
-    await requireWriteAccess(ref);
     return _remoteAck(
       PickMealsAction(
         meals: meals,
@@ -272,7 +263,6 @@ class MealPlanController extends _$MealPlanController {
     required MealSource source,
     required String id,
   }) async {
-    await requireWriteAccess(ref);
     return _remoteAck(
       SwapMealAction(planMealId: planMealId, source: source, id: id),
       (r) => r.plan,
@@ -286,7 +276,6 @@ class MealPlanController extends _$MealPlanController {
     String? conversationId,
     String? planId,
   }) async {
-    await requireWriteAccess(ref);
     final plan = await _remoteAck(
       ConfirmPlanAction(
         date: date,
@@ -326,7 +315,6 @@ class MealPlanController extends _$MealPlanController {
     required String to,
     String? effect,
   }) async {
-    await requireWriteAccess(ref);
     return _remoteAck(
       SwapIngredientAction(planMealId: planMealId, from: from, to: to),
       (r) => r.plan,
@@ -338,7 +326,6 @@ class MealPlanController extends _$MealPlanController {
   /// the 4c stopgap where the chat screen sent "Accept the rule: …" as a
   /// plain message (another model turn, no ack, no plan fold).
   Future<MealPlan?> acceptRule(PlanRule rule, {String? conversationId}) async {
-    await requireWriteAccess(ref);
     return _remoteAck(
       AcceptRuleAction(
         rule: rule.copyWith(accepted: true),
@@ -350,7 +337,6 @@ class MealPlanController extends _$MealPlanController {
 
   /// Archive the current plan and start an empty draft (`new_plan`).
   Future<MealPlan?> newPlan({String? conversationId}) async {
-    await requireWriteAccess(ref);
     return _remoteAck(
       NewPlanAction(conversationId: conversationId),
       (r) => r.plan,
@@ -366,7 +352,6 @@ class MealPlanController extends _$MealPlanController {
   /// `syncFromRemote` deletes a non-archived plan the server no longer has.
   /// The returned receipt is what the caller offers Undo from.
   Future<VanaReceiptPart?> deletePlan({String? id}) async {
-    await requireWriteAccess(ref);
     final receipt = await _remoteAck(
       DeletePlanAction(id: id),
       (r) => r.parts.whereType<VanaReceiptPart>().firstOrNull,
@@ -378,7 +363,6 @@ class MealPlanController extends _$MealPlanController {
   /// Put back the plan [receipt] deleted, sending its undo params verbatim.
   /// The server restores the rows; [refresh] pulls them back into Drift.
   Future<void> undoDeletePlan(VanaReceiptPart receipt) async {
-    if (!await ref.canWrite()) return;
     final undo = receipt.undo;
     if (undo == null) return;
     await _remoteAck(UndoReceiptAction(params: undo.params), (r) => r);
@@ -391,7 +375,6 @@ class MealPlanController extends _$MealPlanController {
     String planMealId, {
     MealType? mealType,
   }) async {
-    await requireWriteAccess(ref);
     return _remoteAck(
       LogFromPlanAction(planMealId: planMealId, mealType: mealType),
       (r) => r.parts.whereType<VanaLoggedPart>().firstOrNull,
@@ -401,7 +384,6 @@ class MealPlanController extends _$MealPlanController {
   /// Fill a day's empty slots (`plan_day`). Returns the `day` part; the
   /// plan's `days` are re-read afterwards so the local copy matches.
   Future<VanaDayPart?> planDay({String? date}) async {
-    await requireWriteAccess(ref);
     final part = await _remoteAck(
       PlanDayAction(date: date),
       (r) => r.parts.whereType<VanaDayPart>().firstOrNull,

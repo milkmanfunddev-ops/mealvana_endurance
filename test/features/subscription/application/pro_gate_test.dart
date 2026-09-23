@@ -72,10 +72,10 @@ void main() {
       }
     });
 
-    test('the gate has two answers, and only open writes', () {
+    test('the gate has two answers, and only open runs AI', () {
       expect(AppAccess.values, [AppAccess.open, AppAccess.closed]);
-      expect(AppAccess.open.canWrite, isTrue);
-      expect(AppAccess.closed.canWrite, isFalse);
+      expect(AppAccess.open.allowsAi, isTrue);
+      expect(AppAccess.closed.allowsAi, isFalse);
     });
   });
 
@@ -212,7 +212,7 @@ void main() {
     );
   });
 
-  group('writeAccessProvider (mp-457 §4)', () {
+  group('writeAccessProvider (the AI-action check)', () {
     ProviderContainer container(
       SubscriptionStatus status, {
       bool isAdmin = false,
@@ -227,18 +227,18 @@ void main() {
       return c;
     }
 
-    test('open writes', () async {
+    test('open runs AI', () async {
       expect(await container(_active).read(writeAccessProvider.future), isTrue);
     });
 
-    test('closed (lapsed) does not write', () async {
+    test('closed (lapsed) runs no AI', () async {
       expect(
         await container(_lapsed).read(writeAccessProvider.future),
         isFalse,
       );
     });
 
-    test('closed (never subscribed) does not write', () async {
+    test('closed (never subscribed) runs no AI', () async {
       expect(
         await container(
           SubscriptionStatus.none,
@@ -247,7 +247,7 @@ void main() {
       );
     });
 
-    test('a lapsed admin writes', () async {
+    test('a lapsed admin runs AI', () async {
       expect(
         await container(
           _lapsed,

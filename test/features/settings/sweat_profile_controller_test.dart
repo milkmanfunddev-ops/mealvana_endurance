@@ -17,7 +17,6 @@ import 'package:mocktail/mocktail.dart';
 import 'package:riverpod/riverpod.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 import 'package:supabase_flutter/supabase_flutter.dart';
-import '../../helpers/write_access.dart';
 
 // ---------------------------------------------------------------------------
 // Mocks
@@ -203,7 +202,6 @@ void main() {
     ProviderContainer _makeContainer(UserProfile seededProfile) {
       return ProviderContainer(
         overrides: [
-          writesAllowed(),
           userRepositoryProvider.overrideWith((_) async => repository),
         ],
       );
@@ -247,7 +245,6 @@ void main() {
     test('save() returns error for sweat rate = 0 (out of range)', () async {
       final container = ProviderContainer(
         overrides: [
-          writesAllowed(),
           userRepositoryProvider.overrideWith((_) async => repository),
         ],
       );
@@ -268,7 +265,6 @@ void main() {
     test('save() returns error for sweat rate >= 4000', () async {
       final container = ProviderContainer(
         overrides: [
-          writesAllowed(),
           userRepositoryProvider.overrideWith((_) async => repository),
         ],
       );
@@ -289,7 +285,6 @@ void main() {
     test('save() returns error for sweat rate = -1 (negative)', () async {
       final container = ProviderContainer(
         overrides: [
-          writesAllowed(),
           userRepositoryProvider.overrideWith((_) async => repository),
         ],
       );
@@ -310,7 +305,6 @@ void main() {
     test('save() returns error for sodium concentration = 0', () async {
       final container = ProviderContainer(
         overrides: [
-          writesAllowed(),
           userRepositoryProvider.overrideWith((_) async => repository),
         ],
       );
@@ -331,7 +325,6 @@ void main() {
     test('save() returns error for sodium concentration >= 2500', () async {
       final container = ProviderContainer(
         overrides: [
-          writesAllowed(),
           userRepositoryProvider.overrideWith((_) async => repository),
         ],
       );
@@ -353,7 +346,6 @@ void main() {
       // Null means "not set" — no validation should run.
       final container = ProviderContainer(
         overrides: [
-          writesAllowed(),
           userRepositoryProvider.overrideWith((_) async => repository),
         ],
       );
@@ -377,7 +369,6 @@ void main() {
     test('sweatRate boundary: 1 is valid (no error)', () async {
       final container = ProviderContainer(
         overrides: [
-          writesAllowed(),
           userRepositoryProvider.overrideWith((_) async => repository),
         ],
       );
@@ -400,7 +391,6 @@ void main() {
     test('sweatRate boundary: 3999 is valid (no rate error)', () async {
       final container = ProviderContainer(
         overrides: [
-          writesAllowed(),
           userRepositoryProvider.overrideWith((_) async => repository),
         ],
       );
@@ -428,7 +418,6 @@ void main() {
     test('setSweatRate updates state immediately', () async {
       final container = ProviderContainer(
         overrides: [
-          writesAllowed(),
           userRepositoryProvider.overrideWith((_) async => repository),
         ],
       );
@@ -448,7 +437,6 @@ void main() {
     test('setSweatSodium updates state immediately', () async {
       final container = ProviderContainer(
         overrides: [
-          writesAllowed(),
           userRepositoryProvider.overrideWith((_) async => repository),
         ],
       );
@@ -470,7 +458,6 @@ void main() {
       () async {
         final container = ProviderContainer(
           overrides: [
-            writesAllowed(),
             userRepositoryProvider.overrideWith((_) async => repository),
           ],
         );
@@ -504,7 +491,6 @@ void main() {
     test('setSweatTestSource updates state', () async {
       final container = ProviderContainer(
         overrides: [
-          writesAllowed(),
           userRepositoryProvider.overrideWith((_) async => repository),
         ],
       );
@@ -524,7 +510,6 @@ void main() {
     test('setSweatTestDate updates state', () async {
       final container = ProviderContainer(
         overrides: [
-          writesAllowed(),
           userRepositoryProvider.overrideWith((_) async => repository),
         ],
       );

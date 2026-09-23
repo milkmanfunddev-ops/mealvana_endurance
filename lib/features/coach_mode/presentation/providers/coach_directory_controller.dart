@@ -4,7 +4,6 @@ import 'package:riverpod_annotation/riverpod_annotation.dart';
 
 import '../../application/coach_service.dart';
 import '../../domain/coach.dart';
-import '../../../subscription/application/write_guard.dart';
 
 part 'coach_directory_controller.g.dart';
 
@@ -61,7 +60,6 @@ class CoachDirectoryController extends _$CoachDirectoryController {
 
   /// Request to connect with a coach (athlete initiates)
   Future<bool> requestCoach(String coachUserId) async {
-    await requireWriteAccess(ref);
     final currentState = state.value;
     if (currentState == null) return false;
 

@@ -31,7 +31,6 @@ import 'package:mealvana_endurance/features/nutrition_plan/domain/nutrition_plan
 import 'package:mealvana_endurance/features/nutrition_plan/domain/food_item_data.dart';
 
 import '../helpers/widget_test_harness.dart';
-import '../helpers/write_access.dart';
 
 // ---------------------------------------------------------------------------
 // Helpers shared across tests
@@ -183,7 +182,6 @@ void main() {
           tester,
           const ActivityDetailScreen(activityId: 'act-1'),
           overrides: [
-            writesAllowed(),
             activityDetailControllerProvider(
               activityId: 'act-1',
             ).overrideWith(() => _FakeActivityDetailController(state)),
@@ -206,7 +204,6 @@ void main() {
           tester,
           const ActivityDetailScreen(activityId: 'act-1'),
           overrides: [
-            writesAllowed(),
             activityDetailControllerProvider(
               activityId: 'act-1',
             ).overrideWith(() => _FakeActivityDetailController(state)),
@@ -235,7 +232,6 @@ void main() {
         tester,
         const ActivityDetailScreen(activityId: 'act-1'),
         overrides: [
-          writesAllowed(),
           activityDetailControllerProvider(
             activityId: 'act-1',
           ).overrideWith(() => _FakeActivityDetailController(state)),
@@ -256,7 +252,6 @@ void main() {
           tester,
           const ActivityDetailScreen(activityId: 'act-1'),
           overrides: [
-            writesAllowed(),
             activityDetailControllerProvider(
               activityId: 'act-1',
             ).overrideWith(() => _FakeActivityDetailController(state)),
@@ -277,7 +272,6 @@ void main() {
           tester,
           const ActivityDetailScreen(activityId: 'act-1'),
           overrides: [
-            writesAllowed(),
             activityDetailControllerProvider(
               activityId: 'act-1',
             ).overrideWith(() => _FakeActivityDetailController(state)),
@@ -298,7 +292,6 @@ void main() {
         tester,
         const ActivityDetailScreen(activityId: 'act-1'),
         overrides: [
-          writesAllowed(),
           activityDetailControllerProvider(
             activityId: 'act-1',
           ).overrideWith(() => _FakeActivityDetailController(state)),
@@ -318,7 +311,6 @@ void main() {
         tester,
         const ActivityDetailScreen(activityId: 'act-1'),
         overrides: [
-          writesAllowed(),
           activityDetailControllerProvider(
             activityId: 'act-1',
           ).overrideWith(() => _FakeActivityDetailController(state)),
@@ -340,7 +332,6 @@ void main() {
           tester,
           const ActivityDetailScreen(activityId: 'act-1'),
           overrides: [
-            writesAllowed(),
             activityDetailControllerProvider(
               activityId: 'act-1',
             ).overrideWith(() => _FakeActivityDetailController(state)),

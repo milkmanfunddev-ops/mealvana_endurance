@@ -60,7 +60,7 @@ final class VanaConversationsControllerProvider
 }
 
 String _$vanaConversationsControllerHash() =>
-    r'1ea7e4eb0fabd0cc9d177320d758e0d85132a204';
+    r'2ac53a794eec10a827aaf191d791d6432501109b';
 
 /// The conversations list for one [kind] ("Ask Vana" / "Meal plans").
 

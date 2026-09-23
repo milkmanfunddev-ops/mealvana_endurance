@@ -17,7 +17,6 @@ import '../domain/vana_setting.dart';
 import '../domain/week_start.dart';
 import 'meal_plan_controller.dart';
 import 'plan_reminder_service.dart';
-import '../../subscription/application/write_guard.dart';
 
 part 'vana_settings_controller.g.dart';
 
@@ -147,26 +146,22 @@ class VanaSettingsController extends _$VanaSettingsController {
   }
 
   Future<void> setBatchCooking(bool value) async {
-    if (!await ref.canWrite()) return;
     await _setSetting(VanaSetting.batchCooking, value);
   }
 
   Future<void> setShowMacros(bool value) async {
-    if (!await ref.canWrite()) return;
     await _setSetting(VanaSetting.showMacros, value);
   }
 
   /// The day a plan week starts (`DateTime.monday` … `DateTime.sunday`).
   /// The Plan tab's week follows through the settings row in Drift.
   Future<void> setWeekStart(int weekday) async {
-    if (!await ref.canWrite()) return;
     await _setSetting(VanaSetting.weekStart, PlanPeriod.weekdayToWire(weekday));
   }
 
   /// How many days one plan covers, within [PlanPeriod.minDays] …
   /// [PlanPeriod.maxDays]; anything outside is ignored.
   Future<void> setPeriodDays(int days) async {
-    if (!await ref.canWrite()) return;
     if (!PlanPeriod.isValidDays(days)) return;
     await _setSetting(VanaSetting.periodDays, days);
   }
@@ -175,7 +170,6 @@ class VanaSettingsController extends _$VanaSettingsController {
   /// Turning it on with a confirmed plan in hand schedules that plan's two
   /// notifications; turning it off cancels them.
   Future<void> setRemindersEnabled(bool value) async {
-    if (!await ref.canWrite()) return;
     final current = state.value;
     if (current == null) return;
     state = AsyncData(current.copyWith(remindersEnabled: value));
@@ -265,7 +259,6 @@ class VanaSettingsController extends _$VanaSettingsController {
 
   /// Forget a memory (local-first tombstone; replayed as `is_deleted`).
   Future<void> deleteMemory(String id) async {
-    if (!await ref.canWrite()) return;
     final userId = _userId;
     final current = state.value;
     if (userId == null || current == null) return;

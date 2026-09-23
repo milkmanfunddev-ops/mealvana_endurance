@@ -1,7 +1,6 @@
-/// Where the paywall lives in the router, as the gate and the write guard
-/// know it. Application-level so a controller can open the paywall without
-/// importing presentation; `pro_gate_redirect.dart` re-exports it for the
-/// router and the screens.
+/// Where the paywall lives in the router, as the gate knows it.
+/// Application-level so the gate needs nothing from presentation;
+/// `pro_gate_redirect.dart` re-exports it for the router and the screens.
 library;
 
 /// Where a closed account is sent, and stays: the full-screen paywall with

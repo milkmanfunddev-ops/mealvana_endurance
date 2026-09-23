@@ -968,11 +968,6 @@ class ContentKeys {
       'ai_credits.pack_month_and_quarter';
   static const String aiCreditsPackSliver = 'ai_credits.pack_sliver';
 
-  // Plan ended (mp-457): the bar a lapsed account sees on every screen —
-  // lib/shared/widgets/kyle_design/feedback/plan_ended_bar.dart.
-  static const String planEndedMessage = 'plan_ended.message';
-  static const String planEndedSubscribeButton = 'plan_ended.subscribe_button';
-
   // The Subscription screen in Settings (mp-495): its row in Settings, the
   // plan status with its date, what Pro includes and Upgrade. The feature
   // lines and Manage subscription are the paywall's own keys. `{date}` is

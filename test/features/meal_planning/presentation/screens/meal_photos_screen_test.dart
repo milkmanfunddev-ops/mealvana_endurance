@@ -27,7 +27,6 @@ import 'package:mealvana_endurance/features/meal_planning/presentation/screens/m
 import 'package:mealvana_endurance/shared/widgets/kyle_design/buttons/primary_button.dart';
 
 import '../helpers/test_content.dart';
-import '../../../../helpers/write_access.dart';
 
 const _mealId = 'AD-001';
 const _address = 'https://images.pexels.com/photos/1/salmon-salad.jpeg';
@@ -152,7 +151,6 @@ void main() {
     await tester.pumpWidget(
       ProviderScope(
         overrides: [
-          writesAllowed(),
           contentServiceProvider.overrideWith(testContentService),
           mealPhotoRepositoryProvider.overrideWithValue(repo),
           // The camera and the crop editor are platform widgets — they are

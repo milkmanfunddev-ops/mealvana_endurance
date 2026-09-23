@@ -42,7 +42,7 @@ final class PersonalTemplatesControllerProvider
 }
 
 String _$personalTemplatesControllerHash() =>
-    r'5e0941625bbb4f089d1a50c8ccc1bd1d185b5799';
+    r'0604557611551039020fd888fcc29bd376affd56';
 
 /// Controller for personal nutrition plan templates
 

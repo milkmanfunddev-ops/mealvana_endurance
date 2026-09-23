@@ -115,8 +115,8 @@ class SubscriptionScreen extends ConsumerWidget {
                       KylePrimaryButton(
                         key: const ValueKey('subscription.upgrade_button'),
                         text: t(ContentKeys.subscriptionUpgradeButton),
-                        // The same way in as the plan-ended bar and the AI
-                        // guard: the paywall pushed over this screen.
+                        // The same way in as the AI guard: the app goes to
+                        // the full-screen paywall.
                         onPressed: () => openPaywall(GoRouter.of(context)),
                       ),
                     ],

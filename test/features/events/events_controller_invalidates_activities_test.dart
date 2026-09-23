@@ -24,8 +24,6 @@ import 'package:mealvana_endurance/shared/services/sync/sync_coordinator.dart';
 import 'package:mocktail/mocktail.dart';
 import 'package:riverpod/riverpod.dart';
 
-import '../../helpers/write_access.dart';
-
 class _MockEventsService extends Mock implements EventsService {}
 
 class _MockEventsRepository extends Mock implements EventsRepository {}
@@ -101,7 +99,6 @@ void main() {
       final container = ProviderContainer(
         overrides: [
           eventsServiceProvider.overrideWithValue(service),
-          writesAllowed(),
           eventsRepositoryProvider.overrideWithValue(repository),
           appLoggerProvider.overrideWithValue(NoopAppLogger()),
           syncCoordinatorProvider.overrideWith(_NoopSyncCoordinator.new),

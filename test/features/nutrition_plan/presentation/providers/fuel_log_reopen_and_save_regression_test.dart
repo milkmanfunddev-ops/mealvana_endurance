@@ -14,7 +14,6 @@ import 'package:mealvana_endurance/shared/domain/activity_type.dart';
 import 'package:mocktail/mocktail.dart';
 
 import '../../../../helpers/fixtures/user_fixtures.dart';
-import '../../../../helpers/write_access.dart';
 
 // Regression tests for Bug Reports 391e3fdb754c81a4b47bd4ccd06b9647 ("Returning
 // to workout nutrition logging hides the dashboard, blocks editing, and shows
@@ -133,7 +132,6 @@ ProviderContainer _containerWithSeed(
 }) {
   final container = ProviderContainer(
     overrides: [
-      writesAllowed(),
       activitiesServiceProvider.overrideWithValue(activitiesService),
       authServiceProvider.overrideWithValue(authService),
       activityDetailControllerProvider(

@@ -11,7 +11,6 @@ import '../../../../shared/widgets/custom_app_bar_back_button.dart';
 import '../../../../shared/widgets/kyle_design/kyle_design.dart';
 import '../../../nutrition_plan/domain/run_parameters.dart';
 import '../providers/sweat_profile_controller.dart';
-import '../../../subscription/domain/write_access_denied.dart';
 
 /// Dedicated settings screen for the user's sweat profile.
 ///
@@ -114,12 +113,7 @@ class _SweatProfileScreenState extends ConsumerState<SweatProfileScreen> {
       controller.setKnownSodiumConcentration(raw);
     }
 
-    final String? error;
-    try {
-      error = await controller.save();
-    } on WriteAccessDenied {
-      return; // the paywall is already up over this screen (mp-457 §3)
-    }
+    final error = await controller.save();
     if (!mounted) return;
 
     if (error != null) {

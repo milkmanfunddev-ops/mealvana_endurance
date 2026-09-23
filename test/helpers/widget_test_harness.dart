@@ -243,8 +243,8 @@ Future<void> smokeScreen(
     // tests that need custom prefs behaviour can pass their own override
     // in [overrides]; it will appear later in the list and take precedence.
     if (withAppDeps) mockSharedPreferences(),
-    // The write guard's answer (mp-457 §4): open by default, false for a
-    // lapsed-account test, null to leave writeAccessProvider unoverridden.
+    // The AI-action check's answer (writeAccessProvider): open by default,
+    // false for a lapsed-account AI test, null to leave it unoverridden.
     if (withAppDeps && writeAccess != null)
       writeAccessProvider.overrideWithValue(AsyncData(writeAccess)),
     ...overrides,

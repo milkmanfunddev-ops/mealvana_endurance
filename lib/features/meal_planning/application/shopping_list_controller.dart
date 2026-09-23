@@ -13,7 +13,6 @@ import '../domain/shopping_list.dart';
 import '../domain/ui_action.dart';
 import 'meal_plan_controller.dart';
 import 'shopping_qty_formatter.dart';
-import '../../subscription/application/write_guard.dart';
 
 part 'shopping_list_controller.g.dart';
 
@@ -192,12 +191,10 @@ class ShoppingListController extends _$ShoppingListController {
   // ── Toggles ───────────────────────────────────────────────────────────────
 
   Future<void> setChecked(String name, bool value) async {
-    if (!await ref.canWrite()) return;
     await _toggle(name, ShoppingField.checked, value);
   }
 
   Future<void> setHave(String name, bool value) async {
-    if (!await ref.canWrite()) return;
     await _toggle(name, ShoppingField.have, value);
   }
 
@@ -239,7 +236,6 @@ class ShoppingListController extends _$ShoppingListController {
   /// Add a hand-written line to the list on screen. Aisle is the server's
   /// guess. Throws when there is no list to add to (offline mirror).
   Future<void> addItem(String name, {String qty = ''}) async {
-    if (!await ref.canWrite()) return;
     final current = state.value;
     final listId = current?.listId;
     if (current == null || listId == null) {
@@ -260,7 +256,6 @@ class ShoppingListController extends _$ShoppingListController {
     required String name,
     required String qty,
   }) async {
-    if (!await ref.canWrite()) return;
     final current = state.value;
     final row = current == null ? null : _rowFor(current, item);
     if (current == null || row == null) {
@@ -275,7 +270,6 @@ class ShoppingListController extends _$ShoppingListController {
   }
 
   Future<void> deleteItem(ShoppingItem item) async {
-    if (!await ref.canWrite()) return;
     final current = state.value;
     final row = current == null ? null : _rowFor(current, item);
     if (current == null || row == null) {
@@ -300,7 +294,6 @@ class ShoppingListController extends _$ShoppingListController {
   /// Start a new hand-made list and open it. The plan's own list stays in
   /// history.
   Future<void> newList({String? name}) async {
-    if (!await ref.canWrite()) return;
     final current = state.value ?? const ShoppingListState();
     state = await AsyncValue.guard(() async {
       final made = await _client.run(CreateShoppingListAction(name: name));
@@ -330,7 +323,6 @@ class ShoppingListController extends _$ShoppingListController {
   /// list [id] names. The new name shows at once; the server's answer
   /// settles it, and a failure puts the old name back.
   Future<void> renameList(String name, {String? id}) async {
-    if (!await ref.canWrite()) return;
     final current = state.value;
     final clean = name.trim();
     final target = id ?? current?.listId;
@@ -378,7 +370,6 @@ class ShoppingListController extends _$ShoppingListController {
   /// otherwise it just leaves history. Same shape as [newList]: the whole
   /// state is re-read from the server, and a failure puts today's back.
   Future<void> deleteList(String id) async {
-    if (!await ref.canWrite()) return;
     final current = state.value ?? const ShoppingListState();
     final pinned = _openedListId;
     if (id != current.listId) {

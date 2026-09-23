@@ -875,10 +875,6 @@
     "pack_share": "{percent}% of a month of Vana",
     "pack_price_one_time": "{price} one-time purchase"
   },
-  "plan_ended": {
-    "message": "Your plan has ended. Your data is read-only until you subscribe.",
-    "subscribe_button": "Subscribe"
-  },
   "subscription": {
     "settings_row_title": "Subscription",
     "settings_row_subtitle": "Your plan, what it includes, and managing it",

@@ -13,7 +13,6 @@ import 'package:mealvana_endurance/features/nutrition_plan/presentation/provider
 import 'package:mealvana_endurance/shared/services/app_external_deps.dart';
 import 'package:mealvana_endurance/shared/services/logging_service.dart';
 import 'package:mocktail/mocktail.dart';
-import '../../../../helpers/write_access.dart';
 
 // Regression test for Bug 3a3e3fdb-754c-8101-adb0-d2471b0d4bb5:
 // "Fuel logging: 'Food added' confirmation shows but the food is not added"
@@ -119,7 +118,6 @@ void main() {
   ProviderContainer buildContainer(ActivityDetailState seed) {
     final container = ProviderContainer(
       overrides: [
-        writesAllowed(),
         appExternalDepsProvider.overrideWithValue(mockDeps),
         authServiceProvider.overrideWithValue(mockAuthService),
         activityDetailControllerProvider(

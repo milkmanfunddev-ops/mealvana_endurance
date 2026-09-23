@@ -31,9 +31,8 @@ enum AppAccess {
   /// (mp-284). The full-screen paywall and nothing else (mp-280, mp-611).
   closed;
 
-  /// Whether writes and AI calls may run (mp-457 §4). Only open ever
-  /// reaches a write; the write guard still asks until ticket 20 removes it.
-  bool get canWrite => this == open;
+  /// Whether AI actions may run: only an open gate.
+  bool get allowsAi => this == open;
 }
 
 /// The resolved subscription status for the current user.

@@ -30,7 +30,6 @@ import 'package:mealvana_endurance/features/meal_planning/domain/vana_stream_eve
 import 'package:mealvana_endurance/shared/providers/user_id_provider.dart';
 import 'package:mealvana_endurance/shared/services/app_external_deps.dart';
 import 'package:shared_preferences/shared_preferences.dart';
-import '../../../helpers/write_access.dart';
 
 /// Records every idle signal the controller sends. [reply] is what each
 /// signal's future does: completes, never completes, or throws.
@@ -89,7 +88,6 @@ void main() {
   ProviderContainer containerFor(String userId) {
     final c = ProviderContainer(
       overrides: [
-        writesAllowed(),
         sharedPreferencesProvider.overrideWithValue(prefs),
         userIdProvider.overrideWith((ref) async => userId),
         vanaClockProvider.overrideWithValue(() => now),

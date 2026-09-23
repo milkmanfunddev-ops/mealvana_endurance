@@ -64,7 +64,6 @@ import 'package:mealvana_endurance/features/nutrition_plan/presentation/utils/pi
 import 'package:mealvana_endurance/shared/services/app_config.dart';
 import 'package:mealvana_endurance/theme/app_theme.dart';
 import 'package:mealvana_endurance/theme/kyle_design/app_colors.dart';
-import '../../helpers/write_access.dart';
 
 // ── Fixtures ───────────────────────────────────────────────────────────────
 
@@ -206,7 +205,6 @@ List<Override> _cardOverrides({
   AthleteConflictProfile Function()? profile,
   Set<String> pinned = const {},
 }) => [
-  writesAllowed(),
   formulaPinControllerProvider.overrideWith(
     () => _StubPinController(initiallyPinned: pinned),
   ),
@@ -623,7 +621,6 @@ void main() {
       await tester.pumpWidget(
         ProviderScope(
           overrides: [
-            writesAllowed(),
             athleteConflictProfileProvider.overrideWith((ref) async => profile),
           ],
           child: MaterialApp(
@@ -686,7 +683,6 @@ void main() {
       await tester.pumpWidget(
         ProviderScope(
           overrides: [
-            writesAllowed(),
             formulaEditorControllerProvider(
               'pf-1',
               FormulaPhase.before,
@@ -788,7 +784,6 @@ void main() {
       await tester.pumpWidget(
         ProviderScope(
           overrides: [
-            writesAllowed(),
             formulaEditorControllerProvider(
               null,
               FormulaPhase.before,
