@@ -89,5 +89,9 @@
   "test/features/subscription/presentation/goldens/subscription_active_light.png": {
     "id": "6346f33f6f94efc2fc505a5fc1a4014c",
     "sha256": "df69a486b40194b19caddeda0bd61bed6da9a075067e78d34a50d90c624040f4"
+  },
+  "docs/ssot/decisions/images/mealplanning/vana-settings.png": {
+    "id": "6fa6c3f51e2d917c4087268ac023462c",
+    "sha256": "19a9bed388df74f7dce6ea7034d0dbef3c540950b0e3ae71fbdf5de5f4ebde5a"
   }
 }

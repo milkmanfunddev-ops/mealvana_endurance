@@ -878,8 +878,10 @@ test('matchScreen takes the card\'s screen line: exact phrase per comma part fir
   assert.equal(matchScreen('Any screen with the launcher', real).key, 'launcher');
   // The fallback takes the longest phrase, whatever order the registry lists its screens in.
   const reversed = Object.fromEntries(Object.entries(real).reverse());
-  assert.equal(matchScreen('Vana settings screen', real).key, 'settings');
-  assert.equal(matchScreen('Vana settings screen', reversed).key, 'settings');
+  assert.equal(matchScreen('Vana conversations list screen', real).key, 'vana-conversations');
+  assert.equal(matchScreen('Vana conversations list screen', reversed).key, 'vana-conversations');
+  // Vana settings is its own screen since ai-cost wave 5, so its phrase matches exactly, not through 'Settings'.
+  assert.equal(matchScreen('Vana settings', real).key, 'vana-settings');
   assert.equal(matchScreen('Coach formula feedback, Vana chat', real).key, 'vana-chat');
 });
 

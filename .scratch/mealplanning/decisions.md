@@ -3086,7 +3086,7 @@ Read share 85.2% over ten turns, 93.9% over the nine follow-ups; the turns right
 ## mp-571 · The phone works out the share of the month from the wallet row
 - category: Cutting costs
 - status: proposed
-- image: none
+- image: docs/ssot/decisions/images/mealplanning/vana-settings.png
 - caption:
 - svg2: docs/ssot/decisions/images/mealplanning/mp-571-2.svg
 - screen: Vana settings
@@ -3113,6 +3113,7 @@ Mirrors `budgetStatus` in `allowance.ts`, with the unit test copying that file's
 
 > 2026-09-22 proposed in wave 5 ticket 10
 > 2026-09-22 rewritten in plain words (context, decision, why, details)
+> 2026-09-23 picture captured at 1.27.0+3, dc772c74
 
 ## mp-572 · Price tags are gone, and the budget pill shows what is left as a percent
 - category: Cutting costs
@@ -3149,7 +3150,7 @@ Mirrors `budgetStatus` in `allowance.ts`, with the unit test copying that file's
 ## mp-573 · A cent left is not spent
 - category: Cutting costs
 - status: proposed
-- image: none
+- image: docs/ssot/decisions/images/mealplanning/vana-settings.png
 - caption:
 - svg2: docs/ssot/decisions/images/mealplanning/mp-573-2.svg
 - screen: Vana settings
@@ -3176,11 +3177,12 @@ Mirrors `budgetStatus` in `allowance.ts`, with the unit test copying that file's
 
 > 2026-09-22 proposed in wave 5 ticket 10
 > 2026-09-22 rewritten in plain words (question, context, decision, details)
+> 2026-09-23 picture captured at 1.27.0+3, dc772c74
 
 ## mp-574 · The line above the message box says the month is used
 - category: Cutting costs
 - status: proposed
-- image: none
+- image: docs/ssot/decisions/images/mealplanning/vana-chat.png
 - caption:
 - svg2: docs/ssot/decisions/images/mealplanning/mp-574-2.svg
 - screen: Vana chat
@@ -3205,12 +3207,13 @@ The text is `meal_planning.out_of_credits_strip` in the content system.
 
 > 2026-09-22 proposed in wave 5 ticket 10
 > 2026-09-22 rewritten in plain words (question, context, decision, why, details)
+> 2026-09-23 picture captured at 1.27.0+3, dc772c74
 
 ## mp-575 · The wallet's live connection follows the budget screens
 - category: Cutting costs
 - status: proposed
 - detail: yes
-- image: none
+- image: docs/ssot/decisions/images/mealplanning/vana-settings.png
 - caption:
 - svg2: docs/ssot/decisions/images/mealplanning/mp-575-2.svg
 - screen: Vana settings
@@ -3238,6 +3241,7 @@ The text is `meal_planning.out_of_credits_strip` in the content system.
 
 > 2026-09-22 proposed in wave 5 ticket 10
 > 2026-09-22 rewritten in plain words (context, decision, why, details)
+> 2026-09-23 picture captured at 1.27.0+3, dc772c74
 
 ## mp-576 · Should the wallet row stop reaching the phone in dollars?
 - category: Cutting costs
@@ -3369,7 +3373,7 @@ Founding is a product id containing `_founding` (`me_pro_*_founding` and the `_p
 ## mp-581 · Subscription is the first row in Settings
 - category: Pro and paywall
 - status: proposed
-- image: none
+- image: docs/ssot/decisions/images/mealplanning/settings.png
 - caption:
 - svg2: docs/ssot/decisions/images/mealplanning/mp-581-2.svg
 - screen: Settings
@@ -3393,6 +3397,7 @@ Founding is a product id containing `_founding` (`me_pro_*_founding` and the `_p
 
 > 2026-09-22 proposed in wave 4 ticket 16
 > 2026-09-22 rewritten in plain words (decision, details)
+> 2026-09-23 picture captured at 1.27.0+3, dc772c74
 
 ## mp-582 · What does an admin with no plan see on the Subscription screen?
 - category: Pro and paywall
