@@ -1,6 +1,6 @@
 # 21: The Subscription screen shows a Grant's source and days left
 
-**Status:** in-progress (wave 7, 2026-09-23)
+**Status:** done (wave 7, 2026-09-23)
 **Blocked by:** 03 (touches lib/features/content/domain/content_keys.dart), 04 (touches lib/features/content/domain/content_keys.dart), 15 (touches lib/features/content/domain/content_keys.dart), 16 (touches lib/features/subscription/presentation/screens/subscription_screen.dart), 18 (touches lib/features/subscription/presentation/screens/subscription_screen.dart).
 **Next:** `/implement-lee paywall`
 **Model:** opus
