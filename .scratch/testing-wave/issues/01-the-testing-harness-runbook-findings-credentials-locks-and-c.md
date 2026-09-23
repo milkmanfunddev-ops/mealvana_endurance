@@ -1,6 +1,6 @@
 # 01: The testing harness: runbook, Findings, credentials, locks and cost caps
 
-**Status:** ready-for-agent
+**Status:** in-progress (wave 1, 2026-09-23)
 **Blocked by:** None (can start immediately).
 **Next:** `/implement-lee testing-wave`
 **Model:** opus
