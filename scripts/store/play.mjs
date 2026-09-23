@@ -8,6 +8,10 @@
  *   node scripts/store/play.mjs list                 # read-only: subscriptions, base plans, offers
  *   node scripts/store/play.mjs add-trial            # creates + activates offer `free-week` on every base plan lacking a free phase
  *   node scripts/store/play.mjs add-trial --dry-run
+ *   node scripts/store/play.mjs show <productId>     # read-only: raw subscription JSON
+ *   node scripts/store/play.mjs create-products [--dry-run]
+ *        creates the PRODUCTS table below (subscription + base plan + free-week offer),
+ *        activates each, skips whatever already exists
  *
  * Env:
  *   PLAY_PACKAGE     defaults to com.milkman.mealvanaendurance.dev — the prod package is refused.
@@ -126,6 +130,176 @@ function hasFreeWeek(offer) {
   );
 }
 
+// Regions Play refuses in an offer at regions version 2022/02 (seen: MN)
+// fall under otherRegionsConfig instead of a regional entry.
+const NOT_BILLABLE_IN_OFFER = new Set(['MN']);
+
+/** Creates (if missing) and activates offer `free-week` on one base plan. */
+async function ensureFreeWeek(productId, bp, dryRun) {
+  const offers = bp.offers ?? [];
+  const existing = offers.find((o) => o.offerId === OFFER_ID);
+  if (existing?.state === 'ACTIVE' && hasFreeWeek(existing)) {
+    console.log(`  ${productId}/${bp.basePlanId}: offer ${OFFER_ID} already ACTIVE, skipping`);
+    return;
+  }
+  if (!existing && offers.some(hasFreeWeek)) {
+    console.log(`  ${productId}/${bp.basePlanId}: already has a P7D free offer, skipping`);
+    return;
+  }
+  const regions = (bp.regionalConfigs ?? [])
+    .filter((r) => r.newSubscriberAvailability && !NOT_BILLABLE_IN_OFFER.has(r.regionCode))
+    .map((r) => r.regionCode);
+  console.log(`  ${dryRun ? '[dry-run] would create/activate' : 'creating/activating'} offer ${OFFER_ID} on ${productId}/${bp.basePlanId} (${regions.length} regions + other regions)`);
+  if (dryRun) return;
+  const body = {
+    packageName: pkg,
+    productId,
+    basePlanId: bp.basePlanId,
+    offerId: OFFER_ID,
+    // Store eligibility rule (mp-279 §2): one intro offer per new subscriber
+    // to any subscription in the app — a cancelled trial is not repeated.
+    targeting: { acquisitionRule: { scope: { anySubscriptionInApp: {} } } },
+    phases: [{
+      duration: 'P7D',
+      recurrenceCount: 1,
+      regionalConfigs: regions.map((regionCode) => ({ regionCode, free: {} })),
+      otherRegionsConfig: { free: {} },
+    }],
+    regionalConfigs: regions.map((regionCode) => ({ regionCode, newSubscriberAvailability: true })),
+    otherRegionsConfig: { otherRegionsNewSubscriberAvailability: true },
+  };
+  const base = `/subscriptions/${productId}/basePlans/${bp.basePlanId}/offers`;
+  if (!existing) {
+    await untilOk(`create offer ${productId}/${bp.basePlanId}/${OFFER_ID}`, () =>
+      api('POST', `${base}?offerId=${OFFER_ID}&regionsVersion.version=${REGIONS_VERSION}`, body));
+    console.log('    offer created');
+  }
+  await untilOk(`activate offer ${productId}/${bp.basePlanId}/${OFFER_ID}`, () =>
+    api('POST', `${base}/${OFFER_ID}:activate`, {
+      packageName: pkg, productId, basePlanId: bp.basePlanId, offerId: OFFER_ID,
+      latencyTolerance: 'PRODUCT_UPDATE_LATENCY_TOLERANCE_LATENCY_SENSITIVE',
+    }));
+  console.log('    offer activated');
+}
+
+/**
+ * Play writes are eventually consistent: a just-created base plan or offer
+ * 404s on activate for a while (04-entitlement.md). Retry 404/409/5xx for up
+ * to ~5 minutes; any other error is real and thrown at once.
+ */
+async function untilOk(label, fn, { tries = 30, delayMs = 10000 } = {}) {
+  for (let attempt = 1; ; attempt++) {
+    try {
+      return await fn();
+    } catch (e) {
+      const status = Number(/→ (\d{3})/.exec(e.message ?? '')?.[1]);
+      const transient = status === 404 || status === 409 || status >= 500;
+      if (!transient || attempt >= tries) throw e;
+      console.log(`    ${label}: ${status}, retry ${attempt}/${tries - 1} in ${delayMs / 1000}s`);
+      await new Promise((r) => setTimeout(r, delayMs));
+    }
+  }
+}
+
+// Standard and founding Pro tiers from Xuan's RevenueCat spec (docs/revenuecat-spec-for-lee.md).
+// One auto-renewing base plan each, US price as listed, other regions converted.
+const PRODUCTS = [
+  { productId: 'me_pro_monthly', basePlanId: 'monthly', period: 'P1M', usd: '24.99', title: 'Mealvana Pro Monthly' },
+  { productId: 'me_pro_annual', basePlanId: 'annual', period: 'P1Y', usd: '199.99', title: 'Mealvana Pro Annual' },
+  { productId: 'me_pro_monthly_founding', basePlanId: 'monthly', period: 'P1M', usd: '12.49', title: 'Founding Monthly' },
+  { productId: 'me_pro_annual_founding', basePlanId: 'annual', period: 'P1Y', usd: '99.99', title: 'Founding Annual' },
+];
+// Copied from mealvana_pro_monthly's listing so the store page reads the same.
+const LISTING = {
+  languageCode: 'en-US',
+  description: 'Mealvana Endurance Pro: AI meal planning with Vana, weekly plans and shopping lists built around your training.',
+  benefits: ['Weekly meal plans built with Vana', 'Shopping lists in one tap', 'Cooking mode with timers'],
+};
+
+function money(currencyCode, decimal) {
+  const [units, frac = ''] = decimal.split('.');
+  const nanos = Number((frac + '000000000').slice(0, 9));
+  return nanos ? { currencyCode, units, nanos } : { currencyCode, units };
+}
+function fmt(m) {
+  return m ? `${m.units ?? 0}.${String(Math.round((m.nanos ?? 0) / 1e7)).padStart(2, '0')} ${m.currencyCode}` : '-';
+}
+
+/**
+ * Mirrors mealvana_pro_monthly:monthly: a regional config for US at the list
+ * price plus otherRegionsConfig with USD + EUR (converted) prices. That plan
+ * also has MN, but Play refuses MN at regions version 2022/02 (400 "not
+ * billable"), so MN falls under otherRegionsConfig here.
+ */
+async function basePlanBody(p) {
+  const usd = money('USD', p.usd);
+  const conv = await api('POST', '/pricing:convertRegionPrices', { price: usd });
+  const eur = conv.convertedOtherRegionsPrice?.eurPrice;
+  if (!eur) throw new Error(`convertRegionPrices gave no EUR price for ${p.usd} USD`);
+  return {
+    basePlanId: p.basePlanId,
+    regionalConfigs: [{ regionCode: 'US', newSubscriberAvailability: true, price: usd }],
+    autoRenewingBasePlanType: {
+      billingPeriodDuration: p.period,
+      gracePeriodDuration: 'P7D',
+      resubscribeState: 'RESUBSCRIBE_STATE_ACTIVE',
+      prorationMode: 'SUBSCRIPTION_PRORATION_MODE_CHARGE_ON_NEXT_BILLING_DATE',
+      legacyCompatible: true,
+    },
+    otherRegionsConfig: { usdPrice: usd, eurPrice: eur, newSubscriberAvailability: true },
+  };
+}
+
+async function createProducts(dryRun) {
+  const existing = new Map(((await api('GET', '/subscriptions'))?.subscriptions ?? []).map((s) => [s.productId, s]));
+  for (const p of PRODUCTS) {
+    console.log(`${p.productId}:${p.basePlanId} · ${p.period} · ${p.usd} USD`);
+    let sub = existing.get(p.productId);
+    if (!sub) {
+      const bp = await basePlanBody(p);
+      console.log(`  ${dryRun ? '[dry-run] would create' : 'creating'} subscription (US ${fmt(bp.regionalConfigs[0].price)}, other regions ${fmt(bp.otherRegionsConfig.usdPrice)} / ${fmt(bp.otherRegionsConfig.eurPrice)})`);
+      if (dryRun) {
+        console.log(`  [dry-run] would activate base plan ${p.basePlanId}, then create/activate offer ${OFFER_ID}`);
+        continue;
+      }
+      sub = await api('POST', `/subscriptions?productId=${p.productId}&regionsVersion.version=${REGIONS_VERSION}`, {
+        packageName: pkg,
+        productId: p.productId,
+        listings: [{ ...LISTING, title: p.title }],
+        basePlans: [bp],
+        taxAndComplianceSettings: { eeaWithdrawalRightType: 'WITHDRAWAL_RIGHT_SERVICE' },
+      });
+      console.log('  subscription created');
+    } else {
+      console.log('  subscription exists');
+    }
+    const bp = (sub.basePlans ?? []).find((b) => b.basePlanId === p.basePlanId);
+    if (!bp) throw new Error(`${p.productId} exists without base plan ${p.basePlanId}; add it by hand or delete the draft`);
+    const livePrice = bp.regionalConfigs?.find((r) => r.regionCode === 'US')?.price;
+    if (fmt(livePrice) !== fmt(money('USD', p.usd))) {
+      console.log(`  WARNING: US price on Play is ${fmt(livePrice)}, table says ${p.usd} USD (not changed)`);
+    }
+    if (bp.state === 'ACTIVE') {
+      console.log(`  base plan ${p.basePlanId} already ACTIVE`);
+    } else if (dryRun) {
+      console.log(`  [dry-run] would activate base plan ${p.basePlanId} (now ${bp.state})`);
+    } else {
+      await untilOk(`activate base plan ${p.productId}/${p.basePlanId}`, () =>
+        api('POST', `/subscriptions/${p.productId}/basePlans/${p.basePlanId}:activate`, {
+          packageName: pkg, productId: p.productId, basePlanId: p.basePlanId,
+          latencyTolerance: 'PRODUCT_UPDATE_LATENCY_TOLERANCE_LATENCY_SENSITIVE',
+        }));
+      console.log(`  base plan ${p.basePlanId} activated`);
+    }
+    const offers = (await api('GET', `/subscriptions/${p.productId}/basePlans/${p.basePlanId}/offers`))?.subscriptionOffers ?? [];
+    await ensureFreeWeek(p.productId, { ...bp, offers }, dryRun);
+  }
+  if (!dryRun) {
+    console.log('\nAfter:');
+    print(await catalogue());
+  }
+}
+
 async function addTrial(dryRun) {
   const cat = await catalogue();
   print(cat);
@@ -135,48 +309,7 @@ async function addTrial(dryRun) {
         console.log(`${s.productId}/${bp.basePlanId}: already has a P7D free offer, skipping`);
         continue;
       }
-      // Regions Play refuses in an offer at regions version 2022/02 (seen: MN)
-      // fall under otherRegionsConfig instead of a regional entry.
-      const NOT_BILLABLE = new Set(['MN']);
-      const regions = (bp.regionalConfigs ?? [])
-        .filter((r) => r.newSubscriberAvailability && !NOT_BILLABLE.has(r.regionCode))
-        .map((r) => r.regionCode);
-      console.log(`${dryRun ? '[dry-run] would create' : 'creating'} offer ${OFFER_ID} on ${s.productId}/${bp.basePlanId} (${regions.length} regions + other regions)`);
-      if (dryRun) continue;
-      const body = {
-        packageName: pkg,
-        productId: s.productId,
-        basePlanId: bp.basePlanId,
-        offerId: OFFER_ID,
-        // Store eligibility rule (mp-279 §2): one intro offer per new subscriber
-        // to any subscription in the app — a cancelled trial is not repeated.
-        targeting: { acquisitionRule: { scope: { anySubscriptionInApp: {} } } },
-        phases: [{
-          duration: 'P7D',
-          recurrenceCount: 1,
-          regionalConfigs: regions.map((regionCode) => ({ regionCode, free: {} })),
-          otherRegionsConfig: { free: {} },
-        }],
-        regionalConfigs: regions.map((regionCode) => ({ regionCode, newSubscriberAvailability: true })),
-        otherRegionsConfig: { otherRegionsNewSubscriberAvailability: true },
-      };
-      const existing = bp.offers.find((o) => o.offerId === OFFER_ID);
-      if (!existing) {
-        await api('POST', `/subscriptions/${s.productId}/basePlans/${bp.basePlanId}/offers?offerId=${OFFER_ID}&regionsVersion.version=${REGIONS_VERSION}`, body);
-        console.log('  created');
-      }
-      // Activation is eventually consistent (04-entitlement.md): retry a few times.
-      for (let attempt = 1; attempt <= 5; attempt++) {
-        try {
-          await api('POST', `/subscriptions/${s.productId}/basePlans/${bp.basePlanId}/offers/${OFFER_ID}:activate`, {});
-          console.log('  activated');
-          break;
-        } catch (e) {
-          if (attempt === 5) throw e;
-          console.log(`  activate attempt ${attempt} failed, retrying…`);
-          await new Promise((r) => setTimeout(r, 3000 * attempt));
-        }
-      }
+      await ensureFreeWeek(s.productId, bp, dryRun);
     }
   }
   console.log('\nAfter:');
@@ -186,8 +319,10 @@ async function addTrial(dryRun) {
 const [cmd = 'list', ...flags] = process.argv.slice(2);
 try {
   if (cmd === 'list') print(await catalogue());
+  else if (cmd === 'show') console.log(JSON.stringify(await api('GET', `/subscriptions/${flags[0]}`), null, 2));
   else if (cmd === 'add-trial') await addTrial(flags.includes('--dry-run'));
-  else { console.error('usage: play.mjs list | add-trial [--dry-run]'); process.exit(2); }
+  else if (cmd === 'create-products') await createProducts(flags.includes('--dry-run'));
+  else { console.error('usage: play.mjs list | show <productId> | add-trial [--dry-run] | create-products [--dry-run]'); process.exit(2); }
 } catch (e) {
   console.error(e.message ?? e);
   process.exit(1);

@@ -8,6 +8,11 @@
  *   node scripts/store/asc.mjs list                 # read-only: groups, subscriptions, intro offers
  *   node scripts/store/asc.mjs add-trial            # creates ONE_WEEK FREE_TRIAL on every subscription lacking one
  *   node scripts/store/asc.mjs add-trial --dry-run  # shows what it would create
+ *   node scripts/store/asc.mjs create-products [--dry-run]
+ *       creates the PRODUCTS table below in the Mealvana Pro group: subscription,
+ *       en-US localization, availability in every territory, the USA price plus
+ *       Apple's equalized price in every other territory, then add-trial.
+ *       Idempotent: skips whatever already exists, so it can be re-run.
  *
  * Env (defaults are the dev app):
  *   ASC_APP_ID      App Store Connect app id — refuses the prod app (6751113738).
@@ -24,6 +29,20 @@ import { resolve } from 'node:path';
 
 const PROD_APP_ID = '6751113738';
 const DEV_APP_ID = '6756683509';
+
+const PRO_GROUP_ID = '22351029'; // "Mealvana Pro" on the dev app
+
+/** Subscriptions create-products makes (paywall reprice, 2026-09-21). */
+const PRODUCTS = [
+  { productId: 'me_pro_monthly', name: 'Mealvana Pro Monthly 2026', period: 'ONE_MONTH', usaPrice: '24.99',
+    displayName: 'Mealvana Pro Monthly', description: 'AI meal plans, shopping lists and cooking mode.' },
+  { productId: 'me_pro_annual', name: 'Mealvana Pro Annual 2026', period: 'ONE_YEAR', usaPrice: '199.99',
+    displayName: 'Mealvana Pro Annual', description: 'AI meal plans, shopping lists and cooking mode.' },
+  { productId: 'me_pro_monthly_founding', name: 'Mealvana Pro Monthly Founding', period: 'ONE_MONTH', usaPrice: '12.49',
+    displayName: 'Founding Monthly', description: 'Founding-member price for Mealvana Pro, monthly.' },
+  { productId: 'me_pro_annual_founding', name: 'Mealvana Pro Annual Founding', period: 'ONE_YEAR', usaPrice: '99.99',
+    displayName: 'Founding Annual', description: 'Founding-member price for Mealvana Pro, yearly.' },
+];
 
 const appId = process.env.ASC_APP_ID ?? DEV_APP_ID;
 if (appId === PROD_APP_ID) {
@@ -99,9 +118,11 @@ async function catalogue() {
       const offers = await listAll(
         `/v1/subscriptions/${s.id}/introductoryOffers?fields[subscriptionIntroductoryOffers]=duration,offerMode,numberOfPeriods,startDate,endDate,territory&include=territory`,
       );
+      const prices = await pricesFor(s.id);
       group.subscriptions.push({
         id: s.id,
         ...s.attributes,
+        prices,
         introductoryOffers: offers.map((o) => ({
           id: o.id,
           ...o.attributes,
@@ -120,6 +141,8 @@ function print(cat) {
     console.log(`  group ${g.id} · ${g.referenceName}`);
     for (const s of g.subscriptions) {
       console.log(`    ${s.productId} (${s.id}) · ${s.subscriptionPeriod} · ${s.state}`);
+      const usa = s.prices.find((p) => p.territory === 'USA');
+      console.log(`      price USA ${usa ? usa.customerPrice : '(none)'} · priced in ${s.prices.length} territories`);
       if (s.introductoryOffers.length === 0) console.log('      intro offers: none');
       const byKind = new Map();
       for (const o of s.introductoryOffers) {
@@ -129,6 +152,131 @@ function print(cat) {
       for (const [k, n] of byKind) console.log(`      intro offer ${k} in ${n} territories`);
     }
   }
+}
+
+/** Current prices of a subscription: [{ territory, customerPrice, pricePointId }]. */
+async function pricesFor(subscriptionId) {
+  const out = [];
+  let next = `/v1/subscriptions/${subscriptionId}/prices?include=subscriptionPricePoint,territory&fields[subscriptionPricePoints]=customerPrice&limit=200`;
+  while (next) {
+    const page = await api('GET', next);
+    const points = new Map((page.included ?? []).map((i) => [i.id, i.attributes.customerPrice]));
+    for (const p of page.data ?? []) {
+      const pointId = p.relationships.subscriptionPricePoint.data.id;
+      out.push({ territory: p.relationships.territory.data.id, customerPrice: points.get(pointId), pricePointId: pointId });
+    }
+    next = page.links?.next ?? null;
+  }
+  return out;
+}
+
+/** The subscription's USA price point for `price`, or the nearest two if there is no exact one. */
+async function usaPricePoint(subscriptionId, price) {
+  const points = await listAll(
+    `/v1/subscriptions/${subscriptionId}/pricePoints?filter[territory]=USA&fields[subscriptionPricePoints]=customerPrice&limit=200`,
+  );
+  const exact = points.find((p) => Number(p.attributes.customerPrice) === Number(price));
+  if (exact) return { exact };
+  const nearest = [...points]
+    .sort((a, b) => Math.abs(a.attributes.customerPrice - price) - Math.abs(b.attributes.customerPrice - price))
+    .slice(0, 2)
+    .map((p) => p.attributes.customerPrice);
+  return { nearest };
+}
+
+async function createProducts(dryRun) {
+  const groups = await listAll(`/v1/apps/${appId}/subscriptionGroups?fields[subscriptionGroups]=referenceName`);
+  if (!groups.some((g) => g.id === PRO_GROUP_ID)) throw new Error(`group ${PRO_GROUP_ID} not on app ${appId}`);
+  const existing = await listAll(
+    `/v1/subscriptionGroups/${PRO_GROUP_ID}/subscriptions?fields[subscriptions]=name,productId,state,subscriptionPeriod`,
+  );
+  const allTerritories = (await listAll('/v1/territories?limit=200')).map((t) => t.id);
+  console.log(`group ${PRO_GROUP_ID}: ${existing.length} subscriptions; ${allTerritories.length} territories`);
+
+  // Check every price before creating anything: price tiers are the same for
+  // every subscription, so an existing one in the group answers for a new one.
+  const probeId = existing[0]?.id;
+  for (const p of PRODUCTS) {
+    const sub = existing.find((s) => s.attributes.productId === p.productId);
+    const r = await usaPricePoint(sub?.id ?? probeId, p.usaPrice);
+    if (!r.exact) throw new Error(`no USA price point ${p.usaPrice} for ${p.productId}; nearest: ${r.nearest.join(', ')}`);
+  }
+
+  for (const p of PRODUCTS) {
+    if (p.description.length > 55) throw new Error(`${p.productId}: description over 55 chars`);
+    let sub = existing.find((s) => s.attributes.productId === p.productId);
+    if (!sub) {
+      console.log(`${p.productId}: create subscription "${p.name}" ${p.period}`);
+      if (dryRun) { console.log(`  [dry-run] then localization, availability in ${allTerritories.length}, price ${p.usaPrice} + equalizations`); continue; }
+      sub = (await api('POST', '/v1/subscriptions', {
+        data: {
+          type: 'subscriptions',
+          attributes: { name: p.name, productId: p.productId, subscriptionPeriod: p.period, familySharable: false },
+          relationships: { group: { data: { type: 'subscriptionGroups', id: PRO_GROUP_ID } } },
+        },
+      })).data;
+      console.log(`  created ${sub.id}`);
+    } else {
+      console.log(`${p.productId}: exists (${sub.id})`);
+    }
+
+    const locs = await listAll(`/v1/subscriptions/${sub.id}/subscriptionLocalizations`);
+    if (!locs.some((l) => l.attributes.locale === 'en-US')) {
+      console.log(`  ${dryRun ? '[dry-run] would create' : 'create'} en-US localization "${p.displayName}"`);
+      if (!dryRun) await api('POST', '/v1/subscriptionLocalizations', {
+        data: {
+          type: 'subscriptionLocalizations',
+          attributes: { locale: 'en-US', name: p.displayName, description: p.description },
+          relationships: { subscription: { data: { type: 'subscriptions', id: sub.id } } },
+        },
+      });
+    }
+
+    let available = [];
+    try { available = await territoriesFor(sub.id); } catch (e) { if (!/→ 404/.test(e.message)) throw e; }
+    if (available.length < allTerritories.length) {
+      console.log(`  ${dryRun ? '[dry-run] would set' : 'set'} availability: ${available.length} → ${allTerritories.length} territories`);
+      if (!dryRun) await api('POST', '/v1/subscriptionAvailabilities', {
+        data: {
+          type: 'subscriptionAvailabilities',
+          attributes: { availableInNewTerritories: true },
+          relationships: {
+            subscription: { data: { type: 'subscriptions', id: sub.id } },
+            availableTerritories: { data: allTerritories.map((id) => ({ type: 'territories', id })) },
+          },
+        },
+      });
+    }
+
+    // USA price point, then Apple's equalized point in every other territory.
+    // Only the two relationships: attributes.preserveCurrentPrice makes Apple 409.
+    const { exact: usa } = await usaPricePoint(sub.id, p.usaPrice);
+    const equalized = await listAll(
+      `/v1/subscriptionPricePoints/${usa.id}/equalizations?include=territory&fields[subscriptionPricePoints]=customerPrice,territory&limit=200`,
+    );
+    const wanted = [{ territory: 'USA', id: usa.id }, ...equalized.map((e) => ({ territory: e.relationships.territory.data.id, id: e.id }))];
+    const priced = new Set((await pricesFor(sub.id)).map((x) => x.territory));
+    const missing = wanted.filter((w) => !priced.has(w.territory));
+    console.log(`  prices: ${priced.size} set, ${missing.length} to create (USA ${usa.attributes.customerPrice})`);
+    if (dryRun || missing.length === 0) continue;
+    let n = 0;
+    for (const w of missing) {
+      await api('POST', '/v1/subscriptionPrices', {
+        data: {
+          type: 'subscriptionPrices',
+          relationships: {
+            subscription: { data: { type: 'subscriptions', id: sub.id } },
+            subscriptionPricePoint: { data: { type: 'subscriptionPricePoints', id: w.id } },
+          },
+        },
+      });
+      if (++n % 25 === 0) console.log(`    ${n}/${missing.length}`);
+    }
+    console.log(`  created ${n} prices`);
+  }
+
+  console.log('\nIntroductory offers:');
+  await addTrial(dryRun);
 }
 
 async function territoriesFor(subscriptionId) {
@@ -188,7 +336,8 @@ const [cmd = 'list', ...flags] = process.argv.slice(2);
 try {
   if (cmd === 'list') print(await catalogue());
   else if (cmd === 'add-trial') await addTrial(flags.includes('--dry-run'));
-  else { console.error('usage: asc.mjs list | add-trial [--dry-run]'); process.exit(2); }
+  else if (cmd === 'create-products') await createProducts(flags.includes('--dry-run'));
+  else { console.error('usage: asc.mjs list | add-trial [--dry-run] | create-products [--dry-run]'); process.exit(2); }
 } catch (e) {
   console.error(e.message ?? e);
   process.exit(1);
