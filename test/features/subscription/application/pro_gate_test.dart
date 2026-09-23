@@ -1,7 +1,8 @@
 /// Unit tests for the app gate ([computeAccess] / `appGateProvider` /
 /// [readAppGate] / `writeAccessProvider`). The gate answers open (the
-/// status, or a team admin), lapsed (held `pro` once) or never (mp-457); no
-/// build flag, no tester grant, no coach branch (mp-279, mp-286).
+/// status, or a team admin) or closed (no live Pro, whether the account held
+/// it once or never did, mp-457, mp-611); no build flag, no tester grant, no
+/// coach branch (mp-279, mp-286).
 library;
 
 import 'dart:async';
@@ -54,14 +55,14 @@ void main() {
       expect(computeAccess(_active, isAdmin: false), AppAccess.open);
     });
 
-    test('held once and expired → lapsed', () {
-      expect(computeAccess(_lapsed, isAdmin: false), AppAccess.lapsed);
+    test('held once and expired → closed', () {
+      expect(computeAccess(_lapsed, isAdmin: false), AppAccess.closed);
     });
 
-    test('none → never', () {
+    test('never held → closed', () {
       expect(
         computeAccess(SubscriptionStatus.none, isAdmin: false),
-        AppAccess.never,
+        AppAccess.closed,
       );
     });
 
@@ -71,13 +72,10 @@ void main() {
       }
     });
 
-    test('only open writes; lapsed and open enter the app', () {
+    test('the gate has two answers, and only open writes', () {
+      expect(AppAccess.values, [AppAccess.open, AppAccess.closed]);
       expect(AppAccess.open.canWrite, isTrue);
-      expect(AppAccess.lapsed.canWrite, isFalse);
-      expect(AppAccess.never.canWrite, isFalse);
-      expect(AppAccess.open.entersApp, isTrue);
-      expect(AppAccess.lapsed.entersApp, isTrue);
-      expect(AppAccess.never.entersApp, isFalse);
+      expect(AppAccess.closed.canWrite, isFalse);
     });
   });
 
@@ -101,14 +99,14 @@ void main() {
       expect(await c.read(appGateProvider.future), AppAccess.open);
     });
 
-    test('reflects a never status once resolved', () async {
+    test('a never-subscribed account is closed', () async {
       final c = container(() => _FixedStatus(SubscriptionStatus.none));
-      expect(await c.read(appGateProvider.future), AppAccess.never);
+      expect(await c.read(appGateProvider.future), AppAccess.closed);
     });
 
-    test('reflects a lapsed status once resolved', () async {
+    test('a lapsed account is closed, the same as a never-subscribed one', () async {
       final c = container(() => _FixedStatus(_lapsed));
-      expect(await c.read(appGateProvider.future), AppAccess.lapsed);
+      expect(await c.read(appGateProvider.future), AppAccess.closed);
     });
 
     test('an admin with no subscription is unlocked', () async {
@@ -132,7 +130,7 @@ void main() {
         ],
       );
       addTearDown(c.dispose);
-      expect(await c.read(appGateProvider.future), AppAccess.never);
+      expect(await c.read(appGateProvider.future), AppAccess.closed);
     });
 
     test('is loading while the status is unresolved, then settles', () async {
@@ -152,7 +150,7 @@ void main() {
         final c = container(() => fixed);
         final sub = c.listen(appGateProvider, (_, _) {});
         addTearDown(sub.close);
-        expect(await c.read(appGateProvider.future), AppAccess.never);
+        expect(await c.read(appGateProvider.future), AppAccess.closed);
 
         // The controller's own setter path, as a RevenueCat push uses it.
         fixed.state = const AsyncData(_active);
@@ -178,7 +176,7 @@ void main() {
           ],
         );
         addTearDown(c.dispose);
-        expect(await c.read(appGateProvider.future), AppAccess.never);
+        expect(await c.read(appGateProvider.future), AppAccess.closed);
 
         // The credentials land; the status now answers for the athlete.
         status = _active;
@@ -205,7 +203,7 @@ void main() {
         addTearDown(c.dispose);
         expect(
           await c.read(appGateProvider.notifier).settle(),
-          AppAccess.never,
+          AppAccess.closed,
         );
       },
     );
@@ -230,14 +228,14 @@ void main() {
       expect(await container(_active).read(writeAccessProvider.future), isTrue);
     });
 
-    test('lapsed does not write', () async {
+    test('closed (lapsed) does not write', () async {
       expect(
         await container(_lapsed).read(writeAccessProvider.future),
         isFalse,
       );
     });
 
-    test('never does not write', () async {
+    test('closed (never subscribed) does not write', () async {
       expect(
         await container(
           SubscriptionStatus.none,
@@ -285,7 +283,7 @@ void main() {
       final viaRef = Provider<Future<AppAccess>>((ref) => readAppGate(ref));
       final pending = c.read(viaRef);
       deferred.completer.complete(SubscriptionStatus.none);
-      expect(await pending, AppAccess.never);
+      expect(await pending, AppAccess.closed);
     });
   });
 }

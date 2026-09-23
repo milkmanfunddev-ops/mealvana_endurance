@@ -381,7 +381,7 @@ void main() {
     });
   });
 
-  group('open, lapsed or never from customer info (mp-457)', () {
+  group('open or closed from customer info (mp-457, mp-611)', () {
     ProviderContainer gateContainer({bool isAdmin = false}) {
       final c = ProviderContainer(
         overrides: [
@@ -420,32 +420,32 @@ void main() {
       expect(await c.read(writeAccessProvider.future), isTrue);
     });
 
-    test('a pro that expired answers lapsed, and writes are refused', () async {
+    test('a pro that expired answers closed, and writes are refused', () async {
       when(
         () => service.fetchStatus(),
       ).thenAnswer((_) async => statusOf(customerInfoLapsed));
       final c = gateContainer();
-      expect(await c.read(appGateProvider.future), AppAccess.lapsed);
+      expect(await c.read(appGateProvider.future), AppAccess.closed);
       expect(await c.read(writeAccessProvider.future), isFalse);
     });
 
-    test('no pro ever answers never', () async {
+    test('no pro ever answers closed, the same as an expired one', () async {
       when(
         () => service.fetchStatus(),
       ).thenAnswer((_) async => statusOf(customerInfoNever));
       final c = gateContainer();
-      expect(await c.read(appGateProvider.future), AppAccess.never);
+      expect(await c.read(appGateProvider.future), AppAccess.closed);
       expect(await c.read(writeAccessProvider.future), isFalse);
     });
 
     test(
-      'no answer in time answers never (unknown is locked, mp-284)',
+      'no answer in time answers closed (unknown is locked, mp-284)',
       () async {
         when(
           () => service.fetchStatus(),
         ).thenAnswer((_) => Completer<SubscriptionStatus?>().future);
         final c = gateContainer();
-        expect(await c.read(appGateProvider.future), AppAccess.never);
+        expect(await c.read(appGateProvider.future), AppAccess.closed);
       },
     );
 
@@ -458,7 +458,7 @@ void main() {
       expect(await c.read(writeAccessProvider.future), isTrue);
     });
 
-    test('an expiry pushed mid-session turns open into lapsed', () async {
+    test('an expiry pushed mid-session turns open into closed', () async {
       when(
         () => service.fetchStatus(),
       ).thenAnswer((_) async => statusOf(customerInfoOpen));
@@ -470,11 +470,11 @@ void main() {
       capturedListener!(statusOf(customerInfoLapsed));
       await pumpEventQueue();
 
-      expect(await c.read(appGateProvider.future), AppAccess.lapsed);
+      expect(await c.read(appGateProvider.future), AppAccess.closed);
       expect(await c.read(writeAccessProvider.future), isFalse);
     });
 
-    test('a resubscribe pushed while lapsed opens writes again', () async {
+    test('a resubscribe pushed while closed opens writes again', () async {
       when(
         () => service.fetchStatus(),
       ).thenAnswer((_) async => statusOf(customerInfoLapsed));

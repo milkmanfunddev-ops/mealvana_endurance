@@ -20,24 +20,17 @@ enum Entitlement {
 /// Which source vouched for the active entitlement. [none] when inactive.
 enum SubscriptionSource { none, revenuecat }
 
-/// The gate's answer (mp-457): what this account may do in the app.
+/// The gate's answer (mp-457): open or closed, nothing in between.
 enum AppAccess {
   /// The entitlement is active, or the account is a team admin (mp-416).
   open,
 
-  /// The customer held `pro` once and it has expired: the app opens
-  /// read-only, with the plan-ended bar, and any edit or AI action opens the
-  /// paywall instead of running.
-  lapsed,
+  /// No live `pro`: never held, held once and expired, or an unknown answer
+  /// (mp-284). The full-screen paywall and nothing else (mp-280, mp-611).
+  closed;
 
-  /// No `pro` ever (also an unknown answer, mp-284): the paywall and nothing
-  /// else.
-  never;
-
-  /// Whether the account's own screens render (read-only when [lapsed]).
-  bool get entersApp => this != never;
-
-  /// Whether writes and AI calls may run (the write-access rule, mp-457 §4).
+  /// Whether writes and AI calls may run (mp-457 §4). Only open ever
+  /// reaches a write; the write guard still asks until ticket 20 removes it.
   bool get canWrite => this == open;
 }
 
@@ -82,9 +75,8 @@ class SubscriptionStatus {
 
   /// Whether RevenueCat has ever recorded `pro` for this customer: true
   /// while it is active and after it has expired, false for a customer who
-  /// never held it. With [active] false it separates lapsed from never
-  /// (mp-457). An unknown answer ([none]) is false: unknown is locked
-  /// (mp-284), never read-only.
+  /// never held it. The gate does not read it: lapsed and never are both
+  /// closed (mp-457, mp-611). An unknown answer ([none]) is false.
   final bool hadPro;
 
   /// Whether [expiresAt] has passed as of [now]. False when there is no expiry.
