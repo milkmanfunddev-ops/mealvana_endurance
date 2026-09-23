@@ -9376,7 +9376,7 @@ Founding is a product id containing `_founding` (`me_pro_*_founding` and the `_p
 ## mp-611 · Ticket 19: One full-screen paywall for everyone without Pro
 - category: Tickets
 - status: approved
-- image: none
+- image: test/features/subscription/presentation/goldens/paywall_light.png
 - screen: Paywall
 - source: tickets paywall 2026-09-23
 - ticket: 19
@@ -9404,11 +9404,13 @@ Founding is a product id containing `_founding` (`me_pro_*_founding` and the `_p
 
 > 2026-09-23 proposed from the no-read-only ruling
 > 2026-09-23 approved by Lee
+> 2026-09-23 picture reused from test/features/subscription/presentation/goldens/paywall_light.png
 
 ## mp-612 · Ticket 20: Read-only plumbing comes out
 - category: Tickets
 - status: approved
 - image: none
+- svg: docs/ssot/decisions/images/mealplanning/mp-612.svg
 - screen: none (clean-up across the app's controllers)
 - source: tickets paywall 2026-09-23
 - ticket: 20
@@ -9440,7 +9442,7 @@ Founding is a product id containing `_founding` (`me_pro_*_founding` and the `_p
 ## mp-613 · Ticket 21: The Subscription screen shows a Grant's source and days left
 - category: Tickets
 - status: approved
-- image: none
+- image: docs/ssot/decisions/images/mealplanning/subscription.png
 - screen: Subscription screen
 - source: tickets paywall 2026-09-23
 - ticket: 21
@@ -9468,3 +9470,4 @@ Founding is a product id containing `_founding` (`me_pro_*_founding` and the `_p
 
 > 2026-09-23 proposed from mp-558
 > 2026-09-23 approved by Lee
+> 2026-09-23 picture captured at 1.27.0+3, 36bea725

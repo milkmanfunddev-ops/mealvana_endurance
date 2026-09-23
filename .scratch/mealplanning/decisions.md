@@ -2925,3 +2925,129 @@ An edit made while notes are being written is picked up on the next open. A requ
 **What it touches.** Vana chat; `chips.ts`, the planning persona (`persona.ts` rule 6).
 
 > 2026-09-23 opened in wave 7 ticket 12
+
+## mp-614 · Opening the paywall from inside the app leaves nothing behind it
+- category: Pro and paywall
+- status: proposed
+- image: docs/ssot/decisions/images/mealplanning/paywall-lapsed.png
+- caption: A lapsed account on 23 Sep: the full-screen paywall, no close button, the ⋯ menu top right
+- screen: Paywall
+- source: wave paywall 7 ticket 19
+
+**Context.** Before ticket 19, an AI tap, the Subscription screen's Upgrade button and the Vana launcher pushed the paywall on top of the screen the athlete was on, so a back swipe returned to it. mp-457 makes closed always the full-screen paywall with no close button. The Gate's redirect already sends a closed account to a paywall with nothing under it.
+
+**Question.** When something inside the app opens the paywall, can the athlete swipe back to where they were?
+
+**Decision.** No. Every way into the paywall replaces the whole screen stack, the same as the Gate's redirect, so there is no back swipe and no back button into the app. The only ways out are subscribing, restoring, redeeming a Code, or the ⋯ menu's Sign out and Delete account. Example: an athlete whose trial ended on 8 October taps the Vana launcher on 9 October; the paywall fills the screen and a swipe from the left edge does nothing.
+
+**Why.** A paywall pushed over the app would be a second, closable shape of the paywall, which mp-457 and mp-493 rule out.
+
+**What else was considered.** Pushing a full-screen page on top of the current screen; it leaves the app underneath, one back swipe away.
+
+**What it touches.** Paywall; `open_paywall.dart`, the AI action guard, the Subscription screen's Upgrade, the Vana launcher.
+
+> 2026-09-23 proposed in wave 7 ticket 19
+> 2026-09-23 picture reused from docs/ssot/decisions/images/mealplanning/paywall-lapsed.png
+
+## mp-615 · The Subscription screen tells a Grant's source from its length
+- category: Pro and paywall
+- status: proposed
+- image: docs/ssot/decisions/images/mealplanning/subscription.png
+- screen: Subscription screen
+- source: wave paywall 7 ticket 21
+
+**Context.** mp-558 says a Grant shows where it came from (Legacy grace, a Code, a coach's gift) and its days left. The app reads the account from RevenueCat, the subscription provider, and every Grant there looks the same: one promotional product, a start and an end. The app cannot read the server's record of which Code was used, and RevenueCat's app library does not hand the app the notes the server attaches to a customer.
+
+**Question.** How does the app decide what a Grant is called?
+
+**Decision.** By its length. A Grant of 30 days, give or take a day and a half, is shown as "Grace month"; any other length is shown as "Pro from a code". Under it goes the days left in calendar days, "1 day left" on the day before the end and "Last day today" on the last. Example: a Legacy grace Grant from 1 to 31 October shows "Grace month, 12 days left" on 19 October; a 365-day giveaway Code redeemed on 11 October shows "Pro from a code, 357 days left" on 23 October.
+
+**Why.** The length is the only thing the app can read that differs between them, and it needs no new server work before 1 October.
+
+**What else was considered.** The server's notes on the RevenueCat customer, the app's own copy of the Code it redeemed, and a new server function that answers the source; each needs server or data work the ticket did not have.
+
+**What it touches.** Subscription screen; `grant.dart`, `subscription_service.dart`, the `subscription.*` content keys.
+
+**Details.** A coach's own Code also gives 30 days, so it reads as "Grace month" (mp-617 asks whether to fix that). Days left are counted from today's local date to the end's local date and never go below 0.
+
+> 2026-09-23 proposed in wave 7 ticket 21
+> 2026-09-23 picture captured at 1.27.0+3, 36bea725
+
+## mp-616 · An ended plan says the athlete's data is kept, not read-only
+- category: Pro and paywall
+- status: proposed
+- image: docs/ssot/decisions/images/mealplanning/subscription.png
+- screen: Subscription screen
+- source: wave paywall 7 review
+
+**Context.** The Subscription screen's ended lines said "It ended on {date}. Your data is read-only until you subscribe." mp-280 took read-only mode out: a Lapsed account meets the full-screen paywall and its data is kept as it was.
+
+**Question.** What does the Subscription screen say about the athlete's data once the plan has ended?
+
+**Decision.** "It ended on {date}. Everything you saved is kept for when you subscribe again." With no end date it says only the second sentence. Example: a plan that ended on 8 October reads "It ended on 8 October. Everything you saved is kept for when you subscribe again."
+
+**Why.** "Read-only" describes a mode that no longer exists.
+
+**What else was considered.** Dropping the second sentence; the review kept it because mp-280 promises the data comes back.
+
+**What it touches.** Subscription screen; `subscription.ended_on` and `subscription.ended_no_date` content keys.
+
+> 2026-09-23 proposed in wave 7 review
+> 2026-09-23 picture captured at 1.27.0+3, 36bea725
+
+## mp-617 · Should a coach's own Code stop showing as "Grace month"?
+- category: Pro and paywall
+- kind: question
+- status: open
+- linked: mp-615
+- image: none
+- screen: Subscription screen
+- source: wave paywall 7 ticket 21
+
+**Context.** mp-615 names a Grant by its length, and 30 days reads as "Grace month". A coach entering their own Code also gets 30 days of Pro (mp-458), so their Subscription screen says "Grace month" although they never had the Legacy grace.
+
+**Question.** Should the server mark each Grant's source so the app names it exactly (A), give the Legacy grace a length no Code uses, such as 31 days (B), or leave it (C)?
+
+**Why.** A coach who reads "Grace month" may think their Code did not work. A and B need server work before the 1 October cutover; C needs none.
+
+**What it touches.** Subscription screen; the grace claim and `redeem-code` functions, `grant.dart`.
+
+> 2026-09-23 opened in wave 7 ticket 21
+
+## mp-618 · What is "a coach's gift" on the Subscription screen?
+- category: Pro and paywall
+- kind: question
+- status: open
+- linked: mp-558
+- image: none
+- screen: Subscription screen
+- source: wave paywall 7 ticket 21
+
+**Context.** mp-558 lists three Grant sources: Legacy grace, a Code and a coach's gift. The glossary counts coach comps as Grants. Nothing in the app or its server gives an athlete Pro on a coach's behalf today, so ticket 21 added no label for it and such a Grant would read as "Pro from a code" or "Grace month".
+
+**Question.** Is a coach's gift the Pro a coach gets from their own Code (A), a Grant we make by hand in RevenueCat for a coach (B), or a feature still to build where a coach gives an athlete Pro (C)?
+
+**Why.** It decides whether the screen needs a third label now, and whether a later ticket is owed.
+
+**What it touches.** Subscription screen, the `subscription.*` content keys.
+
+> 2026-09-23 opened in wave 7 ticket 21
+
+## mp-619 · Should Manage subscription show when a Grant outlasts a store subscription?
+- category: Pro and paywall
+- kind: question
+- status: open
+- linked: mp-558
+- image: none
+- screen: Subscription screen
+- source: wave paywall 7 review
+
+**Context.** mp-558 says Manage subscription shows whenever Pro came from a real store, running or ended. The app looks at one record, the `pro` entitlement, and RevenueCat fills it from whichever source ends last. So an athlete with a monthly subscription who also redeems a 365-day Code sees the Code and no Manage, and cannot reach the store to cancel the monthly from the app.
+
+**Question.** Should the app look through every purchase the account has made and show Manage whenever any came from a store (A), or keep following the one `pro` record (B)?
+
+**Why.** An athlete paying for a subscription they can't find in the app may ask the store for a refund.
+
+**What it touches.** Subscription screen, the paywall's ⋯ menu; `subscription_service.dart`.
+
+> 2026-09-23 opened in wave 7 review
