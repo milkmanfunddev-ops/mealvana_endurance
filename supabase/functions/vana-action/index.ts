@@ -18,6 +18,7 @@ import { initSentry, withSentry } from '../_shared/sentry.ts';
 import { authenticate } from '../_shared/vana/auth.ts';
 import { requirePro } from '../_shared/vana/entitlement.ts';
 import { runAction, extraAction } from '../_shared/vana/actions.ts';
+import { runTapped } from '../_shared/vana/chips.ts';
 import { RateLimitedError } from '../_shared/vana/rate-limit.ts';
 import { BudgetRefusedError } from '../_shared/ai/credits.ts';
 import { gatewayRefusalResponse } from '../_shared/ai/gateway_error.ts';
@@ -43,8 +44,10 @@ serve(withSentry(async (req: Request) => {
   const started = Date.now();
   try {
     const payload = (body.payload ?? {}) as Record<string, unknown>;
-    const result = (await extraAction(v, body.type, payload)) ?? (await runAction(v, { type: body.type, payload }));
-    console.log(`[vana-action] user=${v.userId} type=${body.type} parts=${result.parts.map((p) => p.kind).join(',') || '-'} ${Date.now() - started}ms`);
+    // A chip that acts at once (mp-464, ticket 11) carries its label as `chip`: the action runs as any other, then the tap
+    // and what it produced are stored in the conversation and logged as a tap that drew nothing (chips.ts).
+    const result = await runTapped(v, body.type, payload, (await extraAction(v, body.type, payload)) ?? (await runAction(v, { type: body.type, payload })));
+    console.log(`[vana-action] user=${v.userId} type=${body.type}${result.tapMessageId ? ' chip' : ''} parts=${result.parts.map((p) => p.kind).join(',') || '-'} ${Date.now() - started}ms`);
     return jsonResponse(result);
   } catch (e) {
     if (e instanceof RateLimitedError) return jsonResponse({ error: 'rate_limited', retry_after_seconds: e.retryAfterSeconds }, 429);

@@ -159,7 +159,15 @@ export interface UiAction {
     | 'undo_receipt'
     // additive 2026-09-16 (Lee: the athlete deletes a plan by hand): delete_plan{id?, planId?, conversationId?} — the Plan tab's Delete.
     // Answers `{ parts: [receipt(action: 'delete_plan', undo: {…})] }` and no batch part; Undo is the receipt's undo_receipt.
-    | 'delete_plan';
+    | 'delete_plan'
+    // additive 2026-09-23 (mp-464, ai-cost ticket 11): the chips whose next step is fixed act at once, with no model turn.
+    // same_as_last_time{conversationId?|planId?} → {parts:[batch]} (mp-231 clause 5, on the endpoint since 09-15) ·
+    // draft_week{conversationId?, scope?} → {parts:[batch]} (the draftWeek tool's body) · plan_week{} → {parts:[week]} (planWeek's) ·
+    // ask_pantry{title?} → {parts:[pantry]} (askPantry's) · open_shopping_list{} → {parts:[]} (the app opened the list itself).
+    // Any of these, `set_setting` and `set_pantry` may carry `chip: <the label tapped>` beside `conversationId`: the server then
+    // stores the tap as the athlete's turn and the result as a textless assistant turn typed as the tool it stands in for, logs
+    // one `vana_calls` row with no model and `input_mode: 'tap'`, and answers `tapMessageId` / `messageId` beside `parts`.
+    | 'same_as_last_time' | 'draft_week' | 'plan_week' | 'ask_pantry' | 'open_shopping_list';
   payload: Record<string, unknown>;
 }
 

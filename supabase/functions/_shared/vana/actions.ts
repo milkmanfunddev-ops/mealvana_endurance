@@ -8,8 +8,10 @@ import { setSetting, forgetMemory, listMemories, isCoverageScope, isDayKey, isPe
 import { detectPantryFromPhoto, persistAssistantPart } from './pantry.ts';
 import { completeCall, reserveCallOrThrow } from './rate-limit.ts';
 import { reserveBudgetOrThrow } from '../ai/credits.ts';
-import { diagnoseStaples, dayGuidance, planDayPart } from './tools.ts';
+import { diagnoseStaples, dayGuidance, draftWeekPlan, planDayPart, planWeekPart } from './tools.ts';
 import { buildAthleteContext } from './context.ts';
+import { conversationMessages, shownMealIds } from './chat.ts';
+import { suggestedPantry } from './pantry.ts';
 import { getMeal, saveLibraryMeal, getMealDetail, recentMeals, setSavedMealNotes, setMealFeedback } from './meals.ts';
 import { ensureDayNotes, refreshDayNotesSoon } from './daynotes.ts';
 import * as shopping from './shopping.ts';
@@ -87,6 +89,21 @@ export async function extraAction(v: VanaCtx, type: string, p: Record<string, an
     case 'swap_ingredient': return { parts: [{ kind: 'batch', plan: await plan.swapIngredient(v, planMealId(), String(p.from), String(p.to)) }] };
     // mp-231 clause 5: one tap drafts the period from the last confirmed plan. Deterministic — no model call.
     case 'same_as_last_time': { const conversationId = pick(p, 'conversationId', 'conversation_id'); const planId = pick(p, 'planId', 'plan_id'); const sc: plan.PlanScope | null = planId ? { planId: String(planId) } : conversationId ? { conversationId: String(conversationId) } : null; return { parts: [{ kind: 'batch', plan: await plan.draftFromLastTime(v, sc) }] }; }
+    // ---- additive 2026-09-23 (mp-464, ai-cost ticket 11): the chips whose next step is fixed run it here, with no model turn.
+    // Each is the body of the tool Vana used to call for that chip; with `chip` on the payload, vana-action then stores the
+    // tap in the conversation and logs it (chips.ts). draft_week{conversationId, scope?} · plan_week{} · ask_pantry{title?} ·
+    // open_shopping_list{} (the app opened the list; nothing to do here but let the tap be stored).
+    case 'draft_week': {
+      const conversationId = pick(p, 'conversationId', 'conversation_id'); const planId = pick(p, 'planId', 'plan_id');
+      const sc: plan.PlanScope | null = planId ? { planId: String(planId) } : conversationId ? { conversationId: String(conversationId) } : null;
+      const ctx = await conversationContext(v, sc);
+      // What this conversation's pickers already offered: the draft never repeats a meal the athlete passed over.
+      const shown = conversationId ? shownMealIds((await conversationMessages(v, String(conversationId))).messages) : [];
+      return { parts: [{ kind: 'batch', plan: await draftWeekPlan(v, ctx, sc, new Set(shown), isCoverageScope(p.scope) ? p.scope : undefined) }] };
+    }
+    case 'plan_week': return { parts: [await planWeekPart(v, await buildAthleteContext(v))] };
+    case 'ask_pantry': return { parts: [await suggestedPantry(v, p.title ? String(p.title) : undefined)] };
+    case 'open_shopping_list': return { parts: [] };
     case 'set_pantry': { const conversationId = pick(p, 'conversationId', 'conversation_id'); const items = (Array.isArray(p.items) ? p.items : []).map((x: unknown) => String(x).trim()).filter(Boolean).slice(0, 40); const m = await setSetting(v, 'pantry_items', items, 'conversation'); const scope: plan.PlanScope | null = conversationId ? { conversationId: String(conversationId) } : null; const cur = await plan.resolvePlan(v, scope, false); if (cur && cur.meals.length) await plan.refreshShopping(v, cur.id); return { parts: [{ kind: 'memory_saved', memory: m }] }; }
     case 'pantry_photo': { const conversationId = String(pick(p, 'conversationId', 'conversation_id') ?? ''); if (!conversationId) throw new Error('conversationId required');
       // A fridge photo is a vision call: it draws the monthly budget (mp-430, ticket 09) and is limited by the same shared
@@ -145,6 +162,18 @@ export async function extraAction(v: VanaCtx, type: string, p: Record<string, an
     case 'undo_receipt': return { parts: [await undoReceipt(v, p)] };
     default: return null;
   }
+}
+
+/** The context a chat turn builds for a planning conversation (chat.ts runChat): the athlete's block with the PLAN line
+ *  read off the conversation's own draft, not the Plan tab's plan. The coverage scope and the walk stay on it — the
+ *  draft reads them to know which types to fill. */
+async function conversationContext(v: VanaCtx, scope: plan.PlanScope | null) {
+  const c = await buildAthleteContext(v);
+  if (scope?.conversationId) {
+    const draft = await plan.getConversationPlan(v, scope.conversationId, false);
+    c.plan = { ...c.plan, exists: !!draft && draft.meals.length > 0, status: draft?.status ?? 'draft', mealsLeft: draft ? draft.meals.reduce((s, m) => s + m.servingsLeft, 0) : 0, batchCooking: draft?.batchCooking ?? c.plan.batchCooking };
+  }
+  return c;
 }
 
 /** get_home {date?} — what the Food → Plan screen needs: the plan, the day planner, a small day card, staples when there is no plan. No model call. */

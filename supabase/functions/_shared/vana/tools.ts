@@ -38,6 +38,42 @@ export async function planDayPart(v: VanaCtx, ctx: AthleteContext, date: string)
   return { kind: 'day', date, label: dg.label, slots: r.slots, filled: r.filled };
 }
 
+/** "Lay it across the week" (plan Phase 8): the confirmed collection laid over each day of the period. One body for the
+ *  `planWeek` tool and the `plan_week` action (mp-464: the chip runs it with no model turn). */
+export async function planWeekPart(v: VanaCtx, ctx: AthleteContext): Promise<Extract<VanaPart, { kind: 'week' }>> {
+  const days = []; const periodDays = ctx.week.periodDays ?? 7;
+  for (let k = 0; k < periodDays; k++) days.push(await planDayPart(v, ctx, addDays(ctx.week.start, k)));
+  refreshDayNotesSoon(v, today());
+  return { kind: 'week', periodDays, days };
+}
+
+/** "Draft my whole week": deterministically fills every meal type the athlete plans from the library by this period's
+ *  context, servings scaled so a batch covers the days — the model selects nothing. One body for the `draftWeek` tool
+ *  and the `draft_week` action (mp-464: the chip runs it with no model turn). `shown` is what this conversation's
+ *  pickers already offered; every meal drafted joins it. `scopeArg` is a scope named for this draft only; otherwise the
+ *  athlete's own walk and coverage scope decide (mp-231 clause 1). */
+export async function draftWeekPlan(v: VanaCtx, ctx: AthleteContext, scope: PlanScope | null, shown: Set<string>, scopeArg?: 'dinners' | 'dinners_lunches' | 'all'): Promise<MealPlan> {
+  const scopeTypes = (sc?: string | null): MealType[] => sc === 'dinners' ? ['dinner'] : sc === 'all' ? ['dinner', 'lunch', 'breakfast', 'snack'] : ['dinner', 'lunch'];
+  const sc = scopeArg ?? (isCoverageScope(ctx.plan.coverageScope) ? ctx.plan.coverageScope : null);
+  // mp-231 clause 1: the athlete's own walk wins, unless this turn named a scope.
+  const types: MealType[] = !scopeArg && (ctx.plan.mealTypes ?? []).length ? walkFor(ctx.plan.mealTypes) : scopeTypes(sc);
+  const periodDays = ctx.week.periodDays ?? 7;
+  const batchCooking = ctx.plan.batchCooking;
+  // Batch: a few meals at one sitting, each with enough servings for the period. Per day: one meal a night (mp-231 clauses 3-4).
+  const perType = batchCooking ? BATCH_MEALS_PER_TYPE : periodDays;
+  const servings = servingsToCover(periodDays, batchCooking);
+  const cur = await plan.resolvePlan(v, scope, true);
+  const have = new Set((cur?.meals ?? []).map((m) => m.mealType));
+  let p = cur!;
+  for (const t of types) {
+    if (have.has(t)) continue;
+    const excludeIds = [...p.meals.map((m) => m.libraryMealId ?? m.savedMealId ?? '').filter(Boolean), ...shown];
+    const found = await searchMeals(v, { mealType: t, contexts: weekContexts(ctx), limit: perType, excludeIds, embed: false });
+    for (const m of found) { shown.add(m.id); p = await plan.addMeal(v, m, servings, undefined, scope); }
+  }
+  return p;
+}
+
 /** What the model sees for a meal: compact, never the full source string. */
 export const compactMeal = (m: MealRef) => ({ id: m.id, source: m.source, name: m.name, mealType: m.mealType, kind: m.kind, pattern: m.pattern, why: m.why, by: m.attributionShort, batch: m.batch, prepMinutes: m.prepMinutes, contexts: m.contexts, kcal: m.kcal, carbsG: m.carbsG, proteinG: m.proteinG });
 
@@ -207,32 +243,12 @@ function makeAllTools(v: VanaCtx, ctx: AthleteContext, opts: ToolOpts = {}) {
     setSetting: tool({ description: 'Record a setting the athlete chose: batch_cooking (true/false; also re-derives cooking sessions), show_macros (true/false), coverage_scope ("dinners" | "dinners_lunches" | "all" — how much of the week the plan covers), meal_types (the meal types they plan, in the order they want to work through them, e.g. ["dinner","breakfast"] — only when they say which types they want and which they skip), or weekly_budget_usd (a number — "keep it under $80").', inputSchema: z.object({ key: z.enum(['batch_cooking', 'show_macros', 'coverage_scope', 'meal_types', 'weekly_budget_usd']), value: z.union([z.boolean(), z.enum(['dinners', 'dinners_lunches', 'all']), z.array(MealTypeZ).min(1).max(4), z.number().min(0).max(2000)]) }), execute: async (i): Promise<VanaPart> => { const ok = i.key === 'coverage_scope' ? isCoverageScope(i.value) : i.key === 'meal_types' ? isMealTypes(i.value) : i.key === 'weekly_budget_usd' ? typeof i.value === 'number' : typeof i.value === 'boolean'; if (!ok) throw new Error(`setSetting ${i.key}: wrong value type`); const m = await setSettingRow(v, i.key, i.value as boolean | CoverageScope | number | MealType[], 'conversation'); if (i.key === 'batch_cooking') await plan.setBatchCooking(v, i.value as boolean, scope); return { kind: 'memory_saved', memory: m }; } }),
     getSetting: tool({ description: 'Read a setting: value (null if never chosen) and the default that applies then.', inputSchema: z.object({ key: z.enum(['batch_cooking', 'show_macros', 'coverage_scope', 'meal_types', 'weekly_budget_usd']) }), execute: async (i) => ({ key: i.key, value: await getSetting(v, i.key), default: SETTING_DEFAULTS[i.key] }) }),
     // ---- additive 2026-09-03 (plan Phases 2, 3, 7, 8)
-    draftWeek: tool({ description: 'The one-tap complete period ("Draft my whole week", "just decide for me"): deterministically fills every meal type the athlete plans (the WALK line) from the library by this period\'s context and adds them to the plan, servings scaled so a batch covers the days — the model selects nothing. Returns the batch; PRESENT it (a why per meal) and say anything can be swapped from the plan bar. Call at most once per conversation.', inputSchema: z.object({ scope: z.enum(['dinners', 'dinners_lunches', 'all']).optional().describe('Only when the athlete names how much to cover right now; otherwise their own walk and coverage scope decide') }), execute: async (i): Promise<VanaPart> => {
-      const scopeTypes = (sc?: string | null): MealType[] => sc === 'dinners' ? ['dinner'] : sc === 'all' ? ['dinner', 'lunch', 'breakfast', 'snack'] : ['dinner', 'lunch'];
-      const sc = i.scope ?? (isCoverageScope(ctx.plan.coverageScope) ? ctx.plan.coverageScope : null);
-      // mp-231 clause 1: the athlete's own walk wins, unless this turn named a scope.
-      const types: MealType[] = !i.scope && (ctx.plan.mealTypes ?? []).length ? walkFor(ctx.plan.mealTypes) : scopeTypes(sc);
-      const periodDays = ctx.week.periodDays ?? 7;
-      const batchCooking = ctx.plan.batchCooking;
-      // Batch: a few meals at one sitting, each with enough servings for the period. Per day: one meal a night (mp-231 clauses 3-4).
-      const perType = batchCooking ? BATCH_MEALS_PER_TYPE : periodDays;
-      const servings = servingsToCover(periodDays, batchCooking);
-      const cur = await plan.resolvePlan(v, scope, true);
-      const have = new Set((cur?.meals ?? []).map((m) => m.mealType));
-      let p = cur!;
-      for (const t of types) {
-        if (have.has(t)) continue;
-        const excludeIds = [...p.meals.map((m) => m.libraryMealId ?? m.savedMealId ?? '').filter(Boolean), ...shown];
-        const found = await searchMeals(v, { mealType: t, contexts: weekContexts(ctx), limit: perType, excludeIds, embed: false });
-        for (const m of found) { shown.add(m.id); p = await plan.addMeal(v, m, servings, undefined, scope); }
-      }
-      return { kind: 'batch', plan: p };
-    } }),
+    draftWeek: tool({ description: 'The one-tap complete period ("Draft my whole week", "just decide for me"): deterministically fills every meal type the athlete plans (the WALK line) from the library by this period\'s context and adds them to the plan, servings scaled so a batch covers the days — the model selects nothing. Returns the batch; PRESENT it (a why per meal) and say anything can be swapped from the plan bar. Call at most once per conversation.', inputSchema: z.object({ scope: z.enum(['dinners', 'dinners_lunches', 'all']).optional().describe('Only when the athlete names how much to cover right now; otherwise their own walk and coverage scope decide') }), execute: async (i): Promise<VanaPart> => ({ kind: 'batch', plan: await draftWeekPlan(v, ctx, scope, shown, i.scope) }) }),
     // mp-231 clause 5: one tap drafts the period from what they ate last time. Deterministic end to end (clause 6).
     sameAsLastTime: tool({ description: 'The one-tap draft from what they ate last time ("same as last time", "the same as last week", "repeat my last plan"): deterministically copies their last CONFIRMED plan\'s meals into the plan being built, at the servings they were cooked at (a plan built over a different period comes across unscaled) — the model selects nothing. Returns the batch; PRESENT it (what came across, one clause each) and say anything can be swapped from the plan bar. Call at most once per conversation; if it errors there is no confirmed plan to copy, so say so and offer a picker instead.', inputSchema: z.object({}), execute: async (): Promise<VanaPart> => ({ kind: 'batch', plan: await plan.draftFromLastTime(v, scope) }) }),
     askPantry: tool({ description: 'Show what is likely in the house as a tappable grid (seeded from what the athlete logs, saves and bought last week — never a generic list) with a + for anything else. Nothing is used until they tap "Use these". Use for "use what I have" / "what\'s in my fridge" / "cook from my pantry".', inputSchema: z.object({ title: z.string().optional() }), execute: async (i): Promise<VanaPart> => suggestedPantry(v, i.title) }),
     recordDebrief: tool({ description: 'Record the end-of-week debrief the athlete just gave: how many planned meals happened, why some slipped, and 1–3 distilled learnings ("skips fish on weeknights") stored as memories that shape next week\'s proposal. Call once, right after they answer the debrief question.', inputSchema: z.object({ planId: z.string().optional().describe('From the DEBRIEF PENDING context line; omit and the server resolves last week\'s plan'), completed: z.number().int().min(0), planned: z.number().int().min(0).optional(), skipReason: z.string().max(160).optional(), learnings: z.array(z.string().max(120)).max(3).optional() }), execute: async (i): Promise<VanaPart> => { let target = i.planId ? await plan.getPlanById(v, i.planId) : null; if (!target) { const period = await getPlanPeriod(v); const ws = weekStartFor(today(), period.weekStart); const prev = await plan.getPlan(v, addDays(ws, -period.periodDays)); const stamped = prev ? { ...prev, debriefDoneAt: (await v.db.from('meal_plans').select('debrief_done_at').eq('id', prev.id).maybeSingle()).data?.debrief_done_at ?? null } : null; target = pendingDebrief({ today: today(), previous: stamped, periodDays: period.periodDays }); } if (!target) throw new Error('no plan is waiting for a debrief'); const planned = i.planned ?? target.meals.length; const completed = Math.min(i.completed, planned); const { error } = await v.db.from('plan_debriefs').insert({ user_id: v.userId, plan_id: target.id, completed, planned, skip_reason: i.skipReason ?? null }); if (error) throw new Error(error.message); await v.db.from('meal_plans').update({ debrief_done_at: new Date().toISOString() }).eq('id', target.id).eq('user_id', v.userId); await invalidateContext(v); const memories = []; for (const f of i.learnings ?? []) memories.push(await rememberFact(v, { kind: 'pattern', fact: f, confidence: 0.8, source: 'debrief' })); return { kind: 'debrief', planId: target.id, completed, planned, skipReason: i.skipReason ?? null, memories }; } }),
-    planWeek: tool({ description: 'Lay the confirmed collection across the week: fills Breakfast · Lunch · Dinner · Snack for each day of the plan period from the plan\'s meals first (by servings), then the library by that day\'s context. Lands on the Plan tab. Only after confirmPlan and only when the athlete says yes to laying it out.', inputSchema: z.object({}), execute: async (): Promise<VanaPart> => { const days = []; const periodDays = ctx.week.periodDays ?? 7; for (let k = 0; k < periodDays; k++) days.push(await planDayPart(v, ctx, addDays(ctx.week.start, k))); refreshDayNotesSoon(v, today()); return { kind: 'week', periodDays, days }; } }),
+    planWeek: tool({ description: 'Lay the confirmed collection across the week: fills Breakfast · Lunch · Dinner · Snack for each day of the plan period from the plan\'s meals first (by servings), then the library by that day\'s context. Lands on the Plan tab. Only after confirmPlan and only when the athlete says yes to laying it out.', inputSchema: z.object({}), execute: async (): Promise<VanaPart> => planWeekPart(v, ctx) }),
     planDay: tool({ description: 'Plan a day: fill Breakfast · Lunch · Dinner · Snack for a date from the batch first, then the library by that day\'s context. Returns the day widget.', inputSchema: z.object({ date: z.string().optional() }), execute: async (i): Promise<VanaPart> => planDayPart(v, ctx, i.date ?? today()) }),
     setDaySlot: tool({ description: 'Put a specific meal (source+id from a tool result) into one slot of a day, or clear it.', inputSchema: z.object({ date: z.string().optional(), slot: SlotZ, source: z.enum(['plan', 'library', 'saved']).optional(), mealId: z.string().optional(), name: z.string().optional(), clear: z.boolean().optional() }), execute: async (i): Promise<VanaPart> => { const date = i.date ?? today(); if (i.clear) await plan.setDaySlot(v, date, i.slot, null); else if (i.source && i.mealId) { let name = i.name ?? ''; let kcal: number | null = null; let carbsG: number | null = null; if (i.source === 'plan') { const p = await plan.getOrCreatePlan(v); const m = p.meals.find((x) => x.id === i.mealId); if (m) { name = m.name; kcal = m.kcal; carbsG = m.carbsG; } } else { const m = await getMeal(v, i.source, i.mealId); if (m) { name = m.name; kcal = m.kcal; carbsG = m.carbsG; } } await plan.setDaySlot(v, date, i.slot, { source: i.source, id: i.mealId, name, kcal, carbsG }); } const slots = await plan.getDay(v, date); const dg = await dayGuidance(v, ctx, date); return { kind: 'day', date, label: dg.label, slots, filled: [] }; } }),
     getWeather: tool({ description: 'Weather one-liner for a place and date (Open-Meteo).', inputSchema: z.object({ place: z.string(), date: z.string() }), execute: async (i) => ({ line: await weatherLine(i.place, i.date) }) }),
