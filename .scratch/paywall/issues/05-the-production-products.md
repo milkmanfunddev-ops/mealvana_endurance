@@ -12,8 +12,8 @@
 **Touches:** scripts/store/asc.mjs, scripts/store/play.mjs, docs/implement_mealplanning/04-entitlement.md
 
 - [x] Lee has said go in the terminal before anything is created. (Lee, "ok go prod", 2026-09-23)
-- [ ] `asc.mjs list` and `play.mjs list` against production show the four products, prices and free week.
-- [ ] RevenueCat lists the production products on `pro` and in both offerings.
-- [ ] The ids and states are recorded in docs/implement_mealplanning/04-entitlement.md.
+- [x] `asc.mjs list` and `play.mjs list` against production show the four products, prices and free week. (`--prod`, 2026-09-23)
+- [x] RevenueCat lists the production products on `pro` and in both offerings.
+- [x] The ids and states are recorded in docs/implement_mealplanning/04-entitlement.md.
 
 Next: /implement-lee paywall

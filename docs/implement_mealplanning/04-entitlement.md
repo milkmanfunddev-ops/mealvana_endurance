@@ -87,6 +87,46 @@ Known limits: RevenueCat is not configured on the web (`revenueCatApiKey` is emp
 meets the paywall for everyone, coach portal included — an open question for the wave. Content keys moved
 from `pro_version.*` to `paywall.*` (`assets/config/content_defaults.json`).
 
+## Paywall ticket 05 (2026-09-23): the production products
+
+Decisions mp-452, mp-429 (approved as mp-484). Lee said "ok go prod" on 2026-09-23. Made with
+`scripts/store/asc.mjs create-products --prod` and `scripts/store/play.mjs create-products --prod`
+(`--prod` is the only way either script reaches the prod app; dev stays the default and the prod id is
+still refused without the flag). **Nothing was submitted for review.** The founding products come off
+sale on 30 November by hand; nothing is scheduled.
+
+| Store | Product id | Store object | Price | Free week | State |
+|---|---|---|---|---|---|
+| App Store Connect, prod 6751113738, group `Mealvana Pro` 22351111 | `me_pro_monthly_prod` | subscription 6815251933 · ONE_MONTH | USA 24.99 + Apple's equalized price, 175 territories | FREE_TRIAL ONE_WEEK ×1, 175 territories | MISSING_METADATA |
+| | `me_pro_annual_prod` | subscription 6815253177 · ONE_YEAR | USA 199.99, 175 territories | same | MISSING_METADATA |
+| | `me_pro_monthly_founding_prod` | subscription 6815253736 · ONE_MONTH | USA 12.49, 175 territories | same | MISSING_METADATA |
+| | `me_pro_annual_founding_prod` | subscription 6815254459 · ONE_YEAR | USA 99.99, 175 territories | same | MISSING_METADATA |
+| Google Play, `com.milkman.mealvanaendurance` | `me_pro_monthly_prod` | base plan `monthly` P1M, grace P7D | US 24.99 USD; other regions 24.99 USD / 21.91 EUR | offer `free-week` P7D ×1 free, `anySubscriptionInApp` | base plan + offer ACTIVE |
+| | `me_pro_annual_prod` | base plan `annual` P1Y | US 199.99; other 199.99 USD / 175.33 EUR | same | ACTIVE |
+| | `me_pro_monthly_founding_prod` | base plan `monthly` P1M | US 12.49; other 12.49 USD / 10.95 EUR | same | ACTIVE |
+| | `me_pro_annual_founding_prod` | base plan `annual` P1Y | US 99.99; other 99.99 USD / 87.66 EUR | same | ACTIVE |
+
+MISSING_METADATA is the review screenshot, as with every other subscription here; it is added and
+submitted with the release binary (ticket 13). Play auto-added an MN regional price (as on dev); every
+other region is priced through `otherRegionsConfig` (USD + EUR converted by Play), the same shape as dev.
+
+RevenueCat (project `proj77b3c48f`, one project for dev and prod; prod apps iOS `app2953aa638a`,
+Play `app7d2f8e3b85`), all eight attached to entitlement `pro` (`entla441faaeb4`):
+
+| Offering | Package | iOS prod product | Play prod product |
+|---|---|---|---|
+| `default` (`ofrngabf12e1136`, **current**, unchanged) | `$rc_monthly` `pkge316803098d` | `prodc5b9854c12` `me_pro_monthly_prod` | `prod08b912f933` `me_pro_monthly_prod:monthly` |
+| | `$rc_annual` `pkge4a1810d707` | `prod5ba80a209c` `me_pro_annual_prod` | `prod4e44d96638` `me_pro_annual_prod:annual` |
+| `founding` (`ofrng5d8be9a189`, not current; flipped by hand on 1 October) | `$rc_monthly` `pkge08aae32453` | `prodf0771a8e20` `me_pro_monthly_founding_prod` | `prod7b21d0a714` `me_pro_monthly_founding_prod:monthly` |
+| | `$rc_annual` `pkgee1bd8fcb5c` | `prodc0e4507cc0` `me_pro_annual_founding_prod` | `prodc7762e331e` `me_pro_annual_founding_prod:annual` |
+
+The old prod products (`mealvana_pro_monthly_prod` `proddb3abf9661`, `mealvana_pro_annual_prod`
+`prodfbe6cf06cf`, Play `mealvana_pro_monthly:monthly` `prodcff02f95c4`, `mealvana_pro_annual:annual`
+`prod41694bd9a1`) were detached from the `default` packages. They stay on `pro` and are not archived; the
+store products are untouched. No customer could have bought them: the iOS pair never passed review. The
+Test Store's `mealvana_pro_monthly` / `mealvana_pro_annual` are still in the `default` packages (debug
+builds on a `test_` key use them; open question for Lee).
+
 ## What exists (verified 2026-09-01 via the RevenueCat API)
 - Project `proj77b3c48f` already has entitlement **`pro`** ("Mealvana Endurance Pro", since 2025-11)
   with products `mealvana_pro_monthly` ($9.95/mo, P1M) and `mealvana_pro_annual` ($69/yr, P1Y), in the
@@ -104,7 +144,7 @@ from `pro_version.*` to `paywall.*` (`assets/config/content_defaults.json`).
 | App Store Connect | prod 6751113738 | group `Mealvana Pro` 22351111 → `mealvana_pro_monthly_prod` (6807411442, $9.99), `mealvana_pro_annual_prod` (6807411640, $69.99) | MISSING_METADATA — needs the App Review screenshot (paywall) |
 | App Store Connect | dev 6756683509 | group `Mealvana Pro` 22351029 → `mealvana_pro_monthly` (6807411443, $9.99), `mealvana_pro_annual` (6807411689, $69.99) | MISSING_METADATA — same; sandbox purchases work without review |
 | Google Play | `com.milkman.mealvanaendurance` + `.dev` | `mealvana_pro_monthly:monthly` (P1M $9.99), `mealvana_pro_annual:annual` (P1Y $69.99), en-US listing, 7-day grace | base plans ACTIVE |
-| RevenueCat | all 4 store apps | 8 products created, attached to entitlement `pro` (entla441faaeb4) and to `default` offering packages `$rc_monthly` (pkge316803098d) / `$rc_annual` (pkge4a1810d707) | done |
+| RevenueCat | all 4 store apps | 8 products created, attached to entitlement `pro` (entla441faaeb4) and to `default` offering packages `$rc_monthly` (pkge316803098d) / `$rc_annual` (pkge4a1810d707) | done; the dev and prod ones left the offerings with the reprice (mp-452, ticket 05 above), the Test Store pair is still in `default` |
 
 All four ASC subscriptions: en-US localization, all 175 territories, USA price set (Apple equalizes the rest).
 Remaining manual: upload the review screenshot once the paywall exists, then submit with the next binary.
