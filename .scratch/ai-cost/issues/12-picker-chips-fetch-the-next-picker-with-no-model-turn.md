@@ -15,7 +15,7 @@
 - [x] "No recipe only" and "Under 20 min" map to fixed picker arguments in one table, tested.
 - [x] "I like these" and "Next" run the no-model action when the next step is the next meal type's picker, and go to Vana when it is a question or the wrap-up (tests for both).
 - [x] No written line; the tap and the picker are stored for Vana's next turn; nothing drawn from the budget; logged as taps.
-- [ ] Checked on a pool simulator: a week planned with "Other options" and "I like these", with model calls in the log only where Vana asks or wraps up.
+- [x] Checked on a pool simulator: a week planned with "Other options" and "I like these", with model calls in the log only where Vana asks or wraps up.
 - [x] On dev, the model calls and input tokens for a scripted five-picker conversation are recorded in this ticket before and after.
 
 ## Measurements
@@ -39,5 +39,13 @@ picker), then "Other options", "Under 20 min", "Next: Lunch", "Other options" (f
   costs one turn, as it should. The same five pickers appeared in both runs (dinner, dinner, dinner, lunch, lunch).
 - An earlier run against the functions dev had before this ticket's deploys (vana-chat v80 from 09-22, which predates
   ticket 04's compaction) cost 7 calls and 726,530 input tokens; it is not the base code, so it is not the before figure.
+
+**Device check (wave-pool-1, iOS 26.2, dev flavor, 2026-09-23 11:12-11:16 UTC).** The dev account (per-night cooking,
+dinners only) planned a five-dinner week in conversation `f6a0f7fa-6cc0-42c2-bbb7-9aca997c535d`: "Other options" twice
+and "Under 20 min" once each brought a picker at once with no line from Vana and logged
+`vana.tap.next_picker.meal_planning` (model `none`, not debited). The model calls in the log are the opener, Vana's own
+"Quick weeknight options" chip, and the three "I like these" taps, which the server handed to Vana because the walk
+(dinners only) had no next type; the third one was her wrap-up. The first two she answered with another dinner picker,
+since five nights were not yet covered (see the open question in the wave report).
 
 Next: /implement-lee ai-cost
