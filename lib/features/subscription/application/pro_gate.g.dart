@@ -9,7 +9,7 @@ part of 'pro_gate.dart';
 // GENERATED CODE - DO NOT MODIFY BY HAND
 // ignore_for_file: type=lint, type=warning
 /// The app gate, as the router reads it (mp-280: everything is behind it):
-/// open, lapsed or never (mp-457).
+/// open or closed (mp-457).
 ///
 /// Loading while the status is unresolved — the status controller bounds
 /// that wait (mp-284), so awaiting `.future` here answers within a couple of
@@ -22,7 +22,7 @@ part of 'pro_gate.dart';
 const appGateProvider = AppGateProvider._();
 
 /// The app gate, as the router reads it (mp-280: everything is behind it):
-/// open, lapsed or never (mp-457).
+/// open or closed (mp-457).
 ///
 /// Loading while the status is unresolved — the status controller bounds
 /// that wait (mp-284), so awaiting `.future` here answers within a couple of
@@ -32,7 +32,7 @@ const appGateProvider = AppGateProvider._();
 /// `ref.read` sees the same value every screen watches.
 final class AppGateProvider extends $AsyncNotifierProvider<AppGate, AppAccess> {
   /// The app gate, as the router reads it (mp-280: everything is behind it):
-  /// open, lapsed or never (mp-457).
+  /// open or closed (mp-457).
   ///
   /// Loading while the status is unresolved — the status controller bounds
   /// that wait (mp-284), so awaiting `.future` here answers within a couple of
@@ -59,10 +59,10 @@ final class AppGateProvider extends $AsyncNotifierProvider<AppGate, AppAccess> {
   AppGate create() => AppGate();
 }
 
-String _$appGateHash() => r'b702630218c867553a5e0b02f28ff6bdf7d61c8a';
+String _$appGateHash() => r'dd619469cc19934afee5b00d870c51181c7b1b78';
 
 /// The app gate, as the router reads it (mp-280: everything is behind it):
-/// open, lapsed or never (mp-457).
+/// open or closed (mp-457).
 ///
 /// Loading while the status is unresolved — the status controller bounds
 /// that wait (mp-284), so awaiting `.future` here answers within a couple of
@@ -91,28 +91,28 @@ abstract class _$AppGate extends $AsyncNotifier<AppAccess> {
 }
 
 /// The one write-access rule (mp-457 §4): whether this account may write or
-/// call AI right now. True only when the gate is open; a lapsed account sees
-/// its data read-only, and an unresolved gate waits for the gate's bounded
-/// answer (an unknown answer is never, so no). A write controller awaits
-/// this before writing and opens the paywall instead when it says no.
+/// call AI right now. True only when the gate is open; an unresolved gate
+/// waits for the gate's bounded answer (an unknown answer is closed, so no).
+/// A write controller awaits this before writing and opens the paywall
+/// instead when it says no (ticket 20 removes the check).
 
 @ProviderFor(writeAccess)
 const writeAccessProvider = WriteAccessProvider._();
 
 /// The one write-access rule (mp-457 §4): whether this account may write or
-/// call AI right now. True only when the gate is open; a lapsed account sees
-/// its data read-only, and an unresolved gate waits for the gate's bounded
-/// answer (an unknown answer is never, so no). A write controller awaits
-/// this before writing and opens the paywall instead when it says no.
+/// call AI right now. True only when the gate is open; an unresolved gate
+/// waits for the gate's bounded answer (an unknown answer is closed, so no).
+/// A write controller awaits this before writing and opens the paywall
+/// instead when it says no (ticket 20 removes the check).
 
 final class WriteAccessProvider
     extends $FunctionalProvider<AsyncValue<bool>, bool, FutureOr<bool>>
     with $FutureModifier<bool>, $FutureProvider<bool> {
   /// The one write-access rule (mp-457 §4): whether this account may write or
-  /// call AI right now. True only when the gate is open; a lapsed account sees
-  /// its data read-only, and an unresolved gate waits for the gate's bounded
-  /// answer (an unknown answer is never, so no). A write controller awaits
-  /// this before writing and opens the paywall instead when it says no.
+  /// call AI right now. True only when the gate is open; an unresolved gate
+  /// waits for the gate's bounded answer (an unknown answer is closed, so no).
+  /// A write controller awaits this before writing and opens the paywall
+  /// instead when it says no (ticket 20 removes the check).
   const WriteAccessProvider._()
     : super(
         from: null,
