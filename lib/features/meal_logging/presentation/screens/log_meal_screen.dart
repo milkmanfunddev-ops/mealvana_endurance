@@ -1566,7 +1566,7 @@ class _AiTabState extends ConsumerState<_AiTab> {
       );
       return;
     }
-    // A lapsed account meets the paywall instead of the AI call (mp-457 §3).
+    // A lapsed account meets the paywall instead of the AI call; the server refuses it anyway (mp-505).
     if (!await aiActionAllowed(context, ref) || !mounted) return;
     FocusScope.of(context).unfocus();
     analytics.track(

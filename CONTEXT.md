@@ -222,7 +222,7 @@ The check-in Vana opens after a plan week ends, asking how the week went. Record
 
 **Vana sheet**:
 The panel that rises over the current screen when the Launcher is tapped, holding a conversation with Vana. Closing it leaves the screen underneath as it was.
-_Avoid_: The sheet (unqualified; the Top-up sheet and the Paywall sheet are others), overlay, drawer
+_Avoid_: The sheet (unqualified; the Top-up sheet is another), overlay, drawer
 
 **Full-screen chat**:
 Vana's conversation as a whole screen of its own rather than the Vana sheet. Opened from the sheet's full-screen button, it shows the same conversation, only bigger.
@@ -284,8 +284,9 @@ has no free tier, so an account either holds Pro or is Lapsed.
 _Avoid_: Premium, Pro tier, paid tier
 
 **Lapsed**:
-An account that does not hold Pro. It can open every screen and read everything it made, under a
-Subscribe bar, and can change nothing.
+An account that does not hold Pro. It stays signed in and meets the full-screen paywall, the same
+one a new account sees, until it subscribes, restores a purchase or redeems a Code. Everything it
+made is kept and is all there again when Pro is back (mp-280).
 _Avoid_: Expired, free user, locked out
 
 **Grant**:
@@ -383,12 +384,8 @@ A set of plans RevenueCat holds for the paywall to sell. There are two, the regu
 _Avoid_: Current Offering, price list
 
 **Onboarding paywall**:
-The paywall as an account that never subscribed sees it, straight after sign-up: full screen, with no way to close it.
-_Avoid_: Onboarding shape, signup paywall
-
-**Paywall sheet**:
-The paywall as an account that held Pro once and lost it sees it: a sheet it can close, over its read-only app, opened from any edit or AI tap, or from Upgrade on the Subscription screen.
-_Avoid_: Lapsed shape, closable sheet
+The one paywall every account without Pro sees, whether it never subscribed or its Pro ran out: full screen, with no way to close it (mp-457).
+_Avoid_: Onboarding shape, signup paywall, Paywall sheet (retired: there is no sheet over a read-only app)
 
 **⋯ menu**:
 The one button in the paywall's top corner that holds everything secondary: Restore purchases, Redeem code, Manage subscription, Sign out and Delete account.

@@ -183,7 +183,7 @@ class _EditMealLogScreenState extends ConsumerState<EditMealLogScreen> {
     // Metered AI must fail closed: the button is hidden when the release flag
     // is off, and this guard covers any path that reaches here anyway.
     if (!ref.read(appConfigProvider).describeMealEnabled) return;
-    // A lapsed account meets the paywall instead of the AI call (mp-457 §3).
+    // A lapsed account meets the paywall instead of the AI call; the server refuses it anyway (mp-505).
     if (!await aiActionAllowed(context, ref) || !mounted) return;
     final source = await _pickImageSource();
     if (source == null || !mounted) return;

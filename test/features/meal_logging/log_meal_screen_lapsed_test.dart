@@ -1,9 +1,9 @@
-/// A lapsed account's AI tap on the log-meal screen (mp-457 §3, ticket 11).
+/// A lapsed account's AI tap on the log-meal screen (mp-505, ticket 11).
 ///
 /// The log-meal screen is a plain page push the router never sees, so its
 /// Analyze button asks `aiActionAllowed` itself. Through the real screen: a
-/// lapsed account (write access no) taps Analyze on the Describe tab, the
-/// paywall opens over the screen, and `describe-meal` is never called.
+/// lapsed account (AI access no) taps Analyze on the Describe tab, the
+/// paywall opens, and `describe-meal` is never called.
 library;
 
 import 'package:flutter/material.dart';

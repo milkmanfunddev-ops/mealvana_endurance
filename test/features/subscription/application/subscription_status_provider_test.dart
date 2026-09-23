@@ -420,7 +420,7 @@ void main() {
       expect(await c.read(writeAccessProvider.future), isTrue);
     });
 
-    test('a pro that expired answers closed, and writes are refused', () async {
+    test('a pro that expired answers closed, and AI actions are refused', () async {
       when(
         () => service.fetchStatus(),
       ).thenAnswer((_) async => statusOf(customerInfoLapsed));
