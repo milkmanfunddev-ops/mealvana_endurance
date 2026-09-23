@@ -220,6 +220,13 @@ Deno.test('"Use these" records the pantry and stores the app\'s own line as the 
   assertEquals(assistant.parts[0].input, { items: ['eggs', 'rice'] });
 });
 
+Deno.test('a tapped fork answer is remembered as said in the conversation, as the setSetting tool it replaces did; the settings sheet stays "settings"', async () => {
+  const tapped = await runAction(testCtx(world()), { type: 'set_setting', payload: { conversationId: CONV, key: 'coverage_scope', value: 'dinners', chip: CHIP_LABELS.coverageDinners } });
+  assertEquals((tapped.parts[0] as Extract<VanaPart, { kind: 'memory_saved' }>).memory.source, 'conversation');
+  const sheet = await runAction(testCtx(world()), { type: 'set_setting', payload: { key: 'coverage_scope', value: 'dinners' } });
+  assertEquals((sheet.parts[0] as Extract<VanaPart, { kind: 'memory_saved' }>).memory.source, 'settings');
+});
+
 Deno.test('without a chip, or without a conversation, or on an action that is not a chip, nothing is stored or logged', async () => {
   const v = testCtx(world());
   const plain = await runAction(v, { type: 'set_setting', payload: { conversationId: CONV, key: 'coverage_scope', value: 'all' } });
@@ -249,4 +256,7 @@ Deno.test('the persona\'s chip instructions shrink to the chips that still reach
   for (const kept of ['just decide for me', 'repeat my last plan', 'what\'s in my fridge', 'Different protein', '"Adjust"', 'draftWeek', 'sameAsLastTime', 'askPantry', 'planWeek']) {
     assert(PLANNING_PROMPT.includes(kept), `still in the persona: ${kept}`);
   }
+  // The prompt goes out on every planning turn: it must come out smaller than before ticket 11 (15,094 characters at
+  // a740bd9c), not merely reworded.
+  assert(PLANNING_PROMPT.length < 15094, `the planning persona is ${PLANNING_PROMPT.length} characters, not under 15,094`);
 });
