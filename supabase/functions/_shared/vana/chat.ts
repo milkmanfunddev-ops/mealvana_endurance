@@ -372,9 +372,27 @@ export interface ChatRunOpts {
   /** Whether this turn draws the athlete's budget (mp-420 clause 6) — recorded on the call row so "what did the budget
    *  actually pay for" is answerable. Since ticket 09 every turn does, the scripted opener included (mp-430 clause 1). */
   debited?: boolean;
+  /** Receives the turn's full trace when it finishes, or its error when the stream failed. The evals harness
+   *  (`supabase/functions/evals/vana/`) is the only caller; production leaves it unset. */
+  onTrace?: (t: TurnTrace) => void;
 }
 /** What a finished turn cost, as handed to `afterFinish`. */
 export interface FinishedUsage { inputTokens: number; outputTokens: number; cacheReadTokens: number | null; cacheWriteTokens: number | null; gatewayCostUsd: number | null; model: string }
+/** One finished (or failed) turn as the evals harness stores it: everything the prompt was built from — persona, Doll,
+ *  situation, the exact model message array, the tools offered — and everything that came back (steps with their raw
+ *  pre-clamp text and tool inputs/outputs, usage). Built at the only seam where both exist. Production never passes
+ *  `onTrace`, so this costs nothing there; when real-trace sampling is added later it can reuse the same payload. */
+export interface TurnTrace {
+  kind: ConversationKind; opener: boolean; openerVariant: string; newPlan: boolean;
+  functionName: string; model: string; anchorDate: string;
+  situation: string | null; inView: string | null; openerText: string | null;
+  doll: AthleteContext; contextReused: boolean;
+  system: { persona: string; context: string };
+  tools: string[]; modelMessages: ModelMessage[];
+  durationMs: number;
+  text: string; steps: unknown[]; usage: unknown; totalUsage: unknown;
+  error?: string;
+}
 export type ChatOutcome = { ok: true; response: Response } | { ok: false; status: 400 | 429; body: Record<string, unknown> };
 
 /** The reply to an idle signal (schemas.ts IdleAckZ). Nothing waits on it (mp-288 clause 2). */
@@ -483,9 +501,10 @@ export async function runChat(v: VanaCtx, body: ChatBody, opts: ChatRunOpts): Pr
   const tag = `[${opts.functionName}]`;
   console.log(`${tag} user=${v.userId} conv=${convId || '(ephemeral)'} kind=${convKind} opener=${opener}${opener ? `/${openerVariant}${newPlan ? '/new_plan' : ''}` : ''} model=${CHAT_MODEL} context=${reused ? 'reused' : 'built'}`);
 
+  const system = systemMessages(convKind, ctx, anchorDate, extraContext);
   const result = streamText({
     model: CHAT_MODEL,
-    system: systemMessages(convKind, ctx, anchorDate, extraContext),
+    system,
     messages: modelMessages,
     tools,
     maxOutputTokens: MAX_OUTPUT_TOKENS,
@@ -495,7 +514,7 @@ export async function runChat(v: VanaCtx, body: ChatBody, opts: ChatRunOpts): Pr
     headers: chatHeaders(convId),
     // A stream that fails is a call the athlete did not get: its reservation goes back. The hold settles once, so an
     // onFinish that follows an error changes nothing.
-    onError: ({ error }) => { console.error(`${tag} stream error:`, (error as Error)?.message ?? error); if (opts.onFailure) waitUntil(opts.onFailure(error).catch((e) => console.error(`${tag} onFailure threw:`, (e as Error).message))); },
+    onError: ({ error }) => { console.error(`${tag} stream error:`, (error as Error)?.message ?? error); opts.onTrace?.({ kind: convKind, opener, openerVariant, newPlan, functionName: opts.functionName, model: CHAT_MODEL, anchorDate, situation: note, inView, openerText: opener ? openerText : null, doll: ctx, contextReused: reused, system: { persona: String(system[0].content), context: String(system[1].content) }, tools: Object.keys(tools), modelMessages, durationMs: Date.now() - started, text: '', steps: [], usage: null, totalUsage: null, error: String((error as Error)?.message ?? error) }); if (opts.onFailure) waitUntil(opts.onFailure(error).catch((e) => console.error(`${tag} onFailure threw:`, (e as Error).message))); },
     onFinish: ({ text, steps, usage, totalUsage }) => {
       const u = totalUsage ?? usage;
       const inputTokens = u?.inputTokens ?? 0; const outputTokens = u?.outputTokens ?? 0;
@@ -503,6 +522,9 @@ export async function runChat(v: VanaCtx, body: ChatBody, opts: ChatRunOpts): Pr
       // What the turn cost us, out of what the SDK handed back: the cache both directions, the steps, the FIRST step's
       // prompt (the only one that can read the shared prefix from cache) and the gateway's own charge (mp-420 clause 6).
       const metrics = callMetrics(steps as unknown[], u);
+      // Called before the persistence task so a harness sees the trace the moment the stream ends; the rows it also
+      // waits on are written by the task below (its inserts land on the harness's fake db).
+      opts.onTrace?.({ kind: convKind, opener, openerVariant, newPlan, functionName: opts.functionName, model: CHAT_MODEL, anchorDate, situation: note, inView, openerText: opener ? openerText : null, doll: ctx, contextReused: reused, system: { persona: String(system[0].content), context: String(system[1].content) }, tools: Object.keys(tools), modelMessages, durationMs: Date.now() - started, text, steps: steps as unknown[], usage, totalUsage });
       const task = (async () => {
         try {
           if (persist) {
