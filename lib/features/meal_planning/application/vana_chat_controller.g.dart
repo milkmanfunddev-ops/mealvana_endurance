@@ -13,8 +13,9 @@ part of 'vana_chat_controller.dart';
 /// Streams turns from [VanaChatRepository], accumulates text and parts into
 /// the last message, folds `batch` parts into [MealPlanController] (they
 /// are never rendered inline) and `memory_saved` parts into the memory
-/// repository, and maps transport errors to [VanaChatErrorKind]. Chip taps
-/// are plain user messages ([tapChip]).
+/// repository, and maps transport errors to [VanaChatErrorKind]. A chip tap
+/// is a plain user message ([tapChip]), except a fixed-label chip, which
+/// acts at once on the no-model endpoint ([actAtOnce], mp-464).
 
 @ProviderFor(VanaChatController)
 const vanaChatControllerProvider = VanaChatControllerFamily._();
@@ -24,8 +25,9 @@ const vanaChatControllerProvider = VanaChatControllerFamily._();
 /// Streams turns from [VanaChatRepository], accumulates text and parts into
 /// the last message, folds `batch` parts into [MealPlanController] (they
 /// are never rendered inline) and `memory_saved` parts into the memory
-/// repository, and maps transport errors to [VanaChatErrorKind]. Chip taps
-/// are plain user messages ([tapChip]).
+/// repository, and maps transport errors to [VanaChatErrorKind]. A chip tap
+/// is a plain user message ([tapChip]), except a fixed-label chip, which
+/// acts at once on the no-model endpoint ([actAtOnce], mp-464).
 final class VanaChatControllerProvider
     extends $AsyncNotifierProvider<VanaChatController, VanaChatState> {
   /// One Vana conversation (planning or general), keyed by kind + id.
@@ -33,8 +35,9 @@ final class VanaChatControllerProvider
   /// Streams turns from [VanaChatRepository], accumulates text and parts into
   /// the last message, folds `batch` parts into [MealPlanController] (they
   /// are never rendered inline) and `memory_saved` parts into the memory
-  /// repository, and maps transport errors to [VanaChatErrorKind]. Chip taps
-  /// are plain user messages ([tapChip]).
+  /// repository, and maps transport errors to [VanaChatErrorKind]. A chip tap
+  /// is a plain user message ([tapChip]), except a fixed-label chip, which
+  /// acts at once on the no-model endpoint ([actAtOnce], mp-464).
   const VanaChatControllerProvider._({
     required VanaChatControllerFamily super.from,
     required ({VanaConversationKind kind, String? conversationId})
@@ -73,15 +76,16 @@ final class VanaChatControllerProvider
 }
 
 String _$vanaChatControllerHash() =>
-    r'fe0c825677a9602eb6ed5f548c1212604bb859a9';
+    r'583735b28f0d170eb98320cf3d58b5c578acf8bf';
 
 /// One Vana conversation (planning or general), keyed by kind + id.
 ///
 /// Streams turns from [VanaChatRepository], accumulates text and parts into
 /// the last message, folds `batch` parts into [MealPlanController] (they
 /// are never rendered inline) and `memory_saved` parts into the memory
-/// repository, and maps transport errors to [VanaChatErrorKind]. Chip taps
-/// are plain user messages ([tapChip]).
+/// repository, and maps transport errors to [VanaChatErrorKind]. A chip tap
+/// is a plain user message ([tapChip]), except a fixed-label chip, which
+/// acts at once on the no-model endpoint ([actAtOnce], mp-464).
 
 final class VanaChatControllerFamily extends $Family
     with
@@ -106,8 +110,9 @@ final class VanaChatControllerFamily extends $Family
   /// Streams turns from [VanaChatRepository], accumulates text and parts into
   /// the last message, folds `batch` parts into [MealPlanController] (they
   /// are never rendered inline) and `memory_saved` parts into the memory
-  /// repository, and maps transport errors to [VanaChatErrorKind]. Chip taps
-  /// are plain user messages ([tapChip]).
+  /// repository, and maps transport errors to [VanaChatErrorKind]. A chip tap
+  /// is a plain user message ([tapChip]), except a fixed-label chip, which
+  /// acts at once on the no-model endpoint ([actAtOnce], mp-464).
 
   VanaChatControllerProvider call({
     required VanaConversationKind kind,
@@ -126,8 +131,9 @@ final class VanaChatControllerFamily extends $Family
 /// Streams turns from [VanaChatRepository], accumulates text and parts into
 /// the last message, folds `batch` parts into [MealPlanController] (they
 /// are never rendered inline) and `memory_saved` parts into the memory
-/// repository, and maps transport errors to [VanaChatErrorKind]. Chip taps
-/// are plain user messages ([tapChip]).
+/// repository, and maps transport errors to [VanaChatErrorKind]. A chip tap
+/// is a plain user message ([tapChip]), except a fixed-label chip, which
+/// acts at once on the no-model endpoint ([actAtOnce], mp-464).
 
 abstract class _$VanaChatController extends $AsyncNotifier<VanaChatState> {
   late final _$args =

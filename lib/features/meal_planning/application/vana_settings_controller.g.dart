@@ -49,7 +49,7 @@ final class VanaSettingsControllerProvider
 }
 
 String _$vanaSettingsControllerHash() =>
-    r'b6c8d53219fc5e9b8b53864fb1bc346e37309a1c';
+    r'a668590be598d698bbde037d2b50715b45ebe223';
 
 /// Settings are `user_memories` rows: local-first through
 /// [UserMemoryRepository], plus — when online — the `set_setting` action so
