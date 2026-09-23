@@ -998,6 +998,35 @@ class ContentKeys {
       'subscription.includes_header';
   static const String subscriptionUpgradeButton = 'subscription.upgrade_button';
 
+  // Redeem code (mp-458): the entry in the paywall's ⋯ menu (mp-494) and on
+  // the Subscription screen (mp-495), our own Code entry sheet, what a Code
+  // did and why one was refused — lib/features/subscription. `{days}` is the
+  // days of Pro granted. The refusals mirror `redeem-code`'s REFUSALS.
+  static const String redeemCodeButton = 'redeem_code.button';
+  static const String redeemCodeTitle = 'redeem_code.title';
+  static const String redeemCodeBody = 'redeem_code.body';
+  static const String redeemCodeHint = 'redeem_code.hint';
+  static const String redeemCodeSubmit = 'redeem_code.submit';
+  static const String redeemCodeSuccessCoach = 'redeem_code.success_coach';
+  static const String redeemCodeSuccessGiveaway =
+      'redeem_code.success_giveaway';
+  static const String redeemCodeSuccessPaired = 'redeem_code.success_paired';
+  static const String redeemCodeSuccessAttributed =
+      'redeem_code.success_attributed';
+  static const String redeemCodeRefusedNotFound =
+      'redeem_code.refused_not_found';
+  static const String redeemCodeRefusedNotYetValid =
+      'redeem_code.refused_not_yet_valid';
+  static const String redeemCodeRefusedExpired = 'redeem_code.refused_expired';
+  static const String redeemCodeRefusedUsed = 'redeem_code.refused_used';
+  static const String redeemCodeRefusedAlreadyRedeemed =
+      'redeem_code.refused_already_redeemed';
+  static const String redeemCodeRefusedOwnCode = 'redeem_code.refused_own_code';
+  static const String redeemCodeRefusedOther = 'redeem_code.refused_other';
+  static const String redeemCodeFailedSignIn = 'redeem_code.failed_sign_in';
+  static const String redeemCodeFailedUnavailable =
+      'redeem_code.failed_unavailable';
+
   /// Interpolates `{name}` placeholders in a content value:
   /// `format('Give me {n} seconds', {'n': 30})`.
   static String format(String value, Map<String, Object?> params) {

@@ -8,8 +8,11 @@
 /// and date (mp-497 §2); Upgrade only once the plan has ended, opening the
 /// paywall; Manage subscription only with a store subscription, going where
 /// the paywall's Manage goes; the tick list with the AI features under the
-/// one Vana line; no Redeem code yet (mp-496 §3); Settings opening the
-/// screen as a named push; light and dark goldens (mp-497 §3).
+/// one Vana line; Redeem code on every plan state, opening our own Code
+/// entry, where a giveaway Code sent to `redeem-code` (its own answer, fed at
+/// the functions client) turns an ended plan into a running one (mp-458,
+/// mp-495 §3); Settings opening the screen as a named push; light and dark
+/// goldens (mp-497 §3).
 ///
 /// Fonts: widget tests render with the test font, so the goldens pin LAYOUT,
 /// COLOUR and STRUCTURE, not glyph shapes.
@@ -28,6 +31,7 @@ import 'package:go_router/go_router.dart';
 import 'package:intl/intl.dart';
 import 'package:mocktail/mocktail.dart';
 import 'package:purchases_flutter/purchases_flutter.dart';
+import 'package:supabase_flutter/supabase_flutter.dart';
 
 import 'package:mealvana_endurance/features/content/application/content_service.dart';
 import 'package:mealvana_endurance/features/settings/domain/settings_state.dart';
@@ -39,6 +43,7 @@ import 'package:mealvana_endurance/features/subscription/data/user_entitlements_
 import 'package:mealvana_endurance/features/subscription/presentation/pro_gate_redirect.dart';
 import 'package:mealvana_endurance/features/subscription/presentation/screens/paywall_screen.dart';
 import 'package:mealvana_endurance/features/subscription/presentation/screens/subscription_screen.dart';
+import 'package:mealvana_endurance/features/subscription/presentation/widgets/redeem_code_sheet.dart';
 import 'package:mealvana_endurance/shared/services/app_config.dart';
 import 'package:mealvana_endurance/shared/services/notification_service.dart';
 import 'package:mealvana_endurance/shared/widgets/kyle_design/cards/feature_list.dart';
@@ -52,6 +57,10 @@ import '../customer_info_fixtures.dart';
 class _MockSubscriptionService extends Mock implements SubscriptionService {}
 
 class _MockRepository extends Mock implements UserEntitlementsRepository {}
+
+class _MockSupabase extends Mock implements SupabaseClient {}
+
+class _MockFunctions extends Mock implements FunctionsClient {}
 
 class _NoopScheduler implements LocalNotificationScheduler {
   @override
@@ -102,6 +111,7 @@ const _status = ValueKey('subscription.status');
 const _date = ValueKey('subscription.date');
 const _upgrade = ValueKey('subscription.upgrade_button');
 const _manage = ValueKey('subscription.manage_button');
+const _redeem = ValueKey('subscription.redeem_code_button');
 
 void main() {
   late _MockSubscriptionService service;
@@ -128,13 +138,14 @@ void main() {
     required CustomerInfo info,
     bool storeSubscription = true,
     bool launchOpens = true,
+    SupabaseClient? supabase,
   }) {
     when(() => service.fetchStatus()).thenAnswer((_) async => statusOf(info));
     when(
       () => service.hasStoreSubscriptionOnRecord(),
     ).thenAnswer((_) async => storeSubscription);
     return [
-      mockAppExternalDeps(),
+      mockAppExternalDeps(supabaseClient: supabase),
       subscriptionServiceProvider.overrideWithValue(service),
       userEntitlementsRepositoryProvider.overrideWithValue(repo),
       entitlementAnswerTimeoutProvider.overrideWithValue(
@@ -158,6 +169,7 @@ void main() {
     required CustomerInfo info,
     bool storeSubscription = true,
     bool launchOpens = true,
+    SupabaseClient? supabase,
   }) async {
     tester.view.physicalSize = const Size(393, 852);
     tester.view.devicePixelRatio = 1;
@@ -185,6 +197,7 @@ void main() {
           info: info,
           storeSubscription: storeSubscription,
           launchOpens: launchOpens,
+          supabase: supabase,
         ),
         child: MaterialApp.router(routerConfig: router),
       ),
@@ -344,12 +357,79 @@ void main() {
     );
   });
 
-  testWidgets('no Redeem code before the update (mp-496 §3)', (tester) async {
-    await pump(tester, info: customerInfoLapsed);
-    expect(
-      find.textContaining(RegExp('redeem', caseSensitive: false)),
-      findsNothing,
-    );
+  group('Redeem code (mp-458, mp-495 §3)', () {
+    for (final (name, info) in [
+      ('trial', customerInfoTrial),
+      ('active', customerInfoOpen),
+      ('ended', customerInfoLapsed),
+    ]) {
+      testWidgets('there on $name, opening our own Code entry', (tester) async {
+        await pump(tester, info: info);
+        await tester.ensureVisible(find.byKey(_redeem));
+        expect(
+          tester
+              .widget<Text>(
+                find.descendant(
+                  of: find.byKey(_redeem),
+                  matching: find.byType(Text),
+                ),
+              )
+              .data,
+          _copy('redeem_code.button'),
+        );
+        await tester.tap(find.byKey(_redeem));
+        await tester.pumpAndSettle();
+        expect(find.byType(RedeemCodeSheet), findsOneWidget);
+        expect(find.text(_copy('redeem_code.title')), findsOneWidget);
+      });
+    }
+
+    testWidgets('a giveaway Code turns an ended plan into a running one', (
+      tester,
+    ) async {
+      final functions = _MockFunctions();
+      when(
+        () => functions.invoke('redeem-code', body: any(named: 'body')),
+      ).thenAnswer(
+        (_) async => FunctionResponse(
+          status: 200,
+          data: {'ok': true, 'kind': 'giveaway', 'pro_days': 365},
+        ),
+      );
+      final supabase = _MockSupabase();
+      when(() => supabase.functions).thenReturn(functions);
+      var granted = false;
+      when(() => service.forgetCachedStatus()).thenAnswer((_) async {
+        granted = true;
+      });
+
+      await pump(tester, info: customerInfoLapsed, supabase: supabase);
+      // RevenueCat holds the grant once the cache is dropped.
+      when(() => service.fetchStatus()).thenAnswer(
+        (_) async =>
+            statusOf(granted ? customerInfoGranted : customerInfoLapsed),
+      );
+      expect(textOf(tester, _status), _copy('subscription.status_ended'));
+
+      await tester.ensureVisible(find.byKey(_redeem));
+      await tester.tap(find.byKey(_redeem));
+      await tester.pumpAndSettle();
+      await tester.enterText(find.byKey(RedeemCodeSheet.fieldKey), 'win365');
+      await tester.pump();
+      await tester.tap(find.byKey(RedeemCodeSheet.submitKey));
+      await tester.pumpAndSettle();
+
+      verify(
+        () => functions.invoke('redeem-code', body: {'code': 'WIN365'}),
+      ).called(1);
+      expect(find.byType(RedeemCodeSheet), findsNothing);
+      expect(
+        find.text('Code redeemed. You have 365 days of Pro.'),
+        findsOneWidget,
+      );
+      expect(textOf(tester, _status), _copy('subscription.status_active'));
+      expect(find.byKey(_upgrade), findsNothing);
+    });
   });
 
   testWidgets('renders without overflow (smoke)', (tester) async {

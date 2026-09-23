@@ -895,5 +895,25 @@
     "ended_no_date": "Your data is read-only until you subscribe.",
     "includes_header": "What your plan includes",
     "upgrade_button": "Upgrade"
+  },
+  "redeem_code": {
+    "button": "Redeem code",
+    "title": "Redeem a code",
+    "body": "Enter the code you were given.",
+    "hint": "Your code",
+    "submit": "Redeem",
+    "success_coach": "You're set up as a coach, with {days} days of Pro.",
+    "success_giveaway": "Code redeemed. You have {days} days of Pro.",
+    "success_paired": "Code redeemed. Your coach will see your request to pair.",
+    "success_attributed": "Code redeemed.",
+    "refused_not_found": "We don't recognise that code. Check it and try again.",
+    "refused_not_yet_valid": "That code isn't active yet.",
+    "refused_expired": "That code has expired.",
+    "refused_used": "That code has already been used.",
+    "refused_already_redeemed": "You've already used that code.",
+    "refused_own_code": "That's your own code. Share it with your athletes.",
+    "refused_other": "That code can't be used.",
+    "failed_sign_in": "Sign in to redeem a code.",
+    "failed_unavailable": "We couldn't redeem that code just now. Try again in a moment."
   }
 }

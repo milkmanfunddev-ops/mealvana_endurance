@@ -11,9 +11,9 @@
 
 **Touches:** lib/features/subscription/presentation/screens/paywall_screen.dart, lib/features/subscription/presentation/screens/subscription_screen.dart, lib/features/subscription/application/code_entry_controller.dart, lib/features/content/domain/content_keys.dart, test/features/subscription/application/code_entry_controller_test.dart, test/features/subscription/presentation/paywall_screen_test.dart
 
-- [ ] Redeem code in the ⋯ menu and on the Subscription screen (screen widget tests).
-- [ ] The entry sends the code and shows each result (controller test with a fake function).
+- [x] Redeem code in the ⋯ menu and on the Subscription screen (screen widget tests).
+- [x] The entry sends the code and shows each result (controller test with a fake function).
 - [ ] A coach code opens the app without the paywall on the dev simulator.
-- [ ] Copy from the content system.
+- [x] Copy from the content system.
 
 Next: /implement-lee paywall
