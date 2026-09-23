@@ -4,7 +4,7 @@
 import { test } from 'node:test';
 import assert from 'node:assert/strict';
 import { spawnSync } from 'node:child_process';
-import { mkdtempSync } from 'node:fs';
+import { mkdtempSync, writeFileSync, readFileSync } from 'node:fs';
 import { tmpdir } from 'node:os';
 import { join, dirname } from 'node:path';
 import { fileURLToPath } from 'node:url';
@@ -115,4 +115,31 @@ test('the CLI claims, refuses with exit 3, lists and releases', () => {
   assert.equal(run('release', 'build', 'testing-wave-02').status, 0);
   assert.equal(run('claim', 'build', 'testing-wave-03', '--wait', '0').status, 0);
   assert.equal(run('claim', 'nonsense', 'x').status, 64);
+});
+
+test('claiming again refreshes the claim so a long run never goes stale under itself', () => {
+  const dir = state();
+  const c = clock();
+  acquire('slot', 'testing-wave-02', { dir, now: c.now });
+  c.advance(LOCKS.slot.staleMs - MIN);
+  assert.equal(acquire('slot', 'testing-wave-02', { dir, now: c.now }).reused, true);
+  c.advance(2 * MIN);
+  assert.deepEqual(holders('slot', { dir, now: c.now }).map(h => h.stale), [false]);
+});
+
+test('a torn state file stops the claim instead of freeing every lock', () => {
+  const dir = state();
+  acquire('slot', 'testing-wave-02', { dir });
+  writeFileSync(join(dir, 'locks.json'), '{"slot": [{"owner": "testing-wave-02", "si');
+  assert.throws(() => acquire('slot', 'testing-wave-03', { dir }), /unreadable/);
+  assert.match(readFileSync(join(dir, 'locks.json'), 'utf8'), /"si$/);
+});
+
+test('the CLI refuses a --wait that is not a number of minutes', () => {
+  const dir = state();
+  const r = spawnSync(process.execPath, [cli, 'claim', 'slot', 'testing-wave-02', '--wait', '5m'], {
+    env: { ...process.env, TESTING_WAVE_STATE: dir }, encoding: 'utf8', timeout: 10_000,
+  });
+  assert.equal(r.status, 64);
+  assert.match(r.stderr, /--wait takes a number of minutes/);
 });

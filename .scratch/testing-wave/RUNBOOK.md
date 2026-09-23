@@ -52,8 +52,6 @@ Frees its memory before the build. "found nothing to terminate" is fine.
 LOCK claim build OWNER           # waits up to 45 min; one build on the Mac at a time
 ```
 
-No full unit-test run while a wave is live, and never `flutter build`.
-
 ## 5. Run the dev debug build, console to the run folder
 
 In the background (the Bash tool's `run_in_background`), from your worktree:
@@ -99,10 +97,18 @@ A build that fails: release the lock, write a bug Finding with the console excer
 Read, never write, unless your ticket's criteria name the write (a Grant, for example).
 
 - RevenueCat: the v2 API with the secret key in `secrets/revenuecat.env` (main clone), or the
-  RevenueCat MCP. One RevenueCat project serves dev and prod, so reads only.
+  RevenueCat MCP.
 - Dev database: `SELECT` statements only, through the Management API `database/query` on the dev
-  project, as `docs/deployment/supabase-deploy-playbook.md` describes. Never the prod project.
+  project, as `docs/deployment/supabase-deploy-playbook.md` describes.
 - Edge-function logs for the functions the scenario touched: `scripts/edge_logs.sh`.
+
+Both the SQL and the logs need a Management API token. Read it from the main clone without
+printing it, once per shell:
+
+```
+export SUPABASE_PAT="$(sed -n 's/^SUPABASE_MANAGEMENT_TOKEN=//p' /Users/leemartin/development/mealvana_endurance/secrets/supabase_management_api.env)"
+export SUPABASE_ACCESS_TOKEN="$SUPABASE_PAT"
+```
 
 Save each extract to `RUNS` (`revenuecat-<what>.json`, `db-<what>.txt`) and compare it with
 `RUNS/expected.md`. Every mismatch is a Finding.
@@ -134,9 +140,10 @@ FINDINGS index --out "$TMPDIR/testing-wave-index.md"   # exit 2 names a malforme
 
 Do not commit `INDEX.md`; the wave lead regenerates it after merging.
 
-Keep going after a Finding. Stop only when a Finding makes the rest of the scenario meaningless:
-then say so in that Finding (`**Actual.**` ends with "Ticket stopped here: <why>") and go to step
-11. A failed in-app delete account is always a hard stop.
+Keep going after a Finding. Stop only when a Finding makes the rest of the scenario meaningless
+(the spec says when): say so in that Finding (`**Actual.**` ends with "Ticket stopped here:
+<why>"), then mark the run stopped in `RUNS/STOPPED.md`: the Finding's file name, why, and the
+step or criterion the retest resumes from. Go to step 11. A run with no `STOPPED.md` ran to the end.
 
 ## 11. Release everything
 
@@ -147,7 +154,10 @@ At the end of every run, stopped or not, in this order:
 2. Stop `flutter run` (kill the background task) and terminate the app on the simulator.
 3. `SYNC simulator release <name>`
 4. `LOCK release build OWNER` (harmless if already released), then `LOCK release slot OWNER`.
-5. Commit `.scratch/testing-wave/findings/NN-*.md` and `RUNS` on your branch, explicit paths only.
+5. Scan the console before committing it: `grep -nE 'eyJ[A-Za-z0-9_-]{10,}|Bearer |sk_|sbp_' RUNS/console.log`.
+   Any hit: delete `console.log` and commit `console-excerpts.log` with only the lines your
+   Findings cite, the hits cut out.
+6. Commit `.scratch/testing-wave/findings/NN-*.md` and `RUNS` on your branch, explicit paths only.
 
 `LOCK list` shows what is still held. A claim left by a crashed agent is dropped on the next claim
 once it is older than the stale timeout (slot 4 h, build 30 min).

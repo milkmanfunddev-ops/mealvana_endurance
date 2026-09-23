@@ -13,7 +13,7 @@
 
 import { resolve } from 'node:path';
 import { fileURLToPath } from 'node:url';
-import { stateDir, sleepSync, withJson } from './state.mjs';
+import { stateDir, sleepSync, withJson, flag, minutesFlag } from './state.mjs';
 
 const MIN = 60_000;
 export const LOCKS = {
@@ -24,20 +24,27 @@ export const LOCKS = {
 };
 const FILE = 'locks.json';
 
-function spec(name) {
+function lockConfig(name) {
   const s = LOCKS[name];
   if (!s) throw new Error(`no lock "${name}": use ${Object.keys(LOCKS).join(' or ')}`);
   return s;
 }
 
+const isStale = (h, t, staleMs) => t - Date.parse(h.since) > staleMs;
+
 function tryOnce(name, owner, { dir, now, staleMs, cap }) {
   return withJson(dir, FILE, all => {
     const t = now();
     const list = all[name] ?? [];
-    const dropped = list.filter(h => t - Date.parse(h.since) > staleMs);
+    const dropped = list.filter(h => isStale(h, t, staleMs));
     const live = list.filter(h => !dropped.includes(h));
     all[name] = live;
-    if (live.some(h => h.owner === owner)) return { acquired: true, reused: true, owner, dropped, held: live };
+    const mine = live.find(h => h.owner === owner);
+    if (mine) {
+      // Claiming again is a heartbeat: a long run that re-claims never goes stale under itself.
+      mine.since = new Date(t).toISOString();
+      return { acquired: true, reused: true, owner, dropped, held: live };
+    }
     if (live.length >= cap) return { acquired: false, owner, dropped, held: live };
     live.push({ owner, since: new Date(t).toISOString() });
     return { acquired: true, reused: false, owner, dropped, held: live };
@@ -47,7 +54,7 @@ function tryOnce(name, owner, { dir, now, staleMs, cap }) {
 /** Claim a place in the lock, waiting up to `waitMs` (polling every `pollMs`). */
 export function acquire(name, owner, { dir = stateDir(), now = Date.now, sleep = sleepSync, waitMs = 0, pollMs = 30_000, staleMs, cap } = {}) {
   if (!owner) throw new Error('a claim needs an owner (the ticket, e.g. testing-wave-02)');
-  const s = spec(name);
+  const s = lockConfig(name);
   const opts = { dir, now, staleMs: staleMs ?? s.staleMs, cap: cap ?? s.cap };
   const start = now();
   const dropped = [];
@@ -62,7 +69,7 @@ export function acquire(name, owner, { dir = stateDir(), now = Date.now, sleep =
 }
 
 export function release(name, owner, { dir = stateDir() } = {}) {
-  spec(name);
+  lockConfig(name);
   return withJson(dir, FILE, all => {
     const list = all[name] ?? [];
     all[name] = list.filter(h => h.owner !== owner);
@@ -71,17 +78,9 @@ export function release(name, owner, { dir = stateDir() } = {}) {
 }
 
 /** Who holds the lock now, stale claims included (they go on the next claim). */
-export function holders(name, { dir = stateDir(), now = Date.now } = {}) {
-  const s = spec(name);
-  return withJson(dir, FILE, all => (all[name] ?? []).map(h => ({ ...h, stale: now() - Date.parse(h.since) > s.staleMs })));
-}
-
-function flag(args, name) {
-  const i = args.indexOf(name);
-  if (i < 0) return undefined;
-  const v = args[i + 1];
-  args.splice(i, 2);
-  return v;
+export function holders(name, { dir = stateDir(), now = Date.now, staleMs } = {}) {
+  const s = lockConfig(name);
+  return withJson(dir, FILE, all => (all[name] ?? []).map(h => ({ ...h, stale: isStale(h, now(), staleMs ?? s.staleMs) })));
 }
 
 if (process.argv[1] && resolve(process.argv[1]) === fileURLToPath(import.meta.url)) {
@@ -90,14 +89,14 @@ if (process.argv[1] && resolve(process.argv[1]) === fileURLToPath(import.meta.ur
   const usage = () => { process.stderr.write('usage: lock.mjs claim slot|build <owner> [--wait <minutes>] [--stale <minutes>] | release slot|build <owner> | list\n'); process.exit(64); };
   const print = o => process.stdout.write(JSON.stringify(o, null, 2) + '\n');
   if (cmd === 'claim') {
-    const wait = flag(args, '--wait');
-    const stale = flag(args, '--stale');
+    let waitMs, staleMs;
+    try {
+      waitMs = minutesFlag(flag(args, '--wait'), '--wait');
+      staleMs = minutesFlag(flag(args, '--stale'), '--stale');
+    } catch (e) { process.stderr.write(e.message + '\n'); process.exit(64); }
     const [name, owner] = args;
     if (!LOCKS[name] || !owner) usage();
-    const r = acquire(name, owner, {
-      waitMs: wait === undefined ? LOCKS[name].waitMs : Number(wait) * MIN,
-      ...(stale !== undefined ? { staleMs: Number(stale) * MIN } : {}),
-    });
+    const r = acquire(name, owner, { waitMs: waitMs ?? LOCKS[name].waitMs, staleMs });
     print(r);
     process.exit(r.acquired ? 0 : 3);
   } else if (cmd === 'release') {

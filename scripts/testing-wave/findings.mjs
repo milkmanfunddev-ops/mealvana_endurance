@@ -15,6 +15,7 @@
 import { readFileSync, writeFileSync, readdirSync, existsSync } from 'node:fs';
 import { join, dirname, basename, resolve } from 'node:path';
 import { fileURLToPath } from 'node:url';
+import { flag } from './state.mjs';
 
 export const KINDS = ['bug', 'ssot-conflict', 'followup-test', 'idea'];
 export const STATUSES = ['open', 'triaged', 'fixing', 'closed', 'wontfix'];
@@ -121,14 +122,6 @@ export function newFinding(dir, ticket, title, { kind, run, template = join(dir,
     .replace(/^- run:.*$/m, `- run: ${run}`);
   writeFileSync(path, text, { flag: 'wx' });
   return path;
-}
-
-function flag(args, name) {
-  const i = args.indexOf(name);
-  if (i < 0) return undefined;
-  const v = args[i + 1];
-  args.splice(i, 2);
-  return v;
 }
 
 if (process.argv[1] && resolve(process.argv[1]) === fileURLToPath(import.meta.url)) {
