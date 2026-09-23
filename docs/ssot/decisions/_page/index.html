@@ -56,11 +56,12 @@
   .change h4 { margin: 2px 0 6px; font-size: 17px; }
   .change p { margin: 4px 0; font-size: 15px; white-space: pre-wrap; }
   .change .acts { margin-top: 8px; }
-  section.d { display: grid; grid-template-columns: minmax(220px, 5fr) 7fr; gap: 22px; padding: 18px 0 22px; border-bottom: 1px solid var(--line); scroll-margin-top: 90px; }
+  section.d { display: grid; grid-template-columns: minmax(260px, 6fr) 7fr; gap: 22px; padding: 18px 0 22px; border-bottom: 1px solid var(--line); scroll-margin-top: 90px; }
+  .figs { display: flex; flex-direction: column; gap: 12px; }
   .figwrap { display: flex; flex-direction: column; gap: 6px; }
-  .fig { background: var(--ground-2); border: 1px solid var(--line); border-radius: 10px; min-height: 220px; display: flex; align-items: center; justify-content: center; overflow: hidden; padding: 10px; }
-  .fig img { max-height: 520px; max-width: 100%; border-radius: 6px; object-fit: contain; }
-  .fig svg { max-width: 100%; height: auto; }
+  .fig { background: var(--ground-2); border: 1px solid var(--line); border-radius: 10px; min-height: 120px; display: flex; align-items: center; justify-content: center; overflow: hidden; padding: 12px; }
+  .fig img { max-height: 560px; max-width: 100%; border-radius: 6px; object-fit: contain; }
+  .fig svg { width: 100%; max-width: 100%; height: auto; }
   .fig .none { color: var(--muted); font-size: 13px; text-align: center; padding: 20px; }
   .fig .none b { display: block; font-size: 32px; font-family: "Sansita", serif; color: var(--line); }
   .cap { font-size: 12px; color: var(--muted); }
@@ -73,6 +74,7 @@
   .pill { display: inline-block; padding: 1px 8px; border-radius: 999px; font-size: 12px; font-weight: 600; }
   .pill.proposed { background: var(--pending-soft); color: var(--pending); }
   .pill.approved { background: var(--ok-soft); color: var(--ok); }
+  button.linkish { background: none; border: 0; padding: 0; color: var(--accent); font: inherit; font-weight: 600; cursor: pointer; text-decoration: underline; }
   .pill.rejected { background: var(--no-soft); color: var(--no); }
   .pill.withdrawn { background: var(--ground-2); color: var(--muted); }
   .pill.amended, .pill.open { background: var(--amend-soft); color: var(--amend); }
@@ -81,6 +83,10 @@
   .part { margin: 8px 0; max-width: 62ch; }
   .part .k { font-size: 12px; text-transform: uppercase; letter-spacing: .08em; color: var(--muted); }
   .part p { margin: 2px 0 0; white-space: pre-wrap; }
+  .answer { margin: 8px 0 4px; max-width: 62ch; font-size: 17px; line-height: 1.55; }
+  .answer p { margin: 0; white-space: pre-wrap; }
+  .answer .k { font-size: 12px; text-transform: uppercase; letter-spacing: .08em; color: var(--accent); }
+  .txt > .meta.brief { margin-bottom: 4px; }
   .amendbox { background: var(--amend-soft); border-left: 3px solid var(--amend); padding: 8px 12px; margin: 10px 0; border-radius: 0 6px 6px 0; max-width: 62ch; }
   .amendbox .k { font-size: 12px; text-transform: uppercase; letter-spacing: .08em; color: var(--amend); }
   .amendbox p { margin: 2px 0 0; white-space: pre-wrap; }
@@ -167,7 +173,7 @@
     .acts button[data-act="undo"] { flex: 0 0 auto; }
     textarea, input, select { font-size: 16px; }
     .pager button { flex: 1 1 100%; }
-    .part, .qline, ol.clauses, details.more, .amendbox, .sub-form, .explain { max-width: none; }
+    .part, .qline, ol.clauses, details.more, .amendbox, .answer, .sub-form, .explain { max-width: none; }
     .toast { left: 12px; right: 12px; bottom: 12px; max-width: none; text-align: center; }
     .detail-head { gap: 8px; }
     .work .t .cites button, .work .d-row button { min-height: 28px; padding: 2px 10px; }
@@ -205,7 +211,7 @@
 (() => {
   const $ = (s, r = document) => r.querySelector(s);
   const esc = s => String(s ?? '').replace(/[&<>"']/g, c => ({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));
-  const state = { decisions: new Map(), verdicts: new Map(), chats: new Map(), tickets: new Map(), meta: {}, q: '', feat: '', pendingOnly: false, cat: '', db: null, sample: null, artifact: null, open: new Set(), inflight: new Map(), changes: new Map(), vocab: new Map(), termRe: null, sending: null, sentFlash: null, lastSent: null };
+  const state = { decisions: new Map(), verdicts: new Map(), chats: new Map(), tickets: new Map(), meta: {}, q: '', feat: '', pendingOnly: false, cat: '', db: null, sample: null, artifact: null, open: new Set(), inflight: new Map(), changes: new Map(), vocab: new Map(), termRe: null, sending: null, sentFlash: null, lastSent: null, toolsOk: false };
   const featName = f => (state.meta.featureNames && state.meta.featureNames[f]) || f;
   const catKey = d => d.feature + '|' + d.category;
   const chatDocId = id => id.replace(/[^A-Za-z0-9_\-.~:@+]/g, '_').slice(0, 180);
@@ -222,21 +228,27 @@
   function eff(d) {
     const v = state.verdicts.get(d.id);
     if (v && !v.applied) return { status: v.verdict === 'approve' ? 'approved' : v.verdict === 'withdraw' ? 'withdrawn' : v.verdict === 'reject' ? 'rejected' : 'amended', queued: true, text: v.text };
+    if (acceptedEdits(d.id).length) return { status: 'amended', queued: true };
     return { status: d.status, queued: false };
   }
+  // Edits Lee accepted on the page that the terminal has not written to the record yet.
+  const acceptedEdits = id => [...state.verdicts.values()].filter(v => isChangeVerdict(v) && !v.applied && v.accepted && v.change && v.change.op === 'edit' && v.change.id === id).map(v => v.change);
   const isQuestion = d => d.kind === 'question';
+  // A folded card answers for the ids it replaced (its `folded` list), so old links still land.
+  const lookup = id => state.decisions.get(id) || [...state.decisions.values()].find(d => (d.folded || '').split(/[,\s]+/).includes(id));
+  const isOpenQ = d => isQuestion(d) && d.status !== 'answered'; // an answered question is history, not work
   const GONE = ['rejected', 'withdrawn']; // rulings that take a card out of every count
   const isPending = d => { if (isQuestion(d)) return false; const e = eff(d); return !e.queued && (e.status === 'proposed' || e.status === 'amended'); };
   const isChangeVerdict = v => v.verdict === 'change';
 
   function matchesSearch(d) {
     if (!state.q) return true;
-    const hay = [d.id, d.title, d.category, d.context, d.question, d.decision, d.why, d.alternatives, d.touches, d.details, d.original, d.leeSaid].join(' ').toLowerCase();
+    const hay = [d.id, d.folded, d.title, d.category, d.context, d.question, d.decision, d.why, d.alternatives, d.touches, d.details, d.original, d.leeSaid].join(' ').toLowerCase();
     return state.q.split(/\s+/).every(w => hay.includes(w));
   }
   function visible(d) {
     if (state.feat && d.feature !== state.feat) return false;
-    if (state.pendingOnly && !isPending(d) && !isQuestion(d)) return false;
+    if (state.pendingOnly && !isPending(d) && !isOpenQ(d)) return false;
     return matchesSearch(d);
   }
 
@@ -253,7 +265,7 @@
       if (state.feat && d.feature !== state.feat) continue;
       const k = catKey(d);
       if (!g.has(k)) g.set(k, { key: k, feature: d.feature, category: d.category, n: 0, pend: 0, open: 0, queued: 0, detailPend: 0, items: [] });
-      const x = g.get(k); x.n++; if (isPending(d)) { x.pend++; if (d.detail) x.detailPend++; } if (isQuestion(d)) x.open++; const v = state.verdicts.get(d.id); if (v && !v.applied) x.queued++; x.items.push(d);
+      const x = g.get(k); x.n++; if (isPending(d)) { x.pend++; if (d.detail) x.detailPend++; } if (isOpenQ(d)) x.open++; const v = state.verdicts.get(d.id); if (v && !v.applied) x.queued++; x.items.push(d);
     }
     for (const [id, v] of state.verdicts) if (isChangeVerdict(v) && !v.applied && g.has(v.scope)) g.get(v.scope).queued++;
     return [...g.values()];
@@ -273,11 +285,15 @@
     const stale = c.stale ? `<span class="stale" title="${esc((c.changed || []).join('\n'))}">stale · ${(c.changed || []).length} file${(c.changed || []).length === 1 ? '' : 's'} changed</span>` : '';
     return `<div class="age"><span>${c.how === 'reused' ? 'file from' : 'captured at'} ${esc(c.appVersion || c.commit)}${when ? `, ${when}` : ''}</span>${stale}</div>`;
   }
+  // Up to two pictures stacked in the left column: the screenshot when the card has one, then
+  // its drawn picture(s). A card with none shows one empty box saying what would picture it.
   function figure(d) {
-    const cap = (d.imageCaption ? `<div class="cap">${esc(d.imageCaption)}</div>` : '') + ageLine(d.captured);
-    if (d.imageAssetId) return `<div class="figwrap"><div class="fig"><img src="/_blob/${esc(d.imageAssetId)}" alt="${esc(d.imageCaption || d.title)}" loading="lazy"></div>${cap}</div>`;
-    if (d.svg && /^\s*<svg[\s>]/i.test(d.svg)) return `<div class="figwrap"><div class="fig">${d.svg}</div>${cap}</div>`;
-    return `<div class="fig"><div class="none"><b>?</b>No picture yet.<br>${esc(d.screen || 'Nothing on screen shows this one.')}</div></div>`;
+    const isSvg = t => t && /^\s*<svg[\s>]/i.test(t);
+    const figs = [];
+    if (d.imageAssetId) figs.push(`<div class="figwrap"><div class="fig"><img src="/_blob/${esc(d.imageAssetId)}" alt="${esc(d.imageCaption || d.title)}" loading="lazy"></div>${(d.imageCaption ? `<div class="cap">${esc(d.imageCaption)}</div>` : '') + ageLine(d.captured)}</div>`);
+    for (const svg of [d.svg, d.svg2]) if (isSvg(svg) && figs.length < 2) figs.push(`<div class="figwrap"><div class="fig">${svg}</div></div>`);
+    if (!figs.length) figs.push(`<div class="fig"><div class="none"><b>?</b>No picture yet.<br>${esc(d.screen || 'Nothing on screen shows this one.')}</div></div>`);
+    return `<div class="figs">${figs.join('')}</div>`;
   }
 
   function thread(id, placeholder) {
@@ -293,13 +309,18 @@
     const open = state.open.has(d.id);
     const ctx = d.context ? `<div class="part"><div class="k">Context</div><p>${mark(d.context)}</p></div>` : '';
     if (isQuestion(d)) {
+      // An answered question shows the decision that answered it, and that decision's pictures when it has none of its own.
+      const by = d.status === 'answered' && d.answeredBy ? lookup(d.answeredBy) : null;
+      const pic = by && !d.svg && !d.svg2 && !d.imageAssetId ? { ...by, title: by.title } : d;
+      const answeredLine = by ? `<div class="answer"><div class="k">Answered by</div><p><button class="linkish" data-goto-id="${esc(by.id)}">${esc(by.id)}</button> ${esc(by.title)}</p></div>` : '';
       return `<section class="d question" id="${esc(d.id)}" data-id="${esc(d.id)}">
-      ${figure(d)}
+      ${figure(pic)}
       <div class="txt">
         <h3>${esc(d.title)}</h3>
-        <div class="meta"><span class="pill open">open question</span><span>${esc(d.id)}</span>${d.linked ? `<span>from ${esc(d.linked)}</span>` : ''}<span>${esc(d.source || '')}</span></div>
+        <div class="meta">${d.status === 'answered' ? '<span class="pill approved">answered</span>' : '<span class="pill open">open question</span>'}<span>${esc(d.id)}</span>${d.linked ? `<span>from ${esc(d.linked)}</span>` : ''}<span>${esc(d.source || '')}</span></div>
+        <div class="amendbox"><div class="k">The question</div><p>${mark(d.question)}</p></div>
+        ${answeredLine}
         ${ctx}
-        <div class="amendbox"><div class="k">The question, in Lee's words</div><p>${mark(d.question)}</p></div>
         ${d.why ? `<div class="part"><div class="k">Why it matters</div><p>${mark(d.why)}</p></div>` : ''}
         ${d.touches ? `<div class="part"><div class="k">What it touches</div><p>${mark(d.touches)}</p></div>` : ''}
         <details class="explain" ${open ? 'open' : ''}><summary>Discuss</summary>${thread(d.id, '')}</details>
@@ -311,11 +332,19 @@
     const decisionHtml = cl.length
       ? `<ol class="clauses">${cl.map((c, i) => `<li class="${droppedQ.includes(i + 1) ? 'dropped' : ''}">${mark(c)}</li>`).join('')}</ol>`
       : `<p>${mark(d.decision)}</p>`;
-    const body = d.original
-      ? `<div class="amendbox"><div class="k">Original</div><p>${mark(d.original)}</p></div><div class="amendbox"><div class="k">You said</div><p>${mark(d.leeSaid)}</p></div><div class="part"><div class="k">Rewrite, awaiting your approval</div>${decisionHtml}</div>`
-      : `<div class="part"><div class="k">Decision</div>${decisionHtml}</div>`;
+    // The face: picture, title, question, answer, the three buttons. One idea per card.
+    const answer = `<div class="answer">${d.original ? '<div class="k">Rewrite, awaiting your approval</div>' : ''}${decisionHtml}</div>`;
     const qline = d.question ? `<p class="qline"><b>The question</b>${mark(d.question)}</p>` : '';
+    const edits = acceptedEdits(d.id);
+    const editBox = edits.map(c => `<div class="amendbox"><div class="k">Rewrite accepted on the page; the terminal writes it to the record</div>${['context', 'question', 'decision', 'why', 'alternatives', 'touches'].filter(k => c[k]).map(k => `<p><b>${esc(CHANGE_LABELS[k])}.</b> ${esc(c[k])}</p>`).join('')}</div>`).join('');
+    const myChanges = [...state.verdicts].filter(([, v]) => isChangeVerdict(v) && !v.applied && v.about === d.id);
+    // Everything else lives under More: who ruled and when, where it came from, the reasoning, the numbers.
+    const meta = `<div class="meta"><span class="pill ${e.status}">${e.status}</span>${e.queued ? `<span class="pill queued">${byLine('queued', v && v.by)}</span>` : ruledLine(d)}${d.work === 'pending' ? '<span class="pill amended">work pending</span>' : ''}<span>${esc(d.id)}</span>${d.folded ? `<span>folds ${esc(d.folded)}</span>` : ''}<span>${esc(d.source || '')}</span></div>`;
     const more = [
+      meta,
+      d.original ? `<div class="amendbox"><div class="k">Original</div><p>${mark(d.original)}</p></div><div class="amendbox"><div class="k">You said</div><p>${mark(d.leeSaid)}</p></div>` : '',
+      v && !v.applied && (v.text || droppedQ.length) ? `<div class="amendbox"><div class="k">${v.verdict === 'reject' ? 'Your reason' : 'Your words'} (queued)</div><p>${droppedQ.length ? `Drop ${droppedQ.join(', ')}. ` : ''}${esc(v.text)}</p></div>` : '',
+      d.why ? `<div class="part"><div class="k">Why</div><p>${mark(d.why)}</p></div>` : '',
       d.context ? `<div class="part"><div class="k">Context</div><p>${mark(d.context)}</p></div>` : '',
       d.alternatives ? `<div class="part"><div class="k">What else was considered</div><p>${mark(d.alternatives)}</p></div>` : '',
       d.details ? `<div class="part"><div class="k">Details</div><p>${mark(d.details)}</p></div>` : '',
@@ -324,16 +353,15 @@
     const amendForm = cl.length
       ? `<div class="k" style="font-size:12px;text-transform:uppercase;letter-spacing:.08em;color:var(--muted)">Tick what to drop</div><ol class="clauses">${cl.map((c, i) => `<li><label><input type="checkbox" name="drop" value="${i + 1}"><span>${esc(c)}</span></label></li>`).join('')}</ol><textarea placeholder="What you want instead, or nothing if dropping is enough"></textarea>`
       : `<textarea placeholder="What you want instead"></textarea>`;
+    const brief = e.queued ? `<div class="meta brief"><span class="pill queued">${byLine('queued', v && v.by)}</span></div>` : (e.status !== 'approved' && e.status !== 'proposed' ? `<div class="meta brief"><span class="pill ${e.status}">${e.status}</span></div>` : '');
     return `<section class="d ${d.detail ? 'detail' : ''}" id="${esc(d.id)}" data-id="${esc(d.id)}">
       ${figure(d)}
       <div class="txt">
         <h3>${esc(d.title)}</h3>
-        <div class="meta"><span class="pill ${e.status}">${e.status}</span>${e.queued ? `<span class="pill queued">${byLine('queued', v && v.by)}</span>` : ruledLine(d)}${d.work === 'pending' ? '<span class="pill amended">work pending</span>' : ''}<span>${esc(d.id)}</span><span>${esc(d.source || '')}</span></div>
+        ${brief}
         ${qline}
-        ${body}
-        <div class="part"><div class="k">Why</div><p>${mark(d.why)}</p></div>
-        <details class="more" ${state.open.has('more:' + d.id) ? 'open' : ''}><summary>More</summary>${more}</details>
-        ${v && !v.applied && (v.text || droppedQ.length) ? `<div class="amendbox"><div class="k">${v.verdict === 'reject' ? 'Your reason' : 'Your words'} (queued)</div><p>${droppedQ.length ? `Drop ${droppedQ.join(', ')}. ` : ''}${esc(v.text)}</p></div>` : ''}
+        ${answer}
+        ${editBox}
         <div class="acts">
           <button class="approve ${approved ? 'on' : ''}" data-act="approve">${approved ? 'Approved' : 'Approve'}</button>
           <button class="reject ${e.status === 'rejected' ? 'on' : ''}" data-act="reject">${e.status === 'rejected' ? 'Rejected' : 'Reject'}</button>
@@ -342,23 +370,24 @@
         </div>
         <div class="sub-form" data-form="reject"><textarea placeholder="Reason"></textarea><div class="row"><button data-act="reject-send" class="approve">Reject</button><button data-act="close">Cancel</button></div></div>
         <div class="sub-form" data-form="amend">${amendForm}<div class="row"><button data-act="amend-send" class="approve">Send</button><button data-act="close">Cancel</button></div></div>
-        <details class="explain" ${open ? 'open' : ''}><summary>Explain</summary>
-          ${thread(d.id, '')}
+        <details class="more" ${state.open.has('more:' + d.id) ? 'open' : ''}><summary>More</summary>${more}</details>
+        <details class="explain" ${open ? 'open' : ''}><summary>Ask</summary>
+          ${thread(d.id, 'Ask what a word means, why this was decided, or say what should change')}
+          <div class="row"><button data-act="suggest" ${state.sample && (state.chats.get(d.id) || { turns: [] }).turns.length ? '' : 'disabled'}>Draft the rewrite from this conversation</button></div>
+          ${myChanges.map(([id, v]) => changeCard(id, v)).join('')}
         </details>
       </div>
     </section>`;
   }
 
+  const CHANGE_LABELS = { context: 'Context', question: 'Question', decision: 'Decision', why: 'Why', alternatives: 'What else was considered', touches: 'What it touches', reason: 'Reason' };
   function changeCard(id, v) {
     const c = v.change || {};
     const op = c.op || 'edit';
     return `<div class="change" data-change="${esc(id)}">
-      <div class="op">${op === 'add' ? 'Add a decision' : op === 'delete' ? 'Remove a decision' : 'Edit a decision'}${c.id ? ` · ${esc(c.id)}` : ''}${v.accepted ? ' · accepted' : ''}</div>
+      <div class="op">${op === 'add' ? 'Add a decision' : op === 'delete' ? 'Remove a decision' : 'Edit a decision'}${c.id ? ` · ${esc(c.id)}` : ''}${v.about && v.about !== c.id ? ` · from ${esc(v.about)}` : ''}${v.accepted ? ' · accepted' : ''}</div>
       <h4>${esc(c.title || '')}</h4>
-      ${c.context ? `<p><b>Context.</b> ${esc(c.context)}</p>` : ''}
-      ${c.decision ? `<p><b>Decision.</b> ${esc(c.decision)}</p>` : ''}
-      ${c.why ? `<p><b>Why.</b> ${esc(c.why)}</p>` : ''}
-      ${c.reason ? `<p><b>Reason.</b> ${esc(c.reason)}</p>` : ''}
+      ${Object.keys(CHANGE_LABELS).filter(k => c[k]).map(k => `<p><b>${esc(CHANGE_LABELS[k])}.</b> ${esc(c[k])}</p>`).join('')}
       <div class="acts">${v.accepted ? '<button data-act="change-drop">Undo</button>' : '<button class="approve" data-act="change-accept">Accept</button><button data-act="change-drop">Dismiss</button>'}</div>
     </div>`;
   }
@@ -415,12 +444,12 @@
     const all = sorted().filter(d => !feat || d.feature === feat);
     const cited = new Set(tickets.flatMap(t => t.cites || []));
     const pendingWork = all.filter(d => d.work === 'pending' && !GONE.includes(eff(d).status) && !cited.has(d.id));
-    const questions = all.filter(isQuestion);
+    const questions = all.filter(isOpenQ);
     // Stale pictures, one row per picture: the cards on it, when it was taken, what moved.
     const stale = new Map();
     for (const d of all) if (d.captured?.stale && !GONE.includes(eff(d).status)) { const s = stale.get(d.image) || { key: d.captured.key, c: d.captured, cards: [] }; s.cards.push(d); stale.set(d.image, s); }
     const goto = d => `<button data-goto-id="${esc(d.id)}">${esc(d.id)}</button>`;
-    const row = t => `<div class="t"><div class="num">${esc(t.number)}</div><div><div class="name">${esc(t.title)}</div><div class="st ${t.owed ? 'owed' : ''}">${esc(t.status || t.state)}${t.blockedBy && !/^none/i.test(t.blockedBy) ? ` · blocked by ${esc(t.blockedBy)}` : ''}</div>${(t.cites || []).length ? `<div class="cites">${t.cites.map(id => { const d = state.decisions.get(id); return d ? goto(d) : `<span class="hint">${esc(id)}</span>`; }).join('')}</div>` : ''}</div></div>`;
+    const row = t => `<div class="t"><div class="num">${esc(t.number)}</div><div><div class="name">${esc(t.title)}</div><div class="st ${t.owed ? 'owed' : ''}">${esc(t.status || t.state)}${t.blockedBy && !/^none/i.test(t.blockedBy) ? ` · blocked by ${esc(t.blockedBy)}` : ''}</div>${(t.cites || []).length ? `<div class="cites">${t.cites.map(id => { const d = lookup(id); return d ? goto(d) : `<span class="hint">${esc(id)}</span>`; }).join('')}</div>` : ''}</div></div>`;
     let html = `<div class="cat-head"><div class="fname">${esc(featName(feat))}</div><h2>Work</h2><div class="tools"><span class="hint">${done.length} done · ${next.length} ahead · ${pendingWork.length} not yet ticketed · ${questions.length} open question${questions.length === 1 ? '' : 's'} · ${stale.size} stale picture${stale.size === 1 ? '' : 's'}</span></div></div><div class="work">`;
     html += `<h3>Not yet ticketed</h3><p class="lead">Decisions that reverse or extend what is built. Each becomes a ticket when the tooling cuts the next batch.</p>`;
     html += pendingWork.length ? pendingWork.map(d => `<div class="d-row">${goto(d)}<span>${esc(d.title)}</span><span class="pill ${eff(d).status}">${eff(d).status}</span></div>`).join('') : '<p class="hint">Nothing waiting.</p>';
@@ -464,7 +493,7 @@
         ${next ? `<button data-goto="${esc(next.key)}" class="primary">Next: ${esc(next.category)}</button>` : '<span class="hint">Last category.</span>'}
       </div>`;
     }
-    const pendTotal = all.filter(isPending).length, openQ = all.filter(isQuestion).length, queued = [...state.verdicts.values()].filter(v => !v.applied).length;
+    const pendTotal = all.filter(isPending).length, openQ = all.filter(isOpenQ).length, queued = [...state.verdicts.values()].filter(v => !v.applied).length;
     const sent = state.lastSent ? ` · sent ${state.lastSent.n} to the terminal at ${state.lastSent.at.toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })}${queued ? ', waiting for it to apply' : ', applied'}` : '';
     $('#status').textContent = `${pendTotal} waiting · ${queued} queued${openQ ? ` · ${openQ} open` : ''}${state.db ? '' : ' · offline'}${sent}`;
     $('#menuCount').textContent = pendTotal ? String(pendTotal) : '';
@@ -495,11 +524,39 @@
     try { await state.db.doc('verdicts/' + id).delete(); toast('Verdict removed'); } catch (e) { toast('Could not undo: ' + (e.code || e.message)); }
   }
 
+  // What the Explain thread reads: the card, the cards it names in full, the glossary terms it
+  // uses, the tickets that cite it, and one line per sibling. Capped well under the 64 KiB input limit.
+  const ID_RE = /\b[a-z]+-\d{3}\b/g;
+  const cardText = x => `${x.id} · ${x.title} [${eff(x).status}]\n${x.question ? 'Question: ' + x.question + '\n' : ''}Context: ${x.context}\nDecision: ${x.decision}\nWhy: ${x.why}\n${x.alternatives ? 'What else was considered: ' + x.alternatives + '\n' : ''}What it touches: ${x.touches}${x.details ? '\nDetails: ' + x.details : ''}${x.original ? '\nOriginal text before the amendment: ' + x.original + '\nWhat Lee said: ' + x.leeSaid : ''}`.slice(0, 2500);
+  function refsOf(d) {
+    const ids = new Set();
+    for (const t of [d.linked, d.context, d.decision, d.why, d.alternatives, d.touches, d.details]) for (const m of String(t || '').matchAll(ID_RE)) if (m[0] !== d.id && state.decisions.has(m[0])) ids.add(m[0]);
+    return [...ids].slice(0, 6).map(id => state.decisions.get(id));
+  }
+  function termsUsed(d) {
+    const hay = [d.context, d.question, d.decision, d.why].join(' ');
+    const found = new Set(); const re = terms(); re.lastIndex = 0; let m; while ((m = re.exec(hay))) found.add(m[1]);
+    return [...found].map(n => `- ${n}: ${defOf(n)}`).join('\n');
+  }
+  const ticketsCiting = id => [...state.tickets.values()].filter(t => (t.cites || []).includes(id) && t.body).slice(0, 2).map(t => `TICKET ${t.feature} ${t.number} · ${t.title} (${t.status})\n${t.body.slice(0, 3000)}`).join('\n\n');
+  function pageTools() {
+    if (!state.toolsOk) return undefined;
+    const str = v => String(v ?? '').trim();
+    return [
+      { name: 'read_decision', description: 'Returns the full text of one decision card by id, for example mp-317: title, status, plain words, context, question, decision, why, alternatives, what it touches, details.', inputSchema: { type: 'object', properties: { id: { type: 'string' } }, required: ['id'] }, execute: ({ id }) => { const x = state.decisions.get(str(id)); if (!x) throw new Error('no decision ' + str(id)); return cardText(x); } },
+      { name: 'find_decisions', description: 'Searches every decision card for all the given words and returns up to 12 matches as id, title, status and the start of the decision. Use it to find where a term or behaviour is decided.', inputSchema: { type: 'object', properties: { words: { type: 'string' } }, required: ['words'] }, execute: ({ words }) => { const ws = str(words).toLowerCase().split(/\s+/).filter(Boolean); if (!ws.length) throw new Error('no words'); return sorted().filter(x => { const hay = [x.id, x.title, x.context, x.decision, x.why, x.touches].join(' ').toLowerCase(); return ws.every(w => hay.includes(w)); }).slice(0, 12).map(x => `${x.id} · ${x.title} [${eff(x).status}]: ${x.decision.slice(0, 160)}`).join('\n') || 'nothing matches'; } },
+      { name: 'read_ticket', description: 'Returns one work ticket by feature slug and number, for example paywall 01: what was built, its status and its acceptance criteria.', inputSchema: { type: 'object', properties: { feature: { type: 'string' }, number: { type: 'string' } }, required: ['number'] }, execute: ({ feature, number }) => { const n = str(number).padStart(2, '0'); const t = [...state.tickets.values()].find(x => x.number === n && (!str(feature) || x.feature === str(feature))); if (!t) throw new Error('no ticket ' + n); return `${t.feature} ${t.number} · ${t.title} (${t.status})\n${t.body || ''}`; } },
+      { name: 'read_term', description: 'Returns the glossary definition of a term, or says it has none.', inputSchema: { type: 'object', properties: { term: { type: 'string' } }, required: ['term'] }, execute: ({ term }) => { const t = str(term).toLowerCase(); const v = [...state.vocab.values()].find(x => x.term.toLowerCase() === t); return v ? `${v.term} (${v.area}): ${v.definition}${v.avoid ? ' Avoid: ' + v.avoid : ''}` : `No glossary entry for "${str(term)}".`; } },
+    ];
+  }
   function rulesFor(d, g) {
-    const problem = (state.meta.specs && state.meta.specs[d ? d.feature : g.feature]) || '';
+    const problem = ((state.meta.specs && state.meta.specs[d ? d.feature : g.feature]) || '').slice(0, 4000);
     if (d) {
-      const sib = sorted().filter(x => x.feature === d.feature && x.category === d.category && x.id !== d.id).map(x => `- ${x.id} ${x.title}: ${x.decision}`).join('\n');
-      return `You are explaining one product decision from the Mealvana Endurance app to Lee, the product owner. Answer in plain words, short sentences, no em-dashes, no hedging, no bullet lists unless he asks for options. Keep it under 200 words unless he asks for more. Do not invent facts beyond the material below. If the material does not say, say so and suggest what to check.\n\nFEATURE PROBLEM STATEMENT:\n${problem}\n\nTHE DECISION (${d.id}, category ${d.category}):\nTitle: ${d.title}\nContext: ${d.context}\n${d.kind === 'question' ? `Open question in Lee's words: ${d.question}\n` : d.question ? `The question it answers: ${d.question}\n` : ''}Decision: ${d.decision}\nWhy: ${d.why}\nWhat else was considered: ${d.alternatives}\nWhat it touches: ${d.touches}\n${d.details ? `Implementation details: ${d.details}\n` : ''}${d.original ? `Original text before Lee's amendment: ${d.original}\nWhat Lee said: ${d.leeSaid}\n` : ''}\nSIBLING DECISIONS IN THE SAME CATEGORY:\n${sib}`;
+      const sib = sorted().filter(x => x.feature === d.feature && x.category === d.category && x.id !== d.id).map(x => `- ${x.id} ${x.title}: ${x.decision.slice(0, 200)}`).join('\n').slice(0, 6000);
+      const refs = refsOf(d).map(cardText).join('\n\n');
+      const glossary = termsUsed(d);
+      const tickets = ticketsCiting(d.id);
+      return `You are explaining one product decision from the Mealvana Endurance app to Lee, the product owner, who is building it and needs to understand it well enough to build it and to judge it. Answer in plain words, short sentences, no em-dashes, no hedging, no bullet lists unless he asks for options. Define every term of art the first time you use it, with a concrete example when one helps. When a term is defined nowhere in the material, say so plainly instead of guessing. Keep answers under 250 words unless he asks for more. Do not invent facts beyond the material below and what the tools return.${state.toolsOk ? ' Use the tools to read a card, ticket or term the material names when the answer depends on it.' : ''} When Lee says what should change, agree the wording with him in the thread; the page turns the thread into record changes when he presses the draft button.\n\nFEATURE PROBLEM STATEMENT:\n${problem}\n\nTHE DECISION (${d.id}, category ${d.category}, status ${eff(d).status}):\n${cardText(d)}\n${glossary ? `\nGLOSSARY TERMS THIS CARD USES:\n${glossary}\n` : ''}${refs ? `\nCARDS THIS DECISION NAMES, IN FULL:\n${refs}\n` : ''}${tickets ? `\nTICKETS THAT BUILT OR CITE IT:\n${tickets}\n` : ''}\nSIBLING DECISIONS IN THE SAME CATEGORY, ONE LINE EACH:\n${sib}`.slice(0, 60000);
     }
     const list = g.items.map(x => `- ${x.id} ${x.title} [${eff(x).status}]${x.kind === 'question' ? ' (open question: ' + x.question + ')' : ': ' + x.decision}`).join('\n');
     return `You are discussing one category of product decisions from the Mealvana Endurance app with Lee, the product owner. Answer in plain words, short sentences, no em-dashes, no hedging. Keep answers under 250 words unless he asks for more. Refer to decisions by their id. Do not invent facts beyond the material below. If the material does not say, say so.\n\nFEATURE PROBLEM STATEMENT:\n${problem}\n\nCATEGORY: ${g.category}\nDECISIONS:\n${list}`;
@@ -512,7 +569,7 @@
     const turns = [{ role: 'user', content: rulesFor(d, g) }, ...chat.turns.slice(-12).map(t => ({ role: t.role, content: t.text }))];
     let finalText = '';
     try {
-      const { text } = await state.sample(turns, { cache: false, modelTier: 'quick', onText: ({ text }) => { state.inflight.set(id, text); const sec = document.getElementById(id) || document.querySelector(`[data-cat="${CSS.escape(id.slice(4))}"]`); const b = sec && sec.querySelector('.thread .turn:last-child'); if (b && state.inflight.has(id)) b.textContent = text; } });
+      const { text } = await state.sample(turns, { cache: false, modelTier: 'default', tools: pageTools(), onText: ({ text }) => { state.inflight.set(id, text); const sec = document.getElementById(id) || document.querySelector(`[data-cat="${CSS.escape(id.slice(4))}"]`); const b = sec && sec.querySelector('.thread .turn:last-child'); if (b && state.inflight.has(id)) b.textContent = text; } });
       finalText = text;
     } catch (e) {
       finalText = e.text || (e.code === 'not_granted' ? 'You declined in-page Claude for this visit.' : 'Could not answer (' + (e.code || 'error') + ').');
@@ -524,21 +581,22 @@
     if (state.db) state.db.doc('chats/' + chatDocId(id)).set({ key: id, turns: done.turns }).catch(() => {});
   }
 
-  async function suggest(g) {
-    const id = 'cat:' + g.key;
+  // Turns a thread (a card's Explain or a category's Discuss) into change cards Lee accepts on
+  // the page. A card thread may edit its own card, edit or remove another, or add one.
+  async function suggest(g, d) {
+    const id = d ? d.id : 'cat:' + g.key;
     const chat = state.chats.get(id);
     if (!chat || !chat.turns.length) return toast('Nothing to work from yet');
     state.inflight.set(id, 'Drafting changes.'); render();
     const convo = chat.turns.map(t => `${t.role === 'user' ? 'LEE' : 'CLAUDE'}: ${t.text}`).join('\n\n');
-    const prompt = `${rulesFor(null, g)}\n\nBelow is the conversation Lee had about this category. Turn it into a list of concrete changes to the decision record. Reply with only a JSON array. Each item is an object with: "op" ("add", "edit" or "delete"), "id" (the decision id for edit or delete, omit for add), "title" (plain words), and for add or edit: "context" (2 to 4 sentences), "decision" (1 to 3 sentences), "why" (1 to 2 sentences); for delete: "reason" (one sentence). Only include changes Lee asked for or clearly agreed to. If nothing changed, reply with []. Short sentences, no em-dashes, no hedging.\n\nCONVERSATION:\n${convo}`;
+    const prompt = `${rulesFor(d, g)}\n\nBelow is the conversation Lee had ${d ? 'about ' + d.id : 'about this category'}. Turn it into a list of concrete changes to the decision record. Reply with only a JSON array. Each item is an object with: "op" ("add", "edit" or "delete"), "id" (the decision id for edit or delete, omit for add), "title" (plain words), and for add or edit any of: "question" (one phrase), "decision" (the answer in plain words a newcomer can read, two to four sentences, ending with one worked example that uses real dates, names or numbers; no jargon that the glossary does not define), "context" (2 to 4 sentences), "why" (1 to 2 sentences), "alternatives" (one sentence), "touches" (one line), "details" (the precise clauses a builder needs, numbered on their own lines); for delete: "reason" (one sentence). For an edit include only the fields that change. ${d ? `The card under discussion is ${d.id}. Editing another card, removing one, or adding one are all allowed when the conversation calls for it; a change to another card must be consistent with what that card says.` : ''} Only include changes Lee asked for or clearly agreed to. If nothing changed, reply with []. Short sentences, no em-dashes, no hedging.\n\nCONVERSATION:\n${convo}`;
     try {
-      const items = await state.sample.json(prompt, { cache: false, modelTier: 'quick' });
+      const items = await state.sample.json(prompt, { cache: false, modelTier: 'default' });
       const arr = Array.isArray(items) ? items : [];
       if (!arr.length) toast('No changes found');
-      const now = new Date().toISOString();
       for (const c of arr.slice(0, 20)) {
         const vid = 'change-' + Date.now().toString(36) + '-' + Math.random().toString(36).slice(2, 6);
-        const doc = stamp({ verdict: 'change', scope: g.key, feature: g.feature, category: g.category, change: c, accepted: false });
+        const doc = stamp({ verdict: 'change', scope: g.key, about: d ? d.id : '', feature: g.feature, category: g.category, change: c, accepted: false });
         state.verdicts.set(vid, doc);
         if (state.db) state.db.doc('verdicts/' + vid).set(doc).catch(() => {});
       }
@@ -589,7 +647,7 @@
     const b = ev.target.closest('button'); if (!b) return;
     if (b.dataset.goto) { state.cat = b.dataset.goto; render(); window.scrollTo({ top: 0 }); return; }
     if (b.dataset.gotoId) {
-      const d = state.decisions.get(b.dataset.gotoId); if (!d) return;
+      const d = lookup(b.dataset.gotoId); if (!d) return;
       state.cat = catKey(d); state.q = ''; $('#q').value = ''; if (d.detail) state.open.add('det:' + catKey(d)); render();
       document.getElementById(d.id)?.scrollIntoView({ block: 'start' }); return;
     }
@@ -635,6 +693,7 @@
     }
     if (act === 'undo') return undo(d.id);
     if (act === 'ask') { const ta = sec.querySelector('textarea[data-chat]'); const q = ta.value.trim(); if (!q) return; ta.value = ''; return ask(d.id, q, d, null); }
+    if (act === 'suggest') return suggest(groups().find(x => x.key === catKey(d)) || { key: catKey(d), feature: d.feature, category: d.category, items: sorted().filter(x => catKey(x) === catKey(d)) }, d);
   });
   async function finishScope(scope) {
     const queued = queuedForScope(scope);
@@ -669,7 +728,7 @@
   $('#feat').addEventListener('change', e => { state.feat = e.target.value; render(); });
   $('#pendingOnly').addEventListener('change', e => { state.pendingOnly = e.target.checked; try { localStorage.setItem('ssot-pending', e.target.checked ? '1' : ''); } catch {} render(); });
   $('#finishAll').addEventListener('click', () => finish());
-  try { state.pendingOnly = !!localStorage.getItem('ssot-pending'); $('#pendingOnly').checked = state.pendingOnly; } catch {}
+  try { const p = localStorage.getItem('ssot-pending'); state.pendingOnly = p === null ? true : !!p; $('#pendingOnly').checked = state.pendingOnly; } catch {}
   try { (JSON.parse(sessionStorage.getItem('ssot-open') || '[]')).forEach(id => state.open.add(id)); } catch {}
   try { state.cat = localStorage.getItem('ssot-cat') || ''; } catch {}
   // Every database change re-renders the column. Drafts, open forms, ticked clauses, focus and
@@ -709,6 +768,7 @@
   (async () => {
     const [db, sample, artifact] = await Promise.all([claude.use('db'), claude.use('sample'), claude.use('artifact')]);
     state.sample = sample; state.artifact = artifact; state.db = db;
+    if (sample) sample.limits().then(l => { state.toolsOk = !!(l && l.tools); }).catch(() => {});
     if (!db) { $('#status').textContent = 'No database in this view. Nothing can be saved here.'; render(); return; }
     db.doc('meta/state').onSnapshot(s => { state.meta = s.data() || {}; render(); }, () => {});
     db.collection('decisions').onSnapshot(s => { state.decisions = new Map(s.docs.map(x => [x.id, { id: x.id, ...x.data() }])); render(); }, e => { $('#status').textContent = 'Lost the decisions stream: ' + e.code; });

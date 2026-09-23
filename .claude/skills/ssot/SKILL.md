@@ -1,6 +1,6 @@
 ---
 name: ssot
-description: "Open the decisions page, apply the ratifiers' verdicts, and backfill a feature's history into proposals. `/ssot` or `/ssot backfill <feature>`."
+description: "Open the decisions page, apply the ratifiers' verdicts, backfill a feature's history into proposals, or rewrite a feature's cards in plain words. `/ssot`, `/ssot backfill <feature>` or `/ssot rewrite <feature>`."
 disable-model-invocation: true
 model: opus
 ---
@@ -54,6 +54,14 @@ first, then:
 5. Run `epilogue.md`; its step 0 draws a picture for every screenless card the backfill wrote
    and for any older one still without. The `Next:` line is `Next: approve N decisions on the page, then
    /grill-with-docs-lee <feature>`.
+
+## `/ssot rewrite <feature> [--category "<name>"]`
+
+Rewrite a feature's live cards for a decider: plain-words Decision with a worked example,
+precise clauses under Details, a picture of the choice, glossary terms for the jargon. Steps in
+`rewrite.md` beside this file. Runs on Opus; one subagent per category rewrites, a second
+verifies the rulings did not change, `sync.mjs rewrite-apply` writes the files. Never touches
+the `Tickets` category, open questions, or rejected and withdrawn cards.
 
 ## For the -lee skills
 

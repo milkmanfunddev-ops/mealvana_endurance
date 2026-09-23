@@ -18,12 +18,15 @@
 //   node sync.mjs cite <spec.md> <proposals.md> [<ssot.md>]  -> what the spec's decision sections cite, as JSON
 //   node sync.mjs triage <verdicts.json> --out <dir>   -> clear.json (apply now), words.json (synthesise first), rewrites.json (apply after yes)
 //   node sync.mjs next-id <proposals.md> <ssot.md>     -> the next free id
+//   node sync.mjs rewrite-apply <rewrites.json> <proposals.md> <ssot.md> --feature <f> [--glossary CONTEXT.md]  -> apply a plain-words rewrite pass: parts, pictures (drawn from specs), glossary terms; one history line per card
+//   node sync.mjs unclear <decisions.md>... --glossary <CONTEXT.md>  -> backticked terms on card faces that no glossary entry defines, most-used first
+//   node sync.mjs prepare ... --glossary <CONTEXT.md>  -> also reseeds the vocab collection from the glossary
 //   node sync.mjs images <assets.json> <_images.json>  -> images to upload (new, changed, missing), plus unreferenced assets with the id to delete
 //   node sync.mjs asset <assets.json> <path> <asset id> -> record one upload with the file's hash; prints the id it replaced
 //   node sync.mjs asset <assets.json> <path> --drop     -> forget a path; prints the id to delete
 //   node sync.mjs undrawn <proposals.md> [<ssot.md>]   -> screenless cards with no drawn picture yet
 //   node sync.mjs draw <spec.json> [<out.svg>]         -> draw a diagram from a spec (diagram.mjs), checked
-//   node sync.mjs attach-svg <decisions.md> <id> <svg path>  -> check the file and set the card's `svg:` line
+//   node sync.mjs attach-svg <decisions.md> <id> <svg path> [--slot 2]  -> check the file and set the card's `svg:` line (`svg2:` for the second picture)
 //   node sync.mjs uncaptured <proposals.md> [<ssot.md>]  -> cards that name a screen and have no picture, with what would picture them
 //   node sync.mjs capture --check                      -> what stands between this machine and a capture
 //   node sync.mjs capture <feature> <screen>           -> drive the booted simulator to the screen, save the png and its sidecar
@@ -83,7 +86,7 @@ export function parse(text) {
     i++;
     // meta bullets
     while (i < lines.length && lines[i].startsWith('- ')) {
-      const m = lines[i].match(/^- ([a-z]+):\s*(.*)$/);
+      const m = lines[i].match(/^- ([a-z][a-z0-9]*):\s*(.*)$/);
       if (m) d.meta[m[1]] = m[2].trim();
       i++;
     }
@@ -154,6 +157,8 @@ export function toDocuments(doc, { order = 0, readSvg = () => '', readCaptured =
     captured: d.meta.image && d.meta.image !== 'none' ? readCaptured(d.meta.image) : null,
     svgPath: d.meta.svg || '',
     svg: d.meta.svg ? readSvg(d.meta.svg) : '',
+    svg2Path: d.meta.svg2 || '',
+    svg2: d.meta.svg2 ? readSvg(d.meta.svg2) : '',
     context: d.parts.context || '',
     question: d.parts.question || '',
     decision: ticketDecision(d),
@@ -165,9 +170,14 @@ export function toDocuments(doc, { order = 0, readSvg = () => '', readCaptured =
     original: d.parts.original || '',
     leeSaid: d.parts.leeSaid || '',
     ruled: ruling(d.history),
+    answeredBy: isQuestion(d) ? answeredBy(d) : '',
+    folded: d.meta.folded || '',
     order: order + n,
   }));
 }
+
+/** The decision that closed a question: the newest `answered by <id>` history line, else ''. */
+const answeredBy = d => { for (const h of [...d.history].reverse()) { const m = /^answered by ([a-z]+-\d{3})/.exec(h.note || ''); if (m) return m[1]; } return ''; };
 
 /** A ticket card's Decision on the page ends with its blockers and the model that builds it, so the ratifier approves both, not only the prose. */
 const ticketDecision = d => {
@@ -260,10 +270,68 @@ export function fold(plan, proposals, ssot, today = new Date().toISOString().sli
 }
 
 /**
+ * Fold cards that are already ruled (Lee approves the grouping in the terminal, 2026-09-22).
+ * `plan` is [{from: [ids], into: {title, question, context, decision, why, alternatives, touches, details?,
+ * category?, screen?, source?, image?, caption?, svg?, svg2?}}]. Every member must be in the record with
+ * the same status, approved, rejected or withdrawn. The new card takes that status and the first
+ * member's place, lists the ids it replaced in `folded:`, carries every member's history line
+ * (prefixed with its id) and ends with the fold line. Anything else is refused and that step skipped.
+ */
+export function foldRuled(plan, proposals, ssot, { today = new Date().toISOString().slice(0, 10), by = '' } = {}) {
+  const folded = [], refused = [];
+  for (const step of plan) {
+    const members = step.from.map(id => ssot.decisions.find(d => d.id === id));
+    const missing = step.from.filter((id, i) => !members[i]);
+    if (missing.length) { refused.push({ into: step.into.title, why: `not in the record: ${missing.join(', ')}` }); continue; }
+    const statuses = [...new Set(members.map(d => d.meta.status))];
+    if (statuses.length !== 1 || !['approved', ...GONE].includes(statuses[0])) { refused.push({ into: step.into.title, why: `members must share one ruled status: ${members.map(d => d.id + ' is ' + d.meta.status).join(', ')}` }); continue; }
+    if (members.some(isQuestion)) { refused.push({ into: step.into.title, why: 'a question is not folded here' }); continue; }
+    const into = step.into;
+    const id = into.id || nextId(proposals, ssot);
+    const at = ssot.decisions.findIndex(d => d.id === step.from[0]);
+    // `none` in the plan keeps a slot empty instead of inheriting a member's picture.
+    const pick = k => into[k] === 'none' ? '' : into[k] || members.find(d => d.meta[k] && d.meta[k] !== 'none')?.meta[k] || '';
+    const split = v => (v || '').split(/[,\s]+/).filter(Boolean);
+    const meta = {
+      category: into.category || members[0].meta.category,
+      status: statuses[0],
+      image: pick('image') || 'none',
+      caption: into.caption || (pick('image') ? members.find(d => d.meta.image === pick('image'))?.meta.caption || '' : ''),
+    };
+    if (pick('svg')) meta.svg = pick('svg');
+    if (pick('svg2')) meta.svg2 = pick('svg2');
+    meta.screen = into.screen || members[0].meta.screen || '';
+    meta.source = into.source || [...new Set(members.flatMap(d => (d.meta.source || '').split(';').map(x => x.trim()).filter(Boolean)))].join('; ');
+    const linked = [...new Set(members.flatMap(d => split(d.meta.linked)))];
+    if (linked.length) meta.linked = linked.join(', ');
+    const priorFolds = members.flatMap(d => split(d.meta.folded));
+    meta.folded = [...new Set([...step.from, ...priorFolds])].join(', ');
+    const parts = { question: into.question || '', context: into.context || '', decision: into.decision || '', why: into.why || '', alternatives: into.alternatives || 'none recorded', touches: into.touches || '' };
+    if (into.details) parts.details = into.details;
+    for (const k of Object.keys(parts)) if (parts[k] === '' && k !== 'context') delete parts[k];
+    const history = members.flatMap(d => d.history.map(h => ({ date: h.date, note: `${d.id}: ${h.note}` }))).sort((a, b) => a.date.localeCompare(b.date));
+    history.push({ date: today, note: `folded from ${step.from.join(', ')}` + (by ? `, the fold approved by ${by} in the terminal` : '') });
+    for (const m of step.from) ssot.decisions.splice(ssot.decisions.findIndex(d => d.id === m), 1);
+    ssot.decisions.splice(Math.min(at, ssot.decisions.length), 0, { id, title: into.title, meta, parts, history });
+    folded.push({ id, from: step.from, status: statuses[0] });
+  }
+  return { folded, refused };
+}
+
+/** Old id -> the card that now carries it, from every `folded:` line in both files. */
+export function foldedAliases(...docs) {
+  const map = {};
+  for (const doc of docs) for (const d of doc.decisions) for (const old of (d.meta.folded || '').split(/[,\s]+/).filter(Boolean)) map[old] = d.id;
+  return map;
+}
+
+/**
  * Tickets for the `tickets` collection: one document per `.scratch/<feature>/issues/NN-*.md`.
  * Status, blockers and next come from the three header lines every ticket carries.
  * `cites` is every decision id mentioned anywhere in the ticket.
  */
+/** How much of a ticket file rides to the page, so the Explain thread can read what was built. */
+const TICKET_BODY_CAP = 6000;
 export function ticketDocument(feature, file, text, idPrefix = '') {
   const name = file.split('/').pop().replace(/\.md$/, '');
   const num = (name.match(/^(\d+)/) || [])[1] || '';
@@ -274,7 +342,7 @@ export function ticketDocument(feature, file, text, idPrefix = '') {
   const state = /wontfix/.test(s) ? 'dropped' : /^(done|built|verified|typed-postcode|send,|partly verified)/.test(s) ? 'done' : /needs-grilling|needs grilling/.test(s) ? 'needs grilling' : /^(in-progress|building)/.test(s) ? 'building' : /ready/.test(s) ? 'ready' : /after|blocked/.test(s) ? 'waiting' : s ? 'other' : 'proposed';
   const owed = /owed|not yet (seen|looked)|awaiting a look|untested|unverified|not exercised|fails/.test(s);
   const cites = [...new Set((text.match(new RegExp(`\\b${idPrefix || '[a-z]+'}-\\d{3}\\b`, 'g')) || []))].sort();
-  return { id: `${feature}-${num}`, feature, number: num, title, status: statusLine, state, owed, blockedBy: blockedLine, next: nextLine, model: ticketModel(line('Model')), cites, file, order: parseInt(num, 10) || 0 };
+  return { id: `${feature}-${num}`, feature, number: num, title, status: statusLine, state, owed, blockedBy: blockedLine, next: nextLine, model: ticketModel(line('Model')), cites, file, order: parseInt(num, 10) || 0, body: text.slice(0, TICKET_BODY_CAP) };
 }
 
 /** The ticket files of a feature (`NN-<slug>.md`), sorted, as `<dir>/<file>` paths; an absent dir is empty. */
@@ -334,10 +402,10 @@ export function apply(verdicts, proposals, ssot, today = new Date().toISOString(
       // A change drafted from a category discussion and accepted by Lee on the page.
       if (!v.accepted) { refused.push({ id, why: 'change not accepted' }); continue; }
       const c = v.change || {};
-      const note = 'from the category discussion on ' + date;
+      const note = (v.about ? `from the discussion on ${v.about} on ` : 'from the category discussion on ') + date;
       if (c.op === 'add') {
         const nid = nextId(proposals, ssot);
-        proposals.decisions.push({ id: nid, title: c.title || 'Untitled', meta: { category: v.category || 'Other', status: 'proposed', image: 'none', caption: '', screen: c.screen || '', source: `${v.by ? v.by + ', ' : ''}${note}` }, parts: { context: c.context || '', decision: c.decision || '', why: c.why || '', alternatives: c.alternatives || 'none recorded', touches: c.touches || '' }, history: [{ date, note: 'added ' + note + by }] });
+        proposals.decisions.push({ id: nid, title: c.title || 'Untitled', meta: { category: v.category || 'Other', status: 'proposed', image: 'none', caption: '', screen: c.screen || '', source: `${v.by ? v.by + ', ' : ''}${note}` }, parts: { context: c.context || '', question: c.question || '', decision: c.decision || '', why: c.why || '', alternatives: c.alternatives || 'none recorded', touches: c.touches || '' }, history: [{ date, note: 'added ' + note + by }] });
         applied.push({ id, to: 'added as ' + nid });
       } else if (c.op === 'edit') {
         const d = proposals.decisions.find(x => x.id === c.id) || inSsot(c.id);
@@ -347,8 +415,12 @@ export function apply(verdicts, proposals, ssot, today = new Date().toISOString(
         d.parts.leeSaid = `Edit accepted ${note}: ${c.title || ''}`;
         if (c.title) d.title = c.title;
         if (c.context) d.parts.context = c.context;
+        if (c.question) d.parts.question = c.question;
         if (c.decision) d.parts.decision = c.decision;
         if (c.why) d.parts.why = c.why;
+        if (c.alternatives) d.parts.alternatives = c.alternatives;
+        if (c.touches) d.parts.touches = c.touches;
+        if (c.details) d.parts.details = c.details;
         d.history.push({ date, note: 'edited ' + note + by });
         applied.push({ id, to: 'amended ' + c.id });
       } else if (c.op === 'delete') {
@@ -448,6 +520,8 @@ export function answeredLinks(proposals, ssot = { decisions: [] }) {
 export function specCitations(spec, proposals, ssot = { decisions: [] }) {
   const all = [...proposals.decisions, ...ssot.decisions];
   const known = new Map(all.map(d => [d.id, d.meta.status || 'proposed']));
+  const aliases = foldedAliases(proposals, ssot);
+  for (const [old, now] of Object.entries(aliases)) if (!known.has(old) && known.has(now)) known.set(old, known.get(now));
   const category = new Map(all.map(d => [d.id, d.meta.category || 'Other']));
   const first = all.find(d => d.id);
   const prefix = first ? first.id.slice(0, first.id.lastIndexOf('-')) : '[a-z][a-z0-9]*';
@@ -481,6 +555,7 @@ export function specCitations(spec, proposals, ssot = { decisions: [] }) {
     rejected: paragraphs.filter(p => p.ids.some(gone)).map(p => ({ ...p, gone: p.ids.filter(gone) })),
     uncited: paragraphs.filter(p => !p.ids.length),
     unknown: Object.keys(statuses).filter(id => statuses[id] === 'unknown'),
+    folded: Object.fromEntries(Object.keys(statuses).filter(id => aliases[id]).map(id => [id, aliases[id]])),
     pending,
     pendingSpec: pending.filter(id => category.get(id) === 'Spec'),
     unstated: answeredLinks(proposals, ssot).filter(l => !l.stale && !cited.has(l.id)).map(l => l.id),
@@ -516,7 +591,10 @@ const overlap = (a, b) => { const x = touchKey(a), y = touchKey(b); return x ===
  * or withdrawn card is listed but never published.
  */
 export function ticketPlan(feature, proposals, ssot = { decisions: [] }) {
-  const cards = [...proposals.decisions, ...ssot.decisions].filter(d => d.meta.ticket !== undefined && d.meta.ticket !== '');
+  // Two features may share one record (ai-cost cites mp- ids), so a card whose
+  // source names another feature's breakdown (`tickets <feature> <date>`) is not this one's.
+  const other = d => { const m = /^tickets ([a-z0-9-]+) \d{4}-/.exec(d.meta.source || ''); return m !== null && m[1] !== feature; };
+  const cards = [...proposals.decisions, ...ssot.decisions].filter(d => d.meta.ticket !== undefined && d.meta.ticket !== '' && !other(d));
   const tickets = cards.map(d => ({
     id: d.id,
     number: num2(d.meta.ticket),
@@ -673,10 +751,11 @@ export function undrawn(proposals, ssot = { decisions: [] }) {
 }
 
 /** Set a card's `svg:` line (after `caption:`, else after `image:`, else last); false when the id is not in the doc. */
-export function attachSvg(doc, id, path) {
+/** Set a card's drawn picture; `slot` 2 is the second picture (`svg2:`), shown beside the first. */
+export function attachSvg(doc, id, path, { slot = 1 } = {}) {
   const d = doc.decisions.find(x => x.id === id);
   if (!d) return false;
-  d.meta = setMeta(d.meta, 'svg', path, ['caption', 'image']);
+  d.meta = slot === 2 ? setMeta(d.meta, 'svg2', path, ['svg', 'caption', 'image']) : setMeta(d.meta, 'svg', path, ['caption', 'image']);
   return true;
 }
 /** Set one meta line: in place when the card has it, else inserted after the first key of `after` the card has (or last). */
@@ -717,7 +796,7 @@ export function uncaptured(proposals, ssot = { decisions: [] }, screens = {}, { 
   for (const [file, doc] of [['proposals', proposals], ['record', ssot]]) {
     for (const d of doc.decisions) {
       if (isQuestion(d) || GONE.includes(d.meta.status)) continue;
-      if (!d.meta.screen || isScreenless(d) || (d.meta.image && d.meta.image !== 'none')) continue;
+      if (!d.meta.screen || isScreenless(d) || (d.meta.image && d.meta.image !== 'none') || d.meta.noshot) continue;
       const m = matchScreen(d.meta.screen, screens);
       const how = !m ? 'none' : freshReuse(m) ? 'reuse' : m.drive ? 'capture' : 'none';
       out.push({ id: d.id, title: d.title, file, screen: d.meta.screen, key: m?.key || '', how, path: how === 'reuse' ? m.reuse : '', note: m?.note || (m ? '' : 'no screen in screens.json matches') });
@@ -725,6 +804,23 @@ export function uncaptured(proposals, ssot = { decisions: [] }, screens = {}, { 
   }
   return out;
 }
+/**
+ * Take a screenshot off a card that it does not help (a golden whose words render as blocks, an empty
+ * or wrong screen): the image line becomes none, the caption goes, a `noshot:` line keeps the reason
+ * so `uncaptured` and `pictures` do not put one back, and a history line says what was removed.
+ * False when the id is not in the doc or the card has no image.
+ */
+export function detachImage(doc, id, reason, { today = new Date().toISOString().slice(0, 10) } = {}) {
+  const d = doc.decisions.find(x => x.id === id);
+  if (!d || !d.meta.image || d.meta.image === 'none') return false;
+  const was = d.meta.image;
+  d.meta.image = 'none';
+  delete d.meta.caption;
+  d.meta = setMeta(d.meta, 'noshot', String(reason).replace(/\s+/g, ' ').trim(), ['image']);
+  d.history.push({ date: today, note: `screenshot removed: ${was} (${d.meta.noshot})` });
+  return true;
+}
+
 /** Set a card's image (and caption when given) and record the picture's origin as a history line; false when the id is not in the doc. */
 export function attachImage(doc, id, path, { caption, captured = readSidecar(path), today = new Date().toISOString().slice(0, 10) } = {}) {
   const d = doc.decisions.find(x => x.id === id);
@@ -746,6 +842,109 @@ export function attachImage(doc, id, path, { caption, captured = readSidecar(pat
 // screen with no code list, or a commit this clone never had, says nothing
 // about staleness (`stale: null`) rather than guessing.
 const git = (root, ...a) => { const r = spawnSync('git', a, { cwd: root, encoding: 'utf8' }); return r.status === 0 ? r.stdout : null; };
+/**
+ * The glossary in CONTEXT.md as `vocab` documents: `**Term**:` lines under `### Area`
+ * headings, the definition until a blank line, an optional `_Avoid_:` line. `id` is the term
+ * slugged; `order` is file order, which the page keeps.
+ */
+export function glossary(text) {
+  const out = []; let area = 'General';
+  const lines = text.split('\n');
+  for (let i = 0; i < lines.length; i++) {
+    const h = /^### (.+)$/.exec(lines[i]); if (h) { area = h[1].trim(); continue; }
+    const t = /^\*\*(.+?)\*\*:\s*$/.exec(lines[i]); if (!t) continue;
+    const def = [], avoid = [];
+    for (let j = i + 1; j < lines.length && lines[j].trim() !== '' && !/^\*\*.+\*\*:\s*$/.test(lines[j]) && !/^#/.test(lines[j]); j++) {
+      const a = /^_Avoid_:\s*(.*)$/.exec(lines[j]); if (a) avoid.push(a[1].trim()); else def.push(lines[j].trim());
+    }
+    const term = t[1].trim();
+    out.push({ id: term.toLowerCase().replace(/[^a-z0-9]+/g, '-').replace(/^-|-$/g, ''), term, area, definition: def.join(' '), avoid: avoid.join('; '), order: out.length });
+  }
+  return out;
+}
+
+/**
+ * What stands between a reader and the record: the backticked identifiers in a card's face
+ * (question, decision, why, context) that no glossary term defines. Rejected and withdrawn
+ * cards are skipped. `{terms: {term: [ids]}}`, most-used first.
+ */
+export function unclear(docs, glossaryDocs) {
+  const known = new Set(glossaryDocs.map(g => g.term.toLowerCase()));
+  const terms = {};
+  for (const doc of docs) for (const d of doc.decisions) {
+    if (GONE.includes(d.meta.status) || d.meta.kind === 'question') continue;
+    const text = ['context', 'question', 'decision', 'why'].map(k => d.parts[k] || '').join(' ');
+    for (const m of text.matchAll(/`([^`\n]{1,40})`/g)) {
+      const t = m[1].trim(); const key = t.toLowerCase();
+      if (/^[a-z]+-\d{3}$/.test(key) || known.has(key)) continue;
+      (terms[t] = terms[t] || []).includes(d.id) || terms[t].push(d.id);
+    }
+  }
+  return { terms: Object.fromEntries(Object.entries(terms).sort((a, b) => b[1].length - a[1].length)) };
+}
+
+/** Append glossary entries ({term, definition, area?, avoid?}) under their area heading; a term already defined is skipped. */
+export function addTerms(ctx, list) {
+  const have = new Set(glossary(ctx).map(g => g.term.toLowerCase()));
+  for (const v of list) {
+    if (!v || !v.term || !v.definition || have.has(v.term.toLowerCase())) continue;
+    have.add(v.term.toLowerCase());
+    const entry = `**${v.term}**:\n${v.definition.trim()}\n${v.avoid ? `_Avoid_: ${v.avoid}\n` : ''}`;
+    const area = v.area && v.area.trim() ? v.area.trim() : 'General';
+    const h = `### ${area}`;
+    if (ctx.includes(h + '\n')) {
+      const i = ctx.indexOf(h + '\n'); const rest = ctx.slice(i + h.length + 1); const next = rest.search(/\n### |\n## /);
+      const end = next < 0 ? ctx.length : i + h.length + 1 + next;
+      ctx = ctx.slice(0, end).replace(/\n+$/, '') + '\n\n' + entry + ctx.slice(end);
+    } else ctx = ctx.replace(/\n+$/, '') + `\n\n${h}\n\n${entry}`;
+  }
+  return ctx.replace(/\n+$/, '') + '\n';
+}
+
+const REWRITE_PARTS = ['question', 'context', 'decision', 'why', 'alternatives', 'touches', 'details'];
+/**
+ * Apply a plain-words rewrite pass: `items` is {id: {title?, <part>?..., diagram?, slot?}} from
+ * `.scratch/ssot/rewrite/<feature>/<category>.json`. Only the parts given change; status, source
+ * and history are kept and one history line is added. A card that is gone, a question, or not
+ * found is refused. `drawTo(id, spec, slot)` draws the diagram and returns the repo path of the
+ * SVG (or throws, which refuses that card's picture but keeps its words).
+ * Returns {applied: [{id, parts, picture}], refused: [{id, why}]}.
+ */
+export function rewriteApply(items, proposals, ssot, { today = new Date().toISOString().slice(0, 10), drawTo = null, note = 'rewritten in plain words', all = false } = {}) {
+  const applied = [], refused = [];
+  const find = id => proposals.decisions.find(d => d.id === id) || ssot.decisions.find(d => d.id === id);
+  for (const [id, r] of Object.entries(items || {})) {
+    const d = find(id);
+    if (!d) { refused.push({ id, why: 'unknown id' }); continue; }
+    // `all` (the clarity pass, Lee 2026-09-22) also rewords questions and rejected or withdrawn
+    // cards; their status and history stay as they are, like any other card's.
+    if (!all && isQuestion(d)) { refused.push({ id, why: 'an open question is not rewritten' }); continue; }
+    if (!all && GONE.includes(d.meta.status)) { refused.push({ id, why: `status ${d.meta.status}` }); continue; }
+    const parts = REWRITE_PARTS.filter(k => typeof r[k] === 'string' && r[k].trim());
+    if (!parts.length && !r.title && !r.diagram && !r.diagram2) { refused.push({ id, why: 'nothing to change' }); continue; }
+    if (r.title) d.title = String(r.title).trim();
+    for (const k of parts) d.parts[k] = r[k].trim();
+    // Keep the file's part order: rebuild parts in PARTS order.
+    d.parts = Object.fromEntries([...AMEND_PARTS, ...PARTS].map(([k]) => [k, d.parts[k]]).filter(([, v]) => v !== undefined));
+    let picture = '';
+    // `diagram` goes in slot one (slot two when the card has a screenshot, or `slot: 2`); `diagram2` always in slot two.
+    const wanted = [];
+    if (r.diagram) wanted.push([r.diagram, r.slot === 2 || (r.slot !== 1 && (d.meta.image && d.meta.image !== 'none')) ? 2 : 1]);
+    if (r.diagram2) wanted.push([r.diagram2, 2]);
+    for (const [spec, slot] of wanted) {
+      if (!drawTo) break;
+      try {
+        const path = drawTo(id, spec, slot);
+        d.meta = slot === 2 ? setMeta(d.meta, 'svg2', path, ['svg', 'caption', 'image']) : setMeta(d.meta, 'svg', path, ['caption', 'image']);
+        picture = picture ? picture + ', ' + path : path;
+      } catch (e) { refused.push({ id, why: `picture ${slot}: ${e.message}` }); }
+    }
+    d.history.push({ date: today, note: note + (parts.length ? ` (${parts.join(', ')})` : '') });
+    applied.push({ id, parts, picture });
+  }
+  return { applied, refused };
+}
+
 const under = (root, p) => isAbsolute(p) ? p : join(root, p);
 export function changedSince(commit, paths, { root = process.cwd() } = {}) {
   if (!commit || !paths?.length || git(root, 'cat-file', '-e', `${commit}^{commit}`) === null) return null;
@@ -995,31 +1194,50 @@ if (process.argv[1] && import.meta.url.endsWith(process.argv[1].split('/').pop()
         entries.push({ op: 'set', collection: 'tickets', doc_id: id, file_path: `${out}/ticket-${id}.json` });
       }
     }
+    // The glossary rides along too: --glossary CONTEXT.md reseeds the vocab collection.
+    if (opts.glossary) for (const g of glossary(readFileSync(opts.glossary, 'utf8'))) {
+      const { id, ...body } = g;
+      writeFileSync(`${out}/vocab-${id}.json`, JSON.stringify(body, null, 2));
+      entries.push({ op: 'set', collection: 'vocab', doc_id: id, file_path: `${out}/vocab-${id}.json` });
+    }
     const batches = []; for (let k = 0; k < entries.length; k += 50) batches.push(entries.slice(k, k + 50));
     writeFileSync(`${out}/_batches.json`, JSON.stringify(batches, null, 2));
     const images = [...new Set(entries.map(e => JSON.parse(readFileSync(e.file_path, 'utf8')).image).filter(Boolean))];
     writeFileSync(`${out}/_images.json`, JSON.stringify(images, null, 2));
     writeFileSync(`${out}/_features.json`, JSON.stringify([...features], null, 2));
     console.log(`${entries.length} documents in ${batches.length} batches; ${images.length} distinct images (${staleImages(assets, images).length} to upload)`);
+  } else if (cmd === 'rewrite-apply') {
+    // rewrite-apply <rewrites.json> <proposals.md> <ssot.md> --feature <f> [--glossary CONTEXT.md] [--all] [--note <history note>]
+    const [[rf, pf, sf], opts] = flags(args);
+    if (!rf || !pf || !sf || !opts.feature) { console.error('usage: sync.mjs rewrite-apply <rewrites.json> <proposals.md> <ssot.md> --feature <f> [--glossary CONTEXT.md]'); process.exit(2); }
+    const raw = JSON.parse(readFileSync(rf, 'utf8'));
+    const items = raw.cards || raw;
+    const proposals = parse(readFileSync(pf, 'utf8')), ssot = parse(readFileSync(sf, 'utf8'));
+    const drawTo = (id, spec, slot) => {
+      const svg = draw(spec); const check = svgCheck(svg);
+      if (!check.ok) throw new Error(check.problems.join('; '));
+      const path = `docs/ssot/decisions/images/${opts.feature}/${id}${slot === 2 ? '-2' : ''}.svg`;
+      mkdirSync(dirname(path), { recursive: true }); writeFileSync(path, svg); return path;
+    };
+    const r = rewriteApply(items, proposals, ssot, { drawTo, all: !!opts.all, ...(opts.note ? { note: String(opts.note) } : {}) });
+    writeFileSync(pf, serialize(proposals)); writeFileSync(sf, serialize(ssot));
+    let terms = [];
+    if (opts.glossary && Array.isArray(raw.terms) && raw.terms.length) { const before = new Set(glossary(readFileSync(opts.glossary, 'utf8')).map(g => g.term)); const out = addTerms(readFileSync(opts.glossary, 'utf8'), raw.terms); writeFileSync(opts.glossary, out); terms = glossary(out).map(g => g.term).filter(t => !before.has(t)); } // new terms land under their area, not at the end
+    console.log(JSON.stringify({ ...r, terms }, null, 2));
+  } else if (cmd === 'unclear') {
+    // unclear <decisions.md>... --glossary <CONTEXT.md>: undefined backticked terms on card faces.
+    const [files, opts] = flags(args);
+    const g = opts.glossary ? glossary(readFileSync(opts.glossary, 'utf8')) : [];
+    console.log(JSON.stringify(unclear(files.map(f => parse(readFileSync(f, 'utf8'))), g), null, 2));
   } else if (cmd === 'terms') {
     // terms <verdicts.json> <CONTEXT.md>: append accepted `term` verdicts to the glossary
     // under their area heading (created at the end of ## Language if missing).
     const [vf, cf] = args;
     const raw = JSON.parse(readFileSync(vf, 'utf8')); const verdicts = raw.verdicts || raw;
-    let ctx = readFileSync(cf, 'utf8'); const added = [];
-    for (const [id, v] of Object.entries(verdicts)) {
-      if (v.verdict !== 'term') continue;
-      const entry = `**${v.term}**:\n${v.definition.trim()}\n${v.avoid ? `_Avoid_: ${v.avoid}\n` : ''}`;
-      const area = v.area && v.area.trim() ? v.area.trim() : 'General';
-      const h = `### ${area}`;
-      if (ctx.includes(h + '\n')) {
-        const i = ctx.indexOf(h + '\n'); const rest = ctx.slice(i + h.length + 1); const next = rest.search(/\n### |\n## /);
-        const end = next < 0 ? ctx.length : i + h.length + 1 + next;
-        ctx = ctx.slice(0, end).replace(/\n+$/, '') + '\n\n' + entry + ctx.slice(end);
-      } else ctx = ctx.replace(/\n+$/, '') + `\n\n${h}\n\n${entry}`;
-      added.push(id);
-    }
-    writeFileSync(cf, ctx.replace(/\n+$/, '') + '\n');
+    const ctx = readFileSync(cf, 'utf8'); const added = [];
+    const list = [];
+    for (const [id, v] of Object.entries(verdicts)) if (v.verdict === 'term') { list.push(v); added.push(id); }
+    writeFileSync(cf, addTerms(ctx, list));
     console.log(JSON.stringify({ added }));
   } else if (cmd === 'answers') {
     // answers <question id> <decision id> <proposals.md> <ssot.md>: link both ways.
@@ -1073,6 +1291,14 @@ if (process.argv[1] && import.meta.url.endsWith(process.argv[1].split('/').pop()
     const ssot = existsSync(sf) ? parse(readFileSync(sf, 'utf8')) : { decisions: [] };
     const r = fold(plan, proposals, ssot);
     writeFileSync(prf, serialize(proposals));
+    console.log(JSON.stringify(r, null, 2));
+  } else if (cmd === 'fold-ruled') {
+    // fold-ruled <plan.json> <proposals.md> <ssot.md> --by <name>: fold ruled cards in the record.
+    const [[pf, prf, sf], opts] = flags(args);
+    const plan = JSON.parse(readFileSync(pf, 'utf8'));
+    const [proposals, ssot] = readPair(prf, sf);
+    const r = foldRuled(plan, proposals, ssot, { by: opts.by && opts.by !== true ? String(opts.by) : '' });
+    if (r.folded.length) writeFileSync(sf, serialize(ssot));
     console.log(JSON.stringify(r, null, 2));
   } else if (cmd === 'tickets') {
     // tickets <feature> <issues dir>: ticket documents as JSON
@@ -1130,15 +1356,16 @@ if (process.argv[1] && import.meta.url.endsWith(process.argv[1].split('/').pop()
     if (check.problems.length) { console.error(`drawn svg fails the check: ${check.problems.join('; ')}`); process.exit(1); }
     if (outf) writeFileSync(outf, svg); else process.stdout.write(svg);
   } else if (cmd === 'attach-svg') {
-    // attach-svg <decisions.md> <id> <svg path>: check the file, then set the card's svg line.
-    const [df, id, path] = args;
-    if (!df || !id || !path) { console.error('usage: sync.mjs attach-svg <decisions.md> <id> <svg path>'); process.exit(2); }
+    // attach-svg <decisions.md> <id> <svg path> [--slot 2]: check the file, then set the card's svg (or svg2) line.
+    const [[df, id, path], opts] = flags(args);
+    if (!df || !id || !path) { console.error('usage: sync.mjs attach-svg <decisions.md> <id> <svg path> [--slot 2]'); process.exit(2); }
     const check = checkedSvg(path);
     if (check.problems.length) { console.error(`${path}: ${check.problems.join('; ')}`); process.exit(1); }
     const doc = parse(readFileSync(df, 'utf8'));
-    if (!attachSvg(doc, id, path)) { console.error(`${id} is not in ${df}`); process.exit(1); }
+    const slot = opts.slot === '2' ? 2 : 1;
+    if (!attachSvg(doc, id, path, { slot })) { console.error(`${id} is not in ${df}`); process.exit(1); }
     writeFileSync(df, serialize(doc));
-    console.log(`${id}: svg ${path}`);
+    console.log(`${id}: ${slot === 2 ? 'svg2' : 'svg'} ${path}`);
   } else if (cmd === 'uncaptured') {
     // uncaptured <proposals.md> [<ssot.md>]: screen cards with no picture and how each would get one, nothing written.
     const [pf, sf] = args;
@@ -1162,6 +1389,14 @@ if (process.argv[1] && import.meta.url.endsWith(process.argv[1].split('/').pop()
     if (!booted) { console.error('no booted simulator'); process.exit(1); }
     const r = await capture(entry, { dir: imageDir(feature), ...stamp(), device: booted.name, runtime: booted.runtime, io: simulatorIo(booted.udid) });
     console.log(JSON.stringify(r, null, 2));
+  } else if (cmd === 'detach-image') {
+    // detach-image <decisions.md> <id> --reason <text>: take an unhelpful screenshot off a card, for good.
+    const [[df, id], opts] = flags(args);
+    if (!df || !id || typeof opts.reason !== 'string') { console.error('usage: sync.mjs detach-image <decisions.md> <id> --reason <text>'); process.exit(2); }
+    const doc = parse(readFileSync(df, 'utf8'));
+    if (!detachImage(doc, id, opts.reason)) { console.error(`${id}: not in ${df}, or it has no image`); process.exit(1); }
+    writeFileSync(df, serialize(doc));
+    console.log(`${id}: screenshot removed`);
   } else if (cmd === 'attach-image') {
     // attach-image <decisions.md> <id> <png path> [--caption <text>]: set the image line and record where the picture came from.
     const [[df, id, path], opts] = flags(args); const caption = typeof opts.caption === 'string' ? opts.caption : undefined;

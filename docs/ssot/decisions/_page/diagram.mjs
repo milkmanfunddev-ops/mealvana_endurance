@@ -10,6 +10,10 @@
 // Spec shapes (JSON):
 //   { kind: 'flow', title?, width?, rows: [[{id, label, tone?}], ...], edges: [{from, to, label?, tone?}], example?: [lines] }
 //   { kind: 'timeline', title?, width?, steps: [{at, label, tone?}], example?: [lines] }
+//   { kind: 'compare', title?, width?, left: {head, lines: [..], tone?}, right: {head, lines: [..], tone?}, example?: [lines] }
+// A compare shows the two worlds side by side, what was considered on the left
+// and what was decided on the right, each told as the same worked example, so
+// a reader sees the choice before reading a word of the card.
 // `label` may hold `\n` for a second line. `tone` is one of ink (default),
 // accent, ok, no, pending, amend, muted. `width` is a minimum in viewBox
 // units (default 320); the drawing grows to fit its text. The page shows a picture about
@@ -37,8 +41,25 @@ function tone(name) {
   return { fill: v(t[0]), stroke: v(t[1]) };
 }
 
+// The title's serif runs wider than body text; a title longer than the drawing wraps onto a
+// second line and the drawing moves down, so no title runs off the picture's edge.
+const titleW = s => Math.ceil(String(s).length * 15 * 0.6);
+export function titleLines(title, width) {
+  const room = width - 32;
+  if (titleW(title) <= room) return [title];
+  const words = String(title).split(' ');
+  let first = '';
+  while (words.length && titleW(first ? first + ' ' + words[0] : words[0]) <= room) first = first ? first + ' ' + words.shift() : words.shift();
+  return first ? [first, words.join(' ')] : [title];
+}
+
 function wrap(width, height, body, title) {
-  const head = title ? `<text class="dg-title" x="16" y="24">${esc(title)}</text>` : '';
+  const tl = title ? titleLines(title, width) : [];
+  if (tl.length > 1) {
+    body = `<g transform="translate(0 20)">${body}</g>`;
+    height += 20;
+  }
+  const head = tl.map((l, i) => `<text class="dg-title" x="16" y="${24 + i * 20}">${esc(l)}</text>`).join('');
   // width 100% and no height: the page's `.fig svg {height:auto}` keeps the aspect ratio.
   return `<svg class="dg" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 ${width} ${height}" width="100%" role="img" aria-label="${esc(title || 'Diagram')}">\n<style>${STYLE}</style>\n<defs><marker id="dg-arrow" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="8" markerHeight="8" orient="auto-start-reverse"><path d="M0 0 L10 5 L0 10 z" fill="${v('ink-2')}"/></marker></defs>\n${head}${body}</svg>\n`;
 }
@@ -140,9 +161,32 @@ function timeline(spec) {
   return wrap(width, bottom + ex.height + (ex.height ? 0 : 4), axis + body + ex.body, spec.title);
 }
 
+// Two panels: the considered world (left, usually tone no or muted) and the
+// decided one (right, usually tone ok), same example on both sides.
+function compare(spec) {
+  for (const side of ['left', 'right']) if (!spec[side] || !spec[side].head) throw new Error(`a compare needs ${side}.head`);
+  const top = spec.title ? 44 : 16, gap = 16, pad = 12;
+  const panel = (p, fallbackTone) => { const ls = (p.lines || []).flatMap(lines).filter(Boolean); const w = Math.max(140, textW(p.head, 13) + 2 * pad + 8, ...ls.map(l => textW(l, 12) + 2 * pad)); return { ...p, ls, w, h: 34 + ls.length * 17 + pad, t: tone(p.tone || fallbackTone) }; };
+  const L = panel(spec.left, 'no'), R = panel(spec.right, 'ok');
+  const h = Math.max(L.h, R.h);
+  const width = Math.max(spec.width || 0, 320, L.w + R.w + gap + 32, exampleWidth(spec.example));
+  const x0 = (width - (L.w + R.w + gap)) / 2;
+  let body = '';
+  for (const [p, x] of [[L, x0], [R, x0 + L.w + gap]]) {
+    body += `<rect class="dg-box" x="${x}" y="${top}" width="${p.w}" height="${h}" rx="10" fill="${p.t.fill}" stroke="${p.t.stroke}"/>`;
+    body += `<text x="${x + pad}" y="${top + 22}" font-weight="700">${esc(p.head)}</text>`;
+    body += `<line x1="${x + pad}" y1="${top + 30}" x2="${x + p.w - pad}" y2="${top + 30}" stroke="${p.t.stroke}" stroke-width="1"/>`;
+    p.ls.forEach((l, i) => { body += `<text class="dg-sub" x="${x + pad}" y="${top + 48 + i * 17}">${esc(l)}</text>`; });
+  }
+  const bottom = top + h + 16;
+  const ex = example(spec.example, width, bottom);
+  return wrap(width, bottom + ex.height + (ex.height ? 0 : 4), body + ex.body, spec.title);
+}
+
 export function draw(spec) {
   if (!spec || typeof spec !== 'object') throw new Error('draw needs a spec object');
   if (spec.kind === 'flow') return flow(spec);
   if (spec.kind === 'timeline') return timeline(spec);
-  throw new Error(`unknown diagram kind ${spec.kind}; use flow or timeline`);
+  if (spec.kind === 'compare') return compare(spec);
+  throw new Error(`unknown diagram kind ${spec.kind}; use flow, timeline or compare`);
 }

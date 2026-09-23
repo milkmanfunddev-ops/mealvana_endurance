@@ -65,7 +65,7 @@ Last extracted: <git sha>
 - status: proposed | approved | rejected | withdrawn | amended | open | answered
 - image: <repo path> | none
 - caption: <one line, optional>
-- svg: <repo path of a drawn diagram; every screenless card has one, see Drawn pictures>
+- svg: <repo path of a drawn diagram; every screenless card has one, a compare where a choice was made, see Drawn pictures>
 - screen: <which app screen shows this, or "none (algorithm/data)">
 - source: <spec path; ticket NN; ADR; commit; grill <date>; Lee on the page <date>>
 
@@ -73,8 +73,12 @@ Last extracted: <git sha>
 
 **Question.** The one question this section answers, as a phrase. The page shows it first.
 
-**Decision.** One or two sentences, or a numbered list of clauses (`1. …` on its own line each).
-A clause list lets Lee tick the clauses he wants dropped in Rewrite instead of rejecting the whole card.
+**Decision.** The answer in plain words, written for the ratifier, not for the next build agent
+(Lee, 2026-09-22): two to four sentences a newcomer can read, ending with one worked example
+that uses real dates, names or numbers. Every term of art is a glossary term (Vocabulary below)
+or is defined in the sentence that uses it; `sync.mjs unclear` lists the ones that are neither.
+The precise clauses a builder needs go in Details. A numbered clause list (`1. …` on its own
+line each) is still allowed and lets Lee tick the clauses he wants dropped in Rewrite.
 
 **Why.** One or two sentences.
 
@@ -82,7 +86,7 @@ A clause list lets Lee tick the clauses he wants dropped in Rewrite instead of r
 
 **What it touches.** Screens and services, one line.
 
-**Details.** Optional. Pixel sizes, timings and other numbers that belong below the fold.
+**Details.** Optional. The precise clauses, pixel sizes, timings and other numbers that belong below the fold.
 
 > 2026-09-13 approved
 ```
@@ -92,7 +96,7 @@ testing decisions, written by `/to-spec-lee` with `source: spec <feature> <date>
 each card's id in parentheses at the end of the paragraph it came from, so `sync.mjs cite` can
 say which paragraphs stand, which were rejected, and which name no decision.
 
-The `Tickets` category holds a ticket breakdown waiting for approval, written by
+The `Tickets` category holds a ticket breakdown as a record (it is approved in the terminal, not on the page), written by
 `/to-tickets-lee` with `source: tickets <feature> <date>`. Each card carries up to four more
 meta lines: `- ticket: NN` (the number its file will get), `- blocked: NN, NN` (the blockers the
 breakdown declared, optional), `- depends: <id>, <id>` (the decision ids the ticket relies
@@ -117,6 +121,18 @@ page lists these as "Not yet ticketed").
 One card per product question. When a build leaves several cards that answer one question, fold
 them (`sync.mjs fold`) into one card with a clause list, and put the numbers in Details. The
 folded ids are named in the new card's history line and never reused.
+
+Cards already ruled fold the same way once Lee approves the grouping in the terminal (Lee,
+2026-09-22): `sync.mjs fold-ruled <plan.json> <proposals.md> <ssot.md> --by Lee`. Every member must
+be in the record with one shared status (approved, rejected or withdrawn). The new card keeps that
+status, takes the first member's place, carries every member's history line prefixed with its id,
+and lists the replaced ids in a `- folded: <ids>` meta line. The page, `cite` and the answered-by
+link on a question resolve an old id to the card that now carries it, and search finds it by the
+old id.
+
+When two approved cards contradict, the one approved most recently wins (Lee, 2026-09-22): the
+older card is amended to agree, with Lee's rule as its `**Lee said.**`, and waits on the page for
+approval like any amendment.
 
 An amended section carries two extra parts before the decision, `**Original.**`
 and `**Lee said.**`, and its `**Decision.**` is the rewrite awaiting approval.
@@ -182,8 +198,16 @@ one for every screenless card that has none. Nothing draws by hand: a spec in JS
 `sync.mjs draw` (`_page/diagram.mjs`, spec shapes at the top of the file), which writes
 `docs/ssot/decisions/images/<feature>/<id>.svg` and refuses anything that is not inline SVG in
 the page's colour tokens (`var(--token, fallback)`, no raster, no stock art, no other colour).
-`sync.mjs attach-svg` checks the file again and sets the card's `svg:` line; `prepare` inlines
-the file into the page document, where the page shows it in the picture box in both themes.
+`sync.mjs attach-svg` checks the file again and sets the card's `svg:` line (`--slot 2` sets
+`svg2:`, a second drawing); `prepare` inlines the files into the page document, where the page
+shows up to two pictures stacked in the left column, in both themes: the screenshot when the
+card has one, then its drawing(s). A card that chose between two ways gets a `compare` (what was
+considered on the left, what was decided on the right, the same worked example on both sides);
+a card that defines a shape or a sequence gets a `flow` or a `timeline`. `/ssot rewrite
+<feature>` redraws a whole feature this way (`sync.mjs rewrite-apply`); with `--all` it also
+rewords questions and rejected or withdrawn cards, keeping their status (the clarity pass, 2026-09-22).
+An answered question shows the decision that answered it, and that decision's pictures when it
+has none of its own; an open question gets its own drawing of the choice.
 The spec files live beside the run that drew them (`.scratch/ssot/diagrams/`) and are not the
 source of truth; the SVG is. `sync.mjs undrawn` lists what still needs one. A card that names a
 screen is captured, not drawn (ticket 08), unless the ratifier asks for a drawing of its
@@ -268,10 +292,27 @@ blocker: a debug session left from the day before had the app painted but deaf, 
 ## Vocabulary
 
 The page's Vocabulary section mirrors the glossary in `CONTEXT.md` (seeded into the `vocab`
-collection; reseed after editing the glossary). Glossary terms are underlined in every decision
+collection by `prepare --glossary CONTEXT.md`; reseed after editing the glossary). Glossary terms are underlined in every decision
 with the definition on hover, and each category page lists the terms it uses. "Add term" on the
 page queues a `term` verdict; `sync.mjs terms <verdicts.json> CONTEXT.md` appends accepted terms
 under their area heading after Lee confirms them in the terminal.
+
+## Explain and rewrite on the page
+
+A card's face is the picture, the title, the question and the decision, then Approve, Reject
+and Rewrite. Everything else (status, id, source, context, why, what else was considered, what it
+touches, details, the amend box) is under More, so a reader meets one idea per card (Lee,
+2026-09-22). Every card's Ask thread runs on the default model tier (not the quick one) and reads
+the card in full, the cards it names in full, the glossary terms it uses, the tickets that cite
+it and one line per sibling; it also gets four page tools (read a card, search the cards, read a
+ticket, look up a term) where the viewer's plan allows tools. "Draft the rewrite from this
+conversation" turns the thread into change cards (edit this card, edit or remove another, add
+one), each with the record's parts. A change card the ratifier accepts shows on its card at once
+as "Rewrite accepted on the page", counts as queued, and is written to the record by the next
+prologue run (`sync.mjs apply` handles `change` verdicts; `about` names the card the thread was
+on). The page never writes the repo; the terminal does, on the next `/ssot` or -lee run.
+`sync.mjs unclear <files> --glossary CONTEXT.md` lists the backticked terms on card faces that
+no glossary entry defines.
 
 ## Work page
 
@@ -300,11 +341,12 @@ confirming them in the terminal; the spec cites each card's id from the start, a
 ratifier's Finish the prologue drops the rejected paragraphs. It ends with `Next: /to-tickets-lee`
 only when no `Spec` card is pending. `/to-tickets-lee <feature>` in `.claude/skills/to-tickets-lee/`
 runs the prologue, stops while any `Spec` card is proposed or amended (`sync.mjs pending
-<proposals.md> Spec`), follows Matt's to-tickets, and puts the breakdown on the page as one
-`Tickets` card per ticket with its blockers, its touches and the decision ids it depends on,
-instead of quizzing in the terminal; touches that overlap become blocking edges
-(`ticket-plan`), and the ticket files are written (`publish-tickets`) only once every card is
-approved, each with the three header lines the Work page reads, a `**Decisions:**` line citing
+<proposals.md> Spec`), follows Matt's to-tickets, and writes the breakdown as one
+`Tickets` card per ticket with its blockers, its touches and the decision ids it depends on;
+touches that overlap become blocking edges (`ticket-plan`). The ratifier approves the breakdown
+in the terminal, never on the page (Lee, 2026-09-21): the skill lists it there, and on the go
+applies an approve verdict to every card, so the page shows the tickets as a record. The ticket
+files are written (`publish-tickets`) only once every card is approved, each with the three header lines the Work page reads, a `**Decisions:**` line citing
 its ids, and a closing `Next:` line. `/implement-lee <feature>` in
 `.claude/skills/implement-lee/` runs the prologue and builds the tickets in waves. `sync.mjs
 wave` reads the ticket files' Status and Blocked-by lines for the frontier (every ready ticket
@@ -323,7 +365,8 @@ proposals without blocking the next wave, and the screens the wave touched are r
 ## Sync module
 
 `_page/sync.mjs` exports `parse`, `serialize` (byte-identical round trip), `apply` (verdicts from
-the page into the two files), `answers` (close an open question with a decision), `openQuestions`, `questionFirst`,
+the page into the two files), `glossary` (CONTEXT.md terms as vocab documents), `addTerms`, `unclear` (undefined
+backticked terms on card faces), `rewriteApply` (a plain-words rewrite pass), `answers` (close an open question with a decision), `openQuestions`, `questionFirst`,
 `answeredLinks` (decisions that answered a question), `specCitations` (what a spec's decision
 sections cite), `pendingIn` (the pending cards of one category), `ticketPlan` (ticket cards with
 their blocking edges), `publishTickets` (approved ticket cards to files), `fold`, `clauses` and

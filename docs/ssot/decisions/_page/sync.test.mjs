@@ -9,9 +9,9 @@ import { mkdtempSync, writeFileSync, readFileSync, existsSync, readdirSync, rmSy
 import { tmpdir } from 'node:os';
 import { join, dirname, basename } from 'node:path';
 import { fileURLToPath } from 'node:url';
-import { parse, serialize, apply, answers, openQuestions, answeredLinks, specCitations, questionFirst, fold, clauses, toDocuments, ticketDocument, triage, nextId, assetId, staleImages, recordAsset, pendingIn, ticketPlan, publishTickets, svgCheck, undrawn, attachSvg, uncaptured, attachImage, readSidecar, changedSince, captureStatus, stalePictures, refreshPictures, dropAsset, ticketFrontier, designRenderings, touchedScreens, setTicketStatus, wavePlan, waveOpen, waveClose, elapsed } from './sync.mjs';
+import { glossary, unclear, addTerms, rewriteApply, detachImage, foldRuled, foldedAliases, parse, serialize, apply, answers, openQuestions, answeredLinks, specCitations, questionFirst, fold, clauses, toDocuments, ticketDocument, triage, nextId, assetId, staleImages, recordAsset, pendingIn, ticketPlan, publishTickets, svgCheck, undrawn, attachSvg, uncaptured, attachImage, readSidecar, changedSince, captureStatus, stalePictures, refreshPictures, dropAsset, ticketFrontier, designRenderings, touchedScreens, setTicketStatus, wavePlan, waveOpen, waveClose, elapsed } from './sync.mjs';
 import { matchScreen, findElement, runDrive, capture, sidecar, loadScreens, runtimeName, bootedUdid, createSimulator, deleteSimulator, listSimulators, claimSimulator, releaseSimulator } from './capture.mjs';
-import { draw, TOKENS } from './diagram.mjs';
+import { draw, TOKENS, titleLines } from './diagram.mjs';
 
 const here = dirname(fileURLToPath(import.meta.url));
 const cli = join(here, 'sync.mjs');
@@ -639,6 +639,13 @@ test('pendingIn counts the proposed and amended cards of one category, with thei
   apply({ 'sm-023': { verdict: 'approve', at: 't', by: 'Lee' } }, proposals, ssot, '2026-09-14');
   assert.equal(pendingIn(proposals, 'Spec').count, 0);
   assert.deepEqual(pendingIn(proposals, 'Nothing'), { category: 'Nothing', count: 0, ids: [] });
+});
+
+test('ticketPlan leaves out ticket cards sourced from another feature sharing the record', () => {
+  const proposals = parse(ticketFixture.replace('- source: tickets sm 2026-09-14', '- source: tickets other-feature 2026-09-14'));
+  const plan = ticketPlan('sm', proposals, emptySsot());
+  assert.deepEqual(plan.tickets.map(t => t.number), ['04', '05']);
+  assert.deepEqual(ticketPlan('other-feature', proposals, emptySsot()).tickets.map(t => t.number), ['03']);
 });
 
 test('ticketPlan turns overlapping touches into blocking edges, lower number first', () => {
@@ -1350,4 +1357,231 @@ test('the simulator pool: a free device is reused with fresh dev data, a new one
   assert.equal(claimSimulator('mealplanning-25', opts).name, 'wave-pool-1', 'the stale claim is dropped and the name is free');
   assert.throws(() => claimSimulator('', opts), /needs an owner/);
   rmSync(path, { force: true });
+});
+
+
+const plainFixture = `# Decisions: Sample
+
+Feature: sm
+Feature name: Sample
+
+## sm-010 · The row copies the provider's answer
+- category: Paying
+- status: approved
+- image: none
+- caption:
+- screen: none (algorithm/data)
+- source: ticket 01
+
+**Context.** Two rules disagreed.
+
+**Question.** Whose date wins?
+
+**Decision.** The provider's \`pro\` expiry. Example: grant to 31 Oct, trial lapses 12 Oct, access runs to 31 Oct.
+
+**Why.** Grants only reach us that way.
+
+**What else was considered.** The event's own date.
+
+**What it touches.** The webhook, \`_shared/revenuecat\`.
+
+> 2026-09-22 approved by Lee
+
+## sm-011 · An undefined term
+- category: Paying
+- status: proposed
+- image: none
+- caption:
+- screen: none (algorithm/data)
+- source: ticket 02
+
+**Context.** Nothing.
+
+**Decision.** Answer \`403 pro_required\`.
+
+**Why.** Because.
+
+**What else was considered.** none recorded
+
+**What it touches.** Five functions.
+`;
+
+test('unclear lists the backticked terms the glossary does not define', () => {
+  assert.equal(serialize(parse(plainFixture)), plainFixture);
+  const g = glossary('## Language\n\n### Paying for the app\n\n**pro**:\nThe one entitlement id.\n_Avoid_: Pro (the product)\n');
+  const u = unclear([parse(plainFixture)], g);
+  assert.deepEqual(Object.keys(u.terms), ['403 pro_required'], 'pro is defined by the glossary; What it touches is a path list and is not scanned');
+  assert.deepEqual(u.terms['403 pro_required'], ['sm-011']);
+});
+
+test('glossary reads areas, definitions and avoid lines in file order', () => {
+  const g = glossary(`# Context\n\n## Language\n\n### The meal library\n\n**Assembly**:\nA Meal with no method steps: put together rather\nthan cooked.\n_Avoid_: Combo, no-cook meal\n\n**Batch**:\nCooked once.\n\n### Paying for the app\n\n**Legacy grace**:\nThirty days.\n`);
+  assert.deepEqual(g.map(x => [x.id, x.area, x.order]), [['assembly', 'The meal library', 0], ['batch', 'The meal library', 1], ['legacy-grace', 'Paying for the app', 2]]);
+  assert.equal(g[0].definition, 'A Meal with no method steps: put together rather than cooked.');
+  assert.equal(g[0].avoid, 'Combo, no-cook meal');
+  assert.equal(g[1].avoid, '');
+});
+
+test('an accepted edit from a card discussion carries its fields and names the card', () => {
+  const proposals = parse(fixture), ssot = parse('# Decisions: Sample\n\nFeature: sm\nFeature name: Sample\n');
+  const verdicts = { 'change-1': { verdict: 'change', accepted: true, scope: 'sm|Sheet', about: 'sm-001', at: '2026-09-22T10:00:00Z', by: 'Lee', change: { op: 'edit', id: 'sm-001', question: 'How many heights?', decision: '1. One height.', touches: 'VanaSheet, the plan bar' } } };
+  const r = apply(verdicts, proposals, ssot, '2026-09-22');
+  assert.deepEqual(r.applied, [{ id: 'change-1', to: 'amended sm-001' }]);
+  const d = proposals.decisions.find(x => x.id === 'sm-001');
+  assert.equal(d.parts.question, 'How many heights?');
+  assert.equal(d.parts.touches, 'VanaSheet, the plan bar');
+  assert.match(d.history.at(-1).note, /from the discussion on sm-001 on 2026-09-22 by Lee/);
+  assert.match(serialize(proposals), /\*\*Question\.\*\* How many heights\?/);
+});
+
+test('a ticket document carries its body for the page', () => {
+  const t = ticketDocument('sm', 'issues/03-thing.md', '# 03: Thing\n\n**Status:** ready-for-agent\n**Blocked by:** None\n**Next:** x\n\nBody about sm-001.\n');
+  assert.match(t.body, /Body about sm-001/);
+  assert.deepEqual(t.cites, ['sm-001']);
+});
+
+
+test('a compare diagram draws two panels and passes the svg check', () => {
+  const svg = draw({ kind: 'compare', title: 'Whose date wins', left: { head: 'Considered: trust the event', lines: ['Trial lapses 12 Oct', 'Row closes 12 Oct'] }, right: { head: 'Decided: ask RevenueCat', lines: ['Trial lapses 12 Oct', 'Row stays open to 31 Oct'] }, example: ['Grant to 31 Oct'] });
+  assert.match(svg, /Considered: trust the event/);
+  assert.match(svg, /Row stays open to 31 Oct/);
+  assert.equal(svgCheck(svg).ok, true, svgCheck(svg).problems.join('; '));
+  assert.throws(() => draw({ kind: 'compare', left: { head: 'a' } }), /right\.head/);
+});
+
+
+test('a card carries up to two drawn pictures: attach-svg --slot 2 sets svg2 and the page document inlines both', () => {
+  const doc = parse(fixture);
+  assert.equal(attachSvg(doc, 'sm-001', 'images/sm/sm-001.svg'), true);
+  assert.equal(attachSvg(doc, 'sm-001', 'images/sm/sm-001-b.svg', { slot: 2 }), true);
+  const d = doc.decisions[0];
+  assert.deepEqual(Object.keys(d.meta), ['category', 'status', 'image', 'caption', 'svg', 'svg2', 'screen', 'source'], 'the second picture sits right after the first');
+  assert.equal(d.meta.svg, 'images/sm/sm-001.svg');
+  assert.equal(d.meta.svg2, 'images/sm/sm-001-b.svg');
+  assert.equal(serialize(parse(serialize(doc))), serialize(doc));
+  const docs = toDocuments(doc, { readSvg: p => `<svg data-p="${p}"></svg>` });
+  assert.match(docs[0].svg, /sm-001\.svg/);
+  assert.match(docs[0].svg2, /sm-001-b\.svg/);
+  assert.equal(docs[1].svg2, '');
+});
+
+
+test('rewriteApply changes only the parts given, keeps the order, draws the picture into the right slot, and refuses what it must', () => {
+  const proposals = parse(fixture), ssot = parse('# Decisions: Sample\n\nFeature: sm\nFeature name: Sample\n');
+  const drawn = [];
+  const items = {
+    'sm-001': { title: 'The sheet has one height', question: 'How many heights does the sheet have?', decision: 'One. It opens to one height and goes full screen only by its button. Example: drag it up on 12 Oct, it stops at the one height.', details: 'Precisely: 1. One height. 2. Full screen only by its button.', diagram: { kind: 'timeline', title: 'If … (rejected)', steps: [{ at: '1', label: 'a' }, { at: '2', label: 'b' }] }, diagram2: { kind: 'timeline', title: 'What we decided', steps: [{ at: '1', label: 'a' }, { at: '2', label: 'c' }] } },
+    'sm-002': { decision: 'x', diagram: { kind: 'flow', rows: [] } },
+    'sm-999': { decision: 'x' },
+  };
+  const r = rewriteApply(items, proposals, ssot, { today: '2026-09-23', drawTo: (id, spec, slot) => { drawn.push([id, spec.kind, slot]); if (spec.kind === 'flow') throw new Error('a flow needs rows of nodes'); return `images/sm/${id}.svg`; } });
+  assert.deepEqual(r.applied.map(a => a.id), ['sm-001', 'sm-002']);
+  assert.deepEqual(r.refused, [{ id: 'sm-002', why: 'picture 1: a flow needs rows of nodes' }, { id: 'sm-999', why: 'unknown id' }]);
+  const d = proposals.decisions[0];
+  assert.equal(d.parts.question, 'How many heights does the sheet have?');
+  assert.equal(d.parts.why, 'Simpler.', 'untouched parts stay');
+  assert.deepEqual(Object.keys(d.parts), ['context', 'question', 'decision', 'why', 'alternatives', 'touches', 'details']);
+  assert.equal(d.meta.svg, 'images/sm/sm-001.svg');
+  assert.equal(d.meta.svg2, 'images/sm/sm-001.svg', 'the fake drawTo returns one path; the slot is what matters');
+  assert.deepEqual(drawn, [['sm-001', 'timeline', 1], ['sm-001', 'timeline', 2], ['sm-002', 'flow', 1]]);
+  assert.match(d.history.at(-1).note, /^rewritten in plain words \(question, decision, details\)$/);
+  assert.equal(serialize(parse(serialize(proposals))), serialize(proposals));
+});
+
+test('addTerms appends new glossary entries under their area and skips ones already defined', () => {
+  const ctx = '# Context\n\n## Language\n\n### Paying for the app\n\n**Grant**:\nPro given for a time.\n';
+  const out = addTerms(ctx, [{ term: 'Grant', definition: 'dup' }, { term: 'Expiry', area: 'Paying for the app', definition: 'When pro ends.', avoid: 'expiration date' }, { term: 'Tile', area: 'Meal imagery', definition: 'One square.' }]);
+  const g = glossary(out);
+  assert.deepEqual(g.map(x => [x.term, x.area]), [['Grant', 'Paying for the app'], ['Expiry', 'Paying for the app'], ['Tile', 'Meal imagery']]);
+  assert.equal(g[0].definition, 'Pro given for a time.');
+  assert.equal(g[1].avoid, 'expiration date');
+});
+
+test('a title too long for its drawing wraps onto a second line and the drawing moves down', () => {
+  assert.deepEqual(titleLines('Short', 320), ['Short']);
+  const long = 'If the app gave itself Legacy grace (rejected)';
+  const tl = titleLines(long, 320);
+  assert.equal(tl.length, 2);
+  assert.equal(tl.join(' '), long);
+  const svg = draw({ kind: 'timeline', title: long, steps: [{ at: 'a', label: 'b' }, { at: 'c', label: 'd' }] });
+  assert.equal((svg.match(/class="dg-title"/g) || []).length, 2);
+  assert.match(svg, /<g transform="translate\(0 20\)">/);
+});
+
+test('rewriteApply with all rewords a question and a rejected card, keeps their status, and the page knows who answered a question', () => {
+  const proposals = parse(`# Proposed decisions: Sample\n\nFeature: sm\nFeature name: Sample\n\n## sm-010 · Does the sheet remember its height\n- category: Sheet\n- kind: question\n- status: answered\n- linked: sm-001\n- source: grill\n\n**Context.** Old context.\n\n**Question.** old words?\n\n**Why.** Matters.\n\n> 2026-09-14 answered by sm-011\n`);
+  const ssot = parse(`# Decisions: Sample\n\nFeature: sm\nFeature name: Sample\n\n## sm-020 · Three heights\n- category: Sheet\n- status: rejected\n- image: none\n- screen: none\n- source: grill\n\n**Context.** C.\n\n**Decision.** Three heights.\n\n**Why.** W.\n\n> 2026-09-14 rejected by Lee\n`);
+  const items = { 'sm-010': { question: 'Does the sheet open at the height it had last time?' }, 'sm-020': { title: 'The sheet was to have three heights (rejected)', decision: 'Three heights: auto, 75% and full.' } };
+  const refused = rewriteApply(structuredClone(items), parse(serialize(proposals)), parse(serialize(ssot)), { today: '2026-09-23' }).refused;
+  assert.deepEqual(refused.map(x => x.id), ['sm-010', 'sm-020'], 'without all, both are refused as before');
+  const r = rewriteApply(items, proposals, ssot, { today: '2026-09-23', all: true, note: 'clarity pass' });
+  assert.deepEqual(r.applied.map(a => a.id), ['sm-010', 'sm-020']);
+  assert.equal(proposals.decisions[0].meta.status, 'answered');
+  assert.equal(proposals.decisions[0].parts.question, 'Does the sheet open at the height it had last time?');
+  assert.equal(ssot.decisions[0].meta.status, 'rejected');
+  assert.equal(ssot.decisions[0].title, 'The sheet was to have three heights (rejected)');
+  assert.equal(ssot.decisions[0].history.at(-1).note, 'clarity pass (decision)');
+  assert.equal(toDocuments(proposals)[0].answeredBy, 'sm-011');
+  assert.equal(toDocuments(ssot)[0].answeredBy, '');
+});
+
+test('rewriteApply takes a change that only redraws the second picture', () => {
+  const proposals = parse(fixture), ssot = parse('# Decisions: Sample\n\nFeature: sm\nFeature name: Sample\n');
+  const r = rewriteApply({ 'sm-001': { diagram2: { kind: 'timeline', steps: [{ at: '1', label: 'a' }, { at: '2', label: 'b' }] } } }, proposals, ssot, { today: '2026-09-23', drawTo: (id, spec, slot) => `images/sm/${id}-${slot}.svg` });
+  assert.deepEqual(r.applied.map(a => a.id), ['sm-001']);
+  assert.equal(proposals.decisions[0].meta.svg2, 'images/sm/sm-001-2.svg');
+  assert.equal(proposals.decisions[0].history.at(-1).note, 'rewritten in plain words');
+});
+
+test('foldRuled folds approved record cards into one approved card that keeps every history line and answers for the old ids', () => {
+  const card = (id, status, extra = '') => `## ${id} · Card ${id}\n- category: Pay\n- status: ${status}\n- image: none\n- svg: images/${id}.svg\n- screen: none\n- source: spec ${id}\n${extra}\n**Decision.** Rule ${id}.\n\n> 2026-09-1${id.slice(-1)} approved by Lee\n\n`;
+  const ssot = parse(`# Decisions: Sample\n\nFeature: sm\nFeature name: Sample\n\n${card('sm-001', 'approved')}${card('sm-002', 'approved', '- linked: sm-009\n')}${card('sm-003', 'approved')}${card('sm-004', 'rejected')}`);
+  const proposals = parse(`# Proposed decisions: Sample\n\nFeature: sm\nFeature name: Sample\n\n## sm-009 · A question\n- category: Pay\n- kind: question\n- status: open\n\n**Question.** q?\n\n## sm-010 · Spare\n- category: Pay\n- status: proposed\n\n**Decision.** x.\n`);
+  const r = foldRuled([
+    { from: ['sm-001', 'sm-002'], into: { title: 'One rule', question: 'Which rule?', decision: 'Both rules. Example: 1 Oct.', why: 'Same question.', touches: 'Pay', details: 'Precisely:\n1. Rule sm-001.\n2. Rule sm-002.' } },
+    { from: ['sm-003', 'sm-004'], into: { title: 'Mixed' } },
+    { from: ['sm-010', 'sm-003'], into: { title: 'Proposal' } },
+  ], proposals, ssot, { today: '2026-09-23', by: 'Lee' });
+  assert.deepEqual(r.folded, [{ id: 'sm-011', from: ['sm-001', 'sm-002'], status: 'approved' }]);
+  assert.equal(r.refused.length, 2);
+  assert.match(r.refused[0].why, /one ruled status/);
+  assert.match(r.refused[1].why, /not in the record: sm-010/);
+  assert.deepEqual(ssot.decisions.map(d => d.id), ['sm-011', 'sm-003', 'sm-004'], 'the new card takes the first member\'s place');
+  const d = ssot.decisions[0];
+  assert.equal(d.meta.status, 'approved');
+  assert.equal(d.meta.folded, 'sm-001, sm-002');
+  assert.equal(d.meta.linked, 'sm-009');
+  assert.equal(d.meta.svg, 'images/sm-001.svg');
+  assert.deepEqual(d.history.map(h => h.note), ['sm-001: approved by Lee', 'sm-002: approved by Lee', 'folded from sm-001, sm-002, the fold approved by Lee in the terminal']);
+  assert.equal(serialize(parse(serialize(ssot))), serialize(ssot));
+  assert.deepEqual(foldedAliases(proposals, ssot), { 'sm-001': 'sm-011', 'sm-002': 'sm-011' });
+  const cites = specCitations('## Implementation Decisions\n\nThe rule stands (sm-002).\n', proposals, ssot);
+  assert.deepEqual(cites.unknown, []);
+  assert.deepEqual(cites.folded, { 'sm-002': 'sm-011' });
+  assert.equal(toDocuments(ssot)[0].folded, 'sm-001, sm-002');
+});
+
+test('detachImage takes an unhelpful screenshot off for good: uncaptured skips the card afterwards', () => {
+  const doc = parse(`# Decisions: Sample\n\nFeature: sm\nFeature name: Sample\n\n## sm-001 · Paywall rule\n- category: Pay\n- status: approved\n- image: test/goldens/paywall_light.png\n- caption: The paywall\n- svg2: images/sm-001-2.svg\n- screen: Paywall\n- source: spec\n\n**Decision.** x.\n\n> 2026-09-14 approved\n`);
+  assert.equal(detachImage(doc, 'sm-001', 'a golden: its words render as blocks', { today: '2026-09-23' }), true);
+  const d = doc.decisions[0];
+  assert.equal(d.meta.image, 'none');
+  assert.equal(d.meta.caption, undefined);
+  assert.equal(d.meta.noshot, 'a golden: its words render as blocks');
+  assert.equal(d.history.at(-1).note, 'screenshot removed: test/goldens/paywall_light.png (a golden: its words render as blocks)');
+  assert.equal(detachImage(doc, 'sm-001', 'again'), false, 'nothing left to remove');
+  assert.deepEqual(uncaptured({ decisions: [] }, doc, { paywall: { match: ['Paywall'], reuse: 'test/goldens/paywall_light.png' } }), []);
+  assert.equal(serialize(parse(serialize(doc))), serialize(doc));
+});
+
+test('foldRuled leaves a picture slot empty when the plan says none', () => {
+  const card = id => `## ${id} · Card\n- category: Pay\n- status: approved\n- image: shots/${id}.png\n- svg: images/${id}.svg\n- svg2: images/${id}-2.svg\n- screen: Paywall\n- source: s\n\n**Decision.** R.\n\n> 2026-09-14 approved\n\n`;
+  const ssot = parse(`# Decisions: Sample\n\nFeature: sm\nFeature name: Sample\n\n${card('sm-001')}${card('sm-002')}`);
+  const r = foldRuled([{ from: ['sm-001', 'sm-002'], into: { title: 'T', decision: 'D.', image: 'none', svg2: 'none' } }], { decisions: [] }, ssot, { today: '2026-09-23' });
+  assert.equal(r.folded.length, 1);
+  const d = ssot.decisions[0];
+  assert.equal(d.meta.image, 'none');
+  assert.equal(d.meta.caption, '');
+  assert.equal(d.meta.svg, 'images/sm-001.svg');
+  assert.equal(d.meta.svg2, undefined);
 });

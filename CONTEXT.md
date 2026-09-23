@@ -28,11 +28,11 @@ Whether the shopper is collecting the order themselves or having it delivered â€
 never a property of the Location they were handed.
 _Avoid_: Fulfillment type, delivery method, shipping option
 
-**Hand-off**:
+**Checkout hand-off**:
 The end of Mealvana's involvement in an order: the shopper leaves for Kroger's own checkout to
 choose a slot and pay. Mealvana never places an order, sees an order, or knows whether one
 happened, and never handles payment.
-_Avoid_: Checkout, purchase, order placement
+_Avoid_: Checkout, purchase, order placement, Hand-off on its own (that is Vana's button)
 
 **Delivery area**:
 Where the shopper wants their groceries delivered, as a postcode. It is the only thing about a
@@ -64,6 +64,10 @@ _Avoid_: Dish (that is the photographed subject, not the Meal)
 A Meal with no method steps: ingredients put together rather than cooked. Its components stay
 visually themselves in the bowl. Described by a pattern and a frequency rather than by steps.
 _Avoid_: Combo, no-cook meal, snack
+
+**Meal review**:
+An Admin's verdict on one Meal, Good recipe or Not good with a reason, sent from the meal page to a table only Admins can read. Athletes never see it.
+_Avoid_: comment, team review, recipe comment
 
 ### Meal imagery
 
@@ -113,6 +117,12 @@ The model call that reached a Verdict, used only by the frozen image pipeline. A
 adds never goes through the Judge.
 
 ### Vana and what she knows
+
+**Hand-off**:
+A button in Vana's reply that opens the app screen made for what the athlete asked, instead of
+Vana doing it in the sheet: a meal plan opens the meal-planning page, fuelling a workout opens new
+activity, planning an event opens the event screen (mp-305).
+_Avoid_: Redirect, deep link; Checkout hand-off is the Kroger exit
 
 **Vana**:
 The single assistant persona in the app. Whatever the person asks â€” planning meals, a question
@@ -238,12 +248,34 @@ _Avoid_: Fueling window, meal window
 The model provider's short-lived copy of the opening part of a prompt it has just seen. A later call that starts with exactly the same text reads that part back at a tenth of the price; anything that changes breaks the cache from that point on.
 _Avoid_: Cache (unqualified), memory
 
+**LIKES line**:
+The line of the Context block that lists the Meals the athlete voted thumbs up or down, read from Meal feedback every time the block is built.
+_Avoid_: likes, meal preferences
+
+**LAST TALKS line**:
+The line of the Context block that carries what the athlete said in recent conversations, so Vana can pick up where they left off.
+_Avoid_: previous conversations, read-back
+
+**Show more**:
+The chip under a Meal picker that opens a sheet with the rest of the same search, so the athlete can see more meals without a new search.
+_Avoid_: tail, More sheet
+
+**Fuelling window authority**:
+The one place in the app that decides how long a workout's pre-workout window is: the workout's own stored minutes, or a default from its duration and intensity.
+_Avoid_: Window authority, fueling_window_authority
+
+**Step**:
+One call to the model inside a Turn. A turn that calls tools runs several steps; tokens and cache reads are counted per step.
+_Avoid_: model step, tool step (unqualified)
+
 ### Paying for the app
 
 **Gate**:
 The one check that decides whether an account may use the app. It answers yes for an account that
-holds Pro, for a Tester and for an Admin, and the app and the server ask it the same way. There is
-one Gate for the whole app; no feature has its own.
+holds Pro. In the app, and only there, it also opens for an Admin, who skips the paywall screen
+(mp-416); the server lets in Pro alone, so a Tester or an Admin without a TestFlight subscription
+or a Grant is still refused by Vana (mp-318, mp-335). There is one Gate for the whole app; no
+feature has its own.
 _Avoid_: Pro gate, Vana gate, feature lock
 
 **Pro**:
@@ -297,23 +329,21 @@ offer codes are never used.
 _Avoid_: Promo code, offer code, referral link
 
 **Tester**:
-An account that turned on the seven-tap switch in Settings. The Gate lets it in, and it sees test
-items. Anyone can become one.
+An account that turned on the seven-tap switch in Settings. It sees test items, and that is all the
+switch does: to get past the Gate a Tester subscribes in TestFlight, which charges nothing
+(mp-318). Anyone can become one.
 _Avoid_: Internal user, beta user
 
 **Admin**:
-A team account marked by hand in the database. The Gate lets it in, and it may review meals.
+A team account marked by hand in the database. It may review meals, and the Gate in the app lets it
+past the paywall screen; the server still needs a TestFlight subscription or a Grant before Vana
+answers it (mp-416).
 _Avoid_: Staff, superuser
 
-**Allowance**:
-The credits a subscription grants into the wallet each billing period. Spent before any pack
-credits, forfeited when the period ends, and the only credits a trial has. The wallet does not
-distinguish where a credit came from except in this order of spending.
-_Avoid_: Free credits, included credits, quota
-
 **Top-up**:
-A pack of credits bought on its own, spent only once the Allowance is empty. Top-up credits never
-expire and are never forfeited, whatever happens to the subscription.
+Budget bought on its own, in a pack: $1.00 of budget for $4.99 or $5.00 for $19.99 (mp-430). It is
+spent only once the Monthly budget is empty, never expires and is never forfeited, whatever happens
+to the subscription (mp-281).
 _Avoid_: Bundle, pack (that is the store product, not the credits)
 
 **Paywall**:
@@ -334,7 +364,7 @@ _Avoid_: beta build
 
 **Monthly budget**:
 What a subscription puts in the wallet each month, measured in what AI calls actually cost us: $4.00, the same for every plan, a quarter of it in the trial week. The athlete sees only the share used and the refill date.
-_Avoid_: Credits, tokens, quota, allowance of credits
+_Avoid_: Allowance (its name when it was counted in credits), credits, tokens, quota
 
 **Wallet**:
 The one place an account's AI spending comes from: the monthly budget, spent first, and any bought Top-ups. Every AI call draws from it.
@@ -392,6 +422,26 @@ _Avoid_: Budget bar, credits bar
 What is left of the budget bought in Top-ups, shown to the athlete as a share of one month's budget: the $4.99 pack adds a quarter of a month, the $19.99 pack a month and a quarter.
 _Avoid_: Pack credits, bought credits
 
+**Grace run**:
+The script Lee runs at the flip that gives Legacy grace to every registered account created before it. An install still anonymous at the flip gets its month through a Grace claim instead.
+_Avoid_: flip-day run, grace selection, grace script
+
+**Grace claim**:
+The one request an install still anonymous at the flip makes right after sign-up to get its Legacy grace. It is made once and not retried.
+_Avoid_: claim (unqualified), grace-claim
+
+**Plan-ended bar**:
+The bar above every screen of a Lapsed account saying its plan has ended, with a Subscribe button that opens the Paywall sheet (mp-457).
+_Avoid_: Subscribe bar, lapsed banner
+
+**Subscription screen**:
+The screen opened from the first row of Settings that shows where the plan stands and what Pro includes, with Upgrade, Manage subscription and Redeem code (mp-495).
+_Avoid_: Plan screen, Pro screen
+
+**Micro-dollar**:
+A millionth of a dollar, the unit the wallet row counts in. The athlete never sees it; the phone turns it into shares of a month.
+_Avoid_: micros
+
 ### Planning meals
 
 **Draft**:
@@ -429,6 +479,9 @@ _Avoid_: Daily brief
 The sheet that shows a draft plan before it is confirmed: what the period adds up to, every meal with its servings, and the Confirm button.
 _Avoid_: Review plan screen, summary
 
+**Plan bar**:
+The bar pinned above the message box in a planning conversation that shows the Draft: its meals, their servings and the Review plan button. It never shows the confirmed plan.
+
 ### Building and shipping the app
 
 **Prototype**:
@@ -446,6 +499,10 @@ _Avoid_: Prod launch, migration day
 **Dev build**:
 The app built against the dev backend rather than production, for the team. It ships every unfinished feature visible; nothing in it is hidden behind a build flag.
 _Avoid_: Debug build, dev mode (that is the dev environment the build runs in)
+
+**Wiredash**:
+The bug-report tool whose inbox the team reads. An athlete reaches it by shaking the phone or from the card Vana shows for a problem, and feedback typed to Vana is filed there too.
+_Avoid_: bug-report inbox, feedback form
 
 ### Building and testing
 
