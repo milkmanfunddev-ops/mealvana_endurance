@@ -285,20 +285,41 @@ class VanaChatController extends _$VanaChatController {
   /// tap also navigates ([VanaFixedChip.navigatesTo]).
   VanaFixedChip? fixedChipFor(String label) => _fixedChips.match(label);
 
+  /// The picker chip a tapped [label] is ("Other options", the two filters,
+  /// "I like these", `Next: <type>`), or null (ticket 12).
+  VanaPickerChipTap? pickerChipFor(String label) => _fixedChips.picker(label);
+
+  /// Whether a tap on [label] goes to the no-model endpoint first: a fixed
+  /// chip or a picker chip. The screen spends the strip only for the rest.
+  bool actsAtOnce(String label) =>
+      fixedChipFor(label) != null || pickerChipFor(label) != null;
+
   /// A chip tap. A fixed-label chip runs its step at once with no model turn
-  /// ([actAtOnce]); every other label is the next user message (02 §6),
-  /// marked as a tap so the log can tell it from typed turns.
+  /// ([actAtOnce]); so does a picker chip, which brings the next picker
+  /// unless its next step is Vana's. Every other label is the next user
+  /// message (02 §6), marked as a tap so the log can tell it from typed turns.
   Future<void> tapChip(String label) async {
     // A lapsed athlete meets the paywall before the label is even resolved.
     if (!await ref.canWrite()) return;
     final chip = fixedChipFor(label);
-    if (chip == null) return send(label, inputMode: VanaInputMode.tap);
-    return actAtOnce(
-      label: label,
-      statusTool: chip.statusTool,
-      action: (conversationId) =>
-          chip.action(conversationId: conversationId, label: label),
-    );
+    if (chip != null) {
+      return actAtOnce(
+        label: label,
+        statusTool: chip.statusTool,
+        action: (conversationId) =>
+            chip.action(conversationId: conversationId, label: label),
+      );
+    }
+    final picker = pickerChipFor(label);
+    if (picker != null) {
+      return actAtOnce(
+        label: label,
+        statusTool: VanaPickerChip.statusTool,
+        action: (conversationId) =>
+            picker.action(conversationId: conversationId, label: label),
+      );
+    }
+    return send(label, inputMode: VanaInputMode.tap);
   }
 
   /// Run a fixed step with no model turn (mp-464 clauses 3 to 5, ticket 11).
@@ -315,6 +336,11 @@ class VanaChatController extends _$VanaChatController {
   ///
   /// A failure rolls the tap back: nothing was stored, so nothing stays on
   /// screen, and the error reaches the screen the way a turn's does.
+  ///
+  /// A result that hands the tap back (`toVana`: a picker chip whose next
+  /// step is a question or the wrap-up, ticket 12) ran and stored nothing:
+  /// the tap is taken back off the screen and sent to Vana as a tapped
+  /// message instead.
   Future<void> actAtOnce({
     required String label,
     required String statusTool,
@@ -359,6 +385,19 @@ class VanaChatController extends _$VanaChatController {
       }
       final result = await _actions.run(action(conversationId));
       if (!ref.mounted) return;
+      if (result.toVana) {
+        _logger.info(
+          'chip "$label" → Vana',
+          context: _context,
+          data: {'conversationId': conversationId},
+        );
+        return _turn(
+          current.copyWith(conversationId: conversationId),
+          message: label,
+          opener: false,
+          inputMode: VanaInputMode.tap,
+        );
+      }
       MealPlan? plan;
       final drawn = <VanaPart>[];
       for (final part in result.parts) {

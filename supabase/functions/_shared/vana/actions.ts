@@ -1,6 +1,7 @@
 /** UiActions — structured edits that never need the model. POST vana-action { type, payload }.
  *  Payload keys are accepted in camelCase (the contract) and snake_case (what an older client might send). */
-import type { UiAction, VanaPart, DaySlot, DayPlan, ShoppingItem } from './contracts.ts';
+import type { UiAction, VanaPart, DaySlot, DayPlan, ShoppingItem, MealType } from './contracts.ts';
+import type { UIMessage } from 'npm:ai@6.0.277';
 import type { VanaCtx } from './env.ts';
 import { today, TOOL_MODEL } from './env.ts';
 import * as plan from './plan.ts';
@@ -8,7 +9,9 @@ import { setSetting, forgetMemory, listMemories, isCoverageScope, isDayKey, isPe
 import { detectPantryFromPhoto, persistAssistantPart } from './pantry.ts';
 import { completeCall, reserveCallOrThrow } from './rate-limit.ts';
 import { reserveBudgetOrThrow } from '../ai/credits.ts';
-import { diagnoseStaples, dayGuidance, draftWeekPlan, planDayPart, planWeekPart } from './tools.ts';
+import { diagnoseStaples, dayGuidance, draftWeekPlan, mealPickerPart, planDayPart, planWeekPart, type PickerArgs } from './tools.ts';
+import { isPickerChipKind, PICKER_CHIP_ARGS, pickerNextStep } from './chips.ts';
+import { isMealType, walkFor } from './plan-math.ts';
 import { buildAthleteContext } from './context.ts';
 import { conversationMessages, shownMealIds } from './chat.ts';
 import { suggestedPantry } from './pantry.ts';
@@ -104,6 +107,29 @@ export async function extraAction(v: VanaCtx, type: string, p: Record<string, an
     case 'plan_week': return { parts: [await planWeekPart(v, await buildAthleteContext(v))] };
     case 'ask_pantry': return { parts: [await suggestedPantry(v, p.title ? String(p.title) : undefined)] };
     case 'open_shopping_list': return { parts: [] };
+    // ---- additive 2026-09-23 (mp-464, ai-cost ticket 12): the picker's own chips. next_picker{conversationId, chipKind,
+    // mealType?}: 'more' / 'no_recipe' / 'under_20' re-run the last picker for the same type with its own filters and the
+    // chip's fixed arguments laid over them (PICKER_CHIP_ARGS); 'next' draws the next meal type's picker when that is the
+    // whole next step (pickerNextStep), and otherwise answers `toVana` with nothing run, stored or logged — the app then
+    // sends the tap to Vana, who asks the fork or wraps up. The picker's resolved arguments ride back as `toolInput`, the
+    // input the tap is stored under, so the next "Other options" reads the same filters.
+    case 'next_picker': {
+      const conversationId = String(pick(p, 'conversationId', 'conversation_id') ?? ''); if (!conversationId) throw new Error('conversationId required');
+      const chipKind = pick(p, 'chipKind', 'chip_kind'); if (!isPickerChipKind(chipKind)) throw new Error('chipKind must be more | no_recipe | under_20 | next');
+      const sc: plan.PlanScope = { conversationId };
+      const { messages } = await conversationMessages(v, conversationId);
+      const last = lastPicker(messages); if (!last) throw new Error('no picker to follow');
+      const ctx = await conversationContext(v, sc);
+      let args: PickerArgs;
+      if (chipKind === 'next') {
+        const draft = await plan.getConversationPlan(v, conversationId, false);
+        const next = pickerNextStep({ lastType: last.mealType, walk: walkFor(ctx.plan.mealTypes, ctx.plan.coverageScope ?? null), covered: new Set((draft?.meals ?? []).map((m) => m.mealType)), batchKnown: ctx.plan.batchKnown !== false, coverageScope: ctx.plan.coverageScope ?? null, named: isMealType(p.mealType) ? p.mealType : null });
+        if (next.step !== 'picker') return { parts: [], toVana: true, reason: next.step };
+        args = { mealType: next.mealType };
+      } else args = { ...last.filters, ...PICKER_CHIP_ARGS[chipKind] };
+      const part = await mealPickerPart(v, ctx, sc, new Set(shownMealIds(messages)), args);
+      return { parts: [part], toolInput: args };
+    }
     case 'set_pantry': { const conversationId = pick(p, 'conversationId', 'conversation_id'); const items = (Array.isArray(p.items) ? p.items : []).map((x: unknown) => String(x).trim()).filter(Boolean).slice(0, 40); const m = await setSetting(v, 'pantry_items', items, 'conversation'); const scope: plan.PlanScope | null = conversationId ? { conversationId: String(conversationId) } : null; const cur = await plan.resolvePlan(v, scope, false); if (cur && cur.meals.length) await plan.refreshShopping(v, cur.id); return { parts: [{ kind: 'memory_saved', memory: m }] }; }
     case 'pantry_photo': { const conversationId = String(pick(p, 'conversationId', 'conversation_id') ?? ''); if (!conversationId) throw new Error('conversationId required');
       // A fridge photo is a vision call: it draws the monthly budget (mp-430, ticket 09) and is limited by the same shared
@@ -162,6 +188,28 @@ export async function extraAction(v: VanaCtx, type: string, p: Record<string, an
     case 'undo_receipt': return { parts: [await undoReceipt(v, p)] };
     default: return null;
   }
+}
+
+/** The filters a picker's own chips carry over: everything its call was given except the words on it (the title and
+ *  the chips Vana named belong to her turn, not to the search). */
+const CARRIED: readonly (keyof PickerArgs)[] = ['query', 'count', 'contexts', 'batch', 'kind', 'maxPrepMinutes', 'defaultServings', 'excludeAllergens', 'requireDiet', 'ingredientsOnHand'];
+/** The newest picker in a conversation — Vana's or one a chip fetched — as its meal type and the filters it was drawn
+ *  with. A legacy row has no call input, so only its meal type carries over. */
+export function lastPicker(messages: UIMessage[]): { mealType: MealType; filters: PickerArgs } | null {
+  for (let m = messages.length - 1; m >= 0; m--) {
+    const parts = messages[m].parts as { type: string; state?: string; input?: unknown; output?: unknown }[];
+    for (let k = parts.length - 1; k >= 0; k--) {
+      const part = parts[k];
+      const out = part.output as { kind?: string; mealType?: unknown } | undefined;
+      if (!part.type.startsWith('tool-') || part.state !== 'output-available' || out?.kind !== 'meal_picker') continue;
+      const input = (part.type === 'tool-suggestMeals' && part.input && typeof part.input === 'object' ? part.input : {}) as Record<string, unknown>;
+      const mealType: MealType = isMealType(out.mealType) ? out.mealType : isMealType(input.mealType) ? input.mealType : 'dinner';
+      const filters: PickerArgs = { mealType };
+      for (const key of CARRIED) if (input[key] != null) (filters as Record<string, unknown>)[key] = input[key];
+      return { mealType, filters };
+    }
+  }
+  return null;
 }
 
 /** The context a chat turn builds for a planning conversation (chat.ts runChat): the athlete's block with the PLAN line

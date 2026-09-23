@@ -42,9 +42,12 @@ class VanaPickerScope extends InheritedWidget {
 /// has at least one meal. On the conversation's first picker, while the
 /// draft is still empty, a leading "Draft my whole week" chip offers the
 /// propose-first door: it acts at once on the no-model endpoint (mp-464,
-/// `VanaFixedChip.draftWeek`), so the strip stays live after it. The other
-/// replies still go to Vana as the next user message (ticket 12 moves the
-/// ones whose next step is fixed).
+/// `VanaFixedChip.draftWeek`), so the strip stays live after it. "Other
+/// options", "No recipe only" and "Under 20 min" bring the next picker with
+/// no model turn, and so do "I like these" / "`Next: <type>`" when the next
+/// meal type's picker is the whole next step (mp-464, `VanaPickerChip`,
+/// ticket 12); the controller decides, this strip only hands up the label.
+/// "Different protein" and "That's my week" go to Vana.
 ///
 /// When the turn named its own chips ([suggested], mp-272), those labels
 /// stand in for the two replies (`I like these` / `Next: …` and

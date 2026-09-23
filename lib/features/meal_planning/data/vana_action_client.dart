@@ -106,6 +106,11 @@ class VanaActionResult {
   /// label the athlete tapped).
   String? get tapMessageId => readString(extras, 'tapMessageId');
 
+  /// `next_picker` → `toVana`: the step after the tap is Vana's (a fork
+  /// question or the wrap-up). Nothing ran and nothing was stored; the app
+  /// sends the tap to her as a message.
+  bool get toVana => extras['toVana'] == true;
+
   factory VanaActionResult.fromJson(Map<String, dynamic> json) =>
       VanaActionResult(
         parts: VanaPart.listFromJson(json['parts']),
