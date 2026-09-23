@@ -1012,6 +1012,50 @@ void main() {
       ]);
     });
 
+    test('"Other options" runs next_picker with the label, sends no chat '
+        'request, and the picker is the turn with no line', () async {
+      actions.byType['next_picker'] = VanaActionResult(
+        parts: [VanaPart.fromJson(loadFixture('meal_picker'))!],
+        extras: const {'tapMessageId': 'u-7', 'messageId': 'a-7'},
+      );
+      final (:notifier, seen: _) = make(conversationId: 'conv-1');
+      await notifier.future;
+
+      await notifier.tapChip('Other options');
+
+      final ran = actions.ran.single as NextPickerAction;
+      expect(ran.chipKind, 'more');
+      expect(ran.chip, 'Other options');
+      expect(repo.calls, isEmpty, reason: 'no model turn');
+      final messages = notifier.state.value!.messages;
+      expect(messages.map((m) => (m.id, m.isUser)), [
+        ('u-7', true),
+        ('a-7', false),
+      ]);
+      expect(messages.last.content, '');
+      expect(messages.last.parts.single, isA<VanaMealPickerPart>());
+    });
+
+    test('a picker chip the server hands back (toVana) becomes one tapped '
+        'message to Vana, with one athlete bubble', () async {
+      actions.byType['next_picker'] = const VanaActionResult(
+        parts: [],
+        extras: {'toVana': true, 'reason': 'wrap_up'},
+      );
+      repo.events = const [VanaDoneEvent()];
+      final (:notifier, seen: _) = make(conversationId: 'conv-1');
+      await notifier.future;
+
+      await notifier.tapChip('I like these');
+
+      expect(actions.ran.map((a) => a.type), ['next_picker']);
+      expect(repo.calls.map((c) => [c['message'], c['inputMode']]), [
+        ['I like these', 'tap'],
+      ]);
+      final users = notifier.state.value!.messages.where((m) => m.isUser);
+      expect(users.map((m) => m.content), ['I like these']);
+    });
+
     test('a failed action rolls the tap back and reports the error', () async {
       actions.failByType['draft_week'] = const VanaOfflineException('offline');
       final (:notifier, seen: _) = make(conversationId: 'conv-1');
