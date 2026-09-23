@@ -6,6 +6,8 @@
 /// or Supabase types.
 library;
 
+import 'grant.dart';
+
 /// Entitlements the app knows how to gate on. The [key] is the identifier in
 /// RevenueCat; the server's own two-field cache (mp-285) keys on the user.
 enum Entitlement {
@@ -44,6 +46,7 @@ class SubscriptionStatus {
     this.productId,
     this.willRenew = true,
     this.hadPro = false,
+    this.grant,
   });
 
   /// Nobody is subscribed (also the safe fallback whenever a lookup fails
@@ -79,6 +82,10 @@ class SubscriptionStatus {
   /// closed (mp-457, mp-611). An unknown answer ([none]) is false.
   final bool hadPro;
 
+  /// The Grant behind an active `pro`, when RevenueCat granted it rather
+  /// than a store selling it (mp-558); null otherwise.
+  final Grant? grant;
+
   /// Whether [expiresAt] has passed as of [now]. False when there is no expiry.
   bool isExpiredAt(DateTime now) {
     final e = expiresAt;
@@ -93,6 +100,7 @@ class SubscriptionStatus {
     String? productId,
     bool? willRenew,
     bool? hadPro,
+    Grant? grant,
   }) {
     return SubscriptionStatus(
       active: active ?? this.active,
@@ -102,6 +110,7 @@ class SubscriptionStatus {
       productId: productId ?? this.productId,
       willRenew: willRenew ?? this.willRenew,
       hadPro: hadPro ?? this.hadPro,
+      grant: grant ?? this.grant,
     );
   }
 
@@ -114,7 +123,8 @@ class SubscriptionStatus {
       other.isTrial == isTrial &&
       other.productId == productId &&
       other.willRenew == willRenew &&
-      other.hadPro == hadPro;
+      other.hadPro == hadPro &&
+      other.grant == grant;
 
   @override
   int get hashCode => Object.hash(
@@ -125,13 +135,14 @@ class SubscriptionStatus {
     productId,
     willRenew,
     hadPro,
+    grant,
   );
 
   @override
   String toString() =>
       'SubscriptionStatus(active: $active, source: ${source.name}, '
       'expiresAt: $expiresAt, isTrial: $isTrial, productId: $productId, '
-      'willRenew: $willRenew, hadPro: $hadPro)';
+      'willRenew: $willRenew, hadPro: $hadPro, grant: $grant)';
 }
 
 /// A free introductory period the store attaches to a subscription product

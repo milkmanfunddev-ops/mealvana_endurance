@@ -11,8 +11,10 @@
 /// one Vana line; Redeem code on every plan state, opening our own Code
 /// entry, where a giveaway Code sent to `redeem-code` (its own answer, fed at
 /// the functions client) turns an ended plan into a running one (mp-458,
-/// mp-495 §3); Settings opening the screen as a named push; light and dark
-/// goldens (mp-497 §3).
+/// mp-495 §3); a Grant with where it came from and its days left, with no
+/// Manage subscription, while a store subscription keeps its own (mp-558);
+/// Settings opening the screen as a named push; light and dark goldens
+/// (mp-497 §3).
 ///
 /// Fonts: widget tests render with the test font, so the goldens pin LAYOUT,
 /// COLOUR and STRUCTURE, not glyph shapes.
@@ -37,6 +39,7 @@ import 'package:mealvana_endurance/features/content/application/content_service.
 import 'package:mealvana_endurance/features/settings/domain/settings_state.dart';
 import 'package:mealvana_endurance/features/settings/presentation/providers/settings_controller.dart';
 import 'package:mealvana_endurance/features/settings/presentation/screens/settings_screen.dart';
+import 'package:mealvana_endurance/features/subscription/application/subscription_screen_controller.dart';
 import 'package:mealvana_endurance/features/subscription/application/subscription_status_provider.dart';
 import 'package:mealvana_endurance/features/subscription/data/subscription_service.dart';
 import 'package:mealvana_endurance/features/subscription/data/user_entitlements_repository.dart';
@@ -102,6 +105,9 @@ class _RecordingObserver extends NavigatorObserver {
 }
 
 const _userId = 'u-1';
+
+/// 19 October 2026, midday UTC: the day mp-558's example opens Settings.
+final _today = DateTime.utc(2026, 10, 19, 12);
 final _content = loadDefaultContent();
 String _copy(String key) => _content[key]!;
 String _dated(String key, DateTime utc) =>
@@ -152,6 +158,7 @@ void main() {
         const Duration(milliseconds: 60),
       ),
       localNotificationSchedulerProvider.overrideWithValue(_NoopScheduler()),
+      subscriptionScreenClockProvider.overrideWithValue(() => _today),
       contentServiceProvider.overrideWith(
         (ref) => TestContentService(ref, _content),
       ),
@@ -327,6 +334,48 @@ void main() {
     });
   });
 
+  group('a Grant: where it came from and its days left (mp-558)', () {
+    testWidgets('the Legacy grace month, with no Manage subscription', (
+      tester,
+    ) async {
+      await pump(
+        tester,
+        info: customerInfoGraceGrant,
+        storeSubscription: false,
+      );
+      expect(textOf(tester, _status), _copy('subscription.status_grant_grace'));
+      expect(
+        textOf(tester, _date),
+        _copy('subscription.grant_days_left').replaceAll('{days}', '12'),
+      );
+      expect(find.byKey(_manage), findsNothing);
+      expect(find.byKey(_upgrade), findsNothing);
+      expect(find.byKey(_redeem), findsOneWidget);
+    });
+
+    testWidgets('a Code, with its days left', (tester) async {
+      await pump(tester, info: customerInfoGranted, storeSubscription: false);
+      expect(textOf(tester, _status), _copy('subscription.status_grant_code'));
+      expect(
+        textOf(tester, _date),
+        _copy('subscription.grant_days_left').replaceAll('{days}', '338'),
+      );
+      expect(find.byKey(_manage), findsNothing);
+    });
+
+    testWidgets('a store subscription still shows as today, with Manage', (
+      tester,
+    ) async {
+      await pump(tester, info: customerInfoOpen);
+      expect(textOf(tester, _status), _copy('subscription.status_active'));
+      expect(
+        textOf(tester, _date),
+        _dated('subscription.renews', DateTime.utc(2026, 11, 1, 10)),
+      );
+      expect(find.byKey(_manage), findsOneWidget);
+    });
+  });
+
   testWidgets('what Pro includes: the tick list, AI under the one Vana line '
       '(mp-495 §2, mp-493 §2)', (tester) async {
     await pump(tester, info: customerInfoOpen);
@@ -427,7 +476,7 @@ void main() {
         find.text('Code redeemed. You have 365 days of Pro.'),
         findsOneWidget,
       );
-      expect(textOf(tester, _status), _copy('subscription.status_active'));
+      expect(textOf(tester, _status), _copy('subscription.status_grant_code'));
       expect(find.byKey(_upgrade), findsNothing);
     });
   });

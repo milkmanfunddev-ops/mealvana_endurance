@@ -15,6 +15,7 @@ import 'package:purchases_flutter/purchases_flutter.dart';
 import 'package:mealvana_endurance/features/ai_credits/data/revenuecat_service.dart';
 import 'package:mealvana_endurance/features/subscription/data/subscription_service.dart';
 import 'package:mealvana_endurance/features/subscription/domain/entitlement.dart';
+import 'package:mealvana_endurance/features/subscription/domain/grant.dart';
 import 'package:mealvana_endurance/shared/services/sentry/sentry_reporter.dart';
 
 class _MockRevenueCatService extends Mock implements RevenueCatService {}
@@ -26,6 +27,8 @@ class _FakeEntitlement extends Fake implements EntitlementInfo {
     this.periodType = PeriodType.normal,
     this.productIdentifier = 'mealvana_pro_monthly',
     this.willRenew = true,
+    this.store = Store.appStore,
+    this.latestPurchaseDate = '2026-09-01T00:00:00Z',
   });
 
   @override
@@ -38,6 +41,10 @@ class _FakeEntitlement extends Fake implements EntitlementInfo {
   final String productIdentifier;
   @override
   final bool willRenew;
+  @override
+  final Store store;
+  @override
+  final String latestPurchaseDate;
 }
 
 class _FakeOfferings extends Fake implements Offerings {
@@ -138,6 +145,32 @@ void main() {
         _FakeEntitlement(productIdentifier: 'mealvana_pro_annual_prod'),
       );
       expect(s.productId, 'mealvana_pro_annual_prod');
+    });
+
+    test('a store subscription carries no Grant', () {
+      expect(
+        SubscriptionService.statusFromEntitlement(_FakeEntitlement()).grant,
+        isNull,
+      );
+    });
+
+    test('a promotional entitlement carries its Grant (mp-558)', () {
+      final s = SubscriptionService.statusFromEntitlement(
+        _FakeEntitlement(
+          store: Store.promotional,
+          productIdentifier: 'rc_promo_pro_custom',
+          willRenew: false,
+          latestPurchaseDate: '2026-10-01T10:00:00Z',
+          expirationDate: '2026-10-31T10:00:03Z',
+        ),
+      );
+      expect(
+        s.grant,
+        Grant(
+          source: GrantSource.legacyGrace,
+          endsAt: DateTime.utc(2026, 10, 31, 10, 0, 3),
+        ),
+      );
     });
   });
 

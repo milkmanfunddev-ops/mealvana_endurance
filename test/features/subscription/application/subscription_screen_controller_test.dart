@@ -2,7 +2,8 @@
 /// REAL status notifier by producer-shaped customer info
 /// (`customer_info_fixtures.dart`, docs/test/README.md Seam tests): which of
 /// trial, active, founding member or ended the plan is, the date that goes
-/// with it, and whether Upgrade and Manage subscription belong on the screen.
+/// with it, and whether Upgrade and Manage subscription belong on the screen;
+/// a Grant with where it came from and its days left (mp-558).
 library;
 
 import 'package:flutter_riverpod/flutter_riverpod.dart';
@@ -15,6 +16,7 @@ import 'package:mealvana_endurance/features/subscription/application/subscriptio
 import 'package:mealvana_endurance/features/subscription/data/subscription_service.dart';
 import 'package:mealvana_endurance/features/subscription/data/user_entitlements_repository.dart';
 import 'package:mealvana_endurance/features/subscription/domain/entitlement.dart';
+import 'package:mealvana_endurance/features/subscription/domain/grant.dart';
 import 'package:mealvana_endurance/shared/services/notification_service.dart';
 
 import '../customer_info_fixtures.dart';
@@ -38,6 +40,9 @@ class _NoopScheduler implements LocalNotificationScheduler {
 }
 
 const _userId = 'u-1';
+
+/// 19 October 2026, midday UTC: the day mp-558's example opens Settings.
+final _today = DateTime.utc(2026, 10, 19, 12);
 
 void main() {
   late _MockSubscriptionService service;
@@ -76,6 +81,7 @@ void main() {
           const Duration(milliseconds: 60),
         ),
         localNotificationSchedulerProvider.overrideWithValue(_NoopScheduler()),
+        subscriptionScreenClockProvider.overrideWithValue(() => _today),
       ],
     );
     addTearDown(c.dispose);
@@ -142,6 +148,39 @@ void main() {
       )).canManage,
       isFalse,
     );
+  });
+
+  group('a Grant (mp-558)', () {
+    test('the Legacy grace month: its source and days left, no Manage, '
+        'no Upgrade', () async {
+      final s = await read(
+        container(info: customerInfoGraceGrant, storeSubscription: false),
+      );
+      expect(s.plan, PlanStatus.grant);
+      expect(s.grantSource, GrantSource.legacyGrace);
+      expect(s.daysLeft, 12);
+      expect(s.date, DateTime.utc(2026, 10, 31, 10));
+      expect(s.canManage, isFalse);
+      expect(s.canUpgrade, isFalse);
+    });
+
+    test('a Code: 365 days read as a Code, with its days left', () async {
+      final s = await read(
+        container(info: customerInfoGranted, storeSubscription: false),
+      );
+      expect(s.plan, PlanStatus.grant);
+      expect(s.grantSource, GrantSource.code);
+      expect(s.daysLeft, 338); // 19 October 2026 to 22 September 2027
+      expect(s.canManage, isFalse);
+    });
+
+    test('a store subscription is no Grant', () async {
+      final s = await read(container(info: customerInfoOpen));
+      expect(s.plan, PlanStatus.active);
+      expect(s.grantSource, isNull);
+      expect(s.daysLeft, isNull);
+      expect(s.canManage, isTrue);
+    });
   });
 
   test('a status RevenueCat pushes (a purchase from Upgrade) '
