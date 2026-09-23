@@ -5,12 +5,18 @@ import 'package:purchases_flutter/purchases_flutter.dart';
 import 'package:url_launcher/url_launcher.dart';
 
 import '../../../../shared/services/privacy/privacy_links.dart';
+import '../../../../shared/widgets/kyle_design/buttons/circular_action_button.dart';
 import '../../../../shared/widgets/kyle_design/kyle_design.dart';
+import '../../../../shared/widgets/kyle_design/materials/glass_sheet.dart';
 import '../../../content/application/content_service.dart';
 import '../../../content/domain/content_keys.dart';
 import '../../../settings/presentation/providers/settings_controller.dart';
 import '../../application/pro_paywall_controller.dart';
+import '../../domain/entitlement.dart';
+import '../pro_gate_redirect.dart';
 import '../widgets/pro_feature_list.dart';
+
+export '../pro_gate_redirect.dart' show PaywallPresentation;
 
 /// Opens [uri] outside the app. A provider so widget tests can intercept
 /// "Manage subscription" and the terms and privacy links instead of reaching
@@ -39,6 +45,38 @@ final paywallClipPosterProvider = Provider<ImageProvider>(
   (_) => const AssetImage(kPaywallClipPosterAsset),
 );
 
+/// The paywall route's page (mp-493 §5): a [GlassSheetPage] over the screen
+/// it was pushed over when [paywallPresentationFor] answers sheet, a plain
+/// full-screen page otherwise. [access] is the gate's current answer and
+/// [current] the router's configuration being built, which says whether the
+/// paywall was pushed; `app_router.dart` passes both.
+Page<void> paywallRoutePage(
+  GoRouterState state, {
+  required AppAccess? access,
+  required RouteMatchList current,
+}) {
+  final onboarding = state.uri.queryParameters[kOnboardingPaywallQuery] == '1';
+  final presentation = paywallPresentationFor(
+    access: access,
+    onboarding: onboarding,
+    pushed: paywallPushed(current),
+  );
+  final screen = PaywallScreen(
+    onboarding: onboarding,
+    presentation: presentation,
+  );
+  return switch (presentation) {
+    PaywallPresentation.sheet => GlassSheetPage<void>(
+      key: state.pageKey,
+      child: screen,
+    ),
+    PaywallPresentation.fullScreen => MaterialPage<void>(
+      key: state.pageKey,
+      child: screen,
+    ),
+  };
+}
+
 /// The paywall — where an inactive account lands after sign-in and stays
 /// (mp-280), in Bevel's layout with our branding (mp-493).
 ///
@@ -58,10 +96,12 @@ final paywallClipPosterProvider = Provider<ImageProvider>(
 /// it with the update (mp-496 §3). The same menu serves the onboarding shape
 /// (mp-494 §2, replacing mp-417 §3).
 ///
-/// This is the full-screen presentation, which has no close button
-/// (mp-493 §5): a never-subscribed account has nothing behind it, and until
-/// the closable sheet arrives a lapsed account meets it full screen too
-/// (mp-496 §2). The router moves the person into the app the moment the
+/// One layout, two presentations (mp-493 §5, [presentation]). Full screen
+/// has no close button: a never-subscribed account has nothing behind it.
+/// A lapsed account meets it as a closable glass sheet over the read-only
+/// screen it was opened from (mp-457 §3); the close sits beside ⋯ and
+/// arrives with it on the second page (mp-493 §6), and closing returns to
+/// that screen. The router moves the person into the app the moment the
 /// gate opens.
 ///
 /// UI only: purchase / restore / management URL live in
@@ -70,12 +110,19 @@ final paywallClipPosterProvider = Provider<ImageProvider>(
 /// [SettingsController]'s flows; the gate itself is `appGateProvider`. All
 /// copy comes from [ContentKeys].
 class PaywallScreen extends ConsumerWidget {
-  const PaywallScreen({super.key, this.onboarding = false});
+  const PaywallScreen({
+    super.key,
+    this.onboarding = false,
+    this.presentation = PaywallPresentation.fullScreen,
+  });
 
   /// Reached as onboarding's last step (mp-417 §4). Since mp-494 §2 both
   /// shapes carry the same menu, so nothing on the screen differs yet; the
   /// route still says which shape it opened.
   final bool onboarding;
+
+  /// Full screen, or the closable sheet (mp-493 §5).
+  final PaywallPresentation presentation;
 
   Future<void> _buy(BuildContext context, WidgetRef ref, Package pkg) async {
     final content = ref.read(contentServiceProvider);
@@ -290,9 +337,14 @@ class PaywallScreen extends ConsumerWidget {
       ),
     ];
 
+    final isSheet = presentation == PaywallPresentation.sheet;
+
     return Scaffold(
       key: const ValueKey('paywall.screen'),
-      backgroundColor: isDark ? AppColors.blackberry : AppColors.cream,
+      // The sheet is the glass itself; only the full screen paints a ground.
+      backgroundColor: isSheet
+          ? Colors.transparent
+          : (isDark ? AppColors.blackberry : AppColors.cream),
       body: _PaywallPages(
         // Page one: the clip of our own app, silent, in the phone frame
         // (mp-493 §1). A tap skips it.
@@ -318,16 +370,31 @@ class PaywallScreen extends ConsumerWidget {
                   AppSpacing.md,
                   0,
                 ),
-                child: Align(
-                  alignment: AlignmentDirectional.centerEnd,
-                  child: OverflowMenuButton(
-                    key: const ValueKey('paywall.more_button'),
-                    semanticLabel: content.getValue(
-                      ContentKeys.paywallMoreLabel,
+                child: Row(
+                  children: [
+                    // The sheet's close (mp-493 §5, §6): back to the
+                    // read-only screen under it.
+                    if (isSheet)
+                      CircularActionButton(
+                        key: const ValueKey('paywall.close_button'),
+                        icon: Icons.close,
+                        size: OverflowMenuButton.size,
+                        iconColor: textColor,
+                        semanticLabel: content.getValue(
+                          ContentKeys.paywallCloseLabel,
+                        ),
+                        onPressed: () => Navigator.of(context).maybePop(),
+                      ),
+                    const Spacer(),
+                    OverflowMenuButton(
+                      key: const ValueKey('paywall.more_button'),
+                      semanticLabel: content.getValue(
+                        ContentKeys.paywallMoreLabel,
+                      ),
+                      color: textColor,
+                      entries: menu,
                     ),
-                    color: textColor,
-                    entries: menu,
-                  ),
+                  ],
                 ),
               ),
             ),

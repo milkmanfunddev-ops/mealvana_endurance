@@ -11,10 +11,10 @@
 
 **Touches:** lib/features/subscription/presentation/screens/paywall_screen.dart, lib/features/subscription/presentation/pro_gate_redirect.dart, lib/shared/widgets/kyle_design/sheets/, lib/shared/widgets/tabs_screen.dart, test/features/subscription/presentation/paywall_screen_test.dart, test/features/subscription/presentation/goldens/
 
-- [ ] Lapsed: the bar's Subscribe and an AI tap open the sheet; close returns to the same screen (screen widget test).
-- [ ] Never: still full screen, no close (screen widget test).
-- [ ] The sheet's entrance comes from the `kyle_design` glass sheet, extended there if it needs to be.
-- [ ] Golden of the sheet presentation, light and dark.
+- [x] Lapsed: the bar's Subscribe and an AI tap open the sheet; close returns to the same screen (screen widget test).
+- [x] Never: still full screen, no close (screen widget test).
+- [x] The sheet's entrance comes from the `kyle_design` glass sheet, extended there if it needs to be.
+- [x] Golden of the sheet presentation, light and dark.
 - [ ] Checked on the dev simulator with an expired sandbox account.
 
 Next: /implement-lee paywall

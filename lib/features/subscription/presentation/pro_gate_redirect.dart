@@ -90,6 +90,36 @@ void yieldPushedPaywall(GoRouter router, AppAccess? access) {
   router.go('/main');
 }
 
+/// The paywall's two presentations of one layout (mp-493 §5).
+enum PaywallPresentation {
+  /// Full screen, no close: an account that never subscribed has nothing
+  /// behind it, and onboarding ends on it.
+  fullScreen,
+
+  /// A closable glass sheet over the read-only app (mp-457 §3, mp-496 §2).
+  sheet,
+}
+
+/// Which presentation the paywall takes: a sheet only for a lapsed account
+/// whose paywall was PUSHED over a screen (the plan-ended bar's Subscribe,
+/// an edit or AI tap, an AI route redirected), since closing a sheet must
+/// return to the screen under it. A paywall that is the base location has
+/// no screen under it and stays full screen, as does onboarding's.
+PaywallPresentation paywallPresentationFor({
+  required AppAccess? access,
+  required bool onboarding,
+  required bool pushed,
+}) => access == AppAccess.lapsed && !onboarding && pushed
+    ? PaywallPresentation.sheet
+    : PaywallPresentation.fullScreen;
+
+/// Whether the paywall on top of [config] was pushed over another screen
+/// rather than being the base location.
+bool paywallPushed(RouteMatchList config) =>
+    config.matches.isNotEmpty &&
+    config.last is ImperativeRouteMatch &&
+    topPathOf(config) == kPaywallPath;
+
 /// The location path of the route on top of [config]; a pushed route
 /// carries its own match list.
 String topPathOf(RouteMatchList config) {

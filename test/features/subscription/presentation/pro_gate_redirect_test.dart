@@ -71,6 +71,50 @@ void main() {
     });
   });
 
+  group('paywallPresentationFor (mp-493 §5)', () {
+    test('a lapsed account gets the sheet only when the paywall was pushed '
+        'over a screen', () {
+      expect(
+        paywallPresentationFor(
+          access: AppAccess.lapsed,
+          onboarding: false,
+          pushed: true,
+        ),
+        PaywallPresentation.sheet,
+      );
+      expect(
+        paywallPresentationFor(
+          access: AppAccess.lapsed,
+          onboarding: false,
+          pushed: false,
+        ),
+        PaywallPresentation.fullScreen,
+      );
+    });
+
+    test('never, onboarding, open and an unknown gate are full screen', () {
+      for (final access in [AppAccess.never, AppAccess.open, null]) {
+        expect(
+          paywallPresentationFor(
+            access: access,
+            onboarding: false,
+            pushed: true,
+          ),
+          PaywallPresentation.fullScreen,
+          reason: '$access',
+        );
+      }
+      expect(
+        paywallPresentationFor(
+          access: AppAccess.lapsed,
+          onboarding: true,
+          pushed: true,
+        ),
+        PaywallPresentation.fullScreen,
+      );
+    });
+  });
+
   group('isAiPath', () {
     test("Vana's chat, the /jade alias and the meal-AI routes are AI", () {
       for (final p in [

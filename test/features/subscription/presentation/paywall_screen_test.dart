@@ -6,12 +6,16 @@
 /// the store prices (mp-493 §3); the free week when eligible and not when
 /// the store says it is spent; the ⋯ menu listing exactly Restore, Manage
 /// (only with a subscription), Sign out and Delete account, and no Redeem
-/// code yet (mp-494, mp-496 §3); no close button on the full-screen paywall
-/// (mp-493 §5); each menu entry driving the right controller; the
+/// code yet (mp-494, mp-496 §3); the two presentations (mp-493 §5): no close
+/// button full screen, and for a lapsed account a closable glass sheet over
+/// the read-only app, opened by the plan-ended bar, an AI tap or an AI route,
+/// that closes back to the same screen, while a never-subscribed account
+/// stays full screen; each menu entry driving the right controller; the
 /// unavailable state; founding prices beside the struck-through normal ones
 /// (mp-453 §2); the trial terms, price after the trial and the terms and
 /// privacy links (mp-453 §4); the opening clip (mp-493 §1); and light/dark
-/// goldens of the full-screen paywall at phone size, plus the founding shape.
+/// goldens of the full-screen paywall at phone size, plus the founding shape,
+/// and of the sheet over the read-only app, light and dark.
 ///
 /// Fonts: widget tests render with the test font, so the goldens pin LAYOUT,
 /// COLOUR and STRUCTURE, not glyph shapes.
@@ -25,6 +29,7 @@ import 'dart:async';
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:flutter_test/flutter_test.dart';
+import 'package:go_router/go_router.dart';
 import 'package:purchases_flutter/purchases_flutter.dart';
 
 import 'package:mealvana_endurance/features/content/application/content_service.dart';
@@ -33,7 +38,14 @@ import 'package:mealvana_endurance/features/settings/presentation/providers/sett
 import 'package:mealvana_endurance/features/subscription/application/pro_paywall_controller.dart';
 import 'package:mealvana_endurance/features/subscription/application/subscription_status_provider.dart';
 import 'package:mealvana_endurance/features/subscription/domain/entitlement.dart';
+import 'package:mealvana_endurance/features/subscription/application/pro_gate.dart';
+import 'package:mealvana_endurance/features/subscription/presentation/ai_action_guard.dart';
+import 'package:mealvana_endurance/features/subscription/presentation/plan_ended_host.dart';
+import 'package:mealvana_endurance/features/subscription/presentation/pro_gate_redirect.dart';
 import 'package:mealvana_endurance/features/subscription/presentation/screens/paywall_screen.dart';
+import 'package:mealvana_endurance/shared/providers/is_admin_provider.dart';
+import 'package:mealvana_endurance/shared/widgets/kyle_design/feedback/plan_ended_bar.dart';
+import 'package:mealvana_endurance/shared/widgets/kyle_design/materials/glass.dart';
 import 'package:mealvana_endurance/shared/services/privacy/privacy_links.dart';
 import 'package:mealvana_endurance/shared/widgets/kyle_design/buttons/overflow_menu_button.dart';
 import 'package:mealvana_endurance/shared/widgets/kyle_design/cards/feature_list.dart';
@@ -45,6 +57,7 @@ import 'package:mealvana_endurance/theme/kyle_design/app_colors.dart';
 import '../../../helpers/widget_test_harness.dart';
 import '../../../shared/widgets/kyle_design/phone_clip_fakes.dart';
 import '../../meal_planning/presentation/helpers/test_content.dart';
+import '../customer_info_fixtures.dart';
 import '../offerings_fixtures.dart';
 
 // ---------------------------------------------------------------------------
@@ -137,6 +150,7 @@ List<Override> _overrides({
   Future<bool> Function(Uri)? launcher,
   PhoneClipPlayer Function()? clip,
   bool hasSubscription = false,
+  SubscriptionStatus status = SubscriptionStatus.none,
 }) {
   final resolved = plans ?? PaywallPlans(monthly: _monthly, annual: _annual);
   return [
@@ -145,9 +159,7 @@ List<Override> _overrides({
       clip ?? () => FakePhoneClipPlayer(endOnStart: true),
     ),
     paywallClipPosterProvider.overrideWithValue(testPoster),
-    subscriptionStatusProvider.overrideWith(
-      () => _FixedStatus(SubscriptionStatus.none),
-    ),
+    subscriptionStatusProvider.overrideWith(() => _FixedStatus(status)),
     paywallPlansProvider.overrideWith((ref) async => resolved),
     paywallHasSubscriptionProvider.overrideWith((ref) async => hasSubscription),
     if (paywall != null) proPaywallControllerProvider.overrideWith(paywall),
@@ -375,7 +387,7 @@ void main() {
     });
   });
 
-  group('no close button (mp-493 §5)', () {
+  group('the close button: only on the sheet (mp-493 §5)', () {
     testWidgets('never subscribed: none', (tester) async {
       await smokeScreen(tester, const PaywallScreen(), overrides: _overrides());
       expect(find.byKey(_close), findsNothing);
@@ -391,14 +403,35 @@ void main() {
       expect(find.byKey(_close), findsNothing);
     });
 
-    testWidgets('lapsed: none yet, full screen until the sheet arrives '
-        '(mp-496 §2)', (tester) async {
+    testWidgets('lapsed full screen (the paywall as the base location): '
+        'none', (tester) async {
       await smokeScreen(
         tester,
         const PaywallScreen(),
         overrides: _overrides(hasSubscription: true),
       );
       expect(find.byKey(_close), findsNothing);
+    });
+
+    testWidgets('the sheet has one: a close beside ⋯, labelled Close', (
+      tester,
+    ) async {
+      await smokeScreen(
+        tester,
+        const PaywallScreen(presentation: PaywallPresentation.sheet),
+        overrides: _overrides(hasSubscription: true),
+      );
+      expect(find.byKey(_close), findsOneWidget);
+      expect(find.byTooltip(_content['paywall.close_label']!), findsOneWidget);
+      // Same row as ⋯, on the other side.
+      expect(
+        tester.getCenter(find.byKey(_close)).dy,
+        tester.getCenter(find.byKey(_more)).dy,
+      );
+      expect(
+        tester.getCenter(find.byKey(_close)).dx,
+        lessThan(tester.getCenter(find.byKey(_more)).dx),
+      );
     });
   });
 
@@ -1007,5 +1040,215 @@ void main() {
       'founding dark',
       (tester) => golden(tester, Brightness.dark, founding: true),
     );
+  });
+
+  // The two presentations in the app (mp-493 §5, mp-457 §3): the router
+  // wired the way app_router.dart wires it (the gate's redirect, the
+  // paywall route's page from paywallRoutePage), the plan-ended host over
+  // it the way root_app_widget.dart composes it, and the gate answering
+  // from producer-shaped customer info through the real gate.
+  group('two presentations in the app (mp-493 §5)', () {
+    const aiButton = ValueKey('test.ai_action');
+    const subscribe = ValueKey('plan_ended_bar.subscribe');
+
+    Future<GoRouter> pumpApp(
+      WidgetTester tester, {
+      required SubscriptionStatus status,
+      required String initial,
+      Brightness brightness = Brightness.light,
+    }) async {
+      tester.view.physicalSize = const Size(393, 852);
+      tester.view.devicePixelRatio = 1;
+      // A status bar, so the sheet stops below it and the screen shows above.
+      tester.view.padding = const FakeViewPadding(top: 59);
+      addTearDown(tester.view.reset);
+
+      final c = ProviderContainer(
+        overrides: [
+          mockAppExternalDeps(),
+          isAdminProvider.overrideWith((_) async => false),
+          ..._overrides(status: status, hasSubscription: status.hadPro),
+        ],
+      );
+      addTearDown(c.dispose);
+
+      late final GoRouter router;
+      Widget page(String label) => Scaffold(
+        body: Center(
+          child: Column(
+            mainAxisSize: MainAxisSize.min,
+            children: [
+              Text(label),
+              Consumer(
+                builder: (context, ref, _) => TextButton(
+                  key: aiButton,
+                  onPressed: () => unawaited(aiActionAllowed(context, ref)),
+                  child: const Text('ask Vana'),
+                ),
+              ),
+            ],
+          ),
+        ),
+      );
+      router = GoRouter(
+        initialLocation: initial,
+        redirect: (context, state) async {
+          final path = state.uri.path;
+          if (isUngatedPath(path)) return null;
+          final access = await c.read(appGateProvider.future);
+          return gateRedirect(path: path, access: access);
+        },
+        routes: [
+          GoRoute(path: '/main', builder: (_, _) => page('main')),
+          GoRoute(path: '/settings', builder: (_, _) => page('settings')),
+          GoRoute(path: '/vana', builder: (_, _) => page('vana')),
+          GoRoute(
+            path: kPaywallPath,
+            pageBuilder: (_, state) => paywallRoutePage(
+              state,
+              access: c.read(appGateProvider).value,
+              current: router.routerDelegate.currentConfiguration,
+            ),
+          ),
+        ],
+      );
+      addTearDown(router.dispose);
+
+      await tester.pumpWidget(
+        UncontrolledProviderScope(
+          container: c,
+          child: MaterialApp.router(
+            debugShowCheckedModeBanner: false,
+            theme: ThemeData(
+              brightness: brightness,
+              scaffoldBackgroundColor: brightness == Brightness.dark
+                  ? AppColors.blackberry
+                  : AppColors.cream,
+            ),
+            routerConfig: router,
+            builder: (context, child) => RepaintBoundary(
+              key: const Key('golden'),
+              child: PlanEndedHost(router: router, child: child!),
+            ),
+          ),
+        ),
+      );
+      await tester.pumpAndSettle();
+      return router;
+    }
+
+    Finder sheetPaywall() => find.descendant(
+      of: find.byType(GlassSheetSurface),
+      matching: find.byKey(const ValueKey('paywall.screen')),
+    );
+
+    /// The sheet is up over [screen], then its close returns to [screen]
+    /// under the plan-ended bar.
+    Future<void> closesBackTo(
+      WidgetTester tester,
+      GoRouter router,
+      String screen,
+    ) async {
+      expect(sheetPaywall(), findsOneWidget);
+      expect(find.text(screen), findsOneWidget, reason: 'still under it');
+      expect(find.byKey(_close), findsOneWidget);
+
+      await tester.tap(find.byKey(_close));
+      await tester.pumpAndSettle();
+      expect(find.byKey(const ValueKey('paywall.screen')), findsNothing);
+      expect(find.text(screen), findsOneWidget);
+      expect(find.byType(PlanEndedBar), findsOneWidget);
+      expect(topPathOf(router.routerDelegate.currentConfiguration), '/$screen');
+    }
+
+    testWidgets('lapsed: the bar\'s Subscribe opens the sheet; close returns '
+        'to the same screen', (tester) async {
+      final router = await pumpApp(
+        tester,
+        status: statusOf(customerInfoLapsed),
+        initial: '/settings',
+      );
+      expect(find.byType(PlanEndedBar), findsOneWidget);
+
+      await tester.tap(find.byKey(subscribe));
+      await tester.pumpAndSettle();
+      await closesBackTo(tester, router, 'settings');
+    });
+
+    testWidgets('lapsed: an AI tap opens the sheet; close returns to the '
+        'same screen', (tester) async {
+      final router = await pumpApp(
+        tester,
+        status: statusOf(customerInfoLapsed),
+        initial: '/main',
+      );
+
+      await tester.tap(find.byKey(aiButton));
+      await tester.pumpAndSettle();
+      await closesBackTo(tester, router, 'main');
+    });
+
+    testWidgets('lapsed: an AI route opens the sheet over the screen it was '
+        'opened from', (tester) async {
+      final router = await pumpApp(
+        tester,
+        status: statusOf(customerInfoLapsed),
+        initial: '/settings',
+      );
+
+      unawaited(router.push('/vana'));
+      await tester.pumpAndSettle();
+      expect(find.text('vana'), findsNothing);
+      await closesBackTo(tester, router, 'settings');
+    });
+
+    testWidgets('never: full screen, no close, nothing under it', (
+      tester,
+    ) async {
+      final router = await pumpApp(
+        tester,
+        status: statusOf(customerInfoNever),
+        initial: '/main',
+      );
+
+      expect(
+        topPathOf(router.routerDelegate.currentConfiguration),
+        kPaywallPath,
+      );
+      expect(find.byKey(const ValueKey('paywall.screen')), findsOneWidget);
+      expect(sheetPaywall(), findsNothing);
+      expect(find.byType(GlassSheetSurface), findsNothing);
+      expect(find.byKey(_close), findsNothing);
+      expect(find.text('main'), findsNothing);
+      expect(find.byType(PlanEndedBar), findsNothing);
+      final scaffold = tester.widget<Scaffold>(
+        find.byKey(const ValueKey('paywall.screen')),
+      );
+      expect(scaffold.backgroundColor, AppColors.cream);
+    });
+
+    group('goldens: the sheet over the read-only app (mp-497 §3)', () {
+      Future<void> golden(WidgetTester tester, Brightness brightness) async {
+        await pumpApp(
+          tester,
+          status: statusOf(customerInfoLapsed),
+          initial: '/settings',
+          brightness: brightness,
+        );
+        await tester.tap(find.byKey(subscribe));
+        await tester.pumpAndSettle();
+        expect(tester.takeException(), isNull);
+        expect(sheetPaywall(), findsOneWidget);
+
+        final name = brightness == Brightness.dark ? 'dark' : 'light';
+        await expectLater(
+          find.byKey(const Key('golden')),
+          matchesGoldenFile('goldens/paywall_sheet_$name.png'),
+        );
+      }
+
+      testWidgets('light', (tester) => golden(tester, Brightness.light));
+      testWidgets('dark', (tester) => golden(tester, Brightness.dark));
+    });
   });
 }

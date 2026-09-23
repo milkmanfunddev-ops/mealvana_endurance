@@ -666,12 +666,16 @@ class AppRouter {
         ),
 
         // The paywall — where a locked account lands and stays (mp-280).
+        // A lapsed account's paywall, pushed over a read-only screen, is a
+        // closable glass sheet over it; every other is full screen
+        // (mp-493 §5).
         GoRoute(
           path: kPaywallPath,
           name: 'paywall',
-          builder: (context, state) => PaywallScreen(
-            onboarding:
-                state.uri.queryParameters[kOnboardingPaywallQuery] == '1',
+          pageBuilder: (context, state) => paywallRoutePage(
+            state,
+            access: ref.read(appGateProvider).value,
+            current: router.routerDelegate.currentConfiguration,
           ),
         ),
 
