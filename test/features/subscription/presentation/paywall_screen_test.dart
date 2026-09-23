@@ -39,6 +39,7 @@ import 'package:mealvana_endurance/features/subscription/application/pro_paywall
 import 'package:mealvana_endurance/features/subscription/application/subscription_status_provider.dart';
 import 'package:mealvana_endurance/features/subscription/domain/entitlement.dart';
 import 'package:mealvana_endurance/features/subscription/application/pro_gate.dart';
+import 'package:mealvana_endurance/features/subscription/application/write_guard.dart';
 import 'package:mealvana_endurance/features/subscription/presentation/ai_action_guard.dart';
 import 'package:mealvana_endurance/features/subscription/presentation/plan_ended_host.dart';
 import 'package:mealvana_endurance/features/subscription/presentation/pro_gate_redirect.dart';
@@ -1073,6 +1074,7 @@ void main() {
       addTearDown(c.dispose);
 
       late final GoRouter router;
+      final decided = <LocalKey, PaywallPresentation>{};
       Widget page(String label) => Scaffold(
         body: Center(
           child: Column(
@@ -1108,6 +1110,7 @@ void main() {
               state,
               access: c.read(appGateProvider).value,
               current: router.routerDelegate.currentConfiguration,
+              decided: decided,
             ),
           ),
         ],
@@ -1199,6 +1202,56 @@ void main() {
       unawaited(router.push('/vana'));
       await tester.pumpAndSettle();
       expect(find.text('vana'), findsNothing);
+      await closesBackTo(tester, router, 'settings');
+    });
+
+    testWidgets('lapsed: a refused edit opens the sheet; close returns to the '
+        'same screen', (tester) async {
+      final router = await pumpApp(
+        tester,
+        status: statusOf(customerInfoLapsed),
+        initial: '/settings',
+      );
+
+      // What a write controller's refused `canWrite()` does.
+      ProviderScope.containerOf(tester.element(find.text('settings')))
+          .read(paywallRequestsProvider.notifier)
+          .request();
+      await tester.pumpAndSettle();
+      await closesBackTo(tester, router, 'settings');
+    });
+
+    testWidgets('lapsed: the sheet stays a sheet when a route is pushed over '
+        'it and popped', (tester) async {
+      final router = await pumpApp(
+        tester,
+        status: statusOf(customerInfoLapsed),
+        initial: '/settings',
+      );
+      await tester.tap(find.byKey(subscribe));
+      await tester.pumpAndSettle();
+      expect(sheetPaywall(), findsOneWidget);
+
+      // The paywall's page is rebuilt while another route is on top of it.
+      final sheetState = tester.state(
+        find.byKey(const ValueKey('paywall.screen')),
+      );
+      unawaited(router.push('/main'));
+      await tester.pumpAndSettle();
+      expect(
+        find.byType(GlassSheetSurface, skipOffstage: false),
+        findsOneWidget,
+        reason: 'the paywall under the pushed route is still the sheet',
+      );
+      router.pop();
+      await tester.pumpAndSettle();
+      expect(
+        tester.state(find.byKey(const ValueKey('paywall.screen'))),
+        same(sheetState),
+        reason: 'the same sheet, not a new one built on the pop',
+      );
+      await tester.pumpAndSettle();
+
       await closesBackTo(tester, router, 'settings');
     });
 

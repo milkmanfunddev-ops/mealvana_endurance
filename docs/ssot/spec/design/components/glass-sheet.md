@@ -1,6 +1,6 @@
 # Design SSOT — Component: Glass Sheet (page form)
 
-**Status: PROPOSED v1 (Lee, 2026-09-23) — authored app-side, awaiting Xuan.** Written from paywall
+**Status: PROPOSED v1 (Lee, 2026-09-22) — authored app-side, awaiting Xuan.** Written from paywall
 ticket 17 (decisions mp-493 §5 and §6, mp-457 §3, mp-496 §2, approved as mp-501), which needed a
 whole screen to open as a summoned sheet. No reference rendering yet.
 

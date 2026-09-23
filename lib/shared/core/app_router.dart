@@ -127,6 +127,8 @@ class AppRouter {
     // The root widget watches this provider, which keeps the subscription
     // active.
     late final GoRouter router;
+    // Each paywall page's presentation, decided on its first build.
+    final paywallPresentations = <LocalKey, PaywallPresentation>{};
     ref.listen(appGateProvider, (previous, next) {
       if (!next.hasValue || next.isLoading) return;
       if (previous?.value == next.value) return;
@@ -676,6 +678,7 @@ class AppRouter {
             state,
             access: ref.read(appGateProvider).value,
             current: router.routerDelegate.currentConfiguration,
+            decided: paywallPresentations,
           ),
         ),
 
