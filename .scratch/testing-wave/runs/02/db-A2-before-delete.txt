@@ -1,0 +1,12 @@
+[{"user_id":"a816e3ba-552c-437f-ac06-fede919b534c","period_type":"NORMAL","active_until":"2026-09-23 15:06:18.067+00","event_at":"2026-09-23 15:01:18.441+00"}]
+[
+  { tbl: 'auth.identities', col: 'user_id', n: 1 },
+  { tbl: 'auth.users', col: 'id', n: 1 },
+  { tbl: 'public.daily_macro_targets', col: 'user_id', n: 7 },
+  { tbl: 'public.onboarding_surveys', col: 'user_id', n: 1 },
+  { tbl: 'public.token_ledger', col: 'user_id', n: 1 },
+  { tbl: 'public.token_wallets', col: 'user_id', n: 1 },
+  { tbl: 'public.user_entitlements', col: 'user_id', n: 1 },
+  { tbl: 'public.users', col: 'auth_user_id', n: 1 },
+  { tbl: 'public.users', col: 'id', n: 1 }
+]

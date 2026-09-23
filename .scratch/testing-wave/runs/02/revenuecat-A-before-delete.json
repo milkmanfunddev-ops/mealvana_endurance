@@ -1,0 +1,12 @@
+## customer
+{"active_entitlements":{"items":[],"next_page":null,"object":"list","url":"https://api.revenuecat.com/v2/projects/proj77b3c48f/customers/e7ab5001-cfa4-4fe6-8876-5c0a092a0e11/active_entitlements"},"experiment":null,"first_seen_at":1790175346478,"id":"e7ab5001-cfa4-4fe6-8876-5c0a092a0e11","last_seen_app_version":"1.27.0","last_seen_at":1790175346478,"last_seen_country":"US","last_seen_platform":"iOS","last_seen_platform_version":"Version 26.2 (Build 23C54)","object":"customer","project_id":"proj77b3c48f"}
+
+## active_entitlements
+{"items":[],"next_page":null,"object":"list","url":"https://api.revenuecat.com/v2/projects/proj77b3c48f/customers/e7ab5001-cfa4-4fe6-8876-5c0a092a0e11/active_entitlements"}
+
+## subscriptions
+{"items":[],"next_page":null,"object":"list","url":"https://api.revenuecat.com/v2/projects/proj77b3c48f/customers/e7ab5001-cfa4-4fe6-8876-5c0a092a0e11/subscriptions"}
+
+## aliases
+{"items":[{"created_at":1790175346484,"id":"e7ab5001-cfa4-4fe6-8876-5c0a092a0e11","object":"customer.alias"}],"next_page":null,"object":"list","url":"https://api.revenuecat.com/v2/projects/proj77b3c48f/customers/e7ab5001-cfa4-4fe6-8876-5c0a092a0e11/aliases"}
+
