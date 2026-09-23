@@ -4,6 +4,8 @@
  * POST /functions/v1/vana-action      Auth: Supabase user JWT
  * Body: { type: UiAction['type'], payload: {...} }   (02-contract.md §4; camelCase or snake_case payload keys)
  * Response 200: { parts: VanaPart[], ...extras }. The client folds any `batch` part into its plan state.
+ *   A picker chip whose next step is Vana's (`next_picker`, ticket 12) answers { parts: [], toVana: true, reason }: nothing
+ *   ran and nothing was stored, and the app sends the tap to vana-chat instead.
  *   `confirm_plan` is a remote-ack write: the shopping list is built here, then ONE SQL transaction
  *   (`confirm_meal_plan`) confirms the plan and archives the week's other plans; day notes regenerate afterwards
  *   through `vana-day-notes` under EdgeRuntime.waitUntil (never awaited by the client).
@@ -47,7 +49,7 @@ serve(withSentry(async (req: Request) => {
     // A chip that acts at once (mp-464, ticket 11) carries its label as `chip`: the action runs as any other, then the tap
     // and what it produced are stored in the conversation and logged as a tap that drew nothing (chips.ts).
     const result = await runTapped(v, body.type, payload, (await extraAction(v, body.type, payload)) ?? (await runAction(v, { type: body.type, payload })));
-    console.log(`[vana-action] user=${v.userId} type=${body.type}${result.tapMessageId ? ' chip' : ''} parts=${result.parts.map((p) => p.kind).join(',') || '-'} ${Date.now() - started}ms`);
+    console.log(`[vana-action] user=${v.userId} type=${body.type}${result.tapMessageId ? ' chip' : result.toVana ? ' chip→vana' : ''} parts=${result.parts.map((p) => p.kind).join(',') || '-'} ${Date.now() - started}ms`);
     return jsonResponse(result);
   } catch (e) {
     if (e instanceof RateLimitedError) return jsonResponse({ error: 'rate_limited', retry_after_seconds: e.retryAfterSeconds }, 429);

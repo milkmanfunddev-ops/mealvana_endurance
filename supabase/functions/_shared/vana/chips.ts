@@ -16,7 +16,7 @@
  *
  *  The labels Vana must use for the chips she names herself are in chip-labels.ts; the app's copy is
  *  `lib/features/meal_planning/domain/vana_fixed_chip.dart`. */
-import type { ConversationKind, VanaPart } from './contracts.ts';
+import type { ConversationKind, MealType, VanaPart } from './contracts.ts';
 import type { VanaCtx } from './env.ts';
 import { conversationKind } from './chat.ts';
 import { snapshotPlan } from './plan.ts';
@@ -38,6 +38,7 @@ export const TAP_TOOLS: Record<string, string> = {
   ask_pantry: 'askPantry',
   set_pantry: 'setPantry',
   open_shopping_list: 'openShoppingList',
+  next_picker: 'suggestMeals',
 };
 export const isTapAction = (type: string): boolean => Object.prototype.hasOwnProperty.call(TAP_TOOLS, type);
 
@@ -84,13 +85,66 @@ export async function recordTap(v: VanaCtx, t: TapInput): Promise<TapIds> {
 
 /** What `vana-action` does after an action ran: with a `chip` on the payload of an at-once action and a conversation
  *  to store into, the turn is stored and logged and the row ids ride back on the result (`tapMessageId`, `messageId`).
- *  Anything else — no chip, no conversation, an action that is not a chip — passes the result through untouched. */
+ *  Anything else — no chip, no conversation, an action that is not a chip — passes the result through untouched, and so
+ *  does an action that handed the tap back to Vana (`toVana`, ticket 12): nothing ran, so there is nothing to store.
+ *  An action whose tool input is not its wire payload names it as `toolInput` (the picker's resolved arguments). */
 // deno-lint-ignore no-explicit-any
-export async function runTapped<R extends { parts: VanaPart[] }>(v: VanaCtx, type: string, payload: Record<string, any>, result: R): Promise<R & Partial<TapIds>> {
+export async function runTapped<R extends { parts: VanaPart[]; toVana?: unknown; toolInput?: unknown }>(v: VanaCtx, type: string, payload: Record<string, any>, result: R): Promise<R & Partial<TapIds>> {
+  // `toolInput` is for the stored call only; the app never sees it.
+  const { toolInput, ...others } = result;
+  const rest = others as R;
   const chip = typeof payload.chip === 'string' ? payload.chip.trim() : '';
   const conversationId = payload.conversationId ?? payload.conversation_id;
-  if (!chip || !conversationId || !isTapAction(type)) return result;
-  const { chip: _chip, conversationId: _a, conversation_id: _b, planId: _c, plan_id: _d, ...input } = payload;
+  if (!chip || !conversationId || !isTapAction(type) || rest.toVana) return rest;
+  const { chip: _chip, conversationId: _a, conversation_id: _b, planId: _c, plan_id: _d, ...wire } = payload;
+  const input = toolInput && typeof toolInput === 'object' ? (toolInput as Record<string, unknown>) : wire;
   const ids = await recordTap(v, { conversationId: String(conversationId), label: chip, type, input, parts: result.parts });
-  return { ...result, ...ids };
+  return { ...rest, ...ids };
+}
+
+// ---------------------------------------------------------------- the picker's own chips (mp-464, ai-cost ticket 12)
+
+/** The picker chips that fetch another picker with no model turn, as the app names them on `next_picker`'s `chip_kind`.
+ *  `more` is "Other options"; `no_recipe` and `under_20` are the two filters; `next` is "I like these" / "Next: <type>".
+ *  "Different protein" is not here: which protein is a choice only Vana can make, so it stays hers. */
+export type PickerChipKind = 'more' | 'no_recipe' | 'under_20' | 'next';
+export const isPickerChipKind = (x: unknown): x is PickerChipKind => x === 'more' || x === 'no_recipe' || x === 'under_20' || x === 'next';
+
+/** The fixed picker arguments each "same type again" chip lays over the last picker's own. The ONE table: "No recipe
+ *  only" is what Vana passed for it (kind assembly), "Under 20 min" likewise (maxPrepMinutes 20), and "Other options"
+ *  changes nothing — the same search again, which never repeats a meal already shown. */
+export const PICKER_CHIP_ARGS: Record<Exclude<PickerChipKind, 'next'>, { kind?: 'assembly'; maxPrepMinutes?: number }> = {
+  more: {},
+  no_recipe: { kind: 'assembly' },
+  under_20: { maxPrepMinutes: 20 },
+};
+
+/** What follows "I like these" / "Next: <type>" (persona rule 4): the next meal type's picker, a question, or the wrap-up.
+ *  Only the first is fixed; the other two are Vana's to say. */
+export type PickerNextStep = { step: 'picker'; mealType: MealType } | { step: 'ask' } | { step: 'wrap_up' };
+export interface PickerNextInput {
+  /** The meal type of the picker the chip sits under. */
+  lastType: MealType;
+  /** The athlete's walk (walkFor): the types they plan, in their order. */
+  walk: readonly MealType[];
+  /** The meal types the conversation's draft already holds. */
+  covered: ReadonlySet<MealType>;
+  /** Whether batch cooking was ever chosen, and the coverage scope (null = never chosen): the rule-4 forks. */
+  batchKnown: boolean;
+  coverageScope: string | null;
+  /** The type the chip named ("Next: Lunch"), when it named one. */
+  named?: MealType | null;
+}
+
+/** The step after "I like these" / "Next", decided the way the persona's rule 4 decides it. A fork still never chosen
+ *  means Vana asks it; no type left on the walk means she wraps up; otherwise the next uncovered type on the walk after
+ *  the picker's own (wrapping round to one skipped earlier), or the type the chip named when that one is open. */
+export function pickerNextStep(i: PickerNextInput): PickerNextStep {
+  if (!i.batchKnown || i.coverageScope == null) return { step: 'ask' };
+  const open = i.walk.filter((t) => t !== i.lastType && !i.covered.has(t));
+  if (!open.length) return { step: 'wrap_up' };
+  if (i.named && open.includes(i.named)) return { step: 'picker', mealType: i.named };
+  const at = i.walk.indexOf(i.lastType);
+  const after = at < 0 ? [] : open.filter((t) => i.walk.indexOf(t) > at);
+  return { step: 'picker', mealType: (after[0] ?? open[0]) };
 }
