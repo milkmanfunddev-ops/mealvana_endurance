@@ -11,11 +11,33 @@
 
 **Touches:** lib/features/meal_planning/presentation/widgets/picker_chips.dart, lib/features/meal_planning/presentation/screens/vana_chat_screen.dart, lib/features/meal_planning/application/vana_chat_controller.dart, supabase/functions/_shared/vana/actions.ts, supabase/functions/_shared/vana/tools.ts, supabase/functions/_shared/vana/persona.ts
 
-- [ ] A no-model action returns the next picker for the same meal type with the same filters, leaving out meals already shown (server test against the picker's frozen contract fixture).
-- [ ] "No recipe only" and "Under 20 min" map to fixed picker arguments in one table, tested.
-- [ ] "I like these" and "Next" run the no-model action when the next step is the next meal type's picker, and go to Vana when it is a question or the wrap-up (tests for both).
-- [ ] No written line; the tap and the picker are stored for Vana's next turn; nothing drawn from the budget; logged as taps.
+- [x] A no-model action returns the next picker for the same meal type with the same filters, leaving out meals already shown (server test against the picker's frozen contract fixture).
+- [x] "No recipe only" and "Under 20 min" map to fixed picker arguments in one table, tested.
+- [x] "I like these" and "Next" run the no-model action when the next step is the next meal type's picker, and go to Vana when it is a question or the wrap-up (tests for both).
+- [x] No written line; the tap and the picker are stored for Vana's next turn; nothing drawn from the budget; logged as taps.
 - [ ] Checked on a pool simulator: a week planned with "Other options" and "I like these", with model calls in the log only where Vana asks or wraps up.
-- [ ] On dev, the model calls and input tokens for a scripted five-picker conversation are recorded in this ticket before and after.
+- [x] On dev, the model calls and input tokens for a scripted five-picker conversation are recorded in this ticket before and after.
+
+## Measurements
+
+Scripted five-picker conversation on DEV (`scripts/vana-eval/picker-chip-cost.ts`), a fresh Pro athlete with both
+rule-4 forks settled (batch on, dinners and lunches): new-plan opener, typed "Quick weeknights" (Vana's first dinner
+picker), then "Other options", "Under 20 min", "Next: Lunch", "Other options" (four more pickers) and "I like these"
+(walk spent, so Vana wraps up). Figures read back from `vana_calls` for each conversation, 2026-09-23.
+
+| | code on dev | model calls | input tokens | of which cache reads | taps with no model |
+|---|---|---|---|---|---|
+| Before | base `1ad254fc` (vana-chat v81, vana-action v45, deployed 11:05 UTC for this measurement) | 7 | 232,528 | 192,382 | 0 |
+| After | ticket 12 `7315501d` (vana-chat v82, vana-action v46, deployed 11:06 UTC) | 3 | 87,004 | 63,849 | 4 |
+
+- Before, conversation `a1637ce6-7fec-4d7e-9e8d-b43fcaa4030e`: opener 15,101 · typed 31,833 · the five chip taps
+  33,599 / 35,400 / 37,124 / 38,893 / 40,578 (each two model steps, each debited).
+- After, conversation `97786436-bac1-4088-9d05-3b2188a2ca37`: opener 15,087 · typed 31,784 · four
+  `vana.tap.next_picker.meal_planning` rows (model `none`, 0 tokens, not debited, `input_mode` tap) · "I like these"
+  handed to Vana for the wrap-up 40,133.
+- The four picker chips that used to cost 145,016 input tokens and four debited turns cost nothing; the wrap-up still
+  costs one turn, as it should. The same five pickers appeared in both runs (dinner, dinner, dinner, lunch, lunch).
+- An earlier run against the functions dev had before this ticket's deploys (vana-chat v80 from 09-22, which predates
+  ticket 04's compaction) cost 7 calls and 726,530 input tokens; it is not the base code, so it is not the before figure.
 
 Next: /implement-lee ai-cost
