@@ -98,8 +98,13 @@ class VanaActionResult {
       readRecordList(extras, 'lists', ShoppingListSummary.fromJson);
 
   /// `pantry_photo` → `messageId` (the persisted assistant message that
-  /// carries the returned `pantry` part).
+  /// carries the returned `pantry` part). A chip acting at once (mp-464,
+  /// `chip` on the payload) → the same: the stored assistant turn's id.
   String? get messageId => readString(extras, 'messageId');
+
+  /// A chip acting at once → `tapMessageId`, the stored user turn's id (the
+  /// label the athlete tapped).
+  String? get tapMessageId => readString(extras, 'tapMessageId');
 
   factory VanaActionResult.fromJson(Map<String, dynamic> json) =>
       VanaActionResult(

@@ -387,10 +387,7 @@ class _VanaChatScreenState extends ConsumerState<VanaChatScreen> {
       nextType: _nextType(state),
       planHasMeals: plan?.meals.isNotEmpty ?? false,
       chipsEnabled: !_chipsPicked,
-      onChipPick: (label) {
-        setState(() => _chipsPicked = true);
-        _send(label, inputMode: VanaInputMode.tap);
-      },
+      onChipPick: _tapChip,
       onSomethingElse: _focusComposer,
       onAcceptRule: _acceptRule,
       onViewShopping: () => context.go('/main?tab=food&food=shopping'),
@@ -720,6 +717,24 @@ class _VanaChatScreenState extends ConsumerState<VanaChatScreen> {
     setState(() => _chipsPicked = false);
   }
 
+  /// A chip under a turn. A fixed-label chip acts at once (mp-464, ticket
+  /// 11): the controller runs it with no model turn and the strip stays
+  /// live, since the last picker's own replies are still the way on. A chip
+  /// that navigates goes once the tap is stored (or failed: the list still
+  /// opens offline). Every other label is a tapped message to Vana and
+  /// spends the strip until she answers.
+  Future<void> _tapChip(String label) async {
+    final chip = _controller.fixedChipFor(label);
+    if (chip == null) {
+      setState(() => _chipsPicked = true);
+      _send(label, inputMode: VanaInputMode.tap);
+      return;
+    }
+    await _controller.tapChip(label);
+    final to = chip.navigatesTo;
+    if (to != null && mounted) context.go(to);
+  }
+
   void _focusComposer() {
     _inputFocus.requestFocus();
   }
@@ -768,10 +783,8 @@ class _VanaChatScreenState extends ConsumerState<VanaChatScreen> {
       case VanaAttachBrowseMeals():
         await _openBrowse();
       case VanaAttachUseWhatIHave():
-        _send(
-          content.getValue(ContentKeys.mpAttachUseWhatIHave),
-          inputMode: VanaInputMode.tap,
-        );
+        // A fixed-label chip: the pantry grid comes with no model turn.
+        await _tapChip(content.getValue(ContentKeys.mpAttachUseWhatIHave));
       case VanaAttachPhoto(:final file, :final extension):
         // `readAsBytes` works for both the file path (mobile) and the blob
         // URL (web) an XFile can carry.
@@ -793,7 +806,9 @@ class _VanaChatScreenState extends ConsumerState<VanaChatScreen> {
     if (mounted) await _controller.refreshDraft();
   }
 
-  /// "Use these" on a pantry card: record the items, then tell Vana.
+  /// "Use these" on a pantry card: record the items at once, with the app's
+  /// own "I have … on hand" line as the stored turn (mp-464). Vana plans
+  /// with them the next time a turn reaches her; no turn is spent here.
   Future<void> _usePantry(List<String> items) async {
     if (items.isEmpty) return;
     final content = ref.read(contentServiceProvider);

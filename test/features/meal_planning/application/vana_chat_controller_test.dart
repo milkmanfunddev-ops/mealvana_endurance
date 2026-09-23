@@ -9,6 +9,7 @@ import 'dart:typed_data';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:mealvana_endurance/features/ai_credits/domain/insufficient_credits_exception.dart';
+import 'package:mealvana_endurance/features/content/application/content_service.dart';
 import 'package:mealvana_endurance/features/feedback/data/wiredash_feedback_filer.dart';
 import 'package:mealvana_endurance/features/feedback/domain/typed_feedback.dart';
 import 'package:mealvana_endurance/features/meal_logging/application/meal_ai_service.dart';
@@ -25,6 +26,7 @@ import 'package:mealvana_endurance/features/meal_planning/domain/ui_action.dart'
 import 'package:mealvana_endurance/features/meal_planning/domain/user_memory.dart';
 import 'package:mealvana_endurance/features/meal_planning/domain/vana_input_mode.dart';
 import 'package:mealvana_endurance/features/meal_planning/domain/vana_conversation_kind.dart';
+import 'package:mealvana_endurance/features/meal_planning/domain/vana_fixed_chip.dart';
 import 'package:mealvana_endurance/features/meal_planning/domain/vana_message.dart';
 import 'package:mealvana_endurance/features/meal_planning/domain/vana_moment.dart';
 import 'package:mealvana_endurance/shared/domain/activity_type.dart';
@@ -34,6 +36,7 @@ import 'package:mealvana_endurance/features/meal_planning/domain/vana_stream_eve
 
 import '../domain/fixture_helpers.dart';
 import '../helpers/container.dart';
+import '../presentation/helpers/test_content.dart';
 
 class _FakeChatRepo extends Fake implements VanaChatRepository {
   _FakeChatRepo({
@@ -204,6 +207,9 @@ void main() {
   }) {
     final container = testContainer([
       ...baseOverrides(),
+      // The fixed chips the app draws itself are matched by their content
+      // value ("Draft my whole week", "Use what I have").
+      contentServiceProvider.overrideWith(testContentService),
       vanaChatRepositoryProvider.overrideWithValue(repo),
       mealPlanControllerProvider.overrideWith(() => planController),
       userMemoryRepositoryProvider.overrideWithValue(memoryRepo),
@@ -768,8 +774,22 @@ void main() {
       expect(actions.ran, isEmpty);
     });
 
-    test('usePantry records the items then sends the message', () async {
-      repo.events = const [VanaTextEvent('Using those.'), VanaDoneEvent()];
+    test('usePantry records the items at once with the app\'s line as the '
+        'tap, and sends Vana nothing (mp-464)', () async {
+      actions.byType['set_pantry'] = VanaActionResult(
+        parts: const [
+          VanaMemorySavedPart(
+            memory: UserMemory(
+              id: 'mem-p',
+              kind: MemoryKind.setting,
+              fact: 'Has on hand: eggs, rice',
+              confidence: 1,
+              lastConfirmedAt: '2026-09-22T12:00:00Z',
+            ),
+          ),
+        ],
+        extras: const {'tapMessageId': 'u-9', 'messageId': 'a-9'},
+      );
       final (:notifier, seen: _) = make(conversationId: 'conv-1');
       await notifier.future;
 
@@ -781,25 +801,277 @@ void main() {
       final set = actions.ran.single as SetPantryAction;
       expect(set.conversationId, 'conv-1');
       expect(set.items, ['eggs', 'rice']);
-      expect(
-        repo.calls.single['message'],
-        'I have eggs, rice on hand — use these',
-      );
-      expect(notifier.state.value!.messages.last.content, 'Using those.');
+      expect(set.chip, 'I have eggs, rice on hand — use these');
+      expect(repo.calls, isEmpty, reason: 'no model turn');
+      final s = notifier.state.value!;
+      expect(s.messages.map((m) => m.id), ['u-9', 'a-9']);
+      expect(s.messages.first.content, 'I have eggs, rice on hand — use these');
+      expect(s.messages.last.content, '', reason: 'Vana writes no line');
+      expect(s.messages.last.parts.single, isA<VanaMemorySavedPart>());
+      expect(memoryRepo.applied.single.fact, 'Has on hand: eggs, rice');
+      expect(s.isStreaming, isFalse);
     });
 
-    test('usePantry: a failed set_pantry sends nothing', () async {
-      actions.failByType['set_pantry'] = const VanaRateLimitedException(
-        retryAfterSeconds: 5,
+    test(
+      'usePantry: a failed set_pantry rolls the tap back and reports it',
+      () async {
+        actions.failByType['set_pantry'] = const VanaRateLimitedException(
+          retryAfterSeconds: 5,
+        );
+        final (:notifier, seen: _) = make(conversationId: 'conv-1');
+        await notifier.future;
+
+        await notifier.usePantry(['eggs'], message: 'use these');
+
+        expect(repo.calls, isEmpty);
+        expect(notifier.state.value!.messages, isEmpty);
+        expect(notifier.state.value!.error, VanaChatErrorKind.rateLimited);
+        expect(notifier.state.value!.retryAfterSeconds, 5);
+      },
+    );
+  });
+
+  // mp-464 clause 1 (ai-cost ticket 11): a chip whose next step is fixed acts
+  // at once on the no-model endpoint, with the label as the stored tap.
+  group('chips that act at once (mp-464)', () {
+    final batch =
+        VanaPart.fromJson(
+              (loadFixture('batch')['parts'] as List).first
+                  as Map<String, dynamic>,
+            )!
+            as VanaBatchPart;
+
+    test('"Draft my whole week" runs draft_week with the label, sends no chat '
+        'request, folds the batch and draws no turn', () async {
+      actions.byType['draft_week'] = VanaActionResult(
+        parts: [batch],
+        extras: const {'tapMessageId': 'u-1', 'messageId': 'a-1'},
+      );
+      final (:notifier, :seen) = make(conversationId: 'conv-1');
+      await notifier.future;
+
+      await notifier.tapChip('Draft my whole week');
+
+      final ran = actions.ran.single as DraftWeekAction;
+      expect(ran.conversationId, 'conv-1');
+      expect(ran.chip, 'Draft my whole week');
+      expect(ran.toJson()['payload'], {
+        'conversationId': 'conv-1',
+        'chip': 'Draft my whole week',
+      });
+      expect(repo.calls, isEmpty, reason: 'no model turn');
+      final s = notifier.state.value!;
+      // The athlete's bubble stays with its stored id; a batch alone is plan
+      // bar state, so there is no assistant turn to draw.
+      expect(s.messages.map((m) => (m.id, m.isUser, m.content)), [
+        ('u-1', true, 'Draft my whole week'),
+      ]);
+      expect(s.draftPlan!.id, batch.plan.id);
+      expect(planController.applied.single.id, batch.plan.id);
+      expect(
+        seen.any((st) => st.isStreaming && st.statusTool == 'draftWeek'),
+        isTrue,
+        reason: 'the status line names the tool the chip stands in for',
+      );
+      expect(s.isStreaming, isFalse);
+      expect(s.statusTool, isNull);
+    });
+
+    test('a coverage answer records the setting; the memory row is the turn, '
+        'with no line', () async {
+      actions.byType['set_setting'] = const VanaActionResult(
+        parts: [
+          VanaMemorySavedPart(
+            memory: UserMemory(
+              id: 'mem-c',
+              kind: MemoryKind.setting,
+              fact: 'Plans dinners only',
+              confidence: 1,
+              lastConfirmedAt: '2026-09-22T12:00:00Z',
+            ),
+          ),
+        ],
+        extras: {'tapMessageId': 'u-2', 'messageId': 'a-2'},
       );
       final (:notifier, seen: _) = make(conversationId: 'conv-1');
       await notifier.future;
 
-      await notifier.usePantry(['eggs'], message: 'use these');
+      await notifier.tapChip('Dinners only');
 
+      final ran = actions.ran.single as SetSettingAction;
+      expect(ran.key.wire, 'coverage_scope');
+      expect(ran.value, 'dinners');
+      expect(ran.chip, 'Dinners only');
       expect(repo.calls, isEmpty);
-      expect(notifier.state.value!.error, VanaChatErrorKind.rateLimited);
+      final reply = notifier.state.value!.messages.last;
+      expect(reply.id, 'a-2');
+      expect(reply.isUser, isFalse);
+      expect(reply.content, '');
+      expect(reply.parts.single, isA<VanaMemorySavedPart>());
+      expect(memoryRepo.applied.single.fact, 'Plans dinners only');
     });
+
+    test('the batch answers map to batch_cooking true and false', () async {
+      final (:notifier, seen: _) = make(conversationId: 'conv-1');
+      await notifier.future;
+
+      await notifier.tapChip('Batch cook');
+      await notifier.tapChip('cook most nights');
+
+      expect(actions.ran.map((a) => (a as SetSettingAction).value), [
+        true,
+        false,
+      ]);
+      expect(repo.calls, isEmpty);
+    });
+
+    test('"Open shopping list" records the tap, draws nothing, and names '
+        'where the app goes', () async {
+      actions.byType['open_shopping_list'] = const VanaActionResult(
+        parts: [],
+        extras: {'tapMessageId': 'u-3', 'messageId': 'a-3'},
+      );
+      final (:notifier, seen: _) = make(conversationId: 'conv-1');
+      await notifier.future;
+
+      final chip = notifier.fixedChipFor('Open shopping list');
+      expect(chip, VanaFixedChip.openShoppingList);
+      expect(chip!.navigatesTo, '/main?tab=food&food=shopping');
+      await notifier.tapChip('Open shopping list');
+
+      expect(actions.ran.single, isA<OpenShoppingListAction>());
+      expect(actions.ran.single.chip, 'Open shopping list');
+      expect(repo.calls, isEmpty);
+      final s = notifier.state.value!;
+      expect(s.messages.map((m) => (m.id, m.isUser)), [('u-3', true)]);
+    });
+
+    test('"Lay it across the week" and "Use what I have" bring their widget '
+        'with no line', () async {
+      actions.byType['plan_week'] = VanaActionResult(
+        parts: [VanaPart.fromJson(loadFixture('week'))!],
+        extras: const {'tapMessageId': 'u-4', 'messageId': 'a-4'},
+      );
+      actions.byType['ask_pantry'] = VanaActionResult(
+        parts: [VanaPart.fromJson(loadFixture('pantry'))!],
+        extras: const {'tapMessageId': 'u-5', 'messageId': 'a-5'},
+      );
+      final (:notifier, seen: _) = make(conversationId: 'conv-1');
+      await notifier.future;
+
+      await notifier.tapChip('Lay it across the week');
+      await notifier.tapChip('Use what I have');
+
+      expect(actions.ran.map((a) => a.type), ['plan_week', 'ask_pantry']);
+      expect(repo.calls, isEmpty);
+      final messages = notifier.state.value!.messages;
+      expect(messages.map((m) => m.id), ['u-4', 'a-4', 'u-5', 'a-5']);
+      expect(messages[1].parts.single, isA<VanaWeekPart>());
+      expect(messages[1].content, '');
+      expect(messages[3].parts.single, isA<VanaPantryPart>());
+      expect(messages[3].content, '');
+    });
+
+    test(
+      '"Same as last time" on a conversation with no id creates one first',
+      () async {
+        actions.byType['same_as_last_time'] = VanaActionResult(
+          parts: [batch],
+          extras: const {'tapMessageId': 'u-6', 'messageId': 'a-6'},
+        );
+        final (:notifier, seen: _) = make();
+        await notifier.future;
+
+        await notifier.tapChip('Same as last time');
+
+        expect(actions.ran.single.conversationId, 'conv-created');
+        expect(notifier.state.value!.conversationId, 'conv-created');
+        expect(notifier.state.value!.draftPlan!.id, batch.plan.id);
+      },
+    );
+
+    test('a chip Vana named herself, "Adjust" and a typed message still go '
+        'to Vana, as taps and typed', () async {
+      repo.events = const [VanaDoneEvent()];
+      final (:notifier, seen: _) = make(conversationId: 'conv-1');
+      await notifier.future;
+
+      await notifier.tapChip('Something new');
+      await notifier.tapChip('Adjust');
+      await notifier.tapChip('Different protein');
+      await notifier.send('swap the fish for chicken');
+
+      expect(actions.ran, isEmpty, reason: 'nothing acted at once');
+      expect(repo.calls.map((c) => [c['message'], c['inputMode']]), [
+        ['Something new', 'tap'],
+        ['Adjust', 'tap'],
+        ['Different protein', 'tap'],
+        ['swap the fish for chicken', 'typed'],
+      ]);
+    });
+
+    test('a failed action rolls the tap back and reports the error', () async {
+      actions.failByType['draft_week'] = const VanaOfflineException('offline');
+      final (:notifier, seen: _) = make(conversationId: 'conv-1');
+      await notifier.future;
+
+      await notifier.tapChip('Draft my whole week');
+
+      final s = notifier.state.value!;
+      expect(s.messages, isEmpty);
+      expect(s.isStreaming, isFalse);
+      expect(s.error, VanaChatErrorKind.offline);
+      expect(repo.calls, isEmpty);
+    });
+
+    test(
+      'a stored assistant turn with nothing to draw is not a bubble',
+      () async {
+        repo.history = [
+          VanaMessage(
+            id: 'u-1',
+            conversationId: 'conv-1',
+            role: VanaMessageRole.user,
+            content: 'Open shopping list',
+            createdAt: DateTime(2026, 9, 22, 12),
+          ),
+          // The tap's stored turn: a tool part of a kind the app does not draw
+          // parsed to nothing, and no text.
+          VanaMessage(
+            id: 'a-1',
+            conversationId: 'conv-1',
+            role: VanaMessageRole.assistant,
+            content: '',
+            createdAt: DateTime(2026, 9, 22, 12, 0, 1),
+          ),
+          VanaMessage(
+            id: 'u-2',
+            conversationId: 'conv-1',
+            role: VanaMessageRole.user,
+            content: 'Draft my whole week',
+            createdAt: DateTime(2026, 9, 22, 12, 1),
+          ),
+          // A draft-week tap's stored turn: its only part was the batch.
+          VanaMessage(
+            id: 'a-2',
+            conversationId: 'conv-1',
+            role: VanaMessageRole.assistant,
+            content: '',
+            parts: [batch],
+            createdAt: DateTime(2026, 9, 22, 12, 1, 1),
+          ),
+        ];
+        final (:notifier, seen: _) = make(conversationId: 'conv-1');
+        final s = await notifier.future;
+
+        expect(s.messages.map((m) => m.id), ['u-1', 'u-2']);
+        expect(
+          s.draftPlan!.id,
+          batch.plan.id,
+          reason: 'the batch still counts',
+        );
+      },
+    );
   });
 
   // Lee's playtest 2026-09-16 §10: a receipt is the cue to refetch the
@@ -1001,27 +1273,27 @@ void main() {
   // against the chip taps that still cost a turn. Driven through the real
   // notifier — the write path is the request the repository sends.
   group('tap or typed rides every message', () {
-    test('the composer types, a chip taps, and the opener says neither',
-        () async {
-      repo.events = const [VanaDoneEvent()];
-      final (:notifier, seen: _) = make();
-      await notifier.future;
+    test(
+      'the composer types, a chip taps, and the opener says neither',
+      () async {
+        repo.events = const [VanaDoneEvent()];
+        final (:notifier, seen: _) = make();
+        await notifier.future;
 
-      await notifier.loadOpener(anchorDate: '2026-09-22');
-      await notifier.send('what should I eat tonight?');
-      await notifier.tapChip('I like these');
+        await notifier.loadOpener(anchorDate: '2026-09-22');
+        await notifier.send('what should I eat tonight?');
+        await notifier.tapChip('I like these');
 
-      expect(
-        repo.calls.map((c) => [c['opener'], c['inputMode']]),
-        [
+        expect(repo.calls.map((c) => [c['opener'], c['inputMode']]), [
           [true, null],
           [false, 'typed'],
           [false, 'tap'],
-        ],
-      );
-    });
+        ]);
+      },
+    );
 
-    test('"Use these" on the pantry card is a tap', () async {
+    test('"Use these" on the pantry card is a tap the server logs itself: '
+        'no chat request carries it', () async {
       repo.events = const [VanaDoneEvent()];
       actions.byType['set_pantry'] = const VanaActionResult(
         parts: [],
@@ -1030,12 +1302,13 @@ void main() {
       final (:notifier, seen: _) = make(conversationId: 'conv-1');
       await notifier.future;
 
-      await notifier.usePantry(
-        const ['eggs', 'rice'],
-        message: 'I have eggs and rice on hand',
-      );
+      await notifier.usePantry(const [
+        'eggs',
+        'rice',
+      ], message: 'I have eggs and rice on hand');
 
-      expect(repo.calls.single['inputMode'], 'tap');
+      expect(repo.calls, isEmpty);
+      expect(actions.ran.single.chip, 'I have eggs and rice on hand');
     });
 
     test('an edited athlete turn is typed, not tapped', () async {

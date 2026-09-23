@@ -33,15 +33,18 @@ class VanaPickerScope extends InheritedWidget {
 }
 
 /// The client-drawn chip strip under every `meal_picker` in a planning
-/// conversation (02 §6 — never model-generated). Tapping a chip sends its
-/// label as the next user message; `Something else…` focuses the composer.
+/// conversation (02 §6 — never model-generated). Tapping a chip hands its
+/// label to the screen; `Something else…` focuses the composer.
 ///
 /// The primary chip follows coverage: "That's my week" when the 14
 /// lunch+dinner slots are covered, else "`Next: <type>`" for the next slot
 /// Vana will fill, else "I like these". Filter chips appear once the plan
 /// has at least one meal. On the conversation's first picker, while the
 /// draft is still empty, a leading "Draft my whole week" chip offers the
-/// propose-first door (the server's `draftWeek` tool answers it).
+/// propose-first door: it acts at once on the no-model endpoint (mp-464,
+/// `VanaFixedChip.draftWeek`), so the strip stays live after it. The other
+/// replies still go to Vana as the next user message (ticket 12 moves the
+/// ones whose next step is fixed).
 ///
 /// When the turn named its own chips ([suggested], mp-272), those labels
 /// stand in for the two replies (`I like these` / `Next: …` and

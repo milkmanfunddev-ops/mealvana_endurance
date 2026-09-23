@@ -452,6 +452,11 @@ class UserMemoryRepository with SyncableRepository {
         VanaSetting.weekStart =>
           'Starts the plan week on ${_dayNames[value] ?? value}',
         VanaSetting.periodDays => 'Plans $value days at a time',
+        VanaSetting.coverageScope => switch (value) {
+          'dinners' => 'Plans dinners only',
+          'dinners_lunches' => 'Plans dinners and lunches',
+          _ => 'Plans every meal of the week',
+        },
       };
 
   /// `memory.ts DAY_NAMES` — the stored fact is server-authored English.

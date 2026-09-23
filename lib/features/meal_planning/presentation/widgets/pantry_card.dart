@@ -15,6 +15,8 @@ import 'vana_tag.dart';
 /// [SelectableChipGrid] seeded from the part's items, then "Use these".
 /// The card owns the ticked set until the athlete commits; after that it
 /// reads as spent (the grid disables, the button becomes the used line).
+/// "Use these" acts at once (mp-464): the items are recorded with no model
+/// turn, and Vana plans with them the next time a turn reaches her.
 /// A photo-detected pantry carries a small "from your photo" tag, and a
 /// [onScanFridge] host offers a "Scan my fridge" pill beside the title —
 /// the photo flow is the primary way through this card, not a menu three
