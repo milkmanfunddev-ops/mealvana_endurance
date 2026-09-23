@@ -1,6 +1,6 @@
 # 12: Picker chips fetch the next picker with no model turn
 
-**Status:** in-progress (wave 7, 2026-09-23)
+**Status:** done (wave 7, 2026-09-23)
 **Blocked by:** 02 (touches supabase/functions/_shared/vana/tools.ts), 04 (touches supabase/functions/_shared/vana/actions.ts), 05 (touches lib/features/meal_planning/application/vana_chat_controller.dart), 06 (touches supabase/functions/_shared/vana/tools.ts), 07 (touches supabase/functions/_shared/vana/persona.ts), 09 (touches supabase/functions/_shared/vana/actions.ts), 11 (touches lib/features/meal_planning/presentation/widgets/picker_chips.dart).
 **Next:** `/implement-lee ai-cost`
 **Model:** fable
