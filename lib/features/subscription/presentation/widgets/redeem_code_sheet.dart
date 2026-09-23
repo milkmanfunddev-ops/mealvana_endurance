@@ -164,7 +164,13 @@ class _RedeemCodeSheetState extends ConsumerState<RedeemCodeSheet> {
               LengthLimitingTextInputFormatter(40),
               _UpperCase(),
             ],
-            onChanged: (_) => setState(() {}),
+            onChanged: (_) {
+              // A new Code: the last one's refusal no longer applies.
+              if (problem != null) {
+                ref.read(codeEntryControllerProvider.notifier).reset();
+              }
+              setState(() {});
+            },
             onSubmitted: (_) => _submit(),
           ),
           if (problem != null) ...[

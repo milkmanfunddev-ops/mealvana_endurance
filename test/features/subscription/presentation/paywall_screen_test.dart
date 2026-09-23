@@ -914,6 +914,11 @@ void main() {
         tester.widget<Text>(find.byKey(RedeemCodeSheet.problemKey)).data,
         'That code has expired.',
       );
+
+      // Typing another Code clears the refusal.
+      await tester.enterText(find.byKey(RedeemCodeSheet.fieldKey), 'NEW');
+      await tester.pump();
+      expect(find.byKey(RedeemCodeSheet.problemKey), findsNothing);
     });
 
     testWidgets('an anonymous session is told to sign in', (tester) async {
