@@ -3071,3 +3071,65 @@ An edit made while notes are being written is picked up on the next open. A requ
 **What it touches.** `scripts/testing-wave/findings.mjs` (what counts as finished), the spec's Triage section.
 
 > 2026-09-23 opened in wave 1 ticket 01
+
+## mp-654 · Should the app still stop an unpaid AI tap itself, or leave it to the server?
+- category: Pro and paywall
+- kind: question
+- status: open
+- linked: mp-457
+- image: none
+- screen: Log meal
+- source: wave paywall 8 ticket 20
+
+**Context.** Ticket 20 took every write check out of the app (mp-457). Two AI checks are left in the app: Analyze on the log-meal and edit-meal screens, and the Vana launcher. When an account without Pro taps one, the app opens the paywall without calling the server. These screens are pushed without the router seeing them, so the Gate cannot redirect them. The server already refuses the same calls for an unpaid account (mp-505).
+
+**Question.** Do the log-meal Analyze button and the Vana launcher keep their own check that opens the paywall, or do they call the server and let its refusal speak?
+
+**Why.** mp-457 says the app has no write check. These two are AI checks, not write checks. Keeping them means an unpaid tap lands on the paywall instead of an error, but it is a second check the ruling did not ask for.
+
+**What it touches.** Log meal, Edit meal, the Vana launcher; `ai_action_guard.dart`, `vana_companion.dart`, `writeAccessProvider` in `pro_gate.dart` (the name would become an AI-access name if it stays).
+
+> 2026-09-23 opened in wave 8 ticket 20
+
+## mp-655 · Outside the US, prices follow each store's own conversion
+- category: Pro and paywall
+- status: proposed
+- image: none
+- svg: docs/ssot/decisions/images/mealplanning/mp-655.svg
+- screen: none (store setup)
+- source: wave paywall 9 ticket 05
+
+**Context.** mp-452 sets the four Pro prices in US dollars: $24.99 and $199.99, and founding $12.49 and $99.99. Both stores sell in about 175 countries. Someone has to decide the price in each of the others. Ticket 05 created the production products on 23 September.
+
+**Question.** What does Pro cost outside the United States?
+
+**Decision.** Whatever each store converts the US price to. On the App Store every other country gets Apple's matched price for the US price. On Google Play every other country is priced from the dollar and euro amounts Play converted, the same way the dev products were set up. Example: the monthly plan is $24.99 in the US and €21.91 wherever Play charges euros; the founding annual is $99.99 and €87.66.
+
+**Why.** It is how the dev products were set up, it needs no price list per country before 1 October, and Apple and Google keep their matched prices current as exchange rates move.
+
+**What else was considered.** Setting a hand-picked price for each country or region. That means a price list someone would have to write and keep up to date.
+
+**What it touches.** The four `_prod` products on the App Store and Google Play; `scripts/store/asc.mjs`, `scripts/store/play.mjs`, `docs/implement_mealplanning/04-entitlement.md`.
+
+**Details.** Play also added its own price for Mongolia, as it did on dev. App Store: the US price point plus Apple's matched prices, 175 territories. Play: a US regional price plus `otherRegionsConfig` in USD and EUR.
+
+> 2026-09-23 proposed in wave 9 ticket 05
+
+## mp-656 · Do the old products leave RevenueCat's Test Store offering too?
+- category: Pro and paywall
+- kind: question
+- status: open
+- linked: mp-452
+- image: none
+- screen: none (store setup)
+- source: wave paywall 9 ticket 05
+
+**Context.** mp-452 says the old monthly and annual products leave every offering. Ticket 05 took them out of the production and dev apps' offerings. RevenueCat's Test Store, which debug builds with a `test_` key buy from, still sells the old `mealvana_pro_monthly` and `mealvana_pro_annual` in the `default` offering, and it has no `me_pro_*` products to put in their place.
+
+**Question.** Should the Test Store get the four `me_pro_*` products and drop the old two, or stay as it is?
+
+**Why.** A debug build on the Test Store still shows $9.99 and $69.99 and the old ids, so a test there does not match what the stores sell.
+
+**What it touches.** RevenueCat Test Store app `appa283bb35a2`, the `default` offering.
+
+> 2026-09-23 opened in wave 9 ticket 05

@@ -1,0 +1,7 @@
+{
+  "kind": "compare",
+  "title": "Pro prices outside the US",
+  "left": { "head": "Other option: a price list per country", "tone": "muted", "lines": ["We pick a price for each", "of ~175 countries", "and update it by hand", "when exchange rates move"] },
+  "right": { "head": "This card's answer: the store converts", "tone": "ok", "lines": ["App Store: Apple's matched", "price in every territory", "Google Play: Play converts", "to USD and EUR"] },
+  "example": ["Monthly: $24.99 in the US, €21.91 on Play in euro countries", "Founding annual: $99.99 in the US, €87.66 on Play"]
+}
