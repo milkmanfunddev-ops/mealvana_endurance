@@ -1,0 +1,21 @@
+# 09: Cancelling keeps access to the period's end, then the full-screen paywall
+
+**Status:** ready-for-agent
+**Blocked by:** 03 (touches integration_test/flows/cancellation_flow_test.dart), 05.
+**Next:** `/implement-lee testing-wave`
+**Model:** opus
+
+**What to build:** The paid athlete cancels. Until the period ends the app stays open, and RevenueCat and the Entitlement row agree on the end date. After it passes, the account stays signed in and every launch lands on the full-screen paywall with no close button, with Restore, Redeem code, Manage, Sign out and Delete account in the ⋯ menu. Any read-only mode, plan-ended bar or paywall sheet still in the build is an SSOT-conflict Finding against mp-457.
+
+**Decisions:** mp-457, mp-280; approved as mp-629.
+
+**Touches:** integration_test/flows/cancellation_flow_test.dart
+
+- [ ] Runs by the runbook: a slot and the build lock taken and released, the console saved to the run folder, a look-around on every screen visited, every problem written as a Finding and nothing fixed.
+- [ ] Uses the paid account from ticket 05; should run after paywall ticket 20 (read-only plumbing comes out) has merged, and says in its run notes which paywall tickets were in the build.
+- [ ] Cancels inside the Test Store if it can; otherwise sets a Grant ending within ten minutes by API and says so.
+- [ ] Before the end: app open; RevenueCat expiry equals `user_entitlements.active_until`.
+- [ ] After the end: signed in, full-screen paywall on launch and on relaunch, no close button; an AI call made by API with the account's token is refused by the server.
+- [ ] The account's data is still in the dev database, checked by SQL.
+
+Next: /implement-lee testing-wave
