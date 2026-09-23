@@ -5,7 +5,8 @@
 ///   200 { ok: true, kind: 'coach' | 'giveaway', pro_days }
 ///   200 { ok: true, kind: 'paired', coach_user_id } | { ok: true, kind: 'attributed' }
 ///   200 { ok: false, reason, message }   a refusal, with its plain reason
-///   403 sign_in_required · 401 unauthenticated · 400 invalid_input
+///   400 invalid_input (read as a not_found refusal)
+///   403 sign_in_required · 401 unauthenticated
 ///   500 server_error · 502 store_unavailable
 ///
 /// A refusal is an answer ([CodeRefused]); a non-2xx or no answer at all is a

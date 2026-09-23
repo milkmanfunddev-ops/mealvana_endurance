@@ -233,6 +233,26 @@ void main() {
       expect(result.reason, CodeRefusal.other);
       expect(result.serverMessage, 'That code only works in Canada.');
     });
+
+    test('a Code too long to be one (400 invalid_input) is not found, '
+        'never "try again"', () async {
+      answer(
+        () async => throw FunctionException(
+          status: 400,
+          details: {'error': 'invalid_input', 'details': 'code is required'},
+        ),
+      );
+      final c = container();
+
+      final result = await c
+          .read(codeEntryControllerProvider.notifier)
+          .redeem('THIS-CODE-IS-FAR-TOO-LONG-TO-BE-ONE-X');
+
+      expect(result, isA<CodeRefused>());
+      expect((result! as CodeRefused).reason, CodeRefusal.notFound);
+      expect(c.read(codeEntryControllerProvider).hasError, isFalse);
+      verifyNever(() => service.forgetCachedStatus());
+    });
   });
 
   group('no answer is an error, never a grant', () {

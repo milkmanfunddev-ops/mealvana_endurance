@@ -92,7 +92,6 @@ class RedeemCodeSheet extends ConsumerStatefulWidget {
   static const fieldKey = ValueKey('redeem_code.field');
   static const submitKey = ValueKey('redeem_code.submit');
   static const problemKey = ValueKey('redeem_code.problem');
-  static const closeKey = ValueKey('kyle_sheet_header.close');
 
   @override
   ConsumerState<RedeemCodeSheet> createState() => _RedeemCodeSheetState();

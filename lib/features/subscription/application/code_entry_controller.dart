@@ -72,6 +72,10 @@ class CodeEntryController extends _$CodeEntryController {
         context: 'CODES',
         data: {'details': e.details},
       );
+      // 400 invalid_input: after the server strips spaces the Code is empty
+      // or longer than any Code can be. That is a Code we don't know, with
+      // its plain reason (mp-458 clause 6), not a reason to try again.
+      if (e.status == 400) return const {'ok': false, 'reason': 'not_found'};
       throw switch (e.status) {
         401 || 403 => const CodeRedeemFailure.signInRequired(),
         _ => const CodeRedeemFailure.unavailable(),
