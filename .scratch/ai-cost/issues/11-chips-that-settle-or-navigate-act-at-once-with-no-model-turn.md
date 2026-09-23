@@ -11,12 +11,12 @@
 
 **Touches:** lib/features/meal_planning/presentation/widgets/choice_chips.dart, lib/features/meal_planning/presentation/widgets/picker_chips.dart, lib/features/meal_planning/presentation/widgets/pantry_card.dart, lib/features/meal_planning/presentation/screens/vana_chat_screen.dart, lib/features/meal_planning/application/vana_chat_controller.dart, lib/features/meal_planning/data/vana_action_client.dart, supabase/functions/_shared/vana/actions.ts, supabase/functions/_shared/vana/persona.ts, supabase/functions/_shared/vana/contracts.ts
 
-- [ ] Each chip named above runs its action on the no-model endpoint; a transport that counts shows no chat request for any of them (widget tests through the real chat controller).
-- [ ] The result arrives with no written line from Vana and nothing templated in her voice.
-- [ ] The tap and what it produced are stored in the conversation; Vana's next turn is sent them, and a stored conversation still replays byte-for-byte (extends ticket 07's test).
-- [ ] These taps draw nothing from the monthly budget and are logged as taps.
-- [ ] The persona's chip instructions shrink to the chips that still reach Vana.
-- [ ] Chips Vana named herself, "Adjust", openers and typed messages still go to Vana (test).
+- [x] Each chip named above runs its action on the no-model endpoint; a transport that counts shows no chat request for any of them (widget tests through the real chat controller).
+- [x] The result arrives with no written line from Vana and nothing templated in her voice.
+- [x] The tap and what it produced are stored in the conversation; Vana's next turn is sent them, and a stored conversation still replays byte-for-byte (extends ticket 07's test).
+- [x] These taps draw nothing from the monthly budget and are logged as taps.
+- [x] The persona's chip instructions shrink to the chips that still reach Vana.
+- [x] Chips Vana named herself, "Adjust", openers and typed messages still go to Vana (test).
 - [ ] Checked on a pool simulator: a plan drafted, a coverage answer and "Open shopping list", each with no model call in the log.
 
 Next: /implement-lee ai-cost

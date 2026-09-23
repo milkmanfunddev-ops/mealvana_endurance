@@ -12,10 +12,17 @@ import 'vana_setting.dart';
 /// → that conversation's draft; else the week-level active plan. Both are
 /// optional on every action and emitted only when set.
 sealed class UiAction {
-  const UiAction({this.planId, this.conversationId});
+  const UiAction({this.planId, this.conversationId, this.chip});
 
   final String? planId;
   final String? conversationId;
+
+  /// The label the athlete tapped, when this action is a fixed-label chip
+  /// acting at once (mp-464, ticket 11): the server stores the tap as their
+  /// turn and the result as Vana's, and logs it as a tap that drew nothing.
+  /// Null on every other call, and only the chip actions
+  /// (`VanaFixedChip.action`, "Use these") set it.
+  final String? chip;
 
   /// The `type` discriminator.
   String get type;
@@ -27,6 +34,7 @@ sealed class UiAction {
   Map<String, Object?> toPayloadJson() => {
     if (planId != null) 'planId': planId,
     if (conversationId != null) 'conversationId': conversationId,
+    if (chip != null) 'chip': chip,
     ...payloadFields(),
   };
 
@@ -318,17 +326,21 @@ class LogFromPlanAction extends UiAction {
 }
 
 /// `{key, value}` — boolean settings stored as `user_memories` rows.
+/// With [chip], the batch-cooking or coverage answer the athlete tapped
+/// (mp-464): the server records the setting and stores the tap.
 class SetSettingAction extends UiAction {
   const SetSettingAction({
     required this.key,
     required this.value,
     super.planId,
     super.conversationId,
+    super.chip,
   });
 
   final VanaSetting key;
 
-  /// A bool, a `week_start` day (`'mon'`) or a `period_days` int.
+  /// A bool, a `week_start` day (`'mon'`), a `period_days` int or a
+  /// `coverage_scope` (`'dinners'` | `'dinners_lunches'` | `'all'`).
   final Object value;
 
   @override
@@ -667,10 +679,16 @@ class UndoReceiptAction extends UiAction {
 }
 
 /// `{conversationId, items}` — the names the athlete ticked on a `pantry`
-/// card ("Use these"). Returns `{parts: []}`.
+/// card ("Use these"). Returns `{parts: [memory_saved]}`. [chip] is the
+/// app's own "I have … on hand" line, stored as the athlete's turn
+/// (mp-464): Vana plans with the items on her next turn, with no turn spent
+/// on the tap.
 class SetPantryAction extends UiAction {
-  const SetPantryAction({required String conversationId, required this.items})
-    : super(conversationId: conversationId);
+  const SetPantryAction({
+    required String conversationId,
+    required this.items,
+    super.chip,
+  }) : super(conversationId: conversationId);
 
   final List<String> items;
 
@@ -679,6 +697,82 @@ class SetPantryAction extends UiAction {
 
   @override
   Map<String, Object?> payloadFields() => {'items': items};
+}
+
+// ── Chips that act at once (mp-464 clause 1, ai-cost ticket 11) ─────────────
+// Each is the body of the tool Vana used to call for that chip, run on the
+// no-model endpoint with the label as `chip` so the server stores the tap.
+// The result comes back as `{parts, tapMessageId, messageId}`.
+
+/// `{conversationId?}` → `{parts: [batch]}` — the last confirmed plan copied
+/// into this draft (mp-231 clause 5). Errors when there is none to copy.
+class SameAsLastTimeAction extends UiAction {
+  const SameAsLastTimeAction({super.planId, super.conversationId, super.chip});
+
+  @override
+  String get type => 'same_as_last_time';
+
+  @override
+  Map<String, Object?> payloadFields() => const {};
+}
+
+/// `{conversationId?, scope?}` → `{parts: [batch]}` — every type the athlete
+/// plans filled from the library by this period's context.
+class DraftWeekAction extends UiAction {
+  const DraftWeekAction({
+    this.scope,
+    super.planId,
+    super.conversationId,
+    super.chip,
+  });
+
+  /// `'dinners'` | `'dinners_lunches'` | `'all'`, only when the athlete named
+  /// how much to cover for this draft; null and their own walk decides.
+  final String? scope;
+
+  @override
+  String get type => 'draft_week';
+
+  @override
+  Map<String, Object?> payloadFields() => {if (scope != null) 'scope': scope};
+}
+
+/// `{}` → `{parts: [week]}` — the confirmed collection laid across the days
+/// of the period, on the Plan tab.
+class PlanWeekAction extends UiAction {
+  const PlanWeekAction({super.conversationId, super.chip});
+
+  @override
+  String get type => 'plan_week';
+
+  @override
+  Map<String, Object?> payloadFields() => const {};
+}
+
+/// `{title?}` → `{parts: [pantry]}` — what is likely in the house, as the
+/// tappable grid.
+class AskPantryAction extends UiAction {
+  const AskPantryAction({this.title, super.conversationId, super.chip});
+
+  final String? title;
+
+  @override
+  String get type => 'ask_pantry';
+
+  @override
+  Map<String, Object?> payloadFields() => {if (title != null) 'title': title};
+}
+
+/// `{}` → `{parts: []}` — the app opened the shopping list itself; the call
+/// exists so the tap is stored in the conversation.
+class OpenShoppingListAction extends UiAction {
+  const OpenShoppingListAction({super.conversationId, super.chip});
+
+  @override
+  String get type => 'open_shopping_list';
+
+  @override
+  Map<String, Object?> payloadFields() => const {};
 }
 
 // ── Shopping lists (2026-09-16, several lists with hand edits) ───────────────

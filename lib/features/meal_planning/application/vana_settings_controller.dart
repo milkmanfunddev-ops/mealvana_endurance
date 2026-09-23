@@ -212,6 +212,9 @@ class VanaSettingsController extends _$VanaSettingsController {
           days: value is int ? value : period.days,
         ),
       ),
+      // The coverage scope is a chat answer (mp-464), not a sheet setting:
+      // nothing here shows it.
+      VanaSetting.coverageScope => current,
     });
     state = await AsyncValue.guard(() async {
       await _repo.setSetting(userId, setting, value);

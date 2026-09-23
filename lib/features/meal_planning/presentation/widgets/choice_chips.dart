@@ -8,7 +8,12 @@ import '../../domain/vana_part.dart';
 import 'choice_chip_button.dart';
 
 /// `choices` part — an optional question plus 2–4 options. Tapping an
-/// option sends its label as the next user message (02 §3).
+/// option hands its label to the screen: a label with one fixed meaning
+/// (the batch-cooking and coverage answers, "Same as last time", "Open
+/// shopping list", "Lay it across the week"; `VanaFixedChip`) acts at once
+/// with no model turn (mp-464), and any other label is the next user
+/// message (02 §3). The widget never knows which: the label is the whole
+/// contract.
 ///
 /// Always the compact [Wrap] of [ChoiceChipButton]s: the labels carry the
 /// meaning on their own, and a trade-off `details` line (spec §2.3) is not

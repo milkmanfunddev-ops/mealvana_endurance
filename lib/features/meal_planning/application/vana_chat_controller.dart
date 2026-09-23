@@ -7,6 +7,7 @@ import '../../../shared/providers/user_id_provider.dart';
 import '../../../shared/services/app_external_deps.dart';
 import '../../../shared/services/logging_service.dart';
 import '../../ai_credits/domain/insufficient_credits_exception.dart';
+import '../../content/application/content_service.dart';
 import '../../feedback/data/wiredash_feedback_filer.dart';
 import '../../feedback/domain/typed_feedback.dart';
 import '../../meal_logging/application/meal_ai_service.dart';
@@ -18,6 +19,7 @@ import '../domain/meal_plan.dart';
 import '../domain/ui_action.dart';
 import '../domain/vana_input_mode.dart';
 import '../domain/vana_conversation_kind.dart';
+import '../domain/vana_fixed_chip.dart';
 import '../domain/vana_message.dart';
 import '../domain/vana_moment.dart';
 import '../domain/vana_part.dart';
@@ -126,13 +128,16 @@ class VanaChatState {
 /// Streams turns from [VanaChatRepository], accumulates text and parts into
 /// the last message, folds `batch` parts into [MealPlanController] (they
 /// are never rendered inline) and `memory_saved` parts into the memory
-/// repository, and maps transport errors to [VanaChatErrorKind]. Chip taps
-/// are plain user messages ([tapChip]).
+/// repository, and maps transport errors to [VanaChatErrorKind]. A chip tap
+/// is a plain user message ([tapChip]), except a fixed-label chip, which
+/// acts at once on the no-model endpoint ([actAtOnce], mp-464).
 @riverpod
 class VanaChatController extends _$VanaChatController {
   VanaChatRepository get _repo => ref.read(vanaChatRepositoryProvider);
   VanaActionClient get _actions => ref.read(vanaActionClientProvider);
   AppLogger get _logger => ref.read(appExternalDepsProvider).logger;
+  VanaFixedChipResolver get _fixedChips =>
+      VanaFixedChipResolver(ref.read(contentServiceProvider).getValue);
 
   /// The client-raised `status` tool name while a fridge photo is being
   /// read (`VanaStatusCopy` maps it to copy).
@@ -163,7 +168,7 @@ class VanaChatController extends _$VanaChatController {
       return VanaChatState(
         kind: kind,
         conversationId: conversationId,
-        messages: _stripBatchParts(messages),
+        messages: _drawable(_stripBatchParts(messages)),
         draftPlan: latestPlan,
         historyLoaded: true,
       );
@@ -274,10 +279,152 @@ class VanaChatController extends _$VanaChatController {
     await _turn(current, message: trimmed, opener: false, inputMode: inputMode);
   }
 
-  /// Chip taps send the chip label as the next user message (02 §6), marked as
-  /// a tap so the log can tell them from typed turns.
-  Future<void> tapChip(String label) =>
-      send(label, inputMode: VanaInputMode.tap);
+  /// The chip a tapped [label] resolves to when it acts at once (mp-464
+  /// clause 1), or null when the tap is Vana's: a chip she named herself,
+  /// "Adjust", "Different protein". The screen reads it to know whether the
+  /// tap also navigates ([VanaFixedChip.navigatesTo]).
+  VanaFixedChip? fixedChipFor(String label) => _fixedChips.match(label);
+
+  /// A chip tap. A fixed-label chip runs its step at once with no model turn
+  /// ([actAtOnce]); every other label is the next user message (02 §6),
+  /// marked as a tap so the log can tell it from typed turns.
+  Future<void> tapChip(String label) {
+    final chip = fixedChipFor(label);
+    if (chip == null) return send(label, inputMode: VanaInputMode.tap);
+    return actAtOnce(
+      label: label,
+      statusTool: chip.statusTool,
+      action: (conversationId) =>
+          chip.action(conversationId: conversationId, label: label),
+    );
+  }
+
+  /// Run a fixed step with no model turn (mp-464 clauses 3 to 5, ticket 11).
+  ///
+  /// [label] is what the athlete tapped and becomes their bubble; the action
+  /// carries it as `chip`, so the server stores the tap and what it produced
+  /// in the conversation (Vana reads both on her next turn) and logs a tap
+  /// that drew nothing. The result lands as an assistant turn with no text
+  /// and no line in her voice: `batch` parts fold into the plan bar,
+  /// `memory_saved` into the memory store, and whatever is left to draw is
+  /// the turn. A result with nothing to draw is no turn at all. While it
+  /// runs the transcript shows the [statusTool]'s status line. A
+  /// conversation with no id yet is created first, as the fridge photo does.
+  ///
+  /// A failure rolls the tap back: nothing was stored, so nothing stays on
+  /// screen, and the error reaches the screen the way a turn's does.
+  Future<void> actAtOnce({
+    required String label,
+    required String statusTool,
+    required UiAction Function(String conversationId) action,
+  }) async {
+    if (!await ref.canWrite()) return;
+    final current = state.value ?? VanaChatState(kind: kind);
+    if (current.isStreaming) return;
+
+    final now = DateTime.now();
+    final tapId = 'tap_${now.millisecondsSinceEpoch}';
+    final placeholderId = 'acting_${now.millisecondsSinceEpoch}';
+    var conversationId = current.conversationId;
+    state = AsyncData(
+      current.copyWith(
+        messages: [
+          ...current.messages,
+          VanaMessage(
+            id: tapId,
+            conversationId: conversationId ?? '',
+            role: VanaMessageRole.user,
+            content: label,
+            createdAt: now,
+          ),
+          VanaMessage(
+            id: placeholderId,
+            conversationId: conversationId ?? '',
+            role: VanaMessageRole.assistant,
+            content: '',
+            createdAt: now,
+          ),
+        ],
+        isStreaming: true,
+        statusTool: statusTool,
+        clearError: true,
+      ),
+    );
+
+    try {
+      if (conversationId == null || conversationId.isEmpty) {
+        conversationId = await _repo.createConversation(kind);
+      }
+      final result = await _actions.run(action(conversationId));
+      if (!ref.mounted) return;
+      MealPlan? plan;
+      final drawn = <VanaPart>[];
+      for (final part in result.parts) {
+        if (part is VanaBatchPart) {
+          plan = part.plan;
+          continue;
+        }
+        if (part is VanaMemorySavedPart) await _foldMemory(part);
+        drawn.add(part);
+      }
+      if (plan != null) await _foldPlan(plan);
+      if (!ref.mounted) return;
+      final latest = state.value ?? current;
+      final settled = conversationId;
+      state = AsyncData(
+        latest.copyWith(
+          conversationId: settled,
+          messages: [
+            for (final m in latest.messages)
+              if (m.id == tapId)
+                m.copyWith(
+                  id: result.tapMessageId ?? tapId,
+                  conversationId: settled,
+                )
+              else if (m.id != placeholderId)
+                m,
+            if (drawn.isNotEmpty)
+              VanaMessage(
+                id: result.messageId ?? placeholderId,
+                conversationId: settled,
+                role: VanaMessageRole.assistant,
+                content: '',
+                parts: drawn,
+                createdAt: DateTime.now(),
+              ),
+          ],
+          isStreaming: false,
+          clearStatus: true,
+          draftPlan: plan,
+        ),
+      );
+      _logger.info(
+        'chip "$label" → ${result.parts.map((p) => p.kind).join(',')}',
+        context: _context,
+        data: {'conversationId': settled, 'stored': result.messageId != null},
+      );
+    } catch (e, st) {
+      if (!ref.mounted) return;
+      _logger.error(
+        'Vana chip "$label" failed',
+        context: _context,
+        error: e,
+        stackTrace: st,
+      );
+      // Roll the tap back; keep the conversation id if one was made.
+      state = AsyncData(
+        current.copyWith(
+          conversationId: conversationId,
+          isStreaming: false,
+          clearStatus: true,
+          error: _errorKind(e),
+          retryAfterSeconds: e is VanaRateLimitedException
+              ? e.retryAfterSeconds
+              : null,
+        ),
+      );
+    }
+  }
 
   void clearError() {
     final current = state.value;
@@ -459,35 +606,20 @@ class VanaChatController extends _$VanaChatController {
   }
 
   /// "Use these" on a `pantry` card: `set_pantry` records [items] on the
-  /// conversation (remote-ack), then [message] — the screen's rendered
-  /// "I have … on hand" line — goes out as the next turn so Vana plans
-  /// with them. Without a persisted conversation there is nothing to
-  /// record; the message alone is sent.
-  Future<void> usePantry(List<String> items, {required String message}) async {
-    if (!await ref.canWrite()) return;
-    final current = state.value ?? VanaChatState(kind: kind);
-    if (current.isStreaming) return;
-    final conversationId = current.conversationId;
-    if (conversationId != null && conversationId.isNotEmpty) {
-      try {
-        await _actions.run(
-          SetPantryAction(conversationId: conversationId, items: items),
-        );
-      } catch (e, st) {
-        if (!ref.mounted) return;
-        _logger.error(
-          'set_pantry failed',
-          context: _context,
-          error: e,
-          stackTrace: st,
-        );
-        state = AsyncData(current.copyWith(error: _errorKind(e)));
-        return;
-      }
-      if (!ref.mounted) return;
-    }
-    await send(message, inputMode: VanaInputMode.tap);
-  }
+  /// conversation at once, with no model turn (mp-464 clause 1). [message]
+  /// is the screen's rendered "I have … on hand" line: it becomes the
+  /// athlete's bubble and the stored turn, so Vana plans with the items the
+  /// next time a turn reaches her.
+  Future<void> usePantry(List<String> items, {required String message}) =>
+      actAtOnce(
+        label: message,
+        statusTool: 'setPantry',
+        action: (conversationId) => SetPantryAction(
+          conversationId: conversationId,
+          items: items,
+          chip: message,
+        ),
+      );
 
   Future<void> _turn(
     VanaChatState before, {
@@ -769,6 +901,15 @@ class VanaChatController extends _$VanaChatController {
       );
     }
   }
+
+  /// A stored assistant turn with nothing to draw — a chip's tap whose only
+  /// result was a `batch`, or one the app has no widget for — is not a
+  /// bubble (mp-464 clause 3: no line, and no empty bubble standing in for
+  /// one).
+  static List<VanaMessage> _drawable(List<VanaMessage> messages) => [
+    for (final m in messages)
+      if (m.isUser || m.content.isNotEmpty || m.parts.isNotEmpty) m,
+  ];
 
   /// `batch` parts are plan-bar state, never bubbles (02 §3).
   static List<VanaMessage> _stripBatchParts(List<VanaMessage> messages) => [

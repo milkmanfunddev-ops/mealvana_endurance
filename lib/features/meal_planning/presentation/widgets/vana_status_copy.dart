@@ -23,6 +23,13 @@ abstract final class VanaStatusCopy {
     'getLoggedMeals': ContentKeys.mpStatusReadingWeek,
     // Client-raised while the `pantry_photo` action runs (plan §5 Phase 7.3).
     'pantryPhoto': ContentKeys.mpStatusReadingPhoto,
+    // Client-raised while a fixed-label chip acts at once (mp-464, ticket
+    // 11): the tool the chip stands in for, under `VanaFixedChip.statusTool`.
+    'draftWeek': ContentKeys.mpStatusFindingMeals,
+    'sameAsLastTime': ContentKeys.mpStatusFindingMeals,
+    'planWeek': ContentKeys.mpStatusReadingWeek,
+    'askPantry': ContentKeys.mpStatusReadingPhoto,
+    'openShoppingList': ContentKeys.mpStatusBuildingList,
   };
 
   /// The [ContentKeys] key for [tool]; [ContentKeys.mpStatusThinking] when
