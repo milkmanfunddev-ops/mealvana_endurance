@@ -130,5 +130,37 @@
     "failed": [],
     "suite": "green",
     "elapsed": "21m"
+  },
+  {
+    "number": 8,
+    "tickets": [
+      "20"
+    ],
+    "base": "4ebbcf6d1a3b6540ef73401db10e1da44bc3df9f",
+    "branch": "mealplanning",
+    "startedAt": "2026-09-23T13:26:37.604Z",
+    "closedAt": "2026-09-23T13:58:49.368Z",
+    "merged": [
+      "20"
+    ],
+    "failed": [],
+    "suite": "green",
+    "elapsed": "32m"
+  },
+  {
+    "number": 9,
+    "tickets": [
+      "05"
+    ],
+    "base": "0ae31f865c144cf1de4462982f6c5946c0b2a574",
+    "branch": "mealplanning",
+    "startedAt": "2026-09-23T13:30:54.140Z",
+    "closedAt": "2026-09-23T13:58:49.401Z",
+    "merged": [
+      "05"
+    ],
+    "failed": [],
+    "suite": "green",
+    "elapsed": "27m"
   }
 ]

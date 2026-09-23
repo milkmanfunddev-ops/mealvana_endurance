@@ -1,6 +1,6 @@
 # 05: The production products
 
-**Status:** in-progress (wave 9, 2026-09-23)
+**Status:** done (wave 9, 2026-09-23)
 **Blocked by:** None (can start immediately).
 **Next:** `/implement-lee paywall`
 **Model:** opus
