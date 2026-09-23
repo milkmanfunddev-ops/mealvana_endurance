@@ -408,7 +408,11 @@ _Avoid_: Credit (that was the old wallet unit)
 
 **Sandbox**:
 The stores' test mode, where a test account buys a subscription without being charged. The hand runs before a release buy in it; a Grant made there still reaches the webhook labelled as production.
-_Avoid_: Test store, staging
+_Avoid_: staging
+
+**Test Store**:
+RevenueCat's own pretend store. The dev app's debug build on a simulator buys through it, so no Apple or Google record exists for those purchases.
+_Avoid_: Sandbox (that is Apple's and Google's test mode)
 
 **Live connection**:
 The feed over which the server pushes the account's wallet row to the phone whenever it changes. It is open only while a screen that shows the budget is showing.
@@ -509,3 +513,15 @@ _Avoid_: bug-report inbox, feedback form
 **Seam**:
 The place a test enters the real code, with fakes standing in for everything beyond it: the server's handlers, the app's notifiers, the screens, or the eval. A spec names its seams in its Testing Decisions.
 _Avoid_: Test layer, test level
+
+**Testing wave**:
+A round of scenario tests run on simulators, by agents driving the app and by Patrol, that checks the app, RevenueCat and the dev database together and writes down every Finding. Rounds repeat (test, triage, fix, retest) until no Finding is open.
+_Avoid_: QA pass, test sweep
+
+**Finding**:
+One thing a Testing wave turned up: a bug, a conflict with an SSOT decision, a Follow-up test, or an idea. Agents record Findings and never fix them during the run; the fixing waits for triage.
+_Avoid_: Issue, error report, bug ticket
+
+**Follow-up test**:
+A scenario nobody has run yet, which an agent wrote down while looking over a screen for other paths through it and other ways it could break. Together they are the backlog each later round draws from.
+_Avoid_: Additional test, test idea
