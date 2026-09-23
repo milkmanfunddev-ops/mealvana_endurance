@@ -1,9 +1,9 @@
 {
   "screen": "Calendar sheet over the Plan tab",
   "key": "calendar-sheet",
-  "capturedAt": "2026-09-14T16:16:48.622Z",
-  "commit": "43496fed",
-  "appVersion": "1.26.0+1",
+  "capturedAt": "2026-09-23T02:54:41.609Z",
+  "commit": "7dda7d94",
+  "appVersion": "1.27.0+3",
   "device": "iPhone 17 Pro",
   "runtime": "iOS 26.2"
 }

@@ -3775,3 +3775,97 @@ Founding is a product id containing `_founding` (`me_pro_*_founding` and the `_p
 > 2026-09-23 picture reused from test/features/subscription/presentation/goldens/paywall_sheet_dark.png
 > 2026-09-23 clarity pass (question, context)
 > 2026-09-23 screenshot removed: test/features/subscription/presentation/goldens/paywall_sheet_dark.png (a test image: its words render as blocks)
+
+## mp-598 · Redeem code opens a sheet that stays open on a refusal and closes on success
+- category: Pro and paywall
+- status: proposed
+- image: docs/ssot/decisions/images/mealplanning/subscription.png
+- caption: Redeem code on the Subscription screen; it opens the code sheet
+- screen: Subscription screen
+- source: wave paywall 6 ticket 18
+
+**Context.** mp-494 and mp-495 put Redeem code in the paywall's ⋯ menu and on the Subscription screen, and mp-458 says a wrong, expired or used Code gets a plain reason back. Neither says what the entry looks like or where its answer shows. Ticket 18 built one entry that both places open.
+
+**Question.** What does Redeem code open, and where does the athlete see what their Code did?
+
+**Decision.** Redeem code opens a dark glass sheet, the same kind as the paywall sheet, with one field and a Redeem button. When the Code works, the sheet closes and a message at the bottom of the screen says what it did. When the Code is refused, the reason shows under the field and the sheet stays open so the athlete can fix a typo and try again. Example: an athlete types `SUMMERGIVE` with one letter wrong, reads "We don't recognise that code. Check it and try again." under the field, corrects it, and the sheet closes with "Code redeemed. You have 365 days of Pro."
+
+**Why.** A refusal usually means a typo, and a retry should not mean reopening the menu; a success moves the athlete on, often into the app itself.
+
+**What else was considered.** A dialog like the paywall's confirmations, and a bottom message for every answer including refusals.
+
+**What it touches.** The paywall's ⋯ menu, the Subscription screen, the new Redeem code sheet (`redeem_code_sheet.dart`), `code_entry_controller.dart`.
+
+**Details.** Each refusal reason has its own wording in the content system (`redeem_code.*`); a reason this build does not know shows the server's own words. A Code longer than any Code can be (over 32 characters once spaces are removed) reads as not recognised (fixed in the wave review). A signed-out or anonymous session reads "Sign in to redeem a code"; any other failure reads "try again in a moment" and grants nothing. The field shows capitals as typed and takes up to 40 characters; the server ignores case and spaces. Typing a new Code clears the last refusal. The sheet is dark glass in light mode too (mp-587).
+
+> 2026-09-23 proposed in wave 6 ticket 18
+> 2026-09-23 picture reused from test/features/subscription/presentation/goldens/subscription_active_light.png
+> 2026-09-23 picture captured at 1.27.0+3, 7dda7d94
+
+## mp-599 · Redeem code shows on the Subscription screen whatever the plan
+- category: Pro and paywall
+- status: proposed
+- image: docs/ssot/decisions/images/mealplanning/subscription.png
+- caption: Redeem code sits under the plan's status as a pink text button
+- screen: Subscription screen
+- source: wave paywall 6 ticket 18
+
+**Context.** mp-495 gives the Subscription screen three actions: Upgrade when the plan has ended, Manage subscription when there is one, and Redeem code. It shows Upgrade and Manage only in some states and says nothing either way about Redeem code.
+
+**Question.** When does the Subscription screen show Redeem code, and how does it look next to Upgrade and Manage?
+
+**Decision.** Always: on a trial, an active plan, a founding member's plan and an ended one. It sits under Upgrade and Manage as a pink text button, lighter than those two, so the screen never stacks three outlined buttons. Example: an athlete on the second day of her trial opens Settings, taps Subscription, and sees Redeem code under Manage subscription, ready for the giveaway Code a coach handed her.
+
+**Why.** A giveaway or coach Code is worth entering at any point in a plan, and it is the least used of the three actions.
+
+**What else was considered.** An outlined button like Manage, which read heavy with three stacked.
+
+**What it touches.** `subscription_screen.dart` and its four goldens.
+
+**Details.** The button is `KyleTertiaryButton` with the content key `redeem_code.button`.
+
+> 2026-09-23 proposed in wave 6 ticket 18
+> 2026-09-23 picture reused from test/features/subscription/presentation/goldens/subscription_active_light.png
+> 2026-09-23 picture captured at 1.27.0+3, 7dda7d94
+
+## mp-600 · Should a coach who redeems their own Code see coach mode at once?
+- category: Pro and paywall
+- kind: question
+- status: open
+- linked: mp-458
+- image: none
+- caption:
+- svg: docs/ssot/decisions/images/mealplanning/mp-600.svg
+- screen: none (data sync)
+- source: wave paywall 6 ticket 18
+
+**Context.** mp-458 says a coach entering their own Code is marked as a coach and gets 30 days of Pro. The server marks the account as a coach at once, and ticket 18 refreshes Pro at once, so the paywall drops. The app learns that the account is a coach only on its next data sync, so coach mode may not show until then.
+
+**Question.** When a coach redeems their own Code, should the app fetch their coach status straight away so coach mode shows at once (A), or wait for the next sync (B)?
+
+**Why.** A coach who redeems and lands in the app with no coach tools may think the Code only half worked.
+
+**What it touches.** `code_entry_controller.dart`, `coach_service.dart`, the coach mode switch.
+
+> 2026-09-23 opened in wave 6 ticket 18
+
+## mp-601 · Should an athlete's pairing request show as soon as they enter a coach's Code?
+- category: Pro and paywall
+- kind: question
+- status: open
+- linked: mp-458
+- image: none
+- caption:
+- svg: docs/ssot/decisions/images/mealplanning/mp-601.svg
+- screen: none (data sync)
+- source: wave paywall 6 ticket 18
+
+**Context.** mp-458 says an athlete entering a coach's Code gets a pending pairing with that coach. The server makes the request at once, and the entry says "Your coach will see your request to pair." The athlete's own list of coaches is not reloaded, so the pending request shows there only after the next sync.
+
+**Question.** After an athlete enters a coach's Code, should the app reload their coaches so the pending request shows at once (A), or leave it to the next sync (B)?
+
+**Why.** An athlete who checks for the request right after and finds nothing may enter the Code again, and gets "You've already used that code."
+
+**What it touches.** `code_entry_controller.dart`, the athlete's coach list.
+
+> 2026-09-23 opened in wave 6 ticket 18
