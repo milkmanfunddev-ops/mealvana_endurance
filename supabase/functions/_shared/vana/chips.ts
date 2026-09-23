@@ -121,7 +121,7 @@ export const PICKER_CHIP_ARGS: Record<Exclude<PickerChipKind, 'next'>, { kind?: 
 
 /** What follows "I like these" / "Next: <type>" (persona rule 4): the next meal type's picker, a question, or the wrap-up.
  *  Only the first is fixed; the other two are Vana's to say. */
-export type PickerNextStep = { step: 'picker'; mealType: MealType } | { step: 'ask' } | { step: 'wrap_up' };
+export type PickerNextStep = { step: 'picker'; mealType: MealType } | { step: 'ask' } | { step: 'wrap_up' } | { step: 'mismatch' };
 export interface PickerNextInput {
   /** The meal type of the picker the chip sits under. */
   lastType: MealType;
@@ -138,12 +138,14 @@ export interface PickerNextInput {
 
 /** The step after "I like these" / "Next", decided the way the persona's rule 4 decides it. A fork still never chosen
  *  means Vana asks it; no type left on the walk means she wraps up; otherwise the next uncovered type on the walk after
- *  the picker's own (wrapping round to one skipped earlier), or the type the chip named when that one is open. */
+ *  the picker's own (wrapping round to one skipped earlier). A chip that named a type gets that type when it is open, and
+ *  otherwise goes to Vana (`mismatch`). */
 export function pickerNextStep(i: PickerNextInput): PickerNextStep {
   if (!i.batchKnown || i.coverageScope == null) return { step: 'ask' };
   const open = i.walk.filter((t) => t !== i.lastType && !i.covered.has(t));
   if (!open.length) return { step: 'wrap_up' };
-  if (i.named && open.includes(i.named)) return { step: 'picker', mealType: i.named };
+  // A chip that named a type is followed or handed to Vana, never answered with a different type's picker (mp-464).
+  if (i.named) return open.includes(i.named) ? { step: 'picker', mealType: i.named } : { step: 'mismatch' };
   const at = i.walk.indexOf(i.lastType);
   const after = at < 0 ? [] : open.filter((t) => i.walk.indexOf(t) > at);
   return { step: 'picker', mealType: (after[0] ?? open[0]) };

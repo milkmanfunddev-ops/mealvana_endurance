@@ -140,7 +140,8 @@ Deno.test('the step after "I like these": the next open type on the walk, a fork
   assertEquals(pickerNextStep({ ...base, covered: new Set<MealType>(['dinner', 'lunch']) }), { step: 'picker', mealType: 'breakfast' });
   assertEquals(pickerNextStep({ ...base, lastType: 'breakfast', covered: new Set<MealType>(['dinner', 'breakfast']) }), { step: 'picker', mealType: 'lunch' }, 'a type skipped earlier comes round again');
   assertEquals(pickerNextStep({ ...base, named: 'breakfast' }), { step: 'picker', mealType: 'breakfast' }, 'the type the chip named, when it is open');
-  assertEquals(pickerNextStep({ ...base, named: 'snack' }), { step: 'picker', mealType: 'lunch' }, 'a named type off the walk is not followed');
+  assertEquals(pickerNextStep({ ...base, named: 'snack' }), { step: 'mismatch' }, 'a named type off the walk goes to Vana, never a different picker than the chip said');
+  assertEquals(pickerNextStep({ ...base, named: 'dinner' }), { step: 'mismatch' }, 'a named type already covered goes to Vana');
   assertEquals(pickerNextStep({ ...base, batchKnown: false }), { step: 'ask' }, 'batch never chosen: Vana asks');
   assertEquals(pickerNextStep({ ...base, coverageScope: null }), { step: 'ask' }, 'coverage never chosen: Vana asks');
   assertEquals(pickerNextStep({ ...base, covered: new Set<MealType>(['dinner', 'lunch', 'breakfast']) }), { step: 'wrap_up' });
