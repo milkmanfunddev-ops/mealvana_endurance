@@ -1,0 +1,10 @@
+[09:58:34] Starting unified sync for user: a816e3ba-552c-437f-ac06-fede919b534c
+[10:00:52] Starting unified sync for user: a816e3ba-552c-437f-ac06-fede919b534c
+[10:01:19] [rc-webhook] INITIAL_PURCHASE: active_until=2026-09-23T15:06:18.067Z period=NORMAL for a816e3ba-552c-437f-ac06-fede919b534c
+[10:01:19] [CALC_MACROS] Garmin not connected for user a816e3ba-552c-437f-ac06-fede919b534c — skipping week Garmin context
+[10:01:19] [rc-webhook] INITIAL_PURCHASE: allowance 4000000 → a816e3ba-552c-437f-ac06-fede919b534c ({"balance":4000000,"granted":true,"allowance":4000000,"forfeited":0,"allowance_expires_at":"2026-09-23T15:06:18.067+00:00"})
+[10:02:27] Deleting user account: a816e3ba-552c-437f-ac06-fede919b534c
+[10:02:28] Deleted user from public.users: a816e3ba-552c-437f-ac06-fede919b534c
+[10:02:28] Successfully deleted auth account: a816e3ba-552c-437f-ac06-fede919b534c
+
+(8 rows)

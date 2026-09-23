@@ -1,0 +1,9 @@
+[{"id":"a816e3ba-552c-437f-ac06-fede919b534c","email":"lee+e2e-02-20260923t1450z@rightpathprogramming.com","created_at":"2026-09-23 14:58:32.311665+00"}]
+[
+  { tbl: 'auth.identities', col: 'user_id', n: 1 },
+  { tbl: 'auth.users', col: 'id', n: 1 },
+  { tbl: 'public.onboarding_surveys', col: 'user_id', n: 1 },
+  { tbl: 'public.users', col: 'auth_user_id', n: 1 },
+  { tbl: 'public.users', col: 'id', n: 1 }
+]
+[ { ent: 0 } ]
