@@ -148,3 +148,4 @@ design/ds/dist/
 
 # Vana evals: trace runs are regenerable and live in the dev eval_traces table
 evals/vana/traces/*.jsonl
+evals/vana/review/traces.json
