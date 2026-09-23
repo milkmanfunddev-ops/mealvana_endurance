@@ -1,6 +1,6 @@
 # 18: Redeem code in the ⋯ menu and on the Subscription screen
 
-**Status:** in-progress (wave 6, 2026-09-23)
+**Status:** done (wave 6, 2026-09-23)
 **Blocked by:** 03 (touches lib/features/subscription/presentation/screens/paywall_screen.dart), 04 (touches lib/features/content/domain/content_keys.dart), 07, 14 (touches lib/features/subscription/presentation/screens/paywall_screen.dart), 15 (touches lib/features/subscription/presentation/screens/paywall_screen.dart), 16 (touches lib/features/subscription/presentation/screens/subscription_screen.dart), 17 (touches lib/features/subscription/presentation/screens/paywall_screen.dart).
 **Next:** `/implement-lee paywall`
 **Model:** opus
