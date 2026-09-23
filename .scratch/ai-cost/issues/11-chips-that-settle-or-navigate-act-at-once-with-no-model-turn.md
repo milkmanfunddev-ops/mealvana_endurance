@@ -1,6 +1,6 @@
 # 11: Chips that settle or navigate act at once, with no model turn
 
-**Status:** ready-for-agent
+**Status:** in-progress (wave 6, 2026-09-23)
 **Blocked by:** 04 (touches supabase/functions/_shared/vana/actions.ts), 05 (touches lib/features/meal_planning/application/vana_chat_controller.dart), 07 (touches supabase/functions/_shared/vana/persona.ts), 09 (touches supabase/functions/_shared/vana/actions.ts).
 **Next:** `/implement-lee ai-cost`
 **Model:** fable
