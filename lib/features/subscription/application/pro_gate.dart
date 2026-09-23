@@ -79,11 +79,11 @@ Future<AppAccess> readAppGate(Ref ref) {
   return ref.read(appGateProvider.future);
 }
 
-/// The one write-access rule (mp-457 §4): whether this account may write or
-/// call AI right now. True only when the gate is open; an unresolved gate
-/// waits for the gate's bounded answer (an unknown answer is closed, so no).
-/// A write controller awaits this before writing and opens the paywall
-/// instead when it says no (ticket 20 removes the check).
+/// Whether this account may start an AI action right now: true only when
+/// the gate is open; an unresolved gate waits for the gate's bounded answer
+/// (an unknown answer is closed, so no). Read by the AI-action checks on
+/// screens the router never sees (`aiActionAllowed`, the Vana launcher);
+/// no write asks it (mp-457, ticket 20).
 @Riverpod(keepAlive: true)
 Future<bool> writeAccess(Ref ref) async =>
-    (await ref.watch(appGateProvider.future)).canWrite;
+    (await ref.watch(appGateProvider.future)).allowsAi;

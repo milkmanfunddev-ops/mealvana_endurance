@@ -6,7 +6,6 @@ import '../../../../shared/services/logging_service.dart';
 import '../../application/coach_service.dart';
 import '../../domain/coach.dart';
 import '../../domain/coach_athlete_relationship.dart';
-import '../../../subscription/application/write_guard.dart';
 
 part 'coach_dashboard_controller.g.dart';
 
@@ -135,7 +134,6 @@ class CoachDashboardController extends _$CoachDashboardController {
 
   /// Accept a pending athlete request
   Future<void> acceptRequest(String relationshipId) async {
-    if (!await ref.canWrite()) return;
     final currentState = state.value;
     if (currentState == null) return;
 
@@ -167,7 +165,6 @@ class CoachDashboardController extends _$CoachDashboardController {
 
   /// Decline a pending athlete request
   Future<void> declineRequest(String relationshipId) async {
-    if (!await ref.canWrite()) return;
     final currentState = state.value;
     if (currentState == null) return;
 
@@ -199,7 +196,6 @@ class CoachDashboardController extends _$CoachDashboardController {
 
   /// Archive an athlete relationship
   Future<void> archiveAthlete(String relationshipId) async {
-    if (!await ref.canWrite()) return;
     final currentState = state.value;
     if (currentState == null) return;
 

@@ -33,7 +33,6 @@ import '../../features/daily_macros/data/daily_macro_targets_repository.dart';
 import '../../features/auth/application/auth_service.dart';
 import '../../features/subscription/application/pro_paywall_controller.dart';
 import '../../features/subscription/domain/trial_reminder.dart';
-import '../../features/subscription/presentation/plan_ended_host.dart';
 import '../services/support/support_identity.dart';
 import '../../main.dart' show sentryNavigatorKey;
 import 'shake_to_report.dart';
@@ -234,16 +233,11 @@ class _RootAppWidgetState extends ConsumerState<RootAppWidget> {
                       child: AppStartupWidget(
                         // Pass router child back when initialization is complete,
                         // under the Vana launcher, which floats over every
-                        // ordinary route (vana-sheet spec), under the
-                        // plan-ended bar a lapsed account sees on every
-                        // screen (mp-457).
-                        onLoaded: (_) => PlanEndedHost(
+                        // ordinary route (vana-sheet spec).
+                        onLoaded: (_) => VanaCompanionHost(
                           router: goRouter,
-                          child: VanaCompanionHost(
-                            router: goRouter,
-                            observer: vanaCompanionObserver,
-                            child: child!,
-                          ),
+                          observer: vanaCompanionObserver,
+                          child: child!,
                         ),
                       ),
                     ),

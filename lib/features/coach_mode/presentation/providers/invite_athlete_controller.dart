@@ -1,7 +1,6 @@
 import 'package:riverpod_annotation/riverpod_annotation.dart';
 
 import '../../application/coach_service.dart';
-import '../../../subscription/application/write_guard.dart';
 
 part 'invite_athlete_controller.g.dart';
 
@@ -16,7 +15,6 @@ class InviteAthleteController extends _$InviteAthleteController {
 
   /// Send an invitation to an athlete
   Future<bool> inviteAthlete({required String athleteUserId}) async {
-    await requireWriteAccess(ref);
     state = const AsyncLoading();
 
     try {

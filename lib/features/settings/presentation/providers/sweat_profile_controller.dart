@@ -2,7 +2,6 @@ import 'dart:async';
 import 'package:riverpod_annotation/riverpod_annotation.dart';
 import '../../../auth/data/user_repository.dart';
 import '../../../auth/domain/user_preferences.dart';
-import '../../../subscription/application/write_guard.dart';
 
 part 'sweat_profile_controller.g.dart';
 
@@ -139,13 +138,9 @@ class SweatProfileController extends _$SweatProfileController {
   ///
   /// Returns a human-readable error string on validation failure (callers
   /// should show it via [MealvanaSnackbar.showError]), or null on success.
-  /// Throws [WriteAccessDenied] for an account that may not write.
   Future<String?> save() async {
     final current = state.value;
     if (current == null) return 'Profile not loaded yet.';
-    // Refused, the paywall is up and this throws [WriteAccessDenied] (mp-457
-    // §4), so the screen never reports a save that did not happen.
-    await requireWriteAccess(ref);
 
     // Validate known sweat rate
     final rate = current.knownSweatRateMlPerHour;

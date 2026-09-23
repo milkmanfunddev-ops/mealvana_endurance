@@ -7,7 +7,6 @@ import '../../../events/data/events_repository.dart';
 import '../../../events/domain/event.dart';
 import '../../../../shared/domain/activity_type.dart';
 import '../../../../shared/services/logging_service.dart';
-import '../../../subscription/application/write_guard.dart';
 import '../../../../shared/database/app_database.dart' as db;
 import '../../../auth/application/auth_service.dart' as auth_service;
 import '../../../auth/application/supabase_auth_service.dart' as supabase_auth;
@@ -149,7 +148,6 @@ class CalendarController extends _$CalendarController {
     String? reminderTimeOfDay,
     bool reminderRecurring = false,
   }) async {
-    await requireWriteAccess(ref);
     try {
       // Get current user's device ID (stored in id field) and userId
       final user = await _authService.getCurrentUser();
@@ -181,7 +179,6 @@ class CalendarController extends _$CalendarController {
 
   /// Update an existing activity
   Future<void> updateActivity(Activity activity) async {
-    if (!await ref.canWrite()) return;
     try {
       final user = await _authService.getCurrentUser();
       final deviceId = user?.id ?? 'unknown';
@@ -201,7 +198,6 @@ class CalendarController extends _$CalendarController {
 
   /// Update an existing event
   Future<void> updateEvent(Event event) async {
-    if (!await ref.canWrite()) return;
     try {
       await _calendarService.updateEvent(event);
 
@@ -217,7 +213,6 @@ class CalendarController extends _$CalendarController {
 
   /// Delete an activity and its associated event/carb loading
   Future<void> deleteActivity(String activityId) async {
-    if (!await ref.canWrite()) return;
     try {
       final user = await _authService.getCurrentUser();
       final deviceId = user?.id ?? 'unknown';
@@ -238,7 +233,6 @@ class CalendarController extends _$CalendarController {
 
   /// Delete a carb loading day
   Future<void> deleteCarbLoadingDay(String carbLoadingDayId) async {
-    if (!await ref.canWrite()) return;
     try {
       await _calendarService.deleteCarbLoadingDay(carbLoadingDayId);
 
@@ -268,7 +262,6 @@ class CalendarController extends _$CalendarController {
     bool hasCarbLoading = false,
     int? carbLoadingDays,
   }) async {
-    if (!await ref.canWrite()) return;
     try {
       // Get current user's device ID
       final user = await _authService.getCurrentUser();
@@ -367,7 +360,6 @@ class CalendarController extends _$CalendarController {
     required DateTime raceDate,
     required double bodyWeightPounds,
   }) async {
-    if (!await ref.canWrite()) return;
     try {
       // Get current user's device ID
       final user = await _authService.getCurrentUser();
@@ -396,7 +388,6 @@ class CalendarController extends _$CalendarController {
     required DateTime raceDate,
     required double bodyWeightPounds,
   }) async {
-    if (!await ref.canWrite()) return;
     try {
       // Get current user's device ID
       final user = await _authService.getCurrentUser();

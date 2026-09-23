@@ -34,7 +34,6 @@ import '../../domain/integration.dart';
 import '../../../onboarding/presentation/providers/onboarding_controller.dart';
 import '../../domain/runna_defaults.dart';
 import 'integrations_providers.dart';
-import '../../../subscription/application/write_guard.dart';
 
 part 'connect_training_controller.g.dart';
 
@@ -418,8 +417,6 @@ class ConnectTrainingController extends _$ConnectTrainingController {
       // Stamp the cooldown immediately (before the async work) so concurrent
       // rebuilds and hot restarts within the window don't each fire again.
       unawaited(_markGarminBackfillTriggered(prefs));
-      // Unguarded: asking Garmin to re-push is a background pull, not an
-      // edit, so a lapsed account opening this screen gets no paywall.
       Future<void>(() async {
         await _requestGarminBackfill();
       });
@@ -637,7 +634,6 @@ class ConnectTrainingController extends _$ConnectTrainingController {
   }
 
   Future<bool> connectFinalSurge() async {
-    await requireWriteAccess(ref);
     return _connectProvider(
       providerId: 'final_surge',
       authenticate: () => _finalSurgeOAuth.authenticate(_currentUserId!),
@@ -856,7 +852,6 @@ class ConnectTrainingController extends _$ConnectTrainingController {
   /// `_syncGarminMappingIfNeeded`). From settings the row already exists, so the
   /// mapping is written immediately.
   Future<bool> connectGarmin({bool isOnboarding = false}) async {
-    await requireWriteAccess(ref);
     return _connectProvider(
       providerId: 'garmin',
       authenticate: () => _garminOAuth.authenticate(
@@ -897,12 +892,10 @@ class ConnectTrainingController extends _$ConnectTrainingController {
   /// Returns false (and surfaces an error via snackbar in the caller) on
   /// auth failure / network error / Garmin refusal.
   Future<bool> triggerGarminBackfill() async {
-    await requireWriteAccess(ref);
     return _requestGarminBackfill();
   }
 
-  /// [triggerGarminBackfill] without the write guard, for build()'s
-  /// session kick (background pulls stay outside the guard, mp-491).
+  /// The body of [triggerGarminBackfill], also run by build()'s session kick.
   Future<bool> _requestGarminBackfill() async {
     // This is invoked from build()'s fire-and-forget kick via
     // `Future<void>(() async { await _requestGarminBackfill(); })`, which runs
@@ -1044,7 +1037,6 @@ class ConnectTrainingController extends _$ConnectTrainingController {
   }
 
   Future<bool> connectVdot() async {
-    await requireWriteAccess(ref);
     return _connectProvider(
       providerId: 'vdot',
       authenticate: () => _vdotOAuth.authenticate(_currentUserId!),
@@ -1076,7 +1068,6 @@ class ConnectTrainingController extends _$ConnectTrainingController {
   /// inline the state management), and pushes dirty rows to Supabase
   /// immediately after sync to avoid the duplicate-on-relogin trap.
   Future<VdotSyncResult> importVdotWorkouts() async {
-    await requireWriteAccess(ref);
     if (_currentUserId == null) {
       return VdotSyncResult.error('Missing user ID');
     }
@@ -1279,7 +1270,6 @@ class ConnectTrainingController extends _$ConnectTrainingController {
   /// carries no athlete identity) is 'runna-' + a short stable hash of the
   /// URL.
   Future<bool> connectRunna(String feedUrl) async {
-    await requireWriteAccess(ref);
     if (_currentUserId == null) {
       if (kDebugMode) {
         print('❌ connectRunna: No current user ID');
@@ -1398,7 +1388,6 @@ class ConnectTrainingController extends _$ConnectTrainingController {
   /// failures into UploadResult.failed) to avoid the duplicate-on-relogin
   /// trap.
   Future<RunnaSyncResult> importRunnaWorkouts() async {
-    await requireWriteAccess(ref);
     if (_currentUserId == null) {
       return RunnaSyncResult.error('Missing user ID');
     }
@@ -1806,7 +1795,6 @@ class ConnectTrainingController extends _$ConnectTrainingController {
   }
 
   Future<SyncResult> importFinalSurgeWorkouts() async {
-    await requireWriteAccess(ref);
     return _importWorkouts<SyncResult>(
       providerId: 'final_surge',
       syncWorkouts: () => _finalSurgeSync.syncWorkouts(_currentUserId!),
@@ -1827,7 +1815,6 @@ class ConnectTrainingController extends _$ConnectTrainingController {
   }
 
   Future<bool> connectTrainingPeaks() async {
-    await requireWriteAccess(ref);
     final connected = await _connectProvider(
       providerId: 'training_peaks',
       authenticate: () async {
@@ -1884,7 +1871,6 @@ class ConnectTrainingController extends _$ConnectTrainingController {
   }
 
   Future<TrainingPeaksSyncResult> importTrainingPeaksWorkouts() async {
-    await requireWriteAccess(ref);
     if (_currentUserId == null) {
       return TrainingPeaksSyncResult.error('Missing user ID');
     }
@@ -1954,7 +1940,6 @@ class ConnectTrainingController extends _$ConnectTrainingController {
   }
 
   Future<int> importWorkouts() async {
-    await requireWriteAccess(ref);
     if (state.value?.isFinalSurgeConnected == true) {
       final result = await importFinalSurgeWorkouts();
       return result.newWorkouts;

@@ -30,7 +30,6 @@ import '../../../nutrition_plan/presentation/providers/macro_targets_controller.
 import '../../../onboarding/application/onboarding_snapshot_service.dart';
 import '../../../subscription/application/subscription_status_provider.dart';
 import '../../domain/settings_state.dart';
-import '../../../subscription/application/write_guard.dart';
 
 part 'settings_controller.g.dart';
 
@@ -299,7 +298,6 @@ class SettingsController extends _$SettingsController {
 
   /// Update gender
   Future<void> updateGender(Gender gender) async {
-    if (!await ref.canWrite()) return;
     final currentState = state.value;
     if (currentState == null) return;
 
@@ -310,7 +308,6 @@ class SettingsController extends _$SettingsController {
 
   /// Update birthday
   Future<void> updateBirthday(DateTime birthday) async {
-    if (!await ref.canWrite()) return;
     final currentState = state.value;
     if (currentState == null) return;
 
@@ -323,7 +320,6 @@ class SettingsController extends _$SettingsController {
 
   /// Update height
   Future<void> updateHeight(int feet, int inches) async {
-    if (!await ref.canWrite()) return;
     final currentState = state.value;
     if (currentState == null) return;
 
@@ -340,7 +336,6 @@ class SettingsController extends _$SettingsController {
 
   /// Update weight
   Future<void> updateWeight(double pounds) async {
-    if (!await ref.canWrite()) return;
     final currentState = state.value;
     if (currentState == null) return;
 
@@ -353,7 +348,6 @@ class SettingsController extends _$SettingsController {
 
   /// Update water bottle preference
   Future<void> updateWaterBottle(bool runsWithWaterBottle) async {
-    if (!await ref.canWrite()) return;
     final currentState = state.value;
     if (currentState == null) return;
 
@@ -369,7 +363,6 @@ class SettingsController extends _$SettingsController {
 
   /// Update unit system preference
   Future<void> updateUnitSystem(UnitSystem system) async {
-    if (!await ref.canWrite()) return;
     final currentState = state.value;
     if (currentState == null) return;
 
@@ -388,7 +381,6 @@ class SettingsController extends _$SettingsController {
 
   /// Update gut training level
   Future<void> updateGutTraining(GutTraining level) async {
-    if (!await ref.canWrite()) return;
     final currentState = state.value;
     if (currentState == null) return;
 
@@ -401,7 +393,6 @@ class SettingsController extends _$SettingsController {
 
   /// Update sweat rate
   Future<void> updateSweatRate(SweatRateCat sweatRate) async {
-    if (!await ref.canWrite()) return;
     final currentState = state.value;
     if (currentState == null) return;
 
@@ -428,7 +419,6 @@ class SettingsController extends _$SettingsController {
     String? lastName,
     String? email,
   }) async {
-    if (!await ref.canWrite()) return;
     final currentState = state.value;
     if (currentState == null) return;
 
@@ -466,7 +456,6 @@ class SettingsController extends _$SettingsController {
 
   /// Update GI sensitivity
   Future<void> updateGISensitivity(bool giSensitivity) async {
-    if (!await ref.canWrite()) return;
     final currentState = state.value;
     if (currentState == null) return;
 
@@ -484,7 +473,6 @@ class SettingsController extends _$SettingsController {
     bool? hasAeroBottle,
     bool? hasBentoBox,
   }) async {
-    if (!await ref.canWrite()) return;
     final currentState = state.value;
     if (currentState == null) return;
 
@@ -507,7 +495,6 @@ class SettingsController extends _$SettingsController {
     bool? typicalWetsuit,
     String? typicalSwimCapType,
   }) async {
-    if (!await ref.canWrite()) return;
     final currentState = state.value;
     if (currentState == null) return;
 
@@ -526,7 +513,6 @@ class SettingsController extends _$SettingsController {
   /// Save all sport settings (consolidated save for sport settings screen)
   /// This is called when the user clicks the "Save" button on the sport settings screen
   Future<void> saveSportSettings() async {
-    if (!await ref.canWrite()) return;
     final currentState = state.value;
     if (currentState == null) return;
 
@@ -539,7 +525,6 @@ class SettingsController extends _$SettingsController {
 
   /// Update dietary preference
   Future<void> updateDietaryPreference(DietaryPreference? preference) async {
-    if (!await ref.canWrite()) return;
     final currentState = state.value;
     if (currentState == null) return;
 
@@ -552,7 +537,6 @@ class SettingsController extends _$SettingsController {
 
   /// Update allergies
   Future<void> updateAllergies(List<Allergy> allergies) async {
-    if (!await ref.canWrite()) return;
     final currentState = state.value;
     if (currentState == null) return;
 
@@ -569,7 +553,6 @@ class SettingsController extends _$SettingsController {
   Future<void> saveNutritionTargetOverrides(
     NutritionTargetOverrides? overrides,
   ) async {
-    if (!await ref.canWrite()) return;
     final currentState = state.value;
     if (currentState == null) return;
 

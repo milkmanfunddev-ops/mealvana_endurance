@@ -24,7 +24,6 @@ import 'package:mealvana_endurance/features/meal_planning/presentation/screens/s
 import 'package:mealvana_endurance/features/meal_planning/presentation/widgets/shopping_list.dart';
 import '../meal_planning/presentation/helpers/test_content.dart';
 import 'kroger_fixtures.dart';
-import '../../helpers/write_access.dart';
 import 'kroger_repository_test.dart' show FakeRemote;
 
 const plan = '11111111-1111-4111-8111-111111111111';
@@ -210,7 +209,6 @@ void main() {
     repo = KrogerRepository(prefs, remote);
     container = ProviderContainer(
       overrides: [
-        writesAllowed(),
         krogerRepositoryProvider.overrideWith((ref) => repo),
         krogerUserIdProvider.overrideWith((ref) async => account),
         shoppingListControllerProvider.overrideWith(TestShopping.new),

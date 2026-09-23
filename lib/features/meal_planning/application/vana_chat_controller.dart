@@ -29,7 +29,6 @@ import 'meal_plan_controller.dart';
 import 'vana_situation_controller.dart';
 import 'vana_write_refetcher.dart';
 import 'vana_ambient_conversation_controller.dart';
-import '../../subscription/application/write_guard.dart';
 
 part 'vana_chat_controller.g.dart';
 
@@ -242,7 +241,6 @@ class VanaChatController extends _$VanaChatController {
     VanaMoment? moment,
     bool newPlan = false,
   }) async {
-    if (!await ref.canWrite()) return;
     // The opener can be requested in the screen's first post-frame callback,
     // before this notifier's async build() has resolved — writes made before
     // initialization completes are clobbered by the initializer's return.
@@ -271,7 +269,6 @@ class VanaChatController extends _$VanaChatController {
     String text, {
     VanaInputMode inputMode = VanaInputMode.typed,
   }) async {
-    if (!await ref.canWrite()) return;
     final trimmed = text.trim();
     if (trimmed.isEmpty) return;
     final current = state.value ?? VanaChatState(kind: kind);
@@ -299,8 +296,6 @@ class VanaChatController extends _$VanaChatController {
   /// unless its next step is Vana's. Every other label is the next user
   /// message (02 §6), marked as a tap so the log can tell it from typed turns.
   Future<void> tapChip(String label) async {
-    // A lapsed athlete meets the paywall before the label is even resolved.
-    if (!await ref.canWrite()) return;
     final chip = fixedChipFor(label);
     if (chip != null) {
       return actAtOnce(
@@ -346,7 +341,6 @@ class VanaChatController extends _$VanaChatController {
     required String statusTool,
     required UiAction Function(String conversationId) action,
   }) async {
-    if (!await ref.canWrite()) return;
     final current = state.value ?? VanaChatState(kind: kind);
     if (current.isStreaming) return;
 
@@ -484,7 +478,6 @@ class VanaChatController extends _$VanaChatController {
   /// A message id the transcript does not hold (already rewound, or an
   /// optimistic id that never persisted) degrades to a plain [send].
   Future<void> rewindAndSend(String messageId, String text) async {
-    if (!await ref.canWrite()) return;
     final trimmed = text.trim();
     if (trimmed.isEmpty) return;
     final current = state.value ?? VanaChatState(kind: kind);
@@ -570,7 +563,6 @@ class VanaChatController extends _$VanaChatController {
     Uint8List bytes, {
     String extension = 'jpg',
   }) async {
-    if (!await ref.canWrite()) return;
     final current = state.value ?? VanaChatState(kind: kind);
     if (current.isStreaming) return;
 
@@ -917,7 +909,6 @@ class VanaChatController extends _$VanaChatController {
   /// receipt names. Throws on failure so the card can say so; a receipt
   /// with no undo is a no-op.
   Future<void> undoReceipt(VanaReceiptPart part) async {
-    if (!await ref.canWrite()) return;
     final undo = part.undo;
     if (undo == null) return;
     final result = await _actions.run(UndoReceiptAction(params: undo.params));

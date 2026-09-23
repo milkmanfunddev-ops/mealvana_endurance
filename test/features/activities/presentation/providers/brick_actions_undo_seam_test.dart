@@ -29,8 +29,6 @@ import 'package:mocktail/mocktail.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 import 'package:supabase_flutter/supabase_flutter.dart';
 
-import '../../../../helpers/write_access.dart';
-
 class MockSupabaseClient extends Mock implements SupabaseClient {}
 
 class MockAppLogger extends Mock implements AppLogger {}
@@ -131,7 +129,6 @@ void main() {
     container = ProviderContainer(
       overrides: [
         appDatabaseProvider.overrideWithValue(database),
-        writesAllowed(),
         appLoggerProvider.overrideWithValue(logger),
         activitiesRepositoryProvider.overrideWithValue(repository),
         activitiesServiceProvider.overrideWithValue(service),

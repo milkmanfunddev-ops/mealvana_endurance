@@ -41,13 +41,11 @@ import 'package:mealvana_endurance/features/subscription/presentation/widgets/re
 import 'package:mealvana_endurance/features/subscription/application/subscription_status_provider.dart';
 import 'package:mealvana_endurance/features/subscription/domain/entitlement.dart';
 import 'package:mealvana_endurance/features/subscription/application/pro_gate.dart';
-import 'package:mealvana_endurance/features/subscription/application/write_guard.dart';
 import 'package:mealvana_endurance/features/subscription/presentation/ai_action_guard.dart';
-import 'package:mealvana_endurance/features/subscription/presentation/plan_ended_host.dart';
+import 'package:mealvana_endurance/features/subscription/presentation/open_paywall.dart';
 import 'package:mealvana_endurance/features/subscription/presentation/pro_gate_redirect.dart';
 import 'package:mealvana_endurance/features/subscription/presentation/screens/paywall_screen.dart';
 import 'package:mealvana_endurance/shared/providers/is_admin_provider.dart';
-import 'package:mealvana_endurance/shared/widgets/kyle_design/feedback/plan_ended_bar.dart';
 import 'package:mealvana_endurance/shared/widgets/kyle_design/materials/glass.dart';
 import 'package:mealvana_endurance/shared/services/privacy/privacy_links.dart';
 import 'package:mealvana_endurance/shared/widgets/kyle_design/buttons/overflow_menu_button.dart';
@@ -1167,10 +1165,8 @@ void main() {
 
   // One presentation in the app (mp-280, mp-611): the router wired the way
   // app_router.dart wires it (the gate's redirect, the paywall route's page
-  // from paywallRoutePage), the plan-ended host over it the way
-  // root_app_widget.dart composes it until ticket 20 removes it, and the
-  // gate answering from producer-shaped customer info through the real
-  // gate.
+  // from paywallRoutePage), and the gate answering from producer-shaped
+  // customer info through the real gate.
   group('one full-screen paywall in the app (mp-611)', () {
     const aiButton = ValueKey('test.ai_action');
 
@@ -1240,8 +1236,6 @@ void main() {
           child: MaterialApp.router(
             debugShowCheckedModeBanner: false,
             routerConfig: router,
-            builder: (context, child) =>
-                PlanEndedHost(router: router, child: child!),
           ),
         ),
       );
@@ -1249,8 +1243,8 @@ void main() {
       return router;
     }
 
-    /// The full-screen paywall, alone: no glass sheet, no close, no bar,
-    /// nothing under it to go back to.
+    /// The full-screen paywall, alone: no glass sheet, no close, nothing
+    /// under it to go back to.
     void fullScreenAlone(WidgetTester tester, GoRouter router) {
       final config = router.routerDelegate.currentConfiguration;
       expect(config.uri.path, kPaywallPath);
@@ -1259,7 +1253,6 @@ void main() {
       expect(find.byKey(const ValueKey('paywall.screen')), findsOneWidget);
       expect(find.byType(GlassSheetSurface), findsNothing);
       expect(find.byKey(_close), findsNothing);
-      expect(find.byType(PlanEndedBar), findsNothing);
       final scaffold = tester.widget<Scaffold>(
         find.byKey(const ValueKey('paywall.screen')),
       );
@@ -1290,9 +1283,8 @@ void main() {
       expect(find.text('settings'), findsNothing);
     });
 
-    testWidgets('a screen that asks for the paywall (an AI tap, a refused '
-        'edit) gets the full screen in place of the app, not a sheet over '
-        'it', (tester) async {
+    testWidgets('a screen that asks for the paywall (an AI tap) gets the '
+        'full screen in place of the app, not a sheet over it', (tester) async {
       final router = await pumpApp(
         tester,
         status: statusOf(customerInfoLapsed),
@@ -1308,9 +1300,7 @@ void main() {
       fullScreenAlone(tester, router);
 
       // A second ask while it is up does not stack another.
-      ProviderScope.containerOf(
-        tester.element(find.byKey(const ValueKey('paywall.screen'))),
-      ).read(paywallRequestsProvider.notifier).request();
+      openPaywall(router);
       await tester.pumpAndSettle();
       fullScreenAlone(tester, router);
     });

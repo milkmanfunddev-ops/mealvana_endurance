@@ -8,7 +8,6 @@ import '../data/personal_formulas_repository.dart';
 import 'component_conflict_hydration.dart';
 import '../domain/formula_phase.dart';
 import '../domain/personal_formula.dart';
-import '../../subscription/application/write_guard.dart';
 
 part 'personal_formulas_controller.g.dart';
 
@@ -81,7 +80,6 @@ class PersonalFormulasController extends _$PersonalFormulasController {
     PersonalFormula formula, {
     int? quantityEditCount,
   }) async {
-    await requireWriteAccess(ref);
     final repo = ref.read(personalFormulasRepositoryProvider);
     final saved = await repo.create(formula);
     ref.invalidateSelf();
@@ -105,7 +103,6 @@ class PersonalFormulasController extends _$PersonalFormulasController {
     PersonalFormula formula, {
     int? quantityEditCount,
   }) async {
-    await requireWriteAccess(ref);
     final repo = ref.read(personalFormulasRepositoryProvider);
     final saved = await repo.update(formula);
     ref.invalidateSelf();
@@ -121,7 +118,6 @@ class PersonalFormulasController extends _$PersonalFormulasController {
 
   /// Soft-delete a formula and refresh the list.
   Future<void> deleteFormula(String id) async {
-    if (!await ref.canWrite()) return;
     final userId = await _currentUserId();
     if (userId == null) return;
     final repo = ref.read(personalFormulasRepositoryProvider);

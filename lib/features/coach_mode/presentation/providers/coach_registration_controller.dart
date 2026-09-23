@@ -4,7 +4,6 @@ import 'package:riverpod_annotation/riverpod_annotation.dart';
 
 import '../../application/coach_service.dart';
 import '../../../../shared/services/logging_service.dart';
-import '../../../subscription/application/write_guard.dart';
 
 part 'coach_registration_controller.g.dart';
 
@@ -26,7 +25,6 @@ class CoachRegistrationController extends _$CoachRegistrationController {
     required String email,
     String? bio,
   }) async {
-    await requireWriteAccess(ref);
     state = const AsyncLoading();
 
     state = await AsyncValue.guard(() async {

@@ -7,7 +7,6 @@ import '../../../events/application/events_service.dart';
 import '../../../auth/data/user_repository.dart';
 import '../../../nutrition_plan/data/nutrition_plan_repository.dart';
 import '../../../../shared/services/logging_service.dart';
-import '../../../subscription/application/write_guard.dart';
 
 part 'checklist_controller.g.dart';
 
@@ -276,7 +275,6 @@ class ChecklistController extends _$ChecklistController {
 
   /// Toggle the checked state of an item
   Future<void> toggleItem(String itemId, bool isChecked) async {
-    if (!await ref.canWrite()) return;
     // Optimistically update UI
     state = AsyncValue.data(
       state.value?.map((item) {
@@ -310,7 +308,6 @@ class ChecklistController extends _$ChecklistController {
     String itemName, [
     String category = 'gear',
   ]) async {
-    if (!await ref.canWrite()) return;
     state = const AsyncLoading();
 
     state = await AsyncValue.guard(() async {
@@ -339,7 +336,6 @@ class ChecklistController extends _$ChecklistController {
 
   /// Delete an item from the checklist
   Future<void> deleteItem(String itemId) async {
-    if (!await ref.canWrite()) return;
     // Optimistically update UI
     state = AsyncValue.data(
       state.value?.where((item) => item.id != itemId).toList() ?? [],
@@ -360,7 +356,6 @@ class ChecklistController extends _$ChecklistController {
 
   /// Regenerate the entire checklist (useful if event type changes)
   Future<void> regenerateChecklist() async {
-    if (!await ref.canWrite()) return;
     state = const AsyncLoading();
 
     state = await AsyncValue.guard(() async {

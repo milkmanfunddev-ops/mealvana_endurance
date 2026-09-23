@@ -16,7 +16,6 @@ import '../../meal_planning/application/shopping_list_controller.dart';
 import '../data/kroger_repository.dart';
 import '../domain/kroger_models.dart';
 import 'kroger_matching.dart';
-import '../../subscription/application/write_guard.dart';
 
 part 'kroger_controller.g.dart';
 
@@ -236,7 +235,6 @@ class KrogerController extends _$KrogerController {
   /// The delivery area the shopper typed, which is also how they correct it
   /// having moved or travelled.
   Future<void> setArea(String area) async {
-    if (!await ref.canWrite()) return;
     await _run(() => _applyArea(area));
   }
 
@@ -429,7 +427,6 @@ class KrogerController extends _$KrogerController {
     () async => _persist(_reconcile(await _repo.loadRemote(_user!, planId))),
   );
   Future<void> connect() async {
-    if (!await ref.canWrite()) return;
     await _run(() async {
       if (kIsWeb) throw const KrogerException('mobile_only');
       final start = await _repo.remote.call('connect');
@@ -461,7 +458,6 @@ class KrogerController extends _$KrogerController {
   }
 
   Future<void> disconnect() async {
-    if (!await ref.canWrite()) return;
     await _run(() async {
       await _repo.remote.call('disconnect');
       _publish(state.value!.copyWith(connected: false));
@@ -507,7 +503,6 @@ class KrogerController extends _$KrogerController {
   /// says what actually happened: a run that matched nothing, and a run that
   /// had nothing to match, are different outcomes and read differently.
   Future<void> matchAll() async {
-    if (!await ref.canWrite()) return;
     await _run(() async {
       await _persist(_reconcile(state.value!.draft));
       if (state.value!.draft.included.isEmpty) {
@@ -583,7 +578,6 @@ class KrogerController extends _$KrogerController {
     ),
   );
   Future<void> choose(String id, KrogerProduct product) async {
-    if (!await ref.canWrite()) return;
     await _run(() async {
       await _updateLine(
         id,
@@ -599,7 +593,6 @@ class KrogerController extends _$KrogerController {
   }
 
   Future<void> approve(String id) async {
-    if (!await ref.canWrite()) return;
     await _run(() async {
       final line = state.value!.draft.lines.firstWhere((l) => l.id == id);
       if (line.product?.available != true) {
@@ -620,7 +613,6 @@ class KrogerController extends _$KrogerController {
   /// so a later matching run prefers the same products. Nothing to approve
   /// is nothing to do, not a failure.
   Future<void> approveAll() async {
-    if (!await ref.canWrite()) return;
     await _run(() async {
       final draft = state.value!.draft;
       final ids = {for (final l in draft.approvable) l.id};
@@ -640,7 +632,6 @@ class KrogerController extends _$KrogerController {
   }
 
   Future<void> quantity(String id, int count) async {
-    if (!await ref.canWrite()) return;
     await _run(() async {
       if (count < 1 || count > 99) return;
       await _updateLine(
@@ -652,12 +643,10 @@ class KrogerController extends _$KrogerController {
   }
 
   Future<void> exclude(String id, bool value) async {
-    if (!await ref.canWrite()) return;
     await _run(() => _updateLine(id, (l) => l.copyWith(excluded: value)));
   }
 
   Future<void> addManual(String name) async {
-    if (!await ref.canWrite()) return;
     await _run(() async {
       final value = name.trim();
       if (value.isEmpty || value.length > 100) return;
@@ -685,7 +674,6 @@ class KrogerController extends _$KrogerController {
   /// repeated tap, a retried request and a reloaded screen all arrive
   /// without it and are refused by the server's own record of the send.
   Future<void> export({bool resend = false}) async {
-    if (!await ref.canWrite()) return;
     await _run(() async {
       final draft = _reconcile(state.value!.draft);
       await _persist(draft);

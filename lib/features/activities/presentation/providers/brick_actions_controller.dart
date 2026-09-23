@@ -6,7 +6,6 @@ import '../../application/activities_service.dart';
 import '../../data/activities_repository.dart';
 import '../../../../shared/services/logging_service.dart';
 import '../../../../shared/services/schema_recovery_service.dart';
-import '../../../subscription/application/write_guard.dart';
 
 part 'brick_actions_controller.g.dart';
 
@@ -54,7 +53,6 @@ class BrickActionsController extends _$BrickActionsController {
     required List<Activity> activities,
     required List<String> segmentOrder,
   }) async {
-    await requireWriteAccess(ref);
     // CRITICAL: Capture references at start to avoid "ref disposed" errors
     // if the provider rebuilds during async operations
     final service = _service;
@@ -146,7 +144,6 @@ class BrickActionsController extends _$BrickActionsController {
   /// Throws:
   /// - BrickUngroupException if ungroup fails
   Future<void> ungroupBrick(String brickId) async {
-    if (!await ref.canWrite()) return;
     // CRITICAL: Capture references at start to avoid "ref disposed" errors
     // if the provider rebuilds during async operations
     final repository = _repository;
@@ -218,7 +215,6 @@ class BrickActionsController extends _$BrickActionsController {
     required String brickId,
     required int segmentIndex,
   }) async {
-    await requireWriteAccess(ref);
     _logger.info(
       'Removing segment from brick',
       context: 'BRICK_ACTIONS_CONTROLLER',

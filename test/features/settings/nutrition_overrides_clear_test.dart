@@ -19,7 +19,6 @@ import 'package:mealvana_endurance/features/daily_macros/domain/enums.dart';
 import 'package:mealvana_endurance/features/nutrition_plan/domain/nutrition_target_overrides.dart';
 import 'package:mealvana_endurance/features/settings/domain/settings_state.dart';
 import 'package:mealvana_endurance/features/settings/presentation/providers/settings_controller.dart';
-import '../../helpers/write_access.dart';
 
 class _MockUserRepository extends Mock implements UserRepository {}
 
@@ -97,7 +96,6 @@ void main() {
   Future<SettingsController> controller() async {
     final container = ProviderContainer(
       overrides: [
-        writesAllowed(),
         userRepositoryProvider.overrideWith((_) async => repo),
         settingsControllerProvider.overrideWith(_StubbedBuildController.new),
       ],

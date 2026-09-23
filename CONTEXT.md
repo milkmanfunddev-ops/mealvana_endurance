@@ -387,7 +387,7 @@ The paywall as an account that never subscribed sees it, straight after sign-up:
 _Avoid_: Onboarding shape, signup paywall
 
 **Paywall sheet**:
-The paywall as an account that held Pro once and lost it sees it: a sheet it can close, over its read-only app, opened from the plan-ended bar, from any edit or AI tap, or from Upgrade on the Subscription screen.
+The paywall as an account that held Pro once and lost it sees it: a sheet it can close, over its read-only app, opened from any edit or AI tap, or from Upgrade on the Subscription screen.
 _Avoid_: Lapsed shape, closable sheet
 
 **⋯ menu**:
@@ -433,10 +433,6 @@ _Avoid_: flip-day run, grace selection, grace script
 **Grace claim**:
 The one request an install still anonymous at the flip makes right after sign-up to get its Legacy grace. It is made once and not retried.
 _Avoid_: claim (unqualified), grace-claim
-
-**Plan-ended bar**:
-The bar above every screen of a Lapsed account saying its plan has ended, with a Subscribe button that opens the Paywall sheet (mp-457).
-_Avoid_: Subscribe bar, lapsed banner
 
 **Subscription screen**:
 The screen opened from the first row of Settings that shows where the plan stands and what Pro includes, with Upgrade, Manage subscription and Redeem code (mp-495).

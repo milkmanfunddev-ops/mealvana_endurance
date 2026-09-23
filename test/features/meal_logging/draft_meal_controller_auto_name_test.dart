@@ -11,7 +11,6 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 
 import 'package:mealvana_endurance/features/meal_logging/domain/meal_component.dart';
 import 'package:mealvana_endurance/features/meal_logging/presentation/providers/draft_meal_controller.dart';
-import '../../helpers/write_access.dart';
 
 const _logDate = '2026-07-04';
 
@@ -23,7 +22,7 @@ void main() {
     late ProviderContainer container;
 
     setUp(() {
-      container = ProviderContainer(overrides: [writesAllowed()]);
+      container = ProviderContainer();
       addTearDown(container.dispose);
     });
 
@@ -119,7 +118,7 @@ void main() {
     late ProviderContainer container;
 
     setUp(() {
-      container = ProviderContainer(overrides: [writesAllowed()]);
+      container = ProviderContainer();
       addTearDown(container.dispose);
     });
 

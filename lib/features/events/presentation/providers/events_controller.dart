@@ -11,7 +11,6 @@ import '../../../../shared/providers/user_id_provider.dart';
 import '../../../../shared/domain/activity_type.dart';
 import '../../../../shared/services/sync/sync_coordinator.dart';
 import '../../data/events_repository.dart';
-import '../../../subscription/application/write_guard.dart';
 
 part 'events_controller.g.dart';
 
@@ -86,7 +85,6 @@ class EventsController extends _$EventsController {
     String? waveStartTime,
     String? packetPickupInfo,
   }) async {
-    await requireWriteAccess(ref);
     // Keep provider alive during async work when invoked via ref.read (no listeners)
     final keepAliveLink = ref.keepAlive();
 
@@ -143,7 +141,6 @@ class EventsController extends _$EventsController {
   /// Update an existing event
   /// Note: Does NOT invalidate the provider - calling code should handle refresh
   Future<void> updateEvent(Event event) async {
-    if (!await ref.canWrite()) return;
     final keepAliveLink = ref.keepAlive();
 
     // CRITICAL: Cache ALL ref-dependent values BEFORE any async operations
@@ -184,7 +181,6 @@ class EventsController extends _$EventsController {
   /// Delete an event
   /// Also cascade deletes any associated carb loading plan and invalidates related providers
   Future<void> deleteEvent(String eventId) async {
-    if (!await ref.canWrite()) return;
     final keepAliveLink = ref.keepAlive();
 
     // CRITICAL: Cache ALL ref-dependent values BEFORE any async operations

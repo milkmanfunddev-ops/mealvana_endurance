@@ -10,7 +10,6 @@ import 'package:mealvana_endurance/features/coach_mode/domain/coach_athlete_rela
 import 'package:mealvana_endurance/features/coach_mode/domain/coach_message.dart';
 import 'package:mealvana_endurance/features/coach_mode/presentation/providers/coach_chat_controller.dart';
 import 'package:mealvana_endurance/shared/services/logging_service.dart';
-import '../../../helpers/write_access.dart';
 
 // ---------------------------------------------------------------------------
 // Mocks
@@ -160,7 +159,6 @@ void main() {
   ProviderContainer _container() {
     final c = ProviderContainer(
       overrides: [
-        writesAllowed(),
         coachServiceProvider.overrideWithValue(coachService),
         appLoggerProvider.overrideWithValue(logger),
       ],

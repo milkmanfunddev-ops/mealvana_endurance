@@ -11,7 +11,6 @@ import '../domain/formula_phase.dart';
 import '../domain/personal_formula.dart';
 import 'component_conflict_hydration.dart';
 import 'personal_formulas_controller.dart';
-import '../../subscription/application/write_guard.dart';
 
 part 'formula_editor_controller.g.dart';
 
@@ -257,7 +256,6 @@ class FormulaEditorController extends _$FormulaEditorController {
   /// Persist the draft. Returns the saved formula, or `null` if not saveable /
   /// no authenticated user.
   Future<PersonalFormula?> save() async {
-    await requireWriteAccess(ref);
     final draft = state.value;
     if (draft == null || !draft.canSave) return null;
     final userId = _userId;
