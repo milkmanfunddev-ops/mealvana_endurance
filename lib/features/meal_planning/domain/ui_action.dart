@@ -775,6 +775,33 @@ class OpenShoppingListAction extends UiAction {
   Map<String, Object?> payloadFields() => const {};
 }
 
+/// `{chipKind, mealType?}` → `{parts: [meal_picker]}`, or `{parts: [],
+/// toVana: true, reason}` when the step is Vana's (mp-464, ai-cost ticket
+/// 12). [chipKind] is a `VanaPickerChip.wire`: `more` / `no_recipe` /
+/// `under_20` re-run the last picker with its filters and the chip's fixed
+/// arguments; `next` draws the next meal type's picker when that is the whole
+/// next step. [mealType] is the type a `Next: <type>` label named.
+class NextPickerAction extends UiAction {
+  const NextPickerAction({
+    required this.chipKind,
+    this.mealType,
+    super.conversationId,
+    super.chip,
+  });
+
+  final String chipKind;
+  final MealType? mealType;
+
+  @override
+  String get type => 'next_picker';
+
+  @override
+  Map<String, Object?> payloadFields() => {
+    'chipKind': chipKind,
+    if (mealType != null) 'mealType': mealType!.wire,
+  };
+}
+
 // ── Shopping lists (2026-09-16, several lists with hand edits) ───────────────
 // Every one answers `{parts: [], list: ShoppingListDetail}` (or `lists`),
 // read through [VanaActionResult.shoppingList] / [VanaActionResult.shoppingLists].

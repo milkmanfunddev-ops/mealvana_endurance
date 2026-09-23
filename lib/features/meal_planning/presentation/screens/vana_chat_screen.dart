@@ -499,16 +499,21 @@ class _VanaChatScreenState extends ConsumerState<VanaChatScreen> {
   /// progression is decided server-side; the client defaults to the last
   /// picker's own meal type when known.
   /// The type the NEXT picker should fill: the one after the last picker's
-  /// type in the planning order (dinner → lunch → breakfast → snack),
-  /// skipping types the draft already covers. Null once the order is spent
-  /// (the primary chip then falls back to "I like these" / "That's my week").
+  /// type on the athlete's walk (the draft's `coverage.mealTypes`, else the
+  /// planning order dinner → lunch → breakfast → snack), skipping types the
+  /// draft already covers. Null once the walk is spent (the primary chip
+  /// then falls back to "I like these" / "That's my week"). The server walks
+  /// the same order when "`Next: <type>`" fetches the picker (ticket 12).
   MealType? _nextType(VanaChatState state) {
-    const order = [
-      MealType.dinner,
-      MealType.lunch,
-      MealType.breakfast,
-      MealType.snack,
-    ];
+    final walk = state.draftPlan?.coverage.mealTypes ?? const <MealType>[];
+    final order = walk.isNotEmpty
+        ? walk
+        : const [
+            MealType.dinner,
+            MealType.lunch,
+            MealType.breakfast,
+            MealType.snack,
+          ];
     MealType? last;
     for (final message in state.messages.reversed) {
       final picker = message.parts.whereType<VanaMealPickerPart>().firstOrNull;
@@ -719,19 +724,21 @@ class _VanaChatScreenState extends ConsumerState<VanaChatScreen> {
 
   /// A chip under a turn. A fixed-label chip acts at once (mp-464, ticket
   /// 11): the controller runs it with no model turn and the strip stays
-  /// live, since the last picker's own replies are still the way on. A chip
-  /// that navigates goes once the tap is stored (or failed: the list still
-  /// opens offline). Every other label is a tapped message to Vana and
-  /// spends the strip until she answers.
+  /// live, since the last picker's own replies are still the way on. A
+  /// picker chip does the same (ticket 12): the next picker lands with its
+  /// own strip, or, when the step is Vana's, the controller hands her the
+  /// tap. A chip that navigates goes once the tap is stored (or failed: the
+  /// list still opens offline). Every other label is a tapped message to
+  /// Vana and spends the strip until she answers.
   Future<void> _tapChip(String label) async {
     final chip = _controller.fixedChipFor(label);
-    if (chip == null) {
+    if (!_controller.actsAtOnce(label)) {
       setState(() => _chipsPicked = true);
       _send(label, inputMode: VanaInputMode.tap);
       return;
     }
     await _controller.tapChip(label);
-    final to = chip.navigatesTo;
+    final to = chip?.navigatesTo;
     if (to != null && mounted) context.go(to);
   }
 

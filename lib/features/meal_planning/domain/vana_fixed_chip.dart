@@ -1,4 +1,5 @@
 import '../../content/domain/content_keys.dart';
+import 'meal_type.dart';
 import 'ui_action.dart';
 import 'vana_setting.dart';
 
@@ -16,7 +17,7 @@ import 'vana_setting.dart';
 /// names on her own, "Different protein", "Adjust", every opener and every
 /// typed message still go to her (clause 6). The picker's own replies
 /// ("Other options", "I like these", `Next: <type>`, the two filters) are
-/// ticket 12's.
+/// [VanaPickerChip]s (ticket 12).
 enum VanaFixedChip {
   /// The first picker's door: `draft_week`, the `draftWeek` tool's body.
   draftWeek(statusTool: 'draftWeek'),
@@ -114,6 +115,56 @@ enum VanaFixedChip {
       };
 }
 
+/// A chip of the picker's own strip that fetches the next picker with no
+/// model turn (mp-464, approved as mp-477; ai-cost ticket 12). Each runs
+/// `next_picker` on `vana-action` with the label as `chip`; the server keeps
+/// the last picker's filters, lays on the chip's fixed arguments and stores
+/// the tap and the picker for Vana's next turn.
+///
+/// [next] ("I like these", `Next: <type>`) is the one that may not act: when
+/// the step after it is a fork question or the wrap-up, the server answers
+/// `toVana` and the tap goes to Vana as a message. "Different protein" is
+/// not here — which protein is hers to choose.
+enum VanaPickerChip {
+  /// "Other options": the same search again, never a meal already shown.
+  more('more'),
+
+  /// "No recipe only": the same search, assemblies only.
+  noRecipe('no_recipe'),
+
+  /// "Under 20 min": the same search, 20 minutes or less.
+  under20('under_20'),
+
+  /// "I like these" / `Next: <type>`: the next meal type's picker, when
+  /// that is the whole next step.
+  next('next');
+
+  const VanaPickerChip(this.wire);
+
+  /// `next_picker`'s `chipKind`.
+  final String wire;
+
+  /// The status line's tool while it runs: a picker is being found.
+  static const statusTool = 'suggestMeals';
+}
+
+/// A tapped [VanaPickerChip], with the meal type a `Next: <type>` label
+/// named (null for every other label).
+class VanaPickerChipTap {
+  const VanaPickerChipTap(this.chip, {this.mealType});
+
+  final VanaPickerChip chip;
+  final MealType? mealType;
+
+  UiAction action({required String conversationId, required String label}) =>
+      NextPickerAction(
+        chipKind: chip.wire,
+        mealType: mealType,
+        conversationId: conversationId,
+        chip: label,
+      );
+}
+
 /// The labels Vana names herself that the app acts on at once. The persona
 /// (`supabase/functions/_shared/vana/persona.ts`) is pinned to the same
 /// strings through `chip-labels.ts`; change both, and the tests on each side.
@@ -166,6 +217,43 @@ class VanaFixedChipResolver {
     }
     return null;
   }
+
+  /// The picker chip a tapped [label] is, or null. Every label here is the
+  /// app's own, read through [content]: the strip's replies, the two
+  /// filters, and `Next: <type>` for each meal type.
+  VanaPickerChipTap? picker(String label) {
+    final key = _fold(label);
+    if (key.isEmpty) return null;
+    String of(String k) => _fold(content(k));
+    if (key == of(ContentKeys.mpChipOther)) {
+      return const VanaPickerChipTap(VanaPickerChip.more);
+    }
+    if (key == of(ContentKeys.mpFilterNoRecipe)) {
+      return const VanaPickerChipTap(VanaPickerChip.noRecipe);
+    }
+    if (key == of(ContentKeys.mpFilterUnder20)) {
+      return const VanaPickerChipTap(VanaPickerChip.under20);
+    }
+    if (key == of(ContentKeys.mpChipLikeThese)) {
+      return const VanaPickerChipTap(VanaPickerChip.next);
+    }
+    for (final (type, typeKey) in _typeKeys) {
+      final named = ContentKeys.format(content(ContentKeys.mpChipNextLabel), {
+        'type': content(typeKey),
+      });
+      if (key == _fold(named)) {
+        return VanaPickerChipTap(VanaPickerChip.next, mealType: type);
+      }
+    }
+    return null;
+  }
+
+  static const _typeKeys = [
+    (MealType.breakfast, ContentKeys.mpMealTypeBreakfast),
+    (MealType.lunch, ContentKeys.mpMealTypeLunch),
+    (MealType.dinner, ContentKeys.mpMealTypeDinner),
+    (MealType.snack, ContentKeys.mpMealTypeSnack),
+  ];
 
   static String _fold(String s) =>
       s.trim().toLowerCase().replaceAll(RegExp(r'\s+'), ' ');

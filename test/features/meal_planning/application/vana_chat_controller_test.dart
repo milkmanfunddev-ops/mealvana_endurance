@@ -354,10 +354,12 @@ void main() {
       final (:notifier, :seen) = make(conversationId: 'conv-1');
       await notifier.future;
 
-      await notifier.tapChip('I like these');
+      // A chip that still reaches Vana ("I like these" asks vana-action
+      // first since ticket 12).
+      await notifier.tapChip('Different protein');
 
       final s = notifier.state.value!;
-      expect(repo.calls.single['message'], 'I like these');
+      expect(repo.calls.single['message'], 'Different protein');
       expect(repo.calls.single['conversationId'], 'conv-1');
       expect(s.messages, hasLength(2));
       expect(s.messages.first.isUser, isTrue);
@@ -1282,7 +1284,7 @@ void main() {
 
         await notifier.loadOpener(anchorDate: '2026-09-22');
         await notifier.send('what should I eat tonight?');
-        await notifier.tapChip('I like these');
+        await notifier.tapChip('Different protein');
 
         expect(repo.calls.map((c) => [c['opener'], c['inputMode']]), [
           [true, null],
