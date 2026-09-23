@@ -85,7 +85,7 @@ final class CodeEntryControllerProvider
 }
 
 String _$codeEntryControllerHash() =>
-    r'93841575052c46406479ba286101dbb3e65e9c73';
+    r'164e208ca6c9c497551ef92c2cb59aff21c09cb7';
 
 /// Our own Code entry (mp-458), reached from Redeem code in the paywall's ⋯
 /// menu (mp-494) and on the Subscription screen (mp-495). Never the App
