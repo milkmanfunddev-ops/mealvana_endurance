@@ -87,7 +87,11 @@
     "sha256": "73a247925fb873f278a6bd05958d9b03b6eae95f9c1ccd31f6ec64c2e254e9cb"
   },
   "docs/ssot/decisions/images/mealplanning/subscription.png": {
-    "id": "fe19135f85fec22b4149fd379929ba13",
-    "sha256": "404af01111718f8b9bda15d5173d2c9d6f3cd8d4a033465c3e9f7aa1aa89cbfa"
+    "id": "9e5d92d41305ac6870d29c9f4f5c21c1",
+    "sha256": "14403ba3552a0699fbe22c8a15f797cfeb34e7938d9785377d1d84711dd37d50"
+  },
+  "docs/ssot/decisions/images/mealplanning/paywall-lapsed.png": {
+    "id": "76227a7818fba98c8cc2f614d61cea8a",
+    "sha256": "e3418b3e86885acde3fe1fd54d61aa93fb695eb180f47e78d0bfe054bfa4daf0"
   }
 }
