@@ -11,9 +11,9 @@
 
 **Touches:** lib/features/subscription/presentation/screens/subscription_screen.dart, lib/features/subscription/application/subscription_screen_controller.dart, lib/features/content/domain/content_keys.dart, assets/config/content_defaults.json, test/features/subscription/presentation/subscription_screen_test.dart, test/features/subscription/application/subscription_screen_controller_test.dart
 
-- [ ] A Grant shows its source and days left (controller test fed RevenueCat-shaped customer info for a promotional entitlement; screen widget test).
-- [ ] A store subscription still shows as today, with Manage subscription (screen test).
-- [ ] Copy from the content system.
-- [ ] Seen on the dev simulator with a granted account.
+- [x] A Grant shows its source and days left (controller test fed RevenueCat-shaped customer info for a promotional entitlement; screen widget test).
+- [x] A store subscription still shows as today, with Manage subscription (screen test).
+- [x] Copy from the content system.
+- [x] Seen on the dev simulator with a granted account.
 
 Next: /implement-lee paywall
