@@ -3869,3 +3869,148 @@ Founding is a product id containing `_founding` (`me_pro_*_founding` and the `_p
 **What it touches.** `code_entry_controller.dart`, the athlete's coach list.
 
 > 2026-09-23 opened in wave 6 ticket 18
+
+## mp-591 · After a chip acts at once, the other chips stay tappable
+- category: Cutting costs
+- status: proposed
+- image: docs/ssot/decisions/images/mealplanning/vana-chat.png
+- caption:
+- screen: Vana chat
+- source: wave ai-cost 6 ticket 11
+
+**Context.** Before ticket 11, every chip tap went to Vana, and her reply replaced the chips under her last message. Now a chip whose next step is fixed acts at once and Vana writes nothing back (mp-464), so no new message arrives to replace them.
+
+**Question.** After a chip acts at once, can the athlete still tap the other chips under Vana's message?
+
+**Decision.** Yes. The chips stay live, so the athlete can answer one question and still use what Vana showed with it. Example: Vana asks "How much of the week should this plan cover?" under a dinner picker; the athlete taps "Dinners only", the "Remembered: Plans dinners only" card appears, and the dinner picker is still there to pick from.
+
+**Why.** With no new message from Vana, the chips already on screen are the only way on.
+
+**What else was considered.** Spending the chips after one tap, as Vana's reply used to; the athlete would be left with nothing to tap.
+
+**What it touches.** Vana chat screen (`vana_chat_screen.dart`).
+
+> 2026-09-23 proposed in wave 6 ticket 11
+> 2026-09-23 picture captured at 1.27.0+3, 7dda7d94
+
+## mp-592 · A chip that fails to act disappears and says why
+- category: Cutting costs
+- status: proposed
+- image: docs/ssot/decisions/images/mealplanning/vana-chat.png
+- caption:
+- screen: Vana chat
+- source: wave ai-cost 6 ticket 11
+
+**Context.** A chip that acts at once shows the athlete's tap straight away, then asks the server to do the step. The server keeps the tap in the conversation only when the step succeeds.
+
+**Question.** What does the athlete see when a chip that acts at once fails?
+
+**Decision.** The tap is taken off the screen and the error shows the same way a failed message to Vana does, so the chat never shows a step that did not happen. Example: on the dev simulator on Sept 23, "Draft my whole week" reached a server that did not have the new step yet; the tap vanished, the error showed, and the chat was as it had been.
+
+**Why.** Nothing was kept on the server, so nothing should stay on screen.
+
+**What else was considered.** Leaving the tap on screen with a retry mark.
+
+**What it touches.** Vana chat screen; `actAtOnce` in `vana_chat_controller.dart`.
+
+> 2026-09-23 proposed in wave 6 ticket 11
+> 2026-09-23 picture captured at 1.27.0+3, 7dda7d94
+
+## mp-593 · The coverage answer is remembered, with no control for it in Vana settings
+- category: Cutting costs
+- status: proposed
+- image: docs/ssot/decisions/images/mealplanning/vana-settings.png
+- caption:
+- screen: Vana settings
+- source: wave ai-cost 6 ticket 11
+
+**Context.** The coverage question ("Dinners only", "Dinners and lunches", "Every meal") used to be recorded by Vana on the server. The app now records the answer itself when the athlete taps one (mp-464), so the phone needs a setting to hold it.
+
+**Question.** Can the athlete change the coverage answer in Vana settings?
+
+**Decision.** Not yet. The phone keeps the answer as a setting and shows it among what Vana remembers ("Plans dinners only", "Plans dinners and lunches" or "Plans every meal of the week"), but Vana settings has no control for it. To change it, the athlete tells Vana. Example: an athlete taps "Every meal" on Sept 23; what Vana remembers now reads "Plans every meal of the week", and Vana settings looks as it did before.
+
+**Why.** The ticket asked for the chat answer, not a new control.
+
+**What else was considered.** A three-way control in Vana settings beside batch cooking.
+
+**What it touches.** Vana settings, what Vana remembers; `vana_setting.dart`, `user_memory_repository.dart`.
+
+> 2026-09-23 proposed in wave 6 ticket 11
+> 2026-09-23 picture captured at 1.27.0+3, 7dda7d94
+
+## mp-594 · After a tapped fork answer or "Use these", what comes next?
+- category: Cutting costs
+- kind: question
+- status: open
+- linked: mp-464
+- image: none
+- screen: Vana chat
+- source: wave ai-cost 6 ticket 11
+
+**Context.** When Vana first leaves dinners she asks two questions, batch cooking and coverage, and then shows the next meal picker. A tapped answer now gets no reply from her (mp-464 clause 3), so nothing new appears: the athlete carries on with the chips already on screen (mp-591), or types. "Use these" on the pantry card used to bring a picker built from what they have on hand; now Vana stays quiet until the athlete's next message.
+
+**Question.** Is it fine that nothing new appears after a tapped fork answer or "Use these", or should the app send Vana a turn after them (which costs one)?
+
+**Why.** It decides whether planning can stall after a tap. The device check could not show it, because the server side of ticket 11 is not on dev yet.
+
+**What it touches.** Vana chat, the planning persona (`persona.ts` rules 4 and 9).
+
+> 2026-09-23 opened in wave 6 ticket 11
+
+## mp-595 · Should a fixed chip act at once wherever its label appears?
+- category: Cutting costs
+- kind: question
+- status: open
+- linked: mp-464
+- image: none
+- screen: Vana chat
+- source: wave ai-cost 6 ticket 11
+
+**Context.** The app knows a fixed chip only by its words. "Batch cook", "Dinners only" and the other fixed labels act at once wherever they show up. Vana's opening question is her own, and she may offer one of those same words as an answer to it.
+
+**Question.** Should the fixed labels act at once only under the question they belong to, and go to Vana anywhere else?
+
+**Why.** Tapped under her opener, such a chip would quietly save a setting and Vana would not answer.
+
+**What it touches.** Vana chat; `vana_fixed_chip.dart`, `chip-labels.ts`.
+
+> 2026-09-23 opened in wave 6 ticket 11
+
+## mp-596 · "Open shopping list" lands on Plan when the Food tab is already open
+- category: Cutting costs
+- kind: question
+- status: open
+- linked: mp-464
+- image: none
+- screen: Food tab
+- source: wave ai-cost 6 ticket 11
+
+**Context.** The "Open shopping list" chip goes to Food, Shopping. On the device check the Food tab opened on Plan instead: once the Food tab has been built, it keeps the segment it first opened on. The plan bar's link to the shopping list has the same fault. The fix sits in the tab bar's screen, outside ticket 11.
+
+**Question.** Fix it in a small ticket now, or with the next piece of Food tab work?
+
+**Why.** Opening the list is the chip's only job, and today it opens the wrong segment.
+
+**What it touches.** Food tab; `food_screen.dart`, `tabs_screen.dart`.
+
+> 2026-09-23 opened in wave 6 ticket 11
+
+## mp-597 · Should the status line say Vana is thinking while a tap runs with no model?
+- category: Cutting costs
+- kind: question
+- status: open
+- linked: mp-464
+- image: none
+- screen: Vana chat
+- source: wave ai-cost 6 ticket 11
+
+**Context.** While a chip that acts at once is running, the chat shows a status line. For "Use these", the batch cooking answer and the coverage answer it falls back to "Vana is thinking…", and "Use what I have" shows the fridge photo's line, though no model runs and no photo is read.
+
+**Question.** Should these taps show a neutral line such as "Working on it…" instead?
+
+**Why.** mp-464 says Vana has no voice on these taps; the status line still speaks for her.
+
+**What it touches.** Vana chat; `vana_status_copy.dart`, the content system.
+
+> 2026-09-23 opened in wave 6 ticket 11
