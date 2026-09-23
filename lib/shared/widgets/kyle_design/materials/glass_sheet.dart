@@ -2,7 +2,7 @@
 /// as a call ([showGlassSheet]) and as a router page ([GlassSheetPage]).
 ///
 /// Spec for the page form: `docs/ssot/spec/design/components/glass-sheet.md`
-/// **v1** (PROPOSED Lee 2026-09-23, authored app-side, awaiting Xuan). Both
+/// **v1** (PROPOSED Lee 2026-09-22, authored app-side, awaiting Xuan). Both
 /// forms rise on the same route (Material's modal bottom sheet), so a screen
 /// the router opens as a sheet enters exactly like a sheet a widget summons.
 library;

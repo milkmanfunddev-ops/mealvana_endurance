@@ -50,16 +50,25 @@ final paywallClipPosterProvider = Provider<ImageProvider>(
 /// full-screen page otherwise. [access] is the gate's current answer and
 /// [current] the router's configuration being built, which says whether the
 /// paywall was pushed; `app_router.dart` passes both.
+///
+/// The presentation is decided once per page, on its first build, and kept in
+/// [decided] by page key: go_router rebuilds every page whenever the stack
+/// changes, and a route pushed over the sheet would otherwise turn it into a
+/// full-screen page under that route and lose its state.
 Page<void> paywallRoutePage(
   GoRouterState state, {
   required AppAccess? access,
   required RouteMatchList current,
+  required Map<LocalKey, PaywallPresentation> decided,
 }) {
   final onboarding = state.uri.queryParameters[kOnboardingPaywallQuery] == '1';
-  final presentation = paywallPresentationFor(
-    access: access,
-    onboarding: onboarding,
-    pushed: paywallPushed(current),
+  final presentation = decided.putIfAbsent(
+    state.pageKey,
+    () => paywallPresentationFor(
+      access: access,
+      onboarding: onboarding,
+      pushed: paywallPushed(current),
+    ),
   );
   final screen = PaywallScreen(
     onboarding: onboarding,
