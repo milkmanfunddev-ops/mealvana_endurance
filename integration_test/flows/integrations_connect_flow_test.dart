@@ -56,6 +56,8 @@ const _providers = <_Provider>[
   _Provider('garmin', 'connect_training.garmin_connect_button'),
 ];
 
+// One case per provider above; scripts/patrol-targets.mjs reads this line.
+// runner-cases: 3
 void main() {
   for (final provider in _providers) {
     patrolTest(

@@ -1,0 +1,22 @@
+{
+  "flows/ai_coach_chat_flow_test.dart": {
+    "reason": "ai-spend",
+    "why": "Sends a message in the Vana general chat (/jade redirects there): one model turn per run, and the answer is not deterministic."
+  },
+  "flows/meal_plan_build_flow_test.dart": {
+    "reason": "ai-spend",
+    "why": "Generates a new Vana plan: the opener and every picker turn call vana-chat / vana-action. A testing wave caps new plans at three."
+  },
+  "flows/onboarding_signup_flow_test.dart": {
+    "reason": "clean-install",
+    "why": "Needs a fresh install with no session; it self-skips once an earlier flow has signed in, and the job fails on any skip."
+  },
+  "flows/account_delete_flow_test.dart": {
+    "reason": "clean-install",
+    "why": "Signs up throwaway accounts from the welcome screen, so it needs a fresh install with no session, like the signup flow."
+  },
+  "flows/google_login_flow_test.dart": {
+    "reason": "interactive-oauth",
+    "why": "Drives the native Google account sheet, which needs interactive consent; it self-skips on iOS."
+  }
+}
