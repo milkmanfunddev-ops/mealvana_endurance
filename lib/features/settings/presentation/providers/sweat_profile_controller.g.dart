@@ -49,7 +49,7 @@ final class SweatProfileControllerProvider
 }
 
 String _$sweatProfileControllerHash() =>
-    r'c76fe6ed14dcb95462034a88046528b8e0e2f600';
+    r'89d819f9c95ad091d5a7fd4eb0fffa5f1fb42658';
 
 /// Controller for the Sweat Profile settings screen.
 ///

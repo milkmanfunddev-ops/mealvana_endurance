@@ -145,7 +145,7 @@ final class MealLogsForDateProvider
   }
 }
 
-String _$mealLogsForDateHash() => r'518ad78e738593651ff7a24b92b63fc88a902304';
+String _$mealLogsForDateHash() => r'2f7d0a733498335eb0d4f87a06a5e480ae811d56';
 
 /// Streams [MealLog] entries for [date] (formatted as `'yyyy-MM-dd'`) for the
 /// current user.
@@ -256,7 +256,7 @@ final class CompletedActivitiesForDateProvider
 }
 
 String _$completedActivitiesForDateHash() =>
-    r'bc73e1fd4914ee2143f0fe88bccf5759481d0be7';
+    r'd9576f6e278e03fb579ab168c91682c8e3fc8a53';
 
 /// Streams the day's completed activities (local calendar day of
 /// `scheduledDateTime`), so their logged workout fuel can count as "eaten".
@@ -447,7 +447,7 @@ final class RecentMealsProvider
   }
 }
 
-String _$recentMealsHash() => r'f507aef154d019ad74c1eb24cb6411fecc0c7c15';
+String _$recentMealsHash() => r'2bba979839f8ff0194eb072d61d4b05dfb7c917c';
 
 /// Streams all non-deleted saved meals for the current user, ordered by
 /// [SavedMeal.lastUsedAt] descending.
@@ -500,7 +500,7 @@ final class SavedMealsProvider
   }
 }
 
-String _$savedMealsHash() => r'ea91e47c7a97981c83229cfa270e9ed7413f9f60';
+String _$savedMealsHash() => r'3f23104e9acf558a4575686dfbf93f773937fdf4';
 
 /// Controller for meal log mutations.
 ///

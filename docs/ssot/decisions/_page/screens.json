@@ -345,5 +345,35 @@
         "settle": 3000
       }
     ]
+  },
+  "vana-settings": {
+    "match": [
+      "Vana settings",
+      "Vana settings screen",
+      "Meal planning settings"
+    ],
+    "code": [
+      "lib/features/meal_planning/presentation/screens/vana_settings_screen.dart",
+      "lib/features/ai_credits/presentation/widgets/vana_budget_card.dart",
+      "lib/features/ai_credits/domain/budget_share.dart",
+      "lib/features/ai_credits/presentation/sheets/token_top_up_sheet.dart"
+    ],
+    "drive": [
+      {
+        "tap": "Food",
+        "type": "Button"
+      },
+      {
+        "tap": "Vana \u00b7",
+        "settle": 3000
+      },
+      {
+        "tap": "Conversations"
+      },
+      {
+        "tap": "Vana",
+        "settle": 2000
+      }
+    ]
   }
 }
