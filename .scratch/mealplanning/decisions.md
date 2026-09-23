@@ -3776,100 +3776,6 @@ Founding is a product id containing `_founding` (`me_pro_*_founding` and the `_p
 > 2026-09-23 clarity pass (question, context)
 > 2026-09-23 screenshot removed: test/features/subscription/presentation/goldens/paywall_sheet_dark.png (a test image: its words render as blocks)
 
-## mp-598 · Redeem code opens a sheet that stays open on a refusal and closes on success
-- category: Pro and paywall
-- status: proposed
-- image: docs/ssot/decisions/images/mealplanning/subscription.png
-- caption: Redeem code on the Subscription screen; it opens the code sheet
-- screen: Subscription screen
-- source: wave paywall 6 ticket 18
-
-**Context.** mp-494 and mp-495 put Redeem code in the paywall's ⋯ menu and on the Subscription screen, and mp-458 says a wrong, expired or used Code gets a plain reason back. Neither says what the entry looks like or where its answer shows. Ticket 18 built one entry that both places open.
-
-**Question.** What does Redeem code open, and where does the athlete see what their Code did?
-
-**Decision.** Redeem code opens a dark glass sheet, the same kind as the paywall sheet, with one field and a Redeem button. When the Code works, the sheet closes and a message at the bottom of the screen says what it did. When the Code is refused, the reason shows under the field and the sheet stays open so the athlete can fix a typo and try again. Example: an athlete types `SUMMERGIVE` with one letter wrong, reads "We don't recognise that code. Check it and try again." under the field, corrects it, and the sheet closes with "Code redeemed. You have 365 days of Pro."
-
-**Why.** A refusal usually means a typo, and a retry should not mean reopening the menu; a success moves the athlete on, often into the app itself.
-
-**What else was considered.** A dialog like the paywall's confirmations, and a bottom message for every answer including refusals.
-
-**What it touches.** The paywall's ⋯ menu, the Subscription screen, the new Redeem code sheet (`redeem_code_sheet.dart`), `code_entry_controller.dart`.
-
-**Details.** Each refusal reason has its own wording in the content system (`redeem_code.*`); a reason this build does not know shows the server's own words. A Code longer than any Code can be (over 32 characters once spaces are removed) reads as not recognised (fixed in the wave review). A signed-out or anonymous session reads "Sign in to redeem a code"; any other failure reads "try again in a moment" and grants nothing. The field shows capitals as typed and takes up to 40 characters; the server ignores case and spaces. Typing a new Code clears the last refusal. The sheet is dark glass in light mode too (mp-587).
-
-> 2026-09-23 proposed in wave 6 ticket 18
-> 2026-09-23 picture reused from test/features/subscription/presentation/goldens/subscription_active_light.png
-> 2026-09-23 picture captured at 1.27.0+3, 7dda7d94
-
-## mp-599 · Redeem code shows on the Subscription screen whatever the plan
-- category: Pro and paywall
-- status: proposed
-- image: docs/ssot/decisions/images/mealplanning/subscription.png
-- caption: Redeem code sits under the plan's status as a pink text button
-- screen: Subscription screen
-- source: wave paywall 6 ticket 18
-
-**Context.** mp-495 gives the Subscription screen three actions: Upgrade when the plan has ended, Manage subscription when there is one, and Redeem code. It shows Upgrade and Manage only in some states and says nothing either way about Redeem code.
-
-**Question.** When does the Subscription screen show Redeem code, and how does it look next to Upgrade and Manage?
-
-**Decision.** Always: on a trial, an active plan, a founding member's plan and an ended one. It sits under Upgrade and Manage as a pink text button, lighter than those two, so the screen never stacks three outlined buttons. Example: an athlete on the second day of her trial opens Settings, taps Subscription, and sees Redeem code under Manage subscription, ready for the giveaway Code a coach handed her.
-
-**Why.** A giveaway or coach Code is worth entering at any point in a plan, and it is the least used of the three actions.
-
-**What else was considered.** An outlined button like Manage, which read heavy with three stacked.
-
-**What it touches.** `subscription_screen.dart` and its four goldens.
-
-**Details.** The button is `KyleTertiaryButton` with the content key `redeem_code.button`.
-
-> 2026-09-23 proposed in wave 6 ticket 18
-> 2026-09-23 picture reused from test/features/subscription/presentation/goldens/subscription_active_light.png
-> 2026-09-23 picture captured at 1.27.0+3, 7dda7d94
-
-## mp-600 · Should a coach who redeems their own Code see coach mode at once?
-- category: Pro and paywall
-- kind: question
-- status: open
-- linked: mp-458
-- image: none
-- caption:
-- svg: docs/ssot/decisions/images/mealplanning/mp-600.svg
-- screen: none (data sync)
-- source: wave paywall 6 ticket 18
-
-**Context.** mp-458 says a coach entering their own Code is marked as a coach and gets 30 days of Pro. The server marks the account as a coach at once, and ticket 18 refreshes Pro at once, so the paywall drops. The app learns that the account is a coach only on its next data sync, so coach mode may not show until then.
-
-**Question.** When a coach redeems their own Code, should the app fetch their coach status straight away so coach mode shows at once (A), or wait for the next sync (B)?
-
-**Why.** A coach who redeems and lands in the app with no coach tools may think the Code only half worked.
-
-**What it touches.** `code_entry_controller.dart`, `coach_service.dart`, the coach mode switch.
-
-> 2026-09-23 opened in wave 6 ticket 18
-
-## mp-601 · Should an athlete's pairing request show as soon as they enter a coach's Code?
-- category: Pro and paywall
-- kind: question
-- status: open
-- linked: mp-458
-- image: none
-- caption:
-- svg: docs/ssot/decisions/images/mealplanning/mp-601.svg
-- screen: none (data sync)
-- source: wave paywall 6 ticket 18
-
-**Context.** mp-458 says an athlete entering a coach's Code gets a pending pairing with that coach. The server makes the request at once, and the entry says "Your coach will see your request to pair." The athlete's own list of coaches is not reloaded, so the pending request shows there only after the next sync.
-
-**Question.** After an athlete enters a coach's Code, should the app reload their coaches so the pending request shows at once (A), or leave it to the next sync (B)?
-
-**Why.** An athlete who checks for the request right after and finds nothing may enter the Code again, and gets "You've already used that code."
-
-**What it touches.** `code_entry_controller.dart`, the athlete's coach list.
-
-> 2026-09-23 opened in wave 6 ticket 18
-
 ## mp-591 · After a chip acts at once, the other chips stay tappable
 - category: Cutting costs
 - status: proposed
@@ -3892,6 +3798,7 @@ Founding is a product id containing `_founding` (`me_pro_*_founding` and the `_p
 
 > 2026-09-23 proposed in wave 6 ticket 11
 > 2026-09-23 picture captured at 1.27.0+3, 7dda7d94
+> 2026-09-23 picture refreshed at 1.27.0+3, a89b7ea4, replacing docs/ssot/decisions/images/mealplanning/vana-chat.png
 
 ## mp-592 · A chip that fails to act disappears and says why
 - category: Cutting costs
@@ -3915,6 +3822,7 @@ Founding is a product id containing `_founding` (`me_pro_*_founding` and the `_p
 
 > 2026-09-23 proposed in wave 6 ticket 11
 > 2026-09-23 picture captured at 1.27.0+3, 7dda7d94
+> 2026-09-23 picture refreshed at 1.27.0+3, a89b7ea4, replacing docs/ssot/decisions/images/mealplanning/vana-chat.png
 
 ## mp-593 · The coverage answer is remembered, with no control for it in Vana settings
 - category: Cutting costs
@@ -4014,3 +3922,225 @@ Founding is a product id containing `_founding` (`me_pro_*_founding` and the `_p
 **What it touches.** Vana chat; `vana_status_copy.dart`, the content system.
 
 > 2026-09-23 opened in wave 6 ticket 11
+
+## mp-598 · Redeem code opens a sheet that stays open on a refusal and closes on success
+- category: Pro and paywall
+- status: proposed
+- image: docs/ssot/decisions/images/mealplanning/subscription.png
+- caption: Redeem code on the Subscription screen; it opens the code sheet
+- screen: Subscription screen
+- source: wave paywall 6 ticket 18
+
+**Context.** mp-494 and mp-495 put Redeem code in the paywall's ⋯ menu and on the Subscription screen, and mp-458 says a wrong, expired or used Code gets a plain reason back. Neither says what the entry looks like or where its answer shows. Ticket 18 built one entry that both places open.
+
+**Question.** What does Redeem code open, and where does the athlete see what their Code did?
+
+**Decision.** Redeem code opens a dark glass sheet, the same kind as the paywall sheet, with one field and a Redeem button. When the Code works, the sheet closes and a message at the bottom of the screen says what it did. When the Code is refused, the reason shows under the field and the sheet stays open so the athlete can fix a typo and try again. Example: an athlete types `SUMMERGIVE` with one letter wrong, reads "We don't recognise that code. Check it and try again." under the field, corrects it, and the sheet closes with "Code redeemed. You have 365 days of Pro."
+
+**Why.** A refusal usually means a typo, and a retry should not mean reopening the menu; a success moves the athlete on, often into the app itself.
+
+**What else was considered.** A dialog like the paywall's confirmations, and a bottom message for every answer including refusals.
+
+**What it touches.** The paywall's ⋯ menu, the Subscription screen, the new Redeem code sheet (`redeem_code_sheet.dart`), `code_entry_controller.dart`.
+
+**Details.** Each refusal reason has its own wording in the content system (`redeem_code.*`); a reason this build does not know shows the server's own words. A Code longer than any Code can be (over 32 characters once spaces are removed) reads as not recognised (fixed in the wave review). A signed-out or anonymous session reads "Sign in to redeem a code"; any other failure reads "try again in a moment" and grants nothing. The field shows capitals as typed and takes up to 40 characters; the server ignores case and spaces. Typing a new Code clears the last refusal. The sheet is dark glass in light mode too (mp-587).
+
+> 2026-09-23 proposed in wave 6 ticket 18
+> 2026-09-23 picture reused from test/features/subscription/presentation/goldens/subscription_active_light.png
+> 2026-09-23 picture captured at 1.27.0+3, 7dda7d94
+
+## mp-599 · Redeem code shows on the Subscription screen whatever the plan
+- category: Pro and paywall
+- status: proposed
+- image: docs/ssot/decisions/images/mealplanning/subscription.png
+- caption: Redeem code sits under the plan's status as a pink text button
+- screen: Subscription screen
+- source: wave paywall 6 ticket 18
+
+**Context.** mp-495 gives the Subscription screen three actions: Upgrade when the plan has ended, Manage subscription when there is one, and Redeem code. It shows Upgrade and Manage only in some states and says nothing either way about Redeem code.
+
+**Question.** When does the Subscription screen show Redeem code, and how does it look next to Upgrade and Manage?
+
+**Decision.** Always: on a trial, an active plan, a founding member's plan and an ended one. It sits under Upgrade and Manage as a pink text button, lighter than those two, so the screen never stacks three outlined buttons. Example: an athlete on the second day of her trial opens Settings, taps Subscription, and sees Redeem code under Manage subscription, ready for the giveaway Code a coach handed her.
+
+**Why.** A giveaway or coach Code is worth entering at any point in a plan, and it is the least used of the three actions.
+
+**What else was considered.** An outlined button like Manage, which read heavy with three stacked.
+
+**What it touches.** `subscription_screen.dart` and its four goldens.
+
+**Details.** The button is `KyleTertiaryButton` with the content key `redeem_code.button`.
+
+> 2026-09-23 proposed in wave 6 ticket 18
+> 2026-09-23 picture reused from test/features/subscription/presentation/goldens/subscription_active_light.png
+> 2026-09-23 picture captured at 1.27.0+3, 7dda7d94
+
+## mp-600 · Should a coach who redeems their own Code see coach mode at once?
+- category: Pro and paywall
+- kind: question
+- status: open
+- linked: mp-458
+- image: none
+- caption:
+- svg: docs/ssot/decisions/images/mealplanning/mp-600.svg
+- screen: none (data sync)
+- source: wave paywall 6 ticket 18
+
+**Context.** mp-458 says a coach entering their own Code is marked as a coach and gets 30 days of Pro. The server marks the account as a coach at once, and ticket 18 refreshes Pro at once, so the paywall drops. The app learns that the account is a coach only on its next data sync, so coach mode may not show until then.
+
+**Question.** When a coach redeems their own Code, should the app fetch their coach status straight away so coach mode shows at once (A), or wait for the next sync (B)?
+
+**Why.** A coach who redeems and lands in the app with no coach tools may think the Code only half worked.
+
+**What it touches.** `code_entry_controller.dart`, `coach_service.dart`, the coach mode switch.
+
+> 2026-09-23 opened in wave 6 ticket 18
+
+## mp-601 · Should an athlete's pairing request show as soon as they enter a coach's Code?
+- category: Pro and paywall
+- kind: question
+- status: open
+- linked: mp-458
+- image: none
+- caption:
+- svg: docs/ssot/decisions/images/mealplanning/mp-601.svg
+- screen: none (data sync)
+- source: wave paywall 6 ticket 18
+
+**Context.** mp-458 says an athlete entering a coach's Code gets a pending pairing with that coach. The server makes the request at once, and the entry says "Your coach will see your request to pair." The athlete's own list of coaches is not reloaded, so the pending request shows there only after the next sync.
+
+**Question.** After an athlete enters a coach's Code, should the app reload their coaches so the pending request shows at once (A), or leave it to the next sync (B)?
+
+**Why.** An athlete who checks for the request right after and finds nothing may enter the Code again, and gets "You've already used that code."
+
+**What it touches.** `code_entry_controller.dart`, the athlete's coach list.
+
+> 2026-09-23 opened in wave 6 ticket 18
+
+## mp-602 · "I like these" goes to Vana whenever she still has a question to ask
+- category: Cutting costs
+- status: proposed
+- image: docs/ssot/decisions/images/mealplanning/vana-chat.png
+- screen: Vana chat
+- source: wave ai-cost 7 ticket 12
+
+**Context.** mp-464 lets "I like these" and "Next: <meal type>" bring the next picker with no model turn, but only when that picker is the whole next step. When Vana first moves past dinners she asks two things, batch cooking and how much of the week to cover, and at the end she wraps up. Ticket 12 had to decide when the tap counts as "just the next picker".
+
+**Question.** When does "I like these" bring the next picker at once, and when does it go to Vana?
+
+**Decision.** It brings the next picker at once only when the athlete has already answered both of Vana's questions and a meal type they plan is still empty. If either question was never answered, or every type they plan already has meals, the tap goes to Vana as a normal message. Example: on dev on Sept 23 a scripted five-picker conversation cost 7 model calls and 232,528 input tokens before this ticket and 3 calls and 87,004 tokens after, with the four picker taps costing nothing.
+
+**Why.** Vana never loses a question she would have asked; the worst case is one paid turn, never a skipped question.
+
+**What else was considered.** Asking only the first time the athlete leaves dinners, as Vana's own rule says; it saves a few turns but needs the app to know which pickers came before.
+
+**What it touches.** Vana chat; `vana-action` (`next_picker`), `chips.ts` (`pickerNextStep`).
+
+**Details.** The server decides the step from the same settings and meal-type order Vana reads, and answers `toVana` when the step is hers; the app then sends the tap to her as a tapped message with one bubble. Tapped answers are stored and logged with model `none`, zero tokens, not debited.
+
+> 2026-09-23 proposed in wave 7 ticket 12
+> 2026-09-23 picture captured at 1.27.0+3, a89b7ea4
+
+## mp-603 · "Next: <meal type>" names the athlete's own next type, or goes to Vana
+- category: Cutting costs
+- status: proposed
+- image: docs/ssot/decisions/images/mealplanning/vana-chat.png
+- screen: Vana chat
+- source: wave ai-cost 7 ticket 12
+
+**Context.** Under a picker the app shows a "Next: <meal type>" chip. It used to name the next type in a fixed order (dinner, lunch, breakfast, snack), whatever the athlete plans. With ticket 12 that chip brings the picker at once, so the name on it and the picker it brings have to agree.
+
+**Question.** Which meal type does the "Next" chip name, and what if that type is not the one still to plan?
+
+**Decision.** The chip names the next type in the order the athlete's plan covers. When tapped, the app brings that type's picker only if it is still open; if the type is already covered or not in their plan, the tap goes to Vana rather than showing a different type's picker. Example: an athlete who plans dinners and lunches sees "Next: Lunch" under dinner, and tapping it brings a lunch picker with no model turn.
+
+**Why.** A chip that says Lunch and brings breakfast would be wrong in front of the athlete.
+
+**What else was considered.** Keeping the fixed order on the chip and letting the server pick whichever type was open; the review found it could show a picker the chip did not name.
+
+**What it touches.** Vana chat (the picker chip strip); `vana_chat_screen.dart`, `chips.ts`.
+
+> 2026-09-23 proposed in wave 7 ticket 12 (the fall-back to Vana added in the wave's review)
+> 2026-09-23 picture captured at 1.27.0+3, a89b7ea4
+
+## mp-604 · Picker filters stack until the meal type changes
+- category: Cutting costs
+- status: proposed
+- image: docs/ssot/decisions/images/mealplanning/vana-chat.png
+- screen: Vana chat
+- source: wave ai-cost 7 ticket 12
+
+**Context.** "Other options", "No recipe only" and "Under 20 min" now bring another picker at once. An athlete can tap them one after another.
+
+**Question.** When the athlete taps a second filter, does it add to the first or replace it, and what happens when they move to the next meal type?
+
+**Decision.** Filters add up within one meal type, and every new picker leaves out the meals already shown in this conversation. Moving to the next meal type starts with no filters. Example: under a dinner picker the athlete taps "Under 20 min", then "No recipe only", and sees dinners that are both quick and need no recipe; "Next: Lunch" then shows lunches with no filter.
+
+**Why.** Tapping a second filter reads as narrowing further; a filter on dinners says nothing about lunch.
+
+**What else was considered.** Each filter replacing the last; carrying dinner's filters over to lunch.
+
+**What it touches.** Vana chat; `vana-action` (`next_picker`), `actions.ts`.
+
+> 2026-09-23 proposed in wave 7 ticket 12
+> 2026-09-23 picture captured at 1.27.0+3, a89b7ea4
+
+## mp-605 · A picker brought by a chip carries the plain title and none of Vana's chips
+- category: Cutting costs
+- status: proposed
+- image: docs/ssot/decisions/images/mealplanning/vana-chat.png
+- screen: Vana chat
+- source: wave ai-cost 7 ticket 12
+
+**Context.** When Vana shows a picker herself she writes its title and may add chips of her own, such as "Quick weeknight options". A picker brought by a chip tap has no Vana turn behind it, and mp-464 says nothing is written in her voice.
+
+**Question.** What title and chips does a picker brought by a chip tap show?
+
+**Decision.** It shows the picker's standard title, "Tap any — they go straight into your plan", and only the app's own picker chips ("Other options", the two filters, "I like these", "Next"). Chips Vana named on her last picker are not carried over. Example: Vana's dinner picker offers "Quick weeknight options"; after "Other options", the new picker has the standard title and no "Quick weeknight options" chip.
+
+**Why.** Vana's title and chips were written for her turn; repeating them would put words in her mouth.
+
+**What else was considered.** Reusing her last title and chips on every fetched picker.
+
+**What it touches.** Vana chat; `tools.ts` (the default picker title), `actions.ts`.
+
+> 2026-09-23 proposed in wave 7 ticket 12
+> 2026-09-23 picture captured at 1.27.0+3, a89b7ea4
+
+## mp-606 · When does a meal type count as planned?
+- category: Cutting costs
+- kind: question
+- status: open
+- linked: mp-602
+- image: none
+- screen: Vana chat
+- source: wave ai-cost 7 ticket 12
+
+**Context.** mp-602 moves "I like these" to the next type once the current type has meals. Today one meal of a type counts as covered. On the device check, a dinners-only athlete who had picked 2 of 5 dinners tapped "I like these"; the app sent it to Vana (nothing else to plan), and she offered more dinners, a paid turn each time. With dinners and lunches, one dinner is enough for "I like these" to jump to lunch, where Vana might have kept offering dinners.
+
+**Question.** Should a type count as planned after one meal, or only once it fills the nights the plan covers?
+
+**Why.** It decides whether "I like these" can move on too early, and how many paid turns a dinners-only week costs.
+
+**What it touches.** Vana chat; `chips.ts` (`pickerNextStep`), the plan's coverage.
+
+> 2026-09-23 opened in wave 7 ticket 12
+
+## mp-607 · Should "I like these" still skip Vana in a race week?
+- category: Cutting costs
+- kind: question
+- status: open
+- linked: mp-602
+- image: none
+- screen: Vana chat
+- source: wave ai-cost 7 ticket 12
+
+**Context.** Vana has a rule for the night before a race: she proposes a race-eve meal while planning. When "I like these" brings the next picker with no model turn (mp-602), she does not see that moment and cannot make the suggestion then.
+
+**Question.** When a race is in the plan's week, should "I like these" go to Vana instead of bringing the next picker at once?
+
+**Why.** Skipping her saves a turn but could drop the race-eve suggestion for the athletes it matters to most.
+
+**What it touches.** Vana chat; `chips.ts`, the planning persona (`persona.ts` rule 6).
+
+> 2026-09-23 opened in wave 7 ticket 12

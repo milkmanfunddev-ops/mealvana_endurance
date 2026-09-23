@@ -1918,6 +1918,7 @@ Opening a conversation feeds the newest unread previous one to a single Haiku ca
 > 2026-09-14 approved
 > 2026-09-14 picture captured at 1.26.0+1, 43496fed
 > 2026-09-22 rewritten in plain words (question, decision, details)
+> 2026-09-23 picture refreshed at 1.27.0+3, a89b7ea4, replacing docs/ssot/decisions/images/mealplanning/vana-chat.png
 
 ## mp-212 · Vana looks up the athlete's own records with tools before answering
 - category: Vana's voice and openers
@@ -1948,6 +1949,7 @@ Opening a conversation feeds the newest unread previous one to a single Haiku ca
 > 2026-09-14 approved
 > 2026-09-14 picture captured at 1.26.0+1, 43496fed
 > 2026-09-22 rewritten in plain words (question, decision, details)
+> 2026-09-23 picture refreshed at 1.27.0+3, a89b7ea4, replacing docs/ssot/decisions/images/mealplanning/vana-chat.png
 
 ## mp-213 · A side question gets an answer, then an offer to resume planning
 - category: Vana's voice and openers
@@ -1978,6 +1980,7 @@ Opening a conversation feeds the newest unread previous one to a single Haiku ca
 > 2026-09-14 approved
 > 2026-09-14 picture captured at 1.26.0+1, 43496fed
 > 2026-09-22 rewritten in plain words (question, decision, details)
+> 2026-09-23 picture refreshed at 1.27.0+3, a89b7ea4, replacing docs/ssot/decisions/images/mealplanning/vana-chat.png
 
 ## mp-214 · Vana is short and to the point, without a sentence count
 - category: Vana's voice and openers
@@ -2010,6 +2013,7 @@ Opening a conversation feeds the newest unread previous one to a single Haiku ca
 > 2026-09-14 approved
 > 2026-09-14 picture captured at 1.26.0+1, 43496fed
 > 2026-09-22 rewritten in plain words (question, decision, details)
+> 2026-09-23 picture refreshed at 1.27.0+3, a89b7ea4, replacing docs/ssot/decisions/images/mealplanning/vana-chat.png
 
 ## mp-218 · The context block has a token budget and a test that enforces it
 - category: Vana's memory
