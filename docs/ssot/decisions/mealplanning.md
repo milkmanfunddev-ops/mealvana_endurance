@@ -4246,54 +4246,6 @@ No grace period. An existing account meets the paywall and the store trial on fi
 > 2026-09-15 approved by Lee
 > 2026-09-22 rewritten in plain words (question, context, decision, why, details)
 
-## mp-609 · The server's Pro row is a small copy of RevenueCat, written only by the webhook
-- category: Pro and paywall
-- status: approved
-- image: none
-- caption:
-- svg: docs/ssot/decisions/images/mealplanning/mp-285.svg
-- svg2: docs/ssot/decisions/images/mealplanning/mp-285-2.svg
-- screen: none (algorithm/data)
-- source: grill 2026-09-15; wave mealplanning 1 ticket 18; spec paywall 2026-09-21; wave paywall 1 ticket 01
-- folded: mp-285, mp-317, mp-454, mp-503
-- linked: mp-520
-
-**Context.** Four approved cards described the server's Entitlement row, the table the server reads before every AI call, and they disagreed in places (mp-317 clause 4 against mp-503). Lee, 23 September, in the terminal: fold them into one card with the shape already built, whatever fields and columns the table has now, and no limits on it.
-
-**Question.** What does the server keep about who has Pro, and how does it stay right?
-
-**Decision.** The server keeps one small row per account, a copy of what RevenueCat says, and only the webhook writes it. On every event about Pro, bought or granted, the webhook asks RevenueCat when Pro ends for that customer and writes that date; if RevenueCat says Pro is not live, the row closes at the event's time, and if RevenueCat cannot be reached the webhook writes nothing so the event comes again. When the row and RevenueCat disagree, RevenueCat wins, and nothing in the app ever writes the row or gives anyone access. Example: a coach grants an athlete Pro to 31 October and the athlete's trial lapses on 12 October; RevenueCat still answers 31 October, so the row stays open and Vana keeps answering.
-
-**Why.** The server needs a fast answer of its own for every AI call, and RevenueCat already knows the right end date, including when a Grant and a subscription overlap.
-
-**What else was considered.** Reading the date inside each event (mp-317's first rule), and asking RevenueCat on every AI call.
-
-**What it touches.** user_entitlements, revenuecat-webhook, requirePro
-
-**Details.** Precisely:
-1. The table is `user_entitlements`, with the columns it has today (user id, active until, period type, event time), read through `requirePro`. No limits are set on its fields (Lee, 2026-09-23; answers mp-520).
-2. Only the webhook writes it; signed-in users may only read it. Nothing grants Pro from the app side.
-3. On every event that names `pro`, whatever its type, the webhook asks RevenueCat's REST API for the current `pro` expiry and writes it as active until; the event's own expiry is never read. RevenueCat already takes the later of a Grant and a subscription. The function holds a RevenueCat secret key.
-4. When RevenueCat reports no `pro`, the row closes at the event time. If RevenueCat cannot be asked, the webhook answers 500 and writes nothing, so the event is sent again.
-5. An event older than the row's event time is ignored. A transfer closes the old owner's row at the transfer time and writes the new owner's. A test event writes nothing.
-6. The webhook never filters by environment on prod. Prod gets the table and this webhook at the cutover (mp-543).
-
-> 2026-09-15 mp-285: proposed in the grill
-> 2026-09-15 mp-285: approved by Lee
-> 2026-09-15 mp-317: proposed from wave 1 ticket 18
-> 2026-09-17 mp-317: approved by Lee
-> 2026-09-21 mp-454: proposed from the paywall spec
-> 2026-09-21 mp-454: approved by Lee
-> 2026-09-21 mp-503: proposed in wave 1 ticket 01
-> 2026-09-22 mp-285: rewritten in plain words (question, context, decision, why, details)
-> 2026-09-22 mp-317: rewritten in plain words (question, decision, details)
-> 2026-09-22 mp-317: amended by Lee
-> 2026-09-22 mp-454: rewritten in plain words (question, context, decision, why, details)
-> 2026-09-22 mp-503: approved by Lee
-> 2026-09-22 mp-503: rewritten in plain words at Lee's ask; the precise clauses moved to Details
-> 2026-09-23 mp-317: approved again by Lee
-> 2026-09-23 folded from mp-285, mp-317, mp-454, mp-503, the fold approved by Lee in the terminal
-
 ## mp-286 · Coaches pay like everyone else until Xuan's paywall document (withdrawn)
 - category: Pro and paywall
 - status: withdrawn
@@ -5111,53 +5063,6 @@ For now, coaches get no special treatment: one gate, one trial, the same subscri
 > 2026-09-15 approved by Lee
 > 2026-09-23 clarity pass
 > 2026-09-23 screenshot removed: docs/ssot/decisions/images/mealplanning/meal-detail.png (shows no origin label)
-
-## mp-610 · Test everything on dev, and ship prod through TestFlight
-- category: Pro and paywall
-- status: approved
-- image: none
-- caption:
-- svg: docs/ssot/decisions/images/mealplanning/mp-318.svg
-- svg2: docs/ssot/decisions/images/mealplanning/mp-318-2.svg
-- screen: none (algorithm/data)
-- source: wave mealplanning 1 ticket 18; wave mealplanning 2 ticket 19; Lee in the terminal 2026-09-22, after rejecting mp-533
-- linked: mp-510; mp-511; mp-431
-- folded: mp-318, mp-336, mp-553
-
-**Context.** Several cards settled how dev takes test purchases and Grants, how testers get in and who checks Restore, with back-and-forth between them (mp-251 and mp-533 were rejected on the way). Lee, 23 September, in the terminal: fold the dev-server decisions into one; test in dev, release prod through TestFlight, and test everything we can.
-
-**Question.** How do we test purchases and access before anything reaches real athletes?
-
-**Decision.** Everything that can be tested is tested on dev first: the dev app sells the same products as prod through RevenueCat's Test Store, and the dev server takes test purchases and Grants but throws away real purchases. Prod goes to testers through TestFlight, where buying costs nothing, before it goes to the App Store, and the server lets in only accounts RevenueCat shows as paid, with no tester flag. The one check no agent can run, buying with a sandbox account and then tapping Restore, is Lee's on a TestFlight build. Example: on 24 September a tester installs the prod build from TestFlight, starts the annual plan for $0, and Vana answers them; the same purchase in the App Store build would charge.
-
-**Why.** Dev is where mistakes cost nothing, and TestFlight is the last step that behaves like the store without charging anyone.
-
-**What else was considered.** A tester switch that opened the server (rejected as mp-251), and a dev server that heard real purchases too (rejected as mp-533).
-
-**What it touches.** revenuecat-webhook on dev, RevenueCat Test Store offerings, TestFlight builds
-
-**Details.** Precisely:
-1. The dev app's Test Store offerings carry the same new products as prod, with the old ones taken out (answers mp-511).
-2. The dev RevenueCat integration takes every environment. The dev webhook drops every PRODUCTION event whose store is not PROMOTIONAL before it touches anything, and says so; sandbox events and Grants go through. The switch is the dev-only secret `REVENUECAT_SANDBOX_ONLY=true`; prod never sets it.
-3. Testers get in by subscribing in TestFlight, which charges nothing, on dev and on prod release builds; an App Store build charges (answers mp-431). There is no tester list or flag; the server reads only RevenueCat's answer. An Admin skips the paywall screen in the app only (mp-416) and still needs a TestFlight subscription or a Grant for Vana.
-4. The purchase-then-Restore check is Lee's, on a TestFlight build with a sandbox account; no agent can run it.
-5. Store trials are checked by hand in sandbox, never in CI (mp-289).
-
-> 2026-09-15 mp-318: proposed from wave 1 ticket 18
-> 2026-09-15 mp-336: proposed from wave 2 ticket 19
-> 2026-09-15 mp-336: picture reused from test/features/subscription/presentation/goldens/paywall_light.png
-> 2026-09-17 mp-318: amended by Lee
-> 2026-09-17 mp-336: approved by Lee
-> 2026-09-21 mp-318: approved by Lee
-> 2026-09-22 mp-318: rewritten in plain words (question, context, decision, why, details)
-> 2026-09-22 mp-336: rewritten in plain words (question, decision, details)
-> 2026-09-22 mp-553: proposed after Lee's rejection of mp-533
-> 2026-09-22 mp-553: rewritten in plain words (question, context, decision, why, details)
-> 2026-09-23 mp-336: clarity pass (decision)
-> 2026-09-23 mp-336: screenshot removed: test/features/subscription/presentation/goldens/paywall_light.png (a test image: its words render as blocks)
-> 2026-09-23 mp-553: clarity pass
-> 2026-09-23 mp-553: approved by Lee
-> 2026-09-23 folded from mp-318, mp-336, mp-553, the fold approved by Lee in the terminal
 
 ## mp-319 · Scripts write the free-week offers into the dev store apps (rejected)
 - category: Pro and paywall
@@ -9372,3 +9277,194 @@ Founding is a product id containing `_founding` (`me_pro_*_founding` and the `_p
 > 2026-09-23 proposed from Lee's words on mp-602
 > 2026-09-23 approved by Lee
 > 2026-09-23 picture captured at 1.27.0+3, a89b7ea4
+
+## mp-609 · The server's Pro row is a small copy of RevenueCat, written only by the webhook
+- category: Pro and paywall
+- status: approved
+- image: none
+- caption:
+- svg: docs/ssot/decisions/images/mealplanning/mp-285.svg
+- svg2: docs/ssot/decisions/images/mealplanning/mp-285-2.svg
+- screen: none (algorithm/data)
+- source: grill 2026-09-15; wave mealplanning 1 ticket 18; spec paywall 2026-09-21; wave paywall 1 ticket 01
+- folded: mp-285, mp-317, mp-454, mp-503
+- linked: mp-520
+
+**Context.** Four approved cards described the server's Entitlement row, the table the server reads before every AI call, and they disagreed in places (mp-317 clause 4 against mp-503). Lee, 23 September, in the terminal: fold them into one card with the shape already built, whatever fields and columns the table has now, and no limits on it.
+
+**Question.** What does the server keep about who has Pro, and how does it stay right?
+
+**Decision.** The server keeps one small row per account, a copy of what RevenueCat says, and only the webhook writes it. On every event about Pro, bought or granted, the webhook asks RevenueCat when Pro ends for that customer and writes that date; if RevenueCat says Pro is not live, the row closes at the event's time, and if RevenueCat cannot be reached the webhook writes nothing so the event comes again. When the row and RevenueCat disagree, RevenueCat wins, and nothing in the app ever writes the row or gives anyone access. Example: a coach grants an athlete Pro to 31 October and the athlete's trial lapses on 12 October; RevenueCat still answers 31 October, so the row stays open and Vana keeps answering.
+
+**Why.** The server needs a fast answer of its own for every AI call, and RevenueCat already knows the right end date, including when a Grant and a subscription overlap.
+
+**What else was considered.** Reading the date inside each event (mp-317's first rule), and asking RevenueCat on every AI call.
+
+**What it touches.** user_entitlements, revenuecat-webhook, requirePro
+
+**Details.** Precisely:
+1. The table is `user_entitlements`, with the columns it has today (user id, active until, period type, event time), read through `requirePro`. No limits are set on its fields (Lee, 2026-09-23; answers mp-520).
+2. Only the webhook writes it; signed-in users may only read it. Nothing grants Pro from the app side.
+3. On every event that names `pro`, whatever its type, the webhook asks RevenueCat's REST API for the current `pro` expiry and writes it as active until; the event's own expiry is never read. RevenueCat already takes the later of a Grant and a subscription. The function holds a RevenueCat secret key.
+4. When RevenueCat reports no `pro`, the row closes at the event time. If RevenueCat cannot be asked, the webhook answers 500 and writes nothing, so the event is sent again.
+5. An event older than the row's event time is ignored. A transfer closes the old owner's row at the transfer time and writes the new owner's. A test event writes nothing.
+6. The webhook never filters by environment on prod. Prod gets the table and this webhook at the cutover (mp-543).
+
+> 2026-09-15 mp-285: proposed in the grill
+> 2026-09-15 mp-285: approved by Lee
+> 2026-09-15 mp-317: proposed from wave 1 ticket 18
+> 2026-09-17 mp-317: approved by Lee
+> 2026-09-21 mp-454: proposed from the paywall spec
+> 2026-09-21 mp-454: approved by Lee
+> 2026-09-21 mp-503: proposed in wave 1 ticket 01
+> 2026-09-22 mp-285: rewritten in plain words (question, context, decision, why, details)
+> 2026-09-22 mp-317: rewritten in plain words (question, decision, details)
+> 2026-09-22 mp-317: amended by Lee
+> 2026-09-22 mp-454: rewritten in plain words (question, context, decision, why, details)
+> 2026-09-22 mp-503: approved by Lee
+> 2026-09-22 mp-503: rewritten in plain words at Lee's ask; the precise clauses moved to Details
+> 2026-09-23 mp-317: approved again by Lee
+> 2026-09-23 folded from mp-285, mp-317, mp-454, mp-503, the fold approved by Lee in the terminal
+
+## mp-610 · Test everything on dev, and ship prod through TestFlight
+- category: Pro and paywall
+- status: approved
+- image: none
+- caption:
+- svg: docs/ssot/decisions/images/mealplanning/mp-318.svg
+- svg2: docs/ssot/decisions/images/mealplanning/mp-318-2.svg
+- screen: none (algorithm/data)
+- source: wave mealplanning 1 ticket 18; wave mealplanning 2 ticket 19; Lee in the terminal 2026-09-22, after rejecting mp-533
+- linked: mp-510; mp-511; mp-431
+- folded: mp-318, mp-336, mp-553
+
+**Context.** Several cards settled how dev takes test purchases and Grants, how testers get in and who checks Restore, with back-and-forth between them (mp-251 and mp-533 were rejected on the way). Lee, 23 September, in the terminal: fold the dev-server decisions into one; test in dev, release prod through TestFlight, and test everything we can.
+
+**Question.** How do we test purchases and access before anything reaches real athletes?
+
+**Decision.** Everything that can be tested is tested on dev first: the dev app sells the same products as prod through RevenueCat's Test Store, and the dev server takes test purchases and Grants but throws away real purchases. Prod goes to testers through TestFlight, where buying costs nothing, before it goes to the App Store, and the server lets in only accounts RevenueCat shows as paid, with no tester flag. The one check no agent can run, buying with a sandbox account and then tapping Restore, is Lee's on a TestFlight build. Example: on 24 September a tester installs the prod build from TestFlight, starts the annual plan for $0, and Vana answers them; the same purchase in the App Store build would charge.
+
+**Why.** Dev is where mistakes cost nothing, and TestFlight is the last step that behaves like the store without charging anyone.
+
+**What else was considered.** A tester switch that opened the server (rejected as mp-251), and a dev server that heard real purchases too (rejected as mp-533).
+
+**What it touches.** revenuecat-webhook on dev, RevenueCat Test Store offerings, TestFlight builds
+
+**Details.** Precisely:
+1. The dev app's Test Store offerings carry the same new products as prod, with the old ones taken out (answers mp-511).
+2. The dev RevenueCat integration takes every environment. The dev webhook drops every PRODUCTION event whose store is not PROMOTIONAL before it touches anything, and says so; sandbox events and Grants go through. The switch is the dev-only secret `REVENUECAT_SANDBOX_ONLY=true`; prod never sets it.
+3. Testers get in by subscribing in TestFlight, which charges nothing, on dev and on prod release builds; an App Store build charges (answers mp-431). There is no tester list or flag; the server reads only RevenueCat's answer. An Admin skips the paywall screen in the app only (mp-416) and still needs a TestFlight subscription or a Grant for Vana.
+4. The purchase-then-Restore check is Lee's, on a TestFlight build with a sandbox account; no agent can run it.
+5. Store trials are checked by hand in sandbox, never in CI (mp-289).
+
+> 2026-09-15 mp-318: proposed from wave 1 ticket 18
+> 2026-09-15 mp-336: proposed from wave 2 ticket 19
+> 2026-09-15 mp-336: picture reused from test/features/subscription/presentation/goldens/paywall_light.png
+> 2026-09-17 mp-318: amended by Lee
+> 2026-09-17 mp-336: approved by Lee
+> 2026-09-21 mp-318: approved by Lee
+> 2026-09-22 mp-318: rewritten in plain words (question, context, decision, why, details)
+> 2026-09-22 mp-336: rewritten in plain words (question, decision, details)
+> 2026-09-22 mp-553: proposed after Lee's rejection of mp-533
+> 2026-09-22 mp-553: rewritten in plain words (question, context, decision, why, details)
+> 2026-09-23 mp-336: clarity pass (decision)
+> 2026-09-23 mp-336: screenshot removed: test/features/subscription/presentation/goldens/paywall_light.png (a test image: its words render as blocks)
+> 2026-09-23 mp-553: clarity pass
+> 2026-09-23 mp-553: approved by Lee
+> 2026-09-23 folded from mp-318, mp-336, mp-553, the fold approved by Lee in the terminal
+
+## mp-611 · Ticket 19: One full-screen paywall for everyone without Pro
+- category: Tickets
+- status: approved
+- image: none
+- screen: Paywall
+- source: tickets paywall 2026-09-23
+- ticket: 19
+- blocked: 17, 18
+- depends: mp-280, mp-457, mp-493, mp-494
+- model: opus
+
+**Context.** Lee dropped read-only mode on 23 September (mp-280): an account whose Pro ended stays signed in and meets the same full-screen paywall as a new one. Tickets 11 and 17 built a three-answer Gate and a closable paywall sheet over a read-only app.
+
+**Question.** Is this the right slice, with the right blockers?
+
+**Decision.** The Gate answers open or closed, and closed always lands on the full-screen paywall with no close button, for an account that never had Pro and one whose Pro ended alike. The paywall-over-the-app sheet and its close button go; the glass sheet widget stays, since Redeem code uses it.
+
+**Why.** It is the change the ruling asks for, and ticket 20's clean-up can only start once nothing opens the read-only app.
+
+**What else was considered.** One ticket for the Gate and the clean-up together, which would put 40 controllers and the routing in one review.
+
+**What it touches.** lib/features/subscription/application/pro_gate.dart, lib/features/subscription/domain/entitlement.dart, lib/features/subscription/presentation/pro_gate_redirect.dart, lib/features/subscription/application/paywall_location.dart, lib/features/subscription/presentation/ai_action_guard.dart, lib/shared/core/app_router.dart, lib/features/subscription/presentation/screens/paywall_screen.dart, test/features/subscription/application/pro_gate_test.dart, test/features/subscription/presentation/pro_gate_redirect_test.dart, test/features/subscription/presentation/paywall_screen_test.dart
+
+**Details.** 
+- [ ] The Gate answers open or closed; a lapsed account and a never-subscribed one both get closed (Gate test through the real provider).
+- [ ] Closed lands on the full-screen paywall with no close button, from a cold start and from any route (redirect tests).
+- [ ] No paywall sheet over the app: the sheet presentation and its close button are gone; Redeem code still opens its glass sheet (paywall screen tests).
+- [ ] A lapsed account on the dev simulator opens on the full-screen paywall, and subscribing or restoring lands it back in the app.
+
+> 2026-09-23 proposed from the no-read-only ruling
+> 2026-09-23 approved by Lee
+
+## mp-612 · Ticket 20: Read-only plumbing comes out
+- category: Tickets
+- status: approved
+- image: none
+- screen: none (clean-up across the app's controllers)
+- source: tickets paywall 2026-09-23
+- ticket: 20
+- blocked: 19
+- depends: mp-280, mp-457
+- model: opus
+
+**Context.** Ticket 12 made every write controller ask a write guard first, and a refused write opened the paywall through PlanEndedHost; ticket 11 added the plan-ended bar. With read-only mode dropped (mp-280) and ticket 19 sending every account without Pro to the paywall, none of it can run.
+
+**Question.** Is this the right slice, with the right blockers?
+
+**Decision.** The write guard, the refused-write error, PlanEndedHost, the paywall-request channel and the plan-ended bar are deleted, and every controller's write check comes out, with the tests that covered them. The server's paid check on AI calls stays (mp-505).
+
+**Why.** Dead code in 37 controllers is the plumbing Lee wanted gone, and removing it after ticket 19 means nothing can reach it.
+
+**What else was considered.** Leaving the checks in place, always allowed, which keeps the plumbing without a use.
+
+**What it touches.** lib/features/subscription/application/write_guard.dart, lib/features/subscription/domain/write_access_denied.dart, lib/features/subscription/presentation/plan_ended_host.dart, lib/shared/widgets/kyle_design/feedback/plan_ended_bar.dart, lib/shared/widgets/kyle_design/kyle_design.dart, lib/shared/widgets/root_app_widget.dart, test/features/subscription/application/write_guard_test.dart, test/features/subscription/presentation/plan_ended_host_test.dart, lib/features/activities/presentation/providers/activities_controller.dart, lib/features/activities/presentation/providers/brick_actions_controller.dart, lib/features/ai_coach/presentation/providers/ai_coach_chat_controller.dart, lib/features/calendar/presentation/providers/calendar_controller.dart, lib/features/carb_loading/presentation/providers/carb_loading_controller.dart, lib/features/carb_loading/presentation/providers/carb_loading_day_detail_controller.dart, lib/features/carb_loading/presentation/providers/carb_loading_food_selection_controller.dart, lib/features/coach_mode/presentation/providers/athlete_detail_controller.dart, lib/features/coach_mode/presentation/providers/coach_activity_detail_controller.dart, lib/features/coach_mode/presentation/providers/coach_chat_controller.dart, lib/features/coach_mode/presentation/providers/coach_dashboard_controller.dart, lib/features/coach_mode/presentation/providers/coach_directory_controller.dart, lib/features/coach_mode/presentation/providers/coach_registration_controller.dart, lib/features/coach_mode/presentation/providers/invite_athlete_controller.dart, lib/features/coach_mode/presentation/providers/my_coaches_controller.dart, lib/features/events/presentation/providers/events_controller.dart, lib/features/formula_kit/application/formula_editor_controller.dart, lib/features/formula_kit/application/formula_pin_controller.dart, lib/features/formula_kit/application/personal_formulas_controller.dart, lib/features/integrations/presentation/providers/connect_training_controller.dart, lib/features/kroger/application/kroger_controller.dart, lib/features/meal_logging/presentation/providers/draft_meal_controller.dart, lib/features/meal_logging/presentation/providers/meal_log_providers.dart, lib/features/meal_planning/application/meal_detail_controller.dart, lib/features/meal_planning/application/meal_photos_controller.dart, lib/features/meal_planning/application/meal_plan_controller.dart, lib/features/meal_planning/application/plan_day_controller.dart, lib/features/meal_planning/application/shopping_list_controller.dart, lib/features/meal_planning/application/vana_chat_controller.dart, lib/features/meal_planning/application/vana_conversations_controller.dart, lib/features/meal_planning/application/vana_settings_controller.dart, lib/features/nutrition_plan/presentation/providers/activity_detail_controller.dart, lib/features/nutrition_plan/presentation/providers/macro_targets_controller.dart, lib/features/personal_templates/presentation/providers/personal_templates_controller.dart, lib/features/race_checklist/presentation/providers/checklist_controller.dart, lib/features/settings/presentation/providers/settings_controller.dart, lib/features/settings/presentation/providers/sweat_profile_controller.dart
+
+**Details.** 
+- [ ] write_guard, WriteAccessDenied, PlanEndedHost, paywallRequestsProvider and PlanEndedBar are gone, with their tests and the plan-ended bar's component spec entry.
+- [ ] No controller calls canWrite or requireWriteAccess; each controller's existing tests pass without a write-guard override.
+- [ ] codegen, flutter analyze and the full suite are green.
+- [ ] The dev app on the simulator saves a meal plan edit and a logged meal as a subscribed account.
+
+> 2026-09-23 proposed from the no-read-only ruling
+> 2026-09-23 approved by Lee
+
+## mp-613 · Ticket 21: The Subscription screen shows a Grant's source and days left
+- category: Tickets
+- status: approved
+- image: none
+- screen: Subscription screen
+- source: tickets paywall 2026-09-23
+- ticket: 21
+- blocked: 16
+- depends: mp-558, mp-495
+- model: opus
+
+**Context.** mp-558 (Lee, 23 September): Manage subscription stays for store subscriptions only, and an account on a Grant sees where it came from and how many days are left on the Subscription screen. Ticket 16 built that screen.
+
+**Question.** Is this the right slice, with the right blockers?
+
+**Decision.** The Subscription screen shows a Grant as its source (Legacy grace month, a Code, a coach's gift) and the days left until it ends, read from RevenueCat, with no Manage subscription for a Grant alone.
+
+**Why.** It is the one piece of mp-558 not built, and it touches only the Subscription screen.
+
+**What else was considered.** Showing a Grant as "Subscribed" with its end date (the screen today).
+
+**What it touches.** lib/features/subscription/presentation/screens/subscription_screen.dart, lib/features/subscription/application/subscription_screen_controller.dart, lib/features/content/domain/content_keys.dart, assets/config/content_defaults.json, test/features/subscription/presentation/subscription_screen_test.dart, test/features/subscription/application/subscription_screen_controller_test.dart
+
+**Details.** 
+- [ ] A Grant shows its source and days left (controller test fed RevenueCat-shaped customer info for a promotional entitlement; screen widget test).
+- [ ] A store subscription still shows as today, with Manage subscription (screen test).
+- [ ] Copy from the content system.
+- [ ] Seen on the dev simulator with a granted account.
+
+> 2026-09-23 proposed from mp-558
+> 2026-09-23 approved by Lee
