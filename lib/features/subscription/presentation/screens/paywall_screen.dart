@@ -5,19 +5,14 @@ import 'package:purchases_flutter/purchases_flutter.dart';
 import 'package:url_launcher/url_launcher.dart';
 
 import '../../../../shared/services/privacy/privacy_links.dart';
-import '../../../../shared/widgets/kyle_design/buttons/circular_action_button.dart';
 import '../../../../shared/widgets/kyle_design/kyle_design.dart';
-import '../../../../shared/widgets/kyle_design/materials/glass_sheet.dart';
 import '../../../content/application/content_service.dart';
 import '../../../content/domain/content_keys.dart';
 import '../../../settings/presentation/providers/settings_controller.dart';
 import '../../application/pro_paywall_controller.dart';
-import '../../domain/entitlement.dart';
 import '../pro_gate_redirect.dart';
 import '../widgets/pro_feature_list.dart';
 import '../widgets/redeem_code_sheet.dart';
-
-export '../pro_gate_redirect.dart' show PaywallPresentation;
 
 /// Opens [uri] outside the app. A provider so widget tests can intercept
 /// "Manage subscription" and the terms and privacy links instead of reaching
@@ -46,46 +41,15 @@ final paywallClipPosterProvider = Provider<ImageProvider>(
   (_) => const AssetImage(kPaywallClipPosterAsset),
 );
 
-/// The paywall route's page (mp-493 §5): a [GlassSheetPage] over the screen
-/// it was pushed over when [paywallPresentationFor] answers sheet, a plain
-/// full-screen page otherwise. [access] is the gate's current answer and
-/// [current] the router's configuration being built, which says whether the
-/// paywall was pushed; `app_router.dart` passes both.
-///
-/// The presentation is decided once per page, on its first build, and kept in
-/// [decided] by page key: go_router rebuilds every page whenever the stack
-/// changes, and a route pushed over the sheet would otherwise turn it into a
-/// full-screen page under that route and lose its state.
-Page<void> paywallRoutePage(
-  GoRouterState state, {
-  required AppAccess? access,
-  required RouteMatchList current,
-  required Map<LocalKey, PaywallPresentation> decided,
-}) {
-  final onboarding = state.uri.queryParameters[kOnboardingPaywallQuery] == '1';
-  final presentation = decided.putIfAbsent(
-    state.pageKey,
-    () => paywallPresentationFor(
-      access: access,
-      onboarding: onboarding,
-      pushed: paywallPushed(current),
-    ),
-  );
-  final screen = PaywallScreen(
-    onboarding: onboarding,
-    presentation: presentation,
-  );
-  return switch (presentation) {
-    PaywallPresentation.sheet => GlassSheetPage<void>(
-      key: state.pageKey,
-      child: screen,
-    ),
-    PaywallPresentation.fullScreen => MaterialPage<void>(
-      key: state.pageKey,
-      child: screen,
-    ),
-  };
-}
+/// The paywall route's page: always a plain full-screen page (mp-280,
+/// mp-611). Everyone without Pro meets the same paywall with no close
+/// button; the onboarding query only says which shape it opened.
+Page<void> paywallRoutePage(GoRouterState state) => MaterialPage<void>(
+  key: state.pageKey,
+  child: PaywallScreen(
+    onboarding: state.uri.queryParameters[kOnboardingPaywallQuery] == '1',
+  ),
+);
 
 /// The paywall — where an inactive account lands after sign-in and stays
 /// (mp-280), in Bevel's layout with our branding (mp-493).
@@ -106,13 +70,10 @@ Page<void> paywallRoutePage(
 /// a store subscription on record), Sign out and Delete account. The same
 /// menu serves the onboarding shape (mp-494 §2, replacing mp-417 §3).
 ///
-/// One layout, two presentations (mp-493 §5, [presentation]). Full screen
-/// has no close button: a never-subscribed account has nothing behind it.
-/// A lapsed account meets it as a closable glass sheet over the read-only
-/// screen it was opened from (mp-457 §3); the close sits beside ⋯ and
-/// arrives with it on the second page (mp-493 §6), and closing returns to
-/// that screen. The router moves the person into the app the moment the
-/// gate opens.
+/// One presentation for everyone without Pro (mp-280, mp-493 §5, mp-611):
+/// full screen with no close button, for an account that never subscribed
+/// and one whose Pro ended alike; nothing in the app sits behind it. The
+/// router moves the person into the app the moment the gate opens.
 ///
 /// UI only: purchase / restore / management URL live in
 /// [ProPaywallController]; whether there is a subscription to manage is
@@ -120,19 +81,12 @@ Page<void> paywallRoutePage(
 /// [SettingsController]'s flows; the gate itself is `appGateProvider`. All
 /// copy comes from [ContentKeys].
 class PaywallScreen extends ConsumerWidget {
-  const PaywallScreen({
-    super.key,
-    this.onboarding = false,
-    this.presentation = PaywallPresentation.fullScreen,
-  });
+  const PaywallScreen({super.key, this.onboarding = false});
 
   /// Reached as onboarding's last step (mp-417 §4). Since mp-494 §2 both
   /// shapes carry the same menu, so nothing on the screen differs yet; the
   /// route still says which shape it opened.
   final bool onboarding;
-
-  /// Full screen, or the closable sheet (mp-493 §5).
-  final PaywallPresentation presentation;
 
   Future<void> _buy(BuildContext context, WidgetRef ref, Package pkg) async {
     final content = ref.read(contentServiceProvider);
@@ -353,14 +307,9 @@ class PaywallScreen extends ConsumerWidget {
       ),
     ];
 
-    final isSheet = presentation == PaywallPresentation.sheet;
-
     return Scaffold(
       key: const ValueKey('paywall.screen'),
-      // The sheet is the glass itself; only the full screen paints a ground.
-      backgroundColor: isSheet
-          ? Colors.transparent
-          : (isDark ? AppColors.blackberry : AppColors.cream),
+      backgroundColor: isDark ? AppColors.blackberry : AppColors.cream,
       body: _PaywallPages(
         // Page one: the clip of our own app, silent, in the phone frame
         // (mp-493 §1). A tap skips it.
@@ -388,19 +337,6 @@ class PaywallScreen extends ConsumerWidget {
                 ),
                 child: Row(
                   children: [
-                    // The sheet's close (mp-493 §5, §6): back to the
-                    // read-only screen under it.
-                    if (isSheet)
-                      CircularActionButton(
-                        key: const ValueKey('paywall.close_button'),
-                        icon: Icons.close,
-                        size: OverflowMenuButton.size,
-                        iconColor: textColor,
-                        semanticLabel: content.getValue(
-                          ContentKeys.paywallCloseLabel,
-                        ),
-                        onPressed: () => Navigator.of(context).maybePop(),
-                      ),
                     const Spacer(),
                     OverflowMenuButton(
                       key: const ValueKey('paywall.more_button'),

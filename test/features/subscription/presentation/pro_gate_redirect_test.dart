@@ -1,4 +1,6 @@
-/// Tests for the app-gate redirect — the pure rule, and the rule wired into
+/// Tests for the app-gate redirect (mp-280, mp-457, mp-611: open or closed,
+/// and closed is always the full-screen paywall) — the pure rule, and the
+/// rule wired into
 /// a GoRouter the way app_router.dart wires it, driven by the REAL status
 /// notifier (docs/test/README.md: every controller path through the real
 /// notifier) so the timeout-locks and cache-opens cases are proven end to
@@ -71,122 +73,30 @@ void main() {
     });
   });
 
-  group('paywallPresentationFor (mp-493 §5)', () {
-    test('a lapsed account gets the sheet only when the paywall was pushed '
-        'over a screen', () {
-      expect(
-        paywallPresentationFor(
-          access: AppAccess.lapsed,
-          onboarding: false,
-          pushed: true,
-        ),
-        PaywallPresentation.sheet,
-      );
-      expect(
-        paywallPresentationFor(
-          access: AppAccess.lapsed,
-          onboarding: false,
-          pushed: false,
-        ),
-        PaywallPresentation.fullScreen,
-      );
-    });
-
-    test('never, onboarding, open and an unknown gate are full screen', () {
-      for (final access in [AppAccess.never, AppAccess.open, null]) {
-        expect(
-          paywallPresentationFor(
-            access: access,
-            onboarding: false,
-            pushed: true,
-          ),
-          PaywallPresentation.fullScreen,
-          reason: '$access',
-        );
-      }
-      expect(
-        paywallPresentationFor(
-          access: AppAccess.lapsed,
-          onboarding: true,
-          pushed: true,
-        ),
-        PaywallPresentation.fullScreen,
-      );
-    });
-  });
-
-  group('isAiPath', () {
-    test("Vana's chat, the /jade alias and the meal-AI routes are AI", () {
-      for (final p in [
-        '/vana',
-        '/vana/browse',
-        '/vana/conversations',
-        '/jade',
-        '/meal-log/photo',
-        '/meal-log/describe',
-      ]) {
-        expect(isAiPath(p), isTrue, reason: p);
-      }
-    });
-
-    test('ordinary app routes and look-alikes are not', () {
-      for (final p in [
-        '/main',
-        '/food',
-        '/settings/vana',
-        '/meal-log/manual',
-        '/vanas',
-        '/meal-log/photos',
-      ]) {
-        expect(isAiPath(p), isFalse, reason: p);
-      }
-    });
-  });
-
   group('gateRedirect', () {
-    test('never: every app route lands on the paywall', () {
+    test('closed: every app route lands on the paywall', () {
       for (final p in [
         '/main',
         '/settings',
         '/food/plan',
         '/coach-portal',
+        '/events',
         '/vana',
+        '/jade',
+        '/meal-log/photo',
+        '/buy-credits',
       ]) {
         expect(
-          gateRedirect(path: p, access: AppAccess.never),
+          gateRedirect(path: p, access: AppAccess.closed),
           kPaywallPath,
           reason: p,
         );
       }
     });
 
-    test('never: the paywall renders (no loop)', () {
-      expect(gateRedirect(path: kPaywallPath, access: AppAccess.never), isNull);
-    });
-
-    test(
-      'lapsed: app routes render (read-only), AI routes open the paywall',
-      () {
-        for (final p in ['/main', '/settings', '/food/plan', '/events']) {
-          expect(
-            gateRedirect(path: p, access: AppAccess.lapsed),
-            isNull,
-            reason: p,
-          );
-        }
-        for (final p in ['/vana', '/jade', '/meal-log/photo']) {
-          expect(
-            gateRedirect(path: p, access: AppAccess.lapsed),
-            kPaywallPath,
-            reason: p,
-          );
-        }
-      },
-    );
-
-    test('lapsed: the paywall renders when Subscribe opens it', () {
+    test('closed: the paywall renders (no loop)', () {
       expect(
-        gateRedirect(path: kPaywallPath, access: AppAccess.lapsed),
+        gateRedirect(path: kPaywallPath, access: AppAccess.closed),
         isNull,
       );
     });
@@ -251,14 +161,12 @@ void main() {
     Provider<GoRouter> routerProvider(String initial) {
       return Provider<GoRouter>((ref) {
         final refresh = ChangeNotifier();
-        late final GoRouter router;
         ref.listen(appGateProvider, (prev, next) {
           if (!next.hasValue || next.isLoading) return;
-          refresh.notifyListeners();
-          if (prev?.value != next.value) yieldPushedPaywall(router, next.value);
+          if (prev?.value != next.value) refresh.notifyListeners();
         });
         Widget page(String label) => Scaffold(body: Text(label));
-        return router = GoRouter(
+        return GoRouter(
           initialLocation: initial,
           refreshListenable: refresh,
           redirect: (context, state) async {
@@ -371,38 +279,64 @@ void main() {
       },
     );
 
-    testWidgets('lapsed (customer info with an expired pro) reaches app '
-        'routes', (tester) async {
-      when(
-        () => service.fetchStatus(),
-      ).thenAnswer((_) async => statusOf(customerInfoLapsed));
-      await pump(tester, initial: '/settings');
-      expect(find.text('settings'), findsOneWidget);
-      expect(find.text('paywall'), findsNothing);
-    });
+    /// Nothing under the paywall: it is the only page, so there is no
+    /// screen to go back to (mp-280: no close, nothing behind it).
+    void onlyThePaywall(WidgetTester tester, GoRouter router) {
+      expect(find.text('paywall'), findsOneWidget);
+      final config = router.routerDelegate.currentConfiguration;
+      expect(config.uri.path, kPaywallPath);
+      expect(config.matches, hasLength(1));
+      expect(router.canPop(), isFalse);
+    }
 
-    testWidgets('lapsed: an AI route opens the paywall instead', (
+    testWidgets('lapsed (customer info with an expired pro) lands on the '
+        'paywall from a cold start, like a never-subscribed account', (
       tester,
     ) async {
       when(
         () => service.fetchStatus(),
       ).thenAnswer((_) async => statusOf(customerInfoLapsed));
-      final (c, router) = await pump(tester, initial: '/main');
-      expect(find.text('main'), findsOneWidget);
+      final (c, router) = await pump(tester, initial: '/');
+      onlyThePaywall(tester, c.read(router));
+      expect(find.text('main'), findsNothing);
+    });
 
-      unawaited(c.read(router).push('/vana'));
+    testWidgets('lapsed: every route lands on the paywall, AI or not', (
+      tester,
+    ) async {
+      when(
+        () => service.fetchStatus(),
+      ).thenAnswer((_) async => statusOf(customerInfoLapsed));
+      final (c, router) = await pump(tester, initial: '/settings');
+      onlyThePaywall(tester, c.read(router));
+
+      for (final p in ['/main', '/food/plan', '/vana']) {
+        c.read(router).go(p);
+        await tester.pumpAndSettle();
+        onlyThePaywall(tester, c.read(router));
+      }
+      unawaited(c.read(router).push('/settings'));
       await tester.pumpAndSettle();
-
+      expect(find.text('settings'), findsNothing);
       expect(find.text('paywall'), findsOneWidget);
-      expect(find.text('vana'), findsNothing);
+    });
 
-      // Subscribing moves the pushed paywall on: an entitled account never
-      // views it (mp-335 §5), though go_router's refresh redirects the base
-      // location only.
-      capturedListener!(statusOf(customerInfoOpen));
+    testWidgets('an expiry mid-session on a pushed screen closes the app '
+        'onto the paywall, with nothing under it', (tester) async {
+      when(
+        () => service.fetchStatus(),
+      ).thenAnswer((_) async => statusOf(customerInfoOpen));
+      final (c, router) = await pump(tester, initial: '/main');
+      unawaited(c.read(router).push('/settings'));
       await tester.pumpAndSettle();
-      expect(find.text('paywall'), findsNothing);
-      expect(find.text('main'), findsOneWidget);
+      expect(find.text('settings'), findsOneWidget);
+
+      capturedListener!(statusOf(customerInfoLapsed));
+      await tester.pumpAndSettle();
+
+      onlyThePaywall(tester, c.read(router));
+      expect(find.text('settings'), findsNothing);
+      expect(find.text('main'), findsNothing);
     });
 
     testWidgets('never (customer info with no pro) is redirected to the '
@@ -420,30 +354,19 @@ void main() {
       expect(find.text('main'), findsNothing);
     });
 
-    testWidgets('lapsed subscribes: the paywall yields to /main', (
+    testWidgets('lapsed subscribes or restores: the paywall yields to /main', (
       tester,
     ) async {
       when(
         () => service.fetchStatus(),
       ).thenAnswer((_) async => statusOf(customerInfoLapsed));
-      await pump(tester, initial: kPaywallPath);
+      await pump(tester, initial: '/settings');
       expect(find.text('paywall'), findsOneWidget);
 
       capturedListener!(statusOf(customerInfoOpen));
       await tester.pumpAndSettle();
 
       expect(find.text('main'), findsOneWidget);
-    });
-
-    testWidgets('an expiry mid-session leaves a subscriber in the app, '
-        'lapsed', (tester) async {
-      when(
-        () => service.fetchStatus(),
-      ).thenAnswer((_) async => statusOf(customerInfoOpen));
-      await pump(tester, initial: '/settings');
-      capturedListener!(statusOf(customerInfoLapsed));
-      await tester.pumpAndSettle();
-      expect(find.text('settings'), findsOneWidget);
       expect(find.text('paywall'), findsNothing);
     });
 

@@ -11,9 +11,9 @@
 
 **Touches:** lib/features/subscription/application/pro_gate.dart, lib/features/subscription/domain/entitlement.dart, lib/features/subscription/presentation/pro_gate_redirect.dart, lib/features/subscription/application/paywall_location.dart, lib/features/subscription/presentation/ai_action_guard.dart, lib/shared/core/app_router.dart, lib/features/subscription/presentation/screens/paywall_screen.dart, test/features/subscription/application/pro_gate_test.dart, test/features/subscription/presentation/pro_gate_redirect_test.dart, test/features/subscription/presentation/paywall_screen_test.dart
 
-- [ ] The Gate answers open or closed; a lapsed account and a never-subscribed one both get closed (Gate test through the real provider).
-- [ ] Closed lands on the full-screen paywall with no close button, from a cold start and from any route (redirect tests).
-- [ ] No paywall sheet over the app: the sheet presentation and its close button are gone; Redeem code still opens its glass sheet (paywall screen tests).
+- [x] The Gate answers open or closed; a lapsed account and a never-subscribed one both get closed (Gate test through the real provider).
+- [x] Closed lands on the full-screen paywall with no close button, from a cold start and from any route (redirect tests).
+- [x] No paywall sheet over the app: the sheet presentation and its close button are gone; Redeem code still opens its glass sheet (paywall screen tests).
 - [ ] A lapsed account on the dev simulator opens on the full-screen paywall, and subscribing or restoring lands it back in the app.
 
 Next: /implement-lee paywall

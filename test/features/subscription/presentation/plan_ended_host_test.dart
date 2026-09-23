@@ -1,9 +1,10 @@
-/// The read-only shell (mp-457 §3): a lapsed account reaches app routes with
-/// the plan-ended bar over every screen, its Subscribe opens the paywall
-/// over the screen, and the bar leaves when the account subscribes. Driven
-/// by producer-shaped customer info through the REAL status notifier and
-/// gate, the router wired the way app_router.dart wires it, and the host
-/// composed the way root_app_widget.dart composes it.
+/// The host over the router (until ticket 20 deletes it): there is no
+/// read-only shell and no plan-ended bar any more (mp-457, mp-611), so a
+/// closed account meets the full-screen paywall and nothing else, and a
+/// controller's refused write lands on that same paywall. Driven by
+/// producer-shaped customer info through the REAL status notifier and gate,
+/// the router wired the way app_router.dart wires it, and the host composed
+/// the way root_app_widget.dart composes it.
 library;
 
 import 'dart:async';
@@ -34,7 +35,6 @@ class _MockSubscriptionService extends Mock implements SubscriptionService {}
 class _MockRepository extends Mock implements UserEntitlementsRepository {}
 
 const _userId = 'u-1';
-const _subscribe = ValueKey('plan_ended_bar.subscribe');
 
 final _content = loadDefaultContent();
 
@@ -81,17 +81,15 @@ void main() {
 
     final refresh = ChangeNotifier();
     addTearDown(refresh.dispose);
-    late final GoRouter router;
     final sub = c.listen(appGateProvider, (prev, next) {
       if (!next.hasValue || next.isLoading) return;
       if (prev?.value == next.value) return;
       refresh.notifyListeners();
-      yieldPushedPaywall(router, next.value);
     });
     addTearDown(sub.close);
 
     Widget page(String label) => Scaffold(body: Center(child: Text(label)));
-    router = GoRouter(
+    final router = GoRouter(
       initialLocation: initial,
       refreshListenable: refresh,
       redirect: (context, state) async {
@@ -123,105 +121,74 @@ void main() {
     return router;
   }
 
-  testWidgets('lapsed: app routes render under the bar, with its copy', (
-    tester,
-  ) async {
-    when(
-      () => service.fetchStatus(),
-    ).thenAnswer((_) async => statusOf(customerInfoLapsed));
-    final router = await pump(tester, initial: '/main');
-
-    expect(find.text('main'), findsOneWidget);
-    expect(find.byType(PlanEndedBar), findsOneWidget);
-    expect(find.text(_content['plan_ended.message']!), findsOneWidget);
-    expect(find.text(_content['plan_ended.subscribe_button']!), findsOneWidget);
-
-    router.go('/settings');
-    await tester.pumpAndSettle();
-    expect(find.text('settings'), findsOneWidget);
-    expect(find.byType(PlanEndedBar), findsOneWidget);
-  });
-
-  testWidgets('the page starts below the bar, never under it', (tester) async {
-    when(
-      () => service.fetchStatus(),
-    ).thenAnswer((_) async => statusOf(customerInfoLapsed));
-    await pump(tester, initial: '/main');
-
-    final barBottom = tester.getBottomLeft(find.byType(PlanEndedBar)).dy;
-    final pageTop = tester.getTopLeft(find.byType(Scaffold)).dy;
-    expect(pageTop, barBottom);
-  });
-
-  testWidgets('Subscribe opens the paywall over the screen; the bar is not '
-      'on the paywall; back returns to the screen under the bar', (
-    tester,
-  ) async {
-    when(
-      () => service.fetchStatus(),
-    ).thenAnswer((_) async => statusOf(customerInfoLapsed));
-    final router = await pump(tester, initial: '/settings');
-
-    await tester.tap(find.byKey(_subscribe));
-    await tester.pumpAndSettle();
+  /// The paywall alone: nothing under it, no bar over it.
+  void onlyThePaywall(GoRouter router) {
     expect(find.text('paywall'), findsOneWidget);
+    expect(router.canPop(), isFalse);
     expect(find.byType(PlanEndedBar), findsNothing);
+  }
 
-    router.pop();
-    await tester.pumpAndSettle();
-    expect(find.text('settings'), findsOneWidget);
-    expect(find.byType(PlanEndedBar), findsOneWidget);
-  });
-
-  testWidgets('a refused write in a controller opens the paywall over the '
-      'screen, once however many ask', (tester) async {
+  testWidgets('lapsed: the paywall and nothing else, no bar', (tester) async {
     when(
       () => service.fetchStatus(),
     ).thenAnswer((_) async => statusOf(customerInfoLapsed));
     final router = await pump(tester, initial: '/settings');
-    final c = ProviderScope.containerOf(tester.element(find.text('settings')));
-
-    c.read(paywallRequestsProvider.notifier).request();
-    await tester.pumpAndSettle();
-    c.read(paywallRequestsProvider.notifier).request();
-    await tester.pumpAndSettle();
-    expect(find.text('paywall'), findsOneWidget);
-
-    router.pop();
-    await tester.pumpAndSettle();
-    expect(find.text('settings'), findsOneWidget);
+    onlyThePaywall(router);
+    expect(find.text('settings'), findsNothing);
   });
 
-  testWidgets('subscribing from the paywall removes the bar and lands on '
-      '/main', (tester) async {
+  testWidgets('never: the paywall and nothing else, no bar', (tester) async {
+    when(
+      () => service.fetchStatus(),
+    ).thenAnswer((_) async => statusOf(customerInfoNever));
+    final router = await pump(tester, initial: '/main');
+    onlyThePaywall(router);
+    expect(find.text('main'), findsNothing);
+  });
+
+  testWidgets('an expiry mid-session lands on the paywall, no bar', (
+    tester,
+  ) async {
+    when(
+      () => service.fetchStatus(),
+    ).thenAnswer((_) async => statusOf(customerInfoOpen));
+    final router = await pump(tester, initial: '/settings');
+    expect(find.text('settings'), findsOneWidget);
+
+    capturedListener!(statusOf(customerInfoLapsed));
+    await tester.pumpAndSettle();
+
+    onlyThePaywall(router);
+    expect(find.text('settings'), findsNothing);
+  });
+
+  testWidgets('a refused write lands on the one paywall, however many ask', (
+    tester,
+  ) async {
+    when(
+      () => service.fetchStatus(),
+    ).thenAnswer((_) async => statusOf(customerInfoLapsed));
+    final router = await pump(tester, initial: '/settings');
+    final c = ProviderScope.containerOf(tester.element(find.text('paywall')));
+
+    c.read(paywallRequestsProvider.notifier).request();
+    await tester.pumpAndSettle();
+    c.read(paywallRequestsProvider.notifier).request();
+    await tester.pumpAndSettle();
+    onlyThePaywall(router);
+  });
+
+  testWidgets('subscribing from the paywall lands on /main', (tester) async {
     when(
       () => service.fetchStatus(),
     ).thenAnswer((_) async => statusOf(customerInfoLapsed));
     await pump(tester, initial: '/settings');
-    await tester.tap(find.byKey(_subscribe));
-    await tester.pumpAndSettle();
 
     capturedListener!(statusOf(customerInfoOpen));
     await tester.pumpAndSettle();
 
     expect(find.text('main'), findsOneWidget);
     expect(find.byType(PlanEndedBar), findsNothing);
-  });
-
-  testWidgets('an expiry mid-session raises the bar over the same screen', (
-    tester,
-  ) async {
-    when(
-      () => service.fetchStatus(),
-    ).thenAnswer((_) async => statusOf(customerInfoOpen));
-    await pump(tester, initial: '/settings');
-    expect(find.byType(PlanEndedBar), findsNothing);
-
-    capturedListener!(statusOf(customerInfoLapsed));
-    await tester.pumpAndSettle();
-
-    expect(find.text('settings'), findsOneWidget);
-    expect(find.byType(PlanEndedBar), findsOneWidget);
   });
 
   testWidgets('open: no bar', (tester) async {
@@ -231,41 +198,5 @@ void main() {
     await pump(tester, initial: '/main');
     expect(find.text('main'), findsOneWidget);
     expect(find.byType(PlanEndedBar), findsNothing);
-  });
-
-  testWidgets('never: the paywall and nothing else, no bar', (tester) async {
-    when(
-      () => service.fetchStatus(),
-    ).thenAnswer((_) async => statusOf(customerInfoNever));
-    await pump(tester, initial: '/main');
-    expect(find.text('paywall'), findsOneWidget);
-    expect(find.text('main'), findsNothing);
-    expect(find.byType(PlanEndedBar), findsNothing);
-  });
-
-  testWidgets('lapsed: ungated routes carry no bar', (tester) async {
-    when(
-      () => service.fetchStatus(),
-    ).thenAnswer((_) async => statusOf(customerInfoLapsed));
-    await pump(tester, initial: '/welcome');
-    expect(find.text('welcome'), findsOneWidget);
-    expect(find.byType(PlanEndedBar), findsNothing);
-  });
-
-  group('planEndedBarShownOn', () {
-    test('every signed-in route but the paywall', () {
-      for (final p in ['/main', '/settings', '/food', '/events/e-1']) {
-        expect(planEndedBarShownOn(p), isTrue, reason: p);
-      }
-      for (final p in [
-        '',
-        '/',
-        kPaywallPath,
-        '/welcome',
-        '/auth/email-login',
-      ]) {
-        expect(planEndedBarShownOn(p), isFalse, reason: p);
-      }
-    });
   });
 }
