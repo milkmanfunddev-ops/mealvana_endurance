@@ -1,6 +1,6 @@
 # 02: Delete account, plus-address signup and the account sweep
 
-**Status:** in-progress (wave 2, 2026-09-23)
+**Status:** done (wave 2, 2026-09-23)
 **Blocked by:** 01 (touches scripts/testing-wave/sweep-accounts.mjs).
 **Next:** `/implement-lee testing-wave`
 **Model:** opus
