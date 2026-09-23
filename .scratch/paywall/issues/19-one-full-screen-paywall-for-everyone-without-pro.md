@@ -1,6 +1,6 @@
 # 19: One full-screen paywall for everyone without Pro
 
-**Status:** ready-for-agent
+**Status:** in-progress (wave 7, 2026-09-23)
 **Blocked by:** 03 (touches lib/features/subscription/presentation/screens/paywall_screen.dart), 11 (touches lib/features/subscription/application/pro_gate.dart), 14 (touches lib/features/subscription/presentation/screens/paywall_screen.dart), 15 (touches lib/features/subscription/presentation/screens/paywall_screen.dart), 17 (touches lib/features/subscription/presentation/pro_gate_redirect.dart), 18 (touches lib/features/subscription/presentation/screens/paywall_screen.dart).
 **Next:** `/implement-lee paywall`
 **Model:** opus
