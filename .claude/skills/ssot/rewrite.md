@@ -46,10 +46,12 @@ Rules the subagent follows, in this order of weight:
 4. Context: what the thing is and what was true before, two to four sentences; may be left as is.
 5. Title: a plain sentence saying the ruling, not a label ("The server keeps RevenueCat's end
    date, not the event's").
-6. Pictures: two, when the card chose between two ways. Picture one is the world we rejected,
-   picture two the world we chose, each a dated `timeline` of the same worked example told
-   from the athlete's side (what they did, what they saw), titled "If … (rejected)" and "What
-   we decided: …" (mp-503, mp-504). A card that defines a shape or a sequence gets one `flow`
+6. Pictures: two, when the card chose between two ways. Picture one is the other option,
+   picture two the card's answer, each a dated `timeline` of the same worked example told
+   from the athlete's side (what they did, what they saw), titled "Other option: if …" and
+   "This card's answer: …" (mp-503, mp-504). The titles never say "rejected" or "decided":
+   most cards are still waiting for a ruling when they are drawn, and the picture outlives
+   the status (Lee, 2026-09-23). A `compare`'s two heads follow the same rule. A card that defines a shape or a sequence gets one `flow`
    or `timeline`. A card with a screenshot keeps it in slot one and gets one drawing in slot
    two. The page stacks the pictures in the left column, about 420 px wide, so a step's label
    is at most three short lines. `"diagram"` is picture one, `"diagram2"` picture two.

@@ -345,21 +345,21 @@
     const decisionHtml = cl.length
       ? `<ol class="clauses">${cl.map((c, i) => `<li class="${droppedQ.includes(i + 1) ? 'dropped' : ''}">${mark(c)}</li>`).join('')}</ol>`
       : `<p>${mark(d.decision)}</p>`;
-    // The face: picture, title, question, answer, the three buttons. One idea per card.
+    // The face: picture, title, context, question, answer, why and what else was considered, the three buttons.
     const answer = `<div class="answer">${d.original ? '<div class="k">Rewrite, awaiting your approval</div>' : ''}${decisionHtml}</div>`;
     const qline = d.question ? `<p class="qline"><b>The question</b>${mark(d.question)}</p>` : '';
     const edits = acceptedEdits(d.id);
     const editBox = edits.map(c => `<div class="amendbox"><div class="k">Rewrite accepted on the page; the terminal writes it to the record</div>${['context', 'question', 'decision', 'why', 'alternatives', 'touches'].filter(k => c[k]).map(k => `<p><b>${esc(CHANGE_LABELS[k])}.</b> ${esc(c[k])}</p>`).join('')}</div>`).join('');
     const myChanges = [...state.verdicts].filter(([, v]) => isChangeVerdict(v) && !v.applied && v.about === d.id);
-    // Everything else lives under More: who ruled and when, where it came from, the reasoning, the numbers.
+    // The reasoning sits on the face with the answer (Lee, 2026-09-23: a card waiting for a ruling
+    // has to be readable without opening anything). More keeps who ruled, the source, the numbers.
+    const why = d.why ? `<div class="part"><div class="k">Why</div><p>${mark(d.why)}</p></div>` : '';
+    const alts = d.alternatives ? `<div class="part"><div class="k">What else was considered</div><p>${mark(d.alternatives)}</p></div>` : '';
     const meta = `<div class="meta"><span class="pill ${e.status}">${e.status}</span>${e.queued ? `<span class="pill queued">${byLine('queued', v && v.by)}</span>` : ruledLine(d)}${d.work === 'pending' ? '<span class="pill amended">work pending</span>' : ''}<span>${esc(d.id)}</span>${d.folded ? `<span>folds ${esc(d.folded)}</span>` : ''}<span>${esc(d.source || '')}</span></div>`;
     const more = [
       meta,
       d.original ? `<div class="amendbox"><div class="k">Original</div><p>${mark(d.original)}</p></div><div class="amendbox"><div class="k">You said</div><p>${mark(d.leeSaid)}</p></div>` : '',
       v && !v.applied && (v.text || droppedQ.length) ? `<div class="amendbox"><div class="k">${v.verdict === 'reject' ? 'Your reason' : 'Your words'} (queued)</div><p>${droppedQ.length ? `Drop ${droppedQ.join(', ')}. ` : ''}${esc(v.text)}</p></div>` : '',
-      d.why ? `<div class="part"><div class="k">Why</div><p>${mark(d.why)}</p></div>` : '',
-      d.context ? `<div class="part"><div class="k">Context</div><p>${mark(d.context)}</p></div>` : '',
-      d.alternatives ? `<div class="part"><div class="k">What else was considered</div><p>${mark(d.alternatives)}</p></div>` : '',
       d.details ? `<div class="part"><div class="k">Details</div><p>${mark(d.details)}</p></div>` : '',
       d.touches ? `<div class="part"><div class="k">What it touches</div><p>${mark(d.touches)}</p></div>` : '',
     ].join('');
@@ -372,8 +372,11 @@
       <div class="txt">
         <h3>${esc(d.title)}</h3>
         ${brief}
+        ${ctx}
         ${qline}
         ${answer}
+        ${why}
+        ${alts}
         ${editBox}
         <div class="acts">
           <button class="approve ${approved ? 'on' : ''}" data-act="approve">${approved ? 'Approved' : 'Approve'}</button>

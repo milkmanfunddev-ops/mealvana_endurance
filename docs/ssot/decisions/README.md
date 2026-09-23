@@ -299,10 +299,12 @@ under their area heading after Lee confirms them in the terminal.
 
 ## Explain and rewrite on the page
 
-A card's face is the picture, the title, the question and the decision, then Approve, Reject
-and Rewrite. Everything else (status, id, source, context, why, what else was considered, what it
-touches, details, the amend box) is under More, so a reader meets one idea per card (Lee,
-2026-09-22). Every card's Ask thread runs on the default model tier (not the quick one) and reads
+A card's face is the picture, the title, the context, the question, the decision, why and what
+else was considered, then Approve, Reject and Rewrite, so a card waiting for a ruling reads
+without opening anything (Lee, 2026-09-23, replacing the 09-22 face of question and decision
+only). Status, id, source, what it touches, details and the amend box are under More. A drawn
+pair is titled "Other option: …" and "This card's answer: …", never "rejected" or "decided",
+since the picture outlives the card's status. Every card's Ask thread runs on the default model tier (not the quick one) and reads
 the card in full, the cards it names in full, the glossary terms it uses, the tickets that cite
 it and one line per sibling; it also gets five page tools (read a card, search the cards, read a
 ticket, look up a term, read a reference document) where the viewer's plan allows tools. "Draft the rewrite from this
