@@ -8,6 +8,62 @@ part of 'subscription_screen_controller.dart';
 
 // GENERATED CODE - DO NOT MODIFY BY HAND
 // ignore_for_file: type=lint, type=warning
+/// The clock a Grant's days left are counted against. A provider so tests
+/// can pin it; the app never overrides it.
+
+@ProviderFor(subscriptionScreenClock)
+const subscriptionScreenClockProvider = SubscriptionScreenClockProvider._();
+
+/// The clock a Grant's days left are counted against. A provider so tests
+/// can pin it; the app never overrides it.
+
+final class SubscriptionScreenClockProvider
+    extends
+        $FunctionalProvider<
+          DateTime Function(),
+          DateTime Function(),
+          DateTime Function()
+        >
+    with $Provider<DateTime Function()> {
+  /// The clock a Grant's days left are counted against. A provider so tests
+  /// can pin it; the app never overrides it.
+  const SubscriptionScreenClockProvider._()
+    : super(
+        from: null,
+        argument: null,
+        retry: null,
+        name: r'subscriptionScreenClockProvider',
+        isAutoDispose: true,
+        dependencies: null,
+        $allTransitiveDependencies: null,
+      );
+
+  @override
+  String debugGetCreateSourceHash() => _$subscriptionScreenClockHash();
+
+  @$internal
+  @override
+  $ProviderElement<DateTime Function()> $createElement(
+    $ProviderPointer pointer,
+  ) => $ProviderElement(pointer);
+
+  @override
+  DateTime Function() create(Ref ref) {
+    return subscriptionScreenClock(ref);
+  }
+
+  /// {@macro riverpod.override_with_value}
+  Override overrideWithValue(DateTime Function() value) {
+    return $ProviderOverride(
+      origin: this,
+      providerOverride: $SyncValueProvider<DateTime Function()>(value),
+    );
+  }
+}
+
+String _$subscriptionScreenClockHash() =>
+    r'918a74004f4b5e948667bd66e42640c19e29fbcd';
+
 /// The Subscription screen in Settings (mp-495): the plan's status from the
 /// status provider (RevenueCat, mp-279), whether there is a store
 /// subscription to manage, and where Manage subscription goes.
@@ -57,7 +113,7 @@ final class SubscriptionScreenControllerProvider
 }
 
 String _$subscriptionScreenControllerHash() =>
-    r'd9b13d13cf967ba6fb72c4a5905db2114441cd67';
+    r'f7c2a47f3cfa3dba76591409e42070a7122d99fa';
 
 /// The Subscription screen in Settings (mp-495): the plan's status from the
 /// status provider (RevenueCat, mp-279), whether there is a store

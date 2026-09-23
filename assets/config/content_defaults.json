@@ -894,7 +894,12 @@
     "ended_on": "It ended on {date}. Your data is read-only until you subscribe.",
     "ended_no_date": "Your data is read-only until you subscribe.",
     "includes_header": "What your plan includes",
-    "upgrade_button": "Upgrade"
+    "upgrade_button": "Upgrade",
+    "status_grant_grace": "Grace month",
+    "status_grant_code": "Pro from a code",
+    "grant_days_left": "{days} days left",
+    "grant_one_day_left": "1 day left",
+    "grant_last_day": "Last day today"
   },
   "redeem_code": {
     "button": "Redeem code",

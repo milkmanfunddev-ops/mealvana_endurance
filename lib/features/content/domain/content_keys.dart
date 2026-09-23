@@ -998,6 +998,18 @@ class ContentKeys {
       'subscription.includes_header';
   static const String subscriptionUpgradeButton = 'subscription.upgrade_button';
 
+  // A Grant on the Subscription screen (mp-558): where it came from, as the
+  // status, and its days left. `{days}` is the whole days until it ends.
+  static const String subscriptionStatusGrantGrace =
+      'subscription.status_grant_grace';
+  static const String subscriptionStatusGrantCode =
+      'subscription.status_grant_code';
+  static const String subscriptionGrantDaysLeft =
+      'subscription.grant_days_left';
+  static const String subscriptionGrantOneDayLeft =
+      'subscription.grant_one_day_left';
+  static const String subscriptionGrantLastDay = 'subscription.grant_last_day';
+
   // Redeem code (mp-458): the entry in the paywall's ⋯ menu (mp-494) and on
   // the Subscription screen (mp-495), our own Code entry sheet, what a Code
   // did and why one was refused — lib/features/subscription. `{days}` is the

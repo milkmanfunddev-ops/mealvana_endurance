@@ -2,11 +2,17 @@ import 'package:riverpod_annotation/riverpod_annotation.dart';
 
 import '../data/subscription_service.dart';
 import '../domain/entitlement.dart';
+import '../domain/grant.dart';
 import 'subscription_status_provider.dart';
 
 part 'subscription_screen_controller.g.dart';
 
-/// Which of the four plan states the Subscription screen shows (mp-495 §2).
+/// The clock a Grant's days left are counted against. A provider so tests
+/// can pin it; the app never overrides it.
+@riverpod
+DateTime Function() subscriptionScreenClock(Ref ref) => DateTime.now;
+
+/// Which plan state the Subscription screen shows (mp-495 §2, mp-558).
 enum PlanStatus {
   /// In the free week; [SubscriptionScreenState.date] is the day it ends.
   trial,
@@ -17,6 +23,11 @@ enum PlanStatus {
 
   /// Subscribed on a founding product (mp-452); dated as [active].
   founding,
+
+  /// Pro from a Grant (mp-558): where it came from
+  /// ([SubscriptionScreenState.grantSource]) and its days left
+  /// ([SubscriptionScreenState.daysLeft]).
+  grant,
 
   /// No plan running now; the date is the day it ended, when known.
   ended,
@@ -29,6 +40,8 @@ class SubscriptionScreenState {
     this.date,
     this.willRenew = false,
     this.canManage = false,
+    this.grantSource,
+    this.daysLeft,
   });
 
   final PlanStatus plan;
@@ -44,20 +57,32 @@ class SubscriptionScreenState {
   /// record, running or ended (mp-495 §3, as the paywall's ⋯ menu, mp-494).
   final bool canManage;
 
+  /// Where the Grant came from, when [plan] is [PlanStatus.grant].
+  final GrantSource? grantSource;
+
+  /// Days until the Grant ends, when [plan] is [PlanStatus.grant] and it has
+  /// an end.
+  final int? daysLeft;
+
   /// Upgrade (opens the paywall) is offered only once the plan has ended
   /// (mp-495 §3).
   bool get canUpgrade => plan == PlanStatus.ended;
 
-  /// Pure: the screen's state for [status]. A founding member is one whose
-  /// running plan is a founding product (`me_pro_*_founding`, mp-452); the
-  /// free week outranks it, since its end date is the one that matters.
+  /// Pure: the screen's state for [status] on [now]. A founding member is
+  /// one whose running plan is a founding product (`me_pro_*_founding`,
+  /// mp-452); the free week outranks it, since its end date is the one that
+  /// matters. A running Grant shows as itself, with its days left (mp-558).
   static SubscriptionScreenState from(
     SubscriptionStatus status, {
     required bool hasStoreSubscription,
+    required DateTime now,
   }) {
+    final grant = status.active ? status.grant : null;
     final PlanStatus plan;
     if (!status.active) {
       plan = PlanStatus.ended;
+    } else if (grant != null) {
+      plan = PlanStatus.grant;
     } else if (status.isTrial) {
       plan = PlanStatus.trial;
     } else if (isFoundingProduct(status.productId)) {
@@ -70,6 +95,8 @@ class SubscriptionScreenState {
       date: status.expiresAt,
       willRenew: status.active && status.willRenew,
       canManage: hasStoreSubscription,
+      grantSource: grant?.source,
+      daysLeft: grant?.daysLeftAt(now),
     );
   }
 
@@ -96,6 +123,7 @@ class SubscriptionScreenController extends _$SubscriptionScreenController {
     return SubscriptionScreenState.from(
       status,
       hasStoreSubscription: hasStoreSubscription,
+      now: ref.read(subscriptionScreenClockProvider)(),
     );
   }
 

@@ -5,6 +5,7 @@ import 'package:riverpod_annotation/riverpod_annotation.dart';
 import '../../../shared/services/sentry/sentry_reporter.dart';
 import '../../ai_credits/data/revenuecat_service.dart';
 import '../domain/entitlement.dart';
+import '../domain/grant.dart';
 
 part 'subscription_service.g.dart';
 
@@ -309,6 +310,13 @@ class SubscriptionService {
       productId: info.productIdentifier,
       willRenew: info.willRenew,
       hadPro: true,
+      // A Grant has no store behind it: RevenueCat's own PROMOTIONAL store.
+      grant: info.store == Store.promotional
+          ? Grant.fromDates(
+              startedAt: DateTime.tryParse(info.latestPurchaseDate)?.toUtc(),
+              endsAt: expiresAt,
+            )
+          : null,
     );
   }
 

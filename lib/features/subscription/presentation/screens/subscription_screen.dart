@@ -10,6 +10,7 @@ import '../../../../shared/widgets/kyle_design/kyle_design.dart';
 import '../../../content/application/content_service.dart';
 import '../../../content/domain/content_keys.dart';
 import '../../application/subscription_screen_controller.dart';
+import '../../domain/grant.dart';
 import '../open_paywall.dart';
 import '../widgets/pro_feature_list.dart';
 import '../widgets/redeem_code_sheet.dart';
@@ -18,7 +19,8 @@ import 'paywall_screen.dart';
 /// The Subscription screen in Settings (mp-495, approved as mp-500).
 ///
 /// The plan's status with its date (a trial with the day it ends, active
-/// with the day it renews, founding member, or ended), then what Pro
+/// with the day it renews, founding member, or ended; a Grant with where it
+/// came from and its days left, mp-558), then what Pro
 /// includes as a tick list with the AI features under the one Vana line, as
 /// on the paywall. Upgrade opens the paywall, only once the plan has ended;
 /// Manage subscription opens the store's own page, only with a store
@@ -187,10 +189,28 @@ class _PlanStatusCard extends StatelessWidget {
           return content.getValue(ContentKeys.subscriptionEndedNoDate);
         }
         key = ContentKeys.subscriptionEndedOn;
+      case PlanStatus.grant:
+        return _daysLeftLine();
     }
     return ContentKeys.format(content.getValue(key), {
       'date': DateFormat.yMMMMd().format(date.toLocal()),
     });
+  }
+
+  /// A Grant's days left: "12 days left", "1 day left", or its last day.
+  String? _daysLeftLine() {
+    final days = state.daysLeft;
+    if (days == null) return null;
+    if (days == 0) {
+      return content.getValue(ContentKeys.subscriptionGrantLastDay);
+    }
+    if (days == 1) {
+      return content.getValue(ContentKeys.subscriptionGrantOneDayLeft);
+    }
+    return ContentKeys.format(
+      content.getValue(ContentKeys.subscriptionGrantDaysLeft),
+      {'days': days},
+    );
   }
 
   @override
@@ -200,6 +220,10 @@ class _PlanStatusCard extends StatelessWidget {
       PlanStatus.active => ContentKeys.subscriptionStatusActive,
       PlanStatus.founding => ContentKeys.subscriptionStatusFounding,
       PlanStatus.ended => ContentKeys.subscriptionStatusEnded,
+      PlanStatus.grant => switch (state.grantSource) {
+        GrantSource.legacyGrace => ContentKeys.subscriptionStatusGrantGrace,
+        GrantSource.code || null => ContentKeys.subscriptionStatusGrantCode,
+      },
     });
     final dateLine = _dateLine();
     return BaseCard(

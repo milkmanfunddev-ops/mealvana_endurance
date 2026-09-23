@@ -17,12 +17,13 @@ Map<String, dynamic> _pro({
   String periodType = 'NORMAL',
   String store = 'APP_STORE',
   bool? willRenew,
+  String purchased = '2026-08-01T10:00:00Z',
 }) => {
   'identifier': 'pro',
   'isActive': isActive,
   'willRenew': willRenew ?? isActive,
-  'latestPurchaseDate': '2026-08-01T10:00:00Z',
-  'originalPurchaseDate': '2026-08-01T10:00:00Z',
+  'latestPurchaseDate': purchased,
+  'originalPurchaseDate': purchased,
   'productIdentifier': productId,
   'isSandbox': true,
   'ownershipType': 'PURCHASED',
@@ -110,16 +111,42 @@ final CustomerInfo customerInfoOpenCancelled = _info(
   active: true,
 );
 
-/// `pro` granted by RevenueCat (the grace month, a code), not bought: no
-/// store page to manage. Active until 22 October.
+/// A Grant as RevenueCat reports it once `grant_entitlement` has run (the
+/// grace run, `grace-claim`, `redeem-code`): the PROMOTIONAL store, product
+/// `rc_promo_pro_custom` (every grant made with an end time reads so; checked
+/// on the dev customer 2026-09-23), latest purchase the moment of the grant,
+/// no renewal.
+Map<String, dynamic> _grant({
+  required String granted,
+  required String expires,
+}) => _pro(
+  isActive: true,
+  expires: expires,
+  store: 'PROMOTIONAL',
+  productId: 'rc_promo_pro_custom',
+  willRenew: false,
+  purchased: granted,
+);
+
+/// A giveaway Code's Grant: 365 days of `pro` from 22 September 2026. No
+/// store page to manage.
 final CustomerInfo customerInfoGranted = _info(
   all: {
-    'pro': _pro(
-      isActive: true,
-      expires: '2026-10-22T10:00:00Z',
-      store: 'PROMOTIONAL',
-      productId: 'rc_promo_pro_monthly',
-      willRenew: false,
+    'pro': _grant(
+      granted: '2026-09-22T10:00:00Z',
+      expires: '2027-09-22T10:00:00Z',
+    ),
+  },
+  active: true,
+);
+
+/// The Legacy grace month: 30 days of `pro` granted at the flip on
+/// 1 October, ending 31 October.
+final CustomerInfo customerInfoGraceGrant = _info(
+  all: {
+    'pro': _grant(
+      granted: '2026-10-01T10:00:00Z',
+      expires: '2026-10-31T10:00:00Z',
     ),
   },
   active: true,
