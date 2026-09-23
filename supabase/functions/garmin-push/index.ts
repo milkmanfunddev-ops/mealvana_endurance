@@ -286,13 +286,23 @@ async function logInboundGarminPayload(
       : kind === "activity_detail"
       ? "actdet"
       : "actdetfull";
+    // The `nosummary` fallback reads startTimeInSeconds off the PAYLOAD, so it
+    // only ever produced a unique key when the payload was itself a summary.
+    // For `activity_detail_full` the payload is the whole detail object, whose
+    // startTimeInSeconds lives under `.summary` — so every full capture for an
+    // athlete keyed to `...:0` and `ignoreDuplicates` silently discarded all
+    // but the first (found 2026-09-22: three rows existed table-wide, one per
+    // athlete, all from the hours after deploy). Callers now pass an id derived
+    // from the activity itself; the fallback stays as a last resort only.
     const key = summaryId
       ? `${prefix}:${summaryId}`
       : `${prefix}:nosummary:${garminUserId ?? "unknown"}:${
         // deno-lint-ignore no-explicit-any
-        (payload as any)?.startTimeInSeconds ?? "0"
+        (payload as any)?.startTimeInSeconds ??
+          // deno-lint-ignore no-explicit-any
+          (payload as any)?.summary?.startTimeInSeconds ?? "0"
       }`;
-    await supabase
+    const { data: inserted, error } = await supabase
       .from("garmin_health_data")
       .upsert({
         user_id: userId,
@@ -305,7 +315,20 @@ async function logInboundGarminPayload(
           : "activity_detail_full",
         calendar_date: new Date().toISOString().slice(0, 10),
         data: payload,
-      }, { onConflict: "summary_id", ignoreDuplicates: true });
+      }, { onConflict: "summary_id", ignoreDuplicates: true })
+      .select("summary_id");
+
+    // A conflict-ignore that writes nothing is indistinguishable from a
+    // successful write unless we look. That indistinguishability is exactly
+    // what hid the collision above for a day, so say so out loud.
+    if (error) {
+      console.warn(`[garmin-push] inbound payload log error for ${key}:`, error);
+    } else if (Array.isArray(inserted) && inserted.length === 0) {
+      console.warn(
+        `[garmin-push] inbound payload log wrote NOTHING for ${key} ` +
+          `(duplicate summary_id) — payload not retained`,
+      );
+    }
   } catch (err) {
     // Swallow deliberately — see the contract above.
     console.warn("[garmin-push] inbound payload log failed (non-fatal):", err);
@@ -741,21 +764,29 @@ async function processPushBody(body: GarminPushNotification): Promise<void> {
             .eq("garmin_user_id", detail.userId)
             .single();
 
+          // The log key for BOTH detail rows. Garmin does not put summaryId on
+          // `detail.summary` for activityDetails pushes — it sits at the top
+          // level of the detail (e.g. "24442795951-detail"), with activityId
+          // beside it. Reading only `detail.summary.summaryId` sent every
+          // detail down the `nosummary` fallback; deriving the id here is what
+          // makes both rows uniquely keyed per activity.
+          const detailLogId = detail.summaryId ??
+            detail.summary?.summaryId ??
+            (detail.activityId != null ? `${detail.activityId}-detail` : null);
+
           // Forensic log FIRST, same contract as the activities loop. Only the
           // SUMMARY is stored — ActivityDetails carries per-second sample
           // arrays that would bloat the row for no diagnostic value.
           console.log(
             `[garmin-push] inbound activityDetail type="${detail.summary?.activityType}" ` +
-              `summaryId=${detail.summary?.summaryId ?? "none"}`,
+              `summaryId=${detailLogId ?? "none"}`,
           );
           await logInboundGarminPayload(
             supabase,
             "activity_detail",
             detail.userId,
             mapping?.user_id ?? null,
-            detail.summary?.summaryId != null
-              ? String(detail.summary.summaryId)
-              : null,
+            detailLogId != null ? String(detailLogId) : null,
             detail.summary,
           );
 
@@ -768,7 +799,13 @@ async function processPushBody(body: GarminPushNotification): Promise<void> {
             if (prepared.samplesDropped) {
               console.warn(
                 `[garmin-push] sample stream elided (over cap): ` +
-                  `summaryId=${detail.summary?.summaryId ?? "none"} ` +
+                  `summaryId=${detailLogId ?? "none"} ` +
+                  `samples=${prepared.sampleCount} bytes=${prepared.bytes}`,
+              );
+            } else if (prepared.samplesProjected) {
+              console.log(
+                `[garmin-push] sample stream reduced to the forensic core ` +
+                  `(over cap): summaryId=${detailLogId ?? "none"} ` +
                   `samples=${prepared.sampleCount} bytes=${prepared.bytes}`,
               );
             }
@@ -777,9 +814,7 @@ async function processPushBody(body: GarminPushNotification): Promise<void> {
               "activity_detail_full",
               detail.userId,
               mapping?.user_id ?? null,
-              detail.summary?.summaryId != null
-                ? String(detail.summary.summaryId)
-                : null,
+              detailLogId != null ? String(detailLogId) : null,
               prepared.payload,
             );
           } catch (capErr) {

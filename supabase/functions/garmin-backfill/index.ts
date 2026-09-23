@@ -61,7 +61,24 @@ const GARMIN_BACKFILL_PATH: Record<string, string> = {
   // "refresh my weight" call should do.
   // ops/data/bug-reports/2026-08-24-final-surge-completed-workouts-import-as-planned.md
   activities: 'activities',
+  // Added 2026-09-22. `activities` re-pushes SUMMARIES only — no samples — so
+  // it cannot recover a heart-rate or pace curve. The per-second stream lives
+  // on `activityDetails`, which is push-only (the REST pull is a ping
+  // callback a push integration never receives), making backfill the sole
+  // route to a detail we failed to retain. Diagnostic, like `activities`:
+  // re-pushing a month of details is a lot of data, so it stays out of
+  // DEFAULT_SUMMARY_TYPES and must be asked for by name.
+  activity_details: 'activityDetails',
 };
+
+/**
+ * Types billed against Garmin's ACTIVITY backfill window (30 days), not the
+ * 90-day Health/Women's window. A set, not an equality test: when
+ * `activity_details` was added as a second activity-scoped type, an
+ * `=== 'activities'` check would have let it request up to 90 days, which
+ * Garmin rejects upstream (the Q-INT18 failure, one type over).
+ */
+const ACTIVITY_SCOPED_TYPES = new Set(['activities', 'activity_details']);
 
 const DEFAULT_SUMMARY_TYPES = ['body_composition', 'user_metrics'];
 const MAX_WINDOW_DAYS = 90;
@@ -285,9 +302,9 @@ serve(withSentry(async (req: Request) => {
 
     for (const summaryType of summaryTypes) {
       const path = GARMIN_BACKFILL_PATH[summaryType];
-      // Per-type clamp: `activities` is capped at Garmin's 30-day Activity
-      // max; everything else keeps the requested (<=90 day) window.
-      const typeStartSec = summaryType === 'activities'
+      // Per-type clamp: activity-scoped types are capped at Garmin's 30-day
+      // Activity max; everything else keeps the requested (<=90 day) window.
+      const typeStartSec = ACTIVITY_SCOPED_TYPES.has(summaryType)
         ? endSec - Math.min(windowDays, MAX_ACTIVITY_WINDOW_DAYS) * 86400
         : startSec;
       const url =
