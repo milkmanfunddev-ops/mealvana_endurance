@@ -345,6 +345,16 @@ export function ticketDocument(feature, file, text, idPrefix = '') {
   return { id: `${feature}-${num}`, feature, number: num, title, status: statusLine, state, owed, blockedBy: blockedLine, next: nextLine, model: ticketModel(line('Model')), cites, file, order: parseInt(num, 10) || 0, body: text.slice(0, TICKET_BODY_CAP) };
 }
 
+/**
+ * A repo document the page shows whole under Reference and in-page Claude reads with its
+ * `read_reference` tool (Lee, 2026-09-23: Xuan's RevenueCat spec). Titled by its first `# `
+ * heading unless one is given; `source` is the repo path it was read from.
+ */
+export function referenceDocument(file, text, { id, title, summary = '' }) {
+  const heading = (text.match(/^# (.+)$/m) || [])[1];
+  return { id, title: title || (heading ? heading.trim() : file.split('/').pop().replace(/\.md$/, '')), summary, source: file, body: text, updatedAt: new Date().toISOString() };
+}
+
 /** The ticket files of a feature (`NN-<slug>.md`), sorted, as `<dir>/<file>` paths; an absent dir is empty. */
 export const ticketFiles = (root, dir) => existsSync(under(root, dir)) ? readdirSync(under(root, dir)).filter(x => /^\d+-.*\.md$/.test(x)).sort().map(f => `${dir}/${f}`) : [];
 
@@ -1305,6 +1315,14 @@ if (process.argv[1] && import.meta.url.endsWith(process.argv[1].split('/').pop()
     const [feature, dir] = args;
     const docs = ticketFiles(process.cwd(), dir).map(f => ticketDocument(feature, f, readFileSync(f, 'utf8')));
     process.stdout.write(JSON.stringify(docs, null, 2));
+  } else if (cmd === 'reference') {
+    // reference <doc.md> --id <id> [--title <t>] [--summary <s>] --out <file.json>: one `refs` document
+    const [pos, opts] = flags(args);
+    if (!pos[0] || !opts.id || opts.id === true) { console.error('usage: reference <doc.md> --id <id> [--title <t>] [--summary <s>] [--out <file.json>]'); process.exit(2); }
+    const str = v => v && v !== true ? String(v) : '';
+    const doc = referenceDocument(pos[0], readFileSync(pos[0], 'utf8'), { id: String(opts.id), title: str(opts.title), summary: str(opts.summary) });
+    if (str(opts.out)) { writeFileSync(opts.out, JSON.stringify(doc, null, 2)); console.log(JSON.stringify({ op: 'set', collection: 'refs', doc_id: doc.id, file_path: resolve(opts.out) })); }
+    else process.stdout.write(JSON.stringify(doc, null, 2));
   } else if (cmd === 'triage') {
     // triage <verdicts.json> --out <dir>: clear.json for apply, words.json for the terminal.
     const [vf, flag, dir] = args;

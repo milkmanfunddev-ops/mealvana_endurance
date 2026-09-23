@@ -142,6 +142,19 @@
   .work .t .cites button, .work .d-row button { font-size: 12px; padding: 1px 8px; border-radius: 999px; }
   .work .d-row { padding: 8px 0; border-bottom: 1px solid var(--line); max-width: 80ch; display: flex; gap: 10px; align-items: baseline; flex-wrap: wrap; }
   .work .lead { color: var(--ink-2); max-width: 70ch; margin: 0 0 6px; }
+  .refdoc { max-width: 72ch; }
+  .refdoc h1, .refdoc h2, .refdoc h3, .refdoc h4 { margin: 28px 0 8px; }
+  .refdoc h1 { font-size: 26px; } .refdoc h2 { font-size: 21px; } .refdoc h3 { font-size: 18px; } .refdoc h4 { font-size: 16px; }
+  .refdoc p { margin: 8px 0; }
+  .refdoc ul, .refdoc ol { margin: 8px 0; padding-left: 24px; }
+  .refdoc li { margin: 4px 0; }
+  .refdoc code { font: 14px/1.4 ui-monospace, SFMono-Regular, Menlo, monospace; background: var(--ground-2); border-radius: 4px; padding: 1px 5px; }
+  .refdoc hr { border: 0; border-top: 1px solid var(--line); margin: 24px 0; }
+  .refdoc .tablewrap { overflow-x: auto; margin: 12px 0; }
+  .refdoc table { border-collapse: collapse; font-size: 14px; min-width: 100%; }
+  .refdoc th, .refdoc td { border: 1px solid var(--line); padding: 6px 10px; text-align: left; vertical-align: top; }
+  .refdoc th { background: var(--ground-2); font-weight: 600; }
+  .refdoc td { font-variant-numeric: tabular-nums; }
   .empty { color: var(--muted); padding: 60px 0; text-align: center; }
   .pager { display: flex; justify-content: space-between; gap: 12px; margin-top: 28px; flex-wrap: wrap; }
   .pager button { padding: 10px 16px; }
@@ -211,7 +224,7 @@
 (() => {
   const $ = (s, r = document) => r.querySelector(s);
   const esc = s => String(s ?? '').replace(/[&<>"']/g, c => ({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));
-  const state = { decisions: new Map(), verdicts: new Map(), chats: new Map(), tickets: new Map(), meta: {}, q: '', feat: '', pendingOnly: false, cat: '', db: null, sample: null, artifact: null, open: new Set(), inflight: new Map(), changes: new Map(), vocab: new Map(), termRe: null, sending: null, sentFlash: null, lastSent: null, toolsOk: false };
+  const state = { decisions: new Map(), verdicts: new Map(), chats: new Map(), tickets: new Map(), refs: new Map(), meta: {}, q: '', feat: '', pendingOnly: false, cat: '', db: null, sample: null, artifact: null, open: new Set(), inflight: new Map(), changes: new Map(), vocab: new Map(), termRe: null, sending: null, sentFlash: null, lastSent: null, toolsOk: false };
   const featName = f => (state.meta.featureNames && state.meta.featureNames[f]) || f;
   const catKey = d => d.feature + '|' + d.category;
   const chatDocId = id => id.replace(/[^A-Za-z0-9_\-.~:@+]/g, '_').slice(0, 180);
@@ -461,6 +474,50 @@
     return html + '</div>';
   }
 
+  // The reference documents are repo Markdown. Everything is escaped first, then a small set of
+  // block and inline forms is rebuilt, so nothing from the database reaches the page as raw HTML.
+  function inlineMd(t) {
+    return esc(t).replace(/`([^`]+)`/g, '<code>$1</code>').replace(/\*\*([^*]+)\*\*/g, '<b>$1</b>').replace(/(^|[^*])\*([^*\s][^*]*)\*/g, '$1<i>$2</i>');
+  }
+  function mdHtml(text) {
+    const lines = String(text || '').replace(/\r/g, '').split('\n'); const out = []; let i = 0;
+    const cells = l => l.trim().replace(/^\||\|$/g, '').split('|').map(c => c.trim());
+    while (i < lines.length) {
+      const l = lines[i];
+      if (!l.trim()) { i++; continue; }
+      let m;
+      if ((m = l.match(/^(#{1,4})\s+(.*)$/))) { const n = m[1].length; out.push(`<h${n}>${inlineMd(m[2])}</h${n}>`); i++; continue; }
+      if (/^\s*(-{3,}|\*{3,})\s*$/.test(l)) { out.push('<hr>'); i++; continue; }
+      if (/^\s*\|/.test(l) && i + 1 < lines.length && /^\s*\|?\s*:?-{2,}/.test(lines[i + 1])) {
+        const head = cells(l); i += 2; const rows = [];
+        while (i < lines.length && /^\s*\|/.test(lines[i])) rows.push(cells(lines[i++]));
+        out.push(`<div class="tablewrap"><table><thead><tr>${head.map(c => `<th>${inlineMd(c)}</th>`).join('')}</tr></thead><tbody>${rows.map(r => `<tr>${r.map(c => `<td>${inlineMd(c)}</td>`).join('')}</tr>`).join('')}</tbody></table></div>`);
+        continue;
+      }
+      if (/^\s*([-*]|\d+\.)\s+/.test(l)) {
+        const ordered = /^\s*\d+\./.test(l); const items = [];
+        while (i < lines.length && lines[i].trim() && !/^#{1,4}\s/.test(lines[i]) && !/^\s*\|/.test(lines[i])) {
+          if (/^\s*([-*]|\d+\.)\s+/.test(lines[i])) items.push(lines[i].replace(/^\s*([-*]|\d+\.)\s+/, ''));
+          else items[items.length - 1] += ' ' + lines[i].trim();
+          i++;
+        }
+        const tag = ordered ? 'ol' : 'ul'; out.push(`<${tag}>${items.map(x => `<li>${inlineMd(x)}</li>`).join('')}</${tag}>`);
+        continue;
+      }
+      const para = [];
+      while (i < lines.length && lines[i].trim() && !/^(#{1,4}\s|\s*\||\s*([-*]|\d+\.)\s+)/.test(lines[i])) para.push(lines[i++].trim());
+      out.push(`<p>${inlineMd(para.join(' '))}</p>`);
+    }
+    return out.join('');
+  }
+  const refsSorted = () => [...state.refs.values()].sort((a, b) => (a.title || '').localeCompare(b.title || ''));
+  function refPage(id) {
+    const r = state.refs.get(id);
+    if (!r) return '<div class="empty">This reference is not on the page yet.</div>';
+    const when = ago(r.updatedAt);
+    return `<div class="cat-head"><div class="fname">Reference</div><h2>${esc(r.title)}</h2><div class="tools"><span class="hint">${esc(r.source || '')}${when ? ` · copied to the page ${when}` : ''}. In-page Claude can read it when you ask on a card.</span></div></div><div class="refdoc">${mdHtml(r.body)}</div>`;
+  }
+
   function render() {
     const main = $('#main'), nav = $('#navlist'), featSel = $('#feat');
     const all = sorted();
@@ -468,7 +525,7 @@
     if (featSel.options.length !== feats.length + 1) { featSel.innerHTML = '<option value="">All features</option>' + feats.map(f => `<option value="${esc(f)}">${esc(featName(f))}</option>`).join(''); featSel.value = state.feat; }
     const gs = groups();
     if (!gs.length) { nav.innerHTML = '<div class="hint">No decisions loaded yet.</div>'; main.innerHTML = '<div class="empty">Loading.</div>'; return; }
-    if (state.cat !== 'vocab' && state.cat !== 'work' && !gs.some(g => g.key === state.cat)) state.cat = (gs.find(g => g.pend) || gs[0]).key;
+    if (state.cat !== 'vocab' && state.cat !== 'work' && !(state.cat.startsWith('ref:') && state.refs.has(state.cat.slice(4))) && !gs.some(g => g.key === state.cat)) state.cat = (gs.find(g => g.pend) || gs[0]).key;
     let navHtml = '', lastF = null;
     for (const g of gs) {
       if (g.feature !== lastF) { navHtml += `${lastF !== null ? '</div>' : ''}<div class="feat"><div class="fname">${esc(featName(g.feature))}</div>`; lastF = g.feature; }
@@ -477,8 +534,10 @@
     }
     const ticketed = new Set([...state.tickets.values()].flatMap(t => t.cites || []));
     const workPend = all.filter(d => d.work === 'pending' && !GONE.includes(eff(d).status) && !ticketed.has(d.id)).length;
-    nav.innerHTML = navHtml + '</div>' + `<div class="feat"><button class="cat ${state.cat === 'work' ? 'active' : ''}" data-goto="work"><span>Work</span><span class="n ${workPend ? 'pend' : ''}">${workPend ? workPend + ' / ' : ''}${state.tickets.size}</span></button><button class="cat ${state.cat === 'vocab' ? 'active' : ''}" data-goto="vocab"><span>Vocabulary</span><span class="n">${state.vocab.size}</span></button></div>`;
-    if (state.cat === 'vocab') {
+    nav.innerHTML = navHtml + '</div>' + `<div class="feat"><button class="cat ${state.cat === 'work' ? 'active' : ''}" data-goto="work"><span>Work</span><span class="n ${workPend ? 'pend' : ''}">${workPend ? workPend + ' / ' : ''}${state.tickets.size}</span></button><button class="cat ${state.cat === 'vocab' ? 'active' : ''}" data-goto="vocab"><span>Vocabulary</span><span class="n">${state.vocab.size}</span></button></div>` + (state.refs.size ? `<div class="feat"><div class="fname">Reference</div>${refsSorted().map(r => `<button class="cat ${state.cat === 'ref:' + r.id ? 'active' : ''}" data-goto="ref:${esc(r.id)}"><span>${esc(r.title)}</span></button>`).join('')}</div>` : '');
+    if (state.cat.startsWith('ref:')) {
+      main.innerHTML = refPage(state.cat.slice(4));
+    } else if (state.cat === 'vocab') {
       main.innerHTML = vocabPage();
     } else if (state.cat === 'work') {
       main.innerHTML = workPage(state.feat);
@@ -546,9 +605,12 @@
       { name: 'read_decision', description: 'Returns the full text of one decision card by id, for example mp-317: title, status, plain words, context, question, decision, why, alternatives, what it touches, details.', inputSchema: { type: 'object', properties: { id: { type: 'string' } }, required: ['id'] }, execute: ({ id }) => { const x = state.decisions.get(str(id)); if (!x) throw new Error('no decision ' + str(id)); return cardText(x); } },
       { name: 'find_decisions', description: 'Searches every decision card for all the given words and returns up to 12 matches as id, title, status and the start of the decision. Use it to find where a term or behaviour is decided.', inputSchema: { type: 'object', properties: { words: { type: 'string' } }, required: ['words'] }, execute: ({ words }) => { const ws = str(words).toLowerCase().split(/\s+/).filter(Boolean); if (!ws.length) throw new Error('no words'); return sorted().filter(x => { const hay = [x.id, x.title, x.context, x.decision, x.why, x.touches].join(' ').toLowerCase(); return ws.every(w => hay.includes(w)); }).slice(0, 12).map(x => `${x.id} · ${x.title} [${eff(x).status}]: ${x.decision.slice(0, 160)}`).join('\n') || 'nothing matches'; } },
       { name: 'read_ticket', description: 'Returns one work ticket by feature slug and number, for example paywall 01: what was built, its status and its acceptance criteria.', inputSchema: { type: 'object', properties: { feature: { type: 'string' }, number: { type: 'string' } }, required: ['number'] }, execute: ({ feature, number }) => { const n = str(number).padStart(2, '0'); const t = [...state.tickets.values()].find(x => x.number === n && (!str(feature) || x.feature === str(feature))); if (!t) throw new Error('no ticket ' + n); return `${t.feature} ${t.number} · ${t.title} (${t.status})\n${t.body || ''}`; } },
+      { name: 'read_reference', description: 'Returns a reference document the decisions were built from, in full, as Markdown. With no id it lists the documents. ' + (state.refs.size ? 'Available: ' + refsSorted().map(r => `${r.id} (${r.title}${r.summary ? ': ' + r.summary : ''})`).join('; ') + '.' : 'None are loaded.'), inputSchema: { type: 'object', properties: { id: { type: 'string' } } }, execute: ({ id }) => { if (!str(id)) return refsSorted().map(r => `${r.id} · ${r.title}${r.summary ? ': ' + r.summary : ''}`).join('\n') || 'No reference documents.'; const r = state.refs.get(str(id)); if (!r) throw new Error('no reference ' + str(id)); return `${r.title} (${r.source})\n\n${String(r.body || '').slice(0, 40000)}`; } },
       { name: 'read_term', description: 'Returns the glossary definition of a term, or says it has none.', inputSchema: { type: 'object', properties: { term: { type: 'string' } }, required: ['term'] }, execute: ({ term }) => { const t = str(term).toLowerCase(); const v = [...state.vocab.values()].find(x => x.term.toLowerCase() === t); return v ? `${v.term} (${v.area}): ${v.definition}${v.avoid ? ' Avoid: ' + v.avoid : ''}` : `No glossary entry for "${str(term)}".`; } },
     ];
   }
+  // Named in every Ask prompt so the model knows a document exists before deciding to read it.
+  const refsLine = () => state.refs.size ? `\n\nREFERENCE DOCUMENTS the decisions were built from${state.toolsOk ? ' (read one in full with the read_reference tool when a question touches it)' : ''}:\n${refsSorted().map(r => `- ${r.id}: ${r.title}${r.summary ? '. ' + r.summary : ''}`).join('\n')}` : '';
   function rulesFor(d, g) {
     const problem = ((state.meta.specs && state.meta.specs[d ? d.feature : g.feature]) || '').slice(0, 4000);
     if (d) {
@@ -556,10 +618,10 @@
       const refs = refsOf(d).map(cardText).join('\n\n');
       const glossary = termsUsed(d);
       const tickets = ticketsCiting(d.id);
-      return `You are explaining one product decision from the Mealvana Endurance app to Lee, the product owner, who is building it and needs to understand it well enough to build it and to judge it. Answer in plain words, short sentences, no em-dashes, no hedging, no bullet lists unless he asks for options. Define every term of art the first time you use it, with a concrete example when one helps. When a term is defined nowhere in the material, say so plainly instead of guessing. Keep answers under 250 words unless he asks for more. Do not invent facts beyond the material below and what the tools return.${state.toolsOk ? ' Use the tools to read a card, ticket or term the material names when the answer depends on it.' : ''} When Lee says what should change, agree the wording with him in the thread; the page turns the thread into record changes when he presses the draft button.\n\nFEATURE PROBLEM STATEMENT:\n${problem}\n\nTHE DECISION (${d.id}, category ${d.category}, status ${eff(d).status}):\n${cardText(d)}\n${glossary ? `\nGLOSSARY TERMS THIS CARD USES:\n${glossary}\n` : ''}${refs ? `\nCARDS THIS DECISION NAMES, IN FULL:\n${refs}\n` : ''}${tickets ? `\nTICKETS THAT BUILT OR CITE IT:\n${tickets}\n` : ''}\nSIBLING DECISIONS IN THE SAME CATEGORY, ONE LINE EACH:\n${sib}`.slice(0, 60000);
+      return `You are explaining one product decision from the Mealvana Endurance app to Lee, the product owner, who is building it and needs to understand it well enough to build it and to judge it. Answer in plain words, short sentences, no em-dashes, no hedging, no bullet lists unless he asks for options. Define every term of art the first time you use it, with a concrete example when one helps. When a term is defined nowhere in the material, say so plainly instead of guessing. Keep answers under 250 words unless he asks for more. Do not invent facts beyond the material below and what the tools return.${state.toolsOk ? ' Use the tools to read a card, ticket or term the material names when the answer depends on it.' : ''} When Lee says what should change, agree the wording with him in the thread; the page turns the thread into record changes when he presses the draft button.${refsLine()}\n\nFEATURE PROBLEM STATEMENT:\n${problem}\n\nTHE DECISION (${d.id}, category ${d.category}, status ${eff(d).status}):\n${cardText(d)}\n${glossary ? `\nGLOSSARY TERMS THIS CARD USES:\n${glossary}\n` : ''}${refs ? `\nCARDS THIS DECISION NAMES, IN FULL:\n${refs}\n` : ''}${tickets ? `\nTICKETS THAT BUILT OR CITE IT:\n${tickets}\n` : ''}\nSIBLING DECISIONS IN THE SAME CATEGORY, ONE LINE EACH:\n${sib}`.slice(0, 60000);
     }
     const list = g.items.map(x => `- ${x.id} ${x.title} [${eff(x).status}]${x.kind === 'question' ? ' (open question: ' + x.question + ')' : ': ' + x.decision}`).join('\n');
-    return `You are discussing one category of product decisions from the Mealvana Endurance app with Lee, the product owner. Answer in plain words, short sentences, no em-dashes, no hedging. Keep answers under 250 words unless he asks for more. Refer to decisions by their id. Do not invent facts beyond the material below. If the material does not say, say so.\n\nFEATURE PROBLEM STATEMENT:\n${problem}\n\nCATEGORY: ${g.category}\nDECISIONS:\n${list}`;
+    return `You are discussing one category of product decisions from the Mealvana Endurance app with Lee, the product owner. Answer in plain words, short sentences, no em-dashes, no hedging. Keep answers under 250 words unless he asks for more. Refer to decisions by their id. Do not invent facts beyond the material below. If the material does not say, say so.${state.toolsOk ? ' Use the tools to read a card, ticket, term or reference document when the answer depends on it.' : ''}${refsLine()}\n\nFEATURE PROBLEM STATEMENT:\n${problem}\n\nCATEGORY: ${g.category}\nDECISIONS:\n${list}`;
   }
 
   async function ask(id, question, d, g) {
@@ -774,6 +836,7 @@
     db.collection('decisions').onSnapshot(s => { state.decisions = new Map(s.docs.map(x => [x.id, { id: x.id, ...x.data() }])); render(); }, e => { $('#status').textContent = 'Lost the decisions stream: ' + e.code; });
     db.collection('vocab').onSnapshot(s => { state.vocab = new Map(s.docs.map(x => [x.id, x.data()])); state.termRe = null; render(); }, () => {});
     db.collection('tickets').onSnapshot(s => { state.tickets = new Map(s.docs.map(x => [x.id, { id: x.id, ...x.data() }])); render(); }, () => {});
+    db.collection('refs').onSnapshot(s => { state.refs = new Map(s.docs.map(x => [x.id, { id: x.id, ...x.data() }])); render(); }, () => {});
     db.collection('verdicts').onSnapshot(s => { state.verdicts = new Map(s.docs.map(x => [x.id, x.data()])); render(); }, () => {});
     db.collection('chats').onSnapshot(s => { const next = new Map(s.docs.map(x => { const d = x.data(); return [d.key || x.id, d]; })); for (const id of state.inflight.keys()) if (state.chats.has(id)) next.set(id, state.chats.get(id)); state.chats = next; render(); }, () => {});
   })();

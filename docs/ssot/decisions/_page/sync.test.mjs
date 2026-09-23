@@ -9,7 +9,7 @@ import { mkdtempSync, writeFileSync, readFileSync, existsSync, readdirSync, rmSy
 import { tmpdir } from 'node:os';
 import { join, dirname, basename } from 'node:path';
 import { fileURLToPath } from 'node:url';
-import { glossary, unclear, addTerms, rewriteApply, detachImage, foldRuled, foldedAliases, parse, serialize, apply, answers, openQuestions, answeredLinks, specCitations, questionFirst, fold, clauses, toDocuments, ticketDocument, triage, nextId, assetId, staleImages, recordAsset, pendingIn, ticketPlan, publishTickets, svgCheck, undrawn, attachSvg, uncaptured, attachImage, readSidecar, changedSince, captureStatus, stalePictures, refreshPictures, dropAsset, ticketFrontier, designRenderings, touchedScreens, setTicketStatus, wavePlan, waveOpen, waveClose, elapsed } from './sync.mjs';
+import { referenceDocument, glossary, unclear, addTerms, rewriteApply, detachImage, foldRuled, foldedAliases, parse, serialize, apply, answers, openQuestions, answeredLinks, specCitations, questionFirst, fold, clauses, toDocuments, ticketDocument, triage, nextId, assetId, staleImages, recordAsset, pendingIn, ticketPlan, publishTickets, svgCheck, undrawn, attachSvg, uncaptured, attachImage, readSidecar, changedSince, captureStatus, stalePictures, refreshPictures, dropAsset, ticketFrontier, designRenderings, touchedScreens, setTicketStatus, wavePlan, waveOpen, waveClose, elapsed } from './sync.mjs';
 import { matchScreen, findElement, runDrive, capture, sidecar, loadScreens, runtimeName, bootedUdid, createSimulator, deleteSimulator, listSimulators, claimSimulator, releaseSimulator } from './capture.mjs';
 import { draw, TOKENS, titleLines } from './diagram.mjs';
 
@@ -1584,4 +1584,16 @@ test('foldRuled leaves a picture slot empty when the plan says none', () => {
   assert.equal(d.meta.caption, '');
   assert.equal(d.meta.svg, 'images/sm-001.svg');
   assert.equal(d.meta.svg2, undefined);
+});
+
+test('referenceDocument carries a repo document to the page whole, titled by its first heading', () => {
+  const text = '# RevenueCat Implementation Spec — for Lee\n\n*2026-09-07.*\n\n## 1. Products\n\n| id | price |\n|---|---|\n| me_pro_annual | $99.99 |\n';
+  const r = referenceDocument('docs/revenuecat-spec-for-lee.md', text, { id: 'revenuecat-spec', summary: "Xuan's RevenueCat spec" });
+  assert.equal(r.id, 'revenuecat-spec');
+  assert.equal(r.title, 'RevenueCat Implementation Spec — for Lee');
+  assert.equal(r.source, 'docs/revenuecat-spec-for-lee.md');
+  assert.equal(r.summary, "Xuan's RevenueCat spec");
+  assert.equal(r.body, text);
+  assert.equal(referenceDocument('docs/x.md', 'no heading', { id: 'x', title: 'Given' }).title, 'Given');
+  assert.equal(referenceDocument('docs/plain-notes.md', 'no heading', { id: 'x' }).title, 'plain-notes');
 });

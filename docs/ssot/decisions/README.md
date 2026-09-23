@@ -304,8 +304,8 @@ and Rewrite. Everything else (status, id, source, context, why, what else was co
 touches, details, the amend box) is under More, so a reader meets one idea per card (Lee,
 2026-09-22). Every card's Ask thread runs on the default model tier (not the quick one) and reads
 the card in full, the cards it names in full, the glossary terms it uses, the tickets that cite
-it and one line per sibling; it also gets four page tools (read a card, search the cards, read a
-ticket, look up a term) where the viewer's plan allows tools. "Draft the rewrite from this
+it and one line per sibling; it also gets five page tools (read a card, search the cards, read a
+ticket, look up a term, read a reference document) where the viewer's plan allows tools. "Draft the rewrite from this
 conversation" turns the thread into change cards (edit this card, edit or remove another, add
 one), each with the record's parts. A change card the ratifier accepts shows on its card at once
 as "Rewrite accepted on the page", counts as queued, and is written to the record by the next
@@ -313,6 +313,17 @@ prologue run (`sync.mjs apply` handles `change` verdicts; `about` names the card
 on). The page never writes the repo; the terminal does, on the next `/ssot` or -lee run.
 `sync.mjs unclear <files> --glossary CONTEXT.md` lists the backticked terms on card faces that
 no glossary entry defines.
+
+## Reference
+
+The page's Reference entries show repo documents the decisions were built from, whole, so the
+ratifier can read them there: today Xuan's RevenueCat spec (`docs/revenuecat-spec-for-lee.md`,
+id `revenuecat-spec`, Lee 2026-09-23). Each is one document in the `refs` collection,
+`{id, title, summary, source, body, updatedAt}`, built by `sync.mjs reference` and written with
+`write_db`; re-run both when the file changes. Every Ask prompt names the reference documents,
+and in-page Claude reads one in full with its fifth tool, `read_reference`, when a question
+touches it. The page renders the Markdown itself (headings, lists, tables, bold, italic, code)
+from escaped text, so nothing in the collection reaches the page as raw HTML.
 
 ## Work page
 
@@ -370,7 +381,7 @@ backticked terms on card faces), `rewriteApply` (a plain-words rewrite pass), `a
 `answeredLinks` (decisions that answered a question), `specCitations` (what a spec's decision
 sections cite), `pendingIn` (the pending cards of one category), `ticketPlan` (ticket cards with
 their blocking edges), `publishTickets` (approved ticket cards to files), `fold`, `clauses` and
-`ticketDocument`, `svgCheck`, `checkedSvg`, `undrawn`, `attachSvg`, `uncaptured`, `attachImage`, `readSidecar`, `changedSince`, `imageOrigin`, `captureStatus`, `stalePictures`, `refreshPictures` (with `only` for the screens a wave touched), `ticketFrontier`, `designRenderings`, `touchedScreens`, `setTicketStatus`, `wavePlan`, `waveOpen`, `waveClose`, `elapsed`, `dropAsset` and `unreferencedAssets`; `_page/diagram.mjs` exports `draw` and the token list; `_page/capture.mjs` exports `loadScreens`, `matchScreen`, `findElement`, `runDrive`, `capture`, `sidecar`, `simulatorIo`, `bootedUdid`, `createSimulator`, `deleteSimulator`, `listSimulators`, `claimSimulator`, `releaseSimulator`, `simulatorClaims`, `stamp` and `doctor`. Tests: `node --test docs/ssot/decisions/_page/sync.test.mjs`;
+`ticketDocument`, `referenceDocument`, `svgCheck`, `checkedSvg`, `undrawn`, `attachSvg`, `uncaptured`, `attachImage`, `readSidecar`, `changedSince`, `imageOrigin`, `captureStatus`, `stalePictures`, `refreshPictures` (with `only` for the screens a wave touched), `ticketFrontier`, `designRenderings`, `touchedScreens`, `setTicketStatus`, `wavePlan`, `waveOpen`, `waveClose`, `elapsed`, `dropAsset` and `unreferencedAssets`; `_page/diagram.mjs` exports `draw` and the token list; `_page/capture.mjs` exports `loadScreens`, `matchScreen`, `findElement`, `runDrive`, `capture`, `sidecar`, `simulatorIo`, `bootedUdid`, `createSimulator`, `deleteSimulator`, `listSimulators`, `claimSimulator`, `releaseSimulator`, `simulatorClaims`, `stamp` and `doctor`. Tests: `node --test docs/ssot/decisions/_page/sync.test.mjs`;
 every case feeds a markdown fixture, a spec or an svg string and checks what comes out, never
 how the parser walks lines; one case round-trips the real mealplanning record and proposals. CLI:
 
@@ -387,6 +398,7 @@ node docs/ssot/decisions/_page/sync.mjs publish-tickets <feature> <proposals.md>
 node docs/ssot/decisions/_page/sync.mjs question-first <decisions.md>...   # lift "The question was X." into Question
 node docs/ssot/decisions/_page/sync.mjs fold <plan.json> <proposals.md> <ssot.md>   # combine proposals per the plan
 node docs/ssot/decisions/_page/sync.mjs tickets <feature> <issues dir>   # ticket documents as JSON
+node docs/ssot/decisions/_page/sync.mjs reference <doc.md> --id <id> [--title <t>] [--summary <s>] [--out <file.json>]   # one `refs` document for the page's Reference section; with --out prints the write_db entry
 node docs/ssot/decisions/_page/sync.mjs prepare <decisions.md>... --assets <assets.json> --tickets <feature>=<dir> --out <dir>
 node docs/ssot/decisions/_page/sync.mjs triage <verdicts.json> --out <dir>   # clear.json to apply now, words.json to synthesise first, rewrites.json to apply after the yes
 node docs/ssot/decisions/_page/sync.mjs next-id <proposals.md> <ssot.md>     # the next free id across both files
