@@ -1,7 +1,7 @@
 /**
  * The daily cost alert reports and refuses nothing (ai-cost ticket 05, mp-470 criterion 4).
  *
- * The SQL side (`vana_daily_cost_offenders`, `vana_daily_cost_alert`) is read-only by construction and is verified on
+ * The SQL side (the `vana_calls_cost_alert` trigger and `vana_cost_crossed`) never fails the write it rides on and is verified on
  * dev — see the ticket. This covers the edge function's one decision: which Sentry events an alert body raises, and
  * how they are fingerprinted, so a week of the same athlete running hot is a week of issues and not one issue with
  * seven events.

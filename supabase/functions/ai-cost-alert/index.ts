@@ -1,8 +1,9 @@
 /**
  * ai-cost-alert — the Sentry leg of the daily AI cost check (ai-cost ticket 05, mp-420 clause 6).
  *
- * Called by the database itself: the pg_cron job `ai-cost-daily-alert` runs `public.vana_daily_cost_alert()`, which
- * posts here via pg_net ONLY when an account's logged gateway charge for the day is over the threshold ($1.50).
+ * Called by the database itself: the trigger `vana_calls_cost_alert` posts here via pg_net the moment an account's
+ * logged gateway charge for the UTC day passes the threshold ($1.50), once per account per day (mp-523 option b; the
+ * daily cron it replaced was rejected).
  * This function reports and nothing else — it refuses no call, touches no wallet and writes no row. The refusing is
  * the monthly budget's job (mp-430); this exists so Lee hears it the same day instead of from an invoice.
  *

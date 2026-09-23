@@ -90,12 +90,17 @@ has an `input_mode`, and that is the only population where tapping instead of ty
 
 ## The daily check
 
-`cron.job 'ai-cost-daily-alert'`, 06:23 UTC, runs `public.vana_daily_cost_alert()` for yesterday.
-Any account whose logged charge crossed $1.50 is posted to the `ai-cost-alert` edge function via
-pg_net, which raises one Sentry event per account, fingerprinted on the account and the day.
+No scheduled job (mp-523 rejected 2026-09-23, "minimize cron jobs"; migration
+`20260923160000_ai_cost_alert_on_charge.sql`). The trigger `vana_calls_cost_alert` fires when a row's
+`gateway_cost_usd` is written, by `logCall`'s insert or `completeCall`'s update. It sums that account's
+charge for the row's UTC day, and when this row is the one that takes the day past $1.50
+(`public.vana_cost_crossed(before, after)`) it posts the account to the `ai-cost-alert` edge function
+via pg_net, which raises one Sentry event fingerprinted on the account and the day. One report per
+account per day, sent the moment it happens. Two charges committing at the same instant can each miss
+the other, so a crossing may be reported by the next charge that day instead.
 
-It only reads. There is no branch in it that can stop a call and no caller of it on any request
-path — the refusing is the monthly budget's job (mp-430, ticket 09). Threshold and day are
+It only reports. It cannot fail or stop the write it rides on (errors become a NOTICE), and it never
+refuses a call — the refusing is the monthly budget's job (mp-430, ticket 09). Threshold and day are
 parameters, so `select * from public.vana_daily_cost_offenders('2026-10-04'::date, 1.50);` answers
 the same question by hand.
 
