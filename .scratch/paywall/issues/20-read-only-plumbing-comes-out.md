@@ -1,6 +1,6 @@
 # 20: Read-only plumbing comes out
 
-**Status:** ready-for-agent
+**Status:** in-progress (wave 8, 2026-09-23)
 **Blocked by:** 08 (touches lib/features/settings/presentation/providers/settings_controller.dart), 12 (touches lib/features/formula_kit/application/formula_editor_controller.dart), 14 (touches lib/shared/widgets/kyle_design/kyle_design.dart), 15 (touches lib/shared/widgets/kyle_design/kyle_design.dart), 19.
 **Next:** `/implement-lee paywall`
 **Model:** opus
