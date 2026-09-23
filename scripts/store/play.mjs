@@ -1,20 +1,24 @@
 #!/usr/bin/env node
 /**
- * Google Play: list the DEV package's subscriptions and add the seven-day free
- * introductory offer to each base plan (mp-279: same product ids, an offer on
- * the existing base plans).
+ * Google Play: list the Mealvana Pro subscriptions, create the four me_pro_*
+ * products (mp-452) and add the seven-day free introductory offer.
  *
  * Usage (no dependencies, Node 18+):
- *   node scripts/store/play.mjs list                 # read-only: subscriptions, base plans, offers
- *   node scripts/store/play.mjs add-trial            # creates + activates offer `free-week` on every base plan lacking a free phase
- *   node scripts/store/play.mjs add-trial --dry-run
- *   node scripts/store/play.mjs show <productId>     # read-only: raw subscription JSON
- *   node scripts/store/play.mjs create-products [--dry-run]
+ *   node scripts/store/play.mjs list [--prod]                  # read-only: subscriptions, base plans, offers
+ *   node scripts/store/play.mjs add-trial [--prod] [--dry-run]
+ *        creates + activates offer `free-week` on every base plan lacking a free phase
+ *        (with --prod: only the four PRODUCTS below, never the retired mealvana_pro_*)
+ *   node scripts/store/play.mjs show <productId> [--prod]      # read-only: raw subscription JSON
+ *   node scripts/store/play.mjs create-products [--prod] [--dry-run]
  *        creates the PRODUCTS table below (subscription + base plan + free-week offer),
  *        activates each, skips whatever already exists
  *
+ * Targets: the DEV package by default. `--prod` is the only way to reach the PROD
+ * package (com.milkman.mealvanaendurance): it sells the same product ids ending
+ * `_prod` (mp-452). Nothing here submits for review.
+ *
  * Env:
- *   PLAY_PACKAGE     defaults to com.milkman.mealvanaendurance.dev — the prod package is refused.
+ *   PLAY_PACKAGE     defaults to com.milkman.mealvanaendurance.dev — without --prod the prod package is refused.
  *   PLAY_SA_FILE     service-account JSON (default secrets/google/mealvanaendurance-61d62e739439.json in the main clone)
  */
 import { createSign, createPrivateKey } from 'node:crypto';
@@ -26,11 +30,19 @@ const DEV_PACKAGE = 'com.milkman.mealvanaendurance.dev';
 const OFFER_ID = 'free-week';
 const REGIONS_VERSION = '2022/02';
 
-const pkg = process.env.PLAY_PACKAGE ?? DEV_PACKAGE;
-if (pkg === PROD_PACKAGE) {
-  console.error(`refusing to touch the PROD package (${PROD_PACKAGE}); intro offers on prod are a release-day act`);
+const argv = process.argv.slice(2);
+const PROD = argv.includes('--prod');
+if (PROD && process.env.PLAY_PACKAGE && process.env.PLAY_PACKAGE !== PROD_PACKAGE) {
+  console.error(`--prod targets ${PROD_PACKAGE}; PLAY_PACKAGE=${process.env.PLAY_PACKAGE} contradicts it`);
   process.exit(2);
 }
+const pkg = PROD ? PROD_PACKAGE : process.env.PLAY_PACKAGE ?? DEV_PACKAGE;
+if (!PROD && pkg === PROD_PACKAGE) {
+  console.error(`refusing to touch the PROD package (${PROD_PACKAGE}) without --prod`);
+  process.exit(2);
+}
+/** Prod product ids carry the `_prod` suffix (mp-452). */
+const SUFFIX = PROD ? '_prod' : '';
 const saFile = process.env.PLAY_SA_FILE ?? firstExisting([
   resolve('secrets/google/mealvanaendurance-61d62e739439.json'),
   resolve(process.env.HOME ?? '', 'development/mealvana_endurance/secrets/google/mealvanaendurance-61d62e739439.json'),
@@ -208,7 +220,7 @@ const PRODUCTS = [
   { productId: 'me_pro_annual', basePlanId: 'annual', period: 'P1Y', usd: '199.99', title: 'Mealvana Pro Annual' },
   { productId: 'me_pro_monthly_founding', basePlanId: 'monthly', period: 'P1M', usd: '12.49', title: 'Founding Monthly' },
   { productId: 'me_pro_annual_founding', basePlanId: 'annual', period: 'P1Y', usd: '99.99', title: 'Founding Annual' },
-];
+].map((p) => ({ ...p, productId: p.productId + SUFFIX }));
 // Copied from mealvana_pro_monthly's listing so the store page reads the same.
 const LISTING = {
   languageCode: 'en-US',
@@ -303,7 +315,9 @@ async function createProducts(dryRun) {
 async function addTrial(dryRun) {
   const cat = await catalogue();
   print(cat);
-  for (const s of cat) {
+  // On prod only the PRODUCTS table: the retired mealvana_pro_* are never sold again (mp-452).
+  const ids = new Set(PRODUCTS.map((p) => p.productId));
+  for (const s of cat.filter((c) => !PROD || ids.has(c.productId))) {
     for (const bp of s.basePlans) {
       if (bp.offers.some(hasFreeWeek)) {
         console.log(`${s.productId}/${bp.basePlanId}: already has a P7D free offer, skipping`);
@@ -316,13 +330,14 @@ async function addTrial(dryRun) {
   print(await catalogue());
 }
 
-const [cmd = 'list', ...flags] = process.argv.slice(2);
+const [cmd = 'list', ...flags] = argv.filter((a) => a !== '--prod');
 try {
+  console.log(`target: ${PROD ? 'PROD' : 'dev'} package ${pkg}`);
   if (cmd === 'list') print(await catalogue());
   else if (cmd === 'show') console.log(JSON.stringify(await api('GET', `/subscriptions/${flags[0]}`), null, 2));
   else if (cmd === 'add-trial') await addTrial(flags.includes('--dry-run'));
   else if (cmd === 'create-products') await createProducts(flags.includes('--dry-run'));
-  else { console.error('usage: play.mjs list | show <productId> | add-trial [--dry-run] | create-products [--dry-run]'); process.exit(2); }
+  else { console.error('usage: play.mjs list | show <productId> | add-trial [--dry-run] | create-products [--dry-run]  (each takes --prod)'); process.exit(2); }
 } catch (e) {
   console.error(e.message ?? e);
   process.exit(1);

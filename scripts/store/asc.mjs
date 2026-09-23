@@ -1,27 +1,28 @@
 #!/usr/bin/env node
 /**
- * App Store Connect: list the DEV app's subscriptions and add the seven-day
- * free introductory offer (mp-279: the existing monthly and annual products
- * get a free-trial intro offer; no new product ids).
+ * App Store Connect: list the Mealvana Pro subscriptions, create the four
+ * me_pro_* products (mp-452) and add the seven-day free introductory offer.
  *
  * Usage (no dependencies, Node 18+):
- *   node scripts/store/asc.mjs list                 # read-only: groups, subscriptions, intro offers
- *   node scripts/store/asc.mjs add-trial            # creates ONE_WEEK FREE_TRIAL on every subscription lacking one
- *   node scripts/store/asc.mjs add-trial --dry-run  # shows what it would create
- *   node scripts/store/asc.mjs create-products [--dry-run]
+ *   node scripts/store/asc.mjs list [--prod]                 # read-only: groups, subscriptions, intro offers
+ *   node scripts/store/asc.mjs add-trial [--prod] [--dry-run]
+ *       creates ONE_WEEK FREE_TRIAL on every subscription lacking one (with --prod:
+ *       only the four PRODUCTS below, never the retired mealvana_pro_*_prod)
+ *   node scripts/store/asc.mjs create-products [--prod] [--dry-run]
  *       creates the PRODUCTS table below in the Mealvana Pro group: subscription,
  *       en-US localization, availability in every territory, the USA price plus
  *       Apple's equalized price in every other territory, then add-trial.
  *       Idempotent: skips whatever already exists, so it can be re-run.
  *
+ * Targets: the DEV app by default. `--prod` is the only way to reach the PROD app
+ * (6751113738, group 22351111): it sells the same product ids ending `_prod`
+ * (mp-452; Apple product ids are team-unique). Nothing here submits for review.
+ *
  * Env (defaults are the dev app):
- *   ASC_APP_ID      App Store Connect app id — refuses the prod app (6751113738).
+ *   ASC_APP_ID      App Store Connect app id — without --prod the prod app (6751113738) is refused.
  *   ASC_KEY_ID      API key id (default 565CMLNU3G)
  *   ASC_ISSUER_ID   issuer id
  *   ASC_KEY_FILE    path to the .p8 (default secrets/apple/AuthKey_Codemagic_<key>.p8 in the main clone)
- *
- * The prod app is refused by id, not by flag: there is no way to point this at
- * 6751113738. Prod intro offers are a release-day act (docs/implement_mealplanning/04-entitlement.md).
  */
 import { createSign, createPrivateKey } from 'node:crypto';
 import { readFileSync, existsSync } from 'node:fs';
@@ -30,7 +31,23 @@ import { resolve } from 'node:path';
 const PROD_APP_ID = '6751113738';
 const DEV_APP_ID = '6756683509';
 
-const PRO_GROUP_ID = '22351029'; // "Mealvana Pro" on the dev app
+const argv = process.argv.slice(2);
+const PROD = argv.includes('--prod');
+
+/** "Mealvana Pro" group on each app; prod ids carry the `_prod` suffix (mp-452). */
+const TARGET = PROD
+  ? { appId: PROD_APP_ID, groupId: '22351111', suffix: '_prod' }
+  : { appId: process.env.ASC_APP_ID ?? DEV_APP_ID, groupId: '22351029', suffix: '' };
+if (PROD && process.env.ASC_APP_ID && process.env.ASC_APP_ID !== PROD_APP_ID) {
+  console.error(`--prod targets ${PROD_APP_ID}; ASC_APP_ID=${process.env.ASC_APP_ID} contradicts it`);
+  process.exit(2);
+}
+if (!PROD && TARGET.appId === PROD_APP_ID) {
+  console.error(`refusing to touch the PROD app (${PROD_APP_ID}) without --prod`);
+  process.exit(2);
+}
+const appId = TARGET.appId;
+const PRO_GROUP_ID = TARGET.groupId;
 
 /** Subscriptions create-products makes (paywall reprice, 2026-09-21). */
 const PRODUCTS = [
@@ -42,13 +59,8 @@ const PRODUCTS = [
     displayName: 'Founding Monthly', description: 'Founding-member price for Mealvana Pro, monthly.' },
   { productId: 'me_pro_annual_founding', name: 'Mealvana Pro Annual Founding', period: 'ONE_YEAR', usaPrice: '99.99',
     displayName: 'Founding Annual', description: 'Founding-member price for Mealvana Pro, yearly.' },
-];
+].map((p) => ({ ...p, productId: p.productId + TARGET.suffix }));
 
-const appId = process.env.ASC_APP_ID ?? DEV_APP_ID;
-if (appId === PROD_APP_ID) {
-  console.error(`refusing to touch the PROD app (${PROD_APP_ID}); intro offers on prod are a release-day act`);
-  process.exit(2);
-}
 const keyId = process.env.ASC_KEY_ID ?? '565CMLNU3G';
 const issuer = process.env.ASC_ISSUER_ID ?? '4ddd5f89-a054-4c06-b65a-ac9ed980786d';
 const keyFile = process.env.ASC_KEY_FILE ?? firstExisting([
@@ -290,7 +302,7 @@ async function territoriesFor(subscriptionId) {
 async function addTrial(dryRun) {
   const cat = await catalogue();
   print(cat);
-  for (const s of cat.groups.flatMap((g) => g.subscriptions)) {
+  for (const s of trialTargets(cat)) {
     // Apple wants one introductory offer per territory (the "territory"
     // relationship is required), so the offer is created for every territory
     // the subscription is available in, skipping those that already have one.
@@ -324,20 +336,32 @@ async function addTrial(dryRun) {
   printSummary(await catalogue());
 }
 
+/**
+ * Subscriptions add-trial works on. On prod only the PRODUCTS table: the
+ * retired mealvana_pro_*_prod are never sold again (mp-452) and get no offer.
+ */
+function trialTargets(cat) {
+  const all = cat.groups.flatMap((g) => g.subscriptions);
+  if (!PROD) return all;
+  const ids = new Set(PRODUCTS.map((p) => p.productId));
+  return all.filter((s) => ids.has(s.productId));
+}
+
 /** One line per subscription: how many territories carry the free trial. */
 function printSummary(cat) {
-  for (const s of cat.groups.flatMap((g) => g.subscriptions)) {
+  for (const s of trialTargets(cat)) {
     const trials = s.introductoryOffers.filter((o) => o.offerMode === 'FREE_TRIAL' && o.duration === 'ONE_WEEK');
     console.log(`  ${s.productId}: ONE_WEEK FREE_TRIAL in ${trials.length} territories`);
   }
 }
 
-const [cmd = 'list', ...flags] = process.argv.slice(2);
+const [cmd = 'list', ...flags] = argv.filter((a) => a !== '--prod');
 try {
+  console.log(`target: ${PROD ? 'PROD' : 'dev'} app ${appId}, group ${PRO_GROUP_ID}`);
   if (cmd === 'list') print(await catalogue());
   else if (cmd === 'add-trial') await addTrial(flags.includes('--dry-run'));
   else if (cmd === 'create-products') await createProducts(flags.includes('--dry-run'));
-  else { console.error('usage: asc.mjs list | add-trial [--dry-run] | create-products [--dry-run]'); process.exit(2); }
+  else { console.error('usage: asc.mjs list [--prod] | add-trial [--prod] [--dry-run] | create-products [--prod] [--dry-run]'); process.exit(2); }
 } catch (e) {
   console.error(e.message ?? e);
   process.exit(1);
