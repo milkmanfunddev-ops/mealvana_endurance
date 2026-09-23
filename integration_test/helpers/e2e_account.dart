@@ -273,4 +273,7 @@ Future<void> _scrollIntoView(
 }
 
 /// Guard for destructive flows: a throwaway account is only ever made on dev.
-bool get e2eAccountsAllowed => !TestConfig.isProd;
+/// An allowlist on the dev project, not "anything but prod", so a staging or
+/// local `SUPABASE_URL` is refused too (the sweep's `assertDev` does the same).
+bool get e2eAccountsAllowed =>
+    TestConfig.supabaseUrl.contains('vlmtsdzpnjnavdgytcmi');
