@@ -78,7 +78,7 @@ void main() {
   patrolTest(
     'a window stepped on one activity does not leak into the next',
     ($) async {
-      await launchApp();
+      await launchApp($);
       await $.pump(const Duration(milliseconds: 500));
 
       if (!await ensureAuthenticated(

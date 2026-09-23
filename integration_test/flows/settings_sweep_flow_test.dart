@@ -115,7 +115,7 @@ void main() {
   patrolTest(
     'settings sweep — every top-level settings row opens and comes back',
     ($) async {
-      await launchApp();
+      await launchApp($);
       await $.pump(const Duration(milliseconds: 500));
 
       if (!await ensureAuthenticated($)) {

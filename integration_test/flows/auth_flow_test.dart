@@ -36,7 +36,7 @@ void main() {
   patrolTest(
     'email login walk lands on the tabs shell',
     ($) async {
-      await launchApp();
+      await launchApp($);
       // Do NOT pumpAndSettle: startup may show a persistent spinner. Poll
       // with plain pumps for either an existing session (sentinel) or the
       // welcome screen.

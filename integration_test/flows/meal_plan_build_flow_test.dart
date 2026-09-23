@@ -113,7 +113,7 @@ void main() {
         return;
       }
 
-      await launchApp();
+      await launchApp($);
       await $.pump(const Duration(milliseconds: 500));
 
       if (!await ensureAuthenticated($)) {

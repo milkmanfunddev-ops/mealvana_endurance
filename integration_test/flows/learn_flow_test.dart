@@ -39,7 +39,7 @@ void main() {
   patrolTest(
     'learn tab — education list renders and the first lesson screen opens',
     ($) async {
-      await launchApp();
+      await launchApp($);
       // No pumpAndSettle: startup may show persistent spinners.
       await $.pump(const Duration(milliseconds: 500));
 

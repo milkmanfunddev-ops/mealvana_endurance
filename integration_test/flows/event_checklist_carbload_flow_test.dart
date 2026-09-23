@@ -44,7 +44,7 @@ void main() {
   patrolTest(
     'event race-day checklist + carb-loading entry render, then event deleted',
     ($) async {
-      await launchApp();
+      await launchApp($);
       // No pumpAndSettle: startup may show persistent spinners.
       await $.pump(const Duration(milliseconds: 500));
 

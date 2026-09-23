@@ -53,7 +53,7 @@ void main() {
   patrolTest(
     'new user completes onboarding, edits a target, and signs up with email',
     ($) async {
-      await launchApp();
+      await launchApp($);
       await _settleFirstFrame($);
 
       // Fresh install → welcome directly. Anything else (a signed-in

@@ -95,7 +95,7 @@ void main() {
   patrolTest(
     'create a brick, generate its plan, verify units, delete it',
     ($) async {
-      await launchApp();
+      await launchApp($);
       // Do NOT pumpAndSettle: startup can hold a persistent spinner.
       await $.pump(const Duration(milliseconds: 500));
 

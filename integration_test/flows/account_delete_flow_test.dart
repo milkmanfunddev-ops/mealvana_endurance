@@ -42,7 +42,7 @@ void main() {
         markTestSkipped('Throwaway accounts are made on dev only.');
         return;
       }
-      await launchApp();
+      await launchApp($);
       await $.tester.pumpAndSettle(
         const Duration(milliseconds: 100),
         EnginePhase.sendSemanticsUpdate,

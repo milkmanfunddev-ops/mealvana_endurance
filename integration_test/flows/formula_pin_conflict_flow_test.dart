@@ -114,7 +114,7 @@ void main() {
   patrolTest(
     'an allergy-conflicted pin warns first, is honored, then labels and unpins',
     ($) async {
-      await launchApp();
+      await launchApp($);
       await $.pump(const Duration(milliseconds: 500));
 
       if (!await ensureAuthenticated(

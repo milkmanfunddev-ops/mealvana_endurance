@@ -144,7 +144,7 @@ Helpers in `helpers/`:
 
 | File | What it gives a flow |
 |------|----------------------|
-| `flow_launcher.dart` | `launchApp()` (flavor-aware boot), `ensureAuthenticated()`, `noAuthSkipMessage()`, the shared `authSentinel` (`kyle_tab_bar.item.timeline`), `ensureTimelineOnToday()`, `waitForOnTimeline()`, `revealCentered()`. Prefer it over per-file auth walks. |
+| `flow_launcher.dart` | `launchApp($)` (flavor-aware boot; answers the fresh-install notification prompt with Don't Allow), `ensureAuthenticated()`, `noAuthSkipMessage()`, the shared `authSentinel` (`kyle_tab_bar.item.timeline`), `ensureTimelineOnToday()`, `waitForOnTimeline()`, `revealCentered()`. Prefer it over per-file auth walks. |
 | `test_config.dart` | `TestConfig`: flavor-matched login credentials, the Supabase URL and anon key the probes use, timeouts, test data. |
 | `test_helpers.dart` | Finders, tap and wait helpers. |
 | `supabase_probe.dart` | `SupabaseProbe`: read-only PostgREST reads as the test user, to assert a write landed. |

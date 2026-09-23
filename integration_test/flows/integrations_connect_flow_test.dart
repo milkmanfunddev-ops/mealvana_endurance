@@ -65,7 +65,7 @@ void main() {
       ($) async {
         final tester = $.tester;
         // Flavor-aware boot via the shared launcher (helpers/flow_launcher.dart).
-        await launchApp();
+        await launchApp($);
         await tester.pumpAndSettle(
           const Duration(milliseconds: 100),
           EnginePhase.sendSemanticsUpdate,

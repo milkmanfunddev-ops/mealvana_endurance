@@ -56,7 +56,7 @@ void main() {
   patrolTest(
     'build a meal from search, log it, see it on the timeline, then delete it',
     ($) async {
-      await launchApp();
+      await launchApp($);
       // No pumpAndSettle: startup may show persistent spinners.
       await $.pump(const Duration(milliseconds: 500));
 

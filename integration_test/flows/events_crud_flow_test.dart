@@ -46,7 +46,7 @@ void main() {
   patrolTest(
     'create, edit, then delete an event end-to-end',
     ($) async {
-      await launchApp();
+      await launchApp($);
       // Do NOT pumpAndSettle: startup may show a persistent spinner.
       // ensureAuthenticated polls with plain pumps instead.
       await $.pump(const Duration(milliseconds: 500));
