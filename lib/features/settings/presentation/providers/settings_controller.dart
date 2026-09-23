@@ -84,6 +84,22 @@ class SettingsController extends _$SettingsController {
       ContentKeys.settingsAccountStatusAuthenticated,
       defaultValue: 'Signed in',
     );
+    final accountStatusAnonymous = _contentService.getValue(
+      ContentKeys.settingsAccountStatusAnonymous,
+      defaultValue: 'Not signed in',
+    );
+    // Anonymous sessions never get a plain sign-out: dropping an anonymous
+    // session discards its refresh token, which makes the identity — and the
+    // athlete's data behind it — permanently unrecoverable (ruling, Xuan
+    // 2026-09-21). Both anonymous actions preserve the session instead.
+    final createAccountButton = _contentService.getValue(
+      ContentKeys.settingsCreateAccountButton,
+      defaultValue: 'Create an account to save your data',
+    );
+    final logInButton = _contentService.getValue(
+      ContentKeys.settingsLogInButton,
+      defaultValue: 'Log into an existing account',
+    );
     final signOutButton = _contentService.getValue(
       ContentKeys.settingsSignOutButton,
       defaultValue: 'Sign Out',
@@ -222,6 +238,9 @@ class SettingsController extends _$SettingsController {
       title: title,
       accountSectionTitle: accountSectionTitle,
       accountStatusAuthenticated: accountStatusAuthenticated,
+      accountStatusAnonymous: accountStatusAnonymous,
+      createAccountButton: createAccountButton,
+      logInButton: logInButton,
       signOutButton: signOutButton,
       profileSectionTitle: profileSectionTitle,
       preferenceSectionTitle: preferenceSectionTitle,

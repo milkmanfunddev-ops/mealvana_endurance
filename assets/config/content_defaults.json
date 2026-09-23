@@ -300,7 +300,7 @@
     "account_section": "Account",
     "account_status_anonymous": "Not signed in",
     "account_status_authenticated": "Signed in with {provider}",
-    "create_account_button": "Create Account",
+    "create_account_button": "Create an account to save your data",
     "sign_out_button": "Sign Out",
     "profile_section_title": "Your Profile",
     "preferences_section_title": "Preferences",
@@ -319,7 +319,8 @@
     "running_section_title": "Running Settings",
     "gi_sensitivity_label": "GI Sensitivity",
     "gi_sensitivity_subtitle": "Do you have a sensitive stomach during exercise?",
-    "gi_sensitivity_help": "This helps us recommend foods that are easier to digest across all sports"
+    "gi_sensitivity_help": "This helps us recommend foods that are easier to digest across all sports",
+    "log_in_button": "Log into an existing account"
   },
   "cycling_preferences": {
     "ftp_label": "FTP (Functional Threshold Power)",

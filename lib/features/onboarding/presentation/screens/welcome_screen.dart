@@ -1,7 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
-import 'package:shared_preferences/shared_preferences.dart';
 import '../../../../shared/services/app_external_deps.dart';
 import '../../../../shared/services/privacy/analytics_consent.dart';
 import '../providers/onboarding_analytics.dart';
@@ -230,9 +229,14 @@ class WelcomeScreen extends ConsumerWidget {
     // so a fresh run cannot inherit that attempt's integration rows. The
     // pre-paywall version signed out and opened an anonymous session at this
     // point; see lib/features/_archived/anonymous_session/.
+    // Read prefs through the provider seam, not the SharedPreferences
+    // singleton: the static getInstance() never completes inside a widget
+    // test's fake async zone, which swallowed this whole handler and made
+    // "Build My Plan" a dead button there.
     try {
-      final prefs = await SharedPreferences.getInstance();
-      await prefs.remove('onboarding_temp_user_id');
+      await ref
+          .read(sharedPreferencesProvider)
+          .remove('onboarding_temp_user_id');
     } catch (e) {
       debugPrint('[WELCOME] Could not clear the temp onboarding id: $e');
     }

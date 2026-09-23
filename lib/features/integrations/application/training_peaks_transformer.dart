@@ -322,10 +322,11 @@ class TrainingPeaksTransformer {
     // session energy instead of discarding them (Q-INT13). Planned values
     // arrive on every workout; actuals only once TP marks it completed —
     // basic (non-premium) athletes return null for all of these, and null is
-    // stored as null (never fabricated, DI-13).
-    final tssPlanned = (workout['TSSPlanned'] as num?)?.toDouble();
+    // stored as null (never fabricated, DI-13). TSS keys go through
+    // _readTssPlanned/_readTssActual — TP's casing differs per API surface.
+    final tssPlanned = _readTssPlanned(workout)?.toDouble();
     final ifPlanned = (workout['IFPlanned'] as num?)?.toDouble();
-    final tssActual = (workout['TssActual'] as num?)?.toDouble();
+    final tssActual = _readTssActual(workout)?.toDouble();
     final ifActual = (workout['IF'] as num?)?.toDouble();
     final caloriesActual = (workout['Calories'] as num?)?.toDouble();
 
@@ -697,6 +698,19 @@ class TrainingPeaksTransformer {
     return parts.isEmpty ? null : parts.join('\n');
   }
 
+  /// TP spells its TSS keys inconsistently across API surfaces: the published
+  /// spec and by-id examples show `TSSPlanned`, but the live `/v2/workouts`
+  /// range endpoint sends `TssPlanned` / `TssActual` (proven on the prod wire
+  /// 2026-09-18 — populated values were being stored as null daily). Accept
+  /// every observed casing, first non-null wins; a single payload only ever
+  /// carries one spelling. IF/IFPlanned have one casing everywhere and are
+  /// read directly.
+  static num? _readTssPlanned(Map<String, dynamic> workout) =>
+      (workout['TssPlanned'] as num?) ?? (workout['TSSPlanned'] as num?);
+
+  static num? _readTssActual(Map<String, dynamic> workout) =>
+      (workout['TssActual'] as num?) ?? (workout['TSSActual'] as num?);
+
   /// Infer intensity level from workout data
   IntensityLevel _inferIntensity(Map<String, dynamic> workout) {
     // Check IF (Intensity Factor) if available
@@ -708,8 +722,8 @@ class TrainingPeaksTransformer {
       return IntensityLevel.easy;
     }
 
-    // Check TSS for intensity hints
-    final tss = workout['TSSPlanned'] as num?;
+    // Check TSS for intensity hints (§7.1 TSS/hr rung; casing-tolerant read)
+    final tss = _readTssPlanned(workout);
     if (tss != null) {
       // High TSS for duration suggests high intensity
       final duration = (workout['TotalTimePlanned'] as num?)?.toDouble();

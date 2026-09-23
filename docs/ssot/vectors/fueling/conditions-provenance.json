@@ -1,0 +1,114 @@
+{
+ "section": "conditions-provenance",
+ "engine": "OfflineMacroCalculator.calculateDuringWorkoutHydration (+ the plan record that carries the flag)",
+ "specVersion": "during-workout-hydration.md — RATIFIED v2.1 + conditions-provenance addition (Xuan, 2026-09-21)",
+ "note": "EXPECTED-RED until the conditionsSource flag is threaded (environment inputs -> generated plan -> surface). This slice pins PROVENANCE ONLY: the flag's value, its travel, and its persistence. It deliberately pins NO new numbers — CP-4 requires the ratified sweat-rate arithmetic to be untouched, so numeric expectations stay in during-workout-hydration.json and any change there is a defect, not an update. Persistence is the load-bearing assertion: the transient 'Couldn't fetch weather' copy is NOT the marker; a plan generated under fallback must still report assumed after it is persisted and re-read. CP-2 IS SOURCE-DRIVEN, NOT FAILURE-DRIVEN: two code paths now seed the CP-1 constants — the failed fetch AND the Q-CA2 per-activity reset with no forecast loaded — so an implementation keyed on the fetch outcome silently misses the second. Harness: needs an arm that generates a plan, persists it through the real repository, re-reads it, and inspects the flag — a pure in-memory call cannot prove CP-2's travel.",
+ "vectors": [
+  {
+   "id": "fetch-failed-flags-assumed",
+   "status": "ratified",
+   "inputs": {
+    "weatherFetch": "failed",
+    "athleteSuppliedConditions": false
+   },
+   "expected": {
+    "tempC": 20.0,
+    "humidPct": 60,
+    "conditionsSource": "assumed"
+   },
+   "why": "CP-1 names the fallback (20.0 C / 60 %) and CP-2 flags it assumed; today the values are seeded silently with no flag"
+  },
+  {
+   "id": "reset-seeded-defaults-flag-assumed-without-any-fetch-failure",
+   "status": "ratified",
+   "inputs": {
+    "weatherFetch": "not-attempted-or-succeeded-earlier",
+    "forecastLoadedAtReset": false,
+    "createFlowEnteredForNewActivity": true,
+    "athleteSuppliedConditions": false
+   },
+   "expected": {
+    "tempC": 20.0,
+    "humidPct": 60,
+    "conditionsSource": "assumed"
+   },
+   "why": "DETECTION POWER (app-a9's collision catch, 2026-09-21): the Q-CA2 per-activity reset seeds the SAME 20.0/60 constants when no forecast is loaded, with no fetch failure anywhere. An implementation that drives the flag from the FETCH OUTCOME passes every other vector in this file and fails this one — which is the point. CP-2 is a statement about WHERE THE VALUE CAME FROM, never about whether a network call failed"
+  },
+  {
+   "id": "fetch-succeeded-flags-measured",
+   "status": "ratified",
+   "inputs": {
+    "weatherFetch": "ok",
+    "fetchedTempC": 26.7,
+    "fetchedHumidPct": 95,
+    "athleteSuppliedConditions": false
+   },
+   "expected": {
+    "tempC": 26.7,
+    "humidPct": 95,
+    "conditionsSource": "measured"
+   },
+   "why": "the Tampa-day values; measured inputs must be distinguishable from CP-1's defaults by the FLAG, not by their numbers"
+  },
+  {
+   "id": "athlete-override-flags-manual",
+   "status": "ratified",
+   "inputs": {
+    "weatherFetch": "failed",
+    "athleteSuppliedConditions": true,
+    "suppliedTempC": 26.7,
+    "suppliedHumidPct": 95
+   },
+   "expected": {
+    "tempC": 26.7,
+    "humidPct": 95,
+    "conditionsSource": "manual"
+   },
+   "why": "an override after a failed fetch is manual, never assumed — the athlete's input outranks the fallback and the flag must say so"
+  },
+  {
+   "id": "assumed-survives-persistence",
+   "status": "ratified",
+   "inputs": {
+    "weatherFetch": "failed",
+    "athleteSuppliedConditions": false,
+    "persistAndReread": true
+   },
+   "expected": {
+    "conditionsSource": "assumed",
+    "flagPresentAfterReread": true
+   },
+   "why": "CP-3's load-bearing property: the plan outlives the transient failure copy, so the marker must survive persistence and re-read — a UI-only banner fails this vector"
+  },
+  {
+   "id": "provenance-does-not-move-the-numbers",
+   "status": "ratified",
+   "inputs": {
+    "weatherFetch": "failed",
+    "athleteSuppliedConditions": false,
+    "compareAgainst": "during-workout-hydration.json same-input case"
+   },
+   "expected": {
+    "fluidAndSodiumIdenticalToPreRulingContract": true
+   },
+   "why": "CP-4: provenance is additive. If any ratified number moves, that is a defect introduced by the implementation, not an update to this contract"
+  },
+  {
+   "id": "reset-preserves-a-loaded-forecast-and-stays-measured",
+   "status": "ratified",
+   "inputs": {
+    "weatherFetch": "ok",
+    "fetchedTempC": 26.7,
+    "fetchedHumidPct": 95,
+    "createFlowEnteredForNewActivity": true,
+    "athleteSuppliedConditions": false
+   },
+   "expected": {
+    "tempC": 26.7,
+    "humidPct": 95,
+    "conditionsSource": "measured"
+   },
+   "why": "the reset restores the AUTO SOURCE, not a flat constant: a loaded forecast survives the per-activity reset and the plan stays measured. A reset that always seeded 20.0/60 would mark every plan assumed and destroy the distinction CP-2 exists to report (indoor cycling's ratified 45 % humidity is the same class of auto source)"
+  }
+ ]
+}

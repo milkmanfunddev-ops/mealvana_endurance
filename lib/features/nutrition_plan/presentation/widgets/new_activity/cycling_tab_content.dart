@@ -142,6 +142,9 @@ class CyclingTabContent extends ConsumerWidget {
             valuesManuallyAdjusted:
                 formState.temperatureManuallySet ||
                 formState.humidityManuallySet,
+            // CP-3: the D-2 source chip travels with each conditions value.
+            temperatureSourceLabel: formState.temperatureSource.displayLabel,
+            humiditySourceLabel: formState.humiditySource.displayLabel,
             locationFailureReason: formState.locationFailureReason,
             onRequestPermission: controller.requestLocationPermissionAndFetch,
             onOpenSettings: controller.openLocationSettings,

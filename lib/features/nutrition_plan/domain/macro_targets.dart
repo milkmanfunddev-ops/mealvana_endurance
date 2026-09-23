@@ -3,6 +3,9 @@ import 'dart:convert';
 import '../../../shared/domain/activity_type.dart';
 import '../../../shared/utils/unit_formatter.dart';
 import '../../activities/domain/brick_metadata.dart';
+import 'conditions_source.dart';
+
+export 'conditions_source.dart';
 
 /// Complete macro targets for a running session
 class MacroTargets {
@@ -41,6 +44,19 @@ class MacroTargets {
   /// Exact per-segment/per-transition phase targets from generate-macros-v4.
   /// Used to keep generate-nutrition-plan-v3 aligned to V4 ranges.
   final BrickPhaseTargets? brickPhaseTargets;
+
+  /// CP-2 (RULED Xuan, 2026-09-21): attach conditions provenance to the plan.
+  ///
+  /// Purely additive, and deliberately narrow: it writes ONE field on the
+  /// environment echo and touches nothing else, because CP-4 forbids
+  /// provenance from moving any ratified fluid or sodium value. A null source
+  /// is a no-op — an absent flag makes no claim.
+  MacroTargets withConditionsSource(ConditionsSource? source) {
+    if (source == null) return this;
+    return copyWith(
+      duringRun: duringRun.copyWith(conditionsSource: source),
+    );
+  }
 
   MacroTargets copyWith({
     String? id,
@@ -1098,6 +1114,7 @@ class DuringRunMacros {
     this.tempC,
     this.humidityPct,
     this.isIndoor,
+    this.conditionsSource,
   });
 
   final double carbRateGPerH;
@@ -1153,6 +1170,16 @@ class DuringRunMacros {
 
   /// Whether the workout was flagged as indoor.
   final bool? isIndoor;
+
+  /// CP-2 (RULED Xuan, 2026-09-21): where [tempC] / [humidityPct] came from.
+  ///
+  /// Lives HERE, beside the values it describes, so it persists wherever they
+  /// persist (`MacroTargets.toJson()` → the macro repository → re-read) and
+  /// reaches every surface that already reads the environment echo. The
+  /// transient "Couldn't fetch weather" copy is not the marker — the plan
+  /// outlives it (CP-3). Null on legacy plans written before the ruling: an
+  /// absent flag makes no claim, and is never read as `measured`.
+  final ConditionsSource? conditionsSource;
 
   /// Convert fluids to US units (fl oz)
   double get fluidRateFlOzPerH => fluidRateMlPerH * 0.033814;
@@ -1214,6 +1241,7 @@ class DuringRunMacros {
     double? tempC,
     double? humidityPct,
     bool? isIndoor,
+    ConditionsSource? conditionsSource,
   }) {
     return DuringRunMacros(
       carbRateGPerH: carbRateGPerH ?? this.carbRateGPerH,
@@ -1248,6 +1276,7 @@ class DuringRunMacros {
       tempC: tempC ?? this.tempC,
       humidityPct: humidityPct ?? this.humidityPct,
       isIndoor: isIndoor ?? this.isIndoor,
+      conditionsSource: conditionsSource ?? this.conditionsSource,
     );
   }
 
@@ -1285,6 +1314,9 @@ class DuringRunMacros {
       if (tempC != null) 'tempC': tempC,
       if (humidityPct != null) 'humidityPct': humidityPct,
       if (isIndoor != null) 'isIndoor': isIndoor,
+      // CP-2: the flag travels with the plan through persistence.
+      if (conditionsSource != null)
+        'conditionsSource': conditionsSource!.wireValue,
     };
   }
 
@@ -1324,6 +1356,7 @@ class DuringRunMacros {
       tempC: (json['tempC'] as num?)?.toDouble(),
       humidityPct: (json['humidityPct'] as num?)?.toDouble(),
       isIndoor: json['isIndoor'] as bool?,
+      conditionsSource: ConditionsSource.fromWire(json['conditionsSource']),
     );
   }
 
@@ -1359,7 +1392,8 @@ class DuringRunMacros {
         other.isTestedSodium == isTestedSodium &&
         other.tempC == tempC &&
         other.humidityPct == humidityPct &&
-        other.isIndoor == isIndoor;
+        other.isIndoor == isIndoor &&
+        other.conditionsSource == conditionsSource;
   }
 
   @override
@@ -1395,6 +1429,7 @@ class DuringRunMacros {
         tempC,
         humidityPct,
         isIndoor,
+        conditionsSource,
       ),
     );
   }

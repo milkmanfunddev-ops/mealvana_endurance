@@ -58,3 +58,60 @@ numbers by ~2–3 ml. **Vectors use the precise algorithm** (3dp), not the doc's
 ## Conformance
 Vectors: `qa/vectors/fueling/during-workout-hydration.json`. Runner asserts
 `calculateDuringWorkoutHydration` output (rate/floor/ceiling/replacementPct/effectiveSweatRate).
+
+---
+
+## Conditions provenance — RULED (Xuan, 2026-09-21, post-ratification addition)
+
+`tempC` and `humid%` enter the ratified sweat-rate chain as known inputs. They are not always
+known. When the weather fetch fails the app seeds **68 °F (20.0 °C) / 60 %** and generates
+anyway — values that existed only in app code until this ruling. Live consequence (Tampa,
+2026-09): against a real 80 °F / 95 % day the silent default understates effective sweat rate
+by ~38 %, and sodium by the same factor (it is proportional to the post-clamp fluid rate).
+
+**CP-1 — the fallback is named, not invented.** When conditions cannot be fetched and the
+athlete has not supplied them, the engine uses `tempC = 20.0`, `humid% = 60`. These are now
+ruled spec values; changing them is a ruling, not a code edit.
+
+**CP-2 — every plan carries `conditionsSource`**, one of:
+| value | meaning |
+|---|---|
+| `measured` | fetched for the session's place and time |
+| `assumed` | CP-1 fallback used — the fetch failed or was unavailable |
+| `manual` | the athlete supplied or overrode the values |
+A plan whose conditions were assumed MUST NOT be presentable as one built on measured
+conditions. The flag travels with the plan, not with the transient fetch attempt.
+
+**CP-3 — the display must surface it, persistently.** The existing failure copy
+("Couldn't fetch weather. Enter manually or try again") is transient and the plan outlives it;
+surfacing therefore uses the RATIFIED source-chip pattern
+(`spec/design/surfaces/integrations-data-display.md` D-2, inherited by D-2b for body
+composition with named parameters). Parameters for this application: sources
+`Measured · Assumed · Manual`; the chip sits with the conditions value it describes, per D-2's
+own rule that every value displays with its source chip. **No new pattern ratification is
+required** — this is pattern application, the class D-2b established. If a surface shows a
+fueling plan WITHOUT showing its conditions value, that surface has no anchor for the chip and
+its treatment is a design question for the ruling desk — flagged, not decided here.
+
+**CP-4 — the arithmetic is unchanged.** Provenance does not alter the sweat-rate chain, the
+clamps, or sodium's proportionality. A conformance run must show identical numbers to the
+pre-ruling contract for identical inputs; only the flag is new.
+
+**Generation is never blocked** on a failed fetch (a third-party outage must not prevent
+planning; offline planning is a real use). Authority:
+`intake/2026-09-09-environment-fallback-when-weather-fetch-fails.md` (RESOLVED 2026-09-21,
+option 1).
+
+**CP-5 — provenance is SOURCE-driven, never failure-driven** (added 2026-09-21 after the
+Q-CA2 landing exposed a second path): more than one code path seeds the CP-1 constants —
+the failed fetch, and the per-activity form reset entering the create flow with no forecast
+loaded. `conditionsSource` reports WHERE THE VALUE CAME FROM, not whether a network call
+failed; an implementation keyed on the fetch outcome marks the first path and silently
+misses the second, reproducing the exact defect CP-1..CP-4 exist to prevent.
+
+**CP-6 — the per-activity reset restores the AUTO SOURCE, not a flat constant** (ruled as a
+consequence of CP-2 + the Q-CA2 per-activity ruling; revisable by Xuan): on entering the
+create flow for a new activity, temperature and humidity return to the loaded forecast when
+one exists, to the CP-1 placeholders when none does, and indoor cycling keeps its ratified
+45 % humidity. A reset that always seeded 20.0/60 would discard a loaded forecast and mark
+every plan `assumed`, destroying the measured-vs-assumed distinction CP-2 must report.

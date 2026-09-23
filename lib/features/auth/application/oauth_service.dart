@@ -1,7 +1,7 @@
 import 'dart:async';
 import 'dart:convert';
 import 'package:crypto/crypto.dart';
-import 'package:flutter/foundation.dart' show kIsWeb;
+import 'package:flutter/foundation.dart' show kIsWeb, visibleForTesting;
 import 'package:google_sign_in/google_sign_in.dart';
 import 'package:riverpod_annotation/riverpod_annotation.dart';
 import 'package:sign_in_with_apple/sign_in_with_apple.dart';
@@ -62,9 +62,12 @@ class OAuthService extends _$OAuthService {
     // Critical: OAuth may involve app backgrounding for native auth
     ref.keepAlive();
 
-    // Log when provider is disposed for debugging
+    // Log when provider is disposed for debugging. Capture the logger NOW:
+    // the `_logger` getter calls `ref.read`, which Riverpod forbids inside
+    // life-cycle callbacks (debug assertion fires at container dispose).
+    final logger = _logger;
     ref.onDispose(() {
-      _logger.info('OAuthService disposed', context: 'OAUTH_NATIVE');
+      logger.info('OAuthService disposed', context: 'OAUTH_NATIVE');
     });
   }
 
@@ -449,6 +452,73 @@ class OAuthService extends _$OAuthService {
     }
   }
 
+  /// True when [user] was created BY the very sign-in call that returned it —
+  /// i.e. GoTrue minted a brand-new account instead of reaching an existing
+  /// one. Supabase's id-token grant has no "sign in only" mode, so a LOGIN
+  /// attempt with a never-before-seen provider identity silently creates an
+  /// empty account (the 2026-09-17 Critical: Apple registrant logs in with
+  /// Google, private-relay email defeats server-side email matching, and the
+  /// athlete lands in a fresh empty uid that reads as total data loss).
+  ///
+  /// Both timestamps are SERVER time on the wire (`created_at` /
+  /// `last_sign_in_at`), so no device-clock skew is involved: a fresh mint has
+  /// them equal to within milliseconds, while a returning user's `created_at`
+  /// is days-to-months older. The tolerance absorbs GoTrue writing the two
+  /// columns at slightly different instants; per the seam doctrine
+  /// (docs/test/README.md §Seam tests) unparseable boundary data FAILS OPEN —
+  /// refusing on garbage would lock real users out of real accounts.
+  @visibleForTesting
+  static bool isFreshlyMintedUser(
+    User user, {
+    Duration tolerance = const Duration(seconds: 60),
+  }) {
+    final created = DateTime.tryParse(user.createdAt);
+    final lastSignInAtRaw = user.lastSignInAt;
+    final lastSignIn = lastSignInAtRaw == null
+        ? null
+        : DateTime.tryParse(lastSignInAtRaw);
+    if (created == null || lastSignIn == null) return false; // fail open
+    return lastSignIn.difference(created).abs() <= tolerance;
+  }
+
+  /// Guard run right after `signInWithIdToken`: if the "sign-in" actually
+  /// minted a brand-new user, sign that empty account back out and throw
+  /// [OAuthAccountNotFoundException] so the UI can say which way is home,
+  /// instead of stranding the athlete in an account that looks wiped.
+  ///
+  /// Must run BEFORE `completeAuthentication` (no migration onto the mint)
+  /// and before any post-sign-in sync. Known residue: the refused auth user
+  /// remains server-side (deleting it needs service-role — flagged for the
+  /// backend decision), so a retry after [tolerance] would reach it as an
+  /// "existing" account; still strictly better than today's silent mint.
+  @visibleForTesting
+  Future<void> refuseFreshlyMintedLoginAccount({
+    required User user,
+    required String provider,
+    String? email,
+  }) async {
+    if (!isFreshlyMintedUser(user)) return;
+
+    _logger.warning(
+      'LOGIN-mode OAuth minted a brand-new account — refusing and signing '
+      'the empty account back out',
+      context: 'OAUTH_NATIVE',
+      data: {'provider': provider, 'minted_user_id': user.id, 'email': email},
+    );
+
+    await _analytics.track(
+      'auth_oauth_no_existing_account',
+      properties: {
+        'provider': provider,
+        'platform': PlatformInfo.operatingSystem,
+      },
+    );
+
+    await _supabase.auth.signOut();
+
+    throw OAuthAccountNotFoundException(provider: provider, email: email);
+  }
+
   /// Sign in with Apple (replaces current anonymous user)
   /// Used when account linking fails because account already exists
   /// Migrates anonymous user's data to the existing OAuth account
@@ -514,6 +584,17 @@ class OAuthService extends _$OAuthService {
         idToken: credential.identityToken!,
         nonce: rawNonce,
       );
+
+      // A "sign-in" that minted a brand-new user reached no existing account:
+      // refuse before any migration/sync makes the empty account look real.
+      final signedInUser = response.user;
+      if (signedInUser != null) {
+        await refuseFreshlyMintedLoginAccount(
+          user: signedInUser,
+          provider: 'apple',
+          email: signedInUser.email ?? credential.email,
+        );
+      }
 
       final oauthUserId = response.user?.id;
 
@@ -618,10 +699,15 @@ class OAuthService extends _$OAuthService {
     });
 
     if (state.hasError) {
+      final error = state.error;
+      // Expected control-flow signal (no existing account) — not a failure.
+      if (error is OAuthAccountNotFoundException) {
+        throw error;
+      }
       _logger.error(
         'Apple Sign-In failed',
         context: 'OAUTH_NATIVE',
-        error: state.error,
+        error: error,
       );
       throw state.error!;
     }
@@ -693,6 +779,17 @@ class OAuthService extends _$OAuthService {
         idToken: auth.idToken!,
         accessToken: auth.accessToken,
       );
+
+      // A "sign-in" that minted a brand-new user reached no existing account:
+      // refuse before any migration/sync makes the empty account look real.
+      final signedInUser = response.user;
+      if (signedInUser != null) {
+        await refuseFreshlyMintedLoginAccount(
+          user: signedInUser,
+          provider: 'google',
+          email: signedInUser.email ?? account.email,
+        );
+      }
 
       final oauthUserId = response.user?.id;
 
@@ -811,10 +908,15 @@ class OAuthService extends _$OAuthService {
     });
 
     if (state.hasError) {
+      final error = state.error;
+      // Expected control-flow signal (no existing account) — not a failure.
+      if (error is OAuthAccountNotFoundException) {
+        throw error;
+      }
       _logger.error(
         'Google Sign-In failed',
         context: 'OAUTH_NATIVE',
-        error: state.error,
+        error: error,
       );
       throw state.error!;
     }

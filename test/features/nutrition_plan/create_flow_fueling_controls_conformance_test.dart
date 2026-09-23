@@ -110,7 +110,7 @@ void main() {
       );
 
       // Activity 2 opens: the create flow resets the window for the new activity.
-      n.resetFuelingWindowForNewActivity();
+      n.resetFormStateForNewActivity();
       n.updateDateTime(farOut, nineAm);
       n.updateDuration(const Duration(hours: 2));
 

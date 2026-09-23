@@ -500,6 +500,7 @@ class _SettingsScreenState extends ConsumerState<SettingsScreen> {
   }
 
   Widget _buildAccountSection(BuildContext context, dynamic state) {
+    final isAnonymous = state.isAnonymous ?? true;
     final authProvider = state.authProvider ?? 'anonymous';
     final email = state.email;
 
@@ -533,140 +534,220 @@ class _SettingsScreenState extends ConsumerState<SettingsScreen> {
 
           const SizedBox(height: AppSpacing.md),
 
-          // Authenticated user - show provider and sign out
-          Row(
-            children: [
-              Icon(
-                authProvider == 'apple'
-                    ? FontAwesomeIcons.apple.data
-                    : authProvider == 'google'
-                    ? FontAwesomeIcons.google.data
-                    : FontAwesomeIcons.envelope.data,
-                size: AppIconSizes.md,
-                color: AppColors.electrolyte,
-              ),
-              const SizedBox(width: AppSpacing.md),
-              Expanded(
-                child: Column(
-                  crossAxisAlignment: CrossAxisAlignment.start,
-                  children: [
-                    Text(
-                      'Signed in with $providerName',
-                      style: AppTextStyles.bodyMedium.copyWith(
-                        color: Theme.of(context).colorScheme.onSurface,
-                        fontWeight: FontWeight.w500,
+          if (isAnonymous) ...[
+            // Anonymous user - show "Create Account" CTA
+            Row(
+              children: [
+                FaIcon(
+                  FontAwesomeIcons.user,
+                  size: AppIconSizes.md,
+                  color: AppColors.orange.withValues(alpha: 0.7),
+                ),
+                const SizedBox(width: AppSpacing.md),
+                Expanded(
+                  child: Column(
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    children: [
+                      Text(
+                        key: const ValueKey('settings.account_status'),
+                        state.accountStatusAnonymous ?? 'Not signed in',
+                        style: AppTextStyles.bodyMedium.copyWith(
+                          color: Theme.of(context).colorScheme.onSurfaceVariant,
+                        ),
                       ),
-                    ),
-                    if (email != null) ...[
                       const SizedBox(height: AppSpacing.xs),
                       Text(
-                        email,
+                        'Create an account to sync your data across devices',
                         style: AppTextStyles.bodyMedium.copyWith(
                           color: Theme.of(context).colorScheme.onSurfaceVariant,
                           fontSize: 14,
                         ),
                       ),
                     ],
-                  ],
-                ),
-              ),
-            ],
-          ),
-
-          const SizedBox(height: AppSpacing.md),
-
-          // Sign Out button
-          SizedBox(
-            width: double.infinity,
-            child: KyleSecondaryButton(
-              text: state.signOutButton ?? 'Sign Out',
-              onPressed: () async {
-                // Show confirmation dialog
-                final confirmed = await showDialog<bool>(
-                  context: context,
-                  builder: (context) => AlertDialog(
-                    title: const Text('Sign Out?'),
-                    content: const Text(
-                      'You\'ll need to sign in again to use the app.',
-                    ),
-                    actions: [
-                      TextButton(
-                        onPressed: () => Navigator.pop(context, false),
-                        child: const Text('Cancel'),
-                      ),
-                      TextButton(
-                        onPressed: () => Navigator.pop(context, true),
-                        child: const Text('Sign Out'),
-                      ),
-                    ],
                   ),
-                );
-
-                // If user confirmed, proceed with sign out
-                if (confirmed == true && context.mounted) {
-                  await ref.read(settingsControllerProvider.notifier).signOut();
-
-                  // Navigate to welcome screen after logout
-                  if (context.mounted) {
-                    context.go('/welcome');
-                  }
-                }
-              },
+                ),
+              ],
             ),
-          ),
 
-          const SizedBox(height: AppSpacing.md),
+            const SizedBox(height: AppSpacing.md),
 
-          // Delete Account button
-          SizedBox(
-            width: double.infinity,
-            child: TextButton(
-              onPressed: () async {
-                // Show confirmation dialog
-                final confirmed = await showDialog<bool>(
-                  context: context,
-                  builder: (context) => AlertDialog(
-                    title: const Text('Delete Account?'),
-                    content: const Text(
-                      'This will permanently delete your account and all associated data. This action cannot be undone.',
-                    ),
-                    actions: [
-                      TextButton(
-                        onPressed: () => Navigator.pop(context, false),
-                        child: const Text('Cancel'),
-                      ),
-                      TextButton(
-                        onPressed: () => Navigator.pop(context, true),
-                        style: TextButton.styleFrom(
-                          foregroundColor: AppColors.dragonfruit,
+            // Create Account button
+            SizedBox(
+              width: double.infinity,
+              child: KylePrimaryButton(
+                key: const ValueKey('settings.create_account_button'),
+                text:
+                    state.createAccountButton ??
+                    'Create an account to save your data',
+                onPressed: () {
+                  final analytics = ref.read(appExternalDepsProvider);
+                  analytics.analytics.track('settings_create_account_tapped');
+                  context.push('/auth/post-onboarding');
+                },
+              ),
+            ),
+
+            const SizedBox(height: AppSpacing.md),
+
+            // Log In button
+            //
+            // Together with Create Account above, this replaces the sign-out
+            // row for anonymous sessions (ruling, Xuan 2026-09-21). There is
+            // deliberately no sign-out here: signing an anonymous user out
+            // discards the refresh token, so the identity — and every athlete
+            // record behind it — can never be reached again.
+            SizedBox(
+              width: double.infinity,
+              child: KyleSecondaryButton(
+                key: const ValueKey('settings.log_in_button'),
+                text: state.logInButton ?? 'Log into an existing account',
+                onPressed: () {
+                  final analytics = ref.read(appExternalDepsProvider);
+                  analytics.analytics.track('settings_login_tapped');
+                  context.push('/auth/post-onboarding?mode=login');
+                },
+              ),
+            ),
+          ] else ...[
+            // Authenticated user - show provider and sign out
+            Row(
+              children: [
+                Icon(
+                  authProvider == 'apple'
+                      ? FontAwesomeIcons.apple.data
+                      : authProvider == 'google'
+                      ? FontAwesomeIcons.google.data
+                      : FontAwesomeIcons.envelope.data,
+                  size: AppIconSizes.md,
+                  color: AppColors.electrolyte,
+                ),
+                const SizedBox(width: AppSpacing.md),
+                Expanded(
+                  child: Column(
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    children: [
+                      Text(
+                        'Signed in with $providerName',
+                        style: AppTextStyles.bodyMedium.copyWith(
+                          color: Theme.of(context).colorScheme.onSurface,
+                          fontWeight: FontWeight.w500,
                         ),
-                        child: const Text('Delete'),
                       ),
+                      if (email != null) ...[
+                        const SizedBox(height: AppSpacing.xs),
+                        Text(
+                          email,
+                          style: AppTextStyles.bodyMedium.copyWith(
+                            color: Theme.of(
+                              context,
+                            ).colorScheme.onSurfaceVariant,
+                            fontSize: 14,
+                          ),
+                        ),
+                      ],
                     ],
                   ),
-                );
+                ),
+              ],
+            ),
 
-                // If user confirmed, proceed with delete
-                if (confirmed == true && context.mounted) {
-                  await ref
-                      .read(settingsControllerProvider.notifier)
-                      .deleteAccount();
+            const SizedBox(height: AppSpacing.md),
 
-                  // Navigate to welcome screen after account deletion
-                  if (context.mounted) {
-                    context.go('/welcome');
+            // Sign Out button
+            SizedBox(
+              width: double.infinity,
+              child: KyleSecondaryButton(
+                text: state.signOutButton ?? 'Sign Out',
+                onPressed: () async {
+                  // Show confirmation dialog
+                  final confirmed = await showDialog<bool>(
+                    context: context,
+                    builder: (context) => AlertDialog(
+                      title: const Text('Sign Out?'),
+                      content: const Text(
+                        'You\'ll continue using the app as a guest. Your preferences will be saved on this device. Sign in again to sync across devices.',
+                      ),
+                      actions: [
+                        TextButton(
+                          onPressed: () => Navigator.pop(context, false),
+                          child: const Text('Cancel'),
+                        ),
+                        TextButton(
+                          onPressed: () => Navigator.pop(context, true),
+                          child: const Text('Sign Out'),
+                        ),
+                      ],
+                    ),
+                  );
+
+                  // If user confirmed, proceed with sign out
+                  if (confirmed == true && context.mounted) {
+                    await ref
+                        .read(settingsControllerProvider.notifier)
+                        .signOut();
+
+                    // Navigate to welcome screen after logout
+                    if (context.mounted) {
+                      context.go('/welcome');
+                    }
                   }
-                }
-              },
-              child: Text(
-                'Delete Account',
-                style: AppTextStyles.bodyMedium.copyWith(
-                  color: AppColors.dragonfruit,
-                  decoration: TextDecoration.underline,
+                },
+              ),
+            ),
+
+            const SizedBox(height: AppSpacing.md),
+
+            // Delete Account button
+            SizedBox(
+              width: double.infinity,
+              child: TextButton(
+                onPressed: () async {
+                  // Show confirmation dialog
+                  final confirmed = await showDialog<bool>(
+                    context: context,
+                    builder: (context) => AlertDialog(
+                      title: const Text('Delete Account?'),
+                      content: const Text(
+                        'This will permanently delete your account and all associated data. This action cannot be undone.',
+                      ),
+                      actions: [
+                        TextButton(
+                          onPressed: () => Navigator.pop(context, false),
+                          child: const Text('Cancel'),
+                        ),
+                        TextButton(
+                          onPressed: () => Navigator.pop(context, true),
+                          style: TextButton.styleFrom(
+                            foregroundColor: AppColors.dragonfruit,
+                          ),
+                          child: const Text('Delete'),
+                        ),
+                      ],
+                    ),
+                  );
+
+                  // If user confirmed, proceed with delete
+                  if (confirmed == true && context.mounted) {
+                    await ref
+                        .read(settingsControllerProvider.notifier)
+                        .deleteAccount();
+
+                    // Navigate to welcome screen after account deletion
+                    if (context.mounted) {
+                      context.go('/welcome');
+                    }
+                  }
+                },
+                child: Text(
+                  'Delete Account',
+                  style: AppTextStyles.bodyMedium.copyWith(
+                    color: AppColors.dragonfruit,
+                    decoration: TextDecoration.underline,
+                  ),
                 ),
               ),
             ),
-          ),
+          ],
         ],
       ),
     );

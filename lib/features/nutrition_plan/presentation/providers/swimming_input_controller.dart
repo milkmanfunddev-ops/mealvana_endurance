@@ -338,21 +338,32 @@ class SwimmingInputController extends _$SwimmingInputController {
     _autoUpdateFuelingWindow();
   }
 
-    /// Reset the fueling window to its ratified default for a NEW activity.
+  /// Reset the create-flow form state to its derived defaults for a NEW
+  /// activity.
   ///
   /// The sport input controllers are `keepAlive` singletons, so without this a
-  /// window the athlete stepped on one activity — and the `preSwimMinutesManuallySet`
-  /// flag that step latched — rode into every later activity and permanently
-  /// suppressed re-derivation (§3a defaults, incl. Race Pace ⇒ 3 h, could never
-  /// fire again). CF-1's "a manual change persists" means *within the activity
-  /// being edited*. Xuan, on-device 2026-09-03;
+  /// value the athlete set by hand on one activity — and the `*ManuallySet`
+  /// flag that latched with it — rode into every later activity and
+  /// permanently suppressed re-derivation (§3a defaults, incl. Race Pace ⇒ 3 h,
+  /// could never fire again; the title stayed the old event's name). Xuan,
+  /// on-device 2026-09-03;
   /// ops/data/bug-reports/2026-09-03-fueling-window-sticks-across-activities.md
   ///
-  /// Deliberately narrow: only the fueling window is reset here. The lifetime of
-  /// the other form state (title / temperature / humidity flags) is the deferred
-  /// ruling qa/intake/2026-09-03-form-state-reset-semantics.md (Q-CA2).
-  void resetFuelingWindowForNewActivity() {
-    state = state.copyWith(preSwimMinutesManuallySet: false);
+  /// Q-CA2 (RULED Xuan, 2026-09-21 — option (a), PER-ACTIVITY): ONE lifetime for
+  /// ALL form state. Opening the create flow for a NEW activity resets the
+  /// values *and* the flags; CF-1's "a manual change persists" means *within
+  /// the activity being edited*; editing an EXISTING activity re-hydrates from
+  /// that activity (the screen's seeds run after this reset and still win).
+  /// Swimming carries no temperature/humidity overrides — deck temperature is
+  /// forecast-derived only — so the title and the window are all there is here.
+  void resetFormStateForNewActivity() {
+    state = state.copyWith(
+      preSwimMinutesManuallySet: false,
+      activityTitleManuallySet: false,
+      activityTitle: ActivityTitleFormatter.formatSwimmingTitle(
+        state.distanceMeters,
+      ),
+    );
     _autoUpdateFuelingWindow();
   }
 
