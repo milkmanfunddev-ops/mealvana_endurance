@@ -1,5 +1,8 @@
 # Integration Test Infrastructure Setup Complete
 
+> **Superseded (2026-09-23).** This file describes a mocks/fixtures/utils scaffold that no longer
+> exists. The current suite, its flows and helpers are in `README.md` beside this file.
+
 ## Summary
 
 The integration test infrastructure for Mealvana Endurance has been successfully created and validated. All test files compile correctly and the sample test passes.

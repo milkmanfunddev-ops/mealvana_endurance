@@ -77,6 +77,10 @@ weather detail; recipes; share-plan; privacy-consent screen (region-gated); forc
 
 ## Known REAL bugs the suites currently expose (do not "fix" the tests)
 
+> **Superseded (2026-09-23) by the Findings folder.** Bugs, SSOT clashes and follow-up tests are
+> now one file each in `.scratch/testing-wave/findings/` (index: `node scripts/testing-wave/findings.mjs index`).
+> This section is kept for history and is no longer updated; do not add to it.
+
 1. **Before-phase adherence misses its own contract** (`MACRO_CONSTRAINT_RANGES`
    0.9–1.1): protein 81% (50kg/5K) and 122% (70kg/10mi); carbs 112% (90kg/HM) and
    89% (65kg/marathon). `test/e2e/dev_cloud_e2e_test.dart` strict cases.
