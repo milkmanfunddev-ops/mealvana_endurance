@@ -61,11 +61,7 @@ enum RedeemedKind {
 }
 
 class CodeRedeemed extends CodeRedemption {
-  const CodeRedeemed({
-    required this.kind,
-    this.proDays = 0,
-    this.coachUserId,
-  });
+  const CodeRedeemed({required this.kind, this.proDays = 0, this.coachUserId});
 
   final RedeemedKind kind;
 
@@ -124,7 +120,8 @@ enum CodeRedeemFailureKind {
 
 class CodeRedeemFailure implements Exception {
   const CodeRedeemFailure(this.kind);
-  const CodeRedeemFailure.unavailable() : kind = CodeRedeemFailureKind.unavailable;
+  const CodeRedeemFailure.unavailable()
+    : kind = CodeRedeemFailureKind.unavailable;
   const CodeRedeemFailure.signInRequired()
     : kind = CodeRedeemFailureKind.signInRequired;
 

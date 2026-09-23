@@ -4,9 +4,10 @@
 /// Covers: the two plan cards pinned above one Continue button through the
 /// whole scroll, annual selected with its saving and per-month price from
 /// the store prices (mp-493 §3); the free week when eligible and not when
-/// the store says it is spent; the ⋯ menu listing exactly Restore, Manage
-/// (only with a subscription), Sign out and Delete account, and no Redeem
-/// code yet (mp-494, mp-496 §3); the two presentations (mp-493 §5): no close
+/// the store says it is spent; the ⋯ menu listing exactly Restore, Redeem
+/// code, Manage (only with a subscription), Sign out and Delete account
+/// (mp-494); Redeem code opening our own Code entry, which sends the Code
+/// and says what it did or why it was refused (mp-458); the two presentations (mp-493 §5): no close
 /// button full screen, and for a lapsed account a closable glass sheet over
 /// the read-only app, opened by the plan-ended bar, an AI tap or an AI route,
 /// that closes back to the same screen, while a never-subscribed account
@@ -35,7 +36,10 @@ import 'package:purchases_flutter/purchases_flutter.dart';
 import 'package:mealvana_endurance/features/content/application/content_service.dart';
 import 'package:mealvana_endurance/features/settings/domain/settings_state.dart';
 import 'package:mealvana_endurance/features/settings/presentation/providers/settings_controller.dart';
+import 'package:mealvana_endurance/features/subscription/application/code_entry_controller.dart';
 import 'package:mealvana_endurance/features/subscription/application/pro_paywall_controller.dart';
+import 'package:mealvana_endurance/features/subscription/domain/code_redemption.dart';
+import 'package:mealvana_endurance/features/subscription/presentation/widgets/redeem_code_sheet.dart';
 import 'package:mealvana_endurance/features/subscription/application/subscription_status_provider.dart';
 import 'package:mealvana_endurance/features/subscription/domain/entitlement.dart';
 import 'package:mealvana_endurance/features/subscription/application/pro_gate.dart';
@@ -58,6 +62,7 @@ import 'package:mealvana_endurance/theme/kyle_design/app_colors.dart';
 import '../../../helpers/widget_test_harness.dart';
 import '../../../shared/widgets/kyle_design/phone_clip_fakes.dart';
 import '../../meal_planning/presentation/helpers/test_content.dart';
+import '../code_entry_fakes.dart';
 import '../customer_info_fixtures.dart';
 import '../offerings_fixtures.dart';
 
@@ -150,6 +155,7 @@ List<Override> _overrides({
   SettingsController Function()? settings,
   Future<bool> Function(Uri)? launcher,
   PhoneClipPlayer Function()? clip,
+  CodeEntryController Function()? codeEntry,
   bool hasSubscription = false,
   SubscriptionStatus status = SubscriptionStatus.none,
 }) {
@@ -165,12 +171,14 @@ List<Override> _overrides({
     paywallHasSubscriptionProvider.overrideWith((ref) async => hasSubscription),
     if (paywall != null) proPaywallControllerProvider.overrideWith(paywall),
     if (settings != null) settingsControllerProvider.overrideWith(settings),
+    if (codeEntry != null) codeEntryControllerProvider.overrideWith(codeEntry),
     if (launcher != null)
       paywallUrlLauncherProvider.overrideWithValue(launcher),
   ];
 }
 
 const _restore = ValueKey('paywall.restore_button');
+const _redeem = ValueKey('paywall.redeem_code_button');
 const _manage = ValueKey('paywall.manage_button');
 const _signOut = ValueKey('paywall.sign_out_button');
 const _delete = ValueKey('paywall.delete_account_button');
@@ -330,7 +338,7 @@ void main() {
     });
   });
 
-  group('the ⋯ menu (mp-494, mp-496 §3)', () {
+  group('the ⋯ menu (mp-494)', () {
     testWidgets('the old stack of buttons is gone: the actions are only in '
         'the menu', (tester) async {
       await smokeScreen(tester, const PaywallScreen(), overrides: _overrides());
@@ -341,21 +349,21 @@ void main() {
       expect(find.byKey(_more), findsOneWidget);
     });
 
-    testWidgets('never subscribed: Restore, Sign out, Delete account; no '
-        'Manage, no Redeem code', (tester) async {
+    testWidgets('never subscribed: Restore, Redeem code, Sign out, Delete '
+        'account; no Manage', (tester) async {
       await smokeScreen(tester, const PaywallScreen(), overrides: _overrides());
       await _openMenu(tester);
       expect(_menuLabels(tester), [
         'Restore purchases',
+        'Redeem code',
         'Sign out',
         'Delete account',
       ]);
       expect(find.byKey(_manage), findsNothing);
-      expect(find.textContaining('code'), findsNothing);
     });
 
-    testWidgets('with a subscription: Restore, Manage, Sign out, Delete '
-        'account', (tester) async {
+    testWidgets('with a subscription: Restore, Redeem code, Manage, Sign out, '
+        'Delete account', (tester) async {
       await smokeScreen(
         tester,
         const PaywallScreen(),
@@ -364,11 +372,11 @@ void main() {
       await _openMenu(tester);
       expect(_menuLabels(tester), [
         'Restore purchases',
+        'Redeem code',
         'Manage subscription',
         'Sign out',
         'Delete account',
       ]);
-      expect(find.textContaining('code'), findsNothing);
     });
 
     testWidgets('the onboarding shape carries the same menu (mp-494 §2)', (
@@ -382,6 +390,7 @@ void main() {
       await _openMenu(tester);
       expect(_menuLabels(tester), [
         'Restore purchases',
+        'Redeem code',
         'Sign out',
         'Delete account',
       ]);
@@ -673,7 +682,7 @@ void main() {
     await tester.pumpAndSettle();
     expect(paywall.bought, isEmpty);
     await _openMenu(tester);
-    for (final key in [_restore, _signOut, _delete]) {
+    for (final key in [_restore, _redeem, _signOut, _delete]) {
       expect(find.byKey(key), findsOneWidget, reason: '$key');
     }
   });
@@ -805,6 +814,126 @@ void main() {
     await tester.pumpAndSettle();
     expect(settings.deletes, 1);
     expect(settings.signOuts, 0);
+  });
+
+  group('Redeem code (mp-458, mp-494)', () {
+    Future<RecordingCodeEntry> openEntry(
+      WidgetTester tester,
+      Object answer,
+    ) async {
+      final entry = RecordingCodeEntry(answer);
+      await smokeScreen(
+        tester,
+        const PaywallScreen(),
+        overrides: _overrides(codeEntry: () => entry),
+      );
+      await _openMenu(tester);
+      await tester.tap(find.byKey(_redeem));
+      await tester.pumpAndSettle();
+      return entry;
+    }
+
+    Future<void> enter(WidgetTester tester, String code) async {
+      await tester.enterText(find.byKey(RedeemCodeSheet.fieldKey), code);
+      await tester.pump();
+      await tester.tap(find.byKey(RedeemCodeSheet.submitKey));
+      await tester.pumpAndSettle();
+    }
+
+    testWidgets('opens our own Code entry, not the store\'s sheet', (
+      tester,
+    ) async {
+      await openEntry(
+        tester,
+        const CodeRedeemed(kind: RedeemedKind.attributed),
+      );
+      expect(find.byType(RedeemCodeSheet), findsOneWidget);
+      expect(find.text(_content['redeem_code.title']!), findsOneWidget);
+      expect(find.byKey(RedeemCodeSheet.fieldKey), findsOneWidget);
+    });
+
+    testWidgets('Redeem does nothing until a Code is typed', (tester) async {
+      final entry = await openEntry(
+        tester,
+        const CodeRedeemed(kind: RedeemedKind.attributed),
+      );
+      await tester.tap(find.byKey(RedeemCodeSheet.submitKey));
+      await tester.pumpAndSettle();
+      expect(entry.sent, isEmpty);
+      expect(find.byType(RedeemCodeSheet), findsOneWidget);
+    });
+
+    testWidgets("a coach's own Code: sent, the sheet closes and says what it "
+        'did', (tester) async {
+      final entry = await openEntry(
+        tester,
+        const CodeRedeemed(kind: RedeemedKind.coach, proDays: 30),
+      );
+      await enter(tester, 'coach42');
+
+      expect(entry.sent, ['COACH42']);
+      expect(find.byType(RedeemCodeSheet), findsNothing);
+      expect(
+        find.text("You're set up as a coach, with 30 days of Pro."),
+        findsOneWidget,
+      );
+    });
+
+    testWidgets('a giveaway Code says how many days of Pro', (tester) async {
+      await openEntry(
+        tester,
+        const CodeRedeemed(kind: RedeemedKind.giveaway, proDays: 365),
+      );
+      await enter(tester, 'WIN365');
+      expect(
+        find.text('Code redeemed. You have 365 days of Pro.'),
+        findsOneWidget,
+      );
+    });
+
+    testWidgets("a coach's Code entered by an athlete says the pairing is "
+        'asked for', (tester) async {
+      await openEntry(
+        tester,
+        const CodeRedeemed(kind: RedeemedKind.paired, coachUserId: 'c-1'),
+      );
+      await enter(tester, 'COACH42');
+      expect(
+        find.text(_content['redeem_code.success_paired']!),
+        findsOneWidget,
+      );
+    });
+
+    testWidgets('a refused Code keeps the sheet open and says why', (
+      tester,
+    ) async {
+      await openEntry(tester, const CodeRefused(reason: CodeRefusal.expired));
+      await enter(tester, 'OLD');
+      expect(find.byType(RedeemCodeSheet), findsOneWidget);
+      expect(
+        tester.widget<Text>(find.byKey(RedeemCodeSheet.problemKey)).data,
+        'That code has expired.',
+      );
+    });
+
+    testWidgets('an anonymous session is told to sign in', (tester) async {
+      await openEntry(tester, const CodeRedeemFailure.signInRequired());
+      await enter(tester, 'ABC');
+      expect(find.byType(RedeemCodeSheet), findsOneWidget);
+      expect(
+        tester.widget<Text>(find.byKey(RedeemCodeSheet.problemKey)).data,
+        _content['redeem_code.failed_sign_in'],
+      );
+    });
+
+    testWidgets('no answer asks to try again', (tester) async {
+      await openEntry(tester, const CodeRedeemFailure.unavailable());
+      await enter(tester, 'ABC');
+      expect(
+        tester.widget<Text>(find.byKey(RedeemCodeSheet.problemKey)).data,
+        _content['redeem_code.failed_unavailable'],
+      );
+    });
   });
 
   group('founding prices (mp-453 §2)', () {
@@ -1214,9 +1343,9 @@ void main() {
       );
 
       // What a write controller's refused `canWrite()` does.
-      ProviderScope.containerOf(tester.element(find.text('settings')))
-          .read(paywallRequestsProvider.notifier)
-          .request();
+      ProviderScope.containerOf(
+        tester.element(find.text('settings')),
+      ).read(paywallRequestsProvider.notifier).request();
       await tester.pumpAndSettle();
       await closesBackTo(tester, router, 'settings');
     });

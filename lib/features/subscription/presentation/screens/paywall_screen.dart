@@ -15,6 +15,7 @@ import '../../application/pro_paywall_controller.dart';
 import '../../domain/entitlement.dart';
 import '../pro_gate_redirect.dart';
 import '../widgets/pro_feature_list.dart';
+import '../widgets/redeem_code_sheet.dart';
 
 export '../pro_gate_redirect.dart' show PaywallPresentation;
 
@@ -100,10 +101,10 @@ Page<void> paywallRoutePage(
 /// privacy policy (mp-453 §4).
 ///
 /// Everything secondary is behind the one ⋯ button (mp-494): Restore
-/// purchases, Manage subscription (only when the account has a store
-/// subscription on record), Sign out and Delete account. Redeem code joins
-/// it with the update (mp-496 §3). The same menu serves the onboarding shape
-/// (mp-494 §2, replacing mp-417 §3).
+/// purchases, Redeem code (our own Code entry, mp-458; this is the update
+/// that ships it, mp-496 §3), Manage subscription (only when the account has
+/// a store subscription on record), Sign out and Delete account. The same
+/// menu serves the onboarding shape (mp-494 §2, replacing mp-417 §3).
 ///
 /// One layout, two presentations (mp-493 §5, [presentation]). Full screen
 /// has no close button: a never-subscribed account has nothing behind it.
@@ -316,7 +317,8 @@ class PaywallScreen extends ConsumerWidget {
     final clipLabel = content.getValue(ContentKeys.paywallClipLabel);
 
     // mp-494 §1: exactly these, in this order; Manage only with a
-    // subscription to manage. No Redeem code before the update (mp-496 §3).
+    // subscription to manage. Redeem code opens our own entry, never the
+    // store's offer-code sheet.
     void unlessBusy(void Function() action) {
       if (!isBusy) action();
     }
@@ -326,6 +328,11 @@ class PaywallScreen extends ConsumerWidget {
         key: const ValueKey('paywall.restore_button'),
         label: content.getValue(ContentKeys.paywallRestoreButton),
         onSelected: () => unlessBusy(() => _restore(context, ref)),
+      ),
+      OverflowMenuEntry(
+        key: const ValueKey('paywall.redeem_code_button'),
+        label: content.getValue(ContentKeys.redeemCodeButton),
+        onSelected: () => unlessBusy(() => openRedeemCode(context, ref)),
       ),
       if (hasSubscription)
         OverflowMenuEntry(

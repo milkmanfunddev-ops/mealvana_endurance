@@ -12,6 +12,7 @@ import '../../../content/domain/content_keys.dart';
 import '../../application/subscription_screen_controller.dart';
 import '../open_paywall.dart';
 import '../widgets/pro_feature_list.dart';
+import '../widgets/redeem_code_sheet.dart';
 import 'paywall_screen.dart';
 
 /// The Subscription screen in Settings (mp-495, approved as mp-500).
@@ -21,7 +22,8 @@ import 'paywall_screen.dart';
 /// includes as a tick list with the AI features under the one Vana line, as
 /// on the paywall. Upgrade opens the paywall, only once the plan has ended;
 /// Manage subscription opens the store's own page, only with a store
-/// subscription on record. No Redeem code before the update (mp-496 §3).
+/// subscription on record. Redeem code opens our own Code entry (mp-458),
+/// always there: a Code can grant Pro, pair or refer whatever the plan.
 ///
 /// Built from the paywall's `kyle_design` pieces (`FeatureList`, the Kyle
 /// buttons, `BaseCard`) in our branding (mp-495 §4). UI only: the status is
@@ -125,6 +127,12 @@ class SubscriptionScreen extends ConsumerWidget {
                       ),
                     ],
                   ],
+                  const SizedBox(height: AppSpacing.sm),
+                  KyleTertiaryButton(
+                    key: const ValueKey('subscription.redeem_code_button'),
+                    text: t(ContentKeys.redeemCodeButton),
+                    onPressed: () => openRedeemCode(context, ref),
+                  ),
                   const SizedBox(height: AppSpacing.xxl),
                   Text(
                     key: const ValueKey('subscription.includes_header'),

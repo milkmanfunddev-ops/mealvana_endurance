@@ -121,23 +121,26 @@ void main() {
       c.read(subscriptionStatusProvider.future);
 
   group('a Code that grants pro opens the gate', () {
-    test("a coach's own Code: coach, 30 days, and the status re-asked", () async {
-      answer200({'ok': true, 'kind': 'coach', 'pro_days': 30});
-      final c = container();
-      expect((await status(c)).active, isFalse);
+    test(
+      "a coach's own Code: coach, 30 days, and the status re-asked",
+      () async {
+        answer200({'ok': true, 'kind': 'coach', 'pro_days': 30});
+        final c = container();
+        expect((await status(c)).active, isFalse);
 
-      final result = await c
-          .read(codeEntryControllerProvider.notifier)
-          .redeem('coach42');
+        final result = await c
+            .read(codeEntryControllerProvider.notifier)
+            .redeem('coach42');
 
-      expect(result, isA<CodeRedeemed>());
-      final redeemed = result! as CodeRedeemed;
-      expect(redeemed.kind, RedeemedKind.coach);
-      expect(redeemed.proDays, 30);
-      expect(c.read(codeEntryControllerProvider).value, same(result));
-      verify(() => service.forgetCachedStatus()).called(1);
-      expect((await status(c)).active, isTrue);
-    });
+        expect(result, isA<CodeRedeemed>());
+        final redeemed = result! as CodeRedeemed;
+        expect(redeemed.kind, RedeemedKind.coach);
+        expect(redeemed.proDays, 30);
+        expect(c.read(codeEntryControllerProvider).value, same(result));
+        verify(() => service.forgetCachedStatus()).called(1);
+        expect((await status(c)).active, isTrue);
+      },
+    );
 
     test('a giveaway Code: 365 days, and the status re-asked', () async {
       answer200({'ok': true, 'kind': 'giveaway', 'pro_days': 365});
@@ -309,6 +312,9 @@ void main() {
 
     notifier.reset();
 
-    expect(c.read(codeEntryControllerProvider), const AsyncData<CodeRedemption?>(null));
+    expect(
+      c.read(codeEntryControllerProvider),
+      const AsyncData<CodeRedemption?>(null),
+    );
   });
 }
