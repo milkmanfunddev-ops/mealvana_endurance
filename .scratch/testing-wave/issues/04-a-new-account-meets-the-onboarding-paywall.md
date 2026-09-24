@@ -1,6 +1,6 @@
 # 04: A new account meets the onboarding paywall
 
-**Status:** in-progress (wave 4, 2026-09-24)
+**Status:** done (wave 4, 2026-09-24)
 **Blocked by:** 02, 03 (touches integration_test/flows/onboarding_signup_flow_test.dart).
 **Next:** `/implement-lee testing-wave`
 **Model:** opus
