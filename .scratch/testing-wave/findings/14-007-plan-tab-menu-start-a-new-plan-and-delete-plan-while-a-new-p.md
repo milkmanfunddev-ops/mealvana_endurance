@@ -1,0 +1,26 @@
+# 14-007 · Plan tab menu: Start a new plan and Delete plan while a new-plan draft is open
+
+- kind: followup-test
+- status: open
+- ticket: 14
+- run: w8-20260924T1418Z
+- screen: Plan tab (⋮ menu)
+- decision: 
+
+**Steps.**
+1. Plan tab → ⋮ beside "Sep 20 – Sep 26". 2. Tap Start a new plan: does it open the same new-plan chat as the button? 3. With a new-plan draft half built, tap Delete plan on the confirmed plan, then go back to the draft and confirm it.
+
+**Expected.**
+Start a new plan behaves like New meal plan. Deleting the confirmed plan leaves the draft alone, and confirming the draft then works and archives nothing unexpected.
+
+**Actual.**
+Not run (followup). The menu shows Start a new plan, Previous plans, Delete plan.
+
+**Evidence.**
+- runs/14/09-plan-header-menu.png — the menu.
+
+**Decision quote.**
+> 
+
+**Triage.**
+
