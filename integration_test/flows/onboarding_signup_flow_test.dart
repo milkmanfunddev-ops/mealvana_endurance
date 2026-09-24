@@ -171,17 +171,22 @@ void main() {
             'Expected the paywall after signup. If this fails, the signup '
             'round-trip did not complete or the post-signup redirect changed.',
       );
-      await $(const ValueKey('paywall.more_button')).tap();
-      await $.pumpAndSettle();
+      // The paywall never settles (its opening clip keeps animating), so a
+      // bare pumpAndSettle here ran the flow into its 12-minute timeout
+      // (testing-wave 03). Wait for the menu rows instead.
+      await $(
+        const ValueKey('paywall.more_button'),
+      ).tap(settlePolicy: SettlePolicy.noSettle);
       for (final key in const [
         ValueKey('paywall.restore_button'),
         ValueKey('paywall.sign_out_button'),
         ValueKey('paywall.delete_account_button'),
       ]) {
+        await $(key).waitUntilVisible(timeout: const Duration(seconds: 10));
         expect($(key), findsOneWidget, reason: 'paywall menu carries $key');
       }
       await $.tester.tapAt(const Offset(20, 700));
-      await $.pumpAndSettle();
+      await $.pump(const Duration(seconds: 1));
       expect(
         find.textContaining('Failed to save'),
         findsNothing,
