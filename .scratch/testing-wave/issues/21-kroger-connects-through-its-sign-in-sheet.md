@@ -1,6 +1,6 @@
 # 21: Kroger connects through its sign-in sheet
 
-**Status:** in-progress (wave 17, 2026-09-24)
+**Status:** done (wave 17, 2026-09-24)
 **Blocked by:** none.
 **Next:** `/implement-lee testing-wave`
 **Model:** opus
