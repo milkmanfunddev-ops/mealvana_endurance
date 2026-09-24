@@ -162,7 +162,11 @@ At the end of every run, stopped or not, in this order:
 `LOCK list` shows what is still held. A claim left by a crashed agent is dropped on the next claim
 once it is older than the stale timeout (slot 4 h, build 30 min).
 
-## After the wave (wave lead)
+## Before and after the wave (wave lead)
+
+Before opening a wave, read `.scratch/testing-wave/IMPROVEMENTS.md`, the running list of ways to
+make this loop better, and fix or raise one or two of its open items. After the review, append
+what the wave taught (one entry per lesson) and move anything fixed to Done.
 
 `FINDINGS index` writes `.scratch/testing-wave/findings/INDEX.md`, grouped by kind and status, and
 exits 0 only when every Finding is closed or wontfix: that is the end of the loop. `COST status WAVE`
