@@ -11,38 +11,28 @@ Each entry: what went wrong or cost time, where it was seen, and the suggested f
 
 ## Open
 
-Wave 8 (10, 14; 2026-09-24):
-
-- **#30 a credentials-table read printed passwords.** Ticket 10's agent ran an `awk` over
-  `secrets/test_accounts.md` to see its layout and the password column reached its transcript
-  (account D, now deleted, and other test accounts). The runbook forbids printing secrets; the
-  file's shape is still easiest to learn by reading it. Fix: a helper that exports one account's
-  password into the environment (`eval "$(node scripts/testing-wave/cred.mjs env <email>)"`)
-  and the template file for layout, so no agent reads the real file directly. Lee to say whether
-  the printed test-account passwords get changed.
-- **#31 copied simulators carry Lee's dev data.** Every wave simulator is a copy of the dev
-  simulator, so its local database holds Lee's own account's rows even after another account
-  signs in (Finding 14-004). The app bug is the Finding; for testing, a run that checks what is
-  on screen may read Lee's data as the test account's. Fix to consider: sign out on the dev
-  simulator before the copy, or note the account in each prompt.
-
-Wave 9 (16, 32; 2026-09-24):
-
-- **#32 a pool copy carries the dev simulator's app, not the testing build.** `app-build.json`
-  named 433514bc and no app code had changed, but the wave-8 build left with the dropped
-  simulators, so fresh copies held a Sep 23 build. The lead rebuilt. Fix: after a build, the
-  lead keeps `Runner.app` (scratchpad, or install it on the dev simulator too) and the "no
-  build" check also compares the Dart bundle date on a fresh copy.
-- **#33 `app-build.json` still lagged in the worktrees.** The lead recorded the wave-9 build in a
-  commit after `wave --open`, so both worktrees (at base) named 433514bc; the prompt was right.
-  Fix: build before `wave --open`, or keep the prompt as the only source (the runbook says so).
-- **#35 `idb ui text` mangled a long address (ticket 32).** The first signup said "Please enter a
-  valid email address" with no network call; retyped with the mobile MCP it passed. The field
-  shows only its tail, so the agent could not read back what was typed. Fix: runbook step 5 types
-  addresses with the mobile MCP first, and checks a long value with `idb ui describe-all` before
-  submitting.
+(none)
 
 ## Done
+
+**Lee's second walk-through, 2026-09-24** (after wave 9). Each item, what he chose, and where it landed:
+
+- **#30 passwords printed.** `scripts/testing-wave/cred.mjs` (`type`, `file`, `new`, `update`,
+  `list`) is the only way agents reach the credentials; none of its commands prints a password
+  (tested). No password change (Lee): the leak stayed in a local transcript. Runbook names and
+  step 5.
+- **#31 copied simulators carry Lee's data.** The lead runs `scripts/testing-wave/clear-app.sh
+  <udid>` on each copy: the app's data folder is emptied, the build stays, the app opens signed out
+  with a fresh database (checked: 430 KB new database against the dev simulator's 3 MB). It refuses
+  a simulator not named `wave-*`. Tickets that test the leftover data skip it. Lee wanted no extra
+  reinstalls or rebuilds; this has neither.
+- **#32 copies carried an old app.** A build now goes onto the dev simulator itself, so every copy
+  inherits it; the wave-9 build (`52c68764`) was installed there, data kept. Build only when app
+  code changed since `app-build.json` (Lee).
+- **#33 `app-build.json` lagged.** The build check and any build happen before `wave --open`, and
+  the prompt's commit wins if the two differ.
+- **#35 idb typing.** Type with the mobile MCP, idb as fallback; read long values back with
+  `idb ui describe-all` before submitting. Address format unchanged.
 
 - **#34 one run's stop ended the other run's console (wave 9).** Ticket 16 stopped its log stream
   at 14:56:02Z and ticket 32's stream died the same second (SIGTERM). Runbook step 3 now saves

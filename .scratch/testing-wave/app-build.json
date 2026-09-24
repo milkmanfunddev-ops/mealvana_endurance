@@ -1,5 +1,5 @@
 {
   "commit": "52c68764b2cde49951a27220a8dbdb3a463116f7",
   "builtAt": "2026-09-24T14:46:00Z",
-  "note": "Commit the testing app on the wave simulators was built from (wave 9, run_dev.sh debug build from ticket 16's clean worktree; lib unchanged since 433514bc, rebuilt because pool copies carry the dev simulator's older app). null: unknown, so the next wave builds once (RUNBOOK, wave lead step 2)."
+  "note": "Commit the testing app was built from; the dev simulator carries this build, so every wave copy inherits it (wave 9 build, installed on the dev simulator 2026-09-24). Rebuild only when lib/pubspec/ios/assets changed since this commit, before wave --open (RUNBOOK, wave lead step 2)."
 }

@@ -3,8 +3,9 @@
 <!--
 The shape of secrets/test_accounts.md. The real file lives ONLY at
   /Users/leemartin/development/mealvana_endurance/secrets/test_accounts.md
-(gitignored; worktree agents read and append to it by that absolute path). This template holds
-no passwords and is the only copy that is committed. Every account is on DEV; nothing here is
+(gitignored). Agents never open it: they reach it only through scripts/testing-wave/cred.mjs,
+which types, saves and adds passwords without printing one. This template holds no passwords and
+is the only copy that is committed. Every account is on DEV; nothing here is
 ever used against prod.
 
 Agents type these passwords themselves (Lee, 2026-09-23; this repo only, the QA repo's rule is

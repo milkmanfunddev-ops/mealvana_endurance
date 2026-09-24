@@ -14,8 +14,12 @@ Names used below:
 - `RUNS`: `.scratch/testing-wave/runs/NN/` in your worktree. Everything the run produces goes here.
 - `LOCK`: `node scripts/testing-wave/lock.mjs`. `COST`: `node scripts/testing-wave/cost.mjs`.
   `FINDINGS`: `node scripts/testing-wave/findings.mjs`. `SYNC`: `node docs/ssot/decisions/_page/sync.mjs`.
-- Credentials: `/Users/leemartin/development/mealvana_endurance/secrets/test_accounts.md`, always by
-  that absolute path, from every worktree. Its shape is `scripts/testing-wave/test_accounts.template.md`.
+- `CRED`: `node scripts/testing-wave/cred.mjs`, the only way to the credentials
+  (`/Users/leemartin/development/mealvana_endurance/secrets/test_accounts.md`). Never open that file
+  in any way; its shape is `scripts/testing-wave/test_accounts.template.md`, and `CRED list` shows
+  addresses and states. `CRED type <email> --udid UDID` types a password into the focused field,
+  `CRED file <email> SCRATCH/<name>` saves one (mode 600) for an API check, `CRED new` and
+  `CRED update` add and change Created accounts rows. None of them prints a password.
 - `SCRATCH`: the scratch folder your prompt names, one per ticket (`<scratchpad>/testing-wave-NN/`).
   Helper scripts and temporary files go there and nowhere else; never read or run another ticket's.
 - `UDID`: the simulator your prompt names. The wave lead made it for you with the app already
@@ -26,8 +30,9 @@ Nothing gets fixed during a run. Every problem, clash or idea is a Finding (step
 No Patrol (Lee, 2026-09-24). You test by driving the app yourself; you do not write or run
 Patrol flows, whatever an older ticket says.
 
-Never print a secret: no `cat`, `tail` or `bash -x` on anything that reads `secrets/`, `.env*` or
-the credentials file. Read a value into a variable without echoing it.
+Never print a secret: no `cat`, `tail` or `bash -x` on anything that reads `secrets/` or `.env*`,
+and no read of the credentials file except through `CRED`. Read a value into a variable without
+echoing it.
 
 ## 1. Claim a slot
 
@@ -66,25 +71,29 @@ Stop the log stream at step 9.
 
 ## 4. Start from what is on the screen
 
-Look first (the mobile MCP's screenshot and element list). The simulator opens in whatever state
-the dev simulator was in when it was copied: usually signed in as the entitled dev test account,
-with its plans and logs. Do only the setup your ticket needs. Signed out and your ticket uses the
-dev test account: log in with it from the credentials file. A ticket about signup or purchase signs
-out and makes its own account. Never reinstall
-or wipe the app unless the ticket says so.
+Look first (the mobile MCP's screenshot and element list). The wave lead cleared the app's data,
+so it opens signed out on Welcome with an empty local database, unless your prompt says the
+ticket tests the dev simulator's leftover data. Do only the setup your ticket needs: a ticket on
+the dev test account logs in with it (`CRED type test@test.com --udid UDID` for the password); a
+ticket about signup or purchase makes its own account. Never reinstall or wipe the app unless the
+ticket says so.
 
 ## 5. Drive the app
 
 - See and tap with the mobile MCP, on `UDID` only. It works on wave simulators (the wave lead's
   simulator setup installs its helper app). idb is the fallback: `idb ui describe-all --udid UDID`,
   `idb ui tap X Y --udid UDID`.
-- Type text with the MCP or `idb ui text "<text>" --udid UDID`. Passwords come from the credentials
-  file; type them, never echo them into a Finding, commit or report.
+- Type text with the mobile MCP; `idb ui text "<text>" --udid UDID` is the fallback (it once
+  mangled a long address, IMPROVEMENTS #35). Before submitting a long value (an address, a code),
+  read it back with `idb ui describe-all --udid UDID`: a field shows only the tail of a long value.
+  Passwords go in with `CRED type`, never by hand and never into a Finding, commit or report.
 - A new account signs up at `lee+e2e-NN-<UTC time>@rightpathprogramming.com`. Dev asks for the
   6-digit code we email (since 2026-09-24): read it with the Gmail tool
-  (`to:lee+e2e-NN-… from:support@mealvana.io`, newest first), type it into the app. Add the
-  account's row to the credentials file's Created accounts table the moment signup succeeds
-  (re-read the file first, append one row), and update its state as the run changes it.
+  (`to:lee+e2e-NN-… from:support@mealvana.io`, newest first), type it into the app. Before
+  signup, `CRED new <address> --ticket NN --run RUN` makes the password and adds the row (state
+  `new`); type it with `CRED type`. Change the row as the run changes the account (`CRED update
+  <address> --state paid --bought monthly --when <UTC>`; `--new-password` for a reset, after
+  `CRED file` has kept the old one if the run still checks it).
 - Before a step that generates a new Vana plan or makes an AI logging call, spend first:
 
   ```
@@ -173,7 +182,7 @@ step or criterion the retest resumes from. Go to step 9. A run with no `STOPPED.
 At the end of every run, stopped or not, in this order:
 
 1. Delete the account you created through the app's delete-account flow (unless the ticket keeps
-   it), and set its state in the credentials file (`deleted` or `delete-failed`).
+   it), and set its state with `CRED update <address> --state deleted` (or `delete-failed`).
 2. Stop your log stream (`kill $(cat SCRATCH/logstream.pid)`; never `pkill`/`killall log`, which
    ends the other run's console too) and terminate the app on the simulator.
 3. `LOCK release slot OWNER`. The simulator stays; the wave lead deletes it at the close.
@@ -197,19 +206,25 @@ should behave) goes to the page as an open question, the normal way, and nothing
 **Before the wave.**
 
 1. Read `.scratch/testing-wave/IMPROVEMENTS.md`; fix or raise one or two open items.
-2. The app. `.scratch/testing-wave/app-build.json` names the commit the testing app was built from.
-   `git diff --name-only <that commit> <base> -- lib pubspec.yaml pubspec.lock ios assets` empty:
-   no build. Anything listed: build once from a clean worktree at the base (never the main clone,
-   which carries other sessions' unfinished edits): `scripts/run_dev.sh -d <first wave simulator>`,
-   quit it once the app runs, `xcrun simctl install` the same `build/ios/iphonesimulator/Runner.app`
-   on the other wave simulator, and write the base commit to `app-build.json`. Agents never build.
+2. The app, before `wave --open` (Lee, 2026-09-24: build only when app code changed).
+   `.scratch/testing-wave/app-build.json` names the commit the testing app was built from, and the
+   dev simulator carries that build. `git diff --name-only <that commit> HEAD -- lib pubspec.yaml
+   pubspec.lock ios assets` empty: no build, nothing to install. Anything listed: build once from a
+   clean detached worktree at HEAD (never the main clone, which carries other sessions' unfinished
+   edits) with `scripts/run_dev.sh -d <dev simulator udid>`, quit it once the app runs (an install
+   keeps the dev simulator's data and sign-in), remove that worktree, write the commit to
+   `app-build.json` and commit it. Then open the wave. Agents never build.
 3. One simulator per ticket: `SYNC simulator claim testing-wave-NN` for each, before spawning. It
-   copies the dev simulator's app, signed-in data and the mobile MCP helper. Install the freshly
-   built app on each when step 2 built one. The name and udid go in the ticket's prompt.
+   copies the dev simulator, so it carries the testing build, the mobile MCP helper and Lee's app
+   data. Then `scripts/testing-wave/clear-app.sh <udid>` on each, so the app opens signed out with
+   an empty database (it refuses any simulator not named `wave-*`). Skip the clear only for a
+   ticket that tests the leftover data (14-004, 02-001 retests) and say so in its prompt. The name
+   and udid go in the ticket's prompt.
 4. One worktree per ticket (`git worktree add`), then copy every `.env*` file from the main clone
    into it (`cp .env* <worktree>/`), and make the ticket's scratch folder.
-5. The prompt names the worktree, `UDID`, `SCRATCH`, the app's commit, the ticket's full text and
-   its cited decisions, and points at this runbook.
+5. The prompt names the worktree, `UDID`, `SCRATCH`, the app's commit, whether the app data was
+   cleared, the ticket's full text and its cited decisions, and points at this runbook. The
+   prompt's build commit wins over `app-build.json` if they ever differ.
 
 **After the wave.**
 
