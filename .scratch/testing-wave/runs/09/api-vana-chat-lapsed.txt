@@ -1,0 +1,3 @@
+sent at 2026-09-24T13:02:21Z: POST /functions/v1/vana-chat as account D (its own access token), body {"kind":"general","message":"How much carbohydrate should I eat before a long run?"}
+{"error":"pro_required"}
+HTTP 403

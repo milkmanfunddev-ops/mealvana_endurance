@@ -130,6 +130,7 @@ suite. Run it locally or on the M1.
 | `flows/auth_flow_test.dart` | Email login | yes |
 | `flows/barcode_scanner_entry_flow_test.dart` | Barcode scanner entry from the add-food sheet | yes |
 | `flows/brick_plan_flow_test.dart` | Brick workout create → plan → verify the stored legs → clean up | yes |
+| `flows/cancellation_flow_test.dart` | A new `lee+e2e-cancel-*` athlete buys Test Store Monthly, stays in the app while Pro is live, waits (about 30 min) for the monthly to lapse on its own, and on resume lands on the full-screen paywall with no close, the five ⋯ items and still signed in; `vana-chat` answers 403 `pro_required`; its `users` and Entitlement rows are kept; then deletes itself (mp-457, mp-280). The cold relaunch and RevenueCat stay agent-only | clean-install |
 | `flows/energy_breakdown_flow_test.dart` | Energy breakdown (`daily_macros` read path) | yes |
 | `flows/event_checklist_carbload_flow_test.dart` | Event → race-day checklist → carb-load entry | yes |
 | `flows/events_crud_flow_test.dart` | Event create → read → update → delete | yes |
