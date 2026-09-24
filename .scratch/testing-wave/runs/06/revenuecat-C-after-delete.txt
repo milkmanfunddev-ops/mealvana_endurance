@@ -1,0 +1,4 @@
+-- read 11:37:40Z via RevenueCat MCP get-customer, after the in-app delete at 11:37:02Z
+customer d3d962e6-c7d4-4e11-b6ff-60ee59079540 still present (expected: RevenueCat keeps the customer)
+active_entitlements: pro (entla441faaeb4) expires_at 2026-09-24T11:38:37.722Z (the 11:33:37 renewal)
+The Test Store subscription keeps renewing for a deleted account until it lapses (~11:53Z).

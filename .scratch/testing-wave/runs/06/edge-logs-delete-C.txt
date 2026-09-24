@@ -1,0 +1,1 @@
+2026-09-24T11:37:03.669000 POST | 200 | https://vlmtsdzpnjnavdgytcmi.supabase.co/functions/v1/delete-user

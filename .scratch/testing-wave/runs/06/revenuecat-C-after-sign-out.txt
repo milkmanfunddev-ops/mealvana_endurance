@@ -1,0 +1,1 @@
+-- 2026-09-24T11:30:47Z RevenueCat MCP get-customer after sign-out: pro (entla441faaeb4) active, expires_at 2026-09-24T11:33:37.722Z; last_seen_at 11:26:57.225Z; same customer id

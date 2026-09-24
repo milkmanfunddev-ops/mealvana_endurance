@@ -1,0 +1,34 @@
+2026-09-24T11:40:14.167000 [rc-webhook] user d3d962e6-c7d4-4e11-b6ff-60ee59079540 not in this project, ignoring event 2F6A8BC7-6F4D-4A18-B681-E91AAC0919C4
+2026-09-24T11:40:14.202000 POST | 200 | https://vlmtsdzpnjnavdgytcmi.supabase.co/functions/v1/revenuecat-webhook
+2026-09-24T11:43:52.839000 [rc-webhook] INITIAL_PURCHASE: active_until=2026-09-24T11:48:52.069Z period=NORMAL for f2d6a751-c416-4b62-abc9-06a5ffa065b0
+2026-09-24T11:43:52.942000 [rc-webhook] INITIAL_PURCHASE: allowance 4000000 → f2d6a751-c416-4b62-abc9-06a5ffa065b0 ({"balance":4000000,"granted":true,"allowance":4000000,"forfeited":0,"allowance_expires_at":"2026-09-24T11:48:52
+2026-09-24T11:43:52.943000 POST | 200 | https://vlmtsdzpnjnavdgytcmi.supabase.co/functions/v1/revenuecat-webhook
+2026-09-24T11:43:57.475000 [rc-webhook] user 6f9ea9ac-e299-494a-9adb-bd63bd48d1b7 not in this project, ignoring event 19FEAF31-18DE-458E-A747-310D4CD04908
+2026-09-24T11:43:57.477000 POST | 200 | https://vlmtsdzpnjnavdgytcmi.supabase.co/functions/v1/revenuecat-webhook
+2026-09-24T11:44:17.297000 POST | 200 | https://vlmtsdzpnjnavdgytcmi.supabase.co/functions/v1/revenuecat-webhook
+2026-09-24T11:44:17.297000 [rc-webhook] user d3d962e6-c7d4-4e11-b6ff-60ee59079540 not in this project, ignoring event 701BAC3C-E23B-49BD-B8F9-3404ACAD08F4
+2026-09-24T11:47:59.805000 [rc-webhook] user 6f9ea9ac-e299-494a-9adb-bd63bd48d1b7 not in this project, ignoring event 2320570F-3D00-4604-9AAA-D916EE184160
+2026-09-24T11:47:59.806000 POST | 200 | https://vlmtsdzpnjnavdgytcmi.supabase.co/functions/v1/revenuecat-webhook
+2026-09-24T11:48:38.317000 POST | 200 | https://vlmtsdzpnjnavdgytcmi.supabase.co/functions/v1/delete-user
+2026-09-24T11:52:25.770000 [rc-webhook] RENEWAL: active_until=2026-09-24T11:53:52.069Z period=NORMAL for f2d6a751-c416-4b62-abc9-06a5ffa065b0
+2026-09-24T11:52:26.029000 [rc-webhook] RENEWAL: allowance 4000000 → f2d6a751-c416-4b62-abc9-06a5ffa065b0 ({"balance":4000000,"granted":true,"allowance":4000000,"forfeited":4000000,"allowance_expires_at":"2026-09-24T11:53:52.06
+2026-09-24T11:52:26.031000 POST | 200 | https://vlmtsdzpnjnavdgytcmi.supabase.co/functions/v1/revenuecat-webhook
+2026-09-24T11:52:26.621000 [rc-webhook] user 6f9ea9ac-e299-494a-9adb-bd63bd48d1b7 not in this project, ignoring event CF3251B2-C390-4907-8B2A-FAB3B5A9B75A
+2026-09-24T11:52:26.622000 POST | 200 | https://vlmtsdzpnjnavdgytcmi.supabase.co/functions/v1/revenuecat-webhook
+2026-09-24T11:52:43.664000 POST | 200 | https://vlmtsdzpnjnavdgytcmi.supabase.co/functions/v1/revenuecat-webhook
+2026-09-24T11:52:43.664000 [rc-webhook] user d3d962e6-c7d4-4e11-b6ff-60ee59079540 not in this project, ignoring event 54AD356C-55E8-41A4-9142-FD20B827F25B
+2026-09-24T11:56:27.643000 [rc-webhook] user f2d6a751-c416-4b62-abc9-06a5ffa065b0 not in this project, ignoring event 8B23205F-9F58-44FF-877E-F7AF35587AAE
+2026-09-24T11:56:27.645000 POST | 200 | https://vlmtsdzpnjnavdgytcmi.supabase.co/functions/v1/revenuecat-webhook
+2026-09-24T11:56:47.346000 [rc-webhook] user d3d962e6-c7d4-4e11-b6ff-60ee59079540 not in this project, ignoring event AE7FA38E-765B-401B-9580-8369C92E3D8E
+2026-09-24T11:56:47.347000 POST | 200 | https://vlmtsdzpnjnavdgytcmi.supabase.co/functions/v1/revenuecat-webhook
+2026-09-24T11:59:06.897000 [rc-webhook] INITIAL_PURCHASE: active_until=2026-09-24T12:04:05.870Z period=NORMAL for c61d04e9-8174-40de-98e7-caacb34a4ed1
+2026-09-24T11:59:07.022000 [rc-webhook] INITIAL_PURCHASE: allowance 4000000 → c61d04e9-8174-40de-98e7-caacb34a4ed1 ({"balance":4000000,"granted":true,"allowance":4000000,"forfeited":0,"allowance_expires_at":"2026-09-24T12:04:05
+2026-09-24T11:59:07.023000 POST | 200 | https://vlmtsdzpnjnavdgytcmi.supabase.co/functions/v1/revenuecat-webhook
+2026-09-24T12:00:31.285000 [rc-webhook] user 6f9ea9ac-e299-494a-9adb-bd63bd48d1b7 not in this project, ignoring event 93C718D3-BEBD-464A-BC3C-00806C18351A
+2026-09-24T12:00:31.286000 POST | 200 | https://vlmtsdzpnjnavdgytcmi.supabase.co/functions/v1/revenuecat-webhook
+2026-09-24T12:00:31.762000 [rc-webhook] user f2d6a751-c416-4b62-abc9-06a5ffa065b0 not in this project, ignoring event B5928B68-76DF-4EAE-8A71-4C9901969D4B
+2026-09-24T12:00:31.764000 POST | 200 | https://vlmtsdzpnjnavdgytcmi.supabase.co/functions/v1/revenuecat-webhook
+2026-09-24T12:02:45.836000 [rc-webhook] INITIAL_PURCHASE: active_until=2026-09-24T12:07:44.962Z period=NORMAL for a5552afc-9967-47d7-ae72-28f7c0c6b99f
+2026-09-24T12:02:45.963000 [rc-webhook] INITIAL_PURCHASE: allowance 4000000 → a5552afc-9967-47d7-ae72-28f7c0c6b99f ({"balance":4000000,"granted":true,"allowance":4000000,"forfeited":0,"allowance_expires_at":"2026-09-24T12:07:44
+2026-09-24T12:02:45.964000 POST | 200 | https://vlmtsdzpnjnavdgytcmi.supabase.co/functions/v1/revenuecat-webhook
+2026-09-24T12:02:59.317000 POST | 200 | https://vlmtsdzpnjnavdgytcmi.supabase.co/functions/v1/delete-user

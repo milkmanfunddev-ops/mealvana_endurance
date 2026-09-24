@@ -1,0 +1,6 @@
+-- 11:27:26Z to 11:28:06Z: not read. The run's scratch curl helper answered resource_missing for every
+customers/... path (it loaded the key or project id wrongly; a plain curl with the same secret key
+answered 200 for this customer at 11:43Z). The RevenueCat MCP read the customer from 11:29:30Z on:
+first_seen_at 11:24:27.579Z, so the customer existed before the purchase. Its entitlement before
+the purchase comes from the app console only: line 463-464, 11:26:57Z,
+"customer info fetched {active: false, expires_at: null, is_trial: false}".

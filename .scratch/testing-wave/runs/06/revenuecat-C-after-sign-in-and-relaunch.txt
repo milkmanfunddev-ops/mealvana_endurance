@@ -1,0 +1,6 @@
+-- read 11:32:35Z via RevenueCat MCP (get-customer, list-subscriptions), after sign-in 11:31:14Z and cold relaunch 11:31:52Z
+customer d3d962e6-c7d4-4e11-b6ff-60ee59079540 first_seen 11:24:27.579Z last_seen 11:26:57.225Z (unchanged)
+active_entitlements: pro (entla441faaeb4) expires_at 2026-09-24T11:33:37.722Z (unchanged)
+subscriptions (1): subTst2c7c5fec80c3abe5c9c7892cf8792cca, same as after the purchase: test_store, sandbox,
+  active, will_renew, gives_access true, starts 11:28:37.722Z, period -> 11:33:37.722Z, original_customer_id = customer id
+No new customer, alias or subscription.
