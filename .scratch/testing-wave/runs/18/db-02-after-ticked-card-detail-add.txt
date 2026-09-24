@@ -1,0 +1,4 @@
+== 21:10:20Z after the second path: tap on the TICKED Add opened Sweet rice cake's detail; its Add to plan was tapped
+{"name":"Sweet rice cake with jam","servings":8,"servings_left":8,"created_at":"2026-09-24 21:09:24.604476+00","updated_at":"2026-09-24 21:10:20.776+00"}
+{"id":"813df86f-0ad4-4e45-b0c5-bdad898266f3","updated_at":"2026-09-24 21:10:21.294+00","items":5}
+review/feedback tables since 21:00: 0 rows each (feedback, meal_feedback, user_feedback, meal_reviews)
