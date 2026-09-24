@@ -11,9 +11,9 @@
 
 **Touches:** integration_test/flows/redeem_code_flow_test.dart
 
-- [ ] Runs by the runbook: a slot and the build lock taken and released, the console saved to the run folder, a look-around on every screen visited, every problem written as a Finding and nothing fixed.
-- [ ] Signs up its own account at a new plus address, logs it in the credentials file, and deletes it in the app at the end (a failed delete is a Finding).
-- [ ] Uses the dev codes `DEVCOACH30` and `DEVCOACH18` and one made-up code; expected `code_redemptions` rows and Grants are written before the run and checked by SQL and API after.
-- [ ] Each code works once per account; a second redemption of the same code is refused.
+- [x] Runs by the runbook: a slot and the build lock taken and released, the console saved to the run folder, a look-around on every screen visited, every problem written as a Finding and nothing fixed.
+- [x] Signs up its own account at a new plus address, logs it in the credentials file, and deletes it in the app at the end (a failed delete is a Finding).
+- [x] Uses the dev codes `DEVCOACH30` and `DEVCOACH18` and one made-up code; expected `code_redemptions` rows and Grants are written before the run and checked by SQL and API after.
+- [x] Each code works once per account; a second redemption of the same code is refused.
 
 Next: /implement-lee testing-wave

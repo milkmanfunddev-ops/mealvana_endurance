@@ -1,0 +1,17 @@
+[04:00:00] [redeem-code] fa482af4-54e9-4e83-b4a0-c8b622735fa8 redeemed coach code DEVCOACH18 → paired
+[04:08:23] [redeem-code] a51994ad-18b3-4d7a-b622-3aae7b2b1f27 redeemed coach code DEVCOACH30 → paired
+
+(2 rows)
+[03:59:20] POST | 200 | https://vlmtsdzpnjnavdgytcmi.supabase.co/functions/v1/redeem-code
+[03:59:41] POST | 200 | https://vlmtsdzpnjnavdgytcmi.supabase.co/functions/v1/redeem-code
+[04:00:00] POST | 200 | https://vlmtsdzpnjnavdgytcmi.supabase.co/functions/v1/redeem-code
+[04:08:21] POST | 200 | https://vlmtsdzpnjnavdgytcmi.supabase.co/functions/v1/redeem-code
+[04:08:22] POST | 400 | https://vlmtsdzpnjnavdgytcmi.supabase.co/functions/v1/redeem-code
+[04:08:23] POST | 200 | https://vlmtsdzpnjnavdgytcmi.supabase.co/functions/v1/redeem-code
+[04:08:26] POST | 200 | https://vlmtsdzpnjnavdgytcmi.supabase.co/functions/v1/redeem-code
+
+(7 rows)
+[04:01:36] POST | 200 | https://vlmtsdzpnjnavdgytcmi.supabase.co/functions/v1/delete-user
+[04:08:28] POST | 200 | https://vlmtsdzpnjnavdgytcmi.supabase.co/functions/v1/delete-user
+
+(2 rows)
