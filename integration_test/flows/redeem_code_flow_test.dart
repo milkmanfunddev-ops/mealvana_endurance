@@ -22,7 +22,9 @@
 /// DEVCOACH30's owner, both removed by the account delete (they cascade on
 /// the user). A step that throws (a key that never shows) skips the delete:
 /// an account left behind that way, with its pending pairing on the coach,
-/// is swept by `node scripts/testing-wave/sweep-accounts.mjs delete --apply`.
+/// is found with `node scripts/testing-wave/sweep-accounts.mjs list` and
+/// deleted with `sweep-accounts.mjs delete --id ID --apply` (a bare
+/// `delete --apply` also takes another run's live account).
 /// Needs a fresh install (no session): it self-skips otherwise, like the
 /// signup flows. Dev only. If the project asks for email confirmation, start
 /// the code probe first:

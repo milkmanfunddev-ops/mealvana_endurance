@@ -22,8 +22,9 @@
 /// Writes on dev: one auth user, its profile rows and one `user_entitlements`
 /// row (the webhook's), removed by the account delete. RevenueCat keeps the
 /// Test Store customer; nothing is charged. A step that throws skips the
-/// delete: sweep with `node scripts/testing-wave/sweep-accounts.mjs delete
-/// --apply`. Needs a fresh install (no session): it self-skips otherwise,
+/// delete: find the account with `node scripts/testing-wave/sweep-accounts.mjs
+/// list` for its ID, then `sweep-accounts.mjs delete --id ID --apply` (a bare
+/// `delete --apply` also takes another run's live account). Needs a fresh install (no session): it self-skips otherwise,
 /// like the signup flows. Dev only, and only on a build whose RevenueCat key
 /// is the Test Store's (`REVENUECAT_API_KEY_TEST` in `.env.dev.local`).
 ///

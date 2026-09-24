@@ -92,6 +92,16 @@ test('an applied sweep deletes exactly the selected accounts', async () => {
   assert.deepEqual(r.failed, []);
 });
 
+test('a sweep with ids touches only those sweepable accounts, so another run\'s live account survives', async () => {
+  const mine = user('lee+e2e-relogin-1@rightpathprogramming.com');
+  const theirs = user('lee+e2e-07-live@rightpathprogramming.com');
+  const admin = user('test@test.com');
+  const api = fakeApi([mine, theirs, admin]);
+  const r = await sweep({ ref: DEV_REF, api, apply: true, ids: [mine.id, admin.id] });
+  assert.deepEqual(api.deleted, [mine.id], 'the admin is named but never sweepable');
+  assert.deepEqual(r.targets.map(t => t.id), [mine.id]);
+});
+
 test('one failed delete is reported and the rest still run', async () => {
   const a = user('lee+e2e-02-a@rightpathprogramming.com');
   const b = user('lee+e2e-02-b@rightpathprogramming.com');

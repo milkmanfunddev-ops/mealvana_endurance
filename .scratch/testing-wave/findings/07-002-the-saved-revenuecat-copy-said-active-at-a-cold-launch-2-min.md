@@ -18,6 +18,10 @@ mp-335 has the Gate read the saved copy, which "works offline". The edge: once t
 **Actual.**
 At 06:39:04.061 local (11:39:04Z) the app logged `[SubscriptionService] customer info updated {active: true, expires_at: 2026-09-24T11:36:56.000Z}` and `customer info fetched {active: true, expires_at: …11:36:56…}`, then routed to `/main`: the saved copy counted as active 2 min 8 s after its own expiry, while RevenueCat's API had no active entitlement (read at 11:38:37Z). 0.6 s later the fresh fetch returned the renewal (`expires_at 11:41:56`), so no wrong screen was visible this time. But offline, or if the renewal had not come, the Gate would have stayed open on an expired copy for as long as the SDK keeps it (the RevenueCat SDK judges `isActive` against the time of the last server fetch, not the device clock). This is the other side of 05-005 (an app left open keeps the timeline).
 
+Review note (wave lead): mp-335 says nothing about a saved copy past its own expiry, so this may be
+a gap in the record rather than a conflict. The claim that the SDK judges `isActive` against the
+last fetch has no evidence in the run.
+
 **Evidence.**
 - runs/07/device-reinstall.log, 06:39:04.057-06:39:04.666 local (11:39:04Z)
 - runs/07/revenuecat-db-C-after-renewal-2.txt (11:38:16Z: subscription still at period end 11:36:56, row active_until 11:36:56)

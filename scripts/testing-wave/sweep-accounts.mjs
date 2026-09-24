@@ -8,6 +8,8 @@
 //   node sweep-accounts.mjs list                 -> the sweepable accounts (dry run)
 //   node sweep-accounts.mjs delete               -> same as list: says what --apply would delete
 //   node sweep-accounts.mjs delete --apply       -> deletes them; exit 1 if any delete failed
+//   node sweep-accounts.mjs delete --id <id,id> --apply -> only those accounts (a run cleaning up after
+//                                                   itself; a bare sweep also takes other runs' live accounts)
 //   node sweep-accounts.mjs footprint <user id>  -> rows still keyed to that id, per table
 // Every command takes --ref <project ref>, which must be dev.
 
@@ -38,9 +40,11 @@ export function assertDev(ref) {
  * List the sweepable accounts and, with apply, delete them one by one. A failed delete is
  * reported and the rest still run. `api` is { listCandidates(), deleteAccount(id) }.
  */
-export async function sweep({ ref, api, apply = false }) {
+export async function sweep({ ref, api, apply = false, ids }) {
   assertDev(ref);
-  const targets = selectSweepable(await api.listCandidates());
+  // `ids` narrows the sweep to named accounts (still only sweepable ones), so a run cleaning up
+  // after itself never deletes another live run's account.
+  const targets = selectSweepable(await api.listCandidates()).filter(t => !ids || ids.includes(t.id));
   if (!apply) return { mode: 'dry-run', targets, deleted: [], failed: [] };
   const deleted = [];
   const failed = [];
@@ -149,13 +153,15 @@ if (process.argv[1] && resolve(process.argv[1]) === fileURLToPath(import.meta.ur
   const args = process.argv.slice(2);
   const flag = name => { const i = args.indexOf(name); return i === -1 ? undefined : args.splice(i, 2)[1]; };
   const ref = flag('--ref') ?? DEV_REF;
+  const idArg = flag('--id');
+  const ids = idArg ? idArg.split(',').map(x => x.trim()).filter(Boolean) : undefined;
   const apply = args.includes('--apply');
   const [cmd, arg] = args.filter(a => a !== '--apply');
   const out = s => process.stdout.write(`${s}\n`);
   try {
     if (cmd === 'list' || cmd === 'delete') {
       assertDev(ref);
-      const r = await sweep({ ref, api: devAdmin(ref), apply: cmd === 'delete' && apply });
+      const r = await sweep({ ref, api: devAdmin(ref), apply: cmd === 'delete' && apply, ids });
       out(`${r.mode} on dev ${ref}: ${r.targets.length} lee+e2e-* account(s)`);
       for (const t of r.targets) out(`  ${t.id}  ${t.email}  created ${t.created_at}`);
       if (r.mode === 'dry-run' && cmd === 'delete' && r.targets.length) out('dry run: nothing deleted. Add --apply to delete these.');
@@ -166,7 +172,7 @@ if (process.argv[1] && resolve(process.argv[1]) === fileURLToPath(import.meta.ur
       const rows = await devAdmin(ref).footprint(arg);
       out(rows.length ? rows.map(r => `${r.tbl}.${r.col}: ${r.n}`).join('\n') : `no rows keyed to ${arg}`);
     } else {
-      process.stderr.write('usage: sweep-accounts.mjs list | delete [--apply] | footprint <user id>   [--ref <dev ref>]\n');
+      process.stderr.write('usage: sweep-accounts.mjs list | delete [--id <id,id>] [--apply] | footprint <user id>   [--ref <dev ref>]\n');
       process.exit(64);
     }
   } catch (e) {

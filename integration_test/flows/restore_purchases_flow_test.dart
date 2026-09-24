@@ -16,8 +16,10 @@
 /// sandbox, Lee's iPhone ticket). The testing-wave agent checks RevenueCat.
 ///
 /// Writes on dev: one throwaway account, removed by its own delete. A step
-/// that throws (a key that never shows) skips the delete; sweep it with
-/// `node scripts/testing-wave/sweep-accounts.mjs delete --apply`.
+/// that throws (a key that never shows) skips the delete; find its id with
+/// `node scripts/testing-wave/sweep-accounts.mjs list`, then
+/// `sweep-accounts.mjs delete --id ID --apply` (a bare `delete --apply`
+/// also takes another run's live account).
 /// Needs a fresh install (no session): it self-skips otherwise, like the
 /// signup flows. Dev only. If the project asks for email confirmation, start
 /// the code probe first:

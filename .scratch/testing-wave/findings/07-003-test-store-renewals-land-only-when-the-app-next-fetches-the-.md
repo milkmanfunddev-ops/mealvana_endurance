@@ -20,6 +20,9 @@ Until the app fetched the customer, nothing moved: at 11:38:16Z the subscription
 
 The idea: on dev, Test Store renewals appear to be processed when the SDK asks, not on a clock. Tests that read the row or call a Pro-checked function between period end and the next app fetch will see a false lapse. Worth confirming with RevenueCat's docs, and writing into the testing-wave spec next to 05-003. 05-011's "renewals read afterwards" timeline may also be shaped by this.
 
+Review note (wave lead): this rests on one run. In ticket 06 the renewal landed at 11:36:13Z with no
+app fetch tied to it (06-002), so "only when the app asks" is not established; read with 06-002.
+
 **Evidence.**
 - runs/07/revenuecat-C-after-renewal.json (11:37:45Z), runs/07/db-C-after-renewal.txt
 - runs/07/revenuecat-db-C-after-renewal-2.txt (11:38:16Z)

@@ -34,6 +34,22 @@ Each entry: what went wrong or cost time, where it was seen, and the suggested f
 9. **`undrawn` skips open questions,** but the convention draws them, so the wave lead has to
    remember to draw them by hand. Fix: `undrawn --questions`, or include open questions by
    default. Seen: wave 5.
+22. **`simulator claim` crashes with EEXIST when the other agent holds the claims lock** for more
+    than about 10 seconds, and `--wait 90` doesn't cover it (07-005). The agent waited 2.5 minutes
+    in a retry loop of its own. Fix: treat a held claims lock as "wait and retry" inside `claim`.
+    Seen: wave 6.
+23. **A hung Patrol run takes the simulator down with it** (06-009). Nothing times out a Patrol
+    run, and killing it shut the device down. Fix: a timeout in the runbook's Patrol step (or a
+    wrapper), plus a note on rebooting the pool device. Seen: wave 6.
+24. **The flows copy each other's helpers.** Three flows each carry a noSettle copy of
+    `deleteFromPaywallMenu`, and two read `user_entitlements` the same way. `_buyMonthly`,
+    `_dismissWhatsNew`, `_signOut` and `_logIn` will be needed again by 08 and 09. Fix: move
+    them into `integration_test/helpers/e2e_account.dart`, with a noSettle option on the delete,
+    before tickets 08 and 09 write their flows. Seen: waves 5, 6.
+25. **New testing-wave flows are never run by the M1 runner.** Redeem, relogin and restore are all
+    excluded as clean-install, but spec story 76 asks for them on the self-hosted runner's list.
+    Fix: give the runner a clean-install lane (uninstall before each such flow), or change the
+    spec. Seen: waves 5, 6.
 
 ### Test data and accounts
 
@@ -46,7 +62,9 @@ Each entry: what went wrong or cost time, where it was seen, and the suggested f
 
 ### Runbook and agent prompts
 
-14. **Agents write surprises into `notes.md` and not as Findings.** Wave 5's review found three:
+14. **Agents write surprises into `notes.md` and not as Findings.** Still happening in wave 6
+    (four were filed by the wave lead: 06-009, 06-010, 07-010, 07-011), even with the rule in the
+    prompt. Wave 5's review found three:
     redemptions deleted with the account, the early lock release, and the clock jump. Fix: add a
     runbook rule that any line in `notes.md` naming something unexpected gets a Finding, or a
     "known noise" reason next to it. The wave lead's review greps `notes.md` for them. Seen:
@@ -89,6 +107,13 @@ Each entry: what went wrong or cost time, where it was seen, and the suggested f
     ticket. Seen: waves 2–5.
 
 ## Done
+
+- **Cleanup that can't take another run's account.** `sweep-accounts.mjs delete --id <id,id>
+  --apply` deletes only the named throwaway accounts; the three flow headers point at it, since a
+  bare sweep would also delete another agent's live account. Wave 6.
+- **ssot-conflict quoting (#15), partly.** With the rule in the prompt, both of wave 6's
+  ssot-conflicts (06-002, 07-002) quoted their decision word for word. The `index` check is still
+  open.
 
 - **#10, tickets 06–09 chained on a paid account that lapses.** 06, 07 and 08 each sign up and
   buy their own Test Store Monthly and finish within 20 minutes; 09 buys, cancels or lets the

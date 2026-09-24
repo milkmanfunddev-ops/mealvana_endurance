@@ -30,6 +30,11 @@ Store, Apple usually renews ahead of the period end, so the gap may be smaller o
 or retried webhook would open the same gap. On the Test Store every simulator run can hit it every
 5 minutes.
 
+Review note (wave lead): `supabase/functions/kroger/index.ts` also calls `requirePro`, so Kroger
+would be refused in the same gap. The RevenueCat side at 11:36:05Z ("`gives_access: true`") has no
+extract in `runs/06/`; only the row (`db-C-after-renewal.txt`) is evidenced. 07-003 saw a similar gap
+and reads it differently (renewals landing when the app fetches); read the two together.
+
 **Evidence.**
 - runs/06/db-C-after-renewal.txt (11:36:05Z, row still at 11:33:37.722)
 - runs/06/db-C-after-renewal-2.txt (11:36:36Z, row at 11:38:37.722)
