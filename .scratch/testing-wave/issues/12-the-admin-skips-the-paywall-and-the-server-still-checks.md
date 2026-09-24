@@ -1,6 +1,6 @@
 # 12: The admin skips the paywall and the server still checks
 
-**Status:** ready-for-agent
+**Status:** in-progress (wave 4, 2026-09-24)
 **Blocked by:** 03 (touches integration_test/flows/admin_bypass_flow_test.dart).
 **Next:** `/implement-lee testing-wave`
 **Model:** opus
