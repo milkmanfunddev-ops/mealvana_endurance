@@ -1,0 +1,21 @@
+# Ticket 26 run notes
+
+- RUN: w13-20260924T1904Z. Slot claimed 19:04:08Z (owner testing-wave-26; testing-wave-23 also held).
+- App build commit: 52c68764b2cde49951a27220a8dbdb3a463116f7 (per prompt and app-build.json). Worktree HEAD c625e7dd.
+- Simulator: wave-pool-2, F441D216-49EF-4E2A-A2C6-F8FD7B283536. App data cleared by the lead.
+- Shared account with ticket 23 (IMPROVEMENTS #44): 23 logs one describe meal today ("W13-23"). Not mine.
+- 19:05:39Z launched; Welcome shown signed out. 19:06:24Z logged in as test@test.com (email + CRED type). No paywall (entitled).
+- After login: What's New sheet ("Shake to tell us...") then the TrainingPeaks sharing sheet stacked; tapped Got it, then Keep Sharing (leaves the setting as it was). Already filed as 12-008 / 30-010, not re-filed.
+- Console at login: TrainingPeaks token refresh 400, V.O2 "Please reconnect". Known noise: the dev admin's integration tokens are expired (runs 03, 12, 14, 16, 19, 30, 31).
+- Driving: taps and text go through `idb ui tap/text --udid`, not the mobile MCP (build-time decision: idb always targets this UDID; the MCP has read the other simulator's screen before, IMPROVEMENTS #39).
+- 19:07Z Log a Meal → Recent: "No saved or recent meals yet" although the account has server meal logs (06-recent-tab.png). Console: only users/activities/integrations/recipes synced by then, no meal_logs_last_sync. Opened Food tab 19:07:57Z (meal_logs, saved_meals, meal_plans, user_memories synced), back to Log a Meal → Recent now lists Saved meals (Egg & Veggie Scramble) and Recent (08-recent-after-food-tab.png). Finding filed (same root as 10-001, different screen).
+- Food tab shows a Vana opener card ("Heavy training day ... 1007g target"). I did not ask Vana anything; checked in edge logs whether it was an AI call from my run (see below).
+- Recipe pick changed from Egg & Veggie Scramble to Cottage Cheese & Pineapple Bowl (a1b2...0017): the account already has a saved meal named "Egg & Veggie Scramble", so a recipe log under the same name would be harder to tell apart on screen.
+- Recent: picked "Rice cake and Almond butter" (9162543b, 09-23), older than anything ticket 23 writes; Meal type Snack to match the source. Save window 19:08:35–19:08:37Z → row 00a120e5 (created 19:08:36Z).
+- Common: opened on Quick add combos; logged "Oatmeal + raisins", Any time. Save window 19:09:30–19:09:31Z → row f952f981 (created 19:09:30Z).
+- Recipes: Snacks filter → "Cottage Cheese & Pineapple Bowl", Snack. Save window 19:10:05–19:10:06Z → row 46b1d076 (created 19:10:05Z).
+- Ticket 23's row 38c4f0ed "W13-23 Lunch" (describe, created 19:08:16Z) is in the account; expected, not mine, untouched. It did not reach this phone's Recent or timeline during the run (no re-sync after 19:07:52Z).
+- Edge requests in my window (edge-requests.txt, edge-function-logs.txt): sync-all-data and calculate-daily-macros-v6 at 14:06 local = my login. ensure-credits 14:07:05/14 = likely my Log a Meal opens (Describe tab loads the wallet pill) or 23's; no charge. describe-meal 14:07:45–54 = ticket 23 ("W13-23 Lunch"). vana-action get_home 14:07:55 (2.5 s, started ~14:07:52.5) = mine, the Food tab open; get_home makes no model call (actions.ts:227) and no vana-day-notes call followed. vana-action get_home 14:09:58 = ticket 23 (I was in Log a Meal then). garmin-push 14:10 = Garmin server pushes, nobody's run. So no AI call from this run; COST not spent.
+- Console 14:07–14:11 local: no Flutter error or exception line. Only "unknown sport other" fuelling-engine note (known noise, Patrol test activities).
+- Log a Meal opens on Describe with a wallet pill reading 255%; the pill clamps at 999% by design (token_pill.dart), so not filed.
+- Screens visited: Welcome, Log In (email), What's New sheet, TrainingPeaks sharing sheet, Timeline, Log a Meal (Describe landing, Recent, Common, Recipes + Snacks filter), quick log sheet ×3, Food (Plan). Look-around Findings: 26-006..26-010; Welcome/Log In/Food look-arounds already covered by earlier tickets' Findings (02, 12, 30, 19), not repeated.
