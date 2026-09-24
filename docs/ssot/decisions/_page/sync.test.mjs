@@ -1322,10 +1322,10 @@ test('createSimulator copies the dev simulator: same type and runtime, app insta
     'boot NEW-1',
     'get_app_container AAA com.milkman.mealvanaendurance.dev',
     'install NEW-1 /sims/AAA/Runner.app',
-    'get_app_container AAA com.milkman.mealvanaendurance.dev data',
-    'get_app_container NEW-1 com.milkman.mealvanaendurance.dev data',
     'get_app_container AAA com.mobilenext.devicekit-iosUITests.xctrunner',
     'install NEW-1 /sims/AAA/Runner.app',
+    'get_app_container AAA com.milkman.mealvanaendurance.dev data',
+    'get_app_container NEW-1 com.milkman.mealvanaendurance.dev data',
   ]);
   assert.deepEqual(copies, [['/sims/AAA/data', '/sims/NEW-1/data']]);
   assert.throws(() => createSimulator('wave-sm-04', { run }), /already exists/);

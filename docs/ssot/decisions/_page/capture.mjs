@@ -144,7 +144,15 @@ export function bootedUdid(udid = process.env.SSOT_SIMULATOR, { run = simctl } =
  * installed from `from`'s bundle container and `from`'s data container copied
  * in (login, local database, preferences). Returns {udid, name, from, runtime}.
  */
-export function createSimulator(name, { from, bundle = BUNDLE, run = simctl, copy = (src, dst) => execFileSync('rsync', ['-a', '--delete', src + '/', dst + '/']) } = {}) {
+/**
+ * Copies one app data container over another. SplashBoard snapshots are skipped: the dev
+ * simulator rewrites them while it runs, and a file vanishing mid-copy failed a claim (rsync 23,
+ * IMPROVEMENTS #42); the app redraws them on launch.
+ */
+export function copyAppData(src, dst) {
+  execFileSync('rsync', ['-a', '--delete', '--exclude', 'Library/SplashBoard', src + '/', dst + '/']);
+}
+export function createSimulator(name, { from, bundle = BUNDLE, run = simctl, copy = copyAppData } = {}) {
   const all = devices(run);
   const source = from ? all.find(x => x.udid === from || x.name === from) : all.find(x => x.state === 'Booted');
   if (!source) throw new Error(from ? `no simulator is called ${from}` : 'no booted simulator to copy from');
@@ -153,12 +161,13 @@ export function createSimulator(name, { from, bundle = BUNDLE, run = simctl, cop
   run(['boot', udid]);
   const app = run(['get_app_container', source.udid, bundle]).trim();
   run(['install', udid, app]);
-  const data = run(['get_app_container', source.udid, bundle, 'data']).trim();
-  const target = run(['get_app_container', udid, bundle, 'data']).trim();
-  copy(data, target);
+  // The mobile MCP helper goes on before the data copy, so a failed copy never leaves a device without it.
   let helper = '';
   try { helper = run(['get_app_container', source.udid, MCP_HELPER]).trim(); } catch { /* the dev simulator has never run the mobile MCP */ }
   if (helper) run(['install', udid, helper]);
+  const data = run(['get_app_container', source.udid, bundle, 'data']).trim();
+  const target = run(['get_app_container', udid, bundle, 'data']).trim();
+  copy(data, target);
   // Start idb's companion for the new device now, so the first drive does not wait on it.
   const idb = idbPath();
   if (idb) spawnSync(idb, ['connect', udid], { stdio: 'ignore' });
@@ -209,7 +218,7 @@ export function claimSimulator(owner, { from, cap = SIMULATOR_CAP, prefix = POOL
       if (source) {
         const data = run(['get_app_container', source.udid, bundle, 'data']).trim();
         const target = run(['get_app_container', free.udid, bundle, 'data']).trim();
-        (copy ?? ((src, dst) => execFileSync('rsync', ['-a', '--delete', src + '/', dst + '/'])))(data, target);
+        (copy ?? copyAppData)(data, target);
       }
       claims[free.udid] = { owner, name: free.name, since: now() };
       return { udid: free.udid, name: free.name, reused: true, owner };

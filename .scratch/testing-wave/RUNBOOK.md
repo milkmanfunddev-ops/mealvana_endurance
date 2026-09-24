@@ -84,6 +84,8 @@ ticket says so.
   UDID screenshot` for the picture. With two wave simulators up, the mobile MCP's element list has
   returned the other simulator's screen (IMPROVEMENTS #39), so never trust it for what is on
   `UDID`. Tap and type with the mobile MCP on `UDID`; `idb ui tap X Y --udid UDID` is the fallback.
+- Scroll with slow idb drags (`idb ui swipe X1 Y1 X2 Y2 --duration 1.2 --udid UDID`) whenever the
+  run counts rows or chat turns: the mobile MCP's swipe flings past them (IMPROVEMENTS #43).
 - Type text with the mobile MCP; `idb ui text "<text>" --udid UDID` is the fallback (it once
   mangled a long address, IMPROVEMENTS #35). Before submitting a long value (an address, a code),
   read it back with `idb ui describe-all --udid UDID`: a field shows only the tail of a long value.
@@ -228,7 +230,9 @@ should behave) goes to the page as an open question, the normal way, and nothing
    into it (`cp .env* <worktree>/`), and make the ticket's scratch folder.
 5. The prompt names the worktree, `UDID`, `SCRATCH`, the app's commit, whether the app data was
    cleared, the ticket's full text and its cited decisions, and points at this runbook. The
-   prompt's build commit wins over `app-build.json` if they ever differ.
+   prompt's build commit wins over `app-build.json` if they ever differ. When two tickets in the
+   wave use the same account, both prompts say so and name what the other run writes, so each
+   checks only its own rows and treats the other's as expected (IMPROVEMENTS #44).
 
 **After the wave.**
 
