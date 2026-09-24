@@ -1,0 +1,1312 @@
+Resolving dependencies...
+Downloading packages...
+  _fe_analyzer_shared 91.0.0 (108.0.0 available)
+  accessibility_tools 2.2.3 (3.0.0 available)
+  analyzer 8.4.0 (14.4.0 available)
+  analyzer_buffer 0.1.11 (0.3.4 available)
+  analyzer_plugin 0.13.10 (0.14.17 available)
+  animations 2.0.11 (3.0.0 available)
+  app_links 6.4.1 (7.2.1 available)
+  app_links_platform_interface 2.0.2 (2.0.4 available)
+  archive 4.0.7 (4.3.0 available)
+  async 2.13.0 (2.13.1 available)
+  build 3.0.1 (4.0.11 available)
+  build_config 1.1.2 (1.3.3 available)
+  build_daemon 4.0.4 (4.1.6 available)
+  build_resolvers 3.0.1 (3.0.4 available)
+  build_runner 2.6.1 (2.16.1 available)
+  build_runner_core 9.2.1 (9.3.2 available)
+  built_value 8.11.1 (8.13.0 available)
+  calendar_date_picker2 2.0.1 (3.0.0 available)
+  chewie 1.13.0 (1.17.2 available)
+  cli_util 0.4.2 (0.6.0 available)
+  clock 1.1.2 (1.1.3 available)
+  code_builder 4.10.1 (4.12.0 available)
+  connectivity_plus 7.0.0 (7.3.1 available)
+  connectivity_plus_platform_interface 2.0.1 (2.1.0 available)
+  coverage 1.15.0 (1.15.1 available)
+  cross_file 0.3.5+2 (0.3.5+5 available)
+  crypto 3.0.6 (3.0.7 available)
+  cupertino_icons 1.0.8 (1.0.9 available)
+  custom_lint_core 0.8.1 (0.8.2 available)
+  custom_lint_visitor 1.0.0+8.4.0 (1.0.0+9.0.0 available)
+  dart_style 3.1.3 (3.1.13 available)
+  dbus 0.7.11 (0.8.0 available)
+  device_info_plus 12.4.0 (13.2.0 available)
+  device_info_plus_platform_interface 7.0.3 (8.1.0 available)
+  drift 2.29.0 (2.35.0 available)
+  drift_dev 2.29.0 (2.35.0 available)
+  equatable 2.1.0 (3.0.0 available)
+  ffi 2.1.4 (2.2.0 available)
+  file_selector_linux 0.9.4 (0.9.4+1 available)
+  file_selector_macos 0.9.5 (0.9.5+1 available)
+  file_selector_windows 0.9.3+5 (0.9.3+6 available)
+  flutter_dotenv 5.2.1 (6.0.1 available)
+  flutter_lints 5.0.0 (6.0.0 available)
+  flutter_local_notifications 19.4.1 (22.3.1 available)
+  flutter_local_notifications_linux 6.0.0 (8.0.1 available)
+  flutter_local_notifications_platform_interface 9.1.0 (12.2.0 available)
+  flutter_local_notifications_windows 1.0.2 (3.1.1 available)
+  flutter_native_splash 2.4.7 (2.4.8 available)
+  flutter_plugin_android_lifecycle 2.0.34 (2.0.35 available)
+  flutter_riverpod 3.0.1 (3.4.3 available)
+  flutter_secure_storage 9.2.4 (11.2.0 available)
+  flutter_secure_storage_linux 1.2.3 (3.0.3 available)
+  flutter_secure_storage_macos 3.1.3 (4.0.0 available)
+  flutter_secure_storage_platform_interface 1.1.2 (2.1.1 available)
+  flutter_secure_storage_web 1.2.1 (2.1.1 available)
+  flutter_secure_storage_windows 3.1.2 (4.2.2 available)
+  flutter_svg 2.2.3 (2.3.0 available)
+  functions_client 2.5.0 (2.7.1 available)
+  geolocator 13.0.4 (14.0.3 available)
+  geolocator_android 4.6.2 (5.0.3 available)
+  geolocator_apple 2.3.13 (2.3.14 available)
+  geolocator_platform_interface 4.2.6 (4.3.0 available)
+  geolocator_web 4.1.3 (4.1.4 available)
+  glob 2.1.3 (2.2.0 available)
+  go_router 12.1.3 (18.0.1 available)
+  google_fonts 6.3.0 (8.2.1 available)
+  google_sign_in 6.3.0 (7.2.0 available)
+  google_sign_in_android 6.2.1 (7.2.17 available)
+  google_sign_in_ios 5.9.0 (6.3.5 available)
+  google_sign_in_platform_interface 2.5.0 (3.1.0 available)
+  google_sign_in_web 0.12.4+4 (1.1.3 available)
+  gotrue 2.16.0 (2.27.2 available)
+  gtk 2.1.0 (2.2.0 available)
+  html 0.15.6 (0.15.7 available)
+  http 1.5.0 (1.6.0 available)
+  image 4.5.4 (4.10.1 available)
+  image_picker 1.2.2 (1.2.3 available)
+  image_picker_android 0.8.13+17 (0.8.13+23 available)
+  image_picker_ios 0.8.13+3 (0.8.13+7 available)
+  injector 3.0.0 (4.0.0 available)
+  intl 0.20.2 (0.20.3 available)
+  io 1.0.5 (1.1.0 available)
+  jni 0.14.2 (1.0.3 available)
+  js 0.6.7 (0.7.2 available)
+  json_annotation 4.9.0 (4.12.0 available)
+  lints 5.1.1 (6.1.0 available)
+  logger 2.6.2 (2.8.0 available)
+  matcher 0.12.19 (0.12.20 available)
+  material_color_utilities 0.13.0 (0.13.1 available)
+  meta 1.18.0 (1.19.0 available)
+  mime 2.0.0 (2.1.0 available)
+  mixpanel_flutter 2.10.0 (2.14.0 available)
+  mobile_scanner 7.2.0 (7.4.2 available)
+  mockito 5.6.4 (5.8.1 available)
+  mocktail 1.0.4 (1.0.5 available)
+  nanoid2 2.0.1 (2.1.0 available)
+  onesignal_flutter 5.5.0 (5.6.12 available)
+  package_config 2.2.0 (3.0.0 available)
+  package_info_plus 8.3.1 (10.2.1 available)
+  package_info_plus_platform_interface 3.2.1 (4.1.0 available)
+  path_provider 2.1.5 (2.1.6 available)
+  path_provider_android 2.2.17 (2.3.1 available)
+  path_provider_foundation 2.4.1 (2.6.0 available)
+  path_provider_linux 2.2.1 (2.2.2 available)
+  path_provider_platform_interface 2.1.2 (2.1.3 available)
+  pdf 3.11.3 (3.13.1 available)
+  petitparser 7.0.1 (7.0.2 available)
+  platform 3.1.6 (3.2.0 available)
+  pool 1.5.1 (1.5.3 available)
+  posix 6.0.3 (6.5.2 available)
+  postgrest 2.5.0 (2.9.1 available)
+  printing 5.14.2 (5.15.1 available)
+  process 5.0.5 (5.0.6 available)
+  pub_semver 2.2.0 (2.2.1 available)
+  pubspec_parse 1.5.0 (1.6.0 available)
+  purchases_flutter 10.3.0 (10.13.1 available)
+  qr 3.0.2 (4.0.0 available)
+  realtime_client 2.6.0 (2.13.0 available)
+  riverpod 3.0.1 (3.4.3 available)
+  riverpod_analyzer_utils 1.0.0-dev.7 (1.0.0-dev.12 available)
+  riverpod_annotation 3.0.1 (4.0.7 available)
+  riverpod_generator 3.0.1 (4.0.9 available)
+  sensors_plus 6.1.2 (7.1.0 available)
+  sentry 9.6.0 (9.30.1 available)
+  sentry_dart_plugin 3.1.1 (3.4.0 available)
+  sentry_drift 9.6.0 (9.30.1 available)
+  sentry_flutter 9.6.0 (9.30.1 available)
+  share_plus 12.0.2 (13.3.0 available)
+  share_plus_platform_interface 6.1.0 (7.2.0 available)
+  shared_preferences 2.5.3 (2.5.5 available)
+  shared_preferences_android 2.4.11 (2.4.28 available)
+  shared_preferences_foundation 2.5.4 (2.5.7 available)
+  shared_preferences_platform_interface 2.4.1 (2.4.2 available)
+  shimmer 3.0.0 (4.0.0 available)
+  simple_gradient_text 1.3.0 (1.4.0 available)
+  smooth_page_indicator 1.2.1 (3.0.0 available)
+  source_gen 4.2.0 (4.3.0 available)
+  source_maps 0.10.13 (0.10.14 available)
+  source_span 1.10.1 (1.10.2 available)
+  speech_to_text 7.3.0 (7.5.0 available)
+  speech_to_text_platform_interface 2.3.0 (2.5.0 available)
+  speech_to_text_windows 1.0.0+beta.8 (1.0.1 available)
+  sqlite3 2.9.0 (3.6.0 available)
+  sqlite3_flutter_libs 0.5.39 (0.6.0+eol available)
+  sqlparser 0.42.1 (0.45.0 available)
+  stack_trace 1.12.1 (1.12.2 available)
+  storage_client 2.4.1 (2.8.0 available)
+  stream_transform 2.1.1 (2.1.2 available)
+  supabase 2.10.0 (2.16.1 available)
+  supabase_flutter 2.10.3 (2.17.2 available)
+  system_info2 4.0.0 (4.1.0 available)
+  test 1.31.0 (1.32.0 available)
+  test_api 0.7.11 (0.7.14 available)
+  test_core 0.6.17 (0.6.20 available)
+  timezone 0.10.1 (0.11.1 available)
+  universal_io 2.2.2 (2.3.1 available)
+  url_launcher_android 6.3.17 (6.3.33 available)
+  url_launcher_ios 6.3.3 (6.4.2 available)
+  url_launcher_linux 3.2.1 (3.2.3 available)
+  url_launcher_macos 3.2.2 (3.2.6 available)
+  url_launcher_web 2.4.1 (2.4.3 available)
+  url_launcher_windows 3.1.4 (3.1.6 available)
+  uuid 4.5.1 (4.6.0 available)
+  vector_graphics 1.1.19 (1.2.3 available)
+  vector_graphics_compiler 1.1.19 (1.3.0 available)
+  vector_math 2.2.0 (2.4.3 available)
+  vibration 3.2.0 (3.2.1 available)
+  video_player 2.10.1 (2.14.0 available)
+  video_player_android 2.9.4 (2.12.2 available)
+  video_player_avfoundation 2.8.9 (2.12.0 available)
+  video_player_platform_interface 6.6.0 (6.9.0 available)
+  vm_service 15.0.0 (15.3.0 available)
+  wakelock_plus 1.3.3 (1.8.0 available)
+  wakelock_plus_platform_interface 1.3.0 (1.7.0 available)
+  watcher 1.1.2 (1.2.1 available)
+  webdriver 3.1.0 (3.2.0 available)
+  win32 5.14.0 (6.4.0 available)
+  win32_registry 2.1.0 (3.0.3 available)
+  window_to_front 0.0.3 (1.0.0 available)
+  wiredash 2.6.0 (2.6.1 available)
+  xml 6.6.1 (7.0.1 available)
+  yaml 3.1.3 (3.1.4 available)
+  yet_another_json_isolate 2.1.0 (2.1.1 available)
+Got dependencies!
+183 packages have newer versions incompatible with dependency constraints.
+Try `flutter pub outdated` for more information.
+Launching lib/main_dev.dart on wave-pool-2 in debug mode...
+To ensure your app continues to launch on upcoming iOS versions, UIScene lifecycle support will soon be required. Please see https://flutter.dev/to/uiscene-migration for the migration guide.
+
+The following plugins do not support Swift Package Manager for ios:
+  - flutter_secure_storage
+  - printing
+This will become an error in a future version of Flutter. Please contact the plugin maintainers to request Swift Package Manager adoption.
+Running Xcode build...                                          
+Xcode build done.                                           92.9s
+`UIScene` lifecycle will soon be required. Failure to adopt will result in an assert in the future.
+Plugin AppLinksIosPlugin uses deprecated application lifecycle events. Please contact plugin maintainers and request UIScene lifecycle support. This will be required in a future version of Flutter. See https://docs.flutter.dev/release/breaking-changes/uiscenedelegate#migration-guide-for-flutter-plugins
+Plugin FlutterWebAuth2Plugin uses deprecated application lifecycle events. Please contact plugin maintainers and request UIScene lifecycle support. This will be required in a future version of Flutter. See https://docs.flutter.dev/release/breaking-changes/uiscenedelegate#migration-guide-for-flutter-plugins
+Plugin FLTGoogleSignInPlugin uses deprecated application lifecycle events. Please contact plugin maintainers and request UIScene lifecycle support. This will be required in a future version of Flutter. See https://docs.flutter.dev/release/breaking-changes/uiscenedelegate#migration-guide-for-flutter-plugins
+Syncing files to device wave-pool-2...                          
+flutter: supabase.supabase_flutter: INFO: ***** Supabase init completed *****
+flutter: GoRouter: INFO: Full paths for routes:
+flutter:   => /privacy-consent
+flutter:   => /force-upgrade
+flutter:   => /welcome
+flutter:   => /onboarding
+flutter:   => /auth/post-onboarding
+flutter:   => /auth/email-signup
+flutter:   => /auth/email-login
+flutter:   => /auth/forgot-password
+flutter:   => /auth/verify-reset-code
+flutter:   => /auth/set-new-password
+flutter:   => /distancepacegut
+flutter:   => /distance-pace-gut-entry
+flutter:   => /main
+flutter:   => /coach-portal
+flutter:   => /plan
+flutter:   => /current-plan
+flutter:   => /fuel-log
+flutter:   => /adjust-macros
+flutter:   => /learn
+flutter:   => /learn/video
+flutter:   => /events
+flutter:   => /events/create
+flutter:   => /events/:eventId
+flutter:   => /events/:eventId/checklist
+flutter:   => /paywall
+flutter:   => /buy-credits
+flutter:   => /settings
+flutter:   => /settings/connected-apps
+flutter:   => /settings/privacy
+flutter:   => /settings/preferences
+flutter:   => /settings/sweat-profile
+flutter:   => /settings/sport-settings
+flutter:   => /settings/food-preferences-hub
+flutter:   => /settings/sport-preferences-hub
+flutter:   => /settings/nutrition-targets
+flutter:   => /settings/nutrition-profile
+flutter:   => /settings/templates
+flutter:   => /settings/coach-connection
+flutter:   => /settings/food-preferences-consolidated
+flutter:   => /settings/food-preferences
+flutter:   => /settings/dietary-preference
+flutter:   => /settings/allergies
+flutter:   => /settings/running-details
+flutter:   => /settings/cycling-details
+flutter:   => /settings/swimming-details
+flutter:   => /settings/food-preferences/add-food
+flutter:   => /settings/food-preferences/formula-library
+flutter:   =>   /settings/food-preferences/formula-library/before/:id
+flutter:   =>   /settings/food-preferences/formula-library/during/:id
+flutter:   =>   /settings/food-preferences/formula-library/after/:id
+flutter:   =>   /settings/food-preferences/formula-library/personal/create
+flutter:   =>   /settings/food-preferences/formula-library/personal/:id
+flutter:   => /help
+flutter:   => /swap-food
+flutter:   => /barcode-scanner
+flutter:   => /food-detail
+flutter:   => /carb-loading-select-food
+flutter:   => /create-custom-carb-loading-food
+flutter:   => /coach
+flutter:   => /coach/athlete/:relationshipId
+flutter:   => /my-coaches
+flutter:   => /athlete/feedback
+flutter:   => /coach/apply
+flutter:   => /coach-directory
+flutter:   => /chat/:relationshipId
+flutter:   => /meal-log/edit
+flutter:   => /meal-log/manual
+flutter:   => /meal-log/photo
+flutter:   => /meal-log/describe
+flutter:   => /meal-log/review
+flutter:   => /meal-log/recent-saved
+flutter:   => /meal-log/recipe
+flutter:   => /food
+flutter:   =>   /food/meals/recents
+flutter:   =>   /food/meals/:id
+flutter:   =>   /food/cook/:id
+flutter:   =>   /food/swap/:planMealId
+flutter:   =>   /food/kroger/:planId
+flutter:   =>   /food/plans/:id
+flutter:   => /vana
+flutter:   =>   /vana/browse
+flutter:   =>   /vana/conversations
+flutter:   => /settings/vana
+flutter:   => /jade
+flutter: known full paths for route names:
+flutter:   privacy-consent => /privacy-consent
+flutter:   force-upgrade => /force-upgrade
+flutter:   welcome => /welcome
+flutter:   onboarding => /onboarding
+flutter:   auth-post-onboarding => /auth/post-onboarding
+flutter:   auth-email-signup => /auth/email-signup
+flutter:   auth-email-login => /auth/email-login
+flutter:   auth-forgot-password => /auth/forgot-password
+flutter:   auth-verify-reset-code => /auth/verify-reset-code
+flutter:   auth-set-new-password => /auth/set-new-password
+flutter:   distancepacegut => /distancepacegut
+flutter:   distance-pace-gut-entry => /distance-pace-gut-entry
+flutter:   main => /main
+flutter:   coach-portal => /coach-portal
+flutter:   plan => /plan
+flutter:   current-plan => /current-plan
+flutter:   fuel-log => /fuel-log
+flutter:   adjust-macros => /adjust-macros
+flutter:   learn => /learn
+flutter:   learn-video => /learn/video
+flutter:   events-list => /events
+flutter:   events-create => /events/create
+flutter:   event-detail => /events/:eventId
+flutter:   race-checklist => /events/:eventId/checklist
+flutter:   paywall => /paywall
+flutter:   buy-credits => /buy-credits
+flutter:   settings => /settings
+flutter:   settings-connected-apps => /settings/connected-apps
+flutter:   settings-privacy => /settings/privacy
+flutter:   settings-preferences => /settings/preferences
+flutter:   settings-sweat-profile => /settings/sweat-profile
+flutter:   settings-sport-settings => /settings/sport-settings
+flutter:   settings-food-preferences-hub => /settings/food-preferences-hub
+flutter:   settings-sport-preferences-hub => /settings/sport-preferences-hub
+flutter:   settings-nutrition-targets => /settings/nutrition-targets
+flutter:   settings-nutrition-profile => /settings/nutrition-profile
+flutter:   settings-templates => /settings/templates
+flutter:   settings-coach-connection => /settings/coach-connection
+flutter:   settings-food-preferences-consolidated => /settings/food-preferences-consolidated
+flutter:   settings-food-preferences => /settings/food-preferences
+flutter:   settings-dietary-preference => /settings/dietary-preference
+flutter:   settings-allergies => /settings/allergies
+flutter:   settings-running-details => /settings/running-details
+flutter:   settings-cycling-details => /settings/cycling-details
+flutter:   settings-swimming-details => /settings/swimming-details
+flutter:   settings-add-food => /settings/food-preferences/add-food
+flutter:   settings-formula-library => /settings/food-preferences/formula-library
+flutter:   settings-formula-detail-before => /settings/food-preferences/formula-library/before/:id
+flutter:   settings-formula-detail-during => /settings/food-preferences/formula-library/during/:id
+flutter:   settings-formula-detail-after => /settings/food-preferences/formula-library/after/:id
+flutter:   settings-formula-personal-create => /settings/food-preferences/formula-library/personal/create
+flutter:   settings-formula-personal-edit => /settings/food-preferences/formula-library/personal/:id
+flutter:   help-feedback => /help
+flutter:   swap-food => /swap-food
+flutter:   barcode-scanner => /barcode-scanner
+flutter:   food-detail => /food-detail
+flutter:   carb-loading-select-food => /carb-loading-select-food
+flutter:   create-custom-carb-loading-food => /create-custom-carb-loading-food
+flutter:   coach-dashboard => /coach
+flutter:   coach-athlete-detail => /coach/athlete/:relationshipId
+flutter:   my-coaches => /my-coaches
+flutter:   athlete-feedback => /athlete/feedback
+flutter:   coach-apply => /coach/apply
+flutter:   coach-directory => /coach-directory
+flutter:   coach-chat => /chat/:relationshipId
+flutter:   meal-log-edit => /meal-log/edit
+flutter:   meal-log-manual => /meal-log/manual
+flutter:   meal-log-photo => /meal-log/photo
+flutter:   meal-log-describe => /meal-log/describe
+flutter:   meal-log-review => /meal-log/review
+flutter:   meal-log-recent-saved => /meal-log/recent-saved
+flutter:   meal-log-recipe => /meal-log/recipe
+flutter:   food => /food
+flutter:   food-meals-recents => /food/meals/recents
+flutter:   food-meal-detail => /food/meals/:id
+flutter:   food-cooking-mode => /food/cook/:id
+flutter:   food-swap-meal => /food/swap/:planMealId
+flutter:   food-kroger => /food/kroger/:planId
+flutter:   food-previous-plan => /food/plans/:id
+flutter:   vana-chat => /vana
+flutter:   vana-browse => /vana/browse
+flutter:   vana-conversations => /vana/conversations
+flutter:   settings-vana => /settings/vana
+flutter:   jade-chat => /jade
+flutter:
+flutter: GoRouter: INFO: setting initial location /
+Syncing files to device wave-pool-2...                             499ms
+
+Flutter run key commands.
+r Hot reload. 🔥🔥🔥
+R Hot restart.
+h List all available interactive commands.
+d Detach (terminate "flutter run" but leave application running).
+c Clear the screen
+q Quit (terminate the application on the device).
+
+A Dart VM Service on wave-pool-2 is available at: http://127.0.0.1:59506/glsKXdpPEMk=/
+The Flutter DevTools debugger and profiler on wave-pool-2 is available at: http://127.0.0.1:59506/glsKXdpPEMk=/devtools/?uri=ws://127.0.0.1:59506/glsKXdpPEMk=/ws
+flutter: [RevenueCatService] configured {store: test_store}
+flutter: GoRouter: INFO: No initial matches: /
+flutter: GoRouter: INFO: redirecting to RouteMatchList(/welcome)
+flutter: 📊 [ANALYTICS] app_opened {device_id: CEBD33F2-6972-424D-B672-8193811D4096, session_id: 3cc9fc27-ce8d-4909-b49e-d9dde171d5d2, timestamp: 2026-09-23T23:38:53.231798}
+flutter: GoRouter: INFO: Using MaterialApp configuration
+flutter: [SubscriptionService] customer info updated {active: false, expires_at: null}
+flutter: 📊 [ANALYTICS] welcome_login_tapped {}
+flutter: GoRouter: INFO: pushing /auth/post-onboarding?mode=login
+flutter: 📊 [ANALYTICS] screen_viewed {screen_name: Post-Onboarding Auth, mode: login}
+flutter: GoRouter: INFO: pushing /auth/email-login
+flutter: 📊 [ANALYTICS] screen_viewed {screen_name: Email Login}
+flutter: 📊 [ANALYTICS] auth_flow_started {provider: email, source: post_onboarding_login}
+flutter: [SubscriptionService] customer info updated {active: false, expires_at: null}
+flutter: [SubscriptionService] customer info updated {active: true, expires_at: 2027-09-15T19:39:14.000Z}
+flutter: [RevenueCatService] logged in
+flutter: [SubscriptionService] customer info fetched {active: true, expires_at: 2027-09-15T19:39:14.000Z, is_trial: false}
+flutter: 📊 [ANALYTICS] email_sign_in_success {user_id: 607f9dd5-6fa7-48ee-a628-720d4a0506a1, migrated_data: false}
+flutter: 🔄 Starting integration sync for final_surge...
+flutter: 🔄 Starting Final Surge sync for user 607f9dd5-6fa7-48ee-a628-720d4a0506a1
+flutter: 📊 [ANALYTICS] auth_flow_completed {provider: email, source: post_onboarding_login}
+flutter: [SubscriptionService] customer info updated {active: true, expires_at: 2027-09-15T19:39:14.000Z}
+flutter: GoRouter: INFO: popping /welcome
+flutter: GoRouter: INFO: going to /main
+flutter: [SubscriptionService] customer info fetched {active: true, expires_at: 2027-09-15T19:39:14.000Z, is_trial: false}
+flutter: 🔄 Integration sync skipped (final_surge) - already in progress
+flutter: 🔄 Starting integration sync for garmin...
+flutter: 🔄 Garmin is push-only - no sync needed
+flutter: 🔄 Integration sync skipped (final_surge) - already in progress
+flutter: 🔄 Integration sync skipped (garmin) - already in progress
+flutter: 🔄 Starting integration sync for training_peaks...
+flutter: 🔄 Starting full TrainingPeaks sync...
+flutter: DailyBaselineCalculator.sessionCost: unknown sport "other" — F4a zero-with-estimate-flag (session-demand.md F4a, RULED 2026-09-10)
+flutter: DailyBaselineCalculator.sessionCost: unknown sport "other" — F4a zero-with-estimate-flag (session-demand.md F4a, RULED 2026-09-10)
+flutter: 🔑 ConnectTrainingController: Using real user ID: 607f9dd5-6fa7-48ee-a628-720d4a0506a1
+flutter:    (user profile exists: true, onboardingCompleted: true)
+flutter:    (auth user: 607f9dd5-6fa7-48ee-a628-720d4a0506a1, resolved user: 607f9dd5-6fa7-48ee-a628-720d4a0506a1)
+flutter: ✅ Integration sync complete for garmin
+flutter: 🔄 Integration sync skipped (training_peaks) - already in progress
+flutter: 🔄 Starting integration sync for vdot...
+flutter: 🔑 [vdot] AppConfig creds at client build: client_id="mealvana" (len 8), client_secret len 64, authBase=https://app.vdoto2.com
+flutter: ⚠️ TrainingPeaks token expires soon, proactively refreshing...
+flutter: 🔄 Refreshing TrainingPeaks token...
+flutter: 🔑 Token refresh URL: https://oauth.sandbox.trainingpeaks.com/oauth/token
+flutter:    Client ID: mealvana
+flutter: 🔄 [vdot] Starting sync for user 607f9dd5-6fa7-48ee-a628-720d4a0506a1
+flutter: ⚠️ [vdot] Token expires soon, proactively refreshing…
+flutter: DailyBaselineCalculator.sessionCost: unknown sport "other" — F4a zero-with-estimate-flag (session-demand.md F4a, RULED 2026-09-10)
+flutter: DailyBaselineCalculator.sessionCost: unknown sport "other" — F4a zero-with-estimate-flag (session-demand.md F4a, RULED 2026-09-10)
+flutter: ⚠️ Date-range endpoint unavailable (404), falling back to UpcomingWorkouts for 14 days
+flutter: ❌ Token refresh failed: TrainingPeaksApiException: Token refresh failed (status: 400)
+Body: {"error":"invalid_grant"}
+flutter: ⚠️ TrainingPeaks token expires soon, proactively refreshing...
+flutter: 🔄 Refreshing TrainingPeaks token...
+flutter: 🔑 Token refresh URL: https://oauth.sandbox.trainingpeaks.com/oauth/token
+flutter:    Client ID: mealvana
+flutter: ❌ Token refresh failed: TrainingPeaksApiException: Token refresh failed (status: 400)
+Body: {"error":"invalid_grant"}
+flutter: \^[[38;5;208m┌───────────────────────────────────────────────────────────────────────────────────────────────────────────────────────\^[[0m
+flutter: \^[[38;5;208m│ 23:40:18.798 (+0:01:27.396611)\^[[0m
+flutter: \^[[38;5;208m├┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄\^[[0m
+flutter: \^[[38;5;208m│ ⚠️ [INTEGRATION_SYNC] Integration sync reported failure for training_peaks\^[[0m
+flutter: \^[[38;5;208m│ ⚠️ Data: {userId: 607f9dd5-6fa7-48ee-a628-720d4a0506a1, provider: training_peaks, error: Token expired. Please reconnect.}\^[[0m
+flutter: \^[[38;5;208m└───────────────────────────────────────────────────────────────────────────────────────────────────────────────────────\^[[0m
+flutter: ❌ Integration sync failed for training_peaks: Token expired. Please reconnect.
+flutter: 🔄 Integration sync skipped (vdot) - already in progress
+flutter: DailyBaselineCalculator.sessionCost: unknown sport "other" — F4a zero-with-estimate-flag (session-demand.md F4a, RULED 2026-09-10)
+flutter: DailyBaselineCalculator.sessionCost: unknown sport "other" — F4a zero-with-estimate-flag (session-demand.md F4a, RULED 2026-09-10)
+flutter: \^[[38;5;208m┌───────────────────────────────────────────────────────────────────────────────────────────────────────────────────────\^[[0m
+flutter: \^[[38;5;208m│ 23:40:18.924 (+0:01:27.521972)\^[[0m
+flutter: \^[[38;5;208m├┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄\^[[0m
+flutter: \^[[38;5;208m│ ⚠️ [INTEGRATION_SYNC] Integration sync reported failure for vdot\^[[0m
+flutter: \^[[38;5;208m│ ⚠️ Data: {userId: 607f9dd5-6fa7-48ee-a628-720d4a0506a1, provider: vdot, error: Please reconnect your V.O2 account}\^[[0m
+flutter: \^[[38;5;208m└───────────────────────────────────────────────────────────────────────────────────────────────────────────────────────\^[[0m
+flutter: ❌ Integration sync failed for vdot: Please reconnect your V.O2 account
+flutter: DailyBaselineCalculator.sessionCost: unknown sport "other" — F4a zero-with-estimate-flag (session-demand.md F4a, RULED 2026-09-10)
+flutter: DailyBaselineCalculator.sessionCost: unknown sport "other" — F4a zero-with-estimate-flag (session-demand.md F4a, RULED 2026-09-10)
+flutter:    Fetched 21 workouts from Final Surge
+flutter: 🔍 FS TRANSFORM DEBUG - Raw workout keys: [WorkoutKey, WorkoutURL, WorkoutDate, WorkoutTime, WorkoutCode, WorkoutTitle, WorkoutDescription, WorkoutTypeName, WorkoutSubTypeName, WorkoutCompleted, WorkoutRace, WorkoutIcon, PlannedTime, PlannedDistance, PlannedDistanceType, PlannedPace, PlannedPaceType, ActualTime, ActualDistanceMeters, HasStructuredWorkout, StructuredWorkoutURLs]
+flutter: 🔍 FS TRANSFORM DEBUG - Raw workout data:
+flutter:    WorkoutKey: 11342d91-092b-4f5d-a74d-ee9573ca3229
+flutter:    WorkoutURL: https://log.finalsurge.com/WorkoutDetails?s=f71d3644-6ae5-4910-b098-a019a515520e&id=11342d91-092b-4f5d-a74d-ee9573ca3229
+flutter:    WorkoutDate: 2026-09-23T00:00:00
+flutter:    WorkoutDescription: At your discretion
+flutter:    WorkoutTypeName: Swim
+flutter:    WorkoutCompleted: false
+flutter:    WorkoutRace: false
+flutter:    WorkoutIcon: 3
+flutter:    HasStructuredWorkout: false
+flutter:    StructuredWorkoutURLs: {zwo: null, mrc: null, fit: null, json_garmin_v1: null, json_fs_v1: null}
+flutter: 🔍 FS DURATION DEBUG:
+flutter:    PlannedTime raw value: null (type: Null)
+flutter:    ActualTime raw value: null (type: Null)
+flutter: 🔍 FS PACE DEBUG: Using default pace for ActivityType.swimming
+flutter: 🏁 FS TRANSFORM RESULT:
+flutter:    Title: Swim
+flutter:    Type: ActivityType.swimming
+flutter:    Raw PlannedDistance: null (null)
+flutter:    Raw PlannedTime: null seconds
+flutter:    Raw ActualDistanceMeters: null
+flutter:    Raw ActualTime: null
+flutter:    → Final distanceMiles: null
+flutter:    → Final durationMinutes: 30
+flutter:    → Final cyclingSpeedMph: null
+flutter:    → Final pace: null min/mi
+flutter:    → Notes: At your discretion
+flutter: 🔍 FS INTENSITY DEBUG - Checking for workout intensity hints
+flutter:    ⚠️ No intensity distribution hints available
+flutter: 🔍 FS TRANSFORM DEBUG - Raw workout keys: [WorkoutKey, WorkoutURL, WorkoutDate, WorkoutTime, WorkoutCode, WorkoutTitle, WorkoutDescription, WorkoutTypeName, WorkoutSubTypeName, WorkoutCompleted, WorkoutRace, WorkoutIcon, PlannedTime, PlannedDistance, PlannedDistanceType, PlannedPace, PlannedPaceType, ActualTime, ActualDistanceMeters, HasStructuredWorkout, StructuredWorkoutURLs]
+flutter: 🔍 FS TRANSFORM DEBUG - Raw workout data:
+flutter:    WorkoutKey: 29c33f50-a05f-48e2-9835-0d770189795d
+flutter:    WorkoutURL: https://log.finalsurge.com/WorkoutDetails?s=f71d3644-6ae5-4910-b098-a019a515520e&id=29c33f50-a05f-48e2-9835-0d770189795d
+flutter:    WorkoutDate: 2026-09-23T00:00:00
+flutter:    WorkoutDescription: At your discretion
+flutter:    WorkoutTypeName: Bike
+flutter:    WorkoutCompleted: false
+flutter:    WorkoutRace: false
+flutter:    WorkoutIcon: 2
+flutter:    HasStructuredWorkout: false
+flutter:    StructuredWorkoutURLs: {zwo: null, mrc: null, fit: null, json_garmin_v1: null, json_fs_v1: null}
+flutter: 🔍 FS DURATION DEBUG:
+flutter:    PlannedTime raw value: null (type: Null)
+flutter:    ActualTime raw value: null (type: Null)
+flutter: 🔍 FS DISTANCE DEBUG:
+flutter:    PlannedDistance raw value: null (type: Null)
+flutter:    PlannedDistanceType: null
+flutter:    ActualDistanceMeters raw value: null (type: Null)
+flutter:    All distance-related keys: (PlannedDistance, PlannedDistanceType, ActualDistanceMeters)
+flutter:    PlannedDistance: null
+flutter:    PlannedDistanceType: null
+flutter:    ActualDistanceMeters: null
+flutter:    ⚠️ No distance data available, using default for ActivityType.cycling
+flutter: 🔍 FS PACE DEBUG: Using default pace for ActivityType.cycling
+flutter: 🏁 FS TRANSFORM RESULT:
+flutter:    Title: Bike
+flutter:    Type: ActivityType.cycling
+flutter:    Raw PlannedDistance: null (null)
+flutter:    Raw PlannedTime: null seconds
+flutter:    Raw ActualDistanceMeters: null
+flutter:    Raw ActualTime: null
+flutter:    → Final distanceMiles: 10.0
+flutter:    → Final durationMinutes: 45
+flutter:    → Final cyclingSpeedMph: null
+flutter:    → Final pace: null min/mi
+flutter:    → Notes: At your discretion
+flutter: 🔍 FS INTENSITY DEBUG - Checking for workout intensity hints
+flutter:    ⚠️ No intensity distribution hints available
+flutter: 🔍 FS TRANSFORM DEBUG - Raw workout keys: [WorkoutKey, WorkoutURL, WorkoutDate, WorkoutTime, WorkoutCode, WorkoutTitle, WorkoutDescription, WorkoutTypeName, WorkoutSubTypeName, WorkoutCompleted, WorkoutRace, WorkoutIcon, PlannedTime, PlannedDistance, PlannedDistanceType, PlannedPace, PlannedPaceType, ActualTime, ActualDistanceMeters, HasStructuredWorkout, StructuredWorkoutURLs]
+flutter: 🔍 FS TRANSFORM DEBUG - Raw workout data:
+flutter:    WorkoutKey: 78b674b8-cf14-491a-80b9-7c94d8d3cff2
+flutter:    WorkoutURL: https://log.finalsurge.com/WorkoutDetails?s=f71d3644-6ae5-4910-b098-a019a515520e&id=78b674b8-cf14-491a-80b9-7c94d8d3cff2
+flutter:    WorkoutDate: 2026-09-23T00:00:00
+flutter:    WorkoutTitle: R-CORE Routine
+flutter:    WorkoutTypeName: Strength Training
+flutter:    WorkoutCompleted: false
+flutter:    WorkoutRace: false
+flutter:    WorkoutIcon: 5
+flutter:    HasStructuredWorkout: false
+flutter:    StructuredWorkoutURLs: {zwo: null, mrc: null, fit: null, json_garmin_v1: null, json_fs_v1: null}
+flutter: 🔍 FS DURATION DEBUG:
+flutter:    PlannedTime raw value: null (type: Null)
+flutter:    ActualTime raw value: null (type: Null)
+flutter: 🔍 FS DISTANCE DEBUG:
+flutter:    PlannedDistance raw value: null (type: Null)
+flutter:    PlannedDistanceType: null
+flutter:    ActualDistanceMeters raw value: null (type: Null)
+flutter:    All distance-related keys: (PlannedDistance, PlannedDistanceType, ActualDistanceMeters)
+flutter:    PlannedDistance: null
+flutter:    PlannedDistanceType: null
+flutter:    ActualDistanceMeters: null
+flutter:    ⚠️ No distance data available, using default for ActivityType.other
+flutter: 🔍 FS PACE DEBUG: Using default pace for ActivityType.other
+flutter: 🏁 FS TRANSFORM RESULT:
+flutter:    Title: R-CORE Routine
+flutter:    Type: ActivityType.other
+flutter:    Raw PlannedDistance: null (null)
+flutter:    Raw PlannedTime: null seconds
+flutter:    Raw ActualDistanceMeters: null
+flutter:    Raw ActualTime: null
+flutter:    → Final distanceMiles: null
+flutter:    → Final durationMinutes: null
+flutter:    → Final cyclingSpeedMph: null
+flutter:    → Final pace: null min/mi
+flutter:    → Notes: null
+flutter: 🔍 FS INTENSITY DEBUG - Checking for workout intensity hints
+flutter:    ⚠️ No intensity distribution hints available
+flutter: 🔍 FS TRANSFORM DEBUG - Raw workout keys: [WorkoutKey, WorkoutURL, WorkoutDate, WorkoutTime, WorkoutCode, WorkoutTitle, WorkoutDescription, WorkoutTypeName, WorkoutSubTypeName, WorkoutCompleted, WorkoutRace, WorkoutIcon, PlannedTime, PlannedDistance, PlannedDistanceType, PlannedPace, PlannedPaceType, ActualTime, ActualDistanceMeters, HasStructuredWorkout, StructuredWorkoutURLs]
+flutter: 🔍 FS TRANSFORM DEBUG - Raw workout data:
+flutter:    WorkoutKey: d67e6590-af7e-47bb-9508-e14739db5da5
+flutter:    WorkoutURL: https://log.finalsurge.com/WorkoutDetails?s=f71d3644-6ae5-4910-b098-a019a515520e&id=d67e6590-af7e-47bb-9508-e14739db5da5
+flutter:    WorkoutDate: 2026-09-24T00:00:00
+flutter:    WorkoutTitle: Easy
+flutter:    WorkoutDescription: @ 8:45 - 9:38
+
+Finish with 6 x 20 second strides
+flutter:    WorkoutTypeName: Run
+flutter:    WorkoutCompleted: false
+flutter:    WorkoutRace: false
+flutter:    WorkoutIcon: 1
+flutter:    PlannedDistance: 8.0
+flutter:    PlannedDistanceType: mi
+flutter:    HasStructuredWorkout: false
+flutter:    StructuredWorkoutURLs: {zwo: null, mrc: null, fit: null, json_garmin_v1: null, json_fs_v1: null}
+flutter: 🔍 FS DURATION DEBUG:
+flutter:    PlannedTime raw value: null (type: Null)
+flutter:    ActualTime raw value: null (type: Null)
+flutter: 🔍 FS DISTANCE DEBUG:
+flutter:    PlannedDistance raw value: 8.0 (type: double)
+flutter:    PlannedDistanceType: mi
+flutter:    ActualDistanceMeters raw value: null (type: Null)
+flutter:    All distance-related keys: (PlannedDistance, PlannedDistanceType, ActualDistanceMeters)
+flutter:    PlannedDistance: 8.0
+flutter:    PlannedDistanceType: mi
+flutter:    ActualDistanceMeters: null
+flutter:    ✅ Using PlannedDistance: 8.0 mi
+flutter: 🔍 FS PACE DEBUG: Using pace from description: 9.191666666666666 min/mi
+flutter: 🏁 FS TRANSFORM RESULT:
+flutter:    Title: Easy
+flutter:    Type: ActivityType.running
+flutter:    Raw PlannedDistance: 8.0 (mi)
+flutter:    Raw PlannedTime: null seconds
+flutter:    Raw ActualDistanceMeters: null
+flutter:    Raw ActualTime: null
+flutter:    → Final distanceMiles: 8.0
+flutter:    → Final durationMinutes: null
+flutter:    → Final cyclingSpeedMph: null
+flutter:    → Final pace: 9.191666666666666 min/mi
+flutter:    → Notes: Finish with 6 x 20 second strides
+flutter: 🔍 FS INTENSITY DEBUG - Checking for workout intensity hints
+flutter:    ✅ Matched title "Easy": IntensityDistribution(conversational: 95%, tempo: 5%, allOut: 0%)
+flutter: 🔍 FS TRANSFORM DEBUG - Raw workout keys: [WorkoutKey, WorkoutURL, WorkoutDate, WorkoutTime, WorkoutCode, WorkoutTitle, WorkoutDescription, WorkoutTypeName, WorkoutSubTypeName, WorkoutCompleted, WorkoutRace, WorkoutIcon, PlannedTime, PlannedDistance, PlannedDistanceType, PlannedPace, PlannedPaceType, ActualTime, ActualDistanceMeters, HasStructuredWorkout, StructuredWorkoutURLs]
+flutter: 🔍 FS TRANSFORM DEBUG - Raw workout data:
+flutter:    WorkoutKey: 666042c0-1c5f-4f71-8221-1f8c1cd6914a
+flutter:    WorkoutURL: https://log.finalsurge.com/WorkoutDetails?s=f71d3644-6ae5-4910-b098-a019a515520e&id=666042c0-1c5f-4f71-8221-1f8c1cd6914a
+flutter:    WorkoutDate: 2026-09-24T00:00:00
+flutter:    WorkoutTitle: Foam Rolling Routine
+flutter:    WorkoutTypeName: Recovery/Rehab
+flutter:    WorkoutCompleted: false
+flutter:    WorkoutRace: false
+flutter:    WorkoutIcon: 7
+flutter:    HasStructuredWorkout: false
+flutter:    StructuredWorkoutURLs: {zwo: null, mrc: null, fit: null, json_garmin_v1: null, json_fs_v1: null}
+flutter: 🔍 FS DURATION DEBUG:
+flutter:    PlannedTime raw value: null (type: Null)
+flutter:    ActualTime raw value: null (type: Null)
+flutter: 🔍 FS DISTANCE DEBUG:
+flutter:    PlannedDistance raw value: null (type: Null)
+flutter:    PlannedDistanceType: null
+flutter:    ActualDistanceMeters raw value: null (type: Null)
+flutter:    All distance-related keys: (PlannedDistance, PlannedDistanceType, ActualDistanceMeters)
+flutter:    PlannedDistance: null
+flutter:    PlannedDistanceType: null
+flutter:    ActualDistanceMeters: null
+flutter:    ⚠️ No distance data available, using default for ActivityType.other
+flutter: 🔍 FS PACE DEBUG: Using default pace for ActivityType.other
+flutter: 🏁 FS TRANSFORM RESULT:
+flutter:    Title: Foam Rolling Routine
+flutter:    Type: ActivityType.other
+flutter:    Raw PlannedDistance: null (null)
+flutter:    Raw PlannedTime: null seconds
+flutter:    Raw ActualDistanceMeters: null
+flutter:    Raw ActualTime: null
+flutter:    → Final distanceMiles: null
+flutter:    → Final durationMinutes: null
+flutter:    → Final cyclingSpeedMph: null
+flutter:    → Final pace: null min/mi
+flutter:    → Notes: null
+flutter: 🔍 FS INTENSITY DEBUG - Checking for workout intensity hints
+flutter:    ⚠️ No intensity distribution hints available
+flutter: 🔍 FS TRANSFORM DEBUG - Raw workout keys: [WorkoutKey, WorkoutURL, WorkoutDate, WorkoutTime, WorkoutCode, WorkoutTitle, WorkoutDescription, WorkoutTypeName, WorkoutSubTypeName, WorkoutCompleted, WorkoutRace, WorkoutIcon, PlannedTime, PlannedDistance, PlannedDistanceType, PlannedPace, PlannedPaceType, ActualTime, ActualDistanceMeters, HasStructuredWorkout, StructuredWorkoutURLs]
+flutter: 🔍 FS TRANSFORM DEBUG - Raw workout data:
+flutter:    WorkoutKey: 18f023ed-5d53-4eb6-b8e1-1c45ded7bd0f
+flutter:    WorkoutURL: https://log.finalsurge.com/WorkoutDetails?s=f71d3644-6ae5-4910-b098-a019a515520e&id=18f023ed-5d53-4eb6-b8e1-1c45ded7bd0f
+flutter:    WorkoutDate: 2026-09-25T00:00:00
+flutter:    WorkoutDescription: At your discretion
+flutter:    WorkoutTypeName: Swim
+flutter:    WorkoutCompleted: false
+flutter:    WorkoutRace: false
+flutter:    WorkoutIcon: 3
+flutter:    HasStructuredWorkout: false
+flutter:    StructuredWorkoutURLs: {zwo: null, mrc: null, fit: null, json_garmin_v1: null, json_fs_v1: null}
+flutter: 🔍 FS DURATION DEBUG:
+flutter:    PlannedTime raw value: null (type: Null)
+flutter:    ActualTime raw value: null (type: Null)
+flutter: 🔍 FS PACE DEBUG: Using default pace for ActivityType.swimming
+flutter: 🏁 FS TRANSFORM RESULT:
+flutter:    Title: Swim
+flutter:    Type: ActivityType.swimming
+flutter:    Raw PlannedDistance: null (null)
+flutter:    Raw PlannedTime: null seconds
+flutter:    Raw ActualDistanceMeters: null
+flutter:    Raw ActualTime: null
+flutter:    → Final distanceMiles: null
+flutter:    → Final durationMinutes: 30
+flutter:    → Final cyclingSpeedMph: null
+flutter:    → Final pace: null min/mi
+flutter:    → Notes: At your discretion
+flutter: 🔍 FS INTENSITY DEBUG - Checking for workout intensity hints
+flutter:    ⚠️ No intensity distribution hints available
+flutter: 🔍 FS TRANSFORM DEBUG - Raw workout keys: [WorkoutKey, WorkoutURL, WorkoutDate, WorkoutTime, WorkoutCode, WorkoutTitle, WorkoutDescription, WorkoutTypeName, WorkoutSubTypeName, WorkoutCompleted, WorkoutRace, WorkoutIcon, PlannedTime, PlannedDistance, PlannedDistanceType, PlannedPace, PlannedPaceType, ActualTime, ActualDistanceMeters, HasStructuredWorkout, StructuredWorkoutURLs]
+flutter: 🔍 FS TRANSFORM DEBUG - Raw workout data:
+flutter:    WorkoutKey: fac8e2d5-5bfb-4dc1-949d-b9a9a981034b
+flutter:    WorkoutURL: https://log.finalsurge.com/WorkoutDetails?s=f71d3644-6ae5-4910-b098-a019a515520e&id=fac8e2d5-5bfb-4dc1-949d-b9a9a981034b
+flutter:    WorkoutDate: 2026-09-25T00:00:00
+flutter:    WorkoutTitle: R-CORE Routine
+flutter:    WorkoutTypeName: Strength Training
+flutter:    WorkoutCompleted: false
+flutter:    WorkoutRace: false
+flutter:    WorkoutIcon: 5
+flutter:    HasStructuredWorkout: false
+flutter:    StructuredWorkoutURLs: {zwo: null, mrc: null, fit: null, json_garmin_v1: null, json_fs_v1: null}
+flutter: 🔍 FS DURATION DEBUG:
+flutter:    PlannedTime raw value: null (type: Null)
+flutter:    ActualTime raw value: null (type: Null)
+flutter: 🔍 FS DISTANCE DEBUG:
+flutter:    PlannedDistance raw value: null (type: Null)
+flutter:    PlannedDistanceType: null
+flutter:    ActualDistanceMeters raw value: null (type: Null)
+flutter:    All distance-related keys: (PlannedDistance, PlannedDistanceType, ActualDistanceMeters)
+flutter:    PlannedDistance: null
+flutter:    PlannedDistanceType: null
+flutter:    ActualDistanceMeters: null
+flutter:    ⚠️ No distance data available, using default for ActivityType.other
+flutter: 🔍 FS PACE DEBUG: Using default pace for ActivityType.other
+flutter: 🏁 FS TRANSFORM RESULT:
+flutter:    Title: R-CORE Routine
+flutter:    Type: ActivityType.other
+flutter:    Raw PlannedDistance: null (null)
+flutter:    Raw PlannedTime: null seconds
+flutter:    Raw ActualDistanceMeters: null
+flutter:    Raw ActualTime: null
+flutter:    → Final distanceMiles: null
+flutter:    → Final durationMinutes: null
+flutter:    → Final cyclingSpeedMph: null
+flutter:    → Final pace: null min/mi
+flutter:    → Notes: null
+flutter: 🔍 FS INTENSITY DEBUG - Checking for workout intensity hints
+flutter:    ⚠️ No intensity distribution hints available
+flutter:    📋 Fetched structured workout for null
+flutter: 🔍 FS TRANSFORM DEBUG - Raw workout keys: [WorkoutKey, WorkoutURL, WorkoutDate, WorkoutTime, WorkoutCode, WorkoutTitle, WorkoutDescription, WorkoutTypeName, WorkoutSubTypeName, WorkoutCompleted, WorkoutRace, WorkoutIcon, PlannedTime, PlannedDistance, PlannedDistanceType, PlannedPace, PlannedPaceType, ActualTime, ActualDistanceMeters, HasStructuredWorkout, StructuredWorkoutURLs]
+flutter: 🔍 FS TRANSFORM DEBUG - Raw workout data:
+flutter:    WorkoutKey: 105cea78-063c-4581-89ce-27bc19f3c2e6
+flutter:    WorkoutURL: https://log.finalsurge.com/WorkoutDetails?s=f71d3644-6ae5-4910-b098-a019a515520e&id=105cea78-063c-4581-89ce-27bc19f3c2e6
+flutter:    WorkoutDate: 2026-09-26T00:00:00
+flutter:    WorkoutDescription: @ 8:45 - 9:38
+flutter:    WorkoutTypeName: Run
+flutter:    WorkoutSubTypeName: Long Run
+flutter:    WorkoutCompleted: false
+flutter:    WorkoutRace: false
+flutter:    WorkoutIcon: 1
+flutter:    PlannedDistance: 17.0
+flutter:    PlannedDistanceType: mi
+flutter:    HasStructuredWorkout: true
+flutter:    StructuredWorkoutURLs: {fit: https://log.finalsurge.com/api/v1/DownloadWorkout?t=fit&s=f71d3644-6ae5-4910-b098-a019a515520e&id=105cea78-063c-4581-89ce-27bc19f3c2e6, json_garmin_v1: https://log.finalsurge.com/api/v1/DownloadWorkout?t=garminv1&s=f71d3644-6ae5-4910-b098-a019a515520e&id=105cea78-063c-4581-89ce-27bc19f3c2e6, json_fs_v1: https://log.finalsurge.com/api/v1/DownloadWorkout?t=fsv1&s=f71d3644-6ae5-4910-b098-a019a515520e&id=105cea78-063c-4581-89ce-27bc19f3c2e6, zwo: null, mrc: null}
+flutter: 🔍 FS DURATION DEBUG:
+flutter:    PlannedTime raw value: null (type: Null)
+flutter:    ActualTime raw value: null (type: Null)
+flutter: 🔍 FS DISTANCE DEBUG:
+flutter:    PlannedDistance raw value: 17.0 (type: double)
+flutter:    PlannedDistanceType: mi
+flutter:    ActualDistanceMeters raw value: null (type: Null)
+flutter:    All distance-related keys: (PlannedDistance, PlannedDistanceType, ActualDistanceMeters)
+flutter:    PlannedDistance: 17.0
+flutter:    PlannedDistanceType: mi
+flutter:    ActualDistanceMeters: null
+flutter:    ✅ Using PlannedDistance: 17.0 mi
+flutter: 🔍 FS PACE DEBUG: Using pace from description: 9.191666666666666 min/mi
+flutter: 🏁 FS TRANSFORM RESULT:
+flutter:    Title: Run - Long Run
+flutter:    Type: ActivityType.running
+flutter:    Raw PlannedDistance: 17.0 (mi)
+flutter:    Raw PlannedTime: null seconds
+flutter:    Raw ActualDistanceMeters: null
+flutter:    Raw ActualTime: null
+flutter:    → Final distanceMiles: 17.0
+flutter:    → Final durationMinutes: null
+flutter:    → Final cyclingSpeedMph: null
+flutter:    → Final pace: 9.191666666666666 min/mi
+flutter:    → Notes: null
+flutter: 🔍 FS INTENSITY DEBUG - Checking for workout intensity hints
+flutter:    ✅ Matched subtype "Long Run": IntensityDistribution(conversational: 80%, tempo: 15%, allOut: 5%)
+flutter: 🔍 FS TRANSFORM DEBUG - Raw workout keys: [WorkoutKey, WorkoutURL, WorkoutDate, WorkoutTime, WorkoutCode, WorkoutTitle, WorkoutDescription, WorkoutTypeName, WorkoutSubTypeName, WorkoutCompleted, WorkoutRace, WorkoutIcon, PlannedTime, PlannedDistance, PlannedDistanceType, PlannedPace, PlannedPaceType, ActualTime, ActualDistanceMeters, HasStructuredWorkout, StructuredWorkoutURLs]
+flutter: 🔍 FS TRANSFORM DEBUG - Raw workout data:
+flutter:    WorkoutKey: cd4a97d3-14fd-45f8-8355-741dc73d2271
+flutter:    WorkoutURL: https://log.finalsurge.com/WorkoutDetails?s=f71d3644-6ae5-4910-b098-a019a515520e&id=cd4a97d3-14fd-45f8-8355-741dc73d2271
+flutter:    WorkoutDate: 2026-09-26T00:00:00
+flutter:    WorkoutTitle: Foam Rolling Routine
+flutter:    WorkoutTypeName: Recovery/Rehab
+flutter:    WorkoutCompleted: false
+flutter:    WorkoutRace: false
+flutter:    WorkoutIcon: 7
+flutter:    HasStructuredWorkout: false
+flutter:    StructuredWorkoutURLs: {zwo: null, mrc: null, fit: null, json_garmin_v1: null, json_fs_v1: null}
+flutter: 🔍 FS DURATION DEBUG:
+flutter:    PlannedTime raw value: null (type: Null)
+flutter:    ActualTime raw value: null (type: Null)
+flutter: 🔍 FS DISTANCE DEBUG:
+flutter:    PlannedDistance raw value: null (type: Null)
+flutter:    PlannedDistanceType: null
+flutter:    ActualDistanceMeters raw value: null (type: Null)
+flutter:    All distance-related keys: (PlannedDistance, PlannedDistanceType, ActualDistanceMeters)
+flutter:    PlannedDistance: null
+flutter:    PlannedDistanceType: null
+flutter:    ActualDistanceMeters: null
+flutter:    ⚠️ No distance data available, using default for ActivityType.other
+flutter: 🔍 FS PACE DEBUG: Using default pace for ActivityType.other
+flutter: 🏁 FS TRANSFORM RESULT:
+flutter:    Title: Foam Rolling Routine
+flutter:    Type: ActivityType.other
+flutter:    Raw PlannedDistance: null (null)
+flutter:    Raw PlannedTime: null seconds
+flutter:    Raw ActualDistanceMeters: null
+flutter:    Raw ActualTime: null
+flutter:    → Final distanceMiles: null
+flutter:    → Final durationMinutes: null
+flutter:    → Final cyclingSpeedMph: null
+flutter:    → Final pace: null min/mi
+flutter:    → Notes: null
+flutter: 🔍 FS INTENSITY DEBUG - Checking for workout intensity hints
+flutter:    ⚠️ No intensity distribution hints available
+flutter: 🔍 FS TRANSFORM DEBUG - Raw workout keys: [WorkoutKey, WorkoutURL, WorkoutDate, WorkoutTime, WorkoutCode, WorkoutTitle, WorkoutDescription, WorkoutTypeName, WorkoutSubTypeName, WorkoutCompleted, WorkoutRace, WorkoutIcon, PlannedTime, PlannedDistance, PlannedDistanceType, PlannedPace, PlannedPaceType, ActualTime, ActualDistanceMeters, HasStructuredWorkout, StructuredWorkoutURLs]
+flutter: 🔍 FS TRANSFORM DEBUG - Raw workout data:
+flutter:    WorkoutKey: d42b0717-20d2-48c1-ba8b-7ad4e873003c
+flutter:    WorkoutURL: https://log.finalsurge.com/WorkoutDetails?s=f71d3644-6ae5-4910-b098-a019a515520e&id=d42b0717-20d2-48c1-ba8b-7ad4e873003c
+flutter:    WorkoutDate: 2026-09-27T00:00:00
+flutter:    WorkoutDescription: At your discretion.
+flutter:    WorkoutTypeName: Bike
+flutter:    WorkoutSubTypeName: Long Ride
+flutter:    WorkoutCompleted: false
+flutter:    WorkoutRace: false
+flutter:    WorkoutIcon: 2
+flutter:    HasStructuredWorkout: false
+flutter:    StructuredWorkoutURLs: {zwo: null, mrc: null, fit: null, json_garmin_v1: null, json_fs_v1: null}
+flutter: 🔍 FS DURATION DEBUG:
+flutter:    PlannedTime raw value: null (type: Null)
+flutter:    ActualTime raw value: null (type: Null)
+flutter: 🔍 FS DISTANCE DEBUG:
+flutter:    PlannedDistance raw value: null (type: Null)
+flutter:    PlannedDistanceType: null
+flutter:    ActualDistanceMeters raw value: null (type: Null)
+flutter:    All distance-related keys: (PlannedDistance, PlannedDistanceType, ActualDistanceMeters)
+flutter:    PlannedDistance: null
+flutter:    PlannedDistanceType: null
+flutter:    ActualDistanceMeters: null
+flutter:    ⚠️ No distance data available, using default for ActivityType.cycling
+flutter: 🔍 FS PACE DEBUG: Using default pace for ActivityType.cycling
+flutter: 🏁 FS TRANSFORM RESULT:
+flutter:    Title: Bike - Long Ride
+flutter:    Type: ActivityType.cycling
+flutter:    Raw PlannedDistance: null (null)
+flutter:    Raw PlannedTime: null seconds
+flutter:    Raw ActualDistanceMeters: null
+flutter:    Raw ActualTime: null
+flutter:    → Final distanceMiles: 10.0
+flutter:    → Final durationMinutes: 45
+flutter:    → Final cyclingSpeedMph: null
+flutter:    → Final pace: null min/mi
+flutter:    → Notes: At your discretion.
+flutter: 🔍 FS INTENSITY DEBUG - Checking for workout intensity hints
+flutter:    ✅ Matched subtype "Long Ride": IntensityDistribution(conversational: 80%, tempo: 15%, allOut: 5%)
+flutter: 🔍 FS TRANSFORM DEBUG - Raw workout keys: [WorkoutKey, WorkoutURL, WorkoutDate, WorkoutTime, WorkoutCode, WorkoutTitle, WorkoutDescription, WorkoutTypeName, WorkoutSubTypeName, WorkoutCompleted, WorkoutRace, WorkoutIcon, PlannedTime, PlannedDistance, PlannedDistanceType, PlannedPace, PlannedPaceType, ActualTime, ActualDistanceMeters, HasStructuredWorkout, StructuredWorkoutURLs]
+flutter: 🔍 FS TRANSFORM DEBUG - Raw workout data:
+flutter:    WorkoutKey: 35e16042-13cb-4898-87b2-3e0984e4f95a
+flutter:    WorkoutURL: https://log.finalsurge.com/WorkoutDetails?s=f71d3644-6ae5-4910-b098-a019a515520e&id=35e16042-13cb-4898-87b2-3e0984e4f95a
+flutter:    WorkoutDate: 2026-09-27T00:00:00
+flutter:    WorkoutTitle: Foam Rolling Routine
+flutter:    WorkoutTypeName: Recovery/Rehab
+flutter:    WorkoutCompleted: false
+flutter:    WorkoutRace: false
+flutter:    WorkoutIcon: 7
+flutter:    HasStructuredWorkout: false
+flutter:    StructuredWorkoutURLs: {zwo: null, mrc: null, fit: null, json_garmin_v1: null, json_fs_v1: null}
+flutter: 🔍 FS DURATION DEBUG:
+flutter:    PlannedTime raw value: null (type: Null)
+flutter:    ActualTime raw value: null (type: Null)
+flutter: 🔍 FS DISTANCE DEBUG:
+flutter:    PlannedDistance raw value: null (type: Null)
+flutter:    PlannedDistanceType: null
+flutter:    ActualDistanceMeters raw value: null (type: Null)
+flutter:    All distance-related keys: (PlannedDistance, PlannedDistanceType, ActualDistanceMeters)
+flutter:    PlannedDistance: null
+flutter:    PlannedDistanceType: null
+flutter:    ActualDistanceMeters: null
+flutter:    ⚠️ No distance data available, using default for ActivityType.other
+flutter: 🔍 FS PACE DEBUG: Using default pace for ActivityType.other
+flutter: 🏁 FS TRANSFORM RESULT:
+flutter:    Title: Foam Rolling Routine
+flutter:    Type: ActivityType.other
+flutter:    Raw PlannedDistance: null (null)
+flutter:    Raw PlannedTime: null seconds
+flutter:    Raw ActualDistanceMeters: null
+flutter:    Raw ActualTime: null
+flutter:    → Final distanceMiles: null
+flutter:    → Final durationMinutes: null
+flutter:    → Final cyclingSpeedMph: null
+flutter:    → Final pace: null min/mi
+flutter:    → Notes: null
+flutter: 🔍 FS INTENSITY DEBUG - Checking for workout intensity hints
+flutter:    ⚠️ No intensity distribution hints available
+flutter: 🔍 FS TRANSFORM DEBUG - Raw workout keys: [WorkoutKey, WorkoutURL, WorkoutDate, WorkoutTime, WorkoutCode, WorkoutTitle, WorkoutDescription, WorkoutTypeName, WorkoutSubTypeName, WorkoutCompleted, WorkoutRace, WorkoutIcon, PlannedTime, PlannedDistance, PlannedDistanceType, PlannedPace, PlannedPaceType, ActualTime, ActualDistanceMeters, HasStructuredWorkout, StructuredWorkoutURLs]
+flutter: 🔍 FS TRANSFORM DEBUG - Raw workout data:
+flutter:    WorkoutKey: 235a2052-345e-4a23-b810-14d354cc3689
+flutter:    WorkoutURL: https://log.finalsurge.com/WorkoutDetails?s=f71d3644-6ae5-4910-b098-a019a515520e&id=235a2052-345e-4a23-b810-14d354cc3689
+flutter:    WorkoutDate: 2026-09-28T00:00:00
+flutter:    WorkoutDescription: At your discretion
+flutter:    WorkoutTypeName: Swim
+flutter:    WorkoutCompleted: false
+flutter:    WorkoutRace: false
+flutter:    WorkoutIcon: 3
+flutter:    HasStructuredWorkout: false
+flutter:    StructuredWorkoutURLs: {zwo: null, mrc: null, fit: null, json_garmin_v1: null, json_fs_v1: null}
+flutter: 🔍 FS DURATION DEBUG:
+flutter:    PlannedTime raw value: null (type: Null)
+flutter:    ActualTime raw value: null (type: Null)
+flutter: 🔍 FS PACE DEBUG: Using default pace for ActivityType.swimming
+flutter: 🏁 FS TRANSFORM RESULT:
+flutter:    Title: Swim
+flutter:    Type: ActivityType.swimming
+flutter:    Raw PlannedDistance: null (null)
+flutter:    Raw PlannedTime: null seconds
+flutter:    Raw ActualDistanceMeters: null
+flutter:    Raw ActualTime: null
+flutter:    → Final distanceMiles: null
+flutter:    → Final durationMinutes: 30
+flutter:    → Final cyclingSpeedMph: null
+flutter:    → Final pace: null min/mi
+flutter:    → Notes: At your discretion
+flutter: 🔍 FS INTENSITY DEBUG - Checking for workout intensity hints
+flutter:    ⚠️ No intensity distribution hints available
+flutter: 🔍 FS TRANSFORM DEBUG - Raw workout keys: [WorkoutKey, WorkoutURL, WorkoutDate, WorkoutTime, WorkoutCode, WorkoutTitle, WorkoutDescription, WorkoutTypeName, WorkoutSubTypeName, WorkoutCompleted, WorkoutRace, WorkoutIcon, PlannedTime, PlannedDistance, PlannedDistanceType, PlannedPace, PlannedPaceType, ActualTime, ActualDistanceMeters, HasStructuredWorkout, StructuredWorkoutURLs]
+flutter: 🔍 FS TRANSFORM DEBUG - Raw workout data:
+flutter:    WorkoutKey: 7933ac97-32ff-4dc4-85c0-2d25b206d0c0
+flutter:    WorkoutURL: https://log.finalsurge.com/WorkoutDetails?s=f71d3644-6ae5-4910-b098-a019a515520e&id=7933ac97-32ff-4dc4-85c0-2d25b206d0c0
+flutter:    WorkoutDate: 2026-09-28T00:00:00
+flutter:    WorkoutTitle: Test integration
+flutter:    WorkoutTypeName: Bike
+flutter:    WorkoutCompleted: false
+flutter:    WorkoutRace: false
+flutter:    WorkoutIcon: 2
+flutter:    PlannedDistance: 30.0
+flutter:    PlannedDistanceType: mi
+flutter:    HasStructuredWorkout: false
+flutter:    StructuredWorkoutURLs: {zwo: null, mrc: null, fit: null, json_garmin_v1: null, json_fs_v1: null}
+flutter: 🔍 FS DURATION DEBUG:
+flutter:    PlannedTime raw value: null (type: Null)
+flutter:    ActualTime raw value: null (type: Null)
+flutter: 🔍 FS DISTANCE DEBUG:
+flutter:    PlannedDistance raw value: 30.0 (type: double)
+flutter:    PlannedDistanceType: mi
+flutter:    ActualDistanceMeters raw value: null (type: Null)
+flutter:    All distance-related keys: (PlannedDistance, PlannedDistanceType, ActualDistanceMeters)
+flutter:    PlannedDistance: 30.0
+flutter:    PlannedDistanceType: mi
+flutter:    ActualDistanceMeters: null
+flutter:    ✅ Using PlannedDistance: 30.0 mi
+flutter: 🔍 FS PACE DEBUG: Using default pace for ActivityType.cycling
+flutter: 🏁 FS TRANSFORM RESULT:
+flutter:    Title: Test integration
+flutter:    Type: ActivityType.cycling
+flutter:    Raw PlannedDistance: 30.0 (mi)
+flutter:    Raw PlannedTime: null seconds
+flutter:    Raw ActualDistanceMeters: null
+flutter:    Raw ActualTime: null
+flutter:    → Final distanceMiles: 30.0
+flutter:    → Final durationMinutes: null
+flutter:    → Final cyclingSpeedMph: null
+flutter:    → Final pace: null min/mi
+flutter:    → Notes: null
+flutter: 🔍 FS INTENSITY DEBUG - Checking for workout intensity hints
+flutter:    ⚠️ No intensity distribution hints available
+flutter: 🔍 FS TRANSFORM DEBUG - Raw workout keys: [WorkoutKey, WorkoutURL, WorkoutDate, WorkoutTime, WorkoutCode, WorkoutTitle, WorkoutDescription, WorkoutTypeName, WorkoutSubTypeName, WorkoutCompleted, WorkoutRace, WorkoutIcon, PlannedTime, PlannedDistance, PlannedDistanceType, PlannedPace, PlannedPaceType, ActualTime, ActualDistanceMeters, HasStructuredWorkout, StructuredWorkoutURLs]
+flutter: 🔍 FS TRANSFORM DEBUG - Raw workout data:
+flutter:    WorkoutKey: 22cdba5b-ea57-47ab-aaf4-05c0330dd534
+flutter:    WorkoutURL: https://log.finalsurge.com/WorkoutDetails?s=f71d3644-6ae5-4910-b098-a019a515520e&id=22cdba5b-ea57-47ab-aaf4-05c0330dd534
+flutter:    WorkoutDate: 2026-09-28T00:00:00
+flutter:    WorkoutTitle: R-CORE Routine
+flutter:    WorkoutTypeName: Strength Training
+flutter:    WorkoutCompleted: false
+flutter:    WorkoutRace: false
+flutter:    WorkoutIcon: 5
+flutter:    HasStructuredWorkout: false
+flutter:    StructuredWorkoutURLs: {zwo: null, mrc: null, fit: null, json_garmin_v1: null, json_fs_v1: null}
+flutter: 🔍 FS DURATION DEBUG:
+flutter:    PlannedTime raw value: null (type: Null)
+flutter:    ActualTime raw value: null (type: Null)
+flutter: 🔍 FS DISTANCE DEBUG:
+flutter:    PlannedDistance raw value: null (type: Null)
+flutter:    PlannedDistanceType: null
+flutter:    ActualDistanceMeters raw value: null (type: Null)
+flutter:    All distance-related keys: (PlannedDistance, PlannedDistanceType, ActualDistanceMeters)
+flutter:    PlannedDistance: null
+flutter:    PlannedDistanceType: null
+flutter:    ActualDistanceMeters: null
+flutter:    ⚠️ No distance data available, using default for ActivityType.other
+flutter: 🔍 FS PACE DEBUG: Using default pace for ActivityType.other
+flutter: 🏁 FS TRANSFORM RESULT:
+flutter:    Title: R-CORE Routine
+flutter:    Type: ActivityType.other
+flutter:    Raw PlannedDistance: null (null)
+flutter:    Raw PlannedTime: null seconds
+flutter:    Raw ActualDistanceMeters: null
+flutter:    Raw ActualTime: null
+flutter:    → Final distanceMiles: null
+flutter:    → Final durationMinutes: null
+flutter:    → Final cyclingSpeedMph: null
+flutter:    → Final pace: null min/mi
+flutter:    → Notes: null
+flutter: 🔍 FS INTENSITY DEBUG - Checking for workout intensity hints
+flutter:    ⚠️ No intensity distribution hints available
+flutter: 🔍 FS TRANSFORM DEBUG - Raw workout keys: [WorkoutKey, WorkoutURL, WorkoutDate, WorkoutTime, WorkoutCode, WorkoutTitle, WorkoutDescription, WorkoutTypeName, WorkoutSubTypeName, WorkoutCompleted, WorkoutRace, WorkoutIcon, PlannedTime, PlannedDistance, PlannedDistanceType, PlannedPace, PlannedPaceType, ActualTime, ActualDistanceMeters, HasStructuredWorkout, StructuredWorkoutURLs]
+flutter: 🔍 FS TRANSFORM DEBUG - Raw workout data:
+flutter:    WorkoutKey: 353da65e-074e-4c62-8f10-d853cbcb8b7f
+flutter:    WorkoutURL: https://log.finalsurge.com/WorkoutDetails?s=f71d3644-6ae5-4910-b098-a019a515520e&id=353da65e-074e-4c62-8f10-d853cbcb8b7f
+flutter:    WorkoutDate: 2026-09-29T00:00:00
+flutter:    WorkoutTitle: Warm Up Routine
+flutter:    WorkoutDescription: I know this is a long warm up. If you do not have time to do the whole warm up, pick 3 to 4 moves that you enjoy doing and perform those. Remember, something is better than nothing.
+flutter:    WorkoutTypeName: Transition
+flutter:    WorkoutCompleted: false
+flutter:    WorkoutRace: false
+flutter:    WorkoutIcon: 9
+flutter:    HasStructuredWorkout: false
+flutter:    StructuredWorkoutURLs: {zwo: null, mrc: null, fit: null, json_garmin_v1: null, json_fs_v1: null}
+flutter: 🔍 FS DURATION DEBUG:
+flutter:    PlannedTime raw value: null (type: Null)
+flutter:    ActualTime raw value: null (type: Null)
+flutter: 🔍 FS DISTANCE DEBUG:
+flutter:    PlannedDistance raw value: null (type: Null)
+flutter:    PlannedDistanceType: null
+flutter:    ActualDistanceMeters raw value: null (type: Null)
+flutter:    All distance-related keys: (PlannedDistance, PlannedDistanceType, ActualDistanceMeters)
+flutter:    PlannedDistance: null
+flutter:    PlannedDistanceType: null
+flutter:    ActualDistanceMeters: null
+flutter:    ⚠️ No distance data available, using default for ActivityType.other
+flutter: 🔍 FS PACE DEBUG: Using default pace for ActivityType.other
+flutter: 🏁 FS TRANSFORM RESULT:
+flutter:    Title: Warm Up Routine
+flutter:    Type: ActivityType.other
+flutter:    Raw PlannedDistance: null (null)
+flutter:    Raw PlannedTime: null seconds
+flutter:    Raw ActualDistanceMeters: null
+flutter:    Raw ActualTime: null
+flutter:    → Final distanceMiles: null
+flutter:    → Final durationMinutes: null
+flutter:    → Final cyclingSpeedMph: null
+flutter:    → Final pace: null min/mi
+flutter:    → Notes: I know this is a long warm up. If you do not have
+flutter: 🔍 FS INTENSITY DEBUG - Checking for workout intensity hints
+flutter:    ✅ Matched title "Warm Up Routine": IntensityDistribution(conversational: 95%, tempo: 5%, allOut: 0%)
+flutter: 🔍 FS TRANSFORM DEBUG - Raw workout keys: [WorkoutKey, WorkoutURL, WorkoutDate, WorkoutTime, WorkoutCode, WorkoutTitle, WorkoutDescription, WorkoutTypeName, WorkoutSubTypeName, WorkoutCompleted, WorkoutRace, WorkoutIcon, PlannedTime, PlannedDistance, PlannedDistanceType, PlannedPace, PlannedPaceType, ActualTime, ActualDistanceMeters, HasStructuredWorkout, StructuredWorkoutURLs]
+flutter: 🔍 FS TRANSFORM DEBUG - Raw workout data:
+flutter:    WorkoutKey: 90c0f09d-d3af-4915-b395-627dafa8fe97
+flutter:    WorkoutURL: https://log.finalsurge.com/WorkoutDetails?s=f71d3644-6ae5-4910-b098-a019a515520e&id=90c0f09d-d3af-4915-b395-627dafa8fe97
+flutter:    WorkoutDate: 2026-09-29T00:00:00
+flutter:    WorkoutTitle: Speedwork
+flutter:    WorkoutDescription: Refer to Monday afternoon email for details of workout.
+flutter:    WorkoutTypeName: Run
+flutter:    WorkoutCompleted: false
+flutter:    WorkoutRace: false
+flutter:    WorkoutIcon: 1
+flutter:    PlannedDistance: 6.0
+flutter:    PlannedDistanceType: mi
+flutter:    HasStructuredWorkout: false
+flutter:    StructuredWorkoutURLs: {zwo: null, mrc: null, fit: null, json_garmin_v1: null, json_fs_v1: null}
+flutter: 🔍 FS DURATION DEBUG:
+flutter:    PlannedTime raw value: null (type: Null)
+flutter:    ActualTime raw value: null (type: Null)
+flutter: 🔍 FS DISTANCE DEBUG:
+flutter:    PlannedDistance raw value: 6.0 (type: double)
+flutter:    PlannedDistanceType: mi
+flutter:    ActualDistanceMeters raw value: null (type: Null)
+flutter:    All distance-related keys: (PlannedDistance, PlannedDistanceType, ActualDistanceMeters)
+flutter:    PlannedDistance: 6.0
+flutter:    PlannedDistanceType: mi
+flutter:    ActualDistanceMeters: null
+flutter:    ✅ Using PlannedDistance: 6.0 mi
+flutter: 🔍 FS PACE DEBUG: Using default pace for ActivityType.running
+flutter: 🏁 FS TRANSFORM RESULT:
+flutter:    Title: Speedwork
+flutter:    Type: ActivityType.running
+flutter:    Raw PlannedDistance: 6.0 (mi)
+flutter:    Raw PlannedTime: null seconds
+flutter:    Raw ActualDistanceMeters: null
+flutter:    Raw ActualTime: null
+flutter:    → Final distanceMiles: 6.0
+flutter:    → Final durationMinutes: null
+flutter:    → Final cyclingSpeedMph: null
+flutter:    → Final pace: 10.0 min/mi
+flutter:    → Notes: Refer to Monday afternoon email for details of wor
+flutter: 🔍 FS INTENSITY DEBUG - Checking for workout intensity hints
+flutter:    ✅ Matched title "Speedwork": IntensityDistribution(conversational: 40%, tempo: 30%, allOut: 30%)
+flutter: 🔍 FS TRANSFORM DEBUG - Raw workout keys: [WorkoutKey, WorkoutURL, WorkoutDate, WorkoutTime, WorkoutCode, WorkoutTitle, WorkoutDescription, WorkoutTypeName, WorkoutSubTypeName, WorkoutCompleted, WorkoutRace, WorkoutIcon, PlannedTime, PlannedDistance, PlannedDistanceType, PlannedPace, PlannedPaceType, ActualTime, ActualDistanceMeters, HasStructuredWorkout, StructuredWorkoutURLs]
+flutter: 🔍 FS TRANSFORM DEBUG - Raw workout data:
+flutter:    WorkoutKey: c2a59461-fe70-4e5e-a288-22370424e6a8
+flutter:    WorkoutURL: https://log.finalsurge.com/WorkoutDetails?s=f71d3644-6ae5-4910-b098-a019a515520e&id=c2a59461-fe70-4e5e-a288-22370424e6a8
+flutter:    WorkoutDate: 2026-09-29T00:00:00
+flutter:    WorkoutTitle: Foam Rolling Routine
+flutter:    WorkoutTypeName: Recovery/Rehab
+flutter:    WorkoutCompleted: false
+flutter:    WorkoutRace: false
+flutter:    WorkoutIcon: 7
+flutter:    HasStructuredWorkout: false
+flutter:    StructuredWorkoutURLs: {zwo: null, mrc: null, fit: null, json_garmin_v1: null, json_fs_v1: null}
+flutter: 🔍 FS DURATION DEBUG:
+flutter:    PlannedTime raw value: null (type: Null)
+flutter:    ActualTime raw value: null (type: Null)
+flutter: 🔍 FS DISTANCE DEBUG:
+flutter:    PlannedDistance raw value: null (type: Null)
+flutter:    PlannedDistanceType: null
+flutter:    ActualDistanceMeters raw value: null (type: Null)
+flutter:    All distance-related keys: (PlannedDistance, PlannedDistanceType, ActualDistanceMeters)
+flutter:    PlannedDistance: null
+flutter:    PlannedDistanceType: null
+flutter:    ActualDistanceMeters: null
+flutter:    ⚠️ No distance data available, using default for ActivityType.other
+flutter: 🔍 FS PACE DEBUG: Using default pace for ActivityType.other
+flutter: 🏁 FS TRANSFORM RESULT:
+flutter:    Title: Foam Rolling Routine
+flutter:    Type: ActivityType.other
+flutter:    Raw PlannedDistance: null (null)
+flutter:    Raw PlannedTime: null seconds
+flutter:    Raw ActualDistanceMeters: null
+flutter:    Raw ActualTime: null
+flutter:    → Final distanceMiles: null
+flutter:    → Final durationMinutes: null
+flutter:    → Final cyclingSpeedMph: null
+flutter:    → Final pace: null min/mi
+flutter:    → Notes: null
+flutter: 🔍 FS INTENSITY DEBUG - Checking for workout intensity hints
+flutter:    ⚠️ No intensity distribution hints available
+flutter: 🔍 FS TRANSFORM DEBUG - Raw workout keys: [WorkoutKey, WorkoutURL, WorkoutDate, WorkoutTime, WorkoutCode, WorkoutTitle, WorkoutDescription, WorkoutTypeName, WorkoutSubTypeName, WorkoutCompleted, WorkoutRace, WorkoutIcon, PlannedTime, PlannedDistance, PlannedDistanceType, PlannedPace, PlannedPaceType, ActualTime, ActualDistanceMeters, HasStructuredWorkout, StructuredWorkoutURLs]
+flutter: 🔍 FS TRANSFORM DEBUG - Raw workout data:
+flutter:    WorkoutKey: 29cd6585-4c18-4638-b8b8-544fddf5d3ff
+flutter:    WorkoutURL: https://log.finalsurge.com/WorkoutDetails?s=f71d3644-6ae5-4910-b098-a019a515520e&id=29cd6585-4c18-4638-b8b8-544fddf5d3ff
+flutter:    WorkoutDate: 2026-09-30T00:00:00
+flutter:    WorkoutDescription: At your discretion
+flutter:    WorkoutTypeName: Swim
+flutter:    WorkoutCompleted: false
+flutter:    WorkoutRace: false
+flutter:    WorkoutIcon: 3
+flutter:    HasStructuredWorkout: false
+flutter:    StructuredWorkoutURLs: {zwo: null, mrc: null, fit: null, json_garmin_v1: null, json_fs_v1: null}
+flutter: 🔍 FS DURATION DEBUG:
+flutter:    PlannedTime raw value: null (type: Null)
+flutter:    ActualTime raw value: null (type: Null)
+flutter: 🔍 FS PACE DEBUG: Using default pace for ActivityType.swimming
+flutter: 🏁 FS TRANSFORM RESULT:
+flutter:    Title: Swim
+flutter:    Type: ActivityType.swimming
+flutter:    Raw PlannedDistance: null (null)
+flutter:    Raw PlannedTime: null seconds
+flutter:    Raw ActualDistanceMeters: null
+flutter:    Raw ActualTime: null
+flutter:    → Final distanceMiles: null
+flutter:    → Final durationMinutes: 30
+flutter:    → Final cyclingSpeedMph: null
+flutter:    → Final pace: null min/mi
+flutter:    → Notes: At your discretion
+flutter: 🔍 FS INTENSITY DEBUG - Checking for workout intensity hints
+flutter:    ⚠️ No intensity distribution hints available
+flutter: 🔍 FS TRANSFORM DEBUG - Raw workout keys: [WorkoutKey, WorkoutURL, WorkoutDate, WorkoutTime, WorkoutCode, WorkoutTitle, WorkoutDescription, WorkoutTypeName, WorkoutSubTypeName, WorkoutCompleted, WorkoutRace, WorkoutIcon, PlannedTime, PlannedDistance, PlannedDistanceType, PlannedPace, PlannedPaceType, ActualTime, ActualDistanceMeters, HasStructuredWorkout, StructuredWorkoutURLs]
+flutter: 🔍 FS TRANSFORM DEBUG - Raw workout data:
+flutter:    WorkoutKey: f9597ef1-8b24-4f58-be48-00d1a45fc2d8
+flutter:    WorkoutURL: https://log.finalsurge.com/WorkoutDetails?s=f71d3644-6ae5-4910-b098-a019a515520e&id=f9597ef1-8b24-4f58-be48-00d1a45fc2d8
+flutter:    WorkoutDate: 2026-09-30T00:00:00
+flutter:    WorkoutDescription: At your discretion
+flutter:    WorkoutTypeName: Bike
+flutter:    WorkoutCompleted: false
+flutter:    WorkoutRace: false
+flutter:    WorkoutIcon: 2
+flutter:    HasStructuredWorkout: false
+flutter:    StructuredWorkoutURLs: {zwo: null, mrc: null, fit: null, json_garmin_v1: null, json_fs_v1: null}
+flutter: 🔍 FS DURATION DEBUG:
+flutter:    PlannedTime raw value: null (type: Null)
+flutter:    ActualTime raw value: null (type: Null)
+flutter: 🔍 FS DISTANCE DEBUG:
+flutter:    PlannedDistance raw value: null (type: Null)
+flutter:    PlannedDistanceType: null
+flutter:    ActualDistanceMeters raw value: null (type: Null)
+flutter:    All distance-related keys: (PlannedDistance, PlannedDistanceType, ActualDistanceMeters)
+flutter:    PlannedDistance: null
+flutter:    PlannedDistanceType: null
+flutter:    ActualDistanceMeters: null
+flutter:    ⚠️ No distance data available, using default for ActivityType.cycling
+flutter: 🔍 FS PACE DEBUG: Using default pace for ActivityType.cycling
+flutter: 🏁 FS TRANSFORM RESULT:
+flutter:    Title: Bike
+flutter:    Type: ActivityType.cycling
+flutter:    Raw PlannedDistance: null (null)
+flutter:    Raw PlannedTime: null seconds
+flutter:    Raw ActualDistanceMeters: null
+flutter:    Raw ActualTime: null
+flutter:    → Final distanceMiles: 10.0
+flutter:    → Final durationMinutes: 45
+flutter:    → Final cyclingSpeedMph: null
+flutter:    → Final pace: null min/mi
+flutter:    → Notes: At your discretion
+flutter: 🔍 FS INTENSITY DEBUG - Checking for workout intensity hints
+flutter:    ⚠️ No intensity distribution hints available
+flutter: 🔍 FS TRANSFORM DEBUG - Raw workout keys: [WorkoutKey, WorkoutURL, WorkoutDate, WorkoutTime, WorkoutCode, WorkoutTitle, WorkoutDescription, WorkoutTypeName, WorkoutSubTypeName, WorkoutCompleted, WorkoutRace, WorkoutIcon, PlannedTime, PlannedDistance, PlannedDistanceType, PlannedPace, PlannedPaceType, ActualTime, ActualDistanceMeters, HasStructuredWorkout, StructuredWorkoutURLs]
+flutter: 🔍 FS TRANSFORM DEBUG - Raw workout data:
+flutter:    WorkoutKey: 85f946b2-6c8d-465b-80b5-e43772447837
+flutter:    WorkoutURL: https://log.finalsurge.com/WorkoutDetails?s=f71d3644-6ae5-4910-b098-a019a515520e&id=85f946b2-6c8d-465b-80b5-e43772447837
+flutter:    WorkoutDate: 2026-09-30T00:00:00
+flutter:    WorkoutTitle: R-CORE Routine
+flutter:    WorkoutTypeName: Strength Training
+flutter:    WorkoutCompleted: false
+flutter:    WorkoutRace: false
+flutter:    WorkoutIcon: 5
+flutter:    HasStructuredWorkout: false
+flutter:    StructuredWorkoutURLs: {zwo: null, mrc: null, fit: null, json_garmin_v1: null, json_fs_v1: null}
+flutter: 🔍 FS DURATION DEBUG:
+flutter:    PlannedTime raw value: null (type: Null)
+flutter:    ActualTime raw value: null (type: Null)
+flutter: 🔍 FS DISTANCE DEBUG:
+flutter:    PlannedDistance raw value: null (type: Null)
+flutter:    PlannedDistanceType: null
+flutter:    ActualDistanceMeters raw value: null (type: Null)
+flutter:    All distance-related keys: (PlannedDistance, PlannedDistanceType, ActualDistanceMeters)
+flutter:    PlannedDistance: null
+flutter:    PlannedDistanceType: null
+flutter:    ActualDistanceMeters: null
+flutter:    ⚠️ No distance data available, using default for ActivityType.other
+flutter: 🔍 FS PACE DEBUG: Using default pace for ActivityType.other
+flutter: 🏁 FS TRANSFORM RESULT:
+flutter:    Title: R-CORE Routine
+flutter:    Type: ActivityType.other
+flutter:    Raw PlannedDistance: null (null)
+flutter:    Raw PlannedTime: null seconds
+flutter:    Raw ActualDistanceMeters: null
+flutter:    Raw ActualTime: null
+flutter:    → Final distanceMiles: null
+flutter:    → Final durationMinutes: null
+flutter:    → Final cyclingSpeedMph: null
+flutter:    → Final pace: null min/mi
+flutter:    → Notes: null
+flutter: 🔍 FS INTENSITY DEBUG - Checking for workout intensity hints
+flutter:    ⚠️ No intensity distribution hints available
+flutter: 🔍 FS TRANSFORM DEBUG - Raw workout keys: [WorkoutKey, WorkoutURL, WorkoutDate, WorkoutTime, WorkoutCode, WorkoutTitle, WorkoutDescription, WorkoutTypeName, WorkoutSubTypeName, WorkoutCompleted, WorkoutRace, WorkoutIcon, PlannedTime, PlannedDistance, PlannedDistanceType, PlannedPace, PlannedPaceType, ActualTime, ActualDistanceMeters, HasStructuredWorkout, StructuredWorkoutURLs]
+flutter: 🔍 FS TRANSFORM DEBUG - Raw workout data:
+flutter:    WorkoutKey: 2e95557c-1e3a-4700-b875-3ffb2e82accd
+flutter:    WorkoutURL: https://log.finalsurge.com/WorkoutDetails?s=f71d3644-6ae5-4910-b098-a019a515520e&id=2e95557c-1e3a-4700-b875-3ffb2e82accd
+flutter:    WorkoutDate: 2026-10-01T00:00:00
+flutter:    WorkoutTitle: Easy
+flutter:    WorkoutDescription: @ 8:45 - 9:38
+
+Finish with 6 x 20 second strides
+flutter:    WorkoutTypeName: Run
+flutter:    WorkoutCompleted: false
+flutter:    WorkoutRace: false
+flutter:    WorkoutIcon: 1
+flutter:    PlannedDistance: 8.0
+flutter:    PlannedDistanceType: mi
+flutter:    HasStructuredWorkout: false
+flutter:    StructuredWorkoutURLs: {zwo: null, mrc: null, fit: null, json_garmin_v1: null, json_fs_v1: null}
+flutter: 🔍 FS DURATION DEBUG:
+flutter:    PlannedTime raw value: null (type: Null)
+flutter:    ActualTime raw value: null (type: Null)
+flutter: 🔍 FS DISTANCE DEBUG:
+flutter:    PlannedDistance raw value: 8.0 (type: double)
+flutter:    PlannedDistanceType: mi
+flutter:    ActualDistanceMeters raw value: null (type: Null)
+flutter:    All distance-related keys: (PlannedDistance, PlannedDistanceType, ActualDistanceMeters)
+flutter:    PlannedDistance: 8.0
+flutter:    PlannedDistanceType: mi
+flutter:    ActualDistanceMeters: null
+flutter:    ✅ Using PlannedDistance: 8.0 mi
+flutter: 🔍 FS PACE DEBUG: Using pace from description: 9.191666666666666 min/mi
+flutter: 🏁 FS TRANSFORM RESULT:
+flutter:    Title: Easy
+flutter:    Type: ActivityType.running
+flutter:    Raw PlannedDistance: 8.0 (mi)
+flutter:    Raw PlannedTime: null seconds
+flutter:    Raw ActualDistanceMeters: null
+flutter:    Raw ActualTime: null
+flutter:    → Final distanceMiles: 8.0
+flutter:    → Final durationMinutes: null
+flutter:    → Final cyclingSpeedMph: null
+flutter:    → Final pace: 9.191666666666666 min/mi
+flutter:    → Notes: Finish with 6 x 20 second strides
+flutter: 🔍 FS INTENSITY DEBUG - Checking for workout intensity hints
+flutter:    ✅ Matched title "Easy": IntensityDistribution(conversational: 95%, tempo: 5%, allOut: 0%)
+flutter:    Transformed 21 workouts (filtered: 0)
+flutter:    Found 37 existing Final Surge activities
+flutter:    ✅ UNCHANGED: Swim
+flutter:    ✅ UNCHANGED: Bike
+flutter:    ✅ UNCHANGED: R-CORE Routine
+flutter:    🔄 UPDATED (minor): Easy
+flutter:    ✅ UNCHANGED: Foam Rolling Routine
+flutter:    ✅ UNCHANGED: Swim
+flutter:    ✅ UNCHANGED: R-CORE Routine
+flutter:    🔄 UPDATED (minor): Run - Long Run
+flutter:    ✅ UNCHANGED: Foam Rolling Routine
+flutter:    ✅ UNCHANGED: Bike - Long Ride
+flutter:    ✅ UNCHANGED: Foam Rolling Routine
+flutter:    ✅ UNCHANGED: Swim
+flutter:    ✅ UNCHANGED: Test integration
+flutter:    ✅ UNCHANGED: R-CORE Routine
+flutter:    ✅ UNCHANGED: Warm Up Routine
+flutter:    ✅ UNCHANGED: Speedwork
+flutter:    ✅ UNCHANGED: Foam Rolling Routine
+flutter:    ✅ UNCHANGED: Swim
+flutter:    ✅ UNCHANGED: Bike
+flutter:    ✅ UNCHANGED: R-CORE Routine
+flutter:    🔄 UPDATED (minor): Easy
+flutter:    Changes detected: SyncChangeResult(new: 0, updated: 3, deleted: 0, unchanged: 18, tombstoneDropped: 0, revived: 0, unhidden: 0)
+flutter:    ✓ Updated: Easy (scheduleChanged: false)
+flutter: DailyBaselineCalculator.sessionCost: unknown sport "other" — F4a zero-with-estimate-flag (session-demand.md F4a, RULED 2026-09-10)
+flutter: DailyBaselineCalculator.sessionCost: unknown sport "other" — F4a zero-with-estimate-flag (session-demand.md F4a, RULED 2026-09-10)
+flutter:    ✓ Updated: Run - Long Run (scheduleChanged: false)
+flutter: DailyBaselineCalculator.sessionCost: unknown sport "other" — F4a zero-with-estimate-flag (session-demand.md F4a, RULED 2026-09-10)
+flutter: DailyBaselineCalculator.sessionCost: unknown sport "other" — F4a zero-with-estimate-flag (session-demand.md F4a, RULED 2026-09-10)
+flutter:    ✓ Updated: Easy (scheduleChanged: false)
+flutter: DailyBaselineCalculator.sessionCost: unknown sport "other" — F4a zero-with-estimate-flag (session-demand.md F4a, RULED 2026-09-10)
+flutter: DailyBaselineCalculator.sessionCost: unknown sport "other" — F4a zero-with-estimate-flag (session-demand.md F4a, RULED 2026-09-10)
+flutter: DailyBaselineCalculator.sessionCost: unknown sport "other" — F4a zero-with-estimate-flag (session-demand.md F4a, RULED 2026-09-10)
+flutter: DailyBaselineCalculator.sessionCost: unknown sport "other" — F4a zero-with-estimate-flag (session-demand.md F4a, RULED 2026-09-10)
+flutter: DailyBaselineCalculator.sessionCost: unknown sport "other" — F4a zero-with-estimate-flag (session-demand.md F4a, RULED 2026-09-10)
+flutter: DailyBaselineCalculator.sessionCost: unknown sport "other" — F4a zero-with-estimate-flag (session-demand.md F4a, RULED 2026-09-10)
+flutter: ✅ Sync complete: 0 new, 3 updated, 0 deleted, 0 filtered
+flutter: ☁️  Integration sync uploaded 0 dirty records for final_surge
+flutter: ✅ Integration sync complete for final_surge
+flutter: 🔄 Integration sync skipped (garmin) - data is fresh
+flutter: 🔄 Integration sync skipped (training_peaks) - in failure cooldown
+flutter: 🔄 Integration sync skipped (vdot) - in failure cooldown
+Lost connection to device.

@@ -1,0 +1,27 @@
+# 12-007 · Admin signs out and a Lapsed athlete signs in on the same device: the Gate must close, not inherit the admin's answer
+
+- kind: followup-test
+- status: open
+- ticket: 12
+- run: w4-20260924T0417Z
+- screen: Settings
+- decision: 
+
+**Steps.**
+1. Sign in as the dev admin; the tabs shell shows.
+2. Sign out from Settings.
+3. On the same install, sign in as a Lapsed account (no Pro, not Admin).
+
+**Expected.**
+The paywall, full screen with no close button: `isAdminProvider` re-reads for the new user and the RevenueCat status belongs to the new account (see 03-002 for the SDK staying identified as the last account).
+
+**Actual.**
+
+**Evidence.**
+- 
+
+**Decision quote.**
+> 
+
+**Triage.**
+

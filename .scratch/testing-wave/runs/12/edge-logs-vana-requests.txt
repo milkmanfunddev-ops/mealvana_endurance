@@ -1,0 +1,4 @@
+[23:42:33] POST | 200 | https://vlmtsdzpnjnavdgytcmi.supabase.co/functions/v1/vana-chat
+[23:43:09] POST | 200 | https://vlmtsdzpnjnavdgytcmi.supabase.co/functions/v1/vana-chat
+
+(2 rows)
