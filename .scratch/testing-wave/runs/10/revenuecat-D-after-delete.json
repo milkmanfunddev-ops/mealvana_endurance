@@ -1,0 +1,3 @@
+read at 2026-09-24T14:29:08Z
+{"active_entitlements":{"items":[{"entitlement_id":"entla441faaeb4","expires_at":1790260260866,"object":"customer.active_entitlement"}],"next_page":null,"object":"list","url":"https://api.revenuecat.com/v2/projects/proj77b3c48f/customers/d88b5741-f2f2-455c-b2dc-c346d904b01b/active_entitlements"},"experiment":null,"first_seen_at":1790252893268,"id":"d88b5741-f2f2-455c-b2dc-c346d904b01b","last_seen_app_version":"1.27.0","last_seen_at":1790253026922,"last_seen_country":"US","last_seen_platform":"iOS","last_seen_platform_version":"Version 26.2 (Build 23C54)","object":"customer","project_id":"proj77b3c48f"}
+
