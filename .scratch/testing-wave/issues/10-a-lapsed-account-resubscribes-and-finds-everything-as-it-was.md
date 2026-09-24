@@ -1,6 +1,6 @@
 # 10: A lapsed account resubscribes and finds everything as it was
 
-**Status:** in-progress (wave 8, 2026-09-24)
+**Status:** done (wave 8, 2026-09-24)
 **Blocked by:** 09.
 **Next:** `/implement-lee testing-wave`
 **Model:** opus

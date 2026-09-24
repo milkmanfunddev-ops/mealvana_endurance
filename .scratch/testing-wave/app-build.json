@@ -1,5 +1,5 @@
 {
-  "commit": null,
-  "builtAt": null,
-  "note": "Commit the testing app on the wave simulators was built from. null: unknown, so the next wave builds once (RUNBOOK, wave lead step 2)."
+  "commit": "433514bcfedc0100ce7d76416de44fb53fcf6b01",
+  "builtAt": "2026-09-24T14:17:19Z",
+  "note": "Commit the testing app on the wave simulators was built from (wave 8, run_dev.sh debug build from a clean worktree). null: unknown, so the next wave builds once (RUNBOOK, wave lead step 2)."
 }

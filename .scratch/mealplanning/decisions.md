@@ -3133,3 +3133,23 @@ An edit made while notes are being written is picked up on the next open. A requ
 **What it touches.** RevenueCat Test Store app `appa283bb35a2`, the `default` offering.
 
 > 2026-09-23 opened in wave 9 ticket 05
+
+## mp-668 · Does New meal plan archive this week's plan at the tap, or only when the new plan is confirmed?
+- category: Plan tab
+- kind: question
+- status: open
+- linked: mp-241
+- image: none
+- svg: docs/ssot/decisions/images/mealplanning/mp-668.svg
+- screen: none (the Plan tab and the new-plan chat both follow from the answer)
+- source: wave testing-wave 8 ticket 14
+
+**Context.** mp-241 says two things that pull apart: "the Plan tab keeps the confirmed plan until a new one is confirmed" and "\"New meal plan\" archives the plan it is on and starts a fresh, empty draft." mp-234's example sides with keeping it: an athlete with a confirmed plan starts a new one and "removing a meal from it leaves this week's plan as it was." In wave 8 the dev test account tapped New meal plan at 14:22 UTC on 24 September. The app opened a new conversation and nothing else; the draft appeared only when the first meal was picked, and this week's confirmed plan stayed confirmed and on the Plan tab (Findings 14-001, 14-002). Nothing in the app calls the archive-and-start-a-draft action that exists in code.
+
+**Question.** When an athlete taps New meal plan while this week has a confirmed plan, is that plan archived at the tap with a fresh empty draft made at once (A), or does it stay confirmed and on the Plan tab until the new draft is confirmed, with the draft made at the first pick (B, what the app does today)? And under B, should the empty draft exist from the tap so the plan bar can show "Your plan · 0 meals" as mp-234 says?
+
+**Why.** A matches the New meal plan sentence and gives a clean slate. B means an athlete who backs out of the new chat still has this week's plan and never lands on an empty Plan tab.
+
+**What it touches.** The New meal plan button, `MealPlanController.newPlan()`, the Plan tab, the plan bar in the new chat, and which rows ticket 14's retest expects.
+
+> 2026-09-24 opened in wave 8 ticket 14

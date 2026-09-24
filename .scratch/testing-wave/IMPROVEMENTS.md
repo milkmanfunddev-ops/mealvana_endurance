@@ -11,7 +11,30 @@ Each entry: what went wrong or cost time, where it was seen, and the suggested f
 
 ## Open
 
-Nothing open. Lee went through every item on 2026-09-24; what he chose is under Done.
+Wave 8 (10, 14; 2026-09-24):
+
+- **#27 `simctl launch` leaves SpringBoard in front.** Both agents launched the app per runbook
+  step 3 and found the simulator on the home screen; one tapped the icon, one used the mobile
+  MCP's launch. Fix: runbook step 3 launches with the mobile MCP (`mobile_launch_app`) after the
+  log stream starts, or follows `simctl launch` with a tap check.
+- **#28 the mobile MCP's `save_screenshot` refuses paths inside the worktree**, and its element
+  list once returned the previous screen after a tap. Both agents fell back to
+  `xcrun simctl io <udid> screenshot`. Fix: say so in runbook step 5, so no agent spends turns on it.
+- **#29 `app-build.json` reached the worktrees as `null`.** The lead writes it after the build,
+  and the build needs a worktree first. Fix: the lead commits `app-build.json` before spawning
+  (after building), or the prompt's commit line is the only source and the runbook says so.
+- **#30 a credentials-table read printed passwords.** Ticket 10's agent ran an `awk` over
+  `secrets/test_accounts.md` to see its layout and the password column reached its transcript
+  (account D, now deleted, and other test accounts). The runbook forbids printing secrets; the
+  file's shape is still easiest to learn by reading it. Fix: a helper that exports one account's
+  password into the environment (`eval "$(node scripts/testing-wave/cred.mjs env <email>)"`)
+  and the template file for layout, so no agent reads the real file directly. Lee to say whether
+  the printed test-account passwords get changed.
+- **#31 copied simulators carry Lee's dev data.** Every wave simulator is a copy of the dev
+  simulator, so its local database holds Lee's own account's rows even after another account
+  signs in (Finding 14-004). The app bug is the Finding; for testing, a run that checks what is
+  on screen may read Lee's data as the test account's. Fix to consider: sign out on the dev
+  simulator before the copy, or note the account in each prompt.
 
 ## Done
 

@@ -1,6 +1,6 @@
 # 14: New plan starts a new Vana conversation
 
-**Status:** in-progress (wave 8, 2026-09-24)
+**Status:** done (wave 8, 2026-09-24)
 **Blocked by:** none.
 **Next:** `/implement-lee testing-wave`
 **Model:** opus
