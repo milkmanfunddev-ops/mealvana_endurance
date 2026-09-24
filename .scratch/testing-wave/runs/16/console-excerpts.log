@@ -1,0 +1,29 @@
+# Excerpts from the run's console (console.log held token-like lines and was deleted, runbook 9.4). Original line numbers first.
+5154 09:48:21.125032-0500 GoRouter: INFO: Full paths for routes:
+5325 09:48:21.139394-0500 GoRouter: INFO: setting initial location /
+5829 09:48:22.197635-0500 GoRouter: INFO: No initial matches: /
+5890 09:48:22.211175-0500 GoRouter: INFO: No initial matches: /
+5970 09:48:22.215399-0500 GoRouter: INFO: redirecting to RouteMatchList(/welcome)
+5971 09:48:22.215519-0500 GoRouter: INFO: redirecting to RouteMatchList(/welcome)
+6026 09:48:22.239957-0500 GoRouter: INFO: Using MaterialApp configuration
+8341 09:48:40.361988-0500 GoRouter: INFO: pushing /auth/post-onboarding?mode=login
+8797 09:48:48.500294-0500 GoRouter: INFO: pushing /auth/email-login
+22284 09:49:07.148475-0500 ❌ Token refresh failed: TrainingPeaksApiException: Token refresh failed (status: 400)
+22290 09:49:07.290158-0500 ❌ Token refresh failed: TrainingPeaksApiException: Token refresh failed (status: 400)
+22298 09:49:07.309845-0500 ❌ Integration sync failed for training_peaks: Token expired. Please reconnect.
+22458 09:49:08.174423-0500 ❌ Integration sync failed for vdot: Please reconnect your V.O2 account
+22459 09:49:08.181768-0500 ⚠️ Date-range endpoint unavailable (404), falling back to UpcomingWorkouts for 14 days
+23279 09:49:09.191492-0500 GoRouter: INFO: popping /welcome
+23280 09:49:09.266182-0500 GoRouter: INFO: going to /main
+25768 09:50:05.172410-0500 GoRouter: INFO: pushing /vana?mode=general
+26969 09:50:15.528709-0500 GoRouter: INFO: pushing /vana/conversations?kind=general
+27612 09:50:29.259537-0500 GoRouter: INFO: pushing /vana?c=d8efbdb3-a21a-4e7f-984b-94cc89ee67ae&mode=meal_planning
+29280 09:51:40.734367-0500 GoRouter: INFO: popping /main
+29467 09:51:45.556381-0500 GoRouter: INFO: pushing /vana?c=f6a0f7fa-6cc0-42c2-bbb7-9aca997c535d&mode=meal_planning
+31480 09:52:46.507893-0500 GoRouter: INFO: popping /main
+31527 09:52:47.101221-0500 │ ClientException with SocketException: Operation timed out (OS Error: Operation timed out, errno = 60), address = vlmtsdzpnjnavdgytcmi.supabase.co, port = 51001, uri=https://vlmtsdzpnjnavdgytcmi.supabase.co/functions/v1/vana-action
+31529 09:52:47.101321-0500 │ #0   IOClient.send (package:http/src/io_client.dart:227:7)
+31531 09:52:47.101407-0500 │ #2   VanaTransport.postJson (package:mealvana_endurance/features/meal_planning/data/vana_transport.dart:124:49)
+31536 09:52:47.101641-0500 │ ⛔ [VANA_TRANSPORT] Network error calling vana-action
+31707 09:52:53.767888-0500 GoRouter: INFO: pushing /vana?c=d8efbdb3-a21a-4e7f-984b-94cc89ee67ae&mode=meal_planning
+32517 09:53:16.176477-0500 GoRouter: INFO: going to /main?tab=food&food=shopping

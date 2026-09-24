@@ -1,0 +1,29 @@
+# db after Confirm (tapped 14:53:12.9Z), taken 2026-09-24T14:53:27Z, user test@test.com 607f9dd5-6fa7-48ee-a628-720d4a0506a1
+## user_entitlements: period_type | active_until | event_at
+NORMAL | 2027-09-15 19:39:14.349+00 | 2026-09-23 02:34:07.638+00
+## meal_plans week 2026-09-20: id | status | is_deleted | conversation_id | meals | shopping_jsonb_len | created_at | updated_at
+6f365c30-b359-4d7c-a477-7bbc8b7e7450 | archived | false | 0b7df6f0-8ef6-46a8-951f-d7ebac780a6b | 2 | 9 | 2026-09-22 11:59:22.955844+00 | 2026-09-24 01:10:06.794578+00
+15b6b4f4-3a46-4581-826b-f957fd8000a5 | archived | false | ebac747d-86a7-4182-b9f1-327895bc96e3 | 4 | 22 | 2026-09-22 12:08:32.785161+00 | 2026-09-24 01:10:06.794578+00
+b82409d9-a8b8-440d-9f4e-f25262f8a73a | archived | false | 1f805690-12a5-4f33-9d96-b819bdaa5ffd | 0 | 0 | 2026-09-23 02:29:32.425323+00 | 2026-09-24 01:10:06.794578+00
+be6abf2f-881b-478d-9b4b-b09afac3b9a2 | confirmed | false | f6a0f7fa-6cc0-42c2-bbb7-9aca997c535d | 4 | 15 | 2026-09-23 11:14:08.935129+00 | 2026-09-24 14:53:15.809846+00
+54a02440-8b6d-43ac-a1b9-6ce10a47fd74 | archived | false | d8efbdb3-a21a-4e7f-984b-94cc89ee67ae | 1 | 6 | 2026-09-24 14:23:36.672783+00 | 2026-09-24 14:53:15.809846+00
+## confirmed plans (any week, not deleted): id | week_start | updated_at
+a89fbf86-5aa1-4dcb-85f6-7a9a2ecec576 | 2026-08-30 | 2026-09-02 13:46:19.596+00
+a5b4c73c-dd65-433d-8141-207deba7e1a0 | 2026-09-06 | 2026-09-11 15:15:14.853949+00
+f2c0bc78-4b63-478f-8710-14c4c1247d2e | 2026-09-13 | 2026-09-17 00:27:10.739218+00
+be6abf2f-881b-478d-9b4b-b09afac3b9a2 | 2026-09-20 | 2026-09-24 14:53:15.809846+00
+## plan_meals of be6abf2f + 54a02440: plan | id | source | library_meal_id | saved_meal_id | name | servings
+54a02440 | 97b0f6f4-51e9-4b40-b525-6169a9f27dcd | saved | null | fd993bbb-a13a-43e7-a662-ea71ed2ae64a | Egg & Veggie Scramble | 1
+be6abf2f | e4172009-66b1-4c23-9126-d2f054b41023 | library | AD-014 | null | Wholewheat pasta, mixed veg & avocado | 1
+be6abf2f | 30f575e8-4811-4a21-b158-8884738fa8ce | library | AD-103 | null | Farro, chickpea & roasted cauliflower bowl with tahini | 1
+be6abf2f | 7c132e94-8eaf-45c6-824e-1bbe7c615773 | library | AD-108 | null | Spelt, lentil & raw pepper-carrot bowl with balsamic | 1
+be6abf2f | fd0e6ddb-9334-4df9-b3c5-d12eb30d588a | library | AD-113 | null | Farro, white bean & roasted beet bowl with pesto | 1
+## shopping_lists (newest 8): id | plan_id | name | items | created_at | updated_at
+03c4c52b-33f0-4c32-b0c6-a1984f43142f | be6abf2f-881b-478d-9b4b-b09afac3b9a2 | Week of 2026-09-20 | 15 | 2026-09-23 11:14:09.313309+00 | 2026-09-24 14:53:15.869+00
+9bdc9556-f8b5-4c5f-8a77-b5ae70cb24d3 | 54a02440-8b6d-43ac-a1b9-6ce10a47fd74 | Week of 2026-09-20 | 6 | 2026-09-24 14:23:37.547094+00 | 2026-09-24 14:23:37.707+00
+adc5b2de-67ca-4a99-adc3-8d9f826bf2fc | 15b6b4f4-3a46-4581-826b-f957fd8000a5 | Week of 2026-09-20 | 22 | 2026-09-22 12:08:33.567054+00 | 2026-09-22 12:08:47.119+00
+e4d6e247-41ce-491a-a537-f386939e86b6 | 6f365c30-b359-4d7c-a477-7bbc8b7e7450 | Week of 2026-09-20 | 9 | 2026-09-22 11:59:23.570205+00 | 2026-09-22 11:59:24.303+00
+90c2fefc-50f7-4534-bf05-e2e1189c1d01 | null | List 2026-09-19 | 9 | 2026-09-19 16:20:00.22745+00 | 2026-09-19 20:21:33.227+00
+debb5576-5acf-44dd-a144-afbddc66dddd | fc9687ff-fd4f-4fd7-9b34-64c4626a47d9 | Week of 2026-09-13 | 3 | 2026-09-17 00:52:47.289701+00 | 2026-09-17 00:52:52.122+00
+77fd387c-b32d-4c6c-b529-6776fd7d05ee | f2c0bc78-4b63-478f-8710-14c4c1247d2e | Week of 2026-09-13 | 24 | 2026-09-16 18:46:53.211259+00 | 2026-09-17 00:27:10.771+00
+f53e980b-e8e0-4333-a9d8-a1a2000e63f4 | f9f6f432-2b11-455e-910f-db99fbeb352e | Week of 2026-09-13 | 8 | 2026-09-17 00:26:34.466007+00 | 2026-09-17 13:59:12.87+00

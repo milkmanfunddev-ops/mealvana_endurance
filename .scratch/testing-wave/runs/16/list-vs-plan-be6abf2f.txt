@@ -1,0 +1,59 @@
+## Plan be6abf2f meals and their library ingredients (meal_library.ingredients_json)
+- Wholewheat pasta, mixed veg & avocado [e4172009] x1, swaps []
+    wholewheat pasta, cooked | 200 g
+    mixed vegetables, steamed | 200 g
+    avocado | 0.5
+- Farro, chickpea & roasted cauliflower bowl with tahini [30f575e8] x1, swaps []
+    farro, cooked | 200 g
+    chickpeas, canned | 150 g
+    cauliflower, roasted | 150 g
+    tahini sauce, jarred | 2 tbsp
+- Spelt, lentil & raw pepper-carrot bowl with balsamic [7c132e94] x1, swaps []
+    spelt, cooked | 200 g
+    green lentils, canned | 150 g
+    bell pepper, raw | 60 g
+    carrot, raw | 60 g
+    balsamic vinaigrette, bottled | 2 tbsp
+- Farro, white bean & roasted beet bowl with pesto [fd0e6ddb] x1, swaps []
+    farro, cooked | 200 g
+    white beans, canned | 150 g
+    beets, roasted | 120 g
+    pesto, jarred | 2 tbsp
+
+## Expected rows (grocery.ts buildItems over those ingredients): name | qty | aisle | from meals
+Avocado | ½ | Produce | e4172009
+Beets | 120 g | Produce | fd0e6ddb
+Bell pepper | 60 g | Produce | 7c132e94
+Carrot | 60 g | Produce | 7c132e94
+Cauliflower | 150 g | Produce | 30f575e8
+Wholewheat pasta | 200 g | Bakery & Grains | e4172009
+Chickpeas | 150 g | Pantry | 30f575e8
+Green lentils | 150 g | Pantry | 7c132e94
+Pesto | 2 tbsp | Pantry | fd0e6ddb
+Tahini sauce | 2 tbsp | Pantry | 30f575e8
+White beans | 150 g | Pantry | fd0e6ddb
+Balsamic vinaigrette | 2 tbsp | Other | 7c132e94
+Farro | 400 g | Other | 30f575e8,fd0e6ddb
+Mixed vegetables | 200 g | Other | e4172009
+Spelt | 200 g | Other | 7c132e94
+
+## Actual rows (shopping_items of list 03c4c52b): name | qty | aisle | from meals | source | have | edited
+Avocado | ½ | Produce | e4172009 | plan | false | false
+Beets | 120 g | Produce | fd0e6ddb | plan | false | false
+Bell pepper | 60 g | Produce | 7c132e94 | plan | false | false
+Carrot | 60 g | Produce | 7c132e94 | plan | false | false
+Cauliflower | 150 g | Produce | 30f575e8 | plan | false | false
+Wholewheat pasta | 200 g | Bakery & Grains | e4172009 | plan | false | false
+Chickpeas | 150 g | Pantry | 30f575e8 | plan | false | false
+Green lentils | 150 g | Pantry | 7c132e94 | plan | false | false
+Pesto | 2 tbsp | Pantry | fd0e6ddb | plan | false | false
+Tahini sauce | 2 tbsp | Pantry | 30f575e8 | plan | false | false
+White beans | 150 g | Pantry | fd0e6ddb | plan | false | false
+Balsamic vinaigrette | 2 tbsp | Other | 7c132e94 | plan | false | false
+Farro | 400 g | Other | 30f575e8,fd0e6ddb | plan | false | false
+Mixed vegetables | 200 g | Other | e4172009 | plan | false | false
+Spelt | 200 g | Other | 7c132e94 | plan | false | false
+
+## Differences
+none: every list row matches the plan meals, and every expected row is on the list
+mirror meal_plans.shopping == list rows

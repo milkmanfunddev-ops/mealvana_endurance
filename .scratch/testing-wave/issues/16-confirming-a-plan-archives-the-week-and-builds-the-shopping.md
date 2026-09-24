@@ -11,10 +11,10 @@
 
 **Touches:** the dev test account's plans and shopping lists
 
-- [ ] Runs by the runbook: a slot taken and released, the console saved to the run folder, a look-around on every screen visited, every problem written as a Finding and nothing fixed.
-- [ ] Uses the entitled dev test account from the credentials file; no new account.
+- [x] Runs by the runbook: a slot taken and released, the console saved to the run folder, a look-around on every screen visited, every problem written as a Finding and nothing fixed.
+- [x] Uses the entitled dev test account from the credentials file; no new account.
 - [ ] Confirms an existing Draft; no new plan is generated.
 - [ ] SQL shows one confirmed plan for the week and the rest archived.
-- [ ] The list's rows are compared with the plan's meal ingredients and any mismatch is a Finding with both lists attached.
+- [x] The list's rows are compared with the plan's meal ingredients and any mismatch is a Finding with both lists attached.
 
 Next: /implement-lee testing-wave
