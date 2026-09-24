@@ -72,7 +72,7 @@ bool _streaming() => find
 
 void main() {
   patrolTest(
-    'AI chat: /jade opens the Vana general chat, a message gets an answer',
+    'AI chat: the jade route opens the Vana general chat, a message gets an answer',
     ($) async {
       if (TestConfig.isProd) {
         skipFlow(
