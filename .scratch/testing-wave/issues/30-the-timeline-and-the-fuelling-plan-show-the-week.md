@@ -11,9 +11,9 @@
 
 **Touches:** nothing (read only)
 
-- [ ] Runs by the runbook: a slot taken and released, the console saved to the run folder, a look-around on every screen visited, every problem written as a Finding and nothing fixed.
-- [ ] Uses the entitled dev test account from the credentials file; no new account.
-- [ ] The week's sessions on screen equal the planned activities by SQL.
-- [ ] One session's fuelling numbers are recorded against its stored plan.
+- [x] Runs by the runbook: a slot taken and released, the console saved to the run folder, a look-around on every screen visited, every problem written as a Finding and nothing fixed.
+- [x] Uses the entitled dev test account from the credentials file; no new account.
+- [x] The week's sessions on screen equal the planned activities by SQL.
+- [x] One session's fuelling numbers are recorded against its stored plan.
 
 Next: /implement-lee testing-wave

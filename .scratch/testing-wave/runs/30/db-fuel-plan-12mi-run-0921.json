@@ -1,0 +1,666 @@
+{
+  "id": "933edc6f-9a5f-4b8b-a7f9-840bca511088",
+  "title": "12 mi Run",
+  "scheduled_date_time": "2026-09-21 16:45:00",
+  "updated_at": "2026-09-21 15:33:27.247574",
+  "nutrition_plan_data": {
+    "id": "57eb4b5c-4eca-4936-8c3c-242109eabb20",
+    "name": "Nutrition Plan",
+    "notes": null,
+    "version": 1,
+    "sections": [
+      {
+        "id": "before_run",
+        "title": "Before Run",
+        "timing": null,
+        "subtitle": "Pre-workout nutrition",
+        "fatTarget": 5,
+        "foodItems": [],
+        "subPhases": [
+          {
+            "fatTarget": 3.7,
+            "foodItems": [
+              {
+                "id": "bagel",
+                "name": "Bagel (large)",
+                "timing": "2H TO 30 MIN OUT",
+                "isDrink": false,
+                "quantity": "1 Bagel",
+                "templateId": null,
+                "description": null,
+                "displayName": "Bagel (large)",
+                "servingSize": "1 large",
+                "imageAddress": null,
+                "instructions": null,
+                "isIndivisible": false,
+                "displayOverride": null,
+                "nutritionalInfo": {
+                  "fat": 2,
+                  "carbs": 44,
+                  "sugar": null,
+                  "fluids": 0,
+                  "sodium": 602,
+                  "protein": 9,
+                  "calories": 235
+                },
+                "scaleMultiplier": null,
+                "displayNamePlural": "Bagels"
+              },
+              {
+                "id": "jam",
+                "name": "Jam / Jelly",
+                "timing": "2H TO 30 MIN OUT",
+                "isDrink": false,
+                "quantity": "1 tbsp Jam / Jelly",
+                "templateId": null,
+                "description": null,
+                "displayName": "Jam / Jelly",
+                "servingSize": "1 tbsp",
+                "imageAddress": null,
+                "instructions": null,
+                "isIndivisible": false,
+                "displayOverride": null,
+                "nutritionalInfo": {
+                  "fat": 0,
+                  "carbs": 11,
+                  "sugar": null,
+                  "fluids": 6,
+                  "sodium": 7,
+                  "protein": 0,
+                  "calories": 47
+                },
+                "scaleMultiplier": null,
+                "displayNamePlural": "tbsp Jam"
+              },
+              {
+                "id": "addon_banana",
+                "name": "Banana",
+                "timing": "2H TO 30 MIN OUT",
+                "isDrink": false,
+                "quantity": "1 Banana",
+                "templateId": null,
+                "description": null,
+                "displayName": "Banana",
+                "servingSize": "1 medium",
+                "imageAddress": null,
+                "instructions": null,
+                "isIndivisible": false,
+                "displayOverride": null,
+                "nutritionalInfo": {
+                  "fat": 0,
+                  "carbs": 27,
+                  "sugar": null,
+                  "fluids": 0,
+                  "sodium": 1,
+                  "protein": 0,
+                  "calories": 108
+                },
+                "scaleMultiplier": null,
+                "displayNamePlural": "Bananas"
+              }
+            ],
+            "templateId": null,
+            "carbsTarget": 75.7,
+            "pinDecision": {
+              "used_pin": true,
+              "ephemeral": true,
+              "pin_set_size": 0,
+              "fallthrough_reason": null,
+              "pinned_template_id": "55ec540f-1758-4cc1-94d3-7bdc4650c49b",
+              "pinned_template_name": "Bagel + Jam"
+            },
+            "fluidsTarget": 273.1,
+            "sodiumTarget": 0,
+            "subPhaseType": "snack",
+            "templateName": null,
+            "proteinTarget": 10.8
+          },
+          {
+            "fatTarget": 1.3,
+            "foodItems": [
+              {
+                "id": "energy_gel",
+                "name": "Energy Gel",
+                "timing": "LAST 30 MIN",
+                "isDrink": false,
+                "quantity": "1 Energy Gel",
+                "templateId": null,
+                "description": null,
+                "displayName": "Energy Gel",
+                "servingSize": "1 packet",
+                "imageAddress": null,
+                "instructions": null,
+                "isIndivisible": false,
+                "displayOverride": null,
+                "nutritionalInfo": {
+                  "fat": 0,
+                  "carbs": 25,
+                  "sugar": null,
+                  "fluids": 20,
+                  "sodium": 50,
+                  "protein": 0,
+                  "calories": 100
+                },
+                "scaleMultiplier": null,
+                "displayNamePlural": "Energy Gels"
+              },
+              {
+                "id": "water",
+                "name": "Water",
+                "timing": "LAST 30 MIN",
+                "isDrink": true,
+                "quantity": "2 cups Water",
+                "templateId": null,
+                "description": null,
+                "displayName": "Water",
+                "servingSize": "1 cup (8 fl oz / 240 mL)",
+                "imageAddress": null,
+                "instructions": null,
+                "isIndivisible": false,
+                "displayOverride": null,
+                "nutritionalInfo": {
+                  "fat": 0,
+                  "carbs": 0,
+                  "sugar": null,
+                  "fluids": 480,
+                  "sodium": 0,
+                  "protein": 0,
+                  "calories": 0
+                },
+                "scaleMultiplier": null,
+                "displayNamePlural": "cups Water"
+              }
+            ],
+            "templateId": null,
+            "carbsTarget": 25.3,
+            "pinDecision": {
+              "used_pin": true,
+              "ephemeral": true,
+              "pin_set_size": 0,
+              "fallthrough_reason": null,
+              "pinned_template_id": "1b422f25-e528-4dbf-89e5-f5e1f1fc0c92",
+              "pinned_template_name": "Energy Gel"
+            },
+            "fluidsTarget": 204.9,
+            "sodiumTarget": 0,
+            "subPhaseType": "top_up",
+            "templateName": null,
+            "proteinTarget": 2.2
+          }
+        ],
+        "carbsTarget": 101,
+        "fluidsTarget": 478,
+        "sodiumTarget": null,
+        "proteinTarget": 13,
+        "carbsLowTarget": 88,
+        "carbsHighTarget": 113,
+        "fluidsLowTarget": 0,
+        "sodiumLowTarget": null,
+        "fluidsHighTarget": 839,
+        "proteinLowTarget": 0,
+        "sodiumHighTarget": null,
+        "proteinHighTarget": 21
+      },
+      {
+        "id": "during_run",
+        "title": "During Run",
+        "timing": null,
+        "subtitle": null,
+        "fatTarget": null,
+        "foodItems": [
+          {
+            "id": "27f5af16-acbe-4a88-876f-aec17fd12b7c",
+            "name": "Energy Gel",
+            "timing": "Throughout activity",
+            "isDrink": false,
+            "quantity": "1 Energy Gel",
+            "templateId": null,
+            "description": null,
+            "displayName": "Energy Gel",
+            "servingSize": "1 packet",
+            "imageAddress": null,
+            "instructions": null,
+            "isIndivisible": true,
+            "timingCategory": "quickConsume",
+            "displayOverride": null,
+            "nutritionalInfo": {
+              "fat": 0,
+              "carbs": 25,
+              "sugar": null,
+              "fluids": 20,
+              "sodium": 55,
+              "protein": 0,
+              "calories": 100
+            },
+            "scaleMultiplier": null,
+            "displayNamePlural": "Energy Gels"
+          },
+          {
+            "id": "af14e3c2-ed27-4eea-8052-473fb8dcd23f",
+            "name": "Sports Drink",
+            "timing": "Throughout activity",
+            "isDrink": true,
+            "quantity": "4.5 cups Sports Drink",
+            "templateId": null,
+            "description": null,
+            "displayName": "Sports Drink",
+            "servingSize": "1 cup (8 fl oz / 240 mL)",
+            "imageAddress": null,
+            "instructions": null,
+            "isIndivisible": false,
+            "timingCategory": "fuelDrink",
+            "displayOverride": null,
+            "nutritionalInfo": {
+              "fat": 0,
+              "carbs": 67,
+              "sugar": null,
+              "fluids": 1080,
+              "sodium": 450,
+              "protein": 0,
+              "calories": 270
+            },
+            "scaleMultiplier": null,
+            "displayNamePlural": "cups Sports Drink"
+          },
+          {
+            "id": "0519e4ff-f6cf-44d0-898c-ea863c75f017",
+            "name": "Water",
+            "timing": "Throughout activity",
+            "isDrink": true,
+            "quantity": "1 cup Water",
+            "templateId": null,
+            "description": null,
+            "displayName": "Water",
+            "servingSize": "1 cup (8 fl oz / 240 mL)",
+            "imageAddress": null,
+            "instructions": null,
+            "isIndivisible": false,
+            "timingCategory": "sipThroughout",
+            "displayOverride": null,
+            "nutritionalInfo": {
+              "fat": 0,
+              "carbs": 0,
+              "sugar": null,
+              "fluids": 240,
+              "sodium": 0,
+              "protein": 0,
+              "calories": 0
+            },
+            "scaleMultiplier": null,
+            "displayNamePlural": "cups Water"
+          },
+          {
+            "id": "42e95e1c-995f-4c83-8096-a8893cd99ad8",
+            "name": "Electrolyte Capsule",
+            "timing": "Throughout activity",
+            "isDrink": false,
+            "quantity": "3 Electrolyte Capsules",
+            "templateId": null,
+            "description": "Swallowable electrolyte capsule used by endurance runners when sodium targets are high.",
+            "displayName": "Electrolyte Capsule",
+            "servingSize": "1 capsule",
+            "imageAddress": null,
+            "instructions": null,
+            "isIndivisible": true,
+            "timingCategory": "electrolyte",
+            "displayOverride": null,
+            "nutritionalInfo": {
+              "fat": 0,
+              "carbs": 0,
+              "sugar": null,
+              "fluids": 0,
+              "sodium": 570,
+              "protein": 0,
+              "calories": 0
+            },
+            "scaleMultiplier": null,
+            "displayNamePlural": "Electrolyte Capsules"
+          }
+        ],
+        "carbsTarget": 91,
+        "pinDecision": {
+          "used_pin": true,
+          "ephemeral": true,
+          "pin_set_size": 0,
+          "fallthrough_reason": null,
+          "pinned_template_id": "ef02c939-03db-4fab-8886-8fde45dea1bf",
+          "pinned_template_name": "(Gel + Water) + Sports Drink"
+        },
+        "fluidsTarget": 1298,
+        "sodiumTarget": 1071,
+        "proteinTarget": null,
+        "carbsLowTarget": 91,
+        "carbsHighTarget": 126,
+        "fluidsLowTarget": 1103,
+        "sodiumLowTarget": 857,
+        "fluidsHighTarget": 1493,
+        "proteinLowTarget": null,
+        "sodiumHighTarget": 1285,
+        "proteinHighTarget": null
+      },
+      {
+        "id": "after_run",
+        "title": "After Run",
+        "timing": null,
+        "subtitle": "Within 30 minutes",
+        "fatTarget": null,
+        "foodItems": [
+          {
+            "id": "2a376d78-d356-45cc-8619-910d0fe7e02f",
+            "name": "Banana",
+            "timing": "Throughout activity",
+            "isDrink": false,
+            "quantity": "1 Banana",
+            "templateId": null,
+            "description": null,
+            "displayName": "Banana",
+            "servingSize": "1 medium",
+            "imageAddress": null,
+            "instructions": null,
+            "isIndivisible": false,
+            "timingCategory": "slowConsume",
+            "displayOverride": null,
+            "nutritionalInfo": {
+              "fat": 0,
+              "carbs": 27,
+              "sugar": null,
+              "fluids": 88,
+              "sodium": 1,
+              "protein": 1,
+              "calories": 105
+            },
+            "scaleMultiplier": null,
+            "displayNamePlural": "Bananas"
+          },
+          {
+            "id": "038904fa-79b8-4abd-a2e6-797d2e61f57c",
+            "name": "Whey Protein Shake (RTD)",
+            "timing": "Throughout activity",
+            "isDrink": true,
+            "quantity": "1 bottle Whey Protein Shake",
+            "templateId": null,
+            "description": "Generic 11 oz ready-to-drink whey protein shake (Premier, Muscle Milk, Fairlife, etc.). 30g protein.",
+            "displayName": "Whey Protein Shake (RTD)",
+            "servingSize": "1 bottle (11 fl oz / 325 mL)",
+            "imageAddress": null,
+            "instructions": null,
+            "isIndivisible": true,
+            "timingCategory": "fuelDrink",
+            "displayOverride": null,
+            "nutritionalInfo": {
+              "fat": 2,
+              "carbs": 9,
+              "sugar": null,
+              "fluids": 300,
+              "sodium": 200,
+              "protein": 30,
+              "calories": 170
+            },
+            "scaleMultiplier": null,
+            "displayNamePlural": "bottles Whey Protein Shake"
+          }
+        ],
+        "carbsTarget": 84,
+        "pinDecision": {
+          "used_pin": true,
+          "ephemeral": true,
+          "pin_set_size": 0,
+          "fallthrough_reason": null,
+          "pinned_template_id": "89b79e7d-2e89-4ca2-9fff-9295eb9b4cd3",
+          "pinned_template_name": "Whey Shake + Banana"
+        },
+        "fluidsTarget": 1296,
+        "sodiumTarget": 357,
+        "proteinTarget": 29,
+        "carbsLowTarget": 67,
+        "carbsHighTarget": 101,
+        "fluidsLowTarget": 1037,
+        "sodiumLowTarget": 250,
+        "fluidsHighTarget": 1555,
+        "proteinLowTarget": 23,
+        "sodiumHighTarget": 464,
+        "proteinHighTarget": 35
+      }
+    ],
+    "createdAt": "2026-09-21T15:33:27.228213",
+    "isDeleted": false,
+    "updatedAt": "2026-09-21T15:33:27.228213",
+    "activityId": "933edc6f-9a5f-4b8b-a7f9-840bca511088",
+    "planRating": null,
+    "runDateTime": null,
+    "journalNotes": null,
+    "macroTargets": {
+      "fat": 5,
+      "carbs": 276,
+      "fluids": null,
+      "sodium": 1428,
+      "protein": 42,
+      "calories": 1317,
+      "fatRange": null,
+      "fluidsMax": 28,
+      "fluidsMin": 0,
+      "sodiumMax": null,
+      "sodiumMin": null,
+      "carbsRange": null,
+      "proteinRange": null
+    },
+    "totalCalories": null,
+    "lastModifiedBy": null,
+    "clientUpdatedAt": null,
+    "conflictResolution": "last_write_wins",
+    "detailedMacroTargets": {
+      "id": "1790022805381",
+      "preRun": {
+        "carbsG": 101,
+        "fatCapG": 5,
+        "fluidsMl": 478,
+        "proteinG": 13,
+        "sodiumMg": null,
+        "carbTiers": [
+          {
+            "tier": "snack",
+            "carbsG": 75.523068,
+            "rangeLowG": 66.0826845,
+            "rangeHighG": 84.96345149999999,
+            "composition": "snack"
+          },
+          {
+            "tier": "top_off",
+            "carbsG": 25.174356,
+            "rangeLowG": 22.0275615,
+            "rangeHighG": 28.321150499999998,
+            "composition": "top_off"
+          }
+        ],
+        "carbsLowG": 88,
+        "carbsHighG": 113,
+        "fluidTiers": [
+          {
+            "tier": "snack",
+            "fluidMl": 477.61533999999995
+          },
+          {
+            "tier": "top_off",
+            "fluidMl": 0
+          }
+        ],
+        "fluidsLowMl": 0,
+        "proteinLowG": 0,
+        "fluidsHighMl": 839,
+        "proteinHighG": 21,
+        "carbTargetBasis": "evidenced_band",
+        "hydrationRegime": "extrapolated",
+        "fluidTargetBasis": "design_choice",
+        "hydrationCheckUsed": "unknown"
+      },
+      "metrics": {
+        "met": 11.22,
+        "speedMph": 6.666639050100594,
+        "durationH": 1.8,
+        "distanceKm": 19.312,
+        "distanceMi": 11.999950290181069,
+        "durationMin": 108,
+        "paceMinPerMile": 9.00003728251864,
+        "caloriesNetKcal": 1621,
+        "caloriesGrossKcal": 1779
+      },
+      "postRun": {
+        "carbsG": 84,
+        "fluidsMl": 1296,
+        "proteinG": 29,
+        "sodiumMg": 357,
+        "carbsLowG": 67,
+        "carbsHighG": 101,
+        "fluidsLowMl": 1037,
+        "proteinLowG": 23,
+        "sodiumLowMg": 250,
+        "fluidsHighMl": 1555,
+        "proteinHighG": 35,
+        "sodiumHighMg": 464
+      },
+      "duringRun": {
+        "tempC": 20,
+        "isIndoor": false,
+        "carbsLowG": 97.2,
+        "carbTotalG": 91,
+        "carbsHighG": 126,
+        "floorMlPerH": 269,
+        "fluidsLowMl": 1103,
+        "humidityPct": 60,
+        "sodiumLowMg": 857,
+        "fluidTotalMl": 1298,
+        "fluidsHighMl": 1493,
+        "sodiumHighMg": 1285,
+        "carbRateGPerH": 50.400000000000006,
+        "ceilingMlPerH": 800,
+        "gutMultiplier": 1.2,
+        "sodiumTotalMg": 1071,
+        "fluidRateMlPerH": 721,
+        "rawBandLowGPerH": 45,
+        "conditionsSource": "assumed",
+        "rawBandHighGPerH": 60,
+        "sodiumConcMgPerL": 825,
+        "sodiumRateMgPerH": 595,
+        "massNormRateGPerH": 0.6,
+        "sportCeilingGPerH": 70,
+        "absClampRangeGPerH": [
+          54,
+          70
+        ],
+        "replacementPercent": 0.6,
+        "effectiveSweatRateLPerH": 1.201
+      },
+      "timestamp": "2026-09-21T15:33:25.382111",
+      "activityType": "running",
+      "isUserModified": true,
+      "modifiedFields": [],
+      "calculationRule": "Generated from edge function",
+      "preRunSelections": [
+        {
+          "phase": "snack",
+          "stack": null,
+          "add_ons": [
+            {
+              "type": "banana",
+              "carbs_g": 27,
+              "fluid_ml": 0,
+              "servings": 1,
+              "sodium_mg": 1
+            }
+          ],
+          "primary": {
+            "id": "55ec540f-1758-4cc1-94d3-7bdc4650c49b",
+            "name": "Bagel + Jam",
+            "fat_g": 2,
+            "carbs_g": 56,
+            "fluid_ml": 6,
+            "servings": 2,
+            "protein_g": 10,
+            "sodium_mg": 610,
+            "serving_unit": "0.5 bagel + 0.5 tbsp jam (~28g carbs)",
+            "base_category": "Bagel",
+            "component_food_names": [
+              "bagel",
+              "jam"
+            ],
+            "component_quantities": {
+              "jam": 0.5,
+              "bagel": 0.5
+            }
+          },
+          "total_fat_g": 2,
+          "pin_decision": {
+            "used_pin": true,
+            "ephemeral": true,
+            "pin_set_size": 0,
+            "decision_source": "default_formula",
+            "fallthrough_reason": null,
+            "pinned_template_id": "55ec540f-1758-4cc1-94d3-7bdc4650c49b",
+            "pinned_template_name": "Bagel + Jam",
+            "default_fallthrough_reason": "no_pin_for_scope"
+          },
+          "total_carbs_g": 83,
+          "total_fluid_ml": 6,
+          "total_protein_g": 10,
+          "total_sodium_mg": 611
+        },
+        {
+          "drink": {
+            "id": "0519e4ff-f6cf-44d0-898c-ea863c75f017",
+            "name": "Water",
+            "fat_g": 0,
+            "carbs_g": 0,
+            "fluid_ml": 480,
+            "servings": 2,
+            "protein_g": 0,
+            "sodium_mg": 0,
+            "serving_unit": "1 cup (8 fl oz / 240 mL)",
+            "base_category": "Hydration",
+            "component_food_names": [
+              "water"
+            ],
+            "component_quantities": {
+              "water": 1
+            }
+          },
+          "phase": "top_up",
+          "stack": null,
+          "add_ons": [],
+          "primary": {
+            "id": "1b422f25-e528-4dbf-89e5-f5e1f1fc0c92",
+            "name": "Energy Gel",
+            "fat_g": 0,
+            "carbs_g": 25,
+            "fluid_ml": 20,
+            "servings": 1,
+            "protein_g": 0,
+            "sodium_mg": 50,
+            "serving_unit": "1 gel packet (~25g carbs)",
+            "base_category": "Quick Grab",
+            "component_food_names": [
+              "energy_gel"
+            ],
+            "component_quantities": {
+              "energy_gel": 1
+            }
+          },
+          "total_fat_g": 0,
+          "pin_decision": {
+            "used_pin": true,
+            "ephemeral": true,
+            "pin_set_size": 0,
+            "decision_source": "default_formula",
+            "fallthrough_reason": null,
+            "pinned_template_id": "1b422f25-e528-4dbf-89e5-f5e1f1fc0c92",
+            "pinned_template_name": "Energy Gel",
+            "default_fallthrough_reason": "no_pin_for_scope"
+          },
+          "total_carbs_g": 25,
+          "total_fluid_ml": 500,
+          "total_protein_g": 0,
+          "total_sodium_mg": 50
+        }
+      ]
+    }
+  }
+}

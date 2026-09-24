@@ -1,0 +1,40 @@
+== sun
+328	Bike - Long Ride | Skipped | 10 mi · 45 min
+415	Foam Rolling Routine | Skipped | other
+502	Run | Skipped | 7.0 mi · 66 min
+76	Sunday, September 20 ˅
+== mon-0921
+328	Swim | Skipped | 70 min
+415	Corpus Tempo Run | Skipped | 6.2 mi · 55 min
+502	R-CORE Routine | Skipped | 7 min
+589	12 mi Run | Skipped | 12 mi · 108 min
+76	Monday, September 21 ˅
+== tue-0922
+328	Speedwork | Skipped | 5 mi · 48 min
+415	Foam Rolling Routine | Skipped | other
+502	Warm Up Routine | Skipped | other
+589	Corpus Endurance Ride | Skipped | 28 mi · 90 min
+76	Tuesday, September 22 ˅
+== wed-0923
+328	Swim | Skipped | 30 min
+415	Corpus Strength Block | Skipped | 3.0 mi · 45 min
+502	R-CORE Routine | Skipped | other
+589	Bike | Skipped | 10 mi · 45 min
+76	Wednesday, September 23 ˅
+== thu-0924
+328	5:32 AM | Easy | Planned | 8 mi · 34 min
+436	7:00 AM | Foam Rolling Routine | Planned | other
+544	7:00 AM | Rad Device Test Swim | Planned | 45 min
+652	7:28 AM | Run | Planned | 3.9 mi · 36 min
+760	8:45 PM | Patrol H5 1790210557462 | Planned | 10 mi · 120 min
+868	8:45 PM | Patrol H5 1790210599230 | Planned | 10 mi · 120 min
+76	Today, September 24 ˅
+== fri-0925
+328	7:00 AM | R-CORE Routine | Planned | other
+436	7:00 AM | Swim | Planned | 30 min
+76	Friday, September 25 ˅
+== sat-0926
+328	7:00 AM | Foam Rolling Routine | Planned | other
+436	7:00 AM | Run - Long Run | Planned | 17 mi
+76	Saturday, September 26 ˅
+== wed-0923 brick card: '9:00 PM' | 'BRICK | 3 legs · 124 min' | 'Brick workout containing swimming and running and cycling | Pre · During · Recovery fuel'
