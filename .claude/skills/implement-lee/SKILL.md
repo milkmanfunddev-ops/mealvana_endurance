@@ -62,6 +62,11 @@ building, and appends the wave to `.scratch/<feature>/waves.json` with that comm
 Note the wave's `number`, `base` and `startedAt` for the report. The log file itself is
 committed at close.
 
+A feature whose runbook has a "wave lead's routine" section (testing-wave,
+`.scratch/<feature>/RUNBOOK.md`) follows that section where it differs from steps 4 to 8: how
+simulators and env files are handed out, whether the app is built, which page steps are skipped.
+Read it before step 4.
+
 ## 4. One subagent per ticket, each in its own worktree
 
 For every entry in `wave`, in one message so they run at once, create the worktree, then spawn

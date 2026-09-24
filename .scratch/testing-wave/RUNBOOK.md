@@ -16,8 +16,18 @@ Names used below:
   `FINDINGS`: `node scripts/testing-wave/findings.mjs`. `SYNC`: `node docs/ssot/decisions/_page/sync.mjs`.
 - Credentials: `/Users/leemartin/development/mealvana_endurance/secrets/test_accounts.md`, always by
   that absolute path, from every worktree. Its shape is `scripts/testing-wave/test_accounts.template.md`.
+- `SCRATCH`: the scratch folder your prompt names, one per ticket (`<scratchpad>/testing-wave-NN/`).
+  Helper scripts and temporary files go there and nowhere else; never read or run another ticket's.
+- `UDID`: the simulator your prompt names. The wave lead made it for you with the app already
+  installed; it is yours for the whole run and nothing else is.
 
 Nothing gets fixed during a run. Every problem, clash or idea is a Finding (step 10).
+
+No Patrol (Lee, 2026-09-24). You test by driving the app yourself; you do not write or run
+Patrol flows, whatever an older ticket says.
+
+Never print a secret: no `cat`, `tail` or `bash -x` on anything that reads `secrets/`, `.env*` or
+the credentials file. Read a value into a variable without echoing it.
 
 ## 1. Claim a slot
 
@@ -25,63 +35,50 @@ Nothing gets fixed during a run. Every problem, clash or idea is a Finding (step
 LOCK claim slot OWNER            # waits up to 90 min; exit 3 = still two runs going
 ```
 
-Two runs at a time, whatever the simulator pool allows. Exit 3: report the ticket as not run.
-Then `mkdir -p RUNS` and write `RUNS/expected.md`: the RevenueCat and database records the ticket
-expects before and after, copied from its criteria. The run is judged against this file.
+Two runs at a time. Exit 3: report the ticket as not run. Then `mkdir -p RUNS` and write
+`RUNS/expected.md`: the RevenueCat and database records the ticket expects before and after,
+copied from its criteria. The run is judged against this file.
 
-## 2. Claim a simulator
+## 2. Your simulator and the app on it
 
-```
-SYNC simulator claim OWNER --wait 90     # prints {udid, name, reused}
-```
+The wave lead gave you `UDID` with the dev app installed, built from the commit named in your
+prompt (`.scratch/testing-wave/app-build.json`). Write that commit in `RUNS/notes.md`: every
+Finding ties to it. You do not build the app. If the app on `UDID` is missing or will not launch,
+write a bug Finding and report the device check as not run.
 
-Use that `udid` and nothing else for the whole run. Exit 3 or no dev simulator booted: release the
-slot and report the device check as not run.
+Your worktree has every `.env` file the main clone has (the wave lead copied them). Use the dev
+ones; nothing in a run touches prod.
 
-## 3. Terminate the old app
-
-```
-xcrun simctl terminate <udid> com.milkman.mealvanaendurance.dev
-```
-
-Frees its memory before the build. "found nothing to terminate" is fine.
-
-## 4. Take the build lock
+## 3. Launch it with the console going to the run folder
 
 ```
-LOCK claim build OWNER           # waits up to 45 min; one build on the Mac at a time
+xcrun simctl terminate UDID com.milkman.mealvanaendurance.dev
+xcrun simctl spawn UDID log stream --level debug \
+  --predicate 'process == "Runner"' > RUNS/console.log 2>&1 &     # background; the console is evidence
+xcrun simctl launch UDID com.milkman.mealvanaendurance.dev
 ```
 
-## 5. Run the dev debug build, console to the run folder
+Stop the log stream at step 11.
 
-In the background (the Bash tool's `run_in_background`), from your worktree:
+## 4. Start from what is on the screen
 
-```
-scripts/run_dev.sh -d <udid> > .scratch/testing-wave/runs/NN/console.log 2>&1
-```
+Look first (the mobile MCP's screenshot and element list). The simulator opens as the dev test
+account, signed in, with its plans and logs. Do only the setup your ticket needs: most tickets
+need none; a ticket about signup or purchase signs out and makes its own account. Never reinstall
+or wipe the app unless the ticket says so.
 
-`run_dev.sh` is `flutter run` with the dev flavor and the dev entry point. Leave it running for the
-whole run; the console is evidence.
+## 5. Drive the app
 
-## 6. Release the build lock once the app runs
-
-As soon as `console.log` shows the app launched (`Flutter run key commands` or the first frame on
-screen), and before driving anything:
-
-```
-LOCK release build OWNER
-```
-
-A build that fails: release the lock, write a bug Finding with the console excerpt, go to step 11.
-
-## 7. Drive the app
-
-- See and tap with the mobile MCP, on your `udid` only.
-- Type text with idb: `idb ui text "<text>" --udid <udid>`. Passwords come from the credentials
+- See and tap with the mobile MCP, on `UDID` only. It works on wave simulators (the wave lead's
+  simulator setup installs its helper app). idb is the fallback: `idb ui describe-all --udid UDID`,
+  `idb ui tap X Y --udid UDID`.
+- Type text with the MCP or `idb ui text "<text>" --udid UDID`. Passwords come from the credentials
   file; type them, never echo them into a Finding, commit or report.
-- A new account signs up at `lee+e2e-NN-<UTC time>@rightpathprogramming.com`; read its code with
-  the Gmail tool. Add its row to the credentials file's Created accounts table the moment signup
-  succeeds (re-read the file first, append one row), and update its state as the run changes it.
+- A new account signs up at `lee+e2e-NN-<UTC time>@rightpathprogramming.com`. Dev asks for the
+  6-digit code we email (since 2026-09-24): read it with the Gmail tool
+  (`to:lee+e2e-NN-… from:support@mealvana.io`, newest first), type it into the app. Add the
+  account's row to the credentials file's Created accounts table the moment signup succeeds
+  (re-read the file first, append one row), and update its state as the run changes it.
 - Before a step that generates a new Vana plan or makes an AI logging call, spend first:
 
   ```
@@ -91,8 +88,11 @@ A build that fails: release the lock, write a bug Finding with the console excer
   Exit 3 means the wave's cap is used up: skip the step and write a followup-test Finding for it.
   Everything else reuses the plans already on the dev accounts.
 - Screenshots go in `RUNS` with names that say what they show.
+- A step that must be seen live (a renewal, a lapse, a timer): write the clock time before and
+  after every wait in `RUNS/notes.md`. When the gap is longer than planned, write "not seen live"
+  next to the step and say how it was checked instead.
 
-## 8. Check RevenueCat and the dev database
+## 6. Check RevenueCat and the dev database
 
 Read, never write, unless your ticket's criteria name the write (a Grant, for example).
 
@@ -100,7 +100,9 @@ Read, never write, unless your ticket's criteria name the write (a Grant, for ex
   RevenueCat MCP.
 - Dev database: `SELECT` statements only, through the Management API `database/query` on the dev
   project, as `docs/deployment/supabase-deploy-playbook.md` describes.
-- Edge-function logs for the functions the scenario touched: `scripts/edge_logs.sh`.
+- Edge-function logs for the functions the scenario touched: `scripts/edge_logs.sh` (`-s
+  function_edge_logs` for request lines). It exits 1 on any answer that is not rows, so "(no rows
+  in window)" really means none.
 
 Both the SQL and the logs need a Management API token. Read it from the main clone without
 printing it, once per shell:
@@ -121,7 +123,7 @@ code, sign up first, then `seed-codes.mjs own <your account's user id>` prints a
 account owns; it is deleted with the account. Run `seed` at the start of a redeem run, since an
 earlier run may have spent the once-in-total giveaway.
 
-## 9. Look around on every screen
+## 7. Look around on every screen
 
 On each screen you visit, stop and list other paths through it (other buttons, back, swipe, empty
 and error states, offline, a second tap) and other ways it could break. Each one is a
@@ -129,7 +131,10 @@ followup-test Finding naming the screen. Do not run them now; the next rounds pi
 Also read `console.log` after each screen: every error or exception line is a Finding or is noted
 in `RUNS/notes.md` as known noise, with why.
 
-## 10. Write Findings
+Anything unexpected you write in `RUNS/notes.md` is also a Finding, or carries "known noise:
+<why>" beside it. The wave lead reads every notes file at the close and files what you did not.
+
+## 8. Write Findings
 
 One file each, made with:
 
@@ -139,11 +144,12 @@ FINDINGS new NN "<what happened, one line>" --kind bug|ssot-conflict|followup-te
 
 It lands in `.scratch/testing-wave/findings/NN-<next number>-<slug>.md`, filled from `TEMPLATE.md`.
 Fill in screen, steps, expected, actual and evidence (paths under `runs/NN/`, relative to
-`.scratch/testing-wave/`). An ssot-conflict cites the decision id and quotes its Decision text from
-`docs/ssot/decisions/`. Status stays `open`; triage moves it. Check your files parse:
+`.scratch/testing-wave/`, first word of each Evidence bullet). An ssot-conflict cites the decision
+id and quotes its Decision text word for word from `docs/ssot/decisions/`. Status stays `open`;
+triage moves it. Check your files parse and their evidence exists:
 
 ```
-FINDINGS index --out "$TMPDIR/testing-wave-index.md"   # exit 2 names a malformed Finding
+FINDINGS index --out "$TMPDIR/testing-wave-index.md"   # exit 2 names a malformed Finding or a missing evidence file
 ```
 
 Do not commit `INDEX.md`; the wave lead regenerates it after merging.
@@ -151,32 +157,56 @@ Do not commit `INDEX.md`; the wave lead regenerates it after merging.
 Keep going after a Finding. Stop only when a Finding makes the rest of the scenario meaningless
 (the spec says when): say so in that Finding (`**Actual.**` ends with "Ticket stopped here:
 <why>"), then mark the run stopped in `RUNS/STOPPED.md`: the Finding's file name, why, and the
-step or criterion the retest resumes from. Go to step 11. A run with no `STOPPED.md` ran to the end.
+step or criterion the retest resumes from. Go to step 9. A run with no `STOPPED.md` ran to the end.
 
-## 11. Release everything
+## 9. Release everything
 
 At the end of every run, stopped or not, in this order:
 
 1. Delete the account you created through the app's delete-account flow (unless the ticket keeps
    it), and set its state in the credentials file (`deleted` or `delete-failed`).
-2. Stop `flutter run` (kill the background task) and terminate the app on the simulator.
-3. `SYNC simulator release <name>`
-4. `LOCK release build OWNER` (harmless if already released), then `LOCK release slot OWNER`.
-5. Scan the console before committing it: `grep -nE 'eyJ[A-Za-z0-9_-]{10,}|Bearer |sk_|sbp_' RUNS/console.log`.
+2. Stop the log stream and terminate the app on the simulator.
+3. `LOCK release slot OWNER`. The simulator stays; the wave lead deletes it at the close.
+4. Scan the console before committing it: `grep -nE 'eyJ[A-Za-z0-9_-]{10,}|Bearer |sk_|sbp_' RUNS/console.log`.
    Any hit: delete `console.log` and commit `console-excerpts.log` with only the lines your
    Findings cite, the hits cut out.
-6. Commit `.scratch/testing-wave/findings/NN-*.md` and `RUNS` on your branch, explicit paths only. Run logs under `RUNS`
-   are not gitignored (the Findings cite them), so a plain `git add` takes them after the scan.
+5. Commit `.scratch/testing-wave/findings/NN-*.md` and `RUNS` on your branch, explicit paths only.
+   Run logs under `RUNS` are not gitignored (the Findings cite them), so a plain `git add` takes
+   them after the scan.
 
 `LOCK list` shows what is still held. A claim left by a crashed agent is dropped on the next claim
-once it is older than the stale timeout (slot 4 h, build 30 min).
+once it is older than the stale timeout (4 h).
 
-## Before and after the wave (wave lead)
+## The wave lead's routine
 
-Before opening a wave, read `.scratch/testing-wave/IMPROVEMENTS.md`, the running list of ways to
-make this loop better, and fix or raise one or two of its open items. After the review, append
-what the wave taught (one entry per lesson) and move anything fixed to Done.
+The testing wave never writes to the decisions page (Lee, 2026-09-24): no ticket cards, no
+proposals, no pictures, no page reseed. Questions about testing itself are settled with Lee in
+the terminal. A Finding that raises a real product question (paywall, meal planning, how the app
+should behave) goes to the page as an open question, the normal way, and nothing else does.
 
-`FINDINGS index` writes `.scratch/testing-wave/findings/INDEX.md`, grouped by kind and status, and
-exits 0 only when every Finding is closed or wontfix: that is the end of the loop. `COST status WAVE`
-shows what the wave spent. Triage follows the spec's "Triage" section.
+**Before the wave.**
+
+1. Read `.scratch/testing-wave/IMPROVEMENTS.md`; fix or raise one or two open items.
+2. The app. `.scratch/testing-wave/app-build.json` names the commit the testing app was built from.
+   `git diff --name-only <that commit> <base> -- lib pubspec.yaml pubspec.lock ios assets` empty:
+   no build. Anything listed: build once from a clean worktree at the base (never the main clone,
+   which carries other sessions' unfinished edits): `scripts/run_dev.sh -d <first wave simulator>`,
+   quit it once the app runs, `xcrun simctl install` the same `build/ios/iphonesimulator/Runner.app`
+   on the other wave simulator, and write the base commit to `app-build.json`. Agents never build.
+3. One simulator per ticket: `SYNC simulator claim testing-wave-NN` for each, before spawning. It
+   copies the dev simulator's app, signed-in data and the mobile MCP helper. Install the freshly
+   built app on each when step 2 built one. The name and udid go in the ticket's prompt.
+4. One worktree per ticket (`git worktree add`), then copy every `.env*` file from the main clone
+   into it (`cp .env* <worktree>/`), and make the ticket's scratch folder.
+5. The prompt names the worktree, `UDID`, `SCRATCH`, the app's commit, the ticket's full text and
+   its cited decisions, and points at this runbook.
+
+**After the wave.**
+
+1. Merge in ticket order, run `flutter analyze` and the CI suite command.
+2. Read every ticket's `RUNS/notes.md` for surprises with no Finding and no "known noise", and file
+   them (`FINDINGS new …`), noting "filed by the wave lead" in Actual.
+3. `FINDINGS index` (writes `INDEX.md`; exit 0 only when every Finding is closed or wontfix: the end
+   of the loop). `COST status WAVE` shows what the wave spent. Triage follows the spec's "Triage".
+4. `SYNC simulator drop <name>` for every wave simulator; `wave --close`; remove the worktrees.
+5. Append what the wave taught to `IMPROVEMENTS.md` and move anything fixed to Done.
