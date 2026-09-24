@@ -1,0 +1,46 @@
+[
+    {
+        "id": "618143cc-c053-455f-9997-b85a8a1f24a0",
+        "function_name": "vana.describe_meal",
+        "input_tokens": 1351,
+        "output_tokens": 232,
+        "gateway_cost_usd": "0.011493",
+        "debited": true,
+        "steps": 1,
+        "subscriber_period_type": "NORMAL",
+        "created_at": "2026-09-24 19:07:45.257686+00"
+    },
+    {
+        "id": "a7abcbab-9391-4286-8873-28a7eade5094",
+        "function_name": "describe-meal",
+        "input_tokens": 1351,
+        "output_tokens": 232,
+        "gateway_cost_usd": null,
+        "debited": null,
+        "steps": null,
+        "subscriber_period_type": null,
+        "created_at": "2026-09-24 19:07:54.775311+00"
+    },
+    {
+        "id": "959aa38d-9767-4cad-96a0-9f5a1b15da05",
+        "function_name": "vana.meal_photo",
+        "input_tokens": 2368,
+        "output_tokens": 162,
+        "gateway_cost_usd": "0.013695",
+        "debited": true,
+        "steps": 1,
+        "subscriber_period_type": "NORMAL",
+        "created_at": "2026-09-24 20:18:35.75566+00"
+    },
+    {
+        "id": "5d39717a-5732-45e0-9d37-ed853f259e8d",
+        "function_name": "analyze-meal-photo",
+        "input_tokens": 2368,
+        "output_tokens": 162,
+        "gateway_cost_usd": null,
+        "debited": null,
+        "steps": null,
+        "subscriber_period_type": null,
+        "created_at": "2026-09-24 20:18:44.938678+00"
+    }
+]

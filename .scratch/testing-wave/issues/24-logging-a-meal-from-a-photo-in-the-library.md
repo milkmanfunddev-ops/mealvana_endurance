@@ -11,10 +11,10 @@
 
 **Touches:** the dev test account's meal logs
 
-- [ ] Runs by the runbook: a slot taken and released, the console saved to the run folder, a look-around on every screen visited, every problem written as a Finding and nothing fixed.
-- [ ] Uses the entitled dev test account from the credentials file; no new account.
-- [ ] A food photo is added to the simulator's library first; the method is written in the run notes.
-- [ ] Counts against the AI cap.
-- [ ] The saved meal's rows are checked by SQL.
+- [x] Runs by the runbook: a slot taken and released, the console saved to the run folder, a look-around on every screen visited, every problem written as a Finding and nothing fixed.
+- [x] Uses the entitled dev test account from the credentials file; no new account.
+- [x] A food photo is added to the simulator's library first; the method is written in the run notes.
+- [x] Counts against the AI cap.
+- [x] The saved meal's rows are checked by SQL.
 
 Next: /implement-lee testing-wave

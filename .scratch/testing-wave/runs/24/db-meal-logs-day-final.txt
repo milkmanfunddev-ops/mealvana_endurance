@@ -1,0 +1,74 @@
+[
+    {
+        "id": "38c4f0ed-e7d2-453c-9b8e-a19614dbe522",
+        "name": "W13-23 Lunch",
+        "source": "describe",
+        "slot": "lunch",
+        "is_deleted": false,
+        "created_at": "2026-09-24 19:08:16.718804+00",
+        "updated_at": "2026-09-24 19:08:16.719394+00"
+    },
+    {
+        "id": "00a120e5-2c1e-45f2-965a-0d3e21dce761",
+        "name": "Rice cake and Almond butter",
+        "source": "saved",
+        "slot": "snack",
+        "is_deleted": false,
+        "created_at": "2026-09-24 19:08:36.077897+00",
+        "updated_at": "2026-09-24 19:08:36.078051+00"
+    },
+    {
+        "id": "f952f981-8478-4ddb-bbd0-caea673b5859",
+        "name": "Rolled oats and Raisins",
+        "source": "manual",
+        "slot": null,
+        "is_deleted": false,
+        "created_at": "2026-09-24 19:09:30.318833+00",
+        "updated_at": "2026-09-24 19:09:30.318908+00"
+    },
+    {
+        "id": "46b1d076-453f-4429-8f5a-cae1043c013e",
+        "name": "Cottage Cheese & Pineapple Bowl",
+        "source": "recipe",
+        "slot": "snack",
+        "is_deleted": false,
+        "created_at": "2026-09-24 19:10:05.192327+00",
+        "updated_at": "2026-09-24 19:10:05.192363+00"
+    },
+    {
+        "id": "35409440-2a4f-4aa9-802f-dabcb0d2b609",
+        "name": "W14-25 Manual oats",
+        "source": "manual",
+        "slot": "breakfast",
+        "is_deleted": false,
+        "created_at": "2026-09-24 20:18:29.588101+00",
+        "updated_at": "2026-09-24 20:18:29.588853+00"
+    },
+    {
+        "id": "a61f94fd-5dfb-4d16-b4df-901ee732fc20",
+        "name": "W14-25 Decimal kcal",
+        "source": "manual",
+        "slot": null,
+        "is_deleted": false,
+        "created_at": "2026-09-24 20:19:13.112446+00",
+        "updated_at": "2026-09-24 20:19:13.112482+00"
+    },
+    {
+        "id": "f510d5d3-a680-4dee-897a-66db4f540fca",
+        "name": "Spaghetti Bolognese W14-24",
+        "source": "photo",
+        "slot": "dinner",
+        "is_deleted": false,
+        "created_at": "2026-09-24 20:19:18.293416+00",
+        "updated_at": "2026-09-24 20:19:18.29411+00"
+    },
+    {
+        "id": "ae7dba02-aa75-4959-9bdc-b96912c51778",
+        "name": "W14-25 Built bowl",
+        "source": "manual",
+        "slot": "dinner",
+        "is_deleted": false,
+        "created_at": "2026-09-24 20:21:48.566491+00",
+        "updated_at": "2026-09-24 20:21:48.566589+00"
+    }
+]
