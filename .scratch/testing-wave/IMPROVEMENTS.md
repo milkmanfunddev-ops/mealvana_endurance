@@ -11,97 +11,52 @@ Each entry: what went wrong or cost time, where it was seen, and the suggested f
 
 ## Open
 
-### Harness and tooling
-
-3. **Nothing checks that a Finding's evidence exists.** `findings.mjs index` parses the Finding
-   but not the paths under **Evidence.** Fix: `index` warns on an evidence path missing from
-   `runs/`. Seen: wave 5.
-4. **No reliable "build finished" signal.** Each agent writes its own wait loop. In wave 5, one
-   matched "error" inside a Swift Package Manager warning and released the build lock early
-   (11-013). Fix: a `LOCK wait-build <console.log>` helper that waits for `Flutter run key
-   commands`, `Completed building` or a real failure line, then releases the lock. Seen: wave 5.
-5. **`scripts/edge_logs.sh` is broken.** Supabase removed the `logs.all` endpoint, and the script
-   prints "no rows" instead of failing (05-006). The runbook's step 8 depends on it. Fix: move
-   it to the replacement endpoint, and make it fail on any non-row answer. Seen: wave 5.
-6. **The mobile MCP can't drive pool simulators** ("Agent is not installed"), so agents fall back
-   to idb and `simctl` screenshots. Fix: put idb in the runbook as the default, with the MCP as
-   an option. Seen: waves 4, 5.
-7. **Worktrees start with no `.env` files.** Each agent copies or rebuilds `.env.dev.local` by
-   hand. Fix: a `scripts/testing-wave/worktree-env.sh <worktree>` that copies the dev env files
-   only, never prod, and have the runbook call it. Seen: waves 2, 4, 5.
-8. **`touched-screens` counts other sessions' uncommitted `lib/` edits,** so the wave lead skips
-   the picture refresh. Fix: a `--committed` flag that reads only `base..HEAD`. Seen: waves 3, 5.
-9. **`undrawn` skips open questions,** but the convention draws them, so the wave lead has to
-   remember to draw them by hand. Fix: `undrawn --questions`, or include open questions by
-   default. Seen: wave 5.
-22. **`simulator claim` crashes with EEXIST when the other agent holds the claims lock** for more
-    than about 10 seconds, and `--wait 90` doesn't cover it (07-005). The agent waited 2.5 minutes
-    in a retry loop of its own. Fix: treat a held claims lock as "wait and retry" inside `claim`.
-    Seen: wave 6.
-23. **A hung Patrol run takes the simulator down with it** (06-009). Nothing times out a Patrol
-    run, and killing it shut the device down. Fix: a timeout in the runbook's Patrol step (or a
-    wrapper), plus a note on rebooting the pool device. Seen: wave 6.
-25. **New testing-wave flows are never run by the M1 runner.** Redeem, relogin and restore are all
-    excluded as clean-install, but spec story 76 asks for them on the self-hosted runner's list.
-    Fix: give the runner a clean-install lane (uninstall before each such flow), or change the
-    spec. Seen: waves 5, 6.
-
-### Test data and accounts
-
-12. **The Patrol account is lapsed, and the admin holds Pro Grants** (mp-658, 12-001). So the
-    nightly Patrol job fails, and the admin-with-no-Pro case can't be seen. Waiting on Lee's
-    choice in mp-658. Seen: waves 3, 4.
-13. **Dev allows 2 auth emails an hour,** and two parallel tickets both sign up. A rate-limit hit
-    stalls a run. Fix: stagger the two agents' signups (the slot lock could hand out a signup
-    turn), or raise the dev limit. Seen as a risk: wave 5.
-
-### Runbook and agent prompts
-
-14. **Agents write surprises into `notes.md` and not as Findings.** Still happening in wave 6
-    (four were filed by the wave lead: 06-009, 06-010, 07-010, 07-011), even with the rule in the
-    prompt. Wave 5's review found three:
-    redemptions deleted with the account, the early lock release, and the clock jump. Fix: add a
-    runbook rule that any line in `notes.md` naming something unexpected gets a Finding, or a
-    "known noise" reason next to it. The wave lead's review greps `notes.md` for them. Seen:
-    wave 5.
-15. **`ssot-conflict` is under-used.** 05-005 tests mp-457 but was filed as an idea, and 05-002
-    paraphrases mp-279 instead of quoting it. Fix: a runbook example of when a Finding is an
-    ssot-conflict, and a check in `index` that an ssot-conflict has a **Decision quote.** Seen:
-    wave 5.
-16. **Live-timing scenarios can go unobserved.** In ticket 05 the clock jumped two hours between
-    steps, so the expiry the ticket watched was read afterwards from logs (05-011). Fix: for a
-    step that must be seen live, the runbook says to note the time before and after each wait,
-    and to write "not seen live" when the gap is larger than planned. Seen: wave 5.
-17. **Agents skip the Patrol flow a ticket's Touches line names** when the criteria don't ask for
-    it (05-012). Fix: every ticket either lists the flow as a criterion or leaves it off
-    Touches. Seen: wave 5.
-
-### Tickets
-
-18. **Tickets can contradict themselves.** Ticket 05 said both "delete the account at the end"
-    and "keep the paid account for 06–09". Fix: `/to-tickets-lee` checks account-lifecycle
-    criteria against the tickets that depend on them. Seen: wave 5.
-
-### The wave lead's routine
-
-20. **Pool simulators outlive a wave if the lead forgets to drop them.** The lead dropped them in
-    wave 5, but it's a manual step. Fix: `wave --close` drops idle pool devices itself. Seen:
-    wave 5.
-
-### Speed
-
-21. **Every ticket does a cold iOS build, and the builds queue behind one lock.** Each ticket gets
-    a new worktree with an empty `build/`, so Xcode starts from nothing: `run_dev.sh` took 56 s in
-    wave 2 and 93–255 s in waves 4–5, and a Patrol build 68–288 s. A ticket needs one or two builds,
-    and with two tickets only one builds at a time. That is about 5–10 minutes a ticket: real, but
-    not most of the time (ticket 11 took 33 minutes in all). Testing tickets don't change `lib/`,
-    so every ticket in a wave builds the same app. Options: build the dev app once per wave and
-    install that `.app` on each pool device (needs Lee's word, since CLAUDE.md bars
-    `flutter build` as assistant execution; one `flutter run` by the wave lead could produce it);
-    share one Xcode DerivedData across worktrees; or reuse the last wave's worktree for the next
-    ticket. Seen: waves 2–5.
+Nothing open. Lee went through every item on 2026-09-24; what he chose is under Done.
 
 ## Done
+
+**Lee's walk-through, 2026-09-24** (wave 7). Each item, what he chose, and where it landed:
+
+- **#3 evidence.** `findings.mjs index` fails on an Evidence path that exists neither under the
+  testing-wave folder nor in the repo. `383a2753`.
+- **#4 build lock.** Removed; two builds may run at once (Lee). `lock.mjs` keeps only the slot.
+  `383a2753`.
+- **#5 edge_logs.sh.** Reads the unified `logs` table through `/analytics/endpoints/logs`, fails on any
+  answer that is not rows. `383a2753`.
+- **#6 mobile MCP.** Its helper app (`com.mobilenext.devicekit-iosUITests.xctrunner`, not
+  WebDriverAgent) is copied from the dev simulator onto every wave simulator; checked live on a new
+  pool device. `383a2753`.
+- **#7 env files.** The wave lead copies every `.env*` file into each worktree (Lee: agents see
+  everything the main clone sees). Runbook, wave lead step 4.
+- **#8 picture refresh, #9 drawings.** Moot: the testing wave writes nothing to the decisions page
+  (Lee). The 31 ticket cards and three test-setup questions (mp-653, 657, 658) were removed from the
+  record, the proposals and the page; the five paywall questions stay.
+- **#12 accounts.** The Patrol account (`secrets/integration_test.env`) is an admin on dev with no
+  Pro, so the nightly job gets past the paywall (mp-658 settled here). test@test.com keeps its
+  three Grants (Lee).
+- **#13 email.** Dev now asks for the emailed code and allows 30 auth emails an hour; prod allows 30
+  an hour and still confirms on its own until Lee rules on mp-667. Ticket 32 tests signup and
+  forgot password through the Gmail tool. Resend's `mealvana.io` domain is verified.
+- **#14 notes without Findings.** The wave lead reads every `notes.md` at the close and files what
+  the agent did not (wave 7: 09-013). Runbook, after the wave step 2.
+- **#15 decision quote.** Already enforced by `index` before today; the part no check can see
+  (filing a clash as an idea) stays with the prompt.
+- **#16 live timing.** The rule is in the runbook (step 5): times around every wait, "not seen live"
+  when missed.
+- **#17, #23, #24, #25 Patrol.** No Patrol in testing waves (Lee). The seven wave-added flows,
+  their exclusion-list rows and admin_bypass's Codemagic targets were removed; the older flows and
+  the nightly runner are unchanged. `f2c7d8ac`.
+- **#18 tickets.** Tickets 10–31 re-read: Patrol criteria and flow blockers gone, and five
+  shared-account clashes made into blockers (16 after 14, 17 after 16, 19 after 20, 27 after 26, 31
+  after 30).
+- **#20, #22 simulators.** The wave lead makes one simulator per ticket before spawning and drops
+  them at the close; agents never claim.
+- **#21 builds.** The wave lead builds only when app code changed since `app-build.json`'s commit,
+  from a clean worktree, once; agents never build.
+- **#26 shared scratch folder (wave 7).** Each ticket gets its own scratch folder, and the runbook
+  bars printing anything that reads a secret. The RevenueCat key that reached ticket 08's local
+  transcript is not rotated (Lee).
+- **`timeout` missing on this Mac (wave 7).** Moot with Patrol gone.
 
 - **#24, flows copied each other's helpers (part).** `buyMonthlyInTestStore`, `dismissWhatsNew`,
   `openSettings`, `signOutFromSettings`, `logInWithEmail` and `entitlementRows` moved from the

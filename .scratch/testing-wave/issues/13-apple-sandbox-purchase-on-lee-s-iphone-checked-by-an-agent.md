@@ -7,7 +7,7 @@
 
 **What to build:** Lee installs a build that buys through Apple, not the Test Store, on his iPhone, and buys with a sandbox tester. An agent checks App Store Connect in the browser, RevenueCat by API and the dev database by SQL, and records whether all three agree.
 
-**Decisions:** mp-289; approved as mp-633.
+**Decisions:** mp-289.
 
 **Touches:** docs/release/sandbox-trial-runs/
 

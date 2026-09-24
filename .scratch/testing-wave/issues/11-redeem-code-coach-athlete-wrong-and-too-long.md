@@ -7,7 +7,7 @@
 
 **What to build:** A new athlete redeems codes from the paywall's ⋯ menu: a coach's own code gives 30 days of Pro and marks the account a coach; an athlete entering a coach code gets a pending pairing; a wrong code and an overlong code are each refused as not found and the sheet stays open.
 
-**Decisions:** mp-458, mp-535, mp-598; approved as mp-631.
+**Decisions:** mp-458, mp-535, mp-598.
 
 **Touches:** integration_test/flows/redeem_code_flow_test.dart
 

@@ -7,7 +7,7 @@
 
 **What to build:** A new athlete signs up and finishes onboarding, then meets the full-screen paywall with no close button. RevenueCat has a customer for the account and the dev database has no Entitlement row yet.
 
-**Decisions:** mp-457, mp-494; approved as mp-624.
+**Decisions:** mp-457, mp-494.
 
 **Touches:** integration_test/flows/onboarding_signup_flow_test.dart
 

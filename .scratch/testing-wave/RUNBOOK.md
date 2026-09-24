@@ -62,9 +62,11 @@ Stop the log stream at step 11.
 
 ## 4. Start from what is on the screen
 
-Look first (the mobile MCP's screenshot and element list). The simulator opens as the dev test
-account, signed in, with its plans and logs. Do only the setup your ticket needs: most tickets
-need none; a ticket about signup or purchase signs out and makes its own account. Never reinstall
+Look first (the mobile MCP's screenshot and element list). The simulator opens in whatever state
+the dev simulator was in when it was copied: usually signed in as the entitled dev test account,
+with its plans and logs. Do only the setup your ticket needs. Signed out and your ticket uses the
+dev test account: log in with it from the credentials file. A ticket about signup or purchase signs
+out and makes its own account. Never reinstall
 or wipe the app unless the ticket says so.
 
 ## 5. Drive the app

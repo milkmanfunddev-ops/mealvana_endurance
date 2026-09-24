@@ -7,7 +7,7 @@
 
 **What to build:** A new athlete buys a plan with its free week through the Test Store. The Gate opens and RevenueCat shows the subscription with its expiry. The run finds out whether a Test Store purchase reaches the dev webhook, and if it does, the Entitlement row carries the same expiry.
 
-**Decisions:** mp-457, mp-279; approved as mp-625.
+**Decisions:** mp-457, mp-279.
 
 **Touches:** integration_test/flows/paywall_purchase_flow_test.dart
 

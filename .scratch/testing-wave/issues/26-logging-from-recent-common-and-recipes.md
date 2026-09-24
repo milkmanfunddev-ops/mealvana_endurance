@@ -1,17 +1,17 @@
 # 26: Logging from Recent, Common and Recipes
 
 **Status:** ready-for-agent
-**Blocked by:** 03 (touches integration_test/flows/meal_log_sources_flow_test.dart).
+**Blocked by:** none.
 **Next:** `/implement-lee testing-wave`
 **Model:** opus
 
 **What to build:** The athlete logs one meal from each of Recent, Common and Recipes, and each saves as the source had it.
 
-**Decisions:** approved as mp-646.
+**Decisions:** none.
 
-**Touches:** integration_test/flows/meal_log_sources_flow_test.dart
+**Touches:** the dev test account's meal logs
 
-- [ ] Runs by the runbook: a slot and the build lock taken and released, the console saved to the run folder, a look-around on every screen visited, every problem written as a Finding and nothing fixed.
+- [ ] Runs by the runbook: a slot taken and released, the console saved to the run folder, a look-around on every screen visited, every problem written as a Finding and nothing fixed.
 - [ ] Uses the entitled dev test account from the credentials file; no new account.
 - [ ] No AI call.
 - [ ] Each saved meal equals its source by SQL.

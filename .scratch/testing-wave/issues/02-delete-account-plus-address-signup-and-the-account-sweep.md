@@ -7,7 +7,7 @@
 
 **What to build:** An agent signs up a new account at a plus address on Lee's work mailbox, reads the code with the Gmail tool, and deletes the account through the app. Afterwards the dev database has no row for it and RevenueCat shows what deletion leaves. Signing up again at the same address starts a new account. A sweep script removes leftover test accounts. If deletion fails, the ticket stops and says so.
 
-**Decisions:** mp-494; approved as mp-622.
+**Decisions:** mp-494.
 
 **Touches:** scripts/testing-wave/sweep-accounts.mjs, integration_test/helpers/e2e_account.dart, integration_test/flows/account_delete_flow_test.dart
 

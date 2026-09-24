@@ -7,7 +7,7 @@
 
 **What to build:** The paid athlete cancels. Until the period ends the app stays open, and RevenueCat and the Entitlement row agree on the end date. After it passes, the account stays signed in and every launch lands on the full-screen paywall with no close button, with Restore, Redeem code, Manage, Sign out and Delete account in the ⋯ menu. Any read-only mode, plan-ended bar or paywall sheet still in the build is an SSOT-conflict Finding against mp-457.
 
-**Decisions:** mp-457, mp-280; approved as mp-629.
+**Decisions:** mp-457, mp-280.
 
 **Touches:** integration_test/flows/cancellation_flow_test.dart
 

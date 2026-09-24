@@ -7,7 +7,7 @@
 
 **What to build:** An agent picking up any testing-wave ticket finds one runbook that says how a run goes, a Finding template, a credentials file with every login it needs, a slot lock that lets two runs go at once, a build lock that lets one build go at a time, and counters that stop a wave at three new Vana plans and five AI logging calls. A script builds the Findings index and says whether the loop is finished.
 
-**Decisions:** approved as mp-621.
+**Decisions:** none.
 
 **Touches:** scripts/testing-wave/, test/scripts/testing-wave/, .scratch/testing-wave/RUNBOOK.md, .scratch/testing-wave/findings/TEMPLATE.md
 

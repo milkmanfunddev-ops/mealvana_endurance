@@ -7,7 +7,7 @@
 
 **What to build:** The athlete deletes the app, installs it again, signs in, and gets Pro back through Restore purchases if the app does not find it on its own.
 
-**Decisions:** mp-494; approved as mp-627.
+**Decisions:** mp-494.
 
 **Touches:** integration_test/flows/restore_purchases_flow_test.dart
 

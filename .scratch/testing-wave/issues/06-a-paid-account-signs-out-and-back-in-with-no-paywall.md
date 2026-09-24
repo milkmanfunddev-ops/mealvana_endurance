@@ -7,7 +7,7 @@
 
 **What to build:** A paid athlete signs out and signs back in and lands in the app without seeing the paywall, including on a cold start.
 
-**Decisions:** mp-457, mp-335; approved as mp-626.
+**Decisions:** mp-457, mp-335.
 
 **Touches:** integration_test/flows/paid_relogin_flow_test.dart
 

@@ -7,7 +7,7 @@
 
 **What to build:** test@test.com signs in on a fresh simulator and goes straight into the app with no paywall. When it tries an AI action, the server refuses it unless the account has a Pro subscription or a Grant, as mp-416 says, and the run records exactly what the athlete sees.
 
-**Decisions:** mp-416; approved as mp-632.
+**Decisions:** mp-416.
 
 **Touches:** integration_test/flows/admin_bypass_flow_test.dart
 

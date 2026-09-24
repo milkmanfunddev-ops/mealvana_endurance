@@ -1,20 +1,19 @@
 # 23: Logging a meal by describing it
 
 **Status:** ready-for-agent
-**Blocked by:** 03 (touches integration_test/flows/meal_log_describe_flow_test.dart).
+**Blocked by:** none.
 **Next:** `/implement-lee testing-wave`
 **Model:** opus
 
 **What to build:** The athlete describes a meal in words and saves it; the logged meal and its numbers show on the day and in the dev database.
 
-**Decisions:** approved as mp-643.
+**Decisions:** none.
 
-**Touches:** integration_test/flows/meal_log_describe_flow_test.dart
+**Touches:** the dev test account's meal logs
 
-- [ ] Runs by the runbook: a slot and the build lock taken and released, the console saved to the run folder, a look-around on every screen visited, every problem written as a Finding and nothing fixed.
+- [ ] Runs by the runbook: a slot taken and released, the console saved to the run folder, a look-around on every screen visited, every problem written as a Finding and nothing fixed.
 - [ ] Uses the entitled dev test account from the credentials file; no new account.
 - [ ] Counts each AI call against the wave's cap of 5; refuses and writes a followup-test at the cap.
 - [ ] The saved meal's rows are checked by SQL.
-- [ ] The Patrol flow covers opening Describe and the empty and too-short cases only, with no model call.
 
 Next: /implement-lee testing-wave

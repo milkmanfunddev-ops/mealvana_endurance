@@ -7,7 +7,7 @@
 
 **What to build:** The paid athlete opens the Subscription screen and sees the plan they bought, the date it renews or ends as RevenueCat has it, and Manage subscription.
 
-**Decisions:** mp-494, mp-615; approved as mp-628.
+**Decisions:** mp-494, mp-615.
 
 **Touches:** integration_test/flows/subscription_screen_flow_test.dart
 

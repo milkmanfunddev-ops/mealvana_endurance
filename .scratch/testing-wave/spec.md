@@ -1,5 +1,12 @@
 # Testing waves: agents and Patrol test the paying, planning, shopping and logging paths until nothing is open
 
+> **Changed 2026-09-24 (Lee, in the terminal).** No Patrol in testing waves: agents test by driving
+> the app, and the stories below that ask for Patrol flows (the runner list, flows per ticket) are
+> dropped; the seven flows the waves added were removed. No build lock: the wave lead builds the app
+> once when app code changed and hands each ticket its own simulator. The testing wave writes
+> nothing to the decisions page; only product questions it uncovers go there. Dev signup now asks
+> for the emailed code (ticket 32). `RUNBOOK.md` and `IMPROVEMENTS.md` have the detail.
+
 **Status:** ready-for-agent
 
 Written by `/to-spec` on 2026-09-23 from Lee's grilling session the same day. The glossary terms used here

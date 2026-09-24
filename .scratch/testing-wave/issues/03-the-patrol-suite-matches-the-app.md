@@ -7,7 +7,7 @@
 
 **What to build:** Every existing Patrol flow is run on a simulator, outdated flows are brought up to the app as it is today, flows that hang are fixed or marked with a Finding, and the README and the self-hosted runner describe the suite correctly. The runner picks up every flow in the flows folder except a named list that spends on AI, so later tickets add a flow without editing the runner.
 
-**Decisions:** approved as mp-623.
+**Decisions:** none.
 
 **Touches:** integration_test/flows/, integration_test/helpers/, integration_test/README.md, .github/workflows/tests-selfhosted.yml, docs/test/README.md
 
