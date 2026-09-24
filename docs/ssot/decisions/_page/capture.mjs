@@ -26,7 +26,8 @@
 // one. A wave gives every ticket its own: `createSimulator` makes a device of
 // the dev simulator's type and runtime, boots it, installs the dev app from
 // the dev simulator's bundle container and copies its data container over, so
-// the copy opens signed in with the same data. `deleteSimulator` removes it.
+// the copy opens signed in with the same data, plus the mobile MCP's helper app
+// when the dev simulator has it. `deleteSimulator` removes it.
 import { execFileSync, spawnSync } from 'node:child_process';
 import { existsSync, mkdirSync, readFileSync, writeFileSync, rmSync } from 'node:fs';
 import { tmpdir } from 'node:os';
@@ -35,6 +36,9 @@ import { fileURLToPath } from 'node:url';
 
 const here = dirname(fileURLToPath(import.meta.url));
 export const BUNDLE = 'com.milkman.mealvanaendurance.dev';
+// The mobile MCP drives an iOS simulator through this helper app. It installs it on the dev
+// simulator on first use but not on a device made here, where it answers "Agent is not installed".
+export const MCP_HELPER = 'com.mobilenext.devicekit-iosUITests.xctrunner';
 const IDB_PATHS = [process.env.HOME + '/.local/bin', '/opt/homebrew/bin', '/usr/local/bin'];
 
 export function loadScreens(path = join(here, 'screens.json')) {
@@ -152,6 +156,9 @@ export function createSimulator(name, { from, bundle = BUNDLE, run = simctl, cop
   const data = run(['get_app_container', source.udid, bundle, 'data']).trim();
   const target = run(['get_app_container', udid, bundle, 'data']).trim();
   copy(data, target);
+  let helper = '';
+  try { helper = run(['get_app_container', source.udid, MCP_HELPER]).trim(); } catch { /* the dev simulator has never run the mobile MCP */ }
+  if (helper) run(['install', udid, helper]);
   // Start idb's companion for the new device now, so the first drive does not wait on it.
   const idb = idbPath();
   if (idb) spawnSync(idb, ['connect', udid], { stdio: 'ignore' });

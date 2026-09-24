@@ -1,6 +1,6 @@
 // node --test test/scripts/testing-wave/*.test.mjs   (Node 22 takes files or globs, not a folder)
 //
-// The slot semaphore and the build lock, driven with a fake clock in a temp state folder.
+// The slot semaphore, driven with a fake clock in a temp state folder.
 import { test } from 'node:test';
 import assert from 'node:assert/strict';
 import { spawnSync } from 'node:child_process';
@@ -31,34 +31,22 @@ test('the slot lets two runs in and makes the third wait', () => {
   assert.ok(c.now() >= Date.parse('2026-09-23T14:10:00Z'), 'it waited the whole wait before giving up');
 });
 
-test('the build lock lets one build at a time', () => {
-  const dir = state();
-  const c = clock();
-  assert.equal(LOCKS.build.cap, 1);
-  assert.equal(acquire('build', 'testing-wave-02', { dir, now: c.now }).acquired, true);
-  assert.equal(acquire('build', 'testing-wave-03', { dir, now: c.now }).acquired, false);
-  release('build', 'testing-wave-02', { dir });
-  assert.equal(acquire('build', 'testing-wave-03', { dir, now: c.now }).acquired, true);
-});
-
-test('the slot and the build lock are counted apart', () => {
-  const dir = state();
-  const c = clock();
-  acquire('slot', 'a', { dir, now: c.now });
-  acquire('slot', 'b', { dir, now: c.now });
-  assert.equal(acquire('build', 'a', { dir, now: c.now }).acquired, true);
+test('there is no build lock (Lee, 2026-09-24: two builds may run at once)', () => {
+  assert.deepEqual(Object.keys(LOCKS), ['slot']);
+  assert.throws(() => acquire('build', 'a', { dir: state(), now: clock().now }), /no lock "build"/);
 });
 
 test('a waiter gets in as soon as a holder releases', () => {
   const dir = state();
   const c = clock();
-  acquire('build', 'testing-wave-02', { dir, now: c.now });
+  acquire('slot', 'testing-wave-01', { dir, now: c.now });
+  acquire('slot', 'testing-wave-02', { dir, now: c.now });
   let polls = 0;
-  const sleep = ms => { c.sleep(ms); if (++polls === 3) release('build', 'testing-wave-02', { dir }); };
-  const r = acquire('build', 'testing-wave-03', { dir, now: c.now, sleep, waitMs: 30 * MIN, pollMs: MIN });
+  const sleep = ms => { c.sleep(ms); if (++polls === 3) release('slot', 'testing-wave-02', { dir }); };
+  const r = acquire('slot', 'testing-wave-03', { dir, now: c.now, sleep, waitMs: 30 * MIN, pollMs: MIN });
   assert.equal(r.acquired, true);
   assert.equal(polls, 3);
-  assert.deepEqual(holders('build', { dir, now: c.now }).map(h => h.owner), ['testing-wave-03']);
+  assert.deepEqual(holders('slot', { dir, now: c.now }).map(h => h.owner).sort(), ['testing-wave-01', 'testing-wave-03']);
 });
 
 test('claiming again as the same owner keeps the one claim', () => {
@@ -74,19 +62,21 @@ test('claiming again as the same owner keeps the one claim', () => {
 test('a stale claim is dropped and its place given to the next run', () => {
   const dir = state();
   const c = clock();
-  acquire('build', 'crashed-agent', { dir, now: c.now });
-  c.advance(LOCKS.build.staleMs + 1);
-  const r = acquire('build', 'testing-wave-03', { dir, now: c.now });
+  acquire('slot', 'crashed-agent', { dir, now: c.now });
+  acquire('slot', 'crashed-agent-2', { dir, now: c.now });
+  c.advance(LOCKS.slot.staleMs + 1);
+  const r = acquire('slot', 'testing-wave-03', { dir, now: c.now });
   assert.equal(r.acquired, true);
-  assert.deepEqual(r.dropped.map(h => h.owner), ['crashed-agent']);
+  assert.deepEqual(r.dropped.map(h => h.owner), ['crashed-agent', 'crashed-agent-2']);
 });
 
 test('a claim younger than the stale timeout is kept', () => {
   const dir = state();
   const c = clock();
-  acquire('build', 'slow-build', { dir, now: c.now });
-  c.advance(LOCKS.build.staleMs - MIN);
-  assert.equal(acquire('build', 'testing-wave-03', { dir, now: c.now }).acquired, false);
+  acquire('slot', 'slow-run', { dir, now: c.now });
+  acquire('slot', 'slow-run-2', { dir, now: c.now });
+  c.advance(LOCKS.slot.staleMs - MIN);
+  assert.equal(acquire('slot', 'testing-wave-03', { dir, now: c.now }).acquired, false);
 });
 
 test('a stale claim is dropped while a waiter waits', () => {
@@ -107,13 +97,14 @@ test('releasing a claim you do not hold says so', () => {
 test('the CLI claims, refuses with exit 3, lists and releases', () => {
   const env = { ...process.env, TESTING_WAVE_STATE: state() };
   const run = (...a) => spawnSync(process.execPath, [cli, ...a], { encoding: 'utf8', env });
-  assert.equal(run('claim', 'build', 'testing-wave-02').status, 0);
-  const refused = run('claim', 'build', 'testing-wave-03', '--wait', '0');
+  assert.equal(run('claim', 'slot', 'testing-wave-01').status, 0);
+  assert.equal(run('claim', 'slot', 'testing-wave-02').status, 0);
+  const refused = run('claim', 'slot', 'testing-wave-03', '--wait', '0');
   assert.equal(refused.status, 3);
   assert.match(refused.stdout, /testing-wave-02/);
-  assert.match(run('list').stdout, /build.*testing-wave-02/s);
-  assert.equal(run('release', 'build', 'testing-wave-02').status, 0);
-  assert.equal(run('claim', 'build', 'testing-wave-03', '--wait', '0').status, 0);
+  assert.match(run('list').stdout, /slot.*testing-wave-02/s);
+  assert.equal(run('release', 'slot', 'testing-wave-02').status, 0);
+  assert.equal(run('claim', 'slot', 'testing-wave-03', '--wait', '0').status, 0);
   assert.equal(run('claim', 'nonsense', 'x').status, 64);
 });
 

@@ -1,14 +1,14 @@
 #!/usr/bin/env node
-// Testing-wave locks: a slot semaphore (two runs at once) and a build lock (one build at once).
+// Testing-wave lock: a slot semaphore (two runs at once). There is no build lock (Lee, 2026-09-24).
 //
 // A claim is {owner, since}. A claim older than its lock's stale timeout belongs to an agent
 // that died without releasing and is dropped on the next claim. Claiming again as the same
 // owner keeps the one claim. The numbers come from the spec ("Parallelism for this feature").
 //
 // CLI (state in $TESTING_WAVE_STATE, default <tmpdir>/mealvana-testing-wave):
-//   node lock.mjs claim slot|build <owner> [--wait <minutes>] [--stale <minutes>]
+//   node lock.mjs claim slot <owner> [--wait <minutes>] [--stale <minutes>]
 //        -> exit 0 held, exit 3 still full after the wait (prints who holds it)
-//   node lock.mjs release slot|build <owner>
+//   node lock.mjs release slot <owner>
 //   node lock.mjs list
 
 import { resolve } from 'node:path';
@@ -19,8 +19,6 @@ const MIN = 60_000;
 export const LOCKS = {
   // A run holds its slot for the whole scenario; four hours without a release means it died.
   slot: { cap: 2, staleMs: 240 * MIN, waitMs: 90 * MIN },
-  // A dev debug build and first launch take minutes; half an hour without a release means it died.
-  build: { cap: 1, staleMs: 30 * MIN, waitMs: 45 * MIN },
 };
 const FILE = 'locks.json';
 
@@ -86,7 +84,7 @@ export function holders(name, { dir = stateDir(), now = Date.now, staleMs } = {}
 if (process.argv[1] && resolve(process.argv[1]) === fileURLToPath(import.meta.url)) {
   const args = process.argv.slice(2);
   const cmd = args.shift();
-  const usage = () => { process.stderr.write('usage: lock.mjs claim slot|build <owner> [--wait <minutes>] [--stale <minutes>] | release slot|build <owner> | list\n'); process.exit(64); };
+  const usage = () => { process.stderr.write('usage: lock.mjs claim slot <owner> [--wait <minutes>] [--stale <minutes>] | release slot <owner> | list\n'); process.exit(64); };
   const print = o => process.stdout.write(JSON.stringify(o, null, 2) + '\n');
   if (cmd === 'claim') {
     let waitMs, staleMs;

@@ -1278,6 +1278,30 @@ test('bootedUdid takes the simulator named (booting it), else SSOT_SIMULATOR, el
   try { assert.equal(bootedUdid(undefined, { run }).udid, 'BBB'); } finally { delete process.env.SSOT_SIMULATOR; }
 });
 
+test('createSimulator installs the mobile MCP helper when the dev simulator has it, and skips it when not', () => {
+  const list = { devices: { 'com.apple.CoreSimulator.SimRuntime.iOS-26-2': [
+    { udid: 'AAA', name: 'iPhone 17 Pro', state: 'Booted', deviceTypeIdentifier: 'com.apple.CoreSimulator.SimDeviceType.iPhone-17-Pro' },
+  ] } };
+  const make = hasHelper => {
+    const calls = [];
+    const run = a => {
+      calls.push(a.join(' '));
+      if (a[0] === 'list') return JSON.stringify(list);
+      if (a[0] === 'create') return 'NEW-1\n';
+      if (a[0] === 'get_app_container' && a[2] === 'com.mobilenext.devicekit-iosUITests.xctrunner') {
+        if (!hasHelper) throw new Error('No such file or directory');
+        return '/sims/AAA/devicekit-iosUITests-Runner.app\n';
+      }
+      if (a[0] === 'get_app_container') return a[3] === 'data' ? `/sims/${a[1]}/data\n` : `/sims/${a[1]}/Runner.app\n`;
+      return '';
+    };
+    createSimulator('wave-pool-1', { run, copy: () => {} });
+    return calls;
+  };
+  assert.ok(make(true).includes('install NEW-1 /sims/AAA/devicekit-iosUITests-Runner.app'));
+  assert.ok(!make(false).some(c => c.includes('devicekit') && c.startsWith('install')));
+});
+
 test('createSimulator copies the dev simulator: same type and runtime, app installed from its bundle, data container copied; deleteSimulator removes it', () => {
   const calls = [], copies = [];
   const list = { devices: { 'com.apple.CoreSimulator.SimRuntime.iOS-26-2': [
@@ -1300,6 +1324,8 @@ test('createSimulator copies the dev simulator: same type and runtime, app insta
     'install NEW-1 /sims/AAA/Runner.app',
     'get_app_container AAA com.milkman.mealvanaendurance.dev data',
     'get_app_container NEW-1 com.milkman.mealvanaendurance.dev data',
+    'get_app_container AAA com.mobilenext.devicekit-iosUITests.xctrunner',
+    'install NEW-1 /sims/AAA/Runner.app',
   ]);
   assert.deepEqual(copies, [['/sims/AAA/data', '/sims/NEW-1/data']]);
   assert.throws(() => createSimulator('wave-sm-04', { run }), /already exists/);

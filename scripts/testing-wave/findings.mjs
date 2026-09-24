@@ -65,11 +65,40 @@ export function parseFinding(text, file) {
   return f;
 }
 
-/** Every Finding in the folder, file-name order. TEMPLATE.md, INDEX.md and anything not named NN-... are skipped. */
+/**
+ * The paths a Finding's Evidence cites: the first word of each bullet when it looks like a
+ * relative path (`runs/08/console.log`, `scripts/edge_logs.sh`), backticks allowed. Prose bullets
+ * cite nothing.
+ */
+export function evidencePaths(evidence = '') {
+  const paths = [];
+  for (const line of evidence.split('\n')) {
+    const m = line.match(/^\s*-\s+`?([A-Za-z0-9_.-]+(?:\/[A-Za-z0-9_.*-]+)+\/?)`?(?=[\s,;:)]|$)/);
+    if (m) paths.push(m[1]);
+  }
+  return paths;
+}
+
+/**
+ * Every Finding in the folder, file-name order. TEMPLATE.md, INDEX.md and anything not named
+ * NN-... are skipped. An Evidence path that exists neither beside the findings folder (`runs/...`)
+ * nor in the repo is an error, so a Finding never points at a file that was not saved.
+ */
 export function readFindings(dir = FINDINGS_DIR) {
   if (!existsSync(dir)) return [];
-  return readdirSync(dir).filter(n => /^\d{2}-.*\.md$/.test(n)).sort()
-    .map(n => parseFinding(readFileSync(join(dir, n), 'utf8'), n));
+  const wave = dirname(resolve(dir));
+  const exists = p => {
+    const at = base => {
+      const full = join(base, p);
+      return p.includes('*') ? existsSync(dirname(full)) : existsSync(full);
+    };
+    return at(wave) || at(repo);
+  };
+  return readdirSync(dir).filter(n => /^\d{2}-.*\.md$/.test(n)).sort().map(n => {
+    const f = parseFinding(readFileSync(join(dir, n), 'utf8'), n);
+    for (const p of evidencePaths(f.sections.evidence)) if (!exists(p)) f.errors.push(`evidence ${p} does not exist`);
+    return f;
+  });
 }
 
 /** Finished when every Finding is closed or wontfix; `blocking` lists the rest. */

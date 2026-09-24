@@ -1,5 +1,5 @@
 #!/usr/bin/env bash
-# Fetch Supabase edge function logs via the Management API analytics endpoint.
+# Fetch Supabase edge function logs via the Management API analytics endpoint (`logs`).
 #
 # Why this script exists:
 #   The Supabase CLI has no `functions logs` subcommand. The dashboard's logs
@@ -22,8 +22,11 @@
 #
 # Notes:
 #   - Default project ref points to dev (vlmtsdzpnjnavdgytcmi). Override with -p.
-#   - Source tables: function_logs (console.log), function_edge_logs (request
-#     boot/response), edge_logs (postgrest/general).
+#   - Everything is in one `logs` table since Supabase removed `logs.all` (2026-09);
+#     -s picks its `source`: function_logs (console.log), function_edge_logs
+#     (request boot/response), edge_logs (postgrest/general).
+#   - Any answer that is not rows is an error (exit 1), never "no rows": the
+#     old endpoint's removal notice once read as an empty window (Finding 05-006).
 #   - Timestamp is rendered in local time. The raw value is microseconds-epoch.
 
 set -euo pipefail
@@ -73,7 +76,9 @@ if [[ -n "$PATTERN" ]]; then
   ESCAPED_PATTERN="${PATTERN//\'/\'\'}"
   WHERE="where event_message like '%${ESCAPED_PATTERN}%'"
 fi
-SQL="select timestamp, event_message from ${SOURCE} ${WHERE} order by timestamp desc limit ${LIMIT}"
+ESCAPED_SOURCE="${SOURCE//\'/\'\'}"
+if [[ -n "$WHERE" ]]; then WHERE="${WHERE} and source = '${ESCAPED_SOURCE}'"; else WHERE="where source = '${ESCAPED_SOURCE}'"; fi
+SQL="select timestamp, source, event_message from logs ${WHERE} order by timestamp desc limit ${LIMIT}"
 
 # ---- Time window (REQUIRED — empty results without these) -------------------
 START=$(date -u -v-"${MINUTES}"M +"%Y-%m-%dT%H:%M:%SZ")
@@ -82,10 +87,16 @@ END=$(date -u +"%Y-%m-%dT%H:%M:%SZ")
 # ---- URL-encode SQL ---------------------------------------------------------
 ENCODED_SQL=$(python3 -c "import urllib.parse, sys; print(urllib.parse.quote(sys.argv[1]))" "$SQL")
 
-URL="https://api.supabase.com/v1/projects/${PROJECT_REF}/analytics/endpoints/logs.all?sql=${ENCODED_SQL}&iso_timestamp_start=${START}&iso_timestamp_end=${END}"
+URL="https://api.supabase.com/v1/projects/${PROJECT_REF}/analytics/endpoints/logs?sql=${ENCODED_SQL}&iso_timestamp_start=${START}&iso_timestamp_end=${END}"
 
 # ---- Fetch ------------------------------------------------------------------
-RESPONSE=$(curl -s -H "Authorization: Bearer ${SUPABASE_PAT}" "$URL")
+HTTP_BODY=$(mktemp)
+HTTP_CODE=$(curl -s -o "$HTTP_BODY" -w '%{http_code}' -H "Authorization: Bearer ${SUPABASE_PAT}" "$URL")
+RESPONSE=$(cat "$HTTP_BODY"); rm -f "$HTTP_BODY"
+if [[ "$HTTP_CODE" != "200" ]]; then
+  echo "error: HTTP ${HTTP_CODE}: ${RESPONSE:0:300}" >&2
+  exit 1
+fi
 
 # ---- Format -----------------------------------------------------------------
 if [[ "$RAW" == "1" ]]; then
@@ -102,17 +113,22 @@ try:
 except json.JSONDecodeError:
     print(f"error: non-JSON response: {raw[:300]}", file=sys.stderr)
     sys.exit(1)
-if data.get("error"):
-    print(f"error: {data['error']}", file=sys.stderr)
+if not isinstance(data, dict) or data.get("error") or not isinstance(data.get("result"), list):
+    print(f"error: not a list of rows: {raw[:300]}", file=sys.stderr)
     sys.exit(1)
-rows = data.get("result") or []
+rows = data["result"]
 if not rows:
     print("(no rows in window)", file=sys.stderr)
     sys.exit(0)
 # rows came back DESC; flip to ASC for chronological reading
-rows.sort(key=lambda r: r["timestamp"])
+def when(t):
+    # The `logs` table answers ISO strings in UTC; the old tables answered epoch microseconds.
+    if isinstance(t, (int, float)):
+        return datetime.datetime.fromtimestamp(t / 1_000_000)
+    return datetime.datetime.fromisoformat(str(t).replace("Z", "")).replace(tzinfo=datetime.timezone.utc).astimezone()
+rows.sort(key=lambda r: when(r["timestamp"]))
 for r in rows:
-    ts = datetime.datetime.fromtimestamp(r["timestamp"] / 1_000_000).strftime("%H:%M:%S")
+    ts = when(r["timestamp"]).strftime("%H:%M:%S")
     msg = (r.get("event_message") or "").rstrip("\n")
     print(f"[{ts}] {msg}")
 sys.stdout.flush()

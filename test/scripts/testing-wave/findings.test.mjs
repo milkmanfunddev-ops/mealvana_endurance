@@ -5,7 +5,7 @@
 import { test } from 'node:test';
 import assert from 'node:assert/strict';
 import { spawnSync } from 'node:child_process';
-import { mkdtempSync, writeFileSync, readFileSync, existsSync, readdirSync, copyFileSync } from 'node:fs';
+import { mkdtempSync, mkdirSync, writeFileSync, readFileSync, existsSync, readdirSync, copyFileSync } from 'node:fs';
 import { tmpdir } from 'node:os';
 import { join, dirname } from 'node:path';
 import { fileURLToPath } from 'node:url';
@@ -42,8 +42,13 @@ ${quote}
 `;
 }
 
-function folder(files) {
-  const dir = mkdtempSync(join(tmpdir(), 'findings-'));
+// A findings folder inside a testing-wave folder, the way the repo has it, with the evidence file
+// the default Finding cites (runs/02/paywall.png) in place.
+function folder(files, evidence = ['runs/02/paywall.png']) {
+  const wave = mkdtempSync(join(tmpdir(), 'testing-wave-'));
+  const dir = join(wave, 'findings');
+  mkdirSync(dir);
+  for (const path of evidence) { mkdirSync(dirname(join(wave, path)), { recursive: true }); writeFileSync(join(wave, path), ''); }
   for (const [name, text] of Object.entries(files)) writeFileSync(join(dir, name), text);
   return dir;
 }
@@ -184,4 +189,17 @@ test('new refuses an unknown kind', () => {
   const dir = folder({});
   copyFileSync(template, join(dir, 'TEMPLATE.md'));
   assert.throws(() => newFinding(dir, '02', 'x', { kind: 'crash', run: 'w1' }), /kind/);
+});
+
+test('a Finding whose evidence file is missing fails the index and names the path', () => {
+  const dir = folder({ '08-001-a.md': finding({ id: '08-001', evidence: '- runs/08/console.log (the lost connection)\n- runs/02/paywall.png' }) });
+  const r = index(dir);
+  assert.equal(r.status, 2);
+  assert.match(r.stderr, /08-001-a\.md: evidence runs\/08\/console\.log does not exist/);
+  assert.doesNotMatch(r.stderr, /paywall\.png/);
+});
+
+test('evidence may be a repo path, backticked, or prose with no path', () => {
+  const dir = folder({ '08-001-a.md': finding({ id: '08-001', evidence: '- `runs/02/paywall.png` at 12:31Z\n- scripts/testing-wave/findings.mjs (the index)\n- the console, 12:28 to 12:36Z' }) });
+  assert.equal(index(dir).status, 1);
 });
