@@ -11,13 +11,6 @@ Each entry: what went wrong or cost time, where it was seen, and the suggested f
 
 ## Open
 
-- **#36 no offline tool (wave 10).** Ticket 20 had to write its own per-app network cut:
-  `netcut.dylib`, injected with `SIMCTL_CHILD_DYLD_INSERT_LIBRARIES`. It cuts `connect` while a flag
-  file exists, and `vmmap` confirmed only that app's process loaded it. Proxy variables do nothing,
-  because Dart ignores them. The library stayed in that ticket's scratch folder. Suggested fix: move it
-  to `scripts/testing-wave/netcut/` with an `on`/`off` wrapper, and add a line to runbook step 5. Limit:
-  `connectivity_plus` still reads "online", so the app's own offline banner path needs a device
-  (20-006). Finding 20-007.
 - **#37 an SSOT clash with a ratified spec rule has no decision id (wave 10).** 30-003 contradicts
   "The math (RATIFIED)" in `docs/ssot/spec/fueling/during-workout-carbs.md`. `findings.mjs` accepts an
   ssot-conflict only with an `mp-NNN` id, so the agent filed it as a bug that quotes the spec.
@@ -34,6 +27,22 @@ Each entry: what went wrong or cost time, where it was seen, and the suggested f
   gap). Suggested fix: a `COST spend WAVE chat NN` kind with its own cap.
 
 ## Done
+
+- **#46 a harness fix made after `wave --open` misses the wave (wave 14).** The lead built netcut
+  (#36) before opening but committed it at the close, so the worktrees, cut from the wave's base, did
+  not carry it and the prompts had to say so. **Done:** wave-lead step 1 now says to commit
+  between-wave fixes before `wave --open`.
+
+- **#36 no offline tool (wave 10).** Ticket 20 had to write its own per-app network cut:
+  `netcut.dylib`, injected with `SIMCTL_CHILD_DYLD_INSERT_LIBRARIES`. It cuts `connect` while a flag
+  file exists, and `vmmap` confirmed only that app's process loaded it. Proxy variables do nothing,
+  because Dart ignores them. The library stayed in that ticket's scratch folder. Suggested fix: move it
+  to `scripts/testing-wave/netcut/` with an `on`/`off` wrapper, and add a line to runbook step 5. Limit:
+  `connectivity_plus` still reads "online", so the app's own offline banner path needs a device
+  (20-006). Finding 20-007.
+  **Done (wave 14 lead):** `scripts/testing-wave/netcut/{netcut.c,netcut.sh}` (flag and log paths from
+  `NETCUT_FLAG`/`NETCUT_LOG`, passed as `SIMCTL_CHILD_*`), checked live on wave-pool-1: 158 connects
+  blocked in 32 s, library mapped only in the app; runbook step 5 names it.
 
 - **#42 simulator copy died mid-rsync (wave 13).** `capture.mjs` copies app data with
   `copyAppData`, which skips `Library/SplashBoard`, and `createSimulator` installs the mobile MCP

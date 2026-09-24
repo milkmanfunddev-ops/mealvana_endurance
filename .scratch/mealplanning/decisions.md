@@ -3213,3 +3213,23 @@ An edit made while notes are being written is picked up on the next open. A requ
 **What it touches.** `list_plans` in vana-action, the Previous plans sheet's rows and their labels, and the retest of Finding 17-002.
 
 > 2026-09-24 opened in wave 12 ticket 17
+
+## mp-672 · Should a logged meal's type follow the food or the time it was eaten?
+- category: Cutting costs
+- kind: question
+- status: open
+- linked: mp-525
+- image: none
+- svg: docs/ssot/decisions/images/mealplanning/mp-672.svg
+- screen: none (Review & Log shows whichever type the answer picks; the screen itself does not change)
+- source: wave testing-wave 14 ticket 24
+
+**Context.** When an athlete logs a meal from a photo or a description, the model picks its meal type from the food alone (breakfast, lunch, dinner or snack), and mp-525 makes a missing one a snack. The clock plays no part. In wave 14 a photo of spaghetti bolognese logged at 3:18 PM came back as Dinner, preselected on Review & Log, so an athlete who taps Log straight away files an afternoon meal as dinner (Finding 24-005).
+
+**Question.** Where should the meal type come from? (A) The food, as now: the athlete changes it on Review & Log when it is wrong. (B) The time the meal was eaten, from set hours, and the food is ignored. (C) The time first, and the food only breaks a tie near a boundary (a bowl of oats at 11 AM stays breakfast).
+
+**Why.** A needs nothing new but puts afternoon pasta under dinner. B matches how most people think about their day, but calls a 4 PM sandwich a snack. C is closest to what the athlete means, and costs a rule and a boundary table in both the photo and the describe paths.
+
+**What it touches.** The meal-slot line in `_shared/meal_analysis/prompt.ts` (describe and photo), the default in `finalize.ts`, the preselected type on Review & Log, and the retest of Finding 24-005.
+
+> 2026-09-24 opened in wave 14 ticket 24

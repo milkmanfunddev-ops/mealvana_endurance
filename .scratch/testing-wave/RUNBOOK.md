@@ -109,6 +109,12 @@ ticket says so.
   `xcrun simctl io UDID screenshot RUNS/<name>.png`: the mobile MCP's `save_screenshot` refuses
   paths inside the worktree. After a tap, take a new screenshot before trusting the MCP's element
   list; it has returned the previous screen.
+- Offline for your app only: `scripts/testing-wave/netcut/netcut.sh launch UDID SCRATCH` relaunches
+  the app with a connect-blocking library injected (network still on); `netcut.sh on SCRATCH` cuts
+  it and `netcut.sh off SCRATCH` restores it, no relaunch. The host and other simulators keep their
+  network. Blocked connects are logged to `SCRATCH/netcut.log`. The app's connectivity check still
+  reads "online", so its offline banner needs a device (20-006). Start the log stream first
+  (step 3), since `launch` replaces the plain `simctl launch`.
 - A step that must be seen live (a renewal, a lapse, a timer): write the clock time before and
   after every wait in `RUNS/notes.md`. When the gap is longer than planned, write "not seen live"
   next to the step and say how it was checked instead.
@@ -212,6 +218,8 @@ should behave) goes to the page as an open question, the normal way, and nothing
 **Before the wave.**
 
 1. Read `.scratch/testing-wave/IMPROVEMENTS.md`; fix or raise one or two open items.
+   Commit those fixes before `wave --open`: the worktrees branch from the wave's base, so a harness
+   change made after it never reaches the agents.
 2. The app, before `wave --open` (Lee, 2026-09-24: build only when app code changed).
    `.scratch/testing-wave/app-build.json` names the commit the testing app was built from, and the
    dev simulator carries that build. `git diff --name-only <that commit> HEAD -- lib pubspec.yaml

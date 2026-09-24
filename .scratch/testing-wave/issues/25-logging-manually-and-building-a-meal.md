@@ -1,6 +1,6 @@
 # 25: Logging manually and building a meal
 
-**Status:** in-progress (wave 14, 2026-09-24)
+**Status:** done (wave 14, 2026-09-24)
 **Blocked by:** none.
 **Next:** `/implement-lee testing-wave`
 **Model:** opus
