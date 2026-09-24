@@ -1,0 +1,19 @@
+## dev revenuecat-webhook, 08:45Z-10:55Z UTC, from GET /v1/projects/{ref}/analytics/endpoints/logs (unified 'logs' table; logs.all was removed)
+08:50:46.449Z function_logs [rc-webhook] INITIAL_PURCHASE: active_until=2026-09-24T08:55:45.150Z period=NORMAL for 9a986318-7cbf-4489-8115-b60850a2bac7
+08:50:46.805Z function_logs [rc-webhook] INITIAL_PURCHASE: allowance 4000000 → 9a986318-7cbf-4489-8115-b60850a2bac7 ({"balance":4000000,"granted":true,"allowance":4000000,"forfeited":0,"allowance_expires_at":"2026-09-24T08:55:45.15+00:00"})
+08:50:46.807Z function_edge_logs POST | 200 | https://vlmtsdzpnjnavdgytcmi.supabase.co/functions/v1/revenuecat-webhook
+08:59:37.116Z function_logs [rc-webhook] RENEWAL: active_until=2026-09-24T09:00:45.150Z period=NORMAL for 9a986318-7cbf-4489-8115-b60850a2bac7
+08:59:37.261Z function_logs [rc-webhook] RENEWAL: allowance 4000000 → 9a986318-7cbf-4489-8115-b60850a2bac7 ({"balance":4000000,"granted":true,"allowance":4000000,"forfeited":4000000,"allowance_expires_at":"2026-09-24T09:00:45.15+00:00"})
+08:59:37.264Z function_edge_logs POST | 200 | https://vlmtsdzpnjnavdgytcmi.supabase.co/functions/v1/revenuecat-webhook
+09:03:43.606Z function_logs [rc-webhook] RENEWAL: active_until=2026-09-24T09:05:45.150Z period=NORMAL for 9a986318-7cbf-4489-8115-b60850a2bac7
+09:03:43.759Z function_logs [rc-webhook] RENEWAL: allowance 4000000 → 9a986318-7cbf-4489-8115-b60850a2bac7 ({"balance":4000000,"granted":true,"allowance":4000000,"forfeited":4000000,"allowance_expires_at":"2026-09-24T09:05:45.15+00:00"})
+09:03:43.761Z function_edge_logs POST | 200 | https://vlmtsdzpnjnavdgytcmi.supabase.co/functions/v1/revenuecat-webhook
+09:07:43.469Z function_logs [rc-webhook] RENEWAL: active_until=2026-09-24T09:10:45.150Z period=NORMAL for 9a986318-7cbf-4489-8115-b60850a2bac7
+09:07:43.833Z function_logs [rc-webhook] RENEWAL: allowance 4000000 → 9a986318-7cbf-4489-8115-b60850a2bac7 ({"balance":4000000,"granted":true,"allowance":4000000,"forfeited":4000000,"allowance_expires_at":"2026-09-24T09:10:45.15+00:00"})
+09:07:43.834Z function_edge_logs POST | 200 | https://vlmtsdzpnjnavdgytcmi.supabase.co/functions/v1/revenuecat-webhook
+09:11:43.992Z function_logs [rc-webhook] RENEWAL: active_until=2026-09-24T09:15:45.150Z period=NORMAL for 9a986318-7cbf-4489-8115-b60850a2bac7
+09:11:44.200Z function_logs [rc-webhook] RENEWAL: allowance 4000000 → 9a986318-7cbf-4489-8115-b60850a2bac7 ({"balance":4000000,"granted":true,"allowance":4000000,"forfeited":4000000,"allowance_expires_at":"2026-09-24T09:15:45.15+00:00"})
+09:11:44.203Z function_edge_logs POST | 200 | https://vlmtsdzpnjnavdgytcmi.supabase.co/functions/v1/revenuecat-webhook
+09:15:47.698Z function_logs [rc-webhook] EXPIRATION: active_until=2026-09-24T09:15:45.967Z period=NORMAL for 9a986318-7cbf-4489-8115-b60850a2bac7
+09:15:47.959Z function_logs [rc-webhook] EXPIRATION: allowance forfeited for 9a986318-7cbf-4489-8115-b60850a2bac7 ({"balance":0,"allowance":0,"forfeited":4000000})
+09:15:47.961Z function_edge_logs POST | 200 | https://vlmtsdzpnjnavdgytcmi.supabase.co/functions/v1/revenuecat-webhook

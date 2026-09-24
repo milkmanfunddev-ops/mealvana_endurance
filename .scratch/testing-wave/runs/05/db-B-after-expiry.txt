@@ -1,0 +1,3 @@
+# 2026-09-24T10:49:38Z account B after the Test Store subscription expired (09:15:45Z)
+[{"user_id":"9a986318-7cbf-4489-8115-b60850a2bac7","period_type":"NORMAL","active_until":"2026-09-24 09:15:45.967+00","event_at":"2026-09-24 09:15:45.967+00"}]
+[{"column_name":"user_id"},{"column_name":"balance"},{"column_name":"free_period"},{"column_name":"created_at"},{"column_name":"updated_at"},{"column_name":"allowance"},{"column_name":"allowance_monthly"},{"column_name":"allowance_expires_at"},{"column_name":"unit"}]

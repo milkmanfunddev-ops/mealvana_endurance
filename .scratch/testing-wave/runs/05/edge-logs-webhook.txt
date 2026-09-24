@@ -1,0 +1,10 @@
+## function_logs, rc-webhook, last 10 min at 2026-09-24T08:51:31Z (timestamps local)
+[03:50:46] [rc-webhook] INITIAL_PURCHASE: active_until=2026-09-24T08:55:45.150Z period=NORMAL for 9a986318-7cbf-4489-8115-b60850a2bac7
+[03:50:46] [rc-webhook] INITIAL_PURCHASE: allowance 4000000 → 9a986318-7cbf-4489-8115-b60850a2bac7 ({"balance":4000000,"granted":true,"allowance":4000000,"forfeited":0,"allowance_expires_at":"2026-09-24T08:55:45.15+00:00"})
+
+(2 rows)
+
+## function_edge_logs (requests), revenuecat-webhook
+[03:50:46] POST | 200 | https://vlmtsdzpnjnavdgytcmi.supabase.co/functions/v1/revenuecat-webhook
+
+(1 rows)
