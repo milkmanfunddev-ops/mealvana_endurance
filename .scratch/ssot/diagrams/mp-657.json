@@ -1,0 +1,7 @@
+{
+  "kind": "compare",
+  "title": "What the Patrol runner leaves out",
+  "left": { "head": "Other option: AI spend only", "tone": "muted", "lines": ["2 flows left out", "signup, account delete,", "Connect and Google", "skip on a signed-in sim", "and the job goes red"] },
+  "right": { "head": "This card's answer: three reasons", "tone": "ok", "lines": ["ai-spend: 2 flows", "clean-install: 3 flows", "interactive-oauth: 1 flow", "any other reason", "is refused"] },
+  "example": ["21 flow files run each night, 6 are left out with a reason", "A new flow joins the run by existing in the flows folder"]
+}
