@@ -59,7 +59,7 @@ void main() {
       await $.pump(const Duration(milliseconds: 500));
 
       if (!await ensureAuthenticated($)) {
-        markTestSkipped(noAuthSkipMessage());
+        skipFlow(noAuthSkipMessage());
         return;
       }
 

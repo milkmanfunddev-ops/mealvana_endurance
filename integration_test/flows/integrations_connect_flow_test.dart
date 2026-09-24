@@ -87,7 +87,7 @@ void main() {
           // skip — this test's entry point is the onboarding connect screen.
           final connectBtn = find.byKey(ValueKey(provider.connectKey));
           if (connectBtn.evaluate().isEmpty) {
-            markTestSkipped(
+            skipFlow(
               'Connect Training screen not reachable (app not on welcome). '
               'Reinstall for a clean onboarding entry.',
             );

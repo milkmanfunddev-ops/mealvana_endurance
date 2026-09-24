@@ -91,6 +91,14 @@ or any skipped. So:
   that no longer exists fails the job.
 - A file that registers its cases in a loop declares the count with a
   `// runner-cases: N` line (see `integrations_connect_flow_test.dart`).
+- **A skip must be visible.** Patrol's native harness reports a
+  `markTestSkipped` test as passed, and its `Skipped:` count stays 0. Flows
+  call `skipFlow(reason)` from `flow_launcher.dart` instead; the runner passes
+  `--dart-define=PATROL_FAIL_ON_SKIP=true`, which turns every skip into a
+  failure. Pass the same define locally when a skip must not look green.
+- **The account must hold live Pro (or be an Admin).** A signed-in account the
+  Gate keeps closed sits on the paywall, where `ensureAuthenticated` sees
+  neither the shell nor the welcome screen and the flow skips.
 
 ```bash
 node scripts/patrol-targets.mjs targets    # what the job runs
@@ -123,7 +131,7 @@ suite. Run it locally or on the M1.
 | `flows/formula_pin_flow_test.dart` | Pin an existing formula | yes |
 | `flows/fueling_window_persistence_flow_test.dart` | A fueling window belongs to its activity across edits | yes |
 | `flows/google_login_flow_test.dart` | Google OAuth (Android; self-skips on iOS) | interactive-oauth |
-| `flows/integrations_connect_flow_test.dart` | Garmin / TrainingPeaks / FinalSurge connect entry points (3 cases) | yes |
+| `flows/integrations_connect_flow_test.dart` | Garmin / TrainingPeaks / FinalSurge connect entry points (3 cases) | clean-install |
 | `flows/learn_flow_test.dart` | Learn tab | yes |
 | `flows/macro_dashboard_flow_test.dart` | Macro dashboard walk | yes |
 | `flows/meal_card_interaction_flow_test.dart` | Meal/activity card: tap to edit, remove with Undo | yes |
@@ -144,7 +152,7 @@ Helpers in `helpers/`:
 
 | File | What it gives a flow |
 |------|----------------------|
-| `flow_launcher.dart` | `launchApp($)` (flavor-aware boot; answers the fresh-install notification prompt with Don't Allow), `ensureAuthenticated()`, `noAuthSkipMessage()`, the shared `authSentinel` (`kyle_tab_bar.item.timeline`), `ensureTimelineOnToday()`, `waitForOnTimeline()`, `revealCentered()`. Prefer it over per-file auth walks. |
+| `flow_launcher.dart` | `skipFlow()` (see above), `launchApp($)` (flavor-aware boot; answers the fresh-install notification prompt with Don't Allow), `ensureAuthenticated()`, `noAuthSkipMessage()`, the shared `authSentinel` (`kyle_tab_bar.item.timeline`), `ensureTimelineOnToday()`, `waitForOnTimeline()`, `revealCentered()`. Prefer it over per-file auth walks. |
 | `test_config.dart` | `TestConfig`: flavor-matched login credentials, the Supabase URL and anon key the probes use, timeouts, test data. |
 | `test_helpers.dart` | Finders, tap and wait helpers. |
 | `supabase_probe.dart` | `SupabaseProbe`: read-only PostgREST reads as the test user, to assert a write landed. |

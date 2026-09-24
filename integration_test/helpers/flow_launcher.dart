@@ -95,6 +95,26 @@ void restoreTestErrorHandler() {
 /// tab 0.)
 const ValueKey<String> authSentinel = ValueKey('kyle_tab_bar.item.timeline');
 
+/// True when the run asks for every skip to fail instead
+/// (`--dart-define=PATROL_FAIL_ON_SKIP=true`; the M1 runner sets it).
+const bool failOnSkip = bool.fromEnvironment('PATROL_FAIL_ON_SKIP');
+
+/// Skips the running flow with [reason], the way `markTestSkipped` does, or
+/// fails it when [failOnSkip] is set.
+///
+/// Why: Patrol's native harness reports a `markTestSkipped` test as passed
+/// (its summary counts it under Successful, and `Skipped:` stays 0), so a
+/// flow that verified nothing looked green to the runner's "no skips" check
+/// (testing-wave Finding 03-001). Flows call this instead of
+/// `markTestSkipped` so a run that must not skip can say so. Callers still
+/// `return` after it.
+void skipFlow(String reason) {
+  if (failOnSkip) {
+    fail('Skipped, and this run does not allow skips: $reason');
+  }
+  markTestSkipped(reason);
+}
+
 /// Ensures the app is signed in and the tabs shell is visible.
 ///
 /// Returns true when the shell sentinel is on screen. Returns false when

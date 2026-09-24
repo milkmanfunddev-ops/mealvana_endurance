@@ -211,7 +211,12 @@ jobs:
       # scripts/patrol-targets.mjs. Excluded today (see the file for each why):
       # the flows that spend on AI (ai_coach_chat, meal_plan_build), the ones
       # that need a clean install with no session (onboarding_signup,
-      # account_delete) and the interactive Google OAuth flow (google_login).
+      # account_delete, integrations_connect) and the interactive Google OAuth
+      # flow (google_login).
+      #
+      # PATROL_FAIL_ON_SKIP=true turns every flow's skipFlow() into a failure.
+      # Patrol reports a markTestSkipped test as PASSED (Skipped: stays 0), so
+      # without it the skip check below cannot see a flow that tested nothing.
       # Run those by hand against a freshly-erased simulator; the AI ones count
       # against a testing wave's cost caps.
       #
@@ -256,6 +261,7 @@ jobs:
             "${targets[@]}" \
             --flavor dev \
             --dart-define-from-file=secrets/integration_test.env \
+            --dart-define=PATROL_FAIL_ON_SKIP=true \
             -d "$PATROL_DEVICE" \
             2>&1 | tee test-results/patrol.log
 

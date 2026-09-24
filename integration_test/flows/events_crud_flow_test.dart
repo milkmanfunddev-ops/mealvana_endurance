@@ -53,7 +53,7 @@ void main() {
 
       // ---- 0. Ensure we're authenticated on the calendar ----------------
       if (!await ensureAuthenticated($)) {
-        markTestSkipped(noAuthSkipMessage());
+        skipFlow(noAuthSkipMessage());
         return;
       }
 

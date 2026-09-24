@@ -121,7 +121,7 @@ void main() {
         $,
         sentinel: const ValueKey('kyle_date_header.settings'),
       )) {
-        markTestSkipped(noAuthSkipMessage());
+        skipFlow(noAuthSkipMessage());
         return;
       }
 
@@ -189,7 +189,7 @@ void main() {
           _beforePinToggles(),
         ).waitUntilExists(timeout: const Duration(seconds: 20));
       } on Exception {
-        markTestSkipped(
+        skipFlow(
           'No Before formulas in the library for this account — the pin '
           'feature has nothing to act on. Data precondition, not a defect.',
         );
@@ -244,7 +244,7 @@ void main() {
           'exercised. Precondition: an allergy on file that a library '
           'formula contains.',
         );
-        markTestSkipped(
+        skipFlow(
           'No Before formula conflicts with this account\'s profile, so the '
           'FP-4a decision moment cannot be reached. Precondition: the account '
           'needs an allergy on file that a library formula contains.',

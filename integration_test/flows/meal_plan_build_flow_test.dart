@@ -106,7 +106,7 @@ void main() {
     'build a meal plan with Vana, confirm it, and log a meal from the plan',
     ($) async {
       if (TestConfig.isProd) {
-        markTestSkipped(
+        skipFlow(
           'Every turn of this flow calls the vana-chat / vana-action edge '
           'functions — skipped on prod to avoid burning real AI spend.',
         );
@@ -117,13 +117,13 @@ void main() {
       await $.pump(const Duration(milliseconds: 500));
 
       if (!await ensureAuthenticated($)) {
-        markTestSkipped(noAuthSkipMessage());
+        skipFlow(noAuthSkipMessage());
         return;
       }
 
       // ---- 1. Food tab -------------------------------------------------
       if (!$(_foodTab).exists) {
-        markTestSkipped(
+        skipFlow(
           'No Food tab: this build has PRO_GATE_ENABLED=true and the tester '
           'has no active Pro entitlement. The gate itself is covered by '
           'pro_gate_flow_test.dart.',
@@ -177,7 +177,7 @@ void main() {
           _pickerCards(),
           timeout: const Duration(minutes: 2),
         )) {
-          markTestSkipped(
+          skipFlow(
             'Vana returned no meal picker within 2 minutes — a model or '
             'rate-limit outage, not a client regression. The parsing of every '
             'part kind is pinned by the frozen fixtures in '
@@ -285,7 +285,7 @@ void main() {
       await $.pump(const Duration(seconds: 1));
 
       if (!$(_ateIt).exists) {
-        markTestSkipped(
+        skipFlow(
           'The tile sheet offers no "Ate it": every serving of this plan meal '
           'is already logged (servingsLeft == 0). Re-run against a fresh plan.',
         );
@@ -295,7 +295,7 @@ void main() {
       await $.pump(const Duration(seconds: 5));
 
       if (probe == null) {
-        markTestSkipped(
+        skipFlow(
           'No Supabase probe session (INTEGRATION_TEST credentials absent) — '
           'the UI leg passed but the meal_logs row could not be verified.',
         );

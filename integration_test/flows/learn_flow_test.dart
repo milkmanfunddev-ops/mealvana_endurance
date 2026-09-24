@@ -44,7 +44,7 @@ void main() {
       await $.pump(const Duration(milliseconds: 500));
 
       if (!await ensureAuthenticated($)) {
-        markTestSkipped(noAuthSkipMessage());
+        skipFlow(noAuthSkipMessage());
         return;
       }
 
@@ -77,7 +77,7 @@ void main() {
         }
       }
       if (!cardFound) {
-        markTestSkipped(
+        skipFlow(
           'No free lessons available in this environment — the Learn list '
           'rendered its empty state, nothing to open.',
         );

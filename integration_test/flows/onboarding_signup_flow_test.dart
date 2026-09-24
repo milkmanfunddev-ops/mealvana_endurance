@@ -59,7 +59,7 @@ void main() {
       // Fresh install → welcome directly. Anything else (a signed-in
       // session) → skip.
       if (!await _onWelcomeScreen($)) {
-        markTestSkipped(
+        skipFlow(
           'Could not reach the welcome screen (existing non-anonymous '
           'session?). Reinstall the app for a clean onboarding run.',
         );

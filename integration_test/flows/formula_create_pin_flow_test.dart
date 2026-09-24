@@ -91,7 +91,7 @@ void main() {
       $,
       sentinel: const ValueKey('kyle_date_header.settings'),
     )) {
-      markTestSkipped(noAuthSkipMessage());
+      skipFlow(noAuthSkipMessage());
       return;
     }
 
