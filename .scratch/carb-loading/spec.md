@@ -322,6 +322,9 @@ scanning and search FEATURED side by side at the top, the curated Quick Add
 list prominent below, the logged receipt with tap-revealed portion stepper +
 Remove, and a create-your-own-food link. One page per slot; the dashboard card
 is a gauge and a door.
+*(Applied to the prototype in v13, 2026-09-24: all clock views quieted — no
+idea rows or "N ideas" hints anywhere, no auto-open; empty = dashed "Tap to
+log", filled = summary, chevron peek = read-only receipt + "Edit in <slot> ›".)*
 
 - **D1 — Is a carb-loading day its own log, or food-log entries tagged to a day?**
   Hinge for lanes 2 and 3. If entries are ordinary food logs tagged to a
