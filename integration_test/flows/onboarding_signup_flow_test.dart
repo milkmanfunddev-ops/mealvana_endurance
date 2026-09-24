@@ -118,12 +118,18 @@ void main() {
       await _waitForPlanReveal($);
 
       await _scrollIntoView($, const ValueKey('plan_reveal.edit_long_run'));
+      // The pencil opens an inline slider (the +/- and Save sheet is gone;
+      // updated by testing-wave 03). Dragging it commits on release.
       await $(const ValueKey('plan_reveal.edit_long_run')).tap();
       await $(
-        const ValueKey('plan_reveal.edit_plus'),
+        const ValueKey('plan_reveal.slider_long_run'),
       ).waitUntilVisible(timeout: const Duration(seconds: 10));
-      await $(const ValueKey('plan_reveal.edit_plus')).tap();
-      await $(const ValueKey('plan_reveal.edit_save')).tap();
+      await $.tester.drag(
+        find.byKey(const ValueKey('plan_reveal.slider_long_run')),
+        const Offset(60, 0),
+      );
+      await $.pump(const Duration(milliseconds: 400));
+      await $(const ValueKey('plan_reveal.edit_long_run')).tap();
 
       await $(const ValueKey('plan_reveal.continue_button')).tap();
 

@@ -214,6 +214,11 @@ jobs:
       # account_delete, integrations_connect) and the interactive Google OAuth
       # flow (google_login).
       #
+      # --bundle-id: pubspec's patrol.ios.bundle_id is the prod id; the dev
+      # flavor installs com.milkman.mealvanaendurance.dev, and without the flag
+      # every native query ($.native / $.platform) fails with "Application
+      # com.milkman.mealvanaendurance is not running".
+      #
       # PATROL_FAIL_ON_SKIP=true turns every flow's skipFlow() into a failure.
       # Patrol reports a markTestSkipped test as PASSED (Skipped: stays 0), so
       # without it the skip check below cannot see a flow that tested nothing.
@@ -260,6 +265,7 @@ jobs:
           patrol test \
             "${targets[@]}" \
             --flavor dev \
+            --bundle-id com.milkman.mealvanaendurance.dev \
             --dart-define-from-file=secrets/integration_test.env \
             --dart-define=PATROL_FAIL_ON_SKIP=true \
             -d "$PATROL_DEVICE" \

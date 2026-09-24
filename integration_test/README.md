@@ -37,7 +37,7 @@ commit it.
 # One flow (see each test file's header for its exact documented command)
 patrol test \
   --target integration_test/flows/events_crud_flow_test.dart \
-  --flavor dev \
+  --flavor dev --bundle-id com.milkman.mealvanaendurance.dev \
   --dart-define-from-file=.env.dev.local \
   --dart-define-from-file=secrets/integration_test.env \
   --device "iPhone 17 Pro"        # newest-SDK simulator (Patrol-on-iOS needs it)
@@ -45,7 +45,7 @@ patrol test \
 # Whole suite (builds the app once, runs every patrolTest under integration_test/)
 patrol test \
   --target integration_test \
-  --flavor dev \
+  --flavor dev --bundle-id com.milkman.mealvanaendurance.dev \
   --dart-define-from-file=.env.dev.local \
   --dart-define-from-file=secrets/integration_test.env \
   --device "iPhone 17 Pro"
@@ -56,6 +56,12 @@ patrol test \
 credentialed flows self-skip with a clear message rather than failing. Pass
 `.env.dev.local` too: without it `TestConfig` falls back to built-in defaults,
 and its default dev anon key is stale (testing-wave Finding 02-007).
+
+**`--bundle-id` for dev.** `pubspec.yaml`'s `patrol.ios.bundle_id` is the prod
+id. A `--flavor dev` run installs `com.milkman.mealvanaendurance.dev`, so pass
+`--bundle-id com.milkman.mealvanaendurance.dev`; without it every native call
+(`$.native.*`, `$.platform.*` on the app) fails with "Application
+com.milkman.mealvanaendurance is not running" and xcodebuild exits 65.
 
 **iOS caveat:** OAuth flows that go through `ASWebAuthSession` (e.g. Google
 login) cannot be automated on iOS and self-skip. Those are exercised on Android.
