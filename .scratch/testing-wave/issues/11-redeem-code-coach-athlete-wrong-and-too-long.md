@@ -1,6 +1,6 @@
 # 11: Redeem code: coach, athlete, wrong and too long
 
-**Status:** ready-for-agent
+**Status:** in-progress (wave 5, 2026-09-24)
 **Blocked by:** 03 (touches integration_test/flows/redeem_code_flow_test.dart), 04.
 **Next:** `/implement-lee testing-wave`
 **Model:** opus

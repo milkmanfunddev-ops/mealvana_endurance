@@ -1,6 +1,6 @@
 # 05: A trial bought through the Test Store opens the app
 
-**Status:** ready-for-agent
+**Status:** in-progress (wave 5, 2026-09-24)
 **Blocked by:** 03 (touches integration_test/flows/paywall_purchase_flow_test.dart), 04.
 **Next:** `/implement-lee testing-wave`
 **Model:** opus
