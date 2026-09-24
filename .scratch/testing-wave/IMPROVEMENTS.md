@@ -24,26 +24,18 @@ Each entry: what went wrong or cost time, where it was seen, and the suggested f
   Suggested fix: let `decision:` take a `docs/ssot/spec/...` path plus a heading, and have `index`
   check that the quote appears in that file.
 
-- **#39 the mobile MCP read another simulator's screen (wave 11).** Ticket 31's
-  `mobile_list_elements_on_screen` for `wave-pool-2` returned another simulator's screens (a home
-  screen, then a signed-in Food tab) while `simctl io` showed its own app on Welcome. Its taps did
-  land on the right device. From 16:50 UTC it drove everything with `idb ui`. Ticket 19 on
-  `wave-pool-1` saw no mix-up. Suggested fix: check which device the MCP's helper app answers for
-  when two wave simulators run (one helper port shared?), and until then make idb the reader with
-  two simulators up: `idb ui describe-all --udid` for the element list, the MCP only for taps and
-  typing.
-- **#40 every debug-level console carries the dev session token (wave 11).** `log stream --level
-  debug` prints the app's shared preferences, including `sb-…-auth-token`, so both tickets' token
-  scans hit and both deleted `console.log` for an excerpts file. The debug stream is also ~20k lines of
-  system noise. Suggested fix: runbook step 3 streams with `--predicate 'process == "Runner" AND
-  subsystem != "com.apple.defaults"'` (or `--level info`), or step 9 says to expect the hit and
-  cut only those lines, keeping the rest of the console as evidence.
 - **#41 a setting that starts empty can't be put back (wave 11).** Saving Profile & Preferences with
   an empty field keeps the old value (31-004), so a ticket that changes a setting and restores it
   must pick one that is not null. Suggested fix: one line in ticket 31's retest and in the
   ticket-writing notes.
 
 ## Done
+
+- **#39 mobile MCP read another simulator.** Runbook step 4 and 5: idb reads the screen
+  (`describe-all`, `simctl io` screenshot), the MCP only taps and types. The helper-port cause is
+  not looked into. Before wave 12.
+- **#40 token in every console.** Runbook step 9 expects the hit, cuts only the matching lines into
+  `console-redacted.log`, rescans it and keeps the rest as evidence. Before wave 12.
 
 - **#38 edge extracts cross tickets.** Runbook, after the wave step 2: the lead reads the
   tickets' edge-log extracts side by side and matches each error to the run that made it. Wave 11.

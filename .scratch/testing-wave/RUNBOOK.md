@@ -71,7 +71,7 @@ Stop the log stream at step 9.
 
 ## 4. Start from what is on the screen
 
-Look first (the mobile MCP's screenshot and element list). The wave lead cleared the app's data,
+Look first (a `simctl io` screenshot and `idb ui describe-all`). The wave lead cleared the app's data,
 so it opens signed out on Welcome with an empty local database, unless your prompt says the
 ticket tests the dev simulator's leftover data. Do only the setup your ticket needs: a ticket on
 the dev test account logs in with it (`CRED type test@test.com --udid UDID` for the password); a
@@ -80,9 +80,10 @@ ticket says so.
 
 ## 5. Drive the app
 
-- See and tap with the mobile MCP, on `UDID` only. It works on wave simulators (the wave lead's
-  simulator setup installs its helper app). idb is the fallback: `idb ui describe-all --udid UDID`,
-  `idb ui tap X Y --udid UDID`.
+- Read the screen with idb: `idb ui describe-all --udid UDID` for the element list, `xcrun simctl io
+  UDID screenshot` for the picture. With two wave simulators up, the mobile MCP's element list has
+  returned the other simulator's screen (IMPROVEMENTS #39), so never trust it for what is on
+  `UDID`. Tap and type with the mobile MCP on `UDID`; `idb ui tap X Y --udid UDID` is the fallback.
 - Type text with the mobile MCP; `idb ui text "<text>" --udid UDID` is the fallback (it once
   mangled a long address, IMPROVEMENTS #35). Before submitting a long value (an address, a code),
   read it back with `idb ui describe-all --udid UDID`: a field shows only the tail of a long value.
@@ -187,8 +188,11 @@ At the end of every run, stopped or not, in this order:
    ends the other run's console too) and terminate the app on the simulator.
 3. `LOCK release slot OWNER`. The simulator stays; the wave lead deletes it at the close.
 4. Scan the console before committing it: `grep -nE 'eyJ[A-Za-z0-9_-]{10,}|Bearer |sk_|sbp_' RUNS/console.log`.
-   Any hit: delete `console.log` and commit `console-excerpts.log` with only the lines your
-   Findings cite, the hits cut out.
+   Expect hits: the debug stream prints the app's shared preferences, session token included
+   (IMPROVEMENTS #40). Cut only those lines and keep the rest as evidence:
+   `grep -vE 'eyJ[A-Za-z0-9_-]{10,}|Bearer |sk_|sbp_' RUNS/console.log > RUNS/console-redacted.log`,
+   delete `console.log`, run the scan again on the redacted file (it must find nothing), and cite
+   `console-redacted.log` in Findings.
 5. Commit `.scratch/testing-wave/findings/NN-*.md` and `RUNS` on your branch, explicit paths only.
    Run logs under `RUNS` are not gitignored (the Findings cite them), so a plain `git add` takes
    them after the scan.
