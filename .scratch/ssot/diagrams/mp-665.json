@@ -1,0 +1,6 @@
+{"kind":"timeline","title":"A renewal lands after the period ends","steps":[
+ {"at":"11:28:36","label":"Test Store Monthly bought; row active_until 11:33:37","tone":"ok"},
+ {"at":"11:33:37","label":"Period ends; RevenueCat renews, app stays in","tone":"pending"},
+ {"at":"11:33-11:36","label":"Row still 11:33:37: server Pro check says no Pro","tone":"no"},
+ {"at":"11:36:13","label":"Renewal webhook lands; row moves to 11:38:37","tone":"ok"}],
+ "example":["A: grace past active_until covers the 2.5 min gap","B: ask RevenueCat when the row says expired","C (today): refuse in the gap"]}

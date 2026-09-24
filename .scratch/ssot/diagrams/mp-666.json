@@ -1,0 +1,6 @@
+{"kind":"flow","title":"Cold launch with an out-of-date saved copy","rows":[
+ [{"id":"s","label":"Saved copy: Pro active,\nexpires 11:36:56"}],
+ [{"id":"l","label":"Cold launch at 11:39:04\n(RevenueCat: no active Pro)"}],
+ [{"id":"a","label":"A (today): open,\nfetch fixes it"},{"id":"b","label":"B: paywall until\nRevenueCat answers"},{"id":"c","label":"C: open only\nwhen offline"}]],
+ "edges":[{"from":"s","to":"l"},{"from":"l","to":"a","label":"A"},{"from":"l","to":"b","label":"B"},{"from":"l","to":"c","label":"C"}],
+ "example":["Wave 6, ticket 07: the fetch after launch returned a renewal to 11:41:56."]}
