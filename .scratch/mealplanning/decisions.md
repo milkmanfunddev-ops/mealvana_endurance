@@ -3233,3 +3233,22 @@ An edit made while notes are being written is picked up on the next open. A requ
 **What it touches.** The meal-slot line in `_shared/meal_analysis/prompt.ts` (describe and photo), the default in `finalize.ts`, the preselected type on Review & Log, and the retest of Finding 24-005.
 
 > 2026-09-24 opened in wave 14 ticket 24
+
+## mp-673 · Should a plan ever pick a library meal that has no nutrition numbers?
+- category: Meals tab and library
+- kind: question
+- status: open
+- linked: none
+- image: none
+- screen: none (the Plan tab's tiles show whatever numbers the answer leaves them; the screen itself does not change)
+- source: wave testing-wave 16 ticket 29
+
+**Context.** 31 of the 1,922 active library meals have no kcal, carbs, protein or fat. Planning does not skip them: the picker's contract takes a null kcal. In wave 16, test@test.com's confirmed plan for the week of Sep 20 has four dinners, and three of them are among those 31 (AD-103, AD-108, AD-113, all plant-based bowl assemblies). On the Plan tab the other dinner reads "520 kcal · 75g C · 15g P · 18g F". The three bowls show only their Dinner tag, with no number and no word that one is missing. Any day or week total counts them as zero (Finding 29-001).
+
+**Question.** What should happen to a meal with no numbers? (A) Planning never picks it; it stays browsable and loggable. (B) Planning may pick it, and its tile says the numbers are missing. (C) The numbers are filled in for all 31 (estimated from the ingredients and marked approximate, the way the meal page already folds macros away), and nothing else changes.
+
+**Why.** A is one filter in the picker. It takes 31 meals, most of them vegetarian bowls, out of plans for vegetarian athletes. B keeps the variety, but a plan built to hit a carb target can't count a third of its dinners. C fixes the data rather than the rule, and costs an estimation pass plus a check that no active meal has null numbers again.
+
+**What it touches.** The candidate query behind `pick_meals` and plan generation (`_shared/vana/`), the plan tile on the Plan tab and Recents, the day and week totals, and the retest of Finding 29-001.
+
+> 2026-09-24 opened in wave 16 ticket 29
