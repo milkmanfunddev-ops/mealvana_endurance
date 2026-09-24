@@ -11,8 +11,8 @@
 
 **Touches:** the dev test account's meal logs
 
-- [ ] Runs by the runbook: a slot taken and released, the console saved to the run folder, a look-around on every screen visited, every problem written as a Finding and nothing fixed.
-- [ ] Uses the entitled dev test account from the credentials file; no new account.
-- [ ] Totals on screen before and after equal the sums by SQL.
+- [x] Runs by the runbook: a slot taken and released, the console saved to the run folder, a look-around on every screen visited, every problem written as a Finding and nothing fixed.
+- [x] Uses the entitled dev test account from the credentials file; no new account.
+- [x] Totals on screen before and after equal the sums by SQL.
 
 Next: /implement-lee testing-wave
