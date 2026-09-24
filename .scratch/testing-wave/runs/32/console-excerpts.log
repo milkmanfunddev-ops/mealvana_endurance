@@ -1,0 +1,85 @@
+# console-excerpts.log, ticket 32 run w9-20260924T1447Z. Flutter lines only, from console.log (stream 14:47Z-14:56:02Z; deleted after the token scan found 6 JWT lines) and console-2.log (14:56:20Z-14:57Z). Times are local (UTC-5). Token-bearing lines cut.
+
+## A. signup, wrong code (09:51:32), resend (09:51:52), superseded code (09:52:25), right code (09:52:41)
+2026-09-24 09:50:47.582615 📊 [ANALYTICS] auth_flow_started {provider: email, source: post_onboarding_signup}
+2026-09-24 09:50:48.801720 📊 [ANALYTICS] email_verification_required {user_id: bb881b61-a5e8-492f-a6b0-08a2b79a2bb4}
+2026-09-24 09:51:32.005283 \^[[38;5;196m│ InvalidVerificationCodeException: That code has expired. Tap resend for a new one.\^[[0m
+2026-09-24 09:51:32.005367 \^[[38;5;196m│ #0   PrettyAppLogger._logWithContext (package:mealvana_endurance/shared/services/logging_service.dart:342:15)\^[[0m
+2026-09-24 09:51:32.005421 \^[[38;5;196m│ #1   PrettyAppLogger.error (package:mealvana_endurance/shared/services/logging_service.dart:179:5)\^[[0m
+2026-09-24 09:51:32.005467 \^[[38;5;196m│ #2   EmailAuthService.verifyEmailOtp (package:mealvana_endurance/features/auth/application/email_auth_service.dart:585:15)\^[[0m
+2026-09-24 09:51:32.005513 \^[[38;5;196m│ #3   <asynchronous suspension>\^[[0m
+2026-09-24 09:51:32.005635 \^[[38;5;196m│ 09:51:32.001 (+0:03:51.559041)\^[[0m
+2026-09-24 09:51:32.005756 \^[[38;5;196m│ ⛔ [EMAIL_AUTH] Email verification failed\^[[0m
+2026-09-24 09:51:53.296964 📊 [ANALYTICS] email_verification_resent {}
+2026-09-24 09:52:25.319420 \^[[38;5;196m│ InvalidVerificationCodeException: That code has expired. Tap resend for a new one.\^[[0m
+2026-09-24 09:52:25.319540 \^[[38;5;196m│ #0   PrettyAppLogger._logWithContext (package:mealvana_endurance/shared/services/logging_service.dart:342:15)\^[[0m
+2026-09-24 09:52:25.319593 \^[[38;5;196m│ #1   PrettyAppLogger.error (package:mealvana_endurance/shared/services/logging_service.dart:179:5)\^[[0m
+2026-09-24 09:52:25.319633 \^[[38;5;196m│ #2   EmailAuthService.verifyEmailOtp (package:mealvana_endurance/features/auth/application/email_auth_service.dart:585:15)\^[[0m
+2026-09-24 09:52:25.319667 \^[[38;5;196m│ #3   <asynchronous suspension>\^[[0m
+2026-09-24 09:52:25.319743 \^[[38;5;196m│ 09:52:25.319 (+0:04:44.876492)\^[[0m
+2026-09-24 09:52:25.319835 \^[[38;5;196m│ ⛔ [EMAIL_AUTH] Email verification failed\^[[0m
+2026-09-24 09:52:42.831503 📊 [ANALYTICS] email_verification_completed {user_id: bb881b61-a5e8-492f-a6b0-08a2b79a2bb4, otp_type: signup}
+2026-09-24 09:52:42.854893 GoRouter: INFO: popping /welcome
+2026-09-24 09:52:42.870440 [SubscriptionService] customer info updated {active: true, expires_at: 2027-09-15T19:39:14.000Z}
+2026-09-24 09:52:42.964492 📊 [ANALYTICS] user_registered {device_id: bb881b61-a5e8-492f-a6b0-08a2b79a2bb4, timestamp: 2026-09-24T09:52:42.964314, registration_source: onboarding}
+2026-09-24 09:52:43.183762 [SubscriptionService] customer info updated {active: false, expires_at: null}
+2026-09-24 09:52:43.184363 [RevenueCatService] logged in
+2026-09-24 09:52:43.190841 [SubscriptionService] customer info fetched {active: false, expires_at: null, is_trial: false}
+2026-09-24 09:52:43.883867 ℹ️ No active Garmin integration to sync mapping for
+2026-09-24 09:52:43.891108 📊 [ANALYTICS] dietary_preference_saved {preference: omnivore, skipped: false}
+2026-09-24 09:52:43.893074 📊 [ANALYTICS] allergies_saved {allergies: [], count: 0, skipped: true}
+2026-09-24 09:52:43.905236 [SubscriptionService] customer info updated {active: false, expires_at: null}
+2026-09-24 09:52:43.909214 [SubscriptionService] customer info fetched {active: false, expires_at: null, is_trial: false}
+2026-09-24 09:52:45.696211 GoRouter: INFO: going to /paywall?onboarding=1
+
+## B. sign out from the paywall (09:53:3x)
+2026-09-24 09:53:37.132563 📊 [ANALYTICS] settings_sign_out_tapped {}
+2026-09-24 09:53:37.151074 \^[[38;5;196m│ Cannot use the Ref of settingsControllerProvider after it has been disposed. This typically happens if:\^[[0m
+2026-09-24 09:53:37.151114 \^[[38;5;196m│ - A provider rebuilt, but the previous "build" was still pending and is still performing operations.\^[[0m
+2026-09-24 09:53:37.151152 \^[[38;5;196m│   You should therefore either use `ref.onDispose` to cancel pending work, or\^[[0m
+2026-09-24 09:53:37.151185 \^[[38;5;196m│   check `ref.mounted` after async gaps or anything that could invalidate the provider.\^[[0m
+2026-09-24 09:53:37.151218 \^[[38;5;196m│ - You tried to use Ref inside `onDispose` or other life-cycles.\^[[0m
+2026-09-24 09:53:37.151266 \^[[38;5;196m│   This is not supported, as the provider is already being disposed.\^[[0m
+2026-09-24 09:53:37.151301 \^[[38;5;196m│ \^[[0m
+2026-09-24 09:53:37.151433 \^[[38;5;196m│ #0   PrettyAppLogger._logWithContext (package:mealvana_endurance/shared/services/logging_service.dart:342:15)\^[[0m
+2026-09-24 09:53:37.151466 \^[[38;5;196m│ #1   PrettyAppLogger.error (package:mealvana_endurance/shared/services/logging_service.dart:179:5)\^[[0m
+2026-09-24 09:53:37.151502 \^[[38;5;196m│ #2   SettingsController.signOut (package:mealvana_endurance/features/settings/presentation/providers/settings_controller.dart:753:14)\^[[0m
+2026-09-24 09:53:37.151538 \^[[38;5;196m│ #3   <asynchronous suspension>\^[[0m
+2026-09-24 09:53:37.151618 \^[[38;5;196m│ 09:53:37.150 (+0:05:56.707913)\^[[0m
+2026-09-24 09:53:37.151683 \^[[38;5;196m│ ⛔ [SETTINGS] Pro entitlement clear failed\^[[0m
+2026-09-24 09:53:37.152113 supabase.auth: INFO: Signing out user with scope: SignOutScope.local
+2026-09-24 09:53:37.158270 📊 [ANALYTICS] user_signed_out {timestamp: 2026-09-24T09:53:37.158134, was_onboarding_signout: false}
+2026-09-24 09:53:37.163522 [SubscriptionService] customer info updated {active: false, expires_at: null}
+2026-09-24 09:53:37.190535 GoRouter: INFO: redirecting to RouteMatchList(/welcome)
+2026-09-24 09:53:37.572378 GoRouter: INFO: going to /welcome
+
+## C. forgot password, reset, old password refused (09:54-09:56:02)
+2026-09-24 09:54:15.054891 GoRouter: INFO: pushing /auth/verify-reset-code
+2026-09-24 09:54:43.900707 GoRouter: INFO: pushing /auth/set-new-password
+2026-09-24 09:54:43.902569 [SubscriptionService] customer info updated {active: false, expires_at: null}
+2026-09-24 09:54:43.942891 [SubscriptionService] customer info fetched {active: false, expires_at: null, is_trial: false}
+2026-09-24 09:55:17.816323 GoRouter: INFO: going to /auth/email-login
+2026-09-24 09:55:17.825685 📊 [ANALYTICS] screen_viewed {screen_name: Email Login}
+2026-09-24 09:55:50.785231 📊 [ANALYTICS] auth_flow_started {provider: email, source: post_onboarding_login}
+2026-09-24 09:55:51.018951 \^[[38;5;196m│ AuthApiException(message: Invalid login credentials, statusCode: 400, code: invalid_credentials)\^[[0m
+2026-09-24 09:55:51.019059 \^[[38;5;196m│ #0   PrettyAppLogger._logWithContext (package:mealvana_endurance/shared/services/logging_service.dart:342:15)\^[[0m
+2026-09-24 09:55:51.019116 \^[[38;5;196m│ #1   PrettyAppLogger.error (package:mealvana_endurance/shared/services/logging_service.dart:179:5)\^[[0m
+2026-09-24 09:55:51.019167 \^[[38;5;196m│ #2   EmailAuthService.signInWithEmail (package:mealvana_endurance/features/auth/application/email_auth_service.dart:755:15)\^[[0m
+2026-09-24 09:55:51.019210 \^[[38;5;196m│ #3   <asynchronous suspension>\^[[0m
+2026-09-24 09:55:51.019295 \^[[38;5;196m│ 09:55:51.018 (+0:08:10.575814)\^[[0m
+2026-09-24 09:55:51.019380 \^[[38;5;196m│ ⛔ [EMAIL_AUTH] Email sign in failed\^[[0m
+2026-09-24 09:55:51.019854 \^[[38;5;196m│ AuthApiException(message: Invalid login credentials, statusCode: 400, code: invalid_credentials)\^[[0m
+2026-09-24 09:55:51.019948 \^[[38;5;196m│ #0   PrettyAppLogger._logWithContext (package:mealvana_endurance/shared/services/logging_service.dart:342:15)\^[[0m
+2026-09-24 09:55:51.019990 \^[[38;5;196m│ #1   PrettyAppLogger.error (package:mealvana_endurance/shared/services/logging_service.dart:179:5)\^[[0m
+2026-09-24 09:55:51.020023 \^[[38;5;196m│ #2   PostOnboardingAuthController.signInWithEmail (package:mealvana_endurance/features/auth/presentation/providers/post_onboarding_auth_controller.dart:362:15)\^[[0m
+2026-09-24 09:55:51.020056 \^[[38;5;196m│ #3   <asynchronous suspension>\^[[0m
+2026-09-24 09:55:51.020117 \^[[38;5;196m│ 09:55:51.019 (+0:08:10.577140)\^[[0m
+2026-09-24 09:55:51.020178 \^[[38;5;196m│ ⛔ [AUTH] Post-onboarding auth: Email sign in failed\^[[0m
+2026-09-24 09:55:51.020315 📊 [ANALYTICS] auth_flow_failed {provider: email, source: post_onboarding_login, error: AuthApiException(message: Invalid login credentials, statusCode: 400, code: invalid_credentials)}
+
+## D. console-2.log: delete account
+2026-09-24 09:56:51.074034 📊 [ANALYTICS] settings_delete_account_tapped {}
+2026-09-24 09:56:53.664374 supabase.auth: INFO: Signing out user with scope: SignOutScope.local
+2026-09-24 09:56:53.666827 📊 [ANALYTICS] user_signed_out {timestamp: 2026-09-24T09:56:53.666725, was_onboarding_signout: false}
+2026-09-24 09:56:53.670180 [SubscriptionService] customer info updated {active: false, expires_at: null}
+2026-09-24 09:56:53.690631 GoRouter: INFO: redirecting to RouteMatchList(/welcome)
