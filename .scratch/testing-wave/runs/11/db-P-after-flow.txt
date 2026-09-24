@@ -1,0 +1,11 @@
+# Patrol account a51994ad-18b3-4d7a-b622-3aae7b2b1f27 (lee+e2e-redeem-<millis>) after the flow, 2026-09-24T09:09:02Z
+## footprint
+no rows keyed to a51994ad-18b3-4d7a-b622-3aae7b2b1f27
+## redemptions per code
+{"code":"DEVCOACH18","count":1}
+{"code":"DEVCOACH30","count":1}
+## coach's pairings
+{"status":"active","requested_by":"athlete","count":1}
+{"status":"active","requested_by":"coach","count":6}
+## leftover lee+e2e-redeem accounts
+{"count":0}

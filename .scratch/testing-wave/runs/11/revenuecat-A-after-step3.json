@@ -1,0 +1,51 @@
+{
+  "customer": {
+    "active_entitlements": {
+      "items": [],
+      "next_page": null,
+      "object": "list",
+      "url": "https://api.revenuecat.com/v2/projects/proj77b3c48f/customers/fa482af4-54e9-4e83-b4a0-c8b622735fa8/active_entitlements"
+    },
+    "attributes": {
+      "items": [
+        {
+          "name": "$attConsentStatus",
+          "object": "customer.attribute",
+          "updated_at": 1790240143148,
+          "value": "notDetermined"
+        },
+        {
+          "name": "coach_code",
+          "object": "customer.attribute",
+          "updated_at": 1790240322230,
+          "value": "DEVCOACH30"
+        }
+      ],
+      "next_page": null,
+      "object": "list",
+      "url": "https://api.revenuecat.com/v2/projects/proj77b3c48f/customers/fa482af4-54e9-4e83-b4a0-c8b622735fa8/attributes"
+    },
+    "experiment": null,
+    "first_seen_at": 1790239988095,
+    "id": "fa482af4-54e9-4e83-b4a0-c8b622735fa8",
+    "last_seen_app_version": "1.27.0",
+    "last_seen_at": 1790240143336,
+    "last_seen_country": "US",
+    "last_seen_platform": "iOS",
+    "last_seen_platform_version": "Version 26.2 (Build 23C54)",
+    "object": "customer",
+    "project_id": "proj77b3c48f"
+  },
+  "subscriptions": {
+    "items": [],
+    "next_page": null,
+    "object": "list",
+    "url": "https://api.revenuecat.com/v2/projects/proj77b3c48f/customers/fa482af4-54e9-4e83-b4a0-c8b622735fa8/subscriptions"
+  },
+  "purchases": {
+    "items": [],
+    "next_page": null,
+    "object": "list",
+    "url": "https://api.revenuecat.com/v2/projects/proj77b3c48f/customers/fa482af4-54e9-4e83-b4a0-c8b622735fa8/purchases"
+  }
+}
