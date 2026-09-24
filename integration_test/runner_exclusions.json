@@ -30,5 +30,9 @@
   "flows/redeem_code_flow_test.dart": {
     "reason": "clean-install",
     "why": "Signs up a throwaway account from the welcome screen to redeem codes from the paywall, so it needs a fresh install with no session, like the signup flow."
+  },
+  "flows/restore_purchases_flow_test.dart": {
+    "reason": "clean-install",
+    "why": "Signs up a throwaway account from the welcome screen to tap Restore purchases on the paywall, so it needs a fresh install with no session, like the signup flow."
   }
 }

@@ -1,0 +1,55 @@
+## logs table, messages naming account C, 11:25Z-11:45Z (timestamps as returned)
+2026-09-24T11:31:02.000000 {"auth_audit_event":{"action":"login","actor_id":"6f9ea9ac-e299-494a-9adb-bd63bd48d1b7","actor_username":"lee+e2e-07-20260924t1130z@rightpathprogramming.com","actor_via_sso":false,"audit_log_id":"1f256641-efc5-49b6-b320-3378c05957a6","creat
+2026-09-24T11:31:02.000000 {"auth_audit_event":{"action":"user_signedup","actor_id":"6f9ea9ac-e299-494a-9adb-bd63bd48d1b7","actor_username":"lee+e2e-07-20260924t1130z@rightpathprogramming.com","actor_via_sso":false,"audit_log_id":"c9094054-408c-46a1-9fde-3fafda3653bf
+2026-09-24T11:31:03.000000 {"auth_event":{"action":"login","actor_id":"6f9ea9ac-e299-494a-9adb-bd63bd48d1b7","actor_username":"lee+e2e-07-20260924t1130z@rightpathprogramming.com","actor_via_sso":false,"log_type":"account","traits":{"provider":"email"}},"component":"a
+2026-09-24T11:31:03.000000 {"action":"login","immediate_login_after_signup":true,"instance_id":"00000000-0000-0000-0000-000000000000","level":"info","login_method":"password","metering":true,"msg":"Login","provider":"email","time":"2026-09-24T11:31:03Z","user_id":"6f
+2026-09-24T11:31:03.459000 GET | 200 | https://vlmtsdzpnjnavdgytcmi.supabase.co/rest/v1/users?select=is_admin&id=eq.6f9ea9ac-e299-494a-9adb-bd63bd48d1b7 | Dart/3.12 (dart:io)
+2026-09-24T11:31:04.010000 GET | 200 | https://vlmtsdzpnjnavdgytcmi.supabase.co/rest/v1/users?select=is_admin&id=eq.6f9ea9ac-e299-494a-9adb-bd63bd48d1b7 | Dart/3.12 (dart:io)
+2026-09-24T11:31:04.015000 GET | 200 | https://vlmtsdzpnjnavdgytcmi.supabase.co/rest/v1/users?select=*&id=eq.6f9ea9ac-e299-494a-9adb-bd63bd48d1b7 | Dart/3.12 (dart:io)
+2026-09-24T11:31:04.468000 GET | 200 | https://vlmtsdzpnjnavdgytcmi.supabase.co/rest/v1/integrations?select=*&user_id=eq.6f9ea9ac-e299-494a-9adb-bd63bd48d1b7 | Dart/3.12 (dart:io)
+2026-09-24T11:31:04.469000 GET | 200 | https://vlmtsdzpnjnavdgytcmi.supabase.co/rest/v1/activities?select=*&user_id=eq.6f9ea9ac-e299-494a-9adb-bd63bd48d1b7&or=%28deleted_at.is.null%2Cstatus.eq.deleted%29&order=created_at.desc.nullslast | Dart/3.12 (dart:io)
+2026-09-24T11:31:04.881000 Starting unified sync for user: 6f9ea9ac-e299-494a-9adb-bd63bd48d1b7
+
+2026-09-24T11:31:04.912000 GET | 200 | https://vlmtsdzpnjnavdgytcmi.supabase.co/rest/v1/events?select=*&user_id=eq.6f9ea9ac-e299-494a-9adb-bd63bd48d1b7&order=created_at.desc | Deno/2.1.4 (variant; SupabaseEdgeRuntime/1.76.0; ref=vlmtsdzpnjnavdgytcmi)
+2026-09-24T11:31:04.913000 GET | 200 | https://vlmtsdzpnjnavdgytcmi.supabase.co/rest/v1/users?select=*&id=eq.6f9ea9ac-e299-494a-9adb-bd63bd48d1b7 | Deno/2.1.4 (variant; SupabaseEdgeRuntime/1.76.0; ref=vlmtsdzpnjnavdgytcmi)
+2026-09-24T11:31:04.913000 GET | 200 | https://vlmtsdzpnjnavdgytcmi.supabase.co/rest/v1/activities?select=*%2Cnutrition_plan_data&user_id=eq.6f9ea9ac-e299-494a-9adb-bd63bd48d1b7&or=%28deleted_at.is.null%2Cstatus.eq.deleted%29&order=scheduled_date_time.desc | Deno/2.1
+2026-09-24T11:31:04.915000 GET | 200 | https://vlmtsdzpnjnavdgytcmi.supabase.co/rest/v1/food_preferences?select=*&user_id=eq.6f9ea9ac-e299-494a-9adb-bd63bd48d1b7 | Deno/2.1.4 (variant; SupabaseEdgeRuntime/1.76.0; ref=vlmtsdzpnjnavdgytcmi)
+2026-09-24T11:31:04.916000 GET | 200 | https://vlmtsdzpnjnavdgytcmi.supabase.co/rest/v1/carb_loading_days?select=*%2Ccarb_loading_plans%21inner%28user_id%29&carb_loading_plans.user_id=eq.6f9ea9ac-e299-494a-9adb-bd63bd48d1b7 | Deno/2.1.4 (variant; SupabaseEdgeRuntime/
+2026-09-24T11:31:04.917000 GET | 200 | https://vlmtsdzpnjnavdgytcmi.supabase.co/rest/v1/coach_athlete_relationships?select=*&or=%28coach_user_id.eq.6f9ea9ac-e299-494a-9adb-bd63bd48d1b7%2Cathlete_user_id.eq.6f9ea9ac-e299-494a-9adb-bd63bd48d1b7%29&order=created_at.desc
+2026-09-24T11:31:04.917000 GET | 200 | https://vlmtsdzpnjnavdgytcmi.supabase.co/rest/v1/coaches?select=*&user_id=eq.6f9ea9ac-e299-494a-9adb-bd63bd48d1b7&application_status=eq.approved | Deno/2.1.4 (variant; SupabaseEdgeRuntime/1.76.0; ref=vlmtsdzpnjnavdgytcmi)
+2026-09-24T11:31:04.919000 GET | 200 | https://vlmtsdzpnjnavdgytcmi.supabase.co/rest/v1/carb_loading_plans?select=*&user_id=eq.6f9ea9ac-e299-494a-9adb-bd63bd48d1b7 | Deno/2.1.4 (variant; SupabaseEdgeRuntime/1.76.0; ref=vlmtsdzpnjnavdgytcmi)
+2026-09-24T11:31:56.856000 GET | 200 | https://vlmtsdzpnjnavdgytcmi.supabase.co/rest/v1/user_entitlements?select=user_id%2Cactive_until%2Cperiod_type%2Cevent_at&user_id=eq.6f9ea9ac-e299-494a-9adb-bd63bd48d1b7 | Deno/2.1.4 (variant; SupabaseEdgeRuntime/1.76.0; ref=vlm
+2026-09-24T11:31:57.077000 [rc-webhook] INITIAL_PURCHASE: active_until=2026-09-24T11:36:56.226Z period=NORMAL for 6f9ea9ac-e299-494a-9adb-bd63bd48d1b7
+
+2026-09-24T11:31:57.203000 [rc-webhook] INITIAL_PURCHASE: allowance 4000000 → 6f9ea9ac-e299-494a-9adb-bd63bd48d1b7 ({"balance":4000000,"granted":true,"allowance":4000000,"forfeited":0,"allowance_expires_at":"2026-09-24T11:36:56.226+00:00"})
+
+2026-09-24T11:31:57.505000 GET | 200 | https://vlmtsdzpnjnavdgytcmi.supabase.co/rest/v1/users?select=weight_pounds_updated_at%2Cbody_fat_pct_updated_at&id=eq.6f9ea9ac-e299-494a-9adb-bd63bd48d1b7 | Deno/2.1.4 (variant; SupabaseEdgeRuntime/1.76.0; ref=vlmtsdzpnjnavdgyt
+2026-09-24T11:31:57.566000 GET | 200 | https://vlmtsdzpnjnavdgytcmi.supabase.co/rest/v1/garmin_user_mappings?select=garmin_user_id&user_id=eq.6f9ea9ac-e299-494a-9adb-bd63bd48d1b7&limit=1 | Deno/2.1.4 (variant; SupabaseEdgeRuntime/1.76.0; ref=vlmtsdzpnjnavdgytcmi)
+2026-09-24T11:31:57.593000 [CALC_MACROS] Garmin not connected for user 6f9ea9ac-e299-494a-9adb-bd63bd48d1b7 — skipping week Garmin context
+
+2026-09-24T11:33:24.000000 {"auth_audit_event":{"action":"login","actor_id":"6f9ea9ac-e299-494a-9adb-bd63bd48d1b7","actor_username":"lee+e2e-07-20260924t1130z@rightpathprogramming.com","actor_via_sso":false,"audit_log_id":"ac031362-25d9-4cdd-95b2-a797876439a3","creat
+2026-09-24T11:33:24.000000 {"action":"login","instance_id":"00000000-0000-0000-0000-000000000000","level":"info","login_method":"password","metering":true,"msg":"Login","provider":"email","time":"2026-09-24T11:33:24Z","user_id":"6f9ea9ac-e299-494a-9adb-bd63bd48d1b7"}
+2026-09-24T11:33:24.000000 {"auth_event":{"action":"login","actor_id":"6f9ea9ac-e299-494a-9adb-bd63bd48d1b7","actor_username":"lee+e2e-07-20260924t1130z@rightpathprogramming.com","actor_via_sso":false,"log_type":"account","traits":{"provider":"email"}},"component":"a
+2026-09-24T11:33:24.541000 GET | 200 | https://vlmtsdzpnjnavdgytcmi.supabase.co/rest/v1/users?select=*&id=eq.6f9ea9ac-e299-494a-9adb-bd63bd48d1b7 | Dart/3.12 (dart:io)
+2026-09-24T11:33:24.613000 GET | 200 | https://vlmtsdzpnjnavdgytcmi.supabase.co/rest/v1/users?select=is_admin&id=eq.6f9ea9ac-e299-494a-9adb-bd63bd48d1b7 | Dart/3.12 (dart:io)
+2026-09-24T11:33:24.618000 GET | 200 | https://vlmtsdzpnjnavdgytcmi.supabase.co/rest/v1/users?select=*&id=eq.6f9ea9ac-e299-494a-9adb-bd63bd48d1b7 | Dart/3.12 (dart:io)
+2026-09-24T11:33:24.930000 GET | 200 | https://vlmtsdzpnjnavdgytcmi.supabase.co/rest/v1/food_preferences?select=food_name%2Cpreference%2Cpreference_level&user_id=eq.6f9ea9ac-e299-494a-9adb-bd63bd48d1b7 | Dart/3.12 (dart:io)
+2026-09-24T11:33:25.129000 GET | 200 | https://vlmtsdzpnjnavdgytcmi.supabase.co/rest/v1/users?select=food_preferences&id=eq.6f9ea9ac-e299-494a-9adb-bd63bd48d1b7 | Dart/3.12 (dart:io)
+2026-09-24T11:33:25.298000 GET | 200 | https://vlmtsdzpnjnavdgytcmi.supabase.co/rest/v1/users?select=*&id=eq.6f9ea9ac-e299-494a-9adb-bd63bd48d1b7 | Dart/3.12 (dart:io)
+2026-09-24T11:33:25.577000 GET | 200 | https://vlmtsdzpnjnavdgytcmi.supabase.co/rest/v1/integrations?select=*&user_id=eq.6f9ea9ac-e299-494a-9adb-bd63bd48d1b7 | Dart/3.12 (dart:io)
+2026-09-24T11:33:25.577000 GET | 200 | https://vlmtsdzpnjnavdgytcmi.supabase.co/rest/v1/activities?select=*&user_id=eq.6f9ea9ac-e299-494a-9adb-bd63bd48d1b7&or=%28deleted_at.is.null%2Cstatus.eq.deleted%29&order=created_at.desc.nullslast | Dart/3.12 (dart:io)
+2026-09-24T11:33:25.654000 Starting unified sync for user: 6f9ea9ac-e299-494a-9adb-bd63bd48d1b7
+
+2026-09-24T11:33:25.687000 GET | 200 | https://vlmtsdzpnjnavdgytcmi.supabase.co/rest/v1/coach_athlete_relationships?select=*&or=%28coach_user_id.eq.6f9ea9ac-e299-494a-9adb-bd63bd48d1b7%2Cathlete_user_id.eq.6f9ea9ac-e299-494a-9adb-bd63bd48d1b7%29&order=created_at.desc
+2026-09-24T11:33:25.687000 GET | 200 | https://vlmtsdzpnjnavdgytcmi.supabase.co/rest/v1/food_preferences?select=*&user_id=eq.6f9ea9ac-e299-494a-9adb-bd63bd48d1b7 | Deno/2.1.4 (variant; SupabaseEdgeRuntime/1.76.0; ref=vlmtsdzpnjnavdgytcmi)
+2026-09-24T11:33:25.687000 GET | 200 | https://vlmtsdzpnjnavdgytcmi.supabase.co/rest/v1/events?select=*&user_id=eq.6f9ea9ac-e299-494a-9adb-bd63bd48d1b7&order=created_at.desc | Deno/2.1.4 (variant; SupabaseEdgeRuntime/1.76.0; ref=vlmtsdzpnjnavdgytcmi)
+2026-09-24T11:33:25.687000 GET | 200 | https://vlmtsdzpnjnavdgytcmi.supabase.co/rest/v1/users?select=*&id=eq.6f9ea9ac-e299-494a-9adb-bd63bd48d1b7 | Deno/2.1.4 (variant; SupabaseEdgeRuntime/1.76.0; ref=vlmtsdzpnjnavdgytcmi)
+2026-09-24T11:33:25.688000 GET | 200 | https://vlmtsdzpnjnavdgytcmi.supabase.co/rest/v1/carb_loading_plans?select=*&user_id=eq.6f9ea9ac-e299-494a-9adb-bd63bd48d1b7 | Deno/2.1.4 (variant; SupabaseEdgeRuntime/1.76.0; ref=vlmtsdzpnjnavdgytcmi)
+2026-09-24T11:33:25.688000 GET | 200 | https://vlmtsdzpnjnavdgytcmi.supabase.co/rest/v1/coaches?select=*&user_id=eq.6f9ea9ac-e299-494a-9adb-bd63bd48d1b7&application_status=eq.approved | Deno/2.1.4 (variant; SupabaseEdgeRuntime/1.76.0; ref=vlmtsdzpnjnavdgytcmi)
+2026-09-24T11:33:25.688000 GET | 200 | https://vlmtsdzpnjnavdgytcmi.supabase.co/rest/v1/activities?select=*%2Cnutrition_plan_data&user_id=eq.6f9ea9ac-e299-494a-9adb-bd63bd48d1b7&or=%28deleted_at.is.null%2Cstatus.eq.deleted%29&order=scheduled_date_time.desc | Deno/2.1
+2026-09-24T11:33:25.700000 GET | 200 | https://vlmtsdzpnjnavdgytcmi.supabase.co/rest/v1/carb_loading_days?select=*%2Ccarb_loading_plans%21inner%28user_id%29&carb_loading_plans.user_id=eq.6f9ea9ac-e299-494a-9adb-bd63bd48d1b7 | Deno/2.1.4 (variant; SupabaseEdgeRuntime/
+2026-09-24T11:33:26.494000 GET | 200 | https://vlmtsdzpnjnavdgytcmi.supabase.co/rest/v1/users?select=weight_pounds_updated_at%2Cbody_fat_pct_updated_at&id=eq.6f9ea9ac-e299-494a-9adb-bd63bd48d1b7 | Deno/2.1.4 (variant; SupabaseEdgeRuntime/1.76.0; ref=vlmtsdzpnjnavdgyt
+2026-09-24T11:33:26.622000 GET | 200 | https://vlmtsdzpnjnavdgytcmi.supabase.co/rest/v1/garmin_user_mappings?select=garmin_user_id&user_id=eq.6f9ea9ac-e299-494a-9adb-bd63bd48d1b7&limit=1 | Deno/2.1.4 (variant; SupabaseEdgeRuntime/1.76.0; ref=vlmtsdzpnjnavdgytcmi)
+2026-09-24T11:33:26.720000 [CALC_MACROS] Garmin not connected for user 6f9ea9ac-e299-494a-9adb-bd63bd48d1b7 — skipping week Garmin context
+
+2026-09-24T11:34:29.136000 GET | 200 | https://vlmtsdzpnjnavdgytcmi.supabase.co/rest/v1/users?select=is_admin&id=eq.6f9ea9ac-e299-494a-9adb-bd63bd48d1b7 | Dart/3.12 (dart:io)

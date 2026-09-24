@@ -1,0 +1,8 @@
+## logs table, lines naming the Patrol account (UTC)
+2026-09-24T11:48:30.000000 {"auth_audit_event":{"action":"user_signedup","actor_id":"6ddbbc07-5c0c-4b29-b1ec-633edcf75d56","actor_username":"lee+e2e-restore-1790250498002@rightpathprogramming.com","actor_via_sso":false,"audit_l
+2026-09-24T11:48:30.000000 {"auth_audit_event":{"action":"login","actor_id":"6ddbbc07-5c0c-4b29-b1ec-633edcf75d56","actor_username":"lee+e2e-restore-1790250498002@rightpathprogramming.com","actor_via_sso":false,"audit_log_id":"
+2026-09-24T11:48:30.000000 {"auth_event":{"action":"login","actor_id":"6ddbbc07-5c0c-4b29-b1ec-633edcf75d56","actor_username":"lee+e2e-restore-1790250498002@rightpathprogramming.com","actor_via_sso":false,"log_type":"account","
+2026-09-24T11:48:37.000000 {"auth_event":{"action":"login","actor_id":"6ddbbc07-5c0c-4b29-b1ec-633edcf75d56","actor_username":"lee+e2e-restore-1790250498002@rightpathprogramming.com","actor_via_sso":false,"log_type":"account","
+2026-09-24T11:48:37.000000 {"auth_audit_event":{"action":"login","actor_id":"6ddbbc07-5c0c-4b29-b1ec-633edcf75d56","actor_username":"lee+e2e-restore-1790250498002@rightpathprogramming.com","actor_via_sso":false,"audit_log_id":"
+2026-09-24T11:48:38.000000 {"auth_event":{"action":"user_deleted","actor_id":"00000000-0000-0000-0000-000000000000","actor_username":"service_role","actor_via_sso":false,"log_type":"team","traits":{"user_email":"lee+e2e-restore
+2026-09-24T11:48:38.000000 {"auth_audit_event":{"action":"user_deleted","actor_id":"00000000-0000-0000-0000-000000000000","actor_username":"service_role","actor_via_sso":false,"audit_log_id":"e3c48c5f-14e7-4a33-8915-497cbca487f

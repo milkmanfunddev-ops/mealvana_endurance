@@ -1,0 +1,5 @@
+## logs table, delete lines 11:39:30Z-11:45Z (UTC)
+2026-09-24T11:39:59.000000 {"auth_audit_event":{"action":"user_deleted","actor_id":"00000000-0000-0000-0000-000000000000","actor_username":"service_role","actor_via_sso":false,"audit_log_id":"0d9358f7-32ef-4348-b647-f721281526ac","created_at":"202
+2026-09-24T11:39:59.000000 {"auth_event":{"action":"user_deleted","actor_id":"00000000-0000-0000-0000-000000000000","actor_username":"service_role","actor_via_sso":false,"log_type":"team","traits":{"user_email":"lee+e2e-07-20260924t1130z@rightpath
+2026-09-24T11:39:59.399000 Successfully deleted auth account: 6f9ea9ac-e299-494a-9adb-bd63bd48d1b7
+2026-09-24T11:39:59.410000 POST | 200 | https://vlmtsdzpnjnavdgytcmi.supabase.co/functions/v1/delete-user

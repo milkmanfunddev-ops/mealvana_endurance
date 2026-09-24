@@ -1,0 +1,2 @@
+# 2026-09-24T11:32:09Z account C after Test Store purchase at ~11:31:55Z
+[{"user_id":"6f9ea9ac-e299-494a-9adb-bd63bd48d1b7","period_type":"NORMAL","active_until":"2026-09-24 11:36:56.226+00","event_at":"2026-09-24 11:31:56.416+00"}]
