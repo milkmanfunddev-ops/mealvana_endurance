@@ -1,6 +1,6 @@
 # 06: A paid account signs out and back in with no paywall
 
-**Status:** ready-for-agent
+**Status:** in-progress (wave 6, 2026-09-24)
 **Blocked by:** 03 (touches integration_test/flows/paid_relogin_flow_test.dart), 05.
 **Next:** `/implement-lee testing-wave`
 **Model:** opus

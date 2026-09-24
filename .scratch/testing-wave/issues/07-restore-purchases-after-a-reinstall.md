@@ -1,6 +1,6 @@
 # 07: Restore purchases after a reinstall
 
-**Status:** ready-for-agent
+**Status:** in-progress (wave 6, 2026-09-24)
 **Blocked by:** 03 (touches integration_test/flows/restore_purchases_flow_test.dart), 05.
 **Next:** `/implement-lee testing-wave`
 **Model:** opus
