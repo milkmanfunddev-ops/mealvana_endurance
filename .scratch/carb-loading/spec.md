@@ -203,6 +203,28 @@ default opens Dinner; an empty day opens the current slot; accepting collapses
 the slot to a summary and advances the open card; manual overrides stick;
 regular day untouched.
 
+### RULED — 2026-09-24 (Xuan) — the loading bar joins the collapsed face
+
+**The collapsed LOAD face becomes one row: loader + delta.** A continuous
+(not segmented — segments were proposed and rejected) 26 px loading bar takes
+two thirds of the row; the pace words take the right third, value stacked over
+its label. Amends the 2026-09-19 "delta alone" ruling.
+
+Bar anatomy, from Xuan's HUD reference translated to brand: orange only
+(reference cyan = `electrolyte` = burn side, non-conformant here); the
+unloaded track **fades toward the tail**; the fill is **uneven in
+intensity** — dimmer at its start, hottest at the leading edge — with glow;
+rounded, no scanlines, no sharp cells. Fill = eaten/544. The cream **pace
+tick** stays (owed/544): with segments gone it alone makes the bar say pace,
+not percent — fill short of the tick IS the behind-gram gap, made visible.
+Tick hides at 0 owed and on completion.
+
+**Completion flips the label: CARB LOAD → LOADED**, full bar, brighter glow,
+"544 of 544 g". On-pace and Loaded states show grams as the sub-line.
+
+Prototyped through v9 (both files). Still pending for ship: the glow materials
+ruling, and a copy register for the pace/Loaded strings (P-3).
+
 - **D1 — Is a carb-loading day its own log, or food-log entries tagged to a day?**
   Hinge for lanes 2 and 3. If entries are ordinary food logs tagged to a
   carb-loading day, regenerating a protocol rewrites targets without touching
