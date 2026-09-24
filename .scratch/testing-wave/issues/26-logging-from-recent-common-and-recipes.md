@@ -1,6 +1,6 @@
 # 26: Logging from Recent, Common and Recipes
 
-**Status:** in-progress (wave 13, 2026-09-24)
+**Status:** done (wave 13, 2026-09-24)
 **Blocked by:** none.
 **Next:** `/implement-lee testing-wave`
 **Model:** opus

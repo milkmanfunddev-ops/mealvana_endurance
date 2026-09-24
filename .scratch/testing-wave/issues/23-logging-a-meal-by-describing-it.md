@@ -1,6 +1,6 @@
 # 23: Logging a meal by describing it
 
-**Status:** in-progress (wave 13, 2026-09-24)
+**Status:** done (wave 13, 2026-09-24)
 **Blocked by:** none.
 **Next:** `/implement-lee testing-wave`
 **Model:** opus
