@@ -1,0 +1,16 @@
+[15:17:07] POST | 200 | https://vlmtsdzpnjnavdgytcmi.supabase.co/functions/v1/sync-all-data
+[15:17:10] POST | 200 | https://vlmtsdzpnjnavdgytcmi.supabase.co/functions/v1/calculate-daily-macros-v6
+[15:17:11] POST | 200 | https://vlmtsdzpnjnavdgytcmi.supabase.co/functions/v1/sync-all-data
+[15:17:13] POST | 200 | https://vlmtsdzpnjnavdgytcmi.supabase.co/functions/v1/calculate-daily-macros-v6
+[15:17:36] POST | 200 | https://vlmtsdzpnjnavdgytcmi.supabase.co/functions/v1/ensure-credits
+[15:17:36] POST | 200 | https://vlmtsdzpnjnavdgytcmi.supabase.co/functions/v1/ensure-credits
+[15:17:47] POST | 200 | https://vlmtsdzpnjnavdgytcmi.supabase.co/functions/v1/ensure-credits
+[15:17:47] POST | 200 | https://vlmtsdzpnjnavdgytcmi.supabase.co/functions/v1/ensure-credits
+[15:18:44] POST | 200 | https://vlmtsdzpnjnavdgytcmi.supabase.co/functions/v1/analyze-meal-photo
+[15:20:03] POST | 200 | https://vlmtsdzpnjnavdgytcmi.supabase.co/functions/v1/garmin-push
+[15:20:06] POST | 200 | https://vlmtsdzpnjnavdgytcmi.supabase.co/functions/v1/garmin-push
+[15:20:16] POST | 200 | https://vlmtsdzpnjnavdgytcmi.supabase.co/functions/v1/garmin-push
+[15:22:21] POST | 200 | https://vlmtsdzpnjnavdgytcmi.supabase.co/functions/v1/garmin-push
+[15:22:22] POST | 200 | https://vlmtsdzpnjnavdgytcmi.supabase.co/functions/v1/garmin-push
+
+(14 rows)
