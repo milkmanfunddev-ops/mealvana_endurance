@@ -1,6 +1,6 @@
 # 13: The store checks before release
 
-**Status:** in-progress (wave 10, 2026-09-24)
+**Status:** waiting on Lee (phone run on both stores; Claude's part merged in wave 10, 2026-09-24)
 **Blocked by:** 01, 02, 03, 04, 05.
 **Next:** `/implement-lee paywall`
 **Model:** opus

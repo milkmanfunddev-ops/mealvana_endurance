@@ -162,5 +162,21 @@
     "failed": [],
     "suite": "green",
     "elapsed": "27m"
+  },
+  {
+    "number": 10,
+    "tickets": [
+      "13"
+    ],
+    "base": "fafdeec9937fda9c69b5931686289225f4b74a65",
+    "branch": "mealplanning",
+    "startedAt": "2026-09-24T11:42:33.462Z",
+    "closedAt": "2026-09-24T11:55:51.334Z",
+    "merged": [
+      "13"
+    ],
+    "failed": [],
+    "suite": "not run: the wave changed a bash script and docs, no Dart (bash -n and the wizard dry runs instead)",
+    "elapsed": "13m"
   }
 ]
