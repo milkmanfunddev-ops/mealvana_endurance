@@ -75,6 +75,19 @@ Each entry: what went wrong or cost time, where it was seen, and the suggested f
     wave 5, but it's a manual step. Fix: `wave --close` drops idle pool devices itself. Seen:
     wave 5.
 
+### Speed
+
+21. **Every ticket does a cold iOS build, and the builds queue behind one lock.** Each ticket gets
+    a new worktree with an empty `build/`, so Xcode starts from nothing: `run_dev.sh` took 56 s in
+    wave 2 and 93–255 s in waves 4–5, and a Patrol build 68–288 s. A ticket needs one or two builds,
+    and with two tickets only one builds at a time. That is about 5–10 minutes a ticket: real, but
+    not most of the time (ticket 11 took 33 minutes in all). Testing tickets don't change `lib/`,
+    so every ticket in a wave builds the same app. Options: build the dev app once per wave and
+    install that `.app` on each pool device (needs Lee's word, since CLAUDE.md bars
+    `flutter build` as assistant execution; one `flutter run` by the wave lead could produce it);
+    share one Xcode DerivedData across worktrees; or reuse the last wave's worktree for the next
+    ticket. Seen: waves 2–5.
+
 ## Done
 
 - **#10, tickets 06–09 chained on a paid account that lapses.** 06, 07 and 08 each sign up and
