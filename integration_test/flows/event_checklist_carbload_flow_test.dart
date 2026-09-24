@@ -65,9 +65,10 @@ void main() {
       await $(
         const ValueKey('my_events.new_event_button'),
       ).waitUntilExists(timeout: const Duration(seconds: 20));
-      await $(
-        const ValueKey('my_events.new_event_button'),
-      ).scrollTo(settlePolicy: SettlePolicy.noSettle);
+      await revealCentered(
+        $,
+        find.byKey(const ValueKey('my_events.new_event_button')),
+      );
       await $(
         const ValueKey('my_events.new_event_button'),
       ).tap(settlePolicy: SettlePolicy.noSettle);

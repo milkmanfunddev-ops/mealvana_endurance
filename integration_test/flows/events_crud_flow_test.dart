@@ -65,12 +65,15 @@ void main() {
 
       // ---- 1. Calendar → Events tab → New Event -------------------------
       await $(const ValueKey('kyle_tab_bar.item.events')).tap();
-      // New Event sits at the end of the list, below the fold for an account
-      // with many events: scroll it into view before tapping.
+      // New Event sits at the end of the list, below the fold (or behind the
+      // tab bar) for an account with many events: center it before tapping.
       await $(
         const ValueKey('my_events.new_event_button'),
       ).waitUntilExists(timeout: const Duration(seconds: 20));
-      await $(const ValueKey('my_events.new_event_button')).scrollTo();
+      await revealCentered(
+        $,
+        find.byKey(const ValueKey('my_events.new_event_button')),
+      );
       await $(const ValueKey('my_events.new_event_button')).tap();
 
       // ---- 2. CREATE -----------------------------------------------------
