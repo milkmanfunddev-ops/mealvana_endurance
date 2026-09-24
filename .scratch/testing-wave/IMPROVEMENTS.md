@@ -26,6 +26,14 @@ Wave 8 (10, 14; 2026-09-24):
   on screen may read Lee's data as the test account's. Fix to consider: sign out on the dev
   simulator before the copy, or note the account in each prompt.
 
+Wave 9 (16, 32; 2026-09-24):
+
+- **#32 a pool copy carries the dev simulator's app, not the testing build.** `app-build.json`
+  named 433514bc and no app code had changed, but the wave-8 build left with the dropped
+  simulators, so fresh copies held a Sep 23 build. The lead rebuilt. Fix: after a build, the
+  lead keeps `Runner.app` (scratchpad, or install it on the dev simulator too) and the "no
+  build" check also compares the Dart bundle date on a fresh copy.
+
 ## Done
 
 - **#27 launch, #28 screenshots.** Runbook step 3 checks for SpringBoard after `simctl launch`
