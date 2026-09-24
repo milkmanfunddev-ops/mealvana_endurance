@@ -1,0 +1,9 @@
+# 2026-09-24T20:46:36Z function_edge_logs, last 20 min, filter lookup-product
+(no rows in window)
+exit 0
+# search-catalog
+[15:44:42] POST | 200 | https://vlmtsdzpnjnavdgytcmi.supabase.co/functions/v1/search-catalog
+[15:45:20] POST | 200 | https://vlmtsdzpnjnavdgytcmi.supabase.co/functions/v1/search-catalog
+
+(2 rows)
+exit 0
