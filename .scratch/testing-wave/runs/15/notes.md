@@ -1,0 +1,27 @@
+# Ticket 15 run notes (w12-20260924T1712Z)
+
+- Worktree HEAD ed9b3669 (base check passed, no reset); main clone mealplanning also at ed9b3669.
+- App on UDID 39BAC33A-8572-4406-AD10-E97107112E19 (wave-pool-1): dev app built from 52c68764 (prompt and app-build.json agree). Data cleared by the wave lead.
+- 17:12:32Z slot claimed (LOCK claim slot testing-wave-15).
+- 17:13Z db-before.txt, db-messages-ebac747d.txt, db-messages-1a24f2bf.txt. Subject: ebac747d (11 turns, archived Draft 15b6b4f4, 4 meals); second subject 1a24f2bf (7 turns, confirmed plan f2c0bc78, week 09-13).
+- be6abf2f's updated_at is 2026-09-24 16:53:19Z, later than ticket 16's 14:53 confirm: something touched the confirmed plan between waves (another session or wave 11). Not this run.
+- 17:13:49Z console stream started (pid in SCRATCH), app launched; Welcome screen in front, signed out.
+- 17:14Z the first mobile-MCP tap on "I already have an account" (200,816) sent the app to the background (home screen showed, app still running). Tapped the app icon with idb, then idb-tapped the button; the MCP's later taps all landed. Testing-process note, not an app problem: a tap that low may have been read as a home-indicator swipe (the button sits 30 pt above the indicator). Known noise for this run.
+- 17:15Z logged in as test@test.com (password by cred.mjs). What's New sheet "Shake to tell us" and then the TrainingPeaks sharing sheet stacked on first login: already filed (12-008, 30-010); tapped Got it and Keep Sharing (keeps the default, no change).
+- Timeline and Food > Plan: be6abf2f's 4 dinners; Vana note "1007g" carbs (14-010, not refiled).
+- 17:17:01Z tapped Ask Vana's centre: the dev testing-tools button opened UI settings instead (12-002, not refiled). Closed it, tapped Ask Vana's bottom-left edge (340,837).
+- 17:17:17Z the Ask Vana sheet started a NEW general conversation 4d62c862 and streamed an opener (vana.opener.general, Haiku, $0.0216, debited), although today's general conversation 8507a520 (ticket 16's, 14:50Z) exists. 8507a520 has context_day null while 4d62c862 has 2026-09-24, so the server may not have counted 8507a520 as today's. Finding 15-004. The spend is a general opener, not a plan or a logging call, so no COST kind applies (12-004 raised that gap).
+- Full-screen general chat shows a third chip "Pick my dinner and plan the rest of the week" that the sheet did not show (06-vana-sheet.png vs 07-general-chat-full.png). Not checked against the code; no Finding filed, left for the wave lead to judge.
+- iOS asked for Speech Recognition on the full-screen chat (09-004); Don't Allow.
+- 17:17:58Z Conversations (Ask Vana tab) lists two "Quick question" rows for Sep 24 (12:17 PM and 9:50 AM): the second general conversation of the day, see 15-004.
+- Meal plans tab: every row "This week's plan", including Sep 16 rows whose plans are for the week of Sep 13 (16-006, not refiled). Rows are timed by last_message_at in local time (ebac747d 12:08:56Z = 7:08 AM).
+- 17:18:17Z opened ebac747d (Sep 22, 7:08 AM): full history and plan bar on screen within about 1 s (10-ebac747d-open-1s.png); no empty "Ask me anything" state this time (16-008 did not repeat). Header "New meal plan" (16-005, not refiled).
+- Transcript: 11 turns, same count and order as vana_messages (turns-vs-db.md). Scrolling with the MCP swipe flung past turns 4 to 6; slow idb drags (--duration 1.2-1.5) showed every turn. Testing-process note for IMPROVEMENTS.
+- Opener turn shows its question twice (15-002). Cards of meals in the plan show empty checkboxes (15-003).
+- Plan bar for the archived Draft 15b6b4f4: "Your plan · 4 meals", expandable, servings -/+ and remove on each card, Review plan opens "Your week · 4 meals · 16 servings" with Confirm plan (15-001). I did not tap Confirm, -/+ or remove. "7 of 7 servings across 7 days" beside "16 servings" reads as dinner-day coverage (4 dinner meals × 4 servings cover 7 dinner days); known noise, not judged.
+- 17:21:10Z opened 1a24f2bf (Sep 16, 1:48 PM): 7 turns, same count and order; plan bar "Your plan · 6 meals · Plan confirmed" (f2c0bc78, confirmed, 6 meals). Its Tofu, quinoa, spinach & chard card (AL-176, in the plan) shows an empty checkbox (15-003).
+- Console: only the startup noise already known from tickets 14 and 16 (TrainingPeaks token refresh 400, V.O2 "Please reconnect", FinalSurge "Date-range endpoint unavailable (404)", fuelling-engine "No distance data"/"No intensity distribution hints" for Patrol test activities). No error or exception line while the chats were open. The router logged "popping /main" when I tapped Back in ebac747d (12:20:58 local) although the screen went back to Conversations; read as the router naming the page below, known noise.
+- edge-requests.txt covers 17:08 to 17:23Z on dev and may hold wave-pool-2's (ticket 17's) requests too: vana-action at 12:16:20, 12:16:23 and 12:17:05 local came before I opened Vana (I was on Timeline/Food then; Food's Plan tab may load its plan through vana-action). Only one vana-chat call (12:17:20 local) = the opener above.
+- 17:22:38Z db-after.txt: meal_plans 40 (unchanged), no plan created or updated; ebac747d 11 and 1a24f2bf 7 messages (unchanged); +1 conversation and +1 message = 4d62c862's opener.
+- 17:23:48Z log stream stopped, app terminated, slot released. console.log had 4 token lines; console-redacted.log keeps the rest (scan clean).
+- Account left as found except the new general conversation 4d62c862 (1 opener message). No account created, nothing deleted, COST 0.
