@@ -23,6 +23,10 @@
     "reason": "clean-install",
     "why": "Needs a fresh install with no session; it self-skips once an earlier flow has signed in, and the job fails on any skip."
   },
+  "flows/paid_relogin_flow_test.dart": {
+    "reason": "clean-install",
+    "why": "Signs up a throwaway account from the welcome screen and buys Test Store Monthly on the paywall, so it needs a fresh install with no session and a build whose RevenueCat key is the Test Store's."
+  },
   "flows/redeem_code_flow_test.dart": {
     "reason": "clean-install",
     "why": "Signs up a throwaway account from the welcome screen to redeem codes from the paywall, so it needs a fresh install with no session, like the signup flow."

@@ -1,0 +1,17 @@
+## dev revenuecat-webhook, 11:25Z-11:40Z UTC, GET /v1/projects/{ref}/analytics/endpoints/logs (unified logs table), read 11:36:25Z
+rows 9 
+2026-09-24T11:29:02.441000 [rc-webhook] INITIAL_PURCHASE: active_until=2026-09-24T11:33:37.722Z period=NORMAL for d3d962e6-c7d4-4e11-b6ff-60ee59079540
+
+2026-09-24T11:29:02.580000 [rc-webhook] INITIAL_PURCHASE: allowance 4000000 → d3d962e6-c7d4-4e11-b6ff-60ee59079540 ({"balance":4000000,"granted":true,"allowance":4000000,"forfeited":0,"allowance_expires_at":"2026-09-24T11:33:37.722+00:00"})
+
+2026-09-24T11:29:02.581000 POST | 200 | https://vlmtsdzpnjnavdgytcmi.supabase.co/functions/v1/revenuecat-webhook
+2026-09-24T11:31:57.077000 [rc-webhook] INITIAL_PURCHASE: active_until=2026-09-24T11:36:56.226Z period=NORMAL for 6f9ea9ac-e299-494a-9adb-bd63bd48d1b7
+
+2026-09-24T11:31:57.203000 [rc-webhook] INITIAL_PURCHASE: allowance 4000000 → 6f9ea9ac-e299-494a-9adb-bd63bd48d1b7 ({"balance":4000000,"granted":true,"allowance":4000000,"forfeited":0,"allowance_expires_at":"2026-09-24T11:36:56.226+00:00"})
+
+2026-09-24T11:31:57.205000 POST | 200 | https://vlmtsdzpnjnavdgytcmi.supabase.co/functions/v1/revenuecat-webhook
+2026-09-24T11:36:13.712000 [rc-webhook] RENEWAL: active_until=2026-09-24T11:38:37.722Z period=NORMAL for d3d962e6-c7d4-4e11-b6ff-60ee59079540
+
+2026-09-24T11:36:13.827000 [rc-webhook] RENEWAL: allowance 4000000 → d3d962e6-c7d4-4e11-b6ff-60ee59079540 ({"balance":4000000,"granted":true,"allowance":4000000,"forfeited":4000000,"allowance_expires_at":"2026-09-24T11:38:37.722+00:00"})
+
+2026-09-24T11:36:13.828000 POST | 200 | https://vlmtsdzpnjnavdgytcmi.supabase.co/functions/v1/revenuecat-webhook

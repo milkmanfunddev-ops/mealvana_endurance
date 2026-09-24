@@ -1,0 +1,196 @@
+Timestamp               Ty Process[PID:TID]
+2026-09-24 06:31:53.357 Df Runner[40832:9617e8] (Flutter) Plugin AppLinksIosPlugin uses deprecated application lifecycle events. Please contact plugin maintainers and request UIScene lifecycle support. This will be required in a future version of Flutter. See https://docs.flutter.dev/release/breaking-changes/uiscenedelegate#migration-guide-for-flutter-plugins
+2026-09-24 06:31:53.360 Df Runner[40832:9617e8] (Flutter) Plugin FlutterWebAuth2Plugin uses deprecated application lifecycle events. Please contact plugin maintainers and request UIScene lifecycle support. This will be required in a future version of Flutter. See https://docs.flutter.dev/release/breaking-changes/uiscenedelegate#migration-guide-for-flutter-plugins
+2026-09-24 06:31:53.365 Df Runner[40832:9617e8] (Flutter) Plugin FLTGoogleSignInPlugin uses deprecated application lifecycle events. Please contact plugin maintainers and request UIScene lifecycle support. This will be required in a future version of Flutter. See https://docs.flutter.dev/release/breaking-changes/uiscenedelegate#migration-guide-for-flutter-plugins
+2026-09-24 06:31:53.386 Df Runner[40832:96183b] (Flutter) flutter: The Dart VM service is listening on http://127.0.0.1:56808/RP5O98HnYNc=/
+2026-09-24 06:31:54.856 Df Runner[40832:9617e8] (Flutter) flutter: supabase.supabase_flutter: INFO: ***** Supabase init completed *****
+2026-09-24 06:31:55.122 Df Runner[40832:9617e8] (Flutter) flutter: GoRouter: INFO: Full paths for routes:
+2026-09-24 06:31:55.123 Df Runner[40832:9617e8] (Flutter) flutter:   => /privacy-consent
+2026-09-24 06:31:55.123 Df Runner[40832:9617e8] (Flutter) flutter:   => /force-upgrade
+2026-09-24 06:31:55.123 Df Runner[40832:9617e8] (Flutter) flutter:   => /welcome
+2026-09-24 06:31:55.123 Df Runner[40832:9617e8] (Flutter) flutter:   => /onboarding
+2026-09-24 06:31:55.123 Df Runner[40832:9617e8] (Flutter) flutter:   => /auth/post-onboarding
+2026-09-24 06:31:55.123 Df Runner[40832:9617e8] (Flutter) flutter:   => /auth/email-signup
+2026-09-24 06:31:55.123 Df Runner[40832:9617e8] (Flutter) flutter:   => /auth/email-login
+2026-09-24 06:31:55.124 Df Runner[40832:9617e8] (Flutter) flutter:   => /auth/forgot-password
+2026-09-24 06:31:55.124 Df Runner[40832:9617e8] (Flutter) flutter:   => /auth/verify-reset-code
+2026-09-24 06:31:55.124 Df Runner[40832:9617e8] (Flutter) flutter:   => /auth/set-new-password
+2026-09-24 06:31:55.124 Df Runner[40832:9617e8] (Flutter) flutter:   => /distancepacegut
+2026-09-24 06:31:55.124 Df Runner[40832:9617e8] (Flutter) flutter:   => /distance-pace-gut-entry
+2026-09-24 06:31:55.124 Df Runner[40832:9617e8] (Flutter) flutter:   => /main
+2026-09-24 06:31:55.124 Df Runner[40832:9617e8] (Flutter) flutter:   => /coach-portal
+2026-09-24 06:31:55.124 Df Runner[40832:9617e8] (Flutter) flutter:   => /plan
+2026-09-24 06:31:55.125 Df Runner[40832:9617e8] (Flutter) flutter:   => /current-plan
+2026-09-24 06:31:55.125 Df Runner[40832:9617e8] (Flutter) flutter:   => /fuel-log
+2026-09-24 06:31:55.126 Df Runner[40832:9617e8] (Flutter) flutter:   => /adjust-macros
+2026-09-24 06:31:55.126 Df Runner[40832:9617e8] (Flutter) flutter:   => /learn
+2026-09-24 06:31:55.126 Df Runner[40832:9617e8] (Flutter) flutter:   => /learn/video
+2026-09-24 06:31:55.126 Df Runner[40832:9617e8] (Flutter) flutter:   => /events
+2026-09-24 06:31:55.126 Df Runner[40832:9617e8] (Flutter) flutter:   => /events/create
+2026-09-24 06:31:55.126 Df Runner[40832:9617e8] (Flutter) flutter:   => /events/:eventId
+2026-09-24 06:31:55.126 Df Runner[40832:9617e8] (Flutter) flutter:   => /events/:eventId/checklist
+2026-09-24 06:31:55.126 Df Runner[40832:9617e8] (Flutter) flutter:   => /paywall
+2026-09-24 06:31:55.126 Df Runner[40832:9617e8] (Flutter) flutter:   => /buy-credits
+2026-09-24 06:31:55.126 Df Runner[40832:9617e8] (Flutter) flutter:   => /settings
+2026-09-24 06:31:55.126 Df Runner[40832:9617e8] (Flutter) flutter:   => /settings/connected-apps
+2026-09-24 06:31:55.126 Df Runner[40832:9617e8] (Flutter) flutter:   => /settings/privacy
+2026-09-24 06:31:55.126 Df Runner[40832:9617e8] (Flutter) flutter:   => /settings/preferences
+2026-09-24 06:31:55.127 Df Runner[40832:9617e8] (Flutter) flutter:   => /settings/sweat-profile
+2026-09-24 06:31:55.127 Df Runner[40832:9617e8] (Flutter) flutter:   => /settings/sport-settings
+2026-09-24 06:31:55.127 Df Runner[40832:9617e8] (Flutter) flutter:   => /settings/food-preferences-hub
+2026-09-24 06:31:55.127 Df Runner[40832:9617e8] (Flutter) flutter:   => /settings/sport-preferences-hub
+2026-09-24 06:31:55.127 Df Runner[40832:9617e8] (Flutter) flutter:   => /settings/nutrition-targets
+2026-09-24 06:31:55.127 Df Runner[40832:9617e8] (Flutter) flutter:   => /settings/nutrition-profile
+2026-09-24 06:31:55.127 Df Runner[40832:9617e8] (Flutter) flutter:   => /settings/templates
+2026-09-24 06:31:55.127 Df Runner[40832:9617e8] (Flutter) flutter:   => /settings/coach-connection
+2026-09-24 06:31:55.128 Df Runner[40832:9617e8] (Flutter) flutter:   => /settings/food-preferences-consolidated
+2026-09-24 06:31:55.128 Df Runner[40832:9617e8] (Flutter) flutter:   => /settings/food-preferences
+2026-09-24 06:31:55.128 Df Runner[40832:9617e8] (Flutter) flutter:   => /settings/dietary-preference
+2026-09-24 06:31:55.128 Df Runner[40832:9617e8] (Flutter) flutter:   => /settings/allergies
+2026-09-24 06:31:55.128 Df Runner[40832:9617e8] (Flutter) flutter:   => /settings/running-details
+2026-09-24 06:31:55.128 Df Runner[40832:9617e8] (Flutter) flutter:   => /settings/cycling-details
+2026-09-24 06:31:55.128 Df Runner[40832:9617e8] (Flutter) flutter:   => /settings/swimming-details
+2026-09-24 06:31:55.128 Df Runner[40832:9617e8] (Flutter) flutter:   => /settings/food-preferences/add-food
+2026-09-24 06:31:55.128 Df Runner[40832:9617e8] (Flutter) flutter:   => /settings/food-preferences/formula-library
+2026-09-24 06:31:55.128 Df Runner[40832:9617e8] (Flutter) flutter:   =>   /settings/food-preferences/formula-library/before/:id
+2026-09-24 06:31:55.128 Df Runner[40832:9617e8] (Flutter) flutter:   =>   /settings/food-preferences/formula-library/during/:id
+2026-09-24 06:31:55.128 Df Runner[40832:9617e8] (Flutter) flutter:   =>   /settings/food-preferences/formula-library/after/:id
+2026-09-24 06:31:55.128 Df Runner[40832:9617e8] (Flutter) flutter:   =>   /settings/food-preferences/formula-library/personal/create
+2026-09-24 06:31:55.128 Df Runner[40832:9617e8] (Flutter) flutter:   =>   /settings/food-preferences/formula-library/personal/:id
+2026-09-24 06:31:55.128 Df Runner[40832:9617e8] (Flutter) flutter:   => /help
+2026-09-24 06:31:55.129 Df Runner[40832:9617e8] (Flutter) flutter:   => /swap-food
+2026-09-24 06:31:55.129 Df Runner[40832:9617e8] (Flutter) flutter:   => /barcode-scanner
+2026-09-24 06:31:55.129 Df Runner[40832:9617e8] (Flutter) flutter:   => /food-detail
+2026-09-24 06:31:55.129 Df Runner[40832:9617e8] (Flutter) flutter:   => /carb-loading-select-food
+2026-09-24 06:31:55.129 Df Runner[40832:9617e8] (Flutter) flutter:   => /create-custom-carb-loading-food
+2026-09-24 06:31:55.129 Df Runner[40832:9617e8] (Flutter) flutter:   => /coach
+2026-09-24 06:31:55.129 Df Runner[40832:9617e8] (Flutter) flutter:   => /coach/athlete/:relationshipId
+2026-09-24 06:31:55.129 Df Runner[40832:9617e8] (Flutter) flutter:   => /my-coaches
+2026-09-24 06:31:55.129 Df Runner[40832:9617e8] (Flutter) flutter:   => /athlete/feedback
+2026-09-24 06:31:55.129 Df Runner[40832:9617e8] (Flutter) flutter:   => /coach/apply
+2026-09-24 06:31:55.129 Df Runner[40832:9617e8] (Flutter) flutter:   => /coach-directory
+2026-09-24 06:31:55.129 Df Runner[40832:9617e8] (Flutter) flutter:   => /chat/:relationshipId
+2026-09-24 06:31:55.129 Df Runner[40832:9617e8] (Flutter) flutter:   => /meal-log/edit
+2026-09-24 06:31:55.129 Df Runner[40832:9617e8] (Flutter) flutter:   => /meal-log/manual
+2026-09-24 06:31:55.129 Df Runner[40832:9617e8] (Flutter) flutter:   => /meal-log/photo
+2026-09-24 06:31:55.129 Df Runner[40832:9617e8] (Flutter) flutter:   => /meal-log/describe
+2026-09-24 06:31:55.129 Df Runner[40832:9617e8] (Flutter) flutter:   => /meal-log/review
+2026-09-24 06:31:55.129 Df Runner[40832:9617e8] (Flutter) flutter:   => /meal-log/recent-saved
+2026-09-24 06:31:55.129 Df Runner[40832:9617e8] (Flutter) flutter:   => /meal-log/recipe
+2026-09-24 06:31:55.129 Df Runner[40832:9617e8] (Flutter) flutter:   => /food
+2026-09-24 06:31:55.129 Df Runner[40832:9617e8] (Flutter) flutter:   =>   /food/meals/recents
+2026-09-24 06:31:55.129 Df Runner[40832:9617e8] (Flutter) flutter:   =>   /food/meals/:id
+2026-09-24 06:31:55.129 Df Runner[40832:9617e8] (Flutter) flutter:   =>   /food/cook/:id
+2026-09-24 06:31:55.129 Df Runner[40832:9617e8] (Flutter) flutter:   =>   /food/swap/:planMealId
+2026-09-24 06:31:55.129 Df Runner[40832:9617e8] (Flutter) flutter:   =>   /food/kroger/:planId
+2026-09-24 06:31:55.129 Df Runner[40832:9617e8] (Flutter) flutter:   =>   /food/plans/:id
+2026-09-24 06:31:55.129 Df Runner[40832:9617e8] (Flutter) flutter:   => /vana
+2026-09-24 06:31:55.129 Df Runner[40832:9617e8] (Flutter) flutter:   =>   /vana/browse
+2026-09-24 06:31:55.130 Df Runner[40832:9617e8] (Flutter) flutter:   =>   /vana/conversations
+2026-09-24 06:31:55.130 Df Runner[40832:9617e8] (Flutter) flutter:   => /settings/vana
+2026-09-24 06:31:55.130 Df Runner[40832:9617e8] (Flutter) flutter:   => /jade
+2026-09-24 06:31:55.130 Df Runner[40832:9617e8] (Flutter) flutter: known full paths for route names:
+2026-09-24 06:31:55.130 Df Runner[40832:9617e8] (Flutter) flutter:   privacy-consent => /privacy-consent
+2026-09-24 06:31:55.130 Df Runner[40832:9617e8] (Flutter) flutter:   force-upgrade => /force-upgrade
+2026-09-24 06:31:55.130 Df Runner[40832:9617e8] (Flutter) flutter:   welcome => /welcome
+2026-09-24 06:31:55.131 Df Runner[40832:9617e8] (Flutter) flutter:   onboarding => /onboarding
+2026-09-24 06:31:55.131 Df Runner[40832:9617e8] (Flutter) flutter:   auth-post-onboarding => /auth/post-onboarding
+2026-09-24 06:31:55.131 Df Runner[40832:9617e8] (Flutter) flutter:   auth-email-signup => /auth/email-signup
+2026-09-24 06:31:55.131 Df Runner[40832:9617e8] (Flutter) flutter:   auth-email-login => /auth/email-login
+2026-09-24 06:31:55.131 Df Runner[40832:9617e8] (Flutter) flutter:   auth-forgot-password => /auth/forgot-password
+2026-09-24 06:31:55.131 Df Runner[40832:9617e8] (Flutter) flutter:   auth-verify-reset-code => /auth/verify-reset-code
+2026-09-24 06:31:55.131 Df Runner[40832:9617e8] (Flutter) flutter:   auth-set-new-password => /auth/set-new-password
+2026-09-24 06:31:55.131 Df Runner[40832:9617e8] (Flutter) flutter:   distancepacegut => /distancepacegut
+2026-09-24 06:31:55.131 Df Runner[40832:9617e8] (Flutter) flutter:   distance-pace-gut-entry => /distance-pace-gut-entry
+2026-09-24 06:31:55.131 Df Runner[40832:9617e8] (Flutter) flutter:   main => /main
+2026-09-24 06:31:55.131 Df Runner[40832:9617e8] (Flutter) flutter:   coach-portal => /coach-portal
+2026-09-24 06:31:55.139 Df Runner[40832:9617e8] (Flutter) flutter:   plan => /plan
+2026-09-24 06:31:55.140 Df Runner[40832:9617e8] (Flutter) flutter:   current-plan => /current-plan
+2026-09-24 06:31:55.140 Df Runner[40832:9617e8] (Flutter) flutter:   fuel-log => /fuel-log
+2026-09-24 06:31:55.141 Df Runner[40832:9617e8] (Flutter) flutter:   adjust-macros => /adjust-macros
+2026-09-24 06:31:55.141 Df Runner[40832:9617e8] (Flutter) flutter:   learn => /learn
+2026-09-24 06:31:55.141 Df Runner[40832:9617e8] (Flutter) flutter:   learn-video => /learn/video
+2026-09-24 06:31:55.141 Df Runner[40832:9617e8] (Flutter) flutter:   events-list => /events
+2026-09-24 06:31:55.141 Df Runner[40832:9617e8] (Flutter) flutter:   events-create => /events/create
+2026-09-24 06:31:55.141 Df Runner[40832:9617e8] (Flutter) flutter:   event-detail => /events/:eventId
+2026-09-24 06:31:55.141 Df Runner[40832:9617e8] (Flutter) flutter:   race-checklist => /events/:eventId/checklist
+2026-09-24 06:31:55.141 Df Runner[40832:9617e8] (Flutter) flutter:   paywall => /paywall
+2026-09-24 06:31:55.141 Df Runner[40832:9617e8] (Flutter) flutter:   buy-credits => /buy-credits
+2026-09-24 06:31:55.141 Df Runner[40832:9617e8] (Flutter) flutter:   settings => /settings
+2026-09-24 06:31:55.141 Df Runner[40832:9617e8] (Flutter) flutter:   settings-connected-apps => /settings/connected-apps
+2026-09-24 06:31:55.141 Df Runner[40832:9617e8] (Flutter) flutter:   settings-privacy => /settings/privacy
+2026-09-24 06:31:55.141 Df Runner[40832:9617e8] (Flutter) flutter:   settings-preferences => /settings/preferences
+2026-09-24 06:31:55.141 Df Runner[40832:9617e8] (Flutter) flutter:   settings-sweat-profile => /settings/sweat-profile
+2026-09-24 06:31:55.141 Df Runner[40832:9617e8] (Flutter) flutter:   settings-sport-settings => /settings/sport-settings
+2026-09-24 06:31:55.141 Df Runner[40832:9617e8] (Flutter) flutter:   settings-food-preferences-hub => /settings/food-preferences-hub
+2026-09-24 06:31:55.141 Df Runner[40832:9617e8] (Flutter) flutter:   settings-sport-preferences-hub => /settings/sport-preferences-hub
+2026-09-24 06:31:55.141 Df Runner[40832:9617e8] (Flutter) flutter:   settings-nutrition-targets => /settings/nutrition-targets
+2026-09-24 06:31:55.141 Df Runner[40832:9617e8] (Flutter) flutter:   settings-nutrition-profile => /settings/nutrition-profile
+2026-09-24 06:31:55.141 Df Runner[40832:9617e8] (Flutter) flutter:   settings-templates => /settings/templates
+2026-09-24 06:31:55.141 Df Runner[40832:9617e8] (Flutter) flutter:   settings-coach-connection => /settings/coach-connection
+2026-09-24 06:31:55.141 Df Runner[40832:9617e8] (Flutter) flutter:   settings-food-preferences-consolidated => /settings/food-preferences-consolidated
+2026-09-24 06:31:55.141 Df Runner[40832:9617e8] (Flutter) flutter:   settings-food-preferences => /settings/food-preferences
+2026-09-24 06:31:55.141 Df Runner[40832:9617e8] (Flutter) flutter:   settings-dietary-preference => /settings/dietary-preference
+2026-09-24 06:31:55.141 Df Runner[40832:9617e8] (Flutter) flutter:   settings-allergies => /settings/allergies
+2026-09-24 06:31:55.142 Df Runner[40832:9617e8] (Flutter) flutter:   settings-running-details => /settings/running-details
+2026-09-24 06:31:55.142 Df Runner[40832:9617e8] (Flutter) flutter:   settings-cycling-details => /settings/cycling-details
+2026-09-24 06:31:55.142 Df Runner[40832:9617e8] (Flutter) flutter:   settings-swimming-details => /settings/swimming-details
+2026-09-24 06:31:55.142 Df Runner[40832:9617e8] (Flutter) flutter:   settings-add-food => /settings/food-preferences/add-food
+2026-09-24 06:31:55.142 Df Runner[40832:9617e8] (Flutter) flutter:   settings-formula-library => /settings/food-preferences/formula-library
+2026-09-24 06:31:55.142 Df Runner[40832:9617e8] (Flutter) flutter:   settings-formula-detail-before => /settings/food-preferences/formula-library/before/:id
+2026-09-24 06:31:55.142 Df Runner[40832:9617e8] (Flutter) flutter:   settings-formula-detail-during => /settings/food-preferences/formula-library/during/:id
+2026-09-24 06:31:55.142 Df Runner[40832:9617e8] (Flutter) flutter:   settings-formula-detail-after => /settings/food-preferences/formula-library/after/:id
+2026-09-24 06:31:55.142 Df Runner[40832:9617e8] (Flutter) flutter:   settings-formula-personal-create => /settings/food-preferences/formula-library/personal/create
+2026-09-24 06:31:55.142 Df Runner[40832:9617e8] (Flutter) flutter:   settings-formula-personal-edit => /settings/food-preferences/formula-library/personal/:id
+2026-09-24 06:31:55.143 Df Runner[40832:9617e8] (Flutter) flutter:   help-feedback => /help
+2026-09-24 06:31:55.143 Df Runner[40832:9617e8] (Flutter) flutter:   swap-food => /swap-food
+2026-09-24 06:31:55.143 Df Runner[40832:9617e8] (Flutter) flutter:   barcode-scanner => /barcode-scanner
+2026-09-24 06:31:55.143 Df Runner[40832:9617e8] (Flutter) flutter:   food-detail => /food-detail
+2026-09-24 06:31:55.143 Df Runner[40832:9617e8] (Flutter) flutter:   carb-loading-select-food => /carb-loading-select-food
+2026-09-24 06:31:55.143 Df Runner[40832:9617e8] (Flutter) flutter:   create-custom-carb-loading-food => /create-custom-carb-loading-food
+2026-09-24 06:31:55.143 Df Runner[40832:9617e8] (Flutter) flutter:   coach-dashboard => /coach
+2026-09-24 06:31:55.143 Df Runner[40832:9617e8] (Flutter) flutter:   coach-athlete-detail => /coach/athlete/:relationshipId
+2026-09-24 06:31:55.143 Df Runner[40832:9617e8] (Flutter) flutter:   my-coaches => /my-coaches
+2026-09-24 06:31:55.143 Df Runner[40832:9617e8] (Flutter) flutter:   athlete-feedback => /athlete/feedback
+2026-09-24 06:31:55.143 Df Runner[40832:9617e8] (Flutter) flutter:   coach-apply => /coach/apply
+2026-09-24 06:31:55.143 Df Runner[40832:9617e8] (Flutter) flutter:   coach-directory => /coach-directory
+2026-09-24 06:31:55.143 Df Runner[40832:9617e8] (Flutter) flutter:   coach-chat => /chat/:relationshipId
+2026-09-24 06:31:55.143 Df Runner[40832:9617e8] (Flutter) flutter:   meal-log-edit => /meal-log/edit
+2026-09-24 06:31:55.143 Df Runner[40832:9617e8] (Flutter) flutter:   meal-log-manual => /meal-log/manual
+2026-09-24 06:31:55.143 Df Runner[40832:9617e8] (Flutter) flutter:   meal-log-photo => /meal-log/photo
+2026-09-24 06:31:55.143 Df Runner[40832:9617e8] (Flutter) flutter:   meal-log-describe => /meal-log/describe
+2026-09-24 06:31:55.143 Df Runner[40832:9617e8] (Flutter) flutter:   meal-log-review => /meal-log/review
+2026-09-24 06:31:55.143 Df Runner[40832:9617e8] (Flutter) flutter:   meal-log-recent-saved => /meal-log/recent-saved
+2026-09-24 06:31:55.143 Df Runner[40832:9617e8] (Flutter) flutter:   meal-log-recipe => /meal-log/recipe
+2026-09-24 06:31:55.143 Df Runner[40832:9617e8] (Flutter) flutter:   food => /food
+2026-09-24 06:31:55.143 Df Runner[40832:9617e8] (Flutter) flutter:   food-meals-recents => /food/meals/recents
+2026-09-24 06:31:55.143 Df Runner[40832:9617e8] (Flutter) flutter:   food-meal-detail => /food/meals/:id
+2026-09-24 06:31:55.143 Df Runner[40832:9617e8] (Flutter) flutter:   food-cooking-mode => /food/cook/:id
+2026-09-24 06:31:55.143 Df Runner[40832:9617e8] (Flutter) flutter:   food-swap-meal => /food/swap/:planMealId
+2026-09-24 06:31:55.143 Df Runner[40832:9617e8] (Flutter) flutter:   food-kroger => /food/kroger/:planId
+2026-09-24 06:31:55.143 Df Runner[40832:9617e8] (Flutter) flutter:   food-previous-plan => /food/plans/:id
+2026-09-24 06:31:55.144 Df Runner[40832:9617e8] (Flutter) flutter:   vana-chat => /vana
+2026-09-24 06:31:55.144 Df Runner[40832:9617e8] (Flutter) flutter:   vana-browse => /vana/browse
+2026-09-24 06:31:55.144 Df Runner[40832:9617e8] (Flutter) flutter:   vana-conversations => /vana/conversations
+2026-09-24 06:31:55.144 Df Runner[40832:9617e8] (Flutter) flutter:   settings-vana => /settings/vana
+2026-09-24 06:31:55.144 Df Runner[40832:9617e8] (Flutter) flutter:   jade-chat => /jade
+2026-09-24 06:31:55.144 Df Runner[40832:9617e8] (Flutter) flutter:
+2026-09-24 06:31:55.154 Df Runner[40832:9617e8] (Flutter) flutter: GoRouter: INFO: setting initial location /
+2026-09-24 06:31:55.377 Df Runner[40832:9617e8] (Flutter) flutter: [RevenueCatService] logIn skipped: SDK not configured
+2026-09-24 06:31:55.536 Df Runner[40832:9617e8] (Flutter) flutter: [RevenueCatService] logIn skipped: SDK not configured
+2026-09-24 06:31:56.216 Df Runner[40832:9617e8] (Flutter) flutter: ✅ Schema validation passed (40 tables verified)
+2026-09-24 06:31:56.349 Df Runner[40832:9617e8] (Flutter) flutter: [RevenueCatService] configured {store: test_store}
+2026-09-24 06:31:56.355 Df Runner[40832:9617e8] (Flutter) flutter: [SubscriptionService] customer info updated {active: true, expires_at: 2026-09-24T11:33:37.000Z}
+2026-09-24 06:31:56.397 Df Runner[40832:9617e8] (Flutter) flutter: [RevenueCatService] logged in
+2026-09-24 06:31:56.406 Df Runner[40832:9617e8] (Flutter) flutter: [SubscriptionService] customer info fetched {active: true, expires_at: 2026-09-24T11:33:37.000Z, is_trial: false}
+2026-09-24 06:31:56.412 Df Runner[40832:9617e8] (Flutter) flutter: 📊 [ANALYTICS] app_opened {device_id: C023CE96-3326-4881-AD20-F72EB577DA00, session_id: eb9c9fe8-5d4f-40f4-9e5d-7dbdc647f394, timestamp: 2026-09-24T06:31:56.414094}
+2026-09-24 06:31:56.537 Df Runner[40832:9617e8] (Flutter) flutter: GoRouter: INFO: No initial matches: /
+2026-09-24 06:31:56.554 Df Runner[40832:9617e8] (Flutter) flutter: GoRouter: INFO: redirecting to RouteMatchList(/main)
+2026-09-24 06:31:56.630 Df Runner[40832:9617e8] (Flutter) flutter: GoRouter: INFO: Using MaterialApp configuration
+2026-09-24 06:33:33.566 Df Runner[40832:9617e8] (Flutter) flutter: GoRouter: INFO: pushing /settings
+2026-09-24 06:33:35.897 Df Runner[40832:9617e8] (Flutter) flutter: 📊 [ANALYTICS] settings_subscription_tapped {}
+2026-09-24 06:37:02.352 Df Runner[40832:9617e8] (Flutter) flutter: 📊 [ANALYTICS] settings_delete_account_tapped {}
+2026-09-24 06:37:03.713 Df Runner[40832:9617e8] (Flutter) flutter: supabase.auth: INFO: Signing out user with scope: SignOutScope.local
+2026-09-24 06:37:03.720 Df Runner[40832:9617e8] (Flutter) flutter: 📊 [ANALYTICS] user_signed_out {timestamp: 2026-09-24T06:37:03.722878, was_onboarding_signout: false}
+2026-09-24 06:37:03.731 Df Runner[40832:9617e8] (Flutter) flutter: [SubscriptionService] customer info updated {active: true, expires_at: 2026-09-24T11:33:37.000Z}
+2026-09-24 06:37:03.749 Df Runner[40832:9617e8] (Flutter) flutter: GoRouter: INFO: redirecting to RouteMatchList(/welcome)
