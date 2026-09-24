@@ -1,6 +1,6 @@
 # 30: The timeline and the fuelling plan show the week
 
-**Status:** ready-for-agent
+**Status:** in-progress (wave 10, 2026-09-24)
 **Blocked by:** none.
 **Next:** `/implement-lee testing-wave`
 **Model:** opus
