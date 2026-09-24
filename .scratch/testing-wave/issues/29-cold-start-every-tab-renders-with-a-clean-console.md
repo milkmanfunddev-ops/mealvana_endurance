@@ -1,6 +1,6 @@
 # 29: Cold start: every tab renders with a clean console
 
-**Status:** ready-for-agent
+**Status:** in-progress (wave 16, 2026-09-24)
 **Blocked by:** none.
 **Next:** `/implement-lee testing-wave`
 **Model:** opus

@@ -1,6 +1,6 @@
 # 18: Browsing with Vana
 
-**Status:** ready-for-agent
+**Status:** in-progress (wave 16, 2026-09-24)
 **Blocked by:** none.
 **Next:** `/implement-lee testing-wave`
 **Model:** opus
