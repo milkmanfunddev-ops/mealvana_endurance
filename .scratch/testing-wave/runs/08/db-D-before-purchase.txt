@@ -1,0 +1,1 @@
+[{"id":"5f96cc61-71c9-4b43-82fd-a6cb16b85647","email":"lee+e2e-08-20260924t1225z@rightpathprogramming.com","created_at":"2026-09-24 12:25:36.292366+00","email_confirmed_at":"2026-09-24 12:25:36.411603+00","users_rows":1,"ent_rows":0}]

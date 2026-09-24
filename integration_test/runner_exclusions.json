@@ -34,5 +34,9 @@
   "flows/restore_purchases_flow_test.dart": {
     "reason": "clean-install",
     "why": "Signs up a throwaway account from the welcome screen to tap Restore purchases on the paywall, so it needs a fresh install with no session, like the signup flow."
+  },
+  "flows/subscription_screen_flow_test.dart": {
+    "reason": "clean-install",
+    "why": "Signs up a throwaway account from the welcome screen and buys Test Store Monthly on the paywall, so it needs a fresh install with no session and a build whose RevenueCat key is the Test Store's."
   }
 }

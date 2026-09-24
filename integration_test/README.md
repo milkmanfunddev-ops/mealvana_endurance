@@ -152,6 +152,7 @@ suite. Run it locally or on the M1.
 | `flows/recommendation_stacking_flow_test.dart` | Pre-workout occasion stacking (2 cases) | yes |
 | `flows/settings_persist_flow_test.dart` | Settings persistence | yes |
 | `flows/settings_sweep_flow_test.dart` | Every top-level settings screen opens without a crash | yes |
+| `flows/subscription_screen_flow_test.dart` | A new `lee+e2e-*` athlete buys Test Store Monthly, opens Settings → Subscription and sees "Subscribed", the renewal day of its Entitlement row's `active_until`, Manage subscription, no Upgrade, and Redeem code opening our own sheet; then deletes itself from Settings (mp-495, mp-494, mp-558). Tapping Manage stays agent-only | clean-install |
 
 "Runner" is `yes` when the M1 job runs the file, otherwise the reason it is on
 `runner_exclusions.json`. The last result of each flow, and every problem a
