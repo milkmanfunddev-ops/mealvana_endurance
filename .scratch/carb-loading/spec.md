@@ -225,6 +225,20 @@ Tick hides at 0 owed and on completion.
 Prototyped through v9 (both files). Still pending for ship: the glow materials
 ruling, and a copy register for the pace/Loaded strings (P-3).
 
+### BUILT — 2026-09-24, night — the slot page, live in the prototype (v14)
+
+Fully interactive overlay behind every slot card, composed per the ruling:
+header (‹ · slot name · eaten/target), search-with-barcode field, LOGGED
+receipt (tap a row → ×N portion stepper + Remove; quantities ripple
+through slot, day total, and the pace face), RECOMMENDED FOR <slot> (curated
+rows, teal carb-number discs, "N g carbs per serving", one-tap ⊕) with a
+formula row per the Formula Kit composition ("Bagel + Cream Cheese ·
+formula"), › My Foods (27), and the create-your-own / save-a-formula
+footer. Dashboard taps route: card body and "Edit in <slot> ›" open the
+page; the chevron alone peeks. Verified end-to-end in the harness (open →
+stepper ×2 → face flips to "27 g ahead" → rec add → remove
+→ close reflects on the card) and on screen. Regular day untouched.
+
 ### RULED — 2026-09-24, evening (Xuan) — log path, flag shape, and the variants
 
 **The log lives in the food-log table (Path A), and D4 = YES:** loading-day
