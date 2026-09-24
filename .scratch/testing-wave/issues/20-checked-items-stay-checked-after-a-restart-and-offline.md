@@ -11,9 +11,9 @@
 
 **Touches:** the dev test account's shopping list items
 
-- [ ] Runs by the runbook: a slot taken and released, the console saved to the run folder, a look-around on every screen visited, every problem written as a Finding and nothing fixed.
-- [ ] Uses the entitled dev test account from the credentials file; no new account.
-- [ ] Network is cut on the simulator for the offline part; the method is written in the run notes.
+- [x] Runs by the runbook: a slot taken and released, the console saved to the run folder, a look-around on every screen visited, every problem written as a Finding and nothing fixed.
+- [x] Uses the entitled dev test account from the credentials file; no new account.
+- [x] Network is cut on the simulator for the offline part; the method is written in the run notes.
 - [ ] SQL shows the checked state once back online; nothing is lost or doubled.
 
 Next: /implement-lee testing-wave

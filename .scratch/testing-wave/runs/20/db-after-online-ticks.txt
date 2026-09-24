@@ -1,0 +1,37 @@
+# db after 3 online ticks (Avocado, Carrot, Wholewheat pasta at ~16:18:50Z), taken 2026-09-24T16:18:51Z, user test@test.com 607f9dd5, list 03c4c52b (plan be6abf2f)
+## shopping_lists 03c4c52b: updated_at | confirmed_at | rows | checked | have | distinct names
+2026-09-24 16:18:44.775+00 | 2026-09-24 14:53:15.869+00 | 15 | 3 | 0 | 15
+## shopping_items: position | name | qty | aisle | checked | have | source | edited | id
+5 | Wholewheat pasta | 200 g | Bakery & Grains | true | false | plan | false | 9de32a95-1508-4371-81a7-89e0e1b4d18b
+11 | Balsamic vinaigrette | 2 tbsp | Other | false | false | plan | false | 27035213-934e-4a94-a112-fcf81a4d5f53
+12 | Farro | 400 g | Other | false | false | plan | false | 9c8b8872-b1a2-4fa0-90ba-86bf215498c0
+13 | Mixed vegetables | 200 g | Other | false | false | plan | false | b1b85a16-d149-48e8-8133-dc440969d1b5
+14 | Spelt | 200 g | Other | false | false | plan | false | 80fc1ef6-c746-4c52-93ee-8f77ae2602fe
+6 | Chickpeas | 150 g | Pantry | false | false | plan | false | 02a5c819-21a8-423e-b094-ee24c5cc437a
+7 | Green lentils | 150 g | Pantry | false | false | plan | false | 61359a36-5576-475b-b7ad-904f76254548
+8 | Pesto | 2 tbsp | Pantry | false | false | plan | false | 12bef5e7-f814-43b9-a0d0-7f3ca317b56e
+9 | Tahini sauce | 2 tbsp | Pantry | false | false | plan | false | b4778706-cb82-4daa-b9bf-73c64c47e049
+10 | White beans | 150 g | Pantry | false | false | plan | false | 195c83d5-52ab-4b40-b950-564a15cc54de
+0 | Avocado | ½ | Produce | true | false | plan | false | eedd7ec8-954d-428c-80bc-1ae0a98bac1b
+1 | Beets | 120 g | Produce | false | false | plan | false | 5ca6cf63-a696-440e-8cae-5953556ec3dc
+2 | Bell pepper | 60 g | Produce | false | false | plan | false | d48ea20b-6566-42bd-8859-bb255cd51128
+3 | Carrot | 60 g | Produce | true | false | plan | false | d7aeb9a0-154f-4420-81db-7ce8bd82ce97
+4 | Cauliflower | 150 g | Produce | false | false | plan | false | f9f94f7c-80e0-4173-a925-14acce4ee502
+## meal_plans.shopping mirror of be6abf2f: name | checked | have
+Avocado | true | false
+Beets | false | false
+Bell pepper | false | false
+Carrot | true | false
+Cauliflower | false | false
+Wholewheat pasta | true | false
+Chickpeas | false | false
+Green lentils | false | false
+Pesto | false | false
+Tahini sauce | false | false
+White beans | false | false
+Balsamic vinaigrette | false | false
+Farro | false | false
+Mixed vegetables | false | false
+Spelt | false | false
+## meal_plans be6abf2f: status | updated_at
+confirmed | 2026-09-24 16:18:44.978+00
