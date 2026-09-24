@@ -123,6 +123,7 @@ suite. Run it locally or on the M1.
 |------|--------|--------|
 | `patrol_smoke_test.dart` | Toolchain smoke: the app launches, one widget renders | yes |
 | `flows/account_delete_flow_test.dart` | Sign up at `lee+e2e-*`, delete from the paywall ⋯ menu, sign up again as a new account | clean-install |
+| `flows/admin_bypass_flow_test.dart` | mp-416 for the signed-in account: Admin or Pro opens the Gate, an Admin pushing `/paywall` stays on the shell, no Pro means `vana-chat` answers 403 `pro_required` (not run when the account holds Pro) | yes |
 | `flows/activities_crud_flow_test.dart` | Activity create → plan (deterministic macro edge function) → edit → delete | yes |
 | `flows/ai_coach_chat_flow_test.dart` | One turn in the Vana general chat (`/jade` redirects there) | ai-spend |
 | `flows/ai_credits_balance_flow_test.dart` | AI credits pill → top-up sheet resolves; buys nothing | yes |

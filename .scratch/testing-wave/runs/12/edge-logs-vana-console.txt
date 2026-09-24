@@ -1,0 +1,6 @@
+[23:42:32] [vana-chat] user=607f9dd5-6fa7-48ee-a628-720d4a0506a1 conv=13998a9a-7f33-4d14-93bf-84c099d7d855 kind=general opener=true/plan model=anthropic/claude-haiku-4.5 context=built
+[23:42:36] [vana-chat] onFinish user=607f9dd5-6fa7-48ee-a628-720d4a0506a1 conv=13998a9a-7f33-4d14-93bf-84c099d7d855 in=10706 cache_read=0 out=190 steps=1 3953ms
+[23:43:08] [vana-chat] user=607f9dd5-6fa7-48ee-a628-720d4a0506a1 conv=13998a9a-7f33-4d14-93bf-84c099d7d855 kind=general opener=false model=anthropic/claude-haiku-4.5 context=reused
+[23:43:13] [vana-chat] onFinish user=607f9dd5-6fa7-48ee-a628-720d4a0506a1 conv=13998a9a-7f33-4d14-93bf-84c099d7d855 in=23182 cache_read=21690 out=228 steps=2 5011ms
+
+(4 rows)

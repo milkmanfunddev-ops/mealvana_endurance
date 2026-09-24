@@ -11,9 +11,9 @@
 
 **Touches:** integration_test/flows/admin_bypass_flow_test.dart
 
-- [ ] Runs by the runbook: a slot and the build lock taken and released, the console saved to the run folder, a look-around on every screen visited, every problem written as a Finding and nothing fixed.
-- [ ] Signs in as the admin from the credentials file on a freshly claimed simulator.
-- [ ] No paywall at sign-in or on relaunch; `users.is_admin` is true by SQL; RevenueCat shows no active `pro` (or its current Grant, recorded).
-- [ ] One AI action (a Vana message) is tried; the server's answer and the screen are recorded; anything other than mp-416 is a Finding.
+- [x] Runs by the runbook: a slot and the build lock taken and released, the console saved to the run folder, a look-around on every screen visited, every problem written as a Finding and nothing fixed.
+- [x] Signs in as the admin from the credentials file on a freshly claimed simulator.
+- [x] No paywall at sign-in or on relaunch; `users.is_admin` is true by SQL; RevenueCat shows no active `pro` (or its current Grant, recorded).
+- [x] One AI action (a Vana message) is tried; the server's answer and the screen are recorded; anything other than mp-416 is a Finding.
 
 Next: /implement-lee testing-wave
