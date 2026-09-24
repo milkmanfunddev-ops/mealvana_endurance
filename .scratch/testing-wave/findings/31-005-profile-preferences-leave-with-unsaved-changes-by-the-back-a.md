@@ -1,0 +1,26 @@
+# 31-005 · Profile & Preferences: leave with unsaved changes by the back arrow and by swipe-back
+
+- kind: followup-test
+- status: open
+- ticket: 31
+- run: w11-20260924T1648Z
+- screen: Profile & Preferences
+- decision: 
+
+**Steps.**
+1. Open Profile & Preferences and change one field without saving.
+2. Leave by the orange back arrow; reopen. Repeat with the iOS swipe-back gesture.
+
+**Expected.**
+The app either asks to discard changes or drops them; the database is unchanged either way.
+
+**Actual.**
+Not run.
+
+**Evidence.**
+- 
+
+**Decision quote.**
+> 
+
+**Triage.**
