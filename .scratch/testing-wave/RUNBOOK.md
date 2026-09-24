@@ -230,7 +230,10 @@ should behave) goes to the page as an open question, the normal way, and nothing
 
 1. Merge in ticket order, run `flutter analyze` and the CI suite command.
 2. Read every ticket's `RUNS/notes.md` for surprises with no Finding and no "known noise", and file
-   them (`FINDINGS new …`), noting "filed by the wave lead" in Actual.
+   them (`FINDINGS new …`), noting "filed by the wave lead" in Actual. Then read the tickets'
+   edge-log extracts (`RUNS/*edge*`) side by side: a line in one ticket's extract can come from
+   the other ticket's run (wave 10: ticket 20's `kroger` 400s sat only in ticket 30's extract).
+   Match each error to the run whose minutes and screens produced it, and file any nobody filed.
 3. `FINDINGS index` (writes `INDEX.md`; exit 0 only when every Finding is closed or wontfix: the end
    of the loop). `COST status WAVE` shows what the wave spent. Triage follows the spec's "Triage".
 4. `SYNC simulator drop <name>` for every wave simulator; `wave --close`; remove the worktrees.

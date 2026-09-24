@@ -1,6 +1,6 @@
 # 31: Settings, profile and sign-out
 
-**Status:** in-progress (wave 11, 2026-09-24)
+**Status:** done (wave 11, 2026-09-24)
 **Blocked by:** 30 (changes a setting 30 reads).
 **Next:** `/implement-lee testing-wave`
 **Model:** opus

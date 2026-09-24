@@ -3153,3 +3153,23 @@ An edit made while notes are being written is picked up on the next open. A requ
 **What it touches.** The New meal plan button, `MealPlanController.newPlan()`, the Plan tab, the plan bar in the new chat, and which rows ticket 14's retest expects.
 
 > 2026-09-24 opened in wave 8 ticket 14
+
+## mp-669 · Can the athlete delete the shopping list of this week's confirmed plan?
+- category: Shopping list
+- kind: question
+- status: open
+- linked: mp-244
+- image: none
+- svg: docs/ssot/decisions/images/mealplanning/mp-669.svg
+- screen: none (the Shopping tab's Delete list dialog and what the tab shows next both follow from the answer)
+- source: wave testing-wave 11 ticket 19
+
+**Context.** mp-244 says the server builds the list when the athlete confirms and rebuilds it after every plan edit, but no decision says whether the athlete may delete it. In wave 11 the dev test account deleted its confirmed plan's list from Food > Shopping > ⋯ > Delete list at 16:53 UTC on 24 September. The dialog was the same one a hand-made list gets ("Delete this list? Everything on it goes with it."). The list and its 15 rows were removed, the plan stayed confirmed with no list, and the Shopping tab then opened an archived draft's 6-item list as if it were current (Findings 19-001, 19-002).
+
+**Question.** Is the confirmed plan's own list deletable? (A) No: it can only be cleared or its items marked as had. (B) Yes, and the dialog says it is the plan's list and that it comes back on the next plan edit. (C) Yes, and a fresh copy is built at once. And after a delete, what should the tab show: nothing, or the most recent other list?
+
+**Why.** A keeps the list mp-244 calls the moment of value, and Kroger and the offline copy never lose it. B and C let an athlete who shops elsewhere clear the tab.
+
+**What it touches.** The Delete list item in the Shopping tab's ⋯ menu and its dialog, `delete_shopping_list` in vana-action, which list the tab opens when the plan has none, and the retest of Finding 19-001.
+
+> 2026-09-24 opened in wave 11 ticket 19

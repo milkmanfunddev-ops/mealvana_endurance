@@ -1,6 +1,6 @@
 # 19: Previous shopping lists, a new list, and deleting one
 
-**Status:** in-progress (wave 11, 2026-09-24)
+**Status:** done (wave 11, 2026-09-24)
 **Blocked by:** 20 (deletes lists 20 is checking).
 **Next:** `/implement-lee testing-wave`
 **Model:** opus
