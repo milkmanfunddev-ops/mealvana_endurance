@@ -1,6 +1,6 @@
 # 27: Editing and deleting a logged meal changes the day's totals
 
-**Status:** in-progress (wave 15, 2026-09-24)
+**Status:** done (wave 15, 2026-09-24)
 **Blocked by:** 26 (reads the day totals 23 to 26 change).
 **Next:** `/implement-lee testing-wave`
 **Model:** opus

@@ -1,6 +1,6 @@
 # 28: Barcode logging on a simulator
 
-**Status:** in-progress (wave 15, 2026-09-24)
+**Status:** done (wave 15, 2026-09-24)
 **Blocked by:** none.
 **Next:** `/implement-lee testing-wave`
 **Model:** opus

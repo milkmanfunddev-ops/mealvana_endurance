@@ -52,6 +52,8 @@ Each entry: what went wrong or cost time, where it was seen, and the suggested f
   whenever a run counts rows or turns.
 - **#44 two tickets on one account (wave 13).** Wave lead step 5: both prompts name the shared
   account and what the other run writes.
+  Wave 15 confirmed it: 27 and 28 shared test@test.com, 28 was sent to the day before, and each
+  run's SQL extracts named the other's rows and edge requests without a clash.
 - **#39 mobile MCP read another simulator.** Runbook step 4 and 5: idb reads the screen
   (`describe-all`, `simctl io` screenshot), the MCP only taps and types. The helper-port cause is
   not looked into. Before wave 12.
