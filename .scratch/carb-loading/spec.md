@@ -225,6 +225,47 @@ Tick hides at 0 owed and on completion.
 Prototyped through v9 (both files). Still pending for ship: the glow materials
 ruling, and a copy register for the pace/Loaded strings (P-3).
 
+### CONTEXT — the 2026-09-21 Xuan+Lee sync (received via ops-f3, 2026-09-24)
+
+Source: ops/outputs/transcripts/2026-09-21T141554Z (S5–S9). Verified against the
+repo 2026-09-24: NO carb-loading code has shipped since — 9/22 was the
+release/1.27.1 bugfix; the migration below has not landed; the pace mechanic
+exists only in the design prototype. No Augusta-weekend user data can exist.
+
+**RULED on the call (S9) — one store, flag the variant.** Carb foods unify into
+the shared meal-library store with an `is_carb_loading` flag; the separate
+Drift+Supabase carb food tables are the old mistake, not to be repeated
+(Lee+Xuan explicitly agreed). Scope: ingredient-grade foods, not composed
+meals. Presentation is free ("filter, its own page, whatever — the data stores
+centrally"). Cost: a client-side Drift migration to existing installs; whether
+the first ship includes it was NOT settled.
+→ Consequence for this plan: "reuse the old carb catalog wiring" (earlier
+today) is a stopgap at most; the ruled endstate is a library query on the
+flag. The log-table question (A: food-log entries with a slot tag / B: keep
+`carb_loading_day_meals`) is NOT settled by S9 — it ruled the catalog, not the
+log — but the one-store principle leans A. OPEN, Xuan's call.
+
+**UNRESOLVED (S7) — the pace mechanic is contested, not blessed.** Lee's
+standing objection (never withdrawn); Xuan ships it to learn, both aware.
+Lee's four: (1) athletes can tell they're on pace from the suggestions;
+(2) flexibility — a clock-driven scold is the failure mode; (3) timezone
+complexity (Xuan: "take the time zone away, it will be easy to build" — the
+design already uses device-local minutes only); (4) **planning-mode collapse**:
+athletes plan loading days weeks ahead; a surface coupled to "today" is
+structurally wrong for a future day.
+→ NEW REQUIREMENT: **future-day and past-day variants.** Everything designed
+so far (ramp, tick, pace copy, time-aware expansion) assumes viewed-day ==
+today. A future loading day must render clock-free: label + targets + planned
+items, no pace, no tick, no behind-copy. A past day renders the outcome
+(final grams vs 544, Loaded or shortfall). Design these as one coherent
+surface, not a bolt-on.
+
+**Why the rigor anyway:** Rachel Mitchell (dietitian, anti-logging generally)
+is meticulous specifically on loading day — willingness to log is
+event-scoped, not a personality trait. N=1; ship to learn. Lee's minimal pole
+for comparison: "you're on a carb loading day, here are some suggestions, and
+be done with it."
+
 ### RULED — 2026-09-24, later (Xuan) — the slot page is a composition of existing surfaces
 
 No new bespoke surface. The slot page assembles from what ships today:
