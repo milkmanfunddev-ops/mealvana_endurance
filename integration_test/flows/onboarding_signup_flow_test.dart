@@ -258,6 +258,11 @@ void main() {
       }
       expect(
         rows.entitlementRows,
+        isNotNull,
+        reason: 'the user_entitlements read failed, so "no row" is unproven',
+      );
+      expect(
+        rows.entitlementRows,
         isEmpty,
         reason:
             'A new account has never paid, so user_entitlements holds no row '
@@ -324,13 +329,13 @@ Future<
   ({
     Map<String, dynamic>? userRow,
     Map<String, dynamic>? surveyRow,
-    List<Map<String, dynamic>> entitlementRows,
+    List<Map<String, dynamic>>? entitlementRows,
   })
 >
 _pollForPersistedOnboarding(String email, String password) async {
   Map<String, dynamic>? userRow;
   Map<String, dynamic>? surveyRow;
-  var entitlementRows = const <Map<String, dynamic>>[];
+  List<Map<String, dynamic>>? entitlementRows;
 
   for (var attempt = 0; attempt < 18; attempt++) {
     await Future<void>.delayed(const Duration(seconds: 5));
@@ -344,7 +349,7 @@ _pollForPersistedOnboarding(String email, String password) async {
     // The users row is a hard requirement; the survey is uploaded by the
     // same background walk, so once both are present we're done.
     if (userRow != null && surveyRow != null) {
-      entitlementRows = await probe.select(
+      entitlementRows = await probe.trySelect(
         'user_entitlements',
         query: 'user_id=eq.${probe.userId}&select=*',
       );

@@ -204,7 +204,8 @@ void main() {
         expect(
           after,
           isNull,
-          reason: 'mp-416: the Gate is open for an Admin, so /paywall must '
+          reason:
+              'mp-416: the Gate is open for an Admin, so /paywall must '
               'not show the paywall',
         );
         expect($(authSentinel).exists, isTrue);
@@ -212,9 +213,11 @@ void main() {
 
       // ---- The server's own check ----------------------------------------
       if (standing.holdsPro(now)) {
-        // ignore: avoid_print
-        print(
-          '[admin_bypass] server leg not run: the account holds Pro until '
+        // A skip, not a silent return: the server's refusal is this flow's
+        // point, and a run that could not check it must not read as a pass
+        // (Finding 03-001; this account's Grants are Finding 12-001).
+        skipFlow(
+          'admin_bypass: server leg not run, the account holds Pro until '
           '${standing.activeUntil!.toIso8601String()}, so vana-chat would '
           'answer with a billed model turn. mp-416 lets Vana answer here.',
         );
@@ -226,7 +229,8 @@ void main() {
       expect(
         res.statusCode,
         403,
-        reason: 'mp-416: with no Pro the server refuses a Vana message, '
+        reason:
+            'mp-416: with no Pro the server refuses a Vana message, '
             'Admin or not ($standing)',
       );
       expect(

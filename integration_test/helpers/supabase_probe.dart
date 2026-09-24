@@ -110,6 +110,14 @@ class SupabaseProbe {
   Future<List<Map<String, dynamic>>> select(
     String table, {
     required String query,
+  }) async => await trySelect(table, query: query) ?? const [];
+
+  /// Like [select], but null when the read itself failed (non-200, timeout,
+  /// bad body), so a caller asserting "no rows" can tell an empty table from
+  /// a read that never happened.
+  Future<List<Map<String, dynamic>>?> trySelect(
+    String table, {
+    required String query,
   }) async {
     try {
       final res = await http
@@ -118,10 +126,10 @@ class SupabaseProbe {
             headers: _headers,
           )
           .timeout(const Duration(seconds: 20));
-      if (res.statusCode != 200) return const [];
+      if (res.statusCode != 200) return null;
       return (jsonDecode(res.body) as List).cast<Map<String, dynamic>>();
     } on Exception {
-      return const [];
+      return null;
     }
   }
 
