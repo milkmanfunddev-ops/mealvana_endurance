@@ -67,6 +67,9 @@ void main() {
       await $(const ValueKey('kyle_tab_bar.item.events')).tap();
       // New Event sits at the end of the list, below the fold for an account
       // with many events: scroll it into view before tapping.
+      await $(
+        const ValueKey('my_events.new_event_button'),
+      ).waitUntilExists(timeout: const Duration(seconds: 20));
       await $(const ValueKey('my_events.new_event_button')).scrollTo();
       await $(const ValueKey('my_events.new_event_button')).tap();
 

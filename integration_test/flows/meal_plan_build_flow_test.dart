@@ -229,6 +229,8 @@ void main() {
 
       // ---- 4. Confirm (draft plans only) -------------------------------
       if ($(_confirm).exists) {
+        // Confirm sits under the plan list, below the fold for a long plan.
+        await $(_confirm).scrollTo(settlePolicy: SettlePolicy.noSettle);
         await $(_confirm).tap(settlePolicy: SettlePolicy.noSettle);
         // confirm_plan is remote-ack: the button is only gone once the plan
         // has come back confirmed, so its disappearance IS the ack.
@@ -281,6 +283,7 @@ void main() {
       final probe = await SupabaseProbe.signIn();
       final before = probe == null ? const [] : await _planMealLogs(probe);
 
+      await $(_planTiles().first).scrollTo(settlePolicy: SettlePolicy.noSettle);
       await $(_planTiles().first).tap(settlePolicy: SettlePolicy.noSettle);
       await $.pump(const Duration(seconds: 1));
 
