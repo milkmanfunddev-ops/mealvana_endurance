@@ -1,0 +1,26 @@
+Sun 2026-09-20 07:00	Bike - Long Ride	cycling	45	10	planned	2026-09-21 15:16:35+00	final_surge	false	3cb2bdcc-d023-4a83-a9bf-78caa4c37ccc
+Sun 2026-09-20 07:00	Foam Rolling Routine	other			planned	2026-09-21 15:16:35+00	final_surge	false	87fb1f9c-e8c0-4a33-a3ea-b7a709260b37
+Sun 2026-09-20 07:08	Run	running	66	7.00683	planned	2026-09-21 15:16:35+00	final_surge	false	1f31e973-1776-4eb0-8ac5-a23a35a4f05d
+Mon 2026-09-21 06:25	Swim	swimming	70		planned	2026-09-22 07:31:02+00	final_surge	false	2b00af2f-57ff-42be-a8ae-5c9112f165de
+Mon 2026-09-21 07:00	Corpus Tempo Run	running	55	6.2	planned	2026-09-22 07:31:04+00	training_peaks	false	8ab07ec7-7c4c-4648-8c2f-ce562a5fccd2
+Mon 2026-09-21 11:57	R-CORE Routine	other	7		planned	2026-09-22 07:31:02+00	final_surge	false	6229601a-44fe-4a5c-8d17-45e7afd2cb30
+Mon 2026-09-21 16:45	12 mi Run	running	108	12	planned			true	933edc6f-9a5f-4b8b-a7f9-840bca511088
+Tue 2026-09-22 05:49	Speedwork	running	48	5	planned	2026-09-23 06:12:14+00	final_surge	false	920791cd-4f63-41d7-b4a6-aa34838a9c22
+Tue 2026-09-22 07:00	Corpus Endurance Ride	cycling	90	28	planned		training_peaks	false	ccd63def-5806-4ab1-ad55-1370130d12f7
+Tue 2026-09-22 07:00	Foam Rolling Routine	other			planned	2026-09-23 06:12:14+00	final_surge	false	f3b333cd-d1ee-4784-af80-cc9d0091a7f3
+Tue 2026-09-22 07:00	Warm Up Routine	other			planned	2026-09-23 06:12:14+00	final_surge	false	0a52d936-2fe8-4e9d-a6b1-78f79a8dc078
+Wed 2026-09-23 07:00	Bike	cycling	45	10	planned	2026-09-24 09:20:30+00	final_surge	false	b627f0e0-60c9-414a-a3a0-d7416e980029
+Wed 2026-09-23 07:00	Corpus Strength Block	other	45	2.99998	planned		training_peaks	false	0ccf57eb-bca9-4eee-8ffc-5bbd129422a3
+Wed 2026-09-23 07:00	R-CORE Routine	other			planned	2026-09-24 09:20:30+00	final_surge	false	8e896cc0-26ee-40ba-81c4-7397b4f4dcd7
+Wed 2026-09-23 07:00	Swim	swimming	30		planned	2026-09-24 09:20:30+00	final_surge	false	19a854df-807b-4a1c-8e4d-5d0849c0429b
+Wed 2026-09-23 21:00	Patrol Brick 1790211454281	brick	124		planned			true	b3774a2c-e3cd-4273-a194-37d165402a17
+Thu 2026-09-24 05:32	Easy	running	34	8	planned		final_surge	false	ce7b50c7-3ed7-4fb6-9181-be63fdbb0237
+Thu 2026-09-24 07:00	Foam Rolling Routine	other			planned		final_surge	false	3cc9e7c1-c504-49b3-b0c4-0fb6514b86e9
+Thu 2026-09-24 07:00	Rad Device Test Swim	swimming	45		planned		training_peaks	false	bf70bfd3-4e56-439a-bc67-80d514506c5f
+Thu 2026-09-24 07:28	Run	running	36	3.86422	planned		final_surge	false	7d3c02b1-23f9-427e-90d3-5b19bbde1884
+Thu 2026-09-24 20:45	Patrol H5 1790210557462	running	120	10	planned			true	91443fbc-3a00-45c7-acb4-1e18e82e53fc
+Thu 2026-09-24 20:45	Patrol H5 1790210599230	running	120	10	planned			true	9d4d4c93-0c04-4a7a-a4f9-79f4a3655612
+Fri 2026-09-25 07:00	R-CORE Routine	other			planned		final_surge	false	de63e2b3-6506-496b-940c-64a0b699242d
+Fri 2026-09-25 07:00	Swim	swimming	30		planned		final_surge	false	2f6ba1e4-f455-45f5-81a6-b8ba55d398b3
+Sat 2026-09-26 07:00	Foam Rolling Routine	other			planned		final_surge	false	97c20461-4393-4db0-810e-8661b6b3cf6a
+Sat 2026-09-26 07:00	Run - Long Run	running		17	planned		final_surge	false	81340e8f-c08c-48a6-b2c2-6e7d3dd412b7
