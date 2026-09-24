@@ -113,6 +113,14 @@ export SUPABASE_ACCESS_TOKEN="$SUPABASE_PAT"
 Save each extract to `RUNS` (`revenuecat-<what>.json`, `db-<what>.txt`) and compare it with
 `RUNS/expected.md`. Every mismatch is a Finding.
 
+Code fixtures for the redeem scenarios (dev only, never written by hand):
+`node scripts/testing-wave/seed-codes.mjs seed` resets the `E2E*` codes (a once-in-total giveaway,
+a many-use giveaway, an influencer code, an expired one, a not-yet-valid one and a used-up one) and
+clears their redemptions; `seed-codes.mjs list` shows them with their counts. For the coach's own
+code, sign up first, then `seed-codes.mjs own <your account's user id>` prints a coach code your
+account owns; it is deleted with the account. Run `seed` at the start of a redeem run, since an
+earlier run may have spent the once-in-total giveaway.
+
 ## 9. Look around on every screen
 
 On each screen you visit, stop and list other paths through it (other buttons, back, swipe, empty

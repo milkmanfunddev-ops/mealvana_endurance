@@ -13,13 +13,6 @@ Each entry: what went wrong or cost time, where it was seen, and the suggested f
 
 ### Harness and tooling
 
-1. **`wave --open` has no ticket filter.** Waves 4 and 5 were opened with a scratchpad script
-   calling `wavePlan`/`waveOpen` to keep to two tickets at a time. Fix: `sync.mjs wave ... --open
-   --only 14,15` (or a `--max 2` that takes the lowest numbers). Seen: waves 4, 5.
-2. **Run logs are gitignored, and agents forget `git add -f`.** In wave 5, both console logs were
-   left out of the commit, though three Findings cite them. The wave lead copied them in from
-   the worktrees before removing them. Fix: add `!.scratch/testing-wave/runs/**/*.log` to
-   `.gitignore`, so the token scan and a plain `git add` are enough. Seen: waves 2, 5.
 3. **Nothing checks that a Finding's evidence exists.** `findings.mjs index` parses the Finding
    but not the paths under **Evidence.** Fix: `index` warns on an evidence path missing from
    `runs/`. Seen: wave 5.
@@ -44,15 +37,6 @@ Each entry: what went wrong or cost time, where it was seen, and the suggested f
 
 ### Test data and accounts
 
-10. **Tickets 06–09 build on a paid account that can't stay paid.** The Test Store products have
-    no trial (05-002), and a monthly purchase lapses 25 minutes later (05-003). Needs Lee's
-    call: each ticket buys again and finishes within 25 minutes, each starts from a Grant, or
-    ticket 07 uses the natural expiry as its case. Lesson for future tickets: don't chain tickets
-    on an account whose state expires. Seen: wave 5.
-11. **Dev lacks the code rows the redeem scenarios need.** Both coach codes belong to
-    test@test.com, which has already used them. No influencer, giveaway, expired or used-up
-    codes exist (11-001, 11-008). Fix: a dev-only seed script with one row per code kind, each
-    owned by a throwaway coach account, that the ticket can reset. Seen: wave 5.
 12. **The Patrol account is lapsed, and the admin holds Pro Grants** (mp-658, 12-001). So the
     nightly Patrol job fails, and the admin-with-no-Pro case can't be seen. Waiting on Lee's
     choice in mp-658. Seen: waves 3, 4.
@@ -87,18 +71,29 @@ Each entry: what went wrong or cost time, where it was seen, and the suggested f
 
 ### The wave lead's routine
 
-19. **The suite has two failures that were already red before the waves began,** and every
-    wave has to explain them: `test/shared/ci_config_contract_test.dart` (a push-to-develop
-    check against a trigger Lee made PR-only, 11-011) and
-    `test/manual_live/training_peaks_api_test.dart` (needs a live token). Fix: update the
-    contract test to the PR-only trigger, and exclude `test/manual_live/` from the gate. Seen:
-    waves 2–5.
 20. **Pool simulators outlive a wave if the lead forgets to drop them.** The lead dropped them in
     wave 5, but it's a manual step. Fix: `wave --close` drops idle pool devices itself. Seen:
     wave 5.
 
 ## Done
 
+- **#10, tickets 06–09 chained on a paid account that lapses.** 06, 07 and 08 each sign up and
+  buy their own Test Store Monthly and finish within 20 minutes; 09 buys, cancels or lets the
+  25-minute lapse stand in, and keeps the lapsed account for 10. Ticket 05's account and two
+  wave-3 leftovers swept. Lesson for ticket writing: chain tickets only on account states that
+  do not expire (lapsed, deleted), never on a paid one. 09-24, `43fdae9a`.
+- **#2, run logs gitignored.** `.gitignore` now keeps `.scratch/testing-wave/runs/**/*.log`;
+  the token scan still runs before the commit. 09-24, `43fdae9a`.
+- **#1, `wave --open` had no ticket filter.** `sync.mjs wave ... --only NN,NN` or `--max N`
+  (refuses a ticket off the frontier); the implement-lee skill says to use it when a feature
+  caps its waves. 09-24, `43fdae9a`.
+- **#19, the two suite tests red before the waves.** The ci_config contract test now asserts
+  pr-validation is PR-only (Lee 08-21), and the wave lead runs the CI gate's own command
+  (`flutter test --exclude-tags="integration || e2e"`), which leaves out the live-token
+  TrainingPeaks test. 09-24, `35b706ac`.
+- **#11, dev had no code fixtures.** `scripts/testing-wave/seed-codes.mjs` (`seed`, `list`,
+  `own <user id>`) and the runbook's step 8 note; seeded on dev 09-24. Retests of 11-001 and
+  11-008 can run now. 09-24, this commit.
 - Patrol reported a skipped flow as passed; the runner now fails on skips
   (`PATROL_FAIL_ON_SKIP`, `skipFlow()`). Wave 3, `ff1baafc`.
 - The redeem flow's header now says what a thrown wait leaves on dev and how to sweep it. Wave 5,
