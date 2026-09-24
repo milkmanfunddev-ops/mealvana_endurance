@@ -1,0 +1,50 @@
+[
+  {
+    "at_": "2026-09-24 19:08:40.5288+00",
+    "ai_usage": [
+      {
+        "id": "9d05cefe-792a-4b7a-877b-21d625168ee4",
+        "user_id": "607f9dd5-6fa7-48ee-a628-720d4a0506a1",
+        "function_name": "describe-meal",
+        "model": "anthropic/claude-sonnet-4.6",
+        "input_tokens": 1351,
+        "output_tokens": 232,
+        "created_at": "2026-09-24T19:07:54.776159+00:00",
+        "cost_usd": 0.011493
+      }
+    ],
+    "ledger": [
+      {
+        "id": "2e2645ce-1ef1-4d38-8b00-9188cc7f13ee",
+        "user_id": "607f9dd5-6fa7-48ee-a628-720d4a0506a1",
+        "delta": -8000,
+        "reason": "reserve_usage",
+        "ref": "febc3696-d421-431a-9367-d1135408f8f2",
+        "balance_after": 11639674,
+        "created_at": "2026-09-24T19:07:45.117862+00:00",
+        "unit": "usd_micro"
+      },
+      {
+        "id": "b1c241b9-232f-402d-b866-7287ce631552",
+        "user_id": "607f9dd5-6fa7-48ee-a628-720d4a0506a1",
+        "delta": -3493,
+        "reason": "settle_usage",
+        "ref": "febc3696-d421-431a-9367-d1135408f8f2",
+        "balance_after": 11636181,
+        "created_at": "2026-09-24T19:07:54.817787+00:00",
+        "unit": "usd_micro"
+      }
+    ],
+    "wallet": {
+      "user_id": "607f9dd5-6fa7-48ee-a628-720d4a0506a1",
+      "balance": 11636181,
+      "free_period": "2026-09",
+      "created_at": "2026-07-31T19:43:14.778504+00:00",
+      "updated_at": "2026-09-24T19:07:54.817787+00:00",
+      "allowance": 4276181,
+      "allowance_monthly": 6000000,
+      "allowance_expires_at": "2026-10-15T19:18:12.98481+00:00",
+      "unit": "usd_micro"
+    }
+  }
+]
