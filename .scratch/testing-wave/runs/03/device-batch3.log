@@ -1,0 +1,601 @@
+getpwuid_r did not find a match for uid 501
+Filtering the log data using "process == "Runner" AND composedMessage CONTAINS "flutter:""
+Timestamp               Ty Process[PID:TID]
+2026-09-23 19:47:46.709 Df Runner[45271:7d5c94] (Flutter) flutter: The Dart VM service is listening on http://127.0.0.1:56871/qJR2-7a3LTA=/
+2026-09-23 19:47:47.846 Df Runner[45271:7d5c03] (Flutter) flutter: PatrolBinding: Register Patrol service extensions
+2026-09-23 19:47:47.865 Df Runner[45271:7d5c03] (Flutter) flutter: PATROL_LOG {"timestamp":"2026-09-23T19:47:47.854819","type":"config","config":{"printLogs":true}}
+2026-09-23 19:47:47.865 Df Runner[45271:7d5c03] (Flutter) flutter: PATROL_LOG {"timestamp":"2026-09-23T19:47:47.857799","type":"config","config":{"printLogs":true}}
+2026-09-23 19:47:47.875 Df Runner[45271:7d5c03] (Flutter) flutter: 00:00 +0: patrol_test_explorer
+2026-09-23 19:47:47.886 Df Runner[45271:7d5c03] (Flutter) flutter: patrol_test_explorer: obtained Dart-side test hierarchy:
+2026-09-23 19:47:47.889 Df Runner[45271:7d5c03] (Flutter) flutter: -- group: ''
+2026-09-23 19:47:47.890 Df Runner[45271:7d5c03] (Flutter) flutter:      -- test: 'build a meal from search, log it, see it on the timeline, then delete it'
+2026-09-23 19:47:47.897 Df Runner[45271:7d5c03] (Flutter) flutter:      -- test: 'AI coach chat — send a message and receive an assistant response'
+2026-09-23 19:47:47.900 Df Runner[45271:7d5c03] (Flutter) flutter: 00:00 +1: flows.meal_log_build_flow_test build a meal from search, log it, see it on the timeline, then delete it
+2026-09-23 19:47:48.051 Df Runner[45271:7d5c03] (Flutter) flutter: PatrolAppService: registered "flows.meal_log_build_flow_test build a meal from search, log it, see it on the timeline, then delete it"
+2026-09-23 19:47:48.115 Df Runner[45271:7d5c03] (Flutter) flutter: PatrolAppService started, address: 127.0.0.1, host: 127.0.0.1, port: 8082
+2026-09-23 19:47:48.116 Df Runner[45271:7d5c03] (Flutter) flutter: Patrol (native): MobileAutomatorClient created, port: 8081
+2026-09-23 19:47:48.126 Df Runner[45271:7d5c03] (Flutter) flutter: Patrol (native): markPatrolAppServiceReady() started
+2026-09-23 19:47:48.304 Df Runner[45271:7d5c03] (Flutter) flutter: Patrol (native): markPatrolAppServiceReady() succeeded
+2026-09-23 19:47:49.182 Df Runner[45271:7d5c03] (Flutter) flutter: PatrolAppService.listDartTests() called
+2026-09-23 19:47:49.185 Df Runner[45271:7d5c03] (Flutter) flutter: 2026-09-23T19:47:49.182082  0:00:00.002990 POST    [200] /listDartTests
+2026-09-23 19:47:52.538 Df Runner[45323:7d5f22] (Flutter) flutter: The Dart VM service is listening on http://127.0.0.1:56882/7PLbetdpjxw=/
+2026-09-23 19:47:53.046 Df Runner[45323:7d5e65] (Flutter) flutter: PatrolBinding: Register Patrol service extensions
+2026-09-23 19:47:53.067 Df Runner[45323:7d5e65] (Flutter) flutter: PATROL_LOG {"timestamp":"2026-09-23T19:47:53.054751","type":"config","config":{"printLogs":true}}
+2026-09-23 19:47:53.067 Df Runner[45323:7d5e65] (Flutter) flutter: PATROL_LOG {"timestamp":"2026-09-23T19:47:53.058045","type":"config","config":{"printLogs":true}}
+2026-09-23 19:47:53.078 Df Runner[45323:7d5e65] (Flutter) flutter: 00:00 +0: patrol_test_explorer
+2026-09-23 19:47:53.089 Df Runner[45323:7d5e65] (Flutter) flutter: patrol_test_explorer: obtained Dart-side test hierarchy:
+2026-09-23 19:47:53.092 Df Runner[45323:7d5e65] (Flutter) flutter: -- group: ''
+2026-09-23 19:47:53.100 Df Runner[45323:7d5e65] (Flutter) flutter:      -- test: 'build a meal from search, log it, see it on the timeline, then delete it'
+2026-09-23 19:47:53.101 Df Runner[45323:7d5e65] (Flutter) flutter:      -- test: 'AI coach chat — send a message and receive an assistant response'
+2026-09-23 19:47:53.103 Df Runner[45323:7d5e65] (Flutter) flutter: 00:00 +1: flows.meal_log_build_flow_test build a meal from search, log it, see it on the timeline, then delete it
+2026-09-23 19:47:53.254 Df Runner[45323:7d5e65] (Flutter) flutter: PatrolAppService: registered "flows.meal_log_build_flow_test build a meal from search, log it, see it on the timeline, then delete it"
+2026-09-23 19:47:53.284 Df Runner[45323:7d5e65] (Flutter) flutter: PatrolAppService started, address: 127.0.0.1, host: 127.0.0.1, port: 8082
+2026-09-23 19:47:53.285 Df Runner[45323:7d5e65] (Flutter) flutter: Patrol (native): MobileAutomatorClient created, port: 8081
+2026-09-23 19:47:53.295 Df Runner[45323:7d5e65] (Flutter) flutter: Patrol (native): markPatrolAppServiceReady() started
+2026-09-23 19:47:53.385 Df Runner[45323:7d5e65] (Flutter) flutter: Patrol (native): markPatrolAppServiceReady() succeeded
+2026-09-23 19:47:54.313 Df Runner[45323:7d5e65] (Flutter) flutter: PatrolAppService.runDartTest(flows.ai_coach_chat_flow_test AI coach chat — send a message and receive an assistant response) called
+2026-09-23 19:47:54.314 Df Runner[45323:7d5e65] (Flutter) flutter: PatrolAppService: registered test "flows.meal_log_build_flow_test build a meal from search, log it, see it on the timeline, then delete it" was not matched by requested test "flows.ai_coach_chat_flow_test AI coach chat — send a message and receive an assistant response"
+2026-09-23 19:47:54.339 Df Runner[45323:7d5e65] (Flutter) flutter: PatrolBinding: tearDown(): count: 1, results: {build a meal from search, log it, see it on the timeline, then delete it: success}
+2026-09-23 19:47:54.340 Df Runner[45323:7d5e65] (Flutter) flutter: PatrolBinding: finished test flows.meal_log_build_flow_test build a meal from search, log it, see it on the timeline, then delete it, but it was not requested, so its status will not be reported back to the native side
+2026-09-23 19:47:54.340 Df Runner[45323:7d5e65] (Flutter) flutter: 00:01 +2: flows.ai_coach_chat_flow_test AI coach chat — send a message and receive an assistant response
+2026-09-23 19:47:54.359 Df Runner[45323:7d5e65] (Flutter) flutter: PatrolAppService: registered "flows.ai_coach_chat_flow_test AI coach chat — send a message and receive an assistant response"
+2026-09-23 19:47:54.360 Df Runner[45323:7d5e65] (Flutter) flutter: PatrolAppService: requested execution of test "flows.ai_coach_chat_flow_test AI coach chat — send a message and receive an assistant response"
+2026-09-23 19:47:54.360 Df Runner[45323:7d5e65] (Flutter) flutter: Patrol (native): configure() started
+2026-09-23 19:47:54.360 Df Runner[45323:7d5e65] (Flutter) flutter: Patrol (native): MobileAutomatorClient created, port: 8081
+2026-09-23 19:47:54.367 Df Runner[45323:7d5e65] (Flutter) flutter: Patrol (native): configure() succeeded
+2026-09-23 19:47:54.371 Df Runner[45323:7d5e65] (Flutter) flutter: PATROL_LOG {"timestamp":"2026-09-23T19:47:54.367575","type":"test","name":"flows.ai_coach_chat_flow_test AI coach chat — send a message and receive an assistant response","status":"start","error":null}
+2026-09-23 19:47:54.372 Df Runner[45323:7d5e65] (Flutter) flutter: Patrol (native): isPermissionDialogVisible() started
+2026-09-23 19:47:54.373 Df Runner[45323:7d5e65] (Flutter) flutter: PATROL_LOG {"timestamp":"2026-09-23T19:47:54.372281","type":"step","action":"\134u001b[94misPermissionDialogVisible\134u001b[0m \134u001b[90m(native)\134u001b[0m","status":"start","data":null}
+2026-09-23 19:47:54.509 Df Runner[45323:7d5e65] (Flutter) flutter: supabase.supabase_flutter: INFO: ***** Supabase init completed *****
+2026-09-23 19:47:54.568 Df Runner[45323:7d5e65] (Flutter) flutter: GoRouter: INFO: Full paths for routes:
+2026-09-23 19:47:54.568 Df Runner[45323:7d5e65] (Flutter) flutter:   => /privacy-consent
+2026-09-23 19:47:54.568 Df Runner[45323:7d5e65] (Flutter) flutter:   => /force-upgrade
+2026-09-23 19:47:54.568 Df Runner[45323:7d5e65] (Flutter) flutter:   => /welcome
+2026-09-23 19:47:54.568 Df Runner[45323:7d5e65] (Flutter) flutter:   => /onboarding
+2026-09-23 19:47:54.568 Df Runner[45323:7d5e65] (Flutter) flutter:   => /auth/post-onboarding
+2026-09-23 19:47:54.568 Df Runner[45323:7d5e65] (Flutter) flutter:   => /auth/email-signup
+2026-09-23 19:47:54.568 Df Runner[45323:7d5e65] (Flutter) flutter:   => /auth/email-login
+2026-09-23 19:47:54.568 Df Runner[45323:7d5e65] (Flutter) flutter:   => /auth/forgot-password
+2026-09-23 19:47:54.568 Df Runner[45323:7d5e65] (Flutter) flutter:   => /auth/verify-reset-code
+2026-09-23 19:47:54.568 Df Runner[45323:7d5e65] (Flutter) flutter:   => /auth/set-new-password
+2026-09-23 19:47:54.568 Df Runner[45323:7d5e65] (Flutter) flutter:   => /distancepacegut
+2026-09-23 19:47:54.568 Df Runner[45323:7d5e65] (Flutter) flutter:   => /distance-pace-gut-entry
+2026-09-23 19:47:54.568 Df Runner[45323:7d5e65] (Flutter) flutter:   => /main
+2026-09-23 19:47:54.568 Df Runner[45323:7d5e65] (Flutter) flutter:   => /coach-portal
+2026-09-23 19:47:54.568 Df Runner[45323:7d5e65] (Flutter) flutter:   => /plan
+2026-09-23 19:47:54.568 Df Runner[45323:7d5e65] (Flutter) flutter:   => /current-plan
+2026-09-23 19:47:54.568 Df Runner[45323:7d5e65] (Flutter) flutter:   => /fuel-log
+2026-09-23 19:47:54.569 Df Runner[45323:7d5e65] (Flutter) flutter:   => /adjust-macros
+2026-09-23 19:47:54.569 Df Runner[45323:7d5e65] (Flutter) flutter:   => /learn
+2026-09-23 19:47:54.569 Df Runner[45323:7d5e65] (Flutter) flutter:   => /learn/video
+2026-09-23 19:47:54.569 Df Runner[45323:7d5e65] (Flutter) flutter:   => /events
+2026-09-23 19:47:54.569 Df Runner[45323:7d5e65] (Flutter) flutter:   => /events/create
+2026-09-23 19:47:54.569 Df Runner[45323:7d5e65] (Flutter) flutter:   => /events/:eventId
+2026-09-23 19:47:54.569 Df Runner[45323:7d5e65] (Flutter) flutter:   => /events/:eventId/checklist
+2026-09-23 19:47:54.569 Df Runner[45323:7d5e65] (Flutter) flutter:   => /paywall
+2026-09-23 19:47:54.569 Df Runner[45323:7d5e65] (Flutter) flutter:   => /buy-credits
+2026-09-23 19:47:54.569 Df Runner[45323:7d5e65] (Flutter) flutter:   => /settings
+2026-09-23 19:47:54.569 Df Runner[45323:7d5e65] (Flutter) flutter:   => /settings/connected-apps
+2026-09-23 19:47:54.569 Df Runner[45323:7d5e65] (Flutter) flutter:   => /settings/privacy
+2026-09-23 19:47:54.569 Df Runner[45323:7d5e65] (Flutter) flutter:   => /settings/preferences
+2026-09-23 19:47:54.569 Df Runner[45323:7d5e65] (Flutter) flutter:   => /settings/sweat-profile
+2026-09-23 19:47:54.571 Df Runner[45323:7d5e65] (Flutter) flutter:   => /settings/sport-settings
+2026-09-23 19:47:54.571 Df Runner[45323:7d5e65] (Flutter) flutter:   => /settings/food-preferences-hub
+2026-09-23 19:47:54.571 Df Runner[45323:7d5e65] (Flutter) flutter:   => /settings/sport-preferences-hub
+2026-09-23 19:47:54.571 Df Runner[45323:7d5e65] (Flutter) flutter:   => /settings/nutrition-targets
+2026-09-23 19:47:54.571 Df Runner[45323:7d5e65] (Flutter) flutter:   => /settings/nutrition-profile
+2026-09-23 19:47:54.571 Df Runner[45323:7d5e65] (Flutter) flutter:   => /settings/templates
+2026-09-23 19:47:54.571 Df Runner[45323:7d5e65] (Flutter) flutter:   => /settings/coach-connection
+2026-09-23 19:47:54.571 Df Runner[45323:7d5e65] (Flutter) flutter:   => /settings/food-preferences-consolidated
+2026-09-23 19:47:54.571 Df Runner[45323:7d5e65] (Flutter) flutter:   => /settings/food-preferences
+2026-09-23 19:47:54.571 Df Runner[45323:7d5e65] (Flutter) flutter:   => /settings/dietary-preference
+2026-09-23 19:47:54.571 Df Runner[45323:7d5e65] (Flutter) flutter:   => /settings/allergies
+2026-09-23 19:47:54.571 Df Runner[45323:7d5e65] (Flutter) flutter:   => /settings/running-details
+2026-09-23 19:47:54.571 Df Runner[45323:7d5e65] (Flutter) flutter:   => /settings/cycling-details
+2026-09-23 19:47:54.571 Df Runner[45323:7d5e65] (Flutter) flutter:   => /settings/swimming-details
+2026-09-23 19:47:54.571 Df Runner[45323:7d5e65] (Flutter) flutter:   => /settings/food-preferences/add-food
+2026-09-23 19:47:54.572 Df Runner[45323:7d5e65] (Flutter) flutter:   => /settings/food-preferences/formula-library
+2026-09-23 19:47:54.572 Df Runner[45323:7d5e65] (Flutter) flutter:   =>   /settings/food-preferences/formula-library/before/:id
+2026-09-23 19:47:54.572 Df Runner[45323:7d5e65] (Flutter) flutter:   =>   /settings/food-preferences/formula-library/during/:id
+2026-09-23 19:47:54.572 Df Runner[45323:7d5e65] (Flutter) flutter:   =>   /settings/food-preferences/formula-library/after/:id
+2026-09-23 19:47:54.572 Df Runner[45323:7d5e65] (Flutter) flutter:   =>   /settings/food-preferences/formula-library/personal/create
+2026-09-23 19:47:54.572 Df Runner[45323:7d5e65] (Flutter) flutter:   =>   /settings/food-preferences/formula-library/personal/:id
+2026-09-23 19:47:54.572 Df Runner[45323:7d5e65] (Flutter) flutter:   => /help
+2026-09-23 19:47:54.572 Df Runner[45323:7d5e65] (Flutter) flutter:   => /swap-food
+2026-09-23 19:47:54.572 Df Runner[45323:7d5e65] (Flutter) flutter:   => /barcode-scanner
+2026-09-23 19:47:54.572 Df Runner[45323:7d5e65] (Flutter) flutter:   => /food-detail
+2026-09-23 19:47:54.572 Df Runner[45323:7d5e65] (Flutter) flutter:   => /carb-loading-select-food
+2026-09-23 19:47:54.572 Df Runner[45323:7d5e65] (Flutter) flutter:   => /create-custom-carb-loading-food
+2026-09-23 19:47:54.572 Df Runner[45323:7d5e65] (Flutter) flutter:   => /coach
+2026-09-23 19:47:54.572 Df Runner[45323:7d5e65] (Flutter) flutter:   => /coach/athlete/:relationshipId
+2026-09-23 19:47:54.572 Df Runner[45323:7d5e65] (Flutter) flutter:   => /my-coaches
+2026-09-23 19:47:54.572 Df Runner[45323:7d5e65] (Flutter) flutter:   => /athlete/feedback
+2026-09-23 19:47:54.572 Df Runner[45323:7d5e65] (Flutter) flutter:   => /coach/apply
+2026-09-23 19:47:54.573 Df Runner[45323:7d5e65] (Flutter) flutter:   => /coach-directory
+2026-09-23 19:47:54.573 Df Runner[45323:7d5e65] (Flutter) flutter:   => /chat/:relationshipId
+2026-09-23 19:47:54.573 Df Runner[45323:7d5e65] (Flutter) flutter:   => /meal-log/edit
+2026-09-23 19:47:54.573 Df Runner[45323:7d5e65] (Flutter) flutter:   => /meal-log/manual
+2026-09-23 19:47:54.573 Df Runner[45323:7d5e65] (Flutter) flutter:   => /meal-log/photo
+2026-09-23 19:47:54.573 Df Runner[45323:7d5e65] (Flutter) flutter:   => /meal-log/describe
+2026-09-23 19:47:54.573 Df Runner[45323:7d5e65] (Flutter) flutter:   => /meal-log/review
+2026-09-23 19:47:54.573 Df Runner[45323:7d5e65] (Flutter) flutter:   => /meal-log/recent-saved
+2026-09-23 19:47:54.573 Df Runner[45323:7d5e65] (Flutter) flutter:   => /meal-log/recipe
+2026-09-23 19:47:54.573 Df Runner[45323:7d5e65] (Flutter) flutter:   => /food
+2026-09-23 19:47:54.573 Df Runner[45323:7d5e65] (Flutter) flutter:   =>   /food/meals/recents
+2026-09-23 19:47:54.573 Df Runner[45323:7d5e65] (Flutter) flutter:   =>   /food/meals/:id
+2026-09-23 19:47:54.573 Df Runner[45323:7d5e65] (Flutter) flutter:   =>   /food/cook/:id
+2026-09-23 19:47:54.573 Df Runner[45323:7d5e65] (Flutter) flutter:   =>   /food/swap/:planMealId
+2026-09-23 19:47:54.573 Df Runner[45323:7d5e65] (Flutter) flutter:   =>   /food/kroger/:planId
+2026-09-23 19:47:54.573 Df Runner[45323:7d5e65] (Flutter) flutter:   =>   /food/plans/:id
+2026-09-23 19:47:54.573 Df Runner[45323:7d5e65] (Flutter) flutter:   => /vana
+2026-09-23 19:47:54.574 Df Runner[45323:7d5e65] (Flutter) flutter:   =>   /vana/browse
+2026-09-23 19:47:54.574 Df Runner[45323:7d5e65] (Flutter) flutter:   =>   /vana/conversations
+2026-09-23 19:47:54.574 Df Runner[45323:7d5e65] (Flutter) flutter:   => /settings/vana
+2026-09-23 19:47:54.574 Df Runner[45323:7d5e65] (Flutter) flutter:   => /jade
+2026-09-23 19:47:54.574 Df Runner[45323:7d5e65] (Flutter) flutter: known full paths for route names:
+2026-09-23 19:47:54.574 Df Runner[45323:7d5e65] (Flutter) flutter:   privacy-consent => /privacy-consent
+2026-09-23 19:47:54.574 Df Runner[45323:7d5e65] (Flutter) flutter:   force-upgrade => /force-upgrade
+2026-09-23 19:47:54.574 Df Runner[45323:7d5e65] (Flutter) flutter:   welcome => /welcome
+2026-09-23 19:47:54.574 Df Runner[45323:7d5e65] (Flutter) flutter:   onboarding => /onboarding
+2026-09-23 19:47:54.574 Df Runner[45323:7d5e65] (Flutter) flutter:   auth-post-onboarding => /auth/post-onboarding
+2026-09-23 19:47:54.574 Df Runner[45323:7d5e65] (Flutter) flutter:   auth-email-signup => /auth/email-signup
+2026-09-23 19:47:54.574 Df Runner[45323:7d5e65] (Flutter) flutter:   auth-email-login => /auth/email-login
+2026-09-23 19:47:54.574 Df Runner[45323:7d5e65] (Flutter) flutter:   auth-forgot-password => /auth/forgot-password
+2026-09-23 19:47:54.574 Df Runner[45323:7d5e65] (Flutter) flutter:   auth-verify-reset-code => /auth/verify-reset-code
+2026-09-23 19:47:54.574 Df Runner[45323:7d5e65] (Flutter) flutter:   auth-set-new-password => /auth/set-new-password
+2026-09-23 19:47:54.574 Df Runner[45323:7d5e65] (Flutter) flutter:   distancepacegut => /distancepacegut
+2026-09-23 19:47:54.574 Df Runner[45323:7d5e65] (Flutter) flutter:   distance-pace-gut-entry => /distance-pace-gut-entry
+2026-09-23 19:47:54.574 Df Runner[45323:7d5e65] (Flutter) flutter:   main => /main
+2026-09-23 19:47:54.574 Df Runner[45323:7d5e65] (Flutter) flutter:   coach-portal => /coach-portal
+2026-09-23 19:47:54.575 Df Runner[45323:7d5e65] (Flutter) flutter:   plan => /plan
+2026-09-23 19:47:54.575 Df Runner[45323:7d5e65] (Flutter) flutter:   current-plan => /current-plan
+2026-09-23 19:47:54.575 Df Runner[45323:7d5e65] (Flutter) flutter:   fuel-log => /fuel-log
+2026-09-23 19:47:54.575 Df Runner[45323:7d5e65] (Flutter) flutter:   adjust-macros => /adjust-macros
+2026-09-23 19:47:54.575 Df Runner[45323:7d5e65] (Flutter) flutter:   learn => /learn
+2026-09-23 19:47:54.575 Df Runner[45323:7d5e65] (Flutter) flutter:   learn-video => /learn/video
+2026-09-23 19:47:54.575 Df Runner[45323:7d5e65] (Flutter) flutter:   events-list => /events
+2026-09-23 19:47:54.575 Df Runner[45323:7d5e65] (Flutter) flutter:   events-create => /events/create
+2026-09-23 19:47:54.575 Df Runner[45323:7d5e65] (Flutter) flutter:   event-detail => /events/:eventId
+2026-09-23 19:47:54.575 Df Runner[45323:7d5e65] (Flutter) flutter:   race-checklist => /events/:eventId/checklist
+2026-09-23 19:47:54.575 Df Runner[45323:7d5e65] (Flutter) flutter:   paywall => /paywall
+2026-09-23 19:47:54.575 Df Runner[45323:7d5e65] (Flutter) flutter:   buy-credits => /buy-credits
+2026-09-23 19:47:54.575 Df Runner[45323:7d5e65] (Flutter) flutter:   settings => /settings
+2026-09-23 19:47:54.575 Df Runner[45323:7d5e65] (Flutter) flutter:   settings-connected-apps => /settings/connected-apps
+2026-09-23 19:47:54.575 Df Runner[45323:7d5e65] (Flutter) flutter:   settings-privacy => /settings/privacy
+2026-09-23 19:47:54.575 Df Runner[45323:7d5e65] (Flutter) flutter:   settings-preferences => /settings/preferences
+2026-09-23 19:47:54.575 Df Runner[45323:7d5e65] (Flutter) flutter:   settings-sweat-profile => /settings/sweat-profile
+2026-09-23 19:47:54.575 Df Runner[45323:7d5e65] (Flutter) flutter:   settings-sport-settings => /settings/sport-settings
+2026-09-23 19:47:54.575 Df Runner[45323:7d5e65] (Flutter) flutter:   settings-food-preferences-hub => /settings/food-preferences-hub
+2026-09-23 19:47:54.575 Df Runner[45323:7d5e65] (Flutter) flutter:   settings-sport-preferences-hub => /settings/sport-preferences-hub
+2026-09-23 19:47:54.576 Df Runner[45323:7d5e65] (Flutter) flutter:   settings-nutrition-targets => /settings/nutrition-targets
+2026-09-23 19:47:54.576 Df Runner[45323:7d5e65] (Flutter) flutter:   settings-nutrition-profile => /settings/nutrition-profile
+2026-09-23 19:47:54.576 Df Runner[45323:7d5e65] (Flutter) flutter:   settings-templates => /settings/templates
+2026-09-23 19:47:54.576 Df Runner[45323:7d5e65] (Flutter) flutter:   settings-coach-connection => /settings/coach-connection
+2026-09-23 19:47:54.576 Df Runner[45323:7d5e65] (Flutter) flutter:   settings-food-preferences-consolidated => /settings/food-preferences-consolidated
+2026-09-23 19:47:54.576 Df Runner[45323:7d5e65] (Flutter) flutter:   settings-food-preferences => /settings/food-preferences
+2026-09-23 19:47:54.576 Df Runner[45323:7d5e65] (Flutter) flutter:   settings-dietary-preference => /settings/dietary-preference
+2026-09-23 19:47:54.576 Df Runner[45323:7d5e65] (Flutter) flutter:   settings-allergies => /settings/allergies
+2026-09-23 19:47:54.576 Df Runner[45323:7d5e65] (Flutter) flutter:   settings-running-details => /settings/running-details
+2026-09-23 19:47:54.576 Df Runner[45323:7d5e65] (Flutter) flutter:   settings-cycling-details => /settings/cycling-details
+2026-09-23 19:47:54.576 Df Runner[45323:7d5e65] (Flutter) flutter:   settings-swimming-details => /settings/swimming-details
+2026-09-23 19:47:54.576 Df Runner[45323:7d5e65] (Flutter) flutter:   settings-add-food => /settings/food-preferences/add-food
+2026-09-23 19:47:54.576 Df Runner[45323:7d5e65] (Flutter) flutter:   settings-formula-library => /settings/food-preferences/formula-library
+2026-09-23 19:47:54.576 Df Runner[45323:7d5e65] (Flutter) flutter:   settings-formula-detail-before => /settings/food-preferences/formula-library/before/:id
+2026-09-23 19:47:54.576 Df Runner[45323:7d5e65] (Flutter) flutter:   settings-formula-detail-during => /settings/food-preferences/formula-library/during/:id
+2026-09-23 19:47:54.576 Df Runner[45323:7d5e65] (Flutter) flutter:   settings-formula-detail-after => /settings/food-preferences/formula-library/after/:id
+2026-09-23 19:47:54.576 Df Runner[45323:7d5e65] (Flutter) flutter:   settings-formula-personal-create => /settings/food-preferences/formula-library/personal/create
+2026-09-23 19:47:54.577 Df Runner[45323:7d5e65] (Flutter) flutter:   settings-formula-personal-edit => /settings/food-preferences/formula-library/personal/:id
+2026-09-23 19:47:54.577 Df Runner[45323:7d5e65] (Flutter) flutter:   help-feedback => /help
+2026-09-23 19:47:54.577 Df Runner[45323:7d5e65] (Flutter) flutter:   swap-food => /swap-food
+2026-09-23 19:47:54.577 Df Runner[45323:7d5e65] (Flutter) flutter:   barcode-scanner => /barcode-scanner
+2026-09-23 19:47:54.577 Df Runner[45323:7d5e65] (Flutter) flutter:   food-detail => /food-detail
+2026-09-23 19:47:54.577 Df Runner[45323:7d5e65] (Flutter) flutter:   carb-loading-select-food => /carb-loading-select-food
+2026-09-23 19:47:54.577 Df Runner[45323:7d5e65] (Flutter) flutter:   create-custom-carb-loading-food => /create-custom-carb-loading-food
+2026-09-23 19:47:54.577 Df Runner[45323:7d5e65] (Flutter) flutter:   coach-dashboard => /coach
+2026-09-23 19:47:54.577 Df Runner[45323:7d5e65] (Flutter) flutter:   coach-athlete-detail => /coach/athlete/:relationshipId
+2026-09-23 19:47:54.577 Df Runner[45323:7d5e65] (Flutter) flutter:   my-coaches => /my-coaches
+2026-09-23 19:47:54.577 Df Runner[45323:7d5e65] (Flutter) flutter:   athlete-feedback => /athlete/feedback
+2026-09-23 19:47:54.577 Df Runner[45323:7d5e65] (Flutter) flutter:   coach-apply => /coach/apply
+2026-09-23 19:47:54.577 Df Runner[45323:7d5e65] (Flutter) flutter:   coach-directory => /coach-directory
+2026-09-23 19:47:54.577 Df Runner[45323:7d5e65] (Flutter) flutter:   coach-chat => /chat/:relationshipId
+2026-09-23 19:47:54.577 Df Runner[45323:7d5e65] (Flutter) flutter:   meal-log-edit => /meal-log/edit
+2026-09-23 19:47:54.577 Df Runner[45323:7d5e65] (Flutter) flutter:   meal-log-manual => /meal-log/manual
+2026-09-23 19:47:54.577 Df Runner[45323:7d5e65] (Flutter) flutter:   meal-log-photo => /meal-log/photo
+2026-09-23 19:47:54.577 Df Runner[45323:7d5e65] (Flutter) flutter:   meal-log-describe => /meal-log/describe
+2026-09-23 19:47:54.578 Df Runner[45323:7d5e65] (Flutter) flutter:   meal-log-review => /meal-log/review
+2026-09-23 19:47:54.578 Df Runner[45323:7d5e65] (Flutter) flutter:   meal-log-recent-saved => /meal-log/recent-saved
+2026-09-23 19:47:54.578 Df Runner[45323:7d5e65] (Flutter) flutter:   meal-log-recipe => /meal-log/recipe
+2026-09-23 19:47:54.578 Df Runner[45323:7d5e65] (Flutter) flutter:   food => /food
+2026-09-23 19:47:54.578 Df Runner[45323:7d5e65] (Flutter) flutter:   food-meals-recents => /food/meals/recents
+2026-09-23 19:47:54.578 Df Runner[45323:7d5e65] (Flutter) flutter:   food-meal-detail => /food/meals/:id
+2026-09-23 19:47:54.578 Df Runner[45323:7d5e65] (Flutter) flutter:   food-cooking-mode => /food/cook/:id
+2026-09-23 19:47:54.578 Df Runner[45323:7d5e65] (Flutter) flutter:   food-swap-meal => /food/swap/:planMealId
+2026-09-23 19:47:54.578 Df Runner[45323:7d5e65] (Flutter) flutter:   food-kroger => /food/kroger/:planId
+2026-09-23 19:47:54.578 Df Runner[45323:7d5e65] (Flutter) flutter:   food-previous-plan => /food/plans/:id
+2026-09-23 19:47:54.578 Df Runner[45323:7d5e65] (Flutter) flutter:   vana-chat => /vana
+2026-09-23 19:47:54.578 Df Runner[45323:7d5e65] (Flutter) flutter:   vana-browse => /vana/browse
+2026-09-23 19:47:54.579 Df Runner[45323:7d5e65] (Flutter) flutter:   vana-conversations => /vana/conversations
+2026-09-23 19:47:54.579 Df Runner[45323:7d5e65] (Flutter) flutter:   settings-vana => /settings/vana
+2026-09-23 19:47:54.579 Df Runner[45323:7d5e65] (Flutter) flutter:   jade-chat => /jade
+2026-09-23 19:47:54.579 Df Runner[45323:7d5e65] (Flutter) flutter:
+2026-09-23 19:47:54.581 Df Runner[45323:7d5e65] (Flutter) flutter: GoRouter: INFO: setting initial location /
+2026-09-23 19:47:54.700 Df Runner[45323:7d5e65] (Flutter) flutter: [RevenueCatService] logIn skipped: SDK not configured
+2026-09-23 19:47:54.721 Df Runner[45323:7d5e65] (Flutter) flutter: 00:01 +2: flows.meal_log_build_flow_test build a meal from search, log it, see it on the timeline, then delete it
+2026-09-23 19:47:54.721 Df Runner[45323:7d5e65] (Flutter) flutter: [RevenueCatService] logIn skipped: SDK not configured
+2026-09-23 19:47:55.402 Df Runner[45323:7d5e65] (Flutter) flutter: 00:02 +2: flows.ai_coach_chat_flow_test AI coach chat — send a message and receive an assistant response
+2026-09-23 19:47:55.402 Df Runner[45323:7d5e65] (Flutter) flutter: ✅ Schema validation passed (40 tables verified)
+2026-09-23 19:47:55.497 Df Runner[45323:7d5e65] (Flutter) flutter: [RevenueCatService] configured {store: test_store}
+2026-09-23 19:47:55.504 Df Runner[45323:7d5e65] (Flutter) flutter: [SubscriptionService] customer info updated {active: true, expires_at: 2027-09-15T19:39:14.000Z}
+2026-09-23 19:47:55.532 Df Runner[45323:7d5e65] (Flutter) flutter: [RevenueCatService] logged in
+2026-09-23 19:47:55.542 Df Runner[45323:7d5e65] (Flutter) flutter: [SubscriptionService] customer info fetched {active: true, expires_at: 2027-09-15T19:39:14.000Z, is_trial: false}
+2026-09-23 19:47:55.547 Df Runner[45323:7d5e65] (Flutter) flutter: 00:02 +2: flows.meal_log_build_flow_test build a meal from search, log it, see it on the timeline, then delete it
+2026-09-23 19:47:55.547 Df Runner[45323:7d5e65] (Flutter) flutter: 📊 [ANALYTICS] app_opened {device_id: CB2384BE-4EA2-4E3B-B80E-3E2802D767BE, session_id: 46e57148-3726-4276-b8d4-d20a4d4ff0aa, timestamp: 2026-09-23T19:47:55.546782}
+2026-09-23 19:47:55.593 Df Runner[45323:7d5e65] (Flutter) flutter: 00:02 +2: flows.ai_coach_chat_flow_test AI coach chat — send a message and receive an assistant response
+2026-09-23 19:47:55.593 Df Runner[45323:7d5e65] (Flutter) flutter: GoRouter: INFO: No initial matches: /
+2026-09-23 19:47:55.602 Df Runner[45323:7d5e65] (Flutter) flutter: GoRouter: INFO: redirecting to RouteMatchList(/main)
+2026-09-23 19:47:55.632 Df Runner[45323:7d5e65] (Flutter) flutter: GoRouter: INFO: Using MaterialApp configuration
+2026-09-23 19:47:56.297 Df Runner[45323:7d5e65] (Flutter) flutter: 00:03 +2: flows.meal_log_build_flow_test build a meal from search, log it, see it on the timeline, then delete it
+2026-09-23 19:47:56.297 Df Runner[45323:7d5e65] (Flutter) flutter: 🔄 Integration sync skipped (final_surge) - data is fresh
+2026-09-23 19:47:56.297 Df Runner[45323:7d5e65] (Flutter) flutter: 🔄 Integration sync skipped (garmin) - data is fresh
+2026-09-23 19:47:56.302 Df Runner[45323:7d5e65] (Flutter) flutter: 🔄 Starting integration sync for training_peaks...
+2026-09-23 19:47:56.310 Df Runner[45323:7d5e65] (Flutter) flutter: 🔄 Starting full TrainingPeaks sync...
+2026-09-23 19:47:56.315 Df Runner[45323:7d5e65] (Flutter) flutter: DailyBaselineCalculator.sessionCost: unknown sport "other" — F4a zero-with-estimate-flag (session-demand.md F4a, RULED 2026-09-10)
+2026-09-23 19:47:56.316 Df Runner[45323:7d5e65] (Flutter) flutter: DailyBaselineCalculator.sessionCost: unknown sport "other" — F4a zero-with-estimate-flag (session-demand.md F4a, RULED 2026-09-10)
+2026-09-23 19:47:56.333 Df Runner[45323:7d5e65] (Flutter) flutter: ⚠️ TrainingPeaks token expires soon, proactively refreshing...
+2026-09-23 19:47:56.333 Df Runner[45323:7d5e65] (Flutter) flutter: 🔄 Refreshing TrainingPeaks token...
+2026-09-23 19:47:56.333 Df Runner[45323:7d5e65] (Flutter) flutter: 🔑 Token refresh URL: https://oauth.sandbox.trainingpeaks.com/oauth/token
+2026-09-23 19:47:56.333 Df Runner[45323:7d5e65] (Flutter) flutter:    Client ID: mealvana
+2026-09-23 19:47:56.339 Df Runner[45323:7d5e65] (Flutter) flutter: DailyBaselineCalculator.sessionCost: unknown sport "other" — F4a zero-with-estimate-flag (session-demand.md F4a, RULED 2026-09-10)
+2026-09-23 19:47:56.340 Df Runner[45323:7d5e65] (Flutter) flutter: DailyBaselineCalculator.sessionCost: unknown sport "other" — F4a zero-with-estimate-flag (session-demand.md F4a, RULED 2026-09-10)
+2026-09-23 19:47:56.761 Df Runner[45323:7d5e65] (Flutter) flutter: ❌ Token refresh failed: TrainingPeaksApiException: Token refresh failed (status: 400)
+Body: {"error":"invalid_grant"}
+2026-09-23 19:47:56.776 Df Runner[45323:7d5e65] (Flutter) flutter: ⚠️ TrainingPeaks token expires soon, proactively refreshing...
+2026-09-23 19:47:56.776 Df Runner[45323:7d5e65] (Flutter) flutter: 🔄 Refreshing TrainingPeaks token...
+2026-09-23 19:47:56.776 Df Runner[45323:7d5e65] (Flutter) flutter: 🔑 Token refresh URL: https://oauth.sandbox.trainingpeaks.com/oauth/token
+2026-09-23 19:47:56.776 Df Runner[45323:7d5e65] (Flutter) flutter:    Client ID: mealvana
+2026-09-23 19:47:56.857 Df Runner[45323:7d5e65] (Flutter) flutter: ❌ Token refresh failed: TrainingPeaksApiException: Token refresh failed (status: 400)
+Body: {"error":"invalid_grant"}
+2026-09-23 19:47:56.859 Df Runner[45323:7d5e65] (Flutter) flutter: \134^[[38;5;208m┌───────────────────────────────────────────────────────────────────────────────────────────────────────────────────────\134^[[0m
+2026-09-23 19:47:56.859 Df Runner[45323:7d5e65] (Flutter) flutter: \134^[[38;5;208m│ 19:47:56.858 (+0:00:02.309321)\134^[[0m
+2026-09-23 19:47:56.859 Df Runner[45323:7d5e65] (Flutter) flutter: \134^[[38;5;208m├┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄\134^[[0m
+2026-09-23 19:47:56.859 Df Runner[45323:7d5e65] (Flutter) flutter: \134^[[38;5;208m│ ⚠️ [INTEGRATION_SYNC] Integration sync reported failure for training_peaks\134^[[0m
+2026-09-23 19:47:56.860 Df Runner[45323:7d5e65] (Flutter) flutter: \134^[[38;5;208m│ ⚠️ Data: {userId: 607f9dd5-6fa7-48ee-a628-720d4a0506a1, provider: training_peaks, error: Token expired. Please reconnect.}\134^[[0m
+2026-09-23 19:47:56.860 Df Runner[45323:7d5e65] (Flutter) flutter: \134^[[38;5;208m└───────────────────────────────────────────────────────────────────────────────────────────────────────────────────────\134^[[0m
+2026-09-23 19:47:56.860 Df Runner[45323:7d5e65] (Flutter) flutter: ❌ Integration sync failed for training_peaks: Token expired. Please reconnect.
+2026-09-23 19:47:56.860 Df Runner[45323:7d5e65] (Flutter) flutter: 🔄 Starting integration sync for vdot...
+2026-09-23 19:47:56.862 Df Runner[45323:7d5e65] (Flutter) flutter: 🔑 [vdot] AppConfig creds at client build: client_id="mealvana" (len 8), client_secret len 64, authBase=https://app.vdoto2.com
+2026-09-23 19:47:56.867 Df Runner[45323:7d5e65] (Flutter) flutter: 🔄 [vdot] Starting sync for user 607f9dd5-6fa7-48ee-a628-720d4a0506a1
+2026-09-23 19:47:56.867 Df Runner[45323:7d5e65] (Flutter) flutter: ⚠️ [vdot] Token expires soon, proactively refreshing…
+2026-09-23 19:47:57.475 Df Runner[45323:7d5e65] (Flutter) flutter: \134^[[38;5;208m┌───────────────────────────────────────────────────────────────────────────────────────────────────────────────────────\134^[[0m
+2026-09-23 19:47:57.475 Df Runner[45323:7d5e65] (Flutter) flutter: \134^[[38;5;208m│ 19:47:57.474 (+0:00:02.926006)\134^[[0m
+2026-09-23 19:47:57.475 Df Runner[45323:7d5e65] (Flutter) flutter: \134^[[38;5;208m├┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄\134^[[0m
+2026-09-23 19:47:57.475 Df Runner[45323:7d5e65] (Flutter) flutter: \134^[[38;5;208m│ ⚠️ [INTEGRATION_SYNC] Integration sync reported failure for vdot\134^[[0m
+2026-09-23 19:47:57.475 Df Runner[45323:7d5e65] (Flutter) flutter: \134^[[38;5;208m│ ⚠️ Data: {userId: 607f9dd5-6fa7-48ee-a628-720d4a0506a1, provider: vdot, error: Please reconnect your V.O2 account}\134^[[0m
+2026-09-23 19:47:57.475 Df Runner[45323:7d5e65] (Flutter) flutter: \134^[[38;5;208m└───────────────────────────────────────────────────────────────────────────────────────────────────────────────────────\134^[[0m
+2026-09-23 19:47:57.475 Df Runner[45323:7d5e65] (Flutter) flutter: ❌ Integration sync failed for vdot: Please reconnect your V.O2 account
+2026-09-23 19:47:57.581 Df Runner[45323:7d5e65] (Flutter) flutter: DailyBaselineCalculator.sessionCost: unknown sport "other" — F4a zero-with-estimate-flag (session-demand.md F4a, RULED 2026-09-10)
+2026-09-23 19:47:57.582 Df Runner[45323:7d5e65] (Flutter) flutter: DailyBaselineCalculator.sessionCost: unknown sport "other" — F4a zero-with-estimate-flag (session-demand.md F4a, RULED 2026-09-10)
+2026-09-23 19:48:05.484 Df Runner[45323:7d5e65] (Flutter) flutter: 00:12 +2: flows.ai_coach_chat_flow_test AI coach chat — send a message and receive an assistant response
+2026-09-23 19:48:05.484 Df Runner[45323:7d5e65] (Flutter) flutter: Patrol (native): isPermissionDialogVisible() succeeded
+2026-09-23 19:48:05.485 Df Runner[45323:7d5e65] (Flutter) flutter: PATROL_LOG {"timestamp":"2026-09-23T19:48:05.484319","type":"step","action":"\134u001b[94misPermissionDialogVisible\134u001b[0m \134u001b[90m(native)\134u001b[0m","status":"success","data":null}
+2026-09-23 19:48:06.546 Df Runner[45323:7d5e65] (Flutter) flutter: PATROL_LOG {"timestamp":"2026-09-23T19:48:06.537802","type":"step","action":"\134u001b[33mtap\134u001b[0m widgets with key [<'macro_dashboard.filter_all'>].","status":"start","data":null}
+2026-09-23 19:48:06.610 Df Runner[45323:7d5e65] (Flutter) flutter: PATROL_LOG {"timestamp":"2026-09-23T19:48:06.610469","type":"step","action":"\134u001b[33mtap\134u001b[0m widgets with key [<'macro_dashboard.filter_all'>].","status":"success","data":null}
+2026-09-23 19:48:07.033 Df Runner[45323:7d5e65] (Flutter) flutter: GoRouter: INFO: pushing /jade
+2026-09-23 19:48:07.036 Df Runner[45323:7d5e65] (Flutter) flutter: GoRouter: INFO: redirecting to RouteMatchList(/vana)
+2026-09-23 19:48:22.952 Df Runner[45323:7d5e65] (Flutter) flutter:   Mealvana AI entry not available in this flavor (describeMealEnabled is off — /jade redirected away).
+2026-09-23 19:48:23.045 Df Runner[45323:7d5e65] (Flutter) flutter: PatrolBinding: tearDown(): count: 2, results: {build a meal from search, log it, see it on the timeline, then delete it: success, AI coach chat — send a message and receive an assistant response: success}
+2026-09-23 19:48:23.045 Df Runner[45323:7d5e65] (Flutter) flutter: PatrolBinding: finished test flows.ai_coach_chat_flow_test AI coach chat — send a message and receive an assistant response. Will report its status back to the native side
+2026-09-23 19:48:23.045 Df Runner[45323:7d5e65] (Flutter) flutter: PatrolBinding: tearDown(): test "AI coach chat — send a message and receive an assistant response" in group "flows.ai_coach_chat_flow_test AI coach chat — send a message and receive an assistant response", passed: true
+2026-09-23 19:48:23.046 Df Runner[45323:7d5e65] (Flutter) flutter: PatrolAppService.markDartTestAsCompleted(): flows.ai_coach_chat_flow_test AI coach chat — send a message and receive an assistant response
+2026-09-23 19:48:23.048 Df Runner[45323:7d5e65] (Flutter) flutter: 2026-09-23T19:47:54.305428  0:00:28.742393 POST    [200] /runDartTest
+2026-09-23 19:48:23.050 Df Runner[45323:7d5e65] (Flutter) flutter: PATROL_LOG {"timestamp":"2026-09-23T19:48:23.046553","type":"test","name":"flows.ai_coach_chat_flow_test AI coach chat — send a message and receive an assistant response","status":"success","error":null}
+2026-09-23 19:48:23.051 Df Runner[45323:7d5e65] (Flutter) flutter: 00:29 +3: All tests passed!
+2026-09-23 19:48:26.150 Df Runner[45676:7d693a] (Flutter) flutter: The Dart VM service is listening on http://127.0.0.1:56939/WiCDNgCxutY=/
+2026-09-23 19:48:26.605 Df Runner[45676:7d68e9] (Flutter) flutter: PatrolBinding: Register Patrol service extensions
+2026-09-23 19:48:26.622 Df Runner[45676:7d68e9] (Flutter) flutter: PATROL_LOG {"timestamp":"2026-09-23T19:48:26.613691","type":"config","config":{"printLogs":true}}
+2026-09-23 19:48:26.622 Df Runner[45676:7d68e9] (Flutter) flutter: PATROL_LOG {"timestamp":"2026-09-23T19:48:26.616518","type":"config","config":{"printLogs":true}}
+2026-09-23 19:48:26.628 Df Runner[45676:7d68e9] (Flutter) flutter: 00:00 +0: patrol_test_explorer
+2026-09-23 19:48:26.632 Df Runner[45676:7d68e9] (Flutter) flutter: patrol_test_explorer: obtained Dart-side test hierarchy:
+2026-09-23 19:48:26.635 Df Runner[45676:7d68e9] (Flutter) flutter: -- group: ''
+2026-09-23 19:48:26.635 Df Runner[45676:7d68e9] (Flutter) flutter:      -- test: 'build a meal from search, log it, see it on the timeline, then delete it'
+2026-09-23 19:48:26.636 Df Runner[45676:7d68e9] (Flutter) flutter:      -- test: 'AI coach chat — send a message and receive an assistant response'
+2026-09-23 19:48:26.638 Df Runner[45676:7d68e9] (Flutter) flutter: 00:00 +1: flows.meal_log_build_flow_test build a meal from search, log it, see it on the timeline, then delete it
+2026-09-23 19:48:26.738 Df Runner[45676:7d68e9] (Flutter) flutter: PatrolAppService: registered "flows.meal_log_build_flow_test build a meal from search, log it, see it on the timeline, then delete it"
+2026-09-23 19:48:26.775 Df Runner[45676:7d68e9] (Flutter) flutter: PatrolAppService started, address: 127.0.0.1, host: 127.0.0.1, port: 8082
+2026-09-23 19:48:26.776 Df Runner[45676:7d68e9] (Flutter) flutter: Patrol (native): MobileAutomatorClient created, port: 8081
+2026-09-23 19:48:26.779 Df Runner[45676:7d68e9] (Flutter) flutter: Patrol (native): markPatrolAppServiceReady() started
+2026-09-23 19:48:26.846 Df Runner[45676:7d68e9] (Flutter) flutter: Patrol (native): markPatrolAppServiceReady() succeeded
+2026-09-23 19:48:27.762 Df Runner[45676:7d68e9] (Flutter) flutter: PatrolAppService.runDartTest(flows.meal_log_build_flow_test build a meal from search, log it, see it on the timeline, then delete it) called
+2026-09-23 19:48:27.763 Df Runner[45676:7d68e9] (Flutter) flutter: PatrolAppService: requested execution of test "flows.meal_log_build_flow_test build a meal from search, log it, see it on the timeline, then delete it"
+2026-09-23 19:48:27.763 Df Runner[45676:7d68e9] (Flutter) flutter: Patrol (native): configure() started
+2026-09-23 19:48:27.763 Df Runner[45676:7d68e9] (Flutter) flutter: Patrol (native): MobileAutomatorClient created, port: 8081
+2026-09-23 19:48:27.769 Df Runner[45676:7d68e9] (Flutter) flutter: Patrol (native): configure() succeeded
+2026-09-23 19:48:27.775 Df Runner[45676:7d68e9] (Flutter) flutter: PATROL_LOG {"timestamp":"2026-09-23T19:48:27.770308","type":"test","name":"flows.meal_log_build_flow_test build a meal from search, log it, see it on the timeline, then delete it","status":"start","error":null}
+2026-09-23 19:48:27.776 Df Runner[45676:7d68e9] (Flutter) flutter: Patrol (native): isPermissionDialogVisible() started
+2026-09-23 19:48:27.777 Df Runner[45676:7d68e9] (Flutter) flutter: PATROL_LOG {"timestamp":"2026-09-23T19:48:27.776371","type":"step","action":"\134u001b[94misPermissionDialogVisible\134u001b[0m \134u001b[90m(native)\134u001b[0m","status":"start","data":null}
+2026-09-23 19:48:27.902 Df Runner[45676:7d68e9] (Flutter) flutter: supabase.supabase_flutter: INFO: ***** Supabase init completed *****
+2026-09-23 19:48:27.960 Df Runner[45676:7d68e9] (Flutter) flutter: GoRouter: INFO: Full paths for routes:
+2026-09-23 19:48:27.960 Df Runner[45676:7d68e9] (Flutter) flutter:   => /privacy-consent
+2026-09-23 19:48:27.960 Df Runner[45676:7d68e9] (Flutter) flutter:   => /force-upgrade
+2026-09-23 19:48:27.960 Df Runner[45676:7d68e9] (Flutter) flutter:   => /welcome
+2026-09-23 19:48:27.960 Df Runner[45676:7d68e9] (Flutter) flutter:   => /onboarding
+2026-09-23 19:48:27.960 Df Runner[45676:7d68e9] (Flutter) flutter:   => /auth/post-onboarding
+2026-09-23 19:48:27.960 Df Runner[45676:7d68e9] (Flutter) flutter:   => /auth/email-signup
+2026-09-23 19:48:27.960 Df Runner[45676:7d68e9] (Flutter) flutter:   => /auth/email-login
+2026-09-23 19:48:27.960 Df Runner[45676:7d68e9] (Flutter) flutter:   => /auth/forgot-password
+2026-09-23 19:48:27.960 Df Runner[45676:7d68e9] (Flutter) flutter:   => /auth/verify-reset-code
+2026-09-23 19:48:27.960 Df Runner[45676:7d68e9] (Flutter) flutter:   => /auth/set-new-password
+2026-09-23 19:48:27.961 Df Runner[45676:7d68e9] (Flutter) flutter:   => /distancepacegut
+2026-09-23 19:48:27.961 Df Runner[45676:7d68e9] (Flutter) flutter:   => /distance-pace-gut-entry
+2026-09-23 19:48:27.961 Df Runner[45676:7d68e9] (Flutter) flutter:   => /main
+2026-09-23 19:48:27.961 Df Runner[45676:7d68e9] (Flutter) flutter:   => /coach-portal
+2026-09-23 19:48:27.961 Df Runner[45676:7d68e9] (Flutter) flutter:   => /plan
+2026-09-23 19:48:27.961 Df Runner[45676:7d68e9] (Flutter) flutter:   => /current-plan
+2026-09-23 19:48:27.961 Df Runner[45676:7d68e9] (Flutter) flutter:   => /fuel-log
+2026-09-23 19:48:27.961 Df Runner[45676:7d68e9] (Flutter) flutter:   => /adjust-macros
+2026-09-23 19:48:27.961 Df Runner[45676:7d68e9] (Flutter) flutter:   => /learn
+2026-09-23 19:48:27.961 Df Runner[45676:7d68e9] (Flutter) flutter:   => /learn/video
+2026-09-23 19:48:27.961 Df Runner[45676:7d68e9] (Flutter) flutter:   => /events
+2026-09-23 19:48:27.961 Df Runner[45676:7d68e9] (Flutter) flutter:   => /events/create
+2026-09-23 19:48:27.961 Df Runner[45676:7d68e9] (Flutter) flutter:   => /events/:eventId
+2026-09-23 19:48:27.961 Df Runner[45676:7d68e9] (Flutter) flutter:   => /events/:eventId/checklist
+2026-09-23 19:48:27.961 Df Runner[45676:7d68e9] (Flutter) flutter:   => /paywall
+2026-09-23 19:48:27.961 Df Runner[45676:7d68e9] (Flutter) flutter:   => /buy-credits
+2026-09-23 19:48:27.961 Df Runner[45676:7d68e9] (Flutter) flutter:   => /settings
+2026-09-23 19:48:27.962 Df Runner[45676:7d68e9] (Flutter) flutter:   => /settings/connected-apps
+2026-09-23 19:48:27.962 Df Runner[45676:7d68e9] (Flutter) flutter:   => /settings/privacy
+2026-09-23 19:48:27.962 Df Runner[45676:7d68e9] (Flutter) flutter:   => /settings/preferences
+2026-09-23 19:48:27.962 Df Runner[45676:7d68e9] (Flutter) flutter:   => /settings/sweat-profile
+2026-09-23 19:48:27.962 Df Runner[45676:7d68e9] (Flutter) flutter:   => /settings/sport-settings
+2026-09-23 19:48:27.962 Df Runner[45676:7d68e9] (Flutter) flutter:   => /settings/food-preferences-hub
+2026-09-23 19:48:27.962 Df Runner[45676:7d68e9] (Flutter) flutter:   => /settings/sport-preferences-hub
+2026-09-23 19:48:27.962 Df Runner[45676:7d68e9] (Flutter) flutter:   => /settings/nutrition-targets
+2026-09-23 19:48:27.962 Df Runner[45676:7d68e9] (Flutter) flutter:   => /settings/nutrition-profile
+2026-09-23 19:48:27.962 Df Runner[45676:7d68e9] (Flutter) flutter:   => /settings/templates
+2026-09-23 19:48:27.962 Df Runner[45676:7d68e9] (Flutter) flutter:   => /settings/coach-connection
+2026-09-23 19:48:27.962 Df Runner[45676:7d68e9] (Flutter) flutter:   => /settings/food-preferences-consolidated
+2026-09-23 19:48:27.962 Df Runner[45676:7d68e9] (Flutter) flutter:   => /settings/food-preferences
+2026-09-23 19:48:27.962 Df Runner[45676:7d68e9] (Flutter) flutter:   => /settings/dietary-preference
+2026-09-23 19:48:27.962 Df Runner[45676:7d68e9] (Flutter) flutter:   => /settings/allergies
+2026-09-23 19:48:27.962 Df Runner[45676:7d68e9] (Flutter) flutter:   => /settings/running-details
+2026-09-23 19:48:27.963 Df Runner[45676:7d68e9] (Flutter) flutter:   => /settings/cycling-details
+2026-09-23 19:48:27.963 Df Runner[45676:7d68e9] (Flutter) flutter:   => /settings/swimming-details
+2026-09-23 19:48:27.963 Df Runner[45676:7d68e9] (Flutter) flutter:   => /settings/food-preferences/add-food
+2026-09-23 19:48:27.963 Df Runner[45676:7d68e9] (Flutter) flutter:   => /settings/food-preferences/formula-library
+2026-09-23 19:48:27.963 Df Runner[45676:7d68e9] (Flutter) flutter:   =>   /settings/food-preferences/formula-library/before/:id
+2026-09-23 19:48:27.963 Df Runner[45676:7d68e9] (Flutter) flutter:   =>   /settings/food-preferences/formula-library/during/:id
+2026-09-23 19:48:27.963 Df Runner[45676:7d68e9] (Flutter) flutter:   =>   /settings/food-preferences/formula-library/after/:id
+2026-09-23 19:48:27.963 Df Runner[45676:7d68e9] (Flutter) flutter:   =>   /settings/food-preferences/formula-library/personal/create
+2026-09-23 19:48:27.963 Df Runner[45676:7d68e9] (Flutter) flutter:   =>   /settings/food-preferences/formula-library/personal/:id
+2026-09-23 19:48:27.963 Df Runner[45676:7d68e9] (Flutter) flutter:   => /help
+2026-09-23 19:48:27.963 Df Runner[45676:7d68e9] (Flutter) flutter:   => /swap-food
+2026-09-23 19:48:27.963 Df Runner[45676:7d68e9] (Flutter) flutter:   => /barcode-scanner
+2026-09-23 19:48:27.963 Df Runner[45676:7d68e9] (Flutter) flutter:   => /food-detail
+2026-09-23 19:48:27.963 Df Runner[45676:7d68e9] (Flutter) flutter:   => /carb-loading-select-food
+2026-09-23 19:48:27.963 Df Runner[45676:7d68e9] (Flutter) flutter:   => /create-custom-carb-loading-food
+2026-09-23 19:48:27.963 Df Runner[45676:7d68e9] (Flutter) flutter:   => /coach
+2026-09-23 19:48:27.963 Df Runner[45676:7d68e9] (Flutter) flutter:   => /coach/athlete/:relationshipId
+2026-09-23 19:48:27.963 Df Runner[45676:7d68e9] (Flutter) flutter:   => /my-coaches
+2026-09-23 19:48:27.964 Df Runner[45676:7d68e9] (Flutter) flutter:   => /athlete/feedback
+2026-09-23 19:48:27.964 Df Runner[45676:7d68e9] (Flutter) flutter:   => /coach/apply
+2026-09-23 19:48:27.964 Df Runner[45676:7d68e9] (Flutter) flutter:   => /coach-directory
+2026-09-23 19:48:27.964 Df Runner[45676:7d68e9] (Flutter) flutter:   => /chat/:relationshipId
+2026-09-23 19:48:27.964 Df Runner[45676:7d68e9] (Flutter) flutter:   => /meal-log/edit
+2026-09-23 19:48:27.964 Df Runner[45676:7d68e9] (Flutter) flutter:   => /meal-log/manual
+2026-09-23 19:48:27.964 Df Runner[45676:7d68e9] (Flutter) flutter:   => /meal-log/photo
+2026-09-23 19:48:27.964 Df Runner[45676:7d68e9] (Flutter) flutter:   => /meal-log/describe
+2026-09-23 19:48:27.964 Df Runner[45676:7d68e9] (Flutter) flutter:   => /meal-log/review
+2026-09-23 19:48:27.964 Df Runner[45676:7d68e9] (Flutter) flutter:   => /meal-log/recent-saved
+2026-09-23 19:48:27.964 Df Runner[45676:7d68e9] (Flutter) flutter:   => /meal-log/recipe
+2026-09-23 19:48:27.964 Df Runner[45676:7d68e9] (Flutter) flutter:   => /food
+2026-09-23 19:48:27.964 Df Runner[45676:7d68e9] (Flutter) flutter:   =>   /food/meals/recents
+2026-09-23 19:48:27.964 Df Runner[45676:7d68e9] (Flutter) flutter:   =>   /food/meals/:id
+2026-09-23 19:48:27.964 Df Runner[45676:7d68e9] (Flutter) flutter:   =>   /food/cook/:id
+2026-09-23 19:48:27.964 Df Runner[45676:7d68e9] (Flutter) flutter:   =>   /food/swap/:planMealId
+2026-09-23 19:48:27.964 Df Runner[45676:7d68e9] (Flutter) flutter:   =>   /food/kroger/:planId
+2026-09-23 19:48:27.965 Df Runner[45676:7d68e9] (Flutter) flutter:   =>   /food/plans/:id
+2026-09-23 19:48:27.965 Df Runner[45676:7d68e9] (Flutter) flutter:   => /vana
+2026-09-23 19:48:27.965 Df Runner[45676:7d68e9] (Flutter) flutter:   =>   /vana/browse
+2026-09-23 19:48:27.965 Df Runner[45676:7d68e9] (Flutter) flutter:   =>   /vana/conversations
+2026-09-23 19:48:27.965 Df Runner[45676:7d68e9] (Flutter) flutter:   => /settings/vana
+2026-09-23 19:48:27.965 Df Runner[45676:7d68e9] (Flutter) flutter:   => /jade
+2026-09-23 19:48:27.965 Df Runner[45676:7d68e9] (Flutter) flutter: known full paths for route names:
+2026-09-23 19:48:27.965 Df Runner[45676:7d68e9] (Flutter) flutter:   privacy-consent => /privacy-consent
+2026-09-23 19:48:27.965 Df Runner[45676:7d68e9] (Flutter) flutter:   force-upgrade => /force-upgrade
+2026-09-23 19:48:27.965 Df Runner[45676:7d68e9] (Flutter) flutter:   welcome => /welcome
+2026-09-23 19:48:27.965 Df Runner[45676:7d68e9] (Flutter) flutter:   onboarding => /onboarding
+2026-09-23 19:48:27.965 Df Runner[45676:7d68e9] (Flutter) flutter:   auth-post-onboarding => /auth/post-onboarding
+2026-09-23 19:48:27.965 Df Runner[45676:7d68e9] (Flutter) flutter:   auth-email-signup => /auth/email-signup
+2026-09-23 19:48:27.965 Df Runner[45676:7d68e9] (Flutter) flutter:   auth-email-login => /auth/email-login
+2026-09-23 19:48:27.965 Df Runner[45676:7d68e9] (Flutter) flutter:   auth-forgot-password => /auth/forgot-password
+2026-09-23 19:48:27.965 Df Runner[45676:7d68e9] (Flutter) flutter:   auth-verify-reset-code => /auth/verify-reset-code
+2026-09-23 19:48:27.965 Df Runner[45676:7d68e9] (Flutter) flutter:   auth-set-new-password => /auth/set-new-password
+2026-09-23 19:48:27.966 Df Runner[45676:7d68e9] (Flutter) flutter:   distancepacegut => /distancepacegut
+2026-09-23 19:48:27.966 Df Runner[45676:7d68e9] (Flutter) flutter:   distance-pace-gut-entry => /distance-pace-gut-entry
+2026-09-23 19:48:27.966 Df Runner[45676:7d68e9] (Flutter) flutter:   main => /main
+2026-09-23 19:48:27.966 Df Runner[45676:7d68e9] (Flutter) flutter:   coach-portal => /coach-portal
+2026-09-23 19:48:27.966 Df Runner[45676:7d68e9] (Flutter) flutter:   plan => /plan
+2026-09-23 19:48:27.966 Df Runner[45676:7d68e9] (Flutter) flutter:   current-plan => /current-plan
+2026-09-23 19:48:27.966 Df Runner[45676:7d68e9] (Flutter) flutter:   fuel-log => /fuel-log
+2026-09-23 19:48:27.966 Df Runner[45676:7d68e9] (Flutter) flutter:   adjust-macros => /adjust-macros
+2026-09-23 19:48:27.966 Df Runner[45676:7d68e9] (Flutter) flutter:   learn => /learn
+2026-09-23 19:48:27.966 Df Runner[45676:7d68e9] (Flutter) flutter:   learn-video => /learn/video
+2026-09-23 19:48:27.966 Df Runner[45676:7d68e9] (Flutter) flutter:   events-list => /events
+2026-09-23 19:48:27.966 Df Runner[45676:7d68e9] (Flutter) flutter:   events-create => /events/create
+2026-09-23 19:48:27.966 Df Runner[45676:7d68e9] (Flutter) flutter:   event-detail => /events/:eventId
+2026-09-23 19:48:27.966 Df Runner[45676:7d68e9] (Flutter) flutter:   race-checklist => /events/:eventId/checklist
+2026-09-23 19:48:27.966 Df Runner[45676:7d68e9] (Flutter) flutter:   paywall => /paywall
+2026-09-23 19:48:27.966 Df Runner[45676:7d68e9] (Flutter) flutter:   buy-credits => /buy-credits
+2026-09-23 19:48:27.966 Df Runner[45676:7d68e9] (Flutter) flutter:   settings => /settings
+2026-09-23 19:48:27.966 Df Runner[45676:7d68e9] (Flutter) flutter:   settings-connected-apps => /settings/connected-apps
+2026-09-23 19:48:27.967 Df Runner[45676:7d68e9] (Flutter) flutter:   settings-privacy => /settings/privacy
+2026-09-23 19:48:27.967 Df Runner[45676:7d68e9] (Flutter) flutter:   settings-preferences => /settings/preferences
+2026-09-23 19:48:27.967 Df Runner[45676:7d68e9] (Flutter) flutter:   settings-sweat-profile => /settings/sweat-profile
+2026-09-23 19:48:27.967 Df Runner[45676:7d68e9] (Flutter) flutter:   settings-sport-settings => /settings/sport-settings
+2026-09-23 19:48:27.967 Df Runner[45676:7d68e9] (Flutter) flutter:   settings-food-preferences-hub => /settings/food-preferences-hub
+2026-09-23 19:48:27.967 Df Runner[45676:7d68e9] (Flutter) flutter:   settings-sport-preferences-hub => /settings/sport-preferences-hub
+2026-09-23 19:48:27.967 Df Runner[45676:7d68e9] (Flutter) flutter:   settings-nutrition-targets => /settings/nutrition-targets
+2026-09-23 19:48:27.967 Df Runner[45676:7d68e9] (Flutter) flutter:   settings-nutrition-profile => /settings/nutrition-profile
+2026-09-23 19:48:27.967 Df Runner[45676:7d68e9] (Flutter) flutter:   settings-templates => /settings/templates
+2026-09-23 19:48:27.967 Df Runner[45676:7d68e9] (Flutter) flutter:   settings-coach-connection => /settings/coach-connection
+2026-09-23 19:48:27.967 Df Runner[45676:7d68e9] (Flutter) flutter:   settings-food-preferences-consolidated => /settings/food-preferences-consolidated
+2026-09-23 19:48:27.967 Df Runner[45676:7d68e9] (Flutter) flutter:   settings-food-preferences => /settings/food-preferences
+2026-09-23 19:48:27.967 Df Runner[45676:7d68e9] (Flutter) flutter:   settings-dietary-preference => /settings/dietary-preference
+2026-09-23 19:48:27.967 Df Runner[45676:7d68e9] (Flutter) flutter:   settings-allergies => /settings/allergies
+2026-09-23 19:48:27.967 Df Runner[45676:7d68e9] (Flutter) flutter:   settings-running-details => /settings/running-details
+2026-09-23 19:48:27.967 Df Runner[45676:7d68e9] (Flutter) flutter:   settings-cycling-details => /settings/cycling-details
+2026-09-23 19:48:27.967 Df Runner[45676:7d68e9] (Flutter) flutter:   settings-swimming-details => /settings/swimming-details
+2026-09-23 19:48:27.967 Df Runner[45676:7d68e9] (Flutter) flutter:   settings-add-food => /settings/food-preferences/add-food
+2026-09-23 19:48:27.968 Df Runner[45676:7d68e9] (Flutter) flutter:   settings-formula-library => /settings/food-preferences/formula-library
+2026-09-23 19:48:27.968 Df Runner[45676:7d68e9] (Flutter) flutter:   settings-formula-detail-before => /settings/food-preferences/formula-library/before/:id
+2026-09-23 19:48:27.968 Df Runner[45676:7d68e9] (Flutter) flutter:   settings-formula-detail-during => /settings/food-preferences/formula-library/during/:id
+2026-09-23 19:48:27.968 Df Runner[45676:7d68e9] (Flutter) flutter:   settings-formula-detail-after => /settings/food-preferences/formula-library/after/:id
+2026-09-23 19:48:27.968 Df Runner[45676:7d68e9] (Flutter) flutter:   settings-formula-personal-create => /settings/food-preferences/formula-library/personal/create
+2026-09-23 19:48:27.968 Df Runner[45676:7d68e9] (Flutter) flutter:   settings-formula-personal-edit => /settings/food-preferences/formula-library/personal/:id
+2026-09-23 19:48:27.968 Df Runner[45676:7d68e9] (Flutter) flutter:   help-feedback => /help
+2026-09-23 19:48:27.968 Df Runner[45676:7d68e9] (Flutter) flutter:   swap-food => /swap-food
+2026-09-23 19:48:27.968 Df Runner[45676:7d68e9] (Flutter) flutter:   barcode-scanner => /barcode-scanner
+2026-09-23 19:48:27.968 Df Runner[45676:7d68e9] (Flutter) flutter:   food-detail => /food-detail
+2026-09-23 19:48:27.968 Df Runner[45676:7d68e9] (Flutter) flutter:   carb-loading-select-food => /carb-loading-select-food
+2026-09-23 19:48:27.968 Df Runner[45676:7d68e9] (Flutter) flutter:   create-custom-carb-loading-food => /create-custom-carb-loading-food
+2026-09-23 19:48:27.968 Df Runner[45676:7d68e9] (Flutter) flutter:   coach-dashboard => /coach
+2026-09-23 19:48:27.968 Df Runner[45676:7d68e9] (Flutter) flutter:   coach-athlete-detail => /coach/athlete/:relationshipId
+2026-09-23 19:48:27.968 Df Runner[45676:7d68e9] (Flutter) flutter:   my-coaches => /my-coaches
+2026-09-23 19:48:27.968 Df Runner[45676:7d68e9] (Flutter) flutter:   athlete-feedback => /athlete/feedback
+2026-09-23 19:48:27.968 Df Runner[45676:7d68e9] (Flutter) flutter:   coach-apply => /coach/apply
+2026-09-23 19:48:27.968 Df Runner[45676:7d68e9] (Flutter) flutter:   coach-directory => /coach-directory
+2026-09-23 19:48:27.969 Df Runner[45676:7d68e9] (Flutter) flutter:   coach-chat => /chat/:relationshipId
+2026-09-23 19:48:27.969 Df Runner[45676:7d68e9] (Flutter) flutter:   meal-log-edit => /meal-log/edit
+2026-09-23 19:48:27.969 Df Runner[45676:7d68e9] (Flutter) flutter:   meal-log-manual => /meal-log/manual
+2026-09-23 19:48:27.969 Df Runner[45676:7d68e9] (Flutter) flutter:   meal-log-photo => /meal-log/photo
+2026-09-23 19:48:27.969 Df Runner[45676:7d68e9] (Flutter) flutter:   meal-log-describe => /meal-log/describe
+2026-09-23 19:48:27.969 Df Runner[45676:7d68e9] (Flutter) flutter:   meal-log-review => /meal-log/review
+2026-09-23 19:48:27.969 Df Runner[45676:7d68e9] (Flutter) flutter:   meal-log-recent-saved => /meal-log/recent-saved
+2026-09-23 19:48:27.969 Df Runner[45676:7d68e9] (Flutter) flutter:   meal-log-recipe => /meal-log/recipe
+2026-09-23 19:48:27.969 Df Runner[45676:7d68e9] (Flutter) flutter:   food => /food
+2026-09-23 19:48:27.969 Df Runner[45676:7d68e9] (Flutter) flutter:   food-meals-recents => /food/meals/recents
+2026-09-23 19:48:27.969 Df Runner[45676:7d68e9] (Flutter) flutter:   food-meal-detail => /food/meals/:id
+2026-09-23 19:48:27.969 Df Runner[45676:7d68e9] (Flutter) flutter:   food-cooking-mode => /food/cook/:id
+2026-09-23 19:48:27.969 Df Runner[45676:7d68e9] (Flutter) flutter:   food-swap-meal => /food/swap/:planMealId
+2026-09-23 19:48:27.969 Df Runner[45676:7d68e9] (Flutter) flutter:   food-kroger => /food/kroger/:planId
+2026-09-23 19:48:27.969 Df Runner[45676:7d68e9] (Flutter) flutter:   food-previous-plan => /food/plans/:id
+2026-09-23 19:48:27.969 Df Runner[45676:7d68e9] (Flutter) flutter:   vana-chat => /vana
+2026-09-23 19:48:27.969 Df Runner[45676:7d68e9] (Flutter) flutter:   vana-browse => /vana/browse
+2026-09-23 19:48:27.970 Df Runner[45676:7d68e9] (Flutter) flutter:   vana-conversations => /vana/conversations
+2026-09-23 19:48:27.970 Df Runner[45676:7d68e9] (Flutter) flutter:   settings-vana => /settings/vana
+2026-09-23 19:48:27.970 Df Runner[45676:7d68e9] (Flutter) flutter:   jade-chat => /jade
+2026-09-23 19:48:27.970 Df Runner[45676:7d68e9] (Flutter) flutter:
+2026-09-23 19:48:27.971 Df Runner[45676:7d68e9] (Flutter) flutter: GoRouter: INFO: setting initial location /
+2026-09-23 19:48:28.088 Df Runner[45676:7d68e9] (Flutter) flutter: [RevenueCatService] logIn skipped: SDK not configured
+2026-09-23 19:48:28.101 Df Runner[45676:7d68e9] (Flutter) flutter: [RevenueCatService] logIn skipped: SDK not configured
+2026-09-23 19:48:28.409 Df Runner[45676:7d68e9] (Flutter) flutter: ✅ Schema validation passed (40 tables verified)
+2026-09-23 19:48:28.462 Df Runner[45676:7d68e9] (Flutter) flutter: [RevenueCatService] configured {store: test_store}
+2026-09-23 19:48:28.468 Df Runner[45676:7d68e9] (Flutter) flutter: [SubscriptionService] customer info updated {active: true, expires_at: 2027-09-15T19:39:14.000Z}
+2026-09-23 19:48:28.483 Df Runner[45676:7d68e9] (Flutter) flutter: [RevenueCatService] logged in
+2026-09-23 19:48:28.491 Df Runner[45676:7d68e9] (Flutter) flutter: 📊 [ANALYTICS] app_opened {device_id: CB2384BE-4EA2-4E3B-B80E-3E2802D767BE, session_id: c47cdc63-44cf-4b4c-89e4-39708aea62c1, timestamp: 2026-09-23T19:48:28.491217}
+2026-09-23 19:48:28.510 Df Runner[45676:7d68e9] (Flutter) flutter: [SubscriptionService] customer info fetched {active: true, expires_at: 2027-09-15T19:39:14.000Z, is_trial: false}
+2026-09-23 19:48:28.544 Df Runner[45676:7d68e9] (Flutter) flutter: GoRouter: INFO: No initial matches: /
+2026-09-23 19:48:28.553 Df Runner[45676:7d68e9] (Flutter) flutter: GoRouter: INFO: redirecting to RouteMatchList(/main)
+2026-09-23 19:48:28.598 Df Runner[45676:7d68e9] (Flutter) flutter: GoRouter: INFO: Using MaterialApp configuration
+2026-09-23 19:48:29.106 Df Runner[45676:7d68e9] (Flutter) flutter: 🔄 Integration sync skipped (final_surge) - data is fresh
+2026-09-23 19:48:29.106 Df Runner[45676:7d68e9] (Flutter) flutter: 🔄 Integration sync skipped (garmin) - data is fresh
+2026-09-23 19:48:29.111 Df Runner[45676:7d68e9] (Flutter) flutter: 🔄 Starting integration sync for training_peaks...
+2026-09-23 19:48:29.123 Df Runner[45676:7d68e9] (Flutter) flutter: 🔄 Starting full TrainingPeaks sync...
+2026-09-23 19:48:29.136 Df Runner[45676:7d68e9] (Flutter) flutter: DailyBaselineCalculator.sessionCost: unknown sport "other" — F4a zero-with-estimate-flag (session-demand.md F4a, RULED 2026-09-10)
+2026-09-23 19:48:29.137 Df Runner[45676:7d68e9] (Flutter) flutter: DailyBaselineCalculator.sessionCost: unknown sport "other" — F4a zero-with-estimate-flag (session-demand.md F4a, RULED 2026-09-10)
+2026-09-23 19:48:29.154 Df Runner[45676:7d68e9] (Flutter) flutter: ⚠️ TrainingPeaks token expires soon, proactively refreshing...
+2026-09-23 19:48:29.155 Df Runner[45676:7d68e9] (Flutter) flutter: 🔄 Refreshing TrainingPeaks token...
+2026-09-23 19:48:29.155 Df Runner[45676:7d68e9] (Flutter) flutter: 🔑 Token refresh URL: https://oauth.sandbox.trainingpeaks.com/oauth/token
+2026-09-23 19:48:29.155 Df Runner[45676:7d68e9] (Flutter) flutter:    Client ID: mealvana
+2026-09-23 19:48:29.160 Df Runner[45676:7d68e9] (Flutter) flutter: DailyBaselineCalculator.sessionCost: unknown sport "other" — F4a zero-with-estimate-flag (session-demand.md F4a, RULED 2026-09-10)
+2026-09-23 19:48:29.161 Df Runner[45676:7d68e9] (Flutter) flutter: DailyBaselineCalculator.sessionCost: unknown sport "other" — F4a zero-with-estimate-flag (session-demand.md F4a, RULED 2026-09-10)
+2026-09-23 19:48:29.552 Df Runner[45676:7d68e9] (Flutter) flutter: ❌ Token refresh failed: TrainingPeaksApiException: Token refresh failed (status: 400)
+Body: {"error":"invalid_grant"}
+2026-09-23 19:48:29.554 Df Runner[45676:7d68e9] (Flutter) flutter: ⚠️ TrainingPeaks token expires soon, proactively refreshing...
+2026-09-23 19:48:29.554 Df Runner[45676:7d68e9] (Flutter) flutter: 🔄 Refreshing TrainingPeaks token...
+2026-09-23 19:48:29.554 Df Runner[45676:7d68e9] (Flutter) flutter: 🔑 Token refresh URL: https://oauth.sandbox.trainingpeaks.com/oauth/token
+2026-09-23 19:48:29.554 Df Runner[45676:7d68e9] (Flutter) flutter:    Client ID: mealvana
+2026-09-23 19:48:29.697 Df Runner[45676:7d68e9] (Flutter) flutter: ❌ Token refresh failed: TrainingPeaksApiException: Token refresh failed (status: 400)
+Body: {"error":"invalid_grant"}
+2026-09-23 19:48:29.702 Df Runner[45676:7d68e9] (Flutter) flutter: \134^[[38;5;208m┌───────────────────────────────────────────────────────────────────────────────────────────────────────────────────────\134^[[0m
+2026-09-23 19:48:29.702 Df Runner[45676:7d68e9] (Flutter) flutter: \134^[[38;5;208m│ 19:48:29.700 (+0:00:01.759078)\134^[[0m
+2026-09-23 19:48:29.702 Df Runner[45676:7d68e9] (Flutter) flutter: \134^[[38;5;208m├┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄\134^[[0m
+2026-09-23 19:48:29.702 Df Runner[45676:7d68e9] (Flutter) flutter: \134^[[38;5;208m│ ⚠️ [INTEGRATION_SYNC] Integration sync reported failure for training_peaks\134^[[0m
+2026-09-23 19:48:29.702 Df Runner[45676:7d68e9] (Flutter) flutter: \134^[[38;5;208m│ ⚠️ Data: {userId: 607f9dd5-6fa7-48ee-a628-720d4a0506a1, provider: training_peaks, error: Token expired. Please reconnect.}\134^[[0m
+2026-09-23 19:48:29.702 Df Runner[45676:7d68e9] (Flutter) flutter: \134^[[38;5;208m└───────────────────────────────────────────────────────────────────────────────────────────────────────────────────────\134^[[0m
+2026-09-23 19:48:29.703 Df Runner[45676:7d68e9] (Flutter) flutter: ❌ Integration sync failed for training_peaks: Token expired. Please reconnect.
+2026-09-23 19:48:29.704 Df Runner[45676:7d68e9] (Flutter) flutter: 🔄 Starting integration sync for vdot...
+2026-09-23 19:48:29.705 Df Runner[45676:7d68e9] (Flutter) flutter: 🔑 [vdot] AppConfig creds at client build: client_id="mealvana" (len 8), client_secret len 64, authBase=https://app.vdoto2.com
+2026-09-23 19:48:29.712 Df Runner[45676:7d68e9] (Flutter) flutter: 🔄 [vdot] Starting sync for user 607f9dd5-6fa7-48ee-a628-720d4a0506a1
+2026-09-23 19:48:29.712 Df Runner[45676:7d68e9] (Flutter) flutter: ⚠️ [vdot] Token expires soon, proactively refreshing…
+2026-09-23 19:48:30.130 Df Runner[45676:7d68e9] (Flutter) flutter: \134^[[38;5;208m┌───────────────────────────────────────────────────────────────────────────────────────────────────────────────────────\134^[[0m
+2026-09-23 19:48:30.130 Df Runner[45676:7d68e9] (Flutter) flutter: \134^[[38;5;208m│ 19:48:30.130 (+0:00:02.189239)\134^[[0m
+2026-09-23 19:48:30.131 Df Runner[45676:7d68e9] (Flutter) flutter: \134^[[38;5;208m├┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄\134^[[0m
+2026-09-23 19:48:30.131 Df Runner[45676:7d68e9] (Flutter) flutter: \134^[[38;5;208m│ ⚠️ [INTEGRATION_SYNC] Integration sync reported failure for vdot\134^[[0m
+2026-09-23 19:48:30.131 Df Runner[45676:7d68e9] (Flutter) flutter: \134^[[38;5;208m│ ⚠️ Data: {userId: 607f9dd5-6fa7-48ee-a628-720d4a0506a1, provider: vdot, error: Please reconnect your V.O2 account}\134^[[0m
+2026-09-23 19:48:30.131 Df Runner[45676:7d68e9] (Flutter) flutter: \134^[[38;5;208m└───────────────────────────────────────────────────────────────────────────────────────────────────────────────────────\134^[[0m
+2026-09-23 19:48:30.131 Df Runner[45676:7d68e9] (Flutter) flutter: ❌ Integration sync failed for vdot: Please reconnect your V.O2 account
+2026-09-23 19:48:30.226 Df Runner[45676:7d68e9] (Flutter) flutter: DailyBaselineCalculator.sessionCost: unknown sport "other" — F4a zero-with-estimate-flag (session-demand.md F4a, RULED 2026-09-10)
+2026-09-23 19:48:30.227 Df Runner[45676:7d68e9] (Flutter) flutter: DailyBaselineCalculator.sessionCost: unknown sport "other" — F4a zero-with-estimate-flag (session-demand.md F4a, RULED 2026-09-10)
+2026-09-23 19:48:37.841 Df Runner[45676:7d68e9] (Flutter) flutter: Patrol (native): isPermissionDialogVisible() succeeded
+2026-09-23 19:48:37.843 Df Runner[45676:7d68e9] (Flutter) flutter: PATROL_LOG {"timestamp":"2026-09-23T19:48:37.842125","type":"step","action":"\134u001b[94misPermissionDialogVisible\134u001b[0m \134u001b[90m(native)\134u001b[0m","status":"success","data":null}
+2026-09-23 19:48:38.892 Df Runner[45676:7d68e9] (Flutter) flutter: PATROL_LOG {"timestamp":"2026-09-23T19:48:38.886144","type":"step","action":"\134u001b[33mtap\134u001b[0m widgets with key [<'macro_dashboard.filter_all'>].","status":"start","data":null}
+2026-09-23 19:48:38.956 Df Runner[45676:7d68e9] (Flutter) flutter: PATROL_LOG {"timestamp":"2026-09-23T19:48:38.955717","type":"step","action":"\134u001b[33mtap\134u001b[0m widgets with key [<'macro_dashboard.filter_all'>].","status":"success","data":null}
+2026-09-23 19:48:39.368 Df Runner[45676:7d68e9] (Flutter) flutter: PATROL_LOG {"timestamp":"2026-09-23T19:48:39.365227","type":"step","action":"\134u001b[33mtap\134u001b[0m widgets with key [<'kyle_tab_bar.item.timeline'>].","status":"start","data":null}
+2026-09-23 19:48:39.381 Df Runner[45676:7d68e9] (Flutter) flutter: PATROL_LOG {"timestamp":"2026-09-23T19:48:39.379860","type":"step","action":"\134u001b[33mtap\134u001b[0m widgets with key [<'kyle_tab_bar.item.timeline'>].","status":"success","data":null}
+2026-09-23 19:48:39.381 Df Runner[45676:7d68e9] (Flutter) flutter: PATROL_LOG {"timestamp":"2026-09-23T19:48:39.379984","type":"step","action":"\134u001b[36mwaitUntilVisible\134u001b[0m widgets with key [<'macro_dashboard.add_food'>].","status":"start","data":null}
+2026-09-23 19:48:39.382 Df Runner[45676:7d68e9] (Flutter) flutter: PATROL_LOG {"timestamp":"2026-09-23T19:48:39.381266","type":"step","action":"\134u001b[36mwaitUntilVisible\134u001b[0m widgets with key [<'macro_dashboard.add_food'>].","status":"success","data":null}
+2026-09-23 19:48:39.382 Df Runner[45676:7d68e9] (Flutter) flutter: PATROL_LOG {"timestamp":"2026-09-23T19:48:39.381401","type":"step","action":"\134u001b[33mtap\134u001b[0m widgets with key [<'macro_dashboard.add_food'>].","status":"start","data":null}
+2026-09-23 19:48:39.401 Df Runner[45676:7d68e9] (Flutter) flutter: 📊 [ANALYTICS] log_meal_opened {source: macro_dashboard, log_date: 2026-09-23, is_today: true}
+2026-09-23 19:48:39.401 Df Runner[45676:7d68e9] (Flutter) flutter: 📊 [ANALYTICS] diary_opened {source: macro_dashboard, log_date: 2026-09-23, is_today: true}
+2026-09-23 19:48:39.545 Df Runner[45676:7d68e9] (Flutter) flutter: PATROL_LOG {"timestamp":"2026-09-23T19:48:39.545647","type":"step","action":"\134u001b[33mtap\134u001b[0m widgets with key [<'macro_dashboard.add_food'>].","status":"success","data":null}
+2026-09-23 19:48:39.965 Df Runner[45676:7d68e9] (Flutter) flutter: PATROL_LOG {"timestamp":"2026-09-23T19:48:39.963505","type":"step","action":"\134u001b[36mwaitUntilVisible\134u001b[0m widgets with key [<'log_meal.build_a_meal_button'>].","status":"start","data":null}
+2026-09-23 19:48:39.966 Df Runner[45676:7d68e9] (Flutter) flutter: PATROL_LOG {"timestamp":"2026-09-23T19:48:39.965154","type":"step","action":"\134u001b[36mwaitUntilVisible\134u001b[0m widgets with key [<'log_meal.build_a_meal_button'>].","status":"success","data":null}
+2026-09-23 19:48:39.966 Df Runner[45676:7d68e9] (Flutter) flutter: PATROL_LOG {"timestamp":"2026-09-23T19:48:39.965210","type":"step","action":"\134u001b[33mtap\134u001b[0m widgets with key [<'log_meal.build_a_meal_button'>].","status":"start","data":null}
+2026-09-23 19:48:39.994 Df Runner[45676:7d68e9] (Flutter) flutter: 📊 [ANALYTICS] log_method_selected {method: build}
+2026-09-23 19:48:40.066 Df Runner[45676:7d68e9] (Flutter) flutter: PATROL_LOG {"timestamp":"2026-09-23T19:48:40.065667","type":"step","action":"\134u001b[33mtap\134u001b[0m widgets with key [<'log_meal.build_a_meal_button'>].","status":"success","data":null}
+2026-09-23 19:48:40.486 Df Runner[45676:7d68e9] (Flutter) flutter: PATROL_LOG {"timestamp":"2026-09-23T19:48:40.483101","type":"step","action":"\134u001b[36mwaitUntilVisible\134u001b[0m widgets with key [<'build_meal.add_food_button'>].","status":"start","data":null}
+2026-09-23 19:48:40.487 Df Runner[45676:7d68e9] (Flutter) flutter: PATROL_LOG {"timestamp":"2026-09-23T19:48:40.486141","type":"step","action":"\134u001b[36mwaitUntilVisible\134u001b[0m widgets with key [<'build_meal.add_food_button'>].","status":"success","data":null}
+2026-09-23 19:48:40.487 Df Runner[45676:7d68e9] (Flutter) flutter: PATROL_LOG {"timestamp":"2026-09-23T19:48:40.486441","type":"step","action":"\134u001b[33mtap\134u001b[0m widgets with key [<'build_meal.add_food_button'>].","status":"start","data":null}
+2026-09-23 19:48:40.578 Df Runner[45676:7d68e9] (Flutter) flutter: PATROL_LOG {"timestamp":"2026-09-23T19:48:40.577846","type":"step","action":"\134u001b[33mtap\134u001b[0m widgets with key [<'build_meal.add_food_button'>].","status":"success","data":null}
+2026-09-23 19:48:41.000 Df Runner[45676:7d68e9] (Flutter) flutter: PATROL_LOG {"timestamp":"2026-09-23T19:48:40.998819","type":"step","action":"\134u001b[36mwaitUntilVisible\134u001b[0m widgets with key [<'add_food.search_field'>].","status":"start","data":null}
+2026-09-23 19:48:41.001 Df Runner[45676:7d68e9] (Flutter) flutter: PATROL_LOG {"timestamp":"2026-09-23T19:48:41.000184","type":"step","action":"\134u001b[36mwaitUntilVisible\134u001b[0m widgets with key [<'add_food.search_field'>].","status":"success","data":null}
+2026-09-23 19:48:41.001 Df Runner[45676:7d68e9] (Flutter) flutter: PATROL_LOG {"timestamp":"2026-09-23T19:48:41.000496","type":"step","action":"\134u001b[35menterText\134u001b[0m widgets with key [<'add_food.search_field'>].","status":"start","data":null}
+2026-09-23 19:48:41.184 Df Runner[45676:7d68e9] (Flutter) flutter: PATROL_LOG {"timestamp":"2026-09-23T19:48:41.184266","type":"step","action":"\134u001b[35menterText\134u001b[0m widgets with key [<'add_food.search_field'>].","status":"success","data":null}
+2026-09-23 19:48:42.019 Df Runner[45676:7d68e9] (Flutter) flutter: PATROL_LOG {"timestamp":"2026-09-23T19:48:42.017303","type":"step","action":"\134u001b[33mtap\134u001b[0m widgets with widget matching predicate.","status":"start","data":null}
+2026-09-23 19:48:42.130 Df Runner[45676:7d68e9] (Flutter) flutter: PATROL_LOG {"timestamp":"2026-09-23T19:48:42.130086","type":"step","action":"\134u001b[33mtap\134u001b[0m widgets with widget matching predicate.","status":"success","data":null}
+2026-09-23 19:48:42.755 Df Runner[45676:7d68e9] (Flutter) flutter: PATROL_LOG {"timestamp":"2026-09-23T19:48:42.752296","type":"step","action":"\134u001b[33mtap\134u001b[0m widgets with key [<'add_food.back_button'>].","status":"start","data":null}
+2026-09-23 19:48:42.884 Df Runner[45676:7d68e9] (Flutter) flutter: PATROL_LOG {"timestamp":"2026-09-23T19:48:42.883587","type":"step","action":"\134u001b[33mtap\134u001b[0m widgets with key [<'add_food.back_button'>].","status":"success","data":null}
+2026-09-23 19:48:43.303 Df Runner[45676:7d68e9] (Flutter) flutter: PATROL_LOG {"timestamp":"2026-09-23T19:48:43.302438","type":"step","action":"\134u001b[36mwaitUntilVisible\134u001b[0m widgets with key [<'build_meal.name_field'>].","status":"start","data":null}
+2026-09-23 19:48:43.304 Df Runner[45676:7d68e9] (Flutter) flutter: PATROL_LOG {"timestamp":"2026-09-23T19:48:43.303913","type":"step","action":"\134u001b[36mwaitUntilVisible\134u001b[0m widgets with key [<'build_meal.name_field'>].","status":"success","data":null}
+2026-09-23 19:48:43.614 Df Runner[45676:7d68e9] (Flutter) flutter: PATROL_LOG {"timestamp":"2026-09-23T19:48:43.613294","type":"step","action":"\134u001b[35menterText\134u001b[0m widgets with key [<'build_meal.name_field'>].","status":"start","data":null}
+2026-09-23 19:48:43.714 Df Runner[45676:7d68e9] (Flutter) flutter: PATROL_LOG {"timestamp":"2026-09-23T19:48:43.713667","type":"step","action":"\134u001b[35menterText\134u001b[0m widgets with key [<'build_meal.name_field'>].","status":"success","data":null}
+2026-09-23 19:48:44.136 Df Runner[45676:7d68e9] (Flutter) flutter: PATROL_LOG {"timestamp":"2026-09-23T19:48:44.132265","type":"step","action":"\134u001b[36mwaitUntilVisible\134u001b[0m widgets with key [<'build_meal.log_meal_button'>].","status":"start","data":null}
+2026-09-23 19:48:44.137 Df Runner[45676:7d68e9] (Flutter) flutter: PATROL_LOG {"timestamp":"2026-09-23T19:48:44.136585","type":"step","action":"\134u001b[36mwaitUntilVisible\134u001b[0m widgets with key [<'build_meal.log_meal_button'>].","status":"success","data":null}
+2026-09-23 19:48:44.137 Df Runner[45676:7d68e9] (Flutter) flutter: PATROL_LOG {"timestamp":"2026-09-23T19:48:44.136666","type":"step","action":"\134u001b[33mtap\134u001b[0m widgets with key [<'build_meal.log_meal_button'>].","status":"start","data":null}
+2026-09-23 19:48:44.191 Df Runner[45676:7d68e9] (Flutter) flutter: PATROL_LOG {"timestamp":"2026-09-23T19:48:44.187401","type":"step","action":"\134u001b[33mtap\134u001b[0m widgets with key [<'build_meal.log_meal_button'>].","status":"success","data":null}
+2026-09-23 19:48:44.191 Df Runner[45676:7d68e9] (Flutter) flutter: PATROL_LOG {"timestamp":"2026-09-23T19:48:44.188116","type":"step","action":"\134u001b[36mwaitUntilVisible\134u001b[0m widgets with text \134"Meal logged!\134".","status":"start","data":null}
+2026-09-23 19:48:44.653 Df Runner[45676:7d68e9] (Flutter) flutter: PATROL_LOG {"timestamp":"2026-09-23T19:48:44.652225","type":"step","action":"\134u001b[36mwaitUntilVisible\134u001b[0m widgets with text \134"Meal logged!\134".","status":"success","data":null}
+2026-09-23 19:48:44.653 Df Runner[45676:7d68e9] (Flutter) flutter: PATROL_LOG {"timestamp":"2026-09-23T19:48:44.652288","type":"step","action":"\134u001b[36mwaitUntilVisible\134u001b[0m widgets with key [<'log_meal.back_button'>].","status":"start","data":null}
+2026-09-23 19:48:44.654 Df Runner[45676:7d68e9] (Flutter) flutter: PATROL_LOG {"timestamp":"2026-09-23T19:48:44.653563","type":"step","action":"\134u001b[36mwaitUntilVisible\134u001b[0m widgets with key [<'log_meal.back_button'>].","status":"success","data":null}
+2026-09-23 19:48:44.654 Df Runner[45676:7d68e9] (Flutter) flutter: PATROL_LOG {"timestamp":"2026-09-23T19:48:44.653926","type":"step","action":"\134u001b[33mtap\134u001b[0m widgets with key [<'log_meal.back_button'>].","status":"start","data":null}
+2026-09-23 19:48:44.703 Df Runner[45676:7d68e9] (Flutter) flutter: PATROL_LOG {"timestamp":"2026-09-23T19:48:44.700835","type":"step","action":"\134u001b[33mtap\134u001b[0m widgets with key [<'log_meal.back_button'>].","status":"success","data":null}
+2026-09-23 19:48:44.703 Df Runner[45676:7d68e9] (Flutter) flutter: PATROL_LOG {"timestamp":"2026-09-23T19:48:44.701929","type":"step","action":"\134u001b[33mtap\134u001b[0m widgets with key [<'macro_dashboard.filter_all'>].","status":"start","data":null}
+2026-09-23 19:48:44.706 Df Runner[45676:7d68e9] (Flutter) flutter: DailyBaselineCalculator.sessionCost: unknown sport "other" — F4a zero-with-estimate-flag (session-demand.md F4a, RULED 2026-09-10)
+2026-09-23 19:48:44.707 Df Runner[45676:7d68e9] (Flutter) flutter: DailyBaselineCalculator.sessionCost: unknown sport "other" — F4a zero-with-estimate-flag (session-demand.md F4a, RULED 2026-09-10)
+2026-09-23 19:48:44.856 Df Runner[45676:7d68e9] (Flutter) flutter: PATROL_LOG {"timestamp":"2026-09-23T19:48:44.856502","type":"step","action":"\134u001b[33mtap\134u001b[0m widgets with key [<'macro_dashboard.filter_all'>].","status":"success","data":null}
+2026-09-23 19:48:45.175 Df Runner[45676:7d68e9] (Flutter) flutter: 📊 [ANALYTICS] diary_closed {duration_sec: 5, items_logged: 0, log_date: 2026-09-23}
+2026-09-23 19:48:46.579 Df Runner[45676:7d68e9] (Flutter) flutter: meal_log_build cleanup failed (non-fatal): Bad state: No element
+2026-09-23 19:48:46.625 Df Runner[45676:7d68e9] (Flutter) flutter: PatrolBinding: tearDown(): count: 1, results: {build a meal from search, log it, see it on the timeline, then delete it: success}
+2026-09-23 19:48:46.626 Df Runner[45676:7d68e9] (Flutter) flutter: PatrolBinding: finished test flows.meal_log_build_flow_test build a meal from search, log it, see it on the timeline, then delete it. Will report its status back to the native side
+2026-09-23 19:48:46.626 Df Runner[45676:7d68e9] (Flutter) flutter: PatrolBinding: tearDown(): test "build a meal from search, log it, see it on the timeline, then delete it" in group "flows.meal_log_build_flow_test build a meal from search, log it, see it on the timeline, then delete it", passed: true
+2026-09-23 19:48:46.626 Df Runner[45676:7d68e9] (Flutter) flutter: PatrolAppService.markDartTestAsCompleted(): flows.meal_log_build_flow_test build a meal from search, log it, see it on the timeline, then delete it
+2026-09-23 19:48:46.629 Df Runner[45676:7d68e9] (Flutter) flutter: 2026-09-23T19:48:27.757868  0:00:18.871075 POST    [200] /runDartTest
+2026-09-23 19:48:46.632 Df Runner[45676:7d68e9] (Flutter) flutter: PATROL_LOG {"timestamp":"2026-09-23T19:48:46.627602","type":"test","name":"flows.meal_log_build_flow_test build a meal from search, log it, see it on the timeline, then delete it","status":"success","error":null}
+2026-09-23 19:48:46.633 Df Runner[45676:7d68e9] (Flutter) flutter: 00:20 +2: flows.ai_coach_chat_flow_test AI coach chat — send a message and receive an assistant response
+2026-09-23 19:48:46.664 Df Runner[45676:7d68e9] (Flutter) flutter: PatrolAppService: registered "flows.ai_coach_chat_flow_test AI coach chat — send a message and receive an assistant response"
+2026-09-23 19:48:46.664 Df Runner[45676:7d68e9] (Flutter) flutter: PatrolAppService: registered test "flows.ai_coach_chat_flow_test AI coach chat — send a message and receive an assistant response" was not matched by requested test "flows.meal_log_build_flow_test build a meal from search, log it, see it on the timeline, then delete it"
+2026-09-23 19:48:46.667 Df Runner[45676:7d68e9] (Flutter) flutter: PatrolBinding: tearDown(): count: 2, results: {build a meal from search, log it, see it on the timeline, then delete it: success, AI coach chat — send a message and receive an assistant response: success}
+2026-09-23 19:48:46.667 Df Runner[45676:7d68e9] (Flutter) flutter: PatrolBinding: finished test flows.ai_coach_chat_flow_test AI coach chat — send a message and receive an assistant response, but it was not requested, so its status will not be reported back to the native side
+2026-09-23 19:48:46.667 Df Runner[45676:7d68e9] (Flutter) flutter: 00:20 +3: All tests passed!
+Child process terminated with signal 15: Terminated

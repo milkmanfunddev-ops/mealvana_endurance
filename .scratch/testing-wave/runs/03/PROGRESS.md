@@ -1,3 +1,5 @@
+> Resumed 2026-09-23 and finished: results in `results.md`, notes in `notes.md`. Kept as the pause record.
+
 # Ticket 03, run w3-20260923T1942Z: paused
 
 Paused 2026-09-23 at the coordinator's request (Lee had to leave). Device: pool simulator

@@ -1,0 +1,373 @@
+getpwuid_r did not find a match for uid 501
+Filtering the log data using "process == "Runner" AND composedMessage CONTAINS "flutter:""
+Timestamp               Ty Process[PID:TID]
+2026-09-23 21:18:04.258 Df Runner[84006:835008] (Flutter) flutter: The Dart VM service is listening on http://127.0.0.1:64560/5gOKiBUZ9PM=/
+2026-09-23 21:18:05.612 Df Runner[84006:834f28] (Flutter) flutter: PatrolBinding: Register Patrol service extensions
+2026-09-23 21:18:05.644 Df Runner[84006:834f28] (Flutter) flutter: PATROL_LOG {"timestamp":"2026-09-23T21:18:05.624802","type":"config","config":{"printLogs":true}}
+2026-09-23 21:18:05.661 Df Runner[84006:834f28] (Flutter) flutter: 00:00 +0: patrol_test_explorer
+2026-09-23 21:18:05.676 Df Runner[84006:834f28] (Flutter) flutter: patrol_test_explorer: obtained Dart-side test hierarchy:
+2026-09-23 21:18:05.681 Df Runner[84006:834f28] (Flutter) flutter: -- group: ''
+2026-09-23 21:18:05.692 Df Runner[84006:834f28] (Flutter) flutter:      -- test: 'new user completes onboarding, edits a target, and signs up with email'
+2026-09-23 21:18:05.695 Df Runner[84006:834f28] (Flutter) flutter: 00:00 +1: flows.onboarding_signup_flow_test new user completes onboarding, edits a target, and signs up with email
+2026-09-23 21:18:05.892 Df Runner[84006:834f28] (Flutter) flutter: PatrolAppService: registered "flows.onboarding_signup_flow_test new user completes onboarding, edits a target, and signs up with email"
+2026-09-23 21:18:05.975 Df Runner[84006:834f28] (Flutter) flutter: PatrolAppService started, address: 127.0.0.1, host: 127.0.0.1, port: 8082
+2026-09-23 21:18:05.978 Df Runner[84006:834f28] (Flutter) flutter: Patrol (native): MobileAutomatorClient created, port: 8081
+2026-09-23 21:18:05.983 Df Runner[84006:834f28] (Flutter) flutter: Patrol (native): markPatrolAppServiceReady() started
+2026-09-23 21:18:06.247 Df Runner[84006:834f28] (Flutter) flutter: Patrol (native): markPatrolAppServiceReady() succeeded
+2026-09-23 21:18:07.068 Df Runner[84006:834f28] (Flutter) flutter: PatrolAppService.listDartTests() called
+2026-09-23 21:18:07.072 Df Runner[84006:834f28] (Flutter) flutter: 2026-09-23T21:18:07.068010  0:00:00.004118 POST    [200] /listDartTests
+2026-09-23 21:18:10.947 Df Runner[84121:8352eb] (Flutter) flutter: The Dart VM service is listening on http://127.0.0.1:64574/SNuYf4C8OU8=/
+2026-09-23 21:18:11.624 Df Runner[84121:83523e] (Flutter) flutter: PatrolBinding: Register Patrol service extensions
+2026-09-23 21:18:11.671 Df Runner[84121:83523e] (Flutter) flutter: PATROL_LOG {"timestamp":"2026-09-23T21:18:11.648457","type":"config","config":{"printLogs":true}}
+2026-09-23 21:18:11.690 Df Runner[84121:83523e] (Flutter) flutter: 00:00 +0: patrol_test_explorer
+2026-09-23 21:18:11.698 Df Runner[84121:83523e] (Flutter) flutter: patrol_test_explorer: obtained Dart-side test hierarchy:
+2026-09-23 21:18:11.703 Df Runner[84121:83523e] (Flutter) flutter: -- group: ''
+2026-09-23 21:18:11.714 Df Runner[84121:83523e] (Flutter) flutter:      -- test: 'new user completes onboarding, edits a target, and signs up with email'
+2026-09-23 21:18:11.718 Df Runner[84121:83523e] (Flutter) flutter: 00:00 +1: flows.onboarding_signup_flow_test new user completes onboarding, edits a target, and signs up with email
+2026-09-23 21:18:12.003 Df Runner[84121:83523e] (Flutter) flutter: PatrolAppService: registered "flows.onboarding_signup_flow_test new user completes onboarding, edits a target, and signs up with email"
+2026-09-23 21:18:12.090 Df Runner[84121:83523e] (Flutter) flutter: PatrolAppService started, address: 127.0.0.1, host: 127.0.0.1, port: 8082
+2026-09-23 21:18:12.093 Df Runner[84121:83523e] (Flutter) flutter: Patrol (native): MobileAutomatorClient created, port: 8081
+2026-09-23 21:18:12.108 Df Runner[84121:83523e] (Flutter) flutter: Patrol (native): markPatrolAppServiceReady() started
+2026-09-23 21:18:12.209 Df Runner[84121:83523e] (Flutter) flutter: Patrol (native): markPatrolAppServiceReady() succeeded
+2026-09-23 21:18:13.219 Df Runner[84121:83523e] (Flutter) flutter: PatrolAppService.runDartTest(flows.onboarding_signup_flow_test new user completes onboarding, edits a target, and signs up with email) called
+2026-09-23 21:18:13.220 Df Runner[84121:83523e] (Flutter) flutter: PatrolAppService: requested execution of test "flows.onboarding_signup_flow_test new user completes onboarding, edits a target, and signs up with email"
+2026-09-23 21:18:13.222 Df Runner[84121:83523e] (Flutter) flutter: Patrol (native): configure() started
+2026-09-23 21:18:13.222 Df Runner[84121:83523e] (Flutter) flutter: Patrol (native): MobileAutomatorClient created, port: 8081
+2026-09-23 21:18:13.255 Df Runner[84121:83523e] (Flutter) flutter: Patrol (native): configure() succeeded
+2026-09-23 21:18:13.274 Df Runner[84121:83523e] (Flutter) flutter: PATROL_LOG {"timestamp":"2026-09-23T21:18:13.255395","type":"test","name":"flows.onboarding_signup_flow_test new user completes onboarding, edits a target, and signs up with email","status":"start","error":null}
+2026-09-23 21:18:13.276 Df Runner[84121:83523e] (Flutter) flutter: Patrol (native): isPermissionDialogVisible() started
+2026-09-23 21:18:13.294 Df Runner[84121:83523e] (Flutter) flutter: PATROL_LOG {"timestamp":"2026-09-23T21:18:13.282573","type":"step","action":"\134u001b[94misPermissionDialogVisible\134u001b[0m \134u001b[90m(native)\134u001b[0m","status":"start","data":null}
+2026-09-23 21:18:13.569 Df Runner[84121:83523e] (Flutter) flutter: supabase.supabase_flutter: INFO: ***** Supabase init completed *****
+2026-09-23 21:18:13.699 Df Runner[84121:83523e] (Flutter) flutter: GoRouter: INFO: Full paths for routes:
+2026-09-23 21:18:13.700 Df Runner[84121:83523e] (Flutter) flutter:   => /privacy-consent
+2026-09-23 21:18:13.700 Df Runner[84121:83523e] (Flutter) flutter:   => /force-upgrade
+2026-09-23 21:18:13.700 Df Runner[84121:83523e] (Flutter) flutter:   => /welcome
+2026-09-23 21:18:13.700 Df Runner[84121:83523e] (Flutter) flutter:   => /onboarding
+2026-09-23 21:18:13.700 Df Runner[84121:83523e] (Flutter) flutter:   => /auth/post-onboarding
+2026-09-23 21:18:13.700 Df Runner[84121:83523e] (Flutter) flutter:   => /auth/email-signup
+2026-09-23 21:18:13.700 Df Runner[84121:83523e] (Flutter) flutter:   => /auth/email-login
+2026-09-23 21:18:13.700 Df Runner[84121:83523e] (Flutter) flutter:   => /auth/forgot-password
+2026-09-23 21:18:13.700 Df Runner[84121:83523e] (Flutter) flutter:   => /auth/verify-reset-code
+2026-09-23 21:18:13.700 Df Runner[84121:83523e] (Flutter) flutter:   => /auth/set-new-password
+2026-09-23 21:18:13.701 Df Runner[84121:83523e] (Flutter) flutter:   => /distancepacegut
+2026-09-23 21:18:13.701 Df Runner[84121:83523e] (Flutter) flutter:   => /distance-pace-gut-entry
+2026-09-23 21:18:13.701 Df Runner[84121:83523e] (Flutter) flutter:   => /main
+2026-09-23 21:18:13.701 Df Runner[84121:83523e] (Flutter) flutter:   => /coach-portal
+2026-09-23 21:18:13.701 Df Runner[84121:83523e] (Flutter) flutter:   => /plan
+2026-09-23 21:18:13.701 Df Runner[84121:83523e] (Flutter) flutter:   => /current-plan
+2026-09-23 21:18:13.701 Df Runner[84121:83523e] (Flutter) flutter:   => /fuel-log
+2026-09-23 21:18:13.701 Df Runner[84121:83523e] (Flutter) flutter:   => /adjust-macros
+2026-09-23 21:18:13.701 Df Runner[84121:83523e] (Flutter) flutter:   => /learn
+2026-09-23 21:18:13.701 Df Runner[84121:83523e] (Flutter) flutter:   => /learn/video
+2026-09-23 21:18:13.701 Df Runner[84121:83523e] (Flutter) flutter:   => /events
+2026-09-23 21:18:13.702 Df Runner[84121:83523e] (Flutter) flutter:   => /events/create
+2026-09-23 21:18:13.702 Df Runner[84121:83523e] (Flutter) flutter:   => /events/:eventId
+2026-09-23 21:18:13.702 Df Runner[84121:83523e] (Flutter) flutter:   => /events/:eventId/checklist
+2026-09-23 21:18:13.702 Df Runner[84121:83523e] (Flutter) flutter:   => /paywall
+2026-09-23 21:18:13.702 Df Runner[84121:83523e] (Flutter) flutter:   => /buy-credits
+2026-09-23 21:18:13.702 Df Runner[84121:83523e] (Flutter) flutter:   => /settings
+2026-09-23 21:18:13.702 Df Runner[84121:83523e] (Flutter) flutter:   => /settings/connected-apps
+2026-09-23 21:18:13.702 Df Runner[84121:83523e] (Flutter) flutter:   => /settings/privacy
+2026-09-23 21:18:13.702 Df Runner[84121:83523e] (Flutter) flutter:   => /settings/preferences
+2026-09-23 21:18:13.702 Df Runner[84121:83523e] (Flutter) flutter:   => /settings/sweat-profile
+2026-09-23 21:18:13.702 Df Runner[84121:83523e] (Flutter) flutter:   => /settings/sport-settings
+2026-09-23 21:18:13.702 Df Runner[84121:83523e] (Flutter) flutter:   => /settings/food-preferences-hub
+2026-09-23 21:18:13.703 Df Runner[84121:83523e] (Flutter) flutter:   => /settings/sport-preferences-hub
+2026-09-23 21:18:13.703 Df Runner[84121:83523e] (Flutter) flutter:   => /settings/nutrition-targets
+2026-09-23 21:18:13.703 Df Runner[84121:83523e] (Flutter) flutter:   => /settings/nutrition-profile
+2026-09-23 21:18:13.703 Df Runner[84121:83523e] (Flutter) flutter:   => /settings/templates
+2026-09-23 21:18:13.703 Df Runner[84121:83523e] (Flutter) flutter:   => /settings/coach-connection
+2026-09-23 21:18:13.703 Df Runner[84121:83523e] (Flutter) flutter:   => /settings/food-preferences-consolidated
+2026-09-23 21:18:13.703 Df Runner[84121:83523e] (Flutter) flutter:   => /settings/food-preferences
+2026-09-23 21:18:13.703 Df Runner[84121:83523e] (Flutter) flutter:   => /settings/dietary-preference
+2026-09-23 21:18:13.703 Df Runner[84121:83523e] (Flutter) flutter:   => /settings/allergies
+2026-09-23 21:18:13.703 Df Runner[84121:83523e] (Flutter) flutter:   => /settings/running-details
+2026-09-23 21:18:13.704 Df Runner[84121:83523e] (Flutter) flutter:   => /settings/cycling-details
+2026-09-23 21:18:13.704 Df Runner[84121:83523e] (Flutter) flutter:   => /settings/swimming-details
+2026-09-23 21:18:13.704 Df Runner[84121:83523e] (Flutter) flutter:   => /settings/food-preferences/add-food
+2026-09-23 21:18:13.704 Df Runner[84121:83523e] (Flutter) flutter:   => /settings/food-preferences/formula-library
+2026-09-23 21:18:13.704 Df Runner[84121:83523e] (Flutter) flutter:   =>   /settings/food-preferences/formula-library/before/:id
+2026-09-23 21:18:13.704 Df Runner[84121:83523e] (Flutter) flutter:   =>   /settings/food-preferences/formula-library/during/:id
+2026-09-23 21:18:13.704 Df Runner[84121:83523e] (Flutter) flutter:   =>   /settings/food-preferences/formula-library/after/:id
+2026-09-23 21:18:13.704 Df Runner[84121:83523e] (Flutter) flutter:   =>   /settings/food-preferences/formula-library/personal/create
+2026-09-23 21:18:13.704 Df Runner[84121:83523e] (Flutter) flutter:   =>   /settings/food-preferences/formula-library/personal/:id
+2026-09-23 21:18:13.704 Df Runner[84121:83523e] (Flutter) flutter:   => /help
+2026-09-23 21:18:13.704 Df Runner[84121:83523e] (Flutter) flutter:   => /swap-food
+2026-09-23 21:18:13.704 Df Runner[84121:83523e] (Flutter) flutter:   => /barcode-scanner
+2026-09-23 21:18:13.704 Df Runner[84121:83523e] (Flutter) flutter:   => /food-detail
+2026-09-23 21:18:13.704 Df Runner[84121:83523e] (Flutter) flutter:   => /carb-loading-select-food
+2026-09-23 21:18:13.704 Df Runner[84121:83523e] (Flutter) flutter:   => /create-custom-carb-loading-food
+2026-09-23 21:18:13.705 Df Runner[84121:83523e] (Flutter) flutter:   => /coach
+2026-09-23 21:18:13.705 Df Runner[84121:83523e] (Flutter) flutter:   => /coach/athlete/:relationshipId
+2026-09-23 21:18:13.705 Df Runner[84121:83523e] (Flutter) flutter:   => /my-coaches
+2026-09-23 21:18:13.705 Df Runner[84121:83523e] (Flutter) flutter:   => /athlete/feedback
+2026-09-23 21:18:13.705 Df Runner[84121:83523e] (Flutter) flutter:   => /coach/apply
+2026-09-23 21:18:13.706 Df Runner[84121:83523e] (Flutter) flutter:   => /coach-directory
+2026-09-23 21:18:13.706 Df Runner[84121:83523e] (Flutter) flutter:   => /chat/:relationshipId
+2026-09-23 21:18:13.706 Df Runner[84121:83523e] (Flutter) flutter:   => /meal-log/edit
+2026-09-23 21:18:13.706 Df Runner[84121:83523e] (Flutter) flutter:   => /meal-log/manual
+2026-09-23 21:18:13.706 Df Runner[84121:83523e] (Flutter) flutter:   => /meal-log/photo
+2026-09-23 21:18:13.706 Df Runner[84121:83523e] (Flutter) flutter:   => /meal-log/describe
+2026-09-23 21:18:13.706 Df Runner[84121:83523e] (Flutter) flutter:   => /meal-log/review
+2026-09-23 21:18:13.706 Df Runner[84121:83523e] (Flutter) flutter:   => /meal-log/recent-saved
+2026-09-23 21:18:13.706 Df Runner[84121:83523e] (Flutter) flutter:   => /meal-log/recipe
+2026-09-23 21:18:13.706 Df Runner[84121:83523e] (Flutter) flutter:   => /food
+2026-09-23 21:18:13.706 Df Runner[84121:83523e] (Flutter) flutter:   =>   /food/meals/recents
+2026-09-23 21:18:13.707 Df Runner[84121:83523e] (Flutter) flutter:   =>   /food/meals/:id
+2026-09-23 21:18:13.707 Df Runner[84121:83523e] (Flutter) flutter:   =>   /food/cook/:id
+2026-09-23 21:18:13.707 Df Runner[84121:83523e] (Flutter) flutter:   =>   /food/swap/:planMealId
+2026-09-23 21:18:13.707 Df Runner[84121:83523e] (Flutter) flutter:   =>   /food/kroger/:planId
+2026-09-23 21:18:13.707 Df Runner[84121:83523e] (Flutter) flutter:   =>   /food/plans/:id
+2026-09-23 21:18:13.707 Df Runner[84121:83523e] (Flutter) flutter:   => /vana
+2026-09-23 21:18:13.707 Df Runner[84121:83523e] (Flutter) flutter:   =>   /vana/browse
+2026-09-23 21:18:13.707 Df Runner[84121:83523e] (Flutter) flutter:   =>   /vana/conversations
+2026-09-23 21:18:13.707 Df Runner[84121:83523e] (Flutter) flutter:   => /settings/vana
+2026-09-23 21:18:13.707 Df Runner[84121:83523e] (Flutter) flutter:   => /jade
+2026-09-23 21:18:13.707 Df Runner[84121:83523e] (Flutter) flutter: known full paths for route names:
+2026-09-23 21:18:13.708 Df Runner[84121:83523e] (Flutter) flutter:   privacy-consent => /privacy-consent
+2026-09-23 21:18:13.708 Df Runner[84121:83523e] (Flutter) flutter:   force-upgrade => /force-upgrade
+2026-09-23 21:18:13.708 Df Runner[84121:83523e] (Flutter) flutter:   welcome => /welcome
+2026-09-23 21:18:13.708 Df Runner[84121:83523e] (Flutter) flutter:   onboarding => /onboarding
+2026-09-23 21:18:13.708 Df Runner[84121:83523e] (Flutter) flutter:   auth-post-onboarding => /auth/post-onboarding
+2026-09-23 21:18:13.708 Df Runner[84121:83523e] (Flutter) flutter:   auth-email-signup => /auth/email-signup
+2026-09-23 21:18:13.708 Df Runner[84121:83523e] (Flutter) flutter:   auth-email-login => /auth/email-login
+2026-09-23 21:18:13.708 Df Runner[84121:83523e] (Flutter) flutter:   auth-forgot-password => /auth/forgot-password
+2026-09-23 21:18:13.708 Df Runner[84121:83523e] (Flutter) flutter:   auth-verify-reset-code => /auth/verify-reset-code
+2026-09-23 21:18:13.708 Df Runner[84121:83523e] (Flutter) flutter:   auth-set-new-password => /auth/set-new-password
+2026-09-23 21:18:13.708 Df Runner[84121:83523e] (Flutter) flutter:   distancepacegut => /distancepacegut
+2026-09-23 21:18:13.708 Df Runner[84121:83523e] (Flutter) flutter:   distance-pace-gut-entry => /distance-pace-gut-entry
+2026-09-23 21:18:13.708 Df Runner[84121:83523e] (Flutter) flutter:   main => /main
+2026-09-23 21:18:13.708 Df Runner[84121:83523e] (Flutter) flutter:   coach-portal => /coach-portal
+2026-09-23 21:18:13.708 Df Runner[84121:83523e] (Flutter) flutter:   plan => /plan
+2026-09-23 21:18:13.709 Df Runner[84121:83523e] (Flutter) flutter:   current-plan => /current-plan
+2026-09-23 21:18:13.709 Df Runner[84121:83523e] (Flutter) flutter:   fuel-log => /fuel-log
+2026-09-23 21:18:13.709 Df Runner[84121:83523e] (Flutter) flutter:   adjust-macros => /adjust-macros
+2026-09-23 21:18:13.709 Df Runner[84121:83523e] (Flutter) flutter:   learn => /learn
+2026-09-23 21:18:13.709 Df Runner[84121:83523e] (Flutter) flutter:   learn-video => /learn/video
+2026-09-23 21:18:13.709 Df Runner[84121:83523e] (Flutter) flutter:   events-list => /events
+2026-09-23 21:18:13.709 Df Runner[84121:83523e] (Flutter) flutter:   events-create => /events/create
+2026-09-23 21:18:13.709 Df Runner[84121:83523e] (Flutter) flutter:   event-detail => /events/:eventId
+2026-09-23 21:18:13.709 Df Runner[84121:83523e] (Flutter) flutter:   race-checklist => /events/:eventId/checklist
+2026-09-23 21:18:13.709 Df Runner[84121:83523e] (Flutter) flutter:   paywall => /paywall
+2026-09-23 21:18:13.709 Df Runner[84121:83523e] (Flutter) flutter:   buy-credits => /buy-credits
+2026-09-23 21:18:13.709 Df Runner[84121:83523e] (Flutter) flutter:   settings => /settings
+2026-09-23 21:18:13.709 Df Runner[84121:83523e] (Flutter) flutter:   settings-connected-apps => /settings/connected-apps
+2026-09-23 21:18:13.710 Df Runner[84121:83523e] (Flutter) flutter:   settings-privacy => /settings/privacy
+2026-09-23 21:18:13.710 Df Runner[84121:83523e] (Flutter) flutter:   settings-preferences => /settings/preferences
+2026-09-23 21:18:13.710 Df Runner[84121:83523e] (Flutter) flutter:   settings-sweat-profile => /settings/sweat-profile
+2026-09-23 21:18:13.710 Df Runner[84121:83523e] (Flutter) flutter:   settings-sport-settings => /settings/sport-settings
+2026-09-23 21:18:13.710 Df Runner[84121:83523e] (Flutter) flutter:   settings-food-preferences-hub => /settings/food-preferences-hub
+2026-09-23 21:18:13.710 Df Runner[84121:83523e] (Flutter) flutter:   settings-sport-preferences-hub => /settings/sport-preferences-hub
+2026-09-23 21:18:13.710 Df Runner[84121:83523e] (Flutter) flutter:   settings-nutrition-targets => /settings/nutrition-targets
+2026-09-23 21:18:13.710 Df Runner[84121:83523e] (Flutter) flutter:   settings-nutrition-profile => /settings/nutrition-profile
+2026-09-23 21:18:13.710 Df Runner[84121:83523e] (Flutter) flutter:   settings-templates => /settings/templates
+2026-09-23 21:18:13.710 Df Runner[84121:83523e] (Flutter) flutter:   settings-coach-connection => /settings/coach-connection
+2026-09-23 21:18:13.710 Df Runner[84121:83523e] (Flutter) flutter:   settings-food-preferences-consolidated => /settings/food-preferences-consolidated
+2026-09-23 21:18:13.710 Df Runner[84121:83523e] (Flutter) flutter:   settings-food-preferences => /settings/food-preferences
+2026-09-23 21:18:13.710 Df Runner[84121:83523e] (Flutter) flutter:   settings-dietary-preference => /settings/dietary-preference
+2026-09-23 21:18:13.710 Df Runner[84121:83523e] (Flutter) flutter:   settings-allergies => /settings/allergies
+2026-09-23 21:18:13.711 Df Runner[84121:83523e] (Flutter) flutter:   settings-running-details => /settings/running-details
+2026-09-23 21:18:13.711 Df Runner[84121:83523e] (Flutter) flutter:   settings-cycling-details => /settings/cycling-details
+2026-09-23 21:18:13.711 Df Runner[84121:83523e] (Flutter) flutter:   settings-swimming-details => /settings/swimming-details
+2026-09-23 21:18:13.711 Df Runner[84121:83523e] (Flutter) flutter:   settings-add-food => /settings/food-preferences/add-food
+2026-09-23 21:18:13.711 Df Runner[84121:83523e] (Flutter) flutter:   settings-formula-library => /settings/food-preferences/formula-library
+2026-09-23 21:18:13.711 Df Runner[84121:83523e] (Flutter) flutter:   settings-formula-detail-before => /settings/food-preferences/formula-library/before/:id
+2026-09-23 21:18:13.711 Df Runner[84121:83523e] (Flutter) flutter:   settings-formula-detail-during => /settings/food-preferences/formula-library/during/:id
+2026-09-23 21:18:13.711 Df Runner[84121:83523e] (Flutter) flutter:   settings-formula-detail-after => /settings/food-preferences/formula-library/after/:id
+2026-09-23 21:18:13.711 Df Runner[84121:83523e] (Flutter) flutter:   settings-formula-personal-create => /settings/food-preferences/formula-library/personal/create
+2026-09-23 21:18:13.711 Df Runner[84121:83523e] (Flutter) flutter:   settings-formula-personal-edit => /settings/food-preferences/formula-library/personal/:id
+2026-09-23 21:18:13.711 Df Runner[84121:83523e] (Flutter) flutter:   help-feedback => /help
+2026-09-23 21:18:13.711 Df Runner[84121:83523e] (Flutter) flutter:   swap-food => /swap-food
+2026-09-23 21:18:13.711 Df Runner[84121:83523e] (Flutter) flutter:   barcode-scanner => /barcode-scanner
+2026-09-23 21:18:13.711 Df Runner[84121:83523e] (Flutter) flutter:   food-detail => /food-detail
+2026-09-23 21:18:13.711 Df Runner[84121:83523e] (Flutter) flutter:   carb-loading-select-food => /carb-loading-select-food
+2026-09-23 21:18:13.711 Df Runner[84121:83523e] (Flutter) flutter:   create-custom-carb-loading-food => /create-custom-carb-loading-food
+2026-09-23 21:18:13.712 Df Runner[84121:83523e] (Flutter) flutter:   coach-dashboard => /coach
+2026-09-23 21:18:13.712 Df Runner[84121:83523e] (Flutter) flutter:   coach-athlete-detail => /coach/athlete/:relationshipId
+2026-09-23 21:18:13.712 Df Runner[84121:83523e] (Flutter) flutter:   my-coaches => /my-coaches
+2026-09-23 21:18:13.712 Df Runner[84121:83523e] (Flutter) flutter:   athlete-feedback => /athlete/feedback
+2026-09-23 21:18:13.712 Df Runner[84121:83523e] (Flutter) flutter:   coach-apply => /coach/apply
+2026-09-23 21:18:13.712 Df Runner[84121:83523e] (Flutter) flutter:   coach-directory => /coach-directory
+2026-09-23 21:18:13.712 Df Runner[84121:83523e] (Flutter) flutter:   coach-chat => /chat/:relationshipId
+2026-09-23 21:18:13.712 Df Runner[84121:83523e] (Flutter) flutter:   meal-log-edit => /meal-log/edit
+2026-09-23 21:18:13.712 Df Runner[84121:83523e] (Flutter) flutter:   meal-log-manual => /meal-log/manual
+2026-09-23 21:18:13.712 Df Runner[84121:83523e] (Flutter) flutter:   meal-log-photo => /meal-log/photo
+2026-09-23 21:18:13.712 Df Runner[84121:83523e] (Flutter) flutter:   meal-log-describe => /meal-log/describe
+2026-09-23 21:18:13.713 Df Runner[84121:83523e] (Flutter) flutter:   meal-log-review => /meal-log/review
+2026-09-23 21:18:13.713 Df Runner[84121:83523e] (Flutter) flutter:   meal-log-recent-saved => /meal-log/recent-saved
+2026-09-23 21:18:13.713 Df Runner[84121:83523e] (Flutter) flutter:   meal-log-recipe => /meal-log/recipe
+2026-09-23 21:18:13.713 Df Runner[84121:83523e] (Flutter) flutter:   food => /food
+2026-09-23 21:18:13.713 Df Runner[84121:83523e] (Flutter) flutter:   food-meals-recents => /food/meals/recents
+2026-09-23 21:18:13.713 Df Runner[84121:83523e] (Flutter) flutter:   food-meal-detail => /food/meals/:id
+2026-09-23 21:18:13.713 Df Runner[84121:83523e] (Flutter) flutter:   food-cooking-mode => /food/cook/:id
+2026-09-23 21:18:13.713 Df Runner[84121:83523e] (Flutter) flutter:   food-swap-meal => /food/swap/:planMealId
+2026-09-23 21:18:13.713 Df Runner[84121:83523e] (Flutter) flutter:   food-kroger => /food/kroger/:planId
+2026-09-23 21:18:13.713 Df Runner[84121:83523e] (Flutter) flutter:   food-previous-plan => /food/plans/:id
+2026-09-23 21:18:13.713 Df Runner[84121:83523e] (Flutter) flutter:   vana-chat => /vana
+2026-09-23 21:18:13.713 Df Runner[84121:83523e] (Flutter) flutter:   vana-browse => /vana/browse
+2026-09-23 21:18:13.713 Df Runner[84121:83523e] (Flutter) flutter:   vana-conversations => /vana/conversations
+2026-09-23 21:18:13.713 Df Runner[84121:83523e] (Flutter) flutter:   settings-vana => /settings/vana
+2026-09-23 21:18:13.713 Df Runner[84121:83523e] (Flutter) flutter:   jade-chat => /jade
+2026-09-23 21:18:13.714 Df Runner[84121:83523e] (Flutter) flutter:
+2026-09-23 21:18:13.716 Df Runner[84121:83523e] (Flutter) flutter: GoRouter: INFO: setting initial location /
+2026-09-23 21:18:15.077 Df Runner[84121:83523e] (Flutter) flutter: [RevenueCatService] configured {store: test_store}
+2026-09-23 21:18:15.113 Df Runner[84121:83523e] (Flutter) flutter: GoRouter: INFO: No initial matches: /
+2026-09-23 21:18:15.130 Df Runner[84121:83523e] (Flutter) flutter: GoRouter: INFO: redirecting to RouteMatchList(/welcome)
+2026-09-23 21:18:15.153 Df Runner[84121:83523e] (Flutter) flutter: GoRouter: INFO: Using MaterialApp configuration
+2026-09-23 21:18:15.299 Df Runner[84121:83523e] (Flutter) flutter: 📊 [ANALYTICS] app_opened {device_id: 7F77EE27-5BBA-45E8-8276-0C173791C4ED, session_id: a0f9c49e-5eda-4c81-941a-09632bc8d1f1, timestamp: 2026-09-23T21:18:15.298901}
+2026-09-23 21:18:15.592 Df Runner[84121:83523e] (Flutter) flutter: [SubscriptionService] customer info updated {active: false, expires_at: null}
+2026-09-23 21:18:23.797 Df Runner[84121:83523e] (Flutter) flutter: Patrol (native): isPermissionDialogVisible() succeeded
+2026-09-23 21:18:23.799 Df Runner[84121:83523e] (Flutter) flutter: PATROL_LOG {"timestamp":"2026-09-23T21:18:23.797300","type":"step","action":"\134u001b[94misPermissionDialogVisible\134u001b[0m \134u001b[90m(native)\134u001b[0m","status":"success","data":null}
+2026-09-23 21:18:23.940 Df Runner[84121:83523e] (Flutter) flutter: PATROL_LOG {"timestamp":"2026-09-23T21:18:23.923489","type":"step","action":"\134u001b[33mtap\134u001b[0m widgets with key [<'welcome.get_started_button'>].","status":"start","data":null}
+2026-09-23 21:18:23.987 Df Runner[84121:83523e] (Flutter) flutter: 📊 [ANALYTICS] welcome_get_started_tapped {}
+2026-09-23 21:18:23.991 Df Runner[84121:83523e] (Flutter) flutter: GoRouter: INFO: pushing /onboarding
+2026-09-23 21:18:24.057 Df Runner[84121:83523e] (Flutter) flutter: 📊 [ANALYTICS] screen_viewed {screen_name: Sports Selection Onboarding, step_index: 0}
+2026-09-23 21:18:24.622 Df Runner[84121:83523e] (Flutter) flutter: PATROL_LOG {"timestamp":"2026-09-23T21:18:24.616581","type":"step","action":"\134u001b[33mtap\134u001b[0m widgets with key [<'welcome.get_started_button'>].","status":"success","data":null}
+2026-09-23 21:18:24.622 Df Runner[84121:83523e] (Flutter) flutter: PATROL_LOG {"timestamp":"2026-09-23T21:18:24.617979","type":"step","action":"\134u001b[33mtap\134u001b[0m widgets with key [<'sport_selection.running_chip'>].","status":"start","data":null}
+2026-09-23 21:18:25.104 Df Runner[84121:83523e] (Flutter) flutter: PATROL_LOG {"timestamp":"2026-09-23T21:18:25.100835","type":"step","action":"\134u001b[33mtap\134u001b[0m widgets with key [<'sport_selection.running_chip'>].","status":"success","data":null}
+2026-09-23 21:18:25.105 Df Runner[84121:83523e] (Flutter) flutter: PATROL_LOG {"timestamp":"2026-09-23T21:18:25.101087","type":"step","action":"\134u001b[33mtap\134u001b[0m widgets with key [<'sport_selection.continue_button'>].","status":"start","data":null}
+2026-09-23 21:18:25.116 Df Runner[84121:83523e] (Flutter) flutter: 📊 [ANALYTICS] sports_selected {sports: [running], running: true, cycling: false, swimming: false, triathlon: false, count: 1}
+2026-09-23 21:18:25.117 Df Runner[84121:83523e] (Flutter) flutter: 📊 [ANALYTICS] onboarding_step_completed {step_name: sports_selection, step_index: 0}
+2026-09-23 21:18:25.153 Df Runner[84121:83523e] (Flutter) flutter: 📊 [ANALYTICS] screen_viewed {screen_name: Goals Onboarding, step_index: 1}
+2026-09-23 21:18:25.602 Df Runner[84121:83523e] (Flutter) flutter: PATROL_LOG {"timestamp":"2026-09-23T21:18:25.599730","type":"step","action":"\134u001b[33mtap\134u001b[0m widgets with key [<'sport_selection.continue_button'>].","status":"success","data":null}
+2026-09-23 21:18:25.602 Df Runner[84121:83523e] (Flutter) flutter: PATROL_LOG {"timestamp":"2026-09-23T21:18:25.599989","type":"step","action":"\134u001b[33mtap\134u001b[0m widgets with key [<'goals.performance_chip'>].","status":"start","data":null}
+2026-09-23 21:18:26.088 Df Runner[84121:83523e] (Flutter) flutter: PATROL_LOG {"timestamp":"2026-09-23T21:18:26.084362","type":"step","action":"\134u001b[33mtap\134u001b[0m widgets with key [<'goals.performance_chip'>].","status":"success","data":null}
+2026-09-23 21:18:26.088 Df Runner[84121:83523e] (Flutter) flutter: PATROL_LOG {"timestamp":"2026-09-23T21:18:26.084584","type":"step","action":"\134u001b[33mtap\134u001b[0m widgets with key [<'goals.continue_button'>].","status":"start","data":null}
+2026-09-23 21:18:26.096 Df Runner[84121:83523e] (Flutter) flutter: 📊 [ANALYTICS] goals_selected {goals: [performance], count: 1}
+2026-09-23 21:18:26.096 Df Runner[84121:83523e] (Flutter) flutter: 📊 [ANALYTICS] onboarding_step_completed {step_name: goals, step_index: 1}
+2026-09-23 21:18:26.134 Df Runner[84121:83523e] (Flutter) flutter: 📊 [ANALYTICS] screen_viewed {screen_name: Pitfalls Onboarding, step_index: 2}
+2026-09-23 21:18:26.568 Df Runner[84121:83523e] (Flutter) flutter: PATROL_LOG {"timestamp":"2026-09-23T21:18:26.566449","type":"step","action":"\134u001b[33mtap\134u001b[0m widgets with key [<'goals.continue_button'>].","status":"success","data":null}
+2026-09-23 21:18:26.568 Df Runner[84121:83523e] (Flutter) flutter: PATROL_LOG {"timestamp":"2026-09-23T21:18:26.566575","type":"step","action":"\134u001b[33mtap\134u001b[0m widgets with key [<'pitfalls.continue_button'>].","status":"start","data":null}
+2026-09-23 21:18:26.577 Df Runner[84121:83523e] (Flutter) flutter: 📊 [ANALYTICS] pitfalls_selected {pitfalls: [], count: 0}
+2026-09-23 21:18:26.577 Df Runner[84121:83523e] (Flutter) flutter: 📊 [ANALYTICS] onboarding_step_completed {step_name: pitfalls, step_index: 2}
+2026-09-23 21:18:26.602 Df Runner[84121:83523e] (Flutter) flutter: 📊 [ANALYTICS] screen_viewed {screen_name: Connect Training Onboarding, step_index: 3}
+2026-09-23 21:18:26.656 Df Runner[84121:83523e] (Flutter) flutter: 🆕 Generated new temp user ID for onboarding: f2c60b40-d42f-467d-a75a-0705b11969f8
+2026-09-23 21:18:26.656 Df Runner[84121:83523e] (Flutter) flutter: 🔑 ConnectTrainingController: Using temp user ID: f2c60b40-d42f-467d-a75a-0705b11969f8
+2026-09-23 21:18:26.656 Df Runner[84121:83523e] (Flutter) flutter:    (user profile exists: false, onboardingCompleted: null)
+2026-09-23 21:18:26.657 Df Runner[84121:83523e] (Flutter) flutter:    (auth user: null, resolved user: null)
+2026-09-23 21:18:27.859 Df Runner[84121:83523e] (Flutter) flutter: PATROL_LOG {"timestamp":"2026-09-23T21:18:27.849962","type":"step","action":"\134u001b[33mtap\134u001b[0m widgets with key [<'pitfalls.continue_button'>].","status":"success","data":null}
+2026-09-23 21:18:28.069 Df Runner[84121:83523e] (Flutter) flutter: PATROL_LOG {"timestamp":"2026-09-23T21:18:28.067202","type":"step","action":"\134u001b[33mtap\134u001b[0m widgets with key [<'connect_training.declined_tile'>].","status":"start","data":null}
+2026-09-23 21:18:28.080 Df Runner[84121:83523e] (Flutter) flutter: 📊 [ANALYTICS] connect_training_declined {}
+2026-09-23 21:18:28.080 Df Runner[84121:83523e] (Flutter) flutter: 📊 [ANALYTICS] onboarding_step_completed {step_name: connect_training, step_index: 3}
+2026-09-23 21:18:28.122 Df Runner[84121:83523e] (Flutter) flutter: 📊 [ANALYTICS] screen_viewed {screen_name: Personal Info Onboarding, step_index: 4}
+2026-09-23 21:18:28.585 Df Runner[84121:83523e] (Flutter) flutter: PATROL_LOG {"timestamp":"2026-09-23T21:18:28.583102","type":"step","action":"\134u001b[33mtap\134u001b[0m widgets with key [<'connect_training.declined_tile'>].","status":"success","data":null}
+2026-09-23 21:18:28.586 Df Runner[84121:83523e] (Flutter) flutter: PATROL_LOG {"timestamp":"2026-09-23T21:18:28.583454","type":"step","action":"\134u001b[36mwaitUntilVisible\134u001b[0m widgets with key [<'personal_info.gender_female'>].","status":"start","data":null}
+2026-09-23 21:18:28.587 Df Runner[84121:83523e] (Flutter) flutter: PATROL_LOG {"timestamp":"2026-09-23T21:18:28.586264","type":"step","action":"\134u001b[36mwaitUntilVisible\134u001b[0m widgets with key [<'personal_info.gender_female'>].","status":"success","data":null}
+2026-09-23 21:18:28.587 Df Runner[84121:83523e] (Flutter) flutter: PATROL_LOG {"timestamp":"2026-09-23T21:18:28.586421","type":"step","action":"\134u001b[33mtap\134u001b[0m widgets with key [<'personal_info.gender_female'>].","status":"start","data":null}
+2026-09-23 21:18:28.718 Df Runner[84121:83523e] (Flutter) flutter: PATROL_LOG {"timestamp":"2026-09-23T21:18:28.716483","type":"step","action":"\134u001b[33mtap\134u001b[0m widgets with key [<'personal_info.gender_female'>].","status":"success","data":null}
+2026-09-23 21:18:28.718 Df Runner[84121:83523e] (Flutter) flutter: PATROL_LOG {"timestamp":"2026-09-23T21:18:28.716591","type":"step","action":"\134u001b[33mtap\134u001b[0m widgets with key [<'personal_info.continue_button'>].","status":"start","data":null}
+2026-09-23 21:18:28.733 Df Runner[84121:83523e] (Flutter) flutter: 📊 [ANALYTICS] onboarding_step_completed {step_name: personal_info, step_index: 4}
+2026-09-23 21:18:28.768 Df Runner[84121:83523e] (Flutter) flutter: 📊 [ANALYTICS] screen_viewed {screen_name: Body Composition Onboarding, step_index: 5}
+2026-09-23 21:18:29.201 Df Runner[84121:83523e] (Flutter) flutter: PATROL_LOG {"timestamp":"2026-09-23T21:18:29.199980","type":"step","action":"\134u001b[33mtap\134u001b[0m widgets with key [<'personal_info.continue_button'>].","status":"success","data":null}
+2026-09-23 21:18:29.201 Df Runner[84121:83523e] (Flutter) flutter: PATROL_LOG {"timestamp":"2026-09-23T21:18:29.200151","type":"step","action":"\134u001b[33mtap\134u001b[0m widgets with key [<'body_comp.units_metric_button'>].","status":"start","data":null}
+2026-09-23 21:18:29.435 Df Runner[84121:83523e] (Flutter) flutter: PATROL_LOG {"timestamp":"2026-09-23T21:18:29.433407","type":"step","action":"\134u001b[33mtap\134u001b[0m widgets with key [<'body_comp.units_metric_button'>].","status":"success","data":null}
+2026-09-23 21:18:29.435 Df Runner[84121:83523e] (Flutter) flutter: PATROL_LOG {"timestamp":"2026-09-23T21:18:29.433603","type":"step","action":"\134u001b[33mtap\134u001b[0m widgets with key [<'body_comp.continue_button'>].","status":"start","data":null}
+2026-09-23 21:18:29.443 Df Runner[84121:83523e] (Flutter) flutter: 📊 [ANALYTICS] onboarding_step_completed {step_name: body_composition, step_index: 5}
+2026-09-23 21:18:29.468 Df Runner[84121:83523e] (Flutter) flutter: 📊 [ANALYTICS] screen_viewed {screen_name: Nutrition Settings Onboarding, step_index: 6}
+2026-09-23 21:18:29.917 Df Runner[84121:83523e] (Flutter) flutter: PATROL_LOG {"timestamp":"2026-09-23T21:18:29.916295","type":"step","action":"\134u001b[33mtap\134u001b[0m widgets with key [<'body_comp.continue_button'>].","status":"success","data":null}
+2026-09-23 21:18:29.917 Df Runner[84121:83523e] (Flutter) flutter: PATROL_LOG {"timestamp":"2026-09-23T21:18:29.916414","type":"step","action":"\134u001b[33mtap\134u001b[0m widgets with key [<'nutrition_settings.gut_high'>].","status":"start","data":null}
+2026-09-23 21:18:30.153 Df Runner[84121:83523e] (Flutter) flutter: PATROL_LOG {"timestamp":"2026-09-23T21:18:30.150539","type":"step","action":"\134u001b[33mtap\134u001b[0m widgets with key [<'nutrition_settings.gut_high'>].","status":"success","data":null}
+2026-09-23 21:18:30.153 Df Runner[84121:83523e] (Flutter) flutter: PATROL_LOG {"timestamp":"2026-09-23T21:18:30.150729","type":"step","action":"\134u001b[33mtap\134u001b[0m widgets with key [<'nutrition_settings.sweat_heavy'>].","status":"start","data":null}
+2026-09-23 21:18:30.402 Df Runner[84121:83523e] (Flutter) flutter: PATROL_LOG {"timestamp":"2026-09-23T21:18:30.400785","type":"step","action":"\134u001b[33mtap\134u001b[0m widgets with key [<'nutrition_settings.sweat_heavy'>].","status":"success","data":null}
+2026-09-23 21:18:30.403 Df Runner[84121:83523e] (Flutter) flutter: PATROL_LOG {"timestamp":"2026-09-23T21:18:30.400992","type":"step","action":"\134u001b[33mtap\134u001b[0m widgets with key [<'nutrition_settings.continue_button'>].","status":"start","data":null}
+2026-09-23 21:18:30.410 Df Runner[84121:83523e] (Flutter) flutter: 📊 [ANALYTICS] onboarding_step_completed {step_name: nutrition_settings, step_index: 6}
+2026-09-23 21:18:30.434 Df Runner[84121:83523e] (Flutter) flutter: 📊 [ANALYTICS] screen_viewed {screen_name: Plan Reveal Onboarding, step_index: 7}
+2026-09-23 21:18:33.312 Df Runner[84121:83523e] (Flutter) flutter: 📊 [ANALYTICS] plan_preview_viewed {is_generic: false, used_training_data: false}
+2026-09-23 21:18:33.351 Df Runner[84121:83523e] (Flutter) flutter: PATROL_LOG {"timestamp":"2026-09-23T21:18:33.349129","type":"step","action":"\134u001b[33mtap\134u001b[0m widgets with key [<'nutrition_settings.continue_button'>].","status":"success","data":null}
+2026-09-23 21:18:33.351 Df Runner[84121:83523e] (Flutter) flutter: PATROL_LOG {"timestamp":"2026-09-23T21:18:33.349457","type":"step","action":"\134u001b[36mwaitUntilVisible\134u001b[0m widgets with key [<'plan_reveal.title'>].","status":"start","data":null}
+2026-09-23 21:18:33.352 Df Runner[84121:83523e] (Flutter) flutter: PATROL_LOG {"timestamp":"2026-09-23T21:18:33.351528","type":"step","action":"\134u001b[36mwaitUntilVisible\134u001b[0m widgets with key [<'plan_reveal.title'>].","status":"success","data":null}
+2026-09-23 21:18:33.568 Df Runner[84121:83523e] (Flutter) flutter: PATROL_LOG {"timestamp":"2026-09-23T21:18:33.566625","type":"step","action":"\134u001b[33mtap\134u001b[0m widgets with key [<'plan_reveal.edit_long_run'>].","status":"start","data":null}
+2026-09-23 21:18:34.035 Df Runner[84121:83523e] (Flutter) flutter: PATROL_LOG {"timestamp":"2026-09-23T21:18:34.033110","type":"step","action":"\134u001b[33mtap\134u001b[0m widgets with key [<'plan_reveal.edit_long_run'>].","status":"success","data":null}
+2026-09-23 21:18:34.035 Df Runner[84121:83523e] (Flutter) flutter: PATROL_LOG {"timestamp":"2026-09-23T21:18:34.033251","type":"step","action":"\134u001b[36mwaitUntilVisible\134u001b[0m widgets with key [<'plan_reveal.slider_long_run'>].","status":"start","data":null}
+2026-09-23 21:18:34.041 Df Runner[84121:83523e] (Flutter) flutter: PATROL_LOG {"timestamp":"2026-09-23T21:18:34.035724","type":"step","action":"\134u001b[36mwaitUntilVisible\134u001b[0m widgets with key [<'plan_reveal.slider_long_run'>].","status":"success","data":null}
+2026-09-23 21:18:34.052 Df Runner[84121:83523e] (Flutter) flutter: 📊 [ANALYTICS] plan_target_edited {field: long_run_carb_gph, from: 70, to: 95}
+2026-09-23 21:18:34.468 Df Runner[84121:83523e] (Flutter) flutter: PATROL_LOG {"timestamp":"2026-09-23T21:18:34.467235","type":"step","action":"\134u001b[33mtap\134u001b[0m widgets with key [<'plan_reveal.edit_long_run'>].","status":"start","data":null}
+2026-09-23 21:18:34.937 Df Runner[84121:83523e] (Flutter) flutter: PATROL_LOG {"timestamp":"2026-09-23T21:18:34.934019","type":"step","action":"\134u001b[33mtap\134u001b[0m widgets with key [<'plan_reveal.edit_long_run'>].","status":"success","data":null}
+2026-09-23 21:18:34.937 Df Runner[84121:83523e] (Flutter) flutter: PATROL_LOG {"timestamp":"2026-09-23T21:18:34.934177","type":"step","action":"\134u001b[33mtap\134u001b[0m widgets with key [<'plan_reveal.continue_button'>].","status":"start","data":null}
+2026-09-23 21:18:34.951 Df Runner[84121:83523e] (Flutter) flutter: 📊 [ANALYTICS] onboarding_step_completed {step_name: plan_reveal, step_index: 7}
+2026-09-23 21:18:34.984 Df Runner[84121:83523e] (Flutter) flutter: 📊 [ANALYTICS] screen_viewed {screen_name: Daily Plan Preview Onboarding, step_index: 8}
+2026-09-23 21:18:34.985 Df Runner[84121:83523e] (Flutter) flutter: 📊 [ANALYTICS] daily_preview_tab_viewed {tab: workout}
+2026-09-23 21:18:35.451 Df Runner[84121:83523e] (Flutter) flutter: PATROL_LOG {"timestamp":"2026-09-23T21:18:35.449667","type":"step","action":"\134u001b[33mtap\134u001b[0m widgets with key [<'plan_reveal.continue_button'>].","status":"success","data":null}
+2026-09-23 21:18:35.451 Df Runner[84121:83523e] (Flutter) flutter: PATROL_LOG {"timestamp":"2026-09-23T21:18:35.449795","type":"step","action":"\134u001b[36mwaitUntilVisible\134u001b[0m widgets with key [<'daily_preview.tab_rest'>].","status":"start","data":null}
+2026-09-23 21:18:35.452 Df Runner[84121:83523e] (Flutter) flutter: PATROL_LOG {"timestamp":"2026-09-23T21:18:35.451869","type":"step","action":"\134u001b[36mwaitUntilVisible\134u001b[0m widgets with key [<'daily_preview.tab_rest'>].","status":"success","data":null}
+2026-09-23 21:18:35.452 Df Runner[84121:83523e] (Flutter) flutter: PATROL_LOG {"timestamp":"2026-09-23T21:18:35.451938","type":"step","action":"\134u001b[33mtap\134u001b[0m widgets with key [<'daily_preview.tab_rest'>].","status":"start","data":null}
+2026-09-23 21:18:35.459 Df Runner[84121:83523e] (Flutter) flutter: 📊 [ANALYTICS] daily_preview_tab_viewed {tab: rest}
+2026-09-23 21:18:35.685 Df Runner[84121:83523e] (Flutter) flutter: PATROL_LOG {"timestamp":"2026-09-23T21:18:35.683687","type":"step","action":"\134u001b[33mtap\134u001b[0m widgets with key [<'daily_preview.tab_rest'>].","status":"success","data":null}
+2026-09-23 21:18:35.686 Df Runner[84121:83523e] (Flutter) flutter: PATROL_LOG {"timestamp":"2026-09-23T21:18:35.683855","type":"step","action":"\134u001b[33mtap\134u001b[0m widgets with key [<'daily_preview.save_button'>].","status":"start","data":null}
+2026-09-23 21:18:35.695 Df Runner[84121:83523e] (Flutter) flutter: 📊 [ANALYTICS] onboarding_step_completed {step_name: daily_plan_preview, step_index: 8}
+2026-09-23 21:18:35.696 Df Runner[84121:83523e] (Flutter) flutter: 📊 [ANALYTICS] onboarding_completed {step_count: 9, duration_sec: 11}
+2026-09-23 21:18:35.696 Df Runner[84121:83523e] (Flutter) flutter: GoRouter: INFO: pushing /auth/post-onboarding
+2026-09-23 21:18:35.725 Df Runner[84121:83523e] (Flutter) flutter: 📊 [ANALYTICS] screen_viewed {screen_name: Post-Onboarding Auth, mode: signup}
+2026-09-23 21:18:35.951 Df Runner[84121:83523e] (Flutter) flutter: [RevenueCatService] offerings served {offerings: default(2), credits(3), current: default}
+2026-09-23 21:18:35.951 Df Runner[84121:83523e] (Flutter) flutter: [SubscriptionService] offerings fetched {current: default, available: default,credits}
+2026-09-23 21:18:36.333 Df Runner[84121:83523e] (Flutter) flutter: PATROL_LOG {"timestamp":"2026-09-23T21:18:36.332402","type":"step","action":"\134u001b[33mtap\134u001b[0m widgets with key [<'daily_preview.save_button'>].","status":"success","data":null}
+2026-09-23 21:18:36.334 Df Runner[84121:83523e] (Flutter) flutter: PATROL_LOG {"timestamp":"2026-09-23T21:18:36.332532","type":"step","action":"\134u001b[36mwaitUntilVisible\134u001b[0m widgets with key [<'post_onboarding.email_button'>].","status":"start","data":null}
+2026-09-23 21:18:36.334 Df Runner[84121:83523e] (Flutter) flutter: PATROL_LOG {"timestamp":"2026-09-23T21:18:36.334210","type":"step","action":"\134u001b[36mwaitUntilVisible\134u001b[0m widgets with key [<'post_onboarding.email_button'>].","status":"success","data":null}
+2026-09-23 21:18:36.335 Df Runner[84121:83523e] (Flutter) flutter: PATROL_LOG {"timestamp":"2026-09-23T21:18:36.334289","type":"step","action":"\134u001b[33mtap\134u001b[0m widgets with key [<'post_onboarding.email_button'>].","status":"start","data":null}
+2026-09-23 21:18:36.340 Df Runner[84121:83523e] (Flutter) flutter: GoRouter: INFO: pushing /auth/email-signup
+2026-09-23 21:18:36.353 Df Runner[84121:83523e] (Flutter) flutter: 📊 [ANALYTICS] screen_viewed {screen_name: Email Signup}
+2026-09-23 21:18:36.969 Df Runner[84121:83523e] (Flutter) flutter: PATROL_LOG {"timestamp":"2026-09-23T21:18:36.966294","type":"step","action":"\134u001b[33mtap\134u001b[0m widgets with key [<'post_onboarding.email_button'>].","status":"success","data":null}
+2026-09-23 21:18:36.970 Df Runner[84121:83523e] (Flutter) flutter: PATROL_LOG {"timestamp":"2026-09-23T21:18:36.966765","type":"step","action":"\134u001b[35menterText\134u001b[0m widgets with key [<'signup_email.email_field'>].","status":"start","data":null}
+2026-09-23 21:18:37.317 Df Runner[84121:83523e] (Flutter) flutter: PATROL_LOG {"timestamp":"2026-09-23T21:18:37.316492","type":"step","action":"\134u001b[35menterText\134u001b[0m widgets with key [<'signup_email.email_field'>].","status":"success","data":null}
+2026-09-23 21:18:37.317 Df Runner[84121:83523e] (Flutter) flutter: PATROL_LOG {"timestamp":"2026-09-23T21:18:37.316604","type":"step","action":"\134u001b[35menterText\134u001b[0m widgets with key [<'signup_email.password_field'>].","status":"start","data":null}
+2026-09-23 21:18:37.600 Df Runner[84121:83523e] (Flutter) flutter: PATROL_LOG {"timestamp":"2026-09-23T21:18:37.599718","type":"step","action":"\134u001b[35menterText\134u001b[0m widgets with key [<'signup_email.password_field'>].","status":"success","data":null}
+2026-09-23 21:18:37.601 Df Runner[84121:83523e] (Flutter) flutter: PATROL_LOG {"timestamp":"2026-09-23T21:18:37.599813","type":"step","action":"\134u001b[35menterText\134u001b[0m widgets with key [<'signup_email.confirm_password_field'>].","status":"start","data":null}
+2026-09-23 21:18:37.884 Df Runner[84121:83523e] (Flutter) flutter: PATROL_LOG {"timestamp":"2026-09-23T21:18:37.882992","type":"step","action":"\134u001b[35menterText\134u001b[0m widgets with key [<'signup_email.confirm_password_field'>].","status":"success","data":null}
+2026-09-23 21:18:37.885 Df Runner[84121:83523e] (Flutter) flutter: PATROL_LOG {"timestamp":"2026-09-23T21:18:37.883090","type":"step","action":"\134u001b[33mtap\134u001b[0m widgets with key [<'signup_email.create_account_button'>].","status":"start","data":null}
+2026-09-23 21:18:37.898 Df Runner[84121:83523e] (Flutter) flutter: 📊 [ANALYTICS] auth_flow_started {provider: email, source: post_onboarding_signup}
+2026-09-23 21:18:38.368 Df Runner[84121:83523e] (Flutter) flutter: PATROL_LOG {"timestamp":"2026-09-23T21:18:38.366606","type":"step","action":"\134u001b[33mtap\134u001b[0m widgets with key [<'signup_email.create_account_button'>].","status":"success","data":null}
+2026-09-23 21:18:38.368 Df Runner[84121:83523e] (Flutter) flutter: PATROL_LOG {"timestamp":"2026-09-23T21:18:38.366918","type":"step","action":"\134u001b[36mwaitUntilVisible\134u001b[0m widgets with key [<'paywall.more_button'>].","status":"start","data":null}
+2026-09-23 21:18:38.573 Df Runner[84121:83523e] (Flutter) flutter: 📊 [ANALYTICS] email_account_created {user_id: b8f90d7b-f29d-4979-8d13-0682345fc234, email_confirmed: true}
+2026-09-23 21:18:38.579 Df Runner[84121:83523e] (Flutter) flutter: 📊 [ANALYTICS] auth_flow_completed {provider: email, source: post_onboarding_signup}
+2026-09-23 21:18:38.592 Df Runner[84121:83523e] (Flutter) flutter: GoRouter: INFO: popping /welcome
+2026-09-23 21:18:38.617 Df Runner[84121:83523e] (Flutter) flutter: [SubscriptionService] customer info updated {active: false, expires_at: null}
+2026-09-23 21:18:38.771 Df Runner[84121:83523e] (Flutter) flutter: 📊 [ANALYTICS] user_registered {device_id: b8f90d7b-f29d-4979-8d13-0682345fc234, timestamp: 2026-09-23T21:18:38.771482, registration_source: onboarding}
+2026-09-23 21:18:39.187 Df Runner[84121:83523e] (Flutter) flutter: [RevenueCatService] logged in
+2026-09-23 21:18:39.192 Df Runner[84121:83523e] (Flutter) flutter: [SubscriptionService] customer info fetched {active: false, expires_at: null, is_trial: false}
+2026-09-23 21:18:39.362 Df Runner[84121:83523e] (Flutter) flutter: ℹ️ No active Garmin integration to sync mapping for
+2026-09-23 21:18:39.370 Df Runner[84121:83523e] (Flutter) flutter: 📊 [ANALYTICS] dietary_preference_saved {preference: omnivore, skipped: false}
+2026-09-23 21:18:39.376 Df Runner[84121:83523e] (Flutter) flutter: 📊 [ANALYTICS] allergies_saved {allergies: [], count: 0, skipped: true}
+2026-09-23 21:18:39.624 Df Runner[84121:83523e] (Flutter) flutter: [SubscriptionService] customer info updated {active: false, expires_at: null}
+2026-09-23 21:18:39.632 Df Runner[84121:83523e] (Flutter) flutter: [SubscriptionService] customer info fetched {active: false, expires_at: null, is_trial: false}
+2026-09-23 21:18:39.702 Df Runner[84121:83523e] (Flutter) flutter: GoRouter: INFO: going to /paywall?onboarding=1
+2026-09-23 21:18:44.904 Df Runner[84121:83523e] (Flutter) flutter: PATROL_LOG {"timestamp":"2026-09-23T21:18:44.898700","type":"step","action":"\134u001b[36mwaitUntilVisible\134u001b[0m widgets with key [<'paywall.more_button'>].","status":"success","data":null}
+2026-09-23 21:18:44.904 Df Runner[84121:83523e] (Flutter) flutter: PATROL_LOG {"timestamp":"2026-09-23T21:18:44.902675","type":"step","action":"\134u001b[33mtap\134u001b[0m widgets with key [<'paywall.more_button'>].","status":"start","data":null}
+2026-09-23 21:18:44.974 Df Runner[84121:83523e] (Flutter) flutter: PATROL_LOG {"timestamp":"2026-09-23T21:18:44.972818","type":"step","action":"\134u001b[33mtap\134u001b[0m widgets with key [<'paywall.more_button'>].","status":"success","data":null}
+2026-09-23 21:18:44.974 Df Runner[84121:83523e] (Flutter) flutter: PATROL_LOG {"timestamp":"2026-09-23T21:18:44.972949","type":"step","action":"\134u001b[36mwaitUntilVisible\134u001b[0m widgets with key [<'paywall.restore_button'>].","status":"start","data":null}
+2026-09-23 21:18:44.975 Df Runner[84121:83523e] (Flutter) flutter: PATROL_LOG {"timestamp":"2026-09-23T21:18:44.974481","type":"step","action":"\134u001b[36mwaitUntilVisible\134u001b[0m widgets with key [<'paywall.restore_button'>].","status":"success","data":null}
+2026-09-23 21:18:44.975 Df Runner[84121:83523e] (Flutter) flutter: PATROL_LOG {"timestamp":"2026-09-23T21:18:44.974923","type":"step","action":"\134u001b[36mwaitUntilVisible\134u001b[0m widgets with key [<'paywall.sign_out_button'>].","status":"start","data":null}
+2026-09-23 21:18:44.976 Df Runner[84121:83523e] (Flutter) flutter: PATROL_LOG {"timestamp":"2026-09-23T21:18:44.975728","type":"step","action":"\134u001b[36mwaitUntilVisible\134u001b[0m widgets with key [<'paywall.sign_out_button'>].","status":"success","data":null}
+2026-09-23 21:18:44.976 Df Runner[84121:83523e] (Flutter) flutter: PATROL_LOG {"timestamp":"2026-09-23T21:18:44.976016","type":"step","action":"\134u001b[36mwaitUntilVisible\134u001b[0m widgets with key [<'paywall.delete_account_button'>].","status":"start","data":null}
+2026-09-23 21:18:44.981 Df Runner[84121:83523e] (Flutter) flutter: PATROL_LOG {"timestamp":"2026-09-23T21:18:44.976822","type":"step","action":"\134u001b[36mwaitUntilVisible\134u001b[0m widgets with key [<'paywall.delete_account_button'>].","status":"success","data":null}
+2026-09-23 21:18:52.131 Df Runner[84121:83523e] (Flutter) flutter: 00:40 +1: flows.onboarding_signup_flow_test new user completes onboarding, edits a target, and signs up with email [E]
+2026-09-23 21:18:52.132 Df Runner[84121:83523e] (Flutter) flutter:   'package:flutter_test/src/binding.dart': Failed assertion: line 1911 pos 9: '_pendingExceptionDetails != null': A test overrode FlutterError.onError but either failed to return it to its original state, or had unexpected additional errors that it could not handle. Typically, this is caused by using expect() before restoring FlutterError.onError.
+2026-09-23 21:18:52.135 Df Runner[84121:83523e] (Flutter) flutter:   dart:core-patch/errors_patch.dart 67:4         _AssertionError._doThrowNew
+  dart:core-patch/errors_patch.dart 49:5         _AssertionError._throwNew
+  package:flutter_test/src/binding.dart 1911:9   TestWidgetsFlutterBinding._runTest.handleUncaughtError
+  package:flutter_test/src/binding.dart 1920:13  TestWidgetsFlutterBinding._runTest.<fn>
+  dart:async/zone.dart 482:14                    _Zone._processUncaughtError
+  dart:async/zone.dart 703:5                     _CustomZone.handleUncaughtError
+  dart:async/future_impl.dart 886:24             Future._propagateToListeners
+  dart:async/future_impl.dart 738:5              Future._completeErrorObject
+  dart:async/future_impl.dart 742:5              Future._completeError
+2026-09-23 21:30:11.782 Df Runner[84121:83523e] (Flutter) flutter:   TimeoutException after 0:12:00.000000: Test timed out after 12 minutes.
+2026-09-23 21:30:11.837 Df Runner[84121:83523e] (Flutter) flutter:   package:test_api/src/backend/invoker.dart 398:28  Invoker._handleError.<fn>
+  dart:async/zone_root.dart 27:47                   _rootRun
+  dart:async/zone.dart 726:19                       _CustomZone.run
+  package:test_api/src/backend/invoker.dart 396:10  Invoker._handleError
+  package:test_api/src/backend/invoker.dart 351:9   Invoker.heartbeat.<fn>.<fn>
+  dart:async/zone_root.dart 35:13                   _rootRun
+  dart:async/zone.dart 726:19                       _CustomZone.run
+  package:test_api/src/backend/invoker.dart 350:38  Invoker.heartbeat.<fn>
+  dart:async-patch/timer_patch.dart 18:15           Timer._createTimer.<fn>
+  dart:isolate-patch/timer_impl.dart 423:19         _Timer._runTimers
+  dart:isolate-patch/timer_impl.dart 454:5          _Timer._handleMessage
+  dart:isolate-patch/isolate_patch.dart 192:12      _RawReceivePort._handleMessage
+2026-09-23 21:30:11.868 Df Runner[84121:83523e] (Flutter) flutter: PatrolBinding: tearDown(): count: 0, results: {}
+2026-09-23 21:30:11.868 Df Runner[84121:83523e] (Flutter) flutter: PatrolBinding: finished test flows.onboarding_signup_flow_test new user completes onboarding, edits a target, and signs up with email. Will report its status back to the native side
+2026-09-23 21:30:11.869 Df Runner[84121:83523e] (Flutter) flutter: PatrolBinding: tearDown(): test "new user completes onboarding, edits a target, and signs up with email" in group "flows.onboarding_signup_flow_test new user completes onboarding, edits a target, and signs up with email", passed: false
+2026-09-23 21:30:11.870 Df Runner[84121:83523e] (Flutter) flutter: PatrolAppService.markDartTestAsCompleted(): flows.onboarding_signup_flow_test new user completes onboarding, edits a target, and signs up with email
+2026-09-23 21:30:11.897 Df Runner[84121:83523e] (Flutter) flutter: 2026-09-23T21:18:13.208588  0:11:58.686538 POST    [200] /runDartTest
+2026-09-23 21:30:11.908 Df Runner[84121:83523e] (Flutter) flutter: PATROL_LOG {"timestamp":"2026-09-23T21:30:11.873341","type":"test","name":"flows.onboarding_signup_flow_test new user completes onboarding, edits a target, and signs up with email","status":"failure","error":null}
+2026-09-23 21:30:11.910 Df Runner[84121:83523e] (Flutter) flutter: 12:00 +1 -1: Some tests failed.
+Child process terminated with signal 15: Terminated
