@@ -1,0 +1,22 @@
+[15:36:49] POST | 200 | https://vlmtsdzpnjnavdgytcmi.supabase.co/functions/v1/garmin-push
+[15:36:51] POST | 200 | https://vlmtsdzpnjnavdgytcmi.supabase.co/functions/v1/garmin-push
+[15:38:16] POST | 200 | https://vlmtsdzpnjnavdgytcmi.supabase.co/functions/v1/garmin-push
+[15:38:16] POST | 200 | https://vlmtsdzpnjnavdgytcmi.supabase.co/functions/v1/garmin-push
+[15:38:17] POST | 200 | https://vlmtsdzpnjnavdgytcmi.supabase.co/functions/v1/garmin-push
+[15:38:25] POST | 200 | https://vlmtsdzpnjnavdgytcmi.supabase.co/functions/v1/garmin-push
+[15:41:32] POST | 200 | https://vlmtsdzpnjnavdgytcmi.supabase.co/functions/v1/sync-all-data
+[15:41:34] POST | 200 | https://vlmtsdzpnjnavdgytcmi.supabase.co/functions/v1/calculate-daily-macros-v6
+[15:42:14] POST | 200 | https://vlmtsdzpnjnavdgytcmi.supabase.co/functions/v1/sync-all-data
+[15:42:16] POST | 200 | https://vlmtsdzpnjnavdgytcmi.supabase.co/functions/v1/calculate-daily-macros-v6
+[15:42:17] POST | 200 | https://vlmtsdzpnjnavdgytcmi.supabase.co/functions/v1/calculate-daily-macros-v6
+[15:42:28] POST | 200 | https://vlmtsdzpnjnavdgytcmi.supabase.co/functions/v1/vana-action
+[15:42:53] POST | 200 | https://vlmtsdzpnjnavdgytcmi.supabase.co/functions/v1/ensure-credits
+[15:42:53] POST | 200 | https://vlmtsdzpnjnavdgytcmi.supabase.co/functions/v1/ensure-credits
+[15:43:05] POST | 200 | https://vlmtsdzpnjnavdgytcmi.supabase.co/functions/v1/ensure-credits
+[15:43:05] POST | 200 | https://vlmtsdzpnjnavdgytcmi.supabase.co/functions/v1/ensure-credits
+[15:44:42] POST | 200 | https://vlmtsdzpnjnavdgytcmi.supabase.co/functions/v1/search-catalog
+[15:44:43] POST | 200 | https://vlmtsdzpnjnavdgytcmi.supabase.co/functions/v1/search-nutrition-products
+[15:45:20] POST | 200 | https://vlmtsdzpnjnavdgytcmi.supabase.co/functions/v1/search-catalog
+[15:45:21] POST | 200 | https://vlmtsdzpnjnavdgytcmi.supabase.co/functions/v1/search-nutrition-products
+
+(20 rows)
