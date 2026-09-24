@@ -11,10 +11,10 @@
 
 **Touches:** integration_test/flows/onboarding_signup_flow_test.dart
 
-- [ ] Runs by the runbook: a slot and the build lock taken and released, the console saved to the run folder, a look-around on every screen visited, every problem written as a Finding and nothing fixed.
-- [ ] Signs up its own account at a new plus address, logs it in the credentials file, and deletes it in the app at the end (a failed delete is a Finding).
-- [ ] Expected before the run: RevenueCat customer exists with no active entitlement; no `user_entitlements` row. Checked by API and SQL.
-- [ ] The paywall has no close button and its ⋯ menu lists what mp-494 says for an account with nothing to manage.
-- [ ] The rewritten onboarding signup flow passes against a plus-address account.
+- [x] Runs by the runbook: a slot and the build lock taken and released, the console saved to the run folder, a look-around on every screen visited, every problem written as a Finding and nothing fixed.
+- [x] Signs up its own account at a new plus address, logs it in the credentials file, and deletes it in the app at the end (a failed delete is a Finding).
+- [x] Expected before the run: RevenueCat customer exists with no active entitlement; no `user_entitlements` row. Checked by API and SQL.
+- [x] The paywall has no close button and its ⋯ menu lists what mp-494 says for an account with nothing to manage.
+- [x] The rewritten onboarding signup flow passes against a plus-address account.
 
 Next: /implement-lee testing-wave

@@ -1,0 +1,8 @@
+# 2026-09-24T04:28:30Z account A on the paywall
+[{"id":"a92da7e2-4198-4090-942b-5c590702473a","email":"lee+e2e-04-20260924t0426z@rightpathprogramming.com","created_at":"2026-09-24 04:27:35.874879+00","confirmed":true,"users_rows":1,"onboarding_completed":true,"answers":"female/metric/high/heavy","survey_rows":1,"entitlement_rows":0}]
+## footprint
+auth.identities.user_id: 1
+auth.users.id: 1
+public.onboarding_surveys.user_id: 1
+public.users.auth_user_id: 1
+public.users.id: 1
