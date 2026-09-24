@@ -239,6 +239,12 @@ page; the chevron alone peeks. Verified end-to-end in the harness (open →
 stepper ×2 → face flips to "27 g ahead" → rec add → remove
 → close reflects on the card) and on screen. Regular day untouched.
 
+*(v15 corrections, Xuan: empty cards are header-only on every day — no "Tap
+to log" copy, the whole card surface opens the interior; recommendation discs
+use the app's white-glyph-on-teal pattern (bread/bowl/drink), formulas an
+emoji on neutral; logged rows adopt the app's logged-item anatomy — orange
+utensil disc + Compadre name.)*
+
 ### RULED — 2026-09-24, evening (Xuan) — log path, flag shape, and the variants
 
 **The log lives in the food-log table (Path A), and D4 = YES:** loading-day
