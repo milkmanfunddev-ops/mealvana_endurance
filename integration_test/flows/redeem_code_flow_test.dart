@@ -20,8 +20,13 @@
 ///
 /// Writes on dev: one `code_redemptions` row and one pending pairing with
 /// DEVCOACH30's owner, both removed by the account delete (they cascade on
-/// the user). Needs a fresh install (no session): it self-skips otherwise,
-/// like the signup flows. Dev only.
+/// the user). A step that throws (a key that never shows) skips the delete:
+/// an account left behind that way, with its pending pairing on the coach,
+/// is swept by `node scripts/testing-wave/sweep-accounts.mjs delete --apply`.
+/// Needs a fresh install (no session): it self-skips otherwise, like the
+/// signup flows. Dev only. If the project asks for email confirmation, start
+/// the code probe first:
+///   node scripts/testing-wave/code-probe.mjs serve
 ///
 /// Run: patrol test --target integration_test/flows/redeem_code_flow_test.dart \
 ///        --flavor dev --bundle-id com.milkman.mealvanaendurance.dev \
@@ -82,8 +87,9 @@ void main() {
       await walkOnboardingToSignup($);
       await signUpToPaywall($, account);
 
-      // Every leg below reports only after the account is deleted, so a red
-      // run leaves nothing on dev.
+      // Every check below reports only after the account is deleted, so a
+      // failed check leaves nothing on dev (a thrown wait still does; see the
+      // header).
       final failures = <String>[];
       void check(bool ok, String what) {
         if (!ok) failures.add(what);
