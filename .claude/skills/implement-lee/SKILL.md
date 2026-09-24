@@ -52,6 +52,9 @@ Then open the wave:
 SYNC wave <feature> ISSUES --open
 ```
 
+A feature that caps how many tickets build at once (its spec or runbook says so) opens with
+`--only NN,NN` or `--max N` added; the rest of the frontier waits for the next wave.
+
 It marks each wave ticket `in-progress (wave N, <date>)`, commits every file under `ISSUES`
 to the working branch (`wave N opened for <feature>: tickets NN, NN [skip ci]`), so the
 worktrees see the tickets and a second `/implement-lee` in another session sees them as
@@ -145,8 +148,8 @@ below regenerate them once. Never `--abort`; never `git stash`.
 After the last merge, once for the wave:
 
 1. `dart run build_runner build --delete-conflicting-outputs`, and commit what it changed.
-2. `flutter analyze`, then the full suite: `flutter test` (the CI gate is exactly `test/`,
-   `docs/test/README.md`). Red is a stop. Fix what the merge broke, re-run, and if it stays red
+2. `flutter analyze`, then the full suite: `flutter test --exclude-tags="integration || e2e"`, the CI gate's own
+   command (`docs/test/README.md`); the tagged tests need live tokens and are not the gate. Red is a stop. Fix what the merge broke, re-run, and if it stays red
    close the wave with `--suite red` (the command below, so the record says so), then
    end the turn with the failing files listed and `Next: /diagnosing-bugs`, no next wave.
 3. One review of the merged result: `/mattpocock-skills:code-review` from the wave's `base`

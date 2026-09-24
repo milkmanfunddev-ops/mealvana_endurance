@@ -198,7 +198,7 @@ void main() {
   });
 
   group('every deploy has a test gate on the same trigger', () {
-    test('a push to develop runs the dev tests as well as the dev build', () {
+    test('a push to develop runs the dev build, and unit tests gate PRs into develop', () {
       expect(
         eventsOf('dev-ios').contains('push') &&
             branchesOf('dev-ios').contains('develop'),
@@ -218,11 +218,21 @@ void main() {
             'Codemagic (Lee 08-20); the M1 workflow owns push-triggered '
             'flows.',
       );
+      // ▶ Lee 08-21: pr-validation is PR-only (the every-push run doubled
+      // build minutes); unit tests / analyze / format gate a pull request
+      // into develop, not the push that follows it.
       expect(
-        eventsOf('pr-validation').contains('push') &&
+        eventsOf('pr-validation').contains('pull_request') &&
             branchesOf('pr-validation').contains('develop'),
         isTrue,
-        reason: 'Unit tests / analyze / format must gate a push to develop.',
+        reason: 'Unit tests / analyze / format must gate a PR into develop.',
+      );
+      expect(
+        eventsOf('pr-validation'),
+        isNot(contains('push')),
+        reason:
+            'pr-validation stays PR-only (Lee 08-21); restoring push doubles '
+            'Codemagic minutes and needs his say-so.',
       );
     });
 
