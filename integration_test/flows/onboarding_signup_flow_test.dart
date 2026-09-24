@@ -46,6 +46,7 @@ import 'package:flutter/material.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:patrol/patrol.dart';
 
+import '../helpers/e2e_account.dart';
 import '../helpers/flow_launcher.dart';
 import '../helpers/supabase_probe.dart';
 
@@ -66,10 +67,15 @@ void main() {
         return;
       }
 
-      // Unique email so repeated runs never collide on "account exists".
-      final uniqueEmail =
-          'audit_${DateTime.now().millisecondsSinceEpoch}@example.com';
-      const password = 'Test1234!';
+      // A throwaway `lee+e2e-*` address (unique per run, so repeated runs
+      // never collide on "account exists"). Only that shape is swept from dev
+      // by scripts/testing-wave/sweep-accounts.mjs; the old
+      // `audit_*@example.com` accounts were never cleaned up (testing-wave 03).
+      final account = E2eAccount.fresh(
+        tag: 'signup-${DateTime.now().millisecondsSinceEpoch}',
+      );
+      final uniqueEmail = account.email;
+      final password = account.password;
 
       await _startOnboardingFromWelcome($);
 
