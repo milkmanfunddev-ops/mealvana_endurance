@@ -78,14 +78,14 @@ void main() {
   patrolTest(
     'a window stepped on one activity does not leak into the next',
     ($) async {
-      await launchApp();
+      await launchApp($);
       await $.pump(const Duration(milliseconds: 500));
 
       if (!await ensureAuthenticated(
         $,
         sentinel: const ValueKey('kyle_date_header.settings'),
       )) {
-        markTestSkipped(noAuthSkipMessage());
+        skipFlow(noAuthSkipMessage());
         return;
       }
 

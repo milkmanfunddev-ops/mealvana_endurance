@@ -41,7 +41,7 @@ void main() {
 
       // iOS: Google auth runs in ASWebAuthenticationSession — not automatable.
       if (Platform.isIOS) {
-        markTestSkipped(
+        skipFlow(
           'Google sign-in is not automatable on iOS '
           '(ASWebAuthenticationSession is sandboxed). Android only.',
         );
@@ -49,7 +49,7 @@ void main() {
       }
 
       // Flavor-aware boot via the shared launcher (helpers/flow_launcher.dart).
-      await launchApp();
+      await launchApp($);
       await tester.pumpAndSettle(
         const Duration(milliseconds: 100),
         EnginePhase.sendSemanticsUpdate,
@@ -71,7 +71,7 @@ void main() {
       // welcome → login options
       final loginBtn = find.byKey(const ValueKey('welcome.log_in_button'));
       if (loginBtn.evaluate().isEmpty) {
-        markTestSkipped('Not on welcome screen — reinstall for a clean run.');
+        skipFlow('Not on welcome screen — reinstall for a clean run.');
         return;
       }
       await tester.mustTap(loginBtn, reason: 'welcome.log_in_button');

@@ -47,7 +47,7 @@ void main() {
   patrolTest(
     'settings — body composition weight persists across navigate-away and back',
     ($) async {
-      await launchApp();
+      await launchApp($);
       await $.pump(const Duration(milliseconds: 500));
 
       // ---- 0. Auth ----------------------------------------------------------
@@ -57,7 +57,7 @@ void main() {
         $,
         sentinel: const ValueKey('kyle_date_header.settings'),
       )) {
-        markTestSkipped(noAuthSkipMessage());
+        skipFlow(noAuthSkipMessage());
         return;
       }
 

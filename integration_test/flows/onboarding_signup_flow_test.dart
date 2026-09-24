@@ -46,6 +46,7 @@ import 'package:flutter/material.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:patrol/patrol.dart';
 
+import '../helpers/e2e_account.dart';
 import '../helpers/flow_launcher.dart';
 import '../helpers/supabase_probe.dart';
 
@@ -53,23 +54,28 @@ void main() {
   patrolTest(
     'new user completes onboarding, edits a target, and signs up with email',
     ($) async {
-      await launchApp();
+      await launchApp($);
       await _settleFirstFrame($);
 
       // Fresh install → welcome directly. Anything else (a signed-in
       // session) → skip.
       if (!await _onWelcomeScreen($)) {
-        markTestSkipped(
+        skipFlow(
           'Could not reach the welcome screen (existing non-anonymous '
           'session?). Reinstall the app for a clean onboarding run.',
         );
         return;
       }
 
-      // Unique email so repeated runs never collide on "account exists".
-      final uniqueEmail =
-          'audit_${DateTime.now().millisecondsSinceEpoch}@example.com';
-      const password = 'Test1234!';
+      // A throwaway `lee+e2e-*` address (unique per run, so repeated runs
+      // never collide on "account exists"). Only that shape is swept from dev
+      // by scripts/testing-wave/sweep-accounts.mjs; the old
+      // `audit_*@example.com` accounts were never cleaned up (testing-wave 03).
+      final account = E2eAccount.fresh(
+        tag: 'signup-${DateTime.now().millisecondsSinceEpoch}',
+      );
+      final uniqueEmail = account.email;
+      final password = account.password;
 
       await _startOnboardingFromWelcome($);
 
@@ -112,12 +118,18 @@ void main() {
       await _waitForPlanReveal($);
 
       await _scrollIntoView($, const ValueKey('plan_reveal.edit_long_run'));
+      // The pencil opens an inline slider (the +/- and Save sheet is gone;
+      // updated by testing-wave 03). Dragging it commits on release.
       await $(const ValueKey('plan_reveal.edit_long_run')).tap();
       await $(
-        const ValueKey('plan_reveal.edit_plus'),
+        const ValueKey('plan_reveal.slider_long_run'),
       ).waitUntilVisible(timeout: const Duration(seconds: 10));
-      await $(const ValueKey('plan_reveal.edit_plus')).tap();
-      await $(const ValueKey('plan_reveal.edit_save')).tap();
+      await $.tester.drag(
+        find.byKey(const ValueKey('plan_reveal.slider_long_run')),
+        const Offset(60, 0),
+      );
+      await $.pump(const Duration(milliseconds: 400));
+      await $(const ValueKey('plan_reveal.edit_long_run')).tap();
 
       await $(const ValueKey('plan_reveal.continue_button')).tap();
 
@@ -159,17 +171,22 @@ void main() {
             'Expected the paywall after signup. If this fails, the signup '
             'round-trip did not complete or the post-signup redirect changed.',
       );
-      await $(const ValueKey('paywall.more_button')).tap();
-      await $.pumpAndSettle();
+      // The paywall never settles (its opening clip keeps animating), so a
+      // bare pumpAndSettle here ran the flow into its 12-minute timeout
+      // (testing-wave 03). Wait for the menu rows instead.
+      await $(
+        const ValueKey('paywall.more_button'),
+      ).tap(settlePolicy: SettlePolicy.noSettle);
       for (final key in const [
         ValueKey('paywall.restore_button'),
         ValueKey('paywall.sign_out_button'),
         ValueKey('paywall.delete_account_button'),
       ]) {
+        await $(key).waitUntilVisible(timeout: const Duration(seconds: 10));
         expect($(key), findsOneWidget, reason: 'paywall menu carries $key');
       }
       await $.tester.tapAt(const Offset(20, 700));
-      await $.pumpAndSettle();
+      await $.pump(const Duration(seconds: 1));
       expect(
         find.textContaining('Failed to save'),
         findsNothing,

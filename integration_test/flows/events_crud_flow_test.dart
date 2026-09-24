@@ -46,14 +46,14 @@ void main() {
   patrolTest(
     'create, edit, then delete an event end-to-end',
     ($) async {
-      await launchApp();
+      await launchApp($);
       // Do NOT pumpAndSettle: startup may show a persistent spinner.
       // ensureAuthenticated polls with plain pumps instead.
       await $.pump(const Duration(milliseconds: 500));
 
       // ---- 0. Ensure we're authenticated on the calendar ----------------
       if (!await ensureAuthenticated($)) {
-        markTestSkipped(noAuthSkipMessage());
+        skipFlow(noAuthSkipMessage());
         return;
       }
 
@@ -65,7 +65,17 @@ void main() {
 
       // ---- 1. Calendar → Events tab → New Event -------------------------
       await $(const ValueKey('kyle_tab_bar.item.events')).tap();
-      await $(const ValueKey('my_events.new_event_button')).tap();
+      // New Event sits at the end of the list, below the fold for an account
+      // with many events: scroll it into view before tapping.
+      await $(
+        const ValueKey('my_events.new_event_button'),
+      ).waitUntilExists(timeout: const Duration(seconds: 20));
+      await $(
+        const ValueKey('my_events.new_event_button'),
+      ).scrollTo(settlePolicy: SettlePolicy.noSettle);
+      await $(
+        const ValueKey('my_events.new_event_button'),
+      ).tap(settlePolicy: SettlePolicy.noSettle);
 
       // ---- 2. CREATE -----------------------------------------------------
       // The form pre-fills sport (Run), race distance, date and time, so a

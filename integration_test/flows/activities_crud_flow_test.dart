@@ -59,13 +59,13 @@ void main() {
   patrolTest(
     'create a running activity (generate macros), read it, then delete it',
     ($) async {
-      await launchApp();
+      await launchApp($);
       // Do NOT pumpAndSettle: startup may show a persistent spinner.
       await $.pump(const Duration(milliseconds: 500));
 
       // ---- 0. Authenticated on the calendar -----------------------------
       if (!await ensureAuthenticated($)) {
-        markTestSkipped(noAuthSkipMessage());
+        skipFlow(noAuthSkipMessage());
         return;
       }
 

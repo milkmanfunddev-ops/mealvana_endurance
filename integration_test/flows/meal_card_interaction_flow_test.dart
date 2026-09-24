@@ -46,7 +46,7 @@ void main() {
   patrolTest(
     'log a meal → expand card → Edit food opens edit → Remove deletes with Undo',
     ($) async {
-      await launchApp();
+      await launchApp($);
       // Do NOT call pumpAndSettle: the app may have a persistent loading
       // spinner during startup. ensureAuthenticated uses explicit polls.
       await $.pump(const Duration(milliseconds: 500));
@@ -57,7 +57,7 @@ void main() {
         $,
         sentinel: const ValueKey('kyle_date_header.settings'),
       )) {
-        markTestSkipped(noAuthSkipMessage());
+        skipFlow(noAuthSkipMessage());
         return;
       }
 

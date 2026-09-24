@@ -54,12 +54,12 @@ void main() {
   patrolTest(
     'energy breakdown sheet renders the resting → TDEE decomposition',
     ($) async {
-      await launchApp();
+      await launchApp($);
       // No pumpAndSettle: startup may show persistent spinners.
       await $.pump(const Duration(milliseconds: 500));
 
       if (!await ensureAuthenticated($)) {
-        markTestSkipped(noAuthSkipMessage());
+        skipFlow(noAuthSkipMessage());
         return;
       }
 

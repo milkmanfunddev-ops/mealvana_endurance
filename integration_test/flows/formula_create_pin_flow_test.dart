@@ -75,7 +75,7 @@ Finder _personalPinToggles() => find.byWidgetPredicate(
 void main() {
   patrolTest('create a personal During formula, add a food, save it, pin it, verify '
       'pinned-only view, then unpin (cleanup)', ($) async {
-    await launchApp();
+    await launchApp($);
     // Give the engine one frame to render the first widget tree, then proceed.
     // Do NOT call pumpAndSettle here: the app may have a persistent loading
     // spinner (calendar activity fetch, startup provider init) that would
@@ -91,7 +91,7 @@ void main() {
       $,
       sentinel: const ValueKey('kyle_date_header.settings'),
     )) {
-      markTestSkipped(noAuthSkipMessage());
+      skipFlow(noAuthSkipMessage());
       return;
     }
 

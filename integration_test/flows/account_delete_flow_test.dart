@@ -39,17 +39,17 @@ void main() {
     'then signs up as a new, never-paid account',
     ($) async {
       if (!e2eAccountsAllowed) {
-        markTestSkipped('Throwaway accounts are made on dev only.');
+        skipFlow('Throwaway accounts are made on dev only.');
         return;
       }
-      await launchApp();
+      await launchApp($);
       await $.tester.pumpAndSettle(
         const Duration(milliseconds: 100),
         EnginePhase.sendSemanticsUpdate,
         const Duration(minutes: 2),
       );
       if (!await onWelcomeScreen($)) {
-        markTestSkipped(
+        skipFlow(
           'Not on the welcome screen (a session is present). Reinstall the '
           'app for a clean signup run.',
         );

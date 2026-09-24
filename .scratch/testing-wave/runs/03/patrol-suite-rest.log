@@ -1,0 +1,819 @@
+26
+• Building app with entrypoint test_bundle.dart for iOS simulator (debug)...
+	Resolving dependencies...
+	Downloading packages...
+	  _fe_analyzer_shared 91.0.0 (108.0.0 available)
+	  accessibility_tools 2.2.3 (3.0.0 available)
+	  analyzer 8.4.0 (14.4.0 available)
+	  analyzer_buffer 0.1.11 (0.3.4 available)
+	  analyzer_plugin 0.13.10 (0.14.17 available)
+	  animations 2.0.11 (3.0.0 available)
+	  app_links 6.4.1 (7.2.1 available)
+	  app_links_platform_interface 2.0.2 (2.0.4 available)
+	  archive 4.0.7 (4.3.0 available)
+	  async 2.13.0 (2.13.1 available)
+	  build 3.0.1 (4.0.11 available)
+	  build_config 1.1.2 (1.3.3 available)
+	  build_daemon 4.0.4 (4.1.6 available)
+	  build_resolvers 3.0.1 (3.0.4 available)
+	  build_runner 2.6.1 (2.16.1 available)
+	  build_runner_core 9.2.1 (9.3.2 available)
+	  built_value 8.11.1 (8.13.0 available)
+	  calendar_date_picker2 2.0.1 (3.0.0 available)
+	  chewie 1.13.0 (1.17.2 available)
+	  cli_util 0.4.2 (0.6.0 available)
+	  clock 1.1.2 (1.1.3 available)
+	  code_builder 4.10.1 (4.12.0 available)
+	  connectivity_plus 7.0.0 (7.3.1 available)
+	  connectivity_plus_platform_interface 2.0.1 (2.1.0 available)
+	  coverage 1.15.0 (1.15.1 available)
+	  cross_file 0.3.5+2 (0.3.5+5 available)
+	  crypto 3.0.6 (3.0.7 available)
+	  cupertino_icons 1.0.8 (1.0.9 available)
+	  custom_lint_core 0.8.1 (0.8.2 available)
+	  custom_lint_visitor 1.0.0+8.4.0 (1.0.0+9.0.0 available)
+	  dart_style 3.1.3 (3.1.13 available)
+	  dbus 0.7.11 (0.8.0 available)
+	  device_info_plus 12.4.0 (13.2.0 available)
+	  device_info_plus_platform_interface 7.0.3 (8.1.0 available)
+	  drift 2.29.0 (2.35.0 available)
+	  drift_dev 2.29.0 (2.35.0 available)
+	  equatable 2.1.0 (3.0.0 available)
+	  ffi 2.1.4 (2.2.0 available)
+	  file_selector_linux 0.9.4 (0.9.4+1 available)
+	  file_selector_macos 0.9.5 (0.9.5+1 available)
+	  file_selector_windows 0.9.3+5 (0.9.3+6 available)
+	  flutter_dotenv 5.2.1 (6.0.1 available)
+	  flutter_lints 5.0.0 (6.0.0 available)
+	  flutter_local_notifications 19.4.1 (22.3.1 available)
+	  flutter_local_notifications_linux 6.0.0 (8.0.1 available)
+	  flutter_local_notifications_platform_interface 9.1.0 (12.2.0 available)
+	  flutter_local_notifications_windows 1.0.2 (3.1.1 available)
+	  flutter_native_splash 2.4.7 (2.4.8 available)
+	  flutter_plugin_android_lifecycle 2.0.34 (2.0.35 available)
+	  flutter_riverpod 3.0.1 (3.4.3 available)
+	  flutter_secure_storage 9.2.4 (11.2.0 available)
+	  flutter_secure_storage_linux 1.2.3 (3.0.3 available)
+	  flutter_secure_storage_macos 3.1.3 (4.0.0 available)
+	  flutter_secure_storage_platform_interface 1.1.2 (2.1.1 available)
+	  flutter_secure_storage_web 1.2.1 (2.1.1 available)
+	  flutter_secure_storage_windows 3.1.2 (4.2.2 available)
+	  flutter_svg 2.2.3 (2.3.0 available)
+	  functions_client 2.5.0 (2.7.1 available)
+	  geolocator 13.0.4 (14.0.3 available)
+	  geolocator_android 4.6.2 (5.0.3 available)
+	  geolocator_apple 2.3.13 (2.3.14 available)
+	  geolocator_platform_interface 4.2.6 (4.3.0 available)
+	  geolocator_web 4.1.3 (4.1.4 available)
+	  glob 2.1.3 (2.2.0 available)
+	  go_router 12.1.3 (18.0.1 available)
+	  google_fonts 6.3.0 (8.2.1 available)
+	  google_sign_in 6.3.0 (7.2.0 available)
+	  google_sign_in_android 6.2.1 (7.2.17 available)
+	  google_sign_in_ios 5.9.0 (6.3.5 available)
+	  google_sign_in_platform_interface 2.5.0 (3.1.0 available)
+	  google_sign_in_web 0.12.4+4 (1.1.3 available)
+	  gotrue 2.16.0 (2.27.2 available)
+	  gtk 2.1.0 (2.2.0 available)
+	  html 0.15.6 (0.15.7 available)
+	  http 1.5.0 (1.6.0 available)
+	  image 4.5.4 (4.10.1 available)
+	  image_picker 1.2.2 (1.2.3 available)
+	  image_picker_android 0.8.13+17 (0.8.13+23 available)
+	  image_picker_ios 0.8.13+3 (0.8.13+7 available)
+	  injector 3.0.0 (4.0.0 available)
+	  intl 0.20.2 (0.20.3 available)
+	  io 1.0.5 (1.1.0 available)
+	  jni 0.14.2 (1.0.3 available)
+	  js 0.6.7 (0.7.2 available)
+	  json_annotation 4.9.0 (4.12.0 available)
+	  lints 5.1.1 (6.1.0 available)
+	  logger 2.6.2 (2.8.0 available)
+	  matcher 0.12.19 (0.12.20 available)
+	  material_color_utilities 0.13.0 (0.13.1 available)
+	  meta 1.18.0 (1.19.0 available)
+	  mime 2.0.0 (2.1.0 available)
+	  mixpanel_flutter 2.10.0 (2.14.0 available)
+	  mobile_scanner 7.2.0 (7.4.2 available)
+	  mockito 5.6.4 (5.8.1 available)
+	  mocktail 1.0.4 (1.0.5 available)
+	  nanoid2 2.0.1 (2.1.0 available)
+	  onesignal_flutter 5.5.0 (5.6.12 available)
+	  package_config 2.2.0 (3.0.0 available)
+	  package_info_plus 8.3.1 (10.2.1 available)
+	  package_info_plus_platform_interface 3.2.1 (4.1.0 available)
+	  path_provider 2.1.5 (2.1.6 available)
+	  path_provider_android 2.2.17 (2.3.1 available)
+	  path_provider_foundation 2.4.1 (2.6.0 available)
+	  path_provider_linux 2.2.1 (2.2.2 available)
+	  path_provider_platform_interface 2.1.2 (2.1.3 available)
+	  pdf 3.11.3 (3.13.1 available)
+	  petitparser 7.0.1 (7.0.2 available)
+	  platform 3.1.6 (3.2.0 available)
+	  pool 1.5.1 (1.5.3 available)
+	  posix 6.0.3 (6.5.2 available)
+	  postgrest 2.5.0 (2.9.1 available)
+	  printing 5.14.2 (5.15.1 available)
+	  process 5.0.5 (5.0.6 available)
+	  pub_semver 2.2.0 (2.2.1 available)
+	  pubspec_parse 1.5.0 (1.6.0 available)
+	  purchases_flutter 10.3.0 (10.13.1 available)
+	  qr 3.0.2 (4.0.0 available)
+	  realtime_client 2.6.0 (2.13.0 available)
+	  riverpod 3.0.1 (3.4.3 available)
+	  riverpod_analyzer_utils 1.0.0-dev.7 (1.0.0-dev.12 available)
+	  riverpod_annotation 3.0.1 (4.0.7 available)
+	  riverpod_generator 3.0.1 (4.0.9 available)
+	  sensors_plus 6.1.2 (7.1.0 available)
+	  sentry 9.6.0 (9.30.1 available)
+	  sentry_dart_plugin 3.1.1 (3.4.0 available)
+	  sentry_drift 9.6.0 (9.30.1 available)
+	  sentry_flutter 9.6.0 (9.30.1 available)
+	  share_plus 12.0.2 (13.3.0 available)
+	  share_plus_platform_interface 6.1.0 (7.2.0 available)
+	  shared_preferences 2.5.3 (2.5.5 available)
+	  shared_preferences_android 2.4.11 (2.4.28 available)
+	  shared_preferences_foundation 2.5.4 (2.5.7 available)
+	  shared_preferences_platform_interface 2.4.1 (2.4.2 available)
+	  shimmer 3.0.0 (4.0.0 available)
+	  simple_gradient_text 1.3.0 (1.4.0 available)
+	  smooth_page_indicator 1.2.1 (3.0.0 available)
+	  source_gen 4.2.0 (4.3.0 available)
+	  source_maps 0.10.13 (0.10.14 available)
+	  source_span 1.10.1 (1.10.2 available)
+	  speech_to_text 7.3.0 (7.5.0 available)
+	  speech_to_text_platform_interface 2.3.0 (2.5.0 available)
+	  speech_to_text_windows 1.0.0+beta.8 (1.0.1 available)
+	  sqlite3 2.9.0 (3.6.0 available)
+	  sqlite3_flutter_libs 0.5.39 (0.6.0+eol available)
+	  sqlparser 0.42.1 (0.45.0 available)
+	  stack_trace 1.12.1 (1.12.2 available)
+	  storage_client 2.4.1 (2.8.0 available)
+	  stream_transform 2.1.1 (2.1.2 available)
+	  supabase 2.10.0 (2.16.1 available)
+	  supabase_flutter 2.10.3 (2.17.2 available)
+	  system_info2 4.0.0 (4.1.0 available)
+	  test 1.31.0 (1.32.0 available)
+	  test_api 0.7.11 (0.7.14 available)
+	  test_core 0.6.17 (0.6.20 available)
+	  timezone 0.10.1 (0.11.1 available)
+	  universal_io 2.2.2 (2.3.1 available)
+	  url_launcher_android 6.3.17 (6.3.33 available)
+	  url_launcher_ios 6.3.3 (6.4.2 available)
+	  url_launcher_linux 3.2.1 (3.2.3 available)
+	  url_launcher_macos 3.2.2 (3.2.6 available)
+	  url_launcher_web 2.4.1 (2.4.3 available)
+	  url_launcher_windows 3.1.4 (3.1.6 available)
+	  uuid 4.5.1 (4.6.0 available)
+	  vector_graphics 1.1.19 (1.2.3 available)
+	  vector_graphics_compiler 1.1.19 (1.3.0 available)
+	  vector_math 2.2.0 (2.4.3 available)
+	  vibration 3.2.0 (3.2.1 available)
+	  video_player 2.10.1 (2.14.0 available)
+	  video_player_android 2.9.4 (2.12.2 available)
+	  video_player_avfoundation 2.8.9 (2.12.0 available)
+	  video_player_platform_interface 6.6.0 (6.9.0 available)
+	  vm_service 15.0.0 (15.3.0 available)
+	  wakelock_plus 1.3.3 (1.8.0 available)
+	  wakelock_plus_platform_interface 1.3.0 (1.7.0 available)
+	  watcher 1.1.2 (1.2.1 available)
+	  webdriver 3.1.0 (3.2.0 available)
+	  win32 5.14.0 (6.4.0 available)
+	  win32_registry 2.1.0 (3.0.3 available)
+	  window_to_front 0.0.3 (1.0.0 available)
+	  wiredash 2.6.0 (2.6.1 available)
+	  xml 6.6.1 (7.0.1 available)
+	  yaml 3.1.3 (3.1.4 available)
+	  yet_another_json_isolate 2.1.0 (2.1.1 available)
+	Got dependencies!
+	183 packages have newer versions incompatible with dependency constraints.
+	Try `flutter pub outdated` for more information.
+	Building com.milkman.mealvanaendurance.dev for simulator (ios)...
+	To ensure your app continues to launch on upcoming iOS versions, UIScene lifecycle support will soon be required. Please see https://flutter.dev/to/uiscene-migration for the migration guide.
+	
+	The following plugins do not support Swift Package Manager for ios:
+	  - flutter_secure_storage
+	  - printing
+	This will become an error in a future version of Flutter. Please contact the plugin maintainers to request Swift Package Manager adoption.
+✓ Completed building app with entrypoint test_bundle.dart for iOS simulator (86.3s)
+• Running app with entrypoint test_bundle.dart for iOS simulator on simulator wave-pool-1...
+🧪 flows.auth_flow_test email login walk lands on the tabs shell or the paywall
+        ⏳   1. [94misPermissionDialogVisible[0m [90m(native)[0m
+[A[K        ✅   1. [94misPermissionDialogVisible[0m [90m(native)[0m
+        ⏳   2. [33mtap[0m widgets with key [<'welcome.log_in_button'>].
+[A[K        ✅   2. [33mtap[0m widgets with key [<'welcome.log_in_button'>].
+        ⏳   3. [36mwaitUntilVisible[0m widgets with key [<'login_options.email_button'>].
+[A[K        ✅   3. [36mwaitUntilVisible[0m widgets with key [<'login_options.email_button'>].
+        ⏳   4. [33mtap[0m widgets with key [<'login_options.email_button'>].
+[A[K        ✅   4. [33mtap[0m widgets with key [<'login_options.email_button'>].
+        ⏳   5. [36mwaitUntilVisible[0m widgets with key [<'login.email_field'>].
+[A[K        ✅   5. [36mwaitUntilVisible[0m widgets with key [<'login.email_field'>].
+        ⏳   6. [35menterText[0m widgets with key [<'login.email_field'>].
+[A[K        ✅   6. [35menterText[0m widgets with key [<'login.email_field'>].
+        ⏳   7. [35menterText[0m widgets with key [<'login.password_field'>].
+[A[K        ✅   7. [35menterText[0m widgets with key [<'login.password_field'>].
+        ⏳   8. [33mtap[0m widgets with key [<'login.log_in_button'>].
+[A[K        ✅   8. [33mtap[0m widgets with key [<'login.log_in_button'>].
+[A[K[A[K[A[K[A[K[A[K[A[K[A[K[A[K[A[K✅ email login walk lands on the tabs shell or the paywall [90m(/flows/auth_flow_test.dart)[0m [90m(18s)[0m
+🧪 flows.formula_pin_conflict_flow_test an allergy-conflicted pin warns first, is honored, then labels and unpins
+        ⏳   1. [94misPermissionDialogVisible[0m [90m(native)[0m
+[A[K        ✅   1. [94misPermissionDialogVisible[0m [90m(native)[0m
+        ⏳   2. [94mdenyPermission[0m [90m(native)[0m
+[A[K        ✅   2. [94mdenyPermission[0m [90m(native)[0m
+        ⏳   3. [33mtap[0m widgets with key [<'macro_dashboard.filter_all'>].
+[A[K        ✅   3. [33mtap[0m widgets with key [<'macro_dashboard.filter_all'>].
+        ⏳   4. [36mwaitUntilVisible[0m widgets with key [<'kyle_date_header.settings'>].
+[A[K        ✅   4. [36mwaitUntilVisible[0m widgets with key [<'kyle_date_header.settings'>].
+        ⏳   5. [33mtap[0m widgets with key [<'kyle_date_header.settings'>].
+[A[K        ✅   5. [33mtap[0m widgets with key [<'kyle_date_header.settings'>].
+        ⏳   6. [36mwaitUntilVisible[0m widgets with key [<'settings.food_prefs_row'>].
+[A[K        ✅   6. [36mwaitUntilVisible[0m widgets with key [<'settings.food_prefs_row'>].
+        ⏳   7. [32mscrollTo[0m widgets with key [<'settings.food_prefs_row'>].
+[A[K        ✅   7. [32mscrollTo[0m widgets with key [<'settings.food_prefs_row'>].
+        ⏳   8. [33mtap[0m widgets with key [<'settings.food_prefs_row'>] (considering only hit-testable widgets with a RenderBox).
+[A[K        ✅   8. [33mtap[0m widgets with key [<'settings.food_prefs_row'>] (considering only hit-testable widgets with a RenderBox).
+        ⏳   9. [36mwaitUntilVisible[0m widgets with text "Formula Library".
+[A[K        ✅   9. [36mwaitUntilVisible[0m widgets with text "Formula Library".
+        ⏳  10. [33mtap[0m widgets with text "Formula Library".
+[A[K        ✅  10. [33mtap[0m widgets with text "Formula Library".
+        ⏳  11. [36mwaitUntilVisible[0m widgets with key [<'formula_kit.library_screen'>].
+[A[K        ✅  11. [36mwaitUntilVisible[0m widgets with key [<'formula_kit.library_screen'>].
+        ⏳  12. [33mtap[0m widgets with key [<'formula_kit.more_filters_button'>].
+[A[K        ✅  12. [33mtap[0m widgets with key [<'formula_kit.more_filters_button'>].
+        ⏳  13. [36mwaitUntilVisible[0m widgets with key [<'formula_kit.more_filters_sheet'>].
+[A[K        ✅  13. [36mwaitUntilVisible[0m widgets with key [<'formula_kit.more_filters_sheet'>].
+        ⏳  14. [33mtap[0m widgets with key [<'formula_kit.more_filters.apply'>].
+[A[K        ✅  14. [33mtap[0m widgets with key [<'formula_kit.more_filters.apply'>].
+        ⏳  15. [36mwaitUntilExists[0m widgets with widget matching predicate.
+[A[K        ❌  15. [36mwaitUntilExists[0m widgets with widget matching predicate.
+[A[K[A[K[A[K[A[K[A[K[A[K[A[K[A[K[A[K[A[K[A[K[A[K[A[K[A[K[A[K[A[K✅ an allergy-conflicted pin warns first, is honored, then labels and unpins [90m(/flows/formula_pin_conflict_flow_test.dart)[0m [90m(26s)[0m
+🧪 flows.formula_pin_flow_test pin a During formula, see it in pinned-only view, then unpin it
+        ⏳   1. [94misPermissionDialogVisible[0m [90m(native)[0m
+[A[K        ✅   1. [94misPermissionDialogVisible[0m [90m(native)[0m
+        ⏳   2. [33mtap[0m widgets with key [<'macro_dashboard.filter_all'>].
+[A[K        ✅   2. [33mtap[0m widgets with key [<'macro_dashboard.filter_all'>].
+        ⏳   3. [36mwaitUntilVisible[0m widgets with key [<'kyle_date_header.settings'>].
+[A[K        ✅   3. [36mwaitUntilVisible[0m widgets with key [<'kyle_date_header.settings'>].
+        ⏳   4. [33mtap[0m widgets with key [<'kyle_date_header.settings'>].
+[A[K        ✅   4. [33mtap[0m widgets with key [<'kyle_date_header.settings'>].
+        ⏳   5. [36mwaitUntilVisible[0m widgets with key [<'settings.food_prefs_row'>].
+[A[K        ✅   5. [36mwaitUntilVisible[0m widgets with key [<'settings.food_prefs_row'>].
+        ⏳   6. [32mscrollTo[0m widgets with key [<'settings.food_prefs_row'>].
+[A[K        ✅   6. [32mscrollTo[0m widgets with key [<'settings.food_prefs_row'>].
+        ⏳   7. [33mtap[0m widgets with key [<'settings.food_prefs_row'>] (considering only hit-testable widgets with a RenderBox).
+[A[K        ✅   7. [33mtap[0m widgets with key [<'settings.food_prefs_row'>] (considering only hit-testable widgets with a RenderBox).
+        ⏳   8. [36mwaitUntilVisible[0m widgets with text "Formula Library".
+[A[K        ✅   8. [36mwaitUntilVisible[0m widgets with text "Formula Library".
+        ⏳   9. [33mtap[0m widgets with text "Formula Library".
+[A[K        ✅   9. [33mtap[0m widgets with text "Formula Library".
+        ⏳  10. [36mwaitUntilVisible[0m widgets with key [<'formula_kit.library_screen'>].
+[A[K        ✅  10. [36mwaitUntilVisible[0m widgets with key [<'formula_kit.library_screen'>].
+        ⏳  11. [33mtap[0m widgets with key [<'formula_kit.phase_tab.during'>].
+[A[K        ✅  11. [33mtap[0m widgets with key [<'formula_kit.phase_tab.during'>].
+        ⏳  12. [36mwaitUntilVisible[0m widgets with key [<'formula_kit.during_list'>].
+[A[K        ✅  12. [36mwaitUntilVisible[0m widgets with key [<'formula_kit.during_list'>].
+        ⏳  13. [36mwaitUntilExists[0m widgets with widget matching predicate.
+[A[K        ✅  13. [36mwaitUntilExists[0m widgets with widget matching predicate.
+        ⏳  14. [32mscrollTo[0m widgets with widget matching predicate.
+[A[K        ✅  14. [32mscrollTo[0m widgets with widget matching predicate.
+        ⏳  15. [33mtap[0m widgets with widget matching predicate (considering only hit-testable widgets with a RenderBox).
+[A[K        ✅  15. [33mtap[0m widgets with widget matching predicate (considering only hit-testable widgets with a RenderBox).
+        ⏳  16. [33mtap[0m widgets with key [<'formula_kit.pinned_only_button'>].
+[A[K        ✅  16. [33mtap[0m widgets with key [<'formula_kit.pinned_only_button'>].
+        ⏳  17. [32mscrollTo[0m widgets with widget matching predicate.
+[A[K        ✅  17. [32mscrollTo[0m widgets with widget matching predicate.
+        ⏳  18. [33mtap[0m widgets with widget matching predicate (considering only hit-testable widgets with a RenderBox).
+[A[K        ✅  18. [33mtap[0m widgets with widget matching predicate (considering only hit-testable widgets with a RenderBox).
+        ⏳  19. [36mwaitUntilVisible[0m widgets with key [<'formula_kit.during_empty_no_pins'>].
+[A[K        ✅  19. [36mwaitUntilVisible[0m widgets with key [<'formula_kit.during_empty_no_pins'>].
+        ⏳  20. [33mtap[0m widgets with key [<'formula_kit.pinned_only_button'>].
+[A[K        ✅  20. [33mtap[0m widgets with key [<'formula_kit.pinned_only_button'>].
+[A[K[A[K[A[K[A[K[A[K[A[K[A[K[A[K[A[K[A[K[A[K[A[K[A[K[A[K[A[K[A[K[A[K[A[K[A[K[A[K[A[K✅ pin a During formula, see it in pinned-only view, then unpin it [90m(/flows/formula_pin_flow_test.dart)[0m [90m(15s)[0m
+🧪 flows.fueling_window_persistence_flow_test a window stepped on one activity does not leak into the next
+        ⏳   1. [94misPermissionDialogVisible[0m [90m(native)[0m
+[A[K        ✅   1. [94misPermissionDialogVisible[0m [90m(native)[0m
+        ⏳   2. [33mtap[0m widgets with key [<'macro_dashboard.filter_all'>].
+[A[K        ✅   2. [33mtap[0m widgets with key [<'macro_dashboard.filter_all'>].
+        ⏳   3. [33mtap[0m widgets with key [<'kyle_tab_bar.item.timeline'>].
+[A[K        ✅   3. [33mtap[0m widgets with key [<'kyle_tab_bar.item.timeline'>].
+        ⏳   4. [36mwaitUntilVisible[0m widgets with key [<'macro_dashboard.add_activity'>].
+[A[K        ✅   4. [36mwaitUntilVisible[0m widgets with key [<'macro_dashboard.add_activity'>].
+        ⏳   5. [33mtap[0m widgets with key [<'macro_dashboard.add_activity'>].
+[A[K        ✅   5. [33mtap[0m widgets with key [<'macro_dashboard.add_activity'>].
+        ⏳   6. [36mwaitUntilVisible[0m widgets with key [<'activity_create.tab_running'>].
+[A[K        ✅   6. [36mwaitUntilVisible[0m widgets with key [<'activity_create.tab_running'>].
+        ⏳   7. [33mtap[0m widgets with key [<'activity_create.tab_running'>].
+[A[K        ✅   7. [33mtap[0m widgets with key [<'activity_create.tab_running'>].
+        ⏳   8. [32mscrollTo[0m widgets with key [<'activity_create.fueling_window_minus'>].
+[A[K        ✅   8. [32mscrollTo[0m widgets with key [<'activity_create.fueling_window_minus'>].
+        ⏳   9. [33mtap[0m widgets with key [<'activity_create.fueling_window_minus'>].
+[A[K        ✅   9. [33mtap[0m widgets with key [<'activity_create.fueling_window_minus'>].
+        ⏳  10. [33mtap[0m widgets with key [<'activity_create.back_button'>].
+[A[K        ✅  10. [33mtap[0m widgets with key [<'activity_create.back_button'>].
+        ⏳  11. [33mtap[0m widgets with key [<'kyle_tab_bar.item.timeline'>].
+[A[K        ✅  11. [33mtap[0m widgets with key [<'kyle_tab_bar.item.timeline'>].
+        ⏳  12. [36mwaitUntilVisible[0m widgets with key [<'macro_dashboard.add_activity'>].
+[A[K        ✅  12. [36mwaitUntilVisible[0m widgets with key [<'macro_dashboard.add_activity'>].
+        ⏳  13. [33mtap[0m widgets with key [<'macro_dashboard.add_activity'>].
+[A[K        ✅  13. [33mtap[0m widgets with key [<'macro_dashboard.add_activity'>].
+        ⏳  14. [36mwaitUntilVisible[0m widgets with key [<'activity_create.tab_running'>].
+[A[K        ✅  14. [36mwaitUntilVisible[0m widgets with key [<'activity_create.tab_running'>].
+        ⏳  15. [33mtap[0m widgets with key [<'activity_create.tab_running'>].
+[A[K        ✅  15. [33mtap[0m widgets with key [<'activity_create.tab_running'>].
+        ⏳  16. [33mtap[0m widgets with key [<'activity_create.back_button'>].
+[A[K        ✅  16. [33mtap[0m widgets with key [<'activity_create.back_button'>].
+[A[K[A[K[A[K[A[K[A[K[A[K[A[K[A[K[A[K[A[K[A[K[A[K[A[K[A[K[A[K[A[K[A[K✅ a window stepped on one activity does not leak into the next [90m(/flows/fueling_window_persistence_flow_test.dart)[0m [90m(19s)[0m
+🧪 flows.learn_flow_test learn tab — education list renders and the first lesson screen opens
+        ⏳   1. [94misPermissionDialogVisible[0m [90m(native)[0m
+[A[K        ✅   1. [94misPermissionDialogVisible[0m [90m(native)[0m
+        ⏳   2. [94mdenyPermission[0m [90m(native)[0m
+[A[K        ✅   2. [94mdenyPermission[0m [90m(native)[0m
+        ⏳   3. [33mtap[0m widgets with key [<'macro_dashboard.filter_all'>].
+[A[K        ✅   3. [33mtap[0m widgets with key [<'macro_dashboard.filter_all'>].
+        ⏳   4. [33mtap[0m widgets with key [<'kyle_tab_bar.item.learn'>].
+[A[K        ✅   4. [33mtap[0m widgets with key [<'kyle_tab_bar.item.learn'>].
+        ⏳   5. [36mwaitUntilVisible[0m widgets with key [<'learn.title'>].
+[A[K        ✅   5. [36mwaitUntilVisible[0m widgets with key [<'learn.title'>].
+        ⏳   6. [33mtap[0m widgets with key [<'learn.lesson_card_0'>].
+[A[K        ✅   6. [33mtap[0m widgets with key [<'learn.lesson_card_0'>].
+        ⏳   7. [36mwaitUntilVisible[0m widgets with key [<'lesson.title'>].
+[A[K        ✅   7. [36mwaitUntilVisible[0m widgets with key [<'lesson.title'>].
+        ⏳   8. [33mtap[0m widgets with key [<'lesson.back_button'>].
+[A[K        ✅   8. [33mtap[0m widgets with key [<'lesson.back_button'>].
+        ⏳   9. [36mwaitUntilVisible[0m widgets with key [<'learn.title'>].
+[A[K        ✅   9. [36mwaitUntilVisible[0m widgets with key [<'learn.title'>].
+        ⏳  10. [33mtap[0m widgets with key [<'kyle_tab_bar.item.timeline'>].
+[A[K        ✅  10. [33mtap[0m widgets with key [<'kyle_tab_bar.item.timeline'>].
+[A[K[A[K[A[K[A[K[A[K[A[K[A[K[A[K[A[K[A[K[A[K✅ learn tab — education list renders and the first lesson screen opens [90m(/flows/learn_flow_test.dart)[0m [90m(5s)[0m
+🧪 flows.macro_dashboard_flow_test macro dashboard — G1 and G2 swipes, two-time writes, S-4, pager, skip and unskip
+        ⏳   1. [94misPermissionDialogVisible[0m [90m(native)[0m
+[A[K        ✅   1. [94misPermissionDialogVisible[0m [90m(native)[0m
+        ⏳   2. [33mtap[0m widgets with key [<'macro_dashboard.filter_all'>].
+[A[K        ✅   2. [33mtap[0m widgets with key [<'macro_dashboard.filter_all'>].
+        ⏳   3. [33mtap[0m widgets with key [<'kyle_tab_bar.item.timeline'>].
+[A[K        ✅   3. [33mtap[0m widgets with key [<'kyle_tab_bar.item.timeline'>].
+        ⏳   4. [33mtap[0m widgets with key [<'macro_dashboard.filter_all'>].
+[A[K        ✅   4. [33mtap[0m widgets with key [<'macro_dashboard.filter_all'>].
+        ⏳   5. [33mtap[0m widgets with key [<'macro_dashboard.energy_expand'>].
+[A[K        ✅   5. [33mtap[0m widgets with key [<'macro_dashboard.energy_expand'>].
+        ⏳   6. [33mtap[0m widgets with key [<'macro_dashboard.full_breakdown'>].
+[A[K        ✅   6. [33mtap[0m widgets with key [<'macro_dashboard.full_breakdown'>].
+        ⏳   7. [36mwaitUntilVisible[0m widgets with key [<'macro_dashboard.pager'>].
+[A[K        ✅   7. [36mwaitUntilVisible[0m widgets with key [<'macro_dashboard.pager'>].
+        ⏳   8. [33mtap[0m widgets with key [<'macro_dashboard.pager_close'>].
+[A[K        ✅   8. [33mtap[0m widgets with key [<'macro_dashboard.pager_close'>].
+        ⏳   9. [36mwaitUntilVisible[0m widgets with key [<'macro_dashboard.skip_button'>].
+[A[K        ✅   9. [36mwaitUntilVisible[0m widgets with key [<'macro_dashboard.skip_button'>].
+        ⏳  10. [33mtap[0m widgets with key [<'macro_dashboard.skip_button'>].
+[A[K        ✅  10. [33mtap[0m widgets with key [<'macro_dashboard.skip_button'>].
+        ⏳  11. [36mwaitUntilVisible[0m widgets with key [<'macro_dashboard.unskip_button'>].
+[A[K        ✅  11. [36mwaitUntilVisible[0m widgets with key [<'macro_dashboard.unskip_button'>].
+        ⏳  12. [33mtap[0m widgets with key [<'macro_dashboard.unskip_button'>].
+[A[K        ✅  12. [33mtap[0m widgets with key [<'macro_dashboard.unskip_button'>].
+        ⏳  13. [36mwaitUntilVisible[0m widgets with key [<'macro_dashboard.skip_button'>].
+[A[K        ✅  13. [36mwaitUntilVisible[0m widgets with key [<'macro_dashboard.skip_button'>].
+        ⏳  14. [33mtap[0m widgets with key [<'macro_dashboard.skip_button'>].
+[A[K        ✅  14. [33mtap[0m widgets with key [<'macro_dashboard.skip_button'>].
+[A[K[A[K[A[K[A[K[A[K[A[K[A[K[A[K[A[K[A[K[A[K[A[K[A[K[A[K[A[K✅ macro dashboard — G1 and G2 swipes, two-time writes, S-4, pager, skip and unskip [90m(/flows/macro_dashboard_flow_test.dart)[0m [90m(33s)[0m
+🧪 flows.meal_card_interaction_flow_test log a meal → expand card → Edit food opens edit → Remove deletes with Undo
+        ⏳   1. [94misPermissionDialogVisible[0m [90m(native)[0m
+[A[K        ✅   1. [94misPermissionDialogVisible[0m [90m(native)[0m
+        ⏳   2. [33mtap[0m widgets with key [<'macro_dashboard.filter_all'>].
+[A[K        ✅   2. [33mtap[0m widgets with key [<'macro_dashboard.filter_all'>].
+        ⏳   3. [33mtap[0m widgets with key [<'kyle_tab_bar.item.timeline'>].
+[A[K        ✅   3. [33mtap[0m widgets with key [<'kyle_tab_bar.item.timeline'>].
+        ⏳   4. [36mwaitUntilVisible[0m widgets with key [<'macro_dashboard.add_food'>].
+[A[K        ✅   4. [36mwaitUntilVisible[0m widgets with key [<'macro_dashboard.add_food'>].
+        ⏳   5. [33mtap[0m widgets with key [<'macro_dashboard.add_food'>].
+[A[K        ✅   5. [33mtap[0m widgets with key [<'macro_dashboard.add_food'>].
+        ⏳   6. [36mwaitUntilVisible[0m widgets with text "Manual".
+[A[K        ✅   6. [36mwaitUntilVisible[0m widgets with text "Manual".
+        ⏳   7. [33mtap[0m widgets with text "Manual".
+[A[K        ✅   7. [33mtap[0m widgets with text "Manual".
+        ⏳   8. [32mscrollTo[0m widgets with key [<'manual_log.save_button'>].
+[A[K        ✅   8. [32mscrollTo[0m widgets with key [<'manual_log.save_button'>].
+        ⏳   9. [33mtap[0m widgets with key [<'manual_log.save_button'>] (considering only hit-testable widgets with a RenderBox).
+[A[K        ✅   9. [33mtap[0m widgets with key [<'manual_log.save_button'>] (considering only hit-testable widgets with a RenderBox).
+        ⏳  10. [36mwaitUntilVisible[0m widgets with text "Meal logged!".
+[A[K        ✅  10. [36mwaitUntilVisible[0m widgets with text "Meal logged!".
+        ⏳  11. [33mtap[0m widgets with key [<'log_meal.back_button'>].
+[A[K        ✅  11. [33mtap[0m widgets with key [<'log_meal.back_button'>].
+        ⏳  12. [33mtap[0m widgets with key [<'macro_dashboard.filter_all'>].
+[A[K        ✅  12. [33mtap[0m widgets with key [<'macro_dashboard.filter_all'>].
+        ⏳  13. [33mtap[0m widgets with text "Patrol Meal 1790210489191".
+[A[K        ✅  13. [33mtap[0m widgets with text "Patrol Meal 1790210489191".
+        ⏳  14. [36mwaitUntilVisible[0m widgets with text "Edit food".
+[A[K        ✅  14. [36mwaitUntilVisible[0m widgets with text "Edit food".
+        ⏳  15. [33mtap[0m widgets with text "Edit food".
+[A[K        ✅  15. [33mtap[0m widgets with text "Edit food".
+        ⏳  16. [36mwaitUntilVisible[0m widgets with text "Edit Meal".
+[A[K        ✅  16. [36mwaitUntilVisible[0m widgets with text "Edit Meal".
+        ⏳  17. [36mwaitUntilVisible[0m widgets with text "Patrol Meal 1790210489191".
+[A[K        ✅  17. [36mwaitUntilVisible[0m widgets with text "Patrol Meal 1790210489191".
+        ⏳  18. [33mtap[0m widgets with text "Remove".
+[A[K        ✅  18. [33mtap[0m widgets with text "Remove".
+        ⏳  19. [36mwaitUntilVisible[0m widgets with text "Meal deleted".
+[A[K        ✅  19. [36mwaitUntilVisible[0m widgets with text "Meal deleted".
+[A[K[A[K[A[K[A[K[A[K[A[K[A[K[A[K[A[K[A[K[A[K[A[K[A[K[A[K[A[K[A[K[A[K[A[K[A[K[A[K✅ log a meal → expand card → Edit food opens edit → Remove deletes with Undo [90m(/flows/meal_card_interaction_flow_test.dart)[0m [90m(27s)[0m
+🧪 flows.meal_log_build_flow_test build a meal from search, log it, see it on the timeline, then delete it
+        ⏳   1. [94misPermissionDialogVisible[0m [90m(native)[0m
+[A[K        ✅   1. [94misPermissionDialogVisible[0m [90m(native)[0m
+        ⏳   2. [33mtap[0m widgets with key [<'macro_dashboard.filter_all'>].
+[A[K        ✅   2. [33mtap[0m widgets with key [<'macro_dashboard.filter_all'>].
+        ⏳   3. [33mtap[0m widgets with key [<'kyle_tab_bar.item.timeline'>].
+[A[K        ✅   3. [33mtap[0m widgets with key [<'kyle_tab_bar.item.timeline'>].
+        ⏳   4. [36mwaitUntilVisible[0m widgets with key [<'macro_dashboard.add_food'>].
+[A[K        ✅   4. [36mwaitUntilVisible[0m widgets with key [<'macro_dashboard.add_food'>].
+        ⏳   5. [33mtap[0m widgets with key [<'macro_dashboard.add_food'>].
+[A[K        ✅   5. [33mtap[0m widgets with key [<'macro_dashboard.add_food'>].
+        ⏳   6. [36mwaitUntilVisible[0m widgets with key [<'log_meal.build_a_meal_button'>].
+[A[K        ✅   6. [36mwaitUntilVisible[0m widgets with key [<'log_meal.build_a_meal_button'>].
+        ⏳   7. [33mtap[0m widgets with key [<'log_meal.build_a_meal_button'>].
+[A[K        ✅   7. [33mtap[0m widgets with key [<'log_meal.build_a_meal_button'>].
+        ⏳   8. [36mwaitUntilVisible[0m widgets with key [<'build_meal.add_food_button'>].
+[A[K        ✅   8. [36mwaitUntilVisible[0m widgets with key [<'build_meal.add_food_button'>].
+        ⏳   9. [33mtap[0m widgets with key [<'build_meal.add_food_button'>].
+[A[K        ✅   9. [33mtap[0m widgets with key [<'build_meal.add_food_button'>].
+        ⏳  10. [36mwaitUntilVisible[0m widgets with key [<'add_food.search_field'>].
+[A[K        ✅  10. [36mwaitUntilVisible[0m widgets with key [<'add_food.search_field'>].
+        ⏳  11. [35menterText[0m widgets with key [<'add_food.search_field'>].
+[A[K        ✅  11. [35menterText[0m widgets with key [<'add_food.search_field'>].
+        ⏳  12. [33mtap[0m widgets with widget matching predicate.
+[A[K        ✅  12. [33mtap[0m widgets with widget matching predicate.
+        ⏳  13. [33mtap[0m widgets with key [<'add_food.back_button'>].
+[A[K        ✅  13. [33mtap[0m widgets with key [<'add_food.back_button'>].
+        ⏳  14. [36mwaitUntilVisible[0m widgets with key [<'build_meal.name_field'>].
+[A[K        ✅  14. [36mwaitUntilVisible[0m widgets with key [<'build_meal.name_field'>].
+        ⏳  15. [35menterText[0m widgets with key [<'build_meal.name_field'>].
+[A[K        ✅  15. [35menterText[0m widgets with key [<'build_meal.name_field'>].
+        ⏳  16. [36mwaitUntilVisible[0m widgets with key [<'build_meal.log_meal_button'>].
+[A[K        ✅  16. [36mwaitUntilVisible[0m widgets with key [<'build_meal.log_meal_button'>].
+        ⏳  17. [33mtap[0m widgets with key [<'build_meal.log_meal_button'>].
+[A[K        ✅  17. [33mtap[0m widgets with key [<'build_meal.log_meal_button'>].
+        ⏳  18. [36mwaitUntilVisible[0m widgets with text "Meal logged!".
+[A[K        ✅  18. [36mwaitUntilVisible[0m widgets with text "Meal logged!".
+        ⏳  19. [36mwaitUntilVisible[0m widgets with key [<'log_meal.back_button'>].
+[A[K        ✅  19. [36mwaitUntilVisible[0m widgets with key [<'log_meal.back_button'>].
+        ⏳  20. [33mtap[0m widgets with key [<'log_meal.back_button'>].
+[A[K        ✅  20. [33mtap[0m widgets with key [<'log_meal.back_button'>].
+        ⏳  21. [33mtap[0m widgets with key [<'macro_dashboard.filter_all'>].
+[A[K        ✅  21. [33mtap[0m widgets with key [<'macro_dashboard.filter_all'>].
+❌ build a meal from search, log it, see it on the timeline, then delete it [90m(/flows/meal_log_build_flow_test.dart)[0m [90m(18s)[0m
+[31m══╡ EXCEPTION CAUGHT BY FLUTTER TEST FRAMEWORK ╞═════════════════[0m
+[31mThe following TestFailure was thrown running a test:[0m
+[31mExpected: a value greater than or equal to <1>[0m
+[31m  Actual: <0>[0m
+[31m   Which: is not a value greater than or equal to <1>[0m
+[31mBuilt the meal from a search result, but the persisted row[0m
+[31mcarries 0 component(s): null. The draft's foods were dropped on[0m
+[31msave — the card still looks normal.[0m
+[31m[0m
+[31mWhen the exception was thrown, this was the stack:[0m
+[31m#4      main.<anonymous closure> (file:///Users/leemartin/development/mealvana_endurance-waves/testing-wave/03-the-patrol-suite-matches-the-app/integration_test/flows/meal_log_build_flow_test.dart:231:9)[0m
+[31m<asynchronous suspension>[0m
+[31m#5      patrolTest.<anonymous closure> (package:patrol/src/common.dart:194:9)[0m
+[31m<asynchronous suspension>[0m
+[31m#6      testWidgets.<anonymous closure>.<anonymous closure> (package:flutter_test/src/widget_tester.dart:192:15)[0m
+[31m<asynchronous suspension>[0m
+[31m#7      PatrolBinding._wrapTestBodyWithExceptionGatherer (package:patrol/src/binding.dart:277:5)[0m
+[31m<asynchronous suspension>[0m
+[31m#8      TestWidgetsFlutterBinding._runTestBody (package:flutter_test/src/binding.dart:1952:5)[0m
+[31m<asynchronous suspension>[0m
+[31m#9      TestWidgetsFlutterBinding._createTestCompletionHandler.<anonymous closure> (package:flutter_test/src/binding.dart:1706:12)[0m
+[31m<asynchronous suspension>[0m
+[31m[0m
+[31mThis was caught by the test expectation on the following line:[0m
+[31m  file:///Users/leemartin/development/mealvana_endurance-waves/testing-wave/03-the-patrol-suite-matches-the-app/integration_test/flows/meal_log_build_flow_test.dart line 231[0m
+[31mThe test description was:[0m
+[31m  build a meal from search, log it, see it on the timeline, then[0m
+[31m  delete it[0m
+[31m═════════════════════════════════════════════════════════════════[0m
+[31m[0m
+🧪 flows.pro_gate_flow_test App gate — the shell, the paywall and the food and vana routes agree
+        ⏳   1. [94misPermissionDialogVisible[0m [90m(native)[0m
+[A[K        ✅   1. [94misPermissionDialogVisible[0m [90m(native)[0m
+        ⏳   2. [33mtap[0m widgets with key [<'macro_dashboard.filter_all'>].
+[A[K        ✅   2. [33mtap[0m widgets with key [<'macro_dashboard.filter_all'>].
+[A[K[A[K[A[K✅ App gate — the shell, the paywall and the food and vana routes agree [90m(/flows/pro_gate_flow_test.dart)[0m [90m(15s)[0m
+🧪 flows.recommendation_stacking_flow_test recommendation H5: a <=30 min fueling window yields Top-Off only (no Meal or Snack)
+        ⏳   1. [94misPermissionDialogVisible[0m [90m(native)[0m
+[A[K        ✅   1. [94misPermissionDialogVisible[0m [90m(native)[0m
+        ⏳   2. [94mdenyPermission[0m [90m(native)[0m
+[A[K        ✅   2. [94mdenyPermission[0m [90m(native)[0m
+        ⏳   3. [33mtap[0m widgets with key [<'macro_dashboard.filter_all'>].
+[A[K        ✅   3. [33mtap[0m widgets with key [<'macro_dashboard.filter_all'>].
+        ⏳   4. [33mtap[0m widgets with key [<'kyle_tab_bar.item.timeline'>].
+[A[K        ✅   4. [33mtap[0m widgets with key [<'kyle_tab_bar.item.timeline'>].
+        ⏳   5. [36mwaitUntilVisible[0m widgets with key [<'macro_dashboard.add_activity'>].
+[A[K        ✅   5. [36mwaitUntilVisible[0m widgets with key [<'macro_dashboard.add_activity'>].
+        ⏳   6. [33mtap[0m widgets with key [<'macro_dashboard.add_activity'>].
+[A[K        ✅   6. [33mtap[0m widgets with key [<'macro_dashboard.add_activity'>].
+        ⏳   7. [36mwaitUntilVisible[0m widgets with key [<'activity_create.tab_running'>].
+[A[K        ✅   7. [36mwaitUntilVisible[0m widgets with key [<'activity_create.tab_running'>].
+        ⏳   8. [33mtap[0m widgets with key [<'activity_create.tab_running'>].
+[A[K        ✅   8. [33mtap[0m widgets with key [<'activity_create.tab_running'>].
+        ⏳   9. [36mwaitUntilVisible[0m widgets with key [<'activity_create.workout_name_field'>].
+[A[K        ✅   9. [36mwaitUntilVisible[0m widgets with key [<'activity_create.workout_name_field'>].
+        ⏳  10. [35menterText[0m widgets with key [<'activity_create.workout_name_field'>].
+[A[K        ✅  10. [35menterText[0m widgets with key [<'activity_create.workout_name_field'>].
+        ⏳  11. [36mwaitUntilVisible[0m widgets with key [<'activity_create.distance_field'>].
+[A[K        ✅  11. [36mwaitUntilVisible[0m widgets with key [<'activity_create.distance_field'>].
+        ⏳  12. [35menterText[0m widgets with key [<'activity_create.distance_field'>].
+[A[K        ✅  12. [35menterText[0m widgets with key [<'activity_create.distance_field'>].
+        ⏳  13. [36mwaitUntilVisible[0m widgets with key [<'activity_create.duration_hr_field'>].
+[A[K        ❌  13. [36mwaitUntilVisible[0m widgets with key [<'activity_create.duration_hr_field'>].
+        ⏳  14. [35menterText[0m widgets with key [<'activity_create.duration_hr_field'>].
+[A[K        ✅  14. [35menterText[0m widgets with key [<'activity_create.duration_hr_field'>].
+        ⏳  15. [36mwaitUntilVisible[0m widgets with key [<'activity_create.duration_mins_field'>].
+[A[K        ✅  15. [36mwaitUntilVisible[0m widgets with key [<'activity_create.duration_mins_field'>].
+        ⏳  16. [35menterText[0m widgets with key [<'activity_create.duration_mins_field'>].
+[A[K        ✅  16. [35menterText[0m widgets with key [<'activity_create.duration_mins_field'>].
+        ⏳  17. [36mwaitUntilVisible[0m widgets with key [<'activity_create.edit_datetime_button'>].
+[A[K        ❌  17. [36mwaitUntilVisible[0m widgets with key [<'activity_create.edit_datetime_button'>].
+        ⏳  18. [33mtap[0m widgets with key [<'activity_create.edit_datetime_button'>].
+[A[K        ✅  18. [33mtap[0m widgets with key [<'activity_create.edit_datetime_button'>].
+        ⏳  19. [33mtap[0m widgets with text "24".
+[A[K        ✅  19. [33mtap[0m widgets with text "24".
+        ⏳  20. [33mtap[0m widgets with text "OK".
+[A[K        ✅  20. [33mtap[0m widgets with text "OK".
+        ⏳  21. [33mtap[0m widgets with text "OK".
+[A[K        ✅  21. [33mtap[0m widgets with text "OK".
+        ⏳  22. [36mwaitUntilVisible[0m widgets with key [<'activity_create.fueling_window_minus'>].
+[A[K        ❌  22. [36mwaitUntilVisible[0m widgets with key [<'activity_create.fueling_window_minus'>].
+        ⏳  23. [33mtap[0m widgets with key [<'activity_create.fueling_window_minus'>].
+[A[K        ✅  23. [33mtap[0m widgets with key [<'activity_create.fueling_window_minus'>].
+        ⏳  24. [33mtap[0m widgets with key [<'activity_create.fueling_window_minus'>].
+[A[K        ✅  24. [33mtap[0m widgets with key [<'activity_create.fueling_window_minus'>].
+        ⏳  25. [33mtap[0m widgets with key [<'activity_create.fueling_window_minus'>].
+[A[K        ✅  25. [33mtap[0m widgets with key [<'activity_create.fueling_window_minus'>].
+        ⏳  26. [33mtap[0m widgets with key [<'activity_create.fueling_window_minus'>].
+[A[K        ✅  26. [33mtap[0m widgets with key [<'activity_create.fueling_window_minus'>].
+        ⏳  27. [33mtap[0m widgets with key [<'activity_create.fueling_window_minus'>].
+[A[K        ✅  27. [33mtap[0m widgets with key [<'activity_create.fueling_window_minus'>].
+        ⏳  28. [33mtap[0m widgets with key [<'activity_create.fueling_window_minus'>].
+[A[K        ✅  28. [33mtap[0m widgets with key [<'activity_create.fueling_window_minus'>].
+        ⏳  29. [33mtap[0m widgets with key [<'activity_create.fueling_window_minus'>].
+[A[K        ✅  29. [33mtap[0m widgets with key [<'activity_create.fueling_window_minus'>].
+        ⏳  30. [33mtap[0m widgets with key [<'activity_create.fueling_window_minus'>].
+[A[K        ✅  30. [33mtap[0m widgets with key [<'activity_create.fueling_window_minus'>].
+        ⏳  31. [33mtap[0m widgets with key [<'activity_create.fueling_window_minus'>].
+[A[K        ✅  31. [33mtap[0m widgets with key [<'activity_create.fueling_window_minus'>].
+        ⏳  32. [33mtap[0m widgets with key [<'activity_create.fueling_window_minus'>].
+[A[K        ✅  32. [33mtap[0m widgets with key [<'activity_create.fueling_window_minus'>].
+        ⏳  33. [33mtap[0m widgets with key [<'activity_create.fueling_window_plus'>].
+[A[K        ✅  33. [33mtap[0m widgets with key [<'activity_create.fueling_window_plus'>].
+        ⏳  34. [32mscrollTo[0m widgets with key [<'activity_create.generate_plan_button'>].
+[A[K        ✅  34. [32mscrollTo[0m widgets with key [<'activity_create.generate_plan_button'>].
+        ⏳  35. [33mtap[0m widgets with key [<'activity_create.generate_plan_button'>] (considering only hit-testable widgets with a RenderBox).
+[A[K        ✅  35. [33mtap[0m widgets with key [<'activity_create.generate_plan_button'>] (considering only hit-testable widgets with a RenderBox).
+        ⏳  36. [36mwaitUntilVisible[0m widgets with key [<'adjust_macros.create_plan_button'>].
+[A[K        ✅  36. [36mwaitUntilVisible[0m widgets with key [<'adjust_macros.create_plan_button'>].
+        ⏳  37. [32mscrollTo[0m widgets with key [<'adjust_macros.create_plan_button'>].
+[A[K        ✅  37. [32mscrollTo[0m widgets with key [<'adjust_macros.create_plan_button'>].
+        ⏳  38. [33mtap[0m widgets with key [<'adjust_macros.create_plan_button'>] (considering only hit-testable widgets with a RenderBox).
+[A[K        ✅  38. [33mtap[0m widgets with key [<'adjust_macros.create_plan_button'>] (considering only hit-testable widgets with a RenderBox).
+        ⏳  39. [36mwaitUntilVisible[0m widgets with key [<'plan_detail.title'>].
+[A[K        ✅  39. [36mwaitUntilVisible[0m widgets with key [<'plan_detail.title'>].
+[A[K[A[K[A[K[A[K[A[K[A[K[A[K[A[K[A[K[A[K[A[K[A[K[A[K[A[K[A[K[A[K[A[K[A[K[A[K[A[K[A[K[A[K[A[K[A[K[A[K[A[K[A[K[A[K[A[K[A[K[A[K[A[K[A[K[A[K[A[K[A[K[A[K[A[K[A[K[A[K✅ recommendation H5: a <=30 min fueling window yields Top-Off only (no Meal or Snack) [90m(/flows/recommendation_stacking_flow_test.dart)[0m [90m(27s)[0m
+🧪 flows.recommendation_stacking_flow_test recommendation H5: a >=120 min fueling window stacks Full Meal + Snack + Top-Off
+        ⏳   1. [94misPermissionDialogVisible[0m [90m(native)[0m
+[A[K        ✅   1. [94misPermissionDialogVisible[0m [90m(native)[0m
+        ⏳   2. [33mtap[0m widgets with key [<'macro_dashboard.filter_all'>].
+[A[K        ✅   2. [33mtap[0m widgets with key [<'macro_dashboard.filter_all'>].
+        ⏳   3. [33mtap[0m widgets with key [<'kyle_tab_bar.item.timeline'>].
+[A[K        ✅   3. [33mtap[0m widgets with key [<'kyle_tab_bar.item.timeline'>].
+        ⏳   4. [36mwaitUntilVisible[0m widgets with key [<'macro_dashboard.add_activity'>].
+[A[K        ✅   4. [36mwaitUntilVisible[0m widgets with key [<'macro_dashboard.add_activity'>].
+        ⏳   5. [33mtap[0m widgets with key [<'macro_dashboard.add_activity'>].
+[A[K        ✅   5. [33mtap[0m widgets with key [<'macro_dashboard.add_activity'>].
+        ⏳   6. [36mwaitUntilVisible[0m widgets with key [<'activity_create.tab_running'>].
+[A[K        ✅   6. [36mwaitUntilVisible[0m widgets with key [<'activity_create.tab_running'>].
+        ⏳   7. [33mtap[0m widgets with key [<'activity_create.tab_running'>].
+[A[K        ✅   7. [33mtap[0m widgets with key [<'activity_create.tab_running'>].
+        ⏳   8. [36mwaitUntilVisible[0m widgets with key [<'activity_create.workout_name_field'>].
+[A[K        ✅   8. [36mwaitUntilVisible[0m widgets with key [<'activity_create.workout_name_field'>].
+        ⏳   9. [35menterText[0m widgets with key [<'activity_create.workout_name_field'>].
+[A[K        ✅   9. [35menterText[0m widgets with key [<'activity_create.workout_name_field'>].
+        ⏳  10. [36mwaitUntilVisible[0m widgets with key [<'activity_create.distance_field'>].
+[A[K        ✅  10. [36mwaitUntilVisible[0m widgets with key [<'activity_create.distance_field'>].
+        ⏳  11. [35menterText[0m widgets with key [<'activity_create.distance_field'>].
+[A[K        ✅  11. [35menterText[0m widgets with key [<'activity_create.distance_field'>].
+        ⏳  12. [36mwaitUntilVisible[0m widgets with key [<'activity_create.duration_hr_field'>].
+[A[K        ❌  12. [36mwaitUntilVisible[0m widgets with key [<'activity_create.duration_hr_field'>].
+        ⏳  13. [35menterText[0m widgets with key [<'activity_create.duration_hr_field'>].
+[A[K        ✅  13. [35menterText[0m widgets with key [<'activity_create.duration_hr_field'>].
+        ⏳  14. [36mwaitUntilVisible[0m widgets with key [<'activity_create.duration_mins_field'>].
+[A[K        ✅  14. [36mwaitUntilVisible[0m widgets with key [<'activity_create.duration_mins_field'>].
+        ⏳  15. [35menterText[0m widgets with key [<'activity_create.duration_mins_field'>].
+[A[K        ✅  15. [35menterText[0m widgets with key [<'activity_create.duration_mins_field'>].
+        ⏳  16. [36mwaitUntilVisible[0m widgets with key [<'activity_create.edit_datetime_button'>].
+[A[K        ❌  16. [36mwaitUntilVisible[0m widgets with key [<'activity_create.edit_datetime_button'>].
+        ⏳  17. [33mtap[0m widgets with key [<'activity_create.edit_datetime_button'>].
+[A[K        ✅  17. [33mtap[0m widgets with key [<'activity_create.edit_datetime_button'>].
+        ⏳  18. [33mtap[0m widgets with text "24".
+[A[K        ✅  18. [33mtap[0m widgets with text "24".
+        ⏳  19. [33mtap[0m widgets with text "OK".
+[A[K        ✅  19. [33mtap[0m widgets with text "OK".
+        ⏳  20. [33mtap[0m widgets with text "OK".
+[A[K        ✅  20. [33mtap[0m widgets with text "OK".
+        ⏳  21. [36mwaitUntilVisible[0m widgets with key [<'activity_create.fueling_window_minus'>].
+[A[K        ❌  21. [36mwaitUntilVisible[0m widgets with key [<'activity_create.fueling_window_minus'>].
+        ⏳  22. [33mtap[0m widgets with key [<'activity_create.fueling_window_minus'>].
+[A[K        ✅  22. [33mtap[0m widgets with key [<'activity_create.fueling_window_minus'>].
+        ⏳  23. [33mtap[0m widgets with key [<'activity_create.fueling_window_minus'>].
+[A[K        ✅  23. [33mtap[0m widgets with key [<'activity_create.fueling_window_minus'>].
+        ⏳  24. [33mtap[0m widgets with key [<'activity_create.fueling_window_minus'>].
+[A[K        ✅  24. [33mtap[0m widgets with key [<'activity_create.fueling_window_minus'>].
+        ⏳  25. [33mtap[0m widgets with key [<'activity_create.fueling_window_minus'>].
+[A[K        ✅  25. [33mtap[0m widgets with key [<'activity_create.fueling_window_minus'>].
+        ⏳  26. [33mtap[0m widgets with key [<'activity_create.fueling_window_minus'>].
+[A[K        ✅  26. [33mtap[0m widgets with key [<'activity_create.fueling_window_minus'>].
+        ⏳  27. [33mtap[0m widgets with key [<'activity_create.fueling_window_minus'>].
+[A[K        ✅  27. [33mtap[0m widgets with key [<'activity_create.fueling_window_minus'>].
+        ⏳  28. [33mtap[0m widgets with key [<'activity_create.fueling_window_minus'>].
+[A[K        ✅  28. [33mtap[0m widgets with key [<'activity_create.fueling_window_minus'>].
+        ⏳  29. [33mtap[0m widgets with key [<'activity_create.fueling_window_minus'>].
+[A[K        ✅  29. [33mtap[0m widgets with key [<'activity_create.fueling_window_minus'>].
+        ⏳  30. [33mtap[0m widgets with key [<'activity_create.fueling_window_minus'>].
+[A[K        ✅  30. [33mtap[0m widgets with key [<'activity_create.fueling_window_minus'>].
+        ⏳  31. [33mtap[0m widgets with key [<'activity_create.fueling_window_minus'>].
+[A[K        ✅  31. [33mtap[0m widgets with key [<'activity_create.fueling_window_minus'>].
+        ⏳  32. [33mtap[0m widgets with key [<'activity_create.fueling_window_plus'>].
+[A[K        ✅  32. [33mtap[0m widgets with key [<'activity_create.fueling_window_plus'>].
+        ⏳  33. [33mtap[0m widgets with key [<'activity_create.fueling_window_plus'>].
+[A[K        ✅  33. [33mtap[0m widgets with key [<'activity_create.fueling_window_plus'>].
+        ⏳  34. [33mtap[0m widgets with key [<'activity_create.fueling_window_plus'>].
+[A[K        ✅  34. [33mtap[0m widgets with key [<'activity_create.fueling_window_plus'>].
+        ⏳  35. [33mtap[0m widgets with key [<'activity_create.fueling_window_plus'>].
+[A[K        ✅  35. [33mtap[0m widgets with key [<'activity_create.fueling_window_plus'>].
+        ⏳  36. [33mtap[0m widgets with key [<'activity_create.fueling_window_plus'>].
+[A[K        ✅  36. [33mtap[0m widgets with key [<'activity_create.fueling_window_plus'>].
+        ⏳  37. [33mtap[0m widgets with key [<'activity_create.fueling_window_plus'>].
+[A[K        ✅  37. [33mtap[0m widgets with key [<'activity_create.fueling_window_plus'>].
+        ⏳  38. [33mtap[0m widgets with key [<'activity_create.fueling_window_plus'>].
+[A[K        ✅  38. [33mtap[0m widgets with key [<'activity_create.fueling_window_plus'>].
+        ⏳  39. [33mtap[0m widgets with key [<'activity_create.fueling_window_plus'>].
+[A[K        ✅  39. [33mtap[0m widgets with key [<'activity_create.fueling_window_plus'>].
+        ⏳  40. [32mscrollTo[0m widgets with key [<'activity_create.generate_plan_button'>].
+[A[K        ✅  40. [32mscrollTo[0m widgets with key [<'activity_create.generate_plan_button'>].
+        ⏳  41. [33mtap[0m widgets with key [<'activity_create.generate_plan_button'>] (considering only hit-testable widgets with a RenderBox).
+[A[K        ✅  41. [33mtap[0m widgets with key [<'activity_create.generate_plan_button'>] (considering only hit-testable widgets with a RenderBox).
+        ⏳  42. [36mwaitUntilVisible[0m widgets with key [<'adjust_macros.create_plan_button'>].
+[A[K        ✅  42. [36mwaitUntilVisible[0m widgets with key [<'adjust_macros.create_plan_button'>].
+        ⏳  43. [32mscrollTo[0m widgets with key [<'adjust_macros.create_plan_button'>].
+[A[K        ✅  43. [32mscrollTo[0m widgets with key [<'adjust_macros.create_plan_button'>].
+        ⏳  44. [33mtap[0m widgets with key [<'adjust_macros.create_plan_button'>] (considering only hit-testable widgets with a RenderBox).
+[A[K        ✅  44. [33mtap[0m widgets with key [<'adjust_macros.create_plan_button'>] (considering only hit-testable widgets with a RenderBox).
+        ⏳  45. [36mwaitUntilVisible[0m widgets with key [<'plan_detail.title'>].
+[A[K        ✅  45. [36mwaitUntilVisible[0m widgets with key [<'plan_detail.title'>].
+[A[K[A[K[A[K[A[K[A[K[A[K[A[K[A[K[A[K[A[K[A[K[A[K[A[K[A[K[A[K[A[K[A[K[A[K[A[K[A[K[A[K[A[K[A[K[A[K[A[K[A[K[A[K[A[K[A[K[A[K[A[K[A[K[A[K[A[K[A[K[A[K[A[K[A[K[A[K[A[K[A[K[A[K[A[K[A[K[A[K[A[K✅ recommendation H5: a >=120 min fueling window stacks Full Meal + Snack + Top-Off [90m(/flows/recommendation_stacking_flow_test.dart)[0m [90m(38s)[0m
+🧪 flows.settings_persist_flow_test settings — body composition weight persists across navigate-away and back
+        ⏳   1. [94misPermissionDialogVisible[0m [90m(native)[0m
+[A[K        ✅   1. [94misPermissionDialogVisible[0m [90m(native)[0m
+        ⏳   2. [33mtap[0m widgets with key [<'macro_dashboard.filter_all'>].
+[A[K        ✅   2. [33mtap[0m widgets with key [<'macro_dashboard.filter_all'>].
+        ⏳   3. [36mwaitUntilVisible[0m widgets with key [<'kyle_date_header.settings'>].
+[A[K        ✅   3. [36mwaitUntilVisible[0m widgets with key [<'kyle_date_header.settings'>].
+        ⏳   4. [33mtap[0m widgets with key [<'kyle_date_header.settings'>].
+[A[K        ✅   4. [33mtap[0m widgets with key [<'kyle_date_header.settings'>].
+        ⏳   5. [36mwaitUntilVisible[0m widgets with key [<'settings.profile_row'>].
+[A[K        ✅   5. [36mwaitUntilVisible[0m widgets with key [<'settings.profile_row'>].
+        ⏳   6. [32mscrollTo[0m widgets with key [<'settings.body_composition_row'>].
+[A[K        ✅   6. [32mscrollTo[0m widgets with key [<'settings.body_composition_row'>].
+        ⏳   7. [33mtap[0m widgets with key [<'settings.body_composition_row'>] (considering only hit-testable widgets with a RenderBox).
+[A[K        ✅   7. [33mtap[0m widgets with key [<'settings.body_composition_row'>] (considering only hit-testable widgets with a RenderBox).
+        ⏳   8. [36mwaitUntilVisible[0m widgets with key [<'body_composition.weight_field'>].
+[A[K        ✅   8. [36mwaitUntilVisible[0m widgets with key [<'body_composition.weight_field'>].
+        ⏳   9. [35menterText[0m widgets with key [<'body_composition.weight_field'>].
+[A[K        ✅   9. [35menterText[0m widgets with key [<'body_composition.weight_field'>].
+        ⏳  10. [36mwaitUntilVisible[0m widgets with key [<'nutrition_profile.save_button'>].
+[A[K        ✅  10. [36mwaitUntilVisible[0m widgets with key [<'nutrition_profile.save_button'>].
+        ⏳  11. [33mtap[0m widgets with key [<'nutrition_profile.save_button'>].
+[A[K        ✅  11. [33mtap[0m widgets with key [<'nutrition_profile.save_button'>].
+        ⏳  12. [36mwaitUntilVisible[0m widgets with key [<'nutrition_profile.back_button'>].
+[A[K        ✅  12. [36mwaitUntilVisible[0m widgets with key [<'nutrition_profile.back_button'>].
+        ⏳  13. [33mtap[0m widgets with key [<'nutrition_profile.back_button'>].
+[A[K        ✅  13. [33mtap[0m widgets with key [<'nutrition_profile.back_button'>].
+        ⏳  14. [36mwaitUntilVisible[0m widgets with key [<'settings.profile_row'>].
+[A[K        ✅  14. [36mwaitUntilVisible[0m widgets with key [<'settings.profile_row'>].
+        ⏳  15. [32mscrollTo[0m widgets with key [<'settings.body_composition_row'>].
+[A[K        ✅  15. [32mscrollTo[0m widgets with key [<'settings.body_composition_row'>].
+        ⏳  16. [33mtap[0m widgets with key [<'settings.body_composition_row'>] (considering only hit-testable widgets with a RenderBox).
+[A[K        ✅  16. [33mtap[0m widgets with key [<'settings.body_composition_row'>] (considering only hit-testable widgets with a RenderBox).
+        ⏳  17. [36mwaitUntilVisible[0m widgets with key [<'body_composition.weight_field'>].
+[A[K        ✅  17. [36mwaitUntilVisible[0m widgets with key [<'body_composition.weight_field'>].
+        ⏳  18. [35menterText[0m widgets with key [<'body_composition.weight_field'>].
+[A[K        ✅  18. [35menterText[0m widgets with key [<'body_composition.weight_field'>].
+        ⏳  19. [33mtap[0m widgets with key [<'nutrition_profile.save_button'>].
+[A[K        ✅  19. [33mtap[0m widgets with key [<'nutrition_profile.save_button'>].
+[A[K[A[K[A[K[A[K[A[K[A[K[A[K[A[K[A[K[A[K[A[K[A[K[A[K[A[K[A[K[A[K[A[K[A[K[A[K[A[K✅ settings — body composition weight persists across navigate-away and back [90m(/flows/settings_persist_flow_test.dart)[0m [90m(18s)[0m
+🧪 flows.settings_sweep_flow_test settings sweep — every top-level settings row opens and comes back
+        ⏳   1. [94misPermissionDialogVisible[0m [90m(native)[0m
+[A[K        ✅   1. [94misPermissionDialogVisible[0m [90m(native)[0m
+        ⏳   2. [33mtap[0m widgets with key [<'macro_dashboard.filter_all'>].
+[A[K        ✅   2. [33mtap[0m widgets with key [<'macro_dashboard.filter_all'>].
+        ⏳   3. [36mwaitUntilVisible[0m widgets with key [<'kyle_date_header.settings'>].
+[A[K        ✅   3. [36mwaitUntilVisible[0m widgets with key [<'kyle_date_header.settings'>].
+        ⏳   4. [33mtap[0m widgets with key [<'kyle_date_header.settings'>].
+[A[K        ✅   4. [33mtap[0m widgets with key [<'kyle_date_header.settings'>].
+        ⏳   5. [36mwaitUntilVisible[0m widgets with key [<'settings.title'>].
+[A[K        ✅   5. [36mwaitUntilVisible[0m widgets with key [<'settings.title'>].
+        ⏳   6. [33mtap[0m widgets with key [<'settings.profile_row'>].
+[A[K        ✅   6. [33mtap[0m widgets with key [<'settings.profile_row'>].
+        ⏳   7. [36mwaitUntilVisible[0m widgets with key [<'profile_edit.back_button'>].
+[A[K        ✅   7. [36mwaitUntilVisible[0m widgets with key [<'profile_edit.back_button'>].
+        ⏳   8. [36mwaitUntilVisible[0m widgets with key [<'profile_edit.back_button'>].
+[A[K        ✅   8. [36mwaitUntilVisible[0m widgets with key [<'profile_edit.back_button'>].
+        ⏳   9. [33mtap[0m widgets with key [<'profile_edit.back_button'>].
+[A[K        ✅   9. [33mtap[0m widgets with key [<'profile_edit.back_button'>].
+        ⏳  10. [36mwaitUntilVisible[0m widgets with key [<'settings.title'>].
+[A[K        ✅  10. [36mwaitUntilVisible[0m widgets with key [<'settings.title'>].
+        ⏳  11. [33mtap[0m widgets with key [<'settings.food_prefs_row'>].
+[A[K        ✅  11. [33mtap[0m widgets with key [<'settings.food_prefs_row'>].
+        ⏳  12. [36mwaitUntilVisible[0m widgets with key [<'food_prefs.title'>].
+[A[K        ✅  12. [36mwaitUntilVisible[0m widgets with key [<'food_prefs.title'>].
+        ⏳  13. [36mwaitUntilVisible[0m widgets with key [<'food_prefs.back_button'>].
+[A[K        ✅  13. [36mwaitUntilVisible[0m widgets with key [<'food_prefs.back_button'>].
+        ⏳  14. [33mtap[0m widgets with key [<'food_prefs.back_button'>].
+[A[K        ✅  14. [33mtap[0m widgets with key [<'food_prefs.back_button'>].
+        ⏳  15. [36mwaitUntilVisible[0m widgets with key [<'settings.title'>].
+[A[K        ✅  15. [36mwaitUntilVisible[0m widgets with key [<'settings.title'>].
+        ⏳  16. [33mtap[0m widgets with key [<'settings.sport_prefs_row'>].
+[A[K        ✅  16. [33mtap[0m widgets with key [<'settings.sport_prefs_row'>].
+        ⏳  17. [36mwaitUntilVisible[0m widgets with key [<'sport_prefs.title'>].
+[A[K        ✅  17. [36mwaitUntilVisible[0m widgets with key [<'sport_prefs.title'>].
+        ⏳  18. [36mwaitUntilVisible[0m widgets with key [<'sport_prefs.back_button'>].
+[A[K        ✅  18. [36mwaitUntilVisible[0m widgets with key [<'sport_prefs.back_button'>].
+        ⏳  19. [33mtap[0m widgets with key [<'sport_prefs.back_button'>].
+[A[K        ✅  19. [33mtap[0m widgets with key [<'sport_prefs.back_button'>].
+        ⏳  20. [36mwaitUntilVisible[0m widgets with key [<'settings.title'>].
+[A[K        ✅  20. [36mwaitUntilVisible[0m widgets with key [<'settings.title'>].
+        ⏳  21. [33mtap[0m widgets with key [<'settings.body_composition_row'>].
+[A[K        ✅  21. [33mtap[0m widgets with key [<'settings.body_composition_row'>].
+        ⏳  22. [36mwaitUntilVisible[0m widgets with key [<'nutrition_profile.title'>].
+[A[K        ✅  22. [36mwaitUntilVisible[0m widgets with key [<'nutrition_profile.title'>].
+        ⏳  23. [36mwaitUntilVisible[0m widgets with key [<'nutrition_profile.back_button'>].
+[A[K        ✅  23. [36mwaitUntilVisible[0m widgets with key [<'nutrition_profile.back_button'>].
+        ⏳  24. [33mtap[0m widgets with key [<'nutrition_profile.back_button'>].
+[A[K        ✅  24. [33mtap[0m widgets with key [<'nutrition_profile.back_button'>].
+        ⏳  25. [36mwaitUntilVisible[0m widgets with key [<'settings.title'>].
+[A[K        ✅  25. [36mwaitUntilVisible[0m widgets with key [<'settings.title'>].
+        ⏳  26. [33mtap[0m widgets with key [<'settings.nutrition_targets_row'>].
+[A[K        ✅  26. [33mtap[0m widgets with key [<'settings.nutrition_targets_row'>].
+        ⏳  27. [36mwaitUntilVisible[0m widgets with key [<'nutrition_targets.title'>].
+[A[K        ✅  27. [36mwaitUntilVisible[0m widgets with key [<'nutrition_targets.title'>].
+        ⏳  28. [36mwaitUntilVisible[0m widgets with key [<'nutrition_targets.back_button'>].
+[A[K        ✅  28. [36mwaitUntilVisible[0m widgets with key [<'nutrition_targets.back_button'>].
+        ⏳  29. [33mtap[0m widgets with key [<'nutrition_targets.back_button'>].
+[A[K        ✅  29. [33mtap[0m widgets with key [<'nutrition_targets.back_button'>].
+        ⏳  30. [36mwaitUntilVisible[0m widgets with key [<'settings.title'>].
+[A[K        ✅  30. [36mwaitUntilVisible[0m widgets with key [<'settings.title'>].
+        ⏳  31. [33mtap[0m widgets with key [<'settings.coach_connection_row'>].
+[A[K        ✅  31. [33mtap[0m widgets with key [<'settings.coach_connection_row'>].
+        ⏳  32. [36mwaitUntilVisible[0m widgets with key [<'coach_connection.title'>].
+[A[K        ✅  32. [36mwaitUntilVisible[0m widgets with key [<'coach_connection.title'>].
+        ⏳  33. [36mwaitUntilVisible[0m widgets with key [<'coach_connection.back_button'>].
+[A[K        ✅  33. [36mwaitUntilVisible[0m widgets with key [<'coach_connection.back_button'>].
+        ⏳  34. [33mtap[0m widgets with key [<'coach_connection.back_button'>].
+[A[K        ✅  34. [33mtap[0m widgets with key [<'coach_connection.back_button'>].
+        ⏳  35. [36mwaitUntilVisible[0m widgets with key [<'settings.title'>].
+[A[K        ✅  35. [36mwaitUntilVisible[0m widgets with key [<'settings.title'>].
+        ⏳  36. [33mtap[0m widgets with key [<'settings.connected_apps_row'>].
+[A[K        ✅  36. [33mtap[0m widgets with key [<'settings.connected_apps_row'>].
+        ⏳  37. [36mwaitUntilVisible[0m widgets with key [<'connected_apps.title'>].
+[A[K        ✅  37. [36mwaitUntilVisible[0m widgets with key [<'connected_apps.title'>].
+        ⏳  38. [36mwaitUntilVisible[0m widgets with key [<'connected_apps.back_button'>].
+[A[K        ✅  38. [36mwaitUntilVisible[0m widgets with key [<'connected_apps.back_button'>].
+        ⏳  39. [33mtap[0m widgets with key [<'connected_apps.back_button'>].
+[A[K        ✅  39. [33mtap[0m widgets with key [<'connected_apps.back_button'>].
+        ⏳  40. [36mwaitUntilVisible[0m widgets with key [<'settings.title'>].
+[A[K        ✅  40. [36mwaitUntilVisible[0m widgets with key [<'settings.title'>].
+        ⏳  41. [33mtap[0m widgets with key [<'settings.help_row'>].
+[A[K        ✅  41. [33mtap[0m widgets with key [<'settings.help_row'>].
+        ⏳  42. [36mwaitUntilVisible[0m widgets with key [<'help.title'>].
+[A[K        ✅  42. [36mwaitUntilVisible[0m widgets with key [<'help.title'>].
+        ⏳  43. [36mwaitUntilVisible[0m widgets with key [<'help.back_button'>].
+[A[K        ✅  43. [36mwaitUntilVisible[0m widgets with key [<'help.back_button'>].
+        ⏳  44. [33mtap[0m widgets with key [<'help.back_button'>].
+[A[K        ✅  44. [33mtap[0m widgets with key [<'help.back_button'>].
+        ⏳  45. [36mwaitUntilVisible[0m widgets with key [<'settings.title'>].
+[A[K        ✅  45. [36mwaitUntilVisible[0m widgets with key [<'settings.title'>].
+[A[K[A[K[A[K[A[K[A[K[A[K[A[K[A[K[A[K[A[K[A[K[A[K[A[K[A[K[A[K[A[K[A[K[A[K[A[K[A[K[A[K[A[K[A[K[A[K[A[K[A[K[A[K[A[K[A[K[A[K[A[K[A[K[A[K[A[K[A[K[A[K[A[K[A[K[A[K[A[K[A[K[A[K[A[K[A[K[A[K[A[K✅ settings sweep — every top-level settings row opens and comes back [90m(/flows/settings_sweep_flow_test.dart)[0m [90m(22s)[0m
+🧪 patrol_smoke_test app launches and renders at least one widget
+        ⏳   1. [94misPermissionDialogVisible[0m [90m(native)[0m
+[A[K        ✅   1. [94misPermissionDialogVisible[0m [90m(native)[0m
+[A[K[A[K✅ app launches and renders at least one widget [90m(/patrol_smoke_test.dart)[0m [90m(16s)[0m
+
+[1mTest summary:[0m
+📝 Total: 14
+✅ Successful: 13
+❌ Failed: 1
+  - build a meal from search, log it, see it on the timeline, then delete it [90m(/flows/meal_log_build_flow_test.dart)[0m
+⏩ Skipped: 0
+📊 Report: /Users/leemartin/development/mealvana_endurance-waves/testing-wave/03-the-patrol-suite-matches-the-app/build/ios_results_1790210303413.xcresult
+⏱️  Duration: 6m 55s
+
+✗ Failed to execute tests of app with entrypoint test_bundle.dart for iOS simulator on simulator wave-pool-1 (xcodebuild exited with code 65) (415.8s)
+Error: xcodebuild exited with code 65
+See the logs above to learn what happened. Also consider running with --verbose. If the logs still aren't useful, then it's a bug - please report it.
+exit 1

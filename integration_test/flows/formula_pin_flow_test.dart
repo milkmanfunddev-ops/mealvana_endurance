@@ -61,7 +61,7 @@ void main() {
   patrolTest(
     'pin a During formula, see it in pinned-only view, then unpin it',
     ($) async {
-      await launchApp();
+      await launchApp($);
       // Do NOT pumpAndSettle: startup may show a persistent spinner.
       await $.pump(const Duration(milliseconds: 500));
 
@@ -72,7 +72,7 @@ void main() {
         $,
         sentinel: const ValueKey('kyle_date_header.settings'),
       )) {
-        markTestSkipped(noAuthSkipMessage());
+        skipFlow(noAuthSkipMessage());
         return;
       }
 
@@ -131,7 +131,7 @@ void main() {
           _duringPinToggles(),
         ).waitUntilExists(timeout: const Duration(seconds: 20));
       } on Exception {
-        markTestSkipped(
+        skipFlow(
           'No During formulas in the library for this account, so there is '
           'nothing to pin. Seed one (or run formula_create_pin_flow_test, '
           'which creates its own) to exercise this flow.',

@@ -48,12 +48,12 @@ void main() {
   patrolTest(
     'barcode scanner opens from add-food and returns without stranding the user',
     ($) async {
-      await launchApp();
+      await launchApp($);
       // No pumpAndSettle: startup may show persistent spinners.
       await $.pump(const Duration(milliseconds: 500));
 
       if (!await ensureAuthenticated($)) {
-        markTestSkipped(noAuthSkipMessage());
+        skipFlow(noAuthSkipMessage());
         return;
       }
 

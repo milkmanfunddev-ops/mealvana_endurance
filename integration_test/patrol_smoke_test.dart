@@ -22,7 +22,7 @@ void main() {
     'app launches and renders at least one widget',
     ($) async {
       // Flavor-aware boot via the shared launcher (helpers/flow_launcher.dart).
-      await launchApp();
+      await launchApp($);
       await $.pump(const Duration(seconds: 5));
 
       // Assert *some* widget rendered. NOTE: `find.byType(Widget)` is wrong —

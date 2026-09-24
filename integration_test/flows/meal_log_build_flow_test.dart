@@ -56,12 +56,12 @@ void main() {
   patrolTest(
     'build a meal from search, log it, see it on the timeline, then delete it',
     ($) async {
-      await launchApp();
+      await launchApp($);
       // No pumpAndSettle: startup may show persistent spinners.
       await $.pump(const Duration(milliseconds: 500));
 
       if (!await ensureAuthenticated($)) {
-        markTestSkipped(noAuthSkipMessage());
+        skipFlow(noAuthSkipMessage());
         return;
       }
 
@@ -123,7 +123,7 @@ void main() {
         }
       }
       if (!found) {
-        markTestSkipped(
+        skipFlow(
           'No search results for "banana" — the food pool/catalog appears '
           'empty in this environment, cannot exercise the build flow.',
         );
@@ -222,7 +222,9 @@ void main() {
 
         // One food was added to the draft before logging, so the saved meal
         // must carry at least one component.
-        final components = row['components'];
+        // The foods live in `meal_logs.items` (the column was `components`
+        // when this flow was written; updated by testing-wave 03).
+        final components = row['items'];
         final count = components is List
             ? components.length
             : (components is String

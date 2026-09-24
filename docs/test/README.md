@@ -6,6 +6,13 @@
   the auto-discovery edge-fn runner, and the list of REAL bugs the suites currently
   expose (do not "fix" those tests). Supersedes the status claims in the 2026-06 docs
   below where they conflict.
+- **Bugs and follow-up tests now live in `.scratch/testing-wave/findings/`**, one file each
+  (index: `node scripts/testing-wave/findings.mjs index`). The old bug lists
+  (`BUGS_FOUND.md`, `BUG_REGRESSION_TRACKING.md`, the bug section of
+  `coverage-status-2026-07.md`) are superseded by it and no longer updated.
+- **Patrol:** `integration_test/README.md` lists the flows and helpers, the patrol 4.10.0 /
+  patrol_cli 4.8.0 pair, and how the M1 runner picks its targets
+  (`scripts/patrol-targets.mjs` + `integration_test/runner_exclusions.json`).
 
 ## 📋 Current Strategy & Plan (2026-06, START HERE)
 The authoritative, up-to-date testing docs (supersede the older `roadmap.md`,
@@ -14,7 +21,7 @@ The authoritative, up-to-date testing docs (supersede the older `roadmap.md`,
 - **`testing-build-plan-2026.md`** — the sequenced execution plan + **Progress Log (what's done / live-E2E findings / what remains)**. ← *latest status lives here.*
 - **`coverage-gaps-2026.md`** — grounded map of what is NOT yet tested (edge fns / Flutter services / widget / Patrol) + sequence to "test everything". ← *start here for new coverage.*
 - **`test-recommendations-2026.md`** — prioritized next tests (P0s) per layer.
-- **`BUGS_FOUND.md`** — bugs the suite has surfaced (all 17 from the 2026-06-25 sweep fixed).
+- **`BUGS_FOUND.md`** — superseded by `.scratch/testing-wave/findings/` (all 17 from the 2026-06-25 sweep fixed).
 - **`NEED_FROM_LEE.md`** — items that need a human (Sentry token, dev publishable key, etc.).
 - **`testing-roadmap-2026.md`** — the Patrol + edge-fn coverage map.
 - **`edge-function-test-plan-2026.md`** — the nutrition-engine unit-test plan (failure modes, real-catalog reality-check).
@@ -42,7 +49,7 @@ Current edge-fn suite: `supabase/functions/run-algorithm-tests.sh` (§1 = 15 det
 - Flutter tests: `test/` — CI runs `flutter test --exclude-tags="integration || e2e"` with NO path argument (pr-validation in `codemagic.yaml`), so the gate is exactly "whatever is in `test/`".
 - Edge function tests: `supabase/functions/**/*.test.ts`
 - Algorithm test runner: `supabase/functions/run-algorithm-tests.sh`
-- CI: `codemagic.yaml` (pr-validation = analyze + format + unit tests + algorithm tests; `integration-tests*` = Patrol; `web-e2e` = non-gating web boot), mirrored by `.github/workflows/tests-selfhosted.yml`.
+- CI: `codemagic.yaml` (pr-validation = analyze + format + unit tests + algorithm tests; `web-e2e` = non-gating web boot; its `integration-tests*` Patrol workflows have no triggers since 2026-08-20). Patrol runs locally or in `.github/workflows/tests-selfhosted.yml` on the M1.
 
 ## Runbook / Commands
 - Run all Flutter tests:

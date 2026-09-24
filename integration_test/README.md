@@ -37,7 +37,7 @@ commit it.
 # One flow (see each test file's header for its exact documented command)
 patrol test \
   --target integration_test/flows/events_crud_flow_test.dart \
-  --flavor dev \
+  --flavor dev --bundle-id com.milkman.mealvanaendurance.dev \
   --dart-define-from-file=.env.dev.local \
   --dart-define-from-file=secrets/integration_test.env \
   --device "iPhone 17 Pro"        # newest-SDK simulator (Patrol-on-iOS needs it)
@@ -45,7 +45,7 @@ patrol test \
 # Whole suite (builds the app once, runs every patrolTest under integration_test/)
 patrol test \
   --target integration_test \
-  --flavor dev \
+  --flavor dev --bundle-id com.milkman.mealvanaendurance.dev \
   --dart-define-from-file=.env.dev.local \
   --dart-define-from-file=secrets/integration_test.env \
   --device "iPhone 17 Pro"
@@ -53,71 +53,116 @@ patrol test \
 
 `secrets/integration_test.env` (gitignored) supplies `INTEGRATION_TEST_EMAIL` /
 `INTEGRATION_TEST_PASSWORD` for the email-login-backed flows. Without it,
-credentialed flows self-skip with a clear message rather than failing.
+credentialed flows self-skip with a clear message rather than failing. Pass
+`.env.dev.local` too: without it `TestConfig` falls back to built-in defaults,
+and its default dev anon key is stale (testing-wave Finding 02-007).
+
+**`--bundle-id` for dev.** `pubspec.yaml`'s `patrol.ios.bundle_id` is the prod
+id. A `--flavor dev` run installs `com.milkman.mealvanaendurance.dev`, so pass
+`--bundle-id com.milkman.mealvanaendurance.dev`; without it every native call
+(`$.native.*`, `$.platform.*` on the app) fails with "Application
+com.milkman.mealvanaendurance is not running" and xcodebuild exits 65.
 
 **iOS caveat:** OAuth flows that go through `ASWebAuthSession` (e.g. Google
 login) cannot be automated on iOS and self-skip. Those are exercised on Android.
 
+**Bundle order.** A multi-target run executes the files alphabetically in one
+app install, and the first flow that calls `ensureAuthenticated` leaves a
+session behind. The flows that need a clean install (see the exclusion list
+below) self-skip after that, so run them on their own after
+`xcrun simctl uninstall <udid> com.milkman.mealvanaendurance.dev`.
+
 ## CI (self-hosted M1 runner)
 
-`.github/workflows/tests-selfhosted.yml` is the primary gate — it runs on the
-Mac mini M1 self-hosted runner on every push and PR:
+`.github/workflows/tests-selfhosted.yml` is the only CI that runs this suite.
+It runs on the Mac mini M1 self-hosted runner on every push and PR:
 
-- job **`unit-web-deno`** — analyze, unit + widget tests, Deno algorithm tests,
+- job **`unit-web-deno`**: analyze, unit + widget tests, Deno algorithm tests,
   web e2e.
-- job **`integration-patrol-ios`** — the Patrol flows, listed explicitly as
-  repeated `--target` flags so the app is built **once** for all of them. Runs
-  *after* `unit-web-deno`: the box has 8 GB of RAM and cannot do both at once
-  without starving the runner agent into a "lost communication" failure.
+- job **`integration-patrol-ios`**: the Patrol flows in one `patrol test` call
+  with one `--target` per file, so the app is built **once** for all of them.
+  Runs *after* `unit-web-deno`: the box has 8 GB of RAM and cannot do both at
+  once without starving the runner agent into a "lost communication" failure.
 
-Three flows are deliberately excluded from that job: `google_login_flow_test`
-(interactive OAuth consent), `onboarding_signup_flow_test` (needs a clean
-install with no session), and `jade_chat_flow_test` (bills real LLM tokens and
-is non-deterministic). Run those by hand against a freshly-erased simulator.
+The job does not keep its own list. `scripts/patrol-targets.mjs` gives it
+every `*_test.dart` in `integration_test/` and `integration_test/flows/`,
+minus the files named in **`runner_exclusions.json`**, and the expected
+number of `patrolTest` cases across them. The job fails when fewer cases ran
+or any skipped. So:
 
-## CI (Codemagic, mac_mini_m2)
+- **A new flow joins the runner by existing.** Do not edit the workflow.
+- A flow that spends on AI, needs a clean install, or needs interactive OAuth
+  goes on `runner_exclusions.json` with a `reason` (`ai-spend`,
+  `clean-install`, `interactive-oauth`) and a `why`. An entry naming a file
+  that no longer exists fails the job.
+- A file that registers its cases in a loop declares the count with a
+  `// runner-cases: N` line (see `integrations_connect_flow_test.dart`).
+- **A skip must be visible.** Patrol's native harness reports a
+  `markTestSkipped` test as passed, and its `Skipped:` count stays 0. Flows
+  call `skipFlow(reason)` from `flow_launcher.dart` instead; the runner passes
+  `--dart-define=PATROL_FAIL_ON_SKIP=true`, which turns every skip into a
+  failure. Pass the same define locally when a skip must not look green.
+- **The account must hold live Pro (or be an Admin).** A signed-in account the
+  Gate keeps closed sits on the paywall, where `ensureAuthenticated` sees
+  neither the shell nor the welcome screen and the flow skips.
 
-Two workflows in `codemagic.yaml` run these on Apple-silicon Mac runners:
+```bash
+node scripts/patrol-targets.mjs targets    # what the job runs
+node scripts/patrol-targets.mjs count      # how many cases it expects
+node scripts/patrol-targets.mjs excluded   # what it leaves out, and why
+node --test test/scripts/patrol-targets.test.mjs
+```
 
-- **`integration-tests`** — auto-triggers on `release/*` pull requests. Installs
-  patrol_cli 4.8.0, writes `secrets/integration_test.env` from the
-  `INTEGRATION_TEST_ENV` secure var, boots a simulator, and runs the whole suite
-  via `patrol test --target integration_test`.
-- **`integration-test-quick`** — manual only. Runs a single flow selected by the
-  `TEST_FLOW` variable (default `events_crud_flow_test.dart`).
-
-> **One-time setup:** upload the contents of your local
-> `secrets/integration_test.env` as an `INTEGRATION_TEST_ENV` secure variable in
-> the Codemagic **mealvana_dev** variable group. Until then the credentialed
-> flows self-skip in CI.
+Codemagic's Patrol workflows (`integration-tests*` in `codemagic.yaml`) have
+had no triggers since 2026-08-20: Codemagic bills minutes and never runs this
+suite. Run it locally or on the M1.
 
 ## Flows
 
-| File | Covers |
-|------|--------|
-| `patrol_smoke_test.dart` | Toolchain smoke — app launches, one widget renders |
-| `flows/auth_flow_test.dart` | Auth entry points |
-| `flows/onboarding_signup_flow_test.dart` | New-user onboarding → email signup |
-| `flows/google_login_flow_test.dart` | Google OAuth (Android; self-skips on iOS) |
-| `flows/events_crud_flow_test.dart` | Event create → read → update → delete |
-| `flows/activities_crud_flow_test.dart` | Activity CRUD |
-| `flows/formula_create_pin_flow_test.dart` | Create + pin a formula |
-| `flows/formula_pin_flow_test.dart` | Pin an existing formula |
-| ~~`flows/fuel_timeline_flow_test.dart`~~ | RETIRED 2026-08-21 with the legacy Fuel Timeline tab (flag deleted; archived under `_archived/integration_test/`) |
-| `flows/meal_card_interaction_flow_test.dart` | Meal/activity card interactions — tap to edit, swipe to delete |
-| `flows/meal_log_build_flow_test.dart` | Build-a-meal: search → add → log → swipe-delete |
-| `flows/event_checklist_carbload_flow_test.dart` | Event checklist + carb-load |
-| `flows/integrations_connect_flow_test.dart` | Integration connect entry points |
-| `flows/settings_persist_flow_test.dart` | Settings persistence |
-| `flows/settings_sweep_flow_test.dart` | Settings screen sweep |
-| `flows/learn_flow_test.dart` | Learn tab |
-| `flows/paywall_render_flow_test.dart` | Paywall renders |
-| `flows/jade_chat_flow_test.dart` | Jade chat (LLM — excluded from the M1 job) |
+| File | Covers | Runner |
+|------|--------|--------|
+| `patrol_smoke_test.dart` | Toolchain smoke: the app launches, one widget renders | yes |
+| `flows/account_delete_flow_test.dart` | Sign up at `lee+e2e-*`, delete from the paywall ⋯ menu, sign up again as a new account | clean-install |
+| `flows/activities_crud_flow_test.dart` | Activity create → plan (deterministic macro edge function) → edit → delete | yes |
+| `flows/ai_coach_chat_flow_test.dart` | One turn in the Vana general chat (`/jade` redirects there) | ai-spend |
+| `flows/ai_credits_balance_flow_test.dart` | AI credits pill → top-up sheet resolves; buys nothing | yes |
+| `flows/auth_flow_test.dart` | Email login | yes |
+| `flows/barcode_scanner_entry_flow_test.dart` | Barcode scanner entry from the add-food sheet | yes |
+| `flows/brick_plan_flow_test.dart` | Brick workout create → plan → verify the stored legs → clean up | yes |
+| `flows/energy_breakdown_flow_test.dart` | Energy breakdown (`daily_macros` read path) | yes |
+| `flows/event_checklist_carbload_flow_test.dart` | Event → race-day checklist → carb-load entry | yes |
+| `flows/events_crud_flow_test.dart` | Event create → read → update → delete | yes |
+| `flows/formula_create_pin_flow_test.dart` | Personal formula create → add food → save → pin | yes |
+| `flows/formula_pin_conflict_flow_test.dart` | Pin conflict lifecycle | yes |
+| `flows/formula_pin_flow_test.dart` | Pin an existing formula | yes |
+| `flows/fueling_window_persistence_flow_test.dart` | A fueling window belongs to its activity across edits | yes |
+| `flows/google_login_flow_test.dart` | Google OAuth (Android; self-skips on iOS) | interactive-oauth |
+| `flows/integrations_connect_flow_test.dart` | Garmin / TrainingPeaks / FinalSurge connect entry points (3 cases) | clean-install |
+| `flows/learn_flow_test.dart` | Learn tab | yes |
+| `flows/macro_dashboard_flow_test.dart` | Macro dashboard walk | yes |
+| `flows/meal_card_interaction_flow_test.dart` | Meal/activity card: tap to edit, remove with Undo | yes |
+| `flows/meal_log_build_flow_test.dart` | Build-a-meal: search → add → log → delete (no AI) | yes |
+| `flows/meal_plan_build_flow_test.dart` | New Vana plan → confirm → shopping list → "Ate it" → a `meal_logs` row | ai-spend |
+| `flows/onboarding_signup_flow_test.dart` | Onboarding → email signup → the paywall's onboarding shape | clean-install |
+| `flows/pro_gate_flow_test.dart` | The app gate: shell, paywall, `/food` and `/vana` agree | yes |
+| `flows/recommendation_stacking_flow_test.dart` | Pre-workout occasion stacking (2 cases) | yes |
+| `flows/settings_persist_flow_test.dart` | Settings persistence | yes |
+| `flows/settings_sweep_flow_test.dart` | Every top-level settings screen opens without a crash | yes |
 
-Helpers live in `helpers/` (`flow_launcher.dart`, `test_config.dart`,
-`test_helpers.dart`, `onboarding_helper.dart`, `database_verification.dart`).
-`flow_launcher.dart` owns `launchApp()` / `ensureAuthenticated()` and the shared
-`authSentinel` (`kyle_tab_bar.item.timeline`) — prefer it over per-file auth walks.
+"Runner" is `yes` when the M1 job runs the file, otherwise the reason it is on
+`runner_exclusions.json`. The last result of each flow, and every problem a
+run found, live in the testing-wave folders:
+`.scratch/testing-wave/runs/03/results.md` and `.scratch/testing-wave/findings/`.
+
+Helpers in `helpers/`:
+
+| File | What it gives a flow |
+|------|----------------------|
+| `flow_launcher.dart` | `skipFlow()` (see above), `launchApp($)` (flavor-aware boot; answers the fresh-install notification prompt with Don't Allow), `ensureAuthenticated()`, `noAuthSkipMessage()`, the shared `authSentinel` (`kyle_tab_bar.item.timeline`), `ensureTimelineOnToday()`, `waitForOnTimeline()`, `revealCentered()`. Prefer it over per-file auth walks. |
+| `test_config.dart` | `TestConfig`: flavor-matched login credentials, the Supabase URL and anon key the probes use, timeouts, test data. |
+| `test_helpers.dart` | Finders, tap and wait helpers. |
+| `supabase_probe.dart` | `SupabaseProbe`: read-only PostgREST reads as the test user, to assert a write landed. |
+| `e2e_account.dart` | Throwaway `lee+e2e-*` accounts (`E2eAccount`, dev only via `e2eAccountsAllowed`): `onWelcomeScreen()`, `walkOnboardingToSignup()`, `signUpToPaywall()`, `deleteFromPaywallMenu()`, and `CodeProbe` for email codes. |
 
 ## Per-test timeouts: size them to the healthy run, not to fear
 
@@ -128,7 +173,8 @@ assertion that killed each one had already thrown within the first ~20 seconds.
 The remaining ~9½ minutes per failure is dead wall-clock after the body has
 finished.
 
-Meanwhile every *healthy* flow in that same run finished in **1–11 seconds**:
+Meanwhile every *healthy* flow in that same run finished in **1–11 seconds**
+(a 2026-07-31 measurement; `fuel_timeline` and `paywall_render` have since been retired):
 
 | flow | healthy |
 |------|---------|
@@ -149,15 +195,15 @@ timeout to "fix" a flake just makes the next real failure more expensive —
 bound the individual `waitUntilVisible` instead, which fails fast and says
 which finder gave up.
 
-The three flows excluded from the M1 job keep longer timeouts, because they
-genuinely wait on humans or LLMs: `google_login` (8 min), `onboarding_signup`
-(12 min), `jade_chat` (6 min).
+The flows excluded from the M1 job keep longer timeouts, because they
+genuinely wait on humans, signups or LLMs: `google_login` (8 min),
+`onboarding_signup` (12 min), `ai_coach_chat` (6 min).
 
 ## Troubleshooting
 
 | Symptom | Cause |
 |---------|-------|
-| `Version incompatibility detected!` | patrol_cli is not 4.4.0. Re-activate it pinned. |
+| `Version incompatibility detected!`, or undefined XCTest symbols in `PatrolImpl.o` | patrol_cli does not pair with the `patrol` package. For patrol 4.10.0 activate patrol_cli 4.8.0. |
 | `target lib/main_dev.dart is invalid` | `-t` was used as "entrypoint". For patrol_cli `-t` IS `--target`. Drop it. |
 | `Device iPhone … is not attached` | Simulator not booted, or the name does not exist locally (`xcrun simctl list devices available`). |
 | Every test reports "skipped" | `secrets/integration_test.env` missing or empty. |

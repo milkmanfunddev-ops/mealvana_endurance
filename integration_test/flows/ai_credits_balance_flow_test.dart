@@ -54,12 +54,12 @@ void main() {
   patrolTest(
     'token pill opens the top-up sheet and it resolves — no purchase made',
     ($) async {
-      await launchApp();
+      await launchApp($);
       // No pumpAndSettle: startup may show persistent spinners.
       await $.pump(const Duration(milliseconds: 500));
 
       if (!await ensureAuthenticated($)) {
-        markTestSkipped(noAuthSkipMessage());
+        skipFlow(noAuthSkipMessage());
         return;
       }
 
@@ -90,7 +90,7 @@ void main() {
         await $.pump(const Duration(milliseconds: 500));
       }
       if (!pillFound) {
-        markTestSkipped(
+        skipFlow(
           'tokens.balance_pill is absent — AI_CREDITS_ENABLED resolved false '
           'for this build. That is the exact condition that hid the paywall in '
           'Codemagic dev apps, so treat this skip as a finding, not as noise.',

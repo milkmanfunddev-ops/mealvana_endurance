@@ -44,12 +44,12 @@ void main() {
   patrolTest(
     'event race-day checklist + carb-loading entry render, then event deleted',
     ($) async {
-      await launchApp();
+      await launchApp($);
       // No pumpAndSettle: startup may show persistent spinners.
       await $.pump(const Duration(milliseconds: 500));
 
       if (!await ensureAuthenticated($)) {
-        markTestSkipped(noAuthSkipMessage());
+        skipFlow(noAuthSkipMessage());
         return;
       }
 
@@ -60,9 +60,14 @@ void main() {
       await $(
         const ValueKey('kyle_tab_bar.item.events'),
       ).tap(settlePolicy: SettlePolicy.noSettle);
+      // New Event sits at the end of the list, below the fold for an account
+      // with many events: wait for it to exist, then scroll it into view.
       await $(
         const ValueKey('my_events.new_event_button'),
-      ).waitUntilVisible(timeout: const Duration(seconds: 20));
+      ).waitUntilExists(timeout: const Duration(seconds: 20));
+      await $(
+        const ValueKey('my_events.new_event_button'),
+      ).scrollTo(settlePolicy: SettlePolicy.noSettle);
       await $(
         const ValueKey('my_events.new_event_button'),
       ).tap(settlePolicy: SettlePolicy.noSettle);

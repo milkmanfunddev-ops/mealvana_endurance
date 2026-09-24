@@ -150,12 +150,12 @@ Future<bool> _generateRunPlanWithWindow(
   required int plusStepsFromFloor,
   required String expectWindowLabel,
 }) async {
-  await launchApp();
+  await launchApp($);
   // Do NOT pumpAndSettle: startup may show a persistent spinner.
   await $.pump(const Duration(milliseconds: 500));
 
   if (!await ensureAuthenticated($)) {
-    markTestSkipped(noAuthSkipMessage());
+    skipFlow(noAuthSkipMessage());
     return false;
   }
 

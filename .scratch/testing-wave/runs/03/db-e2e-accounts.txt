@@ -1,0 +1,2 @@
+{"id":"5d1e75f7-79e5-4323-abba-6e66a190c481","email":"lee+e2e-signup-1790215646705@rightpathprogramming.com","created_at":"2026-09-24 02:07:41.213784+00","confirmed":true,"onboarding_completed":true,"gut_training_level":"high","sweat_rate":"heavy","has_overrides":false,"surveys":1}
+{"id":"b8f90d7b-f29d-4979-8d13-0682345fc234","email":"lee+e2e-signup-1790216303921@rightpathprogramming.com","created_at":"2026-09-24 02:18:38.313141+00","confirmed":true,"onboarding_completed":true,"gut_training_level":"high","sweat_rate":"heavy","has_overrides":false,"surveys":1}

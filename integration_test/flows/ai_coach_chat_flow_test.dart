@@ -1,30 +1,27 @@
-/// Mealvana AI coach chat flow under **Patrol** — open /jade, send one short
-/// message, and verify a real assistant response arrives.
+/// Mealvana AI chat flow under **Patrol**: open the Vana general chat, send
+/// one short message, and verify a real answer arrives.
 ///
-/// Entry point: the `/jade` route is feature-gated by
-/// `appConfig.describeMealEnabled` (DESCRIBE_MEAL_ENABLED in the flavor's
-/// dotenv) — the router redirect bounces /jade to '/' when the flag is off,
-/// and the AiCoachBanner (the only in-UI entry, `ai_coach.coach_banner`) is not
-/// currently mounted anywhere. So: tap the banner if it happens to exist,
-/// otherwise push '/jade' through the app's GoRouter; if the chat screen
-/// never appears the flag is off for this flavor and the test self-skips.
+/// History: this flow drove the old Jade coach screen (`ai_coach.*` keys).
+/// `/jade` now redirects to `/vana?mode=general` (the jade-chat edge function
+/// is the Vana general alias), so the flow drives the Vana chat screen
+/// (`meal_planning.*` keys). Updated by testing-wave 03 (mp-623).
 ///
 /// Flow:
 ///   PROD guard: markTestSkipped on prod (never burn prod AI spend)
 ///   launchApp → ensureAuthenticated (reuse session, else email login)
-///     → open /jade (banner tap or router push)
-///     → chat screen renders (ai_coach.chat_screen) — else skip
-///     → count existing user/assistant bubbles
-///     → type 'hi' (ai_coach.input_field) → send (ValueKey('send'))
-///     → user bubble count grows (send committed)
-///     → poll up to 60 s for the assistant bubble count to grow
-///       (ai_coach.message_assistant_* — a REAL round-trip through the jade-chat
-///        edge function, not just a button existing)
+///     → router.push('/jade') and assert it lands on the Vana chat screen
+///       (meal_planning.vana_chat_screen), which proves the redirect
+///     → wait for any opener to finish (an empty conversation drafts one)
+///     → note the highest message index on screen
+///     → type 'hi' (meal_planning.chat_input) → send (meal_planning.chat_send)
+///     → a message one past that index appears (the user turn)
+///     → poll up to 60 s for a message two past it and for streaming to end
+///       (a REAL round-trip through vana-chat, not just a button existing)
 ///     → back out of the chat.
 ///
-/// Note: an empty conversation may trigger Mealvana AI's proactive opener, which
-/// also adds an assistant message — the assertions are count-deltas on BOTH
-/// roles, so the opener alone cannot green-light a failed send.
+/// AI SPEND: one model turn per run (plus an opener when the conversation is
+/// empty). It is on integration_test/runner_exclusions.json, so the M1 job
+/// never runs it; a testing wave records it against its cost counter.
 ///
 /// Run (dev only):
 ///   patrol test --target integration_test/flows/ai_coach_chat_flow_test.dart \
@@ -42,119 +39,114 @@ import 'package:patrol/patrol.dart';
 import '../helpers/flow_launcher.dart';
 import '../helpers/test_config.dart';
 
-Finder _bubbles(String rolePrefix) => find.byWidgetPredicate((w) {
-  final key = w.key;
-  return key is ValueKey<String> && key.value.startsWith(rolePrefix);
-});
+const _chatScreen = ValueKey('meal_planning.vana_chat_screen');
+const _input = ValueKey('meal_planning.chat_input');
+const _send = ValueKey('meal_planning.chat_send');
+const _openerLoading = ValueKey('meal_planning.opener_loading');
+const _messagePrefix = 'meal_planning.chat_message_';
 
-Finder _userBubbles() => _bubbles('ai_coach.message_user_');
-Finder _assistantBubbles() => _bubbles('ai_coach.message_assistant_');
+/// The highest `chat_message_<n>` index built on screen, or -1.
+int _lastMessageIndex() {
+  var last = -1;
+  for (final e in find
+      .byWidgetPredicate((w) {
+        final key = w.key;
+        return key is ValueKey<String> && key.value.startsWith(_messagePrefix);
+      })
+      .evaluate()) {
+    final key = e.widget.key! as ValueKey<String>;
+    final n = int.tryParse(key.value.substring(_messagePrefix.length)) ?? -1;
+    if (n > last) last = n;
+  }
+  return last;
+}
+
+/// True while the send button shows its streaming spinner.
+bool _streaming() => find
+    .descendant(
+      of: find.byKey(_send),
+      matching: find.byType(CircularProgressIndicator),
+    )
+    .evaluate()
+    .isNotEmpty;
 
 void main() {
   patrolTest(
-    'AI coach chat — send a message and receive an assistant response',
+    'AI chat: the jade route opens the Vana general chat, a message gets an answer',
     ($) async {
       if (TestConfig.isProd) {
-        markTestSkipped(
-          'Mealvana AI chat calls the jade-chat edge function on every send — '
-          'skipped on prod to avoid burning real AI spend.',
+        skipFlow(
+          'The Vana chat calls vana-chat on every send; skipped on prod to '
+          'avoid burning real AI spend.',
         );
         return;
       }
 
-      await launchApp();
+      await launchApp($);
       // No pumpAndSettle: startup may show persistent spinners.
       await $.pump(const Duration(milliseconds: 500));
 
       if (!await ensureAuthenticated($)) {
-        markTestSkipped(noAuthSkipMessage());
+        skipFlow(noAuthSkipMessage());
         return;
       }
 
-      // ---- 1. Open /jade ----------------------------------------------------
-      if ($(const ValueKey('ai_coach.coach_banner')).exists) {
-        await $(
-          const ValueKey('ai_coach.coach_banner'),
-        ).tap(settlePolicy: SettlePolicy.noSettle);
-      } else {
-        // No banner mounted — drive the app's own router. The redirect still
-        // applies, so a disabled flag bounces this push back to '/'.
-        final context = $.tester.element(find.byKey(authSentinel).first);
-        GoRouter.of(context).push('/jade');
-      }
-      await $.pump(const Duration(milliseconds: 400));
-
-      var chatVisible = false;
-      for (var i = 0; i < 30; i++) {
-        await $.pump(const Duration(milliseconds: 500));
-        if ($(const ValueKey('ai_coach.chat_screen')).exists) {
-          chatVisible = true;
-          break;
-        }
-      }
-      if (!chatVisible) {
-        markTestSkipped(
-          'Mealvana AI entry not available in this flavor '
-          '(describeMealEnabled is off — /jade redirected away).',
-        );
-        return;
-      }
-
-      // The input row renders outside the async history load, so it is
-      // available as soon as the screen mounts.
-      await $(
-        const ValueKey('ai_coach.input_field'),
-      ).waitUntilVisible(timeout: const Duration(seconds: 20));
-
-      // Give the history load a moment so the pre-send counts are stable
-      // (bubbles only render once the controller reaches its data state).
-      await $.pump(const Duration(seconds: 3));
-      final userBefore = _userBubbles().evaluate().length;
-      final assistantBefore = _assistantBubbles().evaluate().length;
-
-      // ---- 2. Send 'hi' -------------------------------------------------------
-      await $(
-        const ValueKey('ai_coach.input_field'),
-      ).enterText('hi', settlePolicy: SettlePolicy.noSettle);
-      await $.pump(const Duration(milliseconds: 300));
-      await $(const ValueKey('send')).tap(settlePolicy: SettlePolicy.noSettle);
-      await $.pump(const Duration(milliseconds: 500));
-
-      // The user bubble lands synchronously with the send.
-      var userGrew = false;
-      for (var i = 0; i < 20; i++) {
-        await $.pump(const Duration(milliseconds: 500));
-        if (_userBubbles().evaluate().length > userBefore) {
-          userGrew = true;
-          break;
-        }
-      }
-      expect(
-        userGrew,
-        isTrue,
-        reason: 'Sending should append a user bubble to the chat history.',
+      // ---- 1. /jade lands on the Vana general chat ------------------------
+      final context = $.tester.element(find.byKey(authSentinel).first);
+      GoRouter.of(context).push('/jade');
+      await $(_chatScreen).waitUntilVisible(
+        timeout: const Duration(seconds: 20),
       );
+      await $(_input).waitUntilVisible(timeout: const Duration(seconds: 20));
 
-      // ---- 3. Poll up to 60 s for an assistant response ----------------------
-      var assistantGrew = false;
+      // An empty conversation drafts an opener first; let it finish so the
+      // index read below is stable.
       for (var i = 0; i < 120; i++) {
         await $.pump(const Duration(milliseconds: 500));
-        if (_assistantBubbles().evaluate().length > assistantBefore) {
-          assistantGrew = true;
+        if (!$(_openerLoading).exists && !_streaming()) break;
+      }
+      await $.pump(const Duration(seconds: 1));
+      final before = _lastMessageIndex();
+
+      // ---- 2. Send 'hi' ---------------------------------------------------
+      await $(_input).enterText('hi', settlePolicy: SettlePolicy.noSettle);
+      await $.pump(const Duration(milliseconds: 300));
+      await $(_send).tap(settlePolicy: SettlePolicy.noSettle);
+
+      var userLanded = false;
+      for (var i = 0; i < 20; i++) {
+        await $.pump(const Duration(milliseconds: 500));
+        if (_lastMessageIndex() >= before + 1) {
+          userLanded = true;
           break;
         }
       }
       expect(
-        assistantGrew,
+        userLanded,
         isTrue,
-        reason:
-            'An assistant response bubble should arrive within 60 s of '
-            'sending — the jade-chat round-trip failed or timed out.',
+        reason: 'Sending should append the user turn to the chat.',
       );
 
-      // ---- 4. Back out of the chat -------------------------------------------
+      // ---- 3. Poll up to 60 s for Vana's answer ---------------------------
+      var answered = false;
+      for (var i = 0; i < 120; i++) {
+        await $.pump(const Duration(milliseconds: 500));
+        if (_lastMessageIndex() >= before + 2 && !_streaming()) {
+          answered = true;
+          break;
+        }
+      }
+      expect(
+        answered,
+        isTrue,
+        reason:
+            'An answer should arrive and finish streaming within 60 s of '
+            'sending; the vana-chat round-trip failed or timed out.',
+      );
+
+      // ---- 4. Back out of the chat ----------------------------------------
       try {
-        await $.tester.tap(find.byTooltip('Back').first);
+        GoRouter.of($.tester.element(find.byKey(_chatScreen).first)).pop();
         await $.pump(const Duration(milliseconds: 500));
       } catch (e) {
         // ignore: avoid_print

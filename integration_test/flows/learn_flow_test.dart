@@ -39,12 +39,12 @@ void main() {
   patrolTest(
     'learn tab — education list renders and the first lesson screen opens',
     ($) async {
-      await launchApp();
+      await launchApp($);
       // No pumpAndSettle: startup may show persistent spinners.
       await $.pump(const Duration(milliseconds: 500));
 
       if (!await ensureAuthenticated($)) {
-        markTestSkipped(noAuthSkipMessage());
+        skipFlow(noAuthSkipMessage());
         return;
       }
 
@@ -77,7 +77,7 @@ void main() {
         }
       }
       if (!cardFound) {
-        markTestSkipped(
+        skipFlow(
           'No free lessons available in this environment — the Learn list '
           'rendered its empty state, nothing to open.',
         );

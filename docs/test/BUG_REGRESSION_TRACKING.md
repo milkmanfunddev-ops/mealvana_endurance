@@ -1,5 +1,9 @@
 # Bug Regression Tracking for Integration Tests
 
+> **Superseded (2026-09-23) by the Findings folder.** Bugs, SSOT clashes and follow-up tests are
+> now one file each in `.scratch/testing-wave/findings/` (index: `node scripts/testing-wave/findings.mjs index`).
+> This list is kept for history and is no longer updated; do not add to it.
+
 **Purpose:** This document tracks bugs discovered during testing that need regression test coverage to prevent reoccurrence.
 
 **Last Updated:** 2025-12-18

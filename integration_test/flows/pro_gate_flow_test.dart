@@ -88,11 +88,11 @@ void main() {
   patrolTest(
     'App gate — the shell, the paywall and the food and vana routes agree',
     ($) async {
-      await launchApp();
+      await launchApp($);
       await $.pump(const Duration(milliseconds: 500));
 
       if (!await ensureAuthenticated($)) {
-        markTestSkipped(noAuthSkipMessage());
+        skipFlow(noAuthSkipMessage());
         return;
       }
 

@@ -26,12 +26,42 @@ import 'test_config.dart';
 /// Boots the app for the flavor this run targets. Call once per test, then
 /// pump briefly — do NOT pumpAndSettle (startup may show a persistent
 /// spinner); [ensureAuthenticated] uses explicit visibility gates instead.
-Future<void> launchApp() async {
+///
+/// Also answers the notification permission prompt a fresh install shows
+/// at startup (see [answerStartupPermissionPrompt]).
+Future<void> launchApp(PatrolIntegrationTester $) async {
   _testErrorHandler = FlutterError.onError;
   if (TestConfig.isProd) {
     await prod.main();
   } else {
     await dev.main();
+  }
+  await answerStartupPermissionPrompt($);
+}
+
+bool _startupPromptAnswered = false;
+
+/// A fresh install asks for notification permission at startup (the
+/// deferred `NotificationService.initialize` calls OneSignal's
+/// `requestPermission`). The iOS alert sits over the app until someone
+/// answers it, and while it was up in testing-wave 03's first run no flow
+/// reached the welcome screen or the tabs shell. Answer it with
+/// "Don't Allow" (flows never need a push) the first time a run launches the
+/// app; iOS then never asks again for that install, so later launches skip
+/// the wait. A run on a simulator that already answered costs [wait] once.
+Future<void> answerStartupPermissionPrompt(
+  PatrolIntegrationTester $, {
+  Duration wait = const Duration(seconds: 10),
+}) async {
+  if (_startupPromptAnswered) return;
+  _startupPromptAnswered = true;
+  try {
+    if (await $.platform.mobile.isPermissionDialogVisible(timeout: wait)) {
+      await $.platform.mobile.denyPermission();
+    }
+  } catch (e) {
+    // ignore: avoid_print
+    print('answerStartupPermissionPrompt: no prompt answered ($e)');
   }
 }
 
@@ -64,6 +94,26 @@ void restoreTestErrorHandler() {
 /// merged into the Fuel Timeline; `calendar.settings_button` is hidden on
 /// tab 0.)
 const ValueKey<String> authSentinel = ValueKey('kyle_tab_bar.item.timeline');
+
+/// True when the run asks for every skip to fail instead
+/// (`--dart-define=PATROL_FAIL_ON_SKIP=true`; the M1 runner sets it).
+const bool failOnSkip = bool.fromEnvironment('PATROL_FAIL_ON_SKIP');
+
+/// Skips the running flow with [reason], the way `markTestSkipped` does, or
+/// fails it when [failOnSkip] is set.
+///
+/// Why: Patrol's native harness reports a `markTestSkipped` test as passed
+/// (its summary counts it under Successful, and `Skipped:` stays 0), so a
+/// flow that verified nothing looked green to the runner's "no skips" check
+/// (testing-wave Finding 03-001). Flows call this instead of
+/// `markTestSkipped` so a run that must not skip can say so. Callers still
+/// `return` after it.
+void skipFlow(String reason) {
+  if (failOnSkip) {
+    fail('Skipped, and this run does not allow skips: $reason');
+  }
+  markTestSkipped(reason);
+}
 
 /// Ensures the app is signed in and the tabs shell is visible.
 ///

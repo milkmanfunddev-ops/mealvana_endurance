@@ -1,5 +1,9 @@
 # Bugs Found by the Test Suite
 
+> **Superseded (2026-09-23) by the Findings folder.** Bugs, SSOT clashes and follow-up tests are
+> now one file each in `.scratch/testing-wave/findings/` (index: `node scripts/testing-wave/findings.mjs index`).
+> This list is kept for history and is no longer updated; do not add to it.
+
 Living list of bugs/issues surfaced while building the widget smoke suite +
 edge-fn tests (2026-06-25 onward). The widget smoke tests are deliberately
 designed to FIND bugs: every crash, render overflow, infinite loader,

@@ -106,24 +106,24 @@ void main() {
     'build a meal plan with Vana, confirm it, and log a meal from the plan',
     ($) async {
       if (TestConfig.isProd) {
-        markTestSkipped(
+        skipFlow(
           'Every turn of this flow calls the vana-chat / vana-action edge '
           'functions — skipped on prod to avoid burning real AI spend.',
         );
         return;
       }
 
-      await launchApp();
+      await launchApp($);
       await $.pump(const Duration(milliseconds: 500));
 
       if (!await ensureAuthenticated($)) {
-        markTestSkipped(noAuthSkipMessage());
+        skipFlow(noAuthSkipMessage());
         return;
       }
 
       // ---- 1. Food tab -------------------------------------------------
       if (!$(_foodTab).exists) {
-        markTestSkipped(
+        skipFlow(
           'No Food tab: this build has PRO_GATE_ENABLED=true and the tester '
           'has no active Pro entitlement. The gate itself is covered by '
           'pro_gate_flow_test.dart.',
@@ -177,7 +177,7 @@ void main() {
           _pickerCards(),
           timeout: const Duration(minutes: 2),
         )) {
-          markTestSkipped(
+          skipFlow(
             'Vana returned no meal picker within 2 minutes — a model or '
             'rate-limit outage, not a client regression. The parsing of every '
             'part kind is pinned by the frozen fixtures in '
@@ -229,6 +229,8 @@ void main() {
 
       // ---- 4. Confirm (draft plans only) -------------------------------
       if ($(_confirm).exists) {
+        // Confirm sits under the plan list, below the fold for a long plan.
+        await $(_confirm).scrollTo(settlePolicy: SettlePolicy.noSettle);
         await $(_confirm).tap(settlePolicy: SettlePolicy.noSettle);
         // confirm_plan is remote-ack: the button is only gone once the plan
         // has come back confirmed, so its disappearance IS the ack.
@@ -281,11 +283,12 @@ void main() {
       final probe = await SupabaseProbe.signIn();
       final before = probe == null ? const [] : await _planMealLogs(probe);
 
+      await $(_planTiles().first).scrollTo(settlePolicy: SettlePolicy.noSettle);
       await $(_planTiles().first).tap(settlePolicy: SettlePolicy.noSettle);
       await $.pump(const Duration(seconds: 1));
 
       if (!$(_ateIt).exists) {
-        markTestSkipped(
+        skipFlow(
           'The tile sheet offers no "Ate it": every serving of this plan meal '
           'is already logged (servingsLeft == 0). Re-run against a fresh plan.',
         );
@@ -295,7 +298,7 @@ void main() {
       await $.pump(const Duration(seconds: 5));
 
       if (probe == null) {
-        markTestSkipped(
+        skipFlow(
           'No Supabase probe session (INTEGRATION_TEST credentials absent) — '
           'the UI leg passed but the meal_logs row could not be verified.',
         );
