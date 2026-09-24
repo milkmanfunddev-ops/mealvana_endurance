@@ -11,9 +11,9 @@
 
 **Touches:** ticket 09's lapsed account
 
-- [ ] Runs by the runbook: a slot taken and released, the console saved to the run folder, a look-around on every screen visited, every problem written as a Finding and nothing fixed.
-- [ ] Uses the lapsed account from ticket 09.
-- [ ] After buying: the Gate opens, RevenueCat and the Entitlement row agree on the new expiry, and a plan and a logged meal made before the lapse are still there.
-- [ ] The account is deleted in the app at the end and marked deleted in the credentials file.
+- [x] Runs by the runbook: a slot taken and released, the console saved to the run folder, a look-around on every screen visited, every problem written as a Finding and nothing fixed.
+- [x] Uses the lapsed account from ticket 09.
+- [x] After buying: the Gate opens, RevenueCat and the Entitlement row agree on the new expiry, and a plan and a logged meal made before the lapse are still there.
+- [x] The account is deleted in the app at the end and marked deleted in the credentials file.
 
 Next: /implement-lee testing-wave

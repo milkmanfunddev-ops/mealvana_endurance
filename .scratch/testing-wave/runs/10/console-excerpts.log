@@ -1,0 +1,74 @@
+2026-09-24 09:18:57.528854-0500 0xa2a768   Default     0x0                  55368  0    Runner: (Flutter) flutter: GoRouter: INFO: setting initial location /
+2026-09-24 09:18:58.473323-0500 0xa2a768   Default     0x0                  55368  0    Runner: (Flutter) flutter: ✅ Schema validation passed (40 tables verified)
+2026-09-24 09:18:58.569954-0500 0xa2a768   Default     0x0                  55368  0    Runner: (Flutter) flutter: [RevenueCatService] configured {store: test_store}
+2026-09-24 09:18:58.580780-0500 0xa2a768   Default     0x0                  55368  0    Runner: (Flutter) flutter: [SubscriptionService] customer info updated {active: true, expires_at: 2027-09-15T19:39:14.000Z}
+2026-09-24 09:18:58.614225-0500 0xa2a768   Default     0x0                  55368  0    Runner: (Flutter) flutter: GoRouter: INFO: redirecting to RouteMatchList(/welcome)
+2026-09-24 09:18:58.614426-0500 0xa2a768   Default     0x0                  55368  0    Runner: (Flutter) flutter: GoRouter: INFO: redirecting to RouteMatchList(/welcome)
+2026-09-24 09:19:27.360439-0500 0xa2a768   Default     0x0                  55368  0    Runner: (Flutter) flutter: 📊 [ANALYTICS] welcome_login_tapped {}
+2026-09-24 09:19:27.361176-0500 0xa2a768   Default     0x0                  55368  0    Runner: (Flutter) flutter: GoRouter: INFO: pushing /auth/post-onboarding?mode=login
+2026-09-24 09:19:27.396301-0500 0xa2a768   Default     0x0                  55368  0    Runner: (Flutter) flutter: 📊 [ANALYTICS] screen_viewed {screen_name: Post-Onboarding Auth, mode: login}
+2026-09-24 09:19:43.034391-0500 0xa2a768   Default     0x0                  55368  0    Runner: (Flutter) flutter: GoRouter: INFO: pushing /auth/email-login
+2026-09-24 09:19:43.043078-0500 0xa2a768   Default     0x0                  55368  0    Runner: (Flutter) flutter: 📊 [ANALYTICS] screen_viewed {screen_name: Email Login}
+2026-09-24 09:20:09.804991-0500 0xa2a768   Default     0x0                  55368  0    Runner: (Flutter) flutter: 📊 [ANALYTICS] auth_flow_started {provider: email, source: post_onboarding_login}
+2026-09-24 09:20:10.473677-0500 0xa2a768   Default     0x0                  55368  0    Runner: (Flutter) flutter: [SubscriptionService] customer info updated {active: true, expires_at: 2027-09-15T19:39:14.000Z}
+2026-09-24 09:20:10.731840-0500 0xa2a768   Default     0x0                  55368  0    Runner: (Flutter) flutter: [SubscriptionService] customer info updated {active: false, expires_at: 2026-09-24T12:56:29.000Z}
+2026-09-24 09:20:10.733155-0500 0xa2a768   Default     0x0                  55368  0    Runner: (Flutter) flutter: [RevenueCatService] logged in
+2026-09-24 09:20:10.747577-0500 0xa2a768   Default     0x0                  55368  0    Runner: (Flutter) flutter: [SubscriptionService] customer info fetched {active: false, expires_at: 2026-09-24T12:56:29.000Z, is_trial: false}
+2026-09-24 09:20:10.903201-0500 0xa2a768   Default     0x0                  55368  0    Runner: (Flutter) flutter: 📊 [ANALYTICS] email_sign_in_success {user_id: d88b5741-f2f2-455c-b2dc-c346d904b01b, migrated_data: false}
+2026-09-24 09:20:10.903717-0500 0xa2a768   Debug       0x0                  55368  0    Runner: (CoreFoundation) [com.apple.defaults:User Defaults] CFPrefsPlistSource<0x600002c0c500> (Domain: com.milkman.mealvanaendurance.dev, User: kCFPreferencesCurrentUser, ByHost: No, Container: (null), Contents Need Refresh: No) skipping setting already-present value for key flutter.last_sync_timestamp_d88b5741-f2f2-455c-b2dc-c346d904b01b
+    "flutter.users_last_sync" = "2026-09-24T09:20:11.097271";
+    "flutter.activities_last_sync" = "2026-09-24T09:20:11.252906";
+    "flutter.integrations_last_sync" = "2026-09-24T09:20:11.275141";
+    "flutter.last_sync_timestamp_d88b5741-f2f2-455c-b2dc-c346d904b01b" = "2026-09-24T14:20:11.848Z";
+2026-09-24 09:20:12.021818-0500 0xa2a768   Default     0x0                  55368  0    Runner: (Flutter) flutter: 📊 [ANALYTICS] auth_flow_completed {provider: email, source: post_onboarding_login}
+2026-09-24 09:20:12.030594-0500 0xa2a768   Default     0x0                  55368  0    Runner: (Flutter) flutter: [SubscriptionService] customer info updated {active: false, expires_at: 2026-09-24T12:56:29.000Z}
+2026-09-24 09:20:12.035064-0500 0xa2a768   Default     0x0                  55368  0    Runner: (Flutter) flutter: GoRouter: INFO: popping /welcome
+2026-09-24 09:20:12.249384-0500 0xa2a768   Default     0x0                  55368  0    Runner: (Flutter) flutter: [SubscriptionService] customer info fetched {active: false, expires_at: 2026-09-24T12:56:29.000Z, is_trial: false}
+2026-09-24 09:20:12.260288-0500 0xa2a768   Default     0x0                  55368  0    Runner: (Flutter) flutter: GoRouter: INFO: going to /main
+2026-09-24 09:20:12.261892-0500 0xa2a768   Default     0x0                  55368  0    Runner: (Flutter) flutter: GoRouter: INFO: redirecting to RouteMatchList(/paywall)
+2026-09-24 09:20:12.383798-0500 0xa2a768   Default     0x0                  55368  0    Runner: (Flutter) flutter: [RevenueCatService] offerings served {offerings: default(2), credits(3), current: default}
+2026-09-24 09:20:12.384571-0500 0xa2a768   Default     0x0                  55368  0    Runner: (Flutter) flutter: [SubscriptionService] offerings fetched {current: default, available: default,credits}
+2026-09-24 09:20:52.423874-0500 0xa2a768   Default     0x0                  55368  0    Runner: (Flutter) flutter: [RevenueCatService] logged in
+2026-09-24 09:20:52.438481-0500 0xa2a768   Default     0x0                  55368  0    Runner: (Flutter) flutter: [RevenueCatService] purchase started {sku: mealvana_pro_monthly}
+2026-09-24 09:21:01.498806-0500 0xa2a768   Default     0x0                  55368  0    Runner: (Flutter) flutter: [SubscriptionService] customer info updated {active: true, expires_at: 2026-09-24T14:26:00.000Z}
+2026-09-24 09:21:01.507057-0500 0xa2a768   Default     0x0                  55368  0    Runner: (Flutter) flutter: GoRouter: INFO: redirecting to RouteMatchList(/main)
+2026-09-24 09:21:01.508878-0500 0xa2a768   Default     0x0                  55368  0    Runner: (Flutter) flutter: [RevenueCatService] purchase succeeded {sku: mealvana_pro_monthly}
+2026-09-24 09:21:01.622261-0500 0xa2a768   Default     0x0                  55368  0    Runner: (Flutter) flutter: [SubscriptionService] customer info fetched {active: true, expires_at: 2026-09-24T14:26:00.000Z, is_trial: false}
+    "flutter.saved_meals_last_sync" = "2026-09-24T09:21:59.459633";
+    "flutter.user_memories_last_sync" = "2026-09-24T09:21:59.466826";
+    "flutter.meal_logs_last_sync" = "2026-09-24T09:21:59.572221";
+    "flutter.meal_plans_last_sync" = "2026-09-24T09:21:59.905914";
+2026-09-24 09:24:33.043766-0500 0xa2a768   Default     0x0                  55368  0    Runner: (Flutter) flutter: GoRouter: INFO: pushing /settings
+2026-09-24 09:24:36.955923-0500 0xa2a768   Default     0x0                  55368  0    Runner: (Flutter) flutter: 📊 [ANALYTICS] settings_subscription_tapped {}
+2026-09-24 09:28:48.910992-0500 0xa2a768   Default     0x0                  55368  0    Runner: (Flutter) flutter: 📊 [ANALYTICS] settings_delete_account_tapped {}
+2026-09-24 09:28:50.447160-0500 0xa2a768   Default     0x0                  55368  0    Runner: (Flutter) flutter: 📊 [ANALYTICS] user_signed_out {timestamp: 2026-09-24T09:28:50.446993, was_onboarding_signout: false}
+    "flutter.users_last_sync" = nil;
+    "flutter.foods_last_sync" = nil;
+2026-09-24 09:28:50.452470-0500 0xa2a768   Default     0x0                  55368  0    Runner: (Flutter) flutter: [SubscriptionService] customer info updated {active: true, expires_at: 2026-09-24T14:26:00.000Z}
+2026-09-24 09:28:50.467738-0500 0xa2a768   Default     0x0                  55368  0    Runner: (Flutter) flutter: GoRouter: INFO: redirecting to RouteMatchList(/welcome)
+    "flutter.carb_loading_foods_last_sync" = nil;
+    "flutter.activities_last_sync" = nil;
+    "flutter.events_last_sync" = nil;
+    "flutter.feedback_last_sync" = nil;
+    "flutter.food_preferences_last_sync" = nil;
+    "flutter.user_foods_last_sync" = nil;
+    "flutter.integrations_last_sync" = nil;
+    "flutter.coaches_last_sync" = nil;
+    "flutter.coach_athlete_relationships_last_sync" = nil;
+    "flutter.carb_loading_plans_last_sync" = nil;
+    "flutter.carb_loading_days_last_sync" = nil;
+    "flutter.carb_loading_day_meals_last_sync" = nil;
+    "flutter.coach_messages_last_sync" = nil;
+    "flutter.template_foods_last_sync" = nil;
+    "flutter.templates_last_sync" = nil;
+    "flutter.during_workout_templates_last_sync" = nil;
+    "flutter.post_workout_templates_last_sync" = nil;
+    "flutter.pre_workout_templates_last_sync" = nil;
+    "flutter.personal_templates_last_sync" = nil;
+    "flutter.formula_pins_last_sync" = nil;
+    "flutter.onboarding_surveys_last_sync" = nil;
+    "flutter.personal_formulas_last_sync" = nil;
+    "flutter.meal_logs_last_sync" = nil;
+    "flutter.saved_meals_last_sync" = nil;
+    "flutter.meal_plans_last_sync" = nil;
+    "flutter.user_memories_last_sync" = nil;
