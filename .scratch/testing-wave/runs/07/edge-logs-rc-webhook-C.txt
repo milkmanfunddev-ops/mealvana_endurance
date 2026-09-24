@@ -1,0 +1,5 @@
+## logs table, rc-webhook lines for account C (UTC)
+2026-09-24T11:31:57.077000 [rc-webhook] INITIAL_PURCHASE: active_until=2026-09-24T11:36:56.226Z period=NORMAL for 6f9ea9ac-e299-494a-9adb-bd63bd48d1b7
+2026-09-24T11:31:57.203000 [rc-webhook] INITIAL_PURCHASE: allowance 4000000 → 6f9ea9ac-e299-494a-9adb-bd63bd48d1b7 ({"balance":4000000,"granted":true,"allowance":4000000,"forfeited":0,"allowance_expires_at":"2026-09-24T11:36:56
+2026-09-24T11:39:05.028000 [rc-webhook] RENEWAL: active_until=2026-09-24T11:41:56.226Z period=NORMAL for 6f9ea9ac-e299-494a-9adb-bd63bd48d1b7
+2026-09-24T11:39:05.150000 [rc-webhook] RENEWAL: allowance 4000000 → 6f9ea9ac-e299-494a-9adb-bd63bd48d1b7 ({"balance":4000000,"granted":true,"allowance":4000000,"forfeited":4000000,"allowance_expires_at":"2026-09-24T11:41:56.22

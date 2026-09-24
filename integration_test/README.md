@@ -147,6 +147,7 @@ suite. Run it locally or on the M1.
 | `flows/onboarding_signup_flow_test.dart` | Onboarding → email signup → the paywall's onboarding shape | clean-install |
 | `flows/pro_gate_flow_test.dart` | The app gate: shell, paywall, `/food` and `/vana` agree | yes |
 | `flows/redeem_code_flow_test.dart` | A new `lee+e2e-*` athlete redeems from the paywall ⋯ menu: a made-up and an overlong code are refused as not found with the sheet open, DEVCOACH30 opens a pending pairing, a second DEVCOACH30 is refused; then deletes itself (mp-458, mp-535, mp-598) | clean-install |
+| `flows/restore_purchases_flow_test.dart` | A new `lee+e2e-*` athlete taps Restore purchases in the paywall ⋯ menu: the nothing-found message, still on the paywall, no `user_entitlements` row, Manage still hidden; then deletes itself (mp-494). The reinstall itself is agent-only (testing-wave 07) | clean-install |
 | `flows/recommendation_stacking_flow_test.dart` | Pre-workout occasion stacking (2 cases) | yes |
 | `flows/settings_persist_flow_test.dart` | Settings persistence | yes |
 | `flows/settings_sweep_flow_test.dart` | Every top-level settings screen opens without a crash | yes |
