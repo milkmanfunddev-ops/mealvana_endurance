@@ -1,0 +1,28 @@
+# 05-final at 2026-09-24T16:54:26Z
+## shopping_lists
+{"id":"9bdc9556-f8b5-4c5f-8a77-b5ae70cb24d3","plan_id":"54a02440-8b6d-43ac-a1b9-6ce10a47fd74","name":"Week of 2026-09-20","created_at":"2026-09-24 14:23:37.547094+00","updated_at":"2026-09-24 14:23:37.707+00","confirmed_at":null,"items":6,"checked":0}
+{"id":"adc5b2de-67ca-4a99-adc3-8d9f826bf2fc","plan_id":"15b6b4f4-3a46-4581-826b-f957fd8000a5","name":"Week of 2026-09-20","created_at":"2026-09-22 12:08:33.567054+00","updated_at":"2026-09-22 12:08:47.119+00","confirmed_at":null,"items":22,"checked":0}
+{"id":"e4d6e247-41ce-491a-a537-f386939e86b6","plan_id":"6f365c30-b359-4d7c-a477-7bbc8b7e7450","name":"Week of 2026-09-20","created_at":"2026-09-22 11:59:23.570205+00","updated_at":"2026-09-22 11:59:24.303+00","confirmed_at":null,"items":9,"checked":0}
+{"id":"90c2fefc-50f7-4534-bf05-e2e1189c1d01","plan_id":null,"name":"List 2026-09-19","created_at":"2026-09-19 16:20:00.22745+00","updated_at":"2026-09-19 20:21:33.227+00","confirmed_at":null,"items":9,"checked":6}
+{"id":"debb5576-5acf-44dd-a144-afbddc66dddd","plan_id":"fc9687ff-fd4f-4fd7-9b34-64c4626a47d9","name":"Week of 2026-09-13","created_at":"2026-09-17 00:52:47.289701+00","updated_at":"2026-09-17 00:52:52.122+00","confirmed_at":null,"items":3,"checked":0}
+{"id":"77fd387c-b32d-4c6c-b529-6776fd7d05ee","plan_id":"f2c0bc78-4b63-478f-8710-14c4c1247d2e","name":"Week of 2026-09-13","created_at":"2026-09-16 18:46:53.211259+00","updated_at":"2026-09-17 00:27:10.771+00","confirmed_at":"2026-09-17 00:27:10.771+00","items":24,"checked":0}
+{"id":"f53e980b-e8e0-4333-a9d8-a1a2000e63f4","plan_id":"f9f6f432-2b11-455e-910f-db99fbeb352e","name":"Week of 2026-09-13","created_at":"2026-09-17 00:26:34.466007+00","updated_at":"2026-09-17 13:59:12.87+00","confirmed_at":null,"items":8,"checked":0}
+{"id":"23a6ab6c-8b3a-4d77-a117-a7ad146ad945","plan_id":null,"name":"List 2026-09-16","created_at":"2026-09-16 18:39:10.90779+00","updated_at":"2026-09-16 18:39:10.90779+00","confirmed_at":null,"items":0,"checked":0}
+{"id":"d907ba91-aa88-4219-8b3a-eeaf5c0da637","plan_id":"4e29032c-5373-4031-81eb-2f48bbc10b1f","name":"Week of 2026-09-13","created_at":"2026-09-16 16:11:53.642761+00","updated_at":"2026-09-16 18:38:49.139+00","confirmed_at":"2026-09-16 18:38:49.139+00","items":18,"checked":0}
+{"id":"c1961185-a11f-4245-ac66-39c8875c3c81","plan_id":"7b25ed93-80f6-438a-996d-47c3324c8d6e","name":"Week of 2026-09-13","created_at":"2026-09-16 18:38:26.260792+00","updated_at":"2026-09-16 18:38:45.115+00","confirmed_at":null,"items":14,"checked":0}
+{"id":"f7eb5cc7-a242-4d3b-a780-161ce729566a","plan_id":null,"name":"List 2026-09-16","created_at":"2026-09-16 16:12:29.891152+00","updated_at":"2026-09-16 16:12:29.891152+00","confirmed_at":null,"items":0,"checked":0}
+{"id":"7ed03528-3ab7-4e85-a776-69039d253f84","plan_id":"6e167344-b36c-4f1e-ac67-e3a9658beae8","name":"Week of 2026-09-13","created_at":"2026-09-16 14:49:15.042327+00","updated_at":"2026-09-16 16:11:18.927+00","confirmed_at":"2026-09-16 16:11:18.927+00","items":16,"checked":0}
+{"id":"2c62b069-9226-44f4-b7c6-e1e0d55899be","plan_id":"9a60cc00-684a-4321-a8dc-70a46575b625","name":"Week of 2026-09-13","created_at":"2026-09-16 16:11:05.383469+00","updated_at":"2026-09-16 16:11:13.839+00","confirmed_at":null,"items":14,"checked":0}
+## orphan shopping_items (list gone)
+[{"count":0}]
+## meal_plans (non-archived + this week)
+{"id":"be6abf2f-881b-478d-9b4b-b09afac3b9a2","status":"confirmed","week_start":"2026-09-20","shopping_len":0,"updated_at":"2026-09-24 16:53:19.994+00"}
+{"id":"54a02440-8b6d-43ac-a1b9-6ce10a47fd74","status":"archived","week_start":"2026-09-20","shopping_len":6,"updated_at":"2026-09-24 14:53:15.809846+00"}
+{"id":"15b6b4f4-3a46-4581-826b-f957fd8000a5","status":"archived","week_start":"2026-09-20","shopping_len":22,"updated_at":"2026-09-24 01:10:06.794578+00"}
+{"id":"b82409d9-a8b8-440d-9f4e-f25262f8a73a","status":"archived","week_start":"2026-09-20","shopping_len":0,"updated_at":"2026-09-24 01:10:06.794578+00"}
+{"id":"6f365c30-b359-4d7c-a477-7bbc8b7e7450","status":"archived","week_start":"2026-09-20","shopping_len":9,"updated_at":"2026-09-24 01:10:06.794578+00"}
+{"id":"fc9687ff-fd4f-4fd7-9b34-64c4626a47d9","status":"draft","week_start":"2026-09-13","shopping_len":3,"updated_at":"2026-09-17 00:52:52.159+00"}
+{"id":"f2c0bc78-4b63-478f-8710-14c4c1247d2e","status":"confirmed","week_start":"2026-09-13","shopping_len":24,"updated_at":"2026-09-17 00:27:10.739218+00"}
+{"id":"4e29032c-5373-4031-81eb-2f48bbc10b1f","status":"confirmed","week_start":"2026-09-13","shopping_len":18,"updated_at":"2026-09-16 18:39:19.682+00"}
+{"id":"6e167344-b36c-4f1e-ac67-e3a9658beae8","status":"confirmed","week_start":"2026-09-13","shopping_len":16,"updated_at":"2026-09-16 16:11:37.283+00"}
+{"id":"a5b4c73c-dd65-433d-8141-207deba7e1a0","status":"confirmed","week_start":"2026-09-06","shopping_len":13,"updated_at":"2026-09-11 15:15:14.853949+00"}

@@ -11,9 +11,9 @@
 
 **Touches:** the dev test account's shopping lists
 
-- [ ] Runs by the runbook: a slot taken and released, the console saved to the run folder, a look-around on every screen visited, every problem written as a Finding and nothing fixed.
-- [ ] Uses the entitled dev test account from the credentials file; no new account.
-- [ ] Rows for each list are checked by SQL after each action.
-- [ ] Deleting the list tied to the confirmed plan is tried and its result recorded.
+- [x] Runs by the runbook: a slot taken and released, the console saved to the run folder, a look-around on every screen visited, every problem written as a Finding and nothing fixed.
+- [x] Uses the entitled dev test account from the credentials file; no new account.
+- [x] Rows for each list are checked by SQL after each action.
+- [x] Deleting the list tied to the confirmed plan is tried and its result recorded.
 
 Next: /implement-lee testing-wave

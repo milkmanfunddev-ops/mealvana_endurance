@@ -1,0 +1,6 @@
+2026-09-24 11:49:42.361784-0500 0xaa7e21   Default     0x0                  6518   0    Runner: (Flutter) flutter: ❌ Token refresh failed: TrainingPeaksApiException: Token refresh failed (status: 400)
+2026-09-24 11:49:42.447065-0500 0xaa7e21   Default     0x0                  6518   0    Runner: (Flutter) flutter: ❌ Token refresh failed: TrainingPeaksApiException: Token refresh failed (status: 400)
+2026-09-24 11:49:42.456132-0500 0xaa7e21   Default     0x0                  6518   0    Runner: (Flutter) flutter: \^[[38;5;208m│ ⚠️ [INTEGRATION_SYNC] Integration sync reported failure for training_peaks\^[[0m
+2026-09-24 11:49:42.456278-0500 0xaa7e21   Default     0x0                  6518   0    Runner: (Flutter) flutter: ❌ Integration sync failed for training_peaks: Token expired. Please reconnect.
+2026-09-24 11:49:42.715456-0500 0xaa7e21   Default     0x0                  6518   0    Runner: (Flutter) flutter: \^[[38;5;208m│ ⚠️ [INTEGRATION_SYNC] Integration sync reported failure for vdot\^[[0m
+2026-09-24 11:49:42.715581-0500 0xaa7e21   Default     0x0                  6518   0    Runner: (Flutter) flutter: ❌ Integration sync failed for vdot: Please reconnect your V.O2 account
