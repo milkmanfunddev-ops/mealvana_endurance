@@ -11,9 +11,9 @@
 
 **Touches:** the dev test account's Vana conversations (read only)
 
-- [ ] Runs by the runbook: a slot taken and released, the console saved to the run folder, a look-around on every screen visited, every problem written as a Finding and nothing fixed.
-- [ ] Uses the entitled dev test account from the credentials file; no new account.
-- [ ] No new plan is generated.
-- [ ] The turns on screen equal the stored messages for that conversation by SQL (count and order).
+- [x] Runs by the runbook: a slot taken and released, the console saved to the run folder, a look-around on every screen visited, every problem written as a Finding and nothing fixed.
+- [x] Uses the entitled dev test account from the credentials file; no new account.
+- [x] No new plan is generated.
+- [x] The turns on screen equal the stored messages for that conversation by SQL (count and order).
 
 Next: /implement-lee testing-wave
