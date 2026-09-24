@@ -22,11 +22,12 @@ Each entry: what went wrong or cost time, where it was seen, and the suggested f
   must pick one that is not null. Suggested fix: one line in ticket 31's retest and in the
   ticket-writing notes.
 
+## Done
+
 - **#45 reaching Conversations costs an opener (wave 12).** The only way to the conversation list
   is Ask Vana, which spends a general opener ($0.02) that no COST kind counts (12-004 raised the
   gap). Suggested fix: a `COST spend WAVE chat NN` kind with its own cap.
-
-## Done
+  **Done (before wave 15):** `cost.mjs` has a `chat` kind, cap 5 a wave; runbook step 5 names it.
 
 - **#46 a harness fix made after `wave --open` misses the wave (wave 14).** The lead built netcut
   (#36) before opening but committed it at the close, so the worktrees, cut from the wave's base, did

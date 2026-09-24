@@ -1,17 +1,17 @@
 #!/usr/bin/env node
-// Testing-wave cost caps: at most three new Vana plans and five AI logging calls per wave,
-// across all agents (spec, "Cost caps per wave"). An agent spends BEFORE the step; a refusal
+// Testing-wave cost caps: at most three new Vana plans, five AI logging calls and five Vana chat
+// calls (an opener or a turn that is not a plan) per wave, across all agents (spec, "Cost caps per wave"). An agent spends BEFORE the step; a refusal
 // means it does not run the step and writes a followup-test Finding instead.
 //
 // CLI (state in $TESTING_WAVE_STATE, default <tmpdir>/mealvana-testing-wave):
-//   node cost.mjs spend <wave> plan|logging <ticket>   -> exit 0 spent, exit 3 refused (cap reached)
+//   node cost.mjs spend <wave> plan|logging|chat <ticket> -> exit 0 spent, exit 3 refused (cap reached)
 //   node cost.mjs status <wave>
 
 import { resolve } from 'node:path';
 import { fileURLToPath } from 'node:url';
 import { stateDir, withJson } from './state.mjs';
 
-export const CAPS = { plan: 3, logging: 5 };
+export const CAPS = { plan: 3, logging: 5, chat: 5 };
 const FILE = 'costs.json';
 
 /** Record one spend, or refuse it if the wave already used its cap for that kind. */
@@ -44,7 +44,7 @@ if (process.argv[1] && resolve(process.argv[1]) === fileURLToPath(import.meta.ur
     const s = spent(wave);
     for (const k of Object.keys(CAPS)) process.stdout.write(`${k}: ${s[k].length}/${CAPS[k]}${s[k].length ? ` (${s[k].map(x => x.ticket).join(', ')})` : ''}\n`);
   } else {
-    process.stderr.write('usage: cost.mjs spend <wave> plan|logging <ticket> | status <wave>\n');
+    process.stderr.write('usage: cost.mjs spend <wave> plan|logging|chat <ticket> | status <wave>\n');
     process.exit(64);
   }
 }

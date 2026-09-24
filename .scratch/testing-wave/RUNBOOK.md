@@ -97,10 +97,11 @@ ticket says so.
   `new`); type it with `CRED type`. Change the row as the run changes the account (`CRED update
   <address> --state paid --bought monthly --when <UTC>`; `--new-password` for a reset, after
   `CRED file` has kept the old one if the run still checks it).
-- Before a step that generates a new Vana plan or makes an AI logging call, spend first:
+- Before a step that generates a new Vana plan, makes an AI logging call or opens a Vana chat
+  (Ask Vana's opener or a chat turn that is not a plan, the only way to Conversations), spend first:
 
   ```
-  COST spend WAVE plan NN          # or: COST spend WAVE logging NN
+  COST spend WAVE plan NN          # or: COST spend WAVE logging NN, COST spend WAVE chat NN
   ```
 
   Exit 3 means the wave's cap is used up: skip the step and write a followup-test Finding for it.

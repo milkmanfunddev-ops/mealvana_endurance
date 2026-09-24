@@ -1,6 +1,6 @@
 // node --test test/scripts/testing-wave/*.test.mjs   (Node 22 takes files or globs, not a folder)
 //
-// The per-wave cost caps: three new Vana plans, five AI logging calls.
+// The per-wave cost caps: three new Vana plans, five AI logging calls, five Vana chat calls.
 import { test } from 'node:test';
 import assert from 'node:assert/strict';
 import { spawnSync } from 'node:child_process';
@@ -13,8 +13,8 @@ import { spend, spent, CAPS } from '../../../scripts/testing-wave/cost.mjs';
 const cli = join(dirname(fileURLToPath(import.meta.url)), '../../../scripts/testing-wave/cost.mjs');
 const state = () => mkdtempSync(join(tmpdir(), 'tw-cost-'));
 
-test('the caps are three plans and five logging calls', () => {
-  assert.deepEqual(CAPS, { plan: 3, logging: 5 });
+test('the caps are three plans, five logging calls and five chat calls', () => {
+  assert.deepEqual(CAPS, { plan: 3, logging: 5, chat: 5 });
 });
 
 test('the fourth new plan in a wave is refused, across tickets', () => {
