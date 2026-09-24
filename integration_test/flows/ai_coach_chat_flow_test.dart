@@ -82,7 +82,7 @@ void main() {
         return;
       }
 
-      await launchApp();
+      await launchApp($);
       // No pumpAndSettle: startup may show persistent spinners.
       await $.pump(const Duration(milliseconds: 500));
 
