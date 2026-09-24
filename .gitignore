@@ -1,6 +1,8 @@
 # Miscellaneous
 *.class
 *.log
+# Testing-wave run logs are evidence Findings cite; the runbook's token scan runs before they are committed.
+!.scratch/testing-wave/runs/**/*.log
 *.pyc
 *.swp
 .DS_Store

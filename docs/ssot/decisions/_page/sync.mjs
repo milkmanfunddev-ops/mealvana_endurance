@@ -35,6 +35,7 @@
 //   node sync.mjs stale <proposals.md> [<ssot.md>] [--screens <screens.json>]  -> every picture in use with its age and whether its screen's code moved on
 //   node sync.mjs refresh <feature> <proposals.md> <ssot.md> [--screens <screens.json>] [--only <key,key>]  -> retake every stale picture once, in place; cards on a golden move to the capture; --only retakes those screens whether stale or not
 //   node sync.mjs wave <feature> <issues dir> [--branch <b>]  -> the frontier: done, building, blocked, uncommitted ticket files, and branch + worktree + renderings per wave ticket
+//   node sync.mjs wave <feature> <issues dir> --only 06,07     -> only those frontier tickets (refused if one is not on it); --max N takes the lowest N
 //   node sync.mjs wave <feature> <issues dir> --open           -> the same, then commits the ticket files with their in-progress marks and logs the wave (base = that commit)
 //   node sync.mjs wave <feature> <issues dir> --close <n> [--merged NN,NN] [--failed NN,NN] [--suite green|red]  -> close the wave with elapsed time; merged tickets become done, every other wave ticket ready-for-agent again
 //   node sync.mjs touched-screens --since <commit> [<file>...]  -> registry screens drawn from the files changed since the commit (committed, uncommitted, untracked)
@@ -1086,7 +1087,7 @@ const gitOut = (root, ...a) => (git(root, ...a) || '').trim();
  * could not see. Worktrees sit beside the clone (`<clone>-waves/<feature>/NN`),
  * never inside it, so the app's analyzer and tests never walk another ticket's tree.
  */
-export function wavePlan(feature, dir, { root = process.cwd(), branch } = {}) {
+export function wavePlan(feature, dir, { root = process.cwd(), branch, only, max } = {}) {
   root = resolve(root);
   const docs = ticketFiles(root, dir).map(f => ticketDocument(feature, f, readFileSync(under(root, f), 'utf8')));
   const frontier = ticketFrontier(docs);
@@ -1095,13 +1096,17 @@ export function wavePlan(feature, dir, { root = process.cwd(), branch } = {}) {
   const status = gitOut(root, 'status', '--porcelain', '--', dir);
   const uncommitted = status.split('\n').filter(Boolean).map(l => l.slice(3).trim()).filter(p => /\/\d+-.*\.md$/.test(p)).sort();
   const wavesDir = join(dirname(root), `${basename(root)}-waves`, feature);
-  const wave = frontier.frontier.map(n => {
+  // `only` names the frontier tickets to build (a name off the frontier is a mistake, not a skip); `max` takes the lowest N.
+  for (const n of only || []) if (!frontier.frontier.includes(n)) throw new Error(`ticket ${n} is not on the frontier (${frontier.frontier.join(', ') || 'empty'})`);
+  let picked = only ? frontier.frontier.filter(n => only.includes(n)) : frontier.frontier;
+  if (max) picked = picked.slice(0, Number(max));
+  const wave = picked.map(n => {
     const t = docs.find(d => d.number === n);
     const text = readFileSync(under(root, t.file), 'utf8');
     const name = `${n}-${basename(t.file).replace(/^\d+-/, '').replace(/\.md$/, '')}`;
     return { number: n, title: t.title, file: t.file, branch: `wave/${feature}/${name}`, worktree: join(wavesDir, name), simulator: `wave-${feature}-${n}`, model: t.model, renderings: designRenderings(text), cites: t.cites };
   });
-  return { feature, branch, base, done: frontier.done, dropped: frontier.dropped, building: frontier.building, blocked: frontier.blocked, wave, uncommitted };
+  return { feature, branch, base, done: frontier.done, dropped: frontier.dropped, building: frontier.building, blocked: frontier.blocked, frontier: frontier.frontier, wave, uncommitted };
 }
 /** Minutes, or hours and minutes, between two ISO instants. */
 export function elapsed(from, to) {
@@ -1489,7 +1494,7 @@ if (process.argv[1] && import.meta.url.endsWith(process.argv[1].split('/').pop()
   } else if (cmd === 'wave') {
     // wave <feature> <issues dir> [--branch <b>] [--open | --close <n> --merged 02,04 --failed 06 --suite green|red]
     const [[feature, dir], opts] = flags(args);
-    if (!feature || !dir) { console.error('usage: sync.mjs wave <feature> <issues dir> [--branch <branch>] [--open | --close <n> [--merged NN,NN] [--failed NN,NN] [--suite green|red]]'); process.exit(2); }
+    if (!feature || !dir) { console.error('usage: sync.mjs wave <feature> <issues dir> [--branch <branch>] [--only NN,NN | --max N] [--open | --close <n> [--merged NN,NN] [--failed NN,NN] [--suite green|red]]'); process.exit(2); }
     const root = process.cwd();
     const logFile = join(dirname(dir.replace(/\/+$/, '')), 'waves.json');
     const log = existsSync(logFile) ? JSON.parse(readFileSync(logFile, 'utf8')) : [];
@@ -1502,7 +1507,9 @@ if (process.argv[1] && import.meta.url.endsWith(process.argv[1].split('/').pop()
       writeFileSync(logFile, JSON.stringify(log, null, 2));
       process.stdout.write(JSON.stringify(entry, null, 2));
     } else {
-      const plan = wavePlan(feature, dir, { branch: opts.branch });
+      let plan;
+      try { plan = wavePlan(feature, dir, { branch: opts.branch, only: typeof opts.only === 'string' ? commaList(opts.only) : undefined, max: typeof opts.max === 'string' ? opts.max : undefined }); }
+      catch (e) { console.error(`wave: ${e.message}`); process.exit(2); }
       if (opts.open && plan.wave.length) {
         // Mark the tickets, commit every ticket file of the feature so the worktrees see them, and take that commit as the base every agent checks against.
         const entry = waveOpen(log, { tickets: plan.wave.map(t => t.number), base: plan.base, branch: plan.branch });

@@ -1232,6 +1232,23 @@ test('wavePlan reads the ticket files, names a branch and worktree per frontier 
   assert.match(readFileSync(join(root, '.scratch/sm/issues/04-d.md'), 'utf8'), /^\*\*Status:\*\* ready-for-agent \(wave 1 failed/m, 'a failed ticket goes back on the frontier');
 });
 
+test('wave --only opens just the named frontier tickets and --max the lowest N; a name off the frontier is refused', () => {
+  const { root, put, git } = repo();
+  for (const n of ['01', '02', '03', '04']) put(`.scratch/sm/issues/${n}-t${n}.md`, ticketFile(n, `T${n}`, 'ready-for-agent', 'None.'));
+  git('add', '-A'); git('commit', '-q', '-m', 'tickets');
+  const plan = wavePlan('sm', '.scratch/sm/issues', { root, branch: 'main', only: ['03', '01'] });
+  assert.deepEqual(plan.wave.map(t => t.number), ['01', '03']);
+  assert.deepEqual(plan.frontier, ['01', '02', '03', '04'], 'the whole frontier is still reported');
+  assert.deepEqual(wavePlan('sm', '.scratch/sm/issues', { root, branch: 'main', max: 2 }).wave.map(t => t.number), ['01', '02']);
+  assert.throws(() => wavePlan('sm', '.scratch/sm/issues', { root, branch: 'main', only: ['09'] }), /09 is not on the frontier/);
+  const out = JSON.parse(execFileSync('node', [cli, 'wave', 'sm', '.scratch/sm/issues', '--branch', 'main', '--open', '--only', '02,04'], { cwd: root, encoding: 'utf8' }));
+  assert.deepEqual(out.wave.map(t => t.number), ['02', '04']);
+  assert.match(git('log', '-1', '--format=%s'), /^wave 1 opened for sm: tickets 02, 04 \[skip ci\]$/);
+  assert.match(readFileSync(join(root, '.scratch/sm/issues/01-t01.md'), 'utf8'), /^\*\*Status:\*\* ready-for-agent$/m, 'a frontier ticket left out stays ready');
+  const again = wavePlan('sm', '.scratch/sm/issues', { root, branch: 'main' });
+  assert.deepEqual(again.wave.map(t => t.number), ['01', '03']); assert.deepEqual(again.building, ['02', '04']);
+});
+
 test('waveOpen and waveClose keep one log per feature and elapsed reads as hours and minutes', () => {
   const log = [];
   const w = waveOpen(log, { tickets: ['02', '04'], base: 'abc', branch: 'main', now: '2026-09-15T10:00:00.000Z' });

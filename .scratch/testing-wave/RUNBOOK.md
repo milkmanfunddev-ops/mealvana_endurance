@@ -157,7 +157,8 @@ At the end of every run, stopped or not, in this order:
 5. Scan the console before committing it: `grep -nE 'eyJ[A-Za-z0-9_-]{10,}|Bearer |sk_|sbp_' RUNS/console.log`.
    Any hit: delete `console.log` and commit `console-excerpts.log` with only the lines your
    Findings cite, the hits cut out.
-6. Commit `.scratch/testing-wave/findings/NN-*.md` and `RUNS` on your branch, explicit paths only.
+6. Commit `.scratch/testing-wave/findings/NN-*.md` and `RUNS` on your branch, explicit paths only. Run logs under `RUNS`
+   are not gitignored (the Findings cite them), so a plain `git add` takes them after the scan.
 
 `LOCK list` shows what is still held. A claim left by a crashed agent is dropped on the next claim
 once it is older than the stale timeout (slot 4 h, build 30 min).
