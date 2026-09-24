@@ -1,0 +1,24 @@
+# Ticket 16 run notes (w9-20260924T1446Z)
+
+- Worktree HEAD 52c68764 (base check passed, no reset).
+- App on UDID E495F2F1-CCB6-4C29-8B61-B5BA3AE1F939 (wave-pool-1): dev app built from 52c68764 per the wave lead's prompt and commit a4d15712 on mealplanning. The worktree's app-build.json at 52c68764 still names 433514bc (the lead recorded the new build in a later commit). Known noise: app-build.json lags one lead commit.
+- 14:46:54Z slot claimed (LOCK claim slot testing-wave-16).
+- 14:47Z db-before.txt, db-before-draft-list-items.txt. No COST spend: the Draft 54a02440 from ticket 14 is confirmed, no plan generated.
+- Note: the Draft already had its own list 9bdc9556 (6 plan rows) before confirm: the server builds a Draft's list at the first pick, not only at confirm (refreshShopping runs after every edit, per mp-244).
+- 14:48:19Z simctl launch left SpringBoard in front; tapped the Endurance Dev icon. App was signed out (welcome); 14:49:05Z logged in by email as test@test.com.
+- 14:49:30Z Plan tab first listed 5 meals incl. "Brown rice, zucchini & chickpea bowl", then 4 after sync; Vana note "1007g" carbs. Already filed as 14-003 and 14-010 (seen again, not refiled).
+- 14:50:02Z tapped the chat bubble on Food: the companion opened a general conversation (8507a520) and streamed an opener before I typed. Already filed as 12-004.
+- 14:50:15Z Conversations button: iOS asked for Speech Recognition (Don't Allow). Already filed as 09-004.
+- Conversations > Meal plans: every row is titled "This week's plan" with only a time to tell them apart (Finding 16-006, idea).
+- 14:50:29Z opened d8efbdb3; the mobile MCP's screenshot showed an empty "Ask me anything" chat for over 40 s, and its element list returned the welcome screen. I went back at 14:51:40Z and opened f6a0f7fa; its MCP screenshot was also empty, but idb describe-all and `simctl io screenshot` (14:52:27Z) showed its history and plan bar. Later reading: the server logged no vana-action for the first d8efbdb3 open, and a vana-action call died with a socket timeout at 14:52:47Z, so the first open may really have hung on get_plan (Finding 16-008, followup-test; the first-open screenshot was deleted as unreliable). Testing-process note: the mobile MCP's screenshots were stale at least once on this simulator, as its element list was; screenshots from here on are simctl only.
+- Chat header reads "New meal plan" for a resumed older conversation (f6a0f7fa, whose plan is confirmed). Finding 16-005.
+- 14:52:53Z reopened d8efbdb3: history, cards and plan bar "Your plan · 1 meal", Review plan (04-draft-conversation-d8efbdb3.png). The Egg & Veggie Scramble card showed an empty checkbox although the meal is in the Draft (16-010).
+- 14:53:07Z Review sheet: "1 meals · 1 servings" (16-004). 14:53:12.9Z tapped Confirm plan; spinner about 3 s; 14:53:16Z router `going to /main?tab=food&food=shopping`, screen on Food > Plan (16-002; 09-007 saw the same).
+- 14:53:30Z db-after.txt: the server re-confirmed be6abf2f and archived the Draft 54a02440 (16-001). Cause read from code: the Review sheet's confirm sends no conversation or plan scope. The week still has one confirmed plan and the rest archived, but the wrong one.
+- 14:54:17Z Shopping sub-tab showed "No shopping list" though the confirmed list existed; 14:54:29Z the list loaded (16-003).
+- List 03c4c52b (be6abf2f) compared with its 4 meals' library ingredients through grocery.ts buildItems: 15 rows, no difference; meal_plans.shopping mirror equal (list-vs-plan-be6abf2f.txt). Imperial units on screen (oz, tbsp); Farro shows a count of 2. Farro, Spelt, Mixed vegetables under Other (16-007).
+- The Draft's own list 9bdc9556 (6 rows) matched its one meal's ingredients before confirm (db-before-draft-list-items.txt vs saved_meals fd993bbb: 8 ingredients, salt and black pepper skipped as always-have); it was never confirmed.
+- 14:55:38Z Plan tab: be6abf2f's 4 dinners, as the database says.
+- Console known noise: TrainingPeaks token refresh 400, V.O2 "Please reconnect", FinalSurge "Date-range endpoint unavailable (404)": the dev admin's integration tokens are expired, unrelated to planning (as in ticket 14's notes, 03-008). "No distance data" / "unknown sport other": fuelling-engine defaults for Patrol test activities. The vana-action socket timeout is 16-008.
+- 14:56:02Z log stream stopped, app terminated, slot released. console.log held 4 token-like hits; deleted, console-excerpts.log keeps the lines the Findings cite.
+- Account left: test@test.com week 2026-09-20: be6abf2f confirmed (4 dinners, list 03c4c52b confirmed_at 14:53:15Z, 15 rows, nothing checked); 54a02440 archived (list 9bdc9556, 6 rows, unconfirmed); 6f365c30, 15b6b4f4, b82409d9 archived. A new general conversation 8507a520 from the companion opener. Nothing deleted, no plan generated, no COST spend.

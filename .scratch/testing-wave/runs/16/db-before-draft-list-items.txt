@@ -1,0 +1,6 @@
+Bell pepper | 40 g | Produce | false | false | plan | 97b0f6f4-51e9-4b40-b525-6169a9f27dcd | false
+Mushroom | 30 g | Produce | false | false | plan | 97b0f6f4-51e9-4b40-b525-6169a9f27dcd | false
+Spinach | 50 g | Produce | false | false | plan | 97b0f6f4-51e9-4b40-b525-6169a9f27dcd | false
+Egg | 2 | Protein | false | false | plan | 97b0f6f4-51e9-4b40-b525-6169a9f27dcd | false
+Butter | 10 g | Dairy | false | false | plan | 97b0f6f4-51e9-4b40-b525-6169a9f27dcd | false
+Heavy cream | 15 ml | Dairy | false | false | plan | 97b0f6f4-51e9-4b40-b525-6169a9f27dcd | false
