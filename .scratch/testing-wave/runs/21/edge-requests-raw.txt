@@ -1,0 +1,23 @@
+[17:32:35] POST | 200 | https://vlmtsdzpnjnavdgytcmi.supabase.co/functions/v1/garmin-push
+[17:32:38] POST | 200 | https://vlmtsdzpnjnavdgytcmi.supabase.co/functions/v1/garmin-push
+[17:32:42] POST | 200 | https://vlmtsdzpnjnavdgytcmi.supabase.co/functions/v1/garmin-push
+[17:32:44] POST | 200 | https://vlmtsdzpnjnavdgytcmi.supabase.co/functions/v1/garmin-push
+[17:32:46] POST | 200 | https://vlmtsdzpnjnavdgytcmi.supabase.co/functions/v1/garmin-push
+[17:34:39] POST | 200 | https://vlmtsdzpnjnavdgytcmi.supabase.co/functions/v1/garmin-push
+[17:35:02] POST | 200 | https://vlmtsdzpnjnavdgytcmi.supabase.co/functions/v1/sync-all-data
+[17:35:04] POST | 200 | https://vlmtsdzpnjnavdgytcmi.supabase.co/functions/v1/calculate-daily-macros-v6
+[17:35:53] POST | 200 | https://vlmtsdzpnjnavdgytcmi.supabase.co/functions/v1/vana-action
+[17:35:58] POST | 200 | https://vlmtsdzpnjnavdgytcmi.supabase.co/functions/v1/garmin-push
+[17:35:59] POST | 200 | https://vlmtsdzpnjnavdgytcmi.supabase.co/functions/v1/garmin-push
+[17:35:59] POST | 200 | https://vlmtsdzpnjnavdgytcmi.supabase.co/functions/v1/vana-action
+[17:36:00] POST | 200 | https://vlmtsdzpnjnavdgytcmi.supabase.co/functions/v1/garmin-push
+[17:36:01] POST | 200 | https://vlmtsdzpnjnavdgytcmi.supabase.co/functions/v1/vana-action
+[17:36:02] POST | 400 | https://vlmtsdzpnjnavdgytcmi.supabase.co/functions/v1/kroger
+[17:36:10] POST | 200 | https://vlmtsdzpnjnavdgytcmi.supabase.co/functions/v1/kroger
+[17:36:10] POST | 200 | https://vlmtsdzpnjnavdgytcmi.supabase.co/functions/v1/kroger
+[17:36:16] POST | 200 | https://vlmtsdzpnjnavdgytcmi.supabase.co/functions/v1/garmin-push
+[17:37:09] POST | 200 | https://vlmtsdzpnjnavdgytcmi.supabase.co/functions/v1/kroger
+[17:38:15] POST | 200 | https://vlmtsdzpnjnavdgytcmi.supabase.co/functions/v1/kroger
+[17:39:28] POST | 200 | https://vlmtsdzpnjnavdgytcmi.supabase.co/functions/v1/kroger
+
+(21 rows)

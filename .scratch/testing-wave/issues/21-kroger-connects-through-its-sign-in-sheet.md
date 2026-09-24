@@ -11,11 +11,11 @@
 
 **Touches:** the dev test account's Kroger connection
 
-- [ ] Runs by the runbook: a slot taken and released, the console saved to the run folder, a look-around on every screen visited, every problem written as a Finding and nothing fixed.
-- [ ] Uses the entitled dev test account from the credentials file; no new account.
-- [ ] Uses Lee's Kroger login from the credentials file.
-- [ ] Every step of the sheet is screenshotted into the run folder.
-- [ ] The stored Kroger connection is checked by SQL after connecting.
-- [ ] If both the MCP and idb fail, the Finding says where, and Lee finishes by hand.
+- [x] Runs by the runbook: a slot taken and released, the console saved to the run folder, a look-around on every screen visited, every problem written as a Finding and nothing fixed.
+- [x] Uses the entitled dev test account from the credentials file; no new account.
+- [x] Uses Lee's Kroger login from the credentials file.
+- [x] Every step of the sheet is screenshotted into the run folder.
+- [x] The stored Kroger connection is checked by SQL after connecting.
+- [x] If both the MCP and idb fail, the Finding says where, and Lee finishes by hand. (Did not arise: the mobile MCP drove the whole sheet, by coordinates on the web page; see runs/21/notes.md.)
 
 Next: /implement-lee testing-wave

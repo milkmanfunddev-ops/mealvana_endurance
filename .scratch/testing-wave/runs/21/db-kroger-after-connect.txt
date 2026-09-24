@@ -1,0 +1,47 @@
+[
+  {
+    "t": "connections",
+    "v": [
+      {
+        "environment": "production",
+        "expires_at": "2026-09-24T23:09:27.804+00:00",
+        "updated_at": "2026-09-24T22:39:27.804+00:00",
+        "refresh_locked_until": "1970-01-01T00:00:00+00:00",
+        "access_len": 937,
+        "refresh_present": true
+      }
+    ]
+  },
+  {
+    "t": "oauth_sessions",
+    "v": {
+      "n": 0,
+      "envs": null,
+      "expires": null
+    }
+  },
+  {
+    "t": "drafts",
+    "v": {
+      "n": 6,
+      "newest": "2026-09-17T14:12:53.18877+00:00"
+    }
+  },
+  {
+    "t": "exports",
+    "v": {
+      "n": 6,
+      "newest": "2026-09-17T13:56:03.598923+00:00",
+      "statuses": [
+        "sent"
+      ],
+      "envs": [
+        "production"
+      ]
+    }
+  },
+  {
+    "t": "now",
+    "v": "2026-09-24T22:39:40.621269+00:00"
+  }
+]

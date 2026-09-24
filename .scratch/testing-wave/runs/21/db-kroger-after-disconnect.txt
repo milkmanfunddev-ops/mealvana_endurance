@@ -1,0 +1,38 @@
+[
+  {
+    "t": "connections",
+    "v": null
+  },
+  {
+    "t": "oauth_sessions",
+    "v": {
+      "n": 0,
+      "envs": null,
+      "expires": null
+    }
+  },
+  {
+    "t": "drafts",
+    "v": {
+      "n": 6,
+      "newest": "2026-09-17T14:12:53.18877+00:00"
+    }
+  },
+  {
+    "t": "exports",
+    "v": {
+      "n": 6,
+      "newest": "2026-09-17T13:56:03.598923+00:00",
+      "statuses": [
+        "sent"
+      ],
+      "envs": [
+        "production"
+      ]
+    }
+  },
+  {
+    "t": "now",
+    "v": "2026-09-24T22:37:27.238288+00:00"
+  }
+]
