@@ -40,7 +40,6 @@ import 'package:patrol/patrol.dart';
 
 import '../helpers/e2e_account.dart';
 import '../helpers/flow_launcher.dart';
-import '../helpers/supabase_probe.dart';
 
 const _paywall = ValueKey('paywall.screen');
 const _shell = authSentinel;
@@ -72,14 +71,14 @@ void main() {
       await signUpToPaywall($, account);
 
       // ---- Buy Monthly through the Test Store ----------------------------
-      await _buyMonthly($);
+      await buyMonthlyInTestStore($);
       // The shell is under the What's New sheet's scrim on a first entry, so
       // wait for it to exist, not to be hit-testable (testing-wave 06's first
       // run failed on waitUntilVisible here).
       await _waitFor($, _shell);
       expect($(_shell).exists, isTrue, reason: 'the Gate opens after purchase');
       restoreTestErrorHandler();
-      await _dismissWhatsNew($);
+      await dismissWhatsNew($);
 
       final failures = <String>[];
       void check(bool ok, String what) {
@@ -88,7 +87,7 @@ void main() {
 
       // The webhook writes the row; it landed 1 s (ticket 05) to 25 s
       // (ticket 06) after the purchase.
-      final before = await _entitlementRows(
+      final before = await entitlementRows(
         account,
         waitFor: const Duration(seconds: 90),
       );
@@ -98,19 +97,19 @@ void main() {
       );
 
       // ---- Sign out: welcome, never the paywall --------------------------
-      await _openSettings($);
-      await _signOut($);
+      await openSettings($);
+      await signOutFromSettings($);
       final sawPaywallOut = await _waitFor($, _welcomeLogIn);
       check(!sawPaywallOut, 'no paywall frame between Sign Out and welcome');
       check($(_welcomeLogIn).exists, 'Sign Out lands on the welcome screen');
 
       // ---- Sign in: the tabs shell, never the paywall --------------------
-      await _logIn($, account);
+      await logInWithEmail($, account);
       final sawPaywallIn = await _waitFor($, _shell);
       check(!sawPaywallIn, 'no paywall frame between Log in and the app');
       check($(_shell).exists, 'Log in lands in the app');
 
-      final after = await _entitlementRows(account);
+      final after = await entitlementRows(account);
       check(
         after != null &&
             after.length == 1 &&
@@ -120,8 +119,8 @@ void main() {
       );
 
       // ---- Delete the account from Settings ------------------------------
-      await _dismissWhatsNew($);
-      await _openSettings($);
+      await dismissWhatsNew($);
+      await openSettings($);
       await _deleteFromSettings($);
       expect(
         await account.isGone(),
@@ -132,23 +131,6 @@ void main() {
       expect(failures, isEmpty, reason: failures.join('\n'));
     },
     timeout: const Timeout(Duration(minutes: 12)),
-  );
-}
-
-/// Monthly → Continue → the Test Store's native alert → "Test valid
-/// purchase". The paywall never settles, so taps are noSettle.
-Future<void> _buyMonthly(PatrolIntegrationTester $) async {
-  await $(
-    const ValueKey('paywall.plan.monthly'),
-  ).tap(settlePolicy: SettlePolicy.noSettle);
-  await $(
-    const ValueKey('paywall.continue_button'),
-  ).tap(settlePolicy: SettlePolicy.noSettle);
-  // The Test Store sheet is an in-app UIKit alert with the buttons "Test
-  // valid purchase", "Test failed purchase" and "Cancel" (testing-wave 05).
-  await $.platform.tap(
-    IOSSelector(label: 'Test valid purchase'),
-    timeout: const Duration(seconds: 20),
   );
 }
 
@@ -164,69 +146,6 @@ Future<bool> _waitFor(PatrolIntegrationTester $, ValueKey<String> key) async {
   return sawPaywall;
 }
 
-/// Taps "Got it" on the What's New sheet when it shows within [wait]. It
-/// opens over the first screen after the Gate opens.
-Future<void> _dismissWhatsNew(
-  PatrolIntegrationTester $, {
-  Duration wait = const Duration(seconds: 5),
-}) async {
-  const cta = ValueKey('whats_new.cta');
-  final deadline = DateTime.now().add(wait);
-  while (DateTime.now().isBefore(deadline)) {
-    if ($(cta).exists) {
-      await $(cta).tap(settlePolicy: SettlePolicy.noSettle);
-      for (var i = 0; i < 20 && $(cta).exists; i++) {
-        await $.pump(const Duration(milliseconds: 200));
-      }
-      return;
-    }
-    await $.pump(const Duration(milliseconds: 200));
-  }
-}
-
-Future<void> _openSettings(PatrolIntegrationTester $) async {
-  await $(
-    const ValueKey('kyle_date_header.settings'),
-  ).tap(settlePolicy: SettlePolicy.noSettle);
-  await $(
-    const ValueKey('settings.title'),
-  ).waitUntilVisible(timeout: const Duration(seconds: 15));
-}
-
-Future<void> _signOut(PatrolIntegrationTester $) async {
-  await $('Sign Out').scrollTo().tap(settlePolicy: SettlePolicy.noSettle);
-  await $.pump(const Duration(milliseconds: 500));
-  // The confirm dialog's action repeats the label.
-  await $('Sign Out').last.tap(settlePolicy: SettlePolicy.noSettle);
-}
-
-Future<void> _logIn(PatrolIntegrationTester $, E2eAccount account) async {
-  // Sign-out lands on welcome mid-transition; a tap before the route settles
-  // is dropped (testing-wave 06's second run), so wait, then tap until the
-  // login options show.
-  await $(_welcomeLogIn).waitUntilVisible(timeout: const Duration(seconds: 15));
-  const emailOption = ValueKey('login_options.email_button');
-  for (var i = 0; i < 3 && !$(emailOption).exists; i++) {
-    await $.pump(const Duration(seconds: 1));
-    if ($(_welcomeLogIn).exists) {
-      await $(_welcomeLogIn).tap(settlePolicy: SettlePolicy.noSettle);
-    }
-    for (var j = 0; j < 20 && !$(emailOption).exists; j++) {
-      await $.pump(const Duration(milliseconds: 250));
-    }
-  }
-  await $(emailOption).waitUntilVisible(timeout: const Duration(seconds: 15));
-  await $(const ValueKey('login_options.email_button')).tap();
-  await $(
-    const ValueKey('login.email_field'),
-  ).waitUntilVisible(timeout: const Duration(seconds: 15));
-  await $(const ValueKey('login.email_field')).enterText(account.email);
-  await $(const ValueKey('login.password_field')).enterText(account.password);
-  await $(
-    const ValueKey('login.log_in_button'),
-  ).tap(settlePolicy: SettlePolicy.noSettle);
-}
-
 Future<void> _deleteFromSettings(PatrolIntegrationTester $) async {
   await $('Delete Account').scrollTo().tap(settlePolicy: SettlePolicy.noSettle);
   await $.pump(const Duration(milliseconds: 500));
@@ -234,31 +153,4 @@ Future<void> _deleteFromSettings(PatrolIntegrationTester $) async {
   await $(
     const ValueKey('welcome.get_started_button'),
   ).waitUntilVisible(timeout: const Duration(seconds: 40));
-}
-
-/// The account's Entitlement rows, read as the account (RLS shows an athlete
-/// its own row), or null when the read failed. Polls for [waitFor] until a
-/// row shows.
-Future<List<Map<String, dynamic>>?> _entitlementRows(
-  E2eAccount account, {
-  Duration waitFor = Duration.zero,
-}) async {
-  final deadline = DateTime.now().add(waitFor);
-  while (true) {
-    final probe = await SupabaseProbe.signInAs(
-      email: account.email,
-      password: account.password,
-    );
-    final rows = probe == null
-        ? null
-        : await probe.trySelect(
-            'user_entitlements',
-            query: 'user_id=eq.${probe.userId}&select=active_until,period_type',
-          );
-    if ((rows != null && rows.isNotEmpty) ||
-        !DateTime.now().isBefore(deadline)) {
-      return rows;
-    }
-    await Future<void>.delayed(const Duration(seconds: 3));
-  }
 }

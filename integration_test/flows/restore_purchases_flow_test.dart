@@ -37,7 +37,6 @@ import 'package:patrol/patrol.dart';
 
 import '../helpers/e2e_account.dart';
 import '../helpers/flow_launcher.dart';
-import '../helpers/supabase_probe.dart';
 
 /// `paywall.restore_none` in content_defaults.json, the start of it.
 const _nothingFound = 'No active subscription was found';
@@ -91,7 +90,7 @@ void main() {
       check(message, 'Restore shows "$_nothingFound…" for a new account');
       check($(_paywall).exists, 'the account stays on the paywall');
 
-      final rows = await _entitlementRowsOf(account);
+      final rows = await entitlementRows(account);
       check(
         rows != null && rows.isEmpty,
         'no user_entitlements row after a restore with nothing to restore '
@@ -135,22 +134,6 @@ Future<bool> _waitForText(PatrolIntegrationTester $, String text) async {
     if (find.textContaining(text).evaluate().isNotEmpty) return true;
   }
   return false;
-}
-
-/// The account's entitlement rows, read as the account (RLS lets an owner
-/// read its own), or null when the read failed.
-Future<List<Map<String, dynamic>>?> _entitlementRowsOf(
-  E2eAccount account,
-) async {
-  final probe = await SupabaseProbe.signInAs(
-    email: account.email,
-    password: account.password,
-  );
-  if (probe == null) return null;
-  return probe.trySelect(
-    'user_entitlements',
-    query: 'user_id=eq.${probe.userId}&select=user_id,active_until',
-  );
 }
 
 /// Delete account → confirm → welcome, from a menu that is already open.

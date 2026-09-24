@@ -41,11 +41,6 @@ Each entry: what went wrong or cost time, where it was seen, and the suggested f
 23. **A hung Patrol run takes the simulator down with it** (06-009). Nothing times out a Patrol
     run, and killing it shut the device down. Fix: a timeout in the runbook's Patrol step (or a
     wrapper), plus a note on rebooting the pool device. Seen: wave 6.
-24. **The flows copy each other's helpers.** Three flows each carry a noSettle copy of
-    `deleteFromPaywallMenu`, and two read `user_entitlements` the same way. `_buyMonthly`,
-    `_dismissWhatsNew`, `_signOut` and `_logIn` will be needed again by 08 and 09. Fix: move
-    them into `integration_test/helpers/e2e_account.dart`, with a noSettle option on the delete,
-    before tickets 08 and 09 write their flows. Seen: waves 5, 6.
 25. **New testing-wave flows are never run by the M1 runner.** Redeem, relogin and restore are all
     excluded as clean-install, but spec story 76 asks for them on the self-hosted runner's list.
     Fix: give the runner a clean-install lane (uninstall before each such flow), or change the
@@ -108,6 +103,10 @@ Each entry: what went wrong or cost time, where it was seen, and the suggested f
 
 ## Done
 
+- **#24, flows copied each other's helpers (part).** `buyMonthlyInTestStore`, `dismissWhatsNew`,
+  `openSettings`, `signOutFromSettings`, `logInWithEmail` and `entitlementRows` moved from the
+  relogin and restore flows into `integration_test/helpers/e2e_account.dart` before 08 and 09.
+  Still open: the three noSettle copies of `deleteFromPaywallMenu`. 09-24, this commit.
 - **Cleanup that can't take another run's account.** `sweep-accounts.mjs delete --id <id,id>
   --apply` deletes only the named throwaway accounts; the three flow headers point at it, since a
   bare sweep would also delete another agent's live account. Wave 6.
