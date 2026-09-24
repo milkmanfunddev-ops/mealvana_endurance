@@ -1,0 +1,12 @@
+getpwuid_r did not find a match for uid 501
+Filtering the log data using "process == "Runner" AND (composedMessage CONTAINS "flutter" OR composedMessage CONTAINS "Service]" OR composedMessage CONTAINS "rror")"
+Timestamp               Ty Process[PID:TID]
+2026-09-24 07:37:11.252 Df Runner[85247:9b26fb] (Flutter) flutter: 📊 [ANALYTICS] settings_subscription_tapped {}
+2026-09-24 07:37:11.822 Df Runner[85247:9b26fb] (Flutter) flutter: [SubscriptionService] customer info updated {active: true, expires_at: 2026-09-24T12:41:39.000Z}
+2026-09-24 07:38:06.885 Df Runner[85247:9b26fb] (Flutter) flutter: 📊 [ANALYTICS] settings_delete_account_tapped {}
+2026-09-24 07:38:08.488 Df Runner[85247:9b26fb] (Flutter) flutter: supabase.auth: INFO: Signing out user with scope: SignOutScope.local
+2026-09-24 07:38:08.501 Df Runner[85247:9b26fb] (Flutter) flutter: 📊 [ANALYTICS] user_signed_out {timestamp: 2026-09-24T07:38:08.500898, was_onboarding_signout: false}
+2026-09-24 07:38:08.507 Df Runner[85247:9b26fb] (Flutter) flutter: [SubscriptionService] customer info updated {active: true, expires_at: 2026-09-24T12:41:39.000Z}
+2026-09-24 07:38:08.557 Df Runner[85247:9b26fb] (Flutter) flutter: GoRouter: INFO: redirecting to RouteMatchList(/welcome)
+2026-09-24 07:38:08.561 Df Runner[85247:9b26fb] (Flutter) flutter: GoRouter: INFO: redirecting to RouteMatchList(/welcome)
+Child process terminated with signal 15: Terminated

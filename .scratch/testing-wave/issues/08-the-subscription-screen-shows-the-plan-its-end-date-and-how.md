@@ -11,8 +11,8 @@
 
 **Touches:** integration_test/flows/subscription_screen_flow_test.dart
 
-- [ ] Runs by the runbook: a slot and the build lock taken and released, the console saved to the run folder, a look-around on every screen visited, every problem written as a Finding and nothing fixed.
-- [ ] Signs up its own account at a new plus address, logs it in the credentials file, and buys Pro Monthly through the Test Store at the start, the way ticket 05 did (its run notes have the steps). The Test Store monthly renews every 5 minutes and lapses about 25 minutes after purchase (05-003), so the paid checks are done within 20 minutes of buying; a lapse before they finish is written down in the run notes, not worked around. The account is deleted in the app at the end (a failed delete is a Finding).
-- [ ] The dates on screen equal RevenueCat's; Manage subscription shows; Redeem code opens its sheet.
+- [x] Runs by the runbook: a slot and the build lock taken and released, the console saved to the run folder, a look-around on every screen visited, every problem written as a Finding and nothing fixed.
+- [x] Signs up its own account at a new plus address, logs it in the credentials file, and buys Pro Monthly through the Test Store at the start, the way ticket 05 did (its run notes have the steps). The Test Store monthly renews every 5 minutes and lapses about 25 minutes after purchase (05-003), so the paid checks are done within 20 minutes of buying; a lapse before they finish is written down in the run notes, not worked around. The account is deleted in the app at the end (a failed delete is a Finding).
+- [x] The dates on screen equal RevenueCat's; Manage subscription shows; Redeem code opens its sheet.
 
 Next: /implement-lee testing-wave
