@@ -58,7 +58,10 @@ xcrun simctl spawn UDID log stream --level debug \
 xcrun simctl launch UDID com.milkman.mealvanaendurance.dev
 ```
 
-Stop the log stream at step 11.
+`simctl launch` can leave SpringBoard in front. Take a screenshot; if the home screen shows,
+launch again with the mobile MCP (`mobile_launch_app`) or tap the app's icon.
+
+Stop the log stream at step 9.
 
 ## 4. Start from what is on the screen
 
@@ -89,7 +92,10 @@ or wipe the app unless the ticket says so.
 
   Exit 3 means the wave's cap is used up: skip the step and write a followup-test Finding for it.
   Everything else reuses the plans already on the dev accounts.
-- Screenshots go in `RUNS` with names that say what they show.
+- Screenshots go in `RUNS` with names that say what they show. Take them with
+  `xcrun simctl io UDID screenshot RUNS/<name>.png`: the mobile MCP's `save_screenshot` refuses
+  paths inside the worktree. After a tap, take a new screenshot before trusting the MCP's element
+  list; it has returned the previous screen.
 - A step that must be seen live (a renewal, a lapse, a timer): write the clock time before and
   after every wait in `RUNS/notes.md`. When the gap is longer than planned, write "not seen live"
   next to the step and say how it was checked instead.

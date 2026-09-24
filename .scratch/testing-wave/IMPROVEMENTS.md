@@ -13,16 +13,6 @@ Each entry: what went wrong or cost time, where it was seen, and the suggested f
 
 Wave 8 (10, 14; 2026-09-24):
 
-- **#27 `simctl launch` leaves SpringBoard in front.** Both agents launched the app per runbook
-  step 3 and found the simulator on the home screen; one tapped the icon, one used the mobile
-  MCP's launch. Fix: runbook step 3 launches with the mobile MCP (`mobile_launch_app`) after the
-  log stream starts, or follows `simctl launch` with a tap check.
-- **#28 the mobile MCP's `save_screenshot` refuses paths inside the worktree**, and its element
-  list once returned the previous screen after a tap. Both agents fell back to
-  `xcrun simctl io <udid> screenshot`. Fix: say so in runbook step 5, so no agent spends turns on it.
-- **#29 `app-build.json` reached the worktrees as `null`.** The lead writes it after the build,
-  and the build needs a worktree first. Fix: the lead commits `app-build.json` before spawning
-  (after building), or the prompt's commit line is the only source and the runbook says so.
 - **#30 a credentials-table read printed passwords.** Ticket 10's agent ran an `awk` over
   `secrets/test_accounts.md` to see its layout and the password column reached its transcript
   (account D, now deleted, and other test accounts). The runbook forbids printing secrets; the
@@ -37,6 +27,11 @@ Wave 8 (10, 14; 2026-09-24):
   simulator before the copy, or note the account in each prompt.
 
 ## Done
+
+- **#27 launch, #28 screenshots.** Runbook step 3 checks for SpringBoard after `simctl launch`
+  and relaunches; step 5 names `simctl io screenshot` and the stale element list. Before wave 9.
+- **#29 `app-build.json` null in worktrees.** Moot while no build is needed: wave 8 committed it
+  (`742d2f16`) before wave 9 opened; a wave that builds commits it before spawning.
 
 **Lee's walk-through, 2026-09-24** (wave 7). Each item, what he chose, and where it landed:
 
