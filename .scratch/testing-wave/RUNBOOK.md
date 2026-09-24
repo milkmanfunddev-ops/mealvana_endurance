@@ -105,7 +105,9 @@ ticket says so.
   ```
 
   Exit 3 means the wave's cap is used up: skip the step and write a followup-test Finding for it.
-  Everything else reuses the plans already on the dev accounts.
+  Everything else reuses the plans already on the dev accounts. An old planning conversation
+  opens with no opener and makes no model call; note in `RUNS/notes.md` when a `chat` spend
+  bought nothing (no `vana_calls` row in your run's minutes), so the lead can count it back.
 - Screenshots go in `RUNS` with names that say what they show. Take them with
   `xcrun simctl io UDID screenshot RUNS/<name>.png`: the mobile MCP's `save_screenshot` refuses
   paths inside the worktree. After a tap, take a new screenshot before trusting the MCP's element
@@ -157,7 +159,9 @@ On each screen you visit, stop and list other paths through it (other buttons, b
 and error states, offline, a second tap) and other ways it could break. Each one is a
 followup-test Finding naming the screen. Do not run them now; the next rounds pick from them.
 Also read `console.log` after each screen: every error or exception line is a Finding or is noted
-in `RUNS/notes.md` as known noise, with why.
+in `RUNS/notes.md` as known noise, with why. A server error your run did not cause (a push
+from Garmin, another run's request in your edge extract) is still filed, kind bug, screen none;
+"not this app" is never a reason to skip it.
 
 Anything unexpected you write in `RUNS/notes.md` is also a Finding, or carries "known noise:
 <why>" beside it. The wave lead reads every notes file at the close and files what you did not.
