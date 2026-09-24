@@ -22,6 +22,24 @@ Each entry: what went wrong or cost time, where it was seen, and the suggested f
   must pick one that is not null. Suggested fix: one line in ticket 31's retest and in the
   ticket-writing notes.
 
+- **#47 a "browse" ticket wrote more than its prompt said (wave 16).** The lead told ticket 29 that
+  ticket 18 would only chat. But Browse's "+" writes a draft plan (`173cebb2`) and a shopping list
+  (`813df86f`), and the Shopping tab then showed that list to ticket 29 halfway through its run. 29
+  worked it out from timestamps. Ticket 18 also had to pick a conversation to write into, because
+  Browse opens only from a planning chat and writes into that chat's plan. Suggested fix: for any
+  ticket with Add or Save controls, the lead reads the screen's code for writes before writing
+  the prompts, and the ticket names the conversation or plan to use.
+
+- **#48 the chat spend is counted before the chat is known to cost anything (wave 16).** Ticket 18
+  spent `COST chat` (1/5) to reach a chat, but that chat opened with no opener and made no model
+  call. Suggested fix: a `COST refund WAVE chat NN` the agent runs when `vana_calls` shows no row
+  for its run, or runbook step 5 notes that an old planning conversation opens without an opener.
+
+- **#49 server-side pushes land in every edge extract (wave 16).** Garmin's fan-out to dev
+  `garmin-push` failed 45 of 45 epochs at 16:13 local, in the middle of the wave. Ticket 18 noted it
+  as "not this app" but filed nothing, so the lead filed 18-012. Suggested fix: runbook step 7 says
+  that a server error the run did not cause is still filed (kind bug, screen none), not skipped.
+
 ## Done
 
 - **#45 reaching Conversations costs an opener (wave 12).** The only way to the conversation list
