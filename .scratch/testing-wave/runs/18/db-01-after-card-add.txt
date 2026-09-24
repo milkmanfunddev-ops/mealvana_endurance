@@ -1,0 +1,16 @@
+== after card Add (Sweet rice cake with jam) 21:09:23Z
+== meal_plans for conversation 0401b3d8 and week >= 09-20
+{"id":"6f365c30-b359-4d7c-a477-7bbc8b7e7450","week_start":"2026-09-20","status":"archived","conversation_id":"0b7df6f0-8ef6-46a8-951f-d7ebac780a6b","created_at":"2026-09-22 11:59:22.955844+00","updated_at":"2026-09-24 01:10:06.794578+00","shop_n":9,"meals":2}
+{"id":"15b6b4f4-3a46-4581-826b-f957fd8000a5","week_start":"2026-09-20","status":"archived","conversation_id":"ebac747d-86a7-4182-b9f1-327895bc96e3","created_at":"2026-09-22 12:08:32.785161+00","updated_at":"2026-09-24 01:10:06.794578+00","shop_n":22,"meals":4}
+{"id":"b82409d9-a8b8-440d-9f4e-f25262f8a73a","week_start":"2026-09-20","status":"archived","conversation_id":"1f805690-12a5-4f33-9d96-b819bdaa5ffd","created_at":"2026-09-23 02:29:32.425323+00","updated_at":"2026-09-24 01:10:06.794578+00","shop_n":0,"meals":0}
+{"id":"be6abf2f-881b-478d-9b4b-b09afac3b9a2","week_start":"2026-09-20","status":"confirmed","conversation_id":"f6a0f7fa-6cc0-42c2-bbb7-9aca997c535d","created_at":"2026-09-23 11:14:08.935129+00","updated_at":"2026-09-24 16:53:19.994+00","shop_n":0,"meals":4}
+{"id":"54a02440-8b6d-43ac-a1b9-6ce10a47fd74","week_start":"2026-09-20","status":"archived","conversation_id":"d8efbdb3-a21a-4e7f-984b-94cc89ee67ae","created_at":"2026-09-24 14:23:36.672783+00","updated_at":"2026-09-24 14:53:15.809846+00","shop_n":6,"meals":1}
+{"id":"173cebb2-454f-48d9-bbd3-6b3a7e561335","week_start":"2026-09-20","status":"draft","conversation_id":"0401b3d8-9c04-497b-9910-45028ac99da3","created_at":"2026-09-24 21:09:24.408271+00","updated_at":"2026-09-24 21:09:25.305+00","shop_n":5,"meals":1}
+== plan_meals of newest plan
+{"plan_id":"173cebb2-454f-48d9-bbd3-6b3a7e561335","name":"Sweet rice cake with jam","source":"library","servings":4,"servings_left":4,"session":null,"meal_type":"breakfast","created_at":"2026-09-24 21:09:24.604476+00"}
+== shopping_lists newest 3
+{"id":"813df86f-0ad4-4e45-b0c5-bdad898266f3","plan_id":"173cebb2-454f-48d9-bbd3-6b3a7e561335","name":"Week of 2026-09-20","created_at":"2026-09-24 21:09:25.038452+00","updated_at":"2026-09-24 21:09:25.191+00","items":5}
+{"id":"9bdc9556-f8b5-4c5f-8a77-b5ae70cb24d3","plan_id":"54a02440-8b6d-43ac-a1b9-6ce10a47fd74","name":"Week of 2026-09-20","created_at":"2026-09-24 14:23:37.547094+00","updated_at":"2026-09-24 14:23:37.707+00","items":6}
+{"id":"adc5b2de-67ca-4a99-adc3-8d9f826bf2fc","plan_id":"15b6b4f4-3a46-4581-826b-f957fd8000a5","name":"Week of 2026-09-20","created_at":"2026-09-22 12:08:33.567054+00","updated_at":"2026-09-22 12:08:47.119+00","items":22}
+== vana_messages since 21:00
+== vana_calls since 21:00

@@ -1,0 +1,29 @@
+# Ticket 18 run w16-20260924T2100Z
+
+- App build commit: 52c68764b2cde49951a27220a8dbdb3a463116f7 (.scratch/testing-wave/app-build.json; prompt agrees).
+- Simulator: wave-pool-1 9927304B-C8E3-4878-BC0D-8A3165E894EB, app data cleared by the wave lead.
+- Base: c6441d944f45bb80d5d091849c482cc61ee41577. Slot claimed 21:00:37Z (held alongside testing-wave-29).
+- Account: test@test.com (dev user 607f9dd5-6fa7-48ee-a628-720d4a0506a1). Ticket 29 runs read-only on the same account.
+- 21:01:26Z app launched with the console streaming to console.log.
+- 21:02:07Z logged in with test@test.com (CRED type). "Shake" What's New sheet: Got it. TrainingPeaks sharing sheet: closed with X (leaves sharing on, nothing written).
+- Console at login: TrainingPeaks token refresh 400, V.O2 "Please reconnect", FinalSurge "Date-range endpoint unavailable (404)", "No distance data"/"No intensity distribution hints". Known noise: the dev admin's integrations are expired and Patrol test activities use engine defaults (runs 14, 16, 17, 19 notes; 03-008). System lines (CoreFSCache, UIFocus, UIScene lifecycle fault): known iOS simulator noise.
+- Food > Plan shows confirmed plan Sep 20 - Sep 26, 4 meals, Add meal (goes to the Meals tab, plan_tab.dart:109) and New meal plan. The browse screen is reachable only from a Vana chat (vana_chat_screen.dart:812), so a chat opener is needed.
+- 21:02:39Z COST spend 16 chat 18 (1/5) before opening a Vana chat. The chat it paid for never ran: "Ask Vana anything" on the Plan tab's note card opened an empty general chat ("Ask me anything", no opener), and no conversation or vana_calls row was made since 21:00 (db-03-final.txt). The spend stays counted.
+- 21:03:48Z the first tap at the Ask Vana FAB (362,816) hit the debug "Open testing tools" button that overlaps it (UI settings panel opened; closed with Close, nothing changed). Known noise: debug-only overlay; runs used the Plan tab's note card instead.
+- 21:04:16Z opening the general chat raised the iOS Speech Recognition prompt before any mic tap; tapped Don't Allow. Already filed as 09-004, not refiled.
+- The general chat composer has no plus, so no Browse meals there. Conversations > Meal plans lists 15+ rows all titled "This week's plan"; opened the Sep 22 9:24 PM row = conversation 0401b3d8 (meal_planning, 1 opener message, no plan row before this run). No opener or model call on open (vana_calls 0 since 21:00). Its header reads "New meal plan".
+- Decision: browse and Add were run inside 0401b3d8, not d8efbdb3 (its plan is archived 54a02440, whose list 9bdc9556 the Shopping tab showed) nor f6a0f7fa (confirmed be6abf2f), so no plan, list or conversation the prompt protects was written. New meal plan was not tapped (it starts a new plan).
+- 21:05:58Z plus > Browse meals opened "Browse meals": Back, Done, Search, Filters, rails Recents / My Foods / Assemblies (See all) / Recipes (See all), "+" (Add to plan) on every card.
+- Search "salmon": 8 results, none contain salmon (the account is vegetarian); every hit matched the research quote shown under the name (17-search-salmon.png). Search toggle closes and clears.
+- Filters: Dinner alone, Dinner + Recipes combine; selected items are shown by colour only. "Any type" cleared the type AND the Recipes kind (code: clearFilters, by design). Filter survives a detail round-trip but not leaving browse.
+- Assemblies See all = the No-recipe-only flat list; Recipes See all = the Recipes flat list. Recents rail has no See all.
+- 21:08:38Z card body opened the meal detail (TEAM REVIEW block, Start cooking, Add to plan); Back returned to browse, card not ticked, nothing written.
+- 21:09:23Z "+" on Sweet rice cake with jam: toast "Added to your plan", card ticked. Server: pick_meals 16:09:25 local; new DRAFT meal_plans 173cebb2 (week 2026-09-20, conversation 0401b3d8), plan_meals servings 4, and a new shopping list 813df86f (5 items) for that draft (db-01).
+- 21:10:01Z a second tap on the TICKED button opened Sweet rice cake's detail (the tap falls through to the card); its Add to plan was tapped (21:10:19Z, my tap sequence expected the Quinoa detail) and the servings went 4 -> 8 with the same toast (db-02). No review rows written by the stray tap on the detail (0 rows in feedback, meal_feedback, user_feedback, meal_reviews).
+- 21:11:24Z Quinoa porridge via its detail's Add to plan: popped back, card ticked, plan_meals servings 4.
+- 21:11:34Z Done: chat plan bar "Your plan · 2 meals", Review plan (not tapped: it leads to Confirm, which would archive be6abf2f). Reopened browse: both picked meals show "+" again, not ticked; filters reset. Back arrow returns to the chat, plan bar unchanged.
+- 21:12:46Z Food > Plan still shows confirmed be6abf2f (4 meals). Food > Shopping now shows the new draft's list 813df86f (11 items: Banana 4, Strawberry jam 16 tbsp, Short-grain rice 1.6 kg ...) instead of 9bdc9556. So ticket 29 (same account, read-only) may see this list on the Shopping tab after 21:09Z.
+- Edge: 3 x vana-action pick_meals (16:09:25, 16:10:21, 16:11:28 CDT), all 200. kroger 400 at 16:12:46 follows my Shopping tab open: known, 20-008. kroger 400 at 16:05:28 and 16:09:02 came while my screen was on the chat/browse: ticket 29's Shopping tab visits (known noise, 20-008). garmin-push errors 16:13: server-side pushes, not this app.
+- Console after login: no Flutter error or exception lines through the browse run.
+- Left on the account: draft 173cebb2 (2 meals) and its list 813df86f, tied to conversation 0401b3d8. Not cleaned up (nothing is fixed or reverted during a run).
+- Stopped log stream and app 21:14Z; slot released 21:14:32Z. Console token scan: lines cut into console-redacted.log (session token in the prefs dump, IMPROVEMENTS #40); rescan clean.

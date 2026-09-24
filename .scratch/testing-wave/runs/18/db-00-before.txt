@@ -1,0 +1,23 @@
+== meal_plans week >= 2026-09-20
+{"id":"6f365c30-b359-4d7c-a477-7bbc8b7e7450","week_start":"2026-09-20","status":"archived","conversation_id":"0b7df6f0-8ef6-46a8-951f-d7ebac780a6b","is_deleted":false,"created_at":"2026-09-22 11:59:22.955844+00","updated_at":"2026-09-24 01:10:06.794578+00","shop_n":9,"meals":2}
+{"id":"15b6b4f4-3a46-4581-826b-f957fd8000a5","week_start":"2026-09-20","status":"archived","conversation_id":"ebac747d-86a7-4182-b9f1-327895bc96e3","is_deleted":false,"created_at":"2026-09-22 12:08:32.785161+00","updated_at":"2026-09-24 01:10:06.794578+00","shop_n":22,"meals":4}
+{"id":"b82409d9-a8b8-440d-9f4e-f25262f8a73a","week_start":"2026-09-20","status":"archived","conversation_id":"1f805690-12a5-4f33-9d96-b819bdaa5ffd","is_deleted":false,"created_at":"2026-09-23 02:29:32.425323+00","updated_at":"2026-09-24 01:10:06.794578+00","shop_n":0,"meals":0}
+{"id":"be6abf2f-881b-478d-9b4b-b09afac3b9a2","week_start":"2026-09-20","status":"confirmed","conversation_id":"f6a0f7fa-6cc0-42c2-bbb7-9aca997c535d","is_deleted":false,"created_at":"2026-09-23 11:14:08.935129+00","updated_at":"2026-09-24 16:53:19.994+00","shop_n":0,"meals":4}
+{"id":"54a02440-8b6d-43ac-a1b9-6ce10a47fd74","week_start":"2026-09-20","status":"archived","conversation_id":"d8efbdb3-a21a-4e7f-984b-94cc89ee67ae","is_deleted":false,"created_at":"2026-09-24 14:23:36.672783+00","updated_at":"2026-09-24 14:53:15.809846+00","shop_n":6,"meals":1}
+== shopping_lists newest 6
+{"id":"9bdc9556-f8b5-4c5f-8a77-b5ae70cb24d3","plan_id":"54a02440-8b6d-43ac-a1b9-6ce10a47fd74","name":"Week of 2026-09-20","created_at":"2026-09-24 14:23:37.547094+00","updated_at":"2026-09-24 14:23:37.707+00","confirmed_at":null,"items":6}
+{"id":"adc5b2de-67ca-4a99-adc3-8d9f826bf2fc","plan_id":"15b6b4f4-3a46-4581-826b-f957fd8000a5","name":"Week of 2026-09-20","created_at":"2026-09-22 12:08:33.567054+00","updated_at":"2026-09-22 12:08:47.119+00","confirmed_at":null,"items":22}
+{"id":"e4d6e247-41ce-491a-a537-f386939e86b6","plan_id":"6f365c30-b359-4d7c-a477-7bbc8b7e7450","name":"Week of 2026-09-20","created_at":"2026-09-22 11:59:23.570205+00","updated_at":"2026-09-22 11:59:24.303+00","confirmed_at":null,"items":9}
+{"id":"90c2fefc-50f7-4534-bf05-e2e1189c1d01","plan_id":null,"name":"List 2026-09-19","created_at":"2026-09-19 16:20:00.22745+00","updated_at":"2026-09-19 20:21:33.227+00","confirmed_at":null,"items":9}
+{"id":"debb5576-5acf-44dd-a144-afbddc66dddd","plan_id":"fc9687ff-fd4f-4fd7-9b34-64c4626a47d9","name":"Week of 2026-09-13","created_at":"2026-09-17 00:52:47.289701+00","updated_at":"2026-09-17 00:52:52.122+00","confirmed_at":null,"items":3}
+{"id":"f53e980b-e8e0-4333-a9d8-a1a2000e63f4","plan_id":"f9f6f432-2b11-455e-910f-db99fbeb352e","name":"Week of 2026-09-13","created_at":"2026-09-17 00:26:34.466007+00","updated_at":"2026-09-17 13:59:12.87+00","confirmed_at":null,"items":8}
+== vana_conversations newest 6
+{"id":"4d62c862-0754-4660-a837-b43cc70fc036","kind":"general","title":"Quick question","created_at":"2026-09-24 17:17:17.589239+00","last_message_at":"2026-09-24 17:17:22.925+00","msgs":1}
+{"id":"8507a520-e9fc-4398-8511-3a3e81117afd","kind":"general","title":"Quick question","created_at":"2026-09-24 14:50:02.079912+00","last_message_at":"2026-09-24 14:50:07.2+00","msgs":1}
+{"id":"d8efbdb3-a21a-4e7f-984b-94cc89ee67ae","kind":"meal_planning","title":"This week's plan","created_at":"2026-09-24 14:22:06.792991+00","last_message_at":"2026-09-24 14:23:07.843+00","msgs":3}
+{"id":"13998a9a-7f33-4d14-93bf-84c099d7d855","kind":"general","title":"Quick question","created_at":"2026-09-24 04:42:30.67391+00","last_message_at":"2026-09-24 04:43:13.504+00","msgs":3}
+{"id":"38ea8992-ac50-43ee-8b4c-2b57ed4b88f8","kind":"general","title":"hi","created_at":"2026-09-24 00:56:41.976531+00","last_message_at":"2026-09-24 00:56:45.989+00","msgs":2}
+{"id":"f6a0f7fa-6cc0-42c2-bbb7-9aca997c535d","kind":"meal_planning","title":"This week's plan","created_at":"2026-09-23 11:12:49.871104+00","last_message_at":"2026-09-23 11:16:17.649+00","msgs":15}
+== vana_calls
+{"n":411,"latest":"2026-09-24 20:18:44.938678+00"}
+Thu Sep 24 21:03:07 UTC 2026
