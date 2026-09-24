@@ -11,7 +11,23 @@ Each entry: what went wrong or cost time, where it was seen, and the suggested f
 
 ## Open
 
-(none)
+- **#36 no offline tool (wave 10).** Ticket 20 had to write its own per-app network cut:
+  `netcut.dylib`, injected with `SIMCTL_CHILD_DYLD_INSERT_LIBRARIES`. It cuts `connect` while a flag
+  file exists, and `vmmap` confirmed only that app's process loaded it. Proxy variables do nothing,
+  because Dart ignores them. The library stayed in that ticket's scratch folder. Suggested fix: move it
+  to `scripts/testing-wave/netcut/` with an `on`/`off` wrapper, and add a line to runbook step 5. Limit:
+  `connectivity_plus` still reads "online", so the app's own offline banner path needs a device
+  (20-006). Finding 20-007.
+- **#37 an SSOT clash with a ratified spec rule has no decision id (wave 10).** 30-003 contradicts
+  "The math (RATIFIED)" in `docs/ssot/spec/fueling/during-workout-carbs.md`. `findings.mjs` accepts an
+  ssot-conflict only with an `mp-NNN` id, so the agent filed it as a bug that quotes the spec.
+  Suggested fix: let `decision:` take a `docs/ssot/spec/...` path plus a heading, and have `index`
+  check that the quote appears in that file.
+- **#38 each ticket's edge-log extract also catches the other ticket (wave 10).** Ticket 30's extract
+  held three `kroger` 400s that came from ticket 20 opening Shopping, and neither agent filed them.
+  The wave lead filed 20-008. Suggested fix: in after-the-wave step 2, read the tickets' edge
+  extracts side by side. Alternatively, agents filter their extract to their own run's minutes and say
+  so in the notes.
 
 ## Done
 

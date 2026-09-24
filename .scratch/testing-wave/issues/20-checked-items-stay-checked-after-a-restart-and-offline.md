@@ -1,6 +1,6 @@
 # 20: Checked items stay checked after a restart and offline
 
-**Status:** in-progress (wave 10, 2026-09-24)
+**Status:** done (wave 10, 2026-09-24)
 **Blocked by:** none.
 **Next:** `/implement-lee testing-wave`
 **Model:** opus
