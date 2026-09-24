@@ -11,9 +11,9 @@
 
 **Touches:** the dev test account's plans and Vana conversations
 
-- [ ] Runs by the runbook: a slot taken and released, the console saved to the run folder, a look-around on every screen visited, every problem written as a Finding and nothing fixed.
-- [ ] Uses the entitled dev test account from the credentials file; no new account.
-- [ ] Counts one new plan against the wave's cap of 3 before starting; refuses and writes a followup-test if the cap is reached.
-- [ ] Expected rows (a new conversation, a new draft plan, the old plan archived) are checked by SQL.
+- [x] Runs by the runbook: a slot taken and released, the console saved to the run folder, a look-around on every screen visited, every problem written as a Finding and nothing fixed.
+- [x] Uses the entitled dev test account from the credentials file; no new account.
+- [x] Counts one new plan against the wave's cap of 3 before starting; refuses and writes a followup-test if the cap is reached.
+- [x] Expected rows (a new conversation, a new draft plan, the old plan archived) are checked by SQL.
 
 Next: /implement-lee testing-wave

@@ -1,0 +1,21 @@
+22686:2026-09-24 09:20:27.857379-0500 0xa2aec2   Default     0x0                  55512  0    Runner: (Flutter) flutter: 🔄 Integration sync skipped (final_surge) - already in progress
+22695:2026-09-24 09:20:27.859554-0500 0xa2aec2   Default     0x0                  55512  0    Runner: (Flutter) flutter: ✅ Integration sync complete for garmin
+22748:2026-09-24 09:20:28.142130-0500 0xa2aec2   Default     0x0                  55512  0    Runner: (Flutter) flutter: ❌ Token refresh failed: TrainingPeaksApiException: Token refresh failed (status: 400)
+22757:2026-09-24 09:20:28.222319-0500 0xa2aec2   Default     0x0                  55512  0    Runner: (Flutter) flutter: ❌ Token refresh failed: TrainingPeaksApiException: Token refresh failed (status: 400)
+22762:2026-09-24 09:20:28.226378-0500 0xa2aec2   Default     0x0                  55512  0    Runner: (Flutter) flutter: \^[[38;5;208m│ ⚠️ [INTEGRATION_SYNC] Integration sync reported failure for training_peaks\^[[0m
+22765:2026-09-24 09:20:28.226566-0500 0xa2aec2   Default     0x0                  55512  0    Runner: (Flutter) flutter: ❌ Integration sync failed for training_peaks: Token expired. Please reconnect.
+23442:2026-09-24 09:20:29.372640-0500 0xa2aec2   Default     0x0                  55512  0    Runner: (Flutter) flutter: \^[[38;5;208m│ ⚠️ [INTEGRATION_SYNC] Integration sync reported failure for vdot\^[[0m
+23445:2026-09-24 09:20:29.372794-0500 0xa2aec2   Default     0x0                  55512  0    Runner: (Flutter) flutter: ❌ Integration sync failed for vdot: Please reconnect your V.O2 account
+23700:2026-09-24 09:20:29.843108-0500 0xa2aec2   Default     0x0                  55512  0    Runner: (Flutter) flutter: 🔄 Integration sync skipped (final_surge) - already in progress
+23701:2026-09-24 09:20:29.843169-0500 0xa2aec2   Default     0x0                  55512  0    Runner: (Flutter) flutter: 🔄 Integration sync skipped (garmin) - data is fresh
+23702:2026-09-24 09:20:29.843222-0500 0xa2aec2   Default     0x0                  55512  0    Runner: (Flutter) flutter: 🔄 Integration sync skipped (training_peaks) - in failure cooldown
+23703:2026-09-24 09:20:29.843271-0500 0xa2aec2   Default     0x0                  55512  0    Runner: (Flutter) flutter: 🔄 Integration sync skipped (vdot) - in failure cooldown
+23704:2026-09-24 09:20:29.844295-0500 0xa2aec2   Default     0x0                  55512  0    Runner: (Flutter) flutter: 🔄 Integration sync skipped (final_surge) - already in progress
+23705:2026-09-24 09:20:29.844363-0500 0xa2aec2   Default     0x0                  55512  0    Runner: (Flutter) flutter: 🔄 Integration sync skipped (garmin) - data is fresh
+23706:2026-09-24 09:20:29.844407-0500 0xa2aec2   Default     0x0                  55512  0    Runner: (Flutter) flutter: 🔄 Integration sync skipped (training_peaks) - in failure cooldown
+23707:2026-09-24 09:20:29.844439-0500 0xa2aec2   Default     0x0                  55512  0    Runner: (Flutter) flutter: 🔄 Integration sync skipped (vdot) - in failure cooldown
+24544:2026-09-24 09:20:30.768064-0500 0xa2aec2   Default     0x0                  55512  0    Runner: (Flutter) flutter: ☁️  Integration sync uploaded 3 dirty records for final_surge
+24545:2026-09-24 09:20:30.768143-0500 0xa2aec2   Default     0x0                  55512  0    Runner: (Flutter) flutter: ✅ Integration sync complete for final_surge
+24546:2026-09-24 09:20:30.768267-0500 0xa2aec2   Default     0x0                  55512  0    Runner: (Flutter) flutter: 🔄 Integration sync skipped (garmin) - data is fresh
+24547:2026-09-24 09:20:30.768335-0500 0xa2aec2   Default     0x0                  55512  0    Runner: (Flutter) flutter: 🔄 Integration sync skipped (training_peaks) - in failure cooldown
+24548:2026-09-24 09:20:30.768477-0500 0xa2aec2   Default     0x0                  55512  0    Runner: (Flutter) flutter: 🔄 Integration sync skipped (vdot) - in failure cooldown

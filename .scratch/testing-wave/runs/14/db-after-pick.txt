@@ -1,0 +1,181 @@
+# db after first pick, taken 2026-09-24T14:24:00Z, user test@test.com 607f9dd5-6fa7-48ee-a628-720d4a0506a1 (New meal plan tapped 14:22:03Z; chip 14:23:04Z; Egg & Veggie Scramble picked 14:23:36Z)
+## meal_plans (all, oldest first): id | week_start | status | is_deleted | conversation_id | meals | created_at | updated_at
+83eb5608-7c72-4e3c-8e1e-b4c77f40bada | 2026-08-23 | archived | false | null | 3 | 2026-08-27 14:11:24.828057+00 | 2026-08-27 16:34:13.063+00
+d63f7220-0077-4c04-978e-6e216714410c | 2026-08-23 | archived | false | null | 3 | 2026-08-27 16:34:13.549403+00 | 2026-08-28 11:45:47.914+00
+40b20856-7c91-4d6c-ad9f-047720ffe1f5 | 2026-08-23 | archived | false | null | 3 | 2026-08-28 11:45:48.343612+00 | 2026-08-28 12:18:11.201+00
+d5b89888-7e38-46db-b559-14a8a4ba5b38 | 2026-08-23 | archived | false | null | 4 | 2026-08-28 12:18:11.730306+00 | 2026-08-28 14:28:01.931+00
+61c0e1ee-14e9-4f4b-ae5d-02f0e8a3678b | 2026-08-23 | archived | false | null | 0 | 2026-08-28 14:28:02.46627+00 | 2026-08-28 14:28:12.662+00
+c95e286f-336a-417a-93d8-1c662962ef31 | 2026-08-23 | archived | false | null | 3 | 2026-08-28 14:28:13.205329+00 | 2026-08-28 14:40:54.054+00
+968c5a59-2132-4feb-9bc0-ffa7c30c8987 | 2026-08-23 | draft | false | null | 0 | 2026-08-28 14:40:54.924697+00 | 2026-08-28 14:40:54.924697+00
+f561026b-af82-478e-9aef-8c83f3edd0f7 | 2026-08-30 | archived | false | null | 3 | 2026-08-31 01:24:24.226955+00 | 2026-08-31 14:03:15.131+00
+0694c723-0bc3-40f5-9677-8414b67c2aef | 2026-08-30 | archived | false | 5ec1c150-5723-4bfa-a332-f52e09108513 | 4 | 2026-08-31 14:00:49.132729+00 | 2026-08-31 14:28:30.13+00
+a89fbf86-5aa1-4dcb-85f6-7a9a2ecec576 | 2026-08-30 | confirmed | false | 2e5dcf07-328c-4200-83ce-ba07e0bb5e8a | 3 | 2026-08-31 14:27:38.505524+00 | 2026-09-02 13:46:19.596+00
+3fad2756-13e9-49cf-bff4-aff22e59c651 | 2026-08-30 | archived | true | 62addf5c-5e43-4d1a-9609-ea441bd26ad3 | 2 | 2026-09-01 12:46:34.402748+00 | 2026-09-01 12:46:36.023+00
+c71e0490-55b7-4cb3-9d95-31afdf7de080 | 2026-08-30 | archived | true | 9c647a56-5350-4566-b394-2e2b6df9a94e | 2 | 2026-09-01 12:47:14.420285+00 | 2026-09-01 12:47:15.969+00
+0ef370b6-614a-4471-8b27-3b66c9ff1120 | 2026-08-30 | archived | true | e5abd862-570e-4e4e-9637-3a3d4a881008 | 3 | 2026-09-01 12:48:54.572757+00 | 2026-09-01 12:49:33.786+00
+43cc9c6a-1308-4ae7-b35b-033a09aafd3e | 2026-08-30 | archived | true | 8d61770f-fb1f-47d6-a90a-6ea2656fa179 | 2 | 2026-09-01 12:50:33.632401+00 | 2026-09-01 12:50:35.481+00
+588c137e-826c-46d4-8a73-f57b1a3d4143 | 2026-08-30 | archived | true | a73f6db2-352e-4d92-bad1-defd605d4516 | 2 | 2026-09-01 12:50:57.970768+00 | 2026-09-01 12:50:59.494+00
+fd5130d1-6d27-4cac-ac91-8fd87defee39 | 2026-08-30 | archived | true | 802144dc-0d9e-4caf-82f5-6c5bf02293cf | 2 | 2026-09-01 13:48:54.720578+00 | 2026-09-01 13:49:01.736745+00
+4daac036-dcf0-4143-83c4-e0866661725f | 2026-08-30 | archived | true | de63dbbe-a3c5-46f5-b0f0-6ebad8f4c338 | 2 | 2026-09-01 13:49:32.226601+00 | 2026-09-01 13:49:40.171399+00
+a8287446-2c73-4678-a88c-5b9cae653f28 | 2026-08-30 | archived | true | 46c256c0-e029-4fce-bb33-704804623285 | 2 | 2026-09-02 11:41:01.656591+00 | 2026-09-02 11:41:03.412+00
+efac7e69-760f-42ab-8deb-23031c4390e0 | 2026-08-30 | archived | true | 6a07555d-6e53-4717-bffe-547ae666acfa | 2 | 2026-09-02 13:44:36.455286+00 | 2026-09-02 13:44:38.066+00
+fa9d6370-3c9a-4ab4-9544-8e2d634d660c | 2026-08-30 | archived | true | 5f24fbd4-f426-4f29-ab9a-bea6fcd14030 | 2 | 2026-09-02 13:45:07.305929+00 | 2026-09-02 13:45:08.92+00
+0c8b27ea-e69e-47a9-99a2-fa876cb279a8 | 2026-08-30 | archived | true | 8478527e-9fef-4367-86f6-1794b220c0fa | 3 | 2026-09-02 13:45:28.355352+00 | 2026-09-02 13:45:32.026+00
+d7c4189f-adac-42ea-9b62-bbbac94c3e56 | 2026-08-30 | archived | true | 201c93aa-054c-461a-925f-96459e7757d3 | 2 | 2026-09-02 13:46:18.048051+00 | 2026-09-02 13:46:19.596+00
+a5b4c73c-dd65-433d-8141-207deba7e1a0 | 2026-09-06 | confirmed | false | 5ccee009-3f9f-4358-a303-f9f92cbc95d9 | 4 | 2026-09-08 13:23:40.833542+00 | 2026-09-11 15:15:14.853949+00
+474a5568-2b3c-4644-bcf6-49f92c62c0e2 | 2026-09-06 | archived | false | 39f6d556-549e-4436-ba3a-e1225a7320ea | 4 | 2026-09-11 15:14:59.821316+00 | 2026-09-11 15:15:14.853949+00
+6e167344-b36c-4f1e-ac67-e3a9658beae8 | 2026-09-13 | confirmed | true | 48c39bfc-b522-4b02-afd4-2c25ecbf8bf7 | 2 | 2026-09-15 14:59:57.411362+00 | 2026-09-16 16:11:37.283+00
+0fcd035c-945e-4ccc-baa3-112fd557f5e4 | 2026-09-13 | archived | false | aabfa9c3-1689-4c57-9905-aebbb54965a2 | 4 | 2026-09-16 13:05:31.663714+00 | 2026-09-16 13:06:04.580466+00
+95f08589-6325-4250-bf5d-0f64df761e6e | 2026-09-13 | archived | false | 9aa9fbc4-8e14-413c-af44-4bc23720cc7c | 3 | 2026-09-16 14:08:00.103781+00 | 2026-09-16 14:08:10.660802+00
+3b747b23-b20d-43ae-a8f6-91046cc09c72 | 2026-09-13 | archived | false | 279377ee-741b-4882-9752-33dba06146d3 | 6 | 2026-09-16 14:25:23.006397+00 | 2026-09-16 14:29:02.50202+00
+50b8190b-3177-4b2b-a4b3-7c8d82fce37e | 2026-09-13 | archived | false | aac5f1bb-568d-48bc-92f9-6f7e7954eb86 | 1 | 2026-09-16 14:49:50.775516+00 | 2026-09-16 14:50:14.587264+00
+9a60cc00-684a-4321-a8dc-70a46575b625 | 2026-09-13 | archived | false | 6950ae62-3ad5-4066-b716-066e063a5cd3 | 3 | 2026-09-16 16:11:04.883315+00 | 2026-09-16 16:11:18.903511+00
+4e29032c-5373-4031-81eb-2f48bbc10b1f | 2026-09-13 | confirmed | true | d5efed4d-8f80-4b19-98e3-c87330884cf7 | 4 | 2026-09-16 16:11:52.830145+00 | 2026-09-16 18:39:19.682+00
+7b25ed93-80f6-438a-996d-47c3324c8d6e | 2026-09-13 | archived | false | 86e75994-baaa-466c-8fa9-84e25cc14d93 | 4 | 2026-09-16 18:38:25.544729+00 | 2026-09-16 18:38:49.10062+00
+f2c0bc78-4b63-478f-8710-14c4c1247d2e | 2026-09-13 | confirmed | false | 1a24f2bf-df4d-4f94-ad5d-2f06bf20e9f8 | 6 | 2026-09-16 18:46:52.34917+00 | 2026-09-17 00:27:10.739218+00
+f9f6f432-2b11-455e-910f-db99fbeb352e | 2026-09-13 | archived | false | 8e7dbc94-0a89-4a96-ac4b-8ec008643f7f | 2 | 2026-09-17 00:26:34.250429+00 | 2026-09-17 13:59:13.075+00
+fc9687ff-fd4f-4fd7-9b34-64c4626a47d9 | 2026-09-13 | draft | false | 6529f891-b36c-4ab8-b06e-733468ae6077 | 1 | 2026-09-17 00:52:47.054751+00 | 2026-09-17 00:52:52.159+00
+6f365c30-b359-4d7c-a477-7bbc8b7e7450 | 2026-09-20 | archived | false | 0b7df6f0-8ef6-46a8-951f-d7ebac780a6b | 2 | 2026-09-22 11:59:22.955844+00 | 2026-09-24 01:10:06.794578+00
+15b6b4f4-3a46-4581-826b-f957fd8000a5 | 2026-09-20 | archived | false | ebac747d-86a7-4182-b9f1-327895bc96e3 | 4 | 2026-09-22 12:08:32.785161+00 | 2026-09-24 01:10:06.794578+00
+b82409d9-a8b8-440d-9f4e-f25262f8a73a | 2026-09-20 | archived | false | 1f805690-12a5-4f33-9d96-b819bdaa5ffd | 0 | 2026-09-23 02:29:32.425323+00 | 2026-09-24 01:10:06.794578+00
+be6abf2f-881b-478d-9b4b-b09afac3b9a2 | 2026-09-20 | confirmed | false | f6a0f7fa-6cc0-42c2-bbb7-9aca997c535d | 4 | 2026-09-23 11:14:08.935129+00 | 2026-09-24 01:10:06.794578+00
+54a02440-8b6d-43ac-a1b9-6ce10a47fd74 | 2026-09-20 | draft | false | d8efbdb3-a21a-4e7f-984b-94cc89ee67ae | 1 | 2026-09-24 14:23:36.672783+00 | 2026-09-24 14:23:37.846+00
+## vana_conversations (all, oldest first): id | kind | is_deleted | messages | created_at | last_message_at | title
+a9dba8f6-b368-4ef6-881e-03a9470ec359 | meal_planning | false | 2 | 2026-06-12 01:54:39.468858+00 | null | What should I eat before tomorrow's workout?
+7c8c709e-b771-4285-9ba9-29d12eedb968 | meal_planning | false | 2 | 2026-06-12 03:57:55.825038+00 | null | What should I eat before tomorrow's workout?
+68238882-3544-4458-9542-2573e236a928 | meal_planning | false | 2 | 2026-06-12 04:30:18.791393+00 | null | What should I eat before tomorrow's workout?
+d8852739-a67d-4ce2-8fa4-5838fc404c47 | meal_planning | false | 2 | 2026-06-12 13:56:37.032698+00 | null | Help me set up my meal baseline
+172365ea-1e9f-4b78-9764-6a388db077a6 | meal_planning | false | 1 | 2026-06-12 13:59:28.042417+00 | null | What should I eat before tomorrow's workout?
+3dd38172-4fe7-42d9-924c-be651f3b56e9 | meal_planning | false | 2 | 2026-06-16 16:59:01.616164+00 | null | Plan the rest of my day
+fb06cdf9-5772-42d8-83db-1b5e6227d864 | meal_planning | false | 2 | 2026-06-17 13:38:51.26371+00 | null | Plan today's meals
+ce81152d-9704-4fa9-ad0c-fda2f66fe1c7 | meal_planning | false | 4 | 2026-06-17 14:00:39.432353+00 | null | Plan the rest of today's meals
+3ff4e1bd-f713-43a2-ba4f-42eeae464942 | meal_planning | false | 2 | 2026-08-27 14:14:31.812721+00 | null | Vana
+a881a53c-d1d8-45c4-92c6-2563871aa4da | meal_planning | false | 2 | 2026-08-27 15:55:56.090516+00 | null | Vana
+9406b5e8-a4ce-4ad4-bcc1-b06f5d907dd2 | meal_planning | false | 2 | 2026-08-27 15:56:46.65991+00 | null | Vana
+51400af3-33f5-4ce1-b4f3-caa59e6de342 | meal_planning | false | 1 | 2026-08-27 16:15:29.169521+00 | 2026-08-27 16:16:14.18+00 | Week check-in
+cf0fec7f-71d8-40ef-9672-675ae2fac895 | meal_planning | false | 1 | 2026-08-27 16:16:20.168503+00 | 2026-08-27 16:16:39.508+00 | Week check-in
+616ce62a-4adc-49c1-bd1e-bcba27b3772a | meal_planning | false | 3 | 2026-08-27 16:17:08.326276+00 | 2026-08-27 16:18:15.105+00 | Week check-in
+922d7fc7-8b99-4d2a-bea9-4c674dc4ff35 | meal_planning | false | 3 | 2026-08-27 16:34:33.325503+00 | 2026-08-27 16:35:59.236+00 | Week check-in
+414b21e0-7bde-4f7c-bd24-1fbb7e526452 | meal_planning | false | 1 | 2026-08-28 11:47:49.271314+00 | 2026-08-28 11:48:18.961+00 | This week's plan
+ada41b75-09f1-4e29-8267-5d48caaaa59c | general | false | 3 | 2026-08-28 11:49:49.361174+00 | 2026-08-28 11:50:33.48+00 | Quick question
+514e10b2-27db-4e7a-a1a1-80367a5797aa | general | false | 5 | 2026-08-28 12:18:42.637227+00 | 2026-08-28 12:19:43.153+00 | Quick question
+5b9ce5de-d0ef-4835-9389-7cdff74abec9 | meal_planning | false | 5 | 2026-08-28 14:03:23.333226+00 | 2026-08-28 14:28:26.006+00 | This week's plan
+d3760fe9-c712-487e-afb1-1287f034e304 | meal_planning | false | 3 | 2026-08-28 14:28:20.993803+00 | 2026-08-28 14:30:31.349+00 | This week's plan
+a370e7fd-48b3-4562-9ac9-94e791b8a408 | meal_planning | false | 1 | 2026-08-31 01:25:19.279884+00 | 2026-08-31 01:25:26.738+00 | This week's plan
+0f0babd9-c205-4774-86e0-367a33dce1da | meal_planning | false | 3 | 2026-08-31 01:50:35.827392+00 | 2026-08-31 01:51:15.152+00 | This week's plan
+0ed90772-705c-4297-b8e7-ae51d1d42255 | meal_planning | false | 7 | 2026-08-31 01:55:49.34599+00 | 2026-08-31 01:57:26.398+00 | This week's plan
+138f2d08-8b8c-4a34-936c-63f5cd3fdf17 | meal_planning | false | 1 | 2026-08-31 12:57:22.224981+00 | 2026-08-31 12:57:26.189+00 | This week's plan
+cee798cf-2267-420d-ac3b-c6381f34e1b6 | meal_planning | false | 1 | 2026-08-31 13:27:07.004816+00 | 2026-08-31 13:27:11.354+00 | This week's plan
+0b5420e1-9d5e-4285-b05e-2bb935e0c67e | general | false | 1 | 2026-08-31 13:30:53.837888+00 | 2026-08-31 13:30:56.851+00 | Quick question
+85189685-c077-4970-b5f4-f7c23cc72b66 | meal_planning | false | 1 | 2026-08-31 13:33:27.498326+00 | 2026-08-31 13:33:31.125+00 | This week's plan
+3ff0e068-4c78-4552-8b9d-8a6ab19c5cb3 | general | false | 2 | 2026-08-31 13:37:27.513842+00 | 2026-08-31 13:37:31.983+00 | What should I eat before tomorrow's session, and what did I 
+f3ea3658-dda6-421c-a4fe-1c4ca14dc1fc | meal_planning | false | 3 | 2026-08-31 13:37:31.717625+00 | 2026-08-31 13:39:13.297+00 | This week's plan
+f018e9e2-38db-433e-9f12-7f5565516b54 | general | false | 2 | 2026-08-31 13:38:24.057319+00 | 2026-08-31 13:38:29.615+00 | What's in my plan?
+d33d6bbf-9f64-461d-982b-a944614e75f0 | general | false | 2 | 2026-08-31 13:39:23.496286+00 | 2026-08-31 13:39:26.986+00 | How did I eat this week?
+e3735416-5e5c-48ea-aad9-b70922b7e618 | general | false | 2 | 2026-08-31 13:47:42.782896+00 | 2026-08-31 13:47:48.097+00 | What should I eat before tomorrow's session?
+42d1b989-91d9-4bf9-911c-02dd76aa1d98 | meal_planning | false | 1 | 2026-08-31 13:50:35.864994+00 | 2026-08-31 13:50:39.332+00 | This week's plan
+5ec1c150-5723-4bfa-a332-f52e09108513 | meal_planning | false | 5 | 2026-08-31 13:59:46.967349+00 | 2026-08-31 14:02:32.069+00 | This week's plan
+c088f6f6-02d1-4042-9a5a-b6105ea61a3f | general | false | 2 | 2026-08-31 14:26:39.665377+00 | 2026-08-31 14:26:44.016+00 | tell me am I a vegetarian and is there a holiday coming up
+2e5dcf07-328c-4200-83ce-ba07e0bb5e8a | meal_planning | false | 5 | 2026-08-31 14:27:10.165577+00 | 2026-08-31 14:27:58.198+00 | This week's plan
+606ac52c-0840-4c1f-b060-5d0f0fc1dc76 | meal_planning | false | 1 | 2026-08-31 14:45:07.423234+00 | 2026-08-31 14:45:11.918+00 | This week's plan
+3892c7b9-cbdc-45f8-a3e0-9c34b50d4f33 | meal_planning | false | 3 | 2026-09-01 12:40:02.046446+00 | 2026-09-01 12:40:18.35+00 | This week's plan
+62addf5c-5e43-4d1a-9609-ea441bd26ad3 | meal_planning | true | 1 | 2026-09-01 12:46:29.50359+00 | 2026-09-01 12:46:33.952+00 | This week's plan
+9b3e44e0-06ff-415e-901d-872cd01c84cb | general | true | 2 | 2026-09-01 12:46:43.05266+00 | 2026-09-01 12:46:47.045+00 | What should I eat before tomorrow's session?
+9c647a56-5350-4566-b394-2e2b6df9a94e | meal_planning | true | 1 | 2026-09-01 12:47:10.384532+00 | 2026-09-01 12:47:14.004+00 | This week's plan
+903ab1e8-a48a-49ea-9e7d-59aa7fbef9ff | general | true | 2 | 2026-09-01 12:47:22.234585+00 | 2026-09-01 12:47:29.092+00 | What should I eat before tomorrow's session?
+e5abd862-570e-4e4e-9637-3a3d4a881008 | meal_planning | true | 9 | 2026-09-01 12:48:50.734356+00 | 2026-09-01 12:49:30.327+00 | This week's plan
+1b272393-e9ec-4ef4-9487-a4400678a01b | general | true | 2 | 2026-09-01 12:49:15.487787+00 | 2026-09-01 12:49:20.6+00 | What should I eat before tomorrow's ride?
+8d61770f-fb1f-47d6-a90a-6ea2656fa179 | meal_planning | true | 1 | 2026-09-01 12:50:29.39637+00 | 2026-09-01 12:50:32.987+00 | This week's plan
+499d10ac-3efc-4093-8d6d-808724e70c61 | general | true | 2 | 2026-09-01 12:50:41.818064+00 | 2026-09-01 12:50:45.842+00 | What should I eat before tomorrow's session?
+a73f6db2-352e-4d92-bad1-defd605d4516 | meal_planning | true | 1 | 2026-09-01 12:50:53.717351+00 | 2026-09-01 12:50:57.553+00 | This week's plan
+1a3996c2-d4fa-480f-a3dd-fb68ba6fefa5 | general | true | 2 | 2026-09-01 12:51:05.758918+00 | 2026-09-01 12:51:09.986+00 | What should I eat before tomorrow's session?
+802144dc-0d9e-4caf-82f5-6c5bf02293cf | meal_planning | true | 3 | 2026-09-01 13:48:49.098505+00 | 2026-09-01 13:49:00.558+00 | This week's plan
+8229ea46-ff89-4a98-833e-f1fdd2d46231 | general | true | 2 | 2026-09-01 13:49:12.162068+00 | 2026-09-01 13:49:15.857+00 | What should I eat before tomorrow's session?
+de63dbbe-a3c5-46f5-b0f0-6ebad8f4c338 | meal_planning | true | 3 | 2026-09-01 13:49:27.980045+00 | 2026-09-01 13:49:39.116+00 | This week's plan
+714dad09-b6f5-4f18-9c65-00a2dbdb21ab | general | true | 2 | 2026-09-01 13:49:50.789601+00 | 2026-09-01 13:49:54.781+00 | What should I eat before tomorrow's session?
+46c256c0-e029-4fce-bb33-704804623285 | meal_planning | true | 1 | 2026-09-02 11:40:57.260721+00 | 2026-09-02 11:41:01.177+00 | This week's plan
+de300ca9-6246-4ff9-bff9-66e826f38d95 | general | true | 2 | 2026-09-02 11:41:10.092518+00 | 2026-09-02 11:41:14.022+00 | What should I eat before tomorrow's session?
+6a07555d-6e53-4717-bffe-547ae666acfa | meal_planning | true | 1 | 2026-09-02 13:44:31.967267+00 | 2026-09-02 13:44:36.014+00 | This week's plan
+94c316f7-5a2b-43a7-8aa9-4d980d79c31d | general | true | 2 | 2026-09-02 13:44:43.37268+00 | 2026-09-02 13:44:47.819+00 | What should I eat before tomorrow's session?
+5f24fbd4-f426-4f29-ab9a-bea6fcd14030 | meal_planning | true | 1 | 2026-09-02 13:45:01.669937+00 | 2026-09-02 13:45:06.856+00 | This week's plan
+bdcb0525-72c8-47dd-b2f6-64e0ad48c4e7 | general | true | 2 | 2026-09-02 13:45:14.592343+00 | 2026-09-02 13:45:18.723+00 | What should I eat before tomorrow's session?
+8478527e-9fef-4367-86f6-1794b220c0fa | meal_planning | true | 1 | 2026-09-02 13:45:24.313747+00 | 2026-09-02 13:45:27.888+00 | This week's plan
+28b41e7c-2957-4953-9c87-11a006b93db9 | general | true | 2 | 2026-09-02 13:45:35.549315+00 | 2026-09-02 13:45:41.437+00 | What should I eat before tomorrow's session?
+201c93aa-054c-461a-925f-96459e7757d3 | meal_planning | true | 1 | 2026-09-02 13:46:14.054169+00 | 2026-09-02 13:46:17.6+00 | This week's plan
+1db90132-ae70-4d6d-8c61-87e33ad825f9 | general | true | 2 | 2026-09-02 13:46:25.482571+00 | 2026-09-02 13:46:29.335+00 | What should I eat before tomorrow's session?
+5ccee009-3f9f-4358-a303-f9f92cbc95d9 | meal_planning | false | 5 | 2026-09-08 13:23:11.597598+00 | 2026-09-08 13:23:35.929+00 | This week's plan
+93c129cf-8b0e-4c89-aaac-dd3b201800b1 | general | false | 2 | 2026-09-08 13:54:06.396085+00 | 2026-09-08 13:54:09.441+00 | the shopping list is broken, it didn't update after I swappe
+680641c6-562a-49c2-be66-97e1088e36ab | general | false | 2 | 2026-09-09 13:22:14.517165+00 | 2026-09-09 13:22:23.613+00 | Some feedback for you: you keep suggesting fish on weeknight
+d650b3f8-f350-4c6f-8029-b8e62742f150 | general | false | 9 | 2026-09-11 01:24:03.137686+00 | 2026-09-11 02:13:34.398+00 | Quick question
+8c406469-9e78-42a9-a4be-a8e1f9fc26a4 | general | false | 10 | 2026-09-11 12:11:00.147791+00 | 2026-09-11 15:13:26.416+00 | Quick question
+7e38b9d4-c4ab-4036-8c3e-f8e9ec148eb0 | meal_planning | false | 1 | 2026-09-11 15:13:54.282658+00 | 2026-09-11 15:14:00.024+00 | This week's plan
+39f6d556-549e-4436-ba3a-e1225a7320ea | meal_planning | false | 3 | 2026-09-11 15:14:25.605587+00 | 2026-09-11 15:14:55.591+00 | This week's plan
+b4704328-6430-4c4c-a953-bb11d1152905 | general | false | 2 | 2026-09-15 14:34:54.19022+00 | 2026-09-15 14:34:59.671+00 | What should I eat before tomorrow's session?
+614dbee6-a3d3-4e81-b96d-f5c6415ddb28 | general | false | 6 | 2026-09-15 14:42:41.514659+00 | 2026-09-15 14:43:41.449+00 | What should I eat before tomorrow's session? It is an easy 6
+55880520-6618-44d9-beec-ff4cca4cfb6c | general | false | 2 | 2026-09-15 14:42:51.003227+00 | 2026-09-15 14:42:52.819+00 | Keep it simple, one option is enough.
+e1654700-b4f2-4a84-8e77-66d6f9091b2f | general | false | 2 | 2026-09-15 14:54:47.452084+00 | 2026-09-15 14:54:50.707+00 | You keep suggesting fish on weeknights and I never make it
+48c39bfc-b522-4b02-afd4-2c25ecbf8bf7 | meal_planning | false | 3 | 2026-09-15 14:58:48.35626+00 | 2026-09-15 14:59:32.373+00 | This week's plan
+2f43d3c0-28a0-4c62-a386-f6864d87cd4c | general | false | 2 | 2026-09-15 19:21:07.714395+00 | 2026-09-15 19:21:11.564+00 | What's in my plan?
+fdde8960-9f12-4a01-80d1-70163011a330 | general | false | 3 | 2026-09-15 20:22:31.528052+00 | 2026-09-15 20:24:30.638+00 | Quick question
+3bf585d0-8bc5-47cb-92f7-2c557324d472 | general | false | 1 | 2026-09-15 20:25:55.467557+00 | 2026-09-15 20:25:59.698+00 | Quick question
+5bd7bb1a-f842-4e03-8dc9-068c08eddf1e | general | false | 2 | 2026-09-16 02:05:49.781928+00 | 2026-09-16 02:05:53.886+00 | Can you make me a meal plan for this week?
+2ceb0373-1ae5-407c-a798-3d1ec45cee9a | general | false | 5 | 2026-09-16 10:45:01.49611+00 | 2026-09-16 10:46:27.608+00 | Quick question
+55fa8129-bdbe-4dc0-97ab-3d67a4e432c0 | general | false | 22 | 2026-09-16 13:01:29.387352+00 | 2026-09-16 19:07:27.646+00 | Quick question
+e919ba6d-6ad7-4705-967d-437e26152ce2 | general | false | 1 | 2026-09-16 13:03:34.391938+00 | 2026-09-16 13:03:39.419+00 | Quick question
+aabfa9c3-1689-4c57-9905-aebbb54965a2 | meal_planning | false | 9 | 2026-09-16 13:04:19.271986+00 | 2026-09-16 13:05:47.994+00 | This week's plan
+20da6a28-ce97-463e-a29b-74fc59ca6bcc | meal_planning | false | 1 | 2026-09-16 13:17:18.274168+00 | 2026-09-16 13:17:21.551+00 | This week's plan
+9aa9fbc4-8e14-413c-af44-4bc23720cc7c | meal_planning | false | 7 | 2026-09-16 14:07:10.11297+00 | 2026-09-16 14:07:57.309+00 | This week's plan
+279377ee-741b-4882-9752-33dba06146d3 | meal_planning | false | 13 | 2026-09-16 14:21:53.883585+00 | 2026-09-16 14:26:05.052+00 | This week's plan
+31009286-1ea8-40c7-be1c-a76d4184f245 | general | false | 1 | 2026-09-16 14:31:34.567411+00 | 2026-09-16 14:31:41.676+00 | Quick question
+ffc4d91a-359d-4a4b-8380-4ce4dcd1caf4 | general | false | 1 | 2026-09-16 14:31:37.423659+00 | 2026-09-16 14:31:42.648+00 | Quick question
+f5157136-c23d-4a0b-9e30-f038d5c4b40e | meal_planning | false | 7 | 2026-09-16 14:41:22.441512+00 | 2026-09-16 14:42:37.328+00 | This week's plan
+bcba7a41-2b86-4556-bdb9-90199302aba5 | general | false | 7 | 2026-09-16 14:48:20.064354+00 | 2026-09-17 00:25:32.423+00 | Quick question
+d344592a-972d-4189-8ccf-650afbe6fc83 | meal_planning | false | 1 | 2026-09-16 14:48:34.118614+00 | 2026-09-16 14:48:40.449+00 | This week's plan
+aac5f1bb-568d-48bc-92f9-6f7e7954eb86 | meal_planning | false | 3 | 2026-09-16 14:48:53.579964+00 | 2026-09-16 14:49:11.612+00 | This week's plan
+d80ba033-a3ff-4a9d-9a7d-afc9aaa73100 | meal_planning | false | 3 | 2026-09-16 14:57:41.704928+00 | 2026-09-16 14:58:00.394+00 | This week's plan
+279e37d2-9edc-43dd-9292-bb6aba933fd1 | meal_planning | false | 1 | 2026-09-16 14:59:04.917023+00 | 2026-09-16 14:59:10.987+00 | This week's plan
+0f955822-4649-402d-b4fe-29ba4c7395ff | meal_planning | false | 1 | 2026-09-16 15:13:44.211522+00 | 2026-09-16 15:13:52.59+00 | This week's plan
+513ccb1b-0d96-4c1e-9061-e2878f7afcef | meal_planning | false | 1 | 2026-09-16 15:13:53.251419+00 | 2026-09-16 15:14:02.156+00 | This week's plan
+62cbbb22-93b6-437d-a814-2c0dffa18c8e | meal_planning | false | 1 | 2026-09-16 15:14:03.06453+00 | 2026-09-16 15:14:11.969+00 | This week's plan
+0fd52eb6-066f-423e-81a7-e09268935474 | meal_planning | false | 1 | 2026-09-16 15:19:32.786393+00 | 2026-09-16 15:19:40.496+00 | This week's plan
+7c4a0a53-ed1b-45cd-bb80-742b114d9b75 | meal_planning | false | 1 | 2026-09-16 15:19:40.476518+00 | 2026-09-16 15:19:47.464+00 | This week's plan
+f5eaa62b-09e1-4aa9-a1a6-3008b5d3e400 | meal_planning | false | 1 | 2026-09-16 15:19:48.005222+00 | 2026-09-16 15:19:54.963+00 | This week's plan
+aad8fe09-f10a-4917-a701-afd80fdb7063 | meal_planning | false | 1 | 2026-09-16 15:20:12.75792+00 | 2026-09-16 15:20:20.345+00 | This week's plan
+a0bb195c-7f90-4fb0-854e-1a8184eb60b7 | meal_planning | false | 1 | 2026-09-16 15:20:30.242506+00 | 2026-09-16 15:20:47.495+00 | This week's plan
+a0fc9fe4-b7b4-4d3a-93cd-442e70a70efc | meal_planning | false | 1 | 2026-09-16 15:20:45.139852+00 | 2026-09-16 15:20:51.787+00 | This week's plan
+16072b14-317b-4d85-a83c-5659daa359a3 | meal_planning | false | 1 | 2026-09-16 15:20:53.371683+00 | 2026-09-16 15:21:00.377+00 | This week's plan
+ab0a7246-b267-41d6-b2af-2633cbcda27c | meal_planning | false | 1 | 2026-09-16 15:21:31.678266+00 | 2026-09-16 15:21:37.283+00 | This week's plan
+bff665be-08c7-4e7f-b077-5fbc57e1bbb3 | meal_planning | false | 1 | 2026-09-16 15:21:37.734887+00 | 2026-09-16 15:21:43.504+00 | This week's plan
+6165b765-3a21-48fb-b04c-ebe1283e4470 | meal_planning | false | 1 | 2026-09-16 15:21:44.35003+00 | 2026-09-16 15:21:51.236+00 | This week's plan
+4b9455f8-44a9-46ca-805f-03af9ee0a77f | meal_planning | false | 1 | 2026-09-16 16:10:09.407247+00 | 2026-09-16 16:10:18.503+00 | This week's plan
+6950ae62-3ad5-4066-b716-066e063a5cd3 | meal_planning | false | 3 | 2026-09-16 16:10:30.687201+00 | 2026-09-16 16:10:58.98+00 | This week's plan
+9ff1bb0d-ceb3-4c9a-8984-5255dc61be82 | meal_planning | false | 1 | 2026-09-16 16:11:31.667777+00 | 2026-09-16 16:11:37.539+00 | This week's plan
+d5efed4d-8f80-4b19-98e3-c87330884cf7 | meal_planning | false | 3 | 2026-09-16 16:11:41.264594+00 | 2026-09-16 16:12:00.179+00 | This week's plan
+01697fc9-f426-4ea7-b534-52def3a5700b | meal_planning | false | 1 | 2026-09-16 17:27:27.556137+00 | 2026-09-16 17:27:35.265+00 | This week's plan
+71997f9f-6dea-4c8e-a772-7bb66551fe5a | meal_planning | false | 1 | 2026-09-16 18:22:31.804733+00 | 2026-09-16 18:22:39.091+00 | This week's plan
+19d75536-875e-469f-8523-f7f7470527ba | meal_planning | false | 1 | 2026-09-16 18:22:49.934358+00 | 2026-09-16 18:22:56.819+00 | This week's plan
+dc20300f-89ff-4ff3-ae6b-ee83584e4fba | meal_planning | false | 1 | 2026-09-16 18:37:51.767598+00 | 2026-09-16 18:38:00.439+00 | This week's plan
+86e75994-baaa-466c-8fa9-84e25cc14d93 | meal_planning | false | 5 | 2026-09-16 18:38:05.159219+00 | 2026-09-16 18:38:38.226+00 | This week's plan
+1a24f2bf-df4d-4f94-ad5d-2f06bf20e9f8 | meal_planning | false | 7 | 2026-09-16 18:45:35.683796+00 | 2026-09-16 18:48:10.252+00 | This week's plan
+ffedde31-f99c-41bc-9276-98f7265d808c | meal_planning | false | 5 | 2026-09-16 19:03:05.665069+00 | 2026-09-16 19:03:38.008+00 | This week's plan
+cb4b7a7f-a4b9-4864-9126-6225200b93db | general | false | 3 | 2026-09-16 19:08:02.599644+00 | 2026-09-16 19:08:37.332+00 | Quick question
+8e7dbc94-0a89-4a96-ac4b-8ec008643f7f | meal_planning | false | 3 | 2026-09-17 00:25:58.03404+00 | 2026-09-17 00:26:25.14+00 | This week's plan
+4f8f4d27-6a2f-4a5a-acd3-2dd260dad209 | meal_planning | false | 1 | 2026-09-17 00:42:14.477949+00 | 2026-09-17 00:42:26.549+00 | This week's plan
+6529f891-b36c-4ab8-b06e-733468ae6077 | meal_planning | false | 3 | 2026-09-17 00:52:27.418445+00 | 2026-09-17 00:52:39.816+00 | This week's plan
+a6835ebf-8d4d-41e7-bdfa-9f1c3ab8d641 | meal_planning | false | 1 | 2026-09-17 00:52:59.886015+00 | 2026-09-17 00:53:04.323+00 | This week's plan
+4a774c41-cee5-44f5-9979-a548f327849f | general | false | 15 | 2026-09-19 16:15:12.167016+00 | 2026-09-19 16:18:34.468+00 | Quick question
+e184c13d-4f11-4bf4-951e-494ead3dea57 | general | false | 2 | 2026-09-21 21:17:57.403287+00 | 2026-09-21 21:18:04.998+00 | In one short sentence, is rice a good pre-run carb?
+d0f97004-c104-48a8-b3b2-fe99661ea0a8 | general | false | 1 | 2026-09-22 01:58:43.410868+00 | 2026-09-22 01:58:49.655+00 | Quick question
+3af2ca69-4f9b-4d31-ab90-354eac95defd | general | false | 4 | 2026-09-22 02:17:18.655829+00 | 2026-09-22 02:17:31.514+00 | In one short sentence: is oatmeal a good pre-run breakfast?
+0b7df6f0-8ef6-46a8-951f-d7ebac780a6b | meal_planning | false | 11 | 2026-09-22 11:59:09.757088+00 | 2026-09-22 11:59:56.957+00 | This week's plan
+ebac747d-86a7-4182-b9f1-327895bc96e3 | meal_planning | false | 11 | 2026-09-22 12:08:20.040052+00 | 2026-09-22 12:08:56.322+00 | This week's plan
+0401b3d8-9c04-497b-9910-45028ac99da3 | meal_planning | false | 1 | 2026-09-23 02:24:32.023109+00 | 2026-09-23 02:24:38.7+00 | This week's plan
+1f805690-12a5-4f33-9d96-b819bdaa5ffd | meal_planning | false | 9 | 2026-09-23 02:28:56.618667+00 | 2026-09-23 02:32:34.376+00 | This week's plan
+f6a0f7fa-6cc0-42c2-bbb7-9aca997c535d | meal_planning | false | 15 | 2026-09-23 11:12:49.871104+00 | 2026-09-23 11:16:17.649+00 | This week's plan
+38ea8992-ac50-43ee-8b4c-2b57ed4b88f8 | general | false | 2 | 2026-09-24 00:56:41.976531+00 | 2026-09-24 00:56:45.989+00 | hi
+13998a9a-7f33-4d14-93bf-84c099d7d855 | general | false | 3 | 2026-09-24 04:42:30.67391+00 | 2026-09-24 04:43:13.504+00 | Quick question
+d8efbdb3-a21a-4e7f-984b-94cc89ee67ae | meal_planning | false | 3 | 2026-09-24 14:22:06.792991+00 | 2026-09-24 14:23:07.843+00 | This week's plan
+## messages of the new conversation: role | created_at | metadata.new_plan | opener | text (first 80)
+assistant | 2026-09-24 14:22:13.040929+00 | true | true | You've got the Ironman in 60 days and a solid week behind you — all 6 planned me
+user | 2026-09-24 14:23:03.938649+00 | null | null | Show me what fits the training
+assistant | 2026-09-24 14:23:07.809944+00 | null | false | These dinners fit your week: plant-based proteins (tofu, eggs, legumes in the gr
