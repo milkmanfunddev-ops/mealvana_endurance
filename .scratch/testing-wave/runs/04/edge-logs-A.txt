@@ -1,0 +1,6 @@
+[23:27:37] Starting unified sync for user: a92da7e2-4198-4090-942b-5c590702473a
+[23:28:56] Deleting user account: a92da7e2-4198-4090-942b-5c590702473a
+[23:28:56] Deleted user from public.users: a92da7e2-4198-4090-942b-5c590702473a
+[23:28:56] Successfully deleted auth account: a92da7e2-4198-4090-942b-5c590702473a
+
+(4 rows)

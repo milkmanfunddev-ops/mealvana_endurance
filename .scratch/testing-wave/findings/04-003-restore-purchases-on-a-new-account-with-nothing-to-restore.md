@@ -1,0 +1,28 @@
+# 04-003 · Restore purchases on a new account with nothing to restore
+
+- kind: followup-test
+- status: open
+- ticket: 04
+- run: w4-20260924T0418Z
+- screen: Paywall
+- decision: 
+
+**Steps.**
+1. A new account on the paywall: ⋯ → Restore purchases.
+
+**Expected.**
+The "nothing to restore" info message (`paywallRestoreNone`), the account stays on the paywall, and
+no `user_entitlements` row appears. Also check the SDK's anonymous customer on a cloned simulator
+(ticket 02 saw one with an active entitlement) is not what gets restored.
+
+**Actual.**
+Not run (look-around, ticket 04).
+
+**Evidence.**
+- runs/04/16-paywall-menu.png
+
+**Decision quote.**
+> 
+
+**Triage.**
+

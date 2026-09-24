@@ -10,9 +10,13 @@
 ///
 ///   **Happy path** — Running + a goal, "I don't use training plan apps"
 ///   tile, personal info, one plan-reveal edit, a daily-preview tab switch,
-///   "Save My Plan", then email signup → lands on the paywall in its
-///   onboarding shape (plans + Restore only; a brand-new account has no
-///   entitlement, mp-297). When a session is present the flow self-skips.
+///   "Save My Plan", then email signup at a sweepable `lee+e2e-*` address →
+///   lands on the full-screen paywall with no close button (mp-457). Its ⋯
+///   menu lists Restore, Redeem code, Sign out and Delete account, and no
+///   Manage (nothing to manage, mp-494). The account's rows are read (users,
+///   survey, and no `user_entitlements` row, mp-624), then the account deletes
+///   itself from the menu, and only then are the rows asserted, so a red run
+///   leaves nothing on dev. When a session is present the flow self-skips.
 ///
 /// The connect-FAILURE path (error snackbar → card back in Connect state →
 /// retry / Skip still advances) is deliberately NOT scripted here: Patrol
@@ -157,10 +161,10 @@ void main() {
       ).enterText(password);
       await $(const ValueKey('signup_email.create_account_button')).tap();
 
-      // ---- Landed on the paywall's onboarding shape with the plan saved --
-      // (a new account has no entitlement). The ⋯ button arrives with the
-      // plans after the opening clip; its menu carries Restore, Sign out and
-      // Delete account in the onboarding shape too (mp-494 §2).
+      // ---- Landed on the full-screen paywall (mp-457: closed Gate) ------
+      // A new account has no Pro, so the Gate answers closed and the app
+      // stays on the paywall. The ⋯ button arrives with the plans after the
+      // opening clip.
       await $(
         const ValueKey('paywall.more_button'),
       ).waitUntilVisible(timeout: const Duration(seconds: 40));
@@ -171,20 +175,34 @@ void main() {
             'Expected the paywall after signup. If this fails, the signup '
             'round-trip did not complete or the post-signup redirect changed.',
       );
-      // The paywall never settles (its opening clip keeps animating), so a
-      // bare pumpAndSettle here ran the flow into its 12-minute timeout
-      // (testing-wave 03). Wait for the menu rows instead.
+      _expectNoWayOffThePaywall($);
+
+      // ---- The ⋯ menu for an account with nothing to manage (mp-494) -----
+      // Restore purchases, Redeem code, Sign out, Delete account; Manage
+      // subscription only when there is a subscription to manage, so never
+      // for a new account. The paywall never settles (its opening clip keeps
+      // animating), so a bare pumpAndSettle here runs the flow into its
+      // timeout (testing-wave 03). Wait for the menu rows instead.
       await $(
         const ValueKey('paywall.more_button'),
       ).tap(settlePolicy: SettlePolicy.noSettle);
       for (final key in const [
         ValueKey('paywall.restore_button'),
+        ValueKey('paywall.redeem_code_button'),
         ValueKey('paywall.sign_out_button'),
         ValueKey('paywall.delete_account_button'),
       ]) {
         await $(key).waitUntilVisible(timeout: const Duration(seconds: 10));
         expect($(key), findsOneWidget, reason: 'paywall menu carries $key');
       }
+      expect(
+        $(const ValueKey('paywall.manage_button')),
+        findsNothing,
+        reason:
+            'mp-494: Manage subscription shows only when the account has a '
+            'subscription to manage; a new account has none.',
+      );
+      // Close the menu (a tap outside the panel dismisses its PopupRoute).
       await $.tester.tapAt(const Offset(20, 700));
       await $.pump(const Duration(seconds: 1));
       expect(
@@ -195,23 +213,62 @@ void main() {
             'snackbar.',
       );
 
-      // ---- THE POINT OF THIS FLOW: the answers actually persisted --------
-      // Probe Supabase AS THE ACCOUNT JUST CREATED (the shared tester session
-      // can't see it under RLS) and assert the sentinel answers landed:
-      // gender female, metric units, high gut training, heavy sweat rate,
-      // the plan-reveal carb edit, and the survey row. These are exactly the
-      // fields the 2026-08 audit found being dropped or reset at the auth
-      // boundary. The upload is a background walk after navigation, so poll.
+      // ---- Read the account's rows before deleting it --------------------
+      // Probe Supabase AS THE ACCOUNT JUST CREATED (RLS scopes every read to
+      // it). The upload is a background walk after navigation, so poll. The
+      // rows are only read here; the assertions run after the delete, so a
+      // failed assertion never leaves the account behind on dev.
       final rows = await _pollForPersistedOnboarding(uniqueEmail, password);
+
+      // ---- Delete the account from the paywall's ⋯ menu (mp-494) ---------
+      await $(
+        const ValueKey('paywall.more_button'),
+      ).tap(settlePolicy: SettlePolicy.noSettle);
+      await $(
+        const ValueKey('paywall.delete_account_button'),
+      ).waitUntilVisible(timeout: const Duration(seconds: 10));
+      await $(
+        const ValueKey('paywall.delete_account_button'),
+      ).tap(settlePolicy: SettlePolicy.noSettle);
+      await $(
+        const ValueKey('paywall.confirm.action'),
+      ).waitUntilVisible(timeout: const Duration(seconds: 10));
+      await $(
+        const ValueKey('paywall.confirm.action'),
+      ).tap(settlePolicy: SettlePolicy.noSettle);
+      await $(
+        const ValueKey('welcome.get_started_button'),
+      ).waitUntilVisible(timeout: const Duration(seconds: 40));
+      expect(
+        await account.isGone(),
+        isTrue,
+        reason: '$uniqueEmail can still sign in after Delete account.',
+      );
+
+      // ---- The Gate's inputs: no Entitlement row for a new account -------
+      // An empty read only means something once the same probe has read the
+      // users row, which proves the token and the transport worked.
       final userRow = rows.userRow;
       final surveyRow = rows.surveyRow;
-
       if (userRow == null) {
         fail(
           'users row for $uniqueEmail never appeared in Supabase within the '
           'polling window — the post-signup profile upload did not land.',
         );
       }
+      expect(
+        rows.entitlementRows,
+        isEmpty,
+        reason:
+            'A new account has never paid, so user_entitlements holds no row '
+            'for it (mp-624).',
+      );
+
+      // ---- THE POINT OF THIS FLOW: the answers actually persisted --------
+      // gender female, metric units, high gut training, heavy sweat rate,
+      // the plan-reveal carb edit, and the survey row. These are exactly the
+      // fields the 2026-08 audit found being dropped or reset at the auth
+      // boundary.
       expect(userRow['gender'], 'female');
       expect(
         userRow['unit_system'],
@@ -227,20 +284,6 @@ void main() {
         reason: 'sweat_rate was omitted from the old upload payload.',
       );
       expect(userRow['onboarding_completed'], true);
-      final overrides = userRow['nutrition_target_overrides'];
-      expect(
-        overrides,
-        isNotNull,
-        reason:
-            'the plan-reveal edit must persist as a nutrition_target_override '
-            '— it was omitted from the old upload payload.',
-      );
-      expect(
-        (overrides as Map)['duringRun'],
-        isNotNull,
-        reason: 'the edited long-RUN carb target must survive signup.',
-      );
-
       expect(
         surveyRow,
         isNotNull,
@@ -251,18 +294,43 @@ void main() {
       );
       expect(surveyRow!['sports'], contains('running'));
       expect(surveyRow['goals'], contains('performance'));
+
+      // Last, because it is red on an open app bug (testing-wave 03-009:
+      // the plan-reveal edit is dropped at signup) and every check above
+      // should still report.
+      final overrides = userRow['nutrition_target_overrides'];
+      expect(
+        overrides,
+        isNotNull,
+        reason:
+            'the plan-reveal edit must persist as a nutrition_target_override '
+            '— it was omitted from the old upload payload (03-009).',
+      );
+      expect(
+        (overrides as Map)['duringRun'],
+        isNotNull,
+        reason: 'the edited long-RUN carb target must survive signup.',
+      );
     },
     timeout: const Timeout(Duration(minutes: 12)),
   );
 }
 
 /// Poll Supabase (as the just-registered account) for the uploaded profile
-/// and survey rows. The post-signup upload runs in the background after
-/// navigation, so give it up to ~90s of wall clock before giving up.
-Future<({Map<String, dynamic>? userRow, Map<String, dynamic>? surveyRow})>
+/// and survey rows, and read its `user_entitlements` rows once both are in.
+/// The post-signup upload runs in the background after navigation, so give
+/// it up to ~90s of wall clock before giving up.
+Future<
+  ({
+    Map<String, dynamic>? userRow,
+    Map<String, dynamic>? surveyRow,
+    List<Map<String, dynamic>> entitlementRows,
+  })
+>
 _pollForPersistedOnboarding(String email, String password) async {
   Map<String, dynamic>? userRow;
   Map<String, dynamic>? surveyRow;
+  var entitlementRows = const <Map<String, dynamic>>[];
 
   for (var attempt = 0; attempt < 18; attempt++) {
     await Future<void>.delayed(const Duration(seconds: 5));
@@ -275,9 +343,50 @@ _pollForPersistedOnboarding(String email, String password) async {
     surveyRow ??= await probe.onboardingSurvey();
     // The users row is a hard requirement; the survey is uploaded by the
     // same background walk, so once both are present we're done.
-    if (userRow != null && surveyRow != null) break;
+    if (userRow != null && surveyRow != null) {
+      entitlementRows = await probe.select(
+        'user_entitlements',
+        query: 'user_id=eq.${probe.userId}&select=*',
+      );
+      break;
+    }
   }
-  return (userRow: userRow, surveyRow: surveyRow);
+  return (
+    userRow: userRow,
+    surveyRow: surveyRow,
+    entitlementRows: entitlementRows,
+  );
+}
+
+/// mp-457: a closed Gate lands on the full-screen paywall and stays there.
+/// No close or back control on the screen, and nothing under it to pop back
+/// to (an iOS edge swipe pops whatever the route can pop).
+void _expectNoWayOffThePaywall(PatrolIntegrationTester $) {
+  final screen = find.byKey(const ValueKey('paywall.screen'));
+  expect(screen, findsOneWidget, reason: 'the paywall is the screen shown');
+  for (final escape in [
+    find.byType(CloseButton),
+    find.byType(BackButton),
+    find.byIcon(Icons.close),
+    find.byIcon(Icons.close_rounded),
+    find.byIcon(Icons.arrow_back),
+    find.byIcon(Icons.arrow_back_ios),
+    find.byIcon(Icons.arrow_back_ios_new),
+  ]) {
+    expect(
+      find.descendant(of: screen, matching: escape),
+      findsNothing,
+      reason: 'mp-457: the paywall has no close button ($escape)',
+    );
+  }
+  final route = ModalRoute.of($.tester.element(screen));
+  expect(
+    route?.canPop ?? false,
+    isFalse,
+    reason:
+        'mp-457: nothing sits behind the paywall, so it must not be poppable '
+        '(a back swipe would leave it).',
+  );
 }
 
 /// Bounded first-frame settle (default 100ms interval, 2-min ceiling).
