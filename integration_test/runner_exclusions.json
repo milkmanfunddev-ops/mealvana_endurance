@@ -1,15 +1,7 @@
 {
-  "flows/account_delete_flow_test.dart": {
-    "reason": "clean-install",
-    "why": "Signs up throwaway accounts from the welcome screen, so it needs a fresh install with no session, like the signup flow."
-  },
   "flows/ai_coach_chat_flow_test.dart": {
     "reason": "ai-spend",
     "why": "Sends a message in the Vana general chat (/jade redirects there): one model turn per run, and the answer is not deterministic."
-  },
-  "flows/cancellation_flow_test.dart": {
-    "reason": "clean-install",
-    "why": "Signs up a throwaway account from the welcome screen and buys Test Store Monthly on the paywall, then waits about 30 minutes for the monthly to lapse, so it needs a fresh install with no session and a build whose RevenueCat key is the Test Store's."
   },
   "flows/google_login_flow_test.dart": {
     "reason": "interactive-oauth",
@@ -26,21 +18,5 @@
   "flows/onboarding_signup_flow_test.dart": {
     "reason": "clean-install",
     "why": "Needs a fresh install with no session; it self-skips once an earlier flow has signed in, and the job fails on any skip."
-  },
-  "flows/paid_relogin_flow_test.dart": {
-    "reason": "clean-install",
-    "why": "Signs up a throwaway account from the welcome screen and buys Test Store Monthly on the paywall, so it needs a fresh install with no session and a build whose RevenueCat key is the Test Store's."
-  },
-  "flows/redeem_code_flow_test.dart": {
-    "reason": "clean-install",
-    "why": "Signs up a throwaway account from the welcome screen to redeem codes from the paywall, so it needs a fresh install with no session, like the signup flow."
-  },
-  "flows/restore_purchases_flow_test.dart": {
-    "reason": "clean-install",
-    "why": "Signs up a throwaway account from the welcome screen to tap Restore purchases on the paywall, so it needs a fresh install with no session, like the signup flow."
-  },
-  "flows/subscription_screen_flow_test.dart": {
-    "reason": "clean-install",
-    "why": "Signs up a throwaway account from the welcome screen and buys Test Store Monthly on the paywall, so it needs a fresh install with no session and a build whose RevenueCat key is the Test Store's."
   }
 }

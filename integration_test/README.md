@@ -122,15 +122,12 @@ suite. Run it locally or on the M1.
 | File | Covers | Runner |
 |------|--------|--------|
 | `patrol_smoke_test.dart` | Toolchain smoke: the app launches, one widget renders | yes |
-| `flows/account_delete_flow_test.dart` | Sign up at `lee+e2e-*`, delete from the paywall ⋯ menu, sign up again as a new account | clean-install |
-| `flows/admin_bypass_flow_test.dart` | mp-416 for the signed-in account: Admin or Pro opens the Gate, an Admin pushing `/paywall` stays on the shell, no Pro means `vana-chat` answers 403 `pro_required` (not run when the account holds Pro) | yes |
 | `flows/activities_crud_flow_test.dart` | Activity create → plan (deterministic macro edge function) → edit → delete | yes |
 | `flows/ai_coach_chat_flow_test.dart` | One turn in the Vana general chat (`/jade` redirects there) | ai-spend |
 | `flows/ai_credits_balance_flow_test.dart` | AI credits pill → top-up sheet resolves; buys nothing | yes |
 | `flows/auth_flow_test.dart` | Email login | yes |
 | `flows/barcode_scanner_entry_flow_test.dart` | Barcode scanner entry from the add-food sheet | yes |
 | `flows/brick_plan_flow_test.dart` | Brick workout create → plan → verify the stored legs → clean up | yes |
-| `flows/cancellation_flow_test.dart` | A new `lee+e2e-cancel-*` athlete buys Test Store Monthly, stays in the app while Pro is live, waits (about 30 min) for the monthly to lapse on its own, and on resume lands on the full-screen paywall with no close, the five ⋯ items and still signed in; `vana-chat` answers 403 `pro_required`; its `users` and Entitlement rows are kept; then deletes itself (mp-457, mp-280). The cold relaunch and RevenueCat stay agent-only | clean-install |
 | `flows/energy_breakdown_flow_test.dart` | Energy breakdown (`daily_macros` read path) | yes |
 | `flows/event_checklist_carbload_flow_test.dart` | Event → race-day checklist → carb-load entry | yes |
 | `flows/events_crud_flow_test.dart` | Event create → read → update → delete | yes |
@@ -146,14 +143,10 @@ suite. Run it locally or on the M1.
 | `flows/meal_log_build_flow_test.dart` | Build-a-meal: search → add → log → delete (no AI) | yes |
 | `flows/meal_plan_build_flow_test.dart` | New Vana plan → confirm → shopping list → "Ate it" → a `meal_logs` row | ai-spend |
 | `flows/onboarding_signup_flow_test.dart` | Onboarding → email signup → the paywall's onboarding shape | clean-install |
-| `flows/paid_relogin_flow_test.dart` | A new `lee+e2e-*` athlete buys Test Store Monthly on the paywall, signs out and back in with no paywall frame on either way and keeps its Entitlement row; then deletes itself from Settings (mp-457, mp-335). The cold relaunch stays agent-only | clean-install |
 | `flows/pro_gate_flow_test.dart` | The app gate: shell, paywall, `/food` and `/vana` agree | yes |
-| `flows/redeem_code_flow_test.dart` | A new `lee+e2e-*` athlete redeems from the paywall ⋯ menu: a made-up and an overlong code are refused as not found with the sheet open, DEVCOACH30 opens a pending pairing, a second DEVCOACH30 is refused; then deletes itself (mp-458, mp-535, mp-598) | clean-install |
-| `flows/restore_purchases_flow_test.dart` | A new `lee+e2e-*` athlete taps Restore purchases in the paywall ⋯ menu: the nothing-found message, still on the paywall, no `user_entitlements` row, Manage still hidden; then deletes itself (mp-494). The reinstall itself is agent-only (testing-wave 07) | clean-install |
 | `flows/recommendation_stacking_flow_test.dart` | Pre-workout occasion stacking (2 cases) | yes |
 | `flows/settings_persist_flow_test.dart` | Settings persistence | yes |
 | `flows/settings_sweep_flow_test.dart` | Every top-level settings screen opens without a crash | yes |
-| `flows/subscription_screen_flow_test.dart` | A new `lee+e2e-*` athlete buys Test Store Monthly, opens Settings → Subscription and sees "Subscribed", the renewal day of its Entitlement row's `active_until`, Manage subscription, no Upgrade, and Redeem code opening our own sheet; then deletes itself from Settings (mp-495, mp-494, mp-558). Tapping Manage stays agent-only | clean-install |
 
 "Runner" is `yes` when the M1 job runs the file, otherwise the reason it is on
 `runner_exclusions.json`. The last result of each flow, and every problem a

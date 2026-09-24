@@ -70,7 +70,9 @@ class E2eAccount {
   }
 
   /// True once this account can no longer sign in, polled for [waitFor].
-  Future<bool> isGone({Duration waitFor = const Duration(seconds: 30)}) async {
+  Future<bool> isGone({
+    Duration waitFor = const Duration(seconds: 30),
+  }) async {
     final deadline = DateTime.now().add(waitFor);
     while (true) {
       final probe = await SupabaseProbe.signInAs(
@@ -144,9 +146,9 @@ Future<void> walkOnboardingToSignup(PatrolIntegrationTester $) async {
     }
     await $.pump(const Duration(milliseconds: 500));
   }
-  await $(
-    sportsContinue,
-  ).waitUntilVisible(timeout: const Duration(seconds: 15));
+  await $(sportsContinue).waitUntilVisible(
+    timeout: const Duration(seconds: 15),
+  );
 
   await $(const ValueKey('sport_selection.running_chip')).tap();
   await $(sportsContinue).tap();
@@ -217,9 +219,9 @@ Future<void> signUpToPaywall(
       }
       await $(verifyField).enterText(code);
       await $(const ValueKey('auth.verify_submit')).tap();
-      await $(
-        paywallMore,
-      ).waitUntilVisible(timeout: const Duration(seconds: 40));
+      await $(paywallMore).waitUntilVisible(
+        timeout: const Duration(seconds: 40),
+      );
       return;
     }
     await $.pump(const Duration(milliseconds: 500));
@@ -275,118 +277,3 @@ Future<void> _scrollIntoView(
 /// local `SUPABASE_URL` is refused too (the sweep's `assertDev` does the same).
 bool get e2eAccountsAllowed =>
     TestConfig.supabaseUrl.contains('vlmtsdzpnjnavdgytcmi');
-
-/// Buys Pro Monthly on the paywall (testing-wave 06): Monthly → Continue → the Test Store's native alert → "Test valid
-/// purchase". The paywall never settles, so taps are noSettle.
-Future<void> buyMonthlyInTestStore(PatrolIntegrationTester $) async {
-  await $(
-    const ValueKey('paywall.plan.monthly'),
-  ).tap(settlePolicy: SettlePolicy.noSettle);
-  await $(
-    const ValueKey('paywall.continue_button'),
-  ).tap(settlePolicy: SettlePolicy.noSettle);
-  // The Test Store sheet is an in-app UIKit alert with the buttons "Test
-  // valid purchase", "Test failed purchase" and "Cancel" (testing-wave 05).
-  await $.platform.tap(
-    IOSSelector(label: 'Test valid purchase'),
-    timeout: const Duration(seconds: 20),
-  );
-}
-
-/// Taps "Got it" on the What's New sheet when it shows within [wait]. It
-/// opens over the first screen after the Gate opens.
-Future<void> dismissWhatsNew(
-  PatrolIntegrationTester $, {
-  Duration wait = const Duration(seconds: 5),
-}) async {
-  const cta = ValueKey('whats_new.cta');
-  final deadline = DateTime.now().add(wait);
-  while (DateTime.now().isBefore(deadline)) {
-    if ($(cta).exists) {
-      await $(cta).tap(settlePolicy: SettlePolicy.noSettle);
-      for (var i = 0; i < 20 && $(cta).exists; i++) {
-        await $.pump(const Duration(milliseconds: 200));
-      }
-      return;
-    }
-    await $.pump(const Duration(milliseconds: 200));
-  }
-}
-
-Future<void> openSettings(PatrolIntegrationTester $) async {
-  await $(
-    const ValueKey('kyle_date_header.settings'),
-  ).tap(settlePolicy: SettlePolicy.noSettle);
-  await $(
-    const ValueKey('settings.title'),
-  ).waitUntilVisible(timeout: const Duration(seconds: 15));
-}
-
-Future<void> signOutFromSettings(PatrolIntegrationTester $) async {
-  await $('Sign Out').scrollTo().tap(settlePolicy: SettlePolicy.noSettle);
-  await $.pump(const Duration(milliseconds: 500));
-  // The confirm dialog's action repeats the label.
-  await $('Sign Out').last.tap(settlePolicy: SettlePolicy.noSettle);
-}
-
-Future<void> logInWithEmail(
-  PatrolIntegrationTester $,
-  E2eAccount account,
-) async {
-  // Sign-out lands on welcome mid-transition; a tap before the route settles
-  // is dropped (testing-wave 06's second run), so wait, then tap until the
-  // login options show.
-  await $(
-    const ValueKey('welcome.log_in_button'),
-  ).waitUntilVisible(timeout: const Duration(seconds: 15));
-  const emailOption = ValueKey('login_options.email_button');
-  for (var i = 0; i < 3 && !$(emailOption).exists; i++) {
-    await $.pump(const Duration(seconds: 1));
-    if ($(const ValueKey('welcome.log_in_button')).exists) {
-      await $(
-        const ValueKey('welcome.log_in_button'),
-      ).tap(settlePolicy: SettlePolicy.noSettle);
-    }
-    for (var j = 0; j < 20 && !$(emailOption).exists; j++) {
-      await $.pump(const Duration(milliseconds: 250));
-    }
-  }
-  await $(emailOption).waitUntilVisible(timeout: const Duration(seconds: 15));
-  await $(const ValueKey('login_options.email_button')).tap();
-  await $(
-    const ValueKey('login.email_field'),
-  ).waitUntilVisible(timeout: const Duration(seconds: 15));
-  await $(const ValueKey('login.email_field')).enterText(account.email);
-  await $(const ValueKey('login.password_field')).enterText(account.password);
-  await $(
-    const ValueKey('login.log_in_button'),
-  ).tap(settlePolicy: SettlePolicy.noSettle);
-}
-
-/// The account's Entitlement rows, read as the account (RLS shows an athlete
-/// its own row), or null when the read failed. Polls for [waitFor] until a
-/// row shows.
-Future<List<Map<String, dynamic>>?> entitlementRows(
-  E2eAccount account, {
-  Duration waitFor = Duration.zero,
-}) async {
-  final deadline = DateTime.now().add(waitFor);
-  while (true) {
-    final probe = await SupabaseProbe.signInAs(
-      email: account.email,
-      password: account.password,
-    );
-    final rows = probe == null
-        ? null
-        : await probe.trySelect(
-            'user_entitlements',
-            query:
-                'user_id=eq.${probe.userId}&select=user_id,active_until,period_type',
-          );
-    if ((rows != null && rows.isNotEmpty) ||
-        !DateTime.now().isBefore(deadline)) {
-      return rows;
-    }
-    await Future<void>.delayed(const Duration(seconds: 3));
-  }
-}

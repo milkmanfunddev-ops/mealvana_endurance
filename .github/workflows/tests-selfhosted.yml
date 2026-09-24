@@ -211,7 +211,7 @@ jobs:
       # scripts/patrol-targets.mjs. Excluded today (see the file for each why):
       # the flows that spend on AI (ai_coach_chat, meal_plan_build), the ones
       # that need a clean install with no session (onboarding_signup,
-      # account_delete, integrations_connect) and the interactive Google OAuth
+      # integrations_connect) and the interactive Google OAuth
       # flow (google_login).
       #
       # --bundle-id: pubspec's patrol.ios.bundle_id is the prod id; the dev
