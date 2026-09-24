@@ -64,5 +64,23 @@
     "failed": [],
     "suite": "green",
     "elapsed": "45m"
+  },
+  {
+    "number": 5,
+    "tickets": [
+      "05",
+      "11"
+    ],
+    "base": "cfa054c87556a153266b8d9dc8f8bd7318b726d7",
+    "branch": "mealplanning",
+    "startedAt": "2026-09-24T08:38:05.044Z",
+    "closedAt": "2026-09-24T10:58:01.942Z",
+    "merged": [
+      "05",
+      "11"
+    ],
+    "failed": [],
+    "suite": "green",
+    "elapsed": "2h 19m"
   }
 ]
