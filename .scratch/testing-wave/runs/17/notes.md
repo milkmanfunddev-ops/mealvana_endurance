@@ -1,0 +1,22 @@
+# Ticket 17 run notes
+
+- RUN: w12-20260924T1712Z. Slot claimed 17:12:46 UTC (testing-wave-15 also held).
+- App on wave-pool-2 (4B967827-8982-4E55-AEB2-6B03C94EF0A4) built from commit 52c68764b2cde49951a27220a8dbdb3a463116f7 (dev flavor); data cleared by the wave lead.
+- Worktree base ed9b36694894b06a896dc79f9832d87deb1f8faa.
+- 17:13 UTC: SQL before (`db-plans-before.json`); expected written (`expected.md`). RevenueCat not read: the ticket names no RevenueCat record and needs no purchase.
+- 17:13-17:14: Welcome → Log In → Log in with email; email typed with idb, password with `cred.mjs type`. All taps and typing went through idb (`idb ui tap`/`idb ui text`); the mobile MCP was not used.
+- After login: What's New sheet ("Shake to tell us what's wrong"), then the TrainingPeaks sharing sheet; closed with its X (leaves sharing on). Known: 12-008, 30-010.
+- Timeline lists Patrol leftover workouts ("Patrol H5 …") on today: known noise, earlier waves' Patrol runs on this account, out of scope here.
+- Plan tab's Vana note says "1007g target": known, 14-010.
+- 17:15:42 Plan ⋮ → Previous plans: 17 rows. Comparison in `db-sheet-vs-sql.txt`. Findings 17-001 (five Aug 23 plans missing), 17-002 (a draft listed).
+- 17:16:18 opened Sep 13 "6 meals" row: f2c0bc78's 6 meals, same names, slots, servings (×N), macros and order as `plan_meals`. Header "An earlier plan. View only." No row actions.
+- Back from the plan view goes to the Plan tab, not to the sheet.
+- 17:17 second open of the sheet: 5 s after tapping Previous plans only the spinner showed (`13-sheet-loading.png` is the next open, same state at 1 s); `list_plans` at 17:17:05 took 8062 ms in the edge log. My tap meant for a row landed on the scrim and closed the sheet (`12-plan-tab-sheet-not-loaded-tap-dismissed.png`). Finding 17-003.
+- Opened the Sep 13 "1 meal" row (2nd in that week): shows "Quinoa, mixed veg & walnuts ×9" = draft fc9687ff's row (the other 1-meal plan 50b8190b holds Mushroom risotto). Confirms 17-002.
+- Opened Aug 30 "4 meals" row: 0694c723's 4 meals match `plan_meals` exactly.
+- `meal_plans.days` is `{}` on every opened plan; only d5b89888 and 83eb5608 (both missing from the sheet) store days, so whether the view shows days was not checkable. Folded into 17-001's retest.
+- Edge log: a vana-chat opener (conversation 4d62c862, created 17:17:17 UTC) and one extra `get_plan` at 17:18:18 on test@test.com that this run did not make: my screen stayed on the Plan tab / plan view at those times. Known noise: ticket 15 runs on the same account in this wave (its agent opens conversations). A plan list read while another run uses the account can change under you; it did not here (before and after identical).
+- Console: TrainingPeaks token refresh 400 and V.O2 "Please reconnect" integration sync failures at login. Known noise: the test account's integrations are expired, noted in runs 03, 12, 14, 16, 19, 30, 31. CoreHaptics/AudioConverter/CFBundle errors are simulator system noise. No Flutter exception.
+- 17:19 SQL after: `db-plans-after.json` identical to before; nothing written.
+- 17:20:12 log stream stopped, app terminated, slot released. 4 token lines cut from the console into `console-redacted.log`; rescan finds nothing.
+- COST: nothing spent (no plan generated, no logging call).

@@ -11,9 +11,9 @@
 
 **Touches:** the dev test account's plans (read only)
 
-- [ ] Runs by the runbook: a slot taken and released, the console saved to the run folder, a look-around on every screen visited, every problem written as a Finding and nothing fixed.
-- [ ] Uses the entitled dev test account from the credentials file; no new account.
+- [x] Runs by the runbook: a slot taken and released, the console saved to the run folder, a look-around on every screen visited, every problem written as a Finding and nothing fixed.
+- [x] Uses the entitled dev test account from the credentials file; no new account.
 - [ ] The plans listed equal the archived and confirmed plans by SQL.
-- [ ] An opened plan's meals equal its stored rows.
+- [x] An opened plan's meals equal its stored rows.
 
 Next: /implement-lee testing-wave

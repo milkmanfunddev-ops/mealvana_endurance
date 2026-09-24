@@ -1,0 +1,33 @@
+Previous plans sheet (idb describe-all, 17:15 UTC, screenshots 08 and 09) vs meal_plans by SQL (db-plans-before.json)
+Account test@test.com (607f9dd5-...). Plan tab's plan: be6abf2f (confirmed, 2026-09-20, 4 meals), left out by the client.
+
+#  sheet row                  SQL plan   status     meals  note
+1  Sep 20 – Sep 26 · 1 meal   54a02440   archived   1
+2  Sep 20 – Sep 26 · 2 meals  6f365c30   archived   2      (15b6b4f4/b82409d9/6f365c30 share updated_at to the microsecond; order among them is arbitrary)
+3  Sep 20 – Sep 26 · 4 meals  15b6b4f4   archived   4
+-  (not shown)                b82409d9   archived   0      0 meals, dropped by the client on purpose
+4  Sep 13 – Sep 19 · 2 meals  f9f6f432   archived   2
+5  Sep 13 – Sep 19 · 1 meal   fc9687ff   DRAFT      1      opened: "Quinoa, mixed veg & walnuts ×9" = fc9687ff's row, so a draft is listed
+6  Sep 13 – Sep 19 · 6 meals  f2c0bc78   confirmed  6      opened, matches (db-plan-meals-f2c0bc78.json)
+7  Sep 13 – Sep 19 · 4 meals  7b25ed93   archived   4
+8  Sep 13 – Sep 19 · 3 meals  9a60cc00   archived   3
+9  Sep 13 – Sep 19 · 1 meal   50b8190b   archived   1
+10 Sep 13 – Sep 19 · 6 meals  3b747b23   archived   6
+11 Sep 13 – Sep 19 · 3 meals  95f08589   archived   3
+12 Sep 13 – Sep 19 · 4 meals  0fcd035c   archived   4
+13 Sep 6 – Sep 12 · 4 meals   a5b4c73c   confirmed  4
+14 Sep 6 – Sep 12 · 4 meals   474a5568   archived   4
+15 Aug 30 – Sep 5 · 3 meals   a89fbf86   confirmed  3
+16 Aug 30 – Sep 5 · 4 meals   0694c723   archived   4      opened, matches (db-plan-meals-0694c723.json)
+17 Aug 30 – Sep 5 · 3 meals   f561026b   archived   3      last row on the sheet
+-  (not shown)                968c5a59   DRAFT      0      20th row of list_plans (limit 20), dropped for 0 meals
+-  MISSING                    c95e286f   archived   3      week 2026-08-23, beyond list_plans' limit of 20
+-  (not shown)                61c0e1ee   archived   0
+-  MISSING                    d5b89888   archived   4      has stored `days`
+-  MISSING                    40b20856   archived   3
+-  MISSING                    d63f7220   archived   3
+-  MISSING                    83eb5608   archived   3      has stored `days`
+
+Deleted plans (is_deleted = true, 14 rows) are correctly absent.
+Result: 16 of the 21 expected archived/confirmed plans are listed; 5 archived plans (week of Aug 23) are missing; 1 draft is listed.
+Meal counts on every listed row equal count(plan_meals).
