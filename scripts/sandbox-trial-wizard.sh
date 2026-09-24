@@ -721,6 +721,13 @@ for bp in d.get("basePlans", []):
   done <<<"$STORE_PRODUCTS"
 }
 
+# shift_minutes TIMESTAMP MINUTES: a Postgres timestamptz moved by MINUTES, as ISO UTC.
+shift_minutes() {
+  python3 -c 'import sys, datetime as d
+t = d.datetime.fromisoformat(sys.argv[1].replace(" ", "T").replace("+00", "+00:00"))
+print((t + d.timedelta(minutes=int(sys.argv[2]))).strftime("%Y-%m-%dT%H:%M:%SZ"))' "$1" "$2"
+}
+
 # store_checks GRANTED_USER_ID: every check that needs no phone, logged to
 # docs/release/sandbox-trial-runs/YYYY-MM-DD-store-checks.md.
 store_checks() {
@@ -776,8 +783,8 @@ print(next((e["id"] for e in json.load(sys.stdin).get("items", []) if e.get("loo
   local at start end
   at="$(json_first "$row" event_at)"
   if [[ -n "$at" ]]; then
-    start="$(python3 -c 'import sys,datetime as d; t=d.datetime.fromisoformat(sys.argv[1].replace(" ","T").replace("+00","+00:00")); print((t-d.timedelta(minutes=2)).strftime("%Y-%m-%dT%H:%M:%SZ"))' "$at")"
-    end="$(python3 -c 'import sys,datetime as d; t=d.datetime.fromisoformat(sys.argv[1].replace(" ","T").replace("+00","+00:00")); print((t+d.timedelta(minutes=3)).strftime("%Y-%m-%dT%H:%M:%SZ"))' "$at")"
+    start="$(shift_minutes "$at" -2)"
+    end="$(shift_minutes "$at" 3)"
     log ""
     log "Webhook lines around the row's event_at ($at), the webhook writing it:"
     log ""
@@ -789,7 +796,10 @@ print(next((e["id"] for e in json.load(sys.stdin).get("items", []) if e.get("loo
   json="$(rc_get "/integrations/webhooks?limit=50")"
   WH_DEV_REF="$DEV_REF" WH_PROD_REF="$PROD_REF" store_check "C7 RevenueCat webhooks: dev and prod hear every lifecycle event, no environment filter" webhooks <<<"$json"
 
-  # A check that never ran is not a pass.
+  # A check that never ran is not a pass. set -e is off in here (the caller runs
+  # store_checks in an && list), so a failed fetch does not stop the run: its
+  # evaluator fails on the empty input instead. This guard catches a check that a
+  # later edit skips or returns early past.
   (( STORE_CHECKS_RUN == STORE_CHECKS_EXPECTED )) || \
     log_step "Every check ran" FAIL "${STORE_CHECKS_RUN} of ${STORE_CHECKS_EXPECTED} checks ran; see the terminal for the error."
 

@@ -24,17 +24,18 @@ no phone; a person runs only what needs one). The gate is step P3c of the prod s
 A person with a fresh sandbox account on each store, on a physical device running the dev app:
 
 1. finishes onboarding as a new athlete and lands on the paywall with the introductory offer;
-2. (2b) with the `founding` offering overridden for that customer in RevenueCat (never made the
+2. with the `founding` offering overridden for that customer in RevenueCat (never made the
    project's current offering: the project is shared with prod), sees the founding prices beside the
    normal ones struck through;
 3. subscribes through the founding offering's seven-day free offer;
-3. the entitlement row on DEV is active on day one (`period_type = TRIAL`, `active_until > now()`);
-4. the monthly Allowance landed in the wallet (a `grant_allowance` ledger row keyed on the RevenueCat event id);
-   (5b) with the device clock moved on to day five, the reminder arrives and its tap opens the
-   store's subscription page;
-5. cancels in the store, and the cancellation reaches DEV;
-6. the trial ends, the server gate closes, and the app shows the paywall and nothing else;
-7. resubscribes in the store's own subscription settings, taps Restore purchases, and the app and the
+4. the entitlement row on DEV is active on day one (`period_type = TRIAL`, `active_until > now()`);
+5. the monthly Allowance landed in the wallet (a `grant_allowance` ledger row keyed on the RevenueCat
+   event id);
+6. with the device clock moved on to day five, the reminder arrives and its tap opens the store's
+   subscription page;
+7. cancels in the store, and the cancellation reaches DEV;
+8. the trial ends, the server gate closes, and the app shows the paywall and nothing else;
+9. resubscribes in the store's own subscription settings, taps Restore purchases, and the app and the
    server gate reopen.
 
 The webhook's own logic (grant on renewal, stale event ignored, transfer moves the row) is tested at
@@ -69,7 +70,8 @@ variables; the phone run also refuses without a terminal.
 
 ## The logs
 
-`store-checks` writes `YYYY-MM-DD-store-checks.md`; each store writes `YYYY-MM-DD-<store>.md` here (a `-2`, `-3` suffix for a second run on the same day):
+`store-checks` writes `YYYY-MM-DD-store-checks.md`; each store writes `YYYY-MM-DD-<store>.md` here
+(a `-2`, `-3` suffix for a second run on the same day):
 the build commit, device, accounts, every step with the DEV rows that proved it, and a closing
 `## Result: GREEN` or `## Result: RED (…)`. Commit the logs with the release. A RED log stays in
 the history; the gate needs a later GREEN log for that store.

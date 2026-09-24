@@ -149,7 +149,7 @@ Finished 2026-09-24T11:52:22Z. Commit this file with the release.
   the cutover and add a prod row check before the release that carries the paywall.
 - **Signed-in browser: not used.** Every item mp-463 lists was answerable through the APIs.
 - **The founding offering is not current** (C4). That is intended: it becomes current by hand on
-  1 October. The phone run overrides it for the sandbox customer only (stage 2b).
+  1 October. The phone run overrides it for the sandbox customer only (README step 2).
 - **All eight App Store subscriptions are `MISSING_METADATA`** (the review screenshot). Sandbox
   purchases work without review; the screenshot goes in with the release binary.
 - **App Store Connect has no sandbox testers** (`GET /v2/sandboxTesters` → 0). The iOS phone run
@@ -162,7 +162,7 @@ Finished 2026-09-24T11:52:22Z. Commit this file with the release.
 Run `scripts/sandbox-trial-wizard.sh ios` and `scripts/sandbox-trial-wizard.sh android` on physical
 devices. Each writes its own `YYYY-MM-DD-<store>.md` here with a `## Result` line; list them below.
 
-| Store | Log | Founding offering shows both prices (2b) | Purchase through founding, free week (3-5) | Day-five reminder, clock moved on (5b) | Restore (8a, 8b) | Result |
+| Store | Log | Founding offering shows both prices (2) | Purchase through founding, free week (3-5) | Day-five reminder, clock moved on (6) | Restore (9) | Result |
 |---|---|---|---|---|---|---|
 | iOS | | | | | | |
 | Android | | | | | | |
