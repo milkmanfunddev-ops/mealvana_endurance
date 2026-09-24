@@ -11,8 +11,8 @@
 
 **Touches:** nothing (read only)
 
-- [ ] Runs by the runbook: a slot taken and released, the console saved to the run folder, a look-around on every screen visited, every problem written as a Finding and nothing fixed.
-- [ ] Uses the entitled dev test account from the credentials file; no new account.
-- [ ] Every console error or exception line is a Finding or listed as known noise with a reason.
+- [x] Runs by the runbook: a slot taken and released, the console saved to the run folder, a look-around on every screen visited, every problem written as a Finding and nothing fixed.
+- [x] Uses the entitled dev test account from the credentials file; no new account.
+- [x] Every console error or exception line is a Finding or listed as known noise with a reason.
 
 Next: /implement-lee testing-wave
