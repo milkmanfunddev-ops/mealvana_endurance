@@ -1,6 +1,6 @@
 # 08: The Subscription screen shows the plan, its end date and how to manage it
 
-**Status:** in-progress (wave 7, 2026-09-24)
+**Status:** done (wave 7, 2026-09-24)
 **Blocked by:** 03 (touches integration_test/flows/subscription_screen_flow_test.dart), 05.
 **Next:** `/implement-lee testing-wave`
 **Model:** opus

@@ -1,6 +1,6 @@
 # 09: Cancelling keeps access to the period's end, then the full-screen paywall
 
-**Status:** in-progress (wave 7, 2026-09-24)
+**Status:** done (wave 7, 2026-09-24)
 **Blocked by:** 03 (touches integration_test/flows/cancellation_flow_test.dart), 05.
 **Next:** `/implement-lee testing-wave`
 **Model:** opus
