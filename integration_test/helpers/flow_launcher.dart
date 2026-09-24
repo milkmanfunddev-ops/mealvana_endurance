@@ -119,7 +119,7 @@ void skipFlow(String reason) {
 ///
 /// Returns true when the shell sentinel is on screen. Returns false when
 /// there is no existing session and no credentials for this flavor — callers
-/// should `markTestSkipped` with a clear message in that case rather than
+/// should `skipFlow` with a clear message in that case rather than
 /// fail.
 Future<bool> ensureAuthenticated(
   PatrolIntegrationTester $, {

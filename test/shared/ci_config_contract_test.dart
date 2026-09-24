@@ -51,6 +51,10 @@ void main() {
 
   late YamlMap codemagic;
   late String m1Source;
+  // The M1 Patrol job takes its targets from scripts/patrol-targets.mjs (every
+  // flow minus integration_test/runner_exclusions.json), not from --target
+  // lines in the workflow.
+  late List<String> m1Targets;
 
   setUpAll(() {
     expect(
@@ -61,6 +65,21 @@ void main() {
     expect(m1File.existsSync(), isTrue, reason: 'M1 workflow missing.');
     codemagic = loadYaml(codemagicFile.readAsStringSync()) as YamlMap;
     m1Source = m1File.readAsStringSync();
+    final listed = Process.runSync('node', [
+      'scripts/patrol-targets.mjs',
+      'targets',
+    ], workingDirectory: repoRoot.path);
+    expect(
+      listed.exitCode,
+      0,
+      reason: 'scripts/patrol-targets.mjs failed: ${listed.stderr}',
+    );
+    m1Targets =
+        (listed.stdout as String)
+            .split('\n')
+            .where((l) => l.isNotEmpty)
+            .toList()
+          ..sort();
   });
 
   YamlMap workflow(String name) {
@@ -285,7 +304,7 @@ void main() {
     test('are absent from the M1 workflow', () {
       for (final entry in _mustNeverAutoRun.entries) {
         expect(
-          RegExp('--target [^\\s]*${entry.key}').hasMatch(m1Source),
+          m1Targets.any((t) => t.contains(entry.key)),
           isFalse,
           reason: 'The M1 workflow must not run ${entry.key}: ${entry.value}.',
         );
@@ -299,13 +318,13 @@ void main() {
     ).allMatches(source).map((m) => m.group(1)!).toSet().toList()..sort();
 
     test('the M1 and Codemagic dev lanes run the same flow list', () {
-      final m1 = targetsIn(m1Source);
+      final m1 = m1Targets;
       final cm = targetsIn(scriptsOf('integration-tests-develop'));
 
       expect(
         m1,
         isNotEmpty,
-        reason: 'The M1 workflow declares no --target flows.',
+        reason: 'scripts/patrol-targets.mjs lists no flows for the M1 job.',
       );
       expect(
         cm,
@@ -319,7 +338,7 @@ void main() {
     });
 
     test('every declared target exists on disk', () {
-      for (final t in targetsIn(m1Source)) {
+      for (final t in m1Targets) {
         expect(
           File('${repoRoot.path}/$t').existsSync(),
           isTrue,

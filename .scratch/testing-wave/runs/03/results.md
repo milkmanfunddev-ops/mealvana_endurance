@@ -17,8 +17,8 @@ the credentialed flows ran as the dev admin (test@test.com, active Pro), with
 | barcode_scanner_entry | pass | patrol-batch4.log |
 | brick_plan | pass | patrol-batch4.log |
 | energy_breakdown | pass | patrol-batch4.log |
-| event_checklist_carbload | fixed: New Event is scrolled to (it rests under the tab bar, 03-007), passes | patrol-batch8.log |
-| events_crud | fixed: same, passes | patrol-batch8.log |
+| event_checklist_carbload | Finding 03-007: red at the New Event tap once the list rests (the review took out the mid-overscroll tap that hid the bug) | patrol-review-events.log |
+| events_crud | Finding 03-007: same, red | patrol-review-events.log |
 | formula_create_pin | pass | patrol-batch4.log |
 | formula_pin_conflict | not verified: skips at its precondition on the admin (no conflicting Before formula), red under fail-on-skip, 03-005 | patrol-batch4.log |
 | formula_pin | pass | patrol-suite-rest.log |
