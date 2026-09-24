@@ -225,6 +225,20 @@ Tick hides at 0 owed and on completion.
 Prototyped through v9 (both files). Still pending for ship: the glow materials
 ruling, and a copy register for the pace/Loaded strings (P-3).
 
+### RULED — 2026-09-24, later (Xuan) — the slot page is a composition of existing surfaces
+
+No new bespoke surface. The slot page assembles from what ships today:
+- **Shell**: the existing Add Food picker — search-with-barcode field, curated
+  "Recommended Foods" (teal discs, "N g carbs per serving", portioned names),
+  My Foods, Create Custom Food. Scoped to the slot, plus a progress header.
+- **Combos**: the **Formula Kit** — a formula already is a named multi-food
+  bundle with quantities and computed totals (incl. sodium). Curated slot
+  combos ship as formulas; "add your own card" = the athlete saving a formula.
+  Log-a-Meal's quick-add card is the display pattern.
+- **Data**: ride Log-a-Meal's logging path — a slot log is an ordinary
+  food-log entry tagged to a slot, which is the D1 "integrate" resolution in
+  practice. New pixels are only the slot header and the Logged section.
+
 ### RULED — 2026-09-24 (Xuan) — slot interior descoped; the card is a door
 
 **No recommendation algorithm this iteration.** Quick-add is the old feature's
