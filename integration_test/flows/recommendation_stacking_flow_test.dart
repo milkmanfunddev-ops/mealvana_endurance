@@ -143,7 +143,7 @@ void main() {
 
 /// Boots, authenticates, creates a running activity with a deterministic
 /// fueling window, generates the plan, and lands on the plan-detail screen.
-/// Returns false (after `markTestSkipped`) when the run has no auth — the
+/// Returns false (after `skipFlow`) when the run has no auth — the
 /// caller should early-return.
 Future<bool> _generateRunPlanWithWindow(
   PatrolIntegrationTester $, {

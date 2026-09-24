@@ -68,6 +68,11 @@ void main() {
       await $(
         const ValueKey('my_events.new_event_button'),
       ).scrollTo(settlePolicy: SettlePolicy.noSettle);
+      // Let the overscroll bounce back so the list rests where an athlete
+      // sees it, then tap. While Finding 03-007 is open New Event rests under
+      // the floating tab bar and this tap fails: the flow stays red until the
+      // app is fixed (testing-wave rule: an app bug is never worked around).
+      await $.pump(const Duration(seconds: 1));
       await $(
         const ValueKey('my_events.new_event_button'),
       ).tap(settlePolicy: SettlePolicy.noSettle);

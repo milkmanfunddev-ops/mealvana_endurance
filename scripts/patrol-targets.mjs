@@ -23,6 +23,7 @@ import { fileURLToPath } from 'node:url';
 const DIR = 'integration_test';
 const FOLDERS = ['', 'flows'];
 const EXCLUSIONS = 'runner_exclusions.json';
+const REASONS = ['ai-spend', 'clean-install', 'interactive-oauth'];
 
 /** The patrolTest cases one test file registers. */
 export function cases(source) {
@@ -39,6 +40,7 @@ export function plan(root) {
   for (const [rel, entry] of Object.entries(exclusions)) {
     if (!existsSync(join(base, rel))) throw new Error(`${EXCLUSIONS}: ${rel} does not exist; drop it from the list`);
     if (!entry?.reason || !entry?.why) throw new Error(`${EXCLUSIONS}: ${rel} needs a reason and a why`);
+    if (!REASONS.includes(entry.reason)) throw new Error(`${EXCLUSIONS}: ${rel} has reason ${entry.reason}; use one of ${REASONS.join(', ')}`);
   }
   const all = FOLDERS.flatMap(folder => {
     const dir = join(base, folder);

@@ -7,7 +7,7 @@
 /// (`meal_planning.*` keys). Updated by testing-wave 03 (mp-623).
 ///
 /// Flow:
-///   PROD guard: markTestSkipped on prod (never burn prod AI spend)
+///   PROD guard: skipFlow on prod (never burn prod AI spend)
 ///   launchApp → ensureAuthenticated (reuse session, else email login)
 ///     → router.push('/jade') and assert it lands on the Vana chat screen
 ///       (meal_planning.vana_chat_screen), which proves the redirect

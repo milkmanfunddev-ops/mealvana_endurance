@@ -76,6 +76,11 @@ test('an exclusion naming a flow that does not exist is refused, so the list can
   assert.throws(() => plan(dir), /gone_flow_test\.dart.*does not exist/);
 });
 
+test('an exclusion whose reason is not a known kind is refused', () => {
+  const dir = repo({ 'flows/a_flow_test.dart': oneCase('a') }, { 'flows/a_flow_test.dart': { reason: 'ai_spend', why: 'typo' } });
+  assert.throws(() => plan(dir), /a_flow_test\.dart.*ai_spend.*ai-spend, clean-install, interactive-oauth/);
+});
+
 test('an exclusion without a reason and a why is refused', () => {
   const dir = repo({ 'flows/a_flow_test.dart': oneCase('a') }, { 'flows/a_flow_test.dart': { reason: 'ai-spend' } });
   assert.throws(() => plan(dir), /a_flow_test\.dart.*reason and a why/);

@@ -1496,9 +1496,10 @@ workflows:
             --target integration_test/flows/event_checklist_carbload_flow_test.dart \
             --target integration_test/flows/formula_pin_flow_test.dart \
             --target integration_test/flows/formula_create_pin_flow_test.dart \
+            --target integration_test/flows/formula_pin_conflict_flow_test.dart \
+            --target integration_test/flows/fueling_window_persistence_flow_test.dart \
             --target integration_test/flows/settings_persist_flow_test.dart \
             --target integration_test/flows/settings_sweep_flow_test.dart \
-            --target integration_test/flows/integrations_connect_flow_test.dart \
             --target integration_test/flows/learn_flow_test.dart \
             --target integration_test/flows/recommendation_stacking_flow_test.dart \
             --target integration_test/flows/energy_breakdown_flow_test.dart \
@@ -1598,9 +1599,10 @@ workflows:
             --target integration_test/flows/event_checklist_carbload_flow_test.dart \
             --target integration_test/flows/formula_pin_flow_test.dart \
             --target integration_test/flows/formula_create_pin_flow_test.dart \
+            --target integration_test/flows/formula_pin_conflict_flow_test.dart \
+            --target integration_test/flows/fueling_window_persistence_flow_test.dart \
             --target integration_test/flows/settings_persist_flow_test.dart \
             --target integration_test/flows/settings_sweep_flow_test.dart \
-            --target integration_test/flows/integrations_connect_flow_test.dart \
             --target integration_test/flows/learn_flow_test.dart \
             --target integration_test/flows/recommendation_stacking_flow_test.dart \
             --target integration_test/flows/energy_breakdown_flow_test.dart \
