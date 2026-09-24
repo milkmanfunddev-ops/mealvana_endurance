@@ -1,0 +1,21 @@
+# console.log line number: text (prefs dump lines are shown as printed; their line number gives their order)
+15836: prefs "flutter.users_last_sync" = "2026-09-24T14:06:25.669829";
+15839: prefs "flutter.integrations_last_sync" = "2026-09-24T14:06:25.917659";
+15885: prefs "flutter.activities_last_sync" = "2026-09-24T14:06:26.953484";
+17604: prefs "flutter.integration_garmin_last_sync" = 1790276789744;
+17733: prefs "flutter.integration_final_surge_last_sync" = 1790276789956;
+18181: 14:07:04.489725 local 📊 [ANALYTICS] log_meal_opened {source: macro_dashboard, log_date: 2026-09-24, is_today: true}
+18427: prefs "flutter.recipes_last_sync" = "2026-09-24T14:07:05.356940";
+18440: 14:07:15.750797 local 📊 [ANALYTICS] log_method_selected {method: recent}
+18520: 14:07:50.407891 local 📊 [ANALYTICS] diary_closed {duration_sec: 45, items_logged: 0, log_date: 2026-09-24}
+18672: prefs "flutter.saved_meals_last_sync" = "2026-09-24T14:07:52.606349";
+18675: prefs "flutter.user_memories_last_sync" = "2026-09-24T14:07:52.687679";
+18678: prefs "flutter.meal_logs_last_sync" = "2026-09-24T14:07:52.753148";
+18682: prefs "flutter.meal_plans_last_sync" = "2026-09-24T14:07:53.059687";
+18748: 14:08:07.116759 local 📊 [ANALYTICS] log_meal_opened {source: macro_dashboard, log_date: 2026-09-24, is_today: true}
+18840: 14:08:10.268115 local 📊 [ANALYTICS] log_method_selected {method: recent}
+19073: 14:08:57.902290 local 📊 [ANALYTICS] log_method_selected {method: common}
+19249: 14:09:40.674595 local 📊 [ANALYTICS] log_method_selected {method: recipe}
+19978: 14:10:16.627902 local 📊 [ANALYTICS] diary_closed {duration_sec: 129, items_logged: 3, log_date: 2026-09-24}
+20431: 14:10:40.332988 local 📊 [ANALYTICS] log_meal_opened {source: macro_dashboard, log_date: 2026-09-24, is_today: true}
+20590: 14:10:43.485570 local 📊 [ANALYTICS] log_method_selected {method: recent}
