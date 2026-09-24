@@ -1,6 +1,6 @@
 # 16: Confirming a plan archives the week and builds the shopping list
 
-**Status:** in-progress (wave 9, 2026-09-24)
+**Status:** done (wave 9, 2026-09-24)
 **Blocked by:** 14 (confirms the Draft 14 makes).
 **Next:** `/implement-lee testing-wave`
 **Model:** opus

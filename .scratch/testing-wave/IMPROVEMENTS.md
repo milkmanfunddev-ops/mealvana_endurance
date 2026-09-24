@@ -33,8 +33,15 @@ Wave 9 (16, 32; 2026-09-24):
   simulators, so fresh copies held a Sep 23 build. The lead rebuilt. Fix: after a build, the
   lead keeps `Runner.app` (scratchpad, or install it on the dev simulator too) and the "no
   build" check also compares the Dart bundle date on a fresh copy.
+- **#33 `app-build.json` still lagged in the worktrees.** The lead recorded the wave-9 build in a
+  commit after `wave --open`, so both worktrees (at base) named 433514bc; the prompt was right.
+  Fix: build before `wave --open`, or keep the prompt as the only source (the runbook says so).
 
 ## Done
+
+- **#34 one run's stop ended the other run's console (wave 9).** Ticket 16 stopped its log stream
+  at 14:56:02Z and ticket 32's stream died the same second (SIGTERM). Runbook step 3 now saves
+  the stream's PID in SCRATCH and step 9 kills only that PID.
 
 - **#27 launch, #28 screenshots.** Runbook step 3 checks for SpringBoard after `simctl launch`
   and relaunches; step 5 names `simctl io screenshot` and the stale element list. Before wave 9.

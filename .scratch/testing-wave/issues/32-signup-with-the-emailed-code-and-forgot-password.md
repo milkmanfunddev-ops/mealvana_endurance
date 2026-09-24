@@ -1,6 +1,6 @@
 # 32: Signup with the emailed code, and forgot password
 
-**Status:** in-progress (wave 9, 2026-09-24)
+**Status:** done (wave 9, 2026-09-24)
 **Blocked by:** none.
 **Next:** `/implement-lee testing-wave`
 **Model:** opus

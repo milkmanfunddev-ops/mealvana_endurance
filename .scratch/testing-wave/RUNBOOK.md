@@ -55,6 +55,7 @@ ones; nothing in a run touches prod.
 xcrun simctl terminate UDID com.milkman.mealvanaendurance.dev
 xcrun simctl spawn UDID log stream --level debug \
   --predicate 'process == "Runner"' > RUNS/console.log 2>&1 &     # background; the console is evidence
+echo $! > SCRATCH/logstream.pid                                   # stop this PID only, never pkill
 xcrun simctl launch UDID com.milkman.mealvanaendurance.dev
 ```
 
@@ -173,7 +174,8 @@ At the end of every run, stopped or not, in this order:
 
 1. Delete the account you created through the app's delete-account flow (unless the ticket keeps
    it), and set its state in the credentials file (`deleted` or `delete-failed`).
-2. Stop the log stream and terminate the app on the simulator.
+2. Stop your log stream (`kill $(cat SCRATCH/logstream.pid)`; never `pkill`/`killall log`, which
+   ends the other run's console too) and terminate the app on the simulator.
 3. `LOCK release slot OWNER`. The simulator stays; the wave lead deletes it at the close.
 4. Scan the console before committing it: `grep -nE 'eyJ[A-Za-z0-9_-]{10,}|Bearer |sk_|sbp_' RUNS/console.log`.
    Any hit: delete `console.log` and commit `console-excerpts.log` with only the lines your
