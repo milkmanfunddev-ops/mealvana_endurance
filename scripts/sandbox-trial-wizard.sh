@@ -182,20 +182,31 @@ finish() {
 # ──────────────────────────────────────────────────────────────────────────
 # STAGES: the meal-planning sandbox trial run (ticket 21; mp-270, mp-289).
 #
-# A person with a fresh sandbox account on each store subscribes through the
-# seven-day introductory offer, and this wizard checks DEV after each step:
-# the entitlement row is active on day one, the Allowance landed, the
-# cancellation arrived, the trial ended on the paywall, and Restore reopened
-# the app. Every step and its evidence go into a dated log under
+# Two parts, each stage marked with who runs it (mp-463):
+#
+# [no phone] Claude's part: `store-checks` reads App Store Connect, Google Play
+#   and RevenueCat: the four products with their prices and free week on both
+#   stores, dev and prod; the founding offering holding the founding products;
+#   a hand-granted account showing `pro` in RevenueCat, and the webhook having
+#   written its DEV row. `preflight` checks DEV is ready.
+# [phone] A person's part: with a fresh sandbox account on each store, on a
+#   real device, the founding offering shows both prices, the purchase goes
+#   through it with the free week, the day-five reminder arrives with the
+#   clock moved on, and Restore reopens the app. The wizard checks DEV after
+#   each step: the entitlement row is active on day one, the Allowance landed,
+#   the cancellation arrived, the trial ended on the paywall.
+#
+# Every step and its evidence go into a dated log under
 # docs/release/sandbox-trial-runs/, which is committed with the release.
-# No meal-planning release without a GREEN log on both stores
-# (docs/deployment/supabase-deploy-playbook.md §8, P3c).
+# No meal-planning release without GREEN logs for store-checks, ios and
+# android (docs/deployment/supabase-deploy-playbook.md §8, P3c).
 #
 # Usage (from the repo root, on the branch whose build is on the device):
-#   scripts/sandbox-trial-wizard.sh              # both stores, iOS first
-#   scripts/sandbox-trial-wizard.sh ios          # one store
+#   scripts/sandbox-trial-wizard.sh store-checks <user id>  # [no phone] <user id>: a hand-granted DEV account
+#   scripts/sandbox-trial-wizard.sh preflight    # [no phone] read-only DEV checks, no prompts
+#   scripts/sandbox-trial-wizard.sh              # [phone] both stores, iOS first
+#   scripts/sandbox-trial-wizard.sh ios          # [phone] one store
 #   scripts/sandbox-trial-wizard.sh android
-#   scripts/sandbox-trial-wizard.sh preflight    # read-only DEV checks, no prompts
 #
 # Safety, by construction:
 #   - DEV only. The project ref is a constant; there is no flag to change it.
@@ -203,14 +214,18 @@ finish() {
 #     (the Management API runs it in a read-only transaction).
 #   - Never in CI (mp-289): refuses to start when CI variables are set or
 #     stdin is not a terminal.
-#   - Writes nothing but the log file. No RevenueCat, App Store Connect or
-#     Play Console calls: the store steps are the human's.
+#   - Writes nothing but the log file. store-checks only GETs from RevenueCat
+#     and runs the store scripts' read-only `list` and `show`; the phone run
+#     calls no store or RevenueCat API at all (its store steps are the human's).
 #
 # Auth: $SUPABASE_MANAGEMENT_TOKEN, else secrets/supabase_management_api.env
-# (this checkout, then the main clone), else ~/.supabase/pat.
+# (this checkout, then the main clone), else ~/.supabase/pat. store-checks also
+# reads secrets/revenuecat.env and the store scripts' own keys (secrets/apple,
+# secrets/google).
 # ──────────────────────────────────────────────────────────────────────────
 
 readonly DEV_REF="vlmtsdzpnjnavdgytcmi"
+readonly PROD_REF="wvmvsodrvbkxfydabqed"  # named only to find its RevenueCat webhook; never queried
 readonly API="https://api.supabase.com/v1"
 readonly DEV_IOS_BUNDLE="com.milkman.mealvanaendurance.dev"
 readonly DEV_ANDROID_PACKAGE="com.milkman.mealvanaendurance.dev"
@@ -333,23 +348,30 @@ poll() {
 
 # webhook_logs USER_ID MINUTES: the webhook's log lines for this user (evidence only).
 webhook_logs() {
-  local uid="$1" minutes="$2" sql enc start end
-  sql="select timestamp, event_message from function_logs where event_message like '%[rc-webhook]%' and event_message like '%${uid}%' order by timestamp asc limit 50"
-  enc="$(python3 -c 'import sys, urllib.parse; print(urllib.parse.quote(sys.argv[1]))' "$sql")"
-  start="$(date -u -v-"${minutes}"M +%Y-%m-%dT%H:%M:%SZ 2>/dev/null || date -u -d "-${minutes} minutes" +%Y-%m-%dT%H:%M:%SZ)"
+  local start end
+  start="$(date -u -v-"${2}"M +%Y-%m-%dT%H:%M:%SZ 2>/dev/null || date -u -d "-${2} minutes" +%Y-%m-%dT%H:%M:%SZ)"
   end="$(date -u +%Y-%m-%dT%H:%M:%SZ)"
-  _curl_auth "$API/projects/$DEV_REF/analytics/endpoints/logs.all?sql=${enc}&iso_timestamp_start=${start}&iso_timestamp_end=${end}" \
+  webhook_logs_between "$1" "$start" "$end"
+}
+
+# webhook_logs_between USER_ID START END: the same, for a fixed UTC window.
+# The Management API's unified `logs` table (ClickHouse SQL); the older
+# logs.all endpoint and its per-source tables are gone.
+webhook_logs_between() {
+  local uid="$1" start="$2" end="$3" sql enc
+  sql="select timestamp, event_message from logs where event_message like '%[rc-webhook]%' and event_message like '%${uid}%' order by timestamp asc limit 50"
+  enc="$(python3 -c 'import sys, urllib.parse; print(urllib.parse.quote(sys.argv[1]))' "$sql")"
+  _curl_auth "$API/projects/$DEV_REF/analytics/endpoints/logs?sql=${enc}&iso_timestamp_start=${start}&iso_timestamp_end=${end}" \
     | JSON_IN="$(cat)" python3 -c '
-import json, os, datetime
+import json, os
 try:
     rows = json.loads(os.environ["JSON_IN"]).get("result") or []
 except Exception:
     rows = []
 for r in rows:
-    ts = datetime.datetime.utcfromtimestamp(r["timestamp"] / 1_000_000).strftime("%H:%M:%SZ")
-    print(ts, (r.get("event_message") or "").strip())
+    print(str(r.get("timestamp", ""))[:19] + "Z", (r.get("event_message") or "").strip())
 if not rows:
-    print("(no webhook log lines for this user in the window; logs can lag a minute)")
+    print("(no webhook log lines for this user in the window; logs lag a minute and age out)")
 ' 2>/dev/null || true
 }
 
@@ -368,7 +390,11 @@ start_log() {
   {
     printf '# Sandbox trial run: %s, %s\n\n' "$store" "$day"
     printf 'Gate for any meal-planning release (mp-270, mp-289; playbook §8 P3c).\n'
-    printf 'Written by `scripts/sandbox-trial-wizard.sh`. Checks are read-only SELECTs against DEV (`%s`).\n\n' "$DEV_REF"
+    if [[ "$store" == "store-checks" ]]; then
+      printf 'Written by `scripts/sandbox-trial-wizard.sh store-checks`. Every call is a read (store and RevenueCat GETs, a SELECT on DEV `%s`).\n\n' "$DEV_REF"
+    else
+      printf 'Written by `scripts/sandbox-trial-wizard.sh`. Checks are read-only SELECTs against DEV (`%s`).\n\n' "$DEV_REF"
+    fi
     printf -- '- Started: %s\n' "$(date -u +%Y-%m-%dT%H:%M:%SZ)"
     printf -- '- Build commit: `%s` on `%s`\n' \
       "$(git -C "$REPO_ROOT" rev-parse HEAD 2>/dev/null || echo unknown)" \
@@ -470,6 +496,308 @@ preflight() {
   return $ok
 }
 
+# ── Claude's checks: the stores and RevenueCat, no phone (mp-463) ─────────
+#
+# Read only, like everything else here: `asc.mjs list`, `play.mjs list/show`
+# (GETs), RevenueCat v2 GETs and one SELECT on DEV. It needs no terminal, so
+# Claude runs it; it still refuses CI (mp-463: no CI job runs any of it).
+
+readonly RC_API="https://api.revenuecat.com/v2"
+RC_KEY=""
+RC_PROJECT=""
+
+# The products every release sells (mp-452): id stem, App Store period, Play
+# base plan and period, USA price. Prod ids carry `_prod` (Apple ids are team-unique).
+readonly STORE_PRODUCTS="me_pro_monthly ONE_MONTH monthly P1M 24.99
+me_pro_annual ONE_YEAR annual P1Y 199.99
+me_pro_monthly_founding ONE_MONTH monthly P1M 12.49
+me_pro_annual_founding ONE_YEAR annual P1Y 99.99"
+
+# Every subscription lifecycle event the entitlement row must hear: a row
+# that never hears a cancellation or expiration never closes.
+readonly WEBHOOK_EVENTS="initial_purchase renewal non_renewing_purchase cancellation uncancellation expiration product_change transfer billing_issue"
+
+load_rc_key() {
+  local common f
+  common="$(git -C "$REPO_ROOT" rev-parse --path-format=absolute --git-common-dir 2>/dev/null || true)"
+  for f in "$REPO_ROOT/secrets/revenuecat.env" "${common%/.git}/secrets/revenuecat.env"; do
+    [[ -r "$f" ]] || continue
+    RC_KEY="$(grep -E '^REVENUECAT_SECRET_KEY=' "$f" | tail -n1 | cut -d= -f2- | tr -d '"')"
+    RC_PROJECT="$(grep -E '^REVENUECAT_PROJECT_ID=' "$f" | tail -n1 | cut -d= -f2- | tr -d '"')"
+    [[ -n "$RC_KEY" && -n "$RC_PROJECT" ]] && return
+  done
+  die "no RevenueCat key: put REVENUECAT_SECRET_KEY and REVENUECAT_PROJECT_ID in secrets/revenuecat.env"
+}
+
+# rc_get PATH: a RevenueCat v2 GET under the project. Never anything but GET.
+rc_get() {
+  curl -sS --max-time 30 -K <(printf 'header = "Authorization: Bearer %s"\n' "$RC_KEY") \
+    "$RC_API/projects/$RC_PROJECT$1"
+}
+
+# store_eval KIND: judges one check. Input on stdin, context in env; prints
+# PASS or FAIL on the first line, then the evidence.
+store_eval() {
+  KIND="$1" PRODUCTS="$STORE_PRODUCTS" EVENTS="$WEBHOOK_EVENTS" python3 -c '
+import json, os, re, sys, time
+kind = os.environ["KIND"]
+raw = sys.stdin.read()
+suffix = os.environ.get("SUFFIX", "")
+products = [l.split() for l in os.environ["PRODUCTS"].splitlines() if l.strip()]
+ok, ev = True, []
+
+def fail(msg):
+    global ok
+    ok = False
+    ev.append("MISSING/WRONG: " + msg)
+
+if kind == "asc":
+    # asc.mjs list: "    <pid> (<id>) · <PERIOD> · <STATE>", then price and intro-offer lines.
+    subs, cur = {}, None
+    for line in raw.splitlines():
+        m = re.match(r"^\s{4}(\S+) \((\d+)\) · (\S+) · (\S+)$", line)
+        if m:
+            cur = subs.setdefault(m.group(1), {"id": m.group(2), "period": m.group(3), "state": m.group(4), "trial": 0})
+            continue
+        m = re.match(r"^\s+price USA (\S+) · priced in (\d+) territories", line)
+        if m and cur: cur["usa"], cur["priced"] = m.group(1), int(m.group(2))
+        m = re.match(r"^\s+intro offer FREE_TRIAL ONE_WEEK ×1 in (\d+) territories", line)
+        if m and cur: cur["trial"] = int(m.group(1))
+    for stem, period, _bp, _p, price in products:
+        pid = stem + suffix
+        s = subs.get(pid)
+        if not s:
+            fail(pid + " not in the Mealvana Pro group"); continue
+        ev.append("%s (%s) · %s · %s · USA %s · priced in %s territories · free week in %s" % (
+            pid, s["id"], s["period"], s["state"], s.get("usa"), s.get("priced"), s["trial"]))
+        if s["period"] != period: fail("%s period %s, want %s" % (pid, s["period"], period))
+        if s.get("usa") != price: fail("%s USA price %s, want %s" % (pid, s.get("usa"), price))
+        if not s.get("priced") or s["priced"] < 2: fail(pid + " priced in too few territories")
+        if s["trial"] != s.get("priced"): fail("%s free week in %s of %s priced territories" % (pid, s["trial"], s.get("priced")))
+
+elif kind == "play":
+    # play.mjs list, then one "PRICE <pid> <bp> <state> <units.cents> <currency>" line per base plan.
+    subs, cur, bp = {}, None, None
+    for line in raw.splitlines():
+        m = re.match(r"^PRICE (\S+) (\S+) (\S+) (\S+) (\S+)$", line)
+        if m:
+            subs.setdefault(m.group(1), {}).setdefault(m.group(2), {})["us"] = (m.group(4), m.group(5))
+            continue
+        m = re.match(r"^  (\S+)$", line)
+        if m: cur = subs.setdefault(m.group(1), {}); continue
+        m = re.match(r"^\s{4}base plan (\S+) · (\S+) · (\S+)", line)
+        if m and cur is not None:
+            bp = cur.setdefault(m.group(1), {}); bp.update(period=m.group(2), state=m.group(3), offers=[]); continue
+        m = re.match(r"^\s{6}offer (\S+) · (\S+) · phases \[(.*)\]", line)
+        if m and bp is not None: bp["offers"].append((m.group(1), m.group(2), m.group(3)))
+    for stem, _period, bpid, period, price in products:
+        pid = stem + suffix
+        b = subs.get(pid, {}).get(bpid)
+        if not b or "period" not in b:
+            fail("%s base plan %s not found" % (pid, bpid)); continue
+        us = b.get("us", ("?", "?"))
+        free = [o for o in b["offers"] if o[1] == "ACTIVE" and re.search(r"P7D×1 free", o[2])]
+        ev.append("%s/%s · %s · %s · US %s %s · offers %s" % (pid, bpid, b["period"], b["state"], us[0], us[1],
+            ", ".join("%s %s [%s]" % o for o in b["offers"]) or "none"))
+        if b["period"] != period: fail("%s period %s, want %s" % (pid, b["period"], period))
+        if b["state"] != "ACTIVE": fail("%s base plan %s" % (pid, b["state"]))
+        if us != (price, "USD"): fail("%s US price %s %s, want %s USD" % (pid, us[0], us[1], price))
+        if not free: fail(pid + " has no ACTIVE free-week offer (P7D×1 free)")
+
+elif kind in ("rc-offering", "rc-entitlement"):
+    d = json.loads(raw)
+    apps = json.loads(os.environ["RC_APPS"])  # {"ios-dev": app id, ...}
+    want = {}  # (package lookup key or None, app label) -> store identifier
+    founding = os.environ.get("OFFERING") == "founding"
+    for stem, _period, bpid, _p, _price in products:
+        if kind == "rc-offering" and (stem.endswith("_founding") != founding): continue
+        pkg = "$rc_annual" if bpid == "annual" else "$rc_monthly"
+        for env, sfx in (("dev", ""), ("prod", "_prod")):
+            want[(pkg, "ios-" + env)] = stem + sfx
+            want[(pkg, "play-" + env)] = "%s%s:%s" % (stem, sfx, bpid)
+    have = set()
+    if kind == "rc-offering":
+        off = next((o for o in d.get("items", []) if o.get("lookup_key") == os.environ["OFFERING"]), None)
+        if not off:
+            fail("offering %s not found" % os.environ["OFFERING"])
+        else:
+            ev.append("offering %s (%s) · %s · %s" % (off["lookup_key"], off["id"], off.get("state"),
+                "current" if off.get("is_current") else "not current"))
+            if off.get("state") != "active": fail("offering state " + str(off.get("state")))
+            for p in (off.get("packages") or {}).get("items", []):
+                for it in (p.get("products") or {}).get("items", []):
+                    pr = it.get("product", {})
+                    have.add((p["lookup_key"], pr.get("app_id"), pr.get("store_identifier")))
+                    ev.append("  %s %s  %s on %s" % (p["lookup_key"], pr.get("id"), pr.get("store_identifier"), pr.get("app_id")))
+    else:
+        for pr in d.get("items", []):
+            have.add((None, pr.get("app_id"), pr.get("store_identifier")))
+        ev.append("entitlement pro holds %d products" % len(d.get("items", [])))
+    for (pkg, app), sid in sorted(want.items()):
+        key = (pkg if kind == "rc-offering" else None, apps.get(app), sid)
+        if key not in have: fail("%s on %s (%s)%s" % (sid, app, apps.get(app), " in " + pkg if kind == "rc-offering" else ""))
+        elif kind == "rc-entitlement": ev.append("  %s on %s" % (sid, app))
+
+elif kind == "granted":
+    d = json.loads(raw)
+    ent, row, now = d["entitlement_id"], d["row"], time.time()
+    act = [e for e in d["active"].get("items", []) if e.get("entitlement_id") == ent]
+    subs = d["subscriptions"].get("items", [])
+    iso = lambda ms: time.strftime("%Y-%m-%dT%H:%M:%SZ", time.gmtime(ms / 1000)) if ms else None
+    for s in subs:
+        ev.append("subscription %s · store %s · %s · gives access %s · %s -> %s" % (
+            s.get("id"), s.get("store"), s.get("status"), s.get("gives_access"), iso(s.get("starts_at")), iso(s.get("ends_at"))))
+    if not act:
+        fail("RevenueCat shows no active pro for this customer")
+        rc_exp = None
+    else:
+        rc_exp = act[0]["expires_at"] / 1000
+        ev.append("RevenueCat active pro until %s" % iso(act[0]["expires_at"]))
+    if not any(s.get("store") == "promotional" and s.get("gives_access") for s in subs):
+        fail("no promotional (hand-granted) subscription giving access")
+    if not isinstance(row, list) or not row:
+        fail("no user_entitlements row on DEV: " + json.dumps(row)[:300])
+    else:
+        r = row[0]
+        ev.append("DEV row: active_until %s · period_type %s · event_at %s · active %s" % (
+            r.get("active_until"), r.get("period_type"), r.get("event_at"), r.get("active")))
+        if str(r.get("active")).lower() != "true": fail("DEV row is not active")
+        if rc_exp is not None and abs(float(r.get("epoch") or 0) - rc_exp) > 1:
+            fail("DEV row active_until differs from RevenueCat pro expiry")
+
+elif kind == "webhooks":
+    d = json.loads(raw)
+    need = set(os.environ["EVENTS"].split())
+    for ref in (os.environ["WH_DEV_REF"], os.environ["WH_PROD_REF"]):
+        hooks = [w for w in d.get("items", []) if ref + ".supabase.co/functions/v1/revenuecat-webhook" in (w.get("url") or "")]
+        if not hooks:
+            fail("no RevenueCat webhook points at " + ref); continue
+        for w in hooks:
+            got = set(w.get("event_types") or [])
+            ev.append("%s -> %s · environment filter %s · events %s" % (w["id"], ref, w.get("environment"), " ".join(sorted(got)) or "(all)"))
+            if w.get("environment"): fail("%s filters on environment %s (a grant arrives as PRODUCTION even in sandbox)" % (w["id"], w["environment"]))
+            if got and not need <= got: fail("%s (%s) lacks %s" % (w["id"], ref, " ".join(sorted(need - got))))
+else:
+    fail("unknown check " + kind)
+
+print("PASS" if ok else "FAIL")
+print("\n".join(ev))
+'
+}
+
+# store_check NAME KIND: runs store_eval on stdin and logs the step. Feed it a
+# here-string, never a pipe: a pipe runs it in a subshell and loses the counts.
+STORE_CHECKS_RUN=0
+readonly STORE_CHECKS_EXPECTED=9  # C1 and C2 twice (dev, prod), C3 to C7 once
+store_check() {
+  local name="$1" out result
+  STORE_CHECKS_RUN=$((STORE_CHECKS_RUN + 1))
+  out="$(store_eval "$2")" || out="FAIL
+(evaluator crashed)"
+  result="$(head -n1 <<<"$out")"
+  log_step "$name" "$result" "$(tail -n +2 <<<"$out")"
+  if [[ "$result" == "PASS" ]]; then say "${GREEN}✓${RESET} $name"; else warn "$name: FAIL"; fi
+}
+
+# play_listing ENV_FLAG: play.mjs list, plus one PRICE line per base plan (US price).
+play_listing() {
+  local flag="$1" sfx="" stem id
+  [[ "$flag" == "--prod" ]] && sfx="_prod"
+  node "$REPO_ROOT/scripts/store/play.mjs" list $flag 2>&1
+  while read -r stem _ _ _ _; do
+    id="${stem}${sfx}"
+    node "$REPO_ROOT/scripts/store/play.mjs" show "$id" $flag 2>/dev/null | sed 1d | python3 -c '
+import json, sys
+try:
+    d = json.load(sys.stdin)
+except Exception:
+    sys.exit(0)
+for bp in d.get("basePlans", []):
+    us = [r["price"] for r in bp.get("regionalConfigs", []) if r.get("regionCode") == "US"]
+    p = us[0] if us else None
+    amount = "%s.%02d" % (p.get("units", "0"), int(p.get("nanos", 0)) // 10000000) if p else "?"
+    print("PRICE", d["productId"], bp["basePlanId"], bp.get("state"), amount, p.get("currencyCode") if p else "?")
+'
+  done <<<"$STORE_PRODUCTS"
+}
+
+# store_checks GRANTED_USER_ID: every check that needs no phone, logged to
+# docs/release/sandbox-trial-runs/YYYY-MM-DD-store-checks.md.
+store_checks() {
+  local granted="$1" apps json ent_id row
+  [[ "$granted" =~ ^[0-9a-f-]{36}$ ]] || die "store-checks needs the user id of a hand-granted DEV account"
+  command -v node >/dev/null 2>&1 || die "node is required"
+  load_token; load_rc_key
+  STORE="store-checks"; start_log "store-checks"
+  log ""
+  log "Claude's part of the gate (mp-463): no phone. App Store Connect and Google Play through"
+  log '`scripts/store/asc.mjs` / `play.mjs` (read-only `list` and `show`), RevenueCat through v2 GETs,'
+  log "the Pro row through a read-only SELECT on DEV. The phone part is \`$(basename "$0") ios|android\`."
+
+  local env flag sfx listing
+  for env in dev prod; do
+    flag=""; sfx=""; [[ $env == prod ]] && { flag="--prod"; sfx="_prod"; }
+    say "App Store Connect, $env"
+    listing="$(node "$REPO_ROOT/scripts/store/asc.mjs" list $flag 2>&1 || true)"
+    SUFFIX="$sfx" store_check "C1 App Store ($env): products, prices, free week" asc <<<"$listing"
+    say "Google Play, $env"
+    listing="$(play_listing "$flag" || true)"
+    SUFFIX="$sfx" store_check "C2 Google Play ($env): products, prices, free week" play <<<"$listing"
+  done
+
+  say "RevenueCat"
+  apps="$(rc_get "/apps?limit=50" | python3 -c '
+import json, sys
+d = json.load(sys.stdin); out = {}
+for a in d.get("items", []):
+    ids = {"app_store": (a.get("app_store") or {}).get("bundle_id"), "play_store": (a.get("play_store") or {}).get("package_name")}
+    ident = ids.get(a.get("type"))
+    for env, want in (("dev", "com.milkman.mealvanaendurance.dev"), ("prod", "com.milkman.mealvanaendurance")):
+        if ident == want: out[("ios-" if a["type"] == "app_store" else "play-") + env] = a["id"]
+print(json.dumps(out))')"
+  json="$(rc_get "/offerings?expand=items.package.product&limit=50")"
+  RC_APPS="$apps" OFFERING=default store_check "C3 RevenueCat: the default offering holds the me_pro products on all four apps" rc-offering <<<"$json"
+  RC_APPS="$apps" OFFERING=founding store_check "C4 RevenueCat: the founding offering holds the founding products on all four apps" rc-offering <<<"$json"
+  ent_id="$(rc_get "/entitlements?limit=50" | python3 -c '
+import json, sys
+print(next((e["id"] for e in json.load(sys.stdin).get("items", []) if e.get("lookup_key") == "pro"), ""))')"
+  json="$(rc_get "/entitlements/${ent_id}/products?limit=100")"
+  RC_APPS="$apps" store_check "C5 RevenueCat: entitlement pro ($ent_id) holds every me_pro product" rc-entitlement <<<"$json"
+
+  say "The hand-granted account"
+  row="$(dev_select "select active_until, period_type, event_at, active_until > now() as active,
+      extract(epoch from active_until) as epoch, now() as checked_at
+    from public.user_entitlements where user_id = '$(sql_quote "$granted")'" || true)"
+  json="$(python3 -c 'import json, sys; print(json.dumps({"entitlement_id": sys.argv[1], "active": json.loads(sys.argv[2]),
+      "subscriptions": json.loads(sys.argv[3]), "row": json.loads(sys.argv[4])}))' \
+    "$ent_id" "$(rc_get "/customers/${granted}/active_entitlements")" \
+    "$(rc_get "/customers/${granted}/subscriptions?limit=50")" "${row:-[]}" || echo '{}')"
+  store_check "C6 A hand-granted account (\`$granted\`) shows pro in RevenueCat and its DEV row matches" granted <<<"$json"
+  local at start end
+  at="$(json_first "$row" event_at)"
+  if [[ -n "$at" ]]; then
+    start="$(python3 -c 'import sys,datetime as d; t=d.datetime.fromisoformat(sys.argv[1].replace(" ","T").replace("+00","+00:00")); print((t-d.timedelta(minutes=2)).strftime("%Y-%m-%dT%H:%M:%SZ"))' "$at")"
+    end="$(python3 -c 'import sys,datetime as d; t=d.datetime.fromisoformat(sys.argv[1].replace(" ","T").replace("+00","+00:00")); print((t+d.timedelta(minutes=3)).strftime("%Y-%m-%dT%H:%M:%SZ"))' "$at")"
+    log ""
+    log "Webhook lines around the row's event_at ($at), the webhook writing it:"
+    log ""
+    log '```'
+    log "$(webhook_logs_between "$granted" "$start" "$end")"
+    log '```'
+  fi
+
+  json="$(rc_get "/integrations/webhooks?limit=50")"
+  WH_DEV_REF="$DEV_REF" WH_PROD_REF="$PROD_REF" store_check "C7 RevenueCat webhooks: dev and prod hear every lifecycle event, no environment filter" webhooks <<<"$json"
+
+  # A check that never ran is not a pass.
+  (( STORE_CHECKS_RUN == STORE_CHECKS_EXPECTED )) || \
+    log_step "Every check ran" FAIL "${STORE_CHECKS_RUN} of ${STORE_CHECKS_EXPECTED} checks ran; see the terminal for the error."
+
+  if (( STORE_FAILS == 0 )); then close_log GREEN; else close_log "RED (${STORE_FAILS} check(s) failed)"; fi
+  note "logged to ${LOG_FILE#"$REPO_ROOT"/}"
+  (( STORE_FAILS == 0 ))
+}
+
 # ── One store ─────────────────────────────────────────────────────────────
 
 run_store() {
@@ -478,7 +806,7 @@ run_store() {
   local uid="" email="" pack_baseline=0 purchase_event_at="" last_event_at="" q_uid json
 
   # 1 ─────────────────────────────────────────────────────────────────────
-  stage "${STORE}: a fresh sandbox account and the dev app on a real device"
+  stage "[phone] ${STORE}: a fresh sandbox account and the dev app on a real device"
   start_log "$STORE"
   if [[ "$STORE" == "ios" ]]; then
     say "The run needs a sandbox Apple Account that has never subscribed, on a physical iPhone."
@@ -509,7 +837,7 @@ run_store() {
   pause "Press Enter when the dev app is open on the device, signed out."
 
   # 2 ─────────────────────────────────────────────────────────────────────
-  stage "${STORE}: a new athlete finishes onboarding and lands on the paywall"
+  stage "[phone] ${STORE}: a new athlete finishes onboarding and lands on the paywall"
   step "In the dev app, sign up with an email that has never had a Mealvana account."
   step "Finish onboarding. It ends on the paywall: Monthly and Annual with store prices,"
   say  "  and the line \"7 days free, then <price>\"."
@@ -550,9 +878,21 @@ run_store() {
   human_check "2. The paywall shows the introductory offer" \
     "Does the paywall show Monthly and Annual with prices and \"7 days free, then <price>\"?" || true
 
+  # 2b ────────────────────────────────────────────────────────────────────
+  stage "[phone] ${STORE}: the founding offering, for this account only"
+  say "The purchase goes through the founding offering (mp-463). RevenueCat is one project for dev"
+  say "and prod, and making founding the project's current offering is the 1 October act, so it"
+  say "is switched on for this one customer only."
+  open_url "https://app.revenuecat.com/"
+  step "RevenueCat → Customers → search ${uid} → Current Offering → override with \"founding\"."
+  warn "Leave the project's current offering alone: it is what the live app sells."
+  step "Force-quit the dev app and open it again; it lands on the paywall."
+  human_check "2b. The founding offering shows both prices" \
+    "Does the paywall show \$12.49 and \$99.99 beside \$24.99 and \$199.99 struck through, with the \"Founding member\" line?" || true
+
   # 3 ─────────────────────────────────────────────────────────────────────
-  stage "${STORE}: subscribe through the introductory offer"
-  step "On the paywall select Monthly, then tap \"Start trial\"."
+  stage "[phone] ${STORE}: subscribe through the founding offering's free week"
+  step "On the paywall select the founding Monthly plan, then tap \"Start trial\"."
   if [[ "$STORE" == "ios" ]]; then step "Confirm the App Store sheet; it names the sandbox environment. Sign in as the tester if asked."
   else step "Confirm the Play sheet; a license tester sees a test payment method. Pick the one that always approves."; fi
   step "The app should leave the paywall and open on the main screen."
@@ -561,7 +901,7 @@ run_store() {
     "Did the purchase complete and the app open past the paywall?" || true
 
   # 4 ─────────────────────────────────────────────────────────────────────
-  stage "${STORE}: the entitlement is active on day one"
+  stage "[phone] ${STORE}: the entitlement is active on day one"
   say "The webhook's INITIAL_PURCHASE should write the row: period_type TRIAL, active_until in the future."
   local sql_day_one="select (e.period_type = 'TRIAL' and e.active_until > now()) as pass,
       e.period_type, e.active_until, e.event_at, now() as checked_at
@@ -580,7 +920,7 @@ $(webhook_logs "$uid" 30)"
   [[ -n "$purchase_event_at" ]] || purchase_event_at="$(json_first "$(dev_select "select event_at from public.user_entitlements where user_id = '${q_uid}'" || true)" event_at)"
 
   # 5 ─────────────────────────────────────────────────────────────────────
-  stage "${STORE}: the Allowance landed"
+  stage "[phone] ${STORE}: the Allowance landed"
   say "The same delivery grants the monthly Allowance into the wallet (grant_allowance, keyed on the RevenueCat event id)."
   local sql_allowance="select (w.allowance > 0 and w.allowance_monthly > 0 and w.allowance_expires_at is not null
           and l.ref is not null and l.delta = w.allowance_monthly
@@ -602,8 +942,24 @@ $(webhook_logs "$uid" 30)"
     [[ $ABORTED == 1 ]] && return
   done
 
+  # 5b ────────────────────────────────────────────────────────────────────
+  stage "[phone] ${STORE}: the day-five reminder, with the clock moved on"
+  say "The purchase set one local notification for 10:00 local, two days before the trial ends (mp-456)."
+  warn "Sandbox shortens the free week to minutes. The app schedules nothing when that 10:00 is already"
+  warn "past (TrialReminder.fireTimeFor), so with a sandbox trial none may be set. Record what you see."
+  if [[ "$STORE" == "ios" ]]; then
+    step "iPhone: Settings → General → Date & Time → Set Automatically off → date five days on, 09:59."
+  else
+    step "Phone: Settings → System → Date & time → automatic off → date five days on, 09:59."
+  fi
+  step "Lock the phone and wait two minutes. Expect: the trial ends in two days, the price after, cancel any time."
+  step "Tap it: the store's subscription page opens."
+  step "Set the clock back to automatic before going on."
+  human_check "5b. The day-five reminder arrived and opened the store's subscription page" \
+    "Did the reminder arrive at 10:00 with that text, and did its tap open the store's subscription page?" || true
+
   # 6 ─────────────────────────────────────────────────────────────────────
-  stage "${STORE}: cancel the subscription"
+  stage "[phone] ${STORE}: cancel the subscription"
   if [[ "$STORE" == "ios" ]]; then
     step "iPhone: Settings → Developer → Sandbox Apple Account → Manage → Mealvana Pro → Cancel (free trial)."
   else
@@ -629,7 +985,7 @@ $(webhook_logs "$uid" 60)"
   done
 
   # 7 ─────────────────────────────────────────────────────────────────────
-  stage "${STORE}: the trial ends and the account meets the paywall"
+  stage "[phone] ${STORE}: the trial ends and the account meets the paywall"
   say "Waiting for the row's active_until to pass (sandbox trials end within minutes)."
   local sql_closed="select (e.active_until <= now()) as pass,
       e.period_type, e.active_until, e.event_at, now() as checked_at,
@@ -658,7 +1014,7 @@ ${forfeit_note}"
     "Is the app on the paywall with only those four actions besides the plans?" || true
 
   # 8 ─────────────────────────────────────────────────────────────────────
-  stage "${STORE}: Restore reopens the app"
+  stage "[phone] ${STORE}: Restore reopens the app"
   say "Resubscribe outside the app, so Restore is the only thing in the app that can reopen it."
   if [[ "$STORE" == "ios" ]]; then
     step "iPhone: Settings → Developer → Sandbox Apple Account → Manage → Mealvana Pro → pick Monthly again."
@@ -686,7 +1042,8 @@ $(webhook_logs "$uid" 120)"
 
   if (( STORE_FAILS == 0 )); then close_log GREEN; else close_log "RED (${STORE_FAILS} step(s) failed)"; fi
   say ""
-  step "Tidy up: cancel the resubscription in the store so the sandbox account stops renewing."
+  step "Tidy up: cancel the resubscription in the store so the sandbox account stops renewing,"
+  say  "  and remove this customer's founding override in RevenueCat."
   pause "Press Enter to continue."
 }
 
@@ -695,6 +1052,11 @@ $(webhook_logs "$uid" 120)"
 MODE="${1:-both}"
 case "$MODE" in
   -h|--help) usage; exit 0 ;;
+  store-checks)
+    refuse_ci
+    store_checks "${2:-}" && { printf '%s✓ store checks GREEN%s\n' "$GREEN" "$RESET"; exit 0; }
+    die "store checks RED: see the log"
+    ;;
   preflight)
     refuse_ci
     if preflight; then printf '%s✓ preflight passed%s\n' "$GREEN" "$RESET"; exit 0; fi
@@ -712,11 +1074,11 @@ case "$MODE" in
   both) STORES=(ios android) ;;
   *) STORES=("$MODE") ;;
 esac
-TOTAL_STAGES=$((1 + 8 * ${#STORES[@]}))
+TOTAL_STAGES=$((1 + 10 * ${#STORES[@]}))
 
 banner "Meal-planning sandbox trial run: ${STORES[*]}"
 
-stage "Preflight: DEV is ready for the run"
+stage "[no phone] Preflight: DEV is ready for the run"
 preflight || { warn "Fix the above before running the trial."; exit 1; }
 note "Every check below is a read-only SELECT against DEV ($DEV_REF). Nothing is written but the log."
 pause "Press Enter to begin."

@@ -11,8 +11,8 @@
 
 **Touches:** scripts/sandbox-trial-wizard.sh, docs/release/sandbox-trial-runs
 
-- [ ] The wizard carries the three new steps and marks which are Claude's and which need a phone.
-- [ ] Claude's checks run and are logged under docs/release/sandbox-trial-runs.
+- [x] The wizard carries the three new steps and marks which are Claude's and which need a phone.
+- [x] Claude's checks run and are logged under docs/release/sandbox-trial-runs.
 - [ ] Lee's phone run is logged green on both stores.
 
 Next: /implement-lee paywall
