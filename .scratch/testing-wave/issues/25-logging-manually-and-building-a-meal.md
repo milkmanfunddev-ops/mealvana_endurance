@@ -11,9 +11,9 @@
 
 **Touches:** the dev test account's meal logs
 
-- [ ] Runs by the runbook: a slot taken and released, the console saved to the run folder, a look-around on every screen visited, every problem written as a Finding and nothing fixed.
-- [ ] Uses the entitled dev test account from the credentials file; no new account.
-- [ ] No AI call.
-- [ ] Saved numbers equal what was entered, by SQL.
+- [x] Runs by the runbook: a slot taken and released, the console saved to the run folder, a look-around on every screen visited, every problem written as a Finding and nothing fixed.
+- [x] Uses the entitled dev test account from the credentials file; no new account.
+- [x] No AI call.
+- [x] Saved numbers equal what was entered, by SQL.
 
 Next: /implement-lee testing-wave
