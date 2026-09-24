@@ -1,0 +1,6 @@
+{"kind":"flow","title":"Does a used code stay used after account delete?","rows":[
+ [{"id":"r","label":"Athlete redeems a code\n1 code_redemptions row"}],
+ [{"id":"d","label":"Athlete deletes the account"}],
+ [{"id":"a","label":"A: redemption kept,\ncode stays spent","tone":"ok"},{"id":"b","label":"B (today): row deleted,\ncount goes down","tone":"no"}]],
+ "edges":[{"from":"r","to":"d"},{"from":"d","to":"a","label":"A"},{"from":"d","to":"b","label":"B"}],
+ "example":["Wave 5: DEVCOACH30 count 2 -> 1 after the delete.","Under B a once-only giveaway could be redeemed again after a new signup."]}

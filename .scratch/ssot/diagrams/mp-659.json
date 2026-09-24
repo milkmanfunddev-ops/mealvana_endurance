@@ -1,0 +1,7 @@
+{"kind":"timeline","title":"When does the paywall come up after Pro runs out?","steps":[
+ {"at":"08:50","label":"Test Store monthly bought; Gate open, timeline shows","tone":"ok"},
+ {"at":"09:15","label":"Pro expires in RevenueCat; app still on the timeline","tone":"no"},
+ {"at":"09:15","label":"A: paywall comes up now, from an expiry timer","tone":"pending"},
+ {"at":"next tap","label":"C: paywall at the next action that needs Pro","tone":"pending"},
+ {"at":"10:48","label":"B (today): paywall on the next resume, 93 min later","tone":"pending"}],
+ "example":["Wave 5, ticket 05: expiry 09:15 UTC, app open until a resume at 10:48.","Server refused AI calls the whole time."]}

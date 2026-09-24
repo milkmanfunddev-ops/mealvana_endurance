@@ -1,0 +1,6 @@
+{"kind":"flow","title":"A second code from the same coach","rows":[
+ [{"id":"one","label":"Athlete enters DEVCOACH30\npending pairing with the coach","tone":"ok"}],
+ [{"id":"two","label":"Same athlete enters DEVCOACH18\n(same coach)"}],
+ [{"id":"a","label":"A: refused,\nalready paired"},{"id":"b","label":"B: recorded,\n'already pending'"},{"id":"c","label":"C (today): 'coach\nwill see a request'"}]],
+ "edges":[{"from":"one","to":"two"},{"from":"two","to":"a","label":"A"},{"from":"two","to":"b","label":"B"},{"from":"two","to":"c","label":"C"}],
+ "example":["Today: two redemptions spent, one pairing,","RevenueCat coach_code goes from DEVCOACH30 to DEVCOACH18."]}
