@@ -225,6 +225,30 @@ Tick hides at 0 owed and on completion.
 Prototyped through v9 (both files). Still pending for ship: the glow materials
 ruling, and a copy register for the pace/Loaded strings (P-3).
 
+### RULED — 2026-09-24, evening (Xuan) — log path, flag shape, and the variants
+
+**The log lives in the food-log table (Path A), and D4 = YES:** loading-day
+food "does contribute to the daily calorie count" — slot logs are ordinary
+food-log entries tagged to a slot. `carb_loading_day_meals` gets no new
+writers; retirement rides the redesign.
+
+**The `is_carb_loading` flag alone is insufficient** (Xuan): six sections, and
+not every carb food fits every section. The unified library row carries the
+flag AND per-slot suitability — the old carb tables' `meal_types` tags migrate
+with the food. "Recommended for <slot>" = library WHERE is_carb_loading AND
+slot ∈ suitability.
+
+**The pace stays gradual** — the ramp, confirmed: chunked into slots for
+structure, computed gradually (7am-ish to 9pm-ish window), never a step.
+
+**Future/past variants designed and prototyped (v11–v12):** two new pills
+(◂ Day 1, Day 3 ▸). Future day: clock-free — "<target> g / planned", empty
+faded track, no tick, no pace copy, quiet header-only slot cards showing the
+split; day target is scenario-driven (Day 3 = the 680 g peak with 170/68/170/
+102/136/34 slots). Past day: the outcome — final grams "of <target> g", fill
+without tick, slot summaries, no open card, no hints. Today keeps everything
+ruled before. This answers Lee's planning-mode objection structurally.
+
 ### CONTEXT — the 2026-09-21 Xuan+Lee sync (received via ops-f3, 2026-09-24)
 
 Source: ops/outputs/transcripts/2026-09-21T141554Z (S5–S9). Verified against the
