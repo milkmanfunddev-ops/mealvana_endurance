@@ -1,0 +1,27 @@
+# 31-009 · Appearance: pick Light or System and check it survives a relaunch and a sign-out
+
+- kind: followup-test
+- status: open
+- ticket: 31
+- run: w11-20260924T1648Z
+- screen: Settings
+- decision: 
+
+**Steps.**
+1. Settings > Appearance; the Theme Mode dialog shows System, Light, Dark with Dark selected.
+2. Pick Light; relaunch; check it is kept.
+3. Sign out and in as another account; check whether the theme carries over. Put Dark back.
+
+**Expected.**
+The pick is kept across a relaunch; whether it follows the device or the account is a product choice to confirm.
+
+**Actual.**
+Not run: this run opened the dialog and dismissed it by tapping outside (the dialog closed, nothing changed).
+
+**Evidence.**
+- runs/31/15-appearance-dialog.png: the dialog
+
+**Decision quote.**
+> 
+
+**Triage.**

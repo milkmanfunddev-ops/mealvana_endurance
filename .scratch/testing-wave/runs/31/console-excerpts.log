@@ -1,0 +1,27 @@
+# console excerpts, run w11-20260924T1648Z (console.log dropped: token-scan hits). Original line numbers first.
+2982 2026-09-24 11:49:44.274287 (Flutter) flutter: GoRouter: INFO: redirecting to RouteMatchList(/welcome)
+3511 2026-09-24 11:49:44.502744 (Flutter) flutter: [SubscriptionService] customer info updated {active: false, expires_at: null}
+15921 2026-09-24 11:50:53.485061 (Flutter) flutter: [SubscriptionService] customer info updated {active: false, expires_at: null}
+16186 2026-09-24 11:50:53.700889 (Flutter) flutter: [SubscriptionService] customer info updated {active: true, expires_at: 2027-09-15T19:39:14.000Z}
+16192 2026-09-24 11:50:53.725152 (Flutter) flutter: [SubscriptionService] customer info fetched {active: true, expires_at: 2027-09-15T19:39:14.000Z, is_trial: false}
+17305 2026-09-24 11:50:57.321697 (Flutter) flutter: [SubscriptionService] customer info updated {active: true, expires_at: 2027-09-15T19:39:14.000Z}
+18066 2026-09-24 11:50:57.603858 (Flutter) flutter: [SubscriptionService] customer info fetched {active: true, expires_at: 2027-09-15T19:39:14.000Z, is_trial: false}
+18220 2026-09-24 11:50:58.077093 (Flutter) flutter: ❌ Token refresh failed: TrainingPeaksApiException: Token refresh failed (status: 400)
+18227 2026-09-24 11:50:58.156300 (Flutter) flutter: ❌ Token refresh failed: TrainingPeaksApiException: Token refresh failed (status: 400)
+18235 2026-09-24 11:50:58.158628 (Flutter) flutter: ❌ Integration sync failed for training_peaks: Token expired. Please reconnect.
+18320 2026-09-24 11:50:58.591183 (Flutter) flutter: ❌ Integration sync failed for vdot: Please reconnect your V.O2 account
+22871 2026-09-24 11:52:28.004992 (Flutter) flutter: [SubscriptionService] customer info updated {active: true, expires_at: 2027-09-15T19:39:14.000Z}
+25716 2026-09-24 11:52:28.161623 (Flutter) flutter: [SubscriptionService] customer info updated {active: true, expires_at: 2027-09-15T19:39:14.000Z}
+26066 2026-09-24 11:52:28.353655 (Flutter) flutter: [SubscriptionService] customer info fetched {active: true, expires_at: 2027-09-15T19:39:14.000Z, is_trial: false}
+26490 2026-09-24 11:52:29.268853 (Flutter) flutter: ❌ Token refresh failed: TrainingPeaksApiException: Token refresh failed (status: 400)
+26496 2026-09-24 11:52:29.355969 (Flutter) flutter: ❌ Token refresh failed: TrainingPeaksApiException: Token refresh failed (status: 400)
+26504 2026-09-24 11:52:29.358695 (Flutter) flutter: ❌ Integration sync failed for training_peaks: Token expired. Please reconnect.
+26551 2026-09-24 11:52:29.765004 (Flutter) flutter: ❌ Integration sync failed for vdot: Please reconnect your V.O2 account
+31952 2026-09-24 11:54:05.139055 (Flutter) flutter: 📊 [ANALYTICS] settings_sign_out_tapped {}
+32010 2026-09-24 11:54:05.422696 (Flutter) flutter: supabase.auth: INFO: Signing out user with scope: SignOutScope.local
+32018 2026-09-24 11:54:05.436380 (Flutter) flutter: 📊 [ANALYTICS] user_signed_out {timestamp: 2026-09-24T11:54:05.436224, was_onboarding_signout: false}
+32362 2026-09-24 11:54:05.454187 (Flutter) flutter: GoRouter: INFO: redirecting to RouteMatchList(/welcome)
+32364 2026-09-24 11:54:05.455157 (Flutter) flutter: [SubscriptionService] customer info updated {active: true, expires_at: 2027-09-15T19:39:14.000Z}
+32445 2026-09-24 11:54:05.658808 (Flutter) flutter: GoRouter: INFO: going to /welcome
+38943 2026-09-24 11:54:21.239066 (Flutter) flutter: [SubscriptionService] customer info updated {active: true, expires_at: 2027-09-15T19:39:14.000Z}
+39211 2026-09-24 11:54:21.276539 (Flutter) flutter: GoRouter: INFO: redirecting to RouteMatchList(/welcome)

@@ -11,8 +11,8 @@
 
 **Touches:** the dev test account's settings
 
-- [ ] Runs by the runbook: a slot taken and released, the console saved to the run folder, a look-around on every screen visited, every problem written as a Finding and nothing fixed.
-- [ ] Uses the entitled dev test account from the credentials file; no new account.
-- [ ] The changed setting is checked by SQL and put back afterwards.
+- [x] Runs by the runbook: a slot taken and released, the console saved to the run folder, a look-around on every screen visited, every problem written as a Finding and nothing fixed.
+- [x] Uses the entitled dev test account from the credentials file; no new account.
+- [x] The changed setting is checked by SQL and put back afterwards.
 
 Next: /implement-lee testing-wave
