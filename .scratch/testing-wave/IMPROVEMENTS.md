@@ -36,6 +36,11 @@ Wave 9 (16, 32; 2026-09-24):
 - **#33 `app-build.json` still lagged in the worktrees.** The lead recorded the wave-9 build in a
   commit after `wave --open`, so both worktrees (at base) named 433514bc; the prompt was right.
   Fix: build before `wave --open`, or keep the prompt as the only source (the runbook says so).
+- **#35 `idb ui text` mangled a long address (ticket 32).** The first signup said "Please enter a
+  valid email address" with no network call; retyped with the mobile MCP it passed. The field
+  shows only its tail, so the agent could not read back what was typed. Fix: runbook step 5 types
+  addresses with the mobile MCP first, and checks a long value with `idb ui describe-all` before
+  submitting.
 
 ## Done
 
