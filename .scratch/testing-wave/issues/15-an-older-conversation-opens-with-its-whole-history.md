@@ -1,6 +1,6 @@
 # 15: An older conversation opens with its whole history
 
-**Status:** in-progress (wave 12, 2026-09-24)
+**Status:** done (wave 12, 2026-09-24)
 **Blocked by:** none.
 **Next:** `/implement-lee testing-wave`
 **Model:** opus

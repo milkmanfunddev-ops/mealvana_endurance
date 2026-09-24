@@ -29,6 +29,27 @@ Each entry: what went wrong or cost time, where it was seen, and the suggested f
   must pick one that is not null. Suggested fix: one line in ticket 31's retest and in the
   ticket-writing notes.
 
+- **#42 a simulator copy dies when the dev simulator's files move (wave 12).** The second
+  `simulator claim` failed in `createSimulator`: rsync exit 23 on
+  `Library/SplashBoard/Snapshots/...`, which vanished on the dev simulator mid-copy. It left
+  `wave-pool-2` booted and unowned, with the app but not the mobile MCP helper (the helper step comes
+  after the copy). A second `claim` reused it and re-copied the data; the lead installed the helper
+  by hand. Suggested fix: in `capture.mjs` `copy`, pass `--exclude Library/SplashBoard` (or treat
+  exit 24 and a vanished-file 23 as success), and install the helper before copying the data.
+
+- **#43 the mobile MCP's swipe skips chat turns (wave 12).** Ticket 15's MCP swipes flung the
+  Vana transcript past turns 4 to 6; only slow idb drags (`idb ui swipe ... --duration 1.2-1.5`)
+  showed every turn. Suggested fix: runbook step 5 names idb drags with a duration for any count
+  of rows or turns.
+- **#44 two tickets on one account see each other (wave 12).** 15 and 17 both read test@test.com.
+  15's Ask Vana made a conversation and opener at 17:17 UTC that sat in 17's edge extract, and 17's
+  read-only plan check held only because 15 changed no plan. Suggested fix: when two tickets share
+  an account, the lead says so in both prompts with what the other run writes, or pairs a
+  shared-account ticket with one on its own account.
+- **#45 reaching Conversations costs an opener (wave 12).** The only way to the conversation list
+  is Ask Vana, which spends a general opener ($0.02) that no COST kind counts (12-004 raised the
+  gap). Suggested fix: a `COST spend WAVE chat NN` kind with its own cap.
+
 ## Done
 
 - **#39 mobile MCP read another simulator.** Runbook step 4 and 5: idb reads the screen

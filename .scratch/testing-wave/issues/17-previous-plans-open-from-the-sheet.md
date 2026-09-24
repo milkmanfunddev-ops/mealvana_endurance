@@ -1,6 +1,6 @@
 # 17: Previous plans open from the sheet
 
-**Status:** in-progress (wave 12, 2026-09-24)
+**Status:** done (wave 12, 2026-09-24)
 **Blocked by:** 16 (lists the plans 14 and 16 change).
 **Next:** `/implement-lee testing-wave`
 **Model:** opus

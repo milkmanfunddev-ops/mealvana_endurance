@@ -3173,3 +3173,43 @@ An edit made while notes are being written is picked up on the next open. A requ
 **What it touches.** The Delete list item in the Shopping tab's ⋯ menu and its dialog, `delete_shopping_list` in vana-action, which list the tab opens when the plan has none, and the retest of Finding 19-001.
 
 > 2026-09-24 opened in wave 11 ticket 19
+
+## mp-670 · What does a conversation show once another confirm has archived its Draft?
+- category: Plan tab
+- kind: question
+- status: open
+- linked: mp-241
+- image: none
+- svg: docs/ssot/decisions/images/mealplanning/mp-670.svg
+- screen: none (the chat's plan bar and Review sheet both follow from the answer)
+- source: wave testing-wave 12 ticket 15
+
+**Context.** mp-241 says confirming a draft archives every other plan for that week, drafts from other conversations included. It does not say what those conversations show afterwards. In wave 12 the dev test account opened its 22 September conversation, whose Draft had been archived when another conversation's plan was confirmed. The plan bar still read "Your plan · 4 meals" with Review plan, each meal could be removed or have its servings changed, and the Review sheet offered a working Confirm plan button. Nothing on screen said the Draft was archived. A conversation whose plan is confirmed does say "Plan confirmed" (Finding 15-001; Finding 16-001 is why tapping that Confirm would not confirm this Draft).
+
+**Question.** When a conversation's Draft has been archived by another confirm, what does the conversation show? (A) The Draft, marked archived and view only, with a line naming the week's confirmed plan. (B) The week's confirmed plan in place of the Draft. (C) Nothing until the athlete picks a meal, which starts a fresh Draft in that conversation. And may the athlete bring the archived Draft back?
+
+**Why.** A keeps the conversation's history true to what happened. B keeps one live plan in view everywhere. C follows "every conversation builds its own Draft" most literally.
+
+**What it touches.** The Vana chat's plan bar and Review plan sheet for a conversation whose plan is archived, `get_plan` and `confirm_plan` in vana-action, and the retests of Findings 15-001 and 16-001.
+
+> 2026-09-24 opened in wave 12 ticket 15
+
+## mp-671 · Does a past week's leftover Draft belong in Previous plans?
+- category: Plan tab
+- kind: question
+- status: open
+- linked: mp-241
+- image: none
+- svg: docs/ssot/decisions/images/mealplanning/mp-671.svg
+- screen: none (the Previous plans sheet and the earlier plan view both follow from the answer)
+- source: wave testing-wave 12 ticket 17
+
+**Context.** mp-241 archives every other plan for a week when a draft is confirmed, but only the plans that exist at that moment. A Draft started after the confirm, or in a week nobody confirmed again, stays a Draft for good. In wave 12 the dev test account's Previous plans sheet listed such a Draft (week of 13 September, one meal, made after that week's plan was confirmed) as "An earlier plan. View only.", the same as the archived and confirmed plans around it, with nothing marking it as a Draft (Finding 17-002).
+
+**Question.** Should the Previous plans sheet list a past week's leftover Draft? (A) No: it lists only confirmed and archived plans, and a Draft stays reachable from its conversation. (B) Yes, labelled Draft, with a way back to its conversation. (C) Drafts are archived when their week ends, so the sheet only ever sees archived and confirmed plans.
+
+**Why.** A keeps the sheet a history of plans that happened. B lets an athlete finish a Draft they forgot. C removes stray Drafts from every list at once, at the cost of a job that runs at week end.
+
+**What it touches.** `list_plans` in vana-action, the Previous plans sheet's rows and their labels, and the retest of Finding 17-002.
+
+> 2026-09-24 opened in wave 12 ticket 17
