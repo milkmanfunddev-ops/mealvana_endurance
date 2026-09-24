@@ -7,6 +7,10 @@
     "reason": "ai-spend",
     "why": "Sends a message in the Vana general chat (/jade redirects there): one model turn per run, and the answer is not deterministic."
   },
+  "flows/cancellation_flow_test.dart": {
+    "reason": "clean-install",
+    "why": "Signs up a throwaway account from the welcome screen and buys Test Store Monthly on the paywall, then waits about 30 minutes for the monthly to lapse, so it needs a fresh install with no session and a build whose RevenueCat key is the Test Store's."
+  },
   "flows/google_login_flow_test.dart": {
     "reason": "interactive-oauth",
     "why": "Drives the native Google account sheet, which needs interactive consent; it self-skips on iOS."

@@ -1,0 +1,14 @@
+## dev revenuecat-webhook lines for account D (d88b5741), 12:25Z-13:10Z UTC, GET /v1/projects/{ref}/analytics/endpoints/logs (unified logs table), read 13:03:55Z
+rows 12 
+2026-09-24T12:31:30.842000 [rc-webhook] INITIAL_PURCHASE: active_until=2026-09-24T12:36:29.761Z period=NORMAL for d88b5741-f2f2-455c-b2dc-c346d904b01b 
+2026-09-24T12:31:30.930000 [rc-webhook] INITIAL_PURCHASE: allowance 4000000 → d88b5741-f2f2-455c-b2dc-c346d904b01b ({"balance":4000000,"granted":true,"allowance":4000000,"forfeited":0,"allowance_expires_at":"2026-09-24T12:36:29.761+00:00"}) 
+2026-09-24T12:39:32.074000 [rc-webhook] RENEWAL: active_until=2026-09-24T12:41:29.761Z period=NORMAL for d88b5741-f2f2-455c-b2dc-c346d904b01b 
+2026-09-24T12:39:32.327000 [rc-webhook] RENEWAL: allowance 4000000 → d88b5741-f2f2-455c-b2dc-c346d904b01b ({"balance":4400000,"granted":true,"allowance":4000000,"forfeited":3964123,"allowance_expires_at":"2026-09-24T12:41:29.761+00:00"}) 
+2026-09-24T12:43:35.825000 [rc-webhook] RENEWAL: active_until=2026-09-24T12:46:29.761Z period=NORMAL for d88b5741-f2f2-455c-b2dc-c346d904b01b 
+2026-09-24T12:43:35.947000 [rc-webhook] RENEWAL: allowance 4000000 → d88b5741-f2f2-455c-b2dc-c346d904b01b ({"balance":4400000,"granted":true,"allowance":4000000,"forfeited":4000000,"allowance_expires_at":"2026-09-24T12:46:29.761+00:00"}) 
+2026-09-24T12:47:38.645000 [rc-webhook] RENEWAL: active_until=2026-09-24T12:51:29.761Z period=NORMAL for d88b5741-f2f2-455c-b2dc-c346d904b01b 
+2026-09-24T12:47:38.898000 [rc-webhook] RENEWAL: allowance 4000000 → d88b5741-f2f2-455c-b2dc-c346d904b01b ({"balance":4400000,"granted":true,"allowance":4000000,"forfeited":4000000,"allowance_expires_at":"2026-09-24T12:51:29.761+00:00"}) 
+2026-09-24T12:51:39.253000 [rc-webhook] RENEWAL: active_until=2026-09-24T12:56:29.761Z period=NORMAL for d88b5741-f2f2-455c-b2dc-c346d904b01b 
+2026-09-24T12:51:39.491000 [rc-webhook] RENEWAL: allowance 4000000 → d88b5741-f2f2-455c-b2dc-c346d904b01b ({"balance":4400000,"granted":true,"allowance":4000000,"forfeited":4000000,"allowance_expires_at":"2026-09-24T12:56:29.761+00:00"}) 
+2026-09-24T12:59:38.031000 [rc-webhook] EXPIRATION: active_until=2026-09-24T12:59:36.902Z period=NORMAL for d88b5741-f2f2-455c-b2dc-c346d904b01b 
+2026-09-24T12:59:38.264000 [rc-webhook] EXPIRATION: allowance forfeited for d88b5741-f2f2-455c-b2dc-c346d904b01b ({"balance":400000,"allowance":0,"forfeited":4000000}) 

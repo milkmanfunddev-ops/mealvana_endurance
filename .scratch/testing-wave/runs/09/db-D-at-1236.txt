@@ -1,0 +1,2 @@
+read at 2026-09-24T12:35:45Z
+[{"user_id":"d88b5741-f2f2-455c-b2dc-c346d904b01b","active_until":"2026-09-24 12:36:29.761+00","period_type":"NORMAL","event_at":"2026-09-24 12:31:29.947+00"}]
