@@ -225,6 +225,25 @@ Tick hides at 0 owed and on completion.
 Prototyped through v9 (both files). Still pending for ship: the glow materials
 ruling, and a copy register for the pace/Loaded strings (P-3).
 
+### RULED — 2026-09-24 (Xuan) — slot interior descoped; the card is a door
+
+**No recommendation algorithm this iteration.** Quick-add is the old feature's
+curated per-section fitting lists, fixed order, portioned names, carb-first.
+Prioritization/remainder-aware picking is explicitly future work.
+
+**Dashboard slot cards carry NO idea rows** — supersedes the idea-rows half of
+the 2026-09-19 sparkle ruling (the six-slot scaffold itself stays because it is
+a loading day, not because the sparkle is on; sparkle's loading-day role needs
+confirming). Card states: unfilled = header + "Tap to log"; filled collapsed =
+summary line; filled expanded = read-only receipt (names + grams) with one
+"Edit in <slot>" exit. **No editing on the dashboard.**
+
+**All interaction lives on the slot page** (tap into the card): barcode
+scanning and search FEATURED side by side at the top, the curated Quick Add
+list prominent below, the logged receipt with tap-revealed portion stepper +
+Remove, and a create-your-own-food link. One page per slot; the dashboard card
+is a gauge and a door.
+
 - **D1 — Is a carb-loading day its own log, or food-log entries tagged to a day?**
   Hinge for lanes 2 and 3. If entries are ordinary food logs tagged to a
   carb-loading day, regenerating a protocol rewrites targets without touching
