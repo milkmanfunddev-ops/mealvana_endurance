@@ -172,7 +172,7 @@ is covered by the compat views. So the rollback is not "undo the migrations"
 
 ## Testing-wave fixes (added 2026-09-25)
 
-Seven more migrations, applied to dev only, all idempotent. On prod they go in
+Eight more migrations, applied to dev only, all idempotent. On prod they go in
 step 2 like the rest, in timestamp order:
 
 - `20260925100000_user_entitlements_will_renew` then
@@ -199,6 +199,12 @@ step 2 like the rest, in timestamp order:
   sheet fails without them. The backfill cannot tell whether an archived plan
   from before 2026-09-16 was ever confirmed; those drop off Previous plans
   (on dev, test@test.com lists 4 of 27).
+- `20260925170100_drop_archived_draft_lists` (wave 26, ticket 101): deletes
+  the shopping lists of archived plans that were never confirmed (plan and
+  list `confirmed_at` both unset); items cascade. Needs `20260925150100`
+  first. Applied to dev 2026-09-25 (6 lists, all test@test.com). Run it on
+  prod after the `vana-action` that drops a draft's list on archive is live,
+  or a draft archived in between keeps its list until the next archive that week.
 
 Step 6 also redeploys every function that imports `_shared/vana/entitlement.ts`
 (on 2026-09-25: `revenuecat-webhook`, `analyze-meal-photo`, `describe-meal`,
