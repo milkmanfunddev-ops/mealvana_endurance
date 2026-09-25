@@ -26,7 +26,7 @@ import { flag } from './state.mjs';
 export const KINDS = ['bug', 'ssot-conflict', 'followup-test', 'idea'];
 export const STATUSES = ['open', 'triaged', 'fixing', 'closed', 'wontfix'];
 const DONE = new Set(['closed', 'wontfix']);
-const NAME = /^(\d{2})-(\d{3})-[a-z0-9-]+\.md$/;
+const NAME = /^(\d{2,3})-(\d{3})-[a-z0-9-]+\.md$/;
 const DECISION_ID = /^[a-z]+-\d+$/;
 const SPEC_REF = /^(docs\/ssot\/spec\/[^#]+\.md)#(.+)$/;
 
@@ -127,7 +127,7 @@ export function readFindings(dir = FINDINGS_DIR, { root = repo } = {}) {
     };
     return at(wave) || at(repo);
   };
-  return readdirSync(dir).filter(n => /^\d{2}-.*\.md$/.test(n)).sort().map(n => {
+  return readdirSync(dir).filter(n => /^\d{2,3}-\d{3}-.*\.md$/.test(n)).sort().map(n => {
     const f = parseFinding(readFileSync(join(dir, n), 'utf8'), n);
     for (const p of evidencePaths(f.sections.evidence)) if (!exists(p)) f.errors.push(`evidence ${p} does not exist`);
     f.errors.push(...specRefErrors(f, root));
@@ -172,7 +172,7 @@ export function newFinding(dir, ticket, title, { kind, run, template = join(dir,
   if (!KINDS.includes(kind)) throw new Error(`kind "${kind}" is not one of ${KINDS.join(', ')}`);
   if (!run) throw new Error('a Finding needs its run id (--run w<wave>-<UTC time>)');
   const t = String(ticket).padStart(2, '0');
-  if (!/^\d{2}$/.test(t)) throw new Error(`ticket "${ticket}" is not a ticket number`);
+  if (!/^\d{2,3}$/.test(t)) throw new Error(`ticket "${ticket}" is not a ticket number`);
   const used = readdirSync(dir).map(n => n.match(NAME)).filter(m => m && m[1] === t).map(m => Number(m[2]));
   const seq = String((used.length ? Math.max(...used) : 0) + 1).padStart(3, '0');
   const path = join(dir, `${t}-${seq}-${slugify(title)}.md`);

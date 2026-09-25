@@ -185,6 +185,17 @@ test('new names the file after the ticket with the next free number and fills in
   assert.ok(readdirSync(dir).includes('07-005-try-dark-mode.md'));
 });
 
+test('a three-digit ticket makes, reads and indexes its Findings', () => {
+  const dir = folder({ '111-001-a.md': finding({ id: '111-001', ticket: '111' }), '11-001-b.md': finding({ id: '11-001' }) });
+  copyFileSync(template, join(dir, 'TEMPLATE.md'));
+  const made = newFinding(dir, '111', 'Cancel shows an error', { kind: 'bug', run: 'w30-20260925T2103Z' });
+  assert.equal(made.split('/').pop(), '111-002-cancel-shows-an-error.md');
+  assert.match(readFileSync(made, 'utf8'), /^- ticket: 111$/m);
+  const found = readFindings(dir);
+  assert.deepEqual(found.map(f => f.id).sort(), ['11-001', '111-001', '111-002']);
+  assert.deepEqual(found.filter(f => f.id !== '111-002').flatMap(f => f.errors), []);
+});
+
 test('new refuses an unknown kind', () => {
   const dir = folder({});
   copyFileSync(template, join(dir, 'TEMPLATE.md'));

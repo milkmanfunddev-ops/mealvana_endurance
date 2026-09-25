@@ -11,9 +11,17 @@ Each entry: what went wrong or cost time, where it was seen, and the suggested f
 
 ## Open
 
-(none)
+- **#74 `netcut on` leaves open connections up (wave 30).** Ticket 111's first tap after the cut
+  (21-007) went out over a connection that was already open; a retry 40 s later was blocked
+  (Finding 111-004). Suggested fix: after `netcut on`, wait for idle connections to drop or
+  relaunch the app before the first offline check, and say so in runbook step 5.
 
 ## Done
+
+- **#73 three-digit tickets had no Findings (wave 30).** `findings.mjs` read and made Findings
+  only for two-digit tickets, so `111-*` files were skipped by `index` and `new` refused
+  ticket 111 (Finding 111-003). Fixed by the wave 30 lead: tickets are two or three digits,
+  with a test.
 
 - **#72 two runs on one account need an order, not just a warning (wave 29).** 88 and 89 shared
   test@test.com, and 89's 19-009 needed plan be6abf2f confirmed with no list, which 88's confirms
