@@ -169,6 +169,7 @@ class MacroDashboardAssembler {
         kcal: _sessionKcal(a, weightKg),
         state: state,
         sport: a.activityType.name,
+        verifiedSourceName: verifiedSourceNameFor(a),
         skipActive: skipActive,
         // A future day's workout hasn't happened: no mark-done (ruled
         // 2026-08-18). Mark-UNDONE on a (legacy) confirmed future card stays
@@ -583,7 +584,12 @@ class MacroDashboardAssembler {
   String _meta(Activity a, {required bool verified}) {
     final double? miles;
     final int? minutes;
-    if (verified) {
+    // D-1: one value family per row, `actual ?? planned` AS A PAIR. A
+    // platform can report a workout done without measurements (FinalSurge
+    // `WorkoutCompleted` alone); that card keeps the planned pair.
+    final hasMeasured =
+        a.actualDistanceMiles != null || a.actualDurationMinutes != null;
+    if (verified && hasMeasured) {
       miles = a.actualDistanceMiles;
       minutes = a.actualDurationMinutes;
     } else {

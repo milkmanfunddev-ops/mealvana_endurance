@@ -11569,6 +11569,17 @@ class $ActivitiesTableTable extends ActivitiesTable
     type: DriftSqlType.int,
     requiredDuringInsert: false,
   );
+  static const VerificationMeta _completionTypeMeta = const VerificationMeta(
+    'completionType',
+  );
+  @override
+  late final GeneratedColumn<String> completionType = GeneratedColumn<String>(
+    'completion_type',
+    aliasedName,
+    true,
+    type: DriftSqlType.string,
+    requiredDuringInsert: false,
+  );
   static const VerificationMeta _nutritionPlanDataMeta = const VerificationMeta(
     'nutritionPlanData',
   );
@@ -11844,6 +11855,7 @@ class $ActivitiesTableTable extends ActivitiesTable
     completionNotes,
     actualDistanceMiles,
     actualDurationMinutes,
+    completionType,
     nutritionPlanData,
     fuelLogData,
     brickMetadata,
@@ -12314,6 +12326,15 @@ class $ActivitiesTableTable extends ActivitiesTable
         ),
       );
     }
+    if (data.containsKey('completion_type')) {
+      context.handle(
+        _completionTypeMeta,
+        completionType.isAcceptableOrUnknown(
+          data['completion_type']!,
+          _completionTypeMeta,
+        ),
+      );
+    }
     if (data.containsKey('nutrition_plan_data')) {
       context.handle(
         _nutritionPlanDataMeta,
@@ -12671,6 +12692,10 @@ class $ActivitiesTableTable extends ActivitiesTable
         DriftSqlType.int,
         data['${effectivePrefix}actual_duration_minutes'],
       ),
+      completionType: attachedDatabase.typeMapping.read(
+        DriftSqlType.string,
+        data['${effectivePrefix}completion_type'],
+      ),
       nutritionPlanData: attachedDatabase.typeMapping.read(
         DriftSqlType.string,
         data['${effectivePrefix}nutrition_plan_data'],
@@ -12811,6 +12836,7 @@ class Activity extends DataClass implements Insertable<Activity> {
   final String? completionNotes;
   final double? actualDistanceMiles;
   final int? actualDurationMinutes;
+  final String? completionType;
   final String? nutritionPlanData;
   final String? fuelLogData;
   final String? brickMetadata;
@@ -12882,6 +12908,7 @@ class Activity extends DataClass implements Insertable<Activity> {
     this.completionNotes,
     this.actualDistanceMiles,
     this.actualDurationMinutes,
+    this.completionType,
     this.nutritionPlanData,
     this.fuelLogData,
     this.brickMetadata,
@@ -13045,6 +13072,9 @@ class Activity extends DataClass implements Insertable<Activity> {
     }
     if (!nullToAbsent || actualDurationMinutes != null) {
       map['actual_duration_minutes'] = Variable<int>(actualDurationMinutes);
+    }
+    if (!nullToAbsent || completionType != null) {
+      map['completion_type'] = Variable<String>(completionType);
     }
     if (!nullToAbsent || nutritionPlanData != null) {
       map['nutrition_plan_data'] = Variable<String>(nutritionPlanData);
@@ -13238,6 +13268,9 @@ class Activity extends DataClass implements Insertable<Activity> {
       actualDurationMinutes: actualDurationMinutes == null && nullToAbsent
           ? const Value.absent()
           : Value(actualDurationMinutes),
+      completionType: completionType == null && nullToAbsent
+          ? const Value.absent()
+          : Value(completionType),
       nutritionPlanData: nutritionPlanData == null && nullToAbsent
           ? const Value.absent()
           : Value(nutritionPlanData),
@@ -13391,6 +13424,7 @@ class Activity extends DataClass implements Insertable<Activity> {
       actualDurationMinutes: serializer.fromJson<int?>(
         json['actualDurationMinutes'],
       ),
+      completionType: serializer.fromJson<String?>(json['completionType']),
       nutritionPlanData: serializer.fromJson<String?>(
         json['nutritionPlanData'],
       ),
@@ -13483,6 +13517,7 @@ class Activity extends DataClass implements Insertable<Activity> {
       'completionNotes': serializer.toJson<String?>(completionNotes),
       'actualDistanceMiles': serializer.toJson<double?>(actualDistanceMiles),
       'actualDurationMinutes': serializer.toJson<int?>(actualDurationMinutes),
+      'completionType': serializer.toJson<String?>(completionType),
       'nutritionPlanData': serializer.toJson<String?>(nutritionPlanData),
       'fuelLogData': serializer.toJson<String?>(fuelLogData),
       'brickMetadata': serializer.toJson<String?>(brickMetadata),
@@ -13557,6 +13592,7 @@ class Activity extends DataClass implements Insertable<Activity> {
     Value<String?> completionNotes = const Value.absent(),
     Value<double?> actualDistanceMiles = const Value.absent(),
     Value<int?> actualDurationMinutes = const Value.absent(),
+    Value<String?> completionType = const Value.absent(),
     Value<String?> nutritionPlanData = const Value.absent(),
     Value<String?> fuelLogData = const Value.absent(),
     Value<String?> brickMetadata = const Value.absent(),
@@ -13698,6 +13734,9 @@ class Activity extends DataClass implements Insertable<Activity> {
     actualDurationMinutes: actualDurationMinutes.present
         ? actualDurationMinutes.value
         : this.actualDurationMinutes,
+    completionType: completionType.present
+        ? completionType.value
+        : this.completionType,
     nutritionPlanData: nutritionPlanData.present
         ? nutritionPlanData.value
         : this.nutritionPlanData,
@@ -13875,6 +13914,9 @@ class Activity extends DataClass implements Insertable<Activity> {
       actualDurationMinutes: data.actualDurationMinutes.present
           ? data.actualDurationMinutes.value
           : this.actualDurationMinutes,
+      completionType: data.completionType.present
+          ? data.completionType.value
+          : this.completionType,
       nutritionPlanData: data.nutritionPlanData.present
           ? data.nutritionPlanData.value
           : this.nutritionPlanData,
@@ -13971,6 +14013,7 @@ class Activity extends DataClass implements Insertable<Activity> {
           ..write('completionNotes: $completionNotes, ')
           ..write('actualDistanceMiles: $actualDistanceMiles, ')
           ..write('actualDurationMinutes: $actualDurationMinutes, ')
+          ..write('completionType: $completionType, ')
           ..write('nutritionPlanData: $nutritionPlanData, ')
           ..write('fuelLogData: $fuelLogData, ')
           ..write('brickMetadata: $brickMetadata, ')
@@ -14047,6 +14090,7 @@ class Activity extends DataClass implements Insertable<Activity> {
     completionNotes,
     actualDistanceMiles,
     actualDurationMinutes,
+    completionType,
     nutritionPlanData,
     fuelLogData,
     brickMetadata,
@@ -14122,6 +14166,7 @@ class Activity extends DataClass implements Insertable<Activity> {
           other.completionNotes == this.completionNotes &&
           other.actualDistanceMiles == this.actualDistanceMiles &&
           other.actualDurationMinutes == this.actualDurationMinutes &&
+          other.completionType == this.completionType &&
           other.nutritionPlanData == this.nutritionPlanData &&
           other.fuelLogData == this.fuelLogData &&
           other.brickMetadata == this.brickMetadata &&
@@ -14195,6 +14240,7 @@ class ActivitiesTableCompanion extends UpdateCompanion<Activity> {
   final Value<String?> completionNotes;
   final Value<double?> actualDistanceMiles;
   final Value<int?> actualDurationMinutes;
+  final Value<String?> completionType;
   final Value<String?> nutritionPlanData;
   final Value<String?> fuelLogData;
   final Value<String?> brickMetadata;
@@ -14267,6 +14313,7 @@ class ActivitiesTableCompanion extends UpdateCompanion<Activity> {
     this.completionNotes = const Value.absent(),
     this.actualDistanceMiles = const Value.absent(),
     this.actualDurationMinutes = const Value.absent(),
+    this.completionType = const Value.absent(),
     this.nutritionPlanData = const Value.absent(),
     this.fuelLogData = const Value.absent(),
     this.brickMetadata = const Value.absent(),
@@ -14340,6 +14387,7 @@ class ActivitiesTableCompanion extends UpdateCompanion<Activity> {
     this.completionNotes = const Value.absent(),
     this.actualDistanceMiles = const Value.absent(),
     this.actualDurationMinutes = const Value.absent(),
+    this.completionType = const Value.absent(),
     this.nutritionPlanData = const Value.absent(),
     this.fuelLogData = const Value.absent(),
     this.brickMetadata = const Value.absent(),
@@ -14418,6 +14466,7 @@ class ActivitiesTableCompanion extends UpdateCompanion<Activity> {
     Expression<String>? completionNotes,
     Expression<double>? actualDistanceMiles,
     Expression<int>? actualDurationMinutes,
+    Expression<String>? completionType,
     Expression<String>? nutritionPlanData,
     Expression<String>? fuelLogData,
     Expression<String>? brickMetadata,
@@ -14507,6 +14556,7 @@ class ActivitiesTableCompanion extends UpdateCompanion<Activity> {
         'actual_distance_miles': actualDistanceMiles,
       if (actualDurationMinutes != null)
         'actual_duration_minutes': actualDurationMinutes,
+      if (completionType != null) 'completion_type': completionType,
       if (nutritionPlanData != null) 'nutrition_plan_data': nutritionPlanData,
       if (fuelLogData != null) 'fuel_log_data': fuelLogData,
       if (brickMetadata != null) 'brick_metadata': brickMetadata,
@@ -14583,6 +14633,7 @@ class ActivitiesTableCompanion extends UpdateCompanion<Activity> {
     Value<String?>? completionNotes,
     Value<double?>? actualDistanceMiles,
     Value<int?>? actualDurationMinutes,
+    Value<String?>? completionType,
     Value<String?>? nutritionPlanData,
     Value<String?>? fuelLogData,
     Value<String?>? brickMetadata,
@@ -14664,6 +14715,7 @@ class ActivitiesTableCompanion extends UpdateCompanion<Activity> {
       actualDistanceMiles: actualDistanceMiles ?? this.actualDistanceMiles,
       actualDurationMinutes:
           actualDurationMinutes ?? this.actualDurationMinutes,
+      completionType: completionType ?? this.completionType,
       nutritionPlanData: nutritionPlanData ?? this.nutritionPlanData,
       fuelLogData: fuelLogData ?? this.fuelLogData,
       brickMetadata: brickMetadata ?? this.brickMetadata,
@@ -14863,6 +14915,9 @@ class ActivitiesTableCompanion extends UpdateCompanion<Activity> {
         actualDurationMinutes.value,
       );
     }
+    if (completionType.present) {
+      map['completion_type'] = Variable<String>(completionType.value);
+    }
     if (nutritionPlanData.present) {
       map['nutrition_plan_data'] = Variable<String>(nutritionPlanData.value);
     }
@@ -14982,6 +15037,7 @@ class ActivitiesTableCompanion extends UpdateCompanion<Activity> {
           ..write('completionNotes: $completionNotes, ')
           ..write('actualDistanceMiles: $actualDistanceMiles, ')
           ..write('actualDurationMinutes: $actualDurationMinutes, ')
+          ..write('completionType: $completionType, ')
           ..write('nutritionPlanData: $nutritionPlanData, ')
           ..write('fuelLogData: $fuelLogData, ')
           ..write('brickMetadata: $brickMetadata, ')
@@ -52111,6 +52167,7 @@ typedef $$ActivitiesTableTableCreateCompanionBuilder =
       Value<String?> completionNotes,
       Value<double?> actualDistanceMiles,
       Value<int?> actualDurationMinutes,
+      Value<String?> completionType,
       Value<String?> nutritionPlanData,
       Value<String?> fuelLogData,
       Value<String?> brickMetadata,
@@ -52185,6 +52242,7 @@ typedef $$ActivitiesTableTableUpdateCompanionBuilder =
       Value<String?> completionNotes,
       Value<double?> actualDistanceMiles,
       Value<int?> actualDurationMinutes,
+      Value<String?> completionType,
       Value<String?> nutritionPlanData,
       Value<String?> fuelLogData,
       Value<String?> brickMetadata,
@@ -52464,6 +52522,11 @@ class $$ActivitiesTableTableFilterComposer
 
   ColumnFilters<int> get actualDurationMinutes => $composableBuilder(
     column: $table.actualDurationMinutes,
+    builder: (column) => ColumnFilters(column),
+  );
+
+  ColumnFilters<String> get completionType => $composableBuilder(
+    column: $table.completionType,
     builder: (column) => ColumnFilters(column),
   );
 
@@ -52827,6 +52890,11 @@ class $$ActivitiesTableTableOrderingComposer
     builder: (column) => ColumnOrderings(column),
   );
 
+  ColumnOrderings<String> get completionType => $composableBuilder(
+    column: $table.completionType,
+    builder: (column) => ColumnOrderings(column),
+  );
+
   ColumnOrderings<String> get nutritionPlanData => $composableBuilder(
     column: $table.nutritionPlanData,
     builder: (column) => ColumnOrderings(column),
@@ -53177,6 +53245,11 @@ class $$ActivitiesTableTableAnnotationComposer
     builder: (column) => column,
   );
 
+  GeneratedColumn<String> get completionType => $composableBuilder(
+    column: $table.completionType,
+    builder: (column) => column,
+  );
+
   GeneratedColumn<String> get nutritionPlanData => $composableBuilder(
     column: $table.nutritionPlanData,
     builder: (column) => column,
@@ -53341,6 +53414,7 @@ class $$ActivitiesTableTableTableManager
                 Value<String?> completionNotes = const Value.absent(),
                 Value<double?> actualDistanceMiles = const Value.absent(),
                 Value<int?> actualDurationMinutes = const Value.absent(),
+                Value<String?> completionType = const Value.absent(),
                 Value<String?> nutritionPlanData = const Value.absent(),
                 Value<String?> fuelLogData = const Value.absent(),
                 Value<String?> brickMetadata = const Value.absent(),
@@ -53413,6 +53487,7 @@ class $$ActivitiesTableTableTableManager
                 completionNotes: completionNotes,
                 actualDistanceMiles: actualDistanceMiles,
                 actualDurationMinutes: actualDurationMinutes,
+                completionType: completionType,
                 nutritionPlanData: nutritionPlanData,
                 fuelLogData: fuelLogData,
                 brickMetadata: brickMetadata,
@@ -53487,6 +53562,7 @@ class $$ActivitiesTableTableTableManager
                 Value<String?> completionNotes = const Value.absent(),
                 Value<double?> actualDistanceMiles = const Value.absent(),
                 Value<int?> actualDurationMinutes = const Value.absent(),
+                Value<String?> completionType = const Value.absent(),
                 Value<String?> nutritionPlanData = const Value.absent(),
                 Value<String?> fuelLogData = const Value.absent(),
                 Value<String?> brickMetadata = const Value.absent(),
@@ -53559,6 +53635,7 @@ class $$ActivitiesTableTableTableManager
                 completionNotes: completionNotes,
                 actualDistanceMiles: actualDistanceMiles,
                 actualDurationMinutes: actualDurationMinutes,
+                completionType: completionType,
                 nutritionPlanData: nutritionPlanData,
                 fuelLogData: fuelLogData,
                 brickMetadata: brickMetadata,

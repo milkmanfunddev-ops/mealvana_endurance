@@ -191,6 +191,7 @@ class ActivitySyncHandler {
             (data['actual_distance_miles'] as num?)?.toDouble(),
           ),
           actualDurationMinutes: Value(data['actual_duration_minutes'] as int?),
+          completionType: Value(data['completion_type'] as String?),
           nutritionPlanData: Value(
             _encodeJsonIfNeeded(data['nutrition_plan_data']),
           ),
@@ -379,6 +380,7 @@ class ActivitySyncHandler {
       'completed_at': activity.completedAt?.toIso8601String(),
       'actual_distance_miles': activity.actualDistanceMiles,
       'actual_duration_minutes': activity.actualDurationMinutes,
+      'completion_type': activity.completionType ?? 'manual',
       'completion_rating': activity.completionRating,
       'completion_notes': activity.completionNotes,
       'nutrition_plan_data': _decodeJsonIfNeeded(activity.nutritionPlanData),

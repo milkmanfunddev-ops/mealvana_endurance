@@ -68,9 +68,10 @@ class FinalSurgeTransformResult {
   final IntensityDistribution? intensityDistribution;
 
   /// True when the payload carries provider-reported completion evidence
-  /// (WorkoutCompleted flag or ActualTime). Never observed populated in
-  /// production (FS-2.1) — Xuan's one-time probe settles it; the M-1.3
-  /// revive path is wired and waiting.
+  /// (WorkoutCompleted flag or ActualTime). First observed on the dev feed
+  /// 2026-09-24 (Finding 29-002): the activity then lands `completed` with
+  /// the measured values, and M-1.3 revives a tombstone for it
+  /// (final-surge-completion.PROPOSED.md, awaiting Xuan).
   final bool providerReportsCompletion;
 }
 
@@ -136,7 +137,8 @@ class FinalSurgeTransformer {
     final now = DateTime.now();
     final hasExplicitDuration = _hasExplicitDuration(workout);
 
-    // Get duration from provider fields only (PlannedTime/ActualTime).
+    // Get duration from the plan only (PlannedTime). Actuals never fill a
+    // planned field (final-surge-completion.PROPOSED.md FSC-2).
     final explicitDurationMinutes = _getDurationMinutes(
       workout,
       activityType,
@@ -187,18 +189,31 @@ class FinalSurgeTransformer {
     final providerWorkoutId = extractWorkoutId(workout);
     final providerWorkoutUrl = workout['WorkoutURL'] as String?;
 
-    // Create the Activity with provider sync fields
-    // Use 'planned' status since synced workouts are confirmed by external platform
+    final scheduledDateTime = _parseScheduledDate(
+      workout['WorkoutDate'] as String?,
+      workout['WorkoutTime'],
+    );
+    final completion = _parseCompletion(workout, start: scheduledDateTime);
+
+    // Create the Activity with provider sync fields. A plan lands 'planned'
+    // (FS-2.1); a workout FS reports done lands 'completed' with the
+    // measured values in actual_* (final-surge-completion.PROPOSED.md).
     final activity = Activity(
       id: _uuid.v4(),
       userId: userId,
       activityType: activityType,
       title: _getTitle(workout, workoutTypeName),
-      scheduledDateTime: _parseScheduledDate(
-        workout['WorkoutDate'] as String?,
-        workout['WorkoutTime'],
-      ),
-      status: ActivityStatus.planned,
+      scheduledDateTime: scheduledDateTime,
+      status: completion != null
+          ? ActivityStatus.completed
+          : ActivityStatus.planned,
+      actualTime: completion?.actualTime,
+      completedAt: completion?.completedAt,
+      actualDistanceMiles: completion?.actualDistanceMiles,
+      actualDurationMinutes: completion?.actualDurationMinutes,
+      completionType: completion != null
+          ? Activity.providerCompletionType
+          : null,
       distanceMiles: distanceMiles,
       durationMinutes: durationMinutes,
       paceTargetMinutesPerMile: paceResult.targetPace,
@@ -262,8 +277,40 @@ class FinalSurgeTransformer {
       paceMaxMinutesPerMile: paceResult.maxPace,
       distanceMeters: distanceMeters,
       intensityDistribution: intensityDistribution,
-      providerReportsCompletion: workout['WorkoutCompleted'] == true ||
-          workout['ActualTime'] != null,
+      providerReportsCompletion: completion != null,
+    );
+  }
+
+  /// The completion FS reports for this workout, or null for a plan.
+  ///
+  /// Completion evidence is `WorkoutCompleted: true` or a positive
+  /// `ActualTime` (the M-1.3 signal). `ActualTime` is seconds,
+  /// `ActualDistanceMeters` meters. [start] is the naive-local start
+  /// (`WorkoutDate` + `WorkoutTime`), so the completion stays on the
+  /// athlete's wall-clock day.
+  _FsCompletion? _parseCompletion(
+    Map<String, dynamic> workout, {
+    required DateTime start,
+  }) {
+    // Null or non-positive -> null (see _parseDurationSeconds).
+    final actualSeconds = _parseDurationSeconds(workout['ActualTime']);
+    if (workout['WorkoutCompleted'] != true && actualSeconds == null) {
+      return null;
+    }
+
+    final actualMeters = workout['ActualDistanceMeters'];
+
+    return _FsCompletion(
+      actualTime: start,
+      completedAt: actualSeconds != null
+          ? start.add(Duration(seconds: actualSeconds))
+          : start,
+      actualDurationMinutes: actualSeconds != null
+          ? (actualSeconds / 60).round().clamp(1, 24 * 60)
+          : null,
+      actualDistanceMiles: actualMeters is num && actualMeters > 0
+          ? actualMeters / 1609.34
+          : null,
     );
   }
 
@@ -368,25 +415,22 @@ class FinalSurgeTransformer {
   ///
   /// Priority order:
   /// 1. PlannedTime (planned workout duration in seconds)
-  /// 2. ActualTime (fallback for completed workouts, also in seconds)
-  /// 3. Default value based on activity type
+  /// 2. Default value based on activity type
+  ///
+  /// ActualTime is measured, never planned: it goes to
+  /// `actual_duration_minutes` (see [_parseCompletion]), never here.
   int? _getDurationMinutes(
     Map<String, dynamic> workout,
     ActivityType activityType, {
     bool includeDefaultFallback = true,
   }) {
     final plannedTimeRaw = workout['PlannedTime'];
-    final actualTimeRaw = workout['ActualTime'];
     final plannedTimeSeconds = _parseDurationSeconds(plannedTimeRaw);
-    final actualTimeSeconds = _parseDurationSeconds(actualTimeRaw);
 
     if (kDebugMode) {
       print('🔍 FS DURATION DEBUG:');
       print(
         '   PlannedTime raw value: $plannedTimeRaw (type: ${plannedTimeRaw.runtimeType})',
-      );
-      print(
-        '   ActualTime raw value: $actualTimeRaw (type: ${actualTimeRaw.runtimeType})',
       );
     }
 
@@ -398,16 +442,6 @@ class FinalSurgeTransformer {
         );
       }
       return (plannedTimeSeconds / 60).round().clamp(1, 24 * 60);
-    }
-
-    // 2. Fallback to ActualTime (for completed workouts)
-    if (actualTimeSeconds != null && actualTimeSeconds > 0) {
-      if (kDebugMode) {
-        print(
-          '   ℹ️ Using ActualTime as fallback: $actualTimeSeconds seconds → ${(actualTimeSeconds / 60).round()} minutes',
-        );
-      }
-      return (actualTimeSeconds / 60).round().clamp(1, 24 * 60);
     }
 
     if (!includeDefaultFallback) {
@@ -477,8 +511,10 @@ class FinalSurgeTransformer {
   ///
   /// Priority order:
   /// 1. PlannedDistance (with PlannedDistanceType for unit conversion)
-  /// 2. ActualDistanceMeters (fallback for completed workouts)
-  /// 3. Default value based on activity type
+  /// 2. Default value based on activity type
+  ///
+  /// ActualDistanceMeters is measured, never planned: it goes to
+  /// `actual_distance_miles` (see [_parseCompletion]), never here.
   double? _getDistanceMiles(
     Map<String, dynamic> workout,
     ActivityType activityType,
@@ -490,7 +526,6 @@ class FinalSurgeTransformer {
 
     final plannedDistance = workout['PlannedDistance'];
     final distanceType = workout['PlannedDistanceType'] as String?;
-    final actualDistanceMeters = workout['ActualDistanceMeters'];
 
     if (kDebugMode) {
       print('🔍 FS DISTANCE DEBUG:');
@@ -498,9 +533,6 @@ class FinalSurgeTransformer {
         '   PlannedDistance raw value: $plannedDistance (type: ${plannedDistance.runtimeType})',
       );
       print('   PlannedDistanceType: $distanceType');
-      print(
-        '   ActualDistanceMeters raw value: $actualDistanceMeters (type: ${actualDistanceMeters.runtimeType})',
-      );
       // Also print all workout keys that contain 'distance' or 'Distance'
       final distanceKeys = workout.keys.where(
         (k) => k.toString().toLowerCase().contains('distance'),
@@ -532,22 +564,7 @@ class FinalSurgeTransformer {
       }
     }
 
-    // 2. Fallback to ActualDistanceMeters (for completed workouts)
-    // This is important because completed workouts may not have PlannedDistance
-    // but will have ActualDistanceMeters from GPS/device sync
-    if (actualDistanceMeters != null &&
-        actualDistanceMeters is num &&
-        actualDistanceMeters > 0) {
-      if (kDebugMode) {
-        print(
-          '   ℹ️ Using ActualDistanceMeters as fallback: $actualDistanceMeters m → ${actualDistanceMeters / 1609.34} mi',
-        );
-      }
-      // ActualDistanceMeters is ALWAYS in meters - convert to miles
-      return actualDistanceMeters / 1609.34;
-    }
-
-    // 3. No distance data available - use defaults
+    // 2. No planned distance - use defaults
     if (kDebugMode) {
       print(
         '   ⚠️ No distance data available, using default for $activityType',
@@ -577,12 +594,12 @@ class FinalSurgeTransformer {
   ///
   /// Priority order:
   /// 1. PlannedDistance (with PlannedDistanceType for unit conversion)
-  /// 2. ActualDistanceMeters (fallback for completed workouts)
-  /// 3. Default swimming distance
+  /// 2. Default swimming distance
+  ///
+  /// ActualDistanceMeters never fills the planned distance.
   double? _getDistanceMeters(Map<String, dynamic> workout) {
     final plannedDistance = workout['PlannedDistance'];
     final distanceType = workout['PlannedDistanceType'] as String?;
-    final actualDistanceMeters = workout['ActualDistanceMeters'];
 
     // 1. First try PlannedDistance
     if (plannedDistance != null &&
@@ -603,15 +620,7 @@ class FinalSurgeTransformer {
       }
     }
 
-    // 2. Fallback to ActualDistanceMeters (for completed workouts)
-    if (actualDistanceMeters != null &&
-        actualDistanceMeters is num &&
-        actualDistanceMeters > 0) {
-      // ActualDistanceMeters is ALWAYS in meters
-      return actualDistanceMeters.toDouble();
-    }
-
-    // 3. Use default
+    // 2. Use default
     return FinalSurgeDefaults.swimmingDistanceMeters;
   }
 
@@ -778,36 +787,19 @@ class FinalSurgeTransformer {
     return pace;
   }
 
-  /// Returns true when Final Surge provided duration directly (planned or actual).
+  /// Returns true when Final Surge planned a duration (PlannedTime).
   ///
   /// We use this to avoid treating app-level defaults as authoritative provider
   /// data when deriving downstream cycling speed.
   bool _hasExplicitDuration(Map<String, dynamic> workout) {
     final plannedTimeSeconds = _parseDurationSeconds(workout['PlannedTime']);
-    if (plannedTimeSeconds != null && plannedTimeSeconds > 0) {
-      return true;
-    }
-
-    final actualTimeSeconds = _parseDurationSeconds(workout['ActualTime']);
-    if (actualTimeSeconds != null && actualTimeSeconds > 0) {
-      return true;
-    }
-
-    return false;
+    return plannedTimeSeconds != null && plannedTimeSeconds > 0;
   }
 
+  /// Returns true when Final Surge planned a distance (PlannedDistance).
   bool _hasProviderDistance(Map<String, dynamic> workout) {
     final plannedDistance = workout['PlannedDistance'];
-    if (plannedDistance is num && plannedDistance > 0) {
-      return true;
-    }
-
-    final actualDistanceMeters = workout['ActualDistanceMeters'];
-    if (actualDistanceMeters is num && actualDistanceMeters > 0) {
-      return true;
-    }
-
-    return false;
+    return plannedDistance is num && plannedDistance > 0;
   }
 
   bool _hasProviderPace(Map<String, dynamic> workout) {
@@ -1729,4 +1721,23 @@ class _ParsedTime {
 
   final int hour;
   final int minute;
+}
+
+/// What FS reports for a completed workout (final-surge-completion.PROPOSED.md).
+class _FsCompletion {
+  const _FsCompletion({
+    required this.actualTime,
+    required this.completedAt,
+    this.actualDurationMinutes,
+    this.actualDistanceMiles,
+  });
+
+  /// Recorded start, naive local (WorkoutDate + WorkoutTime).
+  final DateTime actualTime;
+
+  /// Start plus ActualTime; the start when FS sent no ActualTime.
+  final DateTime completedAt;
+
+  final int? actualDurationMinutes;
+  final double? actualDistanceMiles;
 }

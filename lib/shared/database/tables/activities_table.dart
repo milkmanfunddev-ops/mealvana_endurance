@@ -164,6 +164,11 @@ class ActivitiesTable extends Table {
       real().nullable().named('actual_distance_miles')();
   IntColumn get actualDurationMinutes =>
       integer().nullable().named('actual_duration_minutes')();
+  // Who completed it: null/'manual' = the athlete's mark-done, 'provider' =
+  // a training platform reported it done with its own measurements
+  // (final-surge-completion.PROPOSED.md). Mirrors the Supabase column.
+  TextColumn get completionType =>
+      text().nullable().named('completion_type')();
 
   // Embedded nutrition plan data (JSONB in Supabase, stored as TEXT in SQLite)
   TextColumn get nutritionPlanData =>

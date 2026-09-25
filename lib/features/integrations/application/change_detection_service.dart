@@ -392,6 +392,12 @@ class ChangeDetectionService {
 
   /// Check if activity has minor changes (title, notes, pace, etc.)
   bool _hasMinorChanges(Activity oldActivity, Activity newActivity) {
+    // A platform-reported completion the stored row does not carry yet
+    // (final-surge-completion.PROPOSED.md FSC-3). Without this a completed
+    // payload whose planned fields match the stored plan reads UNCHANGED
+    // and the row stays planned (Finding 29-002).
+    if (_bringsNewProviderCompletion(oldActivity, newActivity)) return true;
+
     // Compare key fields that might change without affecting schedule
     if (oldActivity.title != newActivity.title) return true;
     if (oldActivity.notes != newActivity.notes) return true;
@@ -447,6 +453,24 @@ class ChangeDetectionService {
     }
 
     return false;
+  }
+
+  /// True when [remote] reports a platform completion that [local] does not
+  /// already hold with the same measurements. A Garmin-completed row keeps
+  /// Garmin's measurements (the repository merge never overwrites them), so
+  /// it never counts as a change; nor does a brick-archived segment.
+  bool _bringsNewProviderCompletion(Activity local, Activity remote) {
+    if (!remote.isProviderCompleted) return false;
+    if (local.status == ActivityStatus.archivedForBrick) return false;
+    if (local.status == ActivityStatus.completed &&
+        local.garminSummaryId != null) {
+      return false;
+    }
+    return !local.isProviderCompleted ||
+        local.actualTime != remote.actualTime ||
+        local.completedAt != remote.completedAt ||
+        local.actualDistanceMiles != remote.actualDistanceMiles ||
+        local.actualDurationMinutes != remote.actualDurationMinutes;
   }
 
   String _fingerprint(Activity activity) {

@@ -19,10 +19,10 @@ const _homeColumns = ['home_city', 'home_lat', 'home_lon', 'home_timezone'];
 
 void main() {
   group('home location (v22)', () {
-    test('schemaVersion is 22', () async {
+    test('schemaVersion is at least 22', () async {
       final db = AppDatabase.memory();
       addTearDown(db.close);
-      expect(db.schemaVersion, 22);
+      expect(db.schemaVersion, greaterThanOrEqualTo(22));
     });
 
     test('onCreate produces the four home columns on users', () async {
