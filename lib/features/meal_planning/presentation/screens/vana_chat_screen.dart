@@ -962,15 +962,13 @@ class _VanaChatScreenState extends ConsumerState<VanaChatScreen> {
   void _swapPicked(MealPlan? plan, MealRef meal) {
     final planMeal = _planMealFor(plan, meal);
     if (planMeal == null) return;
-    final planController = ref.read(mealPlanControllerProvider.notifier);
     showMealSheet(
       context: context,
       ref: ref,
       meal: planMeal,
-      onServings: (servings) =>
-          planController.setServings(planMeal.id, servings),
+      onServings: (servings) => _setDraftServings(planMeal, servings),
       onSwap: _swapFromSheet,
-      onRemove: () => planController.removeMeal(planMeal.id),
+      onRemove: () => _removeFromDraft(planMeal),
     );
   }
 
@@ -1072,6 +1070,58 @@ class _VanaChatScreenState extends ConsumerState<VanaChatScreen> {
   bool get _showMacros =>
       ref.read(vanaSettingsControllerProvider).value?.showMacros ?? true;
 
+  /// A stepper outside the plan bar (Review sheet, meal sheet): the same
+  /// local-first write the bar makes, mirrored into this conversation's
+  /// draft at once so the bar, the sheet and a reopened chat agree (88-004).
+  void _setDraftServings(PlanMeal meal, int servings) {
+    final draft = ref
+        .read(
+          vanaChatControllerProvider(kind: widget.kind, conversationId: _key),
+        )
+        .value
+        ?.draftPlan;
+    if (draft != null) {
+      _controller.applyDraftPlan(
+        draft.copyWith(
+          meals: [
+            for (final m in draft.meals)
+              if (m.id == meal.id)
+                m.copyWith(servings: servings, servingsLeft: servings)
+              else
+                m,
+          ],
+          recomputeCoverage: true,
+        ),
+      );
+    }
+    ref
+        .read(mealPlanControllerProvider.notifier)
+        .setServings(meal.id, servings);
+  }
+
+  /// Remove outside the plan bar: drop the meal from the draft at once, then
+  /// the local-first write (88-004).
+  void _removeFromDraft(PlanMeal meal) {
+    final draft = ref
+        .read(
+          vanaChatControllerProvider(kind: widget.kind, conversationId: _key),
+        )
+        .value
+        ?.draftPlan;
+    if (draft != null) {
+      _controller.applyDraftPlan(
+        draft.copyWith(
+          meals: [
+            for (final m in draft.meals)
+              if (m.id != meal.id) m,
+          ],
+          recomputeCoverage: true,
+        ),
+      );
+    }
+    ref.read(mealPlanControllerProvider.notifier).removeMeal(meal.id);
+  }
+
   Future<void> _openReviewSheet(BuildContext context, MealPlan plan) {
     final planController = ref.read(mealPlanControllerProvider.notifier);
     return showReviewSheet(
@@ -1083,13 +1133,18 @@ class _VanaChatScreenState extends ConsumerState<VanaChatScreen> {
         context: context,
         ref: ref,
         meal: meal,
-        onServings: (servings) => planController.setServings(meal.id, servings),
+        onServings: (servings) => _setDraftServings(meal, servings),
         onSwap: _swapFromSheet,
-        onRemove: () => planController.removeMeal(meal.id),
+        onRemove: () => _removeFromDraft(meal),
       ),
-      onServings: (meal, servings) =>
-          planController.setServings(meal.id, servings),
-      onRemove: (meal) => planController.removeMeal(meal.id),
+      onServings: _setDraftServings,
+      onRemove: _removeFromDraft,
+      // The sheet follows this conversation's draft while open, so a Remove
+      // or a stepper shows at once (88-004).
+      livePlan: vanaChatControllerProvider(
+        kind: widget.kind,
+        conversationId: _key,
+      ).select((chat) => chat.value?.draftPlan),
       // The sheet shows THIS conversation's draft, so Confirm names it. An
       // unscoped confirm_plan lands on the week's active plan, which puts an
       // old confirmed plan first and archived the Draft on screen (16-001).
