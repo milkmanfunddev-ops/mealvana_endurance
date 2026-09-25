@@ -168,6 +168,7 @@ ShoppingListState _listState({
   bool isCurrent = true,
   bool empty = false,
   String? planId = 'plan-1',
+  String? weekPlanId,
   bool isOffline = false,
 }) => ShoppingListState(
   listId: 'list-1',
@@ -184,6 +185,7 @@ ShoppingListState _listState({
         },
   itemCount: empty ? 0 : 1,
   previous: previous,
+  weekPlanId: weekPlanId,
   isOffline: isOffline,
 );
 
@@ -346,7 +348,10 @@ void _redesignTests() {
     ) async {
       await _pumpTab(tester, _listState());
 
-      expect(find.text('Week of 2026-09-13'), findsOneWidget);
+      // a list made before 2026-09-25 carries its week as an ISO date; it
+      // reads in words, like the lists made since (Finding 16-007)
+      expect(find.text('Week of Sep 13'), findsOneWidget);
+      expect(find.text('Week of 2026-09-13'), findsNothing);
       expect(
         find.byKey(const ValueKey('meal_planning.shopping_list_date')),
         findsOneWidget,
@@ -412,7 +417,7 @@ void _redesignTests() {
         const ValueKey('meal_planning.shopping_rename_name'),
       );
       expect(field, findsOneWidget);
-      expect(find.text('Week of 2026-09-13'), findsWidgets);
+      expect(find.text('Week of Sep 13'), findsWidgets);
       await tester.enterText(field, 'Big shop');
       await tester.tap(
         find.byKey(const ValueKey('meal_planning.shopping_rename_save')),
@@ -634,6 +639,85 @@ void _redesignTests() {
           content['meal_planning.shopping_previous_current']!,
         ),
         findsOneWidget,
+      );
+    });
+
+    testWidgets(
+      "marks this week's confirmed plan's list apart from other plans' lists (19-005)",
+      (tester) async {
+        await _pumpTab(
+          tester,
+          _listState(
+            planId: null,
+            weekPlanId: 'plan-confirmed',
+            previous: [
+              _summary(
+                'list-draft',
+                'Week of 2026-09-20',
+                on: DateTime.utc(2026, 9, 24),
+                planId: 'plan-draft',
+              ),
+              _summary(
+                'list-week',
+                'Week of Sep 20',
+                on: DateTime.utc(2026, 9, 20),
+                planId: 'plan-confirmed',
+              ),
+            ],
+          ),
+        );
+        await _openMenu(tester, 'meal_planning.shopping_menu');
+        await _choose(tester, 'meal_planning.shopping_previous');
+
+        final mark = find.byKey(
+          const ValueKey('meal_planning.shopping_week_plan_list-week'),
+        );
+        expect(mark, findsOneWidget);
+        expect(
+          find.descendant(
+            of: mark,
+            matching: find.text(content['meal_planning.shopping_week_plan']!),
+          ),
+          findsOneWidget,
+        );
+        // the plan's list carries the stronger mark only
+        expect(
+          find.byKey(
+            const ValueKey('meal_planning.shopping_from_plan_list-week'),
+          ),
+          findsNothing,
+        );
+        // an archived or draft plan's list keeps the plain "From plan"
+        expect(
+          find.byKey(
+            const ValueKey('meal_planning.shopping_from_plan_list-draft'),
+          ),
+          findsOneWidget,
+        );
+        expect(
+          find.byKey(
+            const ValueKey('meal_planning.shopping_week_plan_list-draft'),
+          ),
+          findsNothing,
+        );
+        // both same-week names read in words, whichever way they were stored
+        expect(find.text('Week of Sep 20'), findsNWidgets(2));
+      },
+    );
+
+    testWidgets('no confirmed plan this week: no list is marked', (
+      tester,
+    ) async {
+      await open(tester);
+      expect(
+        find.byWidgetPredicate(
+          (w) =>
+              w.key is ValueKey<String> &&
+              (w.key! as ValueKey<String>).value.startsWith(
+                'meal_planning.shopping_week_plan_',
+              ),
+        ),
+        findsNothing,
       );
     });
 

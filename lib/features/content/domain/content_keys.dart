@@ -739,6 +739,8 @@ class ContentKeys {
   static const String mpShoppingFromPlan = 'meal_planning.shopping_from_plan';
   static const String mpShoppingPreviousCurrent =
       'meal_planning.shopping_previous_current';
+  static const String mpShoppingWeekPlan = 'meal_planning.shopping_week_plan';
+  static const String mpShoppingWeekOf = 'meal_planning.shopping_week_of';
   static const String mpSettingsVanaTitle = 'meal_planning.settings_vana_title';
   static const String mpSettingsBatch = 'meal_planning.settings_batch';
   static const String mpSettingsBatchSub = 'meal_planning.settings_batch_sub';

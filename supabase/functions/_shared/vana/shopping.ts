@@ -69,12 +69,21 @@ export async function mirrorToPlan(v: VanaCtx, listId: string): Promise<Shopping
 }
 
 // ---------------------------------------------------------------- plan ↔ list
-/** The plan's list, made on first use. Named after the week so a prior list reads as "Week of 2026-09-13". */
+const MONTHS = ['Jan', 'Feb', 'Mar', 'Apr', 'May', 'Jun', 'Jul', 'Aug', 'Sep', 'Oct', 'Nov', 'Dec'];
+/** A plan's list name: its week in words, "Week of Sep 20", like the Plan tab's "Sep 20 – Sep 26" (16-007). Read from
+ *  the `YYYY-MM-DD` string itself, never through a Date, so no time zone can move the day. Lists made before
+ *  2026-09-25 keep their stored "Week of 2026-09-20"; the app shows those in words too. */
+export function weekListName(weekStart: string): string {
+  const m = /^(\d{4})-(\d{2})-(\d{2})$/.exec(weekStart);
+  const month = m ? MONTHS[Number(m[2]) - 1] : undefined;
+  return month ? `Week of ${month} ${Number(m![3])}` : `Week of ${weekStart}`;
+}
+/** The plan's list, made on first use. Named after the week ([weekListName]). */
 // deno-lint-ignore no-explicit-any
 export async function ensurePlanList(v: VanaCtx, planId: string, weekStart: string): Promise<any> {
   const { data } = await v.db.from('shopping_lists').select('*').eq('plan_id', planId).eq('user_id', v.userId).maybeSingle();
   if (data) return data;
-  const { data: made, error } = await v.db.from('shopping_lists').insert({ user_id: v.userId, plan_id: planId, name: `Week of ${weekStart}` }).select('*').single();
+  const { data: made, error } = await v.db.from('shopping_lists').insert({ user_id: v.userId, plan_id: planId, name: weekListName(weekStart) }).select('*').single();
   if (error) throw new Error(error.message);
   return made;
 }

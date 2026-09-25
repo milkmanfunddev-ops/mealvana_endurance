@@ -1,7 +1,7 @@
 /** Several shopping lists (2026-09-16): the merge rule that keeps a hand-added or hand-edited line through a re-plan,
  *  and the wire shape of every shopping action, over the fake db. */
 import { assertEquals, assert, assertRejects } from 'https://deno.land/std@0.177.1/testing/asserts.ts';
-import { mergePlanItems, syncPlanList, toItem } from '../../_shared/vana/shopping.ts';
+import { mergePlanItems, syncPlanList, toItem, weekListName } from '../../_shared/vana/shopping.ts';
 import { extraAction } from '../../_shared/vana/actions.ts';
 import { ShoppingListDetailZ, ShoppingListSummaryZ, ActionResultZ } from '../../_shared/vana/schemas.ts';
 import type { ShoppingItem, ShoppingListItem } from '../../_shared/vana/contracts.ts';
@@ -36,12 +36,20 @@ Deno.test('merge: a fresh line whose name a kept row already carries is not doub
   assertEquals(keep.length, 1); assertEquals(insert.length, 0);
 });
 
+Deno.test("weekListName: a plan's list is named by its week in words, not an ISO date (16-007)", () => {
+  assertEquals(weekListName('2026-09-20'), 'Week of Sep 20');
+  assertEquals(weekListName('2026-01-04'), 'Week of Jan 4');
+  assertEquals(weekListName('2026-12-27'), 'Week of Dec 27');
+  // not a date: kept as it came rather than read as the wrong week
+  assertEquals(weekListName('soon'), 'Week of soon');
+});
+
 Deno.test('syncPlanList: makes the plan list once, replaces plan rows, keeps the hand-added row, answers plain lines', async () => {
   const v = ctx();
   const plan = { id: 'p1', weekStart: '2026-09-13', status: 'draft' };
   const first = await syncPlanList(v, plan, [plain('Broccoli'), plain('Rice')]);
   assertEquals(first.map((i) => i.name), ['Broccoli', 'Rice']);
-  const lists = v.fake.rows('shopping_lists'); assertEquals(lists.length, 1); assertEquals(lists[0].plan_id, 'p1'); assertEquals(lists[0].name, 'Week of 2026-09-13');
+  const lists = v.fake.rows('shopping_lists'); assertEquals(lists.length, 1); assertEquals(lists[0].plan_id, 'p1'); assertEquals(lists[0].name, 'Week of Sep 13');
   const listId = String(lists[0].id);
   await v.db.from('shopping_items').insert({ list_id: listId, user_id: U, name: 'Coffee', qty: '1 bag', aisle: 'Beverages', source: 'manual' });
   const second = await syncPlanList(v, plan, [plain('Salmon')]);

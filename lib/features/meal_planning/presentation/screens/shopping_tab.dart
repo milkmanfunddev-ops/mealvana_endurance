@@ -65,7 +65,12 @@ class ShoppingTab extends ConsumerWidget {
           state: state,
           onRename: listId == null
               ? null
-              : () => _renameList(context, ref, listId, state.listName),
+              : () => _renameList(
+                  context,
+                  ref,
+                  listId,
+                  shoppingListNameInWords(content, state.listName),
+                ),
           onNewList: () => _newList(context, ref),
           onPrevious: () => _previousLists(context, ref, state),
           onBackToCurrent: () => _guard(context, ref, controller.openCurrent),
@@ -273,6 +278,7 @@ class ShoppingTab extends ConsumerWidget {
       builder: (sheetContext) => ShoppingPreviousListsSheet(
         lists: state.allLists,
         currentId: state.listId,
+        weekPlanId: state.weekPlanId,
       ),
     );
     if (choice == null || !context.mounted) return;
@@ -288,7 +294,12 @@ class ShoppingTab extends ConsumerWidget {
               .openList(list.id),
         );
       case ShoppingListChoiceAction.rename:
-        await _renameList(context, ref, list.id, list.name);
+        await _renameList(
+          context,
+          ref,
+          list.id,
+          shoppingListNameInWords(ref.read(contentServiceProvider), list.name),
+        );
       case ShoppingListChoiceAction.delete:
         await _deleteList(context, ref, list.id);
     }
@@ -427,7 +438,7 @@ class _ListHeader extends ConsumerWidget {
 
     final name = state.listName.isEmpty
         ? content.getValue(ContentKeys.mpShoppingListUntitled)
-        : state.listName;
+        : shoppingListNameInWords(content, state.listName);
     final date = state.listDate;
     final subLine = [
       if (date != null)
@@ -720,18 +731,40 @@ typedef ShoppingListChoice = ({
   ShoppingListSummary list,
 });
 
+/// A plan's list made before 2026-09-25 is stored as "Week of 2026-09-20";
+/// it reads in words ("Week of Sep 20"), like the lists made since
+/// (Finding 16-007). Any other name, including one the athlete typed, shows
+/// as stored.
+String shoppingListNameInWords(ContentService content, String name) {
+  final m = _isoWeekName.firstMatch(name);
+  if (m == null) return name;
+  final month = int.parse(m[2]!);
+  final day = int.parse(m[3]!);
+  if (month < 1 || month > 12 || day < 1 || day > 31) return name;
+  return ContentKeys.format(content.getValue(ContentKeys.mpShoppingWeekOf), {
+    'date': DateFormat.MMMd().format(DateTime(int.parse(m[1]!), month, day)),
+  });
+}
+
+final _isoWeekName = RegExp(r'^Week of (\d{4})-(\d{2})-(\d{2})$');
+
 /// Every list, newest first: name, date and item count, a "From plan"
 /// marker on a plan's list, a `⋮` with Rename and Delete. Tapping a row
-/// opens it; the one on screen is marked and just closes the sheet.
+/// opens it; the one on screen is marked and just closes the sheet. This
+/// week's confirmed plan's list ([weekPlanId]) carries "This week's plan"
+/// instead, so it stands apart from the lists of drafts that confirming
+/// archived (Finding 19-005).
 class ShoppingPreviousListsSheet extends ConsumerWidget {
   const ShoppingPreviousListsSheet({
     super.key,
     required this.lists,
     required this.currentId,
+    this.weekPlanId,
   });
 
   final List<ShoppingListSummary> lists;
   final String? currentId;
+  final String? weekPlanId;
 
   @override
   Widget build(BuildContext context, WidgetRef ref) {
@@ -795,7 +828,10 @@ class ShoppingPreviousListsSheet extends ConsumerWidget {
                                         child: Text(
                                           lists[i].name.isEmpty
                                               ? untitled
-                                              : lists[i].name,
+                                              : shoppingListNameInWords(
+                                                  content,
+                                                  lists[i].name,
+                                                ),
                                           maxLines: 1,
                                           overflow: TextOverflow.ellipsis,
                                           style: AppTextStyles.bodyMedium
@@ -810,7 +846,19 @@ class ShoppingPreviousListsSheet extends ConsumerWidget {
                                               ),
                                         ),
                                       ),
-                                      if (lists[i].planId != null) ...[
+                                      if (lists[i].planId != null &&
+                                          lists[i].planId == weekPlanId) ...[
+                                        const SizedBox(width: 8),
+                                        _Marker(
+                                          key: ValueKey(
+                                            'meal_planning.shopping_week_plan_${lists[i].id}',
+                                          ),
+                                          text: content.getValue(
+                                            ContentKeys.mpShoppingWeekPlan,
+                                          ),
+                                          color: accent,
+                                        ),
+                                      ] else if (lists[i].planId != null) ...[
                                         const SizedBox(width: 8),
                                         _Marker(
                                           key: ValueKey(
@@ -896,8 +944,9 @@ class ShoppingPreviousListsSheet extends ConsumerWidget {
   }
 }
 
-/// A quiet pill for "From plan": secondary text on a 12% tint, like the
-/// count badge on a list row.
+/// A quiet pill for "From plan" (secondary text) or "This week's plan"
+/// (accent text), on a 12% tint of its colour, like the count badge on a
+/// list row.
 class _Marker extends StatelessWidget {
   const _Marker({super.key, required this.text, required this.color});
 

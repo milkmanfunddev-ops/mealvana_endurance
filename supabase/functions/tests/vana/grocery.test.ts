@@ -24,6 +24,19 @@ Deno.test('grocery: classifies aisles and canonicalises names', () => {
   assertEquals(canonicalName('yellow onion'), 'onion');
 });
 
+Deno.test('grocery: whole grains and mixed vegetables take their aisles, not Other (16-007)', () => {
+  for (const g of ['farro', 'spelt', 'freekeh', 'bulgur', 'bulgur wheat', 'millet', 'buckwheat', 'wheat berries', 'amaranth', 'sorghum', 'teff', 'pearl barley', 'pearl couscous', 'spelt flour']) assertEquals(classifyAisle(g), 'Bakery & Grains', g);
+  for (const veg of ['mixed vegetables', 'mixed veg', 'stir-fry vegetables', 'root vegetables', 'vegetable']) assertEquals(classifyAisle(veg), 'Produce', veg);
+  // the broader "vegetable" match never pulls a pantry or freezer line into Produce
+  assertEquals(classifyAisle('frozen mixed vegetables'), 'Frozen');
+  assertEquals(classifyAisle('vegetable broth'), 'Pantry');
+  assertEquals(classifyAisle('vegetable stock'), 'Pantry');
+  assertEquals(classifyAisle('vegetable oil'), 'Pantry');
+  assertEquals(classifyAisle('canned mixed vegetables'), 'Pantry');
+  const aisles = buildItems([{ id: 'a', servings: 2, baseServings: 1, ingredients: [{ name: 'Farro', qty: '200g' }, { name: 'Spelt', qty: '100g' }, { name: 'Mixed vegetables', qty: '100g' }] }], new Set()).map((i) => [i.name, i.aisle]);
+  assertEquals(aisles, [['Mixed vegetables', 'Produce'], ['Farro', 'Bakery & Grains'], ['Spelt', 'Bakery & Grains']]);
+});
+
 Deno.test("grocery: builds a deduped, aisle-ordered list, honours pantry 'have', and skips salt/oil", () => {
   const items = buildItems([
     { id: 'a', servings: 5, baseServings: 1, ingredients: [{ name: 'chicken breast', qty: '200g' }, { name: 'jasmine rice', qty: '100g dry' }, { name: 'broccoli', qty: '200g' }, { name: 'salt', qty: 'pinch' }] },
