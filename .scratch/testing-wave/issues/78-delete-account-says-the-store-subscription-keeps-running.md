@@ -1,6 +1,6 @@
 # 78: Delete account says the store subscription keeps running
 
-**Status:** in-progress (wave 24, 2026-09-25)
+**Status:** done (wave 24, 2026-09-25)
 **Blocked by:** none.
 **Next:** `/implement-lee testing-wave`
 **Model:** fable

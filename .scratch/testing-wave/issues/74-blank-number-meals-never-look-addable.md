@@ -1,6 +1,6 @@
 # 74: Blank-number meals never look addable
 
-**Status:** in-progress (wave 24, 2026-09-25)
+**Status:** done (wave 24, 2026-09-25)
 **Blocked by:** none.
 **Next:** `/implement-lee testing-wave`
 **Model:** opus
@@ -16,7 +16,7 @@
 - [x] A deno test: `set_day_slot` with a null-kcal library or saved meal is refused and writes nothing.
 - [x] A widget test: the Swap list leaves out a blank-number meal.
 - [x] A widget test: Browse shows a blank-number meal with Add unavailable and the message.
-- [ ] Deployed to dev.
+- [x] Deployed to dev. (wave lead, 2026-09-25 12:37 UTC; vana-action and vana-day-notes again 12:5x with the review fix)
 - [ ] codegen if annotations changed, `flutter analyze` and the suite green.
 
 Next: /implement-lee testing-wave

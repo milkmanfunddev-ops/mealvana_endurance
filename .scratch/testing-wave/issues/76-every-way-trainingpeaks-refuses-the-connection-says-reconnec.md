@@ -1,6 +1,6 @@
 # 76: Every way TrainingPeaks refuses the connection says Reconnect
 
-**Status:** in-progress (wave 24, 2026-09-25)
+**Status:** done (wave 24, 2026-09-25)
 **Blocked by:** none.
 **Next:** `/implement-lee testing-wave`
 **Model:** opus

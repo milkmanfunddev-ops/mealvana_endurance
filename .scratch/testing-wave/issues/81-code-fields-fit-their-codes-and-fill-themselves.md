@@ -1,6 +1,6 @@
 # 81: Code fields fit their codes and fill themselves
 
-**Status:** in-progress (wave 24, 2026-09-25)
+**Status:** done (wave 24, 2026-09-25)
 **Blocked by:** none.
 **Next:** `/implement-lee testing-wave`
 **Model:** fable
@@ -16,7 +16,7 @@
 - [x] A widget test: the field stops at 32 characters.
 - [x] A deno test: a 40-character code answers "too long".
 - [x] A widget test: each code field carries the one-time-code autofill hint.
-- [ ] Deployed to dev (if the server changed).
+- [x] Deployed to dev (redeem-code, wave lead, 2026-09-25 12:37 UTC).
 - [ ] codegen if annotations changed, `flutter analyze` and the suite green.
 
 Next: /implement-lee testing-wave

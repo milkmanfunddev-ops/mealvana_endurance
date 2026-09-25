@@ -1,6 +1,6 @@
 # 84: Shopping lists read clearly
 
-**Status:** in-progress (wave 24, 2026-09-25)
+**Status:** done (wave 24, 2026-09-25)
 **Blocked by:** none.
 **Next:** `/implement-lee testing-wave`
 **Model:** opus
@@ -15,7 +15,7 @@
 
 - [x] A deno test: Farro, Spelt and Mixed vegetables get their aisles; a new list's name reads "Week of Sep 20".
 - [x] A widget test: Previous lists marks the confirmed plan's list.
-- [ ] Deployed to dev.
+- [x] Deployed to dev. (wave lead, 2026-09-25 12:37 UTC)
 - [ ] codegen if annotations changed, `flutter analyze` and the suite green.
 
 Next: /implement-lee testing-wave

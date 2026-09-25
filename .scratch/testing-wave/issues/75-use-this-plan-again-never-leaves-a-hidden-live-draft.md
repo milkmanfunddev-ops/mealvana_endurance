@@ -1,6 +1,6 @@
 # 75: Use this plan again never leaves a hidden live draft
 
-**Status:** in-progress (wave 24, 2026-09-25)
+**Status:** done (wave 24, 2026-09-25)
 **Blocked by:** none.
 **Next:** `/implement-lee testing-wave`
 **Model:** fable
@@ -14,7 +14,7 @@
 **Touches:** supabase/functions/_shared/vana/plan.ts
 
 - [x] A deno test: two Use this plan again in a row leave one live conversation-less draft; a conversation's draft is untouched.
-- [ ] Deployed to dev.
+- [x] Deployed to dev. (wave lead, 2026-09-25 12:37 UTC)
 - [ ] codegen if annotations changed, `flutter analyze` and the suite green.
 
 Next: /implement-lee testing-wave
