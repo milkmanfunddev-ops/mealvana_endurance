@@ -60,8 +60,7 @@ void main() {
   Finder summary() =>
       find.byKey(const ValueKey('meal_planning.review_sheet.summary'));
 
-  String text(WidgetTester tester) =>
-      tester.widget<Text>(summary()).data!;
+  String text(WidgetTester tester) => tester.widget<Text>(summary()).data!;
 
   testWidgets('one meal at one serving reads in the singular', (tester) async {
     await openReview(tester, planOf(meals: 1, servings: 1));

@@ -16,6 +16,7 @@ import '../../../../theme/kyle_design/app_text_styles.dart';
 import '../../application/meal_plan_controller.dart';
 import '../../application/vana_ambient_conversation_controller.dart';
 import '../../application/vana_chat_controller.dart';
+import '../../application/vana_conversations_controller.dart';
 import '../../../subscription/application/subscription_status_provider.dart';
 import '../../data/vana_exceptions.dart';
 import '../../domain/meal_plan.dart';
@@ -42,6 +43,7 @@ import '../widgets/vana_message_card.dart';
 import '../widgets/vana_status_copy.dart';
 import '../widgets/vana_hand_off.dart';
 import '../widgets/vana_part_renderer.dart';
+import '../widgets/vana_repeated_question.dart';
 import '../../../meal_logging/domain/meal_photo_capture.dart';
 
 /// `/vana?mode=&c=` (05 §4) — the Vana chat for both kinds. Planning chats
@@ -192,6 +194,9 @@ class _VanaChatScreenState extends ConsumerState<VanaChatScreen> {
         isDark,
         isPlanning,
         state?.isStreaming ?? false,
+        isPlanning
+            ? _planningTitle(content, plan)
+            : content.getValue(ContentKeys.mpChatTitleGeneral),
       ),
       body: SafeArea(
         child: Column(
@@ -203,7 +208,12 @@ class _VanaChatScreenState extends ConsumerState<VanaChatScreen> {
                           !state.isStreaming &&
                           !isPlanning))
                   ? _EmptyState(kind: widget.kind)
-                  : _buildMessageList(context, state, plan),
+                  : _buildMessageList(
+                      context,
+                      state,
+                      plan,
+                      isPlanning ? _mealsInPlan(plan) : const {},
+                    ),
             ),
             // The bar slides in over the composer the first time the draft
             // gains a meal (and out again if the draft empties), instead of
@@ -295,6 +305,7 @@ class _VanaChatScreenState extends ConsumerState<VanaChatScreen> {
     bool isDark,
     bool isPlanning,
     bool isStreaming,
+    String title,
   ) {
     final textColor = isDark ? AppColors.cream : AppColors.blackberry;
     final muted = textColor.withValues(alpha: 0.6);
@@ -323,11 +334,8 @@ class _VanaChatScreenState extends ConsumerState<VanaChatScreen> {
                   mainAxisSize: MainAxisSize.min,
                   children: [
                     Text(
-                      content.getValue(
-                        isPlanning
-                            ? ContentKeys.mpChatTitlePlanning
-                            : ContentKeys.mpChatTitleGeneral,
-                      ),
+                      title,
+                      key: const ValueKey('meal_planning.chat_title'),
                       maxLines: 1,
                       overflow: TextOverflow.ellipsis,
                       style: AppTextStyles.sectionTitle.copyWith(
@@ -369,19 +377,57 @@ class _VanaChatScreenState extends ConsumerState<VanaChatScreen> {
     );
   }
 
+  /// A new planning conversation reads "New meal plan"; a resumed one is
+  /// headed by its plan (16-005): the row's own title from the
+  /// conversations list, else "Your meal plan" once its plan has meals. A
+  /// resumed conversation with no title and no meals (one just made from
+  /// the list) is still a new plan.
+  String _planningTitle(ContentService content, MealPlan? plan) {
+    final id = widget.conversationId;
+    if (id != null) {
+      final title = ref
+          .watch(vanaConversationsControllerProvider(widget.kind))
+          .value
+          ?.where((c) => c.id == id)
+          .firstOrNull
+          ?.title
+          ?.trim();
+      if (title != null && title.isNotEmpty) return title;
+      if (plan != null && plan.meals.isNotEmpty) {
+        return content.getValue(ContentKeys.mpChatTitlePlanningResumed);
+      }
+    }
+    return content.getValue(ContentKeys.mpChatTitlePlanning);
+  }
+
+  /// Library/saved ids of the meals in THIS conversation's plan, so a
+  /// resumed conversation's meal cards show what went into it (15-003).
+  /// Read off the same draft the plan bar shows (loaded by `get_plan` on
+  /// open, mirrored on every pick, reloaded after Browse), so the ticks and
+  /// the bar cannot disagree.
+  static Set<String> _mealsInPlan(MealPlan? plan) =>
+      plan?.meals
+          .map((m) => m.libraryMealId ?? m.savedMealId)
+          .nonNulls
+          .toSet() ??
+      const {};
+
   // ── Body ─────────────────────────────────────────────────────────────────
 
   Widget _buildMessageList(
     BuildContext context,
     VanaChatState state,
     MealPlan? plan,
+    Set<String> inPlan,
   ) {
     final content = ref.read(contentServiceProvider);
     final coverage = plan?.coverage;
     final callbacks = VanaPartCallbacks(
       onTapMeal: (meal) => context.push('/food/meals/${meal.id}'),
       onPickMeal: _pickMeal,
-      pickedIds: _pickedInCurrentPicker,
+      // What is in this conversation's plan, plus this picker's picks at
+      // once (before the pick's write returns).
+      pickedIds: {...inPlan, ..._pickedInCurrentPicker},
       coverageCovered: coverage?.covered ?? 0,
       coverageOf: coverage?.lunchDinnerSlots ?? 0,
       nextType: _nextType(state),
@@ -450,7 +496,7 @@ class _VanaChatScreenState extends ConsumerState<VanaChatScreen> {
                 isFirstPicker: index == firstPickerIndex,
                 child: VanaMessageCard(
                   key: ValueKey('meal_planning.chat_message_$index'),
-                  message: message,
+                  message: withoutRepeatedQuestion(message),
                   index: index,
                   callbacks: callbacks,
                   isStreaming: state.isStreaming && isLast,

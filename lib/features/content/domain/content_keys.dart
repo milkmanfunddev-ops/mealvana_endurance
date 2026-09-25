@@ -476,8 +476,7 @@ class ContentKeys {
   static const String mpReviewMeals = 'meal_planning.review_meals';
   static const String mpReviewMealsOne = 'meal_planning.review_meals_one';
   static const String mpReviewServings = 'meal_planning.review_servings';
-  static const String mpReviewServingsOne =
-      'meal_planning.review_servings_one';
+  static const String mpReviewServingsOne = 'meal_planning.review_servings_one';
   static const String mpReviewCoverageServings =
       'meal_planning.review_coverage_servings';
   static const String mpReviewCoverageNights =
