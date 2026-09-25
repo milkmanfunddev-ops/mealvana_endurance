@@ -1,0 +1,7 @@
+## items of list 8719653f
+id	name	qty	aisle	checked	have	source	edited	meals
+4f319fe0	Short-grain rice	280 g	Bakery & Grains	false	false	plan	false	1
+112fd2a2	Milk	200 ml	Dairy	false	false	plan	false	1
+83f8945e	Sugar	4 tsp	Pantry	false	false	plan	false	1
+50c8a563	Strawberry jam	8 tbsp	Produce	false	false	plan	false	1
+2475048d	Egg	4	Protein	false	false	plan	false	1

@@ -1,0 +1,302 @@
+[16:19:02] [garmin-push] record failed kind=epochs garminUserId=114759b5-25ef-4256-a502-a10239ef78d1 summaryId=x5ce5b47-6ab65ebc-8 reason=no_user_mapping errorKind=none
+[16:19:02] [garmin-push] record failed kind=epochs garminUserId=114759b5-25ef-4256-a502-a10239ef78d1 summaryId=x5ce5b47-6ab66240-6 reason=no_user_mapping errorKind=none
+[16:19:02] [garmin-push] record failed kind=epochs garminUserId=114759b5-25ef-4256-a502-a10239ef78d1 summaryId=x5ce5b47-6ab66240-8 reason=no_user_mapping errorKind=none
+[16:19:02] [garmin-push] record failed kind=epochs garminUserId=114759b5-25ef-4256-a502-a10239ef78d1 summaryId=x5ce5b47-6ab665c4-6 reason=no_user_mapping errorKind=none
+[16:19:02] [garmin-push] record failed kind=epochs garminUserId=114759b5-25ef-4256-a502-a10239ef78d1 summaryId=x5ce5b47-6ab665c4-8 reason=no_user_mapping errorKind=none
+[16:19:02] [garmin-push] record failed kind=epochs garminUserId=114759b5-25ef-4256-a502-a10239ef78d1 summaryId=x5ce5b47-6ab66948-6 reason=no_user_mapping errorKind=none
+[16:19:02] [garmin-push] record failed kind=epochs garminUserId=114759b5-25ef-4256-a502-a10239ef78d1 summaryId=x5ce5b47-6ab66948-8 reason=no_user_mapping errorKind=none
+[16:19:02] [garmin-push] record failed kind=epochs garminUserId=114759b5-25ef-4256-a502-a10239ef78d1 summaryId=x5ce5b47-6ab66ccc-8 reason=no_user_mapping errorKind=none
+[16:19:02] [garmin-push] record failed kind=epochs garminUserId=114759b5-25ef-4256-a502-a10239ef78d1 summaryId=x5ce5b47-6ab67050-8 reason=no_user_mapping errorKind=none
+[16:19:02] [garmin-push] record failed kind=epochs garminUserId=114759b5-25ef-4256-a502-a10239ef78d1 summaryId=x5ce5b47-6ab673d4-8 reason=no_user_mapping errorKind=none
+[16:19:02] [garmin-push] record failed kind=epochs garminUserId=114759b5-25ef-4256-a502-a10239ef78d1 summaryId=x5ce5b47-6ab67758-8 reason=no_user_mapping errorKind=none
+[16:19:02] [garmin-push] record failed kind=epochs garminUserId=114759b5-25ef-4256-a502-a10239ef78d1 summaryId=x5ce5b47-6ab67adc-8 reason=no_user_mapping errorKind=none
+[16:19:02] [garmin-push] record failed kind=epochs garminUserId=114759b5-25ef-4256-a502-a10239ef78d1 summaryId=x5ce5b47-6ab67e60-8 reason=no_user_mapping errorKind=none
+[16:19:02] [garmin-push] record failed kind=epochs garminUserId=114759b5-25ef-4256-a502-a10239ef78d1 summaryId=x5ce5b47-6ab681e4-8 reason=no_user_mapping errorKind=none
+[16:19:02] [garmin-push] record failed kind=epochs garminUserId=114759b5-25ef-4256-a502-a10239ef78d1 summaryId=x5ce5b47-6ab68568-6 reason=no_user_mapping errorKind=none
+[16:19:03] [garmin-push] record failed kind=epochs garminUserId=114759b5-25ef-4256-a502-a10239ef78d1 summaryId=x5ce5b47-6ab68568-8 reason=no_user_mapping errorKind=none
+[16:19:03] [garmin-push] record failed kind=epochs garminUserId=114759b5-25ef-4256-a502-a10239ef78d1 summaryId=x5ce5b47-6ab688ec-6 reason=no_user_mapping errorKind=none
+[16:19:03] [garmin-push] record failed kind=epochs garminUserId=114759b5-25ef-4256-a502-a10239ef78d1 summaryId=x5ce5b47-6ab688ec-8 reason=no_user_mapping errorKind=none
+[16:19:03] [garmin-push] record failed kind=epochs garminUserId=114759b5-25ef-4256-a502-a10239ef78d1 summaryId=x5ce5b47-6ab68c70-8 reason=no_user_mapping errorKind=none
+[16:19:03] [garmin-push] record failed kind=epochs garminUserId=114759b5-25ef-4256-a502-a10239ef78d1 summaryId=x5ce5b47-6ab68ff4-6 reason=no_user_mapping errorKind=none
+[16:19:03] [garmin-push] record failed kind=epochs garminUserId=114759b5-25ef-4256-a502-a10239ef78d1 summaryId=x5ce5b47-6ab68ff4-8 reason=no_user_mapping errorKind=none
+[16:19:03] [garmin-push] record failed kind=epochs garminUserId=114759b5-25ef-4256-a502-a10239ef78d1 summaryId=x5ce5b47-6ab69378-8 reason=no_user_mapping errorKind=none
+[16:19:03] [garmin-push] record failed kind=epochs garminUserId=114759b5-25ef-4256-a502-a10239ef78d1 summaryId=x5ce5b47-6ab696fc-8 reason=no_user_mapping errorKind=none
+[16:19:03] [garmin-push] record failed kind=epochs garminUserId=114759b5-25ef-4256-a502-a10239ef78d1 summaryId=x5ce5b47-6ab69a80-8 reason=no_user_mapping errorKind=none
+[16:19:03] [garmin-push] record failed kind=epochs garminUserId=114759b5-25ef-4256-a502-a10239ef78d1 summaryId=x5ce5b47-6ab69e04-8 reason=no_user_mapping errorKind=none
+[16:19:03] [garmin-push] record failed kind=epochs garminUserId=114759b5-25ef-4256-a502-a10239ef78d1 summaryId=x5ce5b47-6ab6a188-8 reason=no_user_mapping errorKind=none
+[16:19:03] [garmin-push] record failed kind=epochs garminUserId=114759b5-25ef-4256-a502-a10239ef78d1 summaryId=x5ce5b47-6ab6a50c-8 reason=no_user_mapping errorKind=none
+[16:19:03] [garmin-push] record failed kind=epochs garminUserId=114759b5-25ef-4256-a502-a10239ef78d1 summaryId=x5ce5b47-6ab6a890-8 reason=no_user_mapping errorKind=none
+[16:19:03] [garmin-push] record failed kind=epochs garminUserId=114759b5-25ef-4256-a502-a10239ef78d1 summaryId=x5ce5b47-6ab6ac14-8 reason=no_user_mapping errorKind=none
+[16:19:03] [garmin-push] record failed kind=epochs garminUserId=114759b5-25ef-4256-a502-a10239ef78d1 summaryId=x5ce5b47-6ab6af98-6 reason=no_user_mapping errorKind=none
+[16:19:03] [garmin-push] record failed kind=epochs garminUserId=114759b5-25ef-4256-a502-a10239ef78d1 summaryId=x5ce5b47-6ab6af98-8 reason=no_user_mapping errorKind=none
+[16:19:03] [garmin-push] record failed kind=epochs garminUserId=114759b5-25ef-4256-a502-a10239ef78d1 summaryId=x5ce5b47-6ab6b31c-8 reason=no_user_mapping errorKind=none
+[16:19:03] [garmin-push] record failed kind=epochs garminUserId=114759b5-25ef-4256-a502-a10239ef78d1 summaryId=x5ce5b47-6ab6b6a0-8 reason=no_user_mapping errorKind=none
+[16:19:03] [garmin-push] record failed kind=epochs garminUserId=114759b5-25ef-4256-a502-a10239ef78d1 summaryId=x5ce5b47-6ab6ba24-8 reason=no_user_mapping errorKind=none
+[16:19:03] [garmin-push] record failed kind=epochs garminUserId=114759b5-25ef-4256-a502-a10239ef78d1 summaryId=x5ce5b47-6ab6bda8-6 reason=no_user_mapping errorKind=none
+[16:19:03] [garmin-push] record failed kind=epochs garminUserId=114759b5-25ef-4256-a502-a10239ef78d1 summaryId=x5ce5b47-6ab6bda8-8 reason=no_user_mapping errorKind=none
+[16:19:03] [garmin-push] record failed kind=epochs garminUserId=114759b5-25ef-4256-a502-a10239ef78d1 summaryId=x5ce5b47-6ab6c12c-6 reason=no_user_mapping errorKind=none
+[16:19:03] [garmin-push] record failed kind=epochs garminUserId=114759b5-25ef-4256-a502-a10239ef78d1 summaryId=x5ce5b47-6ab6c12c-8 reason=no_user_mapping errorKind=none
+[16:19:03] [garmin-push] record failed kind=epochs garminUserId=114759b5-25ef-4256-a502-a10239ef78d1 summaryId=x5ce5b47-6ab6c4b0-6 reason=no_user_mapping errorKind=none
+[16:19:03] [garmin-push] record failed kind=epochs garminUserId=114759b5-25ef-4256-a502-a10239ef78d1 summaryId=x5ce5b47-6ab6c4b0-8 reason=no_user_mapping errorKind=none
+[16:19:03] [garmin-push] record failed kind=epochs garminUserId=114759b5-25ef-4256-a502-a10239ef78d1 summaryId=x5ce5b47-6ab6c834-6 reason=no_user_mapping errorKind=none
+[16:19:03] [garmin-push] record failed kind=epochs garminUserId=114759b5-25ef-4256-a502-a10239ef78d1 summaryId=x5ce5b47-6ab6c834-8 reason=no_user_mapping errorKind=none
+[16:19:03] [garmin-push] record failed kind=epochs garminUserId=114759b5-25ef-4256-a502-a10239ef78d1 summaryId=x5ce5b47-6ab6cbb8-6 reason=no_user_mapping errorKind=none
+[16:19:03] [garmin-push] record failed kind=epochs garminUserId=114759b5-25ef-4256-a502-a10239ef78d1 summaryId=x5ce5b47-6ab6cbb8-8 reason=no_user_mapping errorKind=none
+[16:19:03] [garmin-push] record failed kind=epochs garminUserId=114759b5-25ef-4256-a502-a10239ef78d1 summaryId=x5ce5b47-6ab6cf3c-6 reason=no_user_mapping errorKind=none
+[16:19:03] [garmin-push] record failed kind=epochs garminUserId=114759b5-25ef-4256-a502-a10239ef78d1 summaryId=x5ce5b47-6ab6cf3c-8 reason=no_user_mapping errorKind=none
+[16:19:03] [garmin-push] record failed kind=epochs garminUserId=114759b5-25ef-4256-a502-a10239ef78d1 summaryId=x5ce5b47-6ab6d2c0-6 reason=no_user_mapping errorKind=none
+[16:19:03] [garmin-push] record failed kind=epochs garminUserId=114759b5-25ef-4256-a502-a10239ef78d1 summaryId=x5ce5b47-6ab6d2c0-8 reason=no_user_mapping errorKind=none
+[16:19:03] [garmin-push] record failed kind=epochs garminUserId=114759b5-25ef-4256-a502-a10239ef78d1 summaryId=x5ce5b47-6ab6d644-6 reason=no_user_mapping errorKind=none
+[16:19:03] [garmin-push] record failed kind=epochs garminUserId=114759b5-25ef-4256-a502-a10239ef78d1 summaryId=x5ce5b47-6ab6d644-8 reason=no_user_mapping errorKind=none
+[16:19:03] [garmin-push] record failed kind=epochs garminUserId=114759b5-25ef-4256-a502-a10239ef78d1 summaryId=x5ce5b47-6ab6d9c8-6 reason=no_user_mapping errorKind=none
+[16:19:03] [garmin-push] record failed kind=epochs garminUserId=114759b5-25ef-4256-a502-a10239ef78d1 summaryId=x5ce5b47-6ab6d9c8-8 reason=no_user_mapping errorKind=none
+[16:19:03] [garmin-push] record failed kind=epochs garminUserId=114759b5-25ef-4256-a502-a10239ef78d1 summaryId=x5ce5b47-6ab6dd4c-8 reason=no_user_mapping errorKind=none
+[16:19:03] [garmin-push] record failed kind=epochs garminUserId=114759b5-25ef-4256-a502-a10239ef78d1 summaryId=x5ce5b47-6ab6e0d0-6 reason=no_user_mapping errorKind=none
+[16:19:03] [garmin-push] record failed kind=epochs garminUserId=114759b5-25ef-4256-a502-a10239ef78d1 summaryId=x5ce5b47-6ab6e0d0-8 reason=no_user_mapping errorKind=none
+[16:19:03] [garmin-push] record failed kind=epochs garminUserId=114759b5-25ef-4256-a502-a10239ef78d1 summaryId=x5ce5b47-6ab6e454-8 reason=no_user_mapping errorKind=none
+[16:19:03] [garmin-push] Processing complete: {"epochs":{"processed":0,"errors":61}}
+[16:19:13] booted (time: 123ms)
+[16:19:13] Listening on http://localhost:9999/
+[16:19:14] [vana-action] user=607f9dd5-6fa7-48ee-a628-720d4a0506a1 type=get_shopping_list parts=- 606ms
+[16:19:14] booted (time: 76ms)
+[16:19:14] Listening on http://localhost:9999/
+[16:19:15] [vana-action] user=607f9dd5-6fa7-48ee-a628-720d4a0506a1 type=list_shopping_lists parts=- 504ms
+[16:19:16] shutdown
+[16:19:18] shutdown
+[16:19:18] shutdown
+[16:19:26] shutdown
+[16:19:51] booted (time: 170ms)
+[16:19:51] Listening on http://localhost:9999/
+[16:19:52] [vana-action] user=607f9dd5-6fa7-48ee-a628-720d4a0506a1 type=add_shopping_item parts=- 883ms
+[16:19:56] shutdown
+[16:19:58] shutdown
+[16:19:59] shutdown
+[16:20:00] shutdown
+[16:20:12] shutdown
+[16:20:15] shutdown
+[16:20:16] booted (time: 78ms)
+[16:20:16] Listening on http://localhost:9999/
+[16:20:17] shutdown
+[16:20:18] [vana-action] user=607f9dd5-6fa7-48ee-a628-720d4a0506a1 type=add_shopping_item parts=- 1739ms
+[16:20:20] booted (time: 42ms)
+[16:20:20] Listening on http://localhost:9999/
+[16:20:20] [garmin-auth] Expected client ID: "6e904d60-e9d6-48ff-b1e7-3f3e7ff20db6" (length: 36)
+[16:20:20] [garmin-auth] POST request, headers: {"accept":"*/*","accept-encoding":"gzip","accept-language":"*","baggage":"sb-request-id=01a0da70-c9cd-7de9-9730-44692241529e","cdn-loop":"cloudflare; loops=1","cf-connecting-ip":"54.183.156.57","cf-ew-via":"15","cf-ray":"a40d127ceeb5fa72-SJC","cf-visitor":"{\"scheme\":\"https\"}","cf-worker":"supabase.co","content-length":"43190","content-type":"application/json","garmin-client-id":"6e904d60-e9d6-48ff-b1e7-3f3e7ff20db6","host":"edge-runtime.supabase.com","sb-request-id":"01a0da70-c9cd-7de9-9730-44692241529e","traceparent":"00-f5dca4ba35aca77dd7fdec150f026dfb-a7865fafd155b47e-01","user-agent":"Deno/2.1.4 (variant; SupabaseEdgeRuntime/1.76.0; ref=wvmvsodrvbkxfydabqed)","x-amzn-trace-id":"Root=1-6ab6e593-6328468b1f30936d15487fb6","x-forwarded-for":"54.183.156.57,54.183.156.57, 3.2.54.138","x-forwarded-port":"443","x-forwarded-proto":"https","x-garmin-fanout":"1"}
+[16:20:20] [garmin-push] Processing complete: {"dailies":{"processed":0,"errors":1}}
+[16:20:20] [garmin-push] record failed kind=dailies garminUserId=114759b5-25ef-4256-a502-a10239ef78d1 summaryId=x5ce5b47-6ab5ffd0-e538-0 reason=no_user_mapping errorKind=none
+[16:20:28] shutdown
+[16:20:45] booted (time: 73ms)
+[16:20:45] Listening on http://localhost:9999/
+[16:20:46] [vana-action] user=607f9dd5-6fa7-48ee-a628-720d4a0506a1 type=add_shopping_item parts=- 921ms
+[16:20:50] booted (time: 41ms)
+[16:20:50] Listening on http://localhost:9999/
+[16:20:50] [garmin-auth] Expected client ID: "6e904d60-e9d6-48ff-b1e7-3f3e7ff20db6" (length: 36)
+[16:20:50] [garmin-auth] POST request, headers: {"accept":"*/*","accept-encoding":"gzip","accept-language":"*","baggage":"sb-request-id=01a0da71-41c2-7818-8bd8-23a69b1922c1","cdn-loop":"cloudflare; loops=1","cf-connecting-ip":"54.241.132.135","cf-ew-via":"15","cf-ray":"a40d133c7d2d17f0-SJC","cf-visitor":"{\"scheme\":\"https\"}","cf-worker":"supabase.co","content-length":"1499","content-type":"application/json","garmin-client-id":"6e904d60-e9d6-48ff-b1e7-3f3e7ff20db6","host":"edge-runtime.supabase.com","sb-request-id":"01a0da71-41c2-7818-8bd8-23a69b1922c1","traceparent":"00-1a19a6e62802a65f08dc9eb88b445c68-2408cbf59d15a0de-01","user-agent":"Deno/2.1.4 (variant; SupabaseEdgeRuntime/1.76.0; ref=wvmvsodrvbkxfydabqed)","x-amzn-trace-id":"Root=1-6ab6e5b2-2640f67420921369577e37d7","x-forwarded-for":"54.241.132.135,54.241.132.135, 3.2.54.115","x-forwarded-port":"443","x-forwarded-proto":"https","x-garmin-fanout":"1"}
+[16:20:51] [garmin-push] record failed kind=stressDetails garminUserId=e07c3c04-41f7-4ad0-8ff2-d54c07b6d7f8 summaryId=x6427a00-6ab6a890-3cf0 reason=no_user_mapping errorKind=none
+[16:20:51] [garmin-push] Processing complete: {"stressDetails":{"processed":0,"errors":1}}
+[16:20:51] booted (time: 59ms)
+[16:20:51] Listening on http://localhost:9999/
+[16:20:51] [garmin-auth] Expected client ID: "6e904d60-e9d6-48ff-b1e7-3f3e7ff20db6" (length: 36)
+[16:20:51] [garmin-auth] POST request, headers: {"accept":"*/*","accept-encoding":"gzip","accept-language":"*","baggage":"sb-request-id=01a0da71-4566-72a4-bf45-04e3c1ca474f","cdn-loop":"cloudflare; loops=1","cf-connecting-ip":"54.215.52.68","cf-ew-via":"15","cf-ray":"a40d134248682ed1-SJC","cf-visitor":"{\"scheme\":\"https\"}","cf-worker":"supabase.co","content-length":"1113","content-type":"application/json","garmin-client-id":"6e904d60-e9d6-48ff-b1e7-3f3e7ff20db6","host":"edge-runtime.supabase.com","sb-request-id":"01a0da71-4566-72a4-bf45-04e3c1ca474f","traceparent":"00-dd8c434f652b888cc5b9526bb55e691c-b733b3bf4c67bab9-01","user-agent":"Deno/2.1.4 (variant; SupabaseEdgeRuntime/1.76.0; ref=wvmvsodrvbkxfydabqed)","x-amzn-trace-id":"Root=1-6ab6e5b3-3f4fbbb35d1f26a40718a882","x-forwarded-for":"54.215.52.68,54.215.52.68, 3.2.54.118","x-forwarded-port":"443","x-forwarded-proto":"https","x-garmin-fanout":"1"}
+[16:20:51] [garmin-push] record failed kind=epochs garminUserId=e07c3c04-41f7-4ad0-8ff2-d54c07b6d7f8 summaryId=x6427a00-6ab6dd4c-8 reason=no_user_mapping errorKind=none
+[16:20:52] [garmin-push] record failed kind=epochs garminUserId=e07c3c04-41f7-4ad0-8ff2-d54c07b6d7f8 summaryId=x6427a00-6ab6e0d0-8 reason=no_user_mapping errorKind=none
+[16:20:52] [garmin-push] record failed kind=epochs garminUserId=e07c3c04-41f7-4ad0-8ff2-d54c07b6d7f8 summaryId=x6427a00-6ab6e454-8 reason=no_user_mapping errorKind=none
+[16:20:52] [garmin-push] Processing complete: {"epochs":{"processed":0,"errors":3}}
+[16:21:02] booted (time: 117ms)
+[16:21:02] Listening on http://localhost:9999/
+[16:21:03] [vana-action] user=607f9dd5-6fa7-48ee-a628-720d4a0506a1 type=update_shopping_item parts=- 583ms
+[16:21:06] shutdown
+[16:21:25] booted (time: 117ms)
+[16:21:26] Listening on http://localhost:9999/
+[16:21:26] [vana-action] user=607f9dd5-6fa7-48ee-a628-720d4a0506a1 type=rename_shopping_list parts=- 243ms
+[16:21:31] shutdown
+[16:21:35] shutdown
+[16:21:46] booted (time: 43ms)
+[16:21:46] Listening on http://localhost:9999/
+[16:21:46] [garmin-auth] POST request, headers: {"accept":"*/*","accept-encoding":"gzip","accept-language":"*","baggage":"sb-request-id=01a0da72-1cd2-7c79-a6ff-7efad9e63b45","cdn-loop":"cloudflare; loops=1","cf-connecting-ip":"50.18.38.187","cf-ew-via":"15","cf-ray":"a40d149aff9c8188-SJC","cf-visitor":"{\"scheme\":\"https\"}","cf-worker":"supabase.co","content-length":"6576","content-type":"application/json","garmin-client-id":"6e904d60-e9d6-48ff-b1e7-3f3e7ff20db6","host":"edge-runtime.supabase.com","sb-request-id":"01a0da72-1cd2-7c79-a6ff-7efad9e63b45","traceparent":"00-707f3c13cf2d94041b83f5a61fe57f58-aad620c845eda0d0-01","user-agent":"Deno/2.1.4 (variant; SupabaseEdgeRuntime/1.76.0; ref=wvmvsodrvbkxfydabqed)","x-amzn-trace-id":"Root=1-6ab6e5ea-44b3f4e40f26e1fd68cc6c0e","x-forwarded-for":"50.18.38.187,50.18.38.187, 3.2.54.115","x-forwarded-port":"443","x-forwarded-proto":"https","x-garmin-fanout":"1"}
+[16:21:46] [garmin-auth] Expected client ID: "6e904d60-e9d6-48ff-b1e7-3f3e7ff20db6" (length: 36)
+[16:21:47] [garmin-push] Processing complete: {"stressDetails":{"processed":0,"errors":1}}
+[16:21:47] [garmin-push] record failed kind=stressDetails garminUserId=ad141c79-6220-40c6-b2e7-9131dd68ad94 summaryId=x38aa520-6ab5ffd0-e5ec reason=no_user_mapping errorKind=none
+[16:21:47] booted (time: 33ms)
+[16:21:47] Listening on http://localhost:9999/
+[16:21:47] [garmin-auth] Expected client ID: "6e904d60-e9d6-48ff-b1e7-3f3e7ff20db6" (length: 36)
+[16:21:47] [garmin-auth] POST request, headers: {"accept":"*/*","accept-encoding":"gzip","accept-language":"*","baggage":"sb-request-id=01a0da72-1f15-7da8-ae22-739b56fd0fb2","cdn-loop":"cloudflare; loops=1","cf-connecting-ip":"18.191.94.52","cf-ew-via":"15","cf-ray":"a40d149ec80e4afc-CMH","cf-visitor":"{\"scheme\":\"https\"}","cf-worker":"supabase.co","content-length":"29424","content-type":"application/json","garmin-client-id":"6e904d60-e9d6-48ff-b1e7-3f3e7ff20db6","host":"edge-runtime.supabase.com","sb-request-id":"01a0da72-1f15-7da8-ae22-739b56fd0fb2","traceparent":"00-6de0e9058ac2a14f82827e2935af3f8d-730a9bd1d8155ab6-01","user-agent":"Deno/2.1.4 (variant; SupabaseEdgeRuntime/1.76.0; ref=wvmvsodrvbkxfydabqed)","x-amzn-trace-id":"Root=1-6ab6e5eb-2bffbd297a570c827366b164","x-forwarded-for":"18.191.94.52,18.191.94.52, 13.248.111.74","x-forwarded-port":"443","x-forwarded-proto":"https","x-garmin-fanout":"1"}
+[16:21:47] [garmin-push] record failed kind=dailies garminUserId=ad141c79-6220-40c6-b2e7-9131dd68ad94 summaryId=x38aa520-6ab5ffd0-e5ec-0 reason=no_user_mapping errorKind=none
+[16:21:47] [garmin-push] Processing complete: {"dailies":{"processed":0,"errors":1}}
+[16:21:49] booted (time: 43ms)
+[16:21:49] Listening on http://localhost:9999/
+[16:21:49] [garmin-auth] Expected client ID: "6e904d60-e9d6-48ff-b1e7-3f3e7ff20db6" (length: 36)
+[16:21:49] [garmin-auth] POST request, headers: {"accept":"*/*","accept-encoding":"gzip","accept-language":"*","baggage":"sb-request-id=01a0da72-2632-775f-a204-103c0428a4c5","cdn-loop":"cloudflare; loops=1","cf-connecting-ip":"13.56.115.160","cf-ew-via":"15","cf-ray":"a40d14a9fab9ac07-SJC","cf-visitor":"{\"scheme\":\"https\"}","cf-worker":"supabase.co","content-length":"4884","content-type":"application/json","garmin-client-id":"6e904d60-e9d6-48ff-b1e7-3f3e7ff20db6","host":"edge-runtime.supabase.com","sb-request-id":"01a0da72-2632-775f-a204-103c0428a4c5","traceparent":"00-45452c36c09d39f8177e9ff2f8bb3caa-07cfa41f1fbe9e13-01","user-agent":"Deno/2.1.4 (variant; SupabaseEdgeRuntime/1.76.0; ref=wvmvsodrvbkxfydabqed)","x-amzn-trace-id":"Root=1-6ab6e5ed-48a59ad859fd8ab35d1cc221","x-forwarded-for":"13.56.115.160,13.56.115.160, 3.2.54.114","x-forwarded-port":"443","x-forwarded-proto":"https","x-garmin-fanout":"1"}
+[16:21:49] [garmin-push] record failed kind=epochs garminUserId=ad141c79-6220-40c6-b2e7-9131dd68ad94 summaryId=x38aa520-6ab6d2c0-1 reason=no_user_mapping errorKind=none
+[16:21:49] [garmin-push] record failed kind=epochs garminUserId=ad141c79-6220-40c6-b2e7-9131dd68ad94 summaryId=x38aa520-6ab6d2c0-6 reason=no_user_mapping errorKind=none
+[16:21:49] [garmin-push] record failed kind=epochs garminUserId=ad141c79-6220-40c6-b2e7-9131dd68ad94 summaryId=x38aa520-6ab6d2c0-8 reason=no_user_mapping errorKind=none
+[16:21:49] [garmin-push] record failed kind=epochs garminUserId=ad141c79-6220-40c6-b2e7-9131dd68ad94 summaryId=x38aa520-6ab6d644-6 reason=no_user_mapping errorKind=none
+[16:21:49] [garmin-push] record failed kind=epochs garminUserId=ad141c79-6220-40c6-b2e7-9131dd68ad94 summaryId=x38aa520-6ab6d644-8 reason=no_user_mapping errorKind=none
+[16:21:49] [garmin-push] record failed kind=epochs garminUserId=ad141c79-6220-40c6-b2e7-9131dd68ad94 summaryId=x38aa520-6ab6d9c8-6 reason=no_user_mapping errorKind=none
+[16:21:50] [garmin-push] record failed kind=epochs garminUserId=ad141c79-6220-40c6-b2e7-9131dd68ad94 summaryId=x38aa520-6ab6d9c8-8 reason=no_user_mapping errorKind=none
+[16:21:50] booted (time: 123ms)
+[16:21:50] [garmin-push] record failed kind=epochs garminUserId=ad141c79-6220-40c6-b2e7-9131dd68ad94 summaryId=x38aa520-6ab6dd4c-6 reason=no_user_mapping errorKind=none
+[16:21:50] Listening on http://localhost:9999/
+[16:21:50] [garmin-push] record failed kind=epochs garminUserId=ad141c79-6220-40c6-b2e7-9131dd68ad94 summaryId=x38aa520-6ab6dd4c-8 reason=no_user_mapping errorKind=none
+[16:21:50] [garmin-push] record failed kind=epochs garminUserId=ad141c79-6220-40c6-b2e7-9131dd68ad94 summaryId=x38aa520-6ab6e0d0-6 reason=no_user_mapping errorKind=none
+[16:21:50] [vana-action] user=607f9dd5-6fa7-48ee-a628-720d4a0506a1 type=create_shopping_list parts=- 150ms
+[16:21:50] [garmin-push] record failed kind=epochs garminUserId=ad141c79-6220-40c6-b2e7-9131dd68ad94 summaryId=x38aa520-6ab6e0d0-8 reason=no_user_mapping errorKind=none
+[16:21:50] [garmin-push] record failed kind=epochs garminUserId=ad141c79-6220-40c6-b2e7-9131dd68ad94 summaryId=x38aa520-6ab6e454-6 reason=no_user_mapping errorKind=none
+[16:21:50] [garmin-push] record failed kind=epochs garminUserId=ad141c79-6220-40c6-b2e7-9131dd68ad94 summaryId=x38aa520-6ab6e454-8 reason=no_user_mapping errorKind=none
+[16:21:50] [garmin-push] Processing complete: {"epochs":{"processed":0,"errors":13}}
+[16:21:50] booted (time: 129ms)
+[16:21:51] Listening on http://localhost:9999/
+[16:21:52] [vana-action] user=607f9dd5-6fa7-48ee-a628-720d4a0506a1 type=list_shopping_lists parts=- 811ms
+[16:22:00] shutdown
+[16:22:03] booted (time: 81ms)
+[16:22:03] Listening on http://localhost:9999/
+[16:22:04] [vana-action] user=607f9dd5-6fa7-48ee-a628-720d4a0506a1 type=create_shopping_list parts=- 185ms
+[16:22:04] booted (time: 88ms)
+[16:22:04] Listening on http://localhost:9999/
+[16:22:05] [vana-action] user=607f9dd5-6fa7-48ee-a628-720d4a0506a1 type=list_shopping_lists parts=- 965ms
+[16:22:05] shutdown
+[16:22:06] shutdown
+[16:22:17] shutdown
+[16:22:25] booted (time: 34ms)
+[16:22:25] Listening on http://localhost:9999/
+[16:22:25] [garmin-auth] POST request, headers: {"accept":"*/*","accept-encoding":"gzip","accept-language":"*","baggage":"sb-request-id=01a0da72-b418-7407-8a5c-c42a00227d70","cdn-loop":"cloudflare; loops=1","cf-connecting-ip":"18.220.166.232","cf-ew-via":"15","cf-ray":"a40d158cf80cf49c-CMH","cf-visitor":"{\"scheme\":\"https\"}","cf-worker":"supabase.co","content-length":"4737","content-type":"application/json","garmin-client-id":"6e904d60-e9d6-48ff-b1e7-3f3e7ff20db6","host":"edge-runtime.supabase.com","sb-request-id":"01a0da72-b418-7407-8a5c-c42a00227d70","traceparent":"00-c0a82355ec7dacdfbeb9a6dbf00e26b1-2b1592f88a7dc202-01","user-agent":"Deno/2.1.4 (variant; SupabaseEdgeRuntime/1.76.0; ref=wvmvsodrvbkxfydabqed)","x-amzn-trace-id":"Root=1-6ab6e611-476d665329a6d99a61b05be1","x-forwarded-for":"18.220.166.232,18.220.166.232, 13.248.111.78","x-forwarded-port":"443","x-forwarded-proto":"https","x-garmin-fanout":"1"}
+[16:22:25] [garmin-auth] Expected client ID: "6e904d60-e9d6-48ff-b1e7-3f3e7ff20db6" (length: 36)
+[16:22:25] [garmin-push] Processing complete: {"dailies":{"processed":0,"errors":1}}
+[16:22:25] [garmin-push] record failed kind=dailies garminUserId=e07c3c04-41f7-4ad0-8ff2-d54c07b6d7f8 summaryId=x6427a00-6ab6a890-3cf0-0 reason=no_user_mapping errorKind=none
+[16:22:40] shutdown
+[16:22:41] booted (time: 74ms)
+[16:22:41] Listening on http://localhost:9999/
+[16:22:42] [vana-action] user=607f9dd5-6fa7-48ee-a628-720d4a0506a1 type=delete_shopping_list parts=- 622ms
+[16:22:43] booted (time: 73ms)
+[16:22:43] Listening on http://localhost:9999/
+[16:22:43] [vana-action] user=607f9dd5-6fa7-48ee-a628-720d4a0506a1 type=get_shopping_list parts=- 206ms
+[16:22:43] booted (time: 114ms)
+[16:22:43] Listening on http://localhost:9999/
+[16:22:44] [vana-action] user=607f9dd5-6fa7-48ee-a628-720d4a0506a1 type=list_shopping_lists parts=- 665ms
+[16:23:01] shutdown
+[16:23:02] shutdown
+[16:23:04] shutdown
+[16:23:05] shutdown
+[16:23:06] shutdown
+[16:23:18] shutdown
+[16:23:19] shutdown
+[16:23:40] shutdown
+[16:23:47] booted (time: 118ms)
+[16:23:47] booted (time: 117ms)
+[16:23:47] Listening on http://localhost:9999/
+[16:23:47] Listening on http://localhost:9999/
+[16:23:47] [vana-action] user=607f9dd5-6fa7-48ee-a628-720d4a0506a1 type=get_plan parts=- 87ms
+[16:23:47] booted (time: 98ms)
+[16:23:48] Listening on http://localhost:9999/
+[16:23:48] [vana-action] user=607f9dd5-6fa7-48ee-a628-720d4a0506a1 type=get_plan parts=- 93ms
+[16:23:50] [vana-action] user=607f9dd5-6fa7-48ee-a628-720d4a0506a1 type=recent_meals parts=- 2363ms
+[16:23:56] shutdown
+[16:23:58] shutdown
+[16:23:58] shutdown
+[16:24:10] booted (time: 84ms)
+[16:24:10] Listening on http://localhost:9999/
+[16:24:12] [vana-action] user=607f9dd5-6fa7-48ee-a628-720d4a0506a1 type=pick_meals parts=batch 1415ms
+[16:25:02] shutdown
+[16:25:02] shutdown
+[16:25:03] shutdown
+[16:25:22] booted (time: 101ms)
+[16:25:22] Listening on http://localhost:9999/
+[16:25:25] [vana-action] user=607f9dd5-6fa7-48ee-a628-720d4a0506a1 type=get_home parts=batch 2590ms
+[16:25:25] shutdown
+[16:25:27] booted (time: 76ms)
+[16:25:27] Listening on http://localhost:9999/
+[16:25:27] [vana-action] user=607f9dd5-6fa7-48ee-a628-720d4a0506a1 type=get_shopping_list parts=- 207ms
+[16:25:28] booted (time: 113ms)
+[16:25:28] Listening on http://localhost:9999/
+[16:25:28] [vana-action] user=607f9dd5-6fa7-48ee-a628-720d4a0506a1 type=list_shopping_lists parts=- 547ms
+[16:25:47] booted (time: 128ms)
+[16:25:47] Listening on http://localhost:9999/
+[16:25:49] booted (time: 95ms)
+[16:25:49] Listening on http://localhost:9999/
+[16:25:50] [vana-action] user=607f9dd5-6fa7-48ee-a628-720d4a0506a1 type=get_shopping_list parts=- 328ms
+[16:25:50] [vana-action] user=607f9dd5-6fa7-48ee-a628-720d4a0506a1 type=get_home parts=batch 2553ms
+[16:25:50] booted (time: 74ms)
+[16:25:50] Listening on http://localhost:9999/
+[16:25:50] booted (time: 115ms)
+[16:25:51] Listening on http://localhost:9999/
+[16:25:51] [vana-action] user=607f9dd5-6fa7-48ee-a628-720d4a0506a1 type=get_shopping_list parts=- 215ms
+[16:25:51] [vana-action] user=607f9dd5-6fa7-48ee-a628-720d4a0506a1 type=list_shopping_lists parts=- 638ms
+[16:25:51] booted (time: 72ms)
+[16:25:51] Listening on http://localhost:9999/
+[16:25:52] [vana-action] user=607f9dd5-6fa7-48ee-a628-720d4a0506a1 type=list_shopping_lists parts=- 564ms
+[16:25:52] booted (time: 28ms)
+[16:25:52] Listening on http://localhost:9999/
+[16:26:06] booted (time: 142ms)
+[16:26:06] Listening on http://localhost:9999/
+[16:26:06] [vana-action] user=607f9dd5-6fa7-48ee-a628-720d4a0506a1 type=get_shopping_list parts=- 103ms
+[16:26:07] booted (time: 128ms)
+[16:26:07] Listening on http://localhost:9999/
+[16:26:08] [vana-action] user=607f9dd5-6fa7-48ee-a628-720d4a0506a1 type=list_shopping_lists parts=- 674ms
+[16:26:21] booted (time: 94ms)
+[16:26:22] Listening on http://localhost:9999/
+[16:26:22] [vana-action] user=607f9dd5-6fa7-48ee-a628-720d4a0506a1 type=get_shopping_list parts=- 194ms
+[16:26:22] booted (time: 100ms)
+[16:26:22] Listening on http://localhost:9999/
+[16:26:23] [vana-action] user=607f9dd5-6fa7-48ee-a628-720d4a0506a1 type=list_shopping_lists parts=- 761ms
+[16:26:25] booted (time: 41ms)
+[16:26:25] Listening on http://localhost:9999/
+[16:26:25] [garmin-auth] POST request, headers: {"accept":"*/*","accept-encoding":"gzip","accept-language":"*","baggage":"sb-request-id=01a0da76-5b5e-745c-875c-4b7cce2228bc","cdn-loop":"cloudflare; loops=1","cf-connecting-ip":"3.144.43.141","cf-ew-via":"15","cf-ray":"a40d1b6589b54c41-CMH","cf-visitor":"{\"scheme\":\"https\"}","cf-worker":"supabase.co","content-length":"4461","content-type":"application/json","garmin-client-id":"6e904d60-e9d6-48ff-b1e7-3f3e7ff20db6","host":"edge-runtime.supabase.com","sb-request-id":"01a0da76-5b5e-745c-875c-4b7cce2228bc","traceparent":"00-912b665409d736422a6ab9058aa72a2e-8b9d6c6d694ec018-01","user-agent":"Deno/2.1.4 (variant; SupabaseEdgeRuntime/1.76.0; ref=wvmvsodrvbkxfydabqed)","x-amzn-trace-id":"Root=1-6ab6e700-521c8eca0a977d0204175c68","x-forwarded-for":"3.144.43.141,3.144.43.141, 13.248.111.49","x-forwarded-port":"443","x-forwarded-proto":"https","x-garmin-fanout":"1"}
+[16:26:25] [garmin-auth] Expected client ID: "6e904d60-e9d6-48ff-b1e7-3f3e7ff20db6" (length: 36)
+[16:26:25] [garmin-push] record failed kind=stressDetails garminUserId=22bb0eaf-e0cc-407c-a5c3-3c93061209da summaryId=x3a05932-6ab5ffd0-e718 reason=no_user_mapping errorKind=none
+[16:26:25] [garmin-push] Processing complete: {"stressDetails":{"processed":0,"errors":1}}
+[16:26:25] booted (time: 42ms)
+[16:26:25] Listening on http://localhost:9999/
+[16:26:25] [garmin-auth] POST request, headers: {"accept":"*/*","accept-encoding":"gzip","accept-language":"*","baggage":"sb-request-id=01a0da76-5e65-7950-9993-6528873b82a3","cdn-loop":"cloudflare; loops=1","cf-connecting-ip":"3.147.74.25","cf-ew-via":"15","cf-ray":"a40d1b6a5b67a8fe-CMH","cf-visitor":"{\"scheme\":\"https\"}","cf-worker":"supabase.co","content-length":"8202","content-type":"application/json","garmin-client-id":"6e904d60-e9d6-48ff-b1e7-3f3e7ff20db6","host":"edge-runtime.supabase.com","sb-request-id":"01a0da76-5e65-7950-9993-6528873b82a3","traceparent":"00-0be9814edb25cd65dd11f027834a104d-5a704a8b0da93ac7-01","user-agent":"Deno/2.1.4 (variant; SupabaseEdgeRuntime/1.76.0; ref=wvmvsodrvbkxfydabqed)","x-amzn-trace-id":"Root=1-6ab6e701-3eb0dae426ac025a316e09e7","x-forwarded-for":"3.147.74.25,3.147.74.25, 13.248.111.76","x-forwarded-port":"443","x-forwarded-proto":"https","x-garmin-fanout":"1"}
+[16:26:25] [garmin-auth] Expected client ID: "6e904d60-e9d6-48ff-b1e7-3f3e7ff20db6" (length: 36)
+[16:26:25] [garmin-push] record failed kind=dailies garminUserId=22bb0eaf-e0cc-407c-a5c3-3c93061209da summaryId=x3a05932-6ab5ffd0-e718-0 reason=no_user_mapping errorKind=none
+[16:26:25] [garmin-push] Processing complete: {"dailies":{"processed":0,"errors":1}}
+[16:26:26] booted (time: 43ms)
+[16:26:26] Listening on http://localhost:9999/
+[16:26:26] [garmin-auth] Expected client ID: "6e904d60-e9d6-48ff-b1e7-3f3e7ff20db6" (length: 36)
+[16:26:26] [garmin-auth] POST request, headers: {"accept":"*/*","accept-encoding":"gzip","accept-language":"*","baggage":"sb-request-id=01a0da76-6252-7395-accd-c2ff5bdc7996","cdn-loop":"cloudflare; loops=1","cf-connecting-ip":"13.56.180.250","cf-ew-via":"15","cf-ray":"a40d1b70ef9d14b6-SJC","cf-visitor":"{\"scheme\":\"https\"}","cf-worker":"supabase.co","content-length":"1885","content-type":"application/json","garmin-client-id":"6e904d60-e9d6-48ff-b1e7-3f3e7ff20db6","host":"edge-runtime.supabase.com","sb-request-id":"01a0da76-6252-7395-accd-c2ff5bdc7996","traceparent":"00-aaf660642b33fc63357b3fbe6c2e350f-59f22535fd199758-01","user-agent":"Deno/2.1.4 (variant; SupabaseEdgeRuntime/1.76.0; ref=wvmvsodrvbkxfydabqed)","x-amzn-trace-id":"Root=1-6ab6e702-38c7ef027f93cf25452484d2","x-forwarded-for":"13.56.180.250,13.56.180.250, 3.2.54.118","x-forwarded-port":"443","x-forwarded-proto":"https","x-garmin-fanout":"1"}
+[16:26:26] [garmin-push] record failed kind=epochs garminUserId=22bb0eaf-e0cc-407c-a5c3-3c93061209da summaryId=x3a05932-6ab6e0d0-1 reason=no_user_mapping errorKind=none
+[16:26:27] [garmin-push] record failed kind=epochs garminUserId=22bb0eaf-e0cc-407c-a5c3-3c93061209da summaryId=x3a05932-6ab6e0d0-6 reason=no_user_mapping errorKind=none
+[16:26:27] [garmin-push] record failed kind=epochs garminUserId=22bb0eaf-e0cc-407c-a5c3-3c93061209da summaryId=x3a05932-6ab6e0d0-0 reason=no_user_mapping errorKind=none
+[16:26:27] [garmin-push] record failed kind=epochs garminUserId=22bb0eaf-e0cc-407c-a5c3-3c93061209da summaryId=x3a05932-6ab6e0d0-8 reason=no_user_mapping errorKind=none
+[16:26:27] [garmin-push] Processing complete: {"epochs":{"processed":0,"errors":5}}
+[16:26:27] [garmin-push] record failed kind=epochs garminUserId=22bb0eaf-e0cc-407c-a5c3-3c93061209da summaryId=x3a05932-6ab6e454-8 reason=no_user_mapping errorKind=none
+[16:26:32] booted (time: 92ms)
+[16:26:32] Listening on http://localhost:9999/
+[16:26:33] [vana-action] user=607f9dd5-6fa7-48ee-a628-720d4a0506a1 type=update_shopping_item parts=- 494ms
+[16:26:37] shutdown
+[16:26:42] shutdown
+[16:26:43] shutdown
+[16:26:49] shutdown
+[16:27:02] shutdown
+[16:27:04] booted (time: 109ms)
+[16:27:04] Listening on http://localhost:9999/
+[16:27:04] shutdown
+[16:27:05] [vana-action] user=607f9dd5-6fa7-48ee-a628-720d4a0506a1 type=delete_shopping_list parts=- 623ms
+[16:27:05] shutdown
+[16:27:05] booted (time: 127ms)
+[16:27:05] Listening on http://localhost:9999/
+[16:27:05] shutdown
+[16:27:06] [vana-action] user=607f9dd5-6fa7-48ee-a628-720d4a0506a1 type=get_shopping_list parts=- 392ms
+[16:27:06] booted (time: 79ms)
+[16:27:06] shutdown
+[16:27:06] Listening on http://localhost:9999/
+[16:27:07] [vana-action] user=607f9dd5-6fa7-48ee-a628-720d4a0506a1 type=list_shopping_lists parts=- 579ms
+[16:27:07] shutdown
+[16:27:16] shutdown
+[16:27:22] shutdown
+[16:27:37] shutdown
+[16:27:40] shutdown
+[16:27:40] booted (time: 112ms)
+[16:27:40] Listening on http://localhost:9999/
+[16:27:40] shutdown
+[16:27:41] [vana-action] user=607f9dd5-6fa7-48ee-a628-720d4a0506a1 type=delete_shopping_list parts=- 542ms
+[16:27:41] booted (time: 123ms)
+[16:27:41] Listening on http://localhost:9999/
+[16:27:41] shutdown
+[16:27:42] [vana-action] user=607f9dd5-6fa7-48ee-a628-720d4a0506a1 type=get_shopping_list parts=- 188ms
+[16:27:42] booted (time: 105ms)
+[16:27:42] Listening on http://localhost:9999/
+[16:27:43] [vana-action] user=607f9dd5-6fa7-48ee-a628-720d4a0506a1 type=list_shopping_lists parts=- 482ms
+[16:27:47] shutdown
+
+(300 rows)
