@@ -1,0 +1,7 @@
+{"kind":"flow","title":"One testing-wave run, through the harness","rows":[
+ [{"id":"slot","label":"Slot lock\n2 at once","tone":"accent"},{"id":"build","label":"Build lock\n1 at once","tone":"accent"}],
+ [{"id":"run","label":"Agent drives the app\nchecks RC, DB, console"}],
+ [{"id":"cost","label":"Cost counter\n3 plans, 5 AI logs","tone":"pending"},{"id":"find","label":"Findings\none file each","tone":"no"}],
+ [{"id":"idx","label":"Index\nopen? then not done","tone":"ok"}]],
+ "edges":[{"from":"slot","to":"run"},{"from":"build","to":"run","label":"released once running"},{"from":"run","to":"cost"},{"from":"run","to":"find"},{"from":"find","to":"idx"}],
+ "example":["Ticket 14 takes slot 2 of 2, builds while ticket 29 waits,","counts plan 1 of 3, and writes 14-01 (bug) and 14-02 (follow-up test).","The index exits non-zero: 2 Findings open."]}

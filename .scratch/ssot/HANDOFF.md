@@ -125,3 +125,21 @@ and the session gets an `artifact-changed` notification. If the watch is not con
 - Ticket 04 done 09-14 (`/grill-with-docs-lee`, `.claude/skills/grill-with-docs-lee/SKILL.md`,
   `sync.mjs questions`). Next: `/mattpocock-skills:implement 05 ssot`, or Lee grills mp-267 for
   real with `/grill-with-docs-lee mealplanning mp-267`.
+
+## 7. 2026-09-20: the second fold (Lee remote, on his phone)
+
+- 104 pending (41 cards, 63 open questions) became 14 cards and 2 open questions (mp-321, mp-337). Ten folds
+  mp-419 to mp-428 plus two new cards: mp-429 (adopt Xuan's RevenueCat spec; reverses mp-279 cl.1, mp-283,
+  adjusts mp-280, replaces mp-286) and mp-430 (allowance 600, caps, cost work; re-proposes rejected mp-341).
+  Plan and runner: `.scratch/ssot/folds/2026-09-20-plan.mjs`, `2026-09-20-run.mjs`. Every agent question was
+  answered with a recommendation as a clause tagged [built] / [to build] / [no work]; 61 questions closed with
+  `answers`. The six held memory cards (mp-032 to 036, 038) were released from hold and folded into mp-419.
+- The page db had the folded cards and all 68 answered questions deleted, so the phone shows only live work.
+  A plain `prepare` + full reseed brings the answered questions back. `_page/index.html` has a local,
+  NOT YET DEPLOYED tweak (`isOpenQ`, pending-only on by default) that hides them properly; redeploy it
+  (read the live page in full first) before the next full reseed.
+- Two verdicts from 09-17 are still unapplied and wait for Lee's yes: mp-318 and mp-335, both question-shaped
+  rejections. Proposed syntheses: rewrite mp-318 to "server reads two fields only; admin bypass is client-only
+  (mp-416)"; rewrite mp-335 so web reads the server entitlement table (answers mp-337).
+- Briefing for Lee (status, sim checklist, AI cost audit, allowance): https://claude.ai/artifact/DugXB8kNRB46iDXB2xKy6R
+- Nothing committed. Dirty: the record and proposals (09-17 verdicts + this fold), four new SVGs, index.html.

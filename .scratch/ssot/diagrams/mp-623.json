@@ -1,0 +1,6 @@
+{"kind":"flow","title":"Auditing the Patrol suite","rows":[
+ [{"id":"all","label":"Run all 25 flows"}],
+ [{"id":"pass","label":"Passes","tone":"ok"},{"id":"stale","label":"App changed\nfix the test","tone":"amend"},{"id":"bug","label":"App wrong\nFinding, stays red","tone":"no"}],
+ [{"id":"runner","label":"Runner runs every flow\nminus AI-spend list","tone":"accent"}]],
+ "edges":[{"from":"all","to":"pass"},{"from":"all","to":"stale"},{"from":"all","to":"bug"},{"from":"pass","to":"runner"},{"from":"stale","to":"runner"}],
+ "example":["settings_sweep fails on a renamed label: the test is updated.","activities_crud hangs 10 minutes on the app: Finding 03-01, left red.","The runner then expects 25 minus the 2 AI-spend flows."]}

@@ -279,4 +279,96 @@ void main() {
     expect(find.byType(ShoppingTab), findsOneWidget);
     expect(find.byType(PlanTab), findsNothing);
   });
+
+  // mp-596: "Open shopping list" goes to `/main?tab=food&food=shopping`, which
+  // reuses the shell already on screen. The Food tab had opened on Plan, and
+  // kept Plan.
+  testWidgets(
+    'asking an already-built shell for Food, Shopping lands on Shopping',
+    (tester) async {
+      final transport = _CountingTransport();
+      final requested = ValueNotifier<(String?, FoodTab)>((null, FoodTab.plan));
+
+      await pumpSeeded(
+        tester,
+        ValueListenableBuilder<(String?, FoodTab)>(
+          valueListenable: requested,
+          builder: (_, r, _) =>
+              TabsScreen(initialTabName: r.$1, initialFoodTab: r.$2),
+        ),
+        overrides: _shellOverrides(transport),
+      );
+      await _settleShell(tester);
+
+      // The athlete visits Food (on Plan), then goes back to the Timeline.
+      await tester.tap(find.text('Food').first);
+      await _settleShell(tester);
+      await tester.tap(find.text('Timeline').first);
+      await _settleShell(tester);
+
+      requested.value = ('food', FoodTab.shopping);
+      await _settleShell(tester);
+
+      expect(find.byType(ShoppingTab), findsOneWidget);
+      expect(find.byType(PlanTab), findsNothing);
+    },
+  );
+
+  // A repeat of the same location, after the athlete tapped another segment,
+  // still switches: every navigation carries a fresh request.
+  testWidgets(
+    'asking again for Shopping after tapping Plan lands on Shopping',
+    (tester) async {
+      final transport = _CountingTransport();
+      final requested = ValueNotifier<Object>(foodTabRequest());
+
+      await pumpSeeded(
+        tester,
+        ValueListenableBuilder<Object>(
+          valueListenable: requested,
+          builder: (_, r, _) => TabsScreen(
+            initialTabName: 'food',
+            initialFoodTab: FoodTab.shopping,
+            request: r,
+          ),
+        ),
+        overrides: _shellOverrides(transport),
+      );
+      await _settleShell(tester);
+      expect(find.byType(ShoppingTab), findsOneWidget);
+
+      await tester.tap(find.byKey(const ValueKey('meal_planning.tab_plan')));
+      await _settleShell(tester);
+      expect(find.byType(PlanTab), findsOneWidget);
+
+      requested.value = foodTabRequest();
+      await _settleShell(tester);
+      expect(find.byType(ShoppingTab), findsOneWidget);
+    },
+  );
+
+  // "Add meal" on Plan switches to Meals inside the tab; it used to push a
+  // second, tab-less Food page over the shell.
+  testWidgets('"Add meal" switches to Meals and keeps the tab bar', (
+    tester,
+  ) async {
+    final transport = _CountingTransport();
+
+    await pumpSeeded(
+      tester,
+      const TabsScreen(initialTabName: 'food'),
+      overrides: _shellOverrides(transport),
+    );
+    await _settleShell(tester);
+
+    await tester.ensureVisible(
+      find.byKey(const ValueKey('meal_planning.btn_add_meal')),
+    );
+    await tester.tap(find.byKey(const ValueKey('meal_planning.btn_add_meal')));
+    await _settleShell(tester);
+
+    expect(find.byType(MealsTab), findsOneWidget);
+    expect(find.byType(TabsScreen), findsOneWidget);
+    expect(find.text('Timeline'), findsWidgets);
+  });
 }

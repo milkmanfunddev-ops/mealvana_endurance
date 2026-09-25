@@ -49,6 +49,7 @@ import '../widgets/vana_part_renderer.dart';
 import '../widgets/vana_repeated_question.dart';
 import '../../../meal_logging/domain/meal_photo_capture.dart';
 import 'food_screen.dart';
+import '../../../../shared/core/pop_or_home.dart';
 
 /// `/vana?mode=&c=` (05 §4) — the Vana chat for both kinds. Planning chats
 /// carry the plan bar (minimized at start and on every new turn), the
@@ -329,10 +330,7 @@ class _VanaChatScreenState extends ConsumerState<VanaChatScreen> {
           padding: const EdgeInsets.fromLTRB(16, 8, 16, 0),
           child: Row(
             children: [
-              VanaRoundButton.back(
-                context: context,
-                onTap: () => context.pop(),
-              ),
+              VanaRoundButton.back(context: context, onTap: context.popOrHome),
               const SizedBox(width: 12),
               VanaAvatar(size: 32, isPulsing: isStreaming),
               const SizedBox(width: 12),
@@ -456,7 +454,9 @@ class _VanaChatScreenState extends ConsumerState<VanaChatScreen> {
       // mp-265 clause 4: the app's own screen for what they asked to do.
       onHandOff: (part) {
         final to = vanaHandOffDestination(part);
-        context.push(to.location, extra: to.extra);
+        to.replace
+            ? context.go(to.location, extra: to.extra)
+            : context.push(to.location, extra: to.extra);
       },
       // Playtest §10: the Undo on a receipt card runs the write's own undo.
       onUndoReceipt: _controller.undoReceipt,

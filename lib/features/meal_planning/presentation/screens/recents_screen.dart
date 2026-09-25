@@ -12,6 +12,7 @@ import '../../domain/meal_ref.dart';
 import '../../domain/list_pictures.dart';
 import '../widgets/meal_card.dart';
 import '../widgets/vana_round_button.dart';
+import '../../../../shared/core/pop_or_home.dart';
 
 /// `/food/meals/recents` — the full Recents list (the rail's "See all").
 /// Local logs ∪ plan meals by recency; server-resolved when online.
@@ -46,7 +47,7 @@ class RecentsScreen extends ConsumerWidget {
                 children: [
                   VanaRoundButton.back(
                     context: context,
-                    onTap: () => context.pop(),
+                    onTap: context.popOrHome,
                   ),
                   const SizedBox(width: 12),
                   Text(

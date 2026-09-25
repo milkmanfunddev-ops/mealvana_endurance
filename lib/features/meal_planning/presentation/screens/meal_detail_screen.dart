@@ -32,6 +32,7 @@ import '../widgets/dashed_box.dart';
 import '../widgets/vana_round_button.dart';
 import '../widgets/vana_tag.dart';
 import 'vana_browse_screen.dart';
+import '../../../../shared/core/pop_or_home.dart';
 
 /// `/food/meals/:id` (05 §4), minimal layout: hero, title + "see the
 /// original recipe", thumbs · prep row, macro pills, ingredients,
@@ -185,7 +186,7 @@ class _DetailBodyState extends ConsumerState<_DetailBody> {
         // ── Header: back · Save to mine ───────────────────────────────────
         Row(
           children: [
-            VanaRoundButton.back(context: context, onTap: () => context.pop()),
+            VanaRoundButton.back(context: context, onTap: context.popOrHome),
             const Spacer(),
             if (!isSaved) _SaveToMineButton(mealId: meal.id),
           ],

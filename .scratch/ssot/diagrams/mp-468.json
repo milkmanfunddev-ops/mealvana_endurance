@@ -1,0 +1,1 @@
+{"kind": "flow", "title": "Ticket 03: nothing before a tap", "rows": [[{"id": "a", "label": "Today: launch builds Food,\n4 Vana calls, 25 queries", "tone": "no"}], [{"id": "b", "label": "After: first call when\nFood is first opened", "tone": "ok"}]], "edges": [{"from": "a", "to": "b"}], "example": ["A visited tab keeps its state."]}

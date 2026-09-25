@@ -9254,7 +9254,7 @@ Founding is a product id containing `_founding` (`me_pro_*_founding` and the `_p
 - screen: Vana chat
 - work: pending
 - source: Lee on the page 2026-09-23 (mp-602), agreed in the terminal
-- linked: mp-594
+- linked: mp-594; mp-595
 
 **Context.** When Vana first moved past dinners she stopped to ask two questions, "Cook once and eat it across the week, or cook most nights?" and "How much of the week should this plan cover?", whenever the athlete had never saved an answer. Vana settings already shows a batch-cooking switch that reads ON for an athlete who never touched it, so she asked a question the screen already answered. Every question is a paid model turn, and it made planning a fixed sequence of steps.
 
@@ -9471,3 +9471,57 @@ Founding is a product id containing `_founding` (`me_pro_*_founding` and the `_p
 > 2026-09-23 proposed from mp-558
 > 2026-09-23 approved by Lee
 > 2026-09-23 picture captured at 1.27.0+3, 36bea725
+
+## mp-620 · After every picker, the chips come from the plan as it stands, not from a fixed walk
+- category: Cutting costs
+- status: approved
+- image: docs/ssot/decisions/images/mealplanning/vana-chat.png
+- screen: Vana chat
+- work: pending
+- source: Lee in the terminal 2026-09-23 (mp-606)
+- linked: mp-602; mp-606; mp-607
+
+**Original.** The athlete decides. When they tap "I like these" with fewer meals of that type than the nights the plan covers, three fixed chips appear: "More <meal type>" brings another picker for the same type, "That's enough" moves to the next type or to Vana's wrap-up, and "Ask Vana" hands the turn to her. Only "Ask Vana" and the wrap-up are model turns. When the nights are already full, no chips appear and "I like these" moves on as before. Example: a dinners-only athlete with 2 of 5 dinners taps "I like these" and sees the three chips; "More dinners" shows a fresh dinner picker with no model call.
+
+**Lee said.** Edit accepted from the discussion on mp-607 on 2026-09-23: After every picker, the chips come from the plan as it stands, not from a fixed walk
+
+**Context.** "I like these" moves on once a meal type has any meals (mp-602). On the device check, a dinners-only athlete who had picked 2 of 5 dinners tapped it; the app counted dinners as planned and handed the tap to Vana, who offered more dinners, a paid turn each round.
+
+**Question.** When does a meal type count as planned, what comes after a picker, and who decides?
+
+**Decision.** The athlete decides, and the plan is the only state. After every picker the app shows one row of fixed chips worked out fresh from the saved plan: "More <meal type>" for each type in the athlete's coverage that still has fewer meals than the nights the plan covers, "Done" which goes to Vana's wrap-up, and "Ask Vana" which is always there. There is no step order and nothing remembered about where the athlete is: after any conversation with Vana the chips are worked out again from what is saved, so a full type is never offered again and a short one is offered, never forced. Only "Done" and "Ask Vana" are model turns. A race week needs no special case: Vana suggests the race-eve meal at the wrap-up or whenever she is asked (answers mp-607). Example: a dinners-and-lunches athlete with 2 of 5 dinners and no lunches sees "More dinners", "More lunches", "Done" and "Ask Vana"; they ask Vana about a recipe, come back, and the same chips are there with no dinners re-asked beyond the 3 still short.
+
+**Why.** Lee (2026-09-23): ask the athlete rather than guess; it must not feel like a state machine, and a detour to Vana must never bring back a meal type already done.
+
+**What else was considered.** One meal counts as planned (today, too many paid turns); a type counts once the nights are filled and the walk moves on (the app guesses); three chips only when the current type is short (still a fixed walk); in a race week, "I like these" goes to Vana (an extra paid turn).
+
+**What it touches.** Vana chat; `chips.ts` (`pickerNextStep` and the walk), the plan's coverage, fixed chips, the planning persona (`persona.ts` rules 4 and 6).
+
+> 2026-09-23 proposed from Lee's terminal ruling on mp-606
+> 2026-09-23 approved by Lee
+> 2026-09-23 edited from the discussion on mp-607 on 2026-09-23 by Lee
+> 2026-09-23 approved again by Lee
+
+## mp-652 · "Open shopping list" always lands on Shopping
+- category: Cutting costs
+- status: approved
+- image: none
+- screen: Food tab
+- work: done
+- source: Lee in the terminal 2026-09-23 (mp-596)
+- linked: mp-464; mp-596
+
+**Context.** The "Open shopping list" chip and the plan bar's shopping link go to Food, Shopping. When the Food tab had already been opened, it stayed on the segment it first showed, usually Plan.
+
+**Question.** Where does a link to the shopping list land?
+
+**Decision.** Always on the Shopping segment of the Food tab, with the tab bar showing, whether or not Food was opened before. Example: an athlete who looked at Plan this morning taps "Open shopping list" in Vana tonight and sees the list, not Plan.
+
+**Why.** Lee (2026-09-23): fix it now; opening the list is the chip's only job.
+
+**What else was considered.** Fixing it with the next piece of Food tab work.
+
+**What it touches.** Food tab; `food_screen.dart`, `tabs_screen.dart`.
+
+> 2026-09-23 proposed from Lee's terminal ruling on mp-596
+> 2026-09-23 approved by Lee

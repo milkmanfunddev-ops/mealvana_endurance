@@ -19,6 +19,7 @@ import '../widgets/plan_summary.dart';
 import '../widgets/plan_tile.dart';
 import '../widgets/stepper.dart';
 import '../widgets/vana_round_button.dart';
+import '../../../../shared/core/pop_or_home.dart';
 
 /// An earlier plan (`/food/plans/:id`): its name, if the athlete gave it
 /// one, over the week and meal count, then the same rows the Plan tab draws.
@@ -57,7 +58,7 @@ class PreviousPlanScreen extends ConsumerWidget {
                   VanaRoundButton.back(
                     key: const ValueKey('meal_planning.previous_plan_back'),
                     context: context,
-                    onTap: () => context.pop(),
+                    onTap: context.popOrHome,
                   ),
                   const SizedBox(width: AppSpacing.sm),
                   Expanded(

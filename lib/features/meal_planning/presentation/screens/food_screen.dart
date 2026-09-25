@@ -146,7 +146,11 @@ class _FoodScreenState extends ConsumerState<FoodScreen> {
                   index: FoodTab.values.indexOf(_tab),
                   itemCount: FoodTab.values.length,
                   itemBuilder: (_, i) => switch (FoodTab.values[i]) {
-                    FoodTab.plan => const PlanTab(),
+                    // "Add meal" switches segment here; it never pushes a
+                    // second Food page over this one.
+                    FoodTab.plan => PlanTab(
+                      onAddMeal: () => setState(() => _tab = FoodTab.meals),
+                    ),
                     FoodTab.meals => const MealsTab(),
                     FoodTab.shopping => const ShoppingTab(),
                   },

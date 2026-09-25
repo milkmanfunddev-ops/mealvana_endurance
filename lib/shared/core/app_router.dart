@@ -144,6 +144,15 @@ TabsScreen mainTabsScreen(GoRouterState state) {
   );
 }
 
+/// The activity routes read their id from `extra`, which a web refresh or a
+/// restore loses: with no id they send the athlete home instead of showing a
+/// dead page with nothing under it.
+@visibleForTesting
+String? homeWithoutActivityId(BuildContext context, GoRouterState state) {
+  final extra = state.extra;
+  return extra is Map && extra['activityId'] is String ? null : '/main';
+}
+
 /// Notifier that triggers GoRouter redirect re-evaluation on auth state changes.
 /// Used by AuthListenerService to signal sign-out/sign-in events.
 class AuthChangeNotifier extends ChangeNotifier {
@@ -565,6 +574,9 @@ class AppRouter {
         GoRoute(
           path: '/plan',
           name: 'plan',
+          // Without an activity id (a lost `extra`: web refresh, restore)
+          // there is nothing to show and no stack under it: go home.
+          redirect: homeWithoutActivityId,
           builder: (context, state) {
             final extra = state.extra as Map<String, dynamic>?;
             final activityId = extra?['activityId'] as String?;
@@ -586,6 +598,9 @@ class AppRouter {
         GoRoute(
           path: '/current-plan',
           name: 'current-plan',
+          // Without an activity id (a lost `extra`: web refresh, restore)
+          // there is nothing to show and no stack under it: go home.
+          redirect: homeWithoutActivityId,
           builder: (context, state) {
             final extra = state.extra as Map<String, dynamic>?;
             final activityId = extra?['activityId'] as String?;
@@ -607,6 +622,9 @@ class AppRouter {
         GoRoute(
           path: '/fuel-log',
           name: 'fuel-log',
+          // Without an activity id (a lost `extra`: web refresh, restore)
+          // there is nothing to show and no stack under it: go home.
+          redirect: homeWithoutActivityId,
           builder: (context, state) {
             final extra = state.extra as Map<String, dynamic>?;
             final activityId = extra?['activityId'] as String?;
@@ -1119,16 +1137,20 @@ class AppRouter {
         // ====================================================================
         // MEAL PLANNING (Vana) — behind the one app gate like every route
         // ====================================================================
+        // `/food` itself is the Food tab of the shell: a bare Food page had no
+        // tab bar and no way home. Its detail routes stay under it; a deep
+        // link to one gets the tab shell beneath it.
         GoRoute(
           path: '/food',
           name: 'food',
-          builder: (context, state) => FoodScreen(
-            initialTab: switch (state.uri.queryParameters['tab']) {
-              'meals' => FoodTab.meals,
-              'shopping' => FoodTab.shopping,
-              _ => FoodTab.plan,
-            },
-          ),
+          redirect: (context, state) => state.uri.path == '/food'
+              ? foodTabLocation(switch (state.uri.queryParameters['tab']) {
+                  'meals' => FoodTab.meals,
+                  'shopping' => FoodTab.shopping,
+                  _ => FoodTab.plan,
+                })
+              : null,
+          builder: (context, state) => const TabsScreen(initialTabName: 'food'),
           routes: [
             // Static sibling must precede the :id route.
             GoRoute(

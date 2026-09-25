@@ -573,7 +573,7 @@ class _VanaCompanionSheetState extends ConsumerState<VanaCompanionSheet> {
       // mp-265 clause 4: the sheet closes and the app's own screen opens.
       onHandOff: (part) {
         final to = vanaHandOffDestination(part);
-        _leaveTo(to.location, extra: to.extra);
+        _leaveTo(to.location, extra: to.extra, replace: to.replace);
       },
       // Playtest §10: the Undo on a receipt card runs the write's own undo.
       onUndoReceipt: _controller.undoReceipt,
