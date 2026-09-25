@@ -1,7 +1,7 @@
 # 15-003 · Meal cards in a resumed conversation show empty checkboxes for meals that are in the conversation's plan
 
 - kind: bug
-- status: open
+- status: triaged
 - ticket: 15
 - run: w12-20260924T1712Z
 - screen: Vana chat (meal planning), opened from Conversations
@@ -27,3 +27,4 @@ Every card shows an empty checkbox. In `ebac747d`, "Injera with shiro wot" and "
 > 
 
 **Triage.**
+Fix ticket 48 (Lee, 2026-09-25). Closed by the retest after it merges.

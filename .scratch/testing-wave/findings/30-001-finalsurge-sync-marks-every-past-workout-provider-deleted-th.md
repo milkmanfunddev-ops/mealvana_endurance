@@ -1,7 +1,7 @@
 # 30-001 · FinalSurge sync marks every past workout provider-deleted the day after it happens
 
 - kind: bug
-- status: open
+- status: triaged
 - ticket: 30
 - run: w10-20260924T1615Z
 - screen: Timeline
@@ -28,3 +28,4 @@ The timeline still shows these rows (as Skipped), so the athlete's week looks ri
 > 
 
 **Triage.**
+Fix ticket 42 (Lee, 2026-09-25). Closed by the retest after it merges.

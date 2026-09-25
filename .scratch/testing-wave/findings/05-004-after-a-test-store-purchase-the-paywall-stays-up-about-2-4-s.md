@@ -1,7 +1,7 @@
 # 05-004 · After a Test Store purchase the paywall stays up about 2.4 s with Continue enabled again before the app opens
 
 - kind: bug
-- status: open
+- status: triaged
 - ticket: 05
 - run: w5-20260924T0839Z
 - screen: Paywall
@@ -27,4 +27,4 @@ The sheet closes and the paywall keeps its spinner for about 1 s. Then Continue 
 > 
 
 **Triage.**
-
+Fix ticket 45 (Lee, 2026-09-25). Closed by the retest after it merges.

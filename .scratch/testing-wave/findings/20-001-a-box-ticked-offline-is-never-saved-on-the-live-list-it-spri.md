@@ -1,7 +1,7 @@
 # 20-001 · A box ticked offline is never saved: on the live list it springs back unticked, in the offline copy it shows ticked but is gone after a restart or once the network returns
 
 - kind: bug
-- status: open
+- status: triaged
 - ticket: 20
 - run: w10-20260924T1614Z
 - screen: Food (Shopping sub-tab)
@@ -42,4 +42,4 @@ Story 62 of the testing-wave spec and the ticket: the items the athlete checks o
 > 
 
 **Triage.**
-
+Fix ticket 36 (Lee, 2026-09-25). Closed by the retest after it merges.

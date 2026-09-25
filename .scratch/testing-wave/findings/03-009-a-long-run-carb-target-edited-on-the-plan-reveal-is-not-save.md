@@ -1,7 +1,7 @@
 # 03-009 · A long-run carb target edited on the plan reveal is not saved: after email signup nutrition_target_overrides is null
 
 - kind: bug
-- status: open
+- status: triaged
 - ticket: 03
 - run: w3-20260923T1942Z
 - screen: Plan Reveal Onboarding
@@ -36,4 +36,4 @@ this assertion (and then runs out its 12-minute timeout, the known cost of a fai
 > 
 
 **Triage.**
-
+Fix ticket 40 (Lee, 2026-09-25). Closed by the retest after it merges.

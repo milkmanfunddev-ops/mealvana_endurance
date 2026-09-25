@@ -1,7 +1,7 @@
 # 10-001 · After resubscribing on a fresh install the timeline shows no meal logged before the lapse until the Food tab is opened; pull-to-refresh does not bring it
 
 - kind: bug
-- status: open
+- status: triaged
 - ticket: 10
 - run: w8-20260924T1418Z
 - screen: Timeline
@@ -31,4 +31,4 @@ At 14:21:04Z and again at 14:21:37Z the timeline for today was empty: only + Add
 > 
 
 **Triage.**
-
+Fix ticket 46 (Lee, 2026-09-25). Closed by the retest after it merges.

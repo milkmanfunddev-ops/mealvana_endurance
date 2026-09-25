@@ -1,7 +1,7 @@
 # 18-003 · Reopened Browse shows meals already in the draft with a plain plus, so each tap adds four more servings of the same meal
 
 - kind: bug
-- status: open
+- status: triaged
 - ticket: 18
 - run: w16-20260924T2100Z
 - screen: Browse meals
@@ -27,4 +27,4 @@ Both meals sit at the top of Recents with a plain "+" ("Add to plan"), as if not
 > 
 
 **Triage.**
-
+Fix ticket 34 (Lee, 2026-09-25). Closed by the retest after it merges.

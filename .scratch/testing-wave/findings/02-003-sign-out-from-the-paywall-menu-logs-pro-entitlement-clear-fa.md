@@ -1,7 +1,7 @@
 # 02-003 · Sign out from the paywall menu logs 'Pro entitlement clear failed' (settingsControllerProvider Ref used after dispose)
 
 - kind: bug
-- status: open
+- status: triaged
 - ticket: 02
 - run: w2-20260923T1442Z
 - screen: Paywall
@@ -29,3 +29,4 @@ showed the paywall correctly).
 > 
 
 **Triage.**
+Fix ticket 33 (Lee, 2026-09-25). Closed by the retest after it merges.

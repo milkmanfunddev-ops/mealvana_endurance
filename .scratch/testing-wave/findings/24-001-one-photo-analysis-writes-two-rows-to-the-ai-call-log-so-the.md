@@ -1,7 +1,7 @@
 # 24-001 · One photo analysis writes two rows to the AI call log, so the weekly cost view counts each logging call and its tokens twice
 
 - kind: bug
-- status: open
+- status: triaged
 - ticket: 24
 - run: w14-20260924T2015Z
 - screen: Log a Meal (Describe, photo)
@@ -37,3 +37,4 @@ ai_usage (one row) and token_ledger (reserve -13000, settle -695 = 13,695 micro-
 > 
 
 **Triage.**
+Fix ticket 43 (Lee, 2026-09-25). Closed by the retest after it merges.

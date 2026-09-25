@@ -1,7 +1,7 @@
 # 26-001 · Log a Meal Recent tab says no saved or recent meals on a fresh sign-in until the Food tab has been opened
 
 - kind: bug
-- status: open
+- status: triaged
 - ticket: 26
 - run: w13-20260924T1904Z
 - screen: Log a Meal (Recent)
@@ -28,3 +28,4 @@ Step 2 showed "No saved or recent meals yet. Meals you log (and favorite) show u
 > 
 
 **Triage.**
+Fix ticket 46 (Lee, 2026-09-25). Closed by the retest after it merges.

@@ -1,7 +1,7 @@
 # 30-002 · last_synced_at is written as the local wall clock into a UTC timestamptz, five hours off
 
 - kind: bug
-- status: open
+- status: triaged
 - ticket: 30
 - run: w10-20260924T1615Z
 - screen: none
@@ -25,3 +25,4 @@
 > 
 
 **Triage.**
+Fix ticket 42 (Lee, 2026-09-25). Closed by the retest after it merges.

@@ -1,7 +1,7 @@
 # 11-012 · Deleting an account deletes its code_redemptions rows, so a used code may work again after a new signup
 
 - kind: ssot-conflict
-- status: open
+- status: triaged
 - ticket: 11
 - run: w5-20260924T0840Z
 - screen: Paywall ⋯ menu, Delete account
@@ -26,4 +26,4 @@ Both redemption rows went with the account (cascade on the user); per-code count
 > Every Code works once per account, and a giveaway works once in total unless its row allows more; the days a Code grants are set on its row. (mp-535)
 
 **Triage.**
-
+Fix ticket 39 (Lee, 2026-09-25). Closed by the retest after it merges.

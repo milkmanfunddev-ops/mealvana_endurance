@@ -1,7 +1,7 @@
 # 11-011 · ci_config_contract_test is red at the wave base: the 'a push to develop runs the dev tests' check fails
 
 - kind: bug
-- status: open
+- status: triaged
 - ticket: 11
 - run: w5-20260924T0840Z
 - screen: none
@@ -24,4 +24,4 @@ Green, or the check changed to match the current CI rule.
 > 
 
 **Triage.**
-
+Fix ticket 57 (Lee, 2026-09-25). Closed by the retest after it merges.

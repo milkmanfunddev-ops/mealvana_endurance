@@ -1,7 +1,7 @@
 # 28-002 · The barcode-scanner route drops the caller's context, so a scan from meal logging goes to the plan's food page
 
 - kind: bug
-- status: open
+- status: triaged
 - ticket: 28
 - run: w15-20260924T2040Z
 - screen: Scan to Add Food (from Log — Sep 23 and from Build a Meal → Add food)
@@ -29,3 +29,4 @@ The Patrol flow `integration_test/flows/barcode_scanner_entry_flow_test.dart` on
 > 
 
 **Triage.**
+Fix ticket 44 (Lee, 2026-09-25). Closed by the retest after it merges.

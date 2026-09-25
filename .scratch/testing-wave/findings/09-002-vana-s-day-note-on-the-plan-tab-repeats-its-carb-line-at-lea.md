@@ -1,7 +1,7 @@
 # 09-002 · Vana's day note on the Plan tab repeats its carb line (At least 272g carbs — At least 272g carbs) and ends with two full stops
 
 - kind: bug
-- status: open
+- status: triaged
 - ticket: 09
 - run: w7-20260924T1219Z
 - screen: Food (Plan tab)
@@ -24,4 +24,4 @@ The card reads "Rest day. At least 272g carbs — At least 272g carbs, protein a
 > 
 
 **Triage.**
-
+Fix ticket 55 (Lee, 2026-09-25). Closed by the retest after it merges.

@@ -1,7 +1,7 @@
 # 27-002 · Editing or deleting a meal log rewrites the server's created_at from the phone's copy, cut to whole seconds
 
 - kind: bug
-- status: open
+- status: triaged
 - ticket: 27
 - run: w15-20260924T2039Z
 - screen: Timeline row → Edit Meal / Remove (sync to dev meal_logs)
@@ -28,3 +28,4 @@ After the edit, 1ce8b3b7's created_at reads 20:43:41+00 (fraction gone); after t
 > 
 
 **Triage.**
+Fix ticket 54 (Lee, 2026-09-25). Closed by the retest after it merges.

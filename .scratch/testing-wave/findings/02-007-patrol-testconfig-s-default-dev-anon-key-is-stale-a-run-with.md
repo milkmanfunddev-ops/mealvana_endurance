@@ -1,7 +1,7 @@
 # 02-007 · Patrol TestConfig's default dev anon key is stale: a run without an env file gets 'Invalid API key' on every auth call
 
 - kind: bug
-- status: open
+- status: triaged
 - ticket: 02
 - run: w2-20260923T1442Z
 - screen: none
@@ -28,3 +28,4 @@ default, and SupabaseProbe with it, fails to authenticate. Runs with the env fil
 > 
 
 **Triage.**
+Fix ticket 57 (Lee, 2026-09-25). Closed by the retest after it merges.

@@ -1,7 +1,7 @@
 # 19-001 · Deleting the confirmed plan's list opens an archived draft's list as the current list, with Shop with Kroger
 
 - kind: bug
-- status: open
+- status: triaged
 - ticket: 19
 - run: w11-20260924T1647Z
 - screen: Food (Shopping sub-tab)
@@ -28,3 +28,4 @@ The tab fell back to list 9bdc9556 "Week of 2026-09-20", 6 items (Bell pepper, M
 > 
 
 **Triage.**
+Fix ticket 35 (Lee, 2026-09-25). Closed by the retest after it merges.

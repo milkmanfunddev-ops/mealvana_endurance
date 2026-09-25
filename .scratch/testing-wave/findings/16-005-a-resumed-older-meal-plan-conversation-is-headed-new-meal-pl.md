@@ -1,7 +1,7 @@
 # 16-005 · A resumed older meal-plan conversation is headed New meal plan
 
 - kind: bug
-- status: open
+- status: triaged
 - ticket: 16
 - run: w9-20260924T1446Z
 - screen: Vana chat (meal planning)
@@ -24,4 +24,4 @@ Both headers read "New meal plan", including one whose plan bar says "Plan confi
 > 
 
 **Triage.**
-
+Fix ticket 48 (Lee, 2026-09-25). Closed by the retest after it merges.

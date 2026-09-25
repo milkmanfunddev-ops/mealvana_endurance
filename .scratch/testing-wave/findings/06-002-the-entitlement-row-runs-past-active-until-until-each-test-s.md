@@ -1,7 +1,7 @@
 # 06-002 · The Entitlement row runs past active_until until each Test Store renewal lands (2.5 min here), and the server's Pro check has no grace, so a paying account's AI calls would be refused in that gap
 
 - kind: ssot-conflict
-- status: open
+- status: triaged
 - ticket: 06
 - run: w6-20260924T1117Z
 - screen: none
@@ -45,3 +45,4 @@ and reads it differently (renewals landing when the app fetches); read the two t
 > The Gate gives one of two answers: open (Pro is live, or the account is an Admin) or closed (no live Pro, whether the account never had it or it ran out). Closed lands on the full-screen paywall and stays there; there is no read-only mode, no plan-ended bar and no write check in the app. The server refuses AI calls for an account without Pro on its own. Example: an athlete's trial ends unpaid on 8 October; on 9 October the app opens on the paywall, just as it did on the day they signed up.
 
 **Triage.**
+Fix ticket 38 (Lee, 2026-09-25). Closed by the retest after it merges.

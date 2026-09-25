@@ -1,7 +1,7 @@
 # 17-003 · Previous plans sheet can sit on a spinner for 8 s (list_plans took 8062 ms)
 
 - kind: bug
-- status: open
+- status: triaged
 - ticket: 17
 - run: w12-20260924T1712Z
 - screen: Previous plans (sheet)
@@ -27,3 +27,4 @@ Five seconds after the tap only the spinner showed, and the tap meant for a row 
 > 
 
 **Triage.**
+Fix ticket 49 (Lee, 2026-09-25). Closed by the retest after it merges.

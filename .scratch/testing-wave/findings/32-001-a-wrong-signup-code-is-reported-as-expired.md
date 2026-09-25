@@ -1,7 +1,7 @@
 # 32-001 · A wrong signup code is reported as expired
 
 - kind: bug
-- status: open
+- status: triaged
 - ticket: 32
 - run: w9-20260924T1447Z
 - screen: Verify your email
@@ -34,3 +34,4 @@ expired, which sends the athlete to Resend instead of rechecking the digits. Cau
 > 
 
 **Triage.**
+Fix ticket 53 (Lee, 2026-09-25). Closed by the retest after it merges.

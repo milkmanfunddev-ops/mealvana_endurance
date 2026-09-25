@@ -1,7 +1,7 @@
 # 16-001 · Confirm plan in the Draft's conversation confirmed the week's old plan and archived the Draft it showed
 
 - kind: bug
-- status: open
+- status: triaged
 - ticket: 16
 - run: w9-20260924T1446Z
 - screen: Vana chat → Review plan sheet (Confirm plan)
@@ -37,4 +37,4 @@ Not stopped: the list-vs-plan comparison still ran on the plan the server confir
 > Every conversation with Vana builds its own Draft, so an athlete can hold any number of drafts but only one confirmed plan per week. Confirming a draft archives every other plan for that week, drafts from other conversations included, and the Plan tab keeps the confirmed plan until a new one is confirmed. "New meal plan" archives the plan it is on and starts a fresh, empty draft. Example: an athlete starts a draft in Monday's conversation and another in Wednesday's; confirming Wednesday's archives Monday's draft and the week's old confirmed plan.
 
 **Triage.**
-
+Fix ticket 34 (Lee, 2026-09-25). Closed by the retest after it merges.

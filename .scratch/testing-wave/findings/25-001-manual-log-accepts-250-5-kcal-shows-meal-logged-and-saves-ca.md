@@ -1,7 +1,7 @@
 # 25-001 · Manual log accepts 250.5 kcal, shows Meal logged!, and saves calories as null (timeline reads 0 kcal)
 
 - kind: bug
-- status: open
+- status: triaged
 - ticket: 25
 - run: w14-20260924T2015Z
 - screen: Log a Meal → Manual tab
@@ -29,3 +29,4 @@ Row a61f94fd (created 20:19:13Z) has `calories: null`. Carbs 30.2, protein 12.25
 > 
 
 **Triage.**
+Fix ticket 41 (Lee, 2026-09-25). Closed by the retest after it merges.

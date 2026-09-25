@@ -1,7 +1,7 @@
 # 06-003 · The Sign Out dialog says you'll continue using the app as a guest, but sign-out lands on the welcome screen and there is no guest mode
 
 - kind: bug
-- status: open
+- status: triaged
 - ticket: 06
 - run: w6-20260924T1117Z
 - screen: Settings
@@ -31,3 +31,4 @@ above), not in the content system.
 > 
 
 **Triage.**
+Fix ticket 47 (Lee, 2026-09-25). Closed by the retest after it merges.

@@ -1,7 +1,7 @@
 # 14-003 · Plan tab right after login listed a fifth meal that no plan on dev holds, gone seconds later
 
 - kind: bug
-- status: open
+- status: triaged
 - ticket: 14
 - run: w8-20260924T1418Z
 - screen: Plan tab
@@ -27,4 +27,4 @@ At 14:21:06Z the header read "Sep 20 – Sep 26 · 5 meals" and listed a fifth d
 > 
 
 **Triage.**
-
+Fix ticket 33 (Lee, 2026-09-25). Closed by the retest after it merges.

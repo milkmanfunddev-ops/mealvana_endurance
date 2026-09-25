@@ -1,6 +1,6 @@
 # 21-003 · The Kroger sign-in system alert names the app mealvana_endurance instead of its display name
 - kind: bug
-- status: open
+- status: triaged
 - ticket: 21
 - run: w17-20260924T2233Z
 - screen: Shop with Kroger
@@ -22,3 +22,4 @@ The alert reads "“mealvana_endurance” Wants to Use “kroger.com” to Sign 
 > 
 
 **Triage.**
+Fix ticket 56 (Lee, 2026-09-25). Closed by the retest after it merges.

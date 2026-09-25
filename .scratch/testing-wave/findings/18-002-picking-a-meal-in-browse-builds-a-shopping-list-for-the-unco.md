@@ -1,7 +1,7 @@
 # 18-002 · Picking a meal in Browse builds a shopping list for the unconfirmed draft, and the Shopping tab then shows that draft's list instead of the confirmed plan's
 
 - kind: ssot-conflict
-- status: open
+- status: triaged
 - ticket: 18
 - run: w16-20260924T2100Z
 - screen: Browse meals, then Food (Shopping sub-tab)
@@ -30,4 +30,4 @@ The first Add created draft 173cebb2 (week 2026-09-20, conversation 0401b3d8) an
 > The server adds up the list by fixed rules when the athlete confirms, Confirm waits until the server says it is done, and the list is rebuilt after every plan edit; the phone never works it out itself. The tab shows nine aisle groups, each row with a checkbox and a quantity, in imperial units unless Settings says metric; a row used by more than one meal carries a count that opens a list of those meals, which is also the way back to their recipes. Items marked as had are hidden and only Vana's "Add back" brings them back; there is no per-row "have it" switch and no pickup button, and Share sends plain text. Example: two meals in the plan both use onions, so the list shows one onion row with a count of 2 in imperial units, and tapping the count lists both meals and leads back to either recipe.
 
 **Triage.**
-
+Fix ticket 35 (Lee, 2026-09-25). Closed by the retest after it merges.

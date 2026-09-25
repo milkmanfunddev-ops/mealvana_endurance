@@ -1,7 +1,7 @@
 # 03-007 · My Events: with a full list, New Event comes to rest under the floating tab bar
 
 - kind: bug
-- status: open
+- status: triaged
 - ticket: 03
 - run: w3-20260923T1942Z
 - screen: My Events
@@ -37,4 +37,4 @@ made both flows let the list come to rest before tapping, so they stay red until
 > 
 
 **Triage.**
-
+Fix ticket 52 (Lee, 2026-09-25). Closed by the retest after it merges.

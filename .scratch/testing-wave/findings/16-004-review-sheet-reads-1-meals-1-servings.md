@@ -1,7 +1,7 @@
 # 16-004 · Review sheet reads 1 meals, 1 servings
 
 - kind: bug
-- status: open
+- status: triaged
 - ticket: 16
 - run: w9-20260924T1446Z
 - screen: Review plan sheet
@@ -23,4 +23,4 @@
 > 
 
 **Triage.**
-
+Fix ticket 48 (Lee, 2026-09-25). Closed by the retest after it merges.

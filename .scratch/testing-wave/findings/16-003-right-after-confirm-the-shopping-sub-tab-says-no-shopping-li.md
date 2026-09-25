@@ -1,7 +1,7 @@
 # 16-003 · Right after Confirm the Shopping sub-tab says No shopping list for several seconds while the confirmed list exists
 
 - kind: bug
-- status: open
+- status: triaged
 - ticket: 16
 - run: w9-20260924T1446Z
 - screen: Food (Shopping sub-tab)
@@ -27,4 +27,4 @@ At 14:54:17Z the tab showed the empty state "No shopping list. Confirm a meal pl
 > 
 
 **Triage.**
-
+Fix ticket 46 (Lee, 2026-09-25). Closed by the retest after it merges.

@@ -1,7 +1,7 @@
 # 14-004 · After signing in as test@test.com the phone's local database still holds another account's plans, logs, activities and events
 
 - kind: bug
-- status: open
+- status: triaged
 - ticket: 14
 - run: w8-20260924T1418Z
 - screen: Welcome → Log in (email) → Timeline
@@ -25,4 +25,4 @@ The local database holds rows of user 37129f7e (Lee's own dev account): meal_pla
 > 
 
 **Triage.**
-
+Fix ticket 33 (Lee, 2026-09-25). Closed by the retest after it merges.

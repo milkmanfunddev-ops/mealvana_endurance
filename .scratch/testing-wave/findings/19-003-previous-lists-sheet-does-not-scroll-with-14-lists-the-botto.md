@@ -1,7 +1,7 @@
 # 19-003 · Previous lists sheet does not scroll: with 14 lists the bottom overflows by 80 px and the last lists cannot be reached
 
 - kind: bug
-- status: open
+- status: triaged
 - ticket: 19
 - run: w11-20260924T1647Z
 - screen: Food (Shopping sub-tab) > Previous lists
@@ -27,3 +27,4 @@ The sheet shows a yellow-black "BOTTOM OVERFLOWED BY 80 PIXELS" stripe over the 
 > 
 
 **Triage.**
+Fix ticket 49 (Lee, 2026-09-25). Closed by the retest after it merges.

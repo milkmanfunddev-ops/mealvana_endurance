@@ -1,7 +1,7 @@
 # 15-002 · The opener's closing question shows twice: in Vana's bubble and again above the choice chips
 
 - kind: bug
-- status: open
+- status: triaged
 - ticket: 15
 - run: w12-20260924T1712Z
 - screen: Vana chat (meal planning), opened from Conversations
@@ -25,3 +25,4 @@ The bubble ends "…How much cooking do you want to do this week: batch one or t
 > 
 
 **Triage.**
+Fix ticket 48 (Lee, 2026-09-25). Closed by the retest after it merges.

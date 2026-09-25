@@ -1,7 +1,7 @@
 # 24-002 · diary_closed reports items_logged 0 when a photo meal is analyzed and then logged from Review & Log
 
 - kind: bug
-- status: open
+- status: triaged
 - ticket: 24
 - run: w14-20260924T2015Z
 - screen: Log a Meal (Describe, photo) and Review & Log
@@ -31,3 +31,4 @@ abandoned diary. The meal itself saved correctly.
 > 
 
 **Triage.**
+Fix ticket 50 (Lee, 2026-09-25). Closed by the retest after it merges.

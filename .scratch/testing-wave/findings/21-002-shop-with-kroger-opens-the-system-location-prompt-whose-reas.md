@@ -1,6 +1,6 @@
 # 21-002 · Shop with Kroger opens the system location prompt, whose reason text talks about weather forecasts
 - kind: bug
-- status: open
+- status: triaged
 - ticket: 21
 - run: w17-20260924T2233Z
 - screen: Shop with Kroger
@@ -24,3 +24,4 @@ The first thing on screen is iOS's "Allow “Endurance Dev” to use your locati
 > 
 
 **Triage.**
+Fix ticket 56 (Lee, 2026-09-25). Closed by the retest after it merges.

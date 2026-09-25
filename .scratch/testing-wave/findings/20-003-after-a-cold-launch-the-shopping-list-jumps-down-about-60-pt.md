@@ -1,7 +1,7 @@
 # 20-003 · After a cold launch the Shopping list jumps down about 60 pt a few seconds after it appears, when the server's list replaces the local copy
 
 - kind: bug
-- status: open
+- status: triaged
 - ticket: 20
 - run: w10-20260924T1614Z
 - screen: Food (Shopping sub-tab)
@@ -27,4 +27,4 @@ At 1 s the tab showed the list with no "Shop with Kroger" button and the rows st
 > 
 
 **Triage.**
-
+Fix ticket 46 (Lee, 2026-09-25). Closed by the retest after it merges.

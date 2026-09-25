@@ -1,7 +1,7 @@
 # 09-009 · After the lapse RevenueCat ends Pro at 12:56:29 but the Entitlement row says 12:59:36, the time the EXPIRATION webhook arrived (mp-609 clause 4)
 
 - kind: idea
-- status: open
+- status: triaged
 - ticket: 09
 - run: w7-20260924T1219Z
 - screen: none
@@ -27,4 +27,4 @@ Until 12:59:36Z the row said `active_until 12:56:29.761`, equal to RevenueCat. T
 > 
 
 **Triage.**
-
+Fix ticket 38 (Lee, 2026-09-25). Closed by the retest after it merges.

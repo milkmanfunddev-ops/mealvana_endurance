@@ -1,7 +1,7 @@
 # 11-005 · The success message after a redeem covers the paywall's Continue button
 
 - kind: bug
-- status: open
+- status: triaged
 - ticket: 11
 - run: w5-20260924T0840Z
 - screen: Paywall
@@ -25,4 +25,4 @@ The green success message ("Code redeemed. Your coach will see your request to p
 > When the Code works, the sheet closes and a message at the bottom of the screen says what it did.
 
 **Triage.**
-
+Fix ticket 52 (Lee, 2026-09-25). Closed by the retest after it merges.

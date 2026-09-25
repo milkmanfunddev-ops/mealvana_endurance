@@ -1,7 +1,7 @@
 # 28-001 · Granting camera access on the scanner leaves a raw 'MobileScannerController is already running' error that Reset cannot clear
 
 - kind: bug
-- status: open
+- status: triaged
 - ticket: 28
 - run: w15-20260924T2040Z
 - screen: Scan to Add Food (barcode scanner)
@@ -36,3 +36,4 @@ No Flutter error line was printed; the console shows only the TCC camera grant a
 > 
 
 **Triage.**
+Fix ticket 44 (Lee, 2026-09-25). Closed by the retest after it merges.

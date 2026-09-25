@@ -1,7 +1,7 @@
 # 27-003 · Removing a meal from the timeline sends no meal_log_deleted analytics event, and diary_closed reports items_logged 0 after two manual logs
 
 - kind: bug
-- status: open
+- status: triaged
 - ticket: 27
 - run: w15-20260924T2039Z
 - screen: Timeline row → Remove; Log a Meal close
@@ -27,3 +27,4 @@ meal_logged ×2 and meal_log_updated are printed. diary_closed prints items_logg
 > 
 
 **Triage.**
+Fix ticket 50 (Lee, 2026-09-25). Closed by the retest after it merges.

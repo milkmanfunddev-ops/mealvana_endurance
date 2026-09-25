@@ -1,7 +1,7 @@
 # 05-006 · scripts/edge_logs.sh prints no rows since Supabase removed the logs.all endpoint, so a webhook check reads as not fired
 
 - kind: bug
-- status: open
+- status: triaged
 - ticket: 05
 - run: w5-20260924T0839Z
 - screen: none
@@ -26,4 +26,4 @@ The Management API now answers `GET …/analytics/endpoints/logs.all` with HTTP 
 > 
 
 **Triage.**
-
+Fix ticket 57 (Lee, 2026-09-25). Closed by the retest after it merges.
