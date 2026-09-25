@@ -1,0 +1,12 @@
+## 20:24:05Z week 2026-09-20 plans
+id	status	conv	confirmed_at	meals	upd
+be6abf2f	archived	f6a0f7fa	2026-09-24 16:53:19.994+00	5	20:21:43
+173cebb2	archived	0401b3d8	None	2	20:21:43
+1192963b	archived	-	None	4	20:21:43
+8ebeb6da	confirmed	449da56d	2026-09-25 20:21:43.539435+00	2	20:21:43
+9598807a	archived	-	None	6	20:10:37
+54a02440	archived	d8efbdb3	None	2	20:02:00
+15b6b4f4	archived	ebac747d	None	4	19:58:11
+6f365c30	archived	0b7df6f0	None	2	01:10:06
+b82409d9	archived	1f805690	None	0	01:10:06
+## sheet 20:23:54Z: Sep 20 – Sep 26 · 5 meals (no badge); Sep 13 Confirmed 6; Sep 6 Confirmed 4; Aug 30 Confirmed 3
