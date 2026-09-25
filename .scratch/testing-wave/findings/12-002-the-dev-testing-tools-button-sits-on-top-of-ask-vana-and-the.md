@@ -1,7 +1,7 @@
 # 12-002 · The dev testing-tools button sits on top of Ask Vana and the Vana Send button: tapping Ask Vana opened UI settings
 
 - kind: bug
-- status: open
+- status: triaged
 - ticket: 12
 - run: w4-20260924T0417Z
 - screen: Timeline
@@ -29,3 +29,4 @@ The blue "Open testing tools" button (344,782 48×48 pt) overlaps Ask Vana (336,
 
 **Triage.**
 
+Fix ticket 68 (Lee, 2026-09-25). Closed by the retest after it merges.

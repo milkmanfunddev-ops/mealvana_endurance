@@ -1,7 +1,7 @@
 # 15-001 · An archived Draft's conversation shows it as a live Draft: 4 meals, editable servings, Review plan with Confirm plan
 
 - kind: ssot-conflict
-- status: open
+- status: triaged
 - ticket: 15
 - run: w12-20260924T1712Z
 - screen: Vana chat (meal planning), opened from Conversations
@@ -29,3 +29,5 @@ The plan bar reads "Your plan · 4 meals" with an orange Review plan button, the
 > Every conversation with Vana builds its own Draft, so an athlete can hold any number of drafts but only one confirmed plan per week. Confirming a draft archives every other plan for that week, drafts from other conversations included, and the Plan tab keeps the confirmed plan until a new one is confirmed. "New meal plan" archives the plan it is on and starts a fresh, empty draft. Example: an athlete starts a draft in Monday's conversation and another in Wednesday's; confirming Wednesday's archives Monday's draft and the week's old confirmed plan.
 
 **Triage.**
+
+Fix ticket 71 (Lee, 2026-09-25). Closed by the retest after it merges.

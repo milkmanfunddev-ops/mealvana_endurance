@@ -1,7 +1,7 @@
 # 06-009 · A hung Patrol run had to be killed, and the simulator shut down with it
 
 - kind: bug
-- status: open
+- status: wontfix
 - ticket: 06
 - run: w6-20260924T1117Z
 - screen: none
@@ -26,3 +26,4 @@ Patrol hung from the failure until it was killed at 11:55Z, and the simulator sh
 
 **Triage.**
 
+Won't fix (Lee, 2026-09-25): Patrol left the testing waves on 2026-09-24, so no Patrol run hangs a wave simulator any more.

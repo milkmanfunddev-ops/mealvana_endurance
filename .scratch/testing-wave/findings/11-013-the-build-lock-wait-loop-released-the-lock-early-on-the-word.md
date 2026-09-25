@@ -1,7 +1,7 @@
 # 11-013 · The build-lock wait loop released the lock early on the word error in a Swift Package Manager warning
 
 - kind: bug
-- status: open
+- status: wontfix
 - ticket: 11
 - run: w5-20260924T0840Z
 - screen: none
@@ -25,3 +25,4 @@ The loop matched the warning and released the build lock about a minute before t
 
 **Triage.**
 
+Won't fix (Lee, 2026-09-25): the build lock was removed on 2026-09-24; the wave lead builds once.

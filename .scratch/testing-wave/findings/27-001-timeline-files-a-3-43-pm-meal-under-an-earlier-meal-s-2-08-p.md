@@ -1,7 +1,7 @@
 # 27-001 · Timeline files a 3:43 PM meal under an earlier meal's 2:08 PM time card of the same meal type, and two same-time cards swap order after a delete
 
 - kind: bug
-- status: open
+- status: triaged
 - ticket: 27
 - run: w15-20260924T2039Z
 - screen: Timeline (Meals filter, also All)
@@ -28,3 +28,5 @@ Each meal sits under its own eaten time (3:43 PM), in time order, as Today's Fue
 > 
 
 **Triage.**
+
+Fix ticket 59 (Lee, 2026-09-25). Closed by the retest after it merges.

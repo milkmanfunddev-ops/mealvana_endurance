@@ -1,6 +1,6 @@
 # 21-001 · Kroger connects to production, not the certification environment the spec names
 - kind: bug
-- status: open
+- status: closed
 - ticket: 21
 - run: w17-20260924T2233Z
 - screen: Shop with Kroger
@@ -29,3 +29,5 @@ The connection is to Kroger production. The sheet opened on `login.kroger.com` (
 
 **Triage.**
 Lee, 2026-09-24: dev uses Kroger Certification. The wave lead switched dev's secrets back (`scripts/kroger-dev-admin.mjs secrets` + `enable`, `verify-enabled` reports certification; docs/kroger/DEPLOYMENT.md). The retest is ticket 22: reconnect first, then check that the stored row says `certification`.
+
+Closed (Lee, 2026-09-25): Lee picked certification and dev was switched back (`3ac7c5bf`); wave 18 saw the certification line and `login-stage.kroger.com`.

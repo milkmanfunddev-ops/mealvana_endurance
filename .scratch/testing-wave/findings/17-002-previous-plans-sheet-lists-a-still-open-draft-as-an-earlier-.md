@@ -1,7 +1,7 @@
 # 17-002 · Previous plans sheet lists a still-open draft as an earlier plan
 
 - kind: bug
-- status: open
+- status: triaged
 - ticket: 17
 - run: w12-20260924T1712Z
 - screen: Previous plans (sheet) and the earlier plan view
@@ -29,3 +29,5 @@ Open product question: should a past week's leftover draft appear in the athlete
 > 
 
 **Triage.**
+
+Fix ticket 73 (Lee, 2026-09-25). Closed by the retest after it merges.

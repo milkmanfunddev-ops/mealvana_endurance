@@ -1,7 +1,7 @@
 # 29-001 · Three of the four meals in the confirmed plan show no kcal or macros: 31 active library meals have null nutrition and the plan picked three
 
 - kind: bug
-- status: open
+- status: triaged
 - ticket: 29
 - run: w16-20260924T2100Z
 - screen: Food > Plan
@@ -29,3 +29,4 @@ Only "Wholewheat pasta, mixed veg & avocado" (AD-014) shows 520 kcal · 75g C ·
 
 **Triage.**
 
+Fix ticket 61 (Lee, 2026-09-25). Closed by the retest after it merges.

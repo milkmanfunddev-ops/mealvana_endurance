@@ -1,7 +1,7 @@
 # 08-006 · Parallel testing-wave agents share one scratchpad folder, and ticket 09's helper scripts overwrote ticket 08's mid-run, one pointing at the other agent's simulator
 
 - kind: bug
-- status: open
+- status: closed
 - ticket: 08
 - run: w7-20260924T1216Z
 - screen: none
@@ -26,3 +26,5 @@ Ticket 09's files replaced ticket 08's. From about 12:28Z, 08's `ui.py` targeted
 > 
 
 **Triage.**
+
+Closed (Lee, 2026-09-25): each ticket has its own scratch folder since wave 8 (IMPROVEMENTS #26), and waves 8-18 ran with no overlap.

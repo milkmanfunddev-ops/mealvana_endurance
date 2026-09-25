@@ -1,7 +1,7 @@
 # 07-002 · The saved RevenueCat copy said active at a cold launch 2 minutes after its own expiry, while RevenueCat held no active entitlement
 
 - kind: ssot-conflict
-- status: open
+- status: triaged
 - ticket: 07
 - run: w6-20260924T1118Z
 - screen: Timeline
@@ -31,3 +31,5 @@ last fetch has no evidence in the run.
 > On a phone the Gate reads the copy of RevenueCat's answer saved on the device, so it answers at once after a purchase and works offline; the web build has no RevenueCat and reads the server's Entitlement row instead, which opens the coach portal on the web. Startup waits for the Gate, at most two seconds, so a subscriber never sees the paywall flash, and the saved copy counts only once it belongs to the signed-in account. The router is the one place that sends people to or from the paywall, so an account with access can never see it, and the old tester shortcuts and switches are gone.
 
 **Triage.**
+
+Fix ticket 67 (Lee, 2026-09-25). Closed by the retest after it merges.

@@ -1,7 +1,7 @@
 # 03-003 · The Patrol integration-test account is lapsed on dev, so every credentialed flow meets the paywall
 
 - kind: bug
-- status: open
+- status: closed
 - ticket: 03
 - run: w3-20260923T1942Z
 - screen: Paywall
@@ -37,3 +37,4 @@ this run did not write it (the runbook allows only writes a ticket names).
 
 **Triage.**
 
+Closed (Lee, 2026-09-25): the Patrol account was made `is_admin` on dev in wave 7.

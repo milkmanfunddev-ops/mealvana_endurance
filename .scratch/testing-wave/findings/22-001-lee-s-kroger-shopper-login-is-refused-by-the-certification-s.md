@@ -1,6 +1,6 @@
 # 22-001 · Lee's Kroger shopper login is refused by the certification sign-in page (login-stage.kroger.com)
 - kind: bug
-- status: open
+- status: wontfix
 - ticket: 22
 - run: w18-20260925T0127Z
 - screen: Kroger sign-in sheet
@@ -34,3 +34,5 @@ The environment is right this time: certification line on the screen (09-), shee
 > 
 
 **Triage.**
+
+Won't fix as an app bug (Lee, 2026-09-25): Kroger's certification site does not know a production shopper account. Ticket 22 waits on a certification shopper login or a ruling to run on production (IMPROVEMENTS #52).

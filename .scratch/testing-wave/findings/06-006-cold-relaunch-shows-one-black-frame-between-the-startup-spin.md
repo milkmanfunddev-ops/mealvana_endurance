@@ -1,6 +1,6 @@
 # 06-006 · Cold relaunch shows one black frame between the startup spinner and the timeline
 
-- kind: bug
+- kind: followup-test
 - status: open
 - ticket: 06
 - run: w6-20260924T1117Z
@@ -25,3 +25,5 @@ be the route swap from the startup screen to `/main`.
 > 
 
 **Triage.**
+
+Made a follow-up test (Lee, 2026-09-25): seen once, not reproduced. The retest watches a cold relaunch; closed if no black frame shows.

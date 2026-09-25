@@ -1,7 +1,7 @@
 # 08-001 · The Subscription screen says Subscribed and never names the plan bought (Monthly), which the ticket card mp-628 asks for
 
 - kind: ssot-conflict
-- status: open
+- status: triaged
 - ticket: 08
 - run: w7-20260924T1216Z
 - screen: Subscription
@@ -25,3 +25,5 @@ The status card reads "Subscribed" and "Renews on September 24, 2026." Nothing n
 > The paid athlete opens the Subscription screen and sees the plan they bought, the date it renews or ends as RevenueCat has it, and Manage subscription.
 
 **Triage.**
+
+Fix ticket 66 (Lee, 2026-09-25). Closed by the retest after it merges.

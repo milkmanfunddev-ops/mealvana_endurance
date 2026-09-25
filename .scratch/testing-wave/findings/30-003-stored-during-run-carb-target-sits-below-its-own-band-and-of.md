@@ -1,7 +1,7 @@
 # 30-003 · Stored during-run carb target sits below its own band and off the ratified during-carbs math (91 g vs 97-126 g)
 
 - kind: bug
-- status: open
+- status: triaged
 - ticket: 30
 - run: w10-20260924T1615Z
 - screen: Activity detail (12 mi Run, fuelling plan)
@@ -34,3 +34,5 @@ The screen shows DURING carbs 92 g in pink with an info icon, marker left of a 9
 > - Body weight does NOT affect during-carbs (Jeukendrup 2014 — gut absorption isn't weight-scaled).
 
 **Triage.**
+
+Fix ticket 63 (Lee, 2026-09-25). Closed by the retest after it merges.

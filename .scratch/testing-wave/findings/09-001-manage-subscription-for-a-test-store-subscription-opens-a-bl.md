@@ -1,7 +1,7 @@
 # 09-001 · Manage subscription for a Test Store subscription opens a blank Safari start page, so the Test Store monthly cannot be cancelled in the app
 
 - kind: bug
-- status: open
+- status: triaged
 - ticket: 09
 - run: w7-20260924T1219Z
 - screen: Subscription
@@ -27,3 +27,4 @@ The app hands off to Safari, which opens on its blank Start Page (no URL, no Rev
 
 **Triage.**
 
+Fix ticket 66 (Lee, 2026-09-25). Closed by the retest after it merges.

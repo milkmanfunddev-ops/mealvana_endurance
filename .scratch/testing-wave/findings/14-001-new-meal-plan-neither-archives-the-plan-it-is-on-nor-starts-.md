@@ -1,7 +1,7 @@
 # 14-001 · New meal plan neither archives the plan it is on nor starts a draft; the draft appears at the first pick and the old plan stays confirmed
 
 - kind: ssot-conflict
-- status: open
+- status: triaged
 - ticket: 14
 - run: w8-20260924T1418Z
 - screen: Plan tab → Vana chat (New meal plan)
@@ -38,3 +38,4 @@ mp-241 disagrees with itself here: its second sentence says "the Plan tab keeps 
 
 **Triage.**
 
+Fix ticket 70 (Lee, 2026-09-25). Closed by the retest after it merges.

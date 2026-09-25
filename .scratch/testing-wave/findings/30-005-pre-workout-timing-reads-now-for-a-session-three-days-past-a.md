@@ -1,7 +1,7 @@
 # 30-005 · Pre-workout timing reads NOW for a session three days past and nine hours ahead
 
 - kind: bug
-- status: open
+- status: triaged
 - ticket: 30
 - run: w10-20260924T1615Z
 - screen: Activity detail (fuelling plan, BEFORE)
@@ -28,3 +28,5 @@ The stored windows: snack "2H TO 30 MIN OUT", top-off "LAST 30 MIN". A relative 
 > 
 
 **Triage.**
+
+Fix ticket 62 (Lee, 2026-09-25). Closed by the retest after it merges.

@@ -1,7 +1,7 @@
 # 03-001 · Patrol reports a self-skipped flow as passed, so the runner's no-skip check never fired
 
 - kind: bug
-- status: open
+- status: wontfix
 - ticket: 03
 - run: w3-20260923T1942Z
 - screen: none
@@ -43,3 +43,5 @@ is suspect, and the fix only covers flows that go through `skipFlow`.
 > 
 
 **Triage.**
+
+Won't fix (Lee, 2026-09-25): fixed in wave 3 (`PATROL_FAIL_ON_SKIP`, `skipFlow()`), and Patrol left the testing waves on 2026-09-24.

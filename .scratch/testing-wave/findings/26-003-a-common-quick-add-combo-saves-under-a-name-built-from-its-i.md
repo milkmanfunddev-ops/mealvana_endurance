@@ -1,7 +1,7 @@
 # 26-003 · A Common quick-add combo saves under a name built from its items, not the name on the tile
 
 - kind: bug
-- status: open
+- status: triaged
 - ticket: 26
 - run: w13-20260924T1904Z
 - screen: Log a Meal (Common) → quick log sheet
@@ -28,3 +28,5 @@ Row f952f981 is named "Rolled oats and Raisins" (`deriveMealName` over the two i
 > 
 
 **Triage.**
+
+Fix ticket 58 (Lee, 2026-09-25). Closed by the retest after it merges.

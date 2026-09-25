@@ -1,7 +1,7 @@
 # 03-008 · integrations_connect hangs to its 5-minute timeout in all three cases on iOS once Connect is tapped
 
 - kind: bug
-- status: open
+- status: wontfix
 - ticket: 03
 - run: w3-20260923T1942Z
 - screen: Connect Training Onboarding
@@ -39,3 +39,4 @@ not automatable. The flow is on the runner's exclusion list (clean-install).
 
 **Triage.**
 
+Won't fix (Lee, 2026-09-25): iOS's ASWebAuthenticationSession sheet cannot be automated; the flow stays on the runner's exclusion list (interactive-oauth).
