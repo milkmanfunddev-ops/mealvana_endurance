@@ -11,21 +11,16 @@ Each entry: what went wrong or cost time, where it was seen, and the suggested f
 
 ## Open
 
-- **#37 an SSOT clash with a ratified spec rule has no decision id (wave 10).** 30-003 contradicts
-  "The math (RATIFIED)" in `docs/ssot/spec/fueling/during-workout-carbs.md`. `findings.mjs` accepts an
-  ssot-conflict only with an `mp-NNN` id, so the agent filed it as a bug that quotes the spec.
-  Suggested fix: let `decision:` take a `docs/ssot/spec/...` path plus a heading, and have `index`
-  check that the quote appears in that file.
-
-- **#63 two waves of one feature open at once (wave 23).** While wave 23 (58, 71, 72) built, another
-  session ran triage 3 and opened wave 24 (74-85) on the same branch; `wave --open` allowed it
-  because 23's tickets were not on 24's frontier. Wave 23 then had to merge `mealplanning` again
-  before landing (Lee had also committed the other sessions' dirty Food-landing work, `db1da03b`,
-  which ticket 72 had half taken from a saved patch: 4 conflicts, all placement and comments).
-  The two waves overlap at `meal_logging_service.dart` (58 and 83). Suggested fix: `wave --open`
-  warns when another wave of the feature is open, and the second lead reads the first's touches.
+None.
 
 ## Done
+
+- **#37 spec clashes had no id.** `findings.mjs`: `decision:` also takes
+  `docs/ssot/spec/<path>.md#<heading>`; `index` checks the file, the heading and the quote
+  (`a5ac3bfe`, Lee 09-25).
+- **#63 two waves open at once.** `wave --open` holds back any ticket whose Touches overlap an open
+  wave's, and says which files; `--only` does not override it (`5a5b25f4`, Lee 09-25: fix the root,
+  file overlap, not a warning).
 
 - **#41 settings can't be cleared (Lee 09-25: fix the bug).** Fixed at the root: clearing First
   name, Last name or Email on Profile & Preferences now saves it cleared (`5ba1fa05`, 31-004; Email
