@@ -43,10 +43,6 @@ Each entry: what went wrong or cost time, where it was seen, and the suggested f
   reports connected only when the environments match). The agent adapted. Suggested fix: for a
   ticket that follows an environment switch, the lead reads the status path before writing the
   steps (same spirit as #47).
-- **#54 CF-2 conformance goes red in the early morning (wave 19).** At 04:40 local the CF-2
-  clamp-bound stepper test reads "1 h — early start" where it expects "Capped: session in …"; it
-  was red at the wave's base too and green in the afternoon waves. The test depends on the clock.
-  Suggested fix: pin the test's clock (a fixed `now` override) and file it as a Finding.
 - **#56 landing a merge over another session's dirty files (wave 19).** The main clone held
   two-day-old uncommitted edits to three files the wave changed, so a merge there would refuse.
   The lead merged, ran codegen, the suite and review in a clean `merge-19` worktree, then landed
@@ -54,6 +50,13 @@ Each entry: what went wrong or cost time, where it was seen, and the suggested f
   All three merged clean. Worth scripting if it recurs.
 
 ## Done
+
+- **#54 CF-2 conformance goes red in the early morning (wave 19).** At 04:40 local the CF-2
+  clamp-bound stepper test reads "1 h — early start" where it expects "Capped: session in …"; it
+  was red at the wave's base too and green in the afternoon waves. The test depends on the clock.
+  Suggested fix: pin the test's clock (a fixed `now` override) and file it as a Finding.
+  Done 09-25 (wave 22 prep): the caption test starts the session 45 min out, under the 60-min
+  early-start window, so the clamp binds at any hour.
 
 - **#55 fix waves deploy once, from the merged tree (wave 19).** Tickets 34, 37, 38 and 55 all
   changed `_shared/vana/`, so a deploy from one worktree would have overwritten another's. The lead

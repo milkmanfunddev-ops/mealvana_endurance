@@ -314,7 +314,9 @@ void main() {
     test('the clamp-bound state carries the Capped caption (AMENDED)', () {
       final container = makeContainer();
       final n = container.read(runningInputControllerProvider.notifier);
-      final start = DateTime.now().add(const Duration(minutes: 63));
+      // Under the 60-min early-start window, so the clamp binds at any hour
+      // (at 63 min a pre-07:00 start fits the early window and never clamps).
+      final start = DateTime.now().add(const Duration(minutes: 45));
       n.updateDateTime(
         start,
         TimeOfDay(hour: start.hour, minute: start.minute),
