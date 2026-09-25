@@ -659,6 +659,29 @@ void main() {
     expect(find.text('Welcome to Mealvana Endurance!'), findsOneWidget);
   });
 
+  // 10-002: an account whose Pro ended and who buys again from the lapsed
+  // paywall is welcomed back, not greeted as new.
+  testWidgets('a returning account that buys again is welcomed back', (
+    tester,
+  ) async {
+    final paywall = _RecordingPaywall();
+    await smokeScreen(
+      tester,
+      const PaywallScreen(),
+      overrides: _overrides(
+        paywall: () => paywall,
+        status: const SubscriptionStatus(active: false, hadPro: true),
+        hasSubscription: true,
+      ),
+    );
+
+    await tester.tap(find.byKey(_continue));
+    await tester.pumpAndSettle();
+    expect(paywall.bought, ['me_pro_annual']);
+    expect(find.text('Welcome back to Mealvana Endurance!'), findsOneWidget);
+    expect(find.text('Welcome to Mealvana Endurance!'), findsNothing);
+  });
+
   // 05-004: the Gate opens before the router has replaced the paywall; in
   // that window Continue must not come back live for a second purchase.
   testWidgets('after a purchase opens the app, Continue stays disabled until '

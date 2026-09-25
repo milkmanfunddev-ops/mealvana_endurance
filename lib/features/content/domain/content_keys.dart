@@ -17,6 +17,9 @@ class ContentKeys {
   static const String paywallRestoreSuccess = 'paywall.restore_success';
   static const String paywallRestoreNone = 'paywall.restore_none';
   static const String paywallPurchaseSuccess = 'paywall.purchase_success';
+  // A returning account (its Pro ended, `hadPro`) buying again (10-002).
+  static const String paywallPurchaseSuccessReturning =
+      'paywall.purchase_success_returning';
   static const String paywallPurchasePending = 'paywall.purchase_pending';
   static const String paywallPurchaseFailed = 'paywall.purchase_failed';
   static const String paywallManageUnavailable = 'paywall.manage_unavailable';
@@ -182,6 +185,10 @@ class ContentKeys {
   // confirm reuse the paywall's keys so the two screens read the same.
   static const String settingsSignOutConfirmBody =
       'settings.sign_out_confirm_body';
+  // The Profile & Preferences screen's own title (31-014): the settings
+  // screen, not onboarding's "Tell us about yourself".
+  static const String settingsProfilePreferencesTitle =
+      'settings.profile_preferences_title';
   static const String settingsProfileSection = 'settings.profile_section';
   static const String settingsPreferencesSection =
       'settings.preferences_section';

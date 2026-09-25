@@ -22,6 +22,7 @@ import 'package:mocktail/mocktail.dart';
 
 import 'package:mealvana_endurance/features/auth/data/user_repository.dart';
 import 'package:mealvana_endurance/features/auth/domain/user_preferences.dart';
+import 'package:mealvana_endurance/features/content/application/content_service.dart';
 import 'package:mealvana_endurance/features/daily_macros/domain/enums.dart';
 import 'package:mealvana_endurance/features/integrations/presentation/providers/integrations_providers.dart';
 import 'package:mealvana_endurance/features/nutrition_plan/domain/nutrition_target_overrides.dart';
@@ -35,6 +36,7 @@ import 'package:mealvana_endurance/features/settings/presentation/screens/prefer
 import 'package:mealvana_endurance/features/settings/presentation/screens/sweat_profile_screen.dart';
 import 'package:mealvana_endurance/shared/providers/unit_system_provider.dart';
 
+import '../features/meal_planning/presentation/helpers/test_content.dart';
 import '../helpers/widget_test_harness.dart';
 
 // ─── Mock UserRepository ─────────────────────────────────────────────────────
@@ -511,7 +513,9 @@ void main() {
   // to initialise local form state.
 
   group('PreferencesScreen — content', () {
-    testWidgets('"Tell us about yourself" heading is visible in data state', (
+    // 31-014: a settings screen titled for what it is, with a back control
+    // at the top, not onboarding's "Tell us about yourself" heading.
+    testWidgets('titled "Profile & Preferences", not the onboarding heading', (
       tester,
     ) async {
       final seededState = _makeSettingsState(
@@ -525,6 +529,9 @@ void main() {
         tester,
         const PreferencesScreen(),
         overrides: [
+          contentServiceProvider.overrideWith(
+            (ref) => TestContentService(ref, loadDefaultContent()),
+          ),
           settingsControllerProvider.overrideWith(
             () => _SeededSettingsController(seededState),
           ),
@@ -532,11 +539,15 @@ void main() {
         settle: true,
       );
 
+      final title = find.byKey(const ValueKey('preferences.title'));
+      expect(title, findsOneWidget);
+      expect(tester.widget<Text>(title).data, 'Profile & Preferences');
       expect(
-        find.textContaining('Tell us about yourself'),
+        find.byKey(const ValueKey('preferences.app_bar_back_button')),
         findsOneWidget,
-        reason: 'main heading must render in data state',
       );
+      expect(find.textContaining('Tell us about yourself'), findsNothing);
+      expect(find.textContaining('This helps us calculate'), findsNothing);
     });
 
     testWidgets('first name, last name and email fields show seeded values', (

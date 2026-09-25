@@ -12,6 +12,7 @@ import '../../../settings/domain/account_deletion_entry.dart';
 import '../../../settings/presentation/providers/settings_controller.dart';
 import '../../application/pro_paywall_controller.dart';
 import '../../application/subscription_screen_controller.dart';
+import '../../application/subscription_status_provider.dart';
 import '../pro_gate_redirect.dart';
 import '../widgets/pro_feature_list.dart';
 import '../widgets/redeem_code_sheet.dart';
@@ -115,6 +116,13 @@ class _PaywallScreenState extends ConsumerState<PaywallScreen> {
 
   Future<void> _buy(BuildContext context, WidgetRef ref, Package pkg) async {
     final content = ref.read(contentServiceProvider);
+    // Read before the purchase: once Pro is active every status says
+    // `hadPro`, so only the status before the buy tells a returning account
+    // (its Pro ended, 10-002) from a new one. The router resolved the
+    // status before it showed this screen, so the future is already done.
+    final returning = (await ref.read(
+      subscriptionStatusProvider.future,
+    )).hadPro;
     final outcome = await ref
         .read(proPaywallControllerProvider.notifier)
         .buy(pkg);
@@ -124,7 +132,11 @@ class _PaywallScreenState extends ConsumerState<PaywallScreen> {
       case ProPurchaseOutcome.activated:
         MealvanaSnackbar.showSuccess(
           context,
-          content.getValue(ContentKeys.paywallPurchaseSuccess),
+          content.getValue(
+            returning
+                ? ContentKeys.paywallPurchaseSuccessReturning
+                : ContentKeys.paywallPurchaseSuccess,
+          ),
           bottomClearance: _plansClearance(),
         );
       case ProPurchaseOutcome.purchasedPending:

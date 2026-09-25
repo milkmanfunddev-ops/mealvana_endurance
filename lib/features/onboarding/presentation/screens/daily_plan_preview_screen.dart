@@ -225,7 +225,10 @@ class _DailyPlanPreviewScreenState
               ),
             ],
           ),
+          // No nudge for an athlete who tapped "I don't use training plan
+          // apps" two steps ago (04-008); a plain skip still gets it.
           if (draft.connectedProvider == null &&
+              !draft.declinedTrainingApps &&
               widget.onConnectTap != null) ...[
             const SizedBox(height: 24),
             OnboardingConnectNudgeCard(
