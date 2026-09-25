@@ -45,6 +45,7 @@ import 'package:mealvana_endurance/features/ai_credits/data/revenuecat_service.d
 import 'package:mealvana_endurance/features/app_startup/application/app_startup_provider.dart';
 import 'package:mealvana_endurance/features/app_startup/application/app_startup_service.dart';
 import 'package:mealvana_endurance/features/nutrition_plan/data/food_repository.dart';
+import 'package:mealvana_endurance/features/subscription/application/pro_gate.dart';
 import 'package:mealvana_endurance/features/subscription/application/subscription_status_provider.dart';
 import 'package:mealvana_endurance/features/subscription/data/subscription_service.dart';
 import 'package:mealvana_endurance/features/subscription/data/user_entitlements_repository.dart';
@@ -55,6 +56,7 @@ import 'package:mealvana_endurance/shared/services/analytics/analytics_tracker.d
 import 'package:mealvana_endurance/shared/services/app_config.dart';
 import 'package:mealvana_endurance/shared/services/app_external_deps.dart';
 import 'package:mealvana_endurance/shared/services/logging_service.dart';
+import 'package:mealvana_endurance/shared/providers/is_admin_provider.dart';
 import 'package:mealvana_endurance/shared/services/notification_service.dart';
 import 'package:mealvana_endurance/shared/services/sentry/sentry_reporter.dart';
 
@@ -86,6 +88,9 @@ class _FakeRevenueCatSdk implements RevenueCatSdk {
   final calls = <String>[];
   String appUserId = r'$RCAnonymousID:0123456789abcdef';
 
+  /// When set, `logIn` waits on it: a network call with no answer (offline).
+  Completer<void>? logInHold;
+
   @override
   Future<void> configure(PurchasesConfiguration configuration) async {
     calls.add('configure');
@@ -97,6 +102,7 @@ class _FakeRevenueCatSdk implements RevenueCatSdk {
   @override
   Future<void> logIn(String appUserID) async {
     calls.add('logIn:$appUserID');
+    await logInHold?.future;
     appUserId = appUserID;
   }
 
@@ -432,6 +438,7 @@ void main() {
           entitlementAnswerTimeoutProvider.overrideWithValue(
             const Duration(milliseconds: 50),
           ),
+          isAdminProvider.overrideWith((_) async => false),
         ],
       );
       addTearDown(container.dispose);
@@ -452,6 +459,27 @@ void main() {
         container.read(subscriptionStatusProvider).hasValue,
         isTrue,
         reason: 'the gate has an answer before startup hands back its data',
+      );
+    });
+
+    test('an offline logIn that never answers does not hold startup past '
+        'the Gate\'s wait (mp-335, ticket 105)', () async {
+      sdk.logInHold = Completer<void>();
+      final container = gateContainer();
+      final service = container.read(appStartupServiceProvider);
+
+      unawaited(service.configureRevenueCat());
+      await service.initializeAppGate().timeout(
+        const Duration(seconds: 1),
+        onTimeout: () => fail('startup waited on the logIn'),
+      );
+
+      // The router's read of the Gate is not held by it either.
+      expect(
+        await container
+            .read(appGateProvider.future)
+            .timeout(const Duration(seconds: 1)),
+        AppAccess.closed,
       );
     });
 

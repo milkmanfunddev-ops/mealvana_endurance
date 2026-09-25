@@ -177,10 +177,19 @@ String _$subscriptionAuthUserIdHash() =>
 ///    user is not an answer: locked until `logIn` has moved the identity.
 /// 5. An active answer counts for [kRenewalGrace] past its own expiry, then
 ///    as closed until a fresh answer arrives (mp-679, Finding 07-002).
-/// 6. While the controller lives, one timer waits for the moment the current
-///    answer stops counting. It re-counts then (closed, unless something
-///    fresher came) and re-fetches once, so an app left open lands on the
-///    paywall on time, not on the next resume (mp-457, Finding 05-005).
+/// 6. The grace is only for a plan that will renew, so before it is given
+///    RevenueCat itself is asked: an answer in its grace
+///    ([SubscriptionStatus.inRenewalGraceAt]) is followed by a fresh fetch
+///    within the same wait, and the fresh answer wins. A cancel the saved
+///    copy has not seen closes the Gate at the end, not 15 minutes later;
+///    no fresh answer in time leaves the copy counting (ticket 105, Finding
+///    87-006).
+/// 7. While the controller lives, one timer waits for the next moment to
+///    look again: a renewing answer's own expiry (to ask RevenueCat, rule 6),
+///    else the moment it stops counting. It re-counts then (closed, unless
+///    something fresher came) and re-fetches once, so an app left open lands
+///    on the paywall on time, not on the next resume (mp-457, Finding
+///    05-005).
 ///
 /// Every answer it takes also settles the day-five reminder (mp-456 §4): an
 /// active trial that will not renew cancels it. That covers the app open
@@ -215,10 +224,19 @@ const subscriptionStatusProvider = SubscriptionStatusControllerProvider._();
 ///    user is not an answer: locked until `logIn` has moved the identity.
 /// 5. An active answer counts for [kRenewalGrace] past its own expiry, then
 ///    as closed until a fresh answer arrives (mp-679, Finding 07-002).
-/// 6. While the controller lives, one timer waits for the moment the current
-///    answer stops counting. It re-counts then (closed, unless something
-///    fresher came) and re-fetches once, so an app left open lands on the
-///    paywall on time, not on the next resume (mp-457, Finding 05-005).
+/// 6. The grace is only for a plan that will renew, so before it is given
+///    RevenueCat itself is asked: an answer in its grace
+///    ([SubscriptionStatus.inRenewalGraceAt]) is followed by a fresh fetch
+///    within the same wait, and the fresh answer wins. A cancel the saved
+///    copy has not seen closes the Gate at the end, not 15 minutes later;
+///    no fresh answer in time leaves the copy counting (ticket 105, Finding
+///    87-006).
+/// 7. While the controller lives, one timer waits for the next moment to
+///    look again: a renewing answer's own expiry (to ask RevenueCat, rule 6),
+///    else the moment it stops counting. It re-counts then (closed, unless
+///    something fresher came) and re-fetches once, so an app left open lands
+///    on the paywall on time, not on the next resume (mp-457, Finding
+///    05-005).
 ///
 /// Every answer it takes also settles the day-five reminder (mp-456 §4): an
 /// active trial that will not renew cancels it. That covers the app open
@@ -255,10 +273,19 @@ final class SubscriptionStatusControllerProvider
   ///    user is not an answer: locked until `logIn` has moved the identity.
   /// 5. An active answer counts for [kRenewalGrace] past its own expiry, then
   ///    as closed until a fresh answer arrives (mp-679, Finding 07-002).
-  /// 6. While the controller lives, one timer waits for the moment the current
-  ///    answer stops counting. It re-counts then (closed, unless something
-  ///    fresher came) and re-fetches once, so an app left open lands on the
-  ///    paywall on time, not on the next resume (mp-457, Finding 05-005).
+  /// 6. The grace is only for a plan that will renew, so before it is given
+  ///    RevenueCat itself is asked: an answer in its grace
+  ///    ([SubscriptionStatus.inRenewalGraceAt]) is followed by a fresh fetch
+  ///    within the same wait, and the fresh answer wins. A cancel the saved
+  ///    copy has not seen closes the Gate at the end, not 15 minutes later;
+  ///    no fresh answer in time leaves the copy counting (ticket 105, Finding
+  ///    87-006).
+  /// 7. While the controller lives, one timer waits for the next moment to
+  ///    look again: a renewing answer's own expiry (to ask RevenueCat, rule 6),
+  ///    else the moment it stops counting. It re-counts then (closed, unless
+  ///    something fresher came) and re-fetches once, so an app left open lands
+  ///    on the paywall on time, not on the next resume (mp-457, Finding
+  ///    05-005).
   ///
   /// Every answer it takes also settles the day-five reminder (mp-456 §4): an
   /// active trial that will not renew cancels it. That covers the app open
@@ -290,7 +317,7 @@ final class SubscriptionStatusControllerProvider
 }
 
 String _$subscriptionStatusControllerHash() =>
-    r'f1341563cc94c15fc69d9f297254fbd90a463c14';
+    r'c65a377349040f1b958d63b2c8d066d0f2eb3e02';
 
 /// The current user's subscription status, from RevenueCat and nothing else
 /// (mp-279, mp-284).
@@ -311,10 +338,19 @@ String _$subscriptionStatusControllerHash() =>
 ///    user is not an answer: locked until `logIn` has moved the identity.
 /// 5. An active answer counts for [kRenewalGrace] past its own expiry, then
 ///    as closed until a fresh answer arrives (mp-679, Finding 07-002).
-/// 6. While the controller lives, one timer waits for the moment the current
-///    answer stops counting. It re-counts then (closed, unless something
-///    fresher came) and re-fetches once, so an app left open lands on the
-///    paywall on time, not on the next resume (mp-457, Finding 05-005).
+/// 6. The grace is only for a plan that will renew, so before it is given
+///    RevenueCat itself is asked: an answer in its grace
+///    ([SubscriptionStatus.inRenewalGraceAt]) is followed by a fresh fetch
+///    within the same wait, and the fresh answer wins. A cancel the saved
+///    copy has not seen closes the Gate at the end, not 15 minutes later;
+///    no fresh answer in time leaves the copy counting (ticket 105, Finding
+///    87-006).
+/// 7. While the controller lives, one timer waits for the next moment to
+///    look again: a renewing answer's own expiry (to ask RevenueCat, rule 6),
+///    else the moment it stops counting. It re-counts then (closed, unless
+///    something fresher came) and re-fetches once, so an app left open lands
+///    on the paywall on time, not on the next resume (mp-457, Finding
+///    05-005).
 ///
 /// Every answer it takes also settles the day-five reminder (mp-456 §4): an
 /// active trial that will not renew cancels it. That covers the app open

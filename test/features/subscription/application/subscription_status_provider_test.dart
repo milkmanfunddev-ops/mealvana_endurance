@@ -681,11 +681,18 @@ void main() {
         final c = ticking(async);
         async.flushMicrotasks();
         expect(gate(c), AppAccess.open);
+        verify(() => service.fetchStatus()).called(1);
+
+        // At the expiry RevenueCat is asked before the grace is given
+        // (ticket 105): the saved copy, then RevenueCat itself.
+        async.elapse(const Duration(minutes: 5));
+        async.flushMicrotasks();
+        verify(() => service.forgetCachedStatus()).called(1);
+        verify(() => service.fetchStatus()).called(2);
 
         // Expiry + 14:59: still inside the grace.
-        async.elapse(const Duration(minutes: 19, seconds: 59));
+        async.elapse(const Duration(minutes: 14, seconds: 59));
         expect(gate(c), AppAccess.open);
-        verify(() => service.fetchStatus()).called(1);
 
         async.elapse(const Duration(seconds: 1));
         async.flushMicrotasks();
@@ -751,16 +758,23 @@ void main() {
         async.flushMicrotasks();
 
         // Three minutes in, RevenueCat pushes the renewal: next period to
-        // 11:41:56, so it counts to 11:56:56.
+        // 11:41:56, so it counts to 11:56:56. The SDK's copy is that one
+        // from now on.
         async.elapse(const Duration(minutes: 3));
+        when(
+          () => service.fetchStatus(),
+        ).thenAnswer((_) async => statusOf(customerInfoRenewedMonthly));
         capturedListener!(statusOf(customerInfoRenewedMonthly));
         async.flushMicrotasks();
 
-        // Past the old deadline (11:51:56): still open, nothing re-fetched.
+        // Past the old deadline (11:51:56): still open. Nothing was fetched
+        // at the old expiry; only at the new one (11:41:56), the ask before
+        // its grace (ticket 105), which found no newer period.
         async.elapse(const Duration(minutes: 18));
         async.flushMicrotasks();
         expect(gate(c), AppAccess.open);
-        verify(() => service.fetchStatus()).called(1);
+        verify(() => service.fetchStatus()).called(3);
+        verify(() => service.forgetCachedStatus()).called(1);
 
         // Past the new one (11:56:56): closed.
         async.elapse(const Duration(minutes: 5));
@@ -823,6 +837,261 @@ void main() {
         unawaited(c.read(subscriptionStatusProvider.notifier).clear());
         async.flushMicrotasks();
         expect(waits(async), isEmpty);
+        c.dispose();
+      });
+    });
+  });
+  group(
+    'a cancel is seen before grace is given (ticket 105, Finding 87-006)',
+    () {
+      // The saved copy's period ends at 11:36:56 UTC and says it will renew;
+      // RevenueCat itself knows it was the last period.
+      final expiry = DateTime.utc(2026, 9, 24, 11, 36, 56);
+
+      /// Whether the SDK's cached copy has been dropped: the next fetch asks
+      /// RevenueCat itself.
+      late bool asked;
+
+      /// What RevenueCat itself answers once asked.
+      late Future<SubscriptionStatus?> Function() revenueCat;
+
+      setUp(() {
+        asked = false;
+        revenueCat = () async => statusOf(customerInfoEndedMonthly);
+        when(() => service.forgetCachedStatus()).thenAnswer((_) async {
+          asked = true;
+        });
+        when(() => service.fetchStatus()).thenAnswer(
+          (_) => asked
+              ? revenueCat()
+              : Future.value(statusOf(customerInfoSavedMonthly)),
+        );
+      });
+
+      ProviderContainer at(DateTime Function() clock, {Duration? timeout}) {
+        final c = ProviderContainer(
+          overrides: [
+            subscriptionServiceProvider.overrideWithValue(service),
+            userEntitlementsRepositoryProvider.overrideWithValue(repo),
+            if (timeout != null)
+              entitlementAnswerTimeoutProvider.overrideWithValue(timeout),
+            localNotificationSchedulerProvider.overrideWithValue(scheduler),
+            subscriptionClockProvider.overrideWithValue(clock),
+            isAdminProvider.overrideWith((_) async => false),
+          ],
+        );
+        addTearDown(c.dispose);
+        return c;
+      }
+
+      test('a cold launch in the grace fetches first; a fresh won\'t-renew '
+          'answer closes the Gate', () async {
+        final c = at(
+          () => expiry.add(const Duration(minutes: 2)),
+          timeout: _timeout,
+        );
+        expect(await c.read(appGateProvider.future), AppAccess.closed);
+        expect(current(c).hadPro, isTrue);
+        verify(() => service.forgetCachedStatus()).called(1);
+      });
+
+      test('a cold launch in the grace with no fresh answer still opens from '
+          'the saved copy (mp-679)', () async {
+        revenueCat = () => Completer<SubscriptionStatus?>().future;
+        final c = at(
+          () => expiry.add(const Duration(minutes: 2)),
+          timeout: _timeout,
+        );
+        expect(await c.read(appGateProvider.future), AppAccess.open);
+        verify(() => service.forgetCachedStatus()).called(1);
+      });
+
+      test(
+        'a fresh answer that fails (offline) keeps the saved copy',
+        () async {
+          revenueCat = () async => null;
+          final c = at(
+            () => expiry.add(const Duration(minutes: 2)),
+            timeout: _timeout,
+          );
+          expect(await c.read(appGateProvider.future), AppAccess.open);
+        },
+      );
+
+      test('a copy before its expiry is not asked about', () async {
+        final c = at(
+          () => expiry.subtract(const Duration(minutes: 2)),
+          timeout: _timeout,
+        );
+        expect(await c.read(appGateProvider.future), AppAccess.open);
+        verifyNever(() => service.forgetCachedStatus());
+      });
+
+      test('an app left open: at the expiry it fetches, and a won\'t-renew '
+          'answer closes the Gate at the end, with no grace', () {
+        fakeAsync((async) {
+          final start = expiry.subtract(const Duration(minutes: 5));
+          final c = at(() => start.add(async.elapsed), timeout: _timeout);
+          c.listen(appGateProvider, (_, _) {});
+          async.flushMicrotasks();
+          expect(c.read(appGateProvider).requireValue, AppAccess.open);
+          expect(asked, isFalse);
+
+          async.elapse(const Duration(minutes: 4, seconds: 59));
+          expect(c.read(appGateProvider).requireValue, AppAccess.open);
+
+          // The expiry: RevenueCat is asked, and says it will not renew.
+          async.elapse(const Duration(seconds: 1));
+          async.flushMicrotasks();
+          expect(asked, isTrue);
+          expect(c.read(appGateProvider).requireValue, AppAccess.closed);
+          c.dispose();
+        });
+      });
+
+      test('an app left open with no fresh answer at the expiry keeps the '
+          'grace, then closes at its end', () {
+        fakeAsync((async) {
+          revenueCat = () => Completer<SubscriptionStatus?>().future;
+          final start = expiry.subtract(const Duration(minutes: 5));
+          final c = at(() => start.add(async.elapsed), timeout: _timeout);
+          c.listen(appGateProvider, (_, _) {});
+          async.flushMicrotasks();
+
+          async.elapse(const Duration(minutes: 5, seconds: 1));
+          async.flushMicrotasks();
+          expect(asked, isTrue);
+          expect(c.read(appGateProvider).requireValue, AppAccess.open);
+
+          async.elapse(const Duration(minutes: 15));
+          async.flushMicrotasks();
+          expect(c.read(appGateProvider).requireValue, AppAccess.closed);
+          c.dispose();
+        });
+      });
+
+      test('fetchFresh (the Subscription screen opening) asks RevenueCat and '
+          'takes its answer', () async {
+        final c = at(() => customerInfoFetchedAt, timeout: _timeout);
+        revenueCat = () async => statusOf(customerInfoOpenCancelled);
+        when(() => service.fetchStatus()).thenAnswer(
+          (_) =>
+              asked ? revenueCat() : Future.value(statusOf(customerInfoOpen)),
+        );
+        expect((await resolve(c)).willRenew, isTrue);
+
+        await c.read(subscriptionStatusProvider.notifier).fetchFresh();
+
+        expect(asked, isTrue);
+        expect(current(c).active, isTrue);
+        expect(current(c).willRenew, isFalse);
+      });
+
+      test('fetchFresh with no answer (offline) keeps what it had', () async {
+        final c = at(() => customerInfoFetchedAt, timeout: _timeout);
+        revenueCat = () async => null;
+        when(() => service.fetchStatus()).thenAnswer(
+          (_) =>
+              asked ? revenueCat() : Future.value(statusOf(customerInfoOpen)),
+        );
+        await resolve(c);
+
+        await c.read(subscriptionStatusProvider.notifier).fetchFresh();
+
+        expect(current(c).active, isTrue);
+        expect(current(c).willRenew, isTrue);
+      });
+    },
+  );
+
+  group('an expired copy is closed from the first answer, within two '
+      'seconds (ticket 105, Finding 87-009)', () {
+    // As in the finding (there 14:21:31 and 14:37:59): the copy's period
+    // ended at 11:36:56 UTC and the cold launch is 16 minutes later, more
+    // than the grace, with no network.
+    final expiry = DateTime.utc(2026, 9, 24, 11, 36, 56);
+    final launch = expiry.add(const Duration(minutes: 16));
+
+    ProviderContainer offline(FakeAsync async) {
+      final c = ProviderContainer(
+        overrides: [
+          subscriptionServiceProvider.overrideWithValue(service),
+          userEntitlementsRepositoryProvider.overrideWithValue(repo),
+          // The app's own wait (mp-335): not overridden.
+          localNotificationSchedulerProvider.overrideWithValue(scheduler),
+          subscriptionClockProvider.overrideWithValue(
+            () => launch.add(async.elapsed),
+          ),
+          // Supabase is offline too: the admin read never answers.
+          isAdminProvider.overrideWith((_) => Completer<bool>().future),
+        ],
+      );
+      return c;
+    }
+
+    test('the saved copy answers at once and a fresh fetch never does: '
+        'closed, not open first', () {
+      fakeAsync((async) {
+        var asked = false;
+        when(() => service.forgetCachedStatus()).thenAnswer((_) async {
+          asked = true;
+        });
+        when(() => service.fetchStatus()).thenAnswer(
+          (_) => asked
+              ? Completer<SubscriptionStatus?>().future
+              : Future.value(statusOf(customerInfoSavedMonthly)),
+        );
+        final c = offline(async);
+        final answers = <AppAccess>[];
+        c.listen(appGateProvider, (_, next) {
+          if (next.hasValue && !next.isLoading) answers.add(next.value!);
+        });
+        async.flushMicrotasks();
+        expect(current(c).active, isFalse);
+
+        async.elapse(const Duration(seconds: 2));
+        expect(answers, [AppAccess.closed]);
+        c.dispose();
+      });
+    });
+
+    test('no cached answer at all, only the SDK announcing the saved copy: '
+        'closed within two seconds', () {
+      fakeAsync((async) {
+        when(
+          () => service.fetchStatus(),
+        ).thenAnswer((_) => Completer<SubscriptionStatus?>().future);
+        final c = offline(async);
+        final answers = <AppAccess>[];
+        c.listen(appGateProvider, (_, next) {
+          if (next.hasValue && !next.isLoading) answers.add(next.value!);
+        });
+        async.flushMicrotasks();
+        capturedListener!(statusOf(customerInfoSavedMonthly));
+
+        async.elapse(const Duration(seconds: 2));
+        async.flushMicrotasks();
+        expect(answers, [AppAccess.closed]);
+        c.dispose();
+      });
+    });
+
+    test('no answer from RevenueCat or Supabase at all: the Gate still '
+        'answers closed within one wait, not two', () {
+      fakeAsync((async) {
+        when(
+          () => service.fetchStatus(),
+        ).thenAnswer((_) => Completer<SubscriptionStatus?>().future);
+        final c = offline(async);
+        final answers = <AppAccess>[];
+        c.listen(appGateProvider, (_, next) {
+          if (next.hasValue && !next.isLoading) answers.add(next.value!);
+        });
+        async.flushMicrotasks();
+
+        async.elapse(const Duration(seconds: 2));
+        async.flushMicrotasks();
+        expect(answers, [AppAccess.closed]);
         c.dispose();
       });
     });

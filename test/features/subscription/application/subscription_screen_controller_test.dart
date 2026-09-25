@@ -63,11 +63,13 @@ void main() {
     });
     when(() => service.currentAppUserId()).thenAnswer((_) async => _userId);
     when(() => service.logIn(any())).thenAnswer((_) async {});
+    when(() => service.forgetCachedStatus()).thenAnswer((_) async {});
   });
 
   ProviderContainer container({
     required CustomerInfo info,
     bool storeSubscription = true,
+    bool keepOpen = true,
   }) {
     when(() => service.fetchStatus()).thenAnswer((_) async => statusOf(info));
     when(
@@ -88,6 +90,7 @@ void main() {
       ],
     );
     addTearDown(c.dispose);
+    if (!keepOpen) return c;
     // Keep the auto-dispose controller alive between reads.
     final sub = c.listen(subscriptionScreenControllerProvider, (_, _) {});
     addTearDown(sub.close);
@@ -256,5 +259,83 @@ void main() {
           .managementUrl(),
       uri,
     );
+  });
+
+  group('the screen asks RevenueCat each time it opens (ticket 105, '
+      'Finding 87-006)', () {
+    /// Whether the SDK's saved copy has been dropped, so the next fetch
+    /// reaches RevenueCat itself.
+    late bool asked;
+
+    ProviderContainer opened({
+      required CustomerInfo saved,
+      required Future<SubscriptionStatus?> Function() revenueCat,
+      bool keepOpen = true,
+    }) {
+      asked = false;
+      final c = container(info: saved, keepOpen: keepOpen);
+      when(() => service.forgetCachedStatus()).thenAnswer((_) async {
+        asked = true;
+      });
+      when(
+        () => service.fetchStatus(),
+      ).thenAnswer((_) => asked ? revenueCat() : Future.value(statusOf(saved)));
+      return c;
+    }
+
+    test(
+      'a plan in its last period reads "Ends on", not "Renews on"',
+      () async {
+        // The saved copy was fetched before the athlete cancelled; RevenueCat
+        // knows it will not renew.
+        final c = opened(
+          saved: customerInfoOpen,
+          revenueCat: () async => statusOf(customerInfoOpenCancelled),
+        );
+        final s = await read(c);
+        expect(asked, isTrue);
+        expect(s.plan, PlanStatus.active);
+        expect(s.date, DateTime.utc(2026, 11, 1, 10));
+        // The screen's date line: willRenew false is "Ends on {date}. It
+        // won't renew." (ContentKeys.subscriptionEnds).
+        expect(s.willRenew, isFalse);
+      },
+    );
+
+    test('each open asks again; a status change while open does not', () async {
+      final c = opened(
+        saved: customerInfoOpen,
+        revenueCat: () async => statusOf(customerInfoOpen),
+        keepOpen: false,
+      );
+      Future<void> openAndClose(Future<void> Function() whileOpen) async {
+        final sub = c.listen(subscriptionScreenControllerProvider, (_, _) {});
+        await read(c);
+        await whileOpen();
+        sub.close();
+        // The auto-dispose providers go with the screen.
+        await Future<void>.delayed(Duration.zero);
+      }
+
+      await openAndClose(() async {
+        // RevenueCat pushes a change while the screen is open: the screen
+        // follows it without asking again.
+        pushStatus!(statusOf(customerInfoOpenCancelled));
+        await Future<void>.delayed(Duration.zero);
+        expect((await read(c)).willRenew, isFalse);
+      });
+      verify(() => service.forgetCachedStatus()).called(1);
+
+      await openAndClose(() async {});
+      verify(() => service.forgetCachedStatus()).called(1);
+    });
+
+    test('offline, the screen shows the saved copy rather than an ended '
+        'plan', () async {
+      final c = opened(saved: customerInfoOpen, revenueCat: () async => null);
+      final s = await read(c);
+      expect(s.plan, PlanStatus.active);
+      expect(s.willRenew, isTrue);
+    });
   });
 }

@@ -62,22 +62,74 @@ void main() {
         expect(saved.countedAt(expiry.add(kRenewalGrace)).active, isFalse);
       });
 
-      test('a cancelled copy gets no grace: closed just past its expiry, '
-          'as the server (isEntitled grants the grace only when it renews)', () {
-        final cancelled = saved.copyWith(willRenew: false);
-        final now = expiry.add(const Duration(minutes: 2));
-        expect(cancelled.countedAt(now).active, isFalse);
-        expect(
-          cancelled.countedAt(expiry.subtract(const Duration(seconds: 1))),
-          cancelled,
-        );
-      });
+      test(
+        'a cancelled copy gets no grace: closed just past its expiry, '
+        'as the server (isEntitled grants the grace only when it renews)',
+        () {
+          final cancelled = saved.copyWith(willRenew: false);
+          final now = expiry.add(const Duration(minutes: 2));
+          expect(cancelled.countedAt(now).active, isFalse);
+          expect(
+            cancelled.countedAt(expiry.subtract(const Duration(seconds: 1))),
+            cancelled,
+          );
+        },
+      );
 
       test('no expiry, or an inactive answer, counts as it is', () {
         const open = SubscriptionStatus(active: true);
         expect(open.countedAt(DateTime.utc(2099)), open);
         final lapsed = SubscriptionStatus(active: false, expiresAt: expiry);
         expect(lapsed.countedAt(DateTime.utc(2099)), lapsed);
+      });
+
+      group('the grace is asked about first (ticket 105, Finding 87-006)', () {
+        test('in the grace: a renewing copy past its expiry, not past the '
+            'grace', () {
+          expect(saved.inRenewalGraceAt(expiry), isTrue);
+          expect(
+            saved.inRenewalGraceAt(expiry.add(const Duration(minutes: 2))),
+            isTrue,
+          );
+          expect(
+            saved.inRenewalGraceAt(expiry.subtract(const Duration(seconds: 1))),
+            isFalse,
+          );
+          expect(saved.inRenewalGraceAt(expiry.add(kRenewalGrace)), isFalse);
+        });
+
+        test('a cancelled or inactive copy has no grace to ask about', () {
+          final now = expiry.add(const Duration(minutes: 2));
+          expect(
+            saved.copyWith(willRenew: false).inRenewalGraceAt(now),
+            isFalse,
+          );
+          expect(saved.copyWith(active: false).inRenewalGraceAt(now), isFalse);
+        });
+
+        test('a renewing copy is looked at again at its expiry, then at the '
+            'end of the grace', () {
+          final before = expiry.subtract(const Duration(minutes: 5));
+          expect(saved.nextLookAt(before), expiry);
+          expect(saved.nextLookAt(expiry), expiry.add(kRenewalGrace));
+        });
+
+        test('a cancelled copy is looked at again at its expiry; a closed or '
+            'open-ended one never', () {
+          final before = expiry.subtract(const Duration(minutes: 5));
+          expect(saved.copyWith(willRenew: false).nextLookAt(before), expiry);
+          expect(
+            SubscriptionStatus(
+              active: false,
+              expiresAt: expiry,
+            ).nextLookAt(before),
+            isNull,
+          );
+          expect(
+            const SubscriptionStatus(active: true).nextLookAt(before),
+            isNull,
+          );
+        });
       });
     });
 

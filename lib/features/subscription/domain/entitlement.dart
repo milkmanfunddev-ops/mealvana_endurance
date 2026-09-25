@@ -113,6 +113,28 @@ class SubscriptionStatus {
     return willRenew ? e.add(kRenewalGrace) : e;
   }
 
+  /// Whether [now] falls in this answer's renewal grace (mp-679): it will
+  /// renew, its own [expiresAt] has passed, and [kRenewalGrace] has not. The
+  /// grace is only for a plan that will renew, so this is the moment to ask
+  /// RevenueCat for a fresh answer before trusting the copy (ticket 105,
+  /// Finding 87-006): a cancel the copy has not seen closes it at its end.
+  bool inRenewalGraceAt(DateTime now) {
+    final e = expiresAt;
+    if (!active || !willRenew || e == null) return false;
+    return !now.isBefore(e) && now.isBefore(e.add(kRenewalGrace));
+  }
+
+  /// When this answer should be looked at again, as of [now]: at its own
+  /// [expiresAt] while a renewing answer has not reached it (to fetch before
+  /// the grace, ticket 105), otherwise when it stops counting. Null for an
+  /// inactive answer and for an open-ended one.
+  DateTime? nextLookAt(DateTime now) {
+    final e = expiresAt;
+    final end = stopsCountingAt;
+    if (e == null || end == null) return null;
+    return willRenew && now.isBefore(e) ? e : end;
+  }
+
   /// This answer as it counts at [now] (mp-679). An active answer whose own
   /// [expiresAt] passed more than [kRenewalGrace] ago (at once, when it will
   /// not renew) is closed: held once,

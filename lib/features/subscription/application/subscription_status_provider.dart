@@ -48,10 +48,19 @@ Stream<String?> subscriptionAuthUserId(Ref ref) {
 ///    user is not an answer: locked until `logIn` has moved the identity.
 /// 5. An active answer counts for [kRenewalGrace] past its own expiry, then
 ///    as closed until a fresh answer arrives (mp-679, Finding 07-002).
-/// 6. While the controller lives, one timer waits for the moment the current
-///    answer stops counting. It re-counts then (closed, unless something
-///    fresher came) and re-fetches once, so an app left open lands on the
-///    paywall on time, not on the next resume (mp-457, Finding 05-005).
+/// 6. The grace is only for a plan that will renew, so before it is given
+///    RevenueCat itself is asked: an answer in its grace
+///    ([SubscriptionStatus.inRenewalGraceAt]) is followed by a fresh fetch
+///    within the same wait, and the fresh answer wins. A cancel the saved
+///    copy has not seen closes the Gate at the end, not 15 minutes later;
+///    no fresh answer in time leaves the copy counting (ticket 105, Finding
+///    87-006).
+/// 7. While the controller lives, one timer waits for the next moment to
+///    look again: a renewing answer's own expiry (to ask RevenueCat, rule 6),
+///    else the moment it stops counting. It re-counts then (closed, unless
+///    something fresher came) and re-fetches once, so an app left open lands
+///    on the paywall on time, not on the next resume (mp-457, Finding
+///    05-005).
 ///
 /// Every answer it takes also settles the day-five reminder (mp-456 §4): an
 /// active trial that will not renew cancels it. That covers the app open
@@ -73,7 +82,13 @@ class SubscriptionStatusController extends _$SubscriptionStatusController {
   /// kept so a resolve that times out can still answer from it.
   SubscriptionStatus? _lastPush;
 
-  /// Fires when the current answer stops counting (rule 6). One at a time:
+  /// Resolves waiting for an answer, each taking the first push that comes
+  /// while its fetch is out: the SDK announcing its saved copy is an answer
+  /// at once, not only when the wait runs out (ticket 105, Finding 87-009).
+  final _pushWaiters = <Completer<SubscriptionStatus?>>{};
+
+  /// Fires at the next moment to look at the current answer (rule 7). One
+  /// at a time:
   /// every answer taken replaces it.
   Timer? _recountTimer;
 
@@ -136,6 +151,30 @@ class SubscriptionStatusController extends _$SubscriptionStatusController {
     }
   }
 
+  /// Ask RevenueCat itself, past the SDK's saved copy, and take its answer
+  /// (the Subscription screen opening, ticket 105: a plan in its last period
+  /// reads "Ends on", never "Renews on"). No answer in the wait (offline)
+  /// keeps the current one: a failed look never closes the Gate.
+  /// Never throws.
+  Future<void> fetchFresh() async {
+    try {
+      await future;
+      final userId = _repo.currentUserId;
+      if (userId == null || userId.isEmpty || !ref.mounted) return;
+      final fresh = await _freshAnswerFor(userId).timeout(
+        ref.read(entitlementAnswerTimeoutProvider),
+        onTimeout: () => null,
+      );
+      if (fresh == null || !ref.mounted) return;
+      final counted = _counted(fresh);
+      state = AsyncData(counted);
+      _settleTrialReminder(counted);
+      _scheduleRecount(counted);
+    } catch (e) {
+      debugPrint('[SubscriptionStatus] fresh fetch not taken: $e');
+    }
+  }
+
   /// Forget everything for the outgoing user (sign-out, account deletion):
   /// the lock is immediate, the reminder is cancelled, and the RevenueCat
   /// SDK returns to an anonymous customer with an empty cache, so a
@@ -165,18 +204,22 @@ class SubscriptionStatusController extends _$SubscriptionStatusController {
     if (!ref.mounted || current != userId) return;
     final counted = _counted(rc);
     _lastPush = counted;
+    for (final waiter in _pushWaiters) {
+      if (!waiter.isCompleted) waiter.complete(rc);
+    }
     state = AsyncData(counted);
     _settleTrialReminder(counted);
     _scheduleRecount(counted);
   }
 
-  /// Wait for the moment [status] stops counting (rule 6), replacing any
+  /// Wait for the next moment to look at [status] (rule 7), replacing any
   /// earlier wait. Nothing to wait for when it is closed or open-ended.
   void _scheduleRecount(SubscriptionStatus status) {
     _cancelRecount();
-    final end = status.stopsCountingAt;
-    if (end == null) return;
-    final wait = end.difference(ref.read(subscriptionClockProvider)());
+    final now = ref.read(subscriptionClockProvider)();
+    final next = status.nextLookAt(now);
+    if (next == null) return;
+    final wait = next.difference(now);
     _recountTimer = Timer(
       wait > _maxWait ? _maxWait : wait,
       () => unawaited(
@@ -192,9 +235,11 @@ class SubscriptionStatusController extends _$SubscriptionStatusController {
     _recountTimer = null;
   }
 
-  /// The current answer's wait is over: count it again (closed, unless a
-  /// step of a far wait ended early, which just waits again), then ask
-  /// RevenueCat once for a fresher one. A fresh answer re-schedules.
+  /// The current answer's wait is over: count it again, then ask
+  /// RevenueCat once for a fresher one. At a renewing answer's expiry that
+  /// is the ask before the grace (rule 6): the answer still counts while
+  /// the fetch runs. A step of a far wait that ended early just waits
+  /// again. A fresh answer re-schedules.
   Future<void> _recount() async {
     _recountTimer = null;
     if (!ref.mounted) return;
@@ -202,6 +247,10 @@ class SubscriptionStatusController extends _$SubscriptionStatusController {
     if (status == null) return;
     final counted = _counted(status);
     if (counted.active) {
+      if (counted.inRenewalGraceAt(ref.read(subscriptionClockProvider)())) {
+        await refresh();
+        return;
+      }
       _scheduleRecount(counted);
       return;
     }
@@ -235,14 +284,41 @@ class SubscriptionStatusController extends _$SubscriptionStatusController {
     final userId = _repo.currentUserId;
     if (userId == null || userId.isEmpty) return SubscriptionStatus.none;
 
+    final clock = ref.read(subscriptionClockProvider);
+    final started = clock();
     final timeout = ref.read(entitlementAnswerTimeoutProvider);
-    final answer = await _answerFor(
-      userId,
-    ).timeout(timeout, onTimeout: () => null);
-    if (answer != null) return _counted(answer);
+    final pushed = Completer<SubscriptionStatus?>();
+    _pushWaiters.add(pushed);
+    final SubscriptionStatus? answer;
+    try {
+      answer = await Future.any([
+        _answerFor(userId),
+        pushed.future,
+      ]).timeout(timeout, onTimeout: () => null);
+    } finally {
+      _pushWaiters.remove(pushed);
+    }
     // No answer in time: the last push (the cache, when the SDK announced
     // it) still counts; otherwise locked.
-    return _counted(_lastPush ?? SubscriptionStatus.none);
+    final taken = answer ?? _lastPush ?? SubscriptionStatus.none;
+    if (!ref.mounted || !taken.inRenewalGraceAt(clock())) {
+      return _counted(taken);
+    }
+    // In its grace (rule 6): ask RevenueCat before giving it, within what
+    // is left of the same wait, so startup still waits at most [timeout]
+    // (mp-335). No fresh answer in time: the copy counts as it is.
+    final left = timeout - clock().difference(started);
+    final fresh = left <= Duration.zero
+        ? null
+        : await _freshAnswerFor(userId).timeout(left, onTimeout: () => null);
+    return _counted(fresh ?? taken);
+  }
+
+  /// RevenueCat's own answer for [userId], past the SDK's saved copy, or
+  /// null when it has none (offline, SDK unavailable).
+  Future<SubscriptionStatus?> _freshAnswerFor(String userId) async {
+    await _service.forgetCachedStatus();
+    return _answerFor(userId);
   }
 
   /// [status] as it counts now (mp-679): RevenueCat's saved copy judges

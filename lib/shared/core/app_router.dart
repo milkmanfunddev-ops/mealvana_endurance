@@ -302,7 +302,7 @@ class AppRouter {
         // For root path, check app startup state and redirect appropriately
         final appStartupState = ref.read(appStartupProvider);
 
-        return appStartupState.maybeWhen(
+        final target = appStartupState.maybeWhen(
           data: (appStartupData) {
             // CRITICAL: Force upgrade required - block all other navigation
             if (appStartupData.forceUpgradeRequired) {
@@ -348,6 +348,11 @@ class AppRouter {
           // While loading or on error, stay on root (AppStartupWidget handles UI)
           orElse: () => null,
         );
+        // Into the app through the Gate: a closed Gate lands on the paywall
+        // directly, never on /main first (ticket 105, Finding 87-009).
+        // Startup has already waited for the Gate, so this answers at once.
+        if (target != '/main') return target;
+        return startupLanding(await readAppGate(ref));
       },
       routes: [
         // Analytics consent - strict regions only (EEA/UK, Washington).

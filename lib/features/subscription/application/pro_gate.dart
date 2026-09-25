@@ -22,20 +22,28 @@ AppAccess computeAccess(SubscriptionStatus status, {required bool isAdmin}) =>
 ///
 /// Loading while the status is unresolved — the status controller bounds
 /// that wait (mp-284), so awaiting `.future` here answers within a couple of
-/// seconds. The admin read is consulted only for an inactive status and is
-/// bounded by the same timeout, so a slow network still lands on the
-/// paywall instead of hanging the redirect. keepAlive so the router's
-/// `ref.read` sees the same value every screen watches.
+/// seconds. The admin read is consulted only for an inactive status and
+/// gets what is left of the same wait, so the Gate's first answer comes
+/// within one timeout (mp-335: startup waits at most two seconds; ticket
+/// 105, Finding 87-009) and a slow network lands on the paywall instead of
+/// hanging the redirect. keepAlive so the router's `ref.read` sees the same
+/// value every screen watches.
 @Riverpod(keepAlive: true)
 class AppGate extends _$AppGate {
   @override
   FutureOr<AppAccess> build() async {
+    final clock = ref.read(subscriptionClockProvider);
+    final started = clock();
     final status = await ref.watch(subscriptionStatusProvider.future);
     if (status.active) return AppAccess.open;
     final timeout = ref.read(entitlementAnswerTimeoutProvider);
+    final left = timeout - clock().difference(started);
     final isAdmin = await ref
         .watch(isAdminProvider.future)
-        .timeout(timeout, onTimeout: () => false);
+        .timeout(
+          left < Duration.zero ? Duration.zero : left,
+          onTimeout: () => false,
+        );
     return computeAccess(status, isAdmin: isAdmin);
   }
 
