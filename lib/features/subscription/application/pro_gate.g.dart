@@ -13,11 +13,12 @@ part of 'pro_gate.dart';
 ///
 /// Loading while the status is unresolved — the status controller bounds
 /// that wait (mp-284), so awaiting `.future` here answers within a couple of
-/// seconds. The admin read is consulted only for an inactive status and
-/// gets what is left of the same wait, so the Gate's first answer comes
-/// within one timeout (mp-335: startup waits at most two seconds; ticket
-/// 105, Finding 87-009) and a slow network lands on the paywall instead of
-/// hanging the redirect. keepAlive so the router's `ref.read` sees the same
+/// seconds. The admin read starts alongside the status resolve and shares
+/// the same wait, so the Gate's first answer comes within one timeout
+/// (mp-335: startup waits at most two seconds; ticket 105, Finding 87-009)
+/// and a slow network lands on the paywall instead of hanging the redirect.
+/// An admin read that answers yes after the wait reopens a closed gate
+/// (wave 27 review). keepAlive so the router's `ref.read` sees the same
 /// value every screen watches.
 
 @ProviderFor(AppGate)
@@ -28,11 +29,12 @@ const appGateProvider = AppGateProvider._();
 ///
 /// Loading while the status is unresolved — the status controller bounds
 /// that wait (mp-284), so awaiting `.future` here answers within a couple of
-/// seconds. The admin read is consulted only for an inactive status and
-/// gets what is left of the same wait, so the Gate's first answer comes
-/// within one timeout (mp-335: startup waits at most two seconds; ticket
-/// 105, Finding 87-009) and a slow network lands on the paywall instead of
-/// hanging the redirect. keepAlive so the router's `ref.read` sees the same
+/// seconds. The admin read starts alongside the status resolve and shares
+/// the same wait, so the Gate's first answer comes within one timeout
+/// (mp-335: startup waits at most two seconds; ticket 105, Finding 87-009)
+/// and a slow network lands on the paywall instead of hanging the redirect.
+/// An admin read that answers yes after the wait reopens a closed gate
+/// (wave 27 review). keepAlive so the router's `ref.read` sees the same
 /// value every screen watches.
 final class AppGateProvider extends $AsyncNotifierProvider<AppGate, AppAccess> {
   /// The app gate, as the router reads it (mp-280: everything is behind it):
@@ -40,11 +42,12 @@ final class AppGateProvider extends $AsyncNotifierProvider<AppGate, AppAccess> {
   ///
   /// Loading while the status is unresolved — the status controller bounds
   /// that wait (mp-284), so awaiting `.future` here answers within a couple of
-  /// seconds. The admin read is consulted only for an inactive status and
-  /// gets what is left of the same wait, so the Gate's first answer comes
-  /// within one timeout (mp-335: startup waits at most two seconds; ticket
-  /// 105, Finding 87-009) and a slow network lands on the paywall instead of
-  /// hanging the redirect. keepAlive so the router's `ref.read` sees the same
+  /// seconds. The admin read starts alongside the status resolve and shares
+  /// the same wait, so the Gate's first answer comes within one timeout
+  /// (mp-335: startup waits at most two seconds; ticket 105, Finding 87-009)
+  /// and a slow network lands on the paywall instead of hanging the redirect.
+  /// An admin read that answers yes after the wait reopens a closed gate
+  /// (wave 27 review). keepAlive so the router's `ref.read` sees the same
   /// value every screen watches.
   const AppGateProvider._()
     : super(
@@ -65,18 +68,19 @@ final class AppGateProvider extends $AsyncNotifierProvider<AppGate, AppAccess> {
   AppGate create() => AppGate();
 }
 
-String _$appGateHash() => r'8e49ebde13d5daa3f1a599803757bcb35254015e';
+String _$appGateHash() => r'4ba4390d79567bb4445405ba11755812ada5effb';
 
 /// The app gate, as the router reads it (mp-280: everything is behind it):
 /// open or closed (mp-457).
 ///
 /// Loading while the status is unresolved — the status controller bounds
 /// that wait (mp-284), so awaiting `.future` here answers within a couple of
-/// seconds. The admin read is consulted only for an inactive status and
-/// gets what is left of the same wait, so the Gate's first answer comes
-/// within one timeout (mp-335: startup waits at most two seconds; ticket
-/// 105, Finding 87-009) and a slow network lands on the paywall instead of
-/// hanging the redirect. keepAlive so the router's `ref.read` sees the same
+/// seconds. The admin read starts alongside the status resolve and shares
+/// the same wait, so the Gate's first answer comes within one timeout
+/// (mp-335: startup waits at most two seconds; ticket 105, Finding 87-009)
+/// and a slow network lands on the paywall instead of hanging the redirect.
+/// An admin read that answers yes after the wait reopens a closed gate
+/// (wave 27 review). keepAlive so the router's `ref.read` sees the same
 /// value every screen watches.
 
 abstract class _$AppGate extends $AsyncNotifier<AppAccess> {

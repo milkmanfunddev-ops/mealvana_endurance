@@ -41,7 +41,7 @@ final class PasswordRecoveryControllerProvider
 }
 
 String _$passwordRecoveryControllerHash() =>
-    r'7c763a13054f44fa05fd00b3f13449c567e3fdd0';
+    r'b22b0a6e4b9d9d99e29f0ebb4251fc7e594b1e34';
 
 /// Controller for managing OTP-based password recovery flow
 /// Steps: 1) Send reset code  2) Verify code  3) Set new password
