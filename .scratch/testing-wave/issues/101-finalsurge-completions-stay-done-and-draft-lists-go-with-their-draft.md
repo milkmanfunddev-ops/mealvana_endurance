@@ -1,6 +1,6 @@
 # 101: FinalSurge completions stay done, and a draft's list goes with its draft
 
-**Status:** ready-for-agent
+**Status:** in-progress (wave 26, 2026-09-25)
 **Blocked by:** none.
 **Next:** `/implement-lee testing-wave`
 **Model:** opus
