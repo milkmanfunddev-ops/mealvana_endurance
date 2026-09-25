@@ -3,6 +3,29 @@
 One charter per landed version; overwrite with each landing. QA verifies the
 charter against the artifact and hunts beyond it.
 
+## Pipeline contract (amended 2026-09-24, per QA's incomplete-landing find)
+
+The landed HTML is now a TRUE single-file bundle — "sha matches" and "artifact
+runs" are the same claim again. Per version the bundle inlines: the dc-runtime
+(`support.js`, verbatim), the eight dc-import component dependencies (as
+base64 `data:` URLs in a `window.__resources` remap, each with its duplicate
+`@font-face` rules stripped — the main document declares every family), and
+the eight fonts as `data:` URIs (sourced from this repo's `assets/fonts/`;
+`Apercu-Regular` maps to `Apercu Regular.otf`, Compadre to the Demo cut —
+same families the design project ships). Only React/ReactDOM/Babel still come
+from unpkg (SRI-pinned; network needed). Two shas per landing: the DESIGN
+SOURCE sha (the project's `Fuel Timeline -standalone source-.html`, byte-equal
+with the design project) and the BUNDLE sha (this file). The bundler script
+sits beside this charter (`bundle-standalone.py`) so the transform is
+reproducible and auditable.
+
+## v19 bundle (2026-09-24)
+- source sha256/16 `b6da90768caf5413` (design project, verified byte-equal)
+- bundle sha256/16 `d666740ddcfee1ec` (the landed file, 882,718 bytes)
+- Smoke-tested served over localhost in Chrome: hydrates fully (no raw
+  mustaches), Day Header dep loads from the resource map, fonts render,
+  Event page surface + entry row respond.
+
 ## v19 (2026-09-24) — sha256/16 `b6da90768caf5413`
 
 Delta over v18: the ENTRYWAY extension for desk ratification (CE-1..CE-8
