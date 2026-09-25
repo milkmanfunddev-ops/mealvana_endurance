@@ -194,7 +194,7 @@ final class ConversationDraftFamily extends $Family
 ///   [setSession], [addComment], [toggleShopping], [setDaySlot],
 ///   [clearDaySlot] write Drift and schedule a best-effort upload.
 /// - **Remote-ack** edits: [pickMeals], [swapMeal], [confirmPlan],
-///   [newPlan], [logFromPlan], [planDay] call `vana-action`, fold the
+///   [newPlan], [logFromPlan], [planDay], [usePlanAgain] call `vana-action`, fold the
 ///   returned `batch` into Drift with [applyServerPlan], and throw
 ///   [NeedsConnectionException] when offline before sending anything.
 ///
@@ -217,7 +217,7 @@ const mealPlanControllerProvider = MealPlanControllerProvider._();
 ///   [setSession], [addComment], [toggleShopping], [setDaySlot],
 ///   [clearDaySlot] write Drift and schedule a best-effort upload.
 /// - **Remote-ack** edits: [pickMeals], [swapMeal], [confirmPlan],
-///   [newPlan], [logFromPlan], [planDay] call `vana-action`, fold the
+///   [newPlan], [logFromPlan], [planDay], [usePlanAgain] call `vana-action`, fold the
 ///   returned `batch` into Drift with [applyServerPlan], and throw
 ///   [NeedsConnectionException] when offline before sending anything.
 ///
@@ -238,7 +238,7 @@ final class MealPlanControllerProvider
   ///   [setSession], [addComment], [toggleShopping], [setDaySlot],
   ///   [clearDaySlot] write Drift and schedule a best-effort upload.
   /// - **Remote-ack** edits: [pickMeals], [swapMeal], [confirmPlan],
-  ///   [newPlan], [logFromPlan], [planDay] call `vana-action`, fold the
+  ///   [newPlan], [logFromPlan], [planDay], [usePlanAgain] call `vana-action`, fold the
   ///   returned `batch` into Drift with [applyServerPlan], and throw
   ///   [NeedsConnectionException] when offline before sending anything.
   ///
@@ -264,7 +264,7 @@ final class MealPlanControllerProvider
 }
 
 String _$mealPlanControllerHash() =>
-    r'94a9567a70c93a5eb613624443a7e12985e0e028';
+    r'3fb9aec2c835d6bb936d153707a3d9b0c82a1f35';
 
 /// The active plan for the current week — what the Plan tab, the Shopping
 /// tab, the chat's plan bar and the day planner all read.
@@ -279,7 +279,7 @@ String _$mealPlanControllerHash() =>
 ///   [setSession], [addComment], [toggleShopping], [setDaySlot],
 ///   [clearDaySlot] write Drift and schedule a best-effort upload.
 /// - **Remote-ack** edits: [pickMeals], [swapMeal], [confirmPlan],
-///   [newPlan], [logFromPlan], [planDay] call `vana-action`, fold the
+///   [newPlan], [logFromPlan], [planDay], [usePlanAgain] call `vana-action`, fold the
 ///   returned `batch` into Drift with [applyServerPlan], and throw
 ///   [NeedsConnectionException] when offline before sending anything.
 ///
