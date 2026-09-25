@@ -1,0 +1,4 @@
+13:32Z code_redemptions for E2EGIVE365 / B
+{"code": "E2EGIVE365", "id": "a2d4be66-df60-4073-9af1-ec8e332570e8", "code_id": "718e4ebf-482b-4390-ad52-18c80fb6cb67", "user_id": "f4451b56-3493-4272-9858-6dfb94115af4", "redeemed_at": "2026-09-25 13:31:27.122631+00"}
+user_entitlements B
+{"user_id": "f4451b56-3493-4272-9858-6dfb94115af4", "period_type": "PROMOTIONAL", "active_until": "2027-09-25 13:31:27.21+00", "event_at": "2026-09-25 13:31:27.384+00", "will_renew": false}

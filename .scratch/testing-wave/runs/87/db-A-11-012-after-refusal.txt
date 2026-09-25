@@ -1,0 +1,3 @@
+13:34:45Z code_redemptions for A (expect none) and E2EGIVE365 total
+{"code": "E2EGIVE365", "id": "a2d4be66-df60-4073-9af1-ec8e332570e8", "code_id": "718e4ebf-482b-4390-ad52-18c80fb6cb67", "user_id": null, "redeemed_at": "2026-09-25 13:31:27.122631+00"}
+user_entitlements A (expect none)

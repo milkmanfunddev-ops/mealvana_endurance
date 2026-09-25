@@ -1,0 +1,16 @@
+[08:34:08] Starting unified sync for user: 0b231de0-532c-46fd-ae10-085f738faa15
+[08:35:15] [rc-webhook] INITIAL_PURCHASE: active_until=2026-09-25T13:40:14.534Z period=NORMAL for 0b231de0-532c-46fd-ae10-085f738faa15
+[08:35:15] [CALC_MACROS] Garmin not connected for user 0b231de0-532c-46fd-ae10-085f738faa15 — skipping week Garmin context
+[08:35:16] [rc-webhook] INITIAL_PURCHASE: allowance 4000000 → 0b231de0-532c-46fd-ae10-085f738faa15 ({"balance":4000000,"granted":true,"allowance":4000000,"forfeited":0,"allowance_expires_at":"2026-09-25T13:40:14.534+00:00"})
+[08:42:03] [rc-webhook] RENEWAL: active_until=2026-09-25T13:45:14.534Z period=NORMAL for 0b231de0-532c-46fd-ae10-085f738faa15
+[08:42:03] [rc-webhook] RENEWAL: allowance 4000000 → 0b231de0-532c-46fd-ae10-085f738faa15 ({"balance":4000000,"granted":true,"allowance":4000000,"forfeited":4000000,"allowance_expires_at":"2026-09-25T13:45:14.534+00:00"})
+[08:48:10] [rc-webhook] RENEWAL: active_until=2026-09-25T13:50:14.534Z period=NORMAL for 0b231de0-532c-46fd-ae10-085f738faa15
+[08:48:10] [rc-webhook] RENEWAL: allowance 4000000 → 0b231de0-532c-46fd-ae10-085f738faa15 ({"balance":4000000,"granted":true,"allowance":4000000,"forfeited":4000000,"allowance_expires_at":"2026-09-25T13:50:14.534+00:00"})
+[08:54:10] [rc-webhook] RENEWAL: active_until=2026-09-25T13:55:14.534Z period=NORMAL for 0b231de0-532c-46fd-ae10-085f738faa15
+[08:54:11] [rc-webhook] RENEWAL: allowance 4000000 → 0b231de0-532c-46fd-ae10-085f738faa15 ({"balance":4000000,"granted":true,"allowance":4000000,"forfeited":4000000,"allowance_expires_at":"2026-09-25T13:55:14.534+00:00"})
+[08:55:15] [rc-webhook] RENEWAL: active_until=2026-09-25T14:00:14.534Z period=NORMAL for 0b231de0-532c-46fd-ae10-085f738faa15
+[08:55:15] [rc-webhook] RENEWAL: allowance 4000000 → 0b231de0-532c-46fd-ae10-085f738faa15 ({"balance":4000000,"granted":true,"allowance":4000000,"forfeited":4000000,"allowance_expires_at":"2026-09-25T14:00:14.534+00:00"})
+[09:01:46] [rc-webhook] EXPIRATION: active_until=2026-09-25T14:00:14.534Z period=NORMAL for 0b231de0-532c-46fd-ae10-085f738faa15
+[09:01:46] [rc-webhook] EXPIRATION: allowance forfeited for 0b231de0-532c-46fd-ae10-085f738faa15 ({"balance":0,"allowance":0,"forfeited":4000000})
+
+(14 rows)
