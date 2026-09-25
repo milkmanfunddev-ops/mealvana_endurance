@@ -1,0 +1,6 @@
+{"id": "15b6b4f4-3a46-4581-826b-f957fd8000a5", "status": "archived", "week_start": "2026-09-20", "meals": 4}
+{"id": "be6abf2f-881b-478d-9b4b-b09afac3b9a2", "status": "confirmed", "week_start": "2026-09-20", "meals": 4}
+{"id": "b82409d9-a8b8-440d-9f4e-f25262f8a73a", "status": "archived", "week_start": "2026-09-20", "meals": 0}
+{"id": "54a02440-8b6d-43ac-a1b9-6ce10a47fd74", "status": "archived", "week_start": "2026-09-20", "meals": 1}
+{"id": "173cebb2-454f-48d9-bbd3-6b3a7e561335", "status": "draft", "week_start": "2026-09-20", "meals": 2}
+{"id": "6f365c30-b359-4d7c-a477-7bbc8b7e7450", "status": "archived", "week_start": "2026-09-20", "meals": 2}

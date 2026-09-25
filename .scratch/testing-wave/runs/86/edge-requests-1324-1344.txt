@@ -1,0 +1,33 @@
+[08:22:50] POST | 200 | https://vlmtsdzpnjnavdgytcmi.supabase.co/functions/v1/calculate-daily-macros-v6
+[08:23:11] POST | 200 | https://vlmtsdzpnjnavdgytcmi.supabase.co/functions/v1/search-public-events
+[08:26:21] POST | 200 | https://vlmtsdzpnjnavdgytcmi.supabase.co/functions/v1/sync-all-data
+[08:26:51] POST | 200 | https://vlmtsdzpnjnavdgytcmi.supabase.co/functions/v1/ensure-credits
+[08:26:51] POST | 200 | https://vlmtsdzpnjnavdgytcmi.supabase.co/functions/v1/ensure-credits
+[08:27:09] POST | 200 | https://vlmtsdzpnjnavdgytcmi.supabase.co/functions/v1/vana-action
+[08:28:47] POST | 200 | https://vlmtsdzpnjnavdgytcmi.supabase.co/functions/v1/sync-all-data
+[08:29:41] POST | 200 | https://vlmtsdzpnjnavdgytcmi.supabase.co/functions/v1/redeem-code
+[08:30:10] POST | 400 | https://vlmtsdzpnjnavdgytcmi.supabase.co/functions/v1/redeem-code
+[08:30:10] POST | 400 | https://vlmtsdzpnjnavdgytcmi.supabase.co/functions/v1/redeem-code
+[08:31:27] POST | 200 | https://vlmtsdzpnjnavdgytcmi.supabase.co/functions/v1/redeem-code
+[08:31:28] POST | 200 | https://vlmtsdzpnjnavdgytcmi.supabase.co/functions/v1/revenuecat-webhook
+[08:31:32] POST | 200 | https://vlmtsdzpnjnavdgytcmi.supabase.co/functions/v1/calculate-daily-macros-v6
+[08:32:26] POST | 200 | https://vlmtsdzpnjnavdgytcmi.supabase.co/functions/v1/delete-user
+[08:33:47] POST | 200 | https://vlmtsdzpnjnavdgytcmi.supabase.co/functions/v1/sync-all-data
+[08:34:10] POST | 200 | https://vlmtsdzpnjnavdgytcmi.supabase.co/functions/v1/sync-all-data
+[08:34:33] POST | 200 | https://vlmtsdzpnjnavdgytcmi.supabase.co/functions/v1/redeem-code
+[08:35:15] POST | 200 | https://vlmtsdzpnjnavdgytcmi.supabase.co/functions/v1/calculate-daily-macros-v6
+[08:35:16] POST | 200 | https://vlmtsdzpnjnavdgytcmi.supabase.co/functions/v1/revenuecat-webhook
+[08:35:46] POST | 200 | https://vlmtsdzpnjnavdgytcmi.supabase.co/functions/v1/sync-all-data
+[08:35:47] POST | 200 | https://vlmtsdzpnjnavdgytcmi.supabase.co/functions/v1/calculate-daily-macros-v6
+[08:35:59] POST | 200 | https://vlmtsdzpnjnavdgytcmi.supabase.co/functions/v1/vana-action
+[08:37:04] POST | 200 | https://vlmtsdzpnjnavdgytcmi.supabase.co/functions/v1/vana-chat
+[08:38:30] POST | 200 | https://vlmtsdzpnjnavdgytcmi.supabase.co/functions/v1/kroger
+[08:38:39] POST | 200 | https://vlmtsdzpnjnavdgytcmi.supabase.co/functions/v1/kroger
+[08:38:54] POST | 200 | https://vlmtsdzpnjnavdgytcmi.supabase.co/functions/v1/sync-all-data
+[08:39:09] POST | 200 | https://vlmtsdzpnjnavdgytcmi.supabase.co/functions/v1/delete-user
+[08:39:12] POST | 200 | https://vlmtsdzpnjnavdgytcmi.supabase.co/functions/v1/kroger
+[08:39:45] POST | 200 | https://vlmtsdzpnjnavdgytcmi.supabase.co/functions/v1/kroger
+[08:40:17] POST | 200 | https://vlmtsdzpnjnavdgytcmi.supabase.co/functions/v1/kroger
+[08:40:50] POST | 200 | https://vlmtsdzpnjnavdgytcmi.supabase.co/functions/v1/kroger
+
+(31 rows)

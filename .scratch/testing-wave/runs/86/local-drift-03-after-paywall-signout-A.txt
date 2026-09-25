@@ -1,0 +1,15 @@
+# local Drift rows per user_id (after paywall sign-out of A (4dbde602) at 13:35Z, read at 13:35:19Z)
+food_preferences_table  37129f7e-d0b8-4748-b584-e3af0575b8b4:46 
+activities  37129f7e-d0b8-4748-b584-e3af0575b8b4:58 
+events  37129f7e-d0b8-4748-b584-e3af0575b8b4:3 
+carb_loading_plans  37129f7e-d0b8-4748-b584-e3af0575b8b4:3 
+integrations  37129f7e-d0b8-4748-b584-e3af0575b8b4:1 
+meal_logs  37129f7e-d0b8-4748-b584-e3af0575b8b4:24 
+meal_plans  37129f7e-d0b8-4748-b584-e3af0575b8b4:4 
+plan_meals  37129f7e-d0b8-4748-b584-e3af0575b8b4:10 
+# tables without user_id that hold rows:
+users 1
+foods 31
+carb_loading_days 7
+carb_loading_foods 27
+weather_forecasts_table 2
