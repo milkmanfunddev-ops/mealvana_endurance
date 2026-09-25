@@ -230,6 +230,10 @@ class _Body extends ConsumerWidget {
             ),
           ),
         ],
+        // A connection the other Kroger environment left (22-005): shown,
+        // removable below, and replaced by Connect.
+        if (!view.connected && view.otherEnvironment != null)
+          _BodyText(krogerText(ref, ContentKeys.krogerOtherEnvironment)),
         if (!view.connected && view.available)
           Padding(
             padding: const EdgeInsets.symmetric(vertical: AppSpacing.sm),
@@ -409,7 +413,7 @@ class _Body extends ConsumerWidget {
         // Rarely wanted, so it is last rather than under the title — and
         // asked about first, because it sits under the cart actions and the
         // way back from a slipped tap is another kroger.com sign-in (21-010).
-        if (view.connected)
+        if (view.connected || view.otherEnvironment != null)
           Padding(
             padding: const EdgeInsets.only(top: AppSpacing.xl),
             child: Center(

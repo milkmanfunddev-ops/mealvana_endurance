@@ -15,9 +15,9 @@
 
 **Touches:** lib/features/auth/application/supabase_auth_service.dart, lib/features/auth/presentation/providers/password_recovery_controller.dart, lib/features/auth/application/email_auth_service.dart (only if the reset path runs there), lib/features/kroger/, supabase/functions/kroger/index.ts, supabase/functions/_shared/kroger/, lib/features/content/domain/content_keys.dart, assets/config/content_defaults.json
 
-- [ ] Controller test through the real notifier: a successful password update then signs out globally; a failed one signs nothing out.
-- [ ] Kroger: a test (deno for `status`, widget for the screen) where the stored connection is the other environment's: the screen shows it and Disconnect removes the row; Connect replaces it.
-- [ ] No hardcoded strings: any new text goes through the content system.
-- [ ] `flutter analyze` clean on touched files, deno tests for touched functions. Deploy: wave lead.
+- [x] Controller test through the real notifier: a successful password update then signs out globally; a failed one signs nothing out.
+- [x] Kroger: a test (deno for `status`, widget for the screen) where the stored connection is the other environment's: the screen shows it and Disconnect removes the row; Connect replaces it.
+- [x] No hardcoded strings: any new text goes through the content system.
+- [x] `flutter analyze` clean on touched files, deno tests for touched functions. Deploy: wave lead.
 
 Next: /implement-lee testing-wave

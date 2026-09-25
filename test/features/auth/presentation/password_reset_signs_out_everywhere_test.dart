@@ -16,7 +16,6 @@ import 'package:mealvana_endurance/features/auth/presentation/providers/password
 import 'package:mealvana_endurance/shared/services/analytics/analytics_tracker.dart';
 import 'package:mealvana_endurance/shared/services/app_external_deps.dart';
 
-import '../../../helpers/fakes/fake_supabase_client.dart';
 import '../../../helpers/widget_test_harness.dart';
 
 class _MockAnalyticsTracker extends Mock implements AnalyticsTracker {}

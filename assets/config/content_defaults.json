@@ -7,6 +7,7 @@
     "refresh": "Refresh connection and draft",
     "not_configured": "Kroger shopping is being set up. Your shopping list is still available.",
     "certification": "Test mode. Nothing reaches a real Kroger cart.",
+    "other_environment": "A Kroger account connected in another version of the app is still saved, and this version can't use it. Disconnect Kroger removes it; Connect Kroger replaces it.",
     "mobile_only": "Connect Kroger from the iOS or Android app.",
     "redirect_mismatch": "Kroger sign-in is not configured for this app version yet. The registered callback must match this Android build.",
     "authorization_cancelled": "Kroger authorization was cancelled. Try connecting again.",
