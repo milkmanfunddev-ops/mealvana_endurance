@@ -466,11 +466,14 @@ class ChangeDetectionService {
         local.garminSummaryId != null) {
       return false;
     }
+    // A measurement the payload leaves out is kept by the merge, so only a
+    // sent value that differs counts as a change.
+    bool differs(Object? sent, Object? held) => sent != null && sent != held;
     return !local.isProviderCompleted ||
-        local.actualTime != remote.actualTime ||
-        local.completedAt != remote.completedAt ||
-        local.actualDistanceMiles != remote.actualDistanceMiles ||
-        local.actualDurationMinutes != remote.actualDurationMinutes;
+        differs(remote.actualTime, local.actualTime) ||
+        differs(remote.completedAt, local.completedAt) ||
+        differs(remote.actualDistanceMiles, local.actualDistanceMiles) ||
+        differs(remote.actualDurationMinutes, local.actualDurationMinutes);
   }
 
   String _fingerprint(Activity activity) {

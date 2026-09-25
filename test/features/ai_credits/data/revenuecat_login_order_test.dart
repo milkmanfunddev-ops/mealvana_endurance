@@ -174,7 +174,8 @@ void main() {
     // Ticket 85's review note (testing-wave 94 item 4): a failed attempt
     // used to settle the wait, so a logIn asked after it was dropped even
     // though the next configure call retries.
-    test('a logIn asked after the failure waits for the retry', () async {
+    test('a logIn asked after the failure starts the retry and waits for '
+        'it; a later configure joins it', () async {
       final svc = _service(sdk);
       sdk.configureFailuresLeft = 1;
 
@@ -182,8 +183,6 @@ void main() {
       expect(RevenueCatService.isConfigured, isFalse);
 
       final waiting = svc.logIn(_userId);
-      await Future<void>.delayed(Duration.zero);
-      expect(sdk.calls, ['configure'], reason: 'logIn waits, not skipped');
 
       await svc.configureIfPossible();
       await waiting;
@@ -211,19 +210,41 @@ void main() {
     );
 
     test(
-      'with no retry the wait still ends and nothing reaches the SDK',
+      'with no retry coming, logIn starts it itself instead of waiting '
+      'out the bound (wave 25 review)',
       () async {
         final svc = _service(
           sdk,
-          configureWait: const Duration(milliseconds: 20),
+          configureWait: const Duration(seconds: 10),
         );
         sdk.configureFailuresLeft = 1;
 
         await svc.configureIfPossible();
+        final sw = Stopwatch()..start();
         await svc.logIn(_userId);
 
-        expect(sdk.calls, ['configure']);
+        expect(sdk.calls, ['configure', 'configure', 'logIn:$_userId']);
+        expect(RevenueCatService.isConfigured, isTrue);
+        expect(sw.elapsed, lessThan(const Duration(seconds: 1)));
+      },
+    );
+
+    test(
+      'when the retry logIn starts also fails, logIn skips without the SDK',
+      () async {
+        final svc = _service(
+          sdk,
+          configureWait: const Duration(seconds: 10),
+        );
+        sdk.configureFailuresLeft = 2;
+
+        await svc.configureIfPossible();
+        final sw = Stopwatch()..start();
+        await svc.logIn(_userId);
+
+        expect(sdk.calls, ['configure', 'configure']);
         expect(RevenueCatService.isConfigured, isFalse);
+        expect(sw.elapsed, lessThan(const Duration(seconds: 1)));
       },
     );
   });

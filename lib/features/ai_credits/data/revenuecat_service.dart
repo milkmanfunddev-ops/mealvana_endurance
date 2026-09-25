@@ -81,6 +81,12 @@ class RevenueCatService {
   /// for that retry, bounded by [_configureWait] (ticket 85's review note).
   static Completer<void>? _configureSettled;
 
+  /// Whether any configure attempt has finished, successfully or not. A
+  /// [logIn] after a failed attempt starts the retry itself instead of
+  /// waiting out [_configureWait] for one nobody else will start (wave 25
+  /// review).
+  static bool _attemptFinished = false;
+
   /// The `logIn` in flight and the account it is for: a second ask for the
   /// same account while it runs joins it rather than logging in again.
   static Future<void>? _logInInFlight;
@@ -97,6 +103,7 @@ class RevenueCatService {
     _configured = false;
     _configureAttempt = null;
     _configureSettled = null;
+    _attemptFinished = false;
     _logInInFlight = null;
     _logInInFlightUserId = null;
   }
@@ -192,6 +199,7 @@ class RevenueCatService {
     if (inFlight != null) return inFlight;
     final attempt = _configure().then((isFinal) {
       _configureAttempt = null;
+      _attemptFinished = true;
       if (!isFinal) return;
       final settled = _settled;
       if (!settled.isCompleted) settled.complete();
@@ -275,8 +283,13 @@ class RevenueCatService {
       }
       final settled = _settled;
       if (!settled.isCompleted) {
+        final inFlight = _configureAttempt;
+        // Join the attempt running now; after a failed one, retry here;
+        // before any has started, wait for the startup flow's.
+        final Future<void> wait = inFlight ??
+            (_attemptFinished ? configureIfPossible() : settled.future);
         _crumb('logIn waiting for configure');
-        await settled.future.timeout(_configureWait, onTimeout: () {});
+        await wait.timeout(_configureWait, onTimeout: () {});
       }
       if (!_configured) {
         _crumb('logIn skipped: SDK not configured');
