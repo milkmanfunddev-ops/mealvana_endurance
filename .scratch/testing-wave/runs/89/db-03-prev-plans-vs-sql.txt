@@ -1,0 +1,12 @@
+## plans list_plans should list (status confirmed or confirmed_at set, meals>0, not deleted), 20:07:13Z
+id	week_start	status	confirmed_at	meals
+be6abf2f	2026-09-20	confirmed	2026-09-24 16:53:19.994+00	4
+f2c0bc78	2026-09-13	confirmed	2026-09-17 00:27:10.739218+00	6
+a5b4c73c	2026-09-06	confirmed	2026-09-11 15:15:14.853949+00	4
+a89fbf86	2026-08-30	confirmed	2026-09-02 13:46:19.596+00	3
+## never-confirmed drafts (must not be listed)
+id	week_start	status	meals
+968c5a59	2026-08-23	draft	0
+173cebb2	2026-09-20	draft	2
+fc9687ff	2026-09-13	draft	1
+## sheet at 20:07:04Z: Sep 13 – Sep 19 Confirmed 6 meals; Sep 6 – Sep 12 Confirmed 4 meals; Aug 30 – Sep 5 Confirmed 3 meals

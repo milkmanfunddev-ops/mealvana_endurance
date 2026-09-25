@@ -1,0 +1,7 @@
+## meal_library rows naming salmon in name or ingredients (active)
+n	names
+8	Kedgeree | Salmon, jasmine rice & steamed greens with lemon | Salmon, roasted potatoes & radishes | Salmon, pasta & spinach | Salmon, quinoa & spinach | Salmon, oven fries & roasted veg | Salmon, rice & steamed bok choy (gluten-free, dairy-free, egg-free, nut-free) | Salmon, wholemeal bread & grated carrot sandwich
+## rows whose why mentions salmon but name/ingredients do not
+count
+51
+## account is vegetarian (Meals tab search 'salmon' -> Nothing found, 50-)

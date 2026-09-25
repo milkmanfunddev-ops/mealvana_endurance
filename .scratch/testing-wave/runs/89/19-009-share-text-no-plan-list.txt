@@ -1,0 +1,23 @@
+Mealvana shopping list
+9 items to buy
+
+PRODUCE
+☑ asparagus
+
+DAIRY
+☐ milk
+
+BAKERY & GRAINS
+☑ pasta
+
+PANTRY
+☑ green beans
+
+FROZEN
+☐ frozen peas
+
+OTHER
+☑ Alfredo sauce — 1 bottle
+☑ cantaloupe
+☐ detergents
+☑ fish — 1 lb
