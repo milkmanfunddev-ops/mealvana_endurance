@@ -30,6 +30,14 @@ class _EmailLoginScreenState extends ConsumerState<EmailLoginScreen> {
 
   bool _obscurePassword = true;
 
+  /// True from the Log In tap until this screen is left. The controller's
+  /// state stops loading as soon as the session lands, but the screen still
+  /// has work before it navigates (the controller's trailing analytics, the
+  /// pop, or settling the app gate); reading busy from the controller alone
+  /// showed the form enabled for about a second (Finding 12-003). Cleared
+  /// only when the login fails, never on success.
+  bool _submitting = false;
+
   @override
   void initState() {
     super.initState();
@@ -52,6 +60,9 @@ class _EmailLoginScreenState extends ConsumerState<EmailLoginScreen> {
       return;
     }
 
+    if (_submitting) return;
+    setState(() => _submitting = true);
+
     final controller = ref.read(postOnboardingAuthControllerProvider.notifier);
     final contentService = ref.read(contentServiceProvider);
 
@@ -66,7 +77,9 @@ class _EmailLoginScreenState extends ConsumerState<EmailLoginScreen> {
       if (context.canPop()) {
         // The Log In screen beneath listens for this; the pop result is not
         // reliable (see emailAuthHandoffProvider).
-        ref.read(emailAuthHandoffProvider.notifier).succeeded(EmailAuthKind.login);
+        ref
+            .read(emailAuthHandoffProvider.notifier)
+            .succeeded(EmailAuthKind.login);
         context.pop(true);
       } else {
         // On web, check if user is a coach and redirect to coach portal
@@ -85,11 +98,18 @@ class _EmailLoginScreenState extends ConsumerState<EmailLoginScreen> {
           }
         }
         if (!mounted) return;
-        await ref.read(appGateProvider.notifier).settle();
+        try {
+          await ref.read(appGateProvider.notifier).settle();
+        } catch (_) {
+          // Never leave the form stuck busy on a gate failure.
+          if (mounted) setState(() => _submitting = false);
+          rethrow;
+        }
         if (!mounted) return;
         context.go('/main');
       }
     } else if (!success && mounted) {
+      setState(() => _submitting = false);
       // Error message shown by controller via snackbar
       MealvanaSnackbar.showError(
         context,
@@ -104,12 +124,13 @@ class _EmailLoginScreenState extends ConsumerState<EmailLoginScreen> {
   @override
   Widget build(BuildContext context) {
     final asyncState = ref.watch(postOnboardingAuthControllerProvider);
+    final isBusy = asyncState.isLoading || _submitting;
     final contentService = ref.watch(contentServiceProvider);
     final emailAuthService = ref.watch(emailAuthServiceProvider.notifier);
 
     return AdaptivePageScaffold(
       backgroundColor: Theme.of(context).scaffoldBackgroundColor,
-      appBar: _buildAppBar(context, isLoading: asyncState.isLoading),
+      appBar: _buildAppBar(context, isLoading: isBusy),
       contentWidth: AdaptiveContentWidth.narrow,
       body: Stack(
         children: [
@@ -242,7 +263,7 @@ class _EmailLoginScreenState extends ConsumerState<EmailLoginScreen> {
                     child: GestureDetector(
                       key: const ValueKey('login.forgot_password_button'),
                       behavior: HitTestBehavior.opaque,
-                      onTap: asyncState.isLoading
+                      onTap: isBusy
                           ? null
                           : () => context.push('/auth/forgot-password'),
                       child: Padding(
@@ -269,14 +290,12 @@ class _EmailLoginScreenState extends ConsumerState<EmailLoginScreen> {
                   KylePrimaryButton(
                     key: const ValueKey('login.log_in_button'),
                     text: contentService.getValue(
-                      asyncState.isLoading
+                      isBusy
                           ? 'auth.login.logging_in_button'
                           : 'auth.login.button',
-                      defaultValue: asyncState.isLoading
-                          ? 'Logging in...'
-                          : 'Log In',
+                      defaultValue: isBusy ? 'Logging in...' : 'Log In',
                     ),
-                    onPressed: asyncState.isLoading ? null : _handleLogin,
+                    onPressed: isBusy ? null : _handleLogin,
                   ),
 
                   const SizedBox(height: AppSpacing.md),
@@ -288,9 +307,7 @@ class _EmailLoginScreenState extends ConsumerState<EmailLoginScreen> {
                       'auth.email_signup.back_button',
                       defaultValue: 'Back',
                     ),
-                    onPressed: asyncState.isLoading
-                        ? null
-                        : () => context.pop(),
+                    onPressed: isBusy ? null : () => context.pop(),
                   ),
 
                   const SizedBox(height: AppSpacing.xxl),
@@ -300,7 +317,7 @@ class _EmailLoginScreenState extends ConsumerState<EmailLoginScreen> {
           ),
 
           // Loading overlay
-          if (asyncState.isLoading)
+          if (isBusy)
             Container(
               color: Theme.of(
                 context,

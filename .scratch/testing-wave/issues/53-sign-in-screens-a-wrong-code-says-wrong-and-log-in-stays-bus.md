@@ -13,8 +13,8 @@
 
 **Touches:** lib/features/auth/application/email_auth_service.dart, lib/features/auth/domain/auth_exceptions.dart, lib/features/auth/presentation/screens/email_login_screen.dart
 
-- [ ] Unit test on the code-error mapping.
-- [ ] Widget test: Log In stays disabled from tap to navigation.
+- [x] Unit test on the code-error mapping.
+- [x] Widget test: Log In stays disabled from tap to navigation.
 - [ ] codegen if annotations changed, `flutter analyze` and the suite green.
 
 Next: /implement-lee testing-wave

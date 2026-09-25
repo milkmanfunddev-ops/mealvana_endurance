@@ -499,12 +499,12 @@ class EmailAuthService extends _$EmailAuthService {
           type: type,
         );
       } on AuthApiException catch (e) {
-        // Supabase reports a bad or stale code as a 4xx with an opaque
-        // message; surface something a user can act on instead.
-        throw InvalidVerificationCodeException(
-          e.message.toLowerCase().contains('expired')
-              ? 'That code has expired. Tap resend for a new one.'
-              : 'That code is not right. Check it and try again.',
+        // GoTrue reports a wrong and a stale code with one answer; surface
+        // something a user can act on instead (see fromGoTrue).
+        throw InvalidVerificationCodeException.fromGoTrue(
+          code: e.code,
+          statusCode: e.statusCode,
+          message: e.message,
         );
       }
 
