@@ -1,6 +1,6 @@
 # 56: Kroger: the right location reason, the app's own name, and no 400 on every Shopping open
 
-**Status:** in-progress (wave 19, 2026-09-25)
+**Status:** done (wave 19, 2026-09-25)
 **Blocked by:** none.
 **Next:** `/implement-lee testing-wave`
 **Model:** opus
@@ -15,6 +15,6 @@
 
 - [x] Info.plist strings checked in the diff.
 - [ ] Opening Shopping on dev leaves no 400 in the `kroger` edge log.
-- [ ] codegen if annotations changed, `flutter analyze` and the suite green.
+- [x] codegen if annotations changed, `flutter analyze` and the suite green.
 
 Next: /implement-lee testing-wave

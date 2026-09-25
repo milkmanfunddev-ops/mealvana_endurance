@@ -1,6 +1,6 @@
 # 38: The server keeps Pro through a late renewal webhook and ends it when RevenueCat does
 
-**Status:** in-progress (wave 19, 2026-09-25)
+**Status:** done (wave 19, 2026-09-25)
 **Blocked by:** none.
 **Next:** `/implement-lee testing-wave`
 **Model:** opus
@@ -15,7 +15,7 @@
 
 - [x] deno tests: a renewing row a minute past `active_until` is entitled; a non-renewing one is not; past the grace neither is.
 - [x] deno test: an EXPIRATION event sets `active_until` to its `expiration_at_ms`.
-- [ ] Deployed to dev, per the deploy playbook.
-- [ ] codegen if annotations changed, `flutter analyze` and the suite green.
+- [x] Deployed to dev, per the deploy playbook.
+- [x] codegen if annotations changed, `flutter analyze` and the suite green.
 
 Next: /implement-lee testing-wave

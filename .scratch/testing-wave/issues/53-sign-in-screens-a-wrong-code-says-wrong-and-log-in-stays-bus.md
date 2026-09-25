@@ -1,6 +1,6 @@
 # 53: Sign-in screens: a wrong code says wrong, and Log In stays busy
 
-**Status:** in-progress (wave 19, 2026-09-25)
+**Status:** done (wave 19, 2026-09-25)
 **Blocked by:** none.
 **Next:** `/implement-lee testing-wave`
 **Model:** opus
@@ -15,6 +15,6 @@
 
 - [x] Unit test on the code-error mapping.
 - [x] Widget test: Log In stays disabled from tap to navigation.
-- [ ] codegen if annotations changed, `flutter analyze` and the suite green.
+- [x] codegen if annotations changed, `flutter analyze` and the suite green.
 
 Next: /implement-lee testing-wave

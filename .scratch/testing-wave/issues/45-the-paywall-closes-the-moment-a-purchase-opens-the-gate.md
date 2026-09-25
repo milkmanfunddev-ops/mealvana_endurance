@@ -1,6 +1,6 @@
 # 45: The paywall closes the moment a purchase opens the Gate
 
-**Status:** in-progress (wave 19, 2026-09-25)
+**Status:** done (wave 19, 2026-09-25)
 **Blocked by:** none.
 **Next:** `/implement-lee testing-wave`
 **Model:** opus
@@ -15,6 +15,6 @@
 
 - [x] A seam test through the real paywall notifier: after purchase success, Continue stays disabled.
 - [ ] On the simulator the timeline follows the Test Store sheet with no enabled paywall in between.
-- [ ] codegen if annotations changed, `flutter analyze` and the suite green.
+- [x] codegen if annotations changed, `flutter analyze` and the suite green.
 
 Next: /implement-lee testing-wave

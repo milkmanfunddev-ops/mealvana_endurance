@@ -1,6 +1,6 @@
 # 55: Vana's day note says its carb line once
 
-**Status:** in-progress (wave 19, 2026-09-25)
+**Status:** done (wave 19, 2026-09-25)
 **Blocked by:** none.
 **Next:** `/implement-lee testing-wave`
 **Model:** opus
@@ -14,7 +14,7 @@
 **Touches:** supabase/functions/_shared/vana/tools.ts, lib/features/meal_planning/presentation/widgets/day_card.dart
 
 - [x] A test on the note's assembly with a headline that the body repeats.
-- [ ] Deployed to dev if the fix is server-side.
-- [ ] codegen if annotations changed, `flutter analyze` and the suite green.
+- [x] Deployed to dev if the fix is server-side.
+- [x] codegen if annotations changed, `flutter analyze` and the suite green.
 
 Next: /implement-lee testing-wave

@@ -1,6 +1,6 @@
 # 44: The barcode scanner keeps its caller and survives the camera prompt
 
-**Status:** in-progress (wave 19, 2026-09-25)
+**Status:** done (wave 19, 2026-09-25)
 **Blocked by:** none.
 **Next:** `/implement-lee testing-wave`
 **Model:** opus
@@ -15,6 +15,6 @@
 
 - [x] A router test: `barcode_scanner_opened` logs the caller's context from meal logging.
 - [x] A widget test: a second start during the first shows no raw controller error.
-- [ ] codegen if annotations changed, `flutter analyze` and the suite green.
+- [x] codegen if annotations changed, `flutter analyze` and the suite green.
 
 Next: /implement-lee testing-wave

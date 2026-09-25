@@ -1,6 +1,6 @@
 # 43: One AI logging call writes one row to the call log
 
-**Status:** in-progress (wave 19, 2026-09-25)
+**Status:** done (wave 19, 2026-09-25)
 **Blocked by:** none.
 **Next:** `/implement-lee testing-wave`
 **Model:** opus
@@ -15,6 +15,6 @@
 
 - [x] deno test (or a harness test) for each function: one call, one call-log row.
 - [ ] Deployed to dev; one describe on dev leaves one row.
-- [ ] codegen if annotations changed, `flutter analyze` and the suite green.
+- [x] codegen if annotations changed, `flutter analyze` and the suite green.
 
 Next: /implement-lee testing-wave

@@ -1,6 +1,6 @@
 # 57: Harness scripts and tests read the world as it is
 
-**Status:** in-progress (wave 19, 2026-09-25)
+**Status:** done (wave 19, 2026-09-25)
 **Blocked by:** none.
 **Next:** `/implement-lee testing-wave`
 **Model:** opus
@@ -16,6 +16,6 @@
 - [x] `edge_logs.sh` prints rows for a known function on dev.
 - [x] `ci_config_contract_test` green.
 - [x] Running Patrol with no env file fails fast with a clear message.
-- [ ] codegen if annotations changed, `flutter analyze` and the suite green.
+- [x] codegen if annotations changed, `flutter analyze` and the suite green.
 
 Next: /implement-lee testing-wave

@@ -1,6 +1,6 @@
 # 39: A code redemption outlives the account that made it
 
-**Status:** in-progress (wave 19, 2026-09-25)
+**Status:** done (wave 19, 2026-09-25)
 **Blocked by:** none.
 **Next:** `/implement-lee testing-wave`
 **Model:** opus
@@ -16,6 +16,6 @@
 - [x] A new idempotent migration; after deleting a user, its redemptions still count toward the code's total (SQL check on dev).
 - [x] deno test: a giveaway at its limit refuses a new account even after the redeeming account was deleted.
 - [x] Applied to dev only; prod waits for the playbook.
-- [ ] codegen if annotations changed, `flutter analyze` and the suite green.
+- [x] codegen if annotations changed, `flutter analyze` and the suite green.
 
 Next: /implement-lee testing-wave

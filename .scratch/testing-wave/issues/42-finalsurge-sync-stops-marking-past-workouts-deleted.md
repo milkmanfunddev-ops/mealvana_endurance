@@ -1,6 +1,6 @@
 # 42: FinalSurge sync stops marking past workouts deleted
 
-**Status:** in-progress (wave 19, 2026-09-25)
+**Status:** done (wave 19, 2026-09-25)
 **Blocked by:** none.
 **Next:** `/implement-lee testing-wave`
 **Model:** fable
@@ -16,6 +16,6 @@
 - [x] Unit test: a past workout missing from the upcoming list keeps `provider_deleted_at` null; a workout inside the window that vanished is flagged.
 - [x] Unit test: `last_synced_at` serialises with a UTC offset.
 - [x] Past FinalSurge rows already flagged on dev are cleared (one idempotent SQL, dev only), or the ticket says why not.
-- [ ] codegen if annotations changed, `flutter analyze` and the suite green.
+- [x] codegen if annotations changed, `flutter analyze` and the suite green.
 
 Next: /implement-lee testing-wave

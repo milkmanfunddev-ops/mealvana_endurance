@@ -1,6 +1,6 @@
 # 37: Shopping quantities come out in what the athlete buys
 
-**Status:** in-progress (wave 19, 2026-09-25)
+**Status:** done (wave 19, 2026-09-25)
 **Blocked by:** none.
 **Next:** `/implement-lee testing-wave`
 **Model:** opus
@@ -15,7 +15,7 @@
 
 - [x] A deno test: 8 servings of cooked short-grain rice at 200 g gives the dry amount (or a "cooked" row), never 1.6 kg of plain rice.
 - [x] The Kroger screen and the Shopping tab show the same row in the same units (widget test).
-- [ ] Deployed to dev.
-- [ ] codegen if annotations changed, `flutter analyze` and the suite green.
+- [x] Deployed to dev.
+- [x] codegen if annotations changed, `flutter analyze` and the suite green.
 
 Next: /implement-lee testing-wave
