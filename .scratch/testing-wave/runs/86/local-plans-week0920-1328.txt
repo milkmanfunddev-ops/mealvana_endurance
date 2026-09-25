@@ -1,0 +1,3 @@
+plan|status|meals|names
+173cebb2|archived|2|Quinoa porridge with berries & / Sweet rice cake with jam
+be6abf2f|confirmed|4|Farro, chickpea & roasted caul / Spelt, lentil & raw pepper-car / Wholewheat pasta, mixed veg &  / Farro, white bean & roasted be

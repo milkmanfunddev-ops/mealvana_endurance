@@ -1,0 +1,6 @@
+# dev public.users / entitlements for account A (4dbde602-69d1-48cb-b984-2ca707702256), read 13:34:12Z
+{"id": "4dbde602-69d1-48cb-b984-2ca707702256", "email": "lee+e2e-86-20260925t1329z@rightpathprogramming.com", "first_name": null, "last_name": null, "gender": "male", "gut_training_level": "high", "sweat_rate": "heavy", "onboarding_completed": true, "nutrition_target_overrides": {"duringRun": {"carbRateGPerH": 85}, "duringCycling": {}}}
+# user_entitlements:
+(no rows)
+# auth.users:
+{"id": "4dbde602-69d1-48cb-b984-2ca707702256", "email": "lee+e2e-86-20260925t1329z@rightpathprogramming.com", "email_confirmed_at": "2026-09-25 13:33:44.909394+00"}

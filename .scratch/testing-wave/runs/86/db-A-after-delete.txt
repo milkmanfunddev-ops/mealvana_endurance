@@ -1,0 +1,5 @@
+# account A after in-app delete, read 13:39:24Z
+# public.users:
+(no rows)
+# auth.users:
+(no rows)

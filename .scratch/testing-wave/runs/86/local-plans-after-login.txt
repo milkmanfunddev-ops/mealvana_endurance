@@ -1,0 +1,17 @@
+u|plan|status|week_start|meals|names
+37129f7e|b035e41a|confirmed|2026-08-23|2|Wheatberries, white bean & raw / Wholewheat pasta, mixed veg & 
+37129f7e|a3698b11|draft|2026-08-30|4|Quinoa, tempeh & roasted peppe / Big salad — avocado, bell pepp / Rice, edamame & roasted caulif / Greens, chickpeas, quinoa & ta
+37129f7e|cbf31041|draft|2026-08-30|4|Rice, edamame & roasted caulif / Tofu, broccoli, red pepper sti / Rice, black beans & avocado (n / Quinoa, tempeh & roasted peppe
+37129f7e|7907b242|draft|2026-09-06|0|
+607f9dd5|968c5a59|draft|2026-08-23|0|
+607f9dd5|a89fbf86|confirmed|2026-08-30|3|Chicken breast & white rice wi / Marathon Bolognese over pasta / Chicken, jasmine rice & roaste
+607f9dd5|474a5568|archived|2026-09-06|4|Quinoa, black beans & roasted  / Wholewheat pasta, mixed veg &  / Quinoa, mixed veg & walnuts / Rice, baked tofu & roasted bro
+607f9dd5|a5b4c73c|confirmed|2026-09-06|4|Rice, seitan & roasted broccol / Wheatberries, white bean & raw / Egg & Veggie Scramble / Quinoa, mixed veg & walnuts
+607f9dd5|3b747b23|archived|2026-09-13|6|Banana with peanut butter / Gluten-free cinnamon-raisin to / Trail mix with dark chocolate / Toast with peanut butter & hon / Oats, bread, orange & black co / Greek yogurt with berries and 
+607f9dd5|6e167344|archived|2026-09-13|2|Thai peanut lentil-pasta salad / Egg & Veggie Scramble
+607f9dd5|f2c0bc78|confirmed|2026-09-13|6|Wheatberries, white bean & raw / Rice, seitan & roasted broccol / Egg & Veggie Scramble / Chilli non carne with kidney b / Quinoa, mixed veg & walnuts / Tofu, quinoa, spinach & chard 
+607f9dd5|fc9687ff|draft|2026-09-13|1|Quinoa, mixed veg & walnuts
+607f9dd5|15b6b4f4|draft|2026-09-20|4|Rice, black beans & roasted pl / Käsespätzle with side salad / Injera with shiro wot (spiced  / Rice, black beans, guac & hot 
+607f9dd5|6f365c30|draft|2026-09-20|2|Wholewheat pasta, mixed veg &  / Egg & Veggie Scramble
+607f9dd5|b82409d9|draft|2026-09-20|0|
+607f9dd5|be6abf2f|draft|2026-09-20|5|Farro, chickpea & roasted caul / Spelt, lentil & raw pepper-car / Brown rice, zucchini & chickpe / Wholewheat pasta, mixed veg &  / Farro, white bean & roasted be
