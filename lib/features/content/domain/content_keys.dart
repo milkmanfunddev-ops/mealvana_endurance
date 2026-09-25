@@ -910,6 +910,11 @@ class ContentKeys {
   static const String krogerRefresh = 'kroger.refresh';
   static const String krogerNotConfigured = 'kroger.not_configured';
   static const String krogerCertification = 'kroger.certification';
+
+  /// A stored connection from the other Kroger environment (Finding 22-005):
+  /// not used here, removable with Disconnect, replaced by Connect.
+  static const String krogerOtherEnvironment = 'kroger.other_environment';
+
   static const String krogerMobileOnly = 'kroger.mobile_only';
   static const String krogerRedirectMismatch = 'kroger.redirect_mismatch';
   static const String krogerAuthorizationCancelled =

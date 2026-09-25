@@ -159,10 +159,16 @@ export class KrogerService {
           this.userId,
         ).maybeSingle(),
       );
+      // A row stored by the other environment (a production token while
+      // this function runs certification) is no connection here, but it is
+      // named so the screen can show it and offer Disconnect; a finished
+      // connect replaces it (ticket 108, Finding 22-005).
+      const stored = connection?.environment as string | undefined;
       return {
         available: true,
-        connected: connection?.environment === environment,
+        connected: stored === environment,
         environment,
+        other_environment: stored && stored !== environment ? stored : null,
       };
     }
     if (action === "connect") {

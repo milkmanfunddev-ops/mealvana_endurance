@@ -84,6 +84,7 @@ class KrogerState {
     this.busy = false,
     this.connected = false,
     this.environment = 'certification',
+    this.otherEnvironment,
     this.message,
     this.unavailableReason,
     this.area,
@@ -91,6 +92,12 @@ class KrogerState {
   final KrogerDraft draft;
   final bool busy, connected;
   final String environment;
+
+  /// The environment of a stored connection that is not this session's (a
+  /// production token while dev runs certification), or null. It is no
+  /// connection here, but the screen shows it and offers Disconnect; a
+  /// finished connect replaces it (ticket 108, Finding 22-005).
+  final String? otherEnvironment;
 
   /// What just happened — the outcome of one action, or of the initial load.
   final String? message;
@@ -136,6 +143,8 @@ class KrogerState {
     bool? busy,
     bool? connected,
     String? environment,
+    String? otherEnvironment,
+    bool clearOtherEnvironment = false,
     String? message,
     bool clearMessage = false,
     String? unavailableReason,
@@ -146,6 +155,9 @@ class KrogerState {
     busy: busy ?? this.busy,
     connected: connected ?? this.connected,
     environment: environment ?? this.environment,
+    otherEnvironment: clearOtherEnvironment
+        ? null
+        : otherEnvironment ?? this.otherEnvironment,
     message: clearMessage ? null : message ?? this.message,
     unavailableReason: clearUnavailableReason
         ? null
@@ -293,6 +305,7 @@ class KrogerController extends _$KrogerController {
           draft: draft,
           connected: status['connected'] == true,
           environment: status['environment'] as String? ?? draft.environment,
+          otherEnvironment: status['other_environment'] as String?,
           unavailableReason: status['reason'] as String? ?? 'not_configured',
         );
       }
@@ -311,6 +324,7 @@ class KrogerController extends _$KrogerController {
         draft: draft,
         connected: status['connected'] == true,
         environment: status['environment'] as String? ?? 'certification',
+        otherEnvironment: status['other_environment'] as String?,
       );
     });
     _assertScope();
@@ -418,6 +432,8 @@ class KrogerController extends _$KrogerController {
       state.value!.copyWith(
         connected: status['connected'] == true,
         environment: status['environment'] as String?,
+        otherEnvironment: status['other_environment'] as String?,
+        clearOtherEnvironment: status['other_environment'] == null,
         clearUnavailableReason: status['available'] == true,
         unavailableReason: status['reason'] as String? ?? 'not_configured',
       ),
@@ -452,7 +468,12 @@ class KrogerController extends _$KrogerController {
         'state': start['state'],
       });
       _publish(
-        state.value!.copyWith(connected: true, clearUnavailableReason: true),
+        // The exchange replaced any connection the other environment left.
+        state.value!.copyWith(
+          connected: true,
+          clearOtherEnvironment: true,
+          clearUnavailableReason: true,
+        ),
       );
     });
   }
@@ -460,7 +481,10 @@ class KrogerController extends _$KrogerController {
   Future<void> disconnect() async {
     await _run(() async {
       await _repo.remote.call('disconnect');
-      _publish(state.value!.copyWith(connected: false));
+      // The server deletes the stored row whichever environment wrote it.
+      _publish(
+        state.value!.copyWith(connected: false, clearOtherEnvironment: true),
+      );
     });
   }
 

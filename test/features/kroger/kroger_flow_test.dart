@@ -1084,6 +1084,83 @@ void main() {
     });
   });
 
+  group('a connection left by the other Kroger environment (22-005)', () {
+    // The edge function's status for a shopper whose stored connection is
+    // the other environment's: a production token while dev runs
+    // certification. It is no connection here, but the shopper sees it and
+    // can remove it; connecting replaces it.
+    Future<void> leftover() async {
+      status = {
+        'available': true,
+        'connected': false,
+        'environment': 'certification',
+        'other_environment': 'production',
+      };
+      await restart();
+    }
+
+    testWidgets('the screen shows it and Disconnect removes it', (
+      tester,
+    ) async {
+      final copy = loadDefaultContent();
+      await tester.runAsync(leftover);
+      expect(current().connected, false);
+      expect(current().otherEnvironment, 'production');
+      await showScreen(tester);
+      expect(find.text(copy['kroger.other_environment']!), findsOneWidget);
+      expect(find.text(copy['kroger.connect']!), findsOneWidget);
+      await tester.tap(find.byKey(const ValueKey('kroger.disconnect')));
+      await tester.pumpAndSettle();
+      await tester.tap(
+        find.widgetWithText(KylePrimaryButton, copy['kroger.disconnect']!),
+      );
+      await tester.pumpAndSettle();
+      expect(disconnects, 1);
+      expect(current().otherEnvironment, isNull);
+      expect(find.text(copy['kroger.other_environment']!), findsNothing);
+      expect(find.byKey(const ValueKey('kroger.disconnect')), findsNothing);
+      expect(find.text(copy['kroger.connect']!), findsOneWidget);
+    });
+
+    testWidgets('Connect replaces it', (tester) async {
+      final copy = loadDefaultContent();
+      await tester.runAsync(leftover);
+      final base = remote.onCall!;
+      var exchanged = 0;
+      remote.onCall = (action, data) async {
+        if (action == 'connect') {
+          return {
+            'url': 'https://api-ce.kroger.com/v1/connect/oauth2/authorize',
+            'redirect': 'com.milkman.mealvanaendurance://callback',
+            'state': 'expected',
+          };
+        }
+        if (action == 'exchange') {
+          exchanged++;
+          return {'connected': true};
+        }
+        return base(action, data);
+      };
+      browserCallback =
+          'com.milkman.mealvanaendurance://callback?state=expected&code=c';
+      await showScreen(tester);
+      await tester.tap(find.text(copy['kroger.connect']!));
+      await tester.pumpAndSettle();
+      expect(exchanged, 1);
+      expect(current().connected, true);
+      expect(current().otherEnvironment, isNull);
+      expect(find.text(copy['kroger.other_environment']!), findsNothing);
+      expect(find.text(copy['kroger.connect']!), findsNothing);
+      // Disconnect is the connection it now has, not the leftover.
+      expect(find.byKey(const ValueKey('kroger.disconnect')), findsOneWidget);
+    });
+
+    test('a connection of its own names no other environment', () {
+      expect(current().connected, true);
+      expect(current().otherEnvironment, isNull);
+    });
+  });
+
   group('the shopper sees the match before anything is sent', () {
     /// A list where one line matches and one cannot, which is the ordinary
     /// case: a Spoke's catalogue does not cover a whole week's shopping.

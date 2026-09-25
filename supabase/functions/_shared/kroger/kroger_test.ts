@@ -246,6 +246,7 @@ class MemoryDb {
   from(table: string) {
     const db = this;
     let operation = "select", input: any, single = false;
+    let conflict: string | undefined;
     const filters: ((r: any) => boolean)[] = [];
     const query = {
       select(_columns?: string) {
@@ -272,9 +273,10 @@ class MemoryDb {
         input = v;
         return query;
       },
-      upsert(v: any, _options?: any) {
+      upsert(v: any, options?: { onConflict?: string }) {
         operation = "insert";
         input = v;
+        conflict = options?.onConflict;
         return query;
       },
       update(v: any) {
@@ -310,7 +312,12 @@ class MemoryDb {
                 reject,
               );
             }
-            rows.push({ ...input });
+            // An upsert replaces the row its conflict key names.
+            const existing = conflict
+              ? rows.findIndex((r) => r[conflict!] === input[conflict!])
+              : -1;
+            if (existing >= 0) rows[existing] = { ...input };
+            else rows.push({ ...input });
           }
           if (operation === "update") {
             if (db.failUpdate) {
@@ -739,4 +746,54 @@ Deno.test("a refused application credential is a configuration fault, not a reco
     KrogerError,
   );
   assertEquals(error.code, "not_configured");
+});
+
+// Ticket 108, Finding 22-005: a connection stored by the other Kroger
+// environment (a production token while this function runs certification)
+// is not a connection here, but the shopper is told it exists so it can be
+// removed, and a finished connect replaces it.
+function withOtherEnvironmentRow() {
+  const t = setup();
+  t.db.tables.kroger_connections = [{
+    user_id: user,
+    environment: "production",
+    access_token: "production-token",
+    expires_at: new Date(Date.now() + 3600000).toISOString(),
+  }];
+  return t;
+}
+Deno.test("status names a connection left by the other environment", async () => {
+  const { service } = withOtherEnvironmentRow();
+  const status = await service.run("status", {});
+  assertEquals(status.connected, false);
+  assertEquals(status.environment, "certification");
+  assertEquals(status.other_environment, "production");
+});
+Deno.test("status names no other environment for a connection of its own or none", async () => {
+  const { db, service } = setup();
+  const own = await service.run("status", {});
+  assertEquals([own.connected, own.other_environment], [true, null]);
+  db.tables.kroger_connections = [];
+  const none = await service.run("status", {});
+  assertEquals([none.connected, none.other_environment], [false, null]);
+});
+Deno.test("disconnect removes a connection left by the other environment", async () => {
+  const { db, service } = withOtherEnvironmentRow();
+  assertEquals(await service.run("disconnect", {}), { connected: false });
+  assertEquals(db.tables.kroger_connections, []);
+  const status = await service.run("status", {});
+  assertEquals([status.connected, status.other_environment], [false, null]);
+});
+Deno.test("a finished connect replaces a connection left by the other environment", async () => {
+  const { db, service } = withOtherEnvironmentRow();
+  const { state } = await service.run("connect", {}) as { state: string };
+  // The table's default expiry, which the in-memory double does not apply.
+  db.tables.kroger_oauth_sessions[0].expires_at = new Date(Date.now() + 60000)
+    .toISOString();
+  await service.run("exchange", { state, code: "test-code" });
+  assertEquals(db.tables.kroger_connections.length, 1);
+  assertEquals(db.tables.kroger_connections[0].environment, "certification");
+  assertEquals(db.tables.kroger_connections[0].access_token, "test-token");
+  const status = await service.run("status", {});
+  assertEquals([status.connected, status.other_environment], [true, null]);
 });
