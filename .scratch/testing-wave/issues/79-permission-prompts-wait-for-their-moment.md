@@ -13,8 +13,8 @@
 
 **Touches:** lib/shared/services/notification_service.dart, lib/features/meal_planning/presentation/widgets/vana_mic_button.dart
 
-- [ ] A test: startup and the Welcome screen make no notification permission request.
-- [ ] A widget test: building the mic button makes no speech permission request; the first tap does.
+- [x] A test: startup and the Welcome screen make no notification permission request.
+- [x] A widget test: building the mic button makes no speech permission request; the first tap does.
 - [ ] codegen if annotations changed, `flutter analyze` and the suite green.
 
 Next: /implement-lee testing-wave

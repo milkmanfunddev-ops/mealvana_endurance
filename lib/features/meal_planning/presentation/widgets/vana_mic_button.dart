@@ -8,9 +8,12 @@ import '../../../../theme/kyle_design/app_colors.dart';
 import 'vana_round_button.dart';
 
 /// The composer's dictation button (plan §5 Phase 6.5): platform
-/// speech-to-text into the field. Renders nothing on web and whenever the
-/// recognizer is unavailable (no permission, no engine), so the composer
-/// never shows a mic that cannot listen. While listening the button fills
+/// speech-to-text into the field. The recogniser is initialised on the first
+/// tap, never on build: initialising is what raises iOS's Speech Recognition
+/// prompt, and asking on the way into a chat the athlete may never dictate
+/// into invites a "Don't Allow" iOS never asks again (ticket 79, Finding
+/// 09-004). Renders nothing on web, and hides once that first ask comes back
+/// unavailable (refused, no engine). While listening the button fills
 /// electrolyte; tapping again stops.
 class VanaMicButton extends StatefulWidget {
   const VanaMicButton({
@@ -45,16 +48,11 @@ class VanaMicButton extends StatefulWidget {
 
 class _VanaMicButtonState extends State<VanaMicButton> {
   late final SpeechToText _speech = widget.speech ?? SpeechToText();
-  bool _available = false;
+  /// Null until the first tap asks; false hides the button.
+  bool? _available;
   bool _listening = false;
 
-  @override
-  void initState() {
-    super.initState();
-    if (!kIsWeb) _init();
-  }
-
-  Future<void> _init() async {
+  Future<bool> _init() async {
     bool ok;
     try {
       ok = await _speech.initialize(
@@ -71,6 +69,7 @@ class _VanaMicButtonState extends State<VanaMicButton> {
       ok = false;
     }
     if (mounted) setState(() => _available = ok);
+    return ok;
   }
 
   Future<void> _toggle() async {
@@ -79,6 +78,8 @@ class _VanaMicButtonState extends State<VanaMicButton> {
       if (mounted) setState(() => _listening = false);
       return;
     }
+    if (_available != true && !await _init()) return;
+    if (!mounted) return;
     setState(() => _listening = true);
     await _speech.listen(
       onResult: (SpeechRecognitionResult result) {
@@ -99,7 +100,7 @@ class _VanaMicButtonState extends State<VanaMicButton> {
 
   @override
   Widget build(BuildContext context) {
-    if (kIsWeb || !_available) return const SizedBox.shrink();
+    if (kIsWeb || _available == false) return const SizedBox.shrink();
 
     final button = VanaRoundButton(
       key: const ValueKey('meal_planning.chat_mic'),

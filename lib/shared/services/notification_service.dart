@@ -10,11 +10,57 @@ import '../utils/platform_io.dart'
 import 'analytics/analytics_events.dart';
 import 'analytics/analytics_tracker.dart';
 
+/// The slice of the OneSignal SDK [NotificationService] drives, behind a
+/// seam so tests can see when the permission ask happens.
+abstract class RemotePushClient {
+  /// Starts the SDK and wires tap and foreground-display handling.
+  void start(String appId, void Function(Map<String, dynamic>) onClickData);
+
+  /// Registers for remote notifications and refreshes the APNs token. On an
+  /// install that has never answered, this raises the iOS prompt.
+  Future<void> requestPermission({required bool fallbackToSettings});
+
+  void login(String externalId);
+  void logout();
+}
+
+class OneSignalRemotePush implements RemotePushClient {
+  const OneSignalRemotePush();
+
+  @override
+  void start(String appId, void Function(Map<String, dynamic>) onClickData) {
+    OneSignal.initialize(appId);
+    OneSignal.Notifications.addClickListener((event) {
+      final data = event.notification.additionalData;
+      if (data == null) return;
+      onClickData(data);
+    });
+
+    // Show push banners while the app is in the foreground. Without this,
+    // iOS suppresses the alert entirely when Mealvana is open.
+    OneSignal.Notifications.addForegroundWillDisplayListener((event) {
+      event.preventDefault();
+      event.notification.display();
+    });
+  }
+
+  @override
+  Future<void> requestPermission({required bool fallbackToSettings}) =>
+      OneSignal.Notifications.requestPermission(fallbackToSettings);
+
+  @override
+  void login(String externalId) => OneSignal.login(externalId);
+
+  @override
+  void logout() => OneSignal.logout();
+}
+
 class NotificationService {
   static final FlutterLocalNotificationsPlugin _plugin =
       FlutterLocalNotificationsPlugin();
   static bool _isInitialized = false;
   static bool _isOneSignalInitialized = false;
+  static bool _remotePushRegistered = false;
   static String? _pendingNavigationActivityId;
   static String? _pendingNavigationType;
   static String? _pendingRemoteUserId;
@@ -23,6 +69,26 @@ class NotificationService {
   static Future<void> Function(DateTime date)? _dailyMacroCacheInvalidator;
   static AnalyticsTracker _analytics = const NoopAnalyticsTracker();
   static String _oneSignalAppId = '';
+
+  @visibleForTesting
+  static RemotePushClient remotePush = const OneSignalRemotePush();
+
+  /// Returns the static state to a fresh launch, for tests.
+  @visibleForTesting
+  static void debugReset() {
+    _isInitialized = false;
+    _isOneSignalInitialized = false;
+    _remotePushRegistered = false;
+    _pendingNavigationActivityId = null;
+    _pendingNavigationType = null;
+    _pendingRemoteUserId = null;
+    _lastSyncedRemoteUserId = null;
+    _navigationHandler = null;
+    _dailyMacroCacheInvalidator = null;
+    _analytics = const NoopAnalyticsTracker();
+    _oneSignalAppId = '';
+    remotePush = const OneSignalRemotePush();
+  }
 
   /// Registers a callback invoked when a Garmin activity-upload notification
   /// carries a [scheduled_date]. The callback should invalidate the macro
@@ -109,32 +175,13 @@ class NotificationService {
     }
 
     try {
-      OneSignal.initialize(_oneSignalAppId);
-      OneSignal.Notifications.addClickListener((event) {
-        final data = event.notification.additionalData;
-        if (data == null) return;
-        _handleRemoteNotificationData(data);
-      });
+      remotePush.start(_oneSignalAppId, _handleRemoteNotificationData);
 
-      // Show push banners while the app is in the foreground. Without this,
-      // iOS suppresses the alert entirely when Mealvana is open.
-      OneSignal.Notifications.addForegroundWillDisplayListener((event) {
-        event.preventDefault();
-        event.notification.display();
-      });
-
-      // Trigger registerForRemoteNotifications and refresh the APNs token.
-      // OneSignal v5.x does not auto-register on iOS — without this call the
-      // SDK will sit on a stale (or missing) token even when iOS permission
-      // is already granted, and OneSignal eventually flags the subscription
-      // invalid_identifier:true after APNs rejects a delivery. fallbackToSettings
-      // is false so previously-denied users don't get hijacked into Settings.
-      try {
-        await OneSignal.Notifications.requestPermission(false);
-      } catch (e) {
-        debugPrint('OneSignal requestPermission failed: $e');
-      }
-
+      // No permission request here: this runs in deferred startup, before
+      // Welcome or sign-in, and on an install that has never answered the
+      // request IS the iOS prompt (ticket 79, Finding 03-004). The APNs
+      // registration it also performs waits for an athlete's id; see
+      // [_registerForRemotePush].
       _isOneSignalInitialized = true;
       await _syncRemotePushUserIdentity();
     } catch (e) {
@@ -238,19 +285,40 @@ class NotificationService {
     if (!_isOneSignalInitialized || kIsWeb) return;
 
     final targetUserId = _pendingRemoteUserId;
-    if (targetUserId == _lastSyncedRemoteUserId) {
-      return;
+    if (targetUserId != _lastSyncedRemoteUserId) {
+      try {
+        if (targetUserId == null) {
+          remotePush.logout();
+        } else {
+          remotePush.login(targetUserId);
+        }
+        _lastSyncedRemoteUserId = targetUserId;
+      } catch (e) {
+        debugPrint('OneSignal user identity sync failed: $e');
+      }
     }
 
+    if (targetUserId != null) await _registerForRemotePush();
+  }
+
+  /// Triggers registerForRemoteNotifications and refreshes the APNs token,
+  /// once per launch, as soon as an athlete's id is attached to the device:
+  /// right after sign-in, or at launch for a restored session. OneSignal
+  /// v5.x does not auto-register on iOS; without this call the SDK sits on a
+  /// stale (or missing) token even when iOS permission is already granted,
+  /// and OneSignal eventually flags the subscription invalid_identifier:true
+  /// after APNs rejects a delivery (commit 39535a7a).
+  ///
+  /// On an install that has never answered, this is also where iOS asks:
+  /// after sign-in, never over the splash (ticket 79). fallbackToSettings is
+  /// false so previously-denied athletes don't get hijacked into Settings.
+  static Future<void> _registerForRemotePush() async {
+    if (_remotePushRegistered) return;
+    _remotePushRegistered = true;
     try {
-      if (targetUserId == null) {
-        OneSignal.logout();
-      } else {
-        OneSignal.login(targetUserId);
-      }
-      _lastSyncedRemoteUserId = targetUserId;
+      await remotePush.requestPermission(fallbackToSettings: false);
     } catch (e) {
-      debugPrint('OneSignal user identity sync failed: $e');
+      debugPrint('OneSignal requestPermission failed: $e');
     }
   }
 
@@ -439,7 +507,7 @@ class NotificationService {
       // bouncing to Settings on prior denial is the expected UX.
       if (_isOneSignalInitialized) {
         try {
-          await OneSignal.Notifications.requestPermission(true);
+          await remotePush.requestPermission(fallbackToSettings: true);
         } catch (e) {
           debugPrint('OneSignal requestPermission (explicit) failed: $e');
         }
