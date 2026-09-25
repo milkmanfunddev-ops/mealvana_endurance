@@ -224,7 +224,10 @@ class CarbDashboardAssembler {
       loaded: pace.loaded,
       dayRel: dayRel,
       eatenOfTargetStr: '$eaten of $target g',
-      toGoStr: '$toGo g to go',
+      // G19 register amendment (Xuan, 2026-09-26): on completion the
+      // expanded face reads "Target met" in place of the to-go figure —
+      // the clamped "0 g to go" stays the rule for every un-loaded state.
+      toGoStr: pace.loaded ? 'Target met' : '$toGo g to go',
       paceByNowStr: owed == null || owed <= 0 || pace.loaded
           ? null
           : 'pace ${owed.round()} g by now',

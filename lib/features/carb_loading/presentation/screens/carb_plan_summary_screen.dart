@@ -10,6 +10,7 @@ import '../../domain/carb_loading_entryway_engine.dart';
 import '../../domain/carb_loading_pace_engine.dart';
 import '../providers/carb_loading_controller.dart';
 import '../widgets/carb_repick_dialogs.dart';
+import '../widgets/edit_carb_target_dialog.dart';
 import 'carb_loading_protocol_selection_screen.dart';
 
 /// The plan summary surface — a full PAGE (desk G12; the sheet fork is
@@ -112,6 +113,14 @@ class CarbPlanSummaryScreen extends ConsumerWidget {
   }
 
   Widget _dayRow(WidgetRef ref, dynamic day, int totalDays) {
+    // CE-10 (G17, RULED 2026-09-26): today's and future rows open the Edit
+    // Target dialog; PAST rows are inert — that day is history. The dialog
+    // keeps its own Cancel (CE-9 does not bind it).
+    final now = DateTime.now();
+    final today = DateTime(now.year, now.month, now.day);
+    final DateTime planDate = day.planDate as DateTime;
+    final rowDate = DateTime(planDate.year, planDate.month, planDate.day);
+    final editable = !rowDate.isBefore(today);
     final cream = AppColors.cream;
     final weightLb = _weightLb(ref);
     // "Edited" = stored != its protocol derivation at the current weight.
@@ -128,84 +137,127 @@ class CarbPlanSummaryScreen extends ConsumerWidget {
         ? null
         : (grams / (weightLb * CarbLoadingPaceEngine.kgPerLb));
 
-    return Container(
-      margin: const EdgeInsets.only(bottom: 6),
-      padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 11),
-      decoration: BoxDecoration(
-        color: Colors.white.withValues(alpha: 0.035),
-        borderRadius: BorderRadius.circular(12),
-        border: Border.all(color: cream.withValues(alpha: 0.08)),
-      ),
-      child: Row(
-        children: [
-          Expanded(
-            child: Text.rich(
+    return GestureDetector(
+      key: ValueKey('carb_summary.day_row_${day.dayNumber}'),
+      behavior: HitTestBehavior.opaque,
+      onTap: editable && weightLb != null
+          ? () => _editDayTarget(ref, day, weightLb)
+          : null,
+      child: Container(
+        margin: const EdgeInsets.only(bottom: 6),
+        padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 11),
+        decoration: BoxDecoration(
+          color: Colors.white.withValues(alpha: 0.035),
+          borderRadius: BorderRadius.circular(12),
+          border: Border.all(color: cream.withValues(alpha: 0.08)),
+        ),
+        child: Row(
+          children: [
+            Expanded(
+              child: Text.rich(
+                TextSpan(
+                  text: 'DAY ${day.dayNumber}',
+                  style: TextStyle(
+                    fontFamily: 'Apercu',
+                    fontSize: 11,
+                    fontWeight: FontWeight.w600,
+                    letterSpacing: 0.6,
+                    color: cream.withValues(alpha: 0.75),
+                  ),
+                  children: [
+                    TextSpan(
+                      text: '  ${_dateStr(day.planDate as DateTime)}',
+                      style: TextStyle(
+                        fontWeight: FontWeight.w400,
+                        letterSpacing: 0.1,
+                        color: cream.withValues(alpha: 0.4),
+                      ),
+                    ),
+                  ],
+                ),
+              ),
+            ),
+            Text.rich(
               TextSpan(
-                text: 'DAY ${day.dayNumber}',
-                style: TextStyle(
-                  fontFamily: 'Apercu',
-                  fontSize: 11,
-                  fontWeight: FontWeight.w600,
-                  letterSpacing: 0.6,
-                  color: cream.withValues(alpha: 0.75),
+                text: '$grams g',
+                style: const TextStyle(
+                  fontFamily: 'Apercu Mono',
+                  fontSize: 12.5,
+                  color: AppColors.orange,
                 ),
                 children: [
-                  TextSpan(
-                    text: '  ${_dateStr(day.planDate as DateTime)}',
-                    style: TextStyle(
-                      fontWeight: FontWeight.w400,
-                      letterSpacing: 0.1,
-                      color: cream.withValues(alpha: 0.4),
+                  if (gkg != null)
+                    TextSpan(
+                      // Q-CL10: copy shows the STORED per-day rate — the
+                      // engine's number, not the protocol constant.
+                      text: ' · ${gkg.toStringAsFixed(1)} g/kg',
+                      style: TextStyle(
+                        color: AppColors.cream.withValues(alpha: 0.45),
+                      ),
                     ),
-                  ),
                 ],
               ),
             ),
-          ),
-          Text.rich(
-            TextSpan(
-              text: '$grams g',
-              style: const TextStyle(
-                fontFamily: 'Apercu Mono',
-                fontSize: 12.5,
-                color: AppColors.orange,
-              ),
-              children: [
-                if (gkg != null)
-                  TextSpan(
-                    // Q-CL10: copy shows the STORED per-day rate — the
-                    // engine's number, not the protocol constant.
-                    text: ' · ${gkg.toStringAsFixed(1)} g/kg',
-                    style: TextStyle(
-                      color: AppColors.cream.withValues(alpha: 0.45),
-                    ),
+            if (edited) ...[
+              const SizedBox(width: 6),
+              Container(
+                padding: const EdgeInsets.symmetric(horizontal: 6, vertical: 1),
+                decoration: BoxDecoration(
+                  border: Border.all(
+                    color: AppColors.orange.withValues(alpha: 0.5),
                   ),
-              ],
-            ),
-          ),
-          if (edited) ...[
-            const SizedBox(width: 6),
-            Container(
-              padding: const EdgeInsets.symmetric(horizontal: 6, vertical: 1),
-              decoration: BoxDecoration(
-                border: Border.all(
-                  color: AppColors.orange.withValues(alpha: 0.5),
+                  borderRadius: BorderRadius.circular(100),
                 ),
-                borderRadius: BorderRadius.circular(100),
-              ),
-              child: const Text(
-                'EDITED',
-                style: TextStyle(
-                  fontFamily: 'Apercu',
-                  fontSize: 8.5,
-                  fontWeight: FontWeight.w600,
-                  letterSpacing: 0.5,
-                  color: AppColors.orange,
+                child: const Text(
+                  'EDITED',
+                  style: TextStyle(
+                    fontFamily: 'Apercu',
+                    fontSize: 8.5,
+                    fontWeight: FontWeight.w600,
+                    letterSpacing: 0.5,
+                    color: AppColors.orange,
+                  ),
                 ),
               ),
-            ),
+            ],
+            if (editable) ...[
+              const SizedBox(width: 6),
+              Icon(
+                Icons.chevron_right,
+                size: 14,
+                color: cream.withValues(alpha: 0.35),
+              ),
+            ],
           ],
-        ],
+        ),
+      ),
+    );
+  }
+
+  /// CE-10: the EXISTING Edit Target dialog, reused — no new editor surface.
+  Future<void> _editDayTarget(
+    WidgetRef ref,
+    dynamic day,
+    double weightLb,
+  ) async {
+    final context = ref.context;
+    final bodyWeightKg = weightLb * CarbLoadingPaceEngine.kgPerLb;
+    final int grams = day.carbTargetGrams as int;
+    await showDialog<void>(
+      context: context,
+      builder: (dialogContext) => EditCarbTargetDialog(
+        currentCarbsPerKg: bodyWeightKg > 0 ? grams / bodyWeightKg : 0,
+        currentDailyTargetG: grams,
+        bodyWeightKg: bodyWeightKg,
+        onSave: (carbsPerKg, dailyTargetG) {
+          ref
+              .read(carbLoadingControllerProvider.notifier)
+              .updateDayTarget(
+                carbLoadingDayId: day.id as String,
+                carbsPerKg: carbsPerKg,
+                dailyTargetG: dailyTargetG,
+              );
+        },
       ),
     );
   }

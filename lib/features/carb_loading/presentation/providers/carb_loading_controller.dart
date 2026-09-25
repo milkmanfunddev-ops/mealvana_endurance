@@ -116,6 +116,33 @@ class CarbLoadingController extends _$CarbLoadingController {
     }
   }
 
+  /// CE-10 (G17): persist an edited day target from the plan summary.
+  /// Stores BOTH the grams and the resulting g/kg (Q-CL10: the stored value
+  /// drives slots/checkpoints/copy; the rate copy shows the stored rate).
+  Future<void> updateDayTarget({
+    required String carbLoadingDayId,
+    required double carbsPerKg,
+    required int dailyTargetG,
+  }) async {
+    try {
+      final userId = await ref.read(userIdProvider.future);
+      final repository = ref.read(carbLoadingRepositoryProvider);
+      await repository.updateCarbLoadingDay(
+        deviceId: userId,
+        carbLoadingDayId: carbLoadingDayId,
+        updates: {
+          'carbTargetGrams': dailyTargetG,
+          'carbProtocolGPerKg': carbsPerKg,
+        },
+      );
+      ref.invalidateSelf();
+      ref.invalidate(carbLoadingDaysForRangeProvider);
+    } catch (e) {
+      _logger.error('Error updating carb day target', error: e);
+      rethrow;
+    }
+  }
+
   /// CE-4 preview: what selecting [targetProtocolDays] would do — dialog
   /// type, F3 listed-edit data, dropped dates, both outcome plans. Pure
   /// read; nothing changes.

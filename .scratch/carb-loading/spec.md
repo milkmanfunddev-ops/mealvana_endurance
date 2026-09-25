@@ -752,6 +752,35 @@ batch on `feature/carb-loading` (rebased on origin/release/1.27.1). Highlights:
   CD-2 Patrol → land-bundle (official runner invocation across every slice +
   dev attestation + Xuan's explicit go).
 
+### RULED + BUILT — 2026-09-26 morning — G17/G18/G19 (qa 7729a99)
+
+Xuan's morning queue ruled; all three new gates green same morning:
+
+- **G17 / CE-10**: the plan summary's day rows (today + future; past inert)
+  open the EXISTING Edit Target dialog; save persists grams + stored g/kg
+  via the new `updateDayTarget` controller path; EDITED chip re-derives.
+  L2 rows `summary-row-opens-edit-dialog` / `past-day-row-inert` /
+  `edit-save-rederives` green (fake-controller harness, mutable store).
+  The edit-entry gap (#8) is CLOSED.
+- **G18**: the slot migration also DROPS NOT NULL (null = untagged,
+  CL-11-consistent; explicit `slot IS NULL OR` arm in the CHECK rather than
+  leaning on three-valued logic). Seam test with producer-shaped stored
+  rows: null-slot payload sends `slot: null` explicitly; loading-day wire
+  values round-trip; unknown future values skip, never crash.
+- **G19**: register amendment — completion's expanded face reads
+  `Target met` in place of the to-go figure (un-loaded states keep the
+  clamp). Assembler branch + amended register test + NEW
+  `load_face_expanded_loaded` golden citing this ruling. Prototype v23
+  delta pending (non-gating, "when convenient").
+- Also ruled, no app action: portal + D-019/D-020 drops DEFERRED together
+  (ops documents); Q-019 direction = option 1 but it is the
+  loading-day-macros-coupling bundle's work — nothing under this tag.
+
+Suites: 214 green across carb_loading + macro_dashboard + the seam test;
+lib analyzer clean. Sim run: dev flavor live on iPhone 17 from this branch
+— Day 1 of the Augusta plan renders the LOAD face with the on-device pace
+verdict matching the oracle (22 g behind at 6:29 AM).
+
 ## Notes on the two new ideas
 
 **Reminder to start.** Machinery exists — `NotificationService`

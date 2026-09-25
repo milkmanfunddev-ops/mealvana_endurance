@@ -60,15 +60,14 @@ Future<void> pumpHost(WidgetTester tester) async {
 
 void main() {
   group('G16 — CE-9 backdrop abort', () {
-    testWidgets('keep/reset: barrier tap returns null; buttons return choice',
-        (tester) async {
+    testWidgets('keep/reset: barrier tap returns null; buttons return choice', (
+      tester,
+    ) async {
       await pumpHost(tester);
       final open = pumpDialogHost(
         tester,
-        (ctx) => showCarbRepickKeepResetDialog(
-          ctx,
-          decision: keepResetDecision(),
-        ),
+        (ctx) =>
+            showCarbRepickKeepResetDialog(ctx, decision: keepResetDecision()),
       );
 
       // Abort via backdrop.
@@ -103,8 +102,9 @@ void main() {
       expect(await result, isFalse);
     });
 
-    testWidgets('notice: single button proceeds; barrier tap aborts',
-        (tester) async {
+    testWidgets('notice: single button proceeds; barrier tap aborts', (
+      tester,
+    ) async {
       await pumpHost(tester);
       final open = pumpDialogHost(
         tester,
@@ -132,8 +132,9 @@ void main() {
 
       result = open();
       await tester.pumpAndSettle();
-      await tester
-          .tap(find.byKey(const ValueKey('carb_repick.notice_proceed')));
+      await tester.tap(
+        find.byKey(const ValueKey('carb_repick.notice_proceed')),
+      );
       await tester.pumpAndSettle();
       expect(await result, isTrue);
       expect(find.text('Switch to 1-Day'), findsNothing);
@@ -186,8 +187,9 @@ void main() {
       return DateTime(now.year, now.month, now.day).add(Duration(days: days));
     }
 
-    testWidgets('1 day out: 3- and 2-Day disabled WITH reason, never hidden',
-        (tester) async {
+    testWidgets('1 day out: 3- and 2-Day disabled WITH reason, never hidden', (
+      tester,
+    ) async {
       await pumpChooser(tester, raceDate: raceIn(1));
       // All three cards render (never hidden).
       expect(find.text('3-Day Classic'), findsOneWidget);
@@ -198,15 +200,19 @@ void main() {
       expect(find.text('Needs 1 day before race day'), findsNothing);
     });
 
-    testWidgets('tapping a disabled card is a no-op; a feasible one pops',
-        (tester) async {
+    testWidgets('tapping a disabled card is a no-op; a feasible one pops', (
+      tester,
+    ) async {
       final popped = <int?>[];
       await pumpChooser(tester, raceDate: raceIn(1), popped: popped);
       // Disabled 3-Day: tap the card body — nothing happens.
       await tester.tap(find.text('3-Day Classic'), warnIfMissed: false);
       await tester.pumpAndSettle();
-      expect(find.text('3-Day Classic'), findsOneWidget,
-          reason: 'still on the chooser');
+      expect(
+        find.text('3-Day Classic'),
+        findsOneWidget,
+        reason: 'still on the chooser',
+      );
       expect(popped, isEmpty);
       // Feasible 1-Day pops its day count.
       await tester.ensureVisible(
@@ -219,8 +225,9 @@ void main() {
       expect(popped, [1]);
     });
 
-    testWidgets('3+ days out: everything choosable; current plan tagged',
-        (tester) async {
+    testWidgets('3+ days out: everything choosable; current plan tagged', (
+      tester,
+    ) async {
       await pumpChooser(tester, raceDate: raceIn(5), current: 3);
       expect(find.textContaining('Needs '), findsNothing);
       expect(find.text('CURRENT PLAN'), findsOneWidget);

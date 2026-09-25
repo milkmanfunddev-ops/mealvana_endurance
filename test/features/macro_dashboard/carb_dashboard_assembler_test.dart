@@ -128,10 +128,13 @@ void main() {
       expect(data.face.fillFrac, 1.0);
     });
 
-    test('to-go clamps at zero — never negative, never a worded substitute',
-        () {
-      expect(assemble(meals: [log('a', 547)]).face.toGoStr, '0 g to go');
+    test('to-go clamps at zero; completion reads "Target met" (G19)', () {
+      // G19 register amendment: the loaded state substitutes the word form;
+      // every un-loaded state keeps the clamped figure.
+      expect(assemble(meals: [log('a', 547)]).face.toGoStr, 'Target met');
+      expect(assemble(meals: [log('a', 544)]).face.toGoStr, 'Target met');
       expect(assemble(meals: [log('a', 295)]).face.toGoStr, '249 g to go');
+      expect(assemble(meals: [log('a', 543)]).face.toGoStr, '1 g to go');
     });
 
     test('pace-by-now renders owed grams; suppressed pre-window and loaded',

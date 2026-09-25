@@ -8,23 +8,31 @@
 -- migration). Idempotent drop-and-recreate because the dev dump
 -- (docs/dev_schema.txt:2429) and prod may have drifted.
 --
--- NOT IN SCOPE, noted deliberately (pre-existing seam, queued for Xuan —
--- food-search-scan-audit-2026-07-16.md items 4/6): Postgres declares
--- meal_logs.slot NOT NULL while Drift made it NULLABLE at v14, so an
--- untagged (null-slot) row fails on upload. The new slot tags INCREASE
--- traffic through this column; this migration neither fixes nor blesses
--- the nullability mismatch — reconciling it is its own ruling.
+-- G18 (RULED Xuan 2026-09-26, option 1): the column also DROPS NOT NULL —
+-- null = untagged, which is CL-11-consistent (untagged rows count toward
+-- the day, no slot card claims them) and matches what Drift has declared
+-- since v14. This closes the audit's items-4/6 seam where an untagged row
+-- failed on upload (food-search-scan-audit-2026-07-16.md).
 --
 -- Apply per supabase/migrations/README.md: by hand (DataGrip / Management
 -- API), dev first, prod at the carb-loading release under the standing
--- deploy-approval gate.
+-- deploy-approval gate. Both statements are idempotent: DROP NOT NULL on
+-- an already-nullable column is a no-op, and the constraint recreate is
+-- drop-if-exists.
+
+ALTER TABLE public.meal_logs
+  ALTER COLUMN slot DROP NOT NULL;
 
 ALTER TABLE public.meal_logs
   DROP CONSTRAINT IF EXISTS meal_logs_slot_check;
 
+-- The IS NULL arm is explicit (G18): a NULL slot would pass the ANY()
+-- check anyway under SQL three-valued logic, but the allowance is a ruled
+-- behavior now, not an accident of NULL semantics.
 ALTER TABLE public.meal_logs
   ADD CONSTRAINT meal_logs_slot_check CHECK (
-    slot = ANY (
+    slot IS NULL
+    OR slot = ANY (
       ARRAY[
         'breakfast'::text,
         'lunch'::text,

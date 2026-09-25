@@ -196,6 +196,32 @@ void main() {
         'load_face_expanded_today',
       );
     });
+
+    testWidgets('expanded · loaded reads "Target met" (G19 amendment)',
+        (tester) async {
+      // Golden added citing the 2026-09-26 register amendment: on
+      // completion the expanded face substitutes the word form for the
+      // to-go figure.
+      await golden(
+        tester,
+        card(
+          carb: face(
+            label: 'LOADED · DAY 2 OF 3',
+            main: 'Loaded',
+            sub: '547 of 544 g',
+            word: true,
+            fill: 1,
+            tick: null,
+            loaded: true,
+            eatenOfTarget: '547 of 544 g',
+            toGo: 'Target met',
+            byNow: null,
+          ),
+          expanded: true,
+        ),
+        'load_face_expanded_loaded',
+      );
+    });
   });
 
   group('L2 — face selection and E1/E2', () {

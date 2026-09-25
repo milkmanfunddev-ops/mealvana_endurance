@@ -183,116 +183,122 @@ void main() {
     expect(plans.single.totalDays, 2);
   });
 
-  test('CE-4 keep: an edited target migrates by DATE into the new window',
-      () async {
-    final eventId = await createEventWithPlan(3);
-    final before = await daysByDate();
-    final oct3 = before[DateTime(2026, 10, 3)]!;
-    await repository.updateCarbLoadingDay(
-      deviceId: deviceId,
-      carbLoadingDayId: oct3.id,
-      updates: {'carbTargetGrams': 620},
-    );
+  test(
+    'CE-4 keep: an edited target migrates by DATE into the new window',
+    () async {
+      final eventId = await createEventWithPlan(3);
+      final before = await daysByDate();
+      final oct3 = before[DateTime(2026, 10, 3)]!;
+      await repository.updateCarbLoadingDay(
+        deviceId: deviceId,
+        carbLoadingDayId: oct3.id,
+        updates: {'carbTargetGrams': 620},
+      );
 
-    final decision = await service.previewRepickProtocol(
-      eventId: eventId,
-      targetProtocolDays: 2,
-      raceDate: raceDate,
-      bodyWeightPounds: weightLb,
-    );
-    expect(decision.dialogType, RepickDialogType.keepReset);
-    expect(decision.listedEdits, hasLength(1));
-    // F3 DATA: relabeled per the TARGET protocol's window.
-    expect(decision.listedEdits.single.targetDayNumber, 1);
-    expect(decision.listedEdits.single.storedG, 620);
-    expect(decision.droppedDates, isEmpty);
-    expect(decision.keepPlanG, [620, 748]);
-    expect(decision.resetPlanG, [612, 748]);
+      final decision = await service.previewRepickProtocol(
+        eventId: eventId,
+        targetProtocolDays: 2,
+        raceDate: raceDate,
+        bodyWeightPounds: weightLb,
+      );
+      expect(decision.dialogType, RepickDialogType.keepReset);
+      expect(decision.listedEdits, hasLength(1));
+      // F3 DATA: relabeled per the TARGET protocol's window.
+      expect(decision.listedEdits.single.targetDayNumber, 1);
+      expect(decision.listedEdits.single.storedG, 620);
+      expect(decision.droppedDates, isEmpty);
+      expect(decision.keepPlanG, [620, 748]);
+      expect(decision.resetPlanG, [612, 748]);
 
-    await service.applyRepickProtocol(
-      deviceId: deviceId,
-      userId: userId,
-      eventId: eventId,
-      targetProtocolDays: 2,
-      raceDate: raceDate,
-      bodyWeightPounds: weightLb,
-      keepEdits: true,
-    );
-    final after = await daysByDate();
-    expect(after[DateTime(2026, 10, 3)]!.carbTargetGrams, 620);
-    expect(after[DateTime(2026, 10, 3)]!.id, oct3.id);
-    expect(after[DateTime(2026, 10, 4)]!.carbTargetGrams, 748);
-  });
+      await service.applyRepickProtocol(
+        deviceId: deviceId,
+        userId: userId,
+        eventId: eventId,
+        targetProtocolDays: 2,
+        raceDate: raceDate,
+        bodyWeightPounds: weightLb,
+        keepEdits: true,
+      );
+      final after = await daysByDate();
+      expect(after[DateTime(2026, 10, 3)]!.carbTargetGrams, 620);
+      expect(after[DateTime(2026, 10, 3)]!.id, oct3.id);
+      expect(after[DateTime(2026, 10, 4)]!.carbTargetGrams, 748);
+    },
+  );
 
-  test('F4 notice: every edit outside the window drops with disclosure',
-      () async {
-    final eventId = await createEventWithPlan(3);
-    final before = await daysByDate();
-    final oct2 = before[DateTime(2026, 10, 2)]!;
-    await repository.updateCarbLoadingDay(
-      deviceId: deviceId,
-      carbLoadingDayId: oct2.id,
-      updates: {'carbTargetGrams': 600},
-    );
+  test(
+    'F4 notice: every edit outside the window drops with disclosure',
+    () async {
+      final eventId = await createEventWithPlan(3);
+      final before = await daysByDate();
+      final oct2 = before[DateTime(2026, 10, 2)]!;
+      await repository.updateCarbLoadingDay(
+        deviceId: deviceId,
+        carbLoadingDayId: oct2.id,
+        updates: {'carbTargetGrams': 600},
+      );
 
-    final decision = await service.previewRepickProtocol(
-      eventId: eventId,
-      targetProtocolDays: 1,
-      raceDate: raceDate,
-      bodyWeightPounds: weightLb,
-    );
-    expect(decision.dialogType, RepickDialogType.notice);
-    expect(decision.droppedDates, [DateTime(2026, 10, 2)]);
-    expect(decision.keepPlanG, [748]);
-    expect(decision.resetPlanG, [748]);
+      final decision = await service.previewRepickProtocol(
+        eventId: eventId,
+        targetProtocolDays: 1,
+        raceDate: raceDate,
+        bodyWeightPounds: weightLb,
+      );
+      expect(decision.dialogType, RepickDialogType.notice);
+      expect(decision.droppedDates, [DateTime(2026, 10, 2)]);
+      expect(decision.keepPlanG, [748]);
+      expect(decision.resetPlanG, [748]);
 
-    await service.applyRepickProtocol(
-      deviceId: deviceId,
-      userId: userId,
-      eventId: eventId,
-      targetProtocolDays: 1,
-      raceDate: raceDate,
-      bodyWeightPounds: weightLb,
-      keepEdits: false,
-    );
-    final after = await daysByDate();
-    expect(after.length, 1);
-    expect(after[DateTime(2026, 10, 4)]!.carbTargetGrams, 748);
-  });
+      await service.applyRepickProtocol(
+        deviceId: deviceId,
+        userId: userId,
+        eventId: eventId,
+        targetProtocolDays: 1,
+        raceDate: raceDate,
+        bodyWeightPounds: weightLb,
+        keepEdits: false,
+      );
+      final after = await daysByDate();
+      expect(after.length, 1);
+      expect(after[DateTime(2026, 10, 4)]!.carbTargetGrams, 748);
+    },
+  );
 
-  test('CE-5: deleting the plan leaves slot-tagged meal logs untouched',
-      () async {
-    final eventId = await createEventWithPlan(3);
-    final now = DateTime(2026, 10, 2, 8);
-    await db
-        .into(db.mealLogsTable)
-        .insert(
-          MealLogsTableCompanion.insert(
-            id: const Value('meal-slot-1'),
-            userId: userId,
-            logDate: '2026-10-02',
-            name: 'Everything Bagel',
-            source: 'manual',
-            slot: const Value('breakfast'),
-            createdAt: now,
-            updatedAt: now,
-          ),
-        );
+  test(
+    'CE-5: deleting the plan leaves slot-tagged meal logs untouched',
+    () async {
+      final eventId = await createEventWithPlan(3);
+      final now = DateTime(2026, 10, 2, 8);
+      await db
+          .into(db.mealLogsTable)
+          .insert(
+            MealLogsTableCompanion.insert(
+              id: const Value('meal-slot-1'),
+              userId: userId,
+              logDate: '2026-10-02',
+              name: 'Everything Bagel',
+              source: 'manual',
+              slot: const Value('breakfast'),
+              createdAt: now,
+              updatedAt: now,
+            ),
+          );
 
-    await service.deleteCarbLoadingPlan(
-      deviceId: deviceId,
-      eventId: eventId,
-      currentUserId: userId,
-    );
+      await service.deleteCarbLoadingPlan(
+        deviceId: deviceId,
+        eventId: eventId,
+        currentUserId: userId,
+      );
 
-    expect(await db.select(db.carbLoadingPlansTable).get(), isEmpty);
-    expect(await db.select(db.carbLoadingDaysTable).get(), isEmpty);
-    final meals = await db.select(db.mealLogsTable).get();
-    expect(
-      meals,
-      hasLength(1),
-      reason: 'Path A: food already logged stays in the log',
-    );
-    expect(meals.single.id, 'meal-slot-1');
-  });
+      expect(await db.select(db.carbLoadingPlansTable).get(), isEmpty);
+      expect(await db.select(db.carbLoadingDaysTable).get(), isEmpty);
+      final meals = await db.select(db.mealLogsTable).get();
+      expect(
+        meals,
+        hasLength(1),
+        reason: 'Path A: food already logged stays in the log',
+      );
+      expect(meals.single.id, 'meal-slot-1');
+    },
+  );
 }
