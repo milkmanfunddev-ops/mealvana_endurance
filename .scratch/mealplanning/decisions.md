@@ -3134,10 +3134,69 @@ An edit made while notes are being written is picked up on the next open. A requ
 
 > 2026-09-23 opened in wave 9 ticket 05
 
+## mp-665 · Does the server's Pro check allow a grace period after the paid-until time?
+- category: Pro and paywall
+- kind: question
+- status: open
+- linked: mp-505
+- image: none
+- svg: docs/ssot/decisions/images/mealplanning/mp-665.svg
+- screen: none (server: the Pro check on AI and Kroger calls)
+- source: wave testing-wave 6 ticket 06
+
+**Context.** The server checks Pro itself before an AI or Kroger call: it reads the account's Entitlement row and allows the call only while `active_until` is in the future, with no grace. The row moves forward when RevenueCat's renewal webhook arrives. In wave 6 the renewal landed 2.5 minutes after the period ended (Finding 06-002), and in wave 5 about 4 minutes after. In that gap the server treats a paying subscriber as unpaid, while the app, reading RevenueCat, keeps them in.
+
+**Question.** When a period has ended and the renewal webhook has not arrived yet, should the server allow a short grace (for example 10 minutes, or a day) past `active_until` (A), ask RevenueCat directly when the row says expired (B), or refuse as today (C)?
+
+**Why.** A real monthly plan renews once a month, so the gap is rare but real, and a late or retried webhook widens it. A refused AI call to a paying athlete looks like a bug.
+
+**What it touches.** `supabase/functions/_shared/vana/entitlement.ts` (`isEntitled`, `requirePro`), the AI functions and `kroger`, the RevenueCat webhook.
+
+> 2026-09-24 opened in wave 6 ticket 06
+
+## mp-666 · Does the app trust its saved copy of Pro after that copy's own expiry time?
+- category: Pro and paywall
+- kind: question
+- status: answered
+- linked: mp-335
+- image: none
+- svg: docs/ssot/decisions/images/mealplanning/mp-666.svg
+- screen: none (Gate at startup: the saved copy is read before the network answers)
+- source: wave testing-wave 6 ticket 07
+
+**Context.** mp-335 says the Gate reads the copy of RevenueCat's answer saved on the phone, so it answers at once and works offline. In wave 6 a cold launch at 11:39:04 UTC read a saved copy that said Pro was active with an expiry of 11:36:56, two minutes in the past; RevenueCat itself showed no active Pro at that moment (Finding 07-002). The app opened, and the fetch that followed brought the renewed period.
+
+**Question.** When the saved copy says active but its own expiry has passed, does the Gate still open (A, today: the copy wins until the network answers), close to the paywall until RevenueCat answers (B), or open only while offline (C)?
+
+**Why.** mp-335 covers offline and flash-free startup, but not a saved copy that is already out of date. Opening avoids a paywall flash for a subscriber whose renewal is late; closing avoids letting a lapsed account in on a stale copy.
+
+**What it touches.** The Gate (`pro_gate.dart`), `SubscriptionService` startup read, the two-second startup wait.
+
+> 2026-09-24 opened in wave 6 ticket 07
+> 2026-09-25 answered by mp-679
+
+## mp-667 · Does signing up ask for the code we email?
+- category: Pro and paywall
+- kind: question
+- status: open
+- image: none
+- screen: Sign Up with Email
+- source: Lee in the terminal 2026-09-24
+
+**Context.** Today a new account is confirmed the moment it is created, on prod and on dev: nobody is sent a code and nobody types one, so an address with a typo, or someone else's address, becomes an account. The app already has a screen for typing a 6-digit code, and the email goes out through Resend as support@mealvana.io, but only once the project stops confirming on its own. On 2026-09-24 Lee turned dev over to confirm-by-email so the code screen can be tested; prod is unchanged.
+
+**Question.** Should signing up on prod require the 6-digit code we email before the account opens (A), or stay as today, open at once with no code (B)?
+
+**Why.** A code proves the athlete owns the address, so password resets and receipts reach them and a mistyped address can't lock them out later. It adds one step between signup and the paywall, and an email that lands in spam stops the signup.
+
+**What it touches.** The prod Supabase auth setting (confirm email), the Sign Up with Email and verify-code screens, Resend's daily sending limit.
+
+> 2026-09-24 opened by Lee in the terminal
+
 ## mp-668 · Does New meal plan archive this week's plan at the tap, or only when the new plan is confirmed?
 - category: Plan tab
 - kind: question
-- status: open
+- status: answered
 - linked: mp-241
 - image: none
 - svg: docs/ssot/decisions/images/mealplanning/mp-668.svg
@@ -3153,6 +3212,7 @@ An edit made while notes are being written is picked up on the next open. A requ
 **What it touches.** The New meal plan button, `MealPlanController.newPlan()`, the Plan tab, the plan bar in the new chat, and which rows ticket 14's retest expects.
 
 > 2026-09-24 opened in wave 8 ticket 14
+> 2026-09-25 answered by mp-674
 
 ## mp-669 · Can the athlete delete the shopping list of this week's confirmed plan?
 - category: Shopping list
@@ -3177,7 +3237,7 @@ An edit made while notes are being written is picked up on the next open. A requ
 ## mp-670 · What does a conversation show once another confirm has archived its Draft?
 - category: Plan tab
 - kind: question
-- status: open
+- status: answered
 - linked: mp-241
 - image: none
 - svg: docs/ssot/decisions/images/mealplanning/mp-670.svg
@@ -3193,11 +3253,12 @@ An edit made while notes are being written is picked up on the next open. A requ
 **What it touches.** The Vana chat's plan bar and Review plan sheet for a conversation whose plan is archived, `get_plan` and `confirm_plan` in vana-action, and the retests of Findings 15-001 and 16-001.
 
 > 2026-09-24 opened in wave 12 ticket 15
+> 2026-09-25 answered by mp-676
 
 ## mp-671 · Does a past week's leftover Draft belong in Previous plans?
 - category: Plan tab
 - kind: question
-- status: open
+- status: answered
 - linked: mp-241
 - image: none
 - svg: docs/ssot/decisions/images/mealplanning/mp-671.svg
@@ -3213,6 +3274,7 @@ An edit made while notes are being written is picked up on the next open. A requ
 **What it touches.** `list_plans` in vana-action, the Previous plans sheet's rows and their labels, and the retest of Finding 17-002.
 
 > 2026-09-24 opened in wave 12 ticket 17
+> 2026-09-25 answered by mp-677
 
 ## mp-672 · Should a logged meal's type follow the food or the time it was eaten?
 - category: Cutting costs
@@ -3237,7 +3299,7 @@ An edit made while notes are being written is picked up on the next open. A requ
 ## mp-673 · Should a plan ever pick a library meal that has no nutrition numbers?
 - category: Meals tab and library
 - kind: question
-- status: open
+- status: answered
 - linked: none
 - image: none
 - screen: none (the Plan tab's tiles show whatever numbers the answer leaves them; the screen itself does not change)
@@ -3252,3 +3314,141 @@ An edit made while notes are being written is picked up on the next open. A requ
 **What it touches.** The candidate query behind `pick_meals` and plan generation (`_shared/vana/`), the plan tile on the Plan tab and Recents, the day and week totals, and the retest of Finding 29-001.
 
 > 2026-09-24 opened in wave 16 ticket 29
+> 2026-09-25 answered by mp-678
+
+## mp-674 · New meal plan keeps this week's plan until the new one is confirmed
+- category: Plan tab
+- status: proposed
+- image: docs/ssot/decisions/images/mealplanning/plan-tab.png
+- screen: Plan tab
+- source: Lee in the terminal 2026-09-25 (testing-wave triage 2)
+- linked: mp-668
+
+**Context.** mp-241 says two things that pull apart: the Plan tab "keeps the confirmed plan until a new one is confirmed", and New meal plan "archives the plan it is on and starts a fresh, empty draft". The app does the first (Findings 14-001, 14-002), and mp-668 asked which one stands. This card answers it and replaces mp-241's New meal plan sentence.
+
+**Question.** When an athlete taps New meal plan while this week has a confirmed plan, what happens to that plan?
+
+**Decision.** Nothing, until the new plan is confirmed. The athlete's plans are a list: a new plan becomes this week's plan when it is confirmed, and the old one stays in the list as an earlier plan. The new conversation shows its plan bar from the start at "Your plan · 0 meals". Example: on 24 September test@test.com has plan be6abf2f confirmed for the week of 20 September and taps New meal plan; the Plan tab still shows be6abf2f while they pick meals, and only when they confirm the new plan does it take be6abf2f's place, which moves to Previous plans.
+
+**Why.** An athlete who opens New meal plan to look around, or backs out halfway, never loses this week's plan or lands on an empty Plan tab.
+
+**What else was considered.** Archiving this week's plan at the tap and starting an empty draft at once, as mp-241's third sentence says.
+
+**What it touches.** The New meal plan button, the plan bar in a new meal-plan chat (ticket 70), mp-241's New meal plan sentence.
+
+> 2026-09-25 proposed by Lee in the terminal (answers mp-668)
+> 2026-09-25 picture captured at 1.27.0+3, 0e20c2f0
+
+## mp-675 · Plans are a list the athlete can open, edit, rename, delete and use again
+- category: Plan tab
+- status: proposed
+- image: none
+- svg: docs/ssot/decisions/images/mealplanning/mp-675.svg
+- screen: none (Previous plans sheet and the earlier plan view; no capture drive yet)
+- source: Lee in the terminal 2026-09-25 (testing-wave triage 2)
+
+**Context.** Previous plans lists an athlete's earlier plans, but an earlier plan opens view only ("An earlier plan. View only."), and the only way to reuse one is Vana's "same as last time", which copies the most recent plan. Lee ruled on 25 September how plans should work.
+
+**Question.** What can an athlete do with their earlier plans?
+
+**Decision.** Plans are a list, newest first. From Previous plans the athlete opens any earlier plan to look something up, and can edit its meals and servings, rename it or delete it. "Use this plan again" copies an earlier plan into this week as a new draft; confirming that draft replaces this week's plan the same way any new plan does. Example: on 5 October an athlete opens their plan from the week of 14 September, taps Use this plan again, and gets a draft for the week of 4 October with the same four dinners; when they confirm it, it becomes this week's plan and the 14 September plan stays in the list as it was.
+
+**Why.** Athletes repeat weeks that worked; copying one should be one tap, and the list should let them tidy what they keep.
+
+**What else was considered.** Earlier plans stay view only and only "same as last time" copies a plan.
+
+**What it touches.** Previous plans sheet, the earlier plan view, `list_plans` and a new copy action in `_shared/vana/plan.ts` (ticket 73).
+
+> 2026-09-25 proposed by Lee in the terminal
+
+## mp-676 · A conversation whose draft was replaced says so and offers Use this plan instead
+- category: Plan tab
+- status: proposed
+- image: docs/ssot/decisions/images/mealplanning/vana-chat.png
+- screen: Vana chat
+- source: Lee in the terminal 2026-09-25 (testing-wave triage 2)
+- linked: mp-670
+
+**Context.** Confirming a plan archives every other plan for that week, drafts in other conversations included (mp-241). Reopening one of those conversations showed the archived draft as live, with servings controls and a working Confirm (Finding 15-001), and mp-670 asked what it should show.
+
+**Question.** What does a conversation show once another confirm has archived its draft?
+
+**Decision.** It says the athlete confirmed a different plan for this week and that this one is kept in their plans. The draft shows read-only, with no servings controls, no remove and no Confirm, and offers "Use this plan instead", which copies it into this week as a new draft (the copy from mp-675). Example: on 22 September test@test.com built a 4-meal draft in one conversation, then confirmed a different plan for the week of 20 September in another; reopening the first conversation shows the four meals read-only under that note, and Use this plan instead starts a fresh draft with those four meals.
+
+**Why.** A live Confirm on a plan the athlete has already replaced, without knowing it, invites a swap they never meant.
+
+**What else was considered.** Leaving the archived draft live so that Confirm swaps it back in.
+
+**What it touches.** The plan bar and Review sheet in the Vana chat (ticket 71).
+
+> 2026-09-25 proposed by Lee in the terminal (answers mp-670)
+> 2026-09-25 picture captured at 1.27.0+3, 36bea725
+
+## mp-677 · A leftover draft never shows in Previous plans
+- category: Plan tab
+- status: proposed
+- image: none
+- svg: docs/ssot/decisions/images/mealplanning/mp-677.svg
+- screen: none (Previous plans sheet; no capture drive yet)
+- source: Lee in the terminal 2026-09-25 (testing-wave triage 2)
+- linked: mp-671
+
+**Context.** Previous plans listed a past week's draft that was never confirmed as "An earlier plan" (Finding 17-002), and mp-671 asked whether leftover drafts belong there.
+
+**Question.** Does a past week's leftover draft belong in Previous plans?
+
+**Decision.** No. Previous plans lists plans that were confirmed, including ones a later plan replaced; a draft that was never confirmed is not listed. Example: the draft fc9687ff made on 17 September for the week of 13 September, after that week's plan f2c0bc78 was confirmed, does not appear; f2c0bc78 does.
+
+**Why.** A draft is work in progress in a conversation, not a plan the athlete used; listing it as an earlier plan says something that never happened.
+
+**What else was considered.** Listing leftover drafts, marked as drafts.
+
+**What it touches.** `list_plans` and the Previous plans sheet (ticket 73).
+
+> 2026-09-25 proposed by Lee in the terminal (answers mp-671)
+
+## mp-678 · A plan never picks a meal without numbers, and the 31 blank meals get numbers
+- category: Meals tab and library
+- status: proposed
+- image: docs/ssot/decisions/images/mealplanning/plan-tab.png
+- screen: Plan tab
+- source: Lee in the terminal 2026-09-25 (testing-wave triage 2)
+- linked: mp-673
+
+**Context.** 31 of the 1,922 active library meals had no kcal, carbs, protein or fat, and test@test.com's confirmed plan picked three of them, which then showed on the Plan tab with no numbers (Finding 29-001). mp-673 asked what should happen to such meals.
+
+**Question.** What happens to a library meal with no nutrition numbers?
+
+**Decision.** Both fixes. The 31 meals get numbers: found online where a source states them for that dish, and otherwise estimated from the meal's own ingredients and marked as AI-estimated on the meal. And planning never picks a meal whose numbers are missing, so a gap in future data never reaches a plan. Example: "Farro, chickpea & roasted cauliflower bowl with tahini" (AD-103) gets its kcal and macros, marked sourced with its page or marked AI-estimated; a meal added later without numbers stays browsable but is never put in a plan.
+
+**Why.** A plan built around a carb target cannot count dinners it has no numbers for, and the fix belongs in the data as well as the rule.
+
+**What else was considered.** Letting planning pick them with a tile that says the numbers are missing; filling the data only.
+
+**What it touches.** `meal_library` (new `nutrition_origin` and `nutrition_source_url`), the planning candidate query (ticket 61), the Plan tab tiles.
+
+> 2026-09-25 proposed by Lee in the terminal (answers mp-673)
+> 2026-09-25 picture captured at 1.27.0+3, 0e20c2f0
+
+## mp-679 · The saved copy of Pro counts for 15 minutes past its own expiry
+- category: Pro and paywall
+- status: proposed
+- image: none
+- svg: docs/ssot/decisions/images/mealplanning/mp-679.svg
+- screen: none (the Gate at startup reads the saved copy before the network answers)
+- source: Lee in the terminal 2026-09-25 (testing-wave triage 2)
+- linked: mp-666
+
+**Context.** On a phone the Gate reads the copy of RevenueCat's answer saved on the device, so it answers at once and works offline (mp-335). A cold launch read a saved copy that said Pro was active two minutes after that copy's own expiry, while RevenueCat showed no active Pro (Finding 07-002), and mp-666 asked whether the app should trust it. Since wave 19 the server keeps a renewing account open for 15 minutes past its period end, for a late renewal.
+
+**Question.** Does the app trust its saved copy of Pro after that copy's own expiry time?
+
+**Decision.** For 15 minutes, the same grace the server gives a renewing account, then no: after that the saved copy counts as closed until a fresh answer arrives, and a fresh answer always wins. Example: a monthly period ends at 11:36:56 UTC; a cold launch at 11:39 still opens the app from the saved copy while the fetch runs, but a launch at 11:52 with no network lands on the paywall until RevenueCat answers.
+
+**Why.** It keeps an athlete whose renewal is a few minutes late in the app, without letting an old saved copy keep a lapsed account open indefinitely offline.
+
+**What else was considered.** Closing at the saved copy's expiry exactly; trusting the saved copy until the next fresh answer, however old.
+
+**What it touches.** The Gate's reading of the saved copy (ticket 67), `RENEWAL_GRACE_MS` on the server.
+
+> 2026-09-25 proposed by Lee in the terminal (answers mp-666)
