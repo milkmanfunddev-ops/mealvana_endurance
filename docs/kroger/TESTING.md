@@ -97,6 +97,18 @@ Use a Kroger customer test account in Kroger Production; Certification has no
 customer accounts. Test OAuth separately first, with no cart writes. Explicitly
 approve any later test-cart additions. Do not use a customer's real cart for unattended QA.
 
+The team's test account (created 2026-09-25) is recorded in the ignored
+`secrets/kroger.test-account.md`; its password is in the macOS Keychain under
+service `mealvana-kroger-test`:
+
+```sh
+security find-generic-password -s mealvana-kroger-test -w
+```
+
+Sign in with it on Kroger's OAuth screen when the dev app connects Kroger. Its
+cart is disposable, so test adds need no cleanup, but never press Place Order.
+Lee's personal Kroger account is off limits for QA.
+
 - Connect/cancel/reconnect on iOS and Android; reject expired, mismatched and
   replayed callbacks; verify a secret or customer token never reaches the app.
 - Verify refresh when a customer access token expires, concurrent refreshes,
