@@ -92,6 +92,43 @@ void main() {
       findsOneWidget,
     );
   });
+
+  // Testing-wave 89-008: the Meals tab stays mounted holding "spinach"; the
+  // chat's Browse meals reads its own catalog and opens on its rails.
+  testWidgets('Browse opens on its rails while the Meals tab holds a query', (
+    t,
+  ) async {
+    await t.pumpWidget(
+      ProviderScope(
+        overrides: [
+          contentServiceProvider.overrideWith(testContentService),
+          mealCatalogControllerProvider(CatalogSurface.mealsTab).overrideWith(
+            () => _FixedCatalogController(
+              MealCatalogState(query: 'spinach', results: [withIngredients]),
+            ),
+          ),
+          mealCatalogControllerProvider(CatalogSurface.browse).overrideWith(
+            () => _FixedCatalogController(
+              MealCatalogState(assemblies: [saved], railsFromServer: true),
+            ),
+          ),
+        ],
+        child: MaterialApp(
+          home: Scaffold(
+            body: MealCatalogBrowser(
+              onOpenMeal: (_) {},
+              surface: CatalogSurface.browse,
+            ),
+          ),
+        ),
+      ),
+    );
+    await t.pump();
+
+    expect(find.text(withIngredients.name), findsNothing);
+    expect(find.text(saved.name), findsOneWidget);
+    expect(find.byKey(const ValueKey('meal_planning.search_field')), findsNothing);
+  });
 }
 
 class _FixedCatalogController extends MealCatalogController {

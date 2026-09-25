@@ -15,6 +15,7 @@ import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:mealvana_endurance/features/content/application/content_service.dart';
+import 'package:mealvana_endurance/features/meal_logging/domain/saved_meal.dart';
 import 'package:mealvana_endurance/features/meal_planning/application/meal_detail_controller.dart';
 import 'package:mealvana_endurance/features/meal_planning/domain/directions_origin.dart';
 import 'package:mealvana_endurance/features/meal_planning/domain/meal_detail.dart';
@@ -93,6 +94,7 @@ void main() {
                 mealDetailControllerProvider(
                   'D-100',
                 ).overrideWith(() => _FixedDetailController(detail)),
+                noSavedCopy,
               ],
               child: MaterialApp(
                 debugShowCheckedModeBanner: false,
@@ -128,3 +130,8 @@ class _FixedDetailController extends MealDetailController {
   @override
   Future<MealDetail> build(String id) async => detail;
 }
+
+/// No saved copy in My Foods: the heart starts empty without a database.
+final noSavedCopy = savedCopyOfLibraryMealProvider.overrideWith(
+  (ref, id) => Stream<SavedMeal?>.value(null),
+);

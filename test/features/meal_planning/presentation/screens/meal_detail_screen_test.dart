@@ -5,8 +5,13 @@ import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:go_router/go_router.dart';
+import 'package:font_awesome_flutter/font_awesome_flutter.dart';
+import 'package:mealvana_endurance/features/meal_planning/data/vana_action_client.dart';
+import 'package:mealvana_endurance/features/meal_planning/domain/plan_meal.dart';
+import '../../domain/fixture_helpers.dart';
 import 'package:mealvana_endurance/features/content/application/content_service.dart';
 import 'package:mealvana_endurance/features/content/domain/content_keys.dart';
+import 'package:mealvana_endurance/features/meal_logging/domain/saved_meal.dart';
 import 'package:mealvana_endurance/features/meal_planning/application/meal_detail_controller.dart';
 import 'package:mealvana_endurance/features/meal_planning/application/meal_plan_controller.dart';
 import 'package:mealvana_endurance/features/meal_planning/domain/cooking_session.dart';
@@ -80,6 +85,7 @@ void main() {
           isAdminProvider.overrideWith((ref) async => admin),
           internalDeviceFlagProvider.overrideWith(() => StubInternalDeviceFlag(isTester)),
           mealDetailControllerProvider('D-100').overrideWith(() => controller),
+          noSavedCopy,
         ],
         child: const MaterialApp(home: MealDetailScreen(id: 'D-100')),
       ),
@@ -313,6 +319,7 @@ void main() {
             mealDetailControllerProvider(
               d.meal.id,
             ).overrideWith(() => _FixedDetailController(d)),
+            noSavedCopy,
           ],
           child: MaterialApp(home: MealDetailScreen(id: d.meal.id)),
         ),
@@ -431,6 +438,7 @@ void main() {
       WidgetTester tester, {
       required _RecordingPlanController plan,
       String? pick = 'conv-1',
+      MealPlan? draft,
     }) async {
       final router = GoRouter(
         initialLocation: '/browse/detail',
@@ -456,7 +464,12 @@ void main() {
             mealDetailControllerProvider(
               'D-100',
             ).overrideWith(() => _FixedDetailController(detail)),
+            noSavedCopy,
             mealPlanControllerProvider.overrideWith(() => plan),
+            if (pick != null)
+              conversationDraftProvider(pick).overrideWith(
+                (ref) => Stream.value(draft),
+              ),
           ],
           child: MaterialApp.router(routerConfig: router),
         ),
@@ -496,6 +509,118 @@ void main() {
       expect(find.text('browse'), findsOneWidget);
       expect(addButton(), findsNothing);
     });
+
+    testWidgets(
+      'a meal already in the draft says "In your plan" and offers no Add',
+      (tester) async {
+        // The conversation's draft as Drift holds it (producer-shaped
+        // `batch` fixture) with this meal in it (testing-wave 88-007).
+        final fixture = VanaActionResult.fromJson(loadFixture('batch')).plan!;
+        final draft = fixture.copyWith(
+          conversationId: 'conv-1',
+          meals: [
+            PlanMeal(
+              id: 'pm-1',
+              planId: fixture.id,
+              source: MealSource.library,
+              libraryMealId: 'D-100',
+              name: detail.meal.name,
+              mealType: MealType.dinner,
+              servings: 8,
+              servingsLeft: 8,
+            ),
+          ],
+        );
+        final plan = _RecordingPlanController();
+        await pumpPick(tester, plan: plan, draft: draft);
+        await tester.pump();
+
+        expect(addButton(), findsNothing);
+        final note = find.byKey(const ValueKey('meal_planning.detail_in_plan'));
+        await tester.ensureVisible(note);
+        expect(
+          find.descendant(
+            of: note,
+            matching: find.text(content['meal_planning.browse_added']!),
+          ),
+          findsOneWidget,
+        );
+        expect(plan.picks, isEmpty);
+        expect(
+          find.text(content['meal_planning.browse_added_toast']!),
+          findsNothing,
+        );
+      },
+    );
+  });
+
+  group('the heart remembers (testing-wave 89-009)', () {
+    Future<void> pumpWithSaved(WidgetTester tester, SavedMeal? copy) async {
+      await tester.pumpWidget(
+        ProviderScope(
+          overrides: [
+            contentServiceProvider.overrideWith(testContentService),
+            isAdminProvider.overrideWith((ref) async => false),
+            internalDeviceFlagProvider.overrideWith(
+              () => StubInternalDeviceFlag(false),
+            ),
+            mealDetailControllerProvider(
+              'D-100',
+            ).overrideWith(() => _FixedDetailController(detail)),
+            savedCopyOfLibraryMealProvider(
+              'D-100',
+            ).overrideWith((ref) => Stream.value(copy)),
+          ],
+          child: const MaterialApp(home: MealDetailScreen(id: 'D-100')),
+        ),
+      );
+      await tester.pump();
+      await tester.pump();
+    }
+
+    Finder heart(FaIconData icon) => find.descendant(
+      of: find.byKey(const ValueKey('meal_planning.detail_save_to_mine')),
+      matching: find.byWidgetPredicate(
+        (w) =>
+            w is FaIcon &&
+            w.icon?.codePoint == icon.codePoint &&
+            w.icon?.fontFamily == icon.fontFamily,
+      ),
+    );
+
+    testWidgets('a meal saved on an earlier visit opens with a filled heart', (
+      tester,
+    ) async {
+      final t0 = DateTime.utc(2026, 9, 25);
+      await pumpWithSaved(
+        tester,
+        SavedMeal(
+          id: '09f59fb0-0000-4000-8000-000000000001',
+          userId: 'user-1',
+          name: detail.meal.name,
+          components: const [],
+          libraryMealId: 'D-100',
+          createdAt: t0,
+          updatedAt: t0,
+        ),
+      );
+      expect(heart(FontAwesomeIcons.solidHeart), findsOneWidget);
+      expect(
+        find.byTooltip(content['meal_planning.detail_remove_from_mine']!),
+        findsOneWidget,
+      );
+    });
+
+    testWidgets('a meal not in My Foods opens with an empty heart', (
+      tester,
+    ) async {
+      await pumpWithSaved(tester, null);
+      expect(heart(FontAwesomeIcons.heart), findsOneWidget);
+      expect(
+        find.byTooltip(content['meal_planning.detail_save_to_mine']!),
+        findsOneWidget,
+      );
+    });
   });
 
   // ── Directions origin (mp-146 / ticket 32) ─────────────────────────────
@@ -511,6 +636,7 @@ void main() {
             mealDetailControllerProvider(
               'D-100',
             ).overrideWith(() => controller),
+            noSavedCopy,
           ],
           child: const MaterialApp(home: MealDetailScreen(id: 'D-100')),
         ),
@@ -646,3 +772,8 @@ class _RecordingPlanController extends MealPlanController {
     return null;
   }
 }
+
+/// No saved copy in My Foods: the heart starts empty without a database.
+final noSavedCopy = savedCopyOfLibraryMealProvider.overrideWith(
+  (ref, id) => Stream<SavedMeal?>.value(null),
+);

@@ -483,6 +483,11 @@ class _DetailBodyState extends ConsumerState<_DetailBody> {
             height: 48,
             onPressed: () => _swapIn(context, ref),
           )
+        else if (pickConversationId != null && _inDraft(meal.id))
+          // Already in this conversation's draft: say so, as the Browse
+          // card's tick does, and offer no Add that would add nothing
+          // (testing-wave 88-007).
+          _InPlanNote(label: content.getValue(ContentKeys.mpBrowseAdded))
         else if (pickConversationId != null)
           KylePrimaryButton(
             key: const ValueKey('meal_planning.detail_add_to_plan'),
@@ -502,6 +507,18 @@ class _DetailBodyState extends ConsumerState<_DetailBody> {
         const SizedBox(height: AppSpacing.xxl),
       ],
     );
+  }
+
+  /// [mealId] is already in the pick conversation's draft (library id, or
+  /// the saved uuid), matched the way the Browse screen ticks its cards.
+  bool _inDraft(String mealId) {
+    final draft = ref
+        .watch(conversationDraftProvider(pickConversationId!))
+        .value;
+    return draft?.meals.any(
+          (m) => (m.libraryMealId ?? m.savedMealId) == mealId,
+        ) ??
+        false;
   }
 
   /// "Add to plan" from the browse flow: pick into the conversation's draft
@@ -637,7 +654,8 @@ class _SaveToMineButton extends ConsumerStatefulWidget {
 }
 
 class _SaveToMineButtonState extends ConsumerState<_SaveToMineButton> {
-  bool _saved = false;
+  /// What the last tap did, shown until My Foods (Drift) says the same.
+  bool? _tapped;
   bool _busy = false;
 
   @override
@@ -645,24 +663,33 @@ class _SaveToMineButtonState extends ConsumerState<_SaveToMineButton> {
     final content = ref.read(contentServiceProvider);
     final isDark = Theme.of(context).brightness == Brightness.dark;
     final textColor = isDark ? AppColors.cream : AppColors.blackberry;
+    // Saved on an earlier visit reads as saved (testing-wave 89-009).
+    final stored =
+        ref.watch(savedCopyOfLibraryMealProvider(widget.mealId)).value != null;
+    if (_tapped == stored) _tapped = null;
+    final saved = _tapped ?? stored;
 
     return Tooltip(
-      message: content.getValue(ContentKeys.mpDetailSaveToMine),
+      message: content.getValue(
+        saved
+            ? ContentKeys.mpDetailRemoveFromMine
+            : ContentKeys.mpDetailSaveToMine,
+      ),
       child: Material(
         color: isDark ? AppColors.blackberryLight : AppColors.surfaceLight,
         shape: const CircleBorder(),
         child: InkWell(
           key: const ValueKey('meal_planning.detail_save_to_mine'),
-          onTap: _saved || _busy ? null : _save,
+          onTap: _busy ? null : (saved ? _remove : _save),
           customBorder: const CircleBorder(),
           child: SizedBox(
             width: 44,
             height: 44,
             child: Center(
               child: FaIcon(
-                _saved ? FontAwesomeIcons.solidHeart : FontAwesomeIcons.heart,
+                saved ? FontAwesomeIcons.solidHeart : FontAwesomeIcons.heart,
                 size: 18,
-                color: _saved ? AppColors.dragonfruit : textColor,
+                color: saved ? AppColors.dragonfruit : textColor,
               ),
             ),
           ),
@@ -679,7 +706,7 @@ class _SaveToMineButtonState extends ConsumerState<_SaveToMineButton> {
           .read(mealDetailControllerProvider(widget.mealId).notifier)
           .saveToMine();
       if (!mounted) return;
-      setState(() => _saved = true);
+      setState(() => _tapped = true);
       MealvanaSnackbar.showSuccess(
         context,
         content.getValue(ContentKeys.mpDetailSavedToast),
@@ -693,6 +720,66 @@ class _SaveToMineButtonState extends ConsumerState<_SaveToMineButton> {
     } finally {
       if (mounted) setState(() => _busy = false);
     }
+  }
+
+  /// A tap on the filled heart takes the meal out of My Foods.
+  Future<void> _remove() async {
+    final content = ref.read(contentServiceProvider);
+    setState(() => _busy = true);
+    try {
+      final removed = await ref
+          .read(mealDetailControllerProvider(widget.mealId).notifier)
+          .removeFromMine();
+      if (!mounted) return;
+      setState(() => _tapped = false);
+      if (removed) {
+        MealvanaSnackbar.showSuccess(
+          context,
+          content.getValue(ContentKeys.mpDetailRemovedToast),
+        );
+      }
+    } on Exception {
+      if (!mounted) return;
+      MealvanaSnackbar.showError(
+        context,
+        content.getValue(ContentKeys.mpServerError),
+      );
+    } finally {
+      if (mounted) setState(() => _busy = false);
+    }
+  }
+}
+
+/// "In your plan" in place of Add to plan, for a meal already in the draft.
+class _InPlanNote extends StatelessWidget {
+  const _InPlanNote({required this.label});
+
+  final String label;
+
+  @override
+  Widget build(BuildContext context) {
+    final isDark = Theme.of(context).brightness == Brightness.dark;
+    final accent = isDark ? AppColors.electrolyte : AppColors.electrolyteDark;
+    return SizedBox(
+      key: const ValueKey('meal_planning.detail_in_plan'),
+      height: 48,
+      child: Row(
+        mainAxisAlignment: MainAxisAlignment.center,
+        children: [
+          Icon(Icons.check_circle, size: 20, color: accent),
+          const SizedBox(width: 8),
+          Flexible(
+            child: Text(
+              label,
+              style: AppTextStyles.bodyMedium.copyWith(
+                color: accent,
+                fontWeight: FontWeight.w700,
+              ),
+            ),
+          ),
+        ],
+      ),
+    );
   }
 }
 

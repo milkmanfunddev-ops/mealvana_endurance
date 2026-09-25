@@ -666,6 +666,8 @@
     "detail_directions_saved": "Directions saved",
     "detail_save_to_mine": "Save to mine",
     "detail_saved_toast": "Saved to My Foods",
+    "detail_remove_from_mine": "Remove from My Foods",
+    "detail_removed_toast": "Removed from My Foods",
     "detail_thumbs_down_note": "Vana won't suggest this again. Tap again to undo.",
     "detail_review_title": "Team review",
     "detail_review_good": "Good recipe",
