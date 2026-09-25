@@ -282,6 +282,9 @@ the above and follows this instead:
    only real logic gets its own agent. Give each ticket that may write a migration its own
    timestamp (`<date>16NN00`, NN = ticket) so two never collide (#60). Tell agents which files
    another open wave is editing and forbid them (#63).
+   Two tickets that decide the same thing about the same rows (whether another account's unsent
+   data survives a sweep, what counts as dirty) go to one agent. When they cannot, each prompt
+   states the other ticket's rule for that data, not only the shared file names (#70).
 4. Merge as agents finish. Make the `merge-N` worktree when the first report arrives and merge
    each branch in when its agent reports; do not wait for the slowest.
 5. At the end, once: merge `mealplanning` in (it may have moved, #59), one unfiltered codegen,
@@ -289,7 +292,9 @@ the above and follows this instead:
    and re-checked with the affected test folders only, never a second full suite. If
    `mealplanning` moves again before landing, re-merge and run the touched folders only.
 6. Review only the logic-heavy tickets (paywall, sync, plans, startup), with one read-only agent
-   looking for real bugs; skip review for copy and layout tickets.
+   looking for real bugs; skip review for copy and layout tickets. When the lead's review fixes touch an
+   annotated file (`@riverpod`, Drift, freezed), run the unfiltered codegen again before landing
+   and commit what it changes, so the next wave does not inherit stale generated files (#71).
 7. Deploy once, from the final merged tree: SQL first, then every function the wave changed.
    One real read for any changed PostgREST select (#57).
 8. Land with a fast-forward (check `merge-base --is-ancestor` before touching any dirty file,

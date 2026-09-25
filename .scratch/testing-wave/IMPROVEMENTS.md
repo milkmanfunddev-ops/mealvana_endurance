@@ -11,6 +11,10 @@ Each entry: what went wrong or cost time, where it was seen, and the suggested f
 
 ## Open
 
+(none)
+
+## Done
+
 - **#70 two parallel tickets each made their own rule for the same data (wave 27).** 102 (sign-in
   sweep) and 103 (pull after a failed upload) both had to decide when another account's food
   preferences are still unsent. 103 added an upload-pending marker; 102 kept them only while the
@@ -18,16 +22,13 @@ Each entry: what went wrong or cost time, where it was seen, and the suggested f
   shared files, not the shared state. Only the lead's review caught it, along with 102's sweep
   deleting the signed-in coach's own coach-mode rows. Suggested fix: when two tickets in one wave
   decide the same thing about the same rows, give both to one agent, or tell each agent the other
-  ticket's rule in its prompt.
+  ticket's rule in its prompt. Done 09-25: fix-wave step 3.
 
 - **#71 generated files left stale by a closed wave (wave 28).** The unfiltered codegen after
   wave 28's merge rewrote five `.g.dart` files that 108 never touched (`pro_gate.g.dart` doc comment
   from wave 27's review fix, four provider hashes): wave 27's review fixes landed after its last
   codegen. Suggested fix: when the lead's review fixes touch an annotated file, run the codegen
-  again before landing, and commit what it changes.
-
-## Done
-
+  again before landing, and commit what it changes. Done 09-25: fix-wave step 6.
 - **#68 three-digit tickets read as unblocked (wave 26).** `sync.mjs` read `Blocked by` with
   `\b\d{2}\b`, so 100 ("Blocked by: 101.") showed on the frontier. Now `\d{2,3}`, with a test
   (`dcbf75fa`).
