@@ -1,9 +1,10 @@
 /**
  * Pure mapping from a RevenueCat `pro` webhook event, plus RevenueCat's own
  * answer for the customer's current `pro` expiry, to the
- * `public.user_entitlements` row — a two-field cache of RevenueCat (mp-285):
- * `active_until` and `period_type`, plus `event_at` (the RC event time) so an
- * event older than the row is ignored. Nothing else from the payload is kept.
+ * `public.user_entitlements` row — a small cache of RevenueCat (mp-285,
+ * mp-609): `active_until`, `period_type` and `will_renew`, plus `event_at`
+ * (the RC event time) so an event older than the row is ignored. Nothing else
+ * from the payload is kept.
  * `active_until` is RevenueCat's answer, never the payload's expiry (mp-454):
  * RevenueCat already takes the later of a grant and a subscription.
  *
@@ -50,12 +51,25 @@ export const TEST_EVENT_TYPE = 'TEST';
 /** Handled separately: it carries user lists, not a product. */
 export const TRANSFER_EVENT_TYPE = 'TRANSFER';
 
+/**
+ * Event types after which the store subscription renews at its period end.
+ * Every other type (CANCELLATION, EXPIRATION, BILLING_ISSUE, a grant, a pause,
+ * anything new) leaves the row not renewing, so the server gives no grace
+ * past `active_until` (_shared/vana/entitlement.ts `RENEWAL_GRACE_MS`).
+ */
+export const RENEWING_EVENT_TYPES: ReadonlySet<string> = new Set([
+  'INITIAL_PURCHASE',
+  'RENEWAL',
+  'UNCANCELLATION',
+  'PRODUCT_CHANGE',
+]);
+
 /** Two expiries this close are the same end (RevenueCat rounds to the second). */
 const SAME_END_TOLERANCE_MS = 60_000;
 
 export type RcEvent = Record<string, unknown>;
 
-/** The row minus `user_id`: the two gate fields and the event time. */
+/** The row minus `user_id`: the gate fields and the event time. */
 export interface EntitlementRow {
   /** End of the period RevenueCat last reported; null = no access. */
   active_until: string | null;
@@ -63,6 +77,11 @@ export interface EntitlementRow {
   period_type: string | null;
   /** RevenueCat `event_timestamp_ms` as ISO — the ordering key for stale events. */
   event_at: string;
+  /**
+   * The store subscription that sets `active_until` renews there: the gate
+   * keeps Pro a short grace past it while the RENEWAL webhook is on its way.
+   */
+  will_renew: boolean;
 }
 
 /**
@@ -118,9 +137,14 @@ function str(value: unknown): string | null {
  * `active_until` is that answer: a CANCELLATION keeps access to the period
  * end, a live grant outlasts a lapsed trial, a trial started during a grant
  * keeps the grant's end — all RevenueCat's own arithmetic. When RevenueCat
- * reports no `pro`, the row closes at the event time (mp-317 §4: an
- * EXPIRATION closes the row at the event time), never null-as-open and never
- * the payload's expiry.
+ * reports no `pro`, the row closes at the payload's expiry when that is
+ * earlier than the event time, else at the event time (mp-609 clause 4;
+ * testing-wave 09-009: a late EXPIRATION must not move the end to its own
+ * arrival), never null-as-open and never later than the event.
+ *
+ * `will_renew` is true only when RevenueCat reports a live `pro` whose end is
+ * this event's own store subscription (not a grant) and the event type says
+ * that subscription goes on renewing ([RENEWING_EVENT_TYPES]).
  *
  * `period_type` is the payload's only when RevenueCat's end is the payload's
  * own expiry, i.e. this event's purchase is what grants access; otherwise the
@@ -141,10 +165,15 @@ export function entitlementRowFor(
   const payloadIsTheEnd = currentExpiry === null || (payloadExpiry !== null &&
     Math.abs(Date.parse(payloadExpiry) - Date.parse(currentExpiry)) <= SAME_END_TOLERANCE_MS);
 
+  const closedAt = payloadExpiry !== null && Date.parse(payloadExpiry) < Date.parse(eventAt) ? payloadExpiry : eventAt;
+  const storeSubscription = str(event.store) !== 'PROMOTIONAL' && payloadPeriod !== 'PROMOTIONAL';
+
   return {
-    active_until: currentExpiry ?? eventAt,
+    active_until: currentExpiry ?? closedAt,
     period_type: payloadIsTheEnd ? (payloadPeriod ?? storedPeriod) : (storedPeriod ?? payloadPeriod),
     event_at: eventAt,
+    will_renew: currentExpiry !== null && payloadIsTheEnd && storeSubscription &&
+      RENEWING_EVENT_TYPES.has(String(event.type ?? '')),
   };
 }
 

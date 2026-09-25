@@ -477,6 +477,7 @@ describe('B. first event → two-field row', () => {
       active_until: iso(T0 + 7 * DAY),
       period_type: 'TRIAL',
       event_at: iso(T0),
+      will_renew: true,
     });
     assertEquals(db.rpcCalls.filter((c) => c.fn === 'grant_credits').length, 0, 'a Pro subscription never reaches grant_credits');
   });
@@ -484,7 +485,7 @@ describe('B. first event → two-field row', () => {
   it('the payload’s other fields (store, product, price, environment) never reach the row', async () => {
     await handle(rcRequest(body(trialStart())));
     const written = (db.writes[0].payload as Row[])[0];
-    assertEquals(Object.keys(written).sort(), ['active_until', 'event_at', 'period_type', 'user_id']);
+    assertEquals(Object.keys(written).sort(), ['active_until', 'event_at', 'period_type', 'user_id', 'will_renew']);
   });
 
   it('RENEWAL on day eight moves active_until out and period_type to NORMAL', async () => {
@@ -506,6 +507,45 @@ describe('B. first event → two-field row', () => {
     }))));
     assertEquals(db.rows.get(USER_ID)!.active_until, iso(T0 + 7 * DAY));
     assertEquals(db.rows.get(USER_ID)!.event_at, iso(T0 + 2 * DAY));
+    assertEquals(db.rows.get(USER_ID)!.will_renew, false, 'a cancelled subscription gets no grace past its end');
+  });
+
+  it('RENEWAL marks the row renewing; an UNCANCELLATION marks it again', async () => {
+    await handle(rcRequest(body(trialStart())));
+    await handle(rcRequest(body(trialStart({
+      id: 'A1B2C3D4-0000-4000-8000-0000000000A5',
+      type: 'CANCELLATION',
+      event_timestamp_ms: T0 + DAY,
+    }))));
+    assertEquals(db.rows.get(USER_ID)!.will_renew, false);
+    await handle(rcRequest(body(trialStart({
+      id: 'A1B2C3D4-0000-4000-8000-0000000000A6',
+      type: 'UNCANCELLATION',
+      event_timestamp_ms: T0 + 2 * DAY,
+    }))));
+    assertEquals(db.rows.get(USER_ID)!.will_renew, true);
+    await handle(rcRequest(body(paidRenewal())));
+    assertEquals(db.rows.get(USER_ID)!.will_renew, true);
+  });
+
+  it('a late EXPIRATION sets active_until to its expiration_at_ms, not its arrival (09-009, mp-609 clause 4)', async () => {
+    // RevenueCat's last period ended 12:56:29.761; the EXPIRATION came at 12:59:36.902.
+    const end = Date.parse('2026-09-24T12:56:29.761Z');
+    const arrived = Date.parse('2026-09-24T12:59:36.902Z');
+    const { db, handle } = setup(arrived + 2_000);
+    await handle(rcRequest(body(paidRenewal({ event_timestamp_ms: end - 5 * 60_000, expiration_at_ms: end }))));
+    const res = await handle(rcRequest(body(paidRenewal({
+      id: 'A1B2C3D4-0000-4000-8000-0000000000A7',
+      type: 'EXPIRATION',
+      expiration_reason: 'UNSUBSCRIBE',
+      event_timestamp_ms: arrived,
+      expiration_at_ms: end,
+    }))));
+    assertEquals(res.status, 200);
+    const row = db.rows.get(USER_ID)!;
+    assertEquals(row.active_until, iso(end));
+    assertEquals(row.event_at, iso(arrived), 'the event time still orders later events');
+    assertEquals(row.will_renew, false);
   });
 
   it('EXPIRATION closes the row at the expiry, even when the payload’s expiry is later than the event', async () => {
@@ -627,9 +667,11 @@ describe('D. TRANSFER', () => {
       active_until: iso(T0 + 7 * DAY),
       period_type: 'TRIAL',
       event_at: iso(T0 + 3 * DAY),
+      will_renew: true,
     });
     assertEquals(db.rows.get(USER_ID)!.active_until, iso(T0 + 3 * DAY));
     assertEquals(db.rows.get(USER_ID)!.event_at, iso(T0 + 3 * DAY));
+    assertEquals(db.rows.get(USER_ID)!.will_renew, false, 'the closed row gets no grace');
   });
 
   it('after the transfer, a late event for the old owner is stale', async () => {
@@ -853,6 +895,7 @@ describe('H. granted access reaches the row', () => {
       active_until: iso(T0 + 30 * DAY),
       period_type: 'PROMOTIONAL',
       event_at: iso(T0),
+      will_renew: false,
     });
     assertEquals(rc.expiryCalls, [USER_ID], 'the expiry comes from RevenueCat, asked once');
     assertEquals(db.rpcCalls.filter((c) => c.fn === 'grant_credits').length, 0, 'a grant is not a credit pack');
@@ -873,6 +916,7 @@ describe('H. granted access reaches the row', () => {
     assertEquals(row.active_until, iso(T0 + 30 * DAY));
     assertEquals(row.period_type, 'PROMOTIONAL');
     assertEquals(row.event_at, iso(T0 + 2 * DAY));
+    assertEquals(row.will_renew, false, 'the grant sets the end, and a grant does not renew');
   });
 
   it('a trial that outlasts the grant moves the row to the trial’s end', async () => {
@@ -1039,7 +1083,27 @@ describe('F. entitlements.ts', () => {
 
   it('entitlementRowFor yields exactly the two fields plus the event time', () => {
     const row = entitlementRowFor(trialStart(), T0, iso(T0 + 7 * DAY));
-    assertEquals(row, { active_until: iso(T0 + 7 * DAY), period_type: 'TRIAL', event_at: iso(T0) });
+    assertEquals(row, { active_until: iso(T0 + 7 * DAY), period_type: 'TRIAL', event_at: iso(T0), will_renew: true });
+  });
+
+  it('entitlementRowFor: with no `pro` the row closes at the earlier of the payload expiry and the event time', () => {
+    const late = entitlementRowFor(paidRenewal({ type: 'EXPIRATION', event_timestamp_ms: T0 + 10 * DAY, expiration_at_ms: T0 + 9 * DAY }), T0, null);
+    assertEquals(late.active_until, iso(T0 + 9 * DAY));
+    const skewed = entitlementRowFor(paidRenewal({ type: 'EXPIRATION', event_timestamp_ms: T0 + 9 * DAY, expiration_at_ms: T0 + 9 * DAY + 60_000 }), T0, null);
+    assertEquals(skewed.active_until, iso(T0 + 9 * DAY), 'a payload expiry after the event never reopens the row');
+    assertEquals(late.will_renew, false);
+  });
+
+  it('entitlementRowFor: only a live store subscription that sets the end and is still renewing is will_renew', () => {
+    const end = iso(T0 + 37 * DAY);
+    for (const t of ['INITIAL_PURCHASE', 'RENEWAL', 'UNCANCELLATION', 'PRODUCT_CHANGE']) {
+      assertEquals(entitlementRowFor(paidRenewal({ type: t }), T0, end).will_renew, true, t);
+    }
+    for (const t of ['CANCELLATION', 'EXPIRATION', 'BILLING_ISSUE', 'SUBSCRIPTION_PAUSED', 'SUBSCRIPTION_EXTENDED', 'NON_RENEWING_PURCHASE', 'TEMPORARY_ENTITLEMENT_GRANT']) {
+      assertEquals(entitlementRowFor(paidRenewal({ type: t }), T0, end).will_renew, false, t);
+    }
+    assertEquals(entitlementRowFor(promotionalGrant({ type: 'RENEWAL' }), T0, iso(T0 + 30 * DAY)).will_renew, false, 'a grant never renews');
+    assertEquals(entitlementRowFor(paidRenewal(), T0, null).will_renew, false, 'no `pro` means no renewal');
   });
 
   it('entitlementRowFor without event_timestamp_ms stamps the current time', () => {
@@ -1051,7 +1115,7 @@ describe('F. entitlements.ts', () => {
   it('entitlementRowFor: the payload period type holds only when RevenueCat’s end is the payload’s own', () => {
     // A trial during a grant: RevenueCat's end is the grant's, so the stored PROMOTIONAL stays.
     const during = entitlementRowFor(trialStart(), T0, iso(T0 + 30 * DAY), { period_type: 'PROMOTIONAL' });
-    assertEquals(during, { active_until: iso(T0 + 30 * DAY), period_type: 'PROMOTIONAL', event_at: iso(T0) });
+    assertEquals(during, { active_until: iso(T0 + 30 * DAY), period_type: 'PROMOTIONAL', event_at: iso(T0), will_renew: false });
     // RevenueCat rounds to the second; within a minute is the same end.
     const same = entitlementRowFor(trialStart(), T0, iso(T0 + 7 * DAY + 900), { period_type: 'PROMOTIONAL' });
     assertEquals(same.period_type, 'TRIAL');
