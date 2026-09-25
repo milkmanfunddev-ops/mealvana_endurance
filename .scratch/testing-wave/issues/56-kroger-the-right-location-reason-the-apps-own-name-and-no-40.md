@@ -13,7 +13,7 @@
 
 **Touches:** ios/Runner/Info.plist, lib/features/kroger/application/kroger_controller.dart, supabase/functions/kroger/index.ts
 
-- [ ] Info.plist strings checked in the diff.
+- [x] Info.plist strings checked in the diff.
 - [ ] Opening Shopping on dev leaves no 400 in the `kroger` edge log.
 - [ ] codegen if annotations changed, `flutter analyze` and the suite green.
 

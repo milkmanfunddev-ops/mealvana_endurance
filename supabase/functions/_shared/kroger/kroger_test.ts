@@ -635,6 +635,45 @@ Deno.test("a market with no Location is not covered", async () => {
   assertEquals((result.stores as unknown[]).length, 0);
 });
 
+// The Shopping tab asks Coverage with no area at all, keyed off the athlete's
+// home location. An athlete with no home location is a normal account, not a
+// bad request: the answer is "unknown", which leaves the entry point in place,
+// and no Locations call is spent on it (finding 20-008).
+Deno.test("coverage for an athlete with no area is unknown, not an error", async () => {
+  const { seen, client } = recording();
+  const db = new MemoryDb();
+  db.tables.users = [{ id: user, home_lat: null, home_lon: null }];
+  const result = await new KrogerService(db as unknown as Db, user, client).run(
+    "coverage",
+    {},
+  );
+  assertEquals(result.covered, null);
+  assertEquals((result.stores as unknown[]).length, 0);
+  assertEquals(seen.some((r) => r.path.includes("/locations")), false);
+});
+
+Deno.test("a typed area that is not a zip is still an error for coverage", async () => {
+  const { client } = recording();
+  const db = new MemoryDb();
+  db.tables.users = [{ id: user, home_lat: null, home_lon: null }];
+  const error = await new KrogerService(db as unknown as Db, user, client).run(
+    "coverage",
+    { zip: "3520" },
+  ).catch((e) => e);
+  assertEquals(error.code, "invalid_zip");
+});
+
+Deno.test("resolving a Location with no area is still an error", async () => {
+  const { client } = recording();
+  const db = new MemoryDb();
+  db.tables.users = [{ id: user, home_lat: null, home_lon: null }];
+  const error = await new KrogerService(db as unknown as Db, user, client).run(
+    "location",
+    { modality: "DELIVERY" },
+  ).catch((e) => e);
+  assertEquals(error.code, "invalid_zip");
+});
+
 Deno.test("a delivery area resolves one Location, filtered by Modality", async () => {
   const { seen, client } = recording();
   const db = new MemoryDb();
