@@ -91,7 +91,7 @@ final class ShoppingListControllerProvider
 }
 
 String _$shoppingListControllerHash() =>
-    r'398a497fd86779fe6b257feb4bbbd50a17641dfa';
+    r'9a29aba448e5d83dcc85ea2acc97c87bc46013c4';
 
 /// Reads the most recent list (or the one opened from "Previous lists")
 /// through `vana-action`, groups it by aisle, and routes every edit — tick,
