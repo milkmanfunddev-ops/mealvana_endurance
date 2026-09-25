@@ -4,14 +4,14 @@
 /// the client seam uses, answering with producer-shaped customer info
 /// (`customer_info_fixtures.dart`).
 ///
-/// Covers: trial, active, founding member and ended, each with its status
-/// and date (mp-497 §2); Upgrade only once the plan has ended, opening the
-/// paywall; Manage subscription only with a store subscription, going where
-/// the paywall's Manage goes; the tick list with the AI features under the
+/// Covers: trial, active and founding member, each with its status and date
+/// (mp-497 §2); no ended state and no Upgrade, since a lapsed athlete stays
+/// on the paywall (mp-457, 87-008); Manage subscription only with a store
+/// subscription, the one Manage the paywall's ⋯ menu uses too (87-007); the
+/// tick list with the AI features under the
 /// one Vana line; Redeem code on every plan state, opening our own Code
 /// entry, where a giveaway Code sent to `redeem-code` (its own answer, fed at
-/// the functions client) turns an ended plan into a running one (mp-458,
-/// mp-495 §3); a Grant with where it came from and its days left, with no
+/// the functions client) shows the Grant it gave (mp-458, mp-495 §3); a Grant with where it came from and its days left, with no
 /// Manage subscription, while a store subscription keeps its own (mp-558);
 /// Settings opening the screen as a named push; light and dark goldens
 /// (mp-497 §3).
@@ -258,44 +258,25 @@ void main() {
       );
     });
 
-    testWidgets('ended: the day it ended', (tester) async {
+    // 87-008: a lapsed athlete stays on the paywall (mp-457), so there is
+    // no ended state. Only an Admin, open without Pro, reaches the screen
+    // with no plan running: no status card, no Upgrade.
+    testWidgets('no plan running: no ended state and no Upgrade', (
+      tester,
+    ) async {
       await pump(tester, info: customerInfoLapsed);
-      expect(textOf(tester, _status), _copy('subscription.status_ended'));
       expect(
-        textOf(tester, _date),
-        _dated('subscription.ended_on', DateTime.utc(2026, 9, 1, 10)),
+        find.byKey(const ValueKey('subscription.status_card')),
+        findsNothing,
       );
+      expect(find.byKey(_status), findsNothing);
+      expect(find.byKey(_date), findsNothing);
+      expect(find.byKey(_upgrade), findsNothing);
+      expect(find.byKey(_redeem), findsOneWidget);
     });
   });
 
-  group('Upgrade and Manage subscription (mp-495 §3)', () {
-    testWidgets('Upgrade only when the plan has ended', (tester) async {
-      for (final info in [
-        customerInfoTrial,
-        customerInfoOpen,
-        customerInfoFounding,
-      ]) {
-        await pump(tester, info: info);
-        expect(find.byKey(_upgrade), findsNothing);
-      }
-      await pump(tester, info: customerInfoLapsed);
-      expect(find.byKey(_upgrade), findsOneWidget);
-      expect(
-        find.descendant(
-          of: find.byKey(_upgrade),
-          matching: find.text(_copy('subscription.upgrade_button')),
-        ),
-        findsOneWidget,
-      );
-    });
-
-    testWidgets('Upgrade opens the paywall', (tester) async {
-      await pump(tester, info: customerInfoLapsed);
-      await tester.tap(find.byKey(_upgrade));
-      await tester.pumpAndSettle();
-      expect(find.text('paywall stand-in'), findsOneWidget);
-    });
-
+  group('Manage subscription (mp-495 §3, mp-558)', () {
     testWidgets('Manage only with a store subscription', (tester) async {
       await pump(tester, info: customerInfoGranted, storeSubscription: false);
       expect(find.byKey(_manage), findsNothing);
@@ -391,7 +372,6 @@ void main() {
         _copy('subscription.grant_days_left').replaceAll('{days}', '12'),
       );
       expect(find.byKey(_manage), findsNothing);
-      expect(find.byKey(_upgrade), findsNothing);
       expect(find.byKey(_redeem), findsOneWidget);
     });
 
@@ -452,7 +432,7 @@ void main() {
     for (final (name, info) in [
       ('trial', customerInfoTrial),
       ('active', customerInfoOpen),
-      ('ended', customerInfoLapsed),
+      ('no plan running', customerInfoLapsed),
     ]) {
       testWidgets('there on $name, opening our own Code entry', (tester) async {
         await pump(tester, info: info);
@@ -475,9 +455,7 @@ void main() {
       });
     }
 
-    testWidgets('a giveaway Code turns an ended plan into a running one', (
-      tester,
-    ) async {
+    testWidgets('a giveaway Code shows the Grant it gave', (tester) async {
       final functions = _MockFunctions();
       when(
         () => functions.invoke('redeem-code', body: any(named: 'body')),
@@ -500,7 +478,7 @@ void main() {
         (_) async =>
             statusOf(granted ? customerInfoGranted : customerInfoLapsed),
       );
-      expect(textOf(tester, _status), _copy('subscription.status_ended'));
+      expect(find.byKey(_status), findsNothing);
 
       await tester.ensureVisible(find.byKey(_redeem));
       await tester.tap(find.byKey(_redeem));
@@ -519,7 +497,6 @@ void main() {
         findsOneWidget,
       );
       expect(textOf(tester, _status), _copy('subscription.status_grant_code'));
-      expect(find.byKey(_upgrade), findsNothing);
     });
   });
 
@@ -618,10 +595,6 @@ void main() {
       testWidgets(
         'active $mode',
         (tester) => golden(tester, brightness, customerInfoOpen, 'active'),
-      );
-      testWidgets(
-        'ended $mode',
-        (tester) => golden(tester, brightness, customerInfoLapsed, 'ended'),
       );
     }
   });

@@ -13,6 +13,9 @@ part 'subscription_screen_controller.g.dart';
 DateTime Function() subscriptionScreenClock(Ref ref) => DateTime.now;
 
 /// Which plan state the Subscription screen shows (mp-495 §2, mp-558).
+///
+/// There is no ended state: a lapsed athlete stays on the full-screen
+/// paywall (mp-457) and never reaches this screen (87-008).
 enum PlanStatus {
   /// In the free week; [SubscriptionScreenState.date] is the day it ends.
   trial,
@@ -28,9 +31,6 @@ enum PlanStatus {
   /// ([SubscriptionScreenState.grantSource]) and its days left
   /// ([SubscriptionScreenState.daysLeft]).
   grant,
-
-  /// No plan running now; the date is the day it ended, when known.
-  ended,
 }
 
 /// The plan bought, as the paywall sells it (mp-628: the athlete "sees the
@@ -49,10 +49,12 @@ class SubscriptionScreenState {
     this.term,
   });
 
-  final PlanStatus plan;
+  /// Null when no plan is running. Only an Admin (open without Pro,
+  /// mp-457) reaches the screen so; a lapsed athlete is on the paywall.
+  final PlanStatus? plan;
 
   /// Trial end, renewal or end date (UTC), per [plan]. Null when RevenueCat
-  /// has none (an open-ended grant, or no plan on record).
+  /// has none (an open-ended grant, or no plan running).
   final DateTime? date;
 
   /// Whether the store renews (or, in a trial, starts charging) at [date].
@@ -70,13 +72,9 @@ class SubscriptionScreenState {
   final int? daysLeft;
 
   /// Monthly or Annual, for a running store plan (trial, active, founding)
-  /// whose SKU says which. Null for a Grant, an ended plan, or a SKU that
+  /// whose SKU says which. Null for a Grant, no plan running, or a SKU that
   /// names neither.
   final PlanTerm? term;
-
-  /// Upgrade (opens the paywall) is offered only once the plan has ended
-  /// (mp-495 §3).
-  bool get canUpgrade => plan == PlanStatus.ended;
 
   /// Pure: the screen's state for [status] on [now]. A founding member is
   /// one whose running plan is a founding product (`me_pro_*_founding`,
@@ -88,9 +86,9 @@ class SubscriptionScreenState {
     required DateTime now,
   }) {
     final grant = status.active ? status.grant : null;
-    final PlanStatus plan;
+    final PlanStatus? plan;
     if (!status.active) {
-      plan = PlanStatus.ended;
+      plan = null;
     } else if (grant != null) {
       plan = PlanStatus.grant;
     } else if (status.isTrial) {
@@ -102,12 +100,12 @@ class SubscriptionScreenState {
     }
     return SubscriptionScreenState(
       plan: plan,
-      date: status.expiresAt,
+      date: plan == null ? null : status.expiresAt,
       willRenew: status.active && status.willRenew,
       canManage: hasStoreSubscription,
       grantSource: grant?.source,
       daysLeft: grant?.daysLeftAt(now),
-      term: plan == PlanStatus.ended || plan == PlanStatus.grant
+      term: plan == null || plan == PlanStatus.grant
           ? null
           : termOf(status.productId),
     );
@@ -142,8 +140,8 @@ Future<bool> renewingStoreSubscription(Ref ref) =>
 /// status provider (RevenueCat, mp-279), whether there is a store
 /// subscription to manage, and where Manage subscription goes.
 ///
-/// Rebuilds whenever the status does, so a purchase made through Upgrade
-/// turns "ended" into the running plan while the screen is open.
+/// Rebuilds whenever the status does, so a Code redeemed on the screen
+/// shows at once.
 @riverpod
 class SubscriptionScreenController extends _$SubscriptionScreenController {
   @override

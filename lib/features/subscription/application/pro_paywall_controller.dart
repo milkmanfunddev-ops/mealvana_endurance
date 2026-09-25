@@ -167,17 +167,19 @@ Future<PaywallPlans> paywallPlans(Ref ref) async {
 Future<bool> paywallHasSubscription(Ref ref) =>
     ref.read(subscriptionServiceProvider).hasStoreSubscriptionOnRecord();
 
-/// Drives purchase, restore and "manage subscription" for the paywall.
+/// Drives purchase and restore for the paywall.
 ///
 /// State is `AsyncValue<void>`: loading while a store call is in flight,
 /// data when idle, error when the last operation failed unexpectedly.
 ///
-/// A purchase that opens the app leaves the state loading until the router
-/// has moved on (05-004): the Gate opens before `buy` returns, and the
-/// paywall route stays on screen a moment longer. An idle state there would
-/// bring Continue back live, and a second tap would start a second purchase.
-/// The hold ends when the status reports the account closed again (a lapse,
-/// or another account signing in), so a paywall shown later can sell.
+/// Whatever opens the app leaves the state loading until the router has
+/// moved on: a purchase (05-004), a restore, or a redeemed Code that grants
+/// Pro (87-001). The Gate opens a moment before the router replaces the
+/// paywall; an idle state there would bring Continue back live, and a tap
+/// would start a purchase for an account that already has Pro. The hold
+/// starts when the status reports the account open and ends when it reports
+/// it closed again (a lapse, or another account signing in), so a paywall
+/// shown later can sell.
 ///
 /// keepAlive for the same reason as [PurchaseController]: the screen only
 /// `ref.read`s the notifier to call [buy], so under autoDispose the notifier
@@ -189,8 +191,8 @@ class ProPaywallController extends _$ProPaywallController {
   UserEntitlementsRepository get _repo =>
       ref.read(userEntitlementsRepositoryProvider);
 
-  /// Set while a purchase has opened the app and the paywall waits for the
-  /// router to replace it.
+  /// Set while the app is open and the paywall waits for the router to
+  /// replace it.
   bool _holdingForGate = false;
 
   @override
@@ -201,12 +203,24 @@ class ProPaywallController extends _$ProPaywallController {
       _,
       next,
     ) {
-      if (!_holdingForGate || next.isLoading) return;
-      if (next.value?.active == true) return;
+      if (next.isLoading) return;
+      if (next.value?.active == true) {
+        // A redeemed Code (87-001) opens the Gate from outside this
+        // controller; a purchase or restore in flight holds when it returns.
+        if (!_holdingForGate && state is! AsyncLoading) _holdForGate();
+        return;
+      }
+      if (!_holdingForGate) return;
       _holdingForGate = false;
       state = const AsyncData(null);
     });
     return null;
+  }
+
+  /// The Gate is open: stay busy until the router takes the paywall away.
+  void _holdForGate() {
+    _holdingForGate = true;
+    state = const AsyncLoading();
   }
 
   /// Purchase [pkg]. Refuses (before touching the store) when nobody is
@@ -272,11 +286,7 @@ class ProPaywallController extends _$ProPaywallController {
         tags: {'rc_operation': 'buy', 'sku': sku},
       );
     }
-    if (outcome == ProPurchaseOutcome.activated) {
-      // The Gate is open: stay busy until the router takes the paywall away.
-      _holdingForGate = true;
-      state = const AsyncLoading();
-    }
+    if (outcome == ProPurchaseOutcome.activated) _holdForGate();
     return outcome;
   }
 
@@ -294,12 +304,14 @@ class ProPaywallController extends _$ProPaywallController {
     // A restore can bring a subscription onto this account: Manage may now
     // belong in the menu.
     ref.invalidate(paywallHasSubscriptionProvider);
+    if (active) _holdForGate();
     return active;
   }
 
-  /// Where "Manage subscription" goes: RevenueCat's management URL for this
-  /// customer, else the platform store's subscriptions page. Null only on a
-  /// platform with no store (web).
+  /// RevenueCat's management URL for this customer, else the platform
+  /// store's subscriptions page; null for a Test Store plan or on web. Only
+  /// the day-five reminder's tap reads it here; every Manage subscription
+  /// button goes through the Subscription screen's (87-007).
   Future<Uri?> managementUrl() => _service.managementUrl();
 
   /// The day-five reminder (mp-456), when RevenueCat says this purchase

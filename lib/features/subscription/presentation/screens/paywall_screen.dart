@@ -16,6 +16,7 @@ import '../../application/subscription_status_provider.dart';
 import '../pro_gate_redirect.dart';
 import '../widgets/pro_feature_list.dart';
 import '../widgets/redeem_code_sheet.dart';
+import 'subscription_screen.dart' show openManageSubscription;
 
 /// Opens [uri] outside the app. A provider so widget tests can intercept
 /// "Manage subscription" and the terms and privacy links instead of reaching
@@ -78,8 +79,9 @@ Page<void> paywallRoutePage(GoRouterState state) => MaterialPage<void>(
 /// and one whose Pro ended alike; nothing in the app sits behind it. The
 /// router moves the person into the app the moment the gate opens.
 ///
-/// UI only: purchase / restore / management URL live in
-/// [ProPaywallController]; whether there is a subscription to manage is
+/// UI only: purchase and restore live in [ProPaywallController]; Manage
+/// subscription is the Subscription screen's [openManageSubscription];
+/// whether there is a subscription to manage is
 /// [paywallHasSubscriptionProvider]; sign-out and delete reuse
 /// [SettingsController]'s flows; the gate itself is `appGateProvider`. All
 /// copy comes from [ContentKeys].
@@ -182,20 +184,10 @@ class _PaywallScreenState extends ConsumerState<PaywallScreen> {
     }
   }
 
-  Future<void> _manage(BuildContext context, WidgetRef ref) async {
-    final content = ref.read(contentServiceProvider);
-    final launch = ref.read(paywallUrlLauncherProvider);
-    final uri = await ref
-        .read(proPaywallControllerProvider.notifier)
-        .managementUrl();
-    final opened = uri != null && await launch(uri);
-    if (!context.mounted || opened) return;
-    MealvanaSnackbar.showInfo(
-      context,
-      content.getValue(ContentKeys.paywallManageUnavailable),
-      bottomClearance: _plansClearance(),
-    );
-  }
+  /// The Subscription screen's Manage (87-007): the store's page, or the
+  /// message for the store the plan came from, never a fixed one here.
+  Future<void> _manage(BuildContext context, WidgetRef ref) =>
+      openManageSubscription(context, ref, messageClearance: _plansClearance);
 
   Future<void> _openLink(
     BuildContext context,
@@ -588,6 +580,13 @@ class _PlansTray extends StatefulWidget {
 class _PlansTrayState extends State<_PlansTray> {
   _Plan _choice = _Plan.annual;
 
+  /// The plans are inert while busy, as Continue is: a purchase, restore or
+  /// redeemed Code has opened the app and the router is about to replace
+  /// the paywall (05-004, 87-001).
+  void _choose(_Plan plan) {
+    if (!widget.isBusy) setState(() => _choice = plan);
+  }
+
   @override
   Widget build(BuildContext context) {
     final content = widget.content;
@@ -684,7 +683,7 @@ class _PlansTrayState extends State<_PlansTray> {
                   }),
             note: trial(annual),
             selected: identical(selected, annual),
-            onSelected: () => setState(() => _choice = _Plan.annual),
+            onSelected: () => _choose(_Plan.annual),
           ),
         if (monthly != null)
           PlanCard(
@@ -696,7 +695,7 @@ class _PlansTrayState extends State<_PlansTray> {
             regularPrice: struck(monthly, perMonth),
             note: trial(monthly),
             selected: identical(selected, monthly),
-            onSelected: () => setState(() => _choice = _Plan.monthly),
+            onSelected: () => _choose(_Plan.monthly),
           ),
       ],
       action: continueButton,

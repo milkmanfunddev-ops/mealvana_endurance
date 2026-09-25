@@ -102,7 +102,6 @@ void main() {
     expect(s.plan, PlanStatus.trial);
     expect(s.date, DateTime.utc(2026, 9, 29, 10));
     expect(s.willRenew, isTrue);
-    expect(s.canUpgrade, isFalse);
   });
 
   test('active: the plan with the day it renews', () async {
@@ -110,7 +109,6 @@ void main() {
     expect(s.plan, PlanStatus.active);
     expect(s.date, DateTime.utc(2026, 11, 1, 10));
     expect(s.willRenew, isTrue);
-    expect(s.canUpgrade, isFalse);
   });
 
   test('active but cancelled: it will not renew', () async {
@@ -123,23 +121,26 @@ void main() {
     final s = await read(container(info: customerInfoFounding));
     expect(s.plan, PlanStatus.founding);
     expect(s.date, DateTime.utc(2027, 10, 1, 10));
-    expect(s.canUpgrade, isFalse);
   });
 
-  test('ended: the day it ended, and Upgrade', () async {
+  // 87-008: no ended state. A lapsed athlete stays on the paywall
+  // (mp-457); only an Admin, open without Pro, reaches the screen with no
+  // plan running, and the screen names none.
+  test('a plan that ended names no plan and no date, and keeps Manage '
+      'for its store subscription (mp-558)', () async {
     final s = await read(container(info: customerInfoLapsed));
-    expect(s.plan, PlanStatus.ended);
-    expect(s.date, DateTime.utc(2026, 9, 1, 10));
-    expect(s.canUpgrade, isTrue);
+    expect(s.plan, isNull);
+    expect(s.date, isNull);
+    expect(s.term, isNull);
+    expect(s.canManage, isTrue);
   });
 
-  test('no plan on record reads as ended, with no date', () async {
+  test('no plan on record names no plan, no date and no Manage', () async {
     final s = await read(
       container(info: customerInfoNever, storeSubscription: false),
     );
-    expect(s.plan, PlanStatus.ended);
+    expect(s.plan, isNull);
     expect(s.date, isNull);
-    expect(s.canUpgrade, isTrue);
     expect(s.canManage, isFalse);
   });
 
@@ -154,18 +155,19 @@ void main() {
   });
 
   group('a Grant (mp-558)', () {
-    test('the Legacy grace month: its source and days left, no Manage, '
-        'no Upgrade', () async {
-      final s = await read(
-        container(info: customerInfoGraceGrant, storeSubscription: false),
-      );
-      expect(s.plan, PlanStatus.grant);
-      expect(s.grantSource, GrantSource.legacyGrace);
-      expect(s.daysLeft, 12);
-      expect(s.date, DateTime.utc(2026, 10, 31, 10));
-      expect(s.canManage, isFalse);
-      expect(s.canUpgrade, isFalse);
-    });
+    test(
+      'the Legacy grace month: its source and days left, no Manage',
+      () async {
+        final s = await read(
+          container(info: customerInfoGraceGrant, storeSubscription: false),
+        );
+        expect(s.plan, PlanStatus.grant);
+        expect(s.grantSource, GrantSource.legacyGrace);
+        expect(s.daysLeft, 12);
+        expect(s.date, DateTime.utc(2026, 10, 31, 10));
+        expect(s.canManage, isFalse);
+      },
+    );
 
     test('a Code: 365 days read as a Code, with its days left', () async {
       final s = await read(
@@ -231,17 +233,16 @@ void main() {
     });
   });
 
-  test('a status RevenueCat pushes (a purchase from Upgrade) '
-      'replaces ended with active', () async {
-    final c = container(info: customerInfoLapsed);
-    expect((await read(c)).plan, PlanStatus.ended);
+  test('a status RevenueCat pushes (a Code redeemed on the screen) '
+      'replaces the plan shown', () async {
+    final c = container(info: customerInfoOpen);
+    expect((await read(c)).plan, PlanStatus.active);
 
-    pushStatus!(statusOf(customerInfoOpen));
+    pushStatus!(statusOf(customerInfoGranted));
     await Future<void>.delayed(Duration.zero);
 
     final s = await read(c);
-    expect(s.plan, PlanStatus.active);
-    expect(s.canUpgrade, isFalse);
+    expect(s.plan, PlanStatus.grant);
   });
 
   test('managementUrl is the service\'s, as the paywall\'s Manage', () async {

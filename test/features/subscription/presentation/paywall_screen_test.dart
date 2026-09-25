@@ -48,10 +48,13 @@ import 'package:mealvana_endurance/features/subscription/presentation/ai_action_
 import 'package:mealvana_endurance/features/subscription/presentation/open_paywall.dart';
 import 'package:mealvana_endurance/features/subscription/presentation/pro_gate_redirect.dart';
 import 'package:mealvana_endurance/features/subscription/presentation/screens/paywall_screen.dart';
+import 'package:mealvana_endurance/features/subscription/presentation/screens/subscription_screen.dart';
+import 'package:mealvana_endurance/features/subscription/data/subscription_service.dart';
 import 'package:mealvana_endurance/shared/providers/is_admin_provider.dart';
 import 'package:mealvana_endurance/shared/widgets/kyle_design/materials/glass.dart';
 import 'package:mealvana_endurance/shared/services/privacy/privacy_links.dart';
 import 'package:mealvana_endurance/shared/widgets/kyle_design/buttons/overflow_menu_button.dart';
+import 'package:mealvana_endurance/shared/widgets/kyle_design/buttons/primary_button.dart';
 import 'package:mealvana_endurance/shared/widgets/kyle_design/cards/feature_list.dart';
 import 'package:mealvana_endurance/shared/widgets/kyle_design/cards/plan_card.dart';
 import 'package:mealvana_endurance/shared/widgets/kyle_design/data/phone_clip_frame.dart';
@@ -93,21 +96,61 @@ class _FixedStatus extends SubscriptionStatusController {
   Future<SubscriptionStatus> build() async => status;
 }
 
+/// A status the test opens by hand, as a redeemed Code's refresh does.
+class _SwitchableStatus extends SubscriptionStatusController {
+  _SwitchableStatus(this.status);
+  final SubscriptionStatus status;
+  @override
+  Future<SubscriptionStatus> build() async => status;
+
+  void open(SubscriptionStatus next) => state = AsyncData(next);
+}
+
+/// A Code entry whose Code grants Pro: before it answers, the status
+/// reports the account open, as the real controller's refresh leaves it.
+class _GrantingCodeEntry extends RecordingCodeEntry {
+  _GrantingCodeEntry(super.answer);
+
+  @override
+  Future<CodeRedemption?> redeem(String code) async {
+    (ref.read(subscriptionStatusProvider.notifier) as _SwitchableStatus).open(
+      statusOf(customerInfoGranted),
+    );
+    return super.redeem(code);
+  }
+}
+
+/// RevenueCat's answer for Manage subscription, as the service gives it:
+/// the store's page, or null for a Test Store plan (finding 09-001).
+class _ManageService extends Fake implements SubscriptionService {
+  _ManageService(this.url);
+  final Uri? url;
+  int reads = 0;
+
+  @override
+  Future<Uri?> managementUrl() async {
+    reads++;
+    return url;
+  }
+}
+
+/// The Subscription screen's controller on a running store plan. Only its
+/// state is fixed: Manage is the real one, which both screens call (87-007).
+class _PlanWithManage extends SubscriptionScreenController {
+  @override
+  Future<SubscriptionScreenState> build() async =>
+      const SubscriptionScreenState(plan: PlanStatus.active, canManage: true);
+}
+
 /// Records calls instead of touching the store.
 class _RecordingPaywall extends ProPaywallController {
-  _RecordingPaywall({
-    this.restoreResult = true,
-    this.manageUri,
-    this.holdAfterBuy = false,
-  });
+  _RecordingPaywall({this.restoreResult = true, this.holdAfterBuy = false});
   final bool restoreResult;
-  final Uri? manageUri;
 
   /// Stays loading after an activated purchase, as the real controller does
   /// while the router replaces the paywall (05-004).
   final bool holdAfterBuy;
   int restoreCalls = 0;
-  int manageCalls = 0;
   final bought = <String>[];
 
   @override
@@ -117,12 +160,6 @@ class _RecordingPaywall extends ProPaywallController {
   Future<bool> restore() async {
     restoreCalls++;
     return restoreResult;
-  }
-
-  @override
-  Future<Uri?> managementUrl() async {
-    manageCalls++;
-    return manageUri;
   }
 
   @override
@@ -173,6 +210,8 @@ List<Override> _overrides({
   bool hasSubscription = false,
   bool renewingSubscription = false,
   SubscriptionStatus status = SubscriptionStatus.none,
+  SubscriptionStatusController Function()? statusController,
+  _ManageService? manage,
 }) {
   final resolved = plans ?? PaywallPlans(monthly: _monthly, annual: _annual);
   return [
@@ -181,7 +220,9 @@ List<Override> _overrides({
       clip ?? () => FakePhoneClipPlayer(endOnStart: true),
     ),
     paywallClipPosterProvider.overrideWithValue(testPoster),
-    subscriptionStatusProvider.overrideWith(() => _FixedStatus(status)),
+    subscriptionStatusProvider.overrideWith(
+      statusController ?? () => _FixedStatus(status),
+    ),
     paywallPlansProvider.overrideWith((ref) async => resolved),
     paywallHasSubscriptionProvider.overrideWith((ref) async => hasSubscription),
     renewingStoreSubscriptionProvider.overrideWith(
@@ -192,6 +233,10 @@ List<Override> _overrides({
     if (codeEntry != null) codeEntryControllerProvider.overrideWith(codeEntry),
     if (launcher != null)
       paywallUrlLauncherProvider.overrideWithValue(launcher),
+    if (manage != null) ...[
+      subscriptionServiceProvider.overrideWithValue(manage),
+      subscriptionScreenControllerProvider.overrideWith(_PlanWithManage.new),
+    ],
   ];
 }
 
@@ -788,13 +833,13 @@ void main() {
 
   testWidgets('Manage subscription opens the management URL', (tester) async {
     final uri = Uri.parse('https://apps.apple.com/account/subscriptions');
-    final paywall = _RecordingPaywall(manageUri: uri);
+    final manage = _ManageService(uri);
     final launched = <Uri>[];
     await smokeScreen(
       tester,
       const PaywallScreen(),
       overrides: _overrides(
-        paywall: () => paywall,
+        manage: manage,
         hasSubscription: true,
         launcher: (u) async {
           launched.add(u);
@@ -807,21 +852,25 @@ void main() {
     await tester.tap(find.byKey(_manage));
     await tester.pumpAndSettle();
 
-    expect(paywall.manageCalls, 1);
+    expect(manage.reads, 1);
     expect(launched, [uri]);
   });
 
-  testWidgets('Manage subscription with nowhere to go says where to look', (
-    tester,
-  ) async {
-    final paywall = _RecordingPaywall(manageUri: null);
+  // 87-007: a Test Store plan has no store page. The paywall says what the
+  // Subscription screen says, never "the App Store or Google Play".
+  testWidgets('Manage subscription with no page (a Test Store plan) names '
+      'where it is and opens nothing', (tester) async {
+    final launched = <Uri>[];
     await smokeScreen(
       tester,
       const PaywallScreen(),
       overrides: _overrides(
-        paywall: () => paywall,
+        manage: _ManageService(null),
         hasSubscription: true,
-        launcher: (_) async => true,
+        launcher: (u) async {
+          launched.add(u);
+          return true;
+        },
       ),
     );
 
@@ -829,7 +878,86 @@ void main() {
     await tester.tap(find.byKey(_manage));
     await tester.pumpAndSettle();
 
-    expect(find.textContaining('Manage your subscription'), findsOneWidget);
+    expect(
+      find.text(_content[ContentKeys.subscriptionManageNoPage]!),
+      findsOneWidget,
+    );
+    expect(
+      find.text(_content[ContentKeys.paywallManageUnavailable]!),
+      findsNothing,
+    );
+    expect(launched, isEmpty);
+    _expectMessageClearsThePlans(tester);
+  });
+
+  // 87-007: one Manage for both screens. For the same plan's store, the
+  // lapsed paywall's ⋯ → Manage and the Subscription screen's button do the
+  // same thing: open the same page, or say the same words.
+  group('one Manage subscription for the paywall and the Subscription '
+      'screen (87-007)', () {
+    final cases = <(String, Uri?, bool)>[
+      ('App Store, the page opens', Uri.parse(kAppleSubscriptionsUrl), true),
+      ('Test Store, no page', null, true),
+      ('a page that will not open', Uri.parse(kAppleSubscriptionsUrl), false),
+    ];
+    for (final (name, url, opens) in cases) {
+      testWidgets(name, (tester) async {
+        Future<(List<Uri>, List<String?>)> manageOn(
+          Widget screen,
+          Future<void> Function() tapManage,
+        ) async {
+          final launched = <Uri>[];
+          await smokeScreen(
+            tester,
+            screen,
+            overrides: _overrides(
+              manage: _ManageService(url),
+              hasSubscription: true,
+              status: statusOf(customerInfoLapsed),
+              launcher: (u) async {
+                launched.add(u);
+                return opens;
+              },
+            ),
+          );
+          await tapManage();
+          await tester.pumpAndSettle();
+          final said = tester
+              .widgetList<Text>(
+                find.descendant(
+                  of: find.byType(SnackBar),
+                  matching: find.byType(Text),
+                ),
+              )
+              .map((t) => t.data)
+              .toList();
+          return (launched, said);
+        }
+
+        final onPaywall = await manageOn(const PaywallScreen(), () async {
+          await _openMenu(tester);
+          await tester.tap(find.byKey(_manage));
+        });
+        final onScreen = await manageOn(
+          const SubscriptionScreen(),
+          () => tester.tap(
+            find.byKey(const ValueKey('subscription.manage_button')),
+          ),
+        );
+
+        expect(onPaywall.$1, onScreen.$1);
+        expect(onPaywall.$2, onScreen.$2);
+        expect(onPaywall.$1, url == null ? isEmpty : [url]);
+        expect(
+          onPaywall.$2,
+          url == null
+              ? [_content[ContentKeys.subscriptionManageNoPage]]
+              : opens
+              ? isEmpty
+              : [_content[ContentKeys.paywallManageUnavailable]],
+        );
+      });
+    }
   });
 
   testWidgets('Sign out confirms, then signs out through Settings', (
@@ -891,8 +1019,8 @@ void main() {
     tester,
   ) async {
     final settings = _RecordingSettings();
-    final paywall = _RecordingPaywall(
-      manageUri: Uri.parse('https://apps.apple.com/account/subscriptions'),
+    final service = _ManageService(
+      Uri.parse('https://apps.apple.com/account/subscriptions'),
     );
     final launched = <Uri>[];
     await smokeScreen(
@@ -900,7 +1028,7 @@ void main() {
       const PaywallScreen(),
       overrides: _overrides(
         settings: () => settings,
-        paywall: () => paywall,
+        manage: service,
         hasSubscription: true,
         renewingSubscription: true,
         launcher: (uri) async {
@@ -938,7 +1066,7 @@ void main() {
 
     expect(find.byType(AlertDialog), findsNothing);
     expect(settings.deletes, 0);
-    expect(paywall.manageCalls, 1);
+    expect(service.reads, 1);
     expect(launched, [
       Uri.parse('https://apps.apple.com/account/subscriptions'),
     ]);
@@ -1049,6 +1177,51 @@ void main() {
       await enter(tester, 'DEVCOACH30');
 
       _expectMessageClearsThePlans(tester);
+    });
+
+    // 87-001: ticket 45's purchase lock holds for a redeemed Code. From the
+    // Code's success until the router replaces the paywall, nothing on it
+    // can start a purchase. The real paywall controller, not a recording.
+    testWidgets('a Code that opens the app leaves Continue disabled and the '
+        'plans inert until the paywall is gone', (tester) async {
+      await smokeScreen(
+        tester,
+        const PaywallScreen(),
+        overrides: _overrides(
+          statusController: () => _SwitchableStatus(SubscriptionStatus.none),
+          codeEntry: () => _GrantingCodeEntry(
+            const CodeRedeemed(kind: RedeemedKind.giveaway, proDays: 365),
+          ),
+        ),
+      );
+      KylePrimaryButton continueButton() =>
+          tester.widget<KylePrimaryButton>(find.byKey(_continue));
+      expect(continueButton().onPressed, isNotNull);
+
+      await _openMenu(tester);
+      await tester.tap(find.byKey(_redeem));
+      await tester.pumpAndSettle();
+      await tester.enterText(find.byKey(RedeemCodeSheet.fieldKey), 'WIN365');
+      await tester.pump();
+      await tester.tap(find.byKey(RedeemCodeSheet.submitKey));
+      // The held spinner never settles; step past the sheet's exit.
+      await tester.pump();
+      await tester.pump(const Duration(seconds: 1));
+
+      expect(find.byType(RedeemCodeSheet), findsNothing);
+      expect(
+        find.text('Code redeemed. You have 365 days of Pro.'),
+        findsOneWidget,
+      );
+      expect(continueButton().onPressed, isNull);
+      expect(continueButton().isLoading, isTrue);
+
+      // Four seconds on (the window 87-001 saw), still nothing to tap.
+      await tester.pump(const Duration(seconds: 4));
+      expect(continueButton().onPressed, isNull);
+      await tester.tap(find.byKey(_monthlyCard), warnIfMissed: false);
+      await tester.pump();
+      expect(tester.widget<PlanCard>(find.byKey(_annualCard)).selected, isTrue);
     });
 
     testWidgets('a refused Code keeps the sheet open and says why', (
