@@ -18,9 +18,9 @@
 
 **Touches:** nothing (read only), except the accounts the run creates and deletes, and the meals it logs on test@test.com.
 
-- [ ] Runs by the runbook: a slot taken and released, the console saved to the run folder, a look-around on every screen visited, every new problem written as a Finding and nothing fixed.
-- [ ] `RUNS/verdicts.md` has one row per Finding above: id, pass | fail | not run, the evidence (paths under `runs/112/`), and for a fail the new bug Finding's id. A fail is filed as a new bug Finding that names the old id in its Steps. The run does not edit the old Finding files: the wave lead closes the passes from this table.
-- [ ] Each follow-up test above is run and gets a row in `verdicts.md`. A problem it finds is a new Finding.
-- [ ] Every account the run made is deleted at the end (runbook step 9) unless the setup says to keep it.
+- [x] Runs by the runbook: a slot taken and released, the console saved to the run folder, a look-around on every screen visited, every new problem written as a Finding and nothing fixed.
+- [x] `RUNS/verdicts.md` has one row per Finding above: id, pass | fail | not run, the evidence (paths under `runs/112/`), and for a fail the new bug Finding's id. A fail is filed as a new bug Finding that names the old id in its Steps. The run does not edit the old Finding files: the wave lead closes the passes from this table.
+- [x] Each follow-up test above is run and gets a row in `verdicts.md`. A problem it finds is a new Finding.
+- [x] Every account the run made is deleted at the end (runbook step 9) unless the setup says to keep it.
 
 Next: /implement-lee testing-wave

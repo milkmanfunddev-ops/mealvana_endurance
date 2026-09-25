@@ -1,0 +1,8 @@
+# 112 baseline, dev, read 2026-09-25T23:22:53Z. SELECT only.
+## meal_logs count/max
+{"count": 90, "max": "2026-09-25 22:39:44.619099+00"}
+## saved_meals
+{"id": "fd993bbb-a13a-43e7-a662-ea71ed2ae64a", "name": "Egg & Veggie Scramble", "is_deleted": false, "last_used_at": "2026-06-17 13:42:39.046288+00", "calories": 280, "items": [{"name": "Egg & Veggie Scramble", "fat_g": 18, "carb_g": 8, "portion": "1 serving", "calories": 280, "protein_g": 22}]}
+{"id": "09f59fb0-7c9c-4c57-89b7-d98979c7ed44", "name": "Quinoa, mixed veg & walnuts", "is_deleted": false, "last_used_at": "2026-09-25 20:15:40.557+00", "calories": 500, "items": [{"name": "quinoa, cooked", "role": "starch", "portion": "220 g"}, {"name": "mixed vegetables, steamed", "role": "veg", "portion": "200 g"}, {"name": "walnuts", "role": "fat", "portion": "20 g"}]}
+## source 9162543b
+{"id": "9162543b-1022-4462-8c4b-00ef7cf926c4", "name": "Rice cake and Almond butter", "source": "manual", "items": [{"name": "Rice cake", "fat_g": 0.6, "carb_g": 15, "portion": "2 cakes", "calories": 70, "protein_g": 1.4}, {"name": "Almond butter", "fat_g": 9, "carb_g": 3, "portion": "1 tbsp", "calories": 98, "protein_g": 3.4}], "calories": 168, "carbs_g": "18.0", "protein_g": "4.8", "fat_g": "9.6", "sodium_mg": "0.0", "saved_meal_id": null}

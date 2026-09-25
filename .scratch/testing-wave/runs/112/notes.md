@@ -1,0 +1,28 @@
+# 112 notes (run w34-20260925T2320Z)
+
+- App build: e3367d2c914d59f0fcde4b854ff4805416a6dc20 (`.scratch/testing-wave/app-build.json`). Every Finding ties to it.
+- Worktree base ec06df3e. Simulator wave-pool-1 6FFD4D07-3416-45B4-9461-426BEB2D2926. Host clock CDT (UTC-5).
+- Slot claimed 23:20:23Z.
+- Signed in 23:21:44Z (tap Log In); home with What's New sheet at ~23:21:58Z.
+- Log a Meal opened on the Describe tab (not Recent) at 23:23:00Z; Describe shows an AI-wallet chip "253%" (07-log-a-meal-4s.png). Recent was already filled when first opened at 23:23:14Z (sync done during the ~1 min after sign-in). No Analyze tapped.
+- 26-002: re-logged "W14-25 Built bowl" (source ae7dba02, 2 items, manual) at 1 serving, Dinner, 23:23:48Z -> c1dd9305. Items equal, source manual, saved_meal_id null. Sheet preselects "Any time", not the source's slot.
+- 26-005: Built bowl was first in Recent in the 0 s screenshot (10-...), before "Meal logged!" faded.
+- 26-003/26-004: Common "Oatmeal + raisins" 23:24:15Z -> 70bb791d, name "Oatmeal + raisins", sodium_mg null.
+- 26-006 servings: Recent "Oatmeal + raisins" at 2 -> 5543d340 (totals x2, sodium null kept, but portion "2/2 cup dry"); Built bowl at 1.5 -> 5c0c96f4 (totals x1.5, sodium 130.5, portion "6 oz cooked (115 g)", protein_g stored as 60.449999999999996).
+- After the x2 re-log, Recent's "Oatmeal + raisins" row shows 408 kcal: the next "1 serving" re-log of it is the doubled meal.
+- 26-006 describe re-log: "W13-23 Lunch" (38c4f0ed, source describe) 23:25:43Z -> d26a7902, 3 items, totals equal, source describe.
+- 26-006 saved: "Egg & Veggie Scramble" 23:26:16Z -> 58ea9022, source saved, saved_meal_id fd993bbb, last_used_at bumped to 23:26:16Z.
+- 26-006 double tap on Log it (Common "Banana + peanut butter", 23:26:35Z) -> one row 3d90eedf, but the 2nd tap opened the "Cottage cheese + fruit" sheet under it (22-double-tap-after.png).
+- 26-009 dismiss: Cottage cheese sheet closed by a scrim tap; Greek yogurt sheet closed by dragging the handle down (a quick flick from mid-sheet did not close it). No rows written 23:26:36-23:27:10Z.
+- 26-007: Egg 1x 83f837b4, 1.5x f29ae721 (portion "1 serving"/"1.5 servings" -> 112-002; carbs_g 0.6000000000000001 -> 112-004). Eggs + toast twice with Breakfast 6ff23915, 2944415f (two rows, no warning). Search "egg" -> "Eggs" efdbe6cf.
+- 26-008: Chews 0.5x 0ebf3fed (98 kcal, sodium 47.5, recipe_id set), first in Recent at once (34-...). Chips match recipes.type exactly (DB check). Chip row scrolls sideways; Recovery is half-hidden until scrolled. Search "lentil" lists the recipe with a "Recipe" chip.
+- 26-009 step 1: soup sheet opened 23:30:29Z showing 6:30 PM; still 6:30 PM at 23:32:28Z; Log it 23:32:33Z. Its eaten_at can't be read (never uploaded, 112-001); other rows show eaten_at = the minute the sheet opened (Built bowl 1.5x: sheet 6:24 PM, tap 23:25:06Z, eaten_at 23:24:00Z).
+- 26-009 step 2: Greek yogurt at 2:15 PM a68874b1 (eaten_at 19:15Z). Yesterday: timeline Previous day -> + Add Food ("Log — Sep 24") -> Eggs + toast 8:30 PM 85ee2823 (log_date 2026-09-24, eaten_at 09-25 01:30Z). The sheet has no date field; yesterday is reached only from the timeline's day.
+- Upload failure: the soup's immediate insert timed out at 18:33:05 local (errno 60, 31 s) -> b426390d stayed local. Relaunch with netcut (23:37:59Z, network on) and offline relaunch (23:39:02Z) did not upload it. Offline: Apple + cheese 330dab98 (23:39:31Z), Recent re-log Greek yogurt 33bee368 (23:39:55Z). Network back 23:40:27Z; polled every 20 s to 23:42:30Z, pulled timeline 23:42:38Z, reopened Log a Meal 23:42:50Z: none uploaded. Last check 23:50:35: (no rows). -> 112-001. Not seen landing within the run.
+- Throwaway saved meal: the row star named in the prompt is not on any screen (112-008); made it with Build a meal "Also save as a favorite": meal_logs b9acdfd7, saved_meals 85c22213 (totals null -> 112-007). Logged it once: c2a54ff4 (100 kcal although the sheet said 0). Trashed it 23:46:08Z -> is_deleted true (no confirm/undo -> 112-005).
+- No AI call: vana_calls has no row for test@test.com since 23:20Z. Describe tab was opened (default tab) but Analyze never tapped; Ask Vana not touched.
+- Edge extract (23:16-23:46Z): sync-all-data, calculate-daily-macros-v6, ensure-credits, search-catalog, search-nutrition-products from this app; delete-user and revenuecat-webhook are ticket 121's (other run, new accounts); garmin-push no_user_mapping errors -> 112-010. All requests 200.
+- Console: known noise only besides 112-001's lines. TrainingPeaks token refresh 400 and V.O2 "Please reconnect" at sign-in (Finding 21-004); unknown sport "other" (Patrol activities); offline-window errno 51 lines (template_foods, CreditsRepository, integrations) are the netcut cut itself.
+- Analytics: Common single ingredient and quick-add combo logs track method "manual" (only search/catalog taps pass logMethod "common"). Known noise for this ticket: analytics labels only.
+- Harness: idb ui text into Build a meal's Food name stopped after 15 characters twice ("E2E 112 throwaw"); a second idb text call appended the rest. Text fields that arrive prefilled ("1 serving", the meal name) need clearing with backspaces (key 42) first. Known noise: typing tool, not the app.
+- Meals created on test@test.com (all left, none cleaned up; the ticket does not ask): c1dd9305, 70bb791d, 5543d340, 5c0c96f4, d26a7902, 58ea9022, 3d90eedf, 83f837b4, f29ae721, 6ff23915, 2944415f, efdbe6cf, 0ebf3fed, a68874b1, 85ee2823 (log_date 09-24), b9acdfd7, c2a54ff4; local-only on the simulator: b426390d, 330dab98, 33bee368. Saved meal 85c22213 created and soft-deleted.
