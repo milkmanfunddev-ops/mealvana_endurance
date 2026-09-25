@@ -20,6 +20,12 @@ Each entry: what went wrong or cost time, where it was seen, and the suggested f
   decide the same thing about the same rows, give both to one agent, or tell each agent the other
   ticket's rule in its prompt.
 
+- **#71 generated files left stale by a closed wave (wave 28).** The unfiltered codegen after
+  wave 28's merge rewrote five `.g.dart` files that 108 never touched (`pro_gate.g.dart` doc comment
+  from wave 27's review fix, four provider hashes): wave 27's review fixes landed after its last
+  codegen. Suggested fix: when the lead's review fixes touch an annotated file, run the codegen
+  again before landing, and commit what it changes.
+
 ## Done
 
 - **#68 three-digit tickets read as unblocked (wave 26).** `sync.mjs` read `Blocked by` with
