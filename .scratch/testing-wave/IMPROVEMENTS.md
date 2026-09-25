@@ -11,7 +11,25 @@ Each entry: what went wrong or cost time, where it was seen, and the suggested f
 
 ## Open
 
-(none)
+- **#78 a twelve-check retest ran out of look-around (wave 32).** Ticket 116 carried 5 retests
+  and 7 follow-ups; it wrote look-around Findings for four screens and none for the Plan tab,
+  Today's Fuel, onboarding or the paywall, and saved no edge-log extract. 115 (6 checks) did both.
+  The lead filed 116-018 and pulled the extract. Suggested fix: count follow-ups toward the
+  ten-check cap when cutting retest tickets (after-the-wave step 3).
+- **#79 the Patrol account is out of CRED's reach (wave 32).** 03-005's Steps name the Patrol
+  account, whose password lives only in `secrets/integration_test.env`, which agents may not read.
+  116 ran it on its own new account. Suggested fix: add the Patrol account to the credentials
+  file so `CRED type` can reach it, or drop "Patrol account" from Findings' Steps when ticketing.
+- **#80 the Test Store lapse is not 25 minutes (wave 32).** 115's monthly account lapsed about
+  5 minutes after purchase: it did not renew while signed out. 116's stayed signed in, renewed
+  every 5 minutes, and kept throwing the paywall up (07-003). Ticket 123's Setup still plans
+  "around the 25-minute lapse". Suggested fix: say in runbook step 5 that a monthly renews only
+  while the app is signed in, and that Annual (1-hour periods) suits a run that needs Pro without
+  interruptions.
+- **#81 a conversation deep link reaches the Review sheet with no opener (wave 32).** 115 opened
+  `com.milkman.mealvanaendurance:///vana?c=<conversation id>` to confirm an existing draft: no
+  model call, no COST. 116 lost a chat spend to a stray tap on the floating Ask Vana button.
+  Suggested fix: put the deep link in runbook step 5 as the way into an old conversation.
 
 ## Done
 
