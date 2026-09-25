@@ -61,6 +61,24 @@ Each entry: what went wrong or cost time, where it was seen, and the suggested f
   agent prompt says codegen runs unfiltered (`--delete-conflicting-outputs`), and the agent checks
   `git status` before staging.
 
+- **#59 the working branch moved under a fix wave (wave 22).** While 16 agents built, another
+  session merged develop and release/1.27.1 into `mealplanning` (auth, onboarding, TrainingPeaks,
+  `garmin-push`). The lead had already deployed from the wave-only tree, so `garmin-push` went to
+  dev without develop's activityDetails capture fix until a second deploy from the combined tree.
+  Suggested fix: before any deploy, `git log <base>..mealplanning`; if it moved, merge it into the
+  merge worktree, re-run codegen, analyze and the suite, and deploy only from that combined tree.
+- **#60 two tickets took the same migration timestamp (wave 22).** Tickets 60 and 73 both wrote
+  `20260925150000_*.sql`; the lead renumbered 73's to `…150100` at merge. Suggested fix: the prompt
+  gives each ticket that may write a migration its own timestamp (`<date>15NN00`, NN = ticket).
+- **#61 landing over dirty files: check the fast-forward before resetting them (wave 22).** The
+  first landing reset the other session's three dirty files to HEAD, then the fast-forward failed
+  (the branch had moved); the saved copies went back at once. Also, zsh does not split `$F`: use an
+  array. Suggested fix: script #56 with `merge-base --is-ancestor` first and the snapshot compare.
+- **#62 `/design-sync` is required but not installed (wave 22).** CLAUDE.md asks for it after
+  `kyle_design/` changes (51 changed the sheet header, 52 the snackbar); no skill by that name
+  exists at user or project level. Owed for both. Suggested fix: Lee says where it went or drops
+  the rule.
+
 ## Done
 
 - **#54 CF-2 conformance goes red in the early morning (wave 19).** At 04:40 local the CF-2
