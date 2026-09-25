@@ -1,0 +1,43 @@
+'Endurance Dev' Application 201 437
+'7:00 AM\nR-CORE Routine\nPlanned\nother' StaticText 201 508
+'Pre · During · Recovery fuel ›' StaticText 245 525
+'7:00 AM\nSwim\nPlanned\n30 min' StaticText 201 616
+'Pre · During · Recovery fuel ›' StaticText 245 633
+'3:00 PM\nW32-116 snack C\n90 kcal · 9C · 4P · 4F\n⋯' StaticText 201 714
+'4:00 PM' StaticText 201 816
+'W32-116 snack A\n100 kcal · 10C · 5P · 4F\n⋯' StaticText 246 797
+'W32-116 snack B\n120 kcal · 12C · 6P · 5F\n⋯' StaticText 246 855
+'5:39 PM\nW32-116 edit\n300 kcal · 30C · 15P · 12F\n⋯' StaticText 0 0
+'5:39 PM\nW32-116 delete\n150 kcal · 15C · 8P · 6F\n⋯' StaticText 0 0
+'Previous day' Button 24 89
+'Next day' Button 279 89
+'Today, September 25 ˅' Button 151 89
+'NET ENERGY BALANCE' StaticText 88 152
+'Collapse details' Button 355 153
+'760' StaticText 46 176
+'1,839' StaticText 140 176
+'−' StaticText 89 176
+'eaten' StaticText 63 176
+'burned' StaticText 171 176
+'−1,079' StaticText 114 211
+'=' StaticText 39 217
+'kcal' StaticText 197 220
+'Eaten 760 / 3,062' StaticText 77 264
+'2,302 kcal to target' StaticText 291 264
+'Full Breakdown' StaticText 95 300
+'Turn tracking off' StaticText 319 366
+'All' StaticText 65 366
+'Settings' Button 367 89
+'Workout' StaticText 155 366
+'Meals' StaticText 244 366
+'+ Add Food' Button 175 419
+'Hide times' StaticText 365 366
+'+ Add Activity' Button 317 419
+'Timeline' StaticText 171 816
+'Timeline' Button 57 816
+'Food\nFood' Button 133 816
+'Events\nEvents' Button 209 816
+'Learn\nLearn' Button 285 816
+'Show accessibility issues\n' Button 368 696
+'Open testing tools' Button 368 756
+'Ask Vana' Button 362 816

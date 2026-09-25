@@ -1,0 +1,11 @@
+[
+    {
+        "read_at": "2026-09-25 22:27:33.781695+00",
+        "nutrition_target_overrides": {
+            "during": {
+                "carbRateGPerH": 50.400000000000006
+            }
+        },
+        "updated_at": "2026-09-25 22:22:15.137272+00"
+    }
+]

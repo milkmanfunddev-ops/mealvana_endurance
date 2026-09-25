@@ -1,0 +1,32 @@
+'Endurance Dev' Application 201 437
+'3:00 PM\nW32-116 snack C\n90 kcal · 9C · 4P · 4F\n⋯' StaticText 201 390
+'4:00 PM' StaticText 201 514
+'W32-116 snack A\n100 kcal · 10C · 5P · 4F\n⋯' StaticText 246 473
+'W32-116 snack B\n120 kcal · 12C · 6P · 5F\n⋯' StaticText 246 545
+'5:39 PM\nW32-116 edit\n300 kcal · 30C · 15P · 12F\n⋯' StaticText 201 638
+'5:39 PM\nW32-116 delete\n150 kcal · 15C · 8P · 6F\n⋯' StaticText 201 726
+'Previous day' Button 24 89
+'Next day' Button 279 89
+'Today, September 25 ˅' Button 151 89
+'INTAKE TODAY' StaticText 68 152
+'Collapse details' Button 355 153
+'760' StaticText 55 175
+'/ 3,062 kcal' StaticText 113 181
+'76/419g' StaticText 61 210
+'38/117g' StaticText 167 210
+'31/102g' StaticText 274 210
+'Carbs' StaticText 46 243
+'Protein' StaticText 157 243
+'Fat' StaticText 253 243
+'Full Breakdown' StaticText 95 278
+'Turn tracking off' StaticText 319 345
+'All' StaticText 65 345
+'Settings' Button 367 89
+'Workout' StaticText 155 345
+'Meals' StaticText 244 345
+'+ Add Food' Button 246 398
+'Hide times' StaticText 365 345
+'Timeline' Button 40 820
+'Show accessibility issues\n' Button 368 696
+'Open testing tools' Button 368 756
+'Ask Vana' Button 362 816

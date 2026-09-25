@@ -1,0 +1,51 @@
+'Endurance Dev' Application 201 437
+'Back\nBack' Button 34 90
+'Create New Activity Plan' Heading 201 90
+'RUNNING' StaticText 60 178
+'BIKING' StaticText 154 178
+'SWIMMING' StaticText 247 178
+'BRICK' StaticText 341 178
+'DATE\nSep 26, 2026' StaticText 143 489
+'TIME\n7:00 am' StaticText 279 489
+'Workout Name' StaticText 61 552
+'Run - Long Run' TextField 201 595
+'WORKOUT DETAILS' StaticText 85 655
+'Distance *' StaticText 47 689
+'17.0' TextField 188 725
+'mi' StaticText 375 729
+'Avg Pace' StaticText 0 0
+'Duration' StaticText 0 0
+'EST.' StaticText 0 0
+'9:11' TextField 0 0
+'/mi' StaticText 0 0
+'2' TextField 0 0
+'hr' StaticText 0 0
+'36' TextField 0 0
+'min' StaticText 0 0
+'your usual · 9:00 /mi' StaticText 0 0
+'Intensity distribution settings\nINTENSITY\nIntensity distribution: 70% conversational, 20% tempo, 10% all-out' StaticText 0 0
+'ESTIMATE\nESTIMATE' Button 0 0
+'PRECISE\nPRECISE' Button 0 0
+'Easy Run' StaticText 0 0
+'Long Run' StaticText 0 0
+'Tempo Run' StaticText 0 0
+'Intervals' StaticText 0 0
+'Race Pace' StaticText 0 0
+'Recovery Run' StaticText 0 0
+'Pre-Run Fueling Window' StaticText 0 0
+'3 HOURS' StaticText 0 0
+'3 h — long session' StaticText 0 0
+'Temperature' StaticText 0 0
+'View Forecast' StaticText 0 0
+'Location permission blocked.' StaticText 0 0
+'Open app settings' StaticText 0 0
+'68°F' StaticText 0 0
+'Assumed' StaticText 0 0
+'Humidity' StaticText 0 0
+'Decrease % humidity' Button 0 0
+'60 % HUMIDITY' StaticText 0 0
+'Increase % humidity' Button 0 0
+'Assumed' StaticText 0 0
+'Generate Plan' Button 201 792
+'Show accessibility issues\n' Button 368 696
+'Open testing tools' Button 368 756

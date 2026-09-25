@@ -1,0 +1,9 @@
+'WHERE IT CAME FROM · 4 logged' StaticText 201 479
+'W32-116 snack C\n3:00 PM\n90 kcal\n9 · 4 · 4' StaticText 201 533
+'W32-116 snack A\n4:00 PM\n100 kcal\n10 · 5 · 4' StaticText 201 593
+'W32-116 snack B\n4:01 PM\n120 kcal\n12 · 6 · 5' StaticText 201 653
+'W32-116 edit\n5:39 PM\n300 kcal\n30 · 15 · 12' StaticText 201 713
+'Logged so far\n610 kcal' StaticText 201 760
+"Go to Today's Energy" Button 176 820
+'Go to Active Energy' Button 193 820
+"Go to Today's Fueling" Button 218 820

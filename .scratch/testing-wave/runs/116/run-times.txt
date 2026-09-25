@@ -1,0 +1,33 @@
+open 22:33:10Z
+saveA 22:38:06Z
+save B 22:38:50Z
+save C 22:39:14Z
+save edit 22:39:29Z
+save delete 22:39:44Z
+remove delete 22:41:16Z
+remove W32-116 edit 22:41:54Z at  
+remove W32-116 snack B 22:41:59Z at  
+remove W32-116 snack A 22:42:05Z at  
+remove W32-116 snack C 22:42:10Z at  
+remove edit 22:42:34Z
+remove snack B 22:42:40Z y=631 ry=680
+remove snack A 22:42:45Z y=564 ry=608
+remove snack C 22:42:50Z y=476 ry=520
+signout 22:43:59Z
+create account 22:45:59Z
+verified 22:46:20Z
+bought monthly 2026-09-25T22:46:37Z
+allergy save 22:48:13Z
+pin tap 22:48:59Z
+allergy gluten save 22:49:46Z
+pin cream cheese 22:50:45Z
+vana sheet opened by mistake ~22:50:54Z, closing
+pin cream cheese (retry) 22:51:27Z
+pin anyway 22:51:35Z
+relaunch after renewal 22:56:13Z
+delete account 22:57:45Z
+acct2 create 22:59:35Z
+acct2 bought annual 2026-09-25T23:00:10Z
+generate 23:00:31Z
+create plan 23:00:45Z
+acct2 delete 23:01:59Z

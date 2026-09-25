@@ -1,0 +1,16 @@
+2026-09-25 17:20:58.087832-0500 0xeff1af   Default     0x0                  86099  0    Runner: (Flutter) flutter:   => /settings/allergies
+2026-09-25 17:20:58.090153-0500 0xeff1af   Default     0x0                  86099  0    Runner: (Flutter) flutter:   settings-allergies => /settings/allergies
+2026-09-25 17:46:15.084944-0500 0xeff1af   Default     0x0                  86099  0    Runner: (Flutter) flutter: 📊 [ANALYTICS] allergies_saved {allergies: [], count: 0, skipped: true}
+2026-09-25 17:48:03.714405-0500 0xeff1af   Default     0x0                  86099  0    Runner: (Flutter) flutter: 📊 [ANALYTICS] settings_allergies_tapped {}
+2026-09-25 17:48:03.714633-0500 0xeff1af   Default     0x0                  86099  0    Runner: (Flutter) flutter: GoRouter: INFO: pushing /settings/allergies
+2026-09-25 17:48:13.338862-0500 0xeff1af   Default     0x0                  86099  0    Runner: (Flutter) flutter: 📊 [ANALYTICS] allergies_saved {allergies: [peanuts], count: 1, skipped: false}
+2026-09-25 17:48:13.832617-0500 0xeff1af   Default     0x0                  86099  0    Runner: (Flutter) flutter: 📊 [ANALYTICS] allergies_changed {from_count: 0, to_count: 1, allergies: [peanuts], source: settings}
+2026-09-25 17:49:42.875924-0500 0xeff1af   Default     0x0                  86099  0    Runner: (Flutter) flutter: 📊 [ANALYTICS] settings_allergies_tapped {}
+2026-09-25 17:49:42.876077-0500 0xeff1af   Default     0x0                  86099  0    Runner: (Flutter) flutter: GoRouter: INFO: pushing /settings/allergies
+2026-09-25 17:49:46.950219-0500 0xeff1af   Default     0x0                  86099  0    Runner: (Flutter) flutter: 📊 [ANALYTICS] allergies_saved {allergies: [peanuts, gluten], count: 2, skipped: false}
+2026-09-25 17:49:47.268002-0500 0xeff1af   Default     0x0                  86099  0    Runner: (Flutter) flutter: 📊 [ANALYTICS] allergies_changed {from_count: 1, to_count: 2, allergies: [peanuts, gluten], source: settings}
+2026-09-25 17:50:35.914425-0500 0xeff1af   Default     0x0                  86099  0    Runner: (Flutter) flutter: 📊 [ANALYTICS] formula_filter_applied {filter_type: allergen, value: gluten, active_filter_count: 1}
+2026-09-25 17:50:36.744587-0500 0xeff1af   Default     0x0                  86099  0    Runner: (Flutter) flutter: 📊 [ANALYTICS] formula_filter_applied {filter_type: allergen, value: peanuts, active_filter_count: 1}
+2026-09-25 17:56:17.041118-0500 0xf1cebe   Default     0x0                  98609  0    Runner: (Flutter) flutter:   => /settings/allergies
+2026-09-25 17:56:17.043833-0500 0xf1cebe   Default     0x0                  98609  0    Runner: (Flutter) flutter:   settings-allergies => /settings/allergies
+2026-09-25 17:59:51.503495-0500 0xf1cebe   Default     0x0                  98609  0    Runner: (Flutter) flutter: 📊 [ANALYTICS] allergies_saved {allergies: [], count: 0, skipped: true}

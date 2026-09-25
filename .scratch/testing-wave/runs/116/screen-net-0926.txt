@@ -1,0 +1,37 @@
+'Endurance Dev' Application 201 437
+'7:00 AM\nFoam Rolling Routine\nPlanned\nother' StaticText 201 508
+'Pre · During · Recovery fuel ›' StaticText 245 525
+'7:00 AM\nRun - Long Run\nPlanned\n17 mi' StaticText 201 616
+'Pre · During · Recovery fuel ›' StaticText 245 633
+'Previous day' Button 24 89
+'Next day' Button 311 89
+'Saturday, September 26 ˅' Button 167 89
+'NET ENERGY BALANCE' StaticText 88 152
+'Collapse details' Button 355 153
+'0' StaticText 37 176
+'0' StaticText 104 176
+'−' StaticText 89 176
+'eaten' StaticText 63 176
+'burned' StaticText 135 176
+'+0' StaticText 76 211
+'=' StaticText 39 217
+'kcal' StaticText 120 220
+'Eaten 0 / 5,541' StaticText 71 264
+'5,541 kcal to target' StaticText 292 264
+'Full Breakdown' StaticText 95 300
+'Turn tracking off' StaticText 319 366
+'All' StaticText 65 366
+'Settings' Button 367 89
+'Workout' StaticText 155 366
+'Meals' StaticText 244 366
+'+ Add Food' Button 175 419
+'Hide times' StaticText 365 366
+'+ Add Activity' Button 317 419
+'Timeline' StaticText 171 816
+'Timeline' Button 57 816
+'Food\nFood' Button 133 816
+'Events\nEvents' Button 209 816
+'Learn\nLearn' Button 285 816
+'Show accessibility issues\n' Button 368 696
+'Open testing tools' Button 368 756
+'Ask Vana' Button 362 816

@@ -1,0 +1,52 @@
+'Endurance Dev' Application 201 437
+'Back\n12 mi Run\nBack' Button 123 90
+'Save as Routine' Button 270 90
+'Edit Activity' Button 318 90
+'Delete Activity' Button 366 90
+'Running illustration' Image 0 0
+'RUN SCHEDULED FOR' StaticText 0 0
+'12.0 mi  ·  1h 48m  ·  9:00 /mi' StaticText 0 0
+'DATE\nSep 21, 2026' StaticText 0 0
+'TIME\n4:45pm' StaticText 0 0
+'Pin formulas you love' StaticText 201 158
+'BEFORE' StaticText 201 233
+'107g' StaticText 85 272
+'17oz' StaticText 200 272
+'660mg' StaticText 317 272
+'CARBS' StaticText 85 295
+'FLUIDS' StaticText 201 295
+'SODIUM' StaticText 316 295
+'88g' StaticText 45 340
+'113g' StaticText 123 340
+'0oz' StaticText 161 340
+'29oz' StaticText 237 340
+'Pre-Workout Snack\nNOW UNTIL 30 MIN OUT\nBagel (large) + Jam / Jelly + Banana\n82g\nCARBS' Image 201 408
+'Top-Off\nLAST 30 MIN\nEnergy Gel + Water\n25g\nCARBS\n17oz\nFLUIDS' Image 201 513
+'DURING' StaticText 108 630
+'Summary\nSummary' Button 233 630
+'By Hour\nBy Hour' Button 323 630
+'92g' StaticText 89 673
+'45oz' StaticText 200 673
+'1075mg' StaticText 312 673
+'CARBS' StaticText 89 693
+'FLUIDS' StaticText 200 693
+'SODIUM' StaticText 312 693
+'97' StaticText 43 723
+'126' StaticText 134 723
+'37' StaticText 154 723
+'50' StaticText 247 723
+'857' StaticText 268 723
+'1285' StaticText 354 723
+'1 Energy Gel' StaticText 201 776
+'4.5 cups Sports Drink' StaticText 201 846
+'1 cup Water' StaticText 0 0
+'3 Electrolyte Capsules' StaticText 0 0
+'ADD FOOD' StaticText 0 0
+'AFTER' StaticText 0 0
+'1 Banana' StaticText 0 0
+'1 bottle Whey Protein Shake' StaticText 0 0
+'ADD FOOD' StaticText 0 0
+'Save' Button 0 0
+'Complete' Button 0 0
+'Show accessibility issues\n' Button 368 696
+'Open testing tools' Button 368 756

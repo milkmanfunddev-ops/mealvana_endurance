@@ -1,0 +1,6 @@
+2026-09-25 18:02:00.832156-0500 0xf1cebe   Default     0x0                  98609  0    Runner: (Flutter) flutter: GoRouter: INFO: redirecting to RouteMatchList(/paywall)
+2026-09-25 18:02:00.953064-0500 0xf1cebe   Default     0x0                  98609  0    Runner: (Flutter) flutter: [RevenueCatService] logged out
+2026-09-25 18:02:01.203556-0500 0xf1cebe   Default     0x0                  98609  0    Runner: (Flutter) flutter: 📊 [ANALYTICS] user_signed_out {timestamp: 2026-09-25T18:02:01.203360, was_onboarding_signout: false}
+2026-09-25 18:02:01.367696-0500 0xf1cebe   Default     0x0                  98609  0    Runner: (Flutter) flutter: GoRouter: INFO: redirecting to RouteMatchList(/welcome)
+2026-09-25 18:02:03.375593-0500 0xf1cebe   Default     0x0                  98609  0    Runner: (Flutter) flutter: \^[[38;5;208m│ ⚠️ [ACTIVITIES_SERVICE] Activity not found in database\^[[0m
+2026-09-25 18:02:03.375685-0500 0xf1cebe   Default     0x0                  98609  0    Runner: (Flutter) flutter: \^[[38;5;208m│ ⚠️ Data: {userId: b4ef9289-1941-457c-a4ea-9abfec08ffd2, activityId: c8dd5732-8973-49c0-bf4f-998b7749fc2f, searchedWithDeletedAtNull: true}\^[[0m

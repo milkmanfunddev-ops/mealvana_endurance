@@ -1,0 +1,47 @@
+[
+    {
+        "read_at": "2026-09-25 22:43:05.81211+00",
+        "name": "W32-116 snack C",
+        "slot": "snack",
+        "calories": 90,
+        "eaten_at": "2026-09-25 20:00:00+00",
+        "is_deleted": true,
+        "updated_at": "2026-09-25 22:42:51.407232+00"
+    },
+    {
+        "read_at": "2026-09-25 22:43:05.81211+00",
+        "name": "W32-116 snack A",
+        "slot": "snack",
+        "calories": 100,
+        "eaten_at": "2026-09-25 21:00:00+00",
+        "is_deleted": true,
+        "updated_at": "2026-09-25 22:42:46.953763+00"
+    },
+    {
+        "read_at": "2026-09-25 22:43:05.81211+00",
+        "name": "W32-116 snack B",
+        "slot": "snack",
+        "calories": 120,
+        "eaten_at": "2026-09-25 21:01:00+00",
+        "is_deleted": true,
+        "updated_at": "2026-09-25 22:42:40.969736+00"
+    },
+    {
+        "read_at": "2026-09-25 22:43:05.81211+00",
+        "name": "W32-116 edit",
+        "slot": "lunch",
+        "calories": 300,
+        "eaten_at": "2026-09-25 22:39:00+00",
+        "is_deleted": true,
+        "updated_at": "2026-09-25 22:42:35.65295+00"
+    },
+    {
+        "read_at": "2026-09-25 22:43:05.81211+00",
+        "name": "W32-116 delete",
+        "slot": "snack",
+        "calories": 150,
+        "eaten_at": "2026-09-25 22:39:00+00",
+        "is_deleted": true,
+        "updated_at": "2026-09-25 22:41:17.650572+00"
+    }
+]
