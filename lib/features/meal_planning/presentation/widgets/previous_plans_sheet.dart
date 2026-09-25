@@ -83,11 +83,36 @@ class PreviousPlansSheet extends ConsumerWidget {
                 padding: EdgeInsets.symmetric(vertical: AppSpacing.lg),
                 child: Center(child: CircularProgressIndicator()),
               ),
-              error: (_, _) => Text(
-                content.getValue(ContentKeys.mpPreviousPlansFailed),
-                key: const ValueKey('meal_planning.previous_plans_failed'),
-                style: AppTextStyles.bodySmall.copyWith(color: secondary),
-              ),
+              // A failed read says so at once with a Retry (89-011); while
+              // the retry runs the spinner is back.
+              error: (_, _) => plans.isLoading
+                  ? const Padding(
+                      padding: EdgeInsets.symmetric(vertical: AppSpacing.lg),
+                      child: Center(child: CircularProgressIndicator()),
+                    )
+                  : Row(
+                      children: [
+                        Expanded(
+                          child: Text(
+                            content.getValue(ContentKeys.mpPreviousPlansFailed),
+                            key: const ValueKey(
+                              'meal_planning.previous_plans_failed',
+                            ),
+                            style: AppTextStyles.bodySmall.copyWith(
+                              color: secondary,
+                            ),
+                          ),
+                        ),
+                        TextButton(
+                          key: const ValueKey(
+                            'meal_planning.previous_plans_retry',
+                          ),
+                          onPressed: () =>
+                              ref.invalidate(previousPlansProvider),
+                          child: Text(content.getValue(ContentKeys.mpRetry)),
+                        ),
+                      ],
+                    ),
               data: (list) => list.isEmpty
                   ? Text(
                       content.getValue(ContentKeys.mpPreviousPlansEmpty),

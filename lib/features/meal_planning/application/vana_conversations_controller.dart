@@ -8,6 +8,7 @@ import '../data/vana_chat_repository.dart';
 import '../domain/ui_action.dart';
 import '../domain/vana_conversation.dart';
 import '../domain/vana_conversation_kind.dart';
+import 'fail_fast.dart';
 
 part 'vana_conversations_controller.g.dart';
 
@@ -19,7 +20,10 @@ part 'vana_conversations_controller.g.dart';
 /// Paged (88-021): the first page loads in [build]; the screen calls
 /// [loadMore] as its list nears the end, and an under-full page marks the
 /// end so nothing asks again until [refresh].
-@riverpod
+///
+/// A failed first page is an error at once ([failFast]), so the screen shows
+/// its Retry within a moment offline instead of a spinner (88-012).
+@Riverpod(retry: failFast)
 class VanaConversationsController extends _$VanaConversationsController {
   /// Rows per page. The old unpaged read stopped at 50 and hid the rest.
   static const pageSize = 50;

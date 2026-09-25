@@ -48,6 +48,19 @@ enum VanaChatErrorKind {
   unknown,
 }
 
+/// A read the screen could not make, which it shows with a Retry
+/// ([VanaChatController.retryFailedRead]) instead of an empty chat
+/// (testing-wave 129, Findings 88-011, 88-012).
+enum VanaChatFailedRead {
+  /// The conversation's history did not load: never the empty new-plan
+  /// screen, which would let the athlete write into what looks like a new
+  /// plan.
+  history,
+
+  /// Vana's first turn did not come.
+  opener,
+}
+
 /// Immutable state of one Vana conversation screen.
 class VanaChatState {
   const VanaChatState({
@@ -60,6 +73,8 @@ class VanaChatState {
     this.error,
     this.retryAfterSeconds,
     this.historyLoaded = false,
+    this.failedRead,
+    this.unsentMessage,
   });
 
   final VanaConversationKind kind;
@@ -89,6 +104,16 @@ class VanaChatState {
   /// True once history (or "no history") has been resolved.
   final bool historyLoaded;
 
+  /// The read that failed and waits for a Retry, with [error] saying why.
+  /// Survives [VanaChatController.clearError]; the next turn or the Retry
+  /// clears it.
+  final VanaChatFailedRead? failedRead;
+
+  /// The athlete's message whose turn failed and was rolled back: the Ask
+  /// Vana sheet keeps it on screen with the error line, and Retry sends it
+  /// again (88-022). Cleared when the next turn starts.
+  final String? unsentMessage;
+
   /// 403 `pro_required` — the screen warns and refreshes the subscription
   /// status; the router moves onto the paywall when the SDK agrees.
   bool get proRequired => error == VanaChatErrorKind.proRequired;
@@ -107,6 +132,10 @@ class VanaChatState {
     int? retryAfterSeconds,
     bool clearError = false,
     bool? historyLoaded,
+    VanaChatFailedRead? failedRead,
+    bool clearFailedRead = false,
+    String? unsentMessage,
+    bool clearUnsent = false,
   }) => VanaChatState(
     kind: kind,
     conversationId: conversationId ?? this.conversationId,
@@ -119,6 +148,8 @@ class VanaChatState {
         ? null
         : (retryAfterSeconds ?? this.retryAfterSeconds),
     historyLoaded: historyLoaded ?? this.historyLoaded,
+    failedRead: clearFailedRead ? null : (failedRead ?? this.failedRead),
+    unsentMessage: clearUnsent ? null : (unsentMessage ?? this.unsentMessage),
   );
 }
 
@@ -144,11 +175,17 @@ class VanaChatController extends _$VanaChatController {
 
   static const _context = 'VANA_CHAT_CONTROLLER';
 
+  /// The last opener asked for, so a Retry after a failed one asks for the
+  /// same one. Reset in [build]: Riverpod reuses the notifier across an
+  /// invalidate.
+  ({String? anchorDate, VanaMoment? moment, bool newPlan})? _lastOpener;
+
   @override
   FutureOr<VanaChatState> build({
     required VanaConversationKind kind,
     String? conversationId,
   }) async {
+    _lastOpener = null;
     if (conversationId == null || isNewVanaConversationKey(conversationId)) {
       return VanaChatState(kind: kind, historyLoaded: true);
     }
@@ -184,7 +221,33 @@ class VanaChatController extends _$VanaChatController {
         conversationId: conversationId,
         historyLoaded: true,
         error: _errorKind(e),
+        failedRead: VanaChatFailedRead.history,
       );
+    }
+  }
+
+  /// The Retry under a failed read: the history is read again (the whole
+  /// build), or the same opener is asked for again. A no-op when nothing
+  /// failed, or while a turn is running (a second tap lands here).
+  Future<void> retryFailedRead() async {
+    final current = state.value;
+    if (current == null || current.isStreaming || state.isLoading) return;
+    switch (current.failedRead) {
+      case VanaChatFailedRead.history:
+        ref.invalidateSelf();
+        await future;
+      case VanaChatFailedRead.opener:
+        final opener = _lastOpener;
+        state = AsyncData(
+          current.copyWith(clearError: true, clearFailedRead: true),
+        );
+        await loadOpener(
+          anchorDate: opener?.anchorDate,
+          moment: opener?.moment,
+          newPlan: opener?.newPlan ?? false,
+        );
+      case null:
+        return;
     }
   }
 
@@ -248,6 +311,7 @@ class VanaChatController extends _$VanaChatController {
     final current = state.value ?? VanaChatState(kind: kind);
     if (current.isStreaming) return;
     if (moment == null && current.messages.isNotEmpty) return;
+    _lastOpener = (anchorDate: anchorDate, moment: moment, newPlan: newPlan);
     await _turn(
       current,
       message: null,
@@ -689,6 +753,8 @@ class VanaChatController extends _$VanaChatController {
         isStreaming: true,
         clearStatus: true,
         clearError: true,
+        clearFailedRead: true,
+        clearUnsent: true,
       ),
     );
 
@@ -752,6 +818,8 @@ class VanaChatController extends _$VanaChatController {
         data: {'kind': kind.wire, 'opener': opener},
       );
       // Roll back the optimistic pair; keep everything that was persisted.
+      // A failed opener waits for its Retry; a failed message is kept as
+      // unsent so the athlete never loses what they wrote.
       state = AsyncData(
         before.copyWith(
           isStreaming: false,
@@ -760,6 +828,10 @@ class VanaChatController extends _$VanaChatController {
           retryAfterSeconds: e is VanaRateLimitedException
               ? e.retryAfterSeconds
               : null,
+          failedRead: opener ? VanaChatFailedRead.opener : null,
+          clearFailedRead: !opener,
+          unsentMessage: message,
+          clearUnsent: message == null,
         ),
       );
     }

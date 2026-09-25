@@ -203,6 +203,32 @@ void main() {
     );
   });
 
+  /// Testing-wave 129 (Finding 88-013): a pick cut off by the network fell
+  /// into the server error ("Something went wrong"). It says it needs a
+  /// connection, the same as one refused before sending.
+  testWidgets('Add offline says it needs a connection, not something went '
+      'wrong', (tester) async {
+    final plan = _RecordingPlanController(
+      failWith: const VanaOfflineException('socket'),
+    );
+    await pumpScreen(tester, plan: plan);
+
+    await tester.tap(addButton('D-2'));
+    await tester.pump();
+    await tester.pump(const Duration(milliseconds: 300));
+
+    expect(plan.picks, hasLength(1));
+    expect(
+      find.descendant(of: addButton('D-2'), matching: find.byIcon(Icons.add)),
+      findsOneWidget,
+    );
+    expect(
+      find.text(content['meal_planning.needs_connection']!),
+      findsOneWidget,
+    );
+    expect(find.text(content['meal_planning.server_error']!), findsNothing);
+  });
+
   /// Testing-wave 18-003: reopened Browse showed meals already in the
   /// draft with a plain plus, because the ticks lived only in the screen's
   /// own state. The conversation's plan is what decides a tick.

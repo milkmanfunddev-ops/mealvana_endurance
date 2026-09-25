@@ -24,6 +24,7 @@ import 'package:mealvana_endurance/features/meal_planning/application/meal_plan_
 import 'package:mealvana_endurance/features/meal_planning/data/user_memory_repository.dart';
 import 'package:mealvana_endurance/features/meal_planning/data/vana_action_client.dart';
 import 'package:mealvana_endurance/features/meal_planning/data/vana_chat_repository.dart';
+import 'package:mealvana_endurance/features/meal_planning/data/vana_exceptions.dart';
 import 'package:mealvana_endurance/features/meal_planning/domain/meal_plan.dart';
 import 'package:mealvana_endurance/features/meal_planning/domain/ui_action.dart';
 import 'package:mealvana_endurance/features/meal_planning/domain/user_memory.dart';
@@ -102,6 +103,9 @@ class _RecordingPlan extends MealPlanController {
   confirms = [];
   final List<String> removed = [];
 
+  /// When set, confirm fails with it (offline, a server refusal).
+  Object? confirmFailWith;
+
   @override
   Future<MealPlan?> build() async => null;
 
@@ -118,6 +122,7 @@ class _RecordingPlan extends MealPlanController {
     String? planId,
   }) async {
     confirms.add((planId: planId, conversationId: conversationId, date: date));
+    if (confirmFailWith case final error?) throw error;
     return null;
   }
 }
@@ -148,6 +153,7 @@ class _OpenWallet extends CreditsController {
 }
 
 void main() {
+  final content = loadDefaultContent();
   final batch = VanaPart.fromJson(
     (loadFixture('batch')['parts'] as List).first as Map<String, dynamic>,
   )!;
@@ -270,4 +276,54 @@ void main() {
     await tester.pumpAndSettle();
     expect(barTitle(), contains('1 meal'));
   });
+
+  /// Testing-wave 129 (Finding 88-015): Confirm offline showed nothing. The
+  /// sheet stays open on the draft and says it needs a connection; a server
+  /// refusal says so too.
+  for (final (label, error, key) in [
+    (
+      'offline',
+      const VanaOfflineException('socket') as Object,
+      'meal_planning.needs_connection',
+    ),
+    (
+      'refused before sending',
+      const NeedsConnectionException('confirm_plan') as Object,
+      'meal_planning.needs_connection',
+    ),
+    (
+      'a server error',
+      const VanaServerException(500, '{}') as Object,
+      'meal_planning.server_error',
+    ),
+  ]) {
+    testWidgets('Confirm $label: the sheet keeps the draft and says why', (
+      tester,
+    ) async {
+      await pumpScreen(tester);
+      plan.confirmFailWith = error;
+
+      await tester.tap(
+        find.byKey(const ValueKey('meal_planning.plan_bar.review')),
+      );
+      await tester.pumpAndSettle();
+      await tester.tap(
+        find.byKey(const ValueKey('meal_planning.review_sheet.confirm')),
+      );
+      await tester.pumpAndSettle();
+
+      expect(plan.confirms, hasLength(1));
+      final failed = find.byKey(
+        const ValueKey('meal_planning.review_sheet.confirm_failed'),
+      );
+      expect(failed, findsOneWidget);
+      expect(tester.widget<Text>(failed).data, content[key]);
+      expect(
+        find.byKey(const ValueKey('meal_planning.review_sheet.summary')),
+        findsOneWidget,
+        reason: 'the sheet stays open on the draft',
+      );
+      expect(find.text('shopping'), findsNothing);
+    });
+  }
 }

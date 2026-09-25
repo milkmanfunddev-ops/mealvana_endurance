@@ -20,6 +20,9 @@ part of 'previous_plans.dart';
 /// is its only listener, so every open of the sheet reads the list afresh;
 /// the current plan's id is read once at that moment rather than watched,
 /// which would re-hit the server on every edit to this week's plan.
+///
+/// A failed read is an error at once ([failFast]): the sheet shows it with a
+/// Retry instead of spinning through Riverpod's retries (89-011).
 
 @ProviderFor(previousPlans)
 const previousPlansProvider = PreviousPlansProvider._();
@@ -36,6 +39,9 @@ const previousPlansProvider = PreviousPlansProvider._();
 /// is its only listener, so every open of the sheet reads the list afresh;
 /// the current plan's id is read once at that moment rather than watched,
 /// which would re-hit the server on every edit to this week's plan.
+///
+/// A failed read is an error at once ([failFast]): the sheet shows it with a
+/// Retry instead of spinning through Riverpod's retries (89-011).
 
 final class PreviousPlansProvider
     extends
@@ -59,11 +65,14 @@ final class PreviousPlansProvider
   /// is its only listener, so every open of the sheet reads the list afresh;
   /// the current plan's id is read once at that moment rather than watched,
   /// which would re-hit the server on every edit to this week's plan.
+  ///
+  /// A failed read is an error at once ([failFast]): the sheet shows it with a
+  /// Retry instead of spinning through Riverpod's retries (89-011).
   const PreviousPlansProvider._()
     : super(
         from: null,
         argument: null,
-        retry: null,
+        retry: failFast,
         name: r'previousPlansProvider',
         isAutoDispose: true,
         dependencies: null,
@@ -85,7 +94,7 @@ final class PreviousPlansProvider
   }
 }
 
-String _$previousPlansHash() => r'5406d0bda04fdae19953df2f2a2eb5007122121d';
+String _$previousPlansHash() => r'2312c2ab0c45436ca9ebfd5a44e402297b07e0b3';
 
 /// One earlier plan by id (`/food/plans/:id`), straight from the server
 /// (`get_plan {id}`); `null` when the server no longer has it. Plans are a
@@ -99,6 +108,9 @@ String _$previousPlansHash() => r'5406d0bda04fdae19953df2f2a2eb5007122121d';
 /// also be in Drift (the draft a Use again made, a past week's confirmed
 /// plan), so its answer is folded in through [MealPlanController] and the
 /// Plan tab never shows a stale copy.
+///
+/// A failed read is an error at once ([failFast]) and the view offers Retry;
+/// the transport's timeout ends a request that never answers (89-005).
 
 @ProviderFor(EarlierPlan)
 const earlierPlanProvider = EarlierPlanFamily._();
@@ -115,6 +127,9 @@ const earlierPlanProvider = EarlierPlanFamily._();
 /// also be in Drift (the draft a Use again made, a past week's confirmed
 /// plan), so its answer is folded in through [MealPlanController] and the
 /// Plan tab never shows a stale copy.
+///
+/// A failed read is an error at once ([failFast]) and the view offers Retry;
+/// the transport's timeout ends a request that never answers (89-005).
 final class EarlierPlanProvider
     extends $AsyncNotifierProvider<EarlierPlan, MealPlan?> {
   /// One earlier plan by id (`/food/plans/:id`), straight from the server
@@ -129,11 +144,14 @@ final class EarlierPlanProvider
   /// also be in Drift (the draft a Use again made, a past week's confirmed
   /// plan), so its answer is folded in through [MealPlanController] and the
   /// Plan tab never shows a stale copy.
+  ///
+  /// A failed read is an error at once ([failFast]) and the view offers Retry;
+  /// the transport's timeout ends a request that never answers (89-005).
   const EarlierPlanProvider._({
     required EarlierPlanFamily super.from,
     required String super.argument,
   }) : super(
-         retry: null,
+         retry: failFast,
          name: r'earlierPlanProvider',
          isAutoDispose: true,
          dependencies: null,
@@ -165,7 +183,7 @@ final class EarlierPlanProvider
   }
 }
 
-String _$earlierPlanHash() => r'a737ca4947ff3f08aeb93224fc1895691019a8b1';
+String _$earlierPlanHash() => r'82bd4f703c8edbb3c07eceb8703fda01eb55c302';
 
 /// One earlier plan by id (`/food/plans/:id`), straight from the server
 /// (`get_plan {id}`); `null` when the server no longer has it. Plans are a
@@ -179,6 +197,9 @@ String _$earlierPlanHash() => r'a737ca4947ff3f08aeb93224fc1895691019a8b1';
 /// also be in Drift (the draft a Use again made, a past week's confirmed
 /// plan), so its answer is folded in through [MealPlanController] and the
 /// Plan tab never shows a stale copy.
+///
+/// A failed read is an error at once ([failFast]) and the view offers Retry;
+/// the transport's timeout ends a request that never answers (89-005).
 
 final class EarlierPlanFamily extends $Family
     with
@@ -191,7 +212,7 @@ final class EarlierPlanFamily extends $Family
         > {
   const EarlierPlanFamily._()
     : super(
-        retry: null,
+        retry: failFast,
         name: r'earlierPlanProvider',
         dependencies: null,
         $allTransitiveDependencies: null,
@@ -210,6 +231,9 @@ final class EarlierPlanFamily extends $Family
   /// also be in Drift (the draft a Use again made, a past week's confirmed
   /// plan), so its answer is folded in through [MealPlanController] and the
   /// Plan tab never shows a stale copy.
+  ///
+  /// A failed read is an error at once ([failFast]) and the view offers Retry;
+  /// the transport's timeout ends a request that never answers (89-005).
 
   EarlierPlanProvider call(String id) =>
       EarlierPlanProvider._(argument: id, from: this);
@@ -230,6 +254,9 @@ final class EarlierPlanFamily extends $Family
 /// also be in Drift (the draft a Use again made, a past week's confirmed
 /// plan), so its answer is folded in through [MealPlanController] and the
 /// Plan tab never shows a stale copy.
+///
+/// A failed read is an error at once ([failFast]) and the view offers Retry;
+/// the transport's timeout ends a request that never answers (89-005).
 
 abstract class _$EarlierPlan extends $AsyncNotifier<MealPlan?> {
   late final _$args = ref.$arg as String;

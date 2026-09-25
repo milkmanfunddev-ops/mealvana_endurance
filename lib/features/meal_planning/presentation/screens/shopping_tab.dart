@@ -50,6 +50,19 @@ class ShoppingTab extends ConsumerWidget {
     // The list lives server-side, so the first read is a round trip: say
     // loading, never "No shopping list" over a list that exists (16-003).
     if (state == null && listAsync.isLoading) return const _Loading();
+    // Offline with nothing read: say so, never the first-run "Confirm a meal
+    // plan" to an athlete who may have confirmed one (89-001).
+    if (state != null &&
+        state.isOffline &&
+        state.isEmpty &&
+        !state.hasAnyList) {
+      return const Center(
+        child: Padding(
+          padding: EdgeInsets.all(AppSpacing.md),
+          child: _OfflineNotice(textKey: ContentKeys.mpShoppingOfflineEmpty),
+        ),
+      );
+    }
     if (state == null || (state.isEmpty && !state.hasAnyList)) {
       return _EmptyState(
         onNewList: state == null ? null : () => _newList(context, ref),
@@ -596,7 +609,11 @@ class _ListHeader extends ConsumerWidget {
 /// back. Shown for the plan's offline copy and for the live list once a
 /// tick could not be sent.
 class _OfflineNotice extends ConsumerWidget {
-  const _OfflineNotice();
+  const _OfflineNotice({this.textKey = ContentKeys.mpShoppingOffline});
+
+  /// The line: ticks kept on the phone over a list, or the list showing
+  /// once back online when there is none to show.
+  final String textKey;
 
   @override
   Widget build(BuildContext context, WidgetRef ref) {
@@ -621,7 +638,7 @@ class _OfflineNotice extends ConsumerWidget {
           const SizedBox(width: AppSpacing.sm),
           Expanded(
             child: Text(
-              content.getValue(ContentKeys.mpShoppingOffline),
+              content.getValue(textKey),
               style: AppTextStyles.bodySmall.copyWith(color: secondary),
             ),
           ),

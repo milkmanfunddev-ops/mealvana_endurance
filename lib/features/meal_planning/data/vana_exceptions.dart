@@ -132,3 +132,12 @@ class NeedsConnectionException extends VanaException {
   @override
   String toString() => 'NeedsConnectionException($operation)';
 }
+
+/// Whether [error] means the write never reached the server for want of a
+/// connection: refused before sending ([NeedsConnectionException]), or the
+/// transport could not connect or timed out ([VanaOfflineException]). The
+/// screen says it needs a connection for both, never "Something went
+/// wrong" (testing-wave 129, Finding 88-013). The two types stay distinct
+/// for callers that tell them apart.
+bool isConnectionFailure(Object error) =>
+    error is NeedsConnectionException || error is VanaOfflineException;

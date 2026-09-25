@@ -16,6 +16,9 @@ part of 'vana_conversations_controller.dart';
 /// Paged (88-021): the first page loads in [build]; the screen calls
 /// [loadMore] as its list nears the end, and an under-full page marks the
 /// end so nothing asks again until [refresh].
+///
+/// A failed first page is an error at once ([failFast]), so the screen shows
+/// its Retry within a moment offline instead of a spinner (88-012).
 
 @ProviderFor(VanaConversationsController)
 const vanaConversationsControllerProvider =
@@ -29,6 +32,9 @@ const vanaConversationsControllerProvider =
 /// Paged (88-021): the first page loads in [build]; the screen calls
 /// [loadMore] as its list nears the end, and an under-full page marks the
 /// end so nothing asks again until [refresh].
+///
+/// A failed first page is an error at once ([failFast]), so the screen shows
+/// its Retry within a moment offline instead of a spinner (88-012).
 final class VanaConversationsControllerProvider
     extends
         $AsyncNotifierProvider<
@@ -43,11 +49,14 @@ final class VanaConversationsControllerProvider
   /// Paged (88-021): the first page loads in [build]; the screen calls
   /// [loadMore] as its list nears the end, and an under-full page marks the
   /// end so nothing asks again until [refresh].
+  ///
+  /// A failed first page is an error at once ([failFast]), so the screen shows
+  /// its Retry within a moment offline instead of a spinner (88-012).
   const VanaConversationsControllerProvider._({
     required VanaConversationsControllerFamily super.from,
     required VanaConversationKind super.argument,
   }) : super(
-         retry: null,
+         retry: failFast,
          name: r'vanaConversationsControllerProvider',
          isAutoDispose: true,
          dependencies: null,
@@ -81,7 +90,7 @@ final class VanaConversationsControllerProvider
 }
 
 String _$vanaConversationsControllerHash() =>
-    r'f902e167412c70d412cc42caa14c9b7b74f1ceef';
+    r'7c70434666c287861f5b368e949c0bcf9fa867b5';
 
 /// The conversations list for one [kind] ("Ask Vana" / "Meal plans"), read
 /// through `list_conversations` on `vana-action` (ticket 126): each planning
@@ -91,6 +100,9 @@ String _$vanaConversationsControllerHash() =>
 /// Paged (88-021): the first page loads in [build]; the screen calls
 /// [loadMore] as its list nears the end, and an under-full page marks the
 /// end so nothing asks again until [refresh].
+///
+/// A failed first page is an error at once ([failFast]), so the screen shows
+/// its Retry within a moment offline instead of a spinner (88-012).
 
 final class VanaConversationsControllerFamily extends $Family
     with
@@ -103,7 +115,7 @@ final class VanaConversationsControllerFamily extends $Family
         > {
   const VanaConversationsControllerFamily._()
     : super(
-        retry: null,
+        retry: failFast,
         name: r'vanaConversationsControllerProvider',
         dependencies: null,
         $allTransitiveDependencies: null,
@@ -118,6 +130,9 @@ final class VanaConversationsControllerFamily extends $Family
   /// Paged (88-021): the first page loads in [build]; the screen calls
   /// [loadMore] as its list nears the end, and an under-full page marks the
   /// end so nothing asks again until [refresh].
+  ///
+  /// A failed first page is an error at once ([failFast]), so the screen shows
+  /// its Retry within a moment offline instead of a spinner (88-012).
 
   VanaConversationsControllerProvider call(VanaConversationKind kind) =>
       VanaConversationsControllerProvider._(argument: kind, from: this);
@@ -134,6 +149,9 @@ final class VanaConversationsControllerFamily extends $Family
 /// Paged (88-021): the first page loads in [build]; the screen calls
 /// [loadMore] as its list nears the end, and an under-full page marks the
 /// end so nothing asks again until [refresh].
+///
+/// A failed first page is an error at once ([failFast]), so the screen shows
+/// its Retry within a moment offline instead of a spinner (88-012).
 
 abstract class _$VanaConversationsController
     extends $AsyncNotifier<List<VanaConversationSummary>> {

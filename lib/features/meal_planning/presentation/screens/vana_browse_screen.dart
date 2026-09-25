@@ -9,12 +9,12 @@ import '../../../../theme/kyle_design/app_colors.dart';
 import '../../../../theme/kyle_design/app_text_styles.dart';
 import '../../application/meal_catalog_controller.dart';
 import '../../application/meal_plan_controller.dart';
-import '../../data/vana_exceptions.dart';
 import '../../domain/meal_ref.dart';
 import '../../domain/ui_action.dart';
 import '../widgets/meal_catalog_browser.dart';
 import '../widgets/vana_round_button.dart';
 import '../../../../shared/core/pop_or_home.dart';
+import '../widgets/write_failure_snackbar.dart';
 
 /// `/vana/browse?c=<conversationId>` — "Browse meals" from the Vana chat
 /// (Lee, 2026-09-03: "browse all of our recipes and assign them to the meal
@@ -141,20 +141,9 @@ class _VanaBrowseScreenState extends ConsumerState<VanaBrowseScreen> {
         content.getValue(ContentKeys.mpBrowseAddedToast),
         duration: MealvanaSnackbar.shortDuration,
       );
-    } on NeedsConnectionException {
-      if (mounted) {
-        MealvanaSnackbar.showWarning(
-          context,
-          content.getValue(ContentKeys.mpNeedsConnection),
-        );
-      }
-    } on Exception {
-      if (mounted) {
-        MealvanaSnackbar.showError(
-          context,
-          content.getValue(ContentKeys.mpServerError),
-        );
-      }
+    } on Exception catch (e) {
+      // Offline says so, whether refused before sending or cut off (88-013).
+      if (mounted) showWriteFailure(context, content, e);
     } finally {
       _inFlight.remove(meal.id);
     }
