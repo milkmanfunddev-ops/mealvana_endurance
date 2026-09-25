@@ -30,6 +30,20 @@ Each entry: what went wrong or cost time, where it was seen, and the suggested f
   ticket with Add or Save controls, the lead reads the screen's code for writes before writing
   the prompts, and the ticket names the conversation or plan to use.
 
+- **#52 no Kroger certification shopper account (wave 18).** The credentials file's Kroger row is
+  labelled "certification environment", but it is Lee's production login: `login-stage.kroger.com`
+  refused it twice (22-001), so ticket 22 stopped before matching. Ticket 21 only worked because dev
+  was on production then. Suggested fix: Lee makes a shopper account on Kroger's certification site
+  (or the developer portal names one), `cred.mjs update` stores it, and the row's label says which
+  environment each login is for. Until then, 22-004 (match before connecting) is the only way to
+  test matching on dev.
+
+- **#53 the lead's prompt guessed the Kroger screen wrong (wave 18).** The prompt said "Disconnect,
+  then Connect", but a connection row from another environment shows only Connect (`service.ts`
+  reports connected only when the environments match). The agent adapted. Suggested fix: for a
+  ticket that follows an environment switch, the lead reads the status path before writing the
+  steps (same spirit as #47).
+
 ## Done
 
 - **#50 the mobile MCP's first command sends the app to the background (wave 17).** On a fresh wave

@@ -1,6 +1,6 @@
 # 22: Kroger matches the list and hands off to checkout
 
-**Status:** in-progress (wave 18, 2026-09-25)
+**Status:** ready-for-agent (wave 18 failed, 2026-09-25)
 **Blocked by:** 21.
 **Next:** `/implement-lee testing-wave`
 **Model:** opus
