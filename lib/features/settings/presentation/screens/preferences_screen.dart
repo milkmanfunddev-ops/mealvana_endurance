@@ -9,10 +9,14 @@ import '../../../../shared/widgets/navigation/figma_onboarding_footer.dart';
 import '../../../../shared/widgets/kyle_design/data/kyle_source_chip.dart';
 import '../../../integrations/presentation/providers/athlete_zones_provider.dart';
 import '../../../../shared/widgets/content_area.dart';
+import '../../../../shared/widgets/custom_app_bar_back_button.dart';
+import '../../../content/application/content_service.dart';
+import '../../../content/domain/content_keys.dart';
 import '../providers/settings_controller.dart';
 import '../../../auth/domain/user_preferences.dart';
 
-/// Preferences Screen - Settings version that matches onboarding UserProfileScreen
+/// Profile & Preferences: the settings edit of the fields onboarding's
+/// personal-info step collects, under its own title (31-014).
 /// Saves immediately to database instead of caching
 class PreferencesScreen extends ConsumerStatefulWidget {
   const PreferencesScreen({super.key});
@@ -159,10 +163,28 @@ class _PreferencesScreenState extends ConsumerState<PreferencesScreen> {
   @override
   Widget build(BuildContext context) {
     final settingsAsync = ref.watch(settingsControllerProvider);
+    final content = ref.watch(contentServiceProvider);
     final theme = Theme.of(context);
 
     return Scaffold(
       backgroundColor: theme.scaffoldBackgroundColor,
+      // A settings screen titled for what it is, with its back control at
+      // the top (31-014); the onboarding heading it shared is gone.
+      appBar: AppBar(
+        backgroundColor: Colors.transparent,
+        elevation: 0,
+        scrolledUnderElevation: 0,
+        leading: const CustomAppBarBackButton(
+          key: ValueKey('preferences.app_bar_back_button'),
+        ),
+        title: Text(
+          key: const ValueKey('preferences.title'),
+          content.getValue(ContentKeys.settingsProfilePreferencesTitle),
+          style: AppTextStyles.sectionTitle.copyWith(
+            color: theme.colorScheme.onSurface,
+          ),
+        ),
+      ),
       body: ContentArea(
         child: Column(
           children: [
@@ -235,10 +257,6 @@ class _PreferencesScreenState extends ConsumerState<PreferencesScreen> {
   }
 
   Widget _buildContent(BuildContext context, dynamic state) {
-    final theme = Theme.of(context);
-    final isDark = theme.brightness == Brightness.dark;
-    final titleColor = isDark ? AppColors.orange : theme.colorScheme.onSurface;
-
     return GestureDetector(
       onTap: () {
         // Dismiss keyboard when tapping outside input fields
@@ -252,32 +270,6 @@ class _PreferencesScreenState extends ConsumerState<PreferencesScreen> {
           child: Column(
             crossAxisAlignment: CrossAxisAlignment.start,
             children: [
-              const SizedBox(height: 16),
-
-              // Introduction text (matching onboarding)
-              Text(
-                'Tell us about yourself',
-                style: const TextStyle(
-                  fontFamily: 'Sansita',
-                  fontSize: 26,
-                  fontWeight: FontWeight.w700,
-                  height: 1.0,
-                ).copyWith(color: titleColor),
-              ),
-              const SizedBox(height: 12),
-              Text(
-                'This helps us calculate accurate nutrition plans for your activities.',
-                style: const TextStyle(
-                  fontFamily: 'Apercu',
-                  fontSize: 16,
-                  fontWeight: FontWeight.w400,
-                  letterSpacing: 0.192,
-                  height: 1.0,
-                ).copyWith(color: theme.colorScheme.onSurfaceVariant),
-              ),
-
-              const SizedBox(height: AppSpacing.lg),
-
               // Personal information section
               _buildPersonalInfoSection(context),
 
@@ -382,12 +374,11 @@ class _PreferencesScreenState extends ConsumerState<PreferencesScreen> {
 
   ({String? name, String? birthMonth, String? gender})? get _tpIdentity =>
       _userId == null
-          ? null
-          : ref.watch(tpAthleteIdentityProvider(_userId!)).value;
-
-  String? get _fsName => _userId == null
       ? null
-      : ref.watch(fsAthleteNameProvider(_userId!)).value;
+      : ref.watch(tpAthleteIdentityProvider(_userId!)).value;
+
+  String? get _fsName =>
+      _userId == null ? null : ref.watch(fsAthleteNameProvider(_userId!)).value;
 
   /// Identity badges (Xuan rulings 2026-09-13): EVERY provider with a
   /// non-null value shows its badge, primary first (TP, then FS for name).
@@ -467,12 +458,23 @@ class _PreferencesScreenState extends ConsumerState<PreferencesScreen> {
     final year = int.tryParse(birthMonth.substring(0, 4));
     final month = int.tryParse(birthMonth.substring(5, 7));
     if (year == null || month == null) return const SizedBox.shrink();
-    final matches = _birthday != null &&
+    final matches =
+        _birthday != null &&
         _birthday!.year == year &&
         _birthday!.month == month;
     const monthNames = [
-      'Jan', 'Feb', 'Mar', 'Apr', 'May', 'Jun',
-      'Jul', 'Aug', 'Sep', 'Oct', 'Nov', 'Dec',
+      'Jan',
+      'Feb',
+      'Mar',
+      'Apr',
+      'May',
+      'Jun',
+      'Jul',
+      'Aug',
+      'Sep',
+      'Oct',
+      'Nov',
+      'Dec',
     ];
     return Padding(
       padding: const EdgeInsets.only(top: 8),
