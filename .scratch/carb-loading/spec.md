@@ -438,6 +438,61 @@ Harness-verified: ring follows the viewed day; Day-2 chip returns to the exact
 today-view you left (falls back to the default when opened from a past/future
 day); close restores origin after any amount of chip-hopping.
 
+### HANDBACK RECEIVED — 2026-09-24 evening — spec RATIFIED v1 (qa 38ecb35)
+
+`spec/fueling/carb-loading.md` is **RATIFIED v1** at qa commit `38ecb35`
+(branch `qa/carb-loading`, handback `intake/2026-09-24-handback-carb-loading.md`
+with the verbatim interview log in its appendix). Reconciled against the two
+relay blocks above — the applied math matches the ruled math; W7 in the spec's
+worked examples cites the v16 harness readout as its independent cross-check.
+Deltas folded from the handback:
+
+- **Copy-register v1 is the v17 prototype's rendered strings VERBATIM**
+  (amendment (d), "adopt verbatim"): "N g behind pace" · "N g ahead of pace" ·
+  "On pace" · "<target> g / planned" · "LOADED" / "N of N g"; N = whole grams.
+  No copy edits in the prototype from here without a spec change.
+- **D7 collision (desk):** the v16+ breakdown macro strip renders the carbs
+  figure in `electrolyte` — flagged by qa, queued for the desk WITH the
+  amendment-(c) glow ruling. Deliberately NOT corrected ahead of that ruling.
+- **1-Day protocol (G3):** app-side only — chooser third card +
+  `_getCarbProtocolForDay` branch at 11.0 g/kg. No prototype surface (correct).
+- **NEW GAP filed, not ruled:** carb-loading day target vs daily-macros
+  Formula 8 (day −1-only 9.0 floor vs protocol 8/8/10 · 9/11 · 11). Venue and
+  bundle are Xuan's call.
+- Vectors do not exist yet; spec-to-vectors runs next. @v1-staged reds become
+  real when ship-bundle tags `carb-loading@v1`. Gate checklist G1–G6 lives in
+  the handback file.
+
+**LIVE items executed this session:**
+
+- **G1 — D-021 mapper fix: DONE.** `carb_loading_mapper.dart` defaulted the six
+  missing-split fields to `16.67` — percent-scale — while every consumer
+  computes `carbTargetGrams * percent` (a 544 g day would owe a 9,068 g
+  breakfast). Now defaults the ruled fractions .25/.10/.25/.15/.20/.05 with a
+  scale comment. Named test
+  `test/features/carb_loading/carb_loading_mapper_test.dart::missing_split_fields_hydrate_as_fractions`
+  observed RED against the old code, GREEN after; full
+  `test/features/carb_loading/` folder green (97 tests). The Drift table
+  defaults were already correct fractions — the mapper was the only offender.
+- **Mirror re-sync: BLOCKED in this session** — the auto-mode permission
+  classifier denied the whole-tree rsync of qa `38ecb35` into `docs/ssot`
+  (sensitive-source provenance). Nothing was copied; the mirror still pins
+  data-integrations@v1 @ 284566f. Needs Xuan to run the sync or approve it in
+  a non-auto session. Until then the LIVE `run_dart.sh` byte-identity red
+  stands, as designed.
+- **Glow research directive: DONE (research only)** — findings in
+  `.scratch/carb-loading/glow-research.md` beside this file. Headline: layered
+  pure-Flutter primitives (stacked BoxShadows + MaskFilter passes + the exact
+  gradient stops) match ~90% of the reference with zero dependencies and no
+  Impeller blur-regression exposure; `flutter_shaders_ui` or a hand-rolled
+  FragmentProgram bloom are the exceed-the-reference routes; avoid anything
+  BackdropFilter-based for the always-on-screen face. Feeds the desk's
+  amendment-(c) A/B; no implementation before that ruling.
+
+**Environment note below is STALE:** `flutter pub get` resolves on this branch
+with local Flutter 3.41.6 as of tonight (the sign_in_with_apple pin no longer
+bites). `flutter test` runs. The note is kept for history.
+
 ## Notes on the two new ideas
 
 **Reminder to start.** Machinery exists — `NotificationService`
