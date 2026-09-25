@@ -17,7 +17,7 @@
 
 **Touches:** lib/features/meal_planning/presentation/widgets/previous_plans_sheet.dart, the conversations list and planning chat header (lib/features/meal_planning/ or lib/features/ai_coach/), supabase/functions/_shared/vana/chat.ts if the title comes from the server, lib/features/meal_logging/presentation/screens/meal_review_screen.dart, assets/config/content_defaults.json
 
-- [ ] A test for each of the four (title from week and state, sheet order and tag, Back lands on the sheet, thumbnail present for a photo log and absent otherwise).
-- [ ] `flutter analyze` clean on touched files; deno tests if chat.ts changed.
+- [x] A test for each of the four (title from week and state, sheet order and tag, Back lands on the sheet, thumbnail present for a photo log and absent otherwise).
+- [x] `flutter analyze` clean on touched files; deno tests if chat.ts changed.
 
 Next: /implement-lee testing-wave

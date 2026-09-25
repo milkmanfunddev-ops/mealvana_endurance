@@ -14,6 +14,7 @@ import '../../domain/meal_log_source.dart';
 import '../../domain/meal_slot.dart';
 import '../providers/meal_log_providers.dart';
 import '../widgets/meal_component_editor.dart';
+import '../widgets/meal_photo_thumbnail.dart';
 import '../widgets/slot_chip_selector.dart' show OptionalSlotChipSelector;
 
 /// Review & confirm screen shown after AI analysis (photo or describe flows).
@@ -194,6 +195,15 @@ class _MealReviewScreenState extends ConsumerState<MealReviewScreen> {
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
             const SizedBox(height: AppSpacing.md),
+
+            // The analyzed photo, so the athlete sees which picture the
+            // numbers came from before logging (testing-wave 24-007). A
+            // described meal has none.
+            if (_photoPath case final String path when path.isNotEmpty)
+              MealPhotoThumbnail(
+                key: const ValueKey('meal_logging.review_photo'),
+                photoPath: path,
+              ),
 
             // Confidence badge
             _ConfidenceBadge(confidence: _result!.confidence),
