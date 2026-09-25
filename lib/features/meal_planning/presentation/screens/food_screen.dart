@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
+import 'package:go_router/go_router.dart';
 
 import '../../../../features/content/application/content_service.dart';
 import '../../../../features/content/domain/content_keys.dart';
@@ -19,13 +20,28 @@ import 'shopping_tab.dart';
 /// The three segments of the Food screen (05 §4).
 enum FoodTab { plan, meals, shopping }
 
-/// `/food` — header "Food" + segmented Plan · Meals · Shopping. Detail
-/// routes (`/food/meals/:id`, …) are separate routes and hide this header.
-/// The tab state is local; deep links pass `?tab=`.
+/// Where the Food tab opens on [tab]: inside the tab shell, never a bare Food
+/// page with no tab bar and no way home.
+String foodTabLocation(FoodTab tab) => '/main?tab=food&food=${tab.name}';
+
+/// A fresh `extra` for a go to [foodTabLocation]: going to the same location
+/// again (the athlete has since tapped another segment) still switches.
+Object foodTabRequest() => DateTime.now().microsecondsSinceEpoch;
+
+/// Goes to the Food tab on [tab] (see [foodTabLocation]).
+void goToFoodTab(BuildContext context, FoodTab tab) =>
+    context.go(foodTabLocation(tab), extra: foodTabRequest());
+
+/// The Food tab of the tab shell — header "Food" + segmented Plan · Meals ·
+/// Shopping. Detail routes (`/food/meals/:id`, …) are separate routes and hide
+/// this header. The segment is local; links pass `/main?tab=food&food=`.
 class FoodScreen extends ConsumerStatefulWidget {
-  const FoodScreen({super.key, this.initialTab = FoodTab.plan});
+  const FoodScreen({super.key, this.initialTab = FoodTab.plan, this.request});
 
   final FoodTab initialTab;
+
+  /// Changes on every navigation that asks for [initialTab] ([foodTabRequest]).
+  final Object? request;
 
   @override
   ConsumerState<FoodScreen> createState() => _FoodScreenState();
@@ -42,6 +58,18 @@ class _FoodScreenState extends ConsumerState<FoodScreen> {
     WidgetsBinding.instance.addPostFrameCallback((_) {
       if (mounted) ref.read(mealPlanControllerProvider.notifier).refresh();
     });
+  }
+
+  // `/main?tab=food&food=shopping` reuses a Food tab that is already built;
+  // a newly requested segment must still win over the one it first opened
+  // on (mp-596: "Open shopping list" landed on Plan; 16-002: so did Confirm).
+  @override
+  void didUpdateWidget(FoodScreen oldWidget) {
+    super.didUpdateWidget(oldWidget);
+    if (widget.initialTab != oldWidget.initialTab ||
+        widget.request != oldWidget.request) {
+      _tab = widget.initialTab;
+    }
   }
 
   @override
