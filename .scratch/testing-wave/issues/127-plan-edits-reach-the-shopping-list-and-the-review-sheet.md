@@ -1,6 +1,6 @@
 # 127: Plan edits reach the shopping list and the Review sheet
 
-**Status:** in-progress (wave 31, 2026-09-25)
+**Status:** done (wave 31, 2026-09-25)
 **Blocked by:** none.
 **Next:** `/implement-lee testing-wave`
 **Model:** opus

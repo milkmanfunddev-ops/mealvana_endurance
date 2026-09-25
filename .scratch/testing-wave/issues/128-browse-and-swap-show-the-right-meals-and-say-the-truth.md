@@ -1,6 +1,6 @@
 # 128: Browse and Swap show the right meals and say the truth
 
-**Status:** in-progress (wave 31, 2026-09-25)
+**Status:** done (wave 31, 2026-09-25)
 **Blocked by:** none.
 **Next:** `/implement-lee testing-wave`
 **Model:** opus
@@ -23,7 +23,7 @@
 - [x] Controller test: a server Recents answer that arrives after the first paint does not reorder the shown rail.
 - [x] Widget tests: the detail for a meal in the draft shows "In your plan" and no Add; the swap picker excludes the swapped meal and the plan's meals; `MealCard` with no subtitle shows no research note; Browse opens on rails while the Meals tab holds a query.
 - [x] Seam test through the real notifier for the heart: save then unsave writes and soft-deletes the saved meal; reopen reads it as saved.
-- [ ] The migration touches only the "his "/"her " rows, by id; a SQL check after it finds none left.
-- [ ] `flutter analyze` clean on touched files; deno vana tests. Deploy (migration, then vana-action if `meals.ts` changed): wave lead.
+- [x] The migration touches only the "his "/"her " rows, by id; a SQL check after it finds none left.
+- [x] `flutter analyze` clean on touched files; deno vana tests. Deploy (migration, then vana-action if `meals.ts` changed): wave lead.
 
 Next: /implement-lee testing-wave

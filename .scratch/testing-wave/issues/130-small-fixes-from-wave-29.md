@@ -1,6 +1,6 @@
 # 130: Small fixes from wave 29
 
-**Status:** in-progress (wave 31, 2026-09-25)
+**Status:** done (wave 31, 2026-09-25)
 **Blocked by:** none.
 **Next:** `/implement-lee testing-wave`
 **Model:** fable
