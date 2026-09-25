@@ -1,0 +1,966 @@
+<!DOCTYPE html>
+<html>
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<meta name="ext-resource-dependency" content="./Day Header.dc.html" data-resource-id="Day Header" />
+<meta name="ext-resource-dependency" content="./Day Nav.dc.html" data-resource-id="Day Nav" />
+<meta name="ext-resource-dependency" content="./Ride Fuel Sheet.dc.html" data-resource-id="Ride Fuel Sheet" />
+<meta name="ext-resource-dependency" content="./Add Food Sheet.dc.html" data-resource-id="Add Food Sheet" />
+<meta name="ext-resource-dependency" content="./Breakdown Pager.dc.html" data-resource-id="Breakdown Pager" />
+<meta name="ext-resource-dependency" content="./Full Breakdown Sheet.dc.html" data-resource-id="Full Breakdown Sheet" />
+<meta name="ext-resource-dependency" content="./Active Energy Sheet.dc.html" data-resource-id="Active Energy Sheet" />
+<meta name="ext-resource-dependency" content="./Energy Breakdown Sheet.dc.html" data-resource-id="Energy Breakdown Sheet" />
+<template id="__bundler_thumbnail" data-bg-color="#381633">
+  <svg viewBox="0 0 1200 800" xmlns="http://www.w3.org/2000/svg">
+    <rect width="1200" height="800" fill="#381633"/>
+    <rect x="470" y="150" width="260" height="500" rx="46" fill="#0b0b0b"/>
+    <rect x="486" y="172" width="228" height="456" rx="32" fill="#2a1126"/>
+    <circle cx="600" cy="250" r="34" fill="#1cf9cf"/>
+    <path d="M588 250l8 8 16-18" stroke="#381633" stroke-width="5" fill="none" stroke-linecap="round" stroke-linejoin="round"/>
+    <rect x="516" y="320" width="168" height="44" rx="14" fill="#f78b14"/>
+    <rect x="516" y="386" width="168" height="14" rx="7" fill="#f8f6eb" opacity="0.25"/>
+    <rect x="516" y="416" width="120" height="14" rx="7" fill="#f8f6eb" opacity="0.15"/>
+    <rect x="516" y="470" width="168" height="14" rx="7" fill="#1cf9cf" opacity="0.5"/>
+    <rect x="516" y="500" width="100" height="14" rx="7" fill="#f8f6eb" opacity="0.15"/>
+  </svg>
+</template>
+<script src="https://unpkg.com/react@18.3.1/umd/react.production.min.js"></script>
+<script src="https://unpkg.com/react-dom@18.3.1/umd/react-dom.production.min.js"></script>
+<script>
+/* Offline shim: the DC runtime fetches sibling "<Name>.dc.html" files at runtime.
+   Re-route those fetches to the inlined blobs in window.__resources, and strip
+   child @font-face rules (the main document already declares every family with
+   inlined font data; child copies point at fonts/ paths that don't exist offline). */
+(function(){
+  if (!window.fetch) return;
+  var orig = window.fetch.bind(window);
+  window.fetch = function(input, init){
+    try {
+      var url = typeof input === "string" ? input : (input && input.url) || "";
+      var m = url.match(/([^\/]+)\.dc\.html(?:[?#]|$)/);
+      if (m) {
+        var name = decodeURIComponent(m[1]);
+        var res = window.__resources && window.__resources[name];
+        if (res) {
+          return orig(res, init).then(function(r){
+            return r.text().then(function(t){
+              t = t.replace(/@font-face\{[^}]*\}/g, "");
+              return new Response(t, { status: 200, headers: { "Content-Type": "text/html" } });
+            });
+          });
+        }
+      }
+    } catch (e) {}
+    return orig(input, init);
+  };
+})();
+</script>
+<script src="./support.js"></script>
+</head>
+<body>
+<x-dc>
+<helmet>
+<style>
+@font-face{font-family:"Apercu";src:url("fonts/Apercu-Light.otf") format("opentype");font-weight:300;font-display:swap;}
+@font-face{font-family:"Apercu";src:url("fonts/Apercu-Regular.otf") format("opentype");font-weight:400;font-display:swap;}
+@font-face{font-family:"Apercu";src:url("fonts/Apercu-Medium.otf") format("opentype");font-weight:500;font-display:swap;}
+@font-face{font-family:"Apercu";src:url("fonts/Apercu-Bold.otf") format("opentype");font-weight:700;font-display:swap;}
+@font-face{font-family:"Apercu Mono";src:url("fonts/Apercu-Mono.otf") format("opentype");font-weight:400;font-display:swap;}
+@font-face{font-family:"Compadre";src:url("fonts/Compadre-Regular.otf") format("opentype");font-weight:400;font-display:swap;}
+@font-face{font-family:"Compadre Wide";src:url("fonts/Compadre-Wide.otf") format("opentype");font-weight:400;font-display:swap;}
+@font-face{font-family:"Sansita";src:url("fonts/Sansita-Bold.ttf") format("truetype");font-weight:700;font-display:swap;}
+:root{--me-blackberry:rgb(56,22,51);--me-cream:rgb(248,246,235);--me-orange:rgb(247,139,20);--me-electrolyte:rgb(28,249,207);--me-dragonfruit:rgb(220,37,151);}
+*{box-sizing:border-box;}
+.scrollbody::-webkit-scrollbar{width:0;height:0;}
+.scrollbody{scrollbar-width:none;}
+</style>
+</helmet>
+<div style="min-width:100%;min-height:100vh;box-sizing:border-box;padding:48px;background:#e7e5df;font-family:'Apercu',sans-serif;display:flex;flex-direction:column;align-items:center;">
+  <div style="width:412px;margin-bottom:12px;"><div style="font-family:'Sansita',Georgia,serif;font-weight:700;font-size:15px;color:rgb(56,22,51);">Fuel Timeline</div><div style="font-family:'Apercu',sans-serif;font-size:12px;color:rgb(117,77,111);margin-top:2px;">Toggle the time rail on/off, and filter to All &middot; Workout &middot; Meals.</div>
+    <div style="display:flex;flex-direction:column;align-items:flex-start;gap:5px;margin-top:10px;">
+      <div style="display:flex;gap:3px;background:rgba(56,22,51,0.07);border:1px solid rgba(56,22,51,0.13);border-radius:100px;padding:3px;">
+        <button onClick="{{ setRegularDay }}" style="border:none;border-radius:100px;padding:5px 13px;cursor:pointer;white-space:nowrap;font-family:'Apercu',sans-serif;font-weight:500;font-size:11.5px;background:{{ dayRegBg }};color:{{ dayRegColor }};">Regular day</button>
+        <button onClick="{{ setCarbDay }}" style="border:none;border-radius:100px;padding:5px 13px;cursor:pointer;white-space:nowrap;font-family:'Apercu',sans-serif;font-weight:500;font-size:11.5px;background:{{ dayCarbBg }};color:{{ dayCarbColor }};">Carb loading day</button>
+      </div>
+      <sc-if value="{{ carbDayOn }}" hint-placeholder-val="{{ false }}">
+      <div style="display:flex;gap:3px;background:rgba(56,22,51,0.07);border:1px solid rgba(56,22,51,0.13);border-radius:100px;padding:3px;align-self:flex-start;">
+        <sc-for list="{{ timePills }}" as="tp" hint-placeholder-count="4">
+        <button onClick="{{ tp.onPick }}" style="border:none;border-radius:100px;padding:4px 11px;cursor:pointer;white-space:nowrap;font-family:'Apercu',sans-serif;font-weight:500;font-size:11px;background:{{ tp.bg }};color:{{ tp.col }};">{{ tp.label }}</button>
+        </sc-for>
+      </div>
+      </sc-if>
+      <div style="font-family:'Apercu',sans-serif;font-size:10.5px;line-height:1.3;color:rgb(140,104,134);">Prototype control. In the app this is derived from the event&rsquo;s carb-loading plan &mdash; never a setting the athlete sees.</div>
+    </div>
+  </div>
+  <div style="width:412px;height:838px;background:#0b0b0b;border-radius:46px;padding:11px;box-shadow:0 18px 40px -12px rgba(56,22,51,0.4);">
+    <div style="width:100%;height:100%;background:var(--me-blackberry);border-radius:35px;overflow:hidden;position:relative;display:flex;flex-direction:column;">
+      <dc-import name="Day Header" hint-size="100%,250px"></dc-import>
+      <div style="flex:0 0 auto;padding:14px 18px 12px;">
+
+        <sc-if value="{{ trackingOn }}" hint-placeholder-val="{{ true }}">
+        <div style="background:{{ cardBg }};border:1px solid {{ cardBorder }};box-shadow:{{ cardShadow }};border-radius:18px;padding:12px 14px;min-height:{{ dashMinHeight }};display:flex;align-items:flex-start;gap:12px;">
+          <div style="flex:1;min-width:0;">
+
+          <sc-if value="{{ collapAll }}" hint-placeholder-val="{{ false }}">
+          <div style="display:flex;align-items:flex-end;gap:20px;margin-top:0;">
+            <div>
+              <div style="font-family:'Apercu',sans-serif;font-size:9.5px;font-weight:500;letter-spacing:0.08em;text-transform:uppercase;color:rgba(248,246,235,0.5);">Intake</div>
+              <div style="display:flex;align-items:baseline;gap:4px;margin-top:2px;"><span style="font-family:'Sansita',Georgia,serif;font-weight:700;font-size:24px;line-height:1;color:var(--me-orange);">{{ eatenCalStr }}</span><span style="font-family:'Apercu',sans-serif;font-size:11px;color:rgba(248,246,235,0.45);">kcal</span></div>
+            </div>
+            <div>
+              <div style="font-family:'Apercu',sans-serif;font-size:9.5px;font-weight:500;letter-spacing:0.08em;text-transform:uppercase;color:rgba(248,246,235,0.5);">Burned</div>
+              <div style="display:flex;align-items:baseline;gap:4px;margin-top:2px;"><span style="font-family:'Sansita',Georgia,serif;font-weight:700;font-size:24px;line-height:1;color:var(--me-electrolyte);">{{ burnedTotalStr }}</span><span style="font-family:'Apercu',sans-serif;font-size:11px;color:rgba(248,246,235,0.45);">kcal</span></div>
+            </div>
+          </div>
+          </sc-if>
+
+          <sc-if value="{{ collapCarb }}" hint-placeholder-val="{{ false }}">
+          <div style="margin-top:0;">
+            <div style="font-family:'Apercu',sans-serif;font-size:9.5px;font-weight:500;letter-spacing:0.08em;text-transform:uppercase;color:rgba(248,246,235,0.5);">{{ carbDashLabel }}</div>
+            <div style="display:flex;align-items:center;gap:12px;margin-top:10px;"><div style="position:relative;flex:2;min-width:0;"><div style="height:26px;border-radius:13px;padding:3px;border:1px solid rgba(247,139,20,0.45);background:linear-gradient(90deg, rgba(248,246,235,0.11), rgba(248,246,235,0.02));box-shadow:inset 0 1px 3px rgba(0,0,0,0.35);"><div style="height:100%;border-radius:10px;width:{{ carbLoadPctStr }};background:{{ loaderFillBg }};box-shadow:{{ loaderFillShadow }};"></div></div><sc-if value="{{ showPaceTick }}" hint-placeholder-val="{{ false }}"><span style="position:absolute;top:-4px;bottom:-4px;left:{{ carbPacePctStr }};width:2px;border-radius:1px;background:rgba(248,246,235,0.65);"></span></sc-if></div><div style="flex:1;min-width:0;text-align:right;"><div style="font-family:'Sansita',Georgia,serif;font-weight:700;font-size:{{ paceBigSize }};line-height:1.05;color:var(--me-orange);white-space:nowrap;">{{ carbPaceMainStr }}</div><div style="font-family:'Apercu',sans-serif;font-size:10.5px;color:rgba(248,246,235,0.55);margin-top:2px;">{{ carbPaceSubStr }}</div></div></div>
+          </div>
+          </sc-if>
+
+          <sc-if value="{{ showCarbDash }}" hint-placeholder-val="{{ false }}">
+          <div style="margin-top:0;">
+            <div style="font-family:'Apercu',sans-serif;font-size:10px;font-weight:500;letter-spacing:0.08em;text-transform:uppercase;color:rgba(248,246,235,0.5);">{{ carbDashLabel }}</div>
+            <div style="display:flex;align-items:baseline;gap:6px;margin-top:4px;flex-wrap:wrap;"><span style="font-family:'Sansita',Georgia,serif;font-weight:700;font-size:25px;line-height:1;color:var(--me-orange);">{{ carbEatenStr }}</span><span style="font-family:'Apercu',sans-serif;font-size:12px;color:rgba(248,246,235,0.5);">of {{ carbLoadTargetStr }} g</span><span style="font-family:'Apercu',sans-serif;font-size:12px;font-weight:500;color:var(--me-orange);">{{ carbToGoStr }}</span></div>
+            <div style="height:5px;border-radius:3px;background:rgba(248,246,235,0.1);margin-top:12px;overflow:visible;position:relative;"><div style="height:100%;border-radius:3px;background:var(--me-orange);width:{{ carbLoadPctStr }};"></div><div style="position:absolute;top:-3px;bottom:-3px;left:{{ carbPacePctStr }};width:2px;border-radius:1px;background:rgba(248,246,235,0.6);"></div></div>
+            <div style="display:flex;justify-content:space-between;margin-top:7px;"><span style="font-family:'Apercu',sans-serif;font-size:10px;color:rgba(248,246,235,0.5);">{{ carbPaceStr }}</span><span style="font-family:'Apercu Mono',monospace;font-size:10px;color:rgba(248,246,235,0.5);font-variant-numeric:tabular-nums;">pace {{ carbPaceTargetStr }} g by now</span></div>
+            <button onClick="{{ openLoadBreakdown }}" style="margin-top:13px;display:inline-flex;align-items:center;gap:5px;background:transparent;border:1px solid rgba(28,249,207,0.4);border-radius:100px;padding:6px 13px;cursor:pointer;font-family:'Apercu',sans-serif;font-size:11px;font-weight:500;color:var(--me-electrolyte);">Full Breakdown<svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><path d="M9 18l6-6-6-6"></path></svg></button>
+          </div>
+          </sc-if>
+
+          <sc-if value="{{ collapWorkout }}" hint-placeholder-val="{{ false }}">
+          <div style="margin-top:0;">
+            <div style="font-family:'Apercu',sans-serif;font-size:9.5px;font-weight:500;letter-spacing:0.08em;text-transform:uppercase;color:rgba(248,246,235,0.5);">Today's Workout</div>
+            <div style="display:flex;align-items:baseline;gap:5px;margin-top:2px;"><span style="font-family:'Sansita',Georgia,serif;font-weight:700;font-size:24px;line-height:1;color:var(--me-electrolyte);">{{ activeDoneStr }}</span><span style="font-family:'Apercu',sans-serif;font-size:11px;color:rgba(248,246,235,0.45);">done &middot; {{ activePlannedStr }} planned &middot; {{ activeCountStr }}</span></div>
+          </div>
+          </sc-if>
+
+          <sc-if value="{{ collapMeals }}" hint-placeholder-val="{{ false }}">
+          <div style="margin-top:0;">
+            <div style="font-family:'Apercu',sans-serif;font-size:9.5px;font-weight:500;letter-spacing:0.08em;text-transform:uppercase;color:rgba(248,246,235,0.5);">Daily budget</div>
+            <div style="display:flex;align-items:baseline;gap:6px;margin-top:2px;"><span style="font-family:'Sansita',Georgia,serif;font-weight:700;font-size:24px;line-height:1;color:var(--me-orange);">{{ calTargetStr }}</span><span style="font-family:'Apercu',sans-serif;font-size:11px;color:rgba(248,246,235,0.45);">kcal</span><span style="font-family:'Apercu Mono',monospace;font-size:11px;color:rgba(248,246,235,0.4);font-variant-numeric:tabular-nums;white-space:nowrap;">&middot; <span style="color:var(--me-electrolyte);">{{ carbTargetStr }}C</span> &middot; <span style="color:rgb(167,139,250);">{{ proteinTargetStr }}P</span> &middot; <span style="color:rgb(236,84,153);">{{ fatTargetStr }}F</span></span></div>
+          </div>
+          </sc-if>
+
+          <sc-if value="{{ collapOff }}" hint-placeholder-val="{{ false }}">
+          <div style="display:flex;gap:10px;margin-top:10px;align-items:flex-start;">
+            <svg width="15" height="15" viewBox="0 0 24 24" fill="var(--me-orange)" style="flex:0 0 auto;margin-top:1px;"><path d="M12 2l1.9 5.8a2 2 0 0 0 1.3 1.3L21 11l-5.8 1.9a2 2 0 0 0-1.3 1.3L12 20l-1.9-5.8a2 2 0 0 0-1.3-1.3L3 11l5.8-1.9a2 2 0 0 0 1.3-1.3L12 2z"></path></svg>
+            <div style="flex:1;min-width:0;">
+              <div style="font-family:'Apercu',sans-serif;font-size:9.5px;font-weight:600;letter-spacing:0.07em;text-transform:uppercase;color:var(--me-orange);margin-bottom:3px;">{{ insightLabel }}</div>
+              <div style="font-family:'Apercu',sans-serif;font-size:12.5px;line-height:1.45;color:rgba(248,246,235,0.85);white-space:nowrap;overflow:hidden;text-overflow:ellipsis;">{{ insightText }}</div>
+            </div>
+          </div>
+          </sc-if>
+
+          <sc-if value="{{ showMacroDash }}" hint-placeholder-val="{{ true }}">
+          <div style="margin-top:0;">
+            <div style="font-family:'Apercu',sans-serif;font-size:10px;font-weight:500;letter-spacing:0.08em;text-transform:uppercase;color:rgba(248,246,235,0.5);">Intake today</div>
+            <div style="display:flex;align-items:baseline;gap:5px;margin-top:4px;"><span style="font-family:'Sansita',Georgia,serif;font-weight:700;font-size:25px;line-height:1;color:var(--me-orange);">{{ eatenCalStr }}</span><span style="font-family:'Apercu',sans-serif;font-size:12px;color:rgba(248,246,235,0.45);">/ {{ calTargetStr }} kcal</span></div>
+            <div style="display:flex;gap:12px;margin-top:11px;">
+              <sc-for list="{{ macrosSub }}" as="m" hint-placeholder-count="3">
+                <div style="flex:1;">
+                  <div style="font-family:'Apercu Mono',monospace;font-size:12.5px;color:var(--me-cream);font-variant-numeric:tabular-nums;">{{ m.eaten }}<span style="color:rgba(248,246,235,0.4);">/{{ m.target }}{{ m.unit }}</span></div>
+                  <div style="height:5px;border-radius:3px;background:rgba(248,246,235,0.1);margin-top:6px;overflow:hidden;"><div style="height:100%;border-radius:3px;background:{{ m.color }};width:{{ m.pctStr }};"></div></div>
+                  <div style="font-family:'Apercu',sans-serif;font-size:10px;color:rgba(248,246,235,0.5);margin-top:5px;">{{ m.label }}</div>
+                </div>
+              </sc-for>
+            </div>
+            <button onClick="{{ openEnergy }}" style="margin-top:13px;display:inline-flex;align-items:center;gap:5px;background:transparent;border:1px solid rgba(28,249,207,0.4);border-radius:100px;padding:6px 13px;cursor:pointer;font-family:'Apercu',sans-serif;font-size:11px;font-weight:500;color:var(--me-electrolyte);">Full Breakdown<svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><path d="M9 18l6-6-6-6"></path></svg></button>
+          </div>
+          </sc-if>
+
+          <sc-if value="{{ showBalanceDash }}" hint-placeholder-val="{{ false }}">
+          <div style="margin-top:0;">
+            <div style="font-family:'Apercu',sans-serif;font-size:10px;font-weight:500;letter-spacing:0.08em;text-transform:uppercase;color:rgba(248,246,235,0.5);">Energy balance</div>
+            <div style="display:flex;align-items:baseline;gap:5px;margin-top:4px;"><span style="font-family:'Sansita',Georgia,serif;font-weight:700;font-size:25px;line-height:1;color:var(--me-orange);">{{ eatenCalStr }}</span><span style="font-family:'Apercu',sans-serif;font-size:12px;color:rgba(248,246,235,0.45);">/ {{ calTargetStr }} kcal</span></div>
+            <div style="height:5px;border-radius:3px;background:rgba(248,246,235,0.1);margin-top:12px;overflow:hidden;"><div style="height:100%;border-radius:3px;background:var(--me-orange);width:{{ eatenPctStr }};"></div></div>
+            <div style="display:flex;gap:12px;margin-top:11px;">
+              <div style="flex:1;">
+                <div style="display:flex;align-items:center;gap:5px;"><svg width="11" height="11" viewBox="0 0 24 24" fill="none" stroke="var(--me-electrolyte)" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round" style="flex:0 0 auto;"><path d="M12 19V5"></path><path d="m5 12 7-7 7 7"></path></svg><span style="font-family:'Apercu',sans-serif;font-size:10px;color:rgba(248,246,235,0.5);">Burned</span></div>
+                <div style="font-family:'Apercu Mono',monospace;font-size:13px;color:var(--me-cream);margin-top:4px;font-variant-numeric:tabular-nums;">{{ burnedTotalStr }}<span style="color:rgba(248,246,235,0.4);"> kcal</span></div>
+              </div>
+              <div style="flex:1;border-left:1px solid rgba(248,246,235,0.12);padding-left:12px;">
+                <div style="font-family:'Apercu',sans-serif;font-size:10px;color:rgba(248,246,235,0.5);">Net intake</div>
+                <div style="font-family:'Apercu Mono',monospace;font-size:13px;color:var(--me-cream);margin-top:4px;font-variant-numeric:tabular-nums;">{{ netStr }}<span style="color:rgba(248,246,235,0.4);"> kcal</span></div>
+              </div>
+            </div>
+            <button onClick="{{ openFullBreakdown }}" style="margin-top:13px;display:inline-flex;align-items:center;gap:5px;background:transparent;border:1px solid rgba(28,249,207,0.4);border-radius:100px;padding:6px 13px;cursor:pointer;font-family:'Apercu',sans-serif;font-size:11px;font-weight:500;color:var(--me-electrolyte);">Full Breakdown<svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><path d="M9 18l6-6-6-6"></path></svg></button>
+          </div>
+          </sc-if>
+
+          <sc-if value="{{ showEnergyDash }}" hint-placeholder-val="{{ false }}">
+          <div style="margin-top:0;">
+            <div style="font-family:'Apercu',sans-serif;font-size:10px;font-weight:500;letter-spacing:0.08em;text-transform:uppercase;color:rgba(248,246,235,0.5);">Active energy</div>
+            <div style="display:flex;align-items:baseline;gap:5px;margin-top:4px;"><span style="font-family:'Sansita',Georgia,serif;font-weight:700;font-size:25px;line-height:1;color:var(--me-electrolyte);">{{ activeDoneStr }}</span><span style="font-family:'Apercu',sans-serif;font-size:12px;color:rgba(248,246,235,0.45);">done &middot; {{ activePlannedStr }} planned &middot; {{ activeCountStr }}</span></div>
+            <div style="display:flex;gap:3px;height:6px;border-radius:3px;margin-top:12px;overflow:hidden;">
+              <div style="height:100%;border-radius:3px;background:var(--me-electrolyte);width:{{ activeDonePct }};"></div>
+              <div style="height:100%;border-radius:3px;background:rgba(28,249,207,0.22);width:{{ activePlannedPct }};"></div>
+            </div>
+            <div style="display:flex;justify-content:space-between;margin-top:7px;"><span style="font-family:'Apercu',sans-serif;font-size:10px;color:rgba(248,246,235,0.5);">Done now</span><span style="font-family:'Apercu Mono',monospace;font-size:10px;color:rgba(248,246,235,0.5);font-variant-numeric:tabular-nums;">{{ activeProjectedStr }} kcal projected</span></div>
+            <button onClick="{{ openActiveEnergy }}" style="margin-top:13px;display:inline-flex;align-items:center;gap:5px;background:transparent;border:1px solid rgba(28,249,207,0.4);border-radius:100px;padding:6px 13px;cursor:pointer;font-family:'Apercu',sans-serif;font-size:11px;font-weight:500;color:var(--me-electrolyte);">Full Breakdown<svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><path d="M9 18l6-6-6-6"></path></svg></button>
+          </div>
+          </sc-if>
+
+          <sc-if value="{{ showInsightAll }}" hint-placeholder-val="{{ false }}">
+          <div style="display:flex;gap:10px;margin-top:11px;">
+            <svg width="15" height="15" viewBox="0 0 24 24" fill="var(--me-orange)" style="flex:0 0 auto;margin-top:1px;"><path d="M12 2l1.9 5.8a2 2 0 0 0 1.3 1.3L21 11l-5.8 1.9a2 2 0 0 0-1.3 1.3L12 20l-1.9-5.8a2 2 0 0 0-1.3-1.3L3 11l5.8-1.9a2 2 0 0 0 1.3-1.3L12 2z"></path></svg>
+            <div style="flex:1;min-width:0;">
+              <div style="font-family:'Apercu',sans-serif;font-size:9.5px;font-weight:600;letter-spacing:0.07em;text-transform:uppercase;color:var(--me-orange);margin-bottom:4px;">Today's Fuel</div>
+              <div style="font-family:'Apercu',sans-serif;font-size:13px;line-height:1.5;color:var(--me-cream);">Bring carbs up through the day to top off glycogen for Saturday's long run, and keep protein steady at every meal.</div>
+            </div>
+          </div>
+          </sc-if>
+
+          <sc-if value="{{ showInsightWorkout }}" hint-placeholder-val="{{ false }}">
+          <div style="display:flex;gap:10px;margin-top:11px;">
+            <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="var(--me-orange)" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" style="flex:0 0 auto;margin-top:1px;"><circle cx="5.5" cy="17.5" r="3.5"></circle><circle cx="18.5" cy="17.5" r="3.5"></circle><path d="M15 17.5h-4l-2.5-7 3-2 2.5 4h3"></path><circle cx="15" cy="5" r="1.4"></circle></svg>
+            <div style="flex:1;min-width:0;">
+              <div style="font-family:'Apercu',sans-serif;font-size:9.5px;font-weight:600;letter-spacing:0.07em;text-transform:uppercase;color:var(--me-orange);margin-bottom:4px;">Fueling Your Ride</div>
+              <div style="font-family:'Apercu',sans-serif;font-size:13px;line-height:1.5;color:var(--me-cream);">Top off carbs in the 2 hours before, aim for 30&ndash;60 g carbs per hour on the bike, and refuel within 30 minutes after.</div>
+            </div>
+          </div>
+          </sc-if>
+
+          <sc-if value="{{ showInsightMeals }}" hint-placeholder-val="{{ false }}">
+          <div style="display:flex;gap:10px;margin-top:11px;">
+            <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="var(--me-orange)" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" style="flex:0 0 auto;margin-top:1px;"><path d="M4 3v7a3 3 0 0 0 3 3v8M7 3v7M10 3v7M18 3c-1.5 0-2.5 2-2.5 5s1 4 2.5 4v9"></path></svg>
+            <div style="flex:1;min-width:0;">
+              <div style="font-family:'Apercu',sans-serif;font-size:9.5px;font-weight:600;letter-spacing:0.07em;text-transform:uppercase;color:var(--me-orange);margin-bottom:4px;">Fueling Focus</div>
+              <div style="font-family:'Apercu',sans-serif;font-size:13px;line-height:1.5;color:var(--me-cream);">Spread carbs evenly and anchor each meal with protein. Keep it light before the afternoon ride, then refuel within the hour after.</div>
+            </div>
+          </div>
+          </sc-if>
+          </div>
+          <sc-if value="{{ showDashToggle }}" hint-placeholder-val="{{ true }}">
+          <button onClick="{{ toggleDash }}" title="{{ dashToggleTitle }}" style="flex:0 0 auto;align-self:{{ chevronAlign }};display:flex;align-items:center;background:transparent;border:none;padding:0;margin-top:1px;cursor:pointer;color:rgba(248,246,235,0.55);"><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round" style="transform:rotate({{ dashChevronRotate }});transition:transform 0.2s ease;"><path d="m6 9 6 6 6-6"></path></svg></button>
+          </sc-if>
+        </div>
+        </sc-if>
+
+        <div style="display:flex;align-items:center;gap:8px;margin-top:16px;margin-bottom:0;">
+          <div style="flex:1;display:flex;gap:5px;background:rgba(255,255,255,0.05);border:1px solid rgba(248,246,235,0.1);border-radius:100px;padding:4px;">
+            <button onClick="{{ pickAll }}" style="flex:1;display:flex;align-items:center;justify-content:center;border:none;border-radius:100px;padding:8px 4px;cursor:pointer;font-family:'Apercu',sans-serif;font-weight:500;font-size:12.5px;background:{{ pillAllBg }};color:{{ pillAllColor }};">All</button>
+            <button onClick="{{ pickWorkout }}" style="flex:1;display:flex;align-items:center;justify-content:center;border:none;border-radius:100px;padding:8px 4px;cursor:pointer;font-family:'Apercu',sans-serif;font-weight:500;font-size:12.5px;background:{{ pillWorkoutBg }};color:{{ pillWorkoutColor }};">Workout</button>
+            <button onClick="{{ pickMeals }}" style="flex:1;display:flex;align-items:center;justify-content:center;border:none;border-radius:100px;padding:8px 4px;cursor:pointer;font-family:'Apercu',sans-serif;font-weight:500;font-size:12.5px;background:{{ pillMealsBg }};color:{{ pillMealsColor }};">Meals</button>
+          </div>
+          <button onClick="{{ toggleTracking }}" title="{{ trackTitle }}" style="flex:0 0 auto;display:flex;align-items:center;justify-content:center;width:38px;height:38px;background:{{ trackBtnBg }};border:1px solid {{ trackBtnBorder }};border-radius:50%;color:{{ trackBtnColor }};cursor:pointer;">
+            <svg width="17" height="17" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M22 12h-4l-3 9L9 3l-3 9H2"></path></svg>
+          </button>
+          <button onClick="{{ toggleSuggest }}" title="{{ suggestTitle }}" style="flex:0 0 auto;display:flex;align-items:center;justify-content:center;width:38px;height:38px;background:{{ suggestBtnBg }};border:1px solid {{ suggestBtnBorder }};border-radius:50%;color:{{ suggestBtnColor }};cursor:pointer;">
+            <svg width="17" height="17" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M9.937 15.5A2 2 0 0 0 8.5 14.063l-6.135-1.582a.5.5 0 0 1 0-.962L8.5 9.936A2 2 0 0 0 9.937 8.5l1.582-6.135a.5.5 0 0 1 .963 0L14.063 8.5A2 2 0 0 0 15.5 9.937l6.135 1.581a.5.5 0 0 1 0 .964L15.5 14.063a2 2 0 0 0-1.437 1.437l-1.582 6.135a.5.5 0 0 1-.963 0z"></path><path d="M20 3v4"></path><path d="M22 5h-4"></path><path d="M4 17v2"></path><path d="M5 18H3"></path></svg>
+          </button>
+          <button onClick="{{ toggleTimeline }}" title="{{ timelineLabel }}" style="flex:0 0 auto;display:flex;align-items:center;justify-content:center;width:38px;height:38px;background:{{ timelineToggleBg }};border:1px solid {{ timelineToggleBorder }};border-radius:50%;color:{{ timelineToggleColor }};cursor:pointer;">
+            <sc-if value="{{ timelineOpen }}" hint-placeholder-val="{{ true }}"><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="9"></circle><path d="M12 7v5l3 2"></path></svg></sc-if>
+            <sc-if value="{{ timelineClosed }}" hint-placeholder-val="{{ false }}"><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="9"></circle><path d="M12 7v5l3 2"></path><path d="M3 3l18 18"></path></svg></sc-if>
+          </button>
+        </div>
+
+        <sc-if value="{{ showInsightBox }}" hint-placeholder-val="{{ false }}">
+        <div style="background:rgba(255,255,255,0.025);border:1px solid rgba(247,139,20,0.4);border-radius:20px;padding:15px 17px;margin-top:13px;">
+          <div style="display:flex;align-items:flex-start;gap:11px;">
+            <svg width="18" height="18" viewBox="0 0 24 24" fill="var(--me-orange)" style="flex:0 0 auto;margin-top:1px;"><path d="M12 2l1.6 6.4a3 3 0 0 0 2 2L22 12l-6.4 1.6a3 3 0 0 0-2 2L12 22l-1.6-6.4a3 3 0 0 0-2-2L2 12l6.4-1.6a3 3 0 0 0 2-2z"></path></svg>
+            <div style="flex:1;min-width:0;">
+              <div style="display:flex;align-items:center;justify-content:space-between;gap:8px;">
+                <span style="font-family:'Apercu',sans-serif;font-size:11px;font-weight:700;letter-spacing:0.08em;text-transform:uppercase;color:var(--me-orange);">{{ insightLabel }}</span>
+                <button onClick="{{ dismissInsight }}" title="Dismiss" style="flex:0 0 auto;display:flex;background:transparent;border:none;padding:0;margin:-2px -2px 0 0;cursor:pointer;color:rgba(248,246,235,0.45);"><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M18 6 6 18M6 6l12 12"></path></svg></button>
+              </div>
+              <div style="font-family:'Apercu',sans-serif;font-size:14px;line-height:1.5;color:var(--me-cream);margin-top:7px;">{{ insightText }}</div>
+              <button onClick="{{ askFollowUp }}" style="display:inline-flex;align-items:center;gap:7px;margin-top:13px;background:transparent;border:none;padding:0;cursor:pointer;font-family:'Apercu',sans-serif;font-size:13px;font-weight:500;color:var(--me-electrolyte);"><svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M7.9 20A9 9 0 1 0 4 16.1L2 22z"></path></svg>Ask a follow-up<svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round"><path d="m9 18 6-6-6-6"></path></svg></button>
+            </div>
+          </div>
+        </div>
+        </sc-if>
+      </div>
+
+      <div class="scrollbody" style="flex:1;overflow:auto;padding:8px 18px 8px;">
+          <div style="display:flex;gap:10px;">
+            <sc-if value="{{ timelineOpen }}" hint-placeholder-val="{{ true }}"><div style="width:54px;flex:0 0 auto;"></div></sc-if>
+            <sc-if value="{{ timelineOpen }}" hint-placeholder-val="{{ true }}"><div style="width:16px;flex:0 0 auto;position:relative;display:flex;justify-content:center;"><div style="position:absolute;top:0;bottom:0;width:2px;background:rgba(248,246,235,0.12);"></div><div style="position:relative;width:9px;height:9px;border-radius:50%;background:transparent;border:2px dashed rgba(248,246,235,0.35);margin-top:11px;"></div></div></sc-if>
+            <div style="flex:1;min-width:0;display:flex;gap:8px;padding-bottom:16px;">
+              <sc-if value="{{ showAddFood }}" hint-placeholder-val="{{ true }}"><button onClick="{{ openAdd }}" style="flex:1;display:flex;align-items:center;justify-content:center;gap:7px;border:1px dashed rgba(248,246,235,0.25);border-radius:100px;padding:9px;cursor:pointer;background:transparent;font-family:'Apercu',sans-serif;font-weight:500;font-size:12.5px;color:rgba(248,246,235,0.8);"><span style="font-size:15px;line-height:1;">+</span>Add Food</button></sc-if>
+              <sc-if value="{{ showAddActivity }}" hint-placeholder-val="{{ true }}"><button onClick="{{ openAddActivity }}" style="flex:1;display:flex;align-items:center;justify-content:center;gap:7px;border:1px dashed rgba(247,139,20,0.45);border-radius:100px;padding:9px;cursor:pointer;background:transparent;font-family:'Apercu',sans-serif;font-weight:500;font-size:12.5px;color:var(--me-orange);"><span style="font-size:15px;line-height:1;">+</span>Add Activity</button></sc-if>
+            </div>
+          </div>
+
+          <sc-for list="{{ nodes }}" as="n" hint-placeholder-count="5">
+            <div data-node-suggested="{{ n.dataSugg }}" style="display:flex;gap:10px;">
+              <sc-if value="{{ timelineOpen }}" hint-placeholder-val="{{ true }}"><div style="width:54px;flex:0 0 auto;text-align:right;font-family:'Apercu',sans-serif;font-size:10.5px;color:rgba(248,246,235,0.5);padding-top:3px;font-variant-numeric:tabular-nums;">{{ n.time }}</div></sc-if>
+              <sc-if value="{{ n.railSolid }}" hint-placeholder-val="{{ true }}"><div style="width:16px;flex:0 0 auto;position:relative;display:flex;justify-content:center;"><div style="position:absolute;top:0;bottom:0;width:2px;background:rgba(248,246,235,0.12);"></div><div style="position:relative;width:11px;height:11px;border-radius:50%;background:{{ n.dot }};margin-top:5px;border:2px solid var(--me-blackberry);"></div></div></sc-if>
+              <sc-if value="{{ n.railDashed }}" hint-placeholder-val="{{ false }}"><div style="width:16px;flex:0 0 auto;position:relative;display:flex;justify-content:center;"><div style="position:absolute;top:0;bottom:0;width:2px;background:rgba(248,246,235,0.12);"></div><div style="position:relative;width:11px;height:11px;border-radius:50%;background:transparent;border:2px dashed var(--me-orange);margin-top:5px;"></div></div></sc-if>
+              <div style="flex:1;min-width:0;padding-bottom:16px;">
+                <sc-if value="{{ n.isRide }}" hint-placeholder-val="{{ true }}">
+                  <div onClick="{{ openRide }}" style="background:rgba(247,139,20,0.1);border:1px solid rgba(247,139,20,0.45);border-radius:14px;padding:13px;display:flex;align-items:center;gap:12px;cursor:pointer;">
+                    <div style="width:40px;height:40px;border-radius:50%;background:var(--me-electrolyte);display:flex;align-items:center;justify-content:center;flex:0 0 auto;"><svg width="19" height="19" viewBox="0 0 24 24" fill="none" stroke="rgb(56,22,51)" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="5.5" cy="17.5" r="3.5"></circle><circle cx="18.5" cy="17.5" r="3.5"></circle><path d="M15 17.5h-4l-2.5-7 3-2 2.5 4h3"></path><circle cx="15" cy="5" r="1.4"></circle></svg></div>
+                    <div style="flex:1;min-width:0;"><div style="font-family:'Compadre',Georgia,serif;font-size:17px;color:var(--me-cream);">25 mi Ride</div><div style="font-family:'Apercu',sans-serif;font-size:11px;color:rgba(248,246,235,0.55);margin-top:2px;font-variant-numeric:tabular-nums;">25.0 mi &middot; 15.0 mph</div><div style="font-family:'Apercu',sans-serif;font-size:10.5px;color:var(--me-orange);margin-top:5px;">Pre &middot; During &middot; Recovery fuel &rsaquo;</div></div>
+                    <svg width="9" height="9" viewBox="0 0 24 24" fill="none" stroke="rgba(248,246,235,0.5)" stroke-width="2.6" stroke-linecap="round" stroke-linejoin="round"><path d="m9 18 6-6-6-6"></path></svg>
+                  </div>
+                </sc-if>
+                <sc-if value="{{ n.isMeal }}" hint-placeholder-val="{{ true }}">
+                  <div>
+                    <sc-if value="{{ n.slotCard }}" hint-placeholder-val="{{ false }}">
+                    <div style="background:{{ n.slotBg }};border:1px {{ n.slotBorderStyle }} {{ n.slotBorderColor }};border-radius:14px;margin-top:6px;padding:11px 12px;">
+                      <div onClick="{{ n.onAddSlot }}" style="display:flex;align-items:center;justify-content:space-between;gap:8px;cursor:pointer;">
+                        <div style="font-family:'Apercu',sans-serif;font-size:9.5px;font-weight:600;letter-spacing:0.08em;text-transform:uppercase;color:rgba(248,246,235,0.55);">{{ n.slotLabel }}</div>
+                        <div style="display:flex;align-items:center;gap:7px;">
+                          <span style="font-family:'Apercu Mono',monospace;font-size:11px;color:rgba(248,246,235,0.75);font-variant-numeric:tabular-nums;">{{ n.slotEatenStr }} <span style="color:rgba(248,246,235,0.4);">/ {{ n.slotTargetStr }} g</span></span>
+                          <sc-if value="{{ n.slotChevron }}" hint-placeholder-val="{{ false }}"><span onClick="{{ n.onTogglePeek }}" style="display:inline-flex;padding:3px;cursor:pointer;"><svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="rgba(248,246,235,0.5)" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round" style="flex:0 0 auto;transform:rotate({{ n.slotChevronRot }});transition:transform 0.2s;"><path d="m6 9 6 6 6-6"></path></svg></span></sc-if>
+                        </div>
+                      </div>
+                      <sc-if value="{{ n.slotSummary }}" hint-placeholder-val="{{ false }}">
+                      <div style="font-family:'Apercu',sans-serif;font-size:12px;color:rgba(248,246,235,0.55);margin-top:6px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;">{{ n.slotSummaryStr }}</div>
+                      </sc-if>
+                      <sc-if value="{{ n.slotIdeasHint }}" hint-placeholder-val="{{ false }}">
+                      <button onClick="{{ n.onHeaderTap }}" style="display:block;background:transparent;border:none;padding:0;margin-top:6px;cursor:pointer;font-family:'Apercu',sans-serif;font-size:12px;color:var(--me-orange);">{{ n.slotIdeasHintStr }}</button>
+                      </sc-if>
+                      <sc-if value="{{ n.slotOpenRows }}" hint-placeholder-val="{{ false }}">
+                      <div>
+                      <sc-for list="{{ n.slotItems }}" as="si" hint-placeholder-count="2">
+                        <sc-if value="{{ si.loggedRow }}" hint-placeholder-val="{{ true }}">
+                        <div style="display:flex;justify-content:space-between;align-items:center;gap:8px;margin-top:7px;">
+                          <span style="font-family:'Apercu',sans-serif;font-size:12.5px;color:rgba(248,246,235,0.9);white-space:nowrap;overflow:hidden;text-overflow:ellipsis;">{{ si.name }}</span>
+                          <span style="font-family:'Apercu Mono',monospace;font-size:11px;color:rgba(248,246,235,0.6);font-variant-numeric:tabular-nums;flex:0 0 auto;">{{ si.cStr }}</span>
+                        </div>
+                        </sc-if>
+                        <sc-if value="{{ si.suggRow }}" hint-placeholder-val="{{ false }}">
+                        <button onClick="{{ si.onAccept }}" style="width:100%;display:flex;justify-content:space-between;align-items:center;gap:8px;margin-top:7px;background:transparent;border:none;padding:0;cursor:pointer;">
+                          <span style="display:flex;align-items:center;gap:6px;min-width:0;"><svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="var(--me-orange)" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round" style="flex:0 0 auto;"><path d="M12 5v14M5 12h14"></path></svg><span style="font-family:'Apercu',sans-serif;font-size:12.5px;color:rgba(248,246,235,0.7);white-space:nowrap;overflow:hidden;text-overflow:ellipsis;">{{ si.name }}</span></span>
+                          <span style="font-family:'Apercu Mono',monospace;font-size:11px;color:var(--me-orange);font-variant-numeric:tabular-nums;flex:0 0 auto;">{{ si.cStr }}</span>
+                        </button>
+                        </sc-if>
+                        <sc-if value="{{ si.moreRow }}" hint-placeholder-val="{{ false }}">
+                        <div style="margin-top:7px;font-family:'Apercu',sans-serif;font-size:11.5px;color:rgba(248,246,235,0.45);">{{ si.name }}</div>
+                        </sc-if>
+                      </sc-for>
+                      <button onClick="{{ n.onAddSlot }}" style="width:100%;display:flex;justify-content:space-between;align-items:center;margin-top:9px;padding:8px 2px 0;border:none;background:transparent;border-top:1px solid rgba(248,246,235,0.09);cursor:pointer;font-family:'Apercu',sans-serif;font-size:11.5px;color:var(--me-orange);"><span>Edit in {{ n.slotLabel }}</span><span>›</span></button>
+                      </div>
+                      </sc-if>
+                    </div>
+                    </sc-if>
+                    <sc-if value="{{ n.plainMeal }}" hint-placeholder-val="{{ true }}">
+<sc-for list="{{ n.items }}" as="it" hint-placeholder-count="1">
+                      <sc-if value="{{ it.logged }}" hint-placeholder-val="{{ true }}">
+                      <div style="background:rgba(255,255,255,0.045);border:1px solid rgba(248,246,235,0.08);border-radius:14px;margin-top:6px;overflow:hidden;">
+                        <div onClick="{{ it.onToggle }}" style="display:flex;align-items:center;gap:11px;padding:11px 12px;cursor:pointer;">
+                          <div style="width:32px;height:32px;border-radius:50%;background:var(--me-orange);display:flex;align-items:center;justify-content:center;flex:0 0 auto;"><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="rgb(56,22,51)" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M4 3v7a3 3 0 0 0 3 3v8M7 3v7M10 3v7M18 3c-1.5 0-2.5 2-2.5 5s1 4 2.5 4v9"></path></svg></div>
+                          <div style="flex:1;min-width:0;"><div style="font-family:'Compadre',Georgia,serif;font-size:15px;color:var(--me-cream);white-space:nowrap;overflow:hidden;text-overflow:ellipsis;">{{ it.name }}</div><sc-if value="{{ trackingOn }}" hint-placeholder-val="{{ true }}"><div style="font-family:'Apercu',sans-serif;font-size:11px;margin-top:2px;font-variant-numeric:tabular-nums;color:rgba(248,246,235,0.5);"><span style="color:var(--me-cream);font-weight:500;">{{ it.kcal }}</span> kcal &middot; <span style="color:var(--me-electrolyte);">{{ it.c }}C</span> &middot; <span style="color:rgb(167,139,250);">{{ it.p }}P</span> &middot; <span style="color:rgb(236,84,153);">{{ it.f }}F</span></div></sc-if></div>
+                          <div style="color:rgba(248,246,235,0.4);font-size:17px;flex:0 0 auto;line-height:1;">&#8943;</div>
+                        </div>
+                        <sc-if value="{{ it.expanded }}" hint-placeholder-val="{{ false }}"><div style="padding:0 12px 12px 55px;display:flex;gap:10px;"><button style="flex:1;background:rgba(255,255,255,0.05);border:1px solid rgba(248,246,235,0.12);border-radius:100px;padding:7px;color:var(--me-cream);font-family:'Apercu',sans-serif;font-size:12px;cursor:pointer;">Swap food</button><button onClick="{{ it.onRemove }}" style="flex:1;background:transparent;border:1px solid var(--me-dragonfruit);border-radius:100px;padding:7px;color:var(--me-dragonfruit);font-family:'Apercu',sans-serif;font-size:12px;cursor:pointer;">Remove</button></div></sc-if>
+                      </div>
+                      </sc-if>
+                      <sc-if value="{{ it.suggested }}" hint-placeholder-val="{{ false }}">
+                      <div style="background:rgba(247,139,20,0.06);border:1px dashed rgba(247,139,20,0.55);border-radius:14px;margin-top:6px;overflow:hidden;">
+                        <div onClick="{{ it.onToggle }}" style="display:flex;align-items:center;gap:11px;padding:11px 12px;cursor:pointer;">
+                          <div style="width:32px;height:32px;border-radius:50%;background:rgba(247,139,20,0.15);border:1px solid rgba(247,139,20,0.6);display:flex;align-items:center;justify-content:center;flex:0 0 auto;"><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="var(--me-orange)" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M4 3v7a3 3 0 0 0 3 3v8M7 3v7M10 3v7M18 3c-1.5 0-2.5 2-2.5 5s1 4 2.5 4v9"></path></svg></div>
+                          <div style="flex:1;min-width:0;">
+                            <div style="font-family:'Compadre',Georgia,serif;font-size:15px;color:var(--me-cream);white-space:nowrap;overflow:hidden;text-overflow:ellipsis;">{{ it.name }}</div>
+                            <sc-if value="{{ trackingOn }}" hint-placeholder-val="{{ true }}"><div style="font-family:'Apercu',sans-serif;font-size:11px;margin-top:2px;font-variant-numeric:tabular-nums;color:rgba(248,246,235,0.45);">+<span style="color:rgba(248,246,235,0.7);font-weight:500;">{{ it.kcal }}</span> kcal &middot; <span style="color:var(--me-electrolyte);">{{ it.c }}C</span> &middot; <span style="color:rgb(167,139,250);">{{ it.p }}P</span> &middot; <span style="color:rgb(236,84,153);">{{ it.f }}F</span></div></sc-if>
+                          </div>
+                          <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="rgba(247,139,20,0.7)" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round" style="flex:0 0 auto;"><path d="M12 5v14M5 12h14"></path></svg>
+                        </div>
+                        <sc-if value="{{ it.expanded }}" hint-placeholder-val="{{ false }}"><div style="padding:0 12px 12px 55px;display:flex;gap:10px;"><button onClick="{{ it.onAccept }}" style="flex:1;background:var(--me-orange);border:none;border-radius:100px;padding:8px;color:var(--me-blackberry);font-family:'Sansita',Georgia,serif;font-weight:700;font-size:12px;cursor:pointer;">Add to plan</button><button onClick="{{ it.onDismiss }}" style="flex:1;background:transparent;border:1px solid rgba(248,246,235,0.25);border-radius:100px;padding:8px;color:var(--me-cream);font-family:'Apercu',sans-serif;font-size:12px;cursor:pointer;">Dismiss</button></div></sc-if>
+                      </div>
+                      </sc-if>
+                    </sc-for>
+                    </sc-if>
+                  </div>
+                </sc-if>
+              </div>
+            </div>
+          </sc-for>
+        <div style="height:8px;"></div>
+      </div>
+      <dc-import name="Day Nav" on-add="{{ openAdd }}" hint-size="100%,84px"></dc-import>
+      <sc-if value="{{ showRide }}" hint-placeholder-val="{{ false }}"><div style="position:absolute;inset:0;z-index:30;"><dc-import name="Ride Fuel Sheet" on-close="{{ closeOverlay }}" hint-size="100%,100%"></dc-import></div></sc-if>
+      <sc-if value="{{ showAdd }}" hint-placeholder-val="{{ false }}"><div style="position:absolute;inset:0;z-index:30;"><dc-import name="Add Food Sheet" on-close="{{ closeOverlay }}" on-pick="{{ onPickFood }}" hint-size="100%,100%"></dc-import></div></sc-if>
+      <sc-if value="{{ showLoadBreakdown }}" hint-placeholder-val="{{ false }}">
+      <div style="position:absolute;inset:0;z-index:28;background:var(--me-blackberry);display:flex;flex-direction:column;">
+        <div style="flex:0 0 auto;padding:16px 16px 8px;display:flex;align-items:center;gap:10px;">
+          <button onClick="{{ lbClose }}" style="background:rgba(255,255,255,0.07);border:none;border-radius:50%;width:32px;height:32px;color:var(--me-cream);font-size:16px;cursor:pointer;">‹</button>
+          <div style="font-family:'Compadre',Georgia,serif;font-size:17px;color:var(--me-cream);flex:1;">{{ lbTitle }}</div>
+        </div>
+        <div class="scrollbody" style="flex:1;overflow:auto;padding:4px 16px 22px;">
+          <div style="background:rgba(255,255,255,0.045);border:1px solid rgba(247,139,20,0.35);border-radius:16px;padding:13px 14px;">
+            <div style="display:flex;align-items:baseline;gap:7px;"><span style="font-family:'Sansita',Georgia,serif;font-weight:700;font-size:24px;line-height:1;color:var(--me-orange);">{{ carbPaceMainStr }}</span><span style="font-family:'Apercu',sans-serif;font-size:11px;color:rgba(248,246,235,0.5);">{{ carbPaceSubStr }}</span></div>
+            <div style="position:relative;margin-top:11px;">
+              <div style="height:14px;border-radius:8px;padding:2px;border:1px solid rgba(247,139,20,0.45);background:linear-gradient(90deg, rgba(248,246,235,0.11), rgba(248,246,235,0.02));"><div style="height:100%;border-radius:6px;width:{{ carbLoadPctStr }};background:{{ loaderFillBg }};box-shadow:{{ loaderFillShadow }};"></div></div>
+              <sc-if value="{{ showPaceTick }}" hint-placeholder-val="{{ false }}"><span style="position:absolute;top:-3px;bottom:-3px;left:{{ carbPacePctStr }};width:2px;border-radius:1px;background:rgba(248,246,235,0.65);"></span></sc-if>
+            </div>
+            <div style="margin-top:8px;font-family:'Apercu Mono',monospace;font-size:11px;color:rgba(248,246,235,0.6);font-variant-numeric:tabular-nums;">{{ carbEatenStr }} of {{ carbLoadTargetStr }} g carbs</div>
+          </div>
+          <div style="display:flex;justify-content:space-between;margin-top:16px;padding:0 4px;">
+            <div><div style="font-family:'Sansita',Georgia,serif;font-weight:700;font-size:18px;color:var(--me-electrolyte);">{{ lbCarb }}g</div><div style="font-family:'Apercu',sans-serif;font-size:9px;letter-spacing:0.08em;text-transform:uppercase;color:rgba(248,246,235,0.5);margin-top:1px;">Carbs</div></div>
+            <div><div style="font-family:'Sansita',Georgia,serif;font-weight:700;font-size:18px;color:var(--me-electrolyte);">{{ lbPro }}g</div><div style="font-family:'Apercu',sans-serif;font-size:9px;letter-spacing:0.08em;text-transform:uppercase;color:rgba(248,246,235,0.5);margin-top:1px;">Protein</div></div>
+            <div><div style="font-family:'Sansita',Georgia,serif;font-weight:700;font-size:18px;color:var(--me-electrolyte);">{{ lbFat }}g</div><div style="font-family:'Apercu',sans-serif;font-size:9px;letter-spacing:0.08em;text-transform:uppercase;color:rgba(248,246,235,0.5);margin-top:1px;">Fat</div></div>
+            <div><div style="font-family:'Sansita',Georgia,serif;font-weight:700;font-size:18px;color:var(--me-electrolyte);">{{ lbKcal }}</div><div style="font-family:'Apercu',sans-serif;font-size:9px;letter-spacing:0.08em;text-transform:uppercase;color:rgba(248,246,235,0.5);margin-top:1px;">Kcal</div></div>
+          </div>
+          <div style="font-family:'Apercu',sans-serif;font-size:10px;letter-spacing:0.08em;text-transform:uppercase;color:rgba(248,246,235,0.45);padding:16px 2px 4px;">By meal</div>
+          <sc-for list="{{ lbRows }}" as="lr" hint-placeholder-count="6">
+            <div style="background:{{ lr.bg }};border:1px solid {{ lr.border }};border-radius:12px;padding:9px 12px;margin-top:6px;">
+              <div style="display:flex;justify-content:space-between;align-items:baseline;gap:8px;">
+                <span style="font-family:'Apercu',sans-serif;font-size:10px;font-weight:600;letter-spacing:0.07em;text-transform:uppercase;color:rgba(248,246,235,0.7);">{{ lr.label }} <span style="color:rgba(248,246,235,0.35);font-weight:400;">{{ lr.timeStr }}</span></span>
+                <span style="font-family:'Apercu Mono',monospace;font-size:11px;color:rgba(248,246,235,0.75);font-variant-numeric:tabular-nums;">{{ lr.eatenStr }} <span style="color:rgba(248,246,235,0.4);">/ {{ lr.tgtStr }} g</span></span>
+              </div>
+              <div style="height:4px;border-radius:2px;background:rgba(248,246,235,0.1);margin-top:7px;overflow:hidden;"><div style="height:100%;border-radius:2px;background:var(--me-orange);width:{{ lr.pctStr }};"></div></div>
+            </div>
+          </sc-for>
+          <div style="font-family:'Apercu',sans-serif;font-size:10px;letter-spacing:0.08em;text-transform:uppercase;color:rgba(248,246,235,0.45);padding:16px 2px 4px;">Protocol</div>
+          <div style="display:flex;gap:8px;">
+            <sc-for list="{{ lbDays }}" as="ld" hint-placeholder-count="3">
+              <div onClick="{{ ld.onPick }}" style="flex:1;text-align:center;border:1px solid {{ ld.border }};background:{{ ld.bg }};border-radius:12px;padding:9px 4px;cursor:pointer;">
+                <div style="font-family:'Apercu',sans-serif;font-size:9.5px;letter-spacing:0.06em;text-transform:uppercase;color:rgba(248,246,235,0.6);">{{ ld.label }}</div>
+                <div style="font-family:'Sansita',Georgia,serif;font-weight:700;font-size:16px;color:var(--me-orange);margin-top:2px;">{{ ld.tgt }} g</div>
+              </div>
+            </sc-for>
+          </div>
+        </div>
+      </div>
+      </sc-if>
+      <sc-if value="{{ showSlotPage }}" hint-placeholder-val="{{ false }}">
+      <div style="position:absolute;inset:0;z-index:29;background:var(--me-blackberry);display:flex;flex-direction:column;">
+        <div style="flex:0 0 auto;padding:16px 16px 10px;display:flex;align-items:center;gap:10px;">
+          <button onClick="{{ spClose }}" style="background:rgba(255,255,255,0.07);border:none;border-radius:50%;width:32px;height:32px;color:var(--me-cream);font-size:16px;cursor:pointer;">‹</button>
+          <div style="font-family:'Compadre',Georgia,serif;font-size:18px;color:var(--me-cream);flex:1;">{{ spLabel }}</div>
+          <div style="font-family:'Apercu Mono',monospace;font-size:12px;color:rgba(248,246,235,0.75);font-variant-numeric:tabular-nums;">{{ spEaten }} <span style="color:rgba(248,246,235,0.4);">/ {{ spTarget }} g</span></div>
+        </div>
+        <div style="flex:0 0 auto;padding:0 16px 4px;">
+          <div style="display:flex;align-items:center;gap:9px;background:rgba(255,255,255,0.06);border:1px solid rgba(248,246,235,0.12);border-radius:100px;padding:9px 14px;">
+            <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="rgba(248,246,235,0.5)" stroke-width="2.2" stroke-linecap="round"><circle cx="11" cy="11" r="7"></circle><path d="m20 20-3.2-3.2"></path></svg>
+            <div style="flex:1;font-family:'Apercu',sans-serif;font-size:13px;color:rgba(248,246,235,0.45);">Search foods…</div>
+            <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="var(--me-orange)" stroke-width="2" stroke-linecap="round"><path d="M4 8V6a2 2 0 0 1 2-2h2M16 4h2a2 2 0 0 1 2 2v2M20 16v2a2 2 0 0 1-2 2h-2M8 20H6a2 2 0 0 1-2-2v-2"></path><path d="M8 9v6M11.5 9v6M15 9v6"></path></svg>
+          </div>
+        </div>
+        <div class="scrollbody" style="flex:1;overflow:auto;padding:6px 16px 20px;">
+          <sc-if value="{{ spHasLogged }}" hint-placeholder-val="{{ false }}">
+          <div style="font-family:'Apercu',sans-serif;font-size:10px;letter-spacing:0.08em;text-transform:uppercase;color:rgba(248,246,235,0.45);padding:8px 2px 2px;">Logged</div>
+          <sc-for list="{{ spLogged }}" as="li" hint-placeholder-count="1">
+            <div style="background:rgba(255,255,255,0.045);border:1px solid rgba(248,246,235,0.08);border-radius:13px;padding:11px 12px;margin-top:7px;">
+              <div onClick="{{ li.onSel }}" style="display:flex;align-items:center;gap:11px;cursor:pointer;">
+                <div style="width:30px;height:30px;border-radius:50%;background:var(--me-orange);display:flex;align-items:center;justify-content:center;flex:0 0 auto;"><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="rgb(56,22,51)" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M4 3v7a3 3 0 0 0 3 3v8M7 3v7M10 3v7M18 3c-1.5 0-2.5 2-2.5 5s1 4 2.5 4v9"></path></svg></div>
+                <span style="flex:1;min-width:0;font-family:'Compadre',Georgia,serif;font-size:14px;color:var(--me-cream);white-space:nowrap;overflow:hidden;text-overflow:ellipsis;">{{ li.name }}</span>
+                <span style="font-family:'Apercu Mono',monospace;font-size:11.5px;color:rgba(248,246,235,0.65);flex:0 0 auto;font-variant-numeric:tabular-nums;">{{ li.cStr }}</span>
+              </div>
+              <sc-if value="{{ li.sel }}" hint-placeholder-val="{{ false }}">
+              <div style="display:flex;align-items:center;gap:9px;margin-top:9px;padding-left:41px;">
+                <div style="display:flex;align-items:center;gap:11px;background:rgba(255,255,255,0.06);border:1px solid rgba(248,246,235,0.14);border-radius:100px;padding:5px 12px;">
+                  <button onClick="{{ li.onMinus }}" style="background:transparent;border:none;color:var(--me-orange);font-size:16px;line-height:1;cursor:pointer;padding:0;">−</button>
+                  <span style="font-family:'Apercu Mono',monospace;font-size:12px;color:var(--me-cream);">{{ li.qtyStr }}</span>
+                  <button onClick="{{ li.onPlus }}" style="background:transparent;border:none;color:var(--me-orange);font-size:16px;line-height:1;cursor:pointer;padding:0;">+</button>
+                </div>
+                <button onClick="{{ li.onRemove }}" style="margin-left:auto;background:transparent;border:1px solid rgba(220,37,151,0.5);border-radius:100px;padding:5px 13px;color:rgba(220,37,151,0.9);font-family:'Apercu',sans-serif;font-size:11px;cursor:pointer;">Remove</button>
+              </div>
+              </sc-if>
+            </div>
+          </sc-for>
+          </sc-if>
+          <div style="font-family:'Apercu',sans-serif;font-size:10px;letter-spacing:0.08em;text-transform:uppercase;color:rgba(248,246,235,0.45);padding:14px 2px 2px;">Recommended for {{ spLabel }}</div>
+          <sc-for list="{{ spRecs }}" as="rc" hint-placeholder-count="3">
+            <div style="display:flex;align-items:center;gap:11px;background:rgba(255,255,255,0.045);border:1px solid rgba(248,246,235,0.08);border-radius:13px;padding:10px 12px;margin-top:7px;">
+              <div style="width:30px;height:30px;border-radius:50%;background:{{ rc.discBg }};display:flex;align-items:center;justify-content:center;flex:0 0 auto;"><sc-if value="{{ rc.gBread }}" hint-placeholder-val="{{ false }}"><svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="var(--me-cream)" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M5 10a3.5 3.5 0 0 1 2-6.5h10a3.5 3.5 0 0 1 2 6.5v9a1 1 0 0 1-1 1H6a1 1 0 0 1-1-1z"></path></svg></sc-if><sc-if value="{{ rc.gBowl }}" hint-placeholder-val="{{ false }}"><svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="var(--me-cream)" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M4 12a8 8 0 0 0 16 0"></path><path d="M4 12h16"></path><path d="M9 8V6M13 8V5"></path></svg></sc-if><sc-if value="{{ rc.gDrink }}" hint-placeholder-val="{{ false }}"><svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="var(--me-cream)" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M7 4h10l-1.3 15a2 2 0 0 1-2 1.8h-3.4a2 2 0 0 1-2-1.8z"></path><path d="M6.6 9h10.8"></path></svg></sc-if><sc-if value="{{ rc.gEmoji }}" hint-placeholder-val="{{ false }}"><span style="font-size:14px;">{{ rc.emoji }}</span></sc-if></div>
+              <div style="flex:1;min-width:0;">
+                <div style="font-family:'Apercu',sans-serif;font-size:13.5px;color:var(--me-cream);white-space:nowrap;overflow:hidden;text-overflow:ellipsis;">{{ rc.name }}</div>
+                <div style="font-family:'Apercu Mono',monospace;font-size:10.5px;color:rgba(248,246,235,0.55);margin-top:1px;">{{ rc.sub }}</div>
+              </div>
+              <button onClick="{{ rc.onAdd }}" style="width:28px;height:28px;border-radius:50%;background:transparent;border:1px solid var(--me-orange);color:var(--me-orange);display:flex;align-items:center;justify-content:center;flex:0 0 auto;font-size:17px;cursor:pointer;font-family:'Apercu',sans-serif;">+</button>
+            </div>
+          </sc-for>
+          <div style="display:flex;justify-content:space-between;align-items:center;margin-top:14px;padding:0 2px;font-family:'Apercu',sans-serif;font-size:12.5px;color:rgba(248,246,235,0.75);">
+            <span>› My Foods</span>
+            <span style="font-family:'Apercu Mono',monospace;font-size:10px;background:rgba(247,139,20,0.25);border-radius:9px;padding:1px 8px;color:var(--me-orange);">27</span>
+          </div>
+          <div style="margin-top:12px;font-family:'Apercu',sans-serif;font-size:11.5px;color:rgba(248,246,235,0.5);text-align:center;">Not finding it? <span style="color:var(--me-orange);">Create your own food</span> — or save a combo as a <span style="color:var(--me-orange);">formula</span></div>
+        </div>
+      </div>
+      </sc-if>
+      <sc-if value="{{ showBreakdown }}" hint-placeholder-val="{{ false }}"><div style="position:absolute;inset:0;z-index:30;"><dc-import name="Breakdown Pager" on-close="{{ closeBreakdown }}" initial-index="{{ breakdownIndex }}" cal-target="{{ calTargetStr }}" carbs="{{ carbTargetStr }}" protein="{{ proteinTargetStr }}" fat="{{ fatTargetStr }}" hint-size="100%,100%"></dc-import></div></sc-if>
+    </div>
+  </div>
+</div>
+</x-dc>
+<script type="text/x-dc" data-dc-script data-props="{&quot;enableTracking&quot;:{&quot;editor&quot;:&quot;boolean&quot;,&quot;default&quot;:true,&quot;tsType&quot;:&quot;boolean&quot;},&quot;carbLoadingDay&quot;:{&quot;editor&quot;:&quot;boolean&quot;,&quot;default&quot;:false,&quot;tsType&quot;:&quot;boolean&quot;}}">
+const DAY_INIT = "7am";
+const _it = (id, name, kcal, c, p, f) => ({ id, name, kcal, c, p, f });
+const _empty = () => ({ Breakfast: [], Lunch: [], Snack: [], Recovery: [], Dinner: [], "Morning Snack": [], "Afternoon Snack": [], "Evening Snack": [] });
+const _3pmLog = () => { const l = _empty();
+  l.Breakfast = [_it("s3b1", "Everything Bagel with Cream Cheese", 574, 58, 30, 25), _it("s3b2", "Orange Juice, 12 oz", 165, 39, 2, 0), _it("s3b3", "Banana", 105, 27, 1, 0)];
+  l["Morning Snack"] = [_it("s3m1", "Granola Bar + Chocolate Milk", 340, 55, 12, 8)];
+  l.Lunch = [_it("s3l1", "Turkey Sandwich + Pretzels", 520, 74, 28, 12), _it("s3l2", "Apple Juice, 12 oz", 170, 42, 0, 0)];
+  return l; };
+const _7pmLog = () => { const l = _3pmLog();
+  l["Afternoon Snack"] = [_it("s7a1", "Pretzels, 2 oz", 220, 46, 5, 2), _it("s7a2", "Sports Drink, 20 oz", 140, 34, 0, 0)];
+  return l; };
+const _9pmLog = () => { const l = _7pmLog();
+  l.Dinner = [_it("s9d1", "Penne with Marinara & Chicken", 640, 86, 38, 12), _it("s9d2", "Garlic Bread, 2 Slices", 220, 30, 5, 8)];
+  return l; };
+const _10pmLog = () => { const l = _9pmLog();
+  l["Evening Snack"] = [_it("s10e1", "Rice Pudding Cup", 180, 30, 5, 4), _it("s10e2", "Chocolate Milk, 8 oz", 160, 26, 8, 5)];
+  return l; };
+const _day1Log = () => { const l = _9pmLog();
+  l["Evening Snack"] = [_it("p1e1", "Rice Pudding Cup", 180, 30, 5, 4)];
+  return l; };
+const DAY_SCENARIOS = {
+  "7am": { now: 420, log: _empty() },
+  "3pm": { now: 900, log: _3pmLog() },
+  "7pm": { now: 1140, log: _7pmLog() },
+  "9pm": { now: 1260, log: _9pmLog() },
+  "10pm": { now: 1320, log: _10pmLog() },
+  "day1": { now: 720, rel: "past", dayN: 1, log: _day1Log() },
+  "day3": { now: 720, rel: "future", dayN: 3, tgt: 680, log: _empty() },
+};
+class Component extends DCLogic {
+  state = {
+    overlay: null, expanded: null, timelineOpen: true, filter: "all",
+    suggestOn: null, dismissed: {}, slotOpen: {}, slotPage: null, slotRowSel: null, loadBreakdown: false,
+    dayTime: DAY_INIT, carbLog: JSON.parse(JSON.stringify(DAY_SCENARIOS[DAY_INIT].log)),
+    log: {
+      Breakfast: [{ id: "bf", name: "Everything Bagel with Cream Cheese", kcal: 574, c: 58, p: 30, f: 25 }],
+      Lunch: [{ id: "ln", name: "Pineapple Chunks & Eggs", kcal: 408, c: 35, p: 25, f: 20 }],
+      Snack: [{ id: "sn", name: "8 oz Mocha", kcal: 180, c: 24, p: 6, f: 6 }],
+      Recovery: [],
+      Dinner: [],
+      "Morning Snack": [],
+      "Afternoon Snack": [],
+      "Evening Snack": [],
+    },
+  };
+
+  patch(p) { this.setState(p); }
+  toggleExpand(id) { this.setState((s) => ({ expanded: s.expanded === id ? null : id })); }
+  removeItem(group, id) { this.setState((s) => { const K = ((s.carbDay ?? this.props.carbLoadingDay) ?? false) ? "carbLog" : "log"; return { expanded: null, [K]: { ...s[K], [group]: s[K][group].filter((x) => x.id !== id) } }; }); }
+  addFood(food) {
+    this.setState((s) => {
+      const id = "d" + Math.random().toString(36).slice(2, 8);
+      const item = { id, name: food.name, kcal: food.kcal, c: food.c, p: food.p, f: food.f };
+      const K = ((s.carbDay ?? this.props.carbLoadingDay) ?? false) ? "carbLog" : "log";
+      return { overlay: null, [K]: { ...s[K], Dinner: [...s[K].Dinner, item] } };
+    });
+  }
+  acceptSugg(group, it) {
+    this.setState((s) => {
+      const logged = { id: "lg" + Math.random().toString(36).slice(2, 8), name: it.name, kcal: it.kcal, c: it.c, p: it.p, f: it.f };
+      const K = ((s.carbDay ?? this.props.carbLoadingDay) ?? false) ? "carbLog" : "log";
+      return { expanded: null, dismissed: { ...s.dismissed, [it.id]: true }, [K]: { ...s[K], [group]: [...(s[K][group] || []), logged] } };
+    });
+  }
+  dismissSugg(id) { this.setState((s) => ({ expanded: null, dismissed: { ...s.dismissed, [id]: true } })); }
+  toggleSuggest() {
+    this.setState((s) => { const cur = s.suggestOn ?? ((((s.carbDay ?? this.props.carbLoadingDay) ?? false)) ? true : false); return { suggestOn: !cur, expanded: null, insightDismissed: cur ? s.insightDismissed : false }; }, () => {
+      if (this.state.suggestOn) this.scrollToSuggestion();
+    });
+  }
+  dismissInsight() { this.setState({ insightDismissed: true }); }
+  scrollToSuggestion() {
+    setTimeout(() => {
+      const sb = document.querySelector(".scrollbody");
+      const target = document.querySelector('[data-node-suggested="1"]');
+      if (!sb || !target) return;
+      const top = target.getBoundingClientRect().top - sb.getBoundingClientRect().top + sb.scrollTop - 16;
+      const dest = Math.max(0, Math.min(top, sb.scrollHeight - sb.clientHeight));
+      const start = sb.scrollTop, dist = dest - start, t0 = Date.now(), dur = 420;
+      if (this._scrollTimer) clearInterval(this._scrollTimer);
+      this._scrollTimer = setInterval(() => {
+        const k = Math.min(1, (Date.now() - t0) / dur);
+        sb.scrollTop = start + dist * (1 - Math.pow(1 - k, 3));
+        if (k >= 1) { clearInterval(this._scrollTimer); this._scrollTimer = null; }
+      }, 16);
+    }, 50);
+  }
+
+  renderVals() {
+    const s = this.state;
+    const carbDay = (s.carbDay ?? this.props.carbLoadingDay) ?? false;
+    const log = carbDay ? s.carbLog : s.log;
+    const suggest = s.suggestOn ?? (carbDay ? true : false);
+    const tag = {
+      Breakfast: { color: "rgb(251,167,72)" },
+      Lunch: { color: "var(--me-electrolyte)" },
+      Snack: { color: "rgb(236,84,153)" },
+      Recovery: { color: "rgb(251,167,72)" },
+      Dinner: { color: "rgb(167,139,250)" },
+    };
+    const order = ["Breakfast", "Lunch", "Snack", "Recovery", "Dinner"];
+    const META = { Breakfast: 450, Lunch: 750, Snack: 885, Recovery: 1005, Dinner: 1140 };
+    const SCEN = DAY_SCENARIOS[s.dayTime || DAY_INIT] || DAY_SCENARIOS[DAY_INIT];
+    const NOW = carbDay ? SCEN.now : 930; // regular-day demo stays at 3:30 PM
+    const dayRel = carbDay ? (SCEN.rel || "today") : "today";
+    const isToday = dayRel === "today";
+    const CARB_DAY_N = SCEN.dayN || 2;
+    const SUGG = {
+      Recovery: [
+        { id: "sgr1", name: "Chocolate Milk & Banana", kcal: 330, c: 58, p: 14, f: 6 },
+      ],
+      Dinner: [
+        { id: "sgd1", name: "Grilled Chicken & Rice Bowl", kcal: 640, c: 82, p: 50, f: 12 },
+        { id: "sgd2", name: "Roasted Sweet Potato", kcal: 200, c: 46, p: 4, f: 0 },
+      ],
+    };
+    const decLogged = (it, g) => ({
+      ...it, suggested: false, logged: true, group: g, expanded: s.expanded === it.id,
+      onToggle: () => this.toggleExpand(it.id),
+      onRemove: () => this.removeItem(g, it.id),
+    });
+    const decSugg = (it, g) => ({
+      ...it, suggested: true, logged: false, group: g, expanded: s.expanded === it.id,
+      onToggle: () => this.toggleExpand(it.id),
+      onAccept: () => this.acceptSugg(g, it),
+      onDismiss: () => this.dismissSugg(it.id),
+    });
+    const groups = {};
+    order.forEach((g) => {
+      const logged = (log[g] || []).map((it) => decLogged(it, g));
+      const future = META[g] > NOW;
+      const sugg = (suggest && future) ? (SUGG[g] || []).filter((it) => !s.dismissed[it.id]).map((it) => decSugg(it, g)) : [];
+      const items = [...logged, ...sugg];
+      groups[g] = { items, empty: items.length === 0, allSuggested: items.length > 0 && logged.length === 0 };
+    });
+    let cal = 0, cc = 0, pp = 0, ff = 0;
+    Object.keys(log).forEach((g) => (log[g] || []).forEach((it) => { const q = it.qty || 1; cal += it.kcal * q; cc += it.c * q; pp += it.p * q; ff += it.f * q; }));
+    const CARB_LOAD_TARGET = 544, CARB_LOAD_DAY_N = 2, CARB_LOAD_DAYS = 3;
+    const DAY_TARGET = (carbDay && SCEN.tgt) || CARB_LOAD_TARGET;
+    const TGT = { calories: 2520, carbs: carbDay ? DAY_TARGET : 300, protein: 140, fat: 75 };
+    const COL = { carbs: "var(--me-electrolyte)", protein: "rgb(167,139,250)", fat: "rgb(236,84,153)" };
+    const mk2 = (k, label, e, unit) => {
+      const t = TGT[k]; const pct = Math.min(100, Math.round((e / t) * 100));
+      return { label, eaten: e, target: t, unit, color: COL[k], pctStr: pct + "%" };
+    };
+    const macrosSub = [mk2("carbs", "Carbs", cc, "g"), mk2("protein", "Protein", pp, "g"), mk2("fat", "Fat", ff, "g")];
+    const openAdd = () => this.setState({ overlay: "add" });
+    const CSLOTS = [
+      { label: "Breakfast", sources: ["Breakfast"], time: 360, timeStr: "6:00 AM", pct: 0.25, dot: tag.Breakfast.color },
+      { label: "Morning Snack", sources: ["Morning Snack"], time: 540, timeStr: "9:00 AM", pct: 0.10, dot: tag.Snack.color },
+      { label: "Lunch", sources: ["Lunch"], time: 720, timeStr: "12:00 PM", pct: 0.25, dot: tag.Lunch.color },
+      { label: "Afternoon Snack", sources: ["Afternoon Snack", "Snack"], time: 900, timeStr: "3:00 PM", pct: 0.15, dot: tag.Snack.color },
+      { label: "Dinner", sources: ["Dinner"], time: 1080, timeStr: "6:00 PM", pct: 0.20, dot: tag.Dinner.color },
+      { label: "Evening Snack", sources: ["Evening Snack"], time: 1260, timeStr: "9:00 PM", pct: 0.05, dot: "rgb(167,139,250)" },
+    ];
+    const CARB_SUGG = {
+      Breakfast: [
+        { id: "csb1", name: "2 Bagels with Jam", kcal: 620, c: 120, p: 16, f: 6, glyph: "bread" },
+        { id: "csb2", name: "Orange Juice, 12 oz", kcal: 165, c: 39, p: 2, f: 0, glyph: "drink" },
+      ],
+      "Morning Snack": [
+        { id: "csm1", name: "Granola Bar + Chocolate Milk", kcal: 340, c: 55, p: 12, f: 8, glyph: "bread" },
+      ],
+      Lunch: [
+        { id: "csl1", name: "Turkey Sandwich + Pretzels", kcal: 520, c: 74, p: 28, f: 12, glyph: "bread" },
+        { id: "csl2", name: "Apple Juice, 12 oz", kcal: 170, c: 42, p: 0, f: 0, glyph: "drink" },
+      ],
+      "Afternoon Snack": [
+        { id: "csa1", name: "Pretzels, 2 oz", kcal: 220, c: 46, p: 5, f: 2, glyph: "bread" },
+        { id: "csa2", name: "Sports Drink, 20 oz", kcal: 140, c: 34, p: 0, f: 0, glyph: "drink" },
+      ],
+      Dinner: [
+        { id: "csd1", name: "Penne with Marinara & Chicken", kcal: 640, c: 86, p: 38, f: 12, glyph: "bowl" },
+        { id: "csd2", name: "Garlic Bread, 2 Slices", kcal: 220, c: 30, p: 5, f: 8, glyph: "bread" },
+        { id: "csd3", name: "Orange Juice, 12 oz", kcal: 165, c: 39, p: 2, f: 0, glyph: "drink" },
+      ],
+      "Evening Snack": [
+        { id: "cse1", name: "Rice Pudding Cup", kcal: 180, c: 30, p: 5, f: 4, glyph: "bowl" },
+      ],
+    };
+    const carbTimeline = CSLOTS.map((sl, i) => {
+      const logged = sl.sources.flatMap((k) => (log[k] || []).map((it) => decLogged(it, k)));
+      const nextT = i + 1 < CSLOTS.length ? CSLOTS[i + 1].time : 1440;
+      const active = nextT > NOW;
+      const csugg = []; // quiet-card ruling 2026-09-24: no ideas on the dashboard; the curated list lives on the slot page
+      const open = (s.slotOpen || {})[sl.label] ?? false;
+      const items = [...logged, ...csugg];
+      const slotEaten = Math.round(logged.reduce((a, it) => a + it.c * (it.qty || 1), 0));
+      const slotTarget = Math.round(DAY_TARGET * sl.pct);
+      return {
+        id: "cs" + i, time: sl.timeStr, isRide: false, isMeal: true, group: sl.label,
+        dot: sl.dot, tagColor: sl.dot, items, empty: false,
+        suggestedNode: logged.length === 0, solidNode: logged.length > 0,
+        slotCard: true,
+        slotOpenRows: open && (logged.length > 0 || csugg.length > 0),
+        slotSummary: !open && logged.length > 0,
+        slotSummaryStr: logged.length > 0 ? logged[0].name + (logged.length > 1 ? "  +" + (logged.length - 1) + " more" : "") : "",
+        slotIdeasHint: !open && logged.length === 0 && csugg.length > 0,
+        slotIdeasHintStr: csugg.length + (csugg.length === 1 ? " idea \u203a" : " ideas \u203a"),
+        slotChevron: logged.length > 0 || csugg.length > 0,
+        slotChevronRot: open ? "180deg" : "0deg",
+        onHeaderTap: () => {},
+        onTogglePeek: (e) => { if (e && e.stopPropagation) e.stopPropagation(); this.setState((st) => ({ slotOpen: { ...st.slotOpen, [sl.label]: !open } })); },
+        slotItems: [
+          ...logged.map((it) => ({ key: it.id, name: it.name, cStr: Math.round(it.c * (it.qty || 1)) + " g", loggedRow: true, suggRow: false, moreRow: false })),
+          ...csugg.slice(0, 2).map((it) => ({ key: it.id, name: it.name, cStr: "+" + Math.round(it.c) + " g", loggedRow: false, suggRow: true, moreRow: false, onAccept: it.onAccept })),
+          ...(csugg.length > 2 ? [{ key: "more" + i, name: "+ " + (csugg.length - 2) + " more idea" + (csugg.length - 2 > 1 ? "s" : ""), cStr: "", loggedRow: false, suggRow: false, moreRow: true }] : []),
+        ],
+        slotBorderStyle: logged.length > 0 ? "solid" : "dashed",
+        slotBorderColor: logged.length > 0 ? "rgba(248,246,235,0.12)" : "rgba(247,139,20,0.55)",
+        slotBg: logged.length > 0 ? "rgba(255,255,255,0.045)" : "rgba(247,139,20,0.06)",
+        slotLabel: sl.label, slotEatenStr: String(slotEaten), slotTargetStr: String(slotTarget),
+        onAddSlot: () => this.setState({ slotPage: sl.label, slotRowSel: null }),
+      };
+    });
+    carbTimeline.splice(4, 0, { id: "tr", time: "4:15 PM", isRide: true, isMeal: false, dot: "var(--me-orange)", suggestedNode: false, solidNode: true });
+    // A slot's grams accrue across its eating window: from its own time until
+    // the next slot arrives (the same "superseded" clock the cards use). So
+    // nothing is owed before breakfast, and the window closes at 10 PM.
+    const RAMP = [[CSLOTS[0].time, 0]];
+    { let cum = 0;
+      for (let ci = 1; ci < CSLOTS.length; ci++) { cum += Math.round(DAY_TARGET * CSLOTS[ci - 1].pct); RAMP.push([CSLOTS[ci].time, cum]); }
+      RAMP.push([1320, DAY_TARGET]); }
+    let carbPace = DAY_TARGET;
+    if (NOW <= RAMP[0][0]) carbPace = 0;
+    else for (let ri = 1; ri < RAMP.length; ri++) {
+      if (NOW <= RAMP[ri][0]) { const pa = RAMP[ri - 1], pb = RAMP[ri]; carbPace = pa[1] + (NOW - pa[0]) / (pb[0] - pa[0]) * (pb[1] - pa[1]); break; }
+    }
+    const paceDiff = carbPace - cc;
+    const paceBand = Math.max(0.05 * carbPace, 10);
+    const carbComplete = carbDay && cc >= DAY_TARGET;
+    const fullTimeline = [
+      { id: "tb", time: "7:30 AM", isRide: false, isMeal: true, group: "Breakfast", dot: tag.Breakfast.color, tagColor: tag.Breakfast.color, items: groups.Breakfast.items, empty: groups.Breakfast.empty, suggestedNode: groups.Breakfast.allSuggested, solidNode: !groups.Breakfast.allSuggested, openAdd },
+      { id: "tl", time: "12:30 PM", isRide: false, isMeal: true, group: "Lunch", dot: tag.Lunch.color, tagColor: tag.Lunch.color, items: groups.Lunch.items, empty: groups.Lunch.empty, suggestedNode: groups.Lunch.allSuggested, solidNode: !groups.Lunch.allSuggested, openAdd },
+      { id: "ts", time: "2:45 PM", isRide: false, isMeal: true, group: "Snack", dot: tag.Snack.color, tagColor: tag.Snack.color, items: groups.Snack.items, empty: groups.Snack.empty, suggestedNode: groups.Snack.allSuggested, solidNode: !groups.Snack.allSuggested, openAdd },
+      { id: "tr", time: "4:15 PM", isRide: true, isMeal: false, dot: "var(--me-orange)", suggestedNode: false, solidNode: true },
+      { id: "trc", time: "4:45 PM", isRide: false, isMeal: true, group: "Recovery", dot: tag.Recovery.color, tagColor: tag.Recovery.color, items: groups.Recovery.items, empty: groups.Recovery.empty, suggestedNode: groups.Recovery.allSuggested, solidNode: !groups.Recovery.allSuggested, openAdd },
+      { id: "td", time: "7:00 PM", isRide: false, isMeal: true, group: "Dinner", dot: tag.Dinner.color, tagColor: tag.Dinner.color, items: groups.Dinner.items, empty: groups.Dinner.empty, suggestedNode: groups.Dinner.allSuggested, solidNode: !groups.Dinner.allSuggested, openAdd },
+    ];
+    const nodes = (carbDay ? carbTimeline : fullTimeline)
+      .filter((n) => !(n.isMeal && n.empty))
+      .filter((n) => s.filter === "all" ? true : s.filter === "workout" ? n.isRide : n.isMeal)
+      .map((n) => ({ ...n, plainMeal: !n.slotCard, railSolid: s.timelineOpen && !n.suggestedNode, railDashed: s.timelineOpen && n.suggestedNode, dataSugg: n.suggestedNode ? "1" : "" }));
+    const pbg = (k) => s.filter === k ? "var(--me-cream)" : "transparent";
+    const pcol = (k) => s.filter === k ? "var(--me-blackberry)" : "rgba(248,246,235,0.65)";
+    const trackingOn = (s.tracking ?? this.props.enableTracking) ?? true;
+    const workouts = [
+      { id: "w1", name: "25 mi Ride", sub: "25.0 mi \u00b7 15.0 mph \u00b7 1.7 h", cal: 502 },
+    ];
+    const workoutBurn = workouts.reduce((a, w) => a + w.cal, 0);
+    const BASE_DAILY = 1950; // resting + daily-activity expenditure across a full day
+    const baseBurn = Math.round(BASE_DAILY * (NOW / 1440)); // proportional to elapsed day
+    const totalBurned = baseBurn + workoutBurn; // workout (once done) + daily activity
+    const energyWorkouts = workouts.map((w) => ({ ...w, calStr: w.cal.toLocaleString() }));
+
+    // --- Active Energy card: done vs planned, consistent with the Active Energy sheet ---
+    const aeIcon = (kind, stroke) => {
+      const C = (tag, props) => React.createElement(tag, props);
+      const defs = {
+        swim: [C("path",{key:1,d:"M2 16c1.5 0 1.5 1.2 3 1.2S8.5 16 10 16s1.5 1.2 3 1.2 1.5-1.2 3-1.2 1.5 1.2 3 1.2"}),C("path",{key:2,d:"M2 20c1.5 0 1.5 1.2 3 1.2S8.5 20 10 20s1.5 1.2 3 1.2 1.5-1.2 3-1.2 1.5 1.2 3 1.2"}),C("path",{key:3,d:"m6 12 5-3"}),C("circle",{key:4,cx:16,cy:6,r:2})],
+        strength: [C("path",{key:1,d:"M6.5 6.5 17.5 17.5"}),C("path",{key:2,d:"M18 22l4-4"}),C("path",{key:3,d:"M2 6l4-4"}),C("path",{key:4,d:"m7 17-5 5"}),C("path",{key:5,d:"m17 7 5-5"})],
+        ride: [C("circle",{key:1,cx:5.5,cy:17.5,r:3.5}),C("circle",{key:2,cx:18.5,cy:17.5,r:3.5}),C("path",{key:3,d:"M15 17.5h-4l-2.5-7 3-2 2.5 4h3"}),C("circle",{key:4,cx:15,cy:5,r:1.4})],
+      };
+      return C("svg",{width:15,height:15,viewBox:"0 0 24 24",fill:"none",stroke,strokeWidth:2,strokeLinecap:"round",strokeLinejoin:"round"}, defs[kind]);
+    };
+    const aeData = [
+      { name: "Swim", sub: "8:00 AM \u00b7 2,000 yd \u00b7 40 min", cal: 318, planned: false, icon: "swim" },
+      { name: "Strength", sub: "12:45 PM \u00b7 20 min", cal: 110, planned: false, icon: "strength" },
+      { name: "25 mi Ride", sub: "4:15 PM \u00b7 25.0 mi \u00b7 15.0 mph \u00b7 1.7 h", cal: 502, planned: true, icon: "ride" },
+    ];
+    const activeWorkouts = aeData.map((w) => ({
+      name: w.name, sub: w.sub, calStr: w.cal.toLocaleString(), isPlanned: w.planned,
+      opacity: w.planned ? "0.62" : "1",
+      iconBg: w.planned ? "transparent" : "var(--me-electrolyte)",
+      iconBorder: w.planned ? "1.5px solid rgba(28,249,207,0.45)" : "none",
+      calColor: w.planned ? "rgba(248,246,235,0.6)" : "var(--me-cream)",
+      iconEl: aeIcon(w.icon, w.planned ? "rgba(28,249,207,0.7)" : "rgb(56,22,51)"),
+    }));
+    const aeDone = aeData.filter((w) => !w.planned).reduce((a, w) => a + w.cal, 0);
+    const aePlanned = aeData.filter((w) => w.planned).reduce((a, w) => a + w.cal, 0);
+    const aeProjected = aeDone + aePlanned;
+    const dashOpen = !!s.dashOpen;
+    const insightMap = {
+      all: { label: "Today's Fuel", text: "Bring carbs up through the day to top off glycogen for Saturday's long run, and keep protein steady at every meal." },
+      workout: { label: "Fueling Your Ride", text: "Top off carbs in the 2 hours before, aim for 30\u201360 g carbs per hour on the bike, and refuel within 30 minutes after." },
+      meals: { label: "Fueling Focus", text: "Spread carbs evenly and anchor each meal with protein. Keep it light before the afternoon ride, then refuel within the hour after." },
+    };
+    const ins = insightMap[s.filter] || insightMap.all;
+    const remCalNum = Math.max(0, TGT.calories - cal);
+    const remCNum = Math.max(0, TGT.carbs - cc);
+    const remPNum = Math.max(0, TGT.protein - pp);
+    const remFNum = Math.max(0, TGT.fat - ff);
+    const CARB_FORMULAS = {
+      Breakfast: [{ id: "fmB", name: "Bagel + Cream Cheese", kcal: 360, c: 27, p: 8, f: 12, disc: "\ud83e\udd6f" }],
+      Dinner: [{ id: "fmD", name: "Penne + Garlic Bread", kcal: 860, c: 116, p: 43, f: 20, disc: "\ud83c\udf5d" }],
+      "Evening Snack": [{ id: "fmE", name: "Rice Pudding + Choc Milk", kcal: 340, c: 56, p: 13, f: 9, disc: "\ud83c\udf6e" }],
+    };
+    const spLabel = carbDay ? s.slotPage : null;
+    let slotPageVals = { showSlotPage: false, spLabel: "", spEaten: "0", spTarget: "0", spLogged: [], spRecs: [], spHasLogged: false, spClose: () => {} };
+    const spSlot = spLabel ? CSLOTS.find((x) => x.label === spLabel) : null;
+    if (spSlot) {
+      const spLog = spSlot.sources.flatMap((k) => (log[k] || []).map((it) => ({ it, src: k })));
+      const spEatenN = Math.round(spLog.reduce((a, r) => a + r.it.c * (r.it.qty || 1), 0));
+      slotPageVals = {
+        showSlotPage: true,
+        spLabel: spLabel,
+        spEaten: String(spEatenN),
+        spTarget: String(Math.round(DAY_TARGET * spSlot.pct)),
+        spHasLogged: spLog.length > 0,
+        spClose: () => this.setState({ slotPage: null, slotRowSel: null }),
+        spLogged: spLog.map(({ it, src }) => {
+          const q = it.qty || 1;
+          const sel = s.slotRowSel === it.id;
+          const bump = (dq) => this.setState((st) => {
+            const K = ((st.carbDay ?? this.props.carbLoadingDay) ?? false) ? "carbLog" : "log";
+            return { [K]: { ...st[K], [src]: st[K][src].map((x) => x.id === it.id ? { ...x, qty: (x.qty || 1) + dq } : x) } };
+          });
+          return {
+            key: it.id, name: it.name, qtyStr: "\u00d7" + q,
+            cStr: Math.round(it.c * q) + " g",
+            sel: sel,
+            onSel: () => this.setState((st) => ({ slotRowSel: st.slotRowSel === it.id ? null : it.id })),
+            onMinus: (e) => { if (e && e.stopPropagation) e.stopPropagation(); if (q > 1) bump(-1); else this.removeItem(src, it.id); },
+            onPlus: (e) => { if (e && e.stopPropagation) e.stopPropagation(); bump(1); },
+            onRemove: (e) => { if (e && e.stopPropagation) e.stopPropagation(); this.removeItem(src, it.id); },
+          };
+        }),
+        spRecs: [
+          ...(CARB_SUGG[spLabel] || []).map((f) => ({ key: "r" + f.id, name: f.name, sub: f.c + " g carbs per serving", discBg: "var(--me-electrolyte)", gBread: f.glyph === "bread", gBowl: f.glyph === "bowl", gDrink: f.glyph === "drink", gEmoji: false, emoji: "", onAdd: () => this.acceptSugg(spLabel, f) })),
+          ...(CARB_FORMULAS[spLabel] || []).map((f) => ({ key: "r" + f.id, name: f.name, sub: f.c + " g carbs \u00b7 formula", discBg: "rgba(255,255,255,0.10)", gBread: false, gBowl: false, gDrink: false, gEmoji: true, emoji: f.disc, onAdd: () => this.acceptSugg(spLabel, f) })),
+        ],
+      };
+    }
+    const lbRows = CSLOTS.map((sl, i) => {
+      const eatenN = Math.round(sl.sources.reduce((a, k) => a + (log[k] || []).reduce((b, it) => b + it.c * (it.qty || 1), 0), 0));
+      const tgt = Math.round(DAY_TARGET * sl.pct);
+      const nextT = i + 1 < CSLOTS.length ? CSLOTS[i + 1].time : 1440;
+      const cur = isToday && nextT > NOW && sl.time <= NOW;
+      return { key: "lb" + i, label: sl.label, timeStr: sl.timeStr, eatenStr: String(eatenN), tgtStr: String(tgt),
+        pctStr: Math.min(100, Math.round((eatenN / tgt) * 100)) + "%",
+        bg: cur ? "rgba(247,139,20,0.08)" : "rgba(255,255,255,0.035)",
+        border: cur ? "rgba(247,139,20,0.5)" : "rgba(248,246,235,0.08)" };
+    });
+    const PROTO_TARGETS = [544, 544, 680];
+    const TODAY_KEYS = ["7am", "3pm", "7pm", "9pm", "10pm"];
+    const curDayKey = s.dayTime || DAY_INIT;
+    const lbGoDay = (k) => { if (k !== curDayKey) this.setState({ dayTime: k, carbLog: JSON.parse(JSON.stringify(DAY_SCENARIOS[k].log)), slotOpen: {}, dismissed: {}, expanded: null }); };
+    const lbDays = PROTO_TARGETS.map((t, i) => ({ key: "ld" + i, label: "Day " + (i + 1), tgt: String(t),
+      border: (i + 1) === CARB_DAY_N ? "rgba(247,139,20,0.6)" : "rgba(248,246,235,0.1)",
+      bg: (i + 1) === CARB_DAY_N ? "rgba(247,139,20,0.08)" : "rgba(255,255,255,0.03)",
+      onPick: () => lbGoDay(i === 0 ? "day1" : i === 2 ? "day3" : (TODAY_KEYS.includes(s.lbFrom) ? s.lbFrom : DAY_INIT)) }));
+    return {
+      macrosSub, nodes,
+      ...slotPageVals,
+      showLoadBreakdown: carbDay && !!s.loadBreakdown,
+      openLoadBreakdown: () => this.setState({ loadBreakdown: true, lbFrom: curDayKey }),
+      lbClose: () => { if (s.lbFrom && s.lbFrom !== curDayKey) lbGoDay(s.lbFrom); this.setState({ loadBreakdown: false }); },
+      lbTitle: "Carb Load \u00b7 Day " + CARB_DAY_N + " of " + CARB_LOAD_DAYS,
+      lbCarb: String(Math.round(cc)), lbPro: String(Math.round(pp)), lbFat: String(Math.round(ff)),
+      lbKcal: Math.round(cal).toLocaleString("en-US"),
+      lbRows, lbDays,
+      suggestOn: suggest,
+      showInsightBox: suggest && !s.insightDismissed,
+      dismissInsight: () => this.dismissInsight(),
+      toggleSuggest: () => this.toggleSuggest(),
+      askFollowUp: () => {},
+      suggestBtnBg: suggest ? "var(--me-orange)" : "rgba(247,139,20,0.15)",
+      suggestBtnBorder: suggest ? "var(--me-orange)" : "rgba(247,139,20,0.55)",
+      suggestBtnColor: suggest ? "var(--me-blackberry)" : "var(--me-orange)",
+      suggestTitle: suggest ? "Hide suggestions" : "Suggest meals for the rest of your day",
+      pillAllBg: pbg("all"), pillAllColor: pcol("all"),
+      pillWorkoutBg: pbg("workout"), pillWorkoutColor: pcol("workout"),
+      pillMealsBg: pbg("meals"), pillMealsColor: pcol("meals"),
+      pickAll: () => this.setState({ filter: "all" }),
+      pickWorkout: () => this.setState({ filter: "workout" }),
+      pickMeals: () => this.setState({ filter: "meals" }),
+      showAddFood: s.filter !== "workout",
+      showAddActivity: s.filter !== "meals",
+      openAddActivity: () => this.setState({ overlay: "add" }),
+      trackingOn, trackingOff: !trackingOn,
+      dashMinHeight: "0px",
+      dashOpen,
+      toggleDash: () => this.setState((st) => ({ dashOpen: !st.dashOpen })),
+      dashChevronRotate: dashOpen ? "180deg" : "0deg",
+      dashToggleLabel: dashOpen ? "Less" : "More",
+      dashToggleTitle: dashOpen ? "Collapse details" : "Expand details",
+      collapAll: trackingOn && !carbDay && !dashOpen && s.filter === "all",
+      collapWorkout: trackingOn && !dashOpen && s.filter === "workout",
+      collapMeals: trackingOn && !dashOpen && s.filter === "meals",
+      collapOff: false,
+      showDashToggle: trackingOn,
+      collapCarb: trackingOn && carbDay && !dashOpen && s.filter === "all",
+      showCarbDash: trackingOn && carbDay && dashOpen && s.filter === "all",
+      cardBg: carbDay ? "linear-gradient(158deg, rgba(247,139,20,0.17), rgba(247,139,20,0.055) 60%, rgba(255,255,255,0.05))" : "rgba(255,255,255,0.05)",
+      cardBorder: carbDay ? "rgba(247,139,20,0.55)" : "rgba(248,246,235,0.1)",
+      cardShadow: carbDay ? "0 0 0 1px rgba(247,139,20,0.10), 0 6px 26px -6px rgba(247,139,20,0.45)" : "none",
+      carbDashLabel: (carbComplete ? "Loaded" : "Carb Load") + " \u00b7 Day " + CARB_DAY_N + " of " + CARB_LOAD_DAYS,
+      carbEatenStr: cc + " g",
+      carbLoadTargetStr: String(TGT.carbs),
+      carbToGoStr: cc >= TGT.carbs ? "Target met" : (TGT.carbs - cc) + " g to go",
+      carbLoadPctStr: Math.min(100, Math.round((cc / TGT.carbs) * 100)) + "%",
+      carbPaceTargetStr: String(Math.round(carbPace)),
+      carbPacePctStr: Math.min(100, Math.round((carbPace / TGT.carbs) * 100)) + "%",
+      carbPaceStr: paceDiff > paceBand ? Math.round(paceDiff) + " g behind pace" : paceDiff < -paceBand ? Math.round(-paceDiff) + " g ahead of pace" : "on pace",
+      carbPaceMainStr: dayRel === "future" ? TGT.carbs + " g" : carbComplete ? "Loaded" : dayRel === "past" ? cc + " g" : paceDiff > paceBand ? Math.round(paceDiff) + " g" : paceDiff < -paceBand ? Math.round(-paceDiff) + " g" : "On pace",
+      carbPaceSubStr: dayRel === "future" ? "planned" : carbComplete ? cc + " of " + TGT.carbs + " g" : dayRel === "past" ? "of " + TGT.carbs + " g" : paceDiff > paceBand ? "behind pace" : paceDiff < -paceBand ? "ahead of pace" : cc + " of " + TGT.carbs + " g",
+      paceBigSize: (carbComplete || (isToday && Math.abs(paceDiff) <= paceBand)) ? "18px" : "21px",
+      showPaceTick: isToday && carbPace > 0 && !carbComplete,
+      loaderFillBg: carbComplete ? "linear-gradient(90deg, #F78B14 0%, #FFB25C 50%, #F78B14 100%)" : "linear-gradient(90deg, rgba(247,139,20,0.55) 0%, #F78B14 52%, #FFB25C 84%, #FFD9A4 100%)",
+      loaderFillShadow: cc <= 0 ? "none" : carbComplete ? "0 0 16px rgba(247,139,20,0.75), inset 0 1px 0 rgba(255,255,255,0.3)" : "0 0 12px rgba(247,139,20,0.55), inset 0 1px 0 rgba(255,255,255,0.28)",
+      carbDayOn: carbDay,
+      setRegularDay: () => this.setState({ carbDay: false }),
+      setCarbDay: () => this.setState({ carbDay: true }),
+      dayRegBg: carbDay ? "transparent" : "rgb(56,22,51)",
+      dayRegColor: carbDay ? "rgba(56,22,51,0.55)" : "rgb(248,246,235)",
+      dayCarbBg: carbDay ? "rgb(56,22,51)" : "transparent",
+      dayCarbColor: carbDay ? "rgb(248,246,235)" : "rgba(56,22,51,0.55)",
+      timePills: ["7am", "3pm", "7pm", "9pm", "10pm", "day1", "day3"].map((k) => ({
+        label: k === "7am" ? "7 AM" : k === "3pm" ? "3 PM" : k === "7pm" ? "7 PM" : k === "9pm" ? "9 PM" : k === "10pm" ? "10 PM" : k === "day1" ? "\u25c2 Day 1" : "Day 3 \u25b8",
+        bg: (s.dayTime || DAY_INIT) === k ? "rgb(56,22,51)" : "transparent",
+        col: (s.dayTime || DAY_INIT) === k ? "rgb(248,246,235)" : "rgba(56,22,51,0.55)",
+        onPick: () => this.setState({ dayTime: k, carbLog: JSON.parse(JSON.stringify(DAY_SCENARIOS[k].log)), slotOpen: {}, dismissed: {}, expanded: null }),
+      })),
+      insightLabel: ins.label,
+      insightText: ins.text,
+      showMacroDash: trackingOn && dashOpen && s.filter === "meals",
+      showBalanceDash: trackingOn && !carbDay && dashOpen && s.filter === "all",
+      showEnergyDash: trackingOn && dashOpen && s.filter === "workout",
+      showInsightAll: false,
+      showInsightWorkout: false,
+      showInsightMeals: false,
+      energyWorkouts,
+      burnedTotalStr: totalBurned.toLocaleString(),
+      workoutTotalStr: workoutBurn.toLocaleString(),
+      baseBurnStr: baseBurn.toLocaleString(),
+      netStr: (cal - totalBurned).toLocaleString(),
+      remainingStr: Math.max(0, TGT.calories - cal).toLocaleString(),
+      eatenPctStr: Math.min(100, Math.round((cal / TGT.calories) * 100)) + "%",
+      workoutCountStr: workouts.length === 1 ? "1 workout" : workouts.length + " workouts",
+      trackBg: trackingOn ? "var(--me-electrolyte)" : "rgba(248,246,235,0.16)",
+      trackKnobLeft: trackingOn ? "17px" : "2px",
+      trackKnobBg: trackingOn ? "var(--me-blackberry)" : "rgba(248,246,235,0.8)",
+      trackLabel: trackingOn ? "Tracking On" : "Tracking Off",
+      trackTitle: trackingOn ? "Turn tracking off" : "Turn tracking on",
+      trackBtnBg: trackingOn ? "rgba(220,37,151,0.16)" : "rgba(255,255,255,0.05)",
+      trackBtnBorder: trackingOn ? "rgba(220,37,151,0.6)" : "rgba(248,246,235,0.18)",
+      trackBtnColor: trackingOn ? "var(--me-dragonfruit)" : "rgba(248,246,235,0.55)",
+      chevronAlign: dashOpen ? "flex-start" : "center",
+      carbTargetStr: String(TGT.carbs), proteinTargetStr: String(TGT.protein),
+      fatTargetStr: String(TGT.fat),
+      eatenCalStr: cal.toLocaleString(), calTargetStr: TGT.calories.toLocaleString(),
+      timelineOpen: s.timelineOpen, timelineClosed: !s.timelineOpen,
+      timelineLabel: s.timelineOpen ? "Hide times" : "Show times",
+      timelineToggleBg: s.timelineOpen ? "rgba(28,249,207,0.12)" : "rgba(255,255,255,0.05)",
+      timelineToggleBorder: s.timelineOpen ? "rgba(28,249,207,0.55)" : "rgba(248,246,235,0.18)",
+      timelineToggleColor: s.timelineOpen ? "var(--me-electrolyte)" : "rgba(248,246,235,0.55)",
+      entryCountStr: String(fullTimeline.length),
+      showRide: s.overlay === "ride", showAdd: s.overlay === "add",
+      openRide: () => this.setState({ overlay: "ride" }),
+      openAdd, closeOverlay: () => this.setState({ overlay: null }),
+      onPickFood: (food) => this.addFood(food),
+      toggleTimeline: () => this.setState((st) => ({ timelineOpen: !st.timelineOpen })),
+      toggleTracking: () => this.setState((st) => ({ tracking: !((st.tracking ?? this.props.enableTracking) ?? true) })),
+      openEnergy: () => this.setState({ breakdownOpen: true, breakdownIndex: 2 }),
+      openActiveEnergy: () => this.setState({ breakdownOpen: true, breakdownIndex: 1 }),
+      openFullBreakdown: () => this.setState({ breakdownOpen: true, breakdownIndex: 0 }),
+      showBreakdown: !!s.breakdownOpen,
+      breakdownIndex: s.breakdownIndex ?? 0,
+      closeBreakdown: () => this.setState({ breakdownOpen: false }),
+      activeWorkouts,
+      activeDoneStr: aeDone.toLocaleString(),
+      activePlannedStr: aePlanned.toLocaleString(),
+      activeProjectedStr: aeProjected.toLocaleString(),
+      activeDonePct: (aeProjected ? aeDone / aeProjected * 100 : 0).toFixed(1) + "%",
+      activePlannedPct: (aeProjected ? aePlanned / aeProjected * 100 : 0).toFixed(1) + "%",
+      activeCountStr: aeData.length + " workouts",
+    };
+  }
+}
+</script>
+</body>
+</html>

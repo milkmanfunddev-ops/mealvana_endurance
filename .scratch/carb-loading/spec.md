@@ -509,6 +509,44 @@ migrate-by-date on re-pick; dragonfruit delete with Path-A-honest copy;
 reminder-to-start OUT and named in the exclusion list; "Manage plan ›" on the
 breakdown page flagged as touching a ruled read-only surface.
 
+### RULED — 2026-09-24, vector emission (Xuan via qa-6b) — Q-CL11 + entryway ratified; prototype v18
+
+**Q-CL11 (Option R):** ramp anchors = running sum of the ROUNDED slot targets.
+Companion rule NEW here: **the 22:00 anchor is FORCED to the stored day
+target** — when an edited target's rounded slots don't sum to it (450 → 452),
+the final 21:00–22:00 window interpolates from the 21:00 rounded-sum anchor to
+the day target and absorbs the drift. owed(t) stays fractional mid-window
+(vector `edited-target-final-window-clamp` pins owed(21:30)=439.5). qa commit
+e851b6d; 46 vectors landed EXPECTED-RED (engine=null until G2/G3 exists).
+
+**Prototype v18** (both files, server byte-equal, standalone sha
+`ebcb2f16a4b064bf`): v17 computed exact-fraction anchors then rounded owed(t)
+at every instant — coincidentally equal to Option R on 544/680 but divergent
+on edited targets (450 → 12:00 anchor 270 vs ruled 271) and non-conformant on
+fractional owed. v18 rounds each slot into the running sum, drops the owed(t)
+rounding (display still whole grams), and keeps the forced close anchor.
+Harness: all seven demo readouts unchanged; the 450 g oracle reproduces the
+vector exactly (anchors 0,113,158,271,339,429,450; owed(21:30)=439.5).
+
+**Entryway BEHAVIOR ratified** (qa commit 31d31a5,
+`spec/fueling/carb-loading-entryway.md` RATIFIED v1 behavior-only): CE-1/2/3/5
+as proposed verbatim; CE-4 stable day-row identity and CE-6 reminder-to-start
+OUT (now named in exclusions) confirmed; CE-7 "Manage plan ›" stays at the
+desk. **CE-8 NEW: the chooser is feasibility-gated** — a protocol is choosable
+iff daysUntilRace ≥ protocolDays; race day itself offers nothing and the entry
+row states the window has passed; infeasible cards render DISABLED WITH THE
+REASON ("Needs N days before race day"), never hidden; mid-plan re-pick to a
+shorter still-feasible protocol is allowed (CE-4 migrate/drop covers the
+fallout). Build gates G7–G11 stay @v1-staged — the prototype-extension ask is
+for DESK RATIFICATION, not implementation.
+
+**File pipeline established (Xuan's routing via qa):** each version's
+standalone body lands at `.scratch/carb-loading/prototype/fuel-timeline-standalone.html`
+(overwritten; commit history is the version trail; version + sha in the commit
+message) with `WALK-CHARTER.md` beside it. QA drives the HTML in Chrome and
+extracts to spec/design/ as PROPOSED; undocumented behavior is extraction's
+primary quarry.
+
 ## Notes on the two new ideas
 
 **Reminder to start.** Machinery exists — `NotificationService`
