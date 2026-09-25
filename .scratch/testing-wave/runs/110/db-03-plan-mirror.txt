@@ -1,0 +1,2 @@
+shopping
+[{"qty":"2","have":false,"name":"Avocado","aisle":"Produce","checked":false,"fromMealIds":["63cb42c0-6e07-44a6-af86-fd24df0ca25c"]},{"qty":"800 g","have":false,"name":"Mixed vegetables","aisle":"Produce","checked":true,"fromMealIds":["63cb42c0-6e07-44a6-af86-fd24df0ca25c"]},{"qty":"344 g","have":false,"name":"Wholewheat pasta","aisle":"Bakery & Grains","checked":true,"fromMealIds":["63cb42c0-6e07-44a6-af86-fd24df0ca25c"]}]
