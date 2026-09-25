@@ -1,6 +1,6 @@
 # 132: A Plan tab row opens its sheet, with Ate it
 
-**Status:** in-progress (wave 33, 2026-09-25)
+**Status:** done (wave 33, 2026-09-25)
 **Blocked by:** 130 (both change `plan_tab.dart`).
 **Next:** `/implement-lee testing-wave`
 **Model:** opus

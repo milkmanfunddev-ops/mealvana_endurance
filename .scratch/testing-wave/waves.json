@@ -674,6 +674,24 @@
     "base": "3cd3c477cbd97bbf8edfe10af6bd369afdf03348",
     "branch": "mealplanning",
     "startedAt": "2026-09-25T23:01:02.260Z",
+    "closedAt": "2026-09-25T23:34:21.534Z",
+    "merged": [
+      "129",
+      "132"
+    ],
+    "failed": [],
+    "suite": "green",
+    "elapsed": "33m"
+  },
+  {
+    "number": 34,
+    "tickets": [
+      "112",
+      "121"
+    ],
+    "base": "ec06df3e7f0fa16905b0c19d3ed24b81d35f4fe6",
+    "branch": "mealplanning",
+    "startedAt": "2026-09-25T23:17:01.607Z",
     "closedAt": null
   }
 ]

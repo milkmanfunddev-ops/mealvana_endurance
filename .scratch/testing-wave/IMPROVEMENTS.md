@@ -20,6 +20,15 @@ Each entry: what went wrong or cost time, where it was seen, and the suggested f
   account, whose password lives only in `secrets/integration_test.env`, which agents may not read.
   116 ran it on its own new account. Suggested fix: add the Patrol account to the credentials
   file so `CRED type` can reach it, or drop "Patrol account" from Findings' Steps when ticketing.
+- **#82 a new timeout made retried writes unsafe (wave 33).** Ticket 129 added a 20 s transport
+  timeout that reports "needs a connection". The edge function keeps running after the app hangs
+  up, so a slow `log_from_plan`, `pick_meals` or `save_meal` could land while the screen said it
+  failed, and a second tap wrote it twice. The agents' tests passed; the review caught it. The lead
+  fixed it (`7fb086ec`): a timed-out write now pulls the plan before rethrowing. That narrows the
+  race but does not close it; only an idempotency key on those actions does. Suggested fix: a
+  ticket that adds a timeout or a retry to a write names each write it covers and says whether
+  the server call is idempotent; a non-idempotent one gets a key or no timeout.
+
 ## Done
 
 - **#80 the Test Store lapse is not 25 minutes (wave 32).** 115's monthly account lapsed about
