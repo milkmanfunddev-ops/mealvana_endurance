@@ -758,6 +758,7 @@ class _BarcodeScannerScreenState extends ConsumerState<BarcodeScannerScreen>
               _flashOn
                   ? FontAwesomeIcons.bolt.data
                   : FontAwesomeIcons.bolt.data,
+              semanticLabel: 'Flash',
               color: _flashOn ? AppColors.orange : Colors.white,
               size: AppIconSizes.md,
             ),
@@ -891,14 +892,24 @@ class _BarcodeScannerScreenState extends ConsumerState<BarcodeScannerScreen>
           ),
           child: IconButton(
             key: buttonKey,
-            icon: Icon(icon, color: Colors.white, size: AppIconSizes.md),
+            // The caption names the button for a screen reader; the caption
+            // itself is excluded so it is not read twice (testing-wave
+            // 28-006: only the captions read, as text).
+            icon: Icon(
+              icon,
+              semanticLabel: label,
+              color: Colors.white,
+              size: AppIconSizes.md,
+            ),
             onPressed: onPressed,
           ),
         ),
         const SizedBox(height: AppSpacing.xs),
-        Text(
-          label,
-          style: AppTextStyles.smallLabel.copyWith(color: Colors.white),
+        ExcludeSemantics(
+          child: Text(
+            label,
+            style: AppTextStyles.smallLabel.copyWith(color: Colors.white),
+          ),
         ),
       ],
     );

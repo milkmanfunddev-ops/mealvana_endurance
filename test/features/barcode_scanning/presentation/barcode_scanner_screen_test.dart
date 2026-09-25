@@ -165,4 +165,26 @@ void main() {
       expect(find.byKey(const ValueKey('barcode.error')), findsOneWidget);
     },
   );
+
+  /// Testing-wave 28-006: flash, Reset and Switch were not exposed as
+  /// buttons; only the "Reset" and "Switch" captions read, as text.
+  testWidgets('flash, Reset and Switch are labelled buttons', (tester) async {
+    final handle = tester.ensureSemantics();
+    await pumpScanner(tester);
+    platform.finishStart();
+    await tester.pump();
+
+    for (final (key, label) in [
+      ('barcode.flash_button', 'Flash'),
+      ('barcode.reset_button', 'Reset'),
+      ('barcode.switch_button', 'Switch'),
+    ]) {
+      expect(
+        tester.getSemantics(find.byKey(ValueKey(key))),
+        isSemantics(label: label, isButton: true, hasTapAction: true),
+        reason: key,
+      );
+    }
+    handle.dispose();
+  });
 }

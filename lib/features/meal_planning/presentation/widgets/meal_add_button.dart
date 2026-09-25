@@ -9,6 +9,9 @@ import '../../../../theme/kyle_design/app_colors.dart';
 /// absorbs the tap: with no handler the touch fell through to the card
 /// body, which opened the detail, whose Add to plan added the meal again
 /// (testing-wave 18-001).
+///
+/// A screen reader reads [tooltip] as the button's name in both states, so
+/// a ticked Add stays an element named "Added" (testing-wave 18-005).
 class MealAddButton extends StatelessWidget {
   const MealAddButton({
     super.key,
@@ -28,25 +31,30 @@ class MealAddButton extends StatelessWidget {
     final isDark = Theme.of(context).brightness == Brightness.dark;
     final textColor = isDark ? AppColors.cream : AppColors.blackberry;
 
-    return Tooltip(
-      message: tooltip,
-      child: Material(
-        color: added ? AppColors.electrolyte : Colors.transparent,
-        shape: CircleBorder(
-          side: added
-              ? BorderSide.none
-              : BorderSide(color: textColor.withValues(alpha: 0.35)),
-        ),
-        child: InkWell(
-          onTap: onTap ?? () {},
-          customBorder: const CircleBorder(),
-          child: SizedBox(
-            width: size,
-            height: size,
-            child: Icon(
-              added ? Icons.check : Icons.add,
-              size: size * 0.6,
-              color: added ? AppColors.blackberry : textColor,
+    return Semantics(
+      button: true,
+      label: tooltip,
+      child: Tooltip(
+        message: tooltip,
+        excludeFromSemantics: true,
+        child: Material(
+          color: added ? AppColors.electrolyte : Colors.transparent,
+          shape: CircleBorder(
+            side: added
+                ? BorderSide.none
+                : BorderSide(color: textColor.withValues(alpha: 0.35)),
+          ),
+          child: InkWell(
+            onTap: onTap ?? () {},
+            customBorder: const CircleBorder(),
+            child: SizedBox(
+              width: size,
+              height: size,
+              child: Icon(
+                added ? Icons.check : Icons.add,
+                size: size * 0.6,
+                color: added ? AppColors.blackberry : textColor,
+              ),
             ),
           ),
         ),

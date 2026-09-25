@@ -13,7 +13,7 @@
 
 **Touches:** lib/shared/widgets/kyle_design/sheets/kyle_sheet_header.dart, lib/features/meal_planning/presentation/widgets/meal_add_button.dart, lib/features/meal_planning/presentation/screens/vana_browse_screen.dart, lib/features/meal_logging/presentation/screens/log_meal_screen.dart, lib/features/barcode_scanning/presentation/screens/barcode_scanner_screen.dart, lib/features/settings/presentation/screens/preferences_screen.dart
 
-- [ ] Semantics tests for each control.
+- [x] Semantics tests for each control.
 - [ ] `/design-sync` run for the kyle_design change.
 - [ ] codegen if annotations changed, `flutter analyze` and the suite green.
 

@@ -69,6 +69,7 @@ void main() {
     WidgetTester tester, {
     required _RecordingPlanController plan,
     MealPlan? inPlan,
+    MealCatalogState? catalogState,
   }) async {
     final router = GoRouter(
       initialLocation: '/vana/browse?c=conv-1',
@@ -92,7 +93,7 @@ void main() {
         overrides: [
           contentServiceProvider.overrideWith(testContentService),
           mealCatalogControllerProvider.overrideWith(
-            () => _FixedCatalogController(catalog),
+            () => _FixedCatalogController(catalogState ?? catalog),
           ),
           mealPlanControllerProvider.overrideWith(() => plan),
           conversationDraftProvider(
@@ -223,6 +224,48 @@ void main() {
       reason: 'the tap never reached the card body (no detail push)',
     );
     expect(find.text(content['meal_planning.browse_added']!), findsWidgets);
+  });
+
+  /// Testing-wave 18-005: the filter menu showed the active filters by
+  /// colour only; VoiceOver read all seven items as plain buttons.
+  testWidgets('the filter menu marks the active filters as selected', (
+    tester,
+  ) async {
+    final handle = tester.ensureSemantics();
+    await pumpScreen(
+      tester,
+      plan: _RecordingPlanController(),
+      catalogState: catalog.copyWith(
+        mealType: MealType.dinner,
+        kind: MealKind.recipe,
+      ),
+    );
+
+    await tester.tap(find.byKey(const ValueKey('meal_planning.filter_button')));
+    await tester.pumpAndSettle();
+
+    Finder item(String key) => find.descendant(
+      of: find.byType(PopupMenuItem<String>),
+      matching: find.text(content[key]!),
+    );
+
+    expect(
+      tester.getSemantics(item('meal_planning.meal_type_dinner')),
+      isSemantics(isButton: true, isSelected: true),
+    );
+    expect(
+      tester.getSemantics(item('meal_planning.filter_recipes')),
+      isSemantics(isButton: true, isSelected: true),
+    );
+    expect(
+      tester.getSemantics(item('meal_planning.meal_type_lunch')),
+      isSemantics(isButton: true, isSelected: false),
+    );
+    expect(
+      tester.getSemantics(item('meal_planning.filter_any_type')),
+      isSemantics(isButton: true, isSelected: false),
+    );
+    handle.dispose();
   });
 
   testWidgets('Done pops back to the chat', (tester) async {
