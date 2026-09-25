@@ -466,7 +466,7 @@ final class RecentMealsProvider
   }
 }
 
-String _$recentMealsHash() => r'cb78d4d94dbcfa3ed57d115c22e55020e8140cc4';
+String _$recentMealsHash() => r'192570df909ad4ac8470a1ff28a623762e2eab23';
 
 /// Streams all non-deleted saved meals for the current user, ordered by
 /// [SavedMeal.lastUsedAt] descending.

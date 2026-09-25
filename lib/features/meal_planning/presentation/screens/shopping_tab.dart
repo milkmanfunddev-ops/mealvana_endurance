@@ -344,8 +344,6 @@ extension on ShoppingListState {
   }
 }
 
-/// No list anywhere yet: the plan builds one on confirm, or start one by
-/// hand.
 /// The first read is on the wire. A spinner, no words: the tab must not
 /// read as empty until the server has answered.
 class _Loading extends StatelessWidget {
@@ -358,6 +356,8 @@ class _Loading extends StatelessWidget {
   );
 }
 
+/// No list anywhere yet: the plan builds one on confirm, or start one by
+/// hand.
 class _EmptyState extends ConsumerWidget {
   const _EmptyState({required this.onNewList});
 

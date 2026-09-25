@@ -203,7 +203,14 @@ Future<List<MealLog>> recentMeals(Ref ref) async {
   final userId = user?.id;
   if (userId == null) return const [];
 
-  await _ensureSynced(sync, logger, repo, userId);
+  // Bounded like the Plan tab's first read (MealPlanController.firstReadBound):
+  // a hanging connection answers from the local table instead of spinning.
+  await _ensureSynced(
+    sync,
+    logger,
+    repo,
+    userId,
+  ).timeout(const Duration(seconds: 15), onTimeout: () {});
   return repo.getRecentLogs(userId);
 }
 
