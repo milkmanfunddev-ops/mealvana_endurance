@@ -247,7 +247,9 @@ class _TabsScreenState extends ConsumerState<TabsScreen> {
       () => FoodScreen(initialTab: widget.initialFoodTab), // 1: Food
       if (showCoachTab)
         () => const SizedBox.shrink(), // coach portal is rendered above
-      () => const EventsListScreen(),
+      () => const EventsListScreen(
+        bottomInset: HomeShellChrome.bottomChromeClearancePx,
+      ),
       () => const EducationScreen(),
     ];
 
