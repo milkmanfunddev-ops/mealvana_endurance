@@ -10,6 +10,7 @@ import '../../../../theme/kyle_design/app_text_styles.dart';
 import '../../../../shared/widgets/kyle_design/navigation/kyle_tab_pill.dart';
 import '../../../../shared/widgets/lazy_indexed_stack.dart';
 import '../../application/meal_plan_controller.dart';
+import '../../application/youre_set_controller.dart';
 import '../../domain/vana_situation.dart';
 import '../widgets/vana_situation_scope.dart';
 import '../widgets/shopping_share_button.dart';
@@ -68,8 +69,24 @@ class _FoodScreenState extends ConsumerState<FoodScreen> {
     super.didUpdateWidget(oldWidget);
     if (widget.initialTab != oldWidget.initialTab ||
         widget.request != oldWidget.request) {
+      _leaving(widget.initialTab);
       _tab = widget.initialTab;
     }
+  }
+
+  void _select(FoodTab tab) {
+    if (!mounted) return;
+    _leaving(tab);
+    setState(() => _tab = tab);
+  }
+
+  /// The "you're set" card shows once, on the Shopping segment a confirm
+  /// landed on (mp-235): leaving that segment clears it. After the frame,
+  /// since a route can switch the segment mid-build.
+  void _leaving(FoodTab next) {
+    if (_tab != FoodTab.shopping || next == FoodTab.shopping) return;
+    final card = ref.read(youreSetControllerProvider.notifier);
+    WidgetsBinding.instance.addPostFrameCallback((_) => card.dismiss());
   }
 
   @override
@@ -133,10 +150,7 @@ class _FoodScreenState extends ConsumerState<FoodScreen> {
                   AppSpacing.md,
                   AppSpacing.sm,
                 ),
-                child: _TabSelector(
-                  selected: _tab,
-                  onChanged: (tab) => setState(() => _tab = tab),
-                ),
+                child: _TabSelector(selected: _tab, onChanged: _select),
               ),
               Expanded(
                 // A segment is built the first time it is selected and kept
@@ -149,12 +163,13 @@ class _FoodScreenState extends ConsumerState<FoodScreen> {
                     // "Add meal" switches segment here; it never pushes a
                     // second Food page over this one.
                     FoodTab.plan => PlanTab(
-                      onAddMeal: () => setState(() => _tab = FoodTab.meals),
-                      onShowShopping: () =>
-                          setState(() => _tab = FoodTab.shopping),
+                      onAddMeal: () => _select(FoodTab.meals),
+                      onShowShopping: () => _select(FoodTab.shopping),
                     ),
                     FoodTab.meals => const MealsTab(),
-                    FoodTab.shopping => const ShoppingTab(),
+                    FoodTab.shopping => ShoppingTab(
+                      onShowPlan: () => _select(FoodTab.plan),
+                    ),
                   },
                 ),
               ),

@@ -23,8 +23,6 @@ import 'kyle_design/navigation/kyle_tab_bar.dart';
 import 'lazy_indexed_stack.dart';
 import 'sync_status_indicator.dart';
 import '../providers/user_id_provider.dart';
-import '../services/preferences_service.dart';
-import '../../features/integrations/presentation/providers/integrations_providers.dart';
 import 'kyle_design/sheets/tp_writeback_consent_sheet.dart';
 
 /// The `/main` shell — home-shell@v1, SWITCHED OVER (Xuan, 2026-09-06).
@@ -311,6 +309,7 @@ class _TabsScreenState extends ConsumerState<TabsScreen> {
             onSelectTab: _onSelectTabId,
             showDateHeader: _currentIndex == 0,
             showTabBar: !useRail,
+            request: widget.request,
           ),
         ),
       ],

@@ -51,6 +51,12 @@ void main() {
           builder: (_, state) =>
               PreviousPlanScreen(planId: state.pathParameters['id']!),
         ),
+        // Where a confirm lands the athlete: Food > Shopping (mp-235).
+        GoRoute(
+          path: '/main',
+          builder: (_, state) =>
+              Scaffold(body: Text('main ${state.uri.query}')),
+        ),
         GoRoute(
           path: '/food/meals/:id',
           builder: (_, state) =>
@@ -217,7 +223,8 @@ void main() {
     await tester.pumpAndSettle();
     expect(recorder.confirmed, 1);
     expect(find.byType(PreviousPlanScreen), findsNothing);
-    expect(find.text('plan tab'), findsOneWidget);
+    // mp-235 (ticket 131): the confirm lands on Food > Shopping.
+    expect(find.text('main tab=food&food=shopping'), findsOneWidget);
   });
 
   testWidgets('a plan the server no longer has says so', (tester) async {

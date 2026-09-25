@@ -355,6 +355,16 @@ class ContentKeys {
       'meal_planning.confirmed_plan_row_sub';
   static const String mpConfirmedShoppingRowSub =
       'meal_planning.confirmed_shopping_row_sub';
+
+  /// The "you're set" card on Food > Shopping (mp-235, ticket 131): the
+  /// shopping row names the list the athlete is already on, then the chips
+  /// after a confirm and the card's close.
+  static const String mpConfirmedShoppingRow =
+      'meal_planning.confirmed_shopping_row';
+  static const String mpConfirmedLayAcross =
+      'meal_planning.confirmed_lay_across';
+  static const String mpConfirmedAdjust = 'meal_planning.confirmed_adjust';
+  static const String mpConfirmedDismiss = 'meal_planning.confirmed_dismiss';
   static const String mpPlanShare = 'meal_planning.plan_share';
   static const String mpPlanShareTitle = 'meal_planning.plan_share_title';
   static const String mpPlanShareMealLine =

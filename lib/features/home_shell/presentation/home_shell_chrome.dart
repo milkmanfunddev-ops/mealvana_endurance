@@ -51,6 +51,7 @@ class HomeShellChrome extends ConsumerStatefulWidget {
     this.showDateHeader = true,
     this.showTabBar = true,
     this.now,
+    this.request,
   });
 
   /// The active tab's content (the tab stack); scroll notifications
@@ -69,6 +70,13 @@ class HomeShellChrome extends ConsumerStatefulWidget {
 
   /// Injectable wall clock for tests; defaults to [DateTime.now].
   final DateTime? now;
+
+  /// Changes on every navigation that names a tab (`/main?tab=…`, the
+  /// `extra` of `goToFoodTab`). A new one brings the bar back expanded: an
+  /// athlete sent to a tab (a confirm landing on Food > Shopping, mp-235)
+  /// sees the whole bar, not the bubble a scroll elsewhere left
+  /// (Finding 88-016).
+  final Object? request;
 
   // ---- pinned scroll thresholds (home-shell.gestures.yaml tb1/tb2) ----
   static const double tabBarCollapseThresholdPx = 88.0;
@@ -101,6 +109,12 @@ class HomeShellChrome extends ConsumerStatefulWidget {
 
 class _HomeShellChromeState extends ConsumerState<HomeShellChrome> {
   bool _tabBarCollapsed = false;
+
+  @override
+  void didUpdateWidget(HomeShellChrome oldWidget) {
+    super.didUpdateWidget(oldWidget);
+    if (widget.request != oldWidget.request) _tabBarCollapsed = false;
+  }
 
   bool _onScroll(ScrollNotification notification) {
     if (notification.metrics.axis != Axis.vertical) return false;

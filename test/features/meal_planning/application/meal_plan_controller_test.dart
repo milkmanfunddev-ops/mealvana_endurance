@@ -9,6 +9,7 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:mealvana_endurance/features/meal_planning/application/home_service.dart';
 import 'package:mealvana_endurance/features/meal_planning/application/meal_plan_controller.dart';
+import 'package:mealvana_endurance/features/meal_planning/application/youre_set_controller.dart';
 import 'package:mealvana_endurance/features/meal_planning/data/meal_plan_repository.dart';
 import 'package:mealvana_endurance/features/meal_planning/data/user_memory_repository.dart';
 import 'package:mealvana_endurance/features/meal_planning/domain/vana_setting.dart';
@@ -816,6 +817,173 @@ void main() {
       final undo = actions.calls.whereType<UndoReceiptAction>().single;
       expect(undo.toPayloadJson(), receiptJson['undo']['params']);
     });
+  });
+
+  /// Ticket 131 (Finding 88-016, mp-235): a confirm owes the "you're set"
+  /// card on Food > Shopping. The card reads [youreSetControllerProvider];
+  /// the confirm writes it through the real notifier from the producer's
+  /// own `confirm_plan` answer (fixture), never from a plan built here.
+  group("you're set card (mp-235)", () {
+    VanaActionResult confirmAnswer(UiAction action) {
+      if (action is GetPlanAction) {
+        return const VanaActionResult(parts: [], extras: {});
+      }
+      if (action is PlanWeekAction) {
+        return VanaActionResult.fromJson({
+          'parts': [loadFixture('week')],
+        });
+      }
+      return VanaActionResult.fromJson(loadFixture('confirm_plan'));
+    }
+
+    YoureSet? card() => container.read(youreSetControllerProvider).value;
+
+    test(
+      'a confirm the server acknowledged owes the card for its plan',
+      () async {
+        actions = _FakeActionClient(confirmAnswer);
+        final c = controller();
+        await c.future;
+        expect(card(), isNull);
+
+        final confirmed = await c.confirmPlan(planId: 'plan-1');
+
+        expect(confirmed!.id, '588c137e-826c-46d4-8a73-f57b1a3d4143');
+        expect(card()!.planId, confirmed.id);
+        expect(card()!.week, isNull);
+      },
+    );
+
+    test('a refused confirm owes no card', () async {
+      actions = _FakeActionClient(
+        (_) => throw const VanaServerException(500, '{}'),
+      );
+      final c = controller();
+      await c.future;
+
+      await expectLater(c.confirmPlan(), throwsA(isA<VanaServerException>()));
+      expect(card(), isNull);
+    });
+
+    test('offline, a confirm sends nothing and owes no card', () async {
+      connectivity.online = false;
+      final c = controller();
+      await c.future;
+
+      await expectLater(
+        c.confirmPlan(),
+        throwsA(isA<NeedsConnectionException>()),
+      );
+      expect(card(), isNull);
+    });
+
+    test('dismissed, the card stays gone', () async {
+      actions = _FakeActionClient(confirmAnswer);
+      final c = controller();
+      await c.future;
+      await c.confirmPlan(planId: 'plan-1');
+
+      container.read(youreSetControllerProvider.notifier).dismiss();
+
+      expect(card(), isNull);
+    });
+
+    test('Lay it across the week sends plan_week and keeps the days', () async {
+      actions = _FakeActionClient(confirmAnswer);
+      final c = controller();
+      await c.future;
+      await c.confirmPlan(planId: 'plan-1');
+
+      final week = await container
+          .read(youreSetControllerProvider.notifier)
+          .layAcrossWeek();
+
+      final sent = actions.calls.whereType<PlanWeekAction>().single;
+      expect(sent.toJson(), {
+        'type': 'plan_week',
+        'payload': <String, Object?>{},
+      });
+      expect(week!.days, hasLength(2));
+      expect(card()!.week!.days.map((d) => d.date), [
+        '2026-09-07',
+        '2026-09-08',
+      ]);
+      expect(card()!.planId, '588c137e-826c-46d4-8a73-f57b1a3d4143');
+    });
+
+    test('a second tap while one is on the wire joins it', () async {
+      final gate = Completer<void>();
+      final gatedActions = _GatedActionClient((action) async {
+        if (action is PlanWeekAction) await gate.future;
+        return confirmAnswer(action);
+      });
+      container = testContainer([
+        ...baseOverrides(connectivity: connectivity, sync: sync),
+        appDatabaseProvider.overrideWithValue(db),
+        mealPlanRepositoryProvider.overrideWithValue(repo),
+        vanaActionClientProvider.overrideWithValue(gatedActions),
+        homeControllerProvider.overrideWith(() => home),
+      ]);
+      container.listen(mealPlanControllerProvider, (_, __) {});
+      final c = container.read(mealPlanControllerProvider.notifier);
+      await c.future;
+      await c.confirmPlan(planId: 'plan-1');
+
+      final notifier = container.read(youreSetControllerProvider.notifier);
+      final first = notifier.layAcrossWeek();
+      final second = notifier.layAcrossWeek();
+      gate.complete();
+      await Future.wait([first, second]);
+
+      expect(gatedActions.calls.whereType<PlanWeekAction>(), hasLength(1));
+      expect(card()!.week, isNotNull);
+    });
+
+    test('offline, Lay it across rethrows and the card stays', () async {
+      actions = _FakeActionClient(confirmAnswer);
+      final c = controller();
+      await c.future;
+      await c.confirmPlan(planId: 'plan-1');
+      connectivity.online = false;
+
+      await expectLater(
+        container.read(youreSetControllerProvider.notifier).layAcrossWeek(),
+        throwsA(isA<NeedsConnectionException>()),
+      );
+      expect(actions.calls.whereType<PlanWeekAction>(), isEmpty);
+      expect(card()!.planId, '588c137e-826c-46d4-8a73-f57b1a3d4143');
+      expect(card()!.week, isNull);
+    });
+
+    test(
+      'an answer that lands after the card was dismissed is dropped',
+      () async {
+        final gate = Completer<void>();
+        final gatedActions = _GatedActionClient((action) async {
+          if (action is PlanWeekAction) await gate.future;
+          return confirmAnswer(action);
+        });
+        container = testContainer([
+          ...baseOverrides(connectivity: connectivity, sync: sync),
+          appDatabaseProvider.overrideWithValue(db),
+          mealPlanRepositoryProvider.overrideWithValue(repo),
+          vanaActionClientProvider.overrideWithValue(gatedActions),
+          homeControllerProvider.overrideWith(() => home),
+        ]);
+        container.listen(mealPlanControllerProvider, (_, __) {});
+        final c = container.read(mealPlanControllerProvider.notifier);
+        await c.future;
+        await c.confirmPlan(planId: 'plan-1');
+
+        final notifier = container.read(youreSetControllerProvider.notifier);
+        final laying = notifier.layAcrossWeek();
+        notifier.dismiss();
+        gate.complete();
+        await laying;
+
+        expect(card(), isNull);
+      },
+    );
   });
 
   /// Ticket 132 (Finding 88-017, mp-239 detail 4): "Ate it" waits for the

@@ -15,9 +15,9 @@ Lee's ruling (2026-09-25): **both confirms land on Food > Shopping with the tab 
 
 **Touches:** lib/features/meal_planning/presentation/widgets/confirmed_card.dart, lib/features/meal_planning/presentation/screens/shopping_tab.dart, lib/features/meal_planning/presentation/screens/vana_chat_screen.dart, lib/features/meal_planning/presentation/widgets/review_sheet.dart, lib/features/meal_planning/presentation/screens/plan_tab.dart, lib/features/meal_planning/presentation/screens/previous_plan_screen.dart (its Confirm, if it lands the same way), lib/features/meal_planning/application/meal_plan_controller.dart, lib/features/meal_planning/application/plan_reminder_service.dart, lib/features/meal_planning/application/plan_share_service.dart, lib/features/meal_planning/presentation/widgets/vana_part_renderer.dart, lib/features/meal_planning/presentation/screens/food_screen.dart (`goToFoodTab`; callers vana_chat_screen.dart:465, :467, :1111 and plan_tab.dart:130, :170), lib/features/content/domain/content_keys.dart, assets/config/content_defaults.json
 
-- [ ] Widget tests: after a confirm from the Review sheet and from the Plan tab, Food > Shopping shows the card at the top with Share, the reminder chip, Lay it across the week and Adjust; dismissing it keeps it gone.
-- [ ] Seam test through the real notifier for the "just confirmed" state the card reads.
-- [ ] The tab bar is present and expanded on landing.
-- [ ] No hardcoded strings; `flutter analyze` clean on touched files.
+- [x] Widget tests: after a confirm from the Review sheet and from the Plan tab, Food > Shopping shows the card at the top with Share, the reminder chip, Lay it across the week and Adjust; dismissing it keeps it gone.
+- [x] Seam test through the real notifier for the "just confirmed" state the card reads.
+- [x] The tab bar is present and expanded on landing.
+- [x] No hardcoded strings; `flutter analyze` clean on touched files.
 
 Next: /implement-lee testing-wave

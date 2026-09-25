@@ -20,6 +20,7 @@ import '../widgets/plan_tile.dart';
 import '../widgets/stepper.dart';
 import '../widgets/vana_round_button.dart';
 import '../../../../shared/core/pop_or_home.dart';
+import 'food_screen.dart';
 
 /// An earlier plan (`/food/plans/:id`): its name, if the athlete gave it
 /// one, over the week and meal count, then the same rows the Plan tab draws.
@@ -425,8 +426,8 @@ class _PlanRows extends ConsumerWidget {
 }
 
 /// Confirm on a draft opened here: it becomes this week's plan, replacing
-/// the one there the same way any new plan does (mp-675), and the view
-/// closes back to the Plan tab.
+/// the one there the same way any new plan does (mp-675), and the athlete
+/// lands on Food > Shopping with the "you're set" card (mp-235).
 class _ConfirmDraftButton extends ConsumerStatefulWidget {
   const _ConfirmDraftButton({required this.planId});
 
@@ -449,18 +450,19 @@ class _ConfirmDraftButtonState extends ConsumerState<_ConfirmDraftButton> {
       height: 48,
       isLoading: _busy,
       onPressed: () async {
+        // Taken before the await: the confirmed plan drops this button, so
+        // its context may be gone by the time the server answers.
+        final router = GoRouter.of(context);
         setState(() => _busy = true);
         final done = await _run(context, ref, () async {
           await ref.read(earlierPlanProvider(widget.planId).notifier).confirm();
           return true;
         });
         if (mounted) setState(() => _busy = false);
-        if (done != true || !context.mounted) return;
-        MealvanaSnackbar.showSuccess(
-          context,
-          content.getValue(ContentKeys.mpConfirmedToast),
-        );
-        context.pop();
+        if (done != true) return;
+        // mp-235: every confirm lands on Food > Shopping, where the "you're
+        // set" card is the confirmation (ticket 131).
+        router.go(foodTabLocation(FoodTab.shopping), extra: foodTabRequest());
       },
     );
   }

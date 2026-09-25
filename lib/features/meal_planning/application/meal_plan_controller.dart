@@ -22,6 +22,7 @@ import '../domain/vana_part.dart';
 import '../domain/week_start.dart';
 import 'home_service.dart';
 import 'plan_reminder_service.dart';
+import 'youre_set_controller.dart';
 
 part 'meal_plan_controller.g.dart';
 
@@ -81,9 +82,10 @@ Stream<MealPlan?> conversationDraft(Ref ref, String conversationId) async* {
 ///   [setSession], [addComment], [toggleShopping], [setDaySlot],
 ///   [clearDaySlot] write Drift and schedule a best-effort upload.
 /// - **Remote-ack** edits: [pickMeals], [swapMeal], [confirmPlan],
-///   [newPlan], [logFromPlan], [planDay], [usePlanAgain] call `vana-action`, fold the
-///   returned `batch` into Drift with [applyServerPlan], and throw
-///   [NeedsConnectionException] when offline before sending anything.
+///   [newPlan], [logFromPlan], [planDay], [planWeek], [usePlanAgain] call
+///   `vana-action`, fold the returned `batch` into Drift with
+///   [applyServerPlan], and throw [NeedsConnectionException] when offline
+///   before sending anything.
 ///
 /// Session-scoped (`keepAlive`) so the chat can fold `batch` parts into it
 /// even while no screen is watching.
@@ -386,10 +388,15 @@ class MealPlanController extends _$MealPlanController {
       ),
       (r) => r.plan,
     );
-    // Phase 3.5: with the device toggle on, a confirmed plan gets its
-    // check-in + debrief local notifications. Fire-and-forget — a
-    // scheduling failure never fails the confirm.
-    if (plan != null) unawaited(_scheduleReminders(plan));
+    if (plan != null) {
+      // mp-235: every confirm lands on Food > Shopping, and the "you're
+      // set" card waits there for this plan.
+      ref.read(youreSetControllerProvider.notifier).confirmed(plan.id);
+      // Phase 3.5: with the device toggle on, a confirmed plan gets its
+      // check-in + debrief local notifications. Fire-and-forget — a
+      // scheduling failure never fails the confirm.
+      unawaited(_scheduleReminders(plan));
+    }
     return plan;
   }
 
@@ -525,6 +532,20 @@ class MealPlanController extends _$MealPlanController {
     final part = await _remoteAck(
       PlanDayAction(date: date),
       (r) => r.parts.whereType<VanaDayPart>().firstOrNull,
+    );
+    final userId = _userId;
+    if (userId != null) await _refreshFromServer(userId);
+    return part;
+  }
+
+  /// "Lay it across the week" (`plan_week`, mp-235 detail 3): the server
+  /// lays the confirmed collection over the period's days and answers the
+  /// `week` part. The plan's `days` are re-read afterwards so the local copy
+  /// matches, as after [planDay].
+  Future<VanaWeekPart?> planWeek() async {
+    final part = await _remoteAck(
+      const PlanWeekAction(),
+      (r) => r.parts.whereType<VanaWeekPart>().firstOrNull,
     );
     final userId = _userId;
     if (userId != null) await _refreshFromServer(userId);

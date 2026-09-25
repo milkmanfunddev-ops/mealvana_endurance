@@ -194,9 +194,10 @@ final class ConversationDraftFamily extends $Family
 ///   [setSession], [addComment], [toggleShopping], [setDaySlot],
 ///   [clearDaySlot] write Drift and schedule a best-effort upload.
 /// - **Remote-ack** edits: [pickMeals], [swapMeal], [confirmPlan],
-///   [newPlan], [logFromPlan], [planDay], [usePlanAgain] call `vana-action`, fold the
-///   returned `batch` into Drift with [applyServerPlan], and throw
-///   [NeedsConnectionException] when offline before sending anything.
+///   [newPlan], [logFromPlan], [planDay], [planWeek], [usePlanAgain] call
+///   `vana-action`, fold the returned `batch` into Drift with
+///   [applyServerPlan], and throw [NeedsConnectionException] when offline
+///   before sending anything.
 ///
 /// Session-scoped (`keepAlive`) so the chat can fold `batch` parts into it
 /// even while no screen is watching.
@@ -217,9 +218,10 @@ const mealPlanControllerProvider = MealPlanControllerProvider._();
 ///   [setSession], [addComment], [toggleShopping], [setDaySlot],
 ///   [clearDaySlot] write Drift and schedule a best-effort upload.
 /// - **Remote-ack** edits: [pickMeals], [swapMeal], [confirmPlan],
-///   [newPlan], [logFromPlan], [planDay], [usePlanAgain] call `vana-action`, fold the
-///   returned `batch` into Drift with [applyServerPlan], and throw
-///   [NeedsConnectionException] when offline before sending anything.
+///   [newPlan], [logFromPlan], [planDay], [planWeek], [usePlanAgain] call
+///   `vana-action`, fold the returned `batch` into Drift with
+///   [applyServerPlan], and throw [NeedsConnectionException] when offline
+///   before sending anything.
 ///
 /// Session-scoped (`keepAlive`) so the chat can fold `batch` parts into it
 /// even while no screen is watching.
@@ -238,9 +240,10 @@ final class MealPlanControllerProvider
   ///   [setSession], [addComment], [toggleShopping], [setDaySlot],
   ///   [clearDaySlot] write Drift and schedule a best-effort upload.
   /// - **Remote-ack** edits: [pickMeals], [swapMeal], [confirmPlan],
-  ///   [newPlan], [logFromPlan], [planDay], [usePlanAgain] call `vana-action`, fold the
-  ///   returned `batch` into Drift with [applyServerPlan], and throw
-  ///   [NeedsConnectionException] when offline before sending anything.
+  ///   [newPlan], [logFromPlan], [planDay], [planWeek], [usePlanAgain] call
+  ///   `vana-action`, fold the returned `batch` into Drift with
+  ///   [applyServerPlan], and throw [NeedsConnectionException] when offline
+  ///   before sending anything.
   ///
   /// Session-scoped (`keepAlive`) so the chat can fold `batch` parts into it
   /// even while no screen is watching.
@@ -264,7 +267,7 @@ final class MealPlanControllerProvider
 }
 
 String _$mealPlanControllerHash() =>
-    r'07f47ee06e9ca20c600ca08795d4b39c2a80ca79';
+    r'aaa5dac1f6b0e78a0e1070945e64b011817ab53e';
 
 /// The active plan for the current week — what the Plan tab, the Shopping
 /// tab, the chat's plan bar and the day planner all read.
@@ -279,9 +282,10 @@ String _$mealPlanControllerHash() =>
 ///   [setSession], [addComment], [toggleShopping], [setDaySlot],
 ///   [clearDaySlot] write Drift and schedule a best-effort upload.
 /// - **Remote-ack** edits: [pickMeals], [swapMeal], [confirmPlan],
-///   [newPlan], [logFromPlan], [planDay], [usePlanAgain] call `vana-action`, fold the
-///   returned `batch` into Drift with [applyServerPlan], and throw
-///   [NeedsConnectionException] when offline before sending anything.
+///   [newPlan], [logFromPlan], [planDay], [planWeek], [usePlanAgain] call
+///   `vana-action`, fold the returned `batch` into Drift with
+///   [applyServerPlan], and throw [NeedsConnectionException] when offline
+///   before sending anything.
 ///
 /// Session-scoped (`keepAlive`) so the chat can fold `batch` parts into it
 /// even while no screen is watching.
