@@ -348,3 +348,31 @@ describe('createCustomer', () => {
     assertEquals(calls[0].body, { id: USER });
   });
 });
+
+describe('deleteCustomer', () => {
+  it('deletes the customer by id with the secret key (02-005, ticket 95)', async () => {
+    const { fetch, calls } = fakeFetch({
+      [`DELETE /v2/projects/${PROJECT}/customers/${USER}`]: { body: { object: 'customer', id: USER, deleted_at: T0 } },
+    });
+    const rc = makeRevenueCatClient({ secretKey: KEY, projectId: PROJECT, fetch });
+    await rc.deleteCustomer(USER);
+    assertEquals(calls.length, 1);
+    assertEquals(calls[0].method, 'DELETE');
+    assertEquals(calls[0].auth, `Bearer ${KEY}`);
+  });
+
+  it('a customer RevenueCat never saw (404) is already gone, not an error', async () => {
+    const { fetch } = fakeFetch({});
+    const rc = makeRevenueCatClient({ secretKey: KEY, projectId: PROJECT, fetch });
+    await rc.deleteCustomer(USER);
+  });
+
+  it('any other failure throws with the status', async () => {
+    const { fetch } = fakeFetch({
+      [`DELETE /v2/projects/${PROJECT}/customers/${USER}`]: { status: 503, body: { message: 'down' } },
+    });
+    const rc = makeRevenueCatClient({ secretKey: KEY, projectId: PROJECT, fetch });
+    const e = await assertRejects(() => rc.deleteCustomer(USER), RevenueCatError);
+    assertEquals(e.status, 503);
+  });
+});

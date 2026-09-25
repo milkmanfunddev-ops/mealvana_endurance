@@ -31,8 +31,10 @@
  *   200 { ok: true, kind: 'paired', coach_user_id } | { ok: true, kind: 'attributed' }
  *   200 { ok: false, reason, message }   a refusal: the code is wrong, not open
  *                                        yet, expired, used, already redeemed
- *                                        by this caller, or the caller's own
- *                                        influencer code
+ *                                        by this caller, the caller's own
+ *                                        influencer code, or a coach code
+ *                                        from a coach the caller has already
+ *                                        asked or is paired with (already_paired)
  *   400 invalid_input (no code) · 400 code_too_long (over MAX_CODE_LENGTH once
  *   spaces are stripped; 11-003) · 401 unauthenticated · 403 sign_in_required
  *   (anonymous) · 405 method_not_allowed · 500 server_error · 502 store_unavailable
@@ -82,6 +84,7 @@ export const REFUSALS = {
   used: 'That code has already been used.',
   already_redeemed: "You've already used that code.",
   own_code: "That's your own code. Share it with your athletes.",
+  already_paired: "You've already asked this coach to pair.",
 } as const;
 export type Refusal = keyof typeof REFUSALS;
 
@@ -161,6 +164,15 @@ export function makeRedeemHandler(deps: RedeemDeps) {
 
     const isOwner = row.owner_user_id === caller.userId;
     if (row.type === 'influencer' && isOwner) return refuse('own_code');
+
+    // A coach the caller has already asked, or is paired with: a second code
+    // of theirs would spend a claim and overwrite `coach_code` for nothing
+    // (11-002, ticket 95). The same code again keeps its own answer.
+    if (row.type === 'coach' && !isOwner && row.owner_user_id) {
+      const paired = await alreadyPaired(db, row, caller.userId);
+      if (paired === 'error') return json({ error: 'server_error' }, 500);
+      if (paired) return refuse(paired);
+    }
 
     const { data: claim, error: claimError } = await db.rpc('code_claim', {
       p_code_id: row.id,
@@ -346,6 +358,43 @@ async function openPendingPairing(db: Db, coachUserId: string, athleteUserId: st
     updated_at: stamp,
   });
   if (error) throw new AfterClaimError(500, 'server_error', `relationship insert failed: ${error.message}`);
+}
+
+/**
+ * Whether the caller already has a pending or active pairing with the code's
+ * coach: 'already_redeemed' when it was this very code, 'already_paired' for
+ * another code of the same coach or a pairing made some other way, null when
+ * there is none. Only reads; nothing is claimed or written.
+ */
+async function alreadyPaired(
+  db: Db,
+  row: CodeRow,
+  athleteUserId: string,
+): Promise<'already_paired' | 'already_redeemed' | 'error' | null> {
+  const { data: rel, error } = await db
+    .from('coach_athlete_relationships')
+    .select('status')
+    .eq('coach_user_id', row.owner_user_id!)
+    .eq('athlete_user_id', athleteUserId)
+    .maybeSingle();
+  if (error) {
+    console.error('[redeem-code] relationship read failed:', error.message);
+    return 'error';
+  }
+  const status = (rel as { status: string } | null)?.status;
+  if (status !== 'pending' && status !== 'active') return null;
+
+  const { data: mine, error: mineError } = await db
+    .from('code_redemptions')
+    .select('id')
+    .eq('code_id', row.id)
+    .eq('user_id', athleteUserId)
+    .maybeSingle();
+  if (mineError) {
+    console.error('[redeem-code] code_redemptions read failed:', mineError.message);
+    return 'error';
+  }
+  return mine ? 'already_redeemed' : 'already_paired';
 }
 
 /** Give a claim back after a failed step, so the code is not spent on nothing. */

@@ -83,6 +83,9 @@ String? redeemProblem(
     CodeRefusal.ownCode => content.getValue(
       ContentKeys.redeemCodeRefusedOwnCode,
     ),
+    CodeRefusal.alreadyPaired => content.getValue(
+      ContentKeys.redeemCodeRefusedAlreadyPaired,
+    ),
     CodeRefusal.tooLong => content.getValue(
       ContentKeys.redeemCodeRefusedTooLong,
     ),

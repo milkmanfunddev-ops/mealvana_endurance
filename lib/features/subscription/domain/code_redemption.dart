@@ -86,6 +86,10 @@ enum CodeRefusal {
   alreadyRedeemed,
   ownCode,
 
+  /// A coach Code from a coach the athlete has already asked to pair with
+  /// (pending or active); no claim is spent (11-002, ticket 95).
+  alreadyPaired,
+
   /// Longer than any Code can be (the function's 400 `code_too_long`); the
   /// entry caps the field, so only a pasted Code with spaces can reach it.
   tooLong,
@@ -100,6 +104,7 @@ enum CodeRefusal {
     'used' => used,
     'already_redeemed' => alreadyRedeemed,
     'own_code' => ownCode,
+    'already_paired' => alreadyPaired,
     'too_long' => tooLong,
     _ => other,
   };

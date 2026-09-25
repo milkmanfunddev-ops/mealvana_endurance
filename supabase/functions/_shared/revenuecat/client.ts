@@ -9,6 +9,7 @@
  *   getAttributes     the customer's attributes, or null for an unknown customer
  *   promotionalProEnd the end of the customer's live promotional `pro` grant
  *   createCustomer    make a customer RevenueCat has never seen (a grant needs one)
+ *   deleteCustomer    delete a customer and its data (account deletion; 02-005)
  *
  * The v2 API names entitlements by an opaque id; the app knows `pro` by its
  * lookup key, so the client resolves the id once per instance.
@@ -48,6 +49,8 @@ export interface RevenueCatClient {
   promotionalProEnd(appUserId: string): Promise<string | null>;
   /** Create a customer by id (RevenueCat refuses a grant to an unknown one). */
   createCustomer(appUserId: string): Promise<void>;
+  /** Delete a customer; one RevenueCat has never seen (404) is already gone. */
+  deleteCustomer(appUserId: string): Promise<void>;
 }
 
 export interface RevenueCatConfig {
@@ -91,7 +94,7 @@ export function makeRevenueCatClient(config: RevenueCatConfig): RevenueCatClient
   const customerPath = (appUserId: string) => `${base}/customers/${encodeURIComponent(appUserId)}`;
 
   /** A JSON call; a 404 comes back as null, any other non-2xx throws. */
-  async function call<T>(method: 'GET' | 'POST', url: string, body?: unknown): Promise<T | null> {
+  async function call<T>(method: 'GET' | 'POST' | 'DELETE', url: string, body?: unknown): Promise<T | null> {
     const res = await doFetch(url, {
       method,
       headers: {
@@ -181,6 +184,10 @@ export function makeRevenueCatClient(config: RevenueCatConfig): RevenueCatClient
 
     async createCustomer(appUserId) {
       await call('POST', `${base}/customers`, { id: appUserId });
+    },
+
+    async deleteCustomer(appUserId) {
+      await call('DELETE', customerPath(appUserId));
     },
   };
 }

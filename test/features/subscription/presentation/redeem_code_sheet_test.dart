@@ -76,4 +76,27 @@ void main() {
     );
     expect(find.byType(RedeemCodeSheet), findsOneWidget);
   });
+
+  testWidgets('a Code from a coach already asked to pair is said so, in the '
+      'app\'s words (11-002, ticket 95)', (tester) async {
+    final entry = RecordingCodeEntry(
+      const CodeRefused(reason: CodeRefusal.alreadyPaired),
+    );
+    await _pump(tester, entry);
+
+    await tester.enterText(find.byKey(RedeemCodeSheet.fieldKey), 'KYLE18');
+    await tester.pump();
+    await tester.tap(find.byKey(RedeemCodeSheet.submitKey));
+    await tester.pump();
+
+    expect(
+      tester.widget<Text>(find.byKey(RedeemCodeSheet.problemKey)).data,
+      "You've already asked this coach to pair.",
+    );
+    expect(
+      _content['redeem_code.refused_already_paired'],
+      "You've already asked this coach to pair.",
+    );
+    expect(find.byType(RedeemCodeSheet), findsOneWidget);
+  });
 }
