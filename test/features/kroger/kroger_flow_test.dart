@@ -22,6 +22,7 @@ import 'package:mealvana_endurance/features/meal_planning/application/shopping_l
 import 'package:mealvana_endurance/features/meal_planning/domain/shopping_item.dart';
 import 'package:mealvana_endurance/features/meal_planning/presentation/screens/shopping_tab.dart';
 import 'package:mealvana_endurance/features/meal_planning/presentation/widgets/shopping_list.dart';
+import 'package:mealvana_endurance/shared/widgets/kyle_design/buttons/primary_button.dart';
 import '../meal_planning/presentation/helpers/test_content.dart';
 import 'kroger_fixtures.dart';
 import 'kroger_repository_test.dart' show FakeRemote;
@@ -104,6 +105,7 @@ void main() {
   late FakeRemote remote;
   late KrogerController controller;
   var exports = 0;
+  var disconnects = 0;
   var ambiguous = false;
   var browserCallback = '';
   var account = 'user-a';
@@ -137,6 +139,7 @@ void main() {
   setUp(() async {
     SharedPreferences.setMockInitialValues({});
     exports = 0;
+    disconnects = 0;
     ambiguous = false;
     browserCallback = '';
     account = 'user-a';
@@ -189,6 +192,9 @@ void main() {
           if (loadFailure != null) throw KrogerException(loadFailure!);
           // A sent draft stays sent across a reload, as the server's does.
           return {'receipt': receipt};
+        case 'disconnect':
+          disconnects++;
+          return {};
         case 'export':
           exports++;
           sent = data;
@@ -1032,6 +1038,49 @@ void main() {
       await tester.runAsync(firstUse);
       await showScreen(tester);
       expect(find.text(copy['kroger.set_area']!), findsOneWidget);
+    });
+  });
+
+  group('disconnecting asks first (21-010)', () {
+    // The Disconnect control sits under the cart actions, and a slipped tap
+    // used to remove the connection outright: the only way back was another
+    // kroger.com sign-in. So the tap opens a confirmation, on the same sheet
+    // the second send uses, and nothing reaches the server until the shopper
+    // says so.
+    testWidgets('Disconnect opens a confirmation and Cancel keeps the '
+        'connection', (tester) async {
+      final copy = loadDefaultContent();
+      await showScreen(tester);
+      await tester.tap(find.byKey(const ValueKey('kroger.disconnect')));
+      await tester.pumpAndSettle();
+      expect(find.text(copy['kroger.disconnect_confirm']!), findsOneWidget);
+      expect(disconnects, 0);
+      await tester.tap(find.text(copy['kroger.cancel']!));
+      await tester.pumpAndSettle();
+      expect(find.text(copy['kroger.disconnect_confirm']!), findsNothing);
+      expect(disconnects, 0);
+      expect(current().connected, true);
+      expect(find.byKey(const ValueKey('kroger.disconnect')), findsOneWidget);
+    });
+    testWidgets('confirming disconnects through the controller', (
+      tester,
+    ) async {
+      final copy = loadDefaultContent();
+      await showScreen(tester);
+      await tester.tap(find.byKey(const ValueKey('kroger.disconnect')));
+      await tester.pumpAndSettle();
+      // The sheet's own button says what it does, in the same words as the
+      // control that opened it; the screen's control is a tertiary button
+      // and the sheet's is the primary one, which is how the two are told
+      // apart here.
+      await tester.tap(
+        find.widgetWithText(KylePrimaryButton, copy['kroger.disconnect']!),
+      );
+      await tester.pumpAndSettle();
+      expect(disconnects, 1);
+      expect(current().connected, false);
+      expect(find.byKey(const ValueKey('kroger.disconnect')), findsNothing);
+      expect(find.text(copy['kroger.connect']!), findsOneWidget);
     });
   });
 
