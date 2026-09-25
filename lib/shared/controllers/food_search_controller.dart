@@ -238,6 +238,15 @@ class FoodSearchController extends _$FoodSearchController {
     _allTemplateFoods = allFoods
         .where((f) => !userFoodIds.contains(f.id))
         .toList();
+    // G28: the pool is loaded ASYNCHRONOUSLY, so a query can already be
+    // active when it lands — the slot page's seeded query always is, and a
+    // fast typist can be. Without this re-filter those local matches are
+    // lost for good (nothing recomputes until the text is edited), leaving
+    // only network catalog results on screen: Xuan tapped "Rice (1 cup
+    // cooked)" and was offered a rice-protein powder. Mirrors [setFilter].
+    if (state.searchQuery.isNotEmpty) {
+      updateSearch(state.searchQuery);
+    }
   }
 
   /// Update the search query and filter local foods + trigger catalog search.
