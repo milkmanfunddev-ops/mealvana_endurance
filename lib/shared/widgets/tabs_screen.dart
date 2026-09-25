@@ -44,6 +44,7 @@ class TabsScreen extends ConsumerStatefulWidget {
     this.initialTabIndex = 0,
     this.initialTabName,
     this.initialFoodTab = FoodTab.plan,
+    this.request,
   });
 
   final int initialTabIndex;
@@ -55,6 +56,10 @@ class TabsScreen extends ConsumerStatefulWidget {
 
   /// Which segment the Food tab opens on (`/main?tab=food&food=shopping`).
   final FoodTab initialFoodTab;
+
+  /// The route's `extra`, fresh on every navigation that names a tab
+  /// ([foodTabRequest]), so asking again for the same tab still selects it.
+  final Object? request;
 
   @override
   ConsumerState<TabsScreen> createState() => _TabsScreenState();
@@ -132,9 +137,25 @@ class _TabsScreenState extends ConsumerState<TabsScreen> {
   @override
   void didChangeDependencies() {
     super.didChangeDependencies();
+    _selectNamedTab();
+  }
+
+  // Going to `/main?tab=…` while the shell is already up reuses this state;
+  // a newly named tab or Food segment must still be selected (mp-596).
+  @override
+  void didUpdateWidget(TabsScreen oldWidget) {
+    super.didUpdateWidget(oldWidget);
+    if (widget.initialTabName != oldWidget.initialTabName ||
+        widget.initialFoodTab != oldWidget.initialFoodTab ||
+        widget.request != oldWidget.request) {
+      _selectNamedTab();
+    }
+  }
+
+  void _selectNamedTab() {
     final name = widget.initialTabName;
     if (name == null) return;
-    // Resolve once, after the first build computed the index getters.
+    // Resolve after the build computed the index getters.
     WidgetsBinding.instance.addPostFrameCallback((_) {
       if (!mounted) return;
       final index = switch (name) {
@@ -246,7 +267,10 @@ class _TabsScreenState extends ConsumerState<TabsScreen> {
           bottomInset: HomeShellChrome.bottomChromeClearancePx,
         ),
       ),
-      () => FoodScreen(initialTab: widget.initialFoodTab), // 1: Food
+      () => FoodScreen(
+        initialTab: widget.initialFoodTab,
+        request: widget.request,
+      ), // 1: Food
       if (showCoachTab)
         () => const SizedBox.shrink(), // coach portal is rendered above
       () => const EventsListScreen(

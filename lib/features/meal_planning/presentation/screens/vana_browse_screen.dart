@@ -13,6 +13,7 @@ import '../../domain/meal_ref.dart';
 import '../../domain/ui_action.dart';
 import '../widgets/meal_catalog_browser.dart';
 import '../widgets/vana_round_button.dart';
+import '../../../../shared/core/pop_or_home.dart';
 
 /// `/vana/browse?c=<conversationId>` — "Browse meals" from the Vana chat
 /// (Lee, 2026-09-03: "browse all of our recipes and assign them to the meal
@@ -69,7 +70,7 @@ class _VanaBrowseScreenState extends ConsumerState<VanaBrowseScreen> {
                 children: [
                   VanaRoundButton.back(
                     context: context,
-                    onTap: () => context.pop(),
+                    onTap: context.popOrHome,
                   ),
                   const SizedBox(width: 12),
                   Expanded(

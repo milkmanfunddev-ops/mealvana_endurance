@@ -247,7 +247,7 @@
         "type": "Button"
       },
       {
-        "tap": "Vana ·",
+        "tap": "Vana \u00b7",
         "settle": 3000
       }
     ]
@@ -297,7 +297,7 @@
         "type": "Button"
       },
       {
-        "tap": "Vana ·",
+        "tap": "Vana \u00b7",
         "settle": 3000
       },
       {

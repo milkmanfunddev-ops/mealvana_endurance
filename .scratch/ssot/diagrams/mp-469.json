@@ -1,0 +1,1 @@
+{"kind": "flow", "title": "Ticket 04: no free turn, no race", "rows": [[{"id": "a", "label": "Today: 5 parallel calls\nall pass a limit of 4", "tone": "no"}], [{"id": "b", "label": "After: the row is written\nfirst, 4 pass", "tone": "ok"}]], "edges": [{"from": "a", "to": "b"}], "example": ["Empty message: 400, no model, no row.", "No daily cap. No turn counter."]}

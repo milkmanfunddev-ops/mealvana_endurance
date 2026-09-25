@@ -645,8 +645,10 @@ void main() {
       await _condensed(tester);
       await tester.pumpAndSettle();
       expect(find.byType(VanaSheet), findsNothing);
-      expect(h.location, '/food');
-      expect(find.byKey(const ValueKey('plan_tab.list')), findsOneWidget);
+      // The Food tab of the shell, on Plan: never a bare Food page with no
+      // tab bar pushed over it.
+      expect(h.location, '/main?tab=food&food=plan');
+      expect(h.router.canPop(), isFalse);
     });
 
     testWidgets('an event hand-off with an id lands on that event', (

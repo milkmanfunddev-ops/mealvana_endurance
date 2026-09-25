@@ -25,6 +25,7 @@ import '../widgets/plan_overflow_menu.dart';
 import '../widgets/plan_summary.dart';
 import '../widgets/previous_plans_sheet.dart';
 import '../../../../shared/widgets/kyle_design/icons/vana_avatar.dart';
+import 'food_screen.dart';
 
 /// `intent=new_plan`: the athlete chose a fresh plan, so the opener builds
 /// one and never asks about the plan on this tab. Both ways in — the button
@@ -38,7 +39,11 @@ const _newPlanRoute = '/vana?c=new&mode=meal_planning&intent=new_plan';
 /// Tapping a tile opens the meal's detail page. Offline, the day note hides
 /// and the plan renders from the local Drift watch alone.
 class PlanTab extends ConsumerWidget {
-  const PlanTab({super.key});
+  const PlanTab({super.key, this.onAddMeal});
+
+  /// "Add meal": the Food screen switches to its Meals segment. Without one,
+  /// the Food tab is opened on Meals ([goToFoodTab]).
+  final VoidCallback? onAddMeal;
 
   @override
   Widget build(BuildContext context, WidgetRef ref) {
@@ -111,7 +116,8 @@ class PlanTab extends ConsumerWidget {
                   key: const ValueKey('meal_planning.btn_add_meal'),
                   text: content.getValue(ContentKeys.mpBtnAddMeal),
                   height: 44,
-                  onPressed: () => context.push('/food?tab=meals'),
+                  onPressed:
+                      onAddMeal ?? () => goToFoodTab(context, FoodTab.meals),
                 ),
               ),
               const SizedBox(width: AppSpacing.sm),

@@ -17,6 +17,7 @@ import '../../domain/vana_conversation_kind.dart';
 import '../widgets/dashed_box.dart';
 import '../../../../shared/widgets/kyle_design/icons/vana_avatar.dart';
 import '../widgets/vana_round_button.dart';
+import '../../../../shared/core/pop_or_home.dart';
 
 /// `/vana/conversations` (05 §4): the two histories — "Ask Vana" and "Meal
 /// plans" — behind a pill segment, the new-conversation action, and the
@@ -73,7 +74,7 @@ class _VanaConversationsScreenState
                 children: [
                   VanaRoundButton.back(
                     context: context,
-                    onTap: () => context.pop(),
+                    onTap: context.popOrHome,
                   ),
                   const SizedBox(width: 12),
                   const VanaAvatar(size: 32),

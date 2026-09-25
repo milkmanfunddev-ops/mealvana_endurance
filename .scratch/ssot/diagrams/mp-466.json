@@ -1,0 +1,1 @@
+{"kind": "flow", "title": "Ticket 01: signed-in callers only", "rows": [[{"id": "a", "label": "Today: anyone can\nsend a plan email", "tone": "no"}], [{"id": "b", "label": "After: 401 without\na signed-in caller", "tone": "ok"}]], "edges": [{"from": "a", "to": "b"}], "example": ["Bulk upload writes only to the token's own user.", "parse-meal-plan leaves dev."]}
