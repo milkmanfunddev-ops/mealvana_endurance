@@ -546,7 +546,11 @@ class AppStartupService {
   Future<void> checkUserSession() async {
     try {
       final database = ref.read(appDatabaseProvider);
-      final user = await database.userDao.getLocalUserProfile();
+      // The signed-in account's profile only (ticket 102): another account's
+      // rows on the phone must never name the analytics identity.
+      final user = await database.userDao.getLocalUserProfile(
+        _supabase.auth.currentUser?.id,
+      );
 
       if (user != null) {
         // User exists locally - identify them properly in analytics

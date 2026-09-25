@@ -583,6 +583,7 @@ void main() {
   group('checkUserSession', () {
     test('calls identifyUser with user id when user exists locally', () async {
       await _insertUserProfile(database);
+      when(() => mockAuth.currentUser).thenReturn(_FakeUser('test-user-id'));
 
       final container = makeContainer();
       final service = container.read(appStartupServiceProvider);
@@ -607,6 +608,7 @@ void main() {
       'identifies user with the correct user id from the database',
       () async {
         await _insertUserProfile(database);
+        when(() => mockAuth.currentUser).thenReturn(_FakeUser('test-user-id'));
 
         final container = makeContainer();
         final service = container.read(appStartupServiceProvider);
@@ -663,6 +665,61 @@ void main() {
       container.dispose();
     });
 
+    // Ticket 102: the identity is the signed-in account's profile only,
+    // never another account's rows left on the phone.
+    test("ignores another account's newer profile and identifies the "
+        'signed-in account', () async {
+      await _insertUserProfile(database);
+      await database
+          .into(database.userProfilesTable)
+          .insert(
+            UserProfilesTableCompanion.insert(
+              id: 'other-user-id',
+              deviceId: 'device-001',
+              updatedAt: Value(DateTime(2030)),
+            ),
+          );
+      when(() => mockAuth.currentUser).thenReturn(_FakeUser('test-user-id'));
+
+      final container = makeContainer();
+      await container.read(appStartupServiceProvider).checkUserSession();
+
+      final captured = verify(
+        () => mockAnalytics.identifyUser(
+          captureAny(),
+          gender: any(named: 'gender'),
+          age: any(named: 'age'),
+          weightPounds: any(named: 'weightPounds'),
+          runsWithWaterBottle: any(named: 'runsWithWaterBottle'),
+          gutTrainingLevel: any(named: 'gutTrainingLevel'),
+        ),
+      ).captured;
+      expect(captured, ['test-user-id']);
+
+      container.dispose();
+    });
+
+    test('with no session, a local profile names nobody', () async {
+      await _insertUserProfile(database);
+      when(() => mockAuth.currentUser).thenReturn(null);
+
+      final container = makeContainer();
+      await container.read(appStartupServiceProvider).checkUserSession();
+
+      verifyNever(
+        () => mockAnalytics.identifyUser(
+          any(),
+          gender: any(named: 'gender'),
+          age: any(named: 'age'),
+          weightPounds: any(named: 'weightPounds'),
+          runsWithWaterBottle: any(named: 'runsWithWaterBottle'),
+          gutTrainingLevel: any(named: 'gutTrainingLevel'),
+        ),
+      );
+
+      container.dispose();
+    });
+
     test('does not rethrow analytics errors', () async {
       when(
         () => mockAnalytics.identifyUser(
@@ -676,6 +733,7 @@ void main() {
       ).thenThrow(Exception('analytics down'));
 
       await _insertUserProfile(database);
+      when(() => mockAuth.currentUser).thenReturn(_FakeUser('test-user-id'));
 
       final container = makeContainer();
       final service = container.read(appStartupServiceProvider);

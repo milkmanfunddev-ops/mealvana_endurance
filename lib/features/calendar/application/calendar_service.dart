@@ -146,9 +146,10 @@ class CalendarService {
   /// Get all events for a user
   Future<List<domain.Event>> getAllEvents(String userId) async {
     try {
-      // Note: Events table doesn't have userId column, but we'll keep the parameter
-      // for future compatibility and to match the API signature
+      // Only the signed-in account's events (ticket 102): the table has a
+      // user_id column, and another account's rows can be on the phone.
       final query = _database.select(_database.eventsTable)
+        ..where((tbl) => tbl.userId.lower().equals(userId.toLowerCase()))
         ..orderBy([(tbl) => OrderingTerm.desc(tbl.createdAt)]);
 
       final events = await query.get();

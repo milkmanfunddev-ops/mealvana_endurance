@@ -816,47 +816,66 @@ class AppDatabase extends _$AppDatabase {
     // No longer need to populate default data - using enums now
   }
 
-  /// Delete every local row that belongs to [userId]: the profile, every
-  /// table keyed by `user_id`, the carb-loading children keyed through their
-  /// plan, feedback keyed by the profile's device, and the coach-mode rows on
-  /// either side of a relationship. Rows of other accounts stay.
+  /// Tables keyed by `user_id` with no server copy: deleting them loses the
+  /// rows for good, so a sign-out keeps them (ticket 102).
+  static const Set<String> localOnlyTables = <String>{
+    'race_checklist_items',
+    'carb_loading_user_foods',
+  };
+
+  /// Delete [userId]'s local rows: the profile, every table keyed by
+  /// `user_id`, the carb-loading children keyed through their plan, feedback
+  /// keyed by the profile's device, and the coach-mode rows on either side of
+  /// a relationship. Rows of other accounts stay.
   ///
-  /// Sign-out and account deletion both run this, so the next account on the
-  /// phone inherits nothing (Finding 14-004: plans, logs, activities, events
-  /// and an integration of the previous account were still on the device).
+  /// With [keepUnsynced] (sign-out, and the sign-in sweep of other accounts)
+  /// only rows the server already has go (Lee, 2026-09-25, ticket 102: Drift
+  /// exists so offline work is never lost). A row with `needs_upload = 1`
+  /// stays, with every parent it needs to re-upload: the meal plan of a dirty
+  /// plan meal, the carb-loading plan of a dirty day (and that day's meals),
+  /// and the `users` row while anything unsynced of the account stays. The
+  /// [localOnlyTables] stay. `food_preferences` has no flag and re-uploads
+  /// whole, so the caller says whether it stays through
+  /// [keepFoodPreferences] (its pre-logout upload failed, or the account
+  /// still has unsynced rows).
+  ///
+  /// Without [keepUnsynced] (account deletion) everything of the account
+  /// goes, as before (Finding 14-004).
+  ///
   /// The `user_id` tables are found from the schema rather than listed, so a
   /// new user-scoped table is covered without a change here; the seam test in
   /// `test/features/settings/sign_out_clears_device_test.dart` pins the ones
   /// the Finding named.
-  Future<void> clearUserData(String userId) async {
+  Future<void> clearUserData(
+    String userId, {
+    bool keepUnsynced = false,
+    bool keepFoodPreferences = false,
+  }) async {
+    // NULL counts as clean: some tables declare the flag nullable.
+    const clean = '(needs_upload IS NULL OR needs_upload = 0)';
+    const usersPlans = 'SELECT id FROM carb_loading_plans WHERE user_id = ?';
+    // Only a clean row may go under keepUnsynced; otherwise every row goes.
+    final onlyClean = keepUnsynced ? 'AND $clean' : '';
+    final keepFoodPrefs = keepUnsynced && keepFoodPreferences;
+
     await transaction(() async {
-      // Keyed through a parent, or by a column other than user_id.
+      // Keyed through a parent, or by a column other than user_id. A dirty
+      // day keeps its meals: the day re-uploads with them.
       await customStatement(
-        '''
-        DELETE FROM carb_loading_day_meals
-        WHERE carb_loading_day_id IN (
-          SELECT id FROM carb_loading_days
-          WHERE carb_loading_plan_id IN (
-            SELECT id FROM carb_loading_plans WHERE user_id = ?
-          )
-        )
-        ''',
+        'DELETE FROM carb_loading_day_meals WHERE carb_loading_day_id IN ('
+        'SELECT id FROM carb_loading_days '
+        'WHERE carb_loading_plan_id IN ($usersPlans) $onlyClean)',
         [userId],
       );
       await customStatement(
-        '''
-        DELETE FROM carb_loading_days
-        WHERE carb_loading_plan_id IN (
-          SELECT id FROM carb_loading_plans WHERE user_id = ?
-        )
-        ''',
+        'DELETE FROM carb_loading_days '
+        'WHERE carb_loading_plan_id IN ($usersPlans) $onlyClean',
         [userId],
       );
       await customStatement(
-        '''
-        DELETE FROM ${feedbackTable.actualTableName}
-        WHERE device_id IN (SELECT device_id FROM users WHERE id = ?)
-        ''',
+        'DELETE FROM ${feedbackTable.actualTableName} '
+        'WHERE device_id IN (SELECT device_id FROM users WHERE id = ?) '
+        '$onlyClean',
         [userId],
       );
       await customStatement(
@@ -877,20 +896,150 @@ class AppDatabase extends _$AppDatabase {
 
       // Every table with a user_id column, from the schema.
       for (final table in allTables) {
-        final hasUserId = table.$columns.any((c) => c.$name == 'user_id');
-        if (!hasUserId) continue;
+        final columns = table.$columns.map((c) => c.$name).toSet();
+        if (!columns.contains('user_id')) continue;
+        final name = table.actualTableName;
+
+        if (keepUnsynced) {
+          if (localOnlyTables.contains(name)) continue;
+          if (name == foodPreferencesTable.actualTableName && keepFoodPrefs) {
+            continue;
+          }
+        }
+
+        if (!keepUnsynced || !columns.contains('needs_upload')) {
+          await customStatement('DELETE FROM $name WHERE user_id = ?', [
+            userId,
+          ]);
+          continue;
+        }
+
+        // Parents a dirty child needs when it re-uploads.
+        final keepParent = switch (name) {
+          'meal_plans' =>
+            'AND id NOT IN (SELECT plan_id FROM plan_meals '
+                'WHERE user_id = ? AND needs_upload = 1)',
+          'carb_loading_plans' =>
+            'AND id NOT IN (SELECT carb_loading_plan_id FROM carb_loading_days '
+                'WHERE needs_upload = 1 AND carb_loading_plan_id IN '
+                '($usersPlans))',
+          _ => '',
+        };
         await customStatement(
-          'DELETE FROM ${table.actualTableName} WHERE user_id = ?',
-          [userId],
+          'DELETE FROM $name WHERE user_id = ? AND $clean $keepParent',
+          [userId, if (keepParent.isNotEmpty) userId],
         );
       }
 
-      // The profile last: the feedback delete above reads its device_id.
+      // The profile last: the feedback delete above reads its device_id. It
+      // stays while anything of the account still waits for the server.
+      if (keepUnsynced) {
+        final stillUnsynced =
+            await hasUnsyncedRows(userId) ||
+            (keepFoodPrefs && await _hasFoodPreferences(userId));
+        if (stillUnsynced) return;
+      }
       await customStatement(
         'DELETE FROM users WHERE id = ? OR auth_user_id = ?',
         [userId, userId],
       );
     });
+  }
+
+  /// Whether [userId] has any row with `needs_upload = 1`: in a `user_id`
+  /// table, in `carb_loading_days` through its plan, or its own `users` row.
+  Future<bool> hasUnsyncedRows(String userId) async {
+    Future<bool> any(String sql, List<String> args) async {
+      final rows = await customSelect(
+        sql,
+        variables: [for (final a in args) Variable<String>(a)],
+      ).get();
+      return rows.isNotEmpty;
+    }
+
+    for (final table in allTables) {
+      final columns = table.$columns.map((c) => c.$name).toSet();
+      if (!columns.contains('user_id') || !columns.contains('needs_upload')) {
+        continue;
+      }
+      if (await any(
+        'SELECT 1 FROM ${table.actualTableName} '
+        'WHERE user_id = ? AND needs_upload = 1 LIMIT 1',
+        [userId],
+      )) {
+        return true;
+      }
+    }
+    if (await any(
+      'SELECT 1 FROM carb_loading_days WHERE needs_upload = 1 '
+      'AND carb_loading_plan_id IN '
+      '(SELECT id FROM carb_loading_plans WHERE user_id = ?) LIMIT 1',
+      [userId],
+    )) {
+      return true;
+    }
+    return any(
+      'SELECT 1 FROM users WHERE (id = ? OR auth_user_id = ?) '
+      'AND needs_upload = 1 LIMIT 1',
+      [userId, userId],
+    );
+  }
+
+  Future<bool> _hasFoodPreferences(String userId) async {
+    final rows = await customSelect(
+      'SELECT 1 FROM ${foodPreferencesTable.actualTableName} '
+      'WHERE user_id = ? LIMIT 1',
+      variables: [Variable<String>(userId)],
+    ).get();
+    return rows.isNotEmpty;
+  }
+
+  /// Sign-in sweep (Finding 86-001): every other account on the phone loses
+  /// the rows the server already holds and keeps its unsynced ones for its
+  /// own next sign-in, by the same rule as [clearUserData] with
+  /// [keepUnsynced]. Clears rows left by sign-outs made before ticket 33.
+  ///
+  /// The signed-in account is never touched, under any of its ids: a legacy
+  /// profile whose `id` differs from its `auth_user_id` keeps both.
+  /// Returns the ids swept.
+  Future<List<String>> sweepOtherAccounts(String signedInUserId) async {
+    final profiles = await customSelect(
+      'SELECT id, auth_user_id FROM users',
+    ).get();
+    final protected = <String>{signedInUserId};
+    final candidates = <String>{};
+    for (final row in profiles) {
+      final id = row.read<String>('id');
+      final authId = row.readNullable<String>('auth_user_id');
+      if (id == signedInUserId || authId == signedInUserId) {
+        protected.add(id);
+        if (authId != null) protected.add(authId);
+      }
+      candidates.add(id);
+      if (authId != null) candidates.add(authId);
+    }
+    for (final table in allTables) {
+      if (!table.$columns.any((c) => c.$name == 'user_id')) continue;
+      final rows = await customSelect(
+        'SELECT DISTINCT user_id FROM ${table.actualTableName}',
+      ).get();
+      for (final row in rows) {
+        final id = row.readNullable<String>('user_id');
+        if (id != null && id.isNotEmpty) candidates.add(id);
+      }
+    }
+
+    final others = candidates.difference(protected).toList()..sort();
+    for (final other in others) {
+      // No flag on food_preferences: they stay while the account still has
+      // anything unsynced, the sign that its last sign-out did not upload.
+      await clearUserData(
+        other,
+        keepUnsynced: true,
+        keepFoodPreferences: await hasUnsyncedRows(other),
+      );
+    }
+    return others;
   }
 
   /// Validate schema integrity on database open.

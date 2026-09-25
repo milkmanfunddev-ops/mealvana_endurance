@@ -8,6 +8,7 @@ import '../sentry/sentry_reporter.dart';
 import '../analytics/analytics_tracker.dart';
 import '../notification_service.dart';
 import '../sync/sync_coordinator.dart';
+import '../../database/database_provider.dart';
 import '../../providers/user_id_provider.dart';
 import '../../core/app_router.dart';
 import '../../../features/settings/presentation/providers/settings_controller.dart';
@@ -124,6 +125,12 @@ class AuthListenerService {
       // Handle sign-in events
       if (event == AuthChangeEvent.signedIn && session != null) {
         await _handleSignedIn(session.user.id);
+      }
+
+      // A restored session never emits `signedIn`; sweep on it too so a
+      // phone that updated while signed in loses the other accounts' rows.
+      if (event == AuthChangeEvent.initialSession && session != null) {
+        await _sweepOtherAccounts(session.user.id);
       }
     });
   }
@@ -247,11 +254,38 @@ class AuthListenerService {
 
     _ref.invalidate(userIdProvider);
 
+    await _sweepOtherAccounts(userId);
+
     _logger.info(
       'User signed in - controllers will sync on demand via ensureSynced()',
       context: 'AUTH_LISTENER',
       data: {'user_id': userId},
     );
+  }
+
+  /// Every other account on the phone loses the rows the server already
+  /// holds and keeps its unsynced ones for its own next sign-in (ticket 102,
+  /// Finding 86-001). Best effort: a failure here must not block sign-in.
+  Future<void> _sweepOtherAccounts(String userId) async {
+    try {
+      final swept = await _ref
+          .read(appDatabaseProvider)
+          .sweepOtherAccounts(userId);
+      if (swept.isNotEmpty) {
+        _logger.info(
+          'Swept other accounts\' synced rows on sign-in',
+          context: 'AUTH_LISTENER',
+          data: {'user_id': userId, 'swept': swept},
+        );
+      }
+    } catch (e, stackTrace) {
+      _logger.error(
+        'Sign-in sweep of other accounts failed',
+        context: 'AUTH_LISTENER',
+        error: e,
+        stackTrace: stackTrace,
+      );
+    }
   }
 
   /// Dispose of the auth listener

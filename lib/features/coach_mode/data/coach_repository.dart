@@ -1505,10 +1505,18 @@ class CoachRepository with SyncableRepository {
 
       final codePrefix = code.substring(4); // Remove 'ATH-' prefix
 
-      // First try locally from Drift
-      final localResults = await _database
-          .select(_database.userProfilesTable)
-          .get();
+      // First try locally from Drift, against the signed-in account's own
+      // profile only: another account's rows can be on the phone and are
+      // never read under this session (ticket 102).
+      final currentUserId = _supabase.auth.currentUser?.id;
+      final localResults = currentUserId == null
+          ? const <UserProfileEntry>[]
+          : await (_database.select(_database.userProfilesTable)..where(
+                  (u) =>
+                      u.id.equals(currentUserId) |
+                      u.authUserId.equals(currentUserId),
+                ))
+                .get();
       for (final user in localResults) {
         final cleanId = user.id.replaceAll('-', '').toUpperCase();
         if (cleanId.startsWith(codePrefix)) {
