@@ -13,8 +13,8 @@
 
 **Touches:** supabase/functions/_shared/vana/plan.ts, lib/features/meal_planning/presentation/widgets/previous_plans_sheet.dart, lib/features/meal_planning/presentation/screens/shopping_tab.dart
 
-- [ ] deno test: an account with 25 plans lists them all; one query counts the meals.
-- [ ] Widget test: 14 lists scroll to the last with no overflow.
+- [x] deno test: an account with 25 plans lists them all; one query counts the meals.
+- [x] Widget test: 14 lists scroll to the last with no overflow.
 - [ ] Deployed to dev.
 - [ ] codegen if annotations changed, `flutter analyze` and the suite green.
 

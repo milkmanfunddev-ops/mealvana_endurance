@@ -8,7 +8,9 @@
  *
  * Supported chain: select / insert / update / upsert / delete, eq / neq / gt / gte / lt / lte /
  * is / in / like / ilike, order (multi-key, in call order), limit / range, single / maybeSingle,
- * and awaiting the builder directly. `rpc()` dispatches to handlers the test supplies.
+ * and awaiting the builder directly. `rpc()` dispatches to handlers the test supplies. A select may
+ * embed a child table's count (`select('id, plan_meals(count)')`), answered as PostgREST does
+ * (`plan_meals: [{ count }]`) through a foreign key declared in `relations`.
  *
  * Every write is recorded on `writes` so a test can assert what reached the database without
  * reading it back through the same fake.
@@ -37,6 +39,9 @@ export interface FakeDbOptions {
   /** Column defaults per table, applied to inserted rows the way Postgres would. Without these a
    *  freshly inserted row is missing `is_deleted`, and the next `eq('is_deleted', false)` misses it. */
   defaults?: Record<string, Row>;
+  /** Foreign keys for embedded counts, keyed `parent.child` → the child's column that points at the
+   *  parent's `id` (as the migration declares it), e.g. `{ 'meal_plans.plan_meals': 'plan_id' }`. */
+  relations?: Record<string, string>;
 }
 
 type Filter = (r: Row) => boolean;
@@ -68,6 +73,12 @@ export class FakeDb {
 
   defaultsFor(table: string): Row {
     return this.opts.defaults?.[table] ?? {};
+  }
+
+  relation(parent: string, child: string): string {
+    const fk = this.opts.relations?.[`${parent}.${child}`];
+    if (!fk) throw new Error(`fake db: no relation declared for ${parent}.${child}`);
+    return fk;
   }
 
   rows(table: string): Row[] {
@@ -107,13 +118,16 @@ export class QueryBuilder implements PromiseLike<{ data: unknown; error: { messa
   private payload: any = null;
   private returning = false;
   private onConflict: string | null = null;
+  /** Child tables whose row count the select embeds, `child(count)`. */
+  private embeddedCounts: string[] = [];
 
   constructor(private readonly db: FakeDb, private readonly table: string, private readonly forcedError: string | null) {}
 
   // ---- verbs
-  select(_cols?: string) {
-    if (this.mode === 'select') this.mode = 'select';
-    else this.returning = true;
+  select(cols?: string) {
+    if (this.mode === 'select') {
+      for (const m of (cols ?? '').matchAll(/(\w+)\s*\(\s*count\s*\)/g)) this.embeddedCounts.push(m[1]);
+    } else this.returning = true;
     return this;
   }
   // deno-lint-ignore no-explicit-any
@@ -189,7 +203,12 @@ export class QueryBuilder implements PromiseLike<{ data: unknown; error: { messa
       case 'select': {
         // `count: 'exact'` callers (the rate limit) read `count`; it is the matched rows before limit, like PostgREST.
         const hit = this.matching();
-        return { data: this.shape(hit), error: null, count: hit.length };
+        const data = this.shape(hit);
+        for (const child of this.embeddedCounts) {
+          const fk = this.db.relation(this.table, child);
+          for (const r of data) r[child] = [{ count: this.db.rows(child).filter((c) => String(c[fk]) === String(r.id)).length }];
+        }
+        return { data, error: null, count: hit.length };
       }
       case 'insert': {
         const vs: Row[] = (Array.isArray(this.payload) ? this.payload : [this.payload]).map((r: Row) => ({ id: crypto.randomUUID(), created_at: new Date().toISOString(), ...this.db.defaultsFor(this.table), ...clone(r) }));

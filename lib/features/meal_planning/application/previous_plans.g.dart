@@ -9,9 +9,10 @@ part of 'previous_plans.dart';
 // GENERATED CODE - DO NOT MODIFY BY HAND
 // ignore_for_file: type=lint, type=warning
 /// The athlete's earlier plans, newest first — everything `list_plans`
-/// answers except the plan on the Plan tab and plans with nothing in them.
-/// The server already leaves deleted plans out (`is_deleted = false` in
-/// `plan.ts`), so nothing is filtered for that here.
+/// answers except the plan on the Plan tab. The server already leaves
+/// deleted and empty plans out (`listPlans` in `plan.ts`, ticket 49), and
+/// only the Plan tab knows which plan it shows, so that one is dropped here;
+/// the empty-plan check stays as a guard against an older server.
 ///
 /// Read-only and server-only: [MealPlanController] owns the current plan and
 /// nothing else, so history stays out of it. Auto-disposed, and the sheet
@@ -23,9 +24,10 @@ part of 'previous_plans.dart';
 const previousPlansProvider = PreviousPlansProvider._();
 
 /// The athlete's earlier plans, newest first — everything `list_plans`
-/// answers except the plan on the Plan tab and plans with nothing in them.
-/// The server already leaves deleted plans out (`is_deleted = false` in
-/// `plan.ts`), so nothing is filtered for that here.
+/// answers except the plan on the Plan tab. The server already leaves
+/// deleted and empty plans out (`listPlans` in `plan.ts`, ticket 49), and
+/// only the Plan tab knows which plan it shows, so that one is dropped here;
+/// the empty-plan check stays as a guard against an older server.
 ///
 /// Read-only and server-only: [MealPlanController] owns the current plan and
 /// nothing else, so history stays out of it. Auto-disposed, and the sheet
@@ -44,9 +46,10 @@ final class PreviousPlansProvider
         $FutureModifier<List<MealPlanSummary>>,
         $FutureProvider<List<MealPlanSummary>> {
   /// The athlete's earlier plans, newest first — everything `list_plans`
-  /// answers except the plan on the Plan tab and plans with nothing in them.
-  /// The server already leaves deleted plans out (`is_deleted = false` in
-  /// `plan.ts`), so nothing is filtered for that here.
+  /// answers except the plan on the Plan tab. The server already leaves
+  /// deleted and empty plans out (`listPlans` in `plan.ts`, ticket 49), and
+  /// only the Plan tab knows which plan it shows, so that one is dropped here;
+  /// the empty-plan check stays as a guard against an older server.
   ///
   /// Read-only and server-only: [MealPlanController] owns the current plan and
   /// nothing else, so history stays out of it. Auto-disposed, and the sheet

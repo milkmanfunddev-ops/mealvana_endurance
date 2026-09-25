@@ -15,6 +15,11 @@ export const VANA_COLUMN_DEFAULTS: Record<string, Record<string, unknown>> = {
   meal_logs: { is_deleted: false },
 };
 
+/** Foreign keys the Vana migrations declare, for embedded counts. */
+export const VANA_RELATIONS: Record<string, string> = {
+  'meal_plans.plan_meals': 'plan_id',
+};
+
 export interface TestCtx extends VanaCtx {
   fake: FakeDb;
 }
@@ -22,7 +27,11 @@ export interface TestCtx extends VanaCtx {
 /** The caller's client and the service-role client are the same fake — RLS is not what these
  *  tests are about, and a test that wants them apart can build two. */
 export function testCtx(tables: Tables = {}, opts: FakeDbOptions = {}, userId = TEST_USER_ID): TestCtx {
-  const fake = fakeDb(tables, { ...opts, defaults: { ...VANA_COLUMN_DEFAULTS, ...(opts.defaults ?? {}) } });
+  const fake = fakeDb(tables, {
+    ...opts,
+    defaults: { ...VANA_COLUMN_DEFAULTS, ...(opts.defaults ?? {}) },
+    relations: { ...VANA_RELATIONS, ...(opts.relations ?? {}) },
+  });
   // deno-lint-ignore no-explicit-any
   const db = fake as any;
   return { db, admin: db, userId, token: 'test-token', fake };

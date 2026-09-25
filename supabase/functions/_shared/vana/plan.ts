@@ -217,11 +217,18 @@ export async function getPlanById(v: VanaCtx, id: string): Promise<MealPlan | nu
   const { data } = await v.db.from('meal_plans').select('*').eq('id', id).eq('user_id', v.userId).eq('is_deleted', false).maybeSingle();
   return data ? hydrate(v, data) : null;
 }
-export async function listPlans(v: VanaCtx, limit = 20): Promise<(Pick<MealPlan, 'id' | 'weekStart' | 'status' | 'batchCooking'> & { mealCount: number })[]> {
-  const { data } = await v.db.from('meal_plans').select('id, week_start, status, batch_cooking, updated_at').eq('user_id', v.userId).eq('is_deleted', false).order('week_start', { ascending: false }).order('updated_at', { ascending: false }).limit(limit);
-  const out = [] as (Pick<MealPlan, 'id' | 'weekStart' | 'status' | 'batchCooking'> & { mealCount: number })[];
-  for (const p of data ?? []) { const { count } = await v.db.from('plan_meals').select('*', { count: 'exact', head: true }).eq('plan_id', p.id); out.push({ id: p.id, weekStart: p.week_start, status: p.status, batchCooking: !!p.batch_cooking, mealCount: count ?? 0 }); }
-  return out;
+/** `list_plans`: the athlete's plans with meals in them, newest week first, for the Previous plans sheet. One query: each
+ *  plan's meal count is embedded through the `plan_meals.plan_id` foreign key (17-003 saw one count query per plan take
+ *  8 s). Empty plans are dropped before the bound, not after, so a run of empty drafts can never push real plans off the
+ *  end (17-001: a 20-row read over every plan showed 17 and never the oldest week). The caller drops the plan on its tab. */
+export async function listPlans(v: VanaCtx, limit = 200): Promise<(Pick<MealPlan, 'id' | 'weekStart' | 'status' | 'batchCooking'> & { mealCount: number })[]> {
+  const { data, error } = await v.db.from('meal_plans').select('id, week_start, status, batch_cooking, updated_at, plan_meals(count)')
+    .eq('user_id', v.userId).eq('is_deleted', false).order('week_start', { ascending: false }).order('updated_at', { ascending: false });
+  if (error) throw new Error(`list_plans: ${error.message}`);
+  return (data ?? [])
+    .map((p) => ({ id: p.id, weekStart: p.week_start, status: p.status, batchCooking: !!p.batch_cooking, mealCount: (p.plan_meals as { count: number }[] | null)?.[0]?.count ?? 0 }))
+    .filter((p) => p.mealCount > 0)
+    .slice(0, limit);
 }
 /** `new_plan`: archive the plan the scope resolves to (a conversation's draft, an explicit plan, or the week's active
  *  plan) and start a fresh, empty draft in its place — same conversation ownership as the one archived. */
