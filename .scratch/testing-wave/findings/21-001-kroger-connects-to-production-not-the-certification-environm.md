@@ -28,3 +28,4 @@ The connection is to Kroger production. The sheet opened on `login.kroger.com` (
 > 
 
 **Triage.**
+Lee, 2026-09-24: dev uses Kroger Certification. The wave lead switched dev's secrets back (`scripts/kroger-dev-admin.mjs secrets` + `enable`, `verify-enabled` reports certification; docs/kroger/DEPLOYMENT.md). The retest is ticket 22: reconnect first, then check that the stored row says `certification`.

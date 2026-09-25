@@ -8,7 +8,7 @@ Date: 2026-09-08. User explicitly authorized dev deployment after local verifica
 |---|---|---|
 | Database | Kroger-only migration applied and inspected | Not applied |
 | Edge function | `kroger`, ACTIVE, internal JWT validation; configuration updated without source redeploy | Not deployed |
-| Credentials | Kroger Production credentials stored as server secrets | Not uploaded |
+| Credentials | Kroger Certification credentials stored as server secrets (back from Production 2026-09-24) | Not uploaded |
 | Server flag | `KROGER_ENABLED=true` after disabled-state smoke check | Not enabled |
 | Flutter source | Implemented; entry visible in dev configuration | Release flag defaults off |
 | Mobile build | No build cut/push performed | No build cut/push performed |
@@ -19,6 +19,16 @@ Dev project: `vlmtsdzpnjnavdgytcmi`. No production database, function, secret,
 `app_config` or release branch was modified by this task.
 
 ## What was executed
+
+### Back to Certification — 2026-09-24
+
+Lee chose Kroger Certification for dev so testing-wave ticket 22 never fills a real cart
+(Finding 21-001). Probed the Certification client credentials (`client_credentials`, HTTP 200,
+token withheld), then ran `secrets`, `verify`, `enable`, `verify-enabled`: authenticated status
+returns `available:true, environment:certification`. The Production credentials stay in
+`secrets/kroger.prod.env`; `secrets-production` + `enable` + `verify-production` switches back.
+test@test.com's stored connection (made 2026-09-24 22:39 UTC) is still a Production token and
+must be reconnected.
 
 ### Production API configuration switch — 2026-09-08
 
