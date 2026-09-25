@@ -1,6 +1,6 @@
 # 65: garmin-push logs why a record failed
 
-**Status:** ready-for-agent
+**Status:** in-progress (wave 22, 2026-09-25)
 **Blocked by:** none.
 **Next:** `/implement-lee testing-wave`
 **Model:** fable

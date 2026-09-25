@@ -1,6 +1,6 @@
 # 60: Browse search matches the meal, not its research note
 
-**Status:** ready-for-agent
+**Status:** in-progress (wave 22, 2026-09-25)
 **Blocked by:** none.
 **Next:** `/implement-lee testing-wave`
 **Model:** opus

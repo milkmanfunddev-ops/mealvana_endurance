@@ -1,6 +1,6 @@
 # 59: Timeline cards follow the clock
 
-**Status:** ready-for-agent
+**Status:** in-progress (wave 22, 2026-09-25)
 **Blocked by:** none.
 **Next:** `/implement-lee testing-wave`
 **Model:** opus

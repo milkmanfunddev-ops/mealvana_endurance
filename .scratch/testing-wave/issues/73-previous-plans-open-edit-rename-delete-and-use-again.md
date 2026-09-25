@@ -1,6 +1,6 @@
 # 73: Previous plans: open, edit, rename, delete and use again
 
-**Status:** ready-for-agent
+**Status:** in-progress (wave 22, 2026-09-25)
 **Blocked by:** 49 (touches lib/features/meal_planning/presentation/widgets/previous_plans_sheet.dart and supabase/functions/_shared/vana/plan.ts).
 **Next:** `/implement-lee testing-wave`
 **Model:** opus

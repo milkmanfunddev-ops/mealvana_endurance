@@ -1,6 +1,6 @@
 # 66: The Subscription screen names the plan, and Manage never opens a blank page
 
-**Status:** ready-for-agent
+**Status:** in-progress (wave 22, 2026-09-25)
 **Blocked by:** none.
 **Next:** `/implement-lee testing-wave`
 **Model:** opus

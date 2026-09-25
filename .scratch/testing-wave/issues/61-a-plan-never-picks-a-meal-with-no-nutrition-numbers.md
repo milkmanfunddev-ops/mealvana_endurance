@@ -1,6 +1,6 @@
 # 61: A plan never picks a meal with no nutrition numbers
 
-**Status:** ready-for-agent
+**Status:** in-progress (wave 22, 2026-09-25)
 **Blocked by:** none.
 **Next:** `/implement-lee testing-wave`
 **Model:** opus

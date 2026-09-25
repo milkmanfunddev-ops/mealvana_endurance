@@ -1,6 +1,6 @@
 # 69: The dev salmon salad gets its real photo back
 
-**Status:** ready-for-agent
+**Status:** in-progress (wave 22, 2026-09-25)
 **Blocked by:** none.
 **Next:** `/implement-lee testing-wave`
 **Model:** fable
