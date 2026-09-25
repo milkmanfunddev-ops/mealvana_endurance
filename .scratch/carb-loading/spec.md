@@ -793,6 +793,45 @@ summary) able to overflow horizontally — both hardened with flex+ellipsis.
 The flow self-seeds only when today has no plan, and sweeps any orphaned
 Patrol bananas by name.
 
+### G23 CLOSED — 2026-09-25 — diagnosis (two mechanisms) + G23a fix (qa 38bd8a3)
+
+**Mechanism 1 (phantom, no code change).** The 07:29/07:37 "day-3/680 under
+Today Sep 25" sightings were the CD-2 Patrol flow's own seeded plan: the flow
+signs the sim into the dedicated Patrol account (avery@test.com), found no
+plan there, and seeded a 3-day race-tomorrow plan — Sep 25 IS its day 3,
+680 g (149.9 lb → 67.99 kg × 10 g/kg). Patrol runs 1–2 aborted before tail
+cleanup, so the debris persisted across the observation window; run 3–4
+sweeps removed it, leaving the "carb face absent" pole (avery owns no
+Sep-25 plan — correct CD-1 negative). One-driver-per-sim class, closed.
+Ruled: avery STAYS the Patrol account; restore the dev login after runs;
+observations during a Patrol window are unreliable by definition.
+
+**Mechanism 2 = G23a (real defect, fixed to green).** The entryway passes
+`raceDate = DateTime.parse(event.startTime!)` — the gun time
+(2026-09-27T07:30) leaked into `carb_loading_days.plan_date`
+(evidence row: avery's live-created plan dbe80e8d, day at Sep 26 07:30),
+and the dashboard's midnight-keyed reads can never match it: a plan created
+from any timed event never rendered. Fix: repository create normalizes
+raceDate to the local date (plan bounds + day rows); service normalizes the
+event's `carbLoadingStartDate` the same way; both day-row read paths
+(`getCarbLoadingDaysForDateRange`, now a [day, day+1) span query, and
+`getCarbLoadingDaysForPlan`) hand callers midnight-normalized rows so
+pre-fix rows already on devices resolve too. Test
+`g23a_plan_date_normalization_test.dart`: one test asserts midnight storage
+AND the loading-day render (mutation-probed red on the create revert);
+second test covers the legacy 07:30-row defense. Wire note: the upload
+serializer truncates to date-only (`split('T')[0]`), so the SERVER copies
+of affected rows are clean — local Drift rows were the exposure.
+Blast-radius counts on dev/prod (`plan_date::time <> 00:00`, server column
+is `timestamp`) are QUEUED: the Management API query is classifier-blocked
+in auto mode (playbook §7 note) — SQL prepared, runs at Xuan's direction in
+default mode. G23b (overlap tie-order) WITHDRAWN by qa — excluded
+overlapping-loads slice; documented edge, no tie-break built. The stale
+1-day plan is released for Xuan's CE-5 delete exercise whenever he wants.
+
+Suites: 493 green across carb_loading + macro_dashboard + meal_logging +
+events (1 pre-existing skip).
+
 ## Notes on the two new ideas
 
 **Reminder to start.** Machinery exists — `NotificationService`

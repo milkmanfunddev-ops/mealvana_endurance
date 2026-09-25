@@ -139,7 +139,10 @@ class CarbLoadingService {
 
       // Update event with carb loading info (only if eventId is provided)
       if (eventId != null) {
-        final startDate = raceDate.subtract(Duration(days: protocolDays));
+        // Same date-only rule as the repository create (G23a): the event's
+        // carbLoadingStartDate is a local date, not the gun time minus N days.
+        final race = DateTime(raceDate.year, raceDate.month, raceDate.day);
+        final startDate = race.subtract(Duration(days: protocolDays));
         await (_database.update(
           _database.eventsTable,
         )..where((tbl) => tbl.id.equals(eventId))).write(

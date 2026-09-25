@@ -344,8 +344,13 @@ class CarbLoadingRepository with SyncableRepository {
     try {
       // OFFLINE-FIRST: Calculate and save to Drift IMMEDIATELY
       final bodyWeightKg = bodyWeightPounds * 0.453592;
-      final startDate = raceDate.subtract(Duration(days: protocolDays));
-      final endDate = raceDate.subtract(const Duration(days: 1));
+      // planDate semantics are LOCAL DATES (carb-loading@v1 CL-4): strip any
+      // time-of-day the caller's raceDate carries. An event's gun time
+      // (2026-09-27T07:30) leaking into day rows makes them invisible to the
+      // dashboard's midnight-keyed date reads.
+      final race = DateTime(raceDate.year, raceDate.month, raceDate.day);
+      final startDate = race.subtract(Duration(days: protocolDays));
+      final endDate = race.subtract(const Duration(days: 1));
 
       // Calculate average daily carb target for the plan
       double totalCarbs = 0;
@@ -863,7 +868,20 @@ class CarbLoadingRepository with SyncableRepository {
         ..where((tbl) => tbl.carbLoadingPlanId.equals(planId))
         ..orderBy([(tbl) => OrderingTerm.asc(tbl.dayNumber)]);
 
-      return await query.get();
+      // Same legacy-row defense as getCarbLoadingDaysForDateRange: planDate
+      // is a local date; strip any time-of-day a pre-G23a row carries.
+      final days = await query.get();
+      return days
+          .map(
+            (day) => day.copyWith(
+              planDate: DateTime(
+                day.planDate.year,
+                day.planDate.month,
+                day.planDate.day,
+              ),
+            ),
+          )
+          .toList();
     } catch (e, stackTrace) {
       _logger.error(
         'Failed to get carb loading days for plan',
@@ -929,6 +947,17 @@ class CarbLoadingRepository with SyncableRepository {
     required DateTime endDate,
   }) async {
     try {
+      // planDate is a LOCAL DATE, but legacy rows written before the create
+      // path normalized (G23a) can carry a time-of-day. Query the full local
+      // day span [startDate 00:00, endDate+1 00:00) so those rows still
+      // resolve, and hand callers midnight-normalized rows.
+      final dayStart = DateTime(startDate.year, startDate.month, startDate.day);
+      final dayEndExclusive = DateTime(
+        endDate.year,
+        endDate.month,
+        endDate.day,
+      ).add(const Duration(days: 1));
+
       // Join carb_loading_days with carb_loading_plans to filter by user_id
       final query =
           _database.select(_database.carbLoadingDaysTable).join([
@@ -942,10 +971,10 @@ class CarbLoadingRepository with SyncableRepository {
             ..where(
               _database.carbLoadingPlansTable.userId.equals(userId) &
                   _database.carbLoadingDaysTable.planDate.isBiggerOrEqualValue(
-                    startDate,
+                    dayStart,
                   ) &
-                  _database.carbLoadingDaysTable.planDate.isSmallerOrEqualValue(
-                    endDate,
+                  _database.carbLoadingDaysTable.planDate.isSmallerThanValue(
+                    dayEndExclusive,
                   ),
             )
             ..orderBy([
@@ -953,9 +982,16 @@ class CarbLoadingRepository with SyncableRepository {
             ]);
 
       final results = await query.get();
-      return results
-          .map((row) => row.readTable(_database.carbLoadingDaysTable))
-          .toList();
+      return results.map((row) {
+        final day = row.readTable(_database.carbLoadingDaysTable);
+        return day.copyWith(
+          planDate: DateTime(
+            day.planDate.year,
+            day.planDate.month,
+            day.planDate.day,
+          ),
+        );
+      }).toList();
     } catch (e, stackTrace) {
       _logger.error(
         'Failed to get carb loading days for date range',
