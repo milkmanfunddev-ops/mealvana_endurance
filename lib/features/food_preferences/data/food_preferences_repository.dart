@@ -1,6 +1,7 @@
 import 'dart:async';
 
 import 'package:riverpod_annotation/riverpod_annotation.dart';
+import 'package:shared_preferences/shared_preferences.dart';
 import 'package:supabase_flutter/supabase_flutter.dart';
 import '../../../shared/database/app_database.dart';
 import '../../../shared/database/database_provider.dart';
@@ -71,6 +72,18 @@ class FoodPreferencesRepository with SyncableRepository {
         if (level is num) {
           sliderLevels[foodName] = level.toInt().clamp(0, 4);
         }
+      }
+
+      // The table has no needs_upload flag: every upload re-sends all rows.
+      // While the last upload failed, the local values are newer than the
+      // server's, so the pull only adds foods this phone does not have
+      // (ticket 103: the pull now runs after a failed upload).
+      if (await _isUploadPending(userId)) {
+        final local = await database.foodPreferencesDao.getUserFoodPreferences(
+          userId,
+        );
+        preferences.removeWhere((food, _) => local.containsKey(food));
+        sliderLevels.removeWhere((food, _) => local.containsKey(food));
       }
 
       // Save to local Drift database using mergeMode to preserve local preferences
@@ -151,8 +164,10 @@ class FoodPreferencesRepository with SyncableRepository {
         },
       );
 
+      await _setUploadPending(userId, false);
       return UploadResult.successful(allPreferences.length);
     } catch (e, stackTrace) {
+      await _setUploadPending(userId, true);
       await sentry.reportNetworkError(
         e,
         url: 'supabase:food_preferences:upload',
@@ -197,7 +212,9 @@ class FoodPreferencesRepository with SyncableRepository {
         unawaited(() async {
           try {
             await _uploadAllPreferencesForUser(userId);
+            await _setUploadPending(userId, false);
           } catch (e, stackTrace) {
+            await _setUploadPending(userId, true);
             sentry.addBreadcrumb(
               message: 'Immediate upload failed; record stays dirty for retry',
               category: 'sync',
@@ -375,6 +392,26 @@ class FoodPreferencesRepository with SyncableRepository {
       rethrow;
     }
   }
+
+  /// Whether this user's local preferences have changes the server has not
+  /// taken. Kept in SharedPreferences because a rejected upload outlives the
+  /// app session, like the `needs_upload` flag other tables carry.
+  Future<bool> _isUploadPending(String userId) async {
+    final prefs = await SharedPreferences.getInstance();
+    return prefs.getBool(_uploadPendingKey(userId)) ?? false;
+  }
+
+  Future<void> _setUploadPending(String userId, bool pending) async {
+    final prefs = await SharedPreferences.getInstance();
+    if (pending) {
+      await prefs.setBool(_uploadPendingKey(userId), true);
+    } else {
+      await prefs.remove(_uploadPendingKey(userId));
+    }
+  }
+
+  String _uploadPendingKey(String userId) =>
+      '${repositoryKey}_upload_pending_$userId';
 
   Future<void> _uploadAllPreferencesForUser(String userId) async {
     final allPreferences = await database.foodPreferencesDao

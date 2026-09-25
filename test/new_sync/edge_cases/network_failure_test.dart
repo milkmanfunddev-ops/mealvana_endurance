@@ -157,7 +157,10 @@ void main() {
       // First attempt
       await coordinator.ensureSynced('events', 'user-123', repository: repo);
       expect(repo.uploadAttempts, 1);
-      expect(repo.syncAttempts, 0);
+      // A failed upload no longer skips the pull (ticket 103); offline, the
+      // pull is attempted and fails too.
+      expect(repo.syncAttempts, 1);
+      repo.syncAttempts = 0;
 
       // Network comes back, use a fresh coordinator instance to bypass in-memory
       // failure cooldown and retry immediately.
@@ -302,7 +305,8 @@ void main() {
         repository: activitiesRepo,
       );
       expect(activitiesRepo.uploadAttempts, 1);
-      expect(activitiesRepo.syncAttempts, 0);
+      // Pull attempted after the failed upload (ticket 103), and failed.
+      expect(activitiesRepo.syncAttempts, 1);
 
       // Verify users timestamp updated, activities did not
       final usersTime = await usersRepo.getLastSyncTime();
