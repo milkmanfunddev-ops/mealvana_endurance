@@ -13,8 +13,8 @@
 
 **Touches:** lib/features/settings/presentation/screens/settings_screen.dart, lib/features/content/domain/content_keys.dart
 
-- [ ] Widget test: the sign-out dialog text comes from the content system and has no "guest".
-- [ ] Both delete confirms read the same.
+- [x] Widget test: the sign-out dialog text comes from the content system and has no "guest".
+- [x] Both delete confirms read the same.
 - [ ] codegen if annotations changed, `flutter analyze` and the suite green.
 
 Next: /implement-lee testing-wave

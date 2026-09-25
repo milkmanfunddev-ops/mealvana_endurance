@@ -657,31 +657,27 @@ class _SettingsScreenState extends ConsumerState<SettingsScreen> {
             SizedBox(
               width: double.infinity,
               child: KyleSecondaryButton(
-                text: state.signOutButton ?? 'Sign Out',
+                key: const ValueKey('settings.sign_out_button'),
+                text: state.signOutButton,
                 onPressed: () async {
-                  // Show confirmation dialog
-                  final confirmed = await showDialog<bool>(
-                    context: context,
-                    builder: (context) => AlertDialog(
-                      title: const Text('Sign Out?'),
-                      content: const Text(
-                        'You\'ll continue using the app as a guest. Your preferences will be saved on this device. Sign in again to sync across devices.',
-                      ),
-                      actions: [
-                        TextButton(
-                          onPressed: () => Navigator.pop(context, false),
-                          child: const Text('Cancel'),
-                        ),
-                        TextButton(
-                          onPressed: () => Navigator.pop(context, true),
-                          child: const Text('Sign Out'),
-                        ),
-                      ],
+                  // mp-508: no guest mode, so the confirm says the athlete
+                  // signs in again. Title and buttons match the paywall's.
+                  final content = ref.read(contentServiceProvider);
+                  final confirmed = await _confirmAccountAction(
+                    context,
+                    title: content.getValue(
+                      ContentKeys.paywallSignOutConfirmTitle,
                     ),
+                    body: content.getValue(
+                      ContentKeys.settingsSignOutConfirmBody,
+                    ),
+                    action: content.getValue(ContentKeys.paywallSignOutButton),
+                    cancel: content.getValue(ContentKeys.paywallCancel),
+                    destructive: false,
                   );
 
                   // If user confirmed, proceed with sign out
-                  if (confirmed == true && context.mounted) {
+                  if (confirmed && context.mounted) {
                     await ref
                         .read(settingsControllerProvider.notifier)
                         .signOut();
@@ -697,37 +693,31 @@ class _SettingsScreenState extends ConsumerState<SettingsScreen> {
 
             const SizedBox(height: AppSpacing.md),
 
-            // Delete Account button
+            // Delete Account button: the same content keys as the paywall's
+            // delete confirm, so the two read the same (finding 02-006).
             SizedBox(
               width: double.infinity,
               child: TextButton(
+                key: const ValueKey('settings.delete_account_button'),
                 onPressed: () async {
-                  // Show confirmation dialog
-                  final confirmed = await showDialog<bool>(
-                    context: context,
-                    builder: (context) => AlertDialog(
-                      title: const Text('Delete Account?'),
-                      content: const Text(
-                        'This will permanently delete your account and all associated data. This action cannot be undone.',
-                      ),
-                      actions: [
-                        TextButton(
-                          onPressed: () => Navigator.pop(context, false),
-                          child: const Text('Cancel'),
-                        ),
-                        TextButton(
-                          onPressed: () => Navigator.pop(context, true),
-                          style: TextButton.styleFrom(
-                            foregroundColor: AppColors.dragonfruit,
-                          ),
-                          child: const Text('Delete'),
-                        ),
-                      ],
+                  final content = ref.read(contentServiceProvider);
+                  final confirmed = await _confirmAccountAction(
+                    context,
+                    title: content.getValue(
+                      ContentKeys.paywallDeleteConfirmTitle,
                     ),
+                    body: content.getValue(
+                      ContentKeys.paywallDeleteConfirmBody,
+                    ),
+                    action: content.getValue(
+                      ContentKeys.paywallDeleteConfirmAction,
+                    ),
+                    cancel: content.getValue(ContentKeys.paywallCancel),
+                    destructive: true,
                   );
 
                   // If user confirmed, proceed with delete
-                  if (confirmed == true && context.mounted) {
+                  if (confirmed && context.mounted) {
                     await ref
                         .read(settingsControllerProvider.notifier)
                         .deleteAccount();
@@ -739,7 +729,9 @@ class _SettingsScreenState extends ConsumerState<SettingsScreen> {
                   }
                 },
                 child: Text(
-                  'Delete Account',
+                  ref
+                      .watch(contentServiceProvider)
+                      .getValue(ContentKeys.paywallDeleteAccountButton),
                   style: AppTextStyles.bodyMedium.copyWith(
                     color: AppColors.dragonfruit,
                     decoration: TextDecoration.underline,
@@ -751,6 +743,41 @@ class _SettingsScreenState extends ConsumerState<SettingsScreen> {
         ],
       ),
     );
+  }
+
+  /// The account card's confirm (sign out, delete account). Every string is
+  /// passed in from the content system; the same shape as the paywall's.
+  Future<bool> _confirmAccountAction(
+    BuildContext context, {
+    required String title,
+    required String body,
+    required String action,
+    required String cancel,
+    required bool destructive,
+  }) async {
+    final confirmed = await showDialog<bool>(
+      context: context,
+      builder: (context) => AlertDialog(
+        title: Text(title),
+        content: Text(body),
+        actions: [
+          TextButton(
+            key: const ValueKey('settings.confirm.cancel'),
+            onPressed: () => Navigator.pop(context, false),
+            child: Text(cancel),
+          ),
+          TextButton(
+            key: const ValueKey('settings.confirm.action'),
+            onPressed: () => Navigator.pop(context, true),
+            style: destructive
+                ? TextButton.styleFrom(foregroundColor: AppColors.dragonfruit)
+                : null,
+            child: Text(action),
+          ),
+        ],
+      ),
+    );
+    return confirmed == true;
   }
 
   Widget _buildQuickLinksSection(BuildContext context) {
