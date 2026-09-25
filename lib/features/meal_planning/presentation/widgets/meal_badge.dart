@@ -96,13 +96,19 @@ class MealBadge extends ConsumerWidget {
           children: [
             FaIcon(_icon, size: 9, color: text),
             const SizedBox(width: 4),
-            Text(
-              content.getValue(_labelKey),
-              style: TextStyle(
-                fontSize: 10,
-                fontWeight: FontWeight.w600,
-                color: text,
-                height: 1.2,
+            // Ellipsised rather than overflowing when a large text size
+            // makes the label wider than its card (88-014).
+            Flexible(
+              child: Text(
+                content.getValue(_labelKey),
+                maxLines: 1,
+                overflow: TextOverflow.ellipsis,
+                style: TextStyle(
+                  fontSize: 10,
+                  fontWeight: FontWeight.w600,
+                  color: text,
+                  height: 1.2,
+                ),
               ),
             ),
           ],

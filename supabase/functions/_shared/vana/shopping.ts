@@ -211,9 +211,31 @@ export async function createList(v: VanaCtx, name: string | null, seed: Shopping
   }
   return detail(v, made);
 }
+/** List names (ticket 130, Finding 89-015, Lee: all four): capped at 60 like plan names (`PLAN_NAME_MAX` in plan.ts,
+ *  repeated here because plan.ts imports this file), whitespace collapsed, and a name another list has takes the next
+ *  free " (n)". The app applies the same rules over the lists it knows (`shopping_list_name.dart`), so what it shows on
+ *  Save is what is kept. */
+export const LIST_NAME_MAX = 60;
+export function cleanListName(name: string): string {
+  const clean = name.replace(/\s+/g, ' ').trim();
+  return clean.length > LIST_NAME_MAX ? clean.slice(0, LIST_NAME_MAX).trimEnd() : clean;
+}
+export function uniqueListName(name: string, taken: string[]): string {
+  const has = new Set(taken.map(key));
+  if (!has.has(key(name))) return name;
+  const base = name.replace(/ \(\d+\)$/, '');
+  for (let n = 2; ; n++) {
+    const suffix = ` (${n})`;
+    const room = LIST_NAME_MAX - suffix.length;
+    const candidate = `${base.length > room ? base.slice(0, room).trimEnd() : base}${suffix}`;
+    if (!has.has(key(candidate))) return candidate;
+  }
+}
 export async function renameList(v: VanaCtx, id: string, name: string): Promise<ShoppingListDetail> {
-  const clean = name.trim(); if (!clean) throw new Error('name required');
+  const cleaned = cleanListName(name); if (!cleaned) throw new Error('name required');
   await listRow(v, id);
+  const { data: others } = await v.db.from('shopping_lists').select('id, name').eq('user_id', v.userId).limit(200);
+  const clean = uniqueListName(cleaned, ((others ?? []) as { id: string; name: string | null }[]).filter((r) => r.id !== id).map((r) => r.name ?? ''));
   await v.db.from('shopping_lists').update({ name: clean, updated_at: now() }).eq('id', id).eq('user_id', v.userId);
   return detail(v, await listRow(v, id));
 }

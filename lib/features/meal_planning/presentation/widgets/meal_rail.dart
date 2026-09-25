@@ -87,7 +87,8 @@ class MealRail extends StatelessWidget {
           )
         else
           SizedBox(
-            height: 132,
+            // Grows with the text size so no card overflows (88-014).
+            height: MealRailCard.railHeight(context),
             child: ListView.separated(
               scrollDirection: Axis.horizontal,
               itemCount: meals.length,

@@ -169,4 +169,26 @@ void main() {
 
     expect(plan, isNull);
   });
+
+  /// Ticket 130 (Finding 89-013): a plan deleted elsewhere stayed in the
+  /// Previous plans sheet after its view said "This plan is no longer
+  /// here." The sheet stays open under the view (ticket 97), so a plan the
+  /// view finds gone re-reads the list, which then lacks its row.
+  test('a plan the view finds gone drops out of the open sheet', () async {
+    server.rows.insert(0, {...rows.first, 'id': 'plan-gone'});
+    final c = makeContainer(withPlan: current);
+    c.listen(previousPlansProvider, (_, _) {});
+    final before = await c.read(previousPlansProvider.future);
+    expect(before.map((p) => p.id), contains('plan-gone'));
+
+    // Deleted elsewhere (another device, a chat), then opened from the sheet.
+    server.rows.removeWhere((r) => r['id'] == 'plan-gone');
+    final plan = await c.read(earlierPlanProvider('plan-gone').future);
+    expect(plan, isNull);
+    await settle();
+
+    expect(server.calls.whereType<ListPlansAction>().length, 2);
+    final after = await c.read(previousPlansProvider.future);
+    expect(after.map((p) => p.id), isNot(contains('plan-gone')));
+  });
 }

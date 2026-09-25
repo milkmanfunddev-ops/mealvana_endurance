@@ -55,6 +55,10 @@ class EarlierPlan extends _$EarlierPlan {
   @override
   Future<MealPlan?> build(String id) async {
     final result = await _actions.run(GetPlanAction(id: id));
+    // The server no longer has it (deleted elsewhere): the sheet open under
+    // this view still lists it, so the list is read again and loses the row
+    // (Finding 89-013).
+    if (result.plan == null) _listChanged();
     return result.plan;
   }
 

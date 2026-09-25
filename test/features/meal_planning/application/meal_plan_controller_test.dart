@@ -6,12 +6,14 @@ import 'dart:convert';
 
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:flutter_test/flutter_test.dart';
+import 'package:mealvana_endurance/features/meal_planning/application/home_service.dart';
 import 'package:mealvana_endurance/features/meal_planning/application/meal_plan_controller.dart';
 import 'package:mealvana_endurance/features/meal_planning/data/meal_plan_repository.dart';
 import 'package:mealvana_endurance/features/meal_planning/data/user_memory_repository.dart';
 import 'package:mealvana_endurance/features/meal_planning/domain/vana_setting.dart';
 import 'package:mealvana_endurance/features/meal_planning/data/vana_action_client.dart';
 import 'package:mealvana_endurance/features/meal_planning/data/vana_exceptions.dart';
+import 'package:mealvana_endurance/features/meal_planning/domain/home_payload.dart';
 import 'package:mealvana_endurance/features/meal_planning/domain/meal_plan.dart';
 import 'package:mealvana_endurance/features/meal_planning/domain/meal_source.dart';
 import 'package:mealvana_endurance/features/meal_planning/domain/plan_rule.dart';
@@ -25,6 +27,22 @@ import 'package:shared_preferences/shared_preferences.dart';
 import '../domain/fixture_helpers.dart';
 import '../helpers/container.dart';
 import '../helpers/fakes.dart';
+
+/// The Plan tab's home payload, standing in for `get_home`: counts how
+/// often a plan write asks it to read again (ticket 130, Finding 88-023).
+class _RecordingHomeController extends HomeController {
+  int builds = 0;
+  int planChanges = 0;
+
+  @override
+  Future<HomePayload?> build([String? date]) async {
+    builds++;
+    return null;
+  }
+
+  @override
+  Future<void> planChanged() async => planChanges++;
+}
 
 class _FakeActionClient extends Fake implements VanaActionClient {
   _FakeActionClient(this.response);
@@ -89,6 +107,8 @@ void main() {
   late _FakeActionClient actions;
   late StubConnectivity connectivity;
   late NoopSyncCoordinator sync;
+  late _RecordingHomeController home;
+  late ProviderContainer container;
 
   /// The batch fixture, retargeted onto the current week so the test does
   /// not depend on the calendar. `get_plan` (the post-upload re-read)
@@ -122,20 +142,84 @@ void main() {
     actions = _FakeActionClient(batchResult);
     connectivity = StubConnectivity();
     sync = NoopSyncCoordinator();
+    home = _RecordingHomeController();
   });
 
   tearDown(() => db.close());
 
   MealPlanController controller({FakeLogger? logger}) {
-    final container = testContainer([
+    container = testContainer([
       ...baseOverrides(connectivity: connectivity, sync: sync, logger: logger),
       appDatabaseProvider.overrideWithValue(db),
       mealPlanRepositoryProvider.overrideWithValue(repo),
       vanaActionClientProvider.overrideWithValue(actions),
+      homeControllerProvider.overrideWith(() => home),
     ]);
     container.listen(mealPlanControllerProvider, (_, __) {});
     return container.read(mealPlanControllerProvider.notifier);
   }
+
+  /// The Plan tab is open: its day note is on screen and watching.
+  void openPlanTab() =>
+      container.listen(homeControllerProvider(), (_, _) {});
+
+  /// Ticket 130 (Finding 88-023): after a confirm the Plan tab's Vana note
+  /// kept naming the old plan's meal until a relaunch, because the home
+  /// payload was never read again. Every plan write that lands asks the
+  /// note to read again — and only while the tab is there to show it.
+  group('home payload follows the plan', () {
+    test('a remote-ack write (confirmPlan) re-reads the home payload', () async {
+      final c = controller();
+      await c.future;
+      openPlanTab();
+      await settle();
+      expect(home.planChanges, 0);
+
+      await c.confirmPlan(planId: 'plan-1');
+      await settle();
+
+      expect(home.planChanges, 1);
+    });
+
+    test('a local-first write re-reads it once the replay has landed', () async {
+      final c = controller();
+      await c.future;
+      openPlanTab();
+      await settle();
+
+      await c.setServings('pm-1', 2);
+      await settle(const Duration(milliseconds: 80));
+
+      expect(home.planChanges, 1);
+    });
+
+    test('a refused remote-ack write leaves the note alone', () async {
+      actions = _FakeActionClient(
+        (_) => throw const VanaServerException(400, '{"error":"nope"}'),
+      );
+      final c = controller();
+      await c.future;
+      openPlanTab();
+      await settle();
+
+      await expectLater(c.confirmPlan(planId: 'plan-1'), throwsA(anything));
+      await settle();
+
+      expect(home.planChanges, 0);
+    });
+
+    test('with the Plan tab closed nothing is read: no get_home for a tab '
+        'nobody is looking at', () async {
+      final c = controller();
+      await c.future;
+
+      await c.confirmPlan(planId: 'plan-1');
+      await settle();
+
+      expect(home.builds, 0);
+      expect(home.planChanges, 0);
+    });
+  });
 
   test(
     'a Monday week start moves the week the controller binds to (mp-269)',

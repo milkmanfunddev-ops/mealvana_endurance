@@ -14,6 +14,7 @@ import '../domain/meal_plan.dart';
 import '../domain/plan_meal.dart';
 import '../domain/shopping_item.dart';
 import '../domain/shopping_list.dart';
+import '../domain/shopping_list_name.dart';
 import '../domain/ui_action.dart';
 import 'meal_plan_controller.dart';
 import 'shopping_qty_formatter.dart';
@@ -87,6 +88,11 @@ class ShoppingListState {
   final String? weekPlanId;
 
   bool get isEmpty => items.isEmpty;
+
+  /// What is left to buy: rows neither ticked nor already on hand. The share
+  /// summary's number (Finding 89-002: "9 items to buy" while six were
+  /// ticked); [itemCount] is the header's count of rows not on hand.
+  int get toBuyCount => items.where((i) => !i.have && !i.checked).length;
 
   /// True once the account has any list at all, on screen or in
   /// [previous].
@@ -501,14 +507,22 @@ class ShoppingListController extends _$ShoppingListController {
 
   /// Rename the list on screen, or — from the previous-lists sheet — the
   /// list [id] names. The new name shows at once; the server's answer
-  /// settles it, and a failure puts the old name back.
+  /// settles it, and a failure puts the old name back. The name is cleaned,
+  /// capped and made unique among the lists the tab knows before it is
+  /// sent, the same way the server does it, so the two agree (89-015).
   Future<void> renameList(String name, {String? id}) async {
     final current = state.value;
-    final clean = name.trim();
     final target = id ?? current?.listId;
-    if (current == null || target == null || clean.isEmpty) {
+    if (current == null || target == null) {
       throw StateError('no shopping list to rename');
     }
+    final clean = uniqueShoppingListName(cleanShoppingListName(name), [
+      if (current.listId != null && current.listId != target)
+        current.listName,
+      for (final l in current.previous)
+        if (l.id != target) l.name,
+    ]);
+    if (clean.isEmpty) throw StateError('no shopping list to rename');
     if (target == current.listId) {
       state = AsyncData(current.copyWith(listName: clean));
       await _settle(

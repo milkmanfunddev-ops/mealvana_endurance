@@ -20,6 +20,7 @@ import '../domain/plan_rule.dart';
 import '../domain/ui_action.dart';
 import '../domain/vana_part.dart';
 import '../domain/week_start.dart';
+import 'home_service.dart';
 import 'plan_reminder_service.dart';
 
 part 'meal_plan_controller.g.dart';
@@ -269,6 +270,7 @@ class MealPlanController extends _$MealPlanController {
       await _rebuildReplayedLists(userId);
       if (result.count == 0) return;
       await _refreshFromServer(userId);
+      _notifyHome();
     }());
   }
 
@@ -295,6 +297,15 @@ class MealPlanController extends _$MealPlanController {
         );
       }
     }
+  }
+
+  /// The Plan tab's day note reads `get_home` once and keeps it; after a
+  /// plan write it must read again or it names the old plan's meal until a
+  /// relaunch (Finding 88-023). Only while the tab is showing it: a note
+  /// nobody is looking at costs a `get_home` for nothing.
+  void _notifyHome() {
+    if (!ref.exists(homeControllerProvider())) return;
+    unawaited(ref.read(homeControllerProvider().notifier).planChanged());
   }
 
   Future<void> _refreshFromServer(String userId) async {
@@ -554,6 +565,7 @@ class MealPlanController extends _$MealPlanController {
         applied.weekStart == weekStart &&
         !applied.status.wire.contains('archived');
     state = AsyncData(showsThisWeek ? applied : previous.value);
+    _notifyHome();
     return map(result);
   }
 

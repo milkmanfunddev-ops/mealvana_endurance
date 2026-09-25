@@ -1,10 +1,12 @@
 import 'package:flutter/material.dart';
+import 'package:flutter/services.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
 import 'package:intl/intl.dart';
 
 import '../../../../features/content/application/content_service.dart';
 import '../../../../features/content/domain/content_keys.dart';
+import '../../../../features/home_shell/presentation/home_shell_chrome.dart';
 import '../../../../shared/providers/unit_system_provider.dart';
 import '../../../nutrition_plan/domain/run_parameters.dart';
 import '../../../../shared/utils/adaptive_modal.dart';
@@ -18,6 +20,7 @@ import '../../../../theme/kyle_design/app_text_styles.dart';
 import '../../application/shopping_list_controller.dart';
 import '../../domain/shopping_item.dart';
 import '../../domain/shopping_list.dart';
+import '../../domain/shopping_list_name.dart';
 import '../widgets/overflow_menu.dart';
 import '../widgets/shopping_list.dart';
 import '../../../kroger/application/kroger_availability.dart';
@@ -59,7 +62,14 @@ class ShoppingTab extends ConsumerWidget {
     final secondary = textColor.withValues(alpha: 0.6);
 
     return ListView(
-      padding: const EdgeInsets.all(AppSpacing.md),
+      // Bottom padding clears the shell's floating tab bar, as on the Plan
+      // tab (Finding 88-008).
+      padding: const EdgeInsets.fromLTRB(
+        AppSpacing.md,
+        AppSpacing.md,
+        AppSpacing.md,
+        HomeShellChrome.bottomChromeClearancePx,
+      ),
       children: [
         _ListHeader(
           state: state,
@@ -80,6 +90,8 @@ class ShoppingTab extends ConsumerWidget {
                   context,
                   ref,
                   listId,
+                  name: state.listName,
+                  date: state.listDate,
                   planList: _isWeekPlanList(state, state.planId),
                 ),
         ),
@@ -243,9 +255,22 @@ class ShoppingTab extends ConsumerWidget {
     BuildContext context,
     WidgetRef ref,
     String listId, {
+    required String name,
+    required DateTime? date,
     bool planList = false,
   }) async {
     final content = ref.read(contentServiceProvider);
+    // Which list goes, by name and date: two lists may share a name
+    // (89-015).
+    final which = ContentKeys.format(
+      content.getValue(ContentKeys.mpShoppingDeleteListWhich),
+      {
+        'name': name.isEmpty
+            ? content.getValue(ContentKeys.mpShoppingListUntitled)
+            : shoppingListNameInWords(content, name),
+        'date': date == null ? '' : DateFormat.yMMMd().format(date.toLocal()),
+      },
+    );
     final confirmed = await showDialog<bool>(
       context: context,
       builder: (dialogContext) => AlertDialog(
@@ -258,12 +283,23 @@ class ShoppingTab extends ConsumerWidget {
                 : ContentKeys.mpShoppingDeleteListTitle,
           ),
         ),
-        content: Text(
-          content.getValue(
-            planList
-                ? ContentKeys.mpShoppingDeletePlanListBody
-                : ContentKeys.mpShoppingDeleteListBody,
-          ),
+        content: Column(
+          mainAxisSize: MainAxisSize.min,
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
+            Text(
+              which,
+              style: const TextStyle(fontWeight: FontWeight.w600),
+            ),
+            const SizedBox(height: AppSpacing.xs),
+            Text(
+              content.getValue(
+                planList
+                    ? ContentKeys.mpShoppingDeletePlanListBody
+                    : ContentKeys.mpShoppingDeleteListBody,
+              ),
+            ),
+          ],
         ),
         actions: [
           TextButton(
@@ -331,6 +367,8 @@ class ShoppingTab extends ConsumerWidget {
           context,
           ref,
           list.id,
+          name: list.name,
+          date: list.sortDate,
           planList: _isWeekPlanList(state, list.planId),
         );
     }
@@ -718,15 +756,22 @@ class _ShoppingRenameSheetState extends ConsumerState<ShoppingRenameSheet> {
   late final _name = TextEditingController(text: widget.name);
 
   @override
+  void initState() {
+    super.initState();
+    _name.addListener(() => setState(() {}));
+  }
+
+  @override
   void dispose() {
     _name.dispose();
     super.dispose();
   }
 
+  bool get _canSave => _name.text.trim().isNotEmpty;
+
   void _save() {
-    final name = _name.text.trim();
-    if (name.isEmpty) return;
-    Navigator.of(context).pop(name);
+    if (!_canSave) return;
+    Navigator.of(context).pop(_name.text.trim());
   }
 
   @override
@@ -741,13 +786,18 @@ class _ShoppingRenameSheetState extends ConsumerState<ShoppingRenameSheet> {
           controller: _name,
           hintText: content.getValue(ContentKeys.mpShoppingRenameHint),
           autofocus: true,
+          // Capped like a plan name (89-015); the server caps it too.
+          inputFormatters: [
+            LengthLimitingTextInputFormatter(shoppingListNameMax),
+          ],
           onSubmitted: (_) => _save(),
         ),
         const SizedBox(height: AppSpacing.md),
+        // Disabled on an empty name rather than silently doing nothing.
         KylePrimaryButton(
           key: const ValueKey('meal_planning.shopping_rename_save'),
           text: content.getValue(ContentKeys.mpShoppingSaveAction),
-          onPressed: _save,
+          onPressed: _canSave ? _save : null,
         ),
       ],
     );

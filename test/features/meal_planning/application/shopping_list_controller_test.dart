@@ -18,6 +18,7 @@ import 'package:mealvana_endurance/features/meal_planning/domain/meal_plan_statu
 import 'package:mealvana_endurance/features/meal_planning/domain/shopping_item.dart';
 import 'package:mealvana_endurance/features/meal_planning/domain/shopping_list.dart';
 import 'package:mealvana_endurance/features/meal_planning/domain/ui_action.dart';
+import 'package:mealvana_endurance/features/meal_planning/domain/shopping_list_name.dart';
 import 'package:mealvana_endurance/shared/services/prefs_provider.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 
@@ -593,6 +594,73 @@ void main() {
     },
   );
 
+  /// Ticket 130 (Finding 89-015, Lee: all four). A rename to a name another
+  /// list has takes the next free " (n)"; names cap at 60 like plan names.
+  /// The app works the name out from the lists it knows and sends that; the
+  /// server does the same over the table (shopping_lists.test.ts), so the
+  /// two agree.
+  group('rename: names are unique and capped (89-015)', () {
+    test('uniqueShoppingListName: the next free number, the cap kept', () {
+      expect(uniqueShoppingListName('Big shop', ['Costco']), 'Big shop');
+      expect(uniqueShoppingListName('Big shop', ['big shop']), 'Big shop (2)');
+      expect(
+        uniqueShoppingListName('Big shop', ['Big shop', 'Big shop (2)']),
+        'Big shop (3)',
+      );
+      // A typed " (2)" that is taken counts up from its base.
+      expect(
+        uniqueShoppingListName('Big shop (2)', ['Big shop (2)']),
+        'Big shop (3)',
+      );
+      // Whitespace is collapsed and the cap is 60 (PLAN_NAME_MAX), suffix
+      // included.
+      expect(cleanShoppingListName('  Big   shop '), 'Big shop');
+      expect(cleanShoppingListName('x' * 70).length, shoppingListNameMax);
+      final long = uniqueShoppingListName('x' * 60, ['x' * 60]);
+      expect(long.length, lessThanOrEqualTo(shoppingListNameMax));
+      expect(long, endsWith(' (2)'));
+    });
+
+    test('a name another list has is sent with " (2)"', () async {
+      final c = makeContainer();
+      await c.read(shoppingListControllerProvider.future);
+      server.calls.clear();
+
+      await c
+          .read(shoppingListControllerProvider.notifier)
+          .renameList('Week of 2026-09-06');
+
+      final action = server.calls.single as RenameShoppingListAction;
+      expect(action.name, 'Week of 2026-09-06 (2)');
+      final state = c.read(shoppingListControllerProvider).value!;
+      expect(state.listName, 'Week of 2026-09-06 (2)');
+    });
+
+    test('renaming a list to its own name is not a duplicate', () async {
+      final c = makeContainer();
+      final before = await c.read(shoppingListControllerProvider.future);
+      server.calls.clear();
+
+      await c
+          .read(shoppingListControllerProvider.notifier)
+          .renameList(before.listName);
+
+      expect((server.calls.single as RenameShoppingListAction).name, before.listName);
+    });
+
+    test('a long name is capped at 60 before it is sent', () async {
+      final c = makeContainer();
+      await c.read(shoppingListControllerProvider.future);
+      server.calls.clear();
+
+      await c
+          .read(shoppingListControllerProvider.notifier)
+          .renameList('y' * 123);
+
+      expect((server.calls.single as RenameShoppingListAction).name.length, 60);
+    });
+  });
+
   test('rename: a blank name is refused before anything is sent', () async {
     final c = makeContainer();
     await c.read(shoppingListControllerProvider.future);
@@ -780,6 +848,27 @@ PRODUCE
 PANTRY
 ☐ Oats — 500 g''',
     );
+  });
+
+  /// Ticket 130 (Finding 89-002): "9 items to buy" while six were ticked.
+  /// The share summary counts what is left to buy: rows neither ticked nor
+  /// already on hand. The header's "9 items" ([ShoppingListState.itemCount])
+  /// still counts every row not on hand.
+  test('the share count leaves out ticked rows and rows on hand', () {
+    final oats = _item('Oats', 'Pantry', qty: '500 g');
+    final oil = _item('Olive oil', 'Pantry', have: true);
+    final bananas = _item('Bananas', 'Produce', qty: '6', checked: true);
+    final state = ShoppingListState(
+      items: [oats, oil, bananas],
+      byAisle: {
+        'Produce': [bananas],
+        'Pantry': [oats, oil],
+      },
+      itemCount: 2,
+    );
+
+    expect(state.itemCount, 2);
+    expect(state.toBuyCount, 1, reason: 'Bananas are ticked, oil is on hand');
   });
 
   test('share text leaves out an aisle when every item is already on hand', () {

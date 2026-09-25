@@ -5,6 +5,7 @@ import 'package:intl/intl.dart';
 
 import '../../../../features/content/application/content_service.dart';
 import '../../../../features/content/domain/content_keys.dart';
+import '../../../../features/home_shell/presentation/home_shell_chrome.dart';
 import '../../../../shared/widgets/kyle_design/buttons/primary_button.dart';
 import '../../../../shared/widgets/kyle_design/buttons/secondary_button.dart';
 import '../../../../shared/widgets/kyle_design/feedback/mealvana_snackbar.dart';
@@ -68,11 +69,14 @@ class PlanTab extends ConsumerWidget {
         await ref.read(mealPlanControllerProvider.notifier).refresh();
       },
       child: ListView(
+        // The bottom padding clears the shell's floating tab bar: with four
+        // meals the Add meal / New meal plan row sat under it and a tap hit
+        // the Learn tab (Finding 88-008).
         padding: const EdgeInsets.fromLTRB(
           AppSpacing.md,
           AppSpacing.md,
           AppSpacing.md,
-          AppSpacing.md,
+          HomeShellChrome.bottomChromeClearancePx,
         ),
         children: [
           // Vana's note for today always has a slot — it carries the entry

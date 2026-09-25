@@ -18,6 +18,11 @@ part of 'is_admin_provider.dart';
 /// boolean is not worth it. Signed out, or any read failure, means `false`.
 /// A sign-in or sign-out that changes the user re-reads, so an athlete who
 /// signs in after an admin on the same device never inherits the box.
+///
+/// A read that failed (an offline start, Finding 89-010) still answers
+/// `false` — the gate awaits it — and reads again once the network comes
+/// back or the app next resumes, so one bad start does not hide Team review
+/// for the whole session.
 
 @ProviderFor(isAdmin)
 const isAdminProvider = IsAdminProvider._();
@@ -32,6 +37,11 @@ const isAdminProvider = IsAdminProvider._();
 /// boolean is not worth it. Signed out, or any read failure, means `false`.
 /// A sign-in or sign-out that changes the user re-reads, so an athlete who
 /// signs in after an admin on the same device never inherits the box.
+///
+/// A read that failed (an offline start, Finding 89-010) still answers
+/// `false` — the gate awaits it — and reads again once the network comes
+/// back or the app next resumes, so one bad start does not hide Team review
+/// for the whole session.
 
 final class IsAdminProvider
     extends $FunctionalProvider<AsyncValue<bool>, bool, FutureOr<bool>>
@@ -46,6 +56,11 @@ final class IsAdminProvider
   /// boolean is not worth it. Signed out, or any read failure, means `false`.
   /// A sign-in or sign-out that changes the user re-reads, so an athlete who
   /// signs in after an admin on the same device never inherits the box.
+  ///
+  /// A read that failed (an offline start, Finding 89-010) still answers
+  /// `false` — the gate awaits it — and reads again once the network comes
+  /// back or the app next resumes, so one bad start does not hide Team review
+  /// for the whole session.
   const IsAdminProvider._()
     : super(
         from: null,
@@ -71,4 +86,4 @@ final class IsAdminProvider
   }
 }
 
-String _$isAdminHash() => r'2f9a92c82436e365c3d833f13020a9c0ca15bb20';
+String _$isAdminHash() => r'91e145d6d04f241856e961735d72b28a86bfa970';

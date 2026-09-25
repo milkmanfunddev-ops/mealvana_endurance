@@ -16,6 +16,7 @@ import 'package:mealvana_endurance/features/meal_planning/domain/meal_plan_summa
 import 'package:mealvana_endurance/features/meal_planning/domain/vana_part.dart';
 import 'package:mealvana_endurance/features/meal_planning/domain/week_start.dart';
 import 'package:mealvana_endurance/features/meal_planning/presentation/screens/plan_tab.dart';
+import 'package:mealvana_endurance/features/home_shell/presentation/home_shell_chrome.dart';
 import 'package:mealvana_endurance/shared/widgets/kyle_design/buttons/primary_button.dart';
 
 import '../../domain/fixture_helpers.dart';
@@ -53,6 +54,7 @@ void main() {
     HomePayload? home,
     List<MealPlanSummary> previous = const [],
     VoidCallback? onShowShopping,
+    VoidCallback? onAddMeal,
   }) async {
     await tester.pumpWidget(
       ProviderScope(
@@ -70,7 +72,9 @@ void main() {
           dailyMacrosControllerProvider.overrideWith(_NoMacrosController.new),
         ],
         child: MaterialApp(
-          home: Scaffold(body: PlanTab(onShowShopping: onShowShopping)),
+          home: Scaffold(
+            body: PlanTab(onShowShopping: onShowShopping, onAddMeal: onAddMeal),
+          ),
         ),
       ),
     );
@@ -235,6 +239,53 @@ void main() {
       find.byKey(const ValueKey('meal_planning.plan_rebuild_list')),
       findsNothing,
     );
+  });
+
+  /// Ticket 130 (Finding 88-008): with four meals the Add meal / New meal
+  /// plan row sat under the floating tab bar, so a tap hit the Learn tab.
+  /// Scrolled to the end, the row must sit above the shell's bottom chrome
+  /// and take the tap.
+  testWidgets('scrolled to the end, the buttons clear the tab bar with four '
+      'meals and take a tap', (tester) async {
+    // A short phone: the list must scroll, so the row's resting place is
+    // the list's bottom padding and nothing else.
+    tester.view.physicalSize = const Size(390, 600);
+    tester.view.devicePixelRatio = 1.0;
+    addTearDown(tester.view.reset);
+    final fourMeals = confirmedPlan.copyWith(
+      meals: [
+        for (var i = 0; i < 4; i++)
+          confirmedPlan.meals[i % confirmedPlan.meals.length].copyWith(
+            id: 'pm-130-$i',
+          ),
+      ],
+    );
+    var added = 0;
+    await pumpTab(
+      tester,
+      plan: _FakePlanController(fourMeals),
+      onAddMeal: () => added++,
+    );
+    expect(planTiles(), findsNWidgets(4));
+
+    final addMeal = find.byKey(const ValueKey('meal_planning.btn_add_meal'));
+    await tester.drag(find.byType(ListView), const Offset(0, -2000));
+    await settle(tester);
+
+    final position = tester
+        .state<ScrollableState>(find.byType(Scrollable).first)
+        .position;
+    expect(position.maxScrollExtent, greaterThan(0));
+    expect(position.pixels, position.maxScrollExtent);
+    final bottom = tester.getBottomLeft(addMeal).dy;
+    expect(
+      bottom,
+      lessThanOrEqualTo(600 - HomeShellChrome.bottomChromeClearancePx),
+      reason: 'the row must sit above the floating tab bar',
+    );
+    await tester.tap(addMeal);
+    await settle(tester);
+    expect(added, 1);
   });
 
   /// 2026-09-16: the "THIS WEEK'S PLAN" overline is gone; the summary row

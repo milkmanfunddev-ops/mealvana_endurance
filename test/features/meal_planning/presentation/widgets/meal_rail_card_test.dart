@@ -6,6 +6,7 @@ import 'package:mealvana_endurance/features/meal_planning/domain/meal_ref.dart';
 import 'package:mealvana_endurance/features/meal_planning/domain/meal_source.dart';
 import 'package:mealvana_endurance/features/meal_planning/domain/meal_type.dart';
 import 'package:mealvana_endurance/features/meal_planning/presentation/widgets/meal_badge.dart';
+import 'package:mealvana_endurance/features/meal_planning/presentation/widgets/meal_rail.dart';
 import 'package:mealvana_endurance/features/meal_planning/presentation/widgets/meal_rail_card.dart';
 
 import '../helpers/test_content.dart';
@@ -101,5 +102,56 @@ void main() {
 
     expect(find.text('No recipe'), findsWidgets);
     expect(find.textContaining('pieces together'), findsOneWidget);
+  });
+
+  /// Ticket 130 (Finding 88-014): at accessibility-large text every Browse
+  /// card showed Flutter's overflow stripe over its badges, because the rail
+  /// was fixed at 132 px. The rail must grow with the text scale and a card
+  /// with a long name, four badges and a Yours marker must lay out cleanly.
+  testWidgets('a rail at text scale 2.0 lays its cards out without overflow', (
+    tester,
+  ) async {
+    tester.view.physicalSize = const Size(390, 844);
+    tester.view.devicePixelRatio = 1.0;
+    addTearDown(tester.view.reset);
+    final meals = [
+      for (var i = 0; i < 3; i++)
+        MealRef(
+          source: i == 2 ? MealSource.saved : MealSource.library,
+          id: 'D-$i',
+          name: 'Green smoothie with berries, oats, and a very long name $i',
+          mealType: MealType.breakfast,
+          prepMinutes: 5,
+          kcal: 280,
+          dietsOk: const ['vegan'],
+          kind: MealKind.assembly,
+        ),
+    ];
+    await tester.pumpWidget(
+      ProviderScope(
+        overrides: [contentServiceProvider.overrideWith(testContentService)],
+        child: MaterialApp(
+          home: MediaQuery(
+            data: const MediaQueryData(textScaler: TextScaler.linear(2.0)),
+            child: Scaffold(
+              body: MealRail(
+                title: 'Breakfast',
+                meals: meals,
+                onTapMeal: (_) {},
+                actionBuilder: (_) => const Icon(Icons.add),
+              ),
+            ),
+          ),
+        ),
+      ),
+    );
+    await tester.pump();
+
+    // No RenderFlex overflow was reported while laying out.
+    expect(tester.takeException(), isNull);
+    expect(find.byType(MealRailCard), findsWidgets);
+    expect(badge(MealBadgeKind.plantBased), findsWidgets);
+    final railHeight = tester.getSize(find.byType(ListView)).height;
+    expect(railHeight, greaterThan(132), reason: 'the rail grows with the text');
   });
 }

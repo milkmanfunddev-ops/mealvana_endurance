@@ -13,6 +13,7 @@ import 'package:mealvana_endurance/features/meal_planning/domain/meal_detail.dar
 import 'package:mealvana_endurance/features/meal_planning/domain/meal_ref.dart';
 import 'package:mealvana_endurance/features/meal_planning/domain/meal_source.dart';
 import 'package:mealvana_endurance/features/meal_planning/domain/meal_type.dart';
+import 'package:mealvana_endurance/shared/providers/app_version_provider.dart';
 import 'package:supabase_flutter/supabase_flutter.dart';
 
 import '../helpers/container.dart';
@@ -70,6 +71,7 @@ void main() {
     return testContainer([
       ...baseOverrides(logger: logger),
       mealReviewRepositoryProvider.overrideWithValue(reviews),
+      appVersionProvider.overrideWith((ref) async => '1.27.1+4'),
       mealDetailControllerProvider(
         id,
       ).overrideWith(() => _SeededDetailController(seed)),
@@ -92,6 +94,9 @@ void main() {
       'meal_name': 'Marathon Bolognese over pasta',
       'is_good': false,
       'why': 'Too much sauce for the pasta.',
+      // Ticket 130 (Finding 89-014): the build that sent it, as Sentry
+      // reads it (version+build).
+      'app_version': '1.27.1+4',
     });
     // The detail state is untouched — the review is not part of the meal.
     final after = container.read(mealDetailControllerProvider('D-048')).value;
