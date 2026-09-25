@@ -20,18 +20,18 @@ Each entry: what went wrong or cost time, where it was seen, and the suggested f
   account, whose password lives only in `secrets/integration_test.env`, which agents may not read.
   116 ran it on its own new account. Suggested fix: add the Patrol account to the credentials
   file so `CRED type` can reach it, or drop "Patrol account" from Findings' Steps when ticketing.
+## Done
+
 - **#80 the Test Store lapse is not 25 minutes (wave 32).** 115's monthly account lapsed about
   5 minutes after purchase: it did not renew while signed out. 116's stayed signed in, renewed
   every 5 minutes, and kept throwing the paywall up (07-003). Ticket 123's Setup still plans
   "around the 25-minute lapse". Suggested fix: say in runbook step 5 that a monthly renews only
   while the app is signed in, and that Annual (1-hour periods) suits a run that needs Pro without
-  interruptions.
+  interruptions. **Fixed (wave 34 lead):** runbook step 5 says so; ticket 123's Setup re-planned.
 - **#81 a conversation deep link reaches the Review sheet with no opener (wave 32).** 115 opened
   `com.milkman.mealvanaendurance:///vana?c=<conversation id>` to confirm an existing draft: no
   model call, no COST. 116 lost a chat spend to a stray tap on the floating Ask Vana button.
-  Suggested fix: put the deep link in runbook step 5 as the way into an old conversation.
-
-## Done
+  Suggested fix: put the deep link in runbook step 5 as the way into an old conversation. **Fixed (wave 34 lead):** runbook step 5 names the deep link.
 
 - **#75 read-only retests held by a read-only wave (wave 31).** Fixed before wave 33: `ticketTouches`
   drops a Touches entry with no `/` or `.`, so "nothing (read only)" names no file and holds

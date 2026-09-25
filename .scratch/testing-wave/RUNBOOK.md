@@ -113,6 +113,14 @@ ticket says so.
   Everything else reuses the plans already on the dev accounts. An old planning conversation
   opens with no opener and makes no model call; note in `RUNS/notes.md` when a `chat` spend
   bought nothing (no `vana_calls` row in your run's minutes), so the lead can count it back.
+- To reach an old conversation (confirm a draft, read its Review sheet) open it by deep link,
+  which makes no model call and needs no spend: `xcrun simctl openurl UDID
+  "com.milkman.mealvanaendurance:///vana?c=<conversation id>"` (#81). Keep clear of the floating
+  Ask Vana button; a stray tap on it opens a new chat and spends.
+- A Test Store purchase on dev renews only while the app is signed in: a monthly renews every
+  5 minutes and lapses about 5 minutes after sign-out; an Annual has 1-hour periods. A run that
+  needs Pro without the paywall coming back buys Annual; a run that needs a lapse buys monthly
+  and signs out (#80).
 - Screenshots go in `RUNS` with names that say what they show. Take them with
   `xcrun simctl io UDID screenshot RUNS/<name>.png`: the mobile MCP's `save_screenshot` refuses
   paths inside the worktree. After a tap, take a new screenshot before trusting the MCP's element
