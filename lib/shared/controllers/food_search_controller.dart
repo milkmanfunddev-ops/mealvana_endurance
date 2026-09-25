@@ -2,6 +2,7 @@ import 'dart:async';
 import 'package:riverpod_annotation/riverpod_annotation.dart';
 import '../../features/nutrition_plan/domain/food.dart';
 import '../../features/barcode_scanning/application/catalog_search_service.dart';
+import '../../features/barcode_scanning/application/product_detail_service.dart';
 import '../services/food_management/fuel_predicate.dart';
 import '../services/food_management/nutrition_product_search_service.dart';
 import '../services/food_management/shared_food_search_service.dart';
@@ -270,8 +271,26 @@ class FoodSearchController extends _$FoodSearchController {
       isCatalogExpanded: false,
     );
 
-    // Trigger debounced catalog search
     _catalogDebounceTimer?.cancel();
+
+    // A barcode is not a name: the name searches (catalog, nutrition
+    // products) would answer "No foods found" for a product we hold
+    // (testing-wave 28-004). Look it up by barcode instead.
+    final barcode = barcodeDigits(query);
+    if (barcode != null) {
+      // No catalog search runs for this query, so drop the last one's rows.
+      state = state.copyWith(
+        catalogResults: const [],
+        totalCatalogCount: 0,
+        openFoodFactsResults: const [],
+      );
+      _catalogDebounceTimer = Timer(const Duration(milliseconds: 300), () {
+        _lookupBarcode(query, barcode);
+      });
+      return;
+    }
+
+    // Trigger debounced catalog search
     if (query.trim().length >= 2) {
       _catalogDebounceTimer = Timer(const Duration(milliseconds: 300), () {
         _searchCatalog(query.trim());
@@ -414,6 +433,47 @@ class FoodSearchController extends _$FoodSearchController {
     if (localHitCount + catalogHitCount >= _kFewLocalResultsThreshold) return;
 
     unawaited(_searchNutritionProducts(query));
+  }
+
+  /// Internal: a typed barcode goes to `lookup-product` (catalog → cache →
+  /// USDA/OFF, the cascade a scan uses) and the hit is shown as a "More
+  /// Results" card, whose tap resolves it by barcode the same way.
+  Future<void> _lookupBarcode(String query, String barcode) async {
+    if (!_isMounted) return;
+    state = state.copyWith(
+      nutritionProductResults: const [],
+      isSearchingNutritionProducts: true,
+    );
+
+    var results = const <NutritionProductSearchResult>[];
+    try {
+      final product = await ref
+          .read(productDetailServiceProvider)
+          .getProductDetails(barcode: barcode);
+      if (product != null) {
+        results = [NutritionProductSearchResult.fromApiProduct(product)];
+      }
+    } on ProductDetailException catch (e) {
+      // "Product not found" is the usual answer here; the list stays empty.
+      _logger.info(
+        'Barcode query found nothing',
+        context: 'FoodSearchController',
+        data: {'barcode': barcode, 'message': e.message},
+      );
+    } catch (e) {
+      _logger.warning(
+        'Barcode query failed',
+        context: 'FoodSearchController',
+        data: {'barcode': barcode, 'error': e.toString()},
+      );
+    }
+
+    if (!_isMounted) return;
+    if (state.searchQuery.trim() != query.trim()) return;
+    state = state.copyWith(
+      nutritionProductResults: _applyNutritionProductFilter(results),
+      isSearchingNutritionProducts: false,
+    );
   }
 
   /// Internal: search `nutrition_products` (USDA FoodData Central + cached

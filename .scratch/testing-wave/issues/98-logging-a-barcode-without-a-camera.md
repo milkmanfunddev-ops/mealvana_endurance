@@ -16,7 +16,7 @@
 
 **Touches:** lib/features/barcode_scanning/presentation/barcode_scanner_screen.dart, the meal-logging search (lib/features/meal_logging/), supabase/functions/search-catalog/ if matching is server-side, assets/config/content_defaults.json
 
-- [ ] Tests: a barcode-digit query returns the cached product; the no-camera state shows the app message and link; Enter barcode reaches the same confirm screen a scan does.
-- [ ] `flutter analyze` clean; deno tests if a function changed.
+- [x] Tests: a barcode-digit query returns the cached product; the no-camera state shows the app message and link; Enter barcode reaches the same confirm screen a scan does.
+- [x] `flutter analyze` clean; deno tests if a function changed.
 
 Next: /implement-lee testing-wave
