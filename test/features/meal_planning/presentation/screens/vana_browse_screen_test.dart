@@ -7,6 +7,7 @@ import 'package:go_router/go_router.dart';
 import 'package:mealvana_endurance/features/content/application/content_service.dart';
 import 'package:mealvana_endurance/features/meal_planning/application/meal_catalog_controller.dart';
 import 'package:mealvana_endurance/features/meal_planning/application/meal_plan_controller.dart';
+import 'package:mealvana_endurance/features/meal_planning/data/meal_library_remote_data_source.dart';
 import 'package:mealvana_endurance/features/meal_planning/data/vana_action_client.dart';
 import 'package:mealvana_endurance/features/meal_planning/data/vana_exceptions.dart';
 import 'package:mealvana_endurance/features/meal_planning/domain/cooking_session.dart';
@@ -29,13 +30,32 @@ import '../helpers/test_content.dart';
 void main() {
   final content = loadDefaultContent();
 
+  /// A catalog meal with its numbers, as `search_meals` sends one.
   MealRef recipe(String id, String name) => MealRef(
     source: MealSource.library,
     id: id,
     name: name,
     mealType: MealType.dinner,
     kind: MealKind.recipe,
+    kcal: 600,
+    carbsG: 70,
+    proteinG: 35,
+    fatG: 15,
   );
+
+  /// A library meal added without its numbers (mp-678): the row as the
+  /// database sends it, every number null.
+  final blank = MealLibraryRemoteDataSource.rowToMealRef({
+    'id': 'AD-103',
+    'name': 'Farro & cauliflower bowl',
+    'meal_type': 'dinner',
+    'source': 'library',
+    'kind': 'recipe',
+    'kcal': null,
+    'carbs_g': null,
+    'protein_g': null,
+    'fat_g': null,
+  })!;
 
   final catalog = MealCatalogState(
     recipes: [recipe('D-1', 'Salmon quinoa bowl'), recipe('D-2', 'Dal')],
@@ -224,6 +244,45 @@ void main() {
       reason: 'the tap never reached the card body (no detail push)',
     );
     expect(find.text(content['meal_planning.browse_added']!), findsWidgets);
+  });
+
+  /// mp-678 (testing-wave 74 / 61-001): a meal with missing numbers stays
+  /// listed, but its Add says it can't go in a plan and never asks the server.
+  testWidgets('a meal with missing numbers is listed, its Add unavailable', (
+    tester,
+  ) async {
+    final handle = tester.ensureSemantics();
+    final plan = _RecordingPlanController();
+    await pumpScreen(
+      tester,
+      plan: plan,
+      catalogState: catalog.copyWith(recipes: [blank, ...catalog.recipes]),
+    );
+
+    final message = content['meal_planning.browse_no_numbers']!;
+    expect(find.text('Farro & cauliflower bowl'), findsOneWidget);
+    expect(addButton('AD-103'), findsOneWidget);
+    expect(
+      tester.getSemantics(addButton('AD-103')),
+      isSemantics(label: message, isButton: true),
+    );
+
+    await tester.tap(addButton('AD-103'));
+    await tester.pump();
+    await tester.pump(const Duration(milliseconds: 300));
+
+    expect(plan.picks, isEmpty, reason: 'the server is never asked');
+    expect(find.text(message), findsOneWidget);
+    expect(
+      find.byKey(const ValueKey('meal_planning.vana_browse_screen')),
+      findsOneWidget,
+      reason: 'the tap never reached the card body (no detail push)',
+    );
+    // A meal with its numbers beside it still adds.
+    await tester.tap(addButton('D-1'));
+    await tester.pump();
+    expect(plan.picks.single.meals.single.id, 'D-1');
+    handle.dispose();
   });
 
   /// Testing-wave 18-005: the filter menu showed the active filters by

@@ -141,3 +141,28 @@ Deno.test('same as last time: the last plan comes across without the meal whose 
   const meals = (r!.parts[0] as { plan: { meals: { libraryMealId: string }[] } }).plan.meals;
   assertEquals(meals.map((m) => m.libraryMealId), ['AD-014', 'AD-015']);
 });
+
+// ---------------------------------------------------------------- 5. a day slot by hand (ticket 74, 61-001)
+// `set_day_slot` puts a library or saved meal on a day of the plan, so it follows the same rule: a blank meal is refused and
+// the plan's days are left as they were.
+const dayWrites = (v: ReturnType<typeof world>) => v.fake.writesTo('meal_plans', 'update').filter((w) => 'days' in w.values);
+
+Deno.test('day slot: set_day_slot refuses the blank library meal and writes nothing', async () => {
+  const v = world();
+  await assertRejects(() => runAction(v, { type: 'set_day_slot', payload: { date: today(), slot: 'dinner', source: 'library', id: BLANK } } as never), Error, 'no nutrition numbers');
+  assertEquals(dayWrites(v), []);
+});
+
+Deno.test('day slot: set_day_slot refuses a saved meal with no numbers and writes nothing', async () => {
+  const saved: Row = { id: 'bbbbbbbb-0000-4000-8000-000000000074', user_id: U, name: 'Farro bowl', items: [], calories: null, carbs_g: null, protein_g: null, fat_g: null, library_meal_id: BLANK, meal_types: ['dinner'], batch: true, icon: null, is_deleted: false };
+  const v = world({ saved_meals: [saved] });
+  await assertRejects(() => runAction(v, { type: 'set_day_slot', payload: { date: today(), slot: 'dinner', source: 'saved', id: saved.id } } as never), Error, 'no nutrition numbers');
+  assertEquals(dayWrites(v), []);
+});
+
+Deno.test('day slot: a library meal with its numbers still goes on the day', async () => {
+  const v = world();
+  const r = await runAction(v, { type: 'set_day_slot', payload: { date: today(), slot: 'dinner', source: 'library', id: 'AD-014' } } as never);
+  assertEquals((r.parts[0] as { slots: { dinner?: { id: string } } }).slots.dinner?.id, 'AD-014');
+  assertEquals(dayWrites(v).length, 1);
+});

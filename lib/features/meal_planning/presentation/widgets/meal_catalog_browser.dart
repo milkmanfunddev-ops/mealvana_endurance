@@ -75,11 +75,24 @@ class _MealCatalogBrowserState extends ConsumerState<MealCatalogBrowser> {
 
   /// The Add button for [meal], or null when this browser has no add flow.
   /// A ticked button says the meal is already in the plan instead of
-  /// picking again (testing-wave 18-001).
+  /// picking again (testing-wave 18-001). A meal with missing numbers stays
+  /// listed but can't go in a plan (mp-678): its Add is drawn unavailable
+  /// and says so, and the server is never asked (testing-wave 74).
   Widget? _addButton(ContentService content, MealRef meal) {
     final onAdd = widget.onAddMeal;
     if (onAdd == null) return null;
     final added = widget.addedIds.contains(meal.id);
+    final unavailable = !added && !meal.hasNutritionNumbers;
+    if (unavailable) {
+      final message = content.getValue(ContentKeys.mpBrowseNoNumbers);
+      return MealAddButton(
+        key: ValueKey('meal_planning.browse_add_${meal.id}'),
+        added: false,
+        unavailable: true,
+        tooltip: message,
+        onTap: () => MealvanaSnackbar.showInfo(context, message),
+      );
+    }
     return MealAddButton(
       key: ValueKey('meal_planning.browse_add_${meal.id}'),
       added: added,

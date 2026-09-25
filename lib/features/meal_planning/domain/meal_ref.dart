@@ -97,6 +97,13 @@ class MealRef extends WireRecord {
   /// columns are no longer read.
   final MealPhoto? photo;
 
+  /// kcal, carbs, protein and fat are all there (`null` is not `0`: 0 g fat
+  /// is a number). A plan never takes a meal without them (mp-678): it stays
+  /// browsable, but nothing picks it into a plan. The same rule as the
+  /// server's `hasNutritionNumbers` (`_shared/vana/plan-math.ts`).
+  bool get hasNutritionNumbers =>
+      kcal != null && carbsG != null && proteinG != null && fatG != null;
+
   factory MealRef.fromJson(Map<String, dynamic> json) {
     return MealRef(
       source: MealSource.requireWire(readString(json, 'source')),

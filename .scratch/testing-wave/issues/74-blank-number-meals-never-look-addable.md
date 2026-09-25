@@ -13,9 +13,9 @@
 
 **Touches:** lib/features/meal_planning/presentation/screens/swap_meal_screen.dart, lib/features/meal_planning/presentation/widgets/meal_add_button.dart, lib/features/meal_planning/presentation/widgets/meal_catalog_browser.dart, supabase/functions/_shared/vana/actions.ts
 
-- [ ] A deno test: `set_day_slot` with a null-kcal library or saved meal is refused and writes nothing.
-- [ ] A widget test: the Swap list leaves out a blank-number meal.
-- [ ] A widget test: Browse shows a blank-number meal with Add unavailable and the message.
+- [x] A deno test: `set_day_slot` with a null-kcal library or saved meal is refused and writes nothing.
+- [x] A widget test: the Swap list leaves out a blank-number meal.
+- [x] A widget test: Browse shows a blank-number meal with Add unavailable and the message.
 - [ ] Deployed to dev.
 - [ ] codegen if annotations changed, `flutter analyze` and the suite green.
 
