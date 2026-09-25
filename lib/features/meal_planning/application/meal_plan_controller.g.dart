@@ -264,7 +264,7 @@ final class MealPlanControllerProvider
 }
 
 String _$mealPlanControllerHash() =>
-    r'3fb9aec2c835d6bb936d153707a3d9b0c82a1f35';
+    r'b98394d2eb615292b3c0af32465dd1be661fba03';
 
 /// The active plan for the current week — what the Plan tab, the Shopping
 /// tab, the chat's plan bar and the day planner all read.

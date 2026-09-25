@@ -165,7 +165,7 @@ final class EarlierPlanProvider
   }
 }
 
-String _$earlierPlanHash() => r'63ee87ce072b4688deb6ef953ddceb9ce575cf21';
+String _$earlierPlanHash() => r'a838674b86b324f5be0a1f96273a55a918bf7cfd';
 
 /// One earlier plan by id (`/food/plans/:id`), straight from the server
 /// (`get_plan {id}`); `null` when the server no longer has it. Plans are a
