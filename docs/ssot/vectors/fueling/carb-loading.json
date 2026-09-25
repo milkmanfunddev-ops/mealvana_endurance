@@ -1,0 +1,780 @@
+{
+  "section": "carb-loading",
+  "engine": null,
+  "specVersion": "v1 (2026-09-24, ratified)",
+  "note": "Pins RATIFIED v1 (CL-1..CL-12 + Q-CL11 anchor addendum; Xuan 2026-09-24, ruling interview). EXPECTED-RED: no engine implements this spec -- today the app ships only protocol generation (CarbLoadingRepository, adopted by CL-1..CL-4) with NO 1-Day protocol, NO pace ramp, NO band, NO variant logic; the ramp exists only in design prototype v17. engine=null until the published entry point exists (handback G2/G3; transition-nutrition precedent). BUNDLE: carb-loading (manifest at ship-bundle; entryway ratification gates the tag). ORACLE CONVENTIONS the spec does not state: (1) rounding is half-away-from-zero (Dart .round()); edited-target 450 vectors exercise .5 cases (112.5->113, 22.5->23); (2) time input is minutes since local midnight (device-local, CL-10); (3) output field names (owedG, bandG, deltaG, paceState, paceN, loaded, fillFrac, tickFrac, tickHidden, dayTargetG, slotTargetsG) are this file's convention pending the engine surface; (4) day-variant vectors encode \"no pace\" as null fields -- null is not 0, a harness coercing them is the bug (gate-path rule); (5) paceState boundary is inclusive: behind strictly > band, ahead strictly < -band. DETECTION POWER: anchor vectors distinguish basis A from flat-fill (136 vs 102 at t=540) and R-anchors from exact fractions (517 vs 516.8 at t=1260, verdict-flipping at W7) at 100% under 0.001 tolerance; the edited-target clamp vector detects a missing companion rule by 1.0 g. NOT COVERED (deliberate): copy strings (design suite owns Section 2a verbatim rendering); the one-clock card-supersession invariant (design/L2); eaten aggregation from food-log rows (Q-CL8 is a data-layer contract -- these vectors take eatenG as input); protocol chooser/entryway surfaces (unratified, PROPOSED pending); daily-macros coupling (Q-019, own bundle); weights hitting a .5 on day-target rounding (no clean lb input; convention (1) covers it via edited-target vectors).",
+  "toleranceG": 0.001,
+  "toleranceFrac": 0.0001,
+  "vectors": [
+    {
+      "id": "day-target-3day-minus3-149p9lb",
+      "status": "ratified",
+      "inputs": {
+        "bodyWeightLb": 149.9,
+        "protocolDays": 3,
+        "daysBeforeRace": 3
+      },
+      "expected": {
+        "dayTargetG": 544
+      },
+      "why": "CL-1..3: 8.0 g/kg x 67.9934 kg = 543.948 -> round 544. 1-Day = Q-CL3a ruled addition."
+    },
+    {
+      "id": "day-target-3day-minus2-149p9lb",
+      "status": "ratified",
+      "inputs": {
+        "bodyWeightLb": 149.9,
+        "protocolDays": 3,
+        "daysBeforeRace": 2
+      },
+      "expected": {
+        "dayTargetG": 544
+      },
+      "why": "CL-1..3: 8.0 g/kg x 67.9934 kg = 543.948 -> round 544. 1-Day = Q-CL3a ruled addition."
+    },
+    {
+      "id": "day-target-3day-minus1-149p9lb",
+      "status": "ratified",
+      "inputs": {
+        "bodyWeightLb": 149.9,
+        "protocolDays": 3,
+        "daysBeforeRace": 1
+      },
+      "expected": {
+        "dayTargetG": 680
+      },
+      "why": "CL-1..3: 10.0 g/kg x 67.9934 kg = 679.934 -> round 680. 1-Day = Q-CL3a ruled addition."
+    },
+    {
+      "id": "day-target-2day-minus2-149p9lb",
+      "status": "ratified",
+      "inputs": {
+        "bodyWeightLb": 149.9,
+        "protocolDays": 2,
+        "daysBeforeRace": 2
+      },
+      "expected": {
+        "dayTargetG": 612
+      },
+      "why": "CL-1..3: 9.0 g/kg x 67.9934 kg = 611.941 -> round 612. 1-Day = Q-CL3a ruled addition."
+    },
+    {
+      "id": "day-target-2day-minus1-149p9lb",
+      "status": "ratified",
+      "inputs": {
+        "bodyWeightLb": 149.9,
+        "protocolDays": 2,
+        "daysBeforeRace": 1
+      },
+      "expected": {
+        "dayTargetG": 748
+      },
+      "why": "CL-1..3: 11.0 g/kg x 67.9934 kg = 747.928 -> round 748. 1-Day = Q-CL3a ruled addition."
+    },
+    {
+      "id": "day-target-1day-minus1-149p9lb",
+      "status": "ratified",
+      "inputs": {
+        "bodyWeightLb": 149.9,
+        "protocolDays": 1,
+        "daysBeforeRace": 1
+      },
+      "expected": {
+        "dayTargetG": 748
+      },
+      "why": "CL-1..3: 11.0 g/kg x 67.9934 kg = 747.928 -> round 748. 1-Day = Q-CL3a ruled addition."
+    },
+    {
+      "id": "day-target-3day-minus3-176p4lb",
+      "status": "ratified",
+      "inputs": {
+        "bodyWeightLb": 176.4,
+        "protocolDays": 3,
+        "daysBeforeRace": 3
+      },
+      "expected": {
+        "dayTargetG": 640
+      },
+      "why": "CL-1..3: 8.0 g/kg x 80.0136 kg = 640.109 -> round 640. 1-Day = Q-CL3a ruled addition."
+    },
+    {
+      "id": "day-target-3day-minus2-176p4lb",
+      "status": "ratified",
+      "inputs": {
+        "bodyWeightLb": 176.4,
+        "protocolDays": 3,
+        "daysBeforeRace": 2
+      },
+      "expected": {
+        "dayTargetG": 640
+      },
+      "why": "CL-1..3: 8.0 g/kg x 80.0136 kg = 640.109 -> round 640. 1-Day = Q-CL3a ruled addition."
+    },
+    {
+      "id": "day-target-3day-minus1-176p4lb",
+      "status": "ratified",
+      "inputs": {
+        "bodyWeightLb": 176.4,
+        "protocolDays": 3,
+        "daysBeforeRace": 1
+      },
+      "expected": {
+        "dayTargetG": 800
+      },
+      "why": "CL-1..3: 10.0 g/kg x 80.0136 kg = 800.136 -> round 800. 1-Day = Q-CL3a ruled addition."
+    },
+    {
+      "id": "day-target-2day-minus2-176p4lb",
+      "status": "ratified",
+      "inputs": {
+        "bodyWeightLb": 176.4,
+        "protocolDays": 2,
+        "daysBeforeRace": 2
+      },
+      "expected": {
+        "dayTargetG": 720
+      },
+      "why": "CL-1..3: 9.0 g/kg x 80.0136 kg = 720.123 -> round 720. 1-Day = Q-CL3a ruled addition."
+    },
+    {
+      "id": "day-target-2day-minus1-176p4lb",
+      "status": "ratified",
+      "inputs": {
+        "bodyWeightLb": 176.4,
+        "protocolDays": 2,
+        "daysBeforeRace": 1
+      },
+      "expected": {
+        "dayTargetG": 880
+      },
+      "why": "CL-1..3: 11.0 g/kg x 80.0136 kg = 880.150 -> round 880. 1-Day = Q-CL3a ruled addition."
+    },
+    {
+      "id": "day-target-1day-minus1-176p4lb",
+      "status": "ratified",
+      "inputs": {
+        "bodyWeightLb": 176.4,
+        "protocolDays": 1,
+        "daysBeforeRace": 1
+      },
+      "expected": {
+        "dayTargetG": 880
+      },
+      "why": "CL-1..3: 11.0 g/kg x 80.0136 kg = 880.150 -> round 880. 1-Day = Q-CL3a ruled addition."
+    },
+    {
+      "id": "slot-targets-classic-day1",
+      "status": "ratified",
+      "inputs": {
+        "dayTargetG": 544
+      },
+      "expected": {
+        "slotTargetsG": [
+          136,
+          54,
+          136,
+          82,
+          109,
+          27
+        ]
+      },
+      "why": "CL-4 slot_target=round(split x day). 544x[.25,.10,.25,.15,.20,.05]; 54.4->54, 27.2->27 (round down)"
+    },
+    {
+      "id": "slot-targets-classic-day3",
+      "status": "ratified",
+      "inputs": {
+        "dayTargetG": 680
+      },
+      "expected": {
+        "slotTargetsG": [
+          170,
+          68,
+          170,
+          102,
+          136,
+          34
+        ]
+      },
+      "why": "CL-4 slot_target=round(split x day). 680 split exact: 170/68/170/102/136/34"
+    },
+    {
+      "id": "slot-targets-oneday-748",
+      "status": "ratified",
+      "inputs": {
+        "dayTargetG": 748
+      },
+      "expected": {
+        "slotTargetsG": [
+          187,
+          75,
+          187,
+          112,
+          150,
+          37
+        ]
+      },
+      "why": "CL-4 slot_target=round(split x day). 748: 74.8->75, 112.2->112, 149.6->150, 37.4->37 (both directions)"
+    },
+    {
+      "id": "ramp-anchor-544-t360",
+      "status": "ratified",
+      "inputs": {
+        "dayTargetG": 544,
+        "tMin": 360
+      },
+      "expected": {
+        "owedG": 0.0
+      },
+      "why": "CL-6/Q-CL11 anchor 0: running sum of rounded slots = 0.0. Flat-fill alternative at t=540 would give 544*180/960=102 -- basis revert detected at 100%."
+    },
+    {
+      "id": "ramp-anchor-544-t540",
+      "status": "ratified",
+      "inputs": {
+        "dayTargetG": 544,
+        "tMin": 540
+      },
+      "expected": {
+        "owedG": 136.0
+      },
+      "why": "CL-6/Q-CL11 anchor 1: running sum of rounded slots = 136.0. Flat-fill alternative at t=540 would give 544*180/960=102 -- basis revert detected at 100%."
+    },
+    {
+      "id": "ramp-anchor-544-t720",
+      "status": "ratified",
+      "inputs": {
+        "dayTargetG": 544,
+        "tMin": 720
+      },
+      "expected": {
+        "owedG": 190.0
+      },
+      "why": "CL-6/Q-CL11 anchor 2: running sum of rounded slots = 190.0. Flat-fill alternative at t=540 would give 544*180/960=102 -- basis revert detected at 100%."
+    },
+    {
+      "id": "ramp-anchor-544-t900",
+      "status": "ratified",
+      "inputs": {
+        "dayTargetG": 544,
+        "tMin": 900
+      },
+      "expected": {
+        "owedG": 326.0
+      },
+      "why": "CL-6/Q-CL11 anchor 3: running sum of rounded slots = 326.0. Flat-fill alternative at t=540 would give 544*180/960=102 -- basis revert detected at 100%."
+    },
+    {
+      "id": "ramp-anchor-544-t1080",
+      "status": "ratified",
+      "inputs": {
+        "dayTargetG": 544,
+        "tMin": 1080
+      },
+      "expected": {
+        "owedG": 408.0
+      },
+      "why": "CL-6/Q-CL11 anchor 4: running sum of rounded slots = 408.0. Flat-fill alternative at t=540 would give 544*180/960=102 -- basis revert detected at 100%."
+    },
+    {
+      "id": "ramp-anchor-544-t1260",
+      "status": "ratified",
+      "inputs": {
+        "dayTargetG": 544,
+        "tMin": 1260
+      },
+      "expected": {
+        "owedG": 517.0
+      },
+      "why": "CL-6/Q-CL11 anchor 5: running sum of rounded slots = 517.0. Flat-fill alternative at t=540 would give 544*180/960=102 -- basis revert detected at 100%."
+    },
+    {
+      "id": "ramp-anchor-544-t1320",
+      "status": "ratified",
+      "inputs": {
+        "dayTargetG": 544,
+        "tMin": 1320
+      },
+      "expected": {
+        "owedG": 544.0
+      },
+      "why": "CL-6/Q-CL11 anchor 6: running sum of rounded slots = 544.0. Flat-fill alternative at t=540 would give 544*180/960=102 -- basis revert detected at 100%."
+    },
+    {
+      "id": "ramp-before-first-slot",
+      "status": "ratified",
+      "inputs": {
+        "dayTargetG": 544,
+        "tMin": 330
+      },
+      "expected": {
+        "owedG": 0.0
+      },
+      "why": "CL-6: owed=0 for t<=360 (5:30am)"
+    },
+    {
+      "id": "ramp-mid-breakfast-window",
+      "status": "ratified",
+      "inputs": {
+        "dayTargetG": 544,
+        "tMin": 480
+      },
+      "expected": {
+        "owedG": 90.666667
+      },
+      "why": "W2: 136 x 120/180 = 90.666667"
+    },
+    {
+      "id": "ramp-after-close",
+      "status": "ratified",
+      "inputs": {
+        "dayTargetG": 544,
+        "tMin": 1350
+      },
+      "expected": {
+        "owedG": 544.0
+      },
+      "why": "CL-6: owed=day_target for t>=1320"
+    },
+    {
+      "id": "band-floor-region",
+      "status": "ratified",
+      "inputs": {
+        "dayTargetG": 544,
+        "tMin": 480,
+        "eatenG": 0
+      },
+      "expected": {
+        "owedG": 90.666667,
+        "bandG": 10.0,
+        "deltaG": 90.666667,
+        "paceState": "behind",
+        "paceN": 91,
+        "loaded": false,
+        "fillFrac": 0.0,
+        "tickFrac": 0.166667,
+        "tickHidden": false
+      },
+      "why": "W2: owed 90.667, 5%=4.53 < 10 -> band=10; delta 90.667 -> behind, paceN 91"
+    },
+    {
+      "id": "band-floor-at-crossover-low",
+      "status": "ratified",
+      "inputs": {
+        "dayTargetG": 544,
+        "tMin": 720,
+        "eatenG": 0
+      },
+      "expected": {
+        "owedG": 190.0,
+        "bandG": 10.0,
+        "deltaG": 190.0,
+        "paceState": "behind",
+        "paceN": 190,
+        "loaded": false,
+        "fillFrac": 0.0,
+        "tickFrac": 0.349265,
+        "tickHidden": false
+      },
+      "why": "owed 190: 5%=9.5 < 10 -> floor still binds (crossover at owed=200)"
+    },
+    {
+      "id": "band-relative-past-crossover",
+      "status": "ratified",
+      "inputs": {
+        "dayTargetG": 544,
+        "tMin": 740,
+        "eatenG": 0
+      },
+      "expected": {
+        "owedG": 205.111111,
+        "bandG": 10.255556,
+        "deltaG": 205.111111,
+        "paceState": "behind",
+        "paceN": 205,
+        "loaded": false,
+        "fillFrac": 0.0,
+        "tickFrac": 0.377042,
+        "tickHidden": false
+      },
+      "why": "owed 190+136x20/180=205.111: 5%=10.256 > 10 -> relative side binds"
+    },
+    {
+      "id": "verdict-on-pace-at-exact-band",
+      "status": "ratified",
+      "inputs": {
+        "dayTargetG": 544,
+        "tMin": 540,
+        "eatenG": 126
+      },
+      "expected": {
+        "owedG": 136.0,
+        "bandG": 10.0,
+        "deltaG": 10.0,
+        "paceState": "on_pace",
+        "paceN": 10,
+        "loaded": false,
+        "fillFrac": 0.231618,
+        "tickFrac": 0.25,
+        "tickHidden": false
+      },
+      "why": "W3: delta 10 == band 10 -> NOT > band -> on_pace (inclusive boundary)"
+    },
+    {
+      "id": "verdict-behind-one-over-band",
+      "status": "ratified",
+      "inputs": {
+        "dayTargetG": 544,
+        "tMin": 540,
+        "eatenG": 125
+      },
+      "expected": {
+        "owedG": 136.0,
+        "bandG": 10.0,
+        "deltaG": 11.0,
+        "paceState": "behind",
+        "paceN": 11,
+        "loaded": false,
+        "fillFrac": 0.229779,
+        "tickFrac": 0.25,
+        "tickHidden": false
+      },
+      "why": "W4: delta 11 > 10 -> behind"
+    },
+    {
+      "id": "verdict-ahead",
+      "status": "ratified",
+      "inputs": {
+        "dayTargetG": 544,
+        "tMin": 540,
+        "eatenG": 152
+      },
+      "expected": {
+        "owedG": 136.0,
+        "bandG": 10.0,
+        "deltaG": -16.0,
+        "paceState": "ahead",
+        "paceN": 16,
+        "loaded": false,
+        "fillFrac": 0.279412,
+        "tickFrac": 0.25,
+        "tickHidden": false
+      },
+      "why": "W5: delta -16 < -10 -> ahead, paceN 16"
+    },
+    {
+      "id": "verdict-behind-relative-band-edge",
+      "status": "ratified",
+      "inputs": {
+        "dayTargetG": 544,
+        "tMin": 1260,
+        "eatenG": 491
+      },
+      "expected": {
+        "owedG": 517.0,
+        "bandG": 25.85,
+        "deltaG": 26.0,
+        "paceState": "behind",
+        "paceN": 26,
+        "loaded": false,
+        "fillFrac": 0.902574,
+        "tickFrac": 0.950368,
+        "tickHidden": false
+      },
+      "why": "W7: owed 517 (rounded anchor), band 25.85, delta 26 -> behind (just outside; R-anchor arithmetic)"
+    },
+    {
+      "id": "verdict-on-pace-relative-band",
+      "status": "ratified",
+      "inputs": {
+        "dayTargetG": 544,
+        "tMin": 1260,
+        "eatenG": 492
+      },
+      "expected": {
+        "owedG": 517.0,
+        "bandG": 25.85,
+        "deltaG": 25.0,
+        "paceState": "on_pace",
+        "paceN": 25,
+        "loaded": false,
+        "fillFrac": 0.904412,
+        "tickFrac": 0.950368,
+        "tickHidden": false
+      },
+      "why": "W8: delta 25 <= 25.85 -> on_pace"
+    },
+    {
+      "id": "verdict-ahead-boundary-inclusive",
+      "status": "ratified",
+      "inputs": {
+        "dayTargetG": 544,
+        "tMin": 1260,
+        "eatenG": 542
+      },
+      "expected": {
+        "owedG": 517.0,
+        "bandG": 25.85,
+        "deltaG": -25.0,
+        "paceState": "on_pace",
+        "paceN": 25,
+        "loaded": false,
+        "fillFrac": 0.996324,
+        "tickFrac": 0.950368,
+        "tickHidden": false
+      },
+      "why": "delta -25 within +-25.85 -> on_pace (ahead needs < -band)"
+    },
+    {
+      "id": "quiet-dawn-w1",
+      "status": "ratified",
+      "inputs": {
+        "dayTargetG": 544,
+        "tMin": 330,
+        "eatenG": 0
+      },
+      "expected": {
+        "owedG": 0.0,
+        "bandG": 10.0,
+        "deltaG": 0.0,
+        "paceState": "on_pace",
+        "paceN": 0,
+        "loaded": false,
+        "fillFrac": 0.0,
+        "tickFrac": 0.0,
+        "tickHidden": true
+      },
+      "why": "W1: owed 0, band floors at 10, delta 0 -> on_pace; tickHidden (owed=0)"
+    },
+    {
+      "id": "pre-breakfast-bite-on-pace",
+      "status": "ratified",
+      "inputs": {
+        "dayTargetG": 544,
+        "tMin": 330,
+        "eatenG": 9
+      },
+      "expected": {
+        "owedG": 0.0,
+        "bandG": 10.0,
+        "deltaG": -9.0,
+        "paceState": "on_pace",
+        "paceN": 9,
+        "loaded": false,
+        "fillFrac": 0.016544,
+        "tickFrac": 0.0,
+        "tickHidden": true
+      },
+      "why": "floor keeps a 9 g pre-breakfast bite on_pace (delta -9 within +-10); without the Q-CL1 floor this would read ahead"
+    },
+    {
+      "id": "loaded-exact-target",
+      "status": "ratified",
+      "inputs": {
+        "dayTargetG": 544,
+        "tMin": 1260,
+        "eatenG": 544
+      },
+      "expected": {
+        "owedG": 517.0,
+        "bandG": 25.85,
+        "deltaG": -27.0,
+        "paceState": "ahead",
+        "paceN": 27,
+        "loaded": true,
+        "fillFrac": 1.0,
+        "tickFrac": 0.950368,
+        "tickHidden": true
+      },
+      "why": "CL-8 inclusive >=: eaten==target -> loaded; fill 1.0; tickHidden on completion"
+    },
+    {
+      "id": "not-loaded-one-under",
+      "status": "ratified",
+      "inputs": {
+        "dayTargetG": 544,
+        "tMin": 1260,
+        "eatenG": 543
+      },
+      "expected": {
+        "owedG": 517.0,
+        "bandG": 25.85,
+        "deltaG": -26.0,
+        "paceState": "ahead",
+        "paceN": 26,
+        "loaded": false,
+        "fillFrac": 0.998162,
+        "tickFrac": 0.950368,
+        "tickHidden": false
+      },
+      "why": "CL-8: 543 < 544 -> not loaded; fill 543/544"
+    },
+    {
+      "id": "loaded-overshoot-fill-capped",
+      "status": "ratified",
+      "inputs": {
+        "dayTargetG": 544,
+        "tMin": 900,
+        "eatenG": 560
+      },
+      "expected": {
+        "owedG": 326.0,
+        "bandG": 16.3,
+        "deltaG": -234.0,
+        "paceState": "ahead",
+        "paceN": 234,
+        "loaded": true,
+        "fillFrac": 1.0,
+        "tickFrac": 0.599265,
+        "tickHidden": true
+      },
+      "why": "CL-9: fill capped at 1.0 on overshoot; loaded early (t=15:00)"
+    },
+    {
+      "id": "loader-midday-fill-and-tick",
+      "status": "ratified",
+      "inputs": {
+        "dayTargetG": 544,
+        "tMin": 900,
+        "eatenG": 272
+      },
+      "expected": {
+        "owedG": 326.0,
+        "bandG": 16.3,
+        "deltaG": 54.0,
+        "paceState": "behind",
+        "paceN": 54,
+        "loaded": false,
+        "fillFrac": 0.5,
+        "tickFrac": 0.599265,
+        "tickHidden": false
+      },
+      "why": "CL-9: fill 272/544=0.5; tick 326/544=0.599265; tick visible"
+    },
+    {
+      "id": "edited-target-slots",
+      "status": "ratified",
+      "inputs": {
+        "dayTargetG": 450
+      },
+      "expected": {
+        "slotTargetsG": [
+          113,
+          45,
+          113,
+          68,
+          90,
+          23
+        ]
+      },
+      "why": "Q-CL10: slots re-derive from stored 450: 112.5->113 (half away from zero), 45, 113, 67.5->68, 90, 22.5->23; rounded sum 452 != 450"
+    },
+    {
+      "id": "edited-target-anchor-morning",
+      "status": "ratified",
+      "inputs": {
+        "dayTargetG": 450,
+        "tMin": 540,
+        "eatenG": 0
+      },
+      "expected": {
+        "owedG": 113.0,
+        "bandG": 10.0,
+        "deltaG": 113.0,
+        "paceState": "behind",
+        "paceN": 113,
+        "loaded": false,
+        "fillFrac": 0.0,
+        "tickFrac": 0.251111,
+        "tickHidden": false
+      },
+      "why": "Q-CL10+Q-CL11: 9:00 anchor = rounded breakfast slot 113 (not 0.25x450=112.5)"
+    },
+    {
+      "id": "edited-target-final-window-clamp",
+      "status": "ratified",
+      "inputs": {
+        "dayTargetG": 450,
+        "tMin": 1290,
+        "eatenG": 0
+      },
+      "expected": {
+        "owedG": 439.5,
+        "bandG": 21.975,
+        "deltaG": 439.5,
+        "paceState": "behind",
+        "paceN": 440,
+        "loaded": false,
+        "fillFrac": 0.0,
+        "tickFrac": 0.976667,
+        "tickHidden": false
+      },
+      "why": "Q-CL11 companion rule: last window interpolates 429 -> 450 (clamped), owed(21:30)=439.5; unclamped would be 440.5 -- detects a missing clamp"
+    },
+    {
+      "id": "edited-target-close-equals-target",
+      "status": "ratified",
+      "inputs": {
+        "dayTargetG": 450,
+        "tMin": 1320,
+        "eatenG": 0
+      },
+      "expected": {
+        "owedG": 450.0,
+        "bandG": 22.5,
+        "deltaG": 450.0,
+        "paceState": "behind",
+        "paceN": 450,
+        "loaded": false,
+        "fillFrac": 0.0,
+        "tickFrac": 1.0,
+        "tickHidden": false
+      },
+      "why": "Q-CL11: owed(22:00) = 450 exactly (forced), never the 452 rounded-slot sum"
+    },
+    {
+      "id": "future-day-no-pace",
+      "status": "ratified",
+      "inputs": {
+        "dayTargetG": 680,
+        "dayRel": "future",
+        "tMin": 900,
+        "eatenG": 0
+      },
+      "expected": {
+        "slotTargetsG": [
+          170,
+          68,
+          170,
+          102,
+          136,
+          34
+        ],
+        "owedG": null,
+        "bandG": null,
+        "paceState": null,
+        "tickHidden": true
+      },
+      "why": "Day variants: owed(t) undefined off-today; no pace fields, no tick; targets still render (680 planned). null means no-target, NOT 0."
+    },
+    {
+      "id": "past-day-no-pace",
+      "status": "ratified",
+      "inputs": {
+        "dayTargetG": 544,
+        "dayRel": "past",
+        "tMin": 900,
+        "eatenG": 530
+      },
+      "expected": {
+        "owedG": null,
+        "bandG": null,
+        "paceState": null,
+        "tickHidden": true,
+        "fillFrac": 0.974265,
+        "loaded": false
+      },
+      "why": "Past day: outcome only -- fill shown, no tick, no pace; 530 < 544 so not loaded (shortfall face)"
+    }
+  ]
+}

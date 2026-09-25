@@ -48,7 +48,7 @@ vectors, and unspecified behavior. Those findings enter through `intake/` (contr
 | # | Stage | Skill / actor | Output | Gate |
 |---|---|---|---|---|
 | I1 | Producer files a `ruling-request` or `spec-erratum` in `intake/` | app-side agent (never edits specs/vectors) | unstamped `intake/YYYY-MM-DD-<slug>.md` | |
-| I2 | **Triage** — validate vs contract, map to bundle+slices, classify impact (erratum / post-ratification addition / contract change), independently verify errata, brief each ruling | `intake-triage` | ONE triage report; optionally Q-numbers registered | ⚖ Xuan rules |
+| I2 | **Triage** — validate vs contract, map to bundle+slices, classify impact (erratum / post-ratification addition / contract change), independently verify errata, brief each ruling | `intake-triage` | ONE triage report; optionally Q-numbers registered | ⚖ Xuan rules — via `ruling-interview` (logic batches: one question per turn, voice+screen) or `ruling-desk` (visual/design ratification); routing rule in either skill (Xuan, 2026-09-20) |
 | I3 | **Apply** — write the resolution (regenerated vectors / dated spec folds / register + DEVIATIONS), update bundle notes (re-tag `@vN.M` recommended for in-place fixes; contract changes go to `ship-bundle` for `@v(N+1)`), stamp the intake file | `apply-ruling` | resolved artifacts + stamped intake + APP-SIDE HANDBACK checklist | |
 | I4 | Handback — app agent re-syncs the SSOT mirror, re-runs suites, implements what the ruling gates, flips test-plan rows | coding agent (app repo) | green conformance on the corrected contract | |
 | I5 | Land via stage 9 as usual | `land-bundle` | merged trunk | gate: green + contract-unmodified |

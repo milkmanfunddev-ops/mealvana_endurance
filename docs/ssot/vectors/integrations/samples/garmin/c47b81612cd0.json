@@ -1,0 +1,35 @@
+{
+ "fingerprintId": "c47b81612cd0",
+ "provider": "garmin",
+ "stratum": {
+  "endpoint": "garmin/activity_raw",
+  "workoutType": "MOUNTAIN_BIKING"
+ },
+ "optionalKeysInStratum": [],
+ "provenance": {
+  "source": "dev provider_raw_payloads",
+  "scrubbed": "server-side (corpus-export edge fn)",
+  "environment": "dev",
+  "exportedAt": "2026-09-21T00:53:24+00:00",
+  "note": "real-account (dev Garmin athletes), promoted by ruling 2026-09-20",
+  "correction": "re-scrubbed under the default-deny standard (@v1.1 samples de-id erratum, ruled 2026-09-20); fingerprint unchanged, content re-destroyed"
+ },
+ "exemplar": {
+  "summaryId": "syn-e285509b",
+  "activityId": 23547456854,
+  "isWebUpload": false,
+  "activityName": "corpus placeholder",
+  "activityType": "corpus placeholder",
+  "distanceInMeters": 5200.841101057741,
+  "durationInSeconds": 938,
+  "activeKilocalories": 218,
+  "startTimeInSeconds": 1767225600,
+  "startTimeOffsetInSeconds": -15372,
+  "maxSpeedInMetersPerSecond": 8.579002132157626,
+  "totalElevationGainInMeters": 53,
+  "totalElevationLossInMeters": 47,
+  "maxPaceInMinutesPerKilometer": 1.6569929889048916,
+  "averageSpeedInMetersPerSecond": 7.277286771641886,
+  "averagePaceInMinutesPerKilometer": 2.5272318842491868
+ }
+}

@@ -1,0 +1,91 @@
+bundle:  carb-loading
+version: v1
+status:  ratified
+ratified: 2026-09-25            # Xuan — interview (13 decisions) + Q-CL11 + entryway batch + desk sitting + Q-D batch; explicit ship GO 2026-09-25 at his checkpoint
+ships: >
+  Carb-loading release-1: protocol math (3-Day 8/8/10 · 2-Day 9/11 · NEW 1-Day 11 g/kg,
+  point-value copy), the pace ramp (3-h slot grid 6..21 close 22:00, Option-R rounded anchors
+  with the 22:00 clamp, relative band max(5% owed, 10 g), eaten = all-day logs), completion +
+  loader, day variants, the CREATE/EDIT entryway (two-state row, plan summary PAGE, CE-8
+  feasibility gate, re-pick migration by date, CE-9 backdrop abort, delete UI), the LOAD face
+  (expansion admitted per Q-D9) + slot cards + slot page + breakdown page with protocol-chip
+  navigation and the CE-7 Manage-plan footer, copy registers v1, and the ruled data contract
+  (one store + is_carb_loading + slot suitability; Path A slot logs; D4 yes).
+
+specs:
+  - slice:   carb-loading (protocol + ramp math)
+    version: RATIFIED v1 (2026-09-24, interview; Q-CL11 anchor addendum same day)
+    spec:    spec/fueling/carb-loading.md
+    vectors: vectors/fueling/carb-loading.json            # 46 (count-vectors.mjs, 2026-09-25)
+    engine:  null until the published entry point exists (handback G2/G3)
+  - slice:   carb-loading-entryway (behavior)
+    version: RATIFIED v1 behavior (2026-09-24) + CE-8 + CE-9 (2026-09-25)
+    spec:    spec/fueling/carb-loading-entryway.md
+    vectors: vectors/fueling/carb-loading-entryway.json   # 14 (count-vectors.mjs, 2026-09-25)
+    engine:  null (G7–G16 surfaces)
+  - slice:   entryway rendering
+    spec:    spec/design/surfaces/carb-loading-entryway.md     # RATIFIED 2026-09-25 (desk) + v20/v21 re-walks
+  - slice:   dashboard surface + slot card
+    spec:    spec/design/surfaces/carb-loading-dashboard.md    # RATIFIED 2026-09-25 (CD-1..6)
+    also:    spec/design/components/carb-slot-card.md          # RATIFIED 2026-09-25
+  - slice:   energy-card LOAD face
+    spec:    spec/design/components/energy-card.md             # §LOAD-face amendment as re-ruled by Q-D9 (E1 toggles)
+  - slice:   macro-dashboard scope guard
+    spec:    spec/design/surfaces/macro-dashboard.md           # S-5 dated exception
+  - slice:   tokens — glow + D7
+    spec:    spec/design/tokens.md                             # glow general material; Q-D3 exception (electrolyte strip)
+  - slice:   reference rendering / prototype
+    pin:     app .scratch/carb-loading/prototype/fuel-timeline-standalone.html
+    version: v22 VERIFIED (QA walk 2026-09-25) — bundle sha f1c232d958a98bfe, source sha
+             254af8cf3349ef3e, app commit e559dfd7. Strip ✓ (all carb-day states; regular
+             unchanged) · Q-D9 clamp ✓ ("0 g to go" / "pace N g by now" registered forms) ·
+             CE-9 backdrop-abort ✓ on BOTH dialog variants (plan untouched, chooser stays)
+
+excludes:
+  - slice:  loading-day-macros-coupling
+    reason: Q-019 — OWN bundle track (Xuan 2026-09-24); RELEASE-coupled to the LOAD face, not tag-coupled
+  - slice:  sparkle-suggest + todays-fuel-insight
+    reason: ruled out of release-1 (package §5); stripped from the prototype in v22 (Q-D10)
+  - slice:  recommendation-prioritization
+    reason: fixed curation only in release-1
+  - slice:  overlapping-loads
+    reason: undefined behavior, ruled out of scope
+  - slice:  reminder-to-start
+    reason: Q-CE6 — fuel-CTA notifications workstream owns it; startDate seam left clean
+
+# Name-your-red completeness (Xuan 2026-09-20 rule) — every shipped item ↔ a red that lands:
+# G2 ramp engine → carb-loading.json ramp/band/completion/variants slices (46)
+# G3 1-Day protocol → protocol-1day vectors + chooser card
+# G4 point-value copy → register rows + qa-smoke drawer check
+# G5 LOAD face + breakdown → L1/L2 per energy-card amendment (Q-D9 form) + CD map
+# G6 edited-target → edited-day-target vectors incl. 22:00 clamp
+# G7–G11 entryway → carb-loading-entryway.json (14) + L2 rows per handback
+# G12–G15 desk reversals → verified in v20/v21 walks; L2/goldens at implementation
+# G16 CE-9 abort → L2 backdrop-abort rows (negative: plan unchanged)
+# LIVE already green: mirror-resync gate (pending Xuan approval app-side), D-021 mapper fix (app 30a972fc)
+
+conformance:
+  runner: qa/conformance/run_dart.sh
+  invoke:
+    - run_dart.sh carb-loading
+    - run_dart.sh carb-loading-entryway
+  done_when: >
+    Every G1–G16 handoff-table red is green: both vector slices pass through the runner,
+    the L2/golden rows named per gate exist and pass, and the mirror byte-identity check
+    passes against this tag's commit.
+  note: >
+    GREENFIELD: no runner arm exists for either slice yet (verified at ship — zero
+    references in conformance/); the Dart harness is built red-first alongside the engine,
+    per the matching-slice precedent. Vectors are EXPECTED-RED until the engine implements
+    the pinned versions. engine=null in both vector files until the published entry point
+    exists (G2/G3); the manifest is repointed at it in a point release when it lands.
+
+deviations:
+  - id:     D-019
+    slice:  carb-loading
+    status: unratified
+    note:   plan-level daily_carb_target_grams stores a cross-day average; shown nowhere; not blessed by this bundle.
+  - id:     D-020
+    slice:  carb-loading
+    status: unratified
+    note:   logged_carbs_grams/completed have no writer; superseded by Path A food-log derivation; retirement rides implementation.

@@ -1,3 +1,5 @@
+> **RESOLVED 2026-09-21 → OPTION 1 RULED (Xuan, interview): named default becomes ruled spec text + a conditions-assumed provenance marker the plan surface must show; silent substitution IS the defect. Scoped INTO fix/1.27.1.**
+
 type: ruling-request
 bundle:
 
@@ -77,3 +79,36 @@ output shape and regenerate its vectors.
 - Coach Claudia McCoy (pilot), 2026-09-08: screenshot of the create-plan form showing
   "Couldn't fetch weather", 68 °F, 60 % humidity, for a Florida session she reports as ~80 °F / 95 %.
 - Correspondence + full state: `ops/emails/2026-09-08-claudia-progress-highlights.md`.
+
+---
+
+## RULING (Xuan, 2026-09-21, reconciliation interview) — option 1, scoped into fix/1.27.1
+Triggered by Coach Claudia's Tampa report (a "ridiculous low temperature" on her plan). Root
+cause confirmed as THIS defect, not the Q-CA2 form-state stickiness initially suspected: the
+fetch fails, the steppers seed 68 °F / 60 %, Generate Plan stays enabled, and the plan is
+produced from invented conditions with nothing on the surface saying so. On her real day
+(80 °F / 95 %) that understates effective sweat rate by ~38 % and sodium by the same factor.
+
+**Ruled:**
+1. The fallback values become **ruled spec text** with their rationale (they exist only in app
+   code today) — folded into `during-workout-hydration.md` beside the sweat-rate chain as a
+   dated post-ratification addition; sodium inherits and needs no separate text.
+2. **A conditions-assumed provenance flag travels with the plan and the display MUST surface
+   it.** A plan built on invented conditions may never present as one built on measured
+   conditions. This is the load-bearing half of the ruling.
+3. Generate Plan **stays enabled** (option 2 rejected — a third-party outage must not block
+   planning, and offline planning is a real use).
+4. Options 3 (uncertainty band) and 4 (location/season default) are NOT ruled out for later;
+   both change the output shape or need their own provenance rule, and neither removes the
+   question this ruling answers.
+
+## Gates
+- [ ] Spec fold: `during-workout-hydration.md` post-ratification addition (named default +
+      provenance requirement); cross-reference from the sodium spec's proportionality note.
+- [ ] App: the conditions-assumed flag threaded from the environment inputs through the
+      generated plan to the surface; the existing "Couldn't fetch weather. Enter manually or
+      try again" copy stays and gains a PERSISTENT marker — the copy alone was never enough,
+      it is transient and the plan outlives it.
+- [ ] Vectors: provenance-flag presence, not new numbers — the ratified sweat-rate arithmetic
+      is unchanged by this ruling.
+- [ ] Test-plan row with its red, named before implementation (name-your-red rule).

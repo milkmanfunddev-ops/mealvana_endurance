@@ -1,0 +1,55 @@
+{
+ "fingerprintId": "4333e8c032ab",
+ "provider": "garmin",
+ "stratum": {
+  "endpoint": "garmin/activity_raw",
+  "workoutType": "HIIT"
+ },
+ "optionalKeysInStratum": [
+  "parentSummaryId",
+  "steps"
+ ],
+ "provenance": {
+  "source": "prod provider_raw_payloads",
+  "scrubbed": "server-side (corpus-export edge fn)",
+  "environment": "prod",
+  "exportedAt": "2026-09-21T00:53:23+00:00",
+  "note": "real-account (prod), promoted by ruling 2026-09-20",
+  "correction": "re-scrubbed under the default-deny standard (@v1.1 samples de-id erratum, ruled 2026-09-20); fingerprint unchanged, content re-destroyed"
+ },
+ "exemplar": {
+  "steps": 132,
+  "summaryId": "syn-3b235163",
+  "activityId": 20313309164,
+  "isWebUpload": false,
+  "activityName": "corpus placeholder",
+  "activityType": "HIIT",
+  "parentSummaryId": "syn-dc06103f",
+  "durationInSeconds": 341,
+  "activeKilocalories": 60,
+  "startTimeInSeconds": 1767225600,
+  "startTimeOffsetInSeconds": -18870,
+  "maxHeartRateInBeatsPerMinute": 130,
+  "averageHeartRateInBeatsPerMinute": 140
+ },
+ "linkedCompanions": [
+  {
+   "isParent": true,
+   "summaryId": "syn-dc06103f",
+   "activityId": 28664362518,
+   "isWebUpload": false,
+   "activityName": "corpus placeholder",
+   "activityType": "MULTI_SPORT",
+   "distanceInMeters": 3192.6980083464646,
+   "durationInSeconds": 3840,
+   "activeKilocalories": 753,
+   "startTimeInSeconds": 1767225278,
+   "startTimeOffsetInSeconds": -17311,
+   "totalElevationGainInMeters": 34,
+   "totalElevationLossInMeters": 38,
+   "maxHeartRateInBeatsPerMinute": 183,
+   "averageSpeedInMetersPerSecond": 1.118007369931312,
+   "averagePaceInMinutesPerKilometer": 18.08453590340749
+  }
+ ]
+}

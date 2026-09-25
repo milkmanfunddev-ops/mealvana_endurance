@@ -1,0 +1,29 @@
+{
+ "fingerprintId": "ba61d6983465",
+ "provider": "garmin",
+ "stratum": {
+  "endpoint": "garmin/activity_detail_raw",
+  "workoutType": "YOGA"
+ },
+ "optionalKeysInStratum": [],
+ "provenance": {
+  "source": "dev provider_raw_payloads",
+  "scrubbed": "server-side (corpus-export edge fn)",
+  "environment": "dev",
+  "exportedAt": "2026-09-21T00:53:24+00:00",
+  "note": "real-account (dev Garmin athletes), promoted by ruling 2026-09-20",
+  "correction": "re-scrubbed under the default-deny standard (@v1.1 samples de-id erratum, ruled 2026-09-20); fingerprint unchanged, content re-destroyed"
+ },
+ "exemplar": {
+  "activityId": 19464102136,
+  "isWebUpload": false,
+  "activityName": "corpus placeholder",
+  "activityType": "corpus placeholder",
+  "durationInSeconds": 3120,
+  "activeKilocalories": 86,
+  "startTimeInSeconds": 1767225600,
+  "startTimeOffsetInSeconds": -19984,
+  "maxHeartRateInBeatsPerMinute": 112,
+  "averageHeartRateInBeatsPerMinute": 93
+ }
+}

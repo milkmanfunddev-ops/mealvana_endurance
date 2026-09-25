@@ -1,0 +1,38 @@
+{
+ "fingerprintId": "cba62a2f73d2",
+ "provider": "garmin",
+ "stratum": {
+  "endpoint": "garmin/activity_detail_raw",
+  "workoutType": "CYCLING"
+ },
+ "optionalKeysInStratum": [],
+ "provenance": {
+  "source": "dev provider_raw_payloads",
+  "scrubbed": "server-side (corpus-export edge fn)",
+  "environment": "dev",
+  "exportedAt": "2026-09-21T00:53:24+00:00",
+  "note": "real-account (dev Garmin athletes), promoted by ruling 2026-09-20",
+  "correction": "re-scrubbed under the default-deny standard (@v1.1 samples de-id erratum, ruled 2026-09-20); fingerprint unchanged, content re-destroyed"
+ },
+ "exemplar": {
+  "activityId": 28717113187,
+  "isWebUpload": false,
+  "activityName": "corpus placeholder",
+  "activityType": "corpus placeholder",
+  "distanceInMeters": 67336.50642823672,
+  "durationInSeconds": 8045,
+  "activeKilocalories": 922,
+  "startTimeInSeconds": 1767225600,
+  "startTimeOffsetInSeconds": -14667,
+  "maxSpeedInMetersPerSecond": 15.087773782344748,
+  "totalElevationGainInMeters": 310,
+  "totalElevationLossInMeters": 350,
+  "maxHeartRateInBeatsPerMinute": 128,
+  "maxPaceInMinutesPerKilometer": 1.1475577900534093,
+  "averageSpeedInMetersPerSecond": 7.134472836181252,
+  "maxBikeCadenceInRoundsPerMinute": 123,
+  "averageHeartRateInBeatsPerMinute": 141,
+  "averagePaceInMinutesPerKilometer": 2.0471269652823736,
+  "averageBikeCadenceInRoundsPerMinute": 84
+ }
+}

@@ -27,7 +27,7 @@ this surface is invented by the design.
 | Q | Question | Blocks |
 |---|---|---|
 | Q-CA1 | CF-1 recompute vs manual-set needs a class-boundary assert (94→124 min both landed in 2.5h, so the walk could not distinguish recompute from stale) — confirm the window re-derives when an edit crosses a §3a class boundary and the athlete has NOT manually set it | conformance only |
-| Q-CA2 | When does persisted form state RESET? **LIVE DEFECT 2026-09-03** — keepAlive singletons with no reset path let a stepped window and its latched manual flag ride into the next activity, suppressing every ruled re-derivation. Ruling request: `intake/2026-09-03-form-state-reset-semantics.md` | CA-2 + the ruled §3a defaults reaching the athlete at all |
+| Q-CA2 | **RULED (Xuan, 2026-09-21, reconciliation interview): PER-ACTIVITY.** Opening the create flow for a NEW activity resets values AND the `*ManuallySet` flags; "a manual change persists" means within the activity being edited; editing an existing activity re-hydrates from it. ONE lifetime for all flag-bearing form state — window, title, temperature, humidity. Fold: `create-flow-fueling-controls.md` CF-9. Implemented `14671104`; D-018 resolved. Provenance consequence: the reset restores the AUTO SOURCE (`during-workout-hydration.md` CP-6), never a flat constant. | CLOSED |
 | Q-CA3 | PRECISE slider steps and per-zone minimums (can a zone hit 0%?) | CA-5 |
 
 ## Conformance
