@@ -126,9 +126,9 @@ void main() {
 
   tearDown(() => db.close());
 
-  MealPlanController controller() {
+  MealPlanController controller({FakeLogger? logger}) {
     final container = testContainer([
-      ...baseOverrides(connectivity: connectivity, sync: sync),
+      ...baseOverrides(connectivity: connectivity, sync: sync, logger: logger),
       appDatabaseProvider.overrideWithValue(db),
       mealPlanRepositoryProvider.overrideWithValue(repo),
       vanaActionClientProvider.overrideWithValue(actions),
@@ -269,6 +269,13 @@ void main() {
     test(
       'setServings updates state through the Drift watch and replays via RPC',
       () async {
+        // The post-replay list rebuild answers without a batch here, so the
+        // fixture plan never replaces plan-1.
+        actions = _FakeActionClient(
+          (a) => a is RebuildShoppingListAction
+              ? const VanaActionResult(parts: [], extras: {})
+              : batchResult(a),
+        );
         final c = controller();
         await c.future;
 
@@ -307,6 +314,99 @@ void main() {
           isEmpty,
           reason: 'no remote-ack call for a local edit',
         );
+      },
+    );
+  });
+
+  /// Testing-wave 88-003 (ticket 127, mp-244: "the list is rebuilt after
+  /// every plan edit"). The stepper and Remove replay through SQL RPCs that
+  /// touch plan_meals only, so once the replay lands the controller asks the
+  /// server to rebuild each touched plan's list.
+  group('list rebuild after a replayed edit', () {
+    setUp(() {
+      remote.plans = [
+        {..._planRow(weekStartFor()), 'status': 'confirmed'},
+      ];
+    });
+
+    /// Records what the remote had replayed when each rebuild was asked.
+    List<List<String>> rebuildsSeen() {
+      final seen = <List<String>>[];
+      actions = _FakeActionClient((action) {
+        if (action is RebuildShoppingListAction) {
+          seen.add(List.of(remote.calls));
+          return const VanaActionResult(parts: [], extras: {});
+        }
+        return batchResult(action);
+      });
+      return seen;
+    }
+
+    test(
+      'a servings change asks for the plan\'s list after the replay',
+      () async {
+        await repo.syncFromRemote(_user);
+        final seen = rebuildsSeen();
+        final c = controller();
+        await c.future;
+
+        await c.setServings('pm-1', 5);
+        await settle(const Duration(milliseconds: 80));
+
+        final rebuilds = actions.calls.whereType<RebuildShoppingListAction>();
+        expect(rebuilds.map((a) => a.planId), ['plan-1']);
+        expect(seen.single, contains('plan_set_servings:pm-1:5'));
+      },
+    );
+
+    test('a remove asks for the plan\'s list after the replay', () async {
+      await repo.syncFromRemote(_user);
+      final seen = rebuildsSeen();
+      final c = controller();
+      await c.future;
+
+      await c.removeMeal('pm-2');
+      await settle(const Duration(milliseconds: 80));
+
+      final rebuilds = actions.calls.whereType<RebuildShoppingListAction>();
+      expect(rebuilds.map((a) => a.planId), ['plan-1']);
+      expect(seen.single, contains('plan_remove_meal:pm-2'));
+    });
+
+    test('a failed upload asks for no rebuild and says so', () async {
+      await repo.syncFromRemote(_user);
+      rebuildsSeen();
+      remote.failWith = StateError('network down');
+      final logger = FakeLogger();
+      final c = controller(logger: logger);
+      await c.future;
+
+      await c.setServings('pm-1', 5);
+      await settle(const Duration(milliseconds: 80));
+
+      expect(actions.calls.whereType<RebuildShoppingListAction>(), isEmpty);
+      expect(logger.warnings, contains(contains('shopping list not rebuilt')));
+    });
+
+    test(
+      'a rebuild missed by a failed upload is asked by the next one',
+      () async {
+        await repo.syncFromRemote(_user);
+        rebuildsSeen();
+        remote.failWith = StateError('network down');
+        final c = controller();
+        await c.future;
+
+        await c.setServings('pm-1', 5);
+        await settle(const Duration(milliseconds: 80));
+        expect(actions.calls.whereType<RebuildShoppingListAction>(), isEmpty);
+
+        remote.failWith = null;
+        await c.removeMeal('pm-2');
+        await settle(const Duration(milliseconds: 80));
+
+        final rebuilds = actions.calls.whereType<RebuildShoppingListAction>();
+        expect(rebuilds.map((a) => a.planId), ['plan-1']);
       },
     );
   });
