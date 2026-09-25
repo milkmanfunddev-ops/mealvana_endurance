@@ -4,7 +4,9 @@ import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:mealvana_endurance/features/content/application/content_service.dart';
+import 'package:intl/intl.dart';
 import 'package:mealvana_endurance/features/content/domain/content_keys.dart';
+import 'package:mealvana_endurance/shared/widgets/kyle_design/buttons/primary_button.dart';
 import 'package:mealvana_endurance/features/meal_planning/application/shopping_list_controller.dart';
 import 'package:mealvana_endurance/features/kroger/application/kroger_availability.dart';
 import 'package:mealvana_endurance/features/meal_planning/domain/shopping_item.dart';
@@ -428,6 +430,59 @@ void _redesignTests() {
       expect(controller.renames, [('Big shop', 'list-1')]);
     });
 
+    /// Ticket 130 (Finding 89-015): Save does nothing on an empty name and
+    /// said nothing; now it is disabled until there is one. Names cap at 60.
+    testWidgets('the rename sheet disables Save on an empty name and caps '
+        'the name at 60', (tester) async {
+      await _pumpTab(tester, _listState());
+      await tester.tap(
+        find.byKey(const ValueKey('meal_planning.shopping_list_name')),
+      );
+      await tester.pumpAndSettle();
+      final field = find.byKey(
+        const ValueKey('meal_planning.shopping_rename_name'),
+      );
+      final save = find.byKey(
+        const ValueKey('meal_planning.shopping_rename_save'),
+      );
+      expect(tester.widget<KylePrimaryButton>(save).onPressed, isNotNull);
+
+      await tester.enterText(field, '   ');
+      await tester.pump();
+      expect(tester.widget<KylePrimaryButton>(save).onPressed, isNull);
+
+      await tester.enterText(field, 'z' * 70);
+      await tester.pump();
+      expect(tester.widget<KylePrimaryButton>(save).onPressed, isNotNull);
+      expect(tester.widget<TextField>(find.byType(TextField)).controller!.text.length, 60);
+    });
+
+    /// Ticket 130 (Finding 89-015): with two same-named lists the athlete
+    /// could not tell which one Delete meant. The dialog names the list and
+    /// its date.
+    testWidgets('the Delete dialog names the list and its date', (
+      tester,
+    ) async {
+      await _pumpTab(tester, _listState());
+      await _openMenu(tester, 'meal_planning.shopping_menu');
+      await _choose(tester, 'meal_planning.shopping_delete_list');
+
+      final dialog = find.byKey(
+        const ValueKey('meal_planning.shopping_delete_confirm'),
+      );
+      expect(dialog, findsOneWidget);
+      final which = content[ContentKeys.mpShoppingDeleteListWhich]!
+          .replaceAll('{name}', 'Week of Sep 13')
+          .replaceAll(
+            '{date}',
+            DateFormat.yMMMd().format(DateTime.utc(2026, 9, 14).toLocal()),
+          );
+      expect(
+        find.descendant(of: dialog, matching: find.text(which)),
+        findsOneWidget,
+      );
+    });
+
     testWidgets('Delete list asks first; Keep it sends nothing', (
       tester,
     ) async {
@@ -816,11 +871,29 @@ void _redesignTests() {
       expect(controller.renames, [('Bulk run', 'list-a')]);
     });
 
-    testWidgets('a row\'s menu deletes that list after asking', (tester) async {
+    testWidgets('a row\'s menu deletes that list after asking, naming it', (
+      tester,
+    ) async {
       final controller = await open(tester);
 
       await _openMenu(tester, 'meal_planning.shopping_previous_menu_list-b');
       await _choose(tester, 'meal_planning.shopping_previous_delete_list-b');
+      // Ticket 130 (89-015): the dialog says which list goes.
+      final which = content[ContentKeys.mpShoppingDeleteListWhich]!
+          .replaceAll('{name}', 'Old week')
+          .replaceAll(
+            '{date}',
+            DateFormat.yMMMd().format(DateTime.utc(2026, 9, 6).toLocal()),
+          );
+      expect(
+        find.descendant(
+          of: find.byKey(
+            const ValueKey('meal_planning.shopping_delete_confirm'),
+          ),
+          matching: find.text(which),
+        ),
+        findsOneWidget,
+      );
       await _choose(tester, 'meal_planning.shopping_delete_go');
 
       expect(controller.deleted, ['list-b']);

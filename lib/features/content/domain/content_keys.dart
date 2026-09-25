@@ -765,6 +765,9 @@ class ContentKeys {
       'meal_planning.shopping_rename_hint';
   static const String mpShoppingListRenamed =
       'meal_planning.shopping_list_renamed';
+  // Ticket 130 (Finding 89-015): the delete dialog names the list and date.
+  static const String mpShoppingDeleteListWhich =
+      'meal_planning.shopping_delete_list_which';
   static const String mpShoppingListEmpty = 'meal_planning.shopping_list_empty';
   static const String mpShoppingAddTitle = 'meal_planning.shopping_add_title';
   static const String mpShoppingFromPlan = 'meal_planning.shopping_from_plan';

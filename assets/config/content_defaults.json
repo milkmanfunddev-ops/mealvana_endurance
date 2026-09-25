@@ -759,6 +759,7 @@
     "shopping_rename_title": "Rename list",
     "shopping_rename_hint": "List name",
     "shopping_list_renamed": "List renamed",
+    "shopping_delete_list_which": "{name} · {date}",
     "shopping_list_empty": "Nothing on this list yet",
     "shopping_add_title": "Add an item",
     "shopping_from_plan": "From plan",

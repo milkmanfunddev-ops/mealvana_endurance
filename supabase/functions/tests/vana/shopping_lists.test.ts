@@ -1,7 +1,7 @@
 /** Several shopping lists (2026-09-16): the merge rule that keeps a hand-added or hand-edited line through a re-plan,
  *  and the wire shape of every shopping action, over the fake db. */
 import { assertEquals, assert, assertRejects } from 'https://deno.land/std@0.177.1/testing/asserts.ts';
-import { mergePlanItems, syncPlanList, toItem, weekListName } from '../../_shared/vana/shopping.ts';
+import { mergePlanItems, syncPlanList, toItem, weekListName, uniqueListName, cleanListName, LIST_NAME_MAX } from '../../_shared/vana/shopping.ts';
 import { extraAction } from '../../_shared/vana/actions.ts';
 import { ShoppingListDetailZ, ShoppingListSummaryZ, ActionResultZ } from '../../_shared/vana/schemas.ts';
 import type { ShoppingItem, ShoppingListItem } from '../../_shared/vana/contracts.ts';
@@ -274,4 +274,34 @@ Deno.test('ensurePlanList: an insert the unique index refuses (a racing edit mad
   const got = await ensurePlanList(v, 'p1', '2026-09-20');
   assertEquals(got.id, 'winner');
   assertEquals(v.fake.rows('shopping_lists').length, 1);
+});
+
+// Ticket 130 (Finding 89-015, Lee: all four). A rename to a name another list has takes the next free " (n)"; names cap at
+// 60 like plan names. The app works the same name out from the lists it knows (shopping_list_controller_test.dart), so
+// what it shows at once is what the server keeps.
+Deno.test('uniqueListName / cleanListName: the next free number, whitespace collapsed, the cap kept', () => {
+  assertEquals(LIST_NAME_MAX, 60);
+  assertEquals(uniqueListName('Big shop', ['Costco']), 'Big shop');
+  assertEquals(uniqueListName('Big shop', ['big shop']), 'Big shop (2)');
+  assertEquals(uniqueListName('Big shop', ['Big shop', 'Big shop (2)']), 'Big shop (3)');
+  assertEquals(uniqueListName('Big shop (2)', ['Big shop (2)']), 'Big shop (3)');
+  assertEquals(cleanListName('  Big   shop '), 'Big shop');
+  assertEquals(cleanListName('x'.repeat(70)).length, 60);
+  const long = uniqueListName('x'.repeat(60), ['x'.repeat(60)]);
+  assert(long.length <= 60); assert(long.endsWith(' (2)'));
+});
+
+Deno.test('rename_shopping_list: a name another list has gets " (2)", its own name is kept, and 123 characters become 60', async () => {
+  const v = ctx({ shopping_lists: [
+    { id: 'a', user_id: U, name: 'List 2026-09-19', created_at: '2026-09-19T00:00:00Z' },
+    { id: 'b', user_id: U, name: 'Bulk run', created_at: '2026-09-20T00:00:00Z' },
+  ] });
+  const dup = ShoppingListDetailZ.parse((await extraAction(v, 'rename_shopping_list', { id: 'b', name: 'List 2026-09-19' }))!.list);
+  assertEquals(dup.name, 'List 2026-09-19 (2)');
+  const same = ShoppingListDetailZ.parse((await extraAction(v, 'rename_shopping_list', { id: 'b', name: 'List 2026-09-19 (2)' }))!.list);
+  assertEquals(same.name, 'List 2026-09-19 (2)', 'its own name is not a duplicate');
+  const third = ShoppingListDetailZ.parse((await extraAction(v, 'rename_shopping_list', { id: 'a', name: 'List 2026-09-19 (2)' }))!.list);
+  assertEquals(third.name, 'List 2026-09-19 (3)');
+  const long = ShoppingListDetailZ.parse((await extraAction(v, 'rename_shopping_list', { id: 'a', name: 'y'.repeat(123) }))!.list);
+  assertEquals(long.name.length, 60);
 });
