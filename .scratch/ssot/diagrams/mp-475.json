@@ -1,0 +1,1 @@
+{"kind": "flow", "title": "Ticket 10: a share, never dollars", "rows": [[{"id": "a", "label": "Server sends: share used,\nrefill date, bought extra", "tone": "ink"}], [{"id": "b", "label": "Vana settings: a bar\nand a date", "tone": "ok"}]], "edges": [{"from": "a", "to": "b"}], "example": ["At 100%: the top-up sheet.", "Wallet channel open only on a budget screen."]}

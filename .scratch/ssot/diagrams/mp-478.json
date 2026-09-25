@@ -1,0 +1,1 @@
+{"kind": "flow", "title": "Ticket 13: day notes", "rows": [[{"id": "a", "label": "Today: 3.7 generations\nper athlete a day", "tone": "no"}], [{"id": "b", "label": "After: only the days\na plan edit touched", "tone": "ok"}]], "edges": [{"from": "a", "to": "b"}], "example": ["Unchanged plan: stored notes, no model.", "Two requests at once share one call."]}

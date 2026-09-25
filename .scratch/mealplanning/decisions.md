@@ -2792,7 +2792,7 @@ An edit made while notes are being written is picked up on the next open. A requ
 ## mp-595 · Should a fixed chip act at once wherever its label appears?
 - category: Cutting costs
 - kind: question
-- status: open
+- status: answered
 - linked: mp-464
 - image: none
 - screen: Vana chat
@@ -2807,11 +2807,12 @@ An edit made while notes are being written is picked up on the next open. A requ
 **What it touches.** Vana chat; `vana_fixed_chip.dart`, `chip-labels.ts`.
 
 > 2026-09-23 opened in wave 6 ticket 11
+> 2026-09-23 answered by mp-608
 
 ## mp-596 · "Open shopping list" lands on Plan when the Food tab is already open
 - category: Cutting costs
 - kind: question
-- status: open
+- status: answered
 - linked: mp-464
 - image: none
 - screen: Food tab
@@ -2826,6 +2827,7 @@ An edit made while notes are being written is picked up on the next open. A requ
 **What it touches.** Food tab; `food_screen.dart`, `tabs_screen.dart`.
 
 > 2026-09-23 opened in wave 6 ticket 11
+> 2026-09-23 answered by mp-652
 
 ## mp-597 · Should the status line say Vana is thinking while a tap runs with no model?
 - category: Cutting costs
@@ -2891,7 +2893,7 @@ An edit made while notes are being written is picked up on the next open. A requ
 ## mp-606 · When does a meal type count as planned?
 - category: Cutting costs
 - kind: question
-- status: open
+- status: answered
 - linked: mp-602
 - image: none
 - screen: Vana chat
@@ -2906,11 +2908,12 @@ An edit made while notes are being written is picked up on the next open. A requ
 **What it touches.** Vana chat; `chips.ts` (`pickerNextStep`), the plan's coverage.
 
 > 2026-09-23 opened in wave 7 ticket 12
+> 2026-09-23 answered by mp-620
 
 ## mp-607 · Should "I like these" still skip Vana in a race week?
 - category: Cutting costs
 - kind: question
-- status: open
+- status: answered
 - linked: mp-602
 - image: none
 - screen: Vana chat
@@ -2925,6 +2928,7 @@ An edit made while notes are being written is picked up on the next open. A requ
 **What it touches.** Vana chat; `chips.ts`, the planning persona (`persona.ts` rule 6).
 
 > 2026-09-23 opened in wave 7 ticket 12
+> 2026-09-23 answered by mp-620
 
 ## mp-614 · Opening the paywall from inside the app leaves nothing behind it
 - category: Pro and paywall
@@ -3052,26 +3056,6 @@ An edit made while notes are being written is picked up on the next open. A requ
 
 > 2026-09-23 opened in wave 7 review
 
-## mp-653 · When does an idea Finding stop holding the testing loop open?
-- category: Process and scope
-- kind: question
-- status: open
-- linked: mp-621
-- image: none
-- svg: docs/ssot/decisions/images/mealplanning/mp-653.svg
-- screen: none (testing-wave process)
-- source: wave testing-wave 1 ticket 01
-
-**Context.** A testing-wave agent writes an idea Finding when it sees something that could be better but isn't broken. The loop ends when every Finding is closed or won't-fix, and the spec only closes a Finding when a retest passes. An idea has no retest, so as the harness stands, an idea still waiting at triage keeps the loop running for good.
-
-**Question.** At triage, does an idea become a proposal card on the page and close (A), close as won't-fix unless Lee picks it up (B), or stop counting toward the end of the loop, whatever its status (C)?
-
-**Why.** Without a rule for ideas, the loop can never be declared finished, even with every bug fixed.
-
-**What it touches.** `scripts/testing-wave/findings.mjs` (what counts as finished), the spec's Triage section.
-
-> 2026-09-23 opened in wave 1 ticket 01
-
 ## mp-654 · Should the app still stop an unpaid AI tap itself, or leave it to the server?
 - category: Pro and paywall
 - kind: question
@@ -3133,6 +3117,131 @@ An edit made while notes are being written is picked up on the next open. A requ
 **What it touches.** RevenueCat Test Store app `appa283bb35a2`, the `default` offering.
 
 > 2026-09-23 opened in wave 9 ticket 05
+
+## mp-659 · Does a running app close the Gate the moment Pro runs out, or on the next resume?
+- category: Pro and paywall
+- kind: question
+- status: open
+- linked: mp-457
+- image: none
+- svg: docs/ssot/decisions/images/mealplanning/mp-659.svg
+- screen: none (Gate timing: the lapse happens while the timeline is open)
+- source: wave testing-wave 5 ticket 05
+
+**Context.** mp-457 says the Gate is open while Pro is live and closed otherwise, and closed is the full-screen paywall. In wave 5 a Test Store subscription expired at 09:15 UTC while the app sat open on the timeline. The app kept showing the timeline for 93 minutes, and only sending it to the background and back brought up the paywall (Finding 05-005). The server was already refusing AI calls for that account.
+
+**Question.** When Pro runs out while the app is open, does the paywall come up at the expiry time (A), on the next resume or cold start as it does today (B), or at the next action that needs Pro (C)?
+
+**Why.** mp-457 says what closed looks like, not when a running app finds out. With a real monthly plan this is a gap of hours at most, but it decides whether the app needs its own expiry timer.
+
+**What it touches.** The Gate (`pro_gate.dart`), `SubscriptionService` customer-info refresh, the router redirect.
+
+> 2026-09-24 opened in wave 5 ticket 05
+
+## mp-660 · What does a second code from the same coach do?
+- category: Pro and paywall
+- kind: question
+- status: open
+- linked: mp-535
+- image: none
+- svg: docs/ssot/decisions/images/mealplanning/mp-660.svg
+- screen: none (redeem-code server answer; the sheet shows only the message)
+- source: wave testing-wave 5 ticket 11
+
+**Context.** mp-458 and mp-535 say an athlete entering a coach Code gets a pending pairing with that coach, and each Code works once per account. On dev one coach owns two Codes (DEVCOACH30 and DEVCOACH18). In wave 5 an athlete redeemed both: the second one said again that the coach would see a new request, though one was already pending, spent a second redemption, and replaced the first Code in RevenueCat's `coach_code` attribute (Finding 11-002).
+
+**Question.** When an athlete already paired or pending with a coach enters another Code from that coach, is it refused as already paired (A), accepted and recorded with a message that says the request is already pending (B), or accepted as today (C)?
+
+**Why.** The decisions cover one Code per coach. The attribution a coach or influencer report reads comes from `coach_code`, and today the last Code wins.
+
+**What it touches.** The `redeem-code` edge function, the Redeem code sheet's success message, RevenueCat `coach_code`.
+
+> 2026-09-24 opened in wave 5 ticket 11
+
+## mp-661 · Does a used code stay used after the account is deleted?
+- category: Pro and paywall
+- kind: question
+- status: open
+- linked: mp-535
+- image: none
+- svg: docs/ssot/decisions/images/mealplanning/mp-661.svg
+- screen: none (database: code_redemptions)
+- source: wave testing-wave 5 ticket 11
+
+**Context.** mp-535 says every Code works once per account, and a giveaway works once in total unless its row allows more. Redemptions are rows in `code_redemptions`, tied to the account. In wave 5 an athlete redeemed two coach Codes and then deleted the account: both redemption rows were deleted with it, and each Code's redemption count went back down (Finding 11-012).
+
+**Question.** When an account is deleted, are its redemptions kept (without the user, or with the email hashed) so a giveaway stays spent and referral counts stay true (A), or deleted with the account as today (B)?
+
+**Why.** If they go, a person can delete their account, sign up again and redeem a once-only giveaway a second time, and a coach's or influencer's referral count drops each time an athlete leaves.
+
+**What it touches.** The `code_redemptions` foreign key to the user, the `delete-user` edge function, any referral report built on redemption counts.
+
+> 2026-09-24 opened in wave 5 ticket 11
+
+## mp-662 · The sandbox founding purchase uses a one-customer override, not the current offering
+- category: Pro and paywall
+- status: proposed
+- linked: mp-463
+- image: none
+- svg: docs/ssot/decisions/images/mealplanning/mp-662.svg
+- screen: none (store setup)
+- source: wave paywall 10 ticket 13
+
+**Context.** mp-463 has a person buy through the founding offering in Sandbox. The spec says the founding offering "is current" for that run. RevenueCat has one project for dev and prod, so the current offering is what the live App Store and Play builds sell. The founding offering becomes current by hand on 1 October.
+
+**Question.** How does the sandbox run reach the founding prices before 1 October without changing what the live app sells?
+
+**Decision.** The person running it overrides the offering for their one sandbox customer in the RevenueCat dashboard, and removes the override when the run ends. The project's current offering is never changed for a test. Example: on 26 September Lee signs in with a fresh sandbox account, sets that customer's offering to `founding` in RevenueCat, sees $12.49 beside $24.99 struck through, buys, and clears the override afterwards; everyone else still sees $24.99.
+
+**Why.** Making `founding` current, even for a few minutes, would show founding prices to real prod customers, because the project is shared.
+
+**What else was considered.** Making `founding` current for the length of the run, as the spec's wording says. That changes the live app's offer.
+
+**What it touches.** `scripts/sandbox-trial-wizard.sh` phone step 2 and its tidy-up, `docs/release/sandbox-trial-runs/README.md`, `.scratch/paywall/spec.md` (its wording now disagrees).
+
+> 2026-09-24 proposed in wave 10 ticket 13
+
+## mp-663 · Claude's store checks also check the webhooks' event list
+- category: Pro and paywall
+- status: proposed
+- linked: mp-463
+- image: none
+- svg: docs/ssot/decisions/images/mealplanning/mp-663.svg
+- screen: none (store setup)
+- source: wave paywall 10 ticket 13
+
+**Context.** mp-463 lists what Claude checks without a phone: products, prices and free weeks on both stores, the founding offering, a hand-granted account showing `pro`, and its row. Ticket 13 added a seventh check: both RevenueCat webhooks (dev and prod) take every lifecycle event and filter on no environment. On 24 September the prod webhook took only three event types, so the store-checks log came out RED.
+
+**Question.** Does the webhook's event list belong in the release gate's no-phone checks?
+
+**Decision.** Yes. The store-checks log is GREEN only when both webhooks hear every lifecycle event (purchase, renewal, cancellation, expiration, billing issue, product change, transfer and the rest) with no environment filter. Example: on 24 September the prod webhook heard initial purchase, renewal and non-renewing purchase only, so a cancellation on the App Store would never have reached the prod server, and the check failed.
+
+**Why.** A webhook that misses cancellations and expirations leaves a lapsed customer with Pro on the server, and nothing else in the gate would notice.
+
+**What else was considered.** Checking only what mp-463 lists and leaving the webhook to the 1 October cutover runbook (mp-321).
+
+**What it touches.** `scripts/sandbox-trial-wizard.sh` check C7, the prod webhook `whintgraa6c9e50e5`, playbook gate P3c.
+
+> 2026-09-24 proposed in wave 10 ticket 13
+
+## mp-664 · How does the day-five reminder step pass in a sandbox trial?
+- category: Pro and paywall
+- kind: question
+- status: open
+- linked: mp-463
+- image: none
+- screen: none (store setup)
+- source: wave paywall 10 ticket 13
+
+**Context.** mp-463 has a person see "the day-five reminder arriving on a device with its clock moved on". Sandbox shortens the seven-day free week to a few minutes. The app schedules the reminder for 10:00 two days before the trial ends, and schedules nothing when that time has already passed, which it always has in a sandbox trial. Moving the clock on afterwards cannot bring it back.
+
+**Question.** What should the phone run do for the day-five reminder: add a dev-only way to schedule it on the device, trust the reminder's unit tests, or something else?
+
+**Why.** As built, Lee's phone run cannot pass this step, and it is part of the release gate.
+
+**What it touches.** `TrialReminder.fireTimeFor`, `scripts/sandbox-trial-wizard.sh` phone step 6, ticket 13's third criterion.
+
+> 2026-09-24 opened in wave 10 ticket 13
 
 ## mp-665 · Does the server's Pro check allow a grace period after the paid-until time?
 - category: Pro and paywall

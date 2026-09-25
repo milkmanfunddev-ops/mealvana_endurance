@@ -39,8 +39,8 @@
     "sha256": "0861b9d42f1a83bc888ee6ef7e99cc02cbf28b51a0c98d0c973ac971c51995cd"
   },
   "docs/ssot/decisions/images/mealplanning/timeline.png": {
-    "id": "29207c0f1c4d9ec608eb0df473482e9b",
-    "sha256": "49f6c6da4cfd879ba8619642fb873083a05bb9a502bba00eebe2cf62129ca17b"
+    "id": "c2695cfdb447b2a08bc7be283181d2ad",
+    "sha256": "05aaa0489fc708f4ebbdb8dc166871275059216b2631d4b60bd04cb961b166a2"
   },
   "docs/ssot/decisions/images/mealplanning/meals-tab.png": {
     "id": "19f10538e5c4c1ec2a0b06e7dd780957",
@@ -93,5 +93,17 @@
   "docs/ssot/decisions/images/mealplanning/paywall-lapsed.png": {
     "id": "76227a7818fba98c8cc2f614d61cea8a",
     "sha256": "e3418b3e86885acde3fe1fd54d61aa93fb695eb180f47e78d0bfe054bfa4daf0"
+  },
+  "docs/ssot/decisions/images/mealplanning/settings.png": {
+    "id": "8540839117bb4b378d675d1c5451ca57",
+    "sha256": "d6414115140e49db3f5b97d956706ce1236081e144365cc3414a250b97353f18"
+  },
+  "docs/ssot/decisions/images/mealplanning/vana-conversations.png": {
+    "id": "16267bda3439ccbfebb7a49e0b6ea6a2",
+    "sha256": "e7e37ad6e934deeb7cb113d96a2faf5f7326816539f00abf16d805faab2b168b"
+  },
+  "docs/ssot/decisions/images/mealplanning/shopping-tab.png": {
+    "id": "acf2a3a539b8415fb4652d4163b016e6",
+    "sha256": "e255dc023dba576926f5417f68eff72bca43dc9c42f2c80ddd611c9eea89b4fe"
   }
 }

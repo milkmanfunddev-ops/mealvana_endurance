@@ -1,6 +1,6 @@
 ---
 name: to-tickets-lee
-description: "Matt's to-tickets with the decision record around it: refuses while a Spec card is pending, puts the breakdown on the page as one card per ticket with blockers and touches, and writes the ticket files only once every card is approved. `/to-tickets-lee <feature>`."
+description: "Matt's to-tickets with the decision record around it: refuses while a Spec card is pending, writes the breakdown as one card per ticket with blockers and touches, lists it in the terminal for the ratifier's go, and writes the ticket files once that go has approved every card; the page shows the tickets as a record. `/to-tickets-lee <feature>`."
 disable-model-invocation: true
 ---
 
@@ -41,9 +41,9 @@ node .claude/skills/ssot/matt.mjs to-tickets
 Read the file it prints and follow it. A non-zero exit is a stop: report the path it looked for
 and end the turn. His text stays in his file. Gathering context, exploring the code and drafting
 the vertical slices with their blocking edges run as he writes them, from `SPEC` and the
-conversation. Two of his steps change here: where he presents the breakdown in the terminal and
-asks whether the granularity and the edges are right, step 5 below puts it on the page; where he
-publishes the tickets to the tracker, step 7 below writes them from the approved cards.
+conversation. Two of his steps change here: before he presents the breakdown in the terminal,
+step 5 below writes it as cards so the overlaps become edges; where he publishes the tickets to
+the tracker, step 7 below writes them from the approved cards.
 
 ## 4. Load what is ruled
 
@@ -53,9 +53,9 @@ approved decisions and the spec; a rejected decision never becomes ticket work. 
 already in `ISSUES` (if any): new numbers continue after the highest existing one, and a slice
 that repeats a done ticket is not a slice.
 
-## 5. The breakdown goes to the page
+## 5. The breakdown becomes cards
 
-Instead of presenting a numbered list in the terminal, write one card per ticket in `PROPOSALS`,
+Before presenting the numbered list in the terminal (step 6), write one card per ticket in `PROPOSALS`,
 the way `/ssot backfill` step 3 and 4 write one (README parts, id from `SYNC next-id` one at a
 time, `unslop`), with these fixed:
 
@@ -94,21 +94,29 @@ have, either write that number into the card's `blocked:` line so the page shows
 the touches if the overlap is not real. `forward` names any declared blocker that is not a
 lower number; renumber until it is empty, since `publish-tickets` refuses while it is not.
 
-## 6. Push and wait
+## 6. List it in the terminal and wait for the go
 
-Run `.claude/skills/ssot/epilogue.md`. Its `Next:` line for this skill is the "approve N
-decisions" form, so the epilogue sends the push. End the turn with the report and:
+The ratifier approves a breakdown in the terminal, never on the page (Lee, 2026-09-21). The cards
+are the page's record of the tickets, not a queue. Present the breakdown as Matt's step 4 does: a
+numbered list with each ticket's title, what it waits for, the model it is built on, and one line
+on what it delivers. Ask whether the granularity and the edges are right. Send no push. End the
+turn with:
 
 ```
-Next: approve N tickets on the page, then /to-tickets-lee <feature>
+Next: say "good to go" (or what to change), and I write the N ticket files
 ```
 
-Finish on the page (an artifact-changed notification) and the word `done` in the terminal mean
-the same thing: run the prologue again from its step 2. A rejected ticket card means the cut
-was wrong. Re-cut that part of the breakdown as new cards with new ids; the numbers may move,
-and a card whose blockers changed gets a new card too, while the ratifier withdraws the old one
-on the page. Push again and wait again. An amended card is re-proposed with the rewrite. The
-skill writes nothing to `ISSUES` while `SYNC ticket-plan` lists a pending id.
+A change asked for in the terminal is made on the cards in place while they are still proposed
+(numbers, blockers, touches, criteria), `ticket-plan` is run again, and the list is shown again.
+On the go, write the approval as a verdict file and apply it, so the record carries the ruling
+the same way a page verdict would:
+
+```
+{"sentAt": null, "verdicts": {"<id>": {"verdict": "approve", "by": "<ratifier>", "at": "<now, ISO>", "text": ""}, ...}}
+SYNC apply <that file> PROPOSALS RECORD
+```
+
+The skill writes nothing to `ISSUES` while `SYNC ticket-plan` lists a pending id.
 
 ## 7. Write the files
 
