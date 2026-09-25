@@ -60,16 +60,23 @@ Future<List<String>> _candidateDataUserIds(Ref ref) async {
     if (id != null && id.isNotEmpty && !ids.contains(id)) ids.add(id);
   }
 
+  // Only the profile the signed-in session owns, as the controller resolves
+  // it. "The newest local profile" was wrong on a signed-out phone that
+  // still held another account's profile and connection: their name and
+  // email were pre-filled into a stranger's onboarding and saved onto the
+  // new account (Finding 02-001). Signed out, the controller writes under a
+  // temp id (below), never under a leftover profile.
+  final authUserId = deps.supabaseClient.auth.currentUser?.id;
   try {
     final profile = await ref
         .read(appDatabaseProvider)
         .userDao
-        .getLocalUserProfile();
+        .getCurrentUserProfile(currentAuthUserId: authUserId);
     add(profile?.id);
   } catch (_) {
     // No local profile yet (first run) — the ids below still apply.
   }
-  add(deps.supabaseClient.auth.currentUser?.id);
+  add(authUserId);
   add(deps.sharedPreferences.getString(_onboardingTempUserIdKey));
   return ids;
 }

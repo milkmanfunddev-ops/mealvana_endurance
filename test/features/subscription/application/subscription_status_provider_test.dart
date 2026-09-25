@@ -106,6 +106,7 @@ void main() {
     // entitlement for them.
     when(() => service.currentAppUserId()).thenAnswer((_) async => _userId);
     when(() => service.logIn(any())).thenAnswer((_) async {});
+    when(() => service.logOut()).thenAnswer((_) async {});
     when(
       () => service.fetchStatus(),
     ).thenAnswer((_) async => SubscriptionStatus.none);
@@ -197,9 +198,42 @@ void main() {
       expect(await resolve(c), SubscriptionStatus.none);
 
       capturedListener!(_rcActive);
+      // The push checks the SDK's identity before it is taken.
+      await pumpEventQueue();
 
       expect(current(c).active, isTrue);
       expect(current(c).source, SubscriptionSource.revenuecat);
+    });
+
+    test(
+      'a push for another RevenueCat identity is not taken (32-002)',
+      () async {
+        // A phone that held another account: after sign-up the SDK still
+        // pushes the cached customer of that account (or the anonymous one)
+        // until logIn has moved the identity. That push is about someone
+        // else and must never open the app for this user, not for a frame.
+        final c = container();
+        expect(await resolve(c), SubscriptionStatus.none);
+
+        when(
+          () => service.currentAppUserId(),
+        ).thenAnswer((_) async => 'someone-else');
+        capturedListener!(_rcActive);
+        await pumpEventQueue();
+
+        expect(current(c).active, isFalse);
+      },
+    );
+
+    test('a push with nobody signed in is not taken', () async {
+      final c = container();
+      expect(await resolve(c), SubscriptionStatus.none);
+
+      when(() => repo.currentUserId).thenReturn(null);
+      capturedListener!(_rcActive);
+      await pumpEventQueue();
+
+      expect(current(c).active, isFalse);
     });
 
     test('a push flips active → none (expiry, refund)', () async {
@@ -208,6 +242,7 @@ void main() {
       expect((await resolve(c)).active, isTrue);
 
       capturedListener!(SubscriptionStatus.none);
+      await pumpEventQueue();
 
       expect(current(c).active, isFalse);
     });
@@ -289,6 +324,17 @@ void main() {
       await c.read(subscriptionStatusProvider.notifier).clear();
 
       expect(current(c), SubscriptionStatus.none);
+    });
+
+    test('clear logs the RevenueCat SDK out (03-002)', () async {
+      // Signed out, the SDK used to stay identified as the last account and
+      // kept fetching that customer's entitlement.
+      final c = container();
+      await resolve(c);
+
+      await c.read(subscriptionStatusProvider.notifier).clear();
+
+      verify(() => service.logOut()).called(1);
     });
 
     test('a new session id rebuilds the status', () async {

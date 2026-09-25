@@ -101,17 +101,32 @@ class SubscriptionStatusController extends _$SubscriptionStatusController {
     if (status != null) _settleTrialReminder(status);
   }
 
-  /// Forget everything for the outgoing user. The provider rebuilds on the
-  /// auth change too; this makes the lock immediate.
+  /// Forget everything for the outgoing user (sign-out, account deletion):
+  /// the lock is immediate, the reminder is cancelled, and the RevenueCat
+  /// SDK returns to an anonymous customer with an empty cache, so a
+  /// signed-out phone no longer fetches the last account's entitlement and
+  /// the next account never reads it (Findings 03-002, 32-002). The
+  /// provider rebuilds on the auth change too.
   Future<void> clear() async {
     _lastPush = null;
     state = const AsyncData(SubscriptionStatus.none);
     _cancelTrialReminder();
+    await _service.logOut();
   }
 
   /// RevenueCat pushed new CustomerInfo (purchase, renewal, expiry, restore,
   /// or the background refresh of a cached answer).
-  void _onRevenueCatUpdate(SubscriptionStatus rc) {
+  ///
+  /// A push is only an answer for the signed-in user when the SDK's identity
+  /// is theirs. Right after a sign-up on a phone that held another account,
+  /// the SDK still pushes the cached customer of that account (or of the
+  /// anonymous customer) until `logIn` has moved the identity; taking it
+  /// showed a never-paid account as Pro for a moment (Finding 32-002).
+  Future<void> _onRevenueCatUpdate(SubscriptionStatus rc) async {
+    final userId = _repo.currentUserId;
+    if (userId == null || userId.isEmpty) return;
+    final current = await _service.currentAppUserId();
+    if (!ref.mounted || current != userId) return;
     _lastPush = rc;
     state = AsyncData(rc);
     _settleTrialReminder(rc);

@@ -121,6 +121,13 @@ class _PersonalInfoScreenState extends ConsumerState<PersonalInfoScreen> {
 
     // Pre-fill from a connected platform's athlete profile — fireImmediately
     // so an already-resolved (keepAlive) value still lands.
+    //
+    // Applied after the frame, never inline: with a resolved value the
+    // listener fires right here in initState, and writing the draft from
+    // inside a build is a provider mutation during build ("Tried to modify
+    // a provider while the widget tree was building", Finding 02-002). The
+    // post-frame slot also means the year wheel is attached, so the jump to
+    // the platform's birth year actually lands.
     ref.listenManual(onboardingIntegrationProfileProvider, (previous, next) {
       final profile = next.value;
       if (profile == null ||
@@ -130,7 +137,9 @@ class _PersonalInfoScreenState extends ConsumerState<PersonalInfoScreen> {
         return;
       }
       _autofillApplied = true;
-      _applyIntegrationProfile(profile);
+      WidgetsBinding.instance.addPostFrameCallback((_) {
+        if (mounted) _applyIntegrationProfile(profile);
+      });
     }, fireImmediately: true);
 
     // Disconnecting a platform clears the answers it supplied from the

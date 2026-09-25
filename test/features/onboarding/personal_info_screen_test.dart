@@ -387,5 +387,51 @@ void main() {
         findsNothing,
       );
     });
+
+    testWidgets(
+      'an already-resolved profile applies without writing the draft during build (02-002)',
+      (tester) async {
+        // In the app the profile provider is keepAlive and has resolved by
+        // the time this step mounts, so the fireImmediately listener fires
+        // inside initState. Writing the draft there is a provider mutation
+        // during build: "Tried to modify a provider while the widget tree
+        // was building" (Finding 02-002). The overrides above hand the
+        // screen a still-loading future, which is why the other tests never
+        // saw it; resolve it first here.
+        tester.view.physicalSize = standardPhoneSize;
+        tester.view.devicePixelRatio = 1.0;
+        addTearDown(tester.view.resetPhysicalSize);
+        addTearDown(tester.view.resetDevicePixelRatio);
+
+        final container = ProviderContainer(
+          overrides: [
+            mockAppExternalDeps(),
+            mockSharedPreferences(),
+            onboardingIntegrationProfileProvider.overrideWith(
+              (ref) async => tpProfile,
+            ),
+          ],
+        );
+        addTearDown(container.dispose);
+        await container.read(onboardingIntegrationProfileProvider.future);
+
+        await tester.pumpWidget(
+          UncontrolledProviderScope(
+            container: container,
+            child: wrapForTest(const PersonalInfoScreen(stepIndex: 4)),
+          ),
+        );
+        await tester.pumpAndSettle();
+
+        expect(tester.takeException(), isNull);
+        final draft = container
+            .read(onboardingControllerProvider.notifier)
+            .draft;
+        expect(draft.firstName, 'Lee');
+        expect(draft.email, 'lee@example.com');
+        expect(draft.gender, Gender.male);
+        expect(draft.birthYear, 1988);
+      },
+    );
   });
 }

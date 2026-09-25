@@ -802,6 +802,83 @@ class AppDatabase extends _$AppDatabase {
     // No longer need to populate default data - using enums now
   }
 
+  /// Delete every local row that belongs to [userId]: the profile, every
+  /// table keyed by `user_id`, the carb-loading children keyed through their
+  /// plan, feedback keyed by the profile's device, and the coach-mode rows on
+  /// either side of a relationship. Rows of other accounts stay.
+  ///
+  /// Sign-out and account deletion both run this, so the next account on the
+  /// phone inherits nothing (Finding 14-004: plans, logs, activities, events
+  /// and an integration of the previous account were still on the device).
+  /// The `user_id` tables are found from the schema rather than listed, so a
+  /// new user-scoped table is covered without a change here; the seam test in
+  /// `test/features/settings/sign_out_clears_device_test.dart` pins the ones
+  /// the Finding named.
+  Future<void> clearUserData(String userId) async {
+    await transaction(() async {
+      // Keyed through a parent, or by a column other than user_id.
+      await customStatement(
+        '''
+        DELETE FROM carb_loading_day_meals
+        WHERE carb_loading_day_id IN (
+          SELECT id FROM carb_loading_days
+          WHERE carb_loading_plan_id IN (
+            SELECT id FROM carb_loading_plans WHERE user_id = ?
+          )
+        )
+        ''',
+        [userId],
+      );
+      await customStatement(
+        '''
+        DELETE FROM carb_loading_days
+        WHERE carb_loading_plan_id IN (
+          SELECT id FROM carb_loading_plans WHERE user_id = ?
+        )
+        ''',
+        [userId],
+      );
+      await customStatement(
+        '''
+        DELETE FROM ${feedbackTable.actualTableName}
+        WHERE device_id IN (SELECT device_id FROM users WHERE id = ?)
+        ''',
+        [userId],
+      );
+      await customStatement(
+        'DELETE FROM coach_athlete_relationships '
+        'WHERE coach_user_id = ? OR athlete_user_id = ?',
+        [userId, userId],
+      );
+      await customStatement(
+        'DELETE FROM coach_messages '
+        'WHERE coach_user_id = ? OR athlete_user_id = ? OR sender_user_id = ?',
+        [userId, userId, userId],
+      );
+      await customStatement(
+        'DELETE FROM coach_pairing_codes '
+        'WHERE coach_user_id = ? OR used_by_athlete_id = ?',
+        [userId, userId],
+      );
+
+      // Every table with a user_id column, from the schema.
+      for (final table in allTables) {
+        final hasUserId = table.$columns.any((c) => c.$name == 'user_id');
+        if (!hasUserId) continue;
+        await customStatement(
+          'DELETE FROM ${table.actualTableName} WHERE user_id = ?',
+          [userId],
+        );
+      }
+
+      // The profile last: the feedback delete above reads its device_id.
+      await customStatement(
+        'DELETE FROM users WHERE id = ? OR auth_user_id = ?',
+        [userId, userId],
+      );
+    });
+  }
+
   /// Validate schema integrity on database open.
   ///
   /// Uses Drift's `allTables` to automatically check that all expected tables
