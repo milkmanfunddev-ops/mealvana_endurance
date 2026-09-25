@@ -8,7 +8,7 @@
 -- migration). Idempotent drop-and-recreate because the dev dump
 -- (docs/dev_schema.txt:2429) and prod may have drifted.
 --
--- G18 (RULED Xuan 2026-09-26, option 1): the column also DROPS NOT NULL —
+-- G18 (RULED Xuan 2026-09-25, option 1): the column also DROPS NOT NULL —
 -- null = untagged, which is CL-11-consistent (untagged rows count toward
 -- the day, no slot card claims them) and matches what Drift has declared
 -- since v14. This closes the audit's items-4/6 seam where an untagged row
