@@ -173,6 +173,11 @@ class ContentKeys {
       'settings.create_account_button';
   static const String settingsLogInButton = 'settings.log_in_button';
   static const String settingsSignOutButton = 'settings.sign_out_button';
+  // The sign-out confirm's body (mp-508, ticket 47): no guest mode, so it
+  // says the athlete signs in again. Title, buttons and the whole delete
+  // confirm reuse the paywall's keys so the two screens read the same.
+  static const String settingsSignOutConfirmBody =
+      'settings.sign_out_confirm_body';
   static const String settingsProfileSection = 'settings.profile_section';
   static const String settingsPreferencesSection =
       'settings.preferences_section';
