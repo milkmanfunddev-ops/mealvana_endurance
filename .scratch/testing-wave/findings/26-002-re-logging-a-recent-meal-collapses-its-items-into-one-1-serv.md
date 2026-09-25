@@ -1,7 +1,7 @@
 # 26-002 · Re-logging a Recent meal collapses its items into one 1-serving line and saves it as source saved with no saved meal id
 
 - kind: bug
-- status: triaged
+- status: closed
 - ticket: 26
 - run: w13-20260924T1904Z
 - screen: Log a Meal (Recent) → quick log sheet
@@ -30,3 +30,5 @@ New row 00a120e5 (created 19:08:36Z): totals, name and slot equal the source (16
 
 Fix ticket 58 (Lee, 2026-09-25). Closed by the retest after it merges.
 Moved to retest ticket 112 when 91 was split (Lee, 2026-09-25).
+
+Run by retest ticket 112 (run w34-20260925T2320Z, build e3367d2c): pass.

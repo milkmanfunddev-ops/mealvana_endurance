@@ -1,6 +1,6 @@
 # 121: Retest: a new account's sign-up and onboarding paywall
 
-**Status:** in-progress (wave 34, 2026-09-25)
+**Status:** done (wave 34, 2026-09-25)
 **Blocked by:** none.
 **Next:** `/implement-lee testing-wave`
 **Model:** opus

@@ -29,6 +29,16 @@ Each entry: what went wrong or cost time, where it was seen, and the suggested f
   ticket that adds a timeout or a retry to a write names each write it covers and says whether
   the server call is idempotent; a non-idempotent one gets a key or no timeout.
 
+- **#83 a prompt named a control that is not on screen (wave 34).** The lead told 112 to make its
+  throwaway saved meal with the meal row's "save as favorite" star (`meal_log_row.dart`), found by
+  grep. That row is not mounted on any screen (112-008); the agent found Build a meal's "Also save
+  as a favorite" instead. Suggested fix: when a prompt names a control, follow the widget up to a
+  screen that mounts it (its route or its parent's), not only to the method it calls.
+- **#84 a run cannot delete an account that never signed in (wave 34).** 121's "Use a different
+  email" check leaves the first address as an unconfirmed auth user (121-003) that the in-app
+  delete cannot reach. Suggested fix: a lead-only `scripts/testing-wave/` helper that deletes an
+  unconfirmed `lee+e2e-*` auth user on dev by id, run at the close, so leftovers do not pile up.
+
 ## Done
 
 - **#80 the Test Store lapse is not 25 minutes (wave 32).** 115's monthly account lapsed about

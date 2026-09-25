@@ -1,7 +1,7 @@
 # 86-006 · user_registered analytics sends the user id as device_id
 
 - kind: bug
-- status: triaged
+- status: closed
 - ticket: 86
 - run: w25-20260925T1324Z
 - screen: Verify your email
@@ -30,3 +30,5 @@ device's earlier anonymous events.
 **Triage.**
 Fix ticket 104 (Lee, 2026-09-25). Closed by retest ticket 107 after it merges.
 Moved to retest ticket 121 when 107 was split (Lee, 2026-09-25).
+
+Run by retest ticket 121 (run w34-20260925T2320Z, build e3367d2c): pass.

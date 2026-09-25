@@ -1,7 +1,7 @@
 # 26-004 · Quick adds whose items carry no sodium save sodium as 0 mg instead of unknown
 
 - kind: bug
-- status: triaged
+- status: closed
 - ticket: 26
 - run: w13-20260924T1904Z
 - screen: Log a Meal (Common, Recent) → quick log sheet
@@ -27,3 +27,5 @@ Row f952f981 has `sodium_mg 0.0` although neither item has a sodium value; row 0
 **Triage.**
 Fix ticket 41 (Lee, 2026-09-25). Closed by the retest after it merges.
 Moved to retest ticket 112 when 91 was split (Lee, 2026-09-25).
+
+Run by retest ticket 112 (run w34-20260925T2320Z, build e3367d2c): pass.

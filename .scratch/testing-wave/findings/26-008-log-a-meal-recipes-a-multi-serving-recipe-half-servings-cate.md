@@ -1,7 +1,7 @@
 # 26-008 · Log a Meal Recipes: a multi-serving recipe, half servings, category filters and search
 
 - kind: followup-test
-- status: triaged
+- status: closed
 - ticket: 26
 - run: w13-20260924T1904Z
 - screen: Log a Meal (Recipes)
@@ -30,3 +30,5 @@ The logged calories match the per-serving figure the tile shows times the servin
 
 Picked for retest ticket 91 (Lee, 2026-09-25: every open follow-up test folded into the planned runs, cap of ten lifted for this pass).
 Moved to retest ticket 112 when 91 was split (Lee, 2026-09-25).
+
+Run by retest ticket 112 (run w34-20260925T2320Z, build e3367d2c): pass; the offline fresh-install step was not run and moved to follow-up 112-019.

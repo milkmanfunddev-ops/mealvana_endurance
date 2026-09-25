@@ -1,7 +1,7 @@
 # 09-005 · Log a Meal quick add: the same item twice, a changed time eaten, and logging offline
 
 - kind: followup-test
-- status: triaged
+- status: closed
 - ticket: 09
 - run: w7-20260924T1219Z
 - screen: Log a Meal (Common, quick add sheet)
@@ -28,3 +28,5 @@ Two separate meal_logs rows for the double log (or a clear "already logged"); th
 
 Picked for retest ticket 91 (Lee, 2026-09-25: every open follow-up test folded into the planned runs, cap of ten lifted for this pass).
 Moved to retest ticket 112 when 91 was split (Lee, 2026-09-25).
+
+Run by retest ticket 112 (run w34-20260925T2320Z, build e3367d2c): fail, carried by new bug Finding 112-001 (the offline log never uploads); the same item twice and yesterday pass.

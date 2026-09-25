@@ -1,7 +1,7 @@
 # 04-005 · Continue then cancel the Test Store sheet leaves the new account on the paywall
 
 - kind: followup-test
-- status: triaged
+- status: closed
 - ticket: 04
 - run: w4-20260924T0418Z
 - screen: Paywall
@@ -28,3 +28,5 @@ Not run (look-around, ticket 04).
 
 Picked for retest ticket 107 (Lee, 2026-09-25: every open follow-up test folded into the planned runs, cap of ten lifted for this pass).
 Moved to retest ticket 121 when 107 was split (Lee, 2026-09-25).
+
+Run by retest ticket 121 (run w34-20260925T2320Z, build e3367d2c): fail, carried by new bug Finding 121-005 (a failed Test Store purchase shows no message); the cancel passes.

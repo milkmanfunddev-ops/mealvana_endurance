@@ -1,7 +1,7 @@
 # 05-010 · Paywall Continue tapped twice, or during the 2.4 s after a purchase, buys once
 
 - kind: followup-test
-- status: triaged
+- status: closed
 - ticket: 05
 - run: w5-20260924T0839Z
 - screen: Paywall
@@ -28,3 +28,5 @@ Not run (look-around, ticket 05).
 
 Picked for retest ticket 107 (Lee, 2026-09-25: every open follow-up test folded into the planned runs, cap of ten lifted for this pass).
 Moved to retest ticket 121 when 107 was split (Lee, 2026-09-25).
+
+Run by retest ticket 121 (run w34-20260925T2320Z, build e3367d2c): pass (the second tap is refused by the SDK, not the app: new bug Finding 121-008).
