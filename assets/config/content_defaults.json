@@ -950,5 +950,16 @@
     "refused_other": "That code can't be used.",
     "failed_sign_in": "Sign in to redeem a code.",
     "failed_unavailable": "We couldn't redeem that code just now. Try again in a moment."
+  },
+  "barcode_scanner": {
+    "no_camera": "This device doesn't have a camera we can use for scanning. Type the barcode with Enter below, or search for the food by name.",
+    "permission_denied": "Camera access is off. Turn it on for Mealvana in Settings, type the barcode with Enter below, or search for the food by name.",
+    "camera_failed": "The camera didn't start. Go back and open the scanner again, or type the barcode with Enter below.",
+    "search_instead": "Search for the food instead",
+    "enter_label": "Enter",
+    "enter_title": "Enter a barcode",
+    "enter_body": "Type the number printed under the barcode.",
+    "enter_hint": "8 to 14 digits",
+    "enter_submit": "Look it up"
   }
 }

@@ -65,8 +65,11 @@ class FakeMobileScannerPlatform extends MobileScannerPlatform {
 
   /// The pending start fails the way the simulator does: no camera, and the
   /// native session stays open.
-  void failStartNoCamera() {
-    _pending.removeAt(0).completeError(noCamera);
+  void failStartNoCamera() => failStart(noCamera);
+
+  /// The pending start fails with [error]; the native session stays open.
+  void failStart(MobileScannerException error) {
+    _pending.removeAt(0).completeError(error);
   }
 
   @override

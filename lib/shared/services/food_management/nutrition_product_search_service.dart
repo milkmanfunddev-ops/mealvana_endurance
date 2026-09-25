@@ -3,6 +3,7 @@ import 'dart:convert';
 import 'package:riverpod_annotation/riverpod_annotation.dart';
 import 'package:supabase_flutter/supabase_flutter.dart';
 
+import '../../../features/barcode_scanning/domain/api_food_product.dart';
 import '../app_external_deps.dart';
 import '../logging_service.dart';
 import '../supabase/supabase_client_provider.dart';
@@ -99,6 +100,35 @@ class NutritionProductSearchResult {
       nutritionDataPer: json['nutrition_data_per'] as String?,
       source: json['source'] as String?,
       confidenceScore: (json['confidence_score'] as num?)?.toDouble(),
+    );
+  }
+
+  /// The product `lookup-product` answered a barcode query with, as a search
+  /// result: the "More Results" card then resolves it by [barcode] on tap,
+  /// the same as a name-search hit (testing-wave 28-004).
+  factory NutritionProductSearchResult.fromApiProduct(ApiFoodProduct product) {
+    return NutritionProductSearchResult(
+      barcode: product.barcode,
+      productName: product.productName,
+      brandName: product.brandName,
+      imageUrl: product.imageUrl,
+      servingSize: product.servingSize,
+      servingGrams: product.servingGrams,
+      caloriesPer100g: product.caloriesPer100g,
+      carbsPer100g: product.carbohydratesPer100g,
+      proteinPer100g: product.proteinPer100g,
+      fatPer100g: product.fatPer100g,
+      sodiumMgPer100g: product.sodiumMgPer100g,
+      caloriesPerServing: product.caloriesPerServing,
+      carbsPerServing: product.carbohydratesPerServing,
+      proteinPerServing: product.proteinPerServing,
+      fatPerServing: product.fatPerServing,
+      sodiumMgPerServing: product.sodiumMgPerServing,
+      categories: product.categories,
+      suggestedProductType: product.suggestedProductType,
+      nutritionDataPer: product.nutritionDataPer,
+      source: product.apiSource,
+      confidenceScore: product.confidenceScore,
     );
   }
 

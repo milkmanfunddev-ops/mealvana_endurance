@@ -1,12 +1,16 @@
 import 'package:flutter/material.dart';
+import 'package:flutter/services.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
 import 'package:font_awesome_flutter/font_awesome_flutter.dart';
 import 'package:mealvana_endurance/shared/widgets/custom_app_bar_back_button.dart';
 import 'package:mobile_scanner/mobile_scanner.dart';
 import 'package:mealvana_endurance/shared/widgets/kyle_design/kyle_design.dart';
+import 'package:mealvana_endurance/shared/widgets/kyle_design/materials/glass_sheet.dart';
 import '../../../../shared/services/app_external_deps.dart';
 import '../../../../shared/screens/food_detail_screen.dart';
+import '../../../content/application/content_service.dart';
+import '../../../content/domain/content_keys.dart';
 import '../../application/barcode_scanner_service.dart';
 import '../../../nutrition_plan/domain/food.dart';
 
@@ -200,6 +204,44 @@ class _BarcodeScannerScreenState extends ConsumerState<BarcodeScannerScreen>
 
     // Perform barcode lookup
     _lookupBarcode(barcodeValue);
+  }
+
+  String _text(String key) => ref.read(contentServiceProvider).getValue(key);
+
+  /// "Enter": a typed barcode for a device with no working camera
+  /// (testing-wave 28-004). Takes the same lookup → confirm → pop path a
+  /// scan does, from [_lookupBarcode] on.
+  Future<void> _showEnterBarcodeSheet() async {
+    final digits = await showGlassSheet<String>(
+      context,
+      builder: (_) => _EnterBarcodeSheet(
+        title: _text(ContentKeys.barcodeScannerEnterTitle),
+        body: _text(ContentKeys.barcodeScannerEnterBody),
+        hint: _text(ContentKeys.barcodeScannerEnterHint),
+        submit: _text(ContentKeys.barcodeScannerEnterSubmit),
+      ),
+    );
+    if (digits == null || !mounted) return;
+
+    setState(() {
+      _isScanning = false;
+      _lastScannedBarcode = digits;
+    });
+    await _safeStopScanner();
+    if (!mounted) return;
+
+    ref
+        .read(appExternalDepsProvider)
+        .analytics
+        .track(
+          'barcode_entered',
+          properties: {
+            'code': digits,
+            'category': widget.category,
+            'context': widget.context,
+          },
+        );
+    await _lookupBarcode(digits);
   }
 
   Future<void> _lookupBarcode(String barcode) async {
@@ -775,8 +817,30 @@ class _BarcodeScannerScreenState extends ConsumerState<BarcodeScannerScreen>
               errorBuilder: (context, error) => _buildScannerError(error),
             ),
 
-          // Scanner overlay
-          _buildScannerOverlay(),
+          // Scanner frame and instructions: only over a camera. Once the
+          // camera has errored the error message and its link sit here, so
+          // the frame is dropped and never takes their taps.
+          if (_controller != null)
+            ValueListenableBuilder<MobileScannerState>(
+              valueListenable: _controller!,
+              builder: (context, value, _) {
+                if (value.error != null) return const SizedBox.shrink();
+                return IgnorePointer(
+                  child: Stack(
+                    children: [
+                      _buildScannerOverlay(),
+                      if (_isScanning)
+                        Positioned(
+                          top: 120,
+                          left: 20,
+                          right: 20,
+                          child: _buildInstructions(),
+                        ),
+                    ],
+                  ),
+                );
+              },
+            ),
 
           // Bottom controls
           Positioned(
@@ -785,42 +849,49 @@ class _BarcodeScannerScreenState extends ConsumerState<BarcodeScannerScreen>
             right: 0,
             child: _buildBottomControls(),
           ),
-
-          // Instructions
-          if (_isScanning)
-            Positioned(
-              top: 120,
-              left: 20,
-              right: 20,
-              child: _buildInstructions(),
-            ),
         ],
       ),
     );
   }
 
-  /// The camera could not start. Plain words instead of the package's own
-  /// error widget, which shows developer text (finding 28-001).
+  /// The camera could not start. The app's own words (content system)
+  /// instead of the package's error widget with its developer text
+  /// (findings 28-001, 28-004), and a way on: back to the caller's search.
   Widget _buildScannerError(MobileScannerException error) {
-    final message = switch (error.errorCode) {
+    final message = _text(switch (error.errorCode) {
       MobileScannerErrorCode.permissionDenied =>
-        'Camera access is off. Turn it on for Mealvana in Settings to scan '
-            'barcodes.',
-      MobileScannerErrorCode.unsupported =>
-        "This device doesn't have a camera we can use for scanning. Go back "
-            'and search for the food instead.',
-      _ => "The camera didn't start. Go back and open the scanner again.",
-    };
+        ContentKeys.barcodeScannerPermissionDenied,
+      MobileScannerErrorCode.unsupported => ContentKeys.barcodeScannerNoCamera,
+      _ => ContentKeys.barcodeScannerCameraFailed,
+    });
     return ColoredBox(
       color: Colors.black,
       child: Center(
         child: Padding(
           padding: const EdgeInsets.symmetric(horizontal: AppSpacing.xl),
-          child: Text(
-            key: const ValueKey('barcode.error'),
-            message,
-            style: AppTextStyles.bodyMedium.copyWith(color: Colors.white),
-            textAlign: TextAlign.center,
+          child: Column(
+            mainAxisSize: MainAxisSize.min,
+            children: [
+              Text(
+                key: const ValueKey('barcode.error'),
+                message,
+                style: AppTextStyles.bodyMedium.copyWith(color: Colors.white),
+                textAlign: TextAlign.center,
+              ),
+              const SizedBox(height: AppSpacing.md),
+              TextButton(
+                key: const ValueKey('barcode.search_link'),
+                onPressed: () => context.pop(),
+                child: Text(
+                  _text(ContentKeys.barcodeScannerSearchInstead),
+                  style: AppTextStyles.bodyMedium.copyWith(
+                    color: AppColors.electrolyte,
+                    decoration: TextDecoration.underline,
+                    decorationColor: AppColors.electrolyte,
+                  ),
+                ),
+              ),
+            ],
           ),
         ),
       ),
@@ -865,6 +936,14 @@ class _BarcodeScannerScreenState extends ConsumerState<BarcodeScannerScreen>
           icon: FontAwesomeIcons.cameraRotate.data,
           onPressed: _switchCamera,
           label: 'Switch',
+        ),
+
+        // Type the barcode: the path for a device with no working camera.
+        _buildControlButton(
+          buttonKey: const ValueKey('barcode.enter_button'),
+          icon: FontAwesomeIcons.keyboard.data,
+          onPressed: _showEnterBarcodeSheet,
+          label: _text(ContentKeys.barcodeScannerEnterLabel),
         ),
       ],
     );
@@ -912,6 +991,89 @@ class _BarcodeScannerScreenState extends ConsumerState<BarcodeScannerScreen>
           ),
         ),
       ],
+    );
+  }
+}
+
+/// The "Enter a barcode" sheet: a numeric field that pops its digits.
+/// Owns its text controller so the field outlives the sheet's exit.
+class _EnterBarcodeSheet extends StatefulWidget {
+  const _EnterBarcodeSheet({
+    required this.title,
+    required this.body,
+    required this.hint,
+    required this.submit,
+  });
+
+  final String title;
+  final String body;
+  final String hint;
+  final String submit;
+
+  @override
+  State<_EnterBarcodeSheet> createState() => _EnterBarcodeSheetState();
+}
+
+class _EnterBarcodeSheetState extends State<_EnterBarcodeSheet> {
+  final _controller = TextEditingController();
+
+  @override
+  void dispose() {
+    _controller.dispose();
+    super.dispose();
+  }
+
+  /// Closes the sheet with the typed digits; an empty entry stays open.
+  void _submit(String value) {
+    final digits = value.replaceAll(RegExp(r'\D'), '');
+    if (digits.isEmpty) return;
+    Navigator.of(context).pop(digits);
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    return Padding(
+      padding: EdgeInsets.fromLTRB(
+        AppSpacing.lg,
+        AppSpacing.lg,
+        AppSpacing.lg,
+        AppSpacing.lg + MediaQuery.viewInsetsOf(context).bottom,
+      ),
+      child: Column(
+        mainAxisSize: MainAxisSize.min,
+        crossAxisAlignment: CrossAxisAlignment.stretch,
+        children: [
+          Text(
+            widget.title,
+            style: AppTextStyles.sectionTitle.copyWith(
+              color: Theme.of(context).colorScheme.onSurface,
+            ),
+          ),
+          const SizedBox(height: AppSpacing.sm),
+          Text(
+            widget.body,
+            style: AppTextStyles.bodyMedium.copyWith(
+              color: Theme.of(context).colorScheme.onSurfaceVariant,
+            ),
+          ),
+          const SizedBox(height: AppSpacing.md),
+          KyleInputField(
+            key: const ValueKey('barcode.enter_field'),
+            controller: _controller,
+            hintText: widget.hint,
+            keyboardType: TextInputType.number,
+            inputFormatters: [FilteringTextInputFormatter.digitsOnly],
+            autofocus: true,
+            onSubmitted: _submit,
+          ),
+          const SizedBox(height: AppSpacing.md),
+          KylePrimaryButton(
+            key: const ValueKey('barcode.enter_submit'),
+            text: widget.submit,
+            onPressed: () => _submit(_controller.text),
+          ),
+        ],
+      ),
     );
   }
 }

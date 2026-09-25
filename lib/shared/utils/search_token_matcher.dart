@@ -9,6 +9,16 @@ List<String> tokenizeSearchQuery(String query) {
       .toList();
 }
 
+/// The digits of [query] when it is a product barcode typed into a search
+/// box (EAN-8, UPC-A, EAN-13 or GTIN-14: 8, 12, 13 or 14 digits, spaces and
+/// dashes allowed), otherwise null. A number is not a name, so the caller
+/// looks it up by barcode instead of searching names (testing-wave 28-004).
+String? barcodeDigits(String query) {
+  final compact = query.replaceAll(RegExp(r'[\s-]'), '');
+  if (compact.isEmpty || !RegExp(r'^\d+$').hasMatch(compact)) return null;
+  return const {8, 12, 13, 14}.contains(compact.length) ? compact : null;
+}
+
 String normalizeSearchText(String value) {
   return value
       .toLowerCase()

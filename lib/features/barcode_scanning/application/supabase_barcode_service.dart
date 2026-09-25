@@ -54,13 +54,14 @@ class SupabaseBarcodeService {
     }
   }
 
-  /// Validate barcode format
+  /// Validate barcode format: EAN-8, UPC-A, EAN-13 or GTIN-14 (a typed
+  /// barcode may carry the 14-digit packaging form, testing-wave 28-004).
   bool isValidBarcodeFormat(String barcode) {
     final cleanBarcode = barcode.replaceAll(
       RegExp(r'\D'),
       '',
     ); // Remove non-digits
-    return [8, 12, 13].contains(cleanBarcode.length);
+    return const [8, 12, 13, 14].contains(cleanBarcode.length);
   }
 
   /// Clean barcode by removing non-digit characters
