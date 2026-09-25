@@ -13,8 +13,8 @@
 
 **Touches:** lib/features/meal_logging/presentation/screens/log_meal_screen.dart, lib/features/meal_logging/presentation/widgets/log_sheet_helpers.dart, lib/features/meal_logging/domain/meal_auto_name.dart, lib/features/meal_logging/presentation/providers/meal_log_providers.dart
 
-- [ ] A seam test through the real notifier: re-logging a two-item Recent meal saves both items and the original's source.
-- [ ] A Common tile saves under its tile name.
+- [x] A seam test through the real notifier: re-logging a two-item Recent meal saves both items and the original's source.
+- [x] A Common tile saves under its tile name.
 - [ ] codegen if annotations changed, `flutter analyze` and the suite green.
 
 Next: /implement-lee testing-wave
