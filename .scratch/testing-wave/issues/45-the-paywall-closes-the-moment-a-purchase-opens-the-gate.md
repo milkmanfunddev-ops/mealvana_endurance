@@ -13,7 +13,7 @@
 
 **Touches:** lib/features/subscription/application/pro_paywall_controller.dart, lib/features/subscription/presentation/screens/paywall_screen.dart
 
-- [ ] A seam test through the real paywall notifier: after purchase success, Continue stays disabled.
+- [x] A seam test through the real paywall notifier: after purchase success, Continue stays disabled.
 - [ ] On the simulator the timeline follows the Test Store sheet with no enabled paywall in between.
 - [ ] codegen if annotations changed, `flutter analyze` and the suite green.
 
