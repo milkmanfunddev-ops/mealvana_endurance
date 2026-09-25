@@ -114,7 +114,12 @@ void main() {
     );
   });
 
-  testWidgets('empty plan renders nothing', (tester) async {
+  // mp-234 (ticket 70, 14-002): a new conversation's empty draft shows the
+  // bar from the start, with nothing to review and nothing to expand.
+  testWidgets('empty plan: "Your plan · 0 meals", Review inert', (
+    tester,
+  ) async {
+    var reviewed = false;
     await tester.pumpWidget(
       ProviderScope(
         overrides: [contentServiceProvider.overrideWith(testContentService)],
@@ -125,16 +130,33 @@ void main() {
               onServings: (_, __) {},
               onRemove: (_) {},
               onSwap: (_, __) {},
-              onReview: () {},
+              onReview: () => reviewed = true,
             ),
           ),
         ),
       ),
     );
-    expect(find.byType(PlanBar), findsOneWidget);
+    expect(
+      find.byWidgetPredicate(
+        (w) =>
+            w is RichText &&
+            w.text.toPlainText().contains('Your plan') &&
+            w.text.toPlainText().contains('0 meals'),
+      ),
+      findsOneWidget,
+    );
+    await tester.tap(
+      find.byKey(const ValueKey('meal_planning.plan_bar.review')),
+    );
+    await tester.tap(
+      find.byKey(const ValueKey('meal_planning.plan_bar.minimized')),
+    );
+    await tester.pumpAndSettle();
+    expect(reviewed, isFalse);
     expect(
       find.byKey(const ValueKey('meal_planning.plan_bar.minimized')),
-      findsNothing,
+      findsOneWidget,
+      reason: 'nothing to expand',
     );
   });
 

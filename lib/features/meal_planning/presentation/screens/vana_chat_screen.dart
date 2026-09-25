@@ -215,8 +215,9 @@ class _VanaChatScreenState extends ConsumerState<VanaChatScreen> {
                       isPlanning ? _mealsInPlan(plan) : const {},
                     ),
             ),
-            // The bar slides in over the composer the first time the draft
-            // gains a meal (and out again if the draft empties), instead of
+            // A planning conversation shows its bar from the start, at
+            // "Your plan · 0 meals" before any pick (mp-234, 14-002); it
+            // slides in once the conversation has loaded, instead of
             // shoving the transcript up out of nowhere.
             AnimatedSwitcher(
               duration: Duration(
@@ -235,11 +236,11 @@ class _VanaChatScreenState extends ConsumerState<VanaChatScreen> {
                   child: child,
                 ),
               ),
-              child: isPlanning && plan != null && plan.meals.isNotEmpty
+              child: isPlanning && state != null
                   ? PlanBar(
                       key: _planBarKey,
-                      meals: plan.meals,
-                      confirmed: plan.isConfirmed,
+                      meals: plan?.meals ?? const [],
+                      confirmed: plan?.isConfirmed ?? false,
                       showMacros:
                           ref
                               .watch(vanaSettingsControllerProvider)
@@ -251,7 +252,7 @@ class _VanaChatScreenState extends ConsumerState<VanaChatScreen> {
                         // it lands on this draft); the bar shows the result
                         // at once.
                         _controller.applyDraftPlan(
-                          plan.copyWith(
+                          plan!.copyWith(
                             meals: [
                               for (final m in plan.meals)
                                 if (m.id == meal.id)
@@ -271,7 +272,7 @@ class _VanaChatScreenState extends ConsumerState<VanaChatScreen> {
                       },
                       onRemove: (meal) {
                         _controller.applyDraftPlan(
-                          plan.copyWith(
+                          plan!.copyWith(
                             meals: [
                               for (final m in plan.meals)
                                 if (m.id != meal.id) m,
@@ -284,7 +285,7 @@ class _VanaChatScreenState extends ConsumerState<VanaChatScreen> {
                             .removeMeal(meal.id);
                       },
                       onSwap: _swapFromSheet,
-                      onReview: () => _openReviewSheet(context, plan),
+                      onReview: () => _openReviewSheet(context, plan!),
                     )
                   : const SizedBox.shrink(
                       key: ValueKey('meal_planning.plan_bar.hidden'),

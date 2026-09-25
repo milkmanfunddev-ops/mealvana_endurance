@@ -24,7 +24,8 @@ import 'stepper.dart';
 /// and re-minimizes on every new turn (05 §4) so Vana's reply is never hidden
 /// behind it. Minimized: "Your plan · N meals" and the Review action;
 /// expanded: a strip of tiles, each with its own × and servings stepper.
-/// Nothing here calls the model.
+/// An empty draft still shows, at "Your plan · 0 meals" (mp-234), with
+/// nothing to expand and nothing to review yet. Nothing here calls the model.
 class PlanBar extends ConsumerStatefulWidget {
   const PlanBar({
     super.key,
@@ -77,14 +78,15 @@ class PlanBarState extends ConsumerState<PlanBar> {
     final secondary = textColor.withValues(alpha: 0.6);
     final surface = isDark ? AppColors.blackberryLight : AppColors.surfaceLight;
 
-    if (widget.meals.isEmpty) return const SizedBox.shrink();
-
     // A tile's picture is its library Meal's current Dish photo, looked up by
     // meal id — the same answer the plan tile and the review sheet get, so a
     // meal looks the same on all three (ADR 0003).
     final slots = ref.planPhotoSlots(widget.meals);
 
     final n = widget.meals.length;
+    final empty = n == 0;
+    // Nothing to review until a meal is in (and nothing to open).
+    final onReview = widget.confirmed || empty ? null : widget.onReview;
     final count = n == 1
         ? content.getValue(ContentKeys.mpPlanBarCountOne)
         : ContentKeys.format(content.getValue(ContentKeys.mpPlanBarCount), {
@@ -113,11 +115,13 @@ class PlanBarState extends ConsumerState<PlanBar> {
               Expanded(
                 child: GestureDetector(
                   key: ValueKey(
-                    _expanded
+                    _expanded && !empty
                         ? 'meal_planning.plan_bar.expanded'
                         : 'meal_planning.plan_bar.minimized',
                   ),
-                  onTap: () => setState(() => _expanded = !_expanded),
+                  onTap: empty
+                      ? null
+                      : () => setState(() => _expanded = !_expanded),
                   behavior: HitTestBehavior.opaque,
                   child: Row(
                     children: [
@@ -145,14 +149,16 @@ class PlanBarState extends ConsumerState<PlanBar> {
                           ),
                         ),
                       ),
-                      const SizedBox(width: 6),
-                      FaIcon(
-                        _expanded
-                            ? FontAwesomeIcons.chevronDown
-                            : FontAwesomeIcons.chevronUp,
-                        color: secondary,
-                        size: 14,
-                      ),
+                      if (!empty) ...[
+                        const SizedBox(width: 6),
+                        FaIcon(
+                          _expanded
+                              ? FontAwesomeIcons.chevronDown
+                              : FontAwesomeIcons.chevronUp,
+                          color: secondary,
+                          size: 14,
+                        ),
+                      ],
                     ],
                   ),
                 ),
@@ -169,7 +175,7 @@ class PlanBarState extends ConsumerState<PlanBar> {
                       height: 40,
                       fontSize: 13,
                       isFullWidth: false,
-                      onPressed: widget.confirmed ? null : widget.onReview,
+                      onPressed: onReview,
                     )
                   : KyleSecondaryButton(
                       key: const ValueKey('meal_planning.plan_bar.review'),
@@ -177,11 +183,11 @@ class PlanBarState extends ConsumerState<PlanBar> {
                       height: 40,
                       fontSize: 13,
                       isFullWidth: false,
-                      onPressed: widget.confirmed ? null : widget.onReview,
+                      onPressed: onReview,
                     ),
             ],
           ),
-          if (_expanded) ...[
+          if (_expanded && !empty) ...[
             const SizedBox(height: 8),
             SizedBox(
               // The macro strip needs one more line on the tile.
@@ -204,9 +210,12 @@ class PlanBarState extends ConsumerState<PlanBar> {
           ] else if (n < PlanBar.reviewAt) ...[
             const SizedBox(height: 4),
             Text(
-              ContentKeys.format(content.getValue(ContentKeys.mpPlanBarMore), {
-                'n': PlanBar.reviewAt - n,
-              }),
+              empty
+                  ? content.getValue(ContentKeys.mpPlanBarEmpty)
+                  : ContentKeys.format(
+                      content.getValue(ContentKeys.mpPlanBarMore),
+                      {'n': PlanBar.reviewAt - n},
+                    ),
               style: AppTextStyles.bodySmall.copyWith(color: secondary),
             ),
           ],
