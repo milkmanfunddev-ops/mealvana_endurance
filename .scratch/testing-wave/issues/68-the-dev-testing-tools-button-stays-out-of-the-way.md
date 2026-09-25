@@ -13,7 +13,7 @@
 
 **Touches:** lib/shared/widgets/root_app_widget.dart
 
-- [ ] A widget test: the button's rect does not overlap Ask Vana's.
-- [ ] codegen if annotations changed, `flutter analyze` and the suite green.
+- [x] A widget test: the button's rect does not overlap Ask Vana's.
+- [x] codegen if annotations changed, `flutter analyze` and the suite green.
 
 Next: /implement-lee testing-wave
