@@ -1,7 +1,7 @@
 # 10-002 · A returning account that resubscribes from the lapsed paywall is greeted with the new-account snackbar "Welcome to Mealvana Endurance!"
 
 - kind: idea
-- status: open
+- status: triaged
 - ticket: 10
 - run: w8-20260924T1418Z
 - screen: Timeline
@@ -23,4 +23,4 @@ Snackbar "Welcome to Mealvana Endurance!" over the timeline at 14:21:04Z, 4 s af
 > 
 
 **Triage.**
-
+Fix ticket 80 (the wave lead, 2026-09-25: Lee asked for every bug fix that can be done without him). Closed by the retest after it merges.

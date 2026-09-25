@@ -1,7 +1,7 @@
 # 09-004 · Opening a new meal plan with Vana asks for Speech Recognition before the athlete touches the microphone
 
 - kind: idea
-- status: open
+- status: triaged
 - ticket: 09
 - run: w7-20260924T1219Z
 - screen: Vana chat (New meal plan)
@@ -24,4 +24,4 @@ The permission prompt comes up as the chat opens, before any mic tap. After Don'
 > 
 
 **Triage.**
-
+Fix ticket 79 (the wave lead, 2026-09-25: Lee asked for every bug fix that can be done without him). Closed by the retest after it merges.

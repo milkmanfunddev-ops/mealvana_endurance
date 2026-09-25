@@ -1,7 +1,7 @@
 # 02-004 · Delete account leaves the store subscription active and renewing, and the confirm dialog does not say so
 
 - kind: idea
-- status: open
+- status: triaged
 - ticket: 02
 - run: w2-20260923T1442Z
 - screen: Settings
@@ -42,3 +42,4 @@ billing side is not.
 > 
 
 **Triage.**
+Fix ticket 78 (the wave lead, 2026-09-25: Lee asked for every bug fix that can be done without him). Closed by the retest after it merges.

@@ -1,6 +1,6 @@
 # 21-010 · Disconnect Kroger acts at once with no confirmation
 - kind: idea
-- status: open
+- status: triaged
 - ticket: 21
 - run: w17-20260924T2233Z
 - screen: Shop with Kroger
@@ -23,3 +23,4 @@
 > 
 
 **Triage.**
+Fix ticket 82 (the wave lead, 2026-09-25: Lee asked for every bug fix that can be done without him). Closed by the retest after it merges.

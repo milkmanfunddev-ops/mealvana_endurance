@@ -1,7 +1,7 @@
 # 03-004 · A fresh install asks for notification permission at launch, before the welcome screen and with no context
 
 - kind: idea
-- status: open
+- status: triaged
 - ticket: 03
 - run: w3-20260923T1942Z
 - screen: Splash (before Welcome)
@@ -31,4 +31,4 @@ launcher learned to answer it (test code, this ticket).
 > 
 
 **Triage.**
-
+Fix ticket 79 (the wave lead, 2026-09-25: Lee asked for every bug fix that can be done without him). Closed by the retest after it merges.

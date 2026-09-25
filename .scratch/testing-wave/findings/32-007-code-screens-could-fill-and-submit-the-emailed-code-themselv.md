@@ -1,7 +1,7 @@
 # 32-007 · Code screens could fill and submit the emailed code themselves
 
 - kind: idea
-- status: open
+- status: triaged
 - ticket: 32
 - run: w9-20260924T1447Z
 - screen: Verify your email
@@ -27,3 +27,4 @@ Email starts blank although onboarding asked for an email two screens earlier.
 > 
 
 **Triage.**
+Fix ticket 81 (the wave lead, 2026-09-25: Lee asked for every bug fix that can be done without him). Closed by the retest after it merges.
