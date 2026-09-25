@@ -855,6 +855,31 @@ qa's note: the sim's local store carries 27 seeded rows in exactly that
 shape — the section renders live, no deploy dependency. No library
 columns; unification stays D-022 + the parked follow-up intake.
 
+### G24 GREEN — 2026-09-25 — repick propagates in the same frame (qa 4e23d25)
+
+Mechanism (Xuan's "page cache issue" instinct was right): every plan-shape
+write invalidated only `self + carbLoadingDaysForRangeProvider`, but the
+plan summary watches `carbLoadingPlanProvider` +
+`carbLoadingDaysForPlanProvider` and every loading-day dashboard surface
+watches `carbDashboardForDateProvider` — none of the three was ever
+invalidated by a write, so they served cached old-protocol data until
+unrelated navigation rebuilt them (E-3 violation). Not repick-specific:
+create/delete/edit had the same hole (the CD-2 Patrol flow even
+invalidated the dashboard family MANUALLY after seeding, which masked it).
+Fix: one controller helper `_invalidateCarbSurfaces()` — self + plan +
+daysForPlan + daysForRange + carbDashboardForDate — called from all seven
+write/refresh paths; the events controller's delete-event cascade gets the
+same two missing families. Red green in
+`g24_repick_propagation_test.dart`: both ruled repick paths (quiet and
+keep) through the REAL notifier against real Drift, with the REAL summary
+screen painted plus probes watching exactly the entry-row and timeline
+families, all asserted on the new plan in the same pumped frame, zero
+navigation. Red-capability proven against the pristine pre-fix controller
+(both tests fail on stash; a narrow repick-only mutation is masked by the
+fixed background-sync tail — recorded so nobody trusts that accident as
+the propagation path). Suites: 497 green across carb_loading +
+macro_dashboard + meal_logging + events.
+
 ## Notes on the two new ideas
 
 **Reminder to start.** Machinery exists — `NotificationService`

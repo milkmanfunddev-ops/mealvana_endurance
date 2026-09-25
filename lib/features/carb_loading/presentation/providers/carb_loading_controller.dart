@@ -3,6 +3,7 @@ import 'package:riverpod_annotation/riverpod_annotation.dart';
 import '../../application/carb_loading_service.dart';
 import '../../domain/carb_loading_entryway_engine.dart';
 import '../../data/carb_loading_repository.dart';
+import '../../../macro_dashboard/presentation/providers/carb_dashboard_providers.dart';
 import '../../../../shared/database/app_database.dart' as db;
 import '../../../../shared/services/logging_service.dart';
 import '../../../../shared/services/sync/sync_coordinator.dart';
@@ -24,6 +25,21 @@ class CarbLoadingController extends _$CarbLoadingController {
     unawaited(_backgroundSync(userId));
   }
 
+  /// G24 (Xuan, 2026-09-25): EVERY plan-shape write invalidates EVERY
+  /// provider family a carb surface watches — not just the range family.
+  /// The bug: repick invalidated self + daysForRange only, while the plan
+  /// summary watches [carbLoadingPlanProvider] + [carbLoadingDaysForPlanProvider]
+  /// and every loading-day dashboard surface watches
+  /// [carbDashboardForDateProvider]; those rendered stale until unrelated
+  /// navigation happened to rebuild them (E-3 instant-propagation violation).
+  void _invalidateCarbSurfaces() {
+    ref.invalidateSelf();
+    ref.invalidate(carbLoadingPlanProvider);
+    ref.invalidate(carbLoadingDaysForPlanProvider);
+    ref.invalidate(carbLoadingDaysForRangeProvider);
+    ref.invalidate(carbDashboardForDateProvider);
+  }
+
   /// Background sync: ensures data is fresh, then refreshes UI
   Future<void> _backgroundSync(String userId) async {
     final repository = ref.read(carbLoadingRepositoryProvider);
@@ -37,7 +53,7 @@ class CarbLoadingController extends _$CarbLoadingController {
         repository: repository,
       );
       if (!ref.mounted) return;
-      ref.invalidateSelf();
+      _invalidateCarbSurfaces();
     } catch (e, stackTrace) {
       logger.error(
         'Background sync failed',
@@ -71,10 +87,7 @@ class CarbLoadingController extends _$CarbLoadingController {
         bodyWeightPounds: bodyWeightPounds,
       );
 
-      // Refresh carb loading days - invalidate the range provider family
-      ref.invalidateSelf();
-      // Invalidate all carbLoadingDaysForRange provider instances to refresh calendar
-      ref.invalidate(carbLoadingDaysForRangeProvider);
+      _invalidateCarbSurfaces();
     } catch (e) {
       _logger.error('Error creating carb loading plan', error: e);
       rethrow;
@@ -91,10 +104,7 @@ class CarbLoadingController extends _$CarbLoadingController {
         eventId: eventId,
       );
 
-      // Refresh carb loading days
-      ref.invalidateSelf();
-      // Invalidate all carbLoadingDaysForRange provider instances to refresh calendar
-      ref.invalidate(carbLoadingDaysForRangeProvider);
+      _invalidateCarbSurfaces();
     } catch (e) {
       _logger.error('Error deleting carb loading plan', error: e);
       rethrow;
@@ -106,10 +116,7 @@ class CarbLoadingController extends _$CarbLoadingController {
     try {
       await _service.deleteCarbLoadingDay(carbLoadingDayId);
 
-      // Refresh carb loading days
-      ref.invalidateSelf();
-      // Invalidate all carbLoadingDaysForRange provider instances to refresh calendar
-      ref.invalidate(carbLoadingDaysForRangeProvider);
+      _invalidateCarbSurfaces();
     } catch (e) {
       _logger.error('Error deleting carb loading day', error: e);
       rethrow;
@@ -135,8 +142,7 @@ class CarbLoadingController extends _$CarbLoadingController {
           'carbProtocolGPerKg': carbsPerKg,
         },
       );
-      ref.invalidateSelf();
-      ref.invalidate(carbLoadingDaysForRangeProvider);
+      _invalidateCarbSurfaces();
     } catch (e) {
       _logger.error('Error updating carb day target', error: e);
       rethrow;
@@ -204,8 +210,7 @@ class CarbLoadingController extends _$CarbLoadingController {
       );
 
       // Invalidate to reload with fresh data
-      ref.invalidateSelf();
-      ref.invalidate(carbLoadingDaysForRangeProvider);
+      _invalidateCarbSurfaces();
     } catch (e, stackTrace) {
       _logger.error(
         'Error during force refresh',
