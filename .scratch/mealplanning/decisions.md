@@ -3599,3 +3599,41 @@ An edit made while notes are being written is picked up on the next open. A requ
 **What it touches.** The earlier-plan view (`previous_plan_screen.dart`), `EarlierPlan` in `previous_plans.dart`, and Browse's add path in `_shared/vana/`.
 
 > 2026-09-25 opened in wave 22 ticket 73
+
+## mp-682 · Where is a replaced draft "kept in your plans"?
+- category: Plan tab
+- kind: question
+- status: open
+- linked: mp-676
+- image: none
+- screen: Vana chat
+- source: wave testing-wave 23 ticket 71
+
+**Context.** Wave 23 built mp-676: reopening a conversation whose draft another confirm archived shows "You confirmed a different plan for this week. This one is kept in your plans." with the meals read-only and Use this plan instead. But mp-677 keeps Previous plans to plans that were once confirmed, so a draft that was never confirmed (the 15-001 case, and the usual one) is not listed anywhere outside its own conversation. The same note also shows for any archived plan the conversation holds, including a confirmed plan from an earlier week, where "for this week" is wrong.
+
+**Question.** What should the note promise for a draft that was never confirmed? (A) Change the words: "You confirmed a different plan for this week. This draft stays here in this conversation." (B) Keep the words and list replaced drafts in Previous plans after all, which reverses mp-677 for this case. (C) Keep the words; "your plans" means the conversation list, which does show the chat.
+
+**Why.** As built, the note tells the athlete the plan is somewhere it isn't. For test@test.com's 22 September draft, Previous plans would not show it, so the only way back to those four meals is this conversation.
+
+**What it touches.** The plan bar note (`meal_planning.plan_bar_replaced` in `content_defaults.json`), and Previous plans (`list_plans`) if B.
+
+> 2026-09-25 opened in wave 23 ticket 71
+
+## mp-683 · What does a pick do in a conversation whose draft was replaced?
+- category: Plan tab
+- kind: question
+- status: open
+- linked: mp-676
+- image: none
+- screen: Vana chat
+- source: wave testing-wave 23 ticket 71
+
+**Context.** Wave 23 made a replaced draft's plan bar read-only (mp-676): no servings, no remove, no Confirm. The rest of the chat still works: the picker chips, Browse and the composer. The server looks up the conversation's newest plan whatever its status, so a meal picked there would be added to the archived plan, which nothing shows as live.
+
+**Question.** When the athlete picks a meal or asks Vana for one in that conversation, what happens? (A) The pick starts a fresh draft for this week in the same conversation, with only that meal, and the bar shows the new draft. (B) The chat is read-only too: chips, Browse and the composer are off, and Use this plan instead is the only way on. (C) The pick goes into a copy made by Use this plan instead, as if the athlete had tapped it first.
+
+**Why.** Today a pick there writes into a plan the athlete can't confirm or see as live, so it looks like it did nothing. mp-241 gives every conversation its own draft but doesn't say what happens once that draft is archived.
+
+**What it touches.** The Vana chat (`vana_chat_screen.dart`), the conversation-plan lookup and add path in `supabase/functions/_shared/vana/`.
+
+> 2026-09-25 opened in wave 23 ticket 71
