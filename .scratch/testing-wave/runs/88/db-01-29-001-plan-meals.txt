@@ -1,0 +1,18 @@
+## plan_meals of be6abf2f, 19:52:52Z
+position | library_meal_id | name | kcal | carbs_g | protein_g | fat_g | servings
+0 | AD-014 | Wholewheat pasta, mixed veg & avocado | 520 | 75 | 15 | 18 | 1
+1 | AD-103 | Farro, chickpea & roasted cauliflower bowl with tahini | 580 | 97 | 26 | 13 | 1
+2 | AD-108 | Spelt, lentil & raw pepper-carrot bowl with balsamic | 560 | 95 | 26 | 12 | 1
+3 | AD-113 | Farro, white bean & roasted beet bowl with pesto | 610 | 99 | 26 | 15 | 1
+(4 rows)
+## blank-number meals
+src | total | blank
+meal_library active | 1922 | 0
+plan_meals (all users, non-deleted plans) | 71 | 0
+(2 rows)
+library_meal_id | kcal | nutrition_origin
+AD-014 | 520 | ∅
+AD-108 | 560 | ai_estimated
+AD-103 | 580 | ai_estimated
+AD-113 | 610 | ai_estimated
+(4 rows)

@@ -1,0 +1,13 @@
+## before detail Add 20:03:56Z
+name | servings | servings_left | updated_at
+Sweet rice cake with jam | 8 | 8 | 2026-09-24 21:10:20.776+00
+Quinoa porridge with berries & banana | 4 | 4 | 2026-09-24 21:11:26.321038+00
+(2 rows)
+## after detail Add 20:04:02Z
+name | servings | servings_left | updated_at
+Sweet rice cake with jam | 8 | 8 | 2026-09-24 21:10:20.776+00
+Quinoa porridge with berries & banana | 4 | 4 | 2026-09-24 21:11:26.321038+00
+(2 rows)
+updated_at | count
+2026-09-24 21:11:27.81+00 | 11
+(1 rows)

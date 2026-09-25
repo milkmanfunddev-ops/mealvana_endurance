@@ -1,0 +1,3 @@
+id | day_notes_stale | day_notes_at | left
+666be167-08b3-4cd5-8127-d262d0fde28c | false | 2026-09-25 20:28:16.568+00 | {"2026-09-25": "Swim 30m and core work: keep it light with your standard dinner pasta, mixed veg & avocado.", "2026-09-26": "Long run day needs fuel—aim for 835C carbs; pasta with extra avocado at dinner, consider adding fruit or grains earlier in the day.", "2026-09-27": "Long 45m bike follows foam
+(1 rows)

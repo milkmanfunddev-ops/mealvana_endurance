@@ -1,0 +1,11 @@
+## 09-008 after Back 20:09:38Z
+created_at | role | left | nparts
+2026-09-25 20:09:05.546888+00 | assistant | You've got Ironman Cozumel in 59 days, and this week is recovery after last Satu | 2
+2026-09-25 20:09:27.894874+00 | user | Something new | 1
+2026-09-25 20:09:31.633824+00 | assistant | Five dinners built for recovery and protein — the tofu bowl has 37g protein per  | 2
+(3 rows)
+(0 rows)
+created_at | function_name | gateway_cost_usd
+2026-09-25 20:08:58.205708+00 | vana.opener.meal_planning | 0.00483525
+2026-09-25 20:09:27.718544+00 | vana.chat.meal_planning | 0.0053465
+(2 rows)

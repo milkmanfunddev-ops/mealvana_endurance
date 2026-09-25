@@ -1,0 +1,14 @@
+## 15-004 after Ask Vana, 19:53:40Z
+id | kind | context_day | created_at | last_message_at | msgs | first_msg
+38ea8992-ac50-43ee-8b4c-2b57ed4b88f8 | general | ∅ | 2026-09-24 00:56:41.976531+00 | 2026-09-24 00:56:45.989+00 | 2 | hi
+13998a9a-7f33-4d14-93bf-84c099d7d855 | general | ∅ | 2026-09-24 04:42:30.67391+00 | 2026-09-24 04:43:13.504+00 | 3 | Today is a high-load training day — Bike, Swim, Strength, Core, and a Brick session — and 
+8507a520-e9fc-4398-8511-3a3e81117afd | general | ∅ | 2026-09-24 14:50:02.079912+00 | 2026-09-24 14:50:07.2+00 | 1 | Today's a heavy fuel day—you've got the swim and patrol sessions back-to-back, so you'll w
+4d62c862-0754-4660-a837-b43cc70fc036 | general | ∅ | 2026-09-24 17:17:17.589239+00 | 2026-09-24 17:17:22.925+00 | 1 | Today is a heavy training day with 1007g carbs to hit for your Ironman prep — you're looki
+d17ba332-592b-4599-9684-83147cff59b9 | general | 2026-09-25 | 2026-09-25 13:36:59.21358+00 | 2026-09-25 13:37:06.641+00 | 1 | Today's a light fueling day—419g carbs for the easy swim and core work—and you've got four
+0aeabaa0-8ade-4acb-9719-62a2deed0766 | general | 2026-09-25 | 2026-09-25 19:53:25.382534+00 | 2026-09-25 19:53:29.743+00 | 1 | Today is a light swim and core work—419g carbs, which the spelt lentil bowl in your plan h
+(6 rows)
+## vana_calls since run start
+created_at | conversation_id | function_name | model | gateway_cost_usd | debited
+2026-09-25 13:36:59.102265+00 | d17ba332-592b-4599-9684-83147cff59b9 | vana.opener.general | anthropic/claude-haiku-4.5 | 0.02143425 | true
+2026-09-25 19:53:25.206853+00 | 0aeabaa0-8ade-4acb-9719-62a2deed0766 | vana.opener.general | anthropic/claude-haiku-4.5 | 0.02134925 | true
+(2 rows)

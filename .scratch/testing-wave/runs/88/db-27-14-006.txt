@@ -1,0 +1,19 @@
+## 14-006 conversations made this run 20:29:01Z
+id | title | created_at | msgs | plans
+449da56d-725d-49c4-9b8a-b58616a0115c | This week's plan | 2026-09-25 20:08:58.346517+00 | 3 | 1
+9db7c080-3e91-4add-9a03-83064b8d11c2 | This week's plan | 2026-09-25 20:25:07.083889+00 | 1 | 1
+7cc15497-b7c4-43cb-b6e3-e5ea00eff90e | This week's plan | 2026-09-25 20:28:40.998913+00 | 1 | 0
+(3 rows)
+created_at | conversation_id | function_name | gateway_cost_usd
+2026-09-25 19:53:25.206853+00 | 0aeabaa0-8ade-4acb-9719-62a2deed0766 | vana.opener.general | 0.02134925
+2026-09-25 19:58:12.55265+00 | ebac747d-86a7-4182-b9f1-327895bc96e3 | vana.chat.meal_planning | 0.03222675
+2026-09-25 20:08:58.205708+00 | 449da56d-725d-49c4-9b8a-b58616a0115c | vana.opener.meal_planning | 0.00483525
+2026-09-25 20:09:27.718544+00 | 449da56d-725d-49c4-9b8a-b58616a0115c | vana.chat.meal_planning | 0.0053465
+2026-09-25 20:13:14.327089+00 | 29897d1c-87fc-40fc-9002-b1658d56bd60 | vana.opener.general | 0.003592
+2026-09-25 20:15:17.950759+00 | ∅ | vana.daynotes | ∅
+2026-09-25 20:15:40.471996+00 | ∅ | vana.embed | ∅
+2026-09-25 20:21:51.261748+00 | ∅ | vana.daynotes | ∅
+2026-09-25 20:25:06.971235+00 | 9db7c080-3e91-4add-9a03-83064b8d11c2 | vana.opener.meal_planning | 0.00480775
+2026-09-25 20:28:17.787005+00 | ∅ | vana.daynotes | ∅
+2026-09-25 20:28:40.896398+00 | 7cc15497-b7c4-43cb-b6e3-e5ea00eff90e | vana.opener.meal_planning | 0.0025499
+(11 rows)

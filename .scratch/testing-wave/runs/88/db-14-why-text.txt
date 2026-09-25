@@ -1,0 +1,24 @@
+id | why | count
+AD-014 | his dinner base is "rice, quinoa or wholewheat pasta" with v | 2
+AD-016 | his dinner base is "rice, quinoa or wholewheat pasta" with v | 2
+(2 rows)
+count
+1063
+(1 rows)
+start | count
+listed as a  | 25
+listed as th | 18
+thepaleodiet | 15
+described as | 13
+one of the s | 11
+listed among | 10
+one of the d | 10
+athlete meal | 10
+naturally gl | 7
+listed as on | 6
+free of all  | 5
+rice cakes w | 5
+(12 rows)
+his | he_ | hese
+6 | 0 | 0
+(1 rows)
