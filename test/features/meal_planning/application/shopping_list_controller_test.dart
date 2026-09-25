@@ -14,6 +14,7 @@ import 'package:mealvana_endurance/features/meal_planning/data/shopping_tick_sto
 import 'package:mealvana_endurance/features/meal_planning/data/vana_action_client.dart';
 import 'package:mealvana_endurance/features/meal_planning/data/vana_exceptions.dart';
 import 'package:mealvana_endurance/features/meal_planning/domain/meal_plan.dart';
+import 'package:mealvana_endurance/features/meal_planning/domain/meal_plan_status.dart';
 import 'package:mealvana_endurance/features/meal_planning/domain/shopping_item.dart';
 import 'package:mealvana_endurance/features/meal_planning/domain/shopping_list.dart';
 import 'package:mealvana_endurance/features/meal_planning/domain/ui_action.dart';
@@ -246,89 +247,83 @@ void main() {
   // ── Ticks made offline (testing-wave ticket 36, Findings 20-001/20-002) ──
 
   group('offline ticks', () {
-    test(
-      'live list, transport down: the tick stays on screen, is queued, and '
-      'the state says offline',
-      () async {
-        final c = makeContainer();
-        await c.read(shoppingListControllerProvider.future);
-        server.calls.clear();
-        server.failWith = const VanaOfflineException('unreachable');
+    test('live list, transport down: the tick stays on screen, is queued, and '
+        'the state says offline', () async {
+      final c = makeContainer();
+      await c.read(shoppingListControllerProvider.future);
+      server.calls.clear();
+      server.failWith = const VanaOfflineException('unreachable');
 
-        await c
-            .read(shoppingListControllerProvider.notifier)
-            .setChecked('Broccoli', true);
+      await c
+          .read(shoppingListControllerProvider.notifier)
+          .setChecked('Broccoli', true);
 
-        final state = c.read(shoppingListControllerProvider).value!;
-        expect(state.items.first.checked, isTrue, reason: 'not rolled back');
-        expect(state.isOffline, isTrue);
-        expect(state.listId, 'list-plan');
-        final pending = c.read(shoppingTickStoreProvider).read('user-1');
-        expect(pending.single.rowId, 'r1');
-        expect(pending.single.field, ShoppingField.checked);
-        expect(pending.single.value, isTrue);
-      },
-    );
+      final state = c.read(shoppingListControllerProvider).value!;
+      expect(state.items.first.checked, isTrue, reason: 'not rolled back');
+      expect(state.isOffline, isTrue);
+      expect(state.listId, 'list-plan');
+      final pending = c.read(shoppingTickStoreProvider).read('user-1');
+      expect(pending.single.rowId, 'r1');
+      expect(pending.single.field, ShoppingField.checked);
+      expect(pending.single.value, isTrue);
+    });
 
-    test(
-      'offline copy: a tick survives a restart offline and reaches '
-      'update_shopping_item {checked} once the server answers',
-      () async {
-        final name = plan.shopping.first.name;
-        // The server's row for the same line, so the replay has an id.
-        (server.lists.first['items'] as List).add(
-          _row('r9', name, 'Produce', from: const []),
-        );
-        server.failWith = const VanaOfflineException('unreachable');
+    test('offline copy: a tick survives a restart offline and reaches '
+        'update_shopping_item {checked} once the server answers', () async {
+      final name = plan.shopping.first.name;
+      // The server's row for the same line, so the replay has an id.
+      (server.lists.first['items'] as List).add(
+        _row('r9', name, 'Produce', from: const []),
+      );
+      server.failWith = const VanaOfflineException('unreachable');
 
-        // 1. Offline: the mirror stands in; the tick is kept.
-        final first = makeContainer();
-        final mirror = await first.read(shoppingListControllerProvider.future);
-        expect(mirror.listId, isNull);
-        expect(mirror.isOffline, isTrue);
-        await first
-            .read(shoppingListControllerProvider.notifier)
-            .setChecked(name, true);
-        expect(
-          first.read(shoppingListControllerProvider).value!.items.first.checked,
-          isTrue,
-        );
-        first.dispose();
+      // 1. Offline: the mirror stands in; the tick is kept.
+      final first = makeContainer();
+      final mirror = await first.read(shoppingListControllerProvider.future);
+      expect(mirror.listId, isNull);
+      expect(mirror.isOffline, isTrue);
+      await first
+          .read(shoppingListControllerProvider.notifier)
+          .setChecked(name, true);
+      expect(
+        first.read(shoppingListControllerProvider).value!.items.first.checked,
+        isTrue,
+      );
+      first.dispose();
 
-        // 2. Restart, still offline: the tick shows on the mirror again.
-        final second = makeContainer();
-        final again = await second.read(shoppingListControllerProvider.future);
-        expect(again.listId, isNull);
-        expect(
-          again.items.firstWhere((i) => i.name == name).checked,
-          isTrue,
-          reason: 'the queued tick overlays the plan mirror',
-        );
-        second.dispose();
+      // 2. Restart, still offline: the tick shows on the mirror again.
+      final second = makeContainer();
+      final again = await second.read(shoppingListControllerProvider.future);
+      expect(again.listId, isNull);
+      expect(
+        again.items.firstWhere((i) => i.name == name).checked,
+        isTrue,
+        reason: 'the queued tick overlays the plan mirror',
+      );
+      second.dispose();
 
-        // 3. Restart online: the live list loads and the tick is sent by id.
-        server.failWith = null;
-        server.calls.clear();
-        final third = makeContainer();
-        final live = await third.read(shoppingListControllerProvider.future);
+      // 3. Restart online: the live list loads and the tick is sent by id.
+      server.failWith = null;
+      server.calls.clear();
+      final third = makeContainer();
+      final live = await third.read(shoppingListControllerProvider.future);
 
-        expect(live.listId, 'list-plan');
-        expect(live.isOffline, isFalse);
-        final sent = server.calls.whereType<UpdateShoppingItemAction>().single;
-        expect(sent.id, 'r9');
-        expect(sent.checked, isTrue);
-        expect(sent.have, isNull);
-        expect(live.items.firstWhere((i) => i.name == name).checked, isTrue);
-        expect(third.read(shoppingTickStoreProvider).read('user-1'), isEmpty);
-        expect(
-          (server.lists.first['items'] as List).cast<Map>().firstWhere(
-            (r) => r['id'] == 'r9',
-          )['checked'],
-          isTrue,
-          reason: 'shopping_items.checked agrees',
-        );
-      },
-    );
+      expect(live.listId, 'list-plan');
+      expect(live.isOffline, isFalse);
+      final sent = server.calls.whereType<UpdateShoppingItemAction>().single;
+      expect(sent.id, 'r9');
+      expect(sent.checked, isTrue);
+      expect(sent.have, isNull);
+      expect(live.items.firstWhere((i) => i.name == name).checked, isTrue);
+      expect(third.read(shoppingTickStoreProvider).read('user-1'), isEmpty);
+      expect(
+        (server.lists.first['items'] as List).cast<Map>().firstWhere(
+          (r) => r['id'] == 'r9',
+        )['checked'],
+        isTrue,
+        reason: 'shopping_items.checked agrees',
+      );
+    });
 
     test(
       'a live tick queued offline is sent once a later call succeeds',
@@ -353,27 +348,41 @@ void main() {
       },
     );
 
-    test(
-      'a write the server refuses rolls back, rethrows, and leaves nothing '
-      'queued',
-      () async {
-        final c = makeContainer();
-        await c.read(shoppingListControllerProvider.future);
-        server.failWith = const VanaServerException(500, 'boom');
+    test('a write the server refuses rolls back, rethrows, and leaves nothing '
+        'queued', () async {
+      final c = makeContainer();
+      await c.read(shoppingListControllerProvider.future);
+      server.failWith = const VanaServerException(500, 'boom');
 
-        await expectLater(
-          c
-              .read(shoppingListControllerProvider.notifier)
-              .setChecked('Broccoli', true),
-          throwsA(isA<VanaServerException>()),
-        );
+      await expectLater(
+        c
+            .read(shoppingListControllerProvider.notifier)
+            .setChecked('Broccoli', true),
+        throwsA(isA<VanaServerException>()),
+      );
 
-        final state = c.read(shoppingListControllerProvider).value!;
-        expect(state.items.first.checked, isFalse);
-        expect(state.isOffline, isFalse);
-        expect(c.read(shoppingTickStoreProvider).read('user-1'), isEmpty);
-      },
+      final state = c.read(shoppingListControllerProvider).value!;
+      expect(state.items.first.checked, isFalse);
+      expect(state.isOffline, isFalse);
+      expect(c.read(shoppingTickStoreProvider).read('user-1'), isEmpty);
+    });
+  });
+
+  test("names this week's confirmed plan, so Previous lists can mark its list "
+      '(19-005); a draft names none', () async {
+    final draft = makeContainer();
+    expect(
+      (await draft.read(shoppingListControllerProvider.future)).weekPlanId,
+      isNull,
     );
+
+    final confirmed = makeContainer(
+      withPlan: plan.copyWith(status: MealPlanStatus.confirmed),
+    );
+    final state = await confirmed.read(shoppingListControllerProvider.future);
+    expect(state.weekPlanId, plan.id);
+    // it survives a local edit of the state
+    expect(state.copyWith(listName: 'Renamed').weekPlanId, plan.id);
   });
 
   test(

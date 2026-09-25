@@ -13,8 +13,8 @@
 
 **Touches:** supabase/functions/_shared/vana/ (the shopping list builder and its category map), lib/features/meal_planning/presentation/widgets/ (the Previous lists sheet)
 
-- [ ] A deno test: Farro, Spelt and Mixed vegetables get their aisles; a new list's name reads "Week of Sep 20".
-- [ ] A widget test: Previous lists marks the confirmed plan's list.
+- [x] A deno test: Farro, Spelt and Mixed vegetables get their aisles; a new list's name reads "Week of Sep 20".
+- [x] A widget test: Previous lists marks the confirmed plan's list.
 - [ ] Deployed to dev.
 - [ ] codegen if annotations changed, `flutter analyze` and the suite green.
 

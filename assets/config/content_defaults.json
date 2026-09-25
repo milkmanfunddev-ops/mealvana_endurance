@@ -750,6 +750,8 @@
     "shopping_add_title": "Add an item",
     "shopping_from_plan": "From plan",
     "shopping_previous_current": "Open now",
+    "shopping_week_plan": "This week's plan",
+    "shopping_week_of": "Week of {date}",
     "settings_vana_title": "Vana",
     "settings_batch": "Batch cooking",
     "settings_batch_sub": "Plan as cooking sessions, not nightly meals",

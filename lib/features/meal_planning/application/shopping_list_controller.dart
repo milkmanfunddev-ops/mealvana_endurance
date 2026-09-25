@@ -42,6 +42,7 @@ class ShoppingListState {
     this.mealCount = 0,
     this.meals = const [],
     this.previous = const [],
+    this.weekPlanId,
     this.isOffline = false,
   });
 
@@ -80,6 +81,11 @@ class ShoppingListState {
   /// Every other list the athlete has, most recent first.
   final List<ShoppingListSummary> previous;
 
+  /// This week's confirmed plan (the one the Plan tab shows), null while
+  /// the week has none. Its list is marked in Previous lists so it stands
+  /// apart from the lists of drafts that confirming archived (19-005).
+  final String? weekPlanId;
+
   bool get isEmpty => items.isEmpty;
 
   /// True once the account has any list at all, on screen or in
@@ -109,6 +115,7 @@ class ShoppingListState {
     mealCount: mealCount,
     meals: meals,
     previous: previous ?? this.previous,
+    weekPlanId: weekPlanId,
     isOffline: isOffline ?? this.isOffline,
   );
 }
@@ -203,8 +210,9 @@ class ShoppingListController extends _$ShoppingListController {
     List<ShoppingListSummary> lists,
     MealPlan? plan,
   ) {
+    final weekPlanId = plan != null && plan.isConfirmed ? plan.id : null;
     if (list == null) {
-      return _build(previous: lists, isCurrent: true);
+      return _build(previous: lists, isCurrent: true, weekPlanId: weekPlanId);
     }
     final current = lists.isEmpty ? list.id : lists.first.id;
     final planMeals = plan != null && plan.id == list.planId
@@ -225,6 +233,7 @@ class ShoppingListController extends _$ShoppingListController {
         for (final l in lists)
           if (l.id != list.id) l,
       ],
+      weekPlanId: weekPlanId,
     );
   }
 
@@ -715,6 +724,7 @@ class ShoppingListController extends _$ShoppingListController {
       totalServings: servings,
       mealCount: plan.meals.length,
       meals: plan.meals,
+      weekPlanId: plan.isConfirmed ? plan.id : null,
     );
   }
 
@@ -730,6 +740,7 @@ class ShoppingListController extends _$ShoppingListController {
     int mealCount = 0,
     List<PlanMeal> meals = const [],
     List<ShoppingListSummary> previous = const [],
+    String? weekPlanId,
     bool isOffline = false,
   }) {
     final grouped = <String, List<ShoppingItem>>{};
@@ -761,6 +772,7 @@ class ShoppingListController extends _$ShoppingListController {
       mealCount: mealCount,
       meals: meals,
       previous: previous,
+      weekPlanId: weekPlanId,
       isOffline: isOffline,
     );
   }
