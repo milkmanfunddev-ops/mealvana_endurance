@@ -1,0 +1,245 @@
+{
+ "now": "2026-09-25T01:33:07.915298+00:00",
+ "user": "607f9dd5-6fa7-48ee-a628-720d4a0506a1",
+ "connections": [
+  {
+   "environment": "production",
+   "expires_at": "2026-09-24T23:09:27.804+00:00",
+   "updated_at": "2026-09-24T22:39:27.804+00:00",
+   "refresh_present": true
+  }
+ ],
+ "drafts": [
+  {
+   "id": "a5b4c73c-dd65-433d-8141-207deba7e1a0",
+   "plan": "a5b4c73c-dd65-433d-8141-207deba7e1a0",
+   "revision": 10,
+   "updated_at": "2026-09-11T15:16:37.72854+00:00",
+   "env": "production",
+   "store": {
+    "id": "540FC242",
+    "name": "Kroger - - Birmingham Spoke",
+    "address": "30 W Oxmoor Rd, Birmingham, AL"
+   },
+   "lines": 13,
+   "keys": [
+    "dirty",
+    "lines",
+    "store",
+    "planId",
+    "modality",
+    "revision",
+    "environment",
+    "receiptStatus"
+   ]
+  },
+  {
+   "id": "6e167344-b36c-4f1e-ac67-e3a9658beae8",
+   "plan": "6e167344-b36c-4f1e-ac67-e3a9658beae8",
+   "revision": 2,
+   "updated_at": "2026-09-16T13:12:50.125692+00:00",
+   "env": "production",
+   "store": {
+    "id": "540FC242",
+    "name": "Kroger - - Birmingham Spoke",
+    "address": "30 W Oxmoor Rd, Birmingham, AL"
+   },
+   "lines": 12,
+   "keys": [
+    "dirty",
+    "lines",
+    "store",
+    "planId",
+    "modality",
+    "revision",
+    "environment",
+    "receiptStatus"
+   ]
+  },
+  {
+   "id": "4e29032c-5373-4031-81eb-2f48bbc10b1f",
+   "plan": "4e29032c-5373-4031-81eb-2f48bbc10b1f",
+   "revision": 2,
+   "updated_at": "2026-09-16T18:39:00.035683+00:00",
+   "env": "production",
+   "store": {
+    "id": "540FC242",
+    "name": "Kroger - - Birmingham Spoke",
+    "address": "30 W Oxmoor Rd, Birmingham, AL"
+   },
+   "lines": 18,
+   "keys": [
+    "dirty",
+    "lines",
+    "store",
+    "planId",
+    "modality",
+    "revision",
+    "environment",
+    "receiptStatus"
+   ]
+  },
+  {
+   "id": "f2c0bc78-4b63-478f-8710-14c4c1247d2e",
+   "plan": "f2c0bc78-4b63-478f-8710-14c4c1247d2e",
+   "revision": 2,
+   "updated_at": "2026-09-16T18:54:05.110788+00:00",
+   "env": "production",
+   "store": {
+    "id": "540FC242",
+    "name": "Kroger - - Birmingham Spoke",
+    "address": "30 W Oxmoor Rd, Birmingham, AL"
+   },
+   "lines": 23,
+   "keys": [
+    "dirty",
+    "lines",
+    "store",
+    "planId",
+    "modality",
+    "revision",
+    "environment",
+    "receiptStatus"
+   ]
+  },
+  {
+   "id": "fc9687ff-fd4f-4fd7-9b34-64c4626a47d9",
+   "plan": "fc9687ff-fd4f-4fd7-9b34-64c4626a47d9",
+   "revision": 1,
+   "updated_at": "2026-09-17T00:53:43.540189+00:00",
+   "env": "production",
+   "store": {
+    "id": "540FC242",
+    "name": "Kroger - - Birmingham Spoke",
+    "address": "30 W Oxmoor Rd, Birmingham, AL"
+   },
+   "lines": 3,
+   "keys": [
+    "dirty",
+    "lines",
+    "store",
+    "planId",
+    "modality",
+    "revision",
+    "environment",
+    "receiptStatus"
+   ]
+  },
+  {
+   "id": "f9f6f432-2b11-455e-910f-db99fbeb352e",
+   "plan": "f9f6f432-2b11-455e-910f-db99fbeb352e",
+   "revision": 5,
+   "updated_at": "2026-09-17T14:12:53.18877+00:00",
+   "env": "production",
+   "store": {
+    "id": "540FC242",
+    "name": "Kroger - - Birmingham Spoke",
+    "address": "30 W Oxmoor Rd, Birmingham, AL"
+   },
+   "lines": 8,
+   "keys": [
+    "dirty",
+    "lines",
+    "store",
+    "planId",
+    "modality",
+    "revision",
+    "environment",
+    "receiptStatus"
+   ]
+  },
+  {
+   "id": "173cebb2-454f-48d9-bbd3-6b3a7e561335",
+   "plan": "173cebb2-454f-48d9-bbd3-6b3a7e561335",
+   "revision": 1,
+   "updated_at": "2026-09-24T22:40:24.732595+00:00",
+   "env": "production",
+   "store": null,
+   "lines": 11,
+   "keys": [
+    "dirty",
+    "lines",
+    "store",
+    "planId",
+    "modality",
+    "revision",
+    "environment",
+    "receiptStatus"
+   ]
+  }
+ ],
+ "exports": [
+  {
+   "id": "65cfd270-4e4d-451b-a42c-f110d9241130",
+   "plan": "a5b4c73c-dd65-433d-8141-207deba7e1a0",
+   "env": "production",
+   "status": "sent",
+   "created_at": "2026-09-11T01:47:28.013998+00:00",
+   "items": 0,
+   "payload_keys": [
+    "lines",
+    "store"
+   ]
+  },
+  {
+   "id": "eb317f2f-1ad2-4902-98f0-7504e591260d",
+   "plan": "6e167344-b36c-4f1e-ac67-e3a9658beae8",
+   "env": "production",
+   "status": "sent",
+   "created_at": "2026-09-16T13:10:27.350519+00:00",
+   "items": 0,
+   "payload_keys": [
+    "lines",
+    "store"
+   ]
+  },
+  {
+   "id": "47cf341b-84d6-40e8-87f4-6f3fcae256b8",
+   "plan": "4e29032c-5373-4031-81eb-2f48bbc10b1f",
+   "env": "production",
+   "status": "sent",
+   "created_at": "2026-09-16T16:14:32.95757+00:00",
+   "items": 0,
+   "payload_keys": [
+    "lines",
+    "store"
+   ]
+  },
+  {
+   "id": "e3e07e9a-137e-441f-95d4-e59594caf830",
+   "plan": "f2c0bc78-4b63-478f-8710-14c4c1247d2e",
+   "env": "production",
+   "status": "sent",
+   "created_at": "2026-09-16T18:51:50.01401+00:00",
+   "items": 0,
+   "payload_keys": [
+    "lines",
+    "store"
+   ]
+  },
+  {
+   "id": "f67aaee0-01d7-4e87-86b3-df062fad6a83",
+   "plan": "fc9687ff-fd4f-4fd7-9b34-64c4626a47d9",
+   "env": "production",
+   "status": "sent",
+   "created_at": "2026-09-17T00:53:45.347732+00:00",
+   "items": 0,
+   "payload_keys": [
+    "lines",
+    "store"
+   ]
+  },
+  {
+   "id": "fb4d2b81-045f-4402-9f9e-a1282dc942fb",
+   "plan": "f9f6f432-2b11-455e-910f-db99fbeb352e",
+   "env": "production",
+   "status": "sent",
+   "created_at": "2026-09-17T13:56:03.598923+00:00",
+   "items": 0,
+   "payload_keys": [
+    "lines",
+    "store"
+   ]
+  }
+ ]
+}
