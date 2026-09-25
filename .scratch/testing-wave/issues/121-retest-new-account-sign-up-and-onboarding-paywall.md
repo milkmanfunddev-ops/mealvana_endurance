@@ -18,8 +18,8 @@
 
 **Touches:** nothing (read only), except the accounts the run creates and deletes.
 
-- [ ] Runs by the runbook: a slot taken and released, the console saved, a look-around on every screen visited, every new problem written as a Finding and nothing fixed.
-- [ ] `RUNS/verdicts.md` has one row per Finding and follow-up test above: pass | fail | not run, evidence (paths under `runs/121/`), and for a fail the new Finding's id. The run does not edit old Finding files; the lead closes the passes.
+- [x] Runs by the runbook: a slot taken and released, the console saved, a look-around on every screen visited, every new problem written as a Finding and nothing fixed.
+- [x] `RUNS/verdicts.md` has one row per Finding and follow-up test above: pass | fail | not run, evidence (paths under `runs/121/`), and for a fail the new Finding's id. The run does not edit old Finding files; the lead closes the passes.
 - [ ] Every account the run made is deleted at the end.
 
 Next: /implement-lee testing-wave
