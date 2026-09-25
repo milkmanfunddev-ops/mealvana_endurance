@@ -1,3 +1,5 @@
+import 'dart:async';
+
 import 'package:flutter/foundation.dart';
 import 'package:flutter/services.dart' show PlatformException;
 import 'package:purchases_flutter/purchases_flutter.dart';
@@ -36,12 +38,25 @@ RevenueCatService revenueCatService(Ref ref) {
 /// dev builds testers actually run. Breadcrumbs record the happy path too, so a
 /// Sentry event arrives with the configure/offerings/purchase sequence attached.
 class RevenueCatService {
-  RevenueCatService({required AppConfig config, required SentryReporter sentry})
-    : _config = config,
-      _sentry = sentry;
+  RevenueCatService({
+    required AppConfig config,
+    required SentryReporter sentry,
+    RevenueCatSdk sdk = const PurchasesFlutterSdk(),
+    Duration configureWait = const Duration(seconds: 10),
+  }) : _config = config,
+       _sentry = sentry,
+       _sdk = sdk,
+       _configureWait = configureWait;
 
   final AppConfig _config;
   final SentryReporter _sentry;
+  final RevenueCatSdk _sdk;
+
+  /// How long a [logIn] asked before any configure attempt waits for one.
+  /// The startup flow always makes the attempt on its critical path, so in
+  /// the app the wait ends when that attempt settles; the bound is for a
+  /// startup that never reaches it (a force-upgrade or resync return).
+  final Duration _configureWait;
 
   /// Static because [Purchases] is a process-wide native singleton: once it has
   /// been configured, it is configured for every instance of this wrapper.
@@ -52,10 +67,38 @@ class RevenueCatService {
   /// the UI rendered "packs unavailable" forever.
   static bool _configured = false;
 
+  /// The configure attempt in flight, shared by every caller that asks while
+  /// it runs, so the native SDK is configured once.
+  static Future<void>? _configureAttempt;
+
+  /// Settles when the first configure attempt has finished, configured or
+  /// not. A [logIn] asked before that (the router's gate reads the
+  /// subscription status the moment the router exists, ahead of the startup
+  /// flow) waits on it instead of being dropped (Finding 09-013).
+  static Completer<void>? _configureSettled;
+
+  /// The `logIn` in flight and the account it is for: a second ask for the
+  /// same account while it runs joins it rather than logging in again.
+  static Future<void>? _logInInFlight;
+  static String? _logInInFlightUserId;
+
   /// Whether the SDK completed [configureIfPossible]. Exposed so callers can
   /// tell "the store said no" apart from "we never reached the store", which
   /// are indistinguishable from a null/false return.
   static bool get isConfigured => _configured;
+
+  /// Forget the process-wide state between tests. The app never calls this.
+  @visibleForTesting
+  static void debugResetForTesting() {
+    _configured = false;
+    _configureAttempt = null;
+    _configureSettled = null;
+    _logInInFlight = null;
+    _logInInFlightUserId = null;
+  }
+
+  static Completer<void> get _settled =>
+      _configureSettled ??= Completer<void>();
 
   bool get _canUse =>
       _config.aiCreditsEnabled && _config.revenueCatApiKey.isNotEmpty;
@@ -137,9 +180,22 @@ class RevenueCatService {
   ///
   /// No-op when [AppConfig.aiCreditsEnabled] is false, the platform API key is
   /// absent, or the key does not match the platform's required prefix. Safe to
-  /// call multiple times; subsequent calls after the first successful
-  /// configuration are skipped.
-  Future<void> configureIfPossible() async {
+  /// call multiple times: a call while an attempt is in flight joins it, and
+  /// calls after the first successful configuration are skipped.
+  Future<void> configureIfPossible() {
+    if (_configured) return Future.value();
+    final inFlight = _configureAttempt;
+    if (inFlight != null) return inFlight;
+    final attempt = _configure().whenComplete(() {
+      _configureAttempt = null;
+      final settled = _settled;
+      if (!settled.isCompleted) settled.complete();
+    });
+    _configureAttempt = attempt;
+    return attempt;
+  }
+
+  Future<void> _configure() async {
     if (!_canUse) {
       // Not an error — the flag is off or no key is provisioned. But it is the
       // most common reason the whole feature looks broken, so leave a trail.
@@ -149,7 +205,6 @@ class RevenueCatService {
       });
       return;
     }
-    if (_configured) return;
 
     // Guard against a wrong-platform / malformed key reaching the native SDK,
     // which would crash the app rather than throw a catchable Dart error.
@@ -183,9 +238,7 @@ class RevenueCatService {
     }
 
     try {
-      await Purchases.configure(
-        PurchasesConfiguration(_config.revenueCatApiKey),
-      );
+      await _sdk.configure(PurchasesConfiguration(_config.revenueCatApiKey));
       _configured = true;
       _crumb('configured', {'store': isTestStore ? 'test_store' : 'native'});
     } catch (e, st) {
@@ -195,18 +248,56 @@ class RevenueCatService {
 
   /// Identify the signed-in user with RevenueCat.
   ///
-  /// No-op when the SDK is not configured. The RevenueCat App User ID **must**
-  /// be the Supabase auth user id — the `revenuecat-webhook` edge function maps
-  /// `app_user_id` straight onto our user, so a missed login means a real
-  /// purchase credits nobody's wallet.
+  /// The RevenueCat App User ID **must** be the Supabase auth user id — the
+  /// `revenuecat-webhook` edge function maps `app_user_id` straight onto our
+  /// user, so a missed login means a real purchase credits nobody's wallet.
+  ///
+  /// Runs once per identity change, and only after configure (ticket 85,
+  /// Finding 09-013): asked before the first configure attempt has settled,
+  /// it waits for that attempt (bounded) instead of being dropped; asked
+  /// while the same account's `logIn` is in flight, it joins it; asked for
+  /// the identity the SDK already holds, it does nothing. No-op when the
+  /// feature is off or the SDK could not be configured.
   Future<void> logIn(String userId) async {
     if (!_configured) {
-      _crumb('logIn skipped: SDK not configured');
-      return;
+      if (!_canUse) {
+        _crumb('logIn skipped: feature unavailable');
+        return;
+      }
+      final settled = _settled;
+      if (!settled.isCompleted) {
+        _crumb('logIn waiting for configure');
+        await settled.future.timeout(_configureWait, onTimeout: () {});
+      }
+      if (!_configured) {
+        _crumb('logIn skipped: SDK not configured');
+        return;
+      }
     }
 
+    final inFlight = _logInInFlight;
+    if (inFlight != null && _logInInFlightUserId == userId) return inFlight;
+
+    final attempt = _logIn(userId);
+    _logInInFlight = attempt;
+    _logInInFlightUserId = userId;
     try {
-      await Purchases.logIn(userId);
+      await attempt;
+    } finally {
+      if (identical(_logInInFlight, attempt)) {
+        _logInInFlight = null;
+        _logInInFlightUserId = null;
+      }
+    }
+  }
+
+  Future<void> _logIn(String userId) async {
+    try {
+      if (await _sdk.appUserID == userId) {
+        _crumb('logIn skipped: already identified');
+        return;
+      }
+      await _sdk.logIn(userId);
       _crumb('logged in');
     } catch (e, st) {
       _report('logIn failed', e, stackTrace: st);
@@ -228,11 +319,11 @@ class RevenueCatService {
     }
 
     try {
-      if (await Purchases.isAnonymous) {
+      if (await _sdk.isAnonymous) {
         _crumb('logOut skipped: already anonymous');
         return;
       }
-      await Purchases.logOut();
+      await _sdk.logOut();
       _crumb('logged out');
     } catch (e, st) {
       _report('logOut failed', e, stackTrace: st);
@@ -249,7 +340,7 @@ class RevenueCatService {
     }
 
     try {
-      final offerings = await Purchases.getOfferings();
+      final offerings = await _sdk.getOfferings();
       // An empty package list is the single most common reason the paywall
       // renders "unavailable", and it is indistinguishable from a network
       // failure without this. Record what the store actually served.
@@ -288,7 +379,7 @@ class RevenueCatService {
 
     _crumb('purchase started', {'sku': sku});
     try {
-      await Purchases.purchase(PurchaseParams.package(pkg));
+      await _sdk.purchase(PurchaseParams.package(pkg));
       _crumb('purchase succeeded', {'sku': sku});
       return true;
     } on PurchasesError catch (e, st) {
@@ -358,10 +449,55 @@ class RevenueCatService {
     }
 
     try {
-      await Purchases.restorePurchases();
+      await _sdk.restorePurchases();
       _crumb('restore completed');
     } catch (e, st) {
       _report('restore failed', e, stackTrace: st);
     }
   }
+}
+
+/// The purchases_flutter calls [RevenueCatService] makes, behind one seam so
+/// a test can stand in for the native SDK (it lives on platform channels
+/// that dart:test cannot reach). Results the service never reads are
+/// dropped, so a fake returns nothing.
+abstract interface class RevenueCatSdk {
+  Future<void> configure(PurchasesConfiguration configuration);
+  Future<String> get appUserID;
+  Future<void> logIn(String appUserID);
+  Future<bool> get isAnonymous;
+  Future<void> logOut();
+  Future<Offerings> getOfferings();
+  Future<void> purchase(PurchaseParams params);
+  Future<void> restorePurchases();
+}
+
+/// The real SDK: the [Purchases] statics, one to one.
+class PurchasesFlutterSdk implements RevenueCatSdk {
+  const PurchasesFlutterSdk();
+
+  @override
+  Future<void> configure(PurchasesConfiguration configuration) =>
+      Purchases.configure(configuration);
+
+  @override
+  Future<String> get appUserID => Purchases.appUserID;
+
+  @override
+  Future<void> logIn(String appUserID) => Purchases.logIn(appUserID);
+
+  @override
+  Future<bool> get isAnonymous => Purchases.isAnonymous;
+
+  @override
+  Future<void> logOut() => Purchases.logOut();
+
+  @override
+  Future<Offerings> getOfferings() => Purchases.getOfferings();
+
+  @override
+  Future<void> purchase(PurchaseParams params) => Purchases.purchase(params);
+
+  @override
+  Future<void> restorePurchases() => Purchases.restorePurchases();
 }

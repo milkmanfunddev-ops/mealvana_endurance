@@ -24,6 +24,7 @@
 //  - initializeDeferredServices() -> integration-level / SchedulerBinding
 //  - checkAndHandleDirtyRecordBackup upload/discard flow (needs real dialog)
 
+import 'dart:async';
 import 'dart:io';
 
 import 'package:drift/drift.dart' show Value;
@@ -34,19 +35,27 @@ import 'package:mocktail/mocktail.dart';
 import 'package:package_info_plus/package_info_plus.dart';
 import 'package:path_provider_platform_interface/path_provider_platform_interface.dart';
 import 'package:plugin_platform_interface/plugin_platform_interface.dart';
+import 'package:purchases_flutter/purchases_flutter.dart';
 import 'package:riverpod/riverpod.dart';
 import 'package:shared_preferences/shared_preferences.dart'
     show SharedPreferences;
 import 'package:supabase_flutter/supabase_flutter.dart' hide AuthException;
 
+import 'package:mealvana_endurance/features/ai_credits/data/revenuecat_service.dart';
 import 'package:mealvana_endurance/features/app_startup/application/app_startup_provider.dart';
 import 'package:mealvana_endurance/features/app_startup/application/app_startup_service.dart';
 import 'package:mealvana_endurance/features/nutrition_plan/data/food_repository.dart';
+import 'package:mealvana_endurance/features/subscription/application/subscription_status_provider.dart';
+import 'package:mealvana_endurance/features/subscription/data/subscription_service.dart';
+import 'package:mealvana_endurance/features/subscription/data/user_entitlements_repository.dart';
+import 'package:mealvana_endurance/features/subscription/domain/entitlement.dart';
 import 'package:mealvana_endurance/shared/database/app_database.dart';
 import 'package:mealvana_endurance/shared/database/database_provider.dart';
 import 'package:mealvana_endurance/shared/services/analytics/analytics_tracker.dart';
+import 'package:mealvana_endurance/shared/services/app_config.dart';
 import 'package:mealvana_endurance/shared/services/app_external_deps.dart';
 import 'package:mealvana_endurance/shared/services/logging_service.dart';
+import 'package:mealvana_endurance/shared/services/notification_service.dart';
 import 'package:mealvana_endurance/shared/services/sentry/sentry_reporter.dart';
 
 // ─── Mock declarations ────────────────────────────────────────────────────────
@@ -64,6 +73,48 @@ class MockAnalyticsTracker extends Mock implements AnalyticsTracker {}
 class MockFoodRepository extends Mock implements FoodRepository {}
 
 class MockSharedPreferences extends Mock implements SharedPreferences {}
+
+class _MockSubscriptionService extends Mock implements SubscriptionService {}
+
+class _MockEntitlementsRepository extends Mock
+    implements UserEntitlementsRepository {}
+
+class _MockScheduler extends Mock implements LocalNotificationScheduler {}
+
+/// Stands in for the native RevenueCat SDK and records the order of calls.
+class _FakeRevenueCatSdk implements RevenueCatSdk {
+  final calls = <String>[];
+  String appUserId = r'$RCAnonymousID:0123456789abcdef';
+
+  @override
+  Future<void> configure(PurchasesConfiguration configuration) async {
+    calls.add('configure');
+  }
+
+  @override
+  Future<String> get appUserID async => appUserId;
+
+  @override
+  Future<void> logIn(String appUserID) async {
+    calls.add('logIn:$appUserID');
+    appUserId = appUserID;
+  }
+
+  @override
+  Future<bool> get isAnonymous async => appUserId.startsWith(r'$RCAnonymousID');
+
+  @override
+  Future<void> logOut() async => calls.add('logOut');
+
+  @override
+  Future<Offerings> getOfferings() => throw UnimplementedError();
+
+  @override
+  Future<void> purchase(PurchaseParams params) => throw UnimplementedError();
+
+  @override
+  Future<void> restorePurchases() => throw UnimplementedError();
+}
 
 /// Fake path_provider so DirtyRecordBackupService can resolve paths in tests.
 class FakePathProviderPlatform extends Fake
@@ -312,6 +363,121 @@ void main() {
   });
 
   // ─── setSentryUserContext ────────────────────────────────────────────────────
+
+  // ─── initializeAppGate: RevenueCat identity on a cold start ───────────────
+  //
+  // Ticket 85 (Finding 09-013): the SDK sees one `logIn`, after configure,
+  // however many times the startup flow asks. The RevenueCat wrapper is real
+  // and the native SDK is a fake that records the order of calls; the status
+  // provider's own dependencies are mocked so the gate resolves at once.
+
+  group('initializeAppGate (RevenueCat identity)', () {
+    const userId = 'test-user-id';
+    late _FakeRevenueCatSdk sdk;
+    late _MockSubscriptionService subscription;
+    late _MockEntitlementsRepository entitlements;
+    late _MockScheduler scheduler;
+
+    setUp(() {
+      RevenueCatService.debugResetForTesting();
+      sdk = _FakeRevenueCatSdk();
+      subscription = _MockSubscriptionService();
+      entitlements = _MockEntitlementsRepository();
+      scheduler = _MockScheduler();
+      when(() => mockAuth.currentUser).thenReturn(_FakeUser(userId));
+      when(() => entitlements.currentUserId).thenReturn(userId);
+      when(
+        () => entitlements.authUserIdChanges,
+      ).thenAnswer((_) => const Stream<String?>.empty());
+      when(() => subscription.setStatusListener(any())).thenReturn(null);
+      when(
+        () => subscription.currentAppUserId(),
+      ).thenAnswer((_) async => userId);
+      when(() => subscription.logIn(any())).thenAnswer((_) async {});
+      when(
+        () => subscription.fetchStatus(),
+      ).thenAnswer((_) async => SubscriptionStatus.none);
+      when(() => scheduler.cancel(any())).thenAnswer((_) async {});
+    });
+
+    tearDown(RevenueCatService.debugResetForTesting);
+
+    ProviderContainer gateContainer() {
+      final deps = AppExternalDeps(
+        supabaseClient: mockSupabase,
+        logger: mockLogger,
+        sentry: mockSentry,
+        analytics: mockAnalytics,
+        sharedPreferences: mockPrefs,
+      );
+      final revenueCat = RevenueCatService(
+        // The test platform reports Android: the Google key is the one the
+        // platform guard accepts.
+        config: AppConfig.forTesting(
+          aiCreditsEnabled: true,
+          revenueCatApiKeyApple: 'appl_test',
+          revenueCatApiKeyGoogle: 'goog_test',
+        ),
+        sentry: const NoopSentryReporter(),
+        sdk: sdk,
+      );
+      final container = ProviderContainer(
+        overrides: [
+          appExternalDepsProvider.overrideWithValue(deps),
+          appDatabaseProvider.overrideWithValue(database),
+          revenueCatServiceProvider.overrideWithValue(revenueCat),
+          subscriptionServiceProvider.overrideWithValue(subscription),
+          userEntitlementsRepositoryProvider.overrideWithValue(entitlements),
+          localNotificationSchedulerProvider.overrideWithValue(scheduler),
+          entitlementAnswerTimeoutProvider.overrideWithValue(
+            const Duration(milliseconds: 50),
+          ),
+        ],
+      );
+      addTearDown(container.dispose);
+      return container;
+    }
+
+    test('a cold start with a signed-in account: configure, then one logIn, '
+        'and the gate is resolved', () async {
+      final container = gateContainer();
+      final service = container.read(appStartupServiceProvider);
+
+      // The startup flow starts configure first, then reaches the gate.
+      unawaited(service.configureRevenueCat());
+      await service.initializeAppGate();
+
+      expect(sdk.calls, ['configure', 'logIn:$userId']);
+      expect(
+        container.read(subscriptionStatusProvider).hasValue,
+        isTrue,
+        reason: 'the gate has an answer before startup hands back its data',
+      );
+    });
+
+    test('configure asked twice reaches the SDK once', () async {
+      final container = gateContainer();
+      final service = container.read(appStartupServiceProvider);
+
+      await Future.wait([
+        service.configureRevenueCat(),
+        service.configureRevenueCat(),
+      ]);
+
+      expect(sdk.calls, ['configure']);
+    });
+
+    test('nobody signed in: configure only', () async {
+      when(() => mockAuth.currentUser).thenReturn(null);
+      when(() => entitlements.currentUserId).thenReturn(null);
+      final container = gateContainer();
+      final service = container.read(appStartupServiceProvider);
+
+      await service.initializeAppGate();
+
+      expect(sdk.calls, ['configure']);
+    });
+  });
 
   group('setSentryUserContext', () {
     test('passes "anonymous" when no Supabase user is logged in', () async {

@@ -72,6 +72,16 @@ class AppStartup extends _$AppStartup {
           .read(privacyRegionServiceProvider)
           .ensureResolved();
 
+      // 0b. REVENUECAT: start configuring the SDK now, overlapping the
+      // version check and database init. The router's gate reads the
+      // subscription status the moment the router exists, and that read
+      // waits for this attempt before it logs the account in (ticket 85,
+      // Finding 09-013); the later it starts, the likelier the gate's
+      // bounded wait (mp-284) runs out first and the cold start opens on a
+      // locked answer. `initializeAppGate` joins the same attempt; never
+      // throws.
+      unawaited(startupService.configureRevenueCat());
+
       // 0. VERSION CHECK: Check app version and schema version BEFORE database initialization
       // This prevents incompatible app versions from accessing the database
       final versionCheckService = ref.read(versionCheckServiceProvider);

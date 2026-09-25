@@ -406,6 +406,22 @@ class AppStartupService {
     }
   }
 
+  /// Configure the RevenueCat SDK, or join the attempt already running.
+  /// Started at the top of the startup flow and awaited again by
+  /// [initializeAppGate]; a no-op without a RevenueCat key. Never throws.
+  Future<void> configureRevenueCat() async {
+    try {
+      await ref.read(revenueCatServiceProvider).configureIfPossible();
+    } catch (e, stackTrace) {
+      _logger.error(
+        'RevenueCat configure failed',
+        context: 'APP_STARTUP',
+        error: e,
+        stackTrace: stackTrace,
+      );
+    }
+  }
+
   /// Configure RevenueCat and resolve the app gate, on the critical path.
   ///
   /// The router sends every signed-in route through the gate (mp-280), so
@@ -417,17 +433,22 @@ class AppStartupService {
   /// status controller then answers from the SDK's cache at once or, with
   /// no cache, within its bounded wait (mp-284), so this adds at most a
   /// couple of seconds and usually nothing.
+  ///
+  /// `logIn` runs once per cold start (ticket 85, Finding 09-013): the
+  /// status provider's early read waits for the configure attempt started
+  /// at the top of the startup flow and logs the account in itself, and
+  /// this call then joins that `logIn` or finds the identity already held.
+  /// Either way the SDK sees one `logIn`, after configure.
   Future<void> initializeAppGate() async {
     try {
-      final revenueCat = ref.read(revenueCatServiceProvider);
-      await revenueCat.configureIfPossible();
+      await configureRevenueCat();
       final userId = _supabase.auth.currentUser?.id;
       if (userId != null && userId.isNotEmpty) {
-        await revenueCat.logIn(userId);
+        await ref.read(revenueCatServiceProvider).logIn(userId);
       }
-      // A provider first read before this point (an early redirect) would
-      // have answered "SDK not configured"; re-resolve it. A fresh one
-      // resolves on first read.
+      // A provider first read before this point (the router's gate) may
+      // have run out its bounded wait before the identity was moved and
+      // answered locked; re-resolve it. A fresh one resolves on first read.
       if (ref.exists(subscriptionStatusProvider)) {
         await ref.read(subscriptionStatusProvider.notifier).refresh();
       } else {
