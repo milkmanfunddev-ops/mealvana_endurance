@@ -259,6 +259,9 @@ should behave) goes to the page as an open question, the normal way, and nothing
 **After the wave.**
 
 1. Merge in ticket order, run `flutter analyze` and the CI suite command.
+   A fix wave deploys once, from the merged tree: agents deploy nothing (two tickets that touch
+   `_shared/` would overwrite each other), and the lead applies the wave's SQL first, then
+   redeploys every function the merged diff touched (IMPROVEMENTS #55).
 2. Read every ticket's `RUNS/notes.md` for surprises with no Finding and no "known noise", and file
    them (`FINDINGS new …`), noting "filed by the wave lead" in Actual. Then read the tickets'
    edge-log extracts (`RUNS/*edge*`) side by side: a line in one ticket's extract can come from
