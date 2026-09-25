@@ -104,13 +104,17 @@ class SubscriptionStatus {
   }
 
   /// This answer as it counts at [now] (mp-679). An active answer whose own
-  /// [expiresAt] passed more than [kRenewalGrace] ago is closed: held once,
+  /// [expiresAt] passed more than [kRenewalGrace] ago (at once, when it will
+  /// not renew) is closed: held once,
   /// same expiry and product, nothing vouching for it. Every other answer
   /// counts as it is, so a fresh answer, which carries the new period's
   /// expiry, always wins.
   SubscriptionStatus countedAt(DateTime now) {
     final e = expiresAt;
-    if (!active || e == null || now.isBefore(e.add(kRenewalGrace))) {
+    // Like the server's isEntitled: only a renewing subscription gets the
+    // grace; a cancelled one ends at its expiry.
+    final grace = willRenew ? kRenewalGrace : Duration.zero;
+    if (!active || e == null || now.isBefore(e.add(grace))) {
       return this;
     }
     return SubscriptionStatus(

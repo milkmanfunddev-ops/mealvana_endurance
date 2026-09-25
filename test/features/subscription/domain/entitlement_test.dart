@@ -62,6 +62,17 @@ void main() {
         expect(saved.countedAt(expiry.add(kRenewalGrace)).active, isFalse);
       });
 
+      test('a cancelled copy gets no grace: closed just past its expiry, '
+          'as the server (isEntitled grants the grace only when it renews)', () {
+        final cancelled = saved.copyWith(willRenew: false);
+        final now = expiry.add(const Duration(minutes: 2));
+        expect(cancelled.countedAt(now).active, isFalse);
+        expect(
+          cancelled.countedAt(expiry.subtract(const Duration(seconds: 1))),
+          cancelled,
+        );
+      });
+
       test('no expiry, or an inactive answer, counts as it is', () {
         const open = SubscriptionStatus(active: true);
         expect(open.countedAt(DateTime.utc(2099)), open);
