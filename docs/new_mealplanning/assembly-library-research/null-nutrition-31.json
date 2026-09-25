@@ -1,0 +1,2085 @@
+{
+ "_about": "The 31 active dev meal_library rows that had kcal, carbs_g, protein_g and fat_g all null on 2026-09-25 (Finding 29-001), as selected from dev, with the nutrition written by supabase/migrations/20260925141000_meal_library_fill_31_nutrition.sql. None of the source pages states kcal and macros for these dishes, so every value is an AI estimate (nutrition_origin = 'ai_estimated') built from the row's own ingredients and quantities with USDA FoodData Central SR Legacy values per 100 g, or a typical retail label where USDA has no entry. The batch-quantity snack rows (AB-195, AS-158..161) are per two ~25 g bites; see 'estimate.note'.",
+ "rows": [
+  {
+   "id": "AB-036",
+   "name": "Rice cereal with orange juice",
+   "kind": "assembly",
+   "meal_type": "breakfast",
+   "servings": 1,
+   "ingredients": "rice cereal (Rice Krispies) 50 g, orange juice 200 ml",
+   "ingredients_json": [
+    {
+     "qty": "50 g",
+     "name": "rice cereal (Rice Krispies)",
+     "role": "starch"
+    },
+    {
+     "qty": "200 ml",
+     "name": "orange juice",
+     "role": "drink"
+    }
+   ],
+   "source": "https://www.active.com/triathlon/articles/what-do-pro-triathletes-eat-for-breakfast",
+   "source_url": "https://www.active.com/triathlon/articles/what-do-pro-triathletes-eat-for-breakfast",
+   "source_urls": [
+    "https://www.active.com/triathlon/articles/what-do-pro-triathletes-eat-for-breakfast"
+   ],
+   "why": "Charisa Wernick (Ironman runner-up): \"rice cereal and a banana\" as her go-to race-morning breakfast, adapted here with juice for a low-fibre version",
+   "evidence": "Charisa Wernick (Ironman runner-up): \"rice cereal and a banana\" as her go-to race-morning breakfast, adapted here with juice for a low-fibre version",
+   "pattern": "starch + drink",
+   "prep": "3 min",
+   "estimate": {
+    "kcal": 280,
+    "carbs_g": 65,
+    "protein_g": 4,
+    "fat_g": 1,
+    "nutrition_origin": "ai_estimated",
+    "atwater_kcal": 285.9,
+    "note": "",
+    "ingredients_used": [
+     {
+      "grams": 50,
+      "usda_or_label": "label, Kellogg's Rice Krispies"
+     },
+     {
+      "grams": 208,
+      "usda_or_label": "USDA orange juice (200 ml = 208 g)"
+     }
+    ]
+   }
+  },
+  {
+   "id": "AB-055",
+   "name": "White rice with fructose & jam",
+   "kind": "assembly",
+   "meal_type": "breakfast",
+   "servings": 1,
+   "ingredients": "white rice, cooked 150 g, jam 2 tbsp",
+   "ingredients_json": [
+    {
+     "qty": "150 g",
+     "name": "white rice, cooked",
+     "role": "starch"
+    },
+    {
+     "qty": "2 tbsp",
+     "name": "jam",
+     "role": "sauce"
+    }
+   ],
+   "source": "https://nduranz.com/blogs/blogs/race-day-breakfast",
+   "source_url": "https://nduranz.com/blogs/blogs/race-day-breakfast",
+   "source_urls": [
+    "https://nduranz.com/blogs/blogs/race-day-breakfast"
+   ],
+   "why": "race-day breakfast idea: cooked rice topped with fructose powder, fruit syrup, or jam, for very low-fibre pre-race carbohydrate",
+   "evidence": "race-day breakfast idea: cooked rice topped with fructose powder, fruit syrup, or jam, for very low-fibre pre-race carbohydrate",
+   "pattern": "starch + sauce",
+   "prep": "10 min",
+   "estimate": {
+    "kcal": 310,
+    "carbs_g": 70,
+    "protein_g": 4,
+    "fat_g": 0.5,
+    "nutrition_origin": "ai_estimated",
+    "atwater_kcal": 300.7,
+    "note": "",
+    "ingredients_used": [
+     {
+      "grams": 150,
+      "usda_or_label": "USDA rice, white, long-grain, enriched, cooked"
+     },
+     {
+      "grams": 40,
+      "usda_or_label": "USDA jams and preserves (2 tbsp = 40 g)"
+     }
+    ]
+   }
+  },
+  {
+   "id": "AB-195",
+   "name": "Gluten-free oat & sunflower-butter energy bites with dried fruit",
+   "kind": "assembly",
+   "meal_type": "breakfast",
+   "servings": 1,
+   "ingredients": "certified gluten-free rolled oats 1 cup, sunflower seed butter 1/2 cup, maple syrup 1/4 cup, dried fruit 1/4 cup",
+   "ingredients_json": [
+    {
+     "qty": "1 cup",
+     "name": "certified gluten-free rolled oats",
+     "role": "starch"
+    },
+    {
+     "qty": "1/2 cup",
+     "name": "sunflower seed butter",
+     "role": "fat"
+    },
+    {
+     "qty": "1/4 cup",
+     "name": "maple syrup",
+     "role": "other"
+    },
+    {
+     "qty": "1/4 cup",
+     "name": "dried fruit",
+     "role": "fruit"
+    }
+   ],
+   "source": "Sports & Medicine Nutrition RD, \"Allergy Friendly Snacks for High School Athletes\"",
+   "source_url": null,
+   "source_urls": [],
+   "why": "\"oat energy bites combining oats, maple syrup, sunflower butter, and dried fruit\" for pre-training fuel",
+   "evidence": "\"oat energy bites combining oats, maple syrup, sunflower butter, and dried fruit\" for pre-training fuel",
+   "pattern": "starch + fat + sweetener + fruit",
+   "prep": "10 min",
+   "estimate": {
+    "kcal": 220,
+    "carbs_g": 26,
+    "protein_g": 5,
+    "fat_g": 12,
+    "nutrition_origin": "ai_estimated",
+    "atwater_kcal": 231.1,
+    "note": "batch 329 g ≈ 13 bites of 25 g; one serving = 2 bites (1/6.5 of batch); batch total 1424 kcal",
+    "ingredients_used": [
+     {
+      "grams": 81,
+      "usda_or_label": "USDA oats, rolled (1 cup = 81 g)"
+     },
+     {
+      "grams": 128,
+      "usda_or_label": "USDA sunflower seed butter (1/2 cup = 128 g)"
+     },
+     {
+      "grams": 80,
+      "usda_or_label": "USDA maple syrup (1 tbsp = 20 g)"
+     },
+     {
+      "grams": 40,
+      "usda_or_label": "USDA raisins, as \"dried fruit\" (1/4 cup = 40 g)"
+     }
+    ]
+   }
+  },
+  {
+   "id": "AD-101",
+   "name": "Rice, baked tofu & roasted broccoli bowl with sriracha",
+   "kind": "assembly",
+   "meal_type": "dinner",
+   "servings": 1,
+   "ingredients": "white rice, cooked 250 g, tofu, baked 150 g, broccoli, roasted 150 g, sriracha 1 tbsp, sesame seeds 1 tsp",
+   "ingredients_json": [
+    {
+     "qty": "250 g",
+     "name": "white rice, cooked",
+     "role": "starch"
+    },
+    {
+     "qty": "150 g",
+     "name": "tofu, baked",
+     "role": "protein"
+    },
+    {
+     "qty": "150 g",
+     "name": "broccoli, roasted",
+     "role": "veg"
+    },
+    {
+     "qty": "1 tbsp",
+     "name": "sriracha",
+     "role": "sauce"
+    },
+    {
+     "qty": "1 tsp",
+     "name": "sesame seeds",
+     "role": "fat"
+    }
+   ],
+   "source": "https://greenletes.com/plant-based-bowl-formula/ ; Greenletes, plant-based athlete/dietitian recipe site",
+   "source_url": "https://greenletes.com/plant-based-bowl-formula/",
+   "source_urls": [
+    "https://greenletes.com/plant-based-bowl-formula/"
+   ],
+   "why": "\"one of my go-to dinners (and lunches)\" -- author's plant-based bowl formula (base + protein + veg + topping + sauce), explicitly built to be swapped",
+   "evidence": "\"one of my go-to dinners (and lunches)\" -- author's plant-based bowl formula (base + protein + veg + topping + sauce), explicitly built to be swapped",
+   "pattern": "starch + protein + veg + sauce",
+   "prep": "15 min",
+   "estimate": {
+    "kcal": 630,
+    "carbs_g": 89,
+    "protein_g": 37,
+    "fat_g": 16,
+    "nutrition_origin": "ai_estimated",
+    "atwater_kcal": 649.8,
+    "note": "",
+    "ingredients_used": [
+     {
+      "grams": 250,
+      "usda_or_label": "USDA rice, white, long-grain, enriched, cooked"
+     },
+     {
+      "grams": 150,
+      "usda_or_label": "USDA tofu, raw, firm, prepared with calcium sulfate"
+     },
+     {
+      "grams": 150,
+      "usda_or_label": "USDA broccoli, cooked"
+     },
+     {
+      "grams": 16,
+      "usda_or_label": "USDA hot chile sauce, sriracha (1 tbsp = 16 g)"
+     },
+     {
+      "grams": 3,
+      "usda_or_label": "USDA sesame seeds"
+     }
+    ]
+   }
+  },
+  {
+   "id": "AD-102",
+   "name": "Quinoa, black beans & roasted sweet potato bowl with salsa",
+   "kind": "assembly",
+   "meal_type": "dinner",
+   "servings": 1,
+   "ingredients": "quinoa, cooked 200 g, black beans, canned 150 g, sweet potato, roasted 150 g, salsa 3 tbsp, avocado 1/2",
+   "ingredients_json": [
+    {
+     "qty": "200 g",
+     "name": "quinoa, cooked",
+     "role": "starch"
+    },
+    {
+     "qty": "150 g",
+     "name": "black beans, canned",
+     "role": "protein"
+    },
+    {
+     "qty": "150 g",
+     "name": "sweet potato, roasted",
+     "role": "veg"
+    },
+    {
+     "qty": "3 tbsp",
+     "name": "salsa",
+     "role": "sauce"
+    },
+    {
+     "qty": "1/2",
+     "name": "avocado",
+     "role": "fat"
+    }
+   ],
+   "source": "https://greenletes.com/plant-based-bowl-formula/ ; Greenletes, plant-based athlete/dietitian recipe site",
+   "source_url": "https://greenletes.com/plant-based-bowl-formula/",
+   "source_urls": [
+    "https://greenletes.com/plant-based-bowl-formula/"
+   ],
+   "why": "\"one of my go-to dinners (and lunches)\" -- author's plant-based bowl formula (base + protein + veg + topping + sauce), explicitly built to be swapped",
+   "evidence": "\"one of my go-to dinners (and lunches)\" -- author's plant-based bowl formula (base + protein + veg + topping + sauce), explicitly built to be swapped",
+   "pattern": "starch + protein + veg + sauce",
+   "prep": "15 min",
+   "estimate": {
+    "kcal": 640,
+    "carbs_g": 107,
+    "protein_g": 23,
+    "fat_g": 15,
+    "nutrition_origin": "ai_estimated",
+    "atwater_kcal": 653.3,
+    "note": "",
+    "ingredients_used": [
+     {
+      "grams": 200,
+      "usda_or_label": "USDA quinoa, cooked"
+     },
+     {
+      "grams": 150,
+      "usda_or_label": "USDA beans, black, canned, drained"
+     },
+     {
+      "grams": 150,
+      "usda_or_label": "USDA sweet potato, baked in skin"
+     },
+     {
+      "grams": 48,
+      "usda_or_label": "USDA sauce, salsa, ready-to-serve (3 tbsp = 48 g)"
+     },
+     {
+      "grams": 68,
+      "usda_or_label": "USDA avocados, raw (1/2 fruit = 68 g flesh)"
+     }
+    ]
+   }
+  },
+  {
+   "id": "AD-103",
+   "name": "Farro, chickpea & roasted cauliflower bowl with tahini",
+   "kind": "assembly",
+   "meal_type": "dinner",
+   "servings": 1,
+   "ingredients": "farro, cooked 200 g, chickpeas, canned 150 g, cauliflower, roasted 150 g, tahini sauce, jarred 2 tbsp",
+   "ingredients_json": [
+    {
+     "qty": "200 g",
+     "name": "farro, cooked",
+     "role": "starch"
+    },
+    {
+     "qty": "150 g",
+     "name": "chickpeas, canned",
+     "role": "protein"
+    },
+    {
+     "qty": "150 g",
+     "name": "cauliflower, roasted",
+     "role": "veg"
+    },
+    {
+     "qty": "2 tbsp",
+     "name": "tahini sauce, jarred",
+     "role": "sauce"
+    }
+   ],
+   "source": "https://greenletes.com/plant-based-bowl-formula/ ; Greenletes, plant-based athlete/dietitian recipe site",
+   "source_url": "https://greenletes.com/plant-based-bowl-formula/",
+   "source_urls": [
+    "https://greenletes.com/plant-based-bowl-formula/"
+   ],
+   "why": "\"one of my go-to dinners (and lunches)\" -- author's plant-based bowl formula (base + protein + veg + topping + sauce), explicitly built to be swapped",
+   "evidence": "\"one of my go-to dinners (and lunches)\" -- author's plant-based bowl formula (base + protein + veg + topping + sauce), explicitly built to be swapped",
+   "pattern": "starch + protein + veg + sauce",
+   "prep": "15 min",
+   "estimate": {
+    "kcal": 580,
+    "carbs_g": 97,
+    "protein_g": 26,
+    "fat_g": 13,
+    "nutrition_origin": "ai_estimated",
+    "atwater_kcal": 610.5,
+    "note": "",
+    "ingredients_used": [
+     {
+      "grams": 200,
+      "usda_or_label": "USDA spelt, cooked (no farro entry; emmer is a hulled wheat of the same profile)"
+     },
+     {
+      "grams": 150,
+      "usda_or_label": "USDA chickpeas, canned, drained, rinsed"
+     },
+     {
+      "grams": 150,
+      "usda_or_label": "USDA cauliflower, cooked"
+     },
+     {
+      "grams": 30,
+      "usda_or_label": "label, jarred tahini sauce (2 tbsp = 30 g = 80 kcal)"
+     }
+    ]
+   }
+  },
+  {
+   "id": "AD-104",
+   "name": "Bulgur, edamame & roasted beet bowl with balsamic vinaigrette",
+   "kind": "assembly",
+   "meal_type": "dinner",
+   "servings": 1,
+   "ingredients": "bulgur wheat, cooked 200 g, edamame, shelled 120 g, beets, roasted 120 g, balsamic vinaigrette, bottled 2 tbsp",
+   "ingredients_json": [
+    {
+     "qty": "200 g",
+     "name": "bulgur wheat, cooked",
+     "role": "starch"
+    },
+    {
+     "qty": "120 g",
+     "name": "edamame, shelled",
+     "role": "protein"
+    },
+    {
+     "qty": "120 g",
+     "name": "beets, roasted",
+     "role": "veg"
+    },
+    {
+     "qty": "2 tbsp",
+     "name": "balsamic vinaigrette, bottled",
+     "role": "sauce"
+    }
+   ],
+   "source": "https://greenletes.com/plant-based-bowl-formula/ ; Greenletes, plant-based athlete/dietitian recipe site",
+   "source_url": "https://greenletes.com/plant-based-bowl-formula/",
+   "source_urls": [
+    "https://greenletes.com/plant-based-bowl-formula/"
+   ],
+   "why": "\"one of my go-to dinners (and lunches)\" -- author's plant-based bowl formula (base + protein + veg + topping + sauce), explicitly built to be swapped",
+   "evidence": "\"one of my go-to dinners (and lunches)\" -- author's plant-based bowl formula (base + protein + veg + topping + sauce), explicitly built to be swapped",
+   "pattern": "starch + protein + veg + sauce",
+   "prep": "15 min",
+   "estimate": {
+    "kcal": 450,
+    "carbs_g": 63,
+    "protein_g": 23,
+    "fat_g": 16,
+    "nutrition_origin": "ai_estimated",
+    "atwater_kcal": 484.5,
+    "note": "",
+    "ingredients_used": [
+     {
+      "grams": 200,
+      "usda_or_label": "USDA bulgur, cooked"
+     },
+     {
+      "grams": 120,
+      "usda_or_label": "USDA edamame, frozen, prepared"
+     },
+     {
+      "grams": 120,
+      "usda_or_label": "USDA beets, cooked"
+     },
+     {
+      "grams": 30,
+      "usda_or_label": "label, bottled balsamic vinaigrette (2 tbsp = 30 g = 90 kcal)"
+     }
+    ]
+   }
+  },
+  {
+   "id": "AD-105",
+   "name": "Wheatberries, white bean & raw cabbage-carrot bowl with hummus",
+   "kind": "assembly",
+   "meal_type": "dinner",
+   "servings": 1,
+   "ingredients": "wheatberries, cooked 200 g, white beans, canned 150 g, cabbage, shredded 80 g, carrot, shredded 60 g, hummus 3 tbsp",
+   "ingredients_json": [
+    {
+     "qty": "200 g",
+     "name": "wheatberries, cooked",
+     "role": "starch"
+    },
+    {
+     "qty": "150 g",
+     "name": "white beans, canned",
+     "role": "protein"
+    },
+    {
+     "qty": "80 g",
+     "name": "cabbage, shredded",
+     "role": "veg"
+    },
+    {
+     "qty": "60 g",
+     "name": "carrot, shredded",
+     "role": "veg"
+    },
+    {
+     "qty": "3 tbsp",
+     "name": "hummus",
+     "role": "sauce"
+    }
+   ],
+   "source": "https://greenletes.com/plant-based-bowl-formula/ ; Greenletes, plant-based athlete/dietitian recipe site",
+   "source_url": "https://greenletes.com/plant-based-bowl-formula/",
+   "source_urls": [
+    "https://greenletes.com/plant-based-bowl-formula/"
+   ],
+   "why": "\"one of my go-to dinners (and lunches)\" -- author's plant-based bowl formula (base + protein + veg + topping + sauce), explicitly built to be swapped",
+   "evidence": "\"one of my go-to dinners (and lunches)\" -- author's plant-based bowl formula (base + protein + veg + topping + sauce), explicitly built to be swapped",
+   "pattern": "starch + protein + veg + sauce",
+   "prep": "15 min",
+   "estimate": {
+    "kcal": 550,
+    "carbs_g": 105,
+    "protein_g": 26,
+    "fat_g": 6,
+    "nutrition_origin": "ai_estimated",
+    "atwater_kcal": 581.0,
+    "note": "",
+    "ingredients_used": [
+     {
+      "grams": 200,
+      "usda_or_label": "USDA wheat, hard red winter (dry) scaled to cooked at 2.5x weight"
+     },
+     {
+      "grams": 150,
+      "usda_or_label": "USDA beans, white, canned"
+     },
+     {
+      "grams": 80,
+      "usda_or_label": "USDA cabbage, raw"
+     },
+     {
+      "grams": 60,
+      "usda_or_label": "USDA carrots, raw"
+     },
+     {
+      "grams": 45,
+      "usda_or_label": "USDA hummus, commercial (3 tbsp = 45 g)"
+     }
+    ]
+   }
+  },
+  {
+   "id": "AD-106",
+   "name": "Rice, kidney bean & roasted green bean bowl with teriyaki",
+   "kind": "assembly",
+   "meal_type": "dinner",
+   "servings": 1,
+   "ingredients": "brown rice, cooked 250 g, kidney beans, canned 150 g, green beans, roasted 150 g, teriyaki sauce, bottled 2 tbsp",
+   "ingredients_json": [
+    {
+     "qty": "250 g",
+     "name": "brown rice, cooked",
+     "role": "starch"
+    },
+    {
+     "qty": "150 g",
+     "name": "kidney beans, canned",
+     "role": "protein"
+    },
+    {
+     "qty": "150 g",
+     "name": "green beans, roasted",
+     "role": "veg"
+    },
+    {
+     "qty": "2 tbsp",
+     "name": "teriyaki sauce, bottled",
+     "role": "sauce"
+    }
+   ],
+   "source": "https://greenletes.com/plant-based-bowl-formula/ ; Greenletes, plant-based athlete/dietitian recipe site",
+   "source_url": "https://greenletes.com/plant-based-bowl-formula/",
+   "source_urls": [
+    "https://greenletes.com/plant-based-bowl-formula/"
+   ],
+   "why": "\"one of my go-to dinners (and lunches)\" -- author's plant-based bowl formula (base + protein + veg + topping + sauce), explicitly built to be swapped",
+   "evidence": "\"one of my go-to dinners (and lunches)\" -- author's plant-based bowl formula (base + protein + veg + topping + sauce), explicitly built to be swapped",
+   "pattern": "starch + protein + veg + sauce",
+   "prep": "15 min",
+   "estimate": {
+    "kcal": 530,
+    "carbs_g": 105,
+    "protein_g": 22,
+    "fat_g": 3,
+    "nutrition_origin": "ai_estimated",
+    "atwater_kcal": 537.4,
+    "note": "",
+    "ingredients_used": [
+     {
+      "grams": 250,
+      "usda_or_label": "USDA rice, brown, long-grain, cooked"
+     },
+     {
+      "grams": 150,
+      "usda_or_label": "USDA beans, kidney, red, canned, drained"
+     },
+     {
+      "grams": 150,
+      "usda_or_label": "USDA snap beans, green, cooked"
+     },
+     {
+      "grams": 36,
+      "usda_or_label": "USDA sauce, teriyaki, ready-to-serve (2 tbsp = 36 g)"
+     }
+    ]
+   }
+  },
+  {
+   "id": "AD-107",
+   "name": "Quinoa, tempeh & roasted pepper-onion bowl with sriracha",
+   "kind": "assembly",
+   "meal_type": "dinner",
+   "servings": 1,
+   "ingredients": "quinoa, cooked 200 g, tempeh, pan-seared 150 g, bell pepper, roasted 80 g, onion, roasted 60 g, sriracha 1 tbsp",
+   "ingredients_json": [
+    {
+     "qty": "200 g",
+     "name": "quinoa, cooked",
+     "role": "starch"
+    },
+    {
+     "qty": "150 g",
+     "name": "tempeh, pan-seared",
+     "role": "protein"
+    },
+    {
+     "qty": "80 g",
+     "name": "bell pepper, roasted",
+     "role": "veg"
+    },
+    {
+     "qty": "60 g",
+     "name": "onion, roasted",
+     "role": "veg"
+    },
+    {
+     "qty": "1 tbsp",
+     "name": "sriracha",
+     "role": "sauce"
+    }
+   ],
+   "source": "https://greenletes.com/plant-based-bowl-formula/ ; Greenletes, plant-based athlete/dietitian recipe site",
+   "source_url": "https://greenletes.com/plant-based-bowl-formula/",
+   "source_urls": [
+    "https://greenletes.com/plant-based-bowl-formula/"
+   ],
+   "why": "\"one of my go-to dinners (and lunches)\" -- author's plant-based bowl formula (base + protein + veg + topping + sauce), explicitly built to be swapped",
+   "evidence": "\"one of my go-to dinners (and lunches)\" -- author's plant-based bowl formula (base + protein + veg + topping + sauce), explicitly built to be swapped",
+   "pattern": "starch + protein + veg + sauce",
+   "prep": "15 min",
+   "estimate": {
+    "kcal": 590,
+    "carbs_g": 68,
+    "protein_g": 41,
+    "fat_g": 21,
+    "nutrition_origin": "ai_estimated",
+    "atwater_kcal": 621.2,
+    "note": "",
+    "ingredients_used": [
+     {
+      "grams": 200,
+      "usda_or_label": "USDA quinoa, cooked"
+     },
+     {
+      "grams": 150,
+      "usda_or_label": "USDA tempeh"
+     },
+     {
+      "grams": 80,
+      "usda_or_label": "USDA peppers, sweet, red, raw"
+     },
+     {
+      "grams": 60,
+      "usda_or_label": "USDA onions, cooked"
+     },
+     {
+      "grams": 16,
+      "usda_or_label": "USDA hot chile sauce, sriracha (1 tbsp = 16 g)"
+     }
+    ]
+   }
+  },
+  {
+   "id": "AD-108",
+   "name": "Spelt, lentil & raw pepper-carrot bowl with balsamic",
+   "kind": "assembly",
+   "meal_type": "dinner",
+   "servings": 1,
+   "ingredients": "spelt, cooked 200 g, green lentils, canned 150 g, bell pepper, raw 60 g, carrot, raw 60 g, balsamic vinaigrette, bottled 2 tbsp",
+   "ingredients_json": [
+    {
+     "qty": "200 g",
+     "name": "spelt, cooked",
+     "role": "starch"
+    },
+    {
+     "qty": "150 g",
+     "name": "green lentils, canned",
+     "role": "protein"
+    },
+    {
+     "qty": "60 g",
+     "name": "bell pepper, raw",
+     "role": "veg"
+    },
+    {
+     "qty": "60 g",
+     "name": "carrot, raw",
+     "role": "veg"
+    },
+    {
+     "qty": "2 tbsp",
+     "name": "balsamic vinaigrette, bottled",
+     "role": "sauce"
+    }
+   ],
+   "source": "https://greenletes.com/plant-based-bowl-formula/ ; Greenletes, plant-based athlete/dietitian recipe site",
+   "source_url": "https://greenletes.com/plant-based-bowl-formula/",
+   "source_urls": [
+    "https://greenletes.com/plant-based-bowl-formula/"
+   ],
+   "why": "\"one of my go-to dinners (and lunches)\" -- author's plant-based bowl formula (base + protein + veg + topping + sauce), explicitly built to be swapped",
+   "evidence": "\"one of my go-to dinners (and lunches)\" -- author's plant-based bowl formula (base + protein + veg + topping + sauce), explicitly built to be swapped",
+   "pattern": "starch + protein + veg + sauce",
+   "prep": "15 min",
+   "estimate": {
+    "kcal": 560,
+    "carbs_g": 95,
+    "protein_g": 26,
+    "fat_g": 12,
+    "nutrition_origin": "ai_estimated",
+    "atwater_kcal": 589.1,
+    "note": "",
+    "ingredients_used": [
+     {
+      "grams": 200,
+      "usda_or_label": "USDA spelt, cooked"
+     },
+     {
+      "grams": 150,
+      "usda_or_label": "USDA lentils, cooked"
+     },
+     {
+      "grams": 60,
+      "usda_or_label": "USDA peppers, sweet, red, raw"
+     },
+     {
+      "grams": 60,
+      "usda_or_label": "USDA carrots, raw"
+     },
+     {
+      "grams": 30,
+      "usda_or_label": "label, bottled balsamic vinaigrette (2 tbsp = 30 g = 90 kcal)"
+     }
+    ]
+   }
+  },
+  {
+   "id": "AD-109",
+   "name": "Rice, seitan & roasted broccoli bowl with tzatziki (dairy-free)",
+   "kind": "assembly",
+   "meal_type": "dinner",
+   "servings": 1,
+   "ingredients": "white rice, cooked 250 g, seitan, sliced 150 g, broccoli, roasted 150 g, dairy-free tzatziki, jarred 3 tbsp",
+   "ingredients_json": [
+    {
+     "qty": "250 g",
+     "name": "white rice, cooked",
+     "role": "starch"
+    },
+    {
+     "qty": "150 g",
+     "name": "seitan, sliced",
+     "role": "protein"
+    },
+    {
+     "qty": "150 g",
+     "name": "broccoli, roasted",
+     "role": "veg"
+    },
+    {
+     "qty": "3 tbsp",
+     "name": "dairy-free tzatziki, jarred",
+     "role": "sauce"
+    }
+   ],
+   "source": "https://greenletes.com/plant-based-bowl-formula/ ; Greenletes, plant-based athlete/dietitian recipe site",
+   "source_url": "https://greenletes.com/plant-based-bowl-formula/",
+   "source_urls": [
+    "https://greenletes.com/plant-based-bowl-formula/"
+   ],
+   "why": "\"one of my go-to dinners (and lunches)\" -- author's plant-based bowl formula (base + protein + veg + topping + sauce), explicitly built to be swapped",
+   "evidence": "\"one of my go-to dinners (and lunches)\" -- author's plant-based bowl formula (base + protein + veg + topping + sauce), explicitly built to be swapped",
+   "pattern": "starch + protein + veg + sauce",
+   "prep": "15 min",
+   "estimate": {
+    "kcal": 620,
+    "carbs_g": 92,
+    "protein_g": 47,
+    "fat_g": 9,
+    "nutrition_origin": "ai_estimated",
+    "atwater_kcal": 634.0,
+    "note": "",
+    "ingredients_used": [
+     {
+      "grams": 250,
+      "usda_or_label": "USDA rice, white, long-grain, enriched, cooked"
+     },
+     {
+      "grams": 150,
+      "usda_or_label": "label, packaged seitan (no USDA entry)"
+     },
+     {
+      "grams": 150,
+      "usda_or_label": "USDA broccoli, cooked"
+     },
+     {
+      "grams": 45,
+      "usda_or_label": "label, dairy-free tzatziki (3 tbsp = 45 g = 60 kcal)"
+     }
+    ]
+   }
+  },
+  {
+   "id": "AD-110",
+   "name": "Amaranth, black bean & roasted sweet potato bowl with pico de gallo",
+   "kind": "assembly",
+   "meal_type": "dinner",
+   "servings": 1,
+   "ingredients": "amaranth, cooked 200 g, black beans, canned 150 g, sweet potato, roasted 150 g, pico de gallo, jarred 3 tbsp",
+   "ingredients_json": [
+    {
+     "qty": "200 g",
+     "name": "amaranth, cooked",
+     "role": "starch"
+    },
+    {
+     "qty": "150 g",
+     "name": "black beans, canned",
+     "role": "protein"
+    },
+    {
+     "qty": "150 g",
+     "name": "sweet potato, roasted",
+     "role": "veg"
+    },
+    {
+     "qty": "3 tbsp",
+     "name": "pico de gallo, jarred",
+     "role": "sauce"
+    }
+   ],
+   "source": "https://greenletes.com/plant-based-bowl-formula/ ; Greenletes, plant-based athlete/dietitian recipe site",
+   "source_url": "https://greenletes.com/plant-based-bowl-formula/",
+   "source_urls": [
+    "https://greenletes.com/plant-based-bowl-formula/"
+   ],
+   "why": "\"one of my go-to dinners (and lunches)\" -- author's plant-based bowl formula (base + protein + veg + topping + sauce), explicitly built to be swapped",
+   "evidence": "\"one of my go-to dinners (and lunches)\" -- author's plant-based bowl formula (base + protein + veg + topping + sauce), explicitly built to be swapped",
+   "pattern": "starch + protein + veg + sauce",
+   "prep": "15 min",
+   "estimate": {
+    "kcal": 490,
+    "carbs_g": 97,
+    "protein_g": 20,
+    "fat_g": 4,
+    "nutrition_origin": "ai_estimated",
+    "atwater_kcal": 503.8,
+    "note": "",
+    "ingredients_used": [
+     {
+      "grams": 200,
+      "usda_or_label": "USDA amaranth grain, cooked"
+     },
+     {
+      "grams": 150,
+      "usda_or_label": "USDA beans, black, canned, drained"
+     },
+     {
+      "grams": 150,
+      "usda_or_label": "USDA sweet potato, baked in skin"
+     },
+     {
+      "grams": 48,
+      "usda_or_label": "USDA sauce, salsa, ready-to-serve (3 tbsp = 48 g)"
+     }
+    ]
+   }
+  },
+  {
+   "id": "AD-111",
+   "name": "Quinoa, chickpea & roasted green bean bowl with hummus and pumpkin seeds",
+   "kind": "assembly",
+   "meal_type": "dinner",
+   "servings": 1,
+   "ingredients": "quinoa, cooked 200 g, chickpeas, canned 150 g, green beans, roasted 150 g, hummus 3 tbsp, pumpkin seeds 1 tbsp",
+   "ingredients_json": [
+    {
+     "qty": "200 g",
+     "name": "quinoa, cooked",
+     "role": "starch"
+    },
+    {
+     "qty": "150 g",
+     "name": "chickpeas, canned",
+     "role": "protein"
+    },
+    {
+     "qty": "150 g",
+     "name": "green beans, roasted",
+     "role": "veg"
+    },
+    {
+     "qty": "3 tbsp",
+     "name": "hummus",
+     "role": "sauce"
+    },
+    {
+     "qty": "1 tbsp",
+     "name": "pumpkin seeds",
+     "role": "fat"
+    }
+   ],
+   "source": "https://greenletes.com/plant-based-bowl-formula/ ; Greenletes, plant-based athlete/dietitian recipe site",
+   "source_url": "https://greenletes.com/plant-based-bowl-formula/",
+   "source_urls": [
+    "https://greenletes.com/plant-based-bowl-formula/"
+   ],
+   "why": "\"one of my go-to dinners (and lunches)\" -- author's plant-based bowl formula (base + protein + veg + topping + sauce), explicitly built to be swapped",
+   "evidence": "\"one of my go-to dinners (and lunches)\" -- author's plant-based bowl formula (base + protein + veg + topping + sauce), explicitly built to be swapped",
+   "pattern": "starch + protein + veg + fat + sauce",
+   "prep": "15 min",
+   "estimate": {
+    "kcal": 630,
+    "carbs_g": 96,
+    "protein_g": 28,
+    "fat_g": 17,
+    "nutrition_origin": "ai_estimated",
+    "atwater_kcal": 646.7,
+    "note": "",
+    "ingredients_used": [
+     {
+      "grams": 200,
+      "usda_or_label": "USDA quinoa, cooked"
+     },
+     {
+      "grams": 150,
+      "usda_or_label": "USDA chickpeas, canned, drained, rinsed"
+     },
+     {
+      "grams": 150,
+      "usda_or_label": "USDA snap beans, green, cooked"
+     },
+     {
+      "grams": 45,
+      "usda_or_label": "USDA hummus, commercial (3 tbsp = 45 g)"
+     },
+     {
+      "grams": 9,
+      "usda_or_label": "USDA pumpkin seeds, dried (1 tbsp = 9 g)"
+     }
+    ]
+   }
+  },
+  {
+   "id": "AD-112",
+   "name": "Rice, edamame & roasted cauliflower bowl with peanut sauce",
+   "kind": "assembly",
+   "meal_type": "dinner",
+   "servings": 1,
+   "ingredients": "white rice, cooked 250 g, edamame, shelled 120 g, cauliflower, roasted 150 g, peanut sauce, jarred 2 tbsp",
+   "ingredients_json": [
+    {
+     "qty": "250 g",
+     "name": "white rice, cooked",
+     "role": "starch"
+    },
+    {
+     "qty": "120 g",
+     "name": "edamame, shelled",
+     "role": "protein"
+    },
+    {
+     "qty": "150 g",
+     "name": "cauliflower, roasted",
+     "role": "veg"
+    },
+    {
+     "qty": "2 tbsp",
+     "name": "peanut sauce, jarred",
+     "role": "sauce"
+    }
+   ],
+   "source": "https://greenletes.com/plant-based-bowl-formula/ ; Greenletes, plant-based athlete/dietitian recipe site",
+   "source_url": "https://greenletes.com/plant-based-bowl-formula/",
+   "source_urls": [
+    "https://greenletes.com/plant-based-bowl-formula/"
+   ],
+   "why": "\"one of my go-to dinners (and lunches)\" -- author's plant-based bowl formula (base + protein + veg + topping + sauce), explicitly built to be swapped",
+   "evidence": "\"one of my go-to dinners (and lunches)\" -- author's plant-based bowl formula (base + protein + veg + topping + sauce), explicitly built to be swapped",
+   "pattern": "starch + protein + veg + sauce",
+   "prep": "15 min",
+   "estimate": {
+    "kcal": 600,
+    "carbs_g": 96,
+    "protein_g": 27,
+    "fat_g": 13,
+    "nutrition_origin": "ai_estimated",
+    "atwater_kcal": 611.2,
+    "note": "",
+    "ingredients_used": [
+     {
+      "grams": 250,
+      "usda_or_label": "USDA rice, white, long-grain, enriched, cooked"
+     },
+     {
+      "grams": 120,
+      "usda_or_label": "USDA edamame, frozen, prepared"
+     },
+     {
+      "grams": 150,
+      "usda_or_label": "USDA cauliflower, cooked"
+     },
+     {
+      "grams": 36,
+      "usda_or_label": "label, jarred peanut sauce (2 tbsp = 36 g = 90 kcal)"
+     }
+    ]
+   }
+  },
+  {
+   "id": "AD-113",
+   "name": "Farro, white bean & roasted beet bowl with pesto",
+   "kind": "assembly",
+   "meal_type": "dinner",
+   "servings": 1,
+   "ingredients": "farro, cooked 200 g, white beans, canned 150 g, beets, roasted 120 g, pesto, jarred 2 tbsp",
+   "ingredients_json": [
+    {
+     "qty": "200 g",
+     "name": "farro, cooked",
+     "role": "starch"
+    },
+    {
+     "qty": "150 g",
+     "name": "white beans, canned",
+     "role": "protein"
+    },
+    {
+     "qty": "120 g",
+     "name": "beets, roasted",
+     "role": "veg"
+    },
+    {
+     "qty": "2 tbsp",
+     "name": "pesto, jarred",
+     "role": "sauce"
+    }
+   ],
+   "source": "https://greenletes.com/plant-based-bowl-formula/ ; Greenletes, plant-based athlete/dietitian recipe site",
+   "source_url": "https://greenletes.com/plant-based-bowl-formula/",
+   "source_urls": [
+    "https://greenletes.com/plant-based-bowl-formula/"
+   ],
+   "why": "\"one of my go-to dinners (and lunches)\" -- author's plant-based bowl formula (base + protein + veg + topping + sauce), explicitly built to be swapped",
+   "evidence": "\"one of my go-to dinners (and lunches)\" -- author's plant-based bowl formula (base + protein + veg + topping + sauce), explicitly built to be swapped",
+   "pattern": "starch + protein + veg + sauce",
+   "prep": "15 min",
+   "estimate": {
+    "kcal": 610,
+    "carbs_g": 99,
+    "protein_g": 26,
+    "fat_g": 15,
+    "nutrition_origin": "ai_estimated",
+    "atwater_kcal": 641.1,
+    "note": "",
+    "ingredients_used": [
+     {
+      "grams": 200,
+      "usda_or_label": "USDA spelt, cooked (no farro entry; emmer is a hulled wheat of the same profile)"
+     },
+     {
+      "grams": 150,
+      "usda_or_label": "USDA beans, white, canned"
+     },
+     {
+      "grams": 120,
+      "usda_or_label": "USDA beets, cooked"
+     },
+     {
+      "grams": 30,
+      "usda_or_label": "label, jarred basil pesto (2 tbsp = 30 g = 130 kcal)"
+     }
+    ]
+   }
+  },
+  {
+   "id": "AD-114",
+   "name": "Bulgur, black bean & raw cabbage bowl with sriracha and almonds",
+   "kind": "assembly",
+   "meal_type": "dinner",
+   "servings": 1,
+   "ingredients": "bulgur wheat, cooked 200 g, black beans, canned 150 g, cabbage, shredded 100 g, sriracha 1 tbsp, almonds, sliced 1 tbsp",
+   "ingredients_json": [
+    {
+     "qty": "200 g",
+     "name": "bulgur wheat, cooked",
+     "role": "starch"
+    },
+    {
+     "qty": "150 g",
+     "name": "black beans, canned",
+     "role": "protein"
+    },
+    {
+     "qty": "100 g",
+     "name": "cabbage, shredded",
+     "role": "veg"
+    },
+    {
+     "qty": "1 tbsp",
+     "name": "sriracha",
+     "role": "sauce"
+    },
+    {
+     "qty": "1 tbsp",
+     "name": "almonds, sliced",
+     "role": "fat"
+    }
+   ],
+   "source": "https://greenletes.com/plant-based-bowl-formula/ ; Greenletes, plant-based athlete/dietitian recipe site",
+   "source_url": "https://greenletes.com/plant-based-bowl-formula/",
+   "source_urls": [
+    "https://greenletes.com/plant-based-bowl-formula/"
+   ],
+   "why": "\"one of my go-to dinners (and lunches)\" -- author's plant-based bowl formula (base + protein + veg + topping + sauce), explicitly built to be swapped",
+   "evidence": "\"one of my go-to dinners (and lunches)\" -- author's plant-based bowl formula (base + protein + veg + topping + sauce), explicitly built to be swapped",
+   "pattern": "starch + protein + veg + fat + sauce",
+   "prep": "15 min",
+   "estimate": {
+    "kcal": 380,
+    "carbs_g": 72,
+    "protein_g": 18,
+    "fat_g": 4,
+    "nutrition_origin": "ai_estimated",
+    "atwater_kcal": 398.0,
+    "note": "",
+    "ingredients_used": [
+     {
+      "grams": 200,
+      "usda_or_label": "USDA bulgur, cooked"
+     },
+     {
+      "grams": 150,
+      "usda_or_label": "USDA beans, black, canned, drained"
+     },
+     {
+      "grams": 100,
+      "usda_or_label": "USDA cabbage, raw"
+     },
+     {
+      "grams": 16,
+      "usda_or_label": "USDA hot chile sauce, sriracha (1 tbsp = 16 g)"
+     },
+     {
+      "grams": 6,
+      "usda_or_label": "USDA almonds (1 tbsp sliced = 6 g)"
+     }
+    ]
+   }
+  },
+  {
+   "id": "AD-115",
+   "name": "Quinoa, kidney bean & roasted pepper-carrot bowl with salsa and radish",
+   "kind": "assembly",
+   "meal_type": "dinner",
+   "servings": 1,
+   "ingredients": "quinoa, cooked 200 g, kidney beans, canned 150 g, bell pepper, roasted 60 g, carrot, roasted 60 g, salsa 3 tbsp, radish, sliced 30 g",
+   "ingredients_json": [
+    {
+     "qty": "200 g",
+     "name": "quinoa, cooked",
+     "role": "starch"
+    },
+    {
+     "qty": "150 g",
+     "name": "kidney beans, canned",
+     "role": "protein"
+    },
+    {
+     "qty": "60 g",
+     "name": "bell pepper, roasted",
+     "role": "veg"
+    },
+    {
+     "qty": "60 g",
+     "name": "carrot, roasted",
+     "role": "veg"
+    },
+    {
+     "qty": "3 tbsp",
+     "name": "salsa",
+     "role": "sauce"
+    },
+    {
+     "qty": "30 g",
+     "name": "radish, sliced",
+     "role": "veg"
+    }
+   ],
+   "source": "https://greenletes.com/plant-based-bowl-formula/ ; Greenletes, plant-based athlete/dietitian recipe site",
+   "source_url": "https://greenletes.com/plant-based-bowl-formula/",
+   "source_urls": [
+    "https://greenletes.com/plant-based-bowl-formula/"
+   ],
+   "why": "\"one of my go-to dinners (and lunches)\" -- author's plant-based bowl formula (base + protein + veg + topping + sauce), explicitly built to be swapped",
+   "evidence": "\"one of my go-to dinners (and lunches)\" -- author's plant-based bowl formula (base + protein + veg + topping + sauce), explicitly built to be swapped",
+   "pattern": "starch + protein + veg + sauce",
+   "prep": "15 min",
+   "estimate": {
+    "kcal": 470,
+    "carbs_g": 85,
+    "protein_g": 22,
+    "fat_g": 5,
+    "nutrition_origin": "ai_estimated",
+    "atwater_kcal": 470.1,
+    "note": "",
+    "ingredients_used": [
+     {
+      "grams": 200,
+      "usda_or_label": "USDA quinoa, cooked"
+     },
+     {
+      "grams": 150,
+      "usda_or_label": "USDA beans, kidney, red, canned, drained"
+     },
+     {
+      "grams": 60,
+      "usda_or_label": "USDA peppers, sweet, red, raw"
+     },
+     {
+      "grams": 60,
+      "usda_or_label": "USDA carrots, cooked"
+     },
+     {
+      "grams": 48,
+      "usda_or_label": "USDA sauce, salsa, ready-to-serve (3 tbsp = 48 g)"
+     },
+     {
+      "grams": 30,
+      "usda_or_label": "USDA radishes, raw"
+     }
+    ]
+   }
+  },
+  {
+   "id": "AD-116",
+   "name": "Brown rice, broccoli & black bean bowl",
+   "kind": "assembly",
+   "meal_type": "dinner",
+   "servings": 1,
+   "ingredients": "brown rice, cooked 250 g, broccoli, steamed 150 g, black beans, canned 150 g, olive oil 1 tbsp",
+   "ingredients_json": [
+    {
+     "qty": "250 g",
+     "name": "brown rice, cooked",
+     "role": "starch"
+    },
+    {
+     "qty": "150 g",
+     "name": "broccoli, steamed",
+     "role": "veg"
+    },
+    {
+     "qty": "150 g",
+     "name": "black beans, canned",
+     "role": "protein"
+    },
+    {
+     "qty": "1 tbsp",
+     "name": "olive oil",
+     "role": "fat"
+    }
+   ],
+   "source": "https://www.nomeatathlete.com/vegetarian-diet-athletes/ ; No Meat Athlete podcast (Matt Frazier, vegan ultrarunner, and Doug Hay)",
+   "source_url": "https://www.nomeatathlete.com/vegetarian-diet-athletes/",
+   "source_urls": [
+    "https://www.nomeatathlete.com/vegetarian-diet-athletes/"
+   ],
+   "why": "Matt and Doug describe their \"favorite healthy dinner\" as the grain/green/bean meal, \"which can be as simple as a bean and veggie bowl with brown rice\"",
+   "evidence": "Matt and Doug describe their \"favorite healthy dinner\" as the grain/green/bean meal, \"which can be as simple as a bean and veggie bowl with brown rice\"",
+   "pattern": "starch + veg + protein",
+   "prep": "15 min",
+   "estimate": {
+    "kcal": 590,
+    "carbs_g": 94,
+    "protein_g": 18,
+    "fat_g": 17,
+    "nutrition_origin": "ai_estimated",
+    "atwater_kcal": 600.2,
+    "note": "",
+    "ingredients_used": [
+     {
+      "grams": 250,
+      "usda_or_label": "USDA rice, brown, long-grain, cooked"
+     },
+     {
+      "grams": 150,
+      "usda_or_label": "USDA broccoli, cooked"
+     },
+     {
+      "grams": 150,
+      "usda_or_label": "USDA beans, black, canned, drained"
+     },
+     {
+      "grams": 13.5,
+      "usda_or_label": "USDA olive oil (1 tbsp = 13.5 g)"
+     }
+    ]
+   }
+  },
+  {
+   "id": "AD-117",
+   "name": "Brown rice, kale & chickpea bowl",
+   "kind": "assembly",
+   "meal_type": "dinner",
+   "servings": 1,
+   "ingredients": "brown rice, cooked 250 g, kale, sauteed 100 g, chickpeas, canned 150 g, olive oil 1 tbsp",
+   "ingredients_json": [
+    {
+     "qty": "250 g",
+     "name": "brown rice, cooked",
+     "role": "starch"
+    },
+    {
+     "qty": "100 g",
+     "name": "kale, sauteed",
+     "role": "veg"
+    },
+    {
+     "qty": "150 g",
+     "name": "chickpeas, canned",
+     "role": "protein"
+    },
+    {
+     "qty": "1 tbsp",
+     "name": "olive oil",
+     "role": "fat"
+    }
+   ],
+   "source": "https://www.nomeatathlete.com/vegetarian-diet-athletes/ ; No Meat Athlete podcast (Matt Frazier, vegan ultrarunner, and Doug Hay)",
+   "source_url": "https://www.nomeatathlete.com/vegetarian-diet-athletes/",
+   "source_urls": [
+    "https://www.nomeatathlete.com/vegetarian-diet-athletes/"
+   ],
+   "why": "Matt and Doug describe their \"favorite healthy dinner\" as the grain/green/bean meal, \"which can be as simple as a bean and veggie bowl with brown rice\"",
+   "evidence": "Matt and Doug describe their \"favorite healthy dinner\" as the grain/green/bean meal, \"which can be as simple as a bean and veggie bowl with brown rice\"",
+   "pattern": "starch + veg + protein",
+   "prep": "15 min",
+   "estimate": {
+    "kcal": 640,
+    "carbs_g": 98,
+    "protein_g": 18,
+    "fat_g": 20,
+    "nutrition_origin": "ai_estimated",
+    "atwater_kcal": 641.9,
+    "note": "",
+    "ingredients_used": [
+     {
+      "grams": 250,
+      "usda_or_label": "USDA rice, brown, long-grain, cooked"
+     },
+     {
+      "grams": 100,
+      "usda_or_label": "USDA kale, cooked"
+     },
+     {
+      "grams": 150,
+      "usda_or_label": "USDA chickpeas, canned, drained, rinsed"
+     },
+     {
+      "grams": 13.5,
+      "usda_or_label": "USDA olive oil (1 tbsp = 13.5 g)"
+     }
+    ]
+   }
+  },
+  {
+   "id": "AD-118",
+   "name": "Farro, spinach & white bean bowl",
+   "kind": "assembly",
+   "meal_type": "dinner",
+   "servings": 1,
+   "ingredients": "farro, cooked 200 g, spinach, sauteed 100 g, white beans, canned 150 g, olive oil 1 tbsp",
+   "ingredients_json": [
+    {
+     "qty": "200 g",
+     "name": "farro, cooked",
+     "role": "starch"
+    },
+    {
+     "qty": "100 g",
+     "name": "spinach, sauteed",
+     "role": "veg"
+    },
+    {
+     "qty": "150 g",
+     "name": "white beans, canned",
+     "role": "protein"
+    },
+    {
+     "qty": "1 tbsp",
+     "name": "olive oil",
+     "role": "fat"
+    }
+   ],
+   "source": "https://www.nomeatathlete.com/vegetarian-diet-athletes/ ; No Meat Athlete podcast (Matt Frazier, vegan ultrarunner, and Doug Hay)",
+   "source_url": "https://www.nomeatathlete.com/vegetarian-diet-athletes/",
+   "source_urls": [
+    "https://www.nomeatathlete.com/vegetarian-diet-athletes/"
+   ],
+   "why": "Matt and Doug describe their \"favorite healthy dinner\" as the grain/green/bean meal, \"which can be as simple as a bean and veggie bowl with brown rice\"",
+   "evidence": "Matt and Doug describe their \"favorite healthy dinner\" as the grain/green/bean meal, \"which can be as simple as a bean and veggie bowl with brown rice\"",
+   "pattern": "starch + veg + protein",
+   "prep": "15 min",
+   "estimate": {
+    "kcal": 570,
+    "carbs_g": 88,
+    "protein_g": 25,
+    "fat_g": 16,
+    "nutrition_origin": "ai_estimated",
+    "atwater_kcal": 597.2,
+    "note": "",
+    "ingredients_used": [
+     {
+      "grams": 200,
+      "usda_or_label": "USDA spelt, cooked (no farro entry; emmer is a hulled wheat of the same profile)"
+     },
+     {
+      "grams": 100,
+      "usda_or_label": "USDA spinach, cooked"
+     },
+     {
+      "grams": 150,
+      "usda_or_label": "USDA beans, white, canned"
+     },
+     {
+      "grams": 13.5,
+      "usda_or_label": "USDA olive oil (1 tbsp = 13.5 g)"
+     }
+    ]
+   }
+  },
+  {
+   "id": "AD-119",
+   "name": "Brown rice, green beans & kidney bean bowl",
+   "kind": "assembly",
+   "meal_type": "dinner",
+   "servings": 1,
+   "ingredients": "brown rice, cooked 250 g, green beans, steamed 150 g, kidney beans, canned 150 g, olive oil 1 tbsp",
+   "ingredients_json": [
+    {
+     "qty": "250 g",
+     "name": "brown rice, cooked",
+     "role": "starch"
+    },
+    {
+     "qty": "150 g",
+     "name": "green beans, steamed",
+     "role": "veg"
+    },
+    {
+     "qty": "150 g",
+     "name": "kidney beans, canned",
+     "role": "protein"
+    },
+    {
+     "qty": "1 tbsp",
+     "name": "olive oil",
+     "role": "fat"
+    }
+   ],
+   "source": "https://www.nomeatathlete.com/vegetarian-diet-athletes/ ; No Meat Athlete podcast (Matt Frazier, vegan ultrarunner, and Doug Hay)",
+   "source_url": "https://www.nomeatathlete.com/vegetarian-diet-athletes/",
+   "source_urls": [
+    "https://www.nomeatathlete.com/vegetarian-diet-athletes/"
+   ],
+   "why": "Matt and Doug describe their \"favorite healthy dinner\" as the grain/green/bean meal, \"which can be as simple as a bean and veggie bowl with brown rice\"",
+   "evidence": "Matt and Doug describe their \"favorite healthy dinner\" as the grain/green/bean meal, \"which can be as simple as a bean and veggie bowl with brown rice\"",
+   "pattern": "starch + veg + protein",
+   "prep": "15 min",
+   "estimate": {
+    "kcal": 620,
+    "carbs_g": 100,
+    "protein_g": 20,
+    "fat_g": 17,
+    "nutrition_origin": "ai_estimated",
+    "atwater_kcal": 627.9,
+    "note": "",
+    "ingredients_used": [
+     {
+      "grams": 250,
+      "usda_or_label": "USDA rice, brown, long-grain, cooked"
+     },
+     {
+      "grams": 150,
+      "usda_or_label": "USDA snap beans, green, cooked"
+     },
+     {
+      "grams": 150,
+      "usda_or_label": "USDA beans, kidney, red, canned, drained"
+     },
+     {
+      "grams": 13.5,
+      "usda_or_label": "USDA olive oil (1 tbsp = 13.5 g)"
+     }
+    ]
+   }
+  },
+  {
+   "id": "AD-120",
+   "name": "Quinoa, broccoli & lentil bowl",
+   "kind": "assembly",
+   "meal_type": "dinner",
+   "servings": 1,
+   "ingredients": "quinoa, cooked 200 g, broccoli, steamed 150 g, green lentils, canned 150 g, olive oil 1 tbsp",
+   "ingredients_json": [
+    {
+     "qty": "200 g",
+     "name": "quinoa, cooked",
+     "role": "starch"
+    },
+    {
+     "qty": "150 g",
+     "name": "broccoli, steamed",
+     "role": "veg"
+    },
+    {
+     "qty": "150 g",
+     "name": "green lentils, canned",
+     "role": "protein"
+    },
+    {
+     "qty": "1 tbsp",
+     "name": "olive oil",
+     "role": "fat"
+    }
+   ],
+   "source": "https://www.nomeatathlete.com/vegetarian-diet-athletes/ ; No Meat Athlete podcast (Matt Frazier, vegan ultrarunner, and Doug Hay)",
+   "source_url": "https://www.nomeatathlete.com/vegetarian-diet-athletes/",
+   "source_urls": [
+    "https://www.nomeatathlete.com/vegetarian-diet-athletes/"
+   ],
+   "why": "Matt and Doug describe their \"favorite healthy dinner\" as the grain/green/bean meal, \"which can be as simple as a bean and veggie bowl with brown rice\"",
+   "evidence": "Matt and Doug describe their \"favorite healthy dinner\" as the grain/green/bean meal, \"which can be as simple as a bean and veggie bowl with brown rice\"",
+   "pattern": "starch + veg + protein",
+   "prep": "15 min",
+   "estimate": {
+    "kcal": 590,
+    "carbs_g": 84,
+    "protein_g": 26,
+    "fat_g": 18,
+    "nutrition_origin": "ai_estimated",
+    "atwater_kcal": 604.3,
+    "note": "",
+    "ingredients_used": [
+     {
+      "grams": 200,
+      "usda_or_label": "USDA quinoa, cooked"
+     },
+     {
+      "grams": 150,
+      "usda_or_label": "USDA broccoli, cooked"
+     },
+     {
+      "grams": 150,
+      "usda_or_label": "USDA lentils, cooked"
+     },
+     {
+      "grams": 13.5,
+      "usda_or_label": "USDA olive oil (1 tbsp = 13.5 g)"
+     }
+    ]
+   }
+  },
+  {
+   "id": "AD-121",
+   "name": "Brown rice, Brussels sprouts & black bean bowl",
+   "kind": "assembly",
+   "meal_type": "dinner",
+   "servings": 1,
+   "ingredients": "brown rice, cooked 250 g, brussels sprouts, roasted 150 g, black beans, canned 150 g, olive oil 1 tbsp",
+   "ingredients_json": [
+    {
+     "qty": "250 g",
+     "name": "brown rice, cooked",
+     "role": "starch"
+    },
+    {
+     "qty": "150 g",
+     "name": "brussels sprouts, roasted",
+     "role": "veg"
+    },
+    {
+     "qty": "150 g",
+     "name": "black beans, canned",
+     "role": "protein"
+    },
+    {
+     "qty": "1 tbsp",
+     "name": "olive oil",
+     "role": "fat"
+    }
+   ],
+   "source": "https://www.nomeatathlete.com/vegetarian-diet-athletes/ ; No Meat Athlete podcast (Matt Frazier, vegan ultrarunner, and Doug Hay)",
+   "source_url": "https://www.nomeatathlete.com/vegetarian-diet-athletes/",
+   "source_urls": [
+    "https://www.nomeatathlete.com/vegetarian-diet-athletes/"
+   ],
+   "why": "Matt and Doug describe their \"favorite healthy dinner\" as the grain/green/bean meal, \"which can be as simple as a bean and veggie bowl with brown rice\"",
+   "evidence": "Matt and Doug describe their \"favorite healthy dinner\" as the grain/green/bean meal, \"which can be as simple as a bean and veggie bowl with brown rice\"",
+   "pattern": "starch + veg + protein",
+   "prep": "15 min",
+   "estimate": {
+    "kcal": 590,
+    "carbs_g": 94,
+    "protein_g": 19,
+    "fat_g": 17,
+    "nutrition_origin": "ai_estimated",
+    "atwater_kcal": 602.1,
+    "note": "",
+    "ingredients_used": [
+     {
+      "grams": 250,
+      "usda_or_label": "USDA rice, brown, long-grain, cooked"
+     },
+     {
+      "grams": 150,
+      "usda_or_label": "USDA brussels sprouts, cooked"
+     },
+     {
+      "grams": 150,
+      "usda_or_label": "USDA beans, black, canned, drained"
+     },
+     {
+      "grams": 13.5,
+      "usda_or_label": "USDA olive oil (1 tbsp = 13.5 g)"
+     }
+    ]
+   }
+  },
+  {
+   "id": "AD-122",
+   "name": "Barley, chard & pinto bean bowl",
+   "kind": "assembly",
+   "meal_type": "dinner",
+   "servings": 1,
+   "ingredients": "pearl barley, cooked 200 g, swiss chard, sauteed 100 g, pinto beans, canned 150 g, olive oil 1 tbsp",
+   "ingredients_json": [
+    {
+     "qty": "200 g",
+     "name": "pearl barley, cooked",
+     "role": "starch"
+    },
+    {
+     "qty": "100 g",
+     "name": "swiss chard, sauteed",
+     "role": "veg"
+    },
+    {
+     "qty": "150 g",
+     "name": "pinto beans, canned",
+     "role": "protein"
+    },
+    {
+     "qty": "1 tbsp",
+     "name": "olive oil",
+     "role": "fat"
+    }
+   ],
+   "source": "https://www.nomeatathlete.com/vegetarian-diet-athletes/ ; No Meat Athlete podcast (Matt Frazier, vegan ultrarunner, and Doug Hay)",
+   "source_url": "https://www.nomeatathlete.com/vegetarian-diet-athletes/",
+   "source_urls": [
+    "https://www.nomeatathlete.com/vegetarian-diet-athletes/"
+   ],
+   "why": "Matt and Doug describe their \"favorite healthy dinner\" as the grain/green/bean meal, \"which can be as simple as a bean and veggie bowl with brown rice\"",
+   "evidence": "Matt and Doug describe their \"favorite healthy dinner\" as the grain/green/bean meal, \"which can be as simple as a bean and veggie bowl with brown rice\"",
+   "pattern": "starch + veg + protein",
+   "prep": "15 min",
+   "estimate": {
+    "kcal": 560,
+    "carbs_g": 90,
+    "protein_g": 17,
+    "fat_g": 16,
+    "nutrition_origin": "ai_estimated",
+    "atwater_kcal": 571.8,
+    "note": "",
+    "ingredients_used": [
+     {
+      "grams": 200,
+      "usda_or_label": "USDA barley, pearled, cooked"
+     },
+     {
+      "grams": 100,
+      "usda_or_label": "USDA chard, swiss, cooked"
+     },
+     {
+      "grams": 150,
+      "usda_or_label": "USDA beans, pinto, canned, drained"
+     },
+     {
+      "grams": 13.5,
+      "usda_or_label": "USDA olive oil (1 tbsp = 13.5 g)"
+     }
+    ]
+   }
+  },
+  {
+   "id": "AD-123",
+   "name": "Brown rice, zucchini & chickpea bowl",
+   "kind": "assembly",
+   "meal_type": "dinner",
+   "servings": 1,
+   "ingredients": "brown rice, cooked 250 g, zucchini, sauteed 150 g, chickpeas, canned 150 g, olive oil 1 tbsp",
+   "ingredients_json": [
+    {
+     "qty": "250 g",
+     "name": "brown rice, cooked",
+     "role": "starch"
+    },
+    {
+     "qty": "150 g",
+     "name": "zucchini, sauteed",
+     "role": "veg"
+    },
+    {
+     "qty": "150 g",
+     "name": "chickpeas, canned",
+     "role": "protein"
+    },
+    {
+     "qty": "1 tbsp",
+     "name": "olive oil",
+     "role": "fat"
+    }
+   ],
+   "source": "https://www.nomeatathlete.com/vegetarian-diet-athletes/ ; No Meat Athlete podcast (Matt Frazier, vegan ultrarunner, and Doug Hay)",
+   "source_url": "https://www.nomeatathlete.com/vegetarian-diet-athletes/",
+   "source_urls": [
+    "https://www.nomeatathlete.com/vegetarian-diet-athletes/"
+   ],
+   "why": "Matt and Doug describe their \"favorite healthy dinner\" as the grain/green/bean meal, \"which can be as simple as a bean and veggie bowl with brown rice\"",
+   "evidence": "Matt and Doug describe their \"favorite healthy dinner\" as the grain/green/bean meal, \"which can be as simple as a bean and veggie bowl with brown rice\"",
+   "pattern": "starch + veg + protein",
+   "prep": "15 min",
+   "estimate": {
+    "kcal": 630,
+    "carbs_g": 97,
+    "protein_g": 18,
+    "fat_g": 20,
+    "nutrition_origin": "ai_estimated",
+    "atwater_kcal": 638.1,
+    "note": "",
+    "ingredients_used": [
+     {
+      "grams": 250,
+      "usda_or_label": "USDA rice, brown, long-grain, cooked"
+     },
+     {
+      "grams": 150,
+      "usda_or_label": "USDA squash, summer, zucchini"
+     },
+     {
+      "grams": 150,
+      "usda_or_label": "USDA chickpeas, canned, drained, rinsed"
+     },
+     {
+      "grams": 13.5,
+      "usda_or_label": "USDA olive oil (1 tbsp = 13.5 g)"
+     }
+    ]
+   }
+  },
+  {
+   "id": "AL-008",
+   "name": "Sweet potato, feta & spring onion wrap",
+   "kind": "assembly",
+   "meal_type": "lunch",
+   "servings": 1,
+   "ingredients": "sweet potato, roasted 150 g, low-fat feta 40 g, red chilli & spring onion to taste, wholemeal tortilla 1",
+   "ingredients_json": [
+    {
+     "qty": "150 g",
+     "name": "sweet potato, roasted",
+     "role": "starch"
+    },
+    {
+     "qty": "40 g",
+     "name": "low-fat feta",
+     "role": "dairy"
+    },
+    {
+     "qty": "to taste",
+     "name": "red chilli & spring onion",
+     "role": "veg"
+    },
+    {
+     "qty": "1",
+     "name": "wholemeal tortilla",
+     "role": "starch"
+    }
+   ],
+   "source": "BikeRadar, \"Power lunches for cyclists\" (https://www.bikeradar.com/advice/nutrition/power-lunches-for-cyclists)",
+   "source_url": "https://www.bikeradar.com/advice/nutrition/power-lunches-for-cyclists",
+   "source_urls": [
+    "https://www.bikeradar.com/advice/nutrition/power-lunches-for-cyclists"
+   ],
+   "why": "\"About 400kcal, with 13g fat and 1.3g salt\" — BikeRadar's named cyclist wrap",
+   "evidence": "\"About 400kcal, with 13g fat and 1.3g salt\" — BikeRadar's named cyclist wrap",
+   "pattern": "starch + dairy + veg + wrap",
+   "prep": "10 min",
+   "estimate": {
+    "kcal": 380,
+    "carbs_g": 53,
+    "protein_g": 14,
+    "fat_g": 13,
+    "nutrition_origin": "ai_estimated",
+    "atwater_kcal": 387.9,
+    "note": "",
+    "ingredients_used": [
+     {
+      "grams": 150,
+      "usda_or_label": "USDA sweet potato, baked in skin"
+     },
+     {
+      "grams": 40,
+      "usda_or_label": "label, reduced-fat feta"
+     },
+     {
+      "grams": 45,
+      "usda_or_label": "label, wholemeal tortilla, 45 g"
+     },
+     {
+      "grams": 4.5,
+      "usda_or_label": "USDA olive oil (1 tbsp = 13.5 g)"
+     }
+    ]
+   }
+  },
+  {
+   "id": "AS-158",
+   "name": "Peanut butter energy balls with oats",
+   "kind": "assembly",
+   "meal_type": "snack",
+   "servings": 1,
+   "ingredients": "rolled oats 1/2 cup, peanut butter 1/4 cup, maple syrup 2 tbsp",
+   "ingredients_json": [
+    {
+     "qty": "1/2 cup",
+     "name": "rolled oats",
+     "role": "starch"
+    },
+    {
+     "qty": "1/4 cup",
+     "name": "peanut butter",
+     "role": "fat"
+    },
+    {
+     "qty": "2 tbsp",
+     "name": "maple syrup",
+     "role": "other"
+    }
+   ],
+   "source": "https://www.mamasezz.com/blogs/recipes/plant-based-diet-for-athletes-high-protein-snacks ; MamaSezz, \"Plant-Based Diet for Athletes: 10 High Protein Vegan Snacks\"",
+   "source_url": "https://www.mamasezz.com/blogs/recipes/plant-based-diet-for-athletes-high-protein-snacks",
+   "source_urls": [
+    "https://www.mamasezz.com/blogs/recipes/plant-based-diet-for-athletes-high-protein-snacks"
+   ],
+   "why": "MamaSezz lists \"peanut butter energy balls\" first among its 10 plant-based athlete snacks.",
+   "evidence": "MamaSezz lists \"peanut butter energy balls\" first among its 10 plant-based athlete snacks.",
+   "pattern": "starch + nut butter + other",
+   "prep": "15 min (batch ahead)",
+   "estimate": {
+    "kcal": 210,
+    "carbs_g": 22,
+    "protein_g": 7,
+    "fat_g": 12,
+    "nutrition_origin": "ai_estimated",
+    "atwater_kcal": 221.2,
+    "note": "batch 144 g ≈ 6 bites of 25 g; one serving = 2 bites (1/3 of batch); batch total 632 kcal",
+    "ingredients_used": [
+     {
+      "grams": 40,
+      "usda_or_label": "USDA oats, rolled (1 cup = 81 g)"
+     },
+     {
+      "grams": 64,
+      "usda_or_label": "USDA peanut butter, smooth (1/4 cup = 64 g)"
+     },
+     {
+      "grams": 40,
+      "usda_or_label": "USDA maple syrup (1 tbsp = 20 g)"
+     }
+    ]
+   }
+  },
+  {
+   "id": "AS-159",
+   "name": "Oat, nut and dried fruit energy bites with chocolate chips",
+   "kind": "assembly",
+   "meal_type": "snack",
+   "servings": 1,
+   "ingredients": "rolled oats 1/2 cup, mixed nuts, chopped 1/4 cup, dried fruit 1/4 cup, vegan chocolate chips 2 tbsp, nut butter 2 tbsp",
+   "ingredients_json": [
+    {
+     "qty": "1/2 cup",
+     "name": "rolled oats",
+     "role": "starch"
+    },
+    {
+     "qty": "1/4 cup",
+     "name": "mixed nuts, chopped",
+     "role": "fat"
+    },
+    {
+     "qty": "1/4 cup",
+     "name": "dried fruit",
+     "role": "fruit"
+    },
+    {
+     "qty": "2 tbsp",
+     "name": "vegan chocolate chips",
+     "role": "other"
+    },
+    {
+     "qty": "2 tbsp",
+     "name": "nut butter",
+     "role": "fat"
+    }
+   ],
+   "source": "https://www.onepeloton.com/blog/high-protein-vegan-snacks ; Peloton, \"14 High-Protein Vegan Snacks That Fuel Gains and Leave You Feeling Satisfied\"",
+   "source_url": "https://www.onepeloton.com/blog/high-protein-vegan-snacks",
+   "source_urls": [
+    "https://www.onepeloton.com/blog/high-protein-vegan-snacks"
+   ],
+   "why": "Peloton's homemade energy bites: \"oats, nuts, seeds, chocolate chips or dried fruit, and nut butter, all smushed together and rolled into a ball.\"",
+   "evidence": "Peloton's homemade energy bites: \"oats, nuts, seeds, chocolate chips or dried fruit, and nut butter, all smushed together and rolled into a ball.\"",
+   "pattern": "starch + nuts + dried fruit + other + nut butter",
+   "prep": "15 min (batch ahead)",
+   "estimate": {
+    "kcal": 220,
+    "carbs_g": 24,
+    "protein_g": 6,
+    "fat_g": 13,
+    "nutrition_origin": "ai_estimated",
+    "atwater_kcal": 237.2,
+    "note": "batch 167 g ≈ 7 bites of 25 g; one serving = 2 bites (1/3.5 of batch); batch total 779 kcal",
+    "ingredients_used": [
+     {
+      "grams": 40,
+      "usda_or_label": "USDA oats, rolled (1 cup = 81 g)"
+     },
+     {
+      "grams": 34,
+      "usda_or_label": "USDA mixed nuts, dry roasted (1/4 cup = 34 g)"
+     },
+     {
+      "grams": 40,
+      "usda_or_label": "USDA raisins, as \"dried fruit\" (1/4 cup = 40 g)"
+     },
+     {
+      "grams": 21,
+      "usda_or_label": "label, dairy-free dark chocolate chips (2 tbsp = 21 g)"
+     },
+     {
+      "grams": 32,
+      "usda_or_label": "USDA almond butter, as \"nut butter\" (2 tbsp = 32 g)"
+     }
+    ]
+   }
+  },
+  {
+   "id": "AS-160",
+   "name": "No-bake date and oat energy balls",
+   "kind": "assembly",
+   "meal_type": "snack",
+   "servings": 1,
+   "ingredients": "medjool dates 1 cup, pitted, rolled oats 1 cup, almond butter 1/4 cup",
+   "ingredients_json": [
+    {
+     "qty": "1 cup, pitted",
+     "name": "medjool dates",
+     "role": "fruit"
+    },
+    {
+     "qty": "1 cup",
+     "name": "rolled oats",
+     "role": "starch"
+    },
+    {
+     "qty": "1/4 cup",
+     "name": "almond butter",
+     "role": "fat"
+    }
+   ],
+   "source": "https://www.nomeatathlete.com/vegan-athlete-snacks/ ; No Meat Athlete, \"9 High-Energy Plant-Based Snacks for Athletes\"",
+   "source_url": "https://www.nomeatathlete.com/vegan-athlete-snacks/",
+   "source_urls": [
+    "https://www.nomeatathlete.com/vegan-athlete-snacks/"
+   ],
+   "why": "No Meat Athlete's plant-based snack roundup and multiple sports-dietitian sources cite date-oat-nut-butter energy balls as \"the perfect mixture of whole-food carbohydrates, protein, and fats to power you through a workout.\"",
+   "evidence": "No Meat Athlete's plant-based snack roundup and multiple sports-dietitian sources cite date-oat-nut-butter energy balls as \"the perfect mixture of whole-food carbohydrates, protein, and fats to power you through a workout.\"",
+   "pattern": "fruit + starch + nut butter",
+   "prep": "15 min (batch ahead)",
+   "estimate": {
+    "kcal": 180,
+    "carbs_g": 30,
+    "protein_g": 4,
+    "fat_g": 6,
+    "nutrition_origin": "ai_estimated",
+    "atwater_kcal": 195.7,
+    "note": "batch 320 g ≈ 13 bites of 25 g; one serving = 2 bites (1/6.5 of batch); batch total 1185 kcal",
+    "ingredients_used": [
+     {
+      "grams": 175,
+      "usda_or_label": "USDA dates, medjool (1 cup pitted = 175 g)"
+     },
+     {
+      "grams": 81,
+      "usda_or_label": "USDA oats, rolled (1 cup = 81 g)"
+     },
+     {
+      "grams": 64,
+      "usda_or_label": "USDA almond butter (1/4 cup = 64 g)"
+     }
+    ]
+   }
+  },
+  {
+   "id": "AS-161",
+   "name": "Chickpea cookie dough bites",
+   "kind": "assembly",
+   "meal_type": "snack",
+   "servings": 1,
+   "ingredients": "cooked chickpeas 1 cup, nut butter 1/4 cup, maple syrup 2 tbsp, vegan chocolate chips 2 tbsp",
+   "ingredients_json": [
+    {
+     "qty": "1 cup",
+     "name": "cooked chickpeas",
+     "role": "protein"
+    },
+    {
+     "qty": "1/4 cup",
+     "name": "nut butter",
+     "role": "fat"
+    },
+    {
+     "qty": "2 tbsp",
+     "name": "maple syrup",
+     "role": "other"
+    },
+    {
+     "qty": "2 tbsp",
+     "name": "vegan chocolate chips",
+     "role": "other"
+    }
+   ],
+   "source": "https://www.mamasezz.com/blogs/recipes/plant-based-diet-for-athletes-high-protein-snacks ; MamaSezz, \"Plant-Based Diet for Athletes: 10 High Protein Vegan Snacks\"",
+   "source_url": "https://www.mamasezz.com/blogs/recipes/plant-based-diet-for-athletes-high-protein-snacks",
+   "source_urls": [
+    "https://www.mamasezz.com/blogs/recipes/plant-based-diet-for-athletes-high-protein-snacks"
+   ],
+   "why": "MamaSezz lists \"chickpea cookie dough\" among its high-protein plant-based athlete snacks.",
+   "evidence": "MamaSezz lists \"chickpea cookie dough\" among its high-protein plant-based athlete snacks.",
+   "pattern": "protein + nut butter + other",
+   "prep": "10 min (blend, batch ahead)",
+   "estimate": {
+    "kcal": 140,
+    "carbs_g": 15,
+    "protein_g": 4,
+    "fat_g": 8,
+    "nutrition_origin": "ai_estimated",
+    "atwater_kcal": 145.1,
+    "note": "batch 289 g ≈ 12 bites of 25 g; one serving = 2 bites (1/6 of batch); batch total 830 kcal",
+    "ingredients_used": [
+     {
+      "grams": 164,
+      "usda_or_label": "USDA chickpeas, canned, drained, rinsed"
+     },
+     {
+      "grams": 64,
+      "usda_or_label": "USDA almond butter, as \"nut butter\" (2 tbsp = 32 g)"
+     },
+     {
+      "grams": 40,
+      "usda_or_label": "USDA maple syrup (1 tbsp = 20 g)"
+     },
+     {
+      "grams": 21,
+      "usda_or_label": "label, dairy-free dark chocolate chips (2 tbsp = 21 g)"
+     }
+    ]
+   }
+  }
+ ]
+}
