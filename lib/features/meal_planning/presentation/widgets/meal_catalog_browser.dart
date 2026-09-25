@@ -3,6 +3,7 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 
 import '../../../../features/content/application/content_service.dart';
 import '../../../../features/content/domain/content_keys.dart';
+import '../../../../shared/widgets/kyle_design/feedback/mealvana_snackbar.dart';
 import '../../../../theme/kyle_design/app_colors.dart';
 import '../../../../theme/kyle_design/app_spacing.dart';
 import '../../../../theme/kyle_design/app_text_styles.dart';
@@ -45,7 +46,8 @@ class MealCatalogBrowser extends ConsumerStatefulWidget {
   /// Add-to-plan affordance on every card when set.
   final ValueChanged<MealRef>? onAddMeal;
 
-  /// Meal ids already added this session — their Add button shows ticked.
+  /// Meal ids already in the plan (or added this visit) — their Add button
+  /// shows ticked and picks nothing.
   final Set<String> addedIds;
 
   @override
@@ -72,6 +74,8 @@ class _MealCatalogBrowserState extends ConsumerState<MealCatalogBrowser> {
   }
 
   /// The Add button for [meal], or null when this browser has no add flow.
+  /// A ticked button says the meal is already in the plan instead of
+  /// picking again (testing-wave 18-001).
   Widget? _addButton(ContentService content, MealRef meal) {
     final onAdd = widget.onAddMeal;
     if (onAdd == null) return null;
@@ -82,7 +86,13 @@ class _MealCatalogBrowserState extends ConsumerState<MealCatalogBrowser> {
       tooltip: content.getValue(
         added ? ContentKeys.mpBrowseAdded : ContentKeys.mpBrowseAdd,
       ),
-      onTap: added ? null : () => onAdd(meal),
+      onTap: added
+          ? () => MealvanaSnackbar.showInfo(
+              context,
+              content.getValue(ContentKeys.mpBrowseAdded),
+              duration: MealvanaSnackbar.shortDuration,
+            )
+          : () => onAdd(meal),
     );
   }
 

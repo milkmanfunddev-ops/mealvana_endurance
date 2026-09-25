@@ -213,7 +213,9 @@ void main() {
     (tester) async {
       await pumpScreen(tester);
 
-      final review = find.byKey(const ValueKey('meal_planning.plan_bar.review'));
+      final review = find.byKey(
+        const ValueKey('meal_planning.plan_bar.review'),
+      );
       expect(review, findsOneWidget, reason: 'the plan bar shows the draft');
       await tester.tap(review);
       await tester.pumpAndSettle();

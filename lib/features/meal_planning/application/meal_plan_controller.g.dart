@@ -57,6 +57,130 @@ final class PlanPeriodProvider
 
 String _$planPeriodHash() => r'b007a97bf91866f78dff740a5f4c23c85b60464e';
 
+/// The plan a Vana conversation owns, read from Drift, so a screen opened
+/// from the chat ("Browse meals") knows which meals are already in it —
+/// at once and offline. Every remote-ack write folds the returned plan
+/// into Drift, so a pick re-emits here.
+///
+/// On first build the server's copy is folded in too (fire-and-forget,
+/// like `ensureSynced`): the chat reads its draft through `get_plan`
+/// without writing it locally, so a conversation reopened on a fresh
+/// install may have no local row yet (testing-wave 18-003). `get_plan`
+/// with a conversation and no plan creates nothing.
+
+@ProviderFor(conversationDraft)
+const conversationDraftProvider = ConversationDraftFamily._();
+
+/// The plan a Vana conversation owns, read from Drift, so a screen opened
+/// from the chat ("Browse meals") knows which meals are already in it —
+/// at once and offline. Every remote-ack write folds the returned plan
+/// into Drift, so a pick re-emits here.
+///
+/// On first build the server's copy is folded in too (fire-and-forget,
+/// like `ensureSynced`): the chat reads its draft through `get_plan`
+/// without writing it locally, so a conversation reopened on a fresh
+/// install may have no local row yet (testing-wave 18-003). `get_plan`
+/// with a conversation and no plan creates nothing.
+
+final class ConversationDraftProvider
+    extends
+        $FunctionalProvider<AsyncValue<MealPlan?>, MealPlan?, Stream<MealPlan?>>
+    with $FutureModifier<MealPlan?>, $StreamProvider<MealPlan?> {
+  /// The plan a Vana conversation owns, read from Drift, so a screen opened
+  /// from the chat ("Browse meals") knows which meals are already in it —
+  /// at once and offline. Every remote-ack write folds the returned plan
+  /// into Drift, so a pick re-emits here.
+  ///
+  /// On first build the server's copy is folded in too (fire-and-forget,
+  /// like `ensureSynced`): the chat reads its draft through `get_plan`
+  /// without writing it locally, so a conversation reopened on a fresh
+  /// install may have no local row yet (testing-wave 18-003). `get_plan`
+  /// with a conversation and no plan creates nothing.
+  const ConversationDraftProvider._({
+    required ConversationDraftFamily super.from,
+    required String super.argument,
+  }) : super(
+         retry: null,
+         name: r'conversationDraftProvider',
+         isAutoDispose: true,
+         dependencies: null,
+         $allTransitiveDependencies: null,
+       );
+
+  @override
+  String debugGetCreateSourceHash() => _$conversationDraftHash();
+
+  @override
+  String toString() {
+    return r'conversationDraftProvider'
+        ''
+        '($argument)';
+  }
+
+  @$internal
+  @override
+  $StreamProviderElement<MealPlan?> $createElement($ProviderPointer pointer) =>
+      $StreamProviderElement(pointer);
+
+  @override
+  Stream<MealPlan?> create(Ref ref) {
+    final argument = this.argument as String;
+    return conversationDraft(ref, argument);
+  }
+
+  @override
+  bool operator ==(Object other) {
+    return other is ConversationDraftProvider && other.argument == argument;
+  }
+
+  @override
+  int get hashCode {
+    return argument.hashCode;
+  }
+}
+
+String _$conversationDraftHash() => r'229723b1ce2f33df047223442bb64d56efa0098b';
+
+/// The plan a Vana conversation owns, read from Drift, so a screen opened
+/// from the chat ("Browse meals") knows which meals are already in it —
+/// at once and offline. Every remote-ack write folds the returned plan
+/// into Drift, so a pick re-emits here.
+///
+/// On first build the server's copy is folded in too (fire-and-forget,
+/// like `ensureSynced`): the chat reads its draft through `get_plan`
+/// without writing it locally, so a conversation reopened on a fresh
+/// install may have no local row yet (testing-wave 18-003). `get_plan`
+/// with a conversation and no plan creates nothing.
+
+final class ConversationDraftFamily extends $Family
+    with $FunctionalFamilyOverride<Stream<MealPlan?>, String> {
+  const ConversationDraftFamily._()
+    : super(
+        retry: null,
+        name: r'conversationDraftProvider',
+        dependencies: null,
+        $allTransitiveDependencies: null,
+        isAutoDispose: true,
+      );
+
+  /// The plan a Vana conversation owns, read from Drift, so a screen opened
+  /// from the chat ("Browse meals") knows which meals are already in it —
+  /// at once and offline. Every remote-ack write folds the returned plan
+  /// into Drift, so a pick re-emits here.
+  ///
+  /// On first build the server's copy is folded in too (fire-and-forget,
+  /// like `ensureSynced`): the chat reads its draft through `get_plan`
+  /// without writing it locally, so a conversation reopened on a fresh
+  /// install may have no local row yet (testing-wave 18-003). `get_plan`
+  /// with a conversation and no plan creates nothing.
+
+  ConversationDraftProvider call(String conversationId) =>
+      ConversationDraftProvider._(argument: conversationId, from: this);
+
+  @override
+  String toString() => r'conversationDraftProvider';
+}
+
 /// The active plan for the current week — what the Plan tab, the Shopping
 /// tab, the chat's plan bar and the day planner all read.
 ///

@@ -5,7 +5,10 @@ import '../../../../theme/kyle_design/app_colors.dart';
 /// The small round Add affordance on a browse card (Xuan's v5 "Add
 /// ribbon"): an outlined `+` that fills electrolyte with a tick once the
 /// meal has landed in the draft. [onTap] null renders it inert — the ticked
-/// state is not a toggle; removal happens in the plan bar.
+/// state is not a toggle; removal happens in the plan bar. Inert still
+/// absorbs the tap: with no handler the touch fell through to the card
+/// body, which opened the detail, whose Add to plan added the meal again
+/// (testing-wave 18-001).
 class MealAddButton extends StatelessWidget {
   const MealAddButton({
     super.key,
@@ -35,7 +38,7 @@ class MealAddButton extends StatelessWidget {
               : BorderSide(color: textColor.withValues(alpha: 0.35)),
         ),
         child: InkWell(
-          onTap: onTap,
+          onTap: onTap ?? () {},
           customBorder: const CircleBorder(),
           child: SizedBox(
             width: size,

@@ -12,6 +12,7 @@ import 'package:mealvana_endurance/features/meal_planning/data/user_memory_repos
 import 'package:mealvana_endurance/features/meal_planning/domain/vana_setting.dart';
 import 'package:mealvana_endurance/features/meal_planning/data/vana_action_client.dart';
 import 'package:mealvana_endurance/features/meal_planning/data/vana_exceptions.dart';
+import 'package:mealvana_endurance/features/meal_planning/domain/meal_plan.dart';
 import 'package:mealvana_endurance/features/meal_planning/domain/meal_source.dart';
 import 'package:mealvana_endurance/features/meal_planning/domain/plan_rule.dart';
 import 'package:mealvana_endurance/features/meal_planning/domain/ui_action.dart';
@@ -188,6 +189,81 @@ void main() {
       expect(sync.ensured, contains('meal_plans'));
     },
   );
+
+  /// Testing-wave 18-003 (ticket 34): "Browse meals" reads the
+  /// conversation's own plan to tick what is already in it. Drift answers
+  /// first; the server's copy is folded in behind it.
+  group('conversationDraft', () {
+    test('emits the conversation\'s local plan, null for a stranger', () async {
+      remote.plans = [
+        _planRow(weekStartFor()),
+        {
+          ..._planRow(weekStartFor()),
+          'id': 'plan-2',
+          'conversation_id': 'conv-1',
+        },
+      ];
+      remote.meals = [
+        _mealRow('pm-1'),
+        {..._mealRow('pm-9'), 'plan_id': 'plan-2', 'library_meal_id': 'D-900'},
+      ];
+      await repo.syncFromRemote(_user);
+      final container = testContainer([
+        ...baseOverrides(connectivity: connectivity, sync: sync),
+        appDatabaseProvider.overrideWithValue(db),
+        mealPlanRepositoryProvider.overrideWithValue(repo),
+        vanaActionClientProvider.overrideWithValue(actions),
+      ]);
+
+      // Held like a screen would hold them: an unwatched autodispose
+      // provider is dropped before its first emission lands.
+      container.listen(conversationDraftProvider('conv-1'), (_, __) {});
+      container.listen(conversationDraftProvider('conv-none'), (_, __) {});
+
+      final plan = await container.read(
+        conversationDraftProvider('conv-1').future,
+      );
+      expect(plan!.id, 'plan-2');
+      expect(plan.meals.map((m) => m.libraryMealId), ['D-900']);
+      expect(
+        await container.read(conversationDraftProvider('conv-none').future),
+        isNull,
+      );
+    });
+
+    test('folds the server\'s copy into Drift when nothing is local', () async {
+      final serverPlan = VanaActionResult.fromJson(
+        loadFixture('batch'),
+      ).plan!.copyWith(weekStart: weekStartFor(), conversationId: 'conv-2');
+      actions = _FakeActionClient(
+        (action) => action is GetPlanAction && action.conversationId == 'conv-2'
+            ? VanaActionResult(
+                parts: [VanaBatchPart(plan: serverPlan)],
+                extras: const {},
+              )
+            : const VanaActionResult(parts: [], extras: {}),
+      );
+      final container = testContainer([
+        ...baseOverrides(connectivity: connectivity, sync: sync),
+        appDatabaseProvider.overrideWithValue(db),
+        mealPlanRepositoryProvider.overrideWithValue(repo),
+        vanaActionClientProvider.overrideWithValue(actions),
+      ]);
+
+      final seen = <MealPlan?>[];
+      container.listen(conversationDraftProvider('conv-2'), (_, next) {
+        if (next.hasValue) seen.add(next.value);
+      });
+      await settle(const Duration(milliseconds: 120));
+
+      expect(seen.last!.id, serverPlan.id);
+      expect(await repo.getPlanById(serverPlan.id), isNotNull);
+      expect(
+        actions.calls.whereType<GetPlanAction>().single.conversationId,
+        'conv-2',
+      );
+    });
+  });
 
   group('local-first', () {
     test(
