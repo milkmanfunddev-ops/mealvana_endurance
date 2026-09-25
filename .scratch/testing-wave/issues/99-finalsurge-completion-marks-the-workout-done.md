@@ -1,6 +1,6 @@
 # 99: FinalSurge completion marks the workout done
 
-**Status:** in-progress (wave 25, 2026-09-25)
+**Status:** done (wave 25, 2026-09-25)
 **Blocked by:** none.
 **Next:** `/implement-lee testing-wave`
 **Model:** opus

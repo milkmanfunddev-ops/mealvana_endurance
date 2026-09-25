@@ -1,6 +1,6 @@
 # 86: Retest: sign-in, sign-out, onboarding and settings
 
-**Status:** in-progress (wave 25, 2026-09-25)
+**Status:** done (wave 25, 2026-09-25)
 **Blocked by:** none.
 **Next:** `/implement-lee testing-wave`
 **Model:** opus
