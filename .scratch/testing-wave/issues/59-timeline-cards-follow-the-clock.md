@@ -13,7 +13,7 @@
 
 **Touches:** lib/features/fuel_timeline/application/day_timeline_assembler.dart, lib/features/fuel_timeline/domain/timeline_node.dart
 
-- [ ] Assembler tests: a 3:43 PM snack after a 2:08 PM snack gets its own 3:43 PM card; a 2:20 PM snack joins the 2:08 PM card; cards are in time order before and after a delete.
+- [x] Assembler tests: a 3:43 PM snack after a 2:08 PM snack gets its own 3:43 PM card; a 2:20 PM snack joins the 2:08 PM card; cards are in time order before and after a delete.
 - [ ] codegen if annotations changed, `flutter analyze` and the suite green.
 
 Next: /implement-lee testing-wave
