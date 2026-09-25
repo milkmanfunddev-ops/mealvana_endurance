@@ -483,6 +483,9 @@ class ContentKeys {
   static const String mpPlanBarCountOne = 'meal_planning.plan_bar_count_one';
   static const String mpPlanBarMore = 'meal_planning.plan_bar_more';
   static const String mpPlanBarEmpty = 'meal_planning.plan_bar_empty';
+  static const String mpPlanBarReplaced = 'meal_planning.plan_bar_replaced';
+  static const String mpPlanBarUseInstead =
+      'meal_planning.plan_bar_use_instead';
   static const String mpReviewTitle = 'meal_planning.review_title';
   static const String mpReviewConfirm = 'meal_planning.review_confirm';
   static const String mpReviewConfirmed = 'meal_planning.review_confirmed';

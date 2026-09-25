@@ -26,6 +26,11 @@ import 'stepper.dart';
 /// expanded: a strip of tiles, each with its own × and servings stepper.
 /// An empty draft still shows, at "Your plan · 0 meals" (mp-234), with
 /// nothing to expand and nothing to review yet. Nothing here calls the model.
+///
+/// A draft another confirm archived ([onUseInstead] set; mp-241, mp-676)
+/// says the athlete confirmed a different plan for this week and this one is
+/// kept in their plans. Its meals read only (no stepper, no ×, no sheet) and
+/// "Use this plan instead" takes Review's place, so nothing leads to Confirm.
 class PlanBar extends ConsumerStatefulWidget {
   const PlanBar({
     super.key,
@@ -36,6 +41,7 @@ class PlanBar extends ConsumerStatefulWidget {
     required this.onReview,
     this.confirmed = false,
     this.showMacros = true,
+    this.onUseInstead,
   });
 
   final List<PlanMeal> meals;
@@ -53,6 +59,10 @@ class PlanBar extends ConsumerStatefulWidget {
   /// `show_macros` default, plan §4.2); the chat screen passes the athlete's
   /// setting through.
   final bool showMacros;
+
+  /// Set when another confirm archived this draft: the bar reads only and
+  /// offers "Use this plan instead", which calls this.
+  final VoidCallback? onUseInstead;
 
   /// Meals in the plan before Review is worth offering as the primary action.
   static const reviewAt = 3;
@@ -85,6 +95,7 @@ class PlanBarState extends ConsumerState<PlanBar> {
 
     final n = widget.meals.length;
     final empty = n == 0;
+    final replaced = widget.onUseInstead != null;
     // Nothing to review until a meal is in (and nothing to open).
     final onReview = widget.confirmed || empty ? null : widget.onReview;
     final count = n == 1
@@ -168,7 +179,16 @@ class PlanBarState extends ConsumerState<PlanBar> {
               // of a week to review. The button keeps its intrinsic width —
               // the Expanded count text on the left gives way and
               // ellipsizes, so the label is never clipped.
-              n >= PlanBar.reviewAt
+              replaced
+                  ? KylePrimaryButton(
+                      key: const ValueKey('meal_planning.plan_bar.use_instead'),
+                      text: content.getValue(ContentKeys.mpPlanBarUseInstead),
+                      height: 40,
+                      fontSize: 13,
+                      isFullWidth: false,
+                      onPressed: widget.onUseInstead,
+                    )
+                  : n >= PlanBar.reviewAt
                   ? KylePrimaryButton(
                       key: const ValueKey('meal_planning.plan_bar.review'),
                       text: reviewLabel,
@@ -187,6 +207,14 @@ class PlanBarState extends ConsumerState<PlanBar> {
                     ),
             ],
           ),
+          if (replaced) ...[
+            const SizedBox(height: 4),
+            Text(
+              content.getValue(ContentKeys.mpPlanBarReplaced),
+              key: const ValueKey('meal_planning.plan_bar.replaced'),
+              style: AppTextStyles.bodySmall.copyWith(color: secondary),
+            ),
+          ],
           if (_expanded && !empty) ...[
             const SizedBox(height: 8),
             SizedBox(
@@ -200,14 +228,20 @@ class PlanBarState extends ConsumerState<PlanBar> {
                   meal: widget.meals[i],
                   slot: slots[widget.meals[i].id],
                   showMacros: widget.showMacros,
-                  onOpen: () => _openMealSheet(widget.meals[i]),
-                  onRemove: () => widget.onRemove(widget.meals[i]),
-                  onServings: (next) =>
-                      widget.onServings(widget.meals[i], next),
+                  onOpen: replaced
+                      ? null
+                      : () => _openMealSheet(widget.meals[i]),
+                  onRemove: replaced
+                      ? null
+                      : () => widget.onRemove(widget.meals[i]),
+                  onServings: replaced
+                      ? null
+                      : (next) => widget.onServings(widget.meals[i], next),
+                  servingsLabel: _servings(content, widget.meals[i].servings),
                 ),
               ),
             ),
-          ] else if (n < PlanBar.reviewAt) ...[
+          ] else if (!replaced && n < PlanBar.reviewAt) ...[
             const SizedBox(height: 4),
             Text(
               empty
@@ -223,6 +257,12 @@ class PlanBarState extends ConsumerState<PlanBar> {
       ),
     );
   }
+
+  static String _servings(ContentService content, int n) => n == 1
+      ? content.getValue(ContentKeys.mpReviewServingsOne)
+      : ContentKeys.format(content.getValue(ContentKeys.mpReviewServings), {
+          'n': n,
+        });
 
   Future<void> _openMealSheet(PlanMeal meal) {
     return showMealSheet(
@@ -251,23 +291,28 @@ class PlanBarState extends ConsumerState<PlanBar> {
 /// One tile in the expanded bar: a corner × to drop the meal, the Meal's Dish
 /// photo and name (tap for the sheet), the compact macro strip when shown,
 /// then the slot chip beside its stepper. A Meal with no photo shows none, and
-/// the tile starts at its name (ADR 0003).
+/// the tile starts at its name (ADR 0003). With no [onServings] the tile
+/// reads only: no ×, no stepper (its servings as text), no sheet.
 class _PlanBarTile extends StatelessWidget {
   const _PlanBarTile({
     required this.meal,
     required this.onOpen,
     required this.onRemove,
     required this.onServings,
+    required this.servingsLabel,
     this.slot,
     this.showMacros = true,
   });
 
   final PlanMeal meal;
+
+  /// "4 servings", shown in the stepper's place on a read-only tile.
+  final String servingsLabel;
   final MealPhotoSlot? slot;
   final bool showMacros;
-  final VoidCallback onOpen;
-  final VoidCallback onRemove;
-  final ValueChanged<int> onServings;
+  final VoidCallback? onOpen;
+  final VoidCallback? onRemove;
+  final ValueChanged<int>? onServings;
 
   @override
   Widget build(BuildContext context) {
@@ -346,35 +391,48 @@ class _PlanBarTile extends StatelessWidget {
                         child: SlotChip(type: meal.mealType, short: true),
                       ),
                     ),
-                    ServingsStepper(
-                      value: meal.servings,
-                      dense: true,
-                      onChanged: onServings,
-                    ),
+                    if (onServings case final onChanged?)
+                      ServingsStepper(
+                        value: meal.servings,
+                        dense: true,
+                        onChanged: onChanged,
+                      )
+                    else
+                      Text(
+                        servingsLabel,
+                        key: ValueKey(
+                          'meal_planning.plan_bar.servings_${meal.id}',
+                        ),
+                        style: AppTextStyles.bodySmall.copyWith(
+                          color: textColor,
+                          fontWeight: FontWeight.w600,
+                        ),
+                      ),
                   ],
                 ),
               ],
             ),
-            Positioned(
-              top: -4,
-              right: -4,
-              child: GestureDetector(
-                onTap: onRemove,
-                behavior: HitTestBehavior.opaque,
-                child: Container(
-                  width: 24,
-                  height: 24,
-                  decoration: BoxDecoration(
-                    shape: BoxShape.circle,
-                    color: textColor.withValues(alpha: 0.08),
-                    border: Border.all(
-                      color: textColor.withValues(alpha: 0.25),
+            if (onRemove != null)
+              Positioned(
+                top: -4,
+                right: -4,
+                child: GestureDetector(
+                  onTap: onRemove,
+                  behavior: HitTestBehavior.opaque,
+                  child: Container(
+                    width: 24,
+                    height: 24,
+                    decoration: BoxDecoration(
+                      shape: BoxShape.circle,
+                      color: textColor.withValues(alpha: 0.08),
+                      border: Border.all(
+                        color: textColor.withValues(alpha: 0.25),
+                      ),
                     ),
+                    child: Icon(Icons.close, size: 14, color: textColor),
                   ),
-                  child: Icon(Icons.close, size: 14, color: textColor),
                 ),
               ),
-            ),
           ],
         ),
       ),
