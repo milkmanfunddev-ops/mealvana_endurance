@@ -11,6 +11,10 @@ Each entry: what went wrong or cost time, where it was seen, and the suggested f
 
 ## Open
 
+(none)
+
+## Done
+
 - **#72 two runs on one account need an order, not just a warning (wave 29).** 88 and 89 shared
   test@test.com, and 89's 19-009 needed plan be6abf2f confirmed with no list, which 88's confirms
   and Browse picks would destroy. A flag file in a shared scratch folder (`testing-wave-w29-shared/`)
@@ -19,8 +23,9 @@ Each entry: what went wrong or cost time, where it was seen, and the suggested f
   wave-lead step 5 names the state each shared-account check starts from and orders them with a
   flag when one run destroys another's start state; split tickets (Lee 09-25) should keep
   chat-heavy checks apart so one pair does not exhaust the cap.
-
-## Done
+  Done (wave 30 lead): wave-lead step 5 now names each shared-account check's start state and
+  the way back to it, and keeps the flag file for a start state that cannot be rebuilt. The
+  split tickets (110-125) already keep chat-heavy checks apart.
 
 - **#70 two parallel tickets each made their own rule for the same data (wave 27).** 102 (sign-in
   sweep) and 103 (pull after a failed upload) both had to decide when another account's food

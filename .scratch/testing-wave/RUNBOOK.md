@@ -267,6 +267,12 @@ should behave) goes to the page as an open question, the normal way, and nothing
    connection from another environment, a leftover draft). Never tell an agent another run is
    read-only on a guess; name the conversation or plan each ticket writes into (Lee, 2026-09-25,
    IMPROVEMENTS #47, #53).
+   For two runs on one account, name the state each shared-account check starts from, and say
+   how the run gets back to it when the other run's writes move it (wave 30: 110's hand-made
+   lists become the Shopping tab's newest list, which has no Shop with Kroger button, so 111
+   reopens the plan's list from Previous lists). When one run's write destroys a start state
+   the other cannot get back to, order the two with a flag file in a shared scratch folder
+   (IMPROVEMENTS #72).
 
 **Fix waves: keep them fast (Lee, 2026-09-25).** A fix wave runs no scenario, so it skips most of
 the above and follows this instead:
