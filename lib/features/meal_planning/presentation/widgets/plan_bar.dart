@@ -272,6 +272,7 @@ class PlanBarState extends ConsumerState<PlanBar> {
       onServings: (servings) => widget.onServings(meal, servings),
       onSwap: widget.onSwap,
       onRemove: () => widget.onRemove(meal),
+      excludeIds: MealSheet.planMealIds(widget.meals),
       // Ingredient-level swap (plan Phase 6.3) goes straight to the plan
       // controller: it is a plan write like the others, and the bar already
       // owns a ref. A failure surfaces as the sheet's snackbar having been

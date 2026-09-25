@@ -220,6 +220,9 @@ class _SwapMealScreenState extends ConsumerState<SwapMealScreen> {
                                         child: MealCard(
                                           meal: meals[i],
                                           slot: photos[i],
+                                          // Ingredients, never the research
+                                          // note (testing-wave 89-003).
+                                          subtitle: meals[i].ingredients,
                                           onTap: () =>
                                               _swap(context, meals[i], current),
                                         ),

@@ -971,6 +971,7 @@ class _VanaChatScreenState extends ConsumerState<VanaChatScreen> {
           planController.setServings(planMeal.id, servings),
       onSwap: _swapFromSheet,
       onRemove: () => planController.removeMeal(planMeal.id),
+      excludeIds: MealSheet.planMealIds(plan?.meals ?? const []),
     );
   }
 
@@ -1086,6 +1087,7 @@ class _VanaChatScreenState extends ConsumerState<VanaChatScreen> {
         onServings: (servings) => planController.setServings(meal.id, servings),
         onSwap: _swapFromSheet,
         onRemove: () => planController.removeMeal(meal.id),
+        excludeIds: MealSheet.planMealIds(plan.meals),
       ),
       onServings: (meal, servings) =>
           planController.setServings(meal.id, servings),

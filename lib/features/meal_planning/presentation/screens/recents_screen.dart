@@ -88,6 +88,7 @@ class RecentsScreen extends ConsumerWidget {
                             key: ValueKey('meal_planning.recents_${meal.id}'),
                             meal: meal,
                             slot: photos[i],
+                            subtitle: meal.ingredients,
                             onTap: () => context.push('/food/meals/${meal.id}'),
                           ),
                         );
