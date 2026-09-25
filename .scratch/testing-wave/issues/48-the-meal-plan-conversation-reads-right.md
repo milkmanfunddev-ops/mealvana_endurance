@@ -1,6 +1,6 @@
 # 48: The meal-plan conversation reads right
 
-**Status:** ready-for-agent
+**Status:** in-progress (wave 20, 2026-09-25)
 **Blocked by:** 34 (touches lib/features/meal_planning/presentation/screens/vana_chat_screen.dart).
 **Next:** `/implement-lee testing-wave`
 **Model:** opus

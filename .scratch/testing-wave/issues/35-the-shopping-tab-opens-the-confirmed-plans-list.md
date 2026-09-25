@@ -1,6 +1,6 @@
 # 35: The Shopping tab opens the confirmed plan's list
 
-**Status:** ready-for-agent
+**Status:** in-progress (wave 20, 2026-09-25)
 **Blocked by:** 34 (touches supabase/functions/_shared/vana/actions.ts).
 **Next:** `/implement-lee testing-wave`
 **Model:** opus

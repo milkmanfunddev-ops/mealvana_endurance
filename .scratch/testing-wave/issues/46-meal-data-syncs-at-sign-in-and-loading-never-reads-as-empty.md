@@ -1,6 +1,6 @@
 # 46: Meal data syncs at sign-in, and loading never reads as empty
 
-**Status:** ready-for-agent
+**Status:** in-progress (wave 20, 2026-09-25)
 **Blocked by:** 36 (touches lib/features/meal_planning/presentation/screens/shopping_tab.dart).
 **Next:** `/implement-lee testing-wave`
 **Model:** fable

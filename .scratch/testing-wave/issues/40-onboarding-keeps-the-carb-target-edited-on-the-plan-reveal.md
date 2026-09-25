@@ -1,6 +1,6 @@
 # 40: Onboarding keeps the carb target edited on the plan reveal
 
-**Status:** ready-for-agent
+**Status:** in-progress (wave 20, 2026-09-25)
 **Blocked by:** 33 (touches lib/features/onboarding/presentation/providers/onboarding_controller.dart).
 **Next:** `/implement-lee testing-wave`
 **Model:** opus
