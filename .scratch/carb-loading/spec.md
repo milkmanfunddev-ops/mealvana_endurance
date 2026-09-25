@@ -547,6 +547,26 @@ message) with `WALK-CHARTER.md` beside it. QA drives the HTML in Chrome and
 extracts to spec/design/ as PROPOSED; undocumented behavior is extraction's
 primary quarry.
 
+### BUILT — 2026-09-24, late — prototype v19: entryway extension for the desk
+
+Per qa-6b's prototype-extension request (entryway behavior RATIFIED at qa
+31d31a5; this build is for DESK RATIFICATION of pixels, explicitly NOT
+implementation — G7–G11 stay @v1-staged). v19 adds an Event-page surface
+behind prototype-only pills (surface / days-until-race / plan-state /
+Summary-Page-vs-Sheet A/B): CE-1 two-state entry row + CE-8 race-day
+window-passed row; the CE-8 feasibility-gated chooser (1-Day card @ 11 g/kg,
+point-value copy, infeasible cards dimmed WITH reason, never hidden); the
+plan summary surface in both A/B containers (per-day rows w/ EDITED chip,
+race-day-disabled re-pick, dragonfruit remove); the CE-4 keep/reset confirm
+with migrate-by-date (620 g carried to 2-Day, dropped with an explicit note
+on 1-Day); the delete confirm with Path-A-honest copy. Numbers: weight 68 kg
+→ 544/544/680 · 612/748 · 748 (1-Day magnitude matches the G3 vector).
+Harness-walked end to end; chooser + summary visually verified on canvas;
+dashboard and all v18 surfaces untouched; both files server byte-equal.
+Landed at the pipeline path, standalone sha `b6da90768caf5413`; WALK-CHARTER
+v19 section added. Not represented: CE-7 footer (desk), CE-2's conditional
+today-CTA snackbar (no snackbar layer in the prototype).
+
 ## Notes on the two new ideas
 
 **Reminder to start.** Machinery exists — `NotificationService`

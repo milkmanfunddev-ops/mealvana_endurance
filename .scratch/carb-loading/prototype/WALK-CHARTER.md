@@ -3,6 +3,51 @@
 One charter per landed version; overwrite with each landing. QA verifies the
 charter against the artifact and hunts beyond it.
 
+## v19 (2026-09-24) — sha256/16 `b6da90768caf5413`
+
+Delta over v18: the ENTRYWAY extension for desk ratification (CE-1..CE-8
+rendering candidates). Everything in the v18 section below still holds.
+
+### New prototype-only controls (outside the phone frame)
+- Surface pills: **Dashboard | Event page** (always visible). Event page is a
+  full-cover layer inside the phone; the dashboard beneath is untouched.
+- When Event page: **5 days out | 2 days out | 1 day out | Race day** (CE-8
+  input), **No plan | Plan | Plan, edited targets**, and the A/B fork
+  **Summary: Page | Summary: Sheet**.
+
+### Event surface states (all against race = Sun Sep 28, weight 68.0 kg)
+- Header: "Ironman 70.3 Augusta · Sunday, Sep 28 · Race in N days /
+  Race tomorrow / Race day".
+- Entry row (CE-1): no-plan+feasible = "Set Up Carb Loading" (orange border,
+  opens chooser); no-plan+race-day = inert "Carb loading window has passed"
+  (CE-8); plan-exists = summary row "Carb Loading · <protocol>" + window +
+  per-day targets, opens the plan summary.
+- Chooser (CE-8 gated): three cards — 3-Day Classic 8·8·10 g/kg
+  (Sep 25–27, 544/544/680 g), 2-Day Quick 9·11 (Sep 26–27, 612/748), 1-Day 11
+  (Sep 27, 748). Infeasible cards render dimmed WITH the reason "Needs N days
+  before race day" — never hidden; tapping them is a no-op. Current plan's
+  card carries a "Current plan" tag. Point-value copy throughout (CL-12).
+- Plan summary (A/B fork): A = full page, B = bottom sheet w/ drag bar +
+  backdrop; identical content — per-day rows (Day N · date · grams ·
+  g/kg, EDITED chip on edited days), "Change protocol ›" (disabled on race
+  day with "Nothing fits before race day"), "Remove carb loading plan" in
+  dragonfruit.
+- Re-pick confirm (CE-4, only when edited targets exist and a DIFFERENT
+  protocol is chosen): "Keep your edited targets?" lists the edits ("Day 2 —
+  you set 620 g"; day number re-labels per the target protocol's window);
+  when the new window drops the edited date it says so ("…falls outside the
+  window — that target goes away"). Buttons: Keep my targets / Reset to
+  protocol. Keep migrates by date (620 carried onto 2-Day's Sep 26; dropped
+  on 1-Day); same protocol re-tap and no-edit re-picks regenerate quietly,
+  no dialog.
+- Delete confirm: "Remove carb loading plan?" — "Targets and schedule are
+  deleted. Food you've already logged stays in your log." Remove
+  (dragonfruit) / Cancel. Removing returns the entry row to Set Up state.
+
+Not represented: CE-7 "Manage plan ›" breakdown footer (desk item, not
+built); the post-selection today-CTA snackbar (CE-2's conditional toast —
+prototype has no snackbar layer).
+
 ## v18 (2026-09-24) — sha256/16 `ebcb2f16a4b064bf`
 
 Delta over v17: Q-CL11 conformance only — ramp anchors are the running sum of

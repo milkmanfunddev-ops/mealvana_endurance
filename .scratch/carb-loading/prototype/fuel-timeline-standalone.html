@@ -90,6 +90,28 @@
         </sc-for>
       </div>
       </sc-if>
+      <div style="display:flex;gap:3px;background:rgba(56,22,51,0.07);border:1px solid rgba(56,22,51,0.13);border-radius:100px;padding:3px;align-self:flex-start;">
+        <button onClick="{{ setSurfDash }}" style="border:none;border-radius:100px;padding:4px 11px;cursor:pointer;white-space:nowrap;font-family:'Apercu',sans-serif;font-weight:500;font-size:11px;background:{{ surfDashBg }};color:{{ surfDashCol }};">Dashboard</button>
+        <button onClick="{{ setSurfEvent }}" style="border:none;border-radius:100px;padding:4px 11px;cursor:pointer;white-space:nowrap;font-family:'Apercu',sans-serif;font-weight:500;font-size:11px;background:{{ surfEventBg }};color:{{ surfEventCol }};">Event page</button>
+      </div>
+      <sc-if value="{{ surfEventOn }}" hint-placeholder-val="{{ false }}">
+      <div style="display:flex;gap:3px;background:rgba(56,22,51,0.07);border:1px solid rgba(56,22,51,0.13);border-radius:100px;padding:3px;align-self:flex-start;">
+        <sc-for list="{{ evDaysPills }}" as="dp" hint-placeholder-count="4">
+        <button onClick="{{ dp.onPick }}" style="border:none;border-radius:100px;padding:4px 11px;cursor:pointer;white-space:nowrap;font-family:'Apercu',sans-serif;font-weight:500;font-size:11px;background:{{ dp.bg }};color:{{ dp.col }};">{{ dp.label }}</button>
+        </sc-for>
+      </div>
+      <div style="display:flex;gap:3px;background:rgba(56,22,51,0.07);border:1px solid rgba(56,22,51,0.13);border-radius:100px;padding:3px;align-self:flex-start;">
+        <sc-for list="{{ evPlanPills }}" as="pp2" hint-placeholder-count="3">
+        <button onClick="{{ pp2.onPick }}" style="border:none;border-radius:100px;padding:4px 11px;cursor:pointer;white-space:nowrap;font-family:'Apercu',sans-serif;font-weight:500;font-size:11px;background:{{ pp2.bg }};color:{{ pp2.col }};">{{ pp2.label }}</button>
+        </sc-for>
+      </div>
+      <div style="display:flex;gap:3px;background:rgba(56,22,51,0.07);border:1px solid rgba(56,22,51,0.13);border-radius:100px;padding:3px;align-self:flex-start;">
+        <sc-for list="{{ evAbPills }}" as="ab" hint-placeholder-count="2">
+        <button onClick="{{ ab.onPick }}" style="border:none;border-radius:100px;padding:4px 11px;cursor:pointer;white-space:nowrap;font-family:'Apercu',sans-serif;font-weight:500;font-size:11px;background:{{ ab.bg }};color:{{ ab.col }};">{{ ab.label }}</button>
+        </sc-for>
+      </div>
+      <div style="font-family:'Apercu',sans-serif;font-size:10.5px;line-height:1.3;color:rgb(140,104,134);">Entryway states for desk ratification. CE-8 gates the chooser by days-until-race; Page vs Sheet is the A/B fork for the plan summary container.</div>
+      </sc-if>
       <div style="font-family:'Apercu',sans-serif;font-size:10.5px;line-height:1.3;color:rgb(140,104,134);">Prototype control. In the app this is derived from the event&rsquo;s carb-loading plan &mdash; never a setting the athlete sees.</div>
     </div>
   </div>
@@ -377,6 +399,131 @@
       <dc-import name="Day Nav" on-add="{{ openAdd }}" hint-size="100%,84px"></dc-import>
       <sc-if value="{{ showRide }}" hint-placeholder-val="{{ false }}"><div style="position:absolute;inset:0;z-index:30;"><dc-import name="Ride Fuel Sheet" on-close="{{ closeOverlay }}" hint-size="100%,100%"></dc-import></div></sc-if>
       <sc-if value="{{ showAdd }}" hint-placeholder-val="{{ false }}"><div style="position:absolute;inset:0;z-index:30;"><dc-import name="Add Food Sheet" on-close="{{ closeOverlay }}" on-pick="{{ onPickFood }}" hint-size="100%,100%"></dc-import></div></sc-if>
+      <sc-if value="{{ showEvSurface }}" hint-placeholder-val="{{ false }}">
+      <div style="position:absolute;inset:0;z-index:24;background:var(--me-blackberry);display:flex;flex-direction:column;">
+        <div class="scrollbody" style="flex:1;overflow:auto;padding:22px 16px;">
+          <div style="font-family:'Apercu',sans-serif;font-size:10px;letter-spacing:0.1em;text-transform:uppercase;color:rgba(248,246,235,0.45);">Event</div>
+          <div style="font-family:'Compadre',Georgia,serif;font-size:22px;color:var(--me-cream);margin-top:4px;">Ironman 70.3 Augusta</div>
+          <div style="font-family:'Apercu',sans-serif;font-size:12px;color:rgba(248,246,235,0.55);margin-top:3px;">Sunday, Sep 28 &middot; {{ evRaceInStr }}</div>
+          <sc-if value="{{ evRowSetup }}" hint-placeholder-val="{{ false }}">
+          <div onClick="{{ evOpenChooser }}" style="margin-top:20px;background:rgba(247,139,20,0.07);border:1px solid rgba(247,139,20,0.5);border-radius:14px;padding:13px 14px;display:flex;justify-content:space-between;align-items:center;cursor:pointer;">
+            <div><div style="font-family:'Apercu',sans-serif;font-size:13px;font-weight:600;color:var(--me-cream);">Set Up Carb Loading</div><div style="font-family:'Apercu',sans-serif;font-size:11px;color:rgba(248,246,235,0.55);margin-top:2px;">{{ evSetupSub }}</div></div>
+            <span style="color:var(--me-orange);font-size:16px;">&rsaquo;</span>
+          </div>
+          </sc-if>
+          <sc-if value="{{ evRowPassed }}" hint-placeholder-val="{{ false }}">
+          <div style="margin-top:20px;background:rgba(255,255,255,0.03);border:1px solid rgba(248,246,235,0.1);border-radius:14px;padding:13px 14px;">
+            <div style="font-family:'Apercu',sans-serif;font-size:13px;font-weight:600;color:rgba(248,246,235,0.6);">Carb loading window has passed</div>
+            <div style="font-family:'Apercu',sans-serif;font-size:11px;color:rgba(248,246,235,0.45);margin-top:2px;">Race day is today &mdash; fuel the race from the dashboard.</div>
+          </div>
+          </sc-if>
+          <sc-if value="{{ evRowPlan }}" hint-placeholder-val="{{ false }}">
+          <div onClick="{{ evOpenSummary }}" style="margin-top:20px;background:rgba(247,139,20,0.07);border:1px solid rgba(247,139,20,0.5);border-radius:14px;padding:13px 14px;display:flex;justify-content:space-between;align-items:center;cursor:pointer;">
+            <div><div style="font-family:'Apercu',sans-serif;font-size:10px;font-weight:600;letter-spacing:0.08em;text-transform:uppercase;color:rgba(248,246,235,0.55);">Carb Loading &middot; <span style="color:var(--me-orange);">{{ evProtoName }}</span></div><div style="font-family:'Apercu Mono',monospace;font-size:12px;color:var(--me-cream);margin-top:4px;font-variant-numeric:tabular-nums;">{{ evWindowStr }} &middot; {{ evTargetsStr }}</div></div>
+            <span style="color:var(--me-orange);font-size:16px;">&rsaquo;</span>
+          </div>
+          </sc-if>
+        </div>
+
+        <sc-if value="{{ showEvChooser }}" hint-placeholder-val="{{ false }}">
+        <div style="position:absolute;inset:0;z-index:25;background:var(--me-blackberry);display:flex;flex-direction:column;">
+          <div style="flex:0 0 auto;padding:16px 16px 8px;display:flex;align-items:center;gap:10px;">
+            <button onClick="{{ evCloseChooser }}" style="background:rgba(255,255,255,0.07);border:none;border-radius:50%;width:32px;height:32px;color:var(--me-cream);font-size:16px;cursor:pointer;">&lsaquo;</button>
+            <div style="font-family:'Compadre',Georgia,serif;font-size:17px;color:var(--me-cream);flex:1;">Choose a protocol</div>
+          </div>
+          <div class="scrollbody" style="flex:1;overflow:auto;padding:4px 16px 22px;">
+            <sc-for list="{{ evCards }}" as="pc" hint-placeholder-count="3">
+              <div onClick="{{ pc.onSelect }}" style="margin-top:10px;background:{{ pc.bg }};border:1px solid {{ pc.border }};border-radius:16px;padding:14px;opacity:{{ pc.opacity }};cursor:{{ pc.cursor }};">
+                <div style="display:flex;justify-content:space-between;align-items:baseline;gap:8px;">
+                  <span style="font-family:'Compadre',Georgia,serif;font-size:16px;color:var(--me-cream);">{{ pc.name }}</span>
+                  <span style="font-family:'Apercu Mono',monospace;font-size:12px;color:var(--me-orange);font-variant-numeric:tabular-nums;">{{ pc.rateStr }}</span>
+                </div>
+                <div style="font-family:'Apercu',sans-serif;font-size:11px;color:rgba(248,246,235,0.55);margin-top:4px;">{{ pc.sub }}</div>
+                <sc-if value="{{ pc.blocked }}" hint-placeholder-val="{{ false }}"><div style="font-family:'Apercu',sans-serif;font-size:10.5px;font-weight:600;color:rgba(248,246,235,0.5);margin-top:7px;">{{ pc.reason }}</div></sc-if>
+                <sc-if value="{{ pc.current }}" hint-placeholder-val="{{ false }}"><div style="font-family:'Apercu',sans-serif;font-size:9.5px;font-weight:600;letter-spacing:0.07em;text-transform:uppercase;color:var(--me-orange);margin-top:7px;">Current plan</div></sc-if>
+              </div>
+            </sc-for>
+            <div style="font-family:'Apercu',sans-serif;font-size:10.5px;color:rgba(248,246,235,0.4);margin-top:14px;line-height:1.4;">Targets are per day, from your body weight. You can edit any day&rsquo;s target after setup.</div>
+          </div>
+        </div>
+        </sc-if>
+
+        <sc-if value="{{ showEvSumPage }}" hint-placeholder-val="{{ false }}">
+        <div style="position:absolute;inset:0;z-index:26;background:var(--me-blackberry);display:flex;flex-direction:column;">
+          <div style="flex:0 0 auto;padding:16px 16px 8px;display:flex;align-items:center;gap:10px;">
+            <button onClick="{{ evCloseSummary }}" style="background:rgba(255,255,255,0.07);border:none;border-radius:50%;width:32px;height:32px;color:var(--me-cream);font-size:16px;cursor:pointer;">&lsaquo;</button>
+            <div style="font-family:'Compadre',Georgia,serif;font-size:17px;color:var(--me-cream);flex:1;">Carb Loading Plan</div>
+          </div>
+          <div class="scrollbody" style="flex:1;overflow:auto;padding:4px 16px 22px;">
+            <div style="font-family:'Apercu',sans-serif;font-size:10px;letter-spacing:0.08em;text-transform:uppercase;color:rgba(248,246,235,0.45);padding:2px 2px 6px;">{{ evProtoName }} &middot; {{ evWindowStr }}</div>
+            <sc-for list="{{ evSumRows }}" as="sr" hint-placeholder-count="3">
+              <div style="background:rgba(255,255,255,0.035);border:1px solid rgba(248,246,235,0.08);border-radius:12px;padding:10px 12px;margin-top:6px;display:flex;justify-content:space-between;align-items:baseline;gap:8px;">
+                <span style="font-family:'Apercu',sans-serif;font-size:11px;font-weight:600;letter-spacing:0.05em;text-transform:uppercase;color:rgba(248,246,235,0.75);">{{ sr.label }} <span style="color:rgba(248,246,235,0.4);font-weight:400;text-transform:none;letter-spacing:0;">{{ sr.dateStr }}</span></span>
+                <span style="font-family:'Apercu Mono',monospace;font-size:12px;color:var(--me-orange);font-variant-numeric:tabular-nums;">{{ sr.gramsStr }} g <span style="color:rgba(248,246,235,0.45);">&middot; {{ sr.gkgStr }} g/kg</span><sc-if value="{{ sr.edited }}" hint-placeholder-val="{{ false }}"> <span style="font-family:'Apercu',sans-serif;font-size:9px;font-weight:600;letter-spacing:0.06em;text-transform:uppercase;color:var(--me-orange);border:1px solid rgba(247,139,20,0.5);border-radius:100px;padding:1px 6px;">edited</span></sc-if></span>
+              </div>
+            </sc-for>
+            <div onClick="{{ evRepick }}" style="margin-top:14px;border:1px solid {{ evRepickBorder }};border-radius:12px;padding:11px 12px;display:flex;justify-content:space-between;align-items:center;cursor:pointer;opacity:{{ evRepickOpacity }};">
+              <div><div style="font-family:'Apercu',sans-serif;font-size:12px;font-weight:600;color:var(--me-cream);">Change protocol</div><sc-if value="{{ evRepickBlocked }}" hint-placeholder-val="{{ false }}"><div style="font-family:'Apercu',sans-serif;font-size:10.5px;color:rgba(248,246,235,0.5);margin-top:1px;">{{ evRepickReason }}</div></sc-if></div>
+              <span style="color:rgba(248,246,235,0.5);font-size:14px;">&rsaquo;</span>
+            </div>
+            <div onClick="{{ evOpenDelete }}" style="margin-top:8px;border:1px solid rgba(220,37,151,0.45);border-radius:12px;padding:11px 12px;cursor:pointer;">
+              <div style="font-family:'Apercu',sans-serif;font-size:12px;font-weight:600;color:var(--me-dragonfruit);">Remove carb loading plan</div>
+            </div>
+          </div>
+        </div>
+        </sc-if>
+
+        <sc-if value="{{ showEvSumSheet }}" hint-placeholder-val="{{ false }}">
+        <div style="position:absolute;inset:0;z-index:26;">
+          <div onClick="{{ evCloseSummary }}" style="position:absolute;inset:0;background:rgba(0,0,0,0.45);"></div>
+          <div style="position:absolute;left:0;right:0;bottom:0;max-height:78%;background:rgb(46,17,42);border:1px solid rgba(248,246,235,0.12);border-bottom:none;border-radius:22px 22px 0 0;display:flex;flex-direction:column;">
+            <div style="flex:0 0 auto;padding:10px 16px 4px;"><div style="width:36px;height:4px;border-radius:2px;background:rgba(248,246,235,0.25);margin:0 auto;"></div>
+              <div style="font-family:'Compadre',Georgia,serif;font-size:17px;color:var(--me-cream);margin-top:10px;">Carb Loading Plan</div>
+            </div>
+            <div class="scrollbody" style="flex:1;overflow:auto;padding:8px 16px 22px;">
+            <div style="font-family:'Apercu',sans-serif;font-size:10px;letter-spacing:0.08em;text-transform:uppercase;color:rgba(248,246,235,0.45);padding:2px 2px 6px;">{{ evProtoName }} &middot; {{ evWindowStr }}</div>
+            <sc-for list="{{ evSumRows }}" as="sr" hint-placeholder-count="3">
+              <div style="background:rgba(255,255,255,0.035);border:1px solid rgba(248,246,235,0.08);border-radius:12px;padding:10px 12px;margin-top:6px;display:flex;justify-content:space-between;align-items:baseline;gap:8px;">
+                <span style="font-family:'Apercu',sans-serif;font-size:11px;font-weight:600;letter-spacing:0.05em;text-transform:uppercase;color:rgba(248,246,235,0.75);">{{ sr.label }} <span style="color:rgba(248,246,235,0.4);font-weight:400;text-transform:none;letter-spacing:0;">{{ sr.dateStr }}</span></span>
+                <span style="font-family:'Apercu Mono',monospace;font-size:12px;color:var(--me-orange);font-variant-numeric:tabular-nums;">{{ sr.gramsStr }} g <span style="color:rgba(248,246,235,0.45);">&middot; {{ sr.gkgStr }} g/kg</span><sc-if value="{{ sr.edited }}" hint-placeholder-val="{{ false }}"> <span style="font-family:'Apercu',sans-serif;font-size:9px;font-weight:600;letter-spacing:0.06em;text-transform:uppercase;color:var(--me-orange);border:1px solid rgba(247,139,20,0.5);border-radius:100px;padding:1px 6px;">edited</span></sc-if></span>
+              </div>
+            </sc-for>
+            <div onClick="{{ evRepick }}" style="margin-top:14px;border:1px solid {{ evRepickBorder }};border-radius:12px;padding:11px 12px;display:flex;justify-content:space-between;align-items:center;cursor:pointer;opacity:{{ evRepickOpacity }};">
+              <div><div style="font-family:'Apercu',sans-serif;font-size:12px;font-weight:600;color:var(--me-cream);">Change protocol</div><sc-if value="{{ evRepickBlocked }}" hint-placeholder-val="{{ false }}"><div style="font-family:'Apercu',sans-serif;font-size:10.5px;color:rgba(248,246,235,0.5);margin-top:1px;">{{ evRepickReason }}</div></sc-if></div>
+              <span style="color:rgba(248,246,235,0.5);font-size:14px;">&rsaquo;</span>
+            </div>
+            <div onClick="{{ evOpenDelete }}" style="margin-top:8px;border:1px solid rgba(220,37,151,0.45);border-radius:12px;padding:11px 12px;cursor:pointer;">
+              <div style="font-family:'Apercu',sans-serif;font-size:12px;font-weight:600;color:var(--me-dragonfruit);">Remove carb loading plan</div>
+            </div>
+            </div>
+          </div>
+        </div>
+        </sc-if>
+
+        <sc-if value="{{ showEvConfirm }}" hint-placeholder-val="{{ false }}">
+        <div style="position:absolute;inset:0;z-index:28;display:flex;align-items:center;justify-content:center;padding:24px;background:rgba(0,0,0,0.5);">
+          <div style="background:rgb(46,17,42);border:1px solid rgba(248,246,235,0.14);border-radius:18px;padding:18px 16px;width:100%;">
+            <div style="font-family:'Compadre',Georgia,serif;font-size:17px;color:var(--me-cream);">Keep your edited targets?</div>
+            <div style="font-family:'Apercu',sans-serif;font-size:12px;color:rgba(248,246,235,0.65);margin-top:8px;line-height:1.45;">You edited: {{ evEditedListStr }}.</div>
+            <sc-if value="{{ evDropNoteOn }}" hint-placeholder-val="{{ false }}"><div style="font-family:'Apercu',sans-serif;font-size:11px;color:rgba(248,246,235,0.5);margin-top:6px;line-height:1.45;">{{ evDropNoteStr }}</div></sc-if>
+            <button onClick="{{ evConfirmKeep }}" style="margin-top:14px;width:100%;background:var(--me-orange);border:none;border-radius:100px;padding:11px;cursor:pointer;font-family:'Apercu',sans-serif;font-weight:600;font-size:13px;color:rgb(56,22,51);">Keep my targets</button>
+            <button onClick="{{ evConfirmReset }}" style="margin-top:8px;width:100%;background:transparent;border:1px solid rgba(248,246,235,0.3);border-radius:100px;padding:11px;cursor:pointer;font-family:'Apercu',sans-serif;font-weight:600;font-size:13px;color:var(--me-cream);">Reset to protocol</button>
+          </div>
+        </div>
+        </sc-if>
+
+        <sc-if value="{{ showEvDelConfirm }}" hint-placeholder-val="{{ false }}">
+        <div style="position:absolute;inset:0;z-index:28;display:flex;align-items:center;justify-content:center;padding:24px;background:rgba(0,0,0,0.5);">
+          <div style="background:rgb(46,17,42);border:1px solid rgba(248,246,235,0.14);border-radius:18px;padding:18px 16px;width:100%;">
+            <div style="font-family:'Compadre',Georgia,serif;font-size:17px;color:var(--me-cream);">Remove carb loading plan?</div>
+            <div style="font-family:'Apercu',sans-serif;font-size:12px;color:rgba(248,246,235,0.65);margin-top:8px;line-height:1.45;">Targets and schedule are deleted. Food you&rsquo;ve already logged stays in your log.</div>
+            <button onClick="{{ evDeleteGo }}" style="margin-top:14px;width:100%;background:var(--me-dragonfruit);border:none;border-radius:100px;padding:11px;cursor:pointer;font-family:'Apercu',sans-serif;font-weight:600;font-size:13px;color:var(--me-cream);">Remove</button>
+            <button onClick="{{ evDeleteCancel }}" style="margin-top:8px;width:100%;background:transparent;border:1px solid rgba(248,246,235,0.3);border-radius:100px;padding:11px;cursor:pointer;font-family:'Apercu',sans-serif;font-weight:600;font-size:13px;color:var(--me-cream);">Cancel</button>
+          </div>
+        </div>
+        </sc-if>
+      </div>
+      </sc-if>
       <sc-if value="{{ showLoadBreakdown }}" hint-placeholder-val="{{ false }}">
       <div style="position:absolute;inset:0;z-index:28;background:var(--me-blackberry);display:flex;flex-direction:column;">
         <div style="flex:0 0 auto;padding:16px 16px 8px;display:flex;align-items:center;gap:10px;">
@@ -515,6 +662,8 @@ class Component extends DCLogic {
   state = {
     overlay: null, expanded: null, timelineOpen: true, filter: "all",
     suggestOn: null, dismissed: {}, slotOpen: {}, slotPage: null, slotRowSel: null, loadBreakdown: false,
+    surf: "dash", evDaysUntil: 5, evPlan: "none", evProto: "3day", evSum: "page",
+    evChooser: false, evSummary: false, evConfirm: null, evDelConfirm: false,
     dayTime: DAY_INIT, carbLog: JSON.parse(JSON.stringify(DAY_SCENARIOS[DAY_INIT].log)),
     log: {
       Breakfast: [{ id: "bf", name: "Everything Bagel with Cream Cheese", kcal: 574, c: 58, p: 30, f: 25 }],
@@ -825,6 +974,54 @@ class Component extends DCLogic {
         bg: cur ? "rgba(247,139,20,0.08)" : "rgba(255,255,255,0.035)",
         border: cur ? "rgba(247,139,20,0.5)" : "rgba(248,246,235,0.08)" };
     });
+    // ---- Entryway (CE-1..CE-8, desk-ratification candidates) ----
+    const EV_WEIGHT = 68.0;
+    const EV_PROTOS = {
+      "3day": { name: "3-Day Classic", days: 3, rates: [8, 8, 10] },
+      "2day": { name: "2-Day Quick", days: 2, rates: [9, 11] },
+      "1day": { name: "1-Day", days: 1, rates: [11] },
+    };
+    const EV_DATES = { 25: "Thu, Sep 25", 26: "Fri, Sep 26", 27: "Sat, Sep 27" };
+    const evProtoDates = (k) => { const d = EV_PROTOS[k].days; const out = []; for (let n = 0; n < d; n++) out.push(28 - d + n); return out; };
+    const evGrams = (k) => EV_PROTOS[k].rates.map((r) => Math.round(r * EV_WEIGHT));
+    const EV_EDITED = { date: 26, grams: 620 };
+    const evP = EV_PROTOS[s.evProto];
+    const evDatesArr = evProtoDates(s.evProto);
+    const evGramsArr = evGrams(s.evProto);
+    const evHasEdit = s.evPlan === "edited" && evDatesArr.includes(EV_EDITED.date);
+    const evWindowStr = "Sep " + evDatesArr[0] + (evDatesArr.length > 1 ? "\u2013" + evDatesArr[evDatesArr.length - 1] : "");
+    const evTargetsStr = evDatesArr.map((d, i) => (evHasEdit && d === EV_EDITED.date ? EV_EDITED.grams : evGramsArr[i])).join(" / ") + " g";
+    const evApply = (k, plan) => this.setState({ evProto: k, evPlan: plan, evChooser: false, evConfirm: null, evSummary: false });
+    const evSumRows = evDatesArr.map((d, i) => {
+      const edited = evHasEdit && d === EV_EDITED.date;
+      const grams = edited ? EV_EDITED.grams : evGramsArr[i];
+      return { key: "sr" + i, label: "Day " + (i + 1), dateStr: EV_DATES[d],
+        gramsStr: String(grams), gkgStr: (grams / EV_WEIGHT).toFixed(1), edited };
+    });
+    const evRaceDay = s.evDaysUntil === 0;
+    const evCards = Object.keys(EV_PROTOS).map((k) => {
+      const p = EV_PROTOS[k];
+      const feasible = s.evDaysUntil >= p.days;
+      const current = s.evPlan !== "none" && k === s.evProto;
+      const dates = evProtoDates(k);
+      return { key: "pc" + k, name: p.name,
+        rateStr: p.rates.join(" \u00b7 ") + " g/kg",
+        sub: p.days + (p.days === 1 ? " day" : " days") + " \u00b7 Sep " + dates[0] + (dates.length > 1 ? "\u2013" + dates[dates.length - 1] : "") + " \u00b7 " + evGrams(k).join(" / ") + " g",
+        blocked: !feasible, reason: "Needs " + p.days + (p.days === 1 ? " day" : " days") + " before race day",
+        current, opacity: feasible ? "1" : "0.45", cursor: feasible ? "pointer" : "default",
+        bg: current ? "rgba(247,139,20,0.08)" : "rgba(255,255,255,0.035)",
+        border: current ? "rgba(247,139,20,0.55)" : feasible ? "rgba(248,246,235,0.14)" : "rgba(248,246,235,0.08)",
+        onSelect: () => {
+          if (!feasible) return;
+          if (s.evPlan === "none") { evApply(k, "plan"); return; }
+          if (k === s.evProto) { this.setState({ evChooser: false }); return; }
+          if (s.evPlan === "edited") { this.setState({ evConfirm: k }); return; }
+          evApply(k, "plan");
+        } };
+    });
+    const evPend = s.evConfirm ? EV_PROTOS[s.evConfirm] : null;
+    const evPendKeeps = s.evConfirm ? evProtoDates(s.evConfirm).includes(EV_EDITED.date) : false;
+    const evPill = (sel) => ({ bg: sel ? "rgb(56,22,51)" : "transparent", col: sel ? "rgb(248,246,235)" : "rgba(56,22,51,0.55)" });
     const PROTO_TARGETS = [544, 544, 680];
     const TODAY_KEYS = ["7am", "3pm", "7pm", "9pm", "10pm"];
     const curDayKey = s.dayTime || DAY_INIT;
@@ -837,6 +1034,45 @@ class Component extends DCLogic {
       macrosSub, nodes,
       ...slotPageVals,
       showLoadBreakdown: carbDay && !!s.loadBreakdown,
+      showEvSurface: s.surf === "event",
+      setSurfDash: () => this.setState({ surf: "dash" }),
+      setSurfEvent: () => this.setState({ surf: "event" }),
+      surfDashBg: evPill(s.surf === "dash").bg, surfDashCol: evPill(s.surf === "dash").col,
+      surfEventBg: evPill(s.surf === "event").bg, surfEventCol: evPill(s.surf === "event").col,
+      surfEventOn: s.surf === "event",
+      evDaysPills: [[5, "5 days out"], [2, "2 days out"], [1, "1 day out"], [0, "Race day"]].map(([n, label]) => ({ key: "dp" + n, label, ...evPill(s.evDaysUntil === n), onPick: () => this.setState({ evDaysUntil: n, evChooser: false, evConfirm: null }) })),
+      evPlanPills: [["none", "No plan"], ["plan", "Plan"], ["edited", "Plan, edited targets"]].map(([k, label]) => ({ key: "pp" + k, label, ...evPill(s.evPlan === k), onPick: () => this.setState({ evPlan: k, evProto: k === "none" ? s.evProto : "3day", evChooser: false, evSummary: false, evConfirm: null }) })),
+      evAbPills: [["page", "Summary: Page"], ["sheet", "Summary: Sheet"]].map(([k, label]) => ({ key: "ab" + k, label, ...evPill(s.evSum === k), onPick: () => this.setState({ evSum: k }) })),
+      evRaceInStr: evRaceDay ? "Race day" : s.evDaysUntil === 1 ? "Race tomorrow" : "Race in " + s.evDaysUntil + " days",
+      evRowSetup: s.evPlan === "none" && !evRaceDay,
+      evRowPassed: s.evPlan === "none" && evRaceDay,
+      evRowPlan: s.evPlan !== "none",
+      evSetupSub: "3-, 2-, and 1-day protocols",
+      evProtoName: evP.name, evWindowStr, evTargetsStr,
+      evOpenChooser: () => this.setState({ evChooser: true }),
+      evCloseChooser: () => this.setState({ evChooser: false, evConfirm: null }),
+      evOpenSummary: () => this.setState({ evSummary: true }),
+      evCloseSummary: () => this.setState({ evSummary: false }),
+      showEvChooser: !!s.evChooser,
+      showEvSumPage: !!s.evSummary && s.evSum === "page",
+      showEvSumSheet: !!s.evSummary && s.evSum === "sheet",
+      evSumRows, evCards,
+      evRepick: () => { if (!evRaceDay) this.setState({ evChooser: true }); },
+      evRepickBlocked: evRaceDay,
+      evRepickReason: "Nothing fits before race day",
+      evRepickBorder: evRaceDay ? "rgba(248,246,235,0.08)" : "rgba(248,246,235,0.18)",
+      evRepickOpacity: evRaceDay ? "0.5" : "1",
+      evOpenDelete: () => this.setState({ evDelConfirm: true }),
+      showEvDelConfirm: !!s.evDelConfirm,
+      evDeleteGo: () => this.setState({ evDelConfirm: false, evSummary: false, evPlan: "none" }),
+      evDeleteCancel: () => this.setState({ evDelConfirm: false }),
+      showEvConfirm: !!s.evConfirm,
+      evEditedListStr: "Day " + (evDatesArr.indexOf(EV_EDITED.date) + 1) + " \u2014 you set " + EV_EDITED.grams + " g",
+      evDropNoteOn: !!s.evConfirm && !evPendKeeps,
+      evDropNoteStr: evPend ? "On the " + evPend.name + " protocol, " + EV_DATES[EV_EDITED.date] + " falls outside the window \u2014 that target goes away." : "",
+      evConfirmKeep: () => evApply(s.evConfirm, evPendKeeps ? "edited" : "plan"),
+      evConfirmReset: () => evApply(s.evConfirm, "plan"),
+
       openLoadBreakdown: () => this.setState({ loadBreakdown: true, lbFrom: curDayKey }),
       lbClose: () => { if (s.lbFrom && s.lbFrom !== curDayKey) lbGoDay(s.lbFrom); this.setState({ loadBreakdown: false }); },
       lbTitle: "Carb Load \u00b7 Day " + CARB_DAY_N + " of " + CARB_LOAD_DAYS,
