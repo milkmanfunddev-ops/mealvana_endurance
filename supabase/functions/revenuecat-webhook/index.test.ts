@@ -235,6 +235,11 @@ class FakeRevenueCat implements RevenueCatClient {
   async createCustomer(): Promise<void> {
     throw new Error('the webhook never creates customers');
   }
+
+  // deno-lint-ignore require-await
+  async deleteCustomer(): Promise<void> {
+    throw new Error('the webhook never deletes customers');
+  }
 }
 
 // ---------------------------------------------------------------------------

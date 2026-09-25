@@ -186,6 +186,10 @@ function fakeRc(): FakeRc {
       rc.unknown.delete(user);
       rc.created.push(user);
     },
+    // deno-lint-ignore require-await
+    async deleteCustomer() {
+      throw new Error('redeem-code never deletes customers');
+    },
   };
   return rc;
 }
@@ -344,7 +348,30 @@ describe('an athlete entering a coach code', () => {
     assert(pairs[0].requested_at);
   });
 
-  it('already paired with that coach leaves the pairing as it is', async () => {
+  // Finding 11-002, ticket 95 (Lee, 2026-09-25): a code from a coach the
+  // athlete has already asked (pending) or is paired with (active) says so,
+  // spends no claim and leaves the first code in coach_code.
+  for (const status of ['pending', 'active'] as const) {
+    it(`a second code from a coach with a ${status} pairing is refused: no claim, coach_code kept`, async () => {
+      const first = code({});
+      const second = code({ code: 'KYLE18' });
+      const db = world([first, second]);
+      const rc = fakeRc();
+      assertEquals((await redeem(db, rc, signedIn(ATHLETE), { code: 'KYLE30' })).body.kind, 'paired');
+      db.rows('coach_athlete_relationships')[0].status = status;
+      const writesBefore = db.writes.length;
+
+      refusedWith(await redeem(db, rc, signedIn(ATHLETE), { code: 'KYLE18' }), 'already_paired');
+
+      assertEquals(db.rows('code_redemptions').map((r) => r.code_id), [first.id], 'no claim on the second code');
+      assertEquals(rc.attributes, [{ user: ATHLETE, attributes: { coach_code: 'KYLE30' } }]);
+      assertEquals(db.writes.length, writesBefore, 'nothing written');
+      assertEquals(db.rows('coach_athlete_relationships').length, 1);
+      assertEquals(db.rows('coach_athlete_relationships')[0].status, status);
+    });
+  }
+
+  it('a coach code from a coach already paired some other way is refused the same way', async () => {
     const db = world([code({})], {
       coach_athlete_relationships: [{
         id: 'rel-1',
@@ -356,12 +383,27 @@ describe('an athlete entering a coach code', () => {
       }],
     });
     const rc = fakeRc();
-    const res = await redeem(db, rc, signedIn(ATHLETE), { code: 'KYLE30' });
-    assertEquals(res.body.ok, true);
-    assertEquals(db.rows('coach_athlete_relationships').length, 1);
+    refusedWith(await redeem(db, rc, signedIn(ATHLETE), { code: 'KYLE30' }), 'already_paired');
+    nothingWritten(db, rc);
     assertEquals(db.rows('coach_athlete_relationships')[0].status, 'active');
-    assertEquals(db.writesTo('coach_athlete_relationships').length, 0);
-    assertEquals(rc.attributes, [{ user: ATHLETE, attributes: { coach_code: 'KYLE30' } }]);
+  });
+
+  it('a code from a different coach still pairs while another pairing is pending', async () => {
+    const OTHER_COACH = 'c0ac0000-0000-4000-8000-000000000009';
+    const db = world([code({ code: 'OTHER1', owner_user_id: OTHER_COACH })], {
+      coach_athlete_relationships: [{
+        id: 'rel-1',
+        coach_user_id: COACH,
+        athlete_user_id: ATHLETE,
+        status: 'pending',
+        requested_by: 'athlete',
+      }],
+    });
+    const rc = fakeRc();
+    const res = await redeem(db, rc, signedIn(ATHLETE), { code: 'OTHER1' });
+    assertEquals(res.body.kind, 'paired');
+    assertEquals(res.body.coach_user_id, OTHER_COACH);
+    assertEquals(db.rows('coach_athlete_relationships').length, 2);
   });
 
   it('after an archived pairing asks again: the row goes back to pending', async () => {

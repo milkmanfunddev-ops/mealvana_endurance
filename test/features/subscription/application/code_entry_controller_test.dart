@@ -57,6 +57,7 @@ const _refusals = {
   'used': 'That code has already been used.',
   'already_redeemed': "You've already used that code.",
   'own_code': "That's your own code. Share it with your athletes.",
+  'already_paired': "You've already asked this coach to pair.",
 };
 
 void main() {
@@ -200,6 +201,7 @@ void main() {
       'used': CodeRefusal.used,
       'already_redeemed': CodeRefusal.alreadyRedeemed,
       'own_code': CodeRefusal.ownCode,
+      'already_paired': CodeRefusal.alreadyPaired,
     };
     for (final entry in expected.entries) {
       test(entry.key, () async {

@@ -15,9 +15,9 @@
 
 **Touches:** supabase/functions/delete-user/, supabase/functions/redeem-code/, supabase/functions/_shared/ (a RevenueCat client if one exists), the redeem sheet's message mapping in lib/features/subscription/ and assets/config/content_defaults.json. Migration timestamp if one is needed: `20260925169500`.
 
-- [ ] Deno tests: delete-user calls RevenueCat's customer delete with the user id, and a RevenueCat error still deletes the account and logs it.
-- [ ] Deno tests: a second code from the same coach with a pending pairing answers `already_paired` (or the existing name for it), writes no `code_redemptions` row and does not set `coach_code`. The same for an active pairing.
-- [ ] A widget or controller test: the redeem sheet shows the already-asked message.
-- [ ] `flutter analyze` clean on touched files, deno tests for both functions. Deploy: wave lead.
+- [x] Deno tests: delete-user calls RevenueCat's customer delete with the user id, and a RevenueCat error still deletes the account and logs it.
+- [x] Deno tests: a second code from the same coach with a pending pairing answers `already_paired` (or the existing name for it), writes no `code_redemptions` row and does not set `coach_code`. The same for an active pairing.
+- [x] A widget or controller test: the redeem sheet shows the already-asked message.
+- [x] `flutter analyze` clean on touched files, deno tests for both functions. Deploy: wave lead.
 
 Next: /implement-lee testing-wave
