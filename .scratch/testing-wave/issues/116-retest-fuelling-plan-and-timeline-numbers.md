@@ -1,6 +1,6 @@
 # 116: Retest: the fuelling plan, the Plan-tab note and the timeline's numbers
 
-**Status:** ready-for-agent
+**Status:** in-progress (wave 32, 2026-09-25)
 **Blocked by:** none.
 **Pair with:** 115 (confirms a Draft on test@test.com last, 16-003), and any of 112, 113, 114 (they log, edit and remove meals on test@test.com today). This run logs and removes two Manual meals (27-001) and logs snacks (26-010) on test@test.com today. Read every figure with its time in `notes.md`, and the rows behind it at the same minute.
 **Next:** `/implement-lee testing-wave`
