@@ -1041,7 +1041,7 @@ export async function refreshPictures(proposals, ssot, screens, { root = process
 
 // ---- /implement-lee: waves in worktrees ----
 
-const ticketNumbers = line => [...new Set((String(line || '').match(/\b\d{2}\b/g) || []))];
+const ticketNumbers = line => [...new Set((String(line || '').match(/\b\d{2,3}\b/g) || []))];
 /**
  * The frontier: every ticket that is ready and whose blockers are all done or
  * dropped, from the header lines `ticketDocument` read. `building` is what an

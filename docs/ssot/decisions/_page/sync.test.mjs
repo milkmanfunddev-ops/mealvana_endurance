@@ -1146,6 +1146,17 @@ test('ticketFrontier takes the tickets whose blockers are all done, and says wha
   assert.deepEqual(f.dropped, ['06']);
 });
 
+test('ticketFrontier reads three-digit ticket numbers in Blocked by', () => {
+  const docs = [
+    ['99-a.md', ticketFile('99', 'A', 'done', 'None.')],
+    ['100-b.md', ticketFile('100', 'B', 'ready-for-agent', '101.')],
+    ['101-c.md', ticketFile('101', 'C', 'ready-for-agent', '99.')],
+  ].map(([f, t]) => ticketDocument('sm', f, t));
+  const f = ticketFrontier(docs);
+  assert.deepEqual(f.frontier, ['101']);
+  assert.deepEqual(f.blocked, [{ number: '100', waitingOn: ['101'] }]);
+});
+
 test('designRenderings lists the design renderings a ticket cites, once each', () => {
   const text = 'Match `docs/ssot/spec/design/renderings/pre-workout@v2.html` (see docs/ssot/spec/design/renderings/pre-workout@v2.html and docs/ssot/spec/design/renderings/macro-dashboard@v1.html). The spec is docs/ssot/spec/design/components/vana-sheet.md.';
   assert.deepEqual(designRenderings(text), ['docs/ssot/spec/design/renderings/pre-workout@v2.html', 'docs/ssot/spec/design/renderings/macro-dashboard@v1.html']);
