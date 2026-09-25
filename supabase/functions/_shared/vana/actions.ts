@@ -186,6 +186,10 @@ export async function extraAction(v: VanaCtx, type: string, p: Record<string, an
       return { parts: [await deletePlan(v, p.id ? String(p.id) : null, scope, true)] };
     }
     case 'undo_receipt': return { parts: [await undoReceipt(v, p)] };
+    // ---- additive 2026-09-25 (mp-675, testing-wave 73): plans are a list. rename_plan{id, name} · use_plan_again{id} (an
+    // earlier plan copied into this week as a new draft; confirming it replaces this week's plan like any new plan).
+    case 'rename_plan': return { parts: [{ kind: 'batch', plan: await plan.renamePlan(v, String(p.id), String(p.name ?? '')) }] };
+    case 'use_plan_again': return { parts: [{ kind: 'batch', plan: await plan.usePlanAgain(v, String(p.id)) }] };
     default: return null;
   }
 }

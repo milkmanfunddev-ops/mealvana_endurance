@@ -84,63 +84,76 @@ final class PreviousPlansProvider
 
 String _$previousPlansHash() => r'5406d0bda04fdae19953df2f2a2eb5007122121d';
 
-/// One plan by id, straight from the server (`get_plan {id}`), for the
-/// read-only view of an earlier plan. `null` when the server no longer has
-/// it — deleted since the list was read.
+/// One earlier plan by id (`/food/plans/:id`), straight from the server
+/// (`get_plan {id}`); `null` when the server no longer has it. Plans are a
+/// list (mp-675): the athlete edits an earlier plan's meals and servings,
+/// renames it, deletes it, or uses it again as this week's new draft.
+///
+/// History is server-only, like the list: every write here is remote-ack
+/// through `vana-action` and refuses offline before sending anything
+/// ([NeedsConnectionException]). A failed write keeps the plan on screen
+/// and rethrows so the screen can say so. A plan that is not archived may
+/// also be in Drift (the draft a Use again made, a past week's confirmed
+/// plan), so its answer is folded in through [MealPlanController] and the
+/// Plan tab never shows a stale copy.
 
-@ProviderFor(planById)
-const planByIdProvider = PlanByIdFamily._();
+@ProviderFor(EarlierPlan)
+const earlierPlanProvider = EarlierPlanFamily._();
 
-/// One plan by id, straight from the server (`get_plan {id}`), for the
-/// read-only view of an earlier plan. `null` when the server no longer has
-/// it — deleted since the list was read.
-
-final class PlanByIdProvider
-    extends
-        $FunctionalProvider<
-          AsyncValue<MealPlan?>,
-          MealPlan?,
-          FutureOr<MealPlan?>
-        >
-    with $FutureModifier<MealPlan?>, $FutureProvider<MealPlan?> {
-  /// One plan by id, straight from the server (`get_plan {id}`), for the
-  /// read-only view of an earlier plan. `null` when the server no longer has
-  /// it — deleted since the list was read.
-  const PlanByIdProvider._({
-    required PlanByIdFamily super.from,
+/// One earlier plan by id (`/food/plans/:id`), straight from the server
+/// (`get_plan {id}`); `null` when the server no longer has it. Plans are a
+/// list (mp-675): the athlete edits an earlier plan's meals and servings,
+/// renames it, deletes it, or uses it again as this week's new draft.
+///
+/// History is server-only, like the list: every write here is remote-ack
+/// through `vana-action` and refuses offline before sending anything
+/// ([NeedsConnectionException]). A failed write keeps the plan on screen
+/// and rethrows so the screen can say so. A plan that is not archived may
+/// also be in Drift (the draft a Use again made, a past week's confirmed
+/// plan), so its answer is folded in through [MealPlanController] and the
+/// Plan tab never shows a stale copy.
+final class EarlierPlanProvider
+    extends $AsyncNotifierProvider<EarlierPlan, MealPlan?> {
+  /// One earlier plan by id (`/food/plans/:id`), straight from the server
+  /// (`get_plan {id}`); `null` when the server no longer has it. Plans are a
+  /// list (mp-675): the athlete edits an earlier plan's meals and servings,
+  /// renames it, deletes it, or uses it again as this week's new draft.
+  ///
+  /// History is server-only, like the list: every write here is remote-ack
+  /// through `vana-action` and refuses offline before sending anything
+  /// ([NeedsConnectionException]). A failed write keeps the plan on screen
+  /// and rethrows so the screen can say so. A plan that is not archived may
+  /// also be in Drift (the draft a Use again made, a past week's confirmed
+  /// plan), so its answer is folded in through [MealPlanController] and the
+  /// Plan tab never shows a stale copy.
+  const EarlierPlanProvider._({
+    required EarlierPlanFamily super.from,
     required String super.argument,
   }) : super(
          retry: null,
-         name: r'planByIdProvider',
+         name: r'earlierPlanProvider',
          isAutoDispose: true,
          dependencies: null,
          $allTransitiveDependencies: null,
        );
 
   @override
-  String debugGetCreateSourceHash() => _$planByIdHash();
+  String debugGetCreateSourceHash() => _$earlierPlanHash();
 
   @override
   String toString() {
-    return r'planByIdProvider'
+    return r'earlierPlanProvider'
         ''
         '($argument)';
   }
 
   @$internal
   @override
-  $FutureProviderElement<MealPlan?> $createElement($ProviderPointer pointer) =>
-      $FutureProviderElement(pointer);
-
-  @override
-  FutureOr<MealPlan?> create(Ref ref) {
-    final argument = this.argument as String;
-    return planById(ref, argument);
-  }
+  EarlierPlan create() => EarlierPlan();
 
   @override
   bool operator ==(Object other) {
-    return other is PlanByIdProvider && other.argument == argument;
+    return other is EarlierPlanProvider && other.argument == argument;
   }
 
   @override
@@ -149,30 +162,90 @@ final class PlanByIdProvider
   }
 }
 
-String _$planByIdHash() => r'413b287df57f27c259fdd945ec5111fd1e546329';
+String _$earlierPlanHash() => r'63ee87ce072b4688deb6ef953ddceb9ce575cf21';
 
-/// One plan by id, straight from the server (`get_plan {id}`), for the
-/// read-only view of an earlier plan. `null` when the server no longer has
-/// it — deleted since the list was read.
+/// One earlier plan by id (`/food/plans/:id`), straight from the server
+/// (`get_plan {id}`); `null` when the server no longer has it. Plans are a
+/// list (mp-675): the athlete edits an earlier plan's meals and servings,
+/// renames it, deletes it, or uses it again as this week's new draft.
+///
+/// History is server-only, like the list: every write here is remote-ack
+/// through `vana-action` and refuses offline before sending anything
+/// ([NeedsConnectionException]). A failed write keeps the plan on screen
+/// and rethrows so the screen can say so. A plan that is not archived may
+/// also be in Drift (the draft a Use again made, a past week's confirmed
+/// plan), so its answer is folded in through [MealPlanController] and the
+/// Plan tab never shows a stale copy.
 
-final class PlanByIdFamily extends $Family
-    with $FunctionalFamilyOverride<FutureOr<MealPlan?>, String> {
-  const PlanByIdFamily._()
+final class EarlierPlanFamily extends $Family
+    with
+        $ClassFamilyOverride<
+          EarlierPlan,
+          AsyncValue<MealPlan?>,
+          MealPlan?,
+          FutureOr<MealPlan?>,
+          String
+        > {
+  const EarlierPlanFamily._()
     : super(
         retry: null,
-        name: r'planByIdProvider',
+        name: r'earlierPlanProvider',
         dependencies: null,
         $allTransitiveDependencies: null,
         isAutoDispose: true,
       );
 
-  /// One plan by id, straight from the server (`get_plan {id}`), for the
-  /// read-only view of an earlier plan. `null` when the server no longer has
-  /// it — deleted since the list was read.
+  /// One earlier plan by id (`/food/plans/:id`), straight from the server
+  /// (`get_plan {id}`); `null` when the server no longer has it. Plans are a
+  /// list (mp-675): the athlete edits an earlier plan's meals and servings,
+  /// renames it, deletes it, or uses it again as this week's new draft.
+  ///
+  /// History is server-only, like the list: every write here is remote-ack
+  /// through `vana-action` and refuses offline before sending anything
+  /// ([NeedsConnectionException]). A failed write keeps the plan on screen
+  /// and rethrows so the screen can say so. A plan that is not archived may
+  /// also be in Drift (the draft a Use again made, a past week's confirmed
+  /// plan), so its answer is folded in through [MealPlanController] and the
+  /// Plan tab never shows a stale copy.
 
-  PlanByIdProvider call(String id) =>
-      PlanByIdProvider._(argument: id, from: this);
+  EarlierPlanProvider call(String id) =>
+      EarlierPlanProvider._(argument: id, from: this);
 
   @override
-  String toString() => r'planByIdProvider';
+  String toString() => r'earlierPlanProvider';
+}
+
+/// One earlier plan by id (`/food/plans/:id`), straight from the server
+/// (`get_plan {id}`); `null` when the server no longer has it. Plans are a
+/// list (mp-675): the athlete edits an earlier plan's meals and servings,
+/// renames it, deletes it, or uses it again as this week's new draft.
+///
+/// History is server-only, like the list: every write here is remote-ack
+/// through `vana-action` and refuses offline before sending anything
+/// ([NeedsConnectionException]). A failed write keeps the plan on screen
+/// and rethrows so the screen can say so. A plan that is not archived may
+/// also be in Drift (the draft a Use again made, a past week's confirmed
+/// plan), so its answer is folded in through [MealPlanController] and the
+/// Plan tab never shows a stale copy.
+
+abstract class _$EarlierPlan extends $AsyncNotifier<MealPlan?> {
+  late final _$args = ref.$arg as String;
+  String get id => _$args;
+
+  FutureOr<MealPlan?> build(String id);
+  @$mustCallSuper
+  @override
+  void runBuild() {
+    final created = build(_$args);
+    final ref = this.ref as $Ref<AsyncValue<MealPlan?>, MealPlan?>;
+    final element =
+        ref.element
+            as $ClassProviderElement<
+              AnyNotifier<AsyncValue<MealPlan?>, MealPlan?>,
+              AsyncValue<MealPlan?>,
+              Object?,
+              Object?
+            >;
+    element.handleValue(ref, created);
+  }
 }

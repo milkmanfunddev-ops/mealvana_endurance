@@ -1,4 +1,4 @@
-/// `previousPlansProvider` / `planByIdProvider` against a stand-in for
+/// `previousPlansProvider` / `earlierPlanProvider` against a stand-in for
 /// `vana-action` answering in the server's own shape: `listPlans` in
 /// `plan.ts` emits `{id, weekStart, status, batchCooking, mealCount}` rows
 /// newest week first with deleted plans already left out; `get_plan` answers
@@ -151,9 +151,9 @@ void main() {
     expect(plans.map((p) => p.id), ['plan-prev-1', 'plan-prev-2']);
   });
 
-  test('planById reads the plan the server answers with', () async {
+  test('earlierPlan reads the plan the server answers with', () async {
     final c = makeContainer(withPlan: current);
-    final plan = await c.read(planByIdProvider('plan-prev-1').future);
+    final plan = await c.read(earlierPlanProvider('plan-prev-1').future);
 
     expect(plan, isNotNull);
     expect(plan!.id, 'plan-prev-1');
@@ -163,9 +163,9 @@ void main() {
     expect(call.id, 'plan-prev-1');
   });
 
-  test('planById is null when the server no longer has the plan', () async {
+  test('earlierPlan is null when the server no longer has the plan', () async {
     final c = makeContainer(withPlan: current);
-    final plan = await c.read(planByIdProvider('plan-deleted').future);
+    final plan = await c.read(earlierPlanProvider('plan-deleted').future);
 
     expect(plan, isNull);
   });

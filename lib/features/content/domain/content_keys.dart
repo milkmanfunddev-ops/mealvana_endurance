@@ -359,14 +359,30 @@ class ContentKeys {
   static const String mpPlanDeleteConfirm = 'meal_planning.plan_delete_confirm';
   static const String mpPlanDeleteCancel = 'meal_planning.plan_delete_cancel';
   static const String mpPlanDeleted = 'meal_planning.plan_deleted';
-  // Earlier plans (2026-09-16): the ⋮ item, its sheet, and the read-only view.
+  // Earlier plans (2026-09-16): the ⋮ item, its sheet, and the plan's view.
+  // Since 2026-09-25 (mp-675) an earlier plan is edited, renamed, deleted or
+  // used again from its view; the "view only" line is retired.
   static const String mpPlanPrevious = 'meal_planning.plan_previous';
   static const String mpPreviousPlansEmpty =
       'meal_planning.previous_plans_empty';
   static const String mpPreviousPlansFailed =
       'meal_planning.previous_plans_failed';
-  static const String mpPreviousPlanReadOnly =
-      'meal_planning.previous_plan_read_only';
+  static const String mpPreviousPlanRename =
+      'meal_planning.previous_plan_rename';
+  static const String mpPreviousPlanRenameTitle =
+      'meal_planning.previous_plan_rename_title';
+  static const String mpPreviousPlanRenameHint =
+      'meal_planning.previous_plan_rename_hint';
+  static const String mpPreviousPlanRenameSave =
+      'meal_planning.previous_plan_rename_save';
+  static const String mpPreviousPlanRenameCancel =
+      'meal_planning.previous_plan_rename_cancel';
+  static const String mpPreviousPlanUseAgain =
+      'meal_planning.previous_plan_use_again';
+  static const String mpPreviousPlanUseAgainDone =
+      'meal_planning.previous_plan_use_again_done';
+  static const String mpPreviousPlanDeleteBody =
+      'meal_planning.previous_plan_delete_body';
   static const String mpPreviousPlanMissing =
       'meal_planning.previous_plan_missing';
   static const String mpSwapIngredient = 'meal_planning.swap_ingredient';

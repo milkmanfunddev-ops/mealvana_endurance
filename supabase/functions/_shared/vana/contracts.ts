@@ -61,6 +61,7 @@ export type ConversationKind = 'meal_planning' | 'general';
 export interface DayTarget { date: string; kcal: number; carbsG: number; proteinG: number; fatG: number; sessionKcal: number; planningKcal: number; lunchDinnerKcal: number; mode: string | null }
 export interface MealPlan {
   id: string; weekStart: string; status: 'draft' | 'confirmed' | 'archived'; batchCooking: boolean; days?: Record<string, DayPlan>;
+  name?: string | null;                    // additive 2026-09-25 (mp-675): the athlete's own name for the plan; null = shown by its week
   conversationId?: string | null;          // drafts are owned by the Vana conversation building them; null = week-level (Plan tab / legacy)
   brief: string | null; rules: PlanRule[]; meals: PlanMeal[]; shopping: ShoppingItem[];
   dayNotes: Record<string, string>;        // ISO date → Vana's one-liner for that day, precomputed (see server/vana/daynotes.ts)
@@ -167,7 +168,11 @@ export interface UiAction {
     // Any of these, `set_setting` and `set_pantry` may carry `chip: <the label tapped>` beside `conversationId`: the server then
     // stores the tap as the athlete's turn and the result as a textless assistant turn typed as the tool it stands in for, logs
     // one `vana_calls` row with no model and `input_mode: 'tap'`, and answers `tapMessageId` / `messageId` beside `parts`.
-    | 'same_as_last_time' | 'draft_week' | 'plan_week' | 'ask_pantry' | 'open_shopping_list';
+    | 'same_as_last_time' | 'draft_week' | 'plan_week' | 'ask_pantry' | 'open_shopping_list'
+    // additive 2026-09-25 (mp-675, testing-wave 73): plans are a list. rename_plan{id, name} → {parts:[batch]} (an empty name
+    // clears it) · use_plan_again{id} → {parts:[batch]}, the earlier plan copied into this week as a new draft. Editing an
+    // earlier plan's meals is set_servings / remove_meal by planMealId; deleting it is delete_plan{id}.
+    | 'rename_plan' | 'use_plan_again';
   payload: Record<string, unknown>;
 }
 

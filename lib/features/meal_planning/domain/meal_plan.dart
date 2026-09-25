@@ -15,6 +15,7 @@ class MealPlan extends WireRecord {
     required this.id,
     required this.weekStart,
     required this.status,
+    this.name,
     this.batchCooking = false,
     this.days = const {},
     this.conversationId,
@@ -32,6 +33,11 @@ class MealPlan extends WireRecord {
   /// `YYYY-MM-DD` (Monday).
   final String weekStart;
   final MealPlanStatus status;
+
+  /// The athlete's own name for the plan (mp-675, rename in Previous
+  /// plans); `null` shows the plan by its week. Server-only: Drift does not
+  /// keep it.
+  final String? name;
   final bool batchCooking;
 
   /// ISO date → that day's slots.
@@ -73,6 +79,7 @@ class MealPlan extends WireRecord {
       id: requireString(json, 'id'),
       weekStart: requireString(json, 'weekStart'),
       status: MealPlanStatus.requireWire(readString(json, 'status')),
+      name: readString(json, 'name'),
       batchCooking: batchCooking,
       days: Map.unmodifiable(days),
       conversationId: readString(json, 'conversationId'),
@@ -93,6 +100,7 @@ class MealPlan extends WireRecord {
     'id': id,
     'weekStart': weekStart,
     'status': status.wire,
+    'name': name,
     'batchCooking': batchCooking,
     'days': {for (final entry in days.entries) entry.key: entry.value.toJson()},
     'conversationId': conversationId,
@@ -109,6 +117,7 @@ class MealPlan extends WireRecord {
     String? id,
     String? weekStart,
     MealPlanStatus? status,
+    String? name,
     bool? batchCooking,
     Map<String, DayPlan>? days,
     String? conversationId,
@@ -128,6 +137,7 @@ class MealPlan extends WireRecord {
       id: id ?? this.id,
       weekStart: weekStart ?? this.weekStart,
       status: status ?? this.status,
+      name: name ?? this.name,
       batchCooking: batchCooking ?? this.batchCooking,
       days: days ?? this.days,
       conversationId: conversationId ?? this.conversationId,

@@ -13,8 +13,8 @@
 
 **Touches:** lib/features/meal_planning/presentation/widgets/previous_plans_sheet.dart, lib/features/meal_planning/presentation/screens/previous_plan_screen.dart, lib/features/meal_planning/application/meal_plan_controller.dart, supabase/functions/_shared/vana/plan.ts, supabase/functions/_shared/vana/actions.ts
 
-- [ ] A deno test: use-again copies a plan's meals into this week's new draft; delete removes a plan; drafts are not listed.
-- [ ] Seam tests through the real notifier for edit, rename, delete and use again.
+- [x] A deno test: use-again copies a plan's meals into this week's new draft; delete removes a plan; drafts are not listed.
+- [x] Seam tests through the real notifier for edit, rename, delete and use again.
 - [ ] Deployed to dev.
 - [ ] codegen if annotations changed, `flutter analyze` and the suite green.
 

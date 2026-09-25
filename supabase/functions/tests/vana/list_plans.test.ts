@@ -36,7 +36,8 @@ function account() {
   const meals = [];
   for (let i = 0; i < 25; i++) {
     const id = `plan-${String(i).padStart(2, '0')}`;
-    plans.push(planRow(id, weekOf(i), i === 0 ? 'confirmed' : 'archived'));
+    // Each week's plan was confirmed once, the older ones since replaced (archived with confirmed_at kept, ticket 73).
+    plans.push(planRow(id, weekOf(i), i === 0 ? 'confirmed' : 'archived', { confirmed_at: `${weekOf(i)}T09:30:00Z` }));
     for (let m = 0; m < (i % 4) + 1; m++) meals.push(mealRow(`${id}-m${m}`, id));
     if (i < 15) plans.push(planRow(`empty-${i}`, weekOf(i), 'draft', { updated_at: `${weekOf(i)}T10:00:00Z` }));
   }
@@ -58,7 +59,7 @@ Deno.test('listPlans: each row carries its meal count; empty and deleted plans a
   const v = account();
   const out = await listPlans(v);
   assertEquals(out.map((p) => p.mealCount), Array.from({ length: 25 }, (_, i) => (i % 4) + 1));
-  assertEquals(out[0], { id: 'plan-00', weekStart: weekOf(0), status: 'confirmed', batchCooking: true, mealCount: 1 });
+  assertEquals(out[0], { id: 'plan-00', name: null, weekStart: weekOf(0), status: 'confirmed', batchCooking: true, mealCount: 1 });
   assertEquals(out.some((p) => p.id.startsWith('empty-') || p.id === 'deleted' || p.id === 'someone-else'), false);
 });
 

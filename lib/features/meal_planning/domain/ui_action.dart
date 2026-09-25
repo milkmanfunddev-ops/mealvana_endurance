@@ -481,6 +481,36 @@ class GetPlanAction extends UiAction {
   Map<String, Object?> payloadFields() => {if (id != null) 'id': id};
 }
 
+/// `{id, name}` → `{parts: [batch]}` — the athlete's own name for a plan
+/// (mp-675); an empty [name] clears it back to the week.
+class RenamePlanAction extends UiAction {
+  const RenamePlanAction({required this.id, required this.name});
+
+  final String id;
+  final String name;
+
+  @override
+  String get type => 'rename_plan';
+
+  @override
+  Map<String, Object?> payloadFields() => {'id': id, 'name': name};
+}
+
+/// `{id}` → `{parts: [batch]}` — the plan [id] copied into this week as a
+/// new draft (mp-675). The answer is the draft; the earlier plan is left as
+/// it was, and this week's plan is untouched until the draft is confirmed.
+class UsePlanAgainAction extends UiAction {
+  const UsePlanAgainAction({required this.id});
+
+  final String id;
+
+  @override
+  String get type => 'use_plan_again';
+
+  @override
+  Map<String, Object?> payloadFields() => {'id': id};
+}
+
 /// `{}` → `{parts: [], plans: [...]}`.
 class ListPlansAction extends UiAction {
   const ListPlansAction();
