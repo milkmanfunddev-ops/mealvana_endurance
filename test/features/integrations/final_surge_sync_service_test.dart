@@ -278,6 +278,9 @@ void main() {
           localActivities: any(named: 'localActivities'),
           remoteWorkouts: any(named: 'remoteWorkouts'),
           provider: any(named: 'provider'),
+          completionSignalIds: any(named: 'completionSignalIds'),
+          deletionWindowStart: any(named: 'deletionWindowStart'),
+          deletionWindowEnd: any(named: 'deletionWindowEnd'),
         ),
       ).thenReturn(
         SyncChangeResult(
@@ -350,6 +353,9 @@ void main() {
           localActivities: any(named: 'localActivities'),
           remoteWorkouts: any(named: 'remoteWorkouts'),
           provider: any(named: 'provider'),
+          completionSignalIds: any(named: 'completionSignalIds'),
+          deletionWindowStart: any(named: 'deletionWindowStart'),
+          deletionWindowEnd: any(named: 'deletionWindowEnd'),
         ),
       ).thenReturn(
         SyncChangeResult(
@@ -415,6 +421,9 @@ void main() {
             localActivities: any(named: 'localActivities'),
             remoteWorkouts: any(named: 'remoteWorkouts'),
             provider: any(named: 'provider'),
+            completionSignalIds: any(named: 'completionSignalIds'),
+            deletionWindowStart: any(named: 'deletionWindowStart'),
+            deletionWindowEnd: any(named: 'deletionWindowEnd'),
           ),
         ).thenReturn(
           SyncChangeResult(
@@ -460,6 +469,9 @@ void main() {
             localActivities: any(named: 'localActivities'),
             remoteWorkouts: any(named: 'remoteWorkouts'),
             provider: any(named: 'provider'),
+            completionSignalIds: any(named: 'completionSignalIds'),
+            deletionWindowStart: any(named: 'deletionWindowStart'),
+            deletionWindowEnd: any(named: 'deletionWindowEnd'),
           ),
         ).thenReturn(
           SyncChangeResult(
@@ -674,6 +686,193 @@ void main() {
         result.deletedActivityIds,
         equals(['local-normal']),
         reason: 'Normal soft-delete flow must still work after the guard fix.',
+      );
+    });
+  });
+
+  // Finding 30-001: the sync fetches UPCOMING workouts only. A local row that
+  // has already happened is never in that response, so its absence is not a
+  // deletion. These tests run the real ChangeDetectionService behind the
+  // mocked API so the window the service computes is what gets exercised.
+  group('past workouts are not marked provider-deleted (Finding 30-001)', () {
+    late FinalSurgeSyncService realDetectionService;
+
+    Activity remoteFor(String providerId, DateTime scheduledAt) => _activity(
+      id: 'remote-$providerId',
+      providerWorkoutId: providerId,
+      scheduledDateTime: scheduledAt,
+    );
+
+    void stubUpcoming(List<Activity> remote) {
+      final byId = {for (final a in remote) a.providerWorkoutId!: a};
+      when(
+        () => mockApiClient.getUpcomingWorkouts(
+          any(),
+          numDays: any(named: 'numDays'),
+          numWorkouts: any(named: 'numWorkouts'),
+        ),
+      ).thenAnswer(
+        (_) async => FinalSurgeWorkoutsResponse(
+          success: true,
+          workouts: [
+            for (final id in byId.keys)
+              {'WorkoutId': id, 'HasStructuredWorkout': false},
+          ],
+        ),
+      );
+      when(() => mockTransformer.extractWorkoutId(any())).thenAnswer(
+        (inv) => (inv.positionalArguments.first as Map)['WorkoutId'] as String,
+      );
+      when(
+        () => mockTransformer.transform(
+          any(),
+          any(),
+          structuredData: any(named: 'structuredData'),
+        ),
+      ).thenAnswer((inv) {
+        final id =
+            (inv.positionalArguments.first as Map)['WorkoutId'] as String;
+        return FinalSurgeTransformResult(
+          activity: byId[id]!,
+          syncedFromProvider: _provider,
+          providerWorkoutId: id,
+          lastSyncedAt: DateTime(2026, 6, 1),
+        );
+      });
+    }
+
+    setUp(() {
+      when(
+        () => mockIntegrationsRepo.getIntegration(_userId, _provider),
+      ).thenAnswer((_) async => _activeIntegration());
+      realDetectionService = FinalSurgeSyncService(
+        apiClient: mockApiClient,
+        integrationsRepository: mockIntegrationsRepo,
+        activitiesRepository: mockActivitiesRepo,
+        transformer: mockTransformer,
+        changeDetectionService: ChangeDetectionService(),
+        analytics: analytics,
+      );
+    });
+
+    test(
+      'yesterday\'s workout missing from the upcoming list keeps '
+      'providerDeletedAt null; a vanished in-window workout is flagged',
+      () async {
+        final now = DateTime.now();
+        final today = DateTime(now.year, now.month, now.day);
+        final yesterday = _activity(
+          id: 'local-yesterday',
+          providerWorkoutId: 'p-yesterday',
+          scheduledDateTime: today.subtract(const Duration(hours: 17)),
+        );
+        final todayStillThere = _activity(
+          id: 'local-today',
+          providerWorkoutId: 'p-today',
+          scheduledDateTime: today.add(const Duration(hours: 7)),
+        );
+        final vanishedInWindow = _activity(
+          id: 'local-vanished',
+          providerWorkoutId: 'p-vanished',
+          scheduledDateTime: today.add(const Duration(days: 3, hours: 8)),
+        );
+        when(
+          () => mockActivitiesRepo.getActivitiesByUserAndProvider(
+            _userId,
+            _provider,
+          ),
+        ).thenAnswer(
+          (_) async => [yesterday, todayStillThere, vanishedInWindow],
+        );
+        stubUpcoming([remoteFor('p-today', todayStillThere.scheduledDateTime)]);
+
+        final result = await realDetectionService.syncWorkouts(
+          _userId,
+          numDays: 7,
+        );
+
+        expect(result.success, isTrue);
+        expect(result.deleted, 1);
+        verify(
+          () => mockActivitiesRepo.softDeleteFromProvider('local-vanished'),
+        ).called(1);
+        verifyNever(
+          () => mockActivitiesRepo.softDeleteFromProvider('local-yesterday'),
+        );
+        verifyNever(
+          () => mockActivitiesRepo.softDeleteFromProvider('local-today'),
+        );
+      },
+    );
+
+    test('a workout beyond the requested window is never flagged', () async {
+      final now = DateTime.now();
+      final today = DateTime(now.year, now.month, now.day);
+      final beyondWindow = _activity(
+        id: 'local-beyond',
+        providerWorkoutId: 'p-beyond',
+        scheduledDateTime: today.add(const Duration(days: 20, hours: 8)),
+      );
+      when(
+        () => mockActivitiesRepo.getActivitiesByUserAndProvider(
+          _userId,
+          _provider,
+        ),
+      ).thenAnswer((_) async => [beyondWindow]);
+      stubUpcoming(const []);
+
+      final result = await realDetectionService.syncWorkouts(
+        _userId,
+        numDays: 7,
+      );
+
+      expect(result.success, isTrue);
+      expect(result.deleted, 0);
+      verifyNever(() => mockActivitiesRepo.softDeleteFromProvider(any()));
+    });
+
+    test('when the response hits the workout cap, rows after the last '
+        'fetched workout are not flagged', () async {
+      final now = DateTime.now();
+      final today = DateTime(now.year, now.month, now.day);
+      // Cap of 2: the provider answers with exactly 2, so anything scheduled
+      // after the second one may simply have been cut off.
+      final first = remoteFor('p-1', today.add(const Duration(hours: 7)));
+      final second = remoteFor(
+        'p-2',
+        today.add(const Duration(days: 1, hours: 7)),
+      );
+      final afterCap = _activity(
+        id: 'local-after-cap',
+        providerWorkoutId: 'p-3',
+        scheduledDateTime: today.add(const Duration(days: 4, hours: 7)),
+      );
+      final vanishedBeforeCap = _activity(
+        id: 'local-vanished',
+        providerWorkoutId: 'p-gone',
+        scheduledDateTime: today.add(const Duration(hours: 9)),
+      );
+      when(
+        () => mockActivitiesRepo.getActivitiesByUserAndProvider(
+          _userId,
+          _provider,
+        ),
+      ).thenAnswer((_) async => [afterCap, vanishedBeforeCap]);
+      stubUpcoming([first, second]);
+
+      final result = await realDetectionService.syncWorkouts(
+        _userId,
+        numDays: 7,
+        numWorkouts: 2,
+      );
+
+      expect(result.success, isTrue);
+      expect(result.deleted, 1);
+      verify(
+        () => mockActivitiesRepo.softDeleteFromProvider('local-vanished'),
+      ).called(1);
+      verifyNever(
+        () => mockActivitiesRepo.softDeleteFromProvider('local-after-cap'),
       );
     });
   });

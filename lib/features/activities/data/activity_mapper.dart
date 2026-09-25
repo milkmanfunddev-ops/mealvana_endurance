@@ -531,13 +531,13 @@ class ActivityMapper {
       'synced_from_provider': activity.syncedFromProvider,
       'provider_workout_id': activity.providerWorkoutId,
       'provider_workout_url': activity.providerWorkoutUrl,
-      'last_synced_at': activity.lastSyncedAt?.toIso8601String(),
+      'last_synced_at': utcIso8601(activity.lastSyncedAt),
       'workout_subtype': activity.workoutSubtype,
       'pace_min_minutes_per_mile': activity.paceMinMinutesPerMile,
       'pace_max_minutes_per_mile': activity.paceMaxMinutesPerMile,
-      'provider_deleted_at': activity.providerDeletedAt?.toIso8601String(),
-      'provider_scheduled_at': activity.providerScheduledAt?.toIso8601String(),
-      'schedule_changed_at': activity.scheduleChangedAt?.toIso8601String(),
+      'provider_deleted_at': utcIso8601(activity.providerDeletedAt),
+      'provider_scheduled_at': utcIso8601(activity.providerScheduledAt),
+      'schedule_changed_at': utcIso8601(activity.scheduleChangedAt),
       'brick_metadata': activity.brickMetadata?.toJson(),
       'brick_id': activity.brickId,
       'garmin_summary_id': activity.garminSummaryId,
@@ -614,13 +614,13 @@ class ActivityMapper {
       'synced_from_provider': record.syncedFromProvider,
       'provider_workout_id': record.providerWorkoutId,
       'provider_workout_url': record.providerWorkoutUrl,
-      'last_synced_at': record.lastSyncedAt?.toIso8601String(),
+      'last_synced_at': utcIso8601(record.lastSyncedAt),
       'workout_subtype': record.workoutSubtype,
       'pace_min_minutes_per_mile': record.paceMinMinutesPerMile,
       'pace_max_minutes_per_mile': record.paceMaxMinutesPerMile,
-      'provider_deleted_at': record.providerDeletedAt?.toIso8601String(),
-      'provider_scheduled_at': record.providerScheduledAt?.toIso8601String(),
-      'schedule_changed_at': record.scheduleChangedAt?.toIso8601String(),
+      'provider_deleted_at': utcIso8601(record.providerDeletedAt),
+      'provider_scheduled_at': utcIso8601(record.providerScheduledAt),
+      'schedule_changed_at': utcIso8601(record.scheduleChangedAt),
       'brick_metadata': decodeJsonObject(
         record.brickMetadata,
         fieldName: 'brick_metadata',
@@ -698,6 +698,17 @@ class ActivityMapper {
     }
     return null;
   }
+
+  /// Serialise a value bound for a `timestamp with time zone` column.
+  ///
+  /// A local `DateTime` rendered with a bare `toIso8601String()` carries no
+  /// offset, so Postgres reads the device's wall clock as UTC (Finding
+  /// 30-002: `last_synced_at` landed five hours early in CDT). Converting to
+  /// UTC first yields a `Z` suffix and the true instant. Wall-clock columns
+  /// (`scheduled_date_time`, `updated_at`, `created_at`, `completed_at`) are
+  /// `timestamp without time zone` and must NOT go through this.
+  static String? utcIso8601(DateTime? value) =>
+      value?.toUtc().toIso8601String();
 
   /// Parse nutrition plan data from any source (JSONB map, JSON string, or null).
   Map<String, dynamic>? parseNutritionPlanDataValue(dynamic value) {
