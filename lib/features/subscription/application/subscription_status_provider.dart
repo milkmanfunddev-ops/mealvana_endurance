@@ -206,6 +206,9 @@ class SubscriptionStatusController extends _$SubscriptionStatusController {
       return;
     }
     state = AsyncData(counted);
+    // The SDK's cached copy is what just ran out; ask RevenueCat itself.
+    await _service.forgetCachedStatus();
+    if (!ref.mounted) return;
     await refresh();
   }
 

@@ -80,6 +80,10 @@ void main() {
       when(
         () => mockPrivacyRegionService.ensureResolved(),
       ).thenAnswer((_) async {});
+      // Startup kicks RevenueCat's configure off early (ticket 85); a no-op here.
+      when(
+        () => mockAppStartupService.configureRevenueCat(),
+      ).thenAnswer((_) async {});
 
       // Setup default mocks
       when(() => mockSupabaseClient.auth).thenReturn(mockGoTrueClient);

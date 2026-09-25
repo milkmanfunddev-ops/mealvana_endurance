@@ -94,6 +94,7 @@ void main() {
 
   setUp(() {
     service = _MockSubscriptionService();
+    when(() => service.forgetCachedStatus()).thenAnswer((_) async {});
     repo = _MockRepository();
     scheduler = _FakeScheduler();
     capturedListener = null;

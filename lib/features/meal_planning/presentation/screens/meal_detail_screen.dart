@@ -490,7 +490,14 @@ class _DetailBodyState extends ConsumerState<_DetailBody> {
             icon: Icons.add,
             height: 48,
             isLoading: _adding,
-            onPressed: () => _addToPlan(context, ref),
+            // A meal with missing numbers never goes in a plan (mp-678):
+            // say so here instead of failing after the tap.
+            onPressed: meal.hasNutritionNumbers
+                ? () => _addToPlan(context, ref)
+                : () => MealvanaSnackbar.showInfo(
+                    context,
+                    content.getValue(ContentKeys.mpBrowseNoNumbers),
+                  ),
           ),
         const SizedBox(height: AppSpacing.xxl),
       ],
