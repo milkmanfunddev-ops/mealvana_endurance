@@ -901,7 +901,7 @@ void main() {
         expect(insertedLog!.source, MealLogSource.photo);
       });
 
-      test('empty components list produces zero totals', () async {
+      test('empty components list leaves totals unknown (null ≠ 0)', () async {
         MealLog? insertedLog;
         when(() => mockLogRepo.insertLog(any())).thenAnswer((inv) async {
           insertedLog = inv.positionalArguments[0] as MealLog;
@@ -917,8 +917,8 @@ void main() {
           components: const [],
         );
 
-        expect(insertedLog!.calories, 0);
-        expect(insertedLog!.carbsG, 0);
+        expect(insertedLog!.calories, isNull);
+        expect(insertedLog!.carbsG, isNull);
       });
     });
 
@@ -1093,7 +1093,8 @@ void main() {
         );
 
         expect(insertedLog!.components.single.sodiumMg, isNull);
-        expect(insertedLog!.sodiumMg, 0); // fold treats null as 0
+        // Unknown stays unknown (null ≠ 0; ticket 41, Finding 26-004).
+        expect(insertedLog!.sodiumMg, isNull);
       });
     });
 

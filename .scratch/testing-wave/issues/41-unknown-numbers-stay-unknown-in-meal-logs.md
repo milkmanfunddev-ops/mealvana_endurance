@@ -13,8 +13,8 @@
 
 **Touches:** lib/features/meal_logging/presentation/widgets/manual_log_form.dart, lib/features/meal_logging/presentation/widgets/manual_component_form.dart, lib/features/meal_logging/domain/consumed_totals.dart, lib/features/meal_logging/presentation/screens/log_meal_screen.dart
 
-- [ ] 250.5 kcal saves as 250.5 (or rounds as the column requires) and shows on the timeline (seam test through the real notifier).
-- [ ] A quick add of two items with no sodium saves `sodium_mg` null.
+- [x] 250.5 kcal saves as 250.5 (or rounds as the column requires) and shows on the timeline (seam test through the real notifier).
+- [x] A quick add of two items with no sodium saves `sodium_mg` null.
 - [ ] codegen if annotations changed, `flutter analyze` and the suite green.
 
 Next: /implement-lee testing-wave
