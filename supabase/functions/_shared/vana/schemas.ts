@@ -43,7 +43,7 @@ export const DaySlotRefZ = z.object({ source: z.enum(['plan', 'saved', 'library'
 export const DayPlanZ = z.object({ breakfast: DaySlotRefZ.nullable().optional(), lunch: DaySlotRefZ.nullable().optional(), dinner: DaySlotRefZ.nullable().optional(), snack: DaySlotRefZ.nullable().optional() }).strict();
 export const DayTargetZ = z.object({ date: z.string(), kcal: z.number(), carbsG: z.number(), proteinG: z.number(), fatG: z.number(), sessionKcal: z.number(), planningKcal: z.number(), lunchDinnerKcal: z.number(), mode: z.string().nullable() }).strict();
 export const MealPlanZ = z.object({
-  id: z.string(), weekStart: z.string(), status: z.enum(['draft', 'confirmed', 'archived']), batchCooking: z.boolean(), days: z.record(DayPlanZ).optional(),
+  id: z.string(), name: z.string().nullable().optional(), weekStart: z.string(), status: z.enum(['draft', 'confirmed', 'archived']), batchCooking: z.boolean(), days: z.record(DayPlanZ).optional(),
   conversationId: z.string().nullable().optional(), brief: z.string().nullable(), rules: z.array(PlanRuleZ), meals: z.array(PlanMealZ), shopping: z.array(ShoppingItemZ),
   dayNotes: z.record(z.string()), dayNotesStale: z.boolean().optional(),
   coverage: z.object({ lunchDinnerSlots: z.number(), covered: z.number(), periodDays: z.number(), perDay: z.object({ kcal: z.number(), carbsG: z.number(), proteinG: z.number() }).strict() }).strict(),

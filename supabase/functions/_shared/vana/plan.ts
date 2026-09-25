@@ -55,9 +55,9 @@ export async function resolvePlan(v: VanaCtx, scope?: PlanScope | null, create =
   if (scope?.conversationId) return getConversationPlan(v, scope.conversationId, create);
   return create ? getOrCreatePlan(v) : getPlan(v);
 }
-async function insertDraft(v: VanaCtx, weekStart: string, conversationId: string | null): Promise<MealPlan> {
+async function insertDraft(v: VanaCtx, weekStart: string, conversationId: string | null, name: string | null = null): Promise<MealPlan> {
   const batchCooking = (await getSetting<boolean>(v, 'batch_cooking')) ?? true;
-  const { data, error } = await v.db.from('meal_plans').insert({ user_id: v.userId, week_start: weekStart, batch_cooking: batchCooking, conversation_id: conversationId }).select('*').single();
+  const { data, error } = await v.db.from('meal_plans').insert({ user_id: v.userId, week_start: weekStart, batch_cooking: batchCooking, conversation_id: conversationId, ...(name ? { name } : {}) }).select('*').single();
   if (error) throw new Error(error.message);
   return hydrate(v, data);
 }
@@ -71,7 +71,7 @@ async function planIdOfMeal(v: VanaCtx, planMealId: string): Promise<string> {
 async function hydrate(v: VanaCtx, plan: any): Promise<MealPlan> {
   const [{ data: rows }, coverageScope, period, mealTypes] = await Promise.all([v.db.from('plan_meals').select('*').eq('plan_id', plan.id).order('position').order('created_at'), getCoverageScope(v), getPlanPeriod(v), getMealTypes(v)]);
   const meals = (rows ?? []).map(toPlanMeal);
-  return { id: plan.id, weekStart: plan.week_start, status: plan.status, batchCooking: plan.batch_cooking, conversationId: plan.conversation_id ?? null, brief: plan.brief ?? null, days: (plan.days ?? {}) as Record<string, DayPlan>, rules: (plan.rules ?? []) as PlanRule[], meals, shopping: (plan.shopping ?? []) as ShoppingItem[], coverage: coverageOf(meals, coverageScope, period.periodDays, { batchCooking: !!plan.batch_cooking, mealTypes }), dayNotes: (plan.day_notes ?? {}) as Record<string, string>, dayNotesStale: plan.day_notes_stale !== false };
+  return { id: plan.id, name: plan.name ?? null, weekStart: plan.week_start, status: plan.status, batchCooking: plan.batch_cooking, conversationId: plan.conversation_id ?? null, brief: plan.brief ?? null, days: (plan.days ?? {}) as Record<string, DayPlan>, rules: (plan.rules ?? []) as PlanRule[], meals, shopping: (plan.shopping ?? []) as ShoppingItem[], coverage: coverageOf(meals, coverageScope, period.periodDays, { batchCooking: !!plan.batch_cooking, mealTypes }), dayNotes: (plan.day_notes ?? {}) as Record<string, string>, dayNotesStale: plan.day_notes_stale !== false };
 }
 
 // ---------------------------------------------------------------- edits
@@ -228,15 +228,42 @@ export async function getPlanById(v: VanaCtx, id: string): Promise<MealPlan | nu
 /** `list_plans`: the athlete's plans with meals in them, newest week first, for the Previous plans sheet. One query: each
  *  plan's meal count is embedded through the `plan_meals.plan_id` foreign key (17-003 saw one count query per plan take
  *  8 s). Empty plans are dropped before the bound, not after, so a run of empty drafts can never push real plans off the
- *  end (17-001: a 20-row read over every plan showed 17 and never the oldest week). The caller drops the plan on its tab. */
-export async function listPlans(v: VanaCtx, limit = 200): Promise<(Pick<MealPlan, 'id' | 'weekStart' | 'status' | 'batchCooking'> & { mealCount: number })[]> {
-  const { data, error } = await v.db.from('meal_plans').select('id, week_start, status, batch_cooking, updated_at, plan_meals(count)')
+ *  end (17-001: a 20-row read over every plan showed 17 and never the oldest week). The caller drops the plan on its tab.
+ *  Plans are a list of what was confirmed (mp-675, mp-677): a plan is listed when it is confirmed or was once
+ *  (`confirmed_at`, stamped by `confirm_meal_plan`), so one a later plan replaced stays; a draft never confirmed is left
+ *  out, archived or not (17-002: the leftover draft fc9687ff showed as an earlier plan). */
+export async function listPlans(v: VanaCtx, limit = 200): Promise<(Pick<MealPlan, 'id' | 'weekStart' | 'status' | 'batchCooking'> & { name: string | null; mealCount: number })[]> {
+  const { data, error } = await v.db.from('meal_plans').select('id, week_start, status, batch_cooking, name, confirmed_at, updated_at, plan_meals(count)')
     .eq('user_id', v.userId).eq('is_deleted', false).order('week_start', { ascending: false }).order('updated_at', { ascending: false });
   if (error) throw new Error(`list_plans: ${error.message}`);
   return (data ?? [])
-    .map((p) => ({ id: p.id, weekStart: p.week_start, status: p.status, batchCooking: !!p.batch_cooking, mealCount: (p.plan_meals as { count: number }[] | null)?.[0]?.count ?? 0 }))
+    .filter((p) => p.status === 'confirmed' || p.confirmed_at != null)
+    .map((p) => ({ id: p.id, name: p.name ?? null, weekStart: p.week_start, status: p.status, batchCooking: !!p.batch_cooking, mealCount: (p.plan_meals as { count: number }[] | null)?.[0]?.count ?? 0 }))
     .filter((p) => p.mealCount > 0)
     .slice(0, limit);
+}
+/** `rename_plan`: the athlete's own name for a plan (mp-675), shown in Previous plans in place of the week. Whitespace is
+ *  collapsed; an empty name clears it, and the plan goes back to showing its week. */
+export const PLAN_NAME_MAX = 60;
+export async function renamePlan(v: VanaCtx, id: string, name: string): Promise<MealPlan> {
+  const cur = await getPlanById(v, id);
+  if (!cur) throw new Error('plan not found');
+  const clean = name.replace(/\s+/g, ' ').trim().slice(0, PLAN_NAME_MAX);
+  const { error } = await v.db.from('meal_plans').update({ name: clean || null, updated_at: new Date().toISOString() }).eq('id', id).eq('user_id', v.userId);
+  if (error) throw new Error(error.message);
+  return (await getPlanById(v, id))!;
+}
+/** `use_plan_again` (mp-675): an earlier plan copied into this week as a new draft, its name and meals with it. The earlier
+ *  plan is left as it was, and this week's plan is untouched until the copy is confirmed, which replaces it the way any
+ *  new plan's confirm does (`confirm_meal_plan`; mp-674). The copy has no conversation: it is the Plan tab's. Meals go in
+ *  through `addMealById`, fresh from the library or the saved meal, so every guard on adding a meal holds for a copy
+ *  too; one that can no longer be added is left out rather than copied blind. */
+export async function usePlanAgain(v: VanaCtx, id: string): Promise<MealPlan> {
+  const source = await getPlanById(v, id);
+  if (!source) throw new Error('plan not found');
+  const target = await insertDraft(v, await currentWeekStart(v), null, source.name ?? null);
+  await copyMeals(v, source, target, 'use again');
+  return refreshShopping(v, target.id);
 }
 /** `new_plan`: archive the plan the scope resolves to (a conversation's draft, an explicit plan, or the week's active
  *  plan) and start a fresh, empty draft in its place — same conversation ownership as the one archived. */
@@ -261,16 +288,20 @@ export async function draftFromLastTime(v: VanaCtx, scope?: PlanScope | null): P
   const { data } = await v.db.from('meal_plans').select('*').eq('user_id', v.userId).eq('status', 'confirmed').eq('is_deleted', false)
     .lte('week_start', target.weekStart).neq('id', target.id).order('week_start', { ascending: false }).order('updated_at', { ascending: false }).limit(1).maybeSingle();
   if (!data) throw new Error('no confirmed plan to copy');
-  const previous = await hydrate(v, data);
+  await copyMeals(v, await hydrate(v, data), target, 'same-as-last-time');
+  return refreshShopping(v, target.id);
+}
+/** An earlier plan's meals added to [target] in their own order at the servings they had (one night each when the
+ *  athlete now cooks the night of); sessions re-derived by the current mode; a meal already there is left alone. */
+async function copyMeals(v: VanaCtx, previous: MealPlan, target: MealPlan, why: string): Promise<void> {
   const have = new Set(target.meals.map((m) => `${m.source}:${m.libraryMealId ?? m.savedMealId}`));
   for (const m of previous.meals) {
     const id = m.libraryMealId ?? m.savedMealId;
     if (!id || have.has(`${m.source}:${id}`)) continue;
     have.add(`${m.source}:${id}`);
     const servings = target.batchCooking ? Math.max(1, Math.min(12, m.servings)) : 1;
-    try { await addMealById(v, m.source, id, servings, undefined, { planId: target.id }); } catch (e) { console.warn('[plan] same-as-last-time skipped', id, (e as Error).message); }
+    try { await addMealById(v, m.source, id, servings, undefined, { planId: target.id }); } catch (e) { console.warn(`[plan] ${why} skipped`, id, (e as Error).message); }
   }
-  return refreshShopping(v, target.id);
 }
 
 // ---------------------------------------------------------------- day planner (meal_plans.days jsonb)

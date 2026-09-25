@@ -13,8 +13,9 @@ import '../../domain/meal_plan_summary.dart';
 import 'plan_summary.dart';
 
 /// The plan ⋮'s "Previous plans": a sheet of the athlete's earlier plans,
-/// newest first, each a week label and a meal count. Tapping one closes the
-/// sheet and hands its id to [onOpen], which pushes the read-only view.
+/// newest first, each its name (or its week) and a meal count. Tapping one
+/// closes the sheet and hands its id to [onOpen], which pushes the plan's
+/// view, where it is edited, renamed, deleted or used again (mp-675).
 Future<void> showPreviousPlansSheet({
   required BuildContext context,
   required ValueChanged<String> onOpen,
@@ -120,6 +121,15 @@ class _PlanRows extends ConsumerWidget {
             'n': n,
           });
 
+    // A named plan leads with its name and keeps its week on the second
+    // line; an unnamed one is its week, as before.
+    (String, String) lines(MealPlanSummary plan) {
+      final week = PlanSummary.weekLabel(plan.weekStart, periodDays);
+      final meals = mealsLabel(plan.mealCount);
+      final name = plan.name;
+      return name == null ? (week, meals) : (name, '$week · $meals');
+    }
+
     return Container(
       padding: const EdgeInsets.symmetric(horizontal: 16),
       decoration: BoxDecoration(
@@ -148,10 +158,7 @@ class _PlanRows extends ConsumerWidget {
                         crossAxisAlignment: CrossAxisAlignment.start,
                         children: [
                           Text(
-                            PlanSummary.weekLabel(
-                              plans[i].weekStart,
-                              periodDays,
-                            ),
+                            lines(plans[i]).$1,
                             maxLines: 1,
                             overflow: TextOverflow.ellipsis,
                             style: AppTextStyles.bodyMedium.copyWith(
@@ -160,7 +167,9 @@ class _PlanRows extends ConsumerWidget {
                           ),
                           const SizedBox(height: 2),
                           Text(
-                            mealsLabel(plans[i].mealCount),
+                            lines(plans[i]).$2,
+                            maxLines: 1,
+                            overflow: TextOverflow.ellipsis,
                             style: AppTextStyles.bodySmall.copyWith(
                               color: secondary,
                             ),

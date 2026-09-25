@@ -88,6 +88,26 @@ void main() {
     );
   });
 
+  // Ticket 73 (mp-675): a plan the athlete renamed leads with its name.
+  testWidgets('a named plan shows its name, with its week under it', (
+    tester,
+  ) async {
+    final named = [
+      MealPlanSummary.fromJson({
+        'id': 'plan-n',
+        'name': 'Race block',
+        'weekStart': '2026-09-13',
+        'status': 'archived',
+        'batchCooking': true,
+        'mealCount': 4,
+      }),
+    ];
+    await pumpSheet(tester, plans: () async => named, onOpen: (_) {});
+
+    expect(find.text('Race block'), findsOneWidget);
+    expect(find.text('Sep 13 – Sep 19 · 4 meals'), findsOneWidget);
+  });
+
   testWidgets('tapping a plan closes the sheet and hands over its id', (
     tester,
   ) async {
