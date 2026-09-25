@@ -591,6 +591,20 @@ implementation reference. **D7: the breakdown macro strip KEEPS electrolyte**
 smoke-tested in Chrome): source sha `58c4d6471347eae2` (server byte-equal),
 bundle sha `2ed6df9b7be7fd0a`. Charter v20 section has the delta walk map.
 
+### FIXED — 2026-09-25 — V20-R1 (chooser under summary); prototype v21
+
+qa's v20 re-walk (qa 20a8af7) verified all four desk deltas but found the F2
+stacking trap reborn in the page container: "Change protocol" opened the
+chooser at z-25 UNDER the z-26 summary page — an invisible tap. My harness
+drove state directly and never checked paint order; it now carries a static
+z-order assertion (summary < chooser < dialogs). v21 raises the chooser to
+z-27 (stack-above, not replace: chooser back returns to the summary;
+selection closes both). Source sha `0caf27d1bfc27473`, bundle sha
+`2afe613779653c3e`. Deliberately untouched, pending rulings: F6 (dialogs
+offer no abort — touches the "exactly two choices" ruling, Xuan's call);
+E1-suppression on the LOAD face + sparkle/"Today's Fuel" strip (qa flags them
+for the dashboard extraction; Xuan's word pending).
+
 ## Notes on the two new ideas
 
 **Reminder to start.** Machinery exists — `NotificationService`

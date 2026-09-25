@@ -19,6 +19,21 @@ with the design project) and the BUNDLE sha (this file). The bundler script
 sits beside this charter (`bundle-standalone.py`) so the transform is
 reproducible and auditable.
 
+## v21 (2026-09-25) — V20-R1 fix
+- source sha256/16 `0caf27d1bfc27473` (design project, verified byte-equal)
+- bundle sha256/16 `2afe613779653c3e` (880,020 bytes, committed bundler)
+
+One delta over v20: **V20-R1** — the chooser overlay moves z-25 → z-27, so
+"Change protocol" from the plan summary (z-26) now opens ABOVE it (stacks,
+does not replace: closing the chooser returns to the summary; selection still
+closes both per the ruled flow). Confirm dialogs stay z-28, above the
+chooser. Per qa's method note, the harness now carries a static paint-order
+assertion (summary < chooser < confirm/delete within the event layer) next to
+the state-flow checks, so this class of red is caught at build time, not at
+walk time. F6 (no-abort modality) deliberately untouched — awaits Xuan's
+ruling. Chevron/E1 suppression and sparkle/"Today's Fuel" also untouched —
+pending Xuan's word, flagged by qa for the dashboard extraction.
+
 ## v20 (2026-09-25) — desk-conforming revision
 - source sha256/16 `58c4d6471347eae2` (design project, verified byte-equal)
 - bundle sha256/16 `2ed6df9b7be7fd0a` (the landed file, 880,020 bytes; built
