@@ -9,6 +9,7 @@
 
 import 'package:flutter/material.dart';
 import 'package:flutter_test/flutter_test.dart';
+import 'package:go_router/go_router.dart';
 import 'package:mocktail/mocktail.dart';
 import 'package:package_info_plus/package_info_plus.dart';
 
@@ -19,6 +20,7 @@ import 'package:mealvana_endurance/features/meal_planning/presentation/screens/f
 import 'package:mealvana_endurance/features/meal_planning/presentation/screens/meals_tab.dart';
 import 'package:mealvana_endurance/features/meal_planning/presentation/screens/plan_tab.dart';
 import 'package:mealvana_endurance/features/meal_planning/presentation/screens/shopping_tab.dart';
+import 'package:mealvana_endurance/shared/core/app_router.dart';
 import 'package:mealvana_endurance/shared/services/connectivity_checker.dart';
 import 'package:mealvana_endurance/shared/widgets/tabs_screen.dart';
 
@@ -81,6 +83,29 @@ Future<void> _settleShell(WidgetTester tester) async {
   await tester.pump(const Duration(seconds: 1));
   await tester.pump(const Duration(seconds: 1));
 }
+
+/// The real `/main` route builder ([mainTabsScreen]) under a router, with a
+/// pushed chat page standing in for the Vana chat whose Confirm calls
+/// [goToFoodTab]. `go` back to `/main` reuses the shell already under the
+/// chat (same page key), which is what the device run hit (16-002).
+GoRouter _confirmRouter() => GoRouter(
+  initialLocation: '/main',
+  routes: [
+    GoRoute(path: '/main', builder: (_, state) => mainTabsScreen(state)),
+    GoRoute(
+      path: '/vana',
+      builder: (context, _) => Scaffold(
+        body: Center(
+          child: TextButton(
+            key: const ValueKey('test.confirm'),
+            onPressed: () => goToFoodTab(context, FoodTab.shopping),
+            child: const Text('Confirm plan'),
+          ),
+        ),
+      ),
+    ),
+  ],
+);
 
 void main() {
   testWidgets('no Vana request fires between launch and the first Food visit', (
@@ -181,4 +206,77 @@ void main() {
       expect(_anywhere(PlanTab), findsNothing);
     },
   );
+
+  // 16-002 / mp-235: after Confirm the athlete lands on Food > Shopping with
+  // the tab bar. The route said `food=shopping`, but the shell under the chat
+  // had already built Food on Plan and kept it.
+  testWidgets('Confirm from a chat over the shell lands on Food, Shopping', (
+    tester,
+  ) async {
+    final transport = _CountingTransport();
+    final router = _confirmRouter();
+    addTearDown(router.dispose);
+
+    await pumpSeeded(
+      tester,
+      Router.withConfig(config: router),
+      overrides: _shellOverrides(transport),
+    );
+    await _settleShell(tester);
+
+    // The athlete has seen Food (on Plan), then opens the planning chat.
+    await tester.tap(find.text('Food').first);
+    await _settleShell(tester);
+    expect(find.byType(PlanTab), findsOneWidget);
+    router.push('/vana');
+    await _settleShell(tester);
+
+    await tester.tap(find.byKey(const ValueKey('test.confirm')));
+    await _settleShell(tester);
+
+    expect(
+      router.routerDelegate.currentConfiguration.uri.toString(),
+      '/main?tab=food&food=shopping',
+    );
+    expect(find.byType(ShoppingTab), findsOneWidget);
+    expect(find.byType(PlanTab), findsNothing);
+    // The tab bar is there: the shell, not a bare Food page.
+    expect(find.byType(TabsScreen), findsOneWidget);
+    expect(find.text('Timeline'), findsWidgets);
+  });
+
+  // A second Confirm after the athlete tapped Plan asks for the same location
+  // again; every navigation carries a fresh request, so it still switches.
+  testWidgets('Confirm again after tapping Plan lands on Shopping again', (
+    tester,
+  ) async {
+    final transport = _CountingTransport();
+    final router = _confirmRouter();
+    addTearDown(router.dispose);
+
+    await pumpSeeded(
+      tester,
+      Router.withConfig(config: router),
+      overrides: _shellOverrides(transport),
+    );
+    await _settleShell(tester);
+
+    router.push('/vana');
+    await _settleShell(tester);
+    await tester.tap(find.byKey(const ValueKey('test.confirm')));
+    await _settleShell(tester);
+    expect(find.byType(ShoppingTab), findsOneWidget);
+
+    await tester.tap(find.byKey(const ValueKey('meal_planning.tab_plan')));
+    await _settleShell(tester);
+    expect(find.byType(PlanTab), findsOneWidget);
+
+    router.push('/vana');
+    await _settleShell(tester);
+    await tester.tap(find.byKey(const ValueKey('test.confirm')));
+    await _settleShell(tester);
+
+    expect(find.byType(ShoppingTab), findsOneWidget);
+    expect(find.byType(PlanTab), findsNothing);
+  });
 }

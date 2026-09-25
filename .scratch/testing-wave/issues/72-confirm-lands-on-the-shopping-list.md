@@ -13,7 +13,7 @@
 
 **Touches:** lib/features/meal_planning/presentation/screens/food_screen.dart, lib/shared/widgets/tabs_screen.dart, lib/shared/core/app_router.dart
 
-- [ ] A router or widget test: the confirm route opens Food on Shopping.
+- [x] A router or widget test: the confirm route opens Food on Shopping.
 - [ ] codegen if annotations changed, `flutter analyze` and the suite green.
 
 Next: /implement-lee testing-wave

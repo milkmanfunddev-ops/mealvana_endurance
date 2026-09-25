@@ -48,6 +48,7 @@ import '../widgets/vana_hand_off.dart';
 import '../widgets/vana_part_renderer.dart';
 import '../widgets/vana_repeated_question.dart';
 import '../../../meal_logging/domain/meal_photo_capture.dart';
+import 'food_screen.dart';
 
 /// `/vana?mode=&c=` (05 §4) — the Vana chat for both kinds. Planning chats
 /// carry the plan bar (minimized at start and on every new turn), the
@@ -1086,7 +1087,7 @@ class _VanaChatScreenState extends ConsumerState<VanaChatScreen> {
       // (the server has just built it). `go` to the tab shell's Food tab
       // (Shopping segment) so the bottom bar is there — a bare `/food`
       // route has no way home (Lee, 2026-09-07).
-      onConfirmed: () => context.go('/main?tab=food&food=shopping'),
+      onConfirmed: () => goToFoodTab(context, FoodTab.shopping),
     );
   }
 
