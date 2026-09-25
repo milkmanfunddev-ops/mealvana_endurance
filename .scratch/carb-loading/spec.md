@@ -781,6 +781,18 @@ lib analyzer clean. Sim run: dev flavor live on iPhone 17 from this branch
 — Day 1 of the Augusta plan renders the LOAD face with the on-device pace
 verdict matching the oracle (22 g behind at 6:29 AM).
 
+### GREEN — 2026-09-26 — frame-level CD-2 Patrol on device (land board #1)
+
+`carb_loading_ripple_flow_test.dart` passes on the iPhone 17 sim against the
+LIVE dev account: one banana write through the real controller → face label
++ both pace strings + slot header + breakdown hero all painted equal to the
+container's own derivation after one settle. Two productive failures on the
+way: run 1 proved the whole contract and tripped only on a cleanup finder;
+run 2 caught a REAL defect — unconstrained header rows (breakdown + plan
+summary) able to overflow horizontally — both hardened with flex+ellipsis.
+The flow self-seeds only when today has no plan, and sweeps any orphaned
+Patrol bananas by name.
+
 ## Notes on the two new ideas
 
 **Reminder to start.** Machinery exists — `NotificationService`

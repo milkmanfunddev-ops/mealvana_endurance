@@ -60,12 +60,16 @@ class _CarbBreakdownScreenState extends ConsumerState<CarbBreakdownScreen> {
                       children: [
                         _backButton(context),
                         const SizedBox(width: 10),
-                        Text(
-                          carb.breakdown.titleLine,
-                          style: TextStyle(
-                            fontFamily: 'Compadre',
-                            fontSize: 18,
-                            color: cream,
+                        Expanded(
+                          child: Text(
+                            carb.breakdown.titleLine,
+                            maxLines: 1,
+                            overflow: TextOverflow.ellipsis,
+                            style: TextStyle(
+                              fontFamily: 'Compadre',
+                              fontSize: 18,
+                              color: cream,
+                            ),
                           ),
                         ),
                       ],

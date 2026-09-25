@@ -65,12 +65,16 @@ class CarbPlanSummaryScreen extends ConsumerWidget {
                       children: [
                         _backButton(context),
                         const SizedBox(width: 10),
-                        Text(
-                          'Carb Loading Plan',
-                          style: TextStyle(
-                            fontFamily: 'Compadre',
-                            fontSize: 18,
-                            color: cream,
+                        Expanded(
+                          child: Text(
+                            'Carb Loading Plan',
+                            maxLines: 1,
+                            overflow: TextOverflow.ellipsis,
+                            style: TextStyle(
+                              fontFamily: 'Compadre',
+                              fontSize: 18,
+                              color: cream,
+                            ),
                           ),
                         ),
                       ],

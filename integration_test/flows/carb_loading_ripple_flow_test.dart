@@ -187,7 +187,8 @@ void main() {
         findsWidgets,
         reason: 'breakdown title present',
       );
-      await $.tester.tap(find.byTooltip('Back').first, warnIfMissed: false);
+      // The breakdown's back is a Semantics-labeled chevron, not a Tooltip.
+      await $.tester.tap(find.byIcon(Icons.chevron_left).first);
       await $.pumpAndSettle();
 
       // ---- 4. Cleanup through the controllers ------------------------------
@@ -195,7 +196,9 @@ void main() {
         mealLogsForDateProvider(dateStr).future,
       );
       for (final log in logs) {
-        if (log.name == 'Patrol Banana $stamp') {
+        // Sweep ANY patrol banana — including one a previously-failed run
+        // left behind (the name is exclusively this flow's).
+        if (log.name.startsWith('Patrol Banana ')) {
           await container
               .read(mealLogControllerProvider.notifier)
               .deleteLog(log.id);
