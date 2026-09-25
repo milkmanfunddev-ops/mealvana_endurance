@@ -1,6 +1,6 @@
 # 111: Retest: Shop with Kroger
 
-**Status:** ready-for-agent
+**Status:** in-progress (wave 30, 2026-09-25)
 **Blocked by:** none.
 **Pair with:** 110 (the Shopping tab, same account). This run connects and disconnects test@test.com's Kroger connection and removes its production row (22-005); 110 ticks rows and makes and deletes its own hand-made lists. Read the list for 22-003 once, with its time in `notes.md`, and treat 110's lists as expected.
 **Next:** `/implement-lee testing-wave`

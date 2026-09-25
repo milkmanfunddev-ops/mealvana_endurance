@@ -1,6 +1,6 @@
 # 110: Retest: the Shopping tab's lists, ticks and offline copy
 
-**Status:** ready-for-agent
+**Status:** in-progress (wave 30, 2026-09-25)
 **Blocked by:** none.
 **Pair with:** 111 (Shop with Kroger, same account). This run ticks rows, makes hand-made lists (19-006, 19-010), deletes one of its own lists (19-001) and adds to a draft's list from Browse (18-002); 111 writes test@test.com's Kroger connection (connect, disconnect, the production row in 22-005) and reads the current list on the Kroger screen (22-003). Each checks only its own rows and treats the other's as expected.
 **Next:** `/implement-lee testing-wave`
