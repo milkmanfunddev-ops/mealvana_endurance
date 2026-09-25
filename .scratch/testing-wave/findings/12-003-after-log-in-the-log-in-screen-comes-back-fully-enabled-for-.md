@@ -1,7 +1,7 @@
 # 12-003 · After Log In, the Log In screen comes back fully enabled for about a second before the tabs shell
 
 - kind: bug
-- status: triaged
+- status: closed
 - ticket: 12
 - run: w4-20260924T0417Z
 - screen: Log In
@@ -27,3 +27,5 @@ At about 1 s and 2 s the screen shows Logging in… with a spinner; at about 3 s
 
 **Triage.**
 Fix ticket 53 (Lee, 2026-09-25). Closed by the retest after it merges.
+
+Closed by retest ticket 86 (run w25-20260925T1324Z, build 5e05f8a6): pass, evidence in runs/86/verdicts.md.

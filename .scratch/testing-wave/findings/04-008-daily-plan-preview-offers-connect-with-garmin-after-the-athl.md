@@ -1,7 +1,7 @@
 # 04-008 · Daily plan preview offers Connect with Garmin after the athlete said they use no training app
 
 - kind: idea
-- status: triaged
+- status: closed
 - ticket: 04
 - run: w4-20260924T0418Z
 - screen: Daily plan preview (onboarding)
@@ -29,3 +29,5 @@ nudge after an explicit decline.
 
 **Triage.**
 Fix ticket 80 (the wave lead, 2026-09-25: Lee asked for every bug fix that can be done without him). Closed by the retest after it merges.
+
+Closed by retest ticket 86 (run w25-20260925T1324Z, build 5e05f8a6): pass, evidence in runs/86/verdicts.md.

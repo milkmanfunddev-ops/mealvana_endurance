@@ -1,7 +1,7 @@
 # 31-014 · Profile & Preferences opens with the onboarding heading Tell us about yourself and no screen title
 
 - kind: idea
-- status: triaged
+- status: closed
 - ticket: 31
 - run: w11-20260924T1648Z
 - screen: Profile & Preferences
@@ -25,3 +25,5 @@ Idea: the screen reuses the onboarding heading "Tell us about yourself" and "Thi
 
 **Triage.**
 Fix ticket 80 (the wave lead, 2026-09-25: Lee asked for every bug fix that can be done without him). Closed by the retest after it merges.
+
+Closed by retest ticket 86 (run w25-20260925T1324Z, build 5e05f8a6): pass, evidence in runs/86/verdicts.md.

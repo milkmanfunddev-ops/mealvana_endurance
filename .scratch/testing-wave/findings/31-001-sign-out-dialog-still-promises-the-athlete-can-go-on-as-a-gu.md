@@ -1,7 +1,7 @@
 # 31-001 · Sign-out dialog still promises the athlete can go on as a guest
 
 - kind: ssot-conflict
-- status: triaged
+- status: closed
 - ticket: 31
 - run: w11-20260924T1648Z
 - screen: Settings
@@ -28,3 +28,5 @@ The dialog reads "Sign Out? You'll continue using the app as a guest. Your prefe
 
 **Triage.**
 Fix ticket 47 (Lee, 2026-09-25). Closed by the retest after it merges.
+
+Closed by retest ticket 86 (run w25-20260925T1324Z, build 5e05f8a6): pass, evidence in runs/86/verdicts.md.

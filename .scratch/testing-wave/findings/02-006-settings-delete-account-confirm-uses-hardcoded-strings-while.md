@@ -1,7 +1,7 @@
 # 02-006 · Settings Delete Account confirm uses hardcoded strings while the paywall's uses the content system
 
 - kind: bug
-- status: triaged
+- status: closed
 - ticket: 02
 - run: w2-20260923T1442Z
 - screen: Settings
@@ -30,3 +30,5 @@ differently ("Delete account?" / "This permanently deletes your account and all 
 
 **Triage.**
 Fix ticket 47 (Lee, 2026-09-25). Closed by the retest after it merges.
+
+Closed by retest ticket 86 (run w25-20260925T1324Z, build 5e05f8a6): pass, evidence in runs/86/verdicts.md.

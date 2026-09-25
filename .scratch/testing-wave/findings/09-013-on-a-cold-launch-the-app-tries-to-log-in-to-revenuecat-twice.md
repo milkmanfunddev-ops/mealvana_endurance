@@ -1,7 +1,7 @@
 # 09-013 · On a cold launch the app tries to log in to RevenueCat twice before the SDK is configured
 
 - kind: idea
-- status: triaged
+- status: closed
 - ticket: 09
 - run: w7-20260924T1219Z
 - screen: none
@@ -26,3 +26,5 @@ The startup flow configures the RevenueCat SDK before anything asks it to log th
 
 **Triage.**
 Fix ticket 85 (the wave lead, 2026-09-25: Lee asked for every bug fix that can be done without him). Closed by the retest after it merges.
+
+Closed by retest ticket 86 (run w25-20260925T1324Z, build 5e05f8a6): pass, evidence in runs/86/verdicts.md.

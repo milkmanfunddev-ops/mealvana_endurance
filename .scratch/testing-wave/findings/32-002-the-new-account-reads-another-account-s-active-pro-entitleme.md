@@ -1,7 +1,7 @@
 # 32-002 · The new account reads another account's active Pro entitlement for 0.3 s after the code is accepted
 
 - kind: bug
-- status: triaged
+- status: closed
 - ticket: 32
 - run: w9-20260924T1447Z
 - screen: Verify your email
@@ -42,3 +42,5 @@ network the window is longer.
 
 **Triage.**
 Fix ticket 33 (Lee, 2026-09-25). Closed by the retest after it merges.
+
+Closed by retest ticket 86 (run w25-20260925T1324Z, build 5e05f8a6): pass, evidence in runs/86/verdicts.md.

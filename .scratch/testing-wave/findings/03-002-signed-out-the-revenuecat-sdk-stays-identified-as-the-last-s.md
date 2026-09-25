@@ -1,7 +1,7 @@
 # 03-002 · Signed out, the RevenueCat SDK stays identified as the last signed-in account (another user's customer and entitlement)
 
 - kind: bug
-- status: triaged
+- status: closed
 - ticket: 03
 - run: w3-20260923T1942Z
 - screen: Welcome
@@ -36,3 +36,5 @@ device, the next person's first status can be the previous person's subscription
 
 **Triage.**
 Fix ticket 33 (Lee, 2026-09-25). Closed by the retest after it merges.
+
+Closed by retest ticket 86 (run w25-20260925T1324Z, build 5e05f8a6): pass, evidence in runs/86/verdicts.md.

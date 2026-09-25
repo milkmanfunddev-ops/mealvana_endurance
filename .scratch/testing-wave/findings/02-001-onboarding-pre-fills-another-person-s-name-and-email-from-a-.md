@@ -1,7 +1,7 @@
 # 02-001 · Onboarding pre-fills another person's name and email from a TrainingPeaks connection left on the device, and saves that email to the new account
 
 - kind: bug
-- status: triaged
+- status: closed
 - ticket: 02
 - run: w2-20260923T1442Z
 - screen: Personal Info Onboarding
@@ -38,3 +38,5 @@ data shown to, and stored on, a stranger's account.
 
 **Triage.**
 Fix ticket 33 (Lee, 2026-09-25). Closed by the retest after it merges.
+
+Closed by retest ticket 86 (run w25-20260925T1324Z, build 5e05f8a6): pass, evidence in runs/86/verdicts.md.

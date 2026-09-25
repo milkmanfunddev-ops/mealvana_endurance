@@ -1,7 +1,7 @@
 # 02-002 · Personal info step throws a Riverpod assertion (modify a provider while building) when it applies the integration prefill
 
 - kind: bug
-- status: triaged
+- status: closed
 - ticket: 02
 - run: w2-20260923T1442Z
 - screen: Personal Info Onboarding
@@ -28,3 +28,5 @@ Stack: `OnboardingController._updateDraft` (onboarding_controller.dart:416) ←
 
 **Triage.**
 Fix ticket 33 (Lee, 2026-09-25). Closed by the retest after it merges.
+
+Closed by retest ticket 86 (run w25-20260925T1324Z, build 5e05f8a6): pass, evidence in runs/86/verdicts.md.

@@ -26,3 +26,5 @@ The local database holds rows of user 37129f7e (Lee's own dev account): meal_pla
 
 **Triage.**
 Fix ticket 33 (Lee, 2026-09-25). Closed by the retest after it merges.
+
+Retest ticket 86 (wave 25): fail, filed as 86-001. Ticket 33 clears an account's rows only on its own sign-out, so rows left by a sign-out before that fix stay.
