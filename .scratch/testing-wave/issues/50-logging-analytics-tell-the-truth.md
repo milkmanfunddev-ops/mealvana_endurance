@@ -1,6 +1,6 @@
 # 50: Logging analytics tell the truth
 
-**Status:** ready-for-agent
+**Status:** in-progress (wave 21, 2026-09-25)
 **Blocked by:** 41 (touches lib/features/meal_logging/presentation/screens/log_meal_screen.dart), 46 (touches lib/features/meal_logging/presentation/providers/meal_log_providers.dart), 33 (touches lib/features/settings/presentation/providers/settings_controller.dart), 45 (touches lib/features/subscription/presentation/screens/paywall_screen.dart).
 **Next:** `/implement-lee testing-wave`
 **Model:** opus

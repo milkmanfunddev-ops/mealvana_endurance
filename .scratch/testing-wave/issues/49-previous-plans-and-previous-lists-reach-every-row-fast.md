@@ -1,6 +1,6 @@
 # 49: Previous plans and Previous lists reach every row, fast
 
-**Status:** ready-for-agent
+**Status:** in-progress (wave 21, 2026-09-25)
 **Blocked by:** 34 (touches supabase/functions/_shared/vana/plan.ts), 46 (touches lib/features/meal_planning/presentation/screens/shopping_tab.dart).
 **Next:** `/implement-lee testing-wave`
 **Model:** opus
