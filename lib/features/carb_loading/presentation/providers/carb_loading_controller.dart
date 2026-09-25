@@ -1,6 +1,7 @@
 import 'dart:async';
 import 'package:riverpod_annotation/riverpod_annotation.dart';
 import '../../application/carb_loading_service.dart';
+import '../../domain/carb_loading_entryway_engine.dart';
 import '../../data/carb_loading_repository.dart';
 import '../../../../shared/database/app_database.dart' as db;
 import '../../../../shared/services/logging_service.dart';
@@ -115,32 +116,45 @@ class CarbLoadingController extends _$CarbLoadingController {
     }
   }
 
-  /// Update carb loading protocol (delete old plan and create new one)
-  Future<void> updateCarbLoadingProtocol({
+  /// CE-4 preview: what selecting [targetProtocolDays] would do — dialog
+  /// type, F3 listed-edit data, dropped dates, both outcome plans. Pure
+  /// read; nothing changes.
+  Future<RepickDecision> previewRepickProtocol({
     required String eventId,
-    required int newProtocolDays,
+    required int targetProtocolDays,
     required DateTime raceDate,
     required double bodyWeightPounds,
+  }) => _service.previewRepickProtocol(
+    eventId: eventId,
+    targetProtocolDays: targetProtocolDays,
+    raceDate: raceDate,
+    bodyWeightPounds: bodyWeightPounds,
+  );
+
+  /// CE-4/CE-4a apply: writes the athlete's choice through the in-place
+  /// repick. Replaces the retired delete+recreate protocol update.
+  Future<void> applyRepickProtocol({
+    required String eventId,
+    required int targetProtocolDays,
+    required DateTime raceDate,
+    required double bodyWeightPounds,
+    required bool keepEdits,
   }) async {
     try {
-      final deviceIdValue = await ref.read(userIdProvider.future);
-      final userId = deviceIdValue;
-
-      await _service.updateCarbLoadingProtocol(
-        deviceId: deviceIdValue,
+      final userId = await ref.read(userIdProvider.future);
+      await _service.applyRepickProtocol(
+        deviceId: userId,
         userId: userId,
         eventId: eventId,
-        newProtocolDays: newProtocolDays,
+        targetProtocolDays: targetProtocolDays,
         raceDate: raceDate,
         bodyWeightPounds: bodyWeightPounds,
+        keepEdits: keepEdits,
       );
-
-      // Refresh carb loading days
       ref.invalidateSelf();
-      // Invalidate all carbLoadingDaysForRange provider instances to refresh calendar
       ref.invalidate(carbLoadingDaysForRangeProvider);
     } catch (e) {
-      _logger.error('Error updating carb loading protocol', error: e);
+      _logger.error('Error re-picking carb loading protocol', error: e);
       rethrow;
     }
   }

@@ -10,6 +10,7 @@ import '../../../shared/services/sentry/sentry_reporter.dart';
 import '../../../shared/services/app_external_deps.dart';
 import '../../../shared/services/sync/sync_dependency_graph.dart';
 import '../../../shared/data/syncable_repository.dart';
+import '../domain/carb_loading_pace_engine.dart';
 import 'carb_loading_mapper.dart';
 
 part 'carb_loading_repository.g.dart';
@@ -675,6 +676,150 @@ class CarbLoadingRepository with SyncableRepository {
     }
   }
 
+  /// CE-4a (carb-loading@v1): re-pick a protocol by updating day rows IN
+  /// PLACE keyed by plan+date — never delete+recreate. Rows whose date
+  /// survives into the target window keep their identity (foreign references
+  /// and sync history survive); dates outside the new window are removed;
+  /// new dates are inserted. [dayTargetsByDate] carries the FINAL stored
+  /// grams per target-window date — the service derives them from the ruled
+  /// CE-4 migration (keep-by-date or reset), so an athlete's kept edit
+  /// arrives here as the stored value (CL-4a).
+  Future<void> repickCarbLoadingPlanInPlace({
+    required String deviceId,
+    required String planId,
+    required int targetProtocolDays,
+    required DateTime raceDate,
+    required Map<DateTime, int> dayTargetsByDate,
+    bool requireRemoteAck = false,
+  }) async {
+    try {
+      final race = DateTime(raceDate.year, raceDate.month, raceDate.day);
+      final startDate = race.subtract(Duration(days: targetProtocolDays));
+      final endDate = race.subtract(const Duration(days: 1));
+      final targetDates = List<DateTime>.generate(
+        targetProtocolDays,
+        (i) => startDate.add(Duration(days: i)),
+      );
+
+      final existing = await getCarbLoadingDaysForPlan(planId);
+      DateTime dOnly(DateTime d) => DateTime(d.year, d.month, d.day);
+      final existingByDate = {for (final d in existing) dOnly(d.planDate): d};
+      final droppedIds = <String>[
+        for (final d in existing)
+          if (!targetDates.contains(dOnly(d.planDate))) d.id,
+      ];
+
+      final avgDailyCarbs =
+          (dayTargetsByDate.values.fold<int>(0, (a, b) => a + b) /
+                  targetProtocolDays)
+              .round();
+
+      await _database.transaction(() async {
+        for (var i = 0; i < targetDates.length; i++) {
+          final date = targetDates[i];
+          final grams = dayTargetsByDate[date];
+          if (grams == null) {
+            throw StateError('repick: no target for date');
+          }
+          final gPerKg = _getCarbProtocolForDay(
+            protocolDays: targetProtocolDays,
+            daysBeforeRace: targetProtocolDays - i,
+          );
+          final row = existingByDate[date];
+          if (row != null) {
+            await (_database.update(
+              _database.carbLoadingDaysTable,
+            )..where((tbl) => tbl.id.equals(row.id))).write(
+              CarbLoadingDaysTableCompanion(
+                dayNumber: Value(i + 1),
+                carbTargetGrams: Value(grams),
+                carbProtocolGPerKg: Value(gPerKg),
+                needsUpload: const Value(true),
+                localUpdatedAt: Value(DateTime.now()),
+              ),
+            );
+          } else {
+            await _database
+                .into(_database.carbLoadingDaysTable)
+                .insert(
+                  CarbLoadingDaysTableCompanion.insert(
+                    carbLoadingPlanId: planId,
+                    planDate: date,
+                    dayNumber: i + 1,
+                    carbTargetGrams: grams,
+                    carbProtocolGPerKg: Value(gPerKg),
+                    needsUpload: const Value(true),
+                    localUpdatedAt: Value(DateTime.now()),
+                  ),
+                );
+          }
+        }
+        for (final id in droppedIds) {
+          await (_database.delete(
+            _database.carbLoadingDayMealsTable,
+          )..where((tbl) => tbl.carbLoadingDayId.equals(id))).go();
+          await (_database.delete(
+            _database.carbLoadingDaysTable,
+          )..where((tbl) => tbl.id.equals(id))).go();
+        }
+        await (_database.update(
+          _database.carbLoadingPlansTable,
+        )..where((tbl) => tbl.id.equals(planId))).write(
+          CarbLoadingPlansTableCompanion(
+            totalDays: Value(targetProtocolDays),
+            startDate: Value(startDate),
+            endDate: Value(endDate),
+            dailyCarbTargetGrams: Value(avgDailyCarbs),
+            needsUpload: const Value(true),
+            localUpdatedAt: Value(DateTime.now()),
+          ),
+        );
+      });
+
+      Future<void> uploadAll() async {
+        if (droppedIds.isNotEmpty) {
+          await _supabase
+              .from('carb_loading_days')
+              .delete()
+              .inFilter('id', droppedIds);
+        }
+        await _uploadCarbLoadingPlanToSupabase(planId: planId);
+      }
+
+      if (requireRemoteAck) {
+        await uploadAll();
+      } else {
+        unawaited(() async {
+          try {
+            await uploadAll();
+          } catch (e, stackTrace) {
+            _logger.warning(
+              'Immediate upload failed; records stay dirty for retry',
+              context: 'CARB_LOADING_REPOSITORY',
+              error: e,
+              stackTrace: stackTrace,
+              data: {'operation': 'repick', 'recordId': planId},
+            );
+            _sentry.reportNetworkError(
+              e,
+              url: 'supabase:carb_loading_plans:repick',
+              method: 'POST',
+              stackTrace: stackTrace,
+            );
+          }
+        }());
+      }
+    } catch (e, stackTrace) {
+      _logger.error(
+        'Failed to re-pick carb loading protocol',
+        context: 'CARB_LOADING_REPOSITORY',
+        error: e,
+        stackTrace: stackTrace,
+      );
+      rethrow;
+    }
+  }
+
   /// Get carb loading plan by ID
   Future<CarbLoadingPlan?> getCarbLoadingPlanById(String planId) async {
     try {
@@ -828,24 +973,13 @@ class CarbLoadingRepository with SyncableRepository {
     required int protocolDays,
     required int daysBeforeRace,
   }) {
-    if (protocolDays == 2) {
-      // 2-day protocol
-      if (daysBeforeRace == 2) {
-        return 9.0; // Day -2: 9g/kg
-      } else {
-        return 11.0; // Day -1: 11g/kg
-      }
-    } else if (protocolDays == 3) {
-      // 3-day protocol
-      if (daysBeforeRace == 3 || daysBeforeRace == 2) {
-        return 8.0; // Day -3 and -2: 8g/kg
-      } else {
-        return 10.0; // Day -1: 10g/kg
-      }
-    }
-
-    // Default fallback
-    return 8.0;
+    // Single source: the published pace engine's rate table (CL-1..CL-3 +
+    // Q-CL3a's 1-Day @ 11.0) — carb-loading@v1 G3. The old inline table
+    // lacked the 1-Day protocol and silently fell back to 8.0 for it.
+    return CarbLoadingPaceEngine.gPerKg(
+      protocolDays: protocolDays,
+      daysBeforeRace: daysBeforeRace,
+    );
   }
 
   Future<void> _uploadCarbLoadingPlanToSupabase({

@@ -38,7 +38,8 @@ WorkoutCardState resolveWorkoutCardState(
   // stamp; partial leg matches complete the parent but never show
   // verified. Single-sport rows keep the summary-id predicate.
   final isBrick = a.isBrick;
-  final verified = done &&
+  final verified =
+      done &&
       a.garminSummaryId != null &&
       (!isBrick || (a.brickMetadata?.allEnduranceLegsStamped ?? false));
 

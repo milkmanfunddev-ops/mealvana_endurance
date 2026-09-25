@@ -5,11 +5,11 @@ import 'package:go_router/go_router.dart';
 import 'package:mealvana_endurance/shared/widgets/kyle_design/kyle_design.dart';
 import '../../../activities/domain/activity.dart';
 import '../../../carb_loading/presentation/providers/carb_loading_controller.dart';
-import '../../../carb_loading/presentation/screens/carb_loading_day_detail_page.dart';
 import '../../../carb_loading/presentation/screens/carb_loading_protocol_selection_screen.dart';
+import '../../../carb_loading/presentation/screens/carb_plan_summary_screen.dart';
+import '../../../carb_loading/domain/carb_loading_entryway_engine.dart';
 import '../../../../features/auth/data/user_repository.dart';
 import '../../../../shared/database/app_database.dart' as db;
-import '../../../../shared/services/logging_service.dart';
 import '../../application/nutrition_plan_navigation.dart';
 import '../../domain/event.dart';
 import '../providers/events_controller.dart';
@@ -78,23 +78,51 @@ class EventActionButtonsCard extends ConsumerWidget {
 
           const SizedBox(height: AppSpacing.sm),
 
-          // Create or Edit Carb Loading Plan Button
-          KyleSecondaryButton(
-            key: const ValueKey('event_details.carb_loading_button'),
-            onPressed: () => _handleCarbLoadingPlanAction(
-              context,
-              ref,
-              activity,
-              event,
-              eventId,
+          // The carb-loading entryway row (CE-1, two states + the CE-8
+          // race-day state). With a plan: a door to the plan summary —
+          // re-picking is an action ON the plan, one level in. Without one:
+          // Set Up opens the chooser; on race day nothing is choosable and
+          // the row says so instead of hiding.
+          if (event.hasCarbLoading)
+            KyleSecondaryButton(
+              key: const ValueKey('event_details.carb_loading_button'),
+              onPressed: () => CarbPlanSummaryScreen.open(context, eventId),
+              text: 'Carb Loading Plan',
+              icon: FontAwesomeIcons.chartLine.data,
+            )
+          else if (_carbWindowPassed(event))
+            KyleSecondaryButton(
+              key: const ValueKey('event_details.carb_loading_button'),
+              onPressed: null,
+              text: 'Carb loading window has passed',
+              icon: FontAwesomeIcons.clock.data,
+            )
+          else ...[
+            KyleSecondaryButton(
+              key: const ValueKey('event_details.carb_loading_button'),
+              onPressed: () => _handleCarbLoadingPlanAction(
+                context,
+                ref,
+                activity,
+                event,
+                eventId,
+              ),
+              text: 'Set Up Carb Loading',
+              icon: FontAwesomeIcons.plus.data,
             ),
-            text: event.hasCarbLoading
-                ? 'Edit Carb Loading Plan'
-                : 'Create Carb Loading Plan',
-            icon: event.hasCarbLoading
-                ? FontAwesomeIcons.pen.data
-                : FontAwesomeIcons.plus.data,
-          ),
+            if (_feasibleSubtitle(event) != null)
+              Padding(
+                padding: const EdgeInsets.only(top: 4),
+                child: Text(
+                  key: const ValueKey('event_details.carb_loading_subtitle'),
+                  _feasibleSubtitle(event)!,
+                  style: Theme.of(context).textTheme.bodySmall?.copyWith(
+                    color: Theme.of(context).colorScheme.onSurfaceVariant,
+                  ),
+                  textAlign: TextAlign.center,
+                ),
+              ),
+          ],
 
           const SizedBox(height: AppSpacing.sm),
 
@@ -183,88 +211,81 @@ class EventActionButtonsCard extends ConsumerWidget {
         throw Exception('Event has no date');
       }
 
-      if (event.hasCarbLoading) {
-        // Update existing carb loading protocol
-        await carbLoadingController.updateCarbLoadingProtocol(
-          eventId: event.id,
-          newProtocolDays: selectedProtocol,
-          raceDate: raceDate,
-          bodyWeightPounds: userProfile.weightPounds,
+      // CREATE (the edit path lives on the plan summary now — CE-4). The
+      // retired behavior push-replaced onto the legacy day page and popped
+      // event details out of the stack; CE-2 rules the opposite: selection
+      // returns HERE, the row flips to its plan state, and only when the
+      // window is already underway does a snackbar CTA offer today's fuel.
+      await carbLoadingController.createCarbLoadingPlan(
+        eventId: event.id,
+        protocolDays: selectedProtocol,
+        raceDate: raceDate,
+        bodyWeightPounds: userProfile.weightPounds,
+        forUserId: forUserId,
+      );
+
+      if (context.mounted) {
+        ref.invalidate(eventDetailProvider(eventId));
+        final startDate = raceDate.subtract(Duration(days: selectedProtocol));
+        final now = DateTime.now();
+        final today = DateTime(now.year, now.month, now.day);
+        final underway = !DateTime(
+          startDate.year,
+          startDate.month,
+          startDate.day,
+        ).isAfter(today);
+        MealvanaSnackbar.showSuccess(
+          context,
+          'Created $selectedProtocol-day carb loading plan!',
+          actionLabel: underway ? "Go to today's fuel" : null,
+          onAction: underway
+              ? () => Navigator.of(context).popUntil((r) => r.isFirst)
+              : null,
         );
-
-        if (context.mounted) {
-          MealvanaSnackbar.showSuccess(
-            context,
-            'Updated to $selectedProtocol-day carb loading plan!',
-          );
-          // Refresh the event detail to show updated info
-          ref.invalidate(eventDetailProvider(eventId));
-        }
-      } else {
-        // Create new carb loading plan
-
-        await carbLoadingController.createCarbLoadingPlan(
-          eventId: event.id,
-          protocolDays: selectedProtocol,
-          raceDate: raceDate,
-          bodyWeightPounds: userProfile.weightPounds,
-          forUserId: forUserId,
-        );
-
-        if (context.mounted) {
-          MealvanaSnackbar.showSuccess(
-            context,
-            'Created $selectedProtocol-day carb loading plan!',
-          );
-          // Refresh the event detail to show updated info
-          ref.invalidate(eventDetailProvider(eventId));
-
-          // Navigate to the first day of the carb loading plan
-          try {
-            // Fetch the carb loading plan to get plan ID
-            final carbLoadingPlan = await ref.read(
-              carbLoadingPlanProvider(event.id).future,
-            );
-
-            if (carbLoadingPlan != null) {
-              // Fetch all carb loading days for this plan
-              final carbLoadingDays = await ref.read(
-                carbLoadingDaysForPlanProvider(carbLoadingPlan.id).future,
-              );
-
-              // Cast to the correct type
-              final days = carbLoadingDays.cast<db.CarbLoadingDay>();
-
-              // Find the first day (earliest date)
-              if (days.isNotEmpty && context.mounted) {
-                // Sort by date to ensure we get the first day (T-2, T-1, etc.)
-                final sortedDays = List<db.CarbLoadingDay>.from(days)
-                  ..sort((a, b) => a.planDate.compareTo(b.planDate));
-
-                final firstDay = sortedDays.first;
-
-                // Replace event detail with carb loading day so back returns
-                // directly to the previous screen (e.g. Events list).
-                await Navigator.of(context).pushReplacement(
-                  MaterialPageRoute(
-                    builder: (context) =>
-                        CarbLoadingDayDetailPage(carbLoadingDay: firstDay),
-                  ),
-                );
-              }
-            }
-          } catch (e) {
-            ref
-                .read(appLoggerProvider)
-                .error('Error navigating to carb loading day', error: e);
-            // Don't show error to user - plan was created successfully
-          }
-        }
       }
     } catch (e) {
       if (context.mounted) {
         MealvanaSnackbar.showError(context, 'Error creating plan: $e');
       }
     }
+  }
+
+  /// CE-8: race morning (or later) offers nothing — daysUntilRace counts
+  /// whole days with race morning == 0.
+  bool _carbWindowPassed(Event event) {
+    final days = _daysUntilRace(event);
+    return days != null &&
+        CarbLoadingEntrywayEngine.choosableProtocols(days).isEmpty;
+  }
+
+  /// F1: the subtitle enumerates only the feasible protocol set.
+  String? _feasibleSubtitle(Event event) {
+    final days = _daysUntilRace(event);
+    if (days == null) return null;
+    final feasible = CarbLoadingEntrywayEngine.choosableProtocols(
+      days,
+    ).reversed.toList(growable: false);
+    if (feasible.isEmpty) return null;
+    if (feasible.length == 1) return '${feasible.first}-day protocol';
+    final parts = [
+      for (var i = 0; i < feasible.length; i++)
+        i == feasible.length - 1
+            ? '${feasible[i]}-day protocols'
+            : '${feasible[i]}-',
+    ];
+    final head = parts.sublist(0, parts.length - 1).join(', ');
+    final sep = feasible.length > 2 ? ', and ' : ' and ';
+    return '$head$sep${parts.last}';
+  }
+
+  int? _daysUntilRace(Event event) {
+    DateTime? race = event.eventDate;
+    if (race == null && event.startTime != null) {
+      race = DateTime.tryParse(event.startTime!);
+    }
+    if (race == null) return null;
+    final now = DateTime.now();
+    final today = DateTime(now.year, now.month, now.day);
+    return DateTime(race.year, race.month, race.day).difference(today).inDays;
   }
 }

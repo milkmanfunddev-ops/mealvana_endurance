@@ -381,33 +381,6 @@ class CalendarController extends _$CalendarController {
     }
   }
 
-  /// Update carb loading protocol for an event
-  Future<void> updateCarbLoadingProtocol({
-    required String eventId,
-    required int newProtocolDays,
-    required DateTime raceDate,
-    required double bodyWeightPounds,
-  }) async {
-    try {
-      // Get current user's device ID
-      final user = await _authService.getCurrentUser();
-      final userId = user?.id ?? 'unknown';
-
-      await _calendarService.updateCarbLoadingProtocol(
-        userId: userId,
-        eventId: eventId,
-        newProtocolDays: newProtocolDays,
-        raceDate: raceDate,
-        bodyWeightPounds: bodyWeightPounds,
-      );
-
-      // Refresh activities to show updated carb loading days
-      ref.invalidateSelf();
-    } catch (e) {
-      _logger.error('Error updating carb loading protocol', error: e);
-      rethrow;
-    }
-  }
 }
 
 /// All Events Controller - separate from calendar week view

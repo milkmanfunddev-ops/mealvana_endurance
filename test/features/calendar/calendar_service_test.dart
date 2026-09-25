@@ -625,40 +625,13 @@ void main() {
   });
 
   // ---------------------------------------------------------------------------
-  // updateCarbLoadingProtocol – replaces old plan
+  // Protocol re-pick — the delete+recreate updateCarbLoadingProtocol is
+  // RETIRED (carb-loading@v1 CE-4/CE-4a): re-picks go through
+  // CarbLoadingService.applyRepickProtocol, which updates day rows IN PLACE
+  // keyed by plan+date. Its behavior is pinned by the carb-loading-entryway
+  // conformance vectors (qa run_dart.sh) and by
+  // test/features/carb_loading/carb_loading_repick_test.dart.
   // ---------------------------------------------------------------------------
-
-  group('updateCarbLoadingProtocol', () {
-    test('replaces 2-day plan with 3-day plan', () async {
-      final event = await service.createEvent(
-        userId: testUserId,
-        eventType: ActivityType.running,
-      );
-
-      await service.createCarbLoadingPlan(
-        userId: testUserId,
-        eventId: event.id,
-        protocolDays: 2,
-        raceDate: DateTime(2026, 10, 5),
-        bodyWeightPounds: 154.3236,
-      );
-
-      expect((await db.select(db.carbLoadingDaysTable).get()).length, 2);
-
-      await service.updateCarbLoadingProtocol(
-        userId: testUserId,
-        eventId: event.id,
-        newProtocolDays: 3,
-        raceDate: DateTime(2026, 10, 5),
-        bodyWeightPounds: 154.3236,
-      );
-
-      // Should now have 3 days
-      expect((await db.select(db.carbLoadingDaysTable).get()).length, 3);
-      // And only one plan
-      expect((await db.select(db.carbLoadingPlansTable).get()).length, 1);
-    });
-  });
 
   // ---------------------------------------------------------------------------
   // deleteActivity – cascade to event + carb loading

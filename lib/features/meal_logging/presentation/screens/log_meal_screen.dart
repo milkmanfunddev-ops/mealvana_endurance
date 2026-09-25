@@ -68,10 +68,15 @@ void openLogMealScreen(
   BuildContext context, {
   required String logDate,
   required String source,
+  MealSlot? initialSlot,
 }) {
   Navigator.of(context).push<void>(
     MaterialPageRoute(
-      builder: (_) => LogMealScreen(logDate: logDate, source: source),
+      builder: (_) => LogMealScreen(
+        logDate: logDate,
+        source: source,
+        initialSlot: initialSlot,
+      ),
     ),
   );
 }
@@ -112,12 +117,19 @@ class LogMealScreen extends ConsumerStatefulWidget {
     super.key,
     required this.logDate,
     this.source = 'unknown',
+    this.initialSlot,
   });
 
   final String logDate;
 
   /// Entry-point label for the `log_meal_opened` analytics event.
   final String source;
+
+  /// Pre-selected slot for the quick-log confirm sheet — the loading-day
+  /// slot page opens this screen with its own slot so the committed row is
+  /// tagged without an extra tap (carb-loading@v1; the athlete can still
+  /// change or clear it in the sheet).
+  final MealSlot? initialSlot;
 
   @override
   ConsumerState<LogMealScreen> createState() => _LogMealScreenState();
@@ -302,6 +314,7 @@ class _LogMealScreenState extends ConsumerState<LogMealScreen> {
       logDate: widget.logDate,
       showServingsStepper: showServingsStepper,
       initialServings: initialServings,
+      initialSlot: widget.initialSlot,
       previewTotals: (servings) => _totalsOf(buildComponents(servings)),
     );
     if (result == null || !mounted) return;

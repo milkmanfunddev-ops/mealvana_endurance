@@ -5,6 +5,8 @@ import '../../../shared/database/database_provider.dart';
 import '../../../shared/services/logging_service.dart';
 import '../../../shared/domain/write_consistency.dart';
 import '../data/carb_loading_repository.dart';
+import '../domain/carb_loading_entryway_engine.dart';
+import '../domain/carb_loading_pace_engine.dart';
 import '../../coach_mode/data/coach_repository.dart';
 import '../../events/data/events_repository.dart';
 
@@ -378,19 +380,51 @@ class CarbLoadingService {
 
   /// Update carb loading protocol (delete old plan and create new one)
   /// If [forUserId] is provided, creates plan for this user (coach updating athlete's plan)
-  Future<void> updateCarbLoadingProtocol({
-    required String deviceId,
-    required String userId,
-    String?
-    forUserId, // NEW: If provided, update plan for this user (coach updating athlete's plan)
+  /// CE-4 preview: what a protocol selection would do — which dialog (none /
+  /// keep-reset / notice), the F3 listed-edit data, dropped-date disclosure,
+  /// and both outcome plans. Pure decision; nothing is written.
+  Future<RepickDecision> previewRepickProtocol({
     required String eventId,
-    required int newProtocolDays,
+    required int targetProtocolDays,
     required DateTime raceDate,
     required double bodyWeightPounds,
+  }) async {
+    final plan = await getCarbLoadingPlan(eventId);
+    if (plan == null) {
+      throw StateError('No carb loading plan for event $eventId');
+    }
+    final days = await _carbLoadingRepository.getCarbLoadingDaysForPlan(
+      plan.id,
+    );
+    DateTime dOnly(DateTime d) => DateTime(d.year, d.month, d.day);
+    return CarbLoadingEntrywayEngine.repick(
+      currentProtocol: plan.totalDays,
+      storedTargetsByDate: {
+        for (final d in days) dOnly(d.planDate): d.carbTargetGrams,
+      },
+      targetProtocol: targetProtocolDays,
+      bodyWeightLb: bodyWeightPounds,
+      raceDate: raceDate,
+    );
+  }
+
+  /// CE-4/CE-4a apply: writes the chosen outcome of [previewRepickProtocol]
+  /// through the in-place repick (day rows keep their identity by plan+date;
+  /// out-of-window dates are removed with disclosure upstream; slot logs are
+  /// ordinary food-log rows and survive untouched by construction — Path A).
+  /// Replaces the retired delete+recreate `updateCarbLoadingProtocol`.
+  Future<void> applyRepickProtocol({
+    required String deviceId,
+    required String userId,
+    String? forUserId,
+    required String eventId,
+    required int targetProtocolDays,
+    required DateTime raceDate,
+    required double bodyWeightPounds,
+    required bool keepEdits,
     WriteConsistency? consistency,
   }) async {
     try {
-      // Determine the owner
       final ownerId = forUserId ?? userId;
       final resolvedConsistency =
           consistency ??
@@ -398,13 +432,12 @@ class CarbLoadingService {
             actorUserId: userId,
             ownerUserId: ownerId,
           );
-
       _logger.info(
         'Resolved write consistency',
         context: 'CARB_LOADING_SERVICE',
         data: {
           'entity': 'carb_loading_plan',
-          'operation': 'update_protocol',
+          'operation': 'repick_protocol',
           'actorUserId': userId,
           'ownerUserId': ownerId,
           'consistencyMode': resolvedConsistency.value,
@@ -412,28 +445,34 @@ class CarbLoadingService {
         },
       );
 
-      // Delete existing plan (validation happens in deleteCarbLoadingPlan)
-      await deleteCarbLoadingPlan(
-        deviceId: deviceId,
+      final plan = await getCarbLoadingPlan(eventId);
+      if (plan == null) {
+        throw StateError('No carb loading plan for event $eventId');
+      }
+      final decision = await previewRepickProtocol(
         eventId: eventId,
-        currentUserId: userId,
-        planOwnerId: ownerId,
-        consistency: resolvedConsistency,
-      );
-
-      // Create new plan (validation happens in createCarbLoadingPlan)
-      await createCarbLoadingPlan(
-        deviceId: deviceId,
-        userId: userId,
-        forUserId: forUserId,
-        eventId: eventId,
-        protocolDays: newProtocolDays,
+        targetProtocolDays: targetProtocolDays,
         raceDate: raceDate,
         bodyWeightPounds: bodyWeightPounds,
-        consistency: resolvedConsistency,
+      );
+      final targets = keepEdits ? decision.keepPlanG : decision.resetPlanG;
+      final window = CarbLoadingEntrywayEngine.windowDates(
+        protocolDays: targetProtocolDays,
+        raceDate: raceDate,
+      );
+      await _carbLoadingRepository.repickCarbLoadingPlanInPlace(
+        deviceId: deviceId,
+        planId: plan.id,
+        targetProtocolDays: targetProtocolDays,
+        raceDate: raceDate,
+        dayTargetsByDate: {
+          for (var i = 0; i < window.length; i++) window[i]: targets[i],
+        },
+        requireRemoteAck:
+            resolvedConsistency == WriteConsistency.remoteAckRequired,
       );
     } catch (e) {
-      _logger.error('Error updating carb loading protocol', error: e);
+      _logger.error('Error re-picking carb loading protocol', error: e);
       rethrow;
     }
   }
@@ -571,27 +610,14 @@ class CarbLoadingService {
     required int protocolDays,
     required int daysBeforeRace,
   }) {
-    if (protocolDays == 2) {
-      // 2-day protocol
-      if (daysBeforeRace == 2) {
-        // Day -2: 9g/kg
-        return 9.0;
-      } else {
-        // Day -1: 11g/kg
-        return 11.0;
-      }
-    } else if (protocolDays == 3) {
-      // 3-day protocol
-      if (daysBeforeRace == 3 || daysBeforeRace == 2) {
-        // Day -3 and -2: 8g/kg
-        return 8.0;
-      } else {
-        // Day -1: 10g/kg
-        return 10.0;
-      }
-    }
-
-    // Default fallback
-    return 8.0;
+    // Single source: the published pace engine (CL-1..CL-3 + Q-CL3a's 1-Day
+    // @ 11.0) — carb-loading@v1 G3. The old inline copy lacked the 1-Day
+    // protocol and silently priced invalid inputs (protocolDays 5 → 8.0,
+    // race morning → 11.0); the engine THROWS on them instead — a wrong
+    // question deserves an error, not a plausible number.
+    return CarbLoadingPaceEngine.gPerKg(
+      protocolDays: protocolDays,
+      daysBeforeRace: daysBeforeRace,
+    );
   }
 }

@@ -10,7 +10,9 @@ import '../../../daily_macros/domain/daily_macro_targets.dart';
 import '../../../daily_macros/presentation/providers/daily_macros_controller.dart';
 import '../../../meal_logging/presentation/providers/meal_log_providers.dart';
 import '../../application/dashboard_assembler.dart';
+import '../../domain/carb_dashboard_models.dart';
 import '../../domain/dashboard_models.dart';
+import 'carb_dashboard_providers.dart';
 
 part 'macro_dashboard_providers.g.dart';
 
@@ -81,7 +83,7 @@ Future<DashboardData> macroDashboardDay(Ref ref) async {
       .toList(growable: false);
 
   const assembler = MacroDashboardAssembler();
-  return assembler.assemble(
+  final assembled = assembler.assemble(
     selectedDate: selectedDate,
     now: DateTime.now(),
     activities: dayActivities,
@@ -94,6 +96,54 @@ Future<DashboardData> macroDashboardDay(Ref ref) async {
     // toggling it must not recompute the day (intraday-display §5).
     trackingOn: true,
   );
+
+  // Loading day (carb-loading-dashboard.md): the six slot groups ARE the
+  // meal timeline (CD-3) — meal-group nodes are replaced wholesale by slot
+  // cards at their CL-5 clocks; workout nodes interleave by time untouched.
+  // On a regular day `carb` is null and NOTHING below changes (CD-1).
+  final carb = await ref.watch(carbDashboardForDateProvider(dateStr).future);
+  if (carb == null) return assembled;
+  return assembled.withCarb(carb, _carbTimeline(assembled.nodes, carb));
+}
+
+/// CL-5 clocks, minutes since midnight, slot order.
+const List<int> _slotMinutes = [360, 540, 720, 900, 1080, 1260];
+
+List<DashboardNode> _carbTimeline(
+  List<DashboardNode> nodes,
+  CarbDashboardData carb,
+) {
+  // Keep every non-meal node with a rough minutes key parsed from its
+  // rendered time label (workout ordering data is not carried on the node;
+  // the label is the surface's own sort key on loading days).
+  final kept = <(int, DashboardNode)>[
+    for (final n in nodes)
+      if (n.isWorkout) (_minutesOf(n.timeLabel), n),
+  ];
+  final slots = <(int, DashboardNode)>[
+    for (var i = 0; i < carb.slots.length; i++)
+      (
+        _slotMinutes[i],
+        DashboardNode.carbSlot(
+          timeLabel: carb.slots[i].clockStr,
+          carbSlot: carb.slots[i],
+        ),
+      ),
+  ];
+  final merged = [...kept, ...slots]..sort((a, b) => a.$1.compareTo(b.$1));
+  return merged.map((e) => e.$2).toList(growable: false);
+}
+
+/// Parses `8:00 AM` → minutes since midnight; empty/unknown labels (tucked
+/// skipped cards) sort last.
+int _minutesOf(String label) {
+  final m = RegExp(r'^(\d{1,2}):(\d{2})\s*(AM|PM)$').firstMatch(label.trim());
+  if (m == null) return 24 * 60;
+  var h = int.parse(m.group(1)!);
+  final min = int.parse(m.group(2)!);
+  final pm = m.group(3) == 'PM';
+  if (h == 12) h = 0;
+  return (pm ? h + 12 : h) * 60 + min;
 }
 
 /// The last targets the dashboard rendered, per user+day — see the note in
