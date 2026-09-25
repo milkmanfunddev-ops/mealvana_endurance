@@ -130,6 +130,14 @@ class SubscriptionScreenState {
       productId != null && productId.contains('_$kFoundingOfferingId');
 }
 
+/// Whether this account has a store subscription that is running and will
+/// renew, so deleting the account leaves it billing: both Delete account
+/// confirms (Settings, the paywall's menu) say so and offer Manage
+/// subscription only then (finding 02-004). Asked afresh on each open.
+@riverpod
+Future<bool> renewingStoreSubscription(Ref ref) =>
+    ref.read(subscriptionServiceProvider).hasRenewingStoreSubscription();
+
 /// The Subscription screen in Settings (mp-495): the plan's status from the
 /// status provider (RevenueCat, mp-279), whether there is a store
 /// subscription to manage, and where Manage subscription goes.

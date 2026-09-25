@@ -11,6 +11,7 @@ import '../../../content/domain/content_keys.dart';
 import '../../../settings/domain/account_deletion_entry.dart';
 import '../../../settings/presentation/providers/settings_controller.dart';
 import '../../application/pro_paywall_controller.dart';
+import '../../application/subscription_screen_controller.dart';
 import '../pro_gate_redirect.dart';
 import '../widgets/pro_feature_list.dart';
 import '../widgets/redeem_code_sheet.dart';
@@ -205,6 +206,8 @@ class _PaywallScreenState extends ConsumerState<PaywallScreen> {
     );
   }
 
+  /// [note] and [manage] add a second line and a Manage subscription action
+  /// (which closes the confirm, then runs [onManage]) when both are given.
   Future<bool> _confirm(
     BuildContext context, {
     required String title,
@@ -212,13 +215,35 @@ class _PaywallScreenState extends ConsumerState<PaywallScreen> {
     required String action,
     required String cancel,
     required bool destructive,
+    String? note,
+    String? manage,
+    VoidCallback? onManage,
   }) async {
     final confirmed = await showDialog<bool>(
       context: context,
       builder: (context) => AlertDialog(
         title: Text(title),
-        content: Text(body),
+        content: note == null
+            ? Text(body)
+            : Column(
+                mainAxisSize: MainAxisSize.min,
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  Text(body),
+                  const SizedBox(height: AppSpacing.md),
+                  Text(note),
+                ],
+              ),
         actions: [
+          if (note != null && manage != null)
+            TextButton(
+              key: const ValueKey('paywall.confirm.manage'),
+              onPressed: () {
+                Navigator.pop(context, false);
+                onManage?.call();
+              },
+              child: Text(manage),
+            ),
           TextButton(
             key: const ValueKey('paywall.confirm.cancel'),
             onPressed: () => Navigator.pop(context, false),
@@ -259,6 +284,10 @@ class _PaywallScreenState extends ConsumerState<PaywallScreen> {
 
   Future<void> _deleteAccount(BuildContext context, WidgetRef ref) async {
     final content = ref.read(contentServiceProvider);
+    // A store subscription that will renew outlives the account: say so and
+    // offer Manage (finding 02-004).
+    final renewing = await ref.read(renewingStoreSubscriptionProvider.future);
+    if (!context.mounted) return;
     final confirmed = await _confirm(
       context,
       title: content.getValue(ContentKeys.paywallDeleteConfirmTitle),
@@ -266,6 +295,13 @@ class _PaywallScreenState extends ConsumerState<PaywallScreen> {
       action: content.getValue(ContentKeys.paywallDeleteConfirmAction),
       cancel: content.getValue(ContentKeys.paywallCancel),
       destructive: true,
+      note: renewing
+          ? content.getValue(ContentKeys.paywallDeleteConfirmSubscription)
+          : null,
+      manage: renewing
+          ? content.getValue(ContentKeys.paywallManageButton)
+          : null,
+      onManage: () => _manage(context, ref),
     );
     if (!confirmed || !context.mounted) return;
     await ref

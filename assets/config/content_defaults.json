@@ -100,6 +100,7 @@
     "delete_confirm_title": "Delete account?",
     "delete_confirm_body": "This permanently deletes your account and all of its data. This cannot be undone.",
     "delete_confirm_action": "Delete",
+    "delete_confirm_subscription": "Deleting your account does not cancel your subscription. It keeps renewing until you cancel it in the App Store or Google Play.",
     "cancel": "Cancel",
     "founding_line": "Founding member",
     "trial_terms": "{days} days free, then {monthly} a month or {annual} a year. Nothing is charged during the free week. Cancel before it ends and you pay nothing.",

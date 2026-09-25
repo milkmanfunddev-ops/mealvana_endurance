@@ -64,6 +64,54 @@ final class SubscriptionScreenClockProvider
 String _$subscriptionScreenClockHash() =>
     r'918a74004f4b5e948667bd66e42640c19e29fbcd';
 
+/// Whether this account has a store subscription that is running and will
+/// renew, so deleting the account leaves it billing: both Delete account
+/// confirms (Settings, the paywall's menu) say so and offer Manage
+/// subscription only then (finding 02-004). Asked afresh on each open.
+
+@ProviderFor(renewingStoreSubscription)
+const renewingStoreSubscriptionProvider = RenewingStoreSubscriptionProvider._();
+
+/// Whether this account has a store subscription that is running and will
+/// renew, so deleting the account leaves it billing: both Delete account
+/// confirms (Settings, the paywall's menu) say so and offer Manage
+/// subscription only then (finding 02-004). Asked afresh on each open.
+
+final class RenewingStoreSubscriptionProvider
+    extends $FunctionalProvider<AsyncValue<bool>, bool, FutureOr<bool>>
+    with $FutureModifier<bool>, $FutureProvider<bool> {
+  /// Whether this account has a store subscription that is running and will
+  /// renew, so deleting the account leaves it billing: both Delete account
+  /// confirms (Settings, the paywall's menu) say so and offer Manage
+  /// subscription only then (finding 02-004). Asked afresh on each open.
+  const RenewingStoreSubscriptionProvider._()
+    : super(
+        from: null,
+        argument: null,
+        retry: null,
+        name: r'renewingStoreSubscriptionProvider',
+        isAutoDispose: true,
+        dependencies: null,
+        $allTransitiveDependencies: null,
+      );
+
+  @override
+  String debugGetCreateSourceHash() => _$renewingStoreSubscriptionHash();
+
+  @$internal
+  @override
+  $FutureProviderElement<bool> $createElement($ProviderPointer pointer) =>
+      $FutureProviderElement(pointer);
+
+  @override
+  FutureOr<bool> create(Ref ref) {
+    return renewingStoreSubscription(ref);
+  }
+}
+
+String _$renewingStoreSubscriptionHash() =>
+    r'175e4e2d790f668f5223856e27e4ea39f83e230b';
+
 /// The Subscription screen in Settings (mp-495): the plan's status from the
 /// status provider (RevenueCat, mp-279), whether there is a store
 /// subscription to manage, and where Manage subscription goes.

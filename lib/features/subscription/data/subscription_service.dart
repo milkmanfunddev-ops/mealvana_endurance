@@ -286,6 +286,31 @@ class SubscriptionService {
   static bool hasStoreSubscription(EntitlementInfo? info) =>
       info != null && info.store != Store.promotional;
 
+  /// Whether this customer has a store subscription to `pro` that is running
+  /// and will renew: deleting the account leaves it billing, so the delete
+  /// confirms say so (finding 02-004). False when the SDK is unavailable or
+  /// the read fails.
+  Future<bool> hasRenewingStoreSubscription() async {
+    if (!isAvailable) return false;
+    try {
+      final info = await Purchases.getCustomerInfo();
+      return isRenewingStoreSubscription(
+        info.entitlements.all[Entitlement.pro.key],
+      );
+    } catch (e, st) {
+      _report('subscription renewal read failed', e, stackTrace: st);
+      return false;
+    }
+  }
+
+  /// Pure: a store purchase ([hasStoreSubscription]) that is active and set
+  /// to renew. A grant bills nobody; an ended or already-cancelled plan runs
+  /// out on its own. The Test Store counts: its plans renew too, and dev is
+  /// where this is checked.
+  @visibleForTesting
+  static bool isRenewingStoreSubscription(EntitlementInfo? info) =>
+      hasStoreSubscription(info) && info!.isActive && info.willRenew;
+
   /// The platform store's own subscriptions page; null off iOS / Android.
   @visibleForTesting
   static Uri? storeSubscriptionsUrl(TargetPlatform platform) {

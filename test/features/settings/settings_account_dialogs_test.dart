@@ -25,6 +25,8 @@ import 'package:mealvana_endurance/features/settings/domain/account_deletion_ent
 import 'package:mealvana_endurance/features/settings/domain/settings_state.dart';
 import 'package:mealvana_endurance/features/settings/presentation/providers/settings_controller.dart';
 import 'package:mealvana_endurance/features/settings/presentation/screens/settings_screen.dart';
+import 'package:mealvana_endurance/features/subscription/application/subscription_screen_controller.dart';
+import 'package:mealvana_endurance/features/subscription/presentation/screens/paywall_screen.dart';
 import 'package:mealvana_endurance/shared/services/app_config.dart';
 
 import '../../helpers/widget_test_harness.dart';
@@ -33,6 +35,24 @@ import '../meal_planning/presentation/helpers/test_content.dart';
 class _Calls {
   int signOuts = 0;
   int deletes = 0;
+  int manageReads = 0;
+  final launched = <Uri>[];
+}
+
+/// Answers Manage subscription with a fixed page instead of RevenueCat.
+class _FixedManage extends SubscriptionScreenController {
+  _FixedManage(this._calls);
+  final _Calls _calls;
+
+  @override
+  Future<SubscriptionScreenState> build() =>
+      Completer<SubscriptionScreenState>().future;
+
+  @override
+  Future<Uri?> managementUrl() async {
+    _calls.manageReads++;
+    return Uri.parse('https://apps.apple.com/account/subscriptions');
+  }
 }
 
 class _SeededSettingsController extends SettingsController {
@@ -81,6 +101,8 @@ const _dialogKeys = [
   ContentKeys.paywallDeleteConfirmTitle,
   ContentKeys.paywallDeleteConfirmBody,
   ContentKeys.paywallDeleteConfirmAction,
+  ContentKeys.paywallDeleteConfirmSubscription,
+  ContentKeys.paywallManageButton,
 ];
 
 Map<String, String> _sentinels() => {
@@ -92,6 +114,7 @@ Future<void> _pumpSettings(
   WidgetTester tester, {
   required Map<String, String> content,
   required _Calls calls,
+  bool renewingSubscription = false,
 }) async {
   final router = GoRouter(
     initialLocation: '/settings',
@@ -117,6 +140,16 @@ Future<void> _pumpSettings(
         settingsControllerProvider.overrideWith(
           () => _SeededSettingsController(calls),
         ),
+        renewingStoreSubscriptionProvider.overrideWith(
+          (ref) async => renewingSubscription,
+        ),
+        subscriptionScreenControllerProvider.overrideWith(
+          () => _FixedManage(calls),
+        ),
+        paywallUrlLauncherProvider.overrideWithValue((uri) async {
+          calls.launched.add(uri);
+          return true;
+        }),
       ],
       child: ScreenUtilInit(
         designSize: const Size(393, 852),
@@ -274,4 +307,97 @@ void main() {
       expect(find.text('welcome'), findsOneWidget);
     });
   });
+
+  group(
+    'Delete-account confirm with a renewing store subscription (02-004)',
+    () {
+      final manageButton = find.byKey(
+        const ValueKey('settings.confirm.manage'),
+      );
+
+      testWidgets('says the subscription keeps renewing, from the content '
+          'system, and offers Manage subscription', (tester) async {
+        final content = _sentinels();
+        await _pumpSettings(
+          tester,
+          content: content,
+          calls: _Calls(),
+          renewingSubscription: true,
+        );
+
+        await _tap(tester, _deleteButton);
+
+        final dialog = find.byType(AlertDialog);
+        for (final key in [
+          ContentKeys.paywallDeleteConfirmTitle,
+          ContentKeys.paywallDeleteConfirmBody,
+          ContentKeys.paywallDeleteConfirmSubscription,
+          ContentKeys.paywallManageButton,
+          ContentKeys.paywallDeleteConfirmAction,
+          ContentKeys.paywallCancel,
+        ]) {
+          expect(
+            find.descendant(of: dialog, matching: find.text(content[key]!)),
+            findsOneWidget,
+            reason: '$key is not what the dialog shows',
+          );
+        }
+        expect(
+          find.descendant(of: dialog, matching: find.byType(Text)),
+          findsNWidgets(6),
+          reason: 'a seventh string would be a literal',
+        );
+        expect(manageButton, findsOneWidget);
+      });
+
+      testWidgets('names where to cancel; Manage closes the confirm without '
+          'deleting and opens the subscription page', (tester) async {
+        final calls = _Calls();
+        await _pumpSettings(
+          tester,
+          content: _defaults,
+          calls: calls,
+          renewingSubscription: true,
+        );
+
+        await _tap(tester, _deleteButton);
+
+        final note = _defaults[ContentKeys.paywallDeleteConfirmSubscription]!;
+        expect(note, contains('does not cancel'));
+        expect(note, contains('App Store'));
+        expect(note, contains('Google Play'));
+        expect(_dialogText(tester), contains(note));
+
+        await _tap(tester, manageButton);
+
+        expect(find.byType(AlertDialog), findsNothing);
+        expect(calls.deletes, 0);
+        expect(calls.manageReads, 1);
+        expect(calls.launched, [
+          Uri.parse('https://apps.apple.com/account/subscriptions'),
+        ]);
+        expect(find.text('welcome'), findsNothing);
+      });
+
+      testWidgets('without a renewing subscription the confirm says nothing '
+          'about one', (tester) async {
+        await _pumpSettings(
+          tester,
+          content: _defaults,
+          calls: _Calls(),
+          renewingSubscription: false,
+        );
+
+        await _tap(tester, _deleteButton);
+
+        expect(
+          _dialogText(tester),
+          isNot(
+            contains(_defaults[ContentKeys.paywallDeleteConfirmSubscription]),
+          ),
+        );
+        expect(manageButton, findsNothing);
+      });
+    },
+  );
 }

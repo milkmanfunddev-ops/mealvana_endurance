@@ -225,6 +225,73 @@ void main() {
     },
   );
 
+  group('isRenewingStoreSubscription (delete account warns, 02-004)', () {
+    EntitlementInfo pro({
+      required String store,
+      required bool isActive,
+      required bool willRenew,
+    }) => EntitlementInfo.fromJson({
+      'identifier': 'pro',
+      'isActive': isActive,
+      'willRenew': willRenew,
+      'latestPurchaseDate': '2026-08-01T00:00:00Z',
+      'originalPurchaseDate': '2026-08-01T00:00:00Z',
+      'productIdentifier': 'me_pro_monthly',
+      'isSandbox': true,
+      'ownershipType': 'PURCHASED',
+      'store': store,
+      'periodType': 'NORMAL',
+      'expirationDate': '2026-11-01T00:00:00Z',
+      'unsubscribeDetectedAt': null,
+      'billingIssueDetectedAt': null,
+      'verification': 'NOT_REQUESTED',
+    });
+
+    test(
+      'a running store subscription that will renew outlives the account',
+      () {
+        for (final store in ['APP_STORE', 'PLAY_STORE', 'TEST_STORE']) {
+          expect(
+            SubscriptionService.isRenewingStoreSubscription(
+              pro(store: store, isActive: true, willRenew: true),
+            ),
+            isTrue,
+            reason: store,
+          );
+        }
+      },
+    );
+
+    test('nothing to warn about: no pro, a grant, ended, or cancelled', () {
+      expect(SubscriptionService.isRenewingStoreSubscription(null), isFalse);
+      expect(
+        SubscriptionService.isRenewingStoreSubscription(
+          pro(store: 'PROMOTIONAL', isActive: true, willRenew: true),
+        ),
+        isFalse,
+        reason: 'a grant bills nobody',
+      );
+      expect(
+        SubscriptionService.isRenewingStoreSubscription(
+          pro(store: 'APP_STORE', isActive: false, willRenew: false),
+        ),
+        isFalse,
+        reason: 'ended',
+      );
+      expect(
+        SubscriptionService.isRenewingStoreSubscription(
+          pro(store: 'APP_STORE', isActive: true, willRenew: false),
+        ),
+        isFalse,
+        reason: 'already cancelled, runs out on its own',
+      );
+    });
+
+    test('without the SDK nothing is renewing', () async {
+      expect(await service.hasRenewingStoreSubscription(), isFalse);
+    });
+  });
+
   group('introOfferOf (the store price is the source, mp-279)', () {
     test("Apple's free week → seven free days", () {
       final product = _FakeStoreProduct(

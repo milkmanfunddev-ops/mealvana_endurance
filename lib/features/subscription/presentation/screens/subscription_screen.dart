@@ -16,6 +16,38 @@ import '../widgets/pro_feature_list.dart';
 import '../widgets/redeem_code_sheet.dart';
 import 'paywall_screen.dart';
 
+/// Manage subscription from Settings: the Subscription screen's button and
+/// the Delete account confirm's offer (finding 02-004) go the same way.
+/// Opens RevenueCat's management URL, else the store's own subscriptions
+/// page; with no page to open (a Test Store subscription) says where the
+/// subscription is instead of opening an empty browser (finding 09-001).
+Future<void> openManageSubscription(BuildContext context, WidgetRef ref) async {
+  final content = ref.read(contentServiceProvider);
+  final launch = ref.read(paywallUrlLauncherProvider);
+  final uri = await ref
+      .read(subscriptionScreenControllerProvider.notifier)
+      .managementUrl();
+  if (uri == null) {
+    if (!context.mounted) return;
+    MealvanaSnackbar.showInfo(
+      context,
+      content.getValue(ContentKeys.subscriptionManageNoPage),
+    );
+    return;
+  }
+  var opened = false;
+  try {
+    opened = await launch(uri);
+  } catch (_) {
+    opened = false;
+  }
+  if (!context.mounted || opened) return;
+  MealvanaSnackbar.showInfo(
+    context,
+    content.getValue(ContentKeys.paywallManageUnavailable),
+  );
+}
+
 /// The Subscription screen in Settings (mp-495, approved as mp-500).
 ///
 /// The plan's status with the plan bought (Monthly or Annual, mp-628) and
@@ -45,34 +77,8 @@ class SubscriptionScreen extends ConsumerWidget {
     settings: const RouteSettings(name: routeName),
   );
 
-  Future<void> _manage(BuildContext context, WidgetRef ref) async {
-    final content = ref.read(contentServiceProvider);
-    final launch = ref.read(paywallUrlLauncherProvider);
-    final uri = await ref
-        .read(subscriptionScreenControllerProvider.notifier)
-        .managementUrl();
-    // No page to open (a Test Store subscription): say where it is instead
-    // of opening an empty browser (finding 09-001).
-    if (uri == null) {
-      if (!context.mounted) return;
-      MealvanaSnackbar.showInfo(
-        context,
-        content.getValue(ContentKeys.subscriptionManageNoPage),
-      );
-      return;
-    }
-    var opened = false;
-    try {
-      opened = await launch(uri);
-    } catch (_) {
-      opened = false;
-    }
-    if (!context.mounted || opened) return;
-    MealvanaSnackbar.showInfo(
-      context,
-      content.getValue(ContentKeys.paywallManageUnavailable),
-    );
-  }
+  Future<void> _manage(BuildContext context, WidgetRef ref) =>
+      openManageSubscription(context, ref);
 
   @override
   Widget build(BuildContext context, WidgetRef ref) {
