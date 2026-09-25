@@ -13,7 +13,7 @@
 
 **Touches:** supabase/functions/_shared/vana/plan.ts
 
-- [ ] A deno test: two Use this plan again in a row leave one live conversation-less draft; a conversation's draft is untouched.
+- [x] A deno test: two Use this plan again in a row leave one live conversation-less draft; a conversation's draft is untouched.
 - [ ] Deployed to dev.
 - [ ] codegen if annotations changed, `flutter analyze` and the suite green.
 

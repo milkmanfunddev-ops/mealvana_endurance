@@ -257,11 +257,18 @@ export async function renamePlan(v: VanaCtx, id: string, name: string): Promise<
  *  plan is left as it was, and this week's plan is untouched until the copy is confirmed, which replaces it the way any
  *  new plan's confirm does (`confirm_meal_plan`; mp-674). The copy has no conversation: it is the Plan tab's. Meals go in
  *  through `addMealById`, fresh from the library or the saved meal, so every guard on adding a meal holds for a copy
- *  too; one that can no longer be added is left out rather than copied blind. */
+ *  too; one that can no longer be added is left out rather than copied blind.
+ *  The copy takes the place of any earlier conversation-less draft for the week (73-001): that draft is archived first,
+ *  so the week never holds a live draft the athlete cannot reach. A conversation's own draft (mp-241) and the
+ *  confirmed plan are left alone. */
 export async function usePlanAgain(v: VanaCtx, id: string): Promise<MealPlan> {
   const source = await getPlanById(v, id);
   if (!source) throw new Error('plan not found');
-  const target = await insertDraft(v, await currentWeekStart(v), null, source.name ?? null);
+  const weekStart = await currentWeekStart(v);
+  const { error } = await v.db.from('meal_plans').update({ status: 'archived', updated_at: new Date().toISOString() })
+    .eq('user_id', v.userId).eq('week_start', weekStart).eq('status', 'draft').is('conversation_id', null).eq('is_deleted', false);
+  if (error) throw new Error(`use_plan_again: ${error.message}`);
+  const target = await insertDraft(v, weekStart, null, source.name ?? null);
   await copyMeals(v, source, target, 'use again');
   return refreshShopping(v, target.id);
 }
