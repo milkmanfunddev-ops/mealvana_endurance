@@ -114,6 +114,8 @@ export async function syncPlanList(v: VanaCtx, plan: { id: string; weekStart: st
     if (error) throw new Error(error.message);
   }
   await touch(v, list.id);
+  // A confirmed (or once-confirmed) plan's list is confirmed on every build path, not only Rebuild (89-004).
+  if (plan.status === 'confirmed' || await wasConfirmed(v, plan.id)) await markListConfirmedIfUnset(v, plan.id);
   return (await itemsOf(v, list.id)).map(toPlain);
 }
 const wasConfirmed = async (v: VanaCtx, planId: string): Promise<boolean> =>
@@ -171,12 +173,19 @@ async function confirmedPlanId(v: VanaCtx): Promise<string | null> {
 // deno-lint-ignore no-explicit-any
 async function orderedRows(v: VanaCtx): Promise<{ rows: any[]; current: any | null }> {
   const { data } = await v.db.from('shopping_lists').select('*').eq('user_id', v.userId).limit(200);
-  const rows = (data ?? []).slice().sort((a, b) => String(b.confirmed_at ?? b.created_at).localeCompare(String(a.confirmed_at ?? a.created_at)));
+  const hidden = await deletedPlanIds(v);
+  const rows = (data ?? []).filter((r) => !hidden.has(r.plan_id)).slice().sort((a, b) => String(b.confirmed_at ?? b.created_at).localeCompare(String(a.confirmed_at ?? a.created_at)));
   const planId = await confirmedPlanId(v);
   // The default (ticket 35, mp-244): the confirmed plan's list; else the newest hand-made list; else none. A draft's list
   // (Browse and chat edits build one), an archived plan's list and another week's list are never the default.
   const current = (planId ? rows.find((r) => r.plan_id === planId) : undefined) ?? rows.find((r) => !r.plan_id) ?? null;
   return { rows: current ? [current, ...rows.filter((r) => r !== current)] : rows, current };
+}
+/** Plans the athlete deleted (`is_deleted`, writes.ts deletePlan). Their lists stay in the table so Undo brings them back
+ *  with the plan, but the Shopping tab and Previous lists never show them (88-019: "the shopping list goes with it"). */
+async function deletedPlanIds(v: VanaCtx): Promise<Set<unknown>> {
+  const { data } = await v.db.from('meal_plans').select('id').eq('user_id', v.userId).eq('is_deleted', true);
+  return new Set((data ?? []).map((p: { id: string }) => p.id));
 }
 export async function listLists(v: VanaCtx, limit = 30): Promise<ShoppingListSummary[]> {
   const { rows } = await orderedRows(v);
@@ -187,7 +196,8 @@ export async function listLists(v: VanaCtx, limit = 30): Promise<ShoppingListSum
 /** `id` given → that list; else the default list: this week's confirmed plan's list, else the newest hand-made list by
  *  coalesce(confirmed_at, created_at); none → null (the tab's empty state). */
 export async function getList(v: VanaCtx, id?: string | null): Promise<ShoppingListDetail | null> {
-  if (id) return detail(v, await listRow(v, id));
+  // A deleted plan's list is hidden (88-019): a tab still holding its id is moved to the default list instead.
+  if (id) { const row = await listRow(v, id); if (!row.plan_id || !(await deletedPlanIds(v)).has(row.plan_id)) return detail(v, row); }
   const { current } = await orderedRows(v);
   return current ? detail(v, current) : null;
 }

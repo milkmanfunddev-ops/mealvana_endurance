@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
+import 'package:flutter_riverpod/misc.dart' show ProviderListenable;
 
 import '../../../../features/content/application/content_service.dart';
 import '../../../../features/content/domain/content_keys.dart';
@@ -32,6 +33,11 @@ import 'stepper.dart';
 /// [showMacros] puts a compact [MacroPillRow] under each meal's slot chip
 /// (on by default — the `show_macros` default, plan §4.2). No plan-level
 /// total: the sheet does no arithmetic (macro-pill-row MP-5).
+///
+/// [livePlan], when given, is what the sheet renders from while it is open,
+/// so a stepper or Remove shows at once and Confirm confirms what is on
+/// screen (testing-wave 88-004); [plan] is the plan it opened with and the
+/// fallback while [livePlan] has none.
 Future<void> showReviewSheet({
   required BuildContext context,
   required WidgetRef ref,
@@ -47,6 +53,7 @@ Future<void> showReviewSheet({
   /// when provided, the navigation is the confirmation.
   VoidCallback? onConfirmed,
   bool showMacros = true,
+  ProviderListenable<MealPlan?>? livePlan,
 }) {
   final content = ref.read(contentServiceProvider);
   return showAdaptiveModal<void>(
@@ -56,6 +63,7 @@ Future<void> showReviewSheet({
       return _ReviewSheet(
         content: content,
         plan: plan,
+        livePlan: livePlan,
         showMacros: showMacros,
         onTapMeal: onTapMeal,
         onServings: onServings,
@@ -71,6 +79,7 @@ class _ReviewSheet extends ConsumerStatefulWidget {
   const _ReviewSheet({
     required this.content,
     required this.plan,
+    this.livePlan,
     required this.onTapMeal,
     required this.onServings,
     required this.onRemove,
@@ -81,6 +90,7 @@ class _ReviewSheet extends ConsumerStatefulWidget {
 
   final ContentService content;
   final MealPlan plan;
+  final ProviderListenable<MealPlan?>? livePlan;
   final bool showMacros;
   final ValueChanged<PlanMeal> onTapMeal;
   final void Function(PlanMeal meal, int servings) onServings;
@@ -95,12 +105,16 @@ class _ReviewSheet extends ConsumerStatefulWidget {
 class _ReviewSheetState extends ConsumerState<_ReviewSheet> {
   bool _confirming = false;
 
+  /// What the sheet shows: the live plan when the host gave one, else the
+  /// plan it opened with. Set at the top of every [build].
+  late MealPlan _plan;
+
   List<(String?, List<PlanMeal>)> get _groups {
-    if (!widget.plan.batchCooking) {
-      return [(null, widget.plan.meals)];
+    if (!_plan.batchCooking) {
+      return [(null, _plan.meals)];
     }
     final bySession = <CookingSession?, List<PlanMeal>>{};
-    for (final meal in widget.plan.meals) {
+    for (final meal in _plan.meals) {
       bySession.putIfAbsent(meal.session, () => []).add(meal);
     }
     // Stable order: the three sessions, then session-less rows.
@@ -115,16 +129,16 @@ class _ReviewSheetState extends ConsumerState<_ReviewSheet> {
   /// derived from its week start and period length (mp-269).
   String? _sessionLabel(CookingSession? session) => session == null
       ? null
-      : SessionChip.labelInPlan(widget.content, session, widget.plan);
+      : SessionChip.labelInPlan(widget.content, session, _plan);
 
   /// What the plan covers, in the athlete's own mode (mp-231 clauses 3–4): a
   /// batch is cooked once and eaten across the period, so it fills servings;
   /// an athlete who cooks the night of fills nights.
   String _coverageLine() {
-    final coverage = widget.plan.coverage;
+    final coverage = _plan.coverage;
     return ContentKeys.format(
       widget.content.getValue(
-        widget.plan.batchCooking
+        _plan.batchCooking
             ? ContentKeys.mpReviewCoverageServings
             : ContentKeys.mpReviewCoverageNights,
       ),
@@ -138,7 +152,7 @@ class _ReviewSheetState extends ConsumerState<_ReviewSheet> {
 
   /// "Your week" over seven days, "Your 10 days" over any other period.
   String _title() {
-    final days = widget.plan.coverage.periodDays;
+    final days = _plan.coverage.periodDays;
     return days == 7
         ? widget.content.getValue(ContentKeys.mpReviewYourWeek)
         : ContentKeys.format(
@@ -195,13 +209,15 @@ class _ReviewSheetState extends ConsumerState<_ReviewSheet> {
 
   @override
   Widget build(BuildContext context) {
+    final live = widget.livePlan;
+    _plan = (live == null ? null : ref.watch(live)) ?? widget.plan;
     final isDark = Theme.of(context).brightness == Brightness.dark;
     final textColor = isDark ? AppColors.cream : AppColors.blackberry;
     final secondary = textColor.withValues(alpha: 0.65);
-    final confirmed = widget.plan.status == MealPlanStatus.confirmed;
+    final confirmed = _plan.status == MealPlanStatus.confirmed;
     final label = widget.content;
 
-    final totalServings = widget.plan.meals.fold<int>(
+    final totalServings = _plan.meals.fold<int>(
       0,
       (sum, m) => sum + m.servings,
     );
@@ -209,7 +225,7 @@ class _ReviewSheetState extends ConsumerState<_ReviewSheet> {
     // Each row's picture is its library Meal's current Dish photo, read by
     // meal id — the same answer the plan tile and the plan bar get, so the
     // grouping below cannot change what a row shows (ADR 0003).
-    final slots = ref.planPhotoSlots(widget.plan.meals);
+    final slots = ref.planPhotoSlots(_plan.meals);
     return SafeArea(
       child: Padding(
         padding: const EdgeInsets.all(AppSpacing.md),
@@ -229,7 +245,7 @@ class _ReviewSheetState extends ConsumerState<_ReviewSheet> {
             ),
             const SizedBox(height: 2),
             Text(
-              _summaryLine(widget.plan.meals.length, totalServings),
+              _summaryLine(_plan.meals.length, totalServings),
               key: const ValueKey('meal_planning.review_sheet.summary'),
               style: AppTextStyles.bodyMedium.copyWith(color: secondary),
             ),
@@ -240,7 +256,7 @@ class _ReviewSheetState extends ConsumerState<_ReviewSheet> {
               style: AppTextStyles.bodySmall.copyWith(color: secondary),
             ),
             const SizedBox(height: AppSpacing.md),
-            if (widget.plan.meals.isEmpty)
+            if (_plan.meals.isEmpty)
               DashedBox(
                 child: Text(
                   label.getValue(ContentKeys.mpReviewEmpty),
@@ -355,9 +371,7 @@ class _ReviewSheetState extends ConsumerState<_ReviewSheet> {
               ),
               height: 48,
               isLoading: _confirming,
-              onPressed: confirmed || widget.plan.meals.isEmpty
-                  ? null
-                  : _confirm,
+              onPressed: confirmed || _plan.meals.isEmpty ? null : _confirm,
             ),
             const SizedBox(height: AppSpacing.sm),
             KyleSecondaryButton(

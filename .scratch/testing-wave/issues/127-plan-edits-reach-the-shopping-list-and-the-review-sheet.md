@@ -17,9 +17,9 @@
 
 **Touches:** lib/features/meal_planning/application/meal_plan_controller.dart, lib/features/meal_planning/data/meal_plan_repository.dart, lib/features/meal_planning/presentation/widgets/review_sheet.dart, lib/features/meal_planning/presentation/screens/vana_chat_screen.dart, lib/features/meal_planning/application/vana_chat_controller.dart, supabase/functions/_shared/vana/plan.ts, supabase/functions/_shared/vana/shopping.ts, supabase/functions/_shared/vana/writes.ts, supabase/migrations/20260925172700_plan_lists_confirmed_at_backfill.sql
 
-- [ ] Seam test through the real `MealPlanController`: a servings change and a remove on a confirmed plan end with a rebuild request for that plan after the upload; a failed upload requests none and says so.
-- [ ] Widget test: Remove in the Review sheet drops the meal and the counts at once, and the plan bar shows the new count.
-- [ ] Deno tests: an edit on a confirmed plan leaves its list with `confirmed_at`; a deleted plan's list is absent from `listLists` and `getList`, and back after Undo.
-- [ ] `flutter analyze` clean on touched files; deno vana tests. Deploy (migration, then vana-action and the functions sharing `_shared/vana`): wave lead.
+- [x] Seam test through the real `MealPlanController`: a servings change and a remove on a confirmed plan end with a rebuild request for that plan after the upload; a failed upload requests none and says so.
+- [x] Widget test: Remove in the Review sheet drops the meal and the counts at once, and the plan bar shows the new count.
+- [x] Deno tests: an edit on a confirmed plan leaves its list with `confirmed_at`; a deleted plan's list is absent from `listLists` and `getList`, and back after Undo.
+- [x] `flutter analyze` clean on touched files; deno vana tests. Deploy (migration, then vana-action and the functions sharing `_shared/vana`): wave lead.
 
 Next: /implement-lee testing-wave

@@ -75,6 +75,25 @@ class MealPlanRepository with SyncableRepository {
 
   Future<SyncResult>? _inflightSync;
 
+  /// Plans whose meals [uploadDirtyRecords] has replayed (servings, removes)
+  /// since [takeReplayedPlanIds] last drained them. The RPCs touch
+  /// `plan_meals` only, so each needs its shopping list rebuilt on the
+  /// server (mp-244, testing-wave 88-003). Kept here, not in the caller, so a
+  /// replay run by any path (the sync coordinator, a remote-ack flush) is
+  /// still owed its rebuild.
+  final Set<String> _replayedPlanIds = {};
+
+  /// The plans replayed since the last call, and forget them. A caller that
+  /// cannot finish a rebuild hands the id back with [owePlanRebuild].
+  Set<String> takeReplayedPlanIds() {
+    final ids = Set.of(_replayedPlanIds);
+    _replayedPlanIds.clear();
+    return ids;
+  }
+
+  /// Put [planId] back on the owed list (its rebuild did not go through).
+  void owePlanRebuild(String planId) => _replayedPlanIds.add(planId);
+
   // ========================================================================
   // SyncableRepository
   // ========================================================================
@@ -211,6 +230,7 @@ class MealPlanRepository with SyncableRepository {
 
       var count = 0;
       for (final meal in dirtyMeals) {
+        _replayedPlanIds.add(meal.planId);
         if (meal.isDeleted) {
           await _remote.removeMeal(meal.id);
           await (_database.delete(

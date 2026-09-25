@@ -100,9 +100,13 @@ class _DraftActions extends Fake implements VanaActionClient {
 class _RecordingPlan extends MealPlanController {
   final List<({String? planId, String? conversationId, String? date})>
   confirms = [];
+  final List<String> removed = [];
 
   @override
   Future<MealPlan?> build() async => null;
+
+  @override
+  Future<void> removeMeal(String planMealId) async => removed.add(planMealId);
 
   @override
   Future<void> applyServerPlan(MealPlan plan) async {}
@@ -231,4 +235,39 @@ void main() {
       expect(find.text('shopping'), findsOneWidget);
     },
   );
+
+  /// Testing-wave 88-004 (ticket 127): Remove in the Review sheet drops the
+  /// meal and the counts at once, and the plan bar agrees after the sheet
+  /// closes; the removal is the plan controller's local-first write.
+  testWidgets('Remove in the Review sheet drops the meal at once', (
+    tester,
+  ) async {
+    await pumpScreen(tester);
+    final summary = find.byKey(
+      const ValueKey('meal_planning.review_sheet.summary'),
+    );
+    String barTitle() => tester
+        .widgetList<RichText>(find.byType(RichText))
+        .map((t) => t.text.toPlainText())
+        .firstWhere((t) => t.startsWith('Your plan'), orElse: () => '');
+
+    await tester.tap(
+      find.byKey(const ValueKey('meal_planning.plan_bar.review')),
+    );
+    await tester.pumpAndSettle();
+    expect(tester.widget<Text>(summary).data, '2 meals · 8 servings');
+
+    await tester.tap(find.byTooltip('Remove').first);
+    await tester.pumpAndSettle();
+
+    final gone = draft.meals.firstWhere((m) => m.id == plan.removed.single);
+    expect(tester.widget<Text>(summary).data, '1 meal · 4 servings');
+    expect(find.text(gone.name), findsNothing);
+
+    await tester.tap(
+      find.byKey(const ValueKey('meal_planning.review_sheet.keep_planning')),
+    );
+    await tester.pumpAndSettle();
+    expect(barTitle(), contains('1 meal'));
+  });
 }

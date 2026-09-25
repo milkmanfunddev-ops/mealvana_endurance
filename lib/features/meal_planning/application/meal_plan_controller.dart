@@ -259,15 +259,42 @@ class MealPlanController extends _$MealPlanController {
       final result = await _repo.uploadDirtyRecords(userId);
       if (!result.success) {
         _logger.warning(
-          'Deferred meal-plan upload failed; rows stay dirty',
+          'Deferred meal-plan upload failed; rows stay dirty, '
+          'shopping list not rebuilt',
           context: _context,
           data: {'error': result.error},
         );
         return;
       }
+      await _rebuildReplayedLists(userId);
       if (result.count == 0) return;
       await _refreshFromServer(userId);
     }());
+  }
+
+  /// mp-244: "the list is rebuilt after every plan edit". The replayed
+  /// servings / remove RPCs touch `plan_meals` only, so each plan they
+  /// touched gets `rebuild_shopping_list` once the replay has landed
+  /// (testing-wave 88-003). A rebuild that fails stays owed and goes with
+  /// the next successful upload.
+  Future<void> _rebuildReplayedLists(String userId) async {
+    for (final planId in _repo.takeReplayedPlanIds()) {
+      try {
+        final result = await _actions.run(
+          RebuildShoppingListAction(planId: planId),
+        );
+        final plan = result.plan;
+        if (plan != null) await _repo.applyServerPlan(plan, userId: userId);
+      } catch (e) {
+        _repo.owePlanRebuild(planId);
+        _logger.warning(
+          'Shopping list not rebuilt after a plan edit; retried next upload',
+          context: _context,
+          error: e,
+          data: {'planId': planId},
+        );
+      }
+    }
   }
 
   Future<void> _refreshFromServer(String userId) async {
