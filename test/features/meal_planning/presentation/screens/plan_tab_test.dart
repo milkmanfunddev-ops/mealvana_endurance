@@ -3,6 +3,7 @@ import 'dart:async';
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:flutter_test/flutter_test.dart';
+import 'package:go_router/go_router.dart';
 import 'package:mealvana_endurance/features/content/application/content_service.dart';
 import 'package:mealvana_endurance/features/daily_macros/presentation/providers/daily_macros_controller.dart';
 import 'package:mealvana_endurance/features/meal_planning/application/home_service.dart';
@@ -13,19 +14,21 @@ import 'package:mealvana_endurance/features/meal_planning/domain/home_payload.da
 import 'package:mealvana_endurance/features/meal_planning/data/vana_exceptions.dart';
 import 'package:mealvana_endurance/features/meal_planning/domain/meal_plan.dart';
 import 'package:mealvana_endurance/features/meal_planning/domain/meal_plan_summary.dart';
+import 'package:mealvana_endurance/features/meal_planning/domain/meal_type.dart';
 import 'package:mealvana_endurance/features/meal_planning/domain/vana_part.dart';
 import 'package:mealvana_endurance/features/meal_planning/domain/week_start.dart';
 import 'package:mealvana_endurance/features/meal_planning/presentation/screens/plan_tab.dart';
+import 'package:mealvana_endurance/features/meal_planning/presentation/widgets/meal_sheet.dart';
 import 'package:mealvana_endurance/features/home_shell/presentation/home_shell_chrome.dart';
 import 'package:mealvana_endurance/shared/widgets/kyle_design/buttons/primary_button.dart';
 
 import '../../domain/fixture_helpers.dart';
 import '../helpers/test_content.dart';
 
-/// The Plan tab through fake notifiers: the three plan states render.
-/// (The tile sheet and its "Ate it" wiring were removed 2026-09-03 — taps
-/// now route to the meal detail page; the `logFromPlan` remote-ack path
-/// stays covered by `application/meal_plan_controller_test.dart`.)
+/// The Plan tab through fake notifiers: the three plan states render, and a
+/// row opens its sheet with Ate it (ticket 132, mp-239). The `logFromPlan`
+/// remote-ack path itself is covered through the real notifier in
+/// `application/meal_plan_controller_test.dart`.
 /// Bounded settle — the Plan tab's day-note avatar pulses forever while the
 /// home payload loads (and these tests mostly leave it loading), so
 /// `pumpAndSettle` can never return. A few fixed frames cover route/sheet/
@@ -76,6 +79,45 @@ void main() {
             body: PlanTab(onShowShopping: onShowShopping, onAddMeal: onAddMeal),
           ),
         ),
+      ),
+    );
+    await settle(tester);
+  }
+
+  /// The tab under a router, so Recipe can open `/food/meals/:id`.
+  Future<void> pumpRoutedTab(
+    WidgetTester tester, {
+    required MealPlanController plan,
+  }) async {
+    final router = GoRouter(
+      routes: [
+        GoRoute(
+          path: '/',
+          builder: (_, _) => const Scaffold(body: PlanTab()),
+        ),
+        GoRoute(
+          path: '/food/meals/:id',
+          builder: (_, state) =>
+              Scaffold(body: Text('detail ${state.pathParameters['id']}')),
+        ),
+      ],
+    );
+    await tester.pumpWidget(
+      ProviderScope(
+        overrides: [
+          contentServiceProvider.overrideWith(testContentService),
+          mealPlanControllerProvider.overrideWith(() => plan),
+          previousPlansProvider.overrideWith((ref) async => const []),
+          planPeriodProvider.overrideWith(
+            (ref) => Stream.value(const PlanPeriod()),
+          ),
+          homeControllerProvider.overrideWith(() => _FakeHomeController(null)),
+          vanaSettingsControllerProvider.overrideWith(
+            _FakeSettingsController.new,
+          ),
+          dailyMacrosControllerProvider.overrideWith(_NoMacrosController.new),
+        ],
+        child: MaterialApp.router(routerConfig: router),
       ),
     );
     await settle(tester);
@@ -228,6 +270,161 @@ void main() {
       find.text(content['meal_planning.needs_connection']!),
       findsOneWidget,
     );
+  });
+
+  /// Ticket 132 (Finding 88-017, mp-239 details 2-4): a row opens its
+  /// sheet (servings, Ate it, Swap, Remove, Recipe), not the meal detail.
+  group('the row sheet', () {
+    const ateIt = ValueKey('meal_planning.meal_sheet.ate_it');
+    const ateItError = ValueKey('meal_planning.meal_sheet.ate_it_error');
+    final content = loadDefaultContent();
+
+    Future<void> openRow(WidgetTester tester, String name) async {
+      await tester.tap(find.text(name));
+      await settle(tester);
+    }
+
+    testWidgets('a row tap opens the sheet, not the detail', (tester) async {
+      final meal = confirmedPlan.meals.first;
+      await pumpTab(tester, plan: _FakePlanController(confirmedPlan));
+
+      await openRow(tester, meal.name);
+
+      expect(find.byType(MealSheet), findsOneWidget);
+      expect(
+        find.byKey(const ValueKey('meal_planning.meal_sheet.servings')),
+        findsOneWidget,
+      );
+      expect(find.byKey(ateIt), findsOneWidget);
+      expect(
+        find.byKey(const ValueKey('meal_planning.meal_sheet.swap')),
+        findsOneWidget,
+      );
+      expect(
+        find.byKey(const ValueKey('meal_planning.meal_sheet.remove')),
+        findsOneWidget,
+      );
+      expect(
+        find.byKey(const ValueKey('meal_planning.meal_sheet.recipe')),
+        findsOneWidget,
+      );
+    });
+
+    testWidgets('Recipe opens the meal detail', (tester) async {
+      final meal = confirmedPlan.meals.last;
+      await pumpRoutedTab(tester, plan: _FakePlanController(confirmedPlan));
+
+      await openRow(tester, meal.name);
+      expect(find.textContaining('detail '), findsNothing);
+      await tester.tap(
+        find.byKey(const ValueKey('meal_planning.meal_sheet.recipe')),
+      );
+      await settle(tester);
+
+      expect(find.text('detail ${meal.libraryMealId}'), findsOneWidget);
+    });
+
+    testWidgets('Ate it logs the row, then says so and closes', (tester) async {
+      final meal = confirmedPlan.meals.first;
+      final controller = _FakePlanController(confirmedPlan);
+      await pumpTab(tester, plan: controller);
+
+      await openRow(tester, meal.name);
+      await tester.tap(find.byKey(ateIt));
+      await settle(tester);
+
+      expect(controller.logged, [meal.id]);
+      expect(find.byType(MealSheet), findsNothing);
+      expect(
+        find.text(content['meal_planning.logged_done_toast']!),
+        findsOneWidget,
+      );
+    });
+
+    testWidgets('a double tap on Ate it sends one log', (tester) async {
+      final meal = confirmedPlan.meals.first;
+      final controller = _FakePlanController(confirmedPlan)
+        ..logGate = Completer<void>();
+      await pumpTab(tester, plan: controller);
+
+      await openRow(tester, meal.name);
+      await tester.tap(find.byKey(ateIt));
+      await tester.pump();
+      await tester.tap(find.byKey(ateIt), warnIfMissed: false);
+      await tester.pump();
+      controller.logGate!.complete();
+      await settle(tester);
+
+      expect(controller.logged, [meal.id]);
+    });
+
+    testWidgets('offline, Ate it says it needs a connection and the sheet '
+        'stays', (tester) async {
+      final meal = confirmedPlan.meals.first;
+      final controller = _FakePlanController(confirmedPlan)
+        ..logFailsWith = const NeedsConnectionException('log_from_plan');
+      await pumpTab(tester, plan: controller);
+
+      await openRow(tester, meal.name);
+      await tester.tap(find.byKey(ateIt));
+      await settle(tester);
+
+      expect(find.byType(MealSheet), findsOneWidget);
+      final error = tester.widget<Text>(find.byKey(ateItError));
+      expect(error.data, content['meal_planning.needs_connection']);
+      expect(find.byKey(ateIt), findsOneWidget);
+    });
+
+    testWidgets('a refused Ate it says it failed, never needs a connection', (
+      tester,
+    ) async {
+      final meal = confirmedPlan.meals.first;
+      final controller = _FakePlanController(confirmedPlan)
+        ..logFailsWith = const VanaServerException(500, 'boom');
+      await pumpTab(tester, plan: controller);
+
+      await openRow(tester, meal.name);
+      await tester.tap(find.byKey(ateIt));
+      await settle(tester);
+
+      final error = tester.widget<Text>(find.byKey(ateItError));
+      expect(error.data, content['meal_planning.ate_it_failed']);
+    });
+
+    testWidgets('a row with no servings left has no Ate it', (tester) async {
+      final eaten = confirmedPlan.copyWith(
+        meals: [
+          for (final m in confirmedPlan.meals) m.copyWith(servingsLeft: 0),
+        ],
+      );
+      await pumpTab(tester, plan: _FakePlanController(eaten));
+
+      await openRow(tester, eaten.meals.first.name);
+
+      expect(find.byType(MealSheet), findsOneWidget);
+      expect(find.byKey(ateIt), findsNothing);
+    });
+
+    testWidgets('Remove in the sheet closes it and offers Undo', (
+      tester,
+    ) async {
+      final meal = confirmedPlan.meals.first;
+      final controller = _FakePlanController(confirmedPlan);
+      await pumpTab(tester, plan: controller);
+
+      await openRow(tester, meal.name);
+      await tester.tap(
+        find.byKey(const ValueKey('meal_planning.meal_sheet.remove')),
+      );
+      await settle(tester);
+
+      expect(controller.removed, [meal.id]);
+      expect(find.byType(MealSheet), findsNothing);
+      expect(
+        find.text(content['meal_planning.remove_undone']!),
+        findsOneWidget,
+      );
+    });
   });
 
   testWidgets("a draft's ⋮ has no Rebuild shopping list", (tester) async {
@@ -423,8 +620,26 @@ class _FakePlanController extends MealPlanController {
   @override
   Future<void> setServings(String planMealId, int servings) async {}
 
+  final List<String> removed = [];
+
   @override
-  Future<void> removeMeal(String planMealId) async {}
+  Future<void> removeMeal(String planMealId) async => removed.add(planMealId);
+
+  final List<String> logged = [];
+  Exception? logFailsWith;
+  Completer<void>? logGate;
+
+  @override
+  Future<VanaLoggedPart?> logFromPlan(
+    String planMealId, {
+    MealType? mealType,
+  }) async {
+    logged.add(planMealId);
+    await logGate?.future;
+    final failure = logFailsWith;
+    if (failure != null) throw failure;
+    return VanaLoggedPart(planMealId: planMealId, name: '', servingsLeft: 0);
+  }
 
   int deleted = 0;
   final List<VanaReceiptPart> undone = [];

@@ -51,6 +51,11 @@ void main() {
           builder: (_, state) =>
               PreviousPlanScreen(planId: state.pathParameters['id']!),
         ),
+        GoRoute(
+          path: '/food/meals/:id',
+          builder: (_, state) =>
+              Scaffold(body: Text('detail ${state.pathParameters['id']}')),
+        ),
       ],
     );
     await tester.pumpWidget(
@@ -107,6 +112,25 @@ void main() {
     }
     expect(
       find.byKey(const ValueKey('meal_planning.btn_confirm')),
+      findsNothing,
+    );
+  });
+
+  /// Ticket 132: the Plan tab's row opens the meal sheet with Ate it; an
+  /// earlier plan's row is not a plan being eaten from, so it keeps its own
+  /// rule and opens the meal's detail page, with no sheet.
+  testWidgets('a row opens the meal detail, not the Ate it sheet', (
+    tester,
+  ) async {
+    await pumpScreen(tester, plans: {earlier.id: earlier}, id: earlier.id);
+    final meal = earlier.meals.last;
+
+    await tester.tap(find.text(meal.name));
+    await tester.pumpAndSettle();
+
+    expect(find.text('detail ${meal.libraryMealId}'), findsOneWidget);
+    expect(
+      find.byKey(const ValueKey('meal_planning.meal_sheet.ate_it')),
       findsNothing,
     );
   });

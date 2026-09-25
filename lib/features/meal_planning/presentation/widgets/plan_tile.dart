@@ -16,7 +16,8 @@ import 'slot_chip.dart';
 
 /// One planned meal row: the picture, name (up to two lines), the slot chip and the
 /// servings-left note, then "×N" on the trailing edge — the prototype's
-/// `.v-tile`. Tap opens the meal's detail page; swipes and the `⋮` overflow
+/// `.v-tile`. Tap does what the host says (the Plan tab opens the row's
+/// sheet; an earlier plan opens the meal's detail page); swipes and the `⋮` overflow
 /// are owned by [PlanList] / the tile (05 §4).
 ///
 /// Macros ([MacroPillRow], compact) render under the slot chip line when

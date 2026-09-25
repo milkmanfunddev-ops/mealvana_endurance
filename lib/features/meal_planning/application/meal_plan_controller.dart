@@ -104,6 +104,10 @@ class MealPlanController extends _$MealPlanController {
   String? _userId;
   String? _weekStart;
 
+  /// "Ate it" writes on the wire, by plan-meal id: a second tap on the same
+  /// row joins the first instead of logging a second serving.
+  Map<String, Future<VanaLoggedPart?>> _logsInFlight = {};
+
   /// The week this controller is bound to (`YYYY-MM-DD`, on the athlete's
   /// week-start day — Sunday by default).
   String get weekStart => _weekStart ?? weekStartFor();
@@ -112,6 +116,8 @@ class MealPlanController extends _$MealPlanController {
   FutureOr<MealPlan?> build() async {
     final userId = await ref.watch(userIdProvider.future);
     _userId = userId;
+    // Riverpod keeps this notifier across `invalidate`; start clean.
+    _logsInFlight = {};
     // The week follows the athlete's start-day setting; a change rebuilds
     // this controller onto the new week (mp-269).
     final period = await ref.watch(planPeriodProvider.future);
@@ -491,16 +497,26 @@ class MealPlanController extends _$MealPlanController {
     await refresh();
   }
 
-  /// Log one serving of a plan meal (`log_from_plan` → meal_logs row +
-  /// servings_left decrement). Returns the `logged` part.
-  Future<VanaLoggedPart?> logFromPlan(
-    String planMealId, {
-    MealType? mealType,
-  }) async {
-    return _remoteAck(
+  /// "Ate it" (mp-239 detail 4): log one serving of a plan meal
+  /// (`log_from_plan` → a meal_logs row with source plan and the plan meal's
+  /// id, and servings_left one lower). Remote-ack: nothing moves until the
+  /// server answers, and a failure leaves the row as it was and rethrows.
+  /// A call for a row already being logged joins that call, so a double tap
+  /// logs one serving. Returns the `logged` part.
+  Future<VanaLoggedPart?> logFromPlan(String planMealId, {MealType? mealType}) {
+    final inFlight = _logsInFlight[planMealId];
+    if (inFlight != null) return inFlight;
+    final logs = _logsInFlight;
+    final log = _remoteAck(
       LogFromPlanAction(planMealId: planMealId, mealType: mealType),
       (r) => r.parts.whereType<VanaLoggedPart>().firstOrNull,
-    );
+    ).whenComplete(() {
+      // A block body: returning the removed Future would make whenComplete
+      // wait on itself.
+      logs.remove(planMealId);
+    });
+    logs[planMealId] = log;
+    return log;
   }
 
   /// Fill a day's empty slots (`plan_day`). Returns the `day` part; the

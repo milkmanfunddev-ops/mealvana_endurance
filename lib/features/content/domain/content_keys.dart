@@ -556,6 +556,14 @@ class ContentKeys {
   static const String mpServingsThisWeek = 'meal_planning.servings_this_week';
   static const String mpPerServingMacros = 'meal_planning.per_serving_macros';
   static const String mpSheetDone = 'meal_planning.sheet_done';
+
+  /// The plan meal sheet's way to the meal's detail page and Start cooking
+  /// (ticket 132, Lee 2026-09-25).
+  static const String mpSheetRecipe = 'meal_planning.sheet_recipe';
+
+  /// "Ate it" reached the server and it refused (ticket 132). Offline says
+  /// [mpNeedsConnection] instead.
+  static const String mpAteItFailed = 'meal_planning.ate_it_failed';
   static const String mpReviewShoppingLink =
       'meal_planning.review_shopping_link';
   static const String mpServingsLabel = 'meal_planning.servings_label';
