@@ -45,7 +45,8 @@ class VanaActionResult {
     return out;
   }
 
-  /// `list_plans` → `plans`, newest week first, deleted plans left out.
+  /// `list_plans` → `plans`, newest week first, deleted and empty plans
+  /// left out.
   List<MealPlanSummary> get plans =>
       readRecordList(extras, 'plans', MealPlanSummary.fromJson);
 

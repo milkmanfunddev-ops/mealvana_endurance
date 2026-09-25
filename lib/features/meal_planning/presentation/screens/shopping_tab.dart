@@ -757,133 +757,138 @@ class ShoppingPreviousListsSheet extends ConsumerWidget {
             style: AppTextStyles.bodySmall.copyWith(color: secondary),
           )
         else
-          Container(
-            padding: const EdgeInsets.only(left: 16, right: 4),
-            decoration: BoxDecoration(
-              color: surface,
-              borderRadius: BorderRadius.circular(15),
-            ),
-            child: Column(
-              children: [
-                for (var i = 0; i < lists.length; i++)
-                  InkWell(
-                    key: ValueKey(
-                      'meal_planning.shopping_previous_${lists[i].id}',
-                    ),
-                    onTap: () => pop(ShoppingListChoiceAction.open, lists[i]),
-                    child: Container(
-                      constraints: const BoxConstraints(minHeight: 56),
-                      decoration: BoxDecoration(
-                        border: i == lists.length - 1
-                            ? null
-                            : Border(bottom: BorderSide(color: hairline)),
+          // Flexible + a shrink-wrapped list: the sheet sizes to a short
+          // history and scrolls a long one (Finding 19-003).
+          Flexible(
+            child: Container(
+              padding: const EdgeInsets.only(left: 16, right: 4),
+              decoration: BoxDecoration(
+                color: surface,
+                borderRadius: BorderRadius.circular(15),
+              ),
+              child: ListView(
+                shrinkWrap: true,
+                children: [
+                  for (var i = 0; i < lists.length; i++)
+                    InkWell(
+                      key: ValueKey(
+                        'meal_planning.shopping_previous_${lists[i].id}',
                       ),
-                      child: Row(
-                        children: [
-                          Expanded(
-                            child: Column(
-                              mainAxisAlignment: MainAxisAlignment.center,
-                              crossAxisAlignment: CrossAxisAlignment.start,
-                              children: [
-                                Row(
-                                  children: [
-                                    Flexible(
-                                      child: Text(
-                                        lists[i].name.isEmpty
-                                            ? untitled
-                                            : lists[i].name,
-                                        maxLines: 1,
-                                        overflow: TextOverflow.ellipsis,
-                                        style: AppTextStyles.bodyMedium
-                                            .copyWith(
-                                              color: lists[i].id == currentId
-                                                  ? accent
-                                                  : textColor,
-                                              fontWeight:
-                                                  lists[i].id == currentId
-                                                  ? FontWeight.w600
-                                                  : null,
-                                            ),
-                                      ),
-                                    ),
-                                    if (lists[i].planId != null) ...[
-                                      const SizedBox(width: 8),
-                                      _Marker(
-                                        key: ValueKey(
-                                          'meal_planning.shopping_from_plan_${lists[i].id}',
+                      onTap: () => pop(ShoppingListChoiceAction.open, lists[i]),
+                      child: Container(
+                        constraints: const BoxConstraints(minHeight: 56),
+                        decoration: BoxDecoration(
+                          border: i == lists.length - 1
+                              ? null
+                              : Border(bottom: BorderSide(color: hairline)),
+                        ),
+                        child: Row(
+                          children: [
+                            Expanded(
+                              child: Column(
+                                mainAxisAlignment: MainAxisAlignment.center,
+                                crossAxisAlignment: CrossAxisAlignment.start,
+                                children: [
+                                  Row(
+                                    children: [
+                                      Flexible(
+                                        child: Text(
+                                          lists[i].name.isEmpty
+                                              ? untitled
+                                              : lists[i].name,
+                                          maxLines: 1,
+                                          overflow: TextOverflow.ellipsis,
+                                          style: AppTextStyles.bodyMedium
+                                              .copyWith(
+                                                color: lists[i].id == currentId
+                                                    ? accent
+                                                    : textColor,
+                                                fontWeight:
+                                                    lists[i].id == currentId
+                                                    ? FontWeight.w600
+                                                    : null,
+                                              ),
                                         ),
-                                        text: content.getValue(
-                                          ContentKeys.mpShoppingFromPlan,
-                                        ),
-                                        color: secondary,
                                       ),
+                                      if (lists[i].planId != null) ...[
+                                        const SizedBox(width: 8),
+                                        _Marker(
+                                          key: ValueKey(
+                                            'meal_planning.shopping_from_plan_${lists[i].id}',
+                                          ),
+                                          text: content.getValue(
+                                            ContentKeys.mpShoppingFromPlan,
+                                          ),
+                                          color: secondary,
+                                        ),
+                                      ],
                                     ],
-                                  ],
+                                  ),
+                                  const SizedBox(height: 2),
+                                  Text(
+                                    [
+                                      DateFormat.yMMMd().format(
+                                        lists[i].sortDate.toLocal(),
+                                      ),
+                                      ContentKeys.format(
+                                        content.getValue(
+                                          ContentKeys.mpShoppingItemCount,
+                                        ),
+                                        {'n': lists[i].itemCount},
+                                      ),
+                                      if (lists[i].id == currentId)
+                                        content.getValue(
+                                          ContentKeys.mpShoppingPreviousCurrent,
+                                        ),
+                                    ].join(' · '),
+                                    style: AppTextStyles.bodySmall.copyWith(
+                                      color: secondary,
+                                    ),
+                                  ),
+                                ],
+                              ),
+                            ),
+                            OverflowMenu(
+                              key: ValueKey(
+                                'meal_planning.shopping_previous_menu_${lists[i].id}',
+                              ),
+                              tooltip: content.getValue(
+                                ContentKeys.mpShoppingMenuMore,
+                              ),
+                              items: [
+                                OverflowMenuItem(
+                                  key: ValueKey(
+                                    'meal_planning.shopping_previous_rename_${lists[i].id}',
+                                  ),
+                                  label: content.getValue(
+                                    ContentKeys.mpShoppingRenameAction,
+                                  ),
+                                  onSelected: () => pop(
+                                    ShoppingListChoiceAction.rename,
+                                    lists[i],
+                                  ),
                                 ),
-                                const SizedBox(height: 2),
-                                Text(
-                                  [
-                                    DateFormat.yMMMd().format(
-                                      lists[i].sortDate.toLocal(),
-                                    ),
-                                    ContentKeys.format(
-                                      content.getValue(
-                                        ContentKeys.mpShoppingItemCount,
-                                      ),
-                                      {'n': lists[i].itemCount},
-                                    ),
-                                    if (lists[i].id == currentId)
-                                      content.getValue(
-                                        ContentKeys.mpShoppingPreviousCurrent,
-                                      ),
-                                  ].join(' · '),
-                                  style: AppTextStyles.bodySmall.copyWith(
-                                    color: secondary,
+                                OverflowMenuItem(
+                                  key: ValueKey(
+                                    'meal_planning.shopping_previous_delete_${lists[i].id}',
+                                  ),
+                                  label: content.getValue(
+                                    ContentKeys.mpShoppingDeleteAction,
+                                  ),
+                                  destructive: true,
+                                  onSelected: () => pop(
+                                    ShoppingListChoiceAction.delete,
+                                    lists[i],
                                   ),
                                 ),
                               ],
                             ),
-                          ),
-                          OverflowMenu(
-                            key: ValueKey(
-                              'meal_planning.shopping_previous_menu_${lists[i].id}',
-                            ),
-                            tooltip: content.getValue(
-                              ContentKeys.mpShoppingMenuMore,
-                            ),
-                            items: [
-                              OverflowMenuItem(
-                                key: ValueKey(
-                                  'meal_planning.shopping_previous_rename_${lists[i].id}',
-                                ),
-                                label: content.getValue(
-                                  ContentKeys.mpShoppingRenameAction,
-                                ),
-                                onSelected: () => pop(
-                                  ShoppingListChoiceAction.rename,
-                                  lists[i],
-                                ),
-                              ),
-                              OverflowMenuItem(
-                                key: ValueKey(
-                                  'meal_planning.shopping_previous_delete_${lists[i].id}',
-                                ),
-                                label: content.getValue(
-                                  ContentKeys.mpShoppingDeleteAction,
-                                ),
-                                destructive: true,
-                                onSelected: () => pop(
-                                  ShoppingListChoiceAction.delete,
-                                  lists[i],
-                                ),
-                              ),
-                            ],
-                          ),
-                        ],
+                          ],
+                        ),
                       ),
                     ),
-                  ),
-              ],
+                ],
+              ),
             ),
           ),
       ],

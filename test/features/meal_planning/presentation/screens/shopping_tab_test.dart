@@ -675,5 +675,43 @@ void _redesignTests() {
 
       expect(controller.deleted, ['list-b']);
     });
+
+    // Ticket 49, Finding 19-003: 14 lists overflowed the sheet by 80 px and
+    // the last ones could not be reached.
+    testWidgets('fourteen lists scroll to the last one with no overflow', (
+      tester,
+    ) async {
+      final many = [
+        for (var i = 1; i <= 13; i++)
+          _summary(
+            'list-old-$i',
+            'Week $i',
+            on: DateTime.utc(2026, 9, 12).subtract(Duration(days: 7 * i)),
+          ),
+      ];
+      final controller = await _pumpTab(tester, _listState(previous: many));
+      await _openMenu(tester, 'meal_planning.shopping_menu');
+      await _choose(tester, 'meal_planning.shopping_previous');
+      expect(tester.takeException(), isNull);
+
+      final sheet = find.byKey(
+        const ValueKey('meal_planning.shopping_previous_sheet'),
+      );
+      final last = find.byKey(
+        const ValueKey('meal_planning.shopping_previous_list-old-13'),
+      );
+      await tester.scrollUntilVisible(
+        last,
+        200,
+        scrollable: find
+            .descendant(of: sheet, matching: find.byType(Scrollable))
+            .first,
+      );
+      await tester.pumpAndSettle();
+      expect(tester.takeException(), isNull);
+
+      await _choose(tester, 'meal_planning.shopping_previous_list-old-13');
+      expect(controller.opened, ['list-old-13']);
+    });
   });
 }

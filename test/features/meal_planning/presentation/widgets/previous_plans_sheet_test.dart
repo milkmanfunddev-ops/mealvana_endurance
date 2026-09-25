@@ -106,6 +106,51 @@ void main() {
     );
   });
 
+  // Ticket 49, Finding 17-001: every plan the server lists can be reached.
+  testWidgets('twenty-five plans scroll to the oldest with no overflow', (
+    tester,
+  ) async {
+    final many = [
+      for (var i = 0; i < 25; i++)
+        MealPlanSummary.fromJson({
+          'id': 'plan-$i',
+          'weekStart': DateTime.utc(
+            2026,
+            9,
+            13,
+          ).subtract(Duration(days: 7 * i)).toIso8601String().substring(0, 10),
+          'status': 'archived',
+          'batchCooking': true,
+          'mealCount': 3,
+        }),
+    ];
+    final opened = <String>[];
+    await pumpSheet(tester, plans: () async => many, onOpen: opened.add);
+    expect(tester.takeException(), isNull);
+
+    final last = find.byKey(
+      const ValueKey('meal_planning.previous_plan_plan-24'),
+    );
+    await tester.scrollUntilVisible(
+      last,
+      200,
+      scrollable: find
+          .descendant(
+            of: find.byKey(
+              const ValueKey('meal_planning.previous_plans_sheet'),
+            ),
+            matching: find.byType(Scrollable),
+          )
+          .first,
+    );
+    await tester.pumpAndSettle();
+    expect(tester.takeException(), isNull);
+
+    await tester.tap(last);
+    await tester.pumpAndSettle();
+    expect(opened, ['plan-24']);
+  });
+
   testWidgets('no earlier plans says so', (tester) async {
     await pumpSheet(tester, plans: () async => const [], onOpen: (_) {});
 
