@@ -67,9 +67,13 @@ export async function getMeal(v: VanaCtx, source: 'library' | 'saved', id: strin
   const { data } = await v.db.from('saved_meals').select('*, meal_library:library_meal_id(swaps, why, photo_url, photo_credit, photo_credit_url)').eq('id', id).eq('user_id', v.userId).maybeSingle();
   if (!data) return null;
   const items = (data.items ?? []) as { name?: string; food_name?: string }[];
+  const itemNames = items.map((i) => i.name ?? i.food_name ?? '').filter(Boolean);
+  // A meal saved from a log carries the dish as its one item: that is its name again, not what it is made of (89-003).
+  const sameAsName = (n: string) => n.trim().toLowerCase() === String(data.name ?? '').trim().toLowerCase();
+  const ingredients = itemNames.every(sameAsName) ? '' : itemNames.join(', ');
   return rowToMealRef({ source: 'saved', id: data.id, name: data.name, meal_type: data.meal_types?.[0] ?? 'dinner', contexts: [], batch: data.batch ?? false, prep_minutes: null,
     kcal: data.calories, carbs_g: data.carbs_g, protein_g: data.protein_g, fat_g: data.fat_g, allergens: [], diets_ok: [], swaps: data.meal_library?.swaps ?? null,
-    why: data.meal_library?.why ?? 'one of your saved meals', attribution: 'your saved meal', ingredients: items.map((i) => i.name ?? i.food_name ?? '').filter(Boolean).join(', '), library_meal_id: data.library_meal_id, score: 1, icon: data.icon,
+    why: data.meal_library?.why ?? 'one of your saved meals', attribution: 'your saved meal', ingredients, library_meal_id: data.library_meal_id, score: 1, icon: data.icon,
     // A saved Meal shows the library Meal's current photo, so one added later reaches meals the athlete already saved (ADR 0003).
     photo_url: data.meal_library?.photo_url ?? null, photo_credit: data.meal_library?.photo_credit ?? null, photo_credit_url: data.meal_library?.photo_credit_url ?? null });
 }

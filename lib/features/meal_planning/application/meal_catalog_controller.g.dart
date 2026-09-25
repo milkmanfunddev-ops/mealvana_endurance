@@ -17,7 +17,7 @@ part of 'meal_catalog_controller.dart';
 /// only (`meal_library` is not mirrored).
 
 @ProviderFor(MealCatalogController)
-const mealCatalogControllerProvider = MealCatalogControllerProvider._();
+const mealCatalogControllerProvider = MealCatalogControllerFamily._();
 
 /// Meals tab: rails (Recents / My Foods / Assemblies / Recipes) plus a
 /// debounced (350 ms) search with meal-type × kind filters.
@@ -35,27 +35,85 @@ final class MealCatalogControllerProvider
   /// meals) load first so the tab renders offline; the online rails and the
   /// server-resolved Recents replace them when reachable. Search is online
   /// only (`meal_library` is not mirrored).
-  const MealCatalogControllerProvider._()
-    : super(
-        from: null,
-        argument: null,
-        retry: null,
-        name: r'mealCatalogControllerProvider',
-        isAutoDispose: true,
-        dependencies: null,
-        $allTransitiveDependencies: null,
-      );
+  const MealCatalogControllerProvider._({
+    required MealCatalogControllerFamily super.from,
+    required CatalogSurface super.argument,
+  }) : super(
+         retry: null,
+         name: r'mealCatalogControllerProvider',
+         isAutoDispose: true,
+         dependencies: null,
+         $allTransitiveDependencies: null,
+       );
 
   @override
   String debugGetCreateSourceHash() => _$mealCatalogControllerHash();
 
+  @override
+  String toString() {
+    return r'mealCatalogControllerProvider'
+        ''
+        '($argument)';
+  }
+
   @$internal
   @override
   MealCatalogController create() => MealCatalogController();
+
+  @override
+  bool operator ==(Object other) {
+    return other is MealCatalogControllerProvider && other.argument == argument;
+  }
+
+  @override
+  int get hashCode {
+    return argument.hashCode;
+  }
 }
 
 String _$mealCatalogControllerHash() =>
-    r'fadb8c7a4d73ecd74c8929cea5ce17036e7532d2';
+    r'705908b6988c8bb659f6c5585a09b5818ba3d124';
+
+/// Meals tab: rails (Recents / My Foods / Assemblies / Recipes) plus a
+/// debounced (350 ms) search with meal-type × kind filters.
+///
+/// Local rails (Recents from Drift logs + plan meals, My Foods from saved
+/// meals) load first so the tab renders offline; the online rails and the
+/// server-resolved Recents replace them when reachable. Search is online
+/// only (`meal_library` is not mirrored).
+
+final class MealCatalogControllerFamily extends $Family
+    with
+        $ClassFamilyOverride<
+          MealCatalogController,
+          AsyncValue<MealCatalogState>,
+          MealCatalogState,
+          FutureOr<MealCatalogState>,
+          CatalogSurface
+        > {
+  const MealCatalogControllerFamily._()
+    : super(
+        retry: null,
+        name: r'mealCatalogControllerProvider',
+        dependencies: null,
+        $allTransitiveDependencies: null,
+        isAutoDispose: true,
+      );
+
+  /// Meals tab: rails (Recents / My Foods / Assemblies / Recipes) plus a
+  /// debounced (350 ms) search with meal-type × kind filters.
+  ///
+  /// Local rails (Recents from Drift logs + plan meals, My Foods from saved
+  /// meals) load first so the tab renders offline; the online rails and the
+  /// server-resolved Recents replace them when reachable. Search is online
+  /// only (`meal_library` is not mirrored).
+
+  MealCatalogControllerProvider call(CatalogSurface surface) =>
+      MealCatalogControllerProvider._(argument: surface, from: this);
+
+  @override
+  String toString() => r'mealCatalogControllerProvider';
+}
 
 /// Meals tab: rails (Recents / My Foods / Assemblies / Recipes) plus a
 /// debounced (350 ms) search with meal-type × kind filters.
@@ -67,11 +125,14 @@ String _$mealCatalogControllerHash() =>
 
 abstract class _$MealCatalogController
     extends $AsyncNotifier<MealCatalogState> {
-  FutureOr<MealCatalogState> build();
+  late final _$args = ref.$arg as CatalogSurface;
+  CatalogSurface get surface => _$args;
+
+  FutureOr<MealCatalogState> build(CatalogSurface surface);
   @$mustCallSuper
   @override
   void runBuild() {
-    final created = build();
+    final created = build(_$args);
     final ref =
         this.ref as $Ref<AsyncValue<MealCatalogState>, MealCatalogState>;
     final element =

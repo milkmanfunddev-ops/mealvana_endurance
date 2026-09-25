@@ -348,7 +348,7 @@ class _FixedCatalogController extends MealCatalogController {
   final MealCatalogState fixed;
 
   @override
-  FutureOr<MealCatalogState> build() => fixed;
+  FutureOr<MealCatalogState> build(CatalogSurface surface) => fixed;
 }
 
 /// Records every `pickMeals` instead of running the remote-ack action.

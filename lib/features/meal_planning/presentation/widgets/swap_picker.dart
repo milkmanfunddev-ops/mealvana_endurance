@@ -39,7 +39,15 @@ class _SwapPickerState extends ConsumerState<SwapPicker> {
     super.initState();
     _future = ref
         .read(mealLibraryRemoteDataSourceProvider)
-        .searchMeals(mealType: widget.mealType, limit: 8);
+        .searchMeals(
+          mealType: widget.mealType,
+          limit: 8,
+          // Never the meal being swapped or one already in the plan, as on
+          // the Plan tab's Swap screen (testing-wave 88-009); a swap puts the
+          // pick in the plan, so it needs its numbers (mp-678).
+          excludeIds: widget.excludeIds,
+          requireNutritionNumbers: true,
+        );
   }
 
   @override
@@ -91,6 +99,7 @@ class _SwapPickerState extends ConsumerState<SwapPicker> {
                   meal: meal,
                   slot: photos[i],
                   compact: true,
+                  subtitle: meal.ingredients,
                   onTap: () => widget.onPick(meal),
                 ),
               ),

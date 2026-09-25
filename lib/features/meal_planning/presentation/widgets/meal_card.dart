@@ -11,7 +11,7 @@ import 'card_overflow_menu.dart';
 import 'meal_photo_view.dart';
 import 'vana_tag.dart';
 
-/// A [MealRef] presented as a tappable row: picture, name, the why-line,
+/// A [MealRef] presented as a tappable row: picture, name, what it is made of,
 /// then the tag strip (Yours · No recipe · Batch · prep · kcal). Mirrors the
 /// prototype's `CatalogRow` on `.v-tile`. Used by the picker carousel,
 /// search results and detail-adjacent lists.
@@ -32,9 +32,11 @@ import 'vana_tag.dart';
 /// `photosForList` gave it so no photograph repeats. Omitted, the card draws
 /// the Meal's own photo — or nothing at all, which takes no space (ADR 0003).
 ///
-/// [subtitle] replaces the why-line under the name; an empty one shows no
-/// line. The Browse list passes the ingredients, because a library Meal's
-/// `why` is its research note, not a description (testing-wave 18-004).
+/// [subtitle] is the line under the name, and callers pass the ingredients.
+/// With none, or one that only repeats the name (a meal saved from a log
+/// carries the dish as its one item), the card shows no line. It never falls
+/// back to `why`: a library Meal's `why` is its research note, not a
+/// description (testing-wave 18-004, 89-003).
 class MealCard extends ConsumerWidget {
   const MealCard({
     super.key,
@@ -73,7 +75,9 @@ class MealCard extends ConsumerWidget {
     final secondary = textColor.withValues(alpha: 0.55);
     final thumb = compact ? 32.0 : 36.0;
     final photo = slot == null ? meal.photo : slot!.photo;
-    final line = subtitle ?? meal.why;
+    final line = subtitle?.trim() ?? '';
+    final showLine =
+        line.isNotEmpty && line.toLowerCase() != meal.name.trim().toLowerCase();
 
     // kcal sits in the tag strip only when the pill row is not showing it
     // (never twice — macro-pill-row MP-L3).
@@ -132,7 +136,7 @@ class MealCard extends ConsumerWidget {
                           height: 1.25,
                         ),
                       ),
-                      if (!compact && line.isNotEmpty) ...[
+                      if (!compact && showLine) ...[
                         const SizedBox(height: 3),
                         Text(
                           line,

@@ -6,6 +6,7 @@ import '../../../shared/providers/user_id_provider.dart';
 import '../../../shared/services/app_external_deps.dart';
 import '../../../shared/services/logging_service.dart';
 import '../../meal_logging/data/saved_meals_repository.dart';
+import '../../meal_logging/domain/saved_meal.dart';
 import '../data/meal_library_remote_data_source.dart';
 import '../data/meal_review_repository.dart';
 import '../data/vana_action_client.dart';
@@ -15,6 +16,20 @@ import '../domain/meal_source.dart';
 import '../domain/ui_action.dart';
 
 part 'meal_detail_controller.g.dart';
+
+/// The athlete's saved copy of library meal [libraryMealId] (My Foods), or
+/// null. Read from Drift, so the detail's heart shows a meal saved on an
+/// earlier visit as saved (testing-wave 89-009).
+@riverpod
+Stream<SavedMeal?> savedCopyOfLibraryMeal(Ref ref, String libraryMealId) async* {
+  final userId = await ref.watch(userIdProvider.future);
+  yield* ref
+      .watch(savedMealsRepositoryProvider)
+      .watchSavedMeals(userId)
+      .map(
+        (all) => all.where((s) => s.libraryMealId == libraryMealId).firstOrNull,
+      );
+}
 
 /// One meal's detail page / cooking-mode source, by library id or saved
 /// uuid. `keepAlive` so a detail opened once survives a network blip
@@ -100,6 +115,36 @@ class MealDetailController extends _$MealDetailController {
     final saved = result.savedMealRef;
     unawaited(_resyncSavedMeals());
     return saved;
+  }
+
+  /// A second tap on the filled heart: take the library meal out of My
+  /// Foods. Local-first soft delete (the repository uploads each tombstone).
+  /// A save whose resync has not landed yet is pulled first, so an unsave
+  /// right after a save still finds its row. Returns false when there was
+  /// nothing to remove.
+  Future<bool> removeFromMine() async {
+    final current = state.value;
+    if (current == null || current.meal.source == MealSource.saved) {
+      return false;
+    }
+    final repo = ref.read(savedMealsRepositoryProvider);
+    final userId = await ref.read(userIdProvider.future);
+    Future<List<SavedMeal>> find() async =>
+        (await repo.watchSavedMeals(userId).first)
+            .where((s) => s.libraryMealId == current.meal.id)
+            .toList();
+
+    var copies = await find();
+    if (copies.isEmpty) {
+      await _resyncSavedMeals();
+      copies = await find();
+    }
+    // Every copy goes: an older duplicate left behind would keep the heart
+    // filled after the athlete took the meal out.
+    for (final copy in copies) {
+      await repo.softDelete(copy.id);
+    }
+    return copies.isNotEmpty;
   }
 
   /// Admin review (mp-144 clause 3): is this a good recipe, and why. Remote

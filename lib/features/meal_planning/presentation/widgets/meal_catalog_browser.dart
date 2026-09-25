@@ -35,7 +35,12 @@ class MealCatalogBrowser extends ConsumerStatefulWidget {
     this.onSeeAllRecents,
     this.onAddMeal,
     this.addedIds = const {},
+    this.surface = CatalogSurface.mealsTab,
   });
+
+  /// Whose catalog this is: each surface keeps its own search and rails, so
+  /// Browse never opens on the Meals tab's query (testing-wave 89-008).
+  final CatalogSurface surface;
 
   /// Tap on a card body — opens the meal's detail.
   final ValueChanged<MealRef> onOpenMeal;
@@ -59,6 +64,9 @@ class _MealCatalogBrowserState extends ConsumerState<MealCatalogBrowser> {
   final _filterButtonKey = GlobalKey();
   bool _searchOpen = false;
 
+  MealCatalogControllerProvider get _catalog =>
+      mealCatalogControllerProvider(widget.surface);
+
   @override
   void dispose() {
     _searchController.dispose();
@@ -69,7 +77,7 @@ class _MealCatalogBrowserState extends ConsumerState<MealCatalogBrowser> {
     setState(() => _searchOpen = !_searchOpen);
     if (!_searchOpen) {
       _searchController.clear();
-      ref.read(mealCatalogControllerProvider.notifier).setQuery('');
+      ref.read(_catalog.notifier).setQuery('');
     }
   }
 
@@ -113,7 +121,7 @@ class _MealCatalogBrowserState extends ConsumerState<MealCatalogBrowser> {
   Widget build(BuildContext context) {
     final content = ref.read(contentServiceProvider);
     final catalog =
-        ref.watch(mealCatalogControllerProvider).value ??
+        ref.watch(_catalog).value ??
         const MealCatalogState();
     final isDark = Theme.of(context).brightness == Brightness.dark;
     final textColor = isDark ? AppColors.cream : AppColors.blackberry;
@@ -171,7 +179,7 @@ class _MealCatalogBrowserState extends ConsumerState<MealCatalogBrowser> {
                   controller: _searchController,
                   hint: content.getValue(ContentKeys.mpMealsSearchHint),
                   onChanged: ref
-                      .read(mealCatalogControllerProvider.notifier)
+                      .read(_catalog.notifier)
                       .setQuery,
                 ),
               ],
@@ -204,7 +212,7 @@ class _MealCatalogBrowserState extends ConsumerState<MealCatalogBrowser> {
                             // Reaching the tail asks for the next page.
                             WidgetsBinding.instance.addPostFrameCallback((_) {
                               ref
-                                  .read(mealCatalogControllerProvider.notifier)
+                                  .read(_catalog.notifier)
                                   .loadMore();
                             });
                             return const Padding(
@@ -262,7 +270,7 @@ class _MealCatalogBrowserState extends ConsumerState<MealCatalogBrowser> {
                       catalog.assemblies,
                       seeAllLabel: content.getValue(ContentKeys.mpSeeAll),
                       onSeeAll: () => ref
-                          .read(mealCatalogControllerProvider.notifier)
+                          .read(_catalog.notifier)
                           .setKind(MealKind.assembly),
                     ),
                     const SizedBox(height: AppSpacing.md),
@@ -271,7 +279,7 @@ class _MealCatalogBrowserState extends ConsumerState<MealCatalogBrowser> {
                       catalog.recipes,
                       seeAllLabel: content.getValue(ContentKeys.mpSeeAll),
                       onSeeAll: () => ref
-                          .read(mealCatalogControllerProvider.notifier)
+                          .read(_catalog.notifier)
                           .setKind(MealKind.recipe),
                     ),
                     const SizedBox(height: AppSpacing.xxl),
@@ -286,9 +294,9 @@ class _MealCatalogBrowserState extends ConsumerState<MealCatalogBrowser> {
   /// anchored under the filter tool button (prototype `.v-filter-pop`).
   Future<void> _openFilterMenu(BuildContext context) async {
     final content = ref.read(contentServiceProvider);
-    final controller = ref.read(mealCatalogControllerProvider.notifier);
+    final controller = ref.read(_catalog.notifier);
     final state =
-        ref.read(mealCatalogControllerProvider).value ??
+        ref.read(_catalog).value ??
         const MealCatalogState();
 
     final box =

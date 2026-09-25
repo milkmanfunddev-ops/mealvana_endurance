@@ -569,6 +569,11 @@ class ContentKeys {
       'meal_planning.detail_directions_saved';
   static const String mpDetailSaveToMine = 'meal_planning.detail_save_to_mine';
   static const String mpDetailSavedToast = 'meal_planning.detail_saved_toast';
+  // The heart remembers (testing-wave 89-009): a second tap takes it out.
+  static const String mpDetailRemoveFromMine =
+      'meal_planning.detail_remove_from_mine';
+  static const String mpDetailRemovedToast =
+      'meal_planning.detail_removed_toast';
   static const String mpDetailThumbsDownNote =
       'meal_planning.detail_thumbs_down_note';
   // Admin review box (mp-144 clause 3): admins only.

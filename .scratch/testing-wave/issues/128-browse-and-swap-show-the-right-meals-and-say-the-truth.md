@@ -20,9 +20,9 @@
 
 **Touches:** lib/features/meal_planning/application/meal_catalog_controller.dart, lib/features/meal_planning/presentation/widgets/meal_rail.dart, lib/features/meal_planning/presentation/widgets/meal_catalog_browser.dart, lib/features/meal_planning/presentation/screens/recents_screen.dart, lib/features/meal_planning/application/meal_photos_controller.dart, lib/features/meal_planning/presentation/screens/vana_browse_screen.dart, lib/features/meal_planning/presentation/screens/meal_detail_screen.dart, lib/features/meal_planning/application/meal_detail_controller.dart, lib/features/meal_planning/presentation/widgets/swap_picker.dart, lib/features/meal_planning/presentation/widgets/meal_sheet.dart, lib/features/meal_planning/presentation/screens/vana_chat_screen.dart (showMealSheet call sites :966, :1082), lib/features/meal_planning/presentation/widgets/plan_bar.dart (showMealSheet call site :268), lib/features/meal_planning/presentation/screens/swap_meal_screen.dart, lib/features/meal_planning/presentation/widgets/meal_card.dart, supabase/functions/_shared/vana/meals.ts, supabase/migrations/20260925172800_meal_library_why_names_the_source.sql, lib/features/content/domain/content_keys.dart, assets/config/content_defaults.json
 
-- [ ] Controller test: a server Recents answer that arrives after the first paint does not reorder the shown rail.
-- [ ] Widget tests: the detail for a meal in the draft shows "In your plan" and no Add; the swap picker excludes the swapped meal and the plan's meals; `MealCard` with no subtitle shows no research note; Browse opens on rails while the Meals tab holds a query.
-- [ ] Seam test through the real notifier for the heart: save then unsave writes and soft-deletes the saved meal; reopen reads it as saved.
+- [x] Controller test: a server Recents answer that arrives after the first paint does not reorder the shown rail.
+- [x] Widget tests: the detail for a meal in the draft shows "In your plan" and no Add; the swap picker excludes the swapped meal and the plan's meals; `MealCard` with no subtitle shows no research note; Browse opens on rails while the Meals tab holds a query.
+- [x] Seam test through the real notifier for the heart: save then unsave writes and soft-deletes the saved meal; reopen reads it as saved.
 - [ ] The migration touches only the "his "/"her " rows, by id; a SQL check after it finds none left.
 - [ ] `flutter analyze` clean on touched files; deno vana tests. Deploy (migration, then vana-action if `meals.ts` changed): wave lead.
 

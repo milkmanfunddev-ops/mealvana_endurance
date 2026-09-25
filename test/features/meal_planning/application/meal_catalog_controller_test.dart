@@ -2,6 +2,9 @@
 /// 350 ms debounce and the filter → search wiring.
 library;
 
+import 'dart:async';
+
+import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:mealvana_endurance/features/meal_logging/data/meal_log_repository.dart';
 import 'package:mealvana_endurance/features/meal_logging/data/saved_meals_repository.dart';
@@ -22,6 +25,11 @@ import '../helpers/fakes.dart';
 
 class _FakeRemote extends Fake implements MealLibraryRemoteDataSource {
   _FakeRemote({this.pool});
+
+  /// What `recent_meals` answers, and a gate that holds the answer back the
+  /// way the edge function's 1.8-5.2 s did (testing-wave 88-006).
+  List<RecentMeal> serverRecents = const [];
+  Completer<void>? recentsGate;
 
   final List<Map<String, Object?>> searches = [];
 
@@ -78,7 +86,10 @@ class _FakeRemote extends Fake implements MealLibraryRemoteDataSource {
   }
 
   @override
-  Future<List<RecentMeal>> recentMeals({int limit = 20}) async => const [];
+  Future<List<RecentMeal>> recentMeals({int limit = 20}) async {
+    await recentsGate?.future;
+    return serverRecents;
+  }
 }
 
 class _FakeSavedMeals extends Fake implements SavedMealsRepository {
@@ -151,6 +162,8 @@ void main() {
 
   setUp(() => remote = _FakeRemote());
 
+  late ProviderContainer container;
+
   MealCatalogController make({
     List<SavedMeal> saved = const [],
     List<MealLog> logs = const [],
@@ -158,7 +171,7 @@ void main() {
     Map<String, DateTime> planCreatedAt = const {},
     bool online = false,
   }) {
-    final container = testContainer([
+    container = testContainer([
       ...baseOverrides(connectivity: StubConnectivity(online: online)),
       mealLibraryRemoteDataSourceProvider.overrideWithValue(remote),
       savedMealsRepositoryProvider.overrideWithValue(_FakeSavedMeals(saved)),
@@ -167,8 +180,8 @@ void main() {
         _FakePlanRepo(planMeals, planCreatedAt),
       ),
     ]);
-    container.listen(mealCatalogControllerProvider, (_, __) {});
-    return container.read(mealCatalogControllerProvider.notifier);
+    container.listen(mealCatalogControllerProvider(CatalogSurface.mealsTab), (_, __) {});
+    return container.read(mealCatalogControllerProvider(CatalogSurface.mealsTab).notifier);
   }
 
   test(
@@ -351,5 +364,97 @@ void main() {
     await c.loadMore();
     expect(remote.searches, isEmpty);
     expect(c.state.value!.results, isEmpty);
+  });
+
+  // ── Recents holds still once shown (testing-wave 88-006) ───────────────────
+
+  RecentMeal recent(MealSource source, String id, String name) => RecentMeal(
+    meal: MealRef(
+      source: source,
+      id: id,
+      name: name,
+      mealType: MealType.dinner,
+    ),
+    lastUsedAt: _t0.toIso8601String(),
+  );
+
+  test(
+    'a server Recents answer after the first paint does not reorder the shown rail',
+    () async {
+      remote.recentsGate = Completer<void>();
+      remote.serverRecents = [
+        recent(MealSource.library, 'AD-900', 'Rice, black beans & plantain'),
+        recent(MealSource.library, 'D-048', 'Bolognese (server row)'),
+        recent(MealSource.saved, 's-2', 'Oats'),
+      ];
+      final c = make(
+        online: true,
+        saved: [_saved('s-2', 'Oats')],
+        logs: [
+          _log(
+            id: 'l-1',
+            savedMealId: 's-2',
+            at: _t0.add(const Duration(hours: 3)),
+          ),
+        ],
+        planMeals: const [
+          PlanMeal(
+            id: 'pm-1',
+            planId: 'plan-1',
+            source: MealSource.library,
+            libraryMealId: 'D-048',
+            name: 'Bolognese',
+            mealType: MealType.dinner,
+            servings: 4,
+            servingsLeft: 4,
+          ),
+        ],
+        planCreatedAt: {'pm-1': _t0},
+      );
+
+      final painted = await c.future;
+      expect(painted.recents.map((r) => r.meal.id), ['s-2', 'D-048']);
+
+      remote.recentsGate!.complete();
+      await settle(const Duration(milliseconds: 50));
+
+      final s = c.state.value!;
+      expect(s.railsFromServer, isTrue);
+      // Shown meals keep their places; the server's own rows go after them.
+      expect(s.recents.map((r) => r.meal.id), ['s-2', 'D-048', 'AD-900']);
+      // A shown meal takes the server's row in place.
+      expect(s.recents[1].meal.name, 'Bolognese (server row)');
+    },
+  );
+
+  test('with nothing shown, the server Recents are taken as they come', () {
+    final server = [
+      recent(MealSource.library, 'A', 'a'),
+      recent(MealSource.library, 'B', 'b'),
+    ];
+    expect(
+      MealCatalogController.mergeRecents(const [], server).map((r) => r.meal.id),
+      ['A', 'B'],
+    );
+  });
+
+  // ── One catalog per surface (testing-wave 89-008) ──────────────────────────
+
+  test('Browse opens on its rails while the Meals tab holds a query', () async {
+    final c = make();
+    await c.future;
+    c.setQuery('spinach');
+    expect(c.state.value!.isFiltering, isTrue);
+
+    container.listen(
+      mealCatalogControllerProvider(CatalogSurface.browse),
+      (_, __) {},
+    );
+    final browse = await container.read(
+      mealCatalogControllerProvider(CatalogSurface.browse).future,
+    );
+    expect(browse.query, isEmpty);
+    expect(browse.isFiltering, isFalse);
+    expect(c.state.value!.query, 'spinach');
   });
 }

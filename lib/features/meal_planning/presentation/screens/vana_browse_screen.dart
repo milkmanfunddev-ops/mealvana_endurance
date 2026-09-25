@@ -7,6 +7,7 @@ import '../../../../features/content/domain/content_keys.dart';
 import '../../../../shared/widgets/kyle_design/feedback/mealvana_snackbar.dart';
 import '../../../../theme/kyle_design/app_colors.dart';
 import '../../../../theme/kyle_design/app_text_styles.dart';
+import '../../application/meal_catalog_controller.dart';
 import '../../application/meal_plan_controller.dart';
 import '../../data/vana_exceptions.dart';
 import '../../domain/meal_ref.dart';
@@ -104,6 +105,7 @@ class _VanaBrowseScreenState extends ConsumerState<VanaBrowseScreen> {
                 onOpenMeal: _openDetail,
                 onAddMeal: _add,
                 addedIds: {..._added, ...?inPlan},
+                surface: CatalogSurface.browse,
               ),
             ),
           ],

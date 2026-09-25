@@ -33,6 +33,7 @@ Future<void> showMealSheet({
   required void Function(PlanMeal meal, MealRef replacement) onSwap,
   required VoidCallback onRemove,
   void Function(PlanMeal meal, IngredientSwap swap)? onSwapIngredient,
+  Set<String> excludeIds = const {},
 }) {
   return showAdaptiveModal<void>(
     context: context,
@@ -42,6 +43,7 @@ Future<void> showMealSheet({
       onSwap: onSwap,
       onRemove: onRemove,
       onSwapIngredient: onSwapIngredient,
+      excludeIds: excludeIds,
     ),
   );
 }
@@ -54,9 +56,18 @@ class MealSheet extends ConsumerStatefulWidget {
     required this.onSwap,
     required this.onRemove,
     this.onSwapIngredient,
+    this.excludeIds = const {},
   });
 
   final PlanMeal meal;
+
+  /// Library / saved ids of the plan's meals: the Swap list never offers
+  /// them. The meal itself is always left out (testing-wave 88-009).
+  final Set<String> excludeIds;
+
+  /// The ids a host passes as [excludeIds] for a plan holding [meals].
+  static Set<String> planMealIds(Iterable<PlanMeal> meals) =>
+      meals.map((m) => m.libraryMealId ?? m.savedMealId).nonNulls.toSet();
   final ValueChanged<int> onServings;
 
   /// Runs the remote-ack `swap_meal` with the picked replacement.
@@ -201,6 +212,7 @@ class _MealSheetState extends ConsumerState<MealSheet> {
                     child: SingleChildScrollView(
                       child: SwapPicker(
                         mealType: widget.meal.mealType,
+                        excludeIds: {...widget.excludeIds, ?_detailId},
                         onPick: (replacement) {
                           Navigator.of(context).pop();
                           widget.onSwap(widget.meal, replacement);
