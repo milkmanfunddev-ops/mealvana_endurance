@@ -186,7 +186,10 @@ FINDINGS new NN "<what happened, one line>" --kind bug|ssot-conflict|followup-te
 It lands in `.scratch/testing-wave/findings/NN-<next number>-<slug>.md`, filled from `TEMPLATE.md`.
 Fill in screen, steps, expected, actual and evidence (paths under `runs/NN/`, relative to
 `.scratch/testing-wave/`, first word of each Evidence bullet). An ssot-conflict cites the decision
-id and quotes its Decision text word for word from `docs/ssot/decisions/`. Status stays `open`;
+id and quotes its Decision text word for word from `docs/ssot/decisions/`. When the rule it breaks
+lives in a spec rather than a decision card, `decision:` is `docs/ssot/spec/<path>.md#<heading text>`
+and the quote is copied from that file; the index checks the file, the heading and the quote.
+Status stays `open`;
 triage moves it. Check your files parse and their evidence exists:
 
 ```
@@ -255,13 +258,20 @@ should behave) goes to the page as an open question, the normal way, and nothing
    prompt's build commit wins over `app-build.json` if they ever differ. When two tickets in the
    wave use the same account, both prompts say so and name what the other run writes, so each
    checks only its own rows and treats the other's as expected (IMPROVEMENTS #44).
+   Before writing any prompt, read the code behind every screen the ticket visits: what its Add,
+   Save and "+" controls write, and what the screen shows for the state the ticket starts in (a
+   connection from another environment, a leftover draft). Never tell an agent another run is
+   read-only on a guess; name the conversation or plan each ticket writes into (Lee, 2026-09-25,
+   IMPROVEMENTS #47, #53).
 
 **Fix waves: keep them fast (Lee, 2026-09-25).** A fix wave runs no scenario, so it skips most of
 the above and follows this instead:
 
 1. No simulators, no app build, no device checks. Agents run only the test files for their own
    change (TDD at the seams), plus `flutter analyze` on what they touched. They never run the full
-   suite or a review.
+   suite or a review. Codegen always runs unfiltered (`dart run build_runner build
+   --delete-conflicting-outputs`, never `--build-filter`, which deletes every other generated
+   file), and the agent checks `git status` for deleted files before staging (Lee, 2026-09-25, #58).
 2. No decisions-page writes of any kind during a wave, not even open questions. A product question
    an agent raises goes in its ticket file or a Finding; the SSOT is updated later, in one pass,
    from the testing docs.
@@ -297,5 +307,9 @@ the above and follows this instead:
    Match each error to the run whose minutes and screens produced it, and file any nobody filed.
 3. `FINDINGS index` (writes `INDEX.md`; exit 0 only when every Finding is closed or wontfix: the end
    of the loop). `COST status WAVE` shows what the wave spent. Triage follows the spec's "Triage".
+   A fix ticket's Touches lists every file the fix will change: `wave --open` holds back a ticket
+   whose Touches overlap an open wave's (#63). A fix to how the app reaches a screen greps for the
+   route and lists every call site in Touches, not only the button the Finding named (Lee,
+   2026-09-25, #64).
 4. `SYNC simulator drop <name>` for every wave simulator; `wave --close`; remove the worktrees.
 5. Append what the wave taught to `IMPROVEMENTS.md` and move anything fixed to Done.

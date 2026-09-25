@@ -407,6 +407,10 @@ class SettingsController extends _$SettingsController {
 
   /// Save all preferences in a single batch operation
   /// This avoids multiple invalidations that cause excessive UI refreshes
+  ///
+  /// For the free-text fields ([firstName], [lastName], [email]) null means
+  /// "not touched, keep the saved value" and an empty string means "the user
+  /// cleared it, save it cleared" (31-004).
   Future<void> saveAllPreferences({
     Gender? gender,
     DateTime? birthday,
@@ -437,8 +441,8 @@ class SettingsController extends _$SettingsController {
         unitSystem: unitSystem ?? currentState.unitSystem,
         gutTrainingLevel: gutTrainingLevel ?? currentState.gutTrainingLevel,
         sweatRate: sweatRate ?? currentState.sweatRate,
-        firstName: firstName,
-        lastName: lastName,
+        firstName: firstName ?? currentState.firstName,
+        lastName: lastName ?? currentState.lastName,
         email: email ?? currentState.email,
         isSaving: true,
       ),
@@ -648,11 +652,16 @@ class SettingsController extends _$SettingsController {
         allergies: currentState.allergies.isNotEmpty
             ? currentState.allergies
             : existingProfile.allergies,
-        // Optional name fields for coach mode athlete identification
+        // Optional name fields for coach mode athlete identification.
+        // An empty string is a field the user cleared (31-004); null is one
+        // nobody touched, so the saved value stays.
         firstName: currentState.firstName ?? existingProfile.firstName,
+        clearFirstName: currentState.firstName?.isEmpty ?? false,
         lastName: currentState.lastName ?? existingProfile.lastName,
+        clearLastName: currentState.lastName?.isEmpty ?? false,
         // Contact information
         email: currentState.email ?? existingProfile.email,
+        clearEmail: currentState.email?.isEmpty ?? false,
         // Nutrition target overrides
         nutritionTargetOverrides:
             currentState.nutritionTargetOverrides ??

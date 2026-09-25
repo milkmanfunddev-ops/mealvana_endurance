@@ -203,3 +203,49 @@ test('evidence may be a repo path, backticked, or prose with no path', () => {
   const dir = folder({ '08-001-a.md': finding({ id: '08-001', evidence: '- `runs/02/paywall.png` at 12:31Z\n- scripts/testing-wave/findings.mjs (the index)\n- the console, 12:28 to 12:36Z' }) });
   assert.equal(index(dir).status, 1);
 });
+
+// An SSOT conflict may cite a spec file and heading instead of a decision id (IMPROVEMENTS #37).
+// The spec lives in a scratch repo root passed as `root` (or `--root`), never the real docs/ssot/.
+function specRoot() {
+  const root = mkdtempSync(join(tmpdir(), 'spec-root-'));
+  const path = join(root, 'docs/ssot/spec/paywall/lapsed.md');
+  mkdirSync(dirname(path), { recursive: true });
+  writeFileSync(path, '# Lapsed accounts\n\n## When the plan ends\n\nA lapsed account sees the paywall full screen.\nThere is no read-only\nmode, and the user stays signed in.\n\n## Restore\n\nRestore is always offered.\n');
+  return root;
+}
+const specConflict = (decision, quote = '> There is no read-only mode, and the user stays signed in.') =>
+  ({ '04-001-a.md': finding({ id: '04-001', kind: 'ssot-conflict', decision, quote }) });
+
+test('an SSOT conflict may cite a spec file and heading whose text holds the quote', () => {
+  const root = specRoot();
+  const dir = folder(specConflict('docs/ssot/spec/paywall/lapsed.md#When the plan ends'));
+  const [f] = readFindings(dir, { root });
+  assert.deepEqual(f.errors, []);
+  const r = index(dir, '--root', root);
+  assert.equal(r.status, 1, r.stderr);
+  assert.match(r.stdout, /04-001.*decision: docs\/ssot\/spec\/paywall\/lapsed\.md#When the plan ends/);
+});
+
+test('a spec citation fails when the file is missing', () => {
+  const r = index(folder(specConflict('docs/ssot/spec/paywall/nope.md#When the plan ends')), '--root', specRoot());
+  assert.equal(r.status, 2);
+  assert.match(r.stderr, /04-001-a\.md: .*docs\/ssot\/spec\/paywall\/nope\.md does not exist/);
+});
+
+test('a spec citation fails when the heading is not in the file', () => {
+  const r = index(folder(specConflict('docs/ssot/spec/paywall/lapsed.md#When the trial ends')), '--root', specRoot());
+  assert.equal(r.status, 2);
+  assert.match(r.stderr, /04-001-a\.md: .*no heading "When the trial ends"/);
+});
+
+test('a spec citation fails when the quote is not in the file', () => {
+  const r = index(folder(specConflict('docs/ssot/spec/paywall/lapsed.md#When the plan ends', '> A lapsed account keeps a read-only mode.')), '--root', specRoot());
+  assert.equal(r.status, 2);
+  assert.match(r.stderr, /04-001-a\.md: .*quote is not in docs\/ssot\/spec\/paywall\/lapsed\.md/);
+});
+
+test('a decision that is neither an id nor a spec reference is refused', () => {
+  const r = index(folder(specConflict('docs/other/lapsed.md#When the plan ends')), '--root', specRoot());
+  assert.equal(r.status, 2);
+  assert.match(r.stderr, /decision id/);
+});

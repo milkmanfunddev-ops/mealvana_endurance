@@ -660,6 +660,11 @@ class UserProfile {
     // used to work around it by rebuilding the whole profile field by field,
     // which silently reset every field that list forgot.
     bool clearNutritionTargetOverrides = false,
+    // Same for the free-text identity fields: a user who empties First name,
+    // Last name or Email on Profile & Preferences means "no value" (31-004).
+    bool clearFirstName = false,
+    bool clearLastName = false,
+    bool clearEmail = false,
   }) {
     return UserProfile(
       id: id ?? this.id,
@@ -705,10 +710,10 @@ class UserProfile {
       // Sharing preferences
       senderName: senderName ?? this.senderName,
       // User identity
-      firstName: firstName ?? this.firstName,
-      lastName: lastName ?? this.lastName,
+      firstName: clearFirstName ? null : (firstName ?? this.firstName),
+      lastName: clearLastName ? null : (lastName ?? this.lastName),
       // Contact information
-      email: email ?? this.email,
+      email: clearEmail ? null : (email ?? this.email),
       // Nutrition target overrides
       nutritionTargetOverrides: clearNutritionTargetOverrides
           ? null

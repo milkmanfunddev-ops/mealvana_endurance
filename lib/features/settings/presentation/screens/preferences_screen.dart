@@ -126,15 +126,11 @@ class _PreferencesScreenState extends ConsumerState<PreferencesScreen> {
         unitSystem: _unitSystem,
         gutTrainingLevel: _gutTraining,
         sweatRate: _sweatRate,
-        firstName: _firstNameController.text.trim().isNotEmpty
-            ? _firstNameController.text.trim()
-            : null,
-        lastName: _lastNameController.text.trim().isNotEmpty
-            ? _lastNameController.text.trim()
-            : null,
-        email: _emailController.text.trim().isNotEmpty
-            ? _emailController.text.trim()
-            : null,
+        // Every text field is sent as typed: an empty one is a clear, not
+        // "leave it alone" (31-004).
+        firstName: _firstNameController.text.trim(),
+        lastName: _lastNameController.text.trim(),
+        email: _emailController.text.trim(),
       );
 
       if (mounted) {

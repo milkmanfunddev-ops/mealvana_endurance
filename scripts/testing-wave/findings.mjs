@@ -6,9 +6,15 @@
 // every Finding is closed or wontfix: nothing open, no follow-up test waiting, no fix
 // waiting for its retest (spec, "Findings, not fixes" and "Triage").
 //
+// An ssot-conflict names what it clashes with on its `decision:` line: a decision id (mp-457),
+// or a spec reference, docs/ssot/spec/<path>.md#<heading text>. A spec reference must point at
+// a file that exists, a heading in it with that text, and text that holds the Decision quote.
+//
 // CLI:
-//   node findings.mjs index [<dir>] [--out <file>]   -> prints the index and writes it (default <dir>/INDEX.md);
-//                                                       exit 0 finished, 1 not finished, 2 a Finding is malformed
+//   node findings.mjs index [<dir>] [--out <file>] [--root <repo>]
+//                                                    -> prints the index and writes it (default <dir>/INDEX.md);
+//                                                       exit 0 finished, 1 not finished, 2 a Finding is malformed.
+//                                                       --root: where spec references resolve (default this repo)
 //   node findings.mjs new <ticket> <title> --kind <kind> --run <run> [--dir <dir>]
 //                                                    -> copies the template to the next free <ticket>-NNN-<slug>.md, prints its path
 
@@ -21,6 +27,8 @@ export const KINDS = ['bug', 'ssot-conflict', 'followup-test', 'idea'];
 export const STATUSES = ['open', 'triaged', 'fixing', 'closed', 'wontfix'];
 const DONE = new Set(['closed', 'wontfix']);
 const NAME = /^(\d{2})-(\d{3})-[a-z0-9-]+\.md$/;
+const DECISION_ID = /^[a-z]+-\d+$/;
+const SPEC_REF = /^(docs\/ssot\/spec\/[^#]+\.md)#(.+)$/;
 
 const repo = resolve(dirname(fileURLToPath(import.meta.url)), '../..');
 export const FINDINGS_DIR = join(repo, '.scratch/testing-wave/findings');
@@ -59,7 +67,7 @@ export function parseFinding(text, file) {
     if (!parts.evidence) err('no Evidence');
   }
   if (f.kind === 'ssot-conflict') {
-    if (!/^[a-z]+-\d+$/.test(f.decision ?? '')) err('an ssot-conflict needs the decision id it clashes with');
+    if (!DECISION_ID.test(f.decision ?? '') && !SPEC_REF.test(f.decision ?? '')) err('an ssot-conflict needs the decision id it clashes with (mp-457) or a spec reference (docs/ssot/spec/<path>.md#<heading text>)');
     if (!parts['decision quote']) err('an ssot-conflict needs the decision quote');
   }
   return f;
@@ -79,12 +87,37 @@ export function evidencePaths(evidence = '') {
   return paths;
 }
 
+const squash = s => s.split('\n').map(l => l.replace(/^\s*>\s?/, '')).join(' ').replace(/\s+/g, ' ').trim();
+
+/**
+ * The errors of an ssot-conflict that cites a spec (`docs/ssot/spec/<path>.md#<heading text>`)
+ * rather than a decision id: the file must exist under `root`, carry a markdown heading with
+ * that text (whitespace and case aside), and hold the Decision quote (blockquote marks and
+ * whitespace aside). A decision id, or any other kind, has none.
+ */
+export function specRefErrors(f, root = repo) {
+  const m = f.kind === 'ssot-conflict' ? (f.decision ?? '').match(SPEC_REF) : null;
+  if (!m) return [];
+  const [, path, heading] = m;
+  const full = join(root, path);
+  if (!existsSync(full)) return [`decision ${path} does not exist`];
+  const text = readFileSync(full, 'utf8');
+  const norm = s => s.replace(/\s+/g, ' ').trim().toLowerCase();
+  const headings = [...text.matchAll(/^#{1,6}\s+(.*?)\s*#*\s*$/gm)].map(h => norm(h[1]));
+  const errors = [];
+  if (!headings.includes(norm(heading))) errors.push(`decision ${path} has no heading "${heading.trim()}"`);
+  const quote = squash(f.sections['decision quote'] ?? '');
+  if (quote && !squash(text).includes(quote)) errors.push(`the decision quote is not in ${path}`);
+  return errors;
+}
+
 /**
  * Every Finding in the folder, file-name order. TEMPLATE.md, INDEX.md and anything not named
  * NN-... are skipped. An Evidence path that exists neither beside the findings folder (`runs/...`)
- * nor in the repo is an error, so a Finding never points at a file that was not saved.
+ * nor in the repo is an error, so a Finding never points at a file that was not saved. A spec
+ * reference in `decision:` is checked against `root` (the repo) by `specRefErrors`.
  */
-export function readFindings(dir = FINDINGS_DIR) {
+export function readFindings(dir = FINDINGS_DIR, { root = repo } = {}) {
   if (!existsSync(dir)) return [];
   const wave = dirname(resolve(dir));
   const exists = p => {
@@ -97,6 +130,7 @@ export function readFindings(dir = FINDINGS_DIR) {
   return readdirSync(dir).filter(n => /^\d{2}-.*\.md$/.test(n)).sort().map(n => {
     const f = parseFinding(readFileSync(join(dir, n), 'utf8'), n);
     for (const p of evidencePaths(f.sections.evidence)) if (!exists(p)) f.errors.push(`evidence ${p} does not exist`);
+    f.errors.push(...specRefErrors(f, root));
     return f;
   });
 }
@@ -158,8 +192,9 @@ if (process.argv[1] && resolve(process.argv[1]) === fileURLToPath(import.meta.ur
   const cmd = args.shift();
   if (cmd === 'index') {
     const out = flag(args, '--out');
+    const root = flag(args, '--root');
     const dir = resolve(args[0] ?? FINDINGS_DIR);
-    const findings = readFindings(dir);
+    const findings = readFindings(dir, root ? { root: resolve(root) } : {});
     const text = renderIndex(findings);
     writeFileSync(out ? resolve(out) : join(dir, 'INDEX.md'), text);
     process.stdout.write(text);
@@ -174,7 +209,7 @@ if (process.argv[1] && resolve(process.argv[1]) === fileURLToPath(import.meta.ur
     if (!ticket || !title) { process.stderr.write('usage: findings.mjs new <ticket> <title> --kind <kind> --run <run> [--dir <dir>]\n'); process.exit(64); }
     process.stdout.write(newFinding(dir, ticket, title, { kind, run }) + '\n');
   } else {
-    process.stderr.write('usage: findings.mjs index [<dir>] [--out <file>] | new <ticket> <title> --kind <kind> --run <run> [--dir <dir>]\n');
+    process.stderr.write('usage: findings.mjs index [<dir>] [--out <file>] [--root <repo>] | new <ticket> <title> --kind <kind> --run <run> [--dir <dir>]\n');
     process.exit(64);
   }
 }
