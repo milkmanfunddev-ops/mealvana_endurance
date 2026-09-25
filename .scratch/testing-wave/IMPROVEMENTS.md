@@ -49,6 +49,18 @@ Each entry: what went wrong or cost time, where it was seen, and the suggested f
   with a fast-forward after a three-way `git merge-file` of the dirty copies (base, wave, dirty).
   All three merged clean. Worth scripting if it recurs.
 
+- **#57 a fake database proves a query's shape, not that PostgREST takes it (wave 21).** Ticket 49
+  moved `list_plans` to an embedded `plan_meals(count)`, and the deno test ran it against
+  `fake_db.ts`, which was taught the syntax for the test. The lead confirmed it with one read-only
+  service-key read against dev after the deploy (200, 24 of test@test.com's 27 plans have meals).
+  Suggested fix: a fix ticket that changes a PostgREST select gets that one real read in the lead's
+  close routine, before the ticket is marked done.
+- **#58 a filtered codegen run deletes the other generated files (wave 21).** Ticket 49's agent ran
+  `build_runner` with a build filter to refresh one `.g.dart`; every other generated file in the
+  worktree was deleted and had to be restored from git before the commit. Suggested fix: the
+  agent prompt says codegen runs unfiltered (`--delete-conflicting-outputs`), and the agent checks
+  `git status` before staging.
+
 ## Done
 
 - **#54 CF-2 conformance goes red in the early morning (wave 19).** At 04:40 local the CF-2
