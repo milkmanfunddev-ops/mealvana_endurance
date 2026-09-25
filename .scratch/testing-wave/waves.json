@@ -606,5 +606,36 @@
     "failed": [],
     "suite": "",
     "elapsed": "55m"
+  },
+  {
+    "number": 30,
+    "tickets": [
+      "110",
+      "111"
+    ],
+    "base": "a8ebba2930c878a8c865a66a72c4e9e036236bc9",
+    "branch": "mealplanning",
+    "startedAt": "2026-09-25T20:59:45.510Z",
+    "closedAt": "2026-09-25T21:32:12.286Z",
+    "merged": [
+      "110",
+      "111"
+    ],
+    "failed": [],
+    "suite": "",
+    "elapsed": "32m"
+  },
+  {
+    "number": 31,
+    "tickets": [
+      "126",
+      "127",
+      "128",
+      "130"
+    ],
+    "base": "161711430216e97c5693789bbce915ea0e6e96d9",
+    "branch": "mealplanning",
+    "startedAt": "2026-09-25T21:21:46.870Z",
+    "closedAt": null
   }
 ]

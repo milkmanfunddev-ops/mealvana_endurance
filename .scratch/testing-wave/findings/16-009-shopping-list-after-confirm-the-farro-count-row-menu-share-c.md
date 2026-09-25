@@ -1,7 +1,7 @@
 # 16-009 · Shopping list after confirm: the Farro count, row menu, share, check-off and Kroger button
 
 - kind: followup-test
-- status: triaged
+- status: closed
 - ticket: 16
 - run: w9-20260924T1446Z
 - screen: Food (Shopping sub-tab)
@@ -32,3 +32,5 @@ mp-244: the count lists both meals and leads back to either recipe; imperial unl
 
 Picked for retest ticket 90 (Lee, 2026-09-25: every open follow-up test folded into the planned runs, cap of ten lifted for this pass).
 Moved to retest ticket 110 when 90 was split (Lee, 2026-09-25).
+
+Run by retest ticket 110 (run w30-20260925T2103Z, build e3367d2c): pass on steps 2-4; steps 1, 5, 6 and 7 were not safe on the shared account and are carried by 110-013; closed here.

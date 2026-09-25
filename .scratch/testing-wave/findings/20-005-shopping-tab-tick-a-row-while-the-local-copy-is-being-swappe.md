@@ -1,7 +1,7 @@
 # 20-005 · Shopping tab: tick a row while the local copy is being swapped for the server's list, and double-tap a row fast
 
 - kind: followup-test
-- status: triaged
+- status: closed
 - ticket: 20
 - run: w10-20260924T1614Z
 - screen: Food (Shopping sub-tab)
@@ -28,3 +28,5 @@ The row tapped is the row ticked; the final database state matches the screen; a
 
 Picked for retest ticket 90 (Lee, 2026-09-25: every open follow-up test folded into the planned runs, cap of ten lifted for this pass).
 Moved to retest ticket 110 when 90 was split (Lee, 2026-09-25).
+
+Run by retest ticket 110 (run w30-20260925T2103Z, build e3367d2c): pass.

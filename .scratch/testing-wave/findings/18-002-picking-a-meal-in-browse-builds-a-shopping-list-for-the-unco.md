@@ -1,7 +1,7 @@
 # 18-002 · Picking a meal in Browse builds a shopping list for the unconfirmed draft, and the Shopping tab then shows that draft's list instead of the confirmed plan's
 
 - kind: ssot-conflict
-- status: triaged
+- status: closed
 - ticket: 18
 - run: w16-20260924T2100Z
 - screen: Browse meals, then Food (Shopping sub-tab)
@@ -32,3 +32,5 @@ The first Add created draft 173cebb2 (week 2026-09-20, conversation 0401b3d8) an
 **Triage.**
 Fix ticket 35 (Lee, 2026-09-25). Closed by the retest after it merges.
 Moved to retest ticket 110 when 90 was split (Lee, 2026-09-25).
+
+Run by retest ticket 110 (run w30-20260925T2103Z, build e3367d2c): pass.

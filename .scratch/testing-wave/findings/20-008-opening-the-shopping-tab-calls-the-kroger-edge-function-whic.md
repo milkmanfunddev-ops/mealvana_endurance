@@ -1,7 +1,7 @@
 # 20-008 · Opening the Shopping tab calls the kroger edge function, which answers 400 every time
 
 - kind: bug
-- status: triaged
+- status: closed
 - ticket: 20
 - run: w10-20260924T1614Z
 - screen: Food > Shopping
@@ -29,3 +29,5 @@ The dev edge-request log shows `POST /functions/v1/kroger` answering 400 at 11:1
 **Triage.**
 Fix ticket 56 (Lee, 2026-09-25). Closed by the retest after it merges.
 Moved to retest ticket 111 when 90 was split (Lee, 2026-09-25).
+
+Run by retest ticket 111 (run w30-20260925T2103Z, build e3367d2c): pass.

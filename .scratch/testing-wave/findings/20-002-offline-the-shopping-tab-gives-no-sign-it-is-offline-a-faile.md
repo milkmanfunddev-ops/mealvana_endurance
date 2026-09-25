@@ -1,7 +1,7 @@
 # 20-002 · Offline, the Shopping tab gives no sign it is offline: a failed tick is undone without a message, and the offline copy looks like the real list with Shop with Kroger still offered
 
 - kind: bug
-- status: triaged
+- status: closed
 - ticket: 20
 - run: w10-20260924T1614Z
 - screen: Food (Shopping sub-tab)
@@ -30,3 +30,5 @@ A failed tick says so (the app's error snackbar, as other shopping edits do thro
 **Triage.**
 Fix ticket 36 (Lee, 2026-09-25). Closed by the retest after it merges.
 Moved to retest ticket 110 when 90 was split (Lee, 2026-09-25).
+
+Run by retest ticket 110 (run w30-20260925T2103Z, build e3367d2c): pass.

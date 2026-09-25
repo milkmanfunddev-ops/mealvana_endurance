@@ -1,7 +1,7 @@
 # 19-005 · Previous lists shows several identical Week of rows marked From plan with no way to tell the confirmed plan's list from archived drafts' lists
 
 - kind: idea
-- status: triaged
+- status: closed
 - ticket: 19
 - run: w11-20260924T1647Z
 - screen: Food (Shopping sub-tab) > Previous lists
@@ -26,3 +26,5 @@ Every plan list reads the same. The confirmed list is only told apart by being "
 **Triage.**
 Fix ticket 84 (the wave lead, 2026-09-25: Lee asked for every bug fix that can be done without him). Closed by the retest after it merges.
 Moved to retest ticket 110 when 90 was split (Lee, 2026-09-25).
+
+Run by retest ticket 110 (run w30-20260925T2103Z, build e3367d2c): pass.
