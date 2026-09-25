@@ -6,7 +6,6 @@ import 'package:supabase_flutter/supabase_flutter.dart';
 import '../../../shared/services/app_config.dart';
 import '../../../shared/services/app_external_deps.dart';
 import '../../../shared/services/logging_service.dart';
-import '../domain/vana_conversation.dart';
 import '../domain/vana_conversation_kind.dart';
 import '../domain/vana_input_mode.dart';
 import '../domain/vana_message.dart';
@@ -202,35 +201,9 @@ class VanaChatRepository {
 
   // ── Conversations ──────────────────────────────────────────────────────────
 
-  /// The user's conversations of [kind], most recent activity first.
-  Future<List<VanaConversationSummary>> fetchConversations(
-    VanaConversationKind kind, {
-    int limit = 50,
-  }) async {
-    try {
-      final rows = await _supabase
-          .from('vana_conversations')
-          .select('id, kind, title, summary, last_message_at, created_at')
-          .eq('kind', kind.wire)
-          .eq('is_deleted', false)
-          .order('last_message_at', ascending: false, nullsFirst: false)
-          .order('created_at', ascending: false)
-          .limit(limit);
-      return [
-        for (final row in rows as List<dynamic>)
-          if (asJsonMap(row) case final map?)
-            if (_conversationFromRow(map) case final c?) c,
-      ];
-    } catch (e, st) {
-      _logger.error(
-        'fetchConversations(${kind.wire}) failed',
-        context: _context,
-        error: e,
-        stackTrace: st,
-      );
-      rethrow;
-    }
-  }
+  // The list itself is `list_conversations` on `vana-action`
+  // (`VanaConversationsController`, ticket 126): the server picks each row's
+  // plan, so the app never keeps a second pick rule.
 
   /// Insert an empty conversation of [kind] and return its id. RLS: owner
   /// insert (`Users manage own vana conversations`).
@@ -337,22 +310,6 @@ class VanaChatRepository {
       content: text,
       parts: parts,
       createdAt: createdAt,
-    );
-  }
-
-  static VanaConversationSummary? _conversationFromRow(
-    Map<String, dynamic> row,
-  ) {
-    final id = readString(row, 'id');
-    final kind = VanaConversationKind.fromWire(readString(row, 'kind'));
-    if (id == null || kind == null) return null;
-    return VanaConversationSummary(
-      id: id,
-      kind: kind,
-      title: readString(row, 'title'),
-      summary: readString(row, 'summary'),
-      lastMessageAt: readString(row, 'last_message_at'),
-      createdAt: readString(row, 'created_at') ?? '',
     );
   }
 

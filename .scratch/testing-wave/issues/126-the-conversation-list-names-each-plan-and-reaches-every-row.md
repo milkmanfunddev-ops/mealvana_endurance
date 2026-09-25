@@ -15,8 +15,8 @@
 
 **Touches:** lib/features/meal_planning/data/vana_chat_repository.dart, lib/features/meal_planning/application/vana_conversations_controller.dart, lib/features/meal_planning/presentation/screens/vana_conversations_screen.dart, lib/features/meal_planning/domain/ui_action.dart (only if the action route is chosen), supabase/functions/_shared/vana/actions.ts (only if the action route is chosen), supabase/functions/_shared/vana/chat.ts (only if the action route is chosen)
 
-- [ ] A repository or controller test fed a producer-shaped row set (confirmed, archived, draft, no plan) gives the same titles the chat header gives.
-- [ ] A controller test: a second page loads when asked and appends without duplicates; the end of the list stops asking.
-- [ ] `flutter analyze` clean on touched files; deno tests for touched functions. Deploy: wave lead.
+- [x] A repository or controller test fed a producer-shaped row set (confirmed, archived, draft, no plan) gives the same titles the chat header gives.
+- [x] A controller test: a second page loads when asked and appends without duplicates; the end of the list stops asking.
+- [x] `flutter analyze` clean on touched files; deno tests for touched functions. Deploy: wave lead.
 
 Next: /implement-lee testing-wave

@@ -54,12 +54,11 @@ import '../../domain/fixture_helpers.dart';
 import '../../helpers/container.dart';
 import '../helpers/test_content.dart';
 
-/// The chat transport: stored history and the conversations list.
+/// The chat transport: stored history.
 class _ChatRepo extends Fake implements VanaChatRepository {
-  _ChatRepo({required this.history, required this.conversations});
+  _ChatRepo({required this.history});
 
   final List<VanaMessage> history;
-  final List<VanaConversationSummary> conversations;
 
   @override
   Future<VanaChatResponse> streamChat({
@@ -88,19 +87,15 @@ class _ChatRepo extends Fake implements VanaChatRepository {
   @override
   Future<List<VanaMessage>> fetchMessages(String conversationId) async =>
       history;
-
-  @override
-  Future<List<VanaConversationSummary>> fetchConversations(
-    VanaConversationKind kind, {
-    int limit = 50,
-  }) async => conversations;
 }
 
-/// `vana-action`: `get_plan` answers the conversation's plan.
+/// `vana-action`: `get_plan` answers the conversation's plan and
+/// `list_conversations` the conversations list (ticket 126).
 class _PlanActions extends Fake implements VanaActionClient {
-  _PlanActions(this.plan);
+  _PlanActions(this.plan, {required this.conversations});
 
   final MealPlan? plan;
+  final List<VanaConversationSummary> conversations;
 
   @override
   Future<VanaActionResult> run(UiAction action) async {
@@ -109,6 +104,14 @@ class _PlanActions extends Fake implements VanaActionClient {
       return VanaActionResult(
         parts: [VanaBatchPart(plan: p)],
         extras: const {},
+      );
+    }
+    if (action is ListConversationsAction) {
+      return VanaActionResult(
+        parts: const [],
+        extras: {
+          'conversations': [for (final c in conversations) c.toJson()],
+        },
       );
     }
     return const VanaActionResult(parts: [], extras: {});
@@ -248,8 +251,13 @@ void main() {
           ...baseOverrides(),
           contentServiceProvider.overrideWith(testContentService),
           vanaChatRepositoryProvider.overrideWithValue(
-            _ChatRepo(
-              history: messages ?? history(),
+            _ChatRepo(history: messages ?? history()),
+          ),
+          mealPlanControllerProvider.overrideWith(_NoActivePlan.new),
+          userMemoryRepositoryProvider.overrideWithValue(_FakeMemoryRepo()),
+          vanaActionClientProvider.overrideWithValue(
+            _PlanActions(
+              plan,
               conversations: [
                 VanaConversationSummary(
                   id: 'conv-1',
@@ -261,9 +269,6 @@ void main() {
               ],
             ),
           ),
-          mealPlanControllerProvider.overrideWith(_NoActivePlan.new),
-          userMemoryRepositoryProvider.overrideWithValue(_FakeMemoryRepo()),
-          vanaActionClientProvider.overrideWithValue(_PlanActions(plan)),
           mealAiServiceProvider.overrideWithValue(_FakeMealAi()),
           wiredashFeedbackFilerProvider.overrideWithValue(_FakeFiler()),
           creditsControllerProvider.overrideWith(() => _OpenWallet()),

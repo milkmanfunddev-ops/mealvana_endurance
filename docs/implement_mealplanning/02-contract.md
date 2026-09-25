@@ -79,6 +79,7 @@ Unknown kinds are dropped by the Dart parser (same forward-compat rule `AiCoachU
 **app-only (implemented in contract-v1):** `save_meal{libraryMealId}` (→ `{meal: MealRef}`), `get_home{date?}` (the `/api/vana/home` payload), `get_meal{id}` (→ `MealDetail`),
 `recent_meals{limit}`, `set_saved_meal_notes{saved_meal_id,notes}`, `set_meal_feedback{library_meal_id?|saved_meal_id?,vote,reason?}`
 (wraps the RPC so the client has one write channel; direct RPC is also fine).
+`list_conversations{kind?,limit?,offset?}` (→ `{conversations: ConversationSummary[]}`, one page most recent first, each planning row with the plan the server picked for it; ticket 126).
 
 Every action returns `{parts: VanaPart[], ...extras}`; the client folds any `batch` part into the plan state.
 Scope rule: payload `plan_id` → that plan; else `conversation_id` → that conversation's draft; else the

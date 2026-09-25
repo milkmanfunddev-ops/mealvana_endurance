@@ -54,6 +54,10 @@ class _VanaConversationsScreenState
     final conversationsAsync = ref.watch(
       vanaConversationsControllerProvider(_kind),
     );
+    // Re-read on every state change: a page that came back short ends it.
+    final hasMore = ref
+        .watch(vanaConversationsControllerProvider(_kind).notifier)
+        .hasMore;
     final isGeneral = _kind == VanaConversationKind.general;
 
     return Scaffold(
@@ -189,17 +193,48 @@ class _VanaConversationsScreenState
                           AppSpacing.md,
                           AppSpacing.xxl,
                         ),
-                        itemCount: conversations.length,
-                        itemBuilder: (context, i) => Padding(
-                          padding: const EdgeInsets.only(bottom: 8),
-                          child: _ConversationRow(
-                            conversation: conversations[i],
-                            onTap: () => context.push(
-                              '/vana?c=${conversations[i].id}'
-                              '&mode=${_kind.wire}',
+                        itemCount: conversations.length + (hasMore ? 1 : 0),
+                        itemBuilder: (context, i) {
+                          if (i >= conversations.length) {
+                            // Reaching the tail asks for the next page
+                            // (88-021: the list once stopped at 50 rows).
+                            WidgetsBinding.instance.addPostFrameCallback((_) {
+                              ref
+                                  .read(
+                                    vanaConversationsControllerProvider(
+                                      _kind,
+                                    ).notifier,
+                                  )
+                                  .loadMore();
+                            });
+                            return const Padding(
+                              key: ValueKey(
+                                'meal_planning.conversations_load_more',
+                              ),
+                              padding: EdgeInsets.symmetric(vertical: 24),
+                              child: Center(
+                                child: SizedBox(
+                                  width: 20,
+                                  height: 20,
+                                  child: CircularProgressIndicator(
+                                    strokeWidth: 2,
+                                    color: AppColors.electrolyte,
+                                  ),
+                                ),
+                              ),
+                            );
+                          }
+                          return Padding(
+                            padding: const EdgeInsets.only(bottom: 8),
+                            child: _ConversationRow(
+                              conversation: conversations[i],
+                              onTap: () => context.push(
+                                '/vana?c=${conversations[i].id}'
+                                '&mode=${_kind.wire}',
+                              ),
                             ),
-                          ),
-                        ),
+                          );
+                        },
                       ),
               ),
             ),
