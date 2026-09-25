@@ -2784,18 +2784,22 @@ The tick sits top-left and the swap circle top-right on picked tiles. The shown 
 
 ## mp-241 · One confirmed plan per week, and a fresh draft per conversation
 - category: Plan tab
-- status: approved
+- status: amended
 - image: none
 - noshot: a test image: its words render as blocks
 - svg2: docs/ssot/decisions/images/mealplanning/mp-241-2.svg
 - screen: Plan tab
 - source: plan-tab-v2.md; 03-backend.md
 
+**Original.** Every conversation with Vana builds its own Draft, so an athlete can hold any number of drafts but only one confirmed plan per week. Confirming a draft archives every other plan for that week, drafts from other conversations included, and the Plan tab keeps the confirmed plan until a new one is confirmed. "New meal plan" archives the plan it is on and starts a fresh, empty draft. Example: an athlete starts a draft in Monday's conversation and another in Wednesday's; confirming Wednesday's archives Monday's draft and the week's old confirmed plan.
+
+**Lee said.** When two cards contradict, the one approved most recently wins (Lee, 22 September). mp-674 (approved 25 September) says New meal plan leaves this week's plan as it is until the new plan is confirmed, so the New meal plan sentence and clause 3 follow it.
+
 **Context.** Plans used to be filed by the day their week starts, so a new conversation reopened the confirmed plan with three meals already in it. The Plan tab expects exactly one live plan for the week.
 
 **Question.** How do plans, drafts and conversations fit together, and what does "New meal plan" do?
 
-**Decision.** Every conversation with Vana builds its own Draft, so an athlete can hold any number of drafts but only one confirmed plan per week. Confirming a draft archives every other plan for that week, drafts from other conversations included, and the Plan tab keeps the confirmed plan until a new one is confirmed. "New meal plan" archives the plan it is on and starts a fresh, empty draft. Example: an athlete starts a draft in Monday's conversation and another in Wednesday's; confirming Wednesday's archives Monday's draft and the week's old confirmed plan.
+**Decision.** Every conversation with Vana builds its own Draft, so an athlete can hold any number of drafts but only one confirmed plan per week. Confirming a draft archives every other plan for that week, drafts from other conversations included, and the Plan tab keeps the confirmed plan until a new one is confirmed. "New meal plan" starts a new conversation with an empty draft and leaves this week's plan as it is until the new one is confirmed (mp-674). Example: an athlete starts a draft in Monday's conversation and another in Wednesday's; confirming Wednesday's archives Monday's draft and the week's old confirmed plan.
 
 **Why.** Filing plans by week made a new conversation reopen the confirmed plan with meals already in it.
 
@@ -2806,13 +2810,14 @@ The tick sits top-left and the swap circle top-right on picked tiles. The shown 
 **Details.** Precisely:
 1. Each conversation keys its own draft. A partial unique index allows one confirmed plan per athlete-week and any number of drafts.
 2. Confirming archives every other non-archived plan for that week, drafts from other conversations included. The Plan tab keeps the confirmed plan until a new one is confirmed.
-3. "New meal plan" archives the scope's plan and returns a fresh empty draft.
+3. "New meal plan" archives nothing. The new conversation shows its plan bar at "Your plan · 0 meals" from the start, and this week's confirmed plan stays confirmed and on the Plan tab until the new draft is confirmed (mp-674).
 
 > 2026-09-14 folded from mp-133, mp-134
 > 2026-09-14 approved
 > 2026-09-22 rewritten in plain words (question, context, decision, why, details)
 > 2026-09-23 clarity pass (decision)
 > 2026-09-23 screenshot removed: test/features/meal_planning/presentation/goldens/plan_draft_light.png (a test image: its words render as blocks)
+> 2026-09-25 amended by Lee
 
 ## mp-242 · The Meals tab is for looking; meals reach a plan from the plan
 - category: Meals tab and library
@@ -9525,3 +9530,146 @@ Founding is a product id containing `_founding` (`me_pro_*_founding` and the `_p
 
 > 2026-09-23 proposed from Lee's terminal ruling on mp-596
 > 2026-09-23 approved by Lee
+
+## mp-674 · New meal plan keeps this week's plan until the new one is confirmed
+- category: Plan tab
+- status: approved
+- image: docs/ssot/decisions/images/mealplanning/plan-tab.png
+- screen: Plan tab
+- source: Lee in the terminal 2026-09-25 (testing-wave triage 2)
+- linked: mp-668
+
+**Context.** mp-241 says two things that pull apart: the Plan tab "keeps the confirmed plan until a new one is confirmed", and New meal plan "archives the plan it is on and starts a fresh, empty draft". The app does the first (Findings 14-001, 14-002), and mp-668 asked which one stands. This card answers it and replaces mp-241's New meal plan sentence.
+
+**Question.** When an athlete taps New meal plan while this week has a confirmed plan, what happens to that plan?
+
+**Decision.** Nothing, until the new plan is confirmed. The athlete's plans are a list: a new plan becomes this week's plan when it is confirmed, and the old one stays in the list as an earlier plan. The new conversation shows its plan bar from the start at "Your plan · 0 meals". Example: on 24 September test@test.com has plan be6abf2f confirmed for the week of 20 September and taps New meal plan; the Plan tab still shows be6abf2f while they pick meals, and only when they confirm the new plan does it take be6abf2f's place, which moves to Previous plans.
+
+**Why.** An athlete who opens New meal plan to look around, or backs out halfway, never loses this week's plan or lands on an empty Plan tab.
+
+**What else was considered.** Archiving this week's plan at the tap and starting an empty draft at once, as mp-241's third sentence says.
+
+**What it touches.** The New meal plan button, the plan bar in a new meal-plan chat (ticket 70), mp-241's New meal plan sentence.
+
+> 2026-09-25 proposed by Lee in the terminal (answers mp-668)
+> 2026-09-25 picture captured at 1.27.0+3, 0e20c2f0
+> 2026-09-25 approved by Lee
+
+## mp-675 · Plans are a list the athlete can open, edit, rename, delete and use again
+- category: Plan tab
+- status: approved
+- image: none
+- svg: docs/ssot/decisions/images/mealplanning/mp-675.svg
+- screen: none (Previous plans sheet and the earlier plan view; no capture drive yet)
+- source: Lee in the terminal 2026-09-25 (testing-wave triage 2)
+
+**Context.** Previous plans lists an athlete's earlier plans, but an earlier plan opens view only ("An earlier plan. View only."), and the only way to reuse one is Vana's "same as last time", which copies the most recent plan. Lee ruled on 25 September how plans should work.
+
+**Question.** What can an athlete do with their earlier plans?
+
+**Decision.** Plans are a list, newest first. From Previous plans the athlete opens any earlier plan to look something up, and can edit its meals and servings, rename it or delete it. "Use this plan again" copies an earlier plan into this week as a new draft; confirming that draft replaces this week's plan the same way any new plan does. Example: on 5 October an athlete opens their plan from the week of 14 September, taps Use this plan again, and gets a draft for the week of 4 October with the same four dinners; when they confirm it, it becomes this week's plan and the 14 September plan stays in the list as it was.
+
+**Why.** Athletes repeat weeks that worked; copying one should be one tap, and the list should let them tidy what they keep.
+
+**What else was considered.** Earlier plans stay view only and only "same as last time" copies a plan.
+
+**What it touches.** Previous plans sheet, the earlier plan view, `list_plans` and a new copy action in `_shared/vana/plan.ts` (ticket 73).
+
+> 2026-09-25 proposed by Lee in the terminal
+> 2026-09-25 approved by Lee
+
+## mp-676 · A conversation whose draft was replaced says so and offers Use this plan instead
+- category: Plan tab
+- status: approved
+- image: docs/ssot/decisions/images/mealplanning/vana-chat.png
+- screen: Vana chat
+- source: Lee in the terminal 2026-09-25 (testing-wave triage 2)
+- linked: mp-670
+
+**Context.** Confirming a plan archives every other plan for that week, drafts in other conversations included (mp-241). Reopening one of those conversations showed the archived draft as live, with servings controls and a working Confirm (Finding 15-001), and mp-670 asked what it should show.
+
+**Question.** What does a conversation show once another confirm has archived its draft?
+
+**Decision.** It says the athlete confirmed a different plan for this week and that this one is kept in their plans. The draft shows read-only, with no servings controls, no remove and no Confirm, and offers "Use this plan instead", which copies it into this week as a new draft (the copy from mp-675). Example: on 22 September test@test.com built a 4-meal draft in one conversation, then confirmed a different plan for the week of 20 September in another; reopening the first conversation shows the four meals read-only under that note, and Use this plan instead starts a fresh draft with those four meals.
+
+**Why.** A live Confirm on a plan the athlete has already replaced, without knowing it, invites a swap they never meant.
+
+**What else was considered.** Leaving the archived draft live so that Confirm swaps it back in.
+
+**What it touches.** The plan bar and Review sheet in the Vana chat (ticket 71).
+
+> 2026-09-25 proposed by Lee in the terminal (answers mp-670)
+> 2026-09-25 picture captured at 1.27.0+3, 36bea725
+> 2026-09-25 approved by Lee
+
+## mp-677 · A leftover draft never shows in Previous plans
+- category: Plan tab
+- status: approved
+- image: none
+- svg: docs/ssot/decisions/images/mealplanning/mp-677.svg
+- screen: none (Previous plans sheet; no capture drive yet)
+- source: Lee in the terminal 2026-09-25 (testing-wave triage 2)
+- linked: mp-671
+
+**Context.** Previous plans listed a past week's draft that was never confirmed as "An earlier plan" (Finding 17-002), and mp-671 asked whether leftover drafts belong there.
+
+**Question.** Does a past week's leftover draft belong in Previous plans?
+
+**Decision.** No. Previous plans lists plans that were confirmed, including ones a later plan replaced; a draft that was never confirmed is not listed. Example: the draft fc9687ff made on 17 September for the week of 13 September, after that week's plan f2c0bc78 was confirmed, does not appear; f2c0bc78 does.
+
+**Why.** A draft is work in progress in a conversation, not a plan the athlete used; listing it as an earlier plan says something that never happened.
+
+**What else was considered.** Listing leftover drafts, marked as drafts.
+
+**What it touches.** `list_plans` and the Previous plans sheet (ticket 73).
+
+> 2026-09-25 proposed by Lee in the terminal (answers mp-671)
+> 2026-09-25 approved by Lee
+
+## mp-678 · A plan never picks a meal without numbers, and the 31 blank meals get numbers
+- category: Meals tab and library
+- status: approved
+- image: docs/ssot/decisions/images/mealplanning/plan-tab.png
+- screen: Plan tab
+- source: Lee in the terminal 2026-09-25 (testing-wave triage 2)
+- linked: mp-673
+
+**Context.** 31 of the 1,922 active library meals had no kcal, carbs, protein or fat, and test@test.com's confirmed plan picked three of them, which then showed on the Plan tab with no numbers (Finding 29-001). mp-673 asked what should happen to such meals.
+
+**Question.** What happens to a library meal with no nutrition numbers?
+
+**Decision.** Both fixes. The 31 meals get numbers: found online where a source states them for that dish, and otherwise estimated from the meal's own ingredients and marked as AI-estimated on the meal. And planning never picks a meal whose numbers are missing, so a gap in future data never reaches a plan. Example: "Farro, chickpea & roasted cauliflower bowl with tahini" (AD-103) gets its kcal and macros, marked sourced with its page or marked AI-estimated; a meal added later without numbers stays browsable but is never put in a plan.
+
+**Why.** A plan built around a carb target cannot count dinners it has no numbers for, and the fix belongs in the data as well as the rule.
+
+**What else was considered.** Letting planning pick them with a tile that says the numbers are missing; filling the data only.
+
+**What it touches.** `meal_library` (new `nutrition_origin` and `nutrition_source_url`), the planning candidate query (ticket 61), the Plan tab tiles.
+
+> 2026-09-25 proposed by Lee in the terminal (answers mp-673)
+> 2026-09-25 picture captured at 1.27.0+3, 0e20c2f0
+> 2026-09-25 approved by Lee
+
+## mp-679 · The saved copy of Pro counts for 15 minutes past its own expiry
+- category: Pro and paywall
+- status: approved
+- image: none
+- svg: docs/ssot/decisions/images/mealplanning/mp-679.svg
+- screen: none (the Gate at startup reads the saved copy before the network answers)
+- source: Lee in the terminal 2026-09-25 (testing-wave triage 2)
+- linked: mp-666
+
+**Context.** On a phone the Gate reads the copy of RevenueCat's answer saved on the device, so it answers at once and works offline (mp-335). A cold launch read a saved copy that said Pro was active two minutes after that copy's own expiry, while RevenueCat showed no active Pro (Finding 07-002), and mp-666 asked whether the app should trust it. Since wave 19 the server keeps a renewing account open for 15 minutes past its period end, for a late renewal.
+
+**Question.** Does the app trust its saved copy of Pro after that copy's own expiry time?
+
+**Decision.** For 15 minutes, the same grace the server gives a renewing account, then no: after that the saved copy counts as closed until a fresh answer arrives, and a fresh answer always wins. Example: a monthly period ends at 11:36:56 UTC; a cold launch at 11:39 still opens the app from the saved copy while the fetch runs, but a launch at 11:52 with no network lands on the paywall until RevenueCat answers.
+
+**Why.** It keeps an athlete whose renewal is a few minutes late in the app, without letting an old saved copy keep a lapsed account open indefinitely offline.
+
+**What else was considered.** Closing at the saved copy's expiry exactly; trusting the saved copy until the next fresh answer, however old.
+
+**What it touches.** The Gate's reading of the saved copy (ticket 67), `RENEWAL_GRACE_MS` on the server.
+
+> 2026-09-25 proposed by Lee in the terminal (answers mp-666)
+> 2026-09-25 approved by Lee
