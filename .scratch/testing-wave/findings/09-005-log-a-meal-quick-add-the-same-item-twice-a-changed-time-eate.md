@@ -1,7 +1,7 @@
 # 09-005 · Log a Meal quick add: the same item twice, a changed time eaten, and logging offline
 
 - kind: followup-test
-- status: open
+- status: triaged
 - ticket: 09
 - run: w7-20260924T1219Z
 - screen: Log a Meal (Common, quick add sheet)
@@ -26,3 +26,4 @@ Two separate meal_logs rows for the double log (or a clear "already logged"); th
 
 **Triage.**
 
+Picked for retest ticket 91 (Lee, 2026-09-25: every open follow-up test folded into the planned runs, cap of ten lifted for this pass).

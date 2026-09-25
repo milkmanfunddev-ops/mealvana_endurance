@@ -1,7 +1,7 @@
 # 06-008 · A paid account's email Log In with a wrong password first, then the right one
 
 - kind: followup-test
-- status: open
+- status: triaged
 - ticket: 06
 - run: w6-20260924T1117Z
 - screen: Log In
@@ -26,3 +26,5 @@ Not run. This run signed in with the right password once.
 > 
 
 **Triage.**
+
+Picked for retest ticket 109 (Lee, 2026-09-25: every open follow-up test folded into the planned runs, cap of ten lifted for this pass).

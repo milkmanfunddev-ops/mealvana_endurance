@@ -1,7 +1,7 @@
 # 25-003 · Build a Meal: untried paths (Start from saved/recent, Edit item quantity scaling, remove an item, Also save as a favorite, back with a draft, Time eaten stamped at open)
 
 - kind: followup-test
-- status: open
+- status: triaged
 - ticket: 25
 - run: w14-20260924T2015Z
 - screen: Build a Meal
@@ -33,3 +33,5 @@ Not run in ticket 25.
 > 
 
 **Triage.**
+
+Picked for retest ticket 91 (Lee, 2026-09-25: every open follow-up test folded into the planned runs, cap of ten lifted for this pass).

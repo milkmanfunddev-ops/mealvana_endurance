@@ -11,6 +11,8 @@
 
 **Follow-up tests to run:** 17-005 (earlier plan view: tap a meal, a plan deleted since the list was read, long names), 17-006 (Previous plans sheet: empty, offline and error states, swipe-dismiss), 19-009 (after the confirmed plan's list is deleted, a plan edit rebuilds it).
 
+**More follow-up tests (Lee, 2026-09-25, cap of ten lifted for this pass):** 18-010 (Meal detail opened from Browse: heart (Save to mine), Team review, Start cooking, Add photo, See the original recipe, Swaps), 19-007 (Previous lists sheet: row menu Rename and Delete, open then Back to current list, Keep it, a second tap on Delete). Each Finding file holds the steps; read it first. Give each a verdict in `RUNS/verdicts.md` like the retests.
+
 **Setup:** test@test.com. Dev lists 4 of its 27 plans now: plans archived before 09-16 are dropped, which is known and not a Finding. 17-005 step 3 (a plan deleted elsewhere) and 17-006 step 1 (empty sheet) use a new throwaway account, not test@test.com. 19-009 deletes the confirmed plan's list, and ticket 88 runs on the same account in the same wave: do 19-009 last, and write its times in `notes.md`.
 
 **Note:** 17-004 (plans look alike) and 17-007 (Back to the sheet) are ticket 97's and are retested in ticket 100.

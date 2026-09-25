@@ -1,7 +1,7 @@
 # 23-004 · Review & Log: Back without logging, edit an item, rename and change meal type before logging, and the app backgrounded or killed on the screen
 
 - kind: followup-test
-- status: open
+- status: triaged
 - ticket: 23
 - run: w13-20260924T1903Z
 - screen: Review & Log
@@ -24,3 +24,5 @@ Not run. This run went straight through: Review & Log, Log this meal, one row (3
 - runs/23/console-redacted.log: GoRouter codec warning at 14:07:54 local.
 
 **Triage.**
+
+Picked for retest ticket 91 (Lee, 2026-09-25: every open follow-up test folded into the planned runs, cap of ten lifted for this pass).

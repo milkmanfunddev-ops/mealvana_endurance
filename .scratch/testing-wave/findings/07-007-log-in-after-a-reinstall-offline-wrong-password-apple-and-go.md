@@ -1,7 +1,7 @@
 # 07-007 · Log In after a reinstall: offline, wrong password, Apple and Google sign-in for a paid account, and a Lapsed account
 
 - kind: followup-test
-- status: open
+- status: triaged
 - ticket: 07
 - run: w6-20260924T1118Z
 - screen: Log In
@@ -27,3 +27,5 @@ Not run (look-around, ticket 07). Seen on the way: the Log In screen came back f
 > 
 
 **Triage.**
+
+Picked for retest ticket 109 (Lee, 2026-09-25: every open follow-up test folded into the planned runs, cap of ten lifted for this pass).

@@ -1,7 +1,7 @@
 # 06-007 · A paid account signs out offline, and cancels the Sign Out dialog once first
 
 - kind: followup-test
-- status: open
+- status: triaged
 - ticket: 06
 - run: w6-20260924T1117Z
 - screen: Settings
@@ -28,3 +28,5 @@ Not run. This run only signed out online, which landed on welcome with no paywal
 > 
 
 **Triage.**
+
+Picked for retest ticket 109 (Lee, 2026-09-25: every open follow-up test folded into the planned runs, cap of ten lifted for this pass).

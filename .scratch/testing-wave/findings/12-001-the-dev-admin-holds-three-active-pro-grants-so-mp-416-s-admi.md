@@ -1,7 +1,7 @@
 # 12-001 · The dev admin holds three active pro Grants, so mp-416's admin-with-no-Pro case (paywall skipped, Vana refused) cannot be observed on it
 
 - kind: followup-test
-- status: open
+- status: triaged
 - ticket: 12
 - run: w4-20260924T0417Z
 - screen: Timeline
@@ -29,3 +29,4 @@ test@test.com holds three active promotional Grants on `pro` in RevenueCat (2026
 
 **Triage.**
 
+Picked for retest ticket 107 (Lee, 2026-09-25: every open follow-up test folded into the planned runs, cap of ten lifted for this pass).

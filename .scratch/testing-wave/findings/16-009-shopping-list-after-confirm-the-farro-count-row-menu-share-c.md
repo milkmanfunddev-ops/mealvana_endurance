@@ -1,7 +1,7 @@
 # 16-009 · Shopping list after confirm: the Farro count, row menu, share, check-off and Kroger button
 
 - kind: followup-test
-- status: open
+- status: triaged
 - ticket: 16
 - run: w9-20260924T1446Z
 - screen: Food (Shopping sub-tab)
@@ -30,3 +30,4 @@ mp-244: the count lists both meals and leads back to either recipe; imperial unl
 
 **Triage.**
 
+Picked for retest ticket 90 (Lee, 2026-09-25: every open follow-up test folded into the planned runs, cap of ten lifted for this pass).

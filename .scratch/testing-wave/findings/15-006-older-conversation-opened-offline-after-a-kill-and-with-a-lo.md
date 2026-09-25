@@ -1,7 +1,7 @@
 # 15-006 · Older conversation opened offline, after a kill, and with a long transcript: history, plan bar and scroll position
 
 - kind: followup-test
-- status: open
+- status: triaged
 - ticket: 15
 - run: w12-20260924T1712Z
 - screen: Vana chat (meal planning), opened from Conversations
@@ -26,3 +26,5 @@ Offline: the cached history with a clear offline or retry state, never the empty
 > 
 
 **Triage.**
+
+Picked for retest ticket 88 (Lee, 2026-09-25: every open follow-up test folded into the planned runs, cap of ten lifted for this pass).

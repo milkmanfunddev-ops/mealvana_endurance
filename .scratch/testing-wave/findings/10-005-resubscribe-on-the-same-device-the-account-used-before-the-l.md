@@ -1,7 +1,7 @@
 # 10-005 · Resubscribe on the same device the account used before the lapse (local data present) and let the new subscription lapse again
 
 - kind: followup-test
-- status: open
+- status: triaged
 - ticket: 10
 - run: w8-20260924T1418Z
 - screen: Paywall (lapsed)
@@ -26,3 +26,4 @@ Step 2: the timeline and the plan are there at once, from the local database. St
 
 **Triage.**
 
+Picked for retest ticket 107 (Lee, 2026-09-25: every open follow-up test folded into the planned runs, cap of ten lifted for this pass).

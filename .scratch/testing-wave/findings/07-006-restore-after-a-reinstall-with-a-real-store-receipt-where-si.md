@@ -1,7 +1,7 @@
 # 07-006 · Restore after a reinstall with a real store receipt, where sign-in does not find Pro on its own
 
 - kind: followup-test
-- status: open
+- status: triaged
 - ticket: 07
 - run: w6-20260924T1118Z
 - screen: Paywall
@@ -25,3 +25,5 @@ Not run. The simulator's Test Store cannot reach this branch (07-001).
 > 
 
 **Triage.**
+
+Picked for ticket 13 (Lee's iPhone session) (Lee, 2026-09-25: every open follow-up test folded into the planned runs, cap of ten lifted for this pass).

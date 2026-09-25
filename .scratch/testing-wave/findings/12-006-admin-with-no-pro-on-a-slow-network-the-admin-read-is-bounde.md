@@ -1,7 +1,7 @@
 # 12-006 · Admin with no Pro on a slow network: the admin read is bounded by two seconds and lands on the paywall
 
 - kind: followup-test
-- status: open
+- status: triaged
 - ticket: 12
 - run: w4-20260924T0417Z
 - screen: Log In
@@ -24,3 +24,4 @@ mp-416: the app checks for Admin only when the account has no access and waits n
 
 **Triage.**
 
+Picked for retest ticket 107 (Lee, 2026-09-25: every open follow-up test folded into the planned runs, cap of ten lifted for this pass).

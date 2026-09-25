@@ -1,7 +1,7 @@
 # 10-004 · Timeline after resubscribing on a fresh install: cold relaunch and a day change without opening Food, and whether workouts and the net balance come back
 
 - kind: followup-test
-- status: open
+- status: triaged
 - ticket: 10
 - run: w8-20260924T1418Z
 - screen: Timeline
@@ -27,3 +27,4 @@ Every meal log, workout and the day's net balance are there on the timeline with
 
 **Triage.**
 
+Picked for retest ticket 92 (Lee, 2026-09-25: every open follow-up test folded into the planned runs, cap of ten lifted for this pass).

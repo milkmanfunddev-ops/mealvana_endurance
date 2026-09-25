@@ -1,7 +1,7 @@
 # 20-006 · Checked items offline with real airplane mode on a device, where the connectivity check also says offline
 
 - kind: followup-test
-- status: open
+- status: triaged
 - ticket: 20
 - run: w10-20260924T1614Z
 - screen: Food (Shopping sub-tab)
@@ -26,3 +26,4 @@ As 20-001: ticks made offline stay and reach the database when the network retur
 
 **Triage.**
 
+Picked for ticket 13 (Lee's iPhone session) (Lee, 2026-09-25: every open follow-up test folded into the planned runs, cap of ten lifted for this pass).

@@ -1,7 +1,7 @@
 # 08-003 · Manage subscription for a Test Store subscription opens Safari on Apple's account sign-in page, where the subscription cannot be managed
 
 - kind: followup-test
-- status: open
+- status: triaged
 - ticket: 08
 - run: w7-20260924T1216Z
 - screen: Subscription
@@ -25,3 +25,5 @@ Run on the simulator at 12:27:52Z: Safari opened `account.apple.com` at the Appl
 > 
 
 **Triage.**
+
+Picked for ticket 13 (Lee's iPhone session) (Lee, 2026-09-25: every open follow-up test folded into the planned runs, cap of ten lifted for this pass).

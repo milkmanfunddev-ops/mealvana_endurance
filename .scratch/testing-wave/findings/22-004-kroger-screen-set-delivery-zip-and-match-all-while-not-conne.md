@@ -1,6 +1,6 @@
 # 22-004 · Kroger screen: Set delivery ZIP and Match all while not connected, on certification
 - kind: followup-test
-- status: open
+- status: triaged
 - ticket: 22
 - run: w18-20260925T0127Z
 - screen: Shop with Kroger
@@ -24,3 +24,5 @@ Not run: the wave lead's instruction for ticket 22 was to stop on a refused cert
 > 
 
 **Triage.**
+
+Picked for retest ticket 90 (Lee, 2026-09-25: every open follow-up test folded into the planned runs, cap of ten lifted for this pass).

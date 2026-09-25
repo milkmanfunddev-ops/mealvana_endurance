@@ -1,7 +1,7 @@
 # 12-008 · First login stacks the What's New sheet and the TrainingPeaks sharing sheet over the timeline
 
 - kind: followup-test
-- status: open
+- status: triaged
 - ticket: 12
 - run: w4-20260924T0417Z
 - screen: Timeline
@@ -25,3 +25,4 @@ Each sheet shows once, closes by swipe or its buttons, and "Closing this leaves 
 
 **Triage.**
 
+Picked for retest ticket 109 (Lee, 2026-09-25: every open follow-up test folded into the planned runs, cap of ten lifted for this pass).

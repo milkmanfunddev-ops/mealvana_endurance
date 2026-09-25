@@ -1,7 +1,7 @@
 # 19-010 · New list: Add an item, Share and rename on a hand-made list, and New list twice in a day
 
 - kind: followup-test
-- status: open
+- status: triaged
 - ticket: 19
 - run: w11-20260924T1647Z
 - screen: Food (Shopping sub-tab)
@@ -28,3 +28,5 @@ Rows land in shopping_items with the new list's id; names are unique or told apa
 > 
 
 **Triage.**
+
+Picked for retest ticket 90 (Lee, 2026-09-25: every open follow-up test folded into the planned runs, cap of ten lifted for this pass).

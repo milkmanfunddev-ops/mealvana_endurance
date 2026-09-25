@@ -1,7 +1,7 @@
 # 05-012 · paywall_purchase_flow_test.dart was not written; a Test Store purchase flow is feasible
 
 - kind: followup-test
-- status: open
+- status: wontfix
 - ticket: 05
 - run: w5-20260924T0839Z
 - screen: Paywall (onboarding), Test Store sheet
@@ -26,3 +26,4 @@ The ticket's Touches line names the file; the agent did not write it (its criter
 
 **Triage.**
 
+Closed (Lee, 2026-09-25, follow-up sort): no Patrol in testing waves (Lee, 2026-09-24).

@@ -1,6 +1,6 @@
 # 22-005 · Kroger screen: a leftover production connection shows only Connect Kroger, with no way to see or remove it
-- kind: followup-test
-- status: open
+- kind: bug
+- status: triaged
 - ticket: 22
 - run: w18-20260925T0127Z
 - screen: Shop with Kroger
@@ -25,3 +25,5 @@ Seen in this run: the screen shows Connect Kroger and no Disconnect while the pr
 > 
 
 **Triage.**
+
+Bug, fix ticket 108 (Lee, 2026-09-25, follow-up sort): a connection from the other Kroger environment is shown and can be removed. Retest ticket 109.

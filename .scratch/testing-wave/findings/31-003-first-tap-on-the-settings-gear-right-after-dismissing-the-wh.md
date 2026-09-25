@@ -1,7 +1,7 @@
 # 31-003 · First tap on the Settings gear right after dismissing the What's New sheet did nothing
 
 - kind: followup-test
-- status: open
+- status: wontfix
 - ticket: 31
 - run: w11-20260924T1648Z
 - screen: Timeline
@@ -25,3 +25,5 @@ Seen once at 16:51 UTC: the first gear tap did nothing and Timeline stayed; a se
 > 
 
 **Triage.**
+
+Closed (Lee, 2026-09-25, follow-up sort): seen once and not repeated; every run watches for it and it reopens if seen again.

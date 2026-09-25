@@ -1,7 +1,7 @@
 # 28-005 · Scan to Add Food untried paths: denied permission, background and return, not-found and invalid dialogs, offline, other entry points
 
 - kind: followup-test
-- status: open
+- status: triaged
 - ticket: 28
 - run: w15-20260924T2040Z
 - screen: Scan to Add Food; Log — Sep 23; Build a Meal → Add food
@@ -33,3 +33,5 @@ Not run in ticket 28.
 > 
 
 **Triage.**
+
+Picked for retest ticket 91 (Lee, 2026-09-25: every open follow-up test folded into the planned runs, cap of ten lifted for this pass).

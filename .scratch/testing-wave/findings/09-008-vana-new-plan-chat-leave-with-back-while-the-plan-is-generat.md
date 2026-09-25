@@ -1,7 +1,7 @@
 # 09-008 · Vana new-plan chat: leave with Back while the plan is generating, then come back
 
 - kind: followup-test
-- status: open
+- status: triaged
 - ticket: 09
 - run: w7-20260924T1219Z
 - screen: Vana chat (New meal plan)
@@ -26,3 +26,4 @@ The plan finishes or is cleanly dropped; coming back shows the same conversation
 
 **Triage.**
 
+Picked for retest ticket 88 (Lee, 2026-09-25: every open follow-up test folded into the planned runs, cap of ten lifted for this pass).

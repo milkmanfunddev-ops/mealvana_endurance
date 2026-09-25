@@ -1,6 +1,6 @@
 # 21-006 · Kroger sheet: wrong password, then the right one
 - kind: followup-test
-- status: open
+- status: triaged
 - ticket: 21
 - run: w17-20260924T2233Z
 - screen: Kroger sign-in sheet
@@ -23,3 +23,5 @@ Not run.
 > 
 
 **Triage.**
+
+Picked for retest ticket 90 (Lee, 2026-09-25: every open follow-up test folded into the planned runs, cap of ten lifted for this pass).

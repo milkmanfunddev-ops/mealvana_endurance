@@ -1,6 +1,6 @@
 # 21-009 · Kroger screen: allow location on Shop with Kroger and see whether the delivery area fills
 - kind: followup-test
-- status: open
+- status: triaged
 - ticket: 21
 - run: w17-20260924T2233Z
 - screen: Shop with Kroger
@@ -23,3 +23,5 @@ Not run; this run tapped Don't Allow (connect does not need an area).
 > 
 
 **Triage.**
+
+Picked for retest ticket 90 (Lee, 2026-09-25: every open follow-up test folded into the planned runs, cap of ten lifted for this pass).

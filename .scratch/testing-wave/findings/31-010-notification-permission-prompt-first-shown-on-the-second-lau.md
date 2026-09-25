@@ -1,7 +1,7 @@
 # 31-010 · Notification permission prompt: first shown on the second launch; test Allow and what it writes
 
 - kind: followup-test
-- status: open
+- status: triaged
 - ticket: 31
 - run: w11-20260924T1648Z
 - screen: Timeline
@@ -26,3 +26,5 @@ Not run fully. This run tapped Don't Allow; notifications_enabled stayed false (
 > 
 
 **Triage.**
+
+Picked for retest ticket 109 (Lee, 2026-09-25: every open follow-up test folded into the planned runs, cap of ten lifted for this pass).

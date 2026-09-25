@@ -1,7 +1,7 @@
 # 08-005 · Subscription screen on return from Manage subscription, and Manage tapped twice or offline
 
 - kind: followup-test
-- status: open
+- status: triaged
 - ticket: 08
 - run: w7-20260924T1216Z
 - screen: Subscription
@@ -27,3 +27,5 @@ Not run beyond step 1. Back from Safari at 12:28:27Z, the screen still read "Ren
 > 
 
 **Triage.**
+
+Picked for retest ticket 107 (Lee, 2026-09-25: every open follow-up test folded into the planned runs, cap of ten lifted for this pass).

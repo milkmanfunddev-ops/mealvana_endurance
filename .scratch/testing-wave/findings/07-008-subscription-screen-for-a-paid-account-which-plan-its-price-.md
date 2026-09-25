@@ -1,7 +1,7 @@
 # 07-008 · Subscription screen for a paid account: which plan, its price and the renewal time
 
 - kind: followup-test
-- status: open
+- status: triaged
 - ticket: 07
 - run: w6-20260924T1118Z
 - screen: Subscription
@@ -24,3 +24,5 @@ Not run beyond a look (ticket 07). For account C (Monthly) the screen read "Subs
 > 
 
 **Triage.**
+
+Picked for retest ticket 107 (Lee, 2026-09-25: every open follow-up test folded into the planned runs, cap of ten lifted for this pass).

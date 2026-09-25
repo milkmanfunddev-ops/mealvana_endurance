@@ -1,7 +1,7 @@
 # 30-006 · Timeline week walk: past-day cards, filters, hide times, brick card title, pull to refresh, offline
 
 - kind: followup-test
-- status: open
+- status: triaged
 - ticket: 30
 - run: w10-20260924T1615Z
 - screen: Timeline
@@ -23,3 +23,5 @@ Each day equals the SQL rows for that day, in time order, in every path.
 - runs/30/06-timeline-wed-0923-brick.png
 
 **Triage.**
+
+Picked for retest ticket 92 (Lee, 2026-09-25: every open follow-up test folded into the planned runs, cap of ten lifted for this pass).

@@ -11,6 +11,8 @@
 
 **Follow-up tests to run:** none.
 
+**More follow-up tests (Lee, 2026-09-25, cap of ten lifted for this pass):** 31-004 (Profile & Preferences: clear a first or last name and save, check the name is cleared), 31-005 (Profile & Preferences: leave with unsaved changes by the back arrow and by swipe-back), 31-006 (Profile & Preferences: the tap-to-use chips from TrainingPeaks and Final Surge), 31-007 (Profile & Preferences: edit the Email field and save), 31-008 (Profile & Preferences: save while offline), 31-009 (Appearance: pick Light or System and check it survives a relaunch and a sign-out), 31-011 (Settings: Sign Out, then Cancel, and Delete Account, then Cancel), 31-013 (Settings rows not opened this run: Subscription, Diet, Sport, Body Composition, Nutrition Targets, Coach, Connected Apps, Privacy, Help), 04-006 (Onboarding back button mid-flow keeps the answers already given). Each Finding file holds the steps; read it first. Give each a verdict in `RUNS/verdicts.md` like the retests.
+
 **Setup:** test@test.com, plus a new account for 08-002 and 11-005 (the paywall). Read VoiceOver labels with `idb ui describe-all --udid UDID`. 21-004 and 64-001 need a TrainingPeaks token that the API refuses: check that the app marks the connection as needing reconnection. If you cannot cause the refusal without a write the runbook forbids, mark it not run and say why.
 
 

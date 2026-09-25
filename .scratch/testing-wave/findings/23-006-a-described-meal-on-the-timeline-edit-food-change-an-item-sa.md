@@ -1,7 +1,7 @@
 # 23-006 · A described meal on the timeline: Edit food (change an item, Save changes) and Remove, with the day's totals and the row checked
 
 - kind: followup-test
-- status: open
+- status: triaged
 - ticket: 23
 - run: w13-20260924T1903Z
 - screen: Timeline
@@ -24,3 +24,5 @@ Not run; this run opened Edit food and went Back without saving. Use a meal this
 - runs/23/14-edit-food.png: Edit Meal.
 
 **Triage.**
+
+Picked for retest ticket 91 (Lee, 2026-09-25: every open follow-up test folded into the planned runs, cap of ten lifted for this pass).

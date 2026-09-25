@@ -1,7 +1,7 @@
 # 29-004 · Cold start untried path: switch tabs within a second of sign-in, before the first sync ends; console and each tab's first screen
 
 - kind: followup-test
-- status: open
+- status: triaged
 - ticket: 29
 - run: w16-20260924T2100Z
 - screen: Timeline, Food
@@ -26,3 +26,4 @@ Not run. In this run each tab was opened after the first sync had finished (21:0
 
 **Triage.**
 
+Picked for retest ticket 92 (Lee, 2026-09-25: every open follow-up test folded into the planned runs, cap of ten lifted for this pass).

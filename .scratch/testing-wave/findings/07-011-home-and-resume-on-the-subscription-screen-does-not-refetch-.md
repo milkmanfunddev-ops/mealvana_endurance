@@ -1,7 +1,7 @@
 # 07-011 · Home and resume on the Subscription screen does not refetch the customer after a renewal
 
 - kind: followup-test
-- status: open
+- status: triaged
 - ticket: 07
 - run: w6-20260924T1118Z
 - screen: Subscription
@@ -26,3 +26,4 @@ At 11:38:47 Home and resume left the open Subscription screen as it was, with no
 
 **Triage.**
 
+Picked for retest ticket 107 (Lee, 2026-09-25: every open follow-up test folded into the planned runs, cap of ten lifted for this pass).

@@ -1,7 +1,7 @@
 # 30-007 · Month picker: days with only skipped sessions carry no marker; tap a day, month arrows, Today
 
 - kind: followup-test
-- status: open
+- status: triaged
 - ticket: 30
 - run: w10-20260924T1615Z
 - screen: Month picker (timeline date dropdown)
@@ -19,3 +19,5 @@ Markers follow what the timeline shows for that day; every path lands on the cho
 - runs/30/07-month-picker.png
 
 **Triage.**
+
+Picked for retest ticket 92 (Lee, 2026-09-25: every open follow-up test folded into the planned runs, cap of ten lifted for this pass).

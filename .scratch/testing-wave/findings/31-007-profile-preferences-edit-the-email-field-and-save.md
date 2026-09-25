@@ -1,7 +1,7 @@
 # 31-007 · Profile & Preferences: edit the Email field and save
 
 - kind: followup-test
-- status: open
+- status: triaged
 - ticket: 31
 - run: w11-20260924T1648Z
 - screen: Profile & Preferences
@@ -24,3 +24,5 @@ Not run. The field is editable and the save writes public.users.email directly (
 > 
 
 **Triage.**
+
+Picked for retest ticket 93 (Lee, 2026-09-25: every open follow-up test folded into the planned runs, cap of ten lifted for this pass).

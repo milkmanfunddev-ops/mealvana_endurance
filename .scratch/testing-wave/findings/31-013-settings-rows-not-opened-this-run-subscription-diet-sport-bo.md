@@ -1,7 +1,7 @@
 # 31-013 · Settings rows not opened this run: Subscription, Diet, Sport, Body Composition, Nutrition Targets, Coach, Connected Apps, Privacy, Help
 
 - kind: followup-test
-- status: open
+- status: triaged
 - ticket: 31
 - run: w11-20260924T1648Z
 - screen: Settings
@@ -24,3 +24,5 @@ Not run: this run opened Profile & Preferences and Appearance only.
 > 
 
 **Triage.**
+
+Picked for retest ticket 93 (Lee, 2026-09-25: every open follow-up test folded into the planned runs, cap of ten lifted for this pass).

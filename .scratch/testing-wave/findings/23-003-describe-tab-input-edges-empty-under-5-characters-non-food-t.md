@@ -1,7 +1,7 @@
 # 23-003 · Describe tab input edges: empty, under 5 characters, non-food text, a very long description, Analyze tapped twice, Back while analyzing
 
 - kind: followup-test
-- status: open
+- status: triaged
 - ticket: 23
 - run: w13-20260924T1903Z
 - screen: Log a Meal (Describe)
@@ -24,3 +24,5 @@ Not run (one AI call spent this wave by this ticket; each of 2, 3, 4 and 5 costs
 - runs/23/06-add-food.png: the Describe tab.
 
 **Triage.**
+
+Picked for retest ticket 91 (Lee, 2026-09-25: every open follow-up test folded into the planned runs, cap of ten lifted for this pass).

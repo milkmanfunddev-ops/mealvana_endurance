@@ -1,7 +1,7 @@
 # 24-006 · Edit Meal for a photo log: Re-scan photo, Save changes, and Remove from the timeline card
 
 - kind: followup-test
-- status: open
+- status: triaged
 - ticket: 24
 - run: w14-20260924T2015Z
 - screen: Edit Meal, Timeline meal card
@@ -28,3 +28,5 @@ soft-deleted; photo handling as the product intends.
 > 
 
 **Triage.**
+
+Picked for retest ticket 91 (Lee, 2026-09-25: every open follow-up test folded into the planned runs, cap of ten lifted for this pass).

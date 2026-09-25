@@ -1,6 +1,6 @@
 # 21-008 · Kroger screen: the connection shows connected on an access token expired a week, prove the refresh path
 - kind: followup-test
-- status: open
+- status: triaged
 - ticket: 21
 - run: w17-20260924T2233Z
 - screen: Shop with Kroger
@@ -24,3 +24,5 @@ Not run. Ticket 22 runs on this connection and will likely hit the expiry, so it
 > 
 
 **Triage.**
+
+Picked for retest ticket 90 (Lee, 2026-09-25: every open follow-up test folded into the planned runs, cap of ten lifted for this pass).

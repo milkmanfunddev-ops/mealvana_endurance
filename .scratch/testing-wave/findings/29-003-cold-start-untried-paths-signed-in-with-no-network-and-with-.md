@@ -1,7 +1,7 @@
 # 29-003 · Cold start untried paths: signed in with no network, and with an expired session; every tab and the console
 
 - kind: followup-test
-- status: open
+- status: triaged
 - ticket: 29
 - run: w16-20260924T2100Z
 - screen: Welcome, Timeline, Food, Events, Learn
@@ -26,3 +26,4 @@ Not run. This run covered only online cold starts (signed out with an empty data
 
 **Triage.**
 
+Picked for retest ticket 92 (Lee, 2026-09-25: every open follow-up test folded into the planned runs, cap of ten lifted for this pass).

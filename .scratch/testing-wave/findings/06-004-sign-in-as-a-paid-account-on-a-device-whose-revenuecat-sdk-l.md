@@ -1,7 +1,7 @@
 # 06-004 · Sign in as a paid account on a device whose RevenueCat SDK last held a different, unpaid account
 
 - kind: followup-test
-- status: open
+- status: triaged
 - ticket: 06
 - run: w6-20260924T1117Z
 - screen: Log In
@@ -31,3 +31,5 @@ unpaid-to-paid direction and back.
 > 
 
 **Triage.**
+
+Picked for retest ticket 107 (Lee, 2026-09-25: every open follow-up test folded into the planned runs, cap of ten lifted for this pass).

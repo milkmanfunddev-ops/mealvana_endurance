@@ -1,7 +1,7 @@
 # 28-003 · Barcode scanning needs a device: scan a product from Log a meal and Build a meal and check the logged row
 
 - kind: followup-test
-- status: open
+- status: triaged
 - ticket: 28
 - run: w15-20260924T2040Z
 - screen: Scan to Add Food (barcode scanner)
@@ -36,3 +36,5 @@ Not run: needs a device with a camera.
 > 
 
 **Triage.**
+
+Picked for ticket 13 (Lee's iPhone session) (Lee, 2026-09-25: every open follow-up test folded into the planned runs, cap of ten lifted for this pass).

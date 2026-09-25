@@ -1,7 +1,7 @@
 # 16-008 · Resumed meal-plan conversation: empty Ask me anything state while a vana-action call hangs to a socket timeout
 
 - kind: followup-test
-- status: open
+- status: triaged
 - ticket: 16
 - run: w9-20260924T1446Z
 - screen: Vana chat (meal planning), opened from Conversations
@@ -27,3 +27,4 @@ Seen this run, not settled. The first open of `d8efbdb3` (09:50:29 local) showed
 
 **Triage.**
 
+Picked for retest ticket 88 (Lee, 2026-09-25: every open follow-up test folded into the planned runs, cap of ten lifted for this pass).

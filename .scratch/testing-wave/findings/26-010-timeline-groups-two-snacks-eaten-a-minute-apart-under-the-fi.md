@@ -1,7 +1,7 @@
 # 26-010 · Timeline groups two snacks eaten a minute apart under the first one's time, and net balance moved 597 kcal for 672 kcal logged
 
 - kind: followup-test
-- status: open
+- status: triaged
 - ticket: 26
 - run: w13-20260924T1904Z
 - screen: Timeline
@@ -26,3 +26,5 @@ Seen, not yet explained: the 2:08 PM card holds "Rice cake and Almond butter" (e
 > 
 
 **Triage.**
+
+Picked for retest ticket 92 (Lee, 2026-09-25: every open follow-up test folded into the planned runs, cap of ten lifted for this pass).

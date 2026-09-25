@@ -1,7 +1,7 @@
 # 24-004 · Photos picker says Location Is Included: log a geotagged photo and check the stored object has no GPS
 
 - kind: followup-test
-- status: open
+- status: triaged
 - ticket: 24
 - run: w14-20260924T2015Z
 - screen: Photos picker (system) from Log a Meal
@@ -26,3 +26,5 @@ product decides it may keep it.
 > 
 
 **Triage.**
+
+Picked for retest ticket 91 (Lee, 2026-09-25: every open follow-up test folded into the planned runs, cap of ten lifted for this pass).

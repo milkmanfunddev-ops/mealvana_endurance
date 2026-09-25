@@ -1,7 +1,7 @@
 # 19-008 · Week 2026-09-13 on the dev admin holds three confirmed plans and a draft
 
 - kind: followup-test
-- status: open
+- status: wontfix
 - ticket: 19
 - run: w11-20260924T1647Z
 - screen: none
@@ -25,3 +25,5 @@ Seen while reading the account's state for this run, not caused by it: plans f2c
 > 
 
 **Triage.**
+
+Closed (Lee, 2026-09-25, follow-up sort): the rows predate the one-confirmed-plan-per-week rule (mp-241); nothing to test.
