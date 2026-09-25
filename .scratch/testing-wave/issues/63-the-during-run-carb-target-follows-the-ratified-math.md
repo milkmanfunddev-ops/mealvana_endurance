@@ -14,7 +14,7 @@
 **Touches:** lib/features/nutrition_plan/application/macro_generation_service.dart, lib/features/nutrition_plan/data/offline_macro_calculator.dart, lib/features/nutrition_plan/domain/macro_targets.dart, test/qa_conformance/
 
 - [ ] The vectors for during-run carbs are green against the engine (or the ticket reports why the spec and vectors disagree, for Xuan).
-- [ ] Finding 30-003's run (12 mi, 91 g vs 97-126 g band) reproduced in a test and landing inside the band.
+- [x] Finding 30-003's run (12 mi, 91 g vs 97-126 g band) reproduced in a test and landing inside the band.
 - [ ] codegen if annotations changed, `flutter analyze` and the suite green.
 
 Next: /implement-lee testing-wave
