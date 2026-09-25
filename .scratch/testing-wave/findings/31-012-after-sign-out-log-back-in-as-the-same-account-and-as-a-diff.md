@@ -1,7 +1,7 @@
 # 31-012 · After sign-out: log back in as the same account and as a different account on the same phone
 
 - kind: followup-test
-- status: open
+- status: triaged
 - ticket: 31
 - run: w11-20260924T1648Z
 - screen: Welcome
@@ -25,3 +25,5 @@ Not run. After this run's sign-out and relaunch the console still printed `[Subs
 > 
 
 **Triage.**
+
+Picked for retest ticket 109 (Lee, 2026-09-25: every open follow-up test folded into the planned runs, cap of ten lifted for this pass).

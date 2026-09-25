@@ -1,7 +1,7 @@
 # 24-005 · Review & Log after a photo: Back without logging, edit the item, empty name, and the slot the model picks against the clock
 
 - kind: followup-test
-- status: open
+- status: triaged
 - ticket: 24
 - run: w14-20260924T2015Z
 - screen: Review & Log
@@ -29,3 +29,5 @@ saved. 3: a default name or a message. 4: a slot the athlete would expect for th
 > 
 
 **Triage.**
+
+Picked for retest ticket 91 (Lee, 2026-09-25: every open follow-up test folded into the planned runs, cap of ten lifted for this pass).

@@ -11,6 +11,8 @@
 
 **Follow-up tests to run:** none.
 
+**More follow-up tests (Lee, 2026-09-25, cap of ten lifted for this pass):** 16-009 (Shopping list after confirm: the Farro count, row menu, share, check-off and Kroger button), 19-010 (New list: Add an item, Share and rename on a hand-made list, and New list twice in a day), 20-005 (Shopping tab: tick a row while the local copy is being swapped for the server's list, and double-tap a row fast), 20-004 (Shopping tab offline: the list menu, Share, Shop with Kroger, Previous lists, Add item, and a row's count), 21-005 (Kroger sheet: tap Cancel on the kroger.com system alert and close the sign-in sheet with X), 21-006 (Kroger sheet: wrong password, then the right one), 21-007 (Kroger screen: connect with the network cut, and double-tap Connect Kroger), 21-008 (Kroger screen: the connection shows connected on an access token expired a week, prove the refresh path), 21-009 (Kroger screen: allow location on Shop with Kroger and see whether the delivery area fills), 22-004 (Kroger screen: Set delivery ZIP and Match all while not connected, on certification). Each Finding file holds the steps; read it first. Give each a verdict in `RUNS/verdicts.md` like the retests.
+
 **Setup:** test@test.com. `netcut.sh` for 20-001 and 20-002. The Kroger screen half of 22-003 needs a Kroger certification shopper login (IMPROVEMENTS #52). Without one, check the Shopping tab half and mark the Kroger half not run. 19-001 deletes a list: make a new one to delete, never the confirmed plan's list (ticket 89 uses that).
 
 **Note:** the plan-list delete warning and Rebuild shopping list are ticket 96's (19-002), retested in ticket 100.

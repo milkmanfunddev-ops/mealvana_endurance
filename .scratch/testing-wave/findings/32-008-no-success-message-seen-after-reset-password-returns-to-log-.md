@@ -1,7 +1,7 @@
 # 32-008 · No success message seen after Reset Password returns to Log In
 
 - kind: followup-test
-- status: open
+- status: triaged
 - ticket: 32
 - run: w9-20260924T1447Z
 - screen: Set New Password
@@ -26,3 +26,5 @@ The app went back to Log In. The screenshot taken 4 s after the tap shows no mes
 > 
 
 **Triage.**
+
+Picked for retest ticket 109 (Lee, 2026-09-25: every open follow-up test folded into the planned runs, cap of ten lifted for this pass).

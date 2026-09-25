@@ -1,7 +1,7 @@
 # 09-011 · Lapsed paywall: Sign out from the menu, log back in, and relaunch while offline
 
 - kind: followup-test
-- status: open
+- status: triaged
 - ticket: 09
 - run: w7-20260924T1219Z
 - screen: Paywall (lapsed)
@@ -26,3 +26,4 @@ Sign out lands on welcome with no paywall frame; logging back in lands straight 
 
 **Triage.**
 
+Picked for retest ticket 107 (Lee, 2026-09-25: every open follow-up test folded into the planned runs, cap of ten lifted for this pass).

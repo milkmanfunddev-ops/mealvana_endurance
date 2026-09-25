@@ -1,6 +1,6 @@
 # 22-002 · Kroger hand-off to the cart cannot be seen on dev: certification opens no cart by design
 - kind: followup-test
-- status: open
+- status: wontfix
 - ticket: 22
 - run: w18-20260925T0127Z
 - screen: Shop with Kroger
@@ -25,3 +25,5 @@ Not run: this run stopped at the sign-in (22-001).
 > 
 
 **Triage.**
+
+Closed (Lee, 2026-09-25, follow-up sort): Lee ruled the Kroger cart hand-off out of scope on dev (ticket 22 tests matching only).

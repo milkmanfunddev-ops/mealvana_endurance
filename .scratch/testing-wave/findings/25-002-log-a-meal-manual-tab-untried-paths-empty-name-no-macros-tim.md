@@ -1,7 +1,7 @@
 # 25-002 · Log a Meal Manual tab: untried paths (empty name, no macros, Time eaten change, two-decimal and huge values, a second log in a row, back mid-entry)
 
 - kind: followup-test
-- status: open
+- status: triaged
 - ticket: 25
 - run: w14-20260924T2015Z
 - screen: Log a Meal → Manual tab
@@ -31,3 +31,5 @@ Not run in ticket 25.
 > 
 
 **Triage.**
+
+Picked for retest ticket 91 (Lee, 2026-09-25: every open follow-up test folded into the planned runs, cap of ten lifted for this pass).

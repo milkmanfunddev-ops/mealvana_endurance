@@ -1,7 +1,7 @@
 # 09-012 · No CANCELLATION event reached the webhook when the Test Store turned auto-renew off at the fourth renewal; check the cancel-then-run-out path with a store that can cancel
 
 - kind: followup-test
-- status: open
+- status: triaged
 - ticket: 09
 - run: w7-20260924T1219Z
 - screen: none
@@ -26,3 +26,4 @@ This run saw no CANCELLATION: the webhook got RENEWAL at 12:51:39Z carrying the 
 
 **Triage.**
 
+Picked for ticket 13 (Lee's iPhone session) (Lee, 2026-09-25: every open follow-up test folded into the planned runs, cap of ten lifted for this pass).

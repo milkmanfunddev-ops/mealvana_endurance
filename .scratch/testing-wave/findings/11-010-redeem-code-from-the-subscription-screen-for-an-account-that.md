@@ -1,7 +1,7 @@
 # 11-010 · Redeem code from the Subscription screen for an account that already has Pro
 
 - kind: followup-test
-- status: open
+- status: triaged
 - ticket: 11
 - run: w5-20260924T0840Z
 - screen: Subscription
@@ -25,3 +25,4 @@ Not run (look-around, ticket 11). This run reached Redeem code only from the pay
 
 **Triage.**
 
+Picked for retest ticket 107 (Lee, 2026-09-25: every open follow-up test folded into the planned runs, cap of ten lifted for this pass).

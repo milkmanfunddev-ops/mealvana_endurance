@@ -1,7 +1,7 @@
 # 29-006 · Events tab untried paths: open the upcoming and a past event, New Event then back, on a cold start; console
 
 - kind: followup-test
-- status: open
+- status: triaged
 - ticket: 29
 - run: w16-20260924T2100Z
 - screen: Events (My Events)
@@ -27,3 +27,4 @@ Not run. The run only looked at My Events' first screen (one upcoming, four past
 
 **Triage.**
 
+Picked for retest ticket 92 (Lee, 2026-09-25: every open follow-up test folded into the planned runs, cap of ten lifted for this pass).

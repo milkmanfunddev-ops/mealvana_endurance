@@ -1,7 +1,7 @@
 # 30-009 · Net balance: every past day reads -2,447 and every future day +0
 
 - kind: followup-test
-- status: open
+- status: triaged
 - ticket: 30
 - run: w10-20260924T1615Z
 - screen: Timeline (NET BALANCE)
@@ -22,3 +22,5 @@ A past day's balance depends on that day's sessions and logs; a future day with 
 - runs/30/04-timeline-thu-0924-top.png
 
 **Triage.**
+
+Picked for retest ticket 92 (Lee, 2026-09-25: every open follow-up test folded into the planned runs, cap of ten lifted for this pass).

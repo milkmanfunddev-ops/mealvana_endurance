@@ -1,7 +1,7 @@
 # 10-003 · Lapsed paywall: resubscribe with Annual, with Test failed purchase then retry, and with Cancel on the Test Store sheet
 
 - kind: followup-test
-- status: open
+- status: triaged
 - ticket: 10
 - run: w8-20260924T1418Z
 - screen: Paywall (lapsed)
@@ -28,3 +28,4 @@
 
 **Triage.**
 
+Picked for retest ticket 107 (Lee, 2026-09-25: every open follow-up test folded into the planned runs, cap of ten lifted for this pass).

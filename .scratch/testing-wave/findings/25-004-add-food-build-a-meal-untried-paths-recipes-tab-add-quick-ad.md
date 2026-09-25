@@ -1,7 +1,7 @@
 # 25-004 · Add food (build a meal): untried paths (Recipes tab add, Quick add combo, search results, barcode button, adding the same food twice)
 
 - kind: followup-test
-- status: open
+- status: triaged
 - ticket: 25
 - run: w14-20260924T2015Z
 - screen: Build a Meal → + Add food (Recipes, Common, Manual tabs)
@@ -31,3 +31,5 @@ Not run in ticket 25.
 > 
 
 **Triage.**
+
+Picked for retest ticket 91 (Lee, 2026-09-25: every open follow-up test folded into the planned runs, cap of ten lifted for this pass).

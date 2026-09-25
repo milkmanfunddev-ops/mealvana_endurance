@@ -1,7 +1,7 @@
 # 09-007 · Confirm plan routes to the Shopping sub-tab in the log but the Plan sub-tab shows; check which one the athlete should land on
 
 - kind: followup-test
-- status: open
+- status: triaged
 - ticket: 09
 - run: w7-20260924T1219Z
 - screen: Food (Plan tab)
@@ -27,3 +27,4 @@ This run: the log says `food=shopping`, the screen showed the Plan sub-tab selec
 
 **Triage.**
 
+Picked for retest ticket 88 (Lee, 2026-09-25: every open follow-up test folded into the planned runs, cap of ten lifted for this pass).

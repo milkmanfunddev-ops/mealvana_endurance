@@ -1,7 +1,7 @@
 # 26-006 · Log a Meal Recent: a Saved meals row, its trash icon, servings above 1 and a double tap on Log it
 
 - kind: followup-test
-- status: open
+- status: triaged
 - ticket: 26
 - run: w13-20260924T1904Z
 - screen: Log a Meal (Recent)
@@ -27,3 +27,5 @@
 > 
 
 **Triage.**
+
+Picked for retest ticket 91 (Lee, 2026-09-25: every open follow-up test folded into the planned runs, cap of ten lifted for this pass).

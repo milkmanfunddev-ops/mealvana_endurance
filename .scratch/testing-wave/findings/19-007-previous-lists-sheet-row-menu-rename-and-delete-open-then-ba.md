@@ -1,7 +1,7 @@
 # 19-007 · Previous lists sheet: row menu Rename and Delete, open then Back to current list, Keep it, a second tap on Delete
 
 - kind: followup-test
-- status: open
+- status: triaged
 - ticket: 19
 - run: w11-20260924T1647Z
 - screen: Food (Shopping sub-tab) > Previous lists
@@ -29,3 +29,5 @@ Each path leaves the database and the tab agreeing (SQL on shopping_lists and sh
 > 
 
 **Triage.**
+
+Picked for retest ticket 89 (Lee, 2026-09-25: every open follow-up test folded into the planned runs, cap of ten lifted for this pass).

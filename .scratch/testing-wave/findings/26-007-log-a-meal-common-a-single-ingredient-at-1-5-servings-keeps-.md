@@ -1,7 +1,7 @@
 # 26-007 · Log a Meal Common: a single ingredient at 1.5 servings keeps its portion and sodium
 
 - kind: followup-test
-- status: open
+- status: triaged
 - ticket: 26
 - run: w13-20260924T1904Z
 - screen: Log a Meal (Common)
@@ -26,3 +26,5 @@ Rows equal the ingredient scaled by servings. The item's portion still says what
 > 
 
 **Triage.**
+
+Picked for retest ticket 91 (Lee, 2026-09-25: every open follow-up test folded into the planned runs, cap of ten lifted for this pass).

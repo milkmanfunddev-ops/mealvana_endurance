@@ -1,7 +1,7 @@
 # 18-010 · Meal detail opened from Browse: heart (Save to mine), Team review, Start cooking, Add photo, See the original recipe, Swaps
 
 - kind: followup-test
-- status: open
+- status: triaged
 - ticket: 18
 - run: w16-20260924T2100Z
 - screen: Meal detail (opened from Browse)
@@ -26,3 +26,4 @@ Not run in w16: only Back and Add to plan were used on the detail (18-001).
 
 **Triage.**
 
+Picked for retest ticket 89 (Lee, 2026-09-25: every open follow-up test folded into the planned runs, cap of ten lifted for this pass).

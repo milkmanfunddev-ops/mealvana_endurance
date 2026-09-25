@@ -1,7 +1,7 @@
 # 29-005 · Learn tab untried paths: play lesson 1.1 and 1.2, Notify Me, Courses; console for video player errors
 
 - kind: followup-test
-- status: open
+- status: triaged
 - ticket: 29
 - run: w16-20260924T2100Z
 - screen: Learn
@@ -26,3 +26,4 @@ Not run. The run only looked at Learn's first screen: two lesson cards with plai
 
 **Triage.**
 
+Picked for retest ticket 92 (Lee, 2026-09-25: every open follow-up test folded into the planned runs, cap of ten lifted for this pass).

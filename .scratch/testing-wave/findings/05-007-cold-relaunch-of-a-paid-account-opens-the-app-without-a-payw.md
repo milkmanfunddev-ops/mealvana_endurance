@@ -1,7 +1,7 @@
 # 05-007 · Cold relaunch of a paid account opens the app without a paywall frame
 
 - kind: followup-test
-- status: open
+- status: triaged
 - ticket: 05
 - run: w5-20260924T0839Z
 - screen: Timeline
@@ -26,3 +26,4 @@ Not run: account B had lapsed (05-003) before this run got to the cold relaunch.
 
 **Triage.**
 
+Picked for retest ticket 92 (Lee, 2026-09-25: every open follow-up test folded into the planned runs, cap of ten lifted for this pass).

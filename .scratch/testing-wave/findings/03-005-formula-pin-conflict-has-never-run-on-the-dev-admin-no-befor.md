@@ -1,7 +1,7 @@
 # 03-005 · formula_pin_conflict has never run on the dev admin: no Before library formula conflicts with its allergies
 
 - kind: followup-test
-- status: open
+- status: triaged
 - ticket: 03
 - run: w3-20260923T1942Z
 - screen: Formulas (pin)
@@ -30,3 +30,4 @@ this account — the pin feature has nothing to act on") and Patrol reported it 
 
 **Triage.**
 
+Picked for retest ticket 92 (Lee, 2026-09-25: every open follow-up test folded into the planned runs, cap of ten lifted for this pass).

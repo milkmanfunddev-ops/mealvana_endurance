@@ -1,7 +1,7 @@
 # 15-004 · Ask Vana after a fresh sign-in started a second general conversation for Sep 24 and paid for a new opener
 
 - kind: followup-test
-- status: open
+- status: triaged
 - ticket: 15
 - run: w12-20260924T1712Z
 - screen: Ask Vana sheet
@@ -27,3 +27,5 @@ Seen once, not settled. At 17:17:17Z the sheet created `4d62c862` (general, cont
 > 
 
 **Triage.**
+
+Picked for retest ticket 88 (Lee, 2026-09-25: every open follow-up test folded into the planned runs, cap of ten lifted for this pass).

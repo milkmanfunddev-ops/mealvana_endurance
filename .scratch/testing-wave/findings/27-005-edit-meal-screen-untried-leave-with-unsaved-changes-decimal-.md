@@ -1,7 +1,7 @@
 # 27-005 · Edit Meal screen: untried leave-with-unsaved-changes, decimal and empty values, meal type and time eaten changes, kill on the screen
 
 - kind: followup-test
-- status: open
+- status: triaged
 - ticket: 27
 - run: w15-20260924T2039Z
 - screen: Edit Meal
@@ -31,3 +31,5 @@ Not run. The run changed name, kcal, carbs and protein and saved; the row and to
 > 
 
 **Triage.**
+
+Picked for retest ticket 91 (Lee, 2026-09-25: every open follow-up test folded into the planned runs, cap of ten lifted for this pass).

@@ -1,7 +1,7 @@
 # 12-007 · Admin signs out and a Lapsed athlete signs in on the same device: the Gate must close, not inherit the admin's answer
 
 - kind: followup-test
-- status: open
+- status: triaged
 - ticket: 12
 - run: w4-20260924T0417Z
 - screen: Settings
@@ -25,3 +25,4 @@ The paywall, full screen with no close button: `isAdminProvider` re-reads for th
 
 **Triage.**
 
+Picked for retest ticket 107 (Lee, 2026-09-25: every open follow-up test folded into the planned runs, cap of ten lifted for this pass).

@@ -1,7 +1,7 @@
 # 15-005 · Resumed older conversation: tap an old turn's chips, Edit an old user turn, and change servings on an archived Draft
 
 - kind: followup-test
-- status: open
+- status: triaged
 - ticket: 15
 - run: w12-20260924T1712Z
 - screen: Vana chat (meal planning), opened from Conversations
@@ -29,3 +29,5 @@ Old chips on a finished turn either do nothing or send a new turn that is scoped
 > 
 
 **Triage.**
+
+Picked for retest ticket 88 (Lee, 2026-09-25: every open follow-up test folded into the planned runs, cap of ten lifted for this pass).

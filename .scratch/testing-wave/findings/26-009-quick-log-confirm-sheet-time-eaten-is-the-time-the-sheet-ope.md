@@ -1,7 +1,7 @@
 # 26-009 · Quick log confirm sheet: time eaten is the time the sheet opened, a changed time and yesterday, offline
 
 - kind: followup-test
-- status: open
+- status: triaged
 - ticket: 26
 - run: w13-20260924T1904Z
 - screen: Log a Meal → quick log sheet
@@ -27,3 +27,5 @@ eaten_at is what the sheet showed (fine) or the moment of Log it (say which is i
 > 
 
 **Triage.**
+
+Picked for retest ticket 91 (Lee, 2026-09-25: every open follow-up test folded into the planned runs, cap of ten lifted for this pass).

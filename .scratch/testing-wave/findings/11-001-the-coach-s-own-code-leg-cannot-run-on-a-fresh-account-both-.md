@@ -1,7 +1,7 @@
 # 11-001 · The coach's-own-code leg cannot run on a fresh account: both dev coach codes belong to test@test.com, which has already redeemed them
 
 - kind: followup-test
-- status: open
+- status: triaged
 - ticket: 11
 - run: w5-20260924T0840Z
 - screen: Redeem code (paywall ⋯ menu)
@@ -29,3 +29,4 @@ Not run. A new athlete cannot own an existing code, so both dev codes could only
 
 **Triage.**
 
+Picked for retest ticket 107 (Lee, 2026-09-25: every open follow-up test folded into the planned runs, cap of ten lifted for this pass).

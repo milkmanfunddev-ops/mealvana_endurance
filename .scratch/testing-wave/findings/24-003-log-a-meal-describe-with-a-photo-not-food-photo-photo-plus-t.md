@@ -1,7 +1,7 @@
 # 24-003 · Log a Meal, Describe with a photo: not-food photo, photo plus text, remove photo, cancelled picker, Camera, offline, double Analyze
 
 - kind: followup-test
-- status: open
+- status: triaged
 - ticket: 24
 - run: w14-20260924T2015Z
 - screen: Log a Meal (Describe)
@@ -32,3 +32,5 @@ message, no charge kept, one call only. 6: the reserved amount comes back to the
 > 
 
 **Triage.**
+
+Picked for retest ticket 91 (Lee, 2026-09-25: every open follow-up test folded into the planned runs, cap of ten lifted for this pass).

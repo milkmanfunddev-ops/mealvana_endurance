@@ -1,7 +1,7 @@
 # 30-008 · Activity fuelling screen: By Hour tab, low-carb info icon, snack expander, After targets, a session with no stored plan
 
 - kind: followup-test
-- status: open
+- status: triaged
 - ticket: 30
 - run: w10-20260924T1615Z
 - screen: Activity detail (fuelling plan)
@@ -24,3 +24,5 @@ Every number on the screen maps to a stored field or to the sum of the stored fo
 - runs/30/db-fuel-plans-summary.txt
 
 **Triage.**
+
+Picked for retest ticket 92 (Lee, 2026-09-25: every open follow-up test folded into the planned runs, cap of ten lifted for this pass).

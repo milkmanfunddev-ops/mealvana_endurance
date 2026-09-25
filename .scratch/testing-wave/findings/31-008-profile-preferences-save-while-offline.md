@@ -1,7 +1,7 @@
 # 31-008 · Profile & Preferences: save while offline
 
 - kind: followup-test
-- status: open
+- status: triaged
 - ticket: 31
 - run: w11-20260924T1648Z
 - screen: Profile & Preferences
@@ -25,3 +25,5 @@ Not run.
 > 
 
 **Triage.**
+
+Picked for retest ticket 93 (Lee, 2026-09-25: every open follow-up test folded into the planned runs, cap of ten lifted for this pass).

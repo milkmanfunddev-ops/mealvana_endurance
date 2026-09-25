@@ -1,7 +1,7 @@
 # 04-006 · Onboarding back button mid-flow keeps the answers already given
 
 - kind: followup-test
-- status: open
+- status: triaged
 - ticket: 04
 - run: w4-20260924T0418Z
 - screen: Onboarding (Personal info, Body composition, Nutrition settings)
@@ -27,3 +27,4 @@ Not run (look-around, ticket 04).
 
 **Triage.**
 
+Picked for retest ticket 93 (Lee, 2026-09-25: every open follow-up test folded into the planned runs, cap of ten lifted for this pass).

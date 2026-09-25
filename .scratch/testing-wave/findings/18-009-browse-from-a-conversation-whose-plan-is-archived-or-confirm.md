@@ -1,7 +1,7 @@
 # 18-009 · Browse from a conversation whose plan is archived or confirmed: Add writes into that plan (code read), check what the athlete sees
 
 - kind: followup-test
-- status: open
+- status: triaged
 - ticket: 18
 - run: w16-20260924T2100Z
 - screen: Browse meals
@@ -27,3 +27,4 @@ Not run (would have changed plans the w16 prompt protected). From the code, plan
 
 **Triage.**
 
+Picked for retest ticket 88 (Lee, 2026-09-25: every open follow-up test folded into the planned runs, cap of ten lifted for this pass).

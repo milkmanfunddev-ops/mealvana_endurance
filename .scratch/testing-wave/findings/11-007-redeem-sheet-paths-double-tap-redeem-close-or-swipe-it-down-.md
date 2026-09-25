@@ -1,7 +1,7 @@
 # 11-007 · Redeem sheet paths: double-tap Redeem, close or swipe it down mid-request, reopen, software keyboard over the field
 
 - kind: followup-test
-- status: open
+- status: triaged
 - ticket: 11
 - run: w5-20260924T0840Z
 - screen: Redeem code (paywall ⋯ menu)
@@ -29,3 +29,4 @@ Not run (look-around, ticket 11). The simulator ran with the hardware keyboard, 
 
 **Triage.**
 
+Picked for retest ticket 107 (Lee, 2026-09-25: every open follow-up test folded into the planned runs, cap of ten lifted for this pass).

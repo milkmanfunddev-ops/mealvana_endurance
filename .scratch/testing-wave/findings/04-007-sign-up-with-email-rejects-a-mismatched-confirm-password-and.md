@@ -1,7 +1,7 @@
 # 04-007 · Sign Up with Email rejects a mismatched confirm password and a weak password
 
 - kind: followup-test
-- status: open
+- status: triaged
 - ticket: 04
 - run: w4-20260924T0418Z
 - screen: Sign Up with Email
@@ -25,3 +25,4 @@ Not run (look-around, ticket 04).
 
 **Triage.**
 
+Picked for retest ticket 109 (Lee, 2026-09-25: every open follow-up test folded into the planned runs, cap of ten lifted for this pass).

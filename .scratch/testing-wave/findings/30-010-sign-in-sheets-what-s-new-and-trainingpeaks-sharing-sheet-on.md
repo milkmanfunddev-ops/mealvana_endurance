@@ -1,7 +1,7 @@
 # 30-010 · Sign-in sheets: What's New and TrainingPeaks sharing sheet on a fresh sign-in, Turn Off Sharing and Keep Sharing
 
 - kind: followup-test
-- status: open
+- status: triaged
 - ticket: 30
 - run: w10-20260924T1615Z
 - screen: Timeline (sign-in sheets)
@@ -21,3 +21,5 @@ Each sheet shows once per account, and the sharing sheet does not offer sharing 
 - runs/30/console-excerpts.log
 
 **Triage.**
+
+Picked for retest ticket 92 (Lee, 2026-09-25: every open follow-up test folded into the planned runs, cap of ten lifted for this pass).

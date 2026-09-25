@@ -1,7 +1,7 @@
 # 32-003 · Password reset leaves the recovery session and other sessions signed in
 
-- kind: followup-test
-- status: open
+- kind: bug
+- status: triaged
 - ticket: 32
 - run: w9-20260924T1447Z
 - screen: Set New Password
@@ -30,3 +30,5 @@ the new 14:56:06Z sign-in. The app's sign-out also uses `SignOutScope.local`.
 > 
 
 **Triage.**
+
+Bug, fix ticket 108 (Lee, 2026-09-25: a password reset signs out every other session). Retest ticket 109.

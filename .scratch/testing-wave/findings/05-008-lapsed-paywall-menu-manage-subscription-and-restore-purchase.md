@@ -1,7 +1,7 @@
 # 05-008 · Lapsed paywall menu: Manage subscription and Restore purchases for an expired Test Store subscription
 
 - kind: followup-test
-- status: open
+- status: triaged
 - ticket: 05
 - run: w5-20260924T0839Z
 - screen: Paywall
@@ -27,3 +27,4 @@ Not run. The menu showed all five items for account B after it lapsed (22-lapsed
 
 **Triage.**
 
+Picked for retest ticket 107 (Lee, 2026-09-25: every open follow-up test folded into the planned runs, cap of ten lifted for this pass).

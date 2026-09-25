@@ -1,7 +1,7 @@
 # 25-005 · Timeline Meals after manual and built logs: untried edit and delete through the row menu, and whether the 250.5 kcal row can be corrected
 
 - kind: followup-test
-- status: open
+- status: triaged
 - ticket: 25
 - run: w14-20260924T2015Z
 - screen: Timeline (Meals filter)
@@ -27,3 +27,5 @@ Not run in ticket 25. Only this run's three rows showed; the four rows logged ea
 > 
 
 **Triage.**
+
+Picked for retest ticket 91 (Lee, 2026-09-25: every open follow-up test folded into the planned runs, cap of ten lifted for this pass).
