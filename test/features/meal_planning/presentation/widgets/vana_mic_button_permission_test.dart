@@ -2,6 +2,10 @@
 // Speech Recognition. `SpeechToText.initialize` is the call that raises the
 // system prompt, so building the mic button must not make it; the first tap
 // does, and a granted tap goes straight on to listening.
+//
+// Ticket 104 (Finding 86-005): after "Don't Allow" the mic stays and a tap
+// says where to turn access back on; only a device with no speech engine at
+// all loses the button.
 
 import 'package:flutter/material.dart';
 import 'package:flutter_test/flutter_test.dart';
@@ -9,9 +13,13 @@ import 'package:mealvana_endurance/features/meal_planning/presentation/widgets/v
 import 'package:speech_to_text/speech_to_text.dart';
 
 class _FakeSpeech extends Fake implements SpeechToText {
-  _FakeSpeech({this.grants = true});
+  _FakeSpeech({this.grants = true, this.permitted = true});
 
+  /// What `initialize` answers.
   final bool grants;
+
+  /// What `hasPermission` answers: false once the athlete refused.
+  final bool permitted;
   int initializeCalls = 0;
   int listenCalls = 0;
 
@@ -45,8 +53,14 @@ class _FakeSpeech extends Fake implements SpeechToText {
   }
 
   @override
+  Future<bool> get hasPermission async => permitted;
+
+  @override
   Future<void> stop() async {}
 }
+
+const _settingsMessage =
+    'Dictation needs Speech Recognition and Microphone access.';
 
 Widget _host(SpeechToText speech) => MaterialApp(
   home: Scaffold(
@@ -55,6 +69,7 @@ Widget _host(SpeechToText speech) => MaterialApp(
         onText: (_) {},
         tooltip: 'Dictate',
         listeningTooltip: 'Listening',
+        permissionMessage: _settingsMessage,
         speech: speech,
       ),
     ),
@@ -87,10 +102,32 @@ void main() {
     expect(speech.listenCalls, 1);
   });
 
-  testWidgets('a refused ask hides the mic and does not listen', (
-    tester,
-  ) async {
-    final speech = _FakeSpeech(grants: false);
+  testWidgets('a refused ask keeps the mic and a tap says to allow access '
+      'in Settings', (tester) async {
+    final speech = _FakeSpeech(grants: false, permitted: false);
+    await tester.pumpWidget(_host(speech));
+    await tester.pumpAndSettle();
+
+    await tester.tap(_mic);
+    await tester.pump();
+
+    expect(speech.listenCalls, 0);
+    expect(_mic, findsOneWidget, reason: 'refused is not "no engine"');
+    expect(find.text(_settingsMessage), findsOneWidget);
+
+    // A second tap says it again rather than going quiet.
+    ScaffoldMessenger.of(tester.element(_mic)).removeCurrentSnackBar();
+    await tester.pumpAndSettle();
+    expect(find.text(_settingsMessage), findsNothing);
+    await tester.tap(_mic);
+    await tester.pump();
+    expect(find.text(_settingsMessage), findsOneWidget);
+    expect(speech.listenCalls, 0);
+  });
+
+  testWidgets('no speech engine at all hides the mic', (tester) async {
+    // Permission is not what failed: the device has no recogniser.
+    final speech = _FakeSpeech(grants: false, permitted: true);
     await tester.pumpWidget(_host(speech));
     await tester.pumpAndSettle();
 
@@ -100,5 +137,6 @@ void main() {
     expect(speech.initializeCalls, 1);
     expect(speech.listenCalls, 0);
     expect(_mic, findsNothing);
+    expect(find.text(_settingsMessage), findsNothing);
   });
 }
