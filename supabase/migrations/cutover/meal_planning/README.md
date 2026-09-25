@@ -172,7 +172,7 @@ is covered by the compat views. So the rollback is not "undo the migrations"
 
 ## Testing-wave fixes (added 2026-09-25)
 
-Five more migrations, applied to dev only, all idempotent. On prod they go in
+Seven more migrations, applied to dev only, all idempotent. On prod they go in
 step 2 like the rest, in timestamp order:
 
 - `20260925100000_user_entitlements_will_renew` then
@@ -189,6 +189,16 @@ step 2 like the rest, in timestamp order:
   no numbers (all `ai_estimated`) and backfills `plan_meals`. On prod it
   changes nothing once the re-exported snapshot is seeded (the values ride in
   the snapshot); it is kept so the ledger matches dev.
+- `20260925150000_search_meals_matches_name_and_ingredients` (wave 22, ticket
+  60): a typed search (no embedding) returns only meals whose name or
+  ingredients hold every word. Same signature; applied to dev 2026-09-25.
+- `20260925150100_meal_plans_name_and_confirmed_at` (wave 22, ticket 73, mp-675
+  and mp-677): adds `meal_plans.name` and `confirmed_at`, stamps `confirmed_at`
+  in `confirm_meal_plan`, and backfills it. It must be on prod **before
+  `vana-action`**: `listPlans` selects both columns, so the Previous plans
+  sheet fails without them. The backfill cannot tell whether an archived plan
+  from before 2026-09-16 was ever confirmed; those drop off Previous plans
+  (on dev, test@test.com lists 4 of 27).
 
 Step 6 also redeploys every function that imports `_shared/vana/entitlement.ts`
 (on 2026-09-25: `revenuecat-webhook`, `analyze-meal-photo`, `describe-meal`,

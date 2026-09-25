@@ -1,6 +1,6 @@
 # 69: The dev salmon salad gets its real photo back
 
-**Status:** in-progress (wave 22, 2026-09-25)
+**Status:** done (wave 22, 2026-09-25)
 **Blocked by:** none.
 **Next:** `/implement-lee testing-wave`
 **Model:** fable
@@ -13,7 +13,7 @@
 
 **Touches:** dev database only (a committed SQL file under scripts/)
 
-- [ ] AD-001's photo and credit on dev are the pre-test ones (SELECT before and after).
+- [x] AD-001's photo and credit on dev are the pre-test ones (SELECT before and after). Wave lead applied it 2026-09-25 11:59 UTC: all four photo fields null (the pre-test state; no earlier photo existed), one `remove` event, History kept.
 - [x] The SQL file is committed.
 
 Next: /implement-lee testing-wave

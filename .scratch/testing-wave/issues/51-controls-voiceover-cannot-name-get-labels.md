@@ -1,6 +1,6 @@
 # 51: Controls VoiceOver cannot name get labels
 
-**Status:** in-progress (wave 22, 2026-09-25)
+**Status:** done (wave 22, 2026-09-25)
 **Blocked by:** 34 (touches lib/features/meal_planning/presentation/widgets/meal_add_button.dart), 50 (touches lib/features/meal_logging/presentation/screens/log_meal_screen.dart), 44 (touches lib/features/barcode_scanning/presentation/screens/barcode_scanner_screen.dart).
 **Next:** `/implement-lee testing-wave`
 **Model:** opus

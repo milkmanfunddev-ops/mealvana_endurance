@@ -1,6 +1,6 @@
 # 52: Nothing important hides under the keyboard, the tab bar or a message
 
-**Status:** in-progress (wave 22, 2026-09-25)
+**Status:** done (wave 22, 2026-09-25)
 **Blocked by:** 50 (touches lib/features/subscription/presentation/screens/paywall_screen.dart).
 **Next:** `/implement-lee testing-wave`
 **Model:** opus

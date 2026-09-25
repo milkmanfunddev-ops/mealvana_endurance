@@ -1,6 +1,6 @@
 # 62: Pre-workout cards add up and say when
 
-**Status:** in-progress (wave 22, 2026-09-25)
+**Status:** done (wave 22, 2026-09-25)
 **Blocked by:** none.
 **Next:** `/implement-lee testing-wave`
 **Model:** opus
@@ -14,7 +14,7 @@
 **Touches:** lib/features/nutrition_plan/application/pre_workout_before_card_assembler.dart, lib/features/nutrition_plan/domain/pre_workout_before_card_model.dart, lib/features/nutrition_plan/domain/pre_workout_feeding_labels.dart
 
 - [x] Assembler tests: card fluids sum to the header; the Top-Off card with water shows its fluid.
-- [ ] Label tests: a session 3 days past and one 9 hours ahead read their real timing, not NOW.
+- [ ] Label tests: a session 3 days past and one 9 hours ahead read their real timing, not NOW. **Not built (wave 22): the SSOT forbids a clock-relative label (BEFORE-card B-2, test plan I6, PW-021); the labels follow the lead time entered at planning. 30-005 waits on Xuan: amend B-2/I6, or drop the "NOW …" variants from the feeding-card spec.**
 - [ ] codegen if annotations changed, `flutter analyze` and the suite green.
 
 Next: /implement-lee testing-wave

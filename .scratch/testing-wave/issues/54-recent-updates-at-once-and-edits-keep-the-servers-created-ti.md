@@ -1,6 +1,6 @@
 # 54: Recent updates at once, and edits keep the server's created time
 
-**Status:** in-progress (wave 22, 2026-09-25)
+**Status:** done (wave 22, 2026-09-25)
 **Blocked by:** 50 (touches lib/features/meal_logging/presentation/providers/meal_log_providers.dart).
 **Next:** `/implement-lee testing-wave`
 **Model:** opus

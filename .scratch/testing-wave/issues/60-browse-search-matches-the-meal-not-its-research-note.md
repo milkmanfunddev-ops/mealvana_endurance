@@ -1,6 +1,6 @@
 # 60: Browse search matches the meal, not its research note
 
-**Status:** in-progress (wave 22, 2026-09-25)
+**Status:** done (wave 22, 2026-09-25)
 **Blocked by:** none.
 **Next:** `/implement-lee testing-wave`
 **Model:** opus
@@ -15,7 +15,7 @@
 
 - [x] A deno test: "salmon" returns only meals whose name or ingredients contain salmon.
 - [x] A widget test: a flat result's subtitle is not the research note.
-- [ ] Deployed to dev.
+- [x] Deployed to dev. (wave lead, 2026-09-25 12:00 UTC)
 - [ ] codegen if annotations changed, `flutter analyze` and the suite green.
 
 Next: /implement-lee testing-wave

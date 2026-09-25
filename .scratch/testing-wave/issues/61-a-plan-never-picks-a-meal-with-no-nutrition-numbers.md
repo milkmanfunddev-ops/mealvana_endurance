@@ -1,6 +1,6 @@
 # 61: A plan never picks a meal with no nutrition numbers
 
-**Status:** in-progress (wave 22, 2026-09-25)
+**Status:** done (wave 22, 2026-09-25)
 **Blocked by:** none.
 **Next:** `/implement-lee testing-wave`
 **Model:** opus
@@ -14,7 +14,7 @@
 **Touches:** supabase/functions/_shared/vana/meals.ts, supabase/functions/_shared/vana/plan.ts
 
 - [x] A deno test: a candidate set with a null-kcal meal never yields it, for plan build, Browse, swap and same-as-last-time.
-- [ ] Deployed to dev.
+- [x] Deployed to dev. (wave lead, 2026-09-25 12:00 UTC)
 - [ ] codegen if annotations changed, `flutter analyze` and the suite green.
 
 Next: /implement-lee testing-wave

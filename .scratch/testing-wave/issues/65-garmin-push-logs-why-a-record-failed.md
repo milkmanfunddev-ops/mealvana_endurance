@@ -1,6 +1,6 @@
 # 65: garmin-push logs why a record failed
 
-**Status:** in-progress (wave 22, 2026-09-25)
+**Status:** done (wave 22, 2026-09-25)
 **Blocked by:** none.
 **Next:** `/implement-lee testing-wave`
 **Model:** fable
@@ -14,7 +14,7 @@
 **Touches:** supabase/functions/garmin-push/index.ts
 
 - [x] A deno test: a failing record's error reaches the log with its kind.
-- [ ] Deployed to dev.
+- [x] Deployed to dev. (wave lead, 2026-09-25 12:00 UTC; garmin-push again 12:06 with develop's capture fix)
 - [ ] codegen if annotations changed, `flutter analyze` and the suite green.
 
 Next: /implement-lee testing-wave

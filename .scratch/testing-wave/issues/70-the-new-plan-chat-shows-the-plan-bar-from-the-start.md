@@ -1,6 +1,6 @@
 # 70: The new-plan chat shows the plan bar from the start
 
-**Status:** in-progress (wave 22, 2026-09-25)
+**Status:** done (wave 22, 2026-09-25)
 **Blocked by:** none.
 **Next:** `/implement-lee testing-wave`
 **Model:** opus

@@ -1,6 +1,6 @@
 # 68: The dev testing-tools button stays out of the way
 
-**Status:** in-progress (wave 22, 2026-09-25)
+**Status:** done (wave 22, 2026-09-25)
 **Blocked by:** none.
 **Next:** `/implement-lee testing-wave`
 **Model:** fable

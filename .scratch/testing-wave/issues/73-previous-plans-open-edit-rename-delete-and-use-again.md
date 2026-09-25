@@ -1,6 +1,6 @@
 # 73: Previous plans: open, edit, rename, delete and use again
 
-**Status:** in-progress (wave 22, 2026-09-25)
+**Status:** done (wave 22, 2026-09-25)
 **Blocked by:** 49 (touches lib/features/meal_planning/presentation/widgets/previous_plans_sheet.dart and supabase/functions/_shared/vana/plan.ts).
 **Next:** `/implement-lee testing-wave`
 **Model:** opus
@@ -15,7 +15,7 @@
 
 - [x] A deno test: use-again copies a plan's meals into this week's new draft; delete removes a plan; drafts are not listed.
 - [x] Seam tests through the real notifier for edit, rename, delete and use again.
-- [ ] Deployed to dev.
+- [x] Deployed to dev. (wave lead, 2026-09-25 12:00 UTC)
 - [ ] codegen if annotations changed, `flutter analyze` and the suite green.
 
 Next: /implement-lee testing-wave
