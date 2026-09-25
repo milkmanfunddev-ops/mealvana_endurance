@@ -8,7 +8,9 @@
  * A signed-in caller posts `{ code }`. The code is looked up in `public.codes`
  * and, once its window is checked, claimed through `code_claim` (one row in
  * `code_redemptions`, taken under a lock on the code so a giveaway cannot be
- * won twice). Then, by type:
+ * won twice). The row outlives the account: deleting it nulls `user_id` and
+ * keeps the row, so a spent giveaway stays spent (mp-535, testing-wave 39).
+ * Then, by type:
  *
  *   coach, entered by its owner      the account is marked coach (an approved
  *                                    `coaches` row) and gets `perk_days` (30)
