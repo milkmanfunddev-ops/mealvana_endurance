@@ -37,6 +37,7 @@
 //   node sync.mjs wave <feature> <issues dir> [--branch <b>]  -> the frontier: done, building, blocked, uncommitted ticket files, and branch + worktree + renderings per wave ticket
 //   node sync.mjs wave <feature> <issues dir> --only 06,07     -> only those frontier tickets (refused if one is not on it); --max N takes the lowest N
 //   node sync.mjs wave <feature> <issues dir> --open           -> the same, then commits the ticket files with their in-progress marks and logs the wave (base = that commit)
+//                                                                 either way, a frontier ticket whose Touches overlap a still-open wave is held back (named on stderr; --only does not override)
 //   node sync.mjs wave <feature> <issues dir> --close <n> [--merged NN,NN] [--failed NN,NN] [--suite green|red]  -> close the wave with elapsed time; merged tickets become done, every other wave ticket ready-for-agent again
 //   node sync.mjs touched-screens --since <commit> [<file>...]  -> registry screens drawn from the files changed since the commit (committed, uncommitted, untracked)
 //   node sync.mjs simulator claim <owner> [--wait <minutes>] | release <name|udid> | add <name> [--from <udid|name>] | drop <name|udid> | list [<prefix>]  -> a pool of at most three wave simulators copied from the dev one (app + data): claim one when a device is needed, release it right after; every capture command takes --udid or SSOT_SIMULATOR
@@ -1079,6 +1080,26 @@ export function setTicketStatus(text, status) {
   return text.replace(re, `**${TICKET_HEADERS[0]}:** ${status}`);
 }
 const gitOut = (root, ...a) => (git(root, ...a) || '').trim();
+/** A ticket file's `**Touches:**` list, backticks dropped; empty when it has no such line. */
+const ticketTouches = text => splitList(((text.match(/^\*\*Touches:\*\*\s*(.*)$/mi) || [])[1] || '').replace(/`/g, ''));
+/**
+ * The frontier tickets an open wave holds back: a ticket whose Touches share a file
+ * (or sit in a directory another names) with a ticket of any wave in the log that has
+ * not closed. One entry per ticket and wave, the ticket's overlapping Touches as `files`.
+ * A ticket with no Touches line is never held.
+ */
+function heldByOpenWaves(frontier, touchesOf, log) {
+  const held = [];
+  for (const n of frontier) {
+    const mine = touchesOf(n);
+    for (const w of log.filter(w => !w.closedAt)) {
+      const theirs = (w.tickets || []).flatMap(touchesOf);
+      const files = mine.filter(t => theirs.some(u => overlap(t, u)));
+      if (files.length) held.push({ number: n, wave: w.number, files });
+    }
+  }
+  return held;
+}
 /**
  * The next wave for a feature: the frontier from the ticket files, and for each
  * ticket the branch and worktree its agent builds on, the design renderings it
@@ -1086,6 +1107,9 @@ const gitOut = (root, ...a) => (git(root, ...a) || '').trim();
  * tip the worktrees start from; `uncommitted` lists ticket files a worktree
  * could not see. Worktrees sit beside the clone (`<clone>-waves/<feature>/NN`),
  * never inside it, so the app's analyzer and tests never walk another ticket's tree.
+ * Two open waves never change the same file: `held` lists the frontier tickets left out
+ * because their Touches overlap a wave still open in the feature's log (`waves.json`
+ * beside the issues dir); `only` does not override that.
  */
 export function wavePlan(feature, dir, { root = process.cwd(), branch, only, max } = {}) {
   root = resolve(root);
@@ -1098,7 +1122,11 @@ export function wavePlan(feature, dir, { root = process.cwd(), branch, only, max
   const wavesDir = join(dirname(root), `${basename(root)}-waves`, feature);
   // `only` names the frontier tickets to build (a name off the frontier is a mistake, not a skip); `max` takes the lowest N.
   for (const n of only || []) if (!frontier.frontier.includes(n)) throw new Error(`ticket ${n} is not on the frontier (${frontier.frontier.join(', ') || 'empty'})`);
-  let picked = only ? frontier.frontier.filter(n => only.includes(n)) : frontier.frontier;
+  const logFile = under(root, join(dirname(dir.replace(/\/+$/, '')), 'waves.json'));
+  const log = existsSync(logFile) ? JSON.parse(readFileSync(logFile, 'utf8')) : [];
+  const touchesOf = n => { const t = docs.find(d => d.number === n); return t ? ticketTouches(readFileSync(under(root, t.file), 'utf8')) : []; };
+  const held = heldByOpenWaves(frontier.frontier, touchesOf, log);
+  let picked = (only ? frontier.frontier.filter(n => only.includes(n)) : frontier.frontier).filter(n => !held.some(h => h.number === n));
   if (max) picked = picked.slice(0, Number(max));
   const wave = picked.map(n => {
     const t = docs.find(d => d.number === n);
@@ -1106,7 +1134,7 @@ export function wavePlan(feature, dir, { root = process.cwd(), branch, only, max
     const name = `${n}-${basename(t.file).replace(/^\d+-/, '').replace(/\.md$/, '')}`;
     return { number: n, title: t.title, file: t.file, branch: `wave/${feature}/${name}`, worktree: join(wavesDir, name), simulator: `wave-${feature}-${n}`, model: t.model, renderings: designRenderings(text), cites: t.cites };
   });
-  return { feature, branch, base, done: frontier.done, dropped: frontier.dropped, building: frontier.building, blocked: frontier.blocked, frontier: frontier.frontier, wave, uncommitted };
+  return { feature, branch, base, done: frontier.done, dropped: frontier.dropped, building: frontier.building, blocked: frontier.blocked, frontier: frontier.frontier, held, wave, uncommitted };
 }
 /** Minutes, or hours and minutes, between two ISO instants. */
 export function elapsed(from, to) {
@@ -1508,8 +1536,13 @@ if (process.argv[1] && import.meta.url.endsWith(process.argv[1].split('/').pop()
       process.stdout.write(JSON.stringify(entry, null, 2));
     } else {
       let plan;
-      try { plan = wavePlan(feature, dir, { branch: opts.branch, only: typeof opts.only === 'string' ? commaList(opts.only) : undefined, max: typeof opts.max === 'string' ? opts.max : undefined }); }
+      const only = typeof opts.only === 'string' ? commaList(opts.only) : undefined;
+      try { plan = wavePlan(feature, dir, { branch: opts.branch, only, max: typeof opts.max === 'string' ? opts.max : undefined }); }
       catch (e) { console.error(`wave: ${e.message}`); process.exit(2); }
+      // Two open waves never change the same file: say which ticket waits on which wave, and over what.
+      for (const h of plan.held) console.error(`wave: ticket ${h.number} held: open wave ${h.wave} touches ${h.files.join(', ')}`);
+      const onlyHeld = (only || []).filter(n => plan.held.some(h => h.number === n));
+      if (onlyHeld.length) console.error(`wave: --only does not override the hold: ${onlyHeld.join(', ')} left out until the overlapping wave closes`);
       if (opts.open && plan.wave.length) {
         // Mark the tickets, commit every ticket file of the feature so the worktrees see them, and take that commit as the base every agent checks against.
         const entry = waveOpen(log, { tickets: plan.wave.map(t => t.number), base: plan.base, branch: plan.branch });

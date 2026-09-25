@@ -186,7 +186,10 @@ FINDINGS new NN "<what happened, one line>" --kind bug|ssot-conflict|followup-te
 It lands in `.scratch/testing-wave/findings/NN-<next number>-<slug>.md`, filled from `TEMPLATE.md`.
 Fill in screen, steps, expected, actual and evidence (paths under `runs/NN/`, relative to
 `.scratch/testing-wave/`, first word of each Evidence bullet). An ssot-conflict cites the decision
-id and quotes its Decision text word for word from `docs/ssot/decisions/`. Status stays `open`;
+id and quotes its Decision text word for word from `docs/ssot/decisions/`. When the rule it breaks
+lives in a spec rather than a decision card, `decision:` is `docs/ssot/spec/<path>.md#<heading text>`
+and the quote is copied from that file; the index checks the file, the heading and the quote.
+Status stays `open`;
 triage moves it. Check your files parse and their evidence exists:
 
 ```

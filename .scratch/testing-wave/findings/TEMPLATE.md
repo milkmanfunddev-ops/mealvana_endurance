@@ -11,8 +11,9 @@ status:   open | triaged | fixing | closed | wontfix   (agents always write `ope
 ticket:   the two-digit ticket number, the same as the file name's first part
 run:      the run id from the runbook, w<wave>-<UTC time>, e.g. w1-20260923T1405Z
 screen:   the screen as the app names it; `none` for a Finding with no screen
-decision: ssot-conflict only: the decision id (mp-457). Quote its Decision text under
-          "Decision quote" below. Empty for the other kinds.
+decision: ssot-conflict only: the decision id (mp-457), or a spec reference
+          (docs/ssot/spec/<path>.md#<heading text>). Quote its Decision text, or the spec's
+          text, under "Decision quote" below. Empty for the other kinds.
 
 bug and ssot-conflict need Actual and Evidence. followup-test: Steps is what to try, Expected is
 what should happen. idea: Steps is the idea. Delete this comment block when done.

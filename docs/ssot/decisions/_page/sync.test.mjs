@@ -4,7 +4,7 @@
 // come out. None of them inspects how the parser walks lines.
 import { test } from 'node:test';
 import assert from 'node:assert/strict';
-import { execFileSync } from 'node:child_process';
+import { execFileSync, spawnSync } from 'node:child_process';
 import { mkdtempSync, writeFileSync, readFileSync, existsSync, readdirSync, rmSync } from 'node:fs';
 import { tmpdir } from 'node:os';
 import { join, dirname, basename } from 'node:path';
@@ -1234,7 +1234,8 @@ test('wavePlan reads the ticket files, names a branch and worktree per frontier 
 
 test('wave --only opens just the named frontier tickets and --max the lowest N; a name off the frontier is refused', () => {
   const { root, put, git } = repo();
-  for (const n of ['01', '02', '03', '04']) put(`.scratch/sm/issues/${n}-t${n}.md`, ticketFile(n, `T${n}`, 'ready-for-agent', 'None.'));
+  // Each ticket touches its own file, so the open wave holds none of the others back.
+  for (const n of ['01', '02', '03', '04']) put(`.scratch/sm/issues/${n}-t${n}.md`, withTouches(ticketFile(n, `T${n}`, 'ready-for-agent', 'None.'), `lib/t${n}.dart`));
   git('add', '-A'); git('commit', '-q', '-m', 'tickets');
   const plan = wavePlan('sm', '.scratch/sm/issues', { root, branch: 'main', only: ['03', '01'] });
   assert.deepEqual(plan.wave.map(t => t.number), ['01', '03']);
@@ -1247,6 +1248,48 @@ test('wave --only opens just the named frontier tickets and --max the lowest N; 
   assert.match(readFileSync(join(root, '.scratch/sm/issues/01-t01.md'), 'utf8'), /^\*\*Status:\*\* ready-for-agent$/m, 'a frontier ticket left out stays ready');
   const again = wavePlan('sm', '.scratch/sm/issues', { root, branch: 'main' });
   assert.deepEqual(again.wave.map(t => t.number), ['01', '03']); assert.deepEqual(again.building, ['02', '04']);
+});
+
+/** A ticket file with its Touches line replaced, or dropped when `touches` is null. */
+const withTouches = (text, touches) => text.replace(/^\*\*Touches:\*\*.*\n\n/m, touches === null ? '' : `**Touches:** ${touches}\n\n`);
+
+test('wave --open holds back a frontier ticket whose Touches share a file with an open wave, and says why', () => {
+  const { root, put, git } = repo();
+  const t = (n, touches) => put(`.scratch/sm/issues/${n}-t${n}.md`, withTouches(ticketFile(n, `T${n}`, 'ready-for-agent', 'None.'), touches));
+  t('01', 'lib/a, `lib/shared/x.dart`');
+  t('02', 'lib/a/y.dart, lib/c.dart');       // inside wave 1's lib/a
+  t('03', 'lib/b.dart');                     // no overlap
+  t('04', null);                             // no Touches line
+  t('05', 'lib/shared/x.dart');              // the same file as wave 1
+  git('add', '-A'); git('commit', '-q', '-m', 'tickets');
+  const cliRun = (...a) => spawnSync('node', [cli, 'wave', 'sm', '.scratch/sm/issues', '--branch', 'main', ...a], { cwd: root, encoding: 'utf8' });
+  assert.equal(cliRun('--open', '--only', '01').status, 0);
+
+  const plan = wavePlan('sm', '.scratch/sm/issues', { root, branch: 'main' });
+  assert.deepEqual(plan.wave.map(x => x.number), ['03', '04'], 'overlapping tickets are held; no overlap and no Touches line are kept');
+  assert.deepEqual(plan.held, [
+    { number: '02', wave: 1, files: ['lib/a/y.dart'] },
+    { number: '05', wave: 1, files: ['lib/shared/x.dart'] },
+  ]);
+  assert.deepEqual(plan.frontier, ['02', '03', '04', '05'], 'held tickets stay on the frontier');
+
+  // --only does not override the hold, and the CLI says so.
+  const only = cliRun('--only', '02,03');
+  assert.equal(only.status, 0);
+  assert.deepEqual(JSON.parse(only.stdout).wave.map(x => x.number), ['03']);
+  assert.match(only.stderr, /02 held: open wave 1 touches lib\/a\/y\.dart/);
+  assert.match(only.stderr, /--only does not override the hold: 02/);
+
+  // --open prints the hold and opens the rest.
+  const opened = cliRun('--open');
+  assert.deepEqual(JSON.parse(opened.stdout).wave.map(x => x.number), ['03', '04']);
+  assert.match(opened.stderr, /05 held: open wave 1 touches lib\/shared\/x\.dart/);
+
+  // Once wave 1 closes, its Touches hold nothing back.
+  assert.equal(cliRun('--close', '1', '--merged', '01').status, 0);
+  const after = wavePlan('sm', '.scratch/sm/issues', { root, branch: 'main' });
+  assert.deepEqual(after.wave.map(x => x.number), ['02', '05']);
+  assert.deepEqual(after.held, [], 'wave 2 (03, 04) is open but shares no file with 02 or 05');
 });
 
 test('waveOpen and waveClose keep one log per feature and elapsed reads as hours and minutes', () => {
