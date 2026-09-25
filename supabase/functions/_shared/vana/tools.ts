@@ -196,6 +196,16 @@ export async function diagnoseStaples(v: VanaCtx): Promise<Extract<VanaPart, { k
   return { kind: 'staples', meals };
 }
 
+/** The Plan tab's fallback day note, from a `day_guidance` part: the label as a headline, then the part's own note,
+ *  ending with ONE full stop. Every note `dayGuidance` writes except race day's already carries the carb line, so the
+ *  line is prepended only when the note has none — prepending it always gave "At least 272g carbs — At least 272g
+ *  carbs, …" (Finding 09-002). Null when there is no note. */
+export function dayGuidanceLine(day: { label: string; minCarbsG: number; note: string }): string | null {
+  const note = day.note.trim().replace(/\.+$/, '');
+  if (!note) return null;
+  return /carb/i.test(note) ? `${day.label}. ${note}.` : `${day.label}. At least ${day.minCarbsG}g carbs — ${note}.`;
+}
+
 /** Day guidance — deterministic from budget + workouts + library contexts. */
 export async function dayGuidance(v: VanaCtx, ctx: AthleteContext, dateIso = today()): Promise<Extract<VanaPart, { kind: 'day_guidance' }>> {
   const workouts = ctx.week.workouts.filter((w) => w.date === dateIso);

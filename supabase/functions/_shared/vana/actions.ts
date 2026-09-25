@@ -9,7 +9,7 @@ import { setSetting, forgetMemory, listMemories, isCoverageScope, isDayKey, isPe
 import { detectPantryFromPhoto, persistAssistantPart } from './pantry.ts';
 import { completeCall, reserveCallOrThrow } from './rate-limit.ts';
 import { reserveBudgetOrThrow } from '../ai/credits.ts';
-import { diagnoseStaples, dayGuidance, draftWeekPlan, mealPickerPart, planDayPart, planWeekPart, type PickerArgs } from './tools.ts';
+import { diagnoseStaples, dayGuidance, dayGuidanceLine, draftWeekPlan, mealPickerPart, planDayPart, planWeekPart, type PickerArgs } from './tools.ts';
 import { isPickerChipKind, PICKER_CHIP_ARGS, pickerNextStep } from './chips.ts';
 import { isMealType, walkFor } from './plan-math.ts';
 import { buildAthleteContext } from './context.ts';
@@ -233,6 +233,6 @@ export async function homePayload(v: VanaCtx, date = today()) {
   const target = ctx.budget.week.find((t) => t.date === date) ?? (date === today() ? ctx.budget.today : null);
   // Vana's message for the day: precomputed on the plan (regenerated here only when an edit made it stale).
   const { notes: dayNotes, stale } = await ensureDayNotes(v, pl, date);
-  const vana = { date, stale, text: dayNotes[date] ?? (pl && pl.meals.length ? null : (day.note ? `${day.label}. At least ${day.minCarbsG}g carbs — ${day.note}.` : null)) };
+  const vana = { date, stale, text: dayNotes[date] ?? (pl && pl.meals.length ? null : dayGuidanceLine(day)) };
   return { context: ctx, brief: null, day, target, weekTargets: ctx.budget.week, staples, batch: pl ? ({ kind: 'batch', plan: pl ? { ...pl, dayNotes } : pl } as VanaPart) : null, shopping: pl ? shop(pl.shopping) : null, days: { date, slots }, vana, memories: await listMemories(v) };
 }

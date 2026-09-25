@@ -13,7 +13,7 @@
 
 **Touches:** supabase/functions/_shared/vana/tools.ts, lib/features/meal_planning/presentation/widgets/day_card.dart
 
-- [ ] A test on the note's assembly with a headline that the body repeats.
+- [x] A test on the note's assembly with a headline that the body repeats.
 - [ ] Deployed to dev if the fix is server-side.
 - [ ] codegen if annotations changed, `flutter analyze` and the suite green.
 

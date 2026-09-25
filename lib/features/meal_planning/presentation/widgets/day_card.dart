@@ -103,8 +103,10 @@ class DayCard extends ConsumerWidget {
   /// bold unless Vana's note already carries one.
   TextSpan _guidance(BuildContext context, WidgetRef ref, Color textColor) {
     final content = ref.read(contentServiceProvider);
-    if (RegExp('carb', caseSensitive: false).hasMatch(part.note)) {
-      return TextSpan(text: part.note.replaceAll(RegExp(r'\.+$'), '.'));
+    // One full stop at the end, whichever branch adds it (Finding 09-002).
+    final note = part.note.trim().replaceAll(RegExp(r'\.+$'), '');
+    if (RegExp('carb', caseSensitive: false).hasMatch(note)) {
+      return TextSpan(text: '$note.');
     }
     final carbs = ContentKeys.format(
       content.getValue(ContentKeys.mpDayAtLeastCarbs),
@@ -116,7 +118,7 @@ class DayCard extends ConsumerWidget {
           text: carbs,
           style: const TextStyle(fontWeight: FontWeight.w700),
         ),
-        TextSpan(text: part.note.isEmpty ? '.' : ', ${part.note}.'),
+        TextSpan(text: note.isEmpty ? '.' : ', $note.'),
       ],
     );
   }
