@@ -147,12 +147,12 @@ export interface UiAction {
     // pantry_photo{conversationId, photoPath} (ingredient detection on a `meal-photos` upload → a persisted `pantry` part) ·
     // set_pantry{conversationId, items: string[]} (what's on hand → shopping `have`) · swap_ingredient{planMealId, from, to} (saved variant + swap in place)
     | 'rewind' | 'pantry_photo' | 'set_pantry' | 'swap_ingredient'
-    // additive 2026-09-16 (several shopping lists): list_shopping_lists{} → {lists} · get_shopping_list{id?} → {list|null} (default = most
-    // recent by coalesce(confirmed_at, created_at)) · create_shopping_list{name?, fromPlan?} → {list} · rename_shopping_list{id, name} →
+    // additive 2026-09-16 (several shopping lists): list_shopping_lists{} → {lists} · get_shopping_list{id?} → {list|null} (default = this
+    // week's confirmed plan's list, else the newest hand-made list; never a draft's or archived plan's, ticket 35) · create_shopping_list{name?, fromPlan?} → {list} · rename_shopping_list{id, name} →
     // {list} · add_shopping_item{listId, name, qty?, aisle?} → {list} · update_shopping_item{id, name?, qty?, aisle?, checked?, have?} →
     // {list} (name/qty set edited=true) · delete_shopping_item{id} → {list}. All `parts: []`.
     // additive 2026-09-16 (Shopping tab redesign): delete_shopping_list{id} → {list|null} — the list and its rows go (a plan's list
-    // empties the plan's mirror too); the answer is the most recent list left, null when none remains. `parts: []`.
+    // empties the plan's mirror too); the answer is the default list left, null when none is. `parts: []`.
     | 'list_shopping_lists' | 'get_shopping_list' | 'create_shopping_list' | 'rename_shopping_list' | 'delete_shopping_list' | 'add_shopping_item' | 'update_shopping_item' | 'delete_shopping_item'
     // additive 2026-09-16 (Vana writes, playtest §10): undo_receipt{...ReceiptUndo.params} — the Undo button on a receipt card. Answers
     // `{ parts: [receipt(action: 'undo')] }`; the device refetches the receipt's entity as for any receipt.

@@ -8,7 +8,9 @@
  *  survival of a hand-added or renamed line is unit-tested without a database. */
 import type { ShoppingItem, ShoppingListItem, ShoppingListSummary, ShoppingListDetail } from './contracts.ts';
 import type { VanaCtx } from './env.ts';
+import { today, weekStartFor } from './env.ts';
 import { classifyAisle } from './grocery.ts';
+import { getPlanPeriod } from './memory.ts';
 
 const AISLE_ORDER = ['Produce', 'Protein', 'Dairy', 'Bakery & Grains', 'Pantry', 'Spices', 'Frozen', 'Beverages', 'Other'];
 const now = () => new Date().toISOString();
@@ -103,18 +105,37 @@ export async function toggleByName(v: VanaCtx, planId: string, name: string, fie
 }
 
 // ---------------------------------------------------------------- the actions
-export async function listLists(v: VanaCtx, limit = 30): Promise<ShoppingListSummary[]> {
+/** The week's confirmed plan: the plan the Plan tab shows once the athlete has confirmed (plan.ts `getPlan`, same week
+ *  rule; plan.ts imports this file, so the week is worked out here rather than imported). */
+async function confirmedPlanId(v: VanaCtx): Promise<string | null> {
+  const week = weekStartFor(today(), (await getPlanPeriod(v)).weekStart);
+  const { data } = await v.db.from('meal_plans').select('id').eq('user_id', v.userId).eq('week_start', week).eq('status', 'confirmed').eq('is_deleted', false).limit(1).maybeSingle();
+  return data?.id ?? null;
+}
+/** Every list the athlete owns, newest first by coalesce(confirmed_at, created_at), with the default list (below) moved
+ *  to the front so the tab's "current" list and its default agree. */
+// deno-lint-ignore no-explicit-any
+async function orderedRows(v: VanaCtx): Promise<{ rows: any[]; current: any | null }> {
   const { data } = await v.db.from('shopping_lists').select('*').eq('user_id', v.userId).limit(200);
-  const rows = (data ?? []).slice().sort((a, b) => String(b.confirmed_at ?? b.created_at).localeCompare(String(a.confirmed_at ?? a.created_at))).slice(0, limit);
+  const rows = (data ?? []).slice().sort((a, b) => String(b.confirmed_at ?? b.created_at).localeCompare(String(a.confirmed_at ?? a.created_at)));
+  const planId = await confirmedPlanId(v);
+  // The default (ticket 35, mp-244): the confirmed plan's list; else the newest hand-made list; else none. A draft's list
+  // (Browse and chat edits build one), an archived plan's list and another week's list are never the default.
+  const current = (planId ? rows.find((r) => r.plan_id === planId) : undefined) ?? rows.find((r) => !r.plan_id) ?? null;
+  return { rows: current ? [current, ...rows.filter((r) => r !== current)] : rows, current };
+}
+export async function listLists(v: VanaCtx, limit = 30): Promise<ShoppingListSummary[]> {
+  const { rows } = await orderedRows(v);
   const out: ShoppingListSummary[] = [];
-  for (const r of rows) { const items = await itemsOf(v, r.id); out.push(toSummary(r, items.filter((i) => !i.have).length)); }
+  for (const r of rows.slice(0, limit)) { const items = await itemsOf(v, r.id); out.push(toSummary(r, items.filter((i) => !i.have).length)); }
   return out;
 }
-/** `id` given → that list; else the most recent by coalesce(confirmed_at, created_at); none → null. */
+/** `id` given → that list; else the default list: this week's confirmed plan's list, else the newest hand-made list by
+ *  coalesce(confirmed_at, created_at); none → null (the tab's empty state). */
 export async function getList(v: VanaCtx, id?: string | null): Promise<ShoppingListDetail | null> {
   if (id) return detail(v, await listRow(v, id));
-  const [top] = await listLists(v, 1);
-  return top ? detail(v, await listRow(v, top.id)) : null;
+  const { current } = await orderedRows(v);
+  return current ? detail(v, current) : null;
 }
 /** A new hand-made list (empty), or one seeded from the plan's current lines when `fromPlan` names a plan. */
 export async function createList(v: VanaCtx, name: string | null, seed: ShoppingItem[] | null): Promise<ShoppingListDetail> {
@@ -134,7 +155,7 @@ export async function renameList(v: VanaCtx, id: string, name: string): Promise<
 }
 /** Delete a list and every row on it (the rows also cascade in SQL; deleted here too so the fake db agrees). Owner-scoped
  *  like the rest. A plan's list takes the plan's mirror with it, so Kroger and the offline stand-in stop showing lines the
- *  athlete threw away; the next meal edit rebuilds both. Answers the most recent list left, or null when none remains. */
+ *  athlete threw away; the next meal edit rebuilds both. Answers the default list left ([getList]), or null when none is. */
 export async function deleteList(v: VanaCtx, id: string): Promise<ShoppingListDetail | null> {
   const row = await listRow(v, id);
   const { error: e1 } = await v.db.from('shopping_items').delete().eq('list_id', id).eq('user_id', v.userId);
