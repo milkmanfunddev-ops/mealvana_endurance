@@ -5,6 +5,7 @@ import 'package:intl/intl.dart';
 
 import '../../../../features/content/application/content_service.dart';
 import '../../../../features/content/domain/content_keys.dart';
+import '../../../../features/home_shell/presentation/home_shell_chrome.dart';
 import '../../../../shared/providers/unit_system_provider.dart';
 import '../../../nutrition_plan/domain/run_parameters.dart';
 import '../../../../shared/utils/adaptive_modal.dart';
@@ -59,7 +60,14 @@ class ShoppingTab extends ConsumerWidget {
     final secondary = textColor.withValues(alpha: 0.6);
 
     return ListView(
-      padding: const EdgeInsets.all(AppSpacing.md),
+      // Bottom padding clears the shell's floating tab bar, as on the Plan
+      // tab (Finding 88-008).
+      padding: const EdgeInsets.fromLTRB(
+        AppSpacing.md,
+        AppSpacing.md,
+        AppSpacing.md,
+        HomeShellChrome.bottomChromeClearancePx,
+      ),
       children: [
         _ListHeader(
           state: state,
