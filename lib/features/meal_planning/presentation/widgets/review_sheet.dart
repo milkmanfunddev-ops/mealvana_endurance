@@ -169,6 +169,30 @@ class _ReviewSheetState extends ConsumerState<_ReviewSheet> {
     }
   }
 
+  /// "1 meal · 1 serving", "2 meals · 5 servings": each count singular for
+  /// one (16-004).
+  String _summaryLine(int meals, int servings) {
+    final label = widget.content;
+    String count(int n, String one, String many) => n == 1
+        ? label.getValue(one)
+        : ContentKeys.format(label.getValue(many), {'n': n});
+    return ContentKeys.format(
+      label.getValue(ContentKeys.mpReviewSummaryCounts),
+      {
+        'meals': count(
+          meals,
+          ContentKeys.mpReviewMealsOne,
+          ContentKeys.mpReviewMeals,
+        ),
+        'servings': count(
+          servings,
+          ContentKeys.mpReviewServingsOne,
+          ContentKeys.mpReviewServings,
+        ),
+      },
+    );
+  }
+
   @override
   Widget build(BuildContext context) {
     final isDark = Theme.of(context).brightness == Brightness.dark;
@@ -205,10 +229,8 @@ class _ReviewSheetState extends ConsumerState<_ReviewSheet> {
             ),
             const SizedBox(height: 2),
             Text(
-              ContentKeys.format(label.getValue(ContentKeys.mpReviewSummary), {
-                'meals': widget.plan.meals.length,
-                'servings': totalServings,
-              }),
+              _summaryLine(widget.plan.meals.length, totalServings),
+              key: const ValueKey('meal_planning.review_sheet.summary'),
               style: AppTextStyles.bodyMedium.copyWith(color: secondary),
             ),
             const SizedBox(height: 2),
