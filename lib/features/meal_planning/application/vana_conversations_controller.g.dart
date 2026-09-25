@@ -8,20 +8,41 @@ part of 'vana_conversations_controller.dart';
 
 // GENERATED CODE - DO NOT MODIFY BY HAND
 // ignore_for_file: type=lint, type=warning
-/// The conversations list for one [kind] ("Ask Vana" / "Meal plans").
+/// The conversations list for one [kind] ("Ask Vana" / "Meal plans"), read
+/// through `list_conversations` on `vana-action` (ticket 126): each planning
+/// row carries the plan the server picked for it, the same pick the opened
+/// chat shows, so the list and the header never disagree on a title.
+///
+/// Paged (88-021): the first page loads in [build]; the screen calls
+/// [loadMore] as its list nears the end, and an under-full page marks the
+/// end so nothing asks again until [refresh].
 
 @ProviderFor(VanaConversationsController)
 const vanaConversationsControllerProvider =
     VanaConversationsControllerFamily._();
 
-/// The conversations list for one [kind] ("Ask Vana" / "Meal plans").
+/// The conversations list for one [kind] ("Ask Vana" / "Meal plans"), read
+/// through `list_conversations` on `vana-action` (ticket 126): each planning
+/// row carries the plan the server picked for it, the same pick the opened
+/// chat shows, so the list and the header never disagree on a title.
+///
+/// Paged (88-021): the first page loads in [build]; the screen calls
+/// [loadMore] as its list nears the end, and an under-full page marks the
+/// end so nothing asks again until [refresh].
 final class VanaConversationsControllerProvider
     extends
         $AsyncNotifierProvider<
           VanaConversationsController,
           List<VanaConversationSummary>
         > {
-  /// The conversations list for one [kind] ("Ask Vana" / "Meal plans").
+  /// The conversations list for one [kind] ("Ask Vana" / "Meal plans"), read
+  /// through `list_conversations` on `vana-action` (ticket 126): each planning
+  /// row carries the plan the server picked for it, the same pick the opened
+  /// chat shows, so the list and the header never disagree on a title.
+  ///
+  /// Paged (88-021): the first page loads in [build]; the screen calls
+  /// [loadMore] as its list nears the end, and an under-full page marks the
+  /// end so nothing asks again until [refresh].
   const VanaConversationsControllerProvider._({
     required VanaConversationsControllerFamily super.from,
     required VanaConversationKind super.argument,
@@ -60,9 +81,16 @@ final class VanaConversationsControllerProvider
 }
 
 String _$vanaConversationsControllerHash() =>
-    r'2ac53a794eec10a827aaf191d791d6432501109b';
+    r'c8ff8fc5f4395c0fdb153763abf88f268f184807';
 
-/// The conversations list for one [kind] ("Ask Vana" / "Meal plans").
+/// The conversations list for one [kind] ("Ask Vana" / "Meal plans"), read
+/// through `list_conversations` on `vana-action` (ticket 126): each planning
+/// row carries the plan the server picked for it, the same pick the opened
+/// chat shows, so the list and the header never disagree on a title.
+///
+/// Paged (88-021): the first page loads in [build]; the screen calls
+/// [loadMore] as its list nears the end, and an under-full page marks the
+/// end so nothing asks again until [refresh].
 
 final class VanaConversationsControllerFamily extends $Family
     with
@@ -82,7 +110,14 @@ final class VanaConversationsControllerFamily extends $Family
         isAutoDispose: true,
       );
 
-  /// The conversations list for one [kind] ("Ask Vana" / "Meal plans").
+  /// The conversations list for one [kind] ("Ask Vana" / "Meal plans"), read
+  /// through `list_conversations` on `vana-action` (ticket 126): each planning
+  /// row carries the plan the server picked for it, the same pick the opened
+  /// chat shows, so the list and the header never disagree on a title.
+  ///
+  /// Paged (88-021): the first page loads in [build]; the screen calls
+  /// [loadMore] as its list nears the end, and an under-full page marks the
+  /// end so nothing asks again until [refresh].
 
   VanaConversationsControllerProvider call(VanaConversationKind kind) =>
       VanaConversationsControllerProvider._(argument: kind, from: this);
@@ -91,7 +126,14 @@ final class VanaConversationsControllerFamily extends $Family
   String toString() => r'vanaConversationsControllerProvider';
 }
 
-/// The conversations list for one [kind] ("Ask Vana" / "Meal plans").
+/// The conversations list for one [kind] ("Ask Vana" / "Meal plans"), read
+/// through `list_conversations` on `vana-action` (ticket 126): each planning
+/// row carries the plan the server picked for it, the same pick the opened
+/// chat shows, so the list and the header never disagree on a title.
+///
+/// Paged (88-021): the first page loads in [build]; the screen calls
+/// [loadMore] as its list nears the end, and an under-full page marks the
+/// end so nothing asks again until [refresh].
 
 abstract class _$VanaConversationsController
     extends $AsyncNotifier<List<VanaConversationSummary>> {

@@ -8,6 +8,101 @@ part of 'meal_detail_controller.dart';
 
 // GENERATED CODE - DO NOT MODIFY BY HAND
 // ignore_for_file: type=lint, type=warning
+/// The athlete's saved copy of library meal [libraryMealId] (My Foods), or
+/// null. Read from Drift, so the detail's heart shows a meal saved on an
+/// earlier visit as saved (testing-wave 89-009).
+
+@ProviderFor(savedCopyOfLibraryMeal)
+const savedCopyOfLibraryMealProvider = SavedCopyOfLibraryMealFamily._();
+
+/// The athlete's saved copy of library meal [libraryMealId] (My Foods), or
+/// null. Read from Drift, so the detail's heart shows a meal saved on an
+/// earlier visit as saved (testing-wave 89-009).
+
+final class SavedCopyOfLibraryMealProvider
+    extends
+        $FunctionalProvider<
+          AsyncValue<SavedMeal?>,
+          SavedMeal?,
+          Stream<SavedMeal?>
+        >
+    with $FutureModifier<SavedMeal?>, $StreamProvider<SavedMeal?> {
+  /// The athlete's saved copy of library meal [libraryMealId] (My Foods), or
+  /// null. Read from Drift, so the detail's heart shows a meal saved on an
+  /// earlier visit as saved (testing-wave 89-009).
+  const SavedCopyOfLibraryMealProvider._({
+    required SavedCopyOfLibraryMealFamily super.from,
+    required String super.argument,
+  }) : super(
+         retry: null,
+         name: r'savedCopyOfLibraryMealProvider',
+         isAutoDispose: true,
+         dependencies: null,
+         $allTransitiveDependencies: null,
+       );
+
+  @override
+  String debugGetCreateSourceHash() => _$savedCopyOfLibraryMealHash();
+
+  @override
+  String toString() {
+    return r'savedCopyOfLibraryMealProvider'
+        ''
+        '($argument)';
+  }
+
+  @$internal
+  @override
+  $StreamProviderElement<SavedMeal?> $createElement($ProviderPointer pointer) =>
+      $StreamProviderElement(pointer);
+
+  @override
+  Stream<SavedMeal?> create(Ref ref) {
+    final argument = this.argument as String;
+    return savedCopyOfLibraryMeal(ref, argument);
+  }
+
+  @override
+  bool operator ==(Object other) {
+    return other is SavedCopyOfLibraryMealProvider &&
+        other.argument == argument;
+  }
+
+  @override
+  int get hashCode {
+    return argument.hashCode;
+  }
+}
+
+String _$savedCopyOfLibraryMealHash() =>
+    r'b7a26584157111df9f4fb3075317d9ac1dd8318c';
+
+/// The athlete's saved copy of library meal [libraryMealId] (My Foods), or
+/// null. Read from Drift, so the detail's heart shows a meal saved on an
+/// earlier visit as saved (testing-wave 89-009).
+
+final class SavedCopyOfLibraryMealFamily extends $Family
+    with $FunctionalFamilyOverride<Stream<SavedMeal?>, String> {
+  const SavedCopyOfLibraryMealFamily._()
+    : super(
+        retry: null,
+        name: r'savedCopyOfLibraryMealProvider',
+        dependencies: null,
+        $allTransitiveDependencies: null,
+        isAutoDispose: true,
+      );
+
+  /// The athlete's saved copy of library meal [libraryMealId] (My Foods), or
+  /// null. Read from Drift, so the detail's heart shows a meal saved on an
+  /// earlier visit as saved (testing-wave 89-009).
+
+  SavedCopyOfLibraryMealProvider call(String libraryMealId) =>
+      SavedCopyOfLibraryMealProvider._(argument: libraryMealId, from: this);
+
+  @override
+  String toString() => r'savedCopyOfLibraryMealProvider';
+}
+
 /// One meal's detail page / cooking-mode source, by library id or saved
 /// uuid. `keepAlive` so a detail opened once survives a network blip
 /// (05 §2 — the catalog is not mirrored locally).
@@ -75,7 +170,7 @@ final class MealDetailControllerProvider
 }
 
 String _$mealDetailControllerHash() =>
-    r'2310938605306fa9501ec5c29f3abf92b6732dd7';
+    r'cb901a6a3783f65c47a779d03599d43c18197dd8';
 
 /// One meal's detail page / cooking-mode source, by library id or saved
 /// uuid. `keepAlive` so a detail opened once survives a network blip
