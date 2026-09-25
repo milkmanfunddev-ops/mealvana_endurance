@@ -11,7 +11,14 @@ Each entry: what went wrong or cost time, where it was seen, and the suggested f
 
 ## Open
 
-None.
+- **#70 two parallel tickets each made their own rule for the same data (wave 27).** 102 (sign-in
+  sweep) and 103 (pull after a failed upload) both had to decide when another account's food
+  preferences are still unsent. 103 added an upload-pending marker; 102 kept them only while the
+  account had other dirty rows, so the sweep deleted unsent preferences. The prompts named the
+  shared files, not the shared state. Only the lead's review caught it, along with 102's sweep
+  deleting the signed-in coach's own coach-mode rows. Suggested fix: when two tickets in one wave
+  decide the same thing about the same rows, give both to one agent, or tell each agent the other
+  ticket's rule in its prompt.
 
 ## Done
 

@@ -1,6 +1,6 @@
 # 105: The Gate reads an expired or cancelled copy right
 
-**Status:** in-progress (wave 27, 2026-09-25)
+**Status:** done (wave 27, 2026-09-25)
 **Blocked by:** none.
 **Next:** `/implement-lee testing-wave`
 **Model:** opus
@@ -15,9 +15,9 @@
 
 **Touches:** lib/features/subscription/application/subscription_status_provider.dart, lib/features/subscription/application/pro_gate.dart, lib/features/subscription/domain/entitlement.dart, lib/features/subscription/data/subscription_service.dart, lib/features/subscription/application/subscription_screen_controller.dart, lib/features/subscription/presentation/pro_gate_redirect.dart, the startup wait for the Gate (lib/features/app_startup/)
 
-- [ ] Seam test through the real status notifier: a saved copy with `willRenew: true` past its expiry fetches first; a fresh answer of won't-renew closes the Gate at expiry with no grace.
-- [ ] Seam test: a cold start with a saved copy more than 15 minutes past expiry and a fetch that never answers gives a closed first answer within two seconds.
-- [ ] Controller test: opening the Subscription screen fetches fresh customer info, and a won't-renew plan reads "Ends on".
-- [ ] `flutter analyze` clean on touched files, the touched tests green.
+- [x] Seam test through the real status notifier: a saved copy with `willRenew: true` past its expiry fetches first; a fresh answer of won't-renew closes the Gate at expiry with no grace.
+- [x] Seam test: a cold start with a saved copy more than 15 minutes past expiry and a fetch that never answers gives a closed first answer within two seconds.
+- [x] Controller test: opening the Subscription screen fetches fresh customer info, and a won't-renew plan reads "Ends on".
+- [x] `flutter analyze` clean on touched files, the touched tests green.
 
 Next: /implement-lee testing-wave

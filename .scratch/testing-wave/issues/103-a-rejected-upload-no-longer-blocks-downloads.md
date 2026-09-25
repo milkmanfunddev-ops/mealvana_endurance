@@ -1,6 +1,6 @@
 # 103: A rejected upload no longer stops the repository from pulling
 
-**Status:** in-progress (wave 27, 2026-09-25)
+**Status:** done (wave 27, 2026-09-25)
 **Blocked by:** none.
 **Next:** `/implement-lee testing-wave`
 **Model:** opus
@@ -13,9 +13,9 @@
 
 **Touches:** lib/shared/services/sync/sync_coordinator.dart, any repository under lib/features/*/data/ whose `syncFromRemote` overwrites a dirty row, test/ for the coordinator.
 
-- [ ] Coordinator test: a repository whose upload returns `UploadResult.failed()` still has `syncFromRemote` called, its dirty row stays dirty, and the failure is logged.
-- [ ] Test: a dependency whose upload fails does not stop the dependent repository's pull.
-- [ ] For each repository the coordinator syncs, a test (or a named existing one) that a pull keeps a `needs_upload` row.
-- [ ] `flutter analyze` clean on touched files, the touched tests green.
+- [x] Coordinator test: a repository whose upload returns `UploadResult.failed()` still has `syncFromRemote` called, its dirty row stays dirty, and the failure is logged.
+- [x] Test: a dependency whose upload fails does not stop the dependent repository's pull.
+- [x] For each repository the coordinator syncs, a test (or a named existing one) that a pull keeps a `needs_upload` row.
+- [x] `flutter analyze` clean on touched files, the touched tests green.
 
 Next: /implement-lee testing-wave

@@ -1,6 +1,6 @@
 # 106: The paywall locks after a redeem, one Manage for both screens, no ended state
 
-**Status:** in-progress (wave 27, 2026-09-25)
+**Status:** done (wave 27, 2026-09-25)
 **Blocked by:** none.
 **Next:** `/implement-lee testing-wave`
 **Model:** opus
@@ -16,9 +16,9 @@
 
 **Touches:** lib/features/subscription/presentation/screens/paywall_screen.dart, lib/features/subscription/application/pro_paywall_controller.dart, lib/features/subscription/application/code_entry_controller.dart, lib/features/subscription/presentation/widgets/redeem_code_sheet.dart, lib/features/subscription/presentation/screens/subscription_screen.dart, lib/features/subscription/application/subscription_screen_controller.dart, lib/features/settings/presentation/screens/settings_screen.dart, lib/features/content/domain/content_keys.dart, assets/config/content_defaults.json
 
-- [ ] Widget or seam test: after a successful redeem on the paywall, Continue cannot start a purchase until the route changes.
-- [ ] Widget test: the lapsed paywall's Manage and the Subscription screen's Manage show the same result for the same plan's store.
-- [ ] No `PlanStatus.ended` branch or ended-state content key remains; the Subscription screen's tests updated.
-- [ ] `flutter analyze` clean on touched files, the touched tests green.
+- [x] Widget or seam test: after a successful redeem on the paywall, Continue cannot start a purchase until the route changes.
+- [x] Widget test: the lapsed paywall's Manage and the Subscription screen's Manage show the same result for the same plan's store.
+- [x] No `PlanStatus.ended` branch or ended-state content key remains; the Subscription screen's tests updated.
+- [x] `flutter analyze` clean on touched files, the touched tests green.
 
 Next: /implement-lee testing-wave

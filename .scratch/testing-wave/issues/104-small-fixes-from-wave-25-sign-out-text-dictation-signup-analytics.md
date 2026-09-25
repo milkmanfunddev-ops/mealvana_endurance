@@ -1,6 +1,6 @@
 # 104: One sign-out text, dictation explains a refusal, signup analytics carries the device id
 
-**Status:** in-progress (wave 27, 2026-09-25)
+**Status:** done (wave 27, 2026-09-25)
 **Blocked by:** none.
 **Next:** `/implement-lee testing-wave`
 **Model:** opus
@@ -16,9 +16,9 @@
 
 **Touches:** lib/features/subscription/presentation/screens/paywall_screen.dart, lib/features/settings/presentation/screens/settings_screen.dart (the sign-out confirm's key), lib/features/meal_planning/presentation/widgets/vana_mic_button.dart, lib/features/onboarding/application/onboarding_service.dart, lib/shared/services/analytics/ (where the device id is read), lib/features/content/domain/content_keys.dart, assets/config/content_defaults.json
 
-- [ ] Widget test: both sign-out confirms show the same body text from one key.
-- [ ] Widget test: with speech permission refused the Dictate button shows, and a tap shows the settings message; with no speech engine it is hidden.
-- [ ] Test: `trackUserRegistered` receives the device id, not the user id.
-- [ ] `flutter analyze` clean on touched files, the touched tests green.
+- [x] Widget test: both sign-out confirms show the same body text from one key.
+- [x] Widget test: with speech permission refused the Dictate button shows, and a tap shows the settings message; with no speech engine it is hidden.
+- [x] Test: `trackUserRegistered` receives the device id, not the user id.
+- [x] `flutter analyze` clean on touched files, the touched tests green.
 
 Next: /implement-lee testing-wave
