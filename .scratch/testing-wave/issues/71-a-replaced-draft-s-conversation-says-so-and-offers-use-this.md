@@ -1,6 +1,6 @@
 # 71: A replaced draft's conversation says so and offers Use this plan instead
 
-**Status:** ready-for-agent
+**Status:** in-progress (wave 23, 2026-09-25)
 **Blocked by:** 70 (touches lib/features/meal_planning/presentation/screens/vana_chat_screen.dart), 73 (Use this plan again).
 **Next:** `/implement-lee testing-wave`
 **Model:** opus

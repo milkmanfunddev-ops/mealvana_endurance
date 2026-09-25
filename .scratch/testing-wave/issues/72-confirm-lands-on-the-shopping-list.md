@@ -1,6 +1,6 @@
 # 72: Confirm lands on the shopping list
 
-**Status:** ready-for-agent
+**Status:** in-progress (wave 23, 2026-09-25)
 **Blocked by:** 70 (touches lib/features/meal_planning/presentation/screens/vana_chat_screen.dart).
 **Next:** `/implement-lee testing-wave`
 **Model:** opus

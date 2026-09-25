@@ -1,6 +1,6 @@
 # 58: Quick logs keep what they came from
 
-**Status:** ready-for-agent
+**Status:** in-progress (wave 23, 2026-09-25)
 **Blocked by:** 54 (touches lib/features/meal_logging/presentation/providers/meal_log_providers.dart).
 **Next:** `/implement-lee testing-wave`
 **Model:** opus
