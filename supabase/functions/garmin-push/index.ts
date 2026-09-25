@@ -45,6 +45,10 @@ import type {
 import {
   prepareDetailForCapture,
 } from "../_shared/garmin/sample_capture.ts";
+import {
+  logGarminMappingMiss,
+  logGarminRecordFailure,
+} from "../_shared/garmin/push_log.ts";
 
 const GARMIN_CLIENT_ID = Deno.env.get("GARMIN_CLIENT_ID") ?? "";
 const SUPABASE_URL = Deno.env.get("SUPABASE_URL") ?? "";
@@ -349,7 +353,7 @@ async function processPushBody(body: GarminPushNotification): Promise<void> {
       for (const activity of body.activities) {
         try {
           // Look up our user by Garmin userId
-          const { data: mapping } = await supabase
+          const { data: mapping, error: mappingError } = await supabase
             .from("garmin_user_mappings")
             .select("user_id")
             .eq("garmin_user_id", activity.userId)
@@ -372,8 +376,11 @@ async function processPushBody(body: GarminPushNotification): Promise<void> {
           );
 
           if (!mapping) {
-            console.warn(
-              `[garmin-push] No user mapping for Garmin userId: ${activity.userId}`,
+            logGarminMappingMiss(
+              "activities",
+              activity.userId,
+              activity.summaryId,
+              mappingError,
             );
             stats.errors++;
             continue;
@@ -389,14 +396,23 @@ async function processPushBody(body: GarminPushNotification): Promise<void> {
             "[garmin-push]",
           );
           if (outcome.kind === "error") {
-            console.error(
-              "[garmin-push] Matcher pipeline error:",
-              outcome.error,
-            );
+            logGarminRecordFailure({
+              kind: "activities",
+              garminUserId: activity.userId,
+              summaryId: activity.summaryId,
+              reason: "matcher_error",
+              error: outcome.error,
+            });
           }
           tallyOutcome(outcome, stats);
         } catch (err) {
-          console.error(`[garmin-push] Activity processing error:`, err);
+          logGarminRecordFailure({
+            kind: "activities",
+            garminUserId: activity.userId,
+            summaryId: activity.summaryId,
+            reason: "processing_threw",
+            error: err,
+          });
           stats.errors++;
         }
       }
@@ -408,15 +424,18 @@ async function processPushBody(body: GarminPushNotification): Promise<void> {
       const stats = { processed: 0, errors: 0 };
       for (const daily of body.dailies) {
         try {
-          const { data: mapping } = await supabase
+          const { data: mapping, error: mappingError } = await supabase
             .from("garmin_user_mappings")
             .select("user_id")
             .eq("garmin_user_id", daily.userId)
             .single();
 
           if (!mapping) {
-            console.warn(
-              `[garmin-push] No user mapping for Garmin userId: ${daily.userId}`,
+            logGarminMappingMiss(
+              "dailies",
+              daily.userId,
+              daily.summaryId,
+              mappingError,
             );
             stats.errors++;
             continue;
@@ -430,13 +449,25 @@ async function processPushBody(body: GarminPushNotification): Promise<void> {
             .upsert(record, { onConflict: "summary_id" });
 
           if (error) {
-            console.error(`[garmin-push] Daily upsert error:`, error);
+            logGarminRecordFailure({
+              kind: "dailies",
+              garminUserId: daily.userId,
+              summaryId: daily.summaryId,
+              reason: "upsert_failed",
+              error,
+            });
             stats.errors++;
           } else {
             stats.processed++;
           }
         } catch (err) {
-          console.error(`[garmin-push] Daily processing error:`, err);
+          logGarminRecordFailure({
+            kind: "dailies",
+            garminUserId: daily.userId,
+            summaryId: daily.summaryId,
+            reason: "processing_threw",
+            error: err,
+          });
           stats.errors++;
         }
       }
@@ -448,15 +479,18 @@ async function processPushBody(body: GarminPushNotification): Promise<void> {
       const stats = { processed: 0, errors: 0 };
       for (const sleep of body.sleeps) {
         try {
-          const { data: mapping } = await supabase
+          const { data: mapping, error: mappingError } = await supabase
             .from("garmin_user_mappings")
             .select("user_id")
             .eq("garmin_user_id", sleep.userId)
             .single();
 
           if (!mapping) {
-            console.warn(
-              `[garmin-push] No user mapping for Garmin userId: ${sleep.userId}`,
+            logGarminMappingMiss(
+              "sleeps",
+              sleep.userId,
+              sleep.summaryId,
+              mappingError,
             );
             stats.errors++;
             continue;
@@ -470,13 +504,25 @@ async function processPushBody(body: GarminPushNotification): Promise<void> {
             .upsert(record, { onConflict: "summary_id" });
 
           if (error) {
-            console.error(`[garmin-push] Sleep upsert error:`, error);
+            logGarminRecordFailure({
+              kind: "sleeps",
+              garminUserId: sleep.userId,
+              summaryId: sleep.summaryId,
+              reason: "upsert_failed",
+              error,
+            });
             stats.errors++;
           } else {
             stats.processed++;
           }
         } catch (err) {
-          console.error(`[garmin-push] Sleep processing error:`, err);
+          logGarminRecordFailure({
+            kind: "sleeps",
+            garminUserId: sleep.userId,
+            summaryId: sleep.summaryId,
+            reason: "processing_threw",
+            error: err,
+          });
           stats.errors++;
         }
       }
@@ -488,13 +534,19 @@ async function processPushBody(body: GarminPushNotification): Promise<void> {
       const stats = { processed: 0, errors: 0 };
       for (const bodyComp of body.bodyComps) {
         try {
-          const { data: mapping } = await supabase
+          const { data: mapping, error: mappingError } = await supabase
             .from("garmin_user_mappings")
             .select("user_id")
             .eq("garmin_user_id", bodyComp.userId)
             .single();
 
           if (!mapping) {
+            logGarminMappingMiss(
+              "bodyComps",
+              bodyComp.userId,
+              bodyComp.summaryId,
+              mappingError,
+            );
             stats.errors++;
             continue;
           }
@@ -523,7 +575,13 @@ async function processPushBody(body: GarminPushNotification): Promise<void> {
             .upsert(record, { onConflict: "summary_id" });
 
           if (error) {
-            console.error(`[garmin-push] Body comp upsert error:`, error);
+            logGarminRecordFailure({
+              kind: "bodyComps",
+              garminUserId: bodyComp.userId,
+              summaryId: bodyComp.summaryId,
+              reason: "upsert_failed",
+              error,
+            });
             stats.errors++;
             continue;
           }
@@ -539,7 +597,13 @@ async function processPushBody(body: GarminPushNotification): Promise<void> {
           // currently in `users`.
           await mirrorGarminBodyCompToUser(supabase, mapping.user_id, bodyComp);
         } catch (err) {
-          console.error(`[garmin-push] Body comp processing error:`, err);
+          logGarminRecordFailure({
+            kind: "bodyComps",
+            garminUserId: bodyComp.userId,
+            summaryId: bodyComp.summaryId,
+            reason: "processing_threw",
+            error: err,
+          });
           stats.errors++;
         }
       }
@@ -551,13 +615,19 @@ async function processPushBody(body: GarminPushNotification): Promise<void> {
       const stats = { processed: 0, errors: 0 };
       for (const stress of body.stressDetails) {
         try {
-          const { data: mapping } = await supabase
+          const { data: mapping, error: mappingError } = await supabase
             .from("garmin_user_mappings")
             .select("user_id")
             .eq("garmin_user_id", stress.userId)
             .single();
 
           if (!mapping) {
+            logGarminMappingMiss(
+              "stressDetails",
+              stress.userId,
+              stress.summaryId,
+              mappingError,
+            );
             stats.errors++;
             continue;
           }
@@ -580,13 +650,25 @@ async function processPushBody(body: GarminPushNotification): Promise<void> {
             .upsert(record, { onConflict: "summary_id" });
 
           if (error) {
-            console.error(`[garmin-push] Stress upsert error:`, error);
+            logGarminRecordFailure({
+              kind: "stressDetails",
+              garminUserId: stress.userId,
+              summaryId: stress.summaryId,
+              reason: "upsert_failed",
+              error,
+            });
             stats.errors++;
           } else {
             stats.processed++;
           }
         } catch (err) {
-          console.error(`[garmin-push] Stress processing error:`, err);
+          logGarminRecordFailure({
+            kind: "stressDetails",
+            garminUserId: stress.userId,
+            summaryId: stress.summaryId,
+            reason: "processing_threw",
+            error: err,
+          });
           stats.errors++;
         }
       }
@@ -603,15 +685,18 @@ async function processPushBody(body: GarminPushNotification): Promise<void> {
       const stats = { processed: 0, errors: 0, skipped: 0 };
       for (const activity of body.manuallyUpdatedActivities) {
         try {
-          const { data: mapping } = await supabase
+          const { data: mapping, error: mappingError } = await supabase
             .from("garmin_user_mappings")
             .select("user_id")
             .eq("garmin_user_id", activity.userId)
             .single();
 
           if (!mapping) {
-            console.warn(
-              `[garmin-push] No user mapping for Garmin userId: ${activity.userId}`,
+            logGarminMappingMiss(
+              "manuallyUpdatedActivities",
+              activity.userId,
+              activity.summaryId,
+              mappingError,
             );
             stats.errors++;
             continue;
@@ -620,9 +705,11 @@ async function processPushBody(body: GarminPushNotification): Promise<void> {
           const summaryId = activity.summaryId ??
             (activity as { activityId?: string }).activityId;
           if (!summaryId) {
-            console.warn(
-              "[garmin-push] Missing manual-update summary id - skipping",
-            );
+            logGarminRecordFailure({
+              kind: "manuallyUpdatedActivities",
+              garminUserId: activity.userId,
+              reason: "missing_summary_id",
+            });
             stats.errors++;
             continue;
           }
@@ -698,10 +785,13 @@ async function processPushBody(body: GarminPushNotification): Promise<void> {
             .eq("id", existing[0].id);
 
           if (error) {
-            console.error(
-              `[garmin-push] Manually updated activity error:`,
+            logGarminRecordFailure({
+              kind: "manuallyUpdatedActivities",
+              garminUserId: activity.userId,
+              summaryId,
+              reason: "upsert_failed",
               error,
-            );
+            });
             stats.errors++;
           } else {
             console.log(
@@ -712,10 +802,13 @@ async function processPushBody(body: GarminPushNotification): Promise<void> {
             stats.processed++;
           }
         } catch (err) {
-          console.error(
-            `[garmin-push] Manually updated activity processing error:`,
-            err,
-          );
+          logGarminRecordFailure({
+            kind: "manuallyUpdatedActivities",
+            garminUserId: activity.userId,
+            summaryId: activity.summaryId,
+            reason: "processing_threw",
+            error: err,
+          });
           stats.errors++;
         }
       }
@@ -735,7 +828,7 @@ async function processPushBody(body: GarminPushNotification): Promise<void> {
       };
       for (const detail of body.activityDetails) {
         try {
-          const { data: mapping } = await supabase
+          const { data: mapping, error: mappingError } = await supabase
             .from("garmin_user_mappings")
             .select("user_id")
             .eq("garmin_user_id", detail.userId)
@@ -795,8 +888,11 @@ async function processPushBody(body: GarminPushNotification): Promise<void> {
           }
 
           if (!mapping) {
-            console.warn(
-              `[garmin-push] No user mapping for Garmin userId: ${detail.userId}`,
+            logGarminMappingMiss(
+              "activityDetails",
+              detail.userId,
+              detail.summary?.summaryId,
+              mappingError,
             );
             stats.errors++;
             continue;
@@ -811,9 +907,11 @@ async function processPushBody(body: GarminPushNotification): Promise<void> {
             (summary as { activityId?: string }).activityId ??
             (detail as { activityId?: string }).activityId;
           if (!detailSummaryId) {
-            console.warn(
-              "[garmin-push] ActivityDetails missing summaryId — skipping",
-            );
+            logGarminRecordFailure({
+              kind: "activityDetails",
+              garminUserId: detail.userId,
+              reason: "missing_summary_id",
+            });
             stats.errors++;
             continue;
           }
@@ -832,14 +930,23 @@ async function processPushBody(body: GarminPushNotification): Promise<void> {
             "[garmin-push]",
           );
           if (outcome.kind === "error") {
-            console.error(
-              "[garmin-push] Matcher pipeline error (detail):",
-              outcome.error,
-            );
+            logGarminRecordFailure({
+              kind: "activityDetails",
+              garminUserId: detail.userId,
+              summaryId: detailSummaryId,
+              reason: "matcher_error",
+              error: outcome.error,
+            });
           }
           tallyOutcome(outcome, stats);
         } catch (err) {
-          console.error(`[garmin-push] Activity detail processing error:`, err);
+          logGarminRecordFailure({
+            kind: "activityDetails",
+            garminUserId: detail.userId,
+            summaryId: detail.summary?.summaryId,
+            reason: "processing_threw",
+            error: err,
+          });
           stats.errors++;
         }
       }
@@ -851,13 +958,19 @@ async function processPushBody(body: GarminPushNotification): Promise<void> {
       const stats = { processed: 0, errors: 0 };
       for (const epoch of body.epochs) {
         try {
-          const { data: mapping } = await supabase
+          const { data: mapping, error: mappingError } = await supabase
             .from("garmin_user_mappings")
             .select("user_id")
             .eq("garmin_user_id", epoch.userId)
             .single();
 
           if (!mapping) {
+            logGarminMappingMiss(
+              "epochs",
+              epoch.userId,
+              epoch.summaryId,
+              mappingError,
+            );
             stats.errors++;
             continue;
           }
@@ -890,12 +1003,25 @@ async function processPushBody(body: GarminPushNotification): Promise<void> {
             .upsert(record, { onConflict: "summary_id" });
 
           if (error) {
+            logGarminRecordFailure({
+              kind: "epochs",
+              garminUserId: epoch.userId,
+              summaryId: epoch.summaryId,
+              reason: "upsert_failed",
+              error,
+            });
             stats.errors++;
           } else {
             stats.processed++;
           }
         } catch (err) {
-          console.error(`[garmin-push] Epoch processing error:`, err);
+          logGarminRecordFailure({
+            kind: "epochs",
+            garminUserId: epoch.userId,
+            summaryId: epoch.summaryId,
+            reason: "processing_threw",
+            error: err,
+          });
           stats.errors++;
         }
       }
@@ -907,13 +1033,19 @@ async function processPushBody(body: GarminPushNotification): Promise<void> {
       const stats = { processed: 0, errors: 0 };
       for (const metric of body.userMetrics) {
         try {
-          const { data: mapping } = await supabase
+          const { data: mapping, error: mappingError } = await supabase
             .from("garmin_user_mappings")
             .select("user_id")
             .eq("garmin_user_id", metric.userId)
             .single();
 
           if (!mapping) {
+            logGarminMappingMiss(
+              "userMetrics",
+              metric.userId,
+              metric.summaryId,
+              mappingError,
+            );
             stats.errors++;
             continue;
           }
@@ -935,13 +1067,25 @@ async function processPushBody(body: GarminPushNotification): Promise<void> {
             .upsert(record, { onConflict: "summary_id" });
 
           if (error) {
-            console.error(`[garmin-push] User metrics upsert error:`, error);
+            logGarminRecordFailure({
+              kind: "userMetrics",
+              garminUserId: metric.userId,
+              summaryId: metric.summaryId,
+              reason: "upsert_failed",
+              error,
+            });
             stats.errors++;
           } else {
             stats.processed++;
           }
         } catch (err) {
-          console.error(`[garmin-push] User metrics processing error:`, err);
+          logGarminRecordFailure({
+            kind: "userMetrics",
+            garminUserId: metric.userId,
+            summaryId: metric.summaryId,
+            reason: "processing_threw",
+            error: err,
+          });
           stats.errors++;
         }
       }
@@ -980,13 +1124,19 @@ async function processPushBody(body: GarminPushNotification): Promise<void> {
       const stats = { processed: 0, errors: 0 };
       for (const summary of summaries) {
         try {
-          const { data: mapping } = await supabase
+          const { data: mapping, error: mappingError } = await supabase
             .from("garmin_user_mappings")
             .select("user_id")
             .eq("garmin_user_id", summary.userId)
             .single();
 
           if (!mapping) {
+            logGarminMappingMiss(
+              bodyKey,
+              summary.userId,
+              summary.summaryId,
+              mappingError,
+            );
             stats.errors++;
             continue;
           }
@@ -1008,13 +1158,25 @@ async function processPushBody(body: GarminPushNotification): Promise<void> {
             .upsert(record, { onConflict: "summary_id" });
 
           if (error) {
-            console.error(`[garmin-push] ${dataType} upsert error:`, error);
+            logGarminRecordFailure({
+              kind: bodyKey,
+              garminUserId: summary.userId,
+              summaryId: summary.summaryId,
+              reason: "upsert_failed",
+              error,
+            });
             stats.errors++;
           } else {
             stats.processed++;
           }
         } catch (err) {
-          console.error(`[garmin-push] ${dataType} processing error:`, err);
+          logGarminRecordFailure({
+            kind: bodyKey,
+            garminUserId: summary.userId,
+            summaryId: summary.summaryId,
+            reason: "processing_threw",
+            error: err,
+          });
           stats.errors++;
         }
       }

@@ -13,7 +13,7 @@
 
 **Touches:** supabase/functions/garmin-push/index.ts
 
-- [ ] A deno test: a failing record's error reaches the log with its kind.
+- [x] A deno test: a failing record's error reaches the log with its kind.
 - [ ] Deployed to dev.
 - [ ] codegen if annotations changed, `flutter analyze` and the suite green.
 
