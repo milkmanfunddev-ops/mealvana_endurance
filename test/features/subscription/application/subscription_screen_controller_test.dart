@@ -183,6 +183,51 @@ void main() {
     });
   });
 
+  group('the plan bought, Monthly or Annual (mp-628, finding 08-001)', () {
+    test('a monthly subscription is Monthly', () async {
+      final s = await read(container(info: customerInfoOpen));
+      expect(s.term, PlanTerm.monthly);
+    });
+
+    test('a trial names the plan it starts', () async {
+      final s = await read(container(info: customerInfoTrial));
+      expect(s.term, PlanTerm.monthly);
+    });
+
+    test('a founding annual product is Annual', () async {
+      final s = await read(container(info: customerInfoFounding));
+      expect(s.term, PlanTerm.annual);
+    });
+
+    test('an ended plan and a Grant name no plan', () async {
+      expect((await read(container(info: customerInfoLapsed))).term, isNull);
+      expect(
+        (await read(
+          container(info: customerInfoGranted, storeSubscription: false),
+        )).term,
+        isNull,
+      );
+    });
+
+    test('the term is read from the store SKU', () {
+      expect(
+        SubscriptionScreenState.termOf('mealvana_pro_monthly'),
+        PlanTerm.monthly,
+      );
+      expect(
+        SubscriptionScreenState.termOf('me_pro_annual_prod'),
+        PlanTerm.annual,
+      );
+      // Google Play reports `product:base-plan`.
+      expect(
+        SubscriptionScreenState.termOf('me_pro_monthly:monthly'),
+        PlanTerm.monthly,
+      );
+      expect(SubscriptionScreenState.termOf('prod350601b768'), isNull);
+      expect(SubscriptionScreenState.termOf(null), isNull);
+    });
+  });
+
   test('a status RevenueCat pushes (a purchase from Upgrade) '
       'replaces ended with active', () async {
     final c = container(info: customerInfoLapsed);

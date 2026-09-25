@@ -33,6 +33,10 @@ enum PlanStatus {
   ended,
 }
 
+/// The plan bought, as the paywall sells it (mp-628: the athlete "sees the
+/// plan they bought").
+enum PlanTerm { monthly, annual }
+
 /// What the Subscription screen shows.
 class SubscriptionScreenState {
   const SubscriptionScreenState({
@@ -42,6 +46,7 @@ class SubscriptionScreenState {
     this.canManage = false,
     this.grantSource,
     this.daysLeft,
+    this.term,
   });
 
   final PlanStatus plan;
@@ -63,6 +68,11 @@ class SubscriptionScreenState {
   /// Days until the Grant ends, when [plan] is [PlanStatus.grant] and it has
   /// an end.
   final int? daysLeft;
+
+  /// Monthly or Annual, for a running store plan (trial, active, founding)
+  /// whose SKU says which. Null for a Grant, an ended plan, or a SKU that
+  /// names neither.
+  final PlanTerm? term;
 
   /// Upgrade (opens the paywall) is offered only once the plan has ended
   /// (mp-495 §3).
@@ -97,7 +107,21 @@ class SubscriptionScreenState {
       canManage: hasStoreSubscription,
       grantSource: grant?.source,
       daysLeft: grant?.daysLeftAt(now),
+      term: plan == PlanStatus.ended || plan == PlanStatus.grant
+          ? null
+          : termOf(status.productId),
     );
+  }
+
+  /// Pure: the term a store SKU sells. Every SKU the offerings sell names it
+  /// (`me_pro_monthly`, `me_pro_annual_founding`, `mealvana_pro_monthly`,
+  /// Play's `product:base-plan`); anything else names no plan.
+  static PlanTerm? termOf(String? productId) {
+    final id = productId?.toLowerCase();
+    if (id == null) return null;
+    if (id.contains('annual') || id.contains('yearly')) return PlanTerm.annual;
+    if (id.contains('monthly')) return PlanTerm.monthly;
+    return null;
   }
 
   /// Whether [productId] is one of the founding products the `founding`
@@ -129,6 +153,8 @@ class SubscriptionScreenController extends _$SubscriptionScreenController {
 
   /// Where Manage subscription goes: the same as the paywall's ⋯ menu entry
   /// (RevenueCat's management URL, else the store's own subscriptions page).
+  /// Null when there is no page to open: a Test Store subscription, which
+  /// RevenueCat gives no management URL (finding 09-001).
   Future<Uri?> managementUrl() =>
       ref.read(subscriptionServiceProvider).managementUrl();
 }

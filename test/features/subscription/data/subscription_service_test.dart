@@ -302,6 +302,50 @@ void main() {
     });
   });
 
+  group('manageUrlFrom (where Manage subscription goes)', () {
+    test("RevenueCat's management URL when it has one", () {
+      expect(
+        SubscriptionService.manageUrlFrom(
+          'https://apps.apple.com/account/subscriptions?x=1',
+          _FakeEntitlement(),
+          TargetPlatform.iOS,
+        ),
+        Uri.parse('https://apps.apple.com/account/subscriptions?x=1'),
+      );
+    });
+
+    test('none from RevenueCat on a store plan → the store page', () {
+      expect(
+        SubscriptionService.manageUrlFrom(
+          null,
+          _FakeEntitlement(isActive: false),
+          TargetPlatform.iOS,
+        ),
+        Uri.parse(kAppleSubscriptionsUrl),
+      );
+    });
+
+    test('none from RevenueCat on a Test Store plan → nothing to open '
+        '(finding 09-001)', () {
+      expect(
+        SubscriptionService.manageUrlFrom(
+          null,
+          _FakeEntitlement(store: Store.testStore),
+          TargetPlatform.iOS,
+        ),
+        isNull,
+      );
+      expect(
+        SubscriptionService.manageUrlFrom(
+          '',
+          _FakeEntitlement(store: Store.testStore),
+          TargetPlatform.android,
+        ),
+        isNull,
+      );
+    });
+  });
+
   group('not-configured guards (SDK absent in tests)', () {
     test('isAvailable is false before configure', () {
       expect(service.isAvailable, isFalse);

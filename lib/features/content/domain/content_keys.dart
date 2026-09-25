@@ -1027,6 +1027,12 @@ class ContentKeys {
       'subscription.grant_one_day_left';
   static const String subscriptionGrantLastDay = 'subscription.grant_last_day';
 
+  // The plan bought on the status card (mp-628): `{plan}` is the paywall's
+  // Monthly or Annual label. Manage subscription with no page to open (a
+  // Test Store subscription, finding 09-001) says where to manage it.
+  static const String subscriptionPlanName = 'subscription.plan_name';
+  static const String subscriptionManageNoPage = 'subscription.manage_no_page';
+
   // Redeem code (mp-458): the entry in the paywall's ⋯ menu (mp-494) and on
   // the Subscription screen (mp-495), our own Code entry sheet, what a Code
   // did and why one was refused — lib/features/subscription. `{days}` is the

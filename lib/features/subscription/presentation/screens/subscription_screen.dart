@@ -18,13 +18,15 @@ import 'paywall_screen.dart';
 
 /// The Subscription screen in Settings (mp-495, approved as mp-500).
 ///
-/// The plan's status with its date (a trial with the day it ends, active
+/// The plan's status with the plan bought (Monthly or Annual, mp-628) and
+/// its date (a trial with the day it ends, active
 /// with the day it renews, founding member, or ended; a Grant with where it
 /// came from and its days left, mp-558), then what Pro
 /// includes as a tick list with the AI features under the one Vana line, as
 /// on the paywall. Upgrade opens the paywall, only once the plan has ended;
 /// Manage subscription opens the store's own page, only with a store
-/// subscription on record. Redeem code opens our own Code entry (mp-458),
+/// subscription on record; with no page to open (a Test Store subscription)
+/// it says where the subscription is. Redeem code opens our own Code entry (mp-458),
 /// always there: a Code can grant Pro, pair or refer whatever the plan.
 ///
 /// Built from the paywall's `kyle_design` pieces (`FeatureList`, the Kyle
@@ -49,13 +51,21 @@ class SubscriptionScreen extends ConsumerWidget {
     final uri = await ref
         .read(subscriptionScreenControllerProvider.notifier)
         .managementUrl();
+    // No page to open (a Test Store subscription): say where it is instead
+    // of opening an empty browser (finding 09-001).
+    if (uri == null) {
+      if (!context.mounted) return;
+      MealvanaSnackbar.showInfo(
+        context,
+        content.getValue(ContentKeys.subscriptionManageNoPage),
+      );
+      return;
+    }
     var opened = false;
-    if (uri != null) {
-      try {
-        opened = await launch(uri);
-      } catch (_) {
-        opened = false;
-      }
+    try {
+      opened = await launch(uri);
+    } catch (_) {
+      opened = false;
     }
     if (!context.mounted || opened) return;
     MealvanaSnackbar.showInfo(
@@ -226,6 +236,18 @@ class _PlanStatusCard extends StatelessWidget {
       },
     });
     final dateLine = _dateLine();
+    final term = state.term;
+    final planLine = term == null
+        ? null
+        : ContentKeys.format(
+            content.getValue(ContentKeys.subscriptionPlanName),
+            {
+              'plan': content.getValue(switch (term) {
+                PlanTerm.monthly => ContentKeys.paywallMonthlyLabel,
+                PlanTerm.annual => ContentKeys.paywallAnnualLabel,
+              }),
+            },
+          );
     return BaseCard(
       key: const ValueKey('subscription.status_card'),
       padding: AppSpacing.cardPadding,
@@ -241,6 +263,14 @@ class _PlanStatusCard extends StatelessWidget {
                   : textColor,
             ),
           ),
+          if (planLine != null) ...[
+            const SizedBox(height: AppSpacing.xs),
+            Text(
+              key: const ValueKey('subscription.plan'),
+              planLine,
+              style: AppTextStyles.bodyLarge.copyWith(color: textColor),
+            ),
+          ],
           if (dateLine != null) ...[
             const SizedBox(height: AppSpacing.xs),
             Text(

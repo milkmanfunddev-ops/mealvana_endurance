@@ -230,21 +230,39 @@ class SubscriptionService {
 
   /// Where this customer manages the subscription: RevenueCat's
   /// `managementURL` when it has one, else the platform store's
-  /// subscriptions page. Never null on a phone; null on the web.
+  /// subscriptions page. Null on the web, and for a Test Store subscription,
+  /// which has no page anywhere ([manageUrlFrom]).
   Future<Uri?> managementUrl() async {
     if (isAvailable) {
       try {
         final info = await Purchases.getCustomerInfo();
-        final url = info.managementURL;
-        if (url != null && url.isNotEmpty) {
-          final parsed = Uri.tryParse(url);
-          if (parsed != null) return parsed;
-        }
+        return manageUrlFrom(
+          info.managementURL,
+          info.entitlements.all[Entitlement.pro.key],
+          defaultTargetPlatform,
+        );
       } catch (e, st) {
         _report('managementURL read failed', e, stackTrace: st);
       }
     }
     return storeSubscriptionsUrl(defaultTargetPlatform);
+  }
+
+  /// Pure: RevenueCat's [managementUrl] when it has one; else nothing for a
+  /// Test Store plan (RevenueCat keeps none, and the store page would open
+  /// blank, finding 09-001); else the platform store's page.
+  @visibleForTesting
+  static Uri? manageUrlFrom(
+    String? managementUrl,
+    EntitlementInfo? pro,
+    TargetPlatform platform,
+  ) {
+    final parsed = managementUrl == null || managementUrl.isEmpty
+        ? null
+        : Uri.tryParse(managementUrl);
+    if (parsed != null) return parsed;
+    if (pro?.store == Store.testStore) return null;
+    return storeSubscriptionsUrl(platform);
   }
 
   /// Whether this customer has a store subscription to `pro` on record,
