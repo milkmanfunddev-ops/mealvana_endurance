@@ -11,7 +11,14 @@ Each entry: what went wrong or cost time, where it was seen, and the suggested f
 
 ## Open
 
-(none)
+- **#72 two runs on one account need an order, not just a warning (wave 29).** 88 and 89 shared
+  test@test.com, and 89's 19-009 needed plan be6abf2f confirmed with no list, which 88's confirms
+  and Browse picks would destroy. A flag file in a shared scratch folder (`testing-wave-w29-shared/`)
+  worked: 89 wrote it at 20:06Z, 88 held every confirm and be6abf2f write until 20:07Z. The wave's
+  chat cap (5) was used up by the two runs, so some of 88's legs went unrun (88-024). Suggested fix:
+  wave-lead step 5 names the state each shared-account check starts from and orders them with a
+  flag when one run destroys another's start state; split tickets (Lee 09-25) should keep
+  chat-heavy checks apart so one pair does not exhaust the cap.
 
 ## Done
 

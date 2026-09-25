@@ -1,7 +1,7 @@
 # 17-006 · Previous plans sheet: empty, offline and error states, swipe-dismiss, and tapping during load
 
 - kind: followup-test
-- status: triaged
+- status: closed
 - ticket: 17
 - run: w12-20260924T1712Z
 - screen: Previous plans (sheet) and the Plan tab ⋮ menu
@@ -30,3 +30,5 @@ Not run (followup).
 **Triage.**
 
 Picked for retest ticket 89 (Lee, 2026-09-25).
+
+Run by retest ticket 89 (run w29-20260925T1950Z, build e3367d2c): fail, filed as 89-011, 89-012; closed here, the new Findings carry it.

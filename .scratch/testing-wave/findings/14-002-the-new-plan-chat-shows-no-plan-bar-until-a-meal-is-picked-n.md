@@ -1,7 +1,7 @@
 # 14-002 · The new-plan chat shows no plan bar until a meal is picked, not Your plan · 0 meals
 
 - kind: ssot-conflict
-- status: triaged
+- status: closed
 - ticket: 14
 - run: w8-20260924T1418Z
 - screen: Vana chat (New meal plan)
@@ -29,3 +29,5 @@ No plan bar shows while the draft is empty (no draft row exists yet, see 14-001)
 **Triage.**
 
 Fix ticket 70 (Lee, 2026-09-25). Closed by the retest after it merges.
+
+Closed by retest ticket 88 (run w29-20260925T1949Z, build e3367d2c): pass, evidence in runs/88/verdicts.md.

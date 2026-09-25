@@ -1,7 +1,7 @@
 # 18-008 · Browse meals untried paths: offline Add, server error on Add, fast double tap, Browse meals under a picker, empty search, large text, Done with nothing added
 
 - kind: followup-test
-- status: triaged
+- status: closed
 - ticket: 18
 - run: w16-20260924T2100Z
 - screen: Browse meals
@@ -32,3 +32,5 @@ Not run in w16 (ticket 18 covered each on-screen control once).
 **Triage.**
 
 Picked for retest ticket 88 (Lee, 2026-09-25).
+
+Run by retest ticket 88 (run w29-20260925T1949Z, build e3367d2c): fail, filed as 88-013, 88-014, 88-024; closed here, the new Findings carry it.

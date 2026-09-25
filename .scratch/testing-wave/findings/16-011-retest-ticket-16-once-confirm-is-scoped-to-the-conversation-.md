@@ -1,7 +1,7 @@
 # 16-011 · Retest ticket 16 once Confirm is scoped to the conversation: confirm a Draft while the week has another confirmed plan
 
 - kind: followup-test
-- status: triaged
+- status: closed
 - ticket: 16
 - run: w9-20260924T1446Z
 - screen: Vana chat → Review plan sheet
@@ -28,3 +28,5 @@ The confirmed Draft is the only confirmed plan for the week; the old confirmed p
 **Triage.**
 
 Picked for retest ticket 88 (Lee, 2026-09-25).
+
+Closed by retest ticket 88 (run w29-20260925T1949Z, build e3367d2c): pass, evidence in runs/88/verdicts.md. Side problems filed as 88-016.

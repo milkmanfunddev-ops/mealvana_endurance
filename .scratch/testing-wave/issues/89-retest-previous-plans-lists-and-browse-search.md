@@ -1,6 +1,6 @@
 # 89: Retest: previous plans, lists and Browse search
 
-**Status:** in-progress (wave 29, 2026-09-25)
+**Status:** done (wave 29, 2026-09-25)
 **Blocked by:** none.
 **Next:** `/implement-lee testing-wave`
 **Model:** opus

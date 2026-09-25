@@ -1,7 +1,7 @@
 # 15-007 · Conversations list: scroll to the oldest row, rows for deleted or other-week plans, and the Ask Vana tab's empty state
 
 - kind: followup-test
-- status: triaged
+- status: closed
 - ticket: 15
 - run: w12-20260924T1712Z
 - screen: Conversations
@@ -30,3 +30,5 @@ Every stored conversation is reachable; rows for other weeks are told apart from
 **Triage.**
 
 Picked for retest ticket 88 (Lee, 2026-09-25: every open follow-up test folded into the planned runs, cap of ten lifted for this pass).
+
+Run by retest ticket 88 (run w29-20260925T1949Z, build e3367d2c): fail, filed as 88-002, 88-021, 88-024; closed here, the new Findings carry it.

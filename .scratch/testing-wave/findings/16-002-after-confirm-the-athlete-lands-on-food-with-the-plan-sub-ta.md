@@ -1,7 +1,7 @@
 # 16-002 · After Confirm the athlete lands on Food with the Plan sub-tab open, not Shopping
 
 - kind: ssot-conflict
-- status: triaged
+- status: closed
 - ticket: 16
 - run: w9-20260924T1446Z
 - screen: Food (Plan / Shopping sub-tabs)
@@ -28,3 +28,5 @@ The Food tab opens with the Plan sub-tab selected and the tab bar showing. The r
 **Triage.**
 
 Fix ticket 72 (Lee, 2026-09-25). Closed by the retest after it merges.
+
+Closed by retest ticket 88 (run w29-20260925T1949Z, build e3367d2c): pass, evidence in runs/88/verdicts.md. Side problems filed as 88-016.

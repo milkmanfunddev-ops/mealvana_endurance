@@ -1,7 +1,7 @@
 # 14-007 · Plan tab menu: Start a new plan and Delete plan while a new-plan draft is open
 
 - kind: followup-test
-- status: triaged
+- status: closed
 - ticket: 14
 - run: w8-20260924T1418Z
 - screen: Plan tab (⋮ menu)
@@ -25,3 +25,5 @@ Not run (followup). The menu shows Start a new plan, Previous plans, Delete plan
 **Triage.**
 
 Picked for retest ticket 88 (Lee, 2026-09-25: every open follow-up test folded into the planned runs, cap of ten lifted for this pass).
+
+Closed by retest ticket 88 (run w29-20260925T1949Z, build e3367d2c): pass, evidence in runs/88/verdicts.md. Side problems filed as 88-019.

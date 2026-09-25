@@ -1,7 +1,7 @@
 # 61-001 · The Swap screen and set_day_slot still offer or place a meal with no nutrition numbers, and Browse's Add on one shows a raw error
 
 - kind: bug
-- status: triaged
+- status: closed
 - ticket: 61
 - run: w22-20260925T1215Z
 - screen: Swap meal; Browse meals; none (set_day_slot action)
@@ -28,3 +28,5 @@ Ticket 61 guarded every server add path through `addMeal`/`swapMeal`, so the wri
 
 **Triage.**
 Fix ticket 74 (filed by the wave lead from wave 22's review, 2026-09-25). Closed by the retest after it merges.
+
+Closed by retest ticket 88 (run w29-20260925T1949Z, build e3367d2c): pass, evidence in runs/88/verdicts.md. Side problems filed as 88-009, 88-010.

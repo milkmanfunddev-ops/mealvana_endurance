@@ -1,7 +1,7 @@
 # 19-009 · After the confirmed plan's list is deleted, a plan edit or Vana Add back should rebuild it (mp-244)
 
 - kind: followup-test
-- status: triaged
+- status: closed
 - ticket: 19
 - run: w11-20260924T1647Z
 - screen: Food (Shopping sub-tab)
@@ -30,3 +30,5 @@ mp-244: "the list is rebuilt after every plan edit", so the first edit brings ba
 **Triage.**
 
 Picked for retest ticket 89 (Lee, 2026-09-25).
+
+Closed by retest ticket 89 (run w29-20260925T1950Z, build e3367d2c): pass, evidence in runs/89/verdicts.md. Side problems filed as 89-001, 89-002, 89-004.

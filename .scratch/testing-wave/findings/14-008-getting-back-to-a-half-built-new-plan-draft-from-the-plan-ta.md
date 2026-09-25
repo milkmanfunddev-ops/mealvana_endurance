@@ -1,7 +1,7 @@
 # 14-008 · Getting back to a half-built new-plan draft from the Plan tab
 
 - kind: followup-test
-- status: triaged
+- status: closed
 - ticket: 14
 - run: w8-20260924T1418Z
 - screen: Plan tab
@@ -25,3 +25,5 @@ Not run (followup). After step 2 the Plan tab shows only the old confirmed plan 
 **Triage.**
 
 Picked for retest ticket 88 (Lee, 2026-09-25: every open follow-up test folded into the planned runs, cap of ten lifted for this pass).
+
+Run by retest ticket 88 (run w29-20260925T1949Z, build e3367d2c): fail, filed as 88-018; closed here, the new Findings carry it.

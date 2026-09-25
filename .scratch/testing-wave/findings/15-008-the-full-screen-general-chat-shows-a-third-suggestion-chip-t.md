@@ -1,7 +1,7 @@
 # 15-008 · The full-screen general chat shows a third suggestion chip the Ask Vana sheet did not
 
 - kind: followup-test
-- status: triaged
+- status: closed
 - ticket: 15
 - run: w12-20260924T1712Z
 - screen: Ask Vana sheet and full-screen general chat
@@ -26,3 +26,5 @@ The full-screen chat shows a third chip, "Pick my dinner and plan the rest of th
 **Triage.**
 
 Picked for retest ticket 88 (Lee, 2026-09-25: every open follow-up test folded into the planned runs, cap of ten lifted for this pass).
+
+Closed by retest ticket 88 (run w29-20260925T1949Z, build e3367d2c): pass, evidence in runs/88/verdicts.md.

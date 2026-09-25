@@ -1,7 +1,7 @@
 # 17-001 · Previous plans sheet stops at 20 plans: five archived plans from the week of Aug 23 never appear
 
 - kind: bug
-- status: triaged
+- status: closed
 - ticket: 17
 - run: w12-20260924T1712Z
 - screen: Previous plans (sheet from the Plan tab's ⋮)
@@ -30,3 +30,5 @@ Every archived and confirmed plan with meals, other than the one on the Plan tab
 
 **Triage.**
 Fix ticket 49 (Lee, 2026-09-25). Closed by the retest after it merges.
+
+Closed by retest ticket 89 (run w29-20260925T1950Z, build e3367d2c): pass, evidence in runs/89/verdicts.md.

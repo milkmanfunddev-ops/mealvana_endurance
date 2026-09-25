@@ -1,7 +1,7 @@
 # 16-001 · Confirm plan in the Draft's conversation confirmed the week's old plan and archived the Draft it showed
 
 - kind: bug
-- status: triaged
+- status: closed
 - ticket: 16
 - run: w9-20260924T1446Z
 - screen: Vana chat → Review plan sheet (Confirm plan)
@@ -38,3 +38,5 @@ Not stopped: the list-vs-plan comparison still ran on the plan the server confir
 
 **Triage.**
 Fix ticket 34 (Lee, 2026-09-25). Closed by the retest after it merges.
+
+Closed by retest ticket 88 (run w29-20260925T1949Z, build e3367d2c): pass, evidence in runs/88/verdicts.md.

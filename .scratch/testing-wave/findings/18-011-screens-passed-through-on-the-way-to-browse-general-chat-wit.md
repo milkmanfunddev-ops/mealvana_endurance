@@ -1,7 +1,7 @@
 # 18-011 · Screens passed through on the way to Browse: general chat with no plus, Review plan on an old conversation's draft, Plan tab note card, Shopping tab after a browse pick
 
 - kind: followup-test
-- status: triaged
+- status: closed
 - ticket: 18
 - run: w16-20260924T2100Z
 - screen: Vana chat (general and planning), Food (Plan and Shopping sub-tabs)
@@ -31,3 +31,5 @@ Not run in w16 (outside ticket 18's one screen).
 **Triage.**
 
 Picked for retest ticket 88 (Lee, 2026-09-25: every open follow-up test folded into the planned runs, cap of ten lifted for this pass).
+
+Closed by retest ticket 88 (run w29-20260925T1949Z, build e3367d2c): pass, evidence in runs/88/verdicts.md. Side problems filed as 88-024.

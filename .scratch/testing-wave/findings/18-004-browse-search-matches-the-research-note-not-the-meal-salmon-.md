@@ -1,7 +1,7 @@
 # 18-004 · Browse search matches the research note, not the meal: salmon returns eight meals with no salmon, and every result shows the note as its subtitle
 
 - kind: bug
-- status: triaged
+- status: closed
 - ticket: 18
 - run: w16-20260924T2100Z
 - screen: Browse meals (search)
@@ -28,3 +28,5 @@ Search finds meals by what they are (name, ingredients). A search for an ingredi
 **Triage.**
 
 Fix ticket 60 (Lee, 2026-09-25). Closed by the retest after it merges.
+
+Closed by retest ticket 89 (run w29-20260925T1950Z, build e3367d2c): pass, evidence in runs/89/verdicts.md. Side problems filed as 89-003, 89-008.

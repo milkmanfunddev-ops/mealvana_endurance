@@ -1,7 +1,7 @@
 # 18-001 · A tap on an already-ticked Add opens the meal's detail, whose Add to plan adds it again and doubles the servings (4 to 8) with no warning
 
 - kind: bug
-- status: triaged
+- status: closed
 - ticket: 18
 - run: w16-20260924T2100Z
 - screen: Browse meals (from the Vana planning chat)
@@ -34,3 +34,5 @@ Step 4 opened Sweet rice cake's meal detail (the tap on the disabled tick falls 
 
 **Triage.**
 Fix ticket 34 (Lee, 2026-09-25). Closed by the retest after it merges.
+
+Closed by retest ticket 88 (run w29-20260925T1949Z, build e3367d2c): pass, evidence in runs/88/verdicts.md. Side problems filed as 88-007.

@@ -1,7 +1,7 @@
 # 14-006 · Plan tab: New meal plan then Back with nothing picked, several times
 
 - kind: followup-test
-- status: triaged
+- status: closed
 - ticket: 14
 - run: w8-20260924T1418Z
 - screen: Plan tab / Vana chat (New meal plan)
@@ -25,3 +25,5 @@ Not run (followup). Seen here: the tap alone writes a conversation row titled "T
 **Triage.**
 
 Picked for retest ticket 88 (Lee, 2026-09-25: every open follow-up test folded into the planned runs, cap of ten lifted for this pass).
+
+Run by retest ticket 88 (run w29-20260925T1949Z, build e3367d2c): fail, filed as 88-020; closed here, the new Findings carry it.

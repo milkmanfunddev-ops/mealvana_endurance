@@ -1,7 +1,7 @@
 # 73-001 · Use this plan again leaves an older conversation-less draft for the week live but hidden
 
 - kind: bug
-- status: triaged
+- status: closed
 - ticket: 73
 - run: w22-20260925T1215Z
 - screen: Previous plans → earlier plan → Use this plan again
@@ -25,3 +25,5 @@ The second copy replaces the first unconfirmed copy; the week never holds a live
 
 **Triage.**
 Fix ticket 75 (filed by the wave lead from wave 22's review, 2026-09-25). Closed by the retest after it merges.
+
+Closed by retest ticket 89 (run w29-20260925T1950Z, build e3367d2c): pass, evidence in runs/89/verdicts.md. Side problems filed as 89-006.

@@ -1,7 +1,7 @@
 # 15-001 · An archived Draft's conversation shows it as a live Draft: 4 meals, editable servings, Review plan with Confirm plan
 
 - kind: ssot-conflict
-- status: triaged
+- status: closed
 - ticket: 15
 - run: w12-20260924T1712Z
 - screen: Vana chat (meal planning), opened from Conversations
@@ -31,3 +31,5 @@ The plan bar reads "Your plan · 4 meals" with an orange Review plan button, the
 **Triage.**
 
 Fix ticket 71 (Lee, 2026-09-25). Closed by the retest after it merges.
+
+Closed by retest ticket 88 (run w29-20260925T1949Z, build e3367d2c): pass, evidence in runs/88/verdicts.md. Side problems filed as 88-005.
