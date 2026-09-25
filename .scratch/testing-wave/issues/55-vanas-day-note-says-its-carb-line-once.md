@@ -1,6 +1,6 @@
 # 55: Vana's day note says its carb line once
 
-**Status:** ready-for-agent
+**Status:** in-progress (wave 19, 2026-09-25)
 **Blocked by:** none.
 **Next:** `/implement-lee testing-wave`
 **Model:** opus

@@ -1,6 +1,6 @@
 # 44: The barcode scanner keeps its caller and survives the camera prompt
 
-**Status:** ready-for-agent
+**Status:** in-progress (wave 19, 2026-09-25)
 **Blocked by:** none.
 **Next:** `/implement-lee testing-wave`
 **Model:** opus

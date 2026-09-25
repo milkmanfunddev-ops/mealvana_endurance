@@ -1,6 +1,6 @@
 # 39: A code redemption outlives the account that made it
 
-**Status:** ready-for-agent
+**Status:** in-progress (wave 19, 2026-09-25)
 **Blocked by:** none.
 **Next:** `/implement-lee testing-wave`
 **Model:** opus

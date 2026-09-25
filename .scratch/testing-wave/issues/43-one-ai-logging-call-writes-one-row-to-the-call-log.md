@@ -1,6 +1,6 @@
 # 43: One AI logging call writes one row to the call log
 
-**Status:** ready-for-agent
+**Status:** in-progress (wave 19, 2026-09-25)
 **Blocked by:** none.
 **Next:** `/implement-lee testing-wave`
 **Model:** opus

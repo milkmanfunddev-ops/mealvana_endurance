@@ -1,6 +1,6 @@
 # 33: Sign-out clears the last account from the device
 
-**Status:** ready-for-agent
+**Status:** in-progress (wave 19, 2026-09-25)
 **Blocked by:** none.
 **Next:** `/implement-lee testing-wave`
 **Model:** fable

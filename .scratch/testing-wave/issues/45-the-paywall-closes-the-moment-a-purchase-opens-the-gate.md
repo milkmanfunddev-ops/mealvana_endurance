@@ -1,6 +1,6 @@
 # 45: The paywall closes the moment a purchase opens the Gate
 
-**Status:** ready-for-agent
+**Status:** in-progress (wave 19, 2026-09-25)
 **Blocked by:** none.
 **Next:** `/implement-lee testing-wave`
 **Model:** opus

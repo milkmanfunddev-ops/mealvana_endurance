@@ -1,6 +1,6 @@
 # 53: Sign-in screens: a wrong code says wrong, and Log In stays busy
 
-**Status:** ready-for-agent
+**Status:** in-progress (wave 19, 2026-09-25)
 **Blocked by:** none.
 **Next:** `/implement-lee testing-wave`
 **Model:** opus

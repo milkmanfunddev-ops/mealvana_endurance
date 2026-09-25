@@ -1,6 +1,6 @@
 # 56: Kroger: the right location reason, the app's own name, and no 400 on every Shopping open
 
-**Status:** ready-for-agent
+**Status:** in-progress (wave 19, 2026-09-25)
 **Blocked by:** none.
 **Next:** `/implement-lee testing-wave`
 **Model:** opus

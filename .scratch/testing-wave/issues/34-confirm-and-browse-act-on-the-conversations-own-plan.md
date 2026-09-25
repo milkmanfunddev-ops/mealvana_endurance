@@ -1,6 +1,6 @@
 # 34: Confirm and Browse act on the conversation's own plan
 
-**Status:** ready-for-agent
+**Status:** in-progress (wave 19, 2026-09-25)
 **Blocked by:** none.
 **Next:** `/implement-lee testing-wave`
 **Model:** fable
