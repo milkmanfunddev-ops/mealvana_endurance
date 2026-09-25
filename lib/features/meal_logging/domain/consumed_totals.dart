@@ -1,3 +1,5 @@
+import 'meal_component.dart';
+
 /// Aggregated nutritional totals for a set of [MealLog] entries.
 ///
 /// Returned by [MealLoggingService.consumedTotalsForDate] and used by the
@@ -71,4 +73,50 @@ class ConsumedTotals {
   String toString() =>
       'ConsumedTotals(calories: $calories, carbs: ${carbsG}g, '
       'protein: ${proteinG}g, fat: ${fatG}g, sodium: ${sodiumMg}mg)';
+}
+
+/// Totals for ONE meal log, summed from its items, where an unknown stays
+/// unknown (`null ≠ 0`).
+///
+/// A field is null when no item carries a value for it; otherwise it is the
+/// sum of the items that do. A stated zero on an item counts as known. These
+/// are the values written to a `meal_logs` row's denormalised columns, so a
+/// quick add whose items have no sodium saves `sodium_mg` null rather than 0
+/// (Finding 26-004). Day-level displays keep using [ConsumedTotals].
+class MealTotals {
+  const MealTotals({
+    this.calories,
+    this.carbsG,
+    this.proteinG,
+    this.fatG,
+    this.sodiumMg,
+  });
+
+  factory MealTotals.ofComponents(Iterable<MealComponent> components) {
+    int? calories;
+    double? carbsG;
+    double? proteinG;
+    double? fatG;
+    double? sodiumMg;
+    for (final c in components) {
+      if (c.calories != null) calories = (calories ?? 0) + c.calories!;
+      if (c.carbG != null) carbsG = (carbsG ?? 0) + c.carbG!;
+      if (c.proteinG != null) proteinG = (proteinG ?? 0) + c.proteinG!;
+      if (c.fatG != null) fatG = (fatG ?? 0) + c.fatG!;
+      if (c.sodiumMg != null) sodiumMg = (sodiumMg ?? 0) + c.sodiumMg!;
+    }
+    return MealTotals(
+      calories: calories,
+      carbsG: carbsG,
+      proteinG: proteinG,
+      fatG: fatG,
+      sodiumMg: sodiumMg,
+    );
+  }
+
+  final int? calories;
+  final double? carbsG;
+  final double? proteinG;
+  final double? fatG;
+  final double? sodiumMg;
 }

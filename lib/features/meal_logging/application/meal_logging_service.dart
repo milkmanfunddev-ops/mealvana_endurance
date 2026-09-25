@@ -344,17 +344,8 @@ class MealLoggingService {
   // Private Helpers
   // ========================================================================
 
-  ConsumedTotals _sumComponents(List<MealComponent> components) {
-    return components.fold(const ConsumedTotals(), (acc, c) {
-      return ConsumedTotals(
-        calories: acc.calories + (c.calories ?? 0),
-        carbsG: acc.carbsG + (c.carbG ?? 0),
-        proteinG: acc.proteinG + (c.proteinG ?? 0),
-        fatG: acc.fatG + (c.fatG ?? 0),
-        sodiumMg: acc.sodiumMg + (c.sodiumMg ?? 0),
-      );
-    });
-  }
+  MealTotals _sumComponents(List<MealComponent> components) =>
+      MealTotals.ofComponents(components);
 
   /// Format a servings multiplier for the portion string.
   String _formatServings(double servings) {

@@ -5,6 +5,7 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import '../../../../shared/widgets/kyle_design/kyle_design.dart';
 import '../../domain/meal_component.dart';
 import '../providers/draft_meal_controller.dart';
+import 'manual_log_form.dart' show parseCaloriesInput;
 
 /// "Manual" tab body for the build-a-meal sheet.
 ///
@@ -61,7 +62,7 @@ class _ManualComponentFormState extends ConsumerState<ManualComponentForm> {
       portion: _portionCtrl.text.trim().isEmpty
           ? '1 serving'
           : _portionCtrl.text.trim(),
-      calories: int.tryParse(_calCtrl.text),
+      calories: parseCaloriesInput(_calCtrl.text),
       carbG: double.tryParse(_carbCtrl.text),
       proteinG: double.tryParse(_protCtrl.text),
       fatG: double.tryParse(_fatCtrl.text),
