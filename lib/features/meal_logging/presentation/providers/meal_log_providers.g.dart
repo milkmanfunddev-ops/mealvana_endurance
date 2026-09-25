@@ -408,38 +408,53 @@ final class ConsumedTotalsForDateFamily extends $Family
 
 /// Most recent 25 distinct meal names for the current user.
 ///
-/// Used by the "Recent" section of the meal picker. Rebuilds on invalidation
-/// (not a stream — recents don't need real-time updates within a session),
-/// so the `meal_logs` sync is awaited here, not kicked: a one-shot read has
-/// no later emission to carry the server's rows. The Recent tab shows its
-/// spinner meanwhile; a sync that fails answers from the local table.
+/// Used by the "Recent" section of the meal picker. Streams from Drift, so a
+/// meal just logged (re-logged from Recent, or from a recipe) moves to the
+/// top at once, whichever write path logged it (testing-wave 26-005: the
+/// controller's invalidate was skipped whenever the auto-dispose controller
+/// had been disposed mid-write, and `logRecipe` never asked).
+///
+/// The `meal_logs` sync is awaited before the first emission rather than
+/// kicked, so a fresh sign-in shows the spinner, not an empty Recent that
+/// fills in under the athlete's finger; a sync that fails answers from the
+/// local table.
 
 @ProviderFor(recentMeals)
 const recentMealsProvider = RecentMealsProvider._();
 
 /// Most recent 25 distinct meal names for the current user.
 ///
-/// Used by the "Recent" section of the meal picker. Rebuilds on invalidation
-/// (not a stream — recents don't need real-time updates within a session),
-/// so the `meal_logs` sync is awaited here, not kicked: a one-shot read has
-/// no later emission to carry the server's rows. The Recent tab shows its
-/// spinner meanwhile; a sync that fails answers from the local table.
+/// Used by the "Recent" section of the meal picker. Streams from Drift, so a
+/// meal just logged (re-logged from Recent, or from a recipe) moves to the
+/// top at once, whichever write path logged it (testing-wave 26-005: the
+/// controller's invalidate was skipped whenever the auto-dispose controller
+/// had been disposed mid-write, and `logRecipe` never asked).
+///
+/// The `meal_logs` sync is awaited before the first emission rather than
+/// kicked, so a fresh sign-in shows the spinner, not an empty Recent that
+/// fills in under the athlete's finger; a sync that fails answers from the
+/// local table.
 
 final class RecentMealsProvider
     extends
         $FunctionalProvider<
           AsyncValue<List<MealLog>>,
           List<MealLog>,
-          FutureOr<List<MealLog>>
+          Stream<List<MealLog>>
         >
-    with $FutureModifier<List<MealLog>>, $FutureProvider<List<MealLog>> {
+    with $FutureModifier<List<MealLog>>, $StreamProvider<List<MealLog>> {
   /// Most recent 25 distinct meal names for the current user.
   ///
-  /// Used by the "Recent" section of the meal picker. Rebuilds on invalidation
-  /// (not a stream — recents don't need real-time updates within a session),
-  /// so the `meal_logs` sync is awaited here, not kicked: a one-shot read has
-  /// no later emission to carry the server's rows. The Recent tab shows its
-  /// spinner meanwhile; a sync that fails answers from the local table.
+  /// Used by the "Recent" section of the meal picker. Streams from Drift, so a
+  /// meal just logged (re-logged from Recent, or from a recipe) moves to the
+  /// top at once, whichever write path logged it (testing-wave 26-005: the
+  /// controller's invalidate was skipped whenever the auto-dispose controller
+  /// had been disposed mid-write, and `logRecipe` never asked).
+  ///
+  /// The `meal_logs` sync is awaited before the first emission rather than
+  /// kicked, so a fresh sign-in shows the spinner, not an empty Recent that
+  /// fills in under the athlete's finger; a sync that fails answers from the
+  /// local table.
   const RecentMealsProvider._()
     : super(
         from: null,
@@ -456,17 +471,17 @@ final class RecentMealsProvider
 
   @$internal
   @override
-  $FutureProviderElement<List<MealLog>> $createElement(
+  $StreamProviderElement<List<MealLog>> $createElement(
     $ProviderPointer pointer,
-  ) => $FutureProviderElement(pointer);
+  ) => $StreamProviderElement(pointer);
 
   @override
-  FutureOr<List<MealLog>> create(Ref ref) {
+  Stream<List<MealLog>> create(Ref ref) {
     return recentMeals(ref);
   }
 }
 
-String _$recentMealsHash() => r'192570df909ad4ac8470a1ff28a623762e2eab23';
+String _$recentMealsHash() => r'19e9a9b5acfe6603449fbae9cde693457dc954c8';
 
 /// Streams all non-deleted saved meals for the current user, ordered by
 /// [SavedMeal.lastUsedAt] descending.
@@ -573,7 +588,7 @@ final class MealLogControllerProvider
   MealLogController create() => MealLogController();
 }
 
-String _$mealLogControllerHash() => r'dc4ce5dfed7693cd1f08353651ca3ab50d045b60';
+String _$mealLogControllerHash() => r'c2be3c5c4870510d1e555f44a9ed8490260f5099';
 
 /// Controller for meal log mutations.
 ///
