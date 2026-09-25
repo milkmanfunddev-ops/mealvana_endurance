@@ -421,6 +421,23 @@ third card; app-side, no prototype surface.
   the outcome, neither marks a current slot. Unreachable on a regular day even
   with stale state (`carbDay &&` gate).
 
+### RULED — 2026-09-24, later (Xuan) — protocol chips navigate; prototype v17
+
+**The breakdown's PROTOCOL chips are day navigation, not decoration.** Tapping
+Day 1 / Day 3 switches the whole breakdown (and the timeline beneath) to that
+day's view — outcome or planned, targets re-derived; tapping the current-day
+chip returns to today; tapping the chip you're on is a no-op. Read-only is
+preserved: nothing on any destination is editable. The back chevron restores
+the day you *opened* the page from, however far you wandered — the page is a
+viewer, not a place you get lost in.
+
+Prototype v17 ships this (both files, server verified byte-equal): chips carry
+`onPick` through the same scenario-switch the timeline's day pills use;
+`openLoadBreakdown` records the origin day, `lbClose` restores it.
+Harness-verified: ring follows the viewed day; Day-2 chip returns to the exact
+today-view you left (falls back to the default when opened from a past/future
+day); close restores origin after any amount of chip-hopping.
+
 ## Notes on the two new ideas
 
 **Reminder to start.** Machinery exists — `NotificationService`
