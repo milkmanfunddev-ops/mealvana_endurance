@@ -101,7 +101,15 @@ Future<DashboardData> macroDashboardDay(Ref ref) async {
   // meal timeline (CD-3) — meal-group nodes are replaced wholesale by slot
   // cards at their CL-5 clocks; workout nodes interleave by time untouched.
   // On a regular day `carb` is null and NOTHING below changes (CD-1).
-  final carb = await ref.watch(carbDashboardForDateProvider(dateStr).future);
+  // FAIL-SOFT on purpose: a carb-plan lookup failure renders the ordinary
+  // day rather than taking the whole dashboard down — same posture as the
+  // profile-weight read above. CD-1's negative covers the degraded state.
+  CarbDashboardData? carb;
+  try {
+    carb = await ref.watch(carbDashboardForDateProvider(dateStr).future);
+  } catch (_) {
+    carb = null;
+  }
   if (carb == null) return assembled;
   return assembled.withCarb(carb, _carbTimeline(assembled.nodes, carb));
 }
