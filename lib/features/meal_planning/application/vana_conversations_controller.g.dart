@@ -81,7 +81,7 @@ final class VanaConversationsControllerProvider
 }
 
 String _$vanaConversationsControllerHash() =>
-    r'c8ff8fc5f4395c0fdb153763abf88f268f184807';
+    r'f902e167412c70d412cc42caa14c9b7b74f1ceef';
 
 /// The conversations list for one [kind] ("Ask Vana" / "Meal plans"), read
 /// through `list_conversations` on `vana-action` (ticket 126): each planning
