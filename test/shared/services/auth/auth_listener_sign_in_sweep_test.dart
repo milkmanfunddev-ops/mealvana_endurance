@@ -30,8 +30,6 @@ class _MockAnalytics extends Mock implements AnalyticsTracker {}
 
 class _MockLogger extends Mock implements AppLogger {}
 
-class _MockPrefs extends Mock implements SharedPreferences {}
-
 class _MockRemote extends Mock implements UserMemoryRemote {}
 
 class _FakeUser extends Fake implements User {
@@ -48,14 +46,18 @@ class _FakeSession extends Fake implements Session {
 
 const _a = 'aaaaaaaa-0000-4000-8000-000000000001';
 const _b = 'bbbbbbbb-0000-4000-8000-000000000002';
+const _c = 'cccccccc-0000-4000-8000-000000000003';
 
 void main() {
   late AppDatabase db;
   late StreamController<AuthState> authStates;
   late ProviderContainer container;
   late _MockLogger logger;
+  late SharedPreferences prefs;
 
   setUp(() async {
+    SharedPreferences.setMockInitialValues({});
+    prefs = await SharedPreferences.getInstance();
     db = AppDatabase.memory();
     addTearDown(db.close);
     authStates = StreamController<AuthState>.broadcast();
@@ -80,7 +82,7 @@ void main() {
             supabaseClient: fakeSupabaseClient(auth: auth),
             sentry: const NoopSentryReporter(),
             logger: logger,
-            sharedPreferences: _MockPrefs(),
+            sharedPreferences: prefs,
           ),
         ),
         appDatabaseProvider.overrideWithValue(db),
@@ -164,6 +166,191 @@ void main() {
       expect(await _count(db, 'user_memories', _b, 'AND needs_upload = 1'), 1);
     },
   );
+  group('coach mode (wave 27 review)', () {
+    test("a coach's phone keeps its cached athlete and their shared rows; an "
+        'unrelated account still goes', () async {
+      // Coach B's phone caches athlete C's profile the way
+      // syncAthleteProfilesFromSupabase writes it: device id = user id,
+      // no auth id.
+      await _seedAthleteProfile(db, _c);
+      await _seedCoachRow(db, _b);
+      await _seedCoachLinks(db, coach: _b, athlete: _c);
+
+      await emit(AuthChangeEvent.signedIn, _b);
+
+      expect(await _countUsers(db, _c), 1);
+      expect(await _countWhere(db, 'coach_athlete_relationships'), 1);
+      expect(await _countWhere(db, 'coach_messages'), 1);
+      expect(await _countWhere(db, 'coach_pairing_codes'), 1);
+      expect(await _countWhere(db, 'coaches'), 1);
+      // A, who has no link to B, is swept as before.
+      expect(await _count(db, 'activities', _a), 0);
+    });
+
+    test("an athlete's phone keeps its coach's cached profile and their shared "
+        'rows', () async {
+      await _seedAthleteProfile(db, _c);
+      await _seedCoachRow(db, _c);
+      await _seedCoachLinks(db, coach: _c, athlete: _b);
+
+      await emit(AuthChangeEvent.initialSession, _b);
+
+      expect(await _countUsers(db, _c), 1);
+      expect(await _countWhere(db, 'coaches'), 1);
+      expect(await _countWhere(db, 'coach_athlete_relationships'), 1);
+      expect(await _countWhere(db, 'coach_messages'), 1);
+      expect(await _countWhere(db, 'coach_pairing_codes'), 1);
+    });
+
+    test('coach-mode rows between two other accounts still go', () async {
+      await _seedAthleteProfile(db, _c);
+      await _seedCoachRow(db, _c);
+      await _seedCoachLinks(db, coach: _c, athlete: _a);
+
+      await emit(AuthChangeEvent.signedIn, _b);
+
+      expect(await _countWhere(db, 'coach_athlete_relationships'), 0);
+      expect(await _countWhere(db, 'coach_messages'), 0);
+      expect(await _countWhere(db, 'coach_pairing_codes'), 0);
+      expect(await _countWhere(db, 'coaches'), 0);
+      expect(await _countUsers(db, _c), 0);
+    });
+  });
+
+  group('food preferences (wave 27 review)', () {
+    test("another account's unsent food-preference edits stay when its upload "
+        'marker is set, with its profile', () async {
+      // A edited only food preferences offline and signed out: the upload
+      // failed, so the marker is set and nothing carries needs_upload.
+      await db.customStatement(
+        'UPDATE user_memories SET needs_upload = 0 WHERE user_id = ?',
+        [_a],
+      );
+      await _seedFoodPreference(db, _a);
+      await prefs.setBool('food_preferences_upload_pending_$_a', true);
+
+      await emit(AuthChangeEvent.signedIn, _b);
+
+      expect(await _count(db, 'food_preferences_table', _a), 1);
+      expect(await _countUsers(db, _a), 1);
+      expect(await _count(db, 'activities', _a), 0);
+    });
+
+    test('without the marker and with nothing unsynced they go', () async {
+      await db.customStatement(
+        'UPDATE user_memories SET needs_upload = 0 WHERE user_id = ?',
+        [_a],
+      );
+      await _seedFoodPreference(db, _a);
+
+      await emit(AuthChangeEvent.signedIn, _b);
+
+      expect(await _count(db, 'food_preferences_table', _a), 0);
+      expect(await _countUsers(db, _a), 0);
+    });
+  });
+
+  test(
+    'onboarding rows under the temp id waiting to be re-keyed are not swept',
+    () async {
+      const temp = 'dddddddd-0000-4000-8000-000000000004';
+      await prefs.setString('onboarding_temp_user_id', temp);
+      await _seed(db, temp);
+
+      await emit(AuthChangeEvent.signedIn, _b);
+
+      expect(await _count(db, 'activities', temp), 1);
+      expect(await _count(db, 'user_memories', temp), 2);
+      expect(await _countUsers(db, temp), 1);
+      // Others still go.
+      expect(await _count(db, 'activities', _a), 0);
+    },
+  );
+}
+
+/// A profile as the coach repository caches one for display.
+Future<void> _seedAthleteProfile(AppDatabase db, String userId) async {
+  await db
+      .into(db.userProfilesTable)
+      .insert(
+        UserProfilesTableCompanion.insert(
+          id: userId,
+          deviceId: userId,
+          firstName: const Value('Cached'),
+        ),
+      );
+}
+
+Future<void> _seedCoachRow(AppDatabase db, String userId) async {
+  await db
+      .into(db.coachesTable)
+      .insert(
+        CoachesTableCompanion.insert(
+          id: 'coach-row-$userId',
+          userId: userId,
+          firstName: 'Kim',
+          lastName: 'Coach',
+          email: 'coach@example.com',
+        ),
+      );
+}
+
+Future<void> _seedCoachLinks(
+  AppDatabase db, {
+  required String coach,
+  required String athlete,
+}) async {
+  await db
+      .into(db.coachAthleteRelationshipsTable)
+      .insert(
+        CoachAthleteRelationshipsTableCompanion.insert(
+          id: 'rel-$coach-$athlete',
+          coachUserId: coach,
+          athleteUserId: athlete,
+          requestedBy: 'coach',
+          status: const Value('active'),
+        ),
+      );
+  await db
+      .into(db.coachMessagesTable)
+      .insert(
+        CoachMessagesTableCompanion.insert(
+          id: 'msg-$coach-$athlete',
+          coachUserId: coach,
+          athleteUserId: athlete,
+          senderUserId: athlete,
+          messageText: 'Long run done',
+        ),
+      );
+  await db
+      .into(db.coachPairingCodesTable)
+      .insert(
+        CoachPairingCodesTableCompanion.insert(
+          id: 'code-$coach-$athlete',
+          coachUserId: coach,
+          code: 'ABC123',
+          expiresAt: DateTime.utc(2026, 10, 1),
+          usedByAthleteId: Value(athlete),
+        ),
+      );
+}
+
+Future<void> _seedFoodPreference(AppDatabase db, String userId) async {
+  await db
+      .into(db.foodPreferencesTable)
+      .insert(
+        FoodPreferencesTableCompanion.insert(
+          id: 'f${userId.substring(1)}',
+          userId: userId,
+          foodName: 'cilantro',
+          preference: 'dislike',
+        ),
+      );
+}
+
+Future<int> _countWhere(AppDatabase db, String table) async {
+  final rows = await db.customSelect('SELECT COUNT(*) AS n FROM $table').get();
+  return rows.single.read<int>('n');
 }
 
 /// One account: a profile, a synced activity, a synced memory and a memory

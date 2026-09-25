@@ -811,16 +811,18 @@ class SettingsController extends _$SettingsController {
         await database.clearUserData(
           currentUser.id,
           keepUnsynced: true,
+          // The marker, as the sign-in sweep reads it: set while the
+          // preferences' last upload has not landed.
           keepFoodPreferences:
               uploadFailed.contains(_everyRepository) ||
-              uploadFailed.contains('food_preferences'),
+              uploadFailed.contains('food_preferences') ||
+              FoodPreferencesRepository.isUploadPendingIn(
+                prefs,
+                currentUser.id,
+              ),
         );
       } catch (e) {
-        logger.error(
-          'Local data clear failed',
-          context: 'SETTINGS',
-          error: e,
-        );
+        logger.error('Local data clear failed', context: 'SETTINGS', error: e);
       }
     }
 

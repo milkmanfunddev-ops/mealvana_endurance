@@ -9,6 +9,7 @@ import '../analytics/analytics_tracker.dart';
 import '../notification_service.dart';
 import '../sync/sync_coordinator.dart';
 import '../../database/database_provider.dart';
+import '../../../features/food_preferences/data/food_preferences_repository.dart';
 import '../../providers/user_id_provider.dart';
 import '../../core/app_router.dart';
 import '../../../features/settings/presentation/providers/settings_controller.dart';
@@ -21,6 +22,8 @@ import '../../../features/carb_loading/presentation/providers/carb_loading_food_
 import '../../../features/calendar/presentation/providers/calendar_controller.dart';
 import '../../../features/integrations/presentation/providers/connect_training_controller.dart';
 import '../../../features/nutrition_plan/presentation/providers/macro_targets_controller.dart';
+
+const _onboardingTempUserIdKey = 'onboarding_temp_user_id';
 
 /// Service that manages the Supabase auth state listener.
 ///
@@ -268,9 +271,19 @@ class AuthListenerService {
   /// Finding 86-001). Best effort: a failure here must not block sign-in.
   Future<void> _sweepOtherAccounts(String userId) async {
     try {
+      final prefs = _ref.read(appExternalDepsProvider).sharedPreferences;
+      // Onboarding rows under the temp id wait to be re-keyed to this user.
+      final tempUserId = prefs.getString(_onboardingTempUserIdKey);
       final swept = await _ref
           .read(appDatabaseProvider)
-          .sweepOtherAccounts(userId);
+          .sweepOtherAccounts(
+            userId,
+            alsoProtected: {
+              if (tempUserId != null && tempUserId.isNotEmpty) tempUserId,
+            },
+            foodPreferencesPending: (id) async =>
+                FoodPreferencesRepository.isUploadPendingIn(prefs, id),
+          );
       if (swept.isNotEmpty) {
         _logger.info(
           'Swept other accounts\' synced rows on sign-in',

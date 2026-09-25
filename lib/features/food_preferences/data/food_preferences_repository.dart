@@ -410,8 +410,16 @@ class FoodPreferencesRepository with SyncableRepository {
     }
   }
 
-  String _uploadPendingKey(String userId) =>
-      '${repositoryKey}_upload_pending_$userId';
+  String _uploadPendingKey(String userId) => uploadPendingKey(userId);
+
+  /// The SharedPreferences key of [userId]'s upload marker, for the sign-in
+  /// sweep and sign-out, which keep the preferences while it is set.
+  static String uploadPendingKey(String userId) =>
+      'food_preferences_upload_pending_$userId';
+
+  /// Whether [userId]'s last preferences upload did not land.
+  static bool isUploadPendingIn(SharedPreferences prefs, String userId) =>
+      prefs.getBool(uploadPendingKey(userId)) ?? false;
 
   Future<void> _uploadAllPreferencesForUser(String userId) async {
     final allPreferences = await database.foodPreferencesDao

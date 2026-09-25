@@ -842,6 +842,12 @@ class AppDatabase extends _$AppDatabase {
   /// Without [keepUnsynced] (account deletion) everything of the account
   /// goes, as before (Finding 14-004).
   ///
+  /// [keepLinksTo] (the sign-in sweep: the signed-in account's ids) keeps the
+  /// coach-mode rows whose other side is one of those ids: relationships,
+  /// messages and pairing codes the signed-in coach or athlete shares with
+  /// this account. [keepCachedProfile] keeps this account's `users` and
+  /// `coaches` rows, cached on the phone to show a linked coach or athlete.
+  ///
   /// The `user_id` tables are found from the schema rather than listed, so a
   /// new user-scoped table is covered without a change here; the seam test in
   /// `test/features/settings/sign_out_clears_device_test.dart` pins the ones
@@ -850,6 +856,8 @@ class AppDatabase extends _$AppDatabase {
     String userId, {
     bool keepUnsynced = false,
     bool keepFoodPreferences = false,
+    Set<String> keepLinksTo = const {},
+    bool keepCachedProfile = false,
   }) async {
     // NULL counts as clean: some tables declare the flag nullable.
     const clean = '(needs_upload IS NULL OR needs_upload = 0)';
@@ -857,6 +865,17 @@ class AppDatabase extends _$AppDatabase {
     // Only a clean row may go under keepUnsynced; otherwise every row goes.
     final onlyClean = keepUnsynced ? 'AND $clean' : '';
     final keepFoodPrefs = keepUnsynced && keepFoodPreferences;
+    // `AND col NOT IN (...)` for each column, over the ids in keepLinksTo.
+    final links = keepLinksTo.toList();
+    final linkMarks = List.filled(links.length, '?').join(', ');
+    String notLinked(List<String> cols) => links.isEmpty
+        ? ''
+        : cols
+              .map((c) => 'AND ($c IS NULL OR $c NOT IN ($linkMarks))')
+              .join(' ');
+    List<String> linkArgs(int cols) => [
+      for (var i = 0; i < cols; i++) ...links,
+    ];
 
     await transaction(() async {
       // Keyed through a parent, or by a column other than user_id. A dirty
@@ -878,20 +897,24 @@ class AppDatabase extends _$AppDatabase {
         '$onlyClean',
         [userId],
       );
+      const pair = ['coach_user_id', 'athlete_user_id'];
       await customStatement(
         'DELETE FROM coach_athlete_relationships '
-        'WHERE coach_user_id = ? OR athlete_user_id = ?',
-        [userId, userId],
+        'WHERE (coach_user_id = ? OR athlete_user_id = ?) ${notLinked(pair)}',
+        [userId, userId, ...linkArgs(2)],
       );
       await customStatement(
         'DELETE FROM coach_messages '
-        'WHERE coach_user_id = ? OR athlete_user_id = ? OR sender_user_id = ?',
-        [userId, userId, userId],
+        'WHERE (coach_user_id = ? OR athlete_user_id = ? '
+        'OR sender_user_id = ?) ${notLinked(pair)}',
+        [userId, userId, userId, ...linkArgs(2)],
       );
+      const codePair = ['coach_user_id', 'used_by_athlete_id'];
       await customStatement(
         'DELETE FROM coach_pairing_codes '
-        'WHERE coach_user_id = ? OR used_by_athlete_id = ?',
-        [userId, userId],
+        'WHERE (coach_user_id = ? OR used_by_athlete_id = ?) '
+        '${notLinked(codePair)}',
+        [userId, userId, ...linkArgs(2)],
       );
 
       // Every table with a user_id column, from the schema.
@@ -906,10 +929,18 @@ class AppDatabase extends _$AppDatabase {
             continue;
           }
         }
+        if (keepCachedProfile && name == coachesTable.actualTableName) {
+          continue;
+        }
 
         if (!keepUnsynced || !columns.contains('needs_upload')) {
-          await customStatement('DELETE FROM $name WHERE user_id = ?', [
+          // An athlete's code the signed-in coach used is a shared row.
+          final linked = name == athletePairingCodesTable.actualTableName
+              ? notLinked(['used_by_coach_id'])
+              : '';
+          await customStatement('DELETE FROM $name WHERE user_id = ? $linked', [
             userId,
+            if (linked.isNotEmpty) ...links,
           ]);
           continue;
         }
@@ -933,6 +964,7 @@ class AppDatabase extends _$AppDatabase {
 
       // The profile last: the feedback delete above reads its device_id. It
       // stays while anything of the account still waits for the server.
+      if (keepCachedProfile) return;
       if (keepUnsynced) {
         final stillUnsynced =
             await hasUnsyncedRows(userId) ||
@@ -1000,20 +1032,34 @@ class AppDatabase extends _$AppDatabase {
   /// [keepUnsynced]. Clears rows left by sign-outs made before ticket 33.
   ///
   /// The signed-in account is never touched, under any of its ids: a legacy
-  /// profile whose `id` differs from its `auth_user_id` keeps both.
+  /// profile whose `id` differs from its `auth_user_id` keeps both. Nor are
+  /// [alsoProtected] (onboarding rows under a temp id waiting to be re-keyed).
+  ///
+  /// An account linked to the signed-in one by a coach-athlete relationship
+  /// (a coach's athlete, an athlete's coach) keeps its cached `users` and
+  /// `coaches` rows, and the coach-mode rows the two share stay.
+  ///
+  /// An account's `food_preferences` (no `needs_upload` flag) stay while it
+  /// has anything unsynced or [foodPreferencesPending] says their last upload
+  /// did not land (wave 27 review).
+  ///
   /// Returns the ids swept.
-  Future<List<String>> sweepOtherAccounts(String signedInUserId) async {
+  Future<List<String>> sweepOtherAccounts(
+    String signedInUserId, {
+    Set<String> alsoProtected = const {},
+    Future<bool> Function(String userId)? foodPreferencesPending,
+  }) async {
     final profiles = await customSelect(
       'SELECT id, auth_user_id FROM users',
     ).get();
-    final protected = <String>{signedInUserId};
+    final signedIn = <String>{signedInUserId};
     final candidates = <String>{};
     for (final row in profiles) {
       final id = row.read<String>('id');
       final authId = row.readNullable<String>('auth_user_id');
       if (id == signedInUserId || authId == signedInUserId) {
-        protected.add(id);
-        if (authId != null) protected.add(authId);
+        signedIn.add(id);
+        if (authId != null) signedIn.add(authId);
       }
       candidates.add(id);
       if (authId != null) candidates.add(authId);
@@ -1029,14 +1075,36 @@ class AppDatabase extends _$AppDatabase {
       }
     }
 
+    final linked = <String>{};
+    final marks = List.filled(signedIn.length, '?').join(', ');
+    final relationships = await customSelect(
+      'SELECT coach_user_id, athlete_user_id FROM coach_athlete_relationships '
+      'WHERE coach_user_id IN ($marks) OR athlete_user_id IN ($marks)',
+      variables: [
+        for (final id in [...signedIn, ...signedIn]) Variable<String>(id),
+      ],
+    ).get();
+    for (final row in relationships) {
+      linked
+        ..add(row.read<String>('coach_user_id'))
+        ..add(row.read<String>('athlete_user_id'));
+    }
+
+    final protected = {...signedIn, ...alsoProtected};
     final others = candidates.difference(protected).toList()..sort();
     for (final other in others) {
       // No flag on food_preferences: they stay while the account still has
-      // anything unsynced, the sign that its last sign-out did not upload.
+      // anything unsynced, or their own upload marker is set.
+      final keepFoodPreferences =
+          await hasUnsyncedRows(other) ||
+          (foodPreferencesPending != null &&
+              await foodPreferencesPending(other));
       await clearUserData(
         other,
         keepUnsynced: true,
-        keepFoodPreferences: await hasUnsyncedRows(other),
+        keepFoodPreferences: keepFoodPreferences,
+        keepLinksTo: signedIn,
+        keepCachedProfile: linked.contains(other),
       );
     }
     return others;

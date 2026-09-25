@@ -426,6 +426,23 @@ void main() {
       },
     );
 
+    test(
+      "food preferences whose upload marker is still set stay (wave 27 review)",
+      () async {
+        final c = makeContainer();
+        when(
+          () => prefs.getBool(
+            FoodPreferencesRepository.uploadPendingKey(_outgoing),
+          ),
+        ).thenReturn(true);
+
+        await signOutFromPaywall(c);
+
+        expect(await _count(db, 'food_preferences_table', _outgoing), 1);
+        expect(await _count(db, 'activities', _outgoing), 0);
+      },
+    );
+
     test('account deletion still deletes everything, dirty or not', () async {
       final c = makeContainer();
       await _seedUnsyncedWork(db, _outgoing);
