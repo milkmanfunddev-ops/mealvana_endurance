@@ -204,6 +204,9 @@ void main() {
           subscriptionServiceProvider.overrideWithValue(service),
           userEntitlementsRepositoryProvider.overrideWithValue(repo),
           entitlementAnswerTimeoutProvider.overrideWithValue(timeout),
+          subscriptionClockProvider.overrideWithValue(
+            () => customerInfoFetchedAt,
+          ),
           isAdminProvider.overrideWith((_) async => isAdmin),
         ],
       );

@@ -182,6 +182,7 @@ void main() {
           (ref) => TestContentService(ref, content),
         ),
         trialReminderClockProvider.overrideWithValue(() => purchasedAt),
+        subscriptionClockProvider.overrideWithValue(() => purchasedAt),
       ],
     );
     addTearDown(c.dispose);

@@ -82,6 +82,9 @@ void main() {
         ),
         localNotificationSchedulerProvider.overrideWithValue(_NoopScheduler()),
         subscriptionScreenClockProvider.overrideWithValue(() => _today),
+        subscriptionClockProvider.overrideWithValue(
+          () => customerInfoFetchedAt,
+        ),
       ],
     );
     addTearDown(c.dispose);

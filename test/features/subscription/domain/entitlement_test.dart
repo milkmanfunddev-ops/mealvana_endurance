@@ -31,6 +31,45 @@ void main() {
       expect(s.isExpiredAt(DateTime.utc(2026, 9, 1, 11)), isFalse);
     });
 
+    group('countedAt: the saved copy past its own expiry (mp-679)', () {
+      final expiry = DateTime.utc(2026, 9, 24, 11, 36, 56);
+      final saved = SubscriptionStatus(
+        active: true,
+        expiresAt: expiry,
+        source: SubscriptionSource.revenuecat,
+        productId: 'me_pro_monthly',
+      );
+
+      test('the grace is the server\'s RENEWAL_GRACE_MS, 15 minutes', () {
+        expect(kRenewalGrace, const Duration(minutes: 15));
+      });
+
+      test('2 minutes past expiry still counts as it is', () {
+        final now = expiry.add(const Duration(minutes: 2));
+        expect(saved.countedAt(now), saved);
+      });
+
+      test('16 minutes past expiry counts as closed, held once', () {
+        final c = saved.countedAt(expiry.add(const Duration(minutes: 16)));
+        expect(c.active, isFalse);
+        expect(c.hadPro, isTrue);
+        expect(c.source, SubscriptionSource.none);
+        expect(c.expiresAt, expiry);
+        expect(c.productId, 'me_pro_monthly');
+      });
+
+      test('exactly at the end of the grace is closed, as on the server', () {
+        expect(saved.countedAt(expiry.add(kRenewalGrace)).active, isFalse);
+      });
+
+      test('no expiry, or an inactive answer, counts as it is', () {
+        const open = SubscriptionStatus(active: true);
+        expect(open.countedAt(DateTime.utc(2099)), open);
+        final lapsed = SubscriptionStatus(active: false, expiresAt: expiry);
+        expect(lapsed.countedAt(DateTime.utc(2099)), lapsed);
+      });
+    });
+
     test('value equality', () {
       final a = SubscriptionStatus(
         active: true,

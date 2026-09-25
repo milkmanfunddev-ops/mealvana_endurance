@@ -61,6 +61,61 @@ final class EntitlementAnswerTimeoutProvider
 String _$entitlementAnswerTimeoutHash() =>
     r'bce41b6bb23f369a079a34f600da92902d3a1762';
 
+/// The clock the status judges an answer's own expiry against (mp-679). A
+/// provider so tests can pin it; the app never overrides it.
+
+@ProviderFor(subscriptionClock)
+const subscriptionClockProvider = SubscriptionClockProvider._();
+
+/// The clock the status judges an answer's own expiry against (mp-679). A
+/// provider so tests can pin it; the app never overrides it.
+
+final class SubscriptionClockProvider
+    extends
+        $FunctionalProvider<
+          DateTime Function(),
+          DateTime Function(),
+          DateTime Function()
+        >
+    with $Provider<DateTime Function()> {
+  /// The clock the status judges an answer's own expiry against (mp-679). A
+  /// provider so tests can pin it; the app never overrides it.
+  const SubscriptionClockProvider._()
+    : super(
+        from: null,
+        argument: null,
+        retry: null,
+        name: r'subscriptionClockProvider',
+        isAutoDispose: false,
+        dependencies: null,
+        $allTransitiveDependencies: null,
+      );
+
+  @override
+  String debugGetCreateSourceHash() => _$subscriptionClockHash();
+
+  @$internal
+  @override
+  $ProviderElement<DateTime Function()> $createElement(
+    $ProviderPointer pointer,
+  ) => $ProviderElement(pointer);
+
+  @override
+  DateTime Function() create(Ref ref) {
+    return subscriptionClock(ref);
+  }
+
+  /// {@macro riverpod.override_with_value}
+  Override overrideWithValue(DateTime Function() value) {
+    return $ProviderOverride(
+      origin: this,
+      providerOverride: $SyncValueProvider<DateTime Function()>(value),
+    );
+  }
+}
+
+String _$subscriptionClockHash() => r'71717790debf0116f807fd64d0bab4b36c46dabd';
+
 /// Auth identity as a rebuild signal — see [creditsAuthUserId] for the
 /// precedent. A session appearing, changing or ending rebuilds the status.
 
