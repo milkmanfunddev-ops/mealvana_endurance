@@ -37,7 +37,7 @@ final class SettingsControllerProvider
 }
 
 String _$settingsControllerHash() =>
-    r'cbbafd5882d93e4f09cfc40e87338e34f6f4aae4';
+    r'87d94d0d98da606de832f653a59b3244349d667b';
 
 /// Controller for settings screen following Andrea Bizzotto FOA patterns
 
