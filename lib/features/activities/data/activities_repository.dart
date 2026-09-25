@@ -155,10 +155,38 @@ class ActivitiesRepository with SyncableRepository {
             .get();
     final dirtyIds = dirtyRows.map((row) => row.id).toSet();
 
+    // The table is UNIQUE(user_id, synced_from_provider, provider_workout_id):
+    // a server row with another id for the same provider workout would
+    // replace a dirty local row through that constraint (wave 27 review).
+    String providerKey(Object? userId, Object? provider, Object? workoutId) =>
+        '$userId|$provider|$workoutId';
+    final dirtyProviderRows =
+        await (_database.select(_database.activitiesTable)..where(
+              (tbl) =>
+                  tbl.needsUpload.equals(true) &
+                  tbl.syncedFromProvider.isNotNull() &
+                  tbl.providerWorkoutId.isNotNull(),
+            ))
+            .get();
+    final dirtyProviderKeys = {
+      for (final row in dirtyProviderRows)
+        providerKey(row.userId, row.syncedFromProvider, row.providerWorkoutId),
+    };
+    bool clashesWithDirtyRow(Map<String, dynamic> remote) {
+      final provider = remote['synced_from_provider'];
+      final workoutId = remote['provider_workout_id'];
+      if (provider == null || workoutId == null) return false;
+      return dirtyProviderKeys.contains(
+        providerKey(remote['user_id'], provider, workoutId),
+      );
+    }
+
     var upsertedCount = 0;
+    var skippedCount = 0;
     await _database.batch((batch) {
       for (final entry in remoteById.entries) {
-        if (dirtyIds.contains(entry.key)) {
+        if (dirtyIds.contains(entry.key) || clashesWithDirtyRow(entry.value)) {
+          skippedCount++;
           continue;
         }
 
@@ -172,14 +200,11 @@ class ActivitiesRepository with SyncableRepository {
       }
     });
 
-    if (dirtyIds.isNotEmpty) {
+    if (skippedCount > 0) {
       _logger.debug(
         'Skipped remote activity overwrite for dirty local rows',
         context: 'ACTIVITIES_REPOSITORY',
-        data: {
-          'skippedCount': dirtyIds.length,
-          'totalRemote': remoteById.length,
-        },
+        data: {'skippedCount': skippedCount, 'totalRemote': remoteById.length},
       );
     }
 

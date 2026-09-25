@@ -155,6 +155,55 @@ void main() {
     );
   });
 
+  test(
+    'activities: a server row with another id for the same provider '
+    'workout does not replace the dirty local one (wave 27 review)',
+    () async {
+      // UNIQUE(user_id, synced_from_provider, provider_workout_id): X was
+      // imported here and edited offline; the server holds Y for the same
+      // Garmin workout, so X's upload is refused and the pull brings Y.
+      const x = 'act-local-x';
+      const y = 'act-server-y';
+      final repo = ActivitiesRepository(
+        supabase: server.client,
+        database: db,
+        logger: logger,
+        sentry: sentry,
+        deduplicationService: ActivityDeduplicationService(logger: logger),
+      );
+      Map<String, dynamic> garminRow(String id, String title) => {
+        'id': id,
+        'user_id': _user,
+        'title': title,
+        'activity_type': 'run',
+        'scheduled_date_time': '2026-09-27T07:00:00',
+        'duration_minutes': 60,
+        'status': 'completed',
+        'synced_from_provider': 'garmin',
+        'provider_workout_id': 'garmin-991',
+        'deleted_at': null,
+        'created_at': _created,
+        'updated_at': _created,
+      };
+      server.tables['activities'] = [garminRow(x, 'Morning run')];
+      expect((await repo.syncFromRemote(_user)).success, isTrue);
+      await db.customStatement(
+        "UPDATE activities SET needs_upload = 1, title = 'Morning run (notes)' "
+        "WHERE id = '$x'",
+      );
+      server.tables['activities'] = [garminRow(y, 'Morning run (server)')];
+
+      expect((await repo.syncFromRemote(_user)).success, isTrue);
+
+      final rows = await db
+          .customSelect('SELECT id, title, needs_upload FROM activities')
+          .get();
+      expect(rows.map((r) => r.data['id']), [x]);
+      expect(rows.single.data['title'], 'Morning run (notes)');
+      expect(rows.single.data['needs_upload'], 1);
+    },
+  );
+
   test('events', () async {
     final carbLoading = CarbLoadingRepository(
       supabase: server.client,
