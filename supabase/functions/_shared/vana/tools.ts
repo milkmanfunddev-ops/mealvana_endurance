@@ -13,7 +13,7 @@ import * as plan from './plan.ts';
 import type { PlanScope } from './plan.ts';
 import { refreshDayNotesSoon } from './daynotes.ts';
 import { rememberFact, recallMemories, forgetMemory, setSetting as setSettingRow, getSetting, getPlanPeriod, SETTING_DEFAULTS, isCoverageScope, isMealTypes, type CoverageScope } from './memory.ts';
-import { BATCH_MEALS_PER_TYPE, servingsToCover, walkFor } from './plan-math.ts';
+import { BATCH_MEALS_PER_TYPE, hasNutritionNumbers, servingsToCover, walkFor } from './plan-math.ts';
 import { suggestedPantry } from './pantry.ts';
 import { invalidateContext } from './context-cache.ts';
 import { weatherLine, geocode } from './weather.ts';
@@ -34,7 +34,7 @@ const MORE_TAIL = 24;
 export async function planDayPart(v: VanaCtx, ctx: AthleteContext, date: string): Promise<Extract<VanaPart, { kind: 'day' }>> {
   const dg = await dayGuidance(v, ctx, date);
   const contexts = (dg.label === 'Rest day' || dg.label === 'Low-load day') ? ['rest-day'] : dg.label === 'Race eve' ? ['race-week', 'carb-load'] : dg.label === 'Carb-load day' ? ['carb-load'] : ['everyday', 'recovery'];
-  const used = new Set<string>(); const r = await plan.planDay(v, date, async (slot) => { const found = await searchMeals(v, { mealType: slot, contexts: contexts as MealContext[], limit: 6, embed: false }); const pick = found.find((m) => !used.has(m.name.toLowerCase()) && (m.source === 'library' || m.mealType === slot)) ?? found.find((m) => !used.has(m.name.toLowerCase())) ?? null; if (pick) used.add(pick.name.toLowerCase()); return pick; });
+  const used = new Set<string>(); const r = await plan.planDay(v, date, async (slot) => { const found = (await searchMeals(v, { mealType: slot, contexts: contexts as MealContext[], limit: 6, embed: false })).filter(hasNutritionNumbers); const pick = found.find((m) => !used.has(m.name.toLowerCase()) && (m.source === 'library' || m.mealType === slot)) ?? found.find((m) => !used.has(m.name.toLowerCase())) ?? null; if (pick) used.add(pick.name.toLowerCase()); return pick; });
   return { kind: 'day', date, label: dg.label, slots: r.slots, filled: r.filled };
 }
 
@@ -68,7 +68,8 @@ export async function draftWeekPlan(v: VanaCtx, ctx: AthleteContext, scope: Plan
   for (const t of types) {
     if (have.has(t)) continue;
     const excludeIds = [...p.meals.map((m) => m.libraryMealId ?? m.savedMealId ?? '').filter(Boolean), ...shown];
-    const found = await searchMeals(v, { mealType: t, contexts: weekContexts(ctx), limit: perType, excludeIds, embed: false });
+    // A meal with no numbers is never drafted (mp-678): ask for twice the batch so passing one by still fills it.
+    const found = (await searchMeals(v, { mealType: t, contexts: weekContexts(ctx), limit: perType * 2, excludeIds, embed: false })).filter(hasNutritionNumbers).slice(0, perType);
     for (const m of found) { shown.add(m.id); p = await plan.addMeal(v, m, servings, undefined, scope); }
   }
   return p;
@@ -94,7 +95,9 @@ export async function mealPickerPart(v: VanaCtx, ctx: AthleteContext, scope: Pla
   const onHand = (i.ingredientsOnHand ?? []).map((x) => x.toLowerCase().trim()).filter(Boolean);
   const wide = i.maxPrepMinutes != null || onHand.length > 0;
   const found = await searchMeals(v, { query: i.query ?? (onHand.length ? onHand.join(' ') : undefined), mealType, contexts: i.contexts ?? weekContexts(ctx), batch: i.batch, limit: (wide ? 14 : Math.max(8, want + 2)) + MORE_TAIL, excludeAllergens: i.excludeAllergens, requireDiet: i.requireDiet, excludeIds, kind: i.kind ?? null });
-  let pool = i.maxPrepMinutes != null ? found.filter((m) => m.prepMinutes != null && m.prepMinutes <= i.maxPrepMinutes!) : found;
+  // The picker's tiles go straight into the plan, so a meal with no numbers is never offered here (mp-678); Browse still lists it.
+  const plannable = found.filter(hasNutritionNumbers);
+  let pool = i.maxPrepMinutes != null ? plannable.filter((m) => m.prepMinutes != null && m.prepMinutes <= i.maxPrepMinutes!) : plannable;
   if (onHand.length) { const uses = (m: MealRef) => onHand.filter((x) => m.ingredients.toLowerCase().includes(x) || m.name.toLowerCase().includes(x)); pool = pool.map((m) => ({ m, u: uses(m) })).sort((a, b) => b.u.length - a.u.length).map(({ m, u }) => (u.length ? { ...m, why: `Uses your ${u.join(', ')} · ${m.why}` } : m)); }
   const meals = pool.slice(0, want); meals.forEach((m) => shown.add(m.id));
   const more = pool.slice(want, want + MORE_TAIL);

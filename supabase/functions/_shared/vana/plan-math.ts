@@ -29,6 +29,13 @@ export function servingsToCover(periodDays = 7, batchCooking = true, mealsInBatc
   return Math.max(1, Math.min(12, n));
 }
 
+/** A meal has its numbers when kcal, carbs, protein and fat are all there (`null` is not `0`: 0 g fat is a number). A plan
+ *  never picks a meal without them (Lee's ruling on mp-678, testing-wave 61): it stays browsable, but plan build, the
+ *  picker, Browse's add, swap and same-as-last-time all pass it by, so a gap in the library never reaches a plan. */
+export function hasNutritionNumbers(m: { kcal: number | null; carbsG: number | null; proteinG: number | null; fatG: number | null }): boolean {
+  return m.kcal != null && m.carbsG != null && m.proteinG != null && m.fatG != null;
+}
+
 /** `batchCooking` = the plan's mode. `mealTypes` = the athlete's chosen walk, when they have one. */
 export interface CoverageOpts { batchCooking?: boolean; mealTypes?: readonly string[] | null }
 
