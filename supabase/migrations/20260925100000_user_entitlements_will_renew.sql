@@ -10,7 +10,8 @@
 --
 -- Additive and idempotent. APPLY BEFORE deploying revenuecat-webhook or any
 -- function importing `_shared/vana/entitlement.ts`: both name the column, and
--- the gate fails closed (refuses everyone) when its select errors.
+-- the gate fails closed (refuses everyone) when its select errors. Then apply
+-- 20260925110000_allowance_survives_renewal_grace.sql (it reads this column).
 -- Existing rows start not renewing (no grace) until their next event.
 -- =====================================================================
 
