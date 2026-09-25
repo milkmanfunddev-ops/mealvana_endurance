@@ -280,7 +280,8 @@ class _PaywallScreenState extends ConsumerState<PaywallScreen> {
     final confirmed = await _confirm(
       context,
       title: content.getValue(ContentKeys.paywallSignOutConfirmTitle),
-      body: content.getValue(ContentKeys.paywallSignOutConfirmBody),
+      // Settings' body, one key for both confirms (86-004).
+      body: content.getValue(ContentKeys.settingsSignOutConfirmBody),
       action: content.getValue(ContentKeys.paywallSignOutButton),
       cancel: content.getValue(ContentKeys.paywallCancel),
       destructive: false,

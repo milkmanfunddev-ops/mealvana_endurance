@@ -5,6 +5,7 @@ import '../../auth/application/auth_service.dart';
 import '../../../shared/services/app_external_deps.dart';
 import '../../../shared/services/analytics/analytics_events.dart';
 import '../../../shared/services/analytics/analytics_tracker.dart';
+import '../../../shared/services/device_info_service.dart';
 import '../domain/dietary_preference.dart';
 import '../domain/allergy.dart';
 
@@ -51,8 +52,11 @@ class OnboardingService {
       unitSystem: unitSystem,
     );
 
-    // Track user registration
-    await _analytics.trackUserRegistered(deviceId: user.id);
+    // Track user registration with the device id `app_opened` sent, so the
+    // registration ties to the device's earlier events (86-006).
+    await _analytics.trackUserRegistered(
+      deviceId: ref.read(deviceInfoServiceProvider).deviceId,
+    );
 
     // Identify the user in analytics with all their properties
     await _analytics.identifyUser(

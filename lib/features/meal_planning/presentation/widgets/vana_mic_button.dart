@@ -4,6 +4,7 @@ import 'package:font_awesome_flutter/font_awesome_flutter.dart';
 import 'package:speech_to_text/speech_recognition_result.dart';
 import 'package:speech_to_text/speech_to_text.dart';
 
+import '../../../../shared/widgets/kyle_design/feedback/mealvana_snackbar.dart';
 import '../../../../theme/kyle_design/app_colors.dart';
 import 'vana_round_button.dart';
 
@@ -12,8 +13,11 @@ import 'vana_round_button.dart';
 /// tap, never on build: initialising is what raises iOS's Speech Recognition
 /// prompt, and asking on the way into a chat the athlete may never dictate
 /// into invites a "Don't Allow" iOS never asks again (ticket 79, Finding
-/// 09-004). Renders nothing on web, and hides once that first ask comes back
-/// unavailable (refused, no engine). While listening the button fills
+/// 09-004). Renders nothing on web. When the ask fails the button asks the
+/// plugin whether permission is what failed: refused (iOS never asks twice)
+/// keeps the button, and every tap shows [permissionMessage] saying where to
+/// turn access back on; a device with no speech engine at all hides it
+/// (ticket 104, Finding 86-005). While listening the button fills
 /// electrolyte; tapping again stops.
 class VanaMicButton extends StatefulWidget {
   const VanaMicButton({
@@ -21,6 +25,7 @@ class VanaMicButton extends StatefulWidget {
     required this.onText,
     required this.tooltip,
     required this.listeningTooltip,
+    required this.permissionMessage,
     this.enabled = true,
     this.speech,
     this.size = 44,
@@ -32,6 +37,10 @@ class VanaMicButton extends StatefulWidget {
   final ValueChanged<String> onText;
   final String tooltip;
   final String listeningTooltip;
+
+  /// Shown on a tap once the athlete has refused Speech Recognition or the
+  /// microphone: where in Settings to allow it.
+  final String permissionMessage;
   final bool enabled;
 
   /// Injectable recogniser for tests.
@@ -48,8 +57,12 @@ class VanaMicButton extends StatefulWidget {
 
 class _VanaMicButtonState extends State<VanaMicButton> {
   late final SpeechToText _speech = widget.speech ?? SpeechToText();
-  /// Null until the first tap asks; false hides the button.
+
+  /// Null until the first tap asks; false hides the button (no engine).
   bool? _available;
+
+  /// The ask failed because the athlete refused: the button stays.
+  bool _refused = false;
   bool _listening = false;
 
   Future<bool> _init() async {
@@ -68,7 +81,22 @@ class _VanaMicButtonState extends State<VanaMicButton> {
     } catch (_) {
       ok = false;
     }
-    if (mounted) setState(() => _available = ok);
+    // A failed ask is either a refusal or no engine; only permission tells
+    // them apart (the plugin answers false for both).
+    var refused = false;
+    if (!ok) {
+      try {
+        refused = !await _speech.hasPermission;
+      } catch (_) {
+        refused = false;
+      }
+    }
+    if (mounted) {
+      setState(() {
+        _refused = refused;
+        _available = ok ? true : (refused ? null : false);
+      });
+    }
     return ok;
   }
 
@@ -78,7 +106,18 @@ class _VanaMicButtonState extends State<VanaMicButton> {
       if (mounted) setState(() => _listening = false);
       return;
     }
-    if (_available != true && !await _init()) return;
+    if (_available != true && !await _init()) {
+      // Asked again each tap: access turned back on in Settings (Android
+      // keeps the process alive across that) listens straight away.
+      if (_refused && mounted) {
+        MealvanaSnackbar.showInfo(
+          context,
+          widget.permissionMessage,
+          duration: MealvanaSnackbar.longDuration,
+        );
+      }
+      return;
+    }
     if (!mounted) return;
     setState(() => _listening = true);
     await _speech.listen(

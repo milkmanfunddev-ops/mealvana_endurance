@@ -740,6 +740,9 @@ class _VanaChatScreenState extends ConsumerState<VanaChatScreen> {
                         listeningTooltip: content.getValue(
                           ContentKeys.mpMicListening,
                         ),
+                        permissionMessage: content.getValue(
+                          ContentKeys.mpMicPermission,
+                        ),
                         enabled: !isStreaming,
                         onText: _dictated,
                         size: 36,

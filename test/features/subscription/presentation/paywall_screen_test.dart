@@ -859,6 +859,45 @@ void main() {
     expect(settings.signOuts, 1);
   });
 
+  testWidgets('Sign out confirm reads the same body as Settings, from its key '
+      '(86-004)', (tester) async {
+    await smokeScreen(
+      tester,
+      const PaywallScreen(),
+      overrides: _overrides(settings: () => _RecordingSettings()),
+    );
+
+    await _openMenu(tester);
+    await tester.tap(find.byKey(_signOut));
+    await tester.pumpAndSettle();
+
+    // Settings' confirm renders the same four keys
+    // (settings_account_dialogs_test pins that side).
+    final shown = tester
+        .widgetList<Text>(
+          find.descendant(
+            of: find.byType(AlertDialog),
+            matching: find.byType(Text),
+          ),
+        )
+        .map((t) => t.data ?? '')
+        .join(' | ');
+    expect(
+      shown,
+      [
+        _content[ContentKeys.paywallSignOutConfirmTitle],
+        _content[ContentKeys.settingsSignOutConfirmBody],
+        _content[ContentKeys.paywallCancel],
+        _content[ContentKeys.paywallSignOutButton],
+      ].join(' | '),
+    );
+    expect(
+      _content[ContentKeys.settingsSignOutConfirmBody],
+      "You'll need to sign in again to use Mealvana. "
+      'Your data stays with your account.',
+    );
+  });
+
   testWidgets('Delete account is in reach from the menu, confirms, then '
       'deletes through Settings', (tester) async {
     final settings = _RecordingSettings();

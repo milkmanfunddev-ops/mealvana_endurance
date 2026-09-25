@@ -234,6 +234,26 @@ void main() {
       expect(find.text('welcome'), findsOneWidget);
     });
 
+    testWidgets('reads the same as the paywall sign-out confirm (86-004)', (
+      tester,
+    ) async {
+      await _pumpSettings(tester, content: _defaults, calls: _Calls());
+
+      await _tap(tester, _signOutButton);
+
+      // The paywall's confirm renders exactly these four keys
+      // (paywall_screen.dart `_signOut`, pinned by paywall_screen_test).
+      expect(
+        _dialogText(tester),
+        [
+          _defaults[ContentKeys.paywallSignOutConfirmTitle],
+          _defaults[ContentKeys.settingsSignOutConfirmBody],
+          _defaults[ContentKeys.paywallCancel],
+          _defaults[ContentKeys.paywallSignOutButton],
+        ].join(' | '),
+      );
+    });
+
     testWidgets('Cancel keeps the athlete signed in', (tester) async {
       final calls = _Calls();
       await _pumpSettings(tester, content: _defaults, calls: calls);

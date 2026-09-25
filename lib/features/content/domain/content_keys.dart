@@ -25,8 +25,6 @@ class ContentKeys {
   static const String paywallManageUnavailable = 'paywall.manage_unavailable';
   static const String paywallSignOutConfirmTitle =
       'paywall.sign_out_confirm_title';
-  static const String paywallSignOutConfirmBody =
-      'paywall.sign_out_confirm_body';
   static const String paywallDeleteConfirmTitle =
       'paywall.delete_confirm_title';
   static const String paywallDeleteConfirmBody = 'paywall.delete_confirm_body';
@@ -181,8 +179,9 @@ class ContentKeys {
   static const String settingsLogInButton = 'settings.log_in_button';
   static const String settingsSignOutButton = 'settings.sign_out_button';
   // The sign-out confirm's body (mp-508, ticket 47): no guest mode, so it
-  // says the athlete signs in again. Title, buttons and the whole delete
-  // confirm reuse the paywall's keys so the two screens read the same.
+  // says the athlete signs in again. The paywall's sign-out confirm reads it
+  // too (86-004). Title, buttons and the whole delete confirm reuse the
+  // paywall's keys so the two screens read the same.
   static const String settingsSignOutConfirmBody =
       'settings.sign_out_confirm_body';
   // The Profile & Preferences screen's own title (31-014): the settings
@@ -494,6 +493,8 @@ class ContentKeys {
   static const String mpBrowseNoNumbers = 'meal_planning.browse_no_numbers';
   static const String mpMicTooltip = 'meal_planning.mic_tooltip';
   static const String mpMicListening = 'meal_planning.mic_listening';
+  // A mic tap after the athlete refused Speech Recognition (86-005).
+  static const String mpMicPermission = 'meal_planning.mic_permission';
   static const String mpPantryUseMessage = 'meal_planning.pantry_use_message';
   static const String mpPlanBarReview = 'meal_planning.plan_bar_review';
   static const String mpPlanBarMeals = 'meal_planning.plan_bar_meals';
