@@ -14,6 +14,6 @@
 **Touches:** dev database only (a committed SQL file under scripts/)
 
 - [ ] AD-001's photo and credit on dev are the pre-test ones (SELECT before and after).
-- [ ] The SQL file is committed.
+- [x] The SQL file is committed.
 
 Next: /implement-lee testing-wave
