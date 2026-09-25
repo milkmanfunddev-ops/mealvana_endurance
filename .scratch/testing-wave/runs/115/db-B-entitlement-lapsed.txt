@@ -1,0 +1,10 @@
+# B entitlement row 22:35:31Z
+[
+    {
+        "user_id": "1a0ae5a5-bf68-4aed-9301-c3497c882da9",
+        "period_type": "NORMAL",
+        "active_until": "2026-09-25 22:34:42.567+00",
+        "event_at": "2026-09-25 22:29:42.743+00",
+        "will_renew": true
+    }
+]

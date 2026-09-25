@@ -1,0 +1,18 @@
+# B meal log 22:31:58Z
+[
+    {
+        "user_id": "1a0ae5a5-bf68-4aed-9301-c3497c882da9",
+        "id": "bfe043f3-933c-49a2-b703-6a7001a3470a",
+        "log_date": "2026-09-25",
+        "slot": "breakfast",
+        "name": "W32-115 lapse oats",
+        "source": "manual",
+        "calories": 321,
+        "carbs_g": "50.0",
+        "protein_g": "12.0",
+        "fat_g": null,
+        "eaten_at": "2026-09-25 22:29:00+00",
+        "created_at": "2026-09-25 22:31:44.101178+00",
+        "is_deleted": false
+    }
+]
