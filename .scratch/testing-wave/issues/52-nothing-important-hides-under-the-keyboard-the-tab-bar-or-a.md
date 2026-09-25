@@ -13,7 +13,7 @@
 
 **Touches:** lib/features/meal_logging/presentation/screens/describe_meal_screen.dart, lib/features/events/presentation/screens/events_list_screen.dart, lib/features/subscription/presentation/screens/paywall_screen.dart
 
-- [ ] Widget tests: Analyze hit-testable with a keyboard inset; New Event hit-testable at the list end under the tab bar.
+- [x] Widget tests: Analyze hit-testable with a keyboard inset; New Event hit-testable at the list end under the tab bar.
 - [ ] On the simulator, the three screens checked by eye.
 - [ ] codegen if annotations changed, `flutter analyze` and the suite green.
 

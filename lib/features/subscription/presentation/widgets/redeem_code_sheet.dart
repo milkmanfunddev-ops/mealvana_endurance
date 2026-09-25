@@ -18,12 +18,21 @@ import '../../domain/code_redemption.dart';
 /// root navigator's context, captured before the Code is sent: a coach's own
 /// Code or a giveaway opens the gate, and the router may replace the paywall
 /// (and the sheet with it) before the answer is back.
-Future<void> openRedeemCode(BuildContext context, WidgetRef ref) async {
+///
+/// [messageClearance] is how much of the screen's bottom the message must
+/// stay above, asked for when the message is said: the paywall's plans and
+/// Continue (11-005). Nothing is kept clear without it.
+Future<void> openRedeemCode(
+  BuildContext context,
+  WidgetRef ref, {
+  double Function()? messageClearance,
+}) async {
   ref.read(codeEntryControllerProvider.notifier).reset();
   await showGlassSheet<void>(
     context,
     builder: (_) => RedeemCodeSheet(
       host: Navigator.of(context, rootNavigator: true).context,
+      messageClearance: messageClearance,
     ),
   );
 }
@@ -84,10 +93,13 @@ String? redeemProblem(
 /// under the field and the sheet stays open for another try; a Code that did
 /// something closes it.
 class RedeemCodeSheet extends ConsumerStatefulWidget {
-  const RedeemCodeSheet({super.key, required this.host});
+  const RedeemCodeSheet({super.key, required this.host, this.messageClearance});
 
   /// Where the success is said: outlives the sheet and the screen under it.
   final BuildContext host;
+
+  /// The bottom space the success message keeps clear (see [openRedeemCode]).
+  final double Function()? messageClearance;
 
   static const fieldKey = ValueKey('redeem_code.field');
   static const submitKey = ValueKey('redeem_code.submit');
@@ -116,7 +128,11 @@ class _RedeemCodeSheetState extends ConsumerState<RedeemCodeSheet> {
         .redeem(_code.text);
     if (result is! CodeRedeemed) return;
     if (host.mounted) {
-      MealvanaSnackbar.showSuccess(host, redeemedMessage(content, result));
+      MealvanaSnackbar.showSuccess(
+        host,
+        redeemedMessage(content, result),
+        bottomClearance: widget.messageClearance?.call() ?? 0,
+      );
     }
     if (mounted) Navigator.of(context).pop();
   }

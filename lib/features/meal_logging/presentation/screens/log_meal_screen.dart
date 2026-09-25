@@ -1512,8 +1512,25 @@ class _AiTabState extends ConsumerState<_AiTab> {
   /// text or a photo analysis, and the first line names what Mealvana AI is reading.
   List<String> _thinkingPhases = AiThinkingStatus.describePhases;
 
+  /// The description field's focus. While it holds focus the keyboard is up,
+  /// and Analyze leaves the list to ride just above the keys (23-001).
+  final _fieldFocus = FocusNode();
+
+  @override
+  void initState() {
+    super.initState();
+    _fieldFocus.addListener(_onFieldFocusChanged);
+  }
+
+  void _onFieldFocusChanged() {
+    if (mounted) setState(() {});
+  }
+
   @override
   void dispose() {
+    _fieldFocus
+      ..removeListener(_onFieldFocusChanged)
+      ..dispose();
     _ctrl.dispose();
     super.dispose();
   }
@@ -1717,6 +1734,50 @@ class _AiTabState extends ConsumerState<_AiTab> {
     final isDark = Theme.of(context).brightness == Brightness.dark;
     final textColor = isDark ? AppColors.cream : AppColors.blackberry;
 
+    // Analyze sits below the inputs as the single metered action —
+    // whatever is above it (text, photo, or both) goes as one analysis
+    // for one token. The price rides inside the button.
+    final analyze = KylePrimaryButton(
+      text: 'Analyze',
+      onPressed: _analyze,
+      trailing: const TokenCostChip(),
+    );
+    // While the athlete types, the keyboard takes the bottom of the screen
+    // and the list's own Analyze would sit under it (23-001). It is pinned
+    // under the list instead, which the Scaffold keeps just above the keys.
+    final pinAnalyze = _fieldFocus.hasFocus && !_isAnalyzing;
+
+    return Column(
+      children: [
+        Expanded(
+          child: _buildList(context, isDark, textColor, analyze, pinAnalyze),
+        ),
+        if (pinAnalyze)
+          // Part of the field's tap region: pressing Analyze must not count
+          // as a tap outside the field, which would close the keyboard and
+          // move the button out from under the finger before the tap lands.
+          TextFieldTapRegion(
+            child: Padding(
+              padding: const EdgeInsets.fromLTRB(
+                AppSpacing.lg,
+                AppSpacing.sm,
+                AppSpacing.lg,
+                AppSpacing.sm,
+              ),
+              child: analyze,
+            ),
+          ),
+      ],
+    );
+  }
+
+  Widget _buildList(
+    BuildContext context,
+    bool isDark,
+    Color textColor,
+    Widget analyze,
+    bool pinAnalyze,
+  ) {
     return ListView(
       controller: widget.scrollController,
       keyboardDismissBehavior: ScrollViewKeyboardDismissBehavior.onDrag,
@@ -1755,6 +1816,7 @@ class _AiTabState extends ConsumerState<_AiTab> {
             key: _formKey,
             child: TextFormField(
               controller: _ctrl,
+              focusNode: _fieldFocus,
               maxLines: 4,
               minLines: 3,
               textCapitalization: TextCapitalization.sentences,
@@ -1810,15 +1872,7 @@ class _AiTabState extends ConsumerState<_AiTab> {
               isDark: isDark,
             ),
           ],
-          const SizedBox(height: AppSpacing.lg),
-          // Analyze sits below the inputs as the single metered action —
-          // whatever is above it (text, photo, or both) goes as one analysis
-          // for one token. The price rides inside the button.
-          KylePrimaryButton(
-            text: 'Analyze',
-            onPressed: _analyze,
-            trailing: const TokenCostChip(),
-          ),
+          if (!pinAnalyze) ...[const SizedBox(height: AppSpacing.lg), analyze],
         ],
         const SizedBox(height: AppSpacing.xl),
       ],

@@ -21,6 +21,9 @@ enum SnackbarType { success, error, warning, info, loading }
 /// MealvanaSnackbar.showSuccess(context, 'Settings saved!');
 /// MealvanaSnackbar.showError(context, 'Failed to save settings');
 /// ```
+///
+/// A screen with controls docked at its bottom passes `bottomClearance` (their
+/// height) so the message floats above them rather than over them.
 class MealvanaSnackbar {
   MealvanaSnackbar._();
 
@@ -41,6 +44,7 @@ class MealvanaSnackbar {
     String? actionLabel,
     VoidCallback? onAction,
     bool showIcon = true,
+    double bottomClearance = 0,
   }) {
     _show(
       context,
@@ -50,6 +54,7 @@ class MealvanaSnackbar {
       actionLabel: actionLabel,
       onAction: onAction,
       showIcon: showIcon,
+      bottomClearance: bottomClearance,
     );
   }
 
@@ -61,6 +66,7 @@ class MealvanaSnackbar {
     String? actionLabel,
     VoidCallback? onAction,
     bool showIcon = true,
+    double bottomClearance = 0,
   }) {
     _show(
       context,
@@ -70,6 +76,7 @@ class MealvanaSnackbar {
       actionLabel: actionLabel,
       onAction: onAction,
       showIcon: showIcon,
+      bottomClearance: bottomClearance,
     );
   }
 
@@ -81,6 +88,7 @@ class MealvanaSnackbar {
     String? actionLabel,
     VoidCallback? onAction,
     bool showIcon = true,
+    double bottomClearance = 0,
   }) {
     _show(
       context,
@@ -90,6 +98,7 @@ class MealvanaSnackbar {
       actionLabel: actionLabel,
       onAction: onAction,
       showIcon: showIcon,
+      bottomClearance: bottomClearance,
     );
   }
 
@@ -105,6 +114,7 @@ class MealvanaSnackbar {
     VoidCallback? onAction,
     bool showIcon = true,
     bool persist = false,
+    double bottomClearance = 0,
   }) {
     return _show(
       context,
@@ -115,6 +125,7 @@ class MealvanaSnackbar {
       onAction: onAction,
       showIcon: showIcon,
       persist: persist,
+      bottomClearance: bottomClearance,
     );
   }
 
@@ -173,6 +184,7 @@ class MealvanaSnackbar {
     VoidCallback? onAction,
     bool showIcon = true,
     bool persist = false,
+    double bottomClearance = 0,
   }) {
     // Clear any existing snackbars first
     ScaffoldMessenger.of(context).hideCurrentSnackBar();
@@ -209,9 +221,14 @@ class MealvanaSnackbar {
             width: 1,
           ),
         ),
-        margin: const EdgeInsets.symmetric(
-          horizontal: AppSpacing.md,
-          vertical: AppSpacing.lg,
+        // [bottomClearance] lifts the message over controls docked at the
+        // bottom of the screen it shows on (the paywall's plans and
+        // Continue, 11-005), so it never covers them.
+        margin: EdgeInsets.fromLTRB(
+          AppSpacing.md,
+          AppSpacing.lg,
+          AppSpacing.md,
+          AppSpacing.lg + bottomClearance,
         ),
         padding: const EdgeInsets.symmetric(
           horizontal: AppSpacing.md,

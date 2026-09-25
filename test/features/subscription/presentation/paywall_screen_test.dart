@@ -203,6 +203,23 @@ const _annualCard = ValueKey('paywall.plan.annual');
 const _monthlyCard = ValueKey('paywall.plan.monthly');
 
 /// Opens the ⋯ menu.
+/// A message on the paywall sits above the plans tray: it hides neither the
+/// plan cards nor Continue, which can still be tapped while it shows.
+void _expectMessageClearsThePlans(WidgetTester tester) {
+  // The SnackBar's own box includes its margin; the message is its surface.
+  final message = tester.getRect(
+    find
+        .descendant(of: find.byType(SnackBar), matching: find.byType(Material))
+        .first,
+  );
+  final plans = tester.getRect(find.byKey(const ValueKey('paywall.plans')));
+  expect(message.bottom, lessThanOrEqualTo(plans.top));
+  expect(
+    find.byKey(const ValueKey('paywall.continue_button')).hitTestable(),
+    findsOneWidget,
+  );
+}
+
 Future<void> _openMenu(WidgetTester tester) async {
   await tester.tap(find.byKey(_more));
   await tester.pumpAndSettle();
@@ -718,6 +735,8 @@ void main() {
 
     expect(paywall.restoreCalls, 1);
     expect(find.text('Your subscription has been restored.'), findsOneWidget);
+    // The paywall's own messages clear the plans too.
+    _expectMessageClearsThePlans(tester);
   });
 
   testWidgets('Restore with nothing to restore says so', (tester) async {
@@ -927,6 +946,17 @@ void main() {
         find.text(_content['redeem_code.success_paired']!),
         findsOneWidget,
       );
+    });
+
+    testWidgets('what the Code did is said above the plans, and Continue '
+        'stays in reach while it shows (11-005)', (tester) async {
+      await openEntry(
+        tester,
+        const CodeRedeemed(kind: RedeemedKind.paired, coachUserId: 'c-1'),
+      );
+      await enter(tester, 'DEVCOACH30');
+
+      _expectMessageClearsThePlans(tester);
     });
 
     testWidgets('a refused Code keeps the sheet open and says why', (

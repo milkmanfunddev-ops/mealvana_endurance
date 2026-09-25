@@ -29,7 +29,13 @@ import 'event_detail_screen.dart';
 /// - Upcoming events highlighted
 /// - Button below list to create new events
 class EventsListScreen extends ConsumerStatefulWidget {
-  const EventsListScreen({super.key});
+  const EventsListScreen({super.key, this.bottomInset = 0});
+
+  /// Space the host's bottom chrome takes over the list's end — the shell's
+  /// floating tab bar (`HomeShellChrome.bottomChromeClearancePx`) when this
+  /// is the Events tab; 0 when pushed as a page of its own. The list scrolls
+  /// this much further so New Event comes to rest above the bar (03-007).
+  final double bottomInset;
 
   @override
   ConsumerState<EventsListScreen> createState() => _EventsListScreenState();
@@ -228,7 +234,9 @@ class _EventsListScreenState extends ConsumerState<EventsListScreen> {
                       onPressed: _openCreateEvent,
                     ),
                   ),
-                  const SizedBox(height: AppSpacing.xxxl),
+                  // Past the button, room for the host's bottom chrome, so
+                  // at the list's end New Event rests above the tab bar.
+                  SizedBox(height: AppSpacing.xxxl + widget.bottomInset),
                 ],
               ),
             );

@@ -81,13 +81,36 @@ Page<void> paywallRoutePage(GoRouterState state) => MaterialPage<void>(
 /// [paywallHasSubscriptionProvider]; sign-out and delete reuse
 /// [SettingsController]'s flows; the gate itself is `appGateProvider`. All
 /// copy comes from [ContentKeys].
-class PaywallScreen extends ConsumerWidget {
+class PaywallScreen extends ConsumerStatefulWidget {
   const PaywallScreen({super.key, this.onboarding = false});
 
   /// Reached as onboarding's last step (mp-417 §4). Since mp-494 §2 both
   /// shapes carry the same menu, so nothing on the screen differs yet; the
   /// route still says which shape it opened.
   final bool onboarding;
+
+  @override
+  ConsumerState<PaywallScreen> createState() => _PaywallScreenState();
+}
+
+class _PaywallScreenState extends ConsumerState<PaywallScreen> {
+  /// The pinned plans tray, measured so a message floats above it.
+  final _plansKey = GlobalKey();
+
+  /// How much of the screen's bottom a message keeps clear: the plans and
+  /// Continue while they are on screen, nothing before (the clip) or after
+  /// (the paywall gone). A message that covered them hid Continue for its
+  /// whole duration (11-005). Floating messages already stand above the
+  /// bottom safe area, which the tray's height includes.
+  double _plansClearance() {
+    if (!mounted) return 0;
+    final box = _plansKey.currentContext?.findRenderObject();
+    if (box is! RenderBox || !box.attached || !box.hasSize) return 0;
+    final media = MediaQuery.of(context);
+    final top = box.localToGlobal(Offset.zero).dy;
+    final clearance = media.size.height - top - media.viewPadding.bottom;
+    return clearance > 0 ? clearance : 0;
+  }
 
   Future<void> _buy(BuildContext context, WidgetRef ref, Package pkg) async {
     final content = ref.read(contentServiceProvider);
@@ -101,11 +124,13 @@ class PaywallScreen extends ConsumerWidget {
         MealvanaSnackbar.showSuccess(
           context,
           content.getValue(ContentKeys.paywallPurchaseSuccess),
+          bottomClearance: _plansClearance(),
         );
       case ProPurchaseOutcome.purchasedPending:
         MealvanaSnackbar.showWarning(
           context,
           content.getValue(ContentKeys.paywallPurchasePending),
+          bottomClearance: _plansClearance(),
         );
       case ProPurchaseOutcome.requiresAccount:
       case ProPurchaseOutcome.notSignedIn:
@@ -133,11 +158,13 @@ class PaywallScreen extends ConsumerWidget {
       MealvanaSnackbar.showSuccess(
         context,
         content.getValue(ContentKeys.paywallRestoreSuccess),
+        bottomClearance: _plansClearance(),
       );
     } else {
       MealvanaSnackbar.showInfo(
         context,
         content.getValue(ContentKeys.paywallRestoreNone),
+        bottomClearance: _plansClearance(),
       );
     }
   }
@@ -153,6 +180,7 @@ class PaywallScreen extends ConsumerWidget {
     MealvanaSnackbar.showInfo(
       context,
       content.getValue(ContentKeys.paywallManageUnavailable),
+      bottomClearance: _plansClearance(),
     );
   }
 
@@ -173,6 +201,7 @@ class PaywallScreen extends ConsumerWidget {
     MealvanaSnackbar.showError(
       context,
       content.getValue(ContentKeys.paywallLinkFailed),
+      bottomClearance: _plansClearance(),
     );
   }
 
@@ -246,7 +275,7 @@ class PaywallScreen extends ConsumerWidget {
   }
 
   @override
-  Widget build(BuildContext context, WidgetRef ref) {
+  Widget build(BuildContext context) {
     final isDark = Theme.of(context).brightness == Brightness.dark;
     final content = ref.watch(contentServiceProvider);
     final plansAsync = ref.watch(paywallPlansProvider);
@@ -260,6 +289,7 @@ class PaywallScreen extends ConsumerWidget {
         MealvanaSnackbar.showError(
           context,
           content.getValue(ContentKeys.paywallPurchaseFailed),
+          bottomClearance: _plansClearance(),
         );
       }
     });
@@ -289,7 +319,9 @@ class PaywallScreen extends ConsumerWidget {
       OverflowMenuEntry(
         key: const ValueKey('paywall.redeem_code_button'),
         label: content.getValue(ContentKeys.redeemCodeButton),
-        onSelected: () => unlessBusy(() => openRedeemCode(context, ref)),
+        onSelected: () => unlessBusy(
+          () => openRedeemCode(context, ref, messageClearance: _plansClearance),
+        ),
       ),
       if (hasSubscription)
         OverflowMenuEntry(
@@ -423,6 +455,7 @@ class PaywallScreen extends ConsumerWidget {
             ),
             // The plans and the one Continue, pinned (mp-493 §3).
             _PlansTray(
+              key: _plansKey,
               plansAsync: plansAsync,
               content: content,
               isBusy: isBusy,
@@ -486,6 +519,7 @@ enum _Plan { annual, monthly }
 /// tray says so and Continue has nothing to buy.
 class _PlansTray extends StatefulWidget {
   const _PlansTray({
+    super.key,
     required this.plansAsync,
     required this.content,
     required this.isBusy,
