@@ -11,7 +11,8 @@ import 'plan_tile.dart';
 
 /// The plan's meal rows. Swipe **right** → Remove (the caller shows the
 /// Undo snackbar that re-picks the meal); swipe **left** → Swap (routes to
-/// `/food/swap/:id`); tap → the meal's detail page.
+/// `/food/swap/:id`); tap → [onTapMeal] (the Plan tab opens the row's
+/// sheet, mp-239 detail 2).
 ///
 /// Rows always snap back: the plan data is owned by the Drift watch, so the
 /// action fires in [Dismissible.confirmDismiss] and the dismiss itself is

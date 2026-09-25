@@ -646,6 +646,8 @@
     "servings_this_week": "Servings this week",
     "per_serving_macros": "{kcal} kcal · {c}g C · {p}g P per serving",
     "sheet_done": "Done",
+    "sheet_recipe": "Recipe",
+    "ate_it_failed": "Couldn't log that meal. Try again.",
     "session_cook_sun": "Cook Sunday",
     "session_topup_wed": "Top-up Wednesday",
     "session_fresh_fri": "Fresh Friday",

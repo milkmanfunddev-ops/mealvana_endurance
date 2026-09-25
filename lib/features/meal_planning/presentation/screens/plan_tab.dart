@@ -17,10 +17,13 @@ import '../../application/meal_plan_controller.dart';
 import '../../application/vana_ambient_conversation_controller.dart';
 import '../../application/vana_settings_controller.dart';
 import '../../data/vana_exceptions.dart';
+import '../../domain/meal_plan.dart';
 import '../../domain/meal_plan_status.dart';
+import '../../domain/meal_ref.dart';
 import '../../domain/plan_meal.dart';
 import '../../domain/ui_action.dart';
 import '../widgets/dashed_box.dart';
+import '../widgets/meal_sheet.dart';
 import '../widgets/plan_list.dart';
 import '../widgets/plan_overflow_menu.dart';
 import '../widgets/plan_summary.dart';
@@ -37,7 +40,8 @@ const _newPlanRoute = '/vana?c=new&mode=meal_planning&intent=new_plan';
 /// actions, the dashed empty state, and the confirm / new-plan actions. The
 /// plan's ⋮ also opens the earlier plans, each viewable read-only at
 /// `/food/plans/:id`.
-/// Tapping a tile opens the meal's detail page. Offline, the day note hides
+/// Tapping a row opens its sheet (mp-239 detail 2): servings, Ate it, Swap,
+/// Remove, and Recipe for the meal's detail page. Offline, the day note hides
 /// and the plan renders from the local Drift watch alone.
 class PlanTab extends ConsumerWidget {
   const PlanTab({super.key, this.onAddMeal, this.onShowShopping});
@@ -113,9 +117,7 @@ class PlanTab extends ConsumerWidget {
             PlanList(
               meals: plan.meals,
               showMacros: showMacros,
-              onTapMeal: (meal) => context.push(
-                '/food/meals/${meal.libraryMealId ?? meal.savedMealId ?? meal.id}',
-              ),
+              onTapMeal: (meal) => _openMealSheet(context, ref, meal, plan),
               onSwap: (meal) => context.push('/food/swap/${meal.id}'),
               onRemove: (meal) => _removeWithUndo(context, ref, meal),
             ),
@@ -157,6 +159,66 @@ class PlanTab extends ConsumerWidget {
         ],
       ),
     );
+  }
+
+  /// The row's sheet (mp-239 details 2-4), following the row while open.
+  /// Servings and Remove are local-first; Swap and Ate it wait for the
+  /// server. Recipe opens the meal's detail page, with Start cooking.
+  void _openMealSheet(
+    BuildContext context,
+    WidgetRef ref,
+    PlanMeal meal,
+    MealPlan plan,
+  ) {
+    final controller = ref.read(mealPlanControllerProvider.notifier);
+    showMealSheet(
+      context: context,
+      ref: ref,
+      meal: meal,
+      liveMeal: mealPlanControllerProvider.select(
+        (s) => s.value?.meals.where((m) => m.id == meal.id).firstOrNull,
+      ),
+      onServings: (servings) => controller.setServings(meal.id, servings),
+      onSwap: (meal, replacement) =>
+          _swapFromSheet(context, ref, meal, replacement),
+      onRemove: () => _removeWithUndo(context, ref, meal),
+      // The sheet says how it went; a failure rethrows to it.
+      onAteIt: (meal) => controller.logFromPlan(meal.id),
+      onOpenRecipe: (meal) => context.push(
+        '/food/meals/${meal.libraryMealId ?? meal.savedMealId ?? meal.id}',
+      ),
+      excludeIds: MealSheet.planMealIds(plan.meals),
+    );
+  }
+
+  /// A Swap picked in the sheet: the remote-ack `swap_meal`, which keeps the
+  /// row's id (mp-239 detail 3). Refused, the row stays and a snackbar says why.
+  Future<void> _swapFromSheet(
+    BuildContext context,
+    WidgetRef ref,
+    PlanMeal meal,
+    MealRef replacement,
+  ) async {
+    final content = ref.read(contentServiceProvider);
+    try {
+      await ref
+          .read(mealPlanControllerProvider.notifier)
+          .swapMeal(meal.id, source: replacement.source, id: replacement.id);
+    } on NeedsConnectionException {
+      if (context.mounted) {
+        MealvanaSnackbar.showWarning(
+          context,
+          content.getValue(ContentKeys.mpNeedsConnection),
+        );
+      }
+    } on Exception {
+      if (context.mounted) {
+        MealvanaSnackbar.showError(
+          context,
+          content.getValue(ContentKeys.mpServerError),
+        );
+      }
+    }
   }
 
   /// Rebuild shopping list: the server remakes the plan's one list from its

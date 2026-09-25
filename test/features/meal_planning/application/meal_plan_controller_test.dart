@@ -2,6 +2,7 @@
 /// (05 §3) through the real notifier over an in-memory Drift DB.
 library;
 
+import 'dart:async';
 import 'dart:convert';
 
 import 'package:flutter_riverpod/flutter_riverpod.dart';
@@ -54,6 +55,21 @@ class _FakeActionClient extends Fake implements VanaActionClient {
   Future<VanaActionResult> run(UiAction action) async {
     calls.add(action);
     return response(action);
+  }
+}
+
+/// A `vana-action` that holds each answer until the test releases it, so a
+/// test can look at the row while the write is on the wire.
+class _GatedActionClient extends Fake implements VanaActionClient {
+  _GatedActionClient(this.answer);
+
+  final Future<VanaActionResult> Function(UiAction action) answer;
+  final List<UiAction> calls = [];
+
+  @override
+  Future<VanaActionResult> run(UiAction action) {
+    calls.add(action);
+    return answer(action);
   }
 }
 
@@ -160,38 +176,43 @@ void main() {
   }
 
   /// The Plan tab is open: its day note is on screen and watching.
-  void openPlanTab() =>
-      container.listen(homeControllerProvider(), (_, _) {});
+  void openPlanTab() => container.listen(homeControllerProvider(), (_, _) {});
 
   /// Ticket 130 (Finding 88-023): after a confirm the Plan tab's Vana note
   /// kept naming the old plan's meal until a relaunch, because the home
   /// payload was never read again. Every plan write that lands asks the
   /// note to read again — and only while the tab is there to show it.
   group('home payload follows the plan', () {
-    test('a remote-ack write (confirmPlan) re-reads the home payload', () async {
-      final c = controller();
-      await c.future;
-      openPlanTab();
-      await settle();
-      expect(home.planChanges, 0);
+    test(
+      'a remote-ack write (confirmPlan) re-reads the home payload',
+      () async {
+        final c = controller();
+        await c.future;
+        openPlanTab();
+        await settle();
+        expect(home.planChanges, 0);
 
-      await c.confirmPlan(planId: 'plan-1');
-      await settle();
+        await c.confirmPlan(planId: 'plan-1');
+        await settle();
 
-      expect(home.planChanges, 1);
-    });
+        expect(home.planChanges, 1);
+      },
+    );
 
-    test('a local-first write re-reads it once the replay has landed', () async {
-      final c = controller();
-      await c.future;
-      openPlanTab();
-      await settle();
+    test(
+      'a local-first write re-reads it once the replay has landed',
+      () async {
+        final c = controller();
+        await c.future;
+        openPlanTab();
+        await settle();
 
-      await c.setServings('pm-1', 2);
-      await settle(const Duration(milliseconds: 80));
+        await c.setServings('pm-1', 2);
+        await settle(const Duration(milliseconds: 80));
 
-      expect(home.planChanges, 1);
-    });
+        expect(home.planChanges, 1);
+      },
+    );
 
     test('a refused remote-ack write leaves the note alone', () async {
       actions = _FakeActionClient(
@@ -794,6 +815,149 @@ void main() {
 
       final undo = actions.calls.whereType<UndoReceiptAction>().single;
       expect(undo.toPayloadJson(), receiptJson['undo']['params']);
+    });
+  });
+
+  /// Ticket 132 (Finding 88-017, mp-239 detail 4): "Ate it" waits for the
+  /// server, which writes the meal log (source plan, the plan meal's id) and
+  /// takes one serving off; the answer's `batch` is what lowers the row.
+  group('Ate it (logFromPlan)', () {
+    late Completer<VanaActionResult> ack;
+    late _GatedActionClient gated;
+
+    /// What `vana-action` answers for `log_from_plan` (`_shared/vana/
+    /// actions.ts`): the `logged` part, then the whole plan as a `batch`
+    /// with the row's servings left one lower.
+    Future<VanaActionResult> producerAnswer() async {
+      final local = (await repo.getPlanById('plan-1'))!;
+      final served = local.copyWith(
+        meals: [
+          for (final m in local.meals)
+            m.id == 'pm-1' ? m.copyWith(servingsLeft: m.servingsLeft - 1) : m,
+        ],
+      );
+      return VanaActionResult.fromJson({
+        'parts': [
+          {
+            'kind': 'logged',
+            'planMealId': 'pm-1',
+            'name': 'Meal pm-1',
+            'servingsLeft': 3,
+          },
+          {'kind': 'batch', 'plan': served.toJson()},
+        ],
+        'logId': 'log-1',
+      });
+    }
+
+    MealPlanController gatedController() {
+      container = testContainer([
+        ...baseOverrides(connectivity: connectivity, sync: sync),
+        appDatabaseProvider.overrideWithValue(db),
+        mealPlanRepositoryProvider.overrideWithValue(repo),
+        vanaActionClientProvider.overrideWithValue(gated),
+        homeControllerProvider.overrideWith(() => home),
+      ]);
+      container.listen(mealPlanControllerProvider, (_, __) {});
+      return container.read(mealPlanControllerProvider.notifier);
+    }
+
+    int? leftOf(MealPlan? plan) =>
+        plan?.meals.firstWhere((m) => m.id == 'pm-1').servingsLeft;
+
+    setUp(() {
+      ack = Completer<VanaActionResult>();
+      gated = _GatedActionClient((_) => ack.future);
+    });
+
+    test(
+      'sends log_from_plan for the row and drops a serving only on the ack',
+      () async {
+        final c = gatedController();
+        await c.future;
+
+        final logging = c.logFromPlan('pm-1');
+        await pumpEventQueue();
+
+        final sent = gated.calls.whereType<LogFromPlanAction>().single;
+        expect(sent.toJson(), {
+          'type': 'log_from_plan',
+          'payload': {'planMealId': 'pm-1'},
+        });
+        // Nothing moves before the server answers: no optimistic decrement.
+        expect(leftOf(await repo.getPlanById('plan-1')), 4);
+        expect(leftOf(c.state.value), 4);
+
+        ack.complete(await producerAnswer());
+        final logged = await logging;
+
+        expect(logged!.planMealId, 'pm-1');
+        expect(logged.servingsLeft, 3);
+        expect(leftOf(await repo.getPlanById('plan-1')), 3);
+        await pumpEventQueue();
+        expect(leftOf(c.state.value), 3);
+      },
+    );
+
+    test('a failed ack rethrows and leaves the row as it was', () async {
+      final c = gatedController();
+      await c.future;
+      final before = c.state.value;
+
+      final logging = c.logFromPlan('pm-1');
+      await pumpEventQueue();
+      ack.completeError(const VanaServerException(500, 'boom'));
+
+      await expectLater(logging, throwsA(isA<VanaServerException>()));
+      expect(leftOf(await repo.getPlanById('plan-1')), 4);
+      expect(c.state.hasError, isFalse);
+      expect(c.state.value, before);
+    });
+
+    test('offline sends nothing and says it needs a connection', () async {
+      connectivity.online = false;
+      final c = gatedController();
+      await c.future;
+
+      await expectLater(
+        () => c.logFromPlan('pm-1'),
+        throwsA(
+          isA<NeedsConnectionException>().having(
+            (e) => e.operation,
+            'op',
+            'log_from_plan',
+          ),
+        ),
+      );
+      expect(gated.calls, isEmpty);
+      expect(leftOf(await repo.getPlanById('plan-1')), 4);
+    });
+
+    test('a double tap logs once: the second call joins the first', () async {
+      final c = gatedController();
+      await c.future;
+
+      final first = c.logFromPlan('pm-1');
+      final second = c.logFromPlan('pm-1');
+      await pumpEventQueue();
+      expect(gated.calls.whereType<LogFromPlanAction>(), hasLength(1));
+
+      ack.complete(await producerAnswer());
+      expect((await first)!.servingsLeft, 3);
+      expect((await second)!.servingsLeft, 3);
+    });
+
+    test('after the first answers, another tap sends again', () async {
+      final c = gatedController();
+      await c.future;
+
+      final first = c.logFromPlan('pm-1');
+      ack.complete(await producerAnswer());
+      await first;
+      ack = Completer<VanaActionResult>()..complete(producerAnswer());
+      await c.logFromPlan('pm-1');
+
+      expect(gated.calls.whereType<LogFromPlanAction>(), hasLength(2));
     });
   });
 }
