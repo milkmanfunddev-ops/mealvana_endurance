@@ -32,13 +32,14 @@ Routing guide for agents in this repo. Keep it short; detail lives in `/docs`.
   spec name (`docs/ssot/spec/design/components/<name>.md`), header comment citing spec path and
   version. Features compose them, never redefine them. One token registry (`lib/theme/kyle_design/`):
   no `Color(0x…)` literals or Material `Colors.*` for brand semantics outside `lib/theme/`.
-  Run `/design-sync` after changes under `lib/theme/`, `kyle_design/`, or `docs/ssot/spec/design/`.
 - Fuelling algorithm changes must go green against `docs/ssot/vectors/`. Seam tests feed
   producer-shaped data, never the local engine's own output; every controller write path gets one
   test through the real notifier (`docs/test/README.md`, Seam tests).
 - `main()` does non-recoverable bootstrap only; recoverable init (Drift, etc.) goes in the startup
   flow (`docs/technical/andrea/andrea_initialization.txt`).
 - Don't add hide-flags for dev features; dev ships visible and broken freely.
+- Never leave edits uncommitted in the main clone when a session ends: commit them or discard
+  them. Other sessions land merges there, and dirty files block them (Lee, 2026-09-25).
 - Skills and agents added to `.claude/` must not restate these rules or hardcode volatile facts;
   point here and at `/docs` and read the current code.
 

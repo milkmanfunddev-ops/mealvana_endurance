@@ -17,68 +17,6 @@ Each entry: what went wrong or cost time, where it was seen, and the suggested f
   Suggested fix: let `decision:` take a `docs/ssot/spec/...` path plus a heading, and have `index`
   check that the quote appears in that file.
 
-- **#41 a setting that starts empty can't be put back (wave 11).** Saving Profile & Preferences with
-  an empty field keeps the old value (31-004), so a ticket that changes a setting and restores it
-  must pick one that is not null. Suggested fix: one line in ticket 31's retest and in the
-  ticket-writing notes.
-
-- **#47 a "browse" ticket wrote more than its prompt said (wave 16).** The lead told ticket 29 that
-  ticket 18 would only chat. But Browse's "+" writes a draft plan (`173cebb2`) and a shopping list
-  (`813df86f`), and the Shopping tab then showed that list to ticket 29 halfway through its run. 29
-  worked it out from timestamps. Ticket 18 also had to pick a conversation to write into, because
-  Browse opens only from a planning chat and writes into that chat's plan. Suggested fix: for any
-  ticket with Add or Save controls, the lead reads the screen's code for writes before writing
-  the prompts, and the ticket names the conversation or plan to use.
-
-- **#52 no Kroger certification shopper account (wave 18).** The credentials file's Kroger row is
-  labelled "certification environment", but it is Lee's production login: `login-stage.kroger.com`
-  refused it twice (22-001), so ticket 22 stopped before matching. Ticket 21 only worked because dev
-  was on production then. Suggested fix: Lee makes a shopper account on Kroger's certification site
-  (or the developer portal names one), `cred.mjs update` stores it, and the row's label says which
-  environment each login is for. Until then, 22-004 (match before connecting) is the only way to
-  test matching on dev.
-
-- **#53 the lead's prompt guessed the Kroger screen wrong (wave 18).** The prompt said "Disconnect,
-  then Connect", but a connection row from another environment shows only Connect (`service.ts`
-  reports connected only when the environments match). The agent adapted. Suggested fix: for a
-  ticket that follows an environment switch, the lead reads the status path before writing the
-  steps (same spirit as #47).
-- **#56 landing a merge over another session's dirty files (wave 19).** The main clone held
-  two-day-old uncommitted edits to three files the wave changed, so a merge there would refuse.
-  The lead merged, ran codegen, the suite and review in a clean `merge-19` worktree, then landed
-  with a fast-forward after a three-way `git merge-file` of the dirty copies (base, wave, dirty).
-  All three merged clean. Worth scripting if it recurs.
-
-- **#57 a fake database proves a query's shape, not that PostgREST takes it (wave 21).** Ticket 49
-  moved `list_plans` to an embedded `plan_meals(count)`, and the deno test ran it against
-  `fake_db.ts`, which was taught the syntax for the test. The lead confirmed it with one read-only
-  service-key read against dev after the deploy (200, 24 of test@test.com's 27 plans have meals).
-  Suggested fix: a fix ticket that changes a PostgREST select gets that one real read in the lead's
-  close routine, before the ticket is marked done.
-- **#58 a filtered codegen run deletes the other generated files (wave 21).** Ticket 49's agent ran
-  `build_runner` with a build filter to refresh one `.g.dart`; every other generated file in the
-  worktree was deleted and had to be restored from git before the commit. Suggested fix: the
-  agent prompt says codegen runs unfiltered (`--delete-conflicting-outputs`), and the agent checks
-  `git status` before staging.
-
-- **#59 the working branch moved under a fix wave (wave 22).** While 16 agents built, another
-  session merged develop and release/1.27.1 into `mealplanning` (auth, onboarding, TrainingPeaks,
-  `garmin-push`). The lead had already deployed from the wave-only tree, so `garmin-push` went to
-  dev without develop's activityDetails capture fix until a second deploy from the combined tree.
-  Suggested fix: before any deploy, `git log <base>..mealplanning`; if it moved, merge it into the
-  merge worktree, re-run codegen, analyze and the suite, and deploy only from that combined tree.
-- **#60 two tickets took the same migration timestamp (wave 22).** Tickets 60 and 73 both wrote
-  `20260925150000_*.sql`; the lead renumbered 73's to `…150100` at merge. Suggested fix: the prompt
-  gives each ticket that may write a migration its own timestamp (`<date>15NN00`, NN = ticket).
-- **#61 landing over dirty files: check the fast-forward before resetting them (wave 22).** The
-  first landing reset the other session's three dirty files to HEAD, then the fast-forward failed
-  (the branch had moved); the saved copies went back at once. Also, zsh does not split `$F`: use an
-  array. Suggested fix: script #56 with `merge-base --is-ancestor` first and the snapshot compare.
-- **#62 `/design-sync` is required but not installed (wave 22).** CLAUDE.md asks for it after
-  `kyle_design/` changes (51 changed the sheet header, 52 the snackbar); no skill by that name
-  exists at user or project level. Owed for both. Suggested fix: Lee says where it went or drops
-  the rule.
-
 - **#63 two waves of one feature open at once (wave 23).** While wave 23 (58, 71, 72) built, another
   session ran triage 3 and opened wave 24 (74-85) on the same branch; `wave --open` allowed it
   because 23's tickets were not on 24's frontier. Wave 23 then had to merge `mealplanning` again
@@ -86,13 +24,27 @@ Each entry: what went wrong or cost time, where it was seen, and the suggested f
   which ticket 72 had half taken from a saved patch: 4 conflicts, all placement and comments).
   The two waves overlap at `meal_logging_service.dart` (58 and 83). Suggested fix: `wave --open`
   warns when another wave of the feature is open, and the second lead reads the first's touches.
-- **#64 a fix that switches one button leaves its siblings (wave 23).** Ticket 72 moved only
-  Confirm to `goToFoodTab`; review found View shopping, Plan week, the Open shopping list chip and
-  the sheet's close-then-go still going without a fresh request (fixed at review, `28340cfd`).
-  Suggested fix: a navigation fix ticket names every call site of the location it fixes
-  (`grep` for the route string) in Touches.
 
 ## Done
+
+- **#41 settings can't be cleared (Lee 09-25: fix the bug).** Fixed at the root: clearing First
+  name, Last name or Email on Profile & Preferences now saves it cleared (`5ba1fa05`, 31-004; Email
+  had the same bug). 31-004 stays open until a retest runs it.
+- **#47, #53 prompts guessed what a screen writes or shows.** Wave lead step 5: read the code behind
+  every screen the ticket visits before writing prompts, and name the conversation or plan each
+  ticket writes into (Lee 09-25).
+- **#52 no Kroger certification shopper.** Lee 09-25: test matching only. Ticket 22 now runs
+  matching unconnected (22-004); the cart hand-off is out of scope on dev.
+- **#56, #61 landing over another session's dirty files.** Lee 09-25: stop the cause, not script
+  around it. CLAUDE.md: no session leaves edits uncommitted in the main clone.
+- **#58 filtered codegen.** Fix waves step 1: codegen always unfiltered, `git status` before staging
+  (Lee 09-25).
+- **#62 `/design-sync`.** Lee 09-25: rule dropped from CLAUDE.md. The design widgets are not synced
+  to claude.ai/design.
+- **#64 a fix left sibling call sites.** After-the-wave step 3: a navigation fix ticket greps the
+  route and lists every call site in Touches (Lee 09-25).
+- **#57, #59, #60 and #61's landing order.** Already in the fix-wave steps (`f8aee35e`); marked done
+  by Lee 09-25.
 
 - **#65 fix waves took 40-60 minutes of lead time (waves 19-22).** Three full-suite runs in wave
   22, page cards, waiting for the slowest agent, and a landing dance. **Done (Lee, 2026-09-25,
