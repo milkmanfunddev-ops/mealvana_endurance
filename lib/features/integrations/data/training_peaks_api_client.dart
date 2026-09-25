@@ -1,4 +1,7 @@
+import 'dart:async';
 import 'dart:convert';
+import 'dart:io';
+
 import 'package:flutter/foundation.dart';
 import 'package:http/http.dart' as http;
 
@@ -105,19 +108,28 @@ class TrainingPeaksApiClient {
       print('   Client ID: $_clientId');
     }
 
-    final response = await _httpClient.post(
-      Uri.parse(tokenUrl),
-      headers: {
-        'Content-Type': 'application/x-www-form-urlencoded',
-        'User-Agent': _userAgent,
-      },
-      body: {
-        'client_id': _clientId,
-        'client_secret': _clientSecret,
-        'grant_type': 'refresh_token',
-        'refresh_token': refreshToken,
-      },
-    );
+    final http.Response response;
+    try {
+      response = await _httpClient.post(
+        Uri.parse(tokenUrl),
+        headers: {
+          'Content-Type': 'application/x-www-form-urlencoded',
+          'User-Agent': _userAgent,
+        },
+        body: {
+          'client_id': _clientId,
+          'client_secret': _clientSecret,
+          'grant_type': 'refresh_token',
+          'refresh_token': refreshToken,
+        },
+      );
+    } on SocketException catch (e) {
+      throw _refreshUnanswered(e);
+    } on TimeoutException catch (e) {
+      throw _refreshUnanswered(e);
+    } on http.ClientException catch (e) {
+      throw _refreshUnanswered(e);
+    }
 
     if (response.statusCode != 200) {
       throw TrainingPeaksApiException(
@@ -365,6 +377,10 @@ class TrainingPeaksApiClient {
             }
           }
         }
+      } on TokenExpiredException {
+        // TP refused the access token: every other day would be refused
+        // too, and the caller must see it (ticket 76).
+        rethrow;
       } catch (e) {
         // Skip individual day errors, continue with other days
         if (kDebugMode) {
@@ -523,6 +539,12 @@ class TrainingPeaksApiClient {
   String _formatDate(DateTime date) {
     return '${date.year}-${date.month.toString().padLeft(2, '0')}-${date.day.toString().padLeft(2, '0')}';
   }
+
+  /// Ticket 76 (Finding 64-001): a refresh TP never answered (no network,
+  /// timeout) is a refresh failure with no status, so every refresh caller
+  /// records it as an ordinary, retryable error and none lets it escape.
+  TrainingPeaksApiException _refreshUnanswered(Object cause) =>
+      TrainingPeaksApiException('Token refresh failed: no answer ($cause)');
 
   /// Handle error responses and throw appropriate exceptions
   void _handleErrorResponse(http.Response response, String context) {

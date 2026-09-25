@@ -13,8 +13,8 @@
 
 **Touches:** lib/features/integrations/application/training_peaks_sync_service.dart, lib/features/integrations/data/training_peaks_api_client.dart
 
-- [ ] A seam test: a data call answering 401 after a refresh stores `requires_reauth`.
-- [ ] A seam test: a refresh throwing a SocketException stores `error` and the sync returns normally.
+- [x] A seam test: a data call answering 401 after a refresh stores `requires_reauth`.
+- [x] A seam test: a refresh throwing a SocketException stores `error` and the sync returns normally.
 - [ ] codegen if annotations changed, `flutter analyze` and the suite green.
 
 Next: /implement-lee testing-wave
