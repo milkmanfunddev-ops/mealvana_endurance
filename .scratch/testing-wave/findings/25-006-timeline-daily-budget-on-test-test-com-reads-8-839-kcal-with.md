@@ -1,7 +1,7 @@
 # 25-006 · Timeline daily budget on test@test.com reads 8,839 kcal with 475 g fat; check the numbers behind it
 
 - kind: followup-test
-- status: triaged
+- status: closed
 - ticket: 25
 - run: w14-20260924T2015Z
 - screen: Timeline (Meals filter, header)
@@ -27,3 +27,5 @@ The header reads "DAILY BUDGET 8,839 kcal · 1007C · 134P · 475F". 475 g of fa
 
 Picked for retest ticket 92 (Lee, 2026-09-25: every open follow-up test folded into the planned runs, cap of ten lifted for this pass).
 Moved to retest ticket 116 when 92 was split (Lee, 2026-09-25).
+
+Run by retest ticket 116 (run w32-20260925T2220Z, build e3367d2c): pass.

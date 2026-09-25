@@ -1,7 +1,7 @@
 # 30-004 · Pre-workout phase cards show a fluid target, not the foods' fluid, so they do not add up to the Before header
 
 - kind: bug
-- status: triaged
+- status: closed
 - ticket: 30
 - run: w10-20260924T1615Z
 - screen: Activity detail (fuelling plan, BEFORE)
@@ -33,3 +33,5 @@ Same on today's Patrol H5: BEFORE 9 oz (foods 274 mL), its only card (Top-Off) r
 
 Fix ticket 62 (Lee, 2026-09-25). Closed by the retest after it merges.
 Moved to retest ticket 116 when 92 was split (Lee, 2026-09-25).
+
+Run by retest ticket 116 (run w32-20260925T2220Z, build e3367d2c): pass.

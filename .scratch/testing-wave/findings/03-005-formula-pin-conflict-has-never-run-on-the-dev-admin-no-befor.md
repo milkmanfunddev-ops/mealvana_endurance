@@ -1,7 +1,7 @@
 # 03-005 · formula_pin_conflict has never run on the dev admin: no Before library formula conflicts with its allergies
 
 - kind: followup-test
-- status: triaged
+- status: closed
 - ticket: 03
 - run: w3-20260923T1942Z
 - screen: Formulas (pin)
@@ -32,3 +32,5 @@ this account — the pin feature has nothing to act on") and Patrol reported it 
 
 Picked for retest ticket 92 (Lee, 2026-09-25: every open follow-up test folded into the planned runs, cap of ten lifted for this pass).
 Moved to retest ticket 116 when 92 was split (Lee, 2026-09-25).
+
+Run by retest ticket 116 (run w32-20260925T2220Z, build e3367d2c): fail, carried by new bug Finding 116-001 (Peanuts allergy never matches the catalog's "Peanut"); run by hand on the run's own account, not the Patrol account.

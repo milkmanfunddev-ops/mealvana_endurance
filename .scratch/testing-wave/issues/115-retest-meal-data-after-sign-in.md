@@ -1,6 +1,6 @@
 # 115: Retest: meal data after sign-in, and the paywall's delete analytics
 
-**Status:** in-progress (wave 32, 2026-09-25)
+**Status:** done (wave 32, 2026-09-25)
 **Blocked by:** 110.
 **Pair with:** 116 (the fuelling plan and the timeline's numbers, same account). This run confirms an existing Draft on test@test.com last (16-003), which changes the confirmed plan, its list and its Plan-tab note; 116 reads that note (09-002, 14-010) and logs meals today. In one wave, 116 reads the note before 115 confirms: 115 writes the confirm time in `notes.md`.
 **Next:** `/implement-lee testing-wave`

@@ -1,7 +1,7 @@
 # 27-006 · Today's Fuel Where it came from labels a meal by its meal type (Lunch, Snack) instead of its name
 
 - kind: idea
-- status: triaged
+- status: closed
 - ticket: 27
 - run: w15-20260924T2039Z
 - screen: Today's Fuel (Daily, Where it came from)
@@ -25,3 +25,5 @@ Rows with a meal type show only the type: "SNACK 2:08 PM 168 kcal", "LUNCH 2:08 
 **Triage.**
 Fix ticket 80 (the wave lead, 2026-09-25: Lee asked for every bug fix that can be done without him). Closed by the retest after it merges.
 Moved to retest ticket 116 when 92 was split (Lee, 2026-09-25).
+
+Run by retest ticket 116 (run w32-20260925T2220Z, build e3367d2c): pass.

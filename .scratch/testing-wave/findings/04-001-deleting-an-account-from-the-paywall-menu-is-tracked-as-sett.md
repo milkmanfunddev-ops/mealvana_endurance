@@ -1,7 +1,7 @@
 # 04-001 · Deleting an account from the paywall menu is tracked as settings_delete_account_tapped
 
 - kind: idea
-- status: triaged
+- status: closed
 - ticket: 04
 - run: w4-20260924T0418Z
 - screen: Paywall
@@ -32,3 +32,5 @@ source to the tracked event.
 **Triage.**
 Fix ticket 50 (Lee, 2026-09-25). Closed by the retest after it merges.
 Moved to retest ticket 115 when 91 was split (Lee, 2026-09-25).
+
+Run by retest ticket 115 (run w32-20260925T2219Z, build e3367d2c): pass.

@@ -1,7 +1,7 @@
 # 14-010 · Plan tab Vana note says the day needs 1007 g of carbs
 
 - kind: followup-test
-- status: triaged
+- status: closed
 - ticket: 14
 - run: w8-20260924T1418Z
 - screen: Plan tab (Vana note card)
@@ -26,3 +26,5 @@ Not run (followup). 1007 g of carbs in a day is high; the day holds several "Pat
 
 Picked for retest ticket 92 (Lee, 2026-09-25: every open follow-up test folded into the planned runs, cap of ten lifted for this pass).
 Moved to retest ticket 116 when 92 was split (Lee, 2026-09-25).
+
+Run by retest ticket 116 (run w32-20260925T2220Z, build e3367d2c): pass.

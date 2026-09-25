@@ -1,7 +1,7 @@
 # 19-004 · Food Plan sub-tab says No plan yet for about 6 s after login while the confirmed plan loads
 
 - kind: bug
-- status: triaged
+- status: closed
 - ticket: 19
 - run: w11-20260924T1647Z
 - screen: Food (Plan sub-tab)
@@ -28,3 +28,5 @@ The Plan sub-tab first showed the empty state "No plan yet. Vana will build one 
 **Triage.**
 Fix ticket 46 (Lee, 2026-09-25). Closed by the retest after it merges.
 Moved to retest ticket 115 when 91 was split (Lee, 2026-09-25).
+
+Run by retest ticket 115 (run w32-20260925T2219Z, build e3367d2c): pass.

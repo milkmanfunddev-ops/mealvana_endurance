@@ -1,7 +1,7 @@
 # 30-003 · Stored during-run carb target sits below its own band and off the ratified during-carbs math (91 g vs 97-126 g)
 
 - kind: bug
-- status: triaged
+- status: closed
 - ticket: 30
 - run: w10-20260924T1615Z
 - screen: Activity detail (12 mi Run, fuelling plan)
@@ -37,3 +37,5 @@ The screen shows DURING carbs 92 g in pink with an info icon, marker left of a 9
 
 Fix ticket 63 (Lee, 2026-09-25). Closed by the retest after it merges.
 Moved to retest ticket 116 when 92 was split (Lee, 2026-09-25).
+
+Run by retest ticket 116 (run w32-20260925T2220Z, build e3367d2c): pass.
