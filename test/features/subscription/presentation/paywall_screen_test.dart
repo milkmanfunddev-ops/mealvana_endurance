@@ -92,9 +92,17 @@ class _FixedStatus extends SubscriptionStatusController {
 
 /// Records calls instead of touching the store.
 class _RecordingPaywall extends ProPaywallController {
-  _RecordingPaywall({this.restoreResult = true, this.manageUri});
+  _RecordingPaywall({
+    this.restoreResult = true,
+    this.manageUri,
+    this.holdAfterBuy = false,
+  });
   final bool restoreResult;
   final Uri? manageUri;
+
+  /// Stays loading after an activated purchase, as the real controller does
+  /// while the router replaces the paywall (05-004).
+  final bool holdAfterBuy;
   int restoreCalls = 0;
   int manageCalls = 0;
   final bought = <String>[];
@@ -117,6 +125,7 @@ class _RecordingPaywall extends ProPaywallController {
   @override
   Future<ProPurchaseOutcome> buy(Package pkg) async {
     bought.add(pkg.storeProduct.identifier);
+    if (holdAfterBuy) state = const AsyncLoading();
     return ProPurchaseOutcome.activated;
   }
 }
@@ -618,6 +627,27 @@ void main() {
     await tester.pumpAndSettle();
     expect(paywall.bought, ['me_pro_annual']);
     expect(find.text('Welcome to Mealvana Endurance!'), findsOneWidget);
+  });
+
+  // 05-004: the Gate opens before the router has replaced the paywall; in
+  // that window Continue must not come back live for a second purchase.
+  testWidgets('after a purchase opens the app, Continue stays disabled until '
+      'the paywall is gone', (tester) async {
+    final paywall = _RecordingPaywall(holdAfterBuy: true);
+    await smokeScreen(
+      tester,
+      const PaywallScreen(),
+      overrides: _overrides(paywall: () => paywall),
+    );
+
+    await tester.tap(find.byKey(_continue));
+    // The held spinner never settles; step past the snackbar's entrance.
+    await tester.pump();
+    await tester.pump(const Duration(seconds: 3));
+
+    await tester.tap(find.byKey(_continue), warnIfMissed: false);
+    await tester.pump();
+    expect(paywall.bought, ['me_pro_annual']);
   });
 
   testWidgets('picking monthly moves the selection; Continue buys monthly', (

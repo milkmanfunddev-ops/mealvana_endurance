@@ -360,6 +360,51 @@ void main() {
         () => service.purchase(pkg),
       ]);
       expect(c.read(subscriptionStatusProvider).asData!.value.active, isTrue);
+    });
+
+    // 05-004: the router has the Gate open before the paywall is gone; an
+    // idle controller in that window re-enables Continue and a second tap
+    // starts a second purchase.
+    test('after an activated purchase the paywall stays busy until the '
+        'router moves on', () async {
+      var calls = 0;
+      when(() => service.fetchStatus()).thenAnswer((_) async {
+        calls += 1;
+        return calls == 1 ? SubscriptionStatus.none : _rcActive;
+      });
+      final c = container();
+      await c.read(subscriptionStatusProvider.future);
+
+      final outcome = await c
+          .read(proPaywallControllerProvider.notifier)
+          .buy(pkg);
+
+      expect(outcome, ProPurchaseOutcome.activated);
+      expect(c.read(proPaywallControllerProvider), isA<AsyncLoading<void>>());
+      // A later push that keeps the account open changes nothing.
+      await c.read(subscriptionStatusProvider.notifier).refresh();
+      expect(c.read(proPaywallControllerProvider), isA<AsyncLoading<void>>());
+    });
+
+    test('the hold lets go once the account is closed again, so a later '
+        'paywall can sell', () async {
+      var active = false;
+      when(
+        () => service.fetchStatus(),
+      ).thenAnswer((_) async => active ? _rcActive : SubscriptionStatus.none);
+      when(() => service.purchase(any())).thenAnswer((_) async {
+        active = true;
+        return true;
+      });
+      final c = container();
+      await c.read(subscriptionStatusProvider.future);
+      await c.read(proPaywallControllerProvider.notifier).buy(pkg);
+      expect(c.read(proPaywallControllerProvider), isA<AsyncLoading<void>>());
+
+      // The subscription lapses (or another account signs in).
+      active = false;
+      await c.read(subscriptionStatusProvider.notifier).refresh();
+
       expect(c.read(proPaywallControllerProvider), isA<AsyncData<void>>());
     });
 
@@ -375,6 +420,8 @@ void main() {
           c.read(subscriptionStatusProvider).asData!.value.active,
           isFalse,
         );
+        // Nothing opens the app yet, so the paywall stays usable.
+        expect(c.read(proPaywallControllerProvider), isA<AsyncData<void>>());
       },
     );
 
@@ -563,7 +610,8 @@ void main() {
             .buy(monthly);
 
         expect(outcome, ProPurchaseOutcome.activated);
-        expect(c.read(proPaywallControllerProvider), isA<AsyncData<void>>());
+        // Not an error: the paywall holds busy for the open Gate (05-004).
+        expect(c.read(proPaywallControllerProvider), isA<AsyncLoading<void>>());
       },
     );
   });

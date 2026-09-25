@@ -172,6 +172,13 @@ Future<bool> paywallHasSubscription(Ref ref) =>
 /// State is `AsyncValue<void>`: loading while a store call is in flight,
 /// data when idle, error when the last operation failed unexpectedly.
 ///
+/// A purchase that opens the app leaves the state loading until the router
+/// has moved on (05-004): the Gate opens before `buy` returns, and the
+/// paywall route stays on screen a moment longer. An idle state there would
+/// bring Continue back live, and a second tap would start a second purchase.
+/// The hold ends when the status reports the account closed again (a lapse,
+/// or another account signing in), so a paywall shown later can sell.
+///
 /// keepAlive for the same reason as [PurchaseController]: the screen only
 /// `ref.read`s the notifier to call [buy], so under autoDispose the notifier
 /// could be torn down at the first await and every later `ref` use would
@@ -182,8 +189,25 @@ class ProPaywallController extends _$ProPaywallController {
   UserEntitlementsRepository get _repo =>
       ref.read(userEntitlementsRepositoryProvider);
 
+  /// Set while a purchase has opened the app and the paywall waits for the
+  /// router to replace it.
+  bool _holdingForGate = false;
+
   @override
-  FutureOr<void> build() => null;
+  FutureOr<void> build() {
+    // Riverpod reuses the notifier across a rebuild: start unheld.
+    _holdingForGate = false;
+    ref.listen<AsyncValue<SubscriptionStatus>>(subscriptionStatusProvider, (
+      _,
+      next,
+    ) {
+      if (!_holdingForGate || next.isLoading) return;
+      if (next.value?.active == true) return;
+      _holdingForGate = false;
+      state = const AsyncData(null);
+    });
+    return null;
+  }
 
   /// Purchase [pkg]. Refuses (before touching the store) when nobody is
   /// signed in or the session is anonymous; re-asserts the RevenueCat
@@ -247,6 +271,11 @@ class ProPaywallController extends _$ProPaywallController {
         context: 'subscription',
         tags: {'rc_operation': 'buy', 'sku': sku},
       );
+    }
+    if (outcome == ProPurchaseOutcome.activated) {
+      // The Gate is open: stay busy until the router takes the paywall away.
+      _holdingForGate = true;
+      state = const AsyncLoading();
     }
     return outcome;
   }
