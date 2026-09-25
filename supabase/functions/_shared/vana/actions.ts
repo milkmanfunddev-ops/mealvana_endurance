@@ -56,7 +56,7 @@ export async function runAction(v: VanaCtx, a: UiAction): Promise<ActionResult> 
       const date = String(p.date ?? today()); const slot = p.slot as DaySlot;
       let name = String(p.name ?? ''); let kcal: number | null = null; let carbsG: number | null = null;
       if (p.source === 'plan') { const pl = await plan.getOrCreatePlan(v); const m = pl.meals.find((x) => x.id === p.id); if (m) { name = m.name; kcal = m.kcal; carbsG = m.carbsG; } }
-      else { const m = await getMeal(v, p.source, String(p.id)); if (m) { name = m.name; kcal = m.kcal; carbsG = m.carbsG; } }
+      else { const m = await getMeal(v, p.source, String(p.id)); if (m) { plan.mustHaveNumbers(m); name = m.name; kcal = m.kcal; carbsG = m.carbsG; } }   // a blank meal never goes on a day (mp-678, ticket 74)
       const slots = await plan.setDaySlot(v, date, slot, { source: p.source, id: String(p.id), name, kcal, carbsG });
       return { parts: [{ kind: 'day', date, label: '', slots, filled: [slot] }] };
     }

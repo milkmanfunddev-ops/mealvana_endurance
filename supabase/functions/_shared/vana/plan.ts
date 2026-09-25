@@ -99,8 +99,9 @@ export async function addMeal(v: VanaCtx, ref: MealRef, servings?: number | null
 }
 /** A plan never takes a meal whose numbers are missing (mp-678): every add and every swap ends at addMeal / swapMeal, so
  *  the rule holds here whichever surface asked. Browse's add and the model's updateBatch get this error back; plan build and
- *  the picker never reach it because they pass such a meal by (tools.ts), and same-as-last-time skips it. */
-function mustHaveNumbers(ref: MealRef): void {
+ *  the picker never reach it because they pass such a meal by (tools.ts), and same-as-last-time skips it. `set_day_slot`
+ *  (actions.ts) calls it too before it puts a library or saved meal on a day (ticket 74). */
+export function mustHaveNumbers(ref: MealRef): void {
   if (!hasNutritionNumbers(ref)) throw new Error(`no nutrition numbers: "${ref.name}" has no kcal or macros yet, so it can't go in a plan`);
 }
 export async function addMealById(v: VanaCtx, source: 'library' | 'saved', id: string, servings?: number | null, session?: Session, scope?: PlanScope | null) {

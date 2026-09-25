@@ -473,6 +473,8 @@ class ContentKeys {
   static const String mpBrowseAdd = 'meal_planning.browse_add';
   static const String mpBrowseAdded = 'meal_planning.browse_added';
   static const String mpBrowseAddedToast = 'meal_planning.browse_added_toast';
+  // A meal with missing numbers stays listed, but can't go in a plan (mp-678).
+  static const String mpBrowseNoNumbers = 'meal_planning.browse_no_numbers';
   static const String mpMicTooltip = 'meal_planning.mic_tooltip';
   static const String mpMicListening = 'meal_planning.mic_listening';
   static const String mpPantryUseMessage = 'meal_planning.pantry_use_message';
