@@ -15,7 +15,8 @@
  *     a coach code also opens a pending pairing with the coach, an influencer
  *     code never pairs;
  *   - an account RevenueCat has never seen is created there first;
- *   - a giveaway code grants 365 days, once;
+ *   - a giveaway code grants 365 days, once, and stays spent after the
+ *     account that redeemed it is deleted;
  *   - a wrong, not-yet-valid, expired or used code gets a plain reason, and
  *     nothing is written or granted;
  *   - only a signed-in (not anonymous) caller gets in.
@@ -91,6 +92,39 @@ function claimRpc(db: FakeDb) {
     });
     return 'claimed';
   };
+}
+
+/**
+ * What deleting an auth account does to `code_redemptions`, read from the
+ * newest migration that declares the `user_id` foreign key: `cascade` drops the
+ * account's rows, `set null` keeps them with no user. The fake follows the SQL,
+ * so a migration that changes the rule changes what these tests see.
+ */
+function redemptionUserOnDelete(): 'cascade' | 'set null' {
+  const dir = new URL('../../migrations/', import.meta.url);
+  const files = [...Deno.readDirSync(dir)]
+    .filter((e) => e.isFile && e.name.endsWith('.sql'))
+    .map((e) => e.name)
+    .sort()
+    .reverse();
+  const rule = /user_id\s+uuid[^,;]*?references\s+auth\.users\s*\(\s*id\s*\)\s+on\s+delete\s+(cascade|set\s+null)|code_redemptions_user_id_fkey\s+foreign\s+key\s*\(\s*user_id\s*\)\s+references\s+auth\.users\s*\(\s*id\s*\)\s+on\s+delete\s+(cascade|set\s+null)/i;
+  for (const name of files) {
+    const sql = Deno.readTextFileSync(new URL(name, dir));
+    if (!/code_redemptions/i.test(sql)) continue;
+    const m = sql.match(rule);
+    if (m) return (m[1] ?? m[2]).toLowerCase().replace(/\s+/, ' ') as 'cascade' | 'set null';
+  }
+  throw new Error('no migration declares the code_redemptions.user_id foreign key');
+}
+
+/** Delete an account the way `delete-user` does, with the migrations' FK rule applied. */
+function deleteAccount(db: FakeDb, userId: string): void {
+  const rows = db.rows('code_redemptions');
+  if (redemptionUserOnDelete() === 'cascade') {
+    for (let i = rows.length - 1; i >= 0; i--) if (rows[i].user_id === userId) rows.splice(i, 1);
+  } else {
+    for (const r of rows) if (r.user_id === userId) r.user_id = null;
+  }
 }
 
 function world(codes: Row[], extra: Record<string, Row[]> = {}): FakeDb {
@@ -440,6 +474,31 @@ describe('a giveaway code', () => {
     rc.failGrant = undefined;
     assertEquals((await redeem(db, rc, signedIn(WINNER), { code: 'WIN2026' })).body.ok, true);
     assertEquals(rc.grants, [{ user: WINNER, days: 365 }]);
+  });
+
+  // Finding 11-012, ticket 39: deleting an account used to take its redemption
+  // rows with it (on delete cascade), so a spent giveaway came back.
+  it('at its limit refuses a new account even after the redeeming account was deleted', async () => {
+    const db = world([code({ code: 'WIN2026', type: 'giveaway', owner_user_id: null, perk_days: 365 })]);
+    const rc = fakeRc();
+    assertEquals((await redeem(db, rc, signedIn(WINNER), { code: 'WIN2026' })).body.ok, true);
+
+    deleteAccount(db, WINNER);
+
+    assertEquals(db.rows('code_redemptions').length, 1, 'the redemption outlives the account');
+    refusedWith(await redeem(db, rc, signedIn(SECOND_WINNER), { code: 'WIN2026' }), 'used');
+    assertEquals(rc.grants, [{ user: WINNER, days: 365 }]);
+  });
+
+  it('with room for more still counts a deleted account toward its limit', async () => {
+    const db = world([
+      code({ code: 'WIN2026', type: 'giveaway', owner_user_id: null, perk_days: 365, max_redemptions: 2 }),
+    ]);
+    const rc = fakeRc();
+    await redeem(db, rc, signedIn(WINNER), { code: 'WIN2026' });
+    deleteAccount(db, WINNER);
+    assertEquals((await redeem(db, rc, signedIn(SECOND_WINNER), { code: 'WIN2026' })).body.ok, true);
+    refusedWith(await redeem(db, rc, signedIn(ATHLETE), { code: 'WIN2026' }), 'used');
   });
 });
 

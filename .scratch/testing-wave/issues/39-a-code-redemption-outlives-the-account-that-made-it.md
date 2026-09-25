@@ -13,9 +13,9 @@
 
 **Touches:** supabase/migrations/, supabase/functions/redeem-code/handler.ts
 
-- [ ] A new idempotent migration; after deleting a user, its redemptions still count toward the code's total (SQL check on dev).
-- [ ] deno test: a giveaway at its limit refuses a new account even after the redeeming account was deleted.
-- [ ] Applied to dev only; prod waits for the playbook.
+- [x] A new idempotent migration; after deleting a user, its redemptions still count toward the code's total (SQL check on dev).
+- [x] deno test: a giveaway at its limit refuses a new account even after the redeeming account was deleted.
+- [x] Applied to dev only; prod waits for the playbook.
 - [ ] codegen if annotations changed, `flutter analyze` and the suite green.
 
 Next: /implement-lee testing-wave
