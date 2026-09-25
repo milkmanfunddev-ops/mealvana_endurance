@@ -739,6 +739,10 @@ batch on `feature/carb-loading` (rebased on origin/release/1.27.1). Highlights:
   pre-existing, verified failing identically on bare origin/release/1.27.1:
   ci_config develop-test-gate row, CF-2 clamp caption, and the two
   env-gated manual_live API suites.
+- **Final confirmation run**: 4,319 pass · the same 4 pre-existing base reds
+  · 1 ai_credits poll-timing test that failed once and passes in isolation
+  (the recorded full-suite flake class). ZERO regressions from the
+  carb-loading implementation.
 
 ## Notes on the two new ideas
 
