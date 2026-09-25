@@ -492,6 +492,36 @@ class MealLogController extends _$MealLogController {
     });
   }
 
+  /// Re-log a past meal from Log a Meal → Recent as a copy of [original]
+  /// (its items, totals and source; see [MealLoggingService.relogMeal]).
+  Future<void> relogMeal({
+    required MealLog original,
+    double servings = 1,
+    MealSlot? slot,
+    required String logDate,
+    DateTime? eatenAt,
+  }) async {
+    await _runGuarded((service) async {
+      final userId = await _currentUserId();
+      if (userId == null) throw StateError('No authenticated user');
+      await service.relogMeal(
+        original: original,
+        userId: userId,
+        slot: slot,
+        logDate: logDate,
+        eatenAt: eatenAt,
+        servings: servings,
+      );
+      _diary.recordLogged();
+      await _trackEvent('meal_logged', {
+        if (slot != null) 'slot': slot.wireValue,
+        'source': original.source.wireValue,
+        'method': 'recent',
+        'log_date': logDate,
+      });
+    });
+  }
+
   /// Update an existing meal log entry.
   ///
   /// Passes the full updated [MealLog] to the service which recomputes totals

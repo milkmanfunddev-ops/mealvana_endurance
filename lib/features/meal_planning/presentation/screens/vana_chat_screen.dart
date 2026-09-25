@@ -1,3 +1,5 @@
+import 'dart:async';
+
 import 'package:flutter/foundation.dart' show kIsWeb;
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
@@ -20,6 +22,7 @@ import '../../application/vana_conversations_controller.dart';
 import '../../../subscription/application/subscription_status_provider.dart';
 import '../../data/vana_exceptions.dart';
 import '../../domain/meal_plan.dart';
+import '../../domain/meal_plan_status.dart';
 import '../../domain/meal_ref.dart';
 import '../../domain/meal_source.dart';
 import '../../domain/meal_type.dart';
@@ -288,6 +291,12 @@ class _VanaChatScreenState extends ConsumerState<VanaChatScreen> {
                       },
                       onSwap: _swapFromSheet,
                       onReview: () => _openReviewSheet(context, plan!),
+                      // Another confirm archived this conversation's draft
+                      // (mp-241): the bar reads only and offers the copy
+                      // (mp-676, 15-001).
+                      onUseInstead: plan?.status == MealPlanStatus.archived
+                          ? () => _useInstead(context, plan!)
+                          : null,
                     )
                   : const SizedBox.shrink(
                       key: ValueKey('meal_planning.plan_bar.hidden'),
@@ -787,6 +796,7 @@ class _VanaChatScreenState extends ConsumerState<VanaChatScreen> {
     }
     await _controller.tapChip(label);
     final to = chip?.navigatesTo;
+    // A fresh extra so a repeat go still switches the Food segment (16-002).
     if (to != null && mounted) context.go(to, extra: foodTabRequest());
   }
 
@@ -1080,6 +1090,39 @@ class _VanaChatScreenState extends ConsumerState<VanaChatScreen> {
       // route has no way home (Lee, 2026-09-07).
       onConfirmed: () => goToFoodTab(context, FoodTab.shopping),
     );
+  }
+
+  /// "Use this plan instead" (mp-676): copy the archived draft into this
+  /// week as a new draft (ticket 73's `use_plan_again`) and open the copy in
+  /// the plan view, whose Confirm makes it this week's plan. This
+  /// conversation keeps its archived draft.
+  Future<void> _useInstead(BuildContext context, MealPlan plan) async {
+    final content = ref.read(contentServiceProvider);
+    try {
+      final copy = await ref
+          .read(mealPlanControllerProvider.notifier)
+          .usePlanAgain(plan.id);
+      if (copy == null || !context.mounted) return;
+      MealvanaSnackbar.showSuccess(
+        context,
+        content.getValue(ContentKeys.mpPreviousPlanUseAgainDone),
+      );
+      unawaited(context.push('/food/plans/${copy.id}'));
+    } on NeedsConnectionException {
+      if (context.mounted) {
+        MealvanaSnackbar.showWarning(
+          context,
+          content.getValue(ContentKeys.mpNeedsConnection),
+        );
+      }
+    } on Exception {
+      if (context.mounted) {
+        MealvanaSnackbar.showError(
+          context,
+          content.getValue(ContentKeys.mpServerError),
+        );
+      }
+    }
   }
 
   // ── Errors ───────────────────────────────────────────────────────────────

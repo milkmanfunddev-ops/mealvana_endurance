@@ -62,7 +62,7 @@ class _FoodScreenState extends ConsumerState<FoodScreen> {
 
   // `/main?tab=food&food=shopping` reuses a Food tab that is already built;
   // a newly requested segment must still win over the one it first opened
-  // on (mp-596: "Open shopping list" landed on Plan).
+  // on (mp-596: "Open shopping list" landed on Plan; 16-002: so did Confirm).
   @override
   void didUpdateWidget(FoodScreen oldWidget) {
     super.didUpdateWidget(oldWidget);

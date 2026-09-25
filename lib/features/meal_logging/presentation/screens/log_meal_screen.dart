@@ -265,13 +265,15 @@ class _LogMealScreenState extends ConsumerState<LogMealScreen> {
     );
   }
 
-  /// Generic quick-log flow shared by food/ingredient/recent/common-assembly
-  /// taps: shows [showQuickLogConfirmSheet], then writes ONE terminal
-  /// `meal_logs` row via [MealLogController.logFromComponents]. The row's
-  /// name is [deriveMealName] applied to the final component list (a single
+  /// Generic quick-log flow shared by food/ingredient/common-assembly taps:
+  /// shows [showQuickLogConfirmSheet], then writes ONE terminal `meal_logs`
+  /// row via [MealLogController.logFromComponents]. The row is named [name]
+  /// when the tap carries one (a Common quick-add tile, testing-wave 26-003);
+  /// otherwise [deriveMealName] over the final component list (a single
   /// component collapses to that item's own name).
   Future<void> _quickLogComponents({
     required String title,
+    String? name,
     required List<MealComponent> Function(double servings) buildComponents,
     bool showServingsStepper = true,
     double initialServings = 1.0,
@@ -293,7 +295,7 @@ class _LogMealScreenState extends ConsumerState<LogMealScreen> {
     await ref
         .read(mealLogControllerProvider.notifier)
         .logFromComponents(
-          name: deriveMealName(components),
+          name: name ?? deriveMealName(components),
           slot: result.slot,
           logDate: widget.logDate,
           source: source,
@@ -716,17 +718,35 @@ class _LogMealScreenState extends ConsumerState<LogMealScreen> {
     }
   }
 
-  /// Re-log a recent meal (single synthetic component reconstructed from the
-  /// past log's totals) — quick-log with a servings stepper, matching the
-  /// food/ingredient tap pattern. Mirrors the `.saved` source convention
-  /// already used by [RecentSavedPickerScreen] for re-logged history items.
-  void _onRecentTap(MealLog log) {
-    final base = syntheticFromLog(log);
-    _quickLogComponents(
+  /// Re-log a recent meal as a copy of the log itself: its items, totals and
+  /// source, scaled by the servings stepper ([MealLogController.relogMeal];
+  /// testing-wave 26-002).
+  Future<void> _onRecentTap(MealLog log) async {
+    _unfocus();
+    final result = await showQuickLogConfirmSheet(
+      context,
       title: log.name,
-      buildComponents: (servings) => [_scale(base, servings)],
-      source: MealLogSource.saved,
+      logDate: widget.logDate,
+      previewTotals: (servings) => ConsumedTotals(
+        calories: ((log.calories ?? 0) * servings).round(),
+        carbsG: (log.carbsG ?? 0) * servings,
+        proteinG: (log.proteinG ?? 0) * servings,
+        fatG: (log.fatG ?? 0) * servings,
+        sodiumMg: (log.sodiumMg ?? 0) * servings,
+      ),
     );
+    if (result == null || !mounted) return;
+
+    await ref
+        .read(mealLogControllerProvider.notifier)
+        .relogMeal(
+          original: log,
+          servings: result.servings,
+          slot: result.slot,
+          logDate: widget.logDate,
+          eatenAt: result.eatenAt,
+        );
+    _afterQuickLog();
   }
 
   Future<void> _openBuildMealScreen() async {
@@ -884,6 +904,7 @@ class _LogMealScreenState extends ConsumerState<LogMealScreen> {
           scrollController: _scrollController,
           onTapAssembly: (assembly) => _quickLogComponents(
             title: assembly.name,
+            name: assembly.name,
             buildComponents: (_) => assembly.components,
             showServingsStepper: false,
           ),

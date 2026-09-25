@@ -43,11 +43,11 @@ import '../../domain/vana_exchange.dart';
 import '../../domain/vana_launcher_rule.dart';
 import '../../domain/vana_message.dart';
 import '../../domain/vana_moment.dart';
+import '../screens/food_screen.dart';
 import 'part_entrance.dart';
 import 'streamed_text.dart';
 import 'vana_hand_off.dart';
 import 'vana_part_renderer.dart';
-import '../screens/food_screen.dart';
 
 /// Watches the root Navigator for a dialog or sheet on top of the page, so
 /// the launcher never floats over one (its own sheet included), and for a

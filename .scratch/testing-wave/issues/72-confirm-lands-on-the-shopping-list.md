@@ -1,6 +1,6 @@
 # 72: Confirm lands on the shopping list
 
-**Status:** in-progress (wave 23, 2026-09-25)
+**Status:** done (wave 23, 2026-09-25)
 **Blocked by:** 70 (touches lib/features/meal_planning/presentation/screens/vana_chat_screen.dart).
 **Next:** `/implement-lee testing-wave`
 **Model:** opus
@@ -13,7 +13,7 @@
 
 **Touches:** lib/features/meal_planning/presentation/screens/food_screen.dart, lib/shared/widgets/tabs_screen.dart, lib/shared/core/app_router.dart
 
-- [ ] A router or widget test: the confirm route opens Food on Shopping.
-- [ ] codegen if annotations changed, `flutter analyze` and the suite green.
+- [x] A router or widget test: the confirm route opens Food on Shopping.
+- [x] codegen if annotations changed, `flutter analyze` and the suite green.
 
 Next: /implement-lee testing-wave

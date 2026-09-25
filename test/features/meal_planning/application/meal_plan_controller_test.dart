@@ -353,6 +353,55 @@ void main() {
       });
     });
 
+    /// Testing-wave 15-001 (ticket 71, mp-676): "Use this plan instead" on a
+    /// conversation whose draft another confirm archived copies it into this
+    /// week as a new draft (`use_plan_again`, mp-675). The copy lands in
+    /// Drift; the tab keeps showing the plan it had until the copy is
+    /// confirmed.
+    test(
+      'usePlanAgain copies the plan into a new draft and keeps the tab\'s plan',
+      () async {
+        // The week already has a confirmed plan: that is what archived the
+        // conversation's draft.
+        remote.plans = [
+          {..._planRow(weekStartFor()), 'status': 'confirmed'},
+        ];
+        await repo.syncFromRemote(_user);
+        final c = controller();
+        await c.future;
+
+        final copy = await c.usePlanAgain('archived-draft');
+
+        final sent = actions.calls.whereType<UsePlanAgainAction>().single;
+        expect(sent.toJson(), {
+          'type': 'use_plan_again',
+          'payload': {'id': 'archived-draft'},
+        });
+        expect(copy, isNotNull);
+        expect(await repo.getPlanById(copy!.id), isNotNull);
+        expect(copy.meals, hasLength(2));
+        expect(c.state.value!.id, 'plan-1');
+      },
+    );
+
+    test('usePlanAgain offline sends nothing', () async {
+      connectivity.online = false;
+      final c = controller();
+      await c.future;
+
+      await expectLater(
+        () => c.usePlanAgain('archived-draft'),
+        throwsA(
+          isA<NeedsConnectionException>().having(
+            (e) => e.operation,
+            'op',
+            'use_plan_again',
+          ),
+        ),
+      );
+      expect(actions.calls, isEmpty);
+    });
+
     test('offline → NeedsConnectionException before any request', () async {
       connectivity.online = false;
       final c = controller();

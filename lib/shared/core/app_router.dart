@@ -103,6 +103,47 @@ import '../../features/meal_logging/presentation/screens/meal_review_screen.dart
 import '../../features/meal_logging/presentation/screens/recent_saved_picker_screen.dart';
 import '../../features/meal_logging/presentation/screens/recipe_picker_screen.dart';
 
+/// `/main?tab=<name>&food=<segment>`: the tab shell on the named tab and, for
+/// Food, the named segment.
+@visibleForTesting
+TabsScreen mainTabsScreen(GoRouterState state) {
+  // Support tab query parameter to navigate to specific tab — by name, so the
+  // index math (Food tab appears with Pro) stays in TabsScreen.
+  final tabParam = state.uri.queryParameters['tab'];
+  const knownTabNames = {
+    'food',
+    'coach',
+    'events',
+    'notes',
+    'workout-notes',
+    'learn',
+    'survey',
+    'nutrition',
+    'activities',
+    'calendar',
+  };
+  final tabName = tabParam != null && knownTabNames.contains(tabParam)
+      ? tabParam
+      : null;
+
+  // `food=plan|meals|shopping` picks the Food tab's segment, so a flow that
+  // ends on the shopping list (confirming a plan from Vana) lands inside the
+  // tab shell instead of on a bare `/food` screen with no way home (Lee,
+  // 2026-09-07).
+  final foodTab = switch (state.uri.queryParameters['food']) {
+    'meals' => FoodTab.meals,
+    'shopping' => FoodTab.shopping,
+    _ => FoodTab.plan,
+  };
+
+  return TabsScreen(
+    initialTabIndex: 0,
+    initialTabName: tabName,
+    initialFoodTab: foodTab,
+    request: state.extra,
+  );
+}
+
 /// The activity routes read their id from `extra`, which a web refresh or a
 /// restore loses: with no id they send the athlete home instead of showing a
 /// dead page with nothing under it.
@@ -514,44 +555,7 @@ class AppRouter {
         GoRoute(
           path: '/main',
           name: 'main',
-          builder: (context, state) {
-            // Support tab query parameter to navigate to specific tab — by
-            // name, so the index math (Food tab appears with Pro) stays in
-            // TabsScreen.
-            final tabParam = state.uri.queryParameters['tab'];
-            final knownTabNames = const {
-              'food',
-              'coach',
-              'events',
-              'notes',
-              'workout-notes',
-              'learn',
-              'survey',
-              'nutrition',
-              'activities',
-              'calendar',
-            };
-            final tabName = tabParam != null && knownTabNames.contains(tabParam)
-                ? tabParam
-                : null;
-
-            // `food=plan|meals|shopping` picks the Food tab's segment, so a
-            // flow that ends on the shopping list (confirming a plan from
-            // Vana) lands inside the tab shell instead of on a bare `/food`
-            // screen with no way home (Lee, 2026-09-07).
-            final foodTab = switch (state.uri.queryParameters['food']) {
-              'meals' => FoodTab.meals,
-              'shopping' => FoodTab.shopping,
-              _ => FoodTab.plan,
-            };
-
-            return TabsScreen(
-              initialTabIndex: 0,
-              initialTabName: tabName,
-              initialFoodTab: foodTab,
-              request: state.extra,
-            );
-          },
+          builder: (context, state) => mainTabsScreen(state),
         ),
 
         // Coach Portal — dedicated route for coach users (web only)

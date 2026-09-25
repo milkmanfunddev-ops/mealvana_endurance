@@ -80,7 +80,7 @@ Stream<MealPlan?> conversationDraft(Ref ref, String conversationId) async* {
 ///   [setSession], [addComment], [toggleShopping], [setDaySlot],
 ///   [clearDaySlot] write Drift and schedule a best-effort upload.
 /// - **Remote-ack** edits: [pickMeals], [swapMeal], [confirmPlan],
-///   [newPlan], [logFromPlan], [planDay] call `vana-action`, fold the
+///   [newPlan], [logFromPlan], [planDay], [usePlanAgain] call `vana-action`, fold the
 ///   returned `batch` into Drift with [applyServerPlan], and throw
 ///   [NeedsConnectionException] when offline before sending anything.
 ///
@@ -395,6 +395,21 @@ class MealPlanController extends _$MealPlanController {
       NewPlanAction(conversationId: conversationId),
       (r) => r.plan,
     );
+  }
+
+  /// Copy plan [id] into this week as a new draft (`use_plan_again`,
+  /// mp-675): a conversation's draft another confirm archived offers "Use
+  /// this plan instead" (mp-676). The copy goes to Drift so the Plan tab
+  /// knows it, but [state] is left alone: this week's plan stays on the tab
+  /// until the copy is confirmed. Returns the copy, which the caller opens.
+  /// Remote-ack: refuses offline before sending, and a failure rethrows.
+  Future<MealPlan?> usePlanAgain(String id) async {
+    final online = await ref.read(connectivityCheckerProvider).isOnline();
+    if (!online) throw const NeedsConnectionException('use_plan_again');
+    final result = await _actions.run(UsePlanAgainAction(id: id));
+    final copy = result.plan;
+    if (copy != null) await applyServerPlan(copy);
+    return copy;
   }
 
   /// Delete a plan outright (`delete_plan`), [id] naming it and the active

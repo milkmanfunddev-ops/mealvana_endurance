@@ -79,6 +79,19 @@ Each entry: what went wrong or cost time, where it was seen, and the suggested f
   exists at user or project level. Owed for both. Suggested fix: Lee says where it went or drops
   the rule.
 
+- **#63 two waves of one feature open at once (wave 23).** While wave 23 (58, 71, 72) built, another
+  session ran triage 3 and opened wave 24 (74-85) on the same branch; `wave --open` allowed it
+  because 23's tickets were not on 24's frontier. Wave 23 then had to merge `mealplanning` again
+  before landing (Lee had also committed the other sessions' dirty Food-landing work, `db1da03b`,
+  which ticket 72 had half taken from a saved patch: 4 conflicts, all placement and comments).
+  The two waves overlap at `meal_logging_service.dart` (58 and 83). Suggested fix: `wave --open`
+  warns when another wave of the feature is open, and the second lead reads the first's touches.
+- **#64 a fix that switches one button leaves its siblings (wave 23).** Ticket 72 moved only
+  Confirm to `goToFoodTab`; review found View shopping, Plan week, the Open shopping list chip and
+  the sheet's close-then-go still going without a fresh request (fixed at review, `28340cfd`).
+  Suggested fix: a navigation fix ticket names every call site of the location it fixes
+  (`grep` for the route string) in Touches.
+
 ## Done
 
 - **#54 CF-2 conformance goes red in the early morning (wave 19).** At 04:40 local the CF-2

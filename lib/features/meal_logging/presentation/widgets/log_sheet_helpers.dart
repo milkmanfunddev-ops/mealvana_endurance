@@ -20,8 +20,11 @@ export '../../domain/meal_log.dart';
 // syntheticFromLog
 // ---------------------------------------------------------------------------
 
-/// Builds a single [MealComponent] from a past [MealLog] entry so it can be
-/// re-logged via [MealLogController.logFromComponents].
+/// Builds a single [MealComponent] from a past [MealLog]'s totals, for a
+/// Build-a-meal draft started from a log that has no items of its own.
+///
+/// Never used to re-log a meal: a re-log copies the log's own items and
+/// source (`MealLogController.relogMeal`, testing-wave 26-002).
 MealComponent syntheticFromLog(MealLog log) {
   return MealComponent(
     name: log.name,

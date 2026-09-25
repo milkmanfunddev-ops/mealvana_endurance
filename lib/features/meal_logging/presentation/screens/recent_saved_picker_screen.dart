@@ -7,12 +7,10 @@ import '../../../meal_planning/domain/vana_situation.dart';
 import '../../../meal_planning/presentation/widgets/vana_situation_scope.dart';
 import '../../domain/log_date_time.dart';
 import '../../domain/meal_log.dart';
-import '../../domain/meal_log_source.dart';
 import '../../domain/meal_slot.dart';
 import '../../domain/saved_meal.dart';
 import '../providers/meal_log_providers.dart';
-import '../widgets/log_sheet_helpers.dart'
-    show syntheticFromLog, showSlotPickerSheet;
+import '../widgets/log_sheet_helpers.dart' show showSlotPickerSheet;
 
 /// Picker screen for re-logging a recent or saved meal.
 ///
@@ -113,16 +111,14 @@ class _RecentSavedPickerScreenState
     _checkSuccess();
   }
 
+  /// Re-log a history item as a copy of the log itself (testing-wave 26-002).
   Future<void> _logRecentMeal(MealLog log, MealSlot slot) async {
-    final component = syntheticFromLog(log);
     await ref
         .read(mealLogControllerProvider.notifier)
-        .logFromComponents(
-          name: log.name,
+        .relogMeal(
+          original: log,
           slot: slot,
           logDate: _logDate!,
-          source: MealLogSource.saved,
-          components: [component],
           eatenAt: eatenAtForLogDate(_logDate!),
         );
     if (!mounted) return;
