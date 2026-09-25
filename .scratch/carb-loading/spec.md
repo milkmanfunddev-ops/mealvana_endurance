@@ -832,6 +832,29 @@ overlapping-loads slice; documented edge, no tie-break built. The stale
 Suites: 493 green across carb_loading + macro_dashboard + meal_logging +
 events (1 pre-existing skip).
 
+### G21-B GREEN — 2026-09-25 — Recommended section reads the legacy store (D-022)
+
+Per the pin (fork option B, qa d736cf4): the slot page grows the
+"Recommended for {slot}" section, fed by `carbSlotRecommendationsProvider`
+→ the EXISTING `carb_loading_foods` store via `getFoodsByMealType`
+(`meal_types` = per-slot suitability, incl. the store's shipped tolerance:
+null/empty = suitable everywhere). Fixed curation order = the store's
+curation key `name` asc, id tiebreak — deterministic on every device
+(mutation-probed: dropping the sort fails the seam's order assertion).
+Row copy is prototype-verbatim ('N g carbs per serving'); tapping a row
+hands off to the SHIPPING Log-a-Meal surface with a new `initialQuery`
+seeding the unified search (composition ruling holds — no bespoke logging,
+no nutrition math invented from the store's carbs-only rows). Section
+renders today-only, same gate as Add Food. Empty/failed store reads render
+the quiet empty state ('No recommendations yet.'), never a crash.
+Reds green in `carb_slot_recommendations_seam_test.dart`: producer-shaped
+rows (the sync path's verbatim local write — Postgres name-array literals
+`{breakfast,lunch}` from the server's text[]) render suitability-filtered
+in curation order; empty store renders the empty state. Data freshness per
+qa's note: the sim's local store carries 27 seeded rows in exactly that
+shape — the section renders live, no deploy dependency. No library
+columns; unification stays D-022 + the parked follow-up intake.
+
 ## Notes on the two new ideas
 
 **Reminder to start.** Machinery exists — `NotificationService`

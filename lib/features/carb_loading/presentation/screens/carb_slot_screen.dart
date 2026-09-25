@@ -7,6 +7,7 @@ import '../../../macro_dashboard/presentation/providers/carb_dashboard_providers
 import '../../../meal_logging/domain/meal_slot.dart';
 import '../../../meal_logging/presentation/providers/meal_log_providers.dart';
 import '../../../meal_logging/presentation/screens/log_meal_screen.dart';
+import '../../application/carb_slot_recommendations.dart';
 import '../../domain/carb_loading_pace_engine.dart' show CarbDayRel;
 import '../../domain/meal_type.dart';
 
@@ -137,9 +138,12 @@ class CarbSlotScreen extends ConsumerWidget {
               ),
             ),
             Expanded(
-              child: card == null || card.items.isEmpty
-                  ? Padding(
-                      padding: const EdgeInsets.all(18),
+              child: ListView(
+                padding: const EdgeInsets.fromLTRB(16, 0, 16, 24),
+                children: [
+                  if (card == null || card.items.isEmpty)
+                    Padding(
+                      padding: const EdgeInsets.fromLTRB(2, 2, 2, 8),
                       child: Text(
                         'Nothing logged in this slot yet.',
                         style: TextStyle(
@@ -149,25 +153,136 @@ class CarbSlotScreen extends ConsumerWidget {
                         ),
                       ),
                     )
-                  : ListView(
-                      padding: const EdgeInsets.fromLTRB(16, 0, 16, 24),
-                      children: [
-                        for (final item in card.items)
-                          _loggedRow(
-                            context,
-                            ref,
-                            item.id,
-                            item.name,
-                            item.gramsStr,
-                            isToday,
-                          ),
-                      ],
-                    ),
+                  else
+                    for (final item in card.items)
+                      _loggedRow(
+                        context,
+                        ref,
+                        item.id,
+                        item.name,
+                        item.gramsStr,
+                        isToday,
+                      ),
+                  if (isToday) ..._recommendedSection(context, ref),
+                ],
+              ),
             ),
           ],
         ),
       ),
     );
+  }
+
+  /// G21-B (Xuan, 2026-09-25): "Recommended for {slot}" reads the EXISTING
+  /// `carb_loading_foods` store — `meal_types` = per-slot suitability, fixed
+  /// curation order — via [carbSlotRecommendationsProvider]. Tapping a row
+  /// hands off to the shipping Log-a-Meal surface with the search pre-seeded
+  /// (composition ruling: no bespoke logging here). Empty or failed store
+  /// reads render the quiet empty state, never a crash.
+  List<Widget> _recommendedSection(BuildContext context, WidgetRef ref) {
+    final cream = AppColors.cream;
+    final recs =
+        ref.watch(carbSlotRecommendationsProvider(slot)).value ?? const [];
+    return [
+      Padding(
+        padding: const EdgeInsets.fromLTRB(2, 18, 2, 6),
+        child: Text(
+          'RECOMMENDED FOR ${slot.displayName.toUpperCase()}',
+          key: const ValueKey('carb_slot.recommended_section'),
+          style: TextStyle(
+            fontFamily: 'Apercu',
+            fontSize: 10,
+            fontWeight: FontWeight.w600,
+            letterSpacing: 0.8,
+            color: cream.withValues(alpha: 0.45),
+          ),
+        ),
+      ),
+      if (recs.isEmpty)
+        Padding(
+          padding: const EdgeInsets.fromLTRB(2, 2, 2, 8),
+          child: Text(
+            'No recommendations yet.',
+            key: const ValueKey('carb_slot.recommended_empty'),
+            style: TextStyle(
+              fontFamily: 'Apercu',
+              fontSize: 13,
+              color: cream.withValues(alpha: 0.5),
+            ),
+          ),
+        )
+      else
+        for (final rec in recs)
+          Padding(
+            padding: const EdgeInsets.only(bottom: 7),
+            child: InkWell(
+              key: ValueKey('carb_slot.rec_${rec.id}'),
+              onTap: () => openLogMealScreen(
+                context,
+                logDate: dateStr,
+                source: 'carb_slot_recommendation',
+                initialSlot: logSlot,
+                initialQuery: rec.query,
+              ),
+              borderRadius: BorderRadius.circular(13),
+              child: Container(
+                padding: const EdgeInsets.symmetric(
+                  horizontal: 12,
+                  vertical: 10,
+                ),
+                decoration: BoxDecoration(
+                  color: Colors.white.withValues(alpha: 0.045),
+                  borderRadius: BorderRadius.circular(13),
+                  border: Border.all(color: cream.withValues(alpha: 0.08)),
+                ),
+                child: Row(
+                  children: [
+                    Expanded(
+                      child: Column(
+                        crossAxisAlignment: CrossAxisAlignment.start,
+                        children: [
+                          Text(
+                            rec.name,
+                            maxLines: 1,
+                            overflow: TextOverflow.ellipsis,
+                            style: TextStyle(
+                              fontFamily: 'Apercu',
+                              fontSize: 13.5,
+                              color: cream,
+                            ),
+                          ),
+                          const SizedBox(height: 1),
+                          Text(
+                            rec.subStr,
+                            style: TextStyle(
+                              fontFamily: 'Apercu Mono',
+                              fontSize: 10.5,
+                              color: cream.withValues(alpha: 0.55),
+                            ),
+                          ),
+                        ],
+                      ),
+                    ),
+                    const SizedBox(width: 8),
+                    Container(
+                      width: 28,
+                      height: 28,
+                      decoration: BoxDecoration(
+                        shape: BoxShape.circle,
+                        border: Border.all(color: AppColors.orange),
+                      ),
+                      child: Icon(
+                        Icons.add,
+                        size: 17,
+                        color: AppColors.orange,
+                      ),
+                    ),
+                  ],
+                ),
+              ),
+            ),
+          ),
+    ];
   }
 
   Widget _loggedRow(

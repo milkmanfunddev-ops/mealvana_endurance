@@ -69,6 +69,7 @@ void openLogMealScreen(
   required String logDate,
   required String source,
   MealSlot? initialSlot,
+  String? initialQuery,
 }) {
   Navigator.of(context).push<void>(
     MaterialPageRoute(
@@ -76,6 +77,7 @@ void openLogMealScreen(
         logDate: logDate,
         source: source,
         initialSlot: initialSlot,
+        initialQuery: initialQuery,
       ),
     ),
   );
@@ -118,6 +120,7 @@ class LogMealScreen extends ConsumerStatefulWidget {
     required this.logDate,
     this.source = 'unknown',
     this.initialSlot,
+    this.initialQuery,
   });
 
   final String logDate;
@@ -130,6 +133,11 @@ class LogMealScreen extends ConsumerStatefulWidget {
   /// tagged without an extra tap (carb-loading@v1; the athlete can still
   /// change or clear it in the sheet).
   final MealSlot? initialSlot;
+
+  /// Seeds the unified search bar on open (G21-B: a slot-page recommendation
+  /// hands off HERE — this shipping surface still does all the searching and
+  /// logging; the athlete can edit or clear the query like any typed one).
+  final String? initialQuery;
 
   @override
   ConsumerState<LogMealScreen> createState() => _LogMealScreenState();
@@ -204,6 +212,11 @@ class _LogMealScreenState extends ConsumerState<LogMealScreen> {
     WidgetsBinding.instance.addPostFrameCallback((_) {
       _loadRecipes();
       _seedFoodPool();
+      final query = widget.initialQuery;
+      if (query != null && query.isNotEmpty && mounted) {
+        _searchCtrl.text = query;
+        _onSearchChanged(query);
+      }
     });
   }
 
