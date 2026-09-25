@@ -1,0 +1,9 @@
+# B after offline delete (online SELECT), 23:32:11Z
+# auth.users:
+{"id": "9cd57a3f-cc25-429d-8929-8dfc0d9e4ffb", "email": "lee+e2e-121-20260925t2323zb@rightpathprogramming.com", "email_confirmed_at": "2026-09-25 23:25:13.006027+00", "last_sign_in_at": "2026-09-25 23:25:13.048595+00"}
+# public.users:
+{"id": "9cd57a3f-cc25-429d-8929-8dfc0d9e4ffb", "email": "lee+e2e-121-20260925t2323zb@rightpathprogramming.com", "onboarding_completed": true}
+# user_entitlements:
+(no rows)
+# RevenueCat customer:
+{"active_entitlements":{"items":[],"next_page":null,"object":"list","url":"https://api.revenuecat.com/v2/projects/proj77b3c48f/customers/9cd57a3f-cc25-429d-8929-8dfc0d9e4ffb/active_entitlements"},"experiment":null,"first_seen_at":1790378464664,"id":"9cd57a3f-cc25-429d-8929-8dfc0d9e4ffb","last_seen_app_version":"1.27.1","last_seen_at":1790378715474,"last_seen_country":"US","last_seen_platform":"iOS
