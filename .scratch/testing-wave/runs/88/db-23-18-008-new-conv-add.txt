@@ -1,0 +1,4 @@
+## after first Browse add in new conv 20:25:46Z
+conv | created_at | plan | status | meals
+9db7c080-3e91-4add-9a03-83064b8d11c2 | 2026-09-25 20:25:07.083889+00 | 666be167-08b3-4cd5-8127-d262d0fde28c | draft | Wholewheat pasta, mixed veg & avocado x4
+(1 rows)

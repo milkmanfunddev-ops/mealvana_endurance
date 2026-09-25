@@ -1,0 +1,13 @@
+## after Review Remove of Toast 20:05:45Z
+name | servings
+Sweet rice cake with jam | 8
+Quinoa porridge with berries & banana | 4
+(2 rows)
+updated_at | items | toast_rows
+2026-09-25 20:04:35.617+00 | 14 | Honey 4 tsp; Peanut butter 4 tbsp
+(1 rows)
+## 20:06:50Z after reopening 0401b3d8 (bar says 3 meals)
+id | name | servings | created_at
+8c4e8a04-883c-46a9-9700-d877264d03c7 | Sweet rice cake with jam | 8 | 2026-09-24 21:09:24.604476+00
+20e7a75c-7a78-4f4c-ac85-c46f28fe57e9 | Quinoa porridge with berries & banana | 4 | 2026-09-24 21:11:26.321038+00
+(2 rows)

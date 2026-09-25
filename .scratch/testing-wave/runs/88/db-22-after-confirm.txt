@@ -1,0 +1,51 @@
+## taken 2026-09-25T20:22:18Z
+## meal_plans (week >= 2026-09-20)
+id | week_start | status | is_deleted | conversation_id | created_at | updated_at | confirmed_at | shop_items | meals | meal_list
+6f365c30-b359-4d7c-a477-7bbc8b7e7450 | 2026-09-20 | archived | false | 0b7df6f0-8ef6-46a8-951f-d7ebac780a6b | 2026-09-22 11:59:22.955844+00 | 2026-09-24 01:10:06.794578+00 | ∅ | 0 | 2 | Egg & Veggie Scramble x4; Wholewheat pasta, mixed veg & avocado x4
+15b6b4f4-3a46-4581-826b-f957fd8000a5 | 2026-09-20 | archived | false | ebac747d-86a7-4182-b9f1-327895bc96e3 | 2026-09-22 12:08:32.785161+00 | 2026-09-25 19:58:11.354+00 | ∅ | 0 | 4 | Injera with shiro wot (spiced chickpea stew) x4; Käsespätzle with side salad x4; Rice, black beans, guac & hot sauce x4; Rice, black beans & roasted plantain x4
+b82409d9-a8b8-440d-9f4e-f25262f8a73a | 2026-09-20 | archived | false | 1f805690-12a5-4f33-9d96-b819bdaa5ffd | 2026-09-23 02:29:32.425323+00 | 2026-09-24 01:10:06.794578+00 | ∅ | 0 | 0 | ∅
+be6abf2f-881b-478d-9b4b-b09afac3b9a2 | 2026-09-20 | archived | false | f6a0f7fa-6cc0-42c2-bbb7-9aca997c535d | 2026-09-23 11:14:08.935129+00 | 2026-09-25 20:21:43.539435+00 | 2026-09-24 16:53:19.994+00 | 0 | 5 | Quinoa, mixed veg & walnuts x1; Farro, chickpea & roasted cauliflower bowl with tahini x1; Spelt, lentil & raw pepper-carrot bowl with balsamic x1; Farro, white bean & roasted beet bowl with pesto x1; Wholewheat pasta, mixed veg & avocado x4
+54a02440-8b6d-43ac-a1b9-6ce10a47fd74 | 2026-09-20 | archived | false | d8efbdb3-a21a-4e7f-984b-94cc89ee67ae | 2026-09-24 14:23:36.672783+00 | 2026-09-25 20:02:00.078+00 | ∅ | 0 | 2 | Egg & Veggie Scramble x1; Rice, black beans & roasted plantain x4
+173cebb2-454f-48d9-bbd3-6b3a7e561335 | 2026-09-20 | archived | false | 0401b3d8-9c04-497b-9910-45028ac99da3 | 2026-09-24 21:09:24.408271+00 | 2026-09-25 20:21:43.539435+00 | ∅ | 0 | 2 | Sweet rice cake with jam x8; Quinoa porridge with berries & banana x4
+9598807a-e313-473f-aa2c-c5af1e3515f3 | 2026-09-20 | archived | false | ∅ | 2026-09-25 20:09:58.146412+00 | 2026-09-25 20:10:37.861+00 | ∅ | 0 | 6 | Rice, seitan & roasted broccoli bowl with tzatziki (dairy-free) x1; Quinoa, mixed veg & walnuts x1; Egg & Veggie Scramble x1; Wheatberries, white bean & raw cabbage-carrot bowl with hummus x1; Chilli non carne with kidney beans and vegetables x1; Tofu, quinoa, spinach & chard bowl x1
+8ebeb6da-f6b6-40af-a3f9-4289dad49b6a | 2026-09-20 | confirmed | false | 449da56d-725d-49c4-9b8a-b58616a0115c | 2026-09-25 20:10:24.354073+00 | 2026-09-25 20:21:43.539435+00 | 2026-09-25 20:21:43.539435+00 | 0 | 2 | Wholewheat pasta, mixed veg & avocado x1; Quinoa, mixed veg & walnuts x1
+1192963b-55bf-4654-850c-1b8064f9c9c1 | 2026-09-20 | archived | false | ∅ | 2026-09-25 20:10:38.246887+00 | 2026-09-25 20:21:43.539435+00 | ∅ | 0 | 4 | Rice, seitan & roasted broccoli bowl with tzatziki (dairy-free) x1; Quinoa, mixed veg & walnuts x1; Egg & Veggie Scramble x1; Wheatberries, white bean & raw cabbage-carrot bowl with hummus x1
+(9 rows)
+## shopping_lists
+id | plan_id | name | created_at | updated_at | confirmed_at | items
+2aeb8156-6963-4171-bf8d-3147ee0d8998 | 8ebeb6da-f6b6-40af-a3f9-4289dad49b6a | Week of Sep 20 | 2026-09-25 20:10:25.324879+00 | 2026-09-25 20:21:43.567+00 | 2026-09-25 20:21:43.567+00 | 5
+2a4cbd64-6908-4143-b4ee-8e0035188435 | be6abf2f-881b-478d-9b4b-b09afac3b9a2 | Week of Sep 20 | 2026-09-25 20:06:08.849767+00 | 2026-09-25 20:14:18.148+00 | 2026-09-25 20:06:09.389+00 | 17
+90c2fefc-50f7-4534-bf05-e2e1189c1d01 | ∅ | List 2026-09-19 | 2026-09-19 16:20:00.22745+00 | 2026-09-19 20:21:33.227+00 | ∅ | 9
+debb5576-5acf-44dd-a144-afbddc66dddd | fc9687ff-fd4f-4fd7-9b34-64c4626a47d9 | Week of 2026-09-13 | 2026-09-17 00:52:47.289701+00 | 2026-09-17 00:52:52.122+00 | ∅ | 3
+77fd387c-b32d-4c6c-b529-6776fd7d05ee | f2c0bc78-4b63-478f-8710-14c4c1247d2e | Week of 2026-09-13 | 2026-09-16 18:46:53.211259+00 | 2026-09-17 00:27:10.771+00 | 2026-09-17 00:27:10.771+00 | 24
+d907ba91-aa88-4219-8b3a-eeaf5c0da637 | 4e29032c-5373-4031-81eb-2f48bbc10b1f | Week of 2026-09-13 | 2026-09-16 16:11:53.642761+00 | 2026-09-16 18:38:49.139+00 | 2026-09-16 18:38:49.139+00 | 18
+7ed03528-3ab7-4e85-a776-69039d253f84 | 6e167344-b36c-4f1e-ac67-e3a9658beae8 | Week of 2026-09-13 | 2026-09-16 14:49:15.042327+00 | 2026-09-16 16:11:18.927+00 | 2026-09-16 16:11:18.927+00 | 16
+(7 rows)
+## vana_conversations (newest 12)
+id | kind | title | is_deleted | created_at | last_message_at | context_day | msgs
+29897d1c-87fc-40fc-9002-b1658d56bd60 | general | Quick question | false | 2026-09-25 20:13:14.496929+00 | 2026-09-25 20:13:18.595+00 | ∅ | 1
+449da56d-725d-49c4-9b8a-b58616a0115c | meal_planning | This week's plan | false | 2026-09-25 20:08:58.346517+00 | 2026-09-25 20:09:31.671+00 | ∅ | 3
+0aeabaa0-8ade-4acb-9719-62a2deed0766 | general | Quick question | false | 2026-09-25 19:53:25.382534+00 | 2026-09-25 19:53:29.743+00 | ∅ | 1
+d17ba332-592b-4599-9684-83147cff59b9 | general | Quick question | false | 2026-09-25 13:36:59.21358+00 | 2026-09-25 13:37:06.641+00 | ∅ | 1
+4d62c862-0754-4660-a837-b43cc70fc036 | general | Quick question | false | 2026-09-24 17:17:17.589239+00 | 2026-09-24 17:17:22.925+00 | ∅ | 1
+8507a520-e9fc-4398-8511-3a3e81117afd | general | Quick question | false | 2026-09-24 14:50:02.079912+00 | 2026-09-24 14:50:07.2+00 | ∅ | 1
+d8efbdb3-a21a-4e7f-984b-94cc89ee67ae | meal_planning | This week's plan | false | 2026-09-24 14:22:06.792991+00 | 2026-09-24 14:23:07.843+00 | ∅ | 3
+13998a9a-7f33-4d14-93bf-84c099d7d855 | general | Quick question | false | 2026-09-24 04:42:30.67391+00 | 2026-09-24 04:43:13.504+00 | ∅ | 3
+38ea8992-ac50-43ee-8b4c-2b57ed4b88f8 | general | hi | false | 2026-09-24 00:56:41.976531+00 | 2026-09-24 00:56:45.989+00 | ∅ | 2
+f6a0f7fa-6cc0-42c2-bbb7-9aca997c535d | meal_planning | This week's plan | false | 2026-09-23 11:12:49.871104+00 | 2026-09-23 11:16:17.649+00 | ∅ | 15
+1f805690-12a5-4f33-9d96-b819bdaa5ffd | meal_planning | This week's plan | false | 2026-09-23 02:28:56.618667+00 | 2026-09-23 02:32:34.376+00 | ∅ | 9
+0401b3d8-9c04-497b-9910-45028ac99da3 | meal_planning | This week's plan | false | 2026-09-23 02:24:32.023109+00 | 2026-09-23 02:24:38.7+00 | ∅ | 1
+(12 rows)
+## list items of the confirmed plan
+name | qty | aisle | source | from_meal_ids
+Avocado | ½ | Produce | plan | ["bd8d5ac6-4411-4fe4-b40d-7924fb457e49"]
+Mixed vegetables | 400 g | Produce | plan | ["bd8d5ac6-4411-4fe4-b40d-7924fb457e49","3be41f4a-97f1-456b-bba3-195f8a3a9643"]
+Quinoa | 73 g | Bakery & Grains | plan | ["3be41f4a-97f1-456b-bba3-195f8a3a9643"]
+Wholewheat pasta | 86 g | Bakery & Grains | plan | ["bd8d5ac6-4411-4fe4-b40d-7924fb457e49"]
+Walnuts | 20 g | Pantry | plan | ["3be41f4a-97f1-456b-bba3-195f8a3a9643"]
+(5 rows)
+## plan_meals + library ingredients
+id | name | servings | ingredients_json
+bd8d5ac6-4411-4fe4-b40d-7924fb457e49 | Wholewheat pasta, mixed veg & avocado | 1 | [{"qty":"200 g","name":"wholewheat pasta, cooked","role":"starch"},{"qty":"200 g","name":"mixed vegetables, steamed","role":"veg"},{"qty":"0.5","name":"avocado","role":"fat"}]
+3be41f4a-97f1-456b-bba3-195f8a3a9643 | Quinoa, mixed veg & walnuts | 1 | [{"qty":"220 g","name":"quinoa, cooked","role":"starch"},{"qty":"200 g","name":"mixed vegetables, steamed","role":"veg"},{"qty":"20 g","name":"walnuts","role":"fat"}]
+(2 rows)

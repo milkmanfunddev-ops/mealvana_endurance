@@ -1,0 +1,9 @@
+## new draft after 3 picks 20:11:21Z
+id | status | name | meal_type | servings | kcal
+8ebeb6da-f6b6-40af-a3f9-4289dad49b6a | draft | Egg & Veggie Scramble | dinner | 1 | 280
+8ebeb6da-f6b6-40af-a3f9-4289dad49b6a | draft | Wholewheat pasta, mixed veg & avocado | dinner | 1 | 520
+8ebeb6da-f6b6-40af-a3f9-4289dad49b6a | draft | Quinoa, mixed veg & walnuts | dinner | 1 | 500
+(3 rows)
+id | confirmed_at | items
+2aeb8156-6963-4171-bf8d-3147ee0d8998 | ∅ | 11
+(1 rows)

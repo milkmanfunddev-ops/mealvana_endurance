@@ -1,0 +1,5 @@
+name | servings | created_at
+Sweet rice cake with jam | 8 | 2026-09-24 21:09:24.604476+00
+Quinoa porridge with berries & banana | 4 | 2026-09-24 21:11:26.321038+00
+Toast with peanut butter & honey | 4 | 2026-09-25 20:04:34.905345+00
+(3 rows)

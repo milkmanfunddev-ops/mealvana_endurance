@@ -1,0 +1,21 @@
+## before + 19:59:45Z
+id | status | updated_at | meals | list
+f2c0bc78-4b63-478f-8710-14c4c1247d2e | confirmed | 2026-09-17 00:27:10.739218+00 | Rice, seitan & roasted broccoli bowl with tzatziki (dairy-free) x4/4; Quinoa, mixed veg & walnuts x4/4; Egg & Veggie Scramble x4/4; Wheatberries, white bean & raw cabbage-carrot bowl with hummus x4/4; Chilli non carne with kidney beans and vegetables x3/3; Tofu, quinoa, spinach & chard bowl x3/3 | 2026-09-17 00:27:10.771+00 items=24
+(1 rows)
+## after + 19:59:50Z
+id | status | updated_at | meals | list
+f2c0bc78-4b63-478f-8710-14c4c1247d2e | confirmed | 2026-09-25 19:59:47.036801+00 | Rice, seitan & roasted broccoli bowl with tzatziki (dairy-free) x5/5; Quinoa, mixed veg & walnuts x4/4; Egg & Veggie Scramble x4/4; Wheatberries, white bean & raw cabbage-carrot bowl with hummus x4/4; Chilli non carne with kidney beans and vegetables x3/3; Tofu, quinoa, spinach & chard bowl x3/3 | 2026-09-17 00:27:10.771+00 items=24
+(1 rows)
+## lists of f2c0bc78 20:00:02Z
+id | created_at | updated_at | confirmed_at | items
+77fd387c-b32d-4c6c-b529-6776fd7d05ee | 2026-09-16 18:46:53.211259+00 | 2026-09-17 00:27:10.771+00 | 2026-09-17 00:27:10.771+00 | 24
+(1 rows)
+name | qty
+Broccoli | 600 g
+Seitan | 600 g
+White rice | 1.6 kg
+(3 rows)
+## 20:00:16Z list 77fd387c unchanged: updated_at 2026-09-17 00:27:10, Seitan 600 g (plan now 5 servings of the seitan bowl)
+now | updated_at | seitan
+2026-09-25 20:01:03.917224+00 | 2026-09-17 00:27:10.771+00 | 600 g
+(1 rows)
