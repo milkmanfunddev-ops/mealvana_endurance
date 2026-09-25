@@ -30,18 +30,20 @@ Each entry: what went wrong or cost time, where it was seen, and the suggested f
   ticket with Add or Save controls, the lead reads the screen's code for writes before writing
   the prompts, and the ticket names the conversation or plan to use.
 
+## Done
+
 - **#50 the mobile MCP's first command sends the app to the background (wave 17).** On a fresh wave
   simulator, ticket 21's first MCP tap brought the MCP's helper app to the front and SpringBoard
   showed; `simctl launch` brought the app back with its state kept. Suggested fix: runbook step 3
   says to make one harmless MCP call (a screenshot) before the first tap, then relaunch if the home
   screen shows.
+  **Done (before wave 18):** runbook step 3 makes one harmless MCP call and relaunches before the first tap.
 
 - **#51 a web sign-in sheet has no element list (wave 17).** Kroger's `login.kroger.com` page runs in
   an out-of-process ASWebAuthenticationSession; neither the MCP nor `idb ui describe-all` lists its
   fields. Ticket 21 drove it by coordinate taps read off screenshots. Suggested fix: one line in
   runbook step 5 for any OAuth sheet (Kroger, TrainingPeaks, Garmin).
-
-## Done
+  **Done (before wave 18):** runbook step 5 says how to drive an out-of-process sign-in sheet.
 
 - **#49 server-side pushes land in every edge extract (wave 16).** Garmin's fan-out to dev
   `garmin-push` failed 45 of 45 epochs at 16:13 local, in the middle of the wave. Ticket 18 noted it

@@ -67,6 +67,11 @@ xcrun simctl launch UDID com.milkman.mealvanaendurance.dev
 `simctl launch` can leave SpringBoard in front. Take a screenshot; if the home screen shows,
 launch again with the mobile MCP (`mobile_launch_app`) or tap the app's icon.
 
+The mobile MCP's first command on a fresh simulator can bring its helper app to the front and
+send the app to the background (IMPROVEMENTS #50). Make one harmless MCP call first (a
+`mobile_take_screenshot`), then take a `simctl io` screenshot; if the home screen shows, `simctl
+launch` again (the app keeps its state) before the first tap.
+
 Stop the log stream at step 9.
 
 ## 4. Start from what is on the screen
@@ -112,6 +117,10 @@ ticket says so.
   `xcrun simctl io UDID screenshot RUNS/<name>.png`: the mobile MCP's `save_screenshot` refuses
   paths inside the worktree. After a tap, take a new screenshot before trusting the MCP's element
   list; it has returned the previous screen.
+- A web sign-in sheet (Kroger, TrainingPeaks, Garmin) runs out of process: neither the MCP nor
+  `idb ui describe-all` lists its fields (IMPROVEMENTS #51). Drive it by coordinate taps read
+  off `simctl io` screenshots, one screenshot after every tap, and type with the mobile MCP
+  (`CRED type` for the password once the field is focused).
 - Offline for your app only: `scripts/testing-wave/netcut/netcut.sh launch UDID SCRATCH` relaunches
   the app with a connect-blocking library injected (network still on); `netcut.sh on SCRATCH` cuts
   it and `netcut.sh off SCRATCH` restores it, no relaunch. The host and other simulators keep their
