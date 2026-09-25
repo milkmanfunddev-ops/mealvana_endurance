@@ -94,7 +94,9 @@ class _RecordingActions extends Fake implements VanaActionClient {
 
   @override
   Future<VanaActionResult> run(UiAction action) async {
-    if (action is GetPlanAction) {
+    // Reads the screen makes on its own (the plan, the conversation list
+    // since ticket 126) are not chip taps.
+    if (action is GetPlanAction || action is ListConversationsAction) {
       return const VanaActionResult(parts: [], extras: {});
     }
     ran.add(action);
