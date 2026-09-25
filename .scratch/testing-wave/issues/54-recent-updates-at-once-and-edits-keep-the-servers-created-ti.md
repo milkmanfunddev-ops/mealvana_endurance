@@ -13,8 +13,8 @@
 
 **Touches:** lib/features/meal_logging/presentation/providers/meal_log_providers.dart, lib/features/meal_logging/domain/meal_log.dart
 
-- [ ] Seam test: after `logRecipe` and a Recent re-log, `recentMealsProvider` lists the meal first.
-- [ ] Unit test: the upsert payload for an edit carries no `created_at`.
+- [x] Seam test: after `logRecipe` and a Recent re-log, `recentMealsProvider` lists the meal first.
+- [x] Unit test: the upsert payload for an edit carries no `created_at`.
 - [ ] codegen if annotations changed, `flutter analyze` and the suite green.
 
 Next: /implement-lee testing-wave

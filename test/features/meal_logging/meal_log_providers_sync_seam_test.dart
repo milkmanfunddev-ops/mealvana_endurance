@@ -20,18 +20,24 @@ import 'package:riverpod/riverpod.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:mealvana_endurance/features/auth/data/user_repository.dart';
 import 'package:mealvana_endurance/features/auth/domain/user_preferences.dart';
+import 'package:mealvana_endurance/features/meal_logging/application/meal_logging_service.dart';
 import 'package:mealvana_endurance/features/meal_logging/data/meal_log_repository.dart';
 import 'package:mealvana_endurance/features/meal_logging/data/saved_meals_repository.dart';
 import 'package:mealvana_endurance/features/meal_logging/domain/meal_log.dart';
+import 'package:mealvana_endurance/features/meal_logging/domain/meal_log_source.dart';
 import 'package:mealvana_endurance/features/meal_logging/domain/saved_meal.dart';
 import 'package:mealvana_endurance/features/meal_logging/presentation/providers/meal_log_providers.dart';
 import 'package:mealvana_endurance/shared/data/syncable_repository.dart';
 import 'package:mealvana_endurance/shared/database/app_database.dart';
+import 'package:mealvana_endurance/shared/services/app_external_deps.dart';
 import 'package:mealvana_endurance/shared/services/logging_service.dart';
 import 'package:mealvana_endurance/shared/services/sentry/sentry_reporter.dart';
 import 'package:mocktail/mocktail.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 import 'package:supabase_flutter/supabase_flutter.dart';
+
+import '../../helpers/fakes/fake_supabase_client.dart';
+import '../../helpers/fakes/recording_analytics_tracker.dart';
 
 const _user = '607f9dd5-6fa7-48ee-a628-720d4a0506a1';
 const _logDate = '2026-09-23';
@@ -121,6 +127,8 @@ class _MockUserRepository extends Mock implements UserRepository {}
 
 class _MockUserProfile extends Mock implements UserProfile {}
 
+class _MockPrefs extends Mock implements SharedPreferences {}
+
 void _stubLogger(_MockAppLogger logger) {
   when(
     () => logger.info(
@@ -183,6 +191,13 @@ class _MealLogsFromServer extends MealLogRepository {
     await setLastSyncTime(DateTime.now());
     return SyncResult.successful(count);
   }
+
+  /// The upload half of the wire: the server takes every write.
+  @override
+  Future<void> sendUpsert(
+    List<Map<String, dynamic>> rows, {
+    bool ignoreDuplicates = false,
+  }) async {}
 }
 
 class _SavedMealsFromServer extends SavedMealsRepository {
@@ -248,6 +263,15 @@ void main() {
         mealLogRepositoryProvider.overrideWithValue(logs),
         savedMealsRepositoryProvider.overrideWithValue(saved),
         userRepositoryProvider.overrideWith((_) async => users),
+        appExternalDepsProvider.overrideWithValue(
+          AppExternalDeps(
+            analytics: RecordingAnalyticsTracker(),
+            supabaseClient: fakeSupabaseClient(),
+            sentry: const NoopSentryReporter(),
+            logger: const NoopAppLogger(),
+            sharedPreferences: _MockPrefs(),
+          ),
+        ),
       ],
     );
     addTearDown(container.dispose);
@@ -323,8 +347,16 @@ void main() {
   });
 
   group('26-001: Log a Meal, Recent tab', () {
+    // Recent streams from Drift (ticket 54) and is auto-dispose: held as the
+    // Recent tab holds it, or a listener-less read disposes it mid-load.
+    Future<List<MealLog>> readRecent() {
+      final held = container.listen(recentMealsProvider, (_, __) {});
+      addTearDown(held.close);
+      return container.read(recentMealsProvider.future);
+    }
+
     test('Recent lists an earlier meal on a fresh sign-in', () async {
-      final recent = await container.read(recentMealsProvider.future);
+      final recent = await readRecent();
 
       expect(recent.map((l) => l.name), ['Rice cake and Almond butter']);
       expect(logs.syncCalls, 1);
@@ -345,14 +377,14 @@ void main() {
       // The timeline and Recent both ask; the coordinator dedupes in flight
       // and the freshness stamp answers the next ask without a round trip.
       container.listen(mealLogsForDateProvider(_logDate), (_, __) {});
-      await container.read(recentMealsProvider.future);
+      await readRecent();
       await firstWhere<List<MealLog>>(
         container,
         mealLogsForDateProvider(_logDate),
         (l) => l.isNotEmpty,
       );
       container.invalidate(recentMealsProvider);
-      await container.read(recentMealsProvider.future);
+      await readRecent();
 
       expect(logs.syncCalls, 1);
     });
@@ -362,11 +394,78 @@ void main() {
       () async {
         logs.failWith = StateError('offline');
 
-        final recent = await container.read(recentMealsProvider.future);
+        final recent = await readRecent();
 
         expect(recent, isEmpty);
         expect(logs.syncCalls, 1);
       },
     );
+  });
+
+  group('26-005: Recent moves a meal just logged to the top', () {
+    List<String> names(List<MealLog> l) => [for (final m in l) m.name];
+
+    test('after logRecipe and a Recent re-log, Recent lists that meal first, '
+        'with Log a Meal still open', () async {
+      // Log a Meal is open on Recent: the tab watches the provider.
+      final before = await firstWhere<List<MealLog>>(
+        container,
+        recentMealsProvider,
+        (l) => l.isNotEmpty,
+      );
+      expect(names(before), ['Rice cake and Almond butter']);
+
+      // The screens call the auto-dispose controller with a listener-less
+      // read, so it is disposed while the write is in flight.
+      await container
+          .read(mealLogControllerProvider.notifier)
+          .logRecipe(
+            params: const RecipeLogParams(
+              recipeId: 'b8f1c2d3-0000-4000-8000-000000000001',
+              recipeName: 'Overnight Oats',
+              servings: 1,
+              caloriesPerServing: 350,
+              carbsGPerServing: 55,
+              proteinGPerServing: 12,
+              fatGPerServing: 9,
+            ),
+            logDate: _logDate,
+          );
+
+      final afterRecipe = await firstWhere<List<MealLog>>(
+        container,
+        recentMealsProvider,
+        (l) => l.isNotEmpty && l.first.name == 'Overnight Oats',
+      );
+      expect(names(afterRecipe), [
+        'Overnight Oats',
+        'Rice cake and Almond butter',
+      ]);
+
+      // Drift stores created_at to whole seconds; the re-log is a later tap.
+      await Future<void>.delayed(const Duration(milliseconds: 1100));
+
+      // Tapping the Recent row re-logs its components (log_meal_screen
+      // `_quickLogComponents` -> `logFromComponents`).
+      final riceCake = before.single;
+      await container
+          .read(mealLogControllerProvider.notifier)
+          .logFromComponents(
+            name: riceCake.name,
+            logDate: _logDate,
+            source: MealLogSource.manual,
+            components: riceCake.components,
+          );
+
+      final afterRelog = await firstWhere<List<MealLog>>(
+        container,
+        recentMealsProvider,
+        (l) => l.isNotEmpty && l.first.name == 'Rice cake and Almond butter',
+      );
+      expect(names(afterRelog), [
+        'Rice cake and Almond butter',
+        'Overnight Oats',
+      ]);
+    });
   });
 }

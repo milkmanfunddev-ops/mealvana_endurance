@@ -190,20 +190,28 @@ Stream<ConsumedTotals> consumedTotalsForDate(Ref ref, String date) async* {
 
 /// Most recent 25 distinct meal names for the current user.
 ///
-/// Used by the "Recent" section of the meal picker. Rebuilds on invalidation
-/// (not a stream — recents don't need real-time updates within a session),
-/// so the `meal_logs` sync is awaited here, not kicked: a one-shot read has
-/// no later emission to carry the server's rows. The Recent tab shows its
-/// spinner meanwhile; a sync that fails answers from the local table.
+/// Used by the "Recent" section of the meal picker. Streams from Drift, so a
+/// meal just logged (re-logged from Recent, or from a recipe) moves to the
+/// top at once, whichever write path logged it (testing-wave 26-005: the
+/// controller's invalidate was skipped whenever the auto-dispose controller
+/// had been disposed mid-write, and `logRecipe` never asked).
+///
+/// The `meal_logs` sync is awaited before the first emission rather than
+/// kicked, so a fresh sign-in shows the spinner, not an empty Recent that
+/// fills in under the athlete's finger; a sync that fails answers from the
+/// local table.
 @riverpod
-Future<List<MealLog>> recentMeals(Ref ref) async {
+Stream<List<MealLog>> recentMeals(Ref ref) async* {
   final repo = ref.read(mealLogRepositoryProvider);
   final sync = ref.read(syncCoordinatorProvider.notifier);
   final logger = ref.read(appLoggerProvider);
   final userRepo = await ref.read(userRepositoryProvider.future);
   final user = await userRepo.getCurrentUser();
   final userId = user?.id;
-  if (userId == null) return const [];
+  if (userId == null) {
+    yield const [];
+    return;
+  }
 
   // Bounded like the Plan tab's first read (MealPlanController.firstReadBound):
   // a hanging connection answers from the local table instead of spinning.
@@ -213,7 +221,7 @@ Future<List<MealLog>> recentMeals(Ref ref) async {
     repo,
     userId,
   ).timeout(const Duration(seconds: 15), onTimeout: () {});
-  return repo.getRecentLogs(userId);
+  yield* repo.watchRecentLogs(userId);
 }
 
 // ============================================================================
@@ -368,7 +376,6 @@ class MealLogController extends _$MealLogController {
         logDate: logDate,
         eatenAt: eatenAt,
       );
-      if (ref.mounted) ref.invalidate(recentMealsProvider);
 
       _diary.recordLogged();
       await _trackEvent('meal_logged', {
@@ -381,8 +388,8 @@ class MealLogController extends _$MealLogController {
   }
 
   /// Bulk-log multiple saved meals to [logDate] in one batch — the multi-log
-  /// action. No-op for an empty [savedMeals]. Invalidates the recents stream
-  /// once after the batch.
+  /// action. No-op for an empty [savedMeals]. [recentMeals] streams from
+  /// Drift and picks the batch up on its own.
   Future<void> logSavedMeals({
     required List<SavedMeal> savedMeals,
     MealSlot? slot,
@@ -401,7 +408,6 @@ class MealLogController extends _$MealLogController {
         logDate: logDate,
         eatenAt: eatenAt,
       );
-      if (ref.mounted) ref.invalidate(recentMealsProvider);
 
       _diary.recordLogged(savedMeals.length);
       await _trackEvent('meals_logged_bulk', {
@@ -476,7 +482,6 @@ class MealLogController extends _$MealLogController {
         notes: notes,
         eatenAt: eatenAt,
       );
-      if (ref.mounted) ref.invalidate(recentMealsProvider);
       _diary.recordLogged();
       await _trackEvent('meal_logged', {
         if (slot != null) 'slot': slot.wireValue,

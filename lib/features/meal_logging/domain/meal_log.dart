@@ -21,7 +21,8 @@ import 'meal_slot.dart';
 /// propagate through upsert-only sync.
 ///
 /// **Sync columns.** [needsUpload] and [localUpdatedAt] are Drift-only; they
-/// are excluded from [toSupabaseJson].
+/// are excluded from [toSupabaseJson]. `created_at` goes up only when the row
+/// is new to the server; see [toSupabaseUpdateJson].
 class MealLog {
   const MealLog({
     required this.id,
@@ -239,6 +240,17 @@ class MealLog {
       'is_deleted': isDeleted,
     };
   }
+
+  /// JSON payload for a `meal_logs` upsert that may land on a row the server
+  /// already holds (an edit, a delete, a restore, a retried upload).
+  ///
+  /// Same as [toSupabaseJson] without `created_at`: the server's created time
+  /// is the one it first wrote. The local copy holds it to whole seconds
+  /// (Drift), so sending it back rewrote the server's value on every edit
+  /// (testing-wave 27-002). A row the server never saw gets its created time
+  /// from the insert-if-missing step before this upsert.
+  Map<String, dynamic> toSupabaseUpdateJson() =>
+      toSupabaseJson()..remove('created_at');
 
   /// Parse a Supabase row into a [MealLog].
   ///
