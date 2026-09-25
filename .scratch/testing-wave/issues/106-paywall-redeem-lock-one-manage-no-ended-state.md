@@ -1,6 +1,6 @@
 # 106: The paywall locks after a redeem, one Manage for both screens, no ended state
 
-**Status:** ready-for-agent
+**Status:** in-progress (wave 27, 2026-09-25)
 **Blocked by:** none.
 **Next:** `/implement-lee testing-wave`
 **Model:** opus

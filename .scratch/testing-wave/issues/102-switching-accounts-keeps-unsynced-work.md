@@ -1,6 +1,6 @@
 # 102: Switching accounts keeps unsynced work and shows nobody else's rows
 
-**Status:** ready-for-agent
+**Status:** in-progress (wave 27, 2026-09-25)
 **Blocked by:** none.
 **Next:** `/implement-lee testing-wave`
 **Model:** fable
