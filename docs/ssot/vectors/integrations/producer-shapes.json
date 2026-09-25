@@ -1,0 +1,340 @@
+{
+  "section": "producer-shapes",
+  "engine": "transformer tier (TrainingPeaksTransformer / FinalSurgeTransformer / garmin-push mapper)",
+  "specVersion": "spec/integrations/field-map.md §2 — RATIFIED (Xuan, 2026-09-10)",
+  "note": "EXPECTED-RED / partial: producer payload -> stored activities row, oracle spec-derived from field-map.md §2 (NOT copied from the app transformers). Inputs are hand-authored spec-realistic shapes; when the Q-INT1 de-identified corpus lands, real de-identified samples join as additional inputs with the SAME spec-derived oracle. Harness arm: run_dart.sh producer-shapes drives the real transformers over inputs.payload and diffs the emitted row against expected (null = column not written; a discarded field asserts null, never a value).",
+  "vectors": [
+    {
+      "id": "fs-planned-run-null-duration",
+      "status": "ratified",
+      "inputs": {
+        "provider": "final_surge",
+        "payload": {
+          "WorkoutTypeName": "Run",
+          "WorkoutTitle": "Easy Run",
+          "WorkoutDate": "2026-09-15",
+          "PlannedDistance": 5,
+          "PlannedDistanceType": "Miles",
+          "PlannedPace": "9:00",
+          "PlannedPaceType": "PerMile",
+          "PlannedTime": 2700,
+          "WorkoutDescription": "Aerobic base"
+        }
+      },
+      "expected": {
+        "activity_type": "running",
+        "title": "Easy Run",
+        "scheduled_date_time": "2026-09-15T07:00",
+        "planned_time": "2026-09-15T07:00",
+        "duration_minutes": null,
+        "distance_meters": null,
+        "distance_miles": 5,
+        "calories_burned": null,
+        "tss": null,
+        "intensity_z1_z2_pct": null,
+        "intensity_z3_z4_pct": null,
+        "intensity_z5_pct": null,
+        "notes": "Aerobic base",
+        "garmin_summary_id": null
+      },
+      "why": "field-map §2 Duration: FS writes duration_minutes NULL when distance/pace present (Q-INT12); PlannedDistance 5.0 Miles -> distance_miles 5.0, distance_meters discarded"
+    },
+    {
+      "id": "tp-planned-bike-decimal-hours",
+      "status": "ratified",
+      "inputs": {
+        "provider": "training_peaks",
+        "payload": {
+          "WorkoutType": "Bike",
+          "Title": "Threshold Intervals",
+          "WorkoutDay": "2026-09-15",
+          "TotalTimePlanned": 1.5,
+          "DistancePlanned": 40000,
+          "IFPlanned": 0.92,
+          "TSSPlanned": 110,
+          "Description": "4x8min @ FTP"
+        }
+      },
+      "expected": {
+        "activity_type": "cycling",
+        "title": "Threshold Intervals",
+        "scheduled_date_time": "2026-09-15T07:00",
+        "planned_time": "2026-09-15T07:00",
+        "duration_minutes": 90,
+        "distance_meters": 40000,
+        "distance_miles": 24.85485,
+        "calories_burned": null,
+        "tss": null,
+        "intensity_z1_z2_pct": null,
+        "intensity_z3_z4_pct": null,
+        "intensity_z5_pct": null,
+        "notes": "4x8min @ FTP",
+        "garmin_summary_id": null
+      },
+      "why": "field-map §2: TotalTime decimal-hours->90min int; 40000m->24.85mi; IFPlanned/TSSPlanned DISCARDED (Q-INT13), columns stay null"
+    },
+    {
+      "id": "garmin-completed-run-raw-kcal",
+      "status": "ratified",
+      "inputs": {
+        "provider": "garmin",
+        "payload": {
+          "activityType": "RUNNING",
+          "activityName": "Morning Run",
+          "summaryId": "g-run-1",
+          "startTimeLocal": "2026-09-14T06:12",
+          "durationInSeconds": 2655,
+          "distanceInMeters": 8060,
+          "activeKilocalories": 435,
+          "averageHeartRateInBeatsPerMinute": 152,
+          "deviceName": "Forerunner 965"
+        }
+      },
+      "expected": {
+        "activity_type": "running",
+        "title": "Morning Run",
+        "scheduled_date_time": "2026-09-14T06:12",
+        "actual_time": "2026-09-14T06:12",
+        "duration_minutes": 44,
+        "actual_duration_minutes": 44,
+        "distance_meters": 8060,
+        "distance_miles": 5.00825,
+        "calories_burned": 435,
+        "average_heart_rate": 152,
+        "max_heart_rate": null,
+        "garmin_summary_id": "g-run-1",
+        "parent_summary_id": null,
+        "garmin_device_name": "Forerunner 965"
+      },
+      "why": "field-map §2: activeKilocalories 435 stored RAW to calories_burned (F22 corrects at read); measured start overwrites scheduled; 2655s->44min"
+    },
+    {
+      "id": "garmin-multisport-parent",
+      "status": "ratified",
+      "inputs": {
+        "provider": "garmin",
+        "payload": {
+          "activityType": "MULTI_SPORT",
+          "activityName": "Brick",
+          "summaryId": "g-brick-p",
+          "startTimeLocal": "2026-09-14T07:00",
+          "durationInSeconds": 5400,
+          "activeKilocalories": 900
+        }
+      },
+      "expected": {
+        "activity_type": "other",
+        "title": "Brick",
+        "scheduled_date_time": "2026-09-14T07:00",
+        "actual_time": "2026-09-14T07:00",
+        "duration_minutes": 90,
+        "actual_duration_minutes": 90,
+        "distance_meters": null,
+        "distance_miles": null,
+        "calories_burned": 900,
+        "average_heart_rate": null,
+        "max_heart_rate": null,
+        "garmin_summary_id": "g-brick-p",
+        "parent_summary_id": null,
+        "garmin_device_name": null
+      },
+      "why": "field-map §2: MULTI_SPORT parent -> other (unknown sport map); summaryId set; children reference via parentSummaryId"
+    },
+    {
+      "id": "garmin-brick-child-1-bike",
+      "status": "ratified",
+      "inputs": {
+        "provider": "garmin",
+        "payload": {
+          "activityType": "CYCLING",
+          "activityName": "Bike leg",
+          "summaryId": "g-brick-c1",
+          "parentSummaryId": "g-brick-p",
+          "startTimeLocal": "2026-09-14T07:00",
+          "durationInSeconds": 3600,
+          "distanceInMeters": 30000,
+          "activeKilocalories": 600
+        }
+      },
+      "expected": {
+        "activity_type": "cycling",
+        "title": "Bike leg",
+        "scheduled_date_time": "2026-09-14T07:00",
+        "actual_time": "2026-09-14T07:00",
+        "duration_minutes": 60,
+        "actual_duration_minutes": 60,
+        "distance_meters": 30000,
+        "distance_miles": 18.64114,
+        "calories_burned": 600,
+        "average_heart_rate": null,
+        "max_heart_rate": null,
+        "garmin_summary_id": "g-brick-c1",
+        "parent_summary_id": "g-brick-p",
+        "garmin_device_name": null
+      },
+      "why": "B-2 positional: child carries parent_summary_id; cycling; distance meters+miles both set"
+    },
+    {
+      "id": "garmin-brick-child-2-run",
+      "status": "ratified",
+      "inputs": {
+        "provider": "garmin",
+        "payload": {
+          "activityType": "RUNNING",
+          "activityName": "Run leg",
+          "summaryId": "g-brick-c2",
+          "parentSummaryId": "g-brick-p",
+          "startTimeLocal": "2026-09-14T08:05",
+          "durationInSeconds": 1500,
+          "distanceInMeters": 5000,
+          "activeKilocalories": 300
+        }
+      },
+      "expected": {
+        "activity_type": "running",
+        "title": "Run leg",
+        "scheduled_date_time": "2026-09-14T08:05",
+        "actual_time": "2026-09-14T08:05",
+        "duration_minutes": 25,
+        "actual_duration_minutes": 25,
+        "distance_meters": 5000,
+        "distance_miles": 3.10686,
+        "calories_burned": 300,
+        "average_heart_rate": null,
+        "max_heart_rate": null,
+        "garmin_summary_id": "g-brick-c2",
+        "parent_summary_id": "g-brick-p",
+        "garmin_device_name": null
+      },
+      "why": "B-2 positional child 2: parent_summary_id links; running; segment order preserved by start time"
+    },
+    {
+      "id": "fs-swim-distance-miles-null",
+      "status": "ratified",
+      "inputs": {
+        "provider": "final_surge",
+        "payload": {
+          "WorkoutTypeName": "Swim",
+          "WorkoutTitle": "OWS 2k",
+          "WorkoutDate": "2026-09-16",
+          "PlannedDistance": 2000,
+          "PlannedDistanceType": "Meters",
+          "WorkoutDescription": "Open water sighting"
+        }
+      },
+      "expected": {
+        "activity_type": "swimming",
+        "title": "OWS 2k",
+        "scheduled_date_time": "2026-09-16T07:00",
+        "planned_time": "2026-09-16T07:00",
+        "duration_minutes": null,
+        "distance_meters": null,
+        "distance_miles": null,
+        "calories_burned": null,
+        "tss": null,
+        "intensity_z1_z2_pct": null,
+        "intensity_z3_z4_pct": null,
+        "intensity_z5_pct": null,
+        "notes": "Open water sighting",
+        "garmin_summary_id": null
+      },
+      "why": "field-map §2 Distance: swim forces distance_miles NULL, meters computed then DISCARDED; Q-INT12 duration NULL (distance present)"
+    },
+    {
+      "id": "garmin-unknown-sport-other",
+      "status": "ratified",
+      "inputs": {
+        "provider": "garmin",
+        "payload": {
+          "activityType": "ROCK_CLIMBING",
+          "summaryId": "g-climb-1",
+          "startTimeLocal": "2026-09-14T18:00",
+          "durationInSeconds": 3600,
+          "activeKilocalories": 400
+        }
+      },
+      "expected": {
+        "activity_type": "other",
+        "title": "Garmin other",
+        "scheduled_date_time": "2026-09-14T18:00",
+        "actual_time": "2026-09-14T18:00",
+        "duration_minutes": 60,
+        "actual_duration_minutes": 60,
+        "distance_meters": null,
+        "distance_miles": null,
+        "calories_burned": 400,
+        "average_heart_rate": null,
+        "max_heart_rate": null,
+        "garmin_summary_id": "g-climb-1",
+        "parent_summary_id": null,
+        "garmin_device_name": null
+      },
+      "why": "field-map §2 Sport: unknown activityType -> other; title falls back to \"Garmin other\"; excluded from insights downstream"
+    },
+    {
+      "id": "garmin-device-unknown-dropped",
+      "status": "ratified",
+      "inputs": {
+        "provider": "garmin",
+        "payload": {
+          "activityType": "CYCLING",
+          "summaryId": "g-cyc-1",
+          "startTimeLocal": "2026-09-14T12:00",
+          "durationInSeconds": 3600,
+          "distanceInMeters": 30000,
+          "activeKilocalories": 700,
+          "deviceName": "unknown"
+        }
+      },
+      "expected": {
+        "activity_type": "cycling",
+        "title": "Garmin cycling",
+        "scheduled_date_time": "2026-09-14T12:00",
+        "actual_time": "2026-09-14T12:00",
+        "duration_minutes": 60,
+        "actual_duration_minutes": 60,
+        "distance_meters": 30000,
+        "distance_miles": 18.64114,
+        "calories_burned": 700,
+        "average_heart_rate": null,
+        "max_heart_rate": null,
+        "garmin_summary_id": "g-cyc-1",
+        "parent_summary_id": null,
+        "garmin_device_name": null
+      },
+      "why": "field-map §2 Device: literal \"unknown\" dropped -> garmin_device_name null"
+    },
+    {
+      "id": "garmin-zero-distance-replaces",
+      "status": "ratified",
+      "inputs": {
+        "provider": "garmin",
+        "payload": {
+          "activityType": "LAP_SWIMMING",
+          "summaryId": "g-swim-1",
+          "startTimeLocal": "2026-09-14T06:00",
+          "durationInSeconds": 1800,
+          "distanceInMeters": 0,
+          "activeKilocalories": 250
+        }
+      },
+      "expected": {
+        "activity_type": "swimming",
+        "title": "Garmin swimming",
+        "scheduled_date_time": "2026-09-14T06:00",
+        "actual_time": "2026-09-14T06:00",
+        "duration_minutes": 30,
+        "actual_duration_minutes": 30,
+        "distance_meters": 0,
+        "distance_miles": 0,
+        "calories_burned": 250,
+        "average_heart_rate": null,
+        "max_heart_rate": null,
+        "garmin_summary_id": "g-swim-1",
+        "parent_summary_id": null,
+        "garmin_device_name": null
+      },
+      "why": "field-map §2 Distance: measured 0 REPLACES planned (not treated as missing); swimming; miles 0"
+    }
+  ]
+}

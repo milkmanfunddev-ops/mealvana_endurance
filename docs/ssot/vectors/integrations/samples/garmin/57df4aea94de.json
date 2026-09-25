@@ -1,0 +1,38 @@
+{
+ "fingerprintId": "57df4aea94de",
+ "provider": "garmin",
+ "stratum": {
+  "endpoint": "garmin/activity_raw",
+  "workoutType": "TREADMILL_RUNNING"
+ },
+ "optionalKeysInStratum": [],
+ "provenance": {
+  "source": "dev provider_raw_payloads",
+  "scrubbed": "server-side (corpus-export edge fn)",
+  "environment": "dev",
+  "exportedAt": "2026-09-21T00:53:24+00:00",
+  "note": "real-account (dev Garmin athletes), promoted by ruling 2026-09-20",
+  "correction": "re-scrubbed under the default-deny standard (@v1.1 samples de-id erratum, ruled 2026-09-20); fingerprint unchanged, content re-destroyed"
+ },
+ "exemplar": {
+  "steps": 6096,
+  "summaryId": "syn-2fa27137",
+  "activityId": 26723180020,
+  "isWebUpload": false,
+  "activityName": "corpus placeholder",
+  "activityType": "corpus placeholder",
+  "distanceInMeters": 5422.530436617587,
+  "durationInSeconds": 1904,
+  "activeKilocalories": 269,
+  "startTimeInSeconds": 1767225600,
+  "startTimeOffsetInSeconds": -15072,
+  "maxSpeedInMetersPerSecond": 4.106252990683637,
+  "maxHeartRateInBeatsPerMinute": 132,
+  "maxPaceInMinutesPerKilometer": 4.181134063751141,
+  "averageSpeedInMetersPerSecond": 3.8316113144921338,
+  "maxRunCadenceInStepsPerMinute": 252,
+  "averageHeartRateInBeatsPerMinute": 121,
+  "averagePaceInMinutesPerKilometer": 4.690292744018603,
+  "averageRunCadenceInStepsPerMinute": 161.46873132231653
+ }
+}

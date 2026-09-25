@@ -1,7 +1,9 @@
 import 'dart:async';
 import 'package:riverpod_annotation/riverpod_annotation.dart';
 import '../../application/carb_loading_service.dart';
+import '../../domain/carb_loading_entryway_engine.dart';
 import '../../data/carb_loading_repository.dart';
+import '../../../macro_dashboard/presentation/providers/carb_dashboard_providers.dart';
 import '../../../../shared/database/app_database.dart' as db;
 import '../../../../shared/services/logging_service.dart';
 import '../../../../shared/services/sync/sync_coordinator.dart';
@@ -23,6 +25,21 @@ class CarbLoadingController extends _$CarbLoadingController {
     unawaited(_backgroundSync(userId));
   }
 
+  /// G24 (Xuan, 2026-09-25): EVERY plan-shape write invalidates EVERY
+  /// provider family a carb surface watches — not just the range family.
+  /// The bug: repick invalidated self + daysForRange only, while the plan
+  /// summary watches [carbLoadingPlanProvider] + [carbLoadingDaysForPlanProvider]
+  /// and every loading-day dashboard surface watches
+  /// [carbDashboardForDateProvider]; those rendered stale until unrelated
+  /// navigation happened to rebuild them (E-3 instant-propagation violation).
+  void _invalidateCarbSurfaces() {
+    ref.invalidateSelf();
+    ref.invalidate(carbLoadingPlanProvider);
+    ref.invalidate(carbLoadingDaysForPlanProvider);
+    ref.invalidate(carbLoadingDaysForRangeProvider);
+    ref.invalidate(carbDashboardForDateProvider);
+  }
+
   /// Background sync: ensures data is fresh, then refreshes UI
   Future<void> _backgroundSync(String userId) async {
     final repository = ref.read(carbLoadingRepositoryProvider);
@@ -36,7 +53,7 @@ class CarbLoadingController extends _$CarbLoadingController {
         repository: repository,
       );
       if (!ref.mounted) return;
-      ref.invalidateSelf();
+      _invalidateCarbSurfaces();
     } catch (e, stackTrace) {
       logger.error(
         'Background sync failed',
@@ -70,10 +87,7 @@ class CarbLoadingController extends _$CarbLoadingController {
         bodyWeightPounds: bodyWeightPounds,
       );
 
-      // Refresh carb loading days - invalidate the range provider family
-      ref.invalidateSelf();
-      // Invalidate all carbLoadingDaysForRange provider instances to refresh calendar
-      ref.invalidate(carbLoadingDaysForRangeProvider);
+      _invalidateCarbSurfaces();
     } catch (e) {
       _logger.error('Error creating carb loading plan', error: e);
       rethrow;
@@ -90,10 +104,7 @@ class CarbLoadingController extends _$CarbLoadingController {
         eventId: eventId,
       );
 
-      // Refresh carb loading days
-      ref.invalidateSelf();
-      // Invalidate all carbLoadingDaysForRange provider instances to refresh calendar
-      ref.invalidate(carbLoadingDaysForRangeProvider);
+      _invalidateCarbSurfaces();
     } catch (e) {
       _logger.error('Error deleting carb loading plan', error: e);
       rethrow;
@@ -105,42 +116,78 @@ class CarbLoadingController extends _$CarbLoadingController {
     try {
       await _service.deleteCarbLoadingDay(carbLoadingDayId);
 
-      // Refresh carb loading days
-      ref.invalidateSelf();
-      // Invalidate all carbLoadingDaysForRange provider instances to refresh calendar
-      ref.invalidate(carbLoadingDaysForRangeProvider);
+      _invalidateCarbSurfaces();
     } catch (e) {
       _logger.error('Error deleting carb loading day', error: e);
       rethrow;
     }
   }
 
-  /// Update carb loading protocol (delete old plan and create new one)
-  Future<void> updateCarbLoadingProtocol({
-    required String eventId,
-    required int newProtocolDays,
-    required DateTime raceDate,
-    required double bodyWeightPounds,
+  /// CE-10 (G17): persist an edited day target from the plan summary.
+  /// Stores BOTH the grams and the resulting g/kg (Q-CL10: the stored value
+  /// drives slots/checkpoints/copy; the rate copy shows the stored rate).
+  Future<void> updateDayTarget({
+    required String carbLoadingDayId,
+    required double carbsPerKg,
+    required int dailyTargetG,
   }) async {
     try {
-      final deviceIdValue = await ref.read(userIdProvider.future);
-      final userId = deviceIdValue;
+      final userId = await ref.read(userIdProvider.future);
+      final repository = ref.read(carbLoadingRepositoryProvider);
+      await repository.updateCarbLoadingDay(
+        deviceId: userId,
+        carbLoadingDayId: carbLoadingDayId,
+        updates: {
+          'carbTargetGrams': dailyTargetG,
+          'carbProtocolGPerKg': carbsPerKg,
+        },
+      );
+      _invalidateCarbSurfaces();
+    } catch (e) {
+      _logger.error('Error updating carb day target', error: e);
+      rethrow;
+    }
+  }
 
-      await _service.updateCarbLoadingProtocol(
-        deviceId: deviceIdValue,
+  /// CE-4 preview: what selecting [targetProtocolDays] would do — dialog
+  /// type, F3 listed-edit data, dropped dates, both outcome plans. Pure
+  /// read; nothing changes.
+  Future<RepickDecision> previewRepickProtocol({
+    required String eventId,
+    required int targetProtocolDays,
+    required DateTime raceDate,
+    required double bodyWeightPounds,
+  }) => _service.previewRepickProtocol(
+    eventId: eventId,
+    targetProtocolDays: targetProtocolDays,
+    raceDate: raceDate,
+    bodyWeightPounds: bodyWeightPounds,
+  );
+
+  /// CE-4/CE-4a apply: writes the athlete's choice through the in-place
+  /// repick. Replaces the retired delete+recreate protocol update.
+  Future<void> applyRepickProtocol({
+    required String eventId,
+    required int targetProtocolDays,
+    required DateTime raceDate,
+    required double bodyWeightPounds,
+    required bool keepEdits,
+  }) async {
+    try {
+      final userId = await ref.read(userIdProvider.future);
+      await _service.applyRepickProtocol(
+        deviceId: userId,
         userId: userId,
         eventId: eventId,
-        newProtocolDays: newProtocolDays,
+        targetProtocolDays: targetProtocolDays,
         raceDate: raceDate,
         bodyWeightPounds: bodyWeightPounds,
+        keepEdits: keepEdits,
       );
-
-      // Refresh carb loading days
       ref.invalidateSelf();
-      // Invalidate all carbLoadingDaysForRange provider instances to refresh calendar
       ref.invalidate(carbLoadingDaysForRangeProvider);
     } catch (e) {
-      _logger.error('Error updating carb loading protocol', error: e);
+      _logger.error('Error re-picking carb loading protocol', error: e);
       rethrow;
     }
   }
@@ -163,8 +210,7 @@ class CarbLoadingController extends _$CarbLoadingController {
       );
 
       // Invalidate to reload with fresh data
-      ref.invalidateSelf();
-      ref.invalidate(carbLoadingDaysForRangeProvider);
+      _invalidateCarbSurfaces();
     } catch (e, stackTrace) {
       _logger.error(
         'Error during force refresh',

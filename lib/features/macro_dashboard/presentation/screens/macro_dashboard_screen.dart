@@ -21,6 +21,11 @@ import '../../../calendar/presentation/providers/calendar_selected_date_provider
 import '../../../fuel_timeline/presentation/widgets/timeline_brick_tile.dart';
 import '../../../meal_logging/presentation/providers/meal_log_providers.dart';
 import '../../../meal_logging/presentation/screens/log_meal_screen.dart';
+import '../../../../shared/widgets/kyle_design/kyle_design.dart'
+    show CarbSlotCard;
+import '../../../carb_loading/presentation/screens/carb_breakdown_screen.dart';
+import '../../../carb_loading/presentation/screens/carb_slot_screen.dart';
+import '../../domain/carb_dashboard_models.dart';
 import '../../application/dashboard_assembler.dart';
 import '../../domain/dashboard_models.dart';
 import '../me_tokens.dart';
@@ -103,6 +108,13 @@ class MacroDashboardScreen extends ConsumerWidget {
                   face: view.filter,
                   expanded: view.dashOpen,
                   data: data.energy!,
+                  // CD-1: LOAD replaces the All-lens face on loading days —
+                  // surface-chosen (the day sits in a plan), never a setting.
+                  carb: data.carb?.face,
+                  onCarbBreakdown: () => CarbBreakdownScreen.open(
+                    context,
+                    _ymd(ref.read(calendarSelectedDateProvider)),
+                  ),
                   onToggleExpanded: notifier.toggleDash,
                   // E2: opens the face's sheet — the Breakdown Pager at the
                   // face's page (reference mapping: All → Today's Energy,
@@ -415,11 +427,42 @@ class MacroDashboardScreen extends ConsumerWidget {
                   ? picking
                         ? _pickableWorkout(ref, node.workout!, dayWorkouts)
                         : _workout(context, ref, node.workout!)
+                  : node.isCarbSlot
+                  ? _carbSlot(context, ref, view, node.carbSlot!)
                   : _meals(context, ref, view, node),
             ),
           ),
         ],
       ),
+    );
+  }
+
+  /// One loading-day slot group (carb-slot-card.md). Peek state rides the
+  /// view state's expanded-meal channel so it clears on filter switches the
+  /// same way meal expansion does.
+  Widget _carbSlot(
+    BuildContext context,
+    WidgetRef ref,
+    MacroDashboardViewState view,
+    CarbSlotCardData slot,
+  ) {
+    final notifier = ref.read(macroDashboardViewProvider.notifier);
+    final peekId = 'carbslot:${slot.slot.name}';
+    final dateStr = _ymd(ref.read(calendarSelectedDateProvider));
+    return CarbSlotCard(
+      key: ValueKey('macro_dashboard.carb_slot_${slot.slot.name}'),
+      label: slot.label,
+      clockStr: slot.clockStr,
+      headerFigure: slot.headerFigure,
+      isEmpty: slot.isEmpty,
+      summaryLine: slot.summaryLine,
+      receiptRows: [for (final item in slot.items) (item.name, item.gramsStr)],
+      peekOpen: view.expandedMealId == peekId,
+      // SC-1/SC-3: the whole card is the door to the slot interior page.
+      onOpen: () => CarbSlotScreen.open(context, slot.slot, dateStr),
+      // SC-2: peek only; never navigates.
+      onTogglePeek: () => notifier.toggleMealExpanded(peekId),
+      interactive: slot.dayRel == CarbDayRel.today,
     );
   }
 

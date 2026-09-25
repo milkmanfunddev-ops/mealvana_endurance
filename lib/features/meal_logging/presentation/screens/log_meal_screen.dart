@@ -68,10 +68,17 @@ void openLogMealScreen(
   BuildContext context, {
   required String logDate,
   required String source,
+  MealSlot? initialSlot,
+  String? initialQuery,
 }) {
   Navigator.of(context).push<void>(
     MaterialPageRoute(
-      builder: (_) => LogMealScreen(logDate: logDate, source: source),
+      builder: (_) => LogMealScreen(
+        logDate: logDate,
+        source: source,
+        initialSlot: initialSlot,
+        initialQuery: initialQuery,
+      ),
     ),
   );
 }
@@ -112,12 +119,25 @@ class LogMealScreen extends ConsumerStatefulWidget {
     super.key,
     required this.logDate,
     this.source = 'unknown',
+    this.initialSlot,
+    this.initialQuery,
   });
 
   final String logDate;
 
   /// Entry-point label for the `log_meal_opened` analytics event.
   final String source;
+
+  /// Pre-selected slot for the quick-log confirm sheet — the loading-day
+  /// slot page opens this screen with its own slot so the committed row is
+  /// tagged without an extra tap (carb-loading@v1; the athlete can still
+  /// change or clear it in the sheet).
+  final MealSlot? initialSlot;
+
+  /// Seeds the unified search bar on open (G21-B: a slot-page recommendation
+  /// hands off HERE — this shipping surface still does all the searching and
+  /// logging; the athlete can edit or clear the query like any typed one).
+  final String? initialQuery;
 
   @override
   ConsumerState<LogMealScreen> createState() => _LogMealScreenState();
@@ -192,6 +212,11 @@ class _LogMealScreenState extends ConsumerState<LogMealScreen> {
     WidgetsBinding.instance.addPostFrameCallback((_) {
       _loadRecipes();
       _seedFoodPool();
+      final query = widget.initialQuery;
+      if (query != null && query.isNotEmpty && mounted) {
+        _searchCtrl.text = query;
+        _onSearchChanged(query);
+      }
     });
   }
 
@@ -302,6 +327,7 @@ class _LogMealScreenState extends ConsumerState<LogMealScreen> {
       logDate: widget.logDate,
       showServingsStepper: showServingsStepper,
       initialServings: initialServings,
+      initialSlot: widget.initialSlot,
       previewTotals: (servings) => _totalsOf(buildComponents(servings)),
     );
     if (result == null || !mounted) return;

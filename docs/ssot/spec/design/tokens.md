@@ -72,6 +72,29 @@ block's bottom edge and everything above holds the fade's peak.**
   impersonates the sheet's own glyph vocabulary. Every future summoned glass surface inherits
   the scrim.
 
+**`glow`** — RULED (Xuan, 2026-09-25, ruling-desk block · qa/carb-loading desk, post-ratification
+addition; ruling source
+[`../../intake/2026-09-24-carb-loading-amend-c-tokens-materials-glow.md`](../../intake/2026-09-24-carb-loading-amend-c-tokens-materials-glow.md)):
+**a general emphasis material with usage rules** (option 2 of the filed request — the narrow
+LOAD-face-only reading was declined at the desk). Usage rules as ruled:
+- Glow signifies **emphasis**; it never replaces the "hairlines do the work" elevation story —
+  a glowing element is emphasized, not elevated.
+- **Ratified uses today:** the carb-loading LOAD face's loader bar (fill glow, brighter on
+  LOADED) and its card glow (`energy-card.md` §LOAD-face amendment).
+- **Every further use is named per-surface in the invoking component/surface spec** (the lensing
+  precedent directly above) and carries its golden; a glow no spec names is non-conformant.
+- Implementation reference (research only, app-38 2026-09-24): pure-Flutter layered primitives
+  (stacked BoxShadows + MaskFilter + gradient stops, zero deps) as default; FragmentProgram
+  bloom as the exceed route; no BackdropFilter packages on always-on faces; validate on
+  physical iOS.
+Yolk stays RESERVED. Carb figures stay orange per Q-D3, with the exception ruled below.
+
+**Q-D3 exception — the breakdown macro strip (D7) — RULED (Xuan, 2026-09-25, same desk block):**
+the carb-loading breakdown page's macro strip keeps **`electrolyte` as the per-macro accent** —
+an explicit, NAMED exception to "every carb figure is orange". Scope: that strip's macro figures
+only (the per-macro accent convention of macro bars); every other carb quantity on loading
+surfaces stays `orange`. This closes D7 (two-colour carb collision, app spec decision list).
+
 **Lensing — boundary LIFTED (RULED Xuan, 2026-09-06; reverses the filed intake's exclusion):**
 edge refraction/displacement may be **contractual on any glass chrome** where the invoking
 component spec names it (first: the tab bar's switch transition,

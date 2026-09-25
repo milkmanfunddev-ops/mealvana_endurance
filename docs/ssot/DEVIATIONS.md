@@ -192,6 +192,8 @@ so we notice if the behavior changes, **not** an endorsement of it as truth.
   stay owned by the in-progress transition-nutrition slice — this entry is identity only.
 
 ## D-018 — Fueling-window state resets per activity (implemented ahead of its ruling)
+
+> **RESOLVED 2026-09-21 — Q-CA2 RULED per-activity (Xuan, reconciliation interview); folded as `create-flow-fueling-controls.md` CF-9. The shipped narrow fix sat in the intersection of the options and is now the ruled behaviour, extended to title/temperature/humidity in `14671104`. No longer a deviation.**
 - **Status:** `implemented-pending-ruling` (2026-09-03). Xuan's call: fix now, rule later.
 - **Observed / shipped:** `resetFuelingWindowForNewActivity()` on all four sport input
   controllers, invoked once at create-screen entry (app `7418566f`, branch
@@ -209,3 +211,53 @@ so we notice if the behavior changes, **not** an endorsement of it as truth.
   entry either folds into CF-9 as ratified behaviour or the implementation is amended to match a
   different choice.
 
+## D-019 — Carb loading: plan-level `daily_carb_target_grams` stores a cross-day average
+
+- **Status:** open (2026-09-24, carb-loading release-1 intake). Known defect, not intent — named
+  by Xuan's package as a quirk NOT to canonize.
+- **Observed:** `carb_loading_repository.dart:349-368` computes the mean of the per-day targets
+  (unrounded totals, then rounded — 590 for the audited 544/544/680 plan) and stores it as the
+  plan row's `daily_carb_target_grams`. No screen shows it; it contradicts every day target it
+  sits above. Synced to Supabase as-is.
+- **SSOT position:** `spec/fueling/carb-loading.md` §1 defines only per-day targets (CL-3); the
+  plan-level column is unspecified. No vector may assert it.
+- **Resolution path:** app-side — either stop writing the column or store something a screen can
+  honestly show; rides the release-1 rebuild.
+
+## D-020 — Carb loading: `logged_carbs_grams` / `completed` are read + synced but have no writer
+
+- **Status:** open (2026-09-24). Verified: the only `updateCarbLoadingDay` caller passes target
+  fields only (`carb_loading_day_detail_controller.dart:362-366`); nothing anywhere writes either
+  column. UI and coach portal read them (0/544 g regardless of logging); "Mark Complete" is a
+  no-op that says "Day marked as complete!".
+- **SSOT position:** progress derives from food-log entries per `carb-loading.md` §4 (Path A) —
+  these columns are not the contract. Their retirement rides the log ruling; the coach portal
+  falls out of whatever replaces them.
+- **Resolution path:** the release-1 log path (slot-tagged food-log entries) supersedes both
+  columns; app decides retire-vs-backfill.
+
+## D-021 — Carb loading: Supabase mapper defaults split fields at percent scale against fraction-scale storage
+
+- **Status:** open (2026-09-24, QA finding during package verification — not in app-38's package).
+- **Observed:** local Drift defaults are fractions (0.25/0.10/0.25/0.15/0.20/0.05,
+  `carb_loading_days_table.dart:32-44`) but `carb_loading_mapper.dart:60-74` maps a server row's
+  missing split fields to `?? 16.67` — **percent scale**. A wire row missing the split would
+  hydrate slots at 1667% each. Latent (server rows currently carry the fields), but it is a unit
+  clash on the sync seam of exactly the columns release-1 starts depending on (CL-4).
+- **Resolution path:** app-side one-liner (fraction defaults in the mapper, or reject the row);
+  should ride the release-1 branch before the slot targets go live.
+
+
+## D-022 — Carb loading: release-1 slot-page recommendations read the LEGACY separate store (ruled stopgap)
+
+- **Status:** ruled deviation (Xuan, 2026-09-25 — G21 fork option B). The S9 endstate (one
+  store, `is_carb_loading` + per-slot suitability on the shared library) stands RATIFIED and
+  deliberately deferred; release-1 reads the existing `carb_loading_foods` store, whose
+  `meal_types` already carry the per-slot suitability, via the shipping sync path.
+- **Why it is not a self-ratification:** the 2026-09-21 sync record itself says "reuse the old
+  carb catalog wiring is a stopgap at most" and left first-ship inclusion UNSETTLED; Xuan
+  settled it as B at the fork.
+- **Resolution path:** the unification migration (library columns + meal_types carry-over +
+  slot page repoint + old-store retirement) as a named follow-up — resume pointer in
+  `intake/2026-09-25-catalog-unification-follow-up.md`; its red: the G21 seam L2 flips its
+  data source and the old store's reader count drops to zero.

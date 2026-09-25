@@ -307,7 +307,11 @@ class _FoodRow extends StatelessWidget {
             width: AppIconSizes.foodIcon,
             height: AppIconSizes.foodIcon,
             decoration: BoxDecoration(shape: BoxShape.circle, color: iconColor),
-            child: Icon(icon, size: AppIconSizes.controlIcon, color: Colors.white),
+            child: Icon(
+              icon,
+              size: AppIconSizes.controlIcon,
+              color: Colors.white,
+            ),
           ),
           const SizedBox(width: 11),
           Expanded(

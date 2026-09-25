@@ -136,7 +136,7 @@ final class CarbsPerHourBaselineProvider
 }
 
 String _$carbsPerHourBaselineHash() =>
-    r'484e2774a7a6d0cec82d1a4b696d8d114688087f';
+    r'1a415d58591fc31c0e38efd5e18da6aea7fd1aa4';
 
 /// The same-sport fueling baseline for the activity being reviewed.
 ///

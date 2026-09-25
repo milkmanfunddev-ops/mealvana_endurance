@@ -13,6 +13,12 @@ ignored entirely · `NOT-FETCHED` endpoint exists, never called.
 
 ## 1 · TrainingPeaks
 
+> **Source caution (RULED 2026-09-20 with the corpus):** `docs/integration/api-exploration`
+> is SUSPECT INPUT, never reference — it produced both this section's original ~15-key
+> inventory (the live object has 46–48 keys) and the four quarantined producer-shape
+> vectors. Regenerate it from corpus exemplars or stamp it historical; until then any
+> artifact citing it carries a provenance flag.
+
 ### 1.1 Planned workout
 | Fields | Disposition | Potential usage |
 |---|---|---|
@@ -51,6 +57,12 @@ prefill it; shortlist item 10). Events sync with `syncAll` on the same 4 h stale
 clock as workouts, 45-day window. **No provider anywhere exposes A/B/C race priority.**
 
 ### 1.6 `Structure` (structured steps)
+
+> **Provider fact (2026-09-18, ruled into Q-INT29's narrowing 2026-09-20):** a `Structure`
+> is UNREACHABLE under our current OAuth grant — absent from range and by-id reads (owner
+> token included), 401 scope-refusal on `wod/file?format=json|mrc`, 405 on `plan/{id}` —
+> tier-independent (identical on a premium trial). Blocked-on-provider: file-export scope
+> requested 2026-09-20.
 `Length`, `IntensityClass`, `IntensityTarget.{Unit,Value,Min,Max}` (`PercentOfFtp` /
 `PercentOfMaxHr` / `PercentOfThresholdHr` / `PercentOfThresholdSpeed` / `Rpe`, fractions),
 `CadenceTarget`, `RepeatCount`, nested `Steps` — **BUCKETED** into the three
@@ -58,6 +70,11 @@ clock as workouts, 45-day window. **No provider anywhere exposes A/B/C race prio
 in-workout demand modelling; TP itself recomputes TSS/IF from a valid Structure.
 
 ### 1.7 Metric object (`/v2/metrics/...`) — **NOT-FETCHED**
+
+> **Unfetchable under the current grant (RULED 2026-09-20):** live 401 scope-refusal on
+> four fresh tokens (2026-09-18), not the 403-for-basic the client comment modeled.
+> Q-INT26 item 4 is BLOCKED-ON-PROVIDER (`metrics:read` requested 2026-09-20, off the
+> critical path); the `IsPremium` gate in front of the fetch is removed either way.
 Documented endpoint (premium-only reads): `WeightInKilograms`, `HRV` (ms), `Steps`,
 `Stress`, `SleepQuality`, `DateTime`, `UploadClient`. **This is the TP weight-staleness
 fix** (ongoing weight without Garmin) and the only non-Garmin HRV source. It is a
@@ -144,6 +161,10 @@ re-ingesting. Ordered by leverage; each names its Q-row where one exists:
 6. **FS `WorkoutSubTypeName` + pace min/max, TP subtype** onto the row (Q-INT13 as
    drafted).
 7. **TP `IsPremium`** onto `integrations` — predicts null-field behaviour + write-back 403.
+   **Re-documented (RULED 2026-09-20):** connect-time OBSERVATION only — false-negative on
+   premium-featured trials, never true for any athlete to date, NEVER a behavioral
+   predicate; the "predicts" claim above is retired. Gates re-keyed to attempt-and-observe
+   (`intake/2026-09-18-tp-ispremium-flag-unreliable-three-gates.md`).
 8. **All currently-unhandled Garmin push types** — `hrv`, `pulseOx`, `respiration`,
    `healthSnapshot`, `bloodPressures`, `skinTemp` — handled into `garmin_health_data`
    ("we should record this" — Xuan, 2026-09-09; widened from hrv-only per the
@@ -177,6 +198,17 @@ prescriptions (revisit when an engine consumes them), sleep/stress/epoch consump
 (product features, not capture).
 
 ## 7 · Bucketing methods (every BUCKETED field's algorithm — direction item 5)
+
+> **§7.1 confirmed / §7.3 scoped (Xuan, 2026-09-20, post-ratification addition):**
+> the §7.1 intensity ladder (planned IF → TSS/hr → title keywords → default) is CONFIRMED
+> unchanged as the classification mechanism — revived in practice by the `TssPlanned`
+> casing fix (ops Critical) and the per-ACCOUNT planned-load exposure proven 2026-09-18
+> (premium/plan athletes populated; basic null even for hand-typed values). A proposed
+> fifth rung (planned pace vs threshold pace) is filed, unruled:
+> `intake/2026-09-20-intensity-rung-pace-vs-threshold.md`.
+> §7.3 zone-split scope: TP has NO reachable structure input (see §1.6) — zone columns
+> stay NULL for TP; FS awaits its first captured `json_fs_v1` (C5); the default branches
+> that fabricated splits from misread inputs are deleted (Q-INT29 narrowing).
 Per Xuan (2026-09-09): a bucketed field's method is documented here, and the raw value is
 ALSO captured (per-source column, direction item 4) so re-bucketing never needs re-ingest.
 1. **`intensity_level` from TP** (`training_peaks_transformer.dart:676-724`), first match

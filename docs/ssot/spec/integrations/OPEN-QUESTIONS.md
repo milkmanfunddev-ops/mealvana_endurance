@@ -7,7 +7,7 @@ PROPOSED drafts. Ruling desk pass applied 2026-09-10: 21 RULED, 6 DEFERRED.
 | ID | Subject | Where argued | Ruling |
 |---|---|---|---|
 | Q-INT0 | Ratify the family itself: name, scope, that it subsumes the `producers` proposal | `intake/2026-09-08-data-integration-lifecycle-family.md` | **RULED** (2026-09-10) |
-| Q-INT1 | Retention: no TTL/purge anywhere (activities, `garmin_health_data` incl. raw payloads, deactivated `integrations` rows, zero-consumer wellness types) — ratify "indefinite, deliberately" or set windows | `lifecycle.md` L-7, `garmin.md` G-4 | **DEFERRED** (2026-09-10) |
+| Q-INT1 | Retention: no TTL/purge anywhere (activities, `garmin_health_data` incl. raw payloads, deactivated `integrations` rows, zero-consumer wellness types) — ratify "indefinite, deliberately" or set windows | `lifecycle.md` L-7, `garmin.md` G-4 | **RULED** (2026-09-20) — 90-day raw TTL + permanent de-identified corpus |
 | Q-INT2 | Disconnect custody: tokens, `garmin_health_data`, and `users` body-comp mirrors all survive disconnect, against the stated intent "removes what the provider gave us, not just the token" | `lifecycle.md` L-5.2 | **RULED** (2026-09-10) |
 | Q-INT3 | Provider-side revocation: TP deauthorize exists but is never invoked; FS has no revoke; `garmin-deregistration` fails to deactivate the integration row | `lifecycle.md` L-5.3, `training-peaks.md` TP-3, `garmin.md` G-5 | **DEFERRED** (2026-09-10) |
 | Q-INT4 | ONE match window: ruled ±15 min key vs the day-wide Garmin planned-completion matcher (home of unstamped `intake/2026-08-18-skipped-row-sync-match-window.md`) | `lifecycle.md` L-3 | **RULED** (2026-09-10) |
@@ -35,6 +35,7 @@ PROPOSED drafts. Ruling desk pass applied 2026-09-10: 21 RULED, 6 DEFERRED.
 | Q-INT25 | Schema hygiene batch: dual `archivedForBrick` casings, brick schema only in archived migration, `'draft'` not in status enum, `'transition'` missing from type enums, dead columns (`activities.tss`, `integrations.threshold_pace_min_per_mile`, `users.prefers_*`, activity FTP/CSS/speed orphans), three competing fingerprints | `matching.md` M-6, `performance-data.md` P-4 | **RULED** (2026-09-10) |
 | Q-INT27 | First-connect sync-window contract: FS forward 28 days (was our 14-day clamp), Garmin activities backfill 30 days at connect, no TP/FS history import (dated decision) | `final-surge.md` FS-1, `garmin.md` G-1, `training-peaks.md` TP-1 | **RULED** (2026-09-11) |
 | Q-INT28 | Computed zone-2 pace fallback: when the athlete never reports a pace and no platform syncs zones, derive Z2 instead of the hardcoded 9:00 default (candidates: recent easy-run history; age/HR heuristics; labeled conservative default). Plausibility bounds 4-20 min/mi apply to whatever is computed | `performance-data.md` P-1; review-artifact thread ed163233 (2026-09-11) | **STAGED** — Xuan: "remind me to ratify this later" |
+| Q-INT29 | Zone splits persisted only when parsed from a real workout `Structure` | `payload-usage-map.md` §7.3; `intake/2026-09-18-q-int29-tp-disposition.md` | **RULED** (2026-09-17; narrowed 2026-09-20 — no-op for TP, pending FS evidence) |
 
 ## Direction (Xuan, 2026-09-09 — goals, not rulings; desk options should align)
 1. **Minimize user input where a partner already has the datum**; every formula gets the
@@ -73,6 +74,12 @@ PROPOSED drafts. Ruling desk pass applied 2026-09-10: 21 RULED, 6 DEFERRED.
 
 ### Q-INT1 — Retention policy for imported third-party data
 > **DEFERRED (Xuan, 2026-09-10, ruling desk).**
+> **RULED (Xuan, 2026-09-20, corpus interview):** option-2 family — 90-day TTL on all raw
+> provider payloads (Garmin raw types, the new `provider_raw_payloads` FS/TP window, and
+> prod-graduated sample/HRV capture); the permanent record is the de-identified corpus
+> (promotion starts now; privacy-declaration line rides the next terms update). Full
+> contract: `lifecycle.md` L-7 fold. Size meter + alert resurfaces this ruling if raw
+> exceeds 2 GB collectively or 60% of plan storage.
 
 No TTL, purge job, or data-minimisation statement exists for `activities`,
 `garmin_health_data` (including verbatim `activity_raw` payloads and the four wellness
@@ -323,3 +330,16 @@ Gates: the FS 28-day window ships behind the FS date-range server-cap probe (han
 Applier note: Q-INT18's "chained ≤30-day windows" is fixed by this ruling at ONE 30-day
 window; chaining to 60–90 days remains a future additive option if the insight engine's
 live test finds one month too thin. TP's 45-day forward window is unchanged.
+
+### Q-INT29 — Zone splits from structured workouts
+> **RULED (Xuan, 2026-09-17):** persist zone splits only when parsed from a real workout `Structure` — never derived from titles or guesses.
+> **NARROWED (Xuan, 2026-09-20, corpus interview):** no-op for TP by provider capability —
+> a `Structure` is unreachable under our current OAuth grant (every route, every tier;
+> evidence `runs/2026-09-18-tp-structure-hunt.md`, `runs/2026-09-18-tp-premium-trial-probe.md`).
+> TP zone columns stay NULL; FS is NULL-UNTIL-EVIDENCE (the ruling applies unchanged when a
+> `json_fs_v1` structured detail is first captured); the engine's zoneless default at
+> computation time is explicitly unchanged; the fabricating fallback branches
+> (`_classifyIntensity` ≤1.5⇒%FTP, unknown-length⇒seconds, FS twin) are deleted app-side.
+> Reopens if TrainingPeaks grants the file-export scope (provider-relations request sent
+> 2026-09-20). Note: this branch's register lacked the 2026-09-17 row (it lives on
+> `qa/data-integrations-v1.1`); reconcile on merge.

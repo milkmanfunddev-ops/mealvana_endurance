@@ -124,6 +124,49 @@ if [ "$SLICE" = "food-recommendation" ]; then
   exit 0
 fi
 
+# ---- real-payload-corpus arms (bundle real-payload-corpus@v1) --------------
+# raw-retention: the engine is a Postgres table + the callable sweep — a
+# local-db arm applies the REAL app migrations into an ephemeral supabase
+# Postgres and drives raw_retention_sweep(p_now) at the vectors' synthetic
+# clocks (recon W1's local-CI story).
+if [ "$SLICE" = "raw-retention" ]; then
+  require_mirror "$VEC_PATH"
+  exec "$QA_ROOT/conformance/raw_retention_db_arm.sh" "$QA_ROOT/$VEC_PATH" "$APP_ROOT"
+fi
+
+# corpus-fingerprint / corpus-deid: pure-function arms over the TS corpus
+# modules (_shared/corpus/fingerprint.ts, _shared/corpus/scrub.ts), driven by
+# the app's Deno vectors runner — same QA_VECTORS convention as
+# food-recommendation's TS side.
+if [ "$SLICE" = "corpus-fingerprint" ] || [ "$SLICE" = "corpus-deid" ]; then
+  require_mirror "$VEC_PATH"
+  command -v deno >/dev/null || { echo "ABORT: deno not installed"; exit 1; }
+  echo "   arm:     pure-function (Deno, real corpus modules)"
+  cd "$APP_ROOT"
+  QA_VECTORS="$QA_ROOT/$VEC_PATH" \
+    deno test --allow-read --allow-env \
+    supabase/functions/tests/corpus_vectors_test.ts
+  exit 0
+fi
+
+# ---- integrations-data-display: the D-2 design slice (three ratified goldens) --
+# A design slice whose contract is three golden manifests, not one yaml. Mirror-
+# check each ratified goldens manifest, then run the three app golden suites that
+# realize them (data-integrations@v1 done_when: "the three goldens manifests
+# realized as green app suites").
+if [ "$SLICE" = "integrations-data-display" ]; then
+  require_mirror "conformance/design/workout-card-states.goldens.yaml"
+  require_mirror "conformance/design/ftp-source-provenance.goldens.yaml"
+  require_mirror "conformance/design/tp-writeback-consent.goldens.yaml"
+  echo "   arm:     three D-2 golden suites (workout-card-states, ftp-source-provenance, tp-writeback-consent)"
+  cd "$APP_ROOT"
+  flutter test \
+    test/features/nutrition_plan/workout_card_states_golden_test.dart \
+    test/features/settings/ftp_source_provenance_golden_test.dart \
+    test/features/integrations/tp_writeback_consent_golden_test.dart
+  exit 0
+fi
+
 case "$VEC_PATH" in
   vectors/fueling/*.json)
     UNDER="${SLICE//-/_}"
@@ -192,6 +235,21 @@ case "$VEC_PATH" in
     echo "   arm:     design conformance suite: $SUITE"
     cd "$APP_ROOT"
     flutter test "$SUITE"
+    ;;
+
+  vectors/integrations/matching.json)
+    # Matcher-tier twin (Stage B): the pure decision layer bound across the TS
+    # matcher (Deno) and its Dart mirror over the same 41 vectors — both read
+    # the app's docs/ssot copy, which is mirror-checked here first. Green only
+    # when BOTH twins pass (data-integrations@v1 done_when: "all 41 matching
+    # vectors green through the matcher-tier runner").
+    require_mirror "$VEC_PATH"
+    command -v deno >/dev/null || { echo "ABORT: deno not installed — matcher twin unrunnable"; exit 1; }
+    cd "$APP_ROOT"
+    echo "   arm:     matcher-tier twin — Dart mirror (match_decider_vectors_test.dart)"
+    flutter test test/features/integrations/matching/match_decider_vectors_test.dart
+    echo "   arm:     matcher-tier twin — TS matcher (Deno, same vectors)"
+    deno test --allow-read --allow-env supabase/functions/_shared/garmin/matcher.test.ts
     ;;
 
   *)

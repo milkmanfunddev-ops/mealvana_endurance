@@ -85,7 +85,11 @@ class TimelineNodeTile extends ConsumerWidget {
         MealSlot.breakfast => AppColors.orange,
         MealSlot.lunch => kMacroColorCarbs,
         MealSlot.snack => AppColors.dragonfruit,
-        MealSlot.dinner => kMacroColorProtein,
+        // Loading-day slots (carb-loading@v1): snack periods share the
+        // snack accent; evening pairs with dinner (slot_palette.dart).
+        MealSlot.morningSnack ||
+        MealSlot.afternoonSnack => AppColors.dragonfruit,
+        MealSlot.dinner || MealSlot.eveningSnack => kMacroColorProtein,
         // Untagged meals (slot is optional — build-a-meal redesign) get a
         // neutral dot rather than crashing the exhaustive switch.
         null => AppColors.electrolyte,

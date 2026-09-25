@@ -28,3 +28,32 @@ clamp frame entangled with the not-yet-ratified date/time pickers.
 ## Conformance
 Widget tests: CF-1 default = §3a oracle for a given session class/start; CF-2 clamp inertness at
 the bound; CF-3 toggle absence post-bundle. Goldens hold layout/hues.
+
+---
+
+## CF-9 — Form-state lifetime — RULED (Xuan, 2026-09-21, post-ratification addition)
+
+Closes Q-CA2 (`intake/2026-09-03-form-state-reset-semantics.md`, DEFERRED 2026-09-03).
+
+**The lifetime is PER-ACTIVITY.** Opening the create flow for a NEW activity resets both the
+values and the `*ManuallySet` flags. CF-1's "a manual change persists" means *within the
+activity being edited*. Editing an EXISTING activity re-hydrates from that activity.
+
+**Scope — one lifetime for all flag-bearing form state:** fueling window, activity title,
+temperature, humidity. (Swimming and brick legs carry no temperature/humidity flags — swim
+deck temperature is forecast-derived and CF-7's per-leg brick badges are unmounted, recorded
+as a conformance coverage gap; nothing is invented for them.) **CLARIFIED (Xuan, 2026-09-21): FLAG-BEARING ONLY.** The non-flag-bearing fields —
+distance, pace, duration, intensity, date/time, gut training, sweat rate, terrain, units —
+DELIBERATELY carry across activities and are not reset; "one lifetime for all form state"
+means all flag-bearing form state. Rationale recorded: those fields have no ruled
+re-derivation that a latched flag could suppress, so carrying them is convenience rather
+than corruption, and a full wipe would collide with the event/synced prefill paths. A future
+request to reset them is a new ruling, not an implementation detail.
+
+**What the reset restores:** the AUTO SOURCE, never a flat constant — the loaded forecast when
+one exists, the named placeholders when none does, indoor cycling keeping its ratified 45 %
+humidity (`during-workout-hydration.md` CP-6). This is load-bearing for conditions provenance:
+a flat reset would discard a live forecast and mark every plan `assumed`.
+
+Implemented ahead of the fold as `14671104`; D-018 (`implemented-pending-ruling`) resolves
+with this ruling.

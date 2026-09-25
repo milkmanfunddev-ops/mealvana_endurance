@@ -25,6 +25,12 @@ Color slotColor(MealSlot? slot) {
       return const Color(0xFF8E6FD8); // brand violet (matches protein accent)
     case MealSlot.snack:
       return AppColors.dragonfruit;
+    // Loading-day slots (carb-loading@v1): the snack periods share the snack
+    // accent; the fold keeps chips legible without a new colour meaning.
+    case MealSlot.morningSnack || MealSlot.afternoonSnack:
+      return AppColors.dragonfruit;
+    case MealSlot.eveningSnack:
+      return const Color(0xFF8E6FD8); // evening pairs with dinner's violet
     case null:
       return const Color(0xFF9E9E9E); // neutral grey for untagged meals
   }
