@@ -26,6 +26,7 @@ import '../../../shared/services/dirty_record_backup_service.dart';
 import '../../../shared/models/dirty_record_backup.dart';
 import '../presentation/widgets/dirty_record_recovery_dialog.dart';
 import '../../ai_credits/data/revenuecat_service.dart';
+import '../../subscription/application/pro_gate.dart';
 import '../../subscription/application/subscription_status_provider.dart';
 
 /// Service responsible for providing individual startup operations using Drift
@@ -439,21 +440,22 @@ class AppStartupService {
   /// at the top of the startup flow and logs the account in itself, and
   /// this call then joins that `logIn` or finds the identity already held.
   /// Either way the SDK sees one `logIn`, after configure.
+  ///
+  /// Startup waits for the Gate at most [entitlementAnswerTimeoutProvider]
+  /// (mp-335, two seconds; ticket 105, Finding 87-009): a `logIn` or fetch
+  /// with no answer (offline) does not hold the launch. The work carries on
+  /// behind it, and a later answer moves the router the usual way.
   Future<void> initializeAppGate() async {
     try {
-      await configureRevenueCat();
-      final userId = _supabase.auth.currentUser?.id;
-      if (userId != null && userId.isNotEmpty) {
-        await ref.read(revenueCatServiceProvider).logIn(userId);
-      }
-      // A provider first read before this point (the router's gate) may
-      // have run out its bounded wait before the identity was moved and
-      // answered locked; re-resolve it. A fresh one resolves on first read.
-      if (ref.exists(subscriptionStatusProvider)) {
-        await ref.read(subscriptionStatusProvider.notifier).refresh();
-      } else {
-        await ref.read(subscriptionStatusProvider.future);
-      }
+      await _resolveAppGate().timeout(
+        ref.read(entitlementAnswerTimeoutProvider),
+        onTimeout: () {
+          _logger.warning(
+            'App gate not settled within its wait; startup goes on',
+            context: 'APP_STARTUP',
+          );
+        },
+      );
     } catch (e, stackTrace) {
       _logger.error(
         'App gate initialization failed',
@@ -462,6 +464,25 @@ class AppStartupService {
         stackTrace: stackTrace,
       );
     }
+  }
+
+  Future<void> _resolveAppGate() async {
+    await configureRevenueCat();
+    final userId = _supabase.auth.currentUser?.id;
+    if (userId != null && userId.isNotEmpty) {
+      await ref.read(revenueCatServiceProvider).logIn(userId);
+    }
+    // A provider first read before this point (the router's gate) may
+    // have run out its bounded wait before the identity was moved and
+    // answered locked; re-resolve it. A fresh one resolves on first read.
+    if (ref.exists(subscriptionStatusProvider)) {
+      await ref.read(subscriptionStatusProvider.notifier).refresh();
+    } else {
+      await ref.read(subscriptionStatusProvider.future);
+    }
+    // The Gate itself (status and the admin read), so the root redirect
+    // answers from a settled value.
+    await ref.read(appGateProvider.future);
   }
 
   /// Refresh coach status from local coaches table

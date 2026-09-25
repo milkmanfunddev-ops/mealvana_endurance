@@ -112,6 +112,60 @@ final class RenewingStoreSubscriptionProvider
 String _$renewingStoreSubscriptionHash() =>
     r'175e4e2d790f668f5223856e27e4ea39f83e230b';
 
+/// Asks RevenueCat itself, past the SDK's saved copy, once per opening of
+/// the Subscription screen (ticket 105, Finding 87-006): a plan in its last
+/// period reads "Ends on {date}. It won't renew." (mp-558), never "Renews
+/// on". Its own provider so the ask runs once per open, not on every status
+/// change the screen rebuilds for; it goes with the screen. Bounded by the
+/// status controller's wait; no answer keeps the saved copy.
+
+@ProviderFor(subscriptionFreshOnOpen)
+const subscriptionFreshOnOpenProvider = SubscriptionFreshOnOpenProvider._();
+
+/// Asks RevenueCat itself, past the SDK's saved copy, once per opening of
+/// the Subscription screen (ticket 105, Finding 87-006): a plan in its last
+/// period reads "Ends on {date}. It won't renew." (mp-558), never "Renews
+/// on". Its own provider so the ask runs once per open, not on every status
+/// change the screen rebuilds for; it goes with the screen. Bounded by the
+/// status controller's wait; no answer keeps the saved copy.
+
+final class SubscriptionFreshOnOpenProvider
+    extends $FunctionalProvider<AsyncValue<void>, void, FutureOr<void>>
+    with $FutureModifier<void>, $FutureProvider<void> {
+  /// Asks RevenueCat itself, past the SDK's saved copy, once per opening of
+  /// the Subscription screen (ticket 105, Finding 87-006): a plan in its last
+  /// period reads "Ends on {date}. It won't renew." (mp-558), never "Renews
+  /// on". Its own provider so the ask runs once per open, not on every status
+  /// change the screen rebuilds for; it goes with the screen. Bounded by the
+  /// status controller's wait; no answer keeps the saved copy.
+  const SubscriptionFreshOnOpenProvider._()
+    : super(
+        from: null,
+        argument: null,
+        retry: null,
+        name: r'subscriptionFreshOnOpenProvider',
+        isAutoDispose: true,
+        dependencies: null,
+        $allTransitiveDependencies: null,
+      );
+
+  @override
+  String debugGetCreateSourceHash() => _$subscriptionFreshOnOpenHash();
+
+  @$internal
+  @override
+  $FutureProviderElement<void> $createElement($ProviderPointer pointer) =>
+      $FutureProviderElement(pointer);
+
+  @override
+  FutureOr<void> create(Ref ref) {
+    return subscriptionFreshOnOpen(ref);
+  }
+}
+
+String _$subscriptionFreshOnOpenHash() =>
+    r'ecb01e5c151be763e6347b97f7307290492d3d86';
+
 /// The Subscription screen in Settings (mp-495): the plan's status from the
 /// status provider (RevenueCat, mp-279), whether there is a store
 /// subscription to manage, and where Manage subscription goes.
@@ -161,7 +215,7 @@ final class SubscriptionScreenControllerProvider
 }
 
 String _$subscriptionScreenControllerHash() =>
-    r'f7c2a47f3cfa3dba76591409e42070a7122d99fa';
+    r'9f9c3ce1271829e88261bb7d5fd6a5e6c03a362c';
 
 /// The Subscription screen in Settings (mp-495): the plan's status from the
 /// status provider (RevenueCat, mp-279), whether there is a store

@@ -138,6 +138,16 @@ class SubscriptionScreenState {
 Future<bool> renewingStoreSubscription(Ref ref) =>
     ref.read(subscriptionServiceProvider).hasRenewingStoreSubscription();
 
+/// Asks RevenueCat itself, past the SDK's saved copy, once per opening of
+/// the Subscription screen (ticket 105, Finding 87-006): a plan in its last
+/// period reads "Ends on {date}. It won't renew." (mp-558), never "Renews
+/// on". Its own provider so the ask runs once per open, not on every status
+/// change the screen rebuilds for; it goes with the screen. Bounded by the
+/// status controller's wait; no answer keeps the saved copy.
+@riverpod
+Future<void> subscriptionFreshOnOpen(Ref ref) =>
+    ref.read(subscriptionStatusProvider.notifier).fetchFresh();
+
 /// The Subscription screen in Settings (mp-495): the plan's status from the
 /// status provider (RevenueCat, mp-279), whether there is a store
 /// subscription to manage, and where Manage subscription goes.
@@ -148,6 +158,7 @@ Future<bool> renewingStoreSubscription(Ref ref) =>
 class SubscriptionScreenController extends _$SubscriptionScreenController {
   @override
   Future<SubscriptionScreenState> build() async {
+    await ref.watch(subscriptionFreshOnOpenProvider.future);
     final status = await ref.watch(subscriptionStatusProvider.future);
     final hasStoreSubscription = await ref
         .read(subscriptionServiceProvider)

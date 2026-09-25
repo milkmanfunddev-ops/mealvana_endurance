@@ -131,6 +131,19 @@ void main() {
     });
   });
 
+  group('startupLanding (ticket 105, Finding 87-009)', () {
+    test('an onboarded account lands on /main when the Gate is open', () {
+      expect(startupLanding(AppAccess.open), '/main');
+    });
+
+    test(
+      'and straight on the paywall when it is closed, never /main first',
+      () {
+        expect(startupLanding(AppAccess.closed), kPaywallPath);
+      },
+    );
+  });
+
   group('wired into GoRouter through the real notifier', () {
     late _MockSubscriptionService service;
     late _MockRepository repo;
@@ -171,7 +184,7 @@ void main() {
           refreshListenable: refresh,
           redirect: (context, state) async {
             final path = state.uri.path;
-            if (path == '/') return '/main';
+            if (path == '/') return startupLanding(await readAppGate(ref));
             if (isUngatedPath(path)) return null;
             final access = await readAppGate(ref);
             return gateRedirect(path: path, access: access);

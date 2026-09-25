@@ -43,6 +43,13 @@ String? gateRedirect({required String path, required AppAccess access}) {
   return access == AppAccess.open ? null : kPaywallPath;
 }
 
+/// Where the startup redirect sends an onboarded, signed-in account from
+/// `/`: the app when the Gate is open, and straight to the paywall when it
+/// is closed, so the router never passes through `/main` on the way
+/// (ticket 105, Finding 87-009).
+String startupLanding(AppAccess access) =>
+    access == AppAccess.open ? '/main' : kPaywallPath;
+
 /// The location path of the route on top of [config]; a pushed route
 /// carries its own match list.
 String topPathOf(RouteMatchList config) {

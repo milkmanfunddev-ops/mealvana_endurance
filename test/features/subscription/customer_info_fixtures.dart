@@ -180,6 +180,22 @@ final CustomerInfo customerInfoRenewedMonthly = _info(
   requestDate: '2026-09-24T11:39:04Z',
 );
 
+/// RevenueCat's fresh answer when [customerInfoSavedMonthly]'s period was
+/// its last (Finding 87-006: `will_not_renew`, no CANCELLATION seen by the
+/// copy): fetched just after the 11:36:56 expiry, `pro` has expired and
+/// will not renew.
+final CustomerInfo customerInfoEndedMonthly = _info(
+  all: {
+    'pro': _pro(
+      isActive: false,
+      expires: '2026-09-24T11:36:56Z',
+      willRenew: false,
+    ),
+  },
+  active: false,
+  requestDate: '2026-09-24T11:36:57Z',
+);
+
 /// No `pro`, ever.
 final CustomerInfo customerInfoNever = _info(all: const {}, active: false);
 
