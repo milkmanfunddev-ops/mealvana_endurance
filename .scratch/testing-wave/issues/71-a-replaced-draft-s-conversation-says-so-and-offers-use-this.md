@@ -13,8 +13,8 @@
 
 **Touches:** lib/features/meal_planning/presentation/screens/vana_chat_screen.dart, lib/features/meal_planning/presentation/widgets/plan_bar.dart, lib/features/meal_planning/presentation/widgets/review_sheet.dart
 
-- [ ] A widget test: an archived draft's conversation shows the note, no Confirm and no servings controls.
-- [ ] Use this plan instead makes a new draft for this week with the same meals.
+- [x] A widget test: an archived draft's conversation shows the note, no Confirm and no servings controls.
+- [x] Use this plan instead makes a new draft for this week with the same meals.
 - [ ] codegen if annotations changed, `flutter analyze` and the suite green.
 
 Next: /implement-lee testing-wave

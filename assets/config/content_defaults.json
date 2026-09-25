@@ -610,6 +610,8 @@
     "plan_bar_count_one": "1 meal",
     "plan_bar_more": "{n} more and the week starts to take shape.",
     "plan_bar_empty": "Tap a meal above and it lands here.",
+    "plan_bar_replaced": "You confirmed a different plan for this week. This one is kept in your plans.",
+    "plan_bar_use_instead": "Use this plan instead",
     "review_title": "Review your plan",
     "review_confirm": "Confirm plan",
     "review_confirmed": "Plan confirmed",
