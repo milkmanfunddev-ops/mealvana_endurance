@@ -1,7 +1,7 @@
 # 09-010 · RevenueCat's subscriptions API still calls the lapsed Test Store subscription active with gives_access true minutes after it ended, while active_entitlements is empty
 
 - kind: idea
-- status: open
+- status: wontfix
 - ticket: 09
 - run: w7-20260924T1219Z
 - screen: none
@@ -27,3 +27,4 @@ At 13:03:23Z, seven minutes after the end and four after the EXPIRATION webhook,
 
 **Triage.**
 
+Won't fix (Lee, 2026-09-25): RevenueCat's subscriptions API lags active_entitlements for the Test Store; runs judge Pro by active_entitlements.

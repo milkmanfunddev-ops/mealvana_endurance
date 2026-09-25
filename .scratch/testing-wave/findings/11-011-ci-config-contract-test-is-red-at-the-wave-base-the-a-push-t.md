@@ -1,7 +1,7 @@
 # 11-011 · ci_config_contract_test is red at the wave base: the 'a push to develop runs the dev tests' check fails
 
 - kind: bug
-- status: triaged
+- status: closed
 - ticket: 11
 - run: w5-20260924T0840Z
 - screen: none
@@ -25,3 +25,5 @@ Green, or the check changed to match the current CI rule.
 
 **Triage.**
 Fix ticket 57 (Lee, 2026-09-25). Closed by the retest after it merges.
+
+Closed by the wave lead (2026-09-25): `flutter test test/shared/ci_config_contract_test.dart` at 5e05f8a6 passes all 15 checks (ticket 57).

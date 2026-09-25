@@ -1,7 +1,7 @@
 # 28-004 · A camera-less scanner is a dead end: no typed barcode, no photo pick, and search does not match barcode numbers
 
 - kind: idea
-- status: open
+- status: triaged
 - ticket: 28
 - run: w15-20260924T2040Z
 - screen: Scan to Add Food; Log — Sep 23 (search)
@@ -28,3 +28,5 @@ No path: runs/28/14-scanner-second-open.png, runs/28/15-search-barcode-number.pn
 > 
 
 **Triage.**
+
+Fix ticket 98 (Lee, 2026-09-25): no-camera path: food search matches barcode digits, an app-written no-camera message links to search, and the scanner gets an Enter-barcode field. Closed by retest ticket 100 after it merges.

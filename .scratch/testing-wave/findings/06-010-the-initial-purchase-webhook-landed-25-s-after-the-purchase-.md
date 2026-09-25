@@ -1,7 +1,7 @@
 # 06-010 · The INITIAL_PURCHASE webhook landed 25 s after the purchase; ticket 05 saw about 1 s
 
 - kind: idea
-- status: open
+- status: wontfix
 - ticket: 06
 - run: w6-20260924T1117Z
 - screen: Paywall
@@ -25,3 +25,4 @@ INITIAL_PURCHASE landed at 11:29:02Z, 25 s after the 11:28:36Z purchase; ticket 
 
 **Triage.**
 
+Won't fix (Lee, 2026-09-25): webhook latency is RevenueCat's; the app does not wait on the webhook.

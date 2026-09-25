@@ -1,7 +1,7 @@
 # 08-007 · flutter run loses the app's console once the app sits in Safari after Manage subscription, so the rest of the run's console must come from the simulator log
 
 - kind: idea
-- status: open
+- status: wontfix
 - ticket: 08
 - run: w7-20260924T1216Z
 - screen: Subscription
@@ -25,3 +25,5 @@ Idea: the runbook's step 5 also starts a `log stream` for the app's process next
 > 
 
 **Triage.**
+
+Won't fix (Lee, 2026-09-25): harness: flutter run loses the console once the app is backgrounded; runs use the simulator log stream (runbook step 3).

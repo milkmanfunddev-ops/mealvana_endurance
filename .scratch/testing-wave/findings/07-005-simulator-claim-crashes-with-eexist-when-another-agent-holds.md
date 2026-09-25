@@ -1,7 +1,7 @@
 # 07-005 · simulator claim crashes with EEXIST when another agent holds the claims lock for more than about 10 s
 
 - kind: idea
-- status: open
+- status: wontfix
 - ticket: 07
 - run: w6-20260924T1118Z
 - screen: none
@@ -25,3 +25,5 @@ The claim threw at once: `Error: could not lock …/mealvana-ssot-simulators.jso
 > 
 
 **Triage.**
+
+Won't fix (Lee, 2026-09-25): harness: the claims-lock race is a tooling limit; agents retry the claim.

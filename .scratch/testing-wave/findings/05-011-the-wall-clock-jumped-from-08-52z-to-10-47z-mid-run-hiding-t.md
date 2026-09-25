@@ -1,7 +1,7 @@
 # 05-011 · The wall clock jumped from 08:52Z to 10:47Z mid-run, hiding the live expiry the ticket watched
 
 - kind: idea
-- status: open
+- status: wontfix
 - ticket: 05
 - run: w5-20260924T0839Z
 - screen: none
@@ -24,3 +24,4 @@ Between two steps the clock went from about 08:52Z to 10:47Z, cause unknown, wit
 
 **Triage.**
 
+Won't fix (Lee, 2026-09-25): the host clock jump was the Mac, not the app; a run notes the gap and says "not seen live" (runbook step 5).

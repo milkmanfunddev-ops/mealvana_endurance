@@ -1,7 +1,7 @@
 # 20-007 · Keep the per-app network cut (netcut dylib) as a testing-wave script so offline runs never touch the host network
 
 - kind: idea
-- status: open
+- status: wontfix
 - ticket: 20
 - run: w10-20260924T1614Z
 - screen: none
@@ -25,3 +25,4 @@ Offline tickets (02-015, 04-004, 11-006, 14-009, 20) cut only their own app, wit
 
 **Triage.**
 
+Won't fix (Lee, 2026-09-25): done already: netcut is a testing-wave script (IMPROVEMENTS #36).

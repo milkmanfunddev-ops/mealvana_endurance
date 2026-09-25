@@ -1,7 +1,7 @@
 # 18-012 · garmin-push on dev failed every record of two Garmin fan-out pushes (epochs 0 processed, 45 errors)
 
 - kind: bug
-- status: triaged
+- status: closed
 - ticket: 18
 - run: w16-20260924T2100Z
 - screen: none (server side: the dev `garmin-push` edge function)
@@ -29,3 +29,5 @@ At 16:13:41 `stressDetails` processed 0, errors 1; at 16:13:44 `epochs` processe
 **Triage.**
 
 Fix ticket 65 (Lee, 2026-09-25). Closed by the retest after it merges.
+
+Closed by the wave lead (2026-09-25, from logs): since ticket 65, `garmin-push` logs each failed record. The 08:12 local fan-out's failures all read `reason=no_user_mapping` for Garmin users relayed from prod who have no dev mapping (99cab55a…, eaeecd43…). That is expected on dev, not a function bug.

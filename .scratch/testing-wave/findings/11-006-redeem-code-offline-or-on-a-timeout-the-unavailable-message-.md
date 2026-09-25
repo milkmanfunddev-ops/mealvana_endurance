@@ -1,7 +1,7 @@
 # 11-006 · Redeem code offline or on a timeout: the unavailable message, the code not spent, and a retry that works
 
 - kind: followup-test
-- status: open
+- status: triaged
 - ticket: 11
 - run: w5-20260924T0840Z
 - screen: Redeem code (paywall ⋯ menu)
@@ -27,3 +27,4 @@ Not run (look-around, ticket 11).
 
 **Triage.**
 
+Picked for retest ticket 87 (Lee, 2026-09-25).

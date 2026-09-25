@@ -1,7 +1,7 @@
 # 09-006 · Review plan: remove a meal, Keep planning, and Confirm plan offline or tapped twice
 
 - kind: followup-test
-- status: open
+- status: triaged
 - ticket: 09
 - run: w7-20260924T1219Z
 - screen: Review plan
@@ -26,3 +26,4 @@ Removing a meal drops it from the plan and from the shopping list built at confi
 
 **Triage.**
 
+Picked for retest ticket 88 (Lee, 2026-09-25).

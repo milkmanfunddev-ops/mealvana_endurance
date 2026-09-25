@@ -1,7 +1,7 @@
 # 14-005 · The New meal plan opener talks about last week's plan and last week's talk
 
 - kind: idea
-- status: open
+- status: wontfix
 - ticket: 14
 - run: w8-20260924T1418Z
 - screen: Vana chat (New meal plan)
@@ -25,3 +25,4 @@ The opener starts "You've got the Ironman in 60 days and a solid week behind you
 
 **Triage.**
 
+Won't fix as an app ticket (Lee, 2026-09-25): model behaviour, added to the Vana evals corpus as a scenario (ticket 94).

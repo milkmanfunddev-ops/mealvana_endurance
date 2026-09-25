@@ -1,7 +1,7 @@
 # 29-002 · FinalSurge now sends WorkoutCompleted and actuals for today's runs (FS-2.1 says never observed), yet the timeline cards still say Planned
 
 - kind: idea
-- status: open
+- status: triaged
 - ticket: 29
 - run: w16-20260924T2100Z
 - screen: Timeline
@@ -28,3 +28,4 @@ The dev account's FinalSurge feed sends them today. "Easy" (WorkoutKey d67e6590,
 
 **Triage.**
 
+Fix ticket 99 (Lee, 2026-09-25): build it now: FinalSurge completion marks the workout done and stores the actuals, specced app-side awaiting Xuan. Closed by retest ticket 100 after it merges.

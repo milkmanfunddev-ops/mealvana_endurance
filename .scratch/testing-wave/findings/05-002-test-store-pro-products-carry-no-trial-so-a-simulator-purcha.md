@@ -1,7 +1,7 @@
 # 05-002 · Test Store Pro products carry no trial, so a simulator purchase is a paid period and the seven-day free week cannot be tried there
 
 - kind: idea
-- status: open
+- status: wontfix
 - ticket: 05
 - run: w5-20260924T0839Z
 - screen: Paywall
@@ -26,3 +26,4 @@ The Test Store sheet shows "Price: $9.95, SubscriptionPeriod: 1 month" with no o
 
 **Triage.**
 
+Won't fix (Lee, 2026-09-25): Test Store products carry no trial; the free week is tested on a sandbox device (ticket 13).

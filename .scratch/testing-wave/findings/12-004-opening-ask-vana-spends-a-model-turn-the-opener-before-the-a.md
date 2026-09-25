@@ -1,7 +1,7 @@
 # 12-004 · Opening Ask Vana spends a model turn (the opener) before the athlete types, and the wave's cost counter has no kind for Vana chat
 
 - kind: idea
-- status: open
+- status: wontfix
 - ticket: 12
 - run: w4-20260924T0417Z
 - screen: Vana
@@ -23,3 +23,4 @@ Idea: the harness's `cost.mjs` knows `plan` and `logging` only. A Vana chat turn
 
 **Triage.**
 
+Won't fix (Lee, 2026-09-25): the cost kind is done (`chat`, IMPROVEMENTS #45); the opener spending a turn before the athlete types is kept as product behaviour.

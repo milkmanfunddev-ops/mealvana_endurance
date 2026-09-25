@@ -1,7 +1,7 @@
 # 09-003 · The dev meal library's salmon salad (AD-001) shows a striped test photo credited Photo by Lee (ticket 05 live check) in every athlete's plan
 
 - kind: bug
-- status: triaged
+- status: closed
 - ticket: 09
 - run: w7-20260924T1219Z
 - screen: Food (Plan tab), Review plan
@@ -27,3 +27,5 @@ The thumbnail is a green and brown striped test pattern. Its accessibility label
 **Triage.**
 
 Fix ticket 69 (Lee, 2026-09-25). Closed by the retest after it merges.
+
+Closed by the wave lead (2026-09-25, SQL on dev): `meal_library` AD-001 has `photo_credit` null and no photo.

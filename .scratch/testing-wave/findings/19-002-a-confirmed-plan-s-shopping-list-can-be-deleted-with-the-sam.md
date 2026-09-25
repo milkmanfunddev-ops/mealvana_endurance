@@ -1,7 +1,7 @@
 # 19-002 · A confirmed plan's shopping list can be deleted with the same dialog as any list, leaving the confirmed plan with no list
 
 - kind: idea
-- status: open
+- status: triaged
 - ticket: 19
 - run: w11-20260924T1647Z
 - screen: Food (Shopping sub-tab)
@@ -27,3 +27,5 @@ Tried as the ticket's last action at 16:53Z: deleted with no warning beyond the 
 > 
 
 **Triage.**
+
+Fix ticket 96 (Lee, 2026-09-25): the plan's list can be deleted behind a short, clear warning; the plan page offers "Rebuild shopping list"; a plan has at most one list, so edits and rebuilds update it, never duplicate it. Closed by retest ticket 100 after it merges.

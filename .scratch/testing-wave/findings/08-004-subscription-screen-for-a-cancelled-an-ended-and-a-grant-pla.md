@@ -1,7 +1,7 @@
 # 08-004 · Subscription screen for a cancelled, an ended and a Grant plan: Ends on, It ended on with Upgrade, Grace month or Pro from a code
 
 - kind: followup-test
-- status: open
+- status: triaged
 - ticket: 08
 - run: w7-20260924T1216Z
 - screen: Subscription
@@ -25,3 +25,5 @@ Not run. This run saw only the running, renewing state ("Subscribed", "Renews on
 > 
 
 **Triage.**
+
+Picked for retest ticket 87 (Lee, 2026-09-25).

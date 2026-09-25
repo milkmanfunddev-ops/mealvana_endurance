@@ -1,7 +1,7 @@
 # 05-001 · Test Store purchases reach the dev webhook: purchase, four renewals and the expiry all land and the Entitlement row matches RevenueCat
 
 - kind: idea
-- status: open
+- status: wontfix
 - ticket: 05
 - run: w5-20260924T0839Z
 - screen: Paywall
@@ -36,3 +36,4 @@ So `user_entitlements` can be checked on a simulator after all; the device is ne
 
 **Triage.**
 
+Won't fix (Lee, 2026-09-25): the Test Store path to the dev webhook works; nothing to fix, kept as a record of how it behaves.

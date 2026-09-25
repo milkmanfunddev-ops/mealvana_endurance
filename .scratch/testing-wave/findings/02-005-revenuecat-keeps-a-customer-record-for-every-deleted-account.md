@@ -1,7 +1,7 @@
 # 02-005 · RevenueCat keeps a customer record for every deleted account; nothing removes it
 
 - kind: idea
-- status: open
+- status: triaged
 - ticket: 02
 - run: w2-20260923T1442Z
 - screen: none
@@ -30,3 +30,5 @@ Both customers remain.
 > 
 
 **Triage.**
+
+Fix ticket 95 (Lee, 2026-09-25): account deletion also deletes the RevenueCat customer. Closed by retest ticket 100 after it merges.

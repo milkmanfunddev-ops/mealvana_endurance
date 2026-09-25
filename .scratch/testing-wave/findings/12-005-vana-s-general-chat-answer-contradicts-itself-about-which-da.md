@@ -1,7 +1,7 @@
 # 12-005 · Vana's general-chat answer contradicts itself about which day holds the long ride
 
 - kind: idea
-- status: open
+- status: wontfix
 - ticket: 12
 - run: w4-20260924T0417Z
 - screen: Vana
@@ -23,3 +23,4 @@ Idea for the Vana evals corpus. Asked "How many grams of carbs should I eat befo
 
 **Triage.**
 
+Won't fix as an app ticket (Lee, 2026-09-25): model behaviour, added to the Vana evals corpus as a scenario (ticket 94).

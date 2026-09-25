@@ -1,7 +1,7 @@
 # 07-004 · The founding offering has no Test Store product, so the SDK warns on every launch and the founding price cannot be bought on a simulator
 
 - kind: idea
-- status: open
+- status: wontfix
 - ticket: 07
 - run: w6-20260924T1118Z
 - screen: none
@@ -25,3 +25,5 @@ Every launch logs `WARN: ⚠️ There's a problem with your configuration. No pa
 > 
 
 **Triage.**
+
+Won't fix (Lee, 2026-09-25): the founding offering has no Test Store product by design; the founding price is tested on a sandbox device.

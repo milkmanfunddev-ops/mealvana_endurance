@@ -1,7 +1,7 @@
 # 07-003 · Test Store renewals land only when the app next fetches the customer, so RevenueCat and the Entitlement row show no Pro between period end and that fetch
 
 - kind: idea
-- status: open
+- status: wontfix
 - ticket: 07
 - run: w6-20260924T1118Z
 - screen: none
@@ -35,3 +35,5 @@ app fetch tied to it (06-002), so "only when the app asks" is not established; r
 **Triage.**
 
 Wave 7 (ticket 09, runs/09/notes.md and poll-lapse.log): four renewals landed 2–3 minutes after each period end with no `customer info` fetch from the app in the console from 12:31 to 13:01, so renewals do not need an app fetch. Ticket 08 saw one land in the same second as a fetch, which reads as coincidence.
+
+Won't fix (Lee, 2026-09-25): Test Store renewals land when the app next fetches the customer; this is how the Test Store works.

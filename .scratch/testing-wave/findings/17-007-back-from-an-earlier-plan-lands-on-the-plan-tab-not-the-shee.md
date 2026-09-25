@@ -1,7 +1,7 @@
 # 17-007 · Back from an earlier plan lands on the Plan tab, not the sheet
 
 - kind: idea
-- status: open
+- status: triaged
 - ticket: 17
 - run: w12-20260924T1712Z
 - screen: Earlier plan view
@@ -24,3 +24,5 @@ Not run (idea).
 > 
 
 **Triage.**
+
+Fix ticket 97 (Lee, 2026-09-25): Back from an earlier plan returns to the Previous plans sheet at its scroll position. Closed by retest ticket 100 after it merges.

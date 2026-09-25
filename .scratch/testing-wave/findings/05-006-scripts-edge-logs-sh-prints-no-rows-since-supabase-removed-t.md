@@ -1,7 +1,7 @@
 # 05-006 · scripts/edge_logs.sh prints no rows since Supabase removed the logs.all endpoint, so a webhook check reads as not fired
 
 - kind: bug
-- status: triaged
+- status: closed
 - ticket: 05
 - run: w5-20260924T0839Z
 - screen: none
@@ -27,3 +27,5 @@ The Management API now answers `GET …/analytics/endpoints/logs.all` with HTTP 
 
 **Triage.**
 Fix ticket 57 (Lee, 2026-09-25). Closed by the retest after it merges.
+
+Closed by the wave lead (2026-09-25, from code and logs): `scripts/edge_logs.sh` now queries `analytics/endpoints/logs` (the unified `logs` table); `-m 720 garmin-push` returned rows at 08:12 local, and a non-row answer exits 1.

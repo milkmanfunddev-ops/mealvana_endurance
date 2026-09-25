@@ -1,7 +1,7 @@
 # 16-006 · Conversations, Meal plans: every row is This week's plan, told apart only by time
 
 - kind: idea
-- status: open
+- status: triaged
 - ticket: 16
 - run: w9-20260924T1446Z
 - screen: Conversations (Meal plans)
@@ -24,3 +24,4 @@ Idea: give each meal-plan conversation a title an athlete can pick out, such as 
 
 **Triage.**
 
+Fix ticket 97 (Lee, 2026-09-25): meal-plan conversations are titled by week and state ("Sep 20 week · Draft"). Closed by retest ticket 100 after it merges.

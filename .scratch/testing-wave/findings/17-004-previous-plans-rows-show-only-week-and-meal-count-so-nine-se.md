@@ -1,7 +1,7 @@
 # 17-004 · Previous plans rows show only week and meal count, so nine Sep 13 plans look alike
 
 - kind: idea
-- status: open
+- status: triaged
 - ticket: 17
 - run: w12-20260924T1712Z
 - screen: Previous plans (sheet)
@@ -24,3 +24,5 @@ Not run (idea).
 > 
 
 **Triage.**
+
+Fix ticket 97 (Lee, 2026-09-25): in each week the confirmed plan comes first, tagged Confirmed; drafts after it, newest first (ties broken by created_at). Closed by retest ticket 100 after it merges.

@@ -1,7 +1,7 @@
 # 24-007 · Review & Log and the timeline card show no picture of the photo being logged
 
 - kind: idea
-- status: open
+- status: triaged
 - ticket: 24
 - run: w14-20260924T2015Z
 - screen: Review & Log, Timeline
@@ -26,3 +26,5 @@ Review & Log shows name, slot, items and total but no picture; the timeline card
 > 
 
 **Triage.**
+
+Fix ticket 97 (Lee, 2026-09-25): a thumbnail of the analyzed photo on Review & Log; the timeline card stays as it is. Closed by retest ticket 100 after it merges.

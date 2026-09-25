@@ -1,7 +1,7 @@
 # 07-001 · A Test Store purchase survives an app reinstall: sign-in finds Pro on its own, so Restore is never needed on a simulator
 
 - kind: idea
-- status: open
+- status: wontfix
 - ticket: 07
 - run: w6-20260924T1118Z
 - screen: Log In
@@ -30,3 +30,5 @@ The idea: on the Test Store, the purchase lives with RevenueCat against the app 
 > 
 
 **Triage.**
+
+Won't fix (Lee, 2026-09-25): a Test Store purchase belongs to the RevenueCat customer, so it survives a reinstall; Restore is tested on a device.

@@ -1,7 +1,7 @@
 # 18-007 · Conversations: every meal-plan conversation is titled This week's plan and an old one opens headed New meal plan, so the athlete cannot tell which draft Browse will write to
 
 - kind: idea
-- status: open
+- status: triaged
 - ticket: 18
 - run: w16-20260924T2100Z
 - screen: Conversations (Meal plans), Vana planning chat
@@ -26,3 +26,4 @@ All 15+ rows read "This week's plan" with only a date and time; the row opened (
 
 **Triage.**
 
+Fix ticket 97 (Lee, 2026-09-25): meal-plan conversations are titled by week and state ("Sep 20 week · Draft"). Closed by retest ticket 100 after it merges.

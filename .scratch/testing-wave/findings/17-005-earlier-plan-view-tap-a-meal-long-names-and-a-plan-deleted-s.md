@@ -1,7 +1,7 @@
 # 17-005 · Earlier plan view: tap a meal, long names, and a plan deleted since the list was read
 
 - kind: followup-test
-- status: open
+- status: triaged
 - ticket: 17
 - run: w12-20260924T1712Z
 - screen: Earlier plan view ("An earlier plan. View only.")
@@ -28,3 +28,5 @@ Not run (followup). Three opened plans (f2c0bc78, fc9687ff, 0694c723) matched th
 > 
 
 **Triage.**
+
+Picked for retest ticket 89 (Lee, 2026-09-25).

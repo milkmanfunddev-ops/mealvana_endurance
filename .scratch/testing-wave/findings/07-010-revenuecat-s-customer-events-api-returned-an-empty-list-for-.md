@@ -1,7 +1,7 @@
 # 07-010 · RevenueCat's customer events API returned an empty list for the account throughout the run
 
 - kind: idea
-- status: open
+- status: wontfix
 - ticket: 07
 - run: w6-20260924T1118Z
 - screen: none
@@ -25,3 +25,4 @@ The customer events API returned an empty list for customer C throughout the run
 
 **Triage.**
 
+Won't fix (Lee, 2026-09-25): RevenueCat's customer events API returns nothing for Test Store customers; runs read customers and subscriptions instead.

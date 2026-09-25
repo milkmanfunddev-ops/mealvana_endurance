@@ -1,7 +1,7 @@
 # 05-003 · The Test Store monthly stops after four five-minute renewals and expires 25 minutes after purchase, so the kept paid account is Lapsed
 
 - kind: idea
-- status: open
+- status: wontfix
 - ticket: 05
 - run: w5-20260924T0839Z
 - screen: none
@@ -28,3 +28,4 @@ Kept, but no longer paid: RevenueCat `pro` inactive since 09:15:45Z; `user_entit
 
 **Triage.**
 
+Won't fix (Lee, 2026-09-25): the Test Store ends a monthly after four five-minute renewals; tickets plan around the 25-minute lapse.

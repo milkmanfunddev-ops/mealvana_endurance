@@ -1,7 +1,7 @@
 # 11-002 · A second coach code from the same coach says the coach will see a new request, and overwrites the first code in RevenueCat's coach_code
 
 - kind: idea
-- status: open
+- status: triaged
 - ticket: 11
 - run: w5-20260924T0840Z
 - screen: Paywall
@@ -28,3 +28,4 @@ Both redeem with the same success message, "Code redeemed. Your coach will see y
 
 **Triage.**
 
+Fix ticket 95 (Lee, 2026-09-25): a second code from a coach already asked says "You've already asked this coach to pair", spends no claim, and keeps the first code in coach_code. Closed by retest ticket 100 after it merges.

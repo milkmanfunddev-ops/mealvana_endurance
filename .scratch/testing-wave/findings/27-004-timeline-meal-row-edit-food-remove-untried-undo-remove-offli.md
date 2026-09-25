@@ -1,7 +1,7 @@
 # 27-004 · Timeline meal row Edit food / Remove: untried Undo, remove offline, remove then kill before upload, a second phone, rows with items
 
 - kind: followup-test
-- status: open
+- status: triaged
 - ticket: 27
 - run: w15-20260924T2039Z
 - screen: Timeline (meal row ⋯ → Edit food / Remove, Meal deleted snackbar)
@@ -31,3 +31,5 @@ Not run (out of ticket 27's scope). Only the plain edit and plain remove were ru
 > 
 
 **Triage.**
+
+Picked for retest ticket 91 (Lee, 2026-09-25).
