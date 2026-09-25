@@ -114,6 +114,13 @@ String _$paywallHasSubscriptionHash() =>
 /// State is `AsyncValue<void>`: loading while a store call is in flight,
 /// data when idle, error when the last operation failed unexpectedly.
 ///
+/// A purchase that opens the app leaves the state loading until the router
+/// has moved on (05-004): the Gate opens before `buy` returns, and the
+/// paywall route stays on screen a moment longer. An idle state there would
+/// bring Continue back live, and a second tap would start a second purchase.
+/// The hold ends when the status reports the account closed again (a lapse,
+/// or another account signing in), so a paywall shown later can sell.
+///
 /// keepAlive for the same reason as [PurchaseController]: the screen only
 /// `ref.read`s the notifier to call [buy], so under autoDispose the notifier
 /// could be torn down at the first await and every later `ref` use would
@@ -127,6 +134,13 @@ const proPaywallControllerProvider = ProPaywallControllerProvider._();
 /// State is `AsyncValue<void>`: loading while a store call is in flight,
 /// data when idle, error when the last operation failed unexpectedly.
 ///
+/// A purchase that opens the app leaves the state loading until the router
+/// has moved on (05-004): the Gate opens before `buy` returns, and the
+/// paywall route stays on screen a moment longer. An idle state there would
+/// bring Continue back live, and a second tap would start a second purchase.
+/// The hold ends when the status reports the account closed again (a lapse,
+/// or another account signing in), so a paywall shown later can sell.
+///
 /// keepAlive for the same reason as [PurchaseController]: the screen only
 /// `ref.read`s the notifier to call [buy], so under autoDispose the notifier
 /// could be torn down at the first await and every later `ref` use would
@@ -137,6 +151,13 @@ final class ProPaywallControllerProvider
   ///
   /// State is `AsyncValue<void>`: loading while a store call is in flight,
   /// data when idle, error when the last operation failed unexpectedly.
+  ///
+  /// A purchase that opens the app leaves the state loading until the router
+  /// has moved on (05-004): the Gate opens before `buy` returns, and the
+  /// paywall route stays on screen a moment longer. An idle state there would
+  /// bring Continue back live, and a second tap would start a second purchase.
+  /// The hold ends when the status reports the account closed again (a lapse,
+  /// or another account signing in), so a paywall shown later can sell.
   ///
   /// keepAlive for the same reason as [PurchaseController]: the screen only
   /// `ref.read`s the notifier to call [buy], so under autoDispose the notifier
@@ -162,12 +183,19 @@ final class ProPaywallControllerProvider
 }
 
 String _$proPaywallControllerHash() =>
-    r'6f95fdd507b4f679a1b5724b808acdbb8ea774a0';
+    r'4c72d0fafd3db72d96bf3528094886aebc1d59af';
 
 /// Drives purchase, restore and "manage subscription" for the paywall.
 ///
 /// State is `AsyncValue<void>`: loading while a store call is in flight,
 /// data when idle, error when the last operation failed unexpectedly.
+///
+/// A purchase that opens the app leaves the state loading until the router
+/// has moved on (05-004): the Gate opens before `buy` returns, and the
+/// paywall route stays on screen a moment longer. An idle state there would
+/// bring Continue back live, and a second tap would start a second purchase.
+/// The hold ends when the status reports the account closed again (a lapse,
+/// or another account signing in), so a paywall shown later can sell.
 ///
 /// keepAlive for the same reason as [PurchaseController]: the screen only
 /// `ref.read`s the notifier to call [buy], so under autoDispose the notifier

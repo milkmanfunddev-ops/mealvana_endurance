@@ -217,7 +217,7 @@ final class SubscriptionStatusControllerProvider
 }
 
 String _$subscriptionStatusControllerHash() =>
-    r'e1148ec41d4868e8b8199536d584dfc90b911a79';
+    r'298e4555a41935689e2a2c690f7a2dae18f35fa1';
 
 /// The current user's subscription status, from RevenueCat and nothing else
 /// (mp-279, mp-284).

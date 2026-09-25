@@ -14,8 +14,19 @@ part of 'shopping_list_controller.dart';
 /// write is optimistic on screen and settled by the server's answer.
 ///
 /// Offline the server is unreachable, so the active plan's own mirror
-/// (`meal_plans.shopping`, kept in Drift) stands in read-only: the same
-/// lines, no ids, no edits.
+/// (`meal_plans.shopping`, kept in Drift) stands in: the same lines, no
+/// ids, no edits except ticks.
+///
+/// Ticks are local-first (ticket 36, Findings 20-001/20-002): each one is
+/// written to [ShoppingTickStore] before `update_shopping_item` goes out
+/// and dropped when the server answers. A transport failure keeps the tick
+/// on screen and in the store, marks the state offline, and the tick is
+/// replayed on the next build, on the next successful call, or by the
+/// retry timer. A refusal the server answers (any other error) rolls the
+/// tick back and rethrows so the screen can say so. The Drift mirror is
+/// never written here: the server keeps `meal_plans.shopping` from
+/// `shopping_items`, and a local replay of the mirror would clobber ticks
+/// made online.
 
 @ProviderFor(ShoppingListController)
 const shoppingListControllerProvider = ShoppingListControllerProvider._();
@@ -26,8 +37,19 @@ const shoppingListControllerProvider = ShoppingListControllerProvider._();
 /// write is optimistic on screen and settled by the server's answer.
 ///
 /// Offline the server is unreachable, so the active plan's own mirror
-/// (`meal_plans.shopping`, kept in Drift) stands in read-only: the same
-/// lines, no ids, no edits.
+/// (`meal_plans.shopping`, kept in Drift) stands in: the same lines, no
+/// ids, no edits except ticks.
+///
+/// Ticks are local-first (ticket 36, Findings 20-001/20-002): each one is
+/// written to [ShoppingTickStore] before `update_shopping_item` goes out
+/// and dropped when the server answers. A transport failure keeps the tick
+/// on screen and in the store, marks the state offline, and the tick is
+/// replayed on the next build, on the next successful call, or by the
+/// retry timer. A refusal the server answers (any other error) rolls the
+/// tick back and rethrows so the screen can say so. The Drift mirror is
+/// never written here: the server keeps `meal_plans.shopping` from
+/// `shopping_items`, and a local replay of the mirror would clobber ticks
+/// made online.
 final class ShoppingListControllerProvider
     extends $AsyncNotifierProvider<ShoppingListController, ShoppingListState> {
   /// Reads the most recent list (or the one opened from "Previous lists")
@@ -36,8 +58,19 @@ final class ShoppingListControllerProvider
   /// write is optimistic on screen and settled by the server's answer.
   ///
   /// Offline the server is unreachable, so the active plan's own mirror
-  /// (`meal_plans.shopping`, kept in Drift) stands in read-only: the same
-  /// lines, no ids, no edits.
+  /// (`meal_plans.shopping`, kept in Drift) stands in: the same lines, no
+  /// ids, no edits except ticks.
+  ///
+  /// Ticks are local-first (ticket 36, Findings 20-001/20-002): each one is
+  /// written to [ShoppingTickStore] before `update_shopping_item` goes out
+  /// and dropped when the server answers. A transport failure keeps the tick
+  /// on screen and in the store, marks the state offline, and the tick is
+  /// replayed on the next build, on the next successful call, or by the
+  /// retry timer. A refusal the server answers (any other error) rolls the
+  /// tick back and rethrows so the screen can say so. The Drift mirror is
+  /// never written here: the server keeps `meal_plans.shopping` from
+  /// `shopping_items`, and a local replay of the mirror would clobber ticks
+  /// made online.
   const ShoppingListControllerProvider._()
     : super(
         from: null,
@@ -58,7 +91,7 @@ final class ShoppingListControllerProvider
 }
 
 String _$shoppingListControllerHash() =>
-    r'56b19143ad9181eb02821b2065614d2483aae951';
+    r'398a497fd86779fe6b257feb4bbbd50a17641dfa';
 
 /// Reads the most recent list (or the one opened from "Previous lists")
 /// through `vana-action`, groups it by aisle, and routes every edit — tick,
@@ -66,8 +99,19 @@ String _$shoppingListControllerHash() =>
 /// write is optimistic on screen and settled by the server's answer.
 ///
 /// Offline the server is unreachable, so the active plan's own mirror
-/// (`meal_plans.shopping`, kept in Drift) stands in read-only: the same
-/// lines, no ids, no edits.
+/// (`meal_plans.shopping`, kept in Drift) stands in: the same lines, no
+/// ids, no edits except ticks.
+///
+/// Ticks are local-first (ticket 36, Findings 20-001/20-002): each one is
+/// written to [ShoppingTickStore] before `update_shopping_item` goes out
+/// and dropped when the server answers. A transport failure keeps the tick
+/// on screen and in the store, marks the state offline, and the tick is
+/// replayed on the next build, on the next successful call, or by the
+/// retry timer. A refusal the server answers (any other error) rolls the
+/// tick back and rethrows so the screen can say so. The Drift mirror is
+/// never written here: the server keeps `meal_plans.shopping` from
+/// `shopping_items`, and a local replay of the mirror would clobber ticks
+/// made online.
 
 abstract class _$ShoppingListController
     extends $AsyncNotifier<ShoppingListState> {
