@@ -951,6 +951,30 @@ exist yet; its base is flagged for Xuan (natural candidate: top of
 release/1.27.1, per the ruled release sequence), not created on
 assumption. Suites: 511 green incl. the pre-existing foods-sync tests.
 
+### G27 GREEN — 2026-09-25 — race-window nudge (CE-11, delivery rev. 2, qa 61c881c)
+
+Xuan's post-land rider, built on feature/carb-loading for the 1.28.0
+re-merge. Scheduled LOCAL notifications daily at **06:00 local**,
+raceDate−3…−1 (max 3, NEVER race day — CE-8 gates all; the engine cannot
+express a race-day fire by construction). 06:00 = the ruled breakfast
+window opening. Plan creation disarms (controller hook); plan deletion
+re-arms via the coordinator sweep; the sweep also runs on first frame +
+every foreground resume (RootAppWidget observer) and covers event
+creation/sync. ON-OPEN CATCH-UP: in-window + no plan + nothing shown
+today → immediate nudge; ≤1/day across both paths, restart-proof
+(prefs: last-shown-day + per-event armed-fire days; a catch-up cancels
+today's pending fire; a delivered scheduled fire suppresses catch-up; a
+post-06:00 install with nothing armed still catches up). Copy is CE-11
+register VERBATIM; tap payload `carb_event:<id>` routes to the NEW
+`/events/:eventId` route (EventDetailScreen — the Set Up Carb Loading
+row). Reuses NotificationService (new scheduleCarbNudge/showCarbNudge/
+cancelById on the existing reminders channel) — no OneSignal, no remote
+campaign, Q-CE6's broader deferral stands. All seven named reds green in
+`g27_carb_nudge_test.dart` through the REAL service against a recording
+gateway + real prefs (restart cases rebuild the service over the same
+store); mutation-probed red on the fire hour and on a race-day window
+leak. Suites: 506 green.
+
 ## Notes on the two new ideas
 
 **Reminder to start.** Machinery exists — `NotificationService`
