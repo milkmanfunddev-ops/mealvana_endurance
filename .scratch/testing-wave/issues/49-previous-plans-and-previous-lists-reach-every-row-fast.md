@@ -1,6 +1,6 @@
 # 49: Previous plans and Previous lists reach every row, fast
 
-**Status:** in-progress (wave 21, 2026-09-25)
+**Status:** done (wave 21, 2026-09-25)
 **Blocked by:** 34 (touches supabase/functions/_shared/vana/plan.ts), 46 (touches lib/features/meal_planning/presentation/screens/shopping_tab.dart).
 **Next:** `/implement-lee testing-wave`
 **Model:** opus
@@ -15,7 +15,7 @@
 
 - [x] deno test: an account with 25 plans lists them all; one query counts the meals.
 - [x] Widget test: 14 lists scroll to the last with no overflow.
-- [ ] Deployed to dev.
-- [ ] codegen if annotations changed, `flutter analyze` and the suite green.
+- [x] Deployed to dev.
+- [x] codegen if annotations changed, `flutter analyze` and the suite green.
 
 Next: /implement-lee testing-wave
