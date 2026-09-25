@@ -115,6 +115,9 @@ class _EditMealLogScreenState extends ConsumerState<EditMealLogScreen> {
 
     _nameCtrl.text = log.name;
     _notesCtrl.text = log.notes ?? '';
+    // A note is shown open, with or without items: a described or photo
+    // meal carries the AI's note of what it assumed (testing-wave 23-002).
+    if (log.notes?.isNotEmpty ?? false) _showExtra = true;
 
     if (log.components.isEmpty) {
       // Simple macro fields
@@ -123,10 +126,8 @@ class _EditMealLogScreenState extends ConsumerState<EditMealLogScreen> {
       _protCtrl.text = log.proteinG?.toStringAsFixed(1) ?? '';
       _fatCtrl.text = log.fatG?.toStringAsFixed(1) ?? '';
       _sodiumCtrl.text = log.sodiumMg?.toStringAsFixed(0) ?? '';
-      // Show extra panel if sodium or notes are set
-      if ((log.sodiumMg ?? 0) > 0 || (log.notes?.isNotEmpty ?? false)) {
-        _showExtra = true;
-      }
+      // Show extra panel if sodium is set (notes are handled above)
+      if ((log.sodiumMg ?? 0) > 0) _showExtra = true;
     }
   }
 
