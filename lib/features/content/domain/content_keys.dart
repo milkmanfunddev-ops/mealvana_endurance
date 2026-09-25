@@ -467,6 +467,16 @@ class ContentKeys {
   static const String mpReviewYourWeek = 'meal_planning.review_your_week';
   static const String mpReviewYourPeriod = 'meal_planning.review_your_period';
   static const String mpReviewSummary = 'meal_planning.review_summary';
+
+  /// The summary line as two counts, each singular for one (16-004):
+  /// `{meals} · {servings}` over "1 meal" / "{n} meals" and "1 serving" /
+  /// "{n} servings". Replaces [mpReviewSummary] on the Review sheet.
+  static const String mpReviewSummaryCounts =
+      'meal_planning.review_summary_counts';
+  static const String mpReviewMeals = 'meal_planning.review_meals';
+  static const String mpReviewMealsOne = 'meal_planning.review_meals_one';
+  static const String mpReviewServings = 'meal_planning.review_servings';
+  static const String mpReviewServingsOne = 'meal_planning.review_servings_one';
   static const String mpReviewCoverageServings =
       'meal_planning.review_coverage_servings';
   static const String mpReviewCoverageNights =
@@ -735,6 +745,11 @@ class ContentKeys {
   static const String mpConvAsk = 'meal_planning.conv_ask';
   static const String mpChatTitleGeneral = 'meal_planning.chat_title_general';
   static const String mpChatTitlePlanning = 'meal_planning.chat_title_planning';
+
+  /// A resumed planning conversation whose row has no title yet but whose
+  /// plan has meals (16-005): headed by the plan, never "New meal plan".
+  static const String mpChatTitlePlanningResumed =
+      'meal_planning.chat_title_planning_resumed';
   static const String mpChatSubGeneral = 'meal_planning.chat_sub_general';
   static const String mpChatSubPlanning = 'meal_planning.chat_sub_planning';
   static const String mpConvPlans = 'meal_planning.conv_plans';

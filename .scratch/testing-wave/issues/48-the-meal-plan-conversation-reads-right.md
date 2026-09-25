@@ -13,7 +13,7 @@
 
 **Touches:** lib/features/meal_planning/presentation/screens/vana_chat_screen.dart, lib/features/meal_planning/presentation/widgets/review_sheet.dart
 
-- [ ] Widget tests for each of the four.
+- [x] Widget tests for each of the four.
 - [ ] codegen if annotations changed, `flutter analyze` and the suite green.
 
 Next: /implement-lee testing-wave
