@@ -833,6 +833,39 @@ void main() {
       expect(repo.calls.where((c) => c['opener'] == true), hasLength(2));
     });
 
+    // Testing-wave 129 (Finding 88-022): a message sent offline vanished;
+    // only the offline line showed. The text stays where the athlete sent
+    // it, and Retry sends that same text.
+    testWidgets('a message sent offline stays on screen, and Retry sends it', (
+      tester,
+    ) async {
+      final repo = _FakeChatRepo();
+      await _pump(tester, repo: repo);
+      await _open(tester);
+
+      repo.throwOnStream = const VanaOfflineException('offline');
+      await _send(tester, 'is rice ok tonight');
+
+      final unsent = find.byKey(const ValueKey('vana_sheet.unsent'));
+      expect(unsent, findsOneWidget);
+      expect(
+        find.descendant(of: unsent, matching: find.text('is rice ok tonight')),
+        findsOneWidget,
+      );
+      final offline = loadDefaultContent()['meal_planning.vana_offline']!;
+      expect(find.text(offline), findsOneWidget);
+
+      repo.throwOnStream = null;
+      await tester.tap(find.byKey(const ValueKey('vana_sheet.retry')));
+      await tester.pump();
+      await _settleTurn(tester);
+
+      expect(repo.calls.last['message'], 'is rice ok tonight');
+      expect(unsent, findsNothing);
+      expect(find.text(offline), findsNothing);
+      expect(find.text('is rice ok tonight'), findsOneWidget);
+    });
+
     testWidgets('STREAMING: the sheet does not resize while a turn is in '
         'flight', (tester) async {
       final repo = _FakeChatRepo();
@@ -914,8 +947,10 @@ void main() {
       await tester.tap(find.byKey(const ValueKey('vana_sheet.quick_reply_0')));
       await tester.pump();
       await _settleTurn(tester);
-      // The failed turn left the transcript; the replies did not come back.
-      expect(find.byType(VanaSheetAthleteTurn), findsNothing);
+      // The failed turn left the transcript, its text kept as unsent
+      // (88-022); the replies did not come back.
+      expect(find.byType(VanaSheetAthleteTurn), findsOneWidget);
+      expect(find.byKey(const ValueKey('vana_sheet.unsent')), findsOneWidget);
       expect(find.byKey(const ValueKey('vana_sheet.error')), findsOneWidget);
       expect(find.byType(VanaSheetQuickReplies), findsNothing);
       expect(find.byType(ChoiceChips), findsNothing);

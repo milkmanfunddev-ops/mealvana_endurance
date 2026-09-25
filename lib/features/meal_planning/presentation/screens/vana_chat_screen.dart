@@ -51,6 +51,7 @@ import '../widgets/vana_repeated_question.dart';
 import '../../../meal_logging/domain/meal_photo_capture.dart';
 import 'food_screen.dart';
 import '../../../../shared/core/pop_or_home.dart';
+import '../widgets/write_failure_snackbar.dart';
 
 /// `/vana?mode=&c=` (05 §4) — the Vana chat for both kinds. Planning chats
 /// carry the plan bar (minimized at start and on every new turn), the
@@ -166,6 +167,13 @@ class _VanaChatScreenState extends ConsumerState<VanaChatScreen> {
             _outOfCredits = false;
           });
         }
+        // A failed read shows its own line with Retry (testing-wave 129); a
+        // 403 there still asks RevenueCat again, once.
+        if (s.failedRead != null &&
+            previous?.value?.failedRead == null &&
+            s.error == VanaChatErrorKind.proRequired) {
+          ref.read(subscriptionStatusProvider.notifier).refresh();
+        }
         _handleError(s);
         if (s.messages.isNotEmpty || s.isStreaming) _scrollToBottom();
       },
@@ -209,10 +217,20 @@ class _VanaChatScreenState extends ConsumerState<VanaChatScreen> {
           children: [
             Expanded(
               child:
-                  (state == null ||
-                      (state.messages.isEmpty &&
-                          !state.isStreaming &&
-                          !isPlanning))
+                  // A read that failed says so with a Retry, never the empty
+                  // state of a new chat (88-011, 88-012).
+                  state != null &&
+                      state.failedRead != null &&
+                      state.messages.isEmpty &&
+                      !state.isStreaming
+                  ? _FailedRead(
+                      state: state,
+                      onRetry: _controller.retryFailedRead,
+                    )
+                  : (state == null ||
+                        (state.messages.isEmpty &&
+                            !state.isStreaming &&
+                            !isPlanning))
                   ? _EmptyState(kind: widget.kind)
                   : _buildMessageList(
                       context,
@@ -242,7 +260,12 @@ class _VanaChatScreenState extends ConsumerState<VanaChatScreen> {
                   child: child,
                 ),
               ),
-              child: isPlanning && state != null
+              // A conversation whose history failed has no plan to show:
+              // "Your plan · 0 meals" would read as a new plan (88-012).
+              child:
+                  isPlanning &&
+                      state != null &&
+                      state.failedRead != VanaChatFailedRead.history
                   ? PlanBar(
                       key: _planBarKey,
                       meals: plan?.meals ?? const [],
@@ -406,10 +429,11 @@ class _VanaChatScreenState extends ConsumerState<VanaChatScreen> {
     final newPlan = content.getValue(ContentKeys.mpChatTitlePlanning);
     final id = widget.conversationId;
     if (id == null) return newPlan;
-    if (state != null && state.historyLoaded) {
+    final historyFailed = state?.failedRead == VanaChatFailedRead.history;
+    if (state != null && state.historyLoaded && !historyFailed) {
       _openedEmpty ??= state.messages.isEmpty;
     }
-    if (_openedEmpty != false) return newPlan;
+    if (_openedEmpty != false && !historyFailed) return newPlan;
     if (plan != null) {
       return planTitle(
         content,
@@ -423,7 +447,9 @@ class _VanaChatScreenState extends ConsumerState<VanaChatScreen> {
         .value
         ?.where((c) => c.id == id)
         .firstOrNull;
-    return row == null ? newPlan : planConversationTitle(content, row);
+    if (row != null) return planConversationTitle(content, row);
+    // History did not load: never "New meal plan" over an old conversation.
+    return historyFailed ? content.getValue(ContentKeys.mpConvPlans) : newPlan;
   }
 
   /// Library/saved ids of the meals in THIS conversation's plan, so a
@@ -627,6 +653,10 @@ class _VanaChatScreenState extends ConsumerState<VanaChatScreen> {
     bool isPlanning,
   ) {
     final isStreaming = state?.isStreaming ?? false;
+    // Nothing is written into a conversation whose history did not load: it
+    // would read as a new plan (88-012). The Retry above is the way on.
+    final locked =
+        isStreaming || state?.failedRead == VanaChatFailedRead.history;
     final hint = content.getValue(
       isPlanning
           ? ContentKeys.mpPickerPlaceholderPlanning
@@ -683,7 +713,7 @@ class _VanaChatScreenState extends ConsumerState<VanaChatScreen> {
                         key: const ValueKey('meal_planning.chat_attach'),
                         icon: FontAwesomeIcons.plus,
                         tooltip: content.getValue(ContentKeys.mpAttachTooltip),
-                        onTap: isStreaming ? () {} : _openAttachSheet,
+                        onTap: locked ? () {} : _openAttachSheet,
                         size: 36,
                         iconSize: 16,
                         flat: true,
@@ -698,7 +728,7 @@ class _VanaChatScreenState extends ConsumerState<VanaChatScreen> {
                           key: const ValueKey('meal_planning.chat_input'),
                           controller: _textController,
                           focusNode: _inputFocus,
-                          enabled: !isStreaming,
+                          enabled: !locked,
                           maxLines: null,
                           textInputAction: TextInputAction.send,
                           style: AppTextStyles.bodyMedium.copyWith(
@@ -726,9 +756,7 @@ class _VanaChatScreenState extends ConsumerState<VanaChatScreen> {
                               8,
                             ),
                           ),
-                          onSubmitted: isStreaming
-                              ? null
-                              : (_) => _sendFromInput(),
+                          onSubmitted: locked ? null : (_) => _sendFromInput(),
                         ),
                       ),
                     ),
@@ -743,13 +771,13 @@ class _VanaChatScreenState extends ConsumerState<VanaChatScreen> {
                         permissionMessage: content.getValue(
                           ContentKeys.mpMicPermission,
                         ),
-                        enabled: !isStreaming,
+                        enabled: !locked,
                         onText: _dictated,
                         size: 36,
                         flat: true,
                       ),
                     _SendButton(
-                      enabled: hasText && !isStreaming,
+                      enabled: hasText && !locked,
                       streaming: isStreaming,
                       onTap: _sendFromInput,
                     ),
@@ -886,7 +914,31 @@ class _VanaChatScreenState extends ConsumerState<VanaChatScreen> {
   /// (the plan bar and coverage read it off the chat state).
   Future<void> _openBrowse() async {
     final id = _conversationId;
-    if (id == null) return;
+    if (id == null) {
+      // No draft to browse into until the opener has named the
+      // conversation: say why, never nothing (88-011).
+      final offline =
+          ref
+              .read(
+                vanaChatControllerProvider(
+                  kind: widget.kind,
+                  conversationId: _key,
+                ),
+              )
+              .value
+              ?.error ==
+          VanaChatErrorKind.offline;
+      final content = ref.read(contentServiceProvider);
+      MealvanaSnackbar.showWarning(
+        context,
+        content.getValue(
+          offline
+              ? ContentKeys.mpNeedsConnection
+              : ContentKeys.mpBrowseNeedsPlan,
+        ),
+      );
+      return;
+    }
     await context.push('/vana/browse?c=$id');
     if (mounted) await _controller.refreshDraft();
   }
@@ -1008,20 +1060,9 @@ class _VanaChatScreenState extends ConsumerState<VanaChatScreen> {
               conversationId: _conversationId,
             ),
       );
-    } on NeedsConnectionException {
-      if (mounted) {
-        MealvanaSnackbar.showWarning(
-          context,
-          content.getValue(ContentKeys.mpNeedsConnection),
-        );
-      }
-    } on Exception {
-      if (mounted) {
-        MealvanaSnackbar.showError(
-          context,
-          content.getValue(ContentKeys.mpServerError),
-        );
-      }
+    } on Exception catch (e) {
+      // Offline says so, whether refused before sending or cut off (88-013).
+      if (mounted) showWriteFailure(context, content, e);
     }
   }
 
@@ -1150,17 +1191,12 @@ class _VanaChatScreenState extends ConsumerState<VanaChatScreen> {
       // The sheet shows THIS conversation's draft, so Confirm names it. An
       // unscoped confirm_plan lands on the week's active plan, which puts an
       // old confirmed plan first and archived the Draft on screen (16-001).
-      onConfirm: () async {
-        try {
-          await planController.confirmPlan(
-            planId: plan.id,
-            conversationId: _conversationId,
-          );
-          return true;
-        } on Exception {
-          return false;
-        }
-      },
+      // A failure throws into the sheet, which keeps the draft and says why
+      // (88-015).
+      onConfirm: () => planController.confirmPlan(
+        planId: plan.id,
+        conversationId: _conversationId,
+      ),
       // Confirmed → the shopping list is the next thing the athlete needs
       // (the server has just built it). `go` to the tab shell's Food tab
       // (Shopping segment) so the bottom bar is there — a bare `/food`
@@ -1206,6 +1242,8 @@ class _VanaChatScreenState extends ConsumerState<VanaChatScreen> {
 
   void _handleError(VanaChatState s) {
     if (s.error == null) return;
+    // A failed read keeps its error for the line with Retry in the body.
+    if (s.failedRead != null) return;
     final content = ref.read(contentServiceProvider);
     final error = s.error!;
     WidgetsBinding.instance.addPostFrameCallback((_) {
@@ -1271,6 +1309,73 @@ class _VanaChatScreenState extends ConsumerState<VanaChatScreen> {
         curve: Curves.easeOut,
       );
     });
+  }
+}
+
+/// A read that failed (testing-wave 129): the conversation's history ("Couldn't
+/// load this conversation.") or Vana's opener (why, as the Ask Vana sheet
+/// says it), over a Retry that runs the same read again.
+class _FailedRead extends ConsumerWidget {
+  const _FailedRead({required this.state, required this.onRetry});
+
+  final VanaChatState state;
+  final VoidCallback onRetry;
+
+  @override
+  Widget build(BuildContext context, WidgetRef ref) {
+    final content = ref.read(contentServiceProvider);
+    final isDark = Theme.of(context).brightness == Brightness.dark;
+    final textColor = isDark ? AppColors.cream : AppColors.blackberry;
+    final line = state.failedRead == VanaChatFailedRead.history
+        ? content.getValue(ContentKeys.mpChatHistoryFailed)
+        : switch (state.error) {
+            VanaChatErrorKind.offline => content.getValue(
+              ContentKeys.mpVanaOffline,
+            ),
+            VanaChatErrorKind.rateLimited => ContentKeys.format(
+              content.getValue(ContentKeys.mpRateLimited),
+              {'n': state.retryAfterSeconds ?? 30},
+            ),
+            VanaChatErrorKind.proRequired => content.getValue(
+              ContentKeys.mpProRequired,
+            ),
+            VanaChatErrorKind.aiUnavailable => content.getValue(
+              ContentKeys.mpAiUnavailable,
+            ),
+            _ => content.getValue(ContentKeys.mpServerError),
+          };
+    return Center(
+      child: Padding(
+        padding: const EdgeInsets.all(AppSpacing.lg),
+        child: Column(
+          mainAxisSize: MainAxisSize.min,
+          children: [
+            const VanaAvatar(size: 48),
+            const SizedBox(height: AppSpacing.md),
+            Text(
+              line,
+              key: const ValueKey('meal_planning.chat_failed_read'),
+              textAlign: TextAlign.center,
+              style: AppTextStyles.bodyMedium.copyWith(
+                color: textColor.withValues(alpha: 0.8),
+              ),
+            ),
+            const SizedBox(height: AppSpacing.sm),
+            TextButton(
+              key: const ValueKey('meal_planning.chat_retry'),
+              onPressed: onRetry,
+              child: Text(
+                content.getValue(ContentKeys.mpRetry),
+                style: AppTextStyles.bodyMedium.copyWith(
+                  color: AppColors.orange,
+                  fontWeight: FontWeight.w700,
+                ),
+              ),
+            ),
+          ],
+        ),
+      ),
+    );
   }
 }
 

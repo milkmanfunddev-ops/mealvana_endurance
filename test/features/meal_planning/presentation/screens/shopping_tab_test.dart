@@ -312,6 +312,72 @@ void _redesignTests() {
       expect(find.byKey(const ValueKey('meal_planning.kroger')), findsNothing);
     });
 
+    // Testing-wave 129 (Finding 89-001): offline, a confirmed plan whose
+    // list was deleted (the mirror empty) showed the first-run "No shopping
+    // list · Confirm a meal plan", and Share did nothing.
+    testWidgets('offline with an empty mirror: the offline notice, never the '
+        'first-run empty state', (tester) async {
+      await _pumpTab(
+        tester,
+        const ShoppingListState(
+          planId: 'plan-1',
+          isConfirmed: true,
+          weekPlanId: 'plan-1',
+          isOffline: true,
+        ),
+      );
+
+      expect(
+        find.byKey(const ValueKey('meal_planning.shopping_offline')),
+        findsOneWidget,
+      );
+      expect(
+        find.text(content['meal_planning.shopping_offline_empty']!),
+        findsOneWidget,
+      );
+      expect(
+        find.byKey(const ValueKey('meal_planning.shopping_empty')),
+        findsNothing,
+      );
+      expect(
+        find.text(content['meal_planning.shopping_empty_body']!),
+        findsNothing,
+      );
+    });
+
+    for (final (label, offline, key) in [
+      ('offline', true, 'meal_planning.shopping_share_offline'),
+      ('online', false, 'meal_planning.shopping_share_empty'),
+    ]) {
+      testWidgets('Share with nothing to share says why ($label)', (
+        tester,
+      ) async {
+        await tester.pumpWidget(
+          ProviderScope(
+            overrides: [
+              contentServiceProvider.overrideWith(testContentService),
+              shoppingListControllerProvider.overrideWith(
+                () => _FixedShoppingListController(
+                  ShoppingListState(isOffline: offline),
+                ),
+              ),
+            ],
+            child: const MaterialApp(
+              home: Scaffold(body: Center(child: ShoppingShareButton())),
+            ),
+          ),
+        );
+        await tester.pump();
+
+        await tester.tap(
+          find.byKey(const ValueKey('meal_planning.shopping_share')),
+        );
+        await tester.pump();
+
+        expect(find.text(content[key]!), findsOneWidget);
+      });
+    }
+
     testWidgets('online there is no notice and Kroger is offered', (
       tester,
     ) async {

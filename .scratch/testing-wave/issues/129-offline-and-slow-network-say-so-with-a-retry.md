@@ -21,9 +21,9 @@
 
 **Touches:** lib/features/meal_planning/presentation/screens/vana_chat_screen.dart, lib/features/meal_planning/application/vana_chat_controller.dart, lib/features/meal_planning/application/vana_conversations_controller.dart, lib/features/meal_planning/presentation/screens/vana_conversations_screen.dart, lib/features/meal_planning/presentation/screens/vana_browse_screen.dart, lib/features/meal_planning/presentation/screens/meal_detail_screen.dart, lib/features/meal_planning/application/meal_plan_controller.dart, lib/features/meal_planning/presentation/widgets/review_sheet.dart, lib/features/meal_planning/presentation/widgets/vana_companion.dart, lib/features/meal_planning/presentation/screens/shopping_tab.dart, lib/features/meal_planning/presentation/widgets/shopping_share_button.dart, lib/features/meal_planning/data/vana_transport.dart, lib/features/meal_planning/application/previous_plans.dart, lib/features/meal_planning/presentation/screens/previous_plan_screen.dart, lib/features/meal_planning/presentation/widgets/previous_plans_sheet.dart, lib/features/content/domain/content_keys.dart, assets/config/content_defaults.json
 
-- [ ] Controller tests through the real notifiers: a failed opener, a failed history read, and a failed conversations read each end in an error state with a retry that re-runs the call.
-- [ ] Widget tests: Browse Add and Confirm under `VanaOfflineException` show the connection message; the Ask Vana sheet keeps the failed text; the Shopping tab offline with an empty mirror shows the offline notice, not the first-run state.
-- [ ] Transport test: a request that never answers ends in `VanaOfflineException` after the timeout.
-- [ ] No hardcoded strings; `flutter analyze` clean on touched files.
+- [x] Controller tests through the real notifiers: a failed opener, a failed history read, and a failed conversations read each end in an error state with a retry that re-runs the call.
+- [x] Widget tests: Browse Add and Confirm under `VanaOfflineException` show the connection message; the Ask Vana sheet keeps the failed text; the Shopping tab offline with an empty mirror shows the offline notice, not the first-run state.
+- [x] Transport test: a request that never answers ends in `VanaOfflineException` after the timeout.
+- [x] No hardcoded strings; `flutter analyze` clean on touched files.
 
 Next: /implement-lee testing-wave

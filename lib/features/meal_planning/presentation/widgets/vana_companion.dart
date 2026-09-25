@@ -479,9 +479,25 @@ class _VanaCompanionSheetState extends ConsumerState<VanaCompanionSheet> {
     _controller.send(text, inputMode: mode);
   }
 
+  /// The error line's Retry: the history read again (then the opener, if the
+  /// conversation turns out empty), else the last attempt, else the message
+  /// that could not be sent (88-022).
   void _retry() {
+    final state = ref.read(_provider).value;
     _controller.clearError();
-    _lastAttempt?.call();
+    if (state?.failedRead == VanaChatFailedRead.history) {
+      _controller.retryFailedRead().then((_) {
+        if (mounted) _openToOpener();
+      });
+      return;
+    }
+    final attempt = _lastAttempt;
+    if (attempt != null) {
+      attempt();
+      return;
+    }
+    final unsent = state?.unsentMessage;
+    if (unsent != null) _controller.send(unsent);
   }
 
   /// [handedOver] when the conversation carries on in the full-screen chat,
@@ -589,6 +605,16 @@ class _VanaCompanionSheetState extends ConsumerState<VanaCompanionSheet> {
         else if (_vanaTurn(messages[i], i, exchange, callbacks, state)
             case final turn?)
           turn,
+      // A message whose turn failed stays where the athlete sent it, dimmed,
+      // over the error line and its Retry: never lost (88-022).
+      if (state.unsentMessage case final unsent? when !state.isStreaming)
+        Opacity(
+          opacity: 0.6,
+          child: VanaSheetAthleteTurn(
+            key: const ValueKey('vana_sheet.unsent'),
+            text: unsent,
+          ),
+        ),
       if (exchange.quickReplies.isNotEmpty)
         Padding(
           padding: const EdgeInsets.only(left: kVanaSheetProseInset, top: 4),

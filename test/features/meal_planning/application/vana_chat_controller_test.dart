@@ -39,15 +39,13 @@ import '../helpers/container.dart';
 import '../presentation/helpers/test_content.dart';
 
 class _FakeChatRepo extends Fake implements VanaChatRepository {
-  _FakeChatRepo({
-    this.events = const [],
-    this.history = const [],
-    this.throwOnStream,
-  });
+  _FakeChatRepo({this.events = const []});
 
   List<VanaStreamEvent> events;
-  List<VanaMessage> history;
+  List<VanaMessage> history = const [];
   Object? throwOnStream;
+  Object? throwOnHistory;
+  int historyReads = 0;
   final List<Map<String, Object?>> calls = [];
 
   @override
@@ -82,8 +80,11 @@ class _FakeChatRepo extends Fake implements VanaChatRepository {
   }
 
   @override
-  Future<List<VanaMessage>> fetchMessages(String conversationId) async =>
-      history;
+  Future<List<VanaMessage>> fetchMessages(String conversationId) async {
+    historyReads++;
+    if (throwOnHistory case final error?) throw error;
+    return history;
+  }
 
   @override
   Future<String> createConversation(VanaConversationKind kind) async =>
@@ -1211,6 +1212,107 @@ void main() {
       await notifier.future;
       await notifier.undoReceipt(part);
       expect(actions.ran, isEmpty);
+    });
+  });
+
+  // testing-wave 129 (Findings 88-011, 88-012, 88-022): a read that fails
+  // stays on screen as a failure with a Retry that runs the same call again,
+  // and a message that could not be sent is kept, never dropped.
+  group('failed reads keep a retry (testing-wave 129)', () {
+    test(
+      'a failed opener is a failed read; retry runs the same opener',
+      () async {
+        repo.throwOnStream = const VanaOfflineException('socket');
+        final (:notifier, seen: _) = make();
+        await notifier.future;
+
+        await notifier.loadOpener(newPlan: true);
+
+        var s = notifier.state.value!;
+        expect(s.error, VanaChatErrorKind.offline);
+        expect(s.failedRead, VanaChatFailedRead.opener);
+        expect(s.messages, isEmpty);
+        expect(s.isStreaming, isFalse);
+
+        notifier.clearError();
+        expect(
+          notifier.state.value!.failedRead,
+          VanaChatFailedRead.opener,
+          reason: 'a snackbar clearing the error never loses the Retry',
+        );
+
+        repo.throwOnStream = null;
+        repo.events = eventsFromFixture('opener');
+        await notifier.retryFailedRead();
+
+        s = notifier.state.value!;
+        expect(s.failedRead, isNull);
+        expect(s.error, isNull);
+        expect(s.messages, isNotEmpty);
+        expect(repo.calls, hasLength(2));
+        expect(repo.calls.last['opener'], isTrue);
+        expect(repo.calls.last['newPlan'], isTrue, reason: 'the same opener');
+      },
+    );
+
+    test('a failed history read is a failed read, never an empty new chat; '
+        'retry reads it again', () async {
+      repo.throwOnHistory = const VanaOfflineException('socket');
+      final (:notifier, seen: _) = make(conversationId: 'conv-1');
+      await notifier.future;
+
+      var s = notifier.state.value!;
+      expect(s.failedRead, VanaChatFailedRead.history);
+      expect(s.error, VanaChatErrorKind.offline);
+      expect(s.conversationId, 'conv-1');
+
+      repo.throwOnHistory = null;
+      repo.history = [
+        VanaMessage(
+          id: 'm1',
+          conversationId: 'conv-1',
+          role: VanaMessageRole.user,
+          content: 'plan my week',
+          createdAt: DateTime(2026, 9, 22),
+        ),
+      ];
+      await notifier.retryFailedRead();
+
+      s = notifier.state.value!;
+      expect(s.failedRead, isNull);
+      expect(s.error, isNull);
+      expect(s.messages.single.content, 'plan my week');
+      expect(repo.historyReads, 2);
+    });
+
+    test('retry with nothing failed is a no-op', () async {
+      final (:notifier, seen: _) = make(conversationId: 'conv-1');
+      await notifier.future;
+      await notifier.retryFailedRead();
+      expect(repo.historyReads, 1);
+      expect(repo.calls, isEmpty);
+    });
+
+    test('a send that fails keeps its text as unsent; the next send clears '
+        'it', () async {
+      repo.throwOnStream = const VanaOfflineException('socket');
+      final (:notifier, seen: _) = make(kind: VanaConversationKind.general);
+      await notifier.future;
+
+      await notifier.send('is rice ok tonight');
+
+      var s = notifier.state.value!;
+      expect(s.error, VanaChatErrorKind.offline);
+      expect(s.unsentMessage, 'is rice ok tonight');
+      expect(s.failedRead, isNull, reason: 'a send is not a read');
+
+      repo.throwOnStream = null;
+      repo.events = const [VanaTextEvent('Yes'), VanaDoneEvent()];
+      await notifier.send('is rice ok tonight');
+
+      s = notifier.state.value!;
+      expect(s.unsentMessage, isNull);
+      expect(s.messages.first.content, 'is rice ok tonight');
     });
   });
 

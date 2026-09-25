@@ -4,6 +4,7 @@ import 'package:share_plus/share_plus.dart';
 
 import '../../../../features/content/application/content_service.dart';
 import '../../../../features/content/domain/content_keys.dart';
+import '../../../../shared/widgets/kyle_design/feedback/mealvana_snackbar.dart';
 import '../../../../theme/kyle_design/app_colors.dart';
 import '../../application/shopping_list_controller.dart';
 
@@ -23,7 +24,10 @@ class ShoppingShareButton extends ConsumerWidget {
       key: const ValueKey('meal_planning.shopping_share'),
       onPressed: () {
         final state = ref.read(shoppingListControllerProvider).value;
-        if (state == null || state.isEmpty) return;
+        if (state == null || state.isEmpty) {
+          _nothingToShare(context, content, offline: state?.isOffline ?? false);
+          return;
+        }
         // Counts what is left to buy, not what is ticked (89-002).
         final summary = ContentKeys.format(
           content.getValue(
@@ -36,7 +40,10 @@ class ShoppingShareButton extends ConsumerWidget {
         final body = ref
             .read(shoppingListControllerProvider.notifier)
             .shareText(title: shareTitle, summary: summary);
-        if (body.isEmpty) return;
+        if (body.isEmpty) {
+          _nothingToShare(context, content, offline: state.isOffline);
+          return;
+        }
 
         final box = context.findRenderObject();
         final origin = box is RenderBox
@@ -67,4 +74,18 @@ class ShoppingShareButton extends ConsumerWidget {
       ),
     );
   }
+
+  /// A tap with nothing to share says why, never nothing (89-001).
+  static void _nothingToShare(
+    BuildContext context,
+    ContentService content, {
+    required bool offline,
+  }) => MealvanaSnackbar.showWarning(
+    context,
+    content.getValue(
+      offline
+          ? ContentKeys.mpShoppingShareOffline
+          : ContentKeys.mpShoppingShareEmpty,
+    ),
+  );
 }

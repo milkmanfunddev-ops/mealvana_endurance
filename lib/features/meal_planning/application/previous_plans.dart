@@ -7,6 +7,7 @@ import '../domain/meal_plan.dart';
 import '../domain/meal_plan_status.dart';
 import '../domain/meal_plan_summary.dart';
 import '../domain/ui_action.dart';
+import 'fail_fast.dart';
 import 'meal_plan_controller.dart';
 
 part 'previous_plans.g.dart';
@@ -23,7 +24,10 @@ part 'previous_plans.g.dart';
 /// is its only listener, so every open of the sheet reads the list afresh;
 /// the current plan's id is read once at that moment rather than watched,
 /// which would re-hit the server on every edit to this week's plan.
-@riverpod
+///
+/// A failed read is an error at once ([failFast]): the sheet shows it with a
+/// Retry instead of spinning through Riverpod's retries (89-011).
+@Riverpod(retry: failFast)
 Future<List<MealPlanSummary>> previousPlans(Ref ref) async {
   final currentId = ref.read(mealPlanControllerProvider).value?.id;
   final result = await ref
@@ -47,7 +51,10 @@ Future<List<MealPlanSummary>> previousPlans(Ref ref) async {
 /// also be in Drift (the draft a Use again made, a past week's confirmed
 /// plan), so its answer is folded in through [MealPlanController] and the
 /// Plan tab never shows a stale copy.
-@riverpod
+///
+/// A failed read is an error at once ([failFast]) and the view offers Retry;
+/// the transport's timeout ends a request that never answers (89-005).
+@Riverpod(retry: failFast)
 class EarlierPlan extends _$EarlierPlan {
   VanaActionClient get _actions => ref.read(vanaActionClientProvider);
   MealPlanController get _tab => ref.read(mealPlanControllerProvider.notifier);

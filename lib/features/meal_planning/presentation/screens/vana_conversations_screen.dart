@@ -160,12 +160,35 @@ class _VanaConversationsScreenState
                     color: AppColors.electrolyte,
                   ),
                 ),
+                // Offline the read fails at once (88-012): the line says so
+                // and Retry reads the first page again.
                 error: (e, _) => Center(
-                  child: TextButton(
-                    onPressed: () => ref.invalidate(
-                      vanaConversationsControllerProvider(_kind),
-                    ),
-                    child: Text(content.getValue(ContentKeys.mpRetry)),
+                  child: Column(
+                    mainAxisSize: MainAxisSize.min,
+                    children: [
+                      Text(
+                        content.getValue(ContentKeys.mpConvLoadFailed),
+                        key: const ValueKey(
+                          'meal_planning.conversations_failed',
+                        ),
+                        style: AppTextStyles.bodyMedium.copyWith(
+                          color: secondary,
+                        ),
+                      ),
+                      TextButton(
+                        key: const ValueKey(
+                          'meal_planning.conversations_retry',
+                        ),
+                        onPressed: () => ref
+                            .read(
+                              vanaConversationsControllerProvider(
+                                _kind,
+                              ).notifier,
+                            )
+                            .refresh(),
+                        child: Text(content.getValue(ContentKeys.mpRetry)),
+                      ),
+                    ],
                   ),
                 ),
                 data: (conversations) => conversations.isEmpty

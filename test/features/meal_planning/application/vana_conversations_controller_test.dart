@@ -21,6 +21,8 @@ import 'package:mealvana_endurance/features/meal_planning/domain/ui_action.dart'
 import 'package:mealvana_endurance/features/meal_planning/domain/vana_conversation_kind.dart';
 import 'package:mealvana_endurance/features/meal_planning/presentation/widgets/plan_conversation_title.dart';
 
+import 'package:mealvana_endurance/features/meal_planning/data/vana_exceptions.dart';
+
 import '../helpers/container.dart';
 import '../presentation/helpers/test_content.dart';
 
@@ -52,12 +54,16 @@ class _ListServer extends Fake implements VanaActionClient {
   /// When set, a page past the first waits for it before answering.
   Completer<void>? holdLaterPages;
 
+  /// When set, every call fails with it (the device offline).
+  Object? failWith;
+
   @override
   Future<VanaActionResult> run(UiAction action) async {
     if (action is! ListConversationsAction) {
       throw UnimplementedError(action.type);
     }
     calls.add(action);
+    if (failWith case final error?) throw error;
     final hold = holdLaterPages;
     if (hold != null && action.offset > 0) await hold.future;
     final rows = all
@@ -291,5 +297,32 @@ void main() {
       expect(c.read(provider).requireValue.length, pageSize);
       expect(c.read(provider.notifier).hasMore, isTrue);
     });
+  });
+
+  // Finding 88-012: offline, the list spun 35 s and more while Riverpod
+  // retried the read behind the spinner.
+  test('a failed read is an error at once, and refresh asks again', () async {
+    final server = _ListServer([row('conv-1')])
+      ..failWith = const VanaOfflineException('socket');
+    final c = makeContainer(server);
+    final provider = vanaConversationsControllerProvider(
+      VanaConversationKind.mealPlanning,
+    );
+    final sub = c.listen(provider, (_, _) {});
+    addTearDown(sub.close);
+
+    await settle(const Duration(milliseconds: 600));
+    expect(c.read(provider), isA<AsyncError<Object?>>());
+    expect(
+      c.read(provider).error,
+      isA<VanaOfflineException>(),
+      reason: 'the screen reads the error branch, never a spinner',
+    );
+    expect(server.calls, hasLength(1), reason: 'no silent retries');
+
+    server.failWith = null;
+    await c.read(provider.notifier).refresh();
+    expect(server.calls, hasLength(2));
+    expect(c.read(provider).requireValue.single.id, 'conv-1');
   });
 }

@@ -427,6 +427,19 @@ class ContentKeys {
   static const String mpSeeAll = 'meal_planning.see_all';
   static const String mpRecentsEmpty = 'meal_planning.recents_empty';
   static const String mpRetry = 'meal_planning.retry';
+  // Failed reads and offline states (testing-wave 129): a read that fails
+  // says so with a Retry; an offline tab says it is offline.
+  static const String mpChatHistoryFailed = 'meal_planning.chat_history_failed';
+  static const String mpBrowseNeedsPlan = 'meal_planning.browse_needs_plan';
+  static const String mpConvLoadFailed = 'meal_planning.conv_load_failed';
+  static const String mpPreviousPlanFailed =
+      'meal_planning.previous_plan_failed';
+  static const String mpShoppingOfflineEmpty =
+      'meal_planning.shopping_offline_empty';
+  static const String mpShoppingShareEmpty =
+      'meal_planning.shopping_share_empty';
+  static const String mpShoppingShareOffline =
+      'meal_planning.shopping_share_offline';
   static const String mpFilterTitle = 'meal_planning.filter_title';
   static const String mpFilterAnyType = 'meal_planning.filter_any_type';
   static const String mpFilterAssemblies = 'meal_planning.filter_assemblies';

@@ -131,10 +131,18 @@ class PreviousPlanScreen extends ConsumerWidget {
             Expanded(
               child: planAsync.when(
                 loading: () => const Center(child: CircularProgressIndicator()),
-                error: (_, _) => _Note(
-                  content.getValue(ContentKeys.mpPreviousPlansFailed),
-                  key: const ValueKey('meal_planning.previous_plan_failed'),
-                ),
+                // A failed read says so with a Retry; while the retry runs
+                // the spinner is back (89-005).
+                error: (_, _) => planAsync.isLoading
+                    ? const Center(child: CircularProgressIndicator())
+                    : _Note(
+                        content.getValue(ContentKeys.mpPreviousPlanFailed),
+                        key: const ValueKey(
+                          'meal_planning.previous_plan_failed',
+                        ),
+                        onRetry: () =>
+                            ref.invalidate(earlierPlanProvider(planId)),
+                      ),
                 data: (plan) => plan == null
                     ? _Note(
                         content.getValue(ContentKeys.mpPreviousPlanMissing),
@@ -304,23 +312,44 @@ class _RenameDialogState extends ConsumerState<_RenameDialog> {
 }
 
 /// A one-line note in the body — the plan is gone, or the read failed.
-class _Note extends StatelessWidget {
-  const _Note(this.text, {super.key});
+class _Note extends ConsumerWidget {
+  const _Note(this.text, {super.key, this.onRetry});
 
   final String text;
 
+  /// When set, a Retry under the line.
+  final VoidCallback? onRetry;
+
   @override
-  Widget build(BuildContext context) {
+  Widget build(BuildContext context, WidgetRef ref) {
     final isDark = Theme.of(context).brightness == Brightness.dark;
     final textColor = isDark ? AppColors.cream : AppColors.blackberry;
+    final line = Text(
+      text,
+      style: AppTextStyles.bodyMedium.copyWith(
+        color: textColor.withValues(alpha: 0.6),
+      ),
+    );
+    final retry = onRetry;
     return Padding(
       padding: const EdgeInsets.all(AppSpacing.md),
-      child: Text(
-        text,
-        style: AppTextStyles.bodyMedium.copyWith(
-          color: textColor.withValues(alpha: 0.6),
-        ),
-      ),
+      child: retry == null
+          ? line
+          : Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                line,
+                TextButton(
+                  key: const ValueKey('meal_planning.previous_plan_retry'),
+                  onPressed: retry,
+                  child: Text(
+                    ref
+                        .read(contentServiceProvider)
+                        .getValue(ContentKeys.mpRetry),
+                  ),
+                ),
+              ],
+            ),
     );
   }
 }

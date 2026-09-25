@@ -12,6 +12,7 @@ import 'package:flutter_test/flutter_test.dart';
 import 'package:mealvana_endurance/features/meal_planning/application/meal_plan_controller.dart';
 import 'package:mealvana_endurance/features/meal_planning/application/previous_plans.dart';
 import 'package:mealvana_endurance/features/meal_planning/data/vana_action_client.dart';
+import 'package:mealvana_endurance/features/meal_planning/data/vana_exceptions.dart';
 import 'package:mealvana_endurance/features/meal_planning/domain/meal_plan.dart';
 import 'package:mealvana_endurance/features/meal_planning/domain/meal_plan_status.dart';
 import 'package:mealvana_endurance/features/meal_planning/domain/ui_action.dart';
@@ -37,9 +38,13 @@ class _PlansServer extends Fake implements VanaActionClient {
   final Map<String, Map<String, dynamic>> byId;
   final List<UiAction> calls = [];
 
+  /// When set, every call fails with it (the device offline).
+  Object? failWith;
+
   @override
   Future<VanaActionResult> run(UiAction action) async {
     calls.add(action);
+    if (failWith case final error?) throw error;
     switch (action) {
       case ListPlansAction():
         return VanaActionResult(parts: const [], extras: {'plans': rows});
@@ -190,5 +195,39 @@ void main() {
     expect(server.calls.whereType<ListPlansAction>().length, 2);
     final after = await c.read(previousPlansProvider.future);
     expect(after.map((p) => p.id), isNot(contains('plan-gone')));
+  });
+
+  // Findings 89-011 and 89-005: offline, the sheet spun 35-40 s while
+  // Riverpod retried behind it, and the earlier plan view spun for good.
+  // Both reads fail at once, and a re-read (the Retry) asks the server again.
+  test('offline, the list and the plan view are errors at once, and a '
+      'retry asks again', () async {
+    server.failWith = const VanaOfflineException('socket');
+    final c = makeContainer(withPlan: current);
+    final list = c.listen(previousPlansProvider, (_, _) {});
+    final view = c.listen(earlierPlanProvider('plan-prev-1'), (_, _) {});
+    addTearDown(list.close);
+    addTearDown(view.close);
+
+    await settle(const Duration(milliseconds: 600));
+    expect(c.read(previousPlansProvider), isA<AsyncError<Object?>>());
+    expect(
+      c.read(earlierPlanProvider('plan-prev-1')),
+      isA<AsyncError<Object?>>(),
+    );
+    expect(server.calls, hasLength(2), reason: 'no silent retries');
+
+    server.failWith = null;
+    c.invalidate(previousPlansProvider);
+    c.invalidate(earlierPlanProvider('plan-prev-1'));
+    expect((await c.read(previousPlansProvider.future)).map((p) => p.id), [
+      'plan-prev-1',
+      'plan-prev-2',
+    ]);
+    expect(
+      (await c.read(earlierPlanProvider('plan-prev-1').future))?.id,
+      'plan-prev-1',
+    );
+    expect(server.calls, hasLength(4));
   });
 }

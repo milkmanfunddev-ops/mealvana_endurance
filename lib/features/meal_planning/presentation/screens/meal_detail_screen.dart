@@ -33,6 +33,7 @@ import '../widgets/vana_round_button.dart';
 import '../widgets/vana_tag.dart';
 import 'vana_browse_screen.dart';
 import '../../../../shared/core/pop_or_home.dart';
+import '../widgets/write_failure_snackbar.dart';
 
 /// `/food/meals/:id` (05 §4), minimal layout: hero, title + "see the
 /// original recipe", thumbs · prep row, macro pills, ingredients,
@@ -543,20 +544,9 @@ class _DetailBodyState extends ConsumerState<_DetailBody> {
         duration: MealvanaSnackbar.shortDuration,
       );
       context.pop(true);
-    } on NeedsConnectionException {
-      if (context.mounted) {
-        MealvanaSnackbar.showWarning(
-          context,
-          content.getValue(ContentKeys.mpNeedsConnection),
-        );
-      }
-    } on Exception {
-      if (context.mounted) {
-        MealvanaSnackbar.showError(
-          context,
-          content.getValue(ContentKeys.mpServerError),
-        );
-      }
+    } on Exception catch (e) {
+      // Offline says so, whether refused before sending or cut off (88-013).
+      if (context.mounted) showWriteFailure(context, content, e);
     } finally {
       if (mounted) setState(() => _adding = false);
     }

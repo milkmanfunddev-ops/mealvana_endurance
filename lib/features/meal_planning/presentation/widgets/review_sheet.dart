@@ -13,6 +13,7 @@ import '../../../../shared/widgets/kyle_design/buttons/primary_button.dart';
 import '../../../../shared/widgets/kyle_design/buttons/secondary_button.dart';
 import '../../../../shared/widgets/kyle_design/data/macro_pill_row.dart';
 import '../../application/plan_meal_photos.dart';
+import '../../data/vana_exceptions.dart';
 import '../../domain/cooking_session.dart';
 import '../../domain/meal_plan.dart';
 import '../../domain/meal_plan_status.dart';
@@ -28,7 +29,9 @@ import 'stepper.dart';
 /// and a ×, and the Confirm button — disabled once the plan is confirmed
 /// (05 §4). Confirm is remote-ack: the caller
 /// awaits [onConfirm], gates the "confirmed" transition on it, and this
-/// sheet surfaces failures.
+/// sheet surfaces failures. [onConfirm] throws when the confirm did not
+/// land: the sheet stays open on the draft and says why under the button,
+/// "Needs a connection" or the server error (testing-wave 129, 88-015).
 ///
 /// [showMacros] puts a compact [MacroPillRow] under each meal's slot chip
 /// (on by default — the `show_macros` default, plan §4.2). No plan-level
@@ -45,7 +48,7 @@ Future<void> showReviewSheet({
   required ValueChanged<PlanMeal> onTapMeal,
   required void Function(PlanMeal meal, int servings) onServings,
   required ValueChanged<PlanMeal> onRemove,
-  required Future<bool> Function() onConfirm,
+  required Future<void> Function() onConfirm,
 
   /// Ran after a successful confirm, once the sheet has popped — hosts use
   /// it to land the athlete somewhere useful (the chat screen goes to the
@@ -95,7 +98,7 @@ class _ReviewSheet extends ConsumerStatefulWidget {
   final ValueChanged<PlanMeal> onTapMeal;
   final void Function(PlanMeal meal, int servings) onServings;
   final ValueChanged<PlanMeal> onRemove;
-  final Future<bool> Function() onConfirm;
+  final Future<void> Function() onConfirm;
   final VoidCallback? onConfirmed;
 
   @override
@@ -104,6 +107,10 @@ class _ReviewSheet extends ConsumerStatefulWidget {
 
 class _ReviewSheetState extends ConsumerState<_ReviewSheet> {
   bool _confirming = false;
+
+  /// Why the last Confirm did not land, shown under the button until the
+  /// next tap.
+  String? _confirmFailure;
 
   /// What the sheet shows: the live plan when the host gave one, else the
   /// plan it opened with. Set at the top of every [build].
@@ -162,10 +169,23 @@ class _ReviewSheetState extends ConsumerState<_ReviewSheet> {
   }
 
   Future<void> _confirm() async {
-    setState(() => _confirming = true);
-    final ok = await widget.onConfirm();
+    if (_confirming) return;
+    setState(() {
+      _confirming = true;
+      _confirmFailure = null;
+    });
+    String? failure;
+    try {
+      await widget.onConfirm();
+    } on Exception catch (e) {
+      failure = widget.content.getValue(
+        isConnectionFailure(e)
+            ? ContentKeys.mpNeedsConnection
+            : ContentKeys.mpServerError,
+      );
+    }
     if (!mounted) return;
-    if (ok) {
+    if (failure == null) {
       final navigator = Navigator.of(context);
       final onConfirmed = widget.onConfirmed;
       if (onConfirmed == null) {
@@ -179,7 +199,11 @@ class _ReviewSheetState extends ConsumerState<_ReviewSheet> {
       // screen leaves for the shopping list).
       onConfirmed?.call();
     } else {
-      setState(() => _confirming = false);
+      // The draft stays as it was; the line says why (88-015).
+      setState(() {
+        _confirming = false;
+        _confirmFailure = failure;
+      });
     }
   }
 
@@ -373,6 +397,19 @@ class _ReviewSheetState extends ConsumerState<_ReviewSheet> {
               isLoading: _confirming,
               onPressed: confirmed || _plan.meals.isEmpty ? null : _confirm,
             ),
+            if (_confirmFailure case final failure?) ...[
+              const SizedBox(height: AppSpacing.xs),
+              Text(
+                failure,
+                key: const ValueKey(
+                  'meal_planning.review_sheet.confirm_failed',
+                ),
+                textAlign: TextAlign.center,
+                style: AppTextStyles.bodySmall.copyWith(
+                  color: AppColors.orange,
+                ),
+              ),
+            ],
             const SizedBox(height: AppSpacing.sm),
             KyleSecondaryButton(
               key: const ValueKey('meal_planning.review_sheet.keep_planning'),

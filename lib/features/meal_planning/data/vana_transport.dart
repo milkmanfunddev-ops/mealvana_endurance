@@ -33,12 +33,20 @@ class NdjsonResponse {
 ///
 /// Used by [VanaChatRepository] (streaming), [VanaActionClient] (unary) and,
 /// through [VanaChatRepository], the legacy `AiCoachChatRepository`.
+///
+/// Nothing waits forever (testing-wave 129, Finding 89-005): a unary call
+/// that has not answered within [timeout] ([longTimeout] for the
+/// [longActions]), or a stream whose headers have not come within
+/// [longTimeout], is dropped and raised as [VanaOfflineException], so the
+/// screen says it needs a connection and offers its retry.
 class VanaTransport {
   VanaTransport({
     required SupabaseClient supabase,
     required AppConfig config,
     required AppLogger logger,
     HttpClientFactory? clientFactory,
+    this.timeout = defaultTimeout,
+    this.longTimeout = defaultLongTimeout,
   }) : _supabase = supabase,
        _config = config,
        _logger = logger,
@@ -48,6 +56,35 @@ class VanaTransport {
   final AppConfig _config;
   final AppLogger _logger;
   final HttpClientFactory _clientFactory;
+
+  /// How long a unary call may take before it counts as offline.
+  final Duration timeout;
+
+  /// The budget for the [longActions] and for a chat turn's headers: work
+  /// that runs a model or builds a list server-side.
+  final Duration longTimeout;
+
+  static const defaultTimeout = Duration(seconds: 20);
+  static const defaultLongTimeout = Duration(seconds: 90);
+
+  /// `vana-action` types that run a model or rebuild a plan or list, read
+  /// from the body's `type`.
+  static const longActions = {
+    'confirm_plan',
+    'pantry_photo',
+    'draft_week',
+    'plan_week',
+    'next_picker',
+    'same_as_last_time',
+    'swap_ingredient',
+    'rebuild_shopping_list',
+    'use_plan_again',
+    'new_plan',
+    'rewind',
+  };
+
+  Duration _timeoutFor(Map<String, dynamic> body) =>
+      longActions.contains(body['type']) ? longTimeout : timeout;
 
   static const _context = 'VANA_TRANSPORT';
 
@@ -86,7 +123,7 @@ class VanaTransport {
     final client = _clientFactory();
     http.StreamedResponse streamed;
     try {
-      streamed = await client.send(request);
+      streamed = await client.send(request).timeout(longTimeout);
     } catch (e, st) {
       client.close();
       _logger.error(
@@ -121,7 +158,9 @@ class VanaTransport {
     final client = _clientFactory();
     http.Response response;
     try {
-      response = await http.Response.fromStream(await client.send(request));
+      response = await Future(
+        () async => http.Response.fromStream(await client.send(request)),
+      ).timeout(_timeoutFor(body));
     } catch (e, st) {
       _logger.error(
         'Network error calling $functionName',

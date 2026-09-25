@@ -5,6 +5,7 @@ import 'package:mealvana_endurance/features/content/application/content_service.
 import 'package:mealvana_endurance/features/meal_planning/application/meal_plan_controller.dart';
 import 'package:mealvana_endurance/features/meal_planning/application/previous_plans.dart';
 import 'package:mealvana_endurance/features/meal_planning/data/vana_action_client.dart';
+import 'package:mealvana_endurance/features/meal_planning/data/vana_exceptions.dart';
 import 'package:mealvana_endurance/features/meal_planning/domain/meal_plan.dart';
 import 'package:mealvana_endurance/features/meal_planning/domain/meal_plan_summary.dart';
 import 'package:mealvana_endurance/features/meal_planning/domain/week_start.dart';
@@ -349,6 +350,46 @@ void main() {
 
     expect(
       find.byKey(const ValueKey('meal_planning.previous_plans_failed')),
+      findsOneWidget,
+    );
+  });
+
+  // Testing-wave 129 (Finding 89-011): offline the sheet spun 35-40 s and
+  // its "Pull down to try again" did nothing. The failure shows at once and
+  // Retry reads the list again.
+  testWidgets('offline the failure shows at once, and Retry reads again', (
+    tester,
+  ) async {
+    var reads = 0;
+    await pumpSheet(
+      tester,
+      plans: () async {
+        reads++;
+        if (reads == 1) throw const VanaOfflineException('socket');
+        return rows;
+      },
+      onOpen: (_) {},
+    );
+
+    final failed = find.byKey(
+      const ValueKey('meal_planning.previous_plans_failed'),
+    );
+    expect(failed, findsOneWidget);
+    expect(
+      tester.widget<Text>(failed).data,
+      loadDefaultContent()['meal_planning.previous_plans_failed'],
+    );
+    expect(reads, 1, reason: 'no silent retries behind a spinner');
+
+    await tester.tap(
+      find.byKey(const ValueKey('meal_planning.previous_plans_retry')),
+    );
+    await tester.pumpAndSettle();
+
+    expect(reads, 2);
+    expect(failed, findsNothing);
+    expect(
+      find.byKey(ValueKey('meal_planning.previous_plan_${rows.first.id}')),
       findsOneWidget,
     );
   });
