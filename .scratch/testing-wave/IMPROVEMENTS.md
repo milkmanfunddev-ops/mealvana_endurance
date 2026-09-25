@@ -15,6 +15,13 @@ None.
 
 ## Done
 
+- **#68 three-digit tickets read as unblocked (wave 26).** `sync.mjs` read `Blocked by` with
+  `\b\d{2}\b`, so 100 ("Blocked by: 101.") showed on the frontier. Now `\d{2,3}`, with a test
+  (`dcbf75fa`).
+- **#69 a review found a path the ticket's own tests missed (wave 26).** 101 deleted a draft's list on
+  archive, but a pick still reaching the archived draft (mp-683) re-created it through
+  `syncPlanList`. Fixed by the lead (`1dfcb06c`). A ticket that deletes something should test every
+  write path that can make it again, not only the ones that delete it.
 - **#66 a Drift bump passed the agent's tests but not the suite (wave 25).** Ticket 99 moved Drift to
   v23 and its migration test passed, but `schema_version_guard_test.dart` still pinned v22, so the
   full suite went red at the lead. Suggested fix: a ticket that bumps `schemaVersion` lists the guard
