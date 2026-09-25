@@ -743,6 +743,14 @@ batch on `feature/carb-loading` (rebased on origin/release/1.27.1). Highlights:
   · 1 ai_credits poll-timing test that failed once and passes in isolation
   (the recorded full-suite flake class). ZERO regressions from the
   carb-loading implementation.
+- **QA verification at tip 2cf593b8: GREEN, no findings.** Both conformance
+  arms re-run against a fresh detached worktree (49/49 + 14/14); 293 tests
+  green across carb_loading + macro_dashboard + events incl. the six
+  LOAD-face goldens (regeneration rule LIVE from here); mirror byte-identical
+  to the tag (vector-file drift = the planned engine repoint, re-mirror
+  rides land). Remaining sequence: Xuan's 8 morning rulings → frame-level
+  CD-2 Patrol → land-bundle (official runner invocation across every slice +
+  dev attestation + Xuan's explicit go).
 
 ## Notes on the two new ideas
 
