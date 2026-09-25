@@ -72,6 +72,9 @@ SubscriptionStatus _trialFromRevenueCat({required bool willRenew}) =>
 const _userId = '45a54f25-47c6-4730-8b21-78ea1df36bea';
 const _timeout = Duration(milliseconds: 60);
 
+/// The clock the tests run at: before every fixture's expiry.
+final _now = customerInfoFetchedAt;
+
 final _rcActive = SubscriptionStatus(
   active: true,
   source: SubscriptionSource.revenuecat,
@@ -119,6 +122,7 @@ void main() {
         userEntitlementsRepositoryProvider.overrideWithValue(repo),
         entitlementAnswerTimeoutProvider.overrideWithValue(_timeout),
         localNotificationSchedulerProvider.overrideWithValue(scheduler),
+        subscriptionClockProvider.overrideWithValue(() => _now),
       ],
     );
     addTearDown(c.dispose);
@@ -428,13 +432,15 @@ void main() {
   });
 
   group('open or closed from customer info (mp-457, mp-611)', () {
-    ProviderContainer gateContainer({bool isAdmin = false}) {
+    ProviderContainer gateContainer({bool isAdmin = false, DateTime? at}) {
+      final now = at ?? _now;
       final c = ProviderContainer(
         overrides: [
           subscriptionServiceProvider.overrideWithValue(service),
           userEntitlementsRepositoryProvider.overrideWithValue(repo),
           entitlementAnswerTimeoutProvider.overrideWithValue(_timeout),
           localNotificationSchedulerProvider.overrideWithValue(scheduler),
+          subscriptionClockProvider.overrideWithValue(() => now),
           isAdminProvider.overrideWith((_) async => isAdmin),
         ],
       );
@@ -466,14 +472,17 @@ void main() {
       expect(await c.read(writeAccessProvider.future), isTrue);
     });
 
-    test('a pro that expired answers closed, and AI actions are refused', () async {
-      when(
-        () => service.fetchStatus(),
-      ).thenAnswer((_) async => statusOf(customerInfoLapsed));
-      final c = gateContainer();
-      expect(await c.read(appGateProvider.future), AppAccess.closed);
-      expect(await c.read(writeAccessProvider.future), isFalse);
-    });
+    test(
+      'a pro that expired answers closed, and AI actions are refused',
+      () async {
+        when(
+          () => service.fetchStatus(),
+        ).thenAnswer((_) async => statusOf(customerInfoLapsed));
+        final c = gateContainer();
+        expect(await c.read(appGateProvider.future), AppAccess.closed);
+        expect(await c.read(writeAccessProvider.future), isFalse);
+      },
+    );
 
     test('no pro ever answers closed, the same as an expired one', () async {
       when(
@@ -533,6 +542,99 @@ void main() {
       await pumpEventQueue();
 
       expect(await c.read(writeAccessProvider.future), isTrue);
+    });
+  });
+
+  group('the saved copy counts 15 minutes past its own expiry, then not '
+      '(mp-679, Finding 07-002)', () {
+    // The period in the fixture ends at 11:36:56 UTC.
+    final expiry = DateTime.utc(2026, 9, 24, 11, 36, 56);
+
+    ProviderContainer at(DateTime now) {
+      final c = ProviderContainer(
+        overrides: [
+          subscriptionServiceProvider.overrideWithValue(service),
+          userEntitlementsRepositoryProvider.overrideWithValue(repo),
+          entitlementAnswerTimeoutProvider.overrideWithValue(_timeout),
+          localNotificationSchedulerProvider.overrideWithValue(scheduler),
+          subscriptionClockProvider.overrideWithValue(() => now),
+          isAdminProvider.overrideWith((_) async => false),
+        ],
+      );
+      addTearDown(c.dispose);
+      return c;
+    }
+
+    setUp(() {
+      when(
+        () => service.fetchStatus(),
+      ).thenAnswer((_) async => statusOf(customerInfoSavedMonthly));
+    });
+
+    test(
+      'a cold launch 2 minutes past expiry opens from the saved copy',
+      () async {
+        final c = at(expiry.add(const Duration(minutes: 2)));
+        expect((await resolve(c)).active, isTrue);
+        expect(await c.read(appGateProvider.future), AppAccess.open);
+      },
+    );
+
+    test(
+      'a cold launch 16 minutes past expiry with no network is closed',
+      () async {
+        final c = at(expiry.add(const Duration(minutes: 16)));
+        final s = await resolve(c);
+        expect(s.active, isFalse);
+        expect(s.hadPro, isTrue);
+        expect(await c.read(appGateProvider.future), AppAccess.closed);
+      },
+    );
+
+    test(
+      'the saved copy pushed 16 minutes past expiry does not open it',
+      () async {
+        when(
+          () => service.fetchStatus(),
+        ).thenAnswer((_) async => SubscriptionStatus.none);
+        final c = at(expiry.add(const Duration(minutes: 16)));
+        final sub = c.listen(appGateProvider, (_, _) {});
+        addTearDown(sub.close);
+        expect(await c.read(appGateProvider.future), AppAccess.closed);
+
+        capturedListener!(statusOf(customerInfoSavedMonthly));
+        await pumpEventQueue();
+
+        expect(current(c).active, isFalse);
+        expect(await c.read(appGateProvider.future), AppAccess.closed);
+      },
+    );
+
+    test('a fresh active answer reopens it', () async {
+      final c = at(expiry.add(const Duration(minutes: 16)));
+      final sub = c.listen(appGateProvider, (_, _) {});
+      addTearDown(sub.close);
+      expect(await c.read(appGateProvider.future), AppAccess.closed);
+
+      // RevenueCat's fresh answer: the renewal landed, next period to
+      // 11:41:56.
+      capturedListener!(statusOf(customerInfoRenewedMonthly));
+      await pumpEventQueue();
+
+      expect(current(c).active, isTrue);
+      expect(await c.read(appGateProvider.future), AppAccess.open);
+    });
+
+    test('a fresh active answer fetched on refresh reopens it', () async {
+      final c = at(expiry.add(const Duration(minutes: 16)));
+      expect((await resolve(c)).active, isFalse);
+
+      when(
+        () => service.fetchStatus(),
+      ).thenAnswer((_) async => statusOf(customerInfoRenewedMonthly));
+      await c.read(subscriptionStatusProvider.notifier).refresh();
+
+      expect(current(c).active, isTrue);
     });
   });
 }

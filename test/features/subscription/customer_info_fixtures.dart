@@ -37,7 +37,11 @@ Map<String, dynamic> _pro({
   'verification': 'NOT_REQUESTED',
 };
 
-CustomerInfo _info({required Map<String, dynamic> all, required bool active}) {
+CustomerInfo _info({
+  required Map<String, dynamic> all,
+  required bool active,
+  String requestDate = '2026-09-22T12:00:00Z',
+}) {
   final sku = all.isEmpty ? null : all['pro']['productIdentifier'] as String;
   return CustomerInfo.fromJson({
     'entitlements': {
@@ -54,13 +58,19 @@ CustomerInfo _info({required Map<String, dynamic> all, required bool active}) {
     'allExpirationDates': {
       if (all.isNotEmpty) sku!: all['pro']['expirationDate'],
     },
-    'requestDate': '2026-09-22T12:00:00Z',
+    'requestDate': requestDate,
     'latestExpirationDate': all.isEmpty ? null : all['pro']['expirationDate'],
     'originalPurchaseDate': null,
     'originalApplicationVersion': null,
     'managementURL': null,
   });
 }
+
+/// When the fixtures above were fetched (their `requestDate`): before every
+/// expiry here. Tests that run the real status controller pin its clock to
+/// it, so the saved-copy grace (mp-679) never depends on the day the suite
+/// runs.
+final DateTime customerInfoFetchedAt = DateTime.utc(2026, 9, 22, 12);
 
 /// `pro` active until 1 November.
 final CustomerInfo customerInfoOpen = _info(
@@ -150,6 +160,24 @@ final CustomerInfo customerInfoGraceGrant = _info(
     ),
   },
   active: true,
+);
+
+/// The saved copy from Finding 07-002: a Test Store monthly period
+/// 11:31:56-11:36:56 UTC on 24 September, fetched at 11:34:29 while it ran.
+/// The SDK judged `isActive` at that fetch, so the copy still says active
+/// after its own expiry until a fresh answer replaces it.
+final CustomerInfo customerInfoSavedMonthly = _info(
+  all: {'pro': _pro(isActive: true, expires: '2026-09-24T11:36:56Z')},
+  active: true,
+  requestDate: '2026-09-24T11:34:29Z',
+);
+
+/// RevenueCat's fresh answer once the renewal of [customerInfoSavedMonthly]
+/// landed: the next period runs to 11:41:56.
+final CustomerInfo customerInfoRenewedMonthly = _info(
+  all: {'pro': _pro(isActive: true, expires: '2026-09-24T11:41:56Z')},
+  active: true,
+  requestDate: '2026-09-24T11:39:04Z',
 );
 
 /// No `pro`, ever.

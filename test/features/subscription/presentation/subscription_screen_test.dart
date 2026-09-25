@@ -159,6 +159,7 @@ void main() {
       ),
       localNotificationSchedulerProvider.overrideWithValue(_NoopScheduler()),
       subscriptionScreenClockProvider.overrideWithValue(() => _today),
+      subscriptionClockProvider.overrideWithValue(() => customerInfoFetchedAt),
       contentServiceProvider.overrideWith(
         (ref) => TestContentService(ref, _content),
       ),

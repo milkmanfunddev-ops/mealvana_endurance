@@ -13,7 +13,7 @@
 
 **Touches:** lib/features/subscription/data/subscription_service.dart, lib/features/subscription/domain/entitlement.dart, lib/features/subscription/application/subscription_status_provider.dart
 
-- [ ] Tests: a saved copy 2 minutes past expiry is open; 16 minutes past is closed; a fresh active answer reopens it.
+- [x] Tests: a saved copy 2 minutes past expiry is open; 16 minutes past is closed; a fresh active answer reopens it.
 - [ ] codegen if annotations changed, `flutter analyze` and the suite green.
 
 Next: /implement-lee testing-wave

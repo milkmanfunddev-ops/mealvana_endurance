@@ -17,6 +17,11 @@ part 'subscription_status_provider.g.dart';
 @Riverpod(keepAlive: true)
 Duration entitlementAnswerTimeout(Ref ref) => const Duration(seconds: 2);
 
+/// The clock the status judges an answer's own expiry against (mp-679). A
+/// provider so tests can pin it; the app never overrides it.
+@Riverpod(keepAlive: true)
+DateTime Function() subscriptionClock(Ref ref) => DateTime.now;
+
 /// Auth identity as a rebuild signal — see [creditsAuthUserId] for the
 /// precedent. A session appearing, changing or ending rebuilds the status.
 @Riverpod(keepAlive: true)
@@ -41,6 +46,8 @@ Stream<String?> subscriptionAuthUserId(Ref ref) {
 ///    status and the gate reacts.
 /// 4. A cache that belongs to another RevenueCat identity than the signed-in
 ///    user is not an answer: locked until `logIn` has moved the identity.
+/// 5. An active answer counts for [kRenewalGrace] past its own expiry, then
+///    as closed until a fresh answer arrives (mp-679, Finding 07-002).
 ///
 /// Every answer it takes also settles the day-five reminder (mp-456 §4): an
 /// active trial that will not renew cancels it. That covers the app open
@@ -135,9 +142,10 @@ class SubscriptionStatusController extends _$SubscriptionStatusController {
     if (userId == null || userId.isEmpty) return;
     final current = await _service.currentAppUserId();
     if (!ref.mounted || current != userId) return;
-    _lastPush = rc;
-    state = AsyncData(rc);
-    _settleTrialReminder(rc);
+    final counted = _counted(rc);
+    _lastPush = counted;
+    state = AsyncData(counted);
+    _settleTrialReminder(counted);
   }
 
   /// Cancel the day-five reminder once RevenueCat says the trial will not
@@ -167,11 +175,19 @@ class SubscriptionStatusController extends _$SubscriptionStatusController {
     final answer = await _answerFor(
       userId,
     ).timeout(timeout, onTimeout: () => null);
-    if (answer != null) return answer;
+    if (answer != null) return _counted(answer);
     // No answer in time: the last push (the cache, when the SDK announced
     // it) still counts; otherwise locked.
-    return _lastPush ?? SubscriptionStatus.none;
+    return _counted(_lastPush ?? SubscriptionStatus.none);
   }
+
+  /// [status] as it counts now (mp-679): RevenueCat's saved copy judges
+  /// itself against the time it was fetched, so it can still say active
+  /// after its own expiry. It keeps the Gate open for [kRenewalGrace] past
+  /// that expiry while the fetch runs, then counts as closed until a fresh
+  /// answer, which carries the new period's expiry, replaces it.
+  SubscriptionStatus _counted(SubscriptionStatus status) =>
+      status.countedAt(ref.read(subscriptionClockProvider)());
 
   /// RevenueCat's answer for [userId], or null when it has none. The
   /// identity is checked before the cache is trusted: the cache belongs to

@@ -109,6 +109,9 @@ void main() {
           const Duration(milliseconds: 60),
         ),
         localNotificationSchedulerProvider.overrideWithValue(_NoopScheduler()),
+        subscriptionClockProvider.overrideWithValue(
+          () => customerInfoFetchedAt,
+        ),
       ],
     );
     addTearDown(c.dispose);

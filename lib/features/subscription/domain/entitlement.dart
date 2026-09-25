@@ -19,6 +19,17 @@ enum Entitlement {
   final String key;
 }
 
+/// How long past its own [SubscriptionStatus.expiresAt] an active answer
+/// still counts (mp-679): a saved copy on the phone keeps the Gate open this
+/// long while the fetch for the renewal runs, then counts as closed until a
+/// fresh answer arrives.
+///
+/// KEEP IN STEP with `RENEWAL_GRACE_MS` in
+/// supabase/functions/_shared/vana/entitlement.ts, the server's grace for a
+/// renewing account (15 minutes): the two must move together, or the phone
+/// opens onto a server that refuses every AI call.
+const Duration kRenewalGrace = Duration(minutes: 15);
+
 /// Which source vouched for the active entitlement. [none] when inactive.
 enum SubscriptionSource { none, revenuecat }
 
@@ -56,8 +67,9 @@ class SubscriptionStatus {
   final bool active;
 
   /// When the current period ends (UTC). Null for open-ended grants and for
-  /// [none]. A past [expiresAt] with [active] true is still honoured — the
-  /// producer decided — but [isExpiredAt] lets callers double-check.
+  /// [none]. A past [expiresAt] with [active] true (RevenueCat's saved copy
+  /// judges itself against the time it was fetched) counts only for
+  /// [kRenewalGrace]: see [countedAt].
   final DateTime? expiresAt;
 
   /// Who said so. [SubscriptionSource.none] when [active] is false.
@@ -89,6 +101,25 @@ class SubscriptionStatus {
   bool isExpiredAt(DateTime now) {
     final e = expiresAt;
     return e != null && !e.isAfter(now);
+  }
+
+  /// This answer as it counts at [now] (mp-679). An active answer whose own
+  /// [expiresAt] passed more than [kRenewalGrace] ago is closed: held once,
+  /// same expiry and product, nothing vouching for it. Every other answer
+  /// counts as it is, so a fresh answer, which carries the new period's
+  /// expiry, always wins.
+  SubscriptionStatus countedAt(DateTime now) {
+    final e = expiresAt;
+    if (!active || e == null || now.isBefore(e.add(kRenewalGrace))) {
+      return this;
+    }
+    return SubscriptionStatus(
+      active: false,
+      expiresAt: e,
+      productId: productId,
+      willRenew: false,
+      hadPro: true,
+    );
   }
 
   SubscriptionStatus copyWith({
