@@ -1,5 +1,6 @@
 import 'dart:async';
 
+import 'package:flutter/foundation.dart';
 import 'package:riverpod_annotation/riverpod_annotation.dart';
 
 import '../../../shared/providers/user_id_provider.dart';
@@ -106,6 +107,12 @@ class MealCatalogState {
   );
 }
 
+/// Which screen a catalog belongs to. The Meals tab stays mounted in the
+/// Food tab's stack, so a shared catalog carried its query ("spinach") into
+/// the chat's Browse meals, which then opened on search results with an empty
+/// field (testing-wave 89-008). Each surface keeps its own search and rails.
+enum CatalogSurface { mealsTab, browse }
+
 /// Meals tab: rails (Recents / My Foods / Assemblies / Recipes) plus a
 /// debounced (350 ms) search with meal-type × kind filters.
 ///
@@ -131,7 +138,7 @@ class MealCatalogController extends _$MealCatalogController {
   int _searchSeq = 0;
 
   @override
-  FutureOr<MealCatalogState> build() async {
+  FutureOr<MealCatalogState> build(CatalogSurface surface) async {
     ref.onDispose(() => _debounce?.cancel());
 
     final userId = await ref.watch(userIdProvider.future);
@@ -247,7 +254,7 @@ class MealCatalogController extends _$MealCatalogController {
         current.copyWith(
           assemblies: results[0] as List<MealRef>,
           recipes: results[1] as List<MealRef>,
-          recents: serverRecents.isNotEmpty ? serverRecents : current.recents,
+          recents: mergeRecents(current.recents, serverRecents),
           railsFromServer: true,
         ),
       );
@@ -259,6 +266,32 @@ class MealCatalogController extends _$MealCatalogController {
         stackTrace: st,
       );
     }
+  }
+
+  /// The server's Recents folded into the rail already on screen. It answers
+  /// 1.8-5.2 s after the local rail paints, and replacing the rail then moved
+  /// a different meal under the finger (testing-wave 88-006). So what is shown
+  /// keeps its order: a shown meal takes the server's row (photo, numbers) in
+  /// place, and meals only the server knows go after it, up to the limit.
+  @visibleForTesting
+  static List<RecentMeal> mergeRecents(
+    List<RecentMeal> shown,
+    List<RecentMeal> server,
+  ) {
+    if (server.isEmpty) return shown;
+    if (shown.isEmpty) return server;
+    final serverByKey = {
+      for (final r in server) MealRefMapping.key(r.meal): r,
+    };
+    final merged = [
+      for (final r in shown) serverByKey[MealRefMapping.key(r.meal)] ?? r,
+    ];
+    final shownKeys = {for (final r in shown) MealRefMapping.key(r.meal)};
+    for (final r in server) {
+      if (merged.length >= recentsLimit) break;
+      if (!shownKeys.contains(MealRefMapping.key(r.meal))) merged.add(r);
+    }
+    return merged;
   }
 
   /// Re-read the local rails (after a log or a plan change).

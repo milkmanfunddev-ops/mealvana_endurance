@@ -22,7 +22,9 @@ class RecentsScreen extends ConsumerWidget {
   @override
   Widget build(BuildContext context, WidgetRef ref) {
     final content = ref.read(contentServiceProvider);
-    final catalog = ref.watch(mealCatalogControllerProvider).value;
+    final catalog = ref
+        .watch(mealCatalogControllerProvider(CatalogSurface.mealsTab))
+        .value;
     final recents = catalog?.recents ?? const <RecentMeal>[];
     final photos = photosForList([for (final r in recents) r.meal]);
     final isDark = Theme.of(context).brightness == Brightness.dark;
