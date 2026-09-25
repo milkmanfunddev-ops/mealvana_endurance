@@ -5,8 +5,8 @@
  *
  * Two paths:
  *   1. Every `pro` event, bought or granted (mp-454) → `public.user_entitlements`,
- *      the two-field cache of RevenueCat (mp-285): `active_until` + `period_type`,
- *      written only here, ordered by `event_at`. `active_until` is RevenueCat's
+ *      the small cache of RevenueCat (mp-285, mp-609): `active_until`,
+ *      `period_type` and `will_renew`, written only here, ordered by `event_at`. `active_until` is RevenueCat's
  *      answer for the customer's current `pro` expiry, asked over REST on each
  *      event (_shared/revenuecat), so a grant and a subscription never shorten
  *      each other. A TRANSFER moves the row. The same
@@ -54,7 +54,7 @@ export interface WebhookDeps {
 }
 
 const TABLE = 'user_entitlements';
-const ROW_COLUMNS = 'user_id, active_until, period_type, event_at';
+const ROW_COLUMNS = 'user_id, active_until, period_type, event_at, will_renew';
 
 /** Event types that represent a one-time pack purchase. */
 export const GRANTING_EVENT_TYPES = new Set(['NON_RENEWING_PURCHASE', 'INITIAL_PURCHASE', 'RENEWAL']);
@@ -250,6 +250,7 @@ async function handleTransfer(deps: WebhookDeps, event: RcEvent, eventId: string
             active_until: source!.active_until,
             period_type: source!.period_type,
             event_at: transferAt,
+            will_renew: source!.will_renew ?? false,
           })),
           { onConflict: 'user_id' },
         );
@@ -262,7 +263,7 @@ async function handleTransfer(deps: WebhookDeps, event: RcEvent, eventId: string
     if (source && from.length > 0) {
       const { error } = await client
         .from(TABLE)
-        .update({ active_until: transferAt, event_at: transferAt })
+        .update({ active_until: transferAt, event_at: transferAt, will_renew: false })
         .in('user_id', from);
       if (error) {
         console.error('[rc-webhook] transfer close error:', error.message);

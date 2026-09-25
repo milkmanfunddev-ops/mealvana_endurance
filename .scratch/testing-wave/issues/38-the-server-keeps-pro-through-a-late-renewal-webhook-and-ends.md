@@ -13,8 +13,8 @@
 
 **Touches:** supabase/functions/_shared/vana/entitlement.ts, supabase/functions/revenuecat-webhook/entitlements.ts, supabase/functions/revenuecat-webhook/handler.ts
 
-- [ ] deno tests: a renewing row a minute past `active_until` is entitled; a non-renewing one is not; past the grace neither is.
-- [ ] deno test: an EXPIRATION event sets `active_until` to its `expiration_at_ms`.
+- [x] deno tests: a renewing row a minute past `active_until` is entitled; a non-renewing one is not; past the grace neither is.
+- [x] deno test: an EXPIRATION event sets `active_until` to its `expiration_at_ms`.
 - [ ] Deployed to dev, per the deploy playbook.
 - [ ] codegen if annotations changed, `flutter analyze` and the suite green.
 
