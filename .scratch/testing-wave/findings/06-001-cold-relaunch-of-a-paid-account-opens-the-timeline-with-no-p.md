@@ -1,7 +1,7 @@
 # 06-001 · Cold relaunch of a paid account opens the timeline with no paywall frame (answers 05-007); the offline leg is still open
 
 - kind: followup-test
-- status: triaged
+- status: closed
 - ticket: 06
 - run: w6-20260924T1117Z
 - screen: Timeline
@@ -41,3 +41,5 @@ the Entitlement row were the same as after the purchase. 05-007 can close on ste
 **Triage.**
 
 Picked for retest ticket 87 (Lee, 2026-09-25).
+
+Closed by retest ticket 87 (wave 25, build 5e05f8a6): pass, evidence in runs/87/verdicts.md.

@@ -27,3 +27,5 @@ Not run. This run saw only the running, renewing state ("Subscribed", "Renews on
 **Triage.**
 
 Picked for retest ticket 87 (Lee, 2026-09-25).
+
+Retest ticket 87 (wave 25): fail on the last-period leg, filed as 87-006 and 87-008; running and code-grant states pass.

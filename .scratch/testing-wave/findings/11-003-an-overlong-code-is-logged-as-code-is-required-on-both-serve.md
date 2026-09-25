@@ -1,7 +1,7 @@
 # 11-003 · An overlong code is logged as 'code is required' on both server and app
 
 - kind: idea
-- status: triaged
+- status: closed
 - ticket: 11
 - run: w5-20260924T0840Z
 - screen: Redeem code (paywall ⋯ menu)
@@ -27,3 +27,5 @@ The athlete sees the right thing (the not-found line, sheet open, as mp-458 and 
 
 **Triage.**
 Fix ticket 81 (the wave lead, 2026-09-25: Lee asked for every bug fix that can be done without him). Closed by the retest after it merges.
+
+Closed by retest ticket 87 (wave 25, build 5e05f8a6): pass, evidence in runs/87/verdicts.md.

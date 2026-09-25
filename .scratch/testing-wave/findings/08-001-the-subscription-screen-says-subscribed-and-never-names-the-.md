@@ -1,7 +1,7 @@
 # 08-001 · The Subscription screen says Subscribed and never names the plan bought (Monthly), which the ticket card mp-628 asks for
 
 - kind: ssot-conflict
-- status: triaged
+- status: closed
 - ticket: 08
 - run: w7-20260924T1216Z
 - screen: Subscription
@@ -27,3 +27,5 @@ The status card reads "Subscribed" and "Renews on September 24, 2026." Nothing n
 **Triage.**
 
 Fix ticket 66 (Lee, 2026-09-25). Closed by the retest after it merges.
+
+Closed by retest ticket 87 (wave 25, build 5e05f8a6): pass, evidence in runs/87/verdicts.md.

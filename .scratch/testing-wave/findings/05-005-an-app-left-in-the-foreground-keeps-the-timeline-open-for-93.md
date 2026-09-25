@@ -1,7 +1,7 @@
 # 05-005 · An app left in the foreground keeps the timeline open for 93 minutes after Pro expired; only a resume lands on the paywall
 
 - kind: idea
-- status: triaged
+- status: closed
 - ticket: 05
 - run: w5-20260924T0839Z
 - screen: Timeline
@@ -29,3 +29,5 @@ For 93 minutes after expiry the foreground app stayed open on the timeline (the 
 
 **Triage.**
 Fix ticket 77 (the wave lead, 2026-09-25: Lee asked for every bug fix that can be done without him). Closed by the retest after it merges.
+
+Closed by retest ticket 87 (wave 25, build 5e05f8a6): pass, evidence in runs/87/verdicts.md.

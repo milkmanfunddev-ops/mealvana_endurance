@@ -1,7 +1,7 @@
 # 06-002 · The Entitlement row runs past active_until until each Test Store renewal lands (2.5 min here), and the server's Pro check has no grace, so a paying account's AI calls would be refused in that gap
 
 - kind: ssot-conflict
-- status: triaged
+- status: closed
 - ticket: 06
 - run: w6-20260924T1117Z
 - screen: none
@@ -46,3 +46,5 @@ and reads it differently (renewals landing when the app fetches); read the two t
 
 **Triage.**
 Fix ticket 38 (Lee, 2026-09-25). Closed by the retest after it merges.
+
+Closed by retest ticket 87 (wave 25, build 5e05f8a6): pass, evidence in runs/87/verdicts.md.

@@ -33,3 +33,5 @@ last fetch has no evidence in the run.
 **Triage.**
 
 Fix ticket 67 (Lee, 2026-09-25). Closed by the retest after it merges.
+
+Retest ticket 87 (wave 25): fail, filed as 87-009 (router opens /main for 1.4 s first; startup 5.4 s against mp-335's 2 s).
