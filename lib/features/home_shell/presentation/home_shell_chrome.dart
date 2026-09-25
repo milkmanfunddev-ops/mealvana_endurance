@@ -31,6 +31,7 @@
 library;
 
 import 'package:flutter/material.dart';
+import 'package:flutter/scheduler.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 
 import '../../../shared/core/guarded_navigation.dart';
@@ -104,15 +105,27 @@ class _HomeShellChromeState extends ConsumerState<HomeShellChrome> {
   bool _onScroll(ScrollNotification notification) {
     if (notification.metrics.axis != Axis.vertical) return false;
     final px = notification.metrics.pixels;
-    setState(() {
-      // Hysteresis band (tb2): between the two thresholds the bar keeps its
-      // state, so dithering at the boundary never flaps it.
-      if (px > HomeShellChrome.tabBarCollapseThresholdPx) {
-        _tabBarCollapsed = true;
-      } else if (px < HomeShellChrome.tabBarExpandThresholdPx) {
-        _tabBarCollapsed = false;
-      }
-    });
+    // Hysteresis band (tb2): between the two thresholds the bar keeps its
+    // state, so dithering at the boundary never flaps it.
+    var collapsed = _tabBarCollapsed;
+    if (px > HomeShellChrome.tabBarCollapseThresholdPx) {
+      collapsed = true;
+    } else if (px < HomeShellChrome.tabBarExpandThresholdPx) {
+      collapsed = false;
+    }
+    if (collapsed == _tabBarCollapsed) return false;
+    // A body whose content height changes mid-frame (the timeline re-sorting
+    // its cards) re-settles its scroll position during layout, and that
+    // start notification lands here; setState then is "Build scheduled
+    // during frame". Apply it after the frame instead.
+    if (SchedulerBinding.instance.schedulerPhase ==
+        SchedulerPhase.persistentCallbacks) {
+      SchedulerBinding.instance.addPostFrameCallback((_) {
+        if (mounted) setState(() => _tabBarCollapsed = collapsed);
+      });
+    } else {
+      setState(() => _tabBarCollapsed = collapsed);
+    }
     return false;
   }
 
