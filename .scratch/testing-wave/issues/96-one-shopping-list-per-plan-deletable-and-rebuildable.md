@@ -1,6 +1,6 @@
 # 96: One shopping list per plan, deletable with a warning and rebuildable from the plan
 
-**Status:** ready-for-agent
+**Status:** in-progress (wave 25, 2026-09-25)
 **Blocked by:** none.
 **Next:** `/implement-lee testing-wave`
 **Model:** opus

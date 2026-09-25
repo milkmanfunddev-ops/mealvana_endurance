@@ -1,6 +1,6 @@
 # 98: Logging a barcode without a camera
 
-**Status:** ready-for-agent
+**Status:** in-progress (wave 25, 2026-09-25)
 **Blocked by:** none.
 **Next:** `/implement-lee testing-wave`
 **Model:** fable

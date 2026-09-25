@@ -1,6 +1,6 @@
 # 97: Plans and conversations are easy to tell apart
 
-**Status:** ready-for-agent
+**Status:** in-progress (wave 25, 2026-09-25)
 **Blocked by:** none.
 **Next:** `/implement-lee testing-wave`
 **Model:** fable
