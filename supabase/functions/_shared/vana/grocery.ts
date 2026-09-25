@@ -76,19 +76,58 @@ const fmt = (n: number) => { const r = Math.round(n * 4) / 4; const w = Math.flo
 export function aggregate(entries: { qty: string; mult: number }[]): string {
   const by = new Map<string, number>(); const other: string[] = [];
   for (const e of entries) { const { n, unit } = parseQty(e.qty); if (n == null) { if (e.qty) other.push(e.qty); continue; } by.set(unit, (by.get(unit) ?? 0) + n * e.mult); }
-  const parts = [...by.entries()].map(([u, n]) => { const big = (x: number) => String(Math.round(x * 10) / 10); if (u === 'g' && n >= 1000) return `${big(n / 1000)} kg`; if (u === 'ml' && n >= 1000) return `${big(n / 1000)} l`; return u ? `${fmt(n)} ${plural(u, n)}` : fmt(n); });
+  const parts = [...by.entries()].map(([u, n]) => { const big = (x: number) => String(Math.round(x * 10) / 10); if (u === 'g' && n >= 1000) return `${big(n / 1000)} kg`; if (u === 'ml' && n >= 1000) return `${big(n / 1000)} l`; if (u === 'g' || u === 'ml') return `${Math.round(n)} ${u}`; return u ? `${fmt(n)} ${plural(u, n)}` : fmt(n); });
   if (other.length) parts.push(other[0]);
   return parts.join(' + ');
+}
+
+/**
+ * Grains the library gives at their cooked weight ("Cooked short-grain rice 200g", "white rice, cooked 200 g",
+ * "basmati rice 180g cooked"). They are bought dry and swell as they cook, so a list at the cooked weight asks for
+ * about three times the rice (finding 18-006). `weight` is dry grams per cooked gram: USDA SR Legacy energy density,
+ * raw ÷ cooked (white rice 130/365 = 0.36, short-grain 130/358 = 0.36, brown ≈ 0.33, so rice 0.35; quinoa 120/368;
+ * spaghetti 158/371; oatmeal in water 71/379; pearled barley 123/352; lentils 116/352; bulgur 83/342). `volume` is
+ * dry cups per cooked cup from the usual package directions (1 cup rice or quinoa → 3 cups; ½ cup oats → 1 cup;
+ * 1 cup lentils → 2½ cups). Noodles come before rice so rice noodles take the pasta row. Beans and chickpeas are left
+ * out on purpose: the cooked weight is what a can holds drained, so it is already a weight the athlete can buy.
+ */
+const COOKED_YIELD: Array<[RegExp, { weight: number; volume: number }]> = [
+  [/\b(pasta|noodles?|spaghetti|penne|macaroni|fusilli|rigatoni|linguine|fettuccine|orzo|udon|soba)\b/, { weight: 0.43, volume: 0.5 }],
+  [/\brice\b(?! (cakes?|flour|vinegar|milk|paper|wine))/, { weight: 0.35, volume: 1 / 3 }],
+  [/\b(quinoa|millet|couscous)\b/, { weight: 0.33, volume: 1 / 3 }],
+  [/\b(oats|oatmeal|porridge)\b/, { weight: 0.19, volume: 0.5 }],
+  [/\b(barley|farro|spelt|freekeh|wheat ?berries)\b/, { weight: 0.35, volume: 1 / 3 }],
+  [/\blentils?\b/, { weight: 0.33, volume: 0.4 }],
+  [/\bbulgu?r\b/, { weight: 0.24, volume: 0.4 }],
+];
+const MASS_UNITS = new Set(['g', 'kg', 'oz', 'lb', 'lbs']);
+const VOLUME_UNITS = new Set(['cup', 'tbsp', 'tsp', 'ml', 'l']);
+const COOKED = /\b(cooked|steamed|boiled)\b/;
+/**
+ * What the athlete buys for one catalog row: a cooked grain becomes its dry amount (`factor` scales the amount), and
+ * one whose amount cannot be converted (a count, a "square", a blank) keeps "cooked" in its name rather than reading
+ * as that much dry grain. Everything else passes through with factor 1. Pure — unit-tested.
+ */
+export function buyable(name: string, qty: string, key: string): { key: string; factor: number } {
+  const raw = name.toLowerCase();
+  if (!COOKED.test(raw) && !COOKED.test(qty.toLowerCase())) return { key, factor: 1 };
+  const grain = COOKED_YIELD.find(([re]) => re.test(key));
+  if (!grain) return { key, factor: 1 };
+  const { n, unit } = parseQty(qty);
+  if (n != null && MASS_UNITS.has(unit)) return { key, factor: grain[1].weight };
+  if (n != null && VOLUME_UNITS.has(unit)) return { key, factor: grain[1].volume };
+  return { key: `cooked ${key}`, factor: 1 };
 }
 
 /** Pure aggregation over already-resolved meal ingredient lists — unit-tested. */
 export function buildItems(meals: { id: string; servings: number; baseServings: number; ingredients: { name: string; qty: string }[] }[], have: Set<string>): ShoppingItem[] {
   const buckets = new Map<string, { name: string; entries: { qty: string; mult: number }[]; from: Set<string> }>();
   for (const m of meals) for (const ing of m.ingredients) {
-    const key = canonicalName(ing.name); if (!key || alwaysHave(key)) continue;
+    const canonical = canonicalName(ing.name); if (!canonical || alwaysHave(canonical)) continue;
+    const qty = (ing.qty ?? '').trim() || defaultQty(canonical);
+    const { key, factor } = buyable(ing.name, qty, canonical);
     const b = buckets.get(key) ?? { name: key.charAt(0).toUpperCase() + key.slice(1), entries: [], from: new Set<string>() };
-    const qty = (ing.qty ?? '').trim() || defaultQty(key);
-    b.entries.push({ qty, mult: m.servings / Math.max(1, m.baseServings) }); b.from.add(m.id); buckets.set(key, b);
+    b.entries.push({ qty, mult: factor * m.servings / Math.max(1, m.baseServings) }); b.from.add(m.id); buckets.set(key, b);
   }
   const items: ShoppingItem[] = [...buckets.entries()].map(([key, b]) => ({ aisle: classifyAisle(key), name: b.name, qty: aggregate(b.entries), checked: false, have: [...have].some((h) => key.includes(h)), fromMealIds: [...b.from] }));
   items.sort((a, b) => AISLE_ORDER.indexOf(a.aisle) - AISLE_ORDER.indexOf(b.aisle) || a.name.localeCompare(b.name));

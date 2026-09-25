@@ -8,7 +8,10 @@ import 'package:go_router/go_router.dart';
 
 import '../../content/application/content_service.dart';
 import '../../content/domain/content_keys.dart';
+import '../../meal_planning/application/shopping_qty_formatter.dart';
 import '../../meal_planning/presentation/widgets/vana_round_button.dart';
+import '../../nutrition_plan/domain/run_parameters.dart';
+import '../../../shared/providers/unit_system_provider.dart';
 import '../../../shared/widgets/kyle_design/buttons/primary_button.dart';
 import '../../../shared/widgets/kyle_design/buttons/secondary_button.dart';
 import '../../../shared/widgets/kyle_design/buttons/tertiary_button.dart';
@@ -28,6 +31,17 @@ String krogerText(WidgetRef ref, String key) =>
     ref.read(contentServiceProvider).getValue(key);
 String _format(WidgetRef ref, String key, Map<String, String> values) =>
     ContentKeys.format(krogerText(ref, key), values);
+
+/// "Need …" for a line, in the units the Shopping tab shows the same row in:
+/// the list stores metric, and the athlete reads imperial unless Settings
+/// says metric (22-003). Called from a build, so it watches the preference.
+String _need(WidgetRef ref, String requiredQty) =>
+    _format(ref, ContentKeys.krogerNeeded, {
+      'quantity': formatShoppingQty(
+        requiredQty,
+        ref.watch(unitSystemProvider).value ?? UnitSystem.imperial,
+      ),
+    });
 
 /// How large Kroger's product photograph is drawn: a square thumbnail.
 ///
@@ -591,12 +605,7 @@ class _MatchedLine extends ConsumerWidget {
                       style: muted,
                     ),
                     if (line.requiredQty.isNotEmpty)
-                      Text(
-                        _format(ref, ContentKeys.krogerNeeded, {
-                          'quantity': line.requiredQty,
-                        }),
-                        style: muted,
-                      ),
+                      Text(_need(ref, line.requiredQty), style: muted),
                   ],
                 ),
               ),
@@ -785,9 +794,7 @@ class _ShopperLine extends ConsumerWidget {
       ),
       if (line.requiredQty.isNotEmpty)
         Text(
-          _format(ref, ContentKeys.krogerNeeded, {
-            'quantity': line.requiredQty,
-          }),
+          _need(ref, line.requiredQty),
           style: AppTextStyles.bodySmall.copyWith(color: _mutedInk(context)),
         ),
     ],
