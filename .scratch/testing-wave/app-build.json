@@ -1,5 +1,5 @@
 {
-  "commit": "5e05f8a6393d73c1cf5306fe5f271c05bc24d2f2",
-  "builtAt": "2026-09-25T13:16:45Z",
-  "note": "Commit the testing app was built from; the dev simulator carries this build, so every wave copy inherits it (rebuilt 2026-09-25 after fix waves 19-24, installed on the dev simulator). Rebuild only when lib/pubspec/ios/assets changed since this commit, before wave --open (RUNBOOK, wave lead step 2)."
+  "commit": "e3367d2c914d59f0fcde4b854ff4805416a6dc20",
+  "builtAt": "2026-09-25T19:45:54Z",
+  "note": "Commit the testing app was built from; the dev simulator carries this build, so every wave copy inherits it (rebuilt 2026-09-25 after fix waves 25-28, installed on the dev simulator). Rebuild only when lib/pubspec/ios/assets changed since this commit, before wave --open (RUNBOOK, wave lead step 2)."
 }
