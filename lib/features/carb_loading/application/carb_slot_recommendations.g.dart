@@ -114,3 +114,92 @@ final class CarbSlotRecommendationsFamily extends $Family
   @override
   String toString() => r'carbSlotRecommendationsProvider';
 }
+
+/// Provider face of [resolveCarbRecommendation] for the slot page's tap.
+
+@ProviderFor(carbRecommendationResolution)
+const carbRecommendationResolutionProvider =
+    CarbRecommendationResolutionFamily._();
+
+/// Provider face of [resolveCarbRecommendation] for the slot page's tap.
+
+final class CarbRecommendationResolutionProvider
+    extends
+        $FunctionalProvider<
+          AsyncValue<CarbFoodResolution?>,
+          CarbFoodResolution?,
+          FutureOr<CarbFoodResolution?>
+        >
+    with
+        $FutureModifier<CarbFoodResolution?>,
+        $FutureProvider<CarbFoodResolution?> {
+  /// Provider face of [resolveCarbRecommendation] for the slot page's tap.
+  const CarbRecommendationResolutionProvider._({
+    required CarbRecommendationResolutionFamily super.from,
+    required String super.argument,
+  }) : super(
+         retry: null,
+         name: r'carbRecommendationResolutionProvider',
+         isAutoDispose: true,
+         dependencies: null,
+         $allTransitiveDependencies: null,
+       );
+
+  @override
+  String debugGetCreateSourceHash() => _$carbRecommendationResolutionHash();
+
+  @override
+  String toString() {
+    return r'carbRecommendationResolutionProvider'
+        ''
+        '($argument)';
+  }
+
+  @$internal
+  @override
+  $FutureProviderElement<CarbFoodResolution?> $createElement(
+    $ProviderPointer pointer,
+  ) => $FutureProviderElement(pointer);
+
+  @override
+  FutureOr<CarbFoodResolution?> create(Ref ref) {
+    final argument = this.argument as String;
+    return carbRecommendationResolution(ref, argument);
+  }
+
+  @override
+  bool operator ==(Object other) {
+    return other is CarbRecommendationResolutionProvider &&
+        other.argument == argument;
+  }
+
+  @override
+  int get hashCode {
+    return argument.hashCode;
+  }
+}
+
+String _$carbRecommendationResolutionHash() =>
+    r'082395d47aaf1bff6ad0a6d80304b7c4d6390ceb';
+
+/// Provider face of [resolveCarbRecommendation] for the slot page's tap.
+
+final class CarbRecommendationResolutionFamily extends $Family
+    with $FunctionalFamilyOverride<FutureOr<CarbFoodResolution?>, String> {
+  const CarbRecommendationResolutionFamily._()
+    : super(
+        retry: null,
+        name: r'carbRecommendationResolutionProvider',
+        dependencies: null,
+        $allTransitiveDependencies: null,
+        isAutoDispose: true,
+      );
+
+  /// Provider face of [resolveCarbRecommendation] for the slot page's tap.
+
+  CarbRecommendationResolutionProvider call(String query) =>
+      CarbRecommendationResolutionProvider._(argument: query, from: this);
+
+  @override
+  String toString() => r'carbRecommendationResolutionProvider';
+}

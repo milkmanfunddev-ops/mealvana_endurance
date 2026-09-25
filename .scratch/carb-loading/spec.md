@@ -880,6 +880,38 @@ fixed background-sync tail — recorded so nobody trusts that accident as
 the propagation path). Suites: 497 green across carb_loading +
 macro_dashboard + meal_logging + events.
 
+### G25 GREEN — 2026-09-25 — the ⊕ one-tap logs the RESOLVED food (qa ea7fe30)
+
+Ruled shape (composition ruling's one-tap ⊕; Xuan verbatim: "as if it
+clicks on the quick adds"): at tap the curated row resolves to its REAL
+food and one-tap logs it slot-tagged — real macros, zero invented numbers;
+the search handoff survives only for a row that resolves to nothing, and
+every such row is an enumerated data finding. Implementation:
+`resolveCarbRecommendation` runs the unified search's own matcher
+(tokenize/matchesSearchTokens over name+displayName+plural+description+
+productTypeId) against the LOCAL `foods` mirror in name-asc order — the
+top match the search would surface, offline-first and deterministic (the
+network template_foods/catalog fetch is NOT in the tap path). The commit
+goes through mealLogController.logFromComponents slot-tagged with
+logMethod 'carb_slot_recommendation'; G24's invalidation carries the
+same-frame ripple.
+
+Reds green in `g25_one_tap_log_test.dart` (fixtures extracted VERBATIM
+from the sim's synced DB — 27 curated rows + the 31-row foods mirror):
+L2 tap→slot-tagged log with Toast's stored 17 g/90 kcal (not the curated
+25 g estimate) + Logged-section ripple in one settled frame + zero
+navigation (red against the pre-G25 screen via stash probe); seam runs
+all 27 rows, pins the resolved set (12) and the unresolved set (15), and
+ALWAYS prints the unresolved list. **CURATION DATA FINDING (for the
+record + land notes): 15 of 27 curated rows resolve to nothing in the
+31-row fuel-centric foods mirror** — baked_potato, beet_juice, beets,
+cereal, energy_gel*, graham_crackers, pancake, pasta_marinara, pizza,
+rice, rice_pudding, saltines, sandwich, smoothie, sweet_potato (*gel
+exists as "Gels" but the two-token query "Energy gel" doesn't match).
+Those rows fall back to the seeded search handoff until the foods mirror
+grows the entries — data work, deliberately not a reason to weaken the
+tap. Suites: 499 green.
+
 ## Notes on the two new ideas
 
 **Reminder to start.** Machinery exists — `NotificationService`

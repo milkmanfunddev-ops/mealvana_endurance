@@ -3,7 +3,9 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
 
 import '../../../../theme/kyle_design/app_colors.dart';
+import '../../../../shared/widgets/kyle_design/feedback/mealvana_snackbar.dart';
 import '../../../macro_dashboard/presentation/providers/carb_dashboard_providers.dart';
+import '../../../meal_logging/domain/meal_log_source.dart';
 import '../../../meal_logging/domain/meal_slot.dart';
 import '../../../meal_logging/presentation/providers/meal_log_providers.dart';
 import '../../../meal_logging/presentation/screens/log_meal_screen.dart';
@@ -217,13 +219,7 @@ class CarbSlotScreen extends ConsumerWidget {
             padding: const EdgeInsets.only(bottom: 7),
             child: InkWell(
               key: ValueKey('carb_slot.rec_${rec.id}'),
-              onTap: () => openLogMealScreen(
-                context,
-                logDate: dateStr,
-                source: 'carb_slot_recommendation',
-                initialSlot: logSlot,
-                initialQuery: rec.query,
-              ),
+              onTap: () => _logRecommendation(context, ref, rec),
               borderRadius: BorderRadius.circular(13),
               child: Container(
                 padding: const EdgeInsets.symmetric(
@@ -283,6 +279,48 @@ class CarbSlotScreen extends ConsumerWidget {
             ),
           ),
     ];
+  }
+
+  /// G25 (Xuan, 2026-09-25): the ⊕ one-tap logs — "as if it clicks on the
+  /// quick adds when you log a meal". The curated row RESOLVES to its real
+  /// food in the local `foods` mirror (real macros, nothing invented) and
+  /// commits slot-tagged through the ordinary meal-log path; every carb
+  /// surface ripples in the same frame (G24). The search handoff survives
+  /// ONLY as the fallback for a row that resolves to nothing — such rows
+  /// are enumerated by the seam test as data findings, never silent.
+  Future<void> _logRecommendation(
+    BuildContext context,
+    WidgetRef ref,
+    CarbSlotRecommendation rec,
+  ) async {
+    final resolution = await ref.read(
+      carbRecommendationResolutionProvider(rec.query).future,
+    );
+    if (!context.mounted) return;
+    if (resolution == null) {
+      openLogMealScreen(
+        context,
+        logDate: dateStr,
+        source: 'carb_slot_recommendation',
+        initialSlot: logSlot,
+        initialQuery: rec.query,
+      );
+      return;
+    }
+    await ref
+        .read(mealLogControllerProvider.notifier)
+        .logFromComponents(
+          name: resolution.title,
+          slot: logSlot,
+          logDate: dateStr,
+          source: MealLogSource.manual,
+          components: [resolution.component],
+          eatenAt: DateTime.now(),
+          logMethod: 'carb_slot_recommendation',
+        );
+    if (context.mounted) {
+      MealvanaSnackbar.showSuccess(context, '${resolution.title} logged');
+    }
   }
 
   Widget _loggedRow(
