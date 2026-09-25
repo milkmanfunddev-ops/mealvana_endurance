@@ -11,12 +11,11 @@ Each entry: what went wrong or cost time, where it was seen, and the suggested f
 
 ## Open
 
-- **#74 `netcut on` leaves open connections up (wave 30).** Ticket 111's first tap after the cut
-  (21-007) went out over a connection that was already open; a retry 40 s later was blocked
-  (Finding 111-004). Suggested fix: after `netcut on`, wait for idle connections to drop or
-  relaunch the app before the first offline check, and say so in runbook step 5.
-
 ## Done
+
+- **#74 `netcut on` leaves open connections up (wave 30).** Fixed before wave 32:
+  `netcut.sh on SCRATCH --relaunch UDID` cuts, then relaunches the app so nothing opened before the
+  cut survives; runbook step 5 says to use it before an offline check.
 
 - **#73 three-digit tickets had no Findings (wave 30).** `findings.mjs` read and made Findings
   only for two-digit tickets, so `111-*` files were skipped by `index` and `new` refused

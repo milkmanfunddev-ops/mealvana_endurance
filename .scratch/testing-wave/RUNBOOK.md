@@ -123,7 +123,10 @@ ticket says so.
   (`CRED type` for the password once the field is focused).
 - Offline for your app only: `scripts/testing-wave/netcut/netcut.sh launch UDID SCRATCH` relaunches
   the app with a connect-blocking library injected (network still on); `netcut.sh on SCRATCH` cuts
-  it and `netcut.sh off SCRATCH` restores it, no relaunch. The host and other simulators keep their
+  it and `netcut.sh off SCRATCH` restores it, no relaunch. A plain `on` blocks new connects only:
+  a connection the app opened before the cut stays up, so the first offline tap can still reach
+  the server (#74). Before an offline check, cut with `netcut.sh on SCRATCH --relaunch UDID`,
+  which relaunches the app with the cut already in force. The host and other simulators keep their
   network. Blocked connects are logged to `SCRATCH/netcut.log`. The app's connectivity check still
   reads "online", so its offline banner needs a device (20-006). Start the log stream first
   (step 3), since `launch` replaces the plain `simctl launch`.
