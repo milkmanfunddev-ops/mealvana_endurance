@@ -11,6 +11,7 @@
 // and `syncFromRemote` upserts the server's rows while keeping the ids that
 // are still `needs_upload`.
 
+import 'package:flutter/services.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:mealvana_endurance/features/auth/data/user_repository.dart';
 import 'package:mealvana_endurance/features/meal_logging/data/meal_log_repository.dart';
@@ -218,6 +219,79 @@ void main() {
       // Still rate-limited.
       await coordinator.ensureSynced('meal_logs', _user, repository: repo);
       expect(repo.uploadCalls, 1);
+    });
+  });
+
+  group('forceSyncRepository after a failed upload (wave 27 review)', () {
+    setUp(() {
+      // Online: connectivity_plus answers the check over its channel.
+      TestWidgetsFlutterBinding.ensureInitialized();
+      const channel = MethodChannel('dev.fluttercommunity.plus/connectivity');
+      TestDefaultBinaryMessengerBinding.instance.defaultBinaryMessenger
+          .setMockMethodCallHandler(channel, (call) async => ['wifi']);
+      addTearDown(
+        () => TestDefaultBinaryMessengerBinding.instance.defaultBinaryMessenger
+            .setMockMethodCallHandler(channel, null),
+      );
+    });
+
+    test(
+      'still pulls, keeps the row dirty and logs the repo and error',
+      () async {
+        final coordinator = containerWith().read(
+          syncCoordinatorProvider.notifier,
+        );
+        final repo = repoWithRejectedRow();
+
+        await coordinator.forceSyncRepository(
+          'meal_logs',
+          _user,
+          repository: repo,
+        );
+
+        expect(repo.uploadCalls, 1);
+        expect(
+          repo.pullCalls,
+          1,
+          reason: 'the pull runs after a failed upload',
+        );
+        expect(repo.local['log-from-other-phone'], (
+          name: 'Rice cake and Almond butter',
+          needsUpload: false,
+        ));
+        expect(repo.local['rejected-log'], (name: 'Oats', needsUpload: true));
+        final uploadErrors = logger.errors.where(
+          (e) => e.data?['repoKey'] == 'meal_logs',
+        );
+        expect(uploadErrors, hasLength(1));
+        expect(uploadErrors.single.data?['error'], contains('42501'));
+      },
+    );
+
+    test('owes the upload a retry: ensureSynced after the cooldown uploads '
+        'although the forced pull made the repository fresh', () async {
+      final coordinator = containerWith().read(
+        syncCoordinatorProvider.notifier,
+      );
+      var clock = DateTime(2026, 9, 25, 12);
+      coordinator.now = () => clock;
+      final repo = repoWithRejectedRow();
+
+      await coordinator.forceSyncRepository(
+        'meal_logs',
+        _user,
+        repository: repo,
+      );
+      // Inside the cooldown: rate-limited, no second upload.
+      await coordinator.ensureSynced('meal_logs', _user, repository: repo);
+      expect(repo.uploadCalls, 1);
+
+      clock = clock.add(const Duration(minutes: 3));
+      repo.serverAccepts = true;
+      await coordinator.ensureSynced('meal_logs', _user, repository: repo);
+
+      expect(repo.uploadCalls, 2);
+      expect(repo.local['rejected-log'], (name: 'Oats', needsUpload: false));
     });
   });
 

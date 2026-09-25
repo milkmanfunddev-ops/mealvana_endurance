@@ -803,6 +803,7 @@ class SyncCoordinator extends _$SyncCoordinator {
     }
 
     _syncingNow.add(repoKey);
+    var failureRecorded = false;
 
     try {
       _logger.info(
@@ -817,19 +818,41 @@ class SyncCoordinator extends _$SyncCoordinator {
         await ensureSynced(dep, userId);
       }
 
-      // 2. Upload dirty records FIRST (protect user data)
-      final uploadResult = await repository.uploadDirtyRecords(userId);
-      if (!uploadResult.success) {
-        throw StateError(
-          'Upload failed for $repoKey: ${uploadResult.error ?? 'unknown error'}',
+      // 2. Upload dirty records FIRST (protect user data). A failed upload
+      // does not stop the pull, as in ensureSynced (Finding 86-012): the rows
+      // stay dirty and the upload is owed a retry after the cooldown.
+      final uploadFailure = await _uploadDirty(repoKey, userId, repository);
+      if (uploadFailure != null) {
+        failureRecorded = true;
+        _recordFailure(repoKey);
+        _uploadRetryOwed.add(repoKey);
+        _logger.error(
+          'Dirty record upload failed - pulling anyway, rows kept for retry',
+          context: 'SYNC_COORDINATOR',
+          error: uploadFailure.error,
+          stackTrace: uploadFailure.stackTrace,
+          data: {
+            'repoKey': repoKey,
+            'userId': userId,
+            'error': uploadFailure.error.toString(),
+            'failureCount': _failureCount[repoKey] ?? 1,
+          },
+        );
+        unawaited(
+          _sentry.reportCriticalError(
+            uploadFailure.error,
+            stackTrace: uploadFailure.stackTrace,
+            context: 'sync_forceSync_$repoKey',
+          ),
         );
       }
 
       // 3. Force sync from remote (bypass staleness)
       await repository.syncFromRemote(userId);
 
-      // 4. Update timestamp and clear failure tracking
+      // 4. Update timestamp; clear failure tracking only if the upload landed
       _lastSyncTimes[repoKey] = DateTime.now();
+      if (failureRecorded) return;
       _clearFailureTracking(repoKey);
 
       _logger.info(
@@ -838,7 +861,7 @@ class SyncCoordinator extends _$SyncCoordinator {
         data: {'repoKey': repoKey},
       );
     } catch (e, stackTrace) {
-      _recordFailure(repoKey);
+      if (!failureRecorded) _recordFailure(repoKey);
       _logger.error(
         'Force sync failed',
         context: 'SYNC_COORDINATOR',
