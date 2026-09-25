@@ -8,6 +8,7 @@
  */
 import { assertEquals } from 'https://deno.land/std@0.177.1/testing/asserts.ts';
 import { listConversations } from '../../_shared/vana/chat.ts';
+import { extraAction } from '../../_shared/vana/actions.ts';
 import { testCtx, TEST_USER_ID } from './support/vana_ctx.ts';
 
 const U = TEST_USER_ID;
@@ -78,4 +79,30 @@ Deno.test('listConversations: the plans come in one read; none when the list is 
   const empty = testCtx({ vana_conversations: [] });
   assertEquals(await listConversations(empty, 30, 'meal_planning'), []);
   assertEquals(empty.fake.reads, ['vana_conversations']);
+});
+
+// ---- Ticket 126 (88-002, 89-007, 88-021): the app reads the list through `list_conversations`, so the row titles come
+// from the same plan pick as everything else, and it pages with `offset` so an account with 80 conversations reaches them all.
+
+Deno.test('list_conversations: the action answers the same rows and plans as listConversations, for one kind', async () => {
+  const v = account();
+  const out = await extraAction(v, 'list_conversations', { kind: 'meal_planning', limit: 50 });
+  assertEquals(out!.parts, []);
+  assertEquals(out!.conversations, await listConversations(account(), 50, 'meal_planning'));
+  assertEquals((out!.conversations as { id: string }[]).map((c) => c.id), ['conv-20', 'conv-13', 'conv-12', 'conv-11', 'conv-10']);
+});
+
+Deno.test('list_conversations: offset pages through the list in order, with no row twice and an empty page at the end', async () => {
+  const v = account();
+  const page = async (offset: number) => ((await extraAction(v, 'list_conversations', { kind: 'meal_planning', limit: 2, offset }))!.conversations as { id: string }[]).map((c) => c.id);
+  assertEquals(await page(0), ['conv-20', 'conv-13']);
+  assertEquals(await page(2), ['conv-12', 'conv-11']);
+  assertEquals(await page(4), ['conv-10']);
+  assertEquals(await page(6), []);
+});
+
+Deno.test('list_conversations: a bad limit or offset falls back instead of failing', async () => {
+  const v = account();
+  const out = await extraAction(v, 'list_conversations', { kind: 'general', limit: 'x', offset: -3 });
+  assertEquals((out!.conversations as { id: string }[]).map((c) => c.id), ['conv-09']);
 });
