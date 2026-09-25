@@ -48,6 +48,35 @@ class EmailVerificationRequiredException implements Exception {
 class InvalidVerificationCodeException implements Exception {
   const InvalidVerificationCodeException(this.message);
 
+  /// Maps GoTrue's refusal of a code to text the athlete can act on.
+  ///
+  /// GoTrue answers a mistyped code, a superseded one and a stale one alike
+  /// (403, `otp_expired`, "Token has expired or is invalid"), so the answer
+  /// alone cannot tell them apart. Saying "expired" sent people who had
+  /// mistyped to Resend instead of back to the digits (Finding 32-001), so
+  /// that answer reads wrong first and names both ways out.
+  factory InvalidVerificationCodeException.fromGoTrue({
+    String? code,
+    String? statusCode,
+    required String message,
+  }) {
+    if (code == 'over_request_rate_limit' || statusCode == '429') {
+      return const InvalidVerificationCodeException(tooManyTriesText);
+    }
+    final lower = message.toLowerCase();
+    if (code == 'otp_expired' || lower.contains('expired')) {
+      return const InvalidVerificationCodeException(wrongOrExpiredText);
+    }
+    return const InvalidVerificationCodeException(notRightText);
+  }
+
+  static const wrongOrExpiredText =
+      'That code is wrong or has expired. Check the digits, or tap Resend '
+      'for a new one.';
+  static const notRightText = 'That code is not right. Check it and try again.';
+  static const tooManyTriesText =
+      'Too many tries. Wait a minute and try again.';
+
   final String message;
 
   @override
