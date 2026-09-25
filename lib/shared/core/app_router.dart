@@ -109,7 +109,6 @@ class AuthChangeNotifier extends ChangeNotifier {
   void notify() => notifyListeners();
 }
 
-/// Singleton provider for the auth change notifier
 /// Barcode Scanner Screen - scan barcodes to add or swap foods.
 ///
 /// Passes the caller's `context` through (finding 28-002): meal logging
@@ -129,6 +128,7 @@ final GoRoute barcodeScannerRoute = GoRoute(
   },
 );
 
+/// Singleton provider for the auth change notifier
 final authChangeNotifierProvider = Provider<AuthChangeNotifier>((ref) {
   return AuthChangeNotifier();
 });

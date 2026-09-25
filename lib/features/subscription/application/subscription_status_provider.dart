@@ -71,7 +71,15 @@ class SubscriptionStatusController extends _$SubscriptionStatusController {
 
     // Capture the service: `ref` may not be used inside an onDispose callback.
     final service = _service;
-    service.setStatusListener(_onRevenueCatUpdate);
+    // The listener is sync; the identity check awaits, so its future is
+    // kept alive here and any failure is logged instead of going unhandled.
+    service.setStatusListener(
+      (rc) => unawaited(
+        _onRevenueCatUpdate(rc).catchError((Object e) {
+          debugPrint('[SubscriptionStatus] push not taken: $e');
+        }),
+      ),
+    );
     ref.onDispose(() => service.setStatusListener(null));
 
     // Nobody signed in (sign-out, account deletion): the outgoing account's
