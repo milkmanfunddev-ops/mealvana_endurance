@@ -30,6 +30,7 @@ import '../../../../shared/data/syncable_repository.dart';
 import '../../../nutrition_plan/presentation/providers/macro_targets_controller.dart';
 import '../../../onboarding/application/onboarding_snapshot_service.dart';
 import '../../../subscription/application/subscription_status_provider.dart';
+import '../../domain/account_deletion_entry.dart';
 import '../../domain/settings_state.dart';
 
 part 'settings_controller.g.dart';
@@ -857,7 +858,11 @@ class SettingsController extends _$SettingsController {
   /// 1. Call delete-user Edge Function to delete from auth.users and public.users
   /// 2. Clear user's local data (with WHERE user_id filter)
   /// 3. Sign out to trigger auth state change which rebuilds UI
-  Future<void> deleteAccount() async {
+  ///
+  /// [from] names the screen that asked, for the analytics event only.
+  Future<void> deleteAccount({
+    AccountDeletionEntry from = AccountDeletionEntry.settings,
+  }) async {
     // Read everything the guarded body needs up front: the awaits below can
     // outlive this notifier (the auth listener invalidates it as soon as
     // signOut lands), and touching ref/state after that throws
@@ -878,8 +883,8 @@ class SettingsController extends _$SettingsController {
         throw Exception('No user logged in');
       }
 
-      // Track delete account event
-      await analytics.track('settings_delete_account_tapped');
+      // Track delete account event, named for where it was asked (04-001)
+      await analytics.track(from.analyticsEvent);
 
       // If authenticated, call the delete-user Edge Function
       // This deletes from both auth.users and public.users (with CASCADE)

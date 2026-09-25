@@ -30,6 +30,7 @@ import 'package:mealvana_endurance/features/meal_logging/data/meal_log_repositor
 import 'package:mealvana_endurance/features/meal_logging/data/saved_meals_repository.dart';
 import 'package:mealvana_endurance/features/meal_planning/data/meal_plan_repository.dart';
 import 'package:mealvana_endurance/features/meal_planning/data/user_memory_repository.dart';
+import 'package:mealvana_endurance/features/settings/domain/account_deletion_entry.dart';
 import 'package:mealvana_endurance/features/settings/domain/settings_state.dart';
 import 'package:mealvana_endurance/features/settings/presentation/providers/settings_controller.dart';
 import 'package:mealvana_endurance/features/subscription/application/subscription_status_provider.dart';
@@ -271,6 +272,31 @@ void main() {
       () => subscription.logOut(),
       () => auth.signOut(),
     ]);
+  });
+
+  group('delete account names where it came from (04-001)', () {
+    // The paywall's menu and Settings share the real delete path; only the
+    // event name tells a new account deleting itself on the paywall apart
+    // from a delete in Settings.
+    test('from the paywall: paywall_delete_account_tapped', () async {
+      final c = makeContainer();
+
+      await c
+          .read(settingsControllerProvider.notifier)
+          .deleteAccount(from: AccountDeletionEntry.paywall);
+
+      verify(() => analytics.track('paywall_delete_account_tapped')).called(1);
+      verifyNever(() => analytics.track('settings_delete_account_tapped'));
+    });
+
+    test('from Settings: settings_delete_account_tapped', () async {
+      final c = makeContainer();
+
+      await c.read(settingsControllerProvider.notifier).deleteAccount();
+
+      verify(() => analytics.track('settings_delete_account_tapped')).called(1);
+      verifyNever(() => analytics.track('paywall_delete_account_tapped'));
+    });
   });
 
   test('sign-out from the paywall logs no error (02-003)', () async {

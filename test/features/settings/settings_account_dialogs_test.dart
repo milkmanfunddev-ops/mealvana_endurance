@@ -21,6 +21,7 @@ import 'package:go_router/go_router.dart';
 
 import 'package:mealvana_endurance/features/content/application/content_service.dart';
 import 'package:mealvana_endurance/features/content/domain/content_keys.dart';
+import 'package:mealvana_endurance/features/settings/domain/account_deletion_entry.dart';
 import 'package:mealvana_endurance/features/settings/domain/settings_state.dart';
 import 'package:mealvana_endurance/features/settings/presentation/providers/settings_controller.dart';
 import 'package:mealvana_endurance/features/settings/presentation/screens/settings_screen.dart';
@@ -63,7 +64,9 @@ class _SeededSettingsController extends SettingsController {
   Future<void> signOut() async => _calls.signOuts++;
 
   @override
-  Future<void> deleteAccount() async => _calls.deletes++;
+  Future<void> deleteAccount({
+    AccountDeletionEntry from = AccountDeletionEntry.settings,
+  }) async => _calls.deletes++;
 }
 
 final _defaults = loadDefaultContent();

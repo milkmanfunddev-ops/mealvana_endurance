@@ -7,10 +7,12 @@ import '../../../../features/activities/domain/activity.dart';
 import '../../../../features/auth/data/user_repository.dart';
 import '../../../../features/nutrition_plan/domain/fuel_log_data.dart';
 import '../../../../shared/data/syncable_repository.dart';
+import '../../../../shared/services/analytics/analytics_tracker.dart';
 import '../../../../shared/services/app_external_deps.dart';
 import '../../../../shared/services/logging_service.dart';
 import '../../../../shared/services/supabase/supabase_client_provider.dart';
 import '../../../../shared/services/sync/sync_coordinator.dart';
+import '../../application/diary_session.dart';
 import '../../application/meal_logging_service.dart';
 import '../../data/meal_log_repository.dart';
 import '../../data/saved_meals_repository.dart';
@@ -261,7 +263,14 @@ class MealLogController extends _$MealLogController {
     return null;
   }
 
-  AppLogger get _logger => ref.read(appLoggerProvider);
+  // Read in [_runGuarded] before the first await: the screens call this
+  // auto-dispose controller with a listener-less `read(...notifier)`, so it
+  // is often disposed mid-write, and a `ref.read` after that throws. Reading
+  // them late, behind `ref.mounted` gates, silently dropped `meal_logged`,
+  // `meal_log_deleted` and the diary count (testing-wave 24-002, 27-003).
+  late AnalyticsTracker _analytics;
+  late AppLogger _logger;
+  late DiarySession _diary;
 
   /// Runs [action] inside [AsyncValue.guard], but only writes the result back
   /// to [state] if this provider is still mounted.
@@ -275,11 +284,15 @@ class MealLogController extends _$MealLogController {
   /// - reading `ref` (e.g. the `MealLoggingService`) *after* an async gap
   ///   inside [action] throws the same exception — so the service is read once,
   ///   before the first await, and passed into [action] (Sentry
-  ///   MEALVANA-ENDURANCE-DEV-4X).
+  ///   MEALVANA-ENDURANCE-DEV-4X). The analytics sink, logger and diary
+  ///   session are read here too, so tracking never depends on the ref.
   Future<void> _runGuarded(
     Future<void> Function(MealLoggingService service) action,
   ) async {
     final service = ref.read(mealLoggingServiceProvider);
+    _analytics = ref.read(appExternalDepsProvider).analytics;
+    _logger = ref.read(appLoggerProvider);
+    _diary = ref.read(diarySessionProvider);
     state = const AsyncLoading();
     final result = await AsyncValue.guard(() => action(service));
     if (!ref.mounted) return;
@@ -327,6 +340,7 @@ class MealLogController extends _$MealLogController {
         eatenAt: eatenAt,
       );
 
+      _diary.recordLogged();
       await _trackEvent('meal_logged', {
         if (slot != null) 'slot': slot.wireValue,
         'source': 'manual',
@@ -356,6 +370,7 @@ class MealLogController extends _$MealLogController {
       );
       if (ref.mounted) ref.invalidate(recentMealsProvider);
 
+      _diary.recordLogged();
       await _trackEvent('meal_logged', {
         if (slot != null) 'slot': slot.wireValue,
         'source': 'saved',
@@ -388,6 +403,7 @@ class MealLogController extends _$MealLogController {
       );
       if (ref.mounted) ref.invalidate(recentMealsProvider);
 
+      _diary.recordLogged(savedMeals.length);
       await _trackEvent('meals_logged_bulk', {
         'count': savedMeals.length,
         if (slot != null) 'slot': slot.wireValue,
@@ -418,6 +434,7 @@ class MealLogController extends _$MealLogController {
         notes: notes,
       );
 
+      _diary.recordLogged();
       await _trackEvent('meal_logged', {
         if (slot != null) 'slot': slot.wireValue,
         'source': 'recipe',
@@ -460,6 +477,7 @@ class MealLogController extends _$MealLogController {
         eatenAt: eatenAt,
       );
       if (ref.mounted) ref.invalidate(recentMealsProvider);
+      _diary.recordLogged();
       await _trackEvent('meal_logged', {
         if (slot != null) 'slot': slot.wireValue,
         'source': source.wireValue,
@@ -501,7 +519,6 @@ class MealLogController extends _$MealLogController {
 
       await repo.restoreLog(id: logId, userId: userId);
 
-      if (!ref.mounted) return;
       _logger.info(
         'Meal log restored',
         context: 'MEAL_LOG_CONTROLLER',
@@ -523,7 +540,6 @@ class MealLogController extends _$MealLogController {
 
       await repo.softDeleteLog(id: logId, userId: userId);
 
-      if (!ref.mounted) return;
       _logger.info(
         'Meal log deleted',
         context: 'MEAL_LOG_CONTROLLER',
@@ -569,11 +585,10 @@ class MealLogController extends _$MealLogController {
     String event,
     Map<String, dynamic> properties,
   ) async {
-    // Fire-and-forget analytics: skip if the provider was disposed mid-action
-    // (e.g. the triggering screen popped before the write finished).
-    if (!ref.mounted) return;
-    final analytics = ref.read(appExternalDepsProvider).analytics;
-    await analytics.track(event, properties: properties);
+    // Tracked even when the provider was disposed mid-action (the triggering
+    // screen or row went away before the write finished): the write landed,
+    // so the event is true. [_analytics] was read before the first await.
+    await _analytics.track(event, properties: properties);
   }
 }
 

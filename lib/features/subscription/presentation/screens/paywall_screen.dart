@@ -8,6 +8,7 @@ import '../../../../shared/services/privacy/privacy_links.dart';
 import '../../../../shared/widgets/kyle_design/kyle_design.dart';
 import '../../../content/application/content_service.dart';
 import '../../../content/domain/content_keys.dart';
+import '../../../settings/domain/account_deletion_entry.dart';
 import '../../../settings/presentation/providers/settings_controller.dart';
 import '../../application/pro_paywall_controller.dart';
 import '../pro_gate_redirect.dart';
@@ -238,7 +239,9 @@ class PaywallScreen extends ConsumerWidget {
       destructive: true,
     );
     if (!confirmed || !context.mounted) return;
-    await ref.read(settingsControllerProvider.notifier).deleteAccount();
+    await ref
+        .read(settingsControllerProvider.notifier)
+        .deleteAccount(from: AccountDeletionEntry.paywall);
     if (context.mounted) GoRouter.maybeOf(context)?.go('/welcome');
   }
 

@@ -6,6 +6,7 @@ import '../../../../shared/widgets/kyle_design/kyle_design.dart';
 import '../../../meal_planning/domain/vana_situation.dart';
 import '../../../meal_planning/presentation/widgets/vana_situation_scope.dart';
 import '../../../nutrition_plan/presentation/providers/swap_food_controller.dart';
+import '../../application/diary_session.dart';
 import '../../domain/log_date_time.dart';
 import '../../domain/meal_analysis_result.dart';
 import '../../domain/meal_component.dart';
@@ -38,6 +39,17 @@ class _MealReviewScreenState extends ConsumerState<MealReviewScreen> {
 
   bool _initialized = false;
 
+  /// The Log a Meal session that describe/photo handed here, closed with
+  /// this screen so `diary_closed` counts the save made on it (testing-wave
+  /// 24-002). Read in [initState]: `ref` is not safe in [dispose].
+  late final DiarySession _diary;
+
+  @override
+  void initState() {
+    super.initState();
+    _diary = ref.read(diarySessionProvider);
+  }
+
   @override
   void didChangeDependencies() {
     super.didChangeDependencies();
@@ -61,6 +73,7 @@ class _MealReviewScreenState extends ConsumerState<MealReviewScreen> {
 
   @override
   void dispose() {
+    _diary.closeHandOff();
     _nameCtrl.dispose();
     super.dispose();
   }

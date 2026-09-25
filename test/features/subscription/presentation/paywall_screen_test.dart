@@ -32,6 +32,7 @@ import 'package:go_router/go_router.dart';
 import 'package:purchases_flutter/purchases_flutter.dart';
 
 import 'package:mealvana_endurance/features/content/application/content_service.dart';
+import 'package:mealvana_endurance/features/settings/domain/account_deletion_entry.dart';
 import 'package:mealvana_endurance/features/settings/domain/settings_state.dart';
 import 'package:mealvana_endurance/features/settings/presentation/providers/settings_controller.dart';
 import 'package:mealvana_endurance/features/subscription/application/code_entry_controller.dart';
@@ -134,6 +135,7 @@ class _RecordingPaywall extends ProPaywallController {
 class _RecordingSettings extends SettingsController {
   int signOuts = 0;
   int deletes = 0;
+  AccountDeletionEntry? deletedFrom;
 
   @override
   FutureOr<SettingsState> build() => Completer<SettingsState>().future;
@@ -142,7 +144,12 @@ class _RecordingSettings extends SettingsController {
   Future<void> signOut() async => signOuts++;
 
   @override
-  Future<void> deleteAccount() async => deletes++;
+  Future<void> deleteAccount({
+    AccountDeletionEntry from = AccountDeletionEntry.settings,
+  }) async {
+    deletes++;
+    deletedFrom = from;
+  }
 }
 
 /// The exact strings of `assets/config/content_defaults.json`, so the tests
@@ -821,6 +828,8 @@ void main() {
     await tester.tap(find.byKey(_confirm));
     await tester.pumpAndSettle();
     expect(settings.deletes, 1);
+    // Tracked as a paywall delete, not a Settings one (04-001).
+    expect(settings.deletedFrom, AccountDeletionEntry.paywall);
     expect(settings.signOuts, 0);
   });
 
