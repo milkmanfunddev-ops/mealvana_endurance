@@ -13,9 +13,9 @@
 
 **Touches:** lib/features/meal_planning/application/shopping_list_controller.dart, lib/features/meal_planning/presentation/screens/shopping_tab.dart, lib/features/meal_planning/presentation/widgets/shopping_list.dart
 
-- [ ] A tick made offline shows ticked after a restart and reaches `shopping_items.checked` once online (seam test through the real notifier with the transport failing).
-- [ ] The offline copy carries a visible offline notice.
-- [ ] A write that fails for good tells the athlete.
-- [ ] codegen if annotations changed, `flutter analyze` and the suite green.
+- [x] A tick made offline shows ticked after a restart and reaches `shopping_items.checked` once online (seam test through the real notifier with the transport failing).
+- [x] The offline copy carries a visible offline notice.
+- [x] A write that fails for good tells the athlete.
+- [x] codegen if annotations changed, `flutter analyze` and the suite green.
 
 Next: /implement-lee testing-wave

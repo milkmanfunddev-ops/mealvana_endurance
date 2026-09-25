@@ -667,6 +667,8 @@ class ContentKeys {
   static const String mpShoppingBackToCurrent =
       'meal_planning.shopping_back_to_current';
   static const String mpShoppingFailed = 'meal_planning.shopping_failed';
+  // Ticket 36 (testing-wave): the tab's offline notice.
+  static const String mpShoppingOffline = 'meal_planning.shopping_offline';
   static const String mpShoppingConfirmedOn =
       'meal_planning.shopping_confirmed_on';
   static const String mpShoppingCreatedOn = 'meal_planning.shopping_created_on';

@@ -65,7 +65,14 @@ class ShoppingTab extends ConsumerWidget {
               ? null
               : () => _deleteList(context, ref, listId),
         ),
-        if (state.planId != null && ref.watch(krogerEntryVisibleProvider)) ...[
+        if (state.isOffline) ...[
+          const SizedBox(height: AppSpacing.sm),
+          const _OfflineNotice(),
+        ],
+        // Kroger needs the network; offline the hand-off is not offered.
+        if (state.planId != null &&
+            !state.isOffline &&
+            ref.watch(krogerEntryVisibleProvider)) ...[
           const SizedBox(height: AppSpacing.md),
           KylePrimaryButton(
             key: const ValueKey('meal_planning.kroger'),
@@ -87,9 +94,16 @@ class ShoppingTab extends ConsumerWidget {
         else
           ShoppingList(
             state: state,
-            onToggleChecked: (item, value) =>
-                controller.setChecked(item.name, value),
-            onAddBack: (name) => controller.setHave(name, false),
+            // Awaited through _guard: a write the server refuses says so
+            // (20-002). Offline the controller keeps the tick and never
+            // throws, so no snackbar fires for a queued tick.
+            onToggleChecked: (item, value) => _guard(
+              context,
+              ref,
+              () => controller.setChecked(item.name, value),
+            ),
+            onAddBack: (name) =>
+                _guard(context, ref, () => controller.setHave(name, false)),
             units: units,
             onOpenMeal: (meal) => context.push(
               '/food/meals/${meal.libraryMealId ?? meal.savedMealId ?? meal.id}',
@@ -467,6 +481,46 @@ class _ListHeader extends ConsumerWidget {
           ],
         ),
       ],
+    );
+  }
+}
+
+/// The tab's offline notice (ticket 36): a quiet tinted strip under the
+/// header saying ticks are kept on the phone and sent when the network is
+/// back. Shown for the plan's offline copy and for the live list once a
+/// tick could not be sent.
+class _OfflineNotice extends ConsumerWidget {
+  const _OfflineNotice();
+
+  @override
+  Widget build(BuildContext context, WidgetRef ref) {
+    final content = ref.read(contentServiceProvider);
+    final isDark = Theme.of(context).brightness == Brightness.dark;
+    final textColor = isDark ? AppColors.cream : AppColors.blackberry;
+    final secondary = textColor.withValues(alpha: 0.7);
+    return Container(
+      key: const ValueKey('meal_planning.shopping_offline'),
+      padding: const EdgeInsets.symmetric(
+        horizontal: AppSpacing.md,
+        vertical: AppSpacing.sm,
+      ),
+      decoration: BoxDecoration(
+        color: textColor.withValues(alpha: 0.08),
+        borderRadius: BorderRadius.circular(12),
+      ),
+      child: Row(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          Icon(Icons.cloud_off_outlined, size: 18, color: secondary),
+          const SizedBox(width: AppSpacing.sm),
+          Expanded(
+            child: Text(
+              content.getValue(ContentKeys.mpShoppingOffline),
+              style: AppTextStyles.bodySmall.copyWith(color: secondary),
+            ),
+          ),
+        ],
+      ),
     );
   }
 }

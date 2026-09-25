@@ -94,9 +94,19 @@ class _RecordingShoppingListController extends ShoppingListController {
   final List<(String name, String qty)> added = [];
   int newLists = 0;
   int backToCurrent = 0;
+  final List<(String name, bool value)> ticks = [];
+
+  /// When set, every tick throws it (a write the server refused).
+  Object? tickFailsWith;
 
   @override
   ShoppingListState build() => seed;
+
+  @override
+  Future<void> setChecked(String name, bool value) async {
+    ticks.add((name, value));
+    if (tickFailsWith != null) throw tickFailsWith!;
+  }
 
   @override
   Future<void> openList(String listId) async => opened.add(listId);
@@ -154,6 +164,7 @@ ShoppingListState _listState({
   bool isCurrent = true,
   bool empty = false,
   String? planId = 'plan-1',
+  bool isOffline = false,
 }) => ShoppingListState(
   listId: 'list-1',
   listName: 'Week of 2026-09-13',
@@ -169,6 +180,7 @@ ShoppingListState _listState({
         },
   itemCount: empty ? 0 : 1,
   previous: previous,
+  isOffline: isOffline,
 );
 
 ShoppingListSummary _summary(
@@ -198,6 +210,64 @@ Future<void> _choose(WidgetTester tester, String itemKey) async {
 
 void _redesignTests() {
   final content = loadDefaultContent();
+
+  // ── Offline (testing-wave ticket 36, Findings 20-001/20-002) ─────────────
+
+  group('offline', () {
+    testWidgets('the offline copy says so and does not offer Kroger', (
+      tester,
+    ) async {
+      await _pumpTab(
+        tester,
+        _listState(isOffline: true),
+        krogerVisible: true,
+      );
+
+      expect(
+        find.byKey(const ValueKey('meal_planning.shopping_offline')),
+        findsOneWidget,
+      );
+      expect(
+        find.text(content['meal_planning.shopping_offline']!),
+        findsOneWidget,
+      );
+      expect(find.byKey(const ValueKey('meal_planning.kroger')), findsNothing);
+    });
+
+    testWidgets('online there is no notice and Kroger is offered', (
+      tester,
+    ) async {
+      await _pumpTab(tester, _listState(), krogerVisible: true);
+
+      expect(
+        find.byKey(const ValueKey('meal_planning.shopping_offline')),
+        findsNothing,
+      );
+      expect(
+        find.byKey(const ValueKey('meal_planning.kroger')),
+        findsOneWidget,
+      );
+    });
+
+    testWidgets('a tick the server refuses tells the athlete', (
+      tester,
+    ) async {
+      final controller = await _pumpTab(tester, _listState());
+      controller.tickFailsWith = StateError('refused');
+
+      await tester.tap(
+        find.byKey(const ValueKey('meal_planning.shopping_check_Broccoli')),
+      );
+      await tester.pump();
+      await tester.pump(const Duration(milliseconds: 300));
+
+      expect(controller.ticks, [('Broccoli', true)]);
+      expect(
+        find.text(content['meal_planning.shopping_failed']!),
+        findsOneWidget,
+      );
+    });
+  });
 
   group('header', () {
     testWidgets('shows the name and date, a menu, and no inline add fields', (
