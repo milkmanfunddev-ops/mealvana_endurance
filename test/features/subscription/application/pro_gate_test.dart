@@ -49,6 +49,18 @@ class _MutableStatus extends SubscriptionStatusController {
   Future<SubscriptionStatus> build() async => read();
 }
 
+/// A status controller that answers [status] after [after].
+class _DelayedStatus extends SubscriptionStatusController {
+  _DelayedStatus(this.status, this.after);
+  final SubscriptionStatus status;
+  final Duration after;
+  @override
+  Future<SubscriptionStatus> build() async {
+    await Future<void>.delayed(after);
+    return status;
+  }
+}
+
 void main() {
   group('computeAccess', () {
     test('active → open', () {
@@ -162,6 +174,66 @@ void main() {
         expect(await c.read(appGateProvider.future), AppAccess.open);
       },
     );
+  });
+
+  group('the admin read shares the one wait (wave 27 review)', () {
+    const budget = Duration(milliseconds: 200);
+
+    ProviderContainer containerWith({
+      required Duration statusAfter,
+      required Duration adminAfter,
+    }) {
+      final c = ProviderContainer(
+        overrides: [
+          subscriptionStatusProvider.overrideWith(
+            () => _DelayedStatus(SubscriptionStatus.none, statusAfter),
+          ),
+          isAdminProvider.overrideWith((_) async {
+            await Future<void>.delayed(adminAfter);
+            return true;
+          }),
+          entitlementAnswerTimeoutProvider.overrideWithValue(budget),
+        ],
+      );
+      addTearDown(c.dispose);
+      return c;
+    }
+
+    test('a status resolve that takes most of the wait still lets an admin '
+        'read started with it open the gate', () async {
+      // Scaled from 1.9 s of a 2 s budget and a 0.5 s admin read.
+      final c = containerWith(
+        statusAfter: const Duration(milliseconds: 190),
+        adminAfter: const Duration(milliseconds: 50),
+      );
+      final watch = Stopwatch()..start();
+
+      expect(await c.read(appGateProvider.future), AppAccess.open);
+      expect(
+        watch.elapsed,
+        lessThan(budget + const Duration(milliseconds: 80)),
+      );
+    });
+
+    test('an admin read answering after the wait: first closed, then open '
+        'once it answers', () async {
+      final c = containerWith(
+        statusAfter: Duration.zero,
+        adminAfter: const Duration(milliseconds: 350),
+      );
+      final sub = c.listen(appGateProvider, (_, _) {});
+      addTearDown(sub.close);
+      final watch = Stopwatch()..start();
+
+      expect(await c.read(appGateProvider.future), AppAccess.closed);
+      expect(
+        watch.elapsed,
+        lessThan(budget + const Duration(milliseconds: 80)),
+      );
+
+      await Future<void>.delayed(const Duration(milliseconds: 300));
+      expect(await c.read(appGateProvider.future), AppAccess.open);
+    });
   });
 
   group('settle (the sign-in hand-off to the router)', () {

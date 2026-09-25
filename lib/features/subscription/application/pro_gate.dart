@@ -22,29 +22,34 @@ AppAccess computeAccess(SubscriptionStatus status, {required bool isAdmin}) =>
 ///
 /// Loading while the status is unresolved — the status controller bounds
 /// that wait (mp-284), so awaiting `.future` here answers within a couple of
-/// seconds. The admin read is consulted only for an inactive status and
-/// gets what is left of the same wait, so the Gate's first answer comes
-/// within one timeout (mp-335: startup waits at most two seconds; ticket
-/// 105, Finding 87-009) and a slow network lands on the paywall instead of
-/// hanging the redirect. keepAlive so the router's `ref.read` sees the same
+/// seconds. The admin read starts alongside the status resolve and shares
+/// the same wait, so the Gate's first answer comes within one timeout
+/// (mp-335: startup waits at most two seconds; ticket 105, Finding 87-009)
+/// and a slow network lands on the paywall instead of hanging the redirect.
+/// An admin read that answers yes after the wait reopens a closed gate
+/// (wave 27 review). keepAlive so the router's `ref.read` sees the same
 /// value every screen watches.
 @Riverpod(keepAlive: true)
 class AppGate extends _$AppGate {
   @override
   FutureOr<AppAccess> build() async {
-    final clock = ref.read(subscriptionClockProvider);
-    final started = clock();
+    final timeout = ref.read(entitlementAnswerTimeoutProvider);
+    final isAdminInTime = ref
+        .watch(isAdminProvider.future)
+        .timeout(timeout, onTimeout: () => false);
+    // Not awaited when the status is active; its error is the gate's only
+    // when awaited below.
+    isAdminInTime.ignore();
+    // Watching `.future` rebuilds only when the read restarts, not when it
+    // completes: a late yes must rebuild a closed gate itself.
+    ref.listen(isAdminProvider, (_, next) {
+      if (next.value == true && state.value == AppAccess.closed) {
+        ref.invalidateSelf();
+      }
+    });
     final status = await ref.watch(subscriptionStatusProvider.future);
     if (status.active) return AppAccess.open;
-    final timeout = ref.read(entitlementAnswerTimeoutProvider);
-    final left = timeout - clock().difference(started);
-    final isAdmin = await ref
-        .watch(isAdminProvider.future)
-        .timeout(
-          left < Duration.zero ? Duration.zero : left,
-          onTimeout: () => false,
-        );
-    return computeAccess(status, isAdmin: isAdmin);
+    return computeAccess(status, isAdmin: await isAdminInTime);
   }
 
   /// Sign-in's hand-off to the router (2026-09-16: the first login came back
