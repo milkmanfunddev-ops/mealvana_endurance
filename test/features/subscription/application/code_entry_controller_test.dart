@@ -15,6 +15,7 @@ import 'package:mocktail/mocktail.dart';
 import 'package:supabase_flutter/supabase_flutter.dart';
 
 import 'package:mealvana_endurance/features/subscription/application/code_entry_controller.dart';
+import 'package:mealvana_endurance/features/subscription/application/pro_paywall_controller.dart';
 import 'package:mealvana_endurance/features/subscription/application/subscription_status_provider.dart';
 import 'package:mealvana_endurance/features/subscription/data/subscription_service.dart';
 import 'package:mealvana_endurance/features/subscription/data/user_entitlements_repository.dart';
@@ -159,6 +160,31 @@ void main() {
       expect((result as CodeRedeemed).proDays, 365);
       verify(() => service.forgetCachedStatus()).called(1);
       expect((await status(c)).active, isTrue);
+    });
+
+    // 87-001: ticket 45's purchase lock holds for a redeemed Code too. From
+    // the Code's success until the router takes the paywall away, the
+    // paywall's controller stays busy, so Continue cannot start a purchase.
+    test('a Code that opens the gate holds the paywall busy until the '
+        'account is closed again', () async {
+      answer200({'ok': true, 'kind': 'giveaway', 'pro_days': 365});
+      final c = container();
+      final paywall = c.listen(proPaywallControllerProvider, (_, _) {});
+      addTearDown(paywall.close);
+      await status(c);
+      expect(c.read(proPaywallControllerProvider), isA<AsyncData<void>>());
+
+      await c.read(codeEntryControllerProvider.notifier).redeem('E2EGIVE365');
+
+      expect(c.read(proPaywallControllerProvider), isA<AsyncLoading<void>>());
+      // A later push that keeps the account open changes nothing.
+      await c.read(subscriptionStatusProvider.notifier).refresh();
+      expect(c.read(proPaywallControllerProvider), isA<AsyncLoading<void>>());
+
+      // The Grant ends (or another account signs in): a later paywall sells.
+      cacheDropped = false;
+      await c.read(subscriptionStatusProvider.notifier).refresh();
+      expect(c.read(proPaywallControllerProvider), isA<AsyncData<void>>());
     });
   });
 

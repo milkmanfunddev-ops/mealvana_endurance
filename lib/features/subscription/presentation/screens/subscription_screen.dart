@@ -2,7 +2,6 @@ import 'dart:async';
 
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
-import 'package:go_router/go_router.dart';
 import 'package:intl/intl.dart';
 
 import '../../../../shared/widgets/custom_app_bar_back_button.dart';
@@ -11,17 +10,24 @@ import '../../../content/application/content_service.dart';
 import '../../../content/domain/content_keys.dart';
 import '../../application/subscription_screen_controller.dart';
 import '../../domain/grant.dart';
-import '../open_paywall.dart';
 import '../widgets/pro_feature_list.dart';
 import '../widgets/redeem_code_sheet.dart';
 import 'paywall_screen.dart';
 
-/// Manage subscription from Settings: the Subscription screen's button and
-/// the Delete account confirm's offer (finding 02-004) go the same way.
+/// The one Manage subscription: the Subscription screen's button, both
+/// Delete account confirms' offer (Settings and the paywall, finding 02-004)
+/// and the paywall's ⋯ menu entry (87-007) all go this way.
 /// Opens RevenueCat's management URL, else the store's own subscriptions
 /// page; with no page to open (a Test Store subscription) says where the
 /// subscription is instead of opening an empty browser (finding 09-001).
-Future<void> openManageSubscription(BuildContext context, WidgetRef ref) async {
+///
+/// [messageClearance] is how much of the screen's bottom the message stays
+/// above: the paywall's plans and Continue (11-005).
+Future<void> openManageSubscription(
+  BuildContext context,
+  WidgetRef ref, {
+  double Function()? messageClearance,
+}) async {
   final content = ref.read(contentServiceProvider);
   final launch = ref.read(paywallUrlLauncherProvider);
   final uri = await ref
@@ -32,6 +38,7 @@ Future<void> openManageSubscription(BuildContext context, WidgetRef ref) async {
     MealvanaSnackbar.showInfo(
       context,
       content.getValue(ContentKeys.subscriptionManageNoPage),
+      bottomClearance: messageClearance?.call() ?? 0,
     );
     return;
   }
@@ -45,6 +52,7 @@ Future<void> openManageSubscription(BuildContext context, WidgetRef ref) async {
   MealvanaSnackbar.showInfo(
     context,
     content.getValue(ContentKeys.paywallManageUnavailable),
+    bottomClearance: messageClearance?.call() ?? 0,
   );
 }
 
@@ -52,10 +60,11 @@ Future<void> openManageSubscription(BuildContext context, WidgetRef ref) async {
 ///
 /// The plan's status with the plan bought (Monthly or Annual, mp-628) and
 /// its date (a trial with the day it ends, active
-/// with the day it renews, founding member, or ended; a Grant with where it
+/// with the day it renews, or founding member; a Grant with where it
 /// came from and its days left, mp-558), then what Pro
 /// includes as a tick list with the AI features under the one Vana line, as
-/// on the paywall. Upgrade opens the paywall, only once the plan has ended;
+/// on the paywall. There is no ended state and no Upgrade: a lapsed athlete
+/// stays on the paywall (mp-457, 87-008).
 /// Manage subscription opens the store's own page, only with a store
 /// subscription on record; with no page to open (a Test Store subscription)
 /// it says where the subscription is. Redeem code opens our own Code entry (mp-458),
@@ -120,22 +129,14 @@ class SubscriptionScreen extends ConsumerWidget {
                 crossAxisAlignment: CrossAxisAlignment.stretch,
                 children: [
                   if (state != null) ...[
-                    _PlanStatusCard(
-                      state: state,
-                      content: content,
-                      textColor: textColor,
-                      secondaryColor: secondaryColor,
-                    ),
-                    if (state.canUpgrade) ...[
-                      const SizedBox(height: AppSpacing.md),
-                      KylePrimaryButton(
-                        key: const ValueKey('subscription.upgrade_button'),
-                        text: t(ContentKeys.subscriptionUpgradeButton),
-                        // The same way in as the AI guard: the app goes to
-                        // the full-screen paywall.
-                        onPressed: () => openPaywall(GoRouter.of(context)),
+                    if (state.plan case final plan?)
+                      _PlanStatusCard(
+                        state: state,
+                        plan: plan,
+                        content: content,
+                        textColor: textColor,
+                        secondaryColor: secondaryColor,
                       ),
-                    ],
                     if (state.canManage) ...[
                       const SizedBox(height: AppSpacing.md),
                       KyleSecondaryButton(
@@ -175,12 +176,14 @@ class SubscriptionScreen extends ConsumerWidget {
 class _PlanStatusCard extends StatelessWidget {
   const _PlanStatusCard({
     required this.state,
+    required this.plan,
     required this.content,
     required this.textColor,
     required this.secondaryColor,
   });
 
   final SubscriptionScreenState state;
+  final PlanStatus plan;
   final ContentService content;
   final Color textColor;
   final Color secondaryColor;
@@ -188,7 +191,7 @@ class _PlanStatusCard extends StatelessWidget {
   String? _dateLine() {
     final date = state.date;
     final String key;
-    switch (state.plan) {
+    switch (plan) {
       case PlanStatus.trial:
         if (date == null) return null;
         key = state.willRenew
@@ -200,11 +203,6 @@ class _PlanStatusCard extends StatelessWidget {
         key = state.willRenew
             ? ContentKeys.subscriptionRenews
             : ContentKeys.subscriptionEnds;
-      case PlanStatus.ended:
-        if (date == null) {
-          return content.getValue(ContentKeys.subscriptionEndedNoDate);
-        }
-        key = ContentKeys.subscriptionEndedOn;
       case PlanStatus.grant:
         return _daysLeftLine();
     }
@@ -231,11 +229,10 @@ class _PlanStatusCard extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    final status = content.getValue(switch (state.plan) {
+    final status = content.getValue(switch (plan) {
       PlanStatus.trial => ContentKeys.subscriptionStatusTrial,
       PlanStatus.active => ContentKeys.subscriptionStatusActive,
       PlanStatus.founding => ContentKeys.subscriptionStatusFounding,
-      PlanStatus.ended => ContentKeys.subscriptionStatusEnded,
       PlanStatus.grant => switch (state.grantSource) {
         GrantSource.legacyGrace => ContentKeys.subscriptionStatusGrantGrace,
         GrantSource.code || null => ContentKeys.subscriptionStatusGrantCode,
@@ -264,7 +261,7 @@ class _PlanStatusCard extends StatelessWidget {
             key: const ValueKey('subscription.status'),
             status,
             style: AppTextStyles.h3.copyWith(
-              color: state.plan == PlanStatus.founding
+              color: plan == PlanStatus.founding
                   ? AppColors.electrolyte
                   : textColor,
             ),

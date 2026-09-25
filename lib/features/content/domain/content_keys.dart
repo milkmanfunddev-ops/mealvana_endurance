@@ -1062,17 +1062,13 @@ class ContentKeys {
   static const String subscriptionStatusActive = 'subscription.status_active';
   static const String subscriptionStatusFounding =
       'subscription.status_founding';
-  static const String subscriptionStatusEnded = 'subscription.status_ended';
   static const String subscriptionTrialEnds = 'subscription.trial_ends';
   static const String subscriptionTrialEndsNoRenew =
       'subscription.trial_ends_no_renew';
   static const String subscriptionRenews = 'subscription.renews';
   static const String subscriptionEnds = 'subscription.ends';
-  static const String subscriptionEndedOn = 'subscription.ended_on';
-  static const String subscriptionEndedNoDate = 'subscription.ended_no_date';
   static const String subscriptionIncludesHeader =
       'subscription.includes_header';
-  static const String subscriptionUpgradeButton = 'subscription.upgrade_button';
 
   // A Grant on the Subscription screen (mp-558): where it came from, as the
   // status, and its days left. `{days}` is the whole days until it ends.

@@ -635,6 +635,9 @@ void main() {
       expect(unlocked, isTrue);
       verifyInOrder([() => service.logIn(_userId), () => service.restore()]);
       expect(c.read(subscriptionStatusProvider).asData!.value.active, isTrue);
+      // The Gate is open: busy until the router takes the paywall away, as
+      // after a purchase (05-004) and a redeemed Code (87-001).
+      expect(c.read(proPaywallControllerProvider), isA<AsyncLoading<void>>());
     });
 
     test('a restore that finds nothing leaves the app locked', () async {
@@ -644,6 +647,7 @@ void main() {
           .restore();
       expect(unlocked, isFalse);
       expect(c.read(subscriptionStatusProvider).asData!.value.active, isFalse);
+      expect(c.read(proPaywallControllerProvider), isA<AsyncData<void>>());
     });
 
     test(
