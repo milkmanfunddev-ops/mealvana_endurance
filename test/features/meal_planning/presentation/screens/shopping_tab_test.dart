@@ -1,3 +1,5 @@
+import 'dart:async';
+
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:flutter_test/flutter_test.dart';
@@ -133,6 +135,7 @@ Future<_RecordingShoppingListController> _pumpTab(
   WidgetTester tester,
   ShoppingListState state, {
   bool krogerVisible = false,
+  bool krogerPending = false,
 }) async {
   final controller = _RecordingShoppingListController(state);
   await tester.pumpWidget(
@@ -142,6 +145,7 @@ Future<_RecordingShoppingListController> _pumpTab(
         shoppingListControllerProvider.overrideWith(() => controller),
         unitSystemProvider.overrideWith((ref) async => UnitSystem.imperial),
         krogerEntryVisibleProvider.overrideWithValue(krogerVisible),
+        krogerEntryPendingProvider.overrideWithValue(krogerPending),
       ],
       child: const MaterialApp(home: Scaffold(body: ShoppingTab())),
     ),
@@ -208,8 +212,81 @@ Future<void> _choose(WidgetTester tester, String itemKey) async {
   await tester.pumpAndSettle();
 }
 
+/// A first read that never answers (the list lives server-side).
+class _LoadingShoppingListController extends ShoppingListController {
+  @override
+  Future<ShoppingListState> build() => Completer<ShoppingListState>().future;
+}
+
 void _redesignTests() {
   final content = loadDefaultContent();
+
+  // ── Loading never reads as empty (ticket 46, Findings 16-003, 20-003) ────
+
+  group('first read', () {
+    testWidgets('while the list is on the wire the tab shows loading, not '
+        'No shopping list', (tester) async {
+      await tester.pumpWidget(
+        ProviderScope(
+          overrides: [
+            contentServiceProvider.overrideWith(testContentService),
+            shoppingListControllerProvider.overrideWith(
+              _LoadingShoppingListController.new,
+            ),
+            unitSystemProvider.overrideWith((ref) async => UnitSystem.imperial),
+            krogerEntryVisibleProvider.overrideWithValue(false),
+            krogerEntryPendingProvider.overrideWithValue(false),
+          ],
+          child: const MaterialApp(home: Scaffold(body: ShoppingTab())),
+        ),
+      );
+      await tester.pump();
+
+      expect(
+        find.byKey(const ValueKey('meal_planning.shopping_loading')),
+        findsOneWidget,
+      );
+      expect(
+        find.byKey(const ValueKey('meal_planning.shopping_empty')),
+        findsNothing,
+      );
+      expect(
+        find.text(content['meal_planning.shopping_empty_title']!),
+        findsNothing,
+      );
+    });
+
+    testWidgets('while Kroger coverage is still being asked the rows sit '
+        'where they will once the button lands', (tester) async {
+      await _pumpTab(tester, _listState(), krogerPending: true);
+      expect(
+        find.byKey(const ValueKey('meal_planning.kroger_pending')),
+        findsOneWidget,
+      );
+      expect(find.byKey(const ValueKey('meal_planning.kroger')), findsNothing);
+      final pendingTop = tester.getTopLeft(find.byType(ShoppingList)).dy;
+
+      await _pumpTab(tester, _listState(), krogerVisible: true);
+      expect(
+        find.byKey(const ValueKey('meal_planning.kroger')),
+        findsOneWidget,
+      );
+      final landedTop = tester.getTopLeft(find.byType(ShoppingList)).dy;
+
+      expect(pendingTop, landedTop, reason: 'no jump when the button lands');
+    });
+
+    testWidgets('an answered no from Kroger takes the room away', (
+      tester,
+    ) async {
+      await _pumpTab(tester, _listState());
+      expect(
+        find.byKey(const ValueKey('meal_planning.kroger_pending')),
+        findsNothing,
+      );
+      expect(find.byKey(const ValueKey('meal_planning.kroger')), findsNothing);
+    });
+  });
 
   // ── Offline (testing-wave ticket 36, Findings 20-001/20-002) ─────────────
 
@@ -217,11 +294,7 @@ void _redesignTests() {
     testWidgets('the offline copy says so and does not offer Kroger', (
       tester,
     ) async {
-      await _pumpTab(
-        tester,
-        _listState(isOffline: true),
-        krogerVisible: true,
-      );
+      await _pumpTab(tester, _listState(isOffline: true), krogerVisible: true);
 
       expect(
         find.byKey(const ValueKey('meal_planning.shopping_offline')),
@@ -249,9 +322,7 @@ void _redesignTests() {
       );
     });
 
-    testWidgets('a tick the server refuses tells the athlete', (
-      tester,
-    ) async {
+    testWidgets('a tick the server refuses tells the athlete', (tester) async {
       final controller = await _pumpTab(tester, _listState());
       controller.tickFailsWith = StateError('refused');
 

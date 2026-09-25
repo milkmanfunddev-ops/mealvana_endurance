@@ -22,6 +22,10 @@ import '../widgets/overflow_menu.dart';
 import '../widgets/shopping_list.dart';
 import '../../../kroger/application/kroger_availability.dart';
 
+/// The Shop with Kroger button's height, also reserved while Coverage is
+/// still being asked.
+const _krogerButtonHeight = 44.0;
+
 /// The Shopping tab (05 §4; 2026-09-16: several lists with hand edits, then
 /// Lee's redesign). One list at a time: its name (tap to rename) and date on
 /// the left, a `⋮` on the right with New list · Previous lists · Delete
@@ -35,10 +39,14 @@ class ShoppingTab extends ConsumerWidget {
   @override
   Widget build(BuildContext context, WidgetRef ref) {
     final content = ref.read(contentServiceProvider);
-    final state = ref.watch(shoppingListControllerProvider).value;
+    final listAsync = ref.watch(shoppingListControllerProvider);
+    final state = listAsync.value;
     final units = ref.watch(unitSystemProvider).value ?? UnitSystem.imperial;
     final controller = ref.read(shoppingListControllerProvider.notifier);
 
+    // The list lives server-side, so the first read is a round trip: say
+    // loading, never "No shopping list" over a list that exists (16-003).
+    if (state == null && listAsync.isLoading) return const _Loading();
     if (state == null || (state.isEmpty && !state.hasAnyList)) {
       return _EmptyState(
         onNewList: state == null ? null : () => _newList(context, ref),
@@ -70,19 +78,25 @@ class ShoppingTab extends ConsumerWidget {
           const _OfflineNotice(),
         ],
         // Kroger needs the network; offline the hand-off is not offered.
-        if (state.planId != null &&
-            !state.isOffline &&
-            ref.watch(krogerEntryVisibleProvider)) ...[
-          const SizedBox(height: AppSpacing.md),
-          KylePrimaryButton(
-            key: const ValueKey('meal_planning.kroger'),
-            icon: Icons.shopping_cart_outlined,
-            text: content.getValue(ContentKeys.krogerTitle),
-            height: 44,
-            // Into the Food tree, not onto a bare Navigator route:
-            // the screen keeps the app's chrome and the Pro gate.
-            onPressed: () => context.push('/food/kroger/${state.planId}'),
-          ),
+        if (state.planId != null && !state.isOffline) ...[
+          if (ref.watch(krogerEntryVisibleProvider)) ...[
+            const SizedBox(height: AppSpacing.md),
+            KylePrimaryButton(
+              key: const ValueKey('meal_planning.kroger'),
+              icon: Icons.shopping_cart_outlined,
+              text: content.getValue(ContentKeys.krogerTitle),
+              height: _krogerButtonHeight,
+              // Into the Food tree, not onto a bare Navigator route:
+              // the screen keeps the app's chrome and the Pro gate.
+              onPressed: () => context.push('/food/kroger/${state.planId}'),
+            ),
+          ] else if (ref.watch(krogerEntryPendingProvider))
+            // Coverage is still being asked: hold the button's room so the
+            // rows do not move ~60 pt when it lands (20-003).
+            const SizedBox(
+              key: ValueKey('meal_planning.kroger_pending'),
+              height: AppSpacing.md + _krogerButtonHeight,
+            ),
         ],
         const SizedBox(height: AppSpacing.lg),
         if (state.isEmpty)
@@ -332,6 +346,18 @@ extension on ShoppingListState {
 
 /// No list anywhere yet: the plan builds one on confirm, or start one by
 /// hand.
+/// The first read is on the wire. A spinner, no words: the tab must not
+/// read as empty until the server has answered.
+class _Loading extends StatelessWidget {
+  const _Loading();
+
+  @override
+  Widget build(BuildContext context) => const Center(
+    key: ValueKey('meal_planning.shopping_loading'),
+    child: CircularProgressIndicator(color: AppColors.electrolyte),
+  );
+}
+
 class _EmptyState extends ConsumerWidget {
   const _EmptyState({required this.onNewList});
 

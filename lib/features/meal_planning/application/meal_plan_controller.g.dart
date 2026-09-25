@@ -186,7 +186,10 @@ final class ConversationDraftFamily extends $Family
 ///
 /// - Watches Drift (`MealPlanRepository.watchActivePlan`) so every local or
 ///   server-applied change re-emits, and kicks `ensureSynced('meal_plans')`
-///   in the background on first build (never blocks on the network).
+///   on first build. A local plan answers at once with the sync behind it;
+///   with nothing local and the network up, the first read waits for the
+///   sync (bounded by [firstReadBound]) so the Plan tab shows loading, never
+///   "No plan yet", over a plan confirmed elsewhere (testing-wave 19-004).
 /// - **Local-first** edits (05 §3): [setServings], [removeMeal],
 ///   [setSession], [addComment], [toggleShopping], [setDaySlot],
 ///   [clearDaySlot] write Drift and schedule a best-effort upload.
@@ -206,7 +209,10 @@ const mealPlanControllerProvider = MealPlanControllerProvider._();
 ///
 /// - Watches Drift (`MealPlanRepository.watchActivePlan`) so every local or
 ///   server-applied change re-emits, and kicks `ensureSynced('meal_plans')`
-///   in the background on first build (never blocks on the network).
+///   on first build. A local plan answers at once with the sync behind it;
+///   with nothing local and the network up, the first read waits for the
+///   sync (bounded by [firstReadBound]) so the Plan tab shows loading, never
+///   "No plan yet", over a plan confirmed elsewhere (testing-wave 19-004).
 /// - **Local-first** edits (05 §3): [setServings], [removeMeal],
 ///   [setSession], [addComment], [toggleShopping], [setDaySlot],
 ///   [clearDaySlot] write Drift and schedule a best-effort upload.
@@ -224,7 +230,10 @@ final class MealPlanControllerProvider
   ///
   /// - Watches Drift (`MealPlanRepository.watchActivePlan`) so every local or
   ///   server-applied change re-emits, and kicks `ensureSynced('meal_plans')`
-  ///   in the background on first build (never blocks on the network).
+  ///   on first build. A local plan answers at once with the sync behind it;
+  ///   with nothing local and the network up, the first read waits for the
+  ///   sync (bounded by [firstReadBound]) so the Plan tab shows loading, never
+  ///   "No plan yet", over a plan confirmed elsewhere (testing-wave 19-004).
   /// - **Local-first** edits (05 §3): [setServings], [removeMeal],
   ///   [setSession], [addComment], [toggleShopping], [setDaySlot],
   ///   [clearDaySlot] write Drift and schedule a best-effort upload.
@@ -255,14 +264,17 @@ final class MealPlanControllerProvider
 }
 
 String _$mealPlanControllerHash() =>
-    r'84680fd95a6a9d0565ac719f4ad5c1434e66a16d';
+    r'94a9567a70c93a5eb613624443a7e12985e0e028';
 
 /// The active plan for the current week — what the Plan tab, the Shopping
 /// tab, the chat's plan bar and the day planner all read.
 ///
 /// - Watches Drift (`MealPlanRepository.watchActivePlan`) so every local or
 ///   server-applied change re-emits, and kicks `ensureSynced('meal_plans')`
-///   in the background on first build (never blocks on the network).
+///   on first build. A local plan answers at once with the sync behind it;
+///   with nothing local and the network up, the first read waits for the
+///   sync (bounded by [firstReadBound]) so the Plan tab shows loading, never
+///   "No plan yet", over a plan confirmed elsewhere (testing-wave 19-004).
 /// - **Local-first** edits (05 §3): [setServings], [removeMeal],
 ///   [setSession], [addComment], [toggleShopping], [setDaySlot],
 ///   [clearDaySlot] write Drift and schedule a best-effort upload.

@@ -48,6 +48,9 @@ class PlanTab extends ConsumerWidget {
     final showMacros =
         ref.watch(vanaSettingsControllerProvider).value?.showMacros ?? true;
     final plan = planAsync.value;
+    // No plan to show and a read on the wire: loading, never the dashed
+    // "No plan yet" over a plan confirmed elsewhere (testing-wave 19-004).
+    final loading = plan == null && planAsync.isLoading;
 
     return RefreshIndicator(
       color: AppColors.electrolyte,
@@ -67,7 +70,9 @@ class PlanTab extends ConsumerWidget {
           // point into the chat even before there is a plan to talk about.
           _DayNoteCard(text: home?.vana.text, loading: home == null),
           const SizedBox(height: AppSpacing.md),
-          if (plan == null || plan.meals.isEmpty)
+          if (loading)
+            const _LoadingPlanCard()
+          else if (plan == null || plan.meals.isEmpty)
             const _EmptyPlanCard()
           else ...[
             // The plan's header: its week and meal count, the ⋮ on the right.
@@ -115,7 +120,9 @@ class PlanTab extends ConsumerWidget {
                   key: const ValueKey('meal_planning.btn_new_plan'),
                   text: content.getValue(ContentKeys.mpBtnNewPlan),
                   height: 44,
-                  onPressed: () => context.push(_newPlanRoute),
+                  // A new plan waits for the read: started over a plan
+                  // still loading, it would double the week (19-004).
+                  onPressed: loading ? null : () => context.push(_newPlanRoute),
                 ),
               ),
             ],
@@ -326,6 +333,34 @@ class _DayNoteCard extends ConsumerWidget {
                 ),
               ),
             ],
+          ),
+        ),
+      ),
+    );
+  }
+}
+
+/// The first read is on the wire: the dashed slot holds a spinner where the
+/// plan will be, so the tab never says "No plan yet" over a plan confirmed
+/// elsewhere (testing-wave 19-004).
+class _LoadingPlanCard extends StatelessWidget {
+  const _LoadingPlanCard();
+
+  @override
+  Widget build(BuildContext context) {
+    final isDark = Theme.of(context).brightness == Brightness.dark;
+    final textColor = isDark ? AppColors.cream : AppColors.blackberry;
+
+    return DashedBox(
+      key: const ValueKey('meal_planning.plan_loading'),
+      color: textColor.withValues(alpha: 0.25),
+      child: const Center(
+        child: SizedBox(
+          width: 20,
+          height: 20,
+          child: CircularProgressIndicator(
+            strokeWidth: 2,
+            color: AppColors.electrolyte,
           ),
         ),
       ),
