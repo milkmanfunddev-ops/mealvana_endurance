@@ -19,7 +19,7 @@ import { buildShoppingList } from './grocery.ts';
 import { ensureSavedMealIngredients, backfillPlanIngredients } from './saved-ingredients.ts';
 import { resolveMealIcon } from './meal-icon.ts';
 import { coverageOf, defaultSession, hasNutritionNumbers, servingsToCover } from './plan-math.ts';
-import { syncPlanList, markListConfirmed, toggleByName } from './shopping.ts';
+import { syncPlanList, markListConfirmed, markListConfirmedIfUnset, toggleByName } from './shopping.ts';
 
 export interface PlanScope { planId?: string | null; conversationId?: string | null }
 
@@ -180,6 +180,16 @@ export async function refreshShopping(v: VanaCtx, planId?: string | null): Promi
   await v.db.from('meal_plans').update({ shopping: merged, day_notes_stale: true, updated_at: new Date().toISOString() }).eq('id', plan.id);
   await invalidateContext(v); // every meal edit ends here: the PLAN line changed
   return { ...plan, shopping: merged, dayNotesStale: true };
+}
+/** Rebuild shopping list (the Plan tab's ⋮, ticket 96, Lee 09-25): the plan's list from its meals by the same path
+ *  confirm and every edit take (mp-244), so it updates the plan's one list in place, or makes it again after the athlete
+ *  deleted it, and refills the `meal_plans.shopping` mirror. A confirmed plan's remade list is confirmed with it. */
+export async function rebuildShoppingList(v: VanaCtx, scope?: PlanScope | null): Promise<MealPlan> {
+  const target = await resolvePlan(v, scope, false);
+  if (!target) throw new Error('no plan to build a shopping list from');
+  const rebuilt = await refreshShopping(v, target.id);
+  if (rebuilt.status === 'confirmed') await markListConfirmedIfUnset(v, rebuilt.id);
+  return rebuilt;
 }
 export async function toggleShopping(v: VanaCtx, name: string, field: 'checked' | 'have', value: boolean): Promise<ShoppingItem[]> {
   const plan = (await getPlan(v))!;

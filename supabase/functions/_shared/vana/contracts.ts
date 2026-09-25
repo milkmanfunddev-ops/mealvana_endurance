@@ -154,7 +154,11 @@ export interface UiAction {
     // {list} (name/qty set edited=true) · delete_shopping_item{id} → {list}. All `parts: []`.
     // additive 2026-09-16 (Shopping tab redesign): delete_shopping_list{id} → {list|null} — the list and its rows go (a plan's list
     // empties the plan's mirror too); the answer is the default list left, null when none is. `parts: []`.
+    // additive 2026-09-25 (testing-wave 96): rebuild_shopping_list{planId?} → {parts:[batch], list} — the plan's one list
+    // built from its meals as confirm and every edit build it (mp-244), updated in place or made again after a delete;
+    // no planId = the week's active plan. A plan never has a second list.
     | 'list_shopping_lists' | 'get_shopping_list' | 'create_shopping_list' | 'rename_shopping_list' | 'delete_shopping_list' | 'add_shopping_item' | 'update_shopping_item' | 'delete_shopping_item'
+    | 'rebuild_shopping_list'
     // additive 2026-09-16 (Vana writes, playtest §10): undo_receipt{...ReceiptUndo.params} — the Undo button on a receipt card. Answers
     // `{ parts: [receipt(action: 'undo')] }`; the device refetches the receipt's entity as for any receipt.
     | 'undo_receipt'

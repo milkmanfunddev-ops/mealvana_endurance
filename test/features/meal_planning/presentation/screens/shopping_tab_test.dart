@@ -4,6 +4,7 @@ import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:mealvana_endurance/features/content/application/content_service.dart';
+import 'package:mealvana_endurance/features/content/domain/content_keys.dart';
 import 'package:mealvana_endurance/features/meal_planning/application/shopping_list_controller.dart';
 import 'package:mealvana_endurance/features/kroger/application/kroger_availability.dart';
 import 'package:mealvana_endurance/features/meal_planning/domain/shopping_item.dart';
@@ -445,6 +446,71 @@ void _redesignTests() {
       await _choose(tester, 'meal_planning.shopping_delete_list');
       await _choose(tester, 'meal_planning.shopping_delete_go');
       expect(controller.deleted, ['list-1']);
+    });
+
+    // Ticket 96 (Finding 19-002, Lee 09-25): the confirmed plan's own list
+    // may be deleted, behind its own short warning that the Plan tab can
+    // rebuild it; a hand-made list keeps the plain one.
+    testWidgets("the confirmed plan's list warns it is the plan's list", (
+      tester,
+    ) async {
+      final content = loadDefaultContent();
+      final controller = await _pumpTab(
+        tester,
+        _listState(planId: 'plan-1', weekPlanId: 'plan-1'),
+      );
+
+      await _openMenu(tester, 'meal_planning.shopping_menu');
+      await _choose(tester, 'meal_planning.shopping_delete_list');
+      expect(
+        find.text(content[ContentKeys.mpShoppingDeletePlanListTitle]!),
+        findsOneWidget,
+      );
+      expect(
+        find.text(content[ContentKeys.mpShoppingDeletePlanListBody]!),
+        findsOneWidget,
+      );
+      expect(
+        find.text(content[ContentKeys.mpShoppingDeleteListBody]!),
+        findsNothing,
+      );
+      await _choose(tester, 'meal_planning.shopping_delete_go');
+      expect(controller.deleted, ['list-1']);
+    });
+
+    testWidgets("a hand-made list's delete keeps the plain warning", (
+      tester,
+    ) async {
+      final content = loadDefaultContent();
+      await _pumpTab(tester, _listState(planId: null, weekPlanId: 'plan-1'));
+
+      await _openMenu(tester, 'meal_planning.shopping_menu');
+      await _choose(tester, 'meal_planning.shopping_delete_list');
+      expect(
+        find.text(content[ContentKeys.mpShoppingDeleteListTitle]!),
+        findsOneWidget,
+      );
+      expect(
+        find.text(content[ContentKeys.mpShoppingDeletePlanListBody]!),
+        findsNothing,
+      );
+    });
+
+    testWidgets("an archived draft's list is not the plan's list", (
+      tester,
+    ) async {
+      final content = loadDefaultContent();
+      await _pumpTab(
+        tester,
+        _listState(planId: 'archived-draft', weekPlanId: 'plan-1'),
+      );
+
+      await _openMenu(tester, 'meal_planning.shopping_menu');
+      await _choose(tester, 'meal_planning.shopping_delete_list');
+      expect(
+        find.text(content[ContentKeys.mpShoppingDeleteListBody]!),
+        findsOneWidget,
+      );
     });
 
     testWidgets('an earlier list says so and the menu offers the way back', (

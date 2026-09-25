@@ -7,14 +7,15 @@ import 'overflow_menu.dart';
 
 /// The `⋮` beside the plan's summary row (Lee's 09-16 demo: there was no way
 /// to get rid of a plan by hand). Plan-scoped, so it holds only what the
-/// per-tile menu cannot: start a fresh plan, look at earlier plans, or delete
-/// this one. The trigger and popup are [OverflowMenu], which the Shopping
+/// per-tile menu cannot: start a fresh plan, look at earlier plans, rebuild
+/// the plan's shopping list (ticket 96), or delete this one. The trigger and popup are [OverflowMenu], which the Shopping
 /// tab's header shares.
 class PlanOverflowMenu extends ConsumerWidget {
   const PlanOverflowMenu({
     super.key,
     this.onStartNew,
     this.onPrevious,
+    this.onRebuildList,
     this.onDelete,
   });
 
@@ -22,10 +23,16 @@ class PlanOverflowMenu extends ConsumerWidget {
 
   /// Opens the earlier-plans sheet.
   final VoidCallback? onPrevious;
+
+  /// Rebuilds the plan's shopping list from its meals; null hides it.
+  final VoidCallback? onRebuildList;
   final VoidCallback? onDelete;
 
   bool get isEmpty =>
-      onStartNew == null && onPrevious == null && onDelete == null;
+      onStartNew == null &&
+      onPrevious == null &&
+      onRebuildList == null &&
+      onDelete == null;
 
   @override
   Widget build(BuildContext context, WidgetRef ref) {
@@ -46,6 +53,12 @@ class PlanOverflowMenu extends ConsumerWidget {
             key: const ValueKey('meal_planning.plan_previous'),
             label: content.getValue(ContentKeys.mpPlanPrevious),
             onSelected: onPrevious!,
+          ),
+        if (onRebuildList != null)
+          OverflowMenuItem(
+            key: const ValueKey('meal_planning.plan_rebuild_list'),
+            label: content.getValue(ContentKeys.mpPlanRebuildList),
+            onSelected: onRebuildList!,
           ),
         if (onDelete != null)
           OverflowMenuItem(

@@ -345,6 +345,17 @@ class MealPlanController extends _$MealPlanController {
     return plan;
   }
 
+  /// Rebuild the plan's shopping list from its meals
+  /// (`rebuild_shopping_list`, ticket 96): the Plan tab's way back after the
+  /// athlete deleted the list. The server updates the plan's one list in
+  /// place (or makes it again) and refills the plan's `shopping` mirror,
+  /// which the returned `batch` folds into Drift. Remote-ack like
+  /// [confirmPlan]: refused offline, rethrown on failure.
+  Future<MealPlan?> rebuildShoppingList({String? planId}) => _remoteAck(
+    RebuildShoppingListAction(planId: planId ?? state.value?.id),
+    (r) => r.plan,
+  );
+
   Future<void> _scheduleReminders(MealPlan plan) async {
     try {
       final reminders = ref.read(planReminderServiceProvider);

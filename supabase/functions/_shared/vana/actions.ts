@@ -165,6 +165,8 @@ export async function extraAction(v: VanaCtx, type: string, p: Record<string, an
     }
     case 'rename_shopping_list': return { parts: [], list: await shopping.renameList(v, String(p.id), String(p.name ?? '')) };
     case 'delete_shopping_list': return { parts: [], list: await shopping.deleteList(v, String(p.id)) };
+    // ticket 96: Rebuild shopping list from the Plan tab → the plan's batch and its one list, rebuilt in place.
+    case 'rebuild_shopping_list': { const planId = pick(p, 'planId', 'plan_id'); const pl = await plan.rebuildShoppingList(v, planId ? { planId: String(planId) } : null); return { parts: [{ kind: 'batch', plan: pl }], list: await shopping.planList(v, pl.id) }; }
     case 'add_shopping_item': return { parts: [], list: await shopping.addItem(v, String(pick(p, 'listId', 'list_id')), String(p.name ?? ''), String(p.qty ?? ''), p.aisle == null ? null : String(p.aisle)) };
     case 'update_shopping_item': {
       const patch: shopping.ItemPatch = {};

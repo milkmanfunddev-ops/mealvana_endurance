@@ -150,6 +150,8 @@ class _FoodScreenState extends ConsumerState<FoodScreen> {
                     // second Food page over this one.
                     FoodTab.plan => PlanTab(
                       onAddMeal: () => setState(() => _tab = FoodTab.meals),
+                      onShowShopping: () =>
+                          setState(() => _tab = FoodTab.shopping),
                     ),
                     FoodTab.meals => const MealsTab(),
                     FoodTab.shopping => const ShoppingTab(),
