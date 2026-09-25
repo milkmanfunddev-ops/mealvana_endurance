@@ -1,0 +1,14 @@
+[
+    {
+        "read_at": "2026-09-25 22:34:36.260605+00",
+        "nutrition_target_overrides": {
+            "duringRun": {
+                "carbRateGPerH": 50.4
+            },
+            "duringCycling": {
+                "carbRateGPerH": 50.4
+            }
+        },
+        "updated_at": "2026-09-25 22:34:30.101424+00"
+    }
+]

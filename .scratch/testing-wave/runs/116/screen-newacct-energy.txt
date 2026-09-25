@@ -1,0 +1,5 @@
+"Today's Energy" GenericElement 201 432
+'5:46 PM  ·  74% of the day done' StaticText 201 125
+'NET ENERGY BALANCE\ni\n0\neaten\n−\n1,457\nburned\n=\n−1,457\nkcal' StaticText 201 220
+'Eaten 0 / 2,226 · 2,226 to go\nBurned 1,457 / 2,229 projected' StaticText 201 312
+'WHERE THE BURN COMES FROM' StaticText 201 348

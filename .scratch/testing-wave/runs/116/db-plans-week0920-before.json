@@ -1,0 +1,60 @@
+[
+    {
+        "read_at": "2026-09-25 22:23:12.015797+00",
+        "id": "666be167-08b3-4cd5-8127-d262d0fde28c",
+        "status": "confirmed",
+        "is_deleted": false,
+        "name": null,
+        "confirmed_at": "2026-09-25 20:28:08.765355+00",
+        "created_at": "2026-09-25 20:25:43.201688+00",
+        "updated_at": "2026-09-25 21:26:33.032+00",
+        "day_notes": {
+            "2026-09-25": "Swim 30m and core work: keep it light with your standard dinner pasta, mixed veg & avocado.",
+            "2026-09-26": "Long run day needs fuel\u2014aim for 835C carbs; pasta with extra avocado at dinner, consider adding fruit or grains earlier in the day.",
+            "2026-09-27": "Long 45m bike follows foam rolling; pasta dinner with mixed veg & avocado, boost carbs with a side grain or sweet potato.",
+            "2026-09-28": "Swim 30m and test day: standard pasta, mixed veg & avocado dinner to recover.",
+            "2026-09-29": "Easy day\u2014use your last pasta dinner with mixed veg & avocado, keep portions moderate.",
+            "2026-09-30": "Recovery day: plan a non-pasta dinner with solid protein and seasonal veg to round out your week.",
+            "2026-10-01": "Plan ahead for next week's dinners; you'll need fresh protein anchors to stay consistent on target."
+        },
+        "day_notes_stale": false,
+        "day_notes_at": "2026-09-25 20:28:16.568+00",
+        "n_meals": 1
+    },
+    {
+        "read_at": "2026-09-25 22:23:12.015797+00",
+        "id": "9be88811-dd03-46e1-afcd-9403a69c7087",
+        "status": "draft",
+        "is_deleted": false,
+        "name": null,
+        "confirmed_at": null,
+        "created_at": "2026-09-25 21:24:11.388714+00",
+        "updated_at": "2026-09-25 21:24:12.273+00",
+        "day_notes": {},
+        "day_notes_stale": true,
+        "day_notes_at": null,
+        "n_meals": 1
+    },
+    {
+        "read_at": "2026-09-25 22:23:12.015797+00",
+        "id": "8ebeb6da-f6b6-40af-a3f9-4289dad49b6a",
+        "status": "confirmed",
+        "is_deleted": true,
+        "name": null,
+        "confirmed_at": "2026-09-25 20:21:43.539435+00",
+        "created_at": "2026-09-25 20:10:24.354073+00",
+        "updated_at": "2026-09-25 20:26:43.588+00",
+        "day_notes": {
+            "2026-09-25": "Swim 30m and core work are light\u2014keep dinner simple; save your planned meals for higher-demand days ahead.",
+            "2026-09-26": "Long run day needs fuel: use the quinoa, mixed veg & walnuts at dinner for solid carbs and protein to support 835C target.",
+            "2026-09-27": "Foam rolling is recovery; stick with a lighter dinner to support adaptation after your planned meals are used.",
+            "2026-09-28": "Swim 30m and integration test are moderate\u2014build dinner with anchoring protein to fuel both sessions.",
+            "2026-09-29": "No structured session today; keep dinner balanced and straightforward with your go-to vegetarian protein.",
+            "2026-09-30": "Midweek reset: prepare a nutrient-dense dinner with seasonal veg and protein to maintain momentum into the final days.",
+            "2026-10-01": "Plan your week ahead, sir\u2014consider stocking protein-rich vegetarian options to hit daily targets consistently."
+        },
+        "day_notes_stale": false,
+        "day_notes_at": "2026-09-25 20:21:51.172+00",
+        "n_meals": 2
+    }
+]

@@ -1,0 +1,36 @@
+'71g' StaticText 85 272
+'12oz' StaticText 201 272
+'613mg' StaticText 316 272
+'CARBS' StaticText 85 295
+'FLUIDS' StaticText 201 295
+'SODIUM' StaticText 316 295
+'59g' StaticText 45 340
+'75g' StaticText 125 340
+'0oz' StaticText 161 340
+'23oz' StaticText 237 340
+'Pre-Workout Snack\nNOW UNTIL 30 MIN OUT\nBagel (large) + Jam / Jelly\n55g\nCARBS' Image 201 408
+'Top-Off\nLAST 30 MIN\nApplesauce Pouch + Water\n16g\nCARBS\n12oz\nFLUIDS' Image 201 513
+'DURING' StaticText 108 630
+'Summary\nSummary' Button 233 630
+'By Hour\nBy Hour' Button 323 630
+'118g' StaticText 89 673
+'43oz' StaticText 200 673
+'1160mg' StaticText 312 673
+'CARBS' StaticText 89 693
+'FLUIDS' StaticText 200 693
+'SODIUM' StaticText 312 693
+'97' StaticText 43 723
+'126' StaticText 134 723
+'37' StaticText 154 723
+'50' StaticText 247 723
+'857' StaticText 268 723
+'1285' StaticText 354 723
+'4 Energy Gels' StaticText 201 776
+'5 cups Water' StaticText 201 846
+'3 Electrolyte Tablets' StaticText 0 0
+'0.5 packets Energy Chews' StaticText 0 0
+'ADD FOOD' StaticText 0 0
+'AFTER' StaticText 0 0
+'1 Banana' StaticText 0 0
+'1 Toaster Waffle' StaticText 0 0
+'1 bottle Whey Protein Shake' StaticText 0 0

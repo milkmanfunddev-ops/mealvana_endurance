@@ -1,0 +1,47 @@
+'Endurance Dev' Application 201 437
+'8:46 AM\nRice cake and Almond butter\n168 kcal · 18C · 5P · 10F\n⋯' StaticText 201 498
+'7:42 PM' StaticText 201 622
+'Patrol Build 1790210521428\n105 kcal · 27C · 1P · 0F\n⋯' StaticText 246 581
+'Patrol Build 1790210919365\n105 kcal · 27C · 1P · 0F\n⋯' StaticText 246 653
+'Swim\nSkipped\n30 min' StaticText 201 745
+'R-CORE Routine\nSkipped\nother' StaticText 201 831
+'Bike\nSkipped\n10 mi · 45 min' StaticText 0 0
+'Corpus Strength Block\nSkipped\n3.0 mi · 45 min' StaticText 0 0
+'9:00 PM' StaticText 0 0
+'Brick workout containing swimming and running and cycling\nPre · During · Recovery fuel' StaticText 0 0
+'BRICK\n3 legs · 124 min\nBrick actions' Button 0 0
+'Brick actions' Button 0 0
+'1\nSWIM\n1500 m · 30 min' StaticText 0 0
+'Previous day' Button 24 89
+'Next day' Button 334 89
+'Wednesday, September 23 ˅' Button 179 89
+'NET ENERGY BALANCE' StaticText 88 152
+'Collapse details' Button 355 153
+'378' StaticText 46 176
+'2,484' StaticText 140 176
+'−' StaticText 107 176
+'eaten' StaticText 81 176
+'burned' StaticText 188 176
+'−2,106' StaticText 114 211
+'=' StaticText 39 217
+'kcal' StaticText 197 220
+'Eaten 378 / 5,553' StaticText 77 264
+'5,175 kcal to target' StaticText 293 264
+'Full Breakdown' StaticText 95 300
+'Turn tracking off' StaticText 319 366
+'All' StaticText 65 366
+'Settings' Button 367 89
+'Workout' StaticText 155 366
+'Meals' StaticText 244 366
+'+ Add Food' Button 151 419
+'+ Add Activity' Button 245 419
+'Hide times' StaticText 365 366
+'Brick' Button 344 419
+'Timeline' StaticText 171 816
+'Timeline' Button 57 816
+'Food\nFood' Button 133 816
+'Events\nEvents' Button 209 816
+'Learn\nLearn' Button 285 816
+'Show accessibility issues\n' Button 368 696
+'Open testing tools' Button 368 756
+'Ask Vana' Button 362 816

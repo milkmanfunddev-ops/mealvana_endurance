@@ -1,0 +1,38 @@
+'Endurance Dev' Application 201 437
+'Swim\nSkipped\n70 min' StaticText 201 497
+'Corpus Tempo Run\nSkipped\n6.2 mi · 55 min' StaticText 201 584
+'R-CORE Routine\nSkipped\n7 min' StaticText 201 671
+'12 mi Run\nSkipped\n12 mi · 108 min' StaticText 201 758
+'Previous day' Button 24 89
+'Next day' Button 300 89
+'Monday, September 21 ˅' Button 162 89
+'NET ENERGY BALANCE' StaticText 88 152
+'Collapse details' Button 355 153
+'0' StaticText 37 176
+'2,447' StaticText 122 176
+'−' StaticText 89 176
+'eaten' StaticText 63 176
+'burned' StaticText 171 176
+'−2,447' StaticText 114 211
+'=' StaticText 39 217
+'kcal' StaticText 197 220
+'Eaten 0 / 6,472' StaticText 71 264
+'6,472 kcal to target' StaticText 292 264
+'Full Breakdown' StaticText 95 300
+'Turn tracking off' StaticText 319 366
+'All' StaticText 65 366
+'Settings' Button 367 89
+'Workout' StaticText 155 366
+'Meals' StaticText 244 366
+'+ Add Food' Button 151 419
+'+ Add Activity' Button 245 419
+'Hide times' StaticText 365 366
+'Brick' Button 344 419
+'Timeline' StaticText 171 816
+'Timeline' Button 57 816
+'Food\nFood' Button 133 816
+'Events\nEvents' Button 209 816
+'Learn\nLearn' Button 285 816
+'Show accessibility issues\n' Button 368 696
+'Open testing tools' Button 368 756
+'Ask Vana' Button 362 816

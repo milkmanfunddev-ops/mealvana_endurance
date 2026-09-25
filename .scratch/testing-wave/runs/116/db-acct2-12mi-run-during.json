@@ -1,0 +1,42 @@
+[
+    {
+        "read_at": "2026-09-25 23:01:11.10578+00",
+        "id": "c8dd5732-8973-49c0-bf4f-998b7749fc2f",
+        "title": "12 mi Run",
+        "duration_minutes": 108,
+        "updated_at": "2026-09-25 18:00:47.407783",
+        "during_run": {
+            "tempC": 20,
+            "isIndoor": false,
+            "carbsLowG": 97.2,
+            "carbTotalG": 113,
+            "carbsHighG": 126,
+            "floorMlPerH": 445,
+            "fluidsLowMl": 1103,
+            "humidityPct": 60,
+            "sodiumLowMg": 857,
+            "fluidTotalMl": 1298,
+            "fluidsHighMl": 1493,
+            "sodiumHighMg": 1285,
+            "carbRateGPerH": 63,
+            "ceilingMlPerH": 800,
+            "gutMultiplier": 1.2,
+            "sodiumTotalMg": 1071,
+            "fluidRateMlPerH": 721,
+            "rawBandLowGPerH": 45,
+            "conditionsSource": "assumed",
+            "rawBandHighGPerH": 60,
+            "sodiumConcMgPerL": 825,
+            "sodiumRateMgPerH": 595,
+            "massNormRateGPerH": 0.93,
+            "sportCeilingGPerH": 70,
+            "absClampRangeGPerH": [
+                54,
+                70
+            ],
+            "replacementPercent": 0.6,
+            "effectiveSweatRateLPerH": 1.201
+        },
+        "overrides": null
+    }
+]

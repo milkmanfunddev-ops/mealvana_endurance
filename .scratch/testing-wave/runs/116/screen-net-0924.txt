@@ -1,0 +1,44 @@
+'Endurance Dev' Application 201 437
+'2:08 PM\nW13-23 Lunch\n404 kcal · 41C · 17P · 20F\n⋯' StaticText 201 498
+'2:08 PM' StaticText 201 622
+'Rice cake and Almond butter\n168 kcal · 18C · 5P · 10F\n⋯' StaticText 246 581
+'Cottage Cheese & Pineapple Bowl\n300 kcal · 38C · 28P · 5F\n⋯' StaticText 246 653
+'2:09 PM\nRolled oats and Raisins\n204 kcal · 41C · 6P · 3F\n⋯' StaticText 201 746
+'3:17 PM\nW14-25 Manual oats\n437 kcal · 61C · 24P · 12F\n⋯' StaticText 201 832
+'3:18 PM\nW14-25 Decimal kcal\n0 kcal · 30C · 12P · 8F\n⋯' StaticText 0 0
+'3:19 PM' StaticText 0 0
+'W14-25 Built bowl\n450 kcal · 57C · 40P · 5F\n⋯' StaticText 0 0
+'Spaghetti Bolognese W14-24\n780 kcal · 95C · 38P · 22F\n⋯' StaticText 0 0
+'Previous day' Button 24 89
+'Next day' Button 314 89
+'Thursday, September 24 ˅' Button 169 89
+'NET ENERGY BALANCE' StaticText 88 152
+'Collapse details' Button 355 153
+'3,353' StaticText 55 176
+'2,782' StaticText 158 176
+'−' StaticText 125 176
+'eaten' StaticText 99 176
+'burned' StaticText 206 176
+'+571' StaticText 98 211
+'=' StaticText 39 217
+'kcal' StaticText 165 220
+'Eaten 3,353 / 8,839' StaticText 82 264
+'5,486 kcal to target' StaticText 291 264
+'Full Breakdown' StaticText 95 300
+'Turn tracking off' StaticText 319 366
+'All' StaticText 65 366
+'Settings' Button 367 89
+'Workout' StaticText 155 366
+'Meals' StaticText 244 366
+'+ Add Food' Button 151 419
+'+ Add Activity' Button 245 419
+'Hide times' StaticText 365 366
+'Brick' Button 344 419
+'Timeline' StaticText 171 816
+'Timeline' Button 57 816
+'Food\nFood' Button 133 816
+'Events\nEvents' Button 209 816
+'Learn\nLearn' Button 285 816
+'Show accessibility issues\n' Button 368 696
+'Open testing tools' Button 368 756
+'Ask Vana' Button 362 816

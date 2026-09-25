@@ -1,0 +1,7 @@
+"Today's Energy" StaticText 201 432
+'5:40 PM  ·  74% of the day done' StaticText 201 125
+'NET ENERGY BALANCE\ni\n760\neaten\n−\n1,839\nburned\n=\n−1,079\nkcal' StaticText 201 220
+'Eaten 760 / 3,062 · 2,302 to go\nBurned 1,839 / 3,064 projected' StaticText 201 312
+'WHERE THE BURN COMES FROM' StaticText 201 348
+"ENERGY BURNED\nso far\nby day's end\nResting\nestimated\n1,399\n1,901\nWorkout\nestimated\n+0\n+311\nDaily movement\nestimated\n+364\n+546\nDigestion\nestimated\n+76\n+306\nTotal burned\n1,839\n3,064 StaticText 201 528
+'i' StaticText 120 425

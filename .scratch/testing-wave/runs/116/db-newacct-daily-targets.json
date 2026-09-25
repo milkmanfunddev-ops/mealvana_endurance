@@ -1,0 +1,56 @@
+[
+    {
+        "read_at": "2026-09-25 22:47:15.496202+00",
+        "target_date": "2026-09-20",
+        "carb_g": 295,
+        "prot_g": 95,
+        "fat_g": 74,
+        "tdee": 2229,
+        "rmr": 1605,
+        "session_kcal": 0,
+        "neat_kcal": 401,
+        "tef_kcal": 223,
+        "mode": "prospective",
+        "ea_status": "SOFT_WARNING",
+        "calculation_input": {
+            "weight_kg": 68.04,
+            "energy_basis": "as_computed"
+        }
+    },
+    {
+        "read_at": "2026-09-25 22:47:15.496202+00",
+        "target_date": "2026-09-21",
+        "carb_g": 295,
+        "prot_g": 95,
+        "fat_g": 74,
+        "tdee": 2229,
+        "rmr": 1605,
+        "session_kcal": 0,
+        "neat_kcal": 401,
+        "tef_kcal": 223,
+        "mode": "prospective",
+        "ea_status": "SOFT_WARNING",
+        "calculation_input": {
+            "weight_kg": 68.04,
+            "energy_basis": "as_computed"
+        }
+    },
+    {
+        "read_at": "2026-09-25 22:47:15.496202+00",
+        "target_date": "2026-09-22",
+        "carb_g": 295,
+        "prot_g": 95,
+        "fat_g": 74,
+        "tdee": 2229,
+        "rmr": 1605,
+        "session_kcal": 0,
+        "neat_kcal": 401,
+        "tef_kcal": 223,
+        "mode": "prospective",
+        "ea_status": "SOFT_WARNING",
+        "calculation_input": {
+            "weight_kg": 68.04,
+            "energy_basis": "as_computed"
+        }
+    }
+]
