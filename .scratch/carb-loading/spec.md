@@ -622,6 +622,40 @@ against the v18/v20 charter sections → spec/design/; then a ship-readiness
 summary to Xuan. **Xuan is the explicit checkpoint before ship-bundle tags
 carb-loading@v1 — nothing tags until he says go.**
 
+### EXTRACTED — 2026-09-25 — dashboard surfaces PROPOSED (qa 0091066); Q-D9/Q-D10 await Xuan
+
+qa's dashboard extraction from v21 is done: `surfaces/carb-loading-dashboard.md`
+(CD-1..6) + `components/carb-slot-card.md`, both PROPOSED. The walk reproduced
+the ruled math on-screen (9 PM = the W7 band edge; a stepper tap flipped the
+face 31-behind → On-pace with all five surfaces updating in one frame — CD-2,
+the surface's core contract, clean in v21).
+
+Two findings + F6 are Xuan's rulings; NO prototype work until he calls them:
+
+- **Q-D9 — the expanded LOAD face.** It exists against the ratified
+  collapsed-only text (E1 suppressed), it is currently the ONLY route to Full
+  Breakdown, and it carries two unregistered strings ("249 g to go", "pace N g
+  by now"). Options as filed: (a) enforce collapsed-only — Full Breakdown
+  moves onto the collapsed face, expansion + strings deleted; (b) amend the
+  ruling to admit expansion and register the strings. The prototype today
+  implements NEITHER ruled option — a revision comes either way. Context the
+  ruling should weigh: collapsed-only was the 09-19 ruling, but Xuan
+  explicitly reversed it on 09-20 ("I take that back" — restore expand); the
+  ratified amendment captured the earlier state. app-38 recommendation: (b),
+  matching his later direction; the loader row already satisfies P-2 either
+  way, so (a) is cheap if he prefers the leaner face.
+- **Q-D10 — sparkle + "Today's Fuel"** still render on loading days including
+  the clock-free future day, against the release-1 exclusion. Needs the strip
+  or an explicit re-ruling to keep. app-38 recommendation: strip (it was his
+  own exclusion); build is ready to go on his word.
+- **F6 — no-abort dialogs** (carried). app-38 recommendation: keep exactly two
+  buttons but make backdrop-tap dismiss — an escape without a third choice;
+  a destructive switch with no way out is hostile. His call entirely.
+
+After the three rulings + ratification of the two extraction docs, qa
+assembles the ship-readiness summary. Xuan remains the explicit checkpoint
+before ship-bundle tags.
+
 ## Notes on the two new ideas
 
 **Reminder to start.** Machinery exists — `NotificationService`
