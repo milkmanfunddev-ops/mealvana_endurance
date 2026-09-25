@@ -19,11 +19,17 @@ import 'choice_chip_button.dart';
 import 'plan_summary.dart';
 import 'session_chip.dart';
 
-/// The "you're set" card shown in chat right after `confirm_plan` / a
-/// `shopping_list` part (plan Phase 4): the week and meal count, cooking
+/// The "you're set" card (mp-235): the week and meal count, cooking
 /// sessions, the list size (with what was skipped because the athlete has
 /// it), *where everything lives* — a Plan-tab row and a Shopping-tab row —
 /// then Share and the "remind me the night before cook day" chip.
+///
+/// Two hosts. In chat it answers a `shopping_list` part (plan Phase 4). On
+/// Food > Shopping it sits at the top of the list a confirm just built
+/// (ticket 131): there the Shopping row is where the athlete already is, so
+/// it is inert ([onView] null), and the card adds the chips after a confirm,
+/// Lay it across the week ([onLayAcross]) and Adjust ([onAdjust]), and a
+/// close ([onDismiss]).
 ///
 /// The part carries only the list; the plan comes from
 /// [mealPlanControllerProvider] (or [plan], for hosts and tests that have
@@ -32,15 +38,20 @@ class ConfirmedCard extends ConsumerStatefulWidget {
   const ConfirmedCard({
     super.key,
     required this.part,
-    required this.onView,
+    this.onView,
     this.onViewPlan,
     this.plan,
+    this.onDismiss,
+    this.onLayAcross,
+    this.laidAcross = false,
+    this.onAdjust,
   });
 
   final VanaShoppingListPart part;
 
-  /// Open the Shopping tab.
-  final VoidCallback onView;
+  /// Open the Shopping tab. Null on the Shopping tab itself: the row names
+  /// the list the athlete is on and does nothing.
+  final VoidCallback? onView;
 
   /// Open the Plan tab; the row still renders (inert) without it.
   final VoidCallback? onViewPlan;
@@ -48,12 +59,26 @@ class ConfirmedCard extends ConsumerStatefulWidget {
   /// Optional override; defaults to the plan controller's current plan.
   final MealPlan? plan;
 
+  /// Close the card for good. No close without it.
+  final VoidCallback? onDismiss;
+
+  /// "Lay it across the week"; no chip without it. The host shows the days
+  /// and passes [laidAcross] once they are there.
+  final Future<void> Function()? onLayAcross;
+
+  /// The week is laid across: the chip shows done.
+  final bool laidAcross;
+
+  /// "Adjust": back to Vana about this plan; no chip without it.
+  final VoidCallback? onAdjust;
+
   @override
   ConsumerState<ConfirmedCard> createState() => _ConfirmedCardState();
 }
 
 class _ConfirmedCardState extends ConsumerState<ConfirmedCard> {
   bool _reminderSet = false;
+  bool _layingAcross = false;
 
   @override
   Widget build(BuildContext context) {
@@ -86,14 +111,33 @@ class _ConfirmedCardState extends ConsumerState<ConfirmedCard> {
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
-          Text(
-            content.getValue(ContentKeys.mpConfirmedTitle),
-            key: const ValueKey('meal_planning.confirmed_title'),
-            style: AppTextStyles.sectionTitle.copyWith(
-              color: textColor,
-              fontSize: 16,
-              fontWeight: FontWeight.w700,
-            ),
+          Row(
+            children: [
+              Expanded(
+                child: Text(
+                  content.getValue(ContentKeys.mpConfirmedTitle),
+                  key: const ValueKey('meal_planning.confirmed_title'),
+                  style: AppTextStyles.sectionTitle.copyWith(
+                    color: textColor,
+                    fontSize: 16,
+                    fontWeight: FontWeight.w700,
+                  ),
+                ),
+              ),
+              if (widget.onDismiss case final dismiss?)
+                IconButton(
+                  key: const ValueKey('meal_planning.confirmed_dismiss'),
+                  tooltip: content.getValue(ContentKeys.mpConfirmedDismiss),
+                  onPressed: dismiss,
+                  visualDensity: VisualDensity.compact,
+                  padding: EdgeInsets.zero,
+                  constraints: const BoxConstraints(
+                    minWidth: 32,
+                    minHeight: 32,
+                  ),
+                  icon: Icon(Icons.close, size: 20, color: secondary),
+                ),
+            ],
           ),
           if (plan != null) ...[
             const SizedBox(height: 2),
@@ -128,7 +172,11 @@ class _ConfirmedCardState extends ConsumerState<ConfirmedCard> {
             rowKey: const ValueKey('meal_planning.confirmed_shopping_row'),
             icon: Icons.shopping_cart_outlined,
             iconColor: AppColors.orange,
-            title: content.getValue(ContentKeys.mpReviewShoppingLink),
+            title: content.getValue(
+              widget.onView == null
+                  ? ContentKeys.mpConfirmedShoppingRow
+                  : ContentKeys.mpReviewShoppingLink,
+            ),
             subtitle: content.getValue(ContentKeys.mpConfirmedShoppingRowSub),
             textColor: textColor,
             onTap: widget.onView,
@@ -156,9 +204,45 @@ class _ConfirmedCardState extends ConsumerState<ConfirmedCard> {
               ],
             ),
           ],
+          // mp-235 detail 3: the chips after a confirm. "Open shopping list"
+          // is left off: this host only draws them on the list itself.
+          if (widget.onLayAcross != null || widget.onAdjust != null) ...[
+            const SizedBox(height: AppSpacing.xs),
+            Wrap(
+              spacing: AppSpacing.xs,
+              runSpacing: AppSpacing.xs,
+              children: [
+                if (widget.onLayAcross case final layAcross?)
+                  ChoiceChipButton(
+                    key: const ValueKey('meal_planning.confirmed_lay_across'),
+                    label: content.getValue(ContentKeys.mpConfirmedLayAcross),
+                    selected: widget.laidAcross,
+                    enabled: !widget.laidAcross && !_layingAcross,
+                    onTap: () => _layAcross(layAcross),
+                  ),
+                if (widget.onAdjust case final adjust?)
+                  ChoiceChipButton(
+                    key: const ValueKey('meal_planning.confirmed_adjust'),
+                    label: content.getValue(ContentKeys.mpConfirmedAdjust),
+                    onTap: adjust,
+                  ),
+              ],
+            ),
+          ],
         ],
       ),
     );
+  }
+
+  /// The chip greys out while the week is on the wire; the host says why
+  /// when it fails and the chip comes back.
+  Future<void> _layAcross(Future<void> Function() layAcross) async {
+    setState(() => _layingAcross = true);
+    try {
+      await layAcross();
+    } finally {
+      if (mounted) setState(() => _layingAcross = false);
+    }
   }
 
   void _share(ContentService content, MealPlan plan) {

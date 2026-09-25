@@ -154,7 +154,7 @@ class PlanTab extends ConsumerWidget {
               plan.meals.isNotEmpty &&
               plan.status == MealPlanStatus.draft) ...[
             const SizedBox(height: AppSpacing.sm),
-            const _ConfirmButton(),
+            _ConfirmButton(onShowShopping: onShowShopping),
           ],
           const SizedBox(height: AppSpacing.xxl),
         ],
@@ -497,8 +497,12 @@ class _EmptyPlanCard extends ConsumerWidget {
 }
 
 /// "Confirm plan · build shopping list" — the primary action on a draft.
+/// Once the server has confirmed, the Food screen switches to Shopping
+/// ([onShowShopping]), where the "you're set" card waits.
 class _ConfirmButton extends ConsumerStatefulWidget {
-  const _ConfirmButton();
+  const _ConfirmButton({this.onShowShopping});
+
+  final VoidCallback? onShowShopping;
 
   @override
   ConsumerState<_ConfirmButton> createState() => _ConfirmButtonState();
@@ -518,13 +522,21 @@ class _ConfirmButtonState extends ConsumerState<_ConfirmButton> {
       isLoading: _busy,
       onPressed: () async {
         final controller = ref.read(mealPlanControllerProvider.notifier);
+        // Taken before the await: the confirmed plan drops this button, so
+        // its context may be gone by the time the server answers.
+        final land = widget.onShowShopping;
+        final router = land == null ? GoRouter.maybeOf(context) : null;
         setState(() => _busy = true);
         try {
           await controller.confirmPlan();
-          if (context.mounted) {
-            MealvanaSnackbar.showSuccess(
-              context,
-              content.getValue(ContentKeys.mpConfirmedToast),
+          // mp-235: a confirm lands on Food > Shopping, where the "you're
+          // set" card is the confirmation (ticket 131, Finding 88-016).
+          if (land != null) {
+            land();
+          } else {
+            router?.go(
+              foodTabLocation(FoodTab.shopping),
+              extra: foodTabRequest(),
             );
           }
         } on NeedsConnectionException {
