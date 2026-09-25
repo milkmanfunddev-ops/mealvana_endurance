@@ -111,7 +111,9 @@ void main() {
                 .deleteLog(log.id);
           }
         }
-        container.invalidate(carbDashboardForDateProvider);
+        // No manual invalidation here: the controllers' own writes must
+        // propagate (G24) — a manual invalidate would mask exactly the bug
+        // class this flow exists to catch.
       }
 
       await sweepDebris();
@@ -165,7 +167,8 @@ void main() {
               raceDate: today.add(const Duration(days: 1)),
               bodyWeightPounds: 149.9,
             );
-        container.invalidate(carbDashboardForDateProvider);
+        // G24: createCarbLoadingPlan's own invalidation must surface the
+        // new plan here — no manual invalidate (it masked the real gap).
         carb = await container.read(
           carbDashboardForDateProvider(dateStr).future,
         );
