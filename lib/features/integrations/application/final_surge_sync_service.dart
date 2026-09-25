@@ -167,6 +167,18 @@ class FinalSurgeSyncService {
       final effectiveDays = numDays < 1 ? 1 : (numDays > 14 ? 14 : numDays);
       final firstChunkDays = effectiveDays > 7 ? 7 : effectiveDays;
 
+      // The fetched window, on local wall-clock days: today through the last
+      // requested day. Only local rows inside it can be flagged as deleted
+      // upstream (Finding 30-001); everything else was never asked for.
+      final now = DateTime.now();
+      final today = DateTime(now.year, now.month, now.day);
+      final windowStart = today;
+      var windowEnd = _endOfDay(today.add(Duration(days: effectiveDays - 1)));
+      // UpcomingWorkouts is capped by NumWorkouts. A response that fills the
+      // cap may have been cut off, so the window closes at the last workout
+      // it did return (see below, after transformation).
+      var upcomingHitCap = false;
+
       final workouts = <Map<String, dynamic>>[];
       final firstResponse = await fetchUpcomingChunk(firstChunkDays);
       if (firstResponse.hasError) {
@@ -175,10 +187,9 @@ class FinalSurgeSyncService {
         );
       }
       workouts.addAll(firstResponse.workouts);
+      upcomingHitCap = firstResponse.workouts.length >= numWorkouts;
 
       if (effectiveDays > 7) {
-        final now = DateTime.now();
-        final today = DateTime(now.year, now.month, now.day);
         final startDate = today.add(const Duration(days: 7));
         final endDate = today.add(Duration(days: effectiveDays - 1));
 
@@ -211,6 +222,8 @@ class FinalSurgeSyncService {
             );
           }
           workouts.addAll(fallbackResponse.workouts);
+          upcomingHitCap =
+              upcomingHitCap || fallbackResponse.workouts.length >= numWorkouts;
         }
       }
 
@@ -328,11 +341,22 @@ class FinalSurgeSyncService {
       }
 
       // 6. Detect changes between local and remote
+      if (upcomingHitCap) {
+        windowEnd = _clampToLastFetched(windowEnd, dedupedRemoteActivities);
+        if (kDebugMode) {
+          print(
+            '   ⚠️ UpcomingWorkouts hit the $numWorkouts-workout cap; '
+            'deletion window closes at $windowEnd',
+          );
+        }
+      }
       final changes = _changeDetectionService.detectChanges(
         localActivities: localActivities,
         remoteWorkouts: dedupedRemoteActivities,
         provider: 'final_surge',
         completionSignalIds: completionSignalIds,
+        deletionWindowStart: windowStart,
+        deletionWindowEnd: windowEnd,
       );
 
       if (kDebugMode) {
@@ -454,6 +478,34 @@ class FinalSurgeSyncService {
 
       return SyncResult.error(e.toString());
     }
+  }
+
+  /// The last microsecond of [day]'s local calendar day, so an inclusive
+  /// window end covers every workout scheduled that day.
+  static DateTime _endOfDay(DateTime day) => DateTime(
+    day.year,
+    day.month,
+    day.day,
+  ).add(const Duration(days: 1)).subtract(const Duration(microseconds: 1));
+
+  /// When the provider's answer filled its workout cap, the window can only
+  /// vouch for workouts up to the last one it returned: anything scheduled
+  /// later may have been cut off, not deleted. Returns the earlier of
+  /// [windowEnd] and the last fetched workout's scheduled time. An empty
+  /// fetch at the cap cannot happen (a cap of zero is not a fetch), but if
+  /// the transformer filtered everything out the window stays as it was.
+  static DateTime _clampToLastFetched(
+    DateTime windowEnd,
+    List<Activity> fetched,
+  ) {
+    if (fetched.isEmpty) return windowEnd;
+    var last = fetched.first.scheduledDateTime;
+    for (final activity in fetched.skip(1)) {
+      if (activity.scheduledDateTime.isAfter(last)) {
+        last = activity.scheduledDateTime;
+      }
+    }
+    return last.isBefore(windowEnd) ? last : windowEnd;
   }
 
   /// Ensure the token is valid, refreshing if needed
@@ -632,12 +684,20 @@ class FinalSurgeSyncService {
       final localActivities = await _activitiesRepository
           .getActivitiesByUserAndProvider(userId, 'final_surge');
 
-      // Detect changes between local and remote
+      // Detect changes between local and remote. Only rows inside the
+      // requested date range were fetched, so only they can be flagged as
+      // deleted upstream (Finding 30-001).
       final changes = _changeDetectionService.detectChanges(
         localActivities: localActivities,
         remoteWorkouts: dedupedRemoteActivities,
         provider: 'final_surge',
         completionSignalIds: completionSignalIds,
+        deletionWindowStart: DateTime(
+          startDate.year,
+          startDate.month,
+          startDate.day,
+        ),
+        deletionWindowEnd: _endOfDay(endDate),
       );
 
       // Apply changes

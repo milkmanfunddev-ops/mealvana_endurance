@@ -1,3 +1,4 @@
+import 'package:drift/drift.dart' show Value;
 import 'package:flutter_test/flutter_test.dart';
 import 'package:mealvana_endurance/features/activities/data/activity_mapper.dart';
 import 'package:mealvana_endurance/features/activities/domain/activity.dart'
@@ -198,6 +199,81 @@ void main() {
       );
 
       expect(restored.isFasted, isTrue);
+    });
+  });
+
+  // Finding 30-002: `last_synced_at`, `provider_deleted_at`,
+  // `provider_scheduled_at` and `schedule_changed_at` are `timestamptz` on
+  // the server. A local `DateTime.now()` serialised with a bare
+  // `toIso8601String()` carries no offset, so Postgres reads the local wall
+  // clock as UTC (five hours off in CDT). The wall-clock columns
+  // (`scheduled_date_time`, `updated_at`, ...) are `timestamp without time
+  // zone` and stay local-naive on purpose.
+  group('timestamptz columns serialise as UTC with an offset', () {
+    // A local (non-UTC) instant; the offset is whatever the test host uses.
+    final localInstant = DateTime(2026, 9, 24, 11, 17, 42, 802);
+    final expectedUtc = localInstant.toUtc().toIso8601String();
+
+    domain.Activity syncedDomainActivity() => buildDomainActivity().copyWith(
+      lastSyncedAt: localInstant,
+      providerDeletedAt: localInstant,
+      providerScheduledAt: localInstant,
+      scheduleChangedAt: localInstant,
+    );
+
+    db.Activity syncedDriftRow() => buildDriftRow().copyWith(
+      lastSyncedAt: Value(localInstant),
+      providerDeletedAt: Value(localInstant),
+      providerScheduledAt: Value(localInstant),
+      scheduleChangedAt: Value(localInstant),
+    );
+
+    test('domain -> Supabase payload writes UTC with a Z suffix', () {
+      final payload = mapper.buildSupabasePayload(syncedDomainActivity());
+
+      for (final key in [
+        'last_synced_at',
+        'provider_deleted_at',
+        'provider_scheduled_at',
+        'schedule_changed_at',
+      ]) {
+        expect(payload[key], expectedUtc, reason: key);
+        expect(payload[key], endsWith('Z'), reason: '$key carries an offset');
+      }
+      // The wall-clock column is untouched.
+      expect(payload['scheduled_date_time'], scheduledAt.toIso8601String());
+      expect(payload['scheduled_date_time'], isNot(endsWith('Z')));
+    });
+
+    test('Drift row -> upload payload writes UTC with a Z suffix', () {
+      final payload = mapper.buildUploadPayloadFromRow(syncedDriftRow());
+
+      for (final key in [
+        'last_synced_at',
+        'provider_deleted_at',
+        'provider_scheduled_at',
+        'schedule_changed_at',
+      ]) {
+        expect(payload[key], expectedUtc, reason: key);
+      }
+      expect(payload['scheduled_date_time'], scheduledAt.toIso8601String());
+      expect(payload['scheduled_date_time'], isNot(endsWith('Z')));
+    });
+
+    test('null timestamptz values stay null', () {
+      final payload = mapper.buildSupabasePayload(buildDomainActivity());
+
+      expect(payload['last_synced_at'], isNull);
+      expect(payload['provider_deleted_at'], isNull);
+    });
+
+    test('a UTC value read back from the server round-trips to the same '
+        'instant', () {
+      final payload = mapper.buildSupabasePayload(syncedDomainActivity());
+      final parsed = mapper.parseDateTime(payload['last_synced_at']);
+
+      expect(parsed, isNotNull);
+      expect(parsed!.isAtSameMomentAs(localInstant), isTrue);
     });
   });
 }
