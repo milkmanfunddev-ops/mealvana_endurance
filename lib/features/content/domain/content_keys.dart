@@ -191,6 +191,12 @@ class ContentKeys {
   static const String settingsPaceUnitLabel = 'settings.pace_unit_label';
   static const String settingsGutTrainingLabel = 'settings.gut_training_label';
   static const String settingsSaveButton = 'settings.save_button';
+  // A connection whose token refresh the provider refused for good
+  // (ticket 64): the Reconnect action and the line under the card.
+  static const String settingsConnectionReconnectButton =
+      'settings.connection_reconnect_button';
+  static const String settingsConnectionNeedsReconnect =
+      'settings.connection_needs_reconnect';
 
   // Gender Labels
   static const String genderMale = 'gender.male';

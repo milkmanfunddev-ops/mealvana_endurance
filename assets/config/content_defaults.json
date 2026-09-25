@@ -321,7 +321,9 @@
     "gi_sensitivity_subtitle": "Do you have a sensitive stomach during exercise?",
     "gi_sensitivity_help": "This helps us recommend foods that are easier to digest across all sports",
     "log_in_button": "Log into an existing account",
-    "sign_out_confirm_body": "You'll need to sign in again to use Mealvana. Your data stays with your account."
+    "sign_out_confirm_body": "You'll need to sign in again to use Mealvana. Your data stays with your account.",
+    "connection_reconnect_button": "Reconnect",
+    "connection_needs_reconnect": "Sign in again to keep your workouts syncing."
   },
   "cycling_preferences": {
     "ftp_label": "FTP (Functional Threshold Power)",

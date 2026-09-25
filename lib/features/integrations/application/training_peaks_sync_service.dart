@@ -127,6 +127,8 @@ class TrainingPeaksSyncService {
       integration = await _ensureValidToken(integration);
     } on TrainingPeaksTokenExpiredException {
       return TrainingPeaksSyncResult.tokenExpired();
+    } on TrainingPeaksApiException catch (e) {
+      return TrainingPeaksSyncResult.error(e.toString());
     }
 
     final accessToken = integration.accessToken;
@@ -401,6 +403,8 @@ class TrainingPeaksSyncService {
       integration = await _ensureValidToken(integration);
     } on TrainingPeaksTokenExpiredException {
       return TrainingPeaksSyncResult.tokenExpired();
+    } on TrainingPeaksApiException catch (e) {
+      return TrainingPeaksSyncResult.error(e.toString());
     }
 
     final accessToken = integration.accessToken;
@@ -582,6 +586,8 @@ class TrainingPeaksSyncService {
       integration = await _ensureValidToken(integration);
     } on TrainingPeaksTokenExpiredException {
       return TrainingPeaksEventSyncResult.tokenExpired();
+    } on TrainingPeaksApiException catch (e) {
+      return TrainingPeaksEventSyncResult.error(e.toString());
     }
 
     final accessToken = integration.accessToken;
@@ -651,6 +657,8 @@ class TrainingPeaksSyncService {
       integration = await _ensureValidToken(integration);
     } on TrainingPeaksTokenExpiredException {
       return TrainingPeaksEventSyncResult.tokenExpired();
+    } on TrainingPeaksApiException catch (e) {
+      return TrainingPeaksEventSyncResult.error(e.toString());
     }
 
     final accessToken = integration.accessToken;
@@ -879,6 +887,7 @@ class TrainingPeaksSyncService {
       if (kDebugMode) {
         print('❌ No refresh token available. User must re-authenticate.');
       }
+      await _markNeedsReconnect(integration.userId);
       throw const TrainingPeaksTokenExpiredException();
     }
 
@@ -924,9 +933,23 @@ class TrainingPeaksSyncService {
       if (kDebugMode) {
         print('❌ Token refresh failed: ${e.toString()}');
       }
+      // Ticket 64 (Finding 21-004): TP refusing the refresh token is final —
+      // record it on the row so the connection shows as needing a sign-in
+      // again. A transient failure (outage, rate limit) stays an ordinary
+      // error: the next sync may well succeed.
+      if (!isRefreshRefusedForGood(e.statusCode)) rethrow;
+      await _markNeedsReconnect(integration.userId);
       throw const TrainingPeaksTokenExpiredException();
     }
   }
+
+  Future<void> _markNeedsReconnect(String userId) =>
+      _integrationsRepository.updateSyncStatus(
+        userId,
+        'training_peaks',
+        status: requiresReauthStatus,
+        error: 'Token refresh refused. Please reconnect.',
+      );
 
   /// Dedupe remote workouts so sync remains idempotent even when provider APIs
   /// return repeated records in a single payload.

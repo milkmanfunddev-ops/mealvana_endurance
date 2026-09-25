@@ -13,8 +13,8 @@
 
 **Touches:** lib/features/integrations/application/training_peaks_sync_service.dart, lib/features/integrations/application/training_peaks_oauth_service.dart, lib/features/integrations/data/training_peaks_api_client.dart
 
-- [ ] A seam test: a refresh answering 400 marks the connection as needing reconnection.
-- [ ] A widget test: the integrations screen shows Reconnect for it.
+- [x] A seam test: a refresh answering 400 marks the connection as needing reconnection.
+- [x] A widget test: the integrations screen shows Reconnect for it.
 - [ ] codegen if annotations changed, `flutter analyze` and the suite green.
 
 Next: /implement-lee testing-wave

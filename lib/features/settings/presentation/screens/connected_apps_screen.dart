@@ -5,6 +5,8 @@ import 'package:mealvana_endurance/shared/widgets/custom_app_bar_back_button.dar
 import 'package:onesignal_flutter/onesignal_flutter.dart';
 import 'package:url_launcher/url_launcher.dart';
 
+import '../../../content/application/content_service.dart';
+import '../../../content/domain/content_keys.dart';
 import '../../../integrations/domain/runna_defaults.dart';
 import '../../../integrations/presentation/integration_sync_helpers.dart';
 import '../../../integrations/presentation/providers/connect_training_controller.dart';
@@ -303,6 +305,15 @@ class _ConnectedAppsScreenState extends ConsumerState<ConnectedAppsScreen> {
     // invisible on light cards.
     const trainingPeaksLogo =
         'assets/images/integrations/training_peaks_horizontal_dark.jpg';
+    // Ticket 64: a connection whose token refresh the provider refused for
+    // good shows Reconnect and says why, instead of looking like it works.
+    final content = ref.watch(contentServiceProvider);
+    final reconnectLabel = content.getValue(
+      ContentKeys.settingsConnectionReconnectButton,
+    );
+    final reconnectNote = content.getValue(
+      ContentKeys.settingsConnectionNeedsReconnect,
+    );
 
     return ListView(
       children: [
@@ -333,6 +344,9 @@ class _ConnectedAppsScreenState extends ConsumerState<ConnectedAppsScreen> {
           onDisconnect: () => _disconnectFinalSurge(context, ref),
           onSync: () => _syncFinalSurgeWithState(context, ref),
           hasSynced: _finalSurgeSynced,
+          needsReconnect: data.finalSurgeNeedsReauth,
+          reconnectLabel: reconnectLabel,
+          reconnectNote: reconnectNote,
         ),
 
         // Show last sync info when connected
@@ -367,6 +381,9 @@ class _ConnectedAppsScreenState extends ConsumerState<ConnectedAppsScreen> {
           onDisconnect: () => _disconnectTrainingPeaks(context, ref),
           onSync: () => _syncTrainingPeaksWithState(context, ref),
           hasSynced: _trainingPeaksSynced,
+          needsReconnect: data.trainingPeaksNeedsReauth,
+          reconnectLabel: reconnectLabel,
+          reconnectNote: reconnectNote,
           // Design: the write-back consent toggle lives INSIDE the
           // connected card (Xuan, 2026-09-13 smoke test).
           footer: _buildTpWritebackToggle(context, ref),
@@ -458,6 +475,9 @@ class _ConnectedAppsScreenState extends ConsumerState<ConnectedAppsScreen> {
           onSync: () => _syncVdotWithState(context, ref),
           showSyncButton: data.isVdotConnected,
           hasSynced: _vdotSynced,
+          needsReconnect: data.vdotNeedsReauth,
+          reconnectLabel: reconnectLabel,
+          reconnectNote: reconnectNote,
         ),
 
         const SizedBox(height: AppSpacing.lg),
@@ -582,6 +602,11 @@ class _ConnectedAppsScreenState extends ConsumerState<ConnectedAppsScreen> {
     // invisible on light cards.
     const trainingPeaksLogo =
         'assets/images/integrations/training_peaks_horizontal_dark.jpg';
+    // Ticket 64: the spec rows swap Sync for Reconnect too; the explaining
+    // line stays Settings-only (a third line breaks the uniform 70px row).
+    final reconnectLabel = ref
+        .watch(contentServiceProvider)
+        .getValue(ContentKeys.settingsConnectionReconnectButton);
 
     return Column(
       crossAxisAlignment: CrossAxisAlignment.stretch,
@@ -607,6 +632,8 @@ class _ConnectedAppsScreenState extends ConsumerState<ConnectedAppsScreen> {
           showSyncButton: true,
           hasSynced: _trainingPeaksSynced,
           specStyle: true,
+          needsReconnect: data.trainingPeaksNeedsReauth,
+          reconnectLabel: reconnectLabel,
         ),
 
         const SizedBox(height: 10),
@@ -631,6 +658,8 @@ class _ConnectedAppsScreenState extends ConsumerState<ConnectedAppsScreen> {
           showSyncButton: true,
           hasSynced: _finalSurgeSynced,
           specStyle: true,
+          needsReconnect: data.finalSurgeNeedsReauth,
+          reconnectLabel: reconnectLabel,
         ),
 
         const SizedBox(height: 10),
@@ -651,6 +680,8 @@ class _ConnectedAppsScreenState extends ConsumerState<ConnectedAppsScreen> {
           showSyncButton: true,
           hasSynced: _vdotSynced,
           specStyle: true,
+          needsReconnect: data.vdotNeedsReauth,
+          reconnectLabel: reconnectLabel,
         ),
 
         const SizedBox(height: 10),
