@@ -1,0 +1,46 @@
+{
+ "fingerprintId": "675111c2cc30",
+ "provider": "final_surge",
+ "stratum": {
+  "endpoint": "fs/workouts-list",
+  "workoutType": "Run"
+ },
+ "optionalKeysInStratum": [],
+ "provenance": {
+  "source": "dev provider_raw_payloads",
+  "scrubbed": "server-side (corpus-export edge fn)",
+  "environment": "dev",
+  "exportedAt": "2026-09-21T00:53:24+00:00",
+  "note": "real account (owner's own, promoted by ruling 2026-09-20), fail-safe scrub under the default-deny standard (@v1.1)",
+  "correction": "re-scrubbed under the default-deny standard (@v1.1 samples de-id erratum, ruled 2026-09-20); fingerprint unchanged, content re-destroyed"
+ },
+ "exemplar": {
+  "ActualTime": 4407.489497763289,
+  "WorkoutKey": "syn-7e54736e",
+  "WorkoutURL": "corpus placeholder",
+  "PlannedPace": null,
+  "PlannedTime": null,
+  "WorkoutCode": null,
+  "WorkoutDate": "2026-01-01T00:00:00",
+  "WorkoutIcon": 1,
+  "WorkoutRace": false,
+  "WorkoutTime": "corpus placeholder",
+  "WorkoutTitle": null,
+  "PlannedDistance": null,
+  "PlannedPaceType": null,
+  "WorkoutTypeName": "Run",
+  "WorkoutCompleted": true,
+  "WorkoutDescription": null,
+  "WorkoutSubTypeName": null,
+  "PlannedDistanceType": null,
+  "ActualDistanceMeters": 12309.043148513221,
+  "HasStructuredWorkout": false,
+  "StructuredWorkoutURLs": {
+   "fit": null,
+   "mrc": null,
+   "zwo": null,
+   "json_fs_v1": null,
+   "json_garmin_v1": null
+  }
+ }
+}

@@ -1,0 +1,497 @@
+<title>The Load Face</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Zilla+Slab:wght@500;600;700&family=Archivo:wght@400;500;600;700&family=DM+Mono:wght@400;500&display=swap">
+
+<style>
+  :root {
+    --page:#F3EFE2; --panel:#FBF9F1; --panel-2:#EDE7D7;
+    --ink:#381633; --ink-2:#6B4A63; --ink-3:#93798C; --rule:#DCD3C2;
+    --accent:#B01576; --ok:#0C7A66; --warn:#B4620A;
+    --ok-bg:#D3F2EA; --warn-bg:#F9E6CE; --accent-bg:#F7DCEE;
+
+    --blackberry:#381633; --ground:#2A0F26; --cream:#F8F6EB;
+    --orange:#F78B14; --electrolyte:#1CF9CF; --dragonfruit:#DC2597;
+
+    --display:"Zilla Slab", Georgia, serif;
+    --body:"Archivo","Helvetica Neue",Arial,sans-serif;
+    --mono:"DM Mono",ui-monospace,Menlo,monospace;
+  }
+  @media (prefers-color-scheme: dark) {
+    :root:not([data-theme="light"]) {
+      --page:#240E20; --panel:#32132E; --panel-2:#3F1B3A;
+      --ink:#F8F6EB; --ink-2:#C9B4C3; --ink-3:#9B8195; --rule:#4C2545;
+      --accent:#FF5CBE; --ok:#1CF9CF; --warn:#F78B14;
+      --ok-bg:#0D3F38; --warn-bg:#45250C; --accent-bg:#4A1038;
+    }
+  }
+  :root[data-theme="dark"] {
+    --page:#240E20; --panel:#32132E; --panel-2:#3F1B3A;
+    --ink:#F8F6EB; --ink-2:#C9B4C3; --ink-3:#9B8195; --rule:#4C2545;
+    --accent:#FF5CBE; --ok:#1CF9CF; --warn:#F78B14;
+    --ok-bg:#0D3F38; --warn-bg:#45250C; --accent-bg:#4A1038;
+  }
+
+  body{margin:0;background:var(--page);color:var(--ink);font-family:var(--body);font-size:16px;line-height:1.6;-webkit-font-smoothing:antialiased}
+  .wrap{max-width:1080px;margin:0 auto;padding-inline:20px;padding-block:0 88px}
+  h1,h2,h3{font-family:var(--display);margin:0;text-wrap:balance}
+  h1{font-size:clamp(2rem,5.5vw,3.1rem);font-weight:700;line-height:1.04;letter-spacing:-.015em}
+  h2{font-size:clamp(1.3rem,3.2vw,1.7rem);font-weight:600}
+  h3{font-size:1.02rem;font-weight:600;font-family:var(--body)}
+  p{margin:0;max-width:66ch}
+  .eyebrow{font-family:var(--mono);font-size:.72rem;letter-spacing:.14em;text-transform:uppercase;color:var(--ink-3)}
+
+  header.mast{padding-block:66px 36px;border-bottom:1px solid var(--rule);display:flex;flex-direction:column;gap:16px}
+  .lede{font-size:1.1rem;color:var(--ink-2)}
+  section{padding-block:52px 0}
+  .sec-head{display:flex;flex-direction:column;gap:9px;margin-bottom:24px}
+
+  .stage{display:grid;grid-template-columns:minmax(0,1fr) 316px;gap:40px;align-items:start}
+  @media(max-width:880px){.stage{grid-template-columns:1fr}}
+
+  .phonewrap{display:flex;flex-direction:column;gap:14px;align-items:center}
+  .phone{width:100%;max-width:372px;background:var(--ground);border:1px solid #4C2545;border-radius:34px;padding:12px 0 10px;box-shadow:0 30px 70px rgba(0,0,0,.34);overflow:hidden;font-size:14px;color:var(--cream)}
+  .notch{width:92px;height:22px;background:#000;border-radius:12px;margin:0 auto 10px}
+  .screen{padding-inline:14px}
+
+  .datehead{display:flex;align-items:center;gap:7px;padding-block:4px 12px}
+  .datehead .chev{color:var(--cream);opacity:.55;font-size:15px}
+  .datehead .d{font-family:var(--display);font-weight:700;font-size:17px;letter-spacing:-.01em;flex:1}
+  .datehead .gear{opacity:.7}
+
+  /* energy card — one component, now four faces */
+  .ecard{background:rgba(248,246,235,.055);border:1px solid rgba(248,246,235,.10);border-radius:16px;padding:11px 14px 12px;cursor:pointer}
+  .ecard .khead{display:flex;align-items:center;justify-content:space-between;gap:8px}
+  .ecard .k{font-size:9px;letter-spacing:.13em;text-transform:uppercase;color:rgba(248,246,235,.5)}
+  .ecard .k b{color:var(--orange);font-weight:600}
+  .ecard .chev{opacity:.5;font-size:13px;transition:transform .25s}
+  .ecard.open .chev{transform:rotate(180deg)}
+  .ecard .v{display:flex;align-items:baseline;gap:6px;margin-top:2px;flex-wrap:wrap}
+  .ecard .big{font-size:25px;font-weight:700;font-variant-numeric:tabular-nums;letter-spacing:-.02em;color:var(--orange)}
+  .ecard .big.burn{color:var(--electrolyte)}
+  .ecard .u{font-size:11px;color:rgba(248,246,235,.55)}
+  .ecard .band{font-size:11px;color:var(--orange);font-weight:500}
+  .ecard .targets{font-size:10.5px;color:rgba(248,246,235,.6);margin-top:3px;font-variant-numeric:tabular-nums}
+
+  .mini{height:4px;border-radius:3px;background:rgba(248,246,235,.13);margin-top:8px;overflow:hidden}
+  .mini i{display:block;height:100%;background:var(--orange);border-radius:3px;transition:width .45s cubic-bezier(.2,.7,.3,1)}
+  .fbrow{margin-top:9px;padding-top:9px;border-top:1px solid rgba(248,246,235,.10);font-size:11px;color:var(--orange);font-weight:600;display:flex;justify-content:space-between;align-items:center}
+  .ecard.noexp{cursor:default}
+  .ecard.noexp > .khead > .chev{display:none}
+
+  .exp{margin-top:11px;padding-top:11px;border-top:1px solid rgba(248,246,235,.10);display:flex;flex-direction:column;gap:9px}
+  .macro{display:flex;flex-direction:column;gap:4px}
+  .macro .r{display:flex;justify-content:space-between;font-size:10.5px;font-variant-numeric:tabular-nums}
+  .macro .r b{font-weight:500;color:rgba(248,246,235,.85)}
+  .macro .r span{color:rgba(248,246,235,.5)}
+  .macro .t{height:6px;border-radius:3px;background:rgba(248,246,235,.11);overflow:hidden}
+  .macro .t i{display:block;height:100%;border-radius:3px;background:var(--orange)}
+  .macro.lead .r b{color:var(--cream);font-size:12px;font-weight:600}
+  .macro.lead .r span{font-size:12px}
+  .macro.lead .t{height:9px}
+  .macro.dim .t i{background:rgba(248,246,235,.34)}
+  .macro.dim .r b{color:rgba(248,246,235,.6)}
+
+  .eq{font-size:10.5px;color:rgba(248,246,235,.6);font-variant-numeric:tabular-nums}
+  .eq b{color:rgba(248,246,235,.85);font-weight:500}
+  .fb{font-size:11px;color:var(--orange);font-weight:600;letter-spacing:.02em}
+  .sessionrow{display:flex;justify-content:space-between;font-size:10.5px;color:rgba(248,246,235,.7);font-variant-numeric:tabular-nums}
+  .sessionrow.pl{color:rgba(248,246,235,.42)}
+
+  .filterrow{display:flex;align-items:center;gap:8px;margin-top:10px}
+  .pills{display:flex;background:rgba(248,246,235,.05);border:1px solid rgba(248,246,235,.09);border-radius:999px;padding:3px;flex:1}
+  .pills button{flex:1;border:0;background:transparent;color:rgba(248,246,235,.55);font-family:var(--body);font-size:11.5px;font-weight:500;padding:5px 0;border-radius:999px;cursor:pointer}
+  .pills button[aria-pressed="true"]{background:var(--cream);color:var(--blackberry);font-weight:600}
+  .orb{width:27px;height:27px;border-radius:50%;border:1.3px solid var(--dragonfruit);display:grid;place-items:center;font-size:11px;color:var(--dragonfruit);flex:none}
+  .orb.t{border-color:var(--electrolyte);color:var(--electrolyte)}
+
+  .addrow{display:flex;gap:7px;margin:11px 0 0 62px}
+  .addrow span{flex:1;text-align:center;font-size:11.5px;padding:6px 0;border-radius:999px;border:1px dashed rgba(248,246,235,.3);color:rgba(248,246,235,.72)}
+  .addrow span.act{border-color:rgba(247,139,20,.6);color:var(--orange)}
+  .blockfade{height:1px;background:linear-gradient(90deg,transparent,rgba(248,246,235,.10),transparent);margin-top:12px}
+
+  .timeline{padding-top:12px;min-height:200px}
+  .row{display:grid;grid-template-columns:44px 14px 1fr;align-items:start}
+  .time{font-size:10px;color:rgba(248,246,235,.45);padding-top:13px;font-variant-numeric:tabular-nums}
+  .rail{position:relative;justify-self:center;width:14px;align-self:stretch}
+  .rail::before{content:"";position:absolute;left:50%;top:0;bottom:0;width:1px;background:rgba(248,246,235,.16);transform:translateX(-.5px)}
+  .dot{position:absolute;left:50%;top:15px;width:9px;height:9px;border-radius:50%;transform:translate(-50%,-50%)}
+  .dot.orange{background:var(--orange)}
+  .dot.hollow{background:var(--ground);border:1.5px dashed rgba(248,246,235,.5);width:10px;height:10px}
+  .card{border-radius:14px;padding:10px 12px;margin:5px 0 11px 8px}
+  .card.workout{border:1px dashed rgba(248,246,235,.3)}
+  .card.meal{background:rgba(248,246,235,.05);border:1px solid rgba(248,246,235,.09)}
+  .card .t{font-family:var(--display);font-size:12.5px;font-weight:600;letter-spacing:.06em;text-transform:uppercase}
+  .card .m{font-size:10.5px;color:rgba(248,246,235,.55);margin-top:2px}
+  .card .chip{font-size:9px;border:1px solid rgba(248,246,235,.3);border-radius:999px;padding:1.5px 7px;color:rgba(248,246,235,.65)}
+  .cardhead{display:flex;align-items:center;justify-content:space-between;gap:8px}
+  .mealline{display:flex;justify-content:space-between;font-size:10.5px;color:rgba(248,246,235,.72);padding:2px 0}
+  .mealline b{font-weight:500}
+  .mealline span{color:rgba(248,246,235,.45);font-variant-numeric:tabular-nums}
+  .tabbar{margin:16px 14px 0;background:rgba(248,246,235,.05);border:1px solid rgba(248,246,235,.10);border-radius:999px;display:flex;padding:5px}
+  .tabbar span{flex:1;text-align:center;font-size:10px;color:rgba(248,246,235,.5);padding:6px 0;border-radius:999px}
+  .tabbar span.on{background:rgba(248,246,235,.07);color:var(--cream)}
+
+  .controls{display:flex;flex-direction:column;gap:9px;position:sticky;top:calc(env(safe-area-inset-top,0px) + 16px)}
+  .ck{font-family:var(--mono);font-size:.7rem;letter-spacing:.1em;text-transform:uppercase;color:var(--ink-3);margin-top:6px}
+  .controls button{text-align:left;border:1px solid var(--rule);background:var(--panel);color:var(--ink);border-radius:3px;padding:9px 12px;cursor:pointer;font-family:var(--body);font-size:.86rem;line-height:1.35}
+  .controls button small{display:block;color:var(--ink-3);font-size:.75rem;margin-top:1px}
+  .controls button[aria-pressed="true"]{border-color:var(--accent);background:var(--accent-bg)}
+  .controls button[aria-pressed="true"] small{color:var(--ink-2)}
+  .caption{font-size:.82rem;color:var(--ink-3);text-align:center;max-width:372px}
+
+  .cards{display:grid;grid-template-columns:repeat(auto-fit,minmax(258px,1fr));gap:13px}
+  .b{background:var(--panel);border:1px solid var(--rule);border-radius:3px;padding:17px 19px;display:flex;flex-direction:column;gap:7px}
+  .b p{font-size:.9rem;color:var(--ink-2)}
+  .b.win{border-left:4px solid var(--ok)}
+  .b.fix{border-left:4px solid var(--accent)}
+
+  .tablewrap{overflow-x:auto;border:1px solid var(--rule);border-radius:3px;background:var(--panel)}
+  table{border-collapse:collapse;width:100%;min-width:600px;font-variant-numeric:tabular-nums}
+  th,td{text-align:left;padding:10px 15px;border-bottom:1px solid var(--rule);font-size:.89rem;vertical-align:top}
+  th{font-family:var(--mono);font-size:.68rem;letter-spacing:.1em;text-transform:uppercase;color:var(--ink-3);font-weight:400;background:var(--panel-2)}
+  tr:last-child td{border-bottom:0}
+  tr.new td{background:var(--accent-bg)}
+  tr.new td:first-child{font-weight:600}
+  code{font-family:var(--mono);font-size:.84em;color:var(--ink-2)}
+  caption{caption-side:bottom;text-align:left;padding:11px 15px;font-size:.83rem;color:var(--ink-3)}
+
+  ol.q{margin:0;padding-left:1.2em;display:flex;flex-direction:column;gap:13px}
+  ol.q li{color:var(--ink-2);font-size:.94rem}
+  ol.q b{color:var(--ink)}
+  .tag{font-family:var(--mono);font-size:.63rem;letter-spacing:.12em;text-transform:uppercase;padding:3px 7px;border-radius:2px;background:var(--accent-bg);color:var(--accent);white-space:nowrap}
+
+  footer{margin-top:64px;padding-top:24px;border-top:1px solid var(--rule);font-size:.85rem;color:var(--ink-3);display:flex;flex-direction:column;gap:7px}
+  :focus-visible{outline:2px solid var(--accent);outline-offset:3px}
+  @media(prefers-reduced-motion:reduce){*{transition:none!important}}
+</style>
+
+<div class="wrap">
+
+  <header class="mast">
+    <span class="eyebrow">Visibility · tier 1 · revised to Xuan’s proposal, 2026-09-19</span>
+    <h1>Don’t add a card. Change the&nbsp;card’s&nbsp;face.</h1>
+    <p class="lede">The energy card is already one component with three faces, chosen by the surface, showing the single most decision-relevant number for the lens. On a loading day that number is grams of carbohydrate. So carb loading doesn’t need a new element on the dashboard — it needs a fourth face.</p>
+  </header>
+
+  <section>
+    <div class="sec-head">
+      <span class="eyebrow">Tap the card to expand · switch faces and days</span>
+      <h2>The dashboard, loading and not</h2>
+    </div>
+
+    <div class="stage">
+      <div class="phonewrap">
+        <div class="phone">
+          <div class="notch"></div>
+          <div class="screen">
+
+            <div class="datehead">
+              <span class="chev">‹</span>
+              <span class="d" id="dateLabel">Saturday, September 26</span>
+              <span class="chev">˅</span><span class="chev">›</span><span class="gear">⚙</span>
+            </div>
+
+            <div class="ecard" id="ecard" role="button" tabindex="0" aria-expanded="false">
+              <div class="khead">
+                <span class="k" id="ekey">Carb load · <b>Day 2 of 3</b></span>
+                <span class="chev">˅</span>
+              </div>
+              <div class="v" id="evalue"></div>
+              <div class="targets" id="etargets" hidden></div>
+              <div class="mini" id="emini"><i style="width:57%"></i></div>
+              <div class="fbrow" id="efb" hidden></div>
+              <div class="exp" id="eexp" hidden></div>
+            </div>
+
+            <div class="filterrow">
+              <div class="pills" role="group" aria-label="Filter">
+                <button type="button" data-f="all" aria-pressed="true">All</button>
+                <button type="button" data-f="workout" aria-pressed="false">Workout</button>
+                <button type="button" data-f="meals" aria-pressed="false">Meals</button>
+              </div>
+              <span class="orb">◠</span><span class="orb t">◷</span>
+            </div>
+
+            <div class="addrow">
+              <span id="addFood">+ Add Food</span>
+              <span class="act" id="addAct">+ Add Activity</span>
+            </div>
+            <div class="blockfade"></div>
+
+            <div class="timeline">
+              <div class="row" data-kind="workout">
+                <span class="time">7:10a</span>
+                <span class="rail"><i class="dot hollow"></i></span>
+                <div class="card workout">
+                  <div class="cardhead"><span class="t">Shakeout</span><span class="chip">Planned</span></div>
+                  <div class="m">3 mi · 25 min</div>
+                </div>
+              </div>
+              <div class="row" data-kind="meals">
+                <span class="time">8:05a</span>
+                <span class="rail"><i class="dot orange"></i></span>
+                <div class="card meal">
+                  <div class="mealline"><b>Bagel</b><span>72 g</span></div>
+                  <div class="mealline"><b>Banana</b><span>27 g</span></div>
+                  <div class="mealline"><b>Orange juice</b><span>27 g</span></div>
+                </div>
+              </div>
+              <div class="row" data-kind="meals">
+                <span class="time">12:40p</span>
+                <span class="rail"><i class="dot orange"></i></span>
+                <div class="card meal">
+                  <div class="mealline"><b>Pasta with marinara</b><span>62 g</span></div>
+                  <div class="mealline"><b>Baked potato</b><span>63 g</span></div>
+                </div>
+              </div>
+            </div>
+          </div>
+          <div class="tabbar"><span class="on">Timeline</span><span>Events</span><span>Learn</span></div>
+        </div>
+        <p class="caption">Zilla Slab and Archivo stand in for Compadre and Apercu. Every colour is a real token — and the hue is the axis label, so every carb figure here is <code>orange</code>.</p>
+      </div>
+
+      <div class="controls">
+        <span class="ck" style="margin-top:0">Day</span>
+        <button type="button" data-s="0" aria-pressed="false">Not a loading day<small>Thu 24 Sep — the card as it ships today</small></button>
+        <button type="button" data-s="1" aria-pressed="false">Day 1 · nothing logged<small>Fri 25 Sep · 0 of 544 g</small></button>
+        <button type="button" data-s="2" aria-pressed="true">Day 2 · underway<small>Sat 26 Sep · 312 of 544 g</small></button>
+        <button type="button" data-s="3" aria-pressed="false">Day 3 · peak day<small>Sun 27 Sep · 604 of 680 g</small></button>
+        <button type="button" data-s="4" aria-pressed="false">Day 3 · target met<small>Sun 27 Sep · 694 of 680 g</small></button>
+        <span class="ck">Try also</span>
+        <button type="button" id="tExp" aria-pressed="false">Expand the card<small>Full Breakdown lives here</small></button>
+      </div>
+    </div>
+  </section>
+
+  <section>
+    <div class="sec-head">
+      <span class="eyebrow">Verdict</span>
+      <h2>Three reasons yours beats mine</h2>
+    </div>
+    <div class="cards">
+      <div class="b win">
+        <h3>It never scrolls away</h3>
+        <p>My banner sat at the head of the timeline, so it left the screen on the first scroll. The energy card is inside the pinned instrument block — Ruling #4 — so the load stays on screen for the whole day, which is exactly what a three-day protocol needs.</p>
+      </div>
+      <div class="b win">
+        <h3>It adds nothing to the surface</h3>
+        <p>No new element, no new rail ink, no height taken from the timeline, no new gesture. The surface’s composition table is unchanged. What changes is one component’s face set — a smaller, cleaner thing for a ratifier to rule on than a new dashboard citizen.</p>
+      </div>
+      <div class="b win">
+        <h3>The spec already argues for it</h3>
+        <p>P-2: <em>“collapsed is the single most decision-relevant number for that lens.”</em> On a loading day, net kcal is not that number — 232 g to go is. Your proposal isn’t bending the contract, it’s applying it.</p>
+      </div>
+    </div>
+  </section>
+
+  <section>
+    <div class="sec-head">
+      <span class="eyebrow">Where it lands</span>
+      <h2>Energy card v2 — a fourth face</h2>
+    </div>
+    <div class="tablewrap">
+      <table>
+        <thead><tr><th>Face</th><th>Collapsed — the orienting number</th><th>Expanded — the working detail</th></tr></thead>
+        <tbody>
+          <tr><td><code>ALL</code></td><td><code>NET BALANCE</code> · net kcal · band copy</td><td>the equation · eaten / target · to target · Full Breakdown</td></tr>
+          <tr><td><code>WORKOUT</code></td><td><code>TODAY'S WORKOUT</code> · done · planned kcal</td><td>Active Energy · progress · one row per session · projected</td></tr>
+          <tr><td><code>MEALS</code></td><td><code>DAILY BUDGET</code> · target kcal · C · P · F</td><td>Intake Today · eaten / target · three macro bars</td></tr>
+          <tr class="new"><td><code>LOAD</code></td><td><code>CARB LOAD · DAY n OF 3</code> · carbs / target · to-go copy · progress · <b>Full Breakdown</b></td><td><b>None — E1 is suppressed.</b> There is nothing between the number and the breakdown</td></tr>
+        </tbody>
+        <caption>The surface picks <code>LOAD</code> in place of <code>ALL</code> on any day carrying a carb-loading row. The card still never chooses its own face — the surface does, exactly as v1 requires. Workout and Meals are untouched, so Active Energy and the daily budget stay one tap away.</caption>
+      </table>
+    </div>
+  </section>
+
+  <section>
+    <div class="sec-head">
+      <span class="eyebrow">Two things your redirect caught</span>
+      <h2>Corrections to my first pass</h2>
+    </div>
+    <div class="cards">
+      <div class="b fix">
+        <h3>Yolk fails conformance</h3>
+        <p>I coloured the first mockup in <code>yolk</code>. The token registry says it is <strong>RESERVED — no meaning contract yet</strong>, ruled 2026-08-25, and <em>“a component using it fails conformance.”</em> Carb-loading progress is daily intake, so Q-D3 puts it in <code>orange</code> — and that is now every carb figure in the mock. Target-met stays orange too: <code>electrolyte</code> means the burn side and per-workout fuel, never daily intake.</p>
+      </div>
+      <div class="b fix">
+        <h3>The card can’t navigate</h3>
+        <p>Gesture E1 says tapping the card <em>“never navigates”</em>. Since the load face doesn’t expand either, the whole route to detail runs through <code>Full Breakdown</code> (E2) — which is why it is promoted onto the collapsed face rather than living inside an expansion that no longer exists.</p>
+      </div>
+    </div>
+  </section>
+
+  <section>
+    <div class="sec-head">
+      <span class="eyebrow">Ruled 2026-09-19</span>
+      <h2>No expansion — the breakdown does that work</h2>
+    </div>
+    <p style="color:var(--ink-2);">The load face is collapsed-only. Two states of a number, one of them a half-measure, is one state too many when the day has a single job. So <code>Full Breakdown</code> moves up onto the face itself, and everything that would have lived in an expansion — protein, fat, kcal, the per-meal split — lives on the breakdown page instead.</p>
+    <div class="cards" style="margin-top:22px">
+      <div class="b">
+        <h3>What it costs in the contract</h3>
+        <p><b>E1 is suppressed on this face</b> — the same shape as the workout card’s G3, so there is precedent for a gesture going quiet in one state. The chevron disappears rather than sitting there doing nothing.</p>
+      </div>
+      <div class="b">
+        <h3>P-1 needs one line</h3>
+        <p>“Expansion persists across face switches.” A face with no expansion has to <b>remember</b> rather than clear it: expand Meals, switch to All, switch back — it should still be open. The mock does this; the spec should say it.</p>
+      </div>
+      <div class="b">
+        <h3>The breakdown page is the next design</h3>
+        <p>It now carries everything: macros, the meal-by-meal split, the three days. It is also the natural place for the way into logging — which raises the question below, and is the piece worth designing next.</p>
+      </div>
+    </div>
+  </section>
+
+  <section>
+    <div class="sec-head">
+      <span class="eyebrow">Before anyone writes code</span>
+      <h2>What needs your ruling</h2>
+    </div>
+    <ol class="q">
+      <li><span class="tag">S-5</span> <b>The surface scope guard still bites.</b> <em>“No phase indicator, no safety states, no sodium on this surface — deferred, not forgotten.”</em> <code>DAY 2 OF 3</code> is a phase indicator. The ask is smaller than it was — amend S-5 to admit a fuelling-phase face on the energy card, rather than to admit a new surface citizen — but it is still the one hard blocker.</li>
+      <li><span class="tag">P-3</span> <b>The to-go copy needs a register.</b> Every string on this card traces to <code>intraday-display.md</code> §2, verbatim. “232 g to go” has no register yet. Either a loading band register gets written, or the collapsed face carries only the number and no copy.</li>
+      <li><b>Is the breakdown page the loading page?</b> The other three faces open a sheet — Today’s Energy, Active Energy, Today’s Fuel. If the load’s breakdown is a fourth sheet, the athlete still needs a separate route to the screen where they actually log food. If the breakdown <em>is</em> that screen, the feature collapses to two surfaces: a face on the dashboard and one loading page. That is the simplest thing that works, and it is the decision that shapes the next design.</li>
+      <li><b>Fourth face, or a variant of MEALS?</b> I went with a fourth face because <code>MEALS</code> collapsed is a kcal budget, and a loading day’s orienting number is one macro against a therapeutic target — a genuinely different quantity. Reusing <code>MEALS</code> with a conditional variant is defensible and cheaper, at the cost of making that face’s goldens conditional.</li>
+      <li><b>Goldens go 6 → 8.</b> Three faces × two expansion states becomes four × two. The spec change lands first, then the goldens — the conformance section is explicit that a golden may only be regenerated after the spec changes.</li>
+      <li><b>Does the Meals face show the loading target?</b> On a loading day the <code>C</code> in <code>DAILY BUDGET · C · P · F</code> is 544 g rather than a normal day’s number. That is either a quiet, correct consequence or a second place the load leaks in. Your call whether it needs saying.</li>
+      <li><b>Two races, overlapping loads.</b> Still open from the first pass, and now sharper: the face can only show one <code>DAY n OF 3</code>.</li>
+    </ol>
+  </section>
+
+  <footer>
+    <span>Composed against <code>feature/carb-loading</code> (cut from <code>release/1.27.0</code>). Component authority: <code>docs/ssot/spec/design/components/energy-card.md</code> (RATIFIED v1). Surface: <code>surfaces/macro-dashboard.md</code> (RATIFIED v2 + the home-shell recomposition ruling). Tokens and the number-colour contract: <code>tokens.md</code> Q-D3.</span>
+    <span>Figures are the real ones from the walkthrough: 544 g · 544 g · 680 g off a 68 kg athlete. Plan and findings: <code>.scratch/carb-loading/spec.md</code>.</span>
+  </footer>
+</div>
+
+<script>
+(function(){
+  var DAYS = [
+    { date:"Thursday, September 24", load:null },
+    { date:"Friday, September 25",   load:{ n:1, carb:0,   target:544, togo:"544 g to go", pro:[0,120],  fat:[0,70],   eaten:0,    burn:2260 } },
+    { date:"Saturday, September 26", load:{ n:2, carb:312, target:544, togo:"232 g to go", pro:[78,120], fat:[41,70],  eaten:2180, burn:1420 } },
+    { date:"Sunday, September 27",   load:{ n:3, carb:604, target:680, peak:true, togo:"76 g to go", pro:[96,120], fat:[58,70], eaten:3120, burn:980 } },
+    { date:"Sunday, September 27",   load:{ n:3, carb:694, target:680, peak:true, togo:"Target met", met:true, pro:[112,120], fat:[66,70], eaten:3480, burn:980 } }
+  ];
+
+  var day = 2, face = "all", open = false;
+  var el = {
+    date:document.getElementById("dateLabel"), card:document.getElementById("ecard"),
+    key:document.getElementById("ekey"), val:document.getElementById("evalue"),
+    tgt:document.getElementById("etargets"), mini:document.getElementById("emini"),
+    exp:document.getElementById("eexp"), fb:document.getElementById("efb"),
+    addFood:document.getElementById("addFood"),
+    addAct:document.getElementById("addAct"), tExp:document.getElementById("tExp")
+  };
+
+  function n(x){ return x.toLocaleString("en-US"); }
+  function bar(cls,label,now,tot,unit){
+    var p = tot ? Math.min(100, Math.round(now/tot*100)) : 0;
+    return '<div class="macro '+cls+'"><div class="r"><b>'+label+'</b>'+
+           '<span>'+n(now)+' / '+n(tot)+' '+unit+'</span></div>'+
+           '<div class="t"><i style="width:'+p+'%"></i></div></div>';
+  }
+
+  function render(){
+    var d = DAYS[day], L = d.load, isLoad = !!L && face === "all";
+    el.date.textContent = d.date;
+
+    // E1 is suppressed on the LOAD face: it has no expanded state. `open`
+    // is REMEMBERED though, so switching back to another face restores it (P-1).
+    var showOpen = open && !isLoad;
+    el.card.classList.toggle("open", showOpen);
+    el.card.classList.toggle("noexp", isLoad);
+    el.card.setAttribute("aria-expanded", isLoad ? "false" : String(open));
+    el.tExp.disabled = isLoad;
+    el.tExp.setAttribute("aria-pressed", String(showOpen));
+    el.tExp.querySelector("small").textContent = isLoad
+      ? "The load face doesn’t expand — use Full Breakdown"
+      : (open ? "Collapse it again" : "Full Breakdown lives here");
+
+    var key = "", val = "", tgt = "", mini = null, exp = "", fb = "";
+
+    if (isLoad) {
+      var pct = Math.min(100, Math.round(L.carb / L.target * 100));
+      key = 'Carb load · <b>Day ' + L.n + ' of 3' + (L.peak ? ' · Peak' : '') + '</b>';
+      val = '<span class="big">' + n(L.carb) + ' g</span><span class="u">of ' + n(L.target) + ' g</span>' +
+            '<span class="band">' + L.togo + '</span>';
+      mini = pct;
+      fb = '<span>Full Breakdown</span><span>→</span>';
+    } else if (face === "workout") {
+      key = "Today’s workout";
+      val = '<span class="big burn">0</span><span class="u">done ·</span><span class="big burn" style="font-size:19px">240</span><span class="u">planned kcal</span>';
+      exp = '<div class="k">Active energy</div>' +
+            '<div class="sessionrow pl"><span>7:10a · Shakeout · 3 mi</span><span>240 kcal</span></div>' +
+            '<div class="eq">Projected by day’s end <b>' + n(DAYS[day].load ? 1420 : 2260) + '</b> kcal</div>' +
+            '<div class="fb">Full Breakdown</div>';
+    } else if (face === "meals") {
+      key = "Daily budget";
+      val = '<span class="big">' + n(L ? 3260 : 2260) + '</span><span class="u">kcal</span>';
+      tgt = 'C <b style="color:var(--orange)">' + (L ? n(L.target) : 260) + ' g</b> · P ' + (L ? L.pro[1] : 120) + ' g · F ' + (L ? L.fat[1] : 70) + ' g';
+      exp = '<div class="k">Intake today</div>' +
+            bar("", "Carbs", L ? L.carb : 148, L ? L.target : 260, "g") +
+            bar("", "Protein", L ? L.pro[0] : 62, L ? L.pro[1] : 120, "g") +
+            bar("", "Fat", L ? L.fat[0] : 30, L ? L.fat[1] : 70, "g") +
+            '<div class="fb">Full Breakdown</div>';
+    } else {
+      key = "Net balance";
+      val = '<span class="big">−420</span><span class="u">kcal</span><span class="band">deficit — time to eat</span>';
+      exp = '<div class="k">Net energy balance</div>' +
+            '<div class="eq"><b>1,840</b> eaten − <b>2,260</b> burned = <b>−420</b> net</div>' +
+            bar("", "Eaten", 1840, 2260, "kcal") +
+            '<div class="fb">Full Breakdown</div>';
+    }
+
+    el.key.innerHTML = key;
+    el.val.innerHTML = val;
+    el.tgt.innerHTML = tgt;
+    el.tgt.hidden = !tgt;
+    el.mini.hidden = mini === null;
+    if (mini !== null) el.mini.querySelector("i").style.width = mini + "%";
+    el.fb.innerHTML = fb;
+    el.fb.hidden = !fb;
+    el.exp.innerHTML = exp;
+    el.exp.hidden = !showOpen;
+
+    document.querySelectorAll(".row").forEach(function(r){
+      r.hidden = (face !== "all" && r.dataset.kind !== face);
+    });
+    el.addFood.hidden = face === "workout";
+    el.addAct.hidden = face === "meals";
+  }
+
+  function toggle(){
+    if (DAYS[day].load && face === "all") return;  // E1 suppressed on LOAD
+    open = !open;
+    render();
+  }
+  el.card.addEventListener("click", toggle);
+  el.card.addEventListener("keydown", function(e){
+    if (e.key === "Enter" || e.key === " ") { e.preventDefault(); toggle(); }
+  });
+  el.tExp.addEventListener("click", toggle);
+
+  document.querySelectorAll(".controls button[data-s]").forEach(function(b){
+    b.addEventListener("click", function(){
+      day = +b.dataset.s;
+      document.querySelectorAll(".controls button[data-s]").forEach(function(o){
+        o.setAttribute("aria-pressed", String(o === b));
+      });
+      render();
+    });
+  });
+  document.querySelectorAll(".pills button").forEach(function(b){
+    b.addEventListener("click", function(){
+      face = b.dataset.f;
+      document.querySelectorAll(".pills button").forEach(function(o){
+        o.setAttribute("aria-pressed", String(o === b));
+      });
+      render();
+    });
+  });
+
+  render();
+})();
+</script>

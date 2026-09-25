@@ -1,0 +1,39 @@
+{
+ "fingerprintId": "0db2fe88298d",
+ "provider": "garmin",
+ "stratum": {
+  "endpoint": "garmin/activity_detail_raw",
+  "workoutType": "TRAIL_RUNNING"
+ },
+ "optionalKeysInStratum": [],
+ "provenance": {
+  "source": "prod provider_raw_payloads",
+  "scrubbed": "server-side (corpus-export edge fn)",
+  "environment": "prod",
+  "exportedAt": "2026-09-21T00:53:23+00:00",
+  "note": "real-account (prod), promoted by ruling 2026-09-20",
+  "correction": "re-scrubbed under the default-deny standard (@v1.1 samples de-id erratum, ruled 2026-09-20); fingerprint unchanged, content re-destroyed"
+ },
+ "exemplar": {
+  "steps": 7047,
+  "activityId": 22304892494,
+  "isWebUpload": false,
+  "activityName": "corpus placeholder",
+  "activityType": "TRAIL_RUNNING",
+  "distanceInMeters": 5722.235521500837,
+  "durationInSeconds": 3694,
+  "activeKilocalories": 508,
+  "startTimeInSeconds": 1767225600,
+  "startTimeOffsetInSeconds": -20713,
+  "maxSpeedInMetersPerSecond": 3.4665013077448696,
+  "totalElevationGainInMeters": 88,
+  "totalElevationLossInMeters": 99,
+  "maxHeartRateInBeatsPerMinute": 196,
+  "maxPaceInMinutesPerKilometer": 4.549309043728909,
+  "averageSpeedInMetersPerSecond": 2.1903566883251013,
+  "maxRunCadenceInStepsPerMinute": 218,
+  "averageHeartRateInBeatsPerMinute": 122,
+  "averagePaceInMinutesPerKilometer": 9.157421951478005,
+  "averageRunCadenceInStepsPerMinute": 123.99090198912276
+ }
+}

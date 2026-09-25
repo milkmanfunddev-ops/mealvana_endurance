@@ -159,6 +159,18 @@ QA-verified interactively, 2026-09-11)** — final copy set in D-3.1.
    athlete whose sharing is already underway; no separate variant is needed (supersedes
    the follow-up prompt's ask for one).
 
+## D-4 — Onboarding connect-page cards: no window copy — RULED (Xuan, 2026-09-13, post-ratification addition)
+
+Provider cards on the onboarding connect page (and Connected Apps) carry **no
+history/window sublabels — no numbers, no direction claims**. Rationale: window
+contracts are the family's most volatile (Q-INT27 amended them 2026-09-11; the FS
+server-cap probe mooted part of that 2026-09-13), and the shipped sublabels were
+already inverted vs the ratified contract within 48 h (sim-walk finding F2). The
+history story lives where it earns its moment: the Garmin historical-data primer
+sheet (ratified-in-effect, well-formed on the landed build); the platform value story
+lives in the page header. Supersedes the shipped "Imports ~30 days of history" (TP) /
+"~7 days of history" (FS) sublabels — remove them.
+
 ## Provenance maps — RATIFIED (Xuan, 2026-09-11, desk paste "provenance review")
 
 The review artifact's nine number-provenance maps (real screenshots, every number marked

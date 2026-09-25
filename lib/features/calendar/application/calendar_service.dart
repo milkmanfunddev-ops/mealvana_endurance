@@ -495,31 +495,6 @@ class CalendarService {
   }
 
   /// Update carb loading protocol (delete old plan and create new one)
-  Future<void> updateCarbLoadingProtocol({
-    required String userId,
-    required String eventId,
-    required int newProtocolDays,
-    required DateTime raceDate,
-    required double bodyWeightPounds,
-  }) async {
-    try {
-      // Delete existing plan
-      await deleteCarbLoadingPlan(eventId: eventId);
-
-      // Create new plan
-      await createCarbLoadingPlan(
-        userId: userId,
-        eventId: eventId,
-        protocolDays: newProtocolDays,
-        raceDate: raceDate,
-        bodyWeightPounds: bodyWeightPounds,
-      );
-    } catch (e) {
-      _logger.error('Error updating carb loading protocol', error: e);
-      rethrow;
-    }
-  }
-
   /// Get carb loading plan for an event
   Future<CarbLoadingPlan?> getCarbLoadingPlan(String eventId) async {
     try {

@@ -1,0 +1,40 @@
+{
+ "fingerprintId": "4b705984240f",
+ "provider": "garmin",
+ "stratum": {
+  "endpoint": "garmin/activity_raw",
+  "workoutType": "OTHER"
+ },
+ "optionalKeysInStratum": [
+  "totalElevationGainInMeters"
+ ],
+ "provenance": {
+  "source": "dev provider_raw_payloads",
+  "scrubbed": "server-side (corpus-export edge fn)",
+  "environment": "dev",
+  "exportedAt": "2026-09-21T00:53:24+00:00",
+  "note": "real-account (dev Garmin athletes), promoted by ruling 2026-09-20",
+  "correction": "re-scrubbed under the default-deny standard (@v1.1 samples de-id erratum, ruled 2026-09-20); fingerprint unchanged, content re-destroyed"
+ },
+ "exemplar": {
+  "steps": 758,
+  "summaryId": "syn-20180d77",
+  "activityId": 22182120968,
+  "isWebUpload": false,
+  "activityName": "corpus placeholder",
+  "activityType": "corpus placeholder",
+  "distanceInMeters": 384.9331884491573,
+  "durationInSeconds": 765,
+  "activeKilocalories": 90,
+  "startTimeInSeconds": 1767225600,
+  "startTimeOffsetInSeconds": -20919,
+  "maxSpeedInMetersPerSecond": 4.759541493373163,
+  "totalElevationGainInMeters": 0.9438402532333015,
+  "totalElevationLossInMeters": 2.590661369485676,
+  "maxHeartRateInBeatsPerMinute": 163,
+  "maxPaceInMinutesPerKilometer": 2.9248353175770996,
+  "averageSpeedInMetersPerSecond": 0.4717139437742075,
+  "averageHeartRateInBeatsPerMinute": 81,
+  "averagePaceInMinutesPerKilometer": 26.482715389524028
+ }
+}

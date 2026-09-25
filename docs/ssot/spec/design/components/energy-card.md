@@ -1,6 +1,9 @@
 # Design SSOT — Component: Energy Summary Card
 
-**Status: RATIFIED v1 (Xuan, 2026-08-14).**
+**Status: RATIFIED v1 (Xuan, 2026-08-14) + v2 amendment — the LOAD face — RULED (Xuan,
+2026-09-24, carb-loading interview, post-ratification addition; intake
+`2026-09-24-carb-loading-amend-b-energy-card-v2-load-face.md`). See §LOAD-face amendment below;
+conformance manifests extend when the carb-loading bundle ships.**
 **Component contract** for the dashboard's summary card — **one component with three faces**, not
 three cards. The face follows the active filter lens; the expansion state is the card's own.
 **Tokens:** [`../tokens.md`](../tokens.md). **Numbers authority:**
@@ -54,6 +57,30 @@ band copy string comes from §2's registers verbatim. This card invents no arith
   workout-card swipe); P-3 spot-check (band copy string matches the §2 register for the mock net).
 - **A golden may only be regenerated after this spec changes** — never to make a red test pass.
   Regeneration commits cite the spec change.
+
+## LOAD-face amendment — RULED (Xuan, 2026-09-24, carb-loading interview)
+
+Amends the v1 contract on four clauses; everything else stands unchanged.
+
+1. **Fourth face:** `face ∈ { ALL, WORKOUT, MEALS, LOAD }`. `LOAD` is chosen by the **surface**
+   (the viewed day falls inside a carb-loading plan the athlete created — data, not a setting,
+   never the filter lens) and **replaces the All-lens face** on loading days; `WORKOUT`/`MEALS`
+   stay one tap away, untouched.
+2. **E1 suppressed on LOAD** — the face is collapsed-only: one row, continuous 26 px loader bar
+   (⅔) + pace words (⅓, value over label). Anatomy and numbers:
+   `spec/fueling/carb-loading.md` CL-7..CL-9 + §2a copy register; glow/material tokens await the
+   desk ruling (amendment c).
+3. **P-1 becomes remember-not-clear across LOAD:** `expanded` survives crossing a face with no
+   expansion — ALL-expanded → LOAD → WORKOUT arrives expanded.
+4. **E2 on LOAD** opens the **carb-loading breakdown page** (read-only overlay; prototype v17:
+   protocol chips navigate protocol days, back chevron restores the origin day) — ruled into
+   release-1 scope at the interview (Q-CL6), replacing the net-balance-pager stub.
+
+Conformance additions (staged with the carb-loading bundle; rewritten per Q-D9): L1 goldens for
+the LOAD face — collapsed AND expanded × today / future / past; L2 — face selection is
+data-driven (no LOAD off-plan), E1 toggles on LOAD, P-1 plain persistence across LOAD, E2
+destination from the expanded face, §2a copy strings verbatim incl. `N g to go` (clamp-at-0
+case pinned) and `pace N g by now`.
 
 ## Number-color contract (Q-D3 RULED, Xuan, 2026-08-14)
 

@@ -425,7 +425,11 @@ class _EditCarbTargetDialogState extends ConsumerState<EditCarbTargetDialog> {
           const SizedBox(width: AppSpacing.xs),
           Expanded(
             child: Text(
-              '8-12g/kg per day during carb loading. Higher for longer races.',
+              // CL-12 (carb-loading@v1): point-value copy — the dialog
+              // shows THIS day's stored protocol rate, never a range.
+              'This day\u2019s protocol rate is '
+              '${widget.currentCarbsPerKg.toStringAsFixed(1)} g/kg. '
+              'Protocol days run 8, 9, 10, or 11 g/kg.',
               style: AppTextStyles.smallLabel.copyWith(
                 color: isDark
                     ? AppColors.electrolyte

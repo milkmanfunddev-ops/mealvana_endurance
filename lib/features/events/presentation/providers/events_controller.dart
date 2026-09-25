@@ -4,6 +4,7 @@ import '../../application/events_service.dart';
 import '../../../activities/application/activities_service.dart';
 import '../../../activities/presentation/providers/activities_controller.dart';
 import '../../../carb_loading/presentation/providers/carb_loading_controller.dart';
+import '../../../macro_dashboard/presentation/providers/carb_dashboard_providers.dart';
 import '../../domain/event.dart';
 import '../../../activities/domain/activity.dart';
 import '../../../../shared/services/logging_service.dart';
@@ -201,9 +202,13 @@ class EventsController extends _$EventsController {
       ref.invalidate(allEventsProvider);
 
       // Invalidate carb loading providers to refresh calendar UI
-      // The event deletion cascades to carb loading data in the repository layer
+      // The event deletion cascades to carb loading data in the repository
+      // layer. G24: cover EVERY family a carb surface watches — the summary's
+      // day rows and the loading-day dashboard go stale otherwise.
       ref.invalidate(carbLoadingDaysForRangeProvider);
       ref.invalidate(carbLoadingPlanProvider(eventId));
+      ref.invalidate(carbLoadingDaysForPlanProvider);
+      ref.invalidate(carbDashboardForDateProvider);
 
       // Invalidate activities providers since event deletion cascade-deletes associated activity
       ref.invalidate(activitiesControllerProvider);

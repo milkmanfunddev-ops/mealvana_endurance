@@ -1,0 +1,92 @@
+bundle:  real-payload-corpus
+version: v1.2
+status:  ratified
+ratified: 2026-09-20            # v1: interview batch (bdfbc88) + amendments. v1.1: samples-leak
+                                # arbitration (destroy-content confirmed; scrubber DEFAULT-DENY +
+                                # KEEP-ENUM allowlist; four exemplars re-scrubbed) + FS promotion
+                                # ruled YES (ten real-account exemplars, first FS wing)
+ships: >
+  The retention + corpus contract: provider_raw_payloads (FS/TP raw, 90-day rolling window,
+  one row per (workout id, LastModifiedDate)), the 90-day TTL on all raw types incl.
+  prod-graduated sample/HRV capture, the two-sided sweep meter (over-size + under-arrival
+  expected_flows) with the dead-man clause, the server-side de-identification scrubber,
+  the fingerprint identity function (ruling A: optional keys out of identity), the
+  novelty-gated corpus export, and the IsPremium A1 re-key (no behavior on the flag).
+
+specs:
+  - slice:   raw-retention
+    version: "lifecycle.md L-7 — RULED (Xuan, 2026-09-20; versioning amendment same day)"
+    spec:    spec/integrations/lifecycle.md
+    vectors: vectors/integrations/raw-retention.json      # 7 (count-vectors.mjs, freeze time)
+    engine:  "provider_raw_payloads repository + pg_cron TTL sweep (server-side, to be built)"
+  - slice:   corpus-fingerprint
+    version: "corpus intake Addendum 2 — RATIFIED with the corpus (Xuan, 2026-09-20)"
+    spec:    intake/2026-09-14-real-payload-test-corpus.md   # ruled+stamped; Addendum 2 + ruling A annotation
+    vectors: vectors/integrations/corpus-fingerprint.json # 7
+    engine:  "corpus sampler fingerprint fn (pure, to be built)"
+  - slice:   corpus-deid
+    version: "de-id standard + Q8 + DEFAULT-DENY amendment w/ KEEP-ENUM allowlist (Xuan, 2026-09-20, samples-leak arbitration)"
+    spec:    intake/2026-09-14-real-payload-test-corpus.md
+    vectors: vectors/integrations/corpus-deid.json        # 4 (leak-regression vector added, count-vectors.mjs)
+    engine:  "corpus scrubber (pure, to be built)"
+
+excludes:
+  - slice:  producer-shapes re-authoring
+    reason: blocked on post-implementation exemplars — the quarantined TP four re-author from
+            promoted trial specimens, not before (DI-24 sequencing)
+  - slice:  pace-vs-threshold intensity rung
+    reason: OPEN intake (2026-09-20), next bundle — new policy, needs its own ruling + vectors
+  - slice:  TP metrics + file-export capture
+    reason: BLOCKED-ON-PROVIDER — both scopes requested from TP 2026-09-20 (B1); app rows are
+            created on grant (ops 2a28e4c rebirth trigger)
+  - slice:  DI-17 IF/TSS engine feed
+    reason: unblocked by the casing fix (ops Critical, its own ticket); bundle-scope call for
+            its re-entry stays with Xuan on qa/data-integrations-v1.1
+
+conformance:
+  runner: qa/conformance/run_dart.sh
+  invoke:
+    - run_dart.sh raw-retention        # needs the NEW local-db arm (migrations + injected now)
+    - run_dart.sh corpus-fingerprint   # pure-function arm
+    - run_dart.sh corpus-deid          # pure-function property arm
+  done_when: all three slices green AND DI-24's live populated twin observed (trial raw rows +
+    exemplars in the real repository) before the trial lapses ~2026-10-02
+  note: >
+    Vectors are EXPECTED-RED: nothing implements any slice. Harness co-evolution IS the
+    implementation task: the sweep body must be a callable function with `now` injected;
+    scrubber and fingerprint must be pure functions. Spec locations are unconventional for
+    two slices (a ruled+stamped intake file is the argued home; the binding contract text is
+    the L-7 fold + the vectors' notes) — flagged, not hidden.
+
+corpus:
+  registry: vectors/integrations/samples/   # 14 frozen exemplars — TP 4 (sandbox, hand-typed) +
+                                            # FS 10 (real-account, ruled 2026-09-20, fail-safe scrub);
+                                            # stamps keyed on SOURCE MATERIAL, fail-closed;
+                                            # synthetic ids FNV-derived from source ids
+  note: >
+    FS WorkoutSubTypeName stays OFF the KEEP-ENUM allowlist for v1.1 — the subtype-is-title
+    erratum turns out to govern a TP transformer bug (FS's wire field is legitimate), and the
+    census (n=3 valued: 2 distinct, short, repeated, never-equals-title) reads enum but is too
+    thin to open a permanent verbatim gate. Revisit trigger: census at >=10 valued FS rows.
+    OPERATIONAL: prod must deploy the @v1.1 corpus-export, never v1 (the inverted scrubber IS
+    the correction). Raw-backed promotion decisions inherit the 90-day TTL as a deadline.
+
+deviations: []   # none — no observed-but-unratified behaviour is pinned by this bundle
+
+# ── v1.2 (2026-09-20/21): the gap closure — every item mapped to its RED (the ratified rule's
+#    first full application). Item→red table (done_when covers the WHOLE table):
+#    DI-25 sample capture, GPS STRIPPED AT INGEST (ruled B), 1MiB guard, dev+prod shipped,
+#          flows seeded server-side only → red: two-stage (land = code green + seeds; twin =
+#          post-land flow). HRV ships DARK (Xuan's Garmin-portal custody to-do).
+#    DI-26 BOTH fallback families deleted, whole-structure refusal → red:
+#          tp_structure_refusal_test.dart (7 tests, contributes-nothing property).
+#    DI-27 dead-man both directions → red: raw_retention_dead_man_check_test.dart (6 tests,
+#          never-run-is-stale).
+#    DI-28a Garmin wing (45 dev exemplars) → red: samples/garmin/ non-empty, leak-swept.
+#    DI-28b multisport LINKED SET via embedded linkedCompanions (one-per-fingerprint
+#          unamended; qa-70 reading of the ruled link row, revisable) → red:
+#          641873687409.json, 8/8 companion links resolving.
+#    Also ridden: GPS word-shape doctrine (5th deid vector), isParent/activityType/isWebUpload
+#    on GARMIN_KEEP_ENUM, richest-representative selection, environment-scoped --rescrub,
+#    capture-failure-never-costs-an-activity guard (a159a31c), vacuous-pass guard (len>0).
+#    Client halves RIDE XUAN'S SINGLE RELEASE PUSH; client-produced flows seed after adoption.

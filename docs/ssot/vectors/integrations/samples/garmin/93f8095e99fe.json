@@ -1,0 +1,38 @@
+{
+ "fingerprintId": "93f8095e99fe",
+ "provider": "garmin",
+ "stratum": {
+  "endpoint": "garmin/activity_raw",
+  "workoutType": "LAP_SWIMMING"
+ },
+ "optionalKeysInStratum": [
+  "activeKilocalories",
+  "averagePaceInMinutesPerKilometer",
+  "averageSpeedInMetersPerSecond",
+  "averageSwimCadenceInStrokesPerMinute",
+  "distanceInMeters",
+  "maxPaceInMinutesPerKilometer",
+  "maxSpeedInMetersPerSecond",
+  "numberOfActiveLengths"
+ ],
+ "provenance": {
+  "source": "dev provider_raw_payloads",
+  "scrubbed": "server-side (corpus-export edge fn)",
+  "environment": "dev",
+  "exportedAt": "2026-09-21T00:53:24+00:00",
+  "note": "real-account (dev Garmin athletes), promoted by ruling 2026-09-20",
+  "correction": "re-scrubbed under the default-deny standard (@v1.1 samples de-id erratum, ruled 2026-09-20); fingerprint unchanged, content re-destroyed"
+ },
+ "exemplar": {
+  "summaryId": "syn-78c64c25",
+  "activityId": 21215819671,
+  "isWebUpload": false,
+  "activityName": "corpus placeholder",
+  "activityType": "corpus placeholder",
+  "durationInSeconds": 10,
+  "startTimeInSeconds": 1767225600,
+  "startTimeOffsetInSeconds": -18066,
+  "maxHeartRateInBeatsPerMinute": 102,
+  "averageHeartRateInBeatsPerMinute": 78
+ }
+}

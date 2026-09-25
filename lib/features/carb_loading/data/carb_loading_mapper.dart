@@ -57,21 +57,24 @@ class CarbLoadingMapper {
           ? Value((json['carb_protocol_g_per_kg'] as num).toDouble())
           : const Value.absent(),
       mealCount: Value(json['meal_count'] as int? ?? 6),
+      // Split fields are FRACTIONS of the day target (consumers compute
+      // carbTargetGrams * percent); missing fields default to the ruled
+      // six-slot split, never a percent-scale constant (D-021).
       breakfastPercent: Value(
-        (json['breakfast_percent'] as num?)?.toDouble() ?? 16.67,
+        (json['breakfast_percent'] as num?)?.toDouble() ?? 0.25,
       ),
       morningSnackPercent: Value(
-        (json['morning_snack_percent'] as num?)?.toDouble() ?? 16.67,
+        (json['morning_snack_percent'] as num?)?.toDouble() ?? 0.10,
       ),
-      lunchPercent: Value((json['lunch_percent'] as num?)?.toDouble() ?? 16.67),
+      lunchPercent: Value((json['lunch_percent'] as num?)?.toDouble() ?? 0.25),
       afternoonSnackPercent: Value(
-        (json['afternoon_snack_percent'] as num?)?.toDouble() ?? 16.67,
+        (json['afternoon_snack_percent'] as num?)?.toDouble() ?? 0.15,
       ),
       dinnerPercent: Value(
-        (json['dinner_percent'] as num?)?.toDouble() ?? 16.67,
+        (json['dinner_percent'] as num?)?.toDouble() ?? 0.20,
       ),
       eveningSnackPercent: Value(
-        (json['evening_snack_percent'] as num?)?.toDouble() ?? 16.67,
+        (json['evening_snack_percent'] as num?)?.toDouble() ?? 0.05,
       ),
       loggedCarbsGrams: json['logged_carbs_grams'] != null
           ? Value(json['logged_carbs_grams'] as int)

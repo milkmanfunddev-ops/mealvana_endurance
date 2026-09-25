@@ -1,0 +1,30 @@
+{
+ "fingerprintId": "b286a7b1a9c0",
+ "provider": "garmin",
+ "stratum": {
+  "endpoint": "garmin/activity_raw",
+  "workoutType": "INDOOR_CYCLING"
+ },
+ "optionalKeysInStratum": [],
+ "provenance": {
+  "source": "prod provider_raw_payloads",
+  "scrubbed": "server-side (corpus-export edge fn)",
+  "environment": "prod",
+  "exportedAt": "2026-09-21T00:53:23+00:00",
+  "note": "real-account (prod), promoted by ruling 2026-09-20",
+  "correction": "re-scrubbed under the default-deny standard (@v1.1 samples de-id erratum, ruled 2026-09-20); fingerprint unchanged, content re-destroyed"
+ },
+ "exemplar": {
+  "summaryId": "syn-53c52d75",
+  "activityId": 20586592270,
+  "isWebUpload": false,
+  "activityName": "corpus placeholder",
+  "activityType": "INDOOR_CYCLING",
+  "durationInSeconds": 1661,
+  "activeKilocalories": 234,
+  "startTimeInSeconds": 1767225600,
+  "startTimeOffsetInSeconds": -20654,
+  "maxHeartRateInBeatsPerMinute": 168,
+  "averageHeartRateInBeatsPerMinute": 130
+ }
+}

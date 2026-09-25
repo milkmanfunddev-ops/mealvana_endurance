@@ -7,7 +7,15 @@ enum MealSlot {
   breakfast('breakfast'),
   lunch('lunch'),
   dinner('dinner'),
-  snack('snack');
+  snack('snack'),
+
+  // Loading-day slot taxonomy (carb-loading@v1, CL-5): three additional
+  // periods so a log can be tagged to any of the six ruled slots. On
+  // loading-day surfaces the legacy [snack] folds into Afternoon Snack at
+  // display time — no data migration.
+  morningSnack('morning_snack'),
+  afternoonSnack('afternoon_snack'),
+  eveningSnack('evening_snack');
 
   const MealSlot(this.wireValue);
 
@@ -30,6 +38,12 @@ enum MealSlot {
         return 'Dinner';
       case MealSlot.snack:
         return 'Snack';
+      case MealSlot.morningSnack:
+        return 'Morning Snack';
+      case MealSlot.afternoonSnack:
+        return 'Afternoon Snack';
+      case MealSlot.eveningSnack:
+        return 'Evening Snack';
     }
   }
 

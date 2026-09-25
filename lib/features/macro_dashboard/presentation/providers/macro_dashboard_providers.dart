@@ -11,7 +11,9 @@ import '../../../daily_macros/presentation/providers/daily_macros_controller.dar
 import '../../../meal_logging/presentation/providers/meal_log_providers.dart';
 import '../../application/dashboard_assembler.dart';
 import '../../application/dashboard_transient_telemetry.dart';
+import '../../domain/carb_dashboard_models.dart';
 import '../../domain/dashboard_models.dart';
+import 'carb_dashboard_providers.dart';
 
 part 'macro_dashboard_providers.g.dart';
 
@@ -93,7 +95,7 @@ Future<DashboardData> macroDashboardDay(Ref ref) async {
       .toList(growable: false);
 
   const assembler = MacroDashboardAssembler();
-  return assembler.assemble(
+  final assembled = assembler.assemble(
     selectedDate: selectedDate,
     now: DateTime.now(),
     activities: dayActivities,
@@ -106,6 +108,68 @@ Future<DashboardData> macroDashboardDay(Ref ref) async {
     // toggling it must not recompute the day (intraday-display §5).
     trackingOn: true,
   );
+
+  // Loading day (carb-loading-dashboard.md): the six slot groups ARE the
+  // meal timeline (CD-3) — meal-group nodes are replaced wholesale by slot
+  // cards at their CL-5 clocks; workout nodes interleave by time untouched.
+  // On a regular day `carb` is null and NOTHING below changes (CD-1).
+  // FAIL-SOFT on purpose: a carb-plan lookup failure renders the ordinary
+  // day rather than taking the whole dashboard down — same posture as the
+  // profile-weight read above. CD-1's negative covers the degraded state.
+  CarbDashboardData? carb;
+  try {
+    carb = await ref.watch(carbDashboardForDateProvider(dateStr).future);
+  } catch (_) {
+    carb = null;
+  }
+  if (carb == null) return assembled;
+  return assembled.withCarb(carb, carbLoadingTimeline(assembled.nodes, carb));
+}
+
+/// CL-5 clocks, minutes since midnight, slot order.
+const List<int> _slotMinutes = [360, 540, 720, 900, 1080, 1260];
+
+/// The loading-day timeline merge (CD-3 + G20) — public so the L2 row
+/// `out-of-slot-entry-renders-on-loading-day` pins it directly.
+List<DashboardNode> carbLoadingTimeline(
+  List<DashboardNode> nodes,
+  CarbDashboardData carb,
+) {
+  // Keep every non-meal node — and every UNTAGGED meal group — with a rough
+  // minutes key parsed from its rendered time label (the label is the
+  // surface's own sort key on loading days). Slot-tagged meal groups are
+  // superseded by the slot cards; untagged food renders as an ordinary
+  // entry interleaved by clock (G20: CL-11 + CD-3 + the 2026-09-19 ruling —
+  // out-of-slot items still sit on the timeline and always count).
+  final kept = <(int, DashboardNode)>[
+    for (final n in nodes)
+      if (n.isWorkout || (n.mealGroupLabel == 'Logged'))
+        (_minutesOf(n.timeLabel), n),
+  ];
+  final slots = <(int, DashboardNode)>[
+    for (var i = 0; i < carb.slots.length; i++)
+      (
+        _slotMinutes[i],
+        DashboardNode.carbSlot(
+          timeLabel: carb.slots[i].clockStr,
+          carbSlot: carb.slots[i],
+        ),
+      ),
+  ];
+  final merged = [...kept, ...slots]..sort((a, b) => a.$1.compareTo(b.$1));
+  return merged.map((e) => e.$2).toList(growable: false);
+}
+
+/// Parses `8:00 AM` → minutes since midnight; empty/unknown labels (tucked
+/// skipped cards) sort last.
+int _minutesOf(String label) {
+  final m = RegExp(r'^(\d{1,2}):(\d{2})\s*(AM|PM)$').firstMatch(label.trim());
+  if (m == null) return 24 * 60;
+  var h = int.parse(m.group(1)!);
+  final min = int.parse(m.group(2)!);
+  final pm = m.group(3) == 'PM';
+  if (h == 12) h = 0;
+  return (pm ? h + 12 : h) * 60 + min;
 }
 
 /// The last targets the dashboard rendered, per user+day — see the note in
