@@ -13,8 +13,8 @@
 
 **Touches:** lib/features/subscription/application/subscription_screen_controller.dart, lib/features/subscription/presentation/screens/subscription_screen.dart, lib/features/subscription/data/subscription_service.dart
 
-- [ ] A widget test: a monthly subscription shows Monthly on the status card.
-- [ ] A test: a null management URL shows the message and opens nothing.
+- [x] A widget test: a monthly subscription shows Monthly on the status card.
+- [x] A test: a null management URL shows the message and opens nothing.
 - [ ] codegen if annotations changed, `flutter analyze` and the suite green.
 
 Next: /implement-lee testing-wave

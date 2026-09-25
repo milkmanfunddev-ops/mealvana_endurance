@@ -905,7 +905,9 @@
     "status_grant_code": "Pro from a code",
     "grant_days_left": "{days} days left",
     "grant_one_day_left": "1 day left",
-    "grant_last_day": "Last day today"
+    "grant_last_day": "Last day today",
+    "plan_name": "Pro {plan}",
+    "manage_no_page": "This plan is from RevenueCat's Test Store, which has no store page. Its subscription is in the RevenueCat dashboard."
   },
   "redeem_code": {
     "button": "Redeem code",

@@ -332,6 +332,47 @@ void main() {
       await tester.pump(const Duration(milliseconds: 100));
       expect(find.text(_copy('paywall.manage_unavailable')), findsOneWidget);
     });
+
+    testWidgets('no management URL (a Test Store subscription) says where '
+        'to manage it and opens nothing (finding 09-001)', (tester) async {
+      when(() => service.managementUrl()).thenAnswer((_) async => null);
+      await pump(tester, info: customerInfoOpen);
+      await tester.tap(find.byKey(_manage));
+      await tester.pump();
+      await tester.pump(const Duration(milliseconds: 100));
+      expect(find.text(_copy('subscription.manage_no_page')), findsOneWidget);
+      expect(launched, isEmpty);
+    });
+  });
+
+  group('the plan bought on the status card (mp-628, finding 08-001)', () {
+    String planLine(String label) =>
+        _copy('subscription.plan_name').replaceAll('{plan}', _copy(label));
+
+    testWidgets('a monthly subscription shows Monthly', (tester) async {
+      await pump(tester, info: customerInfoOpen);
+      expect(
+        find.descendant(
+          of: find.byKey(const ValueKey('subscription.status_card')),
+          matching: find.text(planLine('paywall.monthly_label')),
+        ),
+        findsOneWidget,
+      );
+      expect(planLine('paywall.monthly_label'), contains('Monthly'));
+    });
+
+    testWidgets('a founding annual plan shows Annual', (tester) async {
+      await pump(tester, info: customerInfoFounding);
+      expect(
+        textOf(tester, const ValueKey('subscription.plan')),
+        planLine('paywall.annual_label'),
+      );
+    });
+
+    testWidgets('an ended plan names no plan', (tester) async {
+      await pump(tester, info: customerInfoLapsed);
+      expect(find.byKey(const ValueKey('subscription.plan')), findsNothing);
+    });
   });
 
   group('a Grant: where it came from and its days left (mp-558)', () {
