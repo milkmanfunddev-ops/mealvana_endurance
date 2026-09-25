@@ -64,8 +64,13 @@ class IntegrationsRepository with SyncableRepository {
       final remoteRows = (response as List<dynamic>);
 
       // Skip overwrite for any locally-dirty rows so we never clobber tokens
-      // that haven't been pushed yet.
-      final dirtyIds = await _getDirtyIdsForUser(userId);
+      // that haven't been pushed yet. Match on provider too: the local table
+      // is UNIQUE(user_id, provider), so a server row with another id for the
+      // same provider would REPLACE (delete) the dirty local row. That happens
+      // when a reconnect minted a new local id the server keeps refusing.
+      final dirtyRows = await _getDirtyRowsForUser(userId);
+      final dirtyIds = dirtyRows.map((r) => r.id).toSet();
+      final dirtyProviders = dirtyRows.map((r) => r.provider).toSet();
 
       var upserted = 0;
       await _db.batch((batch) {
@@ -75,6 +80,7 @@ class IntegrationsRepository with SyncableRepository {
           final id = mapped['id']?.toString();
           if (id == null || id.isEmpty) continue;
           if (dirtyIds.contains(id)) continue;
+          if (dirtyProviders.contains(mapped['provider'])) continue;
 
           batch.insert(
             _db.integrationsTable,
@@ -224,14 +230,9 @@ class IntegrationsRepository with SyncableRepository {
     }
   }
 
-  Future<Set<String>> _getDirtyIdsForUser(String userId) async {
-    final dirtyRows =
-        await (_db.select(_db.integrationsTable)..where(
-              (t) => t.userId.equals(userId) & t.needsUpload.equals(true),
-            ))
-            .get();
-    return dirtyRows.map((r) => r.id).toSet();
-  }
+  Future<List<Integration>> _getDirtyRowsForUser(String userId) => (_db.select(
+    _db.integrationsTable,
+  )..where((t) => t.userId.equals(userId) & t.needsUpload.equals(true))).get();
 
   // ==========================================================================
   // Public API
