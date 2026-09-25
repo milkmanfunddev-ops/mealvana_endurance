@@ -148,4 +148,26 @@ void main() {
       findsNothing,
     );
   });
+
+  // 04-008: an athlete who tapped "I don't use training plan apps" is not
+  // offered Connect with Garmin on the next screen.
+  testWidgets('no connect nudge after the athlete declined training apps', (
+    tester,
+  ) async {
+    final container = await pumpScreen(tester);
+    final controller = container.read(onboardingControllerProvider.notifier);
+
+    expect(
+      find.byKey(const ValueKey('daily_preview.connect_nudge')),
+      findsOneWidget,
+    );
+
+    controller.recordDeclinedTrainingApps();
+    await tester.pumpAndSettle();
+    expect(
+      find.byKey(const ValueKey('daily_preview.connect_nudge')),
+      findsNothing,
+    );
+    expect(find.text('Connect with Garmin'), findsNothing);
+  });
 }
