@@ -170,8 +170,8 @@ String _$subscriptionFreshOnOpenHash() =>
 /// status provider (RevenueCat, mp-279), whether there is a store
 /// subscription to manage, and where Manage subscription goes.
 ///
-/// Rebuilds whenever the status does, so a purchase made through Upgrade
-/// turns "ended" into the running plan while the screen is open.
+/// Rebuilds whenever the status does, so a Code redeemed on the screen
+/// shows at once.
 
 @ProviderFor(SubscriptionScreenController)
 const subscriptionScreenControllerProvider =
@@ -181,8 +181,8 @@ const subscriptionScreenControllerProvider =
 /// status provider (RevenueCat, mp-279), whether there is a store
 /// subscription to manage, and where Manage subscription goes.
 ///
-/// Rebuilds whenever the status does, so a purchase made through Upgrade
-/// turns "ended" into the running plan while the screen is open.
+/// Rebuilds whenever the status does, so a Code redeemed on the screen
+/// shows at once.
 final class SubscriptionScreenControllerProvider
     extends
         $AsyncNotifierProvider<
@@ -193,8 +193,8 @@ final class SubscriptionScreenControllerProvider
   /// status provider (RevenueCat, mp-279), whether there is a store
   /// subscription to manage, and where Manage subscription goes.
   ///
-  /// Rebuilds whenever the status does, so a purchase made through Upgrade
-  /// turns "ended" into the running plan while the screen is open.
+  /// Rebuilds whenever the status does, so a Code redeemed on the screen
+  /// shows at once.
   const SubscriptionScreenControllerProvider._()
     : super(
         from: null,
@@ -221,8 +221,8 @@ String _$subscriptionScreenControllerHash() =>
 /// status provider (RevenueCat, mp-279), whether there is a store
 /// subscription to manage, and where Manage subscription goes.
 ///
-/// Rebuilds whenever the status does, so a purchase made through Upgrade
-/// turns "ended" into the running plan while the screen is open.
+/// Rebuilds whenever the status does, so a Code redeemed on the screen
+/// shows at once.
 
 abstract class _$SubscriptionScreenController
     extends $AsyncNotifier<SubscriptionScreenState> {
