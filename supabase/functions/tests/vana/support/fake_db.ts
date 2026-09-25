@@ -113,6 +113,7 @@ export class QueryBuilder implements PromiseLike<{ data: unknown; error: { messa
   private filters: Filter[] = [];
   private sorts: Sort[] = [];
   private limitN: number | null = null;
+  private offsetN = 0;
   private mode: Mode = 'select';
   // deno-lint-ignore no-explicit-any
   private payload: any = null;
@@ -158,7 +159,7 @@ export class QueryBuilder implements PromiseLike<{ data: unknown; error: { messa
   // ---- shaping
   order(column: string, opts?: { ascending?: boolean; nullsFirst?: boolean }) { this.sorts.push({ column, ascending: opts?.ascending !== false }); return this; }
   limit(n: number) { this.limitN = n; return this; }
-  range(from: number, to: number) { this.limitN = to - from + 1; return this; }
+  range(from: number, to: number) { this.offsetN = from; this.limitN = to - from + 1; return this; }
 
   // ---- terminals
   async single() {
@@ -190,6 +191,7 @@ export class QueryBuilder implements PromiseLike<{ data: unknown; error: { messa
     for (const s of [...this.sorts].reverse()) {
       out = out.sort((a, b) => (s.ascending ? cmp(val(a, s.column), val(b, s.column)) : -cmp(val(a, s.column), val(b, s.column))));
     }
+    if (this.offsetN > 0) out = out.slice(this.offsetN);
     if (this.limitN != null) out = out.slice(0, this.limitN);
     return clone(out);
   }

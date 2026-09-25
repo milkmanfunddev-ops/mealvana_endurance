@@ -13,7 +13,7 @@ import { diagnoseStaples, dayGuidance, dayGuidanceLine, draftWeekPlan, mealPicke
 import { isPickerChipKind, PICKER_CHIP_ARGS, pickerNextStep } from './chips.ts';
 import { isMealType, walkFor } from './plan-math.ts';
 import { buildAthleteContext } from './context.ts';
-import { conversationMessages, shownMealIds } from './chat.ts';
+import { conversationMessages, listConversations, shownMealIds } from './chat.ts';
 import { suggestedPantry } from './pantry.ts';
 import { getMeal, saveLibraryMeal, getMealDetail, recentMeals, setSavedMealNotes, setMealFeedback } from './meals.ts';
 import { ensureDayNotes, refreshDayNotesSoon } from './daynotes.ts';
@@ -87,6 +87,14 @@ export async function extraAction(v: VanaCtx, type: string, p: Record<string, an
     case 'add_comment': return { parts: [{ kind: 'batch', plan: await plan.addComment(v, planMealId(), p.role === 'vana' ? 'vana' : 'user', String(p.text)) }] };
     case 'accept_rule': { const pl = await plan.setRule(v, { day: p.day, rule: String(p.rule), mealId: pick(p, 'mealId', 'meal_id'), accepted: !!p.accepted }); return { parts: [{ kind: 'batch', plan: pl }] }; }
     case 'list_memories': return { parts: [], memories: await listMemories(v) };
+    // Ticket 126 (88-002, 89-007, 88-021): the app's conversations list. Each planning row carries the plan that titles it
+    // ("Sep 20 week · Confirmed"), picked here by the one rule in chat.ts, never a second one in Dart. {kind?, limit?, offset?}.
+    case 'list_conversations': {
+      const kind = p.kind === 'general' ? 'general' : p.kind === 'meal_planning' ? 'meal_planning' : undefined;
+      const limit = Math.min(Math.max(Math.trunc(Number(p.limit)) || 50, 1), 200);
+      const offset = Math.max(Math.trunc(Number(p.offset)) || 0, 0);
+      return { parts: [], conversations: await listConversations(v, limit, kind, offset) };
+    }
     case 'save_meal': return { parts: [], meal: await saveLibraryMeal(v, String(pick(p, 'libraryMealId', 'library_meal_id'))) };   // heart on the detail page
     // ---- additive 2026-09-03 (plan Phases 6, 7)
     case 'swap_ingredient': return { parts: [{ kind: 'batch', plan: await plan.swapIngredient(v, planMealId(), String(p.from), String(p.to)) }] };

@@ -3,6 +3,7 @@ import 'meal_source.dart';
 import 'meal_type.dart';
 import 'plan_meal.dart';
 import 'plan_rule.dart';
+import 'vana_conversation_kind.dart';
 import 'vana_setting.dart';
 
 /// Model-free edits — `POST vana-action { type, payload }` (contract 02 §4).
@@ -520,6 +521,32 @@ class ListPlansAction extends UiAction {
 
   @override
   Map<String, Object?> payloadFields() => const {};
+}
+
+/// `{kind, limit, offset}` → `{parts: [], conversations: [...]}` — the
+/// conversations list, most recent activity first, one page at a time
+/// (ticket 126). Each planning row carries the plan the server picked for
+/// it, the one rule (`conversationPlans` in `chat.ts`) that titles the row.
+class ListConversationsAction extends UiAction {
+  const ListConversationsAction({
+    required this.kind,
+    required this.limit,
+    this.offset = 0,
+  });
+
+  final VanaConversationKind kind;
+  final int limit;
+  final int offset;
+
+  @override
+  String get type => 'list_conversations';
+
+  @override
+  Map<String, Object?> payloadFields() => {
+    'kind': kind.wire,
+    'limit': limit,
+    'offset': offset,
+  };
 }
 
 // ── App-only actions (the Flutter client's read/write channel) ──────────────

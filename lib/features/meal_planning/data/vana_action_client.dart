@@ -10,6 +10,7 @@ import '../domain/meal_ref.dart';
 import '../domain/shopping_list.dart';
 import '../domain/ui_action.dart';
 import '../domain/user_memory.dart';
+import '../domain/vana_conversation.dart';
 import '../domain/vana_part.dart';
 import '../domain/wire_record.dart';
 import 'vana_chat_repository.dart';
@@ -49,6 +50,11 @@ class VanaActionResult {
   /// left out.
   List<MealPlanSummary> get plans =>
       readRecordList(extras, 'plans', MealPlanSummary.fromJson);
+
+  /// `list_conversations` → `conversations`, one page, most recent activity
+  /// first.
+  List<VanaConversationSummary> get conversations =>
+      readRecordList(extras, 'conversations', VanaConversationSummary.fromJson);
 
   /// `get_home` → `home`.
   HomePayload? get home => switch (asJsonMap(extras['home'])) {

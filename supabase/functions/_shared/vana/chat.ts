@@ -161,10 +161,12 @@ export function clampSentences(t: string, n = RUNAWAY_SENTENCES): string {
 }
 
 // ---------------------------------------------------------------- conversations (vana_conversations / vana_messages, RLS-scoped)
-export async function listConversations(v: VanaCtx, limit = 30, kind?: ConversationKind): Promise<ConversationSummary[]> {
+/** The user's conversations, most recent activity first. `offset` is the page start (ticket 126, 88-021): the app asks for
+ *  the next page when its list nears the end, and an empty page says the list is done. */
+export async function listConversations(v: VanaCtx, limit = 30, kind?: ConversationKind, offset = 0): Promise<ConversationSummary[]> {
   let q = v.db.from('vana_conversations').select('id, kind, title, summary, last_message_at, created_at').eq('user_id', v.userId).eq('is_deleted', false);
   if (kind) q = q.eq('kind', kind);
-  const { data } = await q.order('last_message_at', { ascending: false, nullsFirst: false }).order('created_at', { ascending: false }).limit(limit);
+  const { data } = await q.order('last_message_at', { ascending: false, nullsFirst: false }).order('created_at', { ascending: false }).range(offset, offset + limit - 1);
   // deno-lint-ignore no-explicit-any
   const rows: Omit<ConversationSummary, 'plan'>[] = (data ?? []).map((r: any) => ({ id: r.id, kind: r.kind === 'general' ? 'general' : 'meal_planning', title: r.title, summary: r.summary, lastMessageAt: r.last_message_at, createdAt: r.created_at }));
   const plans = await conversationPlans(v, rows.filter((r) => r.kind === 'meal_planning').map((r) => r.id));
