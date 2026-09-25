@@ -10,6 +10,7 @@ library;
 
 import 'dart:async';
 
+import 'package:fake_async/fake_async.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:mocktail/mocktail.dart';
@@ -635,6 +636,194 @@ void main() {
       await c.read(subscriptionStatusProvider.notifier).refresh();
 
       expect(current(c).active, isTrue);
+    });
+  });
+  group('the Gate closes on time while the app stays open (mp-457, mp-679, '
+      'Finding 05-005)', () {
+    // The saved copy's period ends at 11:36:56 UTC; the controller starts
+    // five minutes before that and nothing resumes the app.
+    final expiry = DateTime.utc(2026, 9, 24, 11, 36, 56);
+    final start = expiry.subtract(const Duration(minutes: 5));
+
+    /// A container whose clock moves with the fake timers.
+    ProviderContainer ticking(FakeAsync async) {
+      final c = ProviderContainer(
+        overrides: [
+          subscriptionServiceProvider.overrideWithValue(service),
+          userEntitlementsRepositoryProvider.overrideWithValue(repo),
+          entitlementAnswerTimeoutProvider.overrideWithValue(_timeout),
+          localNotificationSchedulerProvider.overrideWithValue(scheduler),
+          subscriptionClockProvider.overrideWithValue(
+            () => start.add(async.elapsed),
+          ),
+          isAdminProvider.overrideWith((_) async => false),
+        ],
+      );
+      // Keep the gate listened to, as the router does.
+      c.listen(appGateProvider, (_, _) {});
+      return c;
+    }
+
+    AppAccess gate(ProviderContainer c) => c.read(appGateProvider).requireValue;
+
+    /// Timers that wait (Riverpod's own zero-length refresh ticks aside).
+    Iterable<FakeTimer> waits(FakeAsync async) =>
+        async.pendingTimers.where((t) => t.duration > Duration.zero);
+
+    test('a renewing answer closes 15 minutes past expiry, with no resume, '
+        'after one re-fetch', () {
+      fakeAsync((async) {
+        // RevenueCat keeps serving the saved copy: the renewal never lands.
+        when(
+          () => service.fetchStatus(),
+        ).thenAnswer((_) async => statusOf(customerInfoSavedMonthly));
+        final c = ticking(async);
+        async.flushMicrotasks();
+        expect(gate(c), AppAccess.open);
+
+        // Expiry + 14:59: still inside the grace.
+        async.elapse(const Duration(minutes: 19, seconds: 59));
+        expect(gate(c), AppAccess.open);
+        verify(() => service.fetchStatus()).called(1);
+
+        async.elapse(const Duration(seconds: 1));
+        async.flushMicrotasks();
+        expect(gate(c), AppAccess.closed);
+        expect(current(c).hadPro, isTrue);
+        // One re-fetch at the moment it stopped counting, and no more.
+        verify(() => service.fetchStatus()).called(1);
+        async.elapse(const Duration(hours: 2));
+        verifyNever(() => service.fetchStatus());
+        expect(gate(c), AppAccess.closed);
+        c.dispose();
+      });
+    });
+
+    test('a cancelled answer closes at its expiry', () {
+      fakeAsync((async) {
+        final cancelled = statusOf(
+          customerInfoSavedMonthly,
+        ).copyWith(willRenew: false);
+        when(() => service.fetchStatus()).thenAnswer((_) async => cancelled);
+        final c = ticking(async);
+        async.flushMicrotasks();
+        expect(gate(c), AppAccess.open);
+
+        async.elapse(const Duration(minutes: 4, seconds: 59));
+        expect(gate(c), AppAccess.open);
+
+        async.elapse(const Duration(seconds: 1));
+        async.flushMicrotasks();
+        expect(gate(c), AppAccess.closed);
+        c.dispose();
+      });
+    });
+
+    test('the re-fetch that finds the renewal keeps it open and waits for '
+        'the new period', () {
+      fakeAsync((async) {
+        when(
+          () => service.fetchStatus(),
+        ).thenAnswer((_) async => statusOf(customerInfoSavedMonthly));
+        final c = ticking(async);
+        async.flushMicrotasks();
+
+        // The renewal is on RevenueCat by the time the timer fires.
+        when(
+          () => service.fetchStatus(),
+        ).thenAnswer((_) async => statusOf(customerInfoRenewedMonthly));
+        async.elapse(const Duration(minutes: 20));
+        async.flushMicrotasks();
+        expect(gate(c), AppAccess.open);
+        expect(current(c).expiresAt, DateTime.utc(2026, 9, 24, 11, 41, 56));
+        c.dispose();
+      });
+    });
+
+    test('a fresh active answer before then cancels the close and '
+        're-schedules it for the new period', () {
+      fakeAsync((async) {
+        when(
+          () => service.fetchStatus(),
+        ).thenAnswer((_) async => statusOf(customerInfoSavedMonthly));
+        final c = ticking(async);
+        async.flushMicrotasks();
+
+        // Three minutes in, RevenueCat pushes the renewal: next period to
+        // 11:41:56, so it counts to 11:56:56.
+        async.elapse(const Duration(minutes: 3));
+        capturedListener!(statusOf(customerInfoRenewedMonthly));
+        async.flushMicrotasks();
+
+        // Past the old deadline (11:51:56): still open, nothing re-fetched.
+        async.elapse(const Duration(minutes: 18));
+        async.flushMicrotasks();
+        expect(gate(c), AppAccess.open);
+        verify(() => service.fetchStatus()).called(1);
+
+        // Past the new one (11:56:56): closed.
+        async.elapse(const Duration(minutes: 5));
+        async.flushMicrotasks();
+        expect(gate(c), AppAccess.closed);
+        c.dispose();
+      });
+    });
+
+    test('a far expiry never re-fetches early', () {
+      fakeAsync((async) {
+        // An annual period, months away: the timer must not fire early
+        // (a browser caps a timer at about 24.8 days).
+        when(
+          () => service.fetchStatus(),
+        ).thenAnswer((_) async => statusOf(customerInfoFounding));
+        final c = ticking(async);
+        async.flushMicrotasks();
+
+        async.elapse(const Duration(days: 30));
+        async.flushMicrotasks();
+        expect(gate(c), AppAccess.open);
+        verify(() => service.fetchStatus()).called(1);
+        c.dispose();
+      });
+    });
+
+    test('a closed answer schedules nothing', () {
+      fakeAsync((async) {
+        final c = ticking(async);
+        async.flushMicrotasks();
+        expect(gate(c), AppAccess.closed);
+        expect(waits(async), isEmpty);
+        c.dispose();
+      });
+    });
+
+    test('dispose cancels the timer', () {
+      fakeAsync((async) {
+        when(
+          () => service.fetchStatus(),
+        ).thenAnswer((_) async => statusOf(customerInfoSavedMonthly));
+        final c = ticking(async);
+        async.flushMicrotasks();
+        expect(waits(async), isNotEmpty);
+
+        c.dispose();
+        expect(waits(async), isEmpty);
+      });
+    });
+
+    test('sign-out cancels the timer', () {
+      fakeAsync((async) {
+        when(
+          () => service.fetchStatus(),
+        ).thenAnswer((_) async => statusOf(customerInfoSavedMonthly));
+        final c = ticking(async);
+        async.flushMicrotasks();
+
+        unawaited(c.read(subscriptionStatusProvider.notifier).clear());
+        async.flushMicrotasks();
+        expect(waits(async), isEmpty);
+        c.dispose();
+      });
     });
   });
 }

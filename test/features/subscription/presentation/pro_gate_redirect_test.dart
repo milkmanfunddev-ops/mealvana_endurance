@@ -363,7 +363,7 @@ void main() {
       when(
         () => service.fetchStatus(),
       ).thenAnswer((_) async => statusOf(customerInfoLapsed));
-      await pump(tester, initial: '/settings');
+      final (c, _) = await pump(tester, initial: '/settings');
       expect(find.text('paywall'), findsOneWidget);
 
       capturedListener!(statusOf(customerInfoOpen));
@@ -371,6 +371,9 @@ void main() {
 
       expect(find.text('main'), findsOneWidget);
       expect(find.text('paywall'), findsNothing);
+      // The open answer's re-count timer (ticket 77) must be gone before
+      // flutter_test checks for pending timers, which runs before tearDown.
+      c.dispose();
     });
 
     testWidgets('ungated routes render while locked', (tester) async {

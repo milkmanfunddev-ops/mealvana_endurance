@@ -48,6 +48,10 @@ Stream<String?> subscriptionAuthUserId(Ref ref) {
 ///    user is not an answer: locked until `logIn` has moved the identity.
 /// 5. An active answer counts for [kRenewalGrace] past its own expiry, then
 ///    as closed until a fresh answer arrives (mp-679, Finding 07-002).
+/// 6. While the controller lives, one timer waits for the moment the current
+///    answer stops counting. It re-counts then (closed, unless something
+///    fresher came) and re-fetches once, so an app left open lands on the
+///    paywall on time, not on the next resume (mp-457, Finding 05-005).
 ///
 /// Every answer it takes also settles the day-five reminder (mp-456 §4): an
 /// active trial that will not renew cancels it. That covers the app open
@@ -69,12 +73,24 @@ class SubscriptionStatusController extends _$SubscriptionStatusController {
   /// kept so a resolve that times out can still answer from it.
   SubscriptionStatus? _lastPush;
 
+  /// Fires when the current answer stops counting (rule 6). One at a time:
+  /// every answer taken replaces it.
+  Timer? _recountTimer;
+
+  /// The longest single wait. A browser fires a longer timer at once
+  /// (setTimeout caps at about 24.8 days), so a far expiry waits in steps.
+  static const _maxWait = Duration(days: 1);
+
   @override
   FutureOr<SubscriptionStatus> build() async {
     // Rebuild on identity change (value unused — the repository reads the
     // live session). A new identity starts with no push on record.
     ref.watch(subscriptionAuthUserIdProvider);
     _lastPush = null;
+    // Riverpod keeps this notifier across a rebuild: the old answer's timer
+    // must not outlive it.
+    _cancelRecount();
+    ref.onDispose(_cancelRecount);
 
     // Capture the service: `ref` may not be used inside an onDispose callback.
     final service = _service;
@@ -97,6 +113,7 @@ class SubscriptionStatusController extends _$SubscriptionStatusController {
     try {
       final status = await _resolve();
       _settleTrialReminder(status);
+      if (ref.mounted) _scheduleRecount(status);
       return status;
     } catch (e) {
       debugPrint('[SubscriptionStatus] build failed, locking: $e');
@@ -113,7 +130,10 @@ class SubscriptionStatusController extends _$SubscriptionStatusController {
     if (next.hasError && state.hasValue) return;
     state = next;
     final status = next.value;
-    if (status != null) _settleTrialReminder(status);
+    if (status != null) {
+      _settleTrialReminder(status);
+      _scheduleRecount(status);
+    }
   }
 
   /// Forget everything for the outgoing user (sign-out, account deletion):
@@ -124,6 +144,7 @@ class SubscriptionStatusController extends _$SubscriptionStatusController {
   /// provider rebuilds on the auth change too.
   Future<void> clear() async {
     _lastPush = null;
+    _cancelRecount();
     state = const AsyncData(SubscriptionStatus.none);
     _cancelTrialReminder();
     await _service.logOut();
@@ -146,6 +167,46 @@ class SubscriptionStatusController extends _$SubscriptionStatusController {
     _lastPush = counted;
     state = AsyncData(counted);
     _settleTrialReminder(counted);
+    _scheduleRecount(counted);
+  }
+
+  /// Wait for the moment [status] stops counting (rule 6), replacing any
+  /// earlier wait. Nothing to wait for when it is closed or open-ended.
+  void _scheduleRecount(SubscriptionStatus status) {
+    _cancelRecount();
+    final end = status.stopsCountingAt;
+    if (end == null) return;
+    final wait = end.difference(ref.read(subscriptionClockProvider)());
+    _recountTimer = Timer(
+      wait > _maxWait ? _maxWait : wait,
+      () => unawaited(
+        _recount().catchError((Object e) {
+          debugPrint('[SubscriptionStatus] re-count failed: $e');
+        }),
+      ),
+    );
+  }
+
+  void _cancelRecount() {
+    _recountTimer?.cancel();
+    _recountTimer = null;
+  }
+
+  /// The current answer's wait is over: count it again (closed, unless a
+  /// step of a far wait ended early, which just waits again), then ask
+  /// RevenueCat once for a fresher one. A fresh answer re-schedules.
+  Future<void> _recount() async {
+    _recountTimer = null;
+    if (!ref.mounted) return;
+    final status = state.value;
+    if (status == null) return;
+    final counted = _counted(status);
+    if (counted.active) {
+      _scheduleRecount(counted);
+      return;
+    }
+    state = AsyncData(counted);
+    await refresh();
   }
 
   /// Cancel the day-five reminder once RevenueCat says the trial will not
