@@ -923,6 +923,19 @@ void main() {
         findsOneWidget,
       );
     });
+    testWidgets('an athlete with no area gets unknown and keeps the entry', (
+      tester,
+    ) async {
+      // What the function answers when there is no typed zip and no home
+      // location on record (20-008): a 200 with `covered: null`, never a 400.
+      covered = null;
+      await showShopping(tester);
+      expect(container.read(krogerCoverageProvider).value, isNull);
+      expect(
+        find.byKey(const ValueKey('meal_planning.kroger')),
+        findsOneWidget,
+      );
+    });
   });
   testWidgets('Kroger icon action is above groceries and opens review', (
     tester,

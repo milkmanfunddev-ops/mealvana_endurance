@@ -102,25 +102,22 @@ export class KrogerService {
   // rather than whatever venue their next race is at.
   // A zip the athlete typed must be a real one — a typo is an error, never a
   // silent search somewhere else. Only an ABSENT zip falls back to home.
-  private async locations(
-    body: Record<string, unknown>,
-  ): Promise<Record<string, string>[]> {
+  // `null` when there is no area to search: no zip typed and no home location
+  // on record. That is an ordinary account, so each caller decides what it
+  // means rather than it being a bad request here.
+  private async area(body: Record<string, unknown>): Promise<string | null> {
     const rawZip = typeof body.zip === "string" ? body.zip.trim() : "";
-    let filter: string;
     if (rawZip) {
       if (!/^\d{5}$/.test(rawZip)) throw new KrogerError("invalid_zip");
-      filter = `filter.zipCode.near=${rawZip}`;
-    } else {
-      const { data: u } = await this.admin.from("users").select(
-        "home_lat, home_lon",
-      ).eq("id", this.userId).maybeSingle();
-      if (u?.home_lat == null || u?.home_lon == null) {
-        throw new KrogerError("invalid_zip");
-      }
-      filter = `filter.latLong.near=${Number(u.home_lat)},${
-        Number(u.home_lon)
-      }`;
+      return `filter.zipCode.near=${rawZip}`;
     }
+    const { data: u } = await this.admin.from("users").select(
+      "home_lat, home_lon",
+    ).eq("id", this.userId).maybeSingle();
+    if (u?.home_lat == null || u?.home_lon == null) return null;
+    return `filter.latLong.near=${Number(u.home_lat)},${Number(u.home_lon)}`;
+  }
+  private async locations(filter: string): Promise<Record<string, string>[]> {
     const raw = await this.client.get(
       `/locations?${filter}&filter.limit=10`,
       await this.client.applicationToken(),
@@ -256,8 +253,14 @@ export class KrogerService {
     // Location's own booleans are not Location-truthful. Whether that Location
     // will actually deliver a given product is the filtered product search's
     // answer, and belongs to the matching run.
+    //
+    // With no area to look in, Coverage is unknown (`covered: null`), which
+    // leaves the entry point in place; the Shopping tab asks this of every
+    // athlete, most of whom have no home location on record.
     if (action === "coverage") {
-      const stores = await this.locations(body);
+      const area = await this.area(body);
+      if (area == null) return { covered: null, stores: [] };
+      const stores = await this.locations(area);
       return { covered: stores.length > 0, stores };
     }
     // The Location for a delivery area, which the shopper never chooses and
@@ -265,7 +268,11 @@ export class KrogerService {
     // them; the area only says where to look.
     if (action === "location") {
       const mode = modality(body.modality);
-      const candidates = await this.locations(body);
+      // Resolving a Location needs somewhere to look; the screen asks for a
+      // zip when this fails.
+      const area = await this.area(body);
+      if (area == null) throw new KrogerError("invalid_zip");
+      const candidates = await this.locations(area);
       for (const location of candidates.slice(0, PROBE_LIMIT)) {
         if (await this.serves(location.id, mode)) return { location };
       }
