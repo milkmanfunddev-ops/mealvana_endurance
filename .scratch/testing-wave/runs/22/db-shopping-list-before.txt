@@ -1,0 +1,101 @@
+[
+    {
+        "name": "Banana",
+        "qty": "4",
+        "aisle": "Produce",
+        "checked": false,
+        "have": false,
+        "source": "plan",
+        "position": 0
+    },
+    {
+        "name": "Mixed berries",
+        "qty": "320 g",
+        "aisle": "Produce",
+        "checked": false,
+        "have": false,
+        "source": "plan",
+        "position": 1
+    },
+    {
+        "name": "Strawberry jam",
+        "qty": "16 tbsp",
+        "aisle": "Produce",
+        "checked": false,
+        "have": false,
+        "source": "plan",
+        "position": 2
+    },
+    {
+        "name": "Egg",
+        "qty": "8",
+        "aisle": "Protein",
+        "checked": false,
+        "have": false,
+        "source": "plan",
+        "position": 3
+    },
+    {
+        "name": "Milk",
+        "qty": "400 ml",
+        "aisle": "Dairy",
+        "checked": false,
+        "have": false,
+        "source": "plan",
+        "position": 4
+    },
+    {
+        "name": "Water or oat milk",
+        "qty": "1.2 l",
+        "aisle": "Dairy",
+        "checked": false,
+        "have": false,
+        "source": "plan",
+        "position": 5
+    },
+    {
+        "name": "Quinoa",
+        "qty": "320 g",
+        "aisle": "Bakery & Grains",
+        "checked": false,
+        "have": false,
+        "source": "plan",
+        "position": 6
+    },
+    {
+        "name": "Short-grain rice",
+        "qty": "1.6 kg",
+        "aisle": "Bakery & Grains",
+        "checked": false,
+        "have": false,
+        "source": "plan",
+        "position": 7
+    },
+    {
+        "name": "Maple syrup",
+        "qty": "4 tbsp",
+        "aisle": "Pantry",
+        "checked": false,
+        "have": false,
+        "source": "plan",
+        "position": 8
+    },
+    {
+        "name": "Sugar",
+        "qty": "8 tsp",
+        "aisle": "Pantry",
+        "checked": false,
+        "have": false,
+        "source": "plan",
+        "position": 9
+    },
+    {
+        "name": "Cinnamon",
+        "qty": "2 tsp",
+        "aisle": "Spices",
+        "checked": false,
+        "have": false,
+        "source": "plan",
+        "position": 10
+    }
+]
