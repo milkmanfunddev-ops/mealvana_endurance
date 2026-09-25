@@ -175,6 +175,8 @@ String _$subscriptionAuthUserIdHash() =>
 ///    status and the gate reacts.
 /// 4. A cache that belongs to another RevenueCat identity than the signed-in
 ///    user is not an answer: locked until `logIn` has moved the identity.
+/// 5. An active answer counts for [kRenewalGrace] past its own expiry, then
+///    as closed until a fresh answer arrives (mp-679, Finding 07-002).
 ///
 /// Every answer it takes also settles the day-five reminder (mp-456 §4): an
 /// active trial that will not renew cancels it. That covers the app open
@@ -207,6 +209,8 @@ const subscriptionStatusProvider = SubscriptionStatusControllerProvider._();
 ///    status and the gate reacts.
 /// 4. A cache that belongs to another RevenueCat identity than the signed-in
 ///    user is not an answer: locked until `logIn` has moved the identity.
+/// 5. An active answer counts for [kRenewalGrace] past its own expiry, then
+///    as closed until a fresh answer arrives (mp-679, Finding 07-002).
 ///
 /// Every answer it takes also settles the day-five reminder (mp-456 §4): an
 /// active trial that will not renew cancels it. That covers the app open
@@ -241,6 +245,8 @@ final class SubscriptionStatusControllerProvider
   ///    status and the gate reacts.
   /// 4. A cache that belongs to another RevenueCat identity than the signed-in
   ///    user is not an answer: locked until `logIn` has moved the identity.
+  /// 5. An active answer counts for [kRenewalGrace] past its own expiry, then
+  ///    as closed until a fresh answer arrives (mp-679, Finding 07-002).
   ///
   /// Every answer it takes also settles the day-five reminder (mp-456 §4): an
   /// active trial that will not renew cancels it. That covers the app open
@@ -272,7 +278,7 @@ final class SubscriptionStatusControllerProvider
 }
 
 String _$subscriptionStatusControllerHash() =>
-    r'bd9c3a6141b82932bc799bbe317f1ab4b7138cf4';
+    r'3a339147657273eae4e7258a70d7a667090e851e';
 
 /// The current user's subscription status, from RevenueCat and nothing else
 /// (mp-279, mp-284).
@@ -291,6 +297,8 @@ String _$subscriptionStatusControllerHash() =>
 ///    status and the gate reacts.
 /// 4. A cache that belongs to another RevenueCat identity than the signed-in
 ///    user is not an answer: locked until `logIn` has moved the identity.
+/// 5. An active answer counts for [kRenewalGrace] past its own expiry, then
+///    as closed until a fresh answer arrives (mp-679, Finding 07-002).
 ///
 /// Every answer it takes also settles the day-five reminder (mp-456 §4): an
 /// active trial that will not renew cancels it. That covers the app open

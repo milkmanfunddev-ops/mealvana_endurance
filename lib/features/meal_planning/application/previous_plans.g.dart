@@ -11,10 +11,11 @@ part of 'previous_plans.dart';
 /// The athlete's earlier plans, newest first — everything `list_plans`
 /// answers except the plan on the Plan tab. The server already leaves
 /// deleted and empty plans out (`listPlans` in `plan.ts`, ticket 49), and
+/// drafts that were never confirmed (mp-677, ticket 73), and
 /// only the Plan tab knows which plan it shows, so that one is dropped here;
 /// the empty-plan check stays as a guard against an older server.
 ///
-/// Read-only and server-only: [MealPlanController] owns the current plan and
+/// Server-only: [MealPlanController] owns the current plan and
 /// nothing else, so history stays out of it. Auto-disposed, and the sheet
 /// is its only listener, so every open of the sheet reads the list afresh;
 /// the current plan's id is read once at that moment rather than watched,
@@ -26,10 +27,11 @@ const previousPlansProvider = PreviousPlansProvider._();
 /// The athlete's earlier plans, newest first — everything `list_plans`
 /// answers except the plan on the Plan tab. The server already leaves
 /// deleted and empty plans out (`listPlans` in `plan.ts`, ticket 49), and
+/// drafts that were never confirmed (mp-677, ticket 73), and
 /// only the Plan tab knows which plan it shows, so that one is dropped here;
 /// the empty-plan check stays as a guard against an older server.
 ///
-/// Read-only and server-only: [MealPlanController] owns the current plan and
+/// Server-only: [MealPlanController] owns the current plan and
 /// nothing else, so history stays out of it. Auto-disposed, and the sheet
 /// is its only listener, so every open of the sheet reads the list afresh;
 /// the current plan's id is read once at that moment rather than watched,
@@ -48,10 +50,11 @@ final class PreviousPlansProvider
   /// The athlete's earlier plans, newest first — everything `list_plans`
   /// answers except the plan on the Plan tab. The server already leaves
   /// deleted and empty plans out (`listPlans` in `plan.ts`, ticket 49), and
+  /// drafts that were never confirmed (mp-677, ticket 73), and
   /// only the Plan tab knows which plan it shows, so that one is dropped here;
   /// the empty-plan check stays as a guard against an older server.
   ///
-  /// Read-only and server-only: [MealPlanController] owns the current plan and
+  /// Server-only: [MealPlanController] owns the current plan and
   /// nothing else, so history stays out of it. Auto-disposed, and the sheet
   /// is its only listener, so every open of the sheet reads the list afresh;
   /// the current plan's id is read once at that moment rather than watched,
