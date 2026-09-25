@@ -782,6 +782,27 @@ PANTRY
     );
   });
 
+  /// Ticket 130 (Finding 89-002): "9 items to buy" while six were ticked.
+  /// The share summary counts what is left to buy: rows neither ticked nor
+  /// already on hand. The header's "9 items" ([ShoppingListState.itemCount])
+  /// still counts every row not on hand.
+  test('the share count leaves out ticked rows and rows on hand', () {
+    final oats = _item('Oats', 'Pantry', qty: '500 g');
+    final oil = _item('Olive oil', 'Pantry', have: true);
+    final bananas = _item('Bananas', 'Produce', qty: '6', checked: true);
+    final state = ShoppingListState(
+      items: [oats, oil, bananas],
+      byAisle: {
+        'Produce': [bananas],
+        'Pantry': [oats, oil],
+      },
+      itemCount: 2,
+    );
+
+    expect(state.itemCount, 2);
+    expect(state.toBuyCount, 1, reason: 'Bananas are ticked, oil is on hand');
+  });
+
   test('share text leaves out an aisle when every item is already on hand', () {
     final oil = _item('Olive oil', 'Pantry', have: true);
     final state = ShoppingListState(

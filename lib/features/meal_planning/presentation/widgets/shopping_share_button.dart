@@ -24,13 +24,14 @@ class ShoppingShareButton extends ConsumerWidget {
       onPressed: () {
         final state = ref.read(shoppingListControllerProvider).value;
         if (state == null || state.isEmpty) return;
+        // Counts what is left to buy, not what is ticked (89-002).
         final summary = ContentKeys.format(
           content.getValue(
-            state.itemCount == 1
+            state.toBuyCount == 1
                 ? ContentKeys.mpShoppingShareSummaryOne
                 : ContentKeys.mpShoppingShareSummaryMany,
           ),
-          {'items': state.itemCount},
+          {'items': state.toBuyCount},
         );
         final body = ref
             .read(shoppingListControllerProvider.notifier)

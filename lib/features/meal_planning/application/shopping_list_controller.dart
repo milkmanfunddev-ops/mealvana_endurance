@@ -88,6 +88,11 @@ class ShoppingListState {
 
   bool get isEmpty => items.isEmpty;
 
+  /// What is left to buy: rows neither ticked nor already on hand. The share
+  /// summary's number (Finding 89-002: "9 items to buy" while six were
+  /// ticked); [itemCount] is the header's count of rows not on hand.
+  int get toBuyCount => items.where((i) => !i.have && !i.checked).length;
+
   /// True once the account has any list at all, on screen or in
   /// [previous].
   bool get hasAnyList => listId != null || previous.isNotEmpty;
