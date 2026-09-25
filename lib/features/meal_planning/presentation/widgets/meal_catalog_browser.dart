@@ -213,6 +213,10 @@ class _MealCatalogBrowserState extends ConsumerState<MealCatalogBrowser> {
                             child: MealCard(
                               meal: catalog.results[i],
                               slot: photos[i],
+                              // What the meal is made of, or nothing: the
+                              // why-line is the library's research note
+                              // (testing-wave 18-004).
+                              subtitle: catalog.results[i].ingredients,
                               onTap: () =>
                                   widget.onOpenMeal(catalog.results[i]),
                               trailing: _addButton(content, catalog.results[i]),

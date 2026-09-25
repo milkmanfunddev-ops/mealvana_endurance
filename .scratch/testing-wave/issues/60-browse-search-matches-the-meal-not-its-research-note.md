@@ -13,8 +13,8 @@
 
 **Touches:** supabase/functions/_shared/vana/meals.ts, lib/features/meal_planning/presentation/widgets/meal_catalog_browser.dart
 
-- [ ] A deno test: "salmon" returns only meals whose name or ingredients contain salmon.
-- [ ] A widget test: a flat result's subtitle is not the research note.
+- [x] A deno test: "salmon" returns only meals whose name or ingredients contain salmon.
+- [x] A widget test: a flat result's subtitle is not the research note.
 - [ ] Deployed to dev.
 - [ ] codegen if annotations changed, `flutter analyze` and the suite green.
 

@@ -32,6 +32,13 @@ export function rowToMealRef(r: any): MealRef {
   };
 }
 
+/** A typed search matches a Meal by what it is: every word of the query in its name or ingredients, never its research
+ *  note (`why`; testing-wave 18-004). Twin of the typed-query predicate in search_meals (20260925150000). */
+export function matchesMealText(query: string, name: string, ingredients: string): boolean {
+  const text = `${name} ${ingredients}`.toLowerCase();
+  return query.toLowerCase().split(/\s+/).filter(Boolean).every((w) => text.includes(w));
+}
+
 export interface SearchOpts { query?: string; mealType?: MealType; contexts?: MealContext[]; batch?: boolean; includeSaved?: boolean; limit?: number; embed?: boolean; excludeAllergens?: string[]; requireDiet?: string; excludeIds?: string[]; kind?: 'assembly' | 'recipe' | null }
 export async function searchMeals(v: VanaCtx, o: SearchOpts): Promise<MealRef[]> {
   let embedding: string | null = null;
@@ -45,7 +52,9 @@ export async function searchMeals(v: VanaCtx, o: SearchOpts): Promise<MealRef[]>
     p_kind: o.kind ?? null,
   });
   if (error) throw new Error(`search_meals: ${error.message}`);
-  return (data ?? []).map(rowToMealRef).filter((m: MealRef) => !ex.has(m.id)).slice(0, o.limit ?? 12);
+  // Without an embedding the query is a typed search: keep what the words name, even from a search_meals that predates the fix.
+  const typed = o.query && !embedding ? o.query : null;
+  return (data ?? []).map(rowToMealRef).filter((m: MealRef) => !ex.has(m.id) && (!typed || matchesMealText(typed, m.name, m.ingredients))).slice(0, o.limit ?? 12);
 }
 
 /** Fetch one meal by ref, shaped as a MealRef (no scoring). */
