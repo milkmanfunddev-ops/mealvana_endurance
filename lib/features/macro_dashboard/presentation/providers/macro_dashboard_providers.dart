@@ -111,22 +111,28 @@ Future<DashboardData> macroDashboardDay(Ref ref) async {
     carb = null;
   }
   if (carb == null) return assembled;
-  return assembled.withCarb(carb, _carbTimeline(assembled.nodes, carb));
+  return assembled.withCarb(carb, carbLoadingTimeline(assembled.nodes, carb));
 }
 
 /// CL-5 clocks, minutes since midnight, slot order.
 const List<int> _slotMinutes = [360, 540, 720, 900, 1080, 1260];
 
-List<DashboardNode> _carbTimeline(
+/// The loading-day timeline merge (CD-3 + G20) — public so the L2 row
+/// `out-of-slot-entry-renders-on-loading-day` pins it directly.
+List<DashboardNode> carbLoadingTimeline(
   List<DashboardNode> nodes,
   CarbDashboardData carb,
 ) {
-  // Keep every non-meal node with a rough minutes key parsed from its
-  // rendered time label (workout ordering data is not carried on the node;
-  // the label is the surface's own sort key on loading days).
+  // Keep every non-meal node — and every UNTAGGED meal group — with a rough
+  // minutes key parsed from its rendered time label (the label is the
+  // surface's own sort key on loading days). Slot-tagged meal groups are
+  // superseded by the slot cards; untagged food renders as an ordinary
+  // entry interleaved by clock (G20: CL-11 + CD-3 + the 2026-09-19 ruling —
+  // out-of-slot items still sit on the timeline and always count).
   final kept = <(int, DashboardNode)>[
     for (final n in nodes)
-      if (n.isWorkout) (_minutesOf(n.timeLabel), n),
+      if (n.isWorkout || (n.mealGroupLabel == 'Logged'))
+        (_minutesOf(n.timeLabel), n),
   ];
   final slots = <(int, DashboardNode)>[
     for (var i = 0; i < carb.slots.length; i++)

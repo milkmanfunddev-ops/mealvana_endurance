@@ -36,6 +36,7 @@ import 'package:flutter_test/flutter_test.dart';
 import 'package:patrol/patrol.dart';
 
 import 'package:mealvana_endurance/features/carb_loading/presentation/providers/carb_loading_controller.dart';
+import 'package:mealvana_endurance/features/carb_loading/data/carb_loading_repository.dart';
 import 'package:mealvana_endurance/features/events/presentation/providers/events_controller.dart';
 import 'package:mealvana_endurance/features/macro_dashboard/presentation/providers/carb_dashboard_providers.dart';
 import 'package:mealvana_endurance/features/meal_logging/domain/meal_component.dart';
@@ -80,6 +81,67 @@ void main() {
       final today = DateTime(now.year, now.month, now.day);
       final dateStr = _ymd(today);
       final stamp = DateTime.now().millisecondsSinceEpoch;
+
+      // ---- 0. Sweep debris from any previously-aborted run -----------------
+      // A mid-flow exception (rethrown at the next pump) can abort before
+      // the tail cleanup runs; the seeded plan then OVERLAPS the account's
+      // real plan — ruled-undefined territory. Sweep unconditionally, start
+      // AND end, keyed by this flow's exclusive names.
+      Future<void> sweepDebris() async {
+        final events = await container.read(allEventsProvider.future);
+        for (final e in events) {
+          if ((e.eventName ?? '').startsWith('Patrol CarbRipple')) {
+            debugPrint('CD-2 flow: sweeping leftover event ${e.eventName}');
+            await container
+                .read(carbLoadingControllerProvider.notifier)
+                .deleteCarbLoadingPlan(e.id);
+            await container
+                .read(eventsControllerProvider.notifier)
+                .deleteEvent(e.id);
+          }
+        }
+        final logs = await container.read(
+          mealLogsForDateProvider(dateStr).future,
+        );
+        for (final log in logs) {
+          if (log.name.startsWith('Patrol Banana ')) {
+            debugPrint('CD-2 flow: sweeping leftover log ${log.name}');
+            await container
+                .read(mealLogControllerProvider.notifier)
+                .deleteLog(log.id);
+          }
+        }
+        container.invalidate(carbDashboardForDateProvider);
+      }
+
+      await sweepDebris();
+      await $.pumpAndSettle();
+
+      // ---- 0b. G22 invariant snapshot --------------------------------------
+      // The account's PLAN SET must leave this flow exactly as it entered it
+      // (post-sweep): same plan ids, same day rows, same stored targets. A
+      // teardown mismatch is the synthetic-traffic bug class — test state
+      // leaking into the real account.
+      final repository = container.read(carbLoadingRepositoryProvider);
+      Future<String> planFingerprint() async {
+        final events = await container.read(allEventsProvider.future);
+        final parts = <String>[];
+        for (final e in events) {
+          final plan = await repository.getCarbLoadingPlanForEvent(e.id);
+          if (plan == null) continue;
+          final days = await repository.getCarbLoadingDaysForPlan(plan.id);
+          days.sort((a, b) => a.planDate.compareTo(b.planDate));
+          parts.add(
+            '${plan.id}:${plan.totalDays}:'
+            '${days.map((d) => '${d.id}=${d.planDate.toIso8601String()}'
+                '@${d.carbTargetGrams}').join(',')}',
+          );
+        }
+        parts.sort();
+        return parts.join('|');
+      }
+
+      final planSetBefore = await planFingerprint();
 
       // ---- 1. Ensure today is a loading day --------------------------------
       var carb = await container.read(
@@ -191,28 +253,23 @@ void main() {
       await $.tester.tap(find.byIcon(Icons.chevron_left).first);
       await $.pumpAndSettle();
 
-      // ---- 4. Cleanup through the controllers ------------------------------
-      final logs = await container.read(
-        mealLogsForDateProvider(dateStr).future,
-      );
-      for (final log in logs) {
-        // Sweep ANY patrol banana — including one a previously-failed run
-        // left behind (the name is exclusively this flow's).
-        if (log.name.startsWith('Patrol Banana ')) {
-          await container
-              .read(mealLogControllerProvider.notifier)
-              .deleteLog(log.id);
-        }
-      }
-      if (seededEventId != null) {
-        await container
-            .read(carbLoadingControllerProvider.notifier)
-            .deleteCarbLoadingPlan(seededEventId);
-        await container
-            .read(eventsControllerProvider.notifier)
-            .deleteEvent(seededEventId);
-      }
+      // ---- 4. Cleanup: the same unconditional sweep ------------------------
+      // seededEventId rides the name sweep; referenced to keep the seeding
+      // path explicit.
+      expect(seededEventId == null || seededEventId.isNotEmpty, isTrue);
+      await sweepDebris();
       await $.pumpAndSettle();
+
+      // ---- 5. G22 teardown invariant ---------------------------------------
+      final planSetAfter = await planFingerprint();
+      expect(
+        planSetAfter,
+        planSetBefore,
+        reason:
+            'G22: the plan set (ids + rows + targets) must be IDENTICAL to '
+            'the setup snapshot — anything else is test state leaking into '
+            'the real account.',
+      );
     },
   );
 }

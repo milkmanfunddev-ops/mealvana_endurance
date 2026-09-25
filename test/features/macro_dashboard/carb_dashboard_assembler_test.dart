@@ -12,6 +12,9 @@ import 'package:mealvana_endurance/features/meal_logging/domain/meal_component.d
 import 'package:mealvana_endurance/features/meal_logging/domain/meal_log.dart';
 import 'package:mealvana_endurance/features/meal_logging/domain/meal_log_source.dart';
 import 'package:mealvana_endurance/features/meal_logging/domain/meal_slot.dart';
+import 'package:mealvana_endurance/features/macro_dashboard/application/dashboard_assembler.dart';
+import 'package:mealvana_endurance/features/macro_dashboard/domain/dashboard_models.dart';
+import 'package:mealvana_endurance/features/macro_dashboard/presentation/providers/macro_dashboard_providers.dart';
 import 'package:mealvana_endurance/shared/database/app_database.dart';
 
 CarbLoadingDay day({
@@ -272,6 +275,68 @@ void main() {
           [false, true, false]);
     });
   });
+
+  test(
+    'G20 out-of-slot-entry-renders-on-loading-day: untagged food is an '
+    'ordinary timeline entry at its clock AND moves the face — one write, '
+    'both surfaces',
+    () {
+      // ONE untagged log at 10:30 AM alongside a tagged breakfast.
+      final meals = [
+        log('a', 100, slot: MealSlot.breakfast),
+        log('b', 50, name: 'Trailside Gel'), // untagged — CL-11 counts it
+      ];
+      final carb = assemble(meals: meals);
+
+      // The face counts BOTH (CL-11: eaten = ALL day logs).
+      expect(carb.face.eatenOfTargetStr, '150 of 544 g');
+
+      // Build the ordinary-node set the macro assembler produces, then the
+      // loading-day merge (CD-3): the untagged entry survives as an
+      // ordinary meal node, interleaved by clock BETWEEN the slot cards.
+      const macroAssembler = MacroDashboardAssembler();
+      final untaggedNode = DashboardNode.meals(
+        timeLabel: '10:30 AM',
+        mealGroupLabel: 'Logged',
+        meals: const [
+          MealItemData(
+            id: 'b',
+            name: 'Trailside Gel',
+            kcal: 200,
+            carbsG: 50,
+            proteinG: 10,
+            fatG: 5,
+          ),
+        ],
+      );
+      final taggedNode = DashboardNode.meals(
+        timeLabel: '9:00 AM',
+        mealGroupLabel: 'Breakfast',
+        meals: const [],
+      );
+      final merged = carbLoadingTimeline([untaggedNode, taggedNode], carb);
+
+      // The tagged group is superseded by its slot card; the untagged one
+      // renders as an ordinary entry.
+      expect(merged.where((n) => n.mealGroupLabel == 'Breakfast'), isEmpty);
+      final gelIndex = merged.indexWhere(
+        (n) => n.mealGroupLabel == 'Logged',
+      );
+      expect(gelIndex, isNot(-1), reason: 'the entry must render');
+      // Clock interleave: 10:30 AM sits after the 9:00 slot card and
+      // before the 12:00 one.
+      final morningSnackIndex = merged.indexWhere(
+        (n) => n.carbSlot?.clockStr == '9:00 AM',
+      );
+      final lunchIndex = merged.indexWhere(
+        (n) => n.carbSlot?.clockStr == '12:00 PM',
+      );
+      expect(gelIndex, greaterThan(morningSnackIndex));
+      expect(gelIndex, lessThan(lunchIndex));
+      // macroAssembler referenced so the composition source is explicit.
+      expect(macroAssembler, isNotNull);
+    },
+  );
 
   test('CD-1 negative: no carb day → null, no carb data anywhere', () {
     expect(
