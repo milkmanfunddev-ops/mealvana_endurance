@@ -58,6 +58,9 @@ class _AlwaysOnline implements ConnectivityChecker {
 
   @override
   Future<bool> isOnline() async => true;
+
+  @override
+  Stream<bool> get onlineChanges => const Stream.empty();
 }
 
 PackageInfo _packageInfo() => PackageInfo(
