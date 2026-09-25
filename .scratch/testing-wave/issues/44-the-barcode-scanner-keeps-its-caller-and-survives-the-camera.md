@@ -13,8 +13,8 @@
 
 **Touches:** lib/shared/core/app_router.dart, lib/features/barcode_scanning/presentation/screens/barcode_scanner_screen.dart
 
-- [ ] A router test: `barcode_scanner_opened` logs the caller's context from meal logging.
-- [ ] A widget test: a second start during the first shows no raw controller error.
+- [x] A router test: `barcode_scanner_opened` logs the caller's context from meal logging.
+- [x] A widget test: a second start during the first shows no raw controller error.
 - [ ] codegen if annotations changed, `flutter analyze` and the suite green.
 
 Next: /implement-lee testing-wave

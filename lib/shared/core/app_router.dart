@@ -110,6 +110,25 @@ class AuthChangeNotifier extends ChangeNotifier {
 }
 
 /// Singleton provider for the auth change notifier
+/// Barcode Scanner Screen - scan barcodes to add or swap foods.
+///
+/// Passes the caller's `context` through (finding 28-002): meal logging
+/// sends `meal_log_discover` / `build_meal_add_food`, which makes a scan
+/// return the food to the caller instead of opening the plan's food page.
+final GoRoute barcodeScannerRoute = GoRoute(
+  path: '/barcode-scanner',
+  name: 'barcode-scanner',
+  builder: (context, state) {
+    final extra = state.extra as Map<String, dynamic>?;
+    return BarcodeScannerScreen(
+      category: extra?['category'] as String? ?? 'before_run',
+      foodToSwapId: extra?['foodToSwapId'] as String?,
+      foodToSwapName: extra?['foodToSwapName'] as String?,
+      context: extra?['context'] as String?,
+    );
+  },
+);
+
 final authChangeNotifierProvider = Provider<AuthChangeNotifier>((ref) {
   return AuthChangeNotifier();
 });
@@ -916,18 +935,7 @@ class AppRouter {
         ),
 
         // Barcode Scanner Screen - Scan barcodes to add/swap foods
-        GoRoute(
-          path: '/barcode-scanner',
-          name: 'barcode-scanner',
-          builder: (context, state) {
-            final extra = state.extra as Map<String, dynamic>?;
-            return BarcodeScannerScreen(
-              category: extra?['category'] as String? ?? 'before_run',
-              foodToSwapId: extra?['foodToSwapId'] as String?,
-              foodToSwapName: extra?['foodToSwapName'] as String?,
-            );
-          },
-        ),
+        barcodeScannerRoute,
 
         // Food Detail Screen - Unified screen for adding/editing foods
         // Returns FoodDetailResult when saved, 'DELETE:foodId' when deleted, or null when cancelled

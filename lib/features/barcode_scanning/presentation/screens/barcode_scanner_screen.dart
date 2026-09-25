@@ -36,7 +36,14 @@ class _BarcodeScannerScreenState extends ConsumerState<BarcodeScannerScreen>
     with WidgetsBindingObserver {
   MobileScannerController? _controller;
   bool _isScanning = true;
-  bool _isStartingScanner = false;
+
+  /// The start in flight, if any. A second start while one is running
+  /// joins it instead of reaching the platform (finding 28-001).
+  Future<void>? _startInFlight;
+
+  /// True only when this screen stopped a running camera because the app
+  /// went inactive or paused; resume restarts only in that case.
+  bool _stoppedForLifecycle = false;
   String? _lastScannedBarcode;
   BarcodeScanResult? _lastScanResult;
   bool _flashOn = false;
@@ -98,11 +105,14 @@ class _BarcodeScannerScreenState extends ConsumerState<BarcodeScannerScreen>
 
     switch (state) {
       case AppLifecycleState.resumed:
-        _safeStartScanner();
+        _resumeScanner();
         break;
       case AppLifecycleState.inactive:
       case AppLifecycleState.paused:
-        _safeStopScanner();
+        if (_controller!.value.isRunning) {
+          _stoppedForLifecycle = true;
+          _safeStopScanner();
+        }
         break;
       case AppLifecycleState.detached:
       case AppLifecycleState.hidden:
@@ -110,27 +120,48 @@ class _BarcodeScannerScreenState extends ConsumerState<BarcodeScannerScreen>
     }
   }
 
-  /// Start the scanner, tolerating the race where the controller is still
-  /// initializing (a previous start() is still in flight — e.g. app-resume
-  /// firing while the initial start hasn't finished, or the reset button
-  /// being tapped again before the last start completed). In that window
-  /// `start()` throws `MobileScannerException(controllerInitializing)` —
-  /// safe to ignore since the controller will be running once init
-  /// completes. Fixes an app-resume crash: Sentry MEALVANA-ENDURANCE-79.
+  /// Start the scanner. All start() calls in this screen go through here
+  /// (the controller is created with `autoStart: false`).
   ///
-  /// All start() calls in this screen must go through this method (the
-  /// controller itself is created with `autoStart: false`) so the
-  /// `_isStartingScanner` guard and mounted checks apply uniformly.
-  Future<void> _safeStartScanner() async {
-    if (_isStartingScanner || _controller == null) return;
-    _isStartingScanner = true;
-    try {
-      await _controller?.start();
-    } on MobileScannerException catch (_) {
-      // Already starting / still initializing — ignore, benign race.
-    } finally {
-      _isStartingScanner = false;
+  /// - A call while a start is in flight joins that start rather than
+  ///   starting again. Sentry MEALVANA-ENDURANCE-79 was the
+  ///   `controllerInitializing` throw from that race.
+  /// - After a start that ended in an error, only a permission error is
+  ///   worth retrying. The iOS plugin leaves its capture session open when a
+  ///   start fails (e.g. no camera), so any later start answers "already
+  ///   started", and that error replaced the useful one on screen
+  ///   (finding 28-001).
+  Future<void> _safeStartScanner() {
+    final controller = _controller;
+    if (controller == null) return Future.value();
+    final inFlight = _startInFlight;
+    if (inFlight != null) return inFlight;
+    final error = controller.value.error;
+    if (error != null &&
+        error.errorCode != MobileScannerErrorCode.permissionDenied) {
+      return Future.value();
     }
+    final start = () async {
+      try {
+        await controller.start();
+      } on MobileScannerException catch (_) {
+        // Still initializing or disposed: benign, nothing to do.
+      }
+    }();
+    _startInFlight = start;
+    return start.whenComplete(() {
+      if (identical(_startInFlight, start)) _startInFlight = null;
+    });
+  }
+
+  /// App resumed: wait for any start still in flight (the camera
+  /// permission alert resumes the app while the first start waits on it),
+  /// then restart only a camera that the inactive/paused state stopped.
+  Future<void> _resumeScanner() async {
+    await _startInFlight;
+    if (!mounted || !_stoppedForLifecycle) return;
+    _stoppedForLifecycle = false;
+    await _safeStartScanner();
   }
 
   Future<void> _safeStopScanner() async {
@@ -740,6 +771,7 @@ class _BarcodeScannerScreenState extends ConsumerState<BarcodeScannerScreen>
             MobileScanner(
               controller: _controller!,
               onDetect: _handleBarcodeDetection,
+              errorBuilder: (context, error) => _buildScannerError(error),
             ),
 
           // Scanner overlay
@@ -762,6 +794,34 @@ class _BarcodeScannerScreenState extends ConsumerState<BarcodeScannerScreen>
               child: _buildInstructions(),
             ),
         ],
+      ),
+    );
+  }
+
+  /// The camera could not start. Plain words instead of the package's own
+  /// error widget, which shows developer text (finding 28-001).
+  Widget _buildScannerError(MobileScannerException error) {
+    final message = switch (error.errorCode) {
+      MobileScannerErrorCode.permissionDenied =>
+        'Camera access is off. Turn it on for Mealvana in Settings to scan '
+            'barcodes.',
+      MobileScannerErrorCode.unsupported =>
+        "This device doesn't have a camera we can use for scanning. Go back "
+            'and search for the food instead.',
+      _ => "The camera didn't start. Go back and open the scanner again.",
+    };
+    return ColoredBox(
+      color: Colors.black,
+      child: Center(
+        child: Padding(
+          padding: const EdgeInsets.symmetric(horizontal: AppSpacing.xl),
+          child: Text(
+            key: const ValueKey('barcode.error'),
+            message,
+            style: AppTextStyles.bodyMedium.copyWith(color: Colors.white),
+            textAlign: TextAlign.center,
+          ),
+        ),
       ),
     );
   }
