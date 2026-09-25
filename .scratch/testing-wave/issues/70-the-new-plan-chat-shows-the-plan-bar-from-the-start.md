@@ -13,8 +13,8 @@
 
 **Touches:** lib/features/meal_planning/presentation/screens/vana_chat_screen.dart, lib/features/meal_planning/presentation/widgets/plan_bar.dart
 
-- [ ] A widget test: a new meal-plan conversation shows "Your plan · 0 meals" before any pick.
-- [ ] A test: New meal plan leaves this week's confirmed plan confirmed.
+- [x] A widget test: a new meal-plan conversation shows "Your plan · 0 meals" before any pick.
+- [x] A test: New meal plan leaves this week's confirmed plan confirmed.
 - [ ] codegen if annotations changed, `flutter analyze` and the suite green.
 
 Next: /implement-lee testing-wave
