@@ -1,0 +1,8 @@
+# after Cancel on the disconnect confirm (21:08:38Z), read 2026-09-25T21:08:40Z
+[
+  {
+    "environment": "production",
+    "expires_at": "2026-09-24 23:09:27.804+00",
+    "updated_at": "2026-09-24 22:39:27.804+00"
+  }
+]
