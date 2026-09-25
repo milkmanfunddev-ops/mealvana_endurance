@@ -204,4 +204,7 @@ export interface AthleteContext {
 }
 
 // ---- Conversations (vana_conversations / vana_messages)
-export interface ConversationSummary { id: string; kind: ConversationKind; title: string | null; summary: string | null; lastMessageAt: string | null; createdAt: string }
+/** The plan a meal-plan conversation holds, for its title on the list ("Sep 20 week · Draft", testing-wave 97): the
+ *  confirmed one if the conversation has one, else the newest with meals, else the newest. `null` when it has none. */
+export interface ConversationPlan { weekStart: string; status: MealPlan['status']; mealCount: number }
+export interface ConversationSummary { id: string; kind: ConversationKind; title: string | null; summary: string | null; lastMessageAt: string | null; createdAt: string; plan: ConversationPlan | null }

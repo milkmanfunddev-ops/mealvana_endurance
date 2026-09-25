@@ -26,7 +26,7 @@ import { inViewSection, resolveSituation, SITUATION_MARK, type Situation } from 
 import { asInputMode, callMetrics, logCall, type InputMode } from './log.ts';
 import { subscriberState } from './subscriber.ts';
 import { logAiUsage } from '../ai/usage.ts';
-import type { VanaPart, AthleteContext, ConversationSummary, ConversationKind } from './contracts.ts';
+import type { VanaPart, AthleteContext, ConversationSummary, ConversationPlan, ConversationKind } from './contracts.ts';
 import { getConversationPlan, getPlan, snapshotPlan } from './plan.ts';
 import { addDays, weekStartFor } from './env.ts';
 import { pickOpener, pendingDebrief, NEW_PLAN_SITUATION, OPENER_REPLAY_ID_PREFIX, type OpenerVariant } from './opener.ts';
@@ -166,7 +166,28 @@ export async function listConversations(v: VanaCtx, limit = 30, kind?: Conversat
   if (kind) q = q.eq('kind', kind);
   const { data } = await q.order('last_message_at', { ascending: false, nullsFirst: false }).order('created_at', { ascending: false }).limit(limit);
   // deno-lint-ignore no-explicit-any
-  return (data ?? []).map((r: any) => ({ id: r.id, kind: r.kind === 'general' ? 'general' : 'meal_planning', title: r.title, summary: r.summary, lastMessageAt: r.last_message_at, createdAt: r.created_at }));
+  const rows: Omit<ConversationSummary, 'plan'>[] = (data ?? []).map((r: any) => ({ id: r.id, kind: r.kind === 'general' ? 'general' : 'meal_planning', title: r.title, summary: r.summary, lastMessageAt: r.last_message_at, createdAt: r.created_at }));
+  const plans = await conversationPlans(v, rows.filter((r) => r.kind === 'meal_planning').map((r) => r.id));
+  return rows.map((r) => ({ ...r, plan: plans.get(r.id) ?? null }));
+}
+/** The plan each planning conversation holds (`ConversationPlan`): the app titles the row by its week and state
+ *  (testing-wave 97, 16-006 / 18-007). A conversation can hold several (`startNewPlan` archives one and opens another):
+ *  the confirmed one wins, else the newest that has meals, else the newest. One read for the whole list. */
+async function conversationPlans(v: VanaCtx, conversationIds: string[]): Promise<Map<string, ConversationPlan>> {
+  const out = new Map<string, ConversationPlan>();
+  if (conversationIds.length === 0) return out;
+  const { data, error } = await v.db.from('meal_plans').select('conversation_id, week_start, status, updated_at, created_at, plan_meals(count)')
+    .eq('user_id', v.userId).eq('is_deleted', false).in('conversation_id', conversationIds);
+  if (error) { console.error('[vana] conversationPlans:', error.message); return out; }
+  type Row = { conversation_id: string; week_start: string; status: MealPlan['status']; updated_at: string; created_at: string; plan_meals: { count: number }[] | null };
+  const rows = ((data ?? []) as Row[]).map((r) => ({ ...r, mealCount: r.plan_meals?.[0]?.count ?? 0 }));
+  const later = (a: string, b: string) => (a > b ? -1 : a < b ? 1 : 0);
+  rows.sort((a, b) =>
+    (a.status === 'confirmed' ? 0 : 1) - (b.status === 'confirmed' ? 0 : 1) ||
+    (a.mealCount > 0 ? 0 : 1) - (b.mealCount > 0 ? 0 : 1) ||
+    later(a.updated_at, b.updated_at) || later(a.created_at, b.created_at));
+  for (const r of rows) if (!out.has(r.conversation_id)) out.set(r.conversation_id, { weekStart: r.week_start, status: r.status, mealCount: r.mealCount });
+  return out;
 }
 /** Conversations this user had before `exceptId` (which is the one being opened). Counts deleted ones too — a deleted chat
  *  was still a conversation, and the shake tip is a first-ever thing. Any error reads as "not first" (never re-tip on a hiccup). */

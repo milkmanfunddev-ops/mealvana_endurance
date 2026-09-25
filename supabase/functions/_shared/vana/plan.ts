@@ -234,11 +234,15 @@ export async function getPlanById(v: VanaCtx, id: string): Promise<MealPlan | nu
  *  (`confirmed_at`, stamped by `confirm_meal_plan`), so one a later plan replaced stays; a draft never confirmed is left
  *  out, archived or not (17-002: the leftover draft fc9687ff showed as an earlier plan). */
 export async function listPlans(v: VanaCtx, limit = 200): Promise<(Pick<MealPlan, 'id' | 'weekStart' | 'status' | 'batchCooking'> & { name: string | null; mealCount: number })[]> {
-  const { data, error } = await v.db.from('meal_plans').select('id, week_start, status, batch_cooking, name, confirmed_at, updated_at, plan_meals(count)')
+  const { data, error } = await v.db.from('meal_plans').select('id, week_start, status, batch_cooking, name, confirmed_at, created_at, updated_at, plan_meals(count)')
     .eq('user_id', v.userId).eq('is_deleted', false).order('week_start', { ascending: false }).order('updated_at', { ascending: false });
   if (error) throw new Error(`list_plans: ${error.message}`);
+  // Newest week first; within a week the confirmed plan leads and the rest follow newest first, ties on updated_at
+  // (the same microsecond, seen three times on one account) told apart by created_at (testing-wave 97, 17-004).
+  const later = (a: string, b: string) => (a > b ? -1 : a < b ? 1 : 0);
   return (data ?? [])
     .filter((p) => p.status === 'confirmed' || p.confirmed_at != null)
+    .sort((a, b) => later(a.week_start, b.week_start) || (a.status === 'confirmed' ? 0 : 1) - (b.status === 'confirmed' ? 0 : 1) || later(a.updated_at, b.updated_at) || later(a.created_at, b.created_at))
     .map((p) => ({ id: p.id, name: p.name ?? null, weekStart: p.week_start, status: p.status, batchCooking: !!p.batch_cooking, mealCount: (p.plan_meals as { count: number }[] | null)?.[0]?.count ?? 0 }))
     .filter((p) => p.mealCount > 0)
     .slice(0, limit);
