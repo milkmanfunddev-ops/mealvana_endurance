@@ -21,6 +21,11 @@ export type ProCheck = { ok: true } | { ok: false; reason: 'pro_required' };
  * 4 minutes after the period end (06-002); RevenueCat's first two webhook
  * retries come 5 and 10 minutes after a failed delivery. A cancelled
  * subscription, a grant or a closed row gets no grace.
+ *
+ * KEEP IN STEP with `public.entitlement_renewal_grace()`
+ * (supabase/migrations/20260925110000_allowance_survives_renewal_grace.sql),
+ * which keeps the monthly allowance alive for the same grace: the two must
+ * move together, or the gate opens onto an empty wallet.
  */
 export const RENEWAL_GRACE_MS = 15 * 60_000;
 
