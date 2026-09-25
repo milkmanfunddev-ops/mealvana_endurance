@@ -1,0 +1,5 @@
+## items of list c667902d
+id	name	qty	aisle	checked	have	source	edited	meals
+480ae978	Wholewheat pasta	344 g	Bakery & Grains	true	false	plan	false	1
+b6fbe78b	Avocado	2	Produce	false	false	plan	false	1
+47535805	Mixed vegetables	800 g	Produce	true	false	plan	false	1

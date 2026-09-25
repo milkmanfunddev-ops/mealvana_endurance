@@ -1,7 +1,7 @@
 # 20-004 · Shopping tab offline: the list menu, Share, Shop with Kroger, Previous lists, Add item, and a row's count
 
 - kind: followup-test
-- status: triaged
+- status: closed
 - ticket: 20
 - run: w10-20260924T1614Z
 - screen: Food (Shopping sub-tab), offline copy
@@ -28,3 +28,5 @@ Each either works offline or says it needs the network; none leaves a half-done 
 
 Picked for retest ticket 90 (Lee, 2026-09-25: every open follow-up test folded into the planned runs, cap of ten lifted for this pass).
 Moved to retest ticket 110 when 90 was split (Lee, 2026-09-25).
+
+Run by retest ticket 110 (run w30-20260925T2103Z, build e3367d2c): pass.

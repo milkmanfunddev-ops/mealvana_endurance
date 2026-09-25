@@ -1,6 +1,6 @@
 # 22-003 · Kroger screen shows list needs in metric while the Shopping tab shows the same rows in US units
 - kind: bug
-- status: triaged
+- status: closed
 - ticket: 22
 - run: w18-20260925T0127Z
 - screen: Shop with Kroger
@@ -27,3 +27,5 @@ Shopping tab: Mixed berries 11.5 oz, Milk 13.5 fl oz, Water or oat milk 1.3 qt, 
 **Triage.**
 Fix ticket 37 (Lee, 2026-09-25). Closed by the retest after it merges.
 Moved to retest ticket 111 when 90 was split (Lee, 2026-09-25).
+
+Run by retest ticket 111 (run w30-20260925T2103Z, build e3367d2c): pass.

@@ -1,7 +1,7 @@
 # 19-006 · A new empty hand-made list replaces the confirmed plan's list as the list the Shopping tab opens by default
 
 - kind: followup-test
-- status: triaged
+- status: closed
 - ticket: 19
 - run: w11-20260924T1647Z
 - screen: Food (Shopping sub-tab)
@@ -28,3 +28,5 @@ Decide and check: the tab should keep offering the confirmed plan's list (or a c
 **Triage.**
 Fix ticket 35 (Lee, 2026-09-25). Closed by the retest after it merges.
 Moved to retest ticket 110 when 90 was split (Lee, 2026-09-25).
+
+Run by retest ticket 110 (run w30-20260925T2103Z, build e3367d2c): pass.

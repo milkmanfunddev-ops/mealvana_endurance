@@ -1,0 +1,15 @@
+# read 2026-09-25T21:09:46Z after ZIP 35209
+[
+  {
+    "id": "666be167-08b3-4cd5-8127-d262d0fde28c",
+    "revision": 1,
+    "updated_at": "2026-09-25 21:08:04.116543+00",
+    "env": "certification",
+    "store": {
+      "id": "540FC242",
+      "name": "Kroger - - Birmingham Spoke",
+      "address": "30 W Oxmoor Rd, Birmingham, AL"
+    },
+    "n": 3
+  }
+]
