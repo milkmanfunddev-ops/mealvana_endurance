@@ -62,9 +62,9 @@
 		<key>NSLocationWhenInUseUsageDescription</key>
 		<string>Your location is used for the weather forecast at your upcoming activities, so your nutrition and hydration plan fits local conditions, and to find the Kroger store that can deliver your groceries.</string>
 		<key>NSMicrophoneUsageDescription</key>
-		<string>This app uses the microphone to record voice notes about your nutrition plan experience and feedback.</string>
+		<string>Mealvana uses the microphone so you can talk to Vana instead of typing.</string>
 		<key>NSSpeechRecognitionUsageDescription</key>
-		<string>This app uses speech recognition to help you record voice notes about your nutrition plan experience and feedback.</string>
+		<string>Mealvana uses speech recognition to turn what you say to Vana into text.</string>
 		<key>UIApplicationSupportsIndirectInputEvents</key>
 		<true/>
 		<key>UIBackgroundModes</key>

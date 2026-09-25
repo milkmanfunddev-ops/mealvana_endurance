@@ -191,5 +191,26 @@
     "turns": [
       "What's my heart rate supposed to be on easy rides, and should I be doing zone 2 all winter?"
     ]
+  },
+  {
+    "id": "S21",
+    "task": "out-of-scope",
+    "athlete": "dense",
+    "character": "contradictory",
+    "kind": "general",
+    "turns": [
+      "How many grams of carbs should I eat before tomorrow's long ride?"
+    ]
+  },
+  {
+    "id": "S22",
+    "task": "plan a week",
+    "athlete": "dense",
+    "character": "well-specified",
+    "seed": { "awaiting_debrief": true },
+    "new_plan": true,
+    "turns": [
+      ""
+    ]
   }
 ]

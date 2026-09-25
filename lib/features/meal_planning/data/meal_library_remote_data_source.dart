@@ -75,6 +75,11 @@ class MealLibraryRemoteDataSource {
   ///
   /// [includeDisliked] should be true only when browsing (catalog), never
   /// when suggesting — a −1 vote hides the meal from suggestions.
+  ///
+  /// [requireNutritionNumbers] is for a caller whose pick goes into a plan
+  /// (the Swap screen): a meal missing kcal, carbs, protein or fat never
+  /// takes one of the [limit] slots (mp-678; testing-wave 74 dropped them
+  /// after the cap and could show a short list, 61-001).
   Future<List<MealRef>> searchMeals({
     String? query,
     MealType? mealType,
@@ -88,6 +93,7 @@ class MealLibraryRemoteDataSource {
     bool includeDisliked = false,
     Set<String> excludeIds = const {},
     int offset = 0,
+    bool requireNutritionNumbers = false,
   }) async {
     final params = <String, dynamic>{
       'p_user_id': _userId,
@@ -99,7 +105,11 @@ class MealLibraryRemoteDataSource {
           : contexts.map((c) => c.wire).toList(),
       'p_batch': batch,
       'p_include_saved': includeSaved,
-      'p_limit': limit + excludeIds.length,
+      'p_limit': requestedLimit(
+        limit: limit,
+        excludeCount: excludeIds.length,
+        requireNutritionNumbers: requireNutritionNumbers,
+      ),
       'p_exclude_allergens':
           (excludeAllergens == null || excludeAllergens.isEmpty)
           ? null
@@ -111,20 +121,49 @@ class MealLibraryRemoteDataSource {
     };
 
     final rows = await _supabase.rpc('search_meals', params: params);
-    final out = <MealRef>[];
-    for (final row in rows as List<dynamic>) {
-      final map = asJsonMap(row);
-      if (map == null) continue;
-      final ref = rowToMealRef(map);
-      if (ref == null || excludeIds.contains(ref.id)) continue;
-      out.add(ref);
-      if (out.length >= limit) break;
-    }
+    final out = selectSearchRows(
+      rows as List<dynamic>,
+      limit: limit,
+      excludeIds: excludeIds,
+      requireNutritionNumbers: requireNutritionNumbers,
+    );
     _logger.debug(
       'search_meals → ${out.length}',
       context: _context,
       data: {'query': query, 'mealType': mealType?.wire, 'kind': kind?.wire},
     );
+    return out;
+  }
+
+  /// How many rows to ask `search_meals` for so that [limit] survive the
+  /// exclusions and, when numbers are required, the blank-number rows.
+  /// Blank-number meals are rare (the library's were filled in), so one
+  /// extra [limit] of headroom covers them.
+  static int requestedLimit({
+    required int limit,
+    required int excludeCount,
+    required bool requireNutritionNumbers,
+  }) => limit + excludeCount + (requireNutritionNumbers ? limit : 0);
+
+  /// The first [limit] usable `search_meals` rows, in server order: rows
+  /// that fail to parse, excluded ids and, with [requireNutritionNumbers],
+  /// meals missing a number are skipped before the cap, never after it.
+  static List<MealRef> selectSearchRows(
+    List<dynamic> rows, {
+    required int limit,
+    Set<String> excludeIds = const {},
+    bool requireNutritionNumbers = false,
+  }) {
+    final out = <MealRef>[];
+    for (final row in rows) {
+      final map = asJsonMap(row);
+      if (map == null) continue;
+      final ref = rowToMealRef(map);
+      if (ref == null || excludeIds.contains(ref.id)) continue;
+      if (requireNutritionNumbers && !ref.hasNutritionNumbers) continue;
+      out.add(ref);
+      if (out.length >= limit) break;
+    }
     return out;
   }
 

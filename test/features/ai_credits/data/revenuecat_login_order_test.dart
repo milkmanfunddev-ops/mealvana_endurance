@@ -32,11 +32,18 @@ class _FakeSdk implements RevenueCatSdk {
   /// When set, `configure` does not return until it completes.
   Completer<void>? configureGate;
 
+  /// How many `configure` calls still throw before one succeeds.
+  int configureFailuresLeft = 0;
+
   @override
   Future<void> configure(PurchasesConfiguration configuration) async {
     calls.add('configure');
     final gate = configureGate;
     if (gate != null) await gate.future;
+    if (configureFailuresLeft > 0) {
+      configureFailuresLeft--;
+      throw StateError('store unreachable');
+    }
   }
 
   @override
@@ -163,9 +170,70 @@ void main() {
     });
   });
 
+  group('the first configure fails', () {
+    // Ticket 85's review note (testing-wave 94 item 4): a failed attempt
+    // used to settle the wait, so a logIn asked after it was dropped even
+    // though the next configure call retries.
+    test('a logIn asked after the failure waits for the retry', () async {
+      final svc = _service(sdk);
+      sdk.configureFailuresLeft = 1;
+
+      await svc.configureIfPossible();
+      expect(RevenueCatService.isConfigured, isFalse);
+
+      final waiting = svc.logIn(_userId);
+      await Future<void>.delayed(Duration.zero);
+      expect(sdk.calls, ['configure'], reason: 'logIn waits, not skipped');
+
+      await svc.configureIfPossible();
+      await waiting;
+
+      expect(sdk.calls, ['configure', 'configure', 'logIn:$_userId']);
+      expect(RevenueCatService.isConfigured, isTrue);
+    });
+
+    test(
+      'a logIn asked before the failure also lands after the retry',
+      () async {
+        final svc = _service(sdk);
+        sdk.configureFailuresLeft = 1;
+
+        final early = svc.logIn(_userId);
+        await svc.configureIfPossible();
+        await Future<void>.delayed(Duration.zero);
+        expect(sdk.calls, ['configure']);
+
+        await svc.configureIfPossible();
+        await early;
+
+        expect(sdk.calls, ['configure', 'configure', 'logIn:$_userId']);
+      },
+    );
+
+    test(
+      'with no retry the wait still ends and nothing reaches the SDK',
+      () async {
+        final svc = _service(
+          sdk,
+          configureWait: const Duration(milliseconds: 20),
+        );
+        sdk.configureFailuresLeft = 1;
+
+        await svc.configureIfPossible();
+        await svc.logIn(_userId);
+
+        expect(sdk.calls, ['configure']);
+        expect(RevenueCatService.isConfigured, isFalse);
+      },
+    );
+  });
+
   group('no configure ever comes', () {
     test('logIn gives up after the wait and reaches nothing', () async {
-      final svc = _service(sdk, configureWait: const Duration(milliseconds: 20));
+      final svc = _service(
+        sdk,
+        configureWait: const Duration(milliseconds: 20),
+      );
       await svc.logIn(_userId);
       expect(sdk.calls, isEmpty);
       expect(RevenueCatService.isConfigured, isFalse);

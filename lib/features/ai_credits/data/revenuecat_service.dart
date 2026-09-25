@@ -71,10 +71,14 @@ class RevenueCatService {
   /// it runs, so the native SDK is configured once.
   static Future<void>? _configureAttempt;
 
-  /// Settles when the first configure attempt has finished, configured or
-  /// not. A [logIn] asked before that (the router's gate reads the
-  /// subscription status the moment the router exists, ahead of the startup
-  /// flow) waits on it instead of being dropped (Finding 09-013).
+  /// Settles when a configure attempt has reached a final answer: the SDK
+  /// is configured, or nothing can be (the feature is off, the key is for
+  /// the wrong platform). A [logIn] asked before that (the router's gate
+  /// reads the subscription status the moment the router exists, ahead of
+  /// the startup flow) waits on it instead of being dropped (Finding
+  /// 09-013). An attempt the SDK threw on does not settle it: the next
+  /// [configureIfPossible] retries, and a [logIn] asked in between waits
+  /// for that retry, bounded by [_configureWait] (ticket 85's review note).
   static Completer<void>? _configureSettled;
 
   /// The `logIn` in flight and the account it is for: a second ask for the
@@ -186,8 +190,9 @@ class RevenueCatService {
     if (_configured) return Future.value();
     final inFlight = _configureAttempt;
     if (inFlight != null) return inFlight;
-    final attempt = _configure().whenComplete(() {
+    final attempt = _configure().then((isFinal) {
       _configureAttempt = null;
+      if (!isFinal) return;
       final settled = _settled;
       if (!settled.isCompleted) settled.complete();
     });
@@ -195,7 +200,9 @@ class RevenueCatService {
     return attempt;
   }
 
-  Future<void> _configure() async {
+  /// Returns whether the outcome is final: true once configured or when no
+  /// attempt can ever succeed, false when the SDK threw and a retry may.
+  Future<bool> _configure() async {
     if (!_canUse) {
       // Not an error — the flag is off or no key is provisioned. But it is the
       // most common reason the whole feature looks broken, so leave a trail.
@@ -203,7 +210,7 @@ class RevenueCatService {
         'ai_credits_enabled': _config.aiCreditsEnabled,
         'has_api_key': _config.revenueCatApiKey.isNotEmpty,
       });
-      return;
+      return true;
     }
 
     // Guard against a wrong-platform / malformed key reaching the native SDK,
@@ -217,7 +224,7 @@ class RevenueCatService {
           'for this session',
         ),
       );
-      return;
+      return true;
     }
 
     // A dev build on a real store key cannot complete a purchase: the credit
@@ -241,8 +248,10 @@ class RevenueCatService {
       await _sdk.configure(PurchasesConfiguration(_config.revenueCatApiKey));
       _configured = true;
       _crumb('configured', {'store': isTestStore ? 'test_store' : 'native'});
+      return true;
     } catch (e, st) {
       _report('configure failed', e, stackTrace: st);
+      return false;
     }
   }
 

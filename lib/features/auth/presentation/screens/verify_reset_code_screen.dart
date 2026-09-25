@@ -153,6 +153,13 @@ class _VerifyResetCodeScreenState extends ConsumerState<VerifyResetCodeScreen> {
                   }
                   return null;
                 },
+                // The sixth digit submits, typed, pasted or autofilled
+                // (32-007): no reach for Verify Code.
+                onChanged: (value) {
+                  if (value.trim().length == 6 && !asyncState.isLoading) {
+                    _handleVerifyCode();
+                  }
+                },
                 onFieldSubmitted: (_) => _handleVerifyCode(),
               ),
 

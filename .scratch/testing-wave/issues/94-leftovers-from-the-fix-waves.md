@@ -21,7 +21,7 @@
 
 **Touches:** lib/features/meal_planning/ (the Swap screen and its search call; supabase/functions `search_meals` if filtered server-side), lib/features/onboarding/presentation/screens/plan_reveal_screen.dart, the emailed-code screens under lib/features/auth/, lib/features/ai_credits/data/revenuecat_service.dart, lib/features/settings/presentation/screens/settings_screen.dart, assets/config/content_defaults.json, ios/Runner/Info.plist, evals/vana/scenarios/v1.json
 
-- [ ] A test for each of items 1-5 (item 6 is a plist string, item 7 is data).
-- [ ] codegen if annotations changed, `flutter analyze` clean on touched files, deno tests for any touched function. The suite: wave lead.
+- [x] A test for each of items 1-5 (item 6 is a plist string, item 7 is data). (1: `meal_library_search_selection_test.dart` + the swap screen test asks with `requireNutritionNumbers`; 2: `plan_reveal_screen_test.dart` "no nudge after I don't use training plan apps"; 3: `code_fields_auto_submit_test.dart`, both screens; 4: `revenuecat_login_order_test.dart` "the first configure fails" group, 3 cases; 5: `settings_profile_row_content_test.dart`)
+- [x] codegen not needed (no annotation change); `flutter analyze` clean on every touched line (settings_screen.dart carries 3 older infos at lines 1024-1095); no Supabase function touched, `deno check` green on the evals harness. The suite: wave lead.
 
 Next: /implement-lee testing-wave

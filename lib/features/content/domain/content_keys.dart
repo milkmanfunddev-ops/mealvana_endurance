@@ -189,6 +189,9 @@ class ContentKeys {
   // screen, not onboarding's "Tell us about yourself".
   static const String settingsProfilePreferencesTitle =
       'settings.profile_preferences_title';
+  // The Settings tile that opens it: same title, its own subtitle.
+  static const String settingsProfilePreferencesSubtitle =
+      'settings.profile_preferences_subtitle';
   static const String settingsProfileSection = 'settings.profile_section';
   static const String settingsPreferencesSection =
       'settings.preferences_section';

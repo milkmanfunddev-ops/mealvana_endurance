@@ -202,7 +202,12 @@ class _VerifyEmailScreenState extends ConsumerState<VerifyEmailScreen> {
                     errorText: _error,
                     border: const OutlineInputBorder(),
                   ),
-                  onChanged: (_) => setState(() => _error = null),
+                  onChanged: (value) {
+                    setState(() => _error = null);
+                    // The sixth digit submits, typed, pasted or autofilled
+                    // (32-007): no reach for Verify.
+                    if (value.trim().length == 6 && !_verifying) _verify();
+                  },
                   onSubmitted: (_) => canVerify ? _verify() : null,
                 ),
                 const SizedBox(height: AppSpacing.lg),
