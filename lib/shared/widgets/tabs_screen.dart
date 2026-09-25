@@ -113,7 +113,9 @@ class _TabsScreenState extends ConsumerState<TabsScreen> {
         userId,
         'training_peaks',
       );
-      if (tp == null || !tp.isActive) return;
+      // Ticket 64: a connection TP refused to refresh is not working; the
+      // sharing notice would read as if it were. It shows after a reconnect.
+      if (tp == null || !tp.isActive || tp.needsReconnect) return;
       await prefs.ensureTpWritebackDefaultExplicit();
       if (!mounted) return;
       final choice = await TpWritebackConsentSheet.show(context);

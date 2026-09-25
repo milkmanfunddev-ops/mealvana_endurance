@@ -80,6 +80,7 @@ class ConnectTrainingState {
     this.nextEventName,
     this.finalSurgeNeedsReauth = false,
     this.trainingPeaksNeedsReauth = false,
+    this.vdotNeedsReauth = false,
     this.isNetworkError = false,
   });
 
@@ -114,6 +115,9 @@ class ConnectTrainingState {
 
   /// True if TrainingPeaks tokens expired and user needs to reconnect
   final bool trainingPeaksNeedsReauth;
+
+  /// True if V.O2 refused the token refresh and the user needs to reconnect
+  final bool vdotNeedsReauth;
 
   /// True if the last error was a network error (transient, can retry)
   final bool isNetworkError;
@@ -152,6 +156,7 @@ class ConnectTrainingState {
     String? nextEventName,
     bool? finalSurgeNeedsReauth,
     bool? trainingPeaksNeedsReauth,
+    bool? vdotNeedsReauth,
     bool? isNetworkError,
   }) {
     return ConnectTrainingState(
@@ -197,6 +202,7 @@ class ConnectTrainingState {
           finalSurgeNeedsReauth ?? this.finalSurgeNeedsReauth,
       trainingPeaksNeedsReauth:
           trainingPeaksNeedsReauth ?? this.trainingPeaksNeedsReauth,
+      vdotNeedsReauth: vdotNeedsReauth ?? this.vdotNeedsReauth,
       isNetworkError: isNetworkError ?? this.isNetworkError,
     );
   }
@@ -436,6 +442,12 @@ class ConnectTrainingController extends _$ConnectTrainingController {
       vdotLastSyncAt: vdotIntegration?.lastSyncAt,
       isRunnaConnected: runnaIntegration?.isActive ?? false,
       runnaLastSyncAt: runnaIntegration?.lastSyncAt,
+      // Ticket 64: a refresh the provider refused for good is stored on the
+      // row, so the Reconnect state survives the login sync that found it.
+      finalSurgeNeedsReauth: finalSurgeIntegration?.needsReconnect ?? false,
+      trainingPeaksNeedsReauth:
+          trainingPeaksIntegration?.needsReconnect ?? false,
+      vdotNeedsReauth: vdotIntegration?.needsReconnect ?? false,
     );
   }
 
@@ -642,6 +654,7 @@ class ConnectTrainingController extends _$ConnectTrainingController {
         clearConnectingProvider: true,
         isFinalSurgeConnected: true,
         finalSurgeAthleteName: athleteName,
+        finalSurgeNeedsReauth: false,
       ),
     );
   }
@@ -1045,6 +1058,7 @@ class ConnectTrainingController extends _$ConnectTrainingController {
         clearConnectingProvider: true,
         isVdotConnected: true,
         vdotAthleteName: athleteName,
+        vdotNeedsReauth: false,
       ),
     );
   }
@@ -1109,6 +1123,7 @@ class ConnectTrainingController extends _$ConnectTrainingController {
               isImporting: false,
               clearSyncingProvider: true,
               errorMessage: result.summary,
+              vdotNeedsReauth: true,
             ),
           );
           _trackIntegrationSyncFailed(
@@ -1225,6 +1240,7 @@ class ConnectTrainingController extends _$ConnectTrainingController {
               : null,
           clearErrorMessage: !uploadFailed,
           vdotLastSyncAt: DateTime.now(),
+          vdotNeedsReauth: false,
         ),
       );
 
@@ -1826,6 +1842,7 @@ class ConnectTrainingController extends _$ConnectTrainingController {
         clearConnectingProvider: true,
         isTrainingPeaksConnected: true,
         trainingPeaksAthleteName: athleteName,
+        trainingPeaksNeedsReauth: false,
       ),
     );
 
