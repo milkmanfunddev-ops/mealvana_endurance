@@ -118,6 +118,8 @@ class _VerifyResetCodeScreenState extends ConsumerState<VerifyResetCodeScreen> {
               TextFormField(
                 controller: _codeController,
                 keyboardType: TextInputType.number,
+                // iOS and Android surface the emailed code above the keyboard.
+                autofillHints: const [AutofillHints.oneTimeCode],
                 autocorrect: false,
                 textInputAction: TextInputAction.done,
                 maxLength: 6,

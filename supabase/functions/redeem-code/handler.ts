@@ -33,8 +33,9 @@
  *                                        yet, expired, used, already redeemed
  *                                        by this caller, or the caller's own
  *                                        influencer code
- *   400 invalid_input · 401 unauthenticated · 403 sign_in_required (anonymous)
- *   405 method_not_allowed · 500 server_error · 502 store_unavailable
+ *   400 invalid_input (no code) · 400 code_too_long (over MAX_CODE_LENGTH once
+ *   spaces are stripped; 11-003) · 401 unauthenticated · 403 sign_in_required
+ *   (anonymous) · 405 method_not_allowed · 500 server_error · 502 store_unavailable
  *
  * A refusal is a 200 because it is an answer, not a failure: the app shows the
  * reason and the caller tries another code.
@@ -101,12 +102,14 @@ function json(body: unknown, status = 200): Response {
 
 const refuse = (reason: Refusal) => json({ ok: false, reason, message: REFUSALS[reason] });
 
-/** How the caller typed it → how the table holds it. */
-export function normalizeCode(raw: unknown): string | null {
-  if (typeof raw !== 'string') return null;
-  const c = raw.replace(/\s+/g, '').toUpperCase();
-  if (!c || c.length > MAX_CODE_LENGTH) return null;
-  return c;
+/**
+ * How the caller typed it → how the table holds it: spaces dropped, upper-case.
+ * Empty when nothing was typed; the length is the caller's to check, so a blank
+ * and an overlong code are told apart (11-003).
+ */
+export function normalizeCode(raw: unknown): string {
+  if (typeof raw !== 'string') return '';
+  return raw.replace(/\s+/g, '').toUpperCase();
 }
 
 /** A failure after the claim: the claim is given back and the caller told to retry. */
@@ -135,6 +138,13 @@ export function makeRedeemHandler(deps: RedeemDeps) {
     }
     const entered = normalizeCode(body?.code);
     if (!entered) return json({ error: 'invalid_input', details: 'code is required' }, 400);
+    if (entered.length > MAX_CODE_LENGTH) {
+      return json({
+        error: 'code_too_long',
+        details: `code is longer than ${MAX_CODE_LENGTH} characters`,
+        max_length: MAX_CODE_LENGTH,
+      }, 400);
+    }
 
     const db = deps.db();
     const { data, error } = await db.from('codes').select(CODE_COLUMNS).eq('code', entered).maybeSingle();

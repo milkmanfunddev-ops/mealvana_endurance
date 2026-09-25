@@ -27,7 +27,7 @@
  */
 import { assert, assertEquals } from 'https://deno.land/std@0.224.0/assert/mod.ts';
 import { describe, it } from 'https://deno.land/std@0.224.0/testing/bdd.ts';
-import { type Caller, makeRedeemHandler, REFUSALS } from './handler.ts';
+import { type Caller, makeRedeemHandler, MAX_CODE_LENGTH, REFUSALS } from './handler.ts';
 import { fakeDb, type FakeDb, type Row } from '../tests/vana/support/fake_db.ts';
 import { RevenueCatError, type RevenueCatClient } from '../_shared/revenuecat/client.ts';
 import type { Db } from '../_shared/vana/env.ts';
@@ -575,12 +575,39 @@ describe('who may call', () => {
     assertEquals(db.reads.length, 0);
   });
 
-  it('a body without a code → 400', async () => {
+  it('a body without a code → 400 invalid_input, code is required', async () => {
     const db = world([code({})]);
     const rc = fakeRc();
-    assertEquals((await redeem(db, rc, signedIn(ATHLETE), {})).status, 400);
-    assertEquals((await redeem(db, rc, signedIn(ATHLETE), { code: '   ' })).status, 400);
-    assertEquals((await redeem(db, rc, signedIn(ATHLETE), 'not json')).status, 400);
-    assertEquals((await redeem(db, rc, signedIn(ATHLETE), { code: 'X'.repeat(80) })).status, 400);
+    for (const body of [{}, { code: '   ' }, { code: 7 }]) {
+      const res = await redeem(db, rc, signedIn(ATHLETE), body);
+      assertEquals(res.status, 400);
+      assertEquals(res.body.error, 'invalid_input');
+      assertEquals(res.body.details, 'code is required');
+    }
+    const notJson = await redeem(db, rc, signedIn(ATHLETE), 'not json');
+    assertEquals(notJson.status, 400);
+    assertEquals(notJson.body.error, 'invalid_input');
+    assertEquals(db.reads.length, 0);
+  });
+
+  it('a code longer than any code can be → 400 code_too_long, never "code is required" (11-003)', async () => {
+    const db = world([code({})]);
+    const rc = fakeRc();
+    const res = await redeem(db, rc, signedIn(ATHLETE), { code: 'X'.repeat(40) });
+    assertEquals(res.status, 400);
+    assertEquals(res.body.error, 'code_too_long');
+    assertEquals(res.body.max_length, MAX_CODE_LENGTH);
+    assertEquals(res.body.details, `code is longer than ${MAX_CODE_LENGTH} characters`);
+    assertEquals(db.reads.length, 0);
+  });
+
+  it('a code of exactly the longest length is looked up, not refused as too long', async () => {
+    const db = world([code({ code: 'A'.repeat(MAX_CODE_LENGTH) })]);
+    const rc = fakeRc();
+    // Spaces are stripped before the length is measured (11-004).
+    const spaced = ('A'.repeat(MAX_CODE_LENGTH).match(/.{1,4}/g) ?? []).join(' ');
+    const res = await redeem(db, rc, signedIn(ATHLETE), { code: spaced });
+    assertEquals(res.status, 200);
+    assertEquals(res.body.ok, true);
   });
 });
