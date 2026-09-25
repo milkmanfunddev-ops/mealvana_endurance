@@ -706,6 +706,79 @@ class NotificationService {
     await _plugin.cancel(id);
   }
 
+  /// G27 — the race-window carb-load nudge's channel/details. Same posture
+  /// as nutrition-plan reminders; the ids, timing and copy come from
+  /// CarbNudgeEngine via CarbLoadNudgeService — this layer only delivers.
+  static const _carbNudgeDetails = NotificationDetails(
+    android: AndroidNotificationDetails(
+      'nutrition_plan_reminders',
+      'Nutrition Plan Reminders',
+      channelDescription:
+          'Reminders for your nutrition plans and upcoming activities',
+      importance: Importance.high,
+      priority: Priority.high,
+      playSound: true,
+      enableVibration: true,
+      showWhen: true,
+    ),
+    iOS: DarwinNotificationDetails(
+      presentAlert: true,
+      presentBadge: true,
+      presentSound: true,
+    ),
+  );
+
+  /// Schedules one carb-load nudge fire (G27). Silent no-op without
+  /// permission or on web, matching [scheduleReminder].
+  static Future<void> scheduleCarbNudge({
+    required int id,
+    required String title,
+    required String body,
+    required DateTime fireAt,
+    required String payload,
+  }) async {
+    if (!_isInitialized) {
+      await initialize();
+    }
+    if (kIsWeb) return;
+    if (!await areNotificationsEnabled()) return;
+
+    await _plugin.zonedSchedule(
+      id,
+      title,
+      body,
+      tz.TZDateTime.from(fireAt, tz.local),
+      _carbNudgeDetails,
+      androidScheduleMode: AndroidScheduleMode.exactAllowWhileIdle,
+      payload: payload,
+    );
+  }
+
+  /// Shows the carb-load nudge immediately (G27's on-open catch-up path).
+  static Future<void> showCarbNudge({
+    required int id,
+    required String title,
+    required String body,
+    required String payload,
+  }) async {
+    if (!_isInitialized) {
+      await initialize();
+    }
+    if (kIsWeb) return;
+    if (!await areNotificationsEnabled()) return;
+
+    await _plugin.show(id, title, body, _carbNudgeDetails, payload: payload);
+  }
+
+  /// Cancels one scheduled local notification by id (G27 disarm path).
+  static Future<void> cancelById(int id) async {
+    if (!_isInitialized) {
+      await initialize();
+    }
+    if (kIsWeb) return;
+    await _plugin.cancel(id);
+  }
+
   static Future<void> cancelAllReminders() async {
     if (!_isInitialized) {
       await initialize();

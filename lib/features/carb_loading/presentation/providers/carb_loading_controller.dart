@@ -1,9 +1,11 @@
 import 'dart:async';
 import 'package:riverpod_annotation/riverpod_annotation.dart';
+import '../../application/carb_load_nudge_service.dart';
 import '../../application/carb_loading_service.dart';
 import '../../domain/carb_loading_entryway_engine.dart';
 import '../../data/carb_loading_repository.dart';
 import '../../../macro_dashboard/presentation/providers/carb_dashboard_providers.dart';
+import 'carb_nudge_coordinator.dart';
 import '../../../../shared/database/app_database.dart' as db;
 import '../../../../shared/services/logging_service.dart';
 import '../../../../shared/services/sync/sync_coordinator.dart';
@@ -88,6 +90,14 @@ class CarbLoadingController extends _$CarbLoadingController {
       );
 
       _invalidateCarbSurfaces();
+      // G27: a plan now exists — every remaining race-window nudge for this
+      // event stands down (plan-existence is the truth). Fail-soft.
+      unawaited(
+        ref
+            .read(carbLoadNudgeServiceProvider)
+            .disarmEvent(eventId)
+            .catchError((_) {}),
+      );
     } catch (e) {
       _logger.error('Error creating carb loading plan', error: e);
       rethrow;
@@ -105,6 +115,9 @@ class CarbLoadingController extends _$CarbLoadingController {
       );
 
       _invalidateCarbSurfaces();
+      // G27: the plan is gone — the sweep re-arms the remainder of the
+      // window from plan-existence truth. Fail-soft.
+      unawaited(ref.read(carbNudgeCoordinatorProvider.notifier).run());
     } catch (e) {
       _logger.error('Error deleting carb loading plan', error: e);
       rethrow;
