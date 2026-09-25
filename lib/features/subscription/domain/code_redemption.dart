@@ -5,7 +5,8 @@
 ///   200 { ok: true, kind: 'coach' | 'giveaway', pro_days }
 ///   200 { ok: true, kind: 'paired', coach_user_id } | { ok: true, kind: 'attributed' }
 ///   200 { ok: false, reason, message }   a refusal, with its plain reason
-///   400 invalid_input (read as a not_found refusal)
+///   400 invalid_input, no code (read as a not_found refusal)
+///   400 code_too_long, over 32 characters (read as a too_long refusal)
 ///   403 sign_in_required · 401 unauthenticated
 ///   500 server_error · 502 store_unavailable
 ///
@@ -85,6 +86,10 @@ enum CodeRefusal {
   alreadyRedeemed,
   ownCode,
 
+  /// Longer than any Code can be (the function's 400 `code_too_long`); the
+  /// entry caps the field, so only a pasted Code with spaces can reach it.
+  tooLong,
+
   /// A reason this build does not know; the server's own message is shown.
   other;
 
@@ -95,6 +100,7 @@ enum CodeRefusal {
     'used' => used,
     'already_redeemed' => alreadyRedeemed,
     'own_code' => ownCode,
+    'too_long' => tooLong,
     _ => other,
   };
 }

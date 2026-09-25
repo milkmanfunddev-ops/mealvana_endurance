@@ -237,7 +237,7 @@ void main() {
       expect(result.serverMessage, 'That code only works in Canada.');
     });
 
-    test('a Code too long to be one (400 invalid_input) is not found, '
+    test('a Code the server reads as blank (400 invalid_input) is not found, '
         'never "try again"', () async {
       answer(
         () async => throw FunctionException(
@@ -249,10 +249,34 @@ void main() {
 
       final result = await c
           .read(codeEntryControllerProvider.notifier)
-          .redeem('THIS-CODE-IS-FAR-TOO-LONG-TO-BE-ONE-X');
+          .redeem('ABC');
 
       expect(result, isA<CodeRefused>());
       expect((result! as CodeRefused).reason, CodeRefusal.notFound);
+      expect(c.read(codeEntryControllerProvider).hasError, isFalse);
+      verifyNever(() => service.forgetCachedStatus());
+    });
+
+    test('a Code too long to be one (400 code_too_long) is refused as too '
+        'long, never "try again" (11-003)', () async {
+      answer(
+        () async => throw FunctionException(
+          status: 400,
+          details: {
+            'error': 'code_too_long',
+            'details': 'code is longer than 32 characters',
+            'max_length': 32,
+          },
+        ),
+      );
+      final c = container();
+
+      final result = await c
+          .read(codeEntryControllerProvider.notifier)
+          .redeem('THIS-CODE-IS-FAR-TOO-LONG-TO-BE-ONE-X');
+
+      expect(result, isA<CodeRefused>());
+      expect((result! as CodeRefused).reason, CodeRefusal.tooLong);
       expect(c.read(codeEntryControllerProvider).hasError, isFalse);
       verifyNever(() => service.forgetCachedStatus());
     });

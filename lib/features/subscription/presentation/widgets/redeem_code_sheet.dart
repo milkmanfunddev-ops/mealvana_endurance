@@ -83,6 +83,9 @@ String? redeemProblem(
     CodeRefusal.ownCode => content.getValue(
       ContentKeys.redeemCodeRefusedOwnCode,
     ),
+    CodeRefusal.tooLong => content.getValue(
+      ContentKeys.redeemCodeRefusedTooLong,
+    ),
     CodeRefusal.other =>
       value.serverMessage ??
           content.getValue(ContentKeys.redeemCodeRefusedOther),
@@ -100,6 +103,10 @@ class RedeemCodeSheet extends ConsumerStatefulWidget {
 
   /// The bottom space the success message keeps clear (see [openRedeemCode]).
   final double Function()? messageClearance;
+
+  /// The longest Code there is: `codes_code_format` in the codes migration
+  /// and `MAX_CODE_LENGTH` in redeem-code both say 32 (11-004).
+  static const maxCodeLength = 32;
 
   static const fieldKey = ValueKey('redeem_code.field');
   static const submitKey = ValueKey('redeem_code.submit');
@@ -176,7 +183,7 @@ class _RedeemCodeSheetState extends ConsumerState<RedeemCodeSheet> {
             enabled: !state.isLoading,
             keyboardType: TextInputType.visiblePassword,
             inputFormatters: [
-              LengthLimitingTextInputFormatter(40),
+              LengthLimitingTextInputFormatter(RedeemCodeSheet.maxCodeLength),
               _UpperCase(),
             ],
             onChanged: (_) {

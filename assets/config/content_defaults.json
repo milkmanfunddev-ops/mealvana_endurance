@@ -932,6 +932,7 @@
     "refused_used": "That code has already been used.",
     "refused_already_redeemed": "You've already used that code.",
     "refused_own_code": "That's your own code. Share it with your athletes.",
+    "refused_too_long": "That code is too long. No code is longer than 32 characters.",
     "refused_other": "That code can't be used.",
     "failed_sign_in": "Sign in to redeem a code.",
     "failed_unavailable": "We couldn't redeem that code just now. Try again in a moment."

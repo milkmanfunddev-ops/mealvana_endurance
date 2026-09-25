@@ -13,9 +13,9 @@
 
 **Touches:** lib/features/subscription/presentation/widgets/redeem_code_sheet.dart, supabase/functions/redeem-code/index.ts, lib/features/auth/presentation/screens/verify_email_screen.dart, lib/features/auth/presentation/screens/ (the reset-code screen)
 
-- [ ] A widget test: the field stops at 32 characters.
-- [ ] A deno test: a 40-character code answers "too long".
-- [ ] A widget test: each code field carries the one-time-code autofill hint.
+- [x] A widget test: the field stops at 32 characters.
+- [x] A deno test: a 40-character code answers "too long".
+- [x] A widget test: each code field carries the one-time-code autofill hint.
 - [ ] Deployed to dev (if the server changed).
 - [ ] codegen if annotations changed, `flutter analyze` and the suite green.
 

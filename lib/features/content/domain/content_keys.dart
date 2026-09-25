@@ -1079,6 +1079,8 @@ class ContentKeys {
   static const String redeemCodeRefusedAlreadyRedeemed =
       'redeem_code.refused_already_redeemed';
   static const String redeemCodeRefusedOwnCode = 'redeem_code.refused_own_code';
+  static const String redeemCodeRefusedTooLong =
+      'redeem_code.refused_too_long';
   static const String redeemCodeRefusedOther = 'redeem_code.refused_other';
   static const String redeemCodeFailedSignIn = 'redeem_code.failed_sign_in';
   static const String redeemCodeFailedUnavailable =
