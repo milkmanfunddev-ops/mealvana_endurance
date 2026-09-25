@@ -122,6 +122,29 @@ export async function markListConfirmed(v: VanaCtx, planId: string): Promise<voi
 export async function markListConfirmedIfUnset(v: VanaCtx, planId: string): Promise<void> {
   await v.db.from('shopping_lists').update({ confirmed_at: now(), updated_at: now() }).eq('plan_id', planId).eq('user_id', v.userId).is('confirmed_at', null);
 }
+/** A draft's list goes with its draft (ticket 101, Lee 2026-09-25): once a plan that was never confirmed is archived
+ *  (another plan's confirm, `new_plan`, `use_plan_again`), its list and rows are deleted, so Previous lists holds only
+ *  confirmed plans' lists and hand-made ones. "Never confirmed" is the plan's `confirmed_at` unset AND the list's own
+ *  `confirmed_at` unset: the list's stamp (markListConfirmed, since 2026-09-16) guards a plan confirmed before the plan
+ *  column's backfill. Scoped to one week so a later archive in that week also clears any leftover; idempotent. Answers
+ *  how many lists went. The same predicate cleans existing lists in 20260925170100_drop_archived_draft_lists.sql. */
+export async function dropArchivedDraftLists(v: VanaCtx, weekStart: string): Promise<number> {
+  const { data: plans, error: e0 } = await v.db.from('meal_plans').select('id').eq('user_id', v.userId).eq('week_start', weekStart)
+    .eq('status', 'archived').is('confirmed_at', null);
+  if (e0) throw new Error(e0.message);
+  const planIds = (plans ?? []).map((p: { id: string }) => p.id);
+  if (!planIds.length) return 0;
+  const { data: lists, error: e1 } = await v.db.from('shopping_lists').select('id').eq('user_id', v.userId).in('plan_id', planIds).is('confirmed_at', null);
+  if (e1) throw new Error(e1.message);
+  const listIds = (lists ?? []).map((l: { id: string }) => l.id);
+  if (!listIds.length) return 0;
+  // Rows also cascade in SQL; deleted here too so the fake db agrees (as deleteList does).
+  const { error: e2 } = await v.db.from('shopping_items').delete().in('list_id', listIds).eq('user_id', v.userId);
+  if (e2) throw new Error(e2.message);
+  const { error: e3 } = await v.db.from('shopping_lists').delete().in('id', listIds).eq('user_id', v.userId);
+  if (e3) throw new Error(e3.message);
+  return listIds.length;
+}
 /** The legacy `toggle_shopping {name}` path: keep the list row in step with the jsonb flip. */
 export async function toggleByName(v: VanaCtx, planId: string, name: string, field: 'checked' | 'have', value: boolean): Promise<void> {
   const { data: list } = await v.db.from('shopping_lists').select('id').eq('plan_id', planId).eq('user_id', v.userId).maybeSingle();
