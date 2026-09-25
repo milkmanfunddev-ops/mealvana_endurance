@@ -19,6 +19,35 @@ with the design project) and the BUNDLE sha (this file). The bundler script
 sits beside this charter (`bundle-standalone.py`) so the transform is
 reproducible and auditable.
 
+## v20 (2026-09-25) — desk-conforming revision
+- source sha256/16 `58c4d6471347eae2` (design project, verified byte-equal)
+- bundle sha256/16 `2ed6df9b7be7fd0a` (the landed file, 880,020 bytes; built
+  with the committed bundle-standalone.py)
+
+Deltas over v19 — the four desk reversals (G12–G15), everything else stands:
+1. **G12** — plan summary is a full PAGE only; the sheet variant and the
+   "Summary: Page | Sheet" A/B pills are REMOVED (F2 moot).
+2. **G13/F3+F4** — the re-pick confirm: edits relabel per the TARGET protocol
+   WITH the date — picking 2-Day from the edited 3-Day reads "You edited:
+   Day 1 (Fri, Sep 26) — you set 620 g." When EVERY edit falls outside the
+   new window (picking 1-Day) the dialog is a single-button notice: title
+   "Edited target won't carry over", body "On the 1-Day protocol, Fri,
+   Sep 26 falls outside the window — your 620 g target goes away. Day targets
+   reset to protocol.", button "Switch to 1-Day" (proceeds). These notice
+   strings are DRAFTS per the desk ruling — they fold into the register at
+   re-extraction.
+3. **G14/CE-7** — the breakdown page (dashboard surface) gains a
+   navigation-only "Manage plan ›" footer under the PROTOCOL strip: it closes
+   the breakdown and opens the plan summary on the event surface (plan-state
+   control forced to "Plan" if it was "No plan" — on a real carb day a plan
+   exists by definition). Read-only holds; nothing on the breakdown mutates.
+4. **G15/F1** — the Set Up row's subtitle enumerates only the feasible set:
+   "3-, 2-, and 1-day protocols" / "2- and 1-day protocols" / "1-day
+   protocol" (empty on race day — the row is the window-passed state anyway).
+   F5 (selection-time feasibility re-check) is app-side; the prototype
+   re-derives feasibility on every render, so its onSelect gate is already
+   evaluation-at-tap.
+
 ## v19 bundle (2026-09-24)
 - source sha256/16 `b6da90768caf5413` (design project, verified byte-equal)
 - bundle sha256/16 `d666740ddcfee1ec` (the landed file, 882,718 bytes)

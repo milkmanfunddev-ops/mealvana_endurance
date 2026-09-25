@@ -567,6 +567,30 @@ Landed at the pipeline path, standalone sha `b6da90768caf5413`; WALK-CHARTER
 v19 section added. Not represented: CE-7 footer (desk), CE-2's conditional
 today-CTA snackbar (no snackbar layer in the prototype).
 
+### RULED — 2026-09-25 (Xuan, desk sitting; qa 9753cba) — entryway RATIFIED w/ reversals; glow + D7 ruled; prototype v20
+
+**Entryway rendering RATIFIED** with three reversals of walked v19 behavior
+(the ruling is the contract, not the artifact): G12 summary container = full
+PAGE, sheet fork RETIRED; G13 re-pick confirm relabels edits per the TARGET
+protocol WITH date ("Day 1 (Fri, Sep 26) — you set 620 g") and collapses to a
+single-button notice when every edit falls outside the new window; G14 CE-7
+ruled YES — breakdown page gains the navigation-only "Manage plan ›" footer,
+read-only holds. Plus G15/F1 feasible-set subtitle and F5 selection-time
+feasibility re-check (rides G9, app-side). Copy register v1 = v19 strings
+verbatim amended by F1/F3/F4; the F4 notice strings drafted app-side in v20
+fold in at re-extraction.
+
+**Glow ruled the GENERAL way**: an emphasis material with usage rules in
+tokens.md §Materials — never replaces hairline elevation; LOAD loader + card
+are the first ratified uses; every further use must be NAMED per-surface with
+a golden. The Flutter glow research (`glow-research.md`) is cited as the
+implementation reference. **D7: the breakdown macro strip KEEPS electrolyte**
+— now a named Q-D3 exception; do not recolor.
+
+**Prototype v20** ships the four deltas (harness-verified end to end, bundle
+smoke-tested in Chrome): source sha `58c4d6471347eae2` (server byte-equal),
+bundle sha `2ed6df9b7be7fd0a`. Charter v20 section has the delta walk map.
+
 ## Notes on the two new ideas
 
 **Reminder to start.** Machinery exists — `NotificationService`
