@@ -1,0 +1,46 @@
+# Ticket 111 notes (run w30-20260925T2103Z)
+
+- App build commit: e3367d2c914d59f0fcde4b854ff4805416a6dc20 (wave-pool-2, UDID DAF1F150-5C3B-4A5A-BBE4-7D6B24B8D918), app data cleared by the wave lead.
+- Worktree HEAD a8ebba29; `git diff e3367d2c HEAD -- lib ios supabase` is empty.
+- Slot claimed 21:03:39Z.
+- Kroger shopper logins in CRED: only Lee's (certification) row. Not used (prompt rule). Connect paths cannot finish.
+- IMPROVEMENTS #52 (Lee 09-25): matching runs unconnected, so 22-004 and the Kroger half of 22-003 are run without a connection (catalog reads use the application token, service.ts).
+- Shopping tab open #1: 21:05:50Z
+- 22-003 list read once at 21:06:05Z: Shopping tab shows list 'Week of Sep 20, Confirmed Sep 25' (confirmed plan 666be167, list c667902d): Avocado 2, Mixed vegetables 1.8 lb, Wholewheat pasta 12 oz (03-shopping-tab-open1.png).
+- Shop with Kroger tap #1 at 21:06:10Z: list on screen 'Week of Sep 20' (confirmed plan 666be167's list). Simulator location set to 33.4839,-86.7717 (Birmingham AL, 35209 area) just before.
+- 21-009: tapped Allow While Using App at 21:06:20Z
+- 20-008 open #1: kroger edge 200 at 21:05:53Z, 21:05:54Z (Shopping open 21:05:50Z); 21:06:11/12Z (Kroger screen load), 21:06:24Z (location after Allow).
+- 21-009 part 2: Settings > Privacy & Security > Location Services > Endurance Dev > Never at 21:07:47Z
+- Shop with Kroger tap #2 at 21:08:02Z: list on screen 'Week of Sep 20' (confirmed plan 666be167's list), location now Never (21-009 reopen).
+- 21-009: Allow -> "Delivery to 35223" within ~8 s (05-). No Match all button: kroger_screen.dart:280 shows it only when connected. Filed as a bug (22-004 row).
+- 21-009 denied: reopened 21:08:02Z, "Set delivery ZIP" returns, no error (07-).
+- Known noise: TrainingPeaks token refresh 400 and VDOT "reconnect" at sign-in 21:05:29-30Z, already Finding 21-004.
+- Known noise: iOS Settings search returned "No Results" for the app and for Location Services (simulator Settings index, not the app).
+- kroger_drafts has no row for plan 666be167 after the delivery area resolved (local save only until a sync); watched below.
+- 22-005/21-010: tapped Disconnect Kroger at 21:08:29Z
+- 22-005: confirmed Disconnect at 21:08:50Z (production row removed)
+- 22-004: ZIP 35209 Continue at 21:09:31Z
+- Shopping tab open #2 (after cold restart, notification prompt Don't Allow): 21:10:27Z
+- Shop with Kroger tap #3 at 21:11:07Z: list 'Week of Sep 20' (confirmed plan 666be167's list).
+- 21-003/21-005: Connect Kroger tap at 21:11:17Z
+- 21-005 step 1: alert Cancel at 21:11:33Z -> 'Something went wrong. Your draft is saved on this device; try again.' (18-); kroger_oauth_sessions row 558cd312 left (expires 21:21:18Z); console: 'SFAuthenticationSession was cancelled by user'.
+- 21-005 step 2: Connect at 21:11:51Z, Continue
+- 21-005 step 2: sheet X at 21:12:24Z
+- 21-006: Connect + Continue at 21:12:35Z
+- 21-006: Sign In with a made-up address (no-such-shopper-111@example.com) and a dummy wrong password at 21:13:36Z (Lee's login not used)
+- 21-006: submitted at 21:13:49Z
+- 21-006: Kroger showed 'The email or password is incorrect' in the sheet, app waited; closed with X at 21:14:05Z
+- netcut launch at 21:14:18Z
+- Shopping tab open #3 (netcut relaunch, network on): 21:14:35Z
+- Shop with Kroger tap #4 at 21:14:39Z: list 'Week of Sep 20' (confirmed plan 666be167's list)
+- 21-007: netcut on at 21:14:51Z
+- 21-007: Connect tapped offline at 21:14:51Z
+- 21-007: first offline Connect reached the server anyway (kroger_oauth_sessions 14146c21 at 21:14:52Z, no netcut.log): the app reused an open keep-alive socket, which netcut (connect-blocking) cannot cut. Alert Cancelled at 21:15:20Z; waiting 40 s for idle sockets to close.
+- 21-007: offline Connect retry at 21:16:00Z
+- 21-007 offline: 'Kroger could not be reached. Your draft is saved on this device.' no sheet, button back (27-); netcut.log shows blocked connects.
+- 21-007: netcut off, double tap Connect at 21:16:31Z
+- 21:16:07Z: one kroger request (200) while netcut was on. Known noise: not an error; either this app over a socket opened before the cut (111-004) or ticket 110's Shopping open on the same account.
+- 110's ticks moved the Kroger draft's lines between "Not matched yet" and "Skipped" during the run (Avocado and pasta ticked at 21:11Z, later Mixed vegetables and pasta). Expected (shared account); a ticked row is skipped for Kroger by design (`matchAll` doc comment).
+- findings.mjs rejects three-digit tickets (111-003). Findings were made and index-checked with a scratch copy accepting \d{2,3}; the harness was not changed.
+- No new Vana plan, chat or logging call made; no COST spend. No account created.
+- Kroger end state for test@test.com: no kroger_connections row (production row removed 21:08:50Z); one kroger_oauth_sessions row dd4191cf from the 21-007 double tap, expires 21:26:32Z (111-001).
