@@ -26,3 +26,4 @@ It is exposed only as StaticText "I run with a water bottle | This helps us esti
 
 **Triage.**
 Fix ticket 51 (Lee, 2026-09-25). Closed by the retest after it merges.
+Moved to retest ticket 119 when 93 was split (Lee, 2026-09-25).

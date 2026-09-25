@@ -32,3 +32,4 @@ Same on today's Patrol H5: BEFORE 9 oz (foods 274 mL), its only card (Top-Off) r
 **Triage.**
 
 Fix ticket 62 (Lee, 2026-09-25). Closed by the retest after it merges.
+Moved to retest ticket 116 when 92 was split (Lee, 2026-09-25).

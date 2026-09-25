@@ -26,3 +26,4 @@ Not run. The busy state now holds until the tabs shell (12-003 passes), which sh
 
 **Triage.**
 Picked for retest ticket 107 (Lee, 2026-09-25).
+Moved to retest ticket 120 when 107 was split (Lee, 2026-09-25).

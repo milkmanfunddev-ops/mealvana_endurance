@@ -1,9 +1,11 @@
 # 90: Retest: shopping and Kroger
 
-**Status:** ready-for-agent
+**Status:** wontfix: split into 110-111 (Lee, 2026-09-25)
 **Blocked by:** none.
 **Next:** `/implement-lee testing-wave`
 **Model:** opus
+
+**Split (Lee, 2026-09-25: about ten checks per run):** this ticket is replaced by tickets 110 and 111; run those, not this one.
 
 **What to build:** A retest run. Re-run the steps of each Finding below on the testing build (the commit in `.scratch/testing-wave/app-build.json`), check the fix holds, and give each a verdict. Then run the follow-up tests listed. Nothing is fixed during the run.
 

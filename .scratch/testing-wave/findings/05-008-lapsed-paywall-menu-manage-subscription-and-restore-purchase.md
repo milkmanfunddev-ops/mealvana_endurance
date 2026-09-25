@@ -28,3 +28,4 @@ Not run. The menu showed all five items for account B after it lapsed (22-lapsed
 **Triage.**
 
 Picked for retest ticket 107 (Lee, 2026-09-25: every open follow-up test folded into the planned runs, cap of ten lifted for this pass).
+Moved to retest ticket 123 when 107 was split (Lee, 2026-09-25).

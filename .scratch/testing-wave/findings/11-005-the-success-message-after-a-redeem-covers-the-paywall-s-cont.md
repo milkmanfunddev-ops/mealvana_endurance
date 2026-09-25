@@ -26,3 +26,4 @@ The green success message ("Code redeemed. Your coach will see your request to p
 
 **Triage.**
 Fix ticket 52 (Lee, 2026-09-25). Closed by the retest after it merges.
+Moved to retest ticket 118 when 93 was split (Lee, 2026-09-25).

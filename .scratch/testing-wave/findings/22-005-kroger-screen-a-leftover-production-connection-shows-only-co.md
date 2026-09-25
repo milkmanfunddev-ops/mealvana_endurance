@@ -27,3 +27,4 @@ Seen in this run: the screen shows Connect Kroger and no Disconnect while the pr
 **Triage.**
 
 Bug, fix ticket 108 (Lee, 2026-09-25, follow-up sort): a connection from the other Kroger environment is shown and can be removed. Retest ticket 109.
+Moved to retest ticket 111 when 109 was split (Lee, 2026-09-25).

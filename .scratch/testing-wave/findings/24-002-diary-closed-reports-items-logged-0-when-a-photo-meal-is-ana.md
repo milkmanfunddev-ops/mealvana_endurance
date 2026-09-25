@@ -32,3 +32,4 @@ abandoned diary. The meal itself saved correctly.
 
 **Triage.**
 Fix ticket 50 (Lee, 2026-09-25). Closed by the retest after it merges.
+Moved to retest ticket 114 when 91 was split (Lee, 2026-09-25).

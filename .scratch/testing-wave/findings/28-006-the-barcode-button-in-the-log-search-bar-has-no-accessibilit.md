@@ -27,3 +27,4 @@ The tree lists the search TextField, the tabs and the other buttons, but no elem
 
 **Triage.**
 Fix ticket 51 (Lee, 2026-09-25). Closed by the retest after it merges.
+Moved to retest ticket 118 when 93 was split (Lee, 2026-09-25).

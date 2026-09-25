@@ -26,3 +26,4 @@ Not seen on screen (the only screenshot came 8 s later, on Welcome). The console
 
 **Triage.**
 Picked for retest ticket 107 (Lee, 2026-09-25).
+Moved to retest ticket 122 when 107 was split (Lee, 2026-09-25).

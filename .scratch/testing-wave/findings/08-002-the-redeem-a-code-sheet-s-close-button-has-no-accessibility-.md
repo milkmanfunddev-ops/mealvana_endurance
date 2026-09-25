@@ -27,3 +27,4 @@ The button at {{338, 599}, {40, 40}} has `AXLabel: null`: the tree lists the tit
 
 **Triage.**
 Fix ticket 51 (Lee, 2026-09-25). Closed by the retest after it merges.
+Moved to retest ticket 118 when 93 was split (Lee, 2026-09-25).

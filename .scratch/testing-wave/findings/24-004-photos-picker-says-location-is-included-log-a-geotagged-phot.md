@@ -28,3 +28,4 @@ product decides it may keep it.
 **Triage.**
 
 Picked for retest ticket 91 (Lee, 2026-09-25: every open follow-up test folded into the planned runs, cap of ten lifted for this pass).
+Moved to retest ticket 114 when 91 was split (Lee, 2026-09-25).

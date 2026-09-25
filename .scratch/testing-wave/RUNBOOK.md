@@ -228,6 +228,9 @@ once it is older than the stale timeout (4 h).
 
 ## The wave lead's routine
 
+The wave lead runs one wave per session and the session is cleared between waves; `waves.json` and
+the ticket Status lines carry the state from one wave to the next (Lee, 2026-09-25).
+
 The testing wave never writes to the decisions page (Lee, 2026-09-24): no ticket cards, no
 proposals, no pictures, no page reseed. Questions about testing itself are settled with Lee in
 the terminal. A Finding that raises a real product question (paywall, meal planning, how the app
@@ -315,6 +318,9 @@ the above and follows this instead:
    Match each error to the run whose minutes and screens produced it, and file any nobody filed.
 3. `FINDINGS index` (writes `INDEX.md`; exit 0 only when every Finding is closed or wontfix: the end
    of the loop). `COST status WAVE` shows what the wave spent. Triage follows the spec's "Triage".
+   A retest ticket holds about ten checks (Findings to retest plus follow-up tests), grouped by
+   screen or area and by the account and starting state they need; more checks become more tickets
+   (Lee, 2026-09-25: long runs degrade the agent's context).
    A fix ticket's Touches lists every file the fix will change: `wave --open` holds back a ticket
    whose Touches overlap an open wave's (#63). A fix to how the app reaches a screen greps for the
    route and lists every call site in Touches, not only the button the Finding named (Lee,

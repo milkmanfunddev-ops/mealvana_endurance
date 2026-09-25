@@ -31,3 +31,4 @@ Ticket 67 / mp-335 with the mp-666 ruling: a saved copy more than 15 minutes pas
 
 **Triage.**
 Fix ticket 105 (Lee, 2026-09-25): the Gate's first answer applies the 15-minute cutoff and startup waits at most two seconds. Closed by retest ticket 107 after it merges.
+Moved to retest ticket 123 when 107 was split (Lee, 2026-09-25).

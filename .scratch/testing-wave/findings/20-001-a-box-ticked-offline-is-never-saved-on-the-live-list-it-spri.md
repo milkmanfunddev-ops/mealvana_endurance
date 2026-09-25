@@ -43,3 +43,4 @@ Story 62 of the testing-wave spec and the ticket: the items the athlete checks o
 
 **Triage.**
 Fix ticket 36 (Lee, 2026-09-25). Closed by the retest after it merges.
+Moved to retest ticket 110 when 90 was split (Lee, 2026-09-25).

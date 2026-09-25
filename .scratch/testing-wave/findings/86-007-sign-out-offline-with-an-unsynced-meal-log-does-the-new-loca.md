@@ -29,3 +29,4 @@ before it can fail offline.
 
 **Triage.**
 Fix ticket 102 (Lee, 2026-09-25): made a bug on code reading (a failed pre-logout upload is logged, then the wipe deletes the unsynced rows). Ruling: the wipe deletes only rows the server holds; unsynced rows stay for that account's next sign-in. Analysis: runs/86/triage-sync-analysis.md. Closed by retest ticket 107 after it merges.
+Moved to retest ticket 120 when 107 was split (Lee, 2026-09-25).

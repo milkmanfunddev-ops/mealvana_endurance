@@ -29,3 +29,4 @@ The timeline still shows these rows (as Skipped), so the athlete's week looks ri
 
 **Triage.**
 Fix ticket 42 (Lee, 2026-09-25). Closed by the retest after it merges.
+Moved to retest ticket 117 when 92 was split (Lee, 2026-09-25).

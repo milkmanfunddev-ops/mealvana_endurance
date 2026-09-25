@@ -25,3 +25,4 @@ The first thing on screen is iOS's "Allow “Endurance Dev” to use your locati
 
 **Triage.**
 Fix ticket 56 (Lee, 2026-09-25). Closed by the retest after it merges.
+Moved to retest ticket 111 when 90 was split (Lee, 2026-09-25).

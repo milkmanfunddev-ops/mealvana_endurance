@@ -38,3 +38,4 @@ made both flows let the list come to rest before tapping, so they stay red until
 
 **Triage.**
 Fix ticket 52 (Lee, 2026-09-25). Closed by the retest after it merges.
+Moved to retest ticket 118 when 93 was split (Lee, 2026-09-25).

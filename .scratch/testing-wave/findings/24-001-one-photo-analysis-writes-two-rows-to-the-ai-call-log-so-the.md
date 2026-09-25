@@ -38,3 +38,4 @@ ai_usage (one row) and token_ledger (reserve -13000, settle -695 = 13,695 micro-
 
 **Triage.**
 Fix ticket 43 (Lee, 2026-09-25). Closed by the retest after it merges.
+Moved to retest ticket 114 when 91 was split (Lee, 2026-09-25).

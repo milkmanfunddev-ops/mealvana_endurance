@@ -36,3 +36,4 @@ The screen shows DURING carbs 92 g in pink with an info icon, marker left of a 9
 **Triage.**
 
 Fix ticket 63 (Lee, 2026-09-25). Closed by the retest after it merges.
+Moved to retest ticket 116 when 92 was split (Lee, 2026-09-25).

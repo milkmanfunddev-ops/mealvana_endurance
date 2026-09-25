@@ -27,3 +27,4 @@ Not run. This run covered only online cold starts (signed out with an empty data
 **Triage.**
 
 Picked for retest ticket 92 (Lee, 2026-09-25: every open follow-up test folded into the planned runs, cap of ten lifted for this pass).
+Moved to retest ticket 117 when 92 was split (Lee, 2026-09-25).

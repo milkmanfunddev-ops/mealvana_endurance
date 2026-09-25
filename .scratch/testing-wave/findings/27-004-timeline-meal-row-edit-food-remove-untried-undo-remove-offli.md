@@ -33,3 +33,4 @@ Not run (out of ticket 27's scope). Only the plain edit and plain remove were ru
 **Triage.**
 
 Picked for retest ticket 91 (Lee, 2026-09-25).
+Moved to retest ticket 113 when 91 was split (Lee, 2026-09-25).

@@ -24,3 +24,4 @@ Rows with a meal type show only the type: "SNACK 2:08 PM 168 kcal", "LUNCH 2:08 
 
 **Triage.**
 Fix ticket 80 (the wave lead, 2026-09-25: Lee asked for every bug fix that can be done without him). Closed by the retest after it merges.
+Moved to retest ticket 116 when 92 was split (Lee, 2026-09-25).

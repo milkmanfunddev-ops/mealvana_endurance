@@ -30,3 +30,4 @@ Row a61f94fd (created 20:19:13Z) has `calories: null`. Carbs 30.2, protein 12.25
 
 **Triage.**
 Fix ticket 41 (Lee, 2026-09-25). Closed by the retest after it merges.
+Moved to retest ticket 113 when 91 was split (Lee, 2026-09-25).

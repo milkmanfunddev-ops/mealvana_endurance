@@ -25,3 +25,4 @@ The console shows, at 17:35:03-04 local (22:35 UTC): "Token refresh failed: Trai
 **Triage.**
 
 Fix ticket 64 (Lee, 2026-09-25). Closed by the retest after it merges.
+Moved to retest ticket 118 when 93 was split (Lee, 2026-09-25).

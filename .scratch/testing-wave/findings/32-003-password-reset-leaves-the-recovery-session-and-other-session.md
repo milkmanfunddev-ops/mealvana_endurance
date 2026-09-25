@@ -32,3 +32,4 @@ the new 14:56:06Z sign-in. The app's sign-out also uses `SignOutScope.local`.
 **Triage.**
 
 Bug, fix ticket 108 (Lee, 2026-09-25: a password reset signs out every other session). Retest ticket 109.
+Moved to retest ticket 124 when 109 was split (Lee, 2026-09-25).

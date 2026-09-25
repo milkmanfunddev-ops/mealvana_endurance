@@ -29,3 +29,4 @@ The tab fell back to list 9bdc9556 "Week of 2026-09-20", 6 items (Bell pepper, M
 
 **Triage.**
 Fix ticket 35 (Lee, 2026-09-25). Closed by the retest after it merges.
+Moved to retest ticket 110 when 90 was split (Lee, 2026-09-25).

@@ -27,3 +27,4 @@ Decide and check: the tab should keep offering the confirmed plan's list (or a c
 
 **Triage.**
 Fix ticket 35 (Lee, 2026-09-25). Closed by the retest after it merges.
+Moved to retest ticket 110 when 90 was split (Lee, 2026-09-25).

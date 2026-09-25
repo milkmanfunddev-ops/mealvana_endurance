@@ -28,3 +28,4 @@ meal_logged ×2 and meal_log_updated are printed. diary_closed prints items_logg
 
 **Triage.**
 Fix ticket 50 (Lee, 2026-09-25). Closed by the retest after it merges.
+Moved to retest ticket 113 when 91 was split (Lee, 2026-09-25).

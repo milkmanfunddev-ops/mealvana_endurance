@@ -29,3 +29,4 @@ A failed tick says so (the app's error snackbar, as other shopping edits do thro
 
 **Triage.**
 Fix ticket 36 (Lee, 2026-09-25). Closed by the retest after it merges.
+Moved to retest ticket 110 when 90 was split (Lee, 2026-09-25).

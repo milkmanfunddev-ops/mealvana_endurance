@@ -1,9 +1,11 @@
 # 109: Account lifecycle run: sign up, sign in, reset, sign out, delete
 
-**Status:** ready-for-agent
+**Status:** wontfix: split into 124-125 and 111 (Lee, 2026-09-25)
 **Blocked by:** 108.
 **Next:** `/implement-lee testing-wave`
 **Model:** opus
+
+**Split (Lee, 2026-09-25: about ten checks per run):** this ticket is replaced by tickets 124 and 125, with 22-005 in 111; run those, not this one.
 
 **What to build:** One run through every untried account path, from the 2026-09-25 follow-up sort (Lee: fold every open follow-up test into as few runs as possible, cap of ten lifted for this pass). It also retests ticket 108. The wave lead rebuilds the testing app first if app code changed since `app-build.json` (RUNBOOK, wave lead step 2). Nothing is fixed during the run.
 

@@ -26,3 +26,4 @@ Row f952f981 has `sodium_mg 0.0` although neither item has a sodium value; row 0
 
 **Triage.**
 Fix ticket 41 (Lee, 2026-09-25). Closed by the retest after it merges.
+Moved to retest ticket 112 when 91 was split (Lee, 2026-09-25).

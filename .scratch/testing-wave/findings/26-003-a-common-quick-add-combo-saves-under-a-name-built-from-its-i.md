@@ -30,3 +30,4 @@ Row f952f981 is named "Rolled oats and Raisins" (`deriveMealName` over the two i
 **Triage.**
 
 Fix ticket 58 (Lee, 2026-09-25). Closed by the retest after it merges.
+Moved to retest ticket 112 when 91 was split (Lee, 2026-09-25).

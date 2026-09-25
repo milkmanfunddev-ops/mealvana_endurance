@@ -25,3 +25,4 @@ Not run (look-around, ticket 87). This run saw only "Pro from a code", "365 days
 
 **Triage.**
 Picked for retest ticket 107 (Lee, 2026-09-25).
+Moved to retest ticket 122 when 107 was split (Lee, 2026-09-25).

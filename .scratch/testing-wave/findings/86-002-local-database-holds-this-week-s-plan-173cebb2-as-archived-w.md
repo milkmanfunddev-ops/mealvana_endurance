@@ -32,3 +32,4 @@ ticket 86.
 
 **Triage.**
 Picked for retest ticket 107 (Lee, 2026-09-25).
+Moved to retest ticket 120 when 107 was split (Lee, 2026-09-25).

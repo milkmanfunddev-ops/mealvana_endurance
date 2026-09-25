@@ -32,3 +32,4 @@ each retry throws again, so that repository, and every repository that lists it 
 
 **Triage.**
 Fix ticket 103 (Lee, 2026-09-25): a failed upload is logged and the pull still runs. Closed by retest ticket 107 after it merges.
+Moved to retest ticket 120 when 107 was split (Lee, 2026-09-25).

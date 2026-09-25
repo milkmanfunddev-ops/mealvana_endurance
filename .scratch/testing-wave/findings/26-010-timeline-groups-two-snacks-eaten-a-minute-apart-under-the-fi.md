@@ -28,3 +28,4 @@ Seen, not yet explained: the 2:08 PM card holds "Rice cake and Almond butter" (e
 **Triage.**
 
 Picked for retest ticket 92 (Lee, 2026-09-25: every open follow-up test folded into the planned runs, cap of ten lifted for this pass).
+Moved to retest ticket 116 when 92 was split (Lee, 2026-09-25).

@@ -29,3 +29,4 @@ At 13:31:32Z, about 5 s after the tap, the sheet had closed and the full onboard
 
 **Triage.**
 Fix ticket 106 (Lee, 2026-09-25): ticket 45's purchase lock applies to a redeem. Closed by retest ticket 107 after it merges.
+Moved to retest ticket 122 when 107 was split (Lee, 2026-09-25).

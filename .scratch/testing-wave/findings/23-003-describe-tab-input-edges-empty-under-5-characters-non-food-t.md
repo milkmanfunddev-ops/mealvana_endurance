@@ -26,3 +26,4 @@ Not run (one AI call spent this wave by this ticket; each of 2, 3, 4 and 5 costs
 **Triage.**
 
 Picked for retest ticket 91 (Lee, 2026-09-25: every open follow-up test folded into the planned runs, cap of ten lifted for this pass).
+Moved to retest ticket 114 when 91 was split (Lee, 2026-09-25).

@@ -31,3 +31,4 @@ mp-244: the count lists both meals and leads back to either recipe; imperial unl
 **Triage.**
 
 Picked for retest ticket 90 (Lee, 2026-09-25: every open follow-up test folded into the planned runs, cap of ten lifted for this pass).
+Moved to retest ticket 110 when 90 was split (Lee, 2026-09-25).

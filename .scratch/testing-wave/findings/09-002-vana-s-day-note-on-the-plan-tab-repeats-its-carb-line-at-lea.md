@@ -25,3 +25,4 @@ The card reads "Rest day. At least 272g carbs — At least 272g carbs, protein a
 
 **Triage.**
 Fix ticket 55 (Lee, 2026-09-25). Closed by the retest after it merges.
+Moved to retest ticket 116 when 92 was split (Lee, 2026-09-25).

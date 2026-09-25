@@ -25,3 +25,4 @@ Not run (followup). 1007 g of carbs in a day is high; the day holds several "Pat
 **Triage.**
 
 Picked for retest ticket 92 (Lee, 2026-09-25: every open follow-up test folded into the planned runs, cap of ten lifted for this pass).
+Moved to retest ticket 116 when 92 was split (Lee, 2026-09-25).

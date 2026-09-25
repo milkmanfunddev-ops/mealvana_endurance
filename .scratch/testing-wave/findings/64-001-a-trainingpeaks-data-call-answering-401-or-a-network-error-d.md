@@ -26,3 +26,4 @@ Ticket 64's agent reported both as out of its scope: a data call answering 401 s
 
 **Triage.**
 Fix ticket 76 (filed by the wave lead from wave 22's review, 2026-09-25). Closed by the retest after it merges.
+Moved to retest ticket 118 when 93 was split (Lee, 2026-09-25).

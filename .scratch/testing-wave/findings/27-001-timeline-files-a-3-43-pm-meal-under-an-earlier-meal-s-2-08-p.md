@@ -30,3 +30,4 @@ Each meal sits under its own eaten time (3:43 PM), in time order, as Today's Fue
 **Triage.**
 
 Fix ticket 59 (Lee, 2026-09-25). Closed by the retest after it merges.
+Moved to retest ticket 116 when 92 was split (Lee, 2026-09-25).

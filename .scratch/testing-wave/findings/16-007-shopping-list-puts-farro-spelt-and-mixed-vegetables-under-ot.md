@@ -28,3 +28,4 @@ Idea, two small things seen on the list built at confirm:
 
 **Triage.**
 Fix ticket 84 (the wave lead, 2026-09-25: Lee asked for every bug fix that can be done without him). Closed by the retest after it merges.
+Moved to retest ticket 110 when 90 was split (Lee, 2026-09-25).

@@ -1,9 +1,11 @@
 # 107: Retest the fixes of 102 to 106, and wave 25's follow-up tests
 
-**Status:** ready-for-agent
+**Status:** wontfix: split into 120-123 (Lee, 2026-09-25)
 **Blocked by:** 102, 103, 104, 105, 106.
 **Next:** `/implement-lee testing-wave`
 **Model:** opus
+
+**Split (Lee, 2026-09-25: about ten checks per run):** this ticket is replaced by tickets 120, 121, 122 and 123; run those, not this one.
 
 **What to build:** A retest run on a build that carries tickets 102-106. The wave lead rebuilds the testing app first (RUNBOOK, wave lead step 2). Re-run each Finding's steps, and check each fix ticket's behaviour as its file describes it. Then run the follow-up tests listed. Nothing is fixed during the run.
 

@@ -23,3 +23,4 @@ Row 38c4f0ed-e7d2-453c-9b8e-a19614dbe522 has notes = null. Edit Meal for that me
 
 **Triage.**
 Fix ticket 83 (the wave lead, 2026-09-25: Lee asked for every bug fix that can be done without him). Closed by the retest after it merges.
+Moved to retest ticket 114 when 91 was split (Lee, 2026-09-25).

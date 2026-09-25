@@ -29,3 +29,4 @@ Step 2 showed "No saved or recent meals yet. Meals you log (and favorite) show u
 
 **Triage.**
 Fix ticket 46 (Lee, 2026-09-25). Closed by the retest after it merges.
+Moved to retest ticket 115 when 91 was split (Lee, 2026-09-25).

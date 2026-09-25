@@ -40,3 +40,4 @@ does work: test@test.com's rows were gone after each of its sign-outs, and the n
 
 **Triage.**
 Fix ticket 102 (Lee, 2026-09-25): signing in sweeps other accounts' rows the server already holds and keeps their unsynced rows. Closed by retest ticket 107 after it merges.
+Moved to retest ticket 120 when 107 was split (Lee, 2026-09-25).

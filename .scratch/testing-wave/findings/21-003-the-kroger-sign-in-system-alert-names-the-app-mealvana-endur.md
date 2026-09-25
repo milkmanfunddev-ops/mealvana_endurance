@@ -23,3 +23,4 @@ The alert reads "“mealvana_endurance” Wants to Use “kroger.com” to Sign 
 
 **Triage.**
 Fix ticket 56 (Lee, 2026-09-25). Closed by the retest after it merges.
+Moved to retest ticket 111 when 90 was split (Lee, 2026-09-25).

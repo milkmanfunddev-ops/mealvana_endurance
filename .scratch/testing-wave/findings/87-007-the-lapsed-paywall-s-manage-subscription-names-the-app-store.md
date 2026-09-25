@@ -25,3 +25,4 @@ Snackbar over the lapsed paywall at 14:16:07Z; no Safari opened, so 09-001's bla
 
 **Triage.**
 Fix ticket 106 (Lee, 2026-09-25): the lapsed paywall uses the Subscription screen's store-aware Manage. Closed by retest ticket 107 after it merges.
+Moved to retest ticket 123 when 107 was split (Lee, 2026-09-25).

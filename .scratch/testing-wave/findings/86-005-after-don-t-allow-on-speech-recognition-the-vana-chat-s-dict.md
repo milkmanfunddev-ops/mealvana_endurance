@@ -29,3 +29,4 @@ message. The prompt itself now comes on the mic tap, not on opening the chat (09
 
 **Triage.**
 Fix ticket 104 (Lee, 2026-09-25): Dictate stays after a refusal and a tap says how to turn it on in iOS Settings. Closed by retest ticket 107 after it merges.
+Moved to retest ticket 120 when 107 was split (Lee, 2026-09-25).

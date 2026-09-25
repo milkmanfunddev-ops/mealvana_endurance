@@ -26,3 +26,4 @@ Not run (look-around, ticket 87).
 
 **Triage.**
 Picked for retest ticket 107 (Lee, 2026-09-25).
+Moved to retest ticket 122 when 107 was split (Lee, 2026-09-25).

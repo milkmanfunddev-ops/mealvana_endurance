@@ -28,3 +28,4 @@ The dev edge-request log shows `POST /functions/v1/kroger` answering 400 at 11:1
 
 **Triage.**
 Fix ticket 56 (Lee, 2026-09-25). Closed by the retest after it merges.
+Moved to retest ticket 111 when 90 was split (Lee, 2026-09-25).

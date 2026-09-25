@@ -29,3 +29,4 @@ device's earlier anonymous events.
 
 **Triage.**
 Fix ticket 104 (Lee, 2026-09-25). Closed by retest ticket 107 after it merges.
+Moved to retest ticket 121 when 107 was split (Lee, 2026-09-25).

@@ -26,3 +26,4 @@ Not run: the wave lead's instruction for ticket 22 was to stop on a refused cert
 **Triage.**
 
 Picked for retest ticket 90 (Lee, 2026-09-25: every open follow-up test folded into the planned runs, cap of ten lifted for this pass).
+Moved to retest ticket 111 when 90 was split (Lee, 2026-09-25).

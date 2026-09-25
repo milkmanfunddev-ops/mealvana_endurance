@@ -32,3 +32,4 @@ The screen read "Subscribed", "Pro Monthly", "Renews on September 25, 2026." in 
 
 **Triage.**
 Fix ticket 105 (Lee, 2026-09-25): app side only; the app fetches before granting grace and the Subscription screen fetches on open. Server side won't fix: the Test Store sends no CANCELLATION for its planned end. Closed by retest ticket 107 after it merges.
+Moved to retest ticket 123 when 107 was split (Lee, 2026-09-25).

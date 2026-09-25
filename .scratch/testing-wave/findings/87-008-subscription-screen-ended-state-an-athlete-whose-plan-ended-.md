@@ -25,3 +25,4 @@ Not run beyond the ⋯ menu: after A lapsed at 14:15:14Z the app sat on the payw
 
 **Triage.**
 Fix ticket 106 (Lee, 2026-09-25): the ended state is removed, since mp-457 keeps a lapsed athlete on the paywall. Closed by retest ticket 107 after it merges.
+Moved to retest ticket 123 when 107 was split (Lee, 2026-09-25).

@@ -37,3 +37,4 @@ No Flutter error line was printed; the console shows only the TCC camera grant a
 
 **Triage.**
 Fix ticket 44 (Lee, 2026-09-25). Closed by the retest after it merges.
+Moved to retest ticket 113 when 91 was split (Lee, 2026-09-25).

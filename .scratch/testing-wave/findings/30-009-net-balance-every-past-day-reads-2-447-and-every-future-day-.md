@@ -24,3 +24,4 @@ A past day's balance depends on that day's sessions and logs; a future day with 
 **Triage.**
 
 Picked for retest ticket 92 (Lee, 2026-09-25: every open follow-up test folded into the planned runs, cap of ten lifted for this pass).
+Moved to retest ticket 116 when 92 was split (Lee, 2026-09-25).

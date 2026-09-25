@@ -29,3 +29,4 @@ Not run in ticket 25. Only this run's three rows showed; the four rows logged ea
 **Triage.**
 
 Picked for retest ticket 91 (Lee, 2026-09-25: every open follow-up test folded into the planned runs, cap of ten lifted for this pass).
+Moved to retest ticket 113 when 91 was split (Lee, 2026-09-25).

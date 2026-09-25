@@ -28,3 +28,4 @@ content-system strings and neither mentions a guest, so mp-508 holds for both.
 
 **Triage.**
 Fix ticket 104 (Lee, 2026-09-25): both sign-out confirms use Settings' text. Closed by retest ticket 107 after it merges.
+Moved to retest ticket 121 when 107 was split (Lee, 2026-09-25).

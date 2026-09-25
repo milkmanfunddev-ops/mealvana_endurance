@@ -30,3 +30,4 @@ The blue "Open testing tools" button (344,782 48×48 pt) overlaps Ask Vana (336,
 **Triage.**
 
 Fix ticket 68 (Lee, 2026-09-25). Closed by the retest after it merges.
+Moved to retest ticket 118 when 93 was split (Lee, 2026-09-25).
