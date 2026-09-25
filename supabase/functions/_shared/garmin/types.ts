@@ -145,7 +145,15 @@ export interface GarminActivitySummary {
 export interface GarminActivityDetail {
   userId: string;
   userAccessToken: string;
+  /**
+   * Top-level, and NOT the same shape as an activity summary's summaryId:
+   * observed live as `"24442795951-detail"`. Note that `summary.summaryId` is
+   * absent on these payloads, so this (or `activityId`) is the only per-
+   * activity identity a detail push carries — see garmin-push's detail loop.
+   */
   summaryId: string;
+  /** Present on live payloads alongside summaryId; the bare activity id. */
+  activityId?: string | number;
   summary: GarminActivitySummary;
   samples?: GarminSample[];
   laps?: GarminLap[];
