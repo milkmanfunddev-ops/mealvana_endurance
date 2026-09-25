@@ -194,3 +194,153 @@ landing.
       registered (`N g to go` clamp-at-0, `pace N g by now`).
 - [ ] **Energy-card conformance rewrite lands with the bundle:** E1-toggles-on-LOAD and plain
       P-1 replace the old suppression rows; expanded-face goldens added.
+
+
+## Morning-queue addendum (2026-09-25 interview, read-back confirmed)
+- [ ] **G17 — CE-10 edit affordance:** summary day rows (today/future) open the Edit Target
+      dialog; past rows inert; EDITED chip on save. Reds: L2 `summary-row-opens-edit-dialog`,
+      `past-day-row-inert`, `edit-save-rederives` (G6 vectors already pin the math).
+- [ ] **G18 — migration completion:** the slot-CHECK widening migration also DROPS NOT NULL on
+      meal_logs.slot (null = untagged, CL-11-consistent). Reds: migration idempotency test +
+      a null-slot upload seam test (producer-shaped stored row).
+- [ ] **G19 — "Target met":** register amendment — completion replaces the to-go figure with
+      `Target met`. Reds: the amended register L2 row + regenerated loaded-expanded golden
+      (regeneration cites this spec change).
+- Portal/D-019/D-020: DEFERRED together by ruling (ops bug-report 2026-09-25 documents); no gate.
+- Q-019: ruled direction (option 1) — DIFFERENT bundle; does not gate carb-loading@v1.
+
+## Live-build bug batch (Xuan, 2026-09-25 ~07:40 — reds pinned BEFORE fixes, per the loop)
+- [ ] **G20 — out-of-slot entries missing from the loading-day timeline (CONTRACT BUG).**
+      Observed: +Add Food outside a slot counts toward the face and Today's Fuel but renders NO
+      ordinary timeline entry. Contract: CL-11 + the 2026-09-19 ruling ("may still sit on the
+      timeline as ordinary entries") + CD-3. Red: L2 `out-of-slot-entry-renders-on-loading-day`
+      (log untagged food on a loading day → an ordinary entry card renders at its clock position
+      between the slot cards AND the face updates — both asserted in one test).
+- [ ] **G21 — slot-page RECOMMENDED sections empty on device.** Ruled source: library WHERE
+      is_carb_loading AND slot ∈ suitability (S9 + 2026-09-24), fixed curation. Suspected
+      data/deploy gap, not code — app-38 to confirm: (a) catalog migration written? (b) curated
+      seed rows staged? (c) deploy rides land like the slot-CHECK migration? Red: seam L2
+      `recommended-rows-from-flagged-library` (producer-shaped library rows w/ flag+suitability
+      → slot page renders them; empty library → section renders its empty state, not a crash)
+      + the deploy checklist line at land.
+- [ ] **Q-obs-1 (question, not yet a bug):** face read 60 g behind at 07:37–38 where the minute
+      oracle says 62 — does the LOAD face re-derive on clock tick, or only on data change? If
+      tick-driven refresh was never built, that's a gap CL-6's continuous owed(t) implies; app-38
+      to answer before it's classified.
+- [ ] **Q-obs-2 (question):** sim plan identity flipped Day 1/544 (06:29) → Day 3/680 (07:29)
+      across the relaunch. Xuan's own re-picking, or plan drift? Unanswered as of filing.
+- [ ] **G22 — Patrol hygiene invariant (from Q-obs-2's diagnosis, Patrol debris):** the ripple
+      flow sweeps unconditionally at START and END, and asserts at teardown that the account's
+      plan set (ids + rows) is IDENTICAL to its setup snapshot — an aborted run can never again
+      leave a seeded plan overlapping the athlete's real one. (Overlap rendering itself stays
+      ruled-undefined — the excluded overlapping-loads slice; the flow was the violator.)
+- **Q-obs-1 disposition:** derive-on-data-change is the BASE dashboard's inherited model; no
+  ratified clause requires a clock tick. Held for Xuan's preference (tick vs polish-queue),
+  registered as Q-D11 OPEN in carb-loading-dashboard.md — not a unilateral red.
+- [ ] **G23 — day-row selection / variant binding bug (REOPENS Q-obs-2 — the day-navigation
+      explanation is REFUTED by the pinned evidence).** Two screenshots (QA 07:29, Xuan 07:37)
+      both show header "Today, September 25" with the face rendering "DAY 3 OF 3", the 680-row
+      slot targets, live pace copy AND a tick — 84 g = 170×89/180, day-3 arithmetic on today's
+      dashboard. Contract violated on either branch: CD-4 (today's face uses TODAY's plan row)
+      or the future-day variant (clock-free, never pace copy). Suspect: the day-row/plan
+      resolution under the pre-existing Sep-27 overlap (the stale 1-day plan). Reds: L2
+      `face-uses-selected-days-own-row` (date D inside plan P → face label, slots, and pace all
+      from P's row for D; asserted against a two-plan overlapping fixture — producer-shaped) and
+      L2 `future-day-face-never-shows-pace` (surface binding; the engine-level null vectors
+      already pin the math). REPRO PRESERVATION: do NOT remove the stale 1-day plan until the
+      mechanism is diagnosed — it is likely part of the repro.
+
+- **G21 PINNED (Xuan, 2026-09-25): fork option B.** Slot page reads the EXISTING
+  `carb_loading_foods` store (`getFoodsByMealType`; meal_types = per-slot suitability), fixed
+  curation order, empty-state safe. Reds as named (seam L2 with producer-shaped rows + empty
+  state). Unification = D-022 + the parked follow-up intake; NOT this release.
+- **Q-D11 PINNED (Xuan, 2026-09-25): option 2** — no tick in release-1; polish-queue item; do
+  not build.
+
+## G23 resolution (diagnosis accepted 2026-09-25; report-before-fix honored)
+- **Mechanism 1 — PHANTOM, closed:** the "day-3 under Today Sep 25" was avery@test.com's
+  correctly-rendered Patrol-seeded plan — the sim had been silently account-switched by the
+  flow's ensureAuthenticated at ~07:23. No wrong-day rendering existed; CD-1's negative behaved.
+  QA's 07:29 smoke PASS stands (the math was oracle-exact for the plan actually on screen).
+- [ ] **G23a — REAL DEFECT, fix to green: create-path planDate normalization.** Entryway passes
+      the raw event startTime (with gun time) as raceDate; day rows land at e.g. Sep-26 07:30,
+      the dashboard's midnight-exact range query never matches → a plan created from ANY real
+      event with a gun time never shows the carb face. Red: plan created from an event whose
+      startTime carries a time-of-day produces MIDNIGHT planDates AND renders on its loading
+      day (one test, both asserts). Plus: assess legacy blast radius — existing dev/prod day
+      rows with non-midnight planDates must also render (repair sweep or date-truncating query,
+      implementer's pick; count the affected rows first).
+- **G23b — WITHDRAWN as a red:** the two-plan overlap tie-order (days.first undefined on a
+  date with two rows) is real but sits inside the EXCLUDED overlapping-loads slice — asserting
+  behavior there would encode unruled contract. Documented here as the exclusion's known edge;
+  it rides the overlap ruling whenever that slice opens.
+- **Sim/test-account register:** every Patrol run signs the sim into avery@test.com
+  (integration creds ≠ shared dev login since d4581a37). DECISION (QA, test-infra domain):
+  KEEP the dedicated avery account — Patrol seeding on the shared dev account would pollute
+  real play, which is the worse failure. Rules: one driver per sim at a time; the Patrol
+  runbook/flow restores the dev login (scripts/sim-dev-login.sh) after runs; live observations
+  made while a Patrol is running are unreliable by definition.
+- **G21-B VERIFIED (QA, 48ccfe8f):** seam reds 2/2 green, 408 suite tests green; 27 seeded rows
+  render live, no deploy dependency. Curation-order note for the record: "fixed order" is
+  implemented as name-asc/id-tiebreak — the old feature had NO stable order (its reshuffle was
+  an audit defect), so any deterministic order satisfies the ruling; re-rule cheaply later if a
+  curated sequence is ever wanted.
+- [ ] **G24 — re-pick propagation staleness (CONTRACT BUG, Xuan live-found #3).** After Change
+      Protocol (2-day → 1-day), the plan summary page AND the dashboard timeline kept showing
+      the OLD plan until navigation forced a refresh; self-corrected on day-switch. Contract:
+      E-3 (entryway rendering, RATIFIED: propagation is instant) + the CD-2 one-frame spirit.
+      Suspected missing provider invalidation on the repick path (the edit path invalidates
+      carbLoadingDaysForRangeProvider; repick may not). Red: L2 `repick-propagates-immediately`
+      — through the REAL controller: change protocol (quiet path AND keep/reset path), then in
+      the same pumped frame assert the summary rows, the entry row, and the loading-day
+      timeline all reflect the NEW plan; no navigation events in the test.
+- **G24 FIXED + VERIFIED (QA at f862ea7c):** root cause was UNIVERSAL (no plan write invalidated
+  the three watched families; Patrol's manual invalidation had masked it — that manual call
+  should now be REMOVED from the flow so Patrol exercises the real path). Fix = one
+  _invalidateCarbSurfaces helper on all seven write paths + the delete-event cascade. Red
+  verified: both paths, real notifier + painted summary + family probes, one frame, zero
+  navigation; red-capability by pristine-controller stash probe (the honest caveat about the
+  sync-tail masking narrow mutations is recorded in the app spec — the stash probe is the true
+  red). 497 suite tests + 49 conformance green.
+- [ ] **G25 — Recommended ⊕ must ONE-TAP LOG, not hand off to search (CONTRACT BUG, Xuan live
+      #4; also a QA verification miss — the G21-B seam covered rendering, not tap semantics).**
+      Ruled: the 2026-09-24 composition ruling's "one-tap ⊕" + prototype-verified since v14 +
+      Xuan verbatim today: "when you click on the add button, it is almost as if it clicks on
+      the quick adds when you log a meal." Constraint honored: legacy rows are CARBS-ONLY and
+      D4 says logs count toward daily kcal — so the entry's nutrition must be REAL, never
+      invented. Fix shape (QA-pinned; consistent with every ruling, invents nothing):
+      at tap, RESOLVE the curated row to its real food (unified food db lookup — the same
+      match the current initialQuery search finds first); one-tap logs THAT food slot-tagged
+      via the Log-a-Meal path. Fallback ONLY when no match resolves: the current search
+      handoff, and the unresolved row is REPORTED (data finding), not silent.
+      Reds: L2 `recommended-plus-one-tap-logs` (tap ⊕ → a slot-tagged food-log entry with the
+      resolved food's REAL macros exists + slot header/face ripple, one frame, no navigation);
+      seam `curated-rows-resolve` — all 27 seeded rows assert a resolution (any that fail are
+      enumerated in the test output and become data findings, not silent fallbacks).
+- **G25 FIXED + VERIFIED (QA at 8e3ab66e):** one-tap ⊕ logs the RESOLVED food's stored macros
+  (invention-catching fixture: Toast 17 g/90 kcal ≠ the row's 25 g estimate), slot-tagged,
+  same-frame ripple, zero navigation; 499 suite tests green. Resolution scope ACCEPTED as
+  LOCAL foods mirror only (offline-first deterministic instant write — the wider network net
+  stays out of the tap path by design).
+- **DATA FINDING for Xuan's attestation notes — 15/27 curated rows unresolvable in the
+  31-row foods mirror** (staples class: potato/rice/pasta/pizza/cereal/…; full list printed by
+  the seam test every run). Those 15 fall back to the seeded search handoff until foods-mirror
+  seed rows exist (server data — can land at the deploy OR post-release via sync, no app
+  change). Free quick win: mirror row "Gels" → rename/alias "Energy gel" resolves one more.
+  Xuan's call at attestation: accept-for-release-1 (fallback is honest) vs seed the staples at
+  the land deploy.
+- [ ] **G26 — seed the 15 staple foods (Xuan: seed call = option b, 2026-09-25).** Server seed
+      migration for the foods table: the 15 unresolved staples with HONEST nutrition (cite the
+      source per row — USDA-typical; no invented macros), + the "Gels" → "Energy gel"
+      rename/alias. Deploys at land with the slot-CHECK migration. Red: the
+      `curated-rows-resolve` seam flips its expectation to **27/27** (the printed unresolved
+      list must be empty); local mirror picks the rows up via normal sync — the seam runs
+      against producer-shaped rows in the same wire shape.
+- **G26 FIXED + VERIFIED (QA at 103002d9): 27/27 resolve — unresolved list EMPTY**, proven
+  through the REAL sync mapper on post-migration wire rows; migration carries per-row USDA
+  citations, kcal=4C+4P+9F, idempotent, solver-excluded. Honest correction accepted: pre-seed
+  truth was 13 unresolved (not 15) — energy_gel resolved via description; CEREAL was
+  MIS-RESOLVING to Oatmeal (wrong macros, live quality bug) — fixed by the true Cereal row +
+  the exact-name-first resolver pass; fixture completeness now generator-enforced.
+  ALL G-TABLE ITEMS (G1–G26) BUILT AND QA-VERIFIED. Land awaits: release/1.28.0 base
+  confirmation + blast count, then the ruled sequence.

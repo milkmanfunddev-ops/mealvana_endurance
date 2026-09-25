@@ -1,5 +1,7 @@
 bundle:  carb-loading
-version: v1
+version: v1.1            # point release at land: engine repoints (real entry points), all
+                         # post-@v1 interview/desk rulings folded (CE-9/CE-10, Q-D9..11, G17-G26
+                         # additions incl. seed + repair riders), prototype pin v22. @v1 immutable.
 status:  ratified
 ratified: 2026-09-25            # Xuan — interview (13 decisions) + Q-CL11 + entryway batch + desk sitting + Q-D batch; explicit ship GO 2026-09-25 at his checkpoint
 ships: >
@@ -17,12 +19,12 @@ specs:
     version: RATIFIED v1 (2026-09-24, interview; Q-CL11 anchor addendum same day)
     spec:    spec/fueling/carb-loading.md
     vectors: vectors/fueling/carb-loading.json            # 46 (count-vectors.mjs, 2026-09-25)
-    engine:  null until the published entry point exists (handback G2/G3)
+    engine:  CarbLoadingPaceEngine (landed app 1f5cb247; repointed post-tag per the manifest note — pin at @v1.1)
   - slice:   carb-loading-entryway (behavior)
     version: RATIFIED v1 behavior (2026-09-24) + CE-8 + CE-9 (2026-09-25)
     spec:    spec/fueling/carb-loading-entryway.md
     vectors: vectors/fueling/carb-loading-entryway.json   # 14 (count-vectors.mjs, 2026-09-25)
-    engine:  null (G7–G16 surfaces)
+    engine:  CarbLoadingEntrywayEngine (landed app 1f5cb247; repointed post-tag — pin at @v1.1)
   - slice:   entryway rendering
     spec:    spec/design/surfaces/carb-loading-entryway.md     # RATIFIED 2026-09-25 (desk) + v20/v21 re-walks
   - slice:   dashboard surface + slot card

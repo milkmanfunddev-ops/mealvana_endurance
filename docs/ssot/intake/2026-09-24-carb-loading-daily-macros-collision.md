@@ -1,3 +1,4 @@
+> **RESOLVED 2026-09-25 → morning interview (Xuan): OPTION 1 plan-authoritative override ruled as direction; rebalance spec pass + mini-interview next; own bundle loading-day-macros-coupling**
 type: ruling-request
 bundle: cross-cutting (carb-loading release-1 × daily-macros)
 

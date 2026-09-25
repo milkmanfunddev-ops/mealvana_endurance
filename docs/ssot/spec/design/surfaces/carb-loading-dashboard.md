@@ -44,3 +44,10 @@ traced to `carb-loading.md` fields.
   (regular day has no carb DOM); slot-card rows (its file); CE-7/chip navigation; copy strings
   verbatim; the smoke layer's engine ⇄ drawer number check rides qa-smoke.
 - Prototype defects/deviations: none found beyond Q-D9/Q-D10 this walk.
+- **Q-D11 (OPEN, non-gating, filed 2026-09-25):** the LOAD face re-derives on DATA CHANGE only
+  (the base dashboard's inherited model — no clock tick exists anywhere in the family), so pace
+  copy can run minutes stale between writes. No ratified clause requires a tick; adding one
+  only to the LOAD face would tick it at a different rate than the base "so far" figures.
+  **RULED (Xuan, 2026-09-25): accept-as-model for release-1** — derive-on-data-change stands;
+  the shared minute tick goes to the polish queue. Conformance consequence: qa-smoke triggers a
+  re-derive (any interaction/write) before comparing the face to the clock oracle.

@@ -41,6 +41,13 @@ semantics, delete, and the reminder-to-start disposition. Slot-day math is `carb
   register (dragonfruit), confirm copy states targets/schedule are deleted and **"food already
   logged stays in your log"** (true by Path A). Event-deletion cascade unchanged. No
   archive/history in release-1.
+- **CE-10 — Edit a day target — RULED (Xuan, 2026-09-25 morning interview, Q#8 option A,
+  composition ruled directly):** the plan summary's DAY ROWS are the athlete's edit affordance —
+  tapping a row opens the Edit Target dialog (the existing machinery, register copy per CL-12).
+  Editable for TODAY and FUTURE days only; past rows are inert (the "past days are history"
+  precedent). Saving re-derives slots/checkpoints/ramp/copy per CL-4a and surfaces the EDITED
+  chip. The dialog keeps its own Cancel (it is not a re-pick dialog; CE-9 does not bind it).
+  This makes the ratified chooser-footer promise true.
 - **CE-9 — Dialog abort — RULED (Xuan, 2026-09-25, F6 interview: option A):** on BOTH re-pick
   dialogs (Keep/Reset and the F4 single-notice), a tap outside the dialog ABORTS the re-pick —
   dialog dismisses, plan untouched, chooser stays open. No new button; CE-4's "exactly two
@@ -78,6 +85,7 @@ vector family joins `carb-loading.json` post-ratification: migrate-by-date targe
 | Q-CE6 | **CONFIRMED** — reminder-to-start OUT, named in exclusions |
 | CE-8 | **RULED** — feasibility gate (raised by Xuan at the interview; see row) |
 | CE-9 | **RULED 2026-09-25** — backdrop-tap aborts both re-pick dialogs (F6, option A) |
+| CE-10 | **RULED 2026-09-25** — summary day rows open Edit Target; today/future only; past inert (Q#8 option A) |
 | CE-7 | **RULED yes (Xuan, 2026-09-25, desk)** — navigation-only "Manage plan ›" footer on the breakdown page → plan summary; read-only holds |
 
 ## Rendering ratification (OPEN — the desk)

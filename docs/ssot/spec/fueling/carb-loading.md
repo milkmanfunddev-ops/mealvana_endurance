@@ -91,7 +91,8 @@ writer-less `logged_carbs_grams`/`completed` → **D-020**; mapper's percent-sca
 | `On pace` | \|delta\| ≤ band(t) |
 | `<target> g / planned` | future-day face |
 | `LOADED` + `N of N g` | eaten ≥ day target (label flip + sub-line) |
-| `N g to go` | expanded face headline; to-go = max(day_target − eaten, 0) — RULED addition (Q-D9, Xuan 2026-09-25) |
+| `N g to go` | expanded face headline while eaten < day_target — RULED addition (Q-D9) |
+| `Target met` | replaces the to-go figure on completion (eaten ≥ day_target) — RULED amendment (Xuan, 2026-09-25 morning interview; restores v21’s organic string into the register) |
 | `pace N g by now` | expanded face pace anchor; N = round(owed(t)) — RULED addition (Q-D9) |
 Point-value protocol copy rows ride CL-12. The design surface spec extracted from v17 mirrors
 this register; drift between them is a conformance failure, not a fork.

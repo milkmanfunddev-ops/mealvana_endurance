@@ -31,7 +31,7 @@ ratification itself.
 | [Q-016](#q-016) | Manual profile edits: which cached days recalculate? | **RULED 2026-08-17** — today + future; past days are history |
 | [Q-017](#q-017) | Carb cycling is unobservable under the Q-014 fat cap | **RULED 2026-08-17** — no-op accepted for v1; 10b exemption staged for a LATER bundle version (**excluded from @v2**, Xuan 2026-08-17) |
 | [Q-018](#q-018) | Mark-done: what `actual_time` gets, and on which days it is offered (= design Q-D7) | **RULED 2026-08-18** — `= planned_time` on past AND current days (reverses W-7 `= now`); not offered on a future day. **CONTRACT CHANGE → `@v3`** (ratified + shipped 2026-08-18) |
-| [Q-019](#q-019) | Loading-day collision: Formula 8 vs the ratified carb-loading protocol targets | **OPEN 2026-09-24 — own bundle track** (`loading-day-macros-coupling`, Xuan's routing); gates the app RELEASE that ships the LOAD face, not `carb-loading@v1` |
+| [Q-019](#q-019) | Loading-day collision: Formula 8 vs the ratified carb-loading protocol targets | **RULED 2026-09-25 (direction)** — option 1, plan-authoritative override; fat/kcal rebalance formulas ratify via the follow-up spec pass; own bundle `loading-day-macros-coupling`, release-coupled |
 
 ---
 
@@ -581,6 +581,7 @@ impact split: accepting/documenting is a post-ratification addition; exempting c
 
 ## Q-019
 ### On a day inside a carb-loading plan, what does the daily-macro calculation emit?
+> **RULED (direction) — Xuan, 2026-09-25 morning interview: OPTION 1, plan-authoritative override** — daily-macros carb target := the plan day's STORED target (edits included); protein holds its ratified g/kg; fat/kcal recompute around the load. The rebalance formulas are NOT yet ratified — they arrive via the follow-up PROPOSED spec + mini-interview, then the bundle ships as the daily-macros family's next version. Originally:
 > **OPEN — registered 2026-09-24; routed to its OWN bundle track (`loading-day-macros-coupling`)
 > by Xuan the same day. A contract change to this family by this register's own test (Formula 8,
 > its vectors, and the meal-page numbers all move) → next daily-macros bundle version, never

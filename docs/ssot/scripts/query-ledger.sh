@@ -57,6 +57,7 @@ if [ "${1:-}" = "tp-probe" ]; then MODE="tp-probe"; shift; fi
 if [ "${1:-}" = "retention" ]; then MODE="retention"; shift; fi
 if [ "${1:-}" = "fs-echo" ]; then MODE="fs-echo"; shift; fi
 if [ "${1:-}" = "day-audit" ]; then MODE="day-audit"; DAY="${2:-}"; shift 2; fi
+if [ "${1:-}" = "carb-midnight-audit" ]; then MODE="carb-midnight-audit"; shift; fi
 if [ "${1:-}" = "payload-detail" ]; then MODE="payload-detail"; DAY="${2:-}"; shift 2; fi
 ENVSEL="${1:-all}"
 LIMIT="${2:-1000}"
@@ -79,6 +80,25 @@ CATALOG_QUERIES = {
 }
 for label, ref, key in sections:
     if envsel != "all" and label != envsel:
+        continue
+    if mode == "carb-midnight-audit":
+        # G23a blast radius (Xuan-directed, 2026-09-25): COUNT-ONLY audit of non-midnight
+        # timestamps on carb-loading date columns. Dates only — no ids, no names, no payloads.
+        print(f"== {label} — carb-loading non-midnight date audit ==")
+        for table, cols in (("carb_loading_days", ["plan_date"]),
+                            ("carb_loading_plans", ["start_date", "end_date"])):
+            url = (f"https://{ref}.supabase.co/rest/v1/{table}?select=" + ",".join(cols)
+                   + "&limit=10000")
+            req = urllib.request.Request(url, headers={"apikey": key, "Authorization": "Bearer " + key})
+            try:
+                rows = json.loads(urllib.request.urlopen(req, timeout=30).read())
+            except Exception as e:
+                print(f"  {table}: ERROR {str(e)[:160]}"); continue
+            for col in cols:
+                vals = [r.get(col) for r in rows if r.get(col)]
+                bad = [v for v in vals if "T" in str(v) and not str(v).split("T")[1].startswith("00:00:00")]
+                print(f"  {table}.{col}: {len(vals)} rows, non-midnight = {len(bad)}"
+                      + (f"  (times only: {sorted(set(str(b).split('T')[1] for b in bad))[:5]})" if bad else ""))
         continue
     if mode == "run-audit":
         # For each raw Garmin activity received today: locate the matched activities

@@ -247,3 +247,17 @@ so we notice if the behavior changes, **not** an endorsement of it as truth.
 - **Resolution path:** app-side one-liner (fraction defaults in the mapper, or reject the row);
   should ride the release-1 branch before the slot targets go live.
 
+
+## D-022 — Carb loading: release-1 slot-page recommendations read the LEGACY separate store (ruled stopgap)
+
+- **Status:** ruled deviation (Xuan, 2026-09-25 — G21 fork option B). The S9 endstate (one
+  store, `is_carb_loading` + per-slot suitability on the shared library) stands RATIFIED and
+  deliberately deferred; release-1 reads the existing `carb_loading_foods` store, whose
+  `meal_types` already carry the per-slot suitability, via the shipping sync path.
+- **Why it is not a self-ratification:** the 2026-09-21 sync record itself says "reuse the old
+  carb catalog wiring is a stopgap at most" and left first-ship inclusion UNSETTLED; Xuan
+  settled it as B at the fork.
+- **Resolution path:** the unification migration (library columns + meal_types carry-over +
+  slot page repoint + old-store retirement) as a named follow-up — resume pointer in
+  `intake/2026-09-25-catalog-unification-follow-up.md`; its red: the G21 seam L2 flips its
+  data source and the old store's reader count drops to zero.
