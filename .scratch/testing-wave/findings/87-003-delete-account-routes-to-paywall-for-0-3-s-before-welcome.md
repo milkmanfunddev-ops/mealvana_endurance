@@ -1,7 +1,7 @@
 # 87-003 · Delete account routes to /paywall for 0.3 s before Welcome
 
 - kind: followup-test
-- status: open
+- status: triaged
 - ticket: 87
 - run: w25-20260925T1325Z
 - screen: Settings, Delete account
@@ -25,3 +25,4 @@ Not seen on screen (the only screenshot came 8 s later, on Welcome). The console
 > 
 
 **Triage.**
+Picked for retest ticket 107 (Lee, 2026-09-25).

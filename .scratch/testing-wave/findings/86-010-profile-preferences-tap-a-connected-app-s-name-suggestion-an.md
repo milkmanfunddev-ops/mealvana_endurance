@@ -1,7 +1,7 @@
 # 86-010 · Profile & Preferences: tap a connected app's name suggestion and save
 
 - kind: followup-test
-- status: open
+- status: triaged
 - ticket: 86
 - run: w25-20260925T1324Z
 - screen: Profile & Preferences
@@ -26,3 +26,4 @@ Huang").
 > 
 
 **Triage.**
+Picked for retest ticket 107 (Lee, 2026-09-25).

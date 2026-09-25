@@ -1,7 +1,7 @@
 # 87-002 · An offline cold launch holds the splash about 12 s; Supabase init takes 5.5 s offline against 1.2 s online
 
 - kind: bug
-- status: open
+- status: wontfix
 - ticket: 87
 - run: w25-20260925T1325Z
 - screen: Splash
@@ -28,3 +28,4 @@ Launch 13:37:13.8Z. The splash logo stayed for at least 6 s (one screenshot a se
 > 
 
 **Triage.**
+Won't fix (Lee, 2026-09-25): offline cold launches are rare, and the Gate itself answers within 1 s of Supabase init; the slower init offline is accepted.

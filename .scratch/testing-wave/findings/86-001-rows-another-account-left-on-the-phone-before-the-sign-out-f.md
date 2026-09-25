@@ -1,7 +1,7 @@
 # 86-001 · Rows another account left on the phone before the sign-out fix are never cleared: signed in as test@test.com, Lee's plans, logs and activities are still in the local database
 
 - kind: bug
-- status: open
+- status: triaged
 - ticket: 86
 - run: w25-20260925T1324Z
 - screen: Welcome → Log in (email) → Timeline
@@ -39,3 +39,4 @@ does work: test@test.com's rows were gone after each of its sign-outs, and the n
 > 
 
 **Triage.**
+Fix ticket 102 (Lee, 2026-09-25): signing in sweeps other accounts' rows the server already holds and keeps their unsynced rows. Closed by retest ticket 107 after it merges.

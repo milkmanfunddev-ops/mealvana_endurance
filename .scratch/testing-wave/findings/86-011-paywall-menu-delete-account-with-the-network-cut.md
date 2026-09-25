@@ -1,7 +1,7 @@
 # 86-011 · Paywall menu Delete account with the network cut
 
 - kind: followup-test
-- status: open
+- status: triaged
 - ticket: 86
 - run: w25-20260925T1324Z
 - screen: Paywall
@@ -27,3 +27,4 @@ Not run. Online, the delete worked: Welcome, `[RevenueCatService] logged out`, n
 > 
 
 **Triage.**
+Picked for retest ticket 107 (Lee, 2026-09-25).

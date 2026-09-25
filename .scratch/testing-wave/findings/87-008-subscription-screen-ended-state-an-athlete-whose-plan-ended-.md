@@ -1,7 +1,7 @@
 # 87-008 · Subscription screen ended state: an athlete whose plan ended cannot reach it, since the Gate keeps them on the paywall
 
 - kind: followup-test
-- status: open
+- status: triaged
 - ticket: 87
 - run: w25-20260925T1325Z
 - screen: Subscription
@@ -24,3 +24,4 @@ Not run beyond the ⋯ menu: after A lapsed at 14:15:14Z the app sat on the payw
 > 
 
 **Triage.**
+Fix ticket 106 (Lee, 2026-09-25): the ended state is removed, since mp-457 keeps a lapsed athlete on the paywall. Closed by retest ticket 107 after it merges.

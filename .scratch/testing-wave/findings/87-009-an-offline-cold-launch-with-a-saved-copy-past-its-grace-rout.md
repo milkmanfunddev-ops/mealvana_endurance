@@ -1,7 +1,7 @@
 # 87-009 · An offline cold launch with a saved copy past its grace routes to /main for 1.4 s before the paywall, 5.4 s after the router starts
 
 - kind: bug
-- status: open
+- status: triaged
 - ticket: 87
 - run: w25-20260925T1325Z
 - screen: Startup (splash) → Paywall
@@ -30,3 +30,4 @@ Ticket 67 / mp-335 with the mp-666 ruling: a saved copy more than 15 minutes pas
 > 
 
 **Triage.**
+Fix ticket 105 (Lee, 2026-09-25): the Gate's first answer applies the 15-minute cutoff and startup waits at most two seconds. Closed by retest ticket 107 after it merges.

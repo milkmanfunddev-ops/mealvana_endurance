@@ -1,7 +1,7 @@
 # 86-005 · After Don't Allow on Speech Recognition, the Vana chat's Dictate button disappears without a word
 
 - kind: idea
-- status: open
+- status: triaged
 - ticket: 86
 - run: w25-20260925T1324Z
 - screen: Vana chat (full screen)
@@ -28,3 +28,4 @@ message. The prompt itself now comes on the mic tap, not on opening the chat (09
 > 
 
 **Triage.**
+Fix ticket 104 (Lee, 2026-09-25): Dictate stays after a refusal and a tap says how to turn it on in iOS Settings. Closed by retest ticket 107 after it merges.

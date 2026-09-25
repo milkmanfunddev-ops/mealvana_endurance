@@ -1,7 +1,7 @@
 # 87-001 · After a redeemed code the onboarding paywall stays up about 4 s with Continue live under the success snackbar
 
 - kind: bug
-- status: open
+- status: triaged
 - ticket: 87
 - run: w25-20260925T1325Z
 - screen: Paywall
@@ -28,3 +28,4 @@ At 13:31:32Z, about 5 s after the tap, the sheet had closed and the full onboard
 > 
 
 **Triage.**
+Fix ticket 106 (Lee, 2026-09-25): ticket 45's purchase lock applies to a redeem. Closed by retest ticket 107 after it merges.

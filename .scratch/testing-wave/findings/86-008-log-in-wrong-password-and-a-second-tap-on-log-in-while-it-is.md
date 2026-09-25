@@ -1,7 +1,7 @@
 # 86-008 · Log In: wrong password, and a second tap on Log In while it is busy
 
 - kind: followup-test
-- status: open
+- status: triaged
 - ticket: 86
 - run: w25-20260925T1324Z
 - screen: Log In
@@ -25,3 +25,4 @@ Not run. The busy state now holds until the tabs shell (12-003 passes), which sh
 > 
 
 **Triage.**
+Picked for retest ticket 107 (Lee, 2026-09-25).

@@ -1,7 +1,7 @@
 # 86-003 · Plan tab opened within seconds of login, while the account's own stale local plan rows are still there
 
 - kind: followup-test
-- status: open
+- status: triaged
 - ticket: 86
 - run: w25-20260925T1324Z
 - screen: Plan tab
@@ -31,3 +31,4 @@ so ticket 33 does not remove it; an earlier look at the Plan tab may still show 
 > 
 
 **Triage.**
+Picked for retest ticket 107 (Lee, 2026-09-25).

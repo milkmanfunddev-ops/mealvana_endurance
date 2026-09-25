@@ -1,7 +1,7 @@
 # 86-002 · Local database holds this week's plan 173cebb2 as archived while dev holds it as draft
 
 - kind: followup-test
-- status: open
+- status: triaged
 - ticket: 86
 - run: w25-20260925T1324Z
 - screen: Plan tab
@@ -31,3 +31,4 @@ ticket 86.
 > 
 
 **Triage.**
+Picked for retest ticket 107 (Lee, 2026-09-25).

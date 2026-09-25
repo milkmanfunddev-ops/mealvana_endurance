@@ -1,7 +1,7 @@
 # 86-007 · Sign out offline with an unsynced meal log: does the new local wipe lose it?
 
 - kind: followup-test
-- status: open
+- status: triaged
 - ticket: 86
 - run: w25-20260925T1324Z
 - screen: Settings
@@ -28,3 +28,4 @@ before it can fail offline.
 > 
 
 **Triage.**
+Fix ticket 102 (Lee, 2026-09-25): made a bug on code reading (a failed pre-logout upload is logged, then the wipe deletes the unsynced rows). Ruling: the wipe deletes only rows the server holds; unsynced rows stay for that account's next sign-in. Analysis: runs/86/triage-sync-analysis.md. Closed by retest ticket 107 after it merges.

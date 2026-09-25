@@ -1,7 +1,7 @@
 # 86-009 · Verify your email: Use a different email, and Resend then the superseded code
 
 - kind: followup-test
-- status: open
+- status: triaged
 - ticket: 86
 - run: w25-20260925T1324Z
 - screen: Verify your email
@@ -27,3 +27,4 @@ one." (32-001 passes).
 > 
 
 **Triage.**
+Picked for retest ticket 107 (Lee, 2026-09-25).

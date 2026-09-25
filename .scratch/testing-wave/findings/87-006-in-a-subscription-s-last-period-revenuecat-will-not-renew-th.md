@@ -1,7 +1,7 @@
 # 87-006 · In a subscription's last period (RevenueCat will_not_renew) the Subscription screen still says Renews on, and the app and the server both keep the 15-minute renewal grace past its end
 
 - kind: bug
-- status: open
+- status: triaged
 - ticket: 87
 - run: w25-20260925T1325Z
 - screen: Subscription
@@ -31,3 +31,4 @@ The screen read "Subscribed", "Pro Monthly", "Renews on September 25, 2026." in 
 > 
 
 **Triage.**
+Fix ticket 105 (Lee, 2026-09-25): app side only; the app fetches before granting grace and the Subscription screen fetches on open. Server side won't fix: the Test Store sends no CANCELLATION for its planned end. Closed by retest ticket 107 after it merges.

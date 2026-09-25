@@ -1,7 +1,7 @@
 # 87-005 · Subscription screen on a Grant: redeem a second giveaway, and the days-left line near the end of a Grant
 
 - kind: followup-test
-- status: open
+- status: triaged
 - ticket: 87
 - run: w25-20260925T1325Z
 - screen: Subscription
@@ -24,3 +24,4 @@ Not run (look-around, ticket 87). This run saw only "Pro from a code", "365 days
 > 
 
 **Triage.**
+Picked for retest ticket 107 (Lee, 2026-09-25).

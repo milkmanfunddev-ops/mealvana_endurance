@@ -1,7 +1,7 @@
 # 86-004 · The paywall's sign-out confirm reads differently from Settings' sign-out confirm
 
 - kind: idea
-- status: open
+- status: triaged
 - ticket: 86
 - run: w25-20260925T1324Z
 - screen: Paywall
@@ -27,3 +27,4 @@ content-system strings and neither mentions a guest, so mp-508 holds for both.
 > 
 
 **Triage.**
+Fix ticket 104 (Lee, 2026-09-25): both sign-out confirms use Settings' text. Closed by retest ticket 107 after it merges.

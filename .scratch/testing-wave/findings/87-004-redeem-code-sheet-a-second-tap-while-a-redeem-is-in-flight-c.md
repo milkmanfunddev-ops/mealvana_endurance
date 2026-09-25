@@ -1,7 +1,7 @@
 # 87-004 · Redeem code sheet: a second tap while a redeem is in flight, closing the sheet mid-request, and a 32-character code with spaces
 
 - kind: followup-test
-- status: open
+- status: triaged
 - ticket: 87
 - run: w25-20260925T1325Z
 - screen: Redeem code (paywall ⋯ menu)
@@ -25,3 +25,4 @@ Not run (look-around, ticket 87).
 > 
 
 **Triage.**
+Picked for retest ticket 107 (Lee, 2026-09-25).
