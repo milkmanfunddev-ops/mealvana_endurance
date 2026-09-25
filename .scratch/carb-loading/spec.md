@@ -374,6 +374,53 @@ log", filled = summary, chevron peek = read-only receipt + "Edit in <slot> ›".
 
 ---
 
+### RULED — 2026-09-24 (Xuan, via qa-6b mid-interview) — prototype v16
+
+Relayed by qa-6b during the ratification interview; formal apply-ruling handback
+still to come, but these were sent as Xuan-verbatim and are applied.
+
+**The read-only breakdown page is IN release-1.** E2 on the LOAD face routes to
+it — not to the old net-balance pager, not to the Meals sheet. Logging stays on
+the timeline; the page holds protein/fat/kcal and the meal-by-meal split. The
+dashboard answers *now*; the breakdown answers *the whole day*.
+
+**Slot grid re-ruled to 3-hour anchors.** 6:00 · 9:00 · 12:00 · 15:00 · 18:00 ·
+21:00, window closing 22:00. Day-1 checkpoints: 0@6 · 136@9 · 190@12 · 326@15 ·
+408@18 · 517@21 · 544@22. Supersedes the 7:30/10:00/12:30/… grid in the D8
+refinement above. Consequence: breakfast accrues from 6am, so an empty 7am now
+honestly reads "45 g behind" rather than "On pace".
+
+**Dead-band goes relative: max(5% of owed(t), 10 g)**, replacing the fixed
+±15 g. At 9pm (owed 517) the band is ~26 g; at 7am it floors at 10 g.
+
+**Ramp stands (D8 confirmed). Copy is point-value only, never ranges.
+Eaten = ALL carbs logged that day** (slots are scaffolding — already the
+prototype's behaviour). **An edited day target re-derives slots, checkpoints,
+and copy** (the prototype already scales splits off `DAY_TARGET`; day 3's 680 g
+yields a 170 g breakfast). **1-Day protocol prices at 11.0 g/kg** — chooser's
+third card; app-side, no prototype surface.
+
+**Prototype v16** (both `Fuel Timeline` files, server verified byte-equal):
+
+- Grid + dead-band + checkpoint numbers updated as above; harness-verified:
+  7am 45 behind · 3pm 31 behind · 7pm 69 behind · 9pm 26 behind (band 25.85 —
+  just outside, the relative band earning its keep) · 10pm Loaded 547/544.
+- **Breakdown page built** as a full-screen read-only overlay
+  (`showLoadBreakdown`, z-28), opened by the expanded LOAD face's Full
+  Breakdown button (`openLoadBreakdown`; the regular-day faces keep the old
+  `openFullBreakdown` route). Composition, top to bottom:
+  - header: back chevron · "Carb Load · Day N of 3" (Compadre);
+  - hero: the pace words + the 14px loader recap with cream pace tick +
+    "eaten X of Y g carbs" — same bindings as the face, no second math;
+  - macro strip: carbs/protein/fat/kcal in electrolyte (formula-kit register);
+  - BY MEAL: six rows — slot name + clock, eaten/target g, 4px orange minibar,
+    the currently-open window ringed orange (today only);
+  - PROTOCOL: three day chips (544/544/680), current day ringed.
+  Only interaction is the back button. Day-variant aware via the existing
+  `dayRel`: future shows "680 g planned" and 170-g-scale targets, past shows
+  the outcome, neither marks a current slot. Unreachable on a regular day even
+  with stale state (`carbDay &&` gate).
+
 ## Notes on the two new ideas
 
 **Reminder to start.** Machinery exists — `NotificationService`
