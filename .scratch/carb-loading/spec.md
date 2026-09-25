@@ -522,7 +522,7 @@ e851b6d; 46 vectors landed EXPECTED-RED (engine=null until G2/G3 exists).
 **Prototype v18** (both files, server byte-equal, standalone sha
 `ebcb2f16a4b064bf`): v17 computed exact-fraction anchors then rounded owed(t)
 at every instant — coincidentally equal to Option R on 544/680 but divergent
-on edited targets (450 → 12:00 anchor 270 vs ruled 271) and non-conformant on
+on edited targets (450 → 15:00 anchor 270-exact vs ruled 271; 12:00 is 157.5 vs 158 — clock labels per qa correction) and non-conformant on
 fractional owed. v18 rounds each slot into the running sum, drops the owed(t)
 rounding (display still whole grams), and keeps the forced close anchor.
 Harness: all seven demo readouts unchanged; the 450 g oracle reproduces the
