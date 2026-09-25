@@ -20,6 +20,7 @@ class MealReview {
     required this.mealName,
     required this.isGood,
     required this.why,
+    this.appVersion,
   });
 
   final MealSource mealSource;
@@ -27,6 +28,10 @@ class MealReview {
   final String mealName;
   final bool isGood;
   final String why;
+
+  /// The build that sent the review, `version+build` (Finding 89-014: the
+  /// column was always empty). Null when the platform cannot say.
+  final String? appVersion;
 
   /// `meal_reviews` insert body; `reviewer_id` is stamped by the repository.
   Map<String, dynamic> toRow(String reviewerId) => {
@@ -36,6 +41,7 @@ class MealReview {
     'meal_name': mealName,
     'is_good': isGood,
     'why': why,
+    'app_version': appVersion,
   };
 }
 

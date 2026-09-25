@@ -2,6 +2,7 @@ import 'dart:async';
 
 import 'package:riverpod_annotation/riverpod_annotation.dart';
 
+import '../../../shared/providers/app_version_provider.dart';
 import '../../../shared/providers/user_id_provider.dart';
 import '../../../shared/services/app_external_deps.dart';
 import '../../../shared/services/logging_service.dart';
@@ -112,6 +113,9 @@ class MealDetailController extends _$MealDetailController {
     final clean = why.trim();
     if (clean.isEmpty) return;
     try {
+      // The build that sent it (89-014); a version the platform cannot
+      // give is sent as null, never a reason to refuse the review.
+      final appVersion = await ref.read(appVersionProvider.future);
       await ref
           .read(mealReviewRepositoryProvider)
           .addReview(
@@ -121,6 +125,7 @@ class MealDetailController extends _$MealDetailController {
               mealName: current.meal.name,
               isGood: isGood,
               why: clean.length > 2000 ? clean.substring(0, 2000) : clean,
+              appVersion: appVersion,
             ),
           );
     } catch (e, st) {

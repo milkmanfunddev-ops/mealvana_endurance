@@ -16,6 +16,12 @@ class ConnectivityChecker {
     final result = await Connectivity().checkConnectivity();
     return !result.contains(ConnectivityResult.none);
   }
+
+  /// `true` as the device comes online, `false` as it goes offline — for a
+  /// read that failed offline and wants one more go when the network is back.
+  Stream<bool> get onlineChanges => Connectivity().onConnectivityChanged.map(
+    (result) => !result.contains(ConnectivityResult.none),
+  );
 }
 
 @Riverpod(keepAlive: true)

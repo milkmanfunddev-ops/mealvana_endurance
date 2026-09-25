@@ -60,8 +60,14 @@ class StubConnectivity extends ConnectivityChecker {
 
   bool online;
 
+  /// Push `true` / `false` to play the device coming online / going offline.
+  final changes = StreamController<bool>.broadcast();
+
   @override
   Future<bool> isOnline() async => online;
+
+  @override
+  Stream<bool> get onlineChanges => changes.stream;
 }
 
 // ── Supabase auth surface for VanaTransport ─────────────────────────────────

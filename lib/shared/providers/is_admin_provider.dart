@@ -1,6 +1,8 @@
+import 'package:flutter/widgets.dart';
 import 'package:riverpod_annotation/riverpod_annotation.dart';
 
 import '../services/app_external_deps.dart';
+import '../services/connectivity_checker.dart';
 
 part 'is_admin_provider.g.dart';
 
@@ -14,6 +16,11 @@ part 'is_admin_provider.g.dart';
 /// boolean is not worth it. Signed out, or any read failure, means `false`.
 /// A sign-in or sign-out that changes the user re-reads, so an athlete who
 /// signs in after an admin on the same device never inherits the box.
+///
+/// A read that failed (an offline start, Finding 89-010) still answers
+/// `false` — the gate awaits it — and reads again once the network comes
+/// back or the app next resumes, so one bad start does not hide Team review
+/// for the whole session.
 @Riverpod(keepAlive: true)
 Future<bool> isAdmin(Ref ref) async {
   final deps = ref.watch(appExternalDepsProvider);
@@ -36,8 +43,36 @@ Future<bool> isAdmin(Ref ref) async {
       context: 'IS_ADMIN',
       error: e,
     );
+    _retryWhenReachable(ref);
     return false;
   }
+}
+
+/// Arm one re-read: the first of "the network came back" or "the app
+/// resumed" invalidates the provider, whose rebuild drops both listeners.
+/// Best-effort: if neither signal can be armed (no widgets binding, no
+/// connectivity plugin) the answer stays `false`, as before.
+void _retryWhenReachable(Ref ref) {
+  var armed = true;
+  void retry() {
+    if (!armed) return;
+    armed = false;
+    ref.invalidateSelf();
+  }
+
+  try {
+    final network = ref
+        .read(connectivityCheckerProvider)
+        .onlineChanges
+        .listen((online) {
+          if (online) retry();
+        }, onError: (_) {});
+    ref.onDispose(network.cancel);
+  } catch (_) {}
+  try {
+    final lifecycle = AppLifecycleListener(onResume: retry);
+    ref.onDispose(lifecycle.dispose);
+  } catch (_) {}
 }
 
 /// `users.is_admin` as PostgREST returns it: `true`, `false`, `null` (an
