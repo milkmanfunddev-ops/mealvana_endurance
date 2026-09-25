@@ -447,9 +447,9 @@ class _VanaChatScreenState extends ConsumerState<VanaChatScreen> {
       onChipPick: _tapChip,
       onSomethingElse: _focusComposer,
       onAcceptRule: _acceptRule,
-      onViewShopping: () => context.go('/main?tab=food&food=shopping'),
+      onViewShopping: () => goToFoodTab(context, FoodTab.shopping),
       onPantryUse: _usePantry,
-      onPlanWeekOpen: () => context.go('/main?tab=food&food=plan'),
+      onPlanWeekOpen: () => goToFoodTab(context, FoodTab.plan),
       onPantryPhoto: _snapFridgePhoto,
       onSwapPicked: (meal) => _swapPicked(plan, meal),
       onEditMessage: _beginEdit,
@@ -796,7 +796,8 @@ class _VanaChatScreenState extends ConsumerState<VanaChatScreen> {
     }
     await _controller.tapChip(label);
     final to = chip?.navigatesTo;
-    if (to != null && mounted) context.go(to);
+    // A fresh extra so a repeat go still switches the Food segment (16-002).
+    if (to != null && mounted) context.go(to, extra: foodTabRequest());
   }
 
   void _focusComposer() {
