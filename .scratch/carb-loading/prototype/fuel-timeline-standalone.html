@@ -2192,9 +2192,11 @@ window.__resources = {
           <button onClick="{{ toggleTracking }}" title="{{ trackTitle }}" style="flex:0 0 auto;display:flex;align-items:center;justify-content:center;width:38px;height:38px;background:{{ trackBtnBg }};border:1px solid {{ trackBtnBorder }};border-radius:50%;color:{{ trackBtnColor }};cursor:pointer;">
             <svg width="17" height="17" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M22 12h-4l-3 9L9 3l-3 9H2"></path></svg>
           </button>
+          <sc-if value="{{ showSparkleBtn }}" hint-placeholder-val="{{ true }}">
           <button onClick="{{ toggleSuggest }}" title="{{ suggestTitle }}" style="flex:0 0 auto;display:flex;align-items:center;justify-content:center;width:38px;height:38px;background:{{ suggestBtnBg }};border:1px solid {{ suggestBtnBorder }};border-radius:50%;color:{{ suggestBtnColor }};cursor:pointer;">
             <svg width="17" height="17" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M9.937 15.5A2 2 0 0 0 8.5 14.063l-6.135-1.582a.5.5 0 0 1 0-.962L8.5 9.936A2 2 0 0 0 9.937 8.5l1.582-6.135a.5.5 0 0 1 .963 0L14.063 8.5A2 2 0 0 0 15.5 9.937l6.135 1.581a.5.5 0 0 1 0 .964L15.5 14.063a2 2 0 0 0-1.437 1.437l-1.582 6.135a.5.5 0 0 1-.963 0z"></path><path d="M20 3v4"></path><path d="M22 5h-4"></path><path d="M4 17v2"></path><path d="M5 18H3"></path></svg>
           </button>
+          </sc-if>
           <button onClick="{{ toggleTimeline }}" title="{{ timelineLabel }}" style="flex:0 0 auto;display:flex;align-items:center;justify-content:center;width:38px;height:38px;background:{{ timelineToggleBg }};border:1px solid {{ timelineToggleBorder }};border-radius:50%;color:{{ timelineToggleColor }};cursor:pointer;">
             <sc-if value="{{ timelineOpen }}" hint-placeholder-val="{{ true }}"><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="9"></circle><path d="M12 7v5l3 2"></path></svg></sc-if>
             <sc-if value="{{ timelineClosed }}" hint-placeholder-val="{{ false }}"><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="9"></circle><path d="M12 7v5l3 2"></path><path d="M3 3l18 18"></path></svg></sc-if>
@@ -2394,8 +2396,8 @@ window.__resources = {
         </sc-if>
 
         <sc-if value="{{ showEvConfirm }}" hint-placeholder-val="{{ false }}">
-        <div style="position:absolute;inset:0;z-index:28;display:flex;align-items:center;justify-content:center;padding:24px;background:rgba(0,0,0,0.5);">
-          <div style="background:rgb(46,17,42);border:1px solid rgba(248,246,235,0.14);border-radius:18px;padding:18px 16px;width:100%;">
+        <div onClick="{{ evConfirmAbort }}" style="position:absolute;inset:0;z-index:28;display:flex;align-items:center;justify-content:center;padding:24px;background:rgba(0,0,0,0.5);">
+          <div onClick="{{ evStop }}" style="background:rgb(46,17,42);border:1px solid rgba(248,246,235,0.14);border-radius:18px;padding:18px 16px;width:100%;">
             <div style="font-family:'Compadre',Georgia,serif;font-size:17px;color:var(--me-cream);">{{ evConfirmTitle }}</div>
             <div style="font-family:'Apercu',sans-serif;font-size:12px;color:rgba(248,246,235,0.65);margin-top:8px;line-height:1.45;">{{ evConfirmBody }}</div>
             <sc-if value="{{ evConfirmTwo }}" hint-placeholder-val="{{ true }}">
@@ -2981,6 +2983,8 @@ class Component extends DCLogic {
       evNoticeBtnLabel: evPend ? "Switch to " + evPend.name : "",
       evConfirmKeep: () => evApply(s.evConfirm, evPendKeeps ? "edited" : "plan"),
       evConfirmReset: () => evApply(s.evConfirm, "plan"),
+      evConfirmAbort: () => this.setState({ evConfirm: null }),
+      evStop: (e) => e.stopPropagation(),
 
       openLoadBreakdown: () => this.setState({ loadBreakdown: true, lbFrom: curDayKey }),
       lbClose: () => { if (s.lbFrom && s.lbFrom !== curDayKey) lbGoDay(s.lbFrom); this.setState({ loadBreakdown: false }); },
@@ -2990,7 +2994,8 @@ class Component extends DCLogic {
       lbRows, lbDays,
       lbManage: () => this.setState({ surf: "event", evSummary: true, loadBreakdown: false, evPlan: s.evPlan === "none" ? "plan" : s.evPlan }),
       suggestOn: suggest,
-      showInsightBox: suggest && !s.insightDismissed,
+      showSparkleBtn: !carbDay,
+      showInsightBox: suggest && !s.insightDismissed && !carbDay,
       dismissInsight: () => this.dismissInsight(),
       toggleSuggest: () => this.toggleSuggest(),
       askFollowUp: () => {},
@@ -3027,7 +3032,7 @@ class Component extends DCLogic {
       carbDashLabel: (carbComplete ? "Loaded" : "Carb Load") + " \u00b7 Day " + CARB_DAY_N + " of " + CARB_LOAD_DAYS,
       carbEatenStr: cc + " g",
       carbLoadTargetStr: String(TGT.carbs),
-      carbToGoStr: cc >= TGT.carbs ? "Target met" : (TGT.carbs - cc) + " g to go",
+      carbToGoStr: Math.max(TGT.carbs - cc, 0) + " g to go",
       carbLoadPctStr: Math.min(100, Math.round((cc / TGT.carbs) * 100)) + "%",
       carbPaceTargetStr: String(Math.round(carbPace)),
       carbPacePctStr: Math.min(100, Math.round((carbPace / TGT.carbs) * 100)) + "%",

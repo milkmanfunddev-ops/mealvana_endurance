@@ -656,6 +656,26 @@ After the three rulings + ratification of the two extraction docs, qa
 assembles the ship-readiness summary. Xuan remains the explicit checkpoint
 before ship-bundle tags.
 
+### RULED — 2026-09-25 (Xuan, interview; qa c7ef9ff) — Q-D9/Q-D10/F6; prototype v22
+
+**Q-D9 = option B**: the LOAD face expansion is ADMITTED — built behavior
+becomes the ruled contract (energy-card amendment rewritten: E1 toggles on
+LOAD, plain P-1). The expanded strings are REGISTERED: "N g to go" with
+to-go = max(target − eaten, 0), and "pace N g by now". v22 conforms the
+clamp — and removes "Target met", which v21 rendered at the loaded state and
+which was never registered (flagged to qa for re-extraction).
+**Q-D10**: sparkle + "Today's Fuel" STRIPPED from loading days in v22; the
+composition exclusion stands; regular day unchanged; slot scaffold untouched
+(sparkle-independent per Q-CL7).
+**F6 = CE-9** (new behavior rule): backdrop tap ABORTS both re-pick dialog
+variants — dismisses, plan untouched, chooser stays open; no Cancel button.
+App gate G16 with L2 reds in the handback.
+
+v22: source sha `254af8cf3349ef3e` (server byte-equal), bundle sha
+`f1c232d958a98bfe`. All three deltas harness-verified (incl. abort leaving
+evPlan/evProto untouched and paint order holding). After qa verifies, the
+ship-readiness summary goes to Xuan — he gates ship-bundle and the handover.
+
 ## Notes on the two new ideas
 
 **Reminder to start.** Machinery exists — `NotificationService`

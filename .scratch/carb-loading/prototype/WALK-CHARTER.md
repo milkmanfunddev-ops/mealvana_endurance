@@ -19,6 +19,27 @@ with the design project) and the BUNDLE sha (this file). The bundler script
 sits beside this charter (`bundle-standalone.py`) so the transform is
 reproducible and auditable.
 
+## v22 (2026-09-25) — Q-D9/Q-D10/F6 ruling conformance
+- source sha256/16 `254af8cf3349ef3e` (design project, verified byte-equal)
+- bundle sha256/16 `f1c232d958a98bfe` (880,302 bytes, committed bundler)
+
+Three deltas over v21 (qa c7ef9ff rulings):
+1. **Q-D10 strip** — the sparkle button and the "Today's Fuel" insight box no
+   longer render on loading days (any loading day, including the clock-free
+   future day). Regular day keeps both, unchanged. The six-slot scaffold is
+   untouched — it is loading-day-driven, sparkle-independent (Q-CL7), so
+   stripping the button changes nothing about the slots.
+2. **Q-D9 register conformance** — the expanded LOAD face stands as ruled
+   (option B, no structural change). Its to-go string now conforms to the
+   registered form: "N g to go" with to-go = max(target − eaten, 0) — at
+   547/544 it reads "0 g to go". NOTE for re-extraction: v21 rendered the
+   UNREGISTERED string "Target met" in that state; it is removed.
+3. **CE-9 backdrop-abort** — an outside/backdrop tap on the re-pick dialog
+   (both variants: Keep/Reset and the single-button notice) dismisses it:
+   plan untouched, chooser stays open beneath. No Cancel button added. The
+   dialog card swallows its own taps (stopPropagation). The DELETE confirm is
+   unchanged — it is not a re-pick dialog and already carries Cancel.
+
 ## v21 (2026-09-25) — V20-R1 fix
 - source sha256/16 `0caf27d1bfc27473` (design project, verified byte-equal)
 - bundle sha256/16 `2afe613779653c3e` (880,020 bytes, committed bundler)
