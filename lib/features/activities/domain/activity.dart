@@ -54,6 +54,7 @@ class Activity {
     this.completionNotes,
     this.actualDistanceMiles,
     this.actualDurationMinutes,
+    this.completionType,
 
     // Nutrition plan data (embedded JSON from activities.nutrition_plan_data)
     this.nutritionPlanData,
@@ -166,6 +167,21 @@ class Activity {
   final String? completionNotes;
   final double? actualDistanceMiles;
   final int? actualDurationMinutes;
+
+  /// Who completed the workout (`activities.completion_type`): null or
+  /// `manual` for the athlete's mark-done, [providerCompletionType] when a
+  /// training platform reported it done with its own measurements
+  /// (final-surge-completion.PROPOSED.md).
+  final String? completionType;
+
+  /// [completionType] of a completion a training platform reported.
+  static const providerCompletionType = 'provider';
+
+  /// True when a training platform (not the athlete, not Garmin) reported
+  /// this workout completed.
+  bool get isProviderCompleted =>
+      status == ActivityStatus.completed &&
+      completionType == providerCompletionType;
 
   // Nutrition plan data (embedded JSON from activities.nutrition_plan_data)
   final Map<String, dynamic>? nutritionPlanData;
@@ -289,6 +305,7 @@ class Activity {
       'completionNotes': completionNotes,
       'actualDistanceMiles': actualDistanceMiles,
       'actualDurationMinutes': actualDurationMinutes,
+      'completionType': completionType,
       'nutritionPlanData': nutritionPlanData,
       'fuelLogData': fuelLogData,
       'notes': notes,
@@ -361,6 +378,7 @@ class Activity {
     String? completionNotes,
     double? actualDistanceMiles,
     int? actualDurationMinutes,
+    String? completionType,
     Map<String, dynamic>? nutritionPlanData,
     Map<String, dynamic>? fuelLogData,
     String? notes,
@@ -436,6 +454,7 @@ class Activity {
       actualDistanceMiles: actualDistanceMiles ?? this.actualDistanceMiles,
       actualDurationMinutes:
           actualDurationMinutes ?? this.actualDurationMinutes,
+      completionType: completionType ?? this.completionType,
       nutritionPlanData: nutritionPlanData ?? this.nutritionPlanData,
       fuelLogData: fuelLogData ?? this.fuelLogData,
       notes: notes ?? this.notes,
@@ -513,6 +532,7 @@ class Activity {
         other.completionNotes == completionNotes &&
         other.actualDistanceMiles == actualDistanceMiles &&
         other.actualDurationMinutes == actualDurationMinutes &&
+        other.completionType == completionType &&
         other.nutritionPlanData == nutritionPlanData &&
         other.fuelLogData == fuelLogData &&
         other.notes == notes &&
@@ -613,7 +633,8 @@ class Activity {
           parentSummaryId,
           isParent,
         ) ^
-        (hiddenByDisconnect == true ? 0x1 : 0x0);
+        (hiddenByDisconnect == true ? 0x1 : 0x0) ^
+        completionType.hashCode;
   }
 
   @override

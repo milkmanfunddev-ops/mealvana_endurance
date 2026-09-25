@@ -1454,6 +1454,21 @@ class ActivitiesRepository with SyncableRepository {
     domain.Activity existing,
     domain.Activity incoming,
   ) {
+    // A platform-reported completion (FinalSurge WorkoutCompleted/ActualTime,
+    // final-surge-completion.PROPOSED.md) is fact (M-1.3): it lands status,
+    // completion time and the measured values, over a planned, skipped or
+    // mark-done row. It never overwrites a Garmin completion (device
+    // measurement) or a brick-archived segment. A payload WITHOUT completion
+    // never touches any of these fields, so a later plan-only re-sync
+    // cannot undo a completion.
+    final garminCompleted =
+        existing.status == domain.ActivityStatus.completed &&
+        existing.garminSummaryId != null;
+    final adoptCompletion =
+        incoming.isProviderCompleted &&
+        !garminCompleted &&
+        existing.status != domain.ActivityStatus.archivedForBrick;
+
     return domain.Activity(
       // identity
       id: existing.id,
@@ -1463,7 +1478,9 @@ class ActivitiesRepository with SyncableRepository {
       activityType: incoming.activityType,
       title: incoming.title,
       scheduledDateTime: incoming.scheduledDateTime,
-      status: existing.status,
+      status: adoptCompletion
+          ? domain.ActivityStatus.completed
+          : existing.status,
       distanceMiles: incoming.distanceMiles,
       durationMinutes: incoming.durationMinutes,
       paceTargetMinutesPerMile: incoming.paceTargetMinutesPerMile,
@@ -1491,16 +1508,30 @@ class ActivitiesRepository with SyncableRepository {
           (incoming.scheduledDateTime != existing.scheduledDateTime
               ? incoming.scheduledDateTime
               : existing.plannedTime),
-      actualTime: incoming.actualTime ?? existing.actualTime,
+      actualTime: adoptCompletion
+          ? incoming.actualTime
+          : incoming.isProviderCompleted
+          ? existing.actualTime
+          : incoming.actualTime ?? existing.actualTime,
       caloriesBurned: incoming.caloriesBurned ?? existing.caloriesBurned,
 
-      // preserve local completion and nutrition data
-      completedAt: existing.completedAt,
+      // preserve local completion and nutrition data (a platform-reported
+      // completion replaces the completion fields, see adoptCompletion)
+      completedAt: adoptCompletion
+          ? incoming.completedAt
+          : existing.completedAt,
       completionRating: existing.completionRating,
       nutritionRating: existing.nutritionRating,
       completionNotes: existing.completionNotes,
-      actualDistanceMiles: existing.actualDistanceMiles,
-      actualDurationMinutes: existing.actualDurationMinutes,
+      actualDistanceMiles: adoptCompletion
+          ? incoming.actualDistanceMiles
+          : existing.actualDistanceMiles,
+      actualDurationMinutes: adoptCompletion
+          ? incoming.actualDurationMinutes
+          : existing.actualDurationMinutes,
+      completionType: adoptCompletion
+          ? incoming.completionType
+          : existing.completionType,
       nutritionPlanData: existing.nutritionPlanData,
       // Preserve the locally-logged fuel data; provider imports never carry it.
       fuelLogData: existing.fuelLogData,
@@ -2204,6 +2235,21 @@ class ActivitiesRepository with SyncableRepository {
           status: const Value('completed'),
           deletedAt: const Value(null),
           completedAt: Value(incoming.completedAt ?? now),
+          // The platform's measurements and completion type, when the
+          // signal carries them (FinalSurge does; see
+          // final-surge-completion.PROPOSED.md). Absent fields stay as-is.
+          actualTime: incoming.actualTime != null
+              ? Value(incoming.actualTime)
+              : const Value.absent(),
+          actualDistanceMiles: incoming.actualDistanceMiles != null
+              ? Value(incoming.actualDistanceMiles)
+              : const Value.absent(),
+          actualDurationMinutes: incoming.actualDurationMinutes != null
+              ? Value(incoming.actualDurationMinutes)
+              : const Value.absent(),
+          completionType: incoming.completionType != null
+              ? Value(incoming.completionType)
+              : const Value.absent(),
           // Provider-owned planning fields refresh from the signal.
           title: Value(incoming.title),
           durationMinutes: Value(incoming.durationMinutes),

@@ -338,7 +338,14 @@ class AppDatabase extends _$AppDatabase {
   /// also re-runs the v20 columns idempotently. Supabase
   /// app_config.current_schema_version must be bumped to 22 when the build
   /// carrying this ships.
-  int get schemaVersion => 22;
+  ///
+  /// v23: `activities.completion_type`, the local mirror of the existing
+  /// Supabase column (default 'manual'). A FinalSurge workout the platform
+  /// reports done is stored with 'provider' so the card can show it verified
+  /// (testing-wave ticket 99, final-surge-completion.PROPOSED.md). Nullable;
+  /// null reads as manual. Supabase app_config.current_schema_version must
+  /// be bumped to 23 when the build carrying this ships.
+  int get schemaVersion => 23;
 
   /// Ensure sync tracking columns exist for user-authored tables.
   /// Uses ALTER TABLE IF NOT EXISTS which is supported in modern SQLite (3.35+).
@@ -721,6 +728,13 @@ class AppDatabase extends _$AppDatabase {
           await addColumn('users', 'has_bento_box', 'INTEGER');
           await addColumn('users', 'typical_wetsuit', 'INTEGER');
           await addColumn('users', 'typical_swim_cap_type', 'TEXT');
+        }
+
+        // v23: who completed a workout (manual mark-done vs a platform's
+        // reported completion). Nullable; addColumn is idempotent for web
+        // user_version replays.
+        if (from < 23) {
+          await addColumn('activities', 'completion_type', 'TEXT');
         }
       },
 

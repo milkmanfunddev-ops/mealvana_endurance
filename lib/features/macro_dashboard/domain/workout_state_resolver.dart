@@ -9,7 +9,10 @@
 /// assembler header for the Q-D5/Q-D6/G6 rulings). Behavior is verbatim
 /// from the assembler:
 ///  * done = status `completed` OR `actual_time` stamped; verified when a
-///    platform summary id is present. Sync beats skip (G6).
+///    platform summary id is present, or when a training platform reported
+///    the completion itself (`completion_type = 'provider'`, FinalSurge;
+///    final-surge-completion.PROPOSED.md, awaiting Xuan). Sync beats skip
+///    (G6).
 ///  * ACTIVE skip = status `skipped` (and not done).
 ///  * PASSIVE skip is DERIVED, never written: the day is past and the
 ///    workout has neither sync nor confirmation. The CURRENT day never
@@ -38,9 +41,12 @@ WorkoutCardState resolveWorkoutCardState(
   // stamp; partial leg matches complete the parent but never show
   // verified. Single-sport rows keep the summary-id predicate.
   final isBrick = a.isBrick;
-  final verified = done &&
+  final garminVerified = done &&
       a.garminSummaryId != null &&
       (!isBrick || (a.brickMetadata?.allEnduranceLegsStamped ?? false));
+  // A platform-reported completion (M-1.3 keyed fact) with the platform's
+  // own measurements. Bricks keep the B-3 leg-stamp rule above.
+  final verified = garminVerified || (!isBrick && a.isProviderCompleted);
 
   // SKIPPED — two triggers (Q-D6):
   //  ACTIVE  — status = 'skipped', written by the Skip press (allowed on
@@ -62,4 +68,16 @@ WorkoutCardState resolveWorkoutCardState(
       : (skipActive || skipPassive)
       ? WorkoutCardState.skipped
       : WorkoutCardState.planned;
+}
+
+/// The platform named on a DONE_VERIFIED chip (`verified · <name>`): Garmin
+/// when a Garmin summary stamped the row, else the training platform that
+/// reported the completion.
+String verifiedSourceNameFor(Activity a) {
+  if (a.garminSummaryId != null) return 'Garmin';
+  return switch (a.syncedFromProvider) {
+    'final_surge' => 'Final Surge',
+    'training_peaks' => 'TrainingPeaks',
+    _ => 'Garmin',
+  };
 }

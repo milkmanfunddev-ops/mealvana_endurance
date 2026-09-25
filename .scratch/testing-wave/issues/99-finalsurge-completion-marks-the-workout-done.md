@@ -17,8 +17,8 @@
 
 **Touches:** lib/features/integrations/application/final_surge_transformer.dart, final_surge_sync_service.dart, change_detection_service.dart if it decides status, the Drift activity model only if a field is missing (then codegen and a schema bump), docs/ssot/spec/integrations/final-surge-completion.PROPOSED.md
 
-- [ ] Transformer tests fed the two real payloads from runs/29 (producer-shaped, never the engine's own output): completed with actuals, planned fields untouched.
-- [ ] A seam test through the real sync path: a completed payload marks the stored activity completed with actuals, and a later payload without completion does not undo it.
-- [ ] `flutter analyze` clean; codegen if the schema changed.
+- [x] Transformer tests fed the two real payloads from runs/29 (producer-shaped, never the engine's own output): completed with actuals, planned fields untouched.
+- [x] A seam test through the real sync path: a completed payload marks the stored activity completed with actuals, and a later payload without completion does not undo it.
+- [x] `flutter analyze` clean; codegen if the schema changed.
 
 Next: /implement-lee testing-wave
