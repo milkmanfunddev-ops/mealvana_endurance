@@ -76,7 +76,12 @@ class ShoppingTab extends ConsumerWidget {
           onBackToCurrent: () => _guard(context, ref, controller.openCurrent),
           onDelete: listId == null
               ? null
-              : () => _deleteList(context, ref, listId),
+              : () => _deleteList(
+                  context,
+                  ref,
+                  listId,
+                  planList: _isWeekPlanList(state, state.planId),
+                ),
         ),
         if (state.isOffline) ...[
           const SizedBox(height: AppSpacing.sm),
@@ -225,20 +230,41 @@ class ShoppingTab extends ConsumerWidget {
     );
   }
 
+  /// True when [planId] is this week's confirmed plan: its list is the one
+  /// the Plan tab can rebuild (ticket 96).
+  static bool _isWeekPlanList(ShoppingListState state, String? planId) =>
+      planId != null && planId == state.weekPlanId;
+
   /// Ask first, as the Plan tab does for a plan; nothing is sent on Keep it.
+  /// The confirmed plan's own list ([planList]) says it is the plan's list
+  /// and that the Plan tab can rebuild it (ticket 96, Lee 09-25); any other
+  /// list keeps the plain warning.
   Future<void> _deleteList(
     BuildContext context,
     WidgetRef ref,
-    String listId,
-  ) async {
+    String listId, {
+    bool planList = false,
+  }) async {
     final content = ref.read(contentServiceProvider);
     final confirmed = await showDialog<bool>(
       context: context,
       builder: (dialogContext) => AlertDialog(
         key: const ValueKey('meal_planning.shopping_delete_confirm'),
         backgroundColor: Theme.of(dialogContext).scaffoldBackgroundColor,
-        title: Text(content.getValue(ContentKeys.mpShoppingDeleteListTitle)),
-        content: Text(content.getValue(ContentKeys.mpShoppingDeleteListBody)),
+        title: Text(
+          content.getValue(
+            planList
+                ? ContentKeys.mpShoppingDeletePlanListTitle
+                : ContentKeys.mpShoppingDeleteListTitle,
+          ),
+        ),
+        content: Text(
+          content.getValue(
+            planList
+                ? ContentKeys.mpShoppingDeletePlanListBody
+                : ContentKeys.mpShoppingDeleteListBody,
+          ),
+        ),
         actions: [
           TextButton(
             key: const ValueKey('meal_planning.shopping_delete_cancel'),
@@ -301,7 +327,12 @@ class ShoppingTab extends ConsumerWidget {
           shoppingListNameInWords(ref.read(contentServiceProvider), list.name),
         );
       case ShoppingListChoiceAction.delete:
-        await _deleteList(context, ref, list.id);
+        await _deleteList(
+          context,
+          ref,
+          list.id,
+          planList: _isWeekPlanList(state, list.planId),
+        );
     }
   }
 

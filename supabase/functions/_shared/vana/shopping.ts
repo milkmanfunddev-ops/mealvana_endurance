@@ -78,14 +78,26 @@ export function weekListName(weekStart: string): string {
   const month = m ? MONTHS[Number(m[2]) - 1] : undefined;
   return month ? `Week of ${month} ${Number(m![3])}` : `Week of ${weekStart}`;
 }
-/** The plan's list, made on first use. Named after the week ([weekListName]). */
+/** The plan's list, made on first use. Named after the week ([weekListName]). A plan has at most one list (ticket 96,
+ *  Lee 09-25; the unique index `shopping_lists_plan_idx` holds it in SQL): confirm, every edit and Rebuild land here and
+ *  update that list in place. Two writes racing to make it both see none; the loser's insert hits the index and reads
+ *  the winner's list back instead of failing the edit. */
 // deno-lint-ignore no-explicit-any
 export async function ensurePlanList(v: VanaCtx, planId: string, weekStart: string): Promise<any> {
-  const { data } = await v.db.from('shopping_lists').select('*').eq('plan_id', planId).eq('user_id', v.userId).maybeSingle();
-  if (data) return data;
+  // deno-lint-ignore no-explicit-any
+  const existing = async (): Promise<any> => (await v.db.from('shopping_lists').select('*').eq('plan_id', planId).eq('user_id', v.userId).order('created_at').limit(1).maybeSingle()).data;
+  const found = await existing();
+  if (found) return found;
   const { data: made, error } = await v.db.from('shopping_lists').insert({ user_id: v.userId, plan_id: planId, name: weekListName(weekStart) }).select('*').single();
-  if (error) throw new Error(error.message);
-  return made;
+  if (!error) return made;
+  const raced = await existing();
+  if (raced) return raced;
+  throw new Error(error.message);
+}
+/** The plan's own list with its rows, or null when it has none (never made, or deleted). */
+export async function planList(v: VanaCtx, planId: string): Promise<ShoppingListDetail | null> {
+  const { data } = await v.db.from('shopping_lists').select('*').eq('plan_id', planId).eq('user_id', v.userId).order('created_at').limit(1).maybeSingle();
+  return data ? detail(v, data) : null;
 }
 /** Replace the plan's rows from `fresh`, keep manual / edited rows, and answer the whole list as plain lines
  *  (the caller writes those to `meal_plans.shopping`). */
@@ -104,6 +116,11 @@ export async function syncPlanList(v: VanaCtx, plan: { id: string; weekStart: st
 /** After `confirm_meal_plan`: the list takes the plan's confirmation time, which is what sorts it to the top. */
 export async function markListConfirmed(v: VanaCtx, planId: string): Promise<void> {
   await v.db.from('shopping_lists').update({ confirmed_at: now(), updated_at: now() }).eq('plan_id', planId).eq('user_id', v.userId);
+}
+/** Rebuild on a confirmed plan whose list was deleted: the new list is the confirmed plan's list, so it carries a
+ *  confirmation time like the one it replaces. A list that already has one keeps it. */
+export async function markListConfirmedIfUnset(v: VanaCtx, planId: string): Promise<void> {
+  await v.db.from('shopping_lists').update({ confirmed_at: now(), updated_at: now() }).eq('plan_id', planId).eq('user_id', v.userId).is('confirmed_at', null);
 }
 /** The legacy `toggle_shopping {name}` path: keep the list row in step with the jsonb flip. */
 export async function toggleByName(v: VanaCtx, planId: string, name: string, field: 'checked' | 'have', value: boolean): Promise<void> {
@@ -164,7 +181,7 @@ export async function renameList(v: VanaCtx, id: string, name: string): Promise<
 }
 /** Delete a list and every row on it (the rows also cascade in SQL; deleted here too so the fake db agrees). Owner-scoped
  *  like the rest. A plan's list takes the plan's mirror with it, so Kroger and the offline stand-in stop showing lines the
- *  athlete threw away; the next meal edit rebuilds both. Answers the default list left ([getList]), or null when none is. */
+ *  athlete threw away; the next meal edit, or the Plan tab's Rebuild shopping list (ticket 96), rebuilds both. Answers the default list left ([getList]), or null when none is. */
 export async function deleteList(v: VanaCtx, id: string): Promise<ShoppingListDetail | null> {
   const row = await listRow(v, id);
   const { error: e1 } = await v.db.from('shopping_items').delete().eq('list_id', id).eq('user_id', v.userId);

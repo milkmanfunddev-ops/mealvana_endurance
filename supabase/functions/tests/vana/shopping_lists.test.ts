@@ -188,3 +188,90 @@ Deno.test("get_shopping_list{}: with no confirmed plan this week, the newest han
   assertEquals(await defaultId(await midWeek({ noConfirmed: true, noHandMade: true })), null);
   assertEquals(await defaultId(await midWeek({ dropConfirmedList: true })), 'handMade');
 });
+
+// ---- ticket 96 (Finding 19-002, Lee 09-25): a plan has at most one list; the athlete may delete it and rebuild it from
+// the Plan tab. Rows are producer-shaped (`meal_plans`, `plan_meals`, `meal_library.ingredients_json`).
+
+const PLAN = 'be6abf2f-0000-4000-8000-000000000000';
+async function confirmedWeek() {
+  const week = await currentWeekStart(ctx());
+  const meal = (id: string, lib: string, name: string, servings: number, position: number) => ({
+    id, plan_id: PLAN, user_id: U, source: 'library', library_meal_id: lib, saved_meal_id: null, name, meal_type: 'dinner', session: 'cook-sun',
+    servings, servings_left: servings, kcal: 650, carbs_g: 70, protein_g: 35, fat_g: 18, swaps_applied: [], comments: [], position, icon: null, created_at: `${week}T09:00:00Z`,
+  });
+  return ctx({
+    meal_plans: [{ id: PLAN, user_id: U, week_start: week, status: 'confirmed', batch_cooking: true, conversation_id: null, brief: null, rules: [], shopping: [], days: {}, day_notes: {}, day_notes_stale: false, is_deleted: false, name: null, confirmed_at: `${week}T10:00:00Z`, created_at: `${week}T09:00:00Z`, updated_at: `${week}T10:00:00Z` }],
+    plan_meals: [meal('pm1', 'D-1', 'Farro bowl', 2, 0), meal('pm2', 'D-2', 'Pasta bowl', 2, 1)],
+    meal_library: [
+      { id: 'D-1', name: 'Farro bowl', ingredients_json: [{ name: 'Farro', qty: '80 g' }, { name: 'Spinach', qty: '50 g' }] },
+      { id: 'D-2', name: 'Pasta bowl', ingredients_json: [{ name: 'Pasta', qty: '100 g' }, { name: 'Spinach', qty: '30 g' }] },
+    ],
+  });
+}
+const plansLists = (v: ReturnType<typeof ctx>) => v.fake.rows('shopping_lists').filter((l) => l.plan_id === PLAN);
+const rowNames = (v: ReturnType<typeof ctx>, listId: string) => v.fake.rows('shopping_items').filter((i) => i.list_id === listId).map((i) => String(i.name)).sort();
+
+Deno.test("rebuild_shopping_list: two edits and a rebuild leave the plan exactly one list, its rows the plan's meals' ingredients (96)", async () => {
+  const v = await confirmedWeek();
+  const { setServings } = await import('../../_shared/vana/plan.ts');
+  await setServings(v, 'pm1', 3);                              // an edit builds the list
+  await setServings(v, 'pm2', 0);                              // a second edit drops the pasta
+  const answer = await extraAction(v, 'rebuild_shopping_list', {});
+  assert(answer);
+  assertEquals(plansLists(v).length, 1);
+  const list = ShoppingListDetailZ.parse(answer.list);
+  assertEquals(list.id, plansLists(v)[0].id);
+  assertEquals(list.planId, PLAN);
+  assertEquals(rowNames(v, list.id), ['Farro', 'Spinach']);
+  // and a rebuild with the pasta back updates that same list in place
+  await v.db.from('plan_meals').insert({ id: 'pm3', plan_id: PLAN, user_id: U, source: 'library', library_meal_id: 'D-2', saved_meal_id: null, name: 'Pasta bowl', meal_type: 'dinner', servings: 2, servings_left: 2, swaps_applied: [], comments: [], position: 2 });
+  const again = ShoppingListDetailZ.parse((await extraAction(v, 'rebuild_shopping_list', { planId: PLAN }))!.list);
+  assertEquals(again.id, list.id);
+  assertEquals(plansLists(v).length, 1);
+  assertEquals(rowNames(v, list.id), ['Farro', 'Pasta', 'Spinach']);
+  // the batch part carries the plan with its mirror, so the device folds the lines in
+  const batch = answer.parts.find((pt) => pt.kind === 'batch') as { plan: { id: string; shopping: ShoppingItem[] } };
+  assertEquals(batch.plan.id, PLAN);
+  assertEquals(batch.plan.shopping.map((i) => i.name).sort(), ['Farro', 'Spinach']);
+});
+
+Deno.test("rebuild_shopping_list after a delete makes one list again, confirmed, and fills the plan's shopping mirror (96, 19-002)", async () => {
+  const v = await confirmedWeek();
+  await extraAction(v, 'rebuild_shopping_list', {});
+  const first = plansLists(v)[0];
+  await extraAction(v, 'delete_shopping_list', { id: String(first.id) });
+  assertEquals(plansLists(v).length, 0);
+  assertEquals(v.fake.rows('meal_plans')[0].shopping, []);
+  const rebuilt = ShoppingListDetailZ.parse((await extraAction(v, 'rebuild_shopping_list', {}))!.list);
+  assertEquals(plansLists(v).length, 1);
+  assert(rebuilt.id !== first.id);
+  assert(rebuilt.confirmedAt != null, "the confirmed plan's remade list is confirmed too");
+  assertEquals((v.fake.rows('meal_plans')[0].shopping as ShoppingItem[]).map((i) => i.name).sort(), ['Farro', 'Pasta', 'Spinach']);
+  // and it is the Shopping tab's default again
+  assertEquals(ShoppingListDetailZ.parse((await extraAction(v, 'get_shopping_list', {}))!.list).id, rebuilt.id);
+});
+
+Deno.test('rebuild_shopping_list with no plan this week refuses rather than making one', async () => {
+  await assertRejects(() => extraAction(ctx(), 'rebuild_shopping_list', {}), Error, 'no plan');
+});
+
+Deno.test('ensurePlanList: an insert the unique index refuses (a racing edit made the list) reads that list back', async () => {
+  const v = ctx({ shopping_lists: [] });
+  const { ensurePlanList } = await import('../../_shared/vana/shopping.ts');
+  // The racing write lands between this call's read and its insert: the insert is refused and the winner's row is there.
+  const realFrom = v.db.from.bind(v.db);
+  // deno-lint-ignore no-explicit-any
+  (v.db as any).from = (table: string) => {
+    const b = realFrom(table);
+    if (table !== 'shopping_lists') return b;
+    // deno-lint-ignore no-explicit-any
+    (b as any).insert = () => {
+      v.fake.rows('shopping_lists').push({ id: 'winner', user_id: U, plan_id: 'p1', name: 'Week of Sep 20', created_at: new Date().toISOString() });
+      return { select: () => ({ single: () => Promise.resolve({ data: null, error: { message: 'duplicate key value violates unique constraint "shopping_lists_plan_idx"' } }) }) };
+    };
+    return b;
+  };
+  const got = await ensurePlanList(v, 'p1', '2026-09-20');
+  assertEquals(got.id, 'winner');
+  assertEquals(v.fake.rows('shopping_lists').length, 1);
+});

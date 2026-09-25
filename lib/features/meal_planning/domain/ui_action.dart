@@ -909,6 +909,20 @@ class DeleteShoppingListAction extends UiAction {
   Map<String, Object?> payloadFields() => {'id': id};
 }
 
+/// `{planId?}` → `{parts: [batch], list}` — Rebuild shopping list (ticket
+/// 96): the plan's one list built from its meals the way confirm and every
+/// edit build it (mp-244), updated in place or made again after a delete.
+/// No [planId] = the week's active plan.
+class RebuildShoppingListAction extends UiAction {
+  const RebuildShoppingListAction({super.planId});
+
+  @override
+  String get type => 'rebuild_shopping_list';
+
+  @override
+  Map<String, Object?> payloadFields() => const {};
+}
+
 /// `{listId, name, qty?, aisle?}` — the server guesses the aisle when none
 /// is given.
 class AddShoppingItemAction extends UiAction {

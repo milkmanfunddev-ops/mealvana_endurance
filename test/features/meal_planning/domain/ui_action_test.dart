@@ -217,6 +217,12 @@ void main() {
       check(const DeleteShoppingListAction(id: 'L'), 'delete_shopping_list', {
         'id': 'L',
       });
+      check(
+        const RebuildShoppingListAction(planId: 'P'),
+        'rebuild_shopping_list',
+        {'planId': 'P'},
+      );
+      check(const RebuildShoppingListAction(), 'rebuild_shopping_list', {});
     });
 
     test('log_from_plan', () {

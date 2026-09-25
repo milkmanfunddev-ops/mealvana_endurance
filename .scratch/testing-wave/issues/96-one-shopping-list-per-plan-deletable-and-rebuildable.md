@@ -16,10 +16,10 @@
 
 **Touches:** supabase/functions/_shared/vana/ (grocery build and `delete_shopping_list` in contracts.ts), lib/features/meal_planning/presentation/screens/shopping_tab.dart, plan_tab.dart, their controllers, assets/config/content_defaults.json, a migration `20260925169600_one_list_per_plan.sql` if the constraint is added.
 
-- [ ] Deno test: two edits and a rebuild of one plan leave exactly one list for that plan, with rows equal to its meals' ingredients.
-- [ ] Deno test: rebuilding after a delete creates one list, and the plan's `shopping` mirror is filled again.
-- [ ] Seam test through the real notifier for Rebuild (controller write path).
-- [ ] Widget test: the plan list's delete dialog shows the plan warning; a hand-made list's does not.
-- [ ] `flutter analyze` clean, deno tests for touched functions. SQL and deploy: wave lead.
+- [x] Deno test: two edits and a rebuild of one plan leave exactly one list for that plan, with rows equal to its meals' ingredients.
+- [x] Deno test: rebuilding after a delete creates one list, and the plan's `shopping` mirror is filled again.
+- [x] Seam test through the real notifier for Rebuild (controller write path).
+- [x] Widget test: the plan list's delete dialog shows the plan warning; a hand-made list's does not.
+- [x] `flutter analyze` clean, deno tests for touched functions. SQL and deploy: wave lead.
 
 Next: /implement-lee testing-wave

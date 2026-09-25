@@ -39,11 +39,15 @@ const _newPlanRoute = '/vana?c=new&mode=meal_planning&intent=new_plan';
 /// Tapping a tile opens the meal's detail page. Offline, the day note hides
 /// and the plan renders from the local Drift watch alone.
 class PlanTab extends ConsumerWidget {
-  const PlanTab({super.key, this.onAddMeal});
+  const PlanTab({super.key, this.onAddMeal, this.onShowShopping});
 
   /// "Add meal": the Food screen switches to its Meals segment. Without one,
   /// the Food tab is opened on Meals ([goToFoodTab]).
   final VoidCallback? onAddMeal;
+
+  /// Where Rebuild shopping list lands once the server has answered. Without
+  /// one, the Food tab is opened on Shopping ([goToFoodTab]).
+  final VoidCallback? onShowShopping;
 
   @override
   Widget build(BuildContext context, WidgetRef ref) {
@@ -91,6 +95,12 @@ class PlanTab extends ConsumerWidget {
                     context: context,
                     onOpen: (id) => context.push('/food/plans/$id'),
                   ),
+                  // The confirmed plan's list can be deleted; this is the
+                  // way back (ticket 96, Lee 09-25). A draft's list is not
+                  // the Shopping tab's list until Confirm builds it.
+                  onRebuildList: plan.status == MealPlanStatus.confirmed
+                      ? () => _rebuildList(context, ref)
+                      : null,
                   onDelete: () => _deletePlanWithUndo(context, ref),
                 ),
               ],
@@ -143,6 +153,37 @@ class PlanTab extends ConsumerWidget {
         ],
       ),
     );
+  }
+
+  /// Rebuild shopping list: the server remakes the plan's one list from its
+  /// meals, then the athlete lands on it. Nothing moves until the server has
+  /// answered; offline or refused, a snackbar says so and the tab stays.
+  Future<void> _rebuildList(BuildContext context, WidgetRef ref) async {
+    final content = ref.read(contentServiceProvider);
+    try {
+      await ref.read(mealPlanControllerProvider.notifier).rebuildShoppingList();
+      if (!context.mounted) return;
+      final show = onShowShopping;
+      if (show != null) {
+        show();
+      } else {
+        goToFoodTab(context, FoodTab.shopping);
+      }
+    } on NeedsConnectionException {
+      if (context.mounted) {
+        MealvanaSnackbar.showWarning(
+          context,
+          content.getValue(ContentKeys.mpNeedsConnection),
+        );
+      }
+    } on Exception {
+      if (context.mounted) {
+        MealvanaSnackbar.showError(
+          context,
+          content.getValue(ContentKeys.mpServerError),
+        );
+      }
+    }
   }
 
   /// Delete the plan by hand: ask first (it takes the week's meals and the

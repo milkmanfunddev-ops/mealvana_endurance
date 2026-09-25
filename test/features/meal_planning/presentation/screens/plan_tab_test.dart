@@ -10,6 +10,7 @@ import 'package:mealvana_endurance/features/meal_planning/application/meal_plan_
 import 'package:mealvana_endurance/features/meal_planning/application/previous_plans.dart';
 import 'package:mealvana_endurance/features/meal_planning/application/vana_settings_controller.dart';
 import 'package:mealvana_endurance/features/meal_planning/domain/home_payload.dart';
+import 'package:mealvana_endurance/features/meal_planning/data/vana_exceptions.dart';
 import 'package:mealvana_endurance/features/meal_planning/domain/meal_plan.dart';
 import 'package:mealvana_endurance/features/meal_planning/domain/meal_plan_summary.dart';
 import 'package:mealvana_endurance/features/meal_planning/domain/vana_part.dart';
@@ -51,6 +52,7 @@ void main() {
     required MealPlanController plan,
     HomePayload? home,
     List<MealPlanSummary> previous = const [],
+    VoidCallback? onShowShopping,
   }) async {
     await tester.pumpWidget(
       ProviderScope(
@@ -67,7 +69,9 @@ void main() {
           ),
           dailyMacrosControllerProvider.overrideWith(_NoMacrosController.new),
         ],
-        child: const MaterialApp(home: Scaffold(body: PlanTab())),
+        child: MaterialApp(
+          home: Scaffold(body: PlanTab(onShowShopping: onShowShopping)),
+        ),
       ),
     );
     await settle(tester);
@@ -173,6 +177,63 @@ void main() {
     expect(
       find.byKey(const ValueKey('meal_planning.plan_delete')),
       findsOneWidget,
+    );
+  });
+
+  /// Ticket 96 (Finding 19-002, Lee 09-25): the confirmed plan's ⋮ offers
+  /// Rebuild shopping list; the tab lands on Shopping once the server has
+  /// answered, and stays put when it refuses.
+  testWidgets('Rebuild shopping list rebuilds, then lands on Shopping', (
+    tester,
+  ) async {
+    final controller = _FakePlanController(confirmedPlan);
+    var landed = 0;
+    await pumpTab(tester, plan: controller, onShowShopping: () => landed++);
+
+    await tester.tap(find.byKey(const ValueKey('meal_planning.plan_overflow')));
+    await settle(tester);
+    await tester.tap(
+      find.byKey(const ValueKey('meal_planning.plan_rebuild_list')),
+    );
+    await settle(tester);
+
+    expect(controller.rebuilt, 1);
+    expect(landed, 1);
+  });
+
+  testWidgets('a refused rebuild says so and does not land on Shopping', (
+    tester,
+  ) async {
+    final controller = _FakePlanController(confirmedPlan)
+      ..rebuildFailsWith = const NeedsConnectionException(
+        'rebuild_shopping_list',
+      );
+    var landed = 0;
+    await pumpTab(tester, plan: controller, onShowShopping: () => landed++);
+
+    await tester.tap(find.byKey(const ValueKey('meal_planning.plan_overflow')));
+    await settle(tester);
+    await tester.tap(
+      find.byKey(const ValueKey('meal_planning.plan_rebuild_list')),
+    );
+    await settle(tester);
+
+    expect(landed, 0);
+    final content = loadDefaultContent();
+    expect(
+      find.text(content['meal_planning.needs_connection']!),
+      findsOneWidget,
+    );
+  });
+
+  testWidgets("a draft's ⋮ has no Rebuild shopping list", (tester) async {
+    await pumpTab(tester, plan: _FakePlanController(draftPlan));
+
+    await tester.tap(find.byKey(const ValueKey('meal_planning.plan_overflow')));
+    await settle(tester);
+    expect(
+      find.byKey(const ValueKey('meal_planning.plan_rebuild_list')),
+      findsNothing,
     );
   });
 
@@ -316,6 +377,16 @@ class _FakePlanController extends MealPlanController {
 
   int deleted = 0;
   final List<VanaReceiptPart> undone = [];
+  int rebuilt = 0;
+  Exception? rebuildFailsWith;
+
+  @override
+  Future<MealPlan?> rebuildShoppingList({String? planId}) async {
+    rebuilt++;
+    final failure = rebuildFailsWith;
+    if (failure != null) throw failure;
+    return plan;
+  }
 
   /// The producer's receipt for a hand delete, verbatim from the fixture the
   /// contract test reads.

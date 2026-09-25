@@ -379,6 +379,9 @@ class ContentKeys {
   static const String mpPlanDeleteConfirm = 'meal_planning.plan_delete_confirm';
   static const String mpPlanDeleteCancel = 'meal_planning.plan_delete_cancel';
   static const String mpPlanDeleted = 'meal_planning.plan_deleted';
+  // Rebuild shopping list (ticket 96, Lee 09-25): the plan's ⋮ remakes the
+  // plan's one list from its meals, e.g. after the athlete deleted it.
+  static const String mpPlanRebuildList = 'meal_planning.plan_rebuild_list';
   // Earlier plans (2026-09-16): the ⋮ item, its sheet, and the plan's view.
   // Since 2026-09-25 (mp-675) an earlier plan is edited, renamed, deleted or
   // used again from its view; the "view only" line is retired.
@@ -743,6 +746,12 @@ class ContentKeys {
       'meal_planning.shopping_delete_list_cancel';
   static const String mpShoppingListDeleted =
       'meal_planning.shopping_list_deleted';
+  // The confirmed plan's own list gets its own warning (ticket 96): it is
+  // the plan's list and the Plan tab can rebuild it.
+  static const String mpShoppingDeletePlanListTitle =
+      'meal_planning.shopping_delete_plan_list_title';
+  static const String mpShoppingDeletePlanListBody =
+      'meal_planning.shopping_delete_plan_list_body';
   static const String mpShoppingRenameAction =
       'meal_planning.shopping_rename_action';
   static const String mpShoppingRenameTitle =

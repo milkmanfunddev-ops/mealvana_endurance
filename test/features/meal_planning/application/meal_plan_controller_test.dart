@@ -402,6 +402,51 @@ void main() {
       expect(actions.calls, isEmpty);
     });
 
+    /// Testing-wave 19-002 (ticket 96): Rebuild shopping list sends the
+    /// plan on the tab and folds the answered plan, its `shopping` mirror
+    /// refilled, into Drift.
+    test(
+      'rebuildShoppingList sends the tab\'s plan and folds the answer',
+      () async {
+        final c = controller();
+        await c.future;
+
+        final plan = await c.rebuildShoppingList();
+
+        final sent = actions.calls.whereType<RebuildShoppingListAction>();
+        expect(sent.single.toJson(), {
+          'type': 'rebuild_shopping_list',
+          'payload': {'planId': 'plan-1'},
+        });
+        expect(plan, isNotNull);
+        final stored = await repo.getPlanById(plan!.id);
+        expect(stored, isNotNull);
+        expect(
+          stored!.shopping.map((i) => i.name),
+          plan.shopping.map((i) => i.name),
+        );
+        expect(plan.shopping, isNotEmpty);
+      },
+    );
+
+    test('rebuildShoppingList offline sends nothing', () async {
+      connectivity.online = false;
+      final c = controller();
+      await c.future;
+
+      await expectLater(
+        () => c.rebuildShoppingList(),
+        throwsA(
+          isA<NeedsConnectionException>().having(
+            (e) => e.operation,
+            'op',
+            'rebuild_shopping_list',
+          ),
+        ),
+      );
+      expect(actions.calls, isEmpty);
+    });
+
     test('offline → NeedsConnectionException before any request', () async {
       connectivity.online = false;
       final c = controller();
