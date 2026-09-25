@@ -13,7 +13,7 @@
 
 **Touches:** lib/features/kroger/presentation/kroger_screen.dart, lib/features/kroger/application/kroger_controller.dart
 
-- [ ] A widget test: Disconnect opens a confirm; Cancel keeps the connection; confirm disconnects through the real controller.
+- [x] A widget test: Disconnect opens a confirm; Cancel keeps the connection; confirm disconnects through the real controller. (`test/features/kroger/kroger_flow_test.dart`, group "disconnecting asks first (21-010)": two tests through the real `KrogerController` and `FakeRemote`, counting `disconnect` calls.)
 - [ ] codegen if annotations changed, `flutter analyze` and the suite green.
 
 Next: /implement-lee testing-wave

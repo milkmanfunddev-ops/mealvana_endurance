@@ -406,14 +406,26 @@ class _Body extends ConsumerWidget {
               },
             ),
           ),
-        // Rarely wanted, so it is last rather than under the title.
+        // Rarely wanted, so it is last rather than under the title — and
+        // asked about first, because it sits under the cart actions and the
+        // way back from a slipped tap is another kroger.com sign-in (21-010).
         if (view.connected)
           Padding(
             padding: const EdgeInsets.only(top: AppSpacing.xl),
             child: Center(
               child: KyleTertiaryButtonSmall(
+                key: const ValueKey('kroger.disconnect'),
                 text: krogerText(ref, ContentKeys.krogerDisconnect),
-                onPressed: controller.disconnect,
+                onPressed: () async {
+                  if (await _confirm(
+                    context,
+                    ref,
+                    ContentKeys.krogerDisconnectConfirm,
+                    confirmKey: ContentKeys.krogerDisconnect,
+                  )) {
+                    await controller.disconnect();
+                  }
+                },
               ),
             ),
           ),
@@ -818,7 +830,15 @@ Future<T?> _sheet<T>(
   ),
 );
 
-Future<bool> _confirm(BuildContext context, WidgetRef ref, String key) async =>
+/// A yes-or-no sheet: [key] is the question, [confirmKey] the words on the
+/// button that answers yes (Continue unless the action has a name of its
+/// own), and Cancel is always the other way out.
+Future<bool> _confirm(
+  BuildContext context,
+  WidgetRef ref,
+  String key, {
+  String confirmKey = ContentKeys.krogerContinue,
+}) async =>
     await _sheet<bool>(
       context,
       (context) => Column(
@@ -834,7 +854,7 @@ Future<bool> _confirm(BuildContext context, WidgetRef ref, String key) async =>
           ),
           const SizedBox(height: AppSpacing.xl),
           KylePrimaryButton(
-            text: krogerText(ref, ContentKeys.krogerContinue),
+            text: krogerText(ref, confirmKey),
             onPressed: () => Navigator.pop(context, true),
           ),
           const SizedBox(height: AppSpacing.xs),

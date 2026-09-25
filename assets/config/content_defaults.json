@@ -3,6 +3,7 @@
     "title": "Shop with Kroger",
     "connect": "Connect Kroger",
     "disconnect": "Disconnect Kroger",
+    "disconnect_confirm": "Disconnect Kroger? Connecting again means signing in at kroger.com.",
     "refresh": "Refresh connection and draft",
     "not_configured": "Kroger shopping is being set up. Your shopping list is still available.",
     "certification": "Test mode. Nothing reaches a real Kroger cart.",

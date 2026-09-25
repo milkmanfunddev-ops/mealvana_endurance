@@ -868,6 +868,7 @@ class ContentKeys {
   static const String krogerTitle = 'kroger.title';
   static const String krogerConnect = 'kroger.connect';
   static const String krogerDisconnect = 'kroger.disconnect';
+  static const String krogerDisconnectConfirm = 'kroger.disconnect_confirm';
   static const String krogerRefresh = 'kroger.refresh';
   static const String krogerNotConfigured = 'kroger.not_configured';
   static const String krogerCertification = 'kroger.certification';
