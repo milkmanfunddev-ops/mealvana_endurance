@@ -912,6 +912,45 @@ Those rows fall back to the seeded search handoff until the foods mirror
 grows the entries — data work, deliberately not a reason to weaken the
 tap. Suites: 499 green.
 
+### G26 GREEN — 2026-09-25 — foods seed migration, 27/27 resolution (qa 94b01ba)
+
+Xuan's option B: the staples seed at the land deploy.
+`supabase/migrations/20260926050000_seed_foods_carb_loading_staples.sql`
+— 14 new foods rows + the `Gels` → `Energy gel` RENAME (no duplicate row;
+covers energy_gel). Value discipline: carbs anchored to the ratified
+curation serving; protein/fat/sodium USDA-typical composition per row
+(citation comment on every insert); kcal = 4C+4P+9F; rows are logging
+staples, NOT solver foods (`to_exclude_from_solver = true`,
+`show_in_preferences = false`); fixed UUIDs + ON CONFLICT DO NOTHING =
+idempotent. Applies BY HAND at land alongside the slot-CHECK migration,
+dev first, prod at the release cut. **One generator emits both the SQL
+and the test fixture** (values identical by construction; regenerate
+together, never hand-tune).
+
+Seam upgraded to the pinned wire shape: the mirror is seeded by feeding
+post-migration `select *` WIRE rows through the REAL sync mapper —
+`FoodRepository.syncFoodsToLocalDatabase`, now `@visibleForTesting` —
+so local sync pickup is what's proven; 27/27 resolve, unresolved
+asserted EMPTY (still always printed). Resolver gains an exact-name
+first pass (G26): without it, `Beets` token-matched `Beet juice`
+(singular fallback, name-asc) and `Rice` would hit ambiguity classes;
+exact hits now win outright, matching search UX.
+
+**CORRECTION to the G25 report (fixture honesty):** the earlier
+"15 unresolved" was computed on a fixture missing `description` (a
+matcher field). True pre-seed truth, proven by the red probe against
+pre-seed wire rows: **13 unresolved** — energy_gel already resolved via
+the Gels row's description, and cereal MIS-resolved to Oatmeal via its
+"Warm cereal…" description (wrong food, wrong macros — a live quality
+bug the seed's true Cereal row + exact pass now fix). The seed still
+covers all 15 ruled staples.
+
+Land-target note: qa relayed the corrected app-side target
+**release/1.28.0 (local merge, never pushed)** — the branch does NOT
+exist yet; its base is flagged for Xuan (natural candidate: top of
+release/1.27.1, per the ruled release sequence), not created on
+assumption. Suites: 511 green incl. the pre-existing foods-sync tests.
+
 ## Notes on the two new ideas
 
 **Reminder to start.** Machinery exists — `NotificationService`

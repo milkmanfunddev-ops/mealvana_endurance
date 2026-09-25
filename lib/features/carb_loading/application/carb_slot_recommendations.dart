@@ -111,7 +111,19 @@ Future<CarbFoodResolution?> resolveCarbRecommendation(
       await (database.select(database.foodsTable)
             ..orderBy([(t) => OrderingTerm.asc(t.name)]))
           .get();
-  for (final food in rows) {
+  // Exact name match wins outright (G26): with sibling rows in the mirror
+  // ('Beets' vs 'Beet juice', 'Rice' vs 'Rice pudding') the token pass's
+  // name-asc scan would land 'Beets' on 'Beet juice' via the singular
+  // fallback. Search UX ranks exact hits first; the one-tap resolver must
+  // match that.
+  final normalizedQuery = normalizeSearchText(query);
+  final ordered = [
+    ...rows.where(
+      (f) => normalizeSearchText(f.name ?? '') == normalizedQuery,
+    ),
+    ...rows,
+  ];
+  for (final food in ordered) {
     final searchText = [
       food.name,
       food.displayName,

@@ -10,10 +10,12 @@
 //  * L2 `recommended-plus-one-tap-logs` — tap ⊕ → slot-tagged log with the
 //    RESOLVED food's real macros + slot header/receipt ripple, one frame,
 //    no navigation;
-//  * seam `curated-rows-resolve` — all 27 producer-shaped curated rows run
-//    against the producer-shaped foods mirror; the resolved and unresolved
-//    sets are PINNED and the unresolved list is printed for the curation
-//    record.
+//  * seam `curated-rows-resolve` (G26 shape, qa 94b01ba) — the mirror is
+//    seeded by feeding WIRE rows (select * shape, post-G26-migration:
+//    the 14 staple rows + the Gels → 'Energy gel' rename, values identical
+//    to the migration by construction) through the REAL sync mapper, so
+//    local sync pickup is what's proven; ALL 27 curated rows must resolve
+//    and the unresolved list is asserted EMPTY (and always printed).
 import 'package:drift/drift.dart' hide isNull, isNotNull, Column;
 import 'package:drift/native.dart';
 import 'package:flutter/material.dart';
@@ -32,6 +34,7 @@ import 'package:mealvana_endurance/features/meal_logging/domain/meal_log_source.
 import 'package:mealvana_endurance/features/meal_logging/domain/meal_slot.dart';
 import 'package:mealvana_endurance/features/meal_logging/presentation/providers/meal_log_providers.dart';
 import 'package:mealvana_endurance/features/meal_logging/presentation/screens/log_meal_screen.dart';
+import 'package:mealvana_endurance/features/nutrition_plan/data/food_repository.dart';
 import 'package:mealvana_endurance/shared/database/app_database.dart';
 import 'package:mealvana_endurance/shared/database/database_provider.dart';
 import 'package:mealvana_endurance/shared/providers/user_id_provider.dart';
@@ -115,26 +118,23 @@ void main() {
     addTearDown(db.close);
   });
 
+  /// Seeds the local mirror the way the app does: post-G26 WIRE rows
+  /// through the REAL sync mapper — the sync pickup is part of the proof.
   Future<void> seedFoodsMirror() async {
-    for (final f in foodRowFixtures) {
-      await db.into(db.foodsTable).insert(
-            FoodsTableCompanion.insert(
-              id: f.id,
-              name: Value(f.name),
-              displayName: Value(f.displayName),
-              servingSize: Value(f.servingSize),
-              caloriesPerServing: Value(f.calories),
-              carbsPerServing: Value(f.carbs),
-              proteinPerServing: Value(f.protein),
-              fatPerServing: Value(f.fat),
-            ),
-          );
-    }
+    final logger = MockAppLogger();
+    when(() => logger.error(any(),
+        context: any(named: 'context'),
+        error: any(named: 'error'),
+        stackTrace: any(named: 'stackTrace'),
+        data: any(named: 'data'))).thenReturn(null);
+    final foodRepository =
+        FoodRepository(MockSupabaseClient(), db, logger: logger);
+    await foodRepository.syncFoodsToLocalDatabase(wireFoodRowsPostSeed);
   }
 
   test(
-      'seam curated-rows-resolve: every curated row resolves or is an '
-      'ENUMERATED data finding — sets pinned', () async {
+      'seam curated-rows-resolve (G26): all 27 curated rows resolve against '
+      'the post-seed mirror synced through the real wire mapper', () async {
     await seedFoodsMirror();
 
     final resolved = <String>[];
@@ -162,38 +162,12 @@ void main() {
 
     expect(curatedRowFixtures, hasLength(27),
         reason: 'the full seeded curation, producer-shaped');
-    // Pinned sets: curation data work flips entries here DELIBERATELY.
-    expect(resolved, [
-      'apple',
-      'bagel',
-      'banana',
-      'berries',
-      'dates',
-      'fig_bar',
-      'oats',
-      'orange_juice',
-      'pretzels',
-      'sports_drink',
-      'toast',
-      'waffle',
-    ]);
-    expect(unresolved, [
-      'baked_potato',
-      'beet_juice',
-      'beets',
-      'cereal',
-      'energy_gel',
-      'graham_crackers',
-      'pancake',
-      'pasta_marinara',
-      'pizza',
-      'rice',
-      'rice_pudding',
-      'saltines',
-      'sandwich',
-      'smoothie',
-      'sweet_potato',
-    ]);
+    // G26: with the staples seeded (+ the Gels rename), EVERY curated row
+    // resolves — the unresolved list must be EMPTY. A future curation or
+    // seed change that breaks a resolution fails here by name.
+    expect(unresolved, isEmpty,
+        reason: 'G26: no curated row may silently fall back to search');
+    expect(resolved, curatedRowFixtures.map((r) => r.name).toList());
   });
 
   testWidgets(
