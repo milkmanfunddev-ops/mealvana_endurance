@@ -1255,6 +1255,25 @@ void main() {
       },
     );
 
+    test(
+      'a 402 opener is not a failed read: the top-up sheet owns it, not Retry',
+      () async {
+        repo.throwOnStream = const InsufficientCreditsException(
+          balance: 0,
+          cost: 1,
+          message: 'out of budget',
+        );
+        final (:notifier, seen: _) = make();
+        await notifier.future;
+
+        await notifier.loadOpener(newPlan: true);
+
+        final s = notifier.state.value!;
+        expect(s.error, VanaChatErrorKind.insufficientCredits);
+        expect(s.failedRead, isNull);
+      },
+    );
+
     test('a failed history read is a failed read, never an empty new chat; '
         'retry reads it again', () async {
       repo.throwOnHistory = const VanaOfflineException('socket');

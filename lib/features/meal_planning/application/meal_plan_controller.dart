@@ -106,7 +106,9 @@ class MealPlanController extends _$MealPlanController {
 
   /// "Ate it" writes on the wire, by plan-meal id: a second tap on the same
   /// row joins the first instead of logging a second serving.
-  Map<String, Future<VanaLoggedPart?>> _logsInFlight = {};
+  /// Kept across `invalidate` on purpose: a write still on the wire after a
+  /// refresh must still be joined, and each write removes only its own entry.
+  final Map<String, Future<VanaLoggedPart?>> _logsInFlight = {};
 
   /// The week this controller is bound to (`YYYY-MM-DD`, on the athlete's
   /// week-start day — Sunday by default).
@@ -116,8 +118,6 @@ class MealPlanController extends _$MealPlanController {
   FutureOr<MealPlan?> build() async {
     final userId = await ref.watch(userIdProvider.future);
     _userId = userId;
-    // Riverpod keeps this notifier across `invalidate`; start clean.
-    _logsInFlight = {};
     // The week follows the athlete's start-day setting; a change rebuilds
     // this controller onto the new week (mp-269).
     final period = await ref.watch(planPeriodProvider.future);
@@ -570,6 +570,21 @@ class MealPlanController extends _$MealPlanController {
 
     if (outcome.hasError) {
       state = previous;
+      // A timed-out request may still have landed on the server (the edge
+      // function runs on after we hang up). Pull the plan before reporting,
+      // so a write that did land shows and is not repeated by a second tap.
+      final error = outcome.error;
+      if (error is VanaOfflineException && error.cause is TimeoutException) {
+        try {
+          await refresh();
+        } on Exception catch (e) {
+          _logger.warning(
+            'Refresh after a timed-out ${action.type} failed',
+            context: _context,
+            data: {'error': '$e'},
+          );
+        }
+      }
       Error.throwWithStackTrace(
         outcome.error!,
         outcome.stackTrace ?? StackTrace.current,

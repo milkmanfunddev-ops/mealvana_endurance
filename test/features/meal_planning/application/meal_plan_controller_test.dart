@@ -914,6 +914,25 @@ void main() {
       expect(c.state.value, before);
     });
 
+    test('a timed-out ack pulls the plan before rethrowing, since the write '
+        'may have landed; a refused one does not', () async {
+      final c = gatedController();
+      await c.future;
+
+      final refused = c.logFromPlan('pm-1');
+      await pumpEventQueue();
+      ack.completeError(const VanaServerException(500, 'boom'));
+      await expectLater(refused, throwsA(isA<VanaServerException>()));
+      expect(sync.ensured, isNot(contains('force:meal_plans')));
+
+      ack = Completer<VanaActionResult>();
+      final timedOut = c.logFromPlan('pm-1');
+      await pumpEventQueue();
+      ack.completeError(VanaOfflineException(TimeoutException('slow')));
+      await expectLater(timedOut, throwsA(isA<VanaOfflineException>()));
+      expect(sync.ensured, contains('force:meal_plans'));
+    });
+
     test('offline sends nothing and says it needs a connection', () async {
       connectivity.online = false;
       final c = gatedController();

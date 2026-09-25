@@ -820,16 +820,22 @@ class VanaChatController extends _$VanaChatController {
       // Roll back the optimistic pair; keep everything that was persisted.
       // A failed opener waits for its Retry; a failed message is kept as
       // unsent so the athlete never loses what they wrote.
+      final errorKind = _errorKind(e);
+      // A spent budget or a lapsed Pro has its own path on the screen (the
+      // top-up sheet, the paywall); a Retry line would only hit it again.
+      final retryable = opener &&
+          errorKind != VanaChatErrorKind.insufficientCredits &&
+          errorKind != VanaChatErrorKind.proRequired;
       state = AsyncData(
         before.copyWith(
           isStreaming: false,
           clearStatus: true,
-          error: _errorKind(e),
+          error: errorKind,
           retryAfterSeconds: e is VanaRateLimitedException
               ? e.retryAfterSeconds
               : null,
-          failedRead: opener ? VanaChatFailedRead.opener : null,
-          clearFailedRead: !opener,
+          failedRead: retryable ? VanaChatFailedRead.opener : null,
+          clearFailedRead: !retryable,
           unsentMessage: message,
           clearUnsent: message == null,
         ),

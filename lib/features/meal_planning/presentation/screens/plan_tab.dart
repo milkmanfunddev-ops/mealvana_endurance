@@ -28,6 +28,7 @@ import '../widgets/plan_list.dart';
 import '../widgets/plan_overflow_menu.dart';
 import '../widgets/plan_summary.dart';
 import '../widgets/previous_plans_sheet.dart';
+import '../widgets/write_failure_snackbar.dart';
 import '../../../../shared/widgets/kyle_design/icons/vana_avatar.dart';
 import 'food_screen.dart';
 
@@ -204,20 +205,8 @@ class PlanTab extends ConsumerWidget {
       await ref
           .read(mealPlanControllerProvider.notifier)
           .swapMeal(meal.id, source: replacement.source, id: replacement.id);
-    } on NeedsConnectionException {
-      if (context.mounted) {
-        MealvanaSnackbar.showWarning(
-          context,
-          content.getValue(ContentKeys.mpNeedsConnection),
-        );
-      }
-    } on Exception {
-      if (context.mounted) {
-        MealvanaSnackbar.showError(
-          context,
-          content.getValue(ContentKeys.mpServerError),
-        );
-      }
+    } on Exception catch (e) {
+      if (context.mounted) showWriteFailure(context, content, e);
     }
   }
 
