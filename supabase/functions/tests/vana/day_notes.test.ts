@@ -13,7 +13,7 @@
 import { assert, assertEquals } from 'https://deno.land/std@0.177.1/testing/asserts.ts';
 import { getPlanById } from '../../_shared/vana/plan.ts';
 import { buildAthleteContext } from '../../_shared/vana/context.ts';
-import { dayNoteInputs, dayNoteKeys, generateDayNotes, noteDates, CLAIM_TTL_SECONDS } from '../../_shared/vana/daynotes.ts';
+import { dayNoteInputs, dayNoteKeys, generateDayNotes, noteDates, contextInWords, CLAIM_TTL_SECONDS, DAY_NOTE_SYSTEM } from '../../_shared/vana/daynotes.ts';
 import type { DayNotesDeps } from '../../_shared/vana/daynotes.ts';
 import { testCtx, offlineDeps, TEST_USER_ID } from './support/vana_ctx.ts';
 import { fakeDb, type Row, type Tables } from './support/fake_db.ts';
@@ -165,6 +165,32 @@ Deno.test('a plan edit regenerates only the days it touched', async () => {
   assertEquals('day_notes_stale' in write, false);
   assertEquals((await getPlanById(v, PLAN))!.dayNotesStale, false);
   assertEquals(Object.keys(write.day_notes).sort(), DATES.slice().sort(), 'all seven notes are still on the plan');
+});
+
+// Ticket 130 (Finding 88-023): the notes read "aim for 835C carbs" because the context block writes carbs as "835C" and
+// the model copied it. The prompt the notes are written from spells the macros out; the chat's block is left as it is.
+Deno.test('the day-note prompt writes macros in words, never the NC / NP shorthand', async () => {
+  const v = testCtx(baseTables());
+  const plan = (await getPlanById(v, PLAN))!;
+  const rec: Recorder = { calls: [] };
+  await generateDayNotes(v, plan, ANCHOR, deps(rec));
+
+  assertEquals(rec.calls.length, 1);
+  const prompt = rec.calls[0].prompt;
+  assert(!/\d+C(?=[\s/·)]|$)/m.test(prompt), `no "NC" left in:\n${prompt}`);
+  assert(!/\d+P(?=[\s/·)]|$)/m.test(prompt), 'no "NP" either');
+  assert(prompt.includes('400g carbs'), 'the targets read in grams of carbs');
+  assert(prompt.includes('140g protein'));
+  assert(prompt.includes('2900kcal'), 'kcal is already a word and stays');
+  assert(DAY_NOTE_SYSTEM.includes('g carbs'), 'and the system prompt says how to write them');
+});
+
+Deno.test('contextInWords: every macro shorthand the block uses, and nothing else', () => {
+  assertEquals(contextInWords('today 3000kcal ≥400C ≥140P 70F · formulas 600kcal'), 'today 3000kcal ≥400g carbs ≥140g protein 70g fat · formulas 600kcal');
+  assertEquals(contextInWords('week 09-09:400C/140P/3000kcal 09-10:410C/140P/3050kcal · race-week ≥500C'), 'week 09-09:400g carbs/140g protein/3000kcal 09-10:410g carbs/140g protein/3050kcal · race-week ≥500g carbs');
+  assertEquals(contextInWords('LOGGED TODAY 2 meals 125C · PLAN confirmed'), 'LOGGED TODAY 2 meals 125g carbs · PLAN confirmed');
+  // Dates, ids, times and day counts are not macros.
+  assertEquals(contextInWords('RACE Chattanooga 70.3 2026-09-20 (11d) · D-048 · 07:00 Tempo run 60m'), 'RACE Chattanooga 70.3 2026-09-20 (11d) · D-048 · 07:00 Tempo run 60m');
 });
 
 Deno.test('a meal leaving the pool rewrites the unassigned days and leaves the assigned ones alone', async () => {

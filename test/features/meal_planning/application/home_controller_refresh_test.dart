@@ -154,4 +154,52 @@ void main() {
       expect(service.fetches, atFresh + 1 + HomeController.maxStalePolls);
     });
   });
+
+  /// Ticket 130 (Finding 88-023): a plan write asks the note to read again.
+  /// The note on screen stays until the new payload lands, and the poll
+  /// budget refills because the server is rewriting the notes for an edit.
+  test('a plan write re-reads the payload and keeps the note on screen '
+      'until the new one lands', () async {
+    final service = _CountingHomeService(
+      payload: () => homeFixture(stale: false),
+      gated: true,
+    );
+    final container = containerWith(service);
+    final first = container.read(homeControllerProvider().future);
+    await settle();
+    service.releaseAll();
+    await first;
+    expect(service.fetches, 1);
+    final shown = container.read(homeControllerProvider()).value;
+    expect(shown, isNotNull);
+
+    final change = container.read(homeControllerProvider().notifier).planChanged();
+    await settle();
+    expect(service.fetches, 2, reason: 'the plan changed: read again');
+    expect(
+      container.read(homeControllerProvider()).value,
+      same(shown),
+      reason: 'the old note stays up while the new one is on the wire',
+    );
+
+    service.releaseAll();
+    await change;
+    expect(container.read(homeControllerProvider()).hasValue, isTrue);
+  });
+
+  test('a plan write refills the stale-poll budget', () {
+    fakeAsync((async) {
+      final service = _CountingHomeService(payload: () => homeFixture(stale: true));
+      final container = containerWith(service);
+      async.elapse(const Duration(milliseconds: 50));
+      async.elapse(HomeController.stalePollDelay * (HomeController.maxStalePolls + 2));
+      final spent = service.fetches;
+      expect(spent, 1 + HomeController.maxStalePolls);
+
+      container.read(homeControllerProvider().notifier).planChanged();
+      async.elapse(const Duration(milliseconds: 50));
+      async.elapse(HomeController.stalePollDelay * (HomeController.maxStalePolls + 2));
+      expect(service.fetches, spent + 1 + HomeController.maxStalePolls);
+    });
+  });
 }

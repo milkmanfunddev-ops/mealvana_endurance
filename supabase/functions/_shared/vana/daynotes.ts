@@ -32,7 +32,7 @@ import type { AthleteContext, DaySlot, MealPlan } from './contracts.ts';
 const NotesZ = z.object({ notes: z.array(z.object({ date: z.string(), text: z.string() })).min(1).max(8) });
 
 export const DAY_NOTE_SYSTEM =
-  `You are Vana, an endurance-nutrition assistant. Write ONE short message (max 2 sentences, ≤ 30 words) for EACH of the dates listed, telling the athlete how to use their meal plan that day given their training. Be concrete: name a plan meal when it fits (e.g. "long ride → the rice bowl at lunch, extra serving at dinner"), mention the carb target only if it matters that day, keep rest days light. A date with meals already assigned is about those meals; a date with none may draw on any meal in the plan. Minimums framing, never weight or calorie-restriction language, no greetings, no emoji. Only use numbers that appear in the context.`;
+  `You are Vana, an endurance-nutrition assistant. Write ONE short message (max 2 sentences, ≤ 30 words) for EACH of the dates listed, telling the athlete how to use their meal plan that day given their training. Be concrete: name a plan meal when it fits (e.g. "long ride → the rice bowl at lunch, extra serving at dinner"), mention the carb target only if it matters that day, keep rest days light. A date with meals already assigned is about those meals; a date with none may draw on any meal in the plan. Minimums framing, never weight or calorie-restriction language, no greetings, no emoji. Only use numbers that appear in the context, written as the athlete reads them: "412g carbs", "140g protein", never "412C" or "140P".`;
 
 /** How long a claim is honoured before another request may take it over (an isolate that died mid-generation). */
 export const CLAIM_TTL_SECONDS = 120;
@@ -130,6 +130,16 @@ async function storedNotes(v: VanaCtx, planId: string): Promise<{ notes: Record<
 export const staleDates = (dates: string[], stored: { notes: Record<string, string>; keys: Record<string, string> }, want: Record<string, string>) =>
   dates.filter((d) => !stored.notes[d]?.trim() || stored.keys[d] !== want[d]);
 
+/** The context block writes macros in the chat's shorthand ("≥412C ≥140P 70F", "412C/140P/3000kcal"), and Haiku copied
+ *  the C into a note ("aim for 835C carbs", Finding 88-023). The notes' copy of the block spells them out instead; the
+ *  chat's block is untouched (its tests and prompt cache read it byte for byte). */
+export function contextInWords(block: string): string {
+  return block
+    .replace(/(\d+)C(?=[\s/·)]|$)/gm, '$1g carbs')
+    .replace(/(\d+)P(?=[\s/·)]|$)/gm, '$1g protein')
+    .replace(/(\d+)F(?=[\s/·)]|$)/gm, '$1g fat');
+}
+
 function notesPrompt(plan: MealPlan, ctx: AthleteContext, dates: string[]): string {
   const meals = plan.meals.map((m) => `- ${m.name} (${m.mealType}, ×${m.servings}, ${m.servingsLeft} left${m.session ? `, ${m.session}` : ''})`).join('\n') || '- (no meals in the plan yet)';
   const lines = dates.map((d) => {
@@ -137,7 +147,7 @@ function notesPrompt(plan: MealPlan, ctx: AthleteContext, dates: string[]): stri
     const assigned = SLOTS.map((s) => { const r = slots[s]; return r ? `${s}: ${r.name}` : null; }).filter(Boolean).join(', ');
     return `${d} (${dayName(d)}) — ${assigned || 'no meals assigned yet'}`;
   });
-  return `--- CONTEXT ---\n${contextBlock(ctx)}\n--- PLAN (${plan.status}, batch cooking ${plan.batchCooking ? 'on' : 'off'}) ---\n${meals}\n--- DATES ---\n${lines.join('\n')}\nReturn one note per date, in order.`;
+  return `--- CONTEXT ---\n${contextInWords(contextBlock(ctx))}\n--- PLAN (${plan.status}, batch cooking ${plan.batchCooking ? 'on' : 'off'}) ---\n${meals}\n--- DATES ---\n${lines.join('\n')}\nReturn one note per date, in order.`;
 }
 
 /** Bring the plan's notes up to date, writing only the days whose inputs changed. Returns every note the plan holds.

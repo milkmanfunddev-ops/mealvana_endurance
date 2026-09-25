@@ -128,4 +128,18 @@ class HomeController extends _$HomeController {
       return _load(date ?? todayIso());
     });
   }
+
+  /// The plan changed under the note (a confirm, a pick, a serving edit that
+  /// has landed): read the payload again so the note speaks about the plan
+  /// on the tab, not the one it replaced (Finding 88-023). The note on
+  /// screen stays until the new one lands. A plan write is a new edit, so
+  /// the stale-poll budget is refilled: the server is rewriting the notes
+  /// and the tab may follow them in. Offline, nothing is read.
+  Future<void> planChanged() async {
+    if (!await ref.read(connectivityCheckerProvider).isOnline()) return;
+    _stalePolls = 0;
+    final next = await AsyncValue.guard(() => _load(date ?? todayIso()));
+    if (!ref.mounted) return;
+    if (next.hasValue) state = next;
+  }
 }
