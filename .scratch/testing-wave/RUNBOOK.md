@@ -286,7 +286,10 @@ the above and follows this instead:
    --delete-conflicting-outputs`, never `--build-filter`, which deletes every other generated
    file), and the agent checks `git status` for deleted files before staging (Lee, 2026-09-25, #58). A ticket that bumps
    Drift's `schemaVersion` re-pins `_pinnedVersion` and `_pinnedFingerprint` in
-   `schema_version_guard_test.dart` and runs that test (#66).
+   `schema_version_guard_test.dart` and runs that test (#66). An agent that adds a call to a shared
+   client (`VanaActionClient`, a repository) greps the tests for fakes of that client and runs
+   them too: some assert the exact list of calls (#76). A logic ticket's prompt adds: "for every
+   async path you add, write down what happens if it runs twice at once or after a refresh" (#77).
 2. No decisions-page writes of any kind during a wave, not even open questions. A product question
    an agent raises goes in its ticket file or a Finding; the SSOT is updated later, in one pass,
    from the testing docs.

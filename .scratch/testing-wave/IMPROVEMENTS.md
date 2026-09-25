@@ -11,28 +11,17 @@ Each entry: what went wrong or cost time, where it was seen, and the suggested f
 
 ## Open
 
-- **#75 read-only retests are held by a read-only wave (wave 31).** With wave 30's retests open,
-  `wave` held 100 and 112-125 because both waves' Touches read "nothing (read only), except the
-  accounts the run creates and deletes", and the overlap check compares those words as if they
-  were file names. The held list then hid that the fix tickets 126-130 were free to run. Suggested
-  fix: `sync.mjs wave` treats a Touches entry with no path in it (no `/` or `.`) as touching no
-  file; accounts are ordered by the lead (#72), not by the hold.
-
-- **#76 a new client call broke tests that list every call (wave 31).** Ticket 126 moved the
-  conversation list onto `vana-action` (`list_conversations`). Its agent ran its own tests green,
-  but `vana_chat_fixed_chips_test.dart` records every action the chat screen sends and asserts
-  the exact list, so 7 tests went red only in the lead's full suite. Suggested fix: a fix-wave
-  prompt tells an agent that adds a call to a shared client (`VanaActionClient`, a repository) to
-  grep the tests for fakes of that client and run them.
-
-- **#77 the review found four real bugs the agents' tests passed (wave 31).** The read-only review
-  of 127/128/130 found a rebuild that could run before the edit landed, offline replays that never
-  rebuilt, an is_admin retry that looped on connectivity_plus's on-subscribe report, and a page
-  appended across a refresh. All four were concurrency or platform-stream cases. Keep the review
-  for logic tickets, and add to the logic tickets' prompts: "for every async path you add, write
-  down what happens if it runs twice at once or after a refresh".
+(none)
 
 ## Done
+
+- **#75 read-only retests held by a read-only wave (wave 31).** Fixed before wave 33: `ticketTouches`
+  drops a Touches entry with no `/` or `.`, so "nothing (read only)" names no file and holds
+  nothing; test in `sync.test.mjs` (read-only 06 and 07).
+
+- **#76, #77 fix-wave prompts (wave 31).** Runbook fix-wave step 1 now tells an agent that adds a
+  call to a shared client to run the tests that fake it, and has logic tickets write down what an
+  async path does when it runs twice or after a refresh.
 
 - **#74 `netcut on` leaves open connections up (wave 30).** Fixed before wave 32:
   `netcut.sh on SCRATCH --relaunch UDID` cuts, then relaunches the app so nothing opened before the

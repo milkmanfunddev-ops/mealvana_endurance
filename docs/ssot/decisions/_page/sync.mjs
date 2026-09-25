@@ -1080,8 +1080,12 @@ export function setTicketStatus(text, status) {
   return text.replace(re, `**${TICKET_HEADERS[0]}:** ${status}`);
 }
 const gitOut = (root, ...a) => (git(root, ...a) || '').trim();
-/** A ticket file's `**Touches:**` list, backticks dropped; empty when it has no such line. */
-const ticketTouches = text => splitList(((text.match(/^\*\*Touches:\*\*\s*(.*)$/mi) || [])[1] || '').replace(/`/g, ''));
+/**
+ * A ticket file's `**Touches:**` list, backticks dropped; empty when it has no such line.
+ * An entry with no path in it (no `/` or `.`, such as "nothing (read only)") names no file
+ * and is left out, so two read-only tickets never hold each other back.
+ */
+const ticketTouches = text => splitList(((text.match(/^\*\*Touches:\*\*\s*(.*)$/mi) || [])[1] || '').replace(/`/g, '')).filter(t => /[/.]/.test(t));
 /**
  * The frontier tickets an open wave holds back: a ticket whose Touches share a file
  * (or sit in a directory another names) with a ticket of any wave in the log that has

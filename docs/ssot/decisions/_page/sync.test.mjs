@@ -1272,17 +1272,19 @@ test('wave --open holds back a frontier ticket whose Touches share a file with a
   t('03', 'lib/b.dart');                     // no overlap
   t('04', null);                             // no Touches line
   t('05', 'lib/shared/x.dart');              // the same file as wave 1
+  t('06', 'nothing (read only), except the accounts the run creates and deletes');
+  t('07', 'nothing (read only), except the accounts the run creates and deletes');
   git('add', '-A'); git('commit', '-q', '-m', 'tickets');
   const cliRun = (...a) => spawnSync('node', [cli, 'wave', 'sm', '.scratch/sm/issues', '--branch', 'main', ...a], { cwd: root, encoding: 'utf8' });
-  assert.equal(cliRun('--open', '--only', '01').status, 0);
+  assert.equal(cliRun('--open', '--only', '01,06').status, 0);
 
   const plan = wavePlan('sm', '.scratch/sm/issues', { root, branch: 'main' });
-  assert.deepEqual(plan.wave.map(x => x.number), ['03', '04'], 'overlapping tickets are held; no overlap and no Touches line are kept');
+  assert.deepEqual(plan.wave.map(x => x.number), ['03', '04', '07'], 'overlapping tickets are held; no overlap, no Touches line and a read-only 07 beside a read-only 06 are kept');
   assert.deepEqual(plan.held, [
     { number: '02', wave: 1, files: ['lib/a/y.dart'] },
     { number: '05', wave: 1, files: ['lib/shared/x.dart'] },
   ]);
-  assert.deepEqual(plan.frontier, ['02', '03', '04', '05'], 'held tickets stay on the frontier');
+  assert.deepEqual(plan.frontier, ['02', '03', '04', '05', '07'], 'held tickets stay on the frontier');
 
   // --only does not override the hold, and the CLI says so.
   const only = cliRun('--only', '02,03');
@@ -1293,14 +1295,14 @@ test('wave --open holds back a frontier ticket whose Touches share a file with a
 
   // --open prints the hold and opens the rest.
   const opened = cliRun('--open');
-  assert.deepEqual(JSON.parse(opened.stdout).wave.map(x => x.number), ['03', '04']);
+  assert.deepEqual(JSON.parse(opened.stdout).wave.map(x => x.number), ['03', '04', '07']);
   assert.match(opened.stderr, /05 held: open wave 1 touches lib\/shared\/x\.dart/);
 
   // Once wave 1 closes, its Touches hold nothing back.
-  assert.equal(cliRun('--close', '1', '--merged', '01').status, 0);
+  assert.equal(cliRun('--close', '1', '--merged', '01,06').status, 0);
   const after = wavePlan('sm', '.scratch/sm/issues', { root, branch: 'main' });
   assert.deepEqual(after.wave.map(x => x.number), ['02', '05']);
-  assert.deepEqual(after.held, [], 'wave 2 (03, 04) is open but shares no file with 02 or 05');
+  assert.deepEqual(after.held, [], 'wave 2 (03, 04, 07) is open but shares no file with 02 or 05');
 });
 
 test('waveOpen and waveClose keep one log per feature and elapsed reads as hours and minutes', () => {
