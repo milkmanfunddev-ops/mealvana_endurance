@@ -1,6 +1,6 @@
 # 48: The meal-plan conversation reads right
 
-**Status:** in-progress (wave 20, 2026-09-25)
+**Status:** done (wave 20, 2026-09-25)
 **Blocked by:** 34 (touches lib/features/meal_planning/presentation/screens/vana_chat_screen.dart).
 **Next:** `/implement-lee testing-wave`
 **Model:** opus
@@ -14,6 +14,6 @@
 **Touches:** lib/features/meal_planning/presentation/screens/vana_chat_screen.dart, lib/features/meal_planning/presentation/widgets/review_sheet.dart
 
 - [x] Widget tests for each of the four.
-- [ ] codegen if annotations changed, `flutter analyze` and the suite green.
+- [x] codegen if annotations changed, `flutter analyze` and the suite green.
 
 Next: /implement-lee testing-wave

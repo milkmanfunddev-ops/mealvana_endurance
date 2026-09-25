@@ -1,6 +1,6 @@
 # 35: The Shopping tab opens the confirmed plan's list
 
-**Status:** in-progress (wave 20, 2026-09-25)
+**Status:** done (wave 20, 2026-09-25)
 **Blocked by:** 34 (touches supabase/functions/_shared/vana/actions.ts).
 **Next:** `/implement-lee testing-wave`
 **Model:** opus
@@ -15,7 +15,7 @@
 
 - [x] `getList` with no id returns the confirmed plan's list over newer draft, archived and hand-made lists (deno test).
 - [x] Deleting the confirmed plan's list does not bring an archived Draft's list back as current.
-- [ ] Deployed to dev.
-- [ ] codegen if annotations changed, `flutter analyze` and the suite green.
+- [x] Deployed to dev.
+- [x] codegen if annotations changed, `flutter analyze` and the suite green.
 
 Next: /implement-lee testing-wave

@@ -1,6 +1,6 @@
 # 40: Onboarding keeps the carb target edited on the plan reveal
 
-**Status:** in-progress (wave 20, 2026-09-25)
+**Status:** done (wave 20, 2026-09-25)
 **Blocked by:** 33 (touches lib/features/onboarding/presentation/providers/onboarding_controller.dart).
 **Next:** `/implement-lee testing-wave`
 **Model:** opus
@@ -15,6 +15,6 @@
 
 - [x] A seam test through the real onboarding notifier: an edited target is in the uploaded profile.
 - [ ] On dev, a new account's `nutrition_target_overrides` holds the edited value.
-- [ ] codegen if annotations changed, `flutter analyze` and the suite green.
+- [x] codegen if annotations changed, `flutter analyze` and the suite green.
 
 Next: /implement-lee testing-wave

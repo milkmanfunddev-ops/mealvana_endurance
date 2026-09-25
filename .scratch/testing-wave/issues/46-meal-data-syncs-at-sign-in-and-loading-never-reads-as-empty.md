@@ -1,6 +1,6 @@
 # 46: Meal data syncs at sign-in, and loading never reads as empty
 
-**Status:** in-progress (wave 20, 2026-09-25)
+**Status:** done (wave 20, 2026-09-25)
 **Blocked by:** 36 (touches lib/features/meal_planning/presentation/screens/shopping_tab.dart).
 **Next:** `/implement-lee testing-wave`
 **Model:** fable
@@ -16,6 +16,6 @@
 - [x] After a fresh sign-in the timeline shows a meal logged earlier, before Food is opened (seam test with producer-shaped rows).
 - [x] Recent lists earlier meals on a fresh sign-in.
 - [x] Plan and Shopping show a loading state, not their empty states, until the first read answers.
-- [ ] codegen if annotations changed, `flutter analyze` and the suite green.
+- [x] codegen if annotations changed, `flutter analyze` and the suite green.
 
 Next: /implement-lee testing-wave
