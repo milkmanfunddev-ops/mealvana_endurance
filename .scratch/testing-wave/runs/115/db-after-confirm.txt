@@ -1,0 +1,61 @@
+# db after confirm 22:34:23Z
+[
+    {
+        "id": "8ebeb6da-f6b6-40af-a3f9-4289dad49b6a",
+        "status": "confirmed",
+        "confirmed_at": "2026-09-25 20:21:43.539435+00",
+        "updated_at": "2026-09-25 20:26:43.588+00",
+        "is_deleted": true
+    },
+    {
+        "id": "9be88811-dd03-46e1-afcd-9403a69c7087",
+        "status": "confirmed",
+        "confirmed_at": "2026-09-25 22:33:49.946018+00",
+        "updated_at": "2026-09-25 22:33:49.946018+00",
+        "is_deleted": false
+    }
+]
+[
+    {
+        "id": "8719653f-9186-4277-abe8-254c636baa1c",
+        "plan_id": "9be88811-dd03-46e1-afcd-9403a69c7087",
+        "name": "Week of Sep 20",
+        "created_at": "2026-09-25 21:24:12.008255+00",
+        "updated_at": "2026-09-25 22:33:49.972+00",
+        "confirmed_at": "2026-09-25 22:33:49.972+00",
+        "items": 5
+    },
+    {
+        "id": "c667902d-57e2-4ea0-ad44-53ad0748bc00",
+        "plan_id": "666be167-08b3-4cd5-8127-d262d0fde28c",
+        "name": "Week of Sep 20",
+        "created_at": "2026-09-25 20:25:43.751613+00",
+        "updated_at": "2026-09-25 22:25:00.354+00",
+        "confirmed_at": "2026-09-25 20:28:08.786+00",
+        "items": 3
+    },
+    {
+        "id": "2aeb8156-6963-4171-bf8d-3147ee0d8998",
+        "plan_id": "8ebeb6da-f6b6-40af-a3f9-4289dad49b6a",
+        "name": "Week of Sep 20",
+        "created_at": "2026-09-25 20:10:25.324879+00",
+        "updated_at": "2026-09-25 20:21:43.567+00",
+        "confirmed_at": "2026-09-25 20:21:43.567+00",
+        "items": 5
+    },
+    {
+        "id": "2a4cbd64-6908-4143-b4ee-8e0035188435",
+        "plan_id": "be6abf2f-881b-478d-9b4b-b09afac3b9a2",
+        "name": "Week of Sep 20",
+        "created_at": "2026-09-25 20:06:08.849767+00",
+        "updated_at": "2026-09-25 20:14:18.148+00",
+        "confirmed_at": "2026-09-25 20:06:09.389+00",
+        "items": 17
+    }
+]
+[
+    {
+        "count": 424,
+        "max": "2026-09-25 22:33:58.752532+00"
+    }
+]

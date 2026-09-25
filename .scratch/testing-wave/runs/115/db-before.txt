@@ -1,0 +1,201 @@
+# db-before 2026-09-25T22:20:06Z
+[
+    {
+        "id": "8719653f-9186-4277-abe8-254c636baa1c",
+        "plan_id": "9be88811-dd03-46e1-afcd-9403a69c7087",
+        "name": "Week of Sep 20",
+        "created_at": "2026-09-25 21:24:12.008255+00",
+        "updated_at": "2026-09-25 21:24:12.167+00",
+        "confirmed_at": null
+    },
+    {
+        "id": "c667902d-57e2-4ea0-ad44-53ad0748bc00",
+        "plan_id": "666be167-08b3-4cd5-8127-d262d0fde28c",
+        "name": "Week of Sep 20",
+        "created_at": "2026-09-25 20:25:43.751613+00",
+        "updated_at": "2026-09-25 21:26:32.862+00",
+        "confirmed_at": "2026-09-25 20:28:08.786+00"
+    },
+    {
+        "id": "2aeb8156-6963-4171-bf8d-3147ee0d8998",
+        "plan_id": "8ebeb6da-f6b6-40af-a3f9-4289dad49b6a",
+        "name": "Week of Sep 20",
+        "created_at": "2026-09-25 20:10:25.324879+00",
+        "updated_at": "2026-09-25 20:21:43.567+00",
+        "confirmed_at": "2026-09-25 20:21:43.567+00"
+    },
+    {
+        "id": "2a4cbd64-6908-4143-b4ee-8e0035188435",
+        "plan_id": "be6abf2f-881b-478d-9b4b-b09afac3b9a2",
+        "name": "Week of Sep 20",
+        "created_at": "2026-09-25 20:06:08.849767+00",
+        "updated_at": "2026-09-25 20:14:18.148+00",
+        "confirmed_at": "2026-09-25 20:06:09.389+00"
+    },
+    {
+        "id": "90c2fefc-50f7-4534-bf05-e2e1189c1d01",
+        "plan_id": null,
+        "name": "List 2026-09-19",
+        "created_at": "2026-09-19 16:20:00.22745+00",
+        "updated_at": "2026-09-19 20:21:33.227+00",
+        "confirmed_at": null
+    }
+]
+[
+    {
+        "id": "803a567e-2294-415d-a04c-3f072e68493b",
+        "log_date": "2026-06-11",
+        "slot": "dinner",
+        "name": "Factor Chicken and Black Beans Frozen Dinner",
+        "source": "describe",
+        "calories": 450,
+        "eaten_at": null,
+        "created_at": "2026-06-12 02:16:39.760641+00",
+        "is_deleted": false
+    },
+    {
+        "id": "b610b6b7-4c81-4f23-b06a-bd259bcec897",
+        "log_date": "2026-06-11",
+        "slot": "breakfast",
+        "name": "Bagel with peanut butter & banana",
+        "source": "describe",
+        "calories": 520,
+        "eaten_at": null,
+        "created_at": "2026-06-12 04:30:53.835427+00",
+        "is_deleted": false
+    },
+    {
+        "id": "4cfade31-0ce9-4566-ab60-40a6dc4d1f2f",
+        "log_date": "2026-06-12",
+        "slot": "dinner",
+        "name": "Factor Salmon Dinner",
+        "source": "describe",
+        "calories": 620,
+        "eaten_at": null,
+        "created_at": "2026-06-12 13:58:48.297974+00",
+        "is_deleted": false
+    },
+    {
+        "id": "afaf05d1-5663-4d76-a83e-2ce29cc91efd",
+        "log_date": "2026-06-15",
+        "slot": "breakfast",
+        "name": "Oatmeal with Blueberries",
+        "source": "describe",
+        "calories": 534,
+        "eaten_at": null,
+        "created_at": "2026-06-15 14:46:48.695595+00",
+        "is_deleted": false
+    },
+    {
+        "id": "3610a988-e30a-4882-ba44-87635a2dd97e",
+        "log_date": "2026-06-16",
+        "slot": "breakfast",
+        "name": "Blueberry Pancakes",
+        "source": "describe",
+        "calories": 786,
+        "eaten_at": null,
+        "created_at": "2026-06-16 16:18:41.398543+00",
+        "is_deleted": false
+    },
+    {
+        "id": "2765bbef-9f71-4b30-ade0-32a992154065",
+        "log_date": "2026-06-16",
+        "slot": "lunch",
+        "name": "Greek yogurt + honey",
+        "source": "manual",
+        "calories": 164,
+        "eaten_at": null,
+        "created_at": "2026-06-16 20:53:07.268629+00",
+        "is_deleted": false
+    },
+    {
+        "id": "100884ec-29d5-4cee-8469-6364f52343a6",
+        "log_date": "2026-06-16",
+        "slot": "snack",
+        "name": "Egg & Veggie Scramble",
+        "source": "recipe",
+        "calories": 280,
+        "eaten_at": null,
+        "created_at": "2026-06-16 20:53:25.184966+00",
+        "is_deleted": false
+    },
+    {
+        "id": "bcec0965-2653-4aa2-99aa-f24872fe9819",
+        "log_date": "2026-06-17",
+        "slot": "breakfast",
+        "name": "Oatmeal with Blueberries & Peanut Butter",
+        "source": "describe",
+        "calories": 629,
+        "eaten_at": null,
+        "created_at": "2026-06-17 13:39:44.442393+00",
+        "is_deleted": false
+    },
+    {
+        "id": "1c73cabb-194b-4e54-b1f9-52cff8616053",
+        "log_date": "2026-06-17",
+        "slot": "snack",
+        "name": "Egg & Veggie Scramble",
+        "source": "describe",
+        "calories": 280,
+        "eaten_at": null,
+        "created_at": "2026-06-17 13:39:47.891681+00",
+        "is_deleted": false
+    },
+    {
+        "id": "db3da4ae-4978-47a3-a8c4-f2b2a16bfe48",
+        "log_date": "2026-06-18",
+        "slot": "breakfast",
+        "name": "Oatmeal with Blueberries & Peanut Butter",
+        "source": "saved",
+        "calories": 629,
+        "eaten_at": null,
+        "created_at": "2026-06-17 14:08:11.280848+00",
+        "is_deleted": false
+    },
+    {
+        "id": "7f168991-eb71-47e1-9486-88bcc1563713",
+        "log_date": "2026-06-28",
+        "slot": "breakfast",
+        "name": "Oatmeal with Blueberries & Peanut Butter",
+        "source": "saved",
+        "calories": 629,
+        "eaten_at": null,
+        "created_at": "2026-06-29 14:06:03.952065+00",
+        "is_deleted": false
+    },
+    {
+        "id": "c59ae479-838a-4a50-abf7-102f53075e08",
+        "log_date": "2026-06-11",
+        "slot": "dinner",
+        "name": "Spaghetti with Meatballs",
+        "source": "describe",
+        "calories": 939,
+        "eaten_at": null,
+        "created_at": "2026-06-12 01:42:32.775678+00",
+        "is_deleted": false
+    }
+]
+[
+    {
+        "id": "fd993bbb-a13a-43e7-a662-ea71ed2ae64a",
+        "name": "Egg & Veggie Scramble",
+        "created_at": "2026-06-17 13:42:39.046288+00"
+    },
+    {
+        "id": "09f59fb0-7c9c-4c57-89b7-d98979c7ed44",
+        "name": "Quinoa, mixed veg & walnuts",
+        "created_at": "2026-09-25 20:15:40.597889+00"
+    }
+]
+1ce8b3b7 2026-09-24 lunch W15-27 edited manual 610 2026-09-24 20:43:00+00
+ae7dba02 2026-09-24 dinner W14-25 Built bowl manual 450 2026-09-24 20:19:00+00
+f510d5d3 2026-09-24 dinner Spaghetti Bolognese W14-24 photo 780 2026-09-24 20:19:00+00
+a61f94fd 2026-09-24 None W14-25 Decimal kcal manual None 2026-09-24 20:18:00+00
+35409440 2026-09-24 breakfast W14-25 Manual oats manual 437 2026-09-24 20:17:00+00
+46b1d076 2026-09-24 snack Cottage Cheese & Pineapple Bowl recipe 300 2026-09-24 19:09:00+00
+f952f981 2026-09-24 None Rolled oats and Raisins manual 204 2026-09-24 19:09:00+00
+00a120e5 2026-09-24 snack Rice cake and Almond butter saved 168 2026-09-24 19:08:00+00
+38c4f0ed 2026-09-24 lunch W13-23 Lunch describe 404 2026-09-24 19:08:00+00
+a281f826 2026-09-23 None Patrol Build 1790210919365 manual 105 2026-09-24 00:48:00+00
+915ac609 2026-09-23 None Patrol Build 1790210521428 manual 105 2026-09-24 00:42:00+00
+9162543b 2026-09-23 snack Rice cake and Almond butter manual 168 2026-09-23 13:46:00+00
