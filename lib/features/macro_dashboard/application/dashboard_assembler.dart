@@ -515,6 +515,8 @@ class MacroDashboardAssembler {
         : BurnMark.estimated;
 
     // Per-meal rows: logged first (chronological), then planned dimmed.
+    // Each row carries the meal's own name so it can be matched to the
+    // timeline (27-006); the slot's label stands in only for a nameless one.
     final activeMeals = meals.where((m) => !m.isDeleted).toList(growable: false)
       ..sort(
         (a, b) =>
@@ -523,7 +525,7 @@ class MacroDashboardAssembler {
     final mealRows = <BreakdownMealRow>[
       for (final m in activeMeals)
         BreakdownMealRow(
-          name: m.slot?.label ?? m.name,
+          name: m.name.trim().isNotEmpty ? m.name : (m.slot?.label ?? m.name),
           timeLabel: m.eatenAt == null
               ? '~${_timeLabel(m.createdAt)}'
               : _timeLabel(m.eatenAt!),
