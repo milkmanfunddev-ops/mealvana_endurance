@@ -18,7 +18,7 @@ import { getSetting, getCoverageScope, getPantryItems, getPlanPeriod, getMealTyp
 import { buildShoppingList } from './grocery.ts';
 import { ensureSavedMealIngredients, backfillPlanIngredients } from './saved-ingredients.ts';
 import { resolveMealIcon } from './meal-icon.ts';
-import { coverageOf, defaultSession, servingsToCover } from './plan-math.ts';
+import { coverageOf, defaultSession, hasNutritionNumbers, servingsToCover } from './plan-math.ts';
 import { syncPlanList, markListConfirmed, toggleByName } from './shopping.ts';
 
 export interface PlanScope { planId?: string | null; conversationId?: string | null }
@@ -85,6 +85,7 @@ export async function defaultServings(v: VanaCtx, batchCooking: boolean): Promis
  *  of them is the athlete asking for more servings; that is the stepper (`setServings`). Testing-wave 18-001 / 18-003
  *  saw a second Add double a row from 4 to 8 with nothing on screen saying so. */
 export async function addMeal(v: VanaCtx, ref: MealRef, servings?: number | null, session?: Session, scope?: PlanScope | null): Promise<MealPlan> {
+  mustHaveNumbers(ref);
   const plan = (await resolvePlan(v, scope, true))!;
   const existing = plan.meals.find((m) => (ref.source === 'library' ? m.libraryMealId === ref.id : m.savedMealId === ref.id));
   if (existing) return (await getPlanById(v, plan.id))!;
@@ -95,6 +96,12 @@ export async function addMeal(v: VanaCtx, ref: MealRef, servings?: number | null
   // A dish-level saved meal (made from a log) gets its ingredients once before the list is built (saved-ingredients.ts).
   if (ref.source === 'saved') await ensureSavedMealIngredients(v, ref.id);
   return refreshShopping(v, plan.id);
+}
+/** A plan never takes a meal whose numbers are missing (mp-678): every add and every swap ends at addMeal / swapMeal, so
+ *  the rule holds here whichever surface asked. Browse's add and the model's updateBatch get this error back; plan build and
+ *  the picker never reach it because they pass such a meal by (tools.ts), and same-as-last-time skips it. */
+function mustHaveNumbers(ref: MealRef): void {
+  if (!hasNutritionNumbers(ref)) throw new Error(`no nutrition numbers: "${ref.name}" has no kcal or macros yet, so it can't go in a plan`);
 }
 export async function addMealById(v: VanaCtx, source: 'library' | 'saved', id: string, servings?: number | null, session?: Session, scope?: PlanScope | null) {
   const ref = await getMeal(v, source, id); if (!ref) throw new Error(`meal not found: ${source}/${id}`);
@@ -206,6 +213,7 @@ export async function swapMeal(v: VanaCtx, planMealId: string, source: 'library'
   const { data: cur } = await v.db.from('plan_meals').select('*').eq('id', planMealId).eq('user_id', v.userId).maybeSingle();
   if (!cur) throw new Error('plan meal not found');
   const ref = await getMeal(v, source, id); if (!ref) throw new Error(`meal not found: ${source}/${id}`);
+  mustHaveNumbers(ref);
   const eaten = cur.servings - cur.servings_left;
   await v.db.from('plan_meals').update({ source: ref.source, library_meal_id: ref.source === 'library' ? ref.id : null, saved_meal_id: ref.source === 'saved' ? ref.id : null, name: ref.name, meal_type: ref.mealType, kcal: ref.kcal, carbs_g: ref.carbsG, protein_g: ref.proteinG, fat_g: ref.fatG, icon: ref.icon ?? null, servings_left: Math.max(0, cur.servings - eaten), swaps_applied: [], comments: [...((cur.comments ?? []) as unknown[]), { role: 'vana', text: `Swapped ${cur.name} → ${ref.name}`, at: new Date().toISOString() }], updated_at: new Date().toISOString() }).eq('id', planMealId);
   if (ref.source === 'saved') await ensureSavedMealIngredients(v, ref.id); // same hook as addMeal
