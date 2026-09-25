@@ -1,7 +1,8 @@
 # SSOT — Integrations: Final Surge completion
 
-**Status: PROPOSED v1 (Lee, 2026-09-25) — authored app-side, awaiting Xuan.** Written from
-testing-wave ticket 99 (Finding 29-002, Lee's ruling 2026-09-25: build it now). It amends
+**Status: PROPOSED v2 (Lee, 2026-09-25) — authored app-side, awaiting Xuan.** Written from
+testing-wave ticket 99 (Finding 29-002, Lee's ruling 2026-09-25: build it now); v2 adds FSC-6
+from ticket 101 (Lee's ruling the same day). It amends
 [`final-surge.md`](final-surge.md) FS-2.1 and applies [`matching.md`](matching.md) M-1.3 to
 Final Surge. Until Xuan rules, Lee's ruling overrides FS-2.1's "completion data has never been
 observed from FS". App-repo-relative paths.
@@ -71,6 +72,22 @@ DONE_CONFIRMED (self-reported).
 `WorkoutDate` and `WorkoutTime` are naive local wall clock. `actual_time` and `completed_at` are
 built from them without any time-zone conversion, the same as `scheduled_date_time`, so a
 completion stays on the athlete's local day.
+
+## FSC-6 — A provider completion is final for the athlete
+
+Ruled by Lee, 2026-09-25 (testing-wave ticket 101). A workout with `status = completed` and
+`completion_type = provider` cannot be undone by the athlete, the same as a Garmin-verified
+workout:
+
+1. Its card offers no Mark undone and no Skip (workout-card G3 applies), including a brick
+   that B-3 shows as self-reported.
+2. Mark-undone and Skip on such a row are refused; nothing is written. Undoing it would only
+   flip back on the next sync, because FSC-3 rule 1 lands the completion again.
+3. An upload never sends `manual` over a stored `provider`. The app sends `completion_type`
+   only when its own row has a value; a row with none (a device that had the row before the
+   column existed locally) leaves the server's value as it is.
+
+The athlete's own mark-done (`completion_type` null or `manual`) stays undoable.
 
 ## Open for Xuan
 

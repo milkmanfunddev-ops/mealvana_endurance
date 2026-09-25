@@ -43,6 +43,7 @@ class WorkoutCardData {
     this.verifiedSourceName = 'Garmin',
     this.skipActive = false,
     this.markDoneAllowed = true,
+    this.completionFinal = false,
   });
 
   final String activityId;
@@ -84,7 +85,18 @@ class WorkoutCardData {
   /// Skip (G4/G5) stays available on any non-verified card.
   final bool markDoneAllowed;
 
+  /// True when a training platform reported the workout completed
+  /// (`completion_type = 'provider'`). Such a completion is final for the
+  /// athlete (Lee, 2026-09-25): the card offers no Mark undone and no Skip,
+  /// the same as a verified card, even where the chip reads self-reported
+  /// (a brick without every leg stamp, B-3).
+  final bool completionFinal;
+
   bool get isVerified => state == WorkoutCardState.doneVerified;
+
+  /// No gesture may change this card's state (G3): verified, or a
+  /// platform-reported completion.
+  bool get isLocked => isVerified || completionFinal;
   bool get isDone =>
       state == WorkoutCardState.doneConfirmed ||
       state == WorkoutCardState.doneVerified;

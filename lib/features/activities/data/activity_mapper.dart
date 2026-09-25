@@ -528,8 +528,12 @@ class ActivityMapper {
       'completed_at': activity.completedAt?.toIso8601String(),
       'actual_distance_miles': activity.actualDistanceMiles,
       'actual_duration_minutes': activity.actualDurationMinutes,
-      // The server column defaults to 'manual'; never upload a null over it.
-      'completion_type': activity.completionType ?? 'manual',
+      // Sent only when set: a null here (a row from before the v23 local
+      // column) must never overwrite the server's 'provider' with 'manual'
+      // (ticket 101). An absent key leaves the server value alone, and an
+      // insert takes the column default 'manual'.
+      if (activity.completionType != null)
+        'completion_type': activity.completionType,
       'completion_rating': activity.completionRating,
       'nutrition_rating': activity.nutritionRating,
       'completion_notes': activity.completionNotes,
@@ -564,6 +568,24 @@ class ActivityMapper {
       if (includeCreatedAt) 'created_at': activity.createdAt.toIso8601String(),
       'updated_at': DateTime.now().toIso8601String(),
     };
+  }
+
+  /// Split upload payloads into groups whose rows carry the same keys.
+  ///
+  /// PostgREST updates the union of the rows' keys; a row missing one of
+  /// them inside a mixed request gets NULL (or the column default with
+  /// `missing=default`) written over the server value. Payloads that omit an
+  /// unset field (`completion_type`, ticket 101) must therefore be sent in
+  /// their own request. Order inside each group is kept.
+  static List<List<Map<String, dynamic>>> uniformKeyBatches(
+    List<Map<String, dynamic>> payloads,
+  ) {
+    final groups = <String, List<Map<String, dynamic>>>{};
+    for (final p in payloads) {
+      final signature = (p.keys.toList()..sort()).join(',');
+      (groups[signature] ??= []).add(p);
+    }
+    return groups.values.toList();
   }
 
   /// Build Supabase JSON payload from a Drift [Activity] row (for dirty record uploads).
@@ -609,7 +631,10 @@ class ActivityMapper {
       'completed_at': record.completedAt?.toIso8601String(),
       'actual_distance_miles': record.actualDistanceMiles,
       'actual_duration_minutes': record.actualDurationMinutes,
-      'completion_type': record.completionType ?? 'manual',
+      // Only when set; see buildSupabasePayload (ticket 101). Bulk uploads
+      // go through [uniformKeyBatches] so the absent key stays absent.
+      if (record.completionType != null)
+        'completion_type': record.completionType,
       'completion_rating': record.completionRating,
       'nutrition_rating': nutritionRating,
       'completion_notes': record.completionNotes,

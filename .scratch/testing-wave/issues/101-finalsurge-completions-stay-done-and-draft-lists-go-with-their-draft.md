@@ -18,10 +18,12 @@ Kept as built (Lee, same day): conversation titles "No plan yet" and "Archived" 
 
 **Touches:** lib/features/macro_dashboard/ (the workout card's Undo), lib/features/activities/ (mark-undone guard), lib/features/activities/data/activity_mapper.dart, lib/shared/services/sync/entity_sync/activity_sync_handler.dart, supabase/functions/_shared/vana/ (archive/replace paths in plan.ts, shopping.ts), supabase/migrations/20260925170100_drop_archived_draft_lists.sql, docs/ssot/spec/integrations/final-surge-completion.PROPOSED.md
 
-- [ ] Widget test: a provider-completed card shows no Undo; a mark-done card still does.
-- [ ] Controller/repository test: mark-undone on a provider-completed activity is refused.
-- [ ] Mapper/sync test: an upload of a row with null `completion_type` never sends `'manual'` over `'provider'`.
-- [ ] Deno test: archiving or replacing a draft deletes its list; confirming a plan keeps its list; a hand-made list is untouched.
-- [ ] `flutter analyze` clean on touched files, deno tests for touched functions. SQL and deploy: wave lead.
+- [x] Widget test: a provider-completed card shows no Undo; a mark-done card still does.
+- [x] Controller/repository test: mark-undone on a provider-completed activity is refused.
+- [x] Mapper/sync test: an upload of a row with null `completion_type` never sends `'manual'` over `'provider'`.
+- [x] Deno test: archiving or replacing a draft deletes its list; confirming a plan keeps its list; a hand-made list is untouched.
+- [x] `flutter analyze` clean on touched files, deno tests for touched functions. SQL and deploy: wave lead.
 
 Next: /implement-lee testing-wave
+
+**Build notes (wave 26 agent):** a deleted draft (`delete_plan`, which has Undo) keeps its list; the ruling covers archive and replace only. Dev count of archived never-confirmed plans' lists before the migration: 6.
