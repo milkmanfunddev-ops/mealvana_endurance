@@ -24,7 +24,7 @@
  *   - Credit enforcement 402
  *
  * Run with:
- *   deno test --allow-env --allow-read \
+ *   deno test --allow-env --allow-read --allow-sys --node-modules-dir=none \
  *     supabase/functions/describe-meal/index.test.ts
  */
 
@@ -44,6 +44,7 @@ import {
 } from '../_shared/meal_analysis/prompt.ts';
 import { budgetEstimate } from '../_shared/ai/credits.ts';
 import { DESCRIBE_MEAL_MODEL } from '../_shared/ai/model.ts';
+import { oneCallOneRow } from '../tests/meal_analysis_call_log.ts';
 
 // ---------------------------------------------------------------------------
 // A. description validation rules (mirrors index.ts handler logic)
@@ -427,4 +428,15 @@ describe('H. Schema edge cases', () => {
     });
     assert(result.success);
   });
+});
+
+// ---------------------------------------------------------------------------
+// H. One describe, one call-log row (testing-wave ticket 43, Finding 24-001)
+// ---------------------------------------------------------------------------
+
+oneCallOneRow({
+  name: 'describe-meal',
+  source: new URL('./index.ts', import.meta.url),
+  bucket: 'vana.describe_meal',
+  model: DESCRIBE_MEAL_MODEL,
 });

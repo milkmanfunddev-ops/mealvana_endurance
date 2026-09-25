@@ -48,13 +48,9 @@ import { describeMealPrompt } from "../_shared/meal_analysis/prompt.ts";
 import { initSentry, withSentry } from "../_shared/sentry.ts";
 import { refuseUnlessPro } from "../_shared/vana/entitlement.ts";
 import { type BudgetHold, reserveBudget } from "../_shared/ai/credits.ts";
-import {
-  completeCall,
-  reserveCall,
-} from "../_shared/vana/rate-limit.ts";
-import { callMetrics } from "../_shared/vana/log.ts";
+import { reserveCall } from "../_shared/vana/rate-limit.ts";
+import { finishMealCall } from "../_shared/meal_analysis/call_log.ts";
 import { cacheReadTokens, cacheWriteTokens } from "../_shared/vana/stream.ts";
-import { subscriberState } from "../_shared/vana/subscriber.ts";
 
 // ---------------------------------------------------------------------------
 // Environment
@@ -160,7 +156,7 @@ serve(withSentry(async (req: Request) => {
         `length: ${description.length} chars, model: ${DESCRIBE_MEAL_MODEL}`,
     );
 
-    // ── Service-role client (reused for credits + jade_calls/ai_usage logging) ─
+    // ── Service-role client (reused for credits + call log/ai_usage logging) ─
     const serviceClient = createClient(SUPABASE_URL, SUPABASE_SERVICE_ROLE_KEY);
 
     // ── Budget (mp-430, mp-436; ai-cost ticket 09) ───────────────────────────
@@ -218,44 +214,20 @@ serve(withSentry(async (req: Request) => {
     const usage = result.usage;
     const costUsd = gatewayCostUsd(result.providerMetadata);
 
-    // Log usage to jade_calls (fire-and-forget)
-    // Register with waitUntil so the insert survives isolate shutdown
-    // after the response is returned.
+    // The reservation IS this call's row in the Vana call log, and its only one: the tokens, the
+    // gateway's charge, the step, the budget draw and the subscriber's plan state land on it (ai-cost
+    // ticket 05). No second insert: `jade_calls` is a view over the same table, and a second row
+    // doubled the call and its tokens in the weekly cost view (Finding 24-001).
     // deno-lint-ignore no-explicit-any
     (globalThis as any).EdgeRuntime?.waitUntil?.(
-      serviceClient
-        .from("jade_calls")
-        .insert({
-          user_id: user.id,
-          conversation_id: null,
-          function_name: "describe-meal",
-          model: DESCRIBE_MEAL_MODEL,
-          input_tokens: usage?.inputTokens ?? 0,
-          output_tokens: usage?.outputTokens ?? 0,
-        })
-        .then(({ error: logError }) => {
-          if (logError) {
-            console.error("[describe-meal] Failed to log ai usage:", logError);
-          }
-        }),
-    );
-    // The reservation IS this call's row in the Vana call log: its tokens land on it.
-    // The same shape as a chat turn (ai-cost ticket 05): the gateway's charge, cached tokens,
-    // one step, the fact that this call drew the athlete's budget, and the subscriber's plan
-    // state, read on the background task so "cost per athlete by plan" counts logged meals too.
-    // deno-lint-ignore no-explicit-any
-    (globalThis as any).EdgeRuntime?.waitUntil?.(
-      (async () => {
-        const sub = await subscriberState(serviceClient, user.id);
-        await completeCall(serviceClient, reserved.callId, {
-          inputTokens: usage?.inputTokens ?? 0,
-          outputTokens: usage?.outputTokens ?? 0,
-          ...callMetrics([{ usage, providerMetadata: result.providerMetadata }], usage),
-          debited: true,
-          subscriberPeriodType: sub.periodType,
-          subscriberActiveUntil: sub.activeUntil,
-        });
-      })(),
+      finishMealCall(serviceClient, {
+        userId: user.id,
+        callId: reserved.callId,
+        bucket: "vana.describe_meal",
+        model: DESCRIBE_MEAL_MODEL,
+        usage,
+        providerMetadata: result.providerMetadata,
+      }),
     );
     // Also record in the canonical, prod-safe ai_usage ledger (used for
     // per-user token visibility + future throttling).
