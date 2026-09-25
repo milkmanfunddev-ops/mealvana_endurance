@@ -13,7 +13,7 @@
 
 **Touches:** lib/features/subscription/data/subscription_service.dart (and whatever calls its logIn at startup)
 
-- [ ] A test: a cold start with a signed-in account makes exactly one logIn, after configure.
-- [ ] codegen if annotations changed, `flutter analyze` and the suite green.
+- [x] A test: a cold start with a signed-in account makes exactly one logIn, after configure. (`revenuecat_login_order_test.dart`, 7 cases through a fake SDK recording call order; `app_startup_service_test.dart` `initializeAppGate` group, 3 cases through the real startup service)
+- [x] codegen not needed (no annotation change); `flutter analyze` clean on the touched files. [ ] the suite: wave lead.
 
 Next: /implement-lee testing-wave
