@@ -1,0 +1,5 @@
+13:30:09Z
+40-char code:
+400 {"error":"code_too_long","details":"code is longer than 32 characters","max_length":32}
+blank code:
+400 {"error":"invalid_input","details":"code is required"}

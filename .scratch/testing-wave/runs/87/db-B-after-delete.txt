@@ -1,0 +1,6 @@
+13:33Z after deleting B
+auth.users B:
+code_redemptions E2EGIVE365:
+{"code": "E2EGIVE365", "id": "a2d4be66-df60-4073-9af1-ec8e332570e8", "code_id": "718e4ebf-482b-4390-ad52-18c80fb6cb67", "user_id": null, "redeemed_at": "2026-09-25 13:31:27.122631+00"}
+user_entitlements B:
+{"code":"E2EGIVE365","type":"giveaway","owner":null,"valid_from":"2026-09-25 13:26:20.329047+00","valid_until":null,"perk_days":365,"max_redemptions":null,"redemptions":1}
