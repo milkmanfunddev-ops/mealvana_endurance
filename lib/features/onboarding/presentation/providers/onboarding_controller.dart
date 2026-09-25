@@ -750,8 +750,17 @@ class OnboardingController extends _$OnboardingController {
       profile.nutritionTargetOverrides,
       edits,
     );
+    // Local write first, marked dirty (Finding 03-009). The old write-through
+    // cleared needs_upload before the server held the edit, so a sync that
+    // had read the profile before the edit (the diet/allergy writes just
+    // above leave it dirty) could land its stale copy after this one, and the
+    // next download then replaced the clean local row with it: the edit was
+    // gone from both sides. Dirty, the local row wins every download
+    // (`syncFromRemote`, `saveRemoteUserProfile`), and the post-save upload
+    // pushes the whole profile, overrides included.
     await userRepository.updateUserProfile(
       profile.copyWith(nutritionTargetOverrides: clamped),
+      needsUpload: true,
     );
   }
 
