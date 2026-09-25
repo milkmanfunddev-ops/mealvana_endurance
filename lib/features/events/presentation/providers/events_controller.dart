@@ -4,6 +4,7 @@ import '../../application/events_service.dart';
 import '../../../activities/application/activities_service.dart';
 import '../../../activities/presentation/providers/activities_controller.dart';
 import '../../../carb_loading/presentation/providers/carb_loading_controller.dart';
+import '../../../carb_loading/presentation/providers/carb_nudge_coordinator.dart';
 import '../../../macro_dashboard/presentation/providers/carb_dashboard_providers.dart';
 import '../../domain/event.dart';
 import '../../../activities/domain/activity.dart';
@@ -128,6 +129,8 @@ class EventsController extends _$EventsController {
       ref.invalidateSelf();
       ref.invalidate(nextUpcomingEventProvider);
       ref.invalidate(allEventsProvider);
+      // G27: a new event may open a race-window nudge schedule.
+      unawaited(ref.read(carbNudgeCoordinatorProvider.notifier).run());
 
       return createdEvent.id;
     } catch (e) {
