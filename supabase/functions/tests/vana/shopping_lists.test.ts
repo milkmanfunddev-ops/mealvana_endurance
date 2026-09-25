@@ -6,6 +6,7 @@ import { extraAction } from '../../_shared/vana/actions.ts';
 import { ShoppingListDetailZ, ShoppingListSummaryZ, ActionResultZ } from '../../_shared/vana/schemas.ts';
 import type { ShoppingItem, ShoppingListItem } from '../../_shared/vana/contracts.ts';
 import { testCtx, TEST_USER_ID } from './support/vana_ctx.ts';
+import { currentWeekStart } from '../../_shared/vana/plan.ts';
 
 const U = TEST_USER_ID;
 const plain = (name: string, over: Partial<ShoppingItem> = {}): ShoppingItem => ({ aisle: 'Produce', name, qty: '1', checked: false, have: false, fromMealIds: ['m1'], ...over });
@@ -122,4 +123,60 @@ Deno.test('actions: delete_shopping_list takes the rows with it, empties a plan 
   await assertRejects(() => extraAction(v, 'delete_shopping_list', { id: 'x' }), Error, 'not found');
   assertEquals((await extraAction(v, 'delete_shopping_list', { id: 'a' }))!.list, null);
   assertEquals(v.fake.rows('shopping_lists').map((r) => r.id), ['x']);
+});
+
+// ---- ticket 35 (Findings 19-001, 18-002, 19-006): the tab's default list is the confirmed plan's (mp-244).
+
+/** An account mid-week, as the Food tab sees it: this week's confirmed plan with its list, a newer draft's list (Browse
+ *  and chat edits build one, mp-244), an archived draft's list, a newer hand-made list, and an older week's confirmed
+ *  plan whose list was confirmed later than anything else. Every list but this week's confirmed one is "newer". */
+async function midWeek(over: { dropConfirmedList?: boolean; noConfirmed?: boolean; noHandMade?: boolean } = {}) {
+  const week = await currentWeekStart(ctx());
+  const lists = [
+    { id: 'confirmedList', user_id: U, plan_id: 'confirmed', name: `Week of ${week}`, created_at: '2026-09-20T10:00:00Z', confirmed_at: '2026-09-20T11:00:00Z' },
+    { id: 'draftList', user_id: U, plan_id: 'draft', name: `Week of ${week}`, created_at: '2026-09-24T21:09:25Z' },
+    { id: 'archivedList', user_id: U, plan_id: 'archived', name: `Week of ${week}`, created_at: '2026-09-24T09:00:00Z' },
+    { id: 'handMade', user_id: U, name: 'List 2026-09-24', created_at: '2026-09-24T16:55:00Z' },
+    { id: 'olderHandMade', user_id: U, name: 'List 2026-09-02', created_at: '2026-09-02T10:00:00Z' },
+    { id: 'lastWeekList', user_id: U, plan_id: 'lastWeek', name: 'Week of 2020-01-05', created_at: '2020-01-05T10:00:00Z', confirmed_at: '2026-09-25T00:00:00Z' },
+  ].filter((l) => !(over.dropConfirmedList && l.id === 'confirmedList') && !(over.noHandMade && ['handMade', 'olderHandMade'].includes(l.id)));
+  const plans = [
+    { id: 'confirmed', user_id: U, week_start: week, status: over.noConfirmed ? 'archived' : 'confirmed', is_deleted: false, shopping: [] },
+    { id: 'draft', user_id: U, week_start: week, status: 'draft', conversation_id: 'c1', is_deleted: false, shopping: [] },
+    { id: 'archived', user_id: U, week_start: week, status: 'archived', is_deleted: false, shopping: [] },
+    { id: 'lastWeek', user_id: U, week_start: '2020-01-05', status: 'confirmed', is_deleted: false, shopping: [] },
+  ];
+  return ctx({ shopping_lists: lists, meal_plans: plans });
+}
+const defaultId = async (v: ReturnType<typeof ctx>) => ((await extraAction(v, 'get_shopping_list', {}))!.list as { id: string } | null)?.id ?? null;
+const firstListed = async (v: ReturnType<typeof ctx>) => ((await extraAction(v, 'list_shopping_lists', {}))!.lists as { id: string }[])[0]?.id ?? null;
+
+Deno.test("get_shopping_list{}: the confirmed plan's list wins over newer draft, archived and hand-made lists (19-001, 18-002, 19-006)", async () => {
+  const v = await midWeek();
+  assertEquals(await defaultId(v), 'confirmedList');
+  // the lists' order agrees, so the tab marks the plan's list as the current one
+  assertEquals(await firstListed(v), 'confirmedList');
+  // a new hand-made list answers itself when made, but does not become the default
+  const made = ShoppingListDetailZ.parse((await extraAction(v, 'create_shopping_list', {}))!.list);
+  assert(made.id !== 'confirmedList');
+  assertEquals(await defaultId(v), 'confirmedList');
+  assertEquals(await firstListed(v), 'confirmedList');
+});
+
+Deno.test("delete_shopping_list on the confirmed plan's list answers the newest hand-made list, never an archived or draft plan's list (19-001)", async () => {
+  const v = await midWeek();
+  const after = await extraAction(v, 'delete_shopping_list', { id: 'confirmedList' });
+  assertEquals(ShoppingListDetailZ.parse(after!.list).id, 'handMade');
+  assertEquals(await defaultId(v), 'handMade');
+  assertEquals(await firstListed(v), 'handMade');
+  // with no hand-made list, the tab shows its empty state
+  const bare = await midWeek({ noHandMade: true });
+  assertEquals((await extraAction(bare, 'delete_shopping_list', { id: 'confirmedList' }))!.list, null);
+  assertEquals(await defaultId(bare), null);
+});
+
+Deno.test("get_shopping_list{}: with no confirmed plan this week, the newest hand-made list, else null; a draft's or another week's list never", async () => {
+  assertEquals(await defaultId(await midWeek({ noConfirmed: true })), 'handMade');
+  assertEquals(await defaultId(await midWeek({ noConfirmed: true, noHandMade: true })), null);
+  assertEquals(await defaultId(await midWeek({ dropConfirmedList: true })), 'handMade');
 });

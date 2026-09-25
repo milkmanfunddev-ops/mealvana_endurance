@@ -13,8 +13,8 @@
 
 **Touches:** supabase/functions/_shared/vana/shopping.ts, supabase/functions/_shared/vana/actions.ts
 
-- [ ] `getList` with no id returns the confirmed plan's list over newer draft, archived and hand-made lists (deno test).
-- [ ] Deleting the confirmed plan's list does not bring an archived Draft's list back as current.
+- [x] `getList` with no id returns the confirmed plan's list over newer draft, archived and hand-made lists (deno test).
+- [x] Deleting the confirmed plan's list does not bring an archived Draft's list back as current.
 - [ ] Deployed to dev.
 - [ ] codegen if annotations changed, `flutter analyze` and the suite green.
 
