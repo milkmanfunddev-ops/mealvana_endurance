@@ -94,6 +94,12 @@ Each entry: what went wrong or cost time, where it was seen, and the suggested f
 
 ## Done
 
+- **#65 fix waves took 40-60 minutes of lead time (waves 19-22).** Three full-suite runs in wave
+  22, page cards, waiting for the slowest agent, and a landing dance. **Done (Lee, 2026-09-25,
+  wave 24):** RUNBOOK "Fix waves: keep them fast" (no devices, no page writes, merge as agents
+  finish, one full suite, targeted re-runs, review only logic tickets, deploy once). Wave 24 took
+  27 minutes for 12 tickets.
+
 - **#54 CF-2 conformance goes red in the early morning (wave 19).** At 04:40 local the CF-2
   clamp-bound stepper test reads "1 h — early start" where it expects "Capped: session in …"; it
   was red at the wave's base too and green in the afternoon waves. The test depends on the clock.

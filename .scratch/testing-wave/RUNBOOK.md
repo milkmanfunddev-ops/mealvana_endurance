@@ -256,6 +256,34 @@ should behave) goes to the page as an open question, the normal way, and nothing
    wave use the same account, both prompts say so and name what the other run writes, so each
    checks only its own rows and treats the other's as expected (IMPROVEMENTS #44).
 
+**Fix waves: keep them fast (Lee, 2026-09-25).** A fix wave runs no scenario, so it skips most of
+the above and follows this instead:
+
+1. No simulators, no app build, no device checks. Agents run only the test files for their own
+   change (TDD at the seams), plus `flutter analyze` on what they touched. They never run the full
+   suite or a review.
+2. No decisions-page writes of any kind during a wave, not even open questions. A product question
+   an agent raises goes in its ticket file or a Finding; the SSOT is updated later, in one pass,
+   from the testing docs.
+3. Batch small work. Copy fixes and one-line guards go to one agent as a list (fable is enough);
+   only real logic gets its own agent. Give each ticket that may write a migration its own
+   timestamp (`<date>16NN00`, NN = ticket) so two never collide (#60). Tell agents which files
+   another open wave is editing and forbid them (#63).
+4. Merge as agents finish. Make the `merge-N` worktree when the first report arrives and merge
+   each branch in when its agent reports; do not wait for the slowest.
+5. At the end, once: merge `mealplanning` in (it may have moved, #59), one unfiltered codegen,
+   `flutter analyze`, deno tests for touched functions, and ONE full CI suite. A failure is fixed
+   and re-checked with the affected test folders only, never a second full suite. If
+   `mealplanning` moves again before landing, re-merge and run the touched folders only.
+6. Review only the logic-heavy tickets (paywall, sync, plans, startup), with one read-only agent
+   looking for real bugs; skip review for copy and layout tickets.
+7. Deploy once, from the final merged tree: SQL first, then every function the wave changed.
+   One real read for any changed PostgREST select (#57).
+8. Land with a fast-forward (check `merge-base --is-ancestor` before touching any dirty file,
+   #61), close the wave, and push `mealplanning` when Lee has asked for pushes (it triggers no
+   Codemagic build). Push credentials: `GIT_ASKPASS` pointing at a script that runs
+   `gh auth token --user lbm54`.
+
 **After the wave.**
 
 1. Merge in ticket order, run `flutter analyze` and the CI suite command.
