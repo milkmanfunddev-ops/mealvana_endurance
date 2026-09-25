@@ -13,7 +13,7 @@
 
 **Touches:** lib/features/onboarding/presentation/screens/plan_reveal_screen.dart, lib/features/onboarding/presentation/providers/onboarding_controller.dart, lib/features/auth/data/user_repository.dart
 
-- [ ] A seam test through the real onboarding notifier: an edited target is in the uploaded profile.
+- [x] A seam test through the real onboarding notifier: an edited target is in the uploaded profile.
 - [ ] On dev, a new account's `nutrition_target_overrides` holds the edited value.
 - [ ] codegen if annotations changed, `flutter analyze` and the suite green.
 
