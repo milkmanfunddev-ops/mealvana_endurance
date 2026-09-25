@@ -36,7 +36,9 @@ import 'package:mealvana_endurance/features/settings/domain/account_deletion_ent
 import 'package:mealvana_endurance/features/settings/domain/settings_state.dart';
 import 'package:mealvana_endurance/features/settings/presentation/providers/settings_controller.dart';
 import 'package:mealvana_endurance/features/subscription/application/code_entry_controller.dart';
+import 'package:mealvana_endurance/features/content/domain/content_keys.dart';
 import 'package:mealvana_endurance/features/subscription/application/pro_paywall_controller.dart';
+import 'package:mealvana_endurance/features/subscription/application/subscription_screen_controller.dart';
 import 'package:mealvana_endurance/features/subscription/domain/code_redemption.dart';
 import 'package:mealvana_endurance/features/subscription/presentation/widgets/redeem_code_sheet.dart';
 import 'package:mealvana_endurance/features/subscription/application/subscription_status_provider.dart';
@@ -169,6 +171,7 @@ List<Override> _overrides({
   PhoneClipPlayer Function()? clip,
   CodeEntryController Function()? codeEntry,
   bool hasSubscription = false,
+  bool renewingSubscription = false,
   SubscriptionStatus status = SubscriptionStatus.none,
 }) {
   final resolved = plans ?? PaywallPlans(monthly: _monthly, annual: _annual);
@@ -181,6 +184,9 @@ List<Override> _overrides({
     subscriptionStatusProvider.overrideWith(() => _FixedStatus(status)),
     paywallPlansProvider.overrideWith((ref) async => resolved),
     paywallHasSubscriptionProvider.overrideWith((ref) async => hasSubscription),
+    renewingStoreSubscriptionProvider.overrideWith(
+      (ref) async => renewingSubscription,
+    ),
     if (paywall != null) proPaywallControllerProvider.overrideWith(paywall),
     if (settings != null) settingsControllerProvider.overrideWith(settings),
     if (codeEntry != null) codeEntryControllerProvider.overrideWith(codeEntry),
@@ -850,6 +856,69 @@ void main() {
     // Tracked as a paywall delete, not a Settings one (04-001).
     expect(settings.deletedFrom, AccountDeletionEntry.paywall);
     expect(settings.signOuts, 0);
+    expect(
+      find.text(_content[ContentKeys.paywallDeleteConfirmSubscription]!),
+      findsNothing,
+      reason: 'no store subscription renewing: nothing to warn about',
+    );
+  });
+
+  testWidgets('Delete account with a renewing store subscription says it '
+      'keeps renewing and Manage opens the subscription page (02-004)', (
+    tester,
+  ) async {
+    final settings = _RecordingSettings();
+    final paywall = _RecordingPaywall(
+      manageUri: Uri.parse('https://apps.apple.com/account/subscriptions'),
+    );
+    final launched = <Uri>[];
+    await smokeScreen(
+      tester,
+      const PaywallScreen(),
+      overrides: _overrides(
+        settings: () => settings,
+        paywall: () => paywall,
+        hasSubscription: true,
+        renewingSubscription: true,
+        launcher: (uri) async {
+          launched.add(uri);
+          return true;
+        },
+      ),
+    );
+
+    await _openMenu(tester);
+    await tester.tap(find.byKey(_delete));
+    await tester.pumpAndSettle();
+
+    final dialog = find.byType(AlertDialog);
+    expect(
+      find.descendant(
+        of: dialog,
+        matching: find.text(
+          _content[ContentKeys.paywallDeleteConfirmSubscription]!,
+        ),
+      ),
+      findsOneWidget,
+    );
+    final manage = find.byKey(const ValueKey('paywall.confirm.manage'));
+    expect(
+      find.descendant(
+        of: manage,
+        matching: find.text(_content[ContentKeys.paywallManageButton]!),
+      ),
+      findsOneWidget,
+    );
+
+    await tester.tap(manage);
+    await tester.pumpAndSettle();
+
+    expect(find.byType(AlertDialog), findsNothing);
+    expect(settings.deletes, 0);
+    expect(paywall.manageCalls, 1);
+    expect(launched, [
+      Uri.parse('https://apps.apple.com/account/subscriptions'),
+    ]);
   });
 
   group('Redeem code (mp-458, mp-494)', () {

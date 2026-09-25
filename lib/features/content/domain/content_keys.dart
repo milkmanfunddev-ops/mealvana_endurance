@@ -29,6 +29,10 @@ class ContentKeys {
   static const String paywallDeleteConfirmBody = 'paywall.delete_confirm_body';
   static const String paywallDeleteConfirmAction =
       'paywall.delete_confirm_action';
+  // Added to both delete confirms while a store subscription is running and
+  // will renew: deleting the account does not cancel it (finding 02-004).
+  static const String paywallDeleteConfirmSubscription =
+      'paywall.delete_confirm_subscription';
   static const String paywallCancel = 'paywall.cancel';
   // Founding prices and the terms under the plans (mp-453 §2, §4).
   static const String paywallFoundingLine = 'paywall.founding_line';

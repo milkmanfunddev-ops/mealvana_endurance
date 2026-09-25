@@ -13,8 +13,8 @@
 
 **Touches:** lib/features/settings/presentation/screens/settings_screen.dart, lib/features/subscription/presentation/screens/paywall_screen.dart, assets/config/content_defaults.json
 
-- [ ] A widget test: with an active store subscription, the Settings confirm shows the subscription line; without one it does not.
-- [ ] The paywall menu's confirm shows the same line.
-- [ ] codegen if annotations changed, `flutter analyze` and the suite green.
+- [x] A widget test: with an active store subscription, the Settings confirm shows the subscription line; without one it does not.
+- [x] The paywall menu's confirm shows the same line.
+- [ ] codegen if annotations changed, `flutter analyze` and the suite green. (codegen run, `flutter analyze` clean on the touched files; suite: lead)
 
 Next: /implement-lee testing-wave

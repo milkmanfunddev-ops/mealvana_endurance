@@ -15,6 +15,7 @@ import '../../../../shared/widgets/custom_app_bar_back_button.dart';
 import '../../../../shared/services/app_config.dart';
 import '../../../content/application/content_service.dart';
 import '../../../content/domain/content_keys.dart';
+import '../../../subscription/application/subscription_screen_controller.dart';
 import '../../../subscription/presentation/screens/subscription_screen.dart';
 import '../providers/dev_tools_switch_controller.dart';
 import '../providers/settings_controller.dart';
@@ -701,6 +702,12 @@ class _SettingsScreenState extends ConsumerState<SettingsScreen> {
                 key: const ValueKey('settings.delete_account_button'),
                 onPressed: () async {
                   final content = ref.read(contentServiceProvider);
+                  // A store subscription that will renew outlives the
+                  // account: say so and offer Manage (finding 02-004).
+                  final renewing = await ref.read(
+                    renewingStoreSubscriptionProvider.future,
+                  );
+                  if (!context.mounted) return;
                   final confirmed = await _confirmAccountAction(
                     context,
                     title: content.getValue(
@@ -714,6 +721,15 @@ class _SettingsScreenState extends ConsumerState<SettingsScreen> {
                     ),
                     cancel: content.getValue(ContentKeys.paywallCancel),
                     destructive: true,
+                    note: renewing
+                        ? content.getValue(
+                            ContentKeys.paywallDeleteConfirmSubscription,
+                          )
+                        : null,
+                    manage: renewing
+                        ? content.getValue(ContentKeys.paywallManageButton)
+                        : null,
+                    onManage: () => openManageSubscription(context, ref),
                   );
 
                   // If user confirmed, proceed with delete
@@ -747,6 +763,8 @@ class _SettingsScreenState extends ConsumerState<SettingsScreen> {
 
   /// The account card's confirm (sign out, delete account). Every string is
   /// passed in from the content system; the same shape as the paywall's.
+  /// [note] and [manage] add a second line and a Manage subscription action
+  /// (which closes the confirm, then runs [onManage]) when both are given.
   Future<bool> _confirmAccountAction(
     BuildContext context, {
     required String title,
@@ -754,13 +772,35 @@ class _SettingsScreenState extends ConsumerState<SettingsScreen> {
     required String action,
     required String cancel,
     required bool destructive,
+    String? note,
+    String? manage,
+    VoidCallback? onManage,
   }) async {
     final confirmed = await showDialog<bool>(
       context: context,
       builder: (context) => AlertDialog(
         title: Text(title),
-        content: Text(body),
+        content: note == null
+            ? Text(body)
+            : Column(
+                mainAxisSize: MainAxisSize.min,
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  Text(body),
+                  const SizedBox(height: AppSpacing.md),
+                  Text(note),
+                ],
+              ),
         actions: [
+          if (note != null && manage != null)
+            TextButton(
+              key: const ValueKey('settings.confirm.manage'),
+              onPressed: () {
+                Navigator.pop(context, false);
+                onManage?.call();
+              },
+              child: Text(manage),
+            ),
           TextButton(
             key: const ValueKey('settings.confirm.cancel'),
             onPressed: () => Navigator.pop(context, false),
