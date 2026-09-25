@@ -13,8 +13,11 @@
 ///   target for this session", never "0 oz")
 /// * carbs target / band → carbs v2 `carbsG` / `carbsLowG` / `carbsHighG`
 /// * sodium → the SUM of the food rows, never the legacy map's `sodium_mg`
-/// * per-tier fluid → `fluidTiers[]`; per-tier carb aim → `carbTiers[]` (only
-///   for the FC-1 naming threshold — never rendered, FC-2)
+/// * per-card fluid → the SUM of that card's rows (FC-2: a card header shows
+///   what its foods deliver), so the cards add up to the FLUIDS fuel-stat.
+///   The engine's `fluidTiers[]` targets are never rendered on a card.
+/// * per-tier carb aim → `carbTiers[]` (only for the FC-1 naming threshold —
+///   never rendered, FC-2)
 library;
 
 import '../domain/food_item_data.dart';
@@ -78,11 +81,12 @@ abstract final class PreWorkoutBeforeCardAssembler {
       final tier = ordered[i];
       final sp = byType[tier.subPhaseType];
       final rows = <FeedingFoodRow>[];
-      double cardCarbs = 0;
+      double cardCarbs = 0, cardFluidMl = 0;
       for (final food in sp?.foodItems ?? const <FoodItemData>[]) {
         final row = _row(food, '$categoryPrefix:${tier.subPhaseType}');
         rows.add(row);
         cardCarbs += row.carbsG;
+        cardFluidMl += row.fluidMl;
         carbsG += row.carbsG;
         fluidMl += row.fluidMl;
         sodiumMg += row.sodiumMg;
@@ -92,10 +96,7 @@ abstract final class PreWorkoutBeforeCardAssembler {
           ?.where((t) => PreWorkoutFeedingTier.parse(t.tier) == tier)
           .map((t) => t.carbsG)
           .firstOrNull;
-      final tierFluid = preRun?.fluidTiers
-          ?.where((t) => PreWorkoutFeedingTier.parse(t.tier) == tier)
-          .map((t) => t.fluidMl)
-          .firstOrNull;
+      final cardFluidOz = flOzDelivered(cardFluidMl);
 
       feedings.add(
         FeedingCardData(
@@ -115,9 +116,10 @@ abstract final class PreWorkoutBeforeCardAssembler {
           ),
           rows: rows,
           carbsDelivered: wholeUnits(cardCarbs),
-          fluidOz: (!isGated && tierFluid != null && tierFluid > 0)
-              ? flOzTarget(tierFluid)
-              : null,
+          // Delivered, like the carbs beside it (FC-2 / ticket 62). Absent
+          // on the gate path (the FLUIDS stat shows no figure there either)
+          // and when the foods hold under half an ounce.
+          fluidOz: (!isGated && cardFluidOz > 0) ? cardFluidOz : null,
           hostsHydrationCheck:
               tier == PreWorkoutFeedingTier.snack &&
               _checkExists(

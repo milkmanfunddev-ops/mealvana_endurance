@@ -13,7 +13,7 @@
 
 **Touches:** lib/features/nutrition_plan/application/pre_workout_before_card_assembler.dart, lib/features/nutrition_plan/domain/pre_workout_before_card_model.dart, lib/features/nutrition_plan/domain/pre_workout_feeding_labels.dart
 
-- [ ] Assembler tests: card fluids sum to the header; the Top-Off card with water shows its fluid.
+- [x] Assembler tests: card fluids sum to the header; the Top-Off card with water shows its fluid.
 - [ ] Label tests: a session 3 days past and one 9 hours ahead read their real timing, not NOW.
 - [ ] codegen if annotations changed, `flutter analyze` and the suite green.
 

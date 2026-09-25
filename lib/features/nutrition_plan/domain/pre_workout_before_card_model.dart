@@ -208,8 +208,10 @@ class FeedingCardData {
   /// `| none` arm.
   final int carbsDelivered;
 
-  /// The tier's engine fluid in oz (`fluidTiers[].fluidMl`), null when this
-  /// tier carries no fluid.
+  /// Header DELIVERED fluid in oz (FC-2) — Σ this card's rows, so the cards
+  /// add up to the FLUIDS fuel-stat. Null when the rows hold no fluid (under
+  /// half an ounce) or on the gate path. Never the engine's per-tier target
+  /// (`fluidTiers[]`).
   final int? fluidOz;
 
   /// FC-6: the hydration-check row is the first row of the SNACK card on
