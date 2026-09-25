@@ -362,13 +362,17 @@ class _MealCatalogBrowserState extends ConsumerState<MealCatalogBrowser> {
     return PopupMenuItem<String>(
       value: value,
       height: 38,
-      child: Text(
-        label,
-        style: AppTextStyles.bodySmall.copyWith(
-          color: selected
-              ? (isDark ? AppColors.electrolyte : AppColors.electrolyteDark)
-              : textColor,
-          fontWeight: selected ? FontWeight.w700 : FontWeight.w500,
+      // Selected is said, not only coloured (testing-wave 18-005).
+      child: Semantics(
+        selected: selected,
+        child: Text(
+          label,
+          style: AppTextStyles.bodySmall.copyWith(
+            color: selected
+                ? (isDark ? AppColors.electrolyte : AppColors.electrolyteDark)
+                : textColor,
+            fontWeight: selected ? FontWeight.w700 : FontWeight.w500,
+          ),
         ),
       ),
     );

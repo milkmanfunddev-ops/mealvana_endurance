@@ -79,11 +79,13 @@ class FoodSearchBar extends StatelessWidget {
               suffixIcon: Row(
                 mainAxisSize: MainAxisSize.min,
                 children: [
-                  // Barcode button
+                  // Barcode button. Both icon buttons are named for a
+                  // screen reader (testing-wave 28-006).
                   IconButton(
                     key: const ValueKey('add_food.barcode_button'),
                     icon: FaIcon(
                       FontAwesomeIcons.barcode,
+                      semanticLabel: 'Scan barcode',
                       color: AppColors.orange,
                       size: AppIconSizes.controlIcon,
                     ),
@@ -93,20 +95,25 @@ class FoodSearchBar extends StatelessWidget {
                   // Search button with white circular background
                   Padding(
                     padding: const EdgeInsets.only(right: 8.0),
-                    child: GestureDetector(
-                      onTap: () => onSearch(controller.text),
-                      child: Container(
-                        width: 36,
-                        height: 36,
-                        alignment: Alignment.center,
-                        decoration: const BoxDecoration(
-                          color: Colors.white,
-                          shape: BoxShape.circle,
-                        ),
-                        child: FaIcon(
-                          FontAwesomeIcons.magnifyingGlass,
-                          size: AppIconSizes.controlIcon,
-                          color: AppColors.blackberry,
+                    child: Semantics(
+                      container: true,
+                      button: true,
+                      label: 'Search',
+                      child: GestureDetector(
+                        onTap: () => onSearch(controller.text),
+                        child: Container(
+                          width: 36,
+                          height: 36,
+                          alignment: Alignment.center,
+                          decoration: const BoxDecoration(
+                            color: Colors.white,
+                            shape: BoxShape.circle,
+                          ),
+                          child: FaIcon(
+                            FontAwesomeIcons.magnifyingGlass,
+                            size: AppIconSizes.controlIcon,
+                            color: AppColors.blackberry,
+                          ),
                         ),
                       ),
                     ),

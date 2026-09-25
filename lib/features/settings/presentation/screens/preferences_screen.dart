@@ -990,84 +990,91 @@ class _PreferencesScreenState extends ConsumerState<PreferencesScreen> {
     );
   }
 
+  /// A checkbox to a screen reader, with its checked state (testing-wave
+  /// 31-002: it read as static text whether on or off).
   Widget _buildWaterBottleToggle(BuildContext context) {
-    return InkWell(
-      onTap: () {
-        setState(() {
-          _runsWithWaterBottle = !(_runsWithWaterBottle ?? false);
-        });
-        _markChanged();
-      },
-      borderRadius: AppRadius.cardRadius,
-      child: Container(
-        padding: const EdgeInsets.all(AppSpacing.md),
-        decoration: BoxDecoration(
-          color: (_runsWithWaterBottle ?? false)
-              ? AppColors.blackberry.withValues(alpha: 0.1)
-              : Colors.transparent,
-          border: Border.all(
+    return Semantics(
+      key: const ValueKey('preferences.water_bottle'),
+      container: true,
+      checked: _runsWithWaterBottle ?? false,
+      child: InkWell(
+        onTap: () {
+          setState(() {
+            _runsWithWaterBottle = !(_runsWithWaterBottle ?? false);
+          });
+          _markChanged();
+        },
+        borderRadius: AppRadius.cardRadius,
+        child: Container(
+          padding: const EdgeInsets.all(AppSpacing.md),
+          decoration: BoxDecoration(
             color: (_runsWithWaterBottle ?? false)
-                ? AppColors.blackberry
-                : Theme.of(
-                    context,
-                  ).colorScheme.onSurface.withValues(alpha: 0.2),
-            width: (_runsWithWaterBottle ?? false) ? 2 : 1,
+                ? AppColors.blackberry.withValues(alpha: 0.1)
+                : Colors.transparent,
+            border: Border.all(
+              color: (_runsWithWaterBottle ?? false)
+                  ? AppColors.blackberry
+                  : Theme.of(
+                      context,
+                    ).colorScheme.onSurface.withValues(alpha: 0.2),
+              width: (_runsWithWaterBottle ?? false) ? 2 : 1,
+            ),
+            borderRadius: AppRadius.cardRadius,
           ),
-          borderRadius: AppRadius.cardRadius,
-        ),
-        child: Row(
-          children: [
-            Container(
-              width: 24,
-              height: 24,
-              decoration: BoxDecoration(
-                color: (_runsWithWaterBottle ?? false)
-                    ? AppColors.blackberry
-                    : Colors.transparent,
-                border: Border.all(
+          child: Row(
+            children: [
+              Container(
+                width: 24,
+                height: 24,
+                decoration: BoxDecoration(
                   color: (_runsWithWaterBottle ?? false)
                       ? AppColors.blackberry
-                      : Theme.of(
-                          context,
-                        ).colorScheme.onSurface.withValues(alpha: 0.5),
-                  width: 2,
+                      : Colors.transparent,
+                  border: Border.all(
+                    color: (_runsWithWaterBottle ?? false)
+                        ? AppColors.blackberry
+                        : Theme.of(
+                            context,
+                          ).colorScheme.onSurface.withValues(alpha: 0.5),
+                    width: 2,
+                  ),
+                  borderRadius: BorderRadius.circular(6),
                 ),
-                borderRadius: BorderRadius.circular(6),
+                child: (_runsWithWaterBottle ?? false)
+                    ? const FaIcon(
+                        FontAwesomeIcons.check,
+                        size: 14,
+                        color: AppColors.cream,
+                      )
+                    : null,
               ),
-              child: (_runsWithWaterBottle ?? false)
-                  ? const FaIcon(
-                      FontAwesomeIcons.check,
-                      size: 14,
-                      color: AppColors.cream,
-                    )
-                  : null,
-            ),
 
-            const SizedBox(width: AppSpacing.md),
+              const SizedBox(width: AppSpacing.md),
 
-            Expanded(
-              child: Column(
-                crossAxisAlignment: CrossAxisAlignment.start,
-                children: [
-                  Text(
-                    'I run with a water bottle',
-                    style: AppTextStyles.bodyMedium.copyWith(
-                      color: Theme.of(context).colorScheme.onSurface,
-                      fontWeight: FontWeight.w500,
+              Expanded(
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    Text(
+                      'I run with a water bottle',
+                      style: AppTextStyles.bodyMedium.copyWith(
+                        color: Theme.of(context).colorScheme.onSurface,
+                        fontWeight: FontWeight.w500,
+                      ),
                     ),
-                  ),
-                  const SizedBox(height: AppSpacing.xs),
-                  Text(
-                    'This helps us estimate your hydration needs',
-                    style: AppTextStyles.bodyMedium.copyWith(
-                      color: Theme.of(context).colorScheme.onSurfaceVariant,
-                      fontSize: 14,
+                    const SizedBox(height: AppSpacing.xs),
+                    Text(
+                      'This helps us estimate your hydration needs',
+                      style: AppTextStyles.bodyMedium.copyWith(
+                        color: Theme.of(context).colorScheme.onSurfaceVariant,
+                        fontSize: 14,
+                      ),
                     ),
-                  ),
-                ],
+                  ],
+                ),
               ),
-            ),
-          ],
+            ],
+          ),
         ),
       ),
     );
