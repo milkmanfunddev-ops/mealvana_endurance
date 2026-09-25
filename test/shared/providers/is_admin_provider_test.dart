@@ -88,16 +88,29 @@ void main() {
       expect(await container.read(isAdminProvider.future), isFalse);
       expect(reads, 1);
 
+      connectivity.changes.add(false);
+      await pumpEventQueue();
+      expect(reads, 1, reason: 'going offline is not a reason to read');
+
       connectivity.changes.add(true);
       await pumpEventQueue();
       expect(await container.read(isAdminProvider.future), isFalse);
       expect(reads, 2, reason: 'the network came back: read again');
-
-      // Going offline again is not a reason to read.
-      connectivity.changes.add(false);
-      await pumpEventQueue();
-      expect(reads, 2);
     });
+
+    test(
+      'an online report with no offline before it does not re-read',
+      () async {
+        // connectivity_plus reports the current state on subscribe: a read
+        // that failed while online (a 5xx) must not loop on that report.
+        expect(await container.read(isAdminProvider.future), isFalse);
+        expect(reads, 1);
+
+        connectivity.changes.add(true);
+        await pumpEventQueue();
+        expect(reads, 1);
+      },
+    );
 
     test('reads again on the next app resume', () async {
       expect(await container.read(isAdminProvider.future), isFalse);

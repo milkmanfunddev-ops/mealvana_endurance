@@ -9,6 +9,8 @@
 ///   duplicate, and an under-full page stops the asking.
 library;
 
+import 'dart:async';
+
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:mealvana_endurance/features/content/application/content_service.dart';
@@ -47,12 +49,17 @@ class _ListServer extends Fake implements VanaActionClient {
   final List<Map<String, dynamic>> all;
   final List<ListConversationsAction> calls = [];
 
+  /// When set, a page past the first waits for it before answering.
+  Completer<void>? holdLaterPages;
+
   @override
   Future<VanaActionResult> run(UiAction action) async {
     if (action is! ListConversationsAction) {
       throw UnimplementedError(action.type);
     }
     calls.add(action);
+    final hold = holdLaterPages;
+    if (hold != null && action.offset > 0) await hold.future;
     final rows = all
         .where((r) => r['kind'] == action.kind.wire)
         .skip(action.offset)
@@ -230,6 +237,40 @@ void main() {
 
         await c.read(provider.notifier).loadMore();
         expect(server.calls.length, 2);
+      },
+    );
+
+    test(
+      'a page asked for before a refresh is dropped, not appended',
+      () async {
+        final server = _ListServer(many(80));
+        final c = makeContainer(server);
+        final provider = vanaConversationsControllerProvider(
+          VanaConversationKind.mealPlanning,
+        );
+        await c.read(provider.future);
+
+        server.holdLaterPages = Completer<void>();
+        final stale = c.read(provider.notifier).loadMore();
+        // A new conversation lands and the list refreshes while page 2 waits.
+        server.all.insert(0, row('conv-new'));
+        await c.read(provider.notifier).refresh();
+        server.holdLaterPages!.complete();
+        await stale;
+
+        final shown = c.read(provider).requireValue;
+        expect(shown.length, pageSize);
+        expect(shown.first.id, 'conv-new');
+        expect(c.read(provider.notifier).hasMore, isTrue);
+
+        server.holdLaterPages = null;
+        await c.read(provider.notifier).loadMore();
+        expect(
+          server.calls.last.offset,
+          pageSize,
+          reason: 'the next page follows the refreshed list, not the stale one',
+        );
+        expect(c.read(provider).requireValue.length, 81);
       },
     );
 

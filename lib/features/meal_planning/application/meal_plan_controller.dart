@@ -166,6 +166,10 @@ class MealPlanController extends _$MealPlanController {
       await ref
           .read(syncCoordinatorProvider.notifier)
           .ensureSynced('meal_plans', userId, repository: _repo);
+      // The coordinator replays edits made offline; their lists are owed a
+      // rebuild just like a replay this controller scheduled (88-003). Not
+      // awaited: the first read must not wait on a rebuild round trip.
+      unawaited(_rebuildReplayedLists(userId));
     } catch (e) {
       _logger.warning(
         'meal_plans ensureSynced failed (non-fatal)',

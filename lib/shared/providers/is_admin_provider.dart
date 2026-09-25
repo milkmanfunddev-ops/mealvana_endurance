@@ -48,12 +48,14 @@ Future<bool> isAdmin(Ref ref) async {
   }
 }
 
-/// Arm one re-read: the first of "the network came back" or "the app
+/// Arm one re-read: the first of "the network came back" (an offline to
+/// online change, never the state reported on subscribe) or "the app
 /// resumed" invalidates the provider, whose rebuild drops both listeners.
 /// Best-effort: if neither signal can be armed (no widgets binding, no
 /// connectivity plugin) the answer stays `false`, as before.
 void _retryWhenReachable(Ref ref) {
   var armed = true;
+  var sawOffline = false;
   void retry() {
     if (!armed) return;
     armed = false;
@@ -61,12 +63,18 @@ void _retryWhenReachable(Ref ref) {
   }
 
   try {
-    final network = ref
-        .read(connectivityCheckerProvider)
-        .onlineChanges
-        .listen((online) {
-          if (online) retry();
-        }, onError: (_) {});
+    final network = ref.read(connectivityCheckerProvider).onlineChanges.listen((
+      online,
+    ) {
+      // Only an offline-to-online change: the stream also reports the
+      // current state on subscribe, and a read that failed while online
+      // (a 5xx, a timeout) would otherwise re-read in a tight loop.
+      if (!online) {
+        sawOffline = true;
+      } else if (sawOffline) {
+        retry();
+      }
+    }, onError: (_) {});
     ref.onDispose(network.cancel);
   } catch (_) {}
   try {

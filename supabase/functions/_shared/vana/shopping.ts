@@ -114,20 +114,23 @@ export async function syncPlanList(v: VanaCtx, plan: { id: string; weekStart: st
     if (error) throw new Error(error.message);
   }
   await touch(v, list.id);
-  // A confirmed (or once-confirmed) plan's list is confirmed on every build path, not only Rebuild (89-004).
-  if (plan.status === 'confirmed' || await wasConfirmed(v, plan.id)) await markListConfirmedIfUnset(v, plan.id);
+  // A confirmed (or once-confirmed) plan's list is confirmed on every build path, not only Rebuild (89-004), at the
+  // plan's own confirmation time so an edit to an old plan does not sort its remade list to the top.
+  const confirmedAt = await planConfirmedAt(v, plan.id);
+  if (plan.status === 'confirmed' || confirmedAt) await markListConfirmedIfUnset(v, plan.id, confirmedAt ?? undefined);
   return (await itemsOf(v, list.id)).map(toPlain);
 }
-const wasConfirmed = async (v: VanaCtx, planId: string): Promise<boolean> =>
-  (await v.db.from('meal_plans').select('confirmed_at').eq('id', planId).eq('user_id', v.userId).maybeSingle()).data?.confirmed_at != null;
+const planConfirmedAt = async (v: VanaCtx, planId: string): Promise<string | null> =>
+  (await v.db.from('meal_plans').select('confirmed_at').eq('id', planId).eq('user_id', v.userId).maybeSingle()).data?.confirmed_at ?? null;
+const wasConfirmed = async (v: VanaCtx, planId: string): Promise<boolean> => (await planConfirmedAt(v, planId)) != null;
 /** After `confirm_meal_plan`: the list takes the plan's confirmation time, which is what sorts it to the top. */
 export async function markListConfirmed(v: VanaCtx, planId: string): Promise<void> {
   await v.db.from('shopping_lists').update({ confirmed_at: now(), updated_at: now() }).eq('plan_id', planId).eq('user_id', v.userId);
 }
 /** Rebuild on a confirmed plan whose list was deleted: the new list is the confirmed plan's list, so it carries a
  *  confirmation time like the one it replaces. A list that already has one keeps it. */
-export async function markListConfirmedIfUnset(v: VanaCtx, planId: string): Promise<void> {
-  await v.db.from('shopping_lists').update({ confirmed_at: now(), updated_at: now() }).eq('plan_id', planId).eq('user_id', v.userId).is('confirmed_at', null);
+export async function markListConfirmedIfUnset(v: VanaCtx, planId: string, at?: string): Promise<void> {
+  await v.db.from('shopping_lists').update({ confirmed_at: at ?? now(), updated_at: now() }).eq('plan_id', planId).eq('user_id', v.userId).is('confirmed_at', null);
 }
 /** A draft's list goes with its draft (ticket 101, Lee 2026-09-25): once a plan that was never confirmed is archived
  *  (another plan's confirm, `new_plan`, `use_plan_again`), its list and rows are deleted, so Previous lists holds only
@@ -234,8 +237,12 @@ export function uniqueListName(name: string, taken: string[]): string {
 export async function renameList(v: VanaCtx, id: string, name: string): Promise<ShoppingListDetail> {
   const cleaned = cleanListName(name); if (!cleaned) throw new Error('name required');
   await listRow(v, id);
-  const { data: others } = await v.db.from('shopping_lists').select('id, name').eq('user_id', v.userId).limit(200);
-  const clean = uniqueListName(cleaned, ((others ?? []) as { id: string; name: string | null }[]).filter((r) => r.id !== id).map((r) => r.name ?? ''));
+  // Only lists the athlete can see count as taken: a deleted plan's hidden list must not push a " (2)" the app,
+  // which checks the lists it shows, never predicted.
+  const { data: others } = await v.db.from('shopping_lists').select('id, name, plan_id').eq('user_id', v.userId).limit(200);
+  const hidden = await deletedPlanIds(v);
+  const clean = uniqueListName(cleaned, ((others ?? []) as { id: string; name: string | null; plan_id: string | null }[])
+    .filter((r) => r.id !== id && !hidden.has(r.plan_id)).map((r) => r.name ?? ''));
   await v.db.from('shopping_lists').update({ name: clean, updated_at: now() }).eq('id', id).eq('user_id', v.userId);
   return detail(v, await listRow(v, id));
 }

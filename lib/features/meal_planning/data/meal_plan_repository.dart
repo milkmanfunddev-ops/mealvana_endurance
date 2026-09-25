@@ -92,7 +92,17 @@ class MealPlanRepository with SyncableRepository {
   }
 
   /// Put [planId] back on the owed list (its rebuild did not go through).
-  void owePlanRebuild(String planId) => _replayedPlanIds.add(planId);
+  /// After [maxRebuildRetries] failures in a session the id is dropped: a
+  /// plan deleted elsewhere answers "no plan" to every rebuild, and it must
+  /// not be retried on every upload for the rest of the session.
+  void owePlanRebuild(String planId) {
+    final failures = (_rebuildFailures[planId] ?? 0) + 1;
+    _rebuildFailures[planId] = failures;
+    if (failures <= maxRebuildRetries) _replayedPlanIds.add(planId);
+  }
+
+  static const maxRebuildRetries = 3;
+  final Map<String, int> _rebuildFailures = {};
 
   // ========================================================================
   // SyncableRepository
@@ -230,7 +240,6 @@ class MealPlanRepository with SyncableRepository {
 
       var count = 0;
       for (final meal in dirtyMeals) {
-        _replayedPlanIds.add(meal.planId);
         if (meal.isDeleted) {
           await _remote.removeMeal(meal.id);
           await (_database.delete(
@@ -248,6 +257,9 @@ class MealPlanRepository with SyncableRepository {
                 ..where((t) => t.id.equals(meal.id)))
               .write(const PlanMealsTableCompanion(needsUpload: Value(false)));
         }
+        // Owed only once the edit has landed: a concurrent upload that
+        // drains the set must never rebuild ahead of this row's RPC.
+        _replayedPlanIds.add(meal.planId);
         count++;
       }
 

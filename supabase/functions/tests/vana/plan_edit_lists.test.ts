@@ -42,7 +42,7 @@ Deno.test('set_servings on a confirmed plan rebuilds its list with confirmed_at,
   await act(v, 'set_servings', { planMealId: 'pm1', servings: 5 });
   const list = planList(v);
   assert(list, 'the edit built the plan\'s list');
-  assert(list.confirmed_at != null, 'an edit-built list of a confirmed plan is confirmed');
+  assertEquals(list.confirmed_at, '2026-09-20T10:00:00Z', 'an edit-built list takes the plan\'s own confirmation time, not today');
 });
 
 Deno.test('remove_meal on a confirmed plan drops the meal\'s rows and leaves the list confirmed (88-003, 89-004)', async () => {
@@ -58,7 +58,7 @@ Deno.test('remove_meal on a confirmed plan drops the meal\'s rows and leaves the
 Deno.test('an edit on an archived plan that was once confirmed stamps its list too (89-004)', async () => {
   const v = await week('archived', '2026-09-13T10:00:00Z');
   await act(v, 'set_servings', { planMealId: 'pm1', servings: 2 });
-  assert(planList(v)?.confirmed_at != null);
+  assertEquals(planList(v)?.confirmed_at, '2026-09-13T10:00:00Z');
 });
 
 Deno.test('an edit on a draft leaves its list unconfirmed', async () => {

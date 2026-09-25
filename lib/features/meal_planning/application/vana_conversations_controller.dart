@@ -32,6 +32,10 @@ class VanaConversationsController extends _$VanaConversationsController {
   bool _exhausted = false;
   bool _loadingMore = false;
 
+  /// Bumped by [build] and [refresh]: a page that was asked for before a
+  /// restart is dropped, never appended to the new list.
+  int _generation = 0;
+
   /// False once a page came back under [pageSize] rows.
   bool get hasMore => !_exhausted;
 
@@ -39,6 +43,7 @@ class VanaConversationsController extends _$VanaConversationsController {
   FutureOr<List<VanaConversationSummary>> build(VanaConversationKind kind) {
     // Riverpod reuses the notifier across invalidations: start the paging
     // over with the list.
+    _generation++;
     _offset = 0;
     _exhausted = false;
     _loadingMore = false;
@@ -47,6 +52,7 @@ class VanaConversationsController extends _$VanaConversationsController {
 
   Future<void> refresh() async {
     state = const AsyncLoading();
+    _generation++;
     _offset = 0;
     _exhausted = false;
     state = await AsyncValue.guard(_firstPage);
@@ -59,8 +65,10 @@ class VanaConversationsController extends _$VanaConversationsController {
     final current = state.value;
     if (current == null || _exhausted || _loadingMore) return;
     _loadingMore = true;
+    final generation = _generation;
     try {
-      final next = await AsyncValue.guard(() => _page(_offset));
+      final next = await AsyncValue.guard(() => _page(_offset, generation));
+      if (!ref.mounted || generation != _generation) return;
       switch (next) {
         case AsyncData(:final value):
           // A conversation that gained a message between pages moves to the
@@ -97,15 +105,19 @@ class VanaConversationsController extends _$VanaConversationsController {
     return id;
   }
 
-  Future<List<VanaConversationSummary>> _firstPage() => _page(0);
+  Future<List<VanaConversationSummary>> _firstPage() => _page(0, _generation);
 
   /// One page from [offset]; advances [_offset] and marks the end when the
-  /// page came back short.
-  Future<List<VanaConversationSummary>> _page(int offset) async {
+  /// page came back short, unless the list restarted meanwhile.
+  Future<List<VanaConversationSummary>> _page(
+    int offset,
+    int generation,
+  ) async {
     final result = await _actions.run(
       ListConversationsAction(kind: kind, limit: pageSize, offset: offset),
     );
     final rows = result.conversations;
+    if (generation != _generation) return rows;
     _offset = offset + rows.length;
     _exhausted = rows.length < pageSize;
     return rows;
