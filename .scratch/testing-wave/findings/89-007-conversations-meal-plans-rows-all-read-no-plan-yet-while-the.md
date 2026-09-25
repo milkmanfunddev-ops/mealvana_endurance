@@ -1,7 +1,7 @@
 # 89-007 · Conversations Meal plans rows all read No plan yet, while the chat itself is headed Sep 20 week Draft
 
 - kind: bug
-- status: open
+- status: triaged
 - ticket: 89
 - run: w29-20260925T1950Z
 - screen: Vana > Conversations > Meal plans
@@ -26,3 +26,5 @@ Every row in the list reads "No plan yet", including f6a0f7fa (owner of confirme
 > 
 
 **Triage.**
+
+Fix ticket 126 (Lee, 2026-09-25). Closed by the retest after it merges.

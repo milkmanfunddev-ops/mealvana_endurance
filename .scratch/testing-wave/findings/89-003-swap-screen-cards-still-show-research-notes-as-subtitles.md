@@ -1,7 +1,7 @@
 # 89-003 · Swap screen cards still show research notes as subtitles
 
 - kind: bug
-- status: open
+- status: triaged
 - ticket: 89
 - run: w29-20260925T1950Z
 - screen: Swap (Plan tab > meal ⋮ > Swap)
@@ -25,3 +25,5 @@ Every library card on Swap shows the research note: "his dinner base is \"rice, 
 > 
 
 **Triage.**
+
+Fix ticket 128 (Lee, 2026-09-25). Closed by the retest after it merges.

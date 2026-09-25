@@ -1,7 +1,7 @@
 # 88-002 · Every row in Conversations > Meal plans reads No plan yet, whatever plan the conversation holds
 
 - kind: bug
-- status: open
+- status: triaged
 - ticket: 88
 - run: w29-20260925T1949Z
 - screen: Conversations
@@ -27,3 +27,5 @@ All 50 rows read "No plan yet", including `f6a0f7fa` (confirmed be6abf2f, 4 meal
 > 
 
 **Triage.**
+
+Fix ticket 126 (Lee, 2026-09-25). Closed by the retest after it merges.

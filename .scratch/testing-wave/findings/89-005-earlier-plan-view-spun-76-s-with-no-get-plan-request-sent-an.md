@@ -1,7 +1,7 @@
 # 89-005 · Earlier plan view spun 76 s with no get_plan request sent and no error
 
 - kind: bug
-- status: open
+- status: triaged
 - ticket: 89
 - run: w29-20260925T1950Z
 - screen: Earlier plan view (Previous plans > a row)
@@ -28,3 +28,5 @@ The view showed "Previous plans" and a spinner for 76 s, until I tapped Back at 
 > 
 
 **Triage.**
+
+Fix ticket 129 (Lee, 2026-09-25). Closed by the retest after it merges.

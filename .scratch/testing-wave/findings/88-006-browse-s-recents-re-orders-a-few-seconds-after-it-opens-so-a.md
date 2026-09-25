@@ -1,7 +1,7 @@
 # 88-006 · Browse's Recents re-orders a few seconds after it opens, so a tap lands on a different meal
 
 - kind: bug
-- status: open
+- status: triaged
 - ticket: 88
 - run: w29-20260925T1949Z
 - screen: Browse meals
@@ -26,3 +26,5 @@ By the tap the Recents row had changed to "Rice, black beans & roasted plantain"
 > 
 
 **Triage.**
+
+Fix ticket 128 (Lee, 2026-09-25). Closed by the retest after it merges.

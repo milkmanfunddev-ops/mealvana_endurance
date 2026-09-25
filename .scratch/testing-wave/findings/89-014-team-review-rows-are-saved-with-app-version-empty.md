@@ -1,7 +1,7 @@
 # 89-014 · Team review rows are saved with app_version empty
 
 - kind: bug
-- status: open
+- status: triaged
 - ticket: 89
 - run: w29-20260925T1950Z
 - screen: Meal detail (Team review)
@@ -25,3 +25,5 @@ Row 8861acf0: is_good true, why "testing-wave 89 check, ignore", app_version NUL
 > 
 
 **Triage.**
+
+Fix ticket 130 (Lee, 2026-09-25). Closed by the retest after it merges.

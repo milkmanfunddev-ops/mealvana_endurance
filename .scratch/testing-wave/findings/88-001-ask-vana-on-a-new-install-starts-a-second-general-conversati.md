@@ -1,7 +1,7 @@
 # 88-001 · Ask Vana on a new install starts a second general conversation for today and pays for a new opener
 
 - kind: bug
-- status: open
+- status: triaged
 - ticket: 88
 - run: w29-20260925T1949Z
 - screen: Ask Vana sheet
@@ -29,3 +29,5 @@ Step 2 created a new general conversation `0aeabaa0` (context_day 2026-09-25) an
 > 
 
 **Triage.**
+
+Held for the SSOT pass (Lee, 2026-09-25): a product question, no ticket until it is ruled on the page.

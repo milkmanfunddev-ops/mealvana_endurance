@@ -1,7 +1,7 @@
 # 89-012 · With no plan this week the Plan tab has no menu, so Previous plans and Use this plan again cannot be opened
 
 - kind: bug
-- status: open
+- status: triaged
 - ticket: 89
 - run: w29-20260925T1950Z
 - screen: Food (Plan sub-tab)
@@ -24,3 +24,5 @@ The Plan tab shows only "No plan yet. Vana will build one with you ..." with Add
 > 
 
 **Triage.**
+
+Held for the SSOT pass (Lee, 2026-09-25): a product question, no ticket until it is ruled on the page.

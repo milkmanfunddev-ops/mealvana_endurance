@@ -1,7 +1,7 @@
 # 88-013 · Browse's Add offline shows Something went wrong. Try again. instead of a connection message
 
 - kind: bug
-- status: open
+- status: triaged
 - ticket: 88
 - run: w29-20260925T1949Z
 - screen: Browse meals
@@ -24,3 +24,5 @@ A pink toast "Something went wrong. Try again.", no tick, no row (right on data,
 > 
 
 **Triage.**
+
+Fix ticket 129 (Lee, 2026-09-25). Closed by the retest after it merges.

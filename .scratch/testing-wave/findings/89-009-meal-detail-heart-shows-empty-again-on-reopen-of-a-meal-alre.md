@@ -1,7 +1,7 @@
 # 89-009 · Meal detail heart shows empty again on reopen of a meal already saved
 
 - kind: bug
-- status: open
+- status: triaged
 - ticket: 89
 - run: w29-20260925T1950Z
 - screen: Meal detail (opened from Browse)
@@ -28,3 +28,5 @@ Step 3: the filled heart does nothing (disabled once saved; there is no unsave).
 > 
 
 **Triage.**
+
+Fix ticket 128 (Lee, 2026-09-25): the heart shows saved and a second tap removes it from My Foods. Closed by the retest after it merges.

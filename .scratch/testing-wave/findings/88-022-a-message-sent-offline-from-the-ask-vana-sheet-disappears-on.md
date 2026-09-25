@@ -1,7 +1,7 @@
 # 88-022 · A message sent offline from the Ask Vana sheet disappears: only the offline line with Retry shows
 
 - kind: bug
-- status: open
+- status: triaged
 - ticket: 88
 - run: w29-20260925T1949Z
 - screen: Ask Vana sheet
@@ -25,3 +25,5 @@ The sheet shows "You're offline — Vana will reply when you're back." with Retr
 > 
 
 **Triage.**
+
+Fix ticket 129 (Lee, 2026-09-25). Closed by the retest after it merges.

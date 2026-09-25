@@ -1,7 +1,7 @@
 # 89-004 · A plan list rebuilt by a plan edit has no confirmed_at, while Rebuild shopping list stamps one
 
 - kind: bug
-- status: open
+- status: triaged
 - ticket: 89
 - run: w29-20260925T1950Z
 - screen: Food (Shopping sub-tab)
@@ -29,3 +29,5 @@ After the edit (19:57:11Z) list 10579cbf has `confirmed_at` NULL and the header 
 > 
 
 **Triage.**
+
+Fix ticket 127 (Lee, 2026-09-25). Closed by the retest after it merges.

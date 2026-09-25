@@ -1,7 +1,7 @@
 # 89-001 · Offline, a confirmed plan whose list was deleted makes the Shopping tab say No shopping list and Confirm a meal plan, with no offline notice
 
 - kind: bug
-- status: open
+- status: triaged
 - ticket: 89
 - run: w29-20260925T1950Z
 - screen: Food (Shopping sub-tab)
@@ -29,3 +29,5 @@ The tab shows the first-run empty state: "No shopping list · Confirm a meal pla
 > 
 
 **Triage.**
+
+Fix ticket 129 (Lee, 2026-09-25). Closed by the retest after it merges.

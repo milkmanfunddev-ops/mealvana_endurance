@@ -1,7 +1,7 @@
 # 89-006 · Use this plan again copy cannot be reached again once the athlete leaves it
 
 - kind: bug
-- status: open
+- status: triaged
 - ticket: 89
 - run: w29-20260925T1950Z
 - screen: Earlier plan view > ⋮ > Use this plan again
@@ -28,3 +28,5 @@ After Back the copy is nowhere: the Plan tab keeps the confirmed plan (`getPlan`
 > 
 
 **Triage.**
+
+Held for the SSOT pass (Lee, 2026-09-25): a product question, no ticket until it is ruled on the page.

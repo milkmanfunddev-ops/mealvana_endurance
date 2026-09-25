@@ -1,7 +1,7 @@
 # 88-011 · New meal plan offline shows an empty chat with no error or retry, and its Browse does nothing
 
 - kind: bug
-- status: open
+- status: triaged
 - ticket: 88
 - run: w29-20260925T1949Z
 - screen: Vana chat (New meal plan)
@@ -28,3 +28,5 @@ The console logs `[VANA_CHAT_CONTROLLER] Vana turn failed {kind: meal_planning, 
 > 
 
 **Triage.**
+
+Fix ticket 129 (Lee, 2026-09-25). Closed by the retest after it merges.

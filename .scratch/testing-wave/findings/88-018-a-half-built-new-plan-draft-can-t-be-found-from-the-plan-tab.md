@@ -1,7 +1,7 @@
 # 88-018 · A half-built new-plan draft can't be found from the Plan tab
 
 - kind: bug
-- status: open
+- status: triaged
 - ticket: 88
 - run: w29-20260925T1949Z
 - screen: Food > Plan
@@ -26,3 +26,5 @@ The Plan tab shows only the confirmed plan; Previous plans lists one "Sep 20 –
 > 
 
 **Triage.**
+
+Held for the SSOT pass (Lee, 2026-09-25): a product question, no ticket until it is ruled on the page.

@@ -1,7 +1,7 @@
 # 88-015 · Confirm plan offline does nothing visible: no message, the sheet just stays
 
 - kind: bug
-- status: open
+- status: triaged
 - ticket: 88
 - run: w29-20260925T1949Z
 - screen: Review plan sheet
@@ -26,3 +26,5 @@ The draft is left alone (right), but nothing tells the athlete: at 1 s and 5 s t
 > 
 
 **Triage.**
+
+Fix ticket 129 (Lee, 2026-09-25). Closed by the retest after it merges.

@@ -1,7 +1,7 @@
 # 89-010 · One failed is_admin read at an offline start hides Team review for the whole session
 
 - kind: bug
-- status: open
+- status: triaged
 - ticket: 89
 - run: w29-20260925T1950Z
 - screen: Meal detail (Team review)
@@ -26,3 +26,5 @@ No Team review box. The console at the offline launch has "[IS_ADMIN] is_admin r
 > 
 
 **Triage.**
+
+Fix ticket 130 (Lee, 2026-09-25). Closed by the retest after it merges.

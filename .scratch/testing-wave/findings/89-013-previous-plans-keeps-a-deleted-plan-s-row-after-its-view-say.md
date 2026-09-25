@@ -1,7 +1,7 @@
 # 89-013 · Previous plans keeps a deleted plan's row after its view says This plan is no longer here
 
 - kind: bug
-- status: open
+- status: triaged
 - ticket: 89
 - run: w29-20260925T1950Z
 - screen: Previous plans (sheet)
@@ -27,3 +27,5 @@ The view shows "This plan is no longer here." (pass for 17-005 step 3). Back ret
 > 
 
 **Triage.**
+
+Fix ticket 130 (Lee, 2026-09-25). Closed by the retest after it merges.

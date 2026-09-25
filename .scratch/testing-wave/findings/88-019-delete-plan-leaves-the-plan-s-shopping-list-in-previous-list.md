@@ -1,7 +1,7 @@
 # 88-019 · Delete plan leaves the plan's shopping list in Previous lists although the dialog says it goes with it
 
 - kind: bug
-- status: open
+- status: triaged
 - ticket: 88
 - run: w29-20260925T1949Z
 - screen: Food > Plan (Plan options > Delete plan); Shopping > Previous lists
@@ -26,3 +26,5 @@ The plan and its list are gone (the draft 666be167 is untouched).
 > 
 
 **Triage.**
+
+Fix ticket 127 (Lee, 2026-09-25). Closed by the retest after it merges.

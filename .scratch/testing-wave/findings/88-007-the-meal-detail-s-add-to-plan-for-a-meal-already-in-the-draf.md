@@ -1,7 +1,7 @@
 # 88-007 · The meal detail's Add to plan for a meal already in the draft says Added to your plan but adds nothing
 
 - kind: bug
-- status: open
+- status: triaged
 - ticket: 88
 - run: w29-20260925T1949Z
 - screen: Meal detail (from Browse meals)
@@ -27,3 +27,5 @@ The detail offers a plain "+ Add to plan". Tapping it spins, returns to Browse a
 > 
 
 **Triage.**
+
+Fix ticket 128 (Lee, 2026-09-25): the detail shows "In your plan" and no Add. Closed by the retest after it merges.

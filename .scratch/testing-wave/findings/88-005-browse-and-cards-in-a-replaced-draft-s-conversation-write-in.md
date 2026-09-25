@@ -1,7 +1,7 @@
 # 88-005 · Browse and cards in a replaced draft's conversation write into the archived plan and show In your plan
 
 - kind: bug
-- status: open
+- status: triaged
 - ticket: 88
 - run: w29-20260925T1949Z
 - screen: Browse meals (from a conversation whose draft was replaced)
@@ -28,3 +28,5 @@ The pick went into the archived plan: 54a02440 now has 2 meals (Rice, black bean
 > 
 
 **Triage.**
+
+Held for the SSOT pass (Lee, 2026-09-25): a product question, no ticket until it is ruled on the page.

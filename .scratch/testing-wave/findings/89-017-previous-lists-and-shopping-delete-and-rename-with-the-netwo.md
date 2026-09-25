@@ -1,7 +1,7 @@
 # 89-017 · Previous lists and Shopping: delete and rename with the network cut, Share and Kroger on a rebuilt plan list
 
 - kind: followup-test
-- status: open
+- status: triaged
 - ticket: 89
 - run: w29-20260925T1950Z
 - screen: Food (Shopping sub-tab)
@@ -26,3 +26,5 @@ Not run (followup).
 > 
 
 **Triage.**
+
+Picked for the retests of fix tickets 126-132 (Lee, 2026-09-25); placed when those retest tickets are written.

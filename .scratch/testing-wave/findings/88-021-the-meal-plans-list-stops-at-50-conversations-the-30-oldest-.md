@@ -1,7 +1,7 @@
 # 88-021 · The Meal plans list stops at 50 conversations; the 30 oldest can't be reached
 
 - kind: bug
-- status: open
+- status: triaged
 - ticket: 88
 - run: w29-20260925T1949Z
 - screen: Conversations
@@ -25,3 +25,5 @@ The list ends at "Sep 8, 8:23 AM", the 50th row by last_message_at; dev holds 80
 > 
 
 **Triage.**
+
+Fix ticket 126 (Lee, 2026-09-25). Closed by the retest after it merges.

@@ -1,7 +1,7 @@
 # 88-024 · Parts of the 88 follow-ups not run: cap-bound chat turns, slow network, long transcript count, Shopping on a draft's list
 
 - kind: followup-test
-- status: open
+- status: triaged
 - ticket: 88
 - run: w29-20260925T1949Z
 - screen: Vana chat; Ask Vana sheet; Browse meals; Food > Shopping
@@ -25,3 +25,5 @@ As in each original Finding (12-009, 16-008, 15-006, 18-008, 18-011, 15-007).
 > 
 
 **Triage.**
+
+Picked for the retests of fix tickets 126-132 (Lee, 2026-09-25); placed when those retest tickets are written.

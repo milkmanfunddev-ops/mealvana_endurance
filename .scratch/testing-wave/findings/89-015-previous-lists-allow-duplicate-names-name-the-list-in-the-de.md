@@ -1,7 +1,7 @@
 # 89-015 · Previous lists: allow duplicate names, name the list in the delete dialog, say why an empty name does not save
 
 - kind: idea
-- status: open
+- status: triaged
 - ticket: 89
 - run: w29-20260925T1950Z
 - screen: Food (Shopping sub-tab) > Previous lists
@@ -28,3 +28,5 @@
 > 
 
 **Triage.**
+
+Fix ticket 130 (Lee, 2026-09-25): all four parts. Closed by the retest after it merges.

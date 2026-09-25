@@ -1,7 +1,7 @@
 # 89-011 · Previous plans offline spins 35 to 40 s before its failed text, and Pull down to try again does nothing
 
 - kind: bug
-- status: open
+- status: triaged
 - ticket: 89
 - run: w29-20260925T1950Z
 - screen: Previous plans (sheet)
@@ -29,3 +29,5 @@ The spinner showed for 35-40 s while the console logged "Network error calling v
 > 
 
 **Triage.**
+
+Fix ticket 129 (Lee, 2026-09-25). Closed by the retest after it merges.

@@ -1,7 +1,7 @@
 # 89-002 · Shared list text says 9 items to buy while 6 of the 9 are ticked
 
 - kind: bug
-- status: open
+- status: triaged
 - ticket: 89
 - run: w29-20260925T1950Z
 - screen: Food (Shopping sub-tab) > Share
@@ -25,3 +25,5 @@ The text begins "Mealvana shopping list / 9 items to buy" and then lists six row
 > 
 
 **Triage.**
+
+Fix ticket 130 (Lee, 2026-09-25). Closed by the retest after it merges.

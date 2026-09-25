@@ -1,7 +1,7 @@
 # 88-008 · The Plan tab's Add meal and New meal plan buttons sit under the floating tab bar
 
 - kind: bug
-- status: open
+- status: triaged
 - ticket: 88
 - run: w29-20260925T1949Z
 - screen: Food > Plan
@@ -25,3 +25,5 @@ Unscrolled, both buttons are fully behind the floating tab bar; a tap at their p
 > 
 
 **Triage.**
+
+Fix ticket 130 (Lee, 2026-09-25). Closed by the retest after it merges.

@@ -1,7 +1,7 @@
 # 88-012 · Offline, the Meal plans list spins for good and an opened conversation shows as an empty New meal plan
 
 - kind: bug
-- status: open
+- status: triaged
 - ticket: 88
 - run: w29-20260925T1949Z
 - screen: Conversations; Vana chat (meal planning)
@@ -28,3 +28,5 @@ Step 1: a spinner under RECENT for 35 s and more, no rows, no message; the conso
 > 
 
 **Triage.**
+
+Fix ticket 129 (Lee, 2026-09-25). Closed by the retest after it merges.

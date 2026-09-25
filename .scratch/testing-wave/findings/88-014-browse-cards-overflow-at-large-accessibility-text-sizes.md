@@ -1,7 +1,7 @@
 # 88-014 · Browse cards overflow at large accessibility text sizes
 
 - kind: bug
-- status: open
+- status: triaged
 - ticket: 88
 - run: w29-20260925T1949Z
 - screen: Browse meals
@@ -23,3 +23,5 @@ Every visible card shows Flutter's "BOTTOM OVERFLOWED BY 7.0 PIXELS" stripe (one
 > 
 
 **Triage.**
+
+Fix ticket 130 (Lee, 2026-09-25). Closed by the retest after it merges.

@@ -1,7 +1,7 @@
 # 88-010 · Six library meals' why text lost its first letter and reads his dinner base is
 
 - kind: bug
-- status: open
+- status: triaged
 - ticket: 88
 - run: w29-20260925T1949Z
 - screen: Swap
@@ -25,3 +25,5 @@ Wholewheat pasta, mixed veg & avocado (AD-014) and Rice, mixed veg & sunflower s
 > 
 
 **Triage.**
+
+Fix ticket 128 (Lee, 2026-09-25): no letter was lost ("his"/"her" is the source athlete); the card fallback to `why` goes (89-003) and a migration names the source in those rows. Closed by the retest after it merges.

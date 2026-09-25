@@ -1,7 +1,7 @@
 # 89-008 · Browse meals opens with the Meals tab search results while its search box is empty
 
 - kind: bug
-- status: open
+- status: triaged
 - ticket: 89
 - run: w29-20260925T1950Z
 - screen: Browse meals (Vana chat > Add > Browse meals)
@@ -27,3 +27,5 @@ Browse opened straight onto the seven spinach results, with the search button li
 > 
 
 **Triage.**
+
+Fix ticket 128 (Lee, 2026-09-25). Closed by the retest after it merges.

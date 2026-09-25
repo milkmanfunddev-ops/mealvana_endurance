@@ -1,7 +1,7 @@
 # 88-004 · After Remove in the Review sheet the removed meal stays in the sheet and the plan bar, so Confirm shows a plan the server no longer has
 
 - kind: bug
-- status: open
+- status: triaged
 - ticket: 88
 - run: w29-20260925T1949Z
 - screen: Review plan sheet; Vana chat plan bar
@@ -29,3 +29,5 @@ The server row is deleted at once (plan_meals has 2 rows), but the sheet keeps l
 > 
 
 **Triage.**
+
+Fix ticket 127 (Lee, 2026-09-25). Closed by the retest after it merges.

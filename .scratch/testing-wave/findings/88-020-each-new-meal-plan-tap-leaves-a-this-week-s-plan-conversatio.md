@@ -1,7 +1,7 @@
 # 88-020 · Each New meal plan tap leaves a This week's plan conversation and a paid opener, even when the athlete backs out
 
 - kind: idea
-- status: open
+- status: triaged
 - ticket: 88
 - run: w29-20260925T1949Z
 - screen: Food > Plan / Vana chat (New meal plan)
@@ -25,3 +25,5 @@ The tap wrote conversation `7cc15497` ("This week's plan", 1 opener message, no 
 > 
 
 **Triage.**
+
+Held for the SSOT pass (Lee, 2026-09-25): a product question, no ticket until it is ruled on the page.

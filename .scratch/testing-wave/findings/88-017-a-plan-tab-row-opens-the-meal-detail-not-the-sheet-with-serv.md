@@ -1,7 +1,7 @@
 # 88-017 · A Plan tab row opens the meal detail, not the sheet with servings and Ate it; nothing in the app logs a meal from the plan
 
 - kind: ssot-conflict
-- status: open
+- status: triaged
 - ticket: 88
 - run: w29-20260925T1949Z
 - screen: Food > Plan
@@ -26,3 +26,5 @@ The row opens the meal's detail page (photo, review, ingredients, directions, St
 > The Plan tab shows a message from Vana, then every plan meal as one row with its name, meal type and servings, and two buttons: Add meal and New meal plan. Tapping a row opens a sheet to change servings, swap, remove or mark it eaten; swiping right removes it with Undo, and swiping left swaps it. A swap keeps the row's identity, so changing servings afterwards changes the right one. Ate it waits for the server, logs the meal and takes one serving off, and nothing reminds the athlete to log each day. Example: a dinner row shows 2 servings; the athlete taps Ate it, the meal is logged from the plan and the row shows 1; after the last serving, Ate it no longer shows.
 
 **Triage.**
+
+Fix ticket 132 (Lee, 2026-09-25): build to mp-239 as approved, plus a Recipe link in the sheet. Closed by the retest after it merges.

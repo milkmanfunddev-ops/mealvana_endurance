@@ -1,7 +1,7 @@
 # 88-023 · The Plan tab's Vana note keeps naming the old plan's meal after a confirm until the app restarts
 
 - kind: bug
-- status: open
+- status: triaged
 - ticket: 88
 - run: w29-20260925T1949Z
 - screen: Food > Plan (Vana note card)
@@ -25,3 +25,5 @@ Until the relaunch the note still read "Easy swim and core work: the spelt lenti
 > 
 
 **Triage.**
+
+Fix ticket 130 (Lee, 2026-09-25). Closed by the retest after it merges.

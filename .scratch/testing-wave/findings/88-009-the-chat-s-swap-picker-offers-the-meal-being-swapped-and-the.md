@@ -1,7 +1,7 @@
 # 88-009 · The chat's swap picker offers the meal being swapped and the draft's other meals as swaps
 
 - kind: bug
-- status: open
+- status: triaged
 - ticket: 88
 - run: w29-20260925T1949Z
 - screen: Vana chat meal sheet > Swap
@@ -25,3 +25,5 @@ The list's first three are Egg & Veggie Scramble, Wholewheat pasta and Quinoa, m
 > 
 
 **Triage.**
+
+Fix ticket 128 (Lee, 2026-09-25): leave out the meal and every meal already in the plan. Closed by the retest after it merges.

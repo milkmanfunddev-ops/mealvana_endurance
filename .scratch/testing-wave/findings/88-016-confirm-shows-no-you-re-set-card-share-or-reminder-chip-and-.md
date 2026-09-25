@@ -1,7 +1,7 @@
 # 88-016 · Confirm shows no you're set card, share or reminder chip, and Confirm from the Plan tab stays on Plan
 
 - kind: ssot-conflict
-- status: open
+- status: triaged
 - ticket: 88
 - run: w29-20260925T1949Z
 - screen: Review plan sheet > Food > Shopping
@@ -27,3 +27,5 @@ Step 1 lands on Food > Shopping (router `/main?tab=food&food=shopping`), which f
 > Confirm shows a "you're set" card with the week, the cooking sessions, the size of the list and where things live, plus a plain-text share and a "remind me the night before cook day" chip; no calendar, email or PDF in the first version. The athlete lands on the main screens with the Food tab's Shopping part open, so the tab bar is there. The chips after it are Open shopping list, Lay it across the week and Adjust; laying it across shows read-only day cards, and an athlete who never taps it keeps the plan as a set of meals with servings. Example: an athlete confirms, taps the reminder chip, lands on Food > Shopping with the tab bar showing, and never lays the plan across the week, so it stays a set of meals with no days attached.
 
 **Triage.**
+
+Fix ticket 131 (Lee, 2026-09-25): build to mp-235 as approved; the card sits at the top of Shopping after either confirm. Closed by the retest after it merges.
