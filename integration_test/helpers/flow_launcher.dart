@@ -30,6 +30,8 @@ import 'test_config.dart';
 /// Also answers the notification permission prompt a fresh install shows
 /// at startup (see [answerStartupPermissionPrompt]).
 Future<void> launchApp(PatrolIntegrationTester $) async {
+  // No env file, no run: the probe and the account guards read these values.
+  TestConfig.requireSupabaseEnv();
   _testErrorHandler = FlutterError.onError;
   if (TestConfig.isProd) {
     await prod.main();

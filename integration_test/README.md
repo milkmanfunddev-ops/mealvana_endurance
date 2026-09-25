@@ -54,8 +54,9 @@ patrol test \
 `secrets/integration_test.env` (gitignored) supplies `INTEGRATION_TEST_EMAIL` /
 `INTEGRATION_TEST_PASSWORD` for the email-login-backed flows. Without it,
 credentialed flows self-skip with a clear message rather than failing. Pass
-`.env.dev.local` too: without it `TestConfig` falls back to built-in defaults,
-and its default dev anon key is stale (testing-wave Finding 02-007).
+`.env.dev.local` too: `TestConfig` has no built-in Supabase project, so without
+it `launchApp` stops the run with a message naming the missing values (Finding
+02-007).
 
 **`--bundle-id` for dev.** `pubspec.yaml`'s `patrol.ios.bundle_id` is the prod
 id. A `--flavor dev` run installs `com.milkman.mealvanaendurance.dev`, so pass

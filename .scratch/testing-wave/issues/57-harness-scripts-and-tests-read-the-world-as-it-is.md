@@ -13,9 +13,9 @@
 
 **Touches:** scripts/edge_logs.sh, test/shared/ci_config_contract_test.dart, integration_test/helpers/test_config.dart
 
-- [ ] `edge_logs.sh` prints rows for a known function on dev.
-- [ ] `ci_config_contract_test` green.
-- [ ] Running Patrol with no env file fails fast with a clear message.
+- [x] `edge_logs.sh` prints rows for a known function on dev.
+- [x] `ci_config_contract_test` green.
+- [x] Running Patrol with no env file fails fast with a clear message.
 - [ ] codegen if annotations changed, `flutter analyze` and the suite green.
 
 Next: /implement-lee testing-wave
