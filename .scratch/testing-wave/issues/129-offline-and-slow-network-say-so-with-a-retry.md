@@ -1,6 +1,6 @@
 # 129: Offline and a slow network say so, with a retry
 
-**Status:** ready-for-agent
+**Status:** in-progress (wave 33, 2026-09-25)
 **Blocked by:** 127 (both change the Review sheet, the chat screen and its controller).
 **Next:** `/implement-lee testing-wave`
 **Model:** opus
