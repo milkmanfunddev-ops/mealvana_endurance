@@ -794,8 +794,7 @@ class ContentKeys {
   static const String mpPlanStateDraft = 'meal_planning.plan_state_draft';
   static const String mpPlanStateConfirmed =
       'meal_planning.plan_state_confirmed';
-  static const String mpPlanStateArchived =
-      'meal_planning.plan_state_archived';
+  static const String mpPlanStateArchived = 'meal_planning.plan_state_archived';
   static const String mpChatSubGeneral = 'meal_planning.chat_sub_general';
   static const String mpChatSubPlanning = 'meal_planning.chat_sub_planning';
   static const String mpConvPlans = 'meal_planning.conv_plans';
@@ -1104,8 +1103,7 @@ class ContentKeys {
   static const String redeemCodeRefusedAlreadyRedeemed =
       'redeem_code.refused_already_redeemed';
   static const String redeemCodeRefusedOwnCode = 'redeem_code.refused_own_code';
-  static const String redeemCodeRefusedTooLong =
-      'redeem_code.refused_too_long';
+  static const String redeemCodeRefusedTooLong = 'redeem_code.refused_too_long';
   static const String redeemCodeRefusedOther = 'redeem_code.refused_other';
   static const String redeemCodeFailedSignIn = 'redeem_code.failed_sign_in';
   static const String redeemCodeFailedUnavailable =

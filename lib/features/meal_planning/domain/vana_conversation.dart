@@ -71,7 +71,9 @@ class VanaConversationSummary extends WireRecord {
         lastMessageAt: readString(json, 'lastMessageAt'),
         createdAt: readString(json, 'createdAt') ?? '',
         plan: switch (asJsonMap(json['plan'])) {
-          final Map<String, dynamic> plan => VanaConversationPlan.fromJson(plan),
+          final Map<String, dynamic> plan => VanaConversationPlan.fromJson(
+            plan,
+          ),
           null => null,
         },
       );

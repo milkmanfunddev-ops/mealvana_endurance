@@ -77,6 +77,15 @@ class EarlierPlan extends _$EarlierPlan {
     await _send(DeletePlanAction(id: id));
     state = const AsyncData(null);
     if (wasLocal) await _tab.refresh();
+    _listChanged();
+  }
+
+  /// The Previous plans sheet stays open under this plan's view (ticket
+  /// 97), so what it lists is re-read after a write that changes a row:
+  /// a name, a meal count, a plan gone, a confirm that moves one plan onto
+  /// the Plan tab and another into history.
+  void _listChanged() {
+    if (ref.mounted) ref.invalidate(previousPlansProvider);
   }
 
   /// Copy this plan into this week as a new draft (`use_plan_again`). The
@@ -95,6 +104,7 @@ class EarlierPlan extends _$EarlierPlan {
   Future<void> confirm() async {
     final confirmed = await _tab.confirmPlan(planId: id);
     if (confirmed != null) state = AsyncData(confirmed);
+    _listChanged();
   }
 
   bool _mayBeLocal(MealPlan? plan) =>
@@ -106,6 +116,7 @@ class EarlierPlan extends _$EarlierPlan {
     if (plan == null) return;
     if (_mayBeLocal(plan)) await _tab.applyServerPlan(plan);
     if (ref.mounted) state = AsyncData(plan);
+    _listChanged();
   }
 
   /// Refuse offline, run [action], and on failure put the plan back and

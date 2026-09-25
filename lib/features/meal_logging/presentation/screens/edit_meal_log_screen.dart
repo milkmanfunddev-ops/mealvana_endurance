@@ -24,6 +24,7 @@ import '../../domain/meal_slot.dart';
 import '../../../nutrition_plan/presentation/providers/swap_food_controller.dart';
 import '../../../subscription/presentation/ai_action_guard.dart';
 import '../providers/meal_log_providers.dart';
+import '../widgets/meal_photo_thumbnail.dart';
 import '../widgets/meal_analysis_skeleton.dart';
 import '../widgets/meal_component_editor.dart';
 import '../widgets/slot_chip_selector.dart' show OptionalSlotChipSelector;
@@ -560,7 +561,7 @@ class _EditMealLogScreenState extends ConsumerState<EditMealLogScreen> {
                     // Photo thumbnail — tappable to re-scan with a new photo
                     // (view-only while the meal-AI release flag is off).
                     if (_photoPath != null && _photoPath!.isNotEmpty)
-                      _PhotoThumbnail(
+                      MealPhotoThumbnail(
                         // Keyed by path so the image reloads after a re-scan.
                         key: ValueKey(_photoPath),
                         photoPath: _photoPath!,
@@ -747,90 +748,6 @@ class _EditMealLogScreenState extends ConsumerState<EditMealLogScreen> {
       decoration: InputDecoration(
         labelText: label,
         border: const OutlineInputBorder(),
-      ),
-    );
-  }
-}
-
-// ---------------------------------------------------------------------------
-// Meal photo thumbnail (signed URL resolved inline). Tappable to re-scan.
-// ---------------------------------------------------------------------------
-
-class _PhotoThumbnail extends ConsumerWidget {
-  const _PhotoThumbnail({super.key, required this.photoPath, this.onTap});
-
-  final String photoPath;
-
-  /// When non-null, the thumbnail is tappable (used to trigger a photo
-  /// re-scan) and shows a "Tap to re-scan" affordance.
-  final VoidCallback? onTap;
-
-  @override
-  Widget build(BuildContext context, WidgetRef ref) {
-    final urlAsync = ref.watch(mealPhotoSignedUrlProvider(photoPath));
-    return Padding(
-      padding: const EdgeInsets.only(bottom: AppSpacing.md),
-      child: urlAsync.when(
-        data: (url) {
-          if (url == null) return const SizedBox.shrink();
-          return ClipRRect(
-            borderRadius: BorderRadius.circular(AppRadius.md),
-            child: InkWell(
-              onTap: onTap,
-              child: Stack(
-                children: [
-                  Image.network(
-                    url,
-                    height: 160,
-                    width: double.infinity,
-                    fit: BoxFit.cover,
-                    errorBuilder: (_, __, ___) => const SizedBox.shrink(),
-                  ),
-                  if (onTap != null)
-                    Positioned(
-                      right: 8,
-                      bottom: 8,
-                      child: DecoratedBox(
-                        decoration: BoxDecoration(
-                          color: Colors.black54,
-                          borderRadius: BorderRadius.circular(AppRadius.sm),
-                        ),
-                        child: const Padding(
-                          padding: EdgeInsets.symmetric(
-                            horizontal: 8,
-                            vertical: 4,
-                          ),
-                          child: Row(
-                            mainAxisSize: MainAxisSize.min,
-                            children: [
-                              Icon(
-                                Icons.camera_alt_outlined,
-                                size: 14,
-                                color: Colors.white,
-                              ),
-                              SizedBox(width: 4),
-                              Text(
-                                'Tap to re-scan',
-                                style: TextStyle(
-                                  color: Colors.white,
-                                  fontSize: 12,
-                                ),
-                              ),
-                            ],
-                          ),
-                        ),
-                      ),
-                    ),
-                ],
-              ),
-            ),
-          );
-        },
-        loading: () => const SizedBox(
-          height: 160,
-          child: Center(child: CircularProgressIndicator()),
-        ),
-        error: (_, __) => const SizedBox.shrink(),
       ),
     );
   }

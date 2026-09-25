@@ -9,24 +9,25 @@ import '../../../../theme/kyle_design/app_spacing.dart';
 import '../../../../theme/kyle_design/app_text_styles.dart';
 import '../../application/meal_plan_controller.dart';
 import '../../application/previous_plans.dart';
+import '../../domain/meal_plan_status.dart';
 import '../../domain/meal_plan_summary.dart';
+import 'plan_conversation_title.dart';
 import 'plan_summary.dart';
 
 /// The plan ⋮'s "Previous plans": a sheet of the athlete's earlier plans,
-/// newest first, each its name (or its week) and a meal count. Tapping one
-/// closes the sheet and hands its id to [onOpen], which pushes the plan's
-/// view, where it is edited, renamed, deleted or used again (mp-675).
+/// newest week first, the week's confirmed plan leading with a Confirmed
+/// tag (17-004), each its name (or its week) and a meal count. Tapping one
+/// hands its id to [onOpen], which pushes the plan's view, where it is
+/// edited, renamed, deleted or used again (mp-675). The sheet stays under
+/// that view, so Back lands on it where it was scrolled (17-007); it closes
+/// itself when this week's plan changes underneath it (a Use again
+/// confirmed), since the athlete's business is then the Plan tab.
 Future<void> showPreviousPlansSheet({
   required BuildContext context,
   required ValueChanged<String> onOpen,
 }) => showAdaptiveModal<void>(
   context: context,
-  builder: (sheetContext) => PreviousPlansSheet(
-    onOpen: (id) {
-      Navigator.of(sheetContext).pop();
-      onOpen(id);
-    },
-  ),
+  builder: (_) => PreviousPlansSheet(onOpen: onOpen),
 );
 
 /// The sheet's body — the same rows as the Shopping tab's earlier lists
@@ -38,6 +39,20 @@ class PreviousPlansSheet extends ConsumerWidget {
 
   @override
   Widget build(BuildContext context, WidgetRef ref) {
+    ref.listen(mealPlanControllerProvider.select((s) => s.value?.id), (
+      previous,
+      next,
+    ) {
+      if (next == null || next == previous) return;
+      // The plan's view pops itself right after the confirm; close the
+      // sheet once it is the route on top again.
+      WidgetsBinding.instance.addPostFrameCallback((_) {
+        if (!context.mounted) return;
+        if (ModalRoute.of(context)?.isCurrent ?? false) {
+          Navigator.of(context).pop();
+        }
+      });
+    });
     final content = ref.read(contentServiceProvider);
     final isDark = Theme.of(context).brightness == Brightness.dark;
     final textColor = isDark ? AppColors.cream : AppColors.blackberry;
@@ -157,13 +172,33 @@ class _PlanRows extends ConsumerWidget {
                         mainAxisAlignment: MainAxisAlignment.center,
                         crossAxisAlignment: CrossAxisAlignment.start,
                         children: [
-                          Text(
-                            lines(plans[i]).$1,
-                            maxLines: 1,
-                            overflow: TextOverflow.ellipsis,
-                            style: AppTextStyles.bodyMedium.copyWith(
-                              color: textColor,
-                            ),
+                          Row(
+                            children: [
+                              Flexible(
+                                child: Text(
+                                  lines(plans[i]).$1,
+                                  maxLines: 1,
+                                  overflow: TextOverflow.ellipsis,
+                                  style: AppTextStyles.bodyMedium.copyWith(
+                                    color: textColor,
+                                  ),
+                                ),
+                              ),
+                              if (plans[i].status ==
+                                  MealPlanStatus.confirmed) ...[
+                                const SizedBox(width: AppSpacing.xs),
+                                _StateTag(
+                                  key: ValueKey(
+                                    'meal_planning.previous_plan_confirmed_'
+                                    '${plans[i].id}',
+                                  ),
+                                  text: planStateLabel(
+                                    content,
+                                    MealPlanStatus.confirmed,
+                                  ),
+                                ),
+                              ],
+                            ],
                           ),
                           const SizedBox(height: 2),
                           Text(
@@ -186,4 +221,33 @@ class _PlanRows extends ConsumerWidget {
       ),
     );
   }
+}
+
+/// The "Confirmed" tag on the week's confirmed plan: the plan card's badge
+/// (`PlanCard`) at row size.
+class _StateTag extends StatelessWidget {
+  const _StateTag({super.key, required this.text});
+
+  final String text;
+
+  @override
+  Widget build(BuildContext context) => DecoratedBox(
+    decoration: const BoxDecoration(
+      color: AppColors.electrolyte,
+      borderRadius: BorderRadius.all(Radius.circular(AppRadius.pill)),
+    ),
+    child: Padding(
+      padding: const EdgeInsets.symmetric(
+        horizontal: AppSpacing.xs,
+        vertical: 2,
+      ),
+      child: Text(
+        text,
+        style: AppTextStyles.smallLabel.copyWith(
+          color: AppColors.blackberry,
+          fontWeight: FontWeight.w700,
+        ),
+      ),
+    ),
+  );
 }

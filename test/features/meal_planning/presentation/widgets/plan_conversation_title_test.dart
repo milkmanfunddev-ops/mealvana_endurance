@@ -32,7 +32,11 @@ void main() {
       });
 
   test('a draft with meals is "<week> week · Draft"', () {
-    final r = row({'weekStart': '2026-09-20', 'status': 'draft', 'mealCount': 2});
+    final r = row({
+      'weekStart': '2026-09-20',
+      'status': 'draft',
+      'mealCount': 2,
+    });
     expect(planConversationTitle(content, r), 'Sep 20 week · Draft');
   });
 
@@ -77,7 +81,11 @@ void main() {
   });
 
   test('the plan survives the wire round trip', () {
-    final r = row({'weekStart': '2026-09-20', 'status': 'draft', 'mealCount': 2});
+    final r = row({
+      'weekStart': '2026-09-20',
+      'status': 'draft',
+      'mealCount': 2,
+    });
     final again = VanaConversationSummary.fromJson(r.toJson());
     expect(again.plan?.weekStart, '2026-09-20');
     expect(again.plan?.status, MealPlanStatus.draft);
