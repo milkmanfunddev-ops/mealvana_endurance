@@ -605,6 +605,23 @@ offer no abort — touches the "exactly two choices" ruling, Xuan's call);
 E1-suppression on the LOAD face + sparkle/"Today's Fuel" strip (qa flags them
 for the dashboard extraction; Xuan's word pending).
 
+### GREEN — 2026-09-25 — entryway conformant at v21 (qa fafc10f)
+
+qa re-walked v21 physically end-to-end, no instrumentation: V20-R1 RESOLVED
+(chooser paints above the summary; back returns; F3 dialog above the chooser;
+Keep collapses to the event row with the 620/748 migration). Bundle sha
+verified independently. **The entryway is GREEN against everything ruled.**
+
+Open by design, not omissions: F6 no-abort modality (Xuan's call) · LOAD-face
+E1 chevron suppression + sparkle/"Today's Fuel" strip (Xuan's word pending;
+will bite at dashboard extraction).
+
+Next, on qa's side: design-ssot-extract of the dashboard/LOAD surfaces from
+v21 (LOAD face states, slot cards, slot page, breakdown day-navigation)
+against the v18/v20 charter sections → spec/design/; then a ship-readiness
+summary to Xuan. **Xuan is the explicit checkpoint before ship-bundle tags
+carb-loading@v1 — nothing tags until he says go.**
+
 ## Notes on the two new ideas
 
 **Reminder to start.** Machinery exists — `NotificationService`
