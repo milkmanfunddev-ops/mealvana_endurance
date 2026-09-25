@@ -717,6 +717,7 @@
     "shopping_viewing_prior": "An earlier list",
     "shopping_back_to_current": "Back to current list",
     "shopping_failed": "Could not update the list. Check your connection and try again.",
+    "shopping_offline": "You're offline. Ticks are kept on this phone and sent when you're back online.",
     "shopping_confirmed_on": "Confirmed {date}",
     "shopping_created_on": "Made {date}",
     "shopping_menu_more": "List options",

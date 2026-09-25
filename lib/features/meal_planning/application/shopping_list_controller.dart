@@ -3,9 +3,13 @@ import 'dart:async';
 import 'package:riverpod_annotation/riverpod_annotation.dart';
 
 import '../../../shared/providers/unit_system_provider.dart';
+import '../../../shared/providers/user_id_provider.dart';
 import '../../../shared/services/app_external_deps.dart';
+import '../../../shared/services/logging_service.dart';
 import '../../nutrition_plan/domain/run_parameters.dart';
+import '../data/shopping_tick_store.dart';
 import '../data/vana_action_client.dart';
+import '../data/vana_exceptions.dart';
 import '../domain/meal_plan.dart';
 import '../domain/plan_meal.dart';
 import '../domain/shopping_item.dart';
@@ -38,10 +42,17 @@ class ShoppingListState {
     this.mealCount = 0,
     this.meals = const [],
     this.previous = const [],
+    this.isOffline = false,
   });
 
   final String? listId;
   final String listName;
+
+  /// True while the server is unreachable: the plan's offline copy is on
+  /// screen, or the last write on the live list could not be sent. Ticks
+  /// made meanwhile are kept on the device and sent when a call next
+  /// succeeds (ticket 36).
+  final bool isOffline;
 
   /// When the list was confirmed, else made.
   final DateTime? listDate;
@@ -85,6 +96,7 @@ class ShoppingListState {
     String? listName,
     List<ShoppingItem>? items,
     List<ShoppingListSummary>? previous,
+    bool? isOffline,
   }) => ShoppingListController._build(
     listId: listId,
     listName: listName ?? this.listName,
@@ -97,6 +109,7 @@ class ShoppingListState {
     mealCount: mealCount,
     meals: meals,
     previous: previous ?? this.previous,
+    isOffline: isOffline ?? this.isOffline,
   );
 }
 
@@ -106,8 +119,19 @@ class ShoppingListState {
 /// write is optimistic on screen and settled by the server's answer.
 ///
 /// Offline the server is unreachable, so the active plan's own mirror
-/// (`meal_plans.shopping`, kept in Drift) stands in read-only: the same
-/// lines, no ids, no edits.
+/// (`meal_plans.shopping`, kept in Drift) stands in: the same lines, no
+/// ids, no edits except ticks.
+///
+/// Ticks are local-first (ticket 36, Findings 20-001/20-002): each one is
+/// written to [ShoppingTickStore] before `update_shopping_item` goes out
+/// and dropped when the server answers. A transport failure keeps the tick
+/// on screen and in the store, marks the state offline, and the tick is
+/// replayed on the next build, on the next successful call, or by the
+/// retry timer. A refusal the server answers (any other error) rolls the
+/// tick back and rethrows so the screen can say so. The Drift mirror is
+/// never written here: the server keeps `meal_plans.shopping` from
+/// `shopping_items`, and a local replay of the mirror would clobber ticks
+/// made online.
 @riverpod
 class ShoppingListController extends _$ShoppingListController {
   /// The design's aisle order (05 §4).
@@ -125,30 +149,46 @@ class ShoppingListController extends _$ShoppingListController {
 
   static const _context = 'SHOPPING_LIST';
 
+  /// How often queued ticks are retried while the state is offline.
+  static const retryEvery = Duration(seconds: 20);
+
   /// The list the athlete opened from history; null = the most recent one.
   String? _openedListId;
 
+  String? _userId;
+  Timer? _retry;
+
   @override
   FutureOr<ShoppingListState> build() async {
+    // Riverpod reuses the notifier across invalidations: reset what a
+    // previous build may have left.
+    _retry?.cancel();
+    _retry = null;
+    ref.onDispose(() {
+      _retry?.cancel();
+      _retry = null;
+    });
+    _userId = await ref.watch(userIdProvider.future);
     // Every plan edit rebuilds the plan's list server-side, so the plan is
     // the signal to re-read; it is also the offline stand-in.
     final plan = await ref.watch(mealPlanControllerProvider.future);
+    ShoppingListState loaded;
     try {
-      return await _load(plan, listId: _openedListId);
+      loaded = await _load(plan, listId: _openedListId);
     } catch (e) {
-      ref
-          .read(appExternalDepsProvider)
-          .logger
-          .warning(
-            'shopping list read failed; showing the plan mirror',
-            context: _context,
-            error: e,
-          );
-      return fromPlan(plan);
+      _logger.warning(
+        'shopping list read failed; showing the plan mirror',
+        context: _context,
+        error: e,
+      );
+      return _offline(fromPlan(plan));
     }
+    return _replay(loaded);
   }
 
   VanaActionClient get _client => ref.read(vanaActionClientProvider);
+  ShoppingTickStore get _ticks => ref.read(shoppingTickStoreProvider);
+  AppLogger get _logger => ref.read(appExternalDepsProvider).logger;
 
   Future<ShoppingListState> _load(MealPlan? plan, {String? listId}) async {
     final result = await _client.run(GetShoppingListAction(id: listId));
@@ -200,35 +240,166 @@ class ShoppingListController extends _$ShoppingListController {
 
   Future<void> _toggle(String name, ShoppingField field, bool value) async {
     final current = state.value;
-    if (current == null) return;
+    final userId = _userId;
+    if (current == null || userId == null) return;
     final row = _rowNamed(current, name);
     // Optimistic: the server's answer settles it a beat later.
+    final ticked = current.copyWith(
+      items: _flipped(current.items, name, field, value),
+    );
+    state = AsyncData(ticked);
+    // Local write first: the tick is on the device before anything is sent.
+    final tick = PendingShoppingTick(
+      name: name,
+      field: field,
+      value: value,
+      at: DateTime.now(),
+      listId: current.listId,
+      planId: current.planId,
+      rowId: row?.id,
+    );
+    await _ticks.add(userId, tick);
+    if (row == null) {
+      // The offline copy has no ids to write to; the tick waits for the
+      // live list (matched by name on the plan's list).
+      _armRetry();
+      return;
+    }
+    try {
+      await _settle(current, () => _client.run(_updateFor(row.id, tick)));
+    } on VanaOfflineException catch (e) {
+      // Kept, not lost: the tick stays on screen and in the store.
+      _logger.warning(
+        'shopping tick queued: transport down',
+        context: _context,
+        error: e,
+      );
+      state = AsyncData(ticked.copyWith(isOffline: true));
+      _armRetry();
+      return;
+    } catch (_) {
+      // The server answered and said no: nothing to replay.
+      await _ticks.remove(userId, tick);
+      rethrow;
+    }
+    await _ticks.remove(userId, tick);
+  }
+
+  /// Send every queued tick that belongs to the list on screen. Public so
+  /// the retry timer and a future reconnect hook share one path; safe to
+  /// call at any time (a no-op with nothing queued).
+  Future<void> retryPending() async {
+    final current = state.value;
+    if (current == null) return;
+    state = AsyncData(await _replay(current));
+  }
+
+  /// [loaded] with its queued ticks sent (by row id, or by name on the
+  /// plan's list for ticks made on the offline copy), each dropped from the
+  /// store as the server answers. Stops at the first transport failure and
+  /// overlays what is left, marked offline. A tick the server refuses, or
+  /// one whose line no longer exists, is dropped and logged.
+  Future<ShoppingListState> _replay(ShoppingListState loaded) async {
+    final userId = _userId;
+    if (userId == null) return loaded;
+    var current = loaded;
+    for (final tick in _ticks.read(userId)) {
+      if (!tick.appliesTo(listId: current.listId, planId: current.planId)) {
+        continue; // another list's tick; it waits for that list
+      }
+      final rowId = tick.rowId ?? _rowNamed(current, tick.name)?.id;
+      if (rowId == null) {
+        _logger.warning(
+          'shopping tick dropped: no row for "${tick.name}"',
+          context: _context,
+        );
+        await _ticks.remove(userId, tick);
+        continue;
+      }
+      try {
+        final result = await _client.run(_updateFor(rowId, tick));
+        final list = result.shoppingList;
+        if (list != null) {
+          current = _fromDetail(
+            list,
+            _summariesWith(current, list),
+            ref.read(mealPlanControllerProvider).value,
+          );
+        }
+        await _ticks.remove(userId, tick);
+      } on VanaOfflineException catch (e) {
+        _logger.warning(
+          'shopping tick replay stopped: transport down',
+          context: _context,
+          error: e,
+        );
+        return _offline(current);
+      } catch (e) {
+        _logger.warning(
+          'shopping tick dropped: server refused "${tick.name}"',
+          context: _context,
+          error: e,
+        );
+        await _ticks.remove(userId, tick);
+      }
+    }
+    _retry?.cancel();
+    _retry = null;
+    return current;
+  }
+
+  /// [base] as the offline view: queued ticks laid over its lines and the
+  /// offline flag set, with the retry timer armed.
+  ShoppingListState _offline(ShoppingListState base) {
+    _armRetry();
+    return _withPending(base).copyWith(isOffline: true);
+  }
+
+  ShoppingListState _withPending(ShoppingListState base) {
+    final userId = _userId;
+    if (userId == null) return base;
+    var items = base.items;
+    for (final tick in _ticks.read(userId)) {
+      if (!tick.appliesTo(listId: base.listId, planId: base.planId)) continue;
+      items = _flipped(items, tick.name, tick.field, tick.value);
+    }
+    return identical(items, base.items) ? base : base.copyWith(items: items);
+  }
+
+  void _armRetry() {
+    if (_retry != null) return;
+    _retry = Timer.periodic(retryEvery, (_) {
+      if (!ref.mounted) return;
+      unawaited(retryPending());
+    });
+  }
+
+  static UpdateShoppingItemAction _updateFor(
+    String rowId,
+    PendingShoppingTick tick,
+  ) => UpdateShoppingItemAction(
+    id: rowId,
+    checked: tick.field == ShoppingField.checked ? tick.value : null,
+    have: tick.field == ShoppingField.have ? tick.value : null,
+  );
+
+  static List<ShoppingItem> _flipped(
+    List<ShoppingItem> items,
+    String name,
+    ShoppingField field,
+    bool value,
+  ) {
     final target = name.trim().toLowerCase();
-    state = AsyncData(
-      current.copyWith(
-        items: [
-          for (final item in current.items)
-            if (item.name.trim().toLowerCase() == target)
-              switch (field) {
-                ShoppingField.checked => item.copyWith(checked: value),
-                ShoppingField.have => item.copyWith(have: value),
-              }
-            else
-              item,
-        ],
-      ),
-    );
-    if (row == null) return; // the offline mirror has no ids to write to
-    await _settle(
-      current,
-      () => _client.run(
-        UpdateShoppingItemAction(
-          id: row.id,
-          checked: field == ShoppingField.checked ? value : null,
-          have: field == ShoppingField.have ? value : null,
-        ),
-      ),
-    );
+    return [
+      for (final item in items)
+        if (item.name.trim().toLowerCase() == target)
+          switch (field) {
+            ShoppingField.checked => item.copyWith(checked: value),
+            ShoppingField.have => item.copyWith(have: value),
+          }
+        else
+          item,
+    ];
   }
 
   // ── Rows ──────────────────────────────────────────────────────────────────
@@ -559,6 +730,7 @@ class ShoppingListController extends _$ShoppingListController {
     int mealCount = 0,
     List<PlanMeal> meals = const [],
     List<ShoppingListSummary> previous = const [],
+    bool isOffline = false,
   }) {
     final grouped = <String, List<ShoppingItem>>{};
     for (final aisle in aisleOrder) {
@@ -589,6 +761,7 @@ class ShoppingListController extends _$ShoppingListController {
       mealCount: mealCount,
       meals: meals,
       previous: previous,
+      isOffline: isOffline,
     );
   }
 }
