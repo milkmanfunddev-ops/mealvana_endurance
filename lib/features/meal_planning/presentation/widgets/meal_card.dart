@@ -31,6 +31,10 @@ import 'vana_tag.dart';
 /// [slot] is what the card draws where a picture goes; a list passes the one
 /// `photosForList` gave it so no photograph repeats. Omitted, the card draws
 /// the Meal's own photo — or nothing at all, which takes no space (ADR 0003).
+///
+/// [subtitle] replaces the why-line under the name; an empty one shows no
+/// line. The Browse list passes the ingredients, because a library Meal's
+/// `why` is its research note, not a description (testing-wave 18-004).
 class MealCard extends ConsumerWidget {
   const MealCard({
     super.key,
@@ -43,10 +47,12 @@ class MealCard extends ConsumerWidget {
     this.excluded = false,
     this.compact = false,
     this.slot,
+    this.subtitle,
   });
 
   final MealRef meal;
   final MealPhotoSlot? slot;
+  final String? subtitle;
   final VoidCallback onTap;
 
   /// Optional right-aligned action (e.g. the picker's "Add").
@@ -67,6 +73,7 @@ class MealCard extends ConsumerWidget {
     final secondary = textColor.withValues(alpha: 0.55);
     final thumb = compact ? 32.0 : 36.0;
     final photo = slot == null ? meal.photo : slot!.photo;
+    final line = subtitle ?? meal.why;
 
     // kcal sits in the tag strip only when the pill row is not showing it
     // (never twice — macro-pill-row MP-L3).
@@ -125,10 +132,10 @@ class MealCard extends ConsumerWidget {
                           height: 1.25,
                         ),
                       ),
-                      if (!compact && meal.why.isNotEmpty) ...[
+                      if (!compact && line.isNotEmpty) ...[
                         const SizedBox(height: 3),
                         Text(
-                          meal.why,
+                          line,
                           maxLines: 2,
                           overflow: TextOverflow.ellipsis,
                           style: AppTextStyles.bodySmall.copyWith(

@@ -35,8 +35,9 @@ const PLAN = 'aaaaaaaa-0000-4000-8000-000000000121';
 const fixture = JSON.parse(Deno.readTextFileSync(new URL('./fixtures/meal_picker.json', import.meta.url)));
 type Picker = Extract<VanaPart, { kind: 'meal_picker' }>;
 
-/** A library row as `search_meals` returns it: snake_case, scored. */
-const libRow = (id: string, mealType: MealType, over: Record<string, unknown> = {}): Row => ({ source: 'library', id, name: `Meal ${id}`, meal_type: mealType, contexts: ['everyday'], batch: true, prep_minutes: 15, kcal: 600, carbs_g: 70, protein_g: 35, fat_g: 15, allergens: [], diets_ok: [], swaps: null, why: 'fits the week', attribution: 'the library', ingredients: 'rice, beans', library_meal_id: id, score: 0.9, kind: 'recipe', ...over });
+/** A library row as `search_meals` returns it: snake_case, scored. Salmon is in the ingredients because these tests search
+ *  "salmon" with no embedding, and search_meals answers that typed search with name-or-ingredient matches only (ticket 60). */
+const libRow = (id: string, mealType: MealType, over: Record<string, unknown> = {}): Row => ({ source: 'library', id, name: `Meal ${id}`, meal_type: mealType, contexts: ['everyday'], batch: true, prep_minutes: 15, kcal: 600, carbs_g: 70, protein_g: 35, fat_g: 15, allergens: [], diets_ok: [], swaps: null, why: 'fits the week', attribution: 'the library', ingredients: 'salmon, rice, beans', library_meal_id: id, score: 0.9, kind: 'recipe', ...over });
 /** Twelve meals per type: enough for a picker and a tail, so what is left out is visible. */
 const LIBRARY: Row[] = (['dinner', 'lunch', 'breakfast', 'snack'] as MealType[]).flatMap((t) => Array.from({ length: 12 }, (_, i) => libRow(`${t[0].toUpperCase()}-${String(i + 1).padStart(3, '0')}`, t)));
 
