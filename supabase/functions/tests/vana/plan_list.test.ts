@@ -88,6 +88,26 @@ Deno.test('usePlanAgain: copies the plan\'s meals into a new draft for this week
   assertEquals((await listPlans(v)).some((p) => p.id === copy.id), false);
 });
 
+Deno.test('usePlanAgain twice: the week keeps one live conversation-less draft; a conversation\'s draft is untouched (73-001, mp-241)', async () => {
+  const v = account();
+  const CONVO_DRAFT = 'cccccccc-0000-4000-8000-000000000001';
+  v.fake.tables.meal_plans.push(planRow(CONVO_DRAFT, WS, 'draft', { conversation_id: 'conv-1', updated_at: `${WS}T11:00:00Z` }));
+
+  const first = await usePlanAgain(v, SEP14);
+  const second = await usePlanAgain(v, CONFIRMED_OLD);
+  assert(first.id !== second.id);
+
+  const rows = v.fake.tables.meal_plans.filter((r) => r.week_start === WS && r.status !== 'archived');
+  const liveConversationless = rows.filter((r) => r.conversation_id == null && r.status === 'draft').map((r) => r.id);
+  assertEquals(liveConversationless, [second.id]);
+  assertEquals((await getPlanById(v, first.id))!.status, 'archived');
+  // Vana's own draft (mp-241) and the confirmed plan are left as they were.
+  assertEquals((await getPlanById(v, CONVO_DRAFT))!.status, 'draft');
+  assertEquals((await getPlanById(v, THIS_WEEK))!.status, 'confirmed');
+  // Nothing in an earlier week moved either.
+  assertEquals((await getPlanById(v, LEFTOVER))!.status, 'draft');
+});
+
 Deno.test('usePlanAgain: a meal the library no longer has is left out rather than copied blind', async () => {
   const v = account();
   v.fake.tables.meal_library = v.fake.tables.meal_library.filter((m) => m.id !== 'D-003');
