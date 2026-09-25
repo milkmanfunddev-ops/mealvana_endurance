@@ -13,8 +13,8 @@
 
 **Touches:** lib/features/meal_logging/presentation/providers/draft_meal_controller.dart, lib/features/meal_logging/application/meal_logging_service.dart
 
-- [ ] A seam test through the real notifier: a draft with an AI note logs a row whose notes equal it, locally and in the upload payload.
-- [ ] Edit Meal shows the note (widget test).
+- [x] A seam test through the real notifier: a draft with an AI note logs a row whose notes equal it, locally and in the upload payload.
+- [x] Edit Meal shows the note (widget test).
 - [ ] codegen if annotations changed, `flutter analyze` and the suite green.
 
 Next: /implement-lee testing-wave
