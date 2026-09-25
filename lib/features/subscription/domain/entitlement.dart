@@ -103,6 +103,16 @@ class SubscriptionStatus {
     return e != null && !e.isAfter(now);
   }
 
+  /// The moment this answer stops counting (mp-679): its own [expiresAt],
+  /// plus [kRenewalGrace] when it will renew. Like the server's isEntitled,
+  /// only a renewing subscription gets the grace; a cancelled one ends at
+  /// its expiry. Null for an inactive answer and for an open-ended one.
+  DateTime? get stopsCountingAt {
+    final e = expiresAt;
+    if (!active || e == null) return null;
+    return willRenew ? e.add(kRenewalGrace) : e;
+  }
+
   /// This answer as it counts at [now] (mp-679). An active answer whose own
   /// [expiresAt] passed more than [kRenewalGrace] ago (at once, when it will
   /// not renew) is closed: held once,
@@ -111,12 +121,8 @@ class SubscriptionStatus {
   /// expiry, always wins.
   SubscriptionStatus countedAt(DateTime now) {
     final e = expiresAt;
-    // Like the server's isEntitled: only a renewing subscription gets the
-    // grace; a cancelled one ends at its expiry.
-    final grace = willRenew ? kRenewalGrace : Duration.zero;
-    if (!active || e == null || now.isBefore(e.add(grace))) {
-      return this;
-    }
+    final end = stopsCountingAt;
+    if (e == null || end == null || now.isBefore(end)) return this;
     return SubscriptionStatus(
       active: false,
       expiresAt: e,

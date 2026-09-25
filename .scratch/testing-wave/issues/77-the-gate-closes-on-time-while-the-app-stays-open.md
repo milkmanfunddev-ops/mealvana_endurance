@@ -13,8 +13,8 @@
 
 **Touches:** lib/features/subscription/application/subscription_status_provider.dart, lib/features/subscription/domain/entitlement.dart
 
-- [ ] A seam test with an injected clock and fake timers: an open answer whose expiry passes while the controller lives turns closed at expiry (non-renewing) or expiry + 15 min (renewing), with no resume.
-- [ ] A test: a fresh active answer arriving before then cancels the close.
+- [x] A seam test with an injected clock and fake timers: an open answer whose expiry passes while the controller lives turns closed at expiry (non-renewing) or expiry + 15 min (renewing), with no resume.
+- [x] A test: a fresh active answer arriving before then cancels the close.
 - [ ] codegen if annotations changed, `flutter analyze` and the suite green.
 
 Next: /implement-lee testing-wave

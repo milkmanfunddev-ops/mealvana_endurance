@@ -177,6 +177,10 @@ String _$subscriptionAuthUserIdHash() =>
 ///    user is not an answer: locked until `logIn` has moved the identity.
 /// 5. An active answer counts for [kRenewalGrace] past its own expiry, then
 ///    as closed until a fresh answer arrives (mp-679, Finding 07-002).
+/// 6. While the controller lives, one timer waits for the moment the current
+///    answer stops counting. It re-counts then (closed, unless something
+///    fresher came) and re-fetches once, so an app left open lands on the
+///    paywall on time, not on the next resume (mp-457, Finding 05-005).
 ///
 /// Every answer it takes also settles the day-five reminder (mp-456 §4): an
 /// active trial that will not renew cancels it. That covers the app open
@@ -211,6 +215,10 @@ const subscriptionStatusProvider = SubscriptionStatusControllerProvider._();
 ///    user is not an answer: locked until `logIn` has moved the identity.
 /// 5. An active answer counts for [kRenewalGrace] past its own expiry, then
 ///    as closed until a fresh answer arrives (mp-679, Finding 07-002).
+/// 6. While the controller lives, one timer waits for the moment the current
+///    answer stops counting. It re-counts then (closed, unless something
+///    fresher came) and re-fetches once, so an app left open lands on the
+///    paywall on time, not on the next resume (mp-457, Finding 05-005).
 ///
 /// Every answer it takes also settles the day-five reminder (mp-456 §4): an
 /// active trial that will not renew cancels it. That covers the app open
@@ -247,6 +255,10 @@ final class SubscriptionStatusControllerProvider
   ///    user is not an answer: locked until `logIn` has moved the identity.
   /// 5. An active answer counts for [kRenewalGrace] past its own expiry, then
   ///    as closed until a fresh answer arrives (mp-679, Finding 07-002).
+  /// 6. While the controller lives, one timer waits for the moment the current
+  ///    answer stops counting. It re-counts then (closed, unless something
+  ///    fresher came) and re-fetches once, so an app left open lands on the
+  ///    paywall on time, not on the next resume (mp-457, Finding 05-005).
   ///
   /// Every answer it takes also settles the day-five reminder (mp-456 §4): an
   /// active trial that will not renew cancels it. That covers the app open
@@ -278,7 +290,7 @@ final class SubscriptionStatusControllerProvider
 }
 
 String _$subscriptionStatusControllerHash() =>
-    r'3a339147657273eae4e7258a70d7a667090e851e';
+    r'476001b25e18d1f1558c5c7ad766418c19d6c9c2';
 
 /// The current user's subscription status, from RevenueCat and nothing else
 /// (mp-279, mp-284).
@@ -299,6 +311,10 @@ String _$subscriptionStatusControllerHash() =>
 ///    user is not an answer: locked until `logIn` has moved the identity.
 /// 5. An active answer counts for [kRenewalGrace] past its own expiry, then
 ///    as closed until a fresh answer arrives (mp-679, Finding 07-002).
+/// 6. While the controller lives, one timer waits for the moment the current
+///    answer stops counting. It re-counts then (closed, unless something
+///    fresher came) and re-fetches once, so an app left open lands on the
+///    paywall on time, not on the next resume (mp-457, Finding 05-005).
 ///
 /// Every answer it takes also settles the day-five reminder (mp-456 §4): an
 /// active trial that will not renew cancels it. That covers the app open
