@@ -17,6 +17,9 @@ class ContentKeys {
   static const String paywallRestoreSuccess = 'paywall.restore_success';
   static const String paywallRestoreNone = 'paywall.restore_none';
   static const String paywallPurchaseSuccess = 'paywall.purchase_success';
+  // A returning account (its Pro ended, `hadPro`) buying again (10-002).
+  static const String paywallPurchaseSuccessReturning =
+      'paywall.purchase_success_returning';
   static const String paywallPurchasePending = 'paywall.purchase_pending';
   static const String paywallPurchaseFailed = 'paywall.purchase_failed';
   static const String paywallManageUnavailable = 'paywall.manage_unavailable';
