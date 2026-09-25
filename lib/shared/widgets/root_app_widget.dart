@@ -1,19 +1,11 @@
 import 'dart:async';
 
-import 'package:accessibility_tools/accessibility_tools.dart';
 // The testing-tools panel is not exported from the package barrel, but it is
 // the only half of the package that survives a release build: the issue
 // checkers read `RenderObject.debugSemantics`/`debugCreator`, which Flutter
 // nulls out in release. The panel only overrides MediaQuery/Theme, so it runs
 // anywhere. Reaching into `src/` is safe here because accessibility_tools is
 // pinned to an exact version (2.2.3) in pubspec.yaml.
-// ignore: implementation_imports
-import 'package:accessibility_tools/src/testing_tools/test_environment.dart';
-// ignore: implementation_imports
-import 'package:accessibility_tools/src/testing_tools/testing_tools_panel.dart';
-// ignore: implementation_imports
-import 'package:accessibility_tools/src/testing_tools/testing_tools_wrapper.dart';
-import 'package:flutter/foundation.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:flutter_screenutil/flutter_screenutil.dart';
@@ -35,6 +27,7 @@ import '../../features/subscription/application/pro_paywall_controller.dart';
 import '../../features/subscription/domain/trial_reminder.dart';
 import '../services/support/support_identity.dart';
 import '../../main.dart' show sentryNavigatorKey;
+import 'dev_testing_tools.dart';
 import 'shake_to_report.dart';
 
 /// Root app widget that handles app initialization and navigation
@@ -309,18 +302,9 @@ class _RootAppWidgetState extends ConsumerState<RootAppWidget> {
 /// 1. Clamp `MediaQuery.textScaler` to [1.0, 1.6] so extreme system font
 ///    scaling can't break layouts (cut-off CTAs, truncated labels). Bumping
 ///    the ceiling requires verifying every screen at the new value.
-/// 2. In the **dev flavor only**, mount the accessibility testing overlay —
-///    the blue wrench button (text scale, bold text, color-blindness
-///    simulation, locale, semantics debugger) and, in debug, the red issue
-///    checker button.
-///
-/// Tree order matters:
-///
-///     MediaQuery(clamp(OS))
-///       └ AccessibilityTools / _DevTestingTools
-///           ├ TestingToolsWrapper(env override)
-///           │   └ child  ← reads env override OR clamped fallback
-///           └ Overlay(panel + buttons)  ← reads clamped MediaQuery
+/// 2. In the **dev flavor only**, mount the testing tools ([DevTestingTools]:
+///    the blue wrench panel and, in debug, the red issue checker). That file
+///    holds the tree, the per-build-mode table and where the button sits.
 ///
 /// The clamp wraps the *whole* tools tree so the panel chrome itself respects
 /// the ceiling (otherwise the panel UI renders at the raw OS scale, e.g. 3.1×
@@ -336,25 +320,11 @@ class _RootAppWidgetState extends ConsumerState<RootAppWidget> {
 /// build — a Shorebird/TestFlight release binary — carries the tools for QA.
 /// Prod never shows them in any build mode and never reads the switch.
 ///
-/// Which button appears where (switch on):
-///
-/// | build              | blue wrench | red checker |
-/// |--------------------|-------------|-------------|
-/// | dev + debug        | yes         | yes         |
-/// | dev + release      | yes         | no          |
-/// | prod (any mode)    | no          | no          |
-///
-/// The red checker is debug-only for a reason outside our control: its
-/// checkers read `RenderObject.debugSemantics` and `debugCreator`, which
-/// Flutter nulls out in release builds. Forcing it on in an installed dev
-/// build would just render a button that always finds zero issues, so the
-/// release path mounts the testing-tools panel alone.
-///
 /// Flipping the switch swaps the wrapper around [child], which remounts the
 /// subtree down to the router's Navigator. The Navigator carries
 /// `sentryNavigatorKey` (a GlobalKey), so it and every route below it are
 /// reparented with their state intact; the hot-reload re-key in
-/// [_DevAccessibilityTools] already relies on the same behaviour.
+/// [DevTestingTools] already relies on the same behaviour.
 class _AppShell extends ConsumerWidget {
   const _AppShell({required this.child, required this.isDev});
 
@@ -373,150 +343,7 @@ class _AppShell extends ConsumerWidget {
           maxScaleFactor: 1.6,
         ),
       ),
-      child: !toolsOn
-          ? child
-          : kDebugMode
-          ? _DevAccessibilityTools(child: child)
-          : _DevTestingTools(child: child),
-    );
-  }
-}
-
-/// Debug-only wrapper around [AccessibilityTools] that **resets the panel's
-/// state on every hot reload** by re-keying the widget.
-///
-/// Why: the package keeps its `TestEnvironment` (text scale, color mode,
-/// locale override, etc.) in `_AccessibilityToolsState`. Plain `setState`
-/// changes survive hot reload, which made the app stick at e.g. 3.1× text
-/// scale or grayscale between iterations with no obvious way to reset.
-///
-/// `reassemble` fires on every hot reload; bumping a counter and using it
-/// as the child's key forces Flutter to dispose the old `AccessibilityTools`
-/// and create a fresh one — wiping any panel overrides. Cold launches are
-/// also fresh because widget state starts empty.
-class _DevAccessibilityTools extends StatefulWidget {
-  const _DevAccessibilityTools({required this.child});
-
-  final Widget child;
-
-  @override
-  State<_DevAccessibilityTools> createState() => _DevAccessibilityToolsState();
-}
-
-class _DevAccessibilityToolsState extends State<_DevAccessibilityTools> {
-  int _resetGeneration = 0;
-
-  @override
-  void reassemble() {
-    super.reassemble();
-    _resetGeneration++;
-  }
-
-  @override
-  Widget build(BuildContext context) {
-    return AccessibilityTools(
-      key: ValueKey('accessibility-tools-$_resetGeneration'),
-      // Silence the per-rebuild console report (it flooded the logs and buried
-      // real errors). The on-screen overlay + testing panel still work.
-      logLevel: LogLevel.none,
-      child: widget.child,
-    );
-  }
-}
-
-/// Dev-flavor testing tools for **release** builds (installed dev app).
-///
-/// `AccessibilityTools` short-circuits to `child` whenever `!kDebugMode`, so
-/// the installed dev build gets nothing from it. This mounts the half of the
-/// package that does work outside debug — `TestingToolsWrapper` + the wrench
-/// panel — behind the same blue floating button, reproducing the package's own
-/// overlay structure so QA sees identical chrome on device and in simulator.
-///
-/// The red issue-checker button is intentionally absent here; see [_AppShell].
-class _DevTestingTools extends StatefulWidget {
-  const _DevTestingTools({required this.child});
-
-  final Widget child;
-
-  @override
-  State<_DevTestingTools> createState() => _DevTestingToolsState();
-}
-
-class _DevTestingToolsState extends State<_DevTestingTools> {
-  TestEnvironment _environment = const TestEnvironment();
-  bool _panelVisible = false;
-
-  @override
-  Widget build(BuildContext context) {
-    return Stack(
-      textDirection: TextDirection.ltr,
-      children: [
-        // Inserts its own MediaQuery/Theme between the clamp and the app, so
-        // panel overrides reach app content while panel chrome stays clamped.
-        TestingToolsWrapper(environment: _environment, child: widget.child),
-        Overlay(
-          initialEntries: [
-            OverlayEntry(
-              builder: (context) => SafeArea(
-                child: Align(
-                  alignment: Alignment.bottomRight,
-                  child: Padding(
-                    padding: const EdgeInsets.all(16),
-                    child: _TestingToolsButton(
-                      onPressed: () =>
-                          setState(() => _panelVisible = !_panelVisible),
-                    ),
-                  ),
-                ),
-              ),
-            ),
-            OverlayEntry(
-              builder: (context) {
-                if (!_panelVisible) return const SizedBox();
-                return TestingToolsPanel(
-                  environment: _environment,
-                  onClose: () => setState(() => _panelVisible = false),
-                  onEnvironmentUpdate: (environment) =>
-                      setState(() => _environment = environment),
-                );
-              },
-            ),
-          ],
-        ),
-      ],
-    );
-  }
-}
-
-/// Blue wrench button. Matches the package's own `AccessibilityToolsToggle`
-/// (which lives in `src/` and isn't exported) so the two build modes look the
-/// same.
-class _TestingToolsButton extends StatelessWidget {
-  const _TestingToolsButton({required this.onPressed});
-
-  final VoidCallback onPressed;
-
-  @override
-  Widget build(BuildContext context) {
-    const label = 'Open testing tools';
-    return SizedBox.square(
-      dimension: 48,
-      child: Tooltip(
-        message: label,
-        child: FloatingActionButton(
-          onPressed: onPressed,
-          shape: const CircleBorder(),
-          elevation: 10,
-          hoverElevation: 10,
-          backgroundColor: Colors.blue,
-          child: const Icon(
-            Icons.build,
-            size: 24,
-            color: Colors.white,
-            semanticLabel: label,
-          ),
-        ),
-      ),
+      child: !toolsOn ? child : DevTestingTools(child: child),
     );
   }
 }
