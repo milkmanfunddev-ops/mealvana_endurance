@@ -493,6 +493,22 @@ Deltas folded from the handback:
 with local Flutter 3.41.6 as of tonight (the sign_in_with_apple pin no longer
 bites). `flutter test` runs. The note is kept for history.
 
+### OPEN — 2026-09-24, late — plan CREATE/EDIT entryway (bundle gate)
+
+Xuan (via qa-6b): the bundle is not complete until the entryway is understood;
+ship-bundle will not tag until it is ratified. Current state + full design
+proposal handed to QA: `.scratch/carb-loading/entryway-proposal.md` (beside
+this file) — evidence is the 09-19 audit shots (08–13, 21–25) plus code
+citations; as-shipped facts: create `pushReplacement`s onto the legacy day-1
+page (stranded back stack), edit is delete+recreate with fresh IDs and no
+navigation (now a Q-CL10 hazard), delete has service support but no UI.
+Proposal highlights (all marked PROPOSAL for the interview): two-state entry
+row → plan summary surface; post-selection returns to event details with a
+today-CTA when day 1 is underway; keep-my-targets/reset confirm with
+migrate-by-date on re-pick; dragonfruit delete with Path-A-honest copy;
+reminder-to-start OUT and named in the exclusion list; "Manage plan ›" on the
+breakdown page flagged as touching a ruled read-only surface.
+
 ## Notes on the two new ideas
 
 **Reminder to start.** Machinery exists — `NotificationService`
