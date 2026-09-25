@@ -1,6 +1,6 @@
 # 58: Quick logs keep what they came from
 
-**Status:** in-progress (wave 23, 2026-09-25)
+**Status:** done (wave 23, 2026-09-25)
 **Blocked by:** 54 (touches lib/features/meal_logging/presentation/providers/meal_log_providers.dart).
 **Next:** `/implement-lee testing-wave`
 **Model:** opus
@@ -15,6 +15,6 @@
 
 - [x] A seam test through the real notifier: re-logging a two-item Recent meal saves both items and the original's source.
 - [x] A Common tile saves under its tile name.
-- [ ] codegen if annotations changed, `flutter analyze` and the suite green.
+- [x] codegen if annotations changed, `flutter analyze` and the suite green.
 
 Next: /implement-lee testing-wave
