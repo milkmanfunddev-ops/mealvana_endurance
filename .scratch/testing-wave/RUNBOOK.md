@@ -209,7 +209,8 @@ At the end of every run, stopped or not, in this order:
 
 1. Delete the account you created through the app's delete-account flow (unless the ticket keeps
    it), and set its state with `CRED update <address> --state deleted` (or `delete-failed`).
-2. Stop your log stream (`kill $(cat SCRATCH/logstream.pid)`; never `pkill`/`killall log`, which
+2. Stop every background process the run started: each helper loop (a watcher, a poller) keeps
+   its PID in `SCRATCH/<name>.pid` when started and is killed by that PID here (#67). Then stop your log stream (`kill $(cat SCRATCH/logstream.pid)`; never `pkill`/`killall log`, which
    ends the other run's console too) and terminate the app on the simulator.
 3. `LOCK release slot OWNER`. The simulator stays; the wave lead deletes it at the close.
 4. Scan the console before committing it: `grep -nE 'eyJ[A-Za-z0-9_-]{10,}|Bearer |sk_|sbp_' RUNS/console.log`.
@@ -271,7 +272,9 @@ the above and follows this instead:
    change (TDD at the seams), plus `flutter analyze` on what they touched. They never run the full
    suite or a review. Codegen always runs unfiltered (`dart run build_runner build
    --delete-conflicting-outputs`, never `--build-filter`, which deletes every other generated
-   file), and the agent checks `git status` for deleted files before staging (Lee, 2026-09-25, #58).
+   file), and the agent checks `git status` for deleted files before staging (Lee, 2026-09-25, #58). A ticket that bumps
+   Drift's `schemaVersion` re-pins `_pinnedVersion` and `_pinnedFingerprint` in
+   `schema_version_guard_test.dart` and runs that test (#66).
 2. No decisions-page writes of any kind during a wave, not even open questions. A product question
    an agent raises goes in its ticket file or a Finding; the SSOT is updated later, in one pass,
    from the testing docs.

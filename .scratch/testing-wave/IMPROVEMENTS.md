@@ -13,16 +13,18 @@ Each entry: what went wrong or cost time, where it was seen, and the suggested f
 
 None.
 
+## Done
+
 - **#66 a Drift bump passed the agent's tests but not the suite (wave 25).** Ticket 99 moved Drift to
   v23 and its migration test passed, but `schema_version_guard_test.dart` still pinned v22, so the
   full suite went red at the lead. Suggested fix: a ticket that bumps `schemaVersion` lists the guard
   test in Touches, and the agent prompt says to re-pin `_pinnedVersion` and `_pinnedFingerprint`.
+  Done in wave 26: the lead's fix-wave prompt carries the rule (runbook fix-wave step 1).
 - **#67 a retest agent's helper loop outlived its agent (wave 25).** Ticket 87 wrote `watch.sh` (polls
   the simulator every 20 s for the paywall across the lapse) and ended without stopping it; the
   lead killed it. Suggested fix: runbook step 9 says to stop every background loop the run started
   (keep their PIDs in SCRATCH, like the log stream).
-
-## Done
+  Done before wave 26: runbook step 9.2 says so.
 
 - **#37 spec clashes had no id.** `findings.mjs`: `decision:` also takes
   `docs/ssot/spec/<path>.md#<heading>`; `index` checks the file, the heading and the quote
