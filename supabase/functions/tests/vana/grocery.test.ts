@@ -58,3 +58,43 @@ Deno.test('grocery: always-have matches whole phrases only, never bell pepper', 
   ], new Set());
   assertEquals(items.map((i) => i.name), ['Bell pepper']);
 });
+
+Deno.test('grocery: a cooked-weight grain is bought dry, never at three times the rice (18-006)', () => {
+  // Sweet rice cake with jam, added twice from Browse: 8 servings of "Cooked short-grain rice 200g".
+  const items = buildItems([
+    { id: 'a', servings: 8, baseServings: 1, ingredients: [{ name: 'Cooked short-grain rice', qty: '200g' }, { name: 'Egg', qty: '1' }] },
+  ], new Set());
+  const rice = items.find((i) => i.name.toLowerCase().includes('rice'))!;
+  assert(rice.qty !== '1.6 kg', `bought at cooked weight: ${rice.name} ${rice.qty}`);
+  // 1.6 kg cooked × 0.35 (rice's dry/cooked yield) = 560 g dry.
+  assertEquals(rice.name, 'Short-grain rice'); assertEquals(rice.qty, '560 g');
+  assertEquals(items.find((i) => i.name === 'Egg')!.qty, '8');
+});
+
+Deno.test('grocery: cooked weight given in the name or the amount converts per grain, and joins the dry row', () => {
+  const items = buildItems([
+    { id: 'a', servings: 4, baseServings: 1, ingredients: [{ name: 'white rice, cooked', qty: '200 g' }, { name: 'pasta, cooked', qty: '250 g' }, { name: 'quinoa, cooked', qty: '1/2 cup' }] },
+    { id: 'b', servings: 2, baseServings: 1, ingredients: [{ name: 'white rice', qty: '100g dry' }, { name: 'basmati rice', qty: '180g cooked' }, { name: 'rolled oats, cooked in water', qty: '1 cup' }] },
+  ], new Set());
+  const qty = (n: string) => items.find((i) => i.name === n)?.qty;
+  assertEquals(qty('White rice'), '480 g');        // 800 g cooked × 0.35 + 200 g dry
+  assertEquals(qty('Basmati rice'), '126 g');      // 360 g cooked × 0.35
+  assertEquals(qty('Pasta'), '430 g');             // 1 kg cooked × 0.43
+  assertEquals(qty('Quinoa'), '¾ cup');         // 2 cups cooked ÷ 3 = ⅔, shown to the quarter
+  assertEquals(qty('Rolled oats'), '1 cup');       // 2 cups cooked × ½
+});
+
+Deno.test('grocery: a cooked grain whose amount cannot convert keeps "cooked" in its name', () => {
+  const items = buildItems([
+    { id: 'a', servings: 5, baseServings: 1, ingredients: [{ name: 'short-grain white rice, cooked with cream cheese', qty: '1 square (~70 g)' }] },
+  ], new Set());
+  assertEquals(items.map((i) => i.name), ['Cooked short-grain white rice']);
+});
+
+Deno.test('grocery: cooked food that is not a grain, and uncooked grain, pass through', () => {
+  const items = buildItems([
+    { id: 'a', servings: 2, baseServings: 1, ingredients: [{ name: 'chicken breast, grilled', qty: '180 g' }, { name: 'boiled egg', qty: '1' }, { name: 'jasmine rice', qty: '100g dry' }, { name: 'rice vinegar', qty: '1 tbsp' }] },
+  ], new Set());
+  const qty = (n: string) => items.find((i) => i.name === n)?.qty;
+  assertEquals(qty('Chicken breast'), '360 g'); assertEquals(qty('Jasmine rice'), '200 g'); assertEquals(qty('Rice vinegar'), '2 tbsp');
+});

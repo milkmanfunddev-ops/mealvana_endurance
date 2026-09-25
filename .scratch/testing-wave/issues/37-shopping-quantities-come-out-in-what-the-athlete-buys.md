@@ -13,8 +13,8 @@
 
 **Touches:** supabase/functions/_shared/vana/grocery.ts, lib/features/kroger/presentation/kroger_screen.dart
 
-- [ ] A deno test: 8 servings of cooked short-grain rice at 200 g gives the dry amount (or a "cooked" row), never 1.6 kg of plain rice.
-- [ ] The Kroger screen and the Shopping tab show the same row in the same units (widget test).
+- [x] A deno test: 8 servings of cooked short-grain rice at 200 g gives the dry amount (or a "cooked" row), never 1.6 kg of plain rice.
+- [x] The Kroger screen and the Shopping tab show the same row in the same units (widget test).
 - [ ] Deployed to dev.
 - [ ] codegen if annotations changed, `flutter analyze` and the suite green.
 

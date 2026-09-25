@@ -33,6 +33,12 @@ import 'package:mealvana_endurance/features/content/application/content_service.
 import 'package:mealvana_endurance/features/kroger/application/kroger_controller.dart';
 import 'package:mealvana_endurance/features/kroger/domain/kroger_models.dart';
 import 'package:mealvana_endurance/features/kroger/presentation/kroger_screen.dart';
+import 'package:mealvana_endurance/features/content/domain/content_keys.dart';
+import 'package:mealvana_endurance/features/meal_planning/domain/shopping_item.dart';
+import 'package:mealvana_endurance/features/meal_planning/presentation/widgets/shopping_list.dart';
+import 'package:mealvana_endurance/features/meal_planning/application/shopping_list_controller.dart';
+import 'package:mealvana_endurance/features/nutrition_plan/domain/run_parameters.dart';
+import 'package:mealvana_endurance/shared/providers/unit_system_provider.dart';
 import 'package:mealvana_endurance/theme/kyle_design/app_colors.dart';
 import 'package:mealvana_endurance/theme/kyle_design/app_theme.dart';
 
@@ -219,6 +225,138 @@ void main() {
     'unavailable',
     () => _state(unavailableReason: 'pro_required', connected: false),
   );
+
+  group('a need reads in the Shopping tab\'s units (22-003)', () {
+    // The same rows the run compared: stored metric on `shopping_items.qty`,
+    // one on a matched line and one still waiting for a match.
+    KrogerState needs() => KrogerState(
+      connected: true,
+      environment: 'production',
+      area: '35209',
+      draft: KrogerDraft(
+        planId: _plan,
+        store: spokeStore,
+        environment: 'production',
+        lines: [
+          KrogerLine(
+            id: 'r',
+            name: 'Short-grain rice',
+            requiredQty: '1.6 kg',
+            product: spokeProduct,
+            quantity: 1,
+            approved: true,
+          ),
+          const KrogerLine(id: 'm', name: 'Milk', requiredQty: '400 ml'),
+        ],
+      ),
+    );
+
+    Future<void> pumpKroger(WidgetTester tester, UnitSystem units) async {
+      tester.view.physicalSize = const Size(_seWidth, 2400);
+      tester.view.devicePixelRatio = 1;
+      addTearDown(tester.view.reset);
+      await tester.pumpWidget(
+        ProviderScope(
+          overrides: [
+            contentServiceProvider.overrideWith(testContentService),
+            unitSystemProvider.overrideWith((ref) async => units),
+            krogerControllerProvider(
+              _plan,
+            ).overrideWith(() => _SeededController(needs())),
+          ],
+          child: MaterialApp(
+            theme: AppTheme.lightTheme,
+            home: const KrogerScreen(planId: _plan),
+          ),
+        ),
+      );
+      await tester.pumpAndSettle();
+    }
+
+    /// Pumps the Shopping tab's list with one row and returns [expected] once
+    /// the list is seen drawing it, so the Kroger half compares against what
+    /// the Shopping tab really shows rather than against a retyped string.
+    Future<String> shoppingTabQty(
+      WidgetTester tester,
+      String name,
+      String qty,
+      UnitSystem units,
+      String expected,
+    ) async {
+      final item = ShoppingItem.fromJson({
+        'aisle': 'Other',
+        'name': name,
+        'qty': qty,
+        'checked': false,
+        'have': false,
+        'fromMealIds': const <String>[],
+      });
+      await tester.pumpWidget(
+        ProviderScope(
+          overrides: [contentServiceProvider.overrideWith(testContentService)],
+          child: MaterialApp(
+            home: Scaffold(
+              body: SingleChildScrollView(
+                child: ShoppingList(
+                  state: ShoppingListState(
+                    planId: _plan,
+                    isConfirmed: true,
+                    items: [item],
+                    byAisle: {
+                      'Other': [item],
+                    },
+                    itemCount: 1,
+                    skipped: const [],
+                    totalServings: 1,
+                    mealCount: 1,
+                    meals: const [],
+                  ),
+                  onToggleChecked: (_, _) {},
+                  onAddBack: (_) {},
+                  units: units,
+                ),
+              ),
+            ),
+          ),
+        ),
+      );
+      await tester.pump();
+      expect(find.text(expected), findsOneWidget);
+      // A fresh ProviderScope for the next pump, not an updated one.
+      await tester.pumpWidget(const SizedBox());
+      return expected;
+    }
+
+    String need(String quantity) => ContentKeys.format(
+      loadDefaultContent()[ContentKeys.krogerNeeded]!,
+      {'quantity': quantity},
+    );
+
+    for (final units in UnitSystem.values) {
+      testWidgets('${units.name}: rice and milk read as the Shopping tab reads '
+          'them', (tester) async {
+        final imperial = units == UnitSystem.imperial;
+        final rice = await shoppingTabQty(
+          tester,
+          'Short-grain rice',
+          '1.6 kg',
+          units,
+          imperial ? '3.5 lb' : '1.6 kg',
+        );
+        final milk = await shoppingTabQty(
+          tester,
+          'Milk',
+          '400 ml',
+          units,
+          imperial ? '13.5 fl oz' : '400 ml',
+        );
+
+        await pumpKroger(tester, units);
+        expect(find.text(need(rice)), findsOneWidget);
+        expect(find.text(need(milk)), findsOneWidget);
+      });
+    }
+  });
 
   testWidgets('every control on the screen announces itself', (tester) async {
     // A control a screen reader reaches with nothing to say is unusable, and
