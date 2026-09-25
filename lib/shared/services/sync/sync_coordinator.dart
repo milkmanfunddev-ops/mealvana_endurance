@@ -22,9 +22,11 @@ import '../../../features/meal_logging/data/meal_log_repository.dart';
 import '../../../features/meal_logging/data/saved_meals_repository.dart';
 import '../../../features/integrations/presentation/providers/integrations_providers.dart';
 import '../../../features/formula_kit/data/formula_pins_repository.dart';
+import '../../../features/formula_kit/data/personal_formulas_repository.dart';
 import '../../../features/onboarding/data/onboarding_survey_repository.dart';
 import '../../../features/meal_planning/data/meal_plan_repository.dart';
 import '../../../features/meal_planning/data/user_memory_repository.dart';
+import '../../../features/personal_templates/data/personal_templates_repository.dart';
 
 // Provider imports for invalidation
 import '../../../features/activities/presentation/providers/activities_controller.dart';
@@ -312,6 +314,12 @@ class SyncCoordinator extends _$SyncCoordinator {
           return ref.read(mealPlanRepositoryProvider);
         case 'user_memories':
           return ref.read(userMemoryRepositoryProvider);
+        // Formula Kit (ticket 102): both write locally with needs_upload and
+        // had no retry channel here.
+        case 'personal_formulas':
+          return ref.read(personalFormulasRepositoryProvider);
+        case 'personal_templates':
+          return ref.read(personalTemplatesRepositoryProvider);
         default:
           return null;
       }
@@ -346,6 +354,8 @@ class SyncCoordinator extends _$SyncCoordinator {
     'onboarding_surveys',
     'meal_plans',
     'user_memories',
+    'personal_formulas',
+    'personal_templates',
   ];
 
   /// Test-only view of the dirty-record upload roster, so a regression test

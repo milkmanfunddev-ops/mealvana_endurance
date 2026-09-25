@@ -5,6 +5,9 @@
 /// (the RevenueCat SDK stays identified as the last account) and 02-003
 /// (`Pro entitlement clear failed`: the controller's Ref was read after the
 /// auto-dispose that follows a listener-less `ref.read` from the paywall).
+/// Ticket 102 (Finding 86-007): an offline sign-out keeps the unsynced rows,
+/// their parents and the local-only tables, and says so; an online sign-out
+/// uploads every syncable repository before the wipe.
 ///
 /// `build()` is seeded with a fixed state, as the settings suites do; the
 /// sign-out path itself is the real one, against a real in-memory Drift
@@ -24,12 +27,21 @@ import 'package:mealvana_endurance/features/activities/data/activities_repositor
 import 'package:mealvana_endurance/features/auth/data/user_repository.dart';
 import 'package:mealvana_endurance/features/carb_loading/data/carb_loading_repository.dart';
 import 'package:mealvana_endurance/features/events/data/events_repository.dart';
+import 'package:mealvana_endurance/features/content/application/content_service.dart';
+import 'package:mealvana_endurance/features/content/domain/content_keys.dart';
 import 'package:mealvana_endurance/features/feedback/data/feedback_repository.dart';
 import 'package:mealvana_endurance/features/food_preferences/data/food_preferences_repository.dart';
+import 'package:mealvana_endurance/features/formula_kit/data/formula_pins_repository.dart';
+import 'package:mealvana_endurance/features/formula_kit/data/personal_formulas_repository.dart';
+import 'package:mealvana_endurance/features/integrations/data/integrations_repository.dart';
+import 'package:mealvana_endurance/features/integrations/presentation/providers/integrations_providers.dart';
 import 'package:mealvana_endurance/features/meal_logging/data/meal_log_repository.dart';
 import 'package:mealvana_endurance/features/meal_logging/data/saved_meals_repository.dart';
 import 'package:mealvana_endurance/features/meal_planning/data/meal_plan_repository.dart';
 import 'package:mealvana_endurance/features/meal_planning/data/user_memory_repository.dart';
+import 'package:mealvana_endurance/features/onboarding/data/onboarding_survey_repository.dart';
+import 'package:mealvana_endurance/features/personal_templates/data/personal_templates_repository.dart';
+import 'package:mealvana_endurance/features/settings/application/sign_out_notice.dart';
 import 'package:mealvana_endurance/features/settings/domain/account_deletion_entry.dart';
 import 'package:mealvana_endurance/features/settings/domain/settings_state.dart';
 import 'package:mealvana_endurance/features/settings/presentation/providers/settings_controller.dart';
@@ -37,6 +49,7 @@ import 'package:mealvana_endurance/features/subscription/application/subscriptio
 import 'package:mealvana_endurance/features/subscription/data/subscription_service.dart';
 import 'package:mealvana_endurance/features/subscription/data/user_entitlements_repository.dart';
 import 'package:mealvana_endurance/features/subscription/domain/entitlement.dart';
+import 'package:mealvana_endurance/features/user_foods/data/user_foods_repository.dart';
 import 'package:mealvana_endurance/shared/data/syncable_repository.dart';
 import 'package:mealvana_endurance/shared/database/app_database.dart';
 import 'package:mealvana_endurance/shared/database/database_provider.dart';
@@ -47,6 +60,7 @@ import 'package:mealvana_endurance/shared/services/notification_service.dart';
 import 'package:mealvana_endurance/shared/services/sentry/sentry_reporter.dart';
 
 import '../../helpers/fakes/fake_supabase_client.dart';
+import '../meal_planning/presentation/helpers/test_content.dart';
 
 // ─── Mocks ───────────────────────────────────────────────────────────────────
 
@@ -82,6 +96,21 @@ class _MockSavedMealsRepo extends Mock implements SavedMealsRepository {}
 class _MockMealPlanRepo extends Mock implements MealPlanRepository {}
 
 class _MockUserMemoryRepo extends Mock implements UserMemoryRepository {}
+
+class _MockUserFoodsRepo extends Mock implements UserFoodsRepository {}
+
+class _MockIntegrationsRepo extends Mock implements IntegrationsRepository {}
+
+class _MockFormulaPinsRepo extends Mock implements FormulaPinsRepository {}
+
+class _MockOnboardingSurveyRepo extends Mock
+    implements OnboardingSurveyRepository {}
+
+class _MockPersonalFormulasRepo extends Mock
+    implements PersonalFormulasRepository {}
+
+class _MockPersonalTemplatesRepo extends Mock
+    implements PersonalTemplatesRepository {}
 
 class _FakeScheduler implements LocalNotificationScheduler {
   @override
@@ -180,6 +209,10 @@ void main() {
     await _seedTwoAccounts(db);
   });
 
+  /// Every syncable repository the sign-out uploads, by key, so a test can
+  /// verify each one and decide how it answers.
+  late Map<String, SyncableRepository> repos;
+
   T uploadsNothing<T extends SyncableRepository>(T repo) {
     when(
       () => repo.uploadDirtyRecords(any()),
@@ -188,8 +221,55 @@ void main() {
   }
 
   ProviderContainer makeContainer() {
+    final userFoods = uploadsNothing(_MockUserFoodsRepo());
+    final integrations = uploadsNothing(_MockIntegrationsRepo());
+    final formulaPins = uploadsNothing(_MockFormulaPinsRepo());
+    final onboardingSurvey = uploadsNothing(_MockOnboardingSurveyRepo());
+    final personalFormulas = uploadsNothing(_MockPersonalFormulasRepo());
+    final personalTemplates = uploadsNothing(_MockPersonalTemplatesRepo());
+    final activities = uploadsNothing(_MockActivitiesRepo());
+    final events = uploadsNothing(_MockEventsRepo());
+    final carbLoading = uploadsNothing(_MockCarbLoadingRepo());
+    final feedback = uploadsNothing(_MockFeedbackRepo());
+    final foodPrefs = uploadsNothing(_MockFoodPrefsRepo());
+    final users = uploadsNothing(_MockUserRepo());
+    final mealLogs = uploadsNothing(_MockMealLogRepo());
+    final savedMeals = uploadsNothing(_MockSavedMealsRepo());
+    final mealPlans = uploadsNothing(_MockMealPlanRepo());
+    final userMemories = uploadsNothing(_MockUserMemoryRepo());
+    repos = {
+      'activities': activities,
+      'events': events,
+      'carb_loading_plans': carbLoading,
+      'feedback': feedback,
+      'food_preferences': foodPrefs,
+      'users': users,
+      'meal_logs': mealLogs,
+      'saved_meals': savedMeals,
+      'meal_plans': mealPlans,
+      'user_memories': userMemories,
+      'user_foods': userFoods,
+      'integrations': integrations,
+      'formula_pins': formulaPins,
+      'onboarding_surveys': onboardingSurvey,
+      'personal_formulas': personalFormulas,
+      'personal_templates': personalTemplates,
+    };
+    for (final entry in repos.entries) {
+      when(() => entry.value.repositoryKey).thenReturn(entry.key);
+    }
+
     final c = ProviderContainer(
       overrides: [
+        contentServiceProvider.overrideWith(testContentService),
+        userFoodsRepositoryProvider.overrideWith((ref) async => userFoods),
+        integrationsRepositoryProvider.overrideWithValue(integrations),
+        formulaPinsRepositoryProvider.overrideWithValue(formulaPins),
+        onboardingSurveyRepositoryProvider.overrideWithValue(onboardingSurvey),
+        personalFormulasRepositoryProvider.overrideWithValue(personalFormulas),
+        personalTemplatesRepositoryProvider.overrideWithValue(
+          personalTemplates,
+        ),
         appExternalDepsProvider.overrideWithValue(
           AppExternalDeps(
             analytics: analytics,
@@ -208,41 +288,28 @@ void main() {
           const Duration(milliseconds: 20),
         ),
         settingsControllerProvider.overrideWith(_SeededSettingsController.new),
-        activitiesRepositoryProvider.overrideWithValue(
-          uploadsNothing(_MockActivitiesRepo()),
-        ),
-        eventsRepositoryProvider.overrideWithValue(
-          uploadsNothing(_MockEventsRepo()),
-        ),
-        carbLoadingRepositoryProvider.overrideWithValue(
-          uploadsNothing(_MockCarbLoadingRepo()),
-        ),
-        feedbackRepositoryProvider.overrideWithValue(
-          uploadsNothing(_MockFeedbackRepo()),
-        ),
+        activitiesRepositoryProvider.overrideWithValue(activities),
+        eventsRepositoryProvider.overrideWithValue(events),
+        carbLoadingRepositoryProvider.overrideWithValue(carbLoading),
+        feedbackRepositoryProvider.overrideWithValue(feedback),
         foodPreferencesRepositoryProvider.overrideWith(
-          (ref) async => uploadsNothing(_MockFoodPrefsRepo()),
+          (ref) async => foodPrefs,
         ),
-        userRepositoryProvider.overrideWith(
-          (ref) async => uploadsNothing(_MockUserRepo()),
-        ),
-        mealLogRepositoryProvider.overrideWithValue(
-          uploadsNothing(_MockMealLogRepo()),
-        ),
-        savedMealsRepositoryProvider.overrideWithValue(
-          uploadsNothing(_MockSavedMealsRepo()),
-        ),
-        mealPlanRepositoryProvider.overrideWithValue(
-          uploadsNothing(_MockMealPlanRepo()),
-        ),
-        userMemoryRepositoryProvider.overrideWithValue(
-          uploadsNothing(_MockUserMemoryRepo()),
-        ),
+        userRepositoryProvider.overrideWith((ref) async => users),
+        mealLogRepositoryProvider.overrideWithValue(mealLogs),
+        savedMealsRepositoryProvider.overrideWithValue(savedMeals),
+        mealPlanRepositoryProvider.overrideWithValue(mealPlans),
+        userMemoryRepositoryProvider.overrideWithValue(userMemories),
       ],
     );
     addTearDown(c.dispose);
     return c;
   }
+
+  /// The line the athlete sees after an offline sign-out, from the content
+  /// defaults (never hand-copied).
+  final unsyncedKeptLine =
+      loadDefaultContent()[ContentKeys.settingsSignOutUnsyncedKept]!;
 
   /// The paywall's call shape: a listener-less `ref.read` of the auto-dispose
   /// controller, whose Ref is gone by the time the awaits return.
@@ -263,16 +330,125 @@ void main() {
     },
   );
 
-  test('sign-out logs the RevenueCat SDK out before Supabase (03-002)', () async {
-    final c = makeContainer();
+  group('ticket 102: the wipe keeps unsynced work', () {
+    test(
+      'upload failing (offline): clean rows go; dirty rows, their parents, '
+      'food preferences and the local-only tables stay; the line is set',
+      () async {
+        final c = makeContainer();
+        for (final repo in repos.values) {
+          when(
+            () => repo.uploadDirtyRecords(any()),
+          ).thenAnswer((_) async => UploadResult.failed('offline'));
+        }
+        await _seedUnsyncedWork(db, _outgoing);
 
-    await signOutFromPaywall(c);
+        await signOutFromPaywall(c);
 
-    verifyInOrder([
-      () => subscription.logOut(),
-      () => auth.signOut(),
-    ]);
+        // Clean rows of the Finding's tables are gone.
+        expect(await _count(db, 'activities', _outgoing), 0);
+        expect(await _count(db, 'events', _outgoing), 0);
+        expect(await _count(db, 'integrations', _outgoing), 0);
+        expect(await _count(db, 'user_entitlements', _outgoing), 0);
+        expect(
+          await _count(
+            db,
+            'meal_logs',
+            _outgoing,
+            where: 'AND needs_upload = 0',
+          ),
+          0,
+        );
+        // The offline meal log stays; the offline plan meal keeps its plan.
+        expect(
+          await _count(
+            db,
+            'meal_logs',
+            _outgoing,
+            where: 'AND needs_upload = 1',
+          ),
+          1,
+        );
+        expect(await _count(db, 'plan_meals', _outgoing), 1);
+        expect(await _count(db, 'meal_plans', _outgoing), 1);
+        // The profile stays while unsynced rows stay.
+        expect(await _countUsers(db, _outgoing), 1);
+        // food_preferences: its own upload failed, so it stays.
+        expect(await _count(db, 'food_preferences_table', _outgoing), 1);
+        // No server copy: never deleted by a sign-out.
+        expect(await _count(db, 'race_checklist_items', _outgoing), 1);
+        expect(await _count(db, 'carb_loading_user_foods', _outgoing), 1);
+        // The other account is untouched.
+        expect(await _rowsFor(db, _other), isNot(_allZero));
+        // Sign-out still completes, and says so.
+        verify(() => auth.signOut()).called(1);
+        expect(c.read(signOutNoticeProvider), unsyncedKeptLine);
+      },
+    );
+
+    test(
+      'upload succeeding: every syncable repository uploads before the wipe, '
+      'and no line is set',
+      () async {
+        final c = makeContainer();
+        await _seedUnsyncedWork(db, _outgoing);
+        // Each upload sees the account's rows still on the phone.
+        final rowsAtUpload = <String, int>{};
+        for (final entry in repos.entries) {
+          when(() => entry.value.uploadDirtyRecords(any())).thenAnswer((
+            _,
+          ) async {
+            rowsAtUpload[entry.key] = await _count(db, 'meal_logs', _outgoing);
+            return UploadResult.successful(1);
+          });
+        }
+
+        await signOutFromPaywall(c);
+
+        expect(rowsAtUpload.keys, containsAll(repos.keys));
+        expect(rowsAtUpload.values, everyElement(2));
+        for (final repo in repos.values) {
+          verify(() => repo.uploadDirtyRecords(_outgoing)).called(1);
+        }
+        // The upload marked nothing clean here (mocks), so the dirty rows
+        // stay by the wipe rule; the clean ones are gone.
+        expect(
+          await _count(
+            db,
+            'meal_logs',
+            _outgoing,
+            where: 'AND needs_upload = 0',
+          ),
+          0,
+        );
+        expect(await _count(db, 'activities', _outgoing), 0);
+        expect(c.read(signOutNoticeProvider), isNull);
+      },
+    );
+
+    test('account deletion still deletes everything, dirty or not', () async {
+      final c = makeContainer();
+      await _seedUnsyncedWork(db, _outgoing);
+
+      await c.read(settingsControllerProvider.notifier).deleteAccount();
+
+      expect(await _rowsFor(db, _outgoing), _allZero);
+      expect(await _count(db, 'race_checklist_items', _outgoing), 0);
+      expect(await _count(db, 'carb_loading_user_foods', _outgoing), 0);
+      expect(await _rowsFor(db, _other), isNot(_allZero));
+    });
   });
+
+  test(
+    'sign-out logs the RevenueCat SDK out before Supabase (03-002)',
+    () async {
+      final c = makeContainer();
+
+      await signOutFromPaywall(c);
+
+      verifyInOrder([() => subscription.logOut(), () => auth.signOut()]);
+    },
+  );
 
   group('delete account names where it came from (04-001)', () {
     // The paywall's menu and Settings share the real delete path; only the
@@ -345,6 +521,8 @@ Future<void> _seedTwoAccounts(AppDatabase db) async {
             providerAthleteEmail: Value('$userId@tp.example.com'),
             createdAt: now,
             updatedAt: now,
+            // The table defaults to dirty; these rows are synced.
+            needsUpload: const Value(false),
           ),
         );
     await db
@@ -440,6 +618,77 @@ Future<void> _seedTwoAccounts(AppDatabase db) async {
           ),
         );
   }
+}
+
+/// Unsynced work of [userId] on top of [_seedTwoAccounts]: a second meal log
+/// written offline, a plan meal edited offline, a race checklist item and a
+/// carb-loading user food (both local-only).
+Future<void> _seedUnsyncedWork(AppDatabase db, String userId) async {
+  final now = DateTime.utc(2026, 9, 25, 12);
+  await db
+      .into(db.mealLogsTable)
+      .insert(
+        MealLogsTableCompanion.insert(
+          userId: userId,
+          logDate: '2026-09-25',
+          name: 'Offline oats',
+          source: 'manual',
+          createdAt: now,
+          updatedAt: now,
+          needsUpload: const Value(true),
+        ),
+      );
+  await db.customStatement(
+    'UPDATE plan_meals SET needs_upload = 1 WHERE user_id = ?',
+    [userId],
+  );
+  await db
+      .into(db.raceChecklistItemsTable)
+      .insert(
+        RaceChecklistItemsTableCompanion.insert(
+          eventId: 'event-$userId',
+          userId: userId,
+          category: 'gear',
+          itemName: 'Shoes',
+        ),
+      );
+  await db
+      .into(db.carbLoadingUserFoodsTable)
+      .insert(
+        CarbLoadingUserFoodsTableCompanion.insert(
+          id: 'cluf-$userId',
+          deviceId: 'device-$userId',
+          userId: userId,
+          name: 'my_pasta',
+          displayName: 'My pasta',
+          carbsPerServing: 65,
+        ),
+      );
+}
+
+Future<int> _count(
+  AppDatabase db,
+  String table,
+  String userId, {
+  String where = '',
+}) async {
+  final rows = await db
+      .customSelect(
+        'SELECT COUNT(*) AS n FROM $table WHERE user_id = ? $where',
+        variables: [Variable<String>(userId)],
+      )
+      .get();
+  return rows.single.read<int>('n');
+}
+
+Future<int> _countUsers(AppDatabase db, String userId) async {
+  final rows = await db
+      .customSelect(
+        'SELECT COUNT(*) AS n FROM users WHERE id = ? OR auth_user_id = ?',
+        variables: [Variable<String>(userId), Variable<String>(userId)],
+      )
+      .get();
+  return rows.single.read<int>('n');
 }
 
 /// Row counts for [userId], one per table the Findings listed, in a fixed

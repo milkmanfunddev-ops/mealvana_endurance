@@ -3,6 +3,8 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
 import '../../../../shared/services/app_external_deps.dart';
 import '../../../../shared/services/privacy/analytics_consent.dart';
+import '../../../../shared/widgets/kyle_design/feedback/mealvana_snackbar.dart';
+import '../../../settings/application/sign_out_notice.dart';
 import '../providers/onboarding_analytics.dart';
 import '../theme/onboarding_design_tokens.dart';
 
@@ -19,6 +21,22 @@ class WelcomeScreen extends ConsumerWidget {
 
   @override
   Widget build(BuildContext context, WidgetRef ref) {
+    // A sign-out whose upload failed leaves one line to show here, once
+    // (ticket 102): unsynced changes stay on this phone until the next
+    // sign-in. Read after the frame so the snackbar has a Scaffold to sit on.
+    if (ref.watch(signOutNoticeProvider) != null) {
+      WidgetsBinding.instance.addPostFrameCallback((_) {
+        if (!context.mounted) return;
+        final notice = ref.read(signOutNoticeProvider.notifier).take();
+        if (notice != null) {
+          MealvanaSnackbar.showInfo(
+            context,
+            notice,
+            duration: MealvanaSnackbar.longDuration,
+          );
+        }
+      });
+    }
     return Scaffold(
       backgroundColor: OnbTokens.bg,
       body: Container(

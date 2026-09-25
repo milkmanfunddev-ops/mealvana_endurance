@@ -847,4 +847,29 @@ void main() {
       expect(events, isEmpty);
     });
   });
+
+  group('getAllEvents is scoped to the signed-in account (ticket 102)', () {
+    test("with a second account's events on the phone, returns only the "
+        "signed-in account's", () async {
+      final now = DateTime(2026, 6, 1);
+      for (final owner in [testUserId, 'other-user-999']) {
+        await db
+            .into(db.eventsTable)
+            .insert(
+              EventsTableCompanion.insert(
+                id: Value('event-$owner'),
+                userId: owner,
+                eventType: 'running',
+                eventName: Value('Race of $owner'),
+                createdAt: now,
+                updatedAt: now,
+              ),
+            );
+      }
+
+      final events = await service.getAllEvents(testUserId);
+
+      expect(events.map((e) => e.id), ['event-$testUserId']);
+    });
+  });
 }

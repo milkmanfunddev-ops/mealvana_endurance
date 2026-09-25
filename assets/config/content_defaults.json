@@ -328,7 +328,8 @@
     "log_in_button": "Log into an existing account",
     "sign_out_confirm_body": "You'll need to sign in again to use Mealvana. Your data stays with your account.",
     "connection_reconnect_button": "Reconnect",
-    "connection_needs_reconnect": "Sign in again to keep your workouts syncing."
+    "connection_needs_reconnect": "Sign in again to keep your workouts syncing.",
+    "sign_out_unsynced_kept": "You're offline, so your unsynced changes stay on this phone and sync the next time you sign in."
   },
   "cycling_preferences": {
     "ftp_label": "FTP (Functional Threshold Power)",

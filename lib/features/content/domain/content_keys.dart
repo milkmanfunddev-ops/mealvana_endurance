@@ -185,6 +185,10 @@ class ContentKeys {
   // confirm reuse the paywall's keys so the two screens read the same.
   static const String settingsSignOutConfirmBody =
       'settings.sign_out_confirm_body';
+  // Sign-out with the pre-logout upload failing (ticket 102, Finding 86-007):
+  // the athlete's unsynced changes stay on the phone for the next sign-in.
+  static const String settingsSignOutUnsyncedKept =
+      'settings.sign_out_unsynced_kept';
   // The Profile & Preferences screen's own title (31-014): the settings
   // screen, not onboarding's "Tell us about yourself".
   static const String settingsProfilePreferencesTitle =

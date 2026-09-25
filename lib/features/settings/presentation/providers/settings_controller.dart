@@ -22,6 +22,9 @@ import '../../../coach_mode/data/coach_repository.dart';
 import '../../../events/data/events_repository.dart';
 import '../../../feedback/data/feedback_repository.dart';
 import '../../../food_preferences/data/food_preferences_repository.dart';
+import '../../../formula_kit/data/formula_pins_repository.dart';
+import '../../../formula_kit/data/personal_formulas_repository.dart';
+import '../../../integrations/presentation/providers/integrations_providers.dart';
 import '../../../meal_logging/data/meal_log_repository.dart';
 import '../../../meal_logging/data/saved_meals_repository.dart';
 import '../../../meal_planning/data/meal_plan_repository.dart';
@@ -29,7 +32,11 @@ import '../../../meal_planning/data/user_memory_repository.dart';
 import '../../../../shared/data/syncable_repository.dart';
 import '../../../nutrition_plan/presentation/providers/macro_targets_controller.dart';
 import '../../../onboarding/application/onboarding_snapshot_service.dart';
+import '../../../onboarding/data/onboarding_survey_repository.dart';
+import '../../../personal_templates/data/personal_templates_repository.dart';
 import '../../../subscription/application/subscription_status_provider.dart';
+import '../../../user_foods/data/user_foods_repository.dart';
+import '../../application/sign_out_notice.dart';
 import '../../domain/account_deletion_entry.dart';
 import '../../domain/settings_state.dart';
 
@@ -718,12 +725,19 @@ class SettingsController extends _$SettingsController {
     );
   }
 
-  /// Sign out the current user, leaving nothing of the account on the phone.
+  /// Sign out the current user, leaving nothing the server holds on the phone.
   ///
   /// Order: upload what is still dirty, drop the onboarding prefs, forget the
   /// Pro entitlement and log the RevenueCat SDK out, delete the account's
-  /// local rows, then sign out of Supabase (whose `signedOut` event
+  /// synced local rows, then sign out of Supabase (whose `signedOut` event
   /// invalidates the user providers and sends GoRouter to /welcome).
+  ///
+  /// Ticket 102 (Lee, 2026-09-25): the wipe keeps every row that still needs
+  /// upload, so an offline sign-out loses nothing; those rows upload at the
+  /// account's next sign-in. When the upload fails the athlete is told so in
+  /// one line, through [signOutNoticeProvider], which the Welcome screen
+  /// shows. `food_preferences` has no upload flag: it stays only when its
+  /// own upload failed.
   ///
   /// **Every `ref.read` happens before the first `await`.** This controller
   /// is auto-dispose; the paywall calls it through a listener-less
@@ -741,24 +755,31 @@ class SettingsController extends _$SettingsController {
     final database = ref.read(appDatabaseProvider);
     // keepAlive: the notifier outlives this controller.
     final subscriptionStatus = ref.read(subscriptionStatusProvider.notifier);
+    final signOutNotice = ref.read(signOutNoticeProvider.notifier);
+    final unsyncedKeptLine = _contentService.getValue(
+      ContentKeys.settingsSignOutUnsyncedKept,
+    );
     final currentUser = supabaseClient.auth.currentUser;
-    // The repository reads run now; only the two async providers are awaited
+    // The repository reads run now; only the async providers are awaited
     // later, by which time their futures no longer need the Ref.
     final syncRepos = currentUser == null ? null : _captureSyncRepositories();
 
     await analytics.track('settings_sign_out_tapped');
 
-    // Upload dirty records BEFORE the local rows are deleted below.
+    // Upload dirty records BEFORE the local rows are deleted below. What
+    // fails to upload stays on the phone (the wipe keeps dirty rows).
+    var uploadFailed = <String>{};
     if (currentUser != null && syncRepos != null) {
       try {
-        await _uploadDirtyBeforeLogout(
+        uploadFailed = await _uploadDirtyBeforeLogout(
           currentUser.id,
           await syncRepos,
           logger,
         );
       } catch (e) {
-        // Log error but continue with sign-out
+        // Log error but continue with sign-out; nothing was uploaded.
         logger.error('Pre-logout upload failed', context: 'SETTINGS', error: e);
+        uploadFailed = {_everyRepository};
       }
     }
 
@@ -783,11 +804,17 @@ class SettingsController extends _$SettingsController {
       );
     }
 
-    // Delete the account's local rows (Finding 14-004). After the upload
-    // above nothing is lost; the next sign-in syncs from the server.
+    // Delete the account's synced local rows (Finding 14-004). Rows the
+    // upload above did not land stay for the next sign-in (ticket 102).
     if (currentUser != null) {
       try {
-        await database.clearUserData(currentUser.id);
+        await database.clearUserData(
+          currentUser.id,
+          keepUnsynced: true,
+          keepFoodPreferences:
+              uploadFailed.contains(_everyRepository) ||
+              uploadFailed.contains('food_preferences'),
+        );
       } catch (e) {
         logger.error(
           'Local data clear failed',
@@ -797,9 +824,15 @@ class SettingsController extends _$SettingsController {
       }
     }
 
+    // Say so (Finding 86-007): one line on the Welcome screen.
+    signOutNotice.set(uploadFailed.isEmpty ? null : unsyncedKeptLine);
+
     // Sign out from Supabase (triggers AuthChangeEvent.signedOut)
     await supabaseClient.auth.signOut();
   }
+
+  /// Marker in the failed-upload set when the whole pre-logout upload threw.
+  static const _everyRepository = '*';
 
   /// Reads every syncable repository synchronously (no `await` before the
   /// reads) so the list can be awaited after this controller is disposed.
@@ -817,8 +850,20 @@ class SettingsController extends _$SettingsController {
     // Meal planning (Phase 4b): local-first plan edits + Vana settings.
     final mealPlanRepo = ref.read(mealPlanRepositoryProvider);
     final userMemoryRepo = ref.read(userMemoryRepositoryProvider);
+    // Ticket 102: these six write locally with needs_upload too and were
+    // wiped at sign-out with no upload attempt.
+    final userFoodsRepoFuture = ref.read(userFoodsRepositoryProvider.future);
+    final integrationsRepo = ref.read(integrationsRepositoryProvider);
+    final formulaPinsRepo = ref.read(formulaPinsRepositoryProvider);
+    final onboardingSurveyRepo = ref.read(onboardingSurveyRepositoryProvider);
+    final personalFormulasRepo = ref.read(personalFormulasRepositoryProvider);
+    final personalTemplatesRepo = ref.read(personalTemplatesRepositoryProvider);
 
-    return Future.wait([foodPrefsRepoFuture, userRepoFuture]).then(
+    return Future.wait([
+      foodPrefsRepoFuture,
+      userRepoFuture,
+      userFoodsRepoFuture,
+    ]).then(
       (resolved) => <SyncableRepository>[
         activitiesRepo,
         eventsRepo,
@@ -830,6 +875,12 @@ class SettingsController extends _$SettingsController {
         savedMealsRepo,
         mealPlanRepo,
         userMemoryRepo,
+        resolved[2],
+        integrationsRepo,
+        formulaPinsRepo,
+        onboardingSurveyRepo,
+        personalFormulasRepo,
+        personalTemplatesRepo,
       ],
     );
   }
@@ -841,8 +892,9 @@ class SettingsController extends _$SettingsController {
   /// `UploadResult.failed()`, so every result is checked here and the
   /// failures logged — an unchecked call looks identical to a success.
   /// Takes its collaborators as arguments: it runs after the controller may
-  /// have been disposed (see [signOut]).
-  Future<void> _uploadDirtyBeforeLogout(
+  /// have been disposed (see [signOut]). Returns the keys of the repositories
+  /// whose upload failed (empty when everything landed).
+  Future<Set<String>> _uploadDirtyBeforeLogout(
     String userId,
     List<SyncableRepository> repos,
     AppLogger logger,
@@ -851,15 +903,18 @@ class SettingsController extends _$SettingsController {
       repos.map((repo) => repo.uploadDirtyRecords(userId)),
     );
 
+    final failed = <String>{};
     for (var i = 0; i < repos.length; i++) {
       final result = results[i];
       if (result.success) continue;
+      failed.add(repos[i].repositoryKey);
       logger.error(
         'Pre-logout upload failed for ${repos[i].repositoryKey}',
         context: 'SETTINGS',
         data: {'repository': repos[i].repositoryKey, 'error': result.error},
       );
     }
+    return failed;
   }
 
   /// Delete the current user account

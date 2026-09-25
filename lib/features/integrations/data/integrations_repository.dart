@@ -510,15 +510,6 @@ class IntegrationsRepository with SyncableRepository {
     }
   }
 
-  /// Get all integrations (regardless of user).
-  ///
-  /// Used during onboarding to rebase orphan rows created before the user
-  /// profile was finalized.
-  Future<List<IntegrationModel>> getAllIntegrations() async {
-    final results = await _db.select(_db.integrationsTable).get();
-    return results.map(_toModel).toList();
-  }
-
   // ==========================================================================
   // Supabase mirroring
   // ==========================================================================
