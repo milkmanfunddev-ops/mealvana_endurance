@@ -710,6 +710,36 @@ batch on `feature/carb-loading` (rebased on origin/release/1.27.1). Highlights:
   the meal_logs.slot CHECK-constraint question (routed to qa-6b: do the new
   wire values need a server migration ride-along at land?).
 
+### OVERNIGHT LOG — 2026-09-26 early hours (post-phase-2 hardening)
+
+- **CD-2 data-plane L2** (0a4ba6f7): the walked Banana ×1→×2 flip pinned at
+  the provider — face figure, slot sum, receipt row and breakdown all move
+  in ONE recompute. Frame-level half rides Patrol (qa concurred: §5 rules
+  L2/Patrol; sim-explore complements, never substitutes).
+- **meal_logs.slot CHECK migration** (f4bb5959): qa located the constraint
+  in the record (docs/dev_schema.txt:2429, verified first-hand); widening
+  migration written per README convention — additive, idempotent, legacy
+  'snack' kept, applied BY HAND at land under the standing deploy gate.
+  Pre-existing Drift-nullable-vs-PG-NOT-NULL seam noted in the migration
+  comment, deliberately untouched, queued.
+- **Edit-target entry GAP found** (my find, qa confirmed real): Q-CL10/G6 rule
+  edited targets, the ratified chooser footer PROMISES editing, but no
+  athlete-reachable edit surface is ruled — the legacy dialog's only athlete
+  door was the retired one-shot. Morning item #8: (a) affordance on the plan
+  summary's day rows, or (b) editing out of release-1 + a register amendment
+  to the footer string. NOT pre-built.
+- **CL-12 sweep** (ff5e793b): Edit Target dialog help now states the day's
+  own stored g/kg (was "8-12g/kg"); the caller-less calendar duplicate of
+  the chooser deleted.
+- **Full-suite triage** (ed250353): 4279 pass. Of 35 fails, 50 were MINE by
+  root cause (the carb watch threw in harnesses without its dependency
+  chain → whole dashboard down; plus one smoke of the deleted screen) —
+  fixed by making the carb lookup FAIL SOFT (production-correct: a lookup
+  error renders the regular day, never a dead dashboard). Remaining 4 are
+  pre-existing, verified failing identically on bare origin/release/1.27.1:
+  ci_config develop-test-gate row, CF-2 clamp caption, and the two
+  env-gated manual_live API suites.
+
 ## Notes on the two new ideas
 
 **Reminder to start.** Machinery exists — `NotificationService`
