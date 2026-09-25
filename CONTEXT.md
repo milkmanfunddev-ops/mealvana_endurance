@@ -305,14 +305,20 @@ subscription and Grant they hold. The server copies it onto the Entitlement row 
 _Avoid_: Expiration date, active until (that is the column, not the fact)
 
 **Entitlement row**:
-The server's copy of RevenueCat's answer for one account: active until, period type and the time
-of the last event. Only the webhook writes it; the Gate reads it.
+The server's copy of RevenueCat's answer for one account: active until, period type, whether the
+subscription will renew, and the time of the last event. Only the webhook writes it; the Gate reads it.
 _Avoid_: Entitlements table row, cache row
 
 **Trial**:
 The free first week of a subscription, started at the store. A Trial holds Pro. When it lapses the
 account is Lapsed unless a Grant still runs.
 _Avoid_: Free trial, trial period
+
+**Renewal grace**:
+The 15 minutes past its Expiry that a subscription which will renew keeps Pro, on the server and in
+the app's saved copy, so a renewal webhook that lands a few minutes late never locks out a paying
+athlete. A cancelled subscription, a Trial that won't convert and a Grant get none (mp-684, mp-686).
+_Avoid_: Grace period (the store's billing retry), Legacy grace (a Grant)
 
 **Legacy grace**:
 The thirty-day Grant every account that existed before the paywall receives on the day it opens.
@@ -442,8 +448,12 @@ _Avoid_: micros
 ### Planning meals
 
 **Draft**:
-The meal plan being built in a planning conversation, before it is confirmed. Ticked meals go into it, the plan bar shows it, and it becomes the athlete's plan only at Confirm.
+The meal plan being built in a planning conversation, before it is confirmed. Ticked meals go into it, the plan bar shows it, and it becomes the athlete's plan only at Confirm. A Draft that another confirm archived stays in its conversation, read only, with Use this plan instead (mp-676); it is never listed in Previous plans (mp-677).
 _Avoid_: Draft plan; active week plan (that is the confirmed plan on the phone)
+
+**Previous plans**:
+The list of the athlete's earlier plans, newest first: every plan that was confirmed, including ones a later plan replaced, and never a Draft that was not. From it the athlete opens a plan, changes servings, removes a meal, renames or deletes the plan, or taps Use this plan again, which copies it into this week as a new Draft (mp-675, mp-677, mp-687).
+_Avoid_: Plan history, archived plans
 
 **Batch cooking**:
 Cooking a few meals at one sitting, a cooking session, and eating them across the plan's period. It is a setting Vana asks about once and Settings can change; when it is off, each meal is made the night it is eaten.

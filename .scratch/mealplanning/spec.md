@@ -185,7 +185,7 @@ already written by the hot path. No scheduled sweep yet. (mp-288, mp-253)
 mid-conversation episode from the opening half. The opener says the most relevant thing Vana
 already holds from the memory table and the newest episodes as they stand, and leaves last time
 out when its episode does not exist yet. Episodes and the LAST TALKS line stay. (mp-278, mp-008,
-mp-038)
+mp-419)
 
 **The margin-note rule is the definition of a Memory** and the literal instruction to the
 extractor: one sentence a good dietitian would write in the margin of the person's file, only
@@ -256,22 +256,16 @@ the sheet: what the Allowance is, when it renews, and the two packs. In Vana the
 shows it, with one line above the composer; Vana never says "out of credits" mid-thread. The
 server keeps returning 402 and the client keeps one handler for it in the shared layer. (mp-282)
 
-**Existing accounts get no grace period.** They meet the paywall and the store trial on first
-launch of the new build. Paid pack credits stay in the wallet. (mp-283)
-
 **An unknown entitlement is locked, and the cache wins when it exists.** The SDK's cached
 entitlement is the answer whenever there is one, online or not, and the gate reacts when it
 changes. No cache and no answer within a couple of seconds is locked, with Restore purchases on
 the paywall. (mp-284)
 
-**The entitlements table is a two-field cache of RevenueCat.** The webhook alone writes active
-until and period type; the server gates every debiting or Vana call on them. On any disagreement
-RevenueCat wins, an event older than the row's event time is ignored, and nothing grants an
-entitlement from the app side. (mp-285)
-
-**Coaches get nothing special yet.** One gate, one trial, the same subscription, no coach branch
-in the code. The coach rule is an open question waiting on Xuan's paywall document; when it is
-written the adaptation path is a RevenueCat grant on the coach role. (mp-286)
+**The Entitlement row is a small copy of RevenueCat, written only by the webhook.** On every
+event about Pro the webhook asks RevenueCat when Pro ends and writes that date; if Pro is not live
+the row closes, and if RevenueCat cannot be reached it writes nothing so the event comes again. On
+any disagreement RevenueCat wins, an event older than the row's event time is ignored, and nothing
+grants an entitlement from the app side. (mp-609)
 
 **Feedback is already a tool.** The save-feedback tool writes sentiment, an about-field, the
 message, and the conversation to the feedback table. This spec's only feedback work is verifying
