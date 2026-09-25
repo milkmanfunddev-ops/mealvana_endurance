@@ -3452,3 +3452,41 @@ An edit made while notes are being written is picked up on the next open. A requ
 **What it touches.** The Gate's reading of the saved copy (ticket 67), `RENEWAL_GRACE_MS` on the server.
 
 > 2026-09-25 proposed by Lee in the terminal (answers mp-666)
+
+## mp-680 · When an athlete has lowered their own carb rate, what should the during-run band say?
+- category: Build
+- kind: question
+- status: open
+- linked: none
+- image: none
+- screen: none (Activity detail's during-run carb line; the band's wording is the question)
+- source: wave testing-wave 22 ticket 63
+
+**Context.** Finding 30-003 saw a 12 mi run store 91 g of carbs for the run while its own band reads 97 to 126 g. Wave 22 traced it: the engine gives 63 g/h (113 g, inside the band) at every body weight, as the ratified during-workout math says. The 91 g comes from test@test.com's own override, 50.4 g/h, which the "Way Too Much" carb feedback wrote (63 × 0.8). The rate follows the override, but the band stays the engine's 54 to 70 g/h, so the athlete's own choice reads as below target. Each further "Way Too Much" tap lowers the rate again by a fifth.
+
+**Question.** Once an athlete has set their own rate: (A) the band moves to sit around their rate; (B) the band stays the engine's, and the screen stops flagging their own rate as low; (C) the band stays and the flag stays, since the engine's band is the science.
+
+**Why.** A keeps the band and the number in step but hides what the research says. B keeps the research visible and treats the athlete's rate as a choice, not a miss. C is today's behaviour, which reads as a bug in testing.
+
+**What it touches.** How the during-run band is shown next to a personal override, the retest of Finding 30-003 (test@test.com still holds the 50.4 override), and whether repeated feedback taps should compound.
+
+> 2026-09-25 opened in wave 22 ticket 63
+
+## mp-681 · Can an athlete add new meals to an earlier plan?
+- category: Plan tab
+- kind: question
+- status: open
+- linked: mp-675
+- image: none
+- screen: none (the earlier-plan view at /food/plans/:id has no registry entry yet)
+- source: wave testing-wave 22 ticket 73
+
+**Context.** mp-675 says an athlete "can edit its meals and servings, rename it or delete it" from Previous plans. Wave 22 built servings (a stepper on each row) and remove (the row's menu), plus rename, delete and Use this plan again. It did not build adding a meal that was not in the plan: the earlier-plan view has no Browse or picker, and adding there would mean a meal search that writes into a plan that is not this week's.
+
+**Question.** Should editing an earlier plan include adding new meals? (A) No: servings and remove are enough; to add meals, Use this plan again and add them to the new draft in a chat. (B) Yes: the earlier-plan view gets an Add meal button that opens Browse and writes into that plan.
+
+**Why.** A keeps the earlier plan a record the athlete can tidy, and all planning stays in the chat. B matches "edit its meals" word for word, at the cost of a second place that builds plans.
+
+**What it touches.** The earlier-plan view (`previous_plan_screen.dart`), `EarlierPlan` in `previous_plans.dart`, and Browse's add path in `_shared/vana/`.
+
+> 2026-09-25 opened in wave 22 ticket 73
