@@ -1012,9 +1012,15 @@ class _VanaChatScreenState extends ConsumerState<VanaChatScreen> {
       onServings: (meal, servings) =>
           planController.setServings(meal.id, servings),
       onRemove: (meal) => planController.removeMeal(meal.id),
+      // The sheet shows THIS conversation's draft, so Confirm names it. An
+      // unscoped confirm_plan lands on the week's active plan, which puts an
+      // old confirmed plan first and archived the Draft on screen (16-001).
       onConfirm: () async {
         try {
-          await planController.confirmPlan();
+          await planController.confirmPlan(
+            planId: plan.id,
+            conversationId: _conversationId,
+          );
           return true;
         } on Exception {
           return false;

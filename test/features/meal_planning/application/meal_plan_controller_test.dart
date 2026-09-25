@@ -261,6 +261,22 @@ void main() {
       );
     });
 
+    /// Testing-wave 16-001 (ticket 34): an unscoped `confirm_plan` lands on
+    /// the week's active plan, which puts an old confirmed plan before the
+    /// Draft on screen. The wire must carry the conversation and its plan.
+    test('confirmPlan carries the conversation and plan scope', () async {
+      final c = controller();
+      await c.future;
+
+      await c.confirmPlan(conversationId: 'conv-1', planId: 'plan-1');
+
+      final sent = actions.calls.whereType<ConfirmPlanAction>().single;
+      expect(sent.toPayloadJson(), {
+        'planId': 'plan-1',
+        'conversationId': 'conv-1',
+      });
+    });
+
     test('offline → NeedsConnectionException before any request', () async {
       connectivity.online = false;
       final c = controller();
