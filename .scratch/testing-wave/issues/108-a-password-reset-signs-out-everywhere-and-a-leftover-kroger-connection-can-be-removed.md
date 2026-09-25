@@ -1,6 +1,6 @@
 # 108: A password reset signs out everywhere else, and a leftover Kroger connection can be removed
 
-**Status:** ready-for-agent
+**Status:** in-progress (wave 28, 2026-09-25)
 **Blocked by:** none.
 **Next:** `/implement-lee testing-wave`
 **Model:** opus
