@@ -175,6 +175,8 @@ class MacroDashboardAssembler {
         // 2026-08-18). Mark-UNDONE on a (legacy) confirmed future card stays
         // available so it can be corrected.
         markDoneAllowed: !dayFuture,
+        // A platform-reported completion is final (Lee, 2026-09-25).
+        completionFinal: a.isProviderCompleted,
       ),
     );
   }

@@ -14,6 +14,7 @@ import '../../../shared/domain/activity_type.dart';
 import '../../../shared/data/syncable_repository.dart';
 import '../domain/activity.dart' as domain;
 import '../domain/brick_metadata.dart';
+import '../domain/provider_completion_is_final.dart';
 import 'activity_mapper.dart';
 import '../application/activity_deduplication_service.dart';
 
@@ -508,16 +509,19 @@ class ActivitiesRepository with SyncableRepository {
       }
     }
 
-    if (idBacked.isNotEmpty) {
-      await _upsertWithConflictFallback(
-        idBacked.map(_mapper.buildUploadPayloadFromRow).toList(),
-        onConflict: 'id',
-      );
+    // One request per key set: a row that omits an unset completion_type
+    // must not share a request with rows that send it (ticket 101).
+    for (final batch in ActivityMapper.uniformKeyBatches(
+      idBacked.map(_mapper.buildUploadPayloadFromRow).toList(),
+    )) {
+      await _upsertWithConflictFallback(batch, onConflict: 'id');
     }
 
-    if (providerBacked.isNotEmpty) {
+    for (final batch in ActivityMapper.uniformKeyBatches(
+      providerBacked.map(_mapper.buildUploadPayloadFromRow).toList(),
+    )) {
       await _upsertWithConflictFallback(
-        providerBacked.map(_mapper.buildUploadPayloadFromRow).toList(),
+        batch,
         onConflict: 'user_id,synced_from_provider,provider_workout_id',
         fallbackOnConflict: 'id',
       );
@@ -799,7 +803,11 @@ class ActivitiesRepository with SyncableRepository {
 
   /// G2: mark-undone CLEARS actual_time — back to null, not zero — so the
   /// card returns to planned_time.
+  ///
+  /// A platform-reported completion is final for the athlete (Lee,
+  /// 2026-09-25): throws [ProviderCompletionIsFinal] and writes nothing.
   Future<void> markWorkoutUndone({required String activityId}) async {
+    await _refuseIfProviderCompleted(activityId);
     final now = DateTime.now();
     await (_database.update(
       _database.activitiesTable,
@@ -826,7 +834,11 @@ class ActivitiesRepository with SyncableRepository {
   /// and fuel windows (platform-resolution.md SKIPPED addition) and loses
   /// its timeline slot (S-7). Sync beats skip: a later matching platform
   /// sync overwrites this with completed + the measured actual_time.
+  ///
+  /// Skipping clears the completion, so a platform-reported completion
+  /// refuses it the same way as mark-undone ([ProviderCompletionIsFinal]).
   Future<void> skipWorkout({required String activityId}) async {
+    await _refuseIfProviderCompleted(activityId);
     final now = DateTime.now();
     await (_database.update(
       _database.activitiesTable,
@@ -841,6 +853,15 @@ class ActivitiesRepository with SyncableRepository {
       ),
     );
     await _queueImmediateActivityUpsertById(activityId, operation: 'skip');
+  }
+
+  Future<void> _refuseIfProviderCompleted(String activityId) async {
+    final row = await (_database.select(
+      _database.activitiesTable,
+    )..where((tbl) => tbl.id.equals(activityId))).getSingleOrNull();
+    if (row != null && _mapper.fromDriftRow(row).isProviderCompleted) {
+      throw ProviderCompletionIsFinal(activityId);
+    }
   }
 
   /// G5 Unskip: status back to planned; planned_time untouched (the card

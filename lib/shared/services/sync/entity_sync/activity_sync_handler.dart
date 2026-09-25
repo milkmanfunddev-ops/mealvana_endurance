@@ -380,7 +380,10 @@ class ActivitySyncHandler {
       'completed_at': activity.completedAt?.toIso8601String(),
       'actual_distance_miles': activity.actualDistanceMiles,
       'actual_duration_minutes': activity.actualDurationMinutes,
-      'completion_type': activity.completionType ?? 'manual',
+      // Only when set: a null must never overwrite a server 'provider' with
+      // 'manual' (ticket 101).
+      if (activity.completionType != null)
+        'completion_type': activity.completionType,
       'completion_rating': activity.completionRating,
       'completion_notes': activity.completionNotes,
       'nutrition_plan_data': _decodeJsonIfNeeded(activity.nutritionPlanData),

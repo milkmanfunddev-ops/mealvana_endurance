@@ -14,6 +14,7 @@ import '../../../../shared/services/performance_telemetry.dart';
 import '../../../auth/application/supabase_auth_service.dart';
 import '../../../integrations/application/integration_sync_coordinator.dart';
 import '../../domain/brick_metadata.dart';
+import '../../domain/provider_completion_is_final.dart';
 
 part 'activities_controller.g.dart';
 
@@ -331,8 +332,13 @@ class ActivitiesController extends _$ActivitiesController {
 
   /// Mark a workout not-done (macro-dashboard G2): actual_time CLEARED to
   /// null so the card returns to planned_time.
+  ///
+  /// A platform-reported completion is final (Lee, 2026-09-25): throws
+  /// [ProviderCompletionIsFinal] before any optimistic flip. The repository
+  /// refuses it too, for a row whose shown state is stale.
   Future<void> markWorkoutUndone(String activityId) async {
     final previous = state.value ?? const <Activity>[];
+    _refuseIfProviderCompleted(previous, activityId);
     state = AsyncData([
       for (final a in previous)
         if (a.id == activityId)
@@ -355,6 +361,7 @@ class ActivitiesController extends _$ActivitiesController {
   /// recomputes in one frame (S-2) with no loading flash.
   Future<void> skipWorkout(String activityId) async {
     final previous = state.value ?? const <Activity>[];
+    _refuseIfProviderCompleted(previous, activityId);
     state = AsyncData([
       for (final a in previous)
         if (a.id == activityId)
@@ -368,6 +375,14 @@ class ActivitiesController extends _$ActivitiesController {
       _logger.error('Error skipping workout', error: e);
       if (ref.mounted) state = AsyncData(previous);
       rethrow;
+    }
+  }
+
+  void _refuseIfProviderCompleted(List<Activity> shown, String activityId) {
+    for (final a in shown) {
+      if (a.id == activityId && a.isProviderCompleted) {
+        throw ProviderCompletionIsFinal(activityId);
+      }
     }
   }
 
