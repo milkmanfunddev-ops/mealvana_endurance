@@ -16,6 +16,8 @@ interface Scenario {
   id: string; task: string; athlete: ProfileKey; character: string;
   kind?: 'meal_planning' | 'general';
   seed?: { existing_plan?: boolean; awaiting_debrief?: boolean };
+  /** The conversation was opened from "New meal plan" on the Plan tab (chat.ts `new_plan`). An empty first turn is the opener. */
+  new_plan?: boolean;
   turns: string[];
 }
 
@@ -86,7 +88,7 @@ for (const s of selected) {
     const traces: TurnTrace[] = [];
     const prevAssistant = (fake.tables.vana_messages ?? []).filter((r) => r.role === 'assistant').length;
     const t0 = Date.now();
-    const outcome = await runChat(v, { message: s.turns[i], conversation_id: conversationId, kind: s.kind ?? 'meal_planning', timezone: 'America/Chicago', anchor_date: ANCHOR, input_mode: 'typed' }, { functionName: 'evals-vana', onTrace: (t) => traces.push(t) });
+    const outcome = await runChat(v, { message: s.turns[i], conversation_id: conversationId, kind: s.kind ?? 'meal_planning', new_plan: s.new_plan, timezone: 'America/Chicago', anchor_date: ANCHOR, input_mode: 'typed' }, { functionName: 'evals-vana', onTrace: (t) => traces.push(t) });
     turns++;
     if (!outcome.ok) {
       console.warn(`[evals] ${s.id} turn ${i + 1}: refused (${JSON.stringify(outcome.body)})`);

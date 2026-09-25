@@ -240,7 +240,12 @@ class _PlanRevealScreenState extends ConsumerState<PlanRevealScreen> {
           ),
           const SizedBox(height: 16),
         ],
-        if (draft.connectedProvider == null && widget.onConnectTap != null) ...[
+        // No nudge for an athlete who tapped "I don't use training plan
+        // apps" (04-008); a plain skip still gets it. Same guard as the
+        // daily preview.
+        if (draft.connectedProvider == null &&
+            !draft.declinedTrainingApps &&
+            widget.onConnectTap != null) ...[
           OnboardingConnectNudgeCard(
             key: const ValueKey('plan_reveal.connect_nudge'),
             onConnectNow: widget.onConnectTap!,

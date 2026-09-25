@@ -54,10 +54,12 @@ class _SwapMealScreenState extends ConsumerState<SwapMealScreen> {
               mealType: meal.mealType,
               excludeIds: exclude.where((id) => !id.contains(' ')).toSet(),
               limit: 20,
-            )
-            // A swap puts the pick in the plan, so a meal with missing
-            // numbers is never offered (mp-678, testing-wave 74).
-            .then((ms) => [...ms.where((m) => m.hasNutritionNumbers)]);
+              // A swap puts the pick in the plan, so a meal with missing
+              // numbers is never offered (mp-678, testing-wave 74), and
+              // the search leaves them out before the cap so the list
+              // still fills (testing-wave 94).
+              requireNutritionNumbers: true,
+            );
       });
     });
   }

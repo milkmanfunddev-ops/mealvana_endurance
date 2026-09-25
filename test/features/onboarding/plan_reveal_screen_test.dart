@@ -179,6 +179,27 @@ void main() {
     );
   });
 
+  testWidgets('no nudge after "I don\'t use training plan apps"', (
+    tester,
+  ) async {
+    // Finding 04-008 (testing-wave 94 item 2): the same guard the daily
+    // preview took in ticket 80. A plain skip still gets the nudge.
+    final container = await pumpScreen(tester, onConnectTap: () {});
+    container
+        .read(onboardingControllerProvider.notifier)
+        .recordDeclinedTrainingApps();
+    await settleReveal(tester);
+
+    expect(
+      find.byKey(const ValueKey('plan_reveal.connect_nudge')),
+      findsNothing,
+    );
+    expect(
+      find.byKey(const ValueKey('plan_reveal.connected_plan_card')),
+      findsNothing,
+    );
+  });
+
   /// A connected-provider bundle whose digest covers Jul 20–26 2026.
   OnboardingPreviewBundle connectedBundle() => OnboardingPreviewBundle(
     preview: genericBundle.preview,

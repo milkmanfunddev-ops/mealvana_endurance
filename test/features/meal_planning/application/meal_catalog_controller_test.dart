@@ -44,6 +44,7 @@ class _FakeRemote extends Fake implements MealLibraryRemoteDataSource {
     bool includeDisliked = false,
     Set<String> excludeIds = const {},
     int offset = 0,
+    bool requireNutritionNumbers = false,
   }) async {
     searches.add({
       'query': query,

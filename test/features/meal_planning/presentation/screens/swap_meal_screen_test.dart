@@ -54,9 +54,12 @@ Map<String, dynamic> _searchRow(
   'score': 0.9,
 };
 
+/// Stands in for the RPC only: the rows go through the data source's real
+/// selection, so what the screen asks for is what decides the list.
 class _FakeRemote extends Fake implements MealLibraryRemoteDataSource {
   _FakeRemote(this.rows);
   final List<Map<String, dynamic>> rows;
+  bool? askedForNumbers;
 
   @override
   Future<List<MealRef>> searchMeals({
@@ -72,9 +75,16 @@ class _FakeRemote extends Fake implements MealLibraryRemoteDataSource {
     bool includeDisliked = false,
     Set<String> excludeIds = const {},
     int offset = 0,
-  }) async => [
-    for (final r in rows) MealLibraryRemoteDataSource.rowToMealRef(r)!,
-  ];
+    bool requireNutritionNumbers = false,
+  }) async {
+    askedForNumbers = requireNutritionNumbers;
+    return MealLibraryRemoteDataSource.selectSearchRows(
+      rows,
+      limit: limit,
+      excludeIds: excludeIds,
+      requireNutritionNumbers: requireNutritionNumbers,
+    );
+  }
 }
 
 /// Holds a plan with one dinner, the meal being swapped out.
@@ -112,31 +122,30 @@ void main() {
   ) async {
     // The screen reads the plan once, after its first frame, the way it finds
     // it loaded when opened from the Plan tab.
+    final remote = _FakeRemote([
+      // Ranked first, so a guard that only looked past the top
+      // result would still be caught.
+      _searchRow(
+        'AD-103',
+        'Farro & cauliflower bowl',
+        kcal: null,
+        carbs: null,
+        protein: null,
+        fat: null,
+      ),
+      _searchRow('AD-015', 'Lentil dal'),
+      // One number missing is enough to leave it out.
+      _searchRow('AD-016', 'Tofu stir fry', fat: null),
+      // 0 g fat is a number: this one stays.
+      _searchRow('AD-017', 'Chicken rice', fat: 0),
+    ]);
     final container = ProviderContainer(
       overrides: [
         contentServiceProvider.overrideWith(testContentService),
         mealPlanControllerProvider.overrideWith(
           () => _PlanController(planWithOneDinner()),
         ),
-        mealLibraryRemoteDataSourceProvider.overrideWithValue(
-          _FakeRemote([
-            // Ranked first, so a guard that only looked past the top
-            // result would still be caught.
-            _searchRow(
-              'AD-103',
-              'Farro & cauliflower bowl',
-              kcal: null,
-              carbs: null,
-              protein: null,
-              fat: null,
-            ),
-            _searchRow('AD-015', 'Lentil dal'),
-            // One number missing is enough to leave it out.
-            _searchRow('AD-016', 'Tofu stir fry', fat: null),
-            // 0 g fat is a number: this one stays.
-            _searchRow('AD-017', 'Chicken rice', fat: 0),
-          ]),
-        ),
+        mealLibraryRemoteDataSourceProvider.overrideWithValue(remote),
       ],
     );
     addTearDown(container.dispose);
@@ -158,5 +167,8 @@ void main() {
     expect(find.text('Chicken rice'), findsOneWidget);
     expect(find.text('Farro & cauliflower bowl'), findsNothing);
     expect(find.text('Tofu stir fry'), findsNothing);
+    // The search itself leaves the blank ones out, so they never use up the
+    // list's slots (testing-wave 94 item 1).
+    expect(remote.askedForNumbers, isTrue);
   });
 }

@@ -189,6 +189,9 @@ class ContentKeys {
   // screen, not onboarding's "Tell us about yourself".
   static const String settingsProfilePreferencesTitle =
       'settings.profile_preferences_title';
+  // The Settings tile that opens it: same title, its own subtitle.
+  static const String settingsProfilePreferencesSubtitle =
+      'settings.profile_preferences_subtitle';
   static const String settingsProfileSection = 'settings.profile_section';
   static const String settingsPreferencesSection =
       'settings.preferences_section';
@@ -1098,8 +1101,7 @@ class ContentKeys {
   static const String redeemCodeRefusedAlreadyRedeemed =
       'redeem_code.refused_already_redeemed';
   static const String redeemCodeRefusedOwnCode = 'redeem_code.refused_own_code';
-  static const String redeemCodeRefusedTooLong =
-      'redeem_code.refused_too_long';
+  static const String redeemCodeRefusedTooLong = 'redeem_code.refused_too_long';
   static const String redeemCodeRefusedOther = 'redeem_code.refused_other';
   static const String redeemCodeFailedSignIn = 'redeem_code.failed_sign_in';
   static const String redeemCodeFailedUnavailable =
