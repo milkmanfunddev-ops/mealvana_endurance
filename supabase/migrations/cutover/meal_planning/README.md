@@ -169,3 +169,28 @@ is covered by the compat views. So the rollback is not "undo the migrations"
 > `supabase/migrations/20260903120000_meal_planning_relationship_loop.sql` — `meal_plans.checkin_done_at`,
 > `meal_plans.debrief_done_at` and the `plan_debriefs` table (RLS owner policy). Server-only columns; no Drift bump.
 > Applied to DEV by hand on 2026-09-03 (Management API — `db push` is still blocked by the phantom-history rows).
+
+## Testing-wave fixes (added 2026-09-25)
+
+Five more migrations, applied to dev only, all idempotent. On prod they go in
+step 2 like the rest, in timestamp order:
+
+- `20260925100000_user_entitlements_will_renew` then
+  `20260925110000_allowance_survives_renewal_grace` (ticket 38): the second
+  reads the first's column. Both before any function that imports
+  `_shared/vana/entitlement.ts` is deployed (the gate and the webhook select
+  `will_renew`; deployed first, they refuse everyone and the webhook answers 500).
+- `20260925120000_code_redemptions_outlive_account` (ticket 39):
+  `code_redemptions.user_id` becomes `ON DELETE SET NULL`.
+- `20260925140000_meal_library_nutrition_origin` (mp-678): adds
+  `nutrition_origin` / `nutrition_source_url`. It must be on prod **before
+  the step 3 seed**, since the snapshot now carries those columns.
+- `20260925141000_meal_library_fill_31_nutrition`: fills the 31 meals that had
+  no numbers (all `ai_estimated`) and backfills `plan_meals`. On prod it
+  changes nothing once the re-exported snapshot is seeded (the values ride in
+  the snapshot); it is kept so the ledger matches dev.
+
+Step 6 also redeploys every function that imports `_shared/vana/entitlement.ts`
+(on 2026-09-25: `revenuecat-webhook`, `analyze-meal-photo`, `describe-meal`,
+`jade-chat`, `kroger`, `meal-photo`, `vana-action`, `vana-chat`,
+`vana-day-notes`); check with `deno info` at cutover.
