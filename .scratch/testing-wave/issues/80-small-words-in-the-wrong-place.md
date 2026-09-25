@@ -13,7 +13,7 @@
 
 **Touches:** lib/features/subscription/presentation/screens/paywall_screen.dart, lib/features/macro_dashboard/domain/dashboard_models.dart, lib/features/settings/presentation/screens/preferences_screen.dart, lib/features/onboarding/presentation/screens/daily_plan_preview_screen.dart, assets/config/content_defaults.json
 
-- [ ] A test for each of the four.
-- [ ] codegen if annotations changed, `flutter analyze` and the suite green.
+- [x] A test for each of the four.
+- [ ] codegen if annotations changed (none needed), `flutter analyze` (green on every touched file) and the suite green (lead).
 
 Next: /implement-lee testing-wave
