@@ -100,6 +100,10 @@ class SubscriptionService {
   /// Identify [userId] with RevenueCat (idempotent; a no-op before configure).
   Future<void> logIn(String userId) => _revenueCat.logIn(userId);
 
+  /// Return the SDK to an anonymous customer with an empty cache (sign-out,
+  /// account deletion). A no-op before configure or when already anonymous.
+  Future<void> logOut() => _revenueCat.logOut();
+
   /// The status RevenueCat currently holds for the identified customer.
   ///
   /// With a cache on disk the SDK answers from it at once, online or not

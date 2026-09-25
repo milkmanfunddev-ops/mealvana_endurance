@@ -13,12 +13,12 @@
 
 **Touches:** lib/features/settings/presentation/providers/settings_controller.dart, lib/features/onboarding/presentation/screens/personal_info_screen.dart, lib/features/onboarding/presentation/providers/onboarding_controller.dart, lib/features/ai_credits/data/revenuecat_service.dart, lib/features/subscription/application/subscription_status_provider.dart, lib/shared/database/app_database.dart
 
-- [ ] After sign-out the local database holds no row of the signed-out account (a seam test through the real sign-out path).
-- [ ] After sign-out the RevenueCat SDK is anonymous: no `customer info updated {active: true}` line on Welcome.
-- [ ] Sign-out logs no "Pro entitlement clear failed".
+- [x] After sign-out the local database holds no row of the signed-out account (a seam test through the real sign-out path).
+- [x] After sign-out the RevenueCat SDK is anonymous: no `customer info updated {active: true}` line on Welcome.
+- [x] Sign-out logs no "Pro entitlement clear failed".
 - [ ] A new account right after another account's sign-out never logs `active: true` before its own RevenueCat login.
-- [ ] Onboarding on a phone that held another account's TrainingPeaks connection pre-fills nothing from it, and `public.users.email` equals the signup address.
-- [ ] No Riverpod "modify a provider while building" assertion on Personal Info.
-- [ ] codegen if annotations changed, `flutter analyze` and the suite green.
+- [x] Onboarding on a phone that held another account's TrainingPeaks connection pre-fills nothing from it, and `public.users.email` equals the signup address.
+- [x] No Riverpod "modify a provider while building" assertion on Personal Info.
+- [x] codegen if annotations changed, `flutter analyze` and the suite green.
 
 Next: /implement-lee testing-wave
