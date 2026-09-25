@@ -9,6 +9,7 @@ import '../../../events/presentation/providers/events_controller.dart';
 import '../../domain/carb_loading_entryway_engine.dart';
 import '../../domain/carb_loading_pace_engine.dart';
 import '../providers/carb_loading_controller.dart';
+import '../widgets/carb_repick_dialogs.dart';
 import 'carb_loading_protocol_selection_screen.dart';
 
 /// The plan summary surface — a full PAGE (desk G12; the sheet fork is
@@ -316,9 +317,16 @@ class CarbPlanSummaryScreen extends ConsumerWidget {
       case RepickDialogType.none:
         keepEdits = false; // quiet regenerate — outcome is the derivation.
       case RepickDialogType.keepReset:
-        keepEdits = await _showKeepResetDialog(context, decision, selected);
+        keepEdits = await showCarbRepickKeepResetDialog(
+          context,
+          decision: decision,
+        );
       case RepickDialogType.notice:
-        final proceed = await _showNoticeDialog(context, decision, selected);
+        final proceed = await showCarbRepickNoticeDialog(
+          context,
+          decision: decision,
+          targetProtocolName: _protocolName(selected),
+        );
         keepEdits = proceed == true ? false : null;
     }
     if (keepEdits == null || !context.mounted) return; // CE-9 abort.
@@ -336,60 +344,6 @@ class CarbPlanSummaryScreen extends ConsumerWidget {
         'Switched to the ${_protocolName(selected)} protocol',
       );
     }
-  }
-
-  /// CE-4 exactly-two-choice dialog. Returns true = keep, false = reset,
-  /// null = CE-9 backdrop abort. `barrierDismissible` IS the abort gesture —
-  /// no third button.
-  Future<bool?> _showKeepResetDialog(
-    BuildContext context,
-    RepickDecision decision,
-    int targetProtocol,
-  ) {
-    final listed = decision.listedEdits
-        .map(
-          (e) =>
-              'Day ${e.targetDayNumber} (${_dateStr(e.date)}) — you set '
-              '${e.storedG} g',
-        )
-        .join('; ');
-    final dropped = decision.droppedDates.isEmpty
-        ? ''
-        : '\n${decision.droppedDates.map(_dateStr).join(', ')} '
-              'falls outside the new window — that target goes away.';
-    return showDialog<bool>(
-      context: context,
-      barrierDismissible: true, // CE-9
-      builder: (ctx) => _dialogShell(
-        title: 'Keep your edited targets?',
-        body: 'You edited: $listed.$dropped',
-        actions: [
-          _primaryAction(ctx, 'Keep my targets', true),
-          _secondaryAction(ctx, 'Reset to protocol', false),
-        ],
-      ),
-    );
-  }
-
-  /// F4 single-button notice. Returns true = proceed, null = abort (CE-9).
-  Future<bool?> _showNoticeDialog(
-    BuildContext context,
-    RepickDecision decision,
-    int targetProtocol,
-  ) {
-    final name = _protocolName(targetProtocol);
-    final dates = decision.droppedDates.map(_dateStr).join(', ');
-    return showDialog<bool>(
-      context: context,
-      barrierDismissible: true, // CE-9
-      builder: (ctx) => _dialogShell(
-        title: 'Edited target won’t carry over',
-        body:
-            'On the $name protocol, $dates falls outside the window — your '
-            'edited target goes away. Day targets reset to protocol.',
-        actions: [_primaryAction(ctx, 'Switch to $name', true)],
-      ),
-    );
   }
 
   Widget _deleteRow(BuildContext context, WidgetRef ref) {
@@ -491,15 +445,6 @@ class CarbPlanSummaryScreen extends ConsumerWidget {
       ),
     );
   }
-
-  Widget _primaryAction(BuildContext ctx, String label, bool result) =>
-      _actionButton(
-        ctx,
-        label,
-        result,
-        background: AppColors.orange,
-        foreground: AppColors.blackberry,
-      );
 
   Widget _destructiveAction(BuildContext ctx, String label, bool result) =>
       _actionButton(

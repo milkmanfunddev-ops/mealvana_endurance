@@ -676,6 +676,40 @@ v22: source sha `254af8cf3349ef3e` (server byte-equal), bundle sha
 evPlan/evProto untouched and paint order holding). After qa verifies, the
 ship-readiness summary goes to Xuan — he gates ship-bundle and the handover.
 
+### BUILT — 2026-09-25/26 overnight — implementation phase 2 (surfaces + tests)
+
+App commits `09f8cce7` (surfaces + data + retirements) and the L2/golden
+batch on `feature/carb-loading` (rebased on origin/release/1.27.1). Highlights:
+
+- **Dashboard**: LOAD face (Q-D9 form) on the energy card; `CarbLoadBar` +
+  `CarbSlotCard` in kyle_design (glow's first ratified uses, layered-shadow
+  route); six slot groups AS the loading-day timeline; slot page composed
+  from the Log-a-Meal path (slot-tagged rows); breakdown page w/ chip
+  day-navigation + CE-7 footer. CD-1 negative holds (regular day = zero
+  carb DOM).
+- **Entryway**: two-state row + F1 subtitle + window-passed state; chooser
+  w/ 1-Day card, CE-8 disabled-with-reason, F5 re-check, CL-12 point copy;
+  plan summary PAGE (stored g/kg + EDITED chips); shared CE-4 dialogs w/
+  CE-9 backdrop abort; CE-5 delete. CREATE returns to event details
+  (today-CTA snackbar only when underway).
+- **Data**: CE-4a in-place repick (repo primitive + service preview/apply);
+  G3 rate tables delegate to the engine everywhere (1-Day added; invalid
+  inputs throw); MealSlot + three loading-day periods (legacy snack folds
+  into Afternoon Snack at display).
+- **Retired deliberately**: delete+recreate update paths (carb service +
+  controller + calendar copies + their pinning tests); the athlete route
+  onto the legacy day page; 8 dead files. QUEUED for Xuan (not silently
+  changed): the coach-portal D-020 reader + its legacy-page route; the
+  D-020/D-019 column drops (schema work, Lee owns migrations).
+- **Tests green**: 49+14 vectors (qa-verified) · repick db-identity suite ·
+  assembler register suite (14) · dialog abort/chooser-gate widget suites ·
+  entry-row two-state · slot-card SC-1..4 · six LOAD-face L1 goldens
+  generated (`test/features/macro_dashboard/goldens/load_face_*.png`).
+- **Open app-side**: CD-2 ripple L2 (one-frame five-surface assert) — needs
+  an integration-level harness, staged next; qa-smoke drawer⇄engine check;
+  the meal_logs.slot CHECK-constraint question (routed to qa-6b: do the new
+  wire values need a server migration ride-along at land?).
+
 ## Notes on the two new ideas
 
 **Reminder to start.** Machinery exists — `NotificationService`
