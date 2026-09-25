@@ -15,6 +15,7 @@ import '../../application/vana_conversations_controller.dart';
 import '../../domain/vana_conversation.dart';
 import '../../domain/vana_conversation_kind.dart';
 import '../widgets/dashed_box.dart';
+import '../widgets/plan_conversation_title.dart';
 import '../../../../shared/widgets/kyle_design/icons/vana_avatar.dart';
 import '../widgets/vana_round_button.dart';
 import '../../../../shared/core/pop_or_home.dart';
@@ -228,6 +229,9 @@ class _VanaConversationsScreenState
 }
 
 /// One conversation: title over "Sep 2, 3:04 PM · summary", with a chevron.
+/// A meal-plan conversation is titled by the week and state of its plan
+/// ("Sep 20 week · Draft", testing-wave 97), a general one by its first
+/// question.
 class _ConversationRow extends ConsumerWidget {
   const _ConversationRow({required this.conversation, required this.onTap});
 
@@ -248,6 +252,9 @@ class _ConversationRow extends ConsumerWidget {
         ? ''
         : DateFormat('MMM d, h:mm a').format(lastAt.toLocal());
     final summary = conversation.summary;
+    final title = conversation.kind == VanaConversationKind.mealPlanning
+        ? planConversationTitle(content, conversation)
+        : conversation.title ?? content.getValue(ContentKeys.mpConvUntitled);
 
     return Material(
       color: isDark ? AppColors.blackberryLight : AppColors.surfaceLight,
@@ -268,8 +275,10 @@ class _ConversationRow extends ConsumerWidget {
                   crossAxisAlignment: CrossAxisAlignment.start,
                   children: [
                     Text(
-                      conversation.title ??
-                          content.getValue(ContentKeys.mpConvUntitled),
+                      title,
+                      key: ValueKey(
+                        'meal_planning.conversation_title_${conversation.id}',
+                      ),
                       maxLines: 1,
                       overflow: TextOverflow.ellipsis,
                       style: AppTextStyles.foodTitle.copyWith(

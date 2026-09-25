@@ -36,6 +36,7 @@ import '../widgets/meal_sheet.dart';
 import '../../application/vana_settings_controller.dart';
 import '../widgets/picker_chips.dart';
 import '../widgets/plan_bar.dart';
+import '../widgets/plan_conversation_title.dart';
 import '../widgets/review_sheet.dart';
 import '../widgets/vana_attach_sheet.dart';
 import '../../../../shared/widgets/kyle_design/icons/vana_avatar.dart';
@@ -200,7 +201,7 @@ class _VanaChatScreenState extends ConsumerState<VanaChatScreen> {
         isPlanning,
         state?.isStreaming ?? false,
         isPlanning
-            ? _planningTitle(content, plan)
+            ? _planningTitle(content, plan, state)
             : content.getValue(ContentKeys.mpChatTitleGeneral),
       ),
       body: SafeArea(
@@ -386,27 +387,43 @@ class _VanaChatScreenState extends ConsumerState<VanaChatScreen> {
     );
   }
 
+  /// Whether this conversation had no history when it opened: one just made
+  /// from the list, whose opener is its first turn. Latched once history
+  /// loads, so the header never flips mid-opener.
+  bool? _openedEmpty;
+
   /// A new planning conversation reads "New meal plan"; a resumed one is
-  /// headed by its plan (16-005): the row's own title from the
-  /// conversations list, else "Your meal plan" once its plan has meals. A
-  /// resumed conversation with no title and no meals (one just made from
-  /// the list) is still a new plan.
-  String _planningTitle(ContentService content, MealPlan? plan) {
+  /// headed by its plan's week and state, the same title as its row in the
+  /// conversations list (16-005, testing-wave 97). The chat's own draft is
+  /// the freshest source (a confirm in this chat shows here first), then
+  /// the row's plan; a conversation with history and no plan reads
+  /// "No plan yet".
+  String _planningTitle(
+    ContentService content,
+    MealPlan? plan,
+    VanaChatState? state,
+  ) {
+    final newPlan = content.getValue(ContentKeys.mpChatTitlePlanning);
     final id = widget.conversationId;
-    if (id != null) {
-      final title = ref
-          .watch(vanaConversationsControllerProvider(widget.kind))
-          .value
-          ?.where((c) => c.id == id)
-          .firstOrNull
-          ?.title
-          ?.trim();
-      if (title != null && title.isNotEmpty) return title;
-      if (plan != null && plan.meals.isNotEmpty) {
-        return content.getValue(ContentKeys.mpChatTitlePlanningResumed);
-      }
+    if (id == null) return newPlan;
+    if (state != null && state.historyLoaded) {
+      _openedEmpty ??= state.messages.isEmpty;
     }
-    return content.getValue(ContentKeys.mpChatTitlePlanning);
+    if (_openedEmpty != false) return newPlan;
+    if (plan != null) {
+      return planTitle(
+        content,
+        weekStart: plan.weekStart,
+        status: plan.status,
+        mealCount: plan.meals.length,
+      );
+    }
+    final row = ref
+        .watch(vanaConversationsControllerProvider(widget.kind))
+        .value
+        ?.where((c) => c.id == id)
+        .firstOrNull;
+    return row == null ? newPlan : planConversationTitle(content, row);
   }
 
   /// Library/saved ids of the meals in THIS conversation's plan, so a

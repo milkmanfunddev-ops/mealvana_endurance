@@ -786,10 +786,16 @@ class ContentKeys {
   static const String mpChatTitleGeneral = 'meal_planning.chat_title_general';
   static const String mpChatTitlePlanning = 'meal_planning.chat_title_planning';
 
-  /// A resumed planning conversation whose row has no title yet but whose
-  /// plan has meals (16-005): headed by the plan, never "New meal plan".
-  static const String mpChatTitlePlanningResumed =
-      'meal_planning.chat_title_planning_resumed';
+  /// A meal-plan conversation's title, by the week and state of the plan it
+  /// holds ("Sep 20 week · Draft", testing-wave 97); heads the resumed chat
+  /// too (16-005), never "New meal plan".
+  static const String mpConvPlanTitle = 'meal_planning.conv_plan_title';
+  static const String mpConvPlanNone = 'meal_planning.conv_plan_none';
+  static const String mpPlanStateDraft = 'meal_planning.plan_state_draft';
+  static const String mpPlanStateConfirmed =
+      'meal_planning.plan_state_confirmed';
+  static const String mpPlanStateArchived =
+      'meal_planning.plan_state_archived';
   static const String mpChatSubGeneral = 'meal_planning.chat_sub_general';
   static const String mpChatSubPlanning = 'meal_planning.chat_sub_planning';
   static const String mpConvPlans = 'meal_planning.conv_plans';

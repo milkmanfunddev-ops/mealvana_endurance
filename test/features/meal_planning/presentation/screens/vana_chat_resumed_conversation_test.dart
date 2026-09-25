@@ -3,8 +3,9 @@
 /// - 15-003: the meal cards tick the meals that are in THIS conversation's
 ///   plan (the draft `get_plan` answers on open, the one the plan bar
 ///   shows), not only the ones picked since the screen opened.
-/// - 16-005: a resumed conversation is headed by its plan (the row's own
-///   title, else "Your meal plan"), never "New meal plan"; a new one keeps
+/// - 16-005, and ticket 97 (16-006, 18-007): a resumed conversation is
+///   headed by its plan's week and state ("Aug 30 week · Draft"), the same
+///   title as its row in the list, never "New meal plan"; a new one keeps
 ///   "New meal plan".
 /// - 15-002: a trailing question in Vana's bubble that equals the choice
 ///   prompt under it shows once (the prompt keeps it; Vana's words are
@@ -31,6 +32,7 @@ import 'package:mealvana_endurance/features/meal_planning/data/user_memory_repos
 import 'package:mealvana_endurance/features/meal_planning/data/vana_action_client.dart';
 import 'package:mealvana_endurance/features/meal_planning/data/vana_chat_repository.dart';
 import 'package:mealvana_endurance/features/meal_planning/domain/meal_plan.dart';
+import 'package:mealvana_endurance/features/meal_planning/domain/meal_plan_status.dart';
 import 'package:mealvana_endurance/features/meal_planning/domain/meal_ref.dart';
 import 'package:mealvana_endurance/features/meal_planning/domain/meal_source.dart';
 import 'package:mealvana_endurance/features/meal_planning/domain/meal_type.dart';
@@ -222,6 +224,7 @@ void main() {
     MealPlan? plan,
     List<VanaMessage>? messages,
     String? title,
+    VanaConversationPlan? rowPlan,
   }) async {
     tester.view.physicalSize = const Size(800, 3200);
     tester.view.devicePixelRatio = 1;
@@ -253,6 +256,7 @@ void main() {
                   kind: VanaConversationKind.mealPlanning,
                   title: title,
                   createdAt: '2026-09-22T07:08:00Z',
+                  plan: rowPlan,
                 ),
               ],
             ),
@@ -303,29 +307,50 @@ void main() {
     });
   });
 
-  group('header (16-005)', () {
+  group('header (16-005, ticket 97)', () {
     final newPlan = content['meal_planning.chat_title_planning']!;
 
-    testWidgets('a resumed conversation is headed by its row title', (
-      tester,
-    ) async {
-      await pumpScreen(
-        tester,
-        plan: planHolding(['D-024']),
-        title: "This week's plan",
-      );
+    testWidgets(
+      'a resumed conversation is headed by its plan\'s week and state, '
+      'not the row\'s stored title',
+      (tester) async {
+        // The `batch` fixture's plan: the week of Aug 30, a draft.
+        await pumpScreen(
+          tester,
+          plan: planHolding(['D-024']),
+          title: "This week's plan",
+        );
 
-      expect(find.text("This week's plan"), findsOneWidget);
-      expect(find.text(newPlan), findsNothing);
-    });
+        expect(find.text('Aug 30 week · Draft'), findsOneWidget);
+        expect(find.text("This week's plan"), findsNothing);
+        expect(find.text(newPlan), findsNothing);
+      },
+    );
 
-    testWidgets('an untitled resumed conversation with a plan names the plan', (
-      tester,
-    ) async {
-      await pumpScreen(tester, plan: planHolding(['D-024']));
+    testWidgets(
+      'with no draft in the chat, the header is the row\'s title from the '
+      'list',
+      (tester) async {
+        await pumpScreen(
+          tester,
+          rowPlan: const VanaConversationPlan(
+            weekStart: '2026-09-13',
+            status: MealPlanStatus.confirmed,
+            mealCount: 4,
+          ),
+        );
+
+        expect(find.text('Sep 13 week · Confirmed'), findsOneWidget);
+        expect(find.text(newPlan), findsNothing);
+      },
+    );
+
+    testWidgets('a resumed conversation with history and no plan reads '
+        '"No plan yet"', (tester) async {
+      await pumpScreen(tester, title: "This week's plan");
 
       expect(
-        find.text(content['meal_planning.chat_title_planning_resumed']!),
+        find.text(content['meal_planning.conv_plan_none']!),
         findsOneWidget,
       );
       expect(find.text(newPlan), findsNothing);
