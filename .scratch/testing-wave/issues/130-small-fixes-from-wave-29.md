@@ -23,9 +23,9 @@
 
 Rename and Delete for Previous lists live in `shopping_tab.dart` (`_renameList`, `_deleteList`) and `shopping_list_controller.dart` (`renameList`).
 
-- [ ] Widget tests: Plan tab buttons are hit-testable above the tab bar with 4 meals; a rail card at text scale 2.0 lays out without overflow; the Delete dialog names the list; Save is disabled for an empty name.
-- [ ] Controller or unit tests: the share count leaves out ticked rows; a failed admin read is retried; a duplicate list name gets the suffix (server and app agree); a review row carries `app_version`.
-- [ ] Deno test: the day-note context writes no "NC" carb shorthand.
-- [ ] `flutter analyze` clean on touched files; deno vana tests. Deploy (vana-action, vana-day-notes and the functions sharing `_shared/vana`): wave lead.
+- [x] Widget tests: Plan tab buttons are hit-testable above the tab bar with 4 meals; a rail card at text scale 2.0 lays out without overflow; the Delete dialog names the list; Save is disabled for an empty name.
+- [x] Controller or unit tests: the share count leaves out ticked rows; a failed admin read is retried; a duplicate list name gets the suffix (server and app agree); a review row carries `app_version`.
+- [x] Deno test: the day-note context writes no "NC" carb shorthand.
+- [x] `flutter analyze` clean on touched files; deno vana tests. Deploy (vana-action, vana-day-notes and the functions sharing `_shared/vana`): wave lead.
 
 Next: /implement-lee testing-wave
