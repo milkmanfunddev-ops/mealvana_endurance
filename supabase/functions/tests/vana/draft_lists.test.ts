@@ -10,7 +10,7 @@
  * (markListConfirmed).
  */
 import { assertEquals } from 'https://deno.land/std@0.177.1/testing/asserts.ts';
-import { confirmPlan, newPlan, usePlanAgain } from '../../_shared/vana/plan.ts';
+import { confirmPlan, newPlan, setServings, usePlanAgain } from '../../_shared/vana/plan.ts';
 import { dropArchivedDraftLists } from '../../_shared/vana/shopping.ts';
 import { addDays, today, weekStartFor } from '../../_shared/vana/env.ts';
 import { testCtx, TEST_USER_ID } from './support/vana_ctx.ts';
@@ -141,4 +141,19 @@ Deno.test('dropArchivedDraftLists: a list marked confirmed is kept even when its
   assertEquals(listIds(v), ['L-confirmed', 'L-earlier', 'L-hand', 'L-tab', 'L-wednesday']);
   // Idempotent: nothing left to drop.
   assertEquals(await dropArchivedDraftLists(v, WEEK), 0);
+});
+
+Deno.test("an edit in an archived draft's conversation does not bring its deleted list back (wave 26 review)", async () => {
+  const v = account();
+  await confirmPlan(v, { conversationId: WEDNESDAY_CONV }); // archives Monday's draft and deletes its list
+  await setServings(v, 'm2', 4);                           // a pick or edit still reaches Monday's archived draft (mp-683)
+  assertEquals(listIds(v).includes('L-monday'), false);
+  assertEquals(v.fake.rows('shopping_lists').some((r) => r.plan_id === MONDAY_DRAFT), false);
+});
+
+Deno.test('an edit in an archived plan that was once confirmed still rebuilds its list (mp-675: earlier plans stay editable)', async () => {
+  const v = account();
+  v.fake.rows('shopping_lists').splice(v.fake.rows('shopping_lists').findIndex((r) => r.id === 'L-earlier'), 1);
+  await setServings(v, 'm5', 4);
+  assertEquals(v.fake.rows('shopping_lists').some((r) => r.plan_id === EARLIER), true);
 });

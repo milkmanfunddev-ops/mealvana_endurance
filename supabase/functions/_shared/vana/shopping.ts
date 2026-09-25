@@ -102,6 +102,9 @@ export async function planList(v: VanaCtx, planId: string): Promise<ShoppingList
 /** Replace the plan's rows from `fresh`, keep manual / edited rows, and answer the whole list as plain lines
  *  (the caller writes those to `meal_plans.shopping`). */
 export async function syncPlanList(v: VanaCtx, plan: { id: string; weekStart: string; status: string }, fresh: ShoppingItem[]): Promise<ShoppingItem[]> {
+  // An archived draft lost its list with the archive (ticket 101); a pick still reaching it (mp-683) must not make it
+  // again. An archived plan that was once confirmed stays editable (mp-675) and rebuilds its list as before.
+  if (plan.status === 'archived' && !(await planList(v, plan.id)) && !(await wasConfirmed(v, plan.id))) return fresh;
   const list = await ensurePlanList(v, plan.id, plan.weekStart);
   const prev = await itemsOf(v, list.id);
   const { keep, insert, drop } = mergePlanItems(prev, fresh);
@@ -113,6 +116,8 @@ export async function syncPlanList(v: VanaCtx, plan: { id: string; weekStart: st
   await touch(v, list.id);
   return (await itemsOf(v, list.id)).map(toPlain);
 }
+const wasConfirmed = async (v: VanaCtx, planId: string): Promise<boolean> =>
+  (await v.db.from('meal_plans').select('confirmed_at').eq('id', planId).eq('user_id', v.userId).maybeSingle()).data?.confirmed_at != null;
 /** After `confirm_meal_plan`: the list takes the plan's confirmation time, which is what sorts it to the top. */
 export async function markListConfirmed(v: VanaCtx, planId: string): Promise<void> {
   await v.db.from('shopping_lists').update({ confirmed_at: now(), updated_at: now() }).eq('plan_id', planId).eq('user_id', v.userId);
