@@ -13,7 +13,7 @@
 
 **Touches:** supabase/functions/analyze-meal-photo/index.ts, supabase/functions/describe-meal/index.ts
 
-- [ ] deno test (or a harness test) for each function: one call, one call-log row.
+- [x] deno test (or a harness test) for each function: one call, one call-log row.
 - [ ] Deployed to dev; one describe on dev leaves one row.
 - [ ] codegen if annotations changed, `flutter analyze` and the suite green.
 

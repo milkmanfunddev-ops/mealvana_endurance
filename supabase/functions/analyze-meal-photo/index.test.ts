@@ -27,7 +27,7 @@
  *   - Credit enforcement 402
  *
  * Run with:
- *   deno test --allow-env --allow-read \
+ *   deno test --allow-env --allow-read --allow-sys --node-modules-dir=none \
  *     supabase/functions/analyze-meal-photo/index.test.ts
  */
 
@@ -48,6 +48,7 @@ import {
   mealPhotoPrompt,
 } from '../_shared/meal_analysis/prompt.ts';
 import { ANALYZE_MEAL_PHOTO_MODEL } from '../_shared/ai/model.ts';
+import { oneCallOneRow } from '../tests/meal_analysis_call_log.ts';
 
 // ---------------------------------------------------------------------------
 // A. MealAnalysisSchema — shape validation
@@ -461,4 +462,15 @@ describe('F. ANALYZE_MEAL_PHOTO_MODEL default', () => {
     assertEquals(Deno.env.get('ANALYZE_MEAL_PHOTO_MODEL'), undefined);
     assertEquals(ANALYZE_MEAL_PHOTO_MODEL, 'anthropic/claude-sonnet-4.6');
   });
+});
+
+// ---------------------------------------------------------------------------
+// One photo analysis, one call-log row (testing-wave ticket 43, Finding 24-001)
+// ---------------------------------------------------------------------------
+
+oneCallOneRow({
+  name: 'analyze-meal-photo',
+  source: new URL('./index.ts', import.meta.url),
+  bucket: 'vana.meal_photo',
+  model: ANALYZE_MEAL_PHOTO_MODEL,
 });

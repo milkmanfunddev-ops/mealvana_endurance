@@ -177,7 +177,7 @@ Deno.test('the described meal and the meal photo call the shared module, on the 
   for (const [name, src] of [['describe-meal', describe], ['analyze-meal-photo', photo]] as const) {
     assert(src.includes("_shared/vana/rate-limit.ts"), `${name} does not import the shared limiter`);
     assert(/reserveCall\(/.test(src), `${name} does not reserve a call`);
-    assert(/completeCall\(/.test(src), `${name} does not complete its reservation`);
+    assert(/completeCall\(|finishMealCall\(/.test(src), `${name} does not complete its reservation`);
     assert(/rate_limited/.test(src), `${name} does not answer 429 rate_limited`);
   }
 });
