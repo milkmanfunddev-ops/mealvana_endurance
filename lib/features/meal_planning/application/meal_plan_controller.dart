@@ -33,6 +33,40 @@ Stream<PlanPeriod> planPeriod(Ref ref) async* {
   yield* ref.watch(mealPlanRepositoryProvider).watchPlanPeriod(userId);
 }
 
+/// The plan a Vana conversation owns, read from Drift, so a screen opened
+/// from the chat ("Browse meals") knows which meals are already in it —
+/// at once and offline. Every remote-ack write folds the returned plan
+/// into Drift, so a pick re-emits here.
+///
+/// On first build the server's copy is folded in too (fire-and-forget,
+/// like `ensureSynced`): the chat reads its draft through `get_plan`
+/// without writing it locally, so a conversation reopened on a fresh
+/// install may have no local row yet (testing-wave 18-003). `get_plan`
+/// with a conversation and no plan creates nothing.
+@riverpod
+Stream<MealPlan?> conversationDraft(Ref ref, String conversationId) async* {
+  final userId = await ref.watch(userIdProvider.future);
+  final repo = ref.watch(mealPlanRepositoryProvider);
+  final actions = ref.read(vanaActionClientProvider);
+  final logger = ref.read(appExternalDepsProvider).logger;
+  unawaited(() async {
+    try {
+      final result = await actions.run(
+        GetPlanAction(conversationId: conversationId),
+      );
+      final plan = result.plan;
+      if (plan != null) await repo.applyServerPlan(plan, userId: userId);
+    } catch (e) {
+      logger.debug(
+        'conversation plan not refreshed from the server (non-fatal)',
+        context: MealPlanController._context,
+        error: e,
+      );
+    }
+  }());
+  yield* repo.watchConversationPlan(userId, conversationId);
+}
+
 /// The active plan for the current week — what the Plan tab, the Shopping
 /// tab, the chat's plan bar and the day planner all read.
 ///

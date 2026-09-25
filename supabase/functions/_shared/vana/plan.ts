@@ -80,17 +80,18 @@ async function hydrate(v: VanaCtx, plan: any): Promise<MealPlan> {
 export async function defaultServings(v: VanaCtx, batchCooking: boolean): Promise<number> {
   return servingsToCover((await getPlanPeriod(v)).periodDays, batchCooking);
 }
+/** A meal already in the plan is left alone — the same rule `draftFromLastTime` follows. Every Add surface (the picker
+ *  carousel, Browse, the detail's Add to plan, the model's updateBatch) can reach a meal that is already there, and none
+ *  of them is the athlete asking for more servings; that is the stepper (`setServings`). Testing-wave 18-001 / 18-003
+ *  saw a second Add double a row from 4 to 8 with nothing on screen saying so. */
 export async function addMeal(v: VanaCtx, ref: MealRef, servings?: number | null, session?: Session, scope?: PlanScope | null): Promise<MealPlan> {
   const plan = (await resolvePlan(v, scope, true))!;
-  const want = servings ?? await defaultServings(v, plan.batchCooking);
   const existing = plan.meals.find((m) => (ref.source === 'library' ? m.libraryMealId === ref.id : m.savedMealId === ref.id));
-  if (existing) {
-    await v.db.from('plan_meals').update({ servings: existing.servings + want, servings_left: existing.servingsLeft + want, updated_at: new Date().toISOString() }).eq('id', existing.id);
-  } else {
-    const s = session === undefined ? defaultSession(plan.batchCooking, ref, plan.meals) : session;
-    const { error } = await v.db.from('plan_meals').insert({ plan_id: plan.id, user_id: v.userId, source: ref.source, library_meal_id: ref.source === 'library' ? ref.id : null, saved_meal_id: ref.source === 'saved' ? ref.id : null, name: ref.name, meal_type: ref.mealType, session: s, servings: want, servings_left: want, kcal: ref.kcal, carbs_g: ref.carbsG, protein_g: ref.proteinG, fat_g: ref.fatG, position: plan.meals.length, icon: ref.icon ?? null });
-    if (error) throw new Error(error.message);
-  }
+  if (existing) return (await getPlanById(v, plan.id))!;
+  const want = servings ?? await defaultServings(v, plan.batchCooking);
+  const s = session === undefined ? defaultSession(plan.batchCooking, ref, plan.meals) : session;
+  const { error } = await v.db.from('plan_meals').insert({ plan_id: plan.id, user_id: v.userId, source: ref.source, library_meal_id: ref.source === 'library' ? ref.id : null, saved_meal_id: ref.source === 'saved' ? ref.id : null, name: ref.name, meal_type: ref.mealType, session: s, servings: want, servings_left: want, kcal: ref.kcal, carbs_g: ref.carbsG, protein_g: ref.proteinG, fat_g: ref.fatG, position: plan.meals.length, icon: ref.icon ?? null });
+  if (error) throw new Error(error.message);
   // A dish-level saved meal (made from a log) gets its ingredients once before the list is built (saved-ingredients.ts).
   if (ref.source === 'saved') await ensureSavedMealIngredients(v, ref.id);
   return refreshShopping(v, plan.id);

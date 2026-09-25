@@ -13,10 +13,10 @@
 
 **Touches:** lib/features/meal_planning/presentation/screens/vana_chat_screen.dart, lib/features/meal_planning/presentation/widgets/review_sheet.dart, lib/features/meal_planning/application/meal_plan_controller.dart, lib/features/meal_planning/presentation/screens/vana_browse_screen.dart, lib/features/meal_planning/presentation/widgets/meal_catalog_browser.dart, lib/features/meal_planning/presentation/widgets/meal_add_button.dart, supabase/functions/_shared/vana/plan.ts, supabase/functions/_shared/vana/actions.ts
 
-- [ ] Confirm in a Draft's conversation, while the week already has a confirmed plan, confirms that Draft and archives the old plan (deno test on `resolvePlan`/confirm, plus a seam test through the real notifier that the call carries the scope).
-- [ ] Reopened Browse shows meals already in the plan as added.
-- [ ] Add to plan on a meal already in the plan does not raise its servings.
+- [x] Confirm in a Draft's conversation, while the week already has a confirmed plan, confirms that Draft and archives the old plan (deno test on `resolvePlan`/confirm, plus a seam test through the real notifier that the call carries the scope).
+- [x] Reopened Browse shows meals already in the plan as added.
+- [x] Add to plan on a meal already in the plan does not raise its servings.
 - [ ] Deployed to dev; retest 16-011.
-- [ ] codegen if annotations changed, `flutter analyze` and the suite green.
+- [x] codegen if annotations changed, `flutter analyze` and the suite green.
 
 Next: /implement-lee testing-wave

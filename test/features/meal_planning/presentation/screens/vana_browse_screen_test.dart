@@ -7,15 +7,18 @@ import 'package:go_router/go_router.dart';
 import 'package:mealvana_endurance/features/content/application/content_service.dart';
 import 'package:mealvana_endurance/features/meal_planning/application/meal_catalog_controller.dart';
 import 'package:mealvana_endurance/features/meal_planning/application/meal_plan_controller.dart';
+import 'package:mealvana_endurance/features/meal_planning/data/vana_action_client.dart';
 import 'package:mealvana_endurance/features/meal_planning/data/vana_exceptions.dart';
 import 'package:mealvana_endurance/features/meal_planning/domain/cooking_session.dart';
 import 'package:mealvana_endurance/features/meal_planning/domain/meal_plan.dart';
 import 'package:mealvana_endurance/features/meal_planning/domain/meal_ref.dart';
 import 'package:mealvana_endurance/features/meal_planning/domain/meal_source.dart';
 import 'package:mealvana_endurance/features/meal_planning/domain/meal_type.dart';
+import 'package:mealvana_endurance/features/meal_planning/domain/plan_meal.dart';
 import 'package:mealvana_endurance/features/meal_planning/domain/ui_action.dart';
 import 'package:mealvana_endurance/features/meal_planning/presentation/screens/vana_browse_screen.dart';
 
+import '../../domain/fixture_helpers.dart';
 import '../helpers/test_content.dart';
 
 /// `/vana/browse?c=` — the catalog with an Add affordance on every card:
@@ -40,9 +43,32 @@ void main() {
     railsFromServer: true,
   );
 
+  /// The conversation's plan as Drift holds it (producer-shaped `batch`
+  /// fixture, its meals replaced by the ids this catalog shows).
+  MealPlan planHolding(List<String> libraryIds) {
+    final fixture = VanaActionResult.fromJson(loadFixture('batch')).plan!;
+    return fixture.copyWith(
+      conversationId: 'conv-1',
+      meals: [
+        for (final id in libraryIds)
+          PlanMeal(
+            id: 'pm-$id',
+            planId: fixture.id,
+            source: MealSource.library,
+            libraryMealId: id,
+            name: id,
+            mealType: MealType.dinner,
+            servings: 4,
+            servingsLeft: 4,
+          ),
+      ],
+    );
+  }
+
   Future<GoRouter> pumpScreen(
     WidgetTester tester, {
     required _RecordingPlanController plan,
+    MealPlan? inPlan,
   }) async {
     final router = GoRouter(
       initialLocation: '/vana/browse?c=conv-1',
@@ -69,6 +95,9 @@ void main() {
             () => _FixedCatalogController(catalog),
           ),
           mealPlanControllerProvider.overrideWith(() => plan),
+          conversationDraftProvider(
+            'conv-1',
+          ).overrideWith((ref) => Stream.value(inPlan)),
         ],
         child: MaterialApp.router(routerConfig: router),
       ),
@@ -151,6 +180,49 @@ void main() {
       find.text(content['meal_planning.needs_connection']!),
       findsOneWidget,
     );
+  });
+
+  /// Testing-wave 18-003: reopened Browse showed meals already in the
+  /// draft with a plain plus, because the ticks lived only in the screen's
+  /// own state. The conversation's plan is what decides a tick.
+  testWidgets('opens with the meals already in the conversation plan ticked', (
+    tester,
+  ) async {
+    final plan = _RecordingPlanController();
+    await pumpScreen(tester, plan: plan, inPlan: planHolding(['D-2']));
+    await tester.pump();
+
+    expect(
+      find.descendant(of: addButton('D-2'), matching: find.byIcon(Icons.check)),
+      findsOneWidget,
+    );
+    expect(
+      find.descendant(of: addButton('D-1'), matching: find.byIcon(Icons.add)),
+      findsOneWidget,
+    );
+    expect(plan.picks, isEmpty);
+  });
+
+  /// Testing-wave 18-001: a tap on the tick fell through to the card, whose
+  /// body opened the detail, and its Add to plan added the meal again.
+  testWidgets('a tap on a ticked card picks nothing and opens nothing', (
+    tester,
+  ) async {
+    final plan = _RecordingPlanController();
+    await pumpScreen(tester, plan: plan, inPlan: planHolding(['D-2']));
+    await tester.pump();
+
+    await tester.tap(addButton('D-2'));
+    await tester.pump();
+    await tester.pump(const Duration(milliseconds: 300));
+
+    expect(plan.picks, isEmpty);
+    expect(
+      find.byKey(const ValueKey('meal_planning.vana_browse_screen')),
+      findsOneWidget,
+      reason: 'the tap never reached the card body (no detail push)',
+    );
+    expect(find.text(content['meal_planning.browse_added']!), findsWidgets);
   });
 
   testWidgets('Done pops back to the chat', (tester) async {

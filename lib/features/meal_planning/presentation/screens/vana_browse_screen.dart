@@ -35,12 +35,23 @@ class VanaBrowseScreen extends ConsumerStatefulWidget {
 }
 
 class _VanaBrowseScreenState extends ConsumerState<VanaBrowseScreen> {
+  /// Picks that landed this visit — ticked at once, before the plan watch
+  /// re-emits. What is already in the conversation's plan comes from
+  /// [conversationDraftProvider], so a reopened Browse shows it ticked and
+  /// never adds it again (testing-wave 18-003).
   final Set<String> _added = {};
   final Set<String> _inFlight = {};
 
   @override
   Widget build(BuildContext context) {
     final content = ref.read(contentServiceProvider);
+    final inPlan = ref
+        .watch(conversationDraftProvider(widget.conversationId))
+        .value
+        ?.meals
+        .map((m) => m.libraryMealId ?? m.savedMealId)
+        .nonNulls
+        .toSet();
     final isDark = Theme.of(context).brightness == Brightness.dark;
     final bg = isDark ? AppColors.blackberry : AppColors.cream;
     final textColor = isDark ? AppColors.cream : AppColors.blackberry;
@@ -91,7 +102,7 @@ class _VanaBrowseScreenState extends ConsumerState<VanaBrowseScreen> {
               child: MealCatalogBrowser(
                 onOpenMeal: _openDetail,
                 onAddMeal: _add,
-                addedIds: _added,
+                addedIds: {..._added, ...?inPlan},
               ),
             ),
           ],

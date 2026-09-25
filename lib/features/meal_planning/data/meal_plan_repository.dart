@@ -339,6 +339,54 @@ class MealPlanRepository with SyncableRepository {
     });
   }
 
+  /// The plan a Vana conversation owns — the newest non-deleted plan with
+  /// this `conversation_id`, whatever its status — with its live meals.
+  /// `null` when nothing of that conversation's is local yet. Re-emits on
+  /// any `meal_plans` / `plan_meals` change. Mirrors the server's
+  /// `getConversationPlan` (plan.ts), which "Browse meals" reads to tick
+  /// what is already in the plan (testing-wave 18-003).
+  Stream<MealPlan?> watchConversationPlan(
+    String userId,
+    String conversationId,
+  ) {
+    final plans = _database.mealPlansTable;
+    final meals = _database.planMealsTable;
+    final query =
+        _database.select(plans).join([
+          leftOuterJoin(
+            meals,
+            meals.planId.equalsExp(plans.id) & meals.isDeleted.equals(false),
+          ),
+        ])..where(
+          plans.userId.equals(userId) &
+              plans.conversationId.equals(conversationId) &
+              plans.isDeleted.equals(false),
+        );
+    return query.watch().asyncMap((rows) async {
+      MealPlanEntry? newest;
+      final mealsByPlan = <String, List<PlanMealEntry>>{};
+      for (final row in rows) {
+        final plan = row.readTable(plans);
+        if (newest == null || plan.createdAt.isAfter(newest.createdAt)) {
+          newest = plan;
+        }
+        final meal = row.readTableOrNull(meals);
+        if (meal != null) {
+          mealsByPlan.putIfAbsent(plan.id, () => []).add(meal);
+        }
+      }
+      if (newest == null) return null;
+      final coverage = await _coverageFor(newest.userId);
+      return _assemble(
+        newest,
+        mealsByPlan[newest.id] ?? const <PlanMealEntry>[],
+        lunchDinnerSlots: coverage.slots,
+        periodDays: coverage.periodDays,
+        countedTypes: coverage.types,
+      );
+    });
+  }
+
   /// `user_memories.key` of the coverage-scope setting (plan §5 Phase 1.6).
   static const _coverageScopeKey = 'coverage_scope';
 
