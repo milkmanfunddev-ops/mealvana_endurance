@@ -370,6 +370,13 @@ class SavedMealsRepository with SyncableRepository {
     return _upsertRemotePreservingDirty(remoteRows);
   }
 
+  /// The write half of [syncFromRemote] on its own: server-shaped rows in,
+  /// Drift rows out, dirty local rows kept. Lets a seam test feed the rows
+  /// a `saved_meals` SELECT answers with, without a Supabase client.
+  @visibleForTesting
+  Future<int> applyRemoteRows(List<dynamic> remoteRows) =>
+      _upsertRemotePreservingDirty(remoteRows);
+
   // ========================================================================
   // Private Helpers
   // ========================================================================

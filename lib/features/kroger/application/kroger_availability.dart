@@ -45,3 +45,12 @@ final krogerEntryVisibleProvider = Provider<bool>((ref) {
   final coverage = ref.watch(krogerCoverageProvider);
   return !coverage.isLoading && coverage.value != false;
 });
+
+/// Whether the entry point is still being decided: the feature is on and
+/// Coverage has not answered yet. The Shopping tab keeps the button's room
+/// while this is true, so the rows do not move when the answer lands and a
+/// tap aimed early still hits its row (testing-wave 20-003).
+final krogerEntryPendingProvider = Provider<bool>((ref) {
+  if (!ref.watch(krogerShoppingEnabledProvider)) return false;
+  return ref.watch(krogerCoverageProvider).isLoading;
+});

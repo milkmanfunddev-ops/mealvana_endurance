@@ -1,3 +1,5 @@
+import 'dart:async';
+
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:flutter_test/flutter_test.dart';
@@ -13,6 +15,7 @@ import 'package:mealvana_endurance/features/meal_planning/domain/meal_plan_summa
 import 'package:mealvana_endurance/features/meal_planning/domain/vana_part.dart';
 import 'package:mealvana_endurance/features/meal_planning/domain/week_start.dart';
 import 'package:mealvana_endurance/features/meal_planning/presentation/screens/plan_tab.dart';
+import 'package:mealvana_endurance/shared/widgets/kyle_design/buttons/primary_button.dart';
 
 import '../../domain/fixture_helpers.dart';
 import '../helpers/test_content.dart';
@@ -45,7 +48,7 @@ void main() {
 
   Future<void> pumpTab(
     WidgetTester tester, {
-    required _FakePlanController plan,
+    required MealPlanController plan,
     HomePayload? home,
     List<MealPlanSummary> previous = const [],
   }) async {
@@ -74,6 +77,28 @@ void main() {
     final key = w.key;
     return key is ValueKey<String> &&
         key.value.startsWith('meal_planning.plan_tile_');
+  });
+
+  /// Ticket 46 (testing-wave 19-004): the first read was answered from an
+  /// empty local table while the sync was still on the wire, so the tab
+  /// said "No plan yet" for ~6 s over a confirmed plan. While the read is
+  /// in flight the dashed slot holds a spinner and New meal plan waits.
+  testWidgets('a plan still loading shows a loading card, not No plan yet, '
+      'and New meal plan waits', (tester) async {
+    await pumpTab(tester, plan: _LoadingPlanController());
+
+    expect(
+      find.byKey(const ValueKey('meal_planning.plan_loading')),
+      findsOneWidget,
+    );
+    expect(
+      find.byKey(const ValueKey('meal_planning.empty_plan_title')),
+      findsNothing,
+    );
+    final newPlan = tester.widget<KylePrimaryButton>(
+      find.byKey(const ValueKey('meal_planning.btn_new_plan')),
+    );
+    expect(newPlan.onPressed, isNull);
   });
 
   testWidgets('empty plan shows the dashed card with both ways in', (
@@ -269,6 +294,12 @@ void main() {
 }
 
 /// Serves a fixed plan.
+/// A first read that never answers.
+class _LoadingPlanController extends MealPlanController {
+  @override
+  Future<MealPlan?> build() => Completer<MealPlan?>().future;
+}
+
 class _FakePlanController extends MealPlanController {
   _FakePlanController(this.plan);
 

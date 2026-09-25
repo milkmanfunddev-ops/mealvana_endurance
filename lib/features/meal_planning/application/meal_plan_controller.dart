@@ -72,7 +72,10 @@ Stream<MealPlan?> conversationDraft(Ref ref, String conversationId) async* {
 ///
 /// - Watches Drift (`MealPlanRepository.watchActivePlan`) so every local or
 ///   server-applied change re-emits, and kicks `ensureSynced('meal_plans')`
-///   in the background on first build (never blocks on the network).
+///   on first build. A local plan answers at once with the sync behind it;
+///   with nothing local and the network up, the first read waits for the
+///   sync (bounded by [firstReadBound]) so the Plan tab shows loading, never
+///   "No plan yet", over a plan confirmed elsewhere (testing-wave 19-004).
 /// - **Local-first** edits (05 §3): [setServings], [removeMeal],
 ///   [setSession], [addComment], [toggleShopping], [setDaySlot],
 ///   [clearDaySlot] write Drift and schedule a best-effort upload.
@@ -90,6 +93,11 @@ class MealPlanController extends _$MealPlanController {
   AppLogger get _logger => ref.read(appExternalDepsProvider).logger;
 
   static const _context = 'MEAL_PLAN_CONTROLLER';
+
+  /// How long the first read waits for the `meal_plans` sync when there is
+  /// no local plan. Past it the empty local table answers and the sync
+  /// lands behind through the Drift watch.
+  static const firstReadBound = Duration(seconds: 15);
 
   StreamSubscription<MealPlan?>? _subscription;
   String? _userId;
@@ -113,9 +121,10 @@ class MealPlanController extends _$MealPlanController {
       _subscription = null;
     });
 
-    // Repository-level on-demand sync — fire and forget so an offline
-    // athlete still sees the cached plan immediately.
-    unawaited(_ensureSynced(userId));
+    // Repository-level on-demand sync. Not awaited up front, so a cached
+    // plan (or an offline athlete) never waits on the network; only a first
+    // read with nothing local waits for it, below.
+    final synced = _ensureSynced(userId);
 
     final completer = Completer<MealPlan?>();
     _subscription?.cancel();
@@ -137,7 +146,18 @@ class MealPlanController extends _$MealPlanController {
             }
           },
         );
-    return completer.future;
+    final local = await completer.future;
+    if (local != null) return local;
+
+    // Nothing local. Offline, that is the answer. Online, the server may
+    // hold the week's plan (a fresh install, a plan confirmed on another
+    // device): wait for the sync so the screen shows loading meanwhile,
+    // then read what it wrote. The sync dedupes with itself, so this is the
+    // same round trip, not a second one; a fresh stamp makes it a no-op.
+    final online = await ref.read(connectivityCheckerProvider).isOnline();
+    if (!online) return null;
+    await synced.timeout(firstReadBound, onTimeout: () {});
+    return _repo.getActivePlan(userId, _weekStart!);
   }
 
   Future<void> _ensureSynced(String userId) async {
