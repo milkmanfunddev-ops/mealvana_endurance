@@ -79,7 +79,10 @@
     ],
     "arrayCardinalityVerbatim": {
      "samples": 3
-    }
+    },
+    "instantaneousSampleFuzz": [
+     "samples[].hr"
+    ]
    },
    "why": "the ruled table end-to-end: GPS+user/device DROPPED; HR/kcal FUZZED (type kept); name PLACEHOLDER; ids REPLACED with parent-child link preserved; start/end offset 3600s preserved post-shift; samples length 3 kept, values fuzzed"
   },
@@ -188,7 +191,6 @@
     "idsReplacedLinksPreserved": [
      "Id"
     ],
-    "timestampOffsetsPreserved": true,
     "allowlistVerbatim": [
      "Completed",
      "TssCalculationMethod",
@@ -261,12 +263,142 @@
     "arrayCardinalityVerbatim": {
      "samples": 2
     },
+    "instantaneousSampleFuzz": [
+     "samples[].heartRate"
+    ],
     "gpsDroppedAtAnyDepth": [
      "samples[].latitudeInDegree",
      "samples[].longitudeInDegree"
     ]
    },
    "why": "the 2026-09-20 GPS-names defect as a permanent vector: Garmin's REAL key names (startingLatitudeInDegree, nested latitudeInDegree) are GPS by WORD-SHAPE and DROP ENTIRELY at any depth — never fuzzed (a jittered coordinate still points at a region; the ruled row says removed, not fuzzed); array cardinality of samples survives with GPS members gone"
+  },
+  {
+   "id": "garmin-sample-stream-time-structure",
+   "status": "ratified",
+   "inputs": {
+    "rawPayload": {
+     "summaryId": "g-77",
+     "startTimeInSeconds": 1789000000,
+     "samples": [
+      {
+       "startTimeInSeconds": 1789001800,
+       "clockDurationInSeconds": 1800,
+       "movingDurationInSeconds": 1795,
+       "timerDurationInSeconds": 1798,
+       "heartRate": 141,
+       "totalDistanceInMeters": 5400.0
+      },
+      {
+       "startTimeInSeconds": 1789001801,
+       "clockDurationInSeconds": 1801,
+       "movingDurationInSeconds": 1796,
+       "timerDurationInSeconds": 1799,
+       "heartRate": 142,
+       "totalDistanceInMeters": 5402.9
+      },
+      {
+       "startTimeInSeconds": 1789001802,
+       "clockDurationInSeconds": 1802,
+       "movingDurationInSeconds": 1797,
+       "timerDurationInSeconds": 1800,
+       "heartRate": 143,
+       "totalDistanceInMeters": 5405.8
+      },
+      {
+       "startTimeInSeconds": 1789001803,
+       "clockDurationInSeconds": 1803,
+       "movingDurationInSeconds": 1798,
+       "timerDurationInSeconds": 1801,
+       "heartRate": 144,
+       "totalDistanceInMeters": 5408.7
+      },
+      {
+       "startTimeInSeconds": 1789001804,
+       "clockDurationInSeconds": 1804,
+       "movingDurationInSeconds": 1799,
+       "timerDurationInSeconds": 1802,
+       "heartRate": 145,
+       "totalDistanceInMeters": 5411.6
+      },
+      {
+       "startTimeInSeconds": 1789001805,
+       "clockDurationInSeconds": 1805,
+       "movingDurationInSeconds": 1800,
+       "timerDurationInSeconds": 1803,
+       "heartRate": 146,
+       "totalDistanceInMeters": 5414.5
+      },
+      {
+       "startTimeInSeconds": 1789001806,
+       "clockDurationInSeconds": 1806,
+       "movingDurationInSeconds": 1801,
+       "timerDurationInSeconds": 1804,
+       "heartRate": 147,
+       "totalDistanceInMeters": 5417.4
+      },
+      {
+       "startTimeInSeconds": 1789001807,
+       "clockDurationInSeconds": 1807,
+       "movingDurationInSeconds": 1802,
+       "timerDurationInSeconds": 1805,
+       "heartRate": 141,
+       "totalDistanceInMeters": 5420.3
+      },
+      {
+       "startTimeInSeconds": 1789001808,
+       "clockDurationInSeconds": 1808,
+       "movingDurationInSeconds": 1803,
+       "timerDurationInSeconds": 1806,
+       "heartRate": 142,
+       "totalDistanceInMeters": 5423.2
+      },
+      {
+       "startTimeInSeconds": 1789001809,
+       "clockDurationInSeconds": 1809,
+       "movingDurationInSeconds": 1804,
+       "timerDurationInSeconds": 1807,
+       "heartRate": 143,
+       "totalDistanceInMeters": 5426.1
+      }
+     ]
+    },
+    "provenance": "hand-authored, spec-realistic (property-check input, not a shape claim — DI-13c)"
+   },
+   "expected": {
+    "droppedKeys": [],
+    "keptKeySetVerbatim": [
+     "samples",
+     "startTimeInSeconds",
+     "summaryId"
+    ],
+    "nullStaysNull": [],
+    "scalarsMustDiffer": [],
+    "textPlaceholder": [],
+    "idsReplacedLinksPreserved": [
+     "summaryId"
+    ],
+    "timestampOffsetsPreserved": true,
+    "allowlistVerbatim": [],
+    "unclassifiedNotVerbatim": [
+     "samples"
+    ],
+    "arrayCardinalityVerbatim": {
+     "samples": 10
+    },
+    "elapsedClocksVerbatim": [
+     "samples[].clockDurationInSeconds",
+     "samples[].movingDurationInSeconds",
+     "samples[].timerDurationInSeconds"
+    ],
+    "cumulativeMonotoneFuzz": [
+     "samples[].totalDistanceInMeters"
+    ],
+    "instantaneousSampleFuzz": [
+     "samples[].heartRate"
+    ]
+   },
+   "why": "sample-stream time-structure ruling (2026-09-21, from Q8's text). DETECTION-POWER anchor (app-a9's 0%-at-any-seed proof): mid-workout magnitudes over 10 samples make increment (2.9) << fuzz band (~20% of 5400), so a reverted monotone ruling inverts with probability ~1 — a property vector must be drawn from the region where the violation is DETECTABLE. elapsed clocks (clock/moving/timerDurationInSeconds) are the ruled time-cadence -> VERBATIM (offsets-from-start, no delta to apply; cardinality x cadence already discloses duration); absolute startTimeInSeconds shifts by the one context delta (cadence steps survive); cumulative totalDistanceInMeters fuzzes MONOTONE (a backwards odometer is the same internal contradiction as a backwards clock; magnitude destroyed, monotonicity kept); instantaneous heartRate random-fuzzed; array cardinality 3 verbatim"
   },
   {
    "id": "tp-basic-nulls-never-invented",
@@ -299,7 +431,6 @@
     "idsReplacedLinksPreserved": [
      "Id"
     ],
-    "timestampOffsetsPreserved": true,
     "allowlistVerbatim": [],
     "unclassifiedNotVerbatim": []
    },
