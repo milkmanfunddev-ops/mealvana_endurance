@@ -1,6 +1,6 @@
 # 123: Retest: paid and lapsed subscriptions
 
-**Status:** in-progress (wave 38, 2026-09-26)
+**Status:** done (wave 38, 2026-09-26)
 **Blocked by:** none.
 **Next:** `/implement-lee testing-wave`
 **Model:** opus

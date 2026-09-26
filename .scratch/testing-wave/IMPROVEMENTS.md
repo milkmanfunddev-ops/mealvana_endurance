@@ -32,6 +32,19 @@ Each entry: what went wrong or cost time, where it was seen, and the suggested f
   and noted it. Suggested fix: a map for the prompt says "from code, unverified" per line, and
   anything a Finding's verdict hangs on is checked against the screen, not the map.
 
+- **#92 no slow network, only a cut one (wave 38).** 122's 12-006 needs a network that answers
+  slowly, to see the admin read give up at two seconds. The agent built a `netcut`-style shim that
+  sleeps inside `connect()`; that blocks Dart's IO threads, the TLS handshakes fail, and the app
+  saw a failing network with a 24-37 s blank start that cannot be blamed on the app (122-009).
+  Suggested fix: a `netcut.sh slow <ms>` that delays after the connect (or a host-side proxy with
+  a fixed latency for the app's traffic only), tested against a known two-second timeout before an
+  agent relies on it.
+- **#93 `CRED type` right after the focus tap drops characters (wave 38).** 122's first password
+  entry landed 17 of 19 characters; waiting 1.2 s after the focus tap typed all 19. 123's `idb ui
+  text` cut a sign-up address the same way (#35). Suggested fix: `cred.mjs type` waits about a
+  second before typing, and the runbook says to count the dots against the password's length
+  before submitting.
+
 ## Done
 
 - **#79 the Patrol account is out of CRED's reach (wave 32).** 03-005's Steps name the Patrol
