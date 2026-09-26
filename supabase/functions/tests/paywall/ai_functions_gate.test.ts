@@ -24,7 +24,15 @@ const lapsed = (): World => ({
   userId: USER,
   entitlements: [{ user_id: USER, active_until: iso(-24 * HOUR), period_type: 'NORMAL' }],
   balance: 50,
-  users: [{ id: USER, is_internal: true }],
+  users: [{ id: USER, is_internal: true, is_admin: false }],
+});
+
+/** A team admin (`users.is_admin`, 122-004) who never subscribed, with an empty wallet: past the gate, stopped at the credit check. */
+const admin = (): World => ({
+  ...lapsed(),
+  entitlements: [],
+  balance: 0,
+  users: [{ id: USER, is_internal: true, is_admin: true }],
 });
 
 /** An account that never subscribed: no row at all, same bought credits. */
@@ -96,12 +104,26 @@ for (const [label, world] of [['lapsed (expired row)', lapsed], ['never subscrib
         const got = { status: res.status, body: await res.json(), type: res.headers.get('content-type') };
         assertEquals(got, reference);
         assert(hits.includes('GET /rest/v1/user_entitlements'), `${fn} read the entitlement cache: ${hits.join(', ')}`);
-        // Refused before anything costs: no wallet check, no model call, no tester read.
+        // Refused before anything costs: no wallet check, no model call. The one `users` read is the
+        // gate's own admin-flag check (122-004), made once the cache said no; nothing else reads the row.
         assertEquals(hits.filter((h) => h.includes('ai_budget_reserve') || h.startsWith('POST https://')), [], `${fn} stopped at the gate`);
-        assertEquals(hits.filter((h) => h === 'GET /rest/v1/users'), [], `${fn} stopped at the gate`);
+        assertEquals(hits.filter((h) => h === 'GET /rest/v1/users'), ['GET /rest/v1/users'], `${fn} stopped at the gate`);
       });
     });
   }
+}
+
+for (const fn of [...FUNCTIONS, 'vana-chat']) {
+  test(`${fn} lets an Admin with no entitlement row through (122-004)`, async () => {
+    await withWorld(admin(), async (hits) => {
+      const res = await calls[fn](post(fn, fn === 'vana-chat' ? { message: 'hi', kind: 'general' } : REQUESTS[fn]));
+      const body = await res.json().catch(() => null);
+      assertNotEquals(res.status, 403, `${fn} answered ${res.status} ${JSON.stringify(body)}`);
+      assertNotEquals(body?.error, 'pro_required', `${fn} answered ${res.status} ${JSON.stringify(body)}`);
+      assert(hits.includes('GET /rest/v1/user_entitlements'), `${fn} read the entitlement cache: ${hits.join(', ')}`);
+      assert(hits.includes('GET /rest/v1/users'), `${fn} read the admin flag: ${hits.join(', ')}`);
+    });
+  });
 }
 
 for (const fn of FUNCTIONS) {
