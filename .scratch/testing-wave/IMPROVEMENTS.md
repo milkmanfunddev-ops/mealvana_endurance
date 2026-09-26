@@ -39,14 +39,14 @@ Each entry: what went wrong or cost time, where it was seen, and the suggested f
   Suggested fix: a `netcut.sh slow <ms>` that delays after the connect (or a host-side proxy with
   a fixed latency for the app's traffic only), tested against a known two-second timeout before an
   agent relies on it.
+
+## Done
+
 - **#93 `CRED type` right after the focus tap drops characters (wave 38).** 122's first password
   entry landed 17 of 19 characters; waiting 1.2 s after the focus tap typed all 19. 123's `idb ui
   text` cut a sign-up address the same way (#35). Suggested fix: `cred.mjs type` waits about a
   second before typing, and the runbook says to count the dots against the password's length
-  before submitting.
-
-## Done
-
+  before submitting. Done 09-26 (wave 39 lead): `cred.mjs type` waits 1 s (`CRED_TYPE_DELAY_MS`) before typing; runbook step 5 says to count the dots.
 - **#79 the Patrol account is out of CRED's reach (wave 32).** 03-005's Steps name the Patrol
   account, whose password lives only in `secrets/integration_test.env`, which agents may not read.
   116 ran it on its own new account. Suggested fix: add the Patrol account to the credentials

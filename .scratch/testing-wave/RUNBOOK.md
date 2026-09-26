@@ -97,7 +97,9 @@ ticket says so.
   read it back with `idb ui describe-all --udid UDID`: a field shows only the tail of a long value.
   Passwords go in with `CRED type`, never by hand and never into a Finding, commit or report.
   Never tap the eye (show password) icon on a password field: the element list and screenshots
-  then carry the password (#89). Read a password field back only as a count of dots.
+  then carry the password (#89). Read a password field back only as a count of dots, and check
+  the count against the password's length before submitting (`CRED type` waits a second after
+  the focus tap, since typing sooner dropped characters, #93).
 - A new account signs up at `lee+e2e-NN-<UTC time>@rightpathprogramming.com`. Dev asks for the
   6-digit code we email (since 2026-09-24): read it with the Gmail tool
   (`to:lee+e2e-NN-… from:support@mealvana.io`, newest first), type it into the app. Before

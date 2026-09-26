@@ -126,6 +126,8 @@ if (process.argv[1] && resolve(process.argv[1]) === fileURLToPath(import.meta.ur
 
   if (cmd === 'type' && email && f.udid) {
     const acct = find(text(), email, f.section) ?? missing();
+    // A field tapped a moment ago drops the first characters typed into it (IMPROVEMENTS #93).
+    Atomics.wait(new Int32Array(new SharedArrayBuffer(4)), 0, 0, Number(process.env.CRED_TYPE_DELAY_MS ?? 1000));
     const r = spawnSync('idb', ['ui', 'text', acct.password, '--udid', f.udid], { stdio: ['ignore', 'ignore', 'pipe'] });
     if (r.status !== 0) { process.stderr.write(`idb failed (exit ${r.status})\n`); process.exit(1); }
     process.stdout.write(`typed the password for ${acct.address} (${acct.section})\n`);
