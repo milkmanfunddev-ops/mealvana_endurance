@@ -1,0 +1,10 @@
+# 32-003: sessions for A right after Reset Password (02:44:11Z); before the reset (02:43:40Z) there were:
+#   {"id": "7b114bf7-78cc-4e33-ac6a-bd3b5f09056c", "created_at": "2026-09-26 02:35:08.609571+00"}
+#   {"id": "7bceb219-33ca-4be3-8296-7d89e6dca3e9", "created_at": "2026-09-26 02:39:03.871576+00"}
+#   {"id": "efa827a9-ae20-4549-99e7-d70f37b5f626", "created_at": "2026-09-26 02:43:28.766946+00"}
+(no rows)
+# refresh tokens by session
+(no rows)
+# 32-003: after in-app sign-in with the new password (02:44:41Z)
+{"id": "0ec7bdc7-3deb-448a-afd3-98da53f63c43", "user_id": "f153ee51-0b0d-41d3-9576-68ccb3835d3a", "created_at": "2026-09-26 02:44:35.433471+00", "not_after": null, "refreshed_at": null}
+{"id": "f153ee51-0b0d-41d3-9576-68ccb3835d3a", "email": "lee+e2e-124-20260926t0224za@rightpathprogramming.com", "last_sign_in_at": "2026-09-26 02:44:35.432601+00", "recovery_sent_at": null}
