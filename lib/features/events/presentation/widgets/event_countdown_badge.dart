@@ -1,6 +1,8 @@
 import 'package:flutter/material.dart';
 import 'package:mealvana_endurance/shared/widgets/kyle_design/kyle_design.dart';
 
+import '../../domain/event_countdown.dart';
+
 /// Countdown badge widget showing time until event
 class EventCountdownBadge extends StatelessWidget {
   final DateTime eventDate;
@@ -9,32 +11,13 @@ class EventCountdownBadge extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    // Compare dates at day level only, ignoring time components
-    final now = DateTime.now();
-    final todayDateOnly = DateTime(now.year, now.month, now.day);
-    final eventDateOnly = DateTime(
-      eventDate.year,
-      eventDate.month,
-      eventDate.day,
+    // One formula for every countdown surface (117-007).
+    final countdownText = eventCountdownText(
+      eventDate,
+      today: DateTime.now(),
+      pastLabel: 'Event completed',
+      oneDayLabel: '1 day away',
     );
-    final daysDifference = eventDateOnly.difference(todayDateOnly).inDays;
-
-    String countdownText;
-    if (daysDifference < 0) {
-      countdownText = 'Event completed';
-    } else if (daysDifference == 0) {
-      countdownText = 'Today!';
-    } else if (daysDifference == 1) {
-      countdownText = '1 day away';
-    } else if (daysDifference < 7) {
-      countdownText = '$daysDifference days away';
-    } else if (daysDifference < 30) {
-      final weeks = (daysDifference / 7).floor();
-      countdownText = '$weeks ${weeks == 1 ? 'week' : 'weeks'} away';
-    } else {
-      final months = (daysDifference / 30).floor();
-      countdownText = '$months ${months == 1 ? 'month' : 'months'} away';
-    }
 
     return Container(
       padding: const EdgeInsets.symmetric(
