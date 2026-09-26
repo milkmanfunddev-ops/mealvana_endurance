@@ -1,8 +1,8 @@
 /// Testing-wave 31-004: on Profile & Preferences, clearing First name or Last
 /// name and tapping Save Changes kept the old name. The screen sent null for an
 /// empty field, and the save merged `null ?? existing`, so "cleared" read as
-/// "not touched". Email, the screen's other free-text field, had the same
-/// problem.
+/// "not touched". Email had the same problem until it became read-only
+/// (ticket 138, 119-002).
 ///
 /// Drives the real screen and the real SettingsController save path; only the
 /// user repository (the local write plus upload) is faked.
@@ -133,14 +133,20 @@ void main() {
     expect(saved!.toJson()['last_name'], isNull);
   });
 
-  testWidgets('clearing Email saves it cleared, names kept', (tester) async {
+  // Ticket 138 (119-002, Lee 2026-09-26): Email is the login email and
+  // read-only on this screen; the save never sends it.
+  testWidgets('Email is shown read-only as the login email and never saved',
+      (tester) async {
     await pumpScreen(tester);
-    await clearAndSave(tester, 'profile_edit.email_field');
 
-    expect(saved, isNotNull, reason: 'Save Changes must write the profile');
-    expect(saved!.email, isNull);
-    expect(saved!.firstName, 'Alice');
-    expect(saved!.lastName, 'Smith');
+    expect(find.byKey(const ValueKey('profile_edit.email_field')), findsNothing);
+    final value = find.byKey(const ValueKey('profile_edit.email_value'));
+    expect(value, findsOneWidget);
+    expect(tester.widget<Text>(value).data, 'alice@example.com');
+    expect(find.text('Your login email'), findsOneWidget);
+
+    await clearAndSave(tester, 'profile_edit.first_name_field');
+    expect(saved!.email, 'alice@example.com');
   });
 
   test('a save that does not mention the text fields keeps them', () async {

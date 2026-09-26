@@ -131,7 +131,8 @@ class _PreferencesScreenState extends ConsumerState<PreferencesScreen> {
         // "leave it alone" (31-004).
         firstName: _firstNameController.text.trim(),
         lastName: _lastNameController.text.trim(),
-        email: _emailController.text.trim(),
+        // Email is the login email and read-only here (119-002, Lee
+        // 2026-09-26); a change-email flow can come later.
       );
 
       if (mounted) {
@@ -157,60 +158,108 @@ class _PreferencesScreenState extends ConsumerState<PreferencesScreen> {
     }
   }
 
+  /// Back arrow, bottom Back and the iOS swipe all come here (119-010, Lee
+  /// 2026-09-26): with edits pending, ask "Discard changes?"; with none,
+  /// leave at once. A programmatic pop after a save bypasses the guard.
+  Future<void> _leave() async {
+    if (!_hasChanges) {
+      if (mounted) Navigator.of(context).pop();
+      return;
+    }
+    final discard = await _confirmDiscard();
+    if (discard && mounted) Navigator.of(context).pop();
+  }
+
+  Future<void> _onPopInvoked(bool didPop) async {
+    if (didPop) return;
+    await _leave();
+  }
+
+  Future<bool> _confirmDiscard() async {
+    final content = ref.read(contentServiceProvider);
+    final answer = await showDialog<bool>(
+      context: context,
+      builder: (ctx) => AlertDialog(
+        key: const ValueKey('profile_edit.discard_dialog'),
+        title: Text(content.getValue(ContentKeys.profileEditDiscardTitle)),
+        content: Text(content.getValue(ContentKeys.profileEditDiscardBody)),
+        actions: [
+          TextButton(
+            key: const ValueKey('profile_edit.keep_editing'),
+            onPressed: () => Navigator.of(ctx).pop(false),
+            child: Text(content.getValue(ContentKeys.profileEditKeepEditing)),
+          ),
+          TextButton(
+            key: const ValueKey('profile_edit.discard'),
+            onPressed: () => Navigator.of(ctx).pop(true),
+            child: Text(content.getValue(ContentKeys.profileEditDiscard)),
+          ),
+        ],
+      ),
+    );
+    return answer ?? false;
+  }
+
   @override
   Widget build(BuildContext context) {
     final settingsAsync = ref.watch(settingsControllerProvider);
     final content = ref.watch(contentServiceProvider);
     final theme = Theme.of(context);
 
-    return Scaffold(
-      backgroundColor: theme.scaffoldBackgroundColor,
-      // A settings screen titled for what it is, with its back control at
-      // the top (31-014); the onboarding heading it shared is gone.
-      appBar: AppBar(
-        backgroundColor: Colors.transparent,
-        elevation: 0,
-        scrolledUnderElevation: 0,
-        leading: const CustomAppBarBackButton(
-          key: ValueKey('preferences.app_bar_back_button'),
-        ),
-        title: Text(
-          key: const ValueKey('preferences.title'),
-          content.getValue(ContentKeys.settingsProfilePreferencesTitle),
-          style: AppTextStyles.sectionTitle.copyWith(
-            color: theme.colorScheme.onSurface,
+    return PopScope(
+      // Every way out goes through _leave (119-010).
+      canPop: false,
+      onPopInvokedWithResult: (didPop, _) => _onPopInvoked(didPop),
+      child: Scaffold(
+        backgroundColor: theme.scaffoldBackgroundColor,
+        // A settings screen titled for what it is, with its back control at
+        // the top (31-014); the onboarding heading it shared is gone.
+        appBar: AppBar(
+          backgroundColor: Colors.transparent,
+          elevation: 0,
+          scrolledUnderElevation: 0,
+          leading: CustomAppBarBackButton(
+            key: const ValueKey('preferences.app_bar_back_button'),
+            onPressed: _leave,
+          ),
+          title: Text(
+            key: const ValueKey('preferences.title'),
+            content.getValue(ContentKeys.settingsProfilePreferencesTitle),
+            style: AppTextStyles.sectionTitle.copyWith(
+              color: theme.colorScheme.onSurface,
+            ),
           ),
         ),
-      ),
-      body: ContentArea(
-        child: Column(
-          children: [
-            // Content area
-            Expanded(
-              child: SafeArea(
-                bottom: false,
-                child: settingsAsync.when(
-                  data: (state) => _buildContent(context, state),
-                  loading: () => _buildLoadingState(context),
-                  error: (error, stack) => _buildErrorState(context, error),
+        body: ContentArea(
+          child: Column(
+            children: [
+              // Content area
+              Expanded(
+                child: SafeArea(
+                  bottom: false,
+                  child: settingsAsync.when(
+                    data: (state) => _buildContent(context, state),
+                    loading: () => _buildLoadingState(context),
+                    error: (error, stack) => _buildErrorState(context, error),
+                  ),
                 ),
               ),
-            ),
 
-            // Footer navigation (matching onboarding style)
-            SafeArea(
-              top: false,
-              child: FigmaOnboardingFooter(
-                onContinue: _hasChanges && !_isSaving ? _saveChanges : null,
-                onBack: () => Navigator.of(context).pop(),
-                canContinue: _hasChanges && !_isSaving,
-                isLoading: _isSaving,
-                buttonText: 'Save Changes',
-                continueButtonKey: const ValueKey('profile_edit.save_button'),
-                backButtonKey: const ValueKey('profile_edit.back_button'),
+              // Footer navigation (matching onboarding style)
+              SafeArea(
+                top: false,
+                child: FigmaOnboardingFooter(
+                  onContinue: _hasChanges && !_isSaving ? _saveChanges : null,
+                  onBack: _leave,
+                  canContinue: _hasChanges && !_isSaving,
+                  isLoading: _isSaving,
+                  buttonText: 'Save Changes',
+                  continueButtonKey: const ValueKey('profile_edit.save_button'),
+                  backButtonKey: const ValueKey('profile_edit.back_button'),
+                ),
               ),
-            ),
-          ],
+            ],
+          ),
         ),
       ),
     );
@@ -340,17 +389,15 @@ class _PreferencesScreenState extends ConsumerState<PreferencesScreen> {
 
           const SizedBox(height: AppSpacing.md),
 
-          // Email field
-          _buildTextField(
-            fieldKey: const ValueKey('profile_edit.email_field'),
+          // Email: the login email, read-only (119-002, Lee 2026-09-26).
+          _buildReadOnlyField(
             context: context,
-            controller: _emailController,
-            label: 'Email',
-            hint: 'Email address',
+            label: ref
+                .watch(contentServiceProvider)
+                .getValue(ContentKeys.profileEditEmailLoginLabel),
+            value: _emailController.text,
             icon: FontAwesomeIcons.envelope.data,
-            keyboardType: TextInputType.emailAddress,
-            autocorrect: false,
-            autofillHints: const [AutofillHints.email],
+            valueKey: const ValueKey('profile_edit.email_value'),
           ),
 
           const SizedBox(height: AppSpacing.md),
@@ -789,6 +836,60 @@ class _PreferencesScreenState extends ConsumerState<PreferencesScreen> {
                 ),
               ),
             ),
+          ),
+        ),
+      ],
+    );
+  }
+
+  /// A labelled value that cannot be edited, styled like the text fields.
+  Widget _buildReadOnlyField({
+    required BuildContext context,
+    required String label,
+    required String value,
+    required IconData icon,
+    Key? valueKey,
+  }) {
+    final scheme = Theme.of(context).colorScheme;
+    return Column(
+      crossAxisAlignment: CrossAxisAlignment.start,
+      children: [
+        Text(
+          label,
+          style: AppTextStyles.bodyMedium.copyWith(
+            color: scheme.onSurface,
+            fontWeight: FontWeight.w500,
+          ),
+        ),
+        const SizedBox(height: AppSpacing.sm),
+        Container(
+          width: double.infinity,
+          padding: const EdgeInsets.symmetric(
+            horizontal: AppSpacing.md,
+            vertical: AppSpacing.md,
+          ),
+          decoration: BoxDecoration(
+            borderRadius: AppRadius.inputRadius,
+            border: Border.all(color: scheme.onSurface.withValues(alpha: 0.12)),
+          ),
+          child: Row(
+            children: [
+              Icon(
+                icon,
+                size: AppIconSizes.controlIcon,
+                color: scheme.onSurfaceVariant,
+              ),
+              const SizedBox(width: AppSpacing.sm),
+              Expanded(
+                child: Text(
+                  value,
+                  key: valueKey,
+                  style: AppTextStyles.bodyMedium.copyWith(
+                    color: scheme.onSurfaceVariant,
+                  ),
+                ),
+              ),
+            ],
           ),
         ),
       ],
