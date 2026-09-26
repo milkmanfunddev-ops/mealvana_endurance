@@ -20,18 +20,38 @@ Each entry: what went wrong or cost time, where it was seen, and the suggested f
   ticket that adds a timeout or a retry to a write names each write it covers and says whether
   the server call is idempotent; a non-idempotent one gets a key or no timeout.
   Ruled 2026-09-26 (Lee): the server skips a repeated `log_from_plan`, `pick_meals` or `save_meal` by a phone-made id (ticket 134); the runbook rule goes in with ticket 142.
+  Rule in the runbook 09-26 (ticket 142, after-the-wave step 3); stays open for ticket 134's server change.
+- **#98 the dev overlay buttons cover row menus (wave 40, and 100-001).** The red accessibility and
+  blue "Open testing tools" buttons (x ~367, y ~695 and ~756) sit on the timeline rows' ⋯ and the
+  Recipes rows' +; 113 made three stray taps. Suggested fix: runbook step 5 says to scroll a row
+  out of y 650-790 before tapping its ⋯.
+  Ruled 2026-09-26 (Lee): the dev buttons fold into one small button at the top edge (ticket 141).
+- **#100 the password's last character still showed 3 s after `CRED type` (ticket 142's proof).**
+  Even with the new 2 s wait, a screenshot 0.2 s after tapping Log In (about 3 s after typing) showed
+  the last character of the throwaway's password next to the dots, on the "Logging in..." screen.
+  It was the fixed `!` every `CRED new` password ends with, so nothing secret showed, and the file
+  stayed in scratch. Flutter's obscured field seems to keep the last character until the cursor
+  blinks a few times, which may not happen while the field is disabled. Suggested fix: `CRED new`
+  passwords end in a character that gives nothing away (already true), and the runbook says a
+  screenshot of a password field right after a submit tap may carry the last character, so take
+  the next screenshot after the screen changes.
+
+## Done
+
 - **#87 a run's account delete removed the state the next ticket expected (wave 36).** 118's
   ticket said its DEVCOACH30 redeem would leave a pending pairing for 122's 11-009; deleting 118's
   account (runbook step 9) removed the pairing. The lead added a line to 122's Setup: make its
   own pairing. Suggested fix: never plan one ticket's start state on another run's throwaway
   account, since step 9 deletes it.
   Ruled 2026-09-26 (Lee): a seed script writes the start states tests need in a second or two; never another run's account (ticket 142).
+  Done 09-26 (ticket 142): `scripts/testing-wave/seed-states.mjs` writes start states on a run's own `lee+e2e-*` account in about a second (`pairing` 0.93 s, `grant` 1.00 s), dev only; runbook step 6 and lead step 5. No retest after ticket 140 needs a pending pairing (11-009 is moot, 100-008 needs declined/archived), so `pairing` writes `active` by default and takes `--status`.
 - **#91 the lead's code map was wrong twice (wave 37).** An Explore agent's map said the Log In
   chooser has no Apple/Google buttons (it does) and that sign-up with an existing address shows
   "Account Already Exists" (it does not: Supabase hides it, 124-002). Both agents checked the app
   and noted it. Suggested fix: a map for the prompt says "from code, unverified" per line, and
   anything a Finding's verdict hangs on is checked against the screen, not the map.
   Ruled 2026-09-26 (Lee): maps say "from code, unverified" per line; verdict facts are checked on screen (ticket 142).
+  Done 09-26 (ticket 142): lead step 5 says every code-map line reads "from code, unverified" and verdict facts are checked on screen.
 - **#92 no slow network, only a cut one (wave 38).** 122's 12-006 needs a network that answers
   slowly, to see the admin read give up at two seconds. The agent built a `netcut`-style shim that
   sleeps inside `connect()`; that blocks Dart's IO threads, the TLS handshakes fail, and the app
@@ -40,6 +60,7 @@ Each entry: what went wrong or cost time, where it was seen, and the suggested f
   a fixed latency for the app's traffic only), tested against a known two-second timeout before an
   agent relies on it.
   Ruled 2026-09-26 (Lee): build `netcut slow <ms>`, proven against a known 2 s timeout first (ticket 142).
+  Done 09-26 (ticket 142): `netcut.sh slow <ms>` sends the app's TCP connects to a host proxy (`slowproxy.mjs`) that holds each reply; no app thread sleeps. Proved on a wave simulator: `slow 3000 --only api.revenuecat.com` made the 2 s entitlement wait give up (paywall, then in when RevenueCat answered 3.14 s later); `slow 500` went straight in (0.59 s). Numbers in the script header.
 - **#96 a Test Store monthly renews while signed out (wave 40, 117-015).** 117's monthly renewed
   at 11:25, 11:29 and 11:37Z with the account signed out and the app closed, each renewal
   back-dated after a 42 s to 3.7 min gap. That contradicts #80's "lapses about 5 minutes after
@@ -48,28 +69,25 @@ Each entry: what went wrong or cost time, where it was seen, and the suggested f
   lapse polls RevenueCat for the period end and signs in within the gap, or a lapse fixture
   (a Grant that expires) replaces the Test Store for lapse checks; runbook step 5 changes #80's line.
   Ruled 2026-09-26 (Lee): lapse tests use a seeded free grant that ends in about 2 minutes, not the Test Store (ticket 142).
+  Done 09-26 (ticket 142): `seed-states.mjs grant <account> --minutes 2`; the lapsed paywall showed within 5 s of the end with the app open. RevenueCat drops a second grant on the same account (200, nothing written), so the command reads the grant back and exits 2; one lapse check per account. Runbook step 5's #80 lines replaced.
 - **#97 an agent tried a RevenueCat write the ticket did not name (wave 40).** 117 called the v2
   cancel on its own account's subscription to force the lapse (refused, nothing changed). Runbook
   step 6 says read, never write. Suggested fix: the prompt repeats "no RevenueCat or database
   write outside the ticket's criteria, even on your own account".
   Ruled 2026-09-26 (Lee): every prompt repeats the no-unnamed-writes rule (ticket 142).
-- **#98 the dev overlay buttons cover row menus (wave 40, and 100-001).** The red accessibility and
-  blue "Open testing tools" buttons (x ~367, y ~695 and ~756) sit on the timeline rows' ⋯ and the
-  Recipes rows' +; 113 made three stray taps. Suggested fix: runbook step 5 says to scroll a row
-  out of y 650-790 before tapping its ⋯.
-  Ruled 2026-09-26 (Lee): the dev buttons fold into one small button at the top edge (ticket 141).
+  Done 09-26 (ticket 142): runbook step 6 and lead step 5 (every prompt repeats it).
 - **#99 a follow-up test that cannot be run as written (wave 40).** 29-004 asks for tab switches
   before the first sync ends; the sync ends ~5 s after Log In, under the What's New sheet, which
   covers the tab bar. Suggested fix: triage rewrites a follow-up the run proved unreachable, or
   closes it, rather than carrying it to the next retest.
   Ruled 2026-09-26 (Lee): the lead rewrites or closes a follow-up a run proved impossible (ticket 142).
+  Done 09-26 (ticket 142): after-the-wave step 3.
 - Small, for the runbook's step 5 tips: zsh does not split `$var` (`set -- $t`, `F="node …"; $F`
   fail; use functions); a tap on the next field right after `idb ui text` drops the tail (wait 2 s,
   read back, as #93); Backspace deletes from the tap point (forward delete, keycode 76, clears a
   prefilled field); the timeline's Next day arrow moves with the title width.
   Ruled 2026-09-26: ticket 142 folds these into runbook step 5.
-
-## Done
+  Done 09-26 (ticket 142): runbook step 5, next to the `idb ui text` fallback.
 
 - **#94 a logging loop made an 18.6 MB console (wave 39).** 120's offline stretch logged 4,421
   identical `[IS_ADMIN]` warning boxes (Finding 120-009); the `(Flutter)` filter from #88 kept them

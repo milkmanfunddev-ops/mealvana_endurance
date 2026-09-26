@@ -28,9 +28,9 @@
 
 **Touches:** scripts/testing-wave/netcut/netcut.sh, scripts/testing-wave/netcut/netcut.c, scripts/testing-wave/seed-codes.mjs, scripts/testing-wave/cred.mjs, scripts/testing-wave/sweep-accounts.mjs (guards only, if shared), .scratch/testing-wave/RUNBOOK.md, .scratch/testing-wave/IMPROVEMENTS.md
 
-- [ ] `netcut slow 3000` makes the 2 s entitlement read give up. `slow 500` does not. `off` restores. Results are in the header.
-- [ ] `netcut on` then an immediate server tap: blocked, logged, no server row.
-- [ ] The seed writes the pairing state and the short grant on a `lee+e2e-*` account in under ~2 s, refuses prod and non-sweepable accounts, and the grant lapses on screen.
-- [ ] `CRED type` returns 2 s after typing. RUNBOOK and IMPROVEMENTS carry every rule above, and #87 #91 #92 #96 #97 #99 move to Done.
+- [x] `netcut slow 3000` makes the 2 s entitlement read give up. `slow 500` does not. `off` restores. Results are in the header.
+- [x] `netcut on` then an immediate server tap: blocked, logged, no server row.
+- [x] The seed writes the pairing state and the short grant on a `lee+e2e-*` account in under ~2 s, refuses prod and non-sweepable accounts, and the grant lapses on screen.
+- [x] `CRED type` returns 2 s after typing. RUNBOOK and IMPROVEMENTS carry every rule above, and #87 #91 #92 #96 #97 #99 move to Done.
 
 Next: /implement-lee testing-wave

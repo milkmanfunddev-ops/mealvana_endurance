@@ -93,13 +93,19 @@ ticket says so.
 - Scroll with slow idb drags (`idb ui swipe X1 Y1 X2 Y2 --duration 1.2 --udid UDID`) whenever the
   run counts rows or chat turns: the mobile MCP's swipe flings past them (IMPROVEMENTS #43).
 - Type text with the mobile MCP; `idb ui text "<text>" --udid UDID` is the fallback (it once
-  mangled a long address, IMPROVEMENTS #35). Before submitting a long value (an address, a code),
+  mangled a long address, IMPROVEMENTS #35). After `idb ui text`, wait 2 s before tapping the next
+  field and read the value back: a tap sooner drops the tail. Backspace deletes forward from the
+  tap point, so clear a prefilled field with forward delete (`idb ui key 76`) from its start.
+  zsh does not split `$var` (`set -- $t` and `F="node …"; $F` both fail), so wrap a repeated
+  command in a shell function. The Timeline's Next day arrow moves with the title's width: read
+  its position from the element list each time, never reuse a coordinate. Before submitting a long value (an address, a code),
   read it back with `idb ui describe-all --udid UDID`: a field shows only the tail of a long value.
   Passwords go in with `CRED type`, never by hand and never into a Finding, commit or report.
   Never tap the eye (show password) icon on a password field: the element list and screenshots
   then carry the password (#89). Read a password field back only as a count of dots, and check
   the count against the password's length before submitting (`CRED type` waits a second after
-  the focus tap, since typing sooner dropped characters, #93).
+  the focus tap, since typing sooner dropped characters, #93, and 2 s after typing, since iOS
+  shows the last character for a moment and one screenshot caught it, 120-010).
 - A new account signs up at `lee+e2e-NN-<UTC time>@rightpathprogramming.com`. Dev asks for the
   6-digit code we email (since 2026-09-24): read it with the Gmail tool
   (`to:lee+e2e-NN-… from:support@mealvana.io`, newest first), type it into the app. Before
@@ -123,10 +129,14 @@ ticket says so.
   which makes no model call and needs no spend: `xcrun simctl openurl UDID
   "com.milkman.mealvanaendurance:///vana?c=<conversation id>"` (#81). Keep clear of the floating
   Ask Vana button; a stray tap on it opens a new chat and spends.
-- A Test Store purchase on dev renews only while the app is signed in: a monthly renews every
-  5 minutes and lapses about 5 minutes after sign-out; an Annual has 1-hour periods. A run that
-  needs Pro without the paywall coming back buys Annual; a run that needs a lapse buys monthly
-  and signs out (#80).
+- A run that needs Pro without the paywall coming back buys Annual (1-hour periods on the Test
+  Store). A lapse check never uses a Test Store monthly: it keeps renewing while signed out
+  (117-015). It uses a seeded grant instead, `node scripts/testing-wave/seed-states.mjs grant
+  <your account> --minutes 2`: free `pro` in RevenueCat that ends 2 minutes out. Measured
+  2026-09-26: with the app open, the lapsed paywall showed within 5 s of the end, and
+  `user_entitlements` holds the end as `active_until`. One grant per account: RevenueCat answers
+  a second grant on the same account and writes nothing (the command then exits 2), so a second
+  lapse check needs a new account (#96).
 - Screenshots go in `RUNS` with names that say what they show. Take them with
   `xcrun simctl io UDID screenshot RUNS/<name>.png`: the mobile MCP's `save_screenshot` refuses
   paths inside the worktree. After a tap, take a new screenshot before trusting the MCP's element
@@ -135,22 +145,30 @@ ticket says so.
   `idb ui describe-all` lists its fields (IMPROVEMENTS #51). Drive it by coordinate taps read
   off `simctl io` screenshots, one screenshot after every tap, and type with the mobile MCP
   (`CRED type` for the password once the field is focused).
-- Offline for your app only: `scripts/testing-wave/netcut/netcut.sh launch UDID SCRATCH` relaunches
-  the app with a connect-blocking library injected (network still on); `netcut.sh on SCRATCH` cuts
-  it and `netcut.sh off SCRATCH` restores it, no relaunch. A plain `on` blocks new connects only:
-  a connection the app opened before the cut stays up, so the first offline tap can still reach
-  the server (#74). Before an offline check, cut with `netcut.sh on SCRATCH --relaunch UDID`,
-  which relaunches the app with the cut already in force. The host and other simulators keep their
-  network. Blocked connects are logged to `SCRATCH/netcut.log`. The app's connectivity check still
-  reads "online", so its offline banner needs a device (20-006). Start the log stream first
-  (step 3), since `launch` replaces the plain `simctl launch`.
+- Offline or slow for your app only: `scripts/testing-wave/netcut/netcut.sh launch UDID SCRATCH`
+  relaunches the app with a connect-blocking library injected (network still on); `netcut.sh on
+  SCRATCH` cuts it and `netcut.sh off SCRATCH` restores it, no relaunch. `on` also shuts down
+  every connection the app already had open, so the first offline tap is offline too (111-004,
+  proved 2026-09-26 with a Redeem 0.46 s after `on`); `on SCRATCH --relaunch UDID` stays as the
+  fallback. `netcut.sh slow <ms> SCRATCH` makes the app's traffic answer `<ms>` late but succeed
+  (a host proxy holds each reply; `--only api.revenuecat.com` slows one host alone, `--relaunch
+  UDID` so connections opened before it are slowed too). Proved against the 2 s entitlement wait:
+  `slow 3000 --only api.revenuecat.com` gives up and shows the paywall, then lets the account in
+  when RevenueCat answers; `slow 500` goes straight in (#92). An Admin is let through when that
+  read gives up, so use a non-admin account for it. The host and other simulators keep their
+  network. Events go to `SCRATCH/netcut.log` and `SCRATCH/slowproxy.log`; the proxy's PID is in
+  `SCRATCH/slowproxy.pid` (step 9). The app's connectivity check still reads "online", so its
+  offline banner needs a device (20-006). Start the log stream first (step 3), since `launch`
+  replaces the plain `simctl launch`.
 - A step that must be seen live (a renewal, a lapse, a timer): write the clock time before and
   after every wait in `RUNS/notes.md`. When the gap is longer than planned, write "not seen live"
   next to the step and say how it was checked instead.
 
 ## 6. Check RevenueCat and the dev database
 
-Read, never write, unless your ticket's criteria name the write (a Grant, for example).
+Read, never write, unless your ticket's criteria name the write (a Grant, for example): no
+RevenueCat or database writes the ticket doesn't name, even on your own account (#97). A cancel,
+a grant or an SQL fix to force a state is a Finding, not a step.
 
 - RevenueCat: the v2 API with the secret key in `secrets/revenuecat.env` (main clone), or the
   RevenueCat MCP.
@@ -180,6 +198,13 @@ clears their redemptions; `seed-codes.mjs list` shows them with their counts. Fo
 code, sign up first, then `seed-codes.mjs own <your account's user id>` prints a coach code your
 account owns; it is deleted with the account. Run `seed` at the start of a redeem run, since an
 earlier run may have spent the once-in-total giveaway.
+
+Start states come from `node scripts/testing-wave/seed-states.mjs` on an account this run made,
+never from another run's account, which that run's step 9 deletes (#87). Dev only, `lee+e2e-*`
+accounts only, each in about a second: `pairing <account> [--status active|pending|declined|archived]`
+(a pairing with test@test.com; `active` by default, since coach codes now pair at once), `grant
+<account> --minutes 2` (the lapse fixture, step 5), `show <account>` (read only). The state goes
+with the account when step 9 deletes it.
 
 ## 7. Look around on every screen
 
@@ -294,6 +319,11 @@ should behave) goes to the page as an open question, the normal way, and nothing
    prompt's build commit wins over `app-build.json` if they ever differ. When two tickets in the
    wave use the same account, both prompts say so and name what the other run writes, so each
    checks only its own rows and treats the other's as expected (IMPROVEMENTS #44).
+   Every prompt repeats: "no RevenueCat or database writes the ticket doesn't name, even on your
+   own account" (#97). A start state the ticket needs is written by the run itself with
+   `seed-states.mjs` on its own account, never planned on another run's account (#87). Every line
+   of a code map in a prompt says "from code, unverified", and anything a Finding's verdict hangs
+   on is checked on the screen, never taken from the map (#91).
    Before writing any prompt, read the code behind every screen the ticket visits: what its Add,
    Save and "+" controls write, and what the screen shows for the state the ticket starts in (a
    connection from another environment, a leftover draft). Never tell an agent another run is
@@ -364,6 +394,10 @@ the above and follows this instead:
    A retest ticket holds about ten checks (Findings to retest plus follow-up tests), grouped by
    screen or area and by the account and starting state they need; more checks become more tickets
    (Lee, 2026-09-25: long runs degrade the agent's context).
+   A ticket that adds a timeout or a retry lists each write it covers and says whether repeating
+   that write is safe; a write that is not safe gets an idempotency key or no timeout (#82).
+   A follow-up test a run proved impossible as written is rewritten or closed at triage, never
+   carried forward as it stands (#99).
    A fix ticket's Touches lists every file the fix will change: `wave --open` holds back a ticket
    whose Touches overlap an open wave's (#63). A fix to how the app reaches a screen greps for the
    route and lists every call site in Touches, not only the button the Finding named (Lee,

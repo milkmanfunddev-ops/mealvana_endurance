@@ -122,3 +122,21 @@ test('an unknown account exits 2 and bad usage exits 64', () => {
   assert.equal(run(file, 'file', 'nobody@x.com', '/tmp/x').status, 2);
   assert.equal(run(file, 'bogus').status, 64);
 });
+
+test('type waits before typing and 2 s after it, so no screenshot right after shows the last character', () => {
+  // A fake idb on PATH records when it ran; the password goes to it and nowhere else.
+  const dir = mkdtempSync(join(tmpdir(), 'tw-cred-idb-'));
+  const stamp = join(dir, 'typed-at');
+  writeFileSync(join(dir, 'idb'), `#!/bin/sh\nnode -e 'process.stdout.write(String(Date.now()))' > "${stamp}"\n`, { mode: 0o755 });
+  const started = Date.now();
+  const r = spawnSync('node', [cli, 'type', 'test@test.com', '--udid', 'FAKE'], {
+    encoding: 'utf8',
+    env: { ...process.env, PATH: `${dir}:${process.env.PATH}`, TESTING_WAVE_CREDENTIALS: tmpFile(), CRED_TYPE_DELAY_MS: '300' },
+  });
+  const returned = Date.now();
+  assert.equal(r.status, 0, r.stderr);
+  const typedAt = Number(readFileSync(stamp, 'utf8'));
+  assert.ok(typedAt - started >= 300, `waited ${typedAt - started} ms before typing (the #93 wait)`);
+  assert.ok(returned - typedAt >= 2000, `returned ${returned - typedAt} ms after typing, not 2 s (120-010)`);
+  assert.ok(!r.stdout.includes('adminSecret99') && !r.stderr.includes('adminSecret99'), 'the password is never printed');
+});

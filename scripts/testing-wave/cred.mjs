@@ -4,7 +4,8 @@
 // test_accounts.template.md and reach passwords only through this script, which never prints one.
 //
 // CLI (file in $TESTING_WAVE_CREDENTIALS, default the main clone's secrets/test_accounts.md):
-//   node cred.mjs type <email> --udid <udid>          types the password into the focused field (idb)
+//   node cred.mjs type <email> --udid <udid>          types the password into the focused field (idb):
+//                                                     waits 1 s first (#93) and 2 s after (120-010)
 //   node cred.mjs file <email> <path>                 writes the password to <path> (mode 600), for API checks
 //   node cred.mjs new <email> --ticket NN --run RUN   makes a password, appends a Created accounts row (state new)
 //   node cred.mjs update <email> [--state S] [--bought B] [--when W] [--note TEXT] [--new-password]
@@ -130,6 +131,9 @@ if (process.argv[1] && resolve(process.argv[1]) === fileURLToPath(import.meta.ur
     Atomics.wait(new Int32Array(new SharedArrayBuffer(4)), 0, 0, Number(process.env.CRED_TYPE_DELAY_MS ?? 1000));
     const r = spawnSync('idb', ['ui', 'text', acct.password, '--udid', f.udid], { stdio: ['ignore', 'ignore', 'pipe'] });
     if (r.status !== 0) { process.stderr.write(`idb failed (exit ${r.status})\n`); process.exit(1); }
+    // iOS shows a password's last character for a moment; a screenshot right after typing caught
+    // it once (120-010). Return only once it has turned into a dot.
+    Atomics.wait(new Int32Array(new SharedArrayBuffer(4)), 0, 0, Number(process.env.CRED_TYPE_SETTLE_MS ?? 2000));
     process.stdout.write(`typed the password for ${acct.address} (${acct.section})\n`);
   } else if (cmd === 'file' && email && f._[1]) {
     const acct = find(text(), email, f.section) ?? missing();
