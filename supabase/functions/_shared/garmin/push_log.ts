@@ -107,6 +107,61 @@ export function logGarminMappingMiss(
   });
 }
 
+/** The counters every push loop keeps; `skipped` is added on first use. */
+export interface GarminLoopStats {
+  errors: number;
+  skipped?: number;
+}
+
+/**
+ * Per-request tally of `garmin_user_mappings` misses.
+ *
+ * `tally` classifies the miss like [logGarminMappingMiss]: a failed read
+ * (any code but PGRST116) is logged as an error and counted in
+ * `stats.errors`; an unmapped Garmin user is counted in `stats.skipped` and
+ * logged ONCE per Garmin user id for the whole request, however many
+ * records the fan-out carries for them.
+ */
+export class GarminMappingMisses {
+  private readonly loggedUnmapped = new Set<string>();
+
+  tally(
+    kind: string,
+    garminUserId: string | null | undefined,
+    summaryId: string | number | null | undefined,
+    mappingError: unknown,
+    stats: GarminLoopStats,
+  ): "skipped" | "error" {
+    const code = mappingError && typeof mappingError === "object"
+      ? (mappingError as { code?: unknown }).code
+      : undefined;
+    const readFailed = mappingError != null && code !== NOT_FOUND;
+    if (readFailed) {
+      logGarminRecordFailure({
+        kind,
+        garminUserId,
+        summaryId,
+        reason: "mapping_read_failed",
+        error: mappingError,
+      });
+      stats.errors++;
+      return "error";
+    }
+
+    stats.skipped = (stats.skipped ?? 0) + 1;
+    const key = garminUserId ?? "none";
+    if (!this.loggedUnmapped.has(key)) {
+      this.loggedUnmapped.add(key);
+      console.log(
+        `[garmin-push] record skipped kind=${kind} garminUserId=${key} ` +
+          `summaryId=${summaryId ?? "none"} reason=no_user_mapping ` +
+          `(further records for this Garmin user in this request are skipped silently)`,
+      );
+    }
+    return "skipped";
+  }
+}
+
 function cap(s: string): string {
   return s.length > MESSAGE_CAP ? `${s.slice(0, MESSAGE_CAP)}…` : s;
 }

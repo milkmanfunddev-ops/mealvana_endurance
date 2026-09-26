@@ -349,3 +349,78 @@ describe('delete-user — architecture note (live-integration needed)', () => {
     assert(true, 'Placeholder — see comment above');
   });
 });
+
+// ---------------------------------------------------------------------------
+// Ticket 138 (Finding 121-010): the Garmin registration is deleted at Garmin
+// before the rows that hold its token go, and a Garmin failure never blocks.
+// ---------------------------------------------------------------------------
+
+describe('delete-user — Garmin deregistration', () => {
+  function handleWithGarmin(
+    // deno-lint-ignore no-explicit-any
+    userClient: any,
+    // deno-lint-ignore no-explicit-any
+    adminClient: any,
+    // deno-lint-ignore no-explicit-any
+    deregisterGarmin: (admin: any, userId: string) => Promise<'deregistered' | 'no_token' | 'failed'>,
+  ) {
+    return makeDeleteUserHandler({
+      userClient: () => userClient,
+      admin: () => adminClient,
+      revenueCat: () => fakeRevenueCat().rc,
+      deregisterGarmin,
+    })(makeRequest());
+  }
+
+  it('deregisters at Garmin before public.users is deleted', async () => {
+    const { userClient, adminClient, deleteCalls } = buildDeleteClients();
+    const order: string[] = [];
+    // deno-lint-ignore no-explicit-any
+    const wrapped: any = {
+      ...adminClient,
+      from: (table: string) => {
+        order.push(`delete:${table}`);
+        return adminClient.from(table);
+      },
+    };
+
+    const res = await handleWithGarmin(userClient, wrapped, (_admin, userId) => {
+      order.push(`garmin:${userId}`);
+      return Promise.resolve('deregistered' as const);
+    });
+
+    assertEquals(res.status, 200);
+    assertEquals(order[0], 'garmin:user-uuid-456');
+    assertEquals(order[1], 'delete:users');
+    assertEquals(deleteCalls.map((c) => c.table), ['users', 'auth.users']);
+  });
+
+  it('a Garmin failure is logged and the delete still completes', async () => {
+    const { userClient, adminClient, deleteCalls } = buildDeleteClients();
+    const { result: res, logged } = await capturingErrors(() =>
+      handleWithGarmin(userClient, adminClient, () => Promise.resolve('failed' as const))
+    );
+
+    assertEquals(res.status, 200);
+    assertEquals(deleteCalls.map((c) => c.table), ['users', 'auth.users']);
+    assert(logged.some((l) => l.includes('Garmin deregistration failed') && l.includes('user-uuid-456')));
+  });
+
+  it('a Garmin helper that throws never blocks the delete', async () => {
+    const { userClient, adminClient, deleteCalls } = buildDeleteClients();
+    const { result: res, logged } = await capturingErrors(() =>
+      handleWithGarmin(userClient, adminClient, () => Promise.reject(new Error('network down')))
+    );
+
+    assertEquals(res.status, 200);
+    assertEquals(deleteCalls.length, 2);
+    assert(logged.some((l) => l.includes('network down')));
+  });
+
+  it('an account without Garmin deletes as before', async () => {
+    const { userClient, adminClient, deleteCalls } = buildDeleteClients();
+    const res = await handleWithGarmin(userClient, adminClient, () => Promise.resolve('no_token' as const));
+    assertEquals(res.status, 200);
+    assertEquals(deleteCalls.length, 2);
+  });
+});
