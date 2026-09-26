@@ -122,11 +122,14 @@ class _EmailSignupScreenState extends ConsumerState<EmailSignupScreen> {
     // a settled, authenticated session.
     if (!success && mounted) {
       final state = ref.read(postOnboardingAuthControllerProvider);
-      if (state.error is EmailVerificationRequiredException) {
+      if (state.error case final EmailVerificationRequiredException pending) {
         final verified = await Navigator.of(context).push<bool>(
           MaterialPageRoute(
             builder: (_) => VerifyEmailScreen(
               email: email,
+              // A fresh signup's user, so leaving without a code can discard
+              // it (121-003); the upgrade path keeps its uid.
+              pendingUserId: isAnonymousUpgrade ? null : pending.userId,
               // GoTrue models "attach an email to an existing user" as an
               // email change, so the upgrade code is not a signup code.
               otpType: isAnonymousUpgrade

@@ -1,3 +1,5 @@
+import 'dart:async';
+
 import 'package:flutter/foundation.dart' show kIsWeb;
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
@@ -8,16 +10,30 @@ import '../../../../shared/widgets/adaptive/adaptive.dart';
 import '../../../../shared/widgets/kyle_design/kyle_design.dart';
 import '../../../../shared/services/app_external_deps.dart';
 import '../../../content/application/content_service.dart';
+import '../../../content/domain/content_keys.dart';
 import '../../../coach_mode/application/coach_service.dart';
+import '../../../onboarding/presentation/providers/onboarding_controller.dart';
 import '../providers/post_onboarding_auth_controller.dart';
 import '../../application/email_auth_service.dart';
+import '../../domain/auth_exceptions.dart';
 import '../../../subscription/application/pro_gate.dart';
 import '../../application/email_auth_handoff.dart';
+import 'verify_email_screen.dart';
 
 /// Email Login Screen
 /// Allows users to sign in with email and password
+///
+/// A failed Log In says why in one line under the form, which stays until
+/// the next edit (testing-wave 125-002, 125-007): the email or password is
+/// wrong, there is no connection, or it failed. An address that never entered
+/// its signup code is not a failure: the code is resent and Verify your
+/// email opens for it (124-001).
 class EmailLoginScreen extends ConsumerStatefulWidget {
-  const EmailLoginScreen({super.key});
+  const EmailLoginScreen({super.key, this.initialEmail});
+
+  /// An address to start with: the one Verify your email's "Log in" offered
+  /// (124-002).
+  final String? initialEmail;
 
   @override
   ConsumerState<EmailLoginScreen> createState() => _EmailLoginScreenState();
@@ -25,10 +41,15 @@ class EmailLoginScreen extends ConsumerStatefulWidget {
 
 class _EmailLoginScreenState extends ConsumerState<EmailLoginScreen> {
   final _formKey = GlobalKey<FormState>();
-  final _emailController = TextEditingController();
+  late final _emailController = TextEditingController(
+    text: widget.initialEmail ?? '',
+  );
   final _passwordController = TextEditingController();
 
   bool _obscurePassword = true;
+
+  /// The line under the form after a failed Log In; cleared by the next edit.
+  String? _errorLine;
 
   /// True from the Log In tap until this screen is left. The controller's
   /// state stops loading as soon as the session lands, but the screen still
@@ -110,15 +131,63 @@ class _EmailLoginScreenState extends ConsumerState<EmailLoginScreen> {
       }
     } else if (!success && mounted) {
       setState(() => _submitting = false);
-      // Error message shown by controller via snackbar
-      MealvanaSnackbar.showError(
-        context,
-        contentService.getValue(
-          'auth.login.error_failed',
-          defaultValue: 'Login failed. Please check your credentials.',
-        ),
-      );
+      final error = ref.read(postOnboardingAuthControllerProvider).error;
+      if (error is EmailNotConfirmedException) {
+        await _finishVerifying(error.email);
+        return;
+      }
+      // One line under the form, until the next edit (125-002, 125-007).
+      setState(() {
+        _errorLine = switch (error) {
+          WrongCredentialsException() => contentService.getValue(
+            ContentKeys.loginErrorWrongCredentials,
+          ),
+          NoConnectionException() => contentService.getValue(
+            ContentKeys.loginErrorNoConnection,
+          ),
+          _ => contentService.getValue(ContentKeys.loginErrorFailed),
+        };
+      });
     }
+  }
+
+  /// The account exists but never entered its signup code (124-001): resend
+  /// it (best effort; the server may say the last one is recent) and open
+  /// Verify your email. A verified code continues the way a signup does when
+  /// the onboarding answers are still in memory; after a relaunch they are
+  /// not (the draft lives in memory only), and the account continues as a
+  /// login, which the startup flow routes to onboarding if it has no profile.
+  Future<void> _finishVerifying(String email) async {
+    final emailAuth = ref.read(emailAuthServiceProvider.notifier);
+    try {
+      await emailAuth.resendVerificationCode(email: email);
+    } catch (_) {
+      // A recent code may still be in the inbox; the screen can Resend.
+    }
+    if (!mounted) return;
+    final verified = await Navigator.of(context).push<bool>(
+      MaterialPageRoute(
+        builder: (_) => VerifyEmailScreen(email: email),
+        fullscreenDialog: true,
+      ),
+    );
+    if (verified != true || !mounted) return;
+    final hasDraft = ref
+        .read(onboardingControllerProvider.notifier)
+        .hasCompletedProfileDraft;
+    ref
+        .read(emailAuthHandoffProvider.notifier)
+        .succeeded(hasDraft ? EmailAuthKind.signup : EmailAuthKind.login);
+    if (context.canPop()) {
+      context.pop(true);
+    } else {
+      await ref.read(appGateProvider.notifier).settle();
+      if (mounted) context.go('/main');
+    }
+  }
+
+  void _clearErrorLine() {
+    if (_errorLine != null) setState(() => _errorLine = null);
   }
 
   @override
@@ -200,6 +269,7 @@ class _EmailLoginScreenState extends ConsumerState<EmailLoginScreen> {
                       ),
                     ),
                     style: AppTextStyles.bodyMedium,
+                    onChanged: (_) => _clearErrorLine(),
                     validator: (value) {
                       return emailAuthService.validateEmail(value ?? '');
                     },
@@ -249,11 +319,24 @@ class _EmailLoginScreenState extends ConsumerState<EmailLoginScreen> {
                       ),
                     ),
                     style: AppTextStyles.bodyMedium,
+                    onChanged: (_) => _clearErrorLine(),
                     validator: (value) {
                       if ((value ?? '').isEmpty) return 'Password is required';
                       return null;
                     },
                   ),
+
+                  // Why the last Log In failed (125-002, 125-007).
+                  if (_errorLine != null) ...[
+                    const SizedBox(height: AppSpacing.sm),
+                    Text(
+                      _errorLine!,
+                      key: const ValueKey('login.error_line'),
+                      style: AppTextStyles.bodySmall.copyWith(
+                        color: Theme.of(context).colorScheme.error,
+                      ),
+                    ),
+                  ],
 
                   const SizedBox(height: AppSpacing.md),
 

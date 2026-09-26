@@ -84,6 +84,10 @@ void main() {
       when(
         () => mockAppStartupService.configureRevenueCat(),
       ).thenAnswer((_) async {});
+      // A reset the app was quit on is signed out first (124-003); none here.
+      when(
+        () => mockAppStartupService.endAbandonedRecovery(),
+      ).thenAnswer((_) async {});
 
       // Setup default mocks
       when(() => mockSupabaseClient.auth).thenReturn(mockGoTrueClient);

@@ -449,6 +449,24 @@
       "network_error": "Network error. Please check your connection.",
       "user_id_mismatch": "Account linking failed - data preservation error",
       "generic": "Something went wrong. Please try again."
+    },
+    "login": {
+      "error_wrong_credentials": "That email or password isn't right.",
+      "error_no_connection": "No connection. Check your network and try again.",
+      "error_failed": "Login failed. Please try again."
+    },
+    "verify_email": {
+      "resend_in": "Resend code in {n}s",
+      "resend": "Resend code",
+      "resent": "New code sent to {email}",
+      "code_superseded": "That code is from an earlier email. Use the code in the newest one.",
+      "maybe_account_hint": "No code? This address may already have an account.",
+      "log_in": "Log in"
+    },
+    "verify_code": {
+      "resend_in": "Resend code in {n}s",
+      "resent": "A new code has been sent to your email",
+      "resend_failed": "Failed to resend code. Please try again."
     }
   },
   "meal_planning": {

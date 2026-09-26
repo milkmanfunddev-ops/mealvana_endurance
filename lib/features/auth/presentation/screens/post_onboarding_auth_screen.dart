@@ -62,6 +62,12 @@ class _PostOnboardingAuthScreenState
   /// is no longer anonymous, and the email path reports back later.
   late final bool _openedOnOldAnonymousInstall;
 
+  /// True from an email screen's hand-off until this screen navigates away
+  /// (testing-wave 121-011): the save and the gate settle take a few
+  /// seconds, during which the sign-up buttons showed again under the
+  /// popped Verify screen. Busy hides them; a failed save gives them back.
+  bool _handingOff = false;
+
   @override
   void initState() {
     super.initState();
@@ -376,16 +382,23 @@ class _PostOnboardingAuthScreenState
       data: {'kind': event.kind.name, 'seq': event.seq, 'mounted': mounted},
     );
     if (!mounted) return;
-    switch (event.kind) {
-      case EmailAuthKind.login:
-        // Finish without discarding any onboarding draft still in memory.
-        await _finishLoginPreservingDraft(authProvider: 'email');
-      case EmailAuthKind.signup:
-        // The email screen links onto the anonymous user when there is one.
-        await _saveOnboardingDataAndNavigate(
-          authProvider: 'email',
-          claimGrace: _openedOnOldAnonymousInstall,
-        );
+    setState(() => _handingOff = true);
+    try {
+      switch (event.kind) {
+        case EmailAuthKind.login:
+          // Finish without discarding any onboarding draft still in memory.
+          await _finishLoginPreservingDraft(authProvider: 'email');
+        case EmailAuthKind.signup:
+          // The email screen links onto the anonymous user when there is one.
+          await _saveOnboardingDataAndNavigate(
+            authProvider: 'email',
+            claimGrace: _openedOnOldAnonymousInstall,
+          );
+      }
+    } finally {
+      // Still here: the save failed or the gate stayed shut; the buttons
+      // come back. Navigated away: nothing to reset.
+      if (mounted) setState(() => _handingOff = false);
     }
   }
 
@@ -680,12 +693,13 @@ class _PostOnboardingAuthScreenState
     final asyncState = ref.watch(postOnboardingAuthControllerProvider);
     final contentService = ref.watch(contentServiceProvider);
     final isLogin = widget.mode == 'login';
+    final isBusy = asyncState.isLoading || _handingOff;
 
     return AdaptivePageScaffold(
       backgroundColor: OnbTokens.bg,
       appBar: _buildAppBar(
         context,
-        isLoading: asyncState.isLoading,
+        isLoading: isBusy,
         isLogin: isLogin,
         // An old anonymous install sent here by the router (mp-455) has no
         // onboarding to go back to and no account yet: sign-up is the way on.
@@ -768,8 +782,8 @@ class _PostOnboardingAuthScreenState
                     icon: FontAwesomeIcons.apple.data,
                     background: OnbTokens.orange,
                     foreground: OnbTokens.bg,
-                    onPressed: asyncState.isLoading ? null : _handleAppleSignIn,
-                    isLoading: asyncState.isLoading,
+                    onPressed: isBusy ? null : _handleAppleSignIn,
+                    isLoading: isBusy,
                   ),
 
                   // Spec "or" divider between the primary and the rest.
@@ -792,8 +806,8 @@ class _PostOnboardingAuthScreenState
                   icon: FontAwesomeIcons.google.data,
                   background: OnbTokens.cream,
                   foreground: OnbTokens.bg,
-                  onPressed: asyncState.isLoading ? null : _handleGoogleSignIn,
-                  isLoading: asyncState.isLoading,
+                  onPressed: isBusy ? null : _handleGoogleSignIn,
+                  isLoading: isBusy,
                 ),
 
                 const SizedBox(height: 10),
@@ -816,7 +830,7 @@ class _PostOnboardingAuthScreenState
                   background: Colors.transparent,
                   foreground: OnbTokens.creamA(0.75),
                   outlineColor: OnbTokens.creamA(0.2),
-                  onPressed: asyncState.isLoading
+                  onPressed: isBusy
                       ? null
                       : (isLogin ? _handleEmailLogin : _handleEmailSignUp),
                   isLoading: false,
@@ -828,7 +842,7 @@ class _PostOnboardingAuthScreenState
           ),
 
           // Loading overlay for OAuth sign-in flows
-          if (asyncState.isLoading)
+          if (isBusy)
             Container(
               color: OnbTokens.bg.withValues(alpha: 0.9),
               child: Center(

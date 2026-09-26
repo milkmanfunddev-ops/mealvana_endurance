@@ -34,6 +34,16 @@ class _SetNewPasswordScreenState extends ConsumerState<SetNewPasswordScreen> {
     super.dispose();
   }
 
+  /// Cancel or back without a saved password (124-003): the recovery session
+  /// the code opened is signed out, and Log In is where the athlete lands.
+  Future<void> _cancel() async {
+    final router = GoRouter.of(context);
+    await ref
+        .read(passwordRecoveryControllerProvider.notifier)
+        .cancelRecovery();
+    router.go('/auth/email-login');
+  }
+
   Future<void> _handleSetPassword() async {
     if (!_formKey.currentState!.validate()) return;
 
@@ -59,163 +69,171 @@ class _SetNewPasswordScreenState extends ConsumerState<SetNewPasswordScreen> {
     final contentService = ref.watch(contentServiceProvider);
     final emailAuthService = ref.watch(emailAuthServiceProvider.notifier);
 
-    return AdaptivePageScaffold(
-      backgroundColor: Theme.of(context).scaffoldBackgroundColor,
-      appBar: _buildAppBar(context),
-      contentWidth: AdaptiveContentWidth.narrow,
-      body: AdaptiveScrollableBody(
-        padding: AppSpacing.screenPaddingHorizontal,
-        child: Form(
-          key: _formKey,
-          child: Column(
-            crossAxisAlignment: CrossAxisAlignment.stretch,
-            children: [
-              const SizedBox(height: AppSpacing.xl),
+    return PopScope(
+      // A system back is a cancel too (124-003).
+      canPop: false,
+      onPopInvokedWithResult: (didPop, _) {
+        if (!didPop && !asyncState.isLoading) _cancel();
+      },
+      child: AdaptivePageScaffold(
+        backgroundColor: Theme.of(context).scaffoldBackgroundColor,
+        appBar: _buildAppBar(context),
+        contentWidth: AdaptiveContentWidth.narrow,
+        body: AdaptiveScrollableBody(
+          padding: AppSpacing.screenPaddingHorizontal,
+          child: Form(
+            key: _formKey,
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.stretch,
+              children: [
+                const SizedBox(height: AppSpacing.xl),
 
-              // Title
-              Text(
-                contentService.getValue(
-                  'auth.set_password.title',
-                  defaultValue: 'Set New Password',
-                ),
-                style: AppTextStyles.sectionTitle.copyWith(
-                  color: Theme.of(context).colorScheme.onSurface,
-                  fontSize: 28,
-                ),
-                textAlign: TextAlign.center,
-              ),
-
-              const SizedBox(height: AppSpacing.sm),
-
-              // Subtitle
-              Text(
-                contentService.getValue(
-                  'auth.set_password.subtitle',
-                  defaultValue: 'Choose a strong password for your account',
-                ),
-                style: AppTextStyles.bodyMedium.copyWith(
-                  color: Theme.of(context).colorScheme.onSurfaceVariant,
-                ),
-                textAlign: TextAlign.center,
-              ),
-
-              const SizedBox(height: AppSpacing.xxxl),
-
-              // New password field
-              TextFormField(
-                controller: _passwordController,
-                obscureText: _obscurePassword,
-                autocorrect: false,
-                textInputAction: TextInputAction.next,
-                decoration: InputDecoration(
-                  labelText: contentService.getValue(
-                    'auth.set_password.password_label',
-                    defaultValue: 'New Password',
+                // Title
+                Text(
+                  contentService.getValue(
+                    'auth.set_password.title',
+                    defaultValue: 'Set New Password',
                   ),
-                  hintText: contentService.getValue(
-                    'auth.email_signup.password_hint',
-                    defaultValue: 'At least 8 characters',
+                  style: AppTextStyles.sectionTitle.copyWith(
+                    color: Theme.of(context).colorScheme.onSurface,
+                    fontSize: 28,
                   ),
-                  prefixIcon: Icon(
-                    FontAwesomeIcons.lock.data,
-                    size: AppIconSizes.controlIcon,
+                  textAlign: TextAlign.center,
+                ),
+
+                const SizedBox(height: AppSpacing.sm),
+
+                // Subtitle
+                Text(
+                  contentService.getValue(
+                    'auth.set_password.subtitle',
+                    defaultValue: 'Choose a strong password for your account',
+                  ),
+                  style: AppTextStyles.bodyMedium.copyWith(
                     color: Theme.of(context).colorScheme.onSurfaceVariant,
                   ),
-                  suffixIcon: IconButton(
-                    icon: Icon(
-                      _obscurePassword
-                          ? FontAwesomeIcons.eye.data
-                          : FontAwesomeIcons.eyeSlash.data,
-                      size: AppIconSizes.controlIcon,
-                    ),
-                    onPressed: () {
-                      setState(() {
-                        _obscurePassword = !_obscurePassword;
-                      });
-                    },
-                  ),
-                  border: OutlineInputBorder(
-                    borderRadius: AppRadius.inputRadius,
-                  ),
+                  textAlign: TextAlign.center,
                 ),
-                style: AppTextStyles.bodyMedium,
-                validator: (value) {
-                  return emailAuthService.validatePassword(value ?? '');
-                },
-              ),
 
-              const SizedBox(height: AppSpacing.lg),
+                const SizedBox(height: AppSpacing.xxxl),
 
-              // Confirm password field
-              TextFormField(
-                controller: _confirmPasswordController,
-                obscureText: _obscureConfirmPassword,
-                autocorrect: false,
-                textInputAction: TextInputAction.done,
-                decoration: InputDecoration(
-                  labelText: contentService.getValue(
-                    'auth.set_password.confirm_label',
-                    defaultValue: 'Confirm Password',
-                  ),
-                  hintText: contentService.getValue(
-                    'auth.email_signup.password_confirm_hint',
-                    defaultValue: 'Re-enter your password',
-                  ),
-                  prefixIcon: Icon(
-                    FontAwesomeIcons.lock.data,
-                    size: AppIconSizes.controlIcon,
-                    color: Theme.of(context).colorScheme.onSurfaceVariant,
-                  ),
-                  suffixIcon: IconButton(
-                    icon: Icon(
-                      _obscureConfirmPassword
-                          ? FontAwesomeIcons.eye.data
-                          : FontAwesomeIcons.eyeSlash.data,
-                      size: AppIconSizes.controlIcon,
+                // New password field
+                TextFormField(
+                  controller: _passwordController,
+                  obscureText: _obscurePassword,
+                  autocorrect: false,
+                  textInputAction: TextInputAction.next,
+                  decoration: InputDecoration(
+                    labelText: contentService.getValue(
+                      'auth.set_password.password_label',
+                      defaultValue: 'New Password',
                     ),
-                    onPressed: () {
-                      setState(() {
-                        _obscureConfirmPassword = !_obscureConfirmPassword;
-                      });
-                    },
+                    hintText: contentService.getValue(
+                      'auth.email_signup.password_hint',
+                      defaultValue: 'At least 8 characters',
+                    ),
+                    prefixIcon: Icon(
+                      FontAwesomeIcons.lock.data,
+                      size: AppIconSizes.controlIcon,
+                      color: Theme.of(context).colorScheme.onSurfaceVariant,
+                    ),
+                    suffixIcon: IconButton(
+                      icon: Icon(
+                        _obscurePassword
+                            ? FontAwesomeIcons.eye.data
+                            : FontAwesomeIcons.eyeSlash.data,
+                        size: AppIconSizes.controlIcon,
+                      ),
+                      onPressed: () {
+                        setState(() {
+                          _obscurePassword = !_obscurePassword;
+                        });
+                      },
+                    ),
+                    border: OutlineInputBorder(
+                      borderRadius: AppRadius.inputRadius,
+                    ),
                   ),
-                  border: OutlineInputBorder(
-                    borderRadius: AppRadius.inputRadius,
-                  ),
+                  style: AppTextStyles.bodyMedium,
+                  validator: (value) {
+                    return emailAuthService.validatePassword(value ?? '');
+                  },
                 ),
-                style: AppTextStyles.bodyMedium,
-                validator: (value) {
-                  if (value != _passwordController.text) {
-                    return contentService.getValue(
-                      'auth.email_signup.password_mismatch',
-                      defaultValue: 'Passwords do not match',
-                    );
-                  }
-                  return null;
-                },
-                onFieldSubmitted: (_) => _handleSetPassword(),
-              ),
 
-              const SizedBox(height: AppSpacing.xxxl),
+                const SizedBox(height: AppSpacing.lg),
 
-              // Set password button
-              KylePrimaryButton(
-                text: asyncState.isLoading ? 'Resetting...' : 'Reset Password',
-                onPressed: asyncState.isLoading ? null : _handleSetPassword,
-              ),
+                // Confirm password field
+                TextFormField(
+                  controller: _confirmPasswordController,
+                  obscureText: _obscureConfirmPassword,
+                  autocorrect: false,
+                  textInputAction: TextInputAction.done,
+                  decoration: InputDecoration(
+                    labelText: contentService.getValue(
+                      'auth.set_password.confirm_label',
+                      defaultValue: 'Confirm Password',
+                    ),
+                    hintText: contentService.getValue(
+                      'auth.email_signup.password_confirm_hint',
+                      defaultValue: 'Re-enter your password',
+                    ),
+                    prefixIcon: Icon(
+                      FontAwesomeIcons.lock.data,
+                      size: AppIconSizes.controlIcon,
+                      color: Theme.of(context).colorScheme.onSurfaceVariant,
+                    ),
+                    suffixIcon: IconButton(
+                      icon: Icon(
+                        _obscureConfirmPassword
+                            ? FontAwesomeIcons.eye.data
+                            : FontAwesomeIcons.eyeSlash.data,
+                        size: AppIconSizes.controlIcon,
+                      ),
+                      onPressed: () {
+                        setState(() {
+                          _obscureConfirmPassword = !_obscureConfirmPassword;
+                        });
+                      },
+                    ),
+                    border: OutlineInputBorder(
+                      borderRadius: AppRadius.inputRadius,
+                    ),
+                  ),
+                  style: AppTextStyles.bodyMedium,
+                  validator: (value) {
+                    if (value != _passwordController.text) {
+                      return contentService.getValue(
+                        'auth.email_signup.password_mismatch',
+                        defaultValue: 'Passwords do not match',
+                      );
+                    }
+                    return null;
+                  },
+                  onFieldSubmitted: (_) => _handleSetPassword(),
+                ),
 
-              const SizedBox(height: AppSpacing.md),
+                const SizedBox(height: AppSpacing.xxxl),
 
-              // Cancel button
-              KyleSecondaryButton(
-                text: 'Cancel',
-                onPressed: asyncState.isLoading
-                    ? null
-                    : () => context.go('/auth/email-login'),
-              ),
+                // Set password button
+                KylePrimaryButton(
+                  text: asyncState.isLoading
+                      ? 'Resetting...'
+                      : 'Reset Password',
+                  onPressed: asyncState.isLoading ? null : _handleSetPassword,
+                ),
 
-              const SizedBox(height: AppSpacing.xxl),
-            ],
+                const SizedBox(height: AppSpacing.md),
+
+                // Cancel button
+                KyleSecondaryButton(
+                  key: const ValueKey('auth.set_password.cancel'),
+                  text: 'Cancel',
+                  onPressed: asyncState.isLoading ? null : _cancel,
+                ),
+
+                const SizedBox(height: AppSpacing.xxl),
+              ],
+            ),
           ),
         ),
       ),
@@ -231,7 +249,8 @@ class _SetNewPasswordScreenState extends ConsumerState<SetNewPasswordScreen> {
       title: Row(
         children: [
           CustomAppBarBackButton(
-            onPressed: () => context.pop(),
+            key: const ValueKey('auth.set_password.back'),
+            onPressed: _cancel,
             margin: EdgeInsets.zero,
             iconColor: Theme.of(context).colorScheme.onSurface,
             backgroundColor: Theme.of(

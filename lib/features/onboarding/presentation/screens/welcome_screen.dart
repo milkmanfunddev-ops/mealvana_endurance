@@ -3,7 +3,6 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
 import '../../../../shared/services/app_external_deps.dart';
 import '../../../../shared/services/privacy/analytics_consent.dart';
-import '../../../../shared/widgets/kyle_design/feedback/mealvana_snackbar.dart';
 import '../../../settings/application/sign_out_notice.dart';
 import '../providers/onboarding_analytics.dart';
 import '../theme/onboarding_design_tokens.dart';
@@ -21,22 +20,6 @@ class WelcomeScreen extends ConsumerWidget {
 
   @override
   Widget build(BuildContext context, WidgetRef ref) {
-    // A sign-out whose upload failed leaves one line to show here, once
-    // (ticket 102): unsynced changes stay on this phone until the next
-    // sign-in. Read after the frame so the snackbar has a Scaffold to sit on.
-    if (ref.watch(signOutNoticeProvider) != null) {
-      WidgetsBinding.instance.addPostFrameCallback((_) {
-        if (!context.mounted) return;
-        final notice = ref.read(signOutNoticeProvider.notifier).take();
-        if (notice != null) {
-          MealvanaSnackbar.showInfo(
-            context,
-            notice,
-            duration: MealvanaSnackbar.longDuration,
-          );
-        }
-      });
-    }
     return Scaffold(
       backgroundColor: OnbTokens.bg,
       body: Container(
@@ -168,6 +151,12 @@ class WelcomeScreen extends ConsumerWidget {
   }
 
   Widget _buildFooter(BuildContext context, WidgetRef ref) {
+    // A sign-out whose upload failed leaves one line to show here (ticket
+    // 102): unsynced changes stay on this phone until the next sign-in. It
+    // sits above the buttons, never over them (testing-wave 120-006), and a
+    // tap takes it; it is taken when this screen goes, too, so it shows
+    // once.
+    final notice = ref.watch(signOutNoticeProvider);
     return Column(
       mainAxisSize: MainAxisSize.min,
       children: [
@@ -210,6 +199,25 @@ class WelcomeScreen extends ConsumerWidget {
           ),
         ),
         const SizedBox(height: 6),
+        if (notice != null)
+          GestureDetector(
+            key: const ValueKey('welcome.sign_out_notice'),
+            behavior: HitTestBehavior.opaque,
+            onTap: () => ref.read(signOutNoticeProvider.notifier).take(),
+            child: Padding(
+              padding: const EdgeInsets.fromLTRB(0, 8, 0, 4),
+              child: Text(
+                notice,
+                textAlign: TextAlign.center,
+                style: TextStyle(
+                  fontFamily: OnbTokens.fontBody,
+                  fontSize: 13,
+                  height: 1.4,
+                  color: OnbTokens.creamA(0.7),
+                ),
+              ),
+            ),
+          ),
         TextButton(
           key: const ValueKey('welcome.log_in_button'),
           style: TextButton.styleFrom(padding: const EdgeInsets.all(12)),
@@ -228,6 +236,8 @@ class WelcomeScreen extends ConsumerWidget {
   }
 
   void _getStarted(BuildContext context, WidgetRef ref) async {
+    // The sign-out line shows once: leaving takes it.
+    ref.read(signOutNoticeProvider.notifier).take();
     // Track get started
     final externalDeps = ref.read(appExternalDepsProvider);
     externalDeps.analytics.track('welcome_get_started_tapped');
@@ -276,6 +286,8 @@ class WelcomeScreen extends ConsumerWidget {
   }
 
   void _goToLogin(BuildContext context, WidgetRef ref) {
+    // The sign-out line shows once: leaving takes it.
+    ref.read(signOutNoticeProvider.notifier).take();
     // Track login button tap
     final analytics = ref.read(appExternalDepsProvider);
     analytics.analytics.track('welcome_login_tapped');

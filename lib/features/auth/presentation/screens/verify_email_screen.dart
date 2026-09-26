@@ -3,10 +3,12 @@ import 'dart:async';
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
+import 'package:go_router/go_router.dart';
 import 'package:supabase_flutter/supabase_flutter.dart' show OtpType;
 
 import '../../../../shared/widgets/kyle_design/kyle_design.dart';
 import '../../../content/application/content_service.dart';
+import '../../../content/domain/content_keys.dart';
 import '../../application/email_auth_service.dart';
 import '../../domain/auth_exceptions.dart';
 
@@ -20,16 +22,31 @@ import '../../domain/auth_exceptions.dart';
 ///
 /// The screen deliberately cannot be dismissed by the back gesture: leaving
 /// here strands a created-but-unverified account with no way back to this
-/// step. "Use a different email" is the explicit escape hatch.
+/// step. "Use a different email" is the explicit escape hatch; on a fresh
+/// signup it also asks the server to delete the abandoned login
+/// (testing-wave 121-003).
+///
+/// When the address already belongs to a confirmed account, GoTrue answers
+/// the signup with a decoy user and sends nothing, so this screen can never
+/// succeed. It always carries the hint "No code? This address may already
+/// have an account" with Log in, and never says whether the account exists
+/// (124-002, Lee 2026-09-26).
 class VerifyEmailScreen extends ConsumerStatefulWidget {
   const VerifyEmailScreen({
     super.key,
     required this.email,
     this.otpType = OtpType.signup,
     this.pendingPassword,
+    this.pendingUserId,
   });
 
   final String email;
+
+  /// The auth user a fresh signup created, for `discard-signup` when the
+  /// athlete leaves without a code (121-003). Null on the upgrade path and
+  /// when the code was reached from Log In (124-001), where the account is
+  /// theirs to keep.
+  final String? pendingUserId;
 
   /// [OtpType.signup] for a brand-new account, [OtpType.emailChange] when an
   /// anonymous account is being upgraded in place (uid preserved).
@@ -49,9 +66,15 @@ class _VerifyEmailScreenState extends ConsumerState<VerifyEmailScreen> {
   bool _verifying = false;
   String? _error;
 
-  /// Seconds until Resend becomes available again. Starts non-zero because a
-  /// code was just sent by the signup itself.
-  int _resendIn = 30;
+  /// Whether a Resend went out from this screen: a refused code after that
+  /// most likely came from the earlier email (121-002).
+  bool _resent = false;
+
+  /// Seconds until Resend becomes available again. Starts at the server's
+  /// own gap between two emails (60 s, `smtp_max_frequency`) because a code
+  /// was just sent by the signup itself; a shorter countdown let an enabled
+  /// Resend hit a 429 (121-001).
+  int _resendIn = ResendRateLimitedException.serverGapSeconds;
   Timer? _resendTimer;
 
   @override
@@ -67,14 +90,44 @@ class _VerifyEmailScreenState extends ConsumerState<VerifyEmailScreen> {
     super.dispose();
   }
 
-  void _startResendCooldown() {
+  void _startResendCooldown([
+    int seconds = ResendRateLimitedException.serverGapSeconds,
+  ]) {
     _resendTimer?.cancel();
-    setState(() => _resendIn = 30);
+    setState(() => _resendIn = seconds);
+    if (seconds <= 0) return;
     _resendTimer = Timer.periodic(const Duration(seconds: 1), (t) {
       if (!mounted) return t.cancel();
       setState(() => _resendIn--);
       if (_resendIn <= 0) t.cancel();
     });
+  }
+
+  /// A fresh signup the athlete is walking away from leaves no unconfirmed
+  /// login behind (121-003). Fire-and-forget: the screen does not wait.
+  void _discardAbandonedSignup() {
+    final userId = widget.pendingUserId;
+    if (userId == null || widget.otpType != OtpType.signup) return;
+    unawaited(
+      ref
+          .read(emailAuthServiceProvider.notifier)
+          .discardSignup(userId: userId, email: widget.email),
+    );
+  }
+
+  void _useDifferentEmail() {
+    _discardAbandonedSignup();
+    Navigator.of(context).pop(false);
+  }
+
+  /// The hint's Log in (124-002): the address may already be an account, so
+  /// Log In opens with it filled in. The abandoned signup, if this was one,
+  /// is discarded like "Use a different email".
+  void _logIn() {
+    final router = GoRouter.of(context);
+    _discardAbandonedSignup();
+    Navigator.of(context).pop(false);
+    router.push('/auth/email-login', extra: {'email': widget.email});
   }
 
   Future<void> _verify() async {
@@ -97,9 +150,15 @@ class _VerifyEmailScreenState extends ConsumerState<VerifyEmailScreen> {
       Navigator.of(context).pop(true);
     } on InvalidVerificationCodeException catch (e) {
       if (!mounted) return;
+      final content = ref.read(contentServiceProvider);
       setState(() {
         _verifying = false;
-        _error = e.message;
+        // After a Resend, GoTrue's one refusal most likely means the code
+        // from the earlier email (121-002): point at the newest one, never
+        // at Resend, which would send a third.
+        _error = _resent && e.isWrongOrExpired
+            ? content.getValue(ContentKeys.verifyEmailCodeSuperseded)
+            : e.message;
       });
     } catch (_) {
       if (!mounted) return;
@@ -112,13 +171,25 @@ class _VerifyEmailScreenState extends ConsumerState<VerifyEmailScreen> {
 
   Future<void> _resend() async {
     setState(() => _error = null);
+    final content = ref.read(contentServiceProvider);
     try {
       await ref
           .read(emailAuthServiceProvider.notifier)
           .resendVerificationCode(email: widget.email, type: widget.otpType);
       if (!mounted) return;
+      _resent = true;
       _startResendCooldown();
-      MealvanaSnackbar.showSuccess(context, 'New code sent to ${widget.email}');
+      MealvanaSnackbar.showSuccess(
+        context,
+        ContentKeys.format(content.getValue(ContentKeys.verifyEmailResent), {
+          'email': widget.email,
+        }),
+      );
+    } on ResendRateLimitedException catch (e) {
+      // The server's gap has not passed (121-001): count down what it asked
+      // for, and say nothing else.
+      if (!mounted) return;
+      _startResendCooldown(e.retryAfterSeconds);
     } on InvalidVerificationCodeException catch (e) {
       if (!mounted) return;
       setState(() => _error = e.message);
@@ -226,14 +297,16 @@ class _VerifyEmailScreenState extends ConsumerState<VerifyEmailScreen> {
                   onPressed: _resendIn > 0 || _verifying ? null : _resend,
                   child: Text(
                     _resendIn > 0
-                        ? 'Resend code in ${_resendIn}s'
-                        : 'Resend code',
+                        ? ContentKeys.format(
+                            content.getValue(ContentKeys.verifyEmailResendIn),
+                            {'n': _resendIn},
+                          )
+                        : content.getValue(ContentKeys.verifyEmailResend),
                   ),
                 ),
                 TextButton(
-                  onPressed: _verifying
-                      ? null
-                      : () => Navigator.of(context).pop(false),
+                  key: const ValueKey('auth.verify_change_email'),
+                  onPressed: _verifying ? null : _useDifferentEmail,
                   child: Text(
                     content.getValue(
                       'auth.verify_email.change_email',
@@ -243,6 +316,21 @@ class _VerifyEmailScreenState extends ConsumerState<VerifyEmailScreen> {
                       color: onSurface.withValues(alpha: 0.6),
                     ),
                   ),
+                ),
+                const SizedBox(height: AppSpacing.lg),
+                // Always shown, never a verdict on the account (124-002).
+                Text(
+                  content.getValue(ContentKeys.verifyEmailMaybeAccountHint),
+                  key: const ValueKey('auth.verify_maybe_account_hint'),
+                  textAlign: TextAlign.center,
+                  style: AppTextStyles.bodySmall.copyWith(
+                    color: onSurface.withValues(alpha: 0.7),
+                  ),
+                ),
+                TextButton(
+                  key: const ValueKey('auth.verify_log_in'),
+                  onPressed: _verifying ? null : _logIn,
+                  child: Text(content.getValue(ContentKeys.verifyEmailLogIn)),
                 ),
               ],
             ),

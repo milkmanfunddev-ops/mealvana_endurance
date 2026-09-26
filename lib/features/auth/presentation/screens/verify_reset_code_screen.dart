@@ -1,3 +1,5 @@
+import 'dart:async';
+
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
@@ -6,10 +8,17 @@ import 'package:mealvana_endurance/shared/widgets/custom_app_bar_back_button.dar
 import '../../../../shared/widgets/adaptive/adaptive.dart';
 import '../../../../shared/widgets/kyle_design/kyle_design.dart';
 import '../../../content/application/content_service.dart';
+import '../../../content/domain/content_keys.dart';
+import '../../domain/auth_exceptions.dart';
 import '../providers/password_recovery_controller.dart';
 
 /// Verify Reset Code Screen
 /// User enters the 6-digit OTP code received by email
+///
+/// Resend waits as long as the server does (testing-wave 124-004): one email
+/// per address per 60 s (`smtp_max_frequency`), so the link counts down from
+/// the code Forgot Password just sent, and a 429 counts down the wait GoTrue
+/// names instead of saying the resend failed.
 class VerifyResetCodeScreen extends ConsumerStatefulWidget {
   const VerifyResetCodeScreen({super.key, required this.email});
 
@@ -24,10 +33,34 @@ class _VerifyResetCodeScreenState extends ConsumerState<VerifyResetCodeScreen> {
   final _formKey = GlobalKey<FormState>();
   final _codeController = TextEditingController();
 
+  /// Seconds until Resend becomes available again; a code was just sent.
+  int _resendIn = ResendRateLimitedException.serverGapSeconds;
+  Timer? _resendTimer;
+
+  @override
+  void initState() {
+    super.initState();
+    _startResendCooldown();
+  }
+
   @override
   void dispose() {
+    _resendTimer?.cancel();
     _codeController.dispose();
     super.dispose();
+  }
+
+  void _startResendCooldown([
+    int seconds = ResendRateLimitedException.serverGapSeconds,
+  ]) {
+    _resendTimer?.cancel();
+    setState(() => _resendIn = seconds);
+    if (seconds <= 0) return;
+    _resendTimer = Timer.periodic(const Duration(seconds: 1), (t) {
+      if (!mounted) return t.cancel();
+      setState(() => _resendIn--);
+      if (_resendIn <= 0) t.cancel();
+    });
   }
 
   Future<void> _handleVerifyCode() async {
@@ -49,19 +82,27 @@ class _VerifyResetCodeScreenState extends ConsumerState<VerifyResetCodeScreen> {
   }
 
   Future<void> _handleResendCode() async {
+    if (_resendIn > 0) return;
     final controller = ref.read(passwordRecoveryControllerProvider.notifier);
+    final content = ref.read(contentServiceProvider);
 
     final success = await controller.sendResetCode(widget.email);
+    if (!mounted) return;
 
-    if (success && mounted) {
+    if (success) {
+      _startResendCooldown();
       MealvanaSnackbar.showSuccess(
         context,
-        'A new code has been sent to your email',
+        content.getValue(ContentKeys.verifyCodeResent),
       );
-    } else if (!success && mounted) {
+    } else if (controller.lastRetryAfterSeconds case final wait?) {
+      // The server's gap has not passed (124-004): count it down, say
+      // nothing else.
+      _startResendCooldown(wait);
+    } else {
       MealvanaSnackbar.showError(
         context,
-        'Failed to resend code. Please try again.',
+        content.getValue(ContentKeys.verifyCodeResendFailed),
       );
     }
   }
@@ -165,16 +206,28 @@ class _VerifyResetCodeScreenState extends ConsumerState<VerifyResetCodeScreen> {
 
               const SizedBox(height: AppSpacing.lg),
 
-              // Resend code link
+              // Resend code link, disabled while the server would refuse.
               GestureDetector(
-                onTap: asyncState.isLoading ? null : _handleResendCode,
+                key: const ValueKey('auth.reset_resend'),
+                onTap: asyncState.isLoading || _resendIn > 0
+                    ? null
+                    : _handleResendCode,
                 child: Text(
-                  contentService.getValue(
-                    'auth.verify_code.resend',
-                    defaultValue: 'Didn\'t receive a code? Resend',
-                  ),
+                  _resendIn > 0
+                      ? ContentKeys.format(
+                          contentService.getValue(
+                            ContentKeys.verifyCodeResendIn,
+                          ),
+                          {'n': _resendIn},
+                        )
+                      : contentService.getValue(
+                          'auth.verify_code.resend',
+                          defaultValue: 'Didn\'t receive a code? Resend',
+                        ),
                   style: AppTextStyles.bodyMedium.copyWith(
-                    color: AppColors.electrolyte,
+                    color: _resendIn > 0
+                        ? Theme.of(context).colorScheme.onSurfaceVariant
+                        : AppColors.electrolyte,
                   ),
                   textAlign: TextAlign.center,
                 ),

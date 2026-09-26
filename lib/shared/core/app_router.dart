@@ -437,7 +437,11 @@ class AppRouter {
         GoRoute(
           path: '/auth/email-login',
           name: 'auth-email-login',
-          builder: (context, state) => const EmailLoginScreen(),
+          builder: (context, state) {
+            // Verify your email's "Log in" brings its address (124-002).
+            final extra = state.extra as Map<String, dynamic>?;
+            return EmailLoginScreen(initialEmail: extra?['email'] as String?);
+          },
         ),
 
         // Password Recovery Flow

@@ -348,6 +348,12 @@ verify_jwt = true
 [functions.grace-claim]
 verify_jwt = true
 
+# Deletes an abandoned unconfirmed signup by id + email (testing-wave 121-003).
+# There is no session yet, so the caller sends the anon key; the function needs
+# no user and answers the same 200 whatever happened.
+[functions.discard-signup]
+verify_jwt = true
+
 # RevenueCat posts webhooks with a shared secret in the Authorization header
 # (not a Supabase JWT); disable gateway JWT verification and validate the
 # secret inside the function.
