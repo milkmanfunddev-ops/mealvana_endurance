@@ -32,7 +32,7 @@ This is how any agent runs a round the same way, months from now.
 
 1. Pilot gate, once. Before round 001 counts, one Scenario runs end to end and Lee reviews the
    transcript and the marked verdict. This calibrates the Rubric's anchors against his eye
-   before twenty-odd judgments bake in.
+   before twenty-odd Marks bake in.
 2. Surface. The Examiner drives the web build of the app on the dev backend, port 8080, by
    browser automation, signed in as the Scenario's account. Screenshots are evidence. The iOS
    simulator is reserved for spot-checks of UI-native findings and follows the standing
@@ -41,7 +41,7 @@ This is how any agent runs a round the same way, months from now.
    fast and cheap, and a Mark change means Vana changed, not that the conversation happened to
    wander elsewhere.
 4. Transcript. After each Run, read the full conversation from the server's persisted message
-   tables. Both sides, tool calls, metadata. The judgment is based on the exact conversation,
+   tables. Both sides, tool calls, metadata. The Mark is based on the exact conversation,
    never on the Examiner's memory of the session.
 5. Marking. Mark each of the ten dimensions 0/25/50/75/100 against the anchors in `rubric.md`,
    then take the weighted sum. The dimensions and weights live in `rubric.md`; reference them,

@@ -151,6 +151,7 @@ Deno.test('a settle that fails in the database is logged, never thrown at the at
 });
 
 Deno.test('with enforcement off nothing is reserved and settle is a no-op', async () => {
+  const wasEnforced = Deno.env.get('AI_CREDITS_ENFORCED');
   Deno.env.set('AI_CREDITS_ENFORCED', 'false');
   try {
     const { client, calls } = fakeClient({});
@@ -160,7 +161,8 @@ Deno.test('with enforcement off nothing is reserved and settle is a no-op', asyn
     await r.hold.refund();
     assertEquals(calls, []);
   } finally {
-    Deno.env.set('AI_CREDITS_ENFORCED', 'true');
+    if (wasEnforced === undefined) Deno.env.delete('AI_CREDITS_ENFORCED');
+    else Deno.env.set('AI_CREDITS_ENFORCED', wasEnforced);
   }
 });
 
