@@ -453,7 +453,11 @@ class MealLogController extends _$MealLogController {
 
   /// Log a meal built from individual food components (used by photo, describe,
   /// manual-add, and build-a-meal draft flows).
-  Future<void> logFromComponents({
+  ///
+  /// Returns the row as written (its id and summed totals), or null when the
+  /// write failed; the failure is in the controller state (113-009: Build a
+  /// Meal's favourite needs the real log, not a throwaway one).
+  Future<MealLog?> logFromComponents({
     required String name,
     MealSlot? slot,
     required String logDate,
@@ -471,10 +475,11 @@ class MealLogController extends _$MealLogController {
     // recorded on the row so Recent shows the per-serving base (112-012).
     double servings = 1,
   }) async {
+    MealLog? written;
     await _runGuarded((service) async {
       final userId = await _currentUserId();
       if (userId == null) throw StateError('No authenticated user');
-      await service.logFromComponents(
+      written = await service.logFromComponents(
         userId: userId,
         name: name,
         slot: slot,
@@ -494,6 +499,7 @@ class MealLogController extends _$MealLogController {
         'log_date': logDate,
       });
     });
+    return written;
   }
 
   /// Re-log a past meal from Log a Meal → Recent as a copy of [original]
@@ -593,10 +599,16 @@ class MealLogController extends _$MealLogController {
   // Saved meals actions
   // --------------------------------------------------------------------------
 
-  /// Save a log entry as a user favorite.
-  Future<void> saveLogAsFavorite(MealLog log, {String? customName}) async {
+  /// Save a log entry as a user favorite. The favourite copies [log]'s name,
+  /// items and stored totals, so callers pass the row as written (112-007).
+  /// Returns the favourite, or null when the write failed.
+  Future<SavedMeal?> saveLogAsFavorite(
+    MealLog log, {
+    String? customName,
+  }) async {
+    SavedMeal? saved;
     await _runGuarded((service) async {
-      await service.saveLogAsFavorite(log, customName: customName);
+      saved = await service.saveLogAsFavorite(log, customName: customName);
       if (ref.mounted) ref.invalidate(savedMealsProvider);
 
       await _trackEvent('meal_saved_as_favorite', {
@@ -604,15 +616,29 @@ class MealLogController extends _$MealLogController {
         'custom_name': customName != null,
       });
     });
+    return saved;
   }
 
   /// Soft-delete a saved meal.
   Future<void> deleteSavedMeal(String mealId) async {
     await _runGuarded((service) async {
-      await ref.read(savedMealsRepositoryProvider).softDelete(mealId);
+      // Read before the await: the row's screen may close mid-action.
+      final repo = ref.read(savedMealsRepositoryProvider);
+      await repo.softDelete(mealId);
       if (ref.mounted) ref.invalidate(savedMealsProvider);
 
       await _trackEvent('saved_meal_deleted', {'meal_id': mealId});
+    });
+  }
+
+  /// Undo [deleteSavedMeal] (the Undo on its snackbar, 112-005).
+  Future<void> restoreSavedMeal(String mealId) async {
+    await _runGuarded((service) async {
+      final repo = ref.read(savedMealsRepositoryProvider);
+      await repo.restore(mealId);
+      if (ref.mounted) ref.invalidate(savedMealsProvider);
+
+      await _trackEvent('saved_meal_restored', {'meal_id': mealId});
     });
   }
 

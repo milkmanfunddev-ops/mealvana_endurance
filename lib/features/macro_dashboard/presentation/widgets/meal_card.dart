@@ -15,6 +15,8 @@ class MealCard extends StatelessWidget {
     this.onToggle,
     this.onRemove,
     this.onEdit,
+    this.onSaveAsFavorite,
+    this.saveAsFavoriteLabel,
   });
 
   final MealItemData item;
@@ -25,6 +27,11 @@ class MealCard extends StatelessWidget {
   final VoidCallback? onToggle;
   final VoidCallback? onRemove;
   final VoidCallback? onEdit;
+
+  /// "Save as favorite" in the expanded ⋯ (Lee, 112-008). Shown only when
+  /// both the callback and its label (from the content system) are given.
+  final VoidCallback? onSaveAsFavorite;
+  final String? saveAsFavoriteLabel;
 
   @override
   Widget build(BuildContext context) {
@@ -82,7 +89,7 @@ class MealCard extends StatelessWidget {
                               ),
                               children: [
                                 TextSpan(
-                                  text: kcalStr(item.kcal),
+                                  text: kcalStrOrUnknown(item.kcal),
                                   style: TextStyle(
                                     color: me.ink,
                                     fontWeight: FontWeight.w500,
@@ -90,21 +97,21 @@ class MealCard extends StatelessWidget {
                                 ),
                                 const TextSpan(text: ' kcal · '),
                                 TextSpan(
-                                  text: '${item.carbsG.round()}C',
+                                  text: '${macroStrOrUnknown(item.carbsG)}C',
                                   style: const TextStyle(
                                     color: MeTokens.electrolyte,
                                   ),
                                 ),
                                 const TextSpan(text: ' · '),
                                 TextSpan(
-                                  text: '${item.proteinG.round()}P',
+                                  text: '${macroStrOrUnknown(item.proteinG)}P',
                                   style: const TextStyle(
                                     color: MeTokens.proteinAccent,
                                   ),
                                 ),
                                 const TextSpan(text: ' · '),
                                 TextSpan(
-                                  text: '${item.fatG.round()}F',
+                                  text: '${macroStrOrUnknown(item.fatG)}F',
                                   style: const TextStyle(
                                     color: MeTokens.fatAccent,
                                   ),
@@ -131,28 +138,44 @@ class MealCard extends StatelessWidget {
           if (expanded)
             Padding(
               padding: const EdgeInsets.fromLTRB(55, 0, 12, 12),
-              child: Row(
+              child: Column(
                 children: [
-                  Expanded(
-                    child: _pillButton(
-                      label: 'Edit food',
-                      onTap: onEdit,
+                  Row(
+                    children: [
+                      Expanded(
+                        child: _pillButton(
+                          label: 'Edit food',
+                          onTap: onEdit,
+                          background: me.liftAlpha(0.05),
+                          borderColor: me.inkAlpha(0.12),
+                          ink: me.ink,
+                        ),
+                      ),
+                      const SizedBox(width: 10),
+                      Expanded(
+                        child: _pillButton(
+                          label: 'Remove',
+                          onTap: onRemove,
+                          background: Colors.transparent,
+                          // Destructive = dragonfruit only (tokens.md).
+                          borderColor: MeTokens.dragonfruit,
+                          ink: MeTokens.dragonfruit,
+                        ),
+                      ),
+                    ],
+                  ),
+                  if (onSaveAsFavorite != null &&
+                      saveAsFavoriteLabel != null) ...[
+                    const SizedBox(height: 8),
+                    _pillButton(
+                      key: ValueKey('macro_dashboard.meal_${item.id}.favorite'),
+                      label: saveAsFavoriteLabel!,
+                      onTap: onSaveAsFavorite,
                       background: me.liftAlpha(0.05),
                       borderColor: me.inkAlpha(0.12),
                       ink: me.ink,
                     ),
-                  ),
-                  const SizedBox(width: 10),
-                  Expanded(
-                    child: _pillButton(
-                      label: 'Remove',
-                      onTap: onRemove,
-                      background: Colors.transparent,
-                      // Destructive = dragonfruit only (tokens.md).
-                      borderColor: MeTokens.dragonfruit,
-                      ink: MeTokens.dragonfruit,
-                    ),
-                  ),
+                  ],
                 ],
               ),
             ),
@@ -162,6 +185,7 @@ class MealCard extends StatelessWidget {
   }
 
   Widget _pillButton({
+    Key? key,
     required String label,
     required VoidCallback? onTap,
     required Color background,
@@ -169,6 +193,7 @@ class MealCard extends StatelessWidget {
     required Color ink,
   }) {
     return GestureDetector(
+      key: key,
       onTap: onTap,
       child: Container(
         padding: const EdgeInsets.symmetric(vertical: 7),

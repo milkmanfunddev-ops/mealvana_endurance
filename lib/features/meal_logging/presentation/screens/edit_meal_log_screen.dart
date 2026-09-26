@@ -26,6 +26,7 @@ import '../../../subscription/presentation/ai_action_guard.dart';
 import '../providers/meal_log_providers.dart';
 import '../widgets/meal_photo_thumbnail.dart';
 import '../widgets/meal_analysis_skeleton.dart';
+import '../widgets/manual_log_form.dart' show parseCaloriesInput;
 import '../widgets/meal_component_editor.dart';
 import '../widgets/slot_chip_selector.dart' show OptionalSlotChipSelector;
 import '../../domain/meal_photo_capture.dart';
@@ -78,6 +79,12 @@ class _EditMealLogScreenState extends ConsumerState<EditMealLogScreen> {
   /// True while a re-scan photo is uploading + being analysed by Mealvana AI AI.
   bool _isRescanning = false;
 
+  /// What each macro field showed when the screen opened. A field whose text
+  /// still matches is untouched, and the stored value is kept as is: the
+  /// prefill is rounded to one decimal, so saving the shown text back turned
+  /// a stored 12.25 into 12.3 (113-003).
+  final Map<TextEditingController, String> _prefilled = {};
+
   /// Bumped each time a re-scan replaces the item list. Used to key
   /// [MealComponentEditor] so it re-seeds from the new components (it only
   /// reads `initialComponents` in its `initState`).
@@ -127,10 +134,28 @@ class _EditMealLogScreenState extends ConsumerState<EditMealLogScreen> {
       _protCtrl.text = log.proteinG?.toStringAsFixed(1) ?? '';
       _fatCtrl.text = log.fatG?.toStringAsFixed(1) ?? '';
       _sodiumCtrl.text = log.sodiumMg?.toStringAsFixed(0) ?? '';
+      for (final ctrl in [
+        _calCtrl,
+        _carbCtrl,
+        _protCtrl,
+        _fatCtrl,
+        _sodiumCtrl,
+      ]) {
+        _prefilled[ctrl] = ctrl.text;
+      }
       // Show extra panel if sodium is set (notes are handled above)
       if ((log.sodiumMg ?? 0) > 0) _showExtra = true;
     }
   }
+
+  bool _touched(TextEditingController ctrl) =>
+      _prefilled[ctrl] != null && ctrl.text != _prefilled[ctrl];
+
+  /// The macro a save writes: the stored value while the field is untouched,
+  /// otherwise the typed number, and null (unknown, never 0) when the user
+  /// emptied it (113-002, 113-003).
+  double? _macroFor(TextEditingController ctrl, double? stored) =>
+      _touched(ctrl) ? double.tryParse(ctrl.text.trim()) : stored;
 
   @override
   void dispose() {
@@ -351,16 +376,30 @@ class _EditMealLogScreenState extends ConsumerState<EditMealLogScreen> {
         notes: _notesCtrl.text.trim().isEmpty ? null : _notesCtrl.text.trim(),
       );
     }
-    // Simple manual log: pass macro fields directly
+    // Simple manual log: the macro fields are the truth. Calories parse
+    // like the Manual forms ("250.5" saves 251, "" saves unknown); a field
+    // left as prefilled keeps its stored value untouched.
+    final calories = _touched(_calCtrl)
+        ? parseCaloriesInput(_calCtrl.text)
+        : original.calories;
+    final carbsG = _macroFor(_carbCtrl, original.carbsG);
+    final proteinG = _macroFor(_protCtrl, original.proteinG);
+    final fatG = _macroFor(_fatCtrl, original.fatG);
+    final sodiumMg = _macroFor(_sodiumCtrl, original.sodiumMg);
     return original.copyWith(
       name: _nameCtrl.text.trim(),
       slot: _slot,
       clearSlot: _slot == null,
-      calories: int.tryParse(_calCtrl.text),
-      carbsG: double.tryParse(_carbCtrl.text),
-      proteinG: double.tryParse(_protCtrl.text),
-      fatG: double.tryParse(_fatCtrl.text),
-      sodiumMg: double.tryParse(_sodiumCtrl.text),
+      calories: calories,
+      clearCalories: calories == null,
+      carbsG: carbsG,
+      clearCarbsG: carbsG == null,
+      proteinG: proteinG,
+      clearProteinG: proteinG == null,
+      fatG: fatG,
+      clearFatG: fatG == null,
+      sodiumMg: sodiumMg,
+      clearSodiumMg: sodiumMg == null,
       photoPath: _photoPath,
       eatenAt: _eatenAt,
       notes: _notesCtrl.text.trim().isEmpty ? null : _notesCtrl.text.trim(),
@@ -740,6 +779,7 @@ class _EditMealLogScreenState extends ConsumerState<EditMealLogScreen> {
 
   Widget _numField(String label, TextEditingController ctrl) {
     return TextFormField(
+      key: ValueKey('edit_meal.${label.split(' ').first.toLowerCase()}_field'),
       controller: ctrl,
       keyboardType: const TextInputType.numberWithOptions(decimal: true),
       inputFormatters: [

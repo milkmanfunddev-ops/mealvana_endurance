@@ -49,6 +49,10 @@ class _BarcodeScannerScreenState extends ConsumerState<BarcodeScannerScreen>
   /// went inactive or paused; resume restarts only in that case.
   bool _stoppedForLifecycle = false;
   String? _lastScannedBarcode;
+
+  /// True while the current lookup came from the Enter sheet, so a format
+  /// failure speaks of typing, not scanning (113-006).
+  bool _lastEntryTyped = false;
   BarcodeScanResult? _lastScanResult;
   bool _flashOn = false;
 
@@ -219,6 +223,7 @@ class _BarcodeScannerScreenState extends ConsumerState<BarcodeScannerScreen>
         body: _text(ContentKeys.barcodeScannerEnterBody),
         hint: _text(ContentKeys.barcodeScannerEnterHint),
         submit: _text(ContentKeys.barcodeScannerEnterSubmit),
+        lengthMessage: _text(ContentKeys.barcodeScannerEnterLength),
       ),
     );
     if (digits == null || !mounted) return;
@@ -226,6 +231,7 @@ class _BarcodeScannerScreenState extends ConsumerState<BarcodeScannerScreen>
     setState(() {
       _isScanning = false;
       _lastScannedBarcode = digits;
+      _lastEntryTyped = true;
     });
     await _safeStopScanner();
     if (!mounted) return;
@@ -318,7 +324,14 @@ class _BarcodeScannerScreenState extends ConsumerState<BarcodeScannerScreen>
       _showNotFoundResult(result.barcode, result.message!);
     } else if (result.isInvalidFormat) {
       _trackLookupFailed('invalid_format', result.barcode);
-      _showInvalidFormatResult(result.barcode, result.message!);
+      // The service's message is about scanning; a typed number that the
+      // format check refuses (say 10 digits) is told to check what it typed.
+      _showInvalidFormatResult(
+        result.barcode,
+        _lastEntryTyped
+            ? _text(ContentKeys.barcodeScannerTypedInvalid)
+            : result.message!,
+      );
     } else {
       _trackLookupFailed('error', result.barcode);
       _showError(result.message ?? 'Unknown error occurred');
@@ -741,6 +754,7 @@ class _BarcodeScannerScreenState extends ConsumerState<BarcodeScannerScreen>
     setState(() {
       _isScanning = true;
       _lastScannedBarcode = null;
+      _lastEntryTyped = false;
       _lastScanResult = null;
     });
     // Route through the guarded starter — a rapid double-tap of the reset
@@ -1003,12 +1017,20 @@ class _EnterBarcodeSheet extends StatefulWidget {
     required this.body,
     required this.hint,
     required this.submit,
+    required this.lengthMessage,
   });
 
   final String title;
   final String body;
   final String hint;
   final String submit;
+
+  /// Shown under the field while the entry is outside 8 to 14 digits; Look
+  /// it up stays disabled until it is (113-006).
+  final String lengthMessage;
+
+  static const int minDigits = 8;
+  static const int maxDigits = 14;
 
   @override
   State<_EnterBarcodeSheet> createState() => _EnterBarcodeSheetState();
@@ -1018,16 +1040,29 @@ class _EnterBarcodeSheetState extends State<_EnterBarcodeSheet> {
   final _controller = TextEditingController();
 
   @override
+  void initState() {
+    super.initState();
+    _controller.addListener(() => setState(() {}));
+  }
+
+  @override
   void dispose() {
     _controller.dispose();
     super.dispose();
   }
 
-  /// Closes the sheet with the typed digits; an empty entry stays open.
+  String get _digits => _controller.text.replaceAll(RegExp(r'\D'), '');
+
+  bool get _lengthOk =>
+      _digits.length >= _EnterBarcodeSheet.minDigits &&
+      _digits.length <= _EnterBarcodeSheet.maxDigits;
+
+  /// Closes the sheet with the typed digits; an entry outside 8 to 14
+  /// digits stays open (the button is disabled; this covers the keyboard's
+  /// Done).
   void _submit(String value) {
-    final digits = value.replaceAll(RegExp(r'\D'), '');
-    if (digits.isEmpty) return;
-    Navigator.of(context).pop(digits);
+    if (!_lengthOk) return;
+    Navigator.of(context).pop(_digits);
   }
 
   @override
@@ -1066,11 +1101,21 @@ class _EnterBarcodeSheetState extends State<_EnterBarcodeSheet> {
             autofocus: true,
             onSubmitted: _submit,
           ),
+          if (_digits.isNotEmpty && !_lengthOk) ...[
+            const SizedBox(height: AppSpacing.xs),
+            Text(
+              widget.lengthMessage,
+              key: const ValueKey('barcode.enter_length_message'),
+              style: AppTextStyles.bodySmall.copyWith(
+                color: Theme.of(context).colorScheme.error,
+              ),
+            ),
+          ],
           const SizedBox(height: AppSpacing.md),
           KylePrimaryButton(
             key: const ValueKey('barcode.enter_submit'),
             text: widget.submit,
-            onPressed: () => _submit(_controller.text),
+            onPressed: _lengthOk ? () => _submit(_controller.text) : null,
           ),
         ],
       ),

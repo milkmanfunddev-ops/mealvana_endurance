@@ -2,12 +2,10 @@ import 'dart:async';
 
 import 'package:riverpod_annotation/riverpod_annotation.dart';
 
-import '../../../../features/auth/data/user_repository.dart';
 import '../../domain/consumed_totals.dart';
 import '../../domain/log_date_time.dart';
 import '../../domain/meal_auto_name.dart';
 import '../../domain/meal_component.dart';
-import '../../domain/meal_log.dart';
 import '../../domain/meal_log_source.dart';
 import '../../domain/meal_slot.dart';
 import 'meal_log_providers.dart';
@@ -189,10 +187,18 @@ class DraftMealController extends _$DraftMealController {
   /// Persists the draft as a single [MealLog] row via
   /// [MealLogController.logFromComponents], then clears the draft on success.
   ///
-  /// When [alsoSaveAsFavorite] is true and the write succeeds, also saves the
-  /// draft's components as a new [SavedMeal] favorite (reuses
-  /// [MealLogController.saveLogAsFavorite] with a throwaway in-memory
-  /// [MealLog], since that method only reads name/components/totals off it).
+  /// When [alsoSaveAsFavorite] is true and the write succeeds, the row as
+  /// written (its id and summed totals; a macro no item carries stays null)
+  /// becomes a new [SavedMeal] through [MealLogController.saveLogAsFavorite],
+  /// and the log row is pointed at that favourite (`saved_meal_id`). Before
+  /// this a throwaway log with no totals and an empty id went in, so the
+  /// Saved sheet previewed 0 kcal and `meal_saved_as_favorite` carried
+  /// `log_id: ''` (112-007, 113-009).
+  ///
+  /// Run twice at once (a double tap on Log meal): each call writes its own
+  /// row from the same draft; the screen disables the button while saving,
+  /// so this is the guard against that. A failed favourite leaves the log in
+  /// place and reports success for the log only.
   ///
   /// Returns true on success. No-ops (returns false) when the draft is empty.
   Future<bool> save({bool alsoSaveAsFavorite = false}) async {
@@ -202,7 +208,7 @@ class DraftMealController extends _$DraftMealController {
     final controller = ref.read(mealLogControllerProvider.notifier);
     final name = current.displayName();
 
-    await controller.logFromComponents(
+    final written = await controller.logFromComponents(
       name: name,
       slot: current.slot,
       logDate: logDate,
@@ -215,30 +221,14 @@ class DraftMealController extends _$DraftMealController {
 
     if (!ref.mounted) return false;
     final result = ref.read(mealLogControllerProvider);
-    final success = result is AsyncData;
-    if (!success) return false;
+    if (result is! AsyncData || written == null) return false;
 
     if (alsoSaveAsFavorite) {
-      final userRepo = await ref.read(userRepositoryProvider.future);
-      final user = await userRepo.getCurrentUser();
-      if (user != null && ref.mounted) {
-        final now = DateTime.now();
-        final tempLog = MealLog(
-          id: '',
-          userId: user.id,
-          logDate: logDate,
-          slot: current.slot,
-          name: name,
-          source: MealLogSource.manual,
-          components: current.components,
-          notes: current.notes,
-          eatenAt: current.eatenAt,
-          createdAt: now,
-          updatedAt: now,
-        );
-        await ref
-            .read(mealLogControllerProvider.notifier)
-            .saveLogAsFavorite(tempLog);
+      final favorite = await controller.saveLogAsFavorite(written);
+      if (favorite != null && ref.mounted) {
+        // Provenance only: the same items and totals go back in, so
+        // repeating this write changes nothing but `updated_at`.
+        await controller.updateLog(written.copyWith(savedMealId: favorite.id));
       }
     }
 

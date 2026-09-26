@@ -27,6 +27,8 @@ import '../../../nutrition_plan/domain/food.dart';
 import '../../../nutrition_plan/domain/food_item.dart';
 import '../../../recipes/application/recipe_service.dart';
 import '../../../recipes/domain/recipe.dart';
+import '../../../content/application/content_service.dart';
+import '../../../content/domain/content_keys.dart';
 import '../../../subscription/presentation/ai_action_guard.dart';
 import '../../application/diary_session.dart';
 import '../../application/meal_ai_service.dart';
@@ -1095,9 +1097,7 @@ class _RecentAndSavedTab extends ConsumerWidget {
             (meal) => _SavedMealRow(
               meal: meal,
               onTap: () => onSavedTap(meal),
-              onDelete: () => ref
-                  .read(mealLogControllerProvider.notifier)
-                  .deleteSavedMeal(meal.id),
+              onDelete: () => _deleteSavedMealWithUndo(context, ref, meal),
               isDark: isDark,
             ),
           ),
@@ -1174,6 +1174,27 @@ class _EmptyTabMessage extends StatelessWidget {
       ),
     );
   }
+}
+
+/// Trashing a Saved row soft-deletes at once (offline-first) and offers Undo
+/// (112-005), the way the Timeline's Remove does. Undo restores the row
+/// through [MealLogController.restoreSavedMeal]; a second Undo, or one after
+/// a sync restored the row, is a no-op.
+void _deleteSavedMealWithUndo(
+  BuildContext context,
+  WidgetRef ref,
+  SavedMeal meal,
+) {
+  final notifier = ref.read(mealLogControllerProvider.notifier);
+  final content = ref.read(contentServiceProvider);
+  notifier.deleteSavedMeal(meal.id);
+  ScaffoldMessenger.of(context).clearSnackBars();
+  MealvanaSnackbar.showInfo(
+    context,
+    content.getValue(ContentKeys.mealLogActionsSavedMealRemoved),
+    actionLabel: content.getValue(ContentKeys.mealLogActionsUndo),
+    onAction: () => notifier.restoreSavedMeal(meal.id),
+  );
 }
 
 class _SavedMealRow extends StatelessWidget {
