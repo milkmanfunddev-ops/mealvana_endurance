@@ -101,7 +101,11 @@ class ContentRepository {
   /// Load default content from assets
   Future<AppContent> loadDefaultContent() async {
     try {
-      final String jsonString = await rootBundle.loadString(_defaultsAssetPath);
+      // load + utf8.decode, not loadString: see ContentDefaultsCache.preload.
+      final data = await rootBundle.load(_defaultsAssetPath);
+      final String jsonString = utf8.decode(
+        data.buffer.asUint8List(data.offsetInBytes, data.lengthInBytes),
+      );
       final Map<String, dynamic> jsonMap = json.decode(jsonString);
 
       // Wrap the defaults in AppContent structure

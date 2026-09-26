@@ -585,7 +585,7 @@ class AppStartupService {
         'Recovery session found at startup without a new password; signing out',
         context: 'AUTH',
       );
-      await _supabase.auth.signOut();
+      await _supabase.auth.signOut(scope: SignOutScope.local);
     } catch (e, stackTrace) {
       _logger.error(
         'Ending the abandoned recovery session failed',

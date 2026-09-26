@@ -24,7 +24,13 @@ security definer
 set search_path = public
 as $$
 declare
-  role text := coalesce(current_setting('request.jwt.claim.role', true), '');
+  -- PostgREST 10+ sets only request.jwt.claims (JSON); the per-claim setting is
+  -- the old form, kept as a fallback (review of wave 42).
+  role text := coalesce(
+    nullif(current_setting('request.jwt.claims', true), '')::jsonb ->> 'role',
+    nullif(current_setting('request.jwt.claim.role', true), ''),
+    ''
+  );
 begin
   -- No JWT claim (psql, the SQL editor, migrations) or the service role:
   -- trusted, write as asked.

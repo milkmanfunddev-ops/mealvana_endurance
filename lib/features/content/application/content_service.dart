@@ -1,5 +1,5 @@
 import 'dart:async' show unawaited;
-import 'dart:convert' show jsonDecode;
+import 'dart:convert' show jsonDecode, utf8;
 
 import 'package:flutter/services.dart' show rootBundle;
 import 'package:flutter_riverpod/flutter_riverpod.dart';
@@ -112,8 +112,12 @@ class ContentDefaultsCache {
   static Future<void> preload() async {
     if (_values != null) return;
     try {
-      final raw = await rootBundle.loadString(
-        'assets/config/content_defaults.json',
+      // load + utf8.decode, not loadString: loadString hands assets of 50 KiB
+      // or more to a compute() isolate, which never resolves under widget
+      // tests' fake time, so every content key read as its raw key (wave 42).
+      final data = await rootBundle.load('assets/config/content_defaults.json');
+      final raw = utf8.decode(
+        data.buffer.asUint8List(data.offsetInBytes, data.lengthInBytes),
       );
       final decoded = jsonDecode(raw);
       if (decoded is! Map<String, dynamic>) return;
