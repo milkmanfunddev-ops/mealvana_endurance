@@ -401,13 +401,14 @@ Feature name: Meal planning
 
 **Question.** Where does the draft live, and what happens on Confirm?
 
-**Decision.** The draft shows only in the plan bar, where meals can be removed or their servings changed. Confirm is only in the Review sheet. Confirming shows a "you're set" card and lands on the Food tab's shopping list; spreading meals across days is optional.
+**Decision.** The draft shows only in the plan bar, where meals can be removed or their servings changed, and the bar appears once the draft has a meal. Confirm is only in the Review sheet. Confirming shows a "you're set" card in the chat and lands on the Food tab's shopping list, with nothing on top of the list; spreading meals across days is optional.
 
 **Why.** The shopping list is the next thing the athlete needs after planning.
 
-**What else was considered.** none recorded
+**What else was considered.** The bar shown from the start at "0 meals" (built, dropped 09-26: an empty tray only took room from the chat); the "you're set" card repeated at the top of the shopping list (built, dropped 09-26).
 
 > 2026-09-26 overhaul: rewritten from mp-234, mp-235, mp-652
+> 2026-09-26 Lee in the terminal: no empty plan bar, no card on top of the shopping list
 
 ## mp-238 · Meal planning lives in the Food tab and opens on the plan
 - category: Plan tab and meals

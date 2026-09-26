@@ -20,6 +20,15 @@ Dev project: `vlmtsdzpnjnavdgytcmi`. No production database, function, secret,
 
 ## What was executed
 
+### Back to Production — 2026-09-26
+
+Lee's throwaway Kroger customer account (`secrets/kroger.test-account.md`) exists for exactly the
+cart concern that sent dev to Certification, and Certification's login-stage page rejects every
+account (it has none), which read on the device as a wrong password. Ran `secrets-production`,
+`enable`, `verify-production`: authenticated status returns `available:true,
+environment:production`. Connections made under Certification must be reconnected. QA shops with
+the test account and never presses Place Order.
+
 ### Back to Certification — 2026-09-24
 
 Lee chose Kroger Certification for dev so testing-wave ticket 22 never fills a real cart
