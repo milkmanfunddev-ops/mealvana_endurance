@@ -21,14 +21,13 @@ in brackets are the other cards folded into the same question.
 ## Miscellany
 
 
-## Decided, needs building
+## Built 2026-09-26, deploys owed (ask Lee before deploying)
 
-- mp-561: retry a failed grace-month claim at app start for accounts made before the paywall (`grace_claim_service.dart`).
-- mp-600: after a coach code pairs or queues a request, refresh coach mode and the pairing list at once (`code_entry_controller.dart`).
-- mp-615: store each grant's source on the server (grace month, code, coach code) and label from it, not from its length (`subscription/domain/grant.dart:26-31`).
-- mp-672: a logged meal's type comes from the time it was eaten, with the food breaking a tie near a boundary; today the model guesses from the food and defaults to snack (`_shared/meal_analysis/prompt.ts`, `finalize.ts:68`).
-- mp-682: change `content_defaults.json:633` to "You confirmed a different plan for this week. This draft stays here in this conversation."
-- mp-683: a meal picked in a conversation whose draft was replaced must not land on the archived draft (`_shared/vana/plan.ts:48-51` ignores status); keep the bar read-only.
+All six are merged on `mealplanning` with their tests green (Flutter 401, Deno 32). Nothing is deployed.
+- Apply migration `20260926070000_pro_grants_source.sql` to dev, then deploy `grace-claim` and `redeem-code` (mp-615).
+- Deploy `describe-meal` and `analyze-meal-photo` (mp-672), and `vana-action`, `vana-chat`, `vana-day-notes` and `jade-chat` (mp-683, which imports `plan.ts`).
+- mp-561, mp-600 and mp-682 are app-side and ship with the next build. If Sanity overrides `meal_planning.plan_bar_replaced`, change it there too.
+- mp-672 used these meal-type windows because no ruled ones existed: breakfast 04:00–10:30, lunch 10:30–14:30, snack 14:30–17:00, dinner 17:00–21:30, then snack. Near a boundary the food decides. Lee can change them.
 
 ## Waiting on Lee or Xuan (tasks and wording, not decisions)
 

@@ -125,6 +125,7 @@ Feature name: Paywall
 
 > 2026-09-26 overhaul: rewritten from mp-555, mp-554
 > 2026-09-26 decided by Claude (Lee's delegation): retry a failed grace claim at startup, so no pre-paywall user loses the promised month (mp-530); needs building (mp-561)
+> 2026-09-26 built (merged on mealplanning; dev deploy owed)
 
 ## mp-280 · When Pro ends, the athlete sees the paywall and stays signed in
 - category: When Pro ends
@@ -248,6 +249,7 @@ Feature name: Paywall
 
 > 2026-09-26 overhaul: rewritten from mp-598, mp-599, mp-544, mp-458
 > 2026-09-26 decided by Claude (Lee's delegation): recorded as built, checked in code (mp-685, mp-660: a repeat code from the same coach is refused with a plain reason); pairing refresh needs building (mp-600)
+> 2026-09-26 built (merged on mealplanning; dev deploy owed)
 
 ## mp-494 · Restore, Redeem code, Manage, Sign out and Delete account sit in one ⋯ menu
 - category: Coach codes and restore
@@ -330,3 +332,4 @@ Feature name: Paywall
 
 > 2026-09-26 overhaul: rewritten from mp-495, mp-558, mp-580, mp-581
 > 2026-09-26 decided by Claude (Lee's delegation): store the grant's source on the server; today a coach's 30-day code shows as "Grace month"; needs building (mp-615)
+> 2026-09-26 built (merged on mealplanning; dev deploy owed)

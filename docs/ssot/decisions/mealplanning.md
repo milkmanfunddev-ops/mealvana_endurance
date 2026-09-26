@@ -431,6 +431,7 @@ Feature name: Meal planning
 > 2026-09-26 overhaul: rewritten from mp-675, mp-674, mp-676, mp-677
 > 2026-09-26 approved by Lee: what an earlier plan allows, checked in code (mp-681, mp-687)
 > 2026-09-26 decided by Claude (Lee's delegation): replaced drafts stay read-only in their chat, as built; the note's promise is corrected (mp-682, mp-683)
+> 2026-09-26 built (merged on mealplanning; dev deploy owed)
 
 ## mp-004 · The word is "meal", and a week of meals is a "batch"
 - category: Plan tab and meals
