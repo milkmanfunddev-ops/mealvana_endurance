@@ -1,7 +1,7 @@
 # 116-006 · AFTER shows only foods and no targets while the stored plan holds After carbs, protein, fluids and sodium targets
 
 - kind: idea
-- status: open
+- status: wontfix
 - ticket: 116
 - run: w32-20260925T2220Z
 - screen: Activity detail (AFTER)
@@ -25,3 +25,4 @@ Follow-up 30-008 step 4. On test@test.com's 12 mi Run, AFTER lists only 1 Banana
 
 **Triage.**
 
+Won't fix (Lee, 2026-09-26): the Activity detail screen keeps its look and copy; only code bugs there get fixed.

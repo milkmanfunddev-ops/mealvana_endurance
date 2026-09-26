@@ -1,7 +1,7 @@
 # 123-001 · In a Test Store plan's last period (RevenueCat will_not_renew) the Subscription screen still says Renews on after its fresh fetch
 
 - kind: bug
-- status: open
+- status: triaged
 - ticket: 123
 - run: w38-20260926T0341Z
 - screen: Subscription
@@ -29,3 +29,5 @@ The screen read "Subscribed", "Pro Monthly", "Renews on September 25, 2026.". Th
 > 
 
 **Triage.**
+
+Fix ticket 140, Paywall, purchases, codes, coach pairing (Lee, 2026-09-26). Closed by the retest after it merges. Record: `triage-20260926.md`.

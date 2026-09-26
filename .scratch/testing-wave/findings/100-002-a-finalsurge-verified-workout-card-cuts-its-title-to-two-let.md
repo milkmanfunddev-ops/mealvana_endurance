@@ -1,7 +1,7 @@
 # 100-002 · A FinalSurge-verified workout card cuts its title to two letters (Swim reads SW...) behind the verified badge
 
 - kind: bug
-- status: open
+- status: triaged
 - ticket: 100
 - run: w39-20260926T1013Z
 - screen: Timeline (Workout filter), Fri Sep 25
@@ -25,3 +25,4 @@ The name is cut to "SW…" (two letters): the badge takes the rest of the row. T
 
 **Triage.**
 
+Fix ticket 137, Timeline and activities (Lee, 2026-09-26). Closed by the retest after it merges. Record: `triage-20260926.md`.

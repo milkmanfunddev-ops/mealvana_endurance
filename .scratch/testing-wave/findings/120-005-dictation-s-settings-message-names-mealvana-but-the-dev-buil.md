@@ -1,7 +1,7 @@
 # 120-005 · Dictation's settings message names Mealvana, but the dev build is Endurance Dev in iOS Settings, and the snackbar covers the composer
 
 - kind: idea
-- status: open
+- status: triaged
 - ticket: 120
 - run: w39-20260926T1013Z
 - screen: Vana chat
@@ -25,3 +25,4 @@ The message names the app as iOS Settings lists it (from the bundle's display na
 
 **Triage.**
 
+Fix ticket 141, Accessibility, dev buttons, small fixes (Lee, 2026-09-26). Ruling: the dictation message names the app as iOS Settings lists it, and stays clear of the composer (141). Closed by the retest after it merges. Record: `triage-20260926.md`.

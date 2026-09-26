@@ -1,7 +1,7 @@
 # 122-004 · An Admin with no Pro gets Retry on Vana's refusal and no way to get Pro from the Subscription screen
 
 - kind: idea
-- status: open
+- status: triaged
 - ticket: 122
 - run: w38-20260926T0340Z
 - screen: Ask Vana
@@ -33,3 +33,4 @@ Retry at 22:45:25 local: second 403 in the console. The Subscription screen read
 
 **Triage.**
 
+Fix ticket 139, Sign-in, sign-up, sign-out, delete, admin (Lee, 2026-09-26). Ruling: admins get every feature (see standing rules) (139). Closed by the retest after it merges. Record: `triage-20260926.md`.

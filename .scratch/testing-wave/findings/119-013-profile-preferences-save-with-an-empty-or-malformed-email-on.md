@@ -1,7 +1,7 @@
 # 119-013 · Profile & Preferences: save with an empty or malformed Email on a throwaway account
 
 - kind: followup-test
-- status: open
+- status: wontfix
 - ticket: 119
 - run: w36-20260926T0031Z
 - screen: Profile & Preferences
@@ -24,3 +24,5 @@ Not run. 31-004's fix made an empty text field save as a clear (`clearEmail: cur
 > 
 
 **Triage.**
+
+Won't fix (Lee, 2026-09-26): moot, Email on Profile & Preferences becomes read-only (ticket 138).

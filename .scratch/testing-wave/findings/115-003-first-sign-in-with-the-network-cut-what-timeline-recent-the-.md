@@ -1,7 +1,7 @@
 # 115-003 · First sign-in with the network cut: what Timeline, Recent, the Plan loading card and the Shopping spinner show when the first reads cannot answer
 
 - kind: followup-test
-- status: open
+- status: triaged
 - ticket: 115
 - run: w32-20260925T2219Z
 - screen: Timeline, Log a Meal (Recent), Food (Plan, Shopping)
@@ -29,3 +29,4 @@ Not run. Fix 46 added loading states that pass online (this run: 26-001, 19-004,
 
 **Triage.**
 
+Folded into the retest of its screen after the 2026-09-26 fix tickets (Lee, 2026-09-26: every follow-up test goes into the retests). Record: `triage-20260926.md`.

@@ -1,7 +1,7 @@
 # 112-014 · Quick-add combos carry no sodium while the same single ingredients do, so any combo leaves the day's sodium unknown
 
 - kind: idea
-- status: open
+- status: triaged
 - ticket: 112
 - run: w34-20260925T2320Z
 - screen: Log a Meal (Common)
@@ -23,3 +23,5 @@ Triage decides.
 > 
 
 **Triage.**
+
+Fix ticket 135, Meal upload and quick logging (Lee, 2026-09-26). Ruling: combos have their own per-item numbers (`quick_assembly.dart`) but no sodium. Add sodium to each item, from the matching single ingredient where one exists (135). Closed by the retest after it merges. Record: `triage-20260926.md`.

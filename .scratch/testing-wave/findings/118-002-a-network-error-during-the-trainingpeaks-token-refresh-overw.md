@@ -1,7 +1,7 @@
 # 118-002 · A network error during the TrainingPeaks token refresh overwrites requires_reauth with error: Reconnect disappears from Connected Apps until the next online sync
 
 - kind: bug
-- status: open
+- status: triaged
 - ticket: 118
 - run: w36-20260926T0031Z
 - screen: Settings → Connected Apps (TrainingPeaks)
@@ -46,3 +46,5 @@ first, the server would have held the raw exception as the athlete-facing error.
 > 
 
 **Triage.**
+
+Fix ticket 138, Settings, connections, allergies, Garmin (Lee, 2026-09-26). Closed by the retest after it merges. Record: `triage-20260926.md`.

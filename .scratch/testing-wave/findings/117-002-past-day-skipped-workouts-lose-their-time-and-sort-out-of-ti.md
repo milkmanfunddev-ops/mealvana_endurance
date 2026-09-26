@@ -1,7 +1,7 @@
 # 117-002 · Past-day skipped workouts lose their time and sort out of time order, after the day's evening meals
 
 - kind: bug
-- status: open
+- status: wontfix
 - ticket: 117
 - run: w40-20260926T1052Z
 - screen: Timeline
@@ -29,3 +29,4 @@ Skipped workouts on a past day show no time and are placed after the meals: Thu 
 
 **Triage.**
 
+Won't fix (Lee, 2026-09-26): the placement follows ratified rule S-7 in `macro-dashboard.md` (a skipped workout has no timestamp and goes after every timed card).

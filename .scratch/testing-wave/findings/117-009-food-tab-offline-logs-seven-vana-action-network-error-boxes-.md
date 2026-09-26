@@ -1,7 +1,7 @@
 # 117-009 · Food tab offline retries a vana-action read eleven times in 38 s, each an error box
 
 - kind: followup-test
-- status: open
+- status: triaged
 - ticket: 117
 - run: w40-20260926T1052Z
 - screen: Food (Plan)
@@ -28,3 +28,4 @@ A bounded retry that stops when the tab is left, one logged line per failure rat
 
 **Triage.**
 
+Folded into the retest of its screen after the 2026-09-26 fix tickets (Lee, 2026-09-26: every follow-up test goes into the retests). Record: `triage-20260926.md`.

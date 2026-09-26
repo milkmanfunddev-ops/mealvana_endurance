@@ -1,7 +1,7 @@
 # 111-005 · Kroger screen: a ZIP no Kroger store delivers to, and an invalid ZIP, in Set delivery ZIP
 
 - kind: followup-test
-- status: open
+- status: triaged
 - ticket: 111
 - run: w30-20260925T2103Z
 - screen: Shop with Kroger
@@ -23,3 +23,5 @@ Not run (look-around, ticket 111).
 > 
 
 **Triage.**
+
+Folded into the retest of its screen after the 2026-09-26 fix tickets (Lee, 2026-09-26: every follow-up test goes into the retests). Record: `triage-20260926.md`.

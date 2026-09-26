@@ -1,7 +1,7 @@
 # 124-002 · Sign up with an address that already has a confirmed account opens Verify your email for a code that is never sent
 
 - kind: bug
-- status: open
+- status: triaged
 - ticket: 124
 - run: w37-20260926T0221Z
 - screen: Sign Up with Email; Verify your email
@@ -38,3 +38,4 @@ overwritten (first_name "Rerun", gender female before and after).
 
 **Triage.**
 
+Fix ticket 139, Sign-in, sign-up, sign-out, delete, admin (Lee, 2026-09-26). Ruling: the code screen says "No code? This address may already have an account" and offers Log in. It never says whether the account exists (139). Closed by the retest after it merges. Record: `triage-20260926.md`.

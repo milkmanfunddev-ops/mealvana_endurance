@@ -1,7 +1,7 @@
 # 121-008 · Two quick Continue taps start two purchases; only RevenueCat's in-progress check stops the second
 
 - kind: bug
-- status: open
+- status: triaged
 - ticket: 121
 - run: w34-20260925T2320Z
 - screen: Paywall
@@ -26,3 +26,4 @@ One Test Store sheet and in the end one purchase, but the console shows `purchas
 
 **Triage.**
 
+Fix ticket 140, Paywall, purchases, codes, coach pairing (Lee, 2026-09-26). Closed by the retest after it merges. Record: `triage-20260926.md`.

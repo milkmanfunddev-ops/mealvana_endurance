@@ -1,7 +1,7 @@
 # 121-004 · public.users.created_at is the phone's local wall clock stamped as UTC
 
 - kind: bug
-- status: open
+- status: triaged
 - ticket: 121
 - run: w34-20260925T2320Z
 - screen: Verify your email
@@ -26,3 +26,4 @@ public.users.created_at = 2026-09-25 18:25:13+00: the local time 18:25:13 writte
 
 **Triage.**
 
+Fix ticket 139, Sign-in, sign-up, sign-out, delete, admin (Lee, 2026-09-26). Closed by the retest after it merges. Record: `triage-20260926.md`.

@@ -1,7 +1,7 @@
 # 100-006 · FinalSurge completions of workouts already out of the fetch window are never read again (Sep 24 runs stay planned)
 
 - kind: idea
-- status: open
+- status: triaged
 - ticket: 100
 - run: w39-20260926T1013Z
 - screen: Timeline (Sep 24); FinalSurge sync
@@ -26,3 +26,4 @@ The fetch starts at today (21 workouts, 2026-09-26 on), so the Sep 24 workouts a
 
 **Triage.**
 
+Fix ticket 138, Settings, connections, allergies, Garmin (Lee, 2026-09-26). Ruling: the FinalSurge fetch looks back 7 days, so late completions land (138). Closed by the retest after it merges. Record: `triage-20260926.md`.

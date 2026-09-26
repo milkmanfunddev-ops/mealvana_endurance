@@ -1,7 +1,7 @@
 # 112-008 · No screen offers "save as favorite" for a logged meal: the star row (MealLogRow) is not mounted anywhere
 
 - kind: bug
-- status: open
+- status: triaged
 - ticket: 112
 - run: w34-20260925T2320Z
 - screen: Timeline
@@ -26,3 +26,5 @@ The one-tap star ("item 23") on a logged meal saves it as a favorite, as the wav
 > 
 
 **Triage.**
+
+Fix ticket 136, Build a Meal, saved meals, Manual and Edit (Lee, 2026-09-26). Ruling: a logged meal's ⋯ on the Timeline gets "Save as favorite" (136). Closed by the retest after it merges. Record: `triage-20260926.md`.

@@ -1,7 +1,7 @@
 # 116-009 · Timeline Meals header on a past day still reads INTAKE TODAY
 
 - kind: bug
-- status: open
+- status: triaged
 - ticket: 116
 - run: w32-20260925T2220Z
 - screen: Timeline (Meals filter, header)
@@ -26,3 +26,4 @@ Every past day's expanded card reads "INTAKE TODAY" (Sep 20–24), e.g. "INTAKE 
 
 **Triage.**
 
+Held for Xuan (Lee, 2026-09-26): "Intake today" is ratified in her `energy-card.md`. Taken out of ticket 137; goes to Xuan with the SSOT pass.

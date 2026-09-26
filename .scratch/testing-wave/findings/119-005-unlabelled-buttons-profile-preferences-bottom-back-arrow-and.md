@@ -1,7 +1,7 @@
 # 119-005 · Unlabelled buttons: Profile & Preferences' bottom back arrow and Sign Up with Email's show-password buttons
 
 - kind: bug
-- status: open
+- status: triaged
 - ticket: 119
 - run: w36-20260926T0031Z
 - screen: Profile & Preferences
@@ -27,3 +27,5 @@ Every button has a name, like Log In's "Show password".
 > 
 
 **Triage.**
+
+Fix ticket 141, Accessibility, dev buttons, small fixes (Lee, 2026-09-26). Closed by the retest after it merges. Record: `triage-20260926.md`.

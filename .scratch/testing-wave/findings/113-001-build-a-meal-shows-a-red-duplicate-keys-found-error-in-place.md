@@ -1,7 +1,7 @@
 # 113-001 · Build a Meal shows a red 'Duplicate keys found' error in place of the items when the same Quick add combo is added twice
 
 - kind: bug
-- status: open
+- status: triaged
 - ticket: 113
 - run: w40-20260926T1051Z
 - screen: Build a Meal
@@ -30,3 +30,5 @@ Likely cause (code read): `MealComponentEditor` keys each row `Dismissible(key: 
 > 
 
 **Triage.**
+
+Fix ticket 136, Build a Meal, saved meals, Manual and Edit (Lee, 2026-09-26). Closed by the retest after it merges. Record: `triage-20260926.md`.

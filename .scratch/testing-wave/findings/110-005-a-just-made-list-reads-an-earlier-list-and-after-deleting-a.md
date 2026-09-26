@@ -1,7 +1,7 @@
 # 110-005 · A just-made list reads An earlier list, and after deleting a list from history the default list reads An earlier list too
 
 - kind: bug
-- status: open
+- status: triaged
 - ticket: 110
 - run: w30-20260925T2103Z
 - screen: Food (Shopping sub-tab)
@@ -27,3 +27,4 @@ Step 1: the new list's subtitle reads "Made Sep 25, 2026 · An earlier list" (it
 
 **Triage.**
 
+Fix ticket 133, Shopping lists and Kroger (Lee, 2026-09-26). Closed by the retest after it merges. Record: `triage-20260926.md`.

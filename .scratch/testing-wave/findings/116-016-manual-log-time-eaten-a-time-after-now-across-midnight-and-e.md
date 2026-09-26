@@ -1,7 +1,7 @@
 # 116-016 · Manual log Time eaten: a time after now, across midnight, and editing a logged meal's time, against the timeline's 30-minute grouping
 
 - kind: followup-test
-- status: open
+- status: triaged
 - ticket: 116
 - run: w32-20260925T2220Z
 - screen: Log a Meal (Manual)
@@ -28,3 +28,4 @@ A future time is refused or clearly flagged; each meal lands on its own day; the
 
 **Triage.**
 
+Folded into the retest of its screen after the 2026-09-26 fix tickets (Lee, 2026-09-26: every follow-up test goes into the retests). Record: `triage-20260926.md`.

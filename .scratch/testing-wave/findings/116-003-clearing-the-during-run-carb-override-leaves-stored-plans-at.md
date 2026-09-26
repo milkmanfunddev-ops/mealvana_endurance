@@ -1,7 +1,7 @@
 # 116-003 · Clearing the during-run carb override leaves stored plans at the old rate and drops the info icon, so 92 g reads below its band with no reason
 
 - kind: bug
-- status: open
+- status: triaged
 - ticket: 116
 - run: w32-20260925T2220Z
 - screen: Activity detail (12 mi Run, fuelling plan)
@@ -33,3 +33,4 @@ The stored plan is unchanged (`duringRun.carbRateGPerH` 50.4, `carbTotalG` 91), 
 
 **Triage.**
 
+Fix ticket 137, Timeline and activities (Lee, 2026-09-26). Closed by the retest after it merges. Record: `triage-20260926.md`.

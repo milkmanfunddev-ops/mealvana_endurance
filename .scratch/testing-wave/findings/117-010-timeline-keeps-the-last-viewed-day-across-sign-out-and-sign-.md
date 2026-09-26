@@ -1,7 +1,7 @@
 # 117-010 · Timeline keeps the last viewed day across sign-out and sign-in, and into a different account
 
 - kind: bug
-- status: open
+- status: triaged
 - ticket: 117
 - run: w40-20260926T1052Z
 - screen: Timeline
@@ -28,3 +28,4 @@ Both land on "Sunday, September 20", the day last viewed before sign-out: test@t
 
 **Triage.**
 
+Fix ticket 137, Timeline and activities (Lee, 2026-09-26). Closed by the retest after it merges. Record: `triage-20260926.md`.

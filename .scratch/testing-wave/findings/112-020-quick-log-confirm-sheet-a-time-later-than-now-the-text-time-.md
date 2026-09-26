@@ -1,7 +1,7 @@
 # 112-020 · Quick log confirm sheet: a time later than now, the text time field, and the default time on a past day
 
 - kind: followup-test
-- status: open
+- status: triaged
 - ticket: 112
 - run: w34-20260925T2320Z
 - screen: Log a Meal → quick log sheet
@@ -26,3 +26,5 @@ A future time is refused or warned; an invalid hour is refused; the past-day def
 > 
 
 **Triage.**
+
+Folded into the retest of its screen after the 2026-09-26 fix tickets (Lee, 2026-09-26: every follow-up test goes into the retests). Record: `triage-20260926.md`.

@@ -1,7 +1,7 @@
 # 113-005 · Log a Meal Manual: Save with an empty name shows nothing when the form is scrolled; the Name is required message sits above the view
 
 - kind: bug
-- status: open
+- status: triaged
 - ticket: 113
 - run: w40-20260926T1051Z
 - screen: Log a Meal → Manual tab
@@ -25,3 +25,5 @@ Nothing visible happens. The validator does set "Name is required" under Meal na
 > 
 
 **Triage.**
+
+Fix ticket 136, Build a Meal, saved meals, Manual and Edit (Lee, 2026-09-26). Closed by the retest after it merges. Record: `triage-20260926.md`.

@@ -1,7 +1,7 @@
 # 118-006 · The paywall message's accessibility frame reaches down over Continue, so VoiceOver touch on Continue reads the message
 
 - kind: bug
-- status: open
+- status: triaged
 - ticket: 118
 - run: w36-20260926T0031Z
 - screen: Paywall
@@ -34,3 +34,5 @@ plans or Continue reads the message for its whole duration.
 > 
 
 **Triage.**
+
+Fix ticket 141, Accessibility, dev buttons, small fixes (Lee, 2026-09-26). Closed by the retest after it merges. Record: `triage-20260926.md`.

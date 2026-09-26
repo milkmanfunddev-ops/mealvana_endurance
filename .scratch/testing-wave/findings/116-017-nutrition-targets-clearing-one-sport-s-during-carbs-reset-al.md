@@ -1,7 +1,7 @@
 # 116-017 · Nutrition Targets: clearing one sport's during carbs, Reset All to Defaults, and whether saved overrides re-plan future stored sessions
 
 - kind: followup-test
-- status: open
+- status: triaged
 - ticket: 116
 - run: w32-20260925T2220Z
 - screen: Nutrition Targets (Settings)
@@ -29,3 +29,4 @@ Each save writes exactly what the fields show, and stored plans follow the athle
 
 **Triage.**
 
+Folded into the retest of its screen after the 2026-09-26 fix tickets (Lee, 2026-09-26: every follow-up test goes into the retests). Record: `triage-20260926.md`.

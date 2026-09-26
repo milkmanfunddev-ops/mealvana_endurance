@@ -1,7 +1,7 @@
 # 116-005 · DURING By Hour reads Hour 1 and Hour 2 at 0 g carbs and 0 mg sodium while the sip-throughout drink carries 67 g across both hours
 
 - kind: bug
-- status: open
+- status: triaged
 - ticket: 116
 - run: w32-20260925T2220Z
 - screen: Activity detail (DURING, By Hour)
@@ -27,3 +27,4 @@ SIP THROUGHOUT lists 4.5 cups Sports Drink (67 g), 1 cup Water and 3 Electrolyte
 
 **Triage.**
 
+Fix ticket 137, Timeline and activities (Lee, 2026-09-26). Closed by the retest after it merges. Record: `triage-20260926.md`.

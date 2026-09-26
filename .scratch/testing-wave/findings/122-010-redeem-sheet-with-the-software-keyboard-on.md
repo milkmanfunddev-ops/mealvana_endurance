@@ -1,7 +1,7 @@
 # 122-010 · Redeem sheet with the software keyboard on
 
 - kind: followup-test
-- status: open
+- status: triaged
 - ticket: 122
 - run: w38-20260926T0340Z
 - screen: Redeem code (paywall ⋯ menu)
@@ -25,3 +25,4 @@ Not run. The wave simulator uses the hardware keyboard, and toggling the softwar
 
 **Triage.**
 
+Folded into the retest of its screen after the 2026-09-26 fix tickets (Lee, 2026-09-26: every follow-up test goes into the retests). Record: `triage-20260926.md`.

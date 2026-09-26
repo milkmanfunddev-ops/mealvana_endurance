@@ -1,7 +1,7 @@
 # 116-013 · Formula Library More filters lists Omnivore among the HIDE FORMULAS WITH allergen chips
 
 - kind: bug
-- status: open
+- status: triaged
 - ticket: 116
 - run: w32-20260925T2220Z
 - screen: Formula Library (More filters)
@@ -24,3 +24,4 @@ The chips read Omnivore (selected), Dairy, Eggs, Fish, Gluten, Peanuts, Sesame, 
 
 **Triage.**
 
+Fix ticket 138, Settings, connections, allergies, Garmin (Lee, 2026-09-26). Closed by the retest after it merges. Record: `triage-20260926.md`.

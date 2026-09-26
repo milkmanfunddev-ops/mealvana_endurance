@@ -1,7 +1,7 @@
 # 116-018 · Today's Fuel and the Plan tab's note got no look-around in wave 32
 
 - kind: followup-test
-- status: open
+- status: triaged
 - ticket: 116
 - run: w32-20260925T2220Z
 - screen: Today's Fuel
@@ -20,3 +20,7 @@ Each row names its meal and moves with the logs; empty days say so; the headers 
 **Evidence.**
 - runs/116/notes.md (screens visited; no look-around lines for Today's Fuel or the Plan tab)
 - runs/116/verdicts.md (27-006, 09-002, 14-010 rows)
+
+**Triage.**
+
+Folded into the retest of its screen after the 2026-09-26 fix tickets (Lee, 2026-09-26: every follow-up test goes into the retests). Record: `triage-20260926.md`.

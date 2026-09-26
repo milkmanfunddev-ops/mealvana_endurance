@@ -1,7 +1,7 @@
 # 115-002 · Manual log's number keypad has no Done key and a tap outside does not close it, so the fields below and Save stay hidden
 
 - kind: followup-test
-- status: open
+- status: triaged
 - ticket: 115
 - run: w32-20260925T2219Z
 - screen: Log a Meal (Manual)
@@ -27,3 +27,5 @@ Seen on the simulator 22:30-22:31Z with account B: the number pad has no Done ke
 > 
 
 **Triage.**
+
+Folded into the retest of its screen after the 2026-09-26 fix tickets (Lee, 2026-09-26: every follow-up test goes into the retests). Record: `triage-20260926.md`.

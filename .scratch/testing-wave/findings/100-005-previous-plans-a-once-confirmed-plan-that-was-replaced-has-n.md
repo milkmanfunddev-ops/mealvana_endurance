@@ -1,7 +1,7 @@
 # 100-005 · Previous plans: a once-confirmed plan that was replaced has no tag, so this week's two rows look alike
 
 - kind: idea
-- status: open
+- status: wontfix
 - ticket: 100
 - run: w39-20260926T1013Z
 - screen: Previous plans (sheet)
@@ -25,3 +25,4 @@ The two Sep 20 rows read "Sep 20 – Sep 26 · 1 meal" and "Sep 20 – Sep 26 ·
 
 **Triage.**
 
+Won't fix (Lee, 2026-09-26): plans are not really weeks; leave it. The next retest checks that deleting an older, replaced plan from Previous plans works.

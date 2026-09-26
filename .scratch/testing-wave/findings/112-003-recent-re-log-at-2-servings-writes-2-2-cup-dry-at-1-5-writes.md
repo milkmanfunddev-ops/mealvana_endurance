@@ -1,7 +1,7 @@
 # 112-003 · Recent re-log at 2 servings writes "2/2 cup dry"; at 1.5 writes "6 oz cooked (115 g)"
 
 - kind: bug
-- status: open
+- status: triaged
 - ticket: 112
 - run: w34-20260925T2320Z
 - screen: Log a Meal (Recent) → quick log sheet
@@ -27,3 +27,5 @@ Row 5543d340: "2/2 cup dry" (only the numerator was scaled) and "4 tbsp". Row 5c
 > 
 
 **Triage.**
+
+Fix ticket 135, Meal upload and quick logging (Lee, 2026-09-26). Closed by the retest after it merges. Record: `triage-20260926.md`.

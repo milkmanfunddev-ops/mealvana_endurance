@@ -1,7 +1,7 @@
 # 112-013 · The Recent quick log sheet starts on "Any time" instead of the source meal's type
 
 - kind: idea
-- status: open
+- status: triaged
 - ticket: 112
 - run: w34-20260925T2320Z
 - screen: Log a Meal (Recent) → quick log sheet
@@ -23,3 +23,5 @@ Triage decides.
 > 
 
 **Triage.**
+
+Fix ticket 135, Meal upload and quick logging (Lee, 2026-09-26). Ruling: a Recent re-log starts on the source log's slot (135). Closed by the retest after it merges. Record: `triage-20260926.md`.

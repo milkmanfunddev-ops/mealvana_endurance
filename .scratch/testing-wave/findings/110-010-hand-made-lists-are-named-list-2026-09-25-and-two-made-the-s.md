@@ -1,7 +1,7 @@
 # 110-010 · Hand-made lists are named List 2026-09-25, and two made the same day read identically in Previous lists
 
 - kind: idea
-- status: open
+- status: triaged
 - ticket: 110
 - run: w30-20260925T2103Z
 - screen: Food (Shopping sub-tab) > Previous lists
@@ -24,3 +24,4 @@ Two identical rows (dfd97e91, 0cfd283c).
 
 **Triage.**
 
+Fix ticket 133, Shopping lists and Kroger (Lee, 2026-09-26). Ruling: New list asks for a name, pre-filled "List · Sep 25", with " (2)" added if that name is taken, as renames already do (133). Closed by the retest after it merges. Record: `triage-20260926.md`.

@@ -1,7 +1,7 @@
 # 119-008 · Connected Apps tells the athlete to tap Refresh for Garmin, but the button reads Sync Now
 
 - kind: bug
-- status: open
+- status: triaged
 - ticket: 119
 - run: w36-20260926T0031Z
 - screen: Connected Apps
@@ -23,3 +23,5 @@ The Garmin card's button reads "Sync Now"; the note under it says "Tap Refresh t
 > 
 
 **Triage.**
+
+Fix ticket 138, Settings, connections, allergies, Garmin (Lee, 2026-09-26). Closed by the retest after it merges. Record: `triage-20260926.md`.

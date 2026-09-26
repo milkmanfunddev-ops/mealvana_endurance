@@ -1,7 +1,7 @@
 # 122-007 · The code field lets iOS turn a double space into a full stop, so a spaced code is refused
 
 - kind: bug
-- status: open
+- status: triaged
 - ticket: 122
 - run: w38-20260926T0340Z
 - screen: Redeem code (paywall ⋯ menu)
@@ -25,3 +25,4 @@ The field read `  E2E. GIVE. 365.              `: iOS smart punctuation replaced
 
 **Triage.**
 
+Fix ticket 140, Paywall, purchases, codes, coach pairing (Lee, 2026-09-26). Closed by the retest after it merges. Record: `triage-20260926.md`.

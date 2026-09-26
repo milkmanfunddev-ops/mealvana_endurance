@@ -1,7 +1,7 @@
 # 112-019 · Log a Meal Recipes: the Recipes tab offline on a fresh install, and recipe calories when servings > 1
 
 - kind: followup-test
-- status: open
+- status: triaged
 - ticket: 112
 - run: w34-20260925T2320Z
 - screen: Log a Meal (Recipes)
@@ -25,3 +25,5 @@ A clear empty/offline state; the tile's figure is per serving.
 > 
 
 **Triage.**
+
+Folded into the retest of its screen after the 2026-09-26 fix tickets (Lee, 2026-09-26: every follow-up test goes into the retests). Record: `triage-20260926.md`.

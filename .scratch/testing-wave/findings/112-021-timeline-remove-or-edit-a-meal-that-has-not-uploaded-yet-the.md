@@ -1,7 +1,7 @@
 # 112-021 · Timeline: remove or edit a meal that has not uploaded yet, then go online
 
 - kind: followup-test
-- status: open
+- status: triaged
 - ticket: 112
 - run: w34-20260925T2320Z
 - screen: Timeline
@@ -24,3 +24,5 @@ A removed never-uploaded meal never appears on the server; an edited one uploads
 > 
 
 **Triage.**
+
+Folded into the retest of its screen after the 2026-09-26 fix tickets (Lee, 2026-09-26: every follow-up test goes into the retests). Record: `triage-20260926.md`.

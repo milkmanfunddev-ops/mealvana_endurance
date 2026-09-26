@@ -1,7 +1,7 @@
 # 121-009 · Every in-app account delete ends with a 403 from /auth/v1/logout
 
 - kind: bug
-- status: open
+- status: triaged
 - ticket: 121
 - run: w34-20260925T2320Z
 - screen: Delete account confirm
@@ -27,3 +27,4 @@ No failing request: after delete-user the session is already gone, so the local 
 
 **Triage.**
 
+Fix ticket 139, Sign-in, sign-up, sign-out, delete, admin (Lee, 2026-09-26). Closed by the retest after it merges. Record: `triage-20260926.md`.

@@ -1,7 +1,7 @@
 # 115-006 · Opening /vana?c=<id> by deep link for a conversation that is deleted, archived or belongs to another account
 
 - kind: followup-test
-- status: open
+- status: triaged
 - ticket: 115
 - run: w32-20260925T2219Z
 - screen: Vana chat
@@ -28,3 +28,4 @@ Not run. This run used the deep link to open the draft's own conversation 7cc154
 
 **Triage.**
 
+Folded into the retest of its screen after the 2026-09-26 fix tickets (Lee, 2026-09-26: every follow-up test goes into the retests). Record: `triage-20260926.md`.

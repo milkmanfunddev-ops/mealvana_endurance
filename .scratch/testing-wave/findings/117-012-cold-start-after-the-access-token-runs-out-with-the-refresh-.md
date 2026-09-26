@@ -1,7 +1,7 @@
 # 117-012 · Cold start after the access token runs out with the refresh token revoked (29-003 expiry leg, not run)
 
 - kind: followup-test
-- status: open
+- status: triaged
 - ticket: 117
 - run: w40-20260926T1052Z
 - screen: Welcome, Timeline, Food, Events, Learn
@@ -26,3 +26,4 @@ The app fails its refresh and lands on Log In with no red screen and no unhandle
 
 **Triage.**
 
+Folded into the retest of its screen after the 2026-09-26 fix tickets (Lee, 2026-09-26: every follow-up test goes into the retests). Record: `triage-20260926.md`.

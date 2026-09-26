@@ -1,7 +1,7 @@
 # 119-004 · The is_admin read retries about 40 times a second for a whole offline session
 
 - kind: bug
-- status: open
+- status: triaged
 - ticket: 119
 - run: w36-20260926T0031Z
 - screen: none
@@ -29,3 +29,5 @@ Note: netcut keeps connectivity_plus reading "online", so the offline-to-online 
 > 
 
 **Triage.**
+
+Fix ticket 139, Sign-in, sign-up, sign-out, delete, admin (Lee, 2026-09-26). Closed by the retest after it merges. Record: `triage-20260926.md`.

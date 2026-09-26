@@ -1,7 +1,7 @@
 # 121-006 · Restore purchases offline says no subscription was found although it never reached the store
 
 - kind: bug
-- status: open
+- status: triaged
 - ticket: 121
 - run: w34-20260925T2320Z
 - screen: Paywall
@@ -26,3 +26,4 @@ A message that the check could not be made (no connection), not a verdict on the
 
 **Triage.**
 
+Fix ticket 140, Paywall, purchases, codes, coach pairing (Lee, 2026-09-26). Closed by the retest after it merges. Record: `triage-20260926.md`.

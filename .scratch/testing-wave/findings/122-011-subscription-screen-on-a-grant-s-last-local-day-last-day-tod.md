@@ -1,7 +1,7 @@
 # 122-011 · Subscription screen on a Grant's last local day: Last day today
 
 - kind: followup-test
-- status: open
+- status: triaged
 - ticket: 122
 - run: w38-20260926T0340Z
 - screen: Subscription
@@ -25,3 +25,4 @@ Not seen live. The one-day Grant (2026-09-26 04:08Z -> 2026-09-27 04:08Z) read "
 
 **Triage.**
 
+Folded into the retest of its screen after the 2026-09-26 fix tickets (Lee, 2026-09-26: every follow-up test goes into the retests). Record: `triage-20260926.md`.

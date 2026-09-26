@@ -1,7 +1,7 @@
 # 112-012 · Re-logging from Recent at 2 servings makes the doubled meal Recent's new 1-serving base
 
 - kind: idea
-- status: open
+- status: triaged
 - ticket: 112
 - run: w34-20260925T2320Z
 - screen: Log a Meal (Recent)
@@ -24,3 +24,5 @@ Triage decides what one serving of a Recent meal means.
 > 
 
 **Triage.**
+
+Fix ticket 135, Meal upload and quick logging (Lee, 2026-09-26). Ruling: a Recent row keeps the meal's per-serving numbers, so 1 serving always means the original amount. Same-named meals with different items both show (135). Closed by the retest after it merges. Record: `triage-20260926.md`.

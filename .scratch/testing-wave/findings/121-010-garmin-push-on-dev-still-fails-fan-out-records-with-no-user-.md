@@ -1,7 +1,7 @@
 # 121-010 · garmin-push on dev still fails fan-out records with no_user_mapping (18-012 closed)
 
 - kind: bug
-- status: open
+- status: triaged
 - ticket: 121
 - run: w34-20260925T2320Z
 - screen: none (server side: dev garmin-push)
@@ -25,3 +25,4 @@ Records for a Garmin user with no dev mapping are skipped quietly (not counted a
 
 **Triage.**
 
+Fix ticket 138, Settings, connections, allergies, Garmin (Lee, 2026-09-26). Ruling: disconnect (`garmin_oauth_service.dart:203` deletes only our mapping) and account delete (`delete-user` never touches Garmin) call Garmin's delete-user-registration API. Leftover pushes are logged once as skipped, not as errors. garmin-auth stops logging headers and IPs. Deregister the two dev orphans (138). Closed by the retest after it merges. Record: `triage-20260926.md`.

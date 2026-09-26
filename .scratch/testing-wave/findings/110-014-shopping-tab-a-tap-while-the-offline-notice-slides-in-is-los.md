@@ -1,7 +1,7 @@
 # 110-014 · Shopping tab: a tap while the offline notice slides in is lost
 
 - kind: followup-test
-- status: open
+- status: triaged
 - ticket: 110
 - run: w30-20260925T2103Z
 - screen: Food (Shopping sub-tab)
@@ -27,3 +27,4 @@ In 110 the first Avocado untick at 21:09:39Z (tapped as the notice appeared) lef
 
 **Triage.**
 
+Folded into the retest of its screen after the 2026-09-26 fix tickets (Lee, 2026-09-26: every follow-up test goes into the retests). Record: `triage-20260926.md`.

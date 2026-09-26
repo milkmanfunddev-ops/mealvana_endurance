@@ -1,7 +1,7 @@
 # 118-004 · A Browse pick into a general Vana conversation lands in a new server draft, but the chat's plan bar reads 0 meals and the pick cannot be removed
 
 - kind: bug
-- status: open
+- status: triaged
 - ticket: 118
 - run: w36-20260926T0031Z
 - screen: Browse meals; Vana chat
@@ -39,3 +39,5 @@ meals) was not tried and may reload the draft differently.
 > 
 
 **Triage.**
+
+Fix ticket 134, Meal plans and Vana (Lee, 2026-09-26). Ruling: a Browse pick from a general (not meal-planning) chat goes into the Plan tab's plan (or starts one), and the plan bar shows it with Remove. A meal-planning chat keeps its picks in its own draft (134). Closed by the retest after it merges. Record: `triage-20260926.md`.

@@ -1,7 +1,7 @@
 # 112-002 · Common single ingredients save their portion as "1 serving" / "1.5 servings", losing the unit ("1 large")
 
 - kind: bug
-- status: open
+- status: triaged
 - ticket: 112
 - run: w34-20260925T2320Z
 - screen: Log a Meal (Common) → quick log sheet
@@ -27,3 +27,5 @@ Rows 83f837b4 and f29ae721: totals and sodium scale correctly (72 → 108 kcal, 
 > 
 
 **Triage.**
+
+Fix ticket 135, Meal upload and quick logging (Lee, 2026-09-26). Closed by the retest after it merges. Record: `triage-20260926.md`.

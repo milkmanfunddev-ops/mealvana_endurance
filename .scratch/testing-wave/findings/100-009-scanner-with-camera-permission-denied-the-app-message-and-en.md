@@ -1,7 +1,7 @@
 # 100-009 · Scanner with camera permission denied: the app message and Enter barcode
 
 - kind: followup-test
-- status: open
+- status: triaged
 - ticket: 100
 - run: w39-20260926T1013Z
 - screen: Scan to Add Food
@@ -25,3 +25,4 @@ Not run: this run chose Allow, so only the no-camera state was seen.
 
 **Triage.**
 
+Folded into the retest of its screen after the 2026-09-26 fix tickets (Lee, 2026-09-26: every follow-up test goes into the retests). Record: `triage-20260926.md`.

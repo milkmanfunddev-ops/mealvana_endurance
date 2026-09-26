@@ -1,7 +1,7 @@
 # 125-004 · Allowing notifications writes nothing: users.notifications_enabled stays false, and the prompt comes on the second launch, not at sign-in
 
 - kind: bug
-- status: open
+- status: triaged
 - ticket: 125
 - run: w37-20260926T0221Z
 - screen: Timeline
@@ -29,3 +29,5 @@ No prompt at the first sign-in (02:23:26Z). It came on the second launch (02:24:
 > 
 
 **Triage.**
+
+Fix ticket 138, Settings, connections, allergies, Garmin (Lee, 2026-09-26). Ruling: iOS asks for notifications once, right after sign-in, and the answer is stored in `users.notifications_enabled`, which also follows later changes in iOS Settings (138). Closed by the retest after it merges. Record: `triage-20260926.md`.

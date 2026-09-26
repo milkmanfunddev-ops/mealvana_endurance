@@ -1,7 +1,7 @@
 # 125-001 · Signing out a Test Store-paid account routes to the paywall before Welcome; offline, a full paywall frame shows
 
 - kind: bug
-- status: open
+- status: triaged
 - ticket: 125
 - run: w37-20260926T0221Z
 - screen: Settings
@@ -29,3 +29,5 @@ Offline (02:36:14Z) frame 1 of 10 shows the paywall's hero mockup ("Today, Septe
 > 
 
 **Triage.**
+
+Fix ticket 139, Sign-in, sign-up, sign-out, delete, admin (Lee, 2026-09-26). Closed by the retest after it merges. Record: `triage-20260926.md`.

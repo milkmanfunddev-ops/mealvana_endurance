@@ -1,7 +1,7 @@
 # 119-007 · Body Composition offers Garmin 185 lb as tap to use when the weight field already reads 185
 
 - kind: bug
-- status: open
+- status: triaged
 - ticket: 119
 - run: w36-20260926T0031Z
 - screen: Body Composition
@@ -23,3 +23,5 @@ Weight reads 185 lbs with "Manual" and "Garmin · 185 lb — tap to use". Tappin
 > 
 
 **Triage.**
+
+Fix ticket 138, Settings, connections, allergies, Garmin (Lee, 2026-09-26). Closed by the retest after it merges. Record: `triage-20260926.md`.

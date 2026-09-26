@@ -1,7 +1,7 @@
 # 113-007 · Back from Build a Meal throws away the whole draft (15 items) with no prompt, while Edit Meal asks Discard changes?
 
 - kind: idea
-- status: open
+- status: triaged
 - ticket: 113
 - run: w40-20260926T1051Z
 - screen: Build a Meal
@@ -31,3 +31,5 @@ Draft discarded silently.
 > 
 
 **Triage.**
+
+Fix ticket 136, Build a Meal, saved meals, Manual and Edit (Lee, 2026-09-26). Ruling: Back from a non-empty Build a Meal asks Discard / Keep building (136). Closed by the retest after it merges. Record: `triage-20260926.md`.

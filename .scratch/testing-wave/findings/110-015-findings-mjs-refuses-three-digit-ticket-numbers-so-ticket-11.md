@@ -1,7 +1,7 @@
 # 110-015 · findings.mjs refuses three-digit ticket numbers, so ticket 110 Findings were written by hand and the index cannot read them
 
 - kind: idea
-- status: open
+- status: closed
 - ticket: 110
 - run: w30-20260925T2103Z
 - screen: none
@@ -24,3 +24,4 @@ Ticket 110's Findings were written by hand in the template's shape and are invis
 
 **Triage.**
 
+Closed (2026-09-26 triage): fixed by `f8ea7233`; `findings.mjs` takes three-digit tickets and the index reads every 1xx file.

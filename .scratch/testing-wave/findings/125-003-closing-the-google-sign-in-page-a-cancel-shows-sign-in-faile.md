@@ -1,7 +1,7 @@
 # 125-003 · Closing the Google sign-in page (a cancel) shows Sign in failed. Please try again.
 
 - kind: bug
-- status: open
+- status: triaged
 - ticket: 125
 - run: w37-20260926T0221Z
 - screen: Log In
@@ -29,3 +29,5 @@ After the X (02:38:34Z) the Log In chooser shows "Sign in failed. Please try aga
 > 
 
 **Triage.**
+
+Fix ticket 139, Sign-in, sign-up, sign-out, delete, admin (Lee, 2026-09-26). Closed by the retest after it merges. Record: `triage-20260926.md`.

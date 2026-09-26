@@ -1,7 +1,7 @@
 # 118-005 · Accessibility: several controls still have no label or read as text, not buttons (onboarding back, signup eye toggles, New Event back, Vana and Browse headers, Connected Apps Reconnect)
 
 - kind: bug
-- status: open
+- status: triaged
 - ticket: 118
 - run: w36-20260926T0031Z
 - screen: Onboarding; Sign Up with Email; New Event; Vana (full screen); Browse meals; Connected Apps
@@ -43,3 +43,5 @@ Browse add and the Log search bar.
 > 
 
 **Triage.**
+
+Fix ticket 141, Accessibility, dev buttons, small fixes (Lee, 2026-09-26). Closed by the retest after it merges. Record: `triage-20260926.md`.

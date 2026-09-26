@@ -1,7 +1,7 @@
 # 112-001 · A meal whose first upload fails is never retried: offline logs stay on the phone after the network returns
 
 - kind: bug
-- status: open
+- status: triaged
 - ticket: 112
 - run: w34-20260925T2320Z
 - screen: Log a Meal → quick log sheet
@@ -33,3 +33,5 @@ Both offline meals showed at once ("Meal logged!", first in Recent, counted in t
 > 
 
 **Triage.**
+
+Fix ticket 135, Meal upload and quick logging (Lee, 2026-09-26). Closed by the retest after it merges. Record: `triage-20260926.md`.

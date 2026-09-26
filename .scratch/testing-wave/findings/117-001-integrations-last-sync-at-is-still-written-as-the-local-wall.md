@@ -1,7 +1,7 @@
 # 117-001 · integrations.last_sync_at is still written as the local wall clock labelled UTC, five hours off (30-002's fault in another table)
 
 - kind: bug
-- status: open
+- status: triaged
 - ticket: 117
 - run: w40-20260926T1052Z
 - screen: none
@@ -26,3 +26,4 @@
 
 **Triage.**
 
+Fix ticket 138, Settings, connections, allergies, Garmin (Lee, 2026-09-26). Closed by the retest after it merges. Record: `triage-20260926.md`.

@@ -1,7 +1,7 @@
 # 117-003 · Workout filter on a past day heads its card TODAY'S WORKOUT
 
 - kind: bug
-- status: open
+- status: triaged
 - ticket: 117
 - run: w40-20260926T1052Z
 - screen: Timeline (Workout filter)
@@ -25,3 +25,4 @@ The card reads "TODAY'S WORKOUT 352 done · 0 planned" on Friday, September 25. 
 
 **Triage.**
 
+Held for Xuan (Lee, 2026-09-26): "Today's Workout" is ratified in her `energy-card.md`. Taken out of ticket 137; goes to Xuan with the SSOT pass.

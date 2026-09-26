@@ -1,7 +1,7 @@
 # 112-010 · garmin-push on dev counts every push for two unmapped Garmin users as an error (reason=no_user_mapping)
 
 - kind: bug
-- status: open
+- status: triaged
 - ticket: 112
 - run: w34-20260925T2320Z
 - screen: none
@@ -24,3 +24,5 @@ garmin-push logged `record failed … reason=no_user_mapping` for garminUserId d
 > 
 
 **Triage.**
+
+Fix ticket 138, Settings, connections, allergies, Garmin (Lee, 2026-09-26). Ruling: disconnect (`garmin_oauth_service.dart:203` deletes only our mapping) and account delete (`delete-user` never touches Garmin) call Garmin's delete-user-registration API. Leftover pushes are logged once as skipped, not as errors. garmin-auth stops logging headers and IPs. Deregister the two dev orphans (138). Closed by the retest after it merges. Record: `triage-20260926.md`.

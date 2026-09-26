@@ -1,7 +1,7 @@
 # 122-005 · The Redeem button turns live again with the spent code for 1-2 frames before the paywall leaves
 
 - kind: bug
-- status: open
+- status: triaged
 - ticket: 122
 - run: w38-20260926T0340Z
 - screen: Redeem code (paywall ⋯ menu)
@@ -27,3 +27,4 @@ The paywall's Continue and plan tiles stay covered by the sheet in every frame (
 
 **Triage.**
 
+Fix ticket 140, Paywall, purchases, codes, coach pairing (Lee, 2026-09-26). Closed by the retest after it merges. Record: `triage-20260926.md`.

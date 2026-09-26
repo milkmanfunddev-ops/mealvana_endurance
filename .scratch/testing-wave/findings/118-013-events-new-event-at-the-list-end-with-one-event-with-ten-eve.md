@@ -1,7 +1,7 @@
 # 118-013 · Events: New Event at the list end with one event, with ten events, and after the tab bar re-expands on scroll-up
 
 - kind: followup-test
-- status: open
+- status: triaged
 - ticket: 118
 - run: w36-20260926T0031Z
 - screen: My Events
@@ -25,3 +25,5 @@ Not run (look-around, ticket 118).
 > 
 
 **Triage.**
+
+Folded into the retest of its screen after the 2026-09-26 fix tickets (Lee, 2026-09-26: every follow-up test goes into the retests). Record: `triage-20260926.md`.

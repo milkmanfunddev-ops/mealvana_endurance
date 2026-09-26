@@ -1,7 +1,7 @@
 # 116-001 · A Peanuts allergy never matches the formula allergen Peanut, so pinning Bagel + PB + Jam gives no warning and the Peanuts filter hides nothing
 
 - kind: bug
-- status: open
+- status: triaged
 - ticket: 116
 - run: w32-20260925T2220Z
 - screen: Formula Library (Before)
@@ -32,3 +32,4 @@ Step 2: Bagel + PB + Jam is listed although More filters shows Peanuts selected 
 
 **Triage.**
 
+Fix ticket 138, Settings, connections, allergies, Garmin (Lee, 2026-09-26). Closed by the retest after it merges. Record: `triage-20260926.md`.

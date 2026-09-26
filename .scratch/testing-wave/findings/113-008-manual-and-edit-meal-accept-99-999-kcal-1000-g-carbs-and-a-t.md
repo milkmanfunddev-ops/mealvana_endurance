@@ -1,7 +1,7 @@
 # 113-008 · Manual and Edit Meal accept 99,999 kcal, 1000 g carbs and a time eaten later today with no check or warning
 
 - kind: idea
-- status: open
+- status: wontfix
 - ticket: 113
 - run: w40-20260926T1051Z
 - screen: Log a Meal → Manual tab; Edit Meal
@@ -32,3 +32,5 @@ No limit or warning on either.
 > 
 
 **Triage.**
+
+Won't fix (Lee, 2026-09-26): no limits on values or eaten times.

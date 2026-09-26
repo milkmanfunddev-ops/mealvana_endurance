@@ -1,7 +1,7 @@
 # 124-009 · Forgot Password for an address that signed up but never verified
 
 - kind: followup-test
-- status: open
+- status: triaged
 - ticket: 124
 - run: w37-20260926T0221Z
 - screen: Forgot Password
@@ -25,3 +25,4 @@ Not run (look-around, ticket 124).
 
 **Triage.**
 
+Folded into the retest of its screen after the 2026-09-26 fix tickets (Lee, 2026-09-26: every follow-up test goes into the retests). Record: `triage-20260926.md`.

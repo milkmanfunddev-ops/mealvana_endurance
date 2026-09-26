@@ -1,7 +1,7 @@
 # 124-003 · Cancel, back or quitting after the right reset code leaves the phone signed in without the password
 
 - kind: bug
-- status: open
+- status: triaged
 - ticket: 124
 - run: w37-20260926T0221Z
 - screen: Set New Password
@@ -37,3 +37,4 @@ still worked (script grant 200 at 02:39:03Z). RevenueCat logged in at the code s
 
 **Triage.**
 
+Fix ticket 139, Sign-in, sign-up, sign-out, delete, admin (Lee, 2026-09-26). Ruling: a recovery session is signed out on cancel, back or quit before the new password is saved (139). Closed by the retest after it merges. Record: `triage-20260926.md`.

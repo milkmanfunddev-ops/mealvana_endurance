@@ -1,7 +1,7 @@
 # 110-001 · A tick made in the offline copy is thrown away by the retry timer and never reaches the server
 
 - kind: bug
-- status: open
+- status: triaged
 - ticket: 110
 - run: w30-20260925T2103Z
 - screen: Food (Shopping sub-tab), offline copy
@@ -36,3 +36,4 @@ The retry timer's replay runs against the offline copy, whose rows have no ids, 
 
 **Triage.**
 
+Fix ticket 133, Shopping lists and Kroger (Lee, 2026-09-26). Closed by the retest after it merges. Record: `triage-20260926.md`.

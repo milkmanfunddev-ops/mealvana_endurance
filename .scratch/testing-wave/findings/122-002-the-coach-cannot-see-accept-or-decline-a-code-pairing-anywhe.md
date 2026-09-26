@@ -1,7 +1,7 @@
 # 122-002 · The coach cannot see, accept or decline a code pairing anywhere in the iOS app
 
 - kind: bug
-- status: open
+- status: triaged
 - ticket: 122
 - run: w38-20260926T0340Z
 - screen: Coach Portal
@@ -29,3 +29,4 @@ No iOS screen offers it. `/coach-portal` is only navigated to when `kIsWeb` (ema
 
 **Triage.**
 
+Fix ticket 140, Paywall, purchases, codes, coach pairing (Lee, 2026-09-26). Closed by the retest after it merges. Record: `triage-20260926.md`.

@@ -1,7 +1,7 @@
 # 112-017 · Log a Meal Saved meals: trash while offline, trash the last saved meal, and a saved meal with no numbers
 
 - kind: followup-test
-- status: open
+- status: triaged
 - ticket: 112
 - run: w34-20260925T2320Z
 - screen: Log a Meal (Recent → Saved meals)
@@ -25,3 +25,5 @@ Delete syncs when back online; empty state is clean; totals come from items.
 > 
 
 **Triage.**
+
+Folded into the retest of its screen after the 2026-09-26 fix tickets (Lee, 2026-09-26: every follow-up test goes into the retests). Record: `triage-20260926.md`.

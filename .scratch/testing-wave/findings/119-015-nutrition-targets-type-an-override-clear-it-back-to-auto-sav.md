@@ -1,7 +1,7 @@
 # 119-015 · Nutrition Targets: type an override, clear it back to Auto, save, check the override is gone
 
 - kind: followup-test
-- status: open
+- status: triaged
 - ticket: 119
 - run: w36-20260926T0031Z
 - screen: Nutrition Targets
@@ -25,3 +25,5 @@ Not run.
 > 
 
 **Triage.**
+
+Folded into the retest of its screen after the 2026-09-26 fix tickets (Lee, 2026-09-26: every follow-up test goes into the retests). Record: `triage-20260926.md`.

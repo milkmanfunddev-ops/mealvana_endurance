@@ -1,7 +1,7 @@
 # 119-003 · Light theme: Timeline meal cards lose their names, calories and times, and the header stays dark
 
 - kind: bug
-- status: open
+- status: triaged
 - ticket: 119
 - run: w36-20260926T0031Z
 - screen: Timeline
@@ -27,3 +27,5 @@ The pick survives the relaunch, but on the Timeline the meal cards show only the
 > 
 
 **Triage.**
+
+Fix ticket 137, Timeline and activities (Lee, 2026-09-26). Closed by the retest after it merges. Record: `triage-20260926.md`.

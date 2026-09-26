@@ -1,7 +1,7 @@
 # 116-004 · Onboarding says the long-run carb target is ACSM guidance at your body weight; the ratified during-carbs math says body weight does not affect it
 
 - kind: ssot-conflict
-- status: open
+- status: wontfix
 - ticket: 116
 - run: w32-20260925T2220Z
 - screen: Onboarding (Your fueling plan)
@@ -25,3 +25,4 @@ It reads "LONG-RUN CARB TARGET 70 g/hr" and "Our recommendation for you: ACSM gu
 
 **Triage.**
 
+Won't fix (Lee, 2026-09-26): onboarding body copy is Xuan's and is never changed.

@@ -1,7 +1,7 @@
 # 116-015 · Two seconds after Delete account the app looked up the deleted account's activity (ACTIVITIES_SERVICE Activity not found)
 
 - kind: followup-test
-- status: open
+- status: triaged
 - ticket: 116
 - run: w32-20260925T2220Z
 - screen: none (after Delete account)
@@ -27,3 +27,4 @@ After Delete account nothing queries the deleted account's rows.
 
 **Triage.**
 
+Folded into the retest of its screen after the 2026-09-26 fix tickets (Lee, 2026-09-26: every follow-up test goes into the retests). Record: `triage-20260926.md`.

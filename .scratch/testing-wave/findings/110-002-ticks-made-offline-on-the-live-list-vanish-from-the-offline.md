@@ -1,7 +1,7 @@
 # 110-002 · Ticks made offline on the live list vanish from the offline copy after a restart, though they are still queued and later sent
 
 - kind: bug
-- status: open
+- status: triaged
 - ticket: 110
 - run: w30-20260925T2103Z
 - screen: Food (Shopping sub-tab), offline copy
@@ -31,3 +31,4 @@ The offline copy shows the server's old state: Avocado ticked, Mixed vegetables 
 
 **Triage.**
 
+Fix ticket 133, Shopping lists and Kroger (Lee, 2026-09-26). Closed by the retest after it merges. Record: `triage-20260926.md`.

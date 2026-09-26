@@ -1,7 +1,7 @@
 # 121-020 · First timeline after purchase opens a New in Mealvana sheet for a brand-new account
 
 - kind: followup-test
-- status: open
+- status: triaged
 - ticket: 121
 - run: w34-20260925T2320Z
 - screen: Timeline (first launch after purchase)
@@ -24,3 +24,4 @@ Not run (look-around, ticket 121).
 
 **Triage.**
 
+Folded into the retest of its screen after the 2026-09-26 fix tickets (Lee, 2026-09-26: every follow-up test goes into the retests). Record: `triage-20260926.md`.

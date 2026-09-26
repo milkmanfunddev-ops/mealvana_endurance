@@ -1,7 +1,7 @@
 # 117-011 · After a server-side sign-out the app stays signed in; Vana reads get 401 unauthenticated and the Vana card stays on Looking at your day
 
 - kind: bug
-- status: open
+- status: triaged
 - ticket: 117
 - run: w40-20260926T1052Z
 - screen: Food (Plan), every tab
@@ -29,3 +29,4 @@ The app opens signed in and every tab renders (Timeline from the local database 
 
 **Triage.**
 
+Fix ticket 139, Sign-in, sign-up, sign-out, delete, admin (Lee, 2026-09-26). Closed by the retest after it merges. Record: `triage-20260926.md`.

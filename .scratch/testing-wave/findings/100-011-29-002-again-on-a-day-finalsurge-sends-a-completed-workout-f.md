@@ -1,7 +1,7 @@
 # 100-011 · 29-002 again on a day FinalSurge sends a completed workout for today
 
 - kind: followup-test
-- status: open
+- status: triaged
 - ticket: 100
 - run: w39-20260926T1013Z
 - screen: Timeline; FinalSurge sync
@@ -26,3 +26,4 @@ Not run today: every workout in the 10:23Z fetch was WorkoutCompleted false. The
 
 **Triage.**
 
+Folded into the retest of its screen after the 2026-09-26 fix tickets (Lee, 2026-09-26: every follow-up test goes into the retests). Record: `triage-20260926.md`.

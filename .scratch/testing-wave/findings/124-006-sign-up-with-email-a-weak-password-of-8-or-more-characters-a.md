@@ -1,7 +1,7 @@
 # 124-006 · Sign Up with Email: a weak password of 8 or more characters (all lowercase, common word)
 
 - kind: followup-test
-- status: open
+- status: triaged
 - ticket: 124
 - run: w37-20260926T0221Z
 - screen: Sign Up with Email
@@ -24,3 +24,4 @@ Not run: a weak password that the server accepted would have made an account who
 
 **Triage.**
 
+Folded into the retest of its screen after the 2026-09-26 fix tickets (Lee, 2026-09-26: every follow-up test goes into the retests). Record: `triage-20260926.md`.

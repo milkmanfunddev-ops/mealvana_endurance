@@ -1,7 +1,7 @@
 # 119-017 · Help & Feedback: open Rate Your Experience and Report a Bug
 
 - kind: followup-test
-- status: open
+- status: triaged
 - ticket: 119
 - run: w36-20260926T0031Z
 - screen: Help & Feedback
@@ -24,3 +24,5 @@ Not run: this run opened the screen only.
 > 
 
 **Triage.**
+
+Folded into the retest of its screen after the 2026-09-26 fix tickets (Lee, 2026-09-26: every follow-up test goes into the retests). Record: `triage-20260926.md`.

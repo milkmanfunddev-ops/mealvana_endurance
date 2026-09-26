@@ -1,7 +1,7 @@
 # 125-009 · Continue with Apple and Google on the account screen after onboarding, closed or refused
 
 - kind: followup-test
-- status: open
+- status: triaged
 - ticket: 125
 - run: w37-20260926T0221Z
 - screen: Create Your Account
@@ -24,3 +24,5 @@ A cancel returns to Create Your Account with the onboarding answers kept and no 
 > 
 
 **Triage.**
+
+Folded into the retest of its screen after the 2026-09-26 fix tickets (Lee, 2026-09-26: every follow-up test goes into the retests). Record: `triage-20260926.md`.

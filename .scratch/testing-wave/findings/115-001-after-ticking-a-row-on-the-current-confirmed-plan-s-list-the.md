@@ -1,7 +1,7 @@
 # 115-001 · After ticking a row on the current confirmed plan's list the header reads An earlier list while a newer draft's list exists
 
 - kind: bug
-- status: open
+- status: triaged
 - ticket: 115
 - run: w32-20260925T2219Z
 - screen: Food (Shopping sub-tab)
@@ -29,3 +29,5 @@ Right after the tick the date line reads "Confirmed Sep 25, 2026 · An earlier l
 > 
 
 **Triage.**
+
+Fix ticket 133, Shopping lists and Kroger (Lee, 2026-09-26). Closed by the retest after it merges. Record: `triage-20260926.md`.

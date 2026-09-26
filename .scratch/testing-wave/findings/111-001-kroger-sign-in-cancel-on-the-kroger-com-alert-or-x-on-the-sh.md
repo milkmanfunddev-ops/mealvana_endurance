@@ -1,7 +1,7 @@
 # 111-001 · Kroger sign-in: Cancel on the kroger.com alert or X on the sheet shows 'Something went wrong' and leaves an OAuth session row
 
 - kind: bug
-- status: open
+- status: triaged
 - ticket: 111
 - run: w30-20260925T2103Z
 - screen: Shop with Kroger
@@ -31,3 +31,5 @@ Both times the snackbar reads "Something went wrong. Your draft is saved on this
 > 
 
 **Triage.**
+
+Fix ticket 133, Shopping lists and Kroger (Lee, 2026-09-26). Closed by the retest after it merges. Record: `triage-20260926.md`.

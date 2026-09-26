@@ -1,7 +1,7 @@
 # 124-001 · Log In with an unconfirmed email says 'check your credentials' and gives no way back to the code
 
 - kind: bug
-- status: open
+- status: triaged
 - ticket: 124
 - run: w37-20260926T0221Z
 - screen: Log In with email
@@ -36,3 +36,4 @@ Nothing landed the account in the app unconfirmed. App build 72d3723e.
 
 **Triage.**
 
+Fix ticket 139, Sign-in, sign-up, sign-out, delete, admin (Lee, 2026-09-26). Closed by the retest after it merges. Record: `triage-20260926.md`.

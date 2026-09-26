@@ -1,7 +1,7 @@
 # 124-010 · After a password reset, a second phone signed in to the account: what it shows at its next token refresh
 
 - kind: followup-test
-- status: open
+- status: triaged
 - ticket: 124
 - run: w37-20260926T0221Z
 - screen: Set New Password
@@ -26,3 +26,4 @@ Not run. 32-003's server side passes (124 verdicts: every other session gone, th
 
 **Triage.**
 
+Folded into the retest of its screen after the 2026-09-26 fix tickets (Lee, 2026-09-26: every follow-up test goes into the retests). Record: `triage-20260926.md`.

@@ -1,7 +1,7 @@
 # 119-014 · Coach Connection on a coach account (test@test.com) shows the athlete's Enter Coach Code form: enter the account's own coach code
 
 - kind: followup-test
-- status: open
+- status: triaged
 - ticket: 119
 - run: w36-20260926T0031Z
 - screen: Coach Connection
@@ -24,3 +24,5 @@ Not run. The screen shows the athlete's "Connect with Your Coach / Enter Coach C
 > 
 
 **Triage.**
+
+Folded into the retest of its screen after the 2026-09-26 fix tickets (Lee, 2026-09-26: every follow-up test goes into the retests). Record: `triage-20260926.md`.

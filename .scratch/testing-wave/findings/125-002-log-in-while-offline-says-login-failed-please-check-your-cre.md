@@ -1,7 +1,7 @@
 # 125-002 · Log In while offline says Login failed. Please check your credentials., the same as a wrong password
 
 - kind: bug
-- status: open
+- status: triaged
 - ticket: 125
 - run: w37-20260926T0221Z
 - screen: Log In
@@ -27,3 +27,5 @@
 > 
 
 **Triage.**
+
+Fix ticket 139, Sign-in, sign-up, sign-out, delete, admin (Lee, 2026-09-26). Ruling: Log In errors stay under the form until the next edit, and say whether it's a wrong email or password, or no connection (139). Closed by the retest after it merges. Record: `triage-20260926.md`.

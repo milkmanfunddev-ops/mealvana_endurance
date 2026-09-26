@@ -1,7 +1,7 @@
 # 116-008 · Net balance on a future day reads +0 on track and a past day counts no planned sessions; the SSOT's intraday display only covers today
 
 - kind: idea
-- status: open
+- status: wontfix
 - ticket: 116
 - run: w32-20260925T2220Z
 - screen: Timeline (NET BALANCE)
@@ -28,3 +28,4 @@ Follow-up 30-009 traced the numbers: on test@test.com, past days Sun 20–Tue 22
 
 **Triage.**
 
+Won't fix (Lee, 2026-09-26): keep as is.

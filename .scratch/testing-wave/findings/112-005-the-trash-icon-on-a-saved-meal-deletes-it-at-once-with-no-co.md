@@ -1,7 +1,7 @@
 # 112-005 · The trash icon on a Saved meal deletes it at once, with no confirm and no undo
 
 - kind: bug
-- status: open
+- status: triaged
 - ticket: 112
 - run: w34-20260925T2320Z
 - screen: Log a Meal (Recent → Saved meals)
@@ -27,3 +27,5 @@ The row vanished at once. No dialog, no snackbar, no undo (76-after-trash-tap.pn
 > 
 
 **Triage.**
+
+Fix ticket 136, Build a Meal, saved meals, Manual and Edit (Lee, 2026-09-26). Closed by the retest after it merges. Record: `triage-20260926.md`.

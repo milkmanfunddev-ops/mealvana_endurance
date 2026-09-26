@@ -1,7 +1,7 @@
 # 112-015 · Sign-in: wrong password, Forgot Password, a double tap on Log In, and sign-in offline
 
 - kind: followup-test
-- status: open
+- status: triaged
 - ticket: 112
 - run: w34-20260925T2320Z
 - screen: Log In
@@ -28,3 +28,5 @@ Clear error, one sign-in, a clear offline message; each first-run prompt once.
 > 
 
 **Triage.**
+
+Folded into the retest of its screen after the 2026-09-26 fix tickets (Lee, 2026-09-26: every follow-up test goes into the retests). Record: `triage-20260926.md`.

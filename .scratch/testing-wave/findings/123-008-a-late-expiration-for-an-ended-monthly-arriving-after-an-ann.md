@@ -1,7 +1,7 @@
 # 123-008 · A late EXPIRATION for an ended monthly, arriving after an Annual purchase, sets will_renew false on the Annual's Entitlement row
 
 - kind: bug
-- status: open
+- status: triaged
 - ticket: 123
 - run: w38-20260926T0341Z
 - screen: none
@@ -29,3 +29,5 @@ After the late EXPIRATION the row read `active_until 05:41:47.468`, `will_renew:
 > 
 
 **Triage.**
+
+Fix ticket 140, Paywall, purchases, codes, coach pairing (Lee, 2026-09-26). Closed by the retest after it merges. Record: `triage-20260926.md`.

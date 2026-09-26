@@ -1,7 +1,7 @@
 # 117-013 · TrainingPeaks sharing sheet: Keep Sharing, Turn Off Sharing and swipe-down on an account whose TrainingPeaks works
 
 - kind: followup-test
-- status: open
+- status: triaged
 - ticket: 117
 - run: w40-20260926T1052Z
 - screen: Timeline (sign-in sheets)
@@ -26,3 +26,4 @@ Each sheet shows once per device/account as coded, Turn Off Sharing turns Traini
 
 **Triage.**
 
+Folded into the retest of its screen after the 2026-09-26 fix tickets (Lee, 2026-09-26: every follow-up test goes into the retests). Record: `triage-20260926.md`.

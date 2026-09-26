@@ -1,7 +1,7 @@
 # 111-002 · Kroger screen: Match all and product search show only when connected, so matching cannot run before a Kroger sign-in
 
 - kind: bug
-- status: open
+- status: triaged
 - ticket: 111
 - run: w30-20260925T2103Z
 - screen: Shop with Kroger
@@ -28,3 +28,5 @@ No Match all button, no product search on a line (tapping one does nothing) and 
 > 
 
 **Triage.**
+
+Fix ticket 133, Shopping lists and Kroger (Lee, 2026-09-26). Ruling: Kroger matching works once a store is picked, before Kroger login. Login is asked only at Add to Kroger cart (133). Closed by the retest after it merges. Record: `triage-20260926.md`.

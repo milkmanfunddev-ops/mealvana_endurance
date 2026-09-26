@@ -1,7 +1,7 @@
 # 117-015 · Test Store monthly kept renewing with the account signed out and the app terminated, so a sign-out lapse is not reliable
 
 - kind: idea
-- status: open
+- status: triaged
 - ticket: 117
 - run: w40-20260926T1052Z
 - screen: none
@@ -27,3 +27,4 @@ A dependable way to make a Lapsed Test Store account.
 
 **Triage.**
 
+Fix ticket 142, Harness (wave lead) (Lee, 2026-09-26). Closed by the retest after it merges. Record: `triage-20260926.md`.

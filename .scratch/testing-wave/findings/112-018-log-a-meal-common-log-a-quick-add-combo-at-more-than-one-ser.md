@@ -1,7 +1,7 @@
 # 112-018 · Log a Meal Common: log a quick-add combo at more than one serving, and search results offline
 
 - kind: followup-test
-- status: open
+- status: triaged
 - ticket: 112
 - run: w34-20260925T2320Z
 - screen: Log a Meal (Common)
@@ -25,3 +25,5 @@ A way to log 2x a combo (or the tile says why not); offline search shows local m
 > 
 
 **Triage.**
+
+Folded into the retest of its screen after the 2026-09-26 fix tickets (Lee, 2026-09-26: every follow-up test goes into the retests). Record: `triage-20260926.md`.

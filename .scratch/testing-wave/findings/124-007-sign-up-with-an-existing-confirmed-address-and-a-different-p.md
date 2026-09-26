@@ -1,7 +1,7 @@
 # 124-007 · Sign up with an existing confirmed address and a different password
 
 - kind: followup-test
-- status: open
+- status: triaged
 - ticket: 124
 - run: w37-20260926T0221Z
 - screen: Sign Up with Email
@@ -25,3 +25,4 @@ Not run (look-around; 124-002 used the account's own password).
 
 **Triage.**
 
+Folded into the retest of its screen after the 2026-09-26 fix tickets (Lee, 2026-09-26: every follow-up test goes into the retests). Record: `triage-20260926.md`.

@@ -1,7 +1,7 @@
 # 110-011 · Share text is always titled Mealvana shopping list and counts ticked rows as to buy
 
 - kind: idea
-- status: open
+- status: triaged
 - ticket: 110
 - run: w30-20260925T2103Z
 - screen: Food (Shopping sub-tab), share sheet
@@ -25,3 +25,4 @@ Generic title; ticked rows counted.
 
 **Triage.**
 
+Fix ticket 133, Shopping lists and Kroger (Lee, 2026-09-26). Ruling: shared text is titled with the list's name and counts only unticked rows (133). Closed by the retest after it merges. Record: `triage-20260926.md`.

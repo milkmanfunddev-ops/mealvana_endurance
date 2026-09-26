@@ -1,7 +1,7 @@
 # 118-003 · Offline start: is_admin read failed is logged 1397 times in 100 s, a retry loop while the network is cut
 
 - kind: bug
-- status: open
+- status: triaged
 - ticket: 118
 - run: w36-20260926T0031Z
 - screen: none
@@ -34,3 +34,5 @@ the invalidate rebuilding and failing again at once. Netcut leaves the OS connec
 > 
 
 **Triage.**
+
+Fix ticket 139, Sign-in, sign-up, sign-out, delete, admin (Lee, 2026-09-26). Closed by the retest after it merges. Record: `triage-20260926.md`.

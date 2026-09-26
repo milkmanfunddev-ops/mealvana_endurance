@@ -1,7 +1,7 @@
 # 113-010 · Scanner and barcode entry: untried device and edge paths (a product with no nutrition, real scans, other entry points, remove-then-kill before upload)
 
 - kind: followup-test
-- status: open
+- status: triaged
 - ticket: 113
 - run: w40-20260926T1051Z
 - screen: Scan to Add Food; Log Food (scanned); Timeline
@@ -29,3 +29,5 @@ Not run.
 > 
 
 **Triage.**
+
+Folded into the retest of its screen after the 2026-09-26 fix tickets (Lee, 2026-09-26: every follow-up test goes into the retests). Record: `triage-20260926.md`.

@@ -1,7 +1,7 @@
 # 117-007 · Event Details says 1 month away for an event 58 days out
 
 - kind: bug
-- status: open
+- status: triaged
 - ticket: 117
 - run: w40-20260926T1052Z
 - screen: Event Details
@@ -24,3 +24,4 @@ It reads "1 month away". The count appears to floor whole months; 58 days reads 
 
 **Triage.**
 
+Fix ticket 141, Accessibility, dev buttons, small fixes (Lee, 2026-09-26). Closed by the retest after it merges. Record: `triage-20260926.md`.

@@ -1,7 +1,7 @@
 # 116-007 · The first open of the 12 mi Run's fuelling screen rewrote activities.updated_at with the plan unchanged; later opens wrote nothing
 
 - kind: followup-test
-- status: open
+- status: triaged
 - ticket: 116
 - run: w32-20260925T2220Z
 - screen: Activity detail (fuelling plan)
@@ -28,3 +28,4 @@ Opening and reading the fuelling screen writes nothing; if it writes on a first 
 
 **Triage.**
 
+Folded into the retest of its screen after the 2026-09-26 fix tickets (Lee, 2026-09-26: every follow-up test goes into the retests). Record: `triage-20260926.md`.

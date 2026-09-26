@@ -1,7 +1,7 @@
 # 115-005 · After a confirm the Plan tab's Vana card reads Looking at your day for 20 s or more while the day note is rebuilt
 
 - kind: followup-test
-- status: open
+- status: triaged
 - ticket: 115
 - run: w32-20260925T2219Z
 - screen: Food (Plan sub-tab)
@@ -28,3 +28,4 @@ Seen once, not timed: the `vana.daynotes` call finished at 22:33:58.75Z (vana_ca
 
 **Triage.**
 
+Folded into the retest of its screen after the 2026-09-26 fix tickets (Lee, 2026-09-26: every follow-up test goes into the retests). Record: `triage-20260926.md`.

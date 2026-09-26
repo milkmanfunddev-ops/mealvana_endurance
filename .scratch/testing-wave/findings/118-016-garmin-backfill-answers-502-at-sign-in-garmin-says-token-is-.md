@@ -1,7 +1,7 @@
 # 118-016 · garmin-backfill answers 502 at sign-in: Garmin says Token is not active and rate-limited, yet Connected Apps shows Garmin as working
 
 - kind: bug
-- status: open
+- status: triaged
 - ticket: 118
 - run: w36-20260926T0031Z
 - screen: none
@@ -35,3 +35,5 @@ runbook files every server error.
 > 
 
 **Triage.**
+
+Fix ticket 138, Settings, connections, allergies, Garmin (Lee, 2026-09-26). Closed by the retest after it merges. Record: `triage-20260926.md`.

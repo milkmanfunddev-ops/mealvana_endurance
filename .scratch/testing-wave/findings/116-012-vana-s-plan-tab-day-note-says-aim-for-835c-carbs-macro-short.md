@@ -1,7 +1,7 @@
 # 116-012 · Vana's Plan-tab day note says aim for 835C carbs, macro shorthand instead of words
 
 - kind: idea
-- status: open
+- status: triaged
 - ticket: 116
 - run: w32-20260925T2220Z
 - screen: Food (Plan tab, Vana note)
@@ -25,3 +25,4 @@ Idea, from follow-up 14-010. test@test.com's confirmed plan 666be167 holds a day
 
 **Triage.**
 
+Fix ticket 134, Meal plans and Vana (Lee, 2026-09-26). Ruling: the day note says "835 g of carbs", never macro shorthand (134). Closed by the retest after it merges. Record: `triage-20260926.md`.

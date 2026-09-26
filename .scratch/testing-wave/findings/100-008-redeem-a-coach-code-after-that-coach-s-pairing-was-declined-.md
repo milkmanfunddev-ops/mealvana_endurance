@@ -1,7 +1,7 @@
 # 100-008 · Redeem: a coach code after that coach's pairing was declined or archived, and the same code a second time
 
 - kind: followup-test
-- status: open
+- status: triaged
 - ticket: 100
 - run: w39-20260926T1013Z
 - screen: Paywall > ⋯ > Redeem code
@@ -26,3 +26,4 @@ Not run. Ticket 95's alreadyPaired reads status pending/active only; the decline
 
 **Triage.**
 
+Folded into the retest of its screen after the 2026-09-26 fix tickets (Lee, 2026-09-26: every follow-up test goes into the retests). Record: `triage-20260926.md`.

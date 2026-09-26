@@ -1,7 +1,7 @@
 # 124-004 · Enter Reset Code: Resend within 60 s of the last code says 'Failed to resend code' with no wait time; the screen has no cooldown
 
 - kind: bug
-- status: open
+- status: triaged
 - ticket: 124
 - run: w37-20260926T0221Z
 - screen: Enter Reset Code
@@ -31,3 +31,4 @@ recovery_sent_at 02:37:43Z). Same 60 s server limit as 121-001, on the reset scr
 
 **Triage.**
 
+Fix ticket 139, Sign-in, sign-up, sign-out, delete, admin (Lee, 2026-09-26). Closed by the retest after it merges. Record: `triage-20260926.md`.

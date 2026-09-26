@@ -1,7 +1,7 @@
 # 125-008 · Lapsed paywall: Restore purchases, Sign out and Manage subscription while offline
 
 - kind: followup-test
-- status: open
+- status: triaged
 - ticket: 125
 - run: w37-20260926T0221Z
 - screen: Paywall
@@ -25,3 +25,5 @@ Restore says it could not reach the store (not "No active subscription was found
 > 
 
 **Triage.**
+
+Folded into the retest of its screen after the 2026-09-26 fix tickets (Lee, 2026-09-26: every follow-up test goes into the retests). Record: `triage-20260926.md`.

@@ -1,7 +1,7 @@
 # 120-002 · A pull archives this week's newer draft locally while dev keeps it as a draft
 
 - kind: bug
-- status: open
+- status: triaged
 - ticket: 120
 - run: w39-20260926T1013Z
 - screen: Food → Plan
@@ -28,3 +28,4 @@ Dev holds 50390c90 as `draft` (created 2026-09-26 00:48Z, after 9be88811 was con
 
 **Triage.**
 
+Fix ticket 134, Meal plans and Vana (Lee, 2026-09-26). Closed by the retest after it merges. Record: `triage-20260926.md`.

@@ -1,7 +1,7 @@
 # 112-011 · The timeline files every "Any time" meal under the first one's time label (a soup eaten 6:30 PM sits under 6:24 PM)
 
 - kind: bug
-- status: open
+- status: triaged
 - ticket: 112
 - run: w34-20260925T2320Z
 - screen: Timeline
@@ -26,3 +26,5 @@ Under "6:24 PM": Oatmeal + raisins (6:24), Built bowl (6:24), Banana + peanut bu
 > 
 
 **Triage.**
+
+Fix ticket 137, Timeline and activities (Lee, 2026-09-26). Closed by the retest after it merges. Record: `triage-20260926.md`.

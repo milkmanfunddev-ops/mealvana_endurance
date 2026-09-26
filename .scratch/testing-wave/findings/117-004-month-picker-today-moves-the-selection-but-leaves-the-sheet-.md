@@ -1,7 +1,7 @@
 # 117-004 · Month picker: Today moves the selection but leaves the sheet open, and the Next day arrow moves with the title's width
 
 - kind: bug
-- status: open
+- status: triaged
 - ticket: 117
 - run: w40-20260926T1052Z
 - screen: Month picker (timeline date dropdown)
@@ -30,3 +30,4 @@ Today moved the selection to 26 and back to September but left the sheet open un
 
 **Triage.**
 
+Fix ticket 137, Timeline and activities (Lee, 2026-09-26). Closed by the retest after it merges. Record: `triage-20260926.md`.

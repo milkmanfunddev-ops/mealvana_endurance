@@ -1,7 +1,7 @@
 # 120-013 · Offline, edit then delete the unsynced Manual log before signing out: does the next sign-in send the edit, or resurrect it?
 
 - kind: followup-test
-- status: open
+- status: triaged
 - ticket: 120
 - run: w39-20260926T1013Z
 - screen: Timeline
@@ -25,3 +25,4 @@ Dev ends with the edited meal, or with no meal after the delete; a deleted unsyn
 
 **Triage.**
 
+Folded into the retest of its screen after the 2026-09-26 fix tickets (Lee, 2026-09-26: every follow-up test goes into the retests). Record: `triage-20260926.md`.

@@ -1,7 +1,7 @@
 # 121-011 · After a correct signup code, Create Your Account shows for about a second before the paywall
 
 - kind: bug
-- status: open
+- status: triaged
 - ticket: 121
 - run: w34-20260925T2320Z
 - screen: Verify your email
@@ -26,3 +26,4 @@ An element read 1 s after the code shows the Create Your Account screen (Apple /
 
 **Triage.**
 
+Fix ticket 139, Sign-in, sign-up, sign-out, delete, admin (Lee, 2026-09-26). Closed by the retest after it merges. Record: `triage-20260926.md`.

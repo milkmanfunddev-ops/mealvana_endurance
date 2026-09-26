@@ -1,7 +1,7 @@
 # 122-001 · A second giveaway on a running Grant is spent and adds no days, yet says You have 365 days of Pro
 
 - kind: bug
-- status: open
+- status: triaged
 - ticket: 122
 - run: w38-20260926T0340Z
 - screen: Subscription
@@ -29,3 +29,4 @@ The sheet closed with "Code redeemed. You have 365 days of Pro." and the screen 
 
 **Triage.**
 
+Fix ticket 140, Paywall, purchases, codes, coach pairing (Lee, 2026-09-26). Ruling: a giveaway is refused while any Pro is active, a running Grant ("You already have free Pro until <date>") or a paying subscription ("You already have Pro"), and the code is not spent (140). Closed by the retest after it merges. Record: `triage-20260926.md`.

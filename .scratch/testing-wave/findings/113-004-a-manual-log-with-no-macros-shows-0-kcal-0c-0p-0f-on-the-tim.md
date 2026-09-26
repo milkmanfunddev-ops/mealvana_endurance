@@ -1,7 +1,7 @@
 # 113-004 · A manual log with no macros shows 0 kcal, 0C, 0P, 0F on the timeline although every value is unknown (null)
 
 - kind: bug
-- status: open
+- status: triaged
 - ticket: 113
 - run: w40-20260926T1051Z
 - screen: Timeline (Meals); Build a Meal
@@ -28,3 +28,5 @@ The row is saved with all four null (db-after-manual.txt), and the timeline show
 > 
 
 **Triage.**
+
+Fix ticket 136, Build a Meal, saved meals, Manual and Edit (Lee, 2026-09-26). Closed by the retest after it merges. Record: `triage-20260926.md`.

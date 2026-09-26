@@ -1,7 +1,7 @@
 # 113-003 · Edit Meal prefills macros rounded to one decimal and writes them back on any save: protein 12.25 becomes 12.3 though it was not touched
 
 - kind: bug
-- status: open
+- status: triaged
 - ticket: 113
 - run: w40-20260926T1051Z
 - screen: Edit Meal
@@ -29,3 +29,5 @@ protein_g is 12.3 on both rows after the save. Edit Meal shows each macro rounde
 > 
 
 **Triage.**
+
+Fix ticket 136, Build a Meal, saved meals, Manual and Edit (Lee, 2026-09-26). Closed by the retest after it merges. Record: `triage-20260926.md`.

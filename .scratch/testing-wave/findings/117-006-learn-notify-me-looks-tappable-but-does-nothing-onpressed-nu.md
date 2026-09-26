@@ -1,7 +1,7 @@
 # 117-006 · Learn: Notify Me looks tappable but does nothing (onPressed null), no feedback on either card
 
 - kind: bug
-- status: open
+- status: triaged
 - ticket: 117
 - run: w40-20260926T1052Z
 - screen: Learn
@@ -27,3 +27,4 @@ Nothing happens on either tap: no snackbar, no state change, no console line. Th
 
 **Triage.**
 
+Fix ticket 141, Accessibility, dev buttons, small fixes (Lee, 2026-09-26). Ruling: Notify Me records interest and says "We'll let you know" (141). ### Bugs with a product call Closed by the retest after it merges. Record: `triage-20260926.md`.

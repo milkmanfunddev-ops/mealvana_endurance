@@ -1,7 +1,7 @@
 # 116-014 · Pinned allergy-conflicted formula: the persistent conflict label, Keep pin and Unpin were not reached (paywall at the Test Store period end)
 
 - kind: followup-test
-- status: open
+- status: triaged
 - ticket: 116
 - run: w32-20260925T2220Z
 - screen: Formula Library (Before, pinned conflicted formula)
@@ -29,3 +29,4 @@ FP-4b: an honored conflicting pin carries the collapsible label, expanding to Ke
 
 **Triage.**
 
+Folded into the retest of its screen after the 2026-09-26 fix tickets (Lee, 2026-09-26: every follow-up test goes into the retests). Record: `triage-20260926.md`.

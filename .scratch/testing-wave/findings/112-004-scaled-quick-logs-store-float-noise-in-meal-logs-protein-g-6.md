@@ -1,7 +1,7 @@
 # 112-004 · Scaled quick logs store float noise in meal_logs (protein_g 60.449999999999996, carbs_g 0.6000000000000001)
 
 - kind: bug
-- status: open
+- status: triaged
 - ticket: 112
 - run: w34-20260925T2320Z
 - screen: Log a Meal (Recent, Common) → quick log sheet
@@ -25,3 +25,5 @@ Stored macros are rounded like every other row (one decimal, e.g. 60.4 / 0.6), s
 > 
 
 **Triage.**
+
+Fix ticket 135, Meal upload and quick logging (Lee, 2026-09-26). Closed by the retest after it merges. Record: `triage-20260926.md`.

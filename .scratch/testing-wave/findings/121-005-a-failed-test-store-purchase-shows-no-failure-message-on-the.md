@@ -1,7 +1,7 @@
 # 121-005 · A failed Test Store purchase shows no failure message on the paywall
 
 - kind: bug
-- status: open
+- status: triaged
 - ticket: 121
 - run: w34-20260925T2320Z
 - screen: Paywall
@@ -28,3 +28,4 @@ The account stays on the paywall and nothing is shown (tried twice, and a third 
 
 **Triage.**
 
+Fix ticket 140, Paywall, purchases, codes, coach pairing (Lee, 2026-09-26). Closed by the retest after it merges. Record: `triage-20260926.md`.

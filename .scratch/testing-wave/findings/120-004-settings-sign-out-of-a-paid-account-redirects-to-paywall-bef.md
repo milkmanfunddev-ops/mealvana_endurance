@@ -1,7 +1,7 @@
 # 120-004 · Settings sign-out of a paid account redirects to /paywall before RevenueCat logs out: is a paywall frame shown?
 
 - kind: followup-test
-- status: open
+- status: triaged
 - ticket: 120
 - run: w39-20260926T1013Z
 - screen: Settings
@@ -26,3 +26,4 @@ Not seen on screen (no recording of that moment). The console at C's sign-out (1
 
 **Triage.**
 
+Folded into the retest of its screen after the 2026-09-26 fix tickets (Lee, 2026-09-26: every follow-up test goes into the retests). Record: `triage-20260926.md`.

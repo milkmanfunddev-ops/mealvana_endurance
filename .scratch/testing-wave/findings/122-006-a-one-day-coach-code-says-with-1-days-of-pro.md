@@ -1,7 +1,7 @@
 # 122-006 · A one-day coach code says with 1 days of Pro
 
 - kind: bug
-- status: open
+- status: triaged
 - ticket: 122
 - run: w38-20260926T0340Z
 - screen: Timeline
@@ -24,3 +24,4 @@ The snackbar on the timeline says "You're set up as a coach, with 1 days of Pro.
 
 **Triage.**
 
+Fix ticket 140, Paywall, purchases, codes, coach pairing (Lee, 2026-09-26). Closed by the retest after it merges. Record: `triage-20260926.md`.

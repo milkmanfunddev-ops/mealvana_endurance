@@ -1,7 +1,7 @@
 # 123-002 · Test failed purchase on the paywall shows no message: a store error is treated as a cancel
 
 - kind: bug
-- status: open
+- status: triaged
 - ticket: 123
 - run: w38-20260926T0341Z
 - screen: Paywall (lapsed)
@@ -27,3 +27,5 @@ The sheet closed and the paywall came back with Continue live and no message at 
 > 
 
 **Triage.**
+
+Fix ticket 140, Paywall, purchases, codes, coach pairing (Lee, 2026-09-26). Closed by the retest after it merges. Record: `triage-20260926.md`.

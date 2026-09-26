@@ -1,7 +1,7 @@
 # 121-001 · Resend code fails with 429 when tapped as the 30 s countdown ends: the server allows one email per 60 s
 
 - kind: bug
-- status: open
+- status: triaged
 - ticket: 121
 - run: w34-20260925T2320Z
 - screen: Verify your email
@@ -28,3 +28,4 @@ A new code is sent, or the countdown is at least as long as the server's minimum
 
 **Triage.**
 
+Fix ticket 139, Sign-in, sign-up, sign-out, delete, admin (Lee, 2026-09-26). Closed by the retest after it merges. Record: `triage-20260926.md`.

@@ -1,7 +1,7 @@
 # 100-007 · Review and Log's photo thumbnail has no accessibility label
 
 - kind: bug
-- status: open
+- status: triaged
 - ticket: 100
 - run: w39-20260926T1013Z
 - screen: Review & Log (photo log)
@@ -25,3 +25,4 @@ The photo draws at the top of the screen but is absent from the accessibility tr
 
 **Triage.**
 
+Fix ticket 141, Accessibility, dev buttons, small fixes (Lee, 2026-09-26). Closed by the retest after it merges. Record: `triage-20260926.md`.

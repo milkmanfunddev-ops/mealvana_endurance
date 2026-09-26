@@ -1,7 +1,7 @@
 # 111-004 · netcut cannot cut a request that reuses an open keep-alive socket, so the first offline tap still reaches the server
 
 - kind: idea
-- status: open
+- status: triaged
 - ticket: 111
 - run: w30-20260925T2103Z
 - screen: Shop with Kroger
@@ -24,3 +24,5 @@
 > 
 
 **Triage.**
+
+Fix ticket 142, Harness (wave lead) (Lee, 2026-09-26). Ruling: `netcut on` also closes the app's open connections, proven by an immediate tap after `on` (142). Closed by the retest after it merges. Record: `triage-20260926.md`.

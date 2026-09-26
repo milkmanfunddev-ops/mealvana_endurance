@@ -1,7 +1,7 @@
 # 121-002 · A superseded signup code reads as "wrong or has expired" and does not point to the newest email
 
 - kind: bug
-- status: open
+- status: triaged
 - ticket: 121
 - run: w34-20260925T2320Z
 - screen: Verify your email
@@ -27,3 +27,4 @@ The six digits submit on their own and the screen reads "That code is wrong or h
 
 **Triage.**
 
+Fix ticket 139, Sign-in, sign-up, sign-out, delete, admin (Lee, 2026-09-26). Closed by the retest after it merges. Record: `triage-20260926.md`.

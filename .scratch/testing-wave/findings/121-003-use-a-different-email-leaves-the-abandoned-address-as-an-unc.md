@@ -1,7 +1,7 @@
 # 121-003 · Use a different email leaves the abandoned address as an unconfirmed auth user on dev
 
 - kind: bug
-- status: open
+- status: triaged
 - ticket: 121
 - run: w34-20260925T2320Z
 - screen: Verify your email
@@ -28,3 +28,4 @@ auth.users keeps 22ae6961-ddc0-4fbc-9f72-d5d6a6eea039 (lee+e2e-121-20260925t2321
 
 **Triage.**
 
+Fix ticket 139, Sign-in, sign-up, sign-out, delete, admin (Lee, 2026-09-26). Ruling: "Use a different email" deletes the abandoned unconfirmed login at once (139). Closed by the retest after it merges. Record: `triage-20260926.md`.

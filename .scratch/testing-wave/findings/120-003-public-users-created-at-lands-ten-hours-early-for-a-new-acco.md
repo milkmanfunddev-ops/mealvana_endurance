@@ -1,7 +1,7 @@
 # 120-003 · public.users.created_at lands ten hours early for a new account (twice the phone's UTC offset)
 
 - kind: bug
-- status: open
+- status: triaged
 - ticket: 120
 - run: w39-20260926T1013Z
 - screen: Verify your email
@@ -26,3 +26,4 @@ auth.users.created_at 10:26:37Z; public.users.created_at 2026-09-26 00:26:53+00,
 
 **Triage.**
 
+Fix ticket 139, Sign-in, sign-up, sign-out, delete, admin (Lee, 2026-09-26). Closed by the retest after it merges. Record: `triage-20260926.md`.

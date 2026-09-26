@@ -1,7 +1,7 @@
 # 100-012 · Add Activity from a past day's Workout filter opens prefilled with 12 mi Run
 
 - kind: followup-test
-- status: open
+- status: triaged
 - ticket: 100
 - run: w39-20260926T1013Z
 - screen: Timeline (Workout filter) > + Add Activity
@@ -25,3 +25,4 @@ Seen once by accident: the form opened on "Create New Activity Plan" already fil
 
 **Triage.**
 
+Folded into the retest of its screen after the 2026-09-26 fix tickets (Lee, 2026-09-26: every follow-up test goes into the retests). Record: `triage-20260926.md`.

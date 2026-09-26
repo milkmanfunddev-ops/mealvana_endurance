@@ -1,7 +1,7 @@
 # 122-012 · Delete account still builds the paywall for 0.3-0.7 s: slow device and network
 
 - kind: followup-test
-- status: open
+- status: triaged
 - ticket: 122
 - run: w38-20260926T0340Z
 - screen: Settings
@@ -27,3 +27,4 @@ On the simulator 87-003 passes on screen: in three deletes (C, D, A) no paywall 
 
 **Triage.**
 
+Folded into the retest of its screen after the 2026-09-26 fix tickets (Lee, 2026-09-26: every follow-up test goes into the retests). Record: `triage-20260926.md`.

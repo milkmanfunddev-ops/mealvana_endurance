@@ -1,7 +1,7 @@
 # 122-003 · An athlete with a pending code pairing sees no sign of it on Coach Connection
 
 - kind: bug
-- status: open
+- status: triaged
 - ticket: 122
 - run: w38-20260926T0340Z
 - screen: Coach Connection
@@ -26,3 +26,4 @@ Coach Connection shows only "Connect with Your Coach", "Enter Coach Code" (the 2
 
 **Triage.**
 
+Fix ticket 140, Paywall, purchases, codes, coach pairing (Lee, 2026-09-26). Closed by the retest after it merges. Record: `triage-20260926.md`.

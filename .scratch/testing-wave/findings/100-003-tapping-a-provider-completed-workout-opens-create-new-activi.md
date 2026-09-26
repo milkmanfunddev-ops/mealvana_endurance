@@ -1,7 +1,7 @@
 # 100-003 · Tapping a provider-completed workout opens Create New Activity Plan with Generate Plan
 
 - kind: bug
-- status: open
+- status: triaged
 - ticket: 100
 - run: w39-20260926T1013Z
 - screen: Timeline workout card > activity editor
@@ -26,3 +26,4 @@ The screen headed "Create New Activity Plan" opens with Swimming selected, Sep 2
 
 **Triage.**
 
+Fix ticket 137, Timeline and activities (Lee, 2026-09-26). Ruling: tapping a provider-completed workout opens its activity detail, never Create New Activity Plan (137). Closed by the retest after it merges. Record: `triage-20260926.md`.

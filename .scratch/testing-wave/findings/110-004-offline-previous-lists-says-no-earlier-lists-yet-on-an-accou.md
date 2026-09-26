@@ -1,7 +1,7 @@
 # 110-004 · Offline, Previous lists says No earlier lists yet on an account with seven earlier lists
 
 - kind: bug
-- status: open
+- status: triaged
 - ticket: 110
 - run: w30-20260925T2103Z
 - screen: Food (Shopping sub-tab) > Previous lists, offline
@@ -25,3 +25,4 @@ The sheet reads "No earlier lists yet." The account has seven earlier lists. An 
 
 **Triage.**
 
+Fix ticket 133, Shopping lists and Kroger (Lee, 2026-09-26). Closed by the retest after it merges. Record: `triage-20260926.md`.

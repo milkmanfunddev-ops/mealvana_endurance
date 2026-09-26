@@ -1,7 +1,7 @@
 # 119-010 · Profile & Preferences drops unsaved changes on back or swipe without asking
 
 - kind: idea
-- status: open
+- status: triaged
 - ticket: 119
 - run: w36-20260926T0031Z
 - screen: Profile & Preferences
@@ -24,3 +24,5 @@ Idea only.
 > 
 
 **Triage.**
+
+Fix ticket 138, Settings, connections, allergies, Garmin (Lee, 2026-09-26). Ruling: Profile & Preferences asks "Discard changes?" on back and on swipe when edits are unsaved (138). Closed by the retest after it merges. Record: `triage-20260926.md`.

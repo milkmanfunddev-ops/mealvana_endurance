@@ -1,7 +1,7 @@
 # 120-008 · Previous plans lists two unlabelled rows for this week: which is the draft, and does opening one change the plan?
 
 - kind: followup-test
-- status: open
+- status: triaged
 - ticket: 120
 - run: w39-20260926T1013Z
 - screen: Food → Plan → Previous plans
@@ -26,3 +26,4 @@ Every row says which plan it is (Draft, Archived); opening one never replaces th
 
 **Triage.**
 
+Folded into the retest of its screen after the 2026-09-26 fix tickets (Lee, 2026-09-26: every follow-up test goes into the retests). Record: `triage-20260926.md`.

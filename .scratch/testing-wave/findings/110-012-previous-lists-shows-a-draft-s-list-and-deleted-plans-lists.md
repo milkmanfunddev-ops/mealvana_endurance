@@ -1,7 +1,7 @@
 # 110-012 · Previous lists shows a draft's list and deleted plans' lists as From plan, like the others, and the draft's list offers Shop with Kroger
 
 - kind: idea
-- status: open
+- status: triaged
 - ticket: 110
 - run: w30-20260925T2103Z
 - screen: Food (Shopping sub-tab) > Previous lists
@@ -26,3 +26,4 @@ Three identical "From plan" rows for the same week.
 
 **Triage.**
 
+Fix ticket 133, Shopping lists and Kroger (Lee, 2026-09-26). Ruling: no list for a draft (see standing rules) (133). Closed by the retest after it merges. Record: `triage-20260926.md`.

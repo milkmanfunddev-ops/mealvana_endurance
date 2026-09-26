@@ -1,7 +1,7 @@
 # 112-007 · Build a meal's "Also save as a favorite" saves the favorite with no totals; its quick log sheet then says 0 kcal
 
 - kind: bug
-- status: open
+- status: triaged
 - ticket: 112
 - run: w34-20260925T2320Z
 - screen: Build a Meal; Log a Meal (Recent → Saved meals)
@@ -27,3 +27,5 @@ saved_meals 85c22213 has `calories`, `carbs_g`, `protein_g`, `fat_g`, `sodium_mg
 > 
 
 **Triage.**
+
+Fix ticket 136, Build a Meal, saved meals, Manual and Edit (Lee, 2026-09-26). Closed by the retest after it merges. Record: `triage-20260926.md`.

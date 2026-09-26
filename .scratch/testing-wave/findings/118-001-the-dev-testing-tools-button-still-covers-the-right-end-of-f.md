@@ -1,7 +1,7 @@
 # 118-001 · The dev testing-tools button still covers the right end of full-width bottom buttons: What's New Got it, Welcome Build My Plan, paywall Continue and Monthly, Redeem
 
 - kind: bug
-- status: open
+- status: triaged
 - ticket: 118
 - run: w36-20260926T0031Z
 - screen: What's New sheet (Timeline); Welcome; Paywall; Redeem a code sheet
@@ -40,3 +40,5 @@ panel instead.
 > 
 
 **Triage.**
+
+Fix ticket 141, Accessibility, dev buttons, small fixes (Lee, 2026-09-26). Ruling: folded into one small button at the top edge (141). Closed by the retest after it merges. Record: `triage-20260926.md`.

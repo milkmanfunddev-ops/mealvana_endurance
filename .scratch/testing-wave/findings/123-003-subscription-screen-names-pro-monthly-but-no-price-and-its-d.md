@@ -1,7 +1,7 @@
 # 123-003 · Subscription screen names Pro Monthly but no price, and its date has no time
 
 - kind: idea
-- status: open
+- status: wontfix
 - ticket: 123
 - run: w38-20260926T0341Z
 - screen: Subscription
@@ -24,3 +24,5 @@ Seen at 03:47:22Z (Monthly) and after the Annual resubscribe (see notes).
 > 
 
 **Triage.**
+
+Won't fix (Lee, 2026-09-26): the price comes from the store; $9.95 exists only in the dev Test Store.

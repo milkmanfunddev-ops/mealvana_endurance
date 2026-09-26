@@ -1,7 +1,7 @@
 # 120-001 · Plan tab shows the account's stale local draft (5 meals, one dev no longer has) for about a second after login
 
 - kind: bug
-- status: open
+- status: triaged
 - ticket: 120
 - run: w39-20260926T1013Z
 - screen: Food → Plan
@@ -30,3 +30,4 @@ The first Plan tab frame (10:17:38Z, about 6 s after Log In) reads "Sep 20 – S
 
 **Triage.**
 
+Fix ticket 134, Meal plans and Vana (Lee, 2026-09-26). Closed by the retest after it merges. Record: `triage-20260926.md`.

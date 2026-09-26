@@ -1,7 +1,7 @@
 # 120-007 · Paywall menu sign-out is logged as settings_sign_out_tapped
 
 - kind: idea
-- status: open
+- status: triaged
 - ticket: 120
 - run: w39-20260926T1013Z
 - screen: Paywall
@@ -24,3 +24,4 @@ The paywall sign-out logs its own source (for example `source: paywall`).
 
 **Triage.**
 
+Fix ticket 139, Sign-in, sign-up, sign-out, delete, admin (Lee, 2026-09-26). Ruling: a sign-out from the paywall logs `source: paywall` (139). Closed by the retest after it merges. Record: `triage-20260926.md`.

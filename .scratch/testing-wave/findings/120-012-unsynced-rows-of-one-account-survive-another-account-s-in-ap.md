@@ -1,7 +1,7 @@
 # 120-012 · Unsynced rows of one account survive another account's in-app delete on the same phone?
 
 - kind: followup-test
-- status: open
+- status: triaged
 - ticket: 120
 - run: w39-20260926T1013Z
 - screen: Paywall
@@ -26,3 +26,4 @@ The delete removes only the deleted account's rows; test@test.com's unsynced log
 
 **Triage.**
 
+Folded into the retest of its screen after the 2026-09-26 fix tickets (Lee, 2026-09-26: every follow-up test goes into the retests). Record: `triage-20260926.md`.

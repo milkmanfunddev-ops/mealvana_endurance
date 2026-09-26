@@ -1,7 +1,7 @@
 # 118-008 · Vana's Ask Vana opener says you are tracking well toward 419 g carbs after 464 g logged
 
 - kind: bug
-- status: open
+- status: triaged
 - ticket: 118
 - run: w36-20260926T0031Z
 - screen: Vana companion (Timeline → Ask Vana)
@@ -32,3 +32,5 @@ model already worked out.
 > 
 
 **Triage.**
+
+Fix ticket 134, Meal plans and Vana (Lee, 2026-09-26). Closed by the retest after it merges. Record: `triage-20260926.md`.

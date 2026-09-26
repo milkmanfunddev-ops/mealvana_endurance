@@ -1,7 +1,7 @@
 # 118-007 · A refused TrainingPeaks or V.O2 connection is shown only inside Connected Apps; nothing on Timeline tells the athlete, and the card says Last synced 1 minute ago
 
 - kind: idea
-- status: open
+- status: triaged
 - ticket: 118
 - run: w36-20260926T0031Z
 - screen: Timeline; Settings → Connected Apps
@@ -34,3 +34,5 @@ with "Sign in again to keep your workouts syncing." and "Last synced: 1 minute a
 > 
 
 **Triage.**
+
+Fix ticket 138, Settings, connections, allergies, Garmin (Lee, 2026-09-26). Ruling: when a sync finds that TrainingPeaks or V.O2 needs signing in again, show a one-time notice naming it, with Reconnect. The card shows the last successful sync, not the last attempt (138). Closed by the retest after it merges. Record: `triage-20260926.md`.

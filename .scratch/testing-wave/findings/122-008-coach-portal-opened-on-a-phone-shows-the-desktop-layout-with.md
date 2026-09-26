@@ -1,7 +1,7 @@
 # 122-008 · Coach Portal opened on a phone shows the desktop layout with overflow stripes
 
 - kind: bug
-- status: open
+- status: wontfix
 - ticket: 122
 - run: w38-20260926T0340Z
 - screen: Coach Portal
@@ -25,3 +25,4 @@ The two-pane desktop layout opens: the athlete list takes two thirds of the widt
 
 **Triage.**
 
+Won't fix (Lee, 2026-09-26): coach-code pairing now auto-accepts (ticket 140), so no phone path to the Coach Portal is needed.

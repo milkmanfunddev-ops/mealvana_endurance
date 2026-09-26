@@ -1,7 +1,7 @@
 # 115-004 · Deleting an account from the Lapsed paywall (not the onboarding one): which analytics event fires, and can analytics tell the two paywalls apart
 
 - kind: followup-test
-- status: open
+- status: triaged
 - ticket: 115
 - run: w32-20260925T2219Z
 - screen: Paywall (Lapsed)
@@ -29,3 +29,4 @@ Not run. This run checked the onboarding paywall only: `paywall_delete_account_t
 
 **Triage.**
 
+Folded into the retest of its screen after the 2026-09-26 fix tickets (Lee, 2026-09-26: every follow-up test goes into the retests). Record: `triage-20260926.md`.

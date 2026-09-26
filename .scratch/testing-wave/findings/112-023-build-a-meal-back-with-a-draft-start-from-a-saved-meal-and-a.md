@@ -1,7 +1,7 @@
 # 112-023 · Build a meal: Back with a draft, start from a saved meal, and a prefilled meal name
 
 - kind: followup-test
-- status: open
+- status: triaged
 - ticket: 112
 - run: w34-20260925T2320Z
 - screen: Build a Meal
@@ -26,3 +26,5 @@ No silent loss of a draft; items copy; the name follows a stated rule.
 > 
 
 **Triage.**
+
+Folded into the retest of its screen after the 2026-09-26 fix tickets (Lee, 2026-09-26: every follow-up test goes into the retests). Record: `triage-20260926.md`.

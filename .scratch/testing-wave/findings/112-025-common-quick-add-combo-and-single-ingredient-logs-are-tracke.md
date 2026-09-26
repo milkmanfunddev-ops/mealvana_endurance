@@ -1,7 +1,7 @@
 # 112-025 · Common quick-add combo and single-ingredient logs are tracked with method manual, not common
 
 - kind: bug
-- status: open
+- status: triaged
 - ticket: 112
 - run: w34-20260925T2320Z
 - screen: Log a Meal (Common)
@@ -26,3 +26,4 @@ The combo and the single ingredient are tracked with method `manual`; only the s
 
 **Triage.**
 
+Fix ticket 135, Meal upload and quick logging (Lee, 2026-09-26). Closed by the retest after it merges. Record: `triage-20260926.md`.

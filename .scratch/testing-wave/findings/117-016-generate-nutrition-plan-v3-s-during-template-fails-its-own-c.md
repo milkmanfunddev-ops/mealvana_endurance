@@ -1,7 +1,7 @@
 # 117-016 · generate-nutrition-plan-v3's during template fails its own carb check (106 g of 95 g, 112%) and falls back to the rule solver
 
 - kind: bug
-- status: open
+- status: triaged
 - ticket: 117
 - run: w40-20260926T1052Z
 - screen: none (server, generate-nutrition-plan-v3)
@@ -29,3 +29,4 @@ At 11:17:25Z the function logged `[DURING-TEMPLATE-SEARCH] Best candidate failed
 
 **Triage.**
 
+Fix ticket 137, Timeline and activities (Lee, 2026-09-26). Ruling: a fix ticket; `docs/ssot/vectors/` must go green (137). Closed by the retest after it merges. Record: `triage-20260926.md`.

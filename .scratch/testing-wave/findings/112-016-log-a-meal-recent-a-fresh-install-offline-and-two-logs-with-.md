@@ -1,7 +1,7 @@
 # 112-016 · Log a Meal Recent: a fresh install offline, and two logs with one name but different items
 
 - kind: followup-test
-- status: open
+- status: triaged
 - ticket: 112
 - run: w34-20260925T2320Z
 - screen: Log a Meal (Recent)
@@ -25,3 +25,5 @@ Spinner then a clear empty/offline state, not an endless spinner; the row states
 > 
 
 **Triage.**
+
+Folded into the retest of its screen after the 2026-09-26 fix tickets (Lee, 2026-09-26: every follow-up test goes into the retests). Record: `triage-20260926.md`.

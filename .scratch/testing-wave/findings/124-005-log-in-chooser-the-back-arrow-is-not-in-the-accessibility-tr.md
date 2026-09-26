@@ -1,7 +1,7 @@
 # 124-005 · Log In chooser: the back arrow is not in the accessibility tree at all
 
 - kind: bug
-- status: open
+- status: triaged
 - ticket: 124
 - run: w37-20260926T0221Z
 - screen: Log In (chooser: Apple, Google, email)
@@ -25,3 +25,4 @@ The arrow is drawn (screenshot, top left) but describe-all lists only the Apple,
 
 **Triage.**
 
+Fix ticket 141, Accessibility, dev buttons, small fixes (Lee, 2026-09-26). Closed by the retest after it merges. Record: `triage-20260926.md`.

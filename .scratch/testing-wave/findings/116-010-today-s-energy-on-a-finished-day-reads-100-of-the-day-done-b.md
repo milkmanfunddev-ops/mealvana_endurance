@@ -1,7 +1,7 @@
 # 116-010 · Today's Energy on a finished day reads 100% of the day done but projects burned 3,331 against 2,782 so far, from digestion of the target rather than what was eaten
 
 - kind: bug
-- status: open
+- status: triaged
 - ticket: 116
 - run: w32-20260925T2220Z
 - screen: Today's Energy (Full Breakdown)
@@ -26,3 +26,4 @@ Header "end of day · 100% of the day done"; "Burned 2,782 / 3,331 projected". W
 
 **Triage.**
 
+Fix ticket 137, Timeline and activities (Lee, 2026-09-26). Closed by the retest after it merges. Record: `triage-20260926.md`.

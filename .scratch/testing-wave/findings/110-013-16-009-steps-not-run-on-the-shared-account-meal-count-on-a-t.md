@@ -1,7 +1,7 @@
 # 110-013 · 16-009 steps not run on the shared account: meal count on a two-meal row, metric switch, plan edit keeping ticks, Kroger with no connection
 
 - kind: followup-test
-- status: open
+- status: triaged
 - ticket: 110
 - run: w30-20260925T2103Z
 - screen: Food (Shopping sub-tab)
@@ -30,3 +30,4 @@ Not run in 110: test@test.com's confirmed plan has no two-meal row; units are an
 
 **Triage.**
 
+Folded into the retest of its screen after the 2026-09-26 fix tickets (Lee, 2026-09-26: every follow-up test goes into the retests). Record: `triage-20260926.md`.

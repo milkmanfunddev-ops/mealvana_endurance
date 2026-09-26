@@ -1,7 +1,7 @@
 # 121-007 · Delete account offline signs the athlete out and wipes local data but keeps the server account, with no message
 
 - kind: bug
-- status: open
+- status: triaged
 - ticket: 121
 - run: w34-20260925T2320Z
 - screen: Paywall
@@ -30,3 +30,4 @@ Welcome within 0.5 s, no message. Console: `Error calling delete-user Edge Funct
 
 **Triage.**
 
+Fix ticket 139, Sign-in, sign-up, sign-out, delete, admin (Lee, 2026-09-26). Closed by the retest after it merges. Record: `triage-20260926.md`.

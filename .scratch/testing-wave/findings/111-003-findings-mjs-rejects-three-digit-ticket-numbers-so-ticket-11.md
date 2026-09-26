@@ -1,7 +1,7 @@
 # 111-003 · findings.mjs rejects three-digit ticket numbers, so ticket 111 cannot make or index its Findings
 
 - kind: bug
-- status: open
+- status: closed
 - ticket: 111
 - run: w30-20260925T2103Z
 - screen: none
@@ -23,3 +23,5 @@ A Finding file `111-001-….md`, and `findings.mjs index` reads it.
 > 
 
 **Triage.**
+
+Closed (2026-09-26 triage): fixed by `f8ea7233`; `findings.mjs` takes three-digit tickets and the index reads every 1xx file.

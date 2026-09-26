@@ -1,7 +1,7 @@
 # 124-008 · Enter Reset Code submits on the sixth digit, and a Verify Code tap right after sends a second verify
 
 - kind: followup-test
-- status: open
+- status: triaged
 - ticket: 124
 - run: w37-20260926T0221Z
 - screen: Enter Reset Code
@@ -27,3 +27,4 @@ Not run as a test. Seen in passing: each wrong code logged two "Reset code verif
 
 **Triage.**
 
+Folded into the retest of its screen after the 2026-09-26 fix tickets (Lee, 2026-09-26: every follow-up test goes into the retests). Record: `triage-20260926.md`.

@@ -1,7 +1,7 @@
 # 119-001 · An offline save on Profile & Preferences reaches the server only at sign-out, not when the app is back online
 
 - kind: bug
-- status: open
+- status: triaged
 - ticket: 119
 - run: w36-20260926T0031Z
 - screen: Profile & Preferences
@@ -39,3 +39,5 @@ Old Finding: 31-008.
 > 
 
 **Triage.**
+
+Fix ticket 138, Settings, connections, allergies, Garmin (Lee, 2026-09-26). Closed by the retest after it merges. Record: `triage-20260926.md`.

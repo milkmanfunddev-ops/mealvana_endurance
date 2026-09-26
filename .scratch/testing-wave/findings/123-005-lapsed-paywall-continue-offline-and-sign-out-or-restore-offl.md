@@ -1,7 +1,7 @@
 # 123-005 · Lapsed paywall: Continue offline, and Sign out or Restore offline
 
 - kind: followup-test
-- status: open
+- status: triaged
 - ticket: 123
 - run: w38-20260926T0341Z
 - screen: Paywall (lapsed)
@@ -25,3 +25,5 @@ Not run (look-around, ticket 123).
 > 
 
 **Triage.**
+
+Folded into the retest of its screen after the 2026-09-26 fix tickets (Lee, 2026-09-26: every follow-up test goes into the retests). Record: `triage-20260926.md`.

@@ -1,7 +1,7 @@
 # 100-001 · Previous lists: the red dev accessibility button covers a row's options button, so that list's menu cannot be opened
 
 - kind: bug
-- status: open
+- status: triaged
 - ticket: 100
 - run: w39-20260926T1013Z
 - screen: Food > Shopping > Previous lists (sheet)
@@ -27,3 +27,4 @@ The red dev "Show accessibility issues" button (368,696) sits on top of that ⋮
 
 **Triage.**
 
+Fix ticket 141, Accessibility, dev buttons, small fixes (Lee, 2026-09-26). Ruling: folded into one small button at the top edge (141). Closed by the retest after it merges. Record: `triage-20260926.md`.

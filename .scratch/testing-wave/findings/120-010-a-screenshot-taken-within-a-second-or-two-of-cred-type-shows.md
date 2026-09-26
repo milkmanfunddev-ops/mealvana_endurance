@@ -1,7 +1,7 @@
 # 120-010 · A screenshot taken within a second or two of CRED type shows the password's last character
 
 - kind: idea
-- status: open
+- status: triaged
 - ticket: 120
 - run: w39-20260926T1013Z
 - screen: Log In
@@ -24,3 +24,4 @@ No screenshot in RUNS ever carries a password character.
 
 **Triage.**
 
+Fix ticket 142, Harness (wave lead) (Lee, 2026-09-26). Ruling: `CRED type` waits 2 s before any screenshot of a password field (142). ### Ideas and SSOT clashes Closed by the retest after it merges. Record: `triage-20260926.md`.

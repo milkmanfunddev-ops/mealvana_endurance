@@ -1,7 +1,7 @@
 # 113-009 · meal_saved_as_favorite analytics from Build a Meal carries an empty log_id
 
 - kind: bug
-- status: open
+- status: triaged
 - ticket: 113
 - run: w40-20260926T1051Z
 - screen: Build a Meal
@@ -25,3 +25,5 @@
 > 
 
 **Triage.**
+
+Fix ticket 136, Build a Meal, saved meals, Manual and Edit (Lee, 2026-09-26). Closed by the retest after it merges. Record: `triage-20260926.md`.

@@ -1,7 +1,7 @@
 # 111-006 · Kroger screen: with location off, the typed ZIP is gone after a restart; check whether the shopper retypes it every visit
 
 - kind: followup-test
-- status: open
+- status: triaged
 - ticket: 111
 - run: w30-20260925T2103Z
 - screen: Shop with Kroger
@@ -25,3 +25,5 @@ Not run beyond step 1 (look-around, ticket 111).
 > 
 
 **Triage.**
+
+Folded into the retest of its screen after the 2026-09-26 fix tickets (Lee, 2026-09-26: every follow-up test goes into the retests). Record: `triage-20260926.md`.

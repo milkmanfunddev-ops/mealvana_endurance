@@ -1,7 +1,7 @@
 # 125-006 · TrainingPeaks sharing sheet with an account whose TrainingPeaks connection works, and after a reconnect
 
 - kind: followup-test
-- status: open
+- status: triaged
 - ticket: 125
 - run: w37-20260926T0221Z
 - screen: Timeline
@@ -27,3 +27,5 @@ Each sheet shows once and closes by swipe or its button; "Closing this leaves sh
 > 
 
 **Triage.**
+
+Folded into the retest of its screen after the 2026-09-26 fix tickets (Lee, 2026-09-26: every follow-up test goes into the retests). Record: `triage-20260926.md`.

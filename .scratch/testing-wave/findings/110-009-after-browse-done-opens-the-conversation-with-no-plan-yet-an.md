@@ -1,7 +1,7 @@
 # 110-009 · After Browse, Done opens the conversation with No plan yet and Your plan 0 meals though its draft holds the pick
 
 - kind: bug
-- status: open
+- status: triaged
 - ticket: 110
 - run: w30-20260925T2103Z
 - screen: Vana chat (meal planning)
@@ -28,3 +28,4 @@ The header reads "No plan yet" and the plan bar "Your plan · 0 meals — Tap a 
 
 **Triage.**
 
+Fix ticket 134, Meal plans and Vana (Lee, 2026-09-26). Closed by the retest after it merges. Record: `triage-20260926.md`.

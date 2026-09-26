@@ -1,7 +1,7 @@
 # 120-009 · Offline and signed in, the is_admin read fails and re-reads about 45 times a second until sign-out
 
 - kind: bug
-- status: open
+- status: triaged
 - ticket: 120
 - run: w39-20260926T1013Z
 - screen: Timeline
@@ -27,3 +27,4 @@ One failed read, then one retry when the network comes back or the app resumes (
 
 **Triage.**
 
+Fix ticket 139, Sign-in, sign-up, sign-out, delete, admin (Lee, 2026-09-26). Closed by the retest after it merges. Record: `triage-20260926.md`.

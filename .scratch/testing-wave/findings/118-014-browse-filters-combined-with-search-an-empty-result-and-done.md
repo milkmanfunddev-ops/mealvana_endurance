@@ -1,7 +1,7 @@
 # 118-014 · Browse: filters combined with search, an empty result, and Done versus Back after picks
 
 - kind: followup-test
-- status: open
+- status: triaged
 - ticket: 118
 - run: w36-20260926T0031Z
 - screen: Browse meals
@@ -25,3 +25,5 @@ Not run (look-around, ticket 118).
 > 
 
 **Triage.**
+
+Folded into the retest of its screen after the 2026-09-26 fix tickets (Lee, 2026-09-26: every follow-up test goes into the retests). Record: `triage-20260926.md`.

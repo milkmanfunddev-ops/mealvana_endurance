@@ -1,7 +1,7 @@
 # 117-014 · Past event's detail offers Create Carb Loading Plan and Race Day Checklist for a race already run
 
 - kind: followup-test
-- status: open
+- status: triaged
 - ticket: 117
 - run: w40-20260926T1052Z
 - screen: Event Details
@@ -26,3 +26,4 @@ A past event offers only what makes sense after the race (its plan, a recap); no
 
 **Triage.**
 
+Folded into the retest of its screen after the 2026-09-26 fix tickets (Lee, 2026-09-26: every follow-up test goes into the retests). Record: `triage-20260926.md`.

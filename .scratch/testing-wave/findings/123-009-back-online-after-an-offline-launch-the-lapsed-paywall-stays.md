@@ -1,7 +1,7 @@
 # 123-009 · Back online after an offline launch, the lapsed paywall stays on Plans aren't available and the Gate is not asked again until a resume
 
 - kind: bug
-- status: open
+- status: triaged
 - ticket: 123
 - run: w38-20260926T0341Z
 - screen: Paywall
@@ -30,3 +30,5 @@ From 04:37:35Z to 04:39:24Z the console shows no fetch at all (no `customer info
 > 
 
 **Triage.**
+
+Fix ticket 140, Paywall, purchases, codes, coach pairing (Lee, 2026-09-26). Closed by the retest after it merges. Record: `triage-20260926.md`.

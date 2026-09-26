@@ -1,7 +1,7 @@
 # 117-008 · Learn offline says No videos available yet instead of the lessons or an offline message
 
 - kind: bug
-- status: open
+- status: triaged
 - ticket: 117
 - run: w40-20260926T1052Z
 - screen: Learn
@@ -27,3 +27,4 @@ Learn shows "No videos available yet" under Mealvana 101 (the online screen list
 
 **Triage.**
 
+Fix ticket 141, Accessibility, dev buttons, small fixes (Lee, 2026-09-26). Closed by the retest after it merges. Record: `triage-20260926.md`.

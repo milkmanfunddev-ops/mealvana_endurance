@@ -1,7 +1,7 @@
 # 100-004 · Opening a past day's workout card asks for location for the weather forecast
 
 - kind: idea
-- status: open
+- status: triaged
 - ticket: 100
 - run: w39-20260926T1013Z
 - screen: Timeline workout card (past day)
@@ -25,3 +25,4 @@ iOS asked "Allow “Endurance Dev” to use your location?" with the reason "You
 
 **Triage.**
 
+Fix ticket 137, Timeline and activities (Lee, 2026-09-26). Ruling: location is asked for only on an upcoming activity with a forecast (137). Closed by the retest after it merges. Record: `triage-20260926.md`.

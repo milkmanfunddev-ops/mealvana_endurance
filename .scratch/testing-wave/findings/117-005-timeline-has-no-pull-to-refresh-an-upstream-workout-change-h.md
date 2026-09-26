@@ -1,7 +1,7 @@
 # 117-005 · Timeline has no pull to refresh: an upstream workout change has no manual way in
 
 - kind: idea
-- status: open
+- status: triaged
 - ticket: 117
 - run: w40-20260926T1052Z
 - screen: Timeline
@@ -24,3 +24,4 @@ A way on the Timeline to fetch upstream workout changes now.
 
 **Triage.**
 
+Fix ticket 137, Timeline and activities (Lee, 2026-09-26). Ruling: pull-to-refresh on the Timeline syncs connected apps (137). Closed by the retest after it merges. Record: `triage-20260926.md`.

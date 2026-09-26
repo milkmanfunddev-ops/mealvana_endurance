@@ -1,7 +1,7 @@
 # 112-022 · Log a Meal opens on Describe with a "253%" chip: check the default tab and what the chip means
 
 - kind: followup-test
-- status: open
+- status: triaged
 - ticket: 112
 - run: w34-20260925T2320Z
 - screen: Log a Meal (Describe)
@@ -24,3 +24,5 @@ The default tab is the intended one; the chip says what it counts (an AI budget 
 > 
 
 **Triage.**
+
+Folded into the retest of its screen after the 2026-09-26 fix tickets (Lee, 2026-09-26: every follow-up test goes into the retests). Record: `triage-20260926.md`.

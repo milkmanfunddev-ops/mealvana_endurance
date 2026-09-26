@@ -1,7 +1,7 @@
 # 116-011 · Back from a newly created activity walks back through Adjust Your Macros and Create New Activity Plan instead of the timeline
 
 - kind: bug
-- status: open
+- status: triaged
 - ticket: 116
 - run: w32-20260925T2220Z
 - screen: Activity detail (after Create Plan)
@@ -27,3 +27,4 @@ The first Back lands on "Adjust Your Macros" (During this Run, Create Plan butto
 
 **Triage.**
 
+Fix ticket 137, Timeline and activities (Lee, 2026-09-26). Closed by the retest after it merges. Record: `triage-20260926.md`.

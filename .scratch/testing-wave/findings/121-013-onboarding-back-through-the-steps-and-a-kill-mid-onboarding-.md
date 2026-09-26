@@ -1,7 +1,7 @@
 # 121-013 · Onboarding: back through the steps and a kill mid-onboarding keep the answers
 
 - kind: followup-test
-- status: open
+- status: triaged
 - ticket: 121
 - run: w34-20260925T2320Z
 - screen: Onboarding
@@ -26,3 +26,4 @@ Not run (look-around, ticket 121).
 
 **Triage.**
 
+Folded into the retest of its screen after the 2026-09-26 fix tickets (Lee, 2026-09-26: every follow-up test goes into the retests). Record: `triage-20260926.md`.
