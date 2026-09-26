@@ -1,0 +1,6 @@
+{"kind":"timeline","title":"Example: from picks to the shopping list",
+"steps":[
+{"at":"Picking","label":"Each ticked meal appears in the plan bar above\nthe message box; remove it or change servings there","tone":"muted"},
+{"at":"Review sheet","label":"The whole draft, and the only Confirm button","tone":"accent"},
+{"at":"Confirm","label":"A \"you're set\" card","tone":"ok"},
+{"at":"Lands on","label":"The Food tab's shopping list.\nSpreading meals across days is optional","tone":"ok"}]}

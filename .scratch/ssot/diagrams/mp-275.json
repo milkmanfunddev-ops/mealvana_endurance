@@ -1,0 +1,7 @@
+{"kind":"timeline","title":"Example: one day of conversations",
+"steps":[
+{"at":"08:00","label":"Taps the launcher: today's conversation starts","tone":"ok"},
+{"at":"12:30","label":"Taps New meal plan: always a new conversation","tone":"accent"},
+{"at":"18:00","label":"Taps the Plan tab's Vana card: the morning\nconversation reopens as it was, no new model call","tone":"ok"},
+{"at":"Next day, 07:00","label":"First open after midnight: a new conversation","tone":"accent"},
+{"at":"Any time","label":"Every past conversation stays in history","tone":"muted"}]}

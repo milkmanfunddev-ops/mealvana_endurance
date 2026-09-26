@@ -1,0 +1,4 @@
+{"kind":"compare","title":"A photo, or nothing at all",
+"left":{"head":"Other option","lines":["Salmon bowl  [photo]","Lentil curry  [photo]","Chicken wrap  [grey box]","","A placeholder or icon","where no photo exists"]},
+"right":{"head":"This card's answer","lines":["Salmon bowl  [photo]","Lentil curry  [photo]","Chicken wrap","","No box, no icon: the","row just has no picture"]},
+"example":["Example rows. Plans look the Dish photo up from the library,","so a photo added to the chicken wrap later shows in plans","already made, the same one the Meals tab shows."]}

@@ -1,0 +1,30 @@
+{
+ "kind": "timeline",
+ "title": "Example: a day with an evening run",
+ "steps": [
+  {
+   "at": "16:00",
+   "label": "Run planned for 17:30 today: Vana speaks first\nabout fuelling it (moment 1)",
+   "tone": "accent"
+  },
+  {
+   "at": "18:45",
+   "label": "70-minute run finished, nothing logged since:\nshe speaks first about recovery (moment 2)",
+   "tone": "accent"
+  },
+  {
+   "at": "20:00",
+   "label": "Two moments used: she says nothing more today,\nand never twice for the same workout",
+   "tone": "muted"
+  },
+  {
+   "at": "Next day",
+   "label": "A cook-day check-in comes as the opener\nwhen the app next opens, not as a moment",
+   "tone": "ok"
+  }
+ ],
+ "example": [
+  "Order when several could open: a live fuelling moment,",
+  "then what is on screen, then the personal opener."
+ ]
+}

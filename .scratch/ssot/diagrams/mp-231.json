@@ -1,0 +1,6 @@
+{"kind":"timeline","title":"Example: a plan of dinners and lunches",
+"steps":[
+{"at":"Meal types","label":"The athlete wants dinners and lunches only","tone":"accent"},
+{"at":"Dinner picker","label":"Meals they liked or cooked before come first.\nOnly a tick adds a meal: they tick three","tone":"ok"},
+{"at":"Chips from the plan as it stands","label":"\"More lunches\" · \"Done\" · \"Ask Vana\"\n(dinners are no longer short)","tone":"ok"},
+{"at":"Shortcut","label":"\"Draft it for me\" or \"Same as last time\"\nfills the plan in one tap","tone":"muted"}]}

@@ -1,0 +1,4 @@
+{"kind":"compare","title":"Vana reads the settings, never asks",
+"left":{"head":"Other option","lines":["Mid-plan Vana stops:","\"Do you batch cook?\"","\"Just dinners, or","lunches too?\"","→ each question is a","paid model turn"]},
+"right":{"head":"This card's answer","lines":["Settings (the defaults):","batch cooking on,","dinners only, from","Sunday for 7 days","→ she plans straight","from them"]},
+"example":["Example: batch cooking on, a 7-day period: three dinners,","each cooked in 3 servings (5 servings for 14 days).","\"Lunches too this week\" in chat is saved as the setting."]}

@@ -1,0 +1,4 @@
+{ "kind": "compare", "title": "Pro ends on 31 Oct: what the athlete sees",
+  "left": { "head": "Other option: read-only", "tone": "muted", "lines": ["Paywall can be closed", "Plans and logs visible, not editable", "More screens to build and test"] },
+  "right": { "head": "This card's answer", "tone": "ok", "lines": ["Full-screen paywall, no close", "Still signed in, data kept", "Out: subscribe, restore, code", "Pro back: everything returns"] },
+  "example": ["Example: the trial is cancelled and ends 31 Oct.", "1 Nov: the app opens on the paywall. A code", "redeemed on 3 Nov brings every plan back."] }

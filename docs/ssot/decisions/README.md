@@ -17,7 +17,14 @@ A subsection is a card's `category:`. The page shows them in this order (`FEATUR
 
 How a decision gets in: a skill puts the question to Lee in the terminal (AskUserQuestion, one
 question at a time, recommended answer first). His answer is the approval, and the skill writes
-the card straight into the record. Nothing waits on the page. A ruling that changes an existing
+the card straight into the record. Review-queue items Lee has delegated are decided by Claude
+from the code, the docs and his earlier rulings, and are marked that way.
+
+On the page every card has Approve, Reject and Rewrite, plus an Ask thread that can draft a
+rewrite. Approve is a sign-off on a card that is already approved (for example Xuan confirming
+it), and it adds a history line. Reject, Rewrite and accepted change cards reach the terminal on
+Finish. The prologue puts each one to Lee, and his answer rewrites the card in place or deletes
+it. The record never holds a rejected or pending card. A ruling that changes an existing
 card rewrites that card in place (newest ruling wins) with a history line; the old wording stays
 in git. Undecided items live in `.scratch/ssot/review-queue.md` until Lee answers them.
 
@@ -39,8 +46,9 @@ looks for in `~/.local/bin` (Captured pictures below).
 
 1. Install Node 20 or newer. The sync module is plain ESM with no dependencies.
 2. Test: `node --test docs/ssot/decisions/_page/sync.test.mjs` (all cases must pass).
-3. Open the page: the artifact link below. It is a read-only record: no Approve, Reject or
-   Finish. Each card has an Ask thread for questions about it.
+3. Open the page: the artifact link below. Whoever opens it picks their name in the header once,
+   and every verdict they give carries that name. Finish sends the queued verdicts to the
+   terminal (prologue).
 4. Reseed the page after the files change:
    `node docs/ssot/decisions/_page/sync.mjs prepare docs/ssot/decisions/{mealplanning,paywall,shopping-list,ai-cost,misc}.md --assets docs/ssot/decisions/_page/assets.json --glossary CONTEXT.md --out <dir>`,
    then `write_db` the batches in `<dir>/_batches.json`, and delete from the `decisions`
@@ -103,6 +111,19 @@ never reused. `folded:` lists the older ids a card absorbed, so a code comment c
 still finds its card (the page and search resolve it). Every `>` line is a dated history entry.
 
 ## Drawn pictures
+
+**Every card gets a picture** (Lee, 2026-09-26): a capture when the card names a screen and one
+exists, otherwise a drawing. A good picture explains the card, and it says something the words
+alone make harder to see: the numbers laid out against time, the order of steps, or the two
+options side by side. A bad picture repeats the card title in boxes. Examples:
+- "New signups pay $24.99 a month or $199.99 a year, with founding prices until 30 November"
+  → a timeline: 1 Oct, founding $12.49 / $99.99 → 30 Nov, founding plans come off sale →
+  after that, $24.99 / $199.99, each with the 7-day trial.
+- "A new meal plan starts with a read of the week and one question" → the first turns of the
+  conversation in order: Vana's read of the week, her one question, the athlete's answer, the
+  first meal picker.
+The `ssot-pictures` agent (`.claude/agents/ssot-pictures.md`) draws the missing ones.
+
 
 A card whose `screen:` starts with `none` has nothing to screenshot, so it gets a drawn picture
 of its mechanism instead: boxes and arrows, or a timeline, and one worked example with real
@@ -213,7 +234,7 @@ under their area heading after Lee confirms them in the terminal.
 ## Ask on the page
 
 A card's face is the picture, the title, the context, the question, the decision, why and what
-else was considered. There are no ruling buttons. A drawn pair is titled "Other option: …" and
+else was considered, then Approve, Reject and Rewrite (see "How a decision gets in" above). A drawn pair is titled "Other option: …" and
 "This card's answer: …", never "rejected" or "decided". Every card's Ask thread runs on the
 default model tier and reads the card, the cards it names, the glossary terms it uses and one
 line per sibling, with page tools (read a card, search the cards, look up a term, read a

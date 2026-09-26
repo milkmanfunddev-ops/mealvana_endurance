@@ -1,0 +1,4 @@
+{"kind":"compare","title":"What the paywall lists",
+"left":{"head":"Other option: every line","lines":["Fuel plans","Vana chat","Meal description","Meal photos","Coach insight","Shopping lists","Training sync","Kroger delivery"],"tone":"muted"},
+"right":{"head":"This card's answer: four","lines":["1 Fuel plan, every session","2 Vana, nutrition coach:","all the AI features","3 Shopping lists","4 Training sync: Garmin,","TrainingPeaks, FinalSurge"],"tone":"ok"},
+"example":["Also includes: recipes, brick workouts, hydration,","fuel formulas, daily targets. Kroger is left off:","delivery does not reach every athlete."]}

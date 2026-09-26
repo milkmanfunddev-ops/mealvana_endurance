@@ -1,0 +1,7 @@
+{"kind":"flow","title":"An admin account and the paywall","rows":[
+[{"id":"in","label":"Signs in"}],
+[{"id":"adm","label":"Marked admin\nby hand","tone":"ok"},{"id":"oth","label":"Anyone else\nwithout Pro","tone":"muted"}],
+[{"id":"app","label":"Straight into\nthe app","tone":"ok"},{"id":"pw","label":"Paywall","tone":"no"}],
+[{"id":"ai","label":"AI features: refused\nwithout a subscription\nor granted month","tone":"no"}]],
+"edges":[{"from":"in","to":"adm"},{"from":"in","to":"oth"},{"from":"adm","to":"app"},{"from":"oth","to":"pw"},{"from":"app","to":"ai"}],
+"example":["No build switch and no tester shortcut:","the admin mark is the only exception."]}

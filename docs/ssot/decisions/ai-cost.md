@@ -8,6 +8,7 @@ Feature name: Cost cutting
 - status: approved
 - folded: mp-018, mp-432, mp-517, mp-525
 - image: none
+- svg: docs/ssot/decisions/images/ai-cost/mp-465.svg
 - screen: none (algorithm/data)
 - source: spec ai-cost 2026-09-21; Lee in the terminal 2026-09-21; wave ai-cost 2 ticket 14
 
@@ -27,6 +28,7 @@ Feature name: Cost cutting
 - category: Models
 - status: approved
 - image: none
+- svg: docs/ssot/decisions/images/ai-cost/mp-464.svg
 - screen: none (algorithm/data)
 - source: spec ai-cost 2026-09-21; Lee in the terminal 2026-09-21
 
@@ -47,6 +49,7 @@ Feature name: Cost cutting
 - status: approved
 - folded: mp-420, mp-568, mp-570
 - image: none
+- svg: docs/ssot/decisions/images/ai-cost/mp-276.svg
 - screen: none (algorithm/data)
 - source: grill 2026-09-15; wave ai-cost 5 ticket 07
 
@@ -66,6 +69,7 @@ Feature name: Cost cutting
 - category: Caching
 - status: approved
 - image: none
+- svg: docs/ssot/decisions/images/ai-cost/mp-569.svg
 - screen: none (the Vana server)
 - source: wave ai-cost 5 ticket 07
 
@@ -86,6 +90,7 @@ Feature name: Cost cutting
 - status: approved
 - folded: mp-281, mp-436, mp-504, mp-515, mp-512, mp-526
 - image: none
+- svg: docs/ssot/decisions/images/ai-cost/mp-430.svg
 - screen: none (algorithm/data)
 - source: docs/research/vana-cost-and-pricing.md; Lee on the page 2026-09-17; Lee in the terminal 2026-09-21
 
@@ -106,6 +111,7 @@ Feature name: Cost cutting
 - category: Usage budget
 - status: approved
 - image: none
+- svg: docs/ssot/decisions/images/ai-cost/mp-551.svg
 - screen: none (algorithm/data)
 - source: mp-430; mp-281; wave ai-cost 4 ticket 09
 
@@ -126,6 +132,7 @@ Feature name: Cost cutting
 - status: approved
 - folded: mp-342, mp-437, mp-549, mp-550, mp-573, mp-574
 - image: none
+- svg: docs/ssot/decisions/images/ai-cost/mp-282.svg
 - screen: Vana chat
 - source: grill 2026-09-15; spec ai-cost 2026-09-21; wave ai-cost 4 ticket 09; wave ai-cost 5 ticket 10
 
@@ -166,6 +173,7 @@ Feature name: Cost cutting
 - status: approved
 - folded: mp-519, mp-524
 - image: none
+- svg: docs/ssot/decisions/images/ai-cost/mp-521.svg
 - screen: none (algorithm/data)
 - source: wave ai-cost 3 ticket 05
 

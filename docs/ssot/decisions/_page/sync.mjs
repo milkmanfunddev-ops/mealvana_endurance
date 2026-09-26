@@ -393,7 +393,9 @@ export function apply(verdicts, proposals, ssot, today = new Date().toISOString(
     const by = who ? ` by ${who}` : '';
     const existing = inSsot(id);
     if (v.verdict === 'approve') {
-      if (existing && existing.meta.status === 'approved') { withdraw(existing, date, by); continue; }
+      // The record holds approved cards only (Lee, 2026-09-26): Approve on an approved card is a
+      // sign-off (Xuan confirming it), recorded in its history; withdrawing is its own verdict.
+      if (existing && existing.meta.status === 'approved') { existing.history.push({ date, note: 'approved' + by }); applied.push({ id, to: 'approved' }); continue; }
       if (existing) { existing.meta.status = 'approved'; existing.history.push({ date, note: 'approved again' + by }); applied.push({ id, to: 'approved' }); continue; }
       const d = take(id); if (!d) { refused.push({ id, why: 'unknown id' }); continue; }
       d.meta.status = 'approved';
