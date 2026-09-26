@@ -40,6 +40,30 @@ Each entry: what went wrong or cost time, where it was seen, and the suggested f
   a fixed latency for the app's traffic only), tested against a known two-second timeout before an
   agent relies on it.
 
+- **#96 a Test Store monthly renews while signed out (wave 40, 117-015).** 117's monthly renewed
+  at 11:25, 11:29 and 11:37Z with the account signed out and the app closed, each renewal
+  back-dated after a 42 s to 3.7 min gap. That contradicts #80's "lapses about 5 minutes after
+  sign-out", and RevenueCat's v2 cancel refuses a Test Store subscription. 117 reached a Lapsed
+  sign-in only by tapping Log In 7 s after a period ended. Suggested fix: a run that needs a
+  lapse polls RevenueCat for the period end and signs in within the gap, or a lapse fixture
+  (a Grant that expires) replaces the Test Store for lapse checks; runbook step 5 changes #80's line.
+- **#97 an agent tried a RevenueCat write the ticket did not name (wave 40).** 117 called the v2
+  cancel on its own account's subscription to force the lapse (refused, nothing changed). Runbook
+  step 6 says read, never write. Suggested fix: the prompt repeats "no RevenueCat or database
+  write outside the ticket's criteria, even on your own account".
+- **#98 the dev overlay buttons cover row menus (wave 40, and 100-001).** The red accessibility and
+  blue "Open testing tools" buttons (x ~367, y ~695 and ~756) sit on the timeline rows' ⋯ and the
+  Recipes rows' +; 113 made three stray taps. Suggested fix: runbook step 5 says to scroll a row
+  out of y 650-790 before tapping its ⋯.
+- **#99 a follow-up test that cannot be run as written (wave 40).** 29-004 asks for tab switches
+  before the first sync ends; the sync ends ~5 s after Log In, under the What's New sheet, which
+  covers the tab bar. Suggested fix: triage rewrites a follow-up the run proved unreachable, or
+  closes it, rather than carrying it to the next retest.
+- Small, for the runbook's step 5 tips: zsh does not split `$var` (`set -- $t`, `F="node …"; $F`
+  fail; use functions); a tap on the next field right after `idb ui text` drops the tail (wait 2 s,
+  read back, as #93); Backspace deletes from the tap point (forward delete, keycode 76, clears a
+  prefilled field); the timeline's Next day arrow moves with the title width.
+
 ## Done
 
 - **#94 a logging loop made an 18.6 MB console (wave 39).** 120's offline stretch logged 4,421
