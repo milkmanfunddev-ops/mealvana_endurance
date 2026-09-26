@@ -1,6 +1,6 @@
 # 141: Accessibility, dev buttons, small fixes
 
-**Status:** in-progress (wave 41, 2026-09-26)
+**Status:** done (wave 41, 2026-09-26)
 **Blocked by:** none.
 **Next:** `/implement-lee testing-wave`
 **Model:** fable
@@ -35,3 +35,6 @@ The onboarding back arrow and tile widgets are mapped from code, not checked on 
 - [x] `flutter analyze` clean on touched files.
 
 Next: /implement-lee testing-wave
+
+## Wave 41 notes (lead)
+- The dev pill is excluded from semantics: retests tap it by coordinate (centre x, just under the status bar). Check its fit against the Dynamic Island on the retest.

@@ -1,6 +1,6 @@
 # 135: Meal upload and quick logging
 
-**Status:** in-progress (wave 41, 2026-09-26)
+**Status:** done (wave 41, 2026-09-26)
 **Blocked by:** none.
 **Next:** `/implement-lee testing-wave`
 **Model:** fable
@@ -30,3 +30,8 @@ The app-resume and Log-a-Meal-open hooks for item 1 are not mapped yet (unverifi
 - [x] `flutter analyze` clean on touched files.
 
 Next: /implement-lee testing-wave
+
+## Wave 41 notes (lead)
+- Built: `meal_logs.servings` (Drift v24, migration `20260926163500`, applied to dev 2026-09-26). Review fix: uploads always send `servings`, so a mixed batch never writes NULL; prod needs the migration before any v24 build.
+- Open: does editing a 2-serving log's items reset `servings` to 1? Today it keeps the logged count, so Recent's base can drift after an edit.
+- Minor, not fixed: the owed-retry set survives sign-out (the old user's dirty rows wait for their next sign-in); a narrow race where an in-flight successful sync clears an owed mark set during it.

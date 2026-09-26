@@ -1,6 +1,6 @@
 # 137: Timeline and activities
 
-**Status:** in-progress (wave 41, 2026-09-26)
+**Status:** done (wave 41, 2026-09-26)
 **Blocked by:** none.
 **Next:** `/implement-lee testing-wave`
 **Model:** fable
@@ -36,3 +36,7 @@
 - [x] `flutter analyze` clean on touched files. Run codegen if a Riverpod annotation changes. (Wave 41: no annotation changed, no codegen run.)
 
 Next: /implement-lee testing-wave
+
+## Wave 41 notes (lead)
+- Deployed to dev 2026-09-26: generate-nutrition-plan-v3, generate-macros-v4 (in place; payload version unchanged).
+- Open for Xuan/Lee: CS-6 (`calendar-sheet.md`) says the month sheet stays on Today, the ticket closes it; light-theme accents (electrolyte/protein/fat ~1.3:1 on cream) and light card fills await a token call; `validateDuringTotals` keeps the strict 1.1 cap though 106 g sits inside the plan's own band; the override info icon is not kept (the plan snapshot records no override; `StalePlanWarning` explains instead).
