@@ -108,7 +108,8 @@ ticket says so.
   <address> --state paid --bought monthly --when <UTC>`; `--new-password` for a reset, after
   `CRED file` has kept the old one if the run still checks it).
 - Before a step that generates a new Vana plan, makes an AI logging call or opens a Vana chat
-  (Ask Vana's opener or a chat turn that is not a plan, the only way to Conversations), spend first:
+  (Ask Vana's opener or a chat turn that is not a plan, the only way to Conversations), spend first,
+  before any tap that can open Vana, never after the call (#95):
 
   ```
   COST spend WAVE plan NN          # or: COST spend WAVE logging NN, COST spend WAVE chat NN
@@ -190,6 +191,9 @@ in `RUNS/notes.md` as known noise, with why. A server error your run did not cau
 from Garmin, another run's request in your edge extract) is still filed, kind bug, screen none;
 "not this app" is never a reason to skip it.
 
+A note that says an old Finding is still true (or already fixed) is checked in this run, or says
+"not re-checked" (#95).
+
 Anything unexpected you write in `RUNS/notes.md` is also a Finding, or carries "known noise:
 <why>" beside it. The wave lead reads every notes file at the close and files what you did not.
 
@@ -241,7 +245,10 @@ At the end of every run, stopped or not, in this order:
    `grep -F '(Flutter)' RUNS/console.log | grep -vE 'eyJ[A-Za-z0-9_-]{10,}|Bearer |sk_|sbp_' > RUNS/console-redacted.log`
    (only the app's own lines: the raw stream is ~80 MB of OS debug lines in half an hour, #88),
    delete `console.log`, run the scan again on the redacted file (it must find nothing), and cite
-   `console-redacted.log` in Findings.
+   `console-redacted.log` in Findings. Over 5 MB, collapse repeated logger boxes (an offline loop
+   logs thousands, #94): `node scripts/testing-wave/collapse-console.mjs RUNS/console-redacted.log`
+   keeps the first three and the last copy of each and writes one count line where the rest were;
+   quote that count in the Finding.
 5. Commit `.scratch/testing-wave/findings/NN-*.md` and `RUNS` on your branch, explicit paths only.
    Run logs under `RUNS` are not gitignored (the Findings cite them), so a plain `git add` takes
    them after the scan.
