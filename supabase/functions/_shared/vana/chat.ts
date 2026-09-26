@@ -395,13 +395,14 @@ export interface ChatRunOpts {
   /** Whether this turn draws the athlete's budget (mp-420 clause 6) — recorded on the call row so "what did the budget
    *  actually pay for" is answerable. Since ticket 09 every turn does, the scripted opener included (mp-430 clause 1). */
   debited?: boolean;
-  /** Receives the turn's full trace when it finishes, or its error when the stream failed. The evals harness
-   *  (`supabase/functions/evals/vana/`) is the only caller; production leaves it unset. */
+  /** Receives the turn's full trace when it finishes, or its error when the stream failed. Kept as a
+   *  tracing seam (the deleted evals harness was its only caller; the judging system reads the persisted
+   *  tables instead); production leaves it unset. */
   onTrace?: (t: TurnTrace) => void;
 }
 /** What a finished turn cost, as handed to `afterFinish`. */
 export interface FinishedUsage { inputTokens: number; outputTokens: number; cacheReadTokens: number | null; cacheWriteTokens: number | null; gatewayCostUsd: number | null; model: string }
-/** One finished (or failed) turn as the evals harness stores it: everything the prompt was built from — persona, Doll,
+/** One finished (or failed) turn as `onTrace` hands it over: everything the prompt was built from — persona, Doll,
  *  situation, the exact model message array, the tools offered — and everything that came back (steps with their raw
  *  pre-clamp text and tool inputs/outputs, usage). Built at the only seam where both exist. Production never passes
  *  `onTrace`, so this costs nothing there; when real-trace sampling is added later it can reuse the same payload. */
