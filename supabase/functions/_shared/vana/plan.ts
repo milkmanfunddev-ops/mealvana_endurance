@@ -87,6 +87,7 @@ export async function defaultServings(v: VanaCtx, batchCooking: boolean): Promis
 export async function addMeal(v: VanaCtx, ref: MealRef, servings?: number | null, session?: Session, scope?: PlanScope | null): Promise<MealPlan> {
   mustHaveNumbers(ref);
   const plan = (await resolvePlan(v, scope, true))!;
+  mustTakeNewMeals(plan);
   const existing = plan.meals.find((m) => (ref.source === 'library' ? m.libraryMealId === ref.id : m.savedMealId === ref.id));
   if (existing) return (await getPlanById(v, plan.id))!;
   const want = servings ?? await defaultServings(v, plan.batchCooking);
@@ -96,6 +97,19 @@ export async function addMeal(v: VanaCtx, ref: MealRef, servings?: number | null
   // A dish-level saved meal (made from a log) gets its ingredients once before the list is built (saved-ingredients.ts).
   if (ref.source === 'saved') await ensureSavedMealIngredients(v, ref.id);
   return refreshShopping(v, plan.id);
+}
+/** The line a pick on an archived plan gets back, the tool's error Vana relays: the plan bar there offers
+ *  "Use this plan instead" (plan_bar.dart), which copies it into this week as a new draft that takes meals. */
+export const ARCHIVED_PLAN_PICK_REFUSAL =
+  'plan is read-only: a different plan was confirmed for this week, so no meals can be added here. Tap "Use this plan instead" on the plan bar to copy it into a new draft you can add to.';
+export class ArchivedPlanError extends Error { constructor() { super(ARCHIVED_PLAN_PICK_REFUSAL); this.name = 'ArchivedPlanError'; } }
+/** A conversation's lookup (`getConversationPlan`) still finds its draft after another confirm archived it: the plan bar
+ *  reads it back read-only. A pick must not land there (mp-683, under mp-675), and an earlier plan takes no new meals
+ *  either (mp-675: servings and removals only). Every add ends at addMeal, so the refusal lives here, whichever surface
+ *  asked: the picker's pick_meals, the model's updateBatch, a drafted week. Nothing is written and no new draft is
+ *  made in the conversation's place, so the archived draft and its bar stay as they were. */
+export function mustTakeNewMeals(plan: Pick<MealPlan, 'status'>): void {
+  if (plan.status === 'archived') throw new ArchivedPlanError();
 }
 /** A plan never takes a meal whose numbers are missing (mp-678): every add and every swap ends at addMeal / swapMeal, so
  *  the rule holds here whichever surface asked. Browse's add and the model's updateBatch get this error back; plan build and

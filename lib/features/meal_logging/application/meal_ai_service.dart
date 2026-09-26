@@ -38,6 +38,17 @@ enum MealAiFailureKind {
 /// carrying the content system's "Vana is unavailable right now".
 const String kAiUnavailableCode = 'ai_unavailable';
 
+/// The `eaten_at` both analysis functions read to pick the meal type
+/// (mp-672): the athlete's local wall clock as `yyyy-MM-ddTHH:mm`, with no
+/// offset, the same local-naive form as `scheduled_date_time`. A log made on
+/// Review & Log is stamped at the current clock time on its day
+/// (`eatenAtForLogDate`), so the clock read here is the one it lands at.
+String mealAiEatenAtWire(DateTime at) {
+  String two(int n) => n.toString().padLeft(2, '0');
+  return '${at.year.toString().padLeft(4, '0')}-${two(at.month)}-${two(at.day)}'
+      'T${two(at.hour)}:${two(at.minute)}';
+}
+
 /// Thrown by [MealAiService] when an AI call cannot be completed.
 ///
 /// [kind] drives the UI message; [debugMessage] is for logs only.
@@ -152,9 +163,13 @@ class MealAiService {
   ///
   /// When [description] is provided, the typed text is analyzed together with
   /// the photo as a single meal (one metered call).
+  ///
+  /// [eatenAt] (default: now) is the clock the meal type is picked from
+  /// (mp-672).
   Future<MealPhotoAnalysis> analyzePhoto(
     File imageFile, {
     String? description,
+    DateTime? eatenAt,
   }) async {
     final userId = _requireUserId();
     final bytes = await imageFile.readAsBytes();
@@ -163,6 +178,7 @@ class MealAiService {
       bytes: bytes,
       extension: _extensionFromPath(imageFile.path),
       description: description,
+      eatenAt: eatenAt,
     );
   }
 
@@ -174,6 +190,7 @@ class MealAiService {
     Uint8List bytes, {
     String extension = 'jpg',
     String? description,
+    DateTime? eatenAt,
   }) async {
     final userId = _requireUserId();
     return _analyzeBytes(
@@ -181,19 +198,28 @@ class MealAiService {
       bytes: bytes,
       extension: extension,
       description: description,
+      eatenAt: eatenAt,
     );
   }
 
   /// Call the `describe-meal` edge function with a free-text [description].
   ///
   /// Returns a [MealAnalysisResult]. Throws [MealAiException] on any failure.
-  Future<MealAnalysisResult> describeMeal(String description) async {
+  /// [eatenAt] (default: now) is the clock the meal type is picked from
+  /// (mp-672).
+  Future<MealAnalysisResult> describeMeal(
+    String description, {
+    DateTime? eatenAt,
+  }) async {
     _requireUserId();
 
     try {
       final response = await _supabase.functions.invoke(
         'describe-meal',
-        body: {'description': description},
+        body: {
+          'description': description,
+          'eaten_at': mealAiEatenAtWire(eatenAt ?? DateTime.now()),
+        },
       );
 
       return _parseAnalysisResponse(response, functionName: 'describe-meal');
@@ -272,6 +298,7 @@ class MealAiService {
     required Uint8List bytes,
     required String extension,
     String? description,
+    DateTime? eatenAt,
   }) async {
     // 1. Upload to storage
     final photoPath = await uploadPhotoBytes(bytes, extension: extension);
@@ -285,6 +312,7 @@ class MealAiService {
           'photo_path': photoPath,
           if (trimmedDescription != null && trimmedDescription.isNotEmpty)
             'description': trimmedDescription,
+          'eaten_at': mealAiEatenAtWire(eatenAt ?? DateTime.now()),
         },
       );
 

@@ -7,6 +7,9 @@
  *     items are added up, so the number at the bottom of the review screen
  *     always equals the rows above it.
  *  2. A photo or a sentence that is not food returns one answer and no macros.
+ *
+ * And the meal type follows the clock when the app sent one (mp-672,
+ * slot_from_time.ts): the model's guess only breaks a tie near a boundary.
  */
 
 import {
@@ -15,6 +18,7 @@ import {
   type MealItem,
   type MealTotals,
 } from './schema.ts';
+import { slotForMeal } from './slot_from_time.ts';
 
 /** Grams and milligrams to one decimal; a float sum otherwise reads 45.300000000000004. */
 function round1(value: number): number {
@@ -57,6 +61,7 @@ export type FinalizedAnalysis =
  */
 export function finalizeAnalysis(
   requested: MealAnalysisRequest,
+  { eatenAt }: { eatenAt?: unknown } = {},
 ): FinalizedAnalysis {
   if (requested.not_food === true || requested.items.length === 0) {
     return { notFood: true };
@@ -65,7 +70,8 @@ export function finalizeAnalysis(
     notFood: false,
     analysis: {
       name: requested.name,
-      suggested_slot: requested.suggested_slot ?? 'snack',
+      // The eaten-at wall clock decides; without one, the model's guess, else snack (mp-525).
+      suggested_slot: slotForMeal(eatenAt, requested.suggested_slot),
       confidence: requested.confidence ?? 'medium',
       items: requested.items,
       // The model's own `totals` never reach the app.
