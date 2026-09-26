@@ -1,6 +1,6 @@
 # 140: Paywall, purchases, codes, coach pairing
 
-**Status:** ready
+**Status:** in-progress (wave 43, 2026-09-26)
 **Blocked by:** none.
 **Next:** `/implement-lee testing-wave`
 **Model:** fable
