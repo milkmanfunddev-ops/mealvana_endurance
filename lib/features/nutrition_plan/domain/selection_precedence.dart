@@ -10,6 +10,8 @@ library;
 
 import 'dart:math';
 
+import '../../onboarding/domain/allergen_normalizer.dart';
+
 /// §1 faces, first match wins.
 int resolveSelectionStep({
   required bool hasInScopePersonalFormula,
@@ -33,13 +35,13 @@ double scalePinnedServings(double carbTargetG, double carbsPerServingG) {
 /// §1a labeled override: a pin is honored unconditionally AND any conflict
 /// with the athlete's profile must be labeled visibly — informed, never
 /// silent.
+///
+/// Allergens compare through the one normaliser (ticket 138, 116-001), so a
+/// template's "Peanut" meets the athlete's `peanuts`.
 bool pinConflictLabelRequired(
   List<String> templateAllergens,
   List<String> athleteAllergies,
-) {
-  final athlete = athleteAllergies.map((a) => a.toLowerCase()).toSet();
-  return templateAllergens.any((a) => athlete.contains(a.toLowerCase()));
-}
+) => allergensConflict(templateAllergens, athleteAllergies);
 
 /// §1 honesty contract: an unrenderable pin downgrades EXPLICITLY — a system
 /// pick never claims `used_pin` (the Option A guard / F-31).

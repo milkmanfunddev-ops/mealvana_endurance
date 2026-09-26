@@ -1,3 +1,4 @@
+import { allergensConflict } from "./allergen-normalize.ts";
 /**
  * Selection precedence & honesty — food-recommendation §1/§1a (RATIFIED
  * Xuan, 2026-09-03). Dart twin:
@@ -42,8 +43,8 @@ export function pinConflictLabelRequired(
   templateAllergens: string[],
   athleteAllergies: string[],
 ): boolean {
-  const athlete = new Set(athleteAllergies.map((a) => a.toLowerCase()));
-  return templateAllergens.some((a) => athlete.has(a.toLowerCase()));
+  // Ticket 138 (116-001): "Peanut" meets `peanuts` through the normaliser.
+  return allergensConflict(templateAllergens, athleteAllergies);
 }
 
 /** §1 honesty contract: an unrenderable pin downgrades EXPLICITLY — a system
