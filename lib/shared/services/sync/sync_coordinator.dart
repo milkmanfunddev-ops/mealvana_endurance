@@ -1,8 +1,10 @@
 import 'dart:async';
 import 'package:connectivity_plus/connectivity_plus.dart';
 import 'package:flutter/foundation.dart' show visibleForTesting;
+import 'package:flutter/widgets.dart' show AppLifecycleListener;
 import 'package:riverpod_annotation/riverpod_annotation.dart';
 import 'package:sentry_flutter/sentry_flutter.dart';
+import '../connectivity_checker.dart';
 import '../logging_service.dart';
 import '../sentry/sentry_reporter.dart';
 import 'data_sync_service.dart';
@@ -84,7 +86,16 @@ class SyncCoordinator extends _$SyncCoordinator {
   /// would wait out the whole staleness window before their next upload try.
   /// A repository in this set skips the staleness check (the failure cooldown
   /// still applies), so its upload is retried at the same rate as before.
+  ///
+  /// A repository's own immediate upload adds itself here too, through
+  /// [markUploadRetryOwed] (testing-wave 112-001): an offline quick log or a
+  /// timed-out insert used to wait out the whole staleness window.
   final Set<String> _uploadRetryOwed = {};
+
+  /// Armed while a retry is owed: the network coming back or the app
+  /// resuming runs [retryOwedUploads]. Both are dropped once nothing is owed.
+  StreamSubscription<bool>? _onlineChanges;
+  AppLifecycleListener? _resume;
 
   /// Cooldown period after a sync failure before retrying
   static const _failureCooldown = Duration(minutes: 2);
@@ -107,12 +118,94 @@ class SyncCoordinator extends _$SyncCoordinator {
 
   @override
   SyncState build() {
+    ref.onDispose(_disarmRetryWhenReachable);
     return SyncState.idle;
   }
 
   AppLogger get _logger => ref.read(appLoggerProvider);
   DataSyncService get _dataSyncService => ref.read(dataSyncServiceProvider);
   SentryReporter get _sentry => ref.read(sentryReporterProvider);
+
+  /// A repository's immediate upload failed and its rows stayed dirty
+  /// (`needs_upload`). The next [ensureSynced] for [repoKey] uploads them
+  /// even while the table is fresh, and the network coming back or the app
+  /// resuming triggers one on its own ([retryOwedUploads]).
+  void markUploadRetryOwed(String repoKey) {
+    _uploadRetryOwed.add(repoKey);
+    _logger.info(
+      'Upload retry owed after a failed immediate upload',
+      context: 'SYNC_COORDINATOR',
+      data: {'repoKey': repoKey},
+    );
+    _armRetryWhenReachable();
+  }
+
+  /// Repositories whose upload is owed a retry (test-only view).
+  @visibleForTesting
+  Set<String> get uploadRetryOwedForTesting =>
+      Set.unmodifiable(_uploadRetryOwed);
+
+  /// Runs [ensureSynced] for every repository owed a retry. The failure
+  /// cooldown is lifted first: it dates from an attempt made under the old
+  /// network state (offline, a dropped connection), which has just changed.
+  ///
+  /// Safe to run twice at once or after a refresh: [ensureSynced] joins an
+  /// in-flight sync for the same repository, and the upload itself is an
+  /// upsert on the row id, so repeating it re-sends the same rows.
+  Future<void> retryOwedUploads() async {
+    if (_uploadRetryOwed.isEmpty) return;
+    final String userId;
+    try {
+      userId = await ref.read(userIdProvider.future);
+    } catch (e) {
+      _logger.warning(
+        'Owed upload retry skipped: no current user',
+        context: 'SYNC_COORDINATOR',
+        error: e,
+      );
+      return;
+    }
+    for (final repoKey in _uploadRetryOwed.toList(growable: false)) {
+      _lastFailedAttempt.remove(repoKey);
+      await ensureSynced(
+        repoKey,
+        userId,
+        repository: await _repositoryFor(repoKey),
+      );
+    }
+  }
+
+  void _armRetryWhenReachable() {
+    if (_onlineChanges == null) {
+      try {
+        _onlineChanges = ref
+            .read(connectivityCheckerProvider)
+            .onlineChanges
+            .listen((online) {
+              if (online) unawaited(retryOwedUploads());
+            }, onError: (_) {});
+      } catch (_) {
+        // No connectivity plugin (tests, web): the other triggers remain.
+      }
+    }
+    if (_resume == null) {
+      try {
+        _resume = AppLifecycleListener(
+          onResume: () => unawaited(retryOwedUploads()),
+        );
+      } catch (_) {
+        // No widgets binding: the other triggers remain.
+      }
+    }
+  }
+
+  void _disarmRetryWhenReachable() {
+    if (_uploadRetryOwed.isNotEmpty) return;
+    unawaited(_onlineChanges?.cancel());
+    _onlineChanges = null;
+    _resume?.dispose();
+    _resume = null;
+  }
 
   /// Ensures a repository's data is fresh (synced within staleness threshold).
   ///
@@ -497,6 +590,7 @@ class SyncCoordinator extends _$SyncCoordinator {
     _lastFailedAttempt.remove(repoKey);
     _failureCount.remove(repoKey);
     _uploadRetryOwed.remove(repoKey);
+    _disarmRetryWhenReachable();
   }
 
   /// Single entry point for ALL sync operations (LEGACY - kept for backwards compatibility)

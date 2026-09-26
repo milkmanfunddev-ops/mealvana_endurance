@@ -1,3 +1,4 @@
+import 'macro_rounding.dart';
 import 'meal_component.dart';
 
 /// Aggregated nutritional totals for a set of [MealLog] entries.
@@ -83,6 +84,9 @@ class ConsumedTotals {
 /// are the values written to a `meal_logs` row's denormalised columns, so a
 /// quick add whose items have no sodium saves `sodium_mg` null rather than 0
 /// (Finding 26-004). Day-level displays keep using [ConsumedTotals].
+///
+/// The sums are rounded (macros to one decimal, sodium to a whole mg) so a
+/// row never stores float noise such as 0.6000000000000001 (112-004).
 class MealTotals {
   const MealTotals({
     this.calories,
@@ -107,10 +111,10 @@ class MealTotals {
     }
     return MealTotals(
       calories: calories,
-      carbsG: carbsG,
-      proteinG: proteinG,
-      fatG: fatG,
-      sodiumMg: sodiumMg,
+      carbsG: roundMacro(carbsG),
+      proteinG: roundMacro(proteinG),
+      fatG: roundMacro(fatG),
+      sodiumMg: roundSodium(sodiumMg),
     );
   }
 

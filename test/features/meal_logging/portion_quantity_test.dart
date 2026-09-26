@@ -6,6 +6,8 @@ import 'package:flutter_test/flutter_test.dart';
 import 'package:mealvana_endurance/features/meal_logging/domain/portion_quantity.dart';
 
 void main() {
+  portionScalingMain();
+
   group('parseLeadingQuantity', () {
     test('parses whole-number leading quantity', () {
       expect(parseLeadingQuantity('1 cup'), 1.0);
@@ -134,6 +136,78 @@ void main() {
     test('keeps fractional digits', () {
       expect(fmtQty(1.5), '1.5');
       expect(fmtQty(0.25), '0.25');
+    });
+  });
+}
+
+// Ticket 135 (testing-wave; Finding 112-003): a Recent re-log at 2 servings
+// wrote "2/2 cup dry" (only the numerator scaled) and at 1.5 wrote "6 oz
+// cooked (115 g)" (the bracketed grams untouched).
+void portionScalingMain() {
+  group('parseLeadingQuantity reads fractions, mixed numbers and decimals', () {
+    test('fractions', () {
+      expect(parseLeadingQuantity('1/2 cup dry'), 0.5);
+      expect(parseLeadingQuantity('3/4 cup'), 0.75);
+    });
+
+    test('mixed numbers', () {
+      expect(parseLeadingQuantity('1 1/2 cups'), 1.5);
+      expect(parseLeadingQuantity('2-1/4 cups'), 2.25);
+    });
+
+    test('decimals and whole numbers still read', () {
+      expect(parseLeadingQuantity('1.25 cup'), 1.25);
+      expect(parseLeadingQuantity('4 oz cooked (115 g)'), 4.0);
+    });
+
+    test('a number glued to its unit reads too', () {
+      expect(parseLeadingQuantity('100g'), 100.0);
+    });
+  });
+
+  group('replaceLeadingQuantity rewrites the whole leading number', () {
+    test('a fraction becomes the scaled decimal, unit kept', () {
+      expect(replaceLeadingQuantity('1/2 cup dry', 1), '1 cup dry');
+      expect(replaceLeadingQuantity('1/2 cup dry', 0.75), '0.75 cup dry');
+    });
+
+    test('a mixed number is replaced as one token', () {
+      expect(replaceLeadingQuantity('1 1/2 cups', 3), '3 cups');
+    });
+  });
+
+  group('scalePortion', () {
+    test('"1/2 cup dry" x 2 is "1 cup dry", never "2/2 cup dry"', () {
+      expect(scalePortion('1/2 cup dry', 2), '1 cup dry');
+      expect(scalePortion('2 tbsp', 2), '4 tbsp');
+    });
+
+    test('a bracketed gram amount scales with the portion', () {
+      expect(scalePortion('4 oz cooked (115 g)', 1.5), '6 oz cooked (173 g)');
+      expect(scalePortion('1 cup (240 ml)', 2), '2 cup (480 ml)');
+      expect(scalePortion('1 oz (28 g)', 2), '2 oz (56 g)');
+    });
+
+    test('"1.25 cup" x 1.5 is "1.875 cup"', () {
+      expect(scalePortion('1.25 cup', 1.5), '1.875 cup');
+    });
+
+    test('"1 large" x 1.5 keeps its unit', () {
+      expect(scalePortion('1 large', 1.5), '1.5 large');
+    });
+
+    test('a portion with no leading number cannot be scaled', () {
+      expect(scalePortion('a handful', 1.5), isNull);
+      expect(scalePortion('a handful (30 g)', 1.5), isNull);
+    });
+  });
+
+  group('fmtQty rounds to three decimals', () {
+    test('a repeating decimal is cut, a clean one is kept', () {
+      expect(fmtQty(2 / 3), '0.667');
+      expect(fmtQty(1.875), '1.875');
+      expect(fmtQty(1.5), '1.5');
+      expect(fmtQty(3.0), '3');
     });
   });
 }

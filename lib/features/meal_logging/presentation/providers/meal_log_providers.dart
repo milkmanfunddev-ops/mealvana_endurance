@@ -467,6 +467,9 @@ class MealLogController extends _$MealLogController {
     // barcode/build/common-tap all persist as `manual`; this disambiguates
     // them for funnels without a schema migration. Defaults to source.
     String? logMethod,
+    // The count [components] were scaled to (a Common ingredient at 1.5),
+    // recorded on the row so Recent shows the per-serving base (112-012).
+    double servings = 1,
   }) async {
     await _runGuarded((service) async {
       final userId = await _currentUserId();
@@ -481,6 +484,7 @@ class MealLogController extends _$MealLogController {
         photoPath: photoPath,
         notes: notes,
         eatenAt: eatenAt,
+        servings: servings,
       );
       _diary.recordLogged();
       await _trackEvent('meal_logged', {

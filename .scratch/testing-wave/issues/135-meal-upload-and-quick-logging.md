@@ -24,9 +24,9 @@
 
 The app-resume and Log-a-Meal-open hooks for item 1 are not mapped yet (unverified). Find where `recentMeals` and `mealLogsForDate` already call `_ensureSynced` and reuse that.
 
-- [ ] Seam test through the real `MealLogController` and `SyncCoordinator`: an insert whose immediate upload fails is uploaded by the next `ensureSynced` while `meal_logs` is still fresh, and by the online event. A `UploadResult.failed()` keeps it owed.
-- [ ] Unit tests: `parseLeadingQuantity` / relog scaling on "1/2 cup dry", "4 oz cooked (115 g)" and "1 large". Scaled totals are rounded and null stays null. Every quick assembly with a matching ingredient has sodium.
-- [ ] Controller or widget tests: a Recent re-log of a 2-serving log previews and logs the per-serving base. Two same-named meals with different items both show. The sheet starts on the source slot. A double tap on Log it writes one row and opens no second sheet. Combo and ingredient logs track `method: common`.
-- [ ] `flutter analyze` clean on touched files.
+- [x] Seam test through the real `MealLogController` and `SyncCoordinator`: an insert whose immediate upload fails is uploaded by the next `ensureSynced` while `meal_logs` is still fresh, and by the online event. A `UploadResult.failed()` keeps it owed.
+- [x] Unit tests: `parseLeadingQuantity` / relog scaling on "1/2 cup dry", "4 oz cooked (115 g)" and "1 large". Scaled totals are rounded and null stays null. Every quick assembly with a matching ingredient has sodium.
+- [x] Controller or widget tests: a Recent re-log of a 2-serving log previews and logs the per-serving base. Two same-named meals with different items both show. The sheet starts on the source slot. A double tap on Log it writes one row and opens no second sheet. Combo and ingredient logs track `method: common`.
+- [x] `flutter analyze` clean on touched files.
 
 Next: /implement-lee testing-wave
