@@ -55,6 +55,12 @@ class PostOnboardingAuthController extends _$PostOnboardingAuthController {
           'auth_account_already_exists',
           properties: {'provider': 'apple', 'source': 'post_onboarding'},
         );
+      } else if (error is OAuthCancelledException) {
+        // The sheet was closed (125-003): not a failure, nothing to report.
+        _logger.info(
+          'Post-onboarding auth: Apple sign-in cancelled',
+          context: 'AUTH',
+        );
       } else {
         _logger.error(
           'Post-onboarding auth: Apple Sign-In failed',
@@ -117,6 +123,12 @@ class PostOnboardingAuthController extends _$PostOnboardingAuthController {
           'auth_account_already_exists',
           properties: {'provider': 'google', 'source': 'post_onboarding'},
         );
+      } else if (error is OAuthCancelledException) {
+        // The sheet was closed (125-003): not a failure, nothing to report.
+        _logger.info(
+          'Post-onboarding auth: Google sign-in cancelled',
+          context: 'AUTH',
+        );
       } else {
         _logger.error(
           'Post-onboarding auth: Google Sign-In failed',
@@ -168,6 +180,12 @@ class PostOnboardingAuthController extends _$PostOnboardingAuthController {
           'Post-onboarding auth: no existing account for this Apple identity',
           context: 'AUTH',
         );
+      } else if (state.error is OAuthCancelledException) {
+        // The sheet was closed (125-003): not a failure, nothing to report.
+        _logger.info(
+          'Post-onboarding auth: Apple sign-in cancelled',
+          context: 'AUTH',
+        );
       } else {
         _logger.error(
           'Post-onboarding auth: Apple Sign-In failed',
@@ -198,6 +216,12 @@ class PostOnboardingAuthController extends _$PostOnboardingAuthController {
       if (state.error is OAuthAccountNotFoundException) {
         _logger.info(
           'Post-onboarding auth: no existing account for this Google identity',
+          context: 'AUTH',
+        );
+      } else if (state.error is OAuthCancelledException) {
+        // The sheet was closed (125-003): not a failure, nothing to report.
+        _logger.info(
+          'Post-onboarding auth: Google sign-in cancelled',
           context: 'AUTH',
         );
       } else {

@@ -347,11 +347,9 @@ class UserProfile {
       weightPounds: (row['weight_pounds'] as num?)?.toDouble() ?? 0,
       runsWithWaterBottle: row['runs_with_water_bottle'] as bool? ?? false,
       createdAt:
-          DateTime.tryParse(row['created_at'] as String? ?? '') ??
-          DateTime.now(),
+          parseServerTimestamp(row['created_at'] as String?) ?? DateTime.now(),
       updatedAt:
-          DateTime.tryParse(row['updated_at'] as String? ?? '') ??
-          DateTime.now(),
+          parseServerTimestamp(row['updated_at'] as String?) ?? DateTime.now(),
       gutTraining: GutTraining.values.firstWhere(
         (gt) => gt.name == row['gut_training_level'],
         orElse: () => GutTraining.moderate,
@@ -439,8 +437,8 @@ class UserProfile {
       heightInches: json['height_inches'] as int,
       weightPounds: (json['weight_pounds'] as num).toDouble(),
       runsWithWaterBottle: json['runs_with_water_bottle'] as bool,
-      createdAt: DateTime.parse(json['created_at'] as String),
-      updatedAt: DateTime.parse(json['updated_at'] as String),
+      createdAt: parseServerTimestamp(json['created_at'] as String)!,
+      updatedAt: parseServerTimestamp(json['updated_at'] as String)!,
       gutTraining: GutTraining.values.firstWhere(
         (gt) => gt.name == json['gut_training_level'],
         orElse: () => GutTraining.moderate,
@@ -537,8 +535,11 @@ class UserProfile {
       'sweat_rate': sweatRate.name,
       'onboarding_completed': onboardingCompleted,
       'app_version': appVersion,
-      'created_at': createdAt.toIso8601String(),
-      'updated_at': updatedAt.toIso8601String(),
+      // UTC with its offset (testing-wave 120-003, 121-004): a local
+      // DateTime's ISO string carries no zone, and PostgREST read it as UTC,
+      // so a Chicago signup landed five hours early.
+      'created_at': createdAt.toUtc().toIso8601String(),
+      'updated_at': updatedAt.toUtc().toIso8601String(),
       'unit_system': unitSystem.name,
       // Sport preferences (only include fields that exist in production Supabase)
       'cycling_ftp_watts': ftpWatts,
@@ -907,4 +908,21 @@ enum GutTrainingLevel {
 
   /// Get string value for API calls
   String get value => name;
+}
+
+/// Parses a `users` timestamp as the server sends it.
+///
+/// `users.created_at` and `updated_at` are `timestamp without time zone`, so
+/// PostgREST returns `2026-09-26T17:04:11.123` with no offset. `DateTime.parse`
+/// reads a zoneless string as LOCAL time, which moved the instant by the
+/// device's offset on every read (testing-wave 120-003, 121-004). The server
+/// stores UTC wall-clock (the app sends `toUtc()` and the column defaults to
+/// `CURRENT_TIMESTAMP` on a UTC server), so a zoneless string is UTC. A
+/// string that carries a zone is parsed as written. Null or unparseable
+/// answers null.
+DateTime? parseServerTimestamp(String? value) {
+  if (value == null || value.isEmpty) return null;
+  final trimmed = value.trim();
+  final hasZone = RegExp(r'(Z|[+-]\d{2}(:?\d{2})?)$').hasMatch(trimmed);
+  return DateTime.tryParse(hasZone ? trimmed : '${trimmed}Z');
 }

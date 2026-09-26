@@ -262,7 +262,7 @@ class AuthMigrationService {
         'home_lat': anonymousProfile.homeLat,
         'home_lon': anonymousProfile.homeLon,
         'home_timezone': anonymousProfile.homeTimezone,
-        'updated_at': DateTime.now().toIso8601String(),
+        'updated_at': DateTime.now().toUtc().toIso8601String(),
       }, onConflict: 'id');
 
       sentry.addBreadcrumb(

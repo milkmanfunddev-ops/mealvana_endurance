@@ -164,8 +164,13 @@ class _PostOnboardingAuthScreenState
   }
 
   void _handleError(BuildContext context, String providerName) {
-    // Check if the error is because the account already exists
     final state = ref.read(postOnboardingAuthControllerProvider);
+
+    // The athlete closed the provider's sheet (125-003): nothing failed, so
+    // nothing is said.
+    if (state.hasError && state.error is OAuthCancelledException) return;
+
+    // Check if the error is because the account already exists
     if (state.hasError && state.error is AccountAlreadyExistsException) {
       final exception = state.error as AccountAlreadyExistsException;
       _showAccountExistsDialog(context, providerName, exception.email);
