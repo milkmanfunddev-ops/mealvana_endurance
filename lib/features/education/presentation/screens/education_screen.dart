@@ -3,6 +3,8 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:font_awesome_flutter/font_awesome_flutter.dart';
 import '../../../../shared/services/app_external_deps.dart';
 import '../../../../shared/widgets/kyle_design/kyle_design.dart';
+import '../../../content/application/content_service.dart';
+import '../../../content/domain/content_keys.dart';
 import '../../domain/education_content.dart';
 import '../providers/education_controller.dart';
 import '../widgets/coming_soon_section_widget.dart';
@@ -17,6 +19,7 @@ class EducationScreen extends ConsumerWidget {
     final theme = Theme.of(context);
     final isDark = theme.brightness == Brightness.dark;
     final state = ref.watch(educationControllerProvider);
+    final content = ref.watch(contentServiceProvider);
 
     return Scaffold(
       backgroundColor: isDark ? AppColors.blackberry : AppColors.cream,
@@ -25,31 +28,41 @@ class EducationScreen extends ConsumerWidget {
           loading: () => const Center(
             child: CircularProgressIndicator(color: AppColors.orange),
           ),
+          // The fetch failed with no last answer to show (117-008): say the
+          // connection is the trouble and offer Retry. The "no videos" empty
+          // state below is for a good answer with nothing in it.
           error: (error, _) => Center(
-            child: Column(
-              mainAxisAlignment: MainAxisAlignment.center,
-              children: [
-                Icon(
-                  Icons.error_outline,
-                  size: 48,
-                  color: isDark ? AppColors.inactive : AppColors.disabled,
-                ),
-                const SizedBox(height: AppSpacing.md),
-                Text(
-                  'Failed to load content',
-                  style: AppTextStyles.bodyMedium.copyWith(
-                    color: isDark
-                        ? AppColors.textDarkSecondary
-                        : AppColors.textLightSecondary,
+            key: const ValueKey('learn.offline'),
+            child: Padding(
+              padding: AppSpacing.screenPadding,
+              child: Column(
+                mainAxisAlignment: MainAxisAlignment.center,
+                children: [
+                  Icon(
+                    Icons.cloud_off_outlined,
+                    size: 48,
+                    color: isDark ? AppColors.inactive : AppColors.disabled,
                   ),
-                ),
-                const SizedBox(height: AppSpacing.md),
-                KylePrimaryButton(
-                  text: 'Retry',
-                  onPressed: () =>
-                      ref.read(educationControllerProvider.notifier).refresh(),
-                ),
-              ],
+                  const SizedBox(height: AppSpacing.md),
+                  Text(
+                    content.getValue(ContentKeys.learnOfflineMessage),
+                    textAlign: TextAlign.center,
+                    style: AppTextStyles.bodyMedium.copyWith(
+                      color: isDark
+                          ? AppColors.textDarkSecondary
+                          : AppColors.textLightSecondary,
+                    ),
+                  ),
+                  const SizedBox(height: AppSpacing.md),
+                  KylePrimaryButton(
+                    key: const ValueKey('learn.retry'),
+                    text: content.getValue(ContentKeys.learnRetry),
+                    onPressed: () => ref
+                        .read(educationControllerProvider.notifier)
+                        .refresh(),
+                  ),
+                ],
+              ),
             ),
           ),
           data: (groups) => RefreshIndicator(

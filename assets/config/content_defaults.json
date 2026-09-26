@@ -621,7 +621,7 @@
     "browse_no_numbers": "Can't go in a plan yet: its nutrition numbers are missing",
     "mic_tooltip": "Dictate",
     "mic_listening": "Listening…",
-    "mic_permission": "Dictation needs Speech Recognition and Microphone access. Turn them on in iOS Settings → Mealvana.",
+    "mic_permission": "Dictation needs Speech Recognition and Microphone access. Turn them on in iOS Settings → {app}.",
     "pantry_use_message": "I have {items} on hand — use these",
     "plan_bar_review": "Review plan",
     "plan_bar_meals": "{n} meals picked",
@@ -980,5 +980,12 @@
     "enter_body": "Type the number printed under the barcode.",
     "enter_hint": "8 to 14 digits",
     "enter_submit": "Look it up"
+  },
+  "learn": {
+    "notify_me": "Notify Me",
+    "notify_me_noted": "Noted",
+    "notify_me_confirm": "We'll let you know",
+    "offline_message": "Couldn't load the lessons. Check your connection and try again.",
+    "retry": "Retry"
   }
 }
