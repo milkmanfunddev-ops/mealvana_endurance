@@ -188,7 +188,7 @@ void main() {
         when(
           () => creditsRepo.fetchWallet(),
         ).thenAnswer((_) async => CreditWallet.zero);
-        when(() => rcService.purchase(any())).thenAnswer((_) async => false);
+        when(() => rcService.purchase(any())).thenAnswer((_) async => StorePurchaseResult.cancelled);
 
         final (container, cleanup) = _buildContainer(
           rcService: rcService,
@@ -216,7 +216,7 @@ void main() {
       when(
         () => creditsRepo.fetchWallet(),
       ).thenAnswer((_) async => CreditWallet.zero);
-      when(() => rcService.purchase(any())).thenAnswer((_) async => false);
+      when(() => rcService.purchase(any())).thenAnswer((_) async => StorePurchaseResult.cancelled);
 
       final (container, cleanup) = _buildContainer(
         rcService: rcService,
@@ -237,7 +237,7 @@ void main() {
       when(
         () => creditsRepo.fetchWallet(),
       ).thenAnswer((_) async => CreditWallet.zero);
-      when(() => rcService.purchase(any())).thenAnswer((_) async => false);
+      when(() => rcService.purchase(any())).thenAnswer((_) async => StorePurchaseResult.cancelled);
 
       final (container, cleanup) = _buildContainer(
         rcService: rcService,
@@ -259,6 +259,38 @@ void main() {
       // After cancel, no poll fires — fetchWallet should not be called again.
       verifyNever(() => creditsRepo.fetchWallet());
     });
+
+    // 121-005 / 123-002: the store refusing used to share the cancel's
+    // `false`, so a refused pack stayed silent.
+    test('a store failure is failed, ends in an error and polls nothing', () async {
+      when(
+        () => creditsRepo.fetchWallet(),
+      ).thenAnswer((_) async => CreditWallet.zero);
+      when(
+        () => rcService.purchase(any()),
+      ).thenAnswer((_) async => StorePurchaseResult.failed);
+
+      final (container, cleanup) = _buildContainer(
+        rcService: rcService,
+        creditsRepo: creditsRepo,
+      );
+      addTearDown(cleanup);
+      await container.read(creditsControllerProvider.future);
+      await container.read(purchaseControllerProvider.future);
+      clearInteractions(creditsRepo);
+
+      final outcome = await container
+          .read(purchaseControllerProvider.notifier)
+          .buy(fakePackage);
+
+      expect(outcome, PurchaseOutcome.failed);
+      expect(container.read(purchaseControllerProvider), isA<AsyncError<void>>());
+      expect(
+        container.read(purchaseControllerProvider).error,
+        isA<StorePurchaseFailed>(),
+      );
+      verifyNever(() => creditsRepo.fetchWallet());
+    });
   });
 
   // -------------------------------------------------------------------------
@@ -275,7 +307,7 @@ void main() {
             ? const CreditWallet(balance: 100)
             : const CreditWallet(balance: 200);
       });
-      when(() => rcService.purchase(any())).thenAnswer((_) async => true);
+      when(() => rcService.purchase(any())).thenAnswer((_) async => StorePurchaseResult.purchased);
 
       final (container, cleanup) = _buildContainer(
         rcService: rcService,
@@ -302,7 +334,7 @@ void main() {
       when(
         () => creditsRepo.fetchWallet(),
       ).thenAnswer((_) async => CreditWallet.zero);
-      when(() => rcService.purchase(any())).thenAnswer((_) async => true);
+      when(() => rcService.purchase(any())).thenAnswer((_) async => StorePurchaseResult.purchased);
 
       final (container, cleanup) = _buildContainer(
         rcService: rcService,
@@ -328,7 +360,7 @@ void main() {
           callCount++;
           return CreditWallet(balance: callCount == 1 ? 50 : 150);
         });
-        when(() => rcService.purchase(any())).thenAnswer((_) async => true);
+        when(() => rcService.purchase(any())).thenAnswer((_) async => StorePurchaseResult.purchased);
 
         final (container, cleanup) = _buildContainer(
           rcService: rcService,
@@ -365,7 +397,7 @@ void main() {
       when(
         () => creditsRepo.fetchWallet(),
       ).thenAnswer((_) async => CreditWallet.zero);
-      when(() => rcService.purchase(any())).thenAnswer((_) async => false);
+      when(() => rcService.purchase(any())).thenAnswer((_) async => StorePurchaseResult.cancelled);
 
       final (container, cleanup) = _buildContainer(
         rcService: rcService,
@@ -527,7 +559,7 @@ void main() {
         when(
           () => creditsRepo.fetchWallet(),
         ).thenAnswer((_) async => const CreditWallet(balance: 100));
-        when(() => rcService.purchase(any())).thenAnswer((_) async => true);
+        when(() => rcService.purchase(any())).thenAnswer((_) async => StorePurchaseResult.purchased);
 
         final (container, cleanup) = _buildContainer(
           rcService: rcService,
@@ -574,7 +606,7 @@ void main() {
       ).thenAnswer((_) async => CreditWallet(balance: balance));
       when(() => rcService.purchase(any())).thenAnswer((_) async {
         balance = 150;
-        return true;
+        return StorePurchaseResult.purchased;
       });
 
       final (container, cleanup) = _buildContainer(
@@ -599,7 +631,7 @@ void main() {
       when(
         () => creditsRepo.fetchWallet(),
       ).thenAnswer((_) async => const CreditWallet(balance: 100));
-      when(() => rcService.purchase(any())).thenAnswer((_) async => true);
+      when(() => rcService.purchase(any())).thenAnswer((_) async => StorePurchaseResult.purchased);
 
       final (container, cleanup) = _buildContainer(
         rcService: rcService,
@@ -628,7 +660,7 @@ void main() {
       when(
         () => creditsRepo.fetchWallet(),
       ).thenAnswer((_) async => const CreditWallet(balance: 100));
-      when(() => rcService.purchase(any())).thenAnswer((_) async => false);
+      when(() => rcService.purchase(any())).thenAnswer((_) async => StorePurchaseResult.cancelled);
 
       final (container, cleanup) = _buildContainer(
         rcService: rcService,
@@ -725,7 +757,7 @@ void main() {
         when(
           () => creditsRepo.fetchWallet(),
         ).thenAnswer((_) async => CreditWallet.zero);
-        when(() => rcService.purchase(any())).thenAnswer((_) async => false);
+        when(() => rcService.purchase(any())).thenAnswer((_) async => StorePurchaseResult.cancelled);
 
         final (container, cleanup) = _buildContainer(
           rcService: rcService,
@@ -760,7 +792,7 @@ void main() {
           if (callCount == 1) throw Exception('offline');
           return const CreditWallet(balance: 0);
         });
-        when(() => rcService.purchase(any())).thenAnswer((_) async => true);
+        when(() => rcService.purchase(any())).thenAnswer((_) async => StorePurchaseResult.purchased);
 
         final (container, cleanup) = _buildContainer(
           rcService: rcService,
@@ -799,7 +831,7 @@ void main() {
         ).thenAnswer((_) async => CreditWallet.zero);
 
         // Make purchase() hang until we complete the completer.
-        final completer = Completer<bool>();
+        final completer = Completer<StorePurchaseResult>();
         when(
           () => rcService.purchase(any()),
         ).thenAnswer((_) => completer.future);
@@ -828,7 +860,7 @@ void main() {
         );
 
         // Complete the purchase so the container can settle cleanly.
-        completer.complete(false);
+        completer.complete(StorePurchaseResult.cancelled);
         await Future<void>.delayed(Duration.zero);
       },
     );

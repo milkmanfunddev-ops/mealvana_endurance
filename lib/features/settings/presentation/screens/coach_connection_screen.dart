@@ -8,6 +8,8 @@ import '../../../../shared/widgets/kyle_design/feedback/mealvana_snackbar.dart';
 import '../../../../shared/widgets/content_area.dart';
 import '../../../../theme/kyle_design/app_colors.dart';
 import '../../../coach_mode/application/coach_service.dart';
+import '../../../content/application/content_service.dart';
+import '../../../content/domain/content_keys.dart';
 import '../../../coach_mode/data/coach_repository.dart';
 import '../../../coach_mode/domain/pairing_code_connection_result.dart';
 
@@ -178,6 +180,8 @@ class _CoachConnectionScreenState extends ConsumerState<CoachConnectionScreen> {
   @override
   Widget build(BuildContext context) {
     final isDark = Theme.of(context).brightness == Brightness.dark;
+    // The paired line reads the content system; rebuild when it changes.
+    ref.watch(contentServiceProvider);
 
     return Scaffold(
       backgroundColor: Theme.of(context).scaffoldBackgroundColor,
@@ -214,6 +218,19 @@ class _CoachConnectionScreenState extends ConsumerState<CoachConnectionScreen> {
     );
   }
 
+  /// "Paired with `<coach>`" (Lee, 2026-09-26; 122-003), or the line without a
+  /// name when the coach has none on record.
+  String _pairedLine() {
+    final content = ref.read(contentServiceProvider);
+    final name = _coachName;
+    return name == null || name.isEmpty
+        ? content.getValue(ContentKeys.coachConnectionPaired)
+        : ContentKeys.format(
+            content.getValue(ContentKeys.coachConnectionPairedWith),
+            {'coach': name},
+          );
+  }
+
   Widget _buildConnectedSection(bool isDark) {
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
@@ -241,9 +258,8 @@ class _CoachConnectionScreenState extends ConsumerState<CoachConnectionScreen> {
                   crossAxisAlignment: CrossAxisAlignment.start,
                   children: [
                     Text(
-                      _coachName != null
-                          ? 'Connected to $_coachName'
-                          : 'Connected to Coach',
+                      key: const ValueKey('coach_connection.paired'),
+                      _pairedLine(),
                       style: TextStyle(
                         color: isDark ? AppColors.cream : AppColors.blackberry,
                         fontWeight: FontWeight.w700,

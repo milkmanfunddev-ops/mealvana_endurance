@@ -553,6 +553,68 @@ describe('B. first event → two-field row', () => {
     assertEquals(row.will_renew, false);
   });
 
+  // 123-008: an ended monthly's EXPIRATION landed after an Annual purchase and
+  // took the Annual's renewal with it. RevenueCat's end is the Annual's, which
+  // the stored row already holds: the late event says nothing about it.
+  it('a late EXPIRATION for an ended plan, after a new renewing purchase, keeps will_renew: true (123-008)', async () => {
+    const monthlyEnd = Date.parse('2026-09-26T04:41:20Z');
+    const annualBought = Date.parse('2026-09-26T04:41:46.7Z');
+    const annualEnd = Date.parse('2026-09-26T05:41:47.468Z');
+    const lateExpiration = Date.parse('2026-09-26T04:42:11.731Z');
+    const { db, rc, handle } = setup(lateExpiration + 2_000);
+
+    await handle(rcRequest(body(paidRenewal({ event_timestamp_ms: monthlyEnd - 5 * 60_000, expiration_at_ms: monthlyEnd }))));
+    await handle(rcRequest(body(paidRenewal({
+      id: 'A1B2C3D4-0000-4000-8000-0000000000B1',
+      type: 'INITIAL_PURCHASE',
+      product_id: 'me_pro_annual',
+      event_timestamp_ms: annualBought,
+      purchased_at_ms: annualBought,
+      expiration_at_ms: annualEnd,
+      transaction_id: '2000000123456799',
+    }))));
+    assertEquals(db.rows.get(USER_ID)!.will_renew, true);
+    assertEquals(db.rows.get(USER_ID)!.active_until, iso(annualEnd));
+
+    // RevenueCat itself still answers the Annual's end: the fake models one
+    // subscription per customer, so pin what RevenueCat reported in the run.
+    rc.pinned = { expiry: iso(annualEnd) };
+    const res = await handle(rcRequest(body(paidRenewal({
+      id: 'A1B2C3D4-0000-4000-8000-0000000000B2',
+      type: 'EXPIRATION',
+      expiration_reason: 'UNSUBSCRIBE',
+      event_timestamp_ms: lateExpiration,
+      expiration_at_ms: monthlyEnd,
+    }))));
+    assertEquals(res.status, 200);
+    const row = db.rows.get(USER_ID)!;
+    assertEquals(row.active_until, iso(annualEnd), 'the Annual sets the end');
+    assertEquals(row.will_renew, true, 'the Annual still renews');
+    assertEquals(row.event_at, iso(lateExpiration));
+  });
+
+  it('a late EXPIRATION after a purchase that was then cancelled keeps will_renew: false', async () => {
+    const monthlyEnd = T0 + 30 * DAY;
+    const annualEnd = T0 + 395 * DAY;
+    const { db, rc, handle } = setup(monthlyEnd + 3 * 60_000);
+    await handle(rcRequest(body(paidRenewal({ event_timestamp_ms: monthlyEnd - 5 * 60_000, expiration_at_ms: monthlyEnd }))));
+    await handle(rcRequest(body(paidRenewal({
+      id: 'B1', type: 'INITIAL_PURCHASE', product_id: 'me_pro_annual',
+      event_timestamp_ms: monthlyEnd + 30_000, expiration_at_ms: annualEnd,
+    }))));
+    await handle(rcRequest(body(paidRenewal({
+      id: 'B2', type: 'CANCELLATION', product_id: 'me_pro_annual',
+      event_timestamp_ms: monthlyEnd + 60_000, expiration_at_ms: annualEnd,
+    }))));
+    assertEquals(db.rows.get(USER_ID)!.will_renew, false);
+    rc.pinned = { expiry: iso(annualEnd) };
+    await handle(rcRequest(body(paidRenewal({
+      id: 'B3', type: 'EXPIRATION', event_timestamp_ms: monthlyEnd + 90_000, expiration_at_ms: monthlyEnd,
+    }))));
+    assertEquals(db.rows.get(USER_ID)!.will_renew, false, 'a cancelled Annual does not renew because an old event landed');
+    assertEquals(db.rows.get(USER_ID)!.active_until, iso(annualEnd));
+  });
+
   it('EXPIRATION closes the row at the expiry, even when the payload’s expiry is later than the event', async () => {
     await handle(rcRequest(body(trialStart())));
     await handle(rcRequest(body(trialStart({

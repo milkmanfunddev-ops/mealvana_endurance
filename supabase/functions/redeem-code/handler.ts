@@ -16,12 +16,19 @@
  *                                    `coaches` row) and gets `perk_days` (30)
  *                                    of `pro` from RevenueCat
  *   coach or influencer, by anyone   `coach_code` / `influencer_code` is set as
- *   else                             a subscriber attribute, and a pending,
- *                                    athlete-requested pairing with the owner
- *                                    is opened in `coach_athlete_relationships`,
- *                                    the row the app's pairing path writes and
- *                                    the coach accepts
- *   giveaway                         `perk_days` (365) of `pro`, once
+ *   else                             a subscriber attribute, and for a coach
+ *                                    code an active, athlete-requested pairing
+ *                                    with the owner is opened in
+ *                                    `coach_athlete_relationships`: a coach's
+ *                                    code is their invitation, so it pairs at
+ *                                    once with nothing pending (Lee,
+ *                                    2026-09-26; 122-002, 122-003)
+ *   giveaway                         `perk_days` (365) of `pro`, once, and only
+ *                                    while no Pro is active: RevenueCat does not
+ *                                    extend a live grant, so a giveaway on top of
+ *                                    a running Grant or a paying subscription is
+ *                                    refused (`pro_active`) and not spent
+ *                                    (122-001; Lee, 2026-09-26)
  *
  * Each grant of `pro` is recorded in `pro_grants` with its source, 'coach' or
  * 'code' (mp-615), which the Subscription screen labels from.
@@ -31,13 +38,15 @@
  *
  * Answers:
  *   200 { ok: true, kind: 'coach' | 'giveaway', pro_days }
- *   200 { ok: true, kind: 'paired', coach_user_id } | { ok: true, kind: 'attributed' }
+ *   200 { ok: true, kind: 'paired', coach_user_id, coach_name } | { ok: true, kind: 'attributed' }
  *   200 { ok: false, reason, message }   a refusal: the code is wrong, not open
  *                                        yet, expired, used, already redeemed
  *                                        by this caller, the caller's own
- *                                        influencer code, or a coach code
- *                                        from a coach the caller has already
- *                                        asked or is paired with (already_paired)
+ *                                        influencer code, a coach code from a
+ *                                        coach the caller is already paired
+ *                                        with (already_paired), or a giveaway
+ *                                        while Pro is active (pro_active, with
+ *                                        `pro_until` and `grant`)
  *   400 invalid_input (no code) · 400 code_too_long (over MAX_CODE_LENGTH once
  *   spaces are stripped; 11-003) · 401 unauthenticated · 403 sign_in_required
  *   (anonymous) · 405 method_not_allowed · 500 server_error · 502 store_unavailable
@@ -89,6 +98,7 @@ export const REFUSALS = {
   already_redeemed: "You've already used that code.",
   own_code: "That's your own code. Share it with your athletes.",
   already_paired: "You've already asked this coach to pair.",
+  pro_active: 'You already have Pro.',
 } as const;
 export type Refusal = keyof typeof REFUSALS;
 
@@ -108,6 +118,27 @@ function json(body: unknown, status = 200): Response {
 }
 
 const refuse = (reason: Refusal) => json({ ok: false, reason, message: REFUSALS[reason] });
+
+/** The Pro the caller already holds, read off `user_entitlements`. */
+interface ActivePro {
+  until: string;
+  /** A RevenueCat grant (free Pro) rather than a paying subscription. */
+  grant: boolean;
+}
+
+/**
+ * A giveaway while Pro is active (122-001): free Pro says until when, a
+ * subscription just says so. The app formats the date itself from `pro_until`;
+ * the message is for a build that does not know the reason.
+ */
+function refuseProActive(active: ActivePro): Response {
+  const message = active.grant ? `You already have free Pro until ${plainDate(active.until)}.` : REFUSALS.pro_active;
+  return json({ ok: false, reason: 'pro_active', message, pro_until: active.until, grant: active.grant });
+}
+
+function plainDate(iso: string): string {
+  return new Date(iso).toLocaleDateString('en-US', { year: 'numeric', month: 'long', day: 'numeric', timeZone: 'UTC' });
+}
 
 /**
  * How the caller typed it → how the table holds it: spaces dropped, upper-case.
@@ -178,6 +209,14 @@ export function makeRedeemHandler(deps: RedeemDeps) {
       if (paired) return refuse(paired);
     }
 
+    // A giveaway on top of running Pro would be spent for nothing: RevenueCat's
+    // grant does not extend a live one (122-001). Refused before the claim.
+    if (row.type === 'giveaway') {
+      const active = await activePro(db, caller.userId, t);
+      if (active === 'error') return json({ error: 'server_error' }, 500);
+      if (active) return refuseProActive(active);
+    }
+
     const { data: claim, error: claimError } = await db.rpc('code_claim', {
       p_code_id: row.id,
       p_user_id: caller.userId,
@@ -225,10 +264,10 @@ async function apply(
   }
 
   // An athlete entering a coach's or an influencer's code. Only a coach code
-  // pairs (mp-458 §4: "a pending pairing with the coach"); an influencer is
+  // pairs (mp-458 §4, as ruled 2026-09-26: paired at once); an influencer is
   // not a coach and never sees the athlete's data.
   const pairsWith = row.type === 'coach' ? row.owner_user_id : null;
-  if (pairsWith) await openPendingPairing(db, pairsWith, caller.userId);
+  if (pairsWith) await openPairing(db, pairsWith, caller.userId);
   const attribute = row.type === 'coach' ? 'coach_code' : 'influencer_code';
   try {
     await withCustomer(deps.revenueCat(), caller.userId, (rc) =>
@@ -236,7 +275,51 @@ async function apply(
   } catch (e) {
     throw new AfterClaimError(502, 'store_unavailable', `setAttributes failed: ${(e as Error).message}`);
   }
-  return pairsWith ? { kind: 'paired', coach_user_id: pairsWith } : { kind: 'attributed' };
+  if (!pairsWith) return { kind: 'attributed' };
+  return { kind: 'paired', coach_user_id: pairsWith, coach_name: await coachName(db, pairsWith) };
+}
+
+/**
+ * The Pro the caller holds now, from `user_entitlements` (the webhook's cache
+ * of RevenueCat): `active_until` later than now. A PROMOTIONAL period is a
+ * grant. Null when none; 'error' when the read failed.
+ */
+async function activePro(db: Db, userId: string, nowMs: number): Promise<ActivePro | null | 'error'> {
+  const { data, error } = await db
+    .from('user_entitlements')
+    .select('active_until, period_type')
+    .eq('user_id', userId)
+    .maybeSingle();
+  if (error) {
+    console.error('[redeem-code] user_entitlements read failed:', error.message);
+    return 'error';
+  }
+  const row = data as { active_until: string | null; period_type: string | null } | null;
+  const until = row?.active_until ? Date.parse(row.active_until) : NaN;
+  if (!Number.isFinite(until) || until <= nowMs) return null;
+  return { until: new Date(until).toISOString(), grant: row!.period_type === 'PROMOTIONAL' };
+}
+
+/**
+ * The coach's name for the answer, the way the app's `getMyCoach` finds it:
+ * the `coaches` row first, then `users`. Null when neither has one; the
+ * lookup never fails the redemption.
+ */
+async function coachName(db: Db, coachUserId: string): Promise<string | null> {
+  const join = (r: { first_name?: string | null; last_name?: string | null } | null) => {
+    const parts = [r?.first_name, r?.last_name].map((p) => (p ?? '').trim()).filter((p) => p.length > 0);
+    return parts.length ? parts.join(' ') : null;
+  };
+  try {
+    const { data: coach } = await db.from('coaches').select('first_name, last_name').eq('user_id', coachUserId).maybeSingle();
+    const fromCoaches = join(coach as { first_name?: string | null; last_name?: string | null } | null);
+    if (fromCoaches) return fromCoaches;
+    const { data: user } = await db.from('users').select('first_name, last_name').eq('id', coachUserId).maybeSingle();
+    return join(user as { first_name?: string | null; last_name?: string | null } | null);
+  } catch (e) {
+    console.warn('[redeem-code] coach name lookup failed:', (e as Error).message);
+    return null;
+  }
 }
 
 /**
@@ -321,13 +404,15 @@ async function markCoach(db: Db, caller: Caller): Promise<void> {
 }
 
 /**
- * The pending pairing, on the row the app's pairing path writes
- * (`CoachRepository.createRelationship` with requested_by 'athlete'): pending
- * until the coach accepts it. A pairing already pending or active is left as
- * it is; a declined or archived one is asked for again. One row per pair
+ * The pairing, on the row the app's pairing path writes
+ * (`CoachRepository.createRelationship`, requested_by 'athlete'), active at
+ * once with `accepted_at` set: the coach's code is their invitation, so
+ * nothing waits on the coach (Lee, 2026-09-26; 122-002, 122-003; this touches
+ * mp-535). A pairing already pending or active is left as it is; a declined
+ * or archived one is opened again. One row per pair
  * (`unique (coach_user_id, athlete_user_id)`).
  */
-async function openPendingPairing(db: Db, coachUserId: string, athleteUserId: string): Promise<void> {
+async function openPairing(db: Db, coachUserId: string, athleteUserId: string): Promise<void> {
   const { data: existing, error: readError } = await db
     .from('coach_athlete_relationships')
     .select('id, status')
@@ -344,10 +429,10 @@ async function openPendingPairing(db: Db, coachUserId: string, athleteUserId: st
     const { error } = await db
       .from('coach_athlete_relationships')
       .update({
-        status: 'pending',
+        status: 'active',
         requested_by: 'athlete',
         requested_at: stamp,
-        accepted_at: null,
+        accepted_at: stamp,
         declined_at: null,
         archived_at: null,
         updated_at: stamp,
@@ -361,9 +446,10 @@ async function openPendingPairing(db: Db, coachUserId: string, athleteUserId: st
     id: crypto.randomUUID(),
     coach_user_id: coachUserId,
     athlete_user_id: athleteUserId,
-    status: 'pending',
+    status: 'active',
     requested_by: 'athlete',
     requested_at: stamp,
+    accepted_at: stamp,
     created_at: stamp,
     updated_at: stamp,
   });

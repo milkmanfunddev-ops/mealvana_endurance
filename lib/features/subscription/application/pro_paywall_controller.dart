@@ -5,6 +5,7 @@ import 'package:purchases_flutter/purchases_flutter.dart';
 import 'package:riverpod_annotation/riverpod_annotation.dart';
 
 import '../../../shared/services/sentry/sentry_reporter.dart';
+import '../../ai_credits/data/revenuecat_service.dart';
 import '../data/subscription_service.dart';
 import '../data/user_entitlements_repository.dart';
 import '../domain/entitlement.dart';
@@ -38,6 +39,36 @@ enum ProPurchaseOutcome {
 
   /// Store rejected the purchase or the SDK is unconfigured.
   failed,
+
+  /// A purchase, restore or hold was already in flight: nothing was started
+  /// (121-008). The button is disabled in the same frame, so only a tap
+  /// that raced the rebuild lands here.
+  busy,
+}
+
+/// What [ProPaywallController.restore] found.
+enum ProRestoreOutcome {
+  /// The store restored a subscription and the status reports active.
+  unlocked,
+
+  /// The store answered and holds nothing for this account.
+  nothingFound,
+
+  /// The store could not be reached (offline, SDK unavailable): no verdict
+  /// on the account (121-006).
+  unavailable,
+
+  /// The restore threw; the state carries the error.
+  failed,
+}
+
+/// A restore that never reached the store: the state's error, so the screen
+/// says the check needs a connection rather than "no subscription found".
+class RestoreUnavailable implements Exception {
+  const RestoreUnavailable();
+
+  @override
+  String toString() => 'RestoreUnavailable';
 }
 
 /// The two plans the paywall offers, from RevenueCat's Current Offering
@@ -226,7 +257,15 @@ class ProPaywallController extends _$ProPaywallController {
   /// Purchase [pkg]. Refuses (before touching the store) when nobody is
   /// signed in or the session is anonymous; re-asserts the RevenueCat
   /// identity; then buys and refreshes the status provider.
+  ///
+  /// One purchase per intent (121-008): while a purchase, a restore or the
+  /// Gate hold is in flight the call answers [ProPurchaseOutcome.busy] at
+  /// once, and the state goes loading before the first await so the screen
+  /// disables Continue in the same frame. Run twice at once, the second call
+  /// makes no store call; run again after the first settles, it is a new
+  /// purchase, which the store itself refuses for a plan already held.
   Future<ProPurchaseOutcome> buy(Package pkg) async {
+    if (state is AsyncLoading) return ProPurchaseOutcome.busy;
     final sku = pkg.storeProduct.identifier;
     final sentry = ref.read(sentryReporterProvider);
 
@@ -255,11 +294,16 @@ class ProPaywallController extends _$ProPaywallController {
       // after launch still carries the anonymous RevenueCat id otherwise.
       await _service.logIn(userId);
 
-      final success = await _service.purchase(pkg);
-      if (!success) {
-        // Cancel vs. store error was already reported by the service.
+      final result = await _service.purchase(pkg);
+      if (result == StorePurchaseResult.cancelled) {
+        // The person dismissed the sheet: quiet, not an error.
         outcome = ProPurchaseOutcome.cancelled;
         return;
+      }
+      if (result == StorePurchaseResult.failed) {
+        // The store refused: the state ends in an error and the screen says
+        // so (121-005, 123-002). The service has already reported it.
+        throw StorePurchaseFailed(sku);
       }
 
       final status = await _refreshStatus();
@@ -279,33 +323,50 @@ class ProPaywallController extends _$ProPaywallController {
     if (state is AsyncError) {
       final err = state as AsyncError;
       outcome = ProPurchaseOutcome.failed;
-      await sentry.reportCriticalError(
-        err.error,
-        stackTrace: err.stackTrace,
-        context: 'subscription',
-        tags: {'rc_operation': 'buy', 'sku': sku},
-      );
+      // A store failure was reported by the service; report the rest.
+      if (err.error is! StorePurchaseFailed) {
+        await sentry.reportCriticalError(
+          err.error,
+          stackTrace: err.stackTrace,
+          context: 'subscription',
+          tags: {'rc_operation': 'buy', 'sku': sku},
+        );
+      }
     }
     if (outcome == ProPurchaseOutcome.activated) _holdForGate();
     return outcome;
   }
 
   /// Restore purchases through the store and refresh the status provider.
-  /// Returns whether the app is unlocked afterwards.
-  Future<bool> restore() async {
+  ///
+  /// A store answer is a verdict on the account: unlocked, or nothing found.
+  /// No answer (offline, the SDK unavailable: the service's null) is
+  /// [ProRestoreOutcome.unavailable], with the state in error, never
+  /// "nothing found" (121-006). A second restore while one is in flight
+  /// answers [ProRestoreOutcome.failed] without a store call; a restore is
+  /// idempotent at the store, so a later repeat is safe.
+  Future<ProRestoreOutcome> restore() async {
+    if (state is AsyncLoading) return ProRestoreOutcome.failed;
     state = const AsyncLoading();
-    var active = false;
+    var outcome = ProRestoreOutcome.failed;
     state = await AsyncValue.guard(() async {
       final userId = _repo.currentUserId;
       if (userId != null && userId.isNotEmpty) await _service.logIn(userId);
-      await _service.restore();
-      active = (await _refreshStatus()).active;
+      final restored = await _service.restore();
+      if (restored == null) throw const RestoreUnavailable();
+      final active = (await _refreshStatus()).active;
+      outcome = active
+          ? ProRestoreOutcome.unlocked
+          : ProRestoreOutcome.nothingFound;
     });
+    if (state is AsyncError && (state as AsyncError).error is RestoreUnavailable) {
+      outcome = ProRestoreOutcome.unavailable;
+    }
     // A restore can bring a subscription onto this account: Manage may now
     // belong in the menu.
     ref.invalidate(paywallHasSubscriptionProvider);
-    if (active) _holdForGate();
-    return active;
+    if (outcome == ProRestoreOutcome.unlocked) _holdForGate();
+    return outcome;
   }
 
   /// RevenueCat's management URL for this customer, else the platform

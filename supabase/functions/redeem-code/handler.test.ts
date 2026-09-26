@@ -12,8 +12,10 @@
  * What it must do:
  *   - a coach entering their own code is marked coach and gets 30 days of `pro`;
  *   - an athlete entering a coach or influencer code gets the attribute set;
- *     a coach code also opens a pending pairing with the coach, an influencer
- *     code never pairs;
+ *     a coach code also pairs with the coach at once (active, accepted; Lee,
+ *     2026-09-26) and names the coach, an influencer code never pairs;
+ *   - a giveaway while any Pro is active (a running Grant, a paying
+ *     subscription) is refused with `pro_active` and not spent (122-001);
  *   - an account RevenueCat has never seen is created there first;
  *   - a giveaway code grants 365 days, once, and stays spent after the
  *     account that redeemed it is deleted;
@@ -140,6 +142,7 @@ function world(codes: Row[], extra: Record<string, Row[]> = {}, errors?: Record<
       coaches: [],
       coach_athlete_relationships: [],
       pro_grants: [],
+      user_entitlements: [],
       ...extra,
     },
     { rpc, errors },
@@ -335,7 +338,9 @@ describe('a coach entering their own code', () => {
 });
 
 describe('an athlete entering a coach code', () => {
-  it('gets coach_code set and a pending pairing with the coach, and no pro', async () => {
+  // Lee, 2026-09-26 (122-002, 122-003): a coach's code is their invitation,
+  // so it pairs at once, with nothing for the coach to accept.
+  it('gets coach_code set and an active, accepted pairing with the coach, named, and no pro', async () => {
     const db = world([code({})]);
     const rc = fakeRc();
     const res = await redeem(db, rc, signedIn(ATHLETE), { code: 'KYLE30' });
@@ -344,18 +349,43 @@ describe('an athlete entering a coach code', () => {
     assertEquals(res.body.ok, true);
     assertEquals(res.body.kind, 'paired');
     assertEquals(res.body.coach_user_id, COACH);
+    assertEquals(res.body.coach_name, 'Kyle Coach');
     assertEquals(rc.attributes, [{ user: ATHLETE, attributes: { coach_code: 'KYLE30' } }]);
     assertEquals(rc.grants.length, 0);
     assertEquals(db.rows('coaches').length, 0);
 
-    // The existing pairing path's row: athlete-requested, pending, until the coach accepts.
+    // The existing pairing path's row, already accepted: what `getMyCoach` reads.
     const pairs = db.rows('coach_athlete_relationships');
     assertEquals(pairs.length, 1);
     assertEquals(pairs[0].coach_user_id, COACH);
     assertEquals(pairs[0].athlete_user_id, ATHLETE);
-    assertEquals(pairs[0].status, 'pending');
+    assertEquals(pairs[0].status, 'active');
     assertEquals(pairs[0].requested_by, 'athlete');
     assert(pairs[0].requested_at);
+    assertEquals(pairs[0].accepted_at, pairs[0].requested_at);
+  });
+
+  it("names the coach from their coaches row first, then their users row", async () => {
+    const db = world([code({})], {
+      coaches: [{
+        id: 'c0ac-row',
+        user_id: COACH,
+        first_name: 'Coach',
+        last_name: 'Kyle',
+        email: 'kyle@example.com',
+        application_status: 'approved',
+      }],
+    });
+    const res = await redeem(db, fakeRc(), signedIn(ATHLETE), { code: 'KYLE30' });
+    assertEquals(res.body.coach_name, 'Coach Kyle');
+
+    const NAMELESS = 'c0ac0000-0000-4000-8000-00000000000a';
+    const db2 = world([code({ code: 'NONAME', owner_user_id: NAMELESS })], {
+      users: [...users(), { id: NAMELESS, first_name: null, last_name: '  ', email: 'n@example.com', is_anonymous: false }],
+    });
+    const res2 = await redeem(db2, fakeRc(), signedIn(ATHLETE), { code: 'NONAME' });
+    assertEquals(res2.body.kind, 'paired');
+    assertEquals(res2.body.coach_name, null);
   });
 
   // Finding 11-002, ticket 95 (Lee, 2026-09-25): a code from a coach the
@@ -416,7 +446,7 @@ describe('an athlete entering a coach code', () => {
     assertEquals(db.rows('coach_athlete_relationships').length, 2);
   });
 
-  it('after an archived pairing asks again: the row goes back to pending', async () => {
+  it('after an archived pairing pairs again: the same row goes back to active, accepted', async () => {
     const db = world([code({})], {
       coach_athlete_relationships: [{
         id: 'rel-1',
@@ -424,6 +454,7 @@ describe('an athlete entering a coach code', () => {
         athlete_user_id: ATHLETE,
         status: 'archived',
         requested_by: 'coach',
+        accepted_at: iso(NOW - 3 * DAY),
         archived_at: iso(NOW - DAY),
       }],
     });
@@ -432,9 +463,11 @@ describe('an athlete entering a coach code', () => {
     assertEquals(res.body.ok, true);
     const pairs = db.rows('coach_athlete_relationships');
     assertEquals(pairs.length, 1);
-    assertEquals(pairs[0].status, 'pending');
+    assertEquals(pairs[0].status, 'active');
     assertEquals(pairs[0].requested_by, 'athlete');
     assertEquals(pairs[0].archived_at, null);
+    assertEquals(pairs[0].declined_at, null);
+    assert(pairs[0].accepted_at && pairs[0].accepted_at !== iso(NOW - 3 * DAY), 'accepted anew');
   });
 
   it('an attribute RevenueCat refuses answers 502 and frees the claim', async () => {
@@ -551,6 +584,81 @@ describe('a giveaway code', () => {
     deleteAccount(db, WINNER);
     assertEquals((await redeem(db, rc, signedIn(SECOND_WINNER), { code: 'WIN2026' })).body.ok, true);
     refusedWith(await redeem(db, rc, signedIn(ATHLETE), { code: 'WIN2026' }), 'used');
+  });
+});
+
+// 122-001 (Lee, 2026-09-26): RevenueCat's grant does not extend a live one, so a
+// giveaway on top of running Pro would be spent for nothing. It is refused, before
+// any claim, while any Pro is active: a running Grant or a paying subscription.
+describe('a giveaway while Pro is active', () => {
+  const giveaway = () => code({ code: 'WIN2026', type: 'giveaway', owner_user_id: null, perk_days: 365 });
+  const entitled = (over: Row): Row => ({
+    user_id: WINNER,
+    active_until: iso(NOW + 300 * DAY),
+    period_type: 'NORMAL',
+    event_at: iso(NOW - DAY),
+    will_renew: true,
+    ...over,
+  });
+
+  it('a running Grant is refused, saying until when, and the code is not spent', async () => {
+    const until = iso(NOW + 300 * DAY);
+    const db = world([giveaway()], { user_entitlements: [entitled({ period_type: 'PROMOTIONAL', will_renew: false })] });
+    const rc = fakeRc();
+    const res = await redeem(db, rc, signedIn(WINNER), { code: 'WIN2026' });
+
+    assertEquals(res.status, 200);
+    assertEquals(res.body.ok, false);
+    assertEquals(res.body.reason, 'pro_active');
+    assertEquals(res.body.grant, true);
+    assertEquals(res.body.pro_until, until);
+    assertEquals(res.body.message, 'You already have free Pro until August 1, 2027.');
+    nothingWritten(db, rc);
+  });
+
+  it('a paying subscription is refused with the plain sentence, and the code is not spent', async () => {
+    const db = world([giveaway()], { user_entitlements: [entitled({})] });
+    const rc = fakeRc();
+    const res = await redeem(db, rc, signedIn(WINNER), { code: 'WIN2026' });
+
+    refusedWith(res, 'pro_active');
+    assertEquals(res.body.grant, false);
+    assertEquals(res.body.pro_until, iso(NOW + 300 * DAY));
+    nothingWritten(db, rc);
+  });
+
+  it('the code stays for the next person', async () => {
+    const db = world([giveaway()], { user_entitlements: [entitled({})] });
+    const rc = fakeRc();
+    refusedWith(await redeem(db, rc, signedIn(WINNER), { code: 'WIN2026' }), 'pro_active');
+    assertEquals((await redeem(db, rc, signedIn(SECOND_WINNER), { code: 'WIN2026' })).body.ok, true);
+    assertEquals(rc.grants, [{ user: SECOND_WINNER, days: 365 }]);
+  });
+
+  it('Pro that has ended, or none on record, lets the giveaway through', async () => {
+    const lapsed = world([giveaway()], { user_entitlements: [entitled({ active_until: iso(NOW - DAY), will_renew: false })] });
+    assertEquals((await redeem(lapsed, fakeRc(), signedIn(WINNER), { code: 'WIN2026' })).body.kind, 'giveaway');
+    const never = world([giveaway()]);
+    assertEquals((await redeem(never, fakeRc(), signedIn(WINNER), { code: 'WIN2026' })).body.kind, 'giveaway');
+  });
+
+  it('a coach code or an influencer code is never checked against Pro', async () => {
+    const db = world([code({}), code({ code: 'IVYRUNS', type: 'influencer', owner_user_id: INFLUENCER, perk_days: 0 })], {
+      user_entitlements: [entitled({ user_id: ATHLETE }), entitled({ user_id: COACH, period_type: 'PROMOTIONAL' })],
+    });
+    const rc = fakeRc();
+    assertEquals((await redeem(db, rc, signedIn(ATHLETE), { code: 'KYLE30' })).body.kind, 'paired');
+    assertEquals((await redeem(db, rc, signedIn(ATHLETE), { code: 'IVYRUNS' })).body.kind, 'attributed');
+    assertEquals((await redeem(db, rc, signedIn(COACH), { code: 'KYLE30' })).body.kind, 'coach');
+  });
+
+  it('a failed entitlement read is a 500, and nothing is claimed', async () => {
+    const db = world([giveaway()], {}, { user_entitlements: 'relation "user_entitlements" does not exist' });
+    const rc = fakeRc();
+    const res = await redeem(db, rc, signedIn(WINNER), { code: 'WIN2026' });
+    assertEquals(res.status, 500);
+    assertEquals(db.rows('code_redemptions').length, 0);
+    assertEquals(rc.grants.length, 0);
   });
 });
 

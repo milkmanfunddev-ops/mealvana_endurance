@@ -206,9 +206,10 @@ class SubscriptionService {
     }
   }
 
-  /// Purchase [pkg] through the store. True on success, false on cancel or
-  /// error — [RevenueCatService.purchase] already reports the distinction.
-  Future<bool> purchase(Package pkg) => _revenueCat.purchase(pkg);
+  /// Purchase [pkg] through the store: confirmed, cancelled or failed.
+  /// [RevenueCatService.purchase] reports a failure itself.
+  Future<StorePurchaseResult> purchase(Package pkg) =>
+      _revenueCat.purchase(pkg);
 
   /// Restore purchases and return the resulting status (null when the SDK
   /// is unavailable or the store call fails).

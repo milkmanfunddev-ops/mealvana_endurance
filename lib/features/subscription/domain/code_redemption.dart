@@ -3,8 +3,9 @@
 /// The function's answers (supabase/functions/redeem-code/handler.ts):
 ///
 ///   200 { ok: true, kind: 'coach' | 'giveaway', pro_days }
-///   200 { ok: true, kind: 'paired', coach_user_id } | { ok: true, kind: 'attributed' }
-///   200 { ok: false, reason, message }   a refusal, with its plain reason
+///   200 { ok: true, kind: 'paired', coach_user_id, coach_name } | { ok: true, kind: 'attributed' }
+///   200 { ok: false, reason, message }   a refusal, with its plain reason;
+///       `pro_active` also carries `pro_until` and `grant` (122-001)
 ///   400 invalid_input, no code (read as a not_found refusal)
 ///   400 code_too_long, over 32 characters (read as a too_long refusal)
 ///   403 sign_in_required · 401 unauthenticated
@@ -28,18 +29,25 @@ sealed class CodeRedemption {
         _ => throw const CodeRedeemFailure.unavailable(),
       };
       final days = data['pro_days'];
+      final coachName = data['coach_name'];
       return CodeRedeemed(
         kind: kind,
         proDays: days is num ? days.toInt() : 0,
         coachUserId: data['coach_user_id'] as String?,
+        coachName: coachName is String && coachName.trim().isNotEmpty
+            ? coachName.trim()
+            : null,
       );
     }
     if (data['ok'] == false) {
+      final until = data['pro_until'];
       return CodeRefused(
         reason: CodeRefusal.fromWire(data['reason']),
         serverMessage: data['message'] is String
             ? data['message'] as String
             : null,
+        proUntil: until is String ? DateTime.tryParse(until)?.toUtc() : null,
+        proIsGrant: data['grant'] == true,
       );
     }
     throw const CodeRedeemFailure.unavailable();
@@ -55,7 +63,8 @@ enum RedeemedKind {
   /// A giveaway Code: [CodeRedeemed.proDays] of `pro` (365).
   giveaway,
 
-  /// A coach's Code entered by an athlete: a pending pairing with that coach.
+  /// A coach's Code entered by an athlete: paired with that coach at once
+  /// (Lee, 2026-09-26: a coach's code is their invitation).
   paired,
 
   /// An influencer's Code: only who referred the account is recorded.
@@ -63,15 +72,23 @@ enum RedeemedKind {
 }
 
 class CodeRedeemed extends CodeRedemption {
-  const CodeRedeemed({required this.kind, this.proDays = 0, this.coachUserId});
+  const CodeRedeemed({
+    required this.kind,
+    this.proDays = 0,
+    this.coachUserId,
+    this.coachName,
+  });
 
   final RedeemedKind kind;
 
   /// Days of `pro` granted; 0 when the Code grants none.
   final int proDays;
 
-  /// The coach a [RedeemedKind.paired] Code asked to pair with.
+  /// The coach a [RedeemedKind.paired] Code paired with.
   final String? coachUserId;
+
+  /// That coach's name, as the server holds it; null when it has none.
+  final String? coachName;
 
   /// Whether RevenueCat now holds a grant the SDK's cache does not know of.
   bool get grantsPro => proDays > 0;
@@ -94,6 +111,10 @@ enum CodeRefusal {
   /// entry caps the field, so only a pasted Code with spaces can reach it.
   tooLong,
 
+  /// A giveaway while any Pro is active: a running Grant or a paying
+  /// subscription. Nothing is spent (122-001; Lee, 2026-09-26).
+  proActive,
+
   /// A reason this build does not know; the server's own message is shown.
   other;
 
@@ -106,17 +127,28 @@ enum CodeRefusal {
     'own_code' => ownCode,
     'already_paired' => alreadyPaired,
     'too_long' => tooLong,
+    'pro_active' => proActive,
     _ => other,
   };
 }
 
 class CodeRefused extends CodeRedemption {
-  const CodeRefused({required this.reason, this.serverMessage});
+  const CodeRefused({
+    required this.reason,
+    this.serverMessage,
+    this.proUntil,
+    this.proIsGrant = false,
+  });
 
   final CodeRefusal reason;
 
   /// The function's own words, used only for [CodeRefusal.other].
   final String? serverMessage;
+
+  /// For [CodeRefusal.proActive]: when the running Pro ends, and whether it
+  /// is a Grant (free Pro) rather than a paying subscription.
+  final DateTime? proUntil;
+  final bool proIsGrant;
 }
 
 /// Why no answer came back.

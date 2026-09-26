@@ -16,6 +16,7 @@ import 'package:flutter_test/flutter_test.dart';
 import 'package:mocktail/mocktail.dart';
 import 'package:purchases_flutter/purchases_flutter.dart';
 
+import 'package:mealvana_endurance/features/ai_credits/data/revenuecat_service.dart';
 import 'package:mealvana_endurance/features/content/application/content_service.dart';
 import 'package:mealvana_endurance/features/content/domain/content_keys.dart';
 import 'package:mealvana_endurance/features/subscription/application/pro_paywall_controller.dart';
@@ -149,8 +150,13 @@ void main() {
     when(
       () => service.fetchStatus(),
     ).thenAnswer((_) async => SubscriptionStatus.none);
-    when(() => service.purchase(any())).thenAnswer((_) async => true);
-    when(() => service.restore()).thenAnswer((_) async => null);
+    when(
+      () => service.purchase(any()),
+    ).thenAnswer((_) async => StorePurchaseResult.purchased);
+    // The store answers and holds nothing: a verdict, unlike null (121-006).
+    when(
+      () => service.restore(),
+    ).thenAnswer((_) async => SubscriptionStatus.none);
     when(
       () => sentry.reportCriticalError(
         any(),
@@ -395,7 +401,7 @@ void main() {
       ).thenAnswer((_) async => active ? _rcActive : SubscriptionStatus.none);
       when(() => service.purchase(any())).thenAnswer((_) async {
         active = true;
-        return true;
+        return StorePurchaseResult.purchased;
       });
       final c = container();
       await c.read(subscriptionStatusProvider.future);
@@ -427,7 +433,9 @@ void main() {
     );
 
     test('a dismissed store sheet is cancelled, not an error', () async {
-      when(() => service.purchase(any())).thenAnswer((_) async => false);
+      when(
+        () => service.purchase(any()),
+      ).thenAnswer((_) async => StorePurchaseResult.cancelled);
       final c = container();
       final outcome = await c
           .read(proPaywallControllerProvider.notifier)
@@ -442,6 +450,84 @@ void main() {
           tags: any(named: 'tags'),
         ),
       );
+    });
+
+    // 121-005, 123-002: the store refusing shared the cancel's `false`, so a
+    // refused purchase ended quiet, with Continue live and no message.
+    test('a store refusal is failed, an error state (the screen says so), '
+        'not reported twice, and leaves the app locked', () async {
+      when(
+        () => service.purchase(any()),
+      ).thenAnswer((_) async => StorePurchaseResult.failed);
+      final c = container();
+      final outcome = await c
+          .read(proPaywallControllerProvider.notifier)
+          .buy(pkg);
+      expect(outcome, ProPurchaseOutcome.failed);
+      expect(c.read(proPaywallControllerProvider), isA<AsyncError<void>>());
+      expect(
+        c.read(proPaywallControllerProvider).error,
+        isA<StorePurchaseFailed>(),
+      );
+      // The service reported the store's refusal; the controller does not.
+      verifyNever(
+        () => sentry.reportCriticalError(
+          any(),
+          stackTrace: any(named: 'stackTrace'),
+          context: any(named: 'context'),
+          tags: any(named: 'tags'),
+        ),
+      );
+      expect(
+        await c.read(subscriptionStatusProvider.future),
+        SubscriptionStatus.none,
+      );
+      // A later Continue is a fresh purchase: the error does not hold.
+      when(
+        () => service.purchase(any()),
+      ).thenAnswer((_) async => StorePurchaseResult.cancelled);
+      expect(
+        await c.read(proPaywallControllerProvider.notifier).buy(pkg),
+        ProPurchaseOutcome.cancelled,
+      );
+    });
+
+    // 121-008: two quick taps on Continue started two store purchases.
+    test('a second buy while one is in flight makes no store call and is '
+        'busy; the state is loading before the first await', () async {
+      final gate = Completer<StorePurchaseResult>();
+      when(() => service.purchase(any())).thenAnswer((_) => gate.future);
+      final c = container();
+      final notifier = c.read(proPaywallControllerProvider.notifier);
+
+      final first = notifier.buy(pkg);
+      // No await has run in the test: the controller is already busy.
+      expect(c.read(proPaywallControllerProvider), isA<AsyncLoading<void>>());
+      final second = await notifier.buy(pkg);
+      expect(second, ProPurchaseOutcome.busy);
+
+      gate.complete(StorePurchaseResult.cancelled);
+      expect(await first, ProPurchaseOutcome.cancelled);
+      verify(() => service.purchase(pkg)).called(1);
+      verify(() => service.logIn(any())).called(1);
+    });
+
+    test('a buy while the paywall holds for the Gate is busy', () async {
+      var calls = 0;
+      when(() => service.fetchStatus()).thenAnswer((_) async {
+        calls += 1;
+        return calls == 1 ? SubscriptionStatus.none : _rcActive;
+      });
+      final c = container();
+      await c.read(subscriptionStatusProvider.future);
+      await c.read(proPaywallControllerProvider.notifier).buy(pkg);
+      expect(c.read(proPaywallControllerProvider), isA<AsyncLoading<void>>());
+
+      expect(
+        await c.read(proPaywallControllerProvider.notifier).buy(pkg),
+        ProPurchaseOutcome.busy,
+      );
+      verify(() => service.purchase(any())).called(1);
     });
 
     test(
@@ -576,7 +662,9 @@ void main() {
     });
 
     test('a dismissed store sheet schedules nothing', () async {
-      when(() => service.purchase(any())).thenAnswer((_) async => false);
+      when(
+        () => service.purchase(any()),
+      ).thenAnswer((_) async => StorePurchaseResult.cancelled);
       await container()
           .read(proPaywallControllerProvider.notifier)
           .buy(monthly);
@@ -628,11 +716,11 @@ void main() {
       final c = container();
       await c.read(subscriptionStatusProvider.future);
 
-      final unlocked = await c
+      final outcome = await c
           .read(proPaywallControllerProvider.notifier)
           .restore();
 
-      expect(unlocked, isTrue);
+      expect(outcome, ProRestoreOutcome.unlocked);
       verifyInOrder([() => service.logIn(_userId), () => service.restore()]);
       expect(c.read(subscriptionStatusProvider).asData!.value.active, isTrue);
       // The Gate is open: busy until the router takes the paywall away, as
@@ -640,25 +728,54 @@ void main() {
       expect(c.read(proPaywallControllerProvider), isA<AsyncLoading<void>>());
     });
 
-    test('a restore that finds nothing leaves the app locked', () async {
+    test('a restore the store answers with nothing leaves the app locked: '
+        'nothing found', () async {
       final c = container();
-      final unlocked = await c
+      final outcome = await c
           .read(proPaywallControllerProvider.notifier)
           .restore();
-      expect(unlocked, isFalse);
+      expect(outcome, ProRestoreOutcome.nothingFound);
       expect(c.read(subscriptionStatusProvider).asData!.value.active, isFalse);
       expect(c.read(proPaywallControllerProvider), isA<AsyncData<void>>());
     });
 
+    // 121-006: offline, the store's null was read as "no subscription found".
+    test('a restore the store never answered (the service\'s null) is '
+        'unavailable, an error state, never a verdict on the account', () async {
+      when(() => service.restore()).thenAnswer((_) async => null);
+      final c = container();
+      await c.read(subscriptionStatusProvider.future);
+      clearInteractions(service);
+      final outcome = await c
+          .read(proPaywallControllerProvider.notifier)
+          .restore();
+      expect(outcome, ProRestoreOutcome.unavailable);
+      expect(c.read(proPaywallControllerProvider), isA<AsyncError<void>>());
+      expect(
+        c.read(proPaywallControllerProvider).error,
+        isA<RestoreUnavailable>(),
+      );
+      // The cached status was not consulted as an answer.
+      verifyNever(() => service.fetchStatus());
+      // Back online, the same tap works again.
+      when(
+        () => service.restore(),
+      ).thenAnswer((_) async => SubscriptionStatus.none);
+      expect(
+        await c.read(proPaywallControllerProvider.notifier).restore(),
+        ProRestoreOutcome.nothingFound,
+      );
+    });
+
     test(
-      'a failing restore is an error state, and the app stays locked',
+      'a throwing restore is failed, an error state, and the app stays locked',
       () async {
         when(() => service.restore()).thenThrow(StateError('offline'));
         final c = container();
-        final unlocked = await c
+        final outcome = await c
             .read(proPaywallControllerProvider.notifier)
             .restore();
-        expect(unlocked, isFalse);
+        expect(outcome, ProRestoreOutcome.failed);
         expect(c.read(proPaywallControllerProvider), isA<AsyncError<void>>());
       },
     );

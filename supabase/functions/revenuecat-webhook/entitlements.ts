@@ -144,7 +144,11 @@ function str(value: unknown): string | null {
  *
  * `will_renew` is true only when RevenueCat reports a live `pro` whose end is
  * this event's own store subscription (not a grant) and the event type says
- * that subscription goes on renewing ([RENEWING_EVENT_TYPES]).
+ * that subscription goes on renewing ([RENEWING_EVENT_TYPES]). When the
+ * payload is not the end and RevenueCat's end is the stored row's end, the
+ * stored `will_renew` stays: a late EXPIRATION for an ended monthly, landing
+ * after an Annual purchase, must not take the Annual's renewal grace away
+ * (123-008, mp-679).
  *
  * `period_type` is the payload's only when RevenueCat's end is the payload's
  * own expiry, i.e. this event's purchase is what grants access; otherwise the
@@ -168,12 +172,23 @@ export function entitlementRowFor(
   const closedAt = payloadExpiry !== null && Date.parse(payloadExpiry) < Date.parse(eventAt) ? payloadExpiry : eventAt;
   const storeSubscription = str(event.store) !== 'PROMOTIONAL' && payloadPeriod !== 'PROMOTIONAL';
 
+  // The stored row already describes RevenueCat's current end: this event is
+  // about something else (an older period, a grant beside a subscription), so
+  // its type says nothing about whether that end renews.
+  const storedEnd = previous?.active_until ?? null;
+  const storedIsTheEnd = currentExpiry !== null && storedEnd !== null &&
+    Math.abs(Date.parse(storedEnd) - Date.parse(currentExpiry)) <= SAME_END_TOLERANCE_MS;
+  const willRenew = payloadIsTheEnd
+    ? currentExpiry !== null && storeSubscription && RENEWING_EVENT_TYPES.has(String(event.type ?? ''))
+    : storedIsTheEnd
+    ? previous?.will_renew === true
+    : false;
+
   return {
     active_until: currentExpiry ?? closedAt,
     period_type: payloadIsTheEnd ? (payloadPeriod ?? storedPeriod) : (storedPeriod ?? payloadPeriod),
     event_at: eventAt,
-    will_renew: currentExpiry !== null && payloadIsTheEnd && storeSubscription &&
-      RENEWING_EVENT_TYPES.has(String(event.type ?? '')),
+    will_renew: willRenew,
   };
 }
 

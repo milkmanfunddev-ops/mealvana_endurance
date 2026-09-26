@@ -27,6 +27,9 @@ class KyleInputField extends StatelessWidget {
     this.onChanged,
     this.textAlign = TextAlign.left,
     this.autofocus = false,
+    this.autocorrect = true,
+    this.smartDashesType,
+    this.smartQuotesType,
   });
 
   final TextEditingController controller;
@@ -45,6 +48,12 @@ class KyleInputField extends StatelessWidget {
   /// sheet that exists to be typed into.
   final bool autofocus;
 
+  /// Off for a field that takes a code, not prose: iOS otherwise turns a
+  /// double space into ". " and a straight quote into a curly one (122-007).
+  final bool autocorrect;
+  final SmartDashesType? smartDashesType;
+  final SmartQuotesType? smartQuotesType;
+
   @override
   Widget build(BuildContext context) {
     return Container(
@@ -61,6 +70,9 @@ class KyleInputField extends StatelessWidget {
               controller: controller,
               focusNode: focusNode,
               autofocus: autofocus,
+              autocorrect: autocorrect,
+              smartDashesType: smartDashesType,
+              smartQuotesType: smartQuotesType,
               enabled: enabled,
               keyboardType: keyboardType,
               textInputAction: textInputAction,

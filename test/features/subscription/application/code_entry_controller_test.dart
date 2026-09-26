@@ -231,8 +231,14 @@ void main() {
   });
 
   group('a Code that grants nothing leaves the status alone', () {
-    test("an athlete entering a coach's Code: a pending pairing", () async {
-      answer200({'ok': true, 'kind': 'paired', 'coach_user_id': 'coach-9'});
+    test("an athlete entering a coach's Code: paired, with the coach's "
+        'name', () async {
+      answer200({
+        'ok': true,
+        'kind': 'paired',
+        'coach_user_id': 'coach-9',
+        'coach_name': 'Kyle Coach',
+      });
       final c = container();
       await status(c);
 
@@ -243,9 +249,35 @@ void main() {
       final redeemed = result! as CodeRedeemed;
       expect(redeemed.kind, RedeemedKind.paired);
       expect(redeemed.coachUserId, 'coach-9');
+      expect(redeemed.coachName, 'Kyle Coach');
       expect(redeemed.grantsPro, isFalse);
       verifyNever(() => service.forgetCachedStatus());
       expect((await status(c)).active, isFalse);
+    });
+
+    test('a coach with no name on record leaves the name null, blank '
+        'included', () async {
+      for (final body in [
+        {'ok': true, 'kind': 'paired', 'coach_user_id': 'coach-9'},
+        {
+          'ok': true,
+          'kind': 'paired',
+          'coach_user_id': 'coach-9',
+          'coach_name': null,
+        },
+        {
+          'ok': true,
+          'kind': 'paired',
+          'coach_user_id': 'coach-9',
+          'coach_name': '  ',
+        },
+      ]) {
+        answer200(body);
+        final result = await container()
+            .read(codeEntryControllerProvider.notifier)
+            .redeem('COACH42');
+        expect((result! as CodeRedeemed).coachName, isNull, reason: '$body');
+      }
     });
 
     test("an influencer's Code: only attributed", () async {
@@ -532,6 +564,85 @@ void main() {
 
     expect(result, isNull);
     verifyNever(() => functions.invoke(any(), body: any(named: 'body')));
+  });
+
+  // 122-005: the sheet's Redeem came back live with the spent Code for the
+  // moment between the answer and the sheet closing.
+  group('busy (122-005)', () {
+    test('stays busy after a success until reset', () async {
+      answer200({'ok': true, 'kind': 'attributed'});
+      final c = container();
+      final notifier = c.read(codeEntryControllerProvider.notifier);
+      expect(CodeEntryController.isBusy(c.read(codeEntryControllerProvider)), isFalse);
+
+      final result = await notifier.redeem('RUNFAST');
+
+      expect(result, isA<CodeRedeemed>());
+      expect(CodeEntryController.isBusy(c.read(codeEntryControllerProvider)), isTrue);
+      // The answer is still there for the sheet to say.
+      expect(c.read(codeEntryControllerProvider).value, same(result));
+
+      notifier.reset();
+      expect(CodeEntryController.isBusy(c.read(codeEntryControllerProvider)), isFalse);
+    });
+
+    test('a refusal or a failure leaves the entry live for another try', () async {
+      answer200({'ok': false, 'reason': 'used', 'message': _refusals['used']});
+      final c = container();
+      await c.read(codeEntryControllerProvider.notifier).redeem('USED');
+      expect(CodeEntryController.isBusy(c.read(codeEntryControllerProvider)), isFalse);
+
+      answer(() async => throw Exception('SocketException'));
+      await c.read(codeEntryControllerProvider.notifier).redeem('AGAIN');
+      expect(CodeEntryController.isBusy(c.read(codeEntryControllerProvider)), isFalse);
+    });
+
+    test('is busy while the answer is in flight', () async {
+      final gate = Completer<FunctionResponse>();
+      answer(() => gate.future);
+      final c = container();
+      final pending = c.read(codeEntryControllerProvider.notifier).redeem('X');
+      await Future<void>.delayed(Duration.zero);
+      expect(CodeEntryController.isBusy(c.read(codeEntryControllerProvider)), isTrue);
+      gate.complete(FunctionResponse(status: 200, data: {'ok': true, 'kind': 'attributed'}));
+      await pending;
+    });
+  });
+
+  // 122-001: a giveaway on running Pro is refused, saying until when for a
+  // Grant; the app formats the date itself from `pro_until`.
+  test('a giveaway refused for running Pro carries the end and whether it '
+      'is a Grant', () async {
+    answer200({
+      'ok': false,
+      'reason': 'pro_active',
+      'message': 'You already have free Pro until September 26, 2027.',
+      'pro_until': '2027-09-26T03:55:09.816Z',
+      'grant': true,
+    });
+    final c = container();
+
+    final result =
+        await c.read(codeEntryControllerProvider.notifier).redeem('WIN')
+            as CodeRefused;
+
+    expect(result.reason, CodeRefusal.proActive);
+    expect(result.proIsGrant, isTrue);
+    expect(result.proUntil, DateTime.utc(2027, 9, 26, 3, 55, 9, 816));
+    verifyNever(() => service.forgetCachedStatus());
+
+    answer200({
+      'ok': false,
+      'reason': 'pro_active',
+      'message': 'You already have Pro.',
+      'pro_until': '2026-10-26T00:00:00Z',
+      'grant': false,
+    });
+    final paying =
+        await container().read(codeEntryControllerProvider.notifier).redeem('WIN')
+            as CodeRefused;
+    expect(paying.reason, CodeRefusal.proActive);
+    expect(paying.proIsGrant, isFalse);
   });
 
   test('reset clears the last answer for the next entry', () async {

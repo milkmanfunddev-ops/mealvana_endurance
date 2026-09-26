@@ -9,6 +9,7 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:flutter_test/flutter_test.dart';
 
 import 'package:mealvana_endurance/features/content/application/content_service.dart';
+import 'package:mealvana_endurance/features/content/domain/content_keys.dart';
 import 'package:mealvana_endurance/features/subscription/application/code_entry_controller.dart';
 import 'package:mealvana_endurance/features/subscription/domain/code_redemption.dart';
 import 'package:mealvana_endurance/features/subscription/presentation/widgets/redeem_code_sheet.dart';
@@ -37,7 +38,112 @@ Future<void> _pump(WidgetTester tester, RecordingCodeEntry entry) async {
   await tester.pump();
 }
 
+/// The sheet's own content service, for the pure message helpers.
+ContentService _testContent(WidgetTester tester) => ProviderScope.containerOf(
+  tester.element(find.byType(RedeemCodeSheet)),
+).read(contentServiceProvider);
+
 void main() {
+  // 122-007: iOS turns a double space into ". ", which then reached the
+  // server inside the Code.
+  testWidgets('the field keeps letters, digits and spaces only: a full stop '
+      'is dropped', (tester) async {
+    final entry = RecordingCodeEntry(
+      const CodeRefused(reason: CodeRefusal.notFound),
+    );
+    await _pump(tester, entry);
+
+    await tester.enterText(find.byKey(RedeemCodeSheet.fieldKey), 'ab. cd-1_2');
+    await tester.pump();
+
+    final field = tester.widget<TextField>(
+      find.descendant(
+        of: find.byKey(RedeemCodeSheet.fieldKey),
+        matching: find.byType(TextField),
+      ),
+    );
+    expect(field.controller!.text, 'AB CD12');
+    expect(field.autocorrect, isFalse);
+    expect(field.smartDashesType, SmartDashesType.disabled);
+    expect(field.smartQuotesType, SmartQuotesType.disabled);
+  });
+
+  // 122-006: "1 days of Pro".
+  testWidgets('one day of Pro reads in the singular', (tester) async {
+    final entry = RecordingCodeEntry(
+      const CodeRefused(reason: CodeRefusal.notFound),
+    );
+    await _pump(tester, entry);
+    final content = _testContent(tester);
+
+    expect(
+      redeemedMessage(
+        content,
+        const CodeRedeemed(kind: RedeemedKind.giveaway, proDays: 1),
+      ),
+      'Code redeemed. You have 1 day of Pro.',
+    );
+    expect(
+      redeemedMessage(
+        content,
+        const CodeRedeemed(kind: RedeemedKind.coach, proDays: 1),
+      ),
+      "You're set up as a coach, with 1 day of Pro.",
+    );
+    expect(
+      redeemedMessage(
+        content,
+        const CodeRedeemed(kind: RedeemedKind.giveaway, proDays: 365),
+      ),
+      'Code redeemed. You have 365 days of Pro.',
+    );
+    expect(
+      redeemedMessage(
+        content,
+        const CodeRedeemed(kind: RedeemedKind.coach, proDays: 30),
+      ),
+      "You're set up as a coach, with 30 days of Pro.",
+    );
+  });
+
+  // 122-001: a giveaway on running Pro.
+  testWidgets('a giveaway refused for running Pro says until when for a '
+      'Grant, and just so for a subscription', (tester) async {
+    final entry = RecordingCodeEntry(
+      CodeRefused(
+        reason: CodeRefusal.proActive,
+        proUntil: DateTime.utc(2027, 9, 26, 3, 55),
+        proIsGrant: true,
+      ),
+    );
+    await _pump(tester, entry);
+
+    await tester.enterText(find.byKey(RedeemCodeSheet.fieldKey), 'WIN');
+    await tester.pump();
+    await tester.tap(find.byKey(RedeemCodeSheet.submitKey));
+    await tester.pump();
+
+    final said = tester.widget<Text>(find.byKey(RedeemCodeSheet.problemKey)).data!;
+    expect(said, startsWith('You already have free Pro until '));
+    expect(said, contains('2027'));
+    expect(said, endsWith('.'));
+    expect(find.byType(RedeemCodeSheet), findsOneWidget);
+
+    entry.answer = const CodeRefused(
+      reason: CodeRefusal.proActive,
+      proUntil: null,
+      proIsGrant: false,
+    );
+    await tester.enterText(find.byKey(RedeemCodeSheet.fieldKey), 'WIN2');
+    await tester.pump();
+    await tester.tap(find.byKey(RedeemCodeSheet.submitKey));
+    await tester.pump();
+    expect(
+      tester.widget<Text>(find.byKey(RedeemCodeSheet.problemKey)).data,
+      _content[ContentKeys.redeemCodeRefusedProActive],
+    );
+  });
+
   testWidgets('the field stops at 32 characters, the longest Code there is '
       '(11-004)', (tester) async {
     final entry = RecordingCodeEntry(

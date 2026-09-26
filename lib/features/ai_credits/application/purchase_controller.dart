@@ -165,14 +165,17 @@ class PurchaseController extends _$PurchaseController {
 
     state = await AsyncValue.guard(() async {
       final previousBalance = await _currentBalance();
-      final success = await _rcService.purchase(pkg);
+      final result = await _rcService.purchase(pkg);
 
-      if (!success) {
-        // RevenueCatService has already reported the distinction (cancel is a
-        // breadcrumb, a store rejection is a Sentry error), so trust its
-        // return value and do not double-report here.
+      if (result == StorePurchaseResult.cancelled) {
+        // A dismissed sheet is the person's own doing: quiet, not an error.
         outcome = PurchaseOutcome.cancelled;
         return;
+      }
+      if (result == StorePurchaseResult.failed) {
+        // The store refused: the state ends in an error so the screen says
+        // so. RevenueCatService has already reported it (121-005).
+        throw StorePurchaseFailed(sku);
       }
 
       // Poll until the webhook has credited the wallet.
@@ -206,12 +209,15 @@ class PurchaseController extends _$PurchaseController {
     if (state is AsyncError) {
       final err = state as AsyncError;
       outcome = PurchaseOutcome.failed;
-      await sentry.reportCriticalError(
-        err.error,
-        stackTrace: err.stackTrace,
-        context: 'ai_credits',
-        tags: {'rc_operation': 'buy', 'sku': sku},
-      );
+      // A store failure was reported by the service; report the rest.
+      if (err.error is! StorePurchaseFailed) {
+        await sentry.reportCriticalError(
+          err.error,
+          stackTrace: err.stackTrace,
+          context: 'ai_credits',
+          tags: {'rc_operation': 'buy', 'sku': sku},
+        );
+      }
     }
 
     return outcome;

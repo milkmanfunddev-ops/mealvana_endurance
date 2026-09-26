@@ -29,7 +29,7 @@ part 'code_entry_controller.g.dart';
 ///
 /// A Code that changes coaching (mp-600, card mp-598) updates the app at
 /// once: a coach's own Code pulls the new `coaches` row, an athlete's coach
-/// Code pulls the pending pairing, and coach mode (Settings) and both
+/// Code pulls the new pairing (active at once), and coach mode (Settings) and both
 /// pairing lists (the athlete's My Coaches, the coach's dashboard) are
 /// rebuilt from it. The pull comes first because both lists sync only once
 /// per notifier, and Riverpod keeps the notifier across an invalidate.
@@ -70,6 +70,13 @@ class CodeEntryController extends _$CodeEntryController {
     });
     return state.value;
   }
+
+  /// Whether the entry is busy: a redemption in flight, or one that
+  /// succeeded. A redeemed Code is spent, so Redeem stays disabled from the
+  /// answer until [reset] on the next open; the sheet closes in between
+  /// (122-005). A second [redeem] in that window is refused by the sheet.
+  static bool isBusy(AsyncValue<CodeRedemption?> state) =>
+      state.isLoading || state.value is CodeRedeemed;
 
   /// Pull what the Code changed in coaching and rebuild coach mode and the
   /// pairing lists. Never throws: the Code is redeemed either way, and a
