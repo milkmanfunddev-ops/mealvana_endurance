@@ -9,6 +9,8 @@
 //   node cred.mjs new <email> --ticket NN --run RUN   makes a password, appends a Created accounts row (state new)
 //   node cred.mjs update <email> [--state S] [--bought B] [--when W] [--note TEXT] [--new-password]
 //   node cred.mjs list                                addresses and states only
+// `type` and `file` take --section <words> when one address sits in two sections (the Patrol
+// account and the Kroger login are both Lee's Gmail): only sections whose name contains the words.
 // Exit 2: no such account. Exit 64: usage.
 
 import { readFileSync, writeFileSync, chmodSync } from 'node:fs';
@@ -50,9 +52,10 @@ export function parse(text) {
   return out;
 }
 
-export function find(text, email) {
+export function find(text, email, section) {
   const want = email.trim().toLowerCase();
-  const hits = parse(text).filter(a => a.address.toLowerCase() === want);
+  const inSection = a => !section || a.section.toLowerCase().includes(section.trim().toLowerCase());
+  const hits = parse(text).filter(a => a.address.toLowerCase() === want && inSection(a));
   return hits[hits.length - 1] ?? null;
 }
 
@@ -117,17 +120,17 @@ if (process.argv[1] && resolve(process.argv[1]) === fileURLToPath(import.meta.ur
   const text = () => readFileSync(file, 'utf8');
   const missing = () => { process.stderr.write(`no account ${email} in ${file}\n`); process.exit(2); };
   const usage = () => {
-    process.stderr.write('usage: cred.mjs type <email> --udid <udid> | file <email> <path> | new <email> --ticket NN --run RUN | update <email> [--state S] [--bought B] [--when W] [--note TEXT] [--new-password] | list\n');
+    process.stderr.write('usage: cred.mjs type <email> --udid <udid> [--section S] | file <email> <path> [--section S] | new <email> --ticket NN --run RUN | update <email> [--state S] [--bought B] [--when W] [--note TEXT] [--new-password] | list\n');
     process.exit(64);
   };
 
   if (cmd === 'type' && email && f.udid) {
-    const acct = find(text(), email) ?? missing();
+    const acct = find(text(), email, f.section) ?? missing();
     const r = spawnSync('idb', ['ui', 'text', acct.password, '--udid', f.udid], { stdio: ['ignore', 'ignore', 'pipe'] });
     if (r.status !== 0) { process.stderr.write(`idb failed (exit ${r.status})\n`); process.exit(1); }
-    process.stdout.write(`typed the password for ${acct.address}\n`);
+    process.stdout.write(`typed the password for ${acct.address} (${acct.section})\n`);
   } else if (cmd === 'file' && email && f._[1]) {
-    const acct = find(text(), email) ?? missing();
+    const acct = find(text(), email, f.section) ?? missing();
     writeFileSync(f._[1], acct.password, { mode: 0o600 });
     chmodSync(f._[1], 0o600);
     process.stdout.write(`wrote the password for ${acct.address} to ${f._[1]}\n`);

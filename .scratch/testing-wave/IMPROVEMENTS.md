@@ -11,10 +11,6 @@ Each entry: what went wrong or cost time, where it was seen, and the suggested f
 
 ## Open
 
-- **#79 the Patrol account is out of CRED's reach (wave 32).** 03-005's Steps name the Patrol
-  account, whose password lives only in `secrets/integration_test.env`, which agents may not read.
-  116 ran it on its own new account. Suggested fix: add the Patrol account to the credentials
-  file so `CRED type` can reach it, or drop "Patrol account" from Findings' Steps when ticketing.
 - **#82 a new timeout made retried writes unsafe (wave 33).** Ticket 129 added a 20 s transport
   timeout that reports "needs a connection". The edge function keeps running after the app hangs
   up, so a slow `log_from_plan`, `pick_meals` or `save_meal` could land while the screen said it
@@ -30,11 +26,6 @@ Each entry: what went wrong or cost time, where it was seen, and the suggested f
   own pairing. Suggested fix: never plan one ticket's start state on another run's throwaway
   account, since step 9 deletes it.
 
-- **#89 the show-password toggle put a password in the transcript (wave 37).** One of 124's taps
-  hit the eye icon on Sign Up; the element list and a screenshot then carried the typed password.
-  The agent deleted the screenshot and changed that account's password in the credentials file
-  before it was used, so nothing live leaked. Suggested fix: runbook step 5 says never tap the
-  eye icon, and after `CRED type` read the field back only as a count of dots.
 - **#91 the lead's code map was wrong twice (wave 37).** An Explore agent's map said the Log In
   chooser has no Apple/Google buttons (it does) and that sign-up with an existing address shows
   "Account Already Exists" (it does not: Supabase hides it, 124-002). Both agents checked the app
@@ -43,6 +34,15 @@ Each entry: what went wrong or cost time, where it was seen, and the suggested f
 
 ## Done
 
+- **#79 the Patrol account is out of CRED's reach (wave 32).** 03-005's Steps name the Patrol
+  account, whose password lives only in `secrets/integration_test.env`, which agents may not read.
+  116 ran it on its own new account. Suggested fix: add the Patrol account to the credentials
+  file so `CRED type` can reach it, or drop "Patrol account" from Findings' Steps when ticketing. Done 09-26 (wave 38 lead): the Patrol account is a section of the credentials file; it shares Lee's Gmail with the Kroger login, so `cred.mjs type|file` take `--section patrol`.
+- **#89 the show-password toggle put a password in the transcript (wave 37).** One of 124's taps
+  hit the eye icon on Sign Up; the element list and a screenshot then carried the typed password.
+  The agent deleted the screenshot and changed that account's password in the credentials file
+  before it was used, so nothing live leaked. Suggested fix: runbook step 5 says never tap the
+  eye icon, and after `CRED type` read the field back only as a count of dots. Done 09-26 (wave 38 lead): runbook step 5 forbids the eye icon on password fields and reads a password field back only as a count of dots.
 - **#88 raw consoles of 80 MB (wave 37).** Both runs' log streams held 77-83 MB of OS debug
   lines in 25 minutes. 124 kept only the app's lines; 125 committed all 77 MB, and the lead cut it
   to the `(Flutter)` lines (4,053) and amended the commit before merging. Suggested fix: runbook

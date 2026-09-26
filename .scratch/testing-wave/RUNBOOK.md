@@ -17,7 +17,8 @@ Names used below:
 - `CRED`: `node scripts/testing-wave/cred.mjs`, the only way to the credentials
   (`/Users/leemartin/development/mealvana_endurance/secrets/test_accounts.md`). Never open that file
   in any way; its shape is `scripts/testing-wave/test_accounts.template.md`, and `CRED list` shows
-  addresses and states. `CRED type <email> --udid UDID` types a password into the focused field,
+  addresses and states. `CRED type <email> --udid UDID` types a password into the focused field
+  (`--section patrol` for the Patrol account, which shares Lee's Gmail with the Kroger login),
   `CRED file <email> SCRATCH/<name>` saves one (mode 600) for an API check, `CRED new` and
   `CRED update` add and change Created accounts rows. None of them prints a password.
 - `SCRATCH`: the scratch folder your prompt names, one per ticket (`<scratchpad>/testing-wave-NN/`).
@@ -95,6 +96,8 @@ ticket says so.
   mangled a long address, IMPROVEMENTS #35). Before submitting a long value (an address, a code),
   read it back with `idb ui describe-all --udid UDID`: a field shows only the tail of a long value.
   Passwords go in with `CRED type`, never by hand and never into a Finding, commit or report.
+  Never tap the eye (show password) icon on a password field: the element list and screenshots
+  then carry the password (#89). Read a password field back only as a count of dots.
 - A new account signs up at `lee+e2e-NN-<UTC time>@rightpathprogramming.com`. Dev asks for the
   6-digit code we email (since 2026-09-24): read it with the Gmail tool
   (`to:lee+e2e-NN-… from:support@mealvana.io`, newest first), type it into the app. Before

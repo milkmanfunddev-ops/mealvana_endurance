@@ -20,6 +20,14 @@ unchanged). Never paste a password into a Finding, a commit, a report or a conso
 | Password | <fill in> |
 | Notes | Admin: skips the paywall screen only (mp-416). |
 
+## Patrol account (dev, lapsed, is_admin)
+
+| Field | Value |
+|---|---|
+| Address | <fill in, from secrets/integration_test.env> |
+| Password | <fill in> |
+| Notes | Lapsed on dev, is_admin. Same address as the Kroger login: `cred.mjs type <email> --section patrol`. |
+
 ## Kroger shopper login (Lee's, certification environment)
 
 | Field | Value |

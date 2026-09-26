@@ -51,6 +51,27 @@ test('parse finds the fixed admin and each created row', () => {
   assert.equal(find(FIXTURE, 'nobody@x.com'), null);
 });
 
+test('--section picks one of two sections that share an address', () => {
+  const shared = FIXTURE.replace('## Apple sandbox testers', `## Patrol account
+
+| Field | Value |
+|---|---|
+| Address | lee@x.com |
+| Password | patrolSecret1 |
+
+## Kroger shopper login
+
+| Field | Value |
+|---|---|
+| Address | lee@x.com |
+| Password | krogerSecret1 |
+
+## Apple sandbox testers`);
+  assert.equal(find(shared, 'lee@x.com').password, 'krogerSecret1');
+  assert.equal(find(shared, 'lee@x.com', 'patrol').password, 'patrolSecret1');
+  assert.equal(find(shared, 'lee@x.com', 'nothing like it'), null);
+});
+
 test('new appends a row in Created accounts with a generated password', () => {
   const next = addAccount(FIXTURE, 'lee+e2e-32-b@rightpathprogramming.com', { ticket: '32', run: 'w9', password: 'Gen1' });
   const acct = find(next, 'lee+e2e-32-b@rightpathprogramming.com');
