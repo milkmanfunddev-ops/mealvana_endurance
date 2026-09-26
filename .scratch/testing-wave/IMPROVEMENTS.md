@@ -11,11 +11,6 @@ Each entry: what went wrong or cost time, where it was seen, and the suggested f
 
 ## Open
 
-- **#78 a twelve-check retest ran out of look-around (wave 32).** Ticket 116 carried 5 retests
-  and 7 follow-ups; it wrote look-around Findings for four screens and none for the Plan tab,
-  Today's Fuel, onboarding or the paywall, and saved no edge-log extract. 115 (6 checks) did both.
-  The lead filed 116-018 and pulled the extract. Suggested fix: count follow-ups toward the
-  ten-check cap when cutting retest tickets (after-the-wave step 3).
 - **#79 the Patrol account is out of CRED's reach (wave 32).** 03-005's Steps name the Patrol
   account, whose password lives only in `secrets/integration_test.env`, which agents may not read.
   116 ran it on its own new account. Suggested fix: add the Patrol account to the credentials
@@ -29,11 +24,6 @@ Each entry: what went wrong or cost time, where it was seen, and the suggested f
   ticket that adds a timeout or a retry to a write names each write it covers and says whether
   the server call is idempotent; a non-idempotent one gets a key or no timeout.
 
-- **#83 a prompt named a control that is not on screen (wave 34).** The lead told 112 to make its
-  throwaway saved meal with the meal row's "save as favorite" star (`meal_log_row.dart`), found by
-  grep. That row is not mounted on any screen (112-008); the agent found Build a meal's "Also save
-  as a favorite" instead. Suggested fix: when a prompt names a control, follow the widget up to a
-  screen that mounts it (its route or its parent's), not only to the method it calls.
 - **#84 a run cannot delete an account that never signed in (wave 34).** 121's "Use a different
   email" check leaves the first address as an unconfirmed auth user (121-003) that the in-app
   delete cannot reach. Suggested fix: a lead-only `scripts/testing-wave/` helper that deletes an
@@ -41,6 +31,20 @@ Each entry: what went wrong or cost time, where it was seen, and the suggested f
 
 ## Done
 
+- **#83 a prompt named a control that is not on screen (wave 34).** The lead told 112 to make its
+  throwaway saved meal with the meal row's "save as favorite" star (`meal_log_row.dart`), found by
+  grep. That row is not mounted on any screen (112-008); the agent found Build a meal's "Also save
+  as a favorite" instead. Suggested fix: when a prompt names a control, follow the widget up to a
+  screen that mounts it (its route or its parent's), not only to the method it calls.
+  Done 09-25 (wave 36 lead): the runbook's wave-lead step 5 now says to follow a named control
+  up to a screen that mounts it.
+- **#78 a twelve-check retest ran out of look-around (wave 32).** Ticket 116 carried 5 retests
+  and 7 follow-ups; it wrote look-around Findings for four screens and none for the Plan tab,
+  Today's Fuel, onboarding or the paywall, and saved no edge-log extract. 115 (6 checks) did both.
+  The lead filed 116-018 and pulled the extract. Suggested fix: count follow-ups toward the
+  ten-check cap when cutting retest tickets (after-the-wave step 3).
+  Done 09-25 (wave 36 lead): the runbook's after-the-wave step 3 already counts follow-ups
+  toward the ten-check cap.
 - **#80 the Test Store lapse is not 25 minutes (wave 32).** 115's monthly account lapsed about
   5 minutes after purchase: it did not renew while signed out. 116's stayed signed in, renewed
   every 5 minutes, and kept throwing the paywall up (07-003). Ticket 123's Setup still plans

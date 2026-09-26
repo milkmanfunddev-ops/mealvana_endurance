@@ -278,6 +278,8 @@ should behave) goes to the page as an open question, the normal way, and nothing
    connection from another environment, a leftover draft). Never tell an agent another run is
    read-only on a guess; name the conversation or plan each ticket writes into (Lee, 2026-09-25,
    IMPROVEMENTS #47, #53).
+   When a prompt names a control, follow its widget up to a screen that mounts it (its route or
+   its parent's), not only to the method it calls: a grep can find a widget no screen shows (#83).
    For two runs on one account, name the state each shared-account check starts from, and say
    how the run gets back to it when the other run's writes move it (wave 30: 110's hand-made
    lists become the Shopping tab's newest list, which has no Shop with Kroger button, so 111
