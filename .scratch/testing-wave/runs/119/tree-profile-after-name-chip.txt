@@ -1,0 +1,50 @@
+Application|Endurance Dev||0,0,402x874
+Button|Back
+Back||12,70,44x40
+Heading|Profile & Preferences||108,77,184x26
+GenericElement|||0,118,402x649
+ScrollArea|||0,118,402x649
+StaticText|Personal Information||36,154,330x44
+TextField||Xuan|36,214,157x53
+TextField||Huang|209,214,157x53
+StaticText|TrainingPeaks||47,280,80x18
+StaticText|Final Surge||157,280,64x18
+StaticText|Email||36,319,35x21
+TextField||test@test.com|36,352,330x53
+StaticText|Gender||36,421,48x21
+StaticText|MALE||36,454,102x80
+StaticText|FEMALE||150,454,102x80
+StaticText|NON-BINARY||264,454,102x80
+StaticText|TrainingPeaks · Female — tap to use||36,542,226x28
+StaticText|Birthday||36,586,55x21
+StaticText|1/14/1996||36,619,330x55
+StaticText|TrainingPeaks · Aug 1982 — tap to use||36,682,234x28
+StaticText|Hydration||36,762,80x5
+CheckBox|I run with a water bottle
+This helps us estimate your hydration needs|0|0,0,0x0
+StaticText|Unit Preferences||0,0,0x0
+StaticText|Unit System||0,0,0x0
+StaticText|Controls display of distance, pace, fluids, and measurements||0,0,0x0
+StaticText|IMPERIAL||0,0,0x0
+StaticText|METRIC||0,0,0x0
+StaticText|Nutrition Settings||0,0,0x0
+StaticText|Gut Training Level||0,0,0x0
+StaticText|Your gut's ability to absorb carbs during exercise||0,0,0x0
+StaticText|LOW
+0.7×||0,0,0x0
+StaticText|MODERATE
+1.0×||0,0,0x0
+StaticText|HIGH
+1.2×||0,0,0x0
+StaticText|Sweat Rate||0,0,0x0
+StaticText|How much you typically sweat during exercise||0,0,0x0
+StaticText|Light||0,0,0x0
+StaticText|Medium||0,0,0x0
+StaticText|Heavy||0,0,0x0
+StaticText|Sweat Profile
+Sodium category, sweat-test values||0,0,0x0
+Button|||20,767,48x48
+Button|Save Changes||80,767,302x48
+Button|Show accessibility issues
+||344,672,48x48
+Button|Open testing tools||344,732,48x48
