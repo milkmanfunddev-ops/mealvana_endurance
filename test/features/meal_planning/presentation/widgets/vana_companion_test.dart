@@ -833,6 +833,19 @@ void main() {
       expect(repo.calls.where((c) => c['opener'] == true), hasLength(2));
     });
 
+    // Testing-wave 122-004: a 403 pro_required can never pass on a retry, so
+    // the line shows without one; the router owns the paywall.
+    testWidgets('pro_required: the line, and no Retry', (tester) async {
+      final repo = _FakeChatRepo()
+        ..throwOnStream = const ProRequiredException();
+      await _pump(tester, repo: repo);
+      await _open(tester);
+      final line = loadDefaultContent()['meal_planning.pro_required']!;
+      expect(find.text(line), findsOneWidget);
+      expect(find.byKey(const ValueKey('vana_sheet.retry')), findsNothing);
+      expect(find.byType(SnackBar), findsNothing);
+    });
+
     // Testing-wave 129 (Finding 88-022): a message sent offline vanished;
     // only the offline line showed. The text stays where the athlete sent
     // it, and Retry sends that same text.

@@ -1383,18 +1383,23 @@ class _FailedRead extends ConsumerWidget {
                 color: textColor.withValues(alpha: 0.8),
               ),
             ),
-            const SizedBox(height: AppSpacing.sm),
-            TextButton(
-              key: const ValueKey('meal_planning.chat_retry'),
-              onPressed: onRetry,
-              child: Text(
-                content.getValue(ContentKeys.mpRetry),
-                style: AppTextStyles.bodyMedium.copyWith(
-                  color: AppColors.orange,
-                  fontWeight: FontWeight.w700,
+            // A lapsed Pro has no Retry (testing-wave 122-004): the read can
+            // never pass until the subscription says otherwise, and the
+            // router owns the paywall.
+            if (state.error != VanaChatErrorKind.proRequired) ...[
+              const SizedBox(height: AppSpacing.sm),
+              TextButton(
+                key: const ValueKey('meal_planning.chat_retry'),
+                onPressed: onRetry,
+                child: Text(
+                  content.getValue(ContentKeys.mpRetry),
+                  style: AppTextStyles.bodyMedium.copyWith(
+                    color: AppColors.orange,
+                    fontWeight: FontWeight.w700,
+                  ),
                 ),
               ),
-            ),
+            ],
           ],
         ),
       ),
