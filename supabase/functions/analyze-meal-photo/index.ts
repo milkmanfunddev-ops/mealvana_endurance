@@ -9,9 +9,11 @@
  * Auth: Supabase user JWT (Authorization: Bearer ...)
  *
  * Request body:
- *   { photo_path: string, description?: string }
+ *   { photo_path: string, description?: string, eaten_at?: string }
  *   — photo_path e.g. "{userId}/{uuid}.jpg"; description is optional typed
- *     text analyzed together with the photo as one meal
+ *     text analyzed together with the photo as one meal; eaten_at is the
+ *     local-naive wall clock the meal will be logged at ("yyyy-MM-ddTHH:mm"),
+ *     which picks its meal type (mp-672). Without it the model's guess stands.
  *
  * Response (200):
  *   MealAnalysis JSON (see _shared/meal_analysis/schema.ts)
@@ -132,7 +134,7 @@ serve(withSentry(async (req: Request) => {
     if (refusal) return refusal;
 
     // Parse body
-    let body: { photo_path?: unknown; description?: unknown };
+    let body: { photo_path?: unknown; description?: unknown; eaten_at?: unknown };
     try {
       body = await req.json();
     } catch {
@@ -272,8 +274,8 @@ serve(withSentry(async (req: Request) => {
     }
 
     // The totals are ours, not the model's, and "not food" is an answer rather than a
-    // parse failure (ai-cost ticket 08, mp-473).
-    const finalized = finalizeAnalysis(result.object);
+    // parse failure (ai-cost ticket 08, mp-473). The meal type follows the eaten-at clock (mp-672).
+    const finalized = finalizeAnalysis(result.object, { eatenAt: body.eaten_at });
     const usage = result.usage;
     const costUsd = gatewayCostUsd(result.providerMetadata);
 
