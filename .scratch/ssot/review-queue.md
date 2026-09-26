@@ -21,15 +21,17 @@ in brackets are the other cards folded into the same question.
 ## Miscellany
 
 
-## Built 2026-09-26, deploys owed (ask Lee before deploying)
+## Built 2026-09-26, live on dev
 
-All six are merged on `mealplanning` with their tests green (Flutter 401, Deno 32). Nothing is deployed.
+All six are merged on `mealplanning` with their tests green (Flutter 401, Deno 32). Lee said go on 09-26, and the migration plus all eight functions are now on dev; prod follows the release sequence.
 - Apply migration `20260926070000_pro_grants_source.sql` to dev, then deploy `grace-claim` and `redeem-code` (mp-615).
 - Deploy `describe-meal` and `analyze-meal-photo` (mp-672), and `vana-action`, `vana-chat`, `vana-day-notes` and `jade-chat` (mp-683, which imports `plan.ts`).
 - mp-561, mp-600 and mp-682 are app-side and ship with the next build. If Sanity overrides `meal_planning.plan_bar_replaced`, change it there too.
 - mp-672 used these meal-type windows because no ruled ones existed: breakfast 04:00–10:30, lunch 10:30–14:30, snack 14:30–17:00, dinner 17:00–21:30, then snack. Near a boundary the food decides. Lee can change them.
 
 ## Waiting on Lee or Xuan (tasks and wording, not decisions)
+
+These are also on the page as the Open tasks reference document (`docs/ssot/decisions/open-tasks.md`).
 
 - mp-513 · Are the drafted trial and renewal lines on the paywall final, or does Xuan rewrite them?
   Recommend: Xuan signs them off as they are.

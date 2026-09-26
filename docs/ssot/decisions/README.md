@@ -224,7 +224,8 @@ Lee's mind, the change is made in the terminal.
 
 The page's Reference entries show repo documents the decisions were built from, whole, so the
 ratifier can read them there: today Xuan's RevenueCat spec (`docs/revenuecat-spec-for-lee.md`,
-id `revenuecat-spec`, Lee 2026-09-23). Each is one document in the `refs` collection,
+id `revenuecat-spec`, Lee 2026-09-23). Also **Open tasks** (`docs/ssot/decisions/open-tasks.md`, id `open-tasks`, Lee
+2026-09-26): what the decisions wait on from Lee or Xuan. These are tasks, never cards; remove a line when it is done and reseed. Each is one document in the `refs` collection,
 `{id, title, summary, source, body, updatedAt}`, built by `sync.mjs reference` and written with
 `write_db`; re-run both when the file changes. Every Ask prompt names the reference documents,
 and in-page Claude reads one in full with its fifth tool, `read_reference`, when a question
