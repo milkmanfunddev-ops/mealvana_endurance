@@ -1,6 +1,6 @@
 # 139: Sign-in, sign-up, sign-out, delete, admin
 
-**Status:** in-progress (wave 42, 2026-09-26)
+**Status:** done (wave 42, 2026-09-26)
 **Blocked by:** none.
 **Next:** `/implement-lee testing-wave`
 **Model:** fable
@@ -38,3 +38,9 @@
 - [x] `flutter analyze` clean on touched files; deno tests (agent side; deploy and data repair remain the lead's). Deploy (every function importing `_shared/vana/entitlement.ts`: vana-action, vana-chat, vana-day-notes, jade-chat, describe-meal, analyze-meal-photo, meal-photo, kroger; and the new discard-signup) and any dev data repair: wave lead. Prod is out of scope.
 
 Next: /implement-lee testing-wave
+
+## Wave 42 notes (lead)
+- Security: users could PATCH their own `is_admin`. Migration `20260926163900_users_admin_flags_server_only` (review fix: reads `request.jwt.claims`, the old per-claim setting is empty under PostgREST 10+) applied to dev and proved in a rolled-back transaction: an authenticated update stays false, service_role goes through. **Prod must apply it before or with any entitlement.ts deploy.**
+- Dev 2026-09-26: analyze-meal-photo, describe-meal, meal-photo (+ the vana/kroger set) redeployed; new `discard-signup` deployed, smoke 200 `{ok:true}`.
+- Review fix: abandoned-recovery sign-out at startup is local scope. 121-009 closes as expected behaviour (post-delete `/logout` 403).
+- Open: existing dev `users.created_at` rows are off by the device offset (not repaired).

@@ -1,6 +1,6 @@
 # 133: Shopping lists and Kroger
 
-**Status:** in-progress (wave 42, 2026-09-26)
+**Status:** done (wave 42, 2026-09-26)
 **Blocked by:** none.
 **Next:** `/implement-lee testing-wave`
 **Model:** fable
@@ -33,3 +33,8 @@
 - [x] `flutter analyze` clean on touched files; deno vana and kroger tests. [ ] Deploy (vana-action and the functions sharing `_shared/vana`, kroger) and apply the draft-list migration to dev: wave lead.
 
 Next: /implement-lee testing-wave
+
+## Wave 42 notes (lead)
+- Dev 2026-09-26: `20260926163300_drop_draft_lists` applied (4 draft lists deleted); kroger, vana-action, vana-chat, vana-day-notes, jade-chat redeployed.
+- Open: a draft's offline copy still shows its mirror lines when the week has no confirmed plan (online a draft has no list). After connecting from Add to Kroger cart, the shopper taps Add again (no auto-continue).
+- Minor, not fixed: a mirror-write echo rebuild cancels a pending 30 s retry timer (the tick stays queued and goes on the next rebuild); `confirmPlan` builds the list before `confirm_meal_plan`, so a failed RPC leaves a draft with a list until the next confirm.

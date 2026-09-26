@@ -1,6 +1,6 @@
 # 136: Build a Meal, saved meals, Manual and Edit
 
-**Status:** in-progress (wave 42, 2026-09-26)
+**Status:** done (wave 42, 2026-09-26)
 **Blocked by:** none.
 **Next:** `/implement-lee testing-wave`
 **Model:** fable
@@ -29,3 +29,6 @@
 - [x] `flutter analyze` clean on touched files. Run codegen if a Riverpod annotation changes.
 
 Next: /implement-lee testing-wave
+
+## Wave 42 notes (lead)
+- Open: should Save as favorite hide once a meal is already a favorite (built: always offered)? Barcode: should the service accept 9-11 digits, or should the hint name the real set (8, 12, 13, 14)?
