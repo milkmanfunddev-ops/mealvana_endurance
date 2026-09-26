@@ -298,14 +298,15 @@ Feature name: Paywall
 
 **Question.** What does the paywall look like?
 
-**Decision.** Bevel's layout in our colours, type and copy. It opens on a silent four-second clip of our own app, which a tap skips, then slides over to the features. Two plan cards, annual on top and already selected with its saving shown, sit pinned above one Continue button the whole time. They stay stacked on small phones too.
+**Decision.** Bevel's layout in our colours, type and copy, on one page. A silent clip of our own app loops in a phone frame at the top, the name and one line under it, then the features. Two plan cards, annual on top and already selected with its saving shown, sit pinned above one Continue button the whole time. They stay stacked on small phones too.
 
 **Why.** Showing the product sells it. The price never scrolls away, and there is only one button to press.
 
-**What else was considered.** Restyling the old price list; side-by-side plan cards.
+**What else was considered.** Restyling the old price list; side-by-side plan cards; the clip as its own first page that a tap skips and that slides away to the features (built 09-21, dropped 09-26: it flashed and was gone before it sold anything).
 
 > 2026-09-26 overhaul: rewritten from mp-493, mp-537, mp-559
 > 2026-09-26 decided by Claude (Lee's delegation): recorded as built, checked in code (mp-566)
+> 2026-09-26 Lee in the terminal: one page, the clip stays and loops at the head of it
 
 ## mp-538 · The paywall leads with four reasons to pay
 - category: The paywall screen
@@ -319,13 +320,14 @@ Feature name: Paywall
 
 **Question.** Which features does the paywall list?
 
-**Decision.** Four headlines: a fuel plan for every session, Vana as your nutrition coach, shopping lists from your plan, and your training already synced from Garmin, TrainingPeaks and FinalSurge. Under "also includes" come recipes with cooking mode, brick workouts, hydration checks, your own fuel formulas and daily targets. All the AI features sit under the one Vana line. Kroger delivery is not listed, because it does not reach every athlete.
+**Decision.** Four headlines, as a sideways carousel of cards: a fuel plan for every session, Vana as your nutrition coach, shopping lists from your plan, and your training already synced from Garmin, TrainingPeaks and FinalSurge. All the AI features sit under the one Vana line. The paywall lists nothing else; the "also includes" list (recipes with cooking mode, brick workouts, hydration checks, your own fuel formulas and daily targets) lives on the Subscription screen. Kroger delivery is not listed, because it does not reach every athlete.
 
 **Why.** The headlines are the reasons to pay, and grouping the AI under Vana gives one clear reason instead of four.
 
-**What else was considered.** Listing Kroger; a separate line for each AI feature.
+**What else was considered.** Listing Kroger; a separate line for each AI feature; the four headlines plus the "also includes" rows as one long list on the paywall (built 09-21, dropped 09-26: too much to read on one screen).
 
 > 2026-09-26 overhaul: rewritten from mp-538
+> 2026-09-26 Lee in the terminal: headlines become a carousel, the also-includes rows leave the paywall
 
 ## mp-495 · Settings has a Subscription screen showing the plan and what Pro includes
 - category: The paywall screen
