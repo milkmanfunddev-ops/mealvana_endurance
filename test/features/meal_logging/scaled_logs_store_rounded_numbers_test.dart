@@ -98,7 +98,11 @@ void main() {
         ),
       ]);
       expect(totals.carbsG, 0.4);
-      expect(totals.fatG, 1.1, reason: '0.9 + 0.2 = 1.1, not 1.1000000000000001');
+      expect(
+        totals.fatG,
+        1.1,
+        reason: '0.9 + 0.2 = 1.1, not 1.1000000000000001',
+      );
       expect(totals.proteinG, 60.5);
       expect(totals.sodiumMg, 131);
     });
@@ -193,58 +197,61 @@ void main() {
     });
   });
 
-  group('112-014: quick assemblies carry sodium from the single ingredients', () {
-    // Item name -> the ingredient it is taken from, with the portion factor.
-    const matches = <String, (String, double)>{
-      'Banana': ('Banana', 1),
-      'Peanut butter': ('Peanut butter', 1),
-      'Greek yogurt': ('Greek yogurt (plain)', 1),
-      'Honey': ('Honey', 1),
-      'Almond butter': ('Almond butter', 1),
-      'Rolled oats': ('Rolled oats', 1),
-      'Eggs': ('Egg', 2),
-      'Whole-grain toast': ('Whole wheat bread', 2),
-      'Cottage cheese': ('Cottage cheese', 1),
-      'Whey protein shake': ('Whey protein powder', 1),
-      'Apple': ('Apple', 1),
-      'Cheddar cheese': ('Cheddar cheese', 1),
-    };
-    const unmatched = {
-      'Rice cake',
-      'Raisins',
-      'Mixed berries',
-      'Low-fat chocolate milk',
-      'Medjool dates',
-    };
+  group(
+    '112-014: quick assemblies carry sodium from the single ingredients',
+    () {
+      // Item name -> the ingredient it is taken from, with the portion factor.
+      const matches = <String, (String, double)>{
+        'Banana': ('Banana', 1),
+        'Peanut butter': ('Peanut butter', 1),
+        'Greek yogurt': ('Greek yogurt (plain)', 1),
+        'Honey': ('Honey', 1),
+        'Almond butter': ('Almond butter', 1),
+        'Rolled oats': ('Rolled oats', 1),
+        'Eggs': ('Egg', 2),
+        'Whole-grain toast': ('Whole wheat bread', 2),
+        'Cottage cheese': ('Cottage cheese', 1),
+        'Whey protein shake': ('Whey protein powder', 1),
+        'Apple': ('Apple', 1),
+        'Cheddar cheese': ('Cheddar cheese', 1),
+      };
+      const unmatched = {
+        'Rice cake',
+        'Raisins',
+        'Mixed berries',
+        'Low-fat chocolate milk',
+        'Medjool dates',
+      };
 
-    test('every item with a matching ingredient has its sodium', () {
-      for (final assembly in kQuickAssemblies) {
-        for (final item in assembly.components) {
-          final match = matches[item.name];
-          if (match == null) {
+      test('every item with a matching ingredient has its sodium', () {
+        for (final assembly in kQuickAssemblies) {
+          for (final item in assembly.components) {
+            final match = matches[item.name];
+            if (match == null) {
+              expect(
+                unmatched,
+                contains(item.name),
+                reason: '${item.name} is neither matched nor listed unmatched',
+              );
+              expect(item.sodiumMg, isNull, reason: item.name);
+              continue;
+            }
+            final (ingredient, factor) = match;
             expect(
-              unmatched,
-              contains(item.name),
-              reason: '${item.name} is neither matched nor listed unmatched',
+              item.sodiumMg,
+              _ingredient(ingredient).sodiumMg! * factor,
+              reason: '${assembly.name}: ${item.name}',
             );
-            expect(item.sodiumMg, isNull, reason: item.name);
-            continue;
           }
-          final (ingredient, factor) = match;
-          expect(
-            item.sodiumMg,
-            _ingredient(ingredient).sodiumMg! * factor,
-            reason: '${assembly.name}: ${item.name}',
-          );
         }
-      }
-    });
+      });
 
-    test('a combo total no longer reads as sodium unknown', () {
-      final eggsToast = kQuickAssemblies.firstWhere(
-        (a) => a.name == 'Eggs + toast',
-      );
-      expect(MealTotals.ofComponents(eggsToast.components).sodiumMg, 430);
-    });
-  });
+      test('a combo total no longer reads as sodium unknown', () {
+        final eggsToast = kQuickAssemblies.firstWhere(
+          (a) => a.name == 'Eggs + toast',
+        );
+        expect(MealTotals.ofComponents(eggsToast.components).sodiumMg, 430);
+      });
+    },
+  );
 }
