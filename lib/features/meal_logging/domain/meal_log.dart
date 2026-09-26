@@ -269,7 +269,7 @@ class MealLog {
       'saved_meal_id': savedMealId,
       'plan_meal_id': planMealId,
       'notes': notes,
-      if (servings != 1) 'servings': servings,
+      'servings': servings,
       'eaten_at': eatenAt?.toUtc().toIso8601String(),
       'created_at': createdAt.toUtc().toIso8601String(),
       'updated_at': updatedAt.toUtc().toIso8601String(),

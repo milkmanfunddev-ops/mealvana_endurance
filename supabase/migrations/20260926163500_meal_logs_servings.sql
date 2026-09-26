@@ -6,9 +6,9 @@
 -- the row's items and totals stay the amount eaten. Recent divides them by
 -- this column, so a re-log at 2 servings does not become the meal's new
 -- 1-serving base. Every existing row was logged at one serving, which the
--- default records. The app sends the column only when it is not 1, so a
--- build reaching a project before this migration keeps uploading ordinary
--- logs and fails only the scaled ones until the column lands (PGRST204).
+-- default records. The app always sends the column (a batched upsert that
+-- omits it on some rows would write NULL there), so this migration must land
+-- on a project before any build carrying Drift v24 talks to it.
 --
 -- Local mirror: Drift schemaVersion 24 (`meal_logs.servings REAL NOT NULL
 -- DEFAULT 1.0`). Bump app_config.current_schema_version to 24 when the

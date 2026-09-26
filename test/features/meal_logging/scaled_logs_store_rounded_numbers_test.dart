@@ -175,12 +175,9 @@ void main() {
       expect(identical(one.perServing(), one), isTrue);
     });
 
-    test('servings crosses the wire only when it is not 1', () {
+    test('servings always crosses the wire, so a mixed batch never writes NULL', () {
       expect(twoServings.toSupabaseJson()['servings'], 2);
-      expect(
-        twoServings.copyWith(servings: 1).toSupabaseJson(),
-        isNot(contains('servings')),
-      );
+      expect(twoServings.copyWith(servings: 1).toSupabaseJson()['servings'], 1);
       expect(
         MealLog.fromSupabaseJson({
           ...twoServings.toSupabaseJson(),
