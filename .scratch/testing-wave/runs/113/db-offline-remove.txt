@@ -1,0 +1,2 @@
+# db-offline-remove: Remove on W40-113 Huge values with netcut on (11:15:3xZ). Server row should still read is_deleted false. Read 2026-09-26T11:15:29Z. SELECT only.
+{"id":"8c8b2645-ba41-45f5-b6c1-9d835e0a09c7","name":"W40-113 Huge values","created_at":"2026-09-26 10:57:36.780057+00","updated_at":"2026-09-26 10:57:36.780088+00","is_deleted":false}

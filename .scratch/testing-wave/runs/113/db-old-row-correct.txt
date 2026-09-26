@@ -1,0 +1,4 @@
+# db-old-row-correct: a61f94fd W14-25 Decimal kcal (25-005). Before: calories null, protein 12.25, updated_at 2026-09-24 20:19:13.112482+00. Edit Meal typed 250.5, saved 11:21:14. SELECT only.
+{"id":"a61f94fd-5dfb-4d16-b4df-901ee732fc20","name":"W14-25 Decimal kcal","created_at":"2026-09-24 20:19:13.112446+00","updated_at":"2026-09-26 11:21:10.69329+00","calories":null,"carbs_g":"30.2","protein_g":"12.3","fat_g":"8.4"}
+## typed 251, saved 11:21:43
+{"id":"a61f94fd-5dfb-4d16-b4df-901ee732fc20","name":"W14-25 Decimal kcal","created_at":"2026-09-24 20:19:13.112446+00","updated_at":"2026-09-26 11:21:37.903966+00","calories":251,"carbs_g":"30.2","protein_g":"12.3","fat_g":"8.4"}
