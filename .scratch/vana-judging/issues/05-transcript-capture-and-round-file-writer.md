@@ -11,7 +11,7 @@ judging itself.
 
 **Blocked by:** 01 (scaffold — runs/ and the sidecar convention live there).
 
-**Status:** in-progress (wave 2, 2026-09-26)
+**Status:** done (wave 2, 2026-09-26)
 
 - [ ] Given a conversation, the script emits its full transcript (user turns, Vana turns, tool
       calls, parts) to a file under `/eval/runs/`
