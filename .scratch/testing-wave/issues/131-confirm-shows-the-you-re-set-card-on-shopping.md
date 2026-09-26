@@ -1,6 +1,6 @@
 # 131: Confirm shows the "you're set" card on Shopping
 
-**Status:** in-progress (wave 35, 2026-09-25)
+**Status:** done (wave 35, 2026-09-26)
 **Blocked by:** 129 (both change the Review sheet's confirm path and the Shopping tab).
 **Next:** `/implement-lee testing-wave`
 **Model:** opus

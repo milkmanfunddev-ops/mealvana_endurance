@@ -709,6 +709,12 @@
     "base": "08ad6242fde18d7c403bef59d6a86db19c916475",
     "branch": "mealplanning",
     "startedAt": "2026-09-25T23:41:50.867Z",
-    "closedAt": null
+    "closedAt": "2026-09-26T00:10:13.062Z",
+    "merged": [
+      "131"
+    ],
+    "failed": [],
+    "suite": "green",
+    "elapsed": "28m"
   }
 ]
