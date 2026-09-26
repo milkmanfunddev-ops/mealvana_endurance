@@ -193,14 +193,36 @@ class ShoppingTab extends ConsumerWidget {
     );
   }
 
-  Future<void> _newList(BuildContext context, WidgetRef ref) => _guard(
-    context,
-    ref,
-    () => ref.read(shoppingListControllerProvider.notifier).newList(),
-    done: ref
-        .read(contentServiceProvider)
-        .getValue(ContentKeys.mpShoppingNewListDone),
-  );
+  /// New list asks for a name (110-010, Lee 09-26), pre-filled with today
+  /// in words ("List · Sep 25") and, when that name is taken, the next free
+  /// " (n)" — the rename rule (89-015), applied again by the controller and
+  /// the server, so the name shown is the name kept.
+  Future<void> _newList(BuildContext context, WidgetRef ref) async {
+    final content = ref.read(contentServiceProvider);
+    final state = ref.read(shoppingListControllerProvider).value;
+    final suggested = uniqueShoppingListName(
+      ContentKeys.format(content.getValue(ContentKeys.mpShoppingNewListDefault), {
+        'date': DateFormat.MMMd().format(DateTime.now()),
+      }),
+      state?.knownNames ?? const [],
+    );
+    final name = await showAdaptiveModal<String>(
+      context: context,
+      builder: (sheetContext) => ShoppingRenameSheet(
+        name: suggested,
+        purpose: ShoppingNamePurpose.create,
+      ),
+    );
+    if (name == null || !context.mounted) return;
+    await _guard(
+      context,
+      ref,
+      () => ref
+          .read(shoppingListControllerProvider.notifier)
+          .newList(name: name),
+      done: content.getValue(ContentKeys.mpShoppingNewListDone),
+    );
+  }
 
   Future<void> _addItem(BuildContext context, WidgetRef ref) async {
     final result = await showAdaptiveModal<({String name, String qty})>(
@@ -366,6 +388,8 @@ class ShoppingTab extends ConsumerWidget {
         lists: state.allLists,
         currentId: state.listId,
         weekPlanId: state.weekPlanId,
+        // The offline copy never read the history (110-004).
+        offline: state.isOffline && state.listId == null,
       ),
     );
     if (choice == null || !context.mounted) return;
@@ -771,10 +795,19 @@ class _ShoppingEditSheetState extends ConsumerState<ShoppingEditSheet> {
 }
 
 /// Rename a list. Pops the new name on Save, null on dismiss.
+/// What the name sheet is for: renaming the list on screen, or naming the
+/// list New list is about to make (110-010).
+enum ShoppingNamePurpose { rename, create }
+
 class ShoppingRenameSheet extends ConsumerStatefulWidget {
-  const ShoppingRenameSheet({super.key, required this.name});
+  const ShoppingRenameSheet({
+    super.key,
+    required this.name,
+    this.purpose = ShoppingNamePurpose.rename,
+  });
 
   final String name;
+  final ShoppingNamePurpose purpose;
 
   @override
   ConsumerState<ShoppingRenameSheet> createState() =>
@@ -806,9 +839,18 @@ class _ShoppingRenameSheetState extends ConsumerState<ShoppingRenameSheet> {
   @override
   Widget build(BuildContext context) {
     final content = ref.read(contentServiceProvider);
+    final create = widget.purpose == ShoppingNamePurpose.create;
     return _Sheet(
-      key: const ValueKey('meal_planning.shopping_rename_sheet'),
-      title: content.getValue(ContentKeys.mpShoppingRenameTitle),
+      key: ValueKey(
+        create
+            ? 'meal_planning.shopping_new_list_sheet'
+            : 'meal_planning.shopping_rename_sheet',
+      ),
+      title: content.getValue(
+        create
+            ? ContentKeys.mpShoppingNewListTitle
+            : ContentKeys.mpShoppingRenameTitle,
+      ),
       children: [
         KyleInputField(
           key: const ValueKey('meal_planning.shopping_rename_name'),
@@ -825,7 +867,11 @@ class _ShoppingRenameSheetState extends ConsumerState<ShoppingRenameSheet> {
         // Disabled on an empty name rather than silently doing nothing.
         KylePrimaryButton(
           key: const ValueKey('meal_planning.shopping_rename_save'),
-          text: content.getValue(ContentKeys.mpShoppingSaveAction),
+          text: content.getValue(
+            create
+                ? ContentKeys.mpShoppingNewListCreate
+                : ContentKeys.mpShoppingSaveAction,
+          ),
           onPressed: _canSave ? _save : null,
         ),
       ],
@@ -870,11 +916,16 @@ class ShoppingPreviousListsSheet extends ConsumerWidget {
     required this.lists,
     required this.currentId,
     this.weekPlanId,
+    this.offline = false,
   });
 
   final List<ShoppingListSummary> lists;
   final String? currentId;
   final String? weekPlanId;
+
+  /// True when the tab is offline and never read its history: the sheet
+  /// says the lists need a connection, never that there are none (110-004).
+  final bool offline;
 
   @override
   Widget build(BuildContext context, WidgetRef ref) {
@@ -894,7 +945,13 @@ class ShoppingPreviousListsSheet extends ConsumerWidget {
       key: const ValueKey('meal_planning.shopping_previous_sheet'),
       title: content.getValue(ContentKeys.mpShoppingPrevious),
       children: [
-        if (lists.isEmpty)
+        if (offline && lists.isEmpty)
+          Text(
+            content.getValue(ContentKeys.mpShoppingPreviousOffline),
+            key: const ValueKey('meal_planning.shopping_previous_offline'),
+            style: AppTextStyles.bodySmall.copyWith(color: secondary),
+          )
+        else if (lists.isEmpty)
           Text(
             content.getValue(ContentKeys.mpShoppingPreviousEmpty),
             style: AppTextStyles.bodySmall.copyWith(color: secondary),
@@ -988,11 +1045,9 @@ class ShoppingPreviousListsSheet extends ConsumerWidget {
                                       DateFormat.yMMMd().format(
                                         lists[i].sortDate.toLocal(),
                                       ),
-                                      ContentKeys.format(
-                                        content.getValue(
-                                          ContentKeys.mpShoppingItemCount,
-                                        ),
-                                        {'n': lists[i].itemCount},
+                                      shoppingItemCountText(
+                                        content,
+                                        lists[i].itemCount,
                                       ),
                                       if (lists[i].id == currentId)
                                         content.getValue(

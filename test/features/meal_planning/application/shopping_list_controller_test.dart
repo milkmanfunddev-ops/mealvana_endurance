@@ -10,6 +10,7 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:mealvana_endurance/features/meal_planning/application/meal_plan_controller.dart';
 import 'package:mealvana_endurance/features/meal_planning/application/shopping_list_controller.dart';
+import 'package:mealvana_endurance/features/meal_planning/data/meal_plan_repository.dart';
 import 'package:mealvana_endurance/features/meal_planning/data/shopping_tick_store.dart';
 import 'package:mealvana_endurance/features/meal_planning/data/vana_action_client.dart';
 import 'package:mealvana_endurance/features/meal_planning/data/vana_exceptions.dart';
@@ -19,11 +20,14 @@ import 'package:mealvana_endurance/features/meal_planning/domain/shopping_item.d
 import 'package:mealvana_endurance/features/meal_planning/domain/shopping_list.dart';
 import 'package:mealvana_endurance/features/meal_planning/domain/ui_action.dart';
 import 'package:mealvana_endurance/features/meal_planning/domain/shopping_list_name.dart';
+import 'package:mealvana_endurance/shared/database/app_database.dart';
+import 'package:mealvana_endurance/shared/database/database_provider.dart';
 import 'package:mealvana_endurance/shared/services/prefs_provider.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 
 import '../domain/fixture_helpers.dart';
 import '../helpers/container.dart';
+import '../helpers/fakes.dart';
 
 class _FixedPlanController extends MealPlanController {
   _FixedPlanController(this.plan);
@@ -44,6 +48,10 @@ class _ShoppingServer extends Fake implements VanaActionClient {
   Object? failWith;
   int _seq = 100;
 
+  /// The server's default list (`orderedRows`): the confirmed plan's list,
+  /// moved to the front whatever its date. Null = plain date order.
+  String? defaultId;
+
   Map<String, dynamic> _list(String id) =>
       lists.firstWhere((l) => l['id'] == id);
 
@@ -55,12 +63,16 @@ class _ShoppingServer extends Fake implements VanaActionClient {
     'itemCount': _rows(l).where((r) => r['have'] != true).length,
   };
 
-  List<Map<String, dynamic>> _sorted() => [...lists]
-    ..sort(
-      (a, b) => ((b['confirmedAt'] ?? b['createdAt']) as String).compareTo(
-        (a['confirmedAt'] ?? a['createdAt']) as String,
-      ),
-    );
+  List<Map<String, dynamic>> _sorted() {
+    final byDate = [...lists]
+      ..sort(
+        (a, b) => ((b['confirmedAt'] ?? b['createdAt']) as String).compareTo(
+          (a['confirmedAt'] ?? a['createdAt']) as String,
+        ),
+      );
+    final first = byDate.where((l) => l['id'] == defaultId).toList();
+    return [...first, ...byDate.where((l) => l['id'] != defaultId)];
+  }
 
   @override
   Future<VanaActionResult> run(UiAction action) async {
@@ -205,11 +217,23 @@ void main() {
   late MealPlan plan;
   late _ShoppingServer server;
   late SharedPreferences prefs;
+  late AppDatabase db;
+  late MealPlanRepository repo;
 
   setUp(() async {
     SharedPreferences.setMockInitialValues({});
     prefs = await SharedPreferences.getInstance();
     plan = VanaActionResult.fromJson(loadFixture('batch')).plan!;
+    // The plan's Drift row: the offline copy's source and the mirror a
+    // settled tick is copied into (110-003).
+    db = AppDatabase.memory();
+    addTearDown(db.close);
+    repo = MealPlanRepository(
+      database: db,
+      logger: FakeLogger(),
+      remote: RecordingMealPlanRemote(),
+    );
+    await repo.applyServerPlan(plan, userId: 'user-1');
     server = _ShoppingServer([
       {
         'id': 'list-plan',
@@ -243,7 +267,19 @@ void main() {
     ),
     vanaActionClientProvider.overrideWithValue(server),
     sharedPreferencesProvider.overrideWithValue(prefs),
+    appDatabaseProvider.overrideWithValue(db),
+    mealPlanRepositoryProvider.overrideWithValue(repo),
   ]);
+
+  /// The plan's list on the fake server carries the plan mirror's first
+  /// line, so a tick made on the offline copy has a row to land on.
+  String mirrorLine() {
+    final name = plan.shopping.first.name;
+    (server.lists.first['items'] as List).add(
+      _row('r9', name, 'Produce', from: const []),
+    );
+    return name;
+  }
 
   // ── Ticks made offline (testing-wave ticket 36, Findings 20-001/20-002) ──
 
@@ -348,6 +384,114 @@ void main() {
         expect(c.read(shoppingTickStoreProvider).read('user-1'), isEmpty);
       },
     );
+
+    // Finding 110-001: the retry timer ran `_replay` against the offline copy,
+    // found no row for the tick and deleted it 20 s after it was made.
+    test('offline copy: the retry keeps a tick with no row, and sends it by '
+        'name once the live list loads (110-001)', () async {
+      final name = mirrorLine();
+      server.failWith = const VanaOfflineException('unreachable');
+      final c = makeContainer();
+      final n = c.read(shoppingListControllerProvider.notifier);
+      expect((await c.read(shoppingListControllerProvider.future)).listId, isNull);
+      await n.setChecked(name, true);
+
+      // The retry fires while still offline: the tick is kept, on screen and
+      // in the store, and nothing was sent.
+      server.calls.clear();
+      await n.retryPending();
+      var state = c.read(shoppingListControllerProvider).value!;
+      expect(state.listId, isNull);
+      expect(state.isOffline, isTrue);
+      expect(state.items.firstWhere((i) => i.name == name).checked, isTrue);
+      expect(c.read(shoppingTickStoreProvider).read('user-1'), hasLength(1));
+      expect(server.calls.whereType<UpdateShoppingItemAction>(), isEmpty);
+
+      // The network is back: the retry loads the live list and the tick
+      // reaches update_shopping_item by the row the name matches.
+      server.failWith = null;
+      server.calls.clear();
+      await n.retryPending();
+      state = c.read(shoppingListControllerProvider).value!;
+      expect(state.listId, 'list-plan');
+      expect(state.isOffline, isFalse);
+      final sent = server.calls.whereType<UpdateShoppingItemAction>().single;
+      expect(sent.id, 'r9');
+      expect(sent.checked, isTrue);
+      expect(state.items.firstWhere((i) => i.name == name).checked, isTrue);
+      expect(c.read(shoppingTickStoreProvider).read('user-1'), isEmpty);
+    });
+
+    // Finding 110-002: ticks made on the live list carry its id, and the
+    // offline copy has none, so they never showed on it.
+    test('a tick made offline on the live list shows on the offline copy '
+        'after a restart (110-002)', () async {
+      final name = mirrorLine();
+      final first = makeContainer();
+      await first.read(shoppingListControllerProvider.future);
+      server.failWith = const VanaOfflineException('unreachable');
+      await first
+          .read(shoppingListControllerProvider.notifier)
+          .setChecked(name, true);
+      final queued = first.read(shoppingTickStoreProvider).read('user-1');
+      expect(queued.single.listId, 'list-plan', reason: 'a live-list tick');
+      first.dispose();
+
+      final second = makeContainer();
+      final copy = await second.read(shoppingListControllerProvider.future);
+      expect(copy.listId, isNull, reason: 'the offline copy');
+      expect(
+        copy.items.firstWhere((i) => i.name == name).checked,
+        isTrue,
+        reason: 'the plan\'s live-list tick is laid over its offline copy',
+      );
+      // A hand-made list's tick is not: it is not this plan's line.
+      expect(
+        PendingShoppingTick(
+          name: name,
+          field: ShoppingField.checked,
+          value: true,
+          at: DateTime.now(),
+          listId: 'list-hand',
+        ).appliesTo(listId: null, planId: plan.id),
+        isFalse,
+      );
+    });
+
+    // Finding 110-003: the offline copy read the Drift mirror, which no tick
+    // settled online ever touched.
+    test('a settled tick is copied into the local plan mirror, so the next '
+        'offline copy shows it (110-003)', () async {
+      final name = mirrorLine();
+      final c = makeContainer();
+      await c.read(shoppingListControllerProvider.future);
+      expect(
+        (await repo.getPlanById(plan.id))!.shopping
+            .firstWhere((i) => i.name == name)
+            .checked,
+        isFalse,
+      );
+
+      await c
+          .read(shoppingListControllerProvider.notifier)
+          .setChecked(name, true);
+      await settle();
+
+      final mirrored = (await repo.getPlanById(plan.id))!.shopping;
+      expect(mirrored.firstWhere((i) => i.name == name).checked, isTrue);
+      expect(
+        mirrored.map((i) => i.name),
+        server.lists.first['items'].map((r) => r['name']),
+        reason: 'the mirror is the whole answered list',
+      );
+      // The mirror's echo through the plan stream is not a plan edit: the
+      // fixed plan controller here cannot emit, but the offline copy built
+      // from the mirror now carries the tick.
+      final offline = ShoppingListController.fromPlan(
+        (await repo.getPlanById(plan.id))!,
+      );
+      expect(offline.items.firstWhere((i) => i.name == name).checked, isTrue);
+    });
 
     test('a write the server refuses rolls back, rethrows, and leaves nothing '
         'queued', () async {
@@ -553,6 +697,116 @@ void main() {
       expect(state.isCurrent, isTrue);
     },
   );
+
+  // ── "An earlier list" (Findings 110-005, 115-001) ─────────────────────────
+
+  group('current stays current', () {
+    setUp(() {
+      // A hand-made list made after the plan's list was confirmed. The
+      // server still lists the confirmed plan's list first (orderedRows).
+      server.lists.add({
+        'id': 'list-newer',
+        'planId': null,
+        'name': 'Race week extras',
+        'createdAt': '2026-09-20T00:00:00Z',
+        'updatedAt': '2026-09-20T00:00:00Z',
+        'confirmedAt': null,
+        'items': <Map<String, dynamic>>[],
+      });
+      server.defaultId = 'list-plan';
+    });
+
+    test("a tick on the plan's list keeps it current while a newer list "
+        'exists (115-001)', () async {
+      final c = makeContainer();
+      final before = await c.read(shoppingListControllerProvider.future);
+      expect(before.listId, 'list-plan');
+      expect(before.isCurrent, isTrue);
+      expect(before.previous.map((l) => l.id), ['list-newer', 'list-old']);
+
+      await c
+          .read(shoppingListControllerProvider.notifier)
+          .setChecked('Broccoli', true);
+
+      final after = c.read(shoppingListControllerProvider).value!;
+      expect(after.isCurrent, isTrue, reason: "the server's order is kept");
+      expect(after.previous.map((l) => l.id), ['list-newer', 'list-old']);
+
+      await c.read(shoppingListControllerProvider.notifier).addItem('Milk');
+      expect(c.read(shoppingListControllerProvider).value!.isCurrent, isTrue);
+    });
+
+    test('an earlier list stays earlier after a tick', () async {
+      final c = makeContainer();
+      await c.read(shoppingListControllerProvider.future);
+      final n = c.read(shoppingListControllerProvider.notifier);
+      await n.openList('list-old');
+      await n.setChecked('Oats', true);
+      final state = c.read(shoppingListControllerProvider).value!;
+      expect(state.isCurrent, isFalse);
+      expect(state.previous.map((l) => l.id), ['list-plan', 'list-newer']);
+    });
+
+    test('New list pins the new list open and current, through a rebuild, '
+        'until another list is opened (110-005)', () async {
+      final c = makeContainer();
+      await c.read(shoppingListControllerProvider.future);
+      final n = c.read(shoppingListControllerProvider.notifier);
+
+      await n.newList(name: 'Costco');
+      var state = c.read(shoppingListControllerProvider).value!;
+      final madeId = state.listId!;
+      expect(state.listName, 'Costco');
+      expect(state.isCurrent, isTrue, reason: 'never "An earlier list"');
+      expect(
+        state.previous.map((l) => l.id),
+        ['list-plan', 'list-newer', 'list-old'],
+        reason: "the plan's list stays the server's default",
+      );
+
+      // Adding to it and a rebuild keep it open and current.
+      await n.addItem('Paper towels');
+      expect(c.read(shoppingListControllerProvider).value!.isCurrent, isTrue);
+      c.invalidate(shoppingListControllerProvider);
+      state = await c.read(shoppingListControllerProvider.future);
+      expect(state.listId, madeId);
+      expect(state.isCurrent, isTrue);
+
+      // Opening the plan's list ends its turn: from history it is earlier.
+      await n.openList('list-plan');
+      expect(c.read(shoppingListControllerProvider).value!.isCurrent, isTrue);
+      await n.openList(madeId);
+      expect(c.read(shoppingListControllerProvider).value!.isCurrent, isFalse);
+    });
+
+    test('a new list named like another gets " (2)" (110-010)', () async {
+      final c = makeContainer();
+      await c.read(shoppingListControllerProvider.future);
+      server.calls.clear();
+
+      await c
+          .read(shoppingListControllerProvider.notifier)
+          .newList(name: ' race  week extras ');
+
+      final made = server.calls.whereType<CreateShoppingListAction>().single;
+      expect(made.name, 'race week extras (2)');
+      expect(
+        c.read(shoppingListControllerProvider).value!.listName,
+        'race week extras (2)',
+      );
+    });
+
+    test('New list with no name lets the server name it', () async {
+      final c = makeContainer();
+      await c.read(shoppingListControllerProvider.future);
+      server.calls.clear();
+      await c.read(shoppingListControllerProvider.notifier).newList();
+      expect(
+        server.calls.whereType<CreateShoppingListAction>().single.name,
+        isNull,
+      );
+    });
+  });
 
   // ── Rename and delete a list (Shopping tab redesign, 2026-09-16) ──────────
 

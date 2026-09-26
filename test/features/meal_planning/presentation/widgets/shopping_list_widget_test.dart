@@ -102,6 +102,35 @@ void main() {
     expect(find.text('Chicken breast'), findsOneWidget);
   });
 
+  // Finding 110-006: "1 meals" and "1 items".
+  testWidgets('one of anything reads in the singular', (tester) async {
+    final state = stateWith([item('Oats', 'Pantry')]);
+    await pumpList(
+      tester,
+      ShoppingListState(
+        planId: state.planId,
+        isConfirmed: true,
+        items: state.items,
+        byAisle: state.byAisle,
+        itemCount: 1,
+        totalServings: 1,
+        mealCount: 1,
+      ),
+    );
+    expect(find.text('1 item'), findsOneWidget);
+    expect(find.text('Totals for 1 serving · 1 meal'), findsOneWidget);
+    expect(find.textContaining('1 items'), findsNothing);
+    expect(find.textContaining('1 meals'), findsNothing);
+  });
+
+  testWidgets('many read in the plural', (tester) async {
+    await pumpList(
+      tester,
+      stateWith([item('Chicken breast', 'Protein'), item('Oats', 'Pantry')]),
+    );
+    expect(find.text('Totals for 8 servings · 3 meals'), findsOneWidget);
+  });
+
   testWidgets('skipped items show the add-back row', (tester) async {
     await pumpList(
       tester,

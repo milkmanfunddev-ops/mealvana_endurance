@@ -41,9 +41,13 @@ class PendingShoppingTick {
   String get key =>
       '${listId ?? 'plan:$planId'}|${name.trim().toLowerCase()}|${field.wire}';
 
-  /// True when this tick belongs to the list on screen.
+  /// True when this tick belongs to the list on screen: by list id on a
+  /// live list; by plan on the offline copy (no list id), so a tick made on
+  /// the plan's live list shows on its offline copy too (110-002), and a
+  /// tick made on the offline copy is matched to the plan's live list by
+  /// name once it loads (110-001).
   bool appliesTo({required String? listId, required String? planId}) {
-    if (this.listId != null) return this.listId == listId;
+    if (this.listId != null && listId != null) return this.listId == listId;
     return this.planId != null && this.planId == planId;
   }
 

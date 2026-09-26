@@ -174,7 +174,8 @@ export async function setBrief(v: VanaCtx, brief: string, scope?: PlanScope | nu
  *  client gets its remote ack from that single call. */
 export async function confirmPlan(v: VanaCtx, scope?: PlanScope | null): Promise<MealPlan> {
   const target = (await resolvePlan(v, scope, true))!;
-  const plan = await refreshShopping(v, target.id);
+  // The plan is still a draft here, and a draft builds no list (110-012): `confirm` is what makes this build one.
+  const plan = await refreshShopping(v, target.id, { confirm: true });
   const { data, error } = await v.db.rpc('confirm_meal_plan', { p_plan_id: plan.id, p_shopping: plan.shopping });
   if (error) throw new Error(`confirm_meal_plan: ${error.message}`);
   if (!data) throw new Error('confirm_meal_plan returned nothing');
@@ -184,21 +185,23 @@ export async function confirmPlan(v: VanaCtx, scope?: PlanScope | null): Promise
 }
 /** Rebuild the plan's lines from its meals. Since 2026-09-16 the lines live in `shopping_lists` / `shopping_items`
  *  (shopping.ts): the plan-built rows are replaced, hand-added and hand-edited rows survive, and the merged list is
- *  mirrored into `meal_plans.shopping` for Kroger and every older reader. `checked` / `have` carry over by name. */
-export async function refreshShopping(v: VanaCtx, planId?: string | null): Promise<MealPlan> {
+ *  mirrored into `meal_plans.shopping` for Kroger and every older reader. `checked` / `have` carry over by name.
+ *  A draft gets only the mirror, no list, unless `confirm` says this is the confirm's build (110-012). */
+export async function refreshShopping(v: VanaCtx, planId?: string | null, opts: { confirm?: boolean } = {}): Promise<MealPlan> {
   const plan = (planId ? await getPlanById(v, planId) : await getPlan(v))!;
   const prev = new Map(plan.shopping.map((i) => [i.name.toLowerCase(), i]));
   await backfillPlanIngredients(v, plan.meals); // dish-level saved meals already planned get their ingredients once (saved-ingredients.ts)
   const items = await buildShoppingList(v, plan, await getPantryItems(v));
   const fresh = items.map((i) => { const p = prev.get(i.name.toLowerCase()); return p ? { ...i, checked: p.checked, have: i.have || p.have } : i; });
-  const merged = await syncPlanList(v, plan, fresh);
+  const merged = await syncPlanList(v, plan, fresh, opts);
   await v.db.from('meal_plans').update({ shopping: merged, day_notes_stale: true, updated_at: new Date().toISOString() }).eq('id', plan.id);
   await invalidateContext(v); // every meal edit ends here: the PLAN line changed
   return { ...plan, shopping: merged, dayNotesStale: true };
 }
 /** Rebuild shopping list (the Plan tab's ⋮, ticket 96, Lee 09-25): the plan's list from its meals by the same path
  *  confirm and every edit take (mp-244), so it updates the plan's one list in place, or makes it again after the athlete
- *  deleted it, and refills the `meal_plans.shopping` mirror. A confirmed plan's remade list is confirmed with it. */
+ *  deleted it, and refills the `meal_plans.shopping` mirror. A confirmed plan's remade list is confirmed with it. On a
+ *  draft it refills the mirror and makes no list (110-012); the Plan tab offers it on a confirmed plan only. */
 export async function rebuildShoppingList(v: VanaCtx, scope?: PlanScope | null): Promise<MealPlan> {
   const target = await resolvePlan(v, scope, false);
   if (!target) throw new Error('no plan to build a shopping list from');

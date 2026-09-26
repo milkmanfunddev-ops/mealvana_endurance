@@ -61,12 +61,11 @@ Deno.test('an edit on an archived plan that was once confirmed stamps its list t
   assertEquals(planList(v)?.confirmed_at, '2026-09-13T10:00:00Z');
 });
 
-Deno.test('an edit on a draft leaves its list unconfirmed', async () => {
+Deno.test('an edit on a draft builds no list at all (110-012, Lee 09-26); the mirror still fills', async () => {
   const v = await week('draft', null);
   await act(v, 'set_servings', { planMealId: 'pm1', servings: 2 });
-  const list = planList(v);
-  assert(list);
-  assertEquals(list.confirmed_at, null);
+  assertEquals(planList(v), undefined);
+  assertEquals((v.fake.rows('meal_plans').find((p) => p.id === PLAN)!.shopping as unknown[]).length > 0, true);
 });
 
 // ---- 88-019

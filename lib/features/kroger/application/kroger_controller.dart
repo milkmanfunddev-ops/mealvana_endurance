@@ -1,6 +1,7 @@
 import 'dart:async';
 import 'dart:convert';
 import 'package:flutter/foundation.dart';
+import 'package:flutter/services.dart' show PlatformException;
 import 'package:flutter_web_auth_2/flutter_web_auth_2.dart';
 import 'package:http/http.dart' as http;
 import 'package:riverpod_annotation/riverpod_annotation.dart';
@@ -127,10 +128,13 @@ class KrogerState {
   String? get confirmedArea => draft.store == null ? null : area;
 
   /// Whether a product can be chosen for a line at all. Searching takes a
-  /// Location to search and a customer to search as, and a sent draft is a
-  /// historical record rather than something still being edited.
+  /// Location to search — not a shopper: the server's catalog reads run on
+  /// the application token (111-002, Lee: matching works once a store is
+  /// picked, before Kroger login) — and a sent draft is a historical record
+  /// rather than something still being edited. An unavailable service (Pro
+  /// lapsed, not configured) searches nothing.
   bool get canChooseProduct =>
-      connected && draft.store != null && !draft.exported;
+      available && draft.store != null && !draft.exported;
 
   /// [message] carries like every other field: omitting it keeps what is
   /// already on the state, and [clearMessage] is how a caller drops it.
@@ -349,8 +353,14 @@ class KrogerController extends _$KrogerController {
   String _error(Object? error) => switch (error) {
     KrogerException(:final code) => code,
     http.ClientException() || AuthRetryableFetchException() => 'unavailable',
+    // Cancel on the system sign-in alert, or the X on the sheet
+    // (flutter_web_auth_2, 111-001): the shopper's choice, not a fault.
+    PlatformException() when _isCancel(error) => 'authorization_cancelled',
     _ => 'unexpected',
   };
+
+  static bool _isCancel(PlatformException e) =>
+      e.code.toUpperCase().contains('CANCEL');
   KrogerDraft _environment(KrogerDraft draft, Map<String, dynamic> status) {
     final environment = status['environment'] as String? ?? draft.environment;
     if (environment == draft.environment) return draft;
@@ -442,17 +452,28 @@ class KrogerController extends _$KrogerController {
   Future<void> loadCloud() => _run(
     () async => _persist(_reconcile(await _repo.loadRemote(_user!, planId))),
   );
+  /// Sign the shopper in at kroger.com. A cancelled sign-in — Cancel on the
+  /// system alert, the X on the sheet, or kroger.com answering with an
+  /// error and no code — is quiet (111-001): the screen stays as it was,
+  /// with Connect Kroger back and no message, and the server drops that
+  /// attempt's `kroger_oauth_sessions` row (`cancel_connect`).
   Future<void> connect() async {
     await _run(() async {
       if (kIsWeb) throw const KrogerException('mobile_only');
       final start = await _repo.remote.call('connect');
       final redirect = Uri.parse(start['redirect'] as String);
-      final result = Uri.parse(
-        await ref.read(krogerBrowserProvider)(
+      final String callback;
+      try {
+        callback = await ref.read(krogerBrowserProvider)(
           start['url'] as String,
           redirect.scheme,
-        ),
-      );
+        );
+      } on PlatformException catch (e) {
+        if (!_isCancel(e)) rethrow;
+        await _cancelConnect(start['state']);
+        return;
+      }
+      final result = Uri.parse(callback);
       if (result.scheme != redirect.scheme ||
           result.host != redirect.host ||
           result.path != redirect.path ||
@@ -461,7 +482,8 @@ class KrogerController extends _$KrogerController {
       }
       if (result.queryParameters['error'] != null ||
           result.queryParameters['code'] == null) {
-        throw const KrogerException('authorization_cancelled');
+        await _cancelConnect(start['state']);
+        return;
       }
       await _repo.remote.call('exchange', {
         'code': result.queryParameters['code'],
@@ -476,6 +498,19 @@ class KrogerController extends _$KrogerController {
         ),
       );
     });
+  }
+
+  /// Best effort: the row expires on its own and the next connect deletes
+  /// it, so a failure here is nothing the shopper needs to hear about.
+  /// Idempotent on the server; running it twice drops nothing more.
+  Future<void> _cancelConnect(Object? state) async {
+    try {
+      await _repo.remote.call('cancel_connect', {
+        if (state is String) 'state': state,
+      });
+    } catch (_) {
+      // Nothing to do: see above.
+    }
   }
 
   Future<void> disconnect() async {

@@ -1,5 +1,7 @@
 import 'dart:async';
 
+import 'package:flutter/services.dart';
+
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:flutter_test/flutter_test.dart';
@@ -98,6 +100,7 @@ class _RecordingShoppingListController extends ShoppingListController {
   final List<String> deleted = [];
   final List<(String name, String qty)> added = [];
   int newLists = 0;
+  final List<String?> newListNames = [];
   int backToCurrent = 0;
   final List<(String name, bool value)> ticks = [];
 
@@ -120,7 +123,10 @@ class _RecordingShoppingListController extends ShoppingListController {
   Future<void> openCurrent() async => backToCurrent++;
 
   @override
-  Future<void> newList({String? name}) async => newLists++;
+  Future<void> newList({String? name}) async {
+    newLists++;
+    newListNames.add(name);
+  }
 
   @override
   Future<void> renameList(String name, {String? id}) async =>
@@ -378,6 +384,130 @@ void _redesignTests() {
       });
     }
 
+    // Finding 110-004: offline, the sheet read "No earlier lists yet." over
+    // seven lists.
+    testWidgets('offline Previous lists says the lists need a connection, '
+        'never that there are none', (tester) async {
+      await _pumpTab(
+        tester,
+        ShoppingListState(
+          planId: 'plan-1',
+          isConfirmed: true,
+          items: const [_broccoli],
+          byAisle: const {
+            'Produce': [_broccoli],
+          },
+          itemCount: 1,
+          isOffline: true,
+        ),
+      );
+      await _openMenu(tester, 'meal_planning.shopping_menu');
+      await _choose(tester, 'meal_planning.shopping_previous');
+
+      expect(
+        find.text(content['meal_planning.shopping_previous_offline']!),
+        findsOneWidget,
+      );
+      expect(
+        find.text(content['meal_planning.shopping_previous_empty']!),
+        findsNothing,
+      );
+    });
+
+    testWidgets('a live list that went offline still shows the history it '
+        'read', (tester) async {
+      await _pumpTab(
+        tester,
+        _listState(
+          isOffline: true,
+          previous: [_summary('list-b', 'Old week')],
+        ),
+      );
+      await _openMenu(tester, 'meal_planning.shopping_menu');
+      await _choose(tester, 'meal_planning.shopping_previous');
+      expect(find.text('Old week'), findsOneWidget);
+      expect(
+        find.text(content['meal_planning.shopping_previous_offline']!),
+        findsNothing,
+      );
+    });
+
+    // Finding 110-011 (Lee): the shared text is titled with the list's name.
+    for (final (stored, shown) in [
+      ('Race week extras', 'Race week extras'),
+      ('Week of 2026-09-20', 'Week of Sep 20'),
+    ]) {
+      testWidgets('Share titles the text with the list\'s name ($shown)', (
+        tester,
+      ) async {
+        final calls = <MethodCall>[];
+        TestDefaultBinaryMessengerBinding.instance.defaultBinaryMessenger
+            .setMockMethodCallHandler(
+              const MethodChannel('dev.fluttercommunity.plus/share'),
+              (call) async {
+                calls.add(call);
+                return 'dev.fluttercommunity.plus/share/success';
+              },
+            );
+        addTearDown(
+          () => TestDefaultBinaryMessengerBinding
+              .instance
+              .defaultBinaryMessenger
+              .setMockMethodCallHandler(
+                const MethodChannel('dev.fluttercommunity.plus/share'),
+                null,
+              ),
+        );
+        const figs = ShoppingItem(
+          aisle: 'Produce',
+          name: 'Figs',
+          qty: '6',
+          checked: true,
+        );
+        await tester.pumpWidget(
+          ProviderScope(
+            overrides: [
+              contentServiceProvider.overrideWith(testContentService),
+              shoppingListControllerProvider.overrideWith(
+                () => _FixedShoppingListController(
+                  ShoppingListState(
+                    listId: 'list-1',
+                    listName: stored,
+                    items: const [_broccoli, figs],
+                    byAisle: const {
+                      'Produce': [_broccoli, figs],
+                    },
+                    itemCount: 2,
+                  ),
+                ),
+              ),
+              unitSystemProvider.overrideWith(
+                (ref) async => UnitSystem.imperial,
+              ),
+            ],
+            child: const MaterialApp(
+              home: Scaffold(body: Center(child: ShoppingShareButton())),
+            ),
+          ),
+        );
+        await tester.pump();
+
+        await tester.tap(
+          find.byKey(const ValueKey('meal_planning.shopping_share')),
+        );
+        await tester.pump();
+
+        final share = calls.single;
+        expect(share.method, 'share');
+        final args = share.arguments as Map;
+        expect(args['title'], shown);
+        expect(args['subject'], shown);
+        // The ticked fig is not counted as still to buy (89-002).
+        expect(args['text'], startsWith('$shown\n1 item to buy\n'));
+        expect(args['text'], isNot(contains('Mealvana shopping list')));
+      });
+    }
+
     testWidgets('online there is no notice and Kroger is offered', (
       tester,
     ) async {
@@ -469,7 +599,53 @@ void _redesignTests() {
       );
 
       await _choose(tester, 'meal_planning.shopping_new_list');
+      // New list asks for a name first (110-010).
+      expect(
+        find.byKey(const ValueKey('meal_planning.shopping_new_list_sheet')),
+        findsOneWidget,
+      );
+      expect(controller.newLists, 0);
+      await tester.tap(
+        find.byKey(const ValueKey('meal_planning.shopping_rename_save')),
+      );
+      await tester.pumpAndSettle();
       expect(controller.newLists, 1);
+    });
+
+    // Finding 110-010 (Lee): New list asks for a name, pre-filled with today
+    // in words, and " (2)" when a list already has that name.
+    testWidgets('New list is pre-filled "List · <today>", made unique, and '
+        'sent as typed', (tester) async {
+      final today = DateFormat.MMMd().format(DateTime.now());
+      final controller = await _pumpTab(
+        tester,
+        _listState(previous: [_summary('list-x', 'List · $today')]),
+      );
+      await _openMenu(tester, 'meal_planning.shopping_menu');
+      await _choose(tester, 'meal_planning.shopping_new_list');
+
+      final field = tester.widget<TextField>(
+        find.descendant(
+          of: find.byKey(const ValueKey('meal_planning.shopping_rename_name')),
+          matching: find.byType(TextField),
+        ),
+      );
+      expect(field.controller!.text, 'List · $today (2)');
+      expect(
+        find.text(content['meal_planning.shopping_new_list_title']!),
+        findsOneWidget,
+      );
+      expect(
+        find.text(content['meal_planning.shopping_new_list_create']!),
+        findsOneWidget,
+      );
+
+      await tester.enterText(find.byType(TextField), 'Race week extras');
+      await tester.tap(
+        find.byKey(const ValueKey('meal_planning.shopping_rename_save')),
+      );
+      await tester.pumpAndSettle();
+      expect(controller.newListNames, ['Race week extras']);
     });
 
     testWidgets('tapping the name opens a prefilled rename sheet', (
@@ -733,8 +909,17 @@ void _redesignTests() {
       await tester.tap(
         find.byKey(const ValueKey('meal_planning.shopping_new_list')),
       );
-      await tester.pump();
+      await tester.pumpAndSettle();
+      expect(
+        find.byKey(const ValueKey('meal_planning.shopping_new_list_sheet')),
+        findsOneWidget,
+      );
+      await tester.tap(
+        find.byKey(const ValueKey('meal_planning.shopping_rename_save')),
+      );
+      await tester.pumpAndSettle();
       expect(controller.newLists, 1);
+      expect(controller.newListNames.single, startsWith('List · '));
     });
   });
 

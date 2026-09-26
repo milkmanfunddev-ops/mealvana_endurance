@@ -2,6 +2,7 @@ import 'dart:async';
 import 'dart:convert';
 import 'dart:io';
 import 'package:flutter/material.dart';
+import 'package:flutter/services.dart' show PlatformException;
 import 'package:flutter_test/flutter_test.dart';
 import 'package:font_awesome_flutter/font_awesome_flutter.dart';
 import 'package:go_router/go_router.dart';
@@ -108,6 +109,7 @@ void main() {
   var disconnects = 0;
   var ambiguous = false;
   var browserCallback = '';
+  Object? browserThrows;
   var account = 'user-a';
   var found = true;
   late Map<String, KrogerProduct> catalog;
@@ -142,6 +144,7 @@ void main() {
     disconnects = 0;
     ambiguous = false;
     browserCallback = '';
+    browserThrows = null;
     account = 'user-a';
     found = true;
     // Each Location has its own catalogue. The Spoke's Broccoli has no price
@@ -221,8 +224,10 @@ void main() {
         contentServiceProvider.overrideWith(testContentService),
         krogerShoppingEnabledProvider.overrideWithValue(true),
         krogerBrowserProvider.overrideWith(
-          (ref) =>
-              (url, scheme) async => browserCallback,
+          (ref) => (url, scheme) async {
+            if (browserThrows != null) throw browserThrows!;
+            return browserCallback;
+          },
         ),
         krogerAreaFinderProvider.overrideWith(
           (ref) =>
@@ -696,6 +701,157 @@ void main() {
     expect(current().message, 'invalid_oauth_state');
     expect(exchanged, false);
   });
+  // Finding 111-001: Cancel on the system alert or X on the sheet read as
+  // "Something went wrong" and left the attempt's OAuth session row.
+  group('a cancelled Kroger sign-in is quiet (111-001)', () {
+    late List<(String, Map<String, dynamic>)> calls;
+    setUp(() async {
+      calls = [];
+      status = {
+        'available': true,
+        'connected': false,
+        'environment': 'certification',
+      };
+      final inner = remote.onCall!;
+      remote.onCall = (action, data) async {
+        calls.add((action, data));
+        if (action == 'connect') {
+          return {
+            'url': 'https://api-ce.kroger.com/v1/connect/oauth2/authorize',
+            'redirect': 'com.milkman.mealvanaendurance://callback',
+            'state': 'expected',
+          };
+        }
+        if (action == 'cancel_connect' || action == 'exchange') return {};
+        return inner(action, data);
+      };
+      await restart();
+      expect(current().connected, false);
+    });
+
+    test('Cancel on the alert: no message, still disconnected, and the '
+        'server drops the attempt', () async {
+      browserThrows = PlatformException(
+        code: 'CANCELED',
+        message: 'User canceled login',
+      );
+      await controller.connect();
+      expect(current().message, isNull);
+      expect(current().connected, false);
+      expect(current().busy, false);
+      expect(
+        calls.where((c) => c.$1 == 'cancel_connect').single.$2,
+        {'state': 'expected'},
+      );
+      expect(calls.any((c) => c.$1 == 'exchange'), false);
+    });
+
+    test('kroger.com answering with an error and no code is a cancel too', () async {
+      browserCallback =
+          'com.milkman.mealvanaendurance://callback?state=expected&error=access_denied';
+      await controller.connect();
+      expect(current().message, isNull);
+      expect(current().connected, false);
+      expect(calls.any((c) => c.$1 == 'cancel_connect'), true);
+      expect(calls.any((c) => c.$1 == 'exchange'), false);
+    });
+
+    test('a cancel_connect the server refuses is swallowed', () async {
+      browserThrows = PlatformException(code: 'CANCELED');
+      final inner = remote.onCall!;
+      remote.onCall = (action, data) async {
+        if (action == 'cancel_connect') throw const KrogerException('rate_limited');
+        return inner(action, data);
+      };
+      await controller.connect();
+      expect(current().message, isNull);
+      expect(current().connected, false);
+    });
+
+    test('any other PlatformException is still reported', () async {
+      browserThrows = PlatformException(code: 'FAILED', message: 'boom');
+      await controller.connect();
+      expect(current().message, 'unexpected');
+    });
+
+    testWidgets('the screen shows no snackbar and Connect Kroger is back', (
+      tester,
+    ) async {
+      browserThrows = PlatformException(code: 'CANCELED');
+      await showScreen(tester);
+      final copy = loadDefaultContent();
+      await tester.tap(find.text(copy['kroger.connect']!));
+      await tester.pumpAndSettle();
+      expect(find.byType(SnackBar), findsNothing);
+      expect(find.text(copy['kroger.unexpected']!), findsNothing);
+      expect(find.text(copy['kroger.authorization_cancelled']!), findsNothing);
+      expect(find.text(copy['kroger.connect']!), findsOneWidget);
+    });
+  });
+
+  // Finding 111-002 (Lee): matching works once a store is picked, before a
+  // Kroger sign-in; login is asked only at Add to Kroger cart.
+  group('matching before a Kroger sign-in (111-002)', () {
+    setUp(() async {
+      status = {
+        'available': true,
+        'connected': false,
+        'environment': 'certification',
+      };
+      await restart();
+      expect(current().connected, false);
+      expect(current().draft.store, isNotNull, reason: 'the device said 35209');
+    });
+
+    test('Match all and a product search run unconnected with a store', () async {
+      expect(current().canChooseProduct, true);
+      await controller.matchAll();
+      expect(searches, ['Broccoli']);
+      expect(current().draft.matched.single.product?.upc, product.upc);
+      expect(current().message, 'review_matches', reason: 'the run\'s own report');
+      final chosen = await controller.search(
+        current().draft.lines.single.id,
+        'Broccoli',
+      );
+      expect(chosen, isNotEmpty);
+    });
+
+    test('a sent draft, or no store, still refuses a product', () async {
+      await firstUse();
+      status = {
+        'available': true,
+        'connected': false,
+        'environment': 'certification',
+      };
+      await restart();
+      expect(current().draft.store, isNull);
+      expect(current().canChooseProduct, false);
+    });
+
+    testWidgets('Match all and Add to Kroger cart are drawn; Add asks to '
+        'connect', (tester) async {
+      await tester.runAsync(reviewed);
+      await showScreen(tester);
+      final copy = loadDefaultContent();
+      expect(find.text(copy['kroger.match_all']!), findsOneWidget);
+      final send = find.byKey(const ValueKey('kroger.export'));
+      expect(send, findsOneWidget);
+      expect(find.text(copy['kroger.connect']!), findsOneWidget);
+
+      await tester.tap(send);
+      await tester.pumpAndSettle();
+      expect(find.text(copy['kroger.send_connect_first']!), findsOneWidget);
+      expect(find.text(copy['kroger.send_confirm']!), findsNothing);
+      expect(exports, 0);
+      // Two Connect Kroger labels now: the body's and the sheet's.
+      expect(find.text(copy['kroger.connect']!), findsNWidgets(2));
+      await tester.tap(find.text(copy['kroger.cancel']!));
+      await tester.pumpAndSettle();
+      expect(exports, 0);
+      expect(current().connected, false);
+    });
+  });
+
   testWidgets('each failure cause says its own thing', (tester) async {
     // Every one of these used to render as "Kroger shopping is being set up",
     // which is a lie in three cases out of four.

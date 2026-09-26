@@ -100,11 +100,15 @@ export async function planList(v: VanaCtx, planId: string): Promise<ShoppingList
   return data ? detail(v, data) : null;
 }
 /** Replace the plan's rows from `fresh`, keep manual / edited rows, and answer the whole list as plain lines
- *  (the caller writes those to `meal_plans.shopping`). */
-export async function syncPlanList(v: VanaCtx, plan: { id: string; weekStart: string; status: string }, fresh: ShoppingItem[]): Promise<ShoppingItem[]> {
-  // An archived draft lost its list with the archive (ticket 101); a pick still reaching it (mp-683) must not make it
-  // again. An archived plan that was once confirmed stays editable (mp-675) and rebuilds its list as before.
-  if (plan.status === 'archived' && !(await planList(v, plan.id)) && !(await wasConfirmed(v, plan.id))) return fresh;
+ *  (the caller writes those to `meal_plans.shopping`).
+ *
+ *  A draft never has a list (110-012, Lee 2026-09-26, clarifying mp-244): the list is built at confirm (`confirm`,
+ *  passed by confirmPlan while the plan is still a draft) and rebuilt after edits to a plan that is, or once was,
+ *  confirmed. A draft's edit answers the fresh lines for the `meal_plans.shopping` mirror (Kroger, the offline copy)
+ *  and touches no list. This covers ticket 101's archived never-confirmed draft too: a pick still reaching it (mp-683)
+ *  makes no list. An archived plan that was once confirmed stays editable (mp-675) and rebuilds its list as before. */
+export async function syncPlanList(v: VanaCtx, plan: { id: string; weekStart: string; status: string }, fresh: ShoppingItem[], opts: { confirm?: boolean } = {}): Promise<ShoppingItem[]> {
+  if (!opts.confirm && plan.status !== 'confirmed' && !(await wasConfirmed(v, plan.id))) return fresh;
   const list = await ensurePlanList(v, plan.id, plan.weekStart);
   const prev = await itemsOf(v, list.id);
   const { keep, insert, drop } = mergePlanItems(prev, fresh);
@@ -204,9 +208,27 @@ export async function getList(v: VanaCtx, id?: string | null): Promise<ShoppingL
   const { current } = await orderedRows(v);
   return current ? detail(v, current) : null;
 }
-/** A new hand-made list (empty), or one seeded from the plan's current lines when `fromPlan` names a plan. */
+/** A hand-made list's default name: today in words, "List · Sep 25" (110-010, Lee 09-26), read from the `YYYY-MM-DD`
+ *  string like [weekListName]. The app pre-fills New list with the same words (`shopping_new_list_default`). */
+export function defaultListName(iso: string): string {
+  const m = /^(\d{4})-(\d{2})-(\d{2})$/.exec(iso);
+  const month = m ? MONTHS[Number(m[2]) - 1] : undefined;
+  return month ? `List · ${month} ${Number(m![3])}` : `List · ${iso}`;
+}
+/** The names of the lists the athlete can see, so a new or renamed list takes the next free " (n)". A deleted plan's
+ *  hidden list must not push a " (2)" the app, which checks the lists it shows, never predicted. */
+async function visibleListNames(v: VanaCtx, exceptId?: string): Promise<string[]> {
+  const { data: others } = await v.db.from('shopping_lists').select('id, name, plan_id').eq('user_id', v.userId).limit(200);
+  const hidden = await deletedPlanIds(v);
+  return ((others ?? []) as { id: string; name: string | null; plan_id: string | null }[])
+    .filter((r) => r.id !== exceptId && !hidden.has(r.plan_id)).map((r) => r.name ?? '');
+}
+/** A new hand-made list (empty), or one seeded from the plan's current lines when `fromPlan` names a plan. Named
+ *  [defaultListName] when none is given; either way the name follows the rename rule (clean, capped, next free " (n)"),
+ *  so two lists made the same day read apart and the app's pre-filled name is the one kept (110-010). */
 export async function createList(v: VanaCtx, name: string | null, seed: ShoppingItem[] | null): Promise<ShoppingListDetail> {
-  const { data: made, error } = await v.db.from('shopping_lists').insert({ user_id: v.userId, plan_id: null, name: name?.trim() || `List ${new Date().toISOString().slice(0, 10)}` }).select('*').single();
+  const clean = uniqueListName(cleanListName(name ?? '') || defaultListName(today()), await visibleListNames(v));
+  const { data: made, error } = await v.db.from('shopping_lists').insert({ user_id: v.userId, plan_id: null, name: clean }).select('*').single();
   if (error) throw new Error(error.message);
   if (seed?.length) {
     const { error: e2 } = await v.db.from('shopping_items').insert(seed.map((i, position) => ({ list_id: made.id, user_id: v.userId, name: i.name, qty: i.qty, aisle: i.aisle, checked: false, have: i.have, source: 'manual', from_meal_ids: i.fromMealIds ?? [], edited: false, position })));
@@ -237,12 +259,7 @@ export function uniqueListName(name: string, taken: string[]): string {
 export async function renameList(v: VanaCtx, id: string, name: string): Promise<ShoppingListDetail> {
   const cleaned = cleanListName(name); if (!cleaned) throw new Error('name required');
   await listRow(v, id);
-  // Only lists the athlete can see count as taken: a deleted plan's hidden list must not push a " (2)" the app,
-  // which checks the lists it shows, never predicted.
-  const { data: others } = await v.db.from('shopping_lists').select('id, name, plan_id').eq('user_id', v.userId).limit(200);
-  const hidden = await deletedPlanIds(v);
-  const clean = uniqueListName(cleaned, ((others ?? []) as { id: string; name: string | null; plan_id: string | null }[])
-    .filter((r) => r.id !== id && !hidden.has(r.plan_id)).map((r) => r.name ?? ''));
+  const clean = uniqueListName(cleaned, await visibleListNames(v, id));
   await v.db.from('shopping_lists').update({ name: clean, updated_at: now() }).eq('id', id).eq('user_id', v.userId);
   return detail(v, await listRow(v, id));
 }

@@ -85,7 +85,10 @@ class KrogerScreen extends ConsumerWidget {
       // Suppressed only when the body is already showing these exact words:
       // gating on availability instead would silence every later failure —
       // a rate limit, an expired authorization — for an unavailable session.
+      // A cancelled sign-in is the shopper's own doing and says nothing
+      // (111-001): Connect Kroger is simply back.
       if (message != null &&
+          message != 'authorization_cancelled' &&
           previous?.value?.message != message &&
           message != next.value?.unavailableReason) {
         MealvanaSnackbar.showInfo(
@@ -276,8 +279,10 @@ class _Body extends ConsumerWidget {
         ],
         // A Location, not an area: the Location is persisted and the area is
         // not, so a shopper coming back to a resolved draft can still match
-        // even before saying where they are again.
-        if (view.connected && view.draft.store != null && !view.draft.exported)
+        // even before saying where they are again. Matching needs no Kroger
+        // sign-in (111-002): the catalog reads run on the application token.
+        // An unavailable service (Pro lapsed, not configured) offers nothing.
+        if (view.available && view.draft.store != null && !view.draft.exported)
           Padding(
             padding: const EdgeInsets.symmetric(vertical: AppSpacing.sm),
             child: KyleSecondaryButton(
@@ -369,12 +374,26 @@ class _Body extends ConsumerWidget {
         // and the button waking up is how they learn that everything matched
         // is approved. Only approved lines are ever sent; `export` refuses a
         // draft that is not `ready` on its own, whatever the button says.
-        if (!view.draft.exported && view.connected)
+        // Shown to every shopper, connected or not (111-002): the cart write
+        // is the one thing that needs a Kroger sign-in, so an unconnected
+        // shopper is asked to connect here, and only here.
+        if (view.available && !view.draft.exported)
           KylePrimaryButton(
             key: const ValueKey('kroger.export'),
             text: krogerText(ref, ContentKeys.krogerSend),
             onPressed: view.draft.ready
                 ? () async {
+                    if (!view.connected) {
+                      if (await _confirm(
+                        context,
+                        ref,
+                        ContentKeys.krogerSendConnectFirst,
+                        confirmKey: ContentKeys.krogerConnect,
+                      )) {
+                        await controller.connect();
+                      }
+                      return;
+                    }
                     if (await _confirm(
                       context,
                       ref,

@@ -697,6 +697,25 @@ class MealPlanRepository with SyncableRepository {
     );
   }
 
+  /// Replace the plan's `shopping` mirror with the lines the server answered
+  /// (Finding 110-003): what this phone last saw of the plan's list, so a
+  /// cold offline start shows the last online ticks. Server truth, so the
+  /// row is not flagged for upload and its clocks are left alone.
+  Future<void> setShoppingMirror(
+    String planId,
+    List<ShoppingItem> items,
+  ) async {
+    final plan = await _livePlan(planId);
+    if (plan == null) return;
+    await (_database.update(
+      _database.mealPlansTable,
+    )..where((t) => t.id.equals(planId))).write(
+      MealPlansTableCompanion(
+        shopping: Value(jsonEncode([for (final i in items) i.toJson()])),
+      ),
+    );
+  }
+
   /// Write (or clear, with `ref == null`) one day-planner slot.
   Future<void> setDaySlot(
     String planId,

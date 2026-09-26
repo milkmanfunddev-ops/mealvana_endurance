@@ -16,6 +16,39 @@ import 'slot_chip.dart';
 import '../../../../shared/widgets/kyle_design/icons/vana_avatar.dart';
 import 'vana_bubble.dart';
 
+/// "1 item" / "{n} items" (Finding 110-006: the tab read "1 items").
+String shoppingItemCountText(ContentService content, int n) => n == 1
+    ? content.getValue(ContentKeys.mpShoppingItemCountOne)
+    : ContentKeys.format(content.getValue(ContentKeys.mpShoppingItemCount), {
+        'n': n,
+      });
+
+/// "Totals for 8 servings · 3 meals", each count in its own number
+/// (110-006: "1 meals").
+String shoppingTotalsText(
+  ContentService content, {
+  required int servings,
+  required int meals,
+}) => ContentKeys.format(content.getValue(ContentKeys.mpShoppingTotalsFor), {
+  'servings': _count(
+    content,
+    servings,
+    ContentKeys.mpShoppingServingsOne,
+    ContentKeys.mpShoppingServingsMany,
+  ),
+  'meals': _count(
+    content,
+    meals,
+    ContentKeys.mpShoppingMealsOne,
+    ContentKeys.mpShoppingMealsMany,
+  ),
+});
+
+String _count(ContentService content, int n, String one, String many) =>
+    n == 1
+    ? content.getValue(one)
+    : ContentKeys.format(content.getValue(many), {'n': n});
+
 /// The aisle-grouped shopping list: the item-count header, Vana's "I left
 /// these off" note, and one card per aisle whose rows are checkbox · name ·
 /// quantity. Toggles are local-first through [ShoppingListController]
@@ -85,10 +118,7 @@ class ShoppingList extends ConsumerWidget {
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
         Text(
-          ContentKeys.format(
-            content.getValue(ContentKeys.mpShoppingItemCount),
-            {'n': state.itemCount},
-          ),
+          shoppingItemCountText(content, state.itemCount),
           style: AppTextStyles.sectionTitle.copyWith(
             color: textColor,
             fontSize: 20,
@@ -99,10 +129,11 @@ class ShoppingList extends ConsumerWidget {
         if (state.mealCount > 0) ...[
           const SizedBox(height: 2),
           Text(
-            ContentKeys.format(content.getValue(ContentKeys.mpShoppingTotals), {
-              'servings': state.totalServings,
-              'meals': state.mealCount,
-            }),
+            shoppingTotalsText(
+              content,
+              servings: state.totalServings,
+              meals: state.mealCount,
+            ),
             style: AppTextStyles.bodySmall.copyWith(color: secondary),
           ),
         ],
