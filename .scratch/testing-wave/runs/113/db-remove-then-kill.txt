@@ -1,0 +1,2 @@
+# db-remove-then-kill: Remove tapped 11:19:23Z on W40-113 Decimal kcal, app terminated 11:19:25Z. Read 2026-09-26T11:19:33Z (before relaunch). SELECT only.
+{"id":"c3bc3639-5577-4972-831e-944838c3d29d","name":"W40-113 Decimal kcal","updated_at":"2026-09-26 11:19:24.023772+00","is_deleted":true}
