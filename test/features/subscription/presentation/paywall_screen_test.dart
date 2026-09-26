@@ -13,8 +13,10 @@
 /// and a never-subscribed one alike, however it was reached; each menu entry
 /// driving the right controller; the unavailable state; founding prices beside the struck-through normal ones
 /// (mp-453 §2); the trial terms, price after the trial and the terms and
-/// privacy links (mp-453 §4); the opening clip (mp-493 §1); and light/dark
-/// goldens of the full-screen paywall at phone size, plus the founding shape.
+/// privacy links (mp-453 §4); the looping clip at the head of the one page
+/// and the four headline features as a carousel (mp-493 §1, Lee 2026-09-26);
+/// and light/dark goldens of the full-screen paywall at phone size, plus the
+/// founding shape.
 ///
 /// Fonts: widget tests render with the test font, so the goldens pin LAYOUT,
 /// COLOUR and STRUCTURE, not glyph shapes.
@@ -50,6 +52,7 @@ import 'package:mealvana_endurance/features/subscription/presentation/open_paywa
 import 'package:mealvana_endurance/features/subscription/presentation/pro_gate_redirect.dart';
 import 'package:mealvana_endurance/features/subscription/presentation/screens/paywall_screen.dart';
 import 'package:mealvana_endurance/features/subscription/presentation/screens/subscription_screen.dart';
+import 'package:mealvana_endurance/features/subscription/presentation/widgets/pro_feature_carousel.dart';
 import 'package:mealvana_endurance/features/subscription/data/subscription_service.dart';
 import 'package:mealvana_endurance/shared/providers/is_admin_provider.dart';
 import 'package:mealvana_endurance/shared/widgets/kyle_design/materials/glass.dart';
@@ -202,9 +205,10 @@ final _content = loadDefaultContent();
 ContentService _testContentService(Ref ref) =>
     TestContentService(ref, _content);
 
-/// Every test but the clip's own starts past the clip: its player ends the
-/// moment it starts, so the page has moved on to the features and plans once
-/// the pump settles. [clip] hands a test the player to drive instead.
+/// Every test but the clip's own uses a player that ends the moment it
+/// starts; the page is the same one either way (the clip's end changes
+/// nothing), the poster just stays up. [clip] hands a test the player to
+/// drive instead.
 List<Override> _overrides({
   PaywallPlans? plans,
   ProPaywallController Function()? paywall,
@@ -400,11 +404,14 @@ void main() {
         const Offset(0, -2000),
       );
       await tester.pumpAndSettle();
+      // The page's own Scrollable, not the features carousel's inside it.
       final scrollable = tester.state<ScrollableState>(
-        find.descendant(
-          of: find.byKey(const ValueKey('paywall.scroll')),
-          matching: find.byType(Scrollable),
-        ),
+        find
+            .descendant(
+              of: find.byKey(const ValueKey('paywall.scroll')),
+              matching: find.byType(Scrollable),
+            )
+            .first,
       );
       expect(scrollable.position.pixels, greaterThan(0));
       expect(scrollable.position.pixels, scrollable.position.maxScrollExtent);
@@ -515,7 +522,7 @@ void main() {
     });
   });
 
-  group('the opening clip (mp-493 §1, mp-497 §2)', () {
+  group('the clip at the head of the one page (mp-493 §1, Lee 2026-09-26)', () {
     const clip = ValueKey('paywall.clip');
     const still = ValueKey('paywall.clip_still');
     const features = ValueKey('paywall.features');
@@ -546,8 +553,10 @@ void main() {
       );
     }
 
-    testWidgets('plays the clip silently, then slides to the features and '
-        'plans; ⋯ arrives with them', (tester) async {
+    testWidgets('the clip plays silently at the head of the one page, with '
+        'the title, the features and the plans; its end changes nothing', (
+      tester,
+    ) async {
       final player = FakePhoneClipPlayer();
       var made = 0;
       await pumpPaywall(
@@ -561,7 +570,8 @@ void main() {
       );
       await tester.pump();
 
-      // Page one: the clip, playing muted, and nothing else.
+      // One page from the start: the clip, playing muted, and everything
+      // else with it. No slide, nothing waits on the clip.
       expect(made, 1);
       expect(player.started, isTrue);
       expect(player.muted, isTrue);
@@ -569,41 +579,72 @@ void main() {
       await tester.pump();
       expect(find.byKey(clip), findsOneWidget);
       expect(find.byKey(FakePhoneClipPlayer.viewKey), findsOneWidget);
-      for (final key in [features, plans, more]) {
-        expect(find.byKey(key), findsNothing, reason: '$key');
+      for (final key in [
+        const ValueKey('paywall.title'),
+        features,
+        plans,
+        more,
+      ]) {
+        expect(find.byKey(key), findsOneWidget, reason: '$key');
       }
+      expect(find.byKey(still), findsNothing);
+      expect(find.byKey(_close), findsNothing);
+      // The clip sits above the title, small and centred (about a third of
+      // the width).
+      final clipRect = tester.getRect(find.byKey(clip));
+      expect(
+        clipRect.bottom,
+        lessThan(
+          tester.getTopLeft(find.byKey(const ValueKey('paywall.title'))).dy,
+        ),
+      );
+      expect(clipRect.width, closeTo((393 - 32) * kPaywallClipWidthFactor, 1));
+      expect(clipRect.center.dx, closeTo(393 / 2, 1));
+      expect(tester.getTopRight(find.byKey(more)).dx, greaterThan(340));
+      expect(tester.getTopRight(find.byKey(more)).dx, lessThanOrEqualTo(393));
 
-      // The clip ends: the features and plans slide over it.
+      // The clip ends: nothing moves, the clip stays where it is.
+      final before = {
+        for (final k in [clip, features, plans, more])
+          k: tester.getRect(find.byKey(k)),
+      };
       player.phase.value = PhoneClipPhase.ended;
       await tester.pump();
       await tester.pump(const Duration(milliseconds: 50));
-      expect(find.byKey(features), findsOneWidget);
-      expect(tester.getTopLeft(find.byKey(more)).dx, greaterThan(393));
       await tester.pumpAndSettle();
-
-      expect(find.byKey(clip), findsNothing);
-      expect(player.disposed, isTrue);
-      for (final key in [features, plans, more]) {
-        expect(find.byKey(key), findsOneWidget, reason: '$key');
+      expect(find.byKey(clip), findsOneWidget);
+      expect(player.disposed, isFalse);
+      for (final entry in before.entries) {
+        expect(
+          tester.getRect(find.byKey(entry.key)),
+          entry.value,
+          reason: '${entry.key} moved when the clip ended',
+        );
       }
-      expect(find.byKey(_close), findsNothing);
-      expect(tester.getTopRight(find.byKey(more)).dx, greaterThan(340));
-      expect(tester.getTopRight(find.byKey(more)).dx, lessThanOrEqualTo(393));
     });
 
-    testWidgets('a tap on the clip skips it', (tester) async {
+    testWidgets('a tap on the clip changes nothing', (tester) async {
       final player = FakePhoneClipPlayer();
       await pumpPaywall(tester, overrides: _overrides(clip: () => player));
       await tester.pump();
+      player.phase.value = PhoneClipPhase.playing;
+      await tester.pump();
+      final before = {
+        for (final k in [clip, features, plans, more])
+          k: tester.getRect(find.byKey(k)),
+      };
       await tester.tap(find.byKey(clip));
       await tester.pumpAndSettle();
-      expect(find.byKey(features), findsOneWidget);
-      expect(find.byKey(clip), findsNothing);
+      expect(find.byKey(clip), findsOneWidget);
+      expect(find.byKey(FakePhoneClipPlayer.viewKey), findsOneWidget);
+      expect(player.disposed, isFalse);
+      for (final entry in before.entries) {
+        expect(tester.getRect(find.byKey(entry.key)), entry.value);
+      }
     });
 
-    testWidgets('Reduce Motion: the first frame, straight on the features', (
-      tester,
-    ) async {
+    testWidgets('Reduce Motion: the first frame in the clip\'s place, the '
+        'page otherwise the same', (tester) async {
       var made = 0;
       await pumpPaywall(
         tester,
@@ -617,7 +658,7 @@ void main() {
       );
       await tester.pump();
 
-      // No clip plays, no slide runs: the still frame heads the features.
+      // No player is made: the still frame heads the page.
       expect(made, 0);
       expect(find.byKey(clip), findsNothing);
       expect(find.byKey(still), findsOneWidget);
@@ -628,18 +669,22 @@ void main() {
         ),
         findsOneWidget,
       );
+      expect(
+        tester.getRect(find.byKey(still)).width,
+        closeTo((393 - 32) * kPaywallClipWidthFactor, 1),
+      );
       for (final key in [features, plans, more]) {
         expect(find.byKey(key), findsOneWidget, reason: '$key');
       }
       // Continue's own 200 ms enabled-state fade (the plans arrive after the
-      // first frame) is the only motion allowed; a slide would still be
-      // running at 250 ms (it takes 480).
+      // first frame) is the only motion allowed.
       await tester.pump(const Duration(milliseconds: 250));
       expect(tester.hasRunningAnimations, isFalse);
     });
 
-    testWidgets('iOS Reduce Motion: the first frame, straight on the '
-        'features', (tester) async {
+    testWidgets('iOS Reduce Motion: the first frame in the clip\'s place', (
+      tester,
+    ) async {
       tester.platformDispatcher.accessibilityFeaturesTestValue =
           const FakeAccessibilityFeatures(reduceMotion: true);
       addTearDown(
@@ -663,38 +708,101 @@ void main() {
       expect(find.byKey(more), findsOneWidget);
     });
 
-    testWidgets('four headline features, the divider, then the rest, with '
-        'the AI features on the one Vana line', (tester) async {
+    testWidgets('four headline features as a carousel, no divider, no '
+        '"also includes" rows; the AI features on the one Vana card', (
+      tester,
+    ) async {
       await smokeScreen(tester, const PaywallScreen(), overrides: _overrides());
       String copy(String key) => _content[key]!;
-      for (final key in [
-        'paywall.feature_fuel_title',
-        'paywall.feature_vana_title',
-        'paywall.feature_vana_body',
-        'paywall.feature_shopping_title',
-        'paywall.feature_sync_title',
-        'paywall.feature_recipes',
-      ]) {
-        expect(find.text(copy(key)), findsOneWidget, reason: key);
-      }
-      expect(find.byKey(FeatureList.headlineKey(3)), findsOneWidget);
-      expect(find.byKey(FeatureList.headlineKey(4)), findsNothing);
+
+      // The features sit under the clip and the title, above the terms and
+      // the plans; scroll them into view.
       expect(
-        find.text(copy('paywall.features_divider').toUpperCase()),
+        tester.getTopLeft(find.byKey(features)).dy,
+        greaterThan(
+          tester.getBottomLeft(find.byKey(const ValueKey('paywall.title'))).dy,
+        ),
+      );
+      expect(
+        tester.getTopLeft(find.byKey(features)).dy,
+        lessThan(
+          tester.getTopLeft(find.byKey(const ValueKey('paywall.terms'))).dy,
+        ),
+      );
+      await tester.ensureVisible(find.byKey(features));
+      await tester.pumpAndSettle();
+
+      // The first card is on screen with its title and body.
+      expect(find.byType(ProFeatureCarousel), findsOneWidget);
+      expect(find.byKey(ProFeatureCarousel.cardKey(0)), findsOneWidget);
+      expect(
+        find.descendant(
+          of: find.byKey(ProFeatureCarousel.cardKey(0)),
+          matching: find.text(copy('paywall.feature_fuel_title')),
+        ),
         findsOneWidget,
       );
       expect(
         find.descendant(
-          of: find.byKey(FeatureList.headlineKey(1)),
-          matching: find.byType(VanaAvatar),
+          of: find.byKey(ProFeatureCarousel.cardKey(0)),
+          matching: find.text(copy('paywall.feature_fuel_body')),
         ),
         findsOneWidget,
       );
+      expect(find.byKey(ProFeatureCarousel.dotsKey), findsOneWidget);
+
+      // Nothing of the old list: no divider, none of the five "more" rows.
+      expect(find.byType(FeatureList), findsNothing);
+      expect(find.text(copy('paywall.features_divider')), findsNothing);
+      expect(
+        find.text(copy('paywall.features_divider').toUpperCase()),
+        findsNothing,
+      );
+      for (final key in [
+        'paywall.feature_recipes',
+        'paywall.feature_brick',
+        'paywall.feature_hydration',
+        'paywall.feature_formulas',
+        'paywall.feature_targets',
+      ]) {
+        expect(find.text(copy(key)), findsNothing, reason: key);
+      }
+
       // The features come before the plans.
       expect(
-        tester.getTopLeft(find.byKey(features)).dy,
-        lessThan(tester.getTopLeft(find.byKey(plans)).dy),
+        tester.getBottomLeft(find.byKey(features)).dy,
+        lessThanOrEqualTo(tester.getTopLeft(find.byKey(plans)).dy),
       );
+
+      // Swipe left: the second card, Vana's, with its avatar.
+      await tester.drag(find.byType(PageView), const Offset(-300, 0));
+      await tester.pumpAndSettle();
+      final vana = find.byKey(ProFeatureCarousel.cardKey(1));
+      expect(vana, findsOneWidget);
+      expect(
+        find.descendant(
+          of: vana,
+          matching: find.text(copy('paywall.feature_vana_title')),
+        ),
+        findsOneWidget,
+      );
+      expect(
+        find.descendant(
+          of: vana,
+          matching: find.text(copy('paywall.feature_vana_body')),
+        ),
+        findsOneWidget,
+      );
+      expect(
+        find.descendant(of: vana, matching: find.byType(VanaAvatar)),
+        findsOneWidget,
+      );
+      final screen = tester.getRect(
+        find.byKey(const ValueKey('paywall.screen')),
+      );
+      final vanaRect = tester.getRect(vana);
+      expect(vanaRect.left, greaterThanOrEqualTo(screen.left));
+      expect(vanaRect.right, lessThanOrEqualTo(screen.right));
     });
   });
 

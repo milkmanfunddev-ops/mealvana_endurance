@@ -12,18 +12,22 @@ clip shows or what happens after it; the page that composes it does.
 `lift` (floating chrome, not a content card). The screen behind the clip is `blackberry` while
 nothing has drawn. The frame introduces no colour of its own and tints nothing it shows.
 
-**First use:** the paywall's opening page (`paywall_screen.dart`), with the clip bundled at
-`assets/video/paywall_clip.mp4` and its first frame at `assets/video/paywall_clip_first.jpg`.
+**First use:** the head of the paywall's one page (`paywall_screen.dart`), looping, about a third of
+the page's width (Lee, 2026-09-26; before that the paywall opened on it full-size, once, and slid
+to the features when it ended). The clip is bundled at `assets/video/paywall_clip.mp4` and its
+first frame at `assets/video/paywall_clip_first.jpg`.
 
 ## Contracts
 
-- **PCF-1 — silent, once.** The clip plays muted, once, without looping, and mixes with other audio
-  so it never stops the athlete's music. Until its first frame plays, the poster (the clip's first
-  frame) holds the screen, so the frame never shows an empty box or a spinner.
+- **PCF-1 — silent, once or looping.** The clip plays muted, once, or looping when the caller asks,
+  and mixes with other audio so it never stops the athlete's music. Until its first frame plays,
+  the poster (the clip's first frame) holds the screen, so the frame never shows an empty box or a
+  spinner. (Looping added for the paywall, Lee 2026-09-26.)
 - **PCF-2 — the end is always reported, once.** The frame tells its page the clip is over exactly
   once: when it ends, when it fails, or when it has not started within the load timeout (3 s by
   default). A page that waits on the clip never waits forever. A failed clip keeps the poster; no
-  broken-video surface is drawn.
+  broken-video surface is drawn. A looping clip never ends by itself, so it reports only failure or
+  a missed start; the paywall no longer waits on it.
 - **PCF-3 — still.** In the still form the frame shows the poster alone and no player is made. It is
   the Reduce Motion form.
 - **PCF-4 — proportions.** The frame fills the width it is given at the clip's aspect ratio. The
