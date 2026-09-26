@@ -120,9 +120,7 @@ class _MealCatalogBrowserState extends ConsumerState<MealCatalogBrowser> {
   @override
   Widget build(BuildContext context) {
     final content = ref.read(contentServiceProvider);
-    final catalog =
-        ref.watch(_catalog).value ??
-        const MealCatalogState();
+    final catalog = ref.watch(_catalog).value ?? const MealCatalogState();
     final isDark = Theme.of(context).brightness == Brightness.dark;
     final textColor = isDark ? AppColors.cream : AppColors.blackberry;
     final secondary = textColor.withValues(alpha: 0.65);
@@ -178,9 +176,7 @@ class _MealCatalogBrowserState extends ConsumerState<MealCatalogBrowser> {
                 _SearchBar(
                   controller: _searchController,
                   hint: content.getValue(ContentKeys.mpMealsSearchHint),
-                  onChanged: ref
-                      .read(_catalog.notifier)
-                      .setQuery,
+                  onChanged: ref.read(_catalog.notifier).setQuery,
                 ),
               ],
             ],
@@ -211,9 +207,7 @@ class _MealCatalogBrowserState extends ConsumerState<MealCatalogBrowser> {
                           if (i >= catalog.results.length) {
                             // Reaching the tail asks for the next page.
                             WidgetsBinding.instance.addPostFrameCallback((_) {
-                              ref
-                                  .read(_catalog.notifier)
-                                  .loadMore();
+                              ref.read(_catalog.notifier).loadMore();
                             });
                             return const Padding(
                               padding: EdgeInsets.symmetric(vertical: 24),
@@ -278,9 +272,8 @@ class _MealCatalogBrowserState extends ConsumerState<MealCatalogBrowser> {
                       content.getValue(ContentKeys.mpRailRecipes),
                       catalog.recipes,
                       seeAllLabel: content.getValue(ContentKeys.mpSeeAll),
-                      onSeeAll: () => ref
-                          .read(_catalog.notifier)
-                          .setKind(MealKind.recipe),
+                      onSeeAll: () =>
+                          ref.read(_catalog.notifier).setKind(MealKind.recipe),
                     ),
                     const SizedBox(height: AppSpacing.xxl),
                   ],
@@ -295,9 +288,7 @@ class _MealCatalogBrowserState extends ConsumerState<MealCatalogBrowser> {
   Future<void> _openFilterMenu(BuildContext context) async {
     final content = ref.read(contentServiceProvider);
     final controller = ref.read(_catalog.notifier);
-    final state =
-        ref.read(_catalog).value ??
-        const MealCatalogState();
+    final state = ref.read(_catalog).value ?? const MealCatalogState();
 
     final box =
         _filterButtonKey.currentContext?.findRenderObject() as RenderBox?;
@@ -386,7 +377,8 @@ class _MealCatalogBrowserState extends ConsumerState<MealCatalogBrowser> {
     final textColor = isDark ? AppColors.cream : AppColors.blackberry;
     return PopupMenuItem<String>(
       value: value,
-      height: 38,
+      // A 48pt tap target (118-005: 38 was too small for the checker).
+      height: kMinInteractiveDimension,
       // Selected is said, not only coloured (testing-wave 18-005).
       child: Semantics(
         selected: selected,
@@ -416,7 +408,8 @@ abstract final class SlotLabels {
 }
 
 /// A 40pt circular tool button; filled electrolyte when its tool is active
-/// (prototype `.v-toolbtn`).
+/// (prototype `.v-toolbtn`). A button named by its tooltip to a screen
+/// reader, with the active state as toggled (118-005).
 class _ToolButton extends StatelessWidget {
   const _ToolButton({
     super.key,
@@ -439,26 +432,38 @@ class _ToolButton extends StatelessWidget {
     final textColor = isDark ? AppColors.cream : AppColors.blackberry;
     final surface = isDark ? AppColors.blackberryLight : AppColors.surfaceLight;
 
-    return Tooltip(
-      message: tooltip,
-      child: Material(
-        key: buttonKey,
-        color: isOn ? AppColors.electrolyte : surface,
-        shape: CircleBorder(
-          side: isOn
-              ? BorderSide.none
-              : BorderSide(color: textColor.withValues(alpha: 0.2), width: 0.5),
-        ),
-        child: InkWell(
-          onTap: onTap,
-          customBorder: const CircleBorder(),
-          child: SizedBox(
-            width: 40,
-            height: 40,
-            child: Icon(
-              icon,
-              size: 18,
-              color: isOn ? AppColors.blackberry : textColor,
+    return Semantics(
+      container: true,
+      button: true,
+      toggled: isOn,
+      label: tooltip,
+      child: Tooltip(
+        message: tooltip,
+        excludeFromSemantics: true,
+        child: Material(
+          key: buttonKey,
+          color: isOn ? AppColors.electrolyte : surface,
+          shape: CircleBorder(
+            side: isOn
+                ? BorderSide.none
+                : BorderSide(
+                    color: textColor.withValues(alpha: 0.2),
+                    width: 0.5,
+                  ),
+          ),
+          child: InkWell(
+            onTap: onTap,
+            customBorder: const CircleBorder(),
+            child: SizedBox(
+              width: 40,
+              height: 40,
+              child: ExcludeSemantics(
+                child: Icon(
+                  icon,
+                  size: 18,
+                  color: isOn ? AppColors.blackberry : textColor,
+                ),
+              ),
             ),
           ),
         ),

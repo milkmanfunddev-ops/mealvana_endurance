@@ -636,6 +636,8 @@ class _EventFormScreenState extends ConsumerState<EventFormScreen> {
         scrolledUnderElevation: 0,
         leading: IconButton(
           key: const ValueKey('event_create.close_button'),
+          // Named (118-005): it leaves the form the way Back does.
+          tooltip: MaterialLocalizations.of(context).backButtonTooltip,
           icon: FaIcon(
             FontAwesomeIcons.xmark,
             size: AppIconSizes.sm,

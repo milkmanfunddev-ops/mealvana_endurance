@@ -4,6 +4,7 @@ import 'package:font_awesome_flutter/font_awesome_flutter.dart';
 
 import '../../../../shared/services/app_external_deps.dart';
 import '../../../../shared/widgets/kyle_design/data/kyle_source_chip.dart';
+import '../../../../shared/widgets/inputs/field_name.dart';
 import '../../../auth/domain/user_preferences.dart';
 import '../../domain/onboarding_integration_profile.dart';
 import '../providers/onboarding_controller.dart';
@@ -358,8 +359,7 @@ class _PersonalInfoScreenState extends ConsumerState<PersonalInfoScreen> {
   /// Same pill, shown when ANY of [fields] was pre-filled — used for the
   /// name/email card, which holds two fields under one pill.
   Widget _provenancePillAny(List<String> fields) {
-    if (_autofillSource == null ||
-        !fields.any(_autofilledFields.contains)) {
+    if (_autofillSource == null || !fields.any(_autofilledFields.contains)) {
       return const SizedBox.shrink();
     }
     return Padding(
@@ -475,48 +475,53 @@ class _PersonalInfoScreenState extends ConsumerState<PersonalInfoScreen> {
     Iterable<String>? autofillHints,
   }) {
     // Spec input: radius 14, cream-4% fill, 1px cream-30% border,
-    // padding 11/12, Apercu 15 cream text, dim leading glyph.
-    return TextField(
-      key: fieldKey,
+    // padding 11/12, Apercu 15 cream text, dim leading glyph. Named by its
+    // hint, so [FieldName] keeps the name once it holds a value (118-005).
+    return FieldName(
+      name: hint,
       controller: controller,
-      keyboardType: keyboardType,
-      textCapitalization: textCapitalization,
-      autocorrect: autocorrect,
-      autofillHints: autofillHints,
-      onChanged: onChanged,
-      cursorColor: OnbTokens.orange,
-      style: const TextStyle(
-        fontFamily: OnbTokens.fontBody,
-        fontSize: 15,
-        color: OnbTokens.cream,
-      ),
-      decoration: InputDecoration(
-        hintText: hint,
-        hintStyle: TextStyle(
+      child: TextField(
+        key: fieldKey,
+        controller: controller,
+        keyboardType: keyboardType,
+        textCapitalization: textCapitalization,
+        autocorrect: autocorrect,
+        autofillHints: autofillHints,
+        onChanged: onChanged,
+        cursorColor: OnbTokens.orange,
+        style: const TextStyle(
           fontFamily: OnbTokens.fontBody,
           fontSize: 15,
-          color: OnbTokens.creamA(0.35),
+          color: OnbTokens.cream,
         ),
-        prefixIcon: icon != null
-            ? Icon(icon, size: 16, color: OnbTokens.creamA(0.45))
-            : null,
-        prefixIconConstraints: icon != null
-            ? const BoxConstraints(minWidth: 34, minHeight: 16)
-            : null,
-        isDense: true,
-        filled: true,
-        fillColor: OnbTokens.creamA(0.04),
-        contentPadding: const EdgeInsets.symmetric(
-          horizontal: 12,
-          vertical: 11,
-        ),
-        enabledBorder: OutlineInputBorder(
-          borderRadius: BorderRadius.circular(OnbTokens.rTile),
-          borderSide: BorderSide(color: OnbTokens.creamA(0.3)),
-        ),
-        focusedBorder: OutlineInputBorder(
-          borderRadius: BorderRadius.circular(OnbTokens.rTile),
-          borderSide: const BorderSide(color: OnbTokens.orange),
+        decoration: InputDecoration(
+          hintText: hint,
+          hintStyle: TextStyle(
+            fontFamily: OnbTokens.fontBody,
+            fontSize: 15,
+            color: OnbTokens.creamA(0.35),
+          ),
+          prefixIcon: icon != null
+              ? Icon(icon, size: 16, color: OnbTokens.creamA(0.45))
+              : null,
+          prefixIconConstraints: icon != null
+              ? const BoxConstraints(minWidth: 34, minHeight: 16)
+              : null,
+          isDense: true,
+          filled: true,
+          fillColor: OnbTokens.creamA(0.04),
+          contentPadding: const EdgeInsets.symmetric(
+            horizontal: 12,
+            vertical: 11,
+          ),
+          enabledBorder: OutlineInputBorder(
+            borderRadius: BorderRadius.circular(OnbTokens.rTile),
+            borderSide: BorderSide(color: OnbTokens.creamA(0.3)),
+          ),
+          focusedBorder: OutlineInputBorder(
+            borderRadius: BorderRadius.circular(OnbTokens.rTile),
+            borderSide: const BorderSide(color: OnbTokens.orange),
+          ),
         ),
       ),
     );

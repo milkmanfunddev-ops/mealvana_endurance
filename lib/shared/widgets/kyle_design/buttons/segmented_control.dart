@@ -54,7 +54,8 @@ class KyleSegmentedControl<T extends Enum> extends ConsumerWidget {
   }
 }
 
-/// Individual segment button
+/// Individual segment button: a button that reports selected to a screen
+/// reader (119-006: the options read as static text).
 class _SegmentButton<T extends Enum> extends StatelessWidget {
   const _SegmentButton({
     super.key,
@@ -71,36 +72,45 @@ class _SegmentButton<T extends Enum> extends StatelessWidget {
   Widget build(BuildContext context) {
     final theme = Theme.of(context);
     final isDark = theme.brightness == Brightness.dark;
+    final label = _getSegmentLabel(segment);
 
-    return GestureDetector(
-      onTap: onTap,
-      child: AnimatedContainer(
-        duration: const Duration(milliseconds: 200),
-        margin: const EdgeInsets.symmetric(horizontal: 1),
-        padding: const EdgeInsets.symmetric(
-          horizontal: AppSpacing.md,
-          vertical: AppSpacing.sm,
-        ),
-        decoration: BoxDecoration(
-          color: isSelected
-              ? (isDark ? AppColors.cream : AppColors.blackberry)
-              : Colors.transparent,
-          borderRadius: AppRadius.segmentedControlRadius,
-          border: Border.all(
-            color: isDark ? AppColors.cream : AppColors.blackberry,
-            width: 2,
-          ),
-        ),
-        child: Center(
-          child: Text(
-            _getSegmentLabel(segment),
-            style: AppTextStyles.segmentedControl.copyWith(
-              color: isSelected
-                  ? (isDark ? AppColors.blackberry : AppColors.cream)
-                  : (isDark ? AppColors.cream : AppColors.blackberry),
-              fontWeight: FontWeight.w700,
+    return Semantics(
+      container: true,
+      button: true,
+      selected: isSelected,
+      label: label,
+      child: GestureDetector(
+        onTap: onTap,
+        child: ExcludeSemantics(
+          child: AnimatedContainer(
+            duration: const Duration(milliseconds: 200),
+            margin: const EdgeInsets.symmetric(horizontal: 1),
+            padding: const EdgeInsets.symmetric(
+              horizontal: AppSpacing.md,
+              vertical: AppSpacing.sm,
             ),
-            textAlign: TextAlign.center,
+            decoration: BoxDecoration(
+              color: isSelected
+                  ? (isDark ? AppColors.cream : AppColors.blackberry)
+                  : Colors.transparent,
+              borderRadius: AppRadius.segmentedControlRadius,
+              border: Border.all(
+                color: isDark ? AppColors.cream : AppColors.blackberry,
+                width: 2,
+              ),
+            ),
+            child: Center(
+              child: Text(
+                label,
+                style: AppTextStyles.segmentedControl.copyWith(
+                  color: isSelected
+                      ? (isDark ? AppColors.blackberry : AppColors.cream)
+                      : (isDark ? AppColors.cream : AppColors.blackberry),
+                  fontWeight: FontWeight.w700,
+                ),
+                textAlign: TextAlign.center,
+              ),
+            ),
           ),
         ),
       ),
@@ -184,56 +194,70 @@ class _GutTrainingSegmentedControlWithValues extends StatelessWidget {
         children: GutTraining.values.map((segment) {
           final isSelected = segment == selected;
           return Expanded(
-            child: GestureDetector(
-              onTap: () => onChanged(segment),
-              child: AnimatedContainer(
-                duration: const Duration(milliseconds: 200),
-                margin: const EdgeInsets.symmetric(horizontal: 1),
-                padding: const EdgeInsets.symmetric(
-                  horizontal: AppSpacing.sm,
-                  vertical: AppSpacing.sm,
-                ),
-                decoration: BoxDecoration(
-                  color: isSelected
-                      ? (isDark ? AppColors.cream : AppColors.blackberry)
-                      : Colors.transparent,
-                  borderRadius: AppRadius.segmentedControlRadius,
-                  border: Border.all(
-                    color: isDark ? AppColors.cream : AppColors.blackberry,
-                    width: 2,
+            child: Semantics(
+              container: true,
+              button: true,
+              selected: isSelected,
+              label: '${segment.displayName} ${segment.gkgValue}',
+              child: GestureDetector(
+                onTap: () => onChanged(segment),
+                child: ExcludeSemantics(
+                  child: AnimatedContainer(
+                    duration: const Duration(milliseconds: 200),
+                    margin: const EdgeInsets.symmetric(horizontal: 1),
+                    padding: const EdgeInsets.symmetric(
+                      horizontal: AppSpacing.sm,
+                      vertical: AppSpacing.sm,
+                    ),
+                    decoration: BoxDecoration(
+                      color: isSelected
+                          ? (isDark ? AppColors.cream : AppColors.blackberry)
+                          : Colors.transparent,
+                      borderRadius: AppRadius.segmentedControlRadius,
+                      border: Border.all(
+                        color: isDark ? AppColors.cream : AppColors.blackberry,
+                        width: 2,
+                      ),
+                    ),
+                    child: Column(
+                      mainAxisSize: MainAxisSize.min,
+                      children: [
+                        Text(
+                          segment.displayName,
+                          style: AppTextStyles.segmentedControl.copyWith(
+                            color: isSelected
+                                ? (isDark
+                                      ? AppColors.blackberry
+                                      : AppColors.cream)
+                                : (isDark
+                                      ? AppColors.cream
+                                      : AppColors.blackberry),
+                            fontWeight: FontWeight.w700,
+                          ),
+                          textAlign: TextAlign.center,
+                        ),
+                        const SizedBox(height: 4),
+                        Text(
+                          segment.gkgValue,
+                          style: AppTextStyles.smallLabel.copyWith(
+                            fontSize: 10,
+                            color: isSelected
+                                ? (isDark
+                                      ? AppColors.blackberry.withValues(
+                                          alpha: 0.8,
+                                        )
+                                      : AppColors.cream.withValues(alpha: 0.8))
+                                : (isDark
+                                      ? AppColors.cream.withValues(alpha: 0.6)
+                                      : AppColors.blackberry.withValues(
+                                          alpha: 0.6,
+                                        )),
+                          ),
+                          textAlign: TextAlign.center,
+                        ),
+                      ],
+                    ),
                   ),
-                ),
-                child: Column(
-                  mainAxisSize: MainAxisSize.min,
-                  children: [
-                    Text(
-                      segment.displayName,
-                      style: AppTextStyles.segmentedControl.copyWith(
-                        color: isSelected
-                            ? (isDark ? AppColors.blackberry : AppColors.cream)
-                            : (isDark ? AppColors.cream : AppColors.blackberry),
-                        fontWeight: FontWeight.w700,
-                      ),
-                      textAlign: TextAlign.center,
-                    ),
-                    const SizedBox(height: 4),
-                    Text(
-                      segment.gkgValue,
-                      style: AppTextStyles.smallLabel.copyWith(
-                        fontSize: 10,
-                        color: isSelected
-                            ? (isDark
-                                  ? AppColors.blackberry.withValues(alpha: 0.8)
-                                  : AppColors.cream.withValues(alpha: 0.8))
-                            : (isDark
-                                  ? AppColors.cream.withValues(alpha: 0.6)
-                                  : AppColors.blackberry.withValues(
-                                      alpha: 0.6,
-                                    )),
-                      ),
-                      textAlign: TextAlign.center,
-                    ),
-                  ],
                 ),
               ),
             ),

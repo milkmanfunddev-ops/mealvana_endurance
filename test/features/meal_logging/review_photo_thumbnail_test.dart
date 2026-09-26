@@ -129,6 +129,22 @@ void main() {
     expect(tester.takeException(), isNull);
   });
 
+  // Ticket 141 (Finding 100-007): the thumbnail carries a label, so a
+  // screen reader learns which photo the numbers came from.
+  testWidgets('the thumbnail is named for a screen reader', (tester) async {
+    final handle = tester.ensureSemantics();
+    await pumpReview(tester, source: 'photo', photoPath: _photoPath);
+
+    final thumb = find.byKey(const ValueKey('meal_logging.review_photo'));
+    expect(
+      tester.getSemantics(
+        find.descendant(of: thumb, matching: find.byType(Image)),
+      ),
+      isSemantics(label: 'Photo being logged', isImage: true),
+    );
+    handle.dispose();
+  });
+
   testWidgets('a described meal, with no photo, shows none', (tester) async {
     await pumpReview(tester, source: 'describe', photoPath: null);
 
