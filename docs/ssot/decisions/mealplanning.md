@@ -46,7 +46,7 @@ Feature name: Meal planning
 ## mp-214 · Vana is short and to the point
 - category: Vana: who she is and how she talks
 - status: approved
-- folded: mp-012
+- folded: mp-012, mp-546
 - image: none
 - screen: Vana chat
 - source: Lee on the page 2026-09-13, rejecting mp-011
@@ -55,13 +55,14 @@ Feature name: Meal planning
 
 **Question.** How long are Vana's replies, and what is off limits?
 
-**Decision.** Vana says what the athlete needs and stops. There is no sentence count. No emoji, no talk about weight, food framed as minimums to reach, and medical questions go to a professional.
+**Decision.** Vana says what the athlete needs and stops. There is no sentence count. When she sends the athlete to a screen, she writes one sentence and stops. No emoji, no talk about weight, food framed as minimums to reach, and medical questions go to a professional.
 
 **Why.** A fixed sentence count cut useful answers short; the tone rules protect athletes.
 
 **What else was considered.** A length limit per kind of turn.
 
 > 2026-09-26 overhaul: rewritten from mp-214, mp-012
+> 2026-09-26 approved by Lee: one sentence before a hand-off, checked in code (mp-546)
 
 ## mp-006 · Vana looks things up before she asks
 - category: Vana: who she is and how she talks
@@ -146,7 +147,7 @@ Feature name: Meal planning
 ## mp-223 · Vana speaks first before and after a workout, at most twice a day
 - category: Vana: who she is and how she talks
 - status: approved
-- folded: mp-224, mp-226, mp-227, mp-228, mp-229
+- folded: mp-224, mp-226, mp-227, mp-228, mp-229, mp-421
 - image: none
 - screen: Any screen with the launcher
 - source: ticket 09; vana-moment.md; archive ticket 13; ticket 10; memory 09-11
@@ -155,18 +156,19 @@ Feature name: Meal planning
 
 **Question.** When does Vana speak first?
 
-**Decision.** Only in two fuelling windows: before a planned workout today, and after a finished endurance session of 60 minutes or more when nothing has been logged since. At most twice a day, never twice for the same workout. Cook-day check-ins and week debriefs come as the opener the next time the app opens, not as moments.
+**Decision.** Only in two fuelling windows: before a planned workout today, and after a finished endurance session of 60 minutes or more when nothing has been logged since. At most twice a day, never twice for the same workout. Cook-day check-ins and week debriefs come as the opener the next time the app opens, not as moments. When more than one thing could open the conversation, a live fuelling moment comes first, then what is on screen, then the personal opener. When the athlete asks for a plan, Vana shows a button to the planning screen.
 
 **Why.** Fuelling around a workout is where a nudge helps most; more than two a day would be noise.
 
 **What else was considered.** Plan moments (cook day, debrief) as their own nudges, put off until the fuelling moments have been lived with.
 
 > 2026-09-26 overhaul: rewritten from mp-223, mp-224, mp-226, mp-227, mp-228, mp-229
+> 2026-09-26 approved by Lee: order of first messages and the plan button (mp-421)
 
 ## mp-245 · Feedback typed to Vana is saved for the team
 - category: Vana: who she is and how she talks
 - status: approved
-- folded: mp-246
+- folded: mp-246, mp-427, mp-547
 - image: none
 - screen: Vana chat
 - source: spec.md; ticket 01; 02-contract.md; archive ticket 01
@@ -175,13 +177,14 @@ Feature name: Meal planning
 
 **Question.** What happens to feedback the athlete types to Vana?
 
-**Decision.** A complaint, praise or suggestion is saved for the team in the athlete's own words and also sent to Wiredash, the bug-report tool. Vana replies only "Saved for the team". A taste comment like "not those" is not feedback. A problem report shows a card with a "Send to the team" button.
+**Decision.** A complaint, praise or suggestion is saved for the team in the athlete's own words and also sent to Wiredash, the bug-report tool. Vana replies only "Saved for the team". If the same message also asks a question, she answers the question. Admins also get a Good / Not good review box on every meal. A taste comment like "not those" is not feedback. A problem report shows a card with a "Send to the team" button.
 
 **Why.** The team hears what athletes say in one place, and Vana never claims to have sent something she did not.
 
 **What else was considered.** none recorded
 
 > 2026-09-26 overhaul: rewritten from mp-245, mp-246
+> 2026-09-26 approved by Lee: feedback plus a question, admin review box, checked in code (mp-427, mp-547)
 
 ## mp-273 · Vana is sent the athlete's Voodoo Doll on every turn
 - category: What Vana knows
@@ -226,7 +229,7 @@ Feature name: Meal planning
 ## mp-022 · Vana remembers what changes how she plans, and the athlete can see and delete it
 - category: What Vana knows
 - status: approved
-- folded: mp-024, mp-025, mp-027, mp-028, mp-029, mp-030, mp-031, mp-037, mp-040, mp-277
+- folded: mp-024, mp-025, mp-027, mp-028, mp-029, mp-030, mp-031, mp-037, mp-040, mp-277, mp-419
 - image: none
 - screen: Vana settings
 - source: spec.md; CONTEXT.md
@@ -235,13 +238,14 @@ Feature name: Meal planning
 
 **Question.** What does Vana remember, and who can see it?
 
-**Decision.** A Memory is one sentence a dietitian would write in the margin, kept only if it changes how Vana plans, such as "Wednesdays are long days". It is saved when the athlete says "remember this", when Vana notices it, or from a read of the chat after it ends; the week's debrief is the only place she learns from what the athlete did. Every Memory shows in one list in Vana settings, where any row can be deleted.
+**Decision.** A Memory is one sentence a dietitian would write in the margin, kept only if it changes how Vana plans, such as "Wednesdays are long days". It is saved when the athlete says "remember this", when Vana notices it, or from a read of the chat after it ends; the week's debrief is the only place she learns from what the athlete did. Every Memory shows in one list in Vana settings, where any row can be deleted. Past chats reach her as a short line of what the athlete said, and a long chat keeps its latest 40 messages word for word with older ones summarised twenty at a time.
 
 **Why.** Short notes that matter keep her useful without piling up noise, and the athlete stays in control of what she holds.
 
 **What else was considered.** A trained model of the athlete's preferences; learning from every swap and skip.
 
 > 2026-09-26 overhaul: rewritten from mp-022, mp-024, mp-025, mp-027, mp-028, mp-029, mp-030, mp-031, mp-037, mp-040, mp-277
+> 2026-09-26 approved by Lee: memory as built, checked in code (mp-419)
 
 ## mp-041 · Coach mode never reads an athlete's Doll
 - category: What Vana knows
@@ -346,7 +350,7 @@ Feature name: Meal planning
 ## mp-232 · Batch cooking, coverage and the plan period are settings Vana reads, never asks
 - category: Planning a week
 - status: approved
-- folded: mp-269, mp-593, mp-608
+- folded: mp-269, mp-424, mp-593, mp-608, mp-425
 - image: none
 - screen: Vana settings
 - source: prototype-rebuild-spec.md; 05-flutter-feature.md
@@ -355,13 +359,15 @@ Feature name: Meal planning
 
 **Question.** Where do batch cooking, coverage and the plan period live?
 
-**Decision.** In settings. Batch cooking is on unless turned off. Coverage is "Dinners only", "Dinners and lunches" or "Every meal", starting on dinners only. A plan period starts on Sunday and runs seven days unless the athlete changes it. Vana plans to these and never asks; if the athlete tells her otherwise in chat, she saves it as the setting.
+**Decision.** In settings. Batch cooking is on unless turned off. With it on, a plan has three meals per meal type, each cooked in enough servings to cover the period (3 servings for 7 days, 5 for 14). Coverage is "Dinners only", "Dinners and lunches" or "Every meal", starting on dinners only. A plan period starts on Sunday and runs seven days unless the athlete changes it: they pick the start day and a length of 3 to 14 days, and each plan keeps the period it was made for. Vana plans to these and never asks; if the athlete tells her otherwise in chat, she saves it as the setting.
 
 **Why.** The settings screen already answers these questions, and every question costs a paid model turn.
 
 **What else was considered.** Asking each question once when never chosen; weeks fixed to Sunday with set cook days.
 
 > 2026-09-26 overhaul: rewritten from mp-232, mp-269, mp-593, mp-608
+> 2026-09-26 approved by Lee: start day and a 3 to 14 day length (mp-424)
+> 2026-09-26 approved by Lee: batch plan shape, checked in code (mp-425)
 
 ## mp-234 · The draft sits in the plan bar, and Confirm lands on the shopping list
 - category: Planning a week
@@ -406,7 +412,7 @@ Feature name: Meal planning
 ## mp-675 · Plans are a list the athlete can reuse
 - category: Plan tab and meals
 - status: approved
-- folded: mp-674, mp-676, mp-677
+- folded: mp-674, mp-676, mp-677, mp-681, mp-687, mp-682, mp-683
 - image: docs/ssot/decisions/images/mealplanning/plan-tab.png
 - caption: The Plan tab.
 - screen: Plan tab
@@ -416,13 +422,15 @@ Feature name: Meal planning
 
 **Question.** What happens to old plans?
 
-**Decision.** Confirmed plans form a list, newest first. The athlete can open, edit, rename or delete any of them, or "Use this plan again" to copy it into this week as a new draft. This week's plan stays until a new one is confirmed. Drafts never confirmed are not listed.
+**Decision.** Confirmed plans form a list, newest first. The athlete can open, edit, rename or delete any of them, or "Use this plan again" to copy it into this week as a new draft. This week's plan stays until a new one is confirmed. Drafts never confirmed are not listed. A draft replaced by a different confirmed plan stays in its own conversation, read-only, with "Use this plan instead"; its note says it stays in that conversation. An earlier plan can have servings changed or meals removed, but not new meals added; to add meals, the athlete uses the plan again.
 
 **Why.** Athletes repeat weeks that worked.
 
 **What else was considered.** none recorded
 
 > 2026-09-26 overhaul: rewritten from mp-675, mp-674, mp-676, mp-677
+> 2026-09-26 approved by Lee: what an earlier plan allows, checked in code (mp-681, mp-687)
+> 2026-09-26 decided by Claude (Lee's delegation): replaced drafts stay read-only in their chat, as built; the note's promise is corrected (mp-682, mp-683)
 
 ## mp-004 · The word is "meal", and a week of meals is a "batch"
 - category: Plan tab and meals
@@ -506,6 +514,7 @@ Feature name: Meal planning
 ## mp-678 · A plan never picks a meal without nutrition numbers
 - category: Plan tab and meals
 - status: approved
+- folded: mp-688
 - image: docs/ssot/decisions/images/mealplanning/plan-tab.png
 - caption: The Plan tab.
 - screen: Plan tab
@@ -515,13 +524,14 @@ Feature name: Meal planning
 
 **Question.** What happens to meals with missing numbers?
 
-**Decision.** Planning never picks a meal whose numbers are missing; it stays browsable. The 31 meals get numbers, from a source where one exists, otherwise estimated from their ingredients and marked AI-estimated.
+**Decision.** Planning never picks a meal whose numbers are missing; it stays browsable. Every way into a plan (add, swap, the meal page, search) refuses it. The 31 meals get numbers, from a source where one exists, otherwise estimated from their ingredients and marked AI-estimated.
 
 **Why.** A plan with blank numbers cannot be fuelled against.
 
 **What else was considered.** none recorded
 
 > 2026-09-26 overhaul: rewritten from mp-678
+> 2026-09-26 approved by Lee: every path refuses, checked in code (mp-688)
 
 ## mp-146 · Every recipe says where its steps came from
 - category: Recipes and cooking

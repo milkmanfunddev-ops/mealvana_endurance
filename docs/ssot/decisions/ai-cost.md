@@ -84,7 +84,7 @@ Feature name: Cost cutting
 ## mp-430 · We track usage, not credits: every account gets $4.00 of AI a month
 - category: Usage budget
 - status: approved
-- folded: mp-281, mp-436, mp-504, mp-515
+- folded: mp-281, mp-436, mp-504, mp-515, mp-512, mp-526
 - image: none
 - screen: none (algorithm/data)
 - source: docs/research/vana-cost-and-pricing.md; Lee on the page 2026-09-17; Lee in the terminal 2026-09-21
@@ -93,13 +93,14 @@ Feature name: Cost cutting
 
 **Question.** How much AI does a subscriber get, and how is it counted?
 
-**Decision.** Every account gets the same budget of $4.00 a month, and each AI call uses it up by what that call really cost us. Nothing counts messages, and there is no daily cap. The trial week starts with $1.00. Unused budget does not carry over to the next month. Credits already in wallets were converted once at 2 cents each. Per-minute limits exist only to stop a runaway loop or script, set well above what a person does.
+**Decision.** Every account gets the same budget of $4.00 a month, and each AI call uses it up by what that call really cost us. Nothing counts messages, and there is no daily cap. The trial week starts with $1.00. Unused budget does not carry over to the next month. Pro from a code or the grace month gets the same $4.00 month as a paying account. Every AI call counts, including a photo that turns out not to be food. Credits already in wallets were converted once at 2 cents each. Per-minute limits exist only to stop a runaway loop or script, set well above what a person does.
 
 **Why.** Lee on 21 September: cap what the account costs, not how often it speaks; one cap for the month, the same for everyone. No subscriber can cost more than $4.00 a month, against the $7.08 to $10.62 we keep from a founding subscription.
 
 **What else was considered.** 300 or 600 credits a month with one credit per action. Daily caps on openers and turns. A hidden dollar ceiling behind visible credits.
 
 > 2026-09-26 overhaul: rewritten from mp-430, mp-281, mp-436, mp-515
+> 2026-09-26 decided by Claude (Lee's delegation): grants get the full month; non-food photos count, as built (mp-512, mp-526)
 
 ## mp-551 · Top-up packs add a share of a month and never expire
 - category: Usage budget
@@ -163,7 +164,7 @@ Feature name: Cost cutting
 ## mp-521 · Every AI call's real cost is logged per athlete
 - category: Usage budget
 - status: approved
-- folded: mp-519
+- folded: mp-519, mp-524
 - image: none
 - screen: none (algorithm/data)
 - source: wave ai-cost 3 ticket 05
@@ -172,10 +173,11 @@ Feature name: Cost cutting
 
 **Question.** What do we record about each AI call?
 
-**Decision.** Every Vana turn records what the gateway charged, how much of the prompt came from the cache, whether the athlete tapped or typed, and their subscription state at that moment. A weekly view adds this up per athlete and per plan. Raw rows are kept for 90 days; weekly totals are kept.
+**Decision.** Every Vana turn records what the gateway charged, how much of the prompt came from the cache, whether the athlete tapped or typed, and their subscription state at that moment. A weekly view adds this up per athlete and per plan. Raw rows are kept for 90 days; weekly totals are kept. The team is alerted when one account's AI charge passes $1.50 in a day.
 
 **Why.** Every later cost or pricing decision, like the one that set Haiku for chat, is argued from these numbers.
 
 **What else was considered.** Keeping our own price table instead of the gateway's charge, which would give two answers to one question.
 
 > 2026-09-26 overhaul: rewritten from mp-521, mp-519
+> 2026-09-26 decided by Claude (Lee's delegation): recorded as built, checked in code: the alert fires from the database when the charge lands (mp-524)

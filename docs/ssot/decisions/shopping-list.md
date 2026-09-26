@@ -6,6 +6,7 @@ Feature name: Shopping list
 ## mp-244 · Confirming a plan makes its shopping list, and every edit keeps it current
 - category: Lists
 - status: approved
+- folded: mp-692, mp-695, mp-669
 - image: none
 - screen: Shopping tab
 - source: plan-tab-v2.md; 05-flutter-feature.md; memory 09-07; memory 09-02
@@ -14,13 +15,15 @@ Feature name: Shopping list
 
 **Question.** Where does the shopping list come from?
 
-**Decision.** Confirming a plan builds its list, adding up every ingredient across the plan's meals, and every later edit to the plan rebuilds it. It is built in one place, on our server, so every screen and Kroger read the same list. Example: two dinners both use onions, so the list shows one onion row with a count of 2.
+**Decision.** Confirming a plan builds its list, adding up every ingredient across the plan's meals, and every later edit to the plan rebuilds it. It is built in one place, on our server, so every screen and Kroger read the same list. The Shopping tab opens this week's confirmed plan's list, titled by its week ("Week of Sep 20"), or else the newest hand-made list. The athlete can delete a plan's list after a confirm; the Plan tab rebuilds it. Example: two dinners both use onions, so the list shows one onion row with a count of 2.
 
 **Why.** One list, built in one place, can never disagree with itself.
 
 **What else was considered.** Building the list on the phone.
 
 > 2026-09-26 overhaul: rewritten from mp-244
+> 2026-09-26 approved by Lee: which list opens and its name, checked in code (mp-692, mp-695)
+> 2026-09-26 decided by Claude (Lee's delegation): deleting a plan's list stays as built (mp-669)
 
 ## mp-697 · The list is grouped by aisle, in imperial units, and each item leads back to its meals
 - category: Lists
