@@ -260,6 +260,8 @@ once it is older than the stale timeout (4 h).
 
 The wave lead runs one wave per session and the session is cleared between waves; `waves.json` and
 the ticket Status lines carry the state from one wave to the next (Lee, 2026-09-25).
+Exception (Lee, 2026-09-26): `/loop /implement-lee testing-wave` may run waves back to back in one
+session by `AUTORUN.md`.
 
 The testing wave never writes to the decisions page (Lee, 2026-09-24): no ticket cards, no
 proposals, no pictures, no page reseed. Questions about testing itself are settled with Lee in
