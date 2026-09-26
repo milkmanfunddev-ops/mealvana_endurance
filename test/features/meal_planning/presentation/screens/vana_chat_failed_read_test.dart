@@ -48,6 +48,9 @@ import '../helpers/test_content.dart';
 /// history is one athlete turn and a turn is one line of Vana's.
 class _FlakyRepo extends Fake implements VanaChatRepository {
   bool offline = true;
+
+  /// What a failed read throws while [offline]; the socket by default.
+  VanaException failure = const VanaOfflineException('socket');
   int historyReads = 0;
   final List<Map<String, Object?>> turns = [];
 
@@ -65,7 +68,7 @@ class _FlakyRepo extends Fake implements VanaChatRepository {
     VanaInputMode? inputMode,
   }) async {
     turns.add({'opener': opener, 'newPlan': newPlan});
-    if (offline) throw const VanaOfflineException('socket');
+    if (offline) throw failure;
     Stream<VanaStreamEvent> events() async* {
       yield const VanaTextEvent('Three dinners to start.');
       yield const VanaDoneEvent();
@@ -81,7 +84,7 @@ class _FlakyRepo extends Fake implements VanaChatRepository {
   @override
   Future<List<VanaMessage>> fetchMessages(String conversationId) async {
     historyReads++;
-    if (offline) throw const VanaOfflineException('socket');
+    if (offline) throw failure;
     return [
       VanaMessage(
         id: 'u-1',
@@ -262,5 +265,34 @@ void main() {
     expect(find.text('Three dinners to start.'), findsOneWidget);
     expect(repo.turns, hasLength(2));
     expect(repo.turns.last, {'opener': true, 'newPlan': true});
+  });
+
+  // Testing-wave 122-004: a 403 pro_required on the history read says so
+  // and offers no Retry; the same read can never pass until the subscription
+  // says otherwise, and the router owns the paywall.
+  testWidgets('a history read refused as pro_required has no Retry', (
+    tester,
+  ) async {
+    await pumpScreen(
+      tester,
+      const VanaChatScreen(
+        kind: VanaConversationKind.mealPlanning,
+        conversationId: 'conv-old',
+      ),
+    );
+    // pumpScreen makes the repo; fail the next read as the server's 403 does.
+    repo.failure = const ProRequiredException();
+    await tester.tap(retry);
+    for (var i = 0; i < 5; i++) {
+      await tester.pump(const Duration(milliseconds: 50));
+    }
+
+    expect(failed, findsOneWidget);
+    // A history read keeps its one line whatever refused it.
+    expect(
+      tester.widget<Text>(failed).data,
+      content['meal_planning.chat_history_failed'],
+    );
+    expect(retry, findsNothing);
   });
 }

@@ -33,6 +33,7 @@ import 'package:purchases_flutter/purchases_flutter.dart';
 
 import 'package:mealvana_endurance/features/content/application/content_service.dart';
 import 'package:mealvana_endurance/features/settings/domain/account_deletion_entry.dart';
+import 'package:mealvana_endurance/features/settings/domain/sign_out_source.dart';
 import 'package:mealvana_endurance/features/settings/domain/settings_state.dart';
 import 'package:mealvana_endurance/features/settings/presentation/providers/settings_controller.dart';
 import 'package:mealvana_endurance/features/subscription/application/code_entry_controller.dart';
@@ -175,12 +176,16 @@ class _RecordingSettings extends SettingsController {
   int signOuts = 0;
   int deletes = 0;
   AccountDeletionEntry? deletedFrom;
+  SignOutSource? signedOutFrom;
 
   @override
   FutureOr<SettingsState> build() => Completer<SettingsState>().future;
 
   @override
-  Future<void> signOut() async => signOuts++;
+  Future<void> signOut({SignOutSource source = SignOutSource.settings}) async {
+    signOuts++;
+    signedOutFrom = source;
+  }
 
   @override
   Future<void> deleteAccount({
@@ -988,6 +993,8 @@ void main() {
     await tester.tap(find.byKey(_confirm));
     await tester.pumpAndSettle();
     expect(settings.signOuts, 1);
+    // The event names the paywall as its source (120-007).
+    expect(settings.signedOutFrom, SignOutSource.paywall);
   });
 
   testWidgets('Sign out confirm reads the same body as Settings, from its key '

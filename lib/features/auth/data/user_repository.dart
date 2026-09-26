@@ -301,7 +301,7 @@ class UserRepository with SyncableRepository {
       final updateData = {
         'auth_provider': authProvider,
         'is_anonymous': isAnonymous,
-        'updated_at': updatedProfile.updatedAt.toIso8601String(),
+        'updated_at': updatedProfile.updatedAt.toUtc().toIso8601String(),
       };
 
       // Only include auth_user_id if provided
@@ -637,8 +637,8 @@ class UserRepository with SyncableRepository {
           'runs_with_water_bottle': newProfile.runsWithWaterBottle,
           'gut_training_level': newProfile.gutTraining.name,
           'onboarding_completed': newProfile.onboardingCompleted,
-          'created_at': newProfile.createdAt.toIso8601String(),
-          'updated_at': newProfile.updatedAt.toIso8601String(),
+          'created_at': newProfile.createdAt.toUtc().toIso8601String(),
+          'updated_at': newProfile.updatedAt.toUtc().toIso8601String(),
         });
       } catch (e, stackTrace) {
         sentry.addBreadcrumb(

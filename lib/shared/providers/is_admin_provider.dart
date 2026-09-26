@@ -21,12 +21,22 @@ part 'is_admin_provider.g.dart';
 /// `false` — the gate awaits it — and reads again once the network comes
 /// back or the app next resumes, so one bad start does not hide Team review
 /// for the whole session.
+///
+/// The auth stream REPLAYS every past event to each new subscriber (GoTrue's
+/// controller is a ReplaySubject). Comparing a replayed event's session to
+/// the user captured here re-invalidated this provider on every rebuild, and
+/// each rebuild subscribed again: a failing read every 25-70 ms for as long
+/// as the network was down, 4,421 times in one run (testing-wave 118-003,
+/// 119-004, 120-009). So an event is only a reason to re-read when the user
+/// GoTrue holds NOW differs from the one this build read for; a replay of an
+/// old sign-out changes nothing.
 @Riverpod(keepAlive: true)
 Future<bool> isAdmin(Ref ref) async {
   final deps = ref.watch(appExternalDepsProvider);
-  final authUserId = deps.supabaseClient.auth.currentUser?.id;
-  final sub = deps.supabaseClient.auth.onAuthStateChange.listen((state) {
-    if (state.session?.user.id != authUserId) ref.invalidateSelf();
+  final auth = deps.supabaseClient.auth;
+  final authUserId = auth.currentUser?.id;
+  final sub = auth.onAuthStateChange.listen((_) {
+    if (auth.currentUser?.id != authUserId) ref.invalidateSelf();
   });
   ref.onDispose(sub.cancel);
   if (authUserId == null) return false;

@@ -1,4 +1,6 @@
 import 'dart:async';
+import 'dart:io' show SocketException;
+import 'package:http/http.dart' as http;
 import 'package:riverpod_annotation/riverpod_annotation.dart';
 import 'package:supabase_flutter/supabase_flutter.dart'
     hide AuthUser, AuthException;
@@ -364,7 +366,7 @@ class EmailAuthService extends _$EmailAuthService {
           'email_verification_required',
           properties: {'user_id': newUserId},
         );
-        throw const EmailVerificationRequiredException();
+        throw EmailVerificationRequiredException(userId: newUserId);
       }
 
       _logger.info(
@@ -596,6 +598,11 @@ class EmailAuthService extends _$EmailAuthService {
   /// Rate limits are enforced server-side (and are tight on the default
   /// mailer), so a failure here is expected and must read as "wait a moment",
   /// not "something is broken".
+  ///
+  /// The server allows one email per address per 60 s (`smtp_max_frequency`).
+  /// Its 429 is raised as [ResendRateLimitedException] with the wait its
+  /// message names, so the screen counts that down instead of saying the
+  /// resend failed (testing-wave 121-001, 124-004).
   Future<void> resendVerificationCode({
     required String email,
     OtpType type = OtpType.signup,
@@ -605,10 +612,51 @@ class EmailAuthService extends _$EmailAuthService {
       await _analytics.track('email_verification_resent');
       _logger.info('Verification code resent', context: 'EMAIL_AUTH');
     } on AuthApiException catch (e) {
-      throw InvalidVerificationCodeException(
-        e.message.toLowerCase().contains('rate')
-            ? 'Too many requests. Wait a minute and try again.'
-            : 'Could not resend the code. Please try again.',
+      if (ResendRateLimitedException.matches(
+        code: e.code,
+        statusCode: e.statusCode,
+        message: e.message,
+      )) {
+        throw ResendRateLimitedException(
+          ResendRateLimitedException.secondsFrom(e.message) ??
+              ResendRateLimitedException.serverGapSeconds,
+        );
+      }
+      throw const InvalidVerificationCodeException(
+        'Could not resend the code. Please try again.',
+      );
+    }
+  }
+
+  /// Ask the server to delete a fresh signup the athlete walked away from
+  /// before entering its code (testing-wave 121-003): "Use a different
+  /// email" or "Log in" on Verify your email. Best effort and fire-and-forget:
+  /// there is no session, so this goes through `discard-signup`, which
+  /// deletes only a matching unconfirmed, never-signed-in, recent user and
+  /// answers the same 200 whatever happened. A failure here is logged and
+  /// changes nothing on the screen.
+  ///
+  /// Running twice: the second call finds no user and deletes nothing.
+  Future<void> discardSignup({
+    required String userId,
+    required String email,
+  }) async {
+    try {
+      await _supabase.functions.invoke(
+        'discard-signup',
+        body: {'user_id': userId, 'email': email.trim()},
+      );
+      _logger.info(
+        'Abandoned signup discarded',
+        context: 'EMAIL_AUTH',
+        data: {'user_id': userId},
+      );
+    } catch (e) {
+      _logger.warning(
+        'discard-signup failed; the unconfirmed login stays until it is '
+        'cleaned up',
+        context: 'EMAIL_AUTH',
+        error: e,
       );
     }
   }
@@ -750,15 +798,55 @@ class EmailAuthService extends _$EmailAuthService {
       }
     });
 
-    // Re-throw errors for UI to handle
+    // Re-throw errors for UI to handle, told apart (125-002, 125-007).
     if (state.hasError) {
-      _logger.error(
-        'Email sign in failed',
-        context: 'EMAIL_AUTH',
-        error: state.error,
-      );
-      throw state.error!;
+      final mapped = mapSignInError(state.error!, email: email);
+      if (mapped is EmailNotConfirmedException) {
+        // Not a failure of the athlete's: the account exists and wants its
+        // code (124-001). The screen resends it and opens Verify your email.
+        _logger.info(
+          'Email sign in: address not confirmed yet',
+          context: 'EMAIL_AUTH',
+        );
+      } else {
+        _logger.error(
+          'Email sign in failed',
+          context: 'EMAIL_AUTH',
+          error: state.error,
+        );
+      }
+      throw mapped;
     }
+  }
+
+  /// GoTrue's answer to a password sign-in, as one of the
+  /// [EmailSignInException] kinds (125-002, 125-007, 124-001):
+  /// `invalid_credentials` is a wrong email or password; a socket or
+  /// retryable fetch failure is no connection; `email_not_confirmed` is an
+  /// account waiting for its code; anything else is a general failure. An
+  /// already-typed exception passes through.
+  static EmailSignInException mapSignInError(
+    Object error, {
+    required String email,
+  }) {
+    if (error is EmailSignInException) return error;
+    if (error is AuthRetryableFetchException ||
+        error is SocketException ||
+        error is http.ClientException) {
+      return NoConnectionException(error);
+    }
+    if (error is AuthApiException) {
+      final message = error.message.toLowerCase();
+      if (error.code == 'invalid_credentials' ||
+          message.contains('invalid login credentials')) {
+        return const WrongCredentialsException();
+      }
+      if (error.code == 'email_not_confirmed' ||
+          message.contains('email not confirmed')) {
+        return EmailNotConfirmedException(email.trim());
+      }
+    }
+    return SignInFailedException(error);
   }
 
   /// Validate email format

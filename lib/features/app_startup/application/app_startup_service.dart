@@ -27,6 +27,7 @@ import '../../../shared/models/dirty_record_backup.dart';
 import '../presentation/widgets/dirty_record_recovery_dialog.dart';
 import '../../ai_credits/data/revenuecat_service.dart';
 import '../../auth/application/grace_claim_service.dart';
+import '../../auth/presentation/providers/password_recovery_controller.dart';
 import '../../subscription/application/pro_gate.dart';
 import '../../subscription/application/subscription_status_provider.dart';
 
@@ -560,6 +561,39 @@ class AppStartupService {
       await DeviceInfoService.instance.initialize();
     }
     return DeviceInfoService.instance.deviceId;
+  }
+
+  /// A password reset the app was quit on (testing-wave 124-003): the right
+  /// reset code signed the phone in, Set New Password was never finished,
+  /// and `PasswordRecoveryController.recoveryPendingKey` is still set. That
+  /// session is signed out here, before the router reads any session, so the
+  /// relaunch lands on Log In and the emailed code alone never signs a phone
+  /// in. The marker is cleared first, so a sign-out that throws is not
+  /// retried on every launch. Never throws.
+  ///
+  /// Running twice: the second run finds no marker and returns.
+  Future<void> endAbandonedRecovery() async {
+    try {
+      final prefs = ref.read(appExternalDepsProvider).sharedPreferences;
+      if (prefs.getBool(PasswordRecoveryController.recoveryPendingKey) !=
+          true) {
+        return;
+      }
+      await prefs.remove(PasswordRecoveryController.recoveryPendingKey);
+      if (_supabase.auth.currentSession == null) return;
+      _logger.info(
+        'Recovery session found at startup without a new password; signing out',
+        context: 'AUTH',
+      );
+      await _supabase.auth.signOut();
+    } catch (e, stackTrace) {
+      _logger.error(
+        'Ending the abandoned recovery session failed',
+        context: 'AUTH',
+        error: e,
+        stackTrace: stackTrace,
+      );
+    }
   }
 
   /// Check if user has existing session and restore it

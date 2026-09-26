@@ -9,6 +9,11 @@
  * There is no flag, no trial clock and no tester bypass on this path: nothing
  * app-side can grant an entitlement. Testers get a RevenueCat promotional
  * grant, which arrives through the webhook like any other event.
+ *
+ * One exception, ruled 2026-09-26 (testing-wave 122-004, superseding
+ * mp-416's server check for admins): a team admin, `public.users.is_admin`
+ * set by hand in the database (mp-144 clause 3), gets every feature. The flag
+ * is read only when the cache says no, and only a literal `true` counts.
  */
 import type { Db } from './env.ts';
 import { jsonResponse } from '../responses.ts';
@@ -60,7 +65,28 @@ export async function requirePro(admin: Db, userId: string, nowMs: number = Date
   } catch (e) {
     console.warn('[vana] user_entitlements read threw (treating as not entitled):', (e as Error).message);
   }
+  if (await isAdmin(admin, userId)) return { ok: true };
   return { ok: false, reason: 'pro_required' };
+}
+
+/**
+ * `public.users.is_admin`, read with the service role (the column is not in
+ * the app's cached profile). Any failure, a missing row, `null` or a
+ * non-boolean value answers false: the gate fails closed, as the cache read
+ * does.
+ */
+async function isAdmin(admin: Db, userId: string): Promise<boolean> {
+  try {
+    const { data, error } = await admin.from('users').select('is_admin').eq('id', userId).maybeSingle();
+    if (error) {
+      console.warn('[vana] users.is_admin read failed (treating as not admin):', error.message);
+      return false;
+    }
+    return (data as { is_admin?: unknown } | null)?.is_admin === true;
+  } catch (e) {
+    console.warn('[vana] users.is_admin read threw (treating as not admin):', (e as Error).message);
+    return false;
+  }
 }
 
 /**

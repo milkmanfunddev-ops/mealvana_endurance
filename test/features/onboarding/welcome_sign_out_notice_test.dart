@@ -1,6 +1,8 @@
 /// The Welcome screen shows the sign-out line once (ticket 102, Finding
 /// 86-007): after an offline sign-out the athlete reads that their unsynced
 /// changes stay on this phone, then the line is taken so it never repeats.
+/// It sits above the buttons, never over them (testing-wave 120-006): a tap
+/// takes it, and so does leaving the screen.
 library;
 
 import 'package:flutter/material.dart';
@@ -36,7 +38,34 @@ void main() {
     await tester.pump();
     await tester.pump();
 
+    final line = find.byKey(const ValueKey('welcome.sign_out_notice'));
     expect(find.text(_line), findsOneWidget);
+    expect(
+      find.byType(SnackBar),
+      findsNothing,
+      reason: 'inline, not over the buttons',
+    );
+    // Above "I already have an account", not on top of it.
+    final lineBottom = tester.getBottomLeft(line).dy;
+    final loginTop = tester
+        .getTopLeft(find.byKey(const ValueKey('welcome.log_in_button')))
+        .dy;
+    expect(lineBottom, lessThanOrEqualTo(loginTop));
+    expect(
+      tester.getTopLeft(line).dy,
+      greaterThan(
+        tester
+            .getBottomLeft(
+              find.byKey(const ValueKey('welcome.get_started_button')),
+            )
+            .dy,
+      ),
+    );
+
+    // A tap takes it.
+    await tester.tap(line);
+    await tester.pump();
+    expect(find.text(_line), findsNothing);
     expect(container.read(signOutNoticeProvider), isNull, reason: 'shown once');
   });
 

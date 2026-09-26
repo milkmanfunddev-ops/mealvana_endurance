@@ -3,6 +3,7 @@
 /// `false`, `null` on a row that predates the column, or no row at all.
 library;
 
+import 'dart:async';
 import 'dart:io';
 
 import 'package:flutter/widgets.dart';
@@ -12,6 +13,7 @@ import 'package:mealvana_endurance/shared/providers/is_admin_provider.dart';
 import 'package:mealvana_endurance/shared/services/app_external_deps.dart';
 import 'package:mealvana_endurance/shared/services/connectivity_checker.dart';
 import 'package:mocktail/mocktail.dart';
+import 'package:supabase_flutter/supabase_flutter.dart';
 
 import '../../features/meal_planning/helpers/container.dart';
 import '../../features/meal_planning/helpers/fakes.dart';
@@ -134,4 +136,76 @@ void main() {
       expect(reads, 2);
     });
   });
+
+  // Testing-wave 118-003, 119-004, 120-009: GoTrue's auth stream replays
+  // every past event to a new subscriber. Each rebuild subscribed again,
+  // saw a replayed event whose session was not the current user, and
+  // invalidated itself: a failing read every 25-70 ms while offline.
+  test(
+    'replayed auth events with another session never re-read; only a real '
+    'user change does',
+    () async {
+      final replayed = [
+        const AuthState(AuthChangeEvent.signedOut, null),
+        AuthState(AuthChangeEvent.initialSession, _sessionFor('user-0')),
+        AuthState(AuthChangeEvent.tokenRefreshed, _sessionFor('user-1')),
+      ];
+      TestWidgetsFlutterBinding.ensureInitialized();
+      var reads = 0;
+      final connectivity = StubConnectivity(online: false);
+      final live = StreamController<AuthState>.broadcast();
+      addTearDown(live.close);
+      final client = supabaseWithSession();
+      final auth = client.auth as MockGoTrueClient;
+      // What GoTrue's ReplaySubject does: every past event, then live ones.
+      Stream<AuthState> replayThenLive() async* {
+        yield* Stream.fromIterable(replayed);
+        yield* live.stream;
+      }
+
+      when(() => auth.onAuthStateChange).thenAnswer((_) => replayThenLive());
+      when(() => client.from('users')).thenAnswer((_) {
+        reads++;
+        throw const SocketException('Network is unreachable');
+      });
+      final c = ProviderContainer(
+        overrides: [
+          appExternalDepsProvider.overrideWithValue(
+            AppExternalDeps(
+              analytics: testDeps().analytics,
+              supabaseClient: client,
+              sentry: testDeps().sentry,
+              logger: FakeLogger(),
+              sharedPreferences: testDeps().sharedPreferences,
+            ),
+          ),
+          connectivityCheckerProvider.overrideWithValue(connectivity),
+        ],
+      );
+      addTearDown(c.dispose);
+      c.listen(isAdminProvider, (_, _) {});
+
+      expect(await c.read(isAdminProvider.future), isFalse);
+      for (var i = 0; i < 20; i++) {
+        await pumpEventQueue();
+      }
+      expect(reads, 1, reason: 'the replay is not a user change');
+
+      // A real sign-out: GoTrue drops the user before it emits the event.
+      when(() => auth.currentUser).thenReturn(null);
+      live.add(const AuthState(AuthChangeEvent.signedOut, null));
+      await pumpEventQueue();
+      expect(await c.read(isAdminProvider.future), isFalse);
+      expect(reads, 1, reason: 'signed out: no read, no user to read for');
+    },
+  );
+}
+
+Session _sessionFor(String userId) {
+  final session = MockSession();
+  final user = MockUser();
+  when(() => user.id).thenReturn(userId);
+  when(() => session.user).thenReturn(user);
+  when(() => session.accessToken).thenReturn('token-$userId');
+  return session;
 }

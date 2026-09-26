@@ -72,6 +72,10 @@ class AppStartup extends _$AppStartup {
           .read(privacyRegionServiceProvider)
           .ensureResolved();
 
+      // 0a'. A reset the app was quit on (124-003): its recovery session is
+      // signed out before anything reads the session, RevenueCat included.
+      await startupService.endAbandonedRecovery();
+
       // 0b. REVENUECAT: start configuring the SDK now, overlapping the
       // version check and database init. The router's gate reads the
       // subscription status the moment the router exists, and that read

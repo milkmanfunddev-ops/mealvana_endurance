@@ -13,10 +13,18 @@ const NOW = Date.parse('2026-09-15T12:00:00Z');
 const HOUR = 3600_000;
 
 type Row = { user_id: string; active_until: string | null; period_type: string | null; will_renew?: boolean };
+/** A `public.users` row as PostgREST returns it: `is_admin` true, false, null or absent. */
+type UserRow = { id: string; is_admin?: boolean | null };
 const MINUTE = 60_000;
 
-/** The only query requirePro may make: select the two fields for one user. */
-function fakeAdmin(rows: Row[], opts: { error?: { message: string }; throws?: boolean } = {}) {
+/**
+ * The two queries requirePro may make: the entitlement row for one user, and
+ * (only when that says no) the user's `is_admin` flag (122-004).
+ */
+function fakeAdmin(
+  rows: Row[],
+  opts: { error?: { message: string }; throws?: boolean; users?: UserRow[] } = {},
+) {
   const log: { table: string; cols: string; user: string }[] = [];
   const admin = {
     from(table: string) {
@@ -30,6 +38,10 @@ function fakeAdmin(rows: Row[], opts: { error?: { message: string }; throws?: bo
           log.push({ table, cols, user });
           if (opts.throws) throw new Error('network');
           if (opts.error) return { data: null, error: opts.error };
+          if (table === 'users') {
+            const row = (opts.users ?? []).find((r) => r.id === user);
+            return { data: row ? { is_admin: row.is_admin ?? null } : null, error: null };
+          }
           return { data: rows.find((r) => r.user_id === user) ?? null, error: null };
         },
       };
@@ -79,8 +91,38 @@ Deno.test('a trial row (period_type TRIAL, active_until in seven days) passes', 
 });
 
 Deno.test('no row → pro_required', async () => {
-  const { admin } = fakeAdmin([]);
+  const { admin, log } = fakeAdmin([]);
   assertEquals(await requirePro(admin, USER, NOW), { ok: false, reason: 'pro_required' });
+  assertEquals(log.map((l) => l.table), ['user_entitlements', 'users'], 'the admin flag is read once the cache says no');
+});
+
+Deno.test('an Admin with no entitlement row passes (122-004)', async () => {
+  const { admin, log } = fakeAdmin([], { users: [{ id: USER, is_admin: true }] });
+  assertEquals(await requirePro(admin, USER, NOW), { ok: true });
+  assertEquals(log[1], { table: 'users', cols: 'is_admin', user: USER });
+});
+
+Deno.test('an Admin with an expired row passes; a non-admin with one does not', async () => {
+  const expired = [{ user_id: USER, active_until: new Date(NOW - HOUR).toISOString(), period_type: 'NORMAL' }];
+  assertEquals(await requirePro(fakeAdmin(expired, { users: [{ id: USER, is_admin: true }] }).admin, USER, NOW), { ok: true });
+  assertEquals(await requirePro(fakeAdmin(expired, { users: [{ id: USER, is_admin: false }] }).admin, USER, NOW), { ok: false, reason: 'pro_required' });
+});
+
+Deno.test('only a literal true is an admin: null, absent, a string, or another user\'s flag', async () => {
+  for (const users of [
+    [{ id: USER, is_admin: null }],
+    [{ id: USER }],
+    [{ id: USER, is_admin: 'true' as unknown as boolean }],
+    [{ id: 'c18d3737-0000-4000-8000-000000000002', is_admin: true }],
+  ]) {
+    assertEquals(await requirePro(fakeAdmin([], { users }).admin, USER, NOW), { ok: false, reason: 'pro_required' });
+  }
+});
+
+Deno.test('an entitled row never reads the admin flag', async () => {
+  const { admin, log } = fakeAdmin([{ user_id: USER, active_until: new Date(NOW + HOUR).toISOString(), period_type: 'NORMAL' }]);
+  assertEquals(await requirePro(admin, USER, NOW), { ok: true });
+  assertEquals(log.map((l) => l.table), ['user_entitlements']);
 });
 
 Deno.test('an expired row → pro_required, whatever the period type', async () => {

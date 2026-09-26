@@ -89,6 +89,27 @@ class ContentKeys {
   static const String postOnboardingTrialFallback =
       'auth.post_onboarding.trial_fallback';
 
+  // Log In errors, one line under the form that stays until the next edit
+  // (testing-wave 125-002, 125-007).
+  static const String loginErrorWrongCredentials =
+      'auth.login.error_wrong_credentials';
+  static const String loginErrorNoConnection = 'auth.login.error_no_connection';
+  static const String loginErrorFailed = 'auth.login.error_failed';
+  // Verify your email (121-001, 121-002, 124-002): the Resend countdown, an
+  // old code after a Resend, and the hint that the address may be an account.
+  static const String verifyEmailResendIn = 'auth.verify_email.resend_in';
+  static const String verifyEmailResend = 'auth.verify_email.resend';
+  static const String verifyEmailResent = 'auth.verify_email.resent';
+  static const String verifyEmailCodeSuperseded =
+      'auth.verify_email.code_superseded';
+  static const String verifyEmailMaybeAccountHint =
+      'auth.verify_email.maybe_account_hint';
+  static const String verifyEmailLogIn = 'auth.verify_email.log_in';
+  // Enter Reset Code (124-004): the same countdown on the reset screen.
+  static const String verifyCodeResendIn = 'auth.verify_code.resend_in';
+  static const String verifyCodeResent = 'auth.verify_code.resent';
+  static const String verifyCodeResendFailed = 'auth.verify_code.resend_failed';
+
   // Main Screen
   static const String mainScreenTitle = 'main_screen.title';
   static const String mainScreenDistanceLabel = 'main_screen.distance_label';
@@ -188,6 +209,10 @@ class ContentKeys {
   // the athlete's unsynced changes stay on the phone for the next sign-in.
   static const String settingsSignOutUnsyncedKept =
       'settings.sign_out_unsynced_kept';
+  // Delete account when `delete-user` gave no 200 (testing-wave 121-007):
+  // nothing was deleted, the athlete stays signed in.
+  static const String settingsDeleteNeedsConnection =
+      'settings.delete_needs_connection';
   // The Profile & Preferences screen's own title (31-014): the settings
   // screen, not onboarding's "Tell us about yourself".
   static const String settingsProfilePreferencesTitle =

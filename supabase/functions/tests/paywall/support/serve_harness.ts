@@ -108,8 +108,8 @@ export interface World {
   balance: number;
   /** When true the wallet RPCs answer 500: the database error that must refuse the call (ticket 09). */
   budgetDown?: boolean;
-  /** `public.users` rows (meal-photo reads `is_internal`). */
-  users: { id: string; is_internal: boolean }[];
+  /** `public.users` rows (meal-photo reads `is_internal`; the gate reads `is_admin`, 122-004). */
+  users: { id: string; is_internal: boolean; is_admin?: boolean | null }[];
 }
 
 /** Every outbound request, as `METHOD path` (host dropped for Supabase, kept for anything else). */

@@ -15,6 +15,7 @@ import '../../../../shared/widgets/custom_app_bar_back_button.dart';
 import '../../../../shared/services/app_config.dart';
 import '../../../content/application/content_service.dart';
 import '../../../content/domain/content_keys.dart';
+import '../../domain/account_deletion_exceptions.dart';
 import '../../../subscription/application/subscription_screen_controller.dart';
 import '../../../subscription/presentation/screens/subscription_screen.dart';
 import '../providers/dev_tools_switch_controller.dart';
@@ -734,9 +735,22 @@ class _SettingsScreenState extends ConsumerState<SettingsScreen> {
 
                   // If user confirmed, proceed with delete
                   if (confirmed && context.mounted) {
-                    await ref
-                        .read(settingsControllerProvider.notifier)
-                        .deleteAccount();
+                    try {
+                      await ref
+                          .read(settingsControllerProvider.notifier)
+                          .deleteAccount();
+                    } on AccountDeletionNeedsConnectionException {
+                      // Nothing was deleted (121-007): still signed in.
+                      if (context.mounted) {
+                        MealvanaSnackbar.showError(
+                          context,
+                          content.getValue(
+                            ContentKeys.settingsDeleteNeedsConnection,
+                          ),
+                        );
+                      }
+                      return;
+                    }
 
                     // Navigate to welcome screen after account deletion
                     if (context.mounted) {

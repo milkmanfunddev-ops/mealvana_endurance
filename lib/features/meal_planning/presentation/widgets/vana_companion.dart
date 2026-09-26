@@ -739,14 +739,20 @@ class _VanaCompanionSheetState extends ConsumerState<VanaCompanionSheet> {
               style: AppTextStyles.bodySmall.copyWith(color: AppColors.cream),
             ),
           ),
-          TextButton(
-            key: const ValueKey('vana_sheet.retry'),
-            onPressed: _retry,
-            child: Text(
-              content.getValue(ContentKeys.mpRetry),
-              style: AppTextStyles.bodySmall.copyWith(color: AppColors.orange),
+          // A lapsed Pro has no Retry (testing-wave 122-004): the same call
+          // can never pass until the subscription (or the admin flag) says
+          // otherwise, and the router owns the paywall.
+          if (state.error != VanaChatErrorKind.proRequired)
+            TextButton(
+              key: const ValueKey('vana_sheet.retry'),
+              onPressed: _retry,
+              child: Text(
+                content.getValue(ContentKeys.mpRetry),
+                style: AppTextStyles.bodySmall.copyWith(
+                  color: AppColors.orange,
+                ),
+              ),
             ),
-          ),
         ],
       ),
     );
