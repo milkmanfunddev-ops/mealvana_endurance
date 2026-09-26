@@ -515,6 +515,26 @@ Deno.test("OAuth state is owner-bound, expiring and single-use", async () => {
   );
   assertEquals(client.exchanges, 1);
 });
+Deno.test("cancel_connect drops the attempt's OAuth session row and leaves the shopper disconnected (111-001)", async () => {
+  const { db, service } = setup();
+  db.tables.kroger_connections = [];
+  db.tables.kroger_oauth_sessions = [];
+  const { state } = await service.run("connect", {}) as { state: string };
+  assertEquals(db.tables.kroger_oauth_sessions.length, 1);
+  assertEquals(
+    await service.run("cancel_connect", { state }),
+    { connected: false },
+  );
+  assertEquals(db.tables.kroger_oauth_sessions, []);
+  // With no state (the app never got one), every row of the shopper's goes.
+  await service.run("connect", {});
+  await service.run("connect", {});
+  assertEquals(await service.run("cancel_connect", {}), { connected: false });
+  assertEquals(db.tables.kroger_oauth_sessions, []);
+  // Nothing to cancel is not an error, and no connection was made.
+  await service.run("cancel_connect", { state });
+  assertEquals((await service.run("status", {})).connected, false);
+});
 Deno.test("concurrent refreshes claim only one lease and persist the new expiry", async () => {
   const { db, client, service } = setup();
   Object.assign(db.tables.kroger_connections[0], {

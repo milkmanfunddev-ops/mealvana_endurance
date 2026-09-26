@@ -1,7 +1,8 @@
 /** Several shopping lists (2026-09-16): the merge rule that keeps a hand-added or hand-edited line through a re-plan,
  *  and the wire shape of every shopping action, over the fake db. */
 import { assertEquals, assert, assertRejects } from 'https://deno.land/std@0.177.1/testing/asserts.ts';
-import { mergePlanItems, syncPlanList, toItem, weekListName, uniqueListName, cleanListName, LIST_NAME_MAX } from '../../_shared/vana/shopping.ts';
+import { mergePlanItems, syncPlanList, toItem, weekListName, uniqueListName, cleanListName, defaultListName, LIST_NAME_MAX } from '../../_shared/vana/shopping.ts';
+import { today } from '../../_shared/vana/env.ts';
 import { extraAction } from '../../_shared/vana/actions.ts';
 import { ShoppingListDetailZ, ShoppingListSummaryZ, ActionResultZ } from '../../_shared/vana/schemas.ts';
 import type { ShoppingItem, ShoppingListItem } from '../../_shared/vana/contracts.ts';
@@ -46,7 +47,7 @@ Deno.test("weekListName: a plan's list is named by its week in words, not an ISO
 
 Deno.test('syncPlanList: makes the plan list once, replaces plan rows, keeps the hand-added row, answers plain lines', async () => {
   const v = ctx();
-  const plan = { id: 'p1', weekStart: '2026-09-13', status: 'draft' };
+  const plan = { id: 'p1', weekStart: '2026-09-13', status: 'confirmed' };
   const first = await syncPlanList(v, plan, [plain('Broccoli'), plain('Rice')]);
   assertEquals(first.map((i) => i.name), ['Broccoli', 'Rice']);
   const lists = v.fake.rows('shopping_lists'); assertEquals(lists.length, 1); assertEquals(lists[0].plan_id, 'p1'); assertEquals(lists[0].name, 'Week of Sep 13');
@@ -147,12 +148,15 @@ async function midWeek(over: { dropConfirmedList?: boolean; noConfirmed?: boolea
     { id: 'handMade', user_id: U, name: 'List 2026-09-24', created_at: '2026-09-24T16:55:00Z' },
     { id: 'olderHandMade', user_id: U, name: 'List 2026-09-02', created_at: '2026-09-02T10:00:00Z' },
     { id: 'lastWeekList', user_id: U, plan_id: 'lastWeek', name: 'Week of 2020-01-05', created_at: '2020-01-05T10:00:00Z', confirmed_at: '2026-09-25T00:00:00Z' },
+    // A plan the athlete deleted keeps its list for Undo, but the tab never shows it (88-019, 110-012).
+    { id: 'deletedList', user_id: U, plan_id: 'deleted', name: `Week of ${week}`, created_at: '2026-09-25T12:00:00Z', confirmed_at: '2026-09-26T00:00:00Z' },
   ].filter((l) => !(over.dropConfirmedList && l.id === 'confirmedList') && !(over.noHandMade && ['handMade', 'olderHandMade'].includes(l.id)));
   const plans = [
     { id: 'confirmed', user_id: U, week_start: week, status: over.noConfirmed ? 'archived' : 'confirmed', is_deleted: false, shopping: [] },
     { id: 'draft', user_id: U, week_start: week, status: 'draft', conversation_id: 'c1', is_deleted: false, shopping: [] },
     { id: 'archived', user_id: U, week_start: week, status: 'archived', is_deleted: false, shopping: [] },
     { id: 'lastWeek', user_id: U, week_start: '2020-01-05', status: 'confirmed', is_deleted: false, shopping: [] },
+    { id: 'deleted', user_id: U, week_start: week, status: 'archived', is_deleted: true, shopping: [] },
   ];
   return ctx({ shopping_lists: lists, meal_plans: plans });
 }
@@ -181,6 +185,29 @@ Deno.test("delete_shopping_list on the confirmed plan's list answers the newest 
   const bare = await midWeek({ noHandMade: true });
   assertEquals((await extraAction(bare, 'delete_shopping_list', { id: 'confirmedList' }))!.list, null);
   assertEquals(await defaultId(bare), null);
+});
+
+Deno.test("a deleted plan's list is hidden: never listed, never the default, and its id opens the default instead (88-019, 110-012)", async () => {
+  const v = await midWeek();
+  const ids = ((await extraAction(v, 'list_shopping_lists', {}))!.lists as { id: string }[]).map((l) => l.id);
+  assertEquals(ids.includes('deletedList'), false);
+  assert(ids.includes('confirmedList'));
+  assertEquals(await defaultId(await midWeek({ noConfirmed: true, noHandMade: true })), null);
+  assertEquals(((await extraAction(v, 'get_shopping_list', { id: 'deletedList' }))!.list as { id: string }).id, 'confirmedList');
+});
+
+Deno.test('create_shopping_list: the default name is today in words, and a second one the same day takes " (2)" (110-010)', async () => {
+  const v = ctx();
+  const base = defaultListName(today());
+  assert(/^List · [A-Z][a-z]{2} \d{1,2}$/.test(base), base);
+  const first = ShoppingListDetailZ.parse((await extraAction(v, 'create_shopping_list', {}))!.list);
+  assertEquals(first.name, base);
+  const second = ShoppingListDetailZ.parse((await extraAction(v, 'create_shopping_list', {}))!.list);
+  assertEquals(second.name, `${base} (2)`);
+  // A typed name follows the same rule as a rename: a taken name takes the next free number.
+  const typed = ShoppingListDetailZ.parse((await extraAction(v, 'create_shopping_list', { name: ` ${base}  ` }))!.list);
+  assertEquals(typed.name, `${base} (3)`);
+  assertEquals(defaultListName('2026-09-25'), 'List · Sep 25');
 });
 
 Deno.test("get_shopping_list{}: with no confirmed plan this week, the newest hand-made list, else null; a draft's or another week's list never", async () => {

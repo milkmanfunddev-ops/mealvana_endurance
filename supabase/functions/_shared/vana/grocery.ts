@@ -44,8 +44,9 @@ export function defaultQty(key: string): string {
 }
 const esc = (s: string) => s.replace(/[.*+?^${}()|[\]\\]/g, '\\$&');
 /** Specific phrases that must win over a broader Produce/Protein match: a tin, a broth or an oil made of vegetables is a
- *  Pantry line, and wheat berries and pearl barley are grains, not fruit (16-007). */
-const PRIORITY: Array<[string, string[]]> = [['Pantry', ['crushed tomatoes','chopped tomatoes','tinned tomatoes','canned','tomato sauce','tomato paste','passata','marinara','coconut milk','peanut butter','almond butter','seed butter','stock','broth','dried','raisin','sun-dried','vegetable oil']], ['Bakery & Grains', ['wheat berr','barley','pearl couscous']], ['Frozen', ['frozen']], ['Dairy', ['cottage cheese','greek yogurt','cream cheese']]];
+ *  Pantry line, wheat berries and pearl barley are grains, not fruit (16-007), and a jam is a jar, whatever fruit it
+ *  names (110-008: "strawberry jam" was filed under Produce by its "strawberr"). */
+const PRIORITY: Array<[string, string[]]> = [['Pantry', ['crushed tomatoes','chopped tomatoes','tinned tomatoes','canned','tomato sauce','tomato paste','passata','marinara','coconut milk','peanut butter','almond butter','seed butter','stock','broth','dried','raisin','sun-dried','vegetable oil','jam','jelly','preserves','marmalade']], ['Bakery & Grains', ['wheat berr','barley','pearl couscous']], ['Frozen', ['frozen']], ['Dairy', ['cottage cheese','greek yogurt','cream cheese']]];
 export function classifyAisle(name: string): string {
   const f = name.toLowerCase();
   for (const [aisle, keys] of PRIORITY) for (const k of keys) if (f.includes(k)) return aisle;

@@ -24,6 +24,14 @@ Deno.test('grocery: classifies aisles and canonicalises names', () => {
   assertEquals(canonicalName('yellow onion'), 'onion');
 });
 
+Deno.test('grocery: a jam, jelly, preserve or marmalade is Pantry, whatever fruit it names (110-008)', () => {
+  assertEquals(classifyAisle('strawberry jam'), 'Pantry');
+  assertEquals(classifyAisle('grape jelly'), 'Pantry');
+  assertEquals(classifyAisle('apricot preserves'), 'Pantry');
+  assertEquals(classifyAisle('orange marmalade'), 'Pantry');
+  assertEquals(classifyAisle('strawberries'), 'Produce');
+});
+
 Deno.test('grocery: whole grains and mixed vegetables take their aisles, not Other (16-007)', () => {
   for (const g of ['farro', 'spelt', 'freekeh', 'bulgur', 'bulgur wheat', 'millet', 'buckwheat', 'wheat berries', 'amaranth', 'sorghum', 'teff', 'pearl barley', 'pearl couscous', 'spelt flour']) assertEquals(classifyAisle(g), 'Bakery & Grains', g);
   for (const veg of ['mixed vegetables', 'mixed veg', 'stir-fry vegetables', 'root vegetables', 'vegetable']) assertEquals(classifyAisle(veg), 'Produce', veg);

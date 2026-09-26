@@ -198,6 +198,20 @@ export class KrogerService {
       }).toString();
       return { url: url.toString(), state, redirect };
     }
+    if (action === "cancel_connect") {
+      // The shopper closed the sign-in (111-001): the attempt's state row goes
+      // now rather than at the next connect or its expiry. With no state (the
+      // app never got one) every row of the shopper's goes. Nothing to drop is
+      // not an error. Idempotent: a repeat finds nothing.
+      const state = body.state == null ? null : uuid(body.state);
+      let query = this.admin.from("kroger_oauth_sessions").delete().eq(
+        "user_id",
+        this.userId,
+      );
+      if (state) query = query.eq("state", state);
+      checked(await query);
+      return { connected: false };
+    }
     if (action === "exchange") {
       const state = uuid(body.state), code = textInput(body.code, 4096);
       const rows = checked(

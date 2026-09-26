@@ -10,7 +10,7 @@
  * (markListConfirmed).
  */
 import { assertEquals } from 'https://deno.land/std@0.177.1/testing/asserts.ts';
-import { confirmPlan, newPlan, setServings, usePlanAgain } from '../../_shared/vana/plan.ts';
+import { confirmPlan, newPlan, rebuildShoppingList, setServings, usePlanAgain } from '../../_shared/vana/plan.ts';
 import { dropArchivedDraftLists } from '../../_shared/vana/shopping.ts';
 import { addDays, today, weekStartFor } from '../../_shared/vana/env.ts';
 import { testCtx, TEST_USER_ID } from './support/vana_ctx.ts';
@@ -74,7 +74,7 @@ function account() {
       itemRow('i1', 'L-confirmed', 'Rice'), itemRow('i2', 'L-monday', 'Eggs'), itemRow('i3', 'L-wednesday', 'Oats'),
       itemRow('i4', 'L-tab', 'Kale'), itemRow('i5', 'L-earlier', 'Beans'), itemRow('i6', 'L-hand', 'Coffee', 'manual'),
     ],
-    meal_library: ['D-001', 'D-002', 'D-003', 'D-004', 'D-005'].map((id) => ({ id, name: id, meal_type: 'dinner', contexts: [], batch: true, kcal: 650, carbs_g: 70, protein_g: 35, fat_g: 18, ingredients: 'rice', source: 'the library' })),
+    meal_library: ['D-001', 'D-002', 'D-003', 'D-004', 'D-005'].map((id) => ({ id, name: id, meal_type: 'dinner', contexts: [], batch: true, kcal: 650, carbs_g: 70, protein_g: 35, fat_g: 18, ingredients: 'rice', ingredients_json: [{ name: 'Rice', qty: '80 g' }], source: 'the library' })),
   }, {
     defaults: listDefaults,
     rpc: {
@@ -127,8 +127,39 @@ Deno.test("use_plan_again: the Plan tab's draft it replaces loses its list; conv
   const ids = listIds(v);
   assertEquals(ids.includes('L-tab'), false);
   for (const kept of ['L-confirmed', 'L-monday', 'L-wednesday', 'L-earlier', 'L-hand']) assertEquals(ids.includes(kept), true, kept);
-  // The copy is a live draft and builds its own list.
-  assertEquals(v.fake.rows('shopping_lists').some((r) => r.plan_id === copy.id), true);
+  // The copy is a draft: no list until it is confirmed (110-012, Lee 09-26); its mirror still holds the lines.
+  assertEquals(v.fake.rows('shopping_lists').some((r) => r.plan_id === copy.id), false);
+  assertEquals(copy.shopping.length > 0, true);
+});
+
+// ---- 110-012 (Lee 2026-09-26, clarifies mp-244): a draft never has a list. The list is built at confirm and rebuilt
+// after edits to a plan that is, or once was, confirmed.
+
+Deno.test("a draft's edit builds no list but fills the plan's mirror; confirm builds the list, confirmed", async () => {
+  const v = account();
+  // The Plan tab's draft with no list yet (the migration cleared the ones drafts had).
+  const lists = v.fake.rows('shopping_lists');
+  lists.splice(lists.findIndex((r) => r.id === 'L-tab'), 1);
+  const edited = await setServings(v, 'm4', 4);
+  assertEquals(v.fake.rows('shopping_lists').some((r) => r.plan_id === TAB_DRAFT), false, 'no list for a draft');
+  assertEquals(edited.shopping.length > 0, true, 'the mirror still carries the lines (Kroger, the offline copy)');
+  const confirmed = await confirmPlan(v, { planId: TAB_DRAFT });
+  const list = v.fake.rows('shopping_lists').find((r) => r.plan_id === TAB_DRAFT);
+  assertEquals(list != null, true, 'confirm builds the list');
+  assertEquals(list!.confirmed_at != null, true);
+  assertEquals(v.fake.rows('shopping_items').filter((r) => r.list_id === list!.id).length > 0, true);
+  assertEquals(confirmed.status, 'confirmed');
+  // An edit to the confirmed plan rebuilds that same list.
+  await setServings(v, 'm4', 6);
+  assertEquals(v.fake.rows('shopping_lists').filter((r) => r.plan_id === TAB_DRAFT).length, 1);
+});
+
+Deno.test('rebuild_shopping_list on a draft leaves it with no list', async () => {
+  const v = account();
+  const lists = v.fake.rows('shopping_lists');
+  lists.splice(lists.findIndex((r) => r.id === 'L-monday'), 1);
+  await rebuildShoppingList(v, { conversationId: MONDAY_CONV });
+  assertEquals(v.fake.rows('shopping_lists').some((r) => r.plan_id === MONDAY_DRAFT), false);
 });
 
 Deno.test('dropArchivedDraftLists: a list marked confirmed is kept even when its plan lacks confirmed_at (pre-backfill plans)', async () => {
