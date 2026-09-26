@@ -40,7 +40,7 @@ import { serve } from 'https://deno.land/std@0.224.0/http/server.ts';
 import { createClient } from 'https://esm.sh/@supabase/supabase-js@2.39.3';
 import { handleCors } from '../_shared/cors.ts';
 import { errorResponse, jsonResponse, serverError } from '../_shared/responses.ts';
-import { CREDITS_ENFORCED, MONTHLY_BUDGET, TRIAL_BUDGET } from '../_shared/ai/credits.ts';
+import { MONTHLY_BUDGET, TRIAL_BUDGET, creditsEnforced } from '../_shared/ai/credits.ts';
 import { budgetStatus, freeMonthlyBudget } from '../_shared/ai/allowance.ts';
 
 const SUPABASE_URL = Deno.env.get('SUPABASE_URL') ?? '';
@@ -88,7 +88,7 @@ serve(async (req) => {
     return jsonResponse({
       ...status,
       allowance_expires_at: status.refill_at,
-      enforced: CREDITS_ENFORCED,
+      enforced: creditsEnforced(),
     });
   } catch (e) {
     console.error('[ensure-credits] unexpected error:', e);
