@@ -1,6 +1,6 @@
 # 120: Retest: two accounts on one phone (leftover rows, sign-out, switching)
 
-**Status:** in-progress (wave 39, 2026-09-26)
+**Status:** done (wave 39, 2026-09-26)
 **Blocked by:** none.
 **Pair with:** 119 (its 31-006 taps the same TrainingPeaks name chip on test@test.com that 86-010 saves). Ticket 100 may run in the same wave on test@test.com: treat its rows as expected.
 **Next:** `/implement-lee testing-wave`

@@ -40,6 +40,18 @@ Each entry: what went wrong or cost time, where it was seen, and the suggested f
   a fixed latency for the app's traffic only), tested against a known two-second timeout before an
   agent relies on it.
 
+- **#94 a logging loop made an 18.6 MB console (wave 39).** 120's offline stretch logged 4,421
+  identical `[IS_ADMIN]` warning boxes (Finding 120-009); the `(Flutter)` filter from #88 kept them
+  all. The lead collapsed them to one count line on the branch before merging (360 KB). Suggested
+  fix: runbook step 9 checks the redacted console's size and, over 5 MB, keeps the first three and
+  the last copy of any repeated logger box with a count line (the lead's script in wave 39's close).
+- **#95 a spend recorded after the call, and a known-fixed fact assumed (wave 39).** 100 opened Ask
+  Vana, which made an opener call, before `COST spend … chat`, and recorded the spend afterwards.
+  120 wrote "RevenueCat still keeps both deleted customers (02-005)" without checking; the lead read
+  both: 404, deleted, as 100's retest of 02-005 showed. Suggested fix: the runbook says a note
+  that cites an old Finding as still true must be checked in this run or say "not re-checked", and
+  that any tap that can open Vana comes after the spend.
+
 ## Done
 
 - **#93 `CRED type` right after the focus tap drops characters (wave 38).** 122's first password
