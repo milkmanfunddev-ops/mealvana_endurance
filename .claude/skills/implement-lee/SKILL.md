@@ -1,7 +1,7 @@
 ---
 name: implement-lee
 description: "Matt's implement run as waves: every unblocked ticket builds at once, each by its own subagent in its own worktree; the wave merges in ticket order with codegen once, the suite once, one review, visual parity where a design rendering is cited, and any product question a build raised goes to the review queue without blocking the next wave. `/implement-lee <feature>`."
-disable-model-invocation: true
+disable-model-invocation: false
 ---
 
 The decision record, its page and the sync commands: `docs/ssot/decisions/README.md`. Read it
