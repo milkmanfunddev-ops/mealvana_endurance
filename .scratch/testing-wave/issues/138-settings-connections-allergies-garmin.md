@@ -33,10 +33,10 @@
 
 Deploy (wave lead, dev): garmin-user-mapping, delete-user, garmin-backfill, garmin-push, garmin-ping, garmin-deregistration (all share `_shared/garmin`). Same names, same inputs and outputs: overwrite in place (playbook §6). No schema change is planned. If one appears, SQL goes first (§3).
 
-- [ ] Deno: the mapping delete and delete-user call Garmin's deregistration with a fresh token and still delete on a Garmin failure. An unmapped push is logged once as skipped, not counted in errors. auth.ts logs no headers. "Token is not active" marks garmin `requires_reauth`.
-- [ ] Seam tests through the real notifiers: a network error keeps `requires_reauth`. `last_sync_at` goes out in UTC. An offline profile save and an allergy save upload once online. The notification answer writes `notifications_enabled`.
-- [ ] Unit tests: "Peanut" matches `peanuts` in the filter and the pin conflict. FinalSurge fetches from 7 days back and flags deletions only from today.
-- [ ] Widget tests: Email is read-only. Back with edits asks Discard changes?. No Omnivore under HIDE FORMULAS WITH. No Garmin chip at an equal weight. The Reconnect notice shows once.
-- [ ] `flutter analyze` clean on touched files. Run codegen if a Riverpod or Drift annotation changes.
+- [x] Deno: the mapping delete and delete-user call Garmin's deregistration with a fresh token and still delete on a Garmin failure. An unmapped push is logged once as skipped, not counted in errors. auth.ts logs no headers. "Token is not active" marks garmin `requires_reauth`.
+- [x] Seam tests through the real notifiers: a network error keeps `requires_reauth`. `last_sync_at` goes out in UTC. An offline profile save and an allergy save upload once online. The notification answer writes `notifications_enabled`.
+- [x] Unit tests: "Peanut" matches `peanuts` in the filter and the pin conflict. FinalSurge fetches from 7 days back and flags deletions only from today.
+- [x] Widget tests: Email is read-only. Back with edits asks Discard changes?. No Omnivore under HIDE FORMULAS WITH. No Garmin chip at an equal weight. The Reconnect notice shows once.
+- [x] `flutter analyze` clean on touched files. Run codegen if a Riverpod or Drift annotation changes.
 
 Next: /implement-lee testing-wave

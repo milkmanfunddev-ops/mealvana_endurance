@@ -192,7 +192,7 @@ class VdotSyncService {
         userId,
         _provider,
         status: 'error',
-        error: e.toString(),
+        error: plainSyncErrorMessage(e, providerName: 'V.O2'),
       );
       if (kDebugMode) {
         print('❌ [vdot] Sync failed: $e');

@@ -362,7 +362,7 @@ class TrainingPeaksSyncService {
         userId,
         'training_peaks',
         status: 'error',
-        error: e.toString(),
+        error: plainSyncErrorMessage(e, providerName: 'TrainingPeaks'),
       );
 
       if (kDebugMode) {
@@ -554,7 +554,7 @@ class TrainingPeaksSyncService {
         userId,
         'training_peaks',
         status: 'error',
-        error: e.toString(),
+        error: plainSyncErrorMessage(e, providerName: 'TrainingPeaks'),
       );
       return TrainingPeaksSyncResult.error(e.toString());
     }
@@ -982,7 +982,7 @@ class TrainingPeaksSyncService {
     userId,
     'training_peaks',
     status: 'error',
-    error: e.toString(),
+    error: plainSyncErrorMessage(e, providerName: 'TrainingPeaks'),
   );
 
   Future<void> _markNeedsReconnect(String userId) =>

@@ -25,6 +25,7 @@ class IntegrationsRepository with SyncableRepository {
     required SupabaseClient supabase,
     required AppLogger logger,
     required SentryReporter sentry,
+    this.onSyncStatusWritten,
   }) : _db = database,
        _supabase = supabase,
        _logger = logger,
@@ -34,6 +35,12 @@ class IntegrationsRepository with SyncableRepository {
   final SupabaseClient _supabase;
   final AppLogger _logger;
   final SentryReporter _sentry;
+
+  /// Called after [updateSyncStatus] writes a row, with the provider and the
+  /// status now stored. The Reconnect notice (ticket 138, Finding 118-007)
+  /// listens here so it learns of a move into `requires_reauth` no matter
+  /// which sync path found it.
+  final void Function(String provider, String status)? onSyncStatusWritten;
   static const _uuid = Uuid();
 
   // ==========================================================================
@@ -360,24 +367,41 @@ class IntegrationsRepository with SyncableRepository {
     }
   }
 
-  /// Update sync status after a sync attempt
+  /// Update sync status after a sync attempt.
+  ///
+  /// Ticket 138 (Findings 118-002, 118-007):
+  /// - `lastSyncAt` is the last SUCCESSFUL sync, so it is stamped only when
+  ///   [status] is `success`; a failed attempt leaves it alone.
+  /// - A plain `error` never overwrites a stored `requires_reauth`: the
+  ///   provider refused the token for good, and a later network blip does
+  ///   not change that. The row keeps its status and message.
   Future<void> updateSyncStatus(
     String userId,
     String provider, {
     required String status,
     String? error,
   }) async {
+    final existing = await getIntegration(userId, provider);
+    final keepsReauth =
+        status == 'error' && existing?.lastSyncStatus == requiresReauthStatus;
+    final storedStatus = keepsReauth ? requiresReauthStatus : status;
     await (_db.update(_db.integrationsTable)
           ..where((t) => t.userId.equals(userId) & t.provider.equals(provider)))
         .write(
           IntegrationsTableCompanion(
-            lastSyncAt: Value(DateTime.now()),
-            lastSyncStatus: Value(status),
-            lastSyncError: Value(error),
+            lastSyncAt: status == 'success'
+                ? Value(DateTime.now())
+                : const Value.absent(),
+            lastSyncStatus: Value(storedStatus),
+            lastSyncError: keepsReauth
+                ? const Value.absent()
+                : Value(error),
             needsUpload: const Value(true),
             updatedAt: Value(DateTime.now()),
           ),
         );
+
+    onSyncStatusWritten?.call(provider, storedStatus);
 
     await _pushUserProviderToSupabase(userId, provider);
   }
@@ -637,7 +661,7 @@ class IntegrationsRepository with SyncableRepository {
       'provider': entity.provider,
       'access_token': entity.accessToken,
       'refresh_token': entity.refreshToken,
-      'token_expires_at': entity.tokenExpiresAt?.toIso8601String(),
+      'token_expires_at': _utc(entity.tokenExpiresAt),
       'provider_athlete_id': entity.providerAthleteId,
       'provider_athlete_name': entity.providerAthleteName,
       'provider_athlete_email': entity.providerAthleteEmail,
@@ -649,11 +673,11 @@ class IntegrationsRepository with SyncableRepository {
       'provider_is_premium': entity.providerIsPremium,
       'athlete_metrics_json': _decodeZonesForJsonb(entity.athleteMetricsJson),
       'is_active': entity.isActive,
-      'last_sync_at': entity.lastSyncAt?.toIso8601String(),
+      'last_sync_at': _utc(entity.lastSyncAt),
       'last_sync_status': entity.lastSyncStatus,
       'last_sync_error': entity.lastSyncError,
-      'created_at': entity.createdAt.toIso8601String(),
-      'updated_at': entity.updatedAt.toIso8601String(),
+      'created_at': _utc(entity.createdAt),
+      'updated_at': _utc(entity.updatedAt),
     };
   }
 
@@ -665,7 +689,7 @@ class IntegrationsRepository with SyncableRepository {
       'provider': model.provider,
       'access_token': model.accessToken,
       'refresh_token': model.refreshToken,
-      'token_expires_at': model.tokenExpiresAt?.toIso8601String(),
+      'token_expires_at': _utc(model.tokenExpiresAt),
       'provider_athlete_id': model.providerAthleteId,
       'provider_athlete_name': model.providerAthleteName,
       'provider_athlete_email': model.providerAthleteEmail,
@@ -677,13 +701,19 @@ class IntegrationsRepository with SyncableRepository {
       'provider_is_premium': model.providerIsPremium,
       'athlete_metrics_json': _decodeZonesForJsonb(model.athleteMetricsJson),
       'is_active': model.isActive,
-      'last_sync_at': model.lastSyncAt?.toIso8601String(),
+      'last_sync_at': _utc(model.lastSyncAt),
       'last_sync_status': model.lastSyncStatus,
       'last_sync_error': model.lastSyncError,
-      'created_at': (model.createdAt ?? now).toIso8601String(),
-      'updated_at': (model.updatedAt ?? now).toIso8601String(),
+      'created_at': _utc(model.createdAt ?? now),
+      'updated_at': _utc(model.updatedAt ?? now),
     };
   }
+
+  /// Timestamps go to the server as UTC instants (Finding 117-001, ticket
+  /// 138). A local `DateTime.toIso8601String()` has no offset, so the server
+  /// read the wall clock as UTC and `last_sync_at` landed hours off; ticket
+  /// 42 fixed the same for `activities.last_synced_at`.
+  String? _utc(DateTime? t) => t?.toUtc().toIso8601String();
 
   /// Drift stores athlete zones as a JSON-encoded string; Supabase wants the
   /// decoded structure for its JSONB column. Pass nulls and malformed input

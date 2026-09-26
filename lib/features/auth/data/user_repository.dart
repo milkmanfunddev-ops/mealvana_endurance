@@ -1,3 +1,5 @@
+import 'dart:async';
+
 import 'package:drift/drift.dart' show Value, Variable;
 import 'package:riverpod_annotation/riverpod_annotation.dart';
 import 'package:supabase_flutter/supabase_flutter.dart';
@@ -5,6 +7,7 @@ import '../domain/user_preferences.dart';
 import '../../../shared/database/app_database.dart';
 import '../../../shared/database/database_provider.dart';
 import '../../../shared/services/app_external_deps.dart';
+import '../../../shared/services/sync/sync_coordinator.dart';
 import '../../../shared/services/sync/sync_dependency_graph.dart';
 import '../../../shared/services/sentry/sentry_reporter.dart';
 import '../../../core/utils/debug_logger.dart';
@@ -19,11 +22,20 @@ class UserRepository with SyncableRepository {
     required this.database,
     required this.supabase,
     required this.sentry,
+    this.onUploadOwed,
   });
 
   final AppDatabase database;
   final SupabaseClient supabase;
   final SentryReporter sentry;
+
+  /// Called when a write leaves the `users` row dirty: a save marked for
+  /// background upload, or an immediate upload that failed. The provider
+  /// wires it to the SyncCoordinator (ticket 138, Findings 119-001,
+  /// 116-002), which uploads right away when online and otherwise at the
+  /// next online moment or app resume, instead of waiting out the 1-hour
+  /// staleness window.
+  final void Function()? onUploadOwed;
 
   // ========== SyncableRepository Implementation ==========
 
@@ -228,7 +240,13 @@ class UserRepository with SyncableRepository {
       // background sync retries it later. Previously the failure was swallowed
       // WITHOUT marking the record dirty, so a failed save never reached
       // Supabase and was never retried.
-      if (!needsUpload) {
+      //
+      // Either way the row is dirty, the coordinator is told at once
+      // (ticket 138): it uploads now when online, else when the network
+      // comes back or the app resumes.
+      if (needsUpload) {
+        onUploadOwed?.call();
+      } else {
         try {
           await _upsertUserProfileToSupabase(updatedProfile);
         } catch (e, stackTrace) {
@@ -237,6 +255,7 @@ class UserRepository with SyncableRepository {
             updatedProfile,
             needsUpload: true,
           );
+          onUploadOwed?.call();
           sentry.addBreadcrumb(
             message: 'Immediate upload failed; record marked dirty for retry',
             category: 'sync',
@@ -268,6 +287,17 @@ class UserRepository with SyncableRepository {
       );
       rethrow;
     }
+  }
+
+  /// Stores the athlete's notification permission answer, local first
+  /// (ticket 138, Finding 125-004). Same write path as any profile change:
+  /// write-through when online, dirty and owed a retry when not. Repeating
+  /// it is safe: the same value lands again.
+  Future<void> setNotificationsEnabled(String userId, bool enabled) async {
+    final current = await database.userDao.getUserProfileById(userId);
+    if (current == null) return;
+    if (current.notificationsEnabled == enabled) return;
+    await updateUserProfile(current.copyWith(notificationsEnabled: enabled));
   }
 
   /// Update auth provider after account linking
@@ -978,5 +1008,17 @@ Future<UserRepository> userRepository(Ref ref) async {
   final sentry = ref.watch(sentryReporterProvider);
   final supabase = ref.watch(appExternalDepsProvider).supabaseClient;
 
-  return UserRepository(database: database, supabase: supabase, sentry: sentry);
+  // The coordinator is keepAlive, so the notifier outlives this provider.
+  final sync = ref.read(syncCoordinatorProvider.notifier);
+  return UserRepository(
+    database: database,
+    supabase: supabase,
+    sentry: sentry,
+    onUploadOwed: () {
+      sync.markUploadRetryOwed('users');
+      // Online: upload right away. Offline: this fails, and the network
+      // coming back or the app resuming runs it again.
+      unawaited(sync.retryOwedUploads());
+    },
+  );
 }

@@ -1,4 +1,6 @@
+import 'dart:async';
 import 'package:flutter/foundation.dart';
+import 'package:flutter/widgets.dart' show AppLifecycleListener;
 import 'package:flutter_local_notifications/flutter_local_notifications.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:onesignal_flutter/onesignal_flutter.dart';
@@ -17,8 +19,12 @@ abstract class RemotePushClient {
   void start(String appId, void Function(Map<String, dynamic>) onClickData);
 
   /// Registers for remote notifications and refreshes the APNs token. On an
-  /// install that has never answered, this raises the iOS prompt.
-  Future<void> requestPermission({required bool fallbackToSettings});
+  /// install that has never answered, this raises the iOS prompt. Returns
+  /// whether notifications are allowed afterwards.
+  Future<bool> requestPermission({required bool fallbackToSettings});
+
+  /// Whether the OS currently allows notifications for this app.
+  Future<bool> permissionGranted();
 
   void login(String externalId);
   void logout();
@@ -45,8 +51,16 @@ class OneSignalRemotePush implements RemotePushClient {
   }
 
   @override
-  Future<void> requestPermission({required bool fallbackToSettings}) =>
+  Future<bool> requestPermission({required bool fallbackToSettings}) =>
       OneSignal.Notifications.requestPermission(fallbackToSettings);
+
+  @override
+  Future<bool> permissionGranted() async {
+    final native = await OneSignal.Notifications.permissionNative();
+    return native == OSNotificationPermission.authorized ||
+        native == OSNotificationPermission.provisional ||
+        native == OSNotificationPermission.ephemeral;
+  }
 
   @override
   void login(String externalId) => OneSignal.login(externalId);
@@ -70,6 +84,13 @@ class NotificationService {
   static AnalyticsTracker _analytics = const NoopAnalyticsTracker();
   static String _oneSignalAppId = '';
 
+  /// Receives the OS's answer to the notification ask, and any later change
+  /// seen on app resume (ticket 138, Finding 125-004). The startup flow
+  /// wires it to `users.notifications_enabled` through the user repository.
+  static Future<void> Function(bool granted)? _onPermissionAnswer;
+  static bool? _lastReportedPermission;
+  static AppLifecycleListener? _resumeListener;
+
   @visibleForTesting
   static RemotePushClient remotePush = const OneSignalRemotePush();
 
@@ -87,6 +108,10 @@ class NotificationService {
     _dailyMacroCacheInvalidator = null;
     _analytics = const NoopAnalyticsTracker();
     _oneSignalAppId = '';
+    _onPermissionAnswer = null;
+    _lastReportedPermission = null;
+    _resumeListener?.dispose();
+    _resumeListener = null;
     remotePush = const OneSignalRemotePush();
   }
 
@@ -102,9 +127,49 @@ class NotificationService {
   static void configure(
     AnalyticsTracker tracker, {
     String oneSignalAppId = '',
+    Future<void> Function(bool granted)? onPermissionAnswer,
   }) {
     _analytics = tracker;
     _oneSignalAppId = oneSignalAppId.trim();
+    _onPermissionAnswer = onPermissionAnswer;
+    if (onPermissionAnswer != null && _resumeListener == null) {
+      try {
+        // A change made in iOS Settings shows up on the next resume.
+        _resumeListener = AppLifecycleListener(
+          onResume: () => unawaited(refreshPermission()),
+        );
+      } catch (_) {
+        // No widgets binding (tests without one): resume is not watched.
+      }
+    }
+  }
+
+  /// Re-reads the OS permission and reports it when it differs from the last
+  /// answer reported this launch. Safe to run twice at once: both read the
+  /// same value and the second finds nothing new.
+  static Future<void> refreshPermission() async {
+    if (kIsWeb || !_isOneSignalInitialized || _onPermissionAnswer == null) {
+      return;
+    }
+    // The answer belongs to a signed-in athlete; nobody attached, nothing
+    // to store.
+    if (_pendingRemoteUserId == null) return;
+    try {
+      final granted = await remotePush.permissionGranted();
+      await _reportPermission(granted);
+    } catch (e) {
+      debugPrint('Notification permission re-read failed: $e');
+    }
+  }
+
+  static Future<void> _reportPermission(bool granted) async {
+    if (_lastReportedPermission == granted) return;
+    _lastReportedPermission = granted;
+    try {
+      await _onPermissionAnswer?.call(granted);
+    } catch (e) {
+      debugPrint('Storing the notification answer failed: $e');
+    }
   }
 
   static bool get isRemotePushConfigured => _oneSignalAppId.isNotEmpty;
@@ -312,11 +377,18 @@ class NotificationService {
   /// On an install that has never answered, this is also where iOS asks:
   /// after sign-in, never over the splash (ticket 79). fallbackToSettings is
   /// false so previously-denied athletes don't get hijacked into Settings.
+  ///
+  /// The answer is stored (ticket 138, Finding 125-004) through
+  /// [_onPermissionAnswer]; a later change in iOS Settings is picked up by
+  /// [refreshPermission] on resume.
   static Future<void> _registerForRemotePush() async {
     if (_remotePushRegistered) return;
     _remotePushRegistered = true;
     try {
-      await remotePush.requestPermission(fallbackToSettings: false);
+      final granted = await remotePush.requestPermission(
+        fallbackToSettings: false,
+      );
+      await _reportPermission(granted);
     } catch (e) {
       debugPrint('OneSignal requestPermission failed: $e');
     }

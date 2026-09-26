@@ -14,9 +14,27 @@ import { describe, it } from "https://deno.land/std@0.168.0/testing/bdd.ts";
 
 import {
   describeGarminError,
+  type GarminLoopStats,
+  GarminMappingMisses,
   logGarminMappingMiss,
   logGarminRecordFailure,
 } from "./push_log.ts";
+
+function captureConsoleLog(run: () => void): string[] {
+  const lines: string[] = [];
+  const original = console.log;
+  console.log = (...args: unknown[]) => {
+    lines.push(
+      args.map((a) => typeof a === "string" ? a : JSON.stringify(a)).join(" "),
+    );
+  };
+  try {
+    run();
+  } finally {
+    console.log = original;
+  }
+  return lines;
+}
 
 function captureConsoleError(run: () => void): string[] {
   const lines: string[] = [];
@@ -138,5 +156,57 @@ describe("logGarminRecordFailure", () => {
       })
     );
     assertEquals(lines[0].length < 500, true);
+  });
+});
+
+// Ticket 138 (112-010 / 121-010): leftover pushes are skipped, not errors.
+describe("GarminMappingMisses", () => {
+  it("counts an unmapped Garmin user as skipped and logs it once per request", () => {
+    const misses = new GarminMappingMisses();
+    const stats: GarminLoopStats & { processed: number } = { processed: 0, errors: 0 };
+    const errors: string[] = [];
+    const logs = captureConsoleLog(() => {
+      errors.push(...captureConsoleError(() => {
+        for (let i = 0; i < 5; i++) {
+          misses.tally("epochs", "garmin-user-gone", `e${i}`, { code: "PGRST116", message: "no rows" }, stats);
+        }
+        misses.tally("stressDetails", "garmin-user-gone", "s1", null, stats);
+      }));
+    });
+    assertEquals(stats.errors, 0);
+    assertEquals(stats.skipped, 6);
+    assertEquals(errors, []);
+    assertEquals(logs.length, 1);
+    assertStringIncludes(logs[0], "record skipped");
+    assertStringIncludes(logs[0], "garminUserId=garmin-user-gone");
+    assertStringIncludes(logs[0], "reason=no_user_mapping");
+  });
+
+  it("logs each distinct unmapped Garmin user once", () => {
+    const misses = new GarminMappingMisses();
+    const stats: GarminLoopStats & { processed: number } = { processed: 0, errors: 0 };
+    const logs = captureConsoleLog(() => {
+      misses.tally("epochs", "garmin-a", "e1", null, stats);
+      misses.tally("epochs", "garmin-b", "e2", null, stats);
+      misses.tally("epochs", "garmin-a", "e3", null, stats);
+    });
+    assertEquals(logs.length, 2);
+    assertEquals(stats.skipped, 3);
+  });
+
+  it("keeps a failed mapping read as an error, every time", () => {
+    const misses = new GarminMappingMisses();
+    const stats: GarminLoopStats & { processed: number } = { processed: 0, errors: 0 };
+    const lines = captureConsoleError(() => {
+      const first = misses.tally("epochs", "garmin-a", "e1", { code: "57014", message: "timeout" }, stats);
+      const second = misses.tally("epochs", "garmin-a", "e2", { code: "57014", message: "timeout" }, stats);
+      assertEquals(first, "error");
+      assertEquals(second, "error");
+    });
+    assertEquals(stats.errors, 2);
+    assertEquals(stats.skipped, undefined);
+    assertEquals(lines.length, 2);
+    assertStringIncludes(lines[0], "reason=mapping_read_failed");
+    assertStringIncludes(lines[0], "errorKind=57014");
   });
 });

@@ -25,6 +25,7 @@
  */
 
 import type { SupabaseClient } from "https://esm.sh/@supabase/supabase-js@2.39.3";
+import { normalizeAllergen } from "./allergen-normalize.ts";
 import { safe } from "../utils.ts";
 import type { ActivityType, Food, Phase } from "./types.ts";
 import {
@@ -295,7 +296,7 @@ export async function getTemplateFoodsForPhase(
   if (allEntries.length === 0) return [];
 
   // Prepare allergen filtering sets (case-insensitive)
-  const allergiesLower = (allergies ?? []).map((a) => a.toLowerCase());
+  const allergiesLower = (allergies ?? []).map(normalizeAllergen);
   const dietPrefLower = dietaryPreference?.toLowerCase() ?? "";
 
   // STEP 4: Filter and transform to Food interface
@@ -368,7 +369,7 @@ export async function getTemplateFoodsForPhase(
       ) {
         const foodAllergens = (f.allergens as string[] | null) ?? [];
         const hasAllergen = foodAllergens.some((a: string) =>
-          allergiesLower.includes(a.toLowerCase())
+          allergiesLower.includes(normalizeAllergen(a))
         );
         if (hasAllergen) {
           console.log(
@@ -680,7 +681,7 @@ export async function getTransitionFoods(
   const allEntries = Array.from(allFoodsMap.values());
 
   // Prepare allergen filtering sets (case-insensitive)
-  const transAllergiesLower = (allergies ?? []).map((a) => a.toLowerCase());
+  const transAllergiesLower = (allergies ?? []).map(normalizeAllergen);
   const transDietPrefLower = dietaryPreference?.toLowerCase() ?? "";
 
   return allEntries
@@ -706,7 +707,7 @@ export async function getTransitionFoods(
       if (transAllergiesLower.length > 0 && !isEssential) {
         const foodAllergens = (f.allergens as string[] | null) ?? [];
         const hasAllergen = foodAllergens.some((a: string) =>
-          transAllergiesLower.includes(a.toLowerCase())
+          transAllergiesLower.includes(normalizeAllergen(a))
         );
         if (hasAllergen) {
           console.log(
@@ -984,7 +985,7 @@ export async function getTemplateFoodsForDuringWithConstraints(
     }
   }
 
-  const allergiesLower = (allergies ?? []).map((a) => a.toLowerCase());
+  const allergiesLower = (allergies ?? []).map(normalizeAllergen);
   const dietPrefLower = dietaryPreference?.toLowerCase() ?? "";
 
   return templateFoods
@@ -1027,7 +1028,7 @@ export async function getTemplateFoodsForDuringWithConstraints(
         const foodAllergens = (f.allergens as string[] | null) ?? [];
         if (
           foodAllergens.some((a) =>
-            allergiesLower.includes((a as string).toLowerCase())
+            allergiesLower.includes(normalizeAllergen(a as string))
           )
         ) return false;
       }

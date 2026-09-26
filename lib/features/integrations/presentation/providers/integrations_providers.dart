@@ -32,6 +32,7 @@ import '../../data/runna_ics_client.dart';
 import '../../data/training_peaks_api_client.dart';
 import '../../data/vdot_api_client.dart';
 import '../../domain/integration.dart';
+import 'reconnect_notice_controller.dart';
 
 part 'integrations_providers.g.dart';
 
@@ -167,6 +168,11 @@ IntegrationsRepository integrationsRepository(Ref ref) {
     supabase: Supabase.instance.client,
     logger: deps.logger,
     sentry: deps.sentry,
+    // Ticket 138 (118-007): every status written reaches the Reconnect
+    // notice. Both providers are keepAlive, so the hook outlives the sync.
+    onSyncStatusWritten: (provider, status) => ref
+        .read(reconnectNoticeControllerProvider.notifier)
+        .onSyncStatusWritten(provider, status),
   );
 }
 

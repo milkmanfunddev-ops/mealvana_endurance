@@ -1,9 +1,10 @@
 /**
  * Delete User Edge Function
  *
- * Completely deletes the caller's own account: public.users (CASCADE),
- * auth.users, then the RevenueCat customer (02-005, ticket 95). What each step
- * does and how a failure is handled is in handler.ts.
+ * Completely deletes the caller's own account: the Garmin registration at
+ * Garmin (ticket 138), public.users (CASCADE), auth.users, then the
+ * RevenueCat customer (02-005, ticket 95). What each step does and how a
+ * failure is handled is in handler.ts.
  *
  * Requires: Valid JWT token from authenticated user.
  *
@@ -18,6 +19,7 @@ import { createClient } from 'https://esm.sh/@supabase/supabase-js@2';
 import { initSentry, withSentry } from '../_shared/sentry.ts';
 import { makeRevenueCatClient, type RevenueCatClient } from '../_shared/revenuecat/client.ts';
 import { makeDeleteUserHandler } from './handler.ts';
+import { deregisterGarminForUser } from '../_shared/garmin/token.ts';
 
 /** One RevenueCat project serves dev and prod. */
 const DEFAULT_REVENUECAT_PROJECT_ID = 'proj77b3c48f';
@@ -40,4 +42,6 @@ serve(withSentry(makeDeleteUserHandler({
       secretKey: Deno.env.get('REVENUECAT_SECRET_KEY') ?? '',
       projectId: Deno.env.get('REVENUECAT_PROJECT_ID') || DEFAULT_REVENUECAT_PROJECT_ID,
     }),
+  deregisterGarmin: (admin, userId) =>
+    deregisterGarminForUser(admin, userId, { logPrefix: '[delete-user]' }),
 })));

@@ -44,6 +44,11 @@ class UserProfile {
   final GutTraining gutTraining;
   final SweatRateCat sweatRate;
   final bool onboardingCompleted;
+
+  /// The athlete's answer to the notification permission ask (ticket 138,
+  /// Finding 125-004): mirrors `users.notifications_enabled`, written when
+  /// iOS answers and re-read on every app resume.
+  final bool notificationsEnabled;
   final String appVersion;
   final bool swipeHintShown;
 
@@ -157,6 +162,7 @@ class UserProfile {
     this.gutTraining = GutTraining.moderate,
     this.sweatRate = SweatRateCat.medium,
     this.onboardingCompleted = false,
+    this.notificationsEnabled = false,
     required this.appVersion,
     this.swipeHintShown = false,
     // Unit preferences
@@ -359,6 +365,7 @@ class UserProfile {
         orElse: () => SweatRateCat.medium,
       ),
       onboardingCompleted: row['onboarding_completed'] as bool? ?? false,
+      notificationsEnabled: row['notifications_enabled'] as bool? ?? false,
       appVersion: row['app_version'] as String? ?? '1.0.0',
       unitSystem: UnitSystem.values.firstWhere(
         (u) => u.name == row['unit_system'],
@@ -448,6 +455,7 @@ class UserProfile {
         orElse: () => SweatRateCat.medium,
       ),
       onboardingCompleted: json['onboarding_completed'] as bool? ?? false,
+      notificationsEnabled: json['notifications_enabled'] as bool? ?? false,
       appVersion: json['app_version'] as String? ?? '1.0.0',
       swipeHintShown:
           false, // Drift-only field, always default to false from Supabase
@@ -534,6 +542,7 @@ class UserProfile {
       'gut_training_level': gutTraining.name,
       'sweat_rate': sweatRate.name,
       'onboarding_completed': onboardingCompleted,
+      'notifications_enabled': notificationsEnabled,
       'app_version': appVersion,
       // UTC with its offset (testing-wave 120-003, 121-004): a local
       // DateTime's ISO string carries no zone, and PostgREST read it as UTC,
@@ -607,6 +616,7 @@ class UserProfile {
     GutTraining? gutTraining,
     SweatRateCat? sweatRate,
     bool? onboardingCompleted,
+    bool? notificationsEnabled,
     String? appVersion,
     bool? swipeHintShown,
     // Unit preferences
@@ -684,6 +694,7 @@ class UserProfile {
       gutTraining: gutTraining ?? this.gutTraining,
       sweatRate: sweatRate ?? this.sweatRate,
       onboardingCompleted: onboardingCompleted ?? this.onboardingCompleted,
+      notificationsEnabled: notificationsEnabled ?? this.notificationsEnabled,
       appVersion: appVersion ?? this.appVersion,
       swipeHintShown: swipeHintShown ?? this.swipeHintShown,
       // Unit preferences

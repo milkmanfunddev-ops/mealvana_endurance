@@ -46,7 +46,7 @@ import {
   prepareDetailForCapture,
 } from "../_shared/garmin/sample_capture.ts";
 import {
-  logGarminMappingMiss,
+  GarminMappingMisses,
   logGarminRecordFailure,
 } from "../_shared/garmin/push_log.ts";
 
@@ -360,7 +360,13 @@ async function processPushBody(body: GarminPushNotification): Promise<void> {
   try {
     const supabase = createClient(SUPABASE_URL, SUPABASE_SERVICE_ROLE_KEY);
 
-    const results: Record<string, { processed: number; errors: number }> = {};
+    const results: Record<
+      string,
+      { processed: number; errors: number; skipped?: number }
+    > = {};
+    // Ticket 138: an unmapped Garmin user is skipped (logged once per
+    // request), not counted as an error.
+    const mappingMisses = new GarminMappingMisses();
 
     // Process activities — match an existing planned activity if one exists,
     // otherwise auto-create a completed activity for endurance sports so the
@@ -399,13 +405,13 @@ async function processPushBody(body: GarminPushNotification): Promise<void> {
           );
 
           if (!mapping) {
-            logGarminMappingMiss(
+            mappingMisses.tally(
               "activities",
               activity.userId,
               activity.summaryId,
               mappingError,
+              stats,
             );
-            stats.errors++;
             continue;
           }
 
@@ -444,7 +450,7 @@ async function processPushBody(body: GarminPushNotification): Promise<void> {
 
     // Process daily summaries
     if (body.dailies && body.dailies.length > 0) {
-      const stats = { processed: 0, errors: 0 };
+      const stats = { processed: 0, errors: 0, skipped: 0 };
       for (const daily of body.dailies) {
         try {
           const { data: mapping, error: mappingError } = await supabase
@@ -454,13 +460,13 @@ async function processPushBody(body: GarminPushNotification): Promise<void> {
             .single();
 
           if (!mapping) {
-            logGarminMappingMiss(
+            mappingMisses.tally(
               "dailies",
               daily.userId,
               daily.summaryId,
               mappingError,
+              stats,
             );
-            stats.errors++;
             continue;
           }
 
@@ -499,7 +505,7 @@ async function processPushBody(body: GarminPushNotification): Promise<void> {
 
     // Process sleep summaries
     if (body.sleeps && body.sleeps.length > 0) {
-      const stats = { processed: 0, errors: 0 };
+      const stats = { processed: 0, errors: 0, skipped: 0 };
       for (const sleep of body.sleeps) {
         try {
           const { data: mapping, error: mappingError } = await supabase
@@ -509,13 +515,13 @@ async function processPushBody(body: GarminPushNotification): Promise<void> {
             .single();
 
           if (!mapping) {
-            logGarminMappingMiss(
+            mappingMisses.tally(
               "sleeps",
               sleep.userId,
               sleep.summaryId,
               mappingError,
+              stats,
             );
-            stats.errors++;
             continue;
           }
 
@@ -554,7 +560,7 @@ async function processPushBody(body: GarminPushNotification): Promise<void> {
 
     // Process body composition
     if (body.bodyComps && body.bodyComps.length > 0) {
-      const stats = { processed: 0, errors: 0 };
+      const stats = { processed: 0, errors: 0, skipped: 0 };
       for (const bodyComp of body.bodyComps) {
         try {
           const { data: mapping, error: mappingError } = await supabase
@@ -564,13 +570,13 @@ async function processPushBody(body: GarminPushNotification): Promise<void> {
             .single();
 
           if (!mapping) {
-            logGarminMappingMiss(
+            mappingMisses.tally(
               "bodyComps",
               bodyComp.userId,
               bodyComp.summaryId,
               mappingError,
+              stats,
             );
-            stats.errors++;
             continue;
           }
 
@@ -635,7 +641,7 @@ async function processPushBody(body: GarminPushNotification): Promise<void> {
 
     // Process stress details
     if (body.stressDetails && body.stressDetails.length > 0) {
-      const stats = { processed: 0, errors: 0 };
+      const stats = { processed: 0, errors: 0, skipped: 0 };
       for (const stress of body.stressDetails) {
         try {
           const { data: mapping, error: mappingError } = await supabase
@@ -645,13 +651,13 @@ async function processPushBody(body: GarminPushNotification): Promise<void> {
             .single();
 
           if (!mapping) {
-            logGarminMappingMiss(
+            mappingMisses.tally(
               "stressDetails",
               stress.userId,
               stress.summaryId,
               mappingError,
+              stats,
             );
-            stats.errors++;
             continue;
           }
 
@@ -715,13 +721,13 @@ async function processPushBody(body: GarminPushNotification): Promise<void> {
             .single();
 
           if (!mapping) {
-            logGarminMappingMiss(
+            mappingMisses.tally(
               "manuallyUpdatedActivities",
               activity.userId,
               activity.summaryId,
               mappingError,
+              stats,
             );
-            stats.errors++;
             continue;
           }
 
@@ -923,13 +929,13 @@ async function processPushBody(body: GarminPushNotification): Promise<void> {
           }
 
           if (!mapping) {
-            logGarminMappingMiss(
+            mappingMisses.tally(
               "activityDetails",
               detail.userId,
               detail.summary?.summaryId,
               mappingError,
+              stats,
             );
-            stats.errors++;
             continue;
           }
 
@@ -990,7 +996,7 @@ async function processPushBody(body: GarminPushNotification): Promise<void> {
 
     // Process epoch summaries
     if (body.epochs && body.epochs.length > 0) {
-      const stats = { processed: 0, errors: 0 };
+      const stats = { processed: 0, errors: 0, skipped: 0 };
       for (const epoch of body.epochs) {
         try {
           const { data: mapping, error: mappingError } = await supabase
@@ -1000,13 +1006,13 @@ async function processPushBody(body: GarminPushNotification): Promise<void> {
             .single();
 
           if (!mapping) {
-            logGarminMappingMiss(
+            mappingMisses.tally(
               "epochs",
               epoch.userId,
               epoch.summaryId,
               mappingError,
+              stats,
             );
-            stats.errors++;
             continue;
           }
 
@@ -1065,7 +1071,7 @@ async function processPushBody(body: GarminPushNotification): Promise<void> {
 
     // Process user metrics (VO2 max, fitness age, etc.)
     if (body.userMetrics && body.userMetrics.length > 0) {
-      const stats = { processed: 0, errors: 0 };
+      const stats = { processed: 0, errors: 0, skipped: 0 };
       for (const metric of body.userMetrics) {
         try {
           const { data: mapping, error: mappingError } = await supabase
@@ -1075,13 +1081,13 @@ async function processPushBody(body: GarminPushNotification): Promise<void> {
             .single();
 
           if (!mapping) {
-            logGarminMappingMiss(
+            mappingMisses.tally(
               "userMetrics",
               metric.userId,
               metric.summaryId,
               mappingError,
+              stats,
             );
-            stats.errors++;
             continue;
           }
 
@@ -1156,7 +1162,7 @@ async function processPushBody(body: GarminPushNotification): Promise<void> {
     for (const [bodyKey, dataType] of genericWellnessTypes) {
       const summaries = body[bodyKey];
       if (!summaries || summaries.length === 0) continue;
-      const stats = { processed: 0, errors: 0 };
+      const stats = { processed: 0, errors: 0, skipped: 0 };
       for (const summary of summaries) {
         try {
           const { data: mapping, error: mappingError } = await supabase
@@ -1166,13 +1172,13 @@ async function processPushBody(body: GarminPushNotification): Promise<void> {
             .single();
 
           if (!mapping) {
-            logGarminMappingMiss(
+            mappingMisses.tally(
               bodyKey,
               summary.userId,
               summary.summaryId,
               mappingError,
+              stats,
             );
-            stats.errors++;
             continue;
           }
 

@@ -9,20 +9,15 @@
  * Validate an incoming Garmin push/ping request.
  * Returns an error message string if invalid, or null if valid.
  *
- * Logs all incoming headers for debugging during integration testing.
+ * Logs nothing about a valid request. Finding 121-010 (ticket 138): this
+ * used to print every request header, caller IPs included, and the expected
+ * client id on every push; the mismatch and missing-header warnings stay,
+ * without the values.
  */
 export function validateGarminRequest(
   req: Request,
   expectedClientId: string,
 ): string | null {
-  // Log request details for debugging
-  const headers: Record<string, string> = {};
-  req.headers.forEach((value, key) => {
-    headers[key] = key.toLowerCase().includes('auth') ? '[REDACTED]' : value;
-  });
-  console.log(`[garmin-auth] ${req.method} request, headers:`, JSON.stringify(headers));
-  console.log(`[garmin-auth] Expected client ID: "${expectedClientId}" (length: ${expectedClientId.length})`);
-
   if (req.method !== 'POST') {
     return `Expected POST, got ${req.method}`;
   }
@@ -37,7 +32,7 @@ export function validateGarminRequest(
   }
 
   if (clientIdHeader !== expectedClientId) {
-    console.error(`[garmin-auth] Client ID mismatch: got "${clientIdHeader}", expected "${expectedClientId}"`);
+    console.error('[garmin-auth] Client ID mismatch; rejecting request');
     return 'Invalid garmin-client-id';
   }
 

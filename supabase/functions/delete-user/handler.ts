@@ -12,9 +12,15 @@
  *      too. It runs only once the auth account is gone, and a RevenueCat
  *      failure never blocks the delete: it is logged with the user id so it
  *      can be retried by hand.
+ *   0. Before any of that, the user's Garmin registration is deleted AT
+ *      Garmin (ticket 138, Finding 121-010): the token lives on the
+ *      integrations row, which step 1's CASCADE removes, so this must run
+ *      first. A Garmin failure never blocks the delete; it is logged like a
+ *      skipped RevenueCat customer.
  */
 
 import type { RevenueCatClient } from '../_shared/revenuecat/client.ts';
+import type { GarminDeregistrationOutcome } from '../_shared/garmin/token.ts';
 
 const corsHeaders = {
   'Access-Control-Allow-Origin': '*',
@@ -31,6 +37,12 @@ export interface DeleteUserDeps {
   admin: () => Client;
   /** RevenueCat's REST API; throws when the secret key is not configured. */
   revenueCat: () => RevenueCatClient;
+  /**
+   * Deletes the user's registration at Garmin (_shared/garmin/token.ts
+   * `deregisterGarminForUser`, given the service-role client). Optional so
+   * older callers keep working; never blocks the delete.
+   */
+  deregisterGarmin?: (admin: Client, userId: string) => Promise<GarminDeregistrationOutcome>;
 }
 
 function json(body: unknown, status: number): Response {
@@ -58,6 +70,9 @@ export function makeDeleteUserHandler(deps: DeleteUserDeps) {
       console.log(`Deleting user account: ${userId}`);
 
       const admin = deps.admin();
+
+      // Step 0: Garmin's registration, while the token still exists.
+      await deregisterGarmin(deps, admin, userId);
 
       // Step 1: public.users; CASCADE deletes the related data.
       const { error: publicDeleteError } = await admin.from('users').delete().eq('id', userId);
@@ -96,6 +111,22 @@ async function deleteRevenueCatCustomer(deps: DeleteUserDeps, userId: string): P
       `[delete-user] RevenueCat customer delete failed for user ${userId}; retry DELETE /customers/${userId}: ${
         (e as Error).message
       }`,
+    );
+  }
+}
+
+async function deregisterGarmin(deps: DeleteUserDeps, admin: Client, userId: string): Promise<void> {
+  if (!deps.deregisterGarmin) return;
+  try {
+    const outcome = await deps.deregisterGarmin(admin, userId);
+    if (outcome === 'failed') {
+      console.error(
+        `[delete-user] Garmin deregistration failed for user ${userId}; Garmin may keep pushing until the orphan is deregistered by hand`,
+      );
+    }
+  } catch (e) {
+    console.error(
+      `[delete-user] Garmin deregistration threw for user ${userId}: ${(e as Error).message}`,
     );
   }
 }
