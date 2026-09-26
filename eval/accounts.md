@@ -32,7 +32,8 @@ Its history is long: months of Vana conversations, feedback and plans from testi
 is part of this persona, not noise to clean — an athlete who has talked to Vana before. What the
 Examiner's CONTEXT block will hold:
 
-- **Athlete**: first name Xuan. Vegetarian, no allergies, gut training high.
+- **Athlete**: first name Xuan. Vegetarian, peanut and tree-nut allergies (set 2026-09-26 for the pilot — the corpus's
+  vegetarian Scenarios assume them on record), gut training high.
 - **Home**: Baton Rouge, LA (`America/Chicago`), set 2026-09-26 — consistent with the Baton
   Rouge Half Marathon in the account's past events. The weather and HOME lines read from here.
 - **Training**: dense triathlon build. 17 sessions in the next 7 days (swim/bike/run mix, roughly

@@ -1,0 +1,34 @@
+{
+  "round": "pilot",
+  "date": "2026-09-26",
+  "runs": [
+    {
+      "scenario": "s07-veg-dinners-after-long-runs",
+      "account": "judging-1",
+      "rerun": false,
+      "dimensions": {
+        "dietitian-judgment": 50,
+        "task-success": 75,
+        "concision-restraint": 100,
+        "interactivity": 50,
+        "tool-use-data-ops": 75,
+        "memory-personalization": 50,
+        "reliability": 100,
+        "opener": 50,
+        "instruction-following": 100,
+        "recovery-boundaries": 100
+      },
+      "weighted_mark": 71.25,
+      "robotic_cap_applied": false,
+      "verdict": "Task achieved: three vegetarian, protein-forward, peanut-free dinner ideas framed for long-run recovery; a pick emerged; the tofu bowl was logged for dinner with correct macros (verified in meal_logs) and the tree-nut correction was saved as a memory (rememberFact verified). Top defects: (1) IMP-001 — the allergy field was read but only peanut applied; walnuts (tree nuts, same list) were suggested, including as the athlete's own saved meal; (2) IMP-004 — the opener read as a dashboard briefing, not one thing this athlete told her; (3) IMP-002 — the correction was remembered silently, never acknowledged; (4) IMP-003 — no tappable parts anywhere in the Run: pick and log happened in prose. Anchor questions for calibration: interactivity had nothing to press (marked 50 for the design gap, not a failure — anchors do not cover \"no parts offered\"); the opener sits between the 50 and 25 anchors (specific but a data read-out). Robotic cap not applied: replies built on the athlete's own words (saved meal, carb overage, the correction).",
+      "improvements": [
+        "IMP-001",
+        "IMP-002",
+        "IMP-003",
+        "IMP-004"
+      ]
+    }
+  ],
+  "average_mark": 71.25,
+  "passed": false
+}

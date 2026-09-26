@@ -40,7 +40,9 @@ structural ones, or drop an entry with a sentence saying why.
 
 ## Backlog
 
-Empty. The pilot Run and round 001 fill it.
-
 | ID | What | Why | Motivating Run | Status |
 |----|------|-----|----------------|--------|
+| IMP-001 | Allergy filtering must apply every entry on the profile's allergy list, not only the one the prompt names. Concretely: when suggesting saved or searched meals, exclude any meal containing any listed allergen (peanuts AND tree nuts here), and say the exclusion. | The pilot asked for peanut-free vegetarian dinners; Vana cited "your vegetarian preferences and peanut allergy" and then suggested the athlete's saved Quinoa, mixed veg & walnuts — tree nuts are on the same allergy list. She read the field and applied one entry of it. | runs/pilot/s07-veg-dinners-after-long-runs | pending |
+| IMP-002 | When rememberFact saves a correction, the visible reply must say so in one clause ("noted — walnuts are off your list for good"), so the athlete knows the correction outlives the conversation. | The pilot's tree-nut correction was saved (rememberFact verified server-side) but the reply never acknowledged it; the athlete cannot know Vana remembered. | runs/pilot/s07-veg-dinners-after-long-runs | pending |
+| IMP-003 | A pick that emerges from meal suggestions should surface as a tappable meal card with a Log action (the designed interaction), not stay in prose with "log it when you're ready". | The pilot's pick (tofu bowl) and the log both happened through plain text; no chip, card, or button appeared in any reply, leaving the interactivity dimension unexercised. | runs/pilot/s07-veg-dinners-after-long-runs | pending |
+| IMP-004 | Openers should lead with one thing only this athlete told her (mp-007/008), not a briefing of plan targets and log deltas. Draft from the Voodoo Doll's episodes/memories, with the day's numbers as seasoning at most. | The pilot's opener was a data read-out (835 g carbs, 393 g over, 9 servings left) — accurate and specific, but the kind of line a dashboard would generate; nothing in it came from something the athlete said. | runs/pilot/s07-veg-dinners-after-long-runs | pending |
