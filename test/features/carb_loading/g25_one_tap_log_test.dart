@@ -73,6 +73,7 @@ class _FakeMealLogController extends MealLogController {
     String? notes,
     DateTime? eatenAt,
     String? logMethod,
+    double servings = 1,
   }) async {
     _loggedCalls.add((
       name: name,
