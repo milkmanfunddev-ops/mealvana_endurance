@@ -184,9 +184,7 @@ class _FoodScreenState extends ConsumerState<FoodScreen> {
                       onShowShopping: () => _select(FoodTab.shopping),
                     ),
                     FoodTab.meals => const MealsTab(),
-                    FoodTab.shopping => ShoppingTab(
-                      onShowPlan: () => _select(FoodTab.plan),
-                    ),
+                    FoodTab.shopping => const ShoppingTab(),
                   },
                 ),
               ),

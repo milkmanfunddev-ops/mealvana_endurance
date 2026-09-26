@@ -28,8 +28,8 @@ import '../widgets/directions_origin_label.dart';
 import '../widgets/meal_photo_entry_points.dart';
 import '../widgets/meal_photo_view.dart';
 import '../widgets/servings_sheet.dart';
-import '../widgets/dashed_box.dart';
 import '../widgets/vana_round_button.dart';
+import '../widgets/dashed_box.dart';
 import '../widgets/vana_tag.dart';
 import 'vana_browse_screen.dart';
 import '../../../../shared/core/pop_or_home.dart';
@@ -96,12 +96,19 @@ class _MealDetailScreenState extends ConsumerState<MealDetailScreen> {
         backgroundColor: bg,
         body: SafeArea(
           child: detailAsync.when(
-            loading: () => const Center(
-              child: CircularProgressIndicator(color: AppColors.electrolyte),
+            // A screen still loading, or one that failed, is still a screen
+            // the athlete can leave: the back button is drawn here too
+            // (2026-09-26: a dead id left a spinner with no way back).
+            loading: () => _WithBack(
+              child: const Center(
+                child: CircularProgressIndicator(color: AppColors.electrolyte),
+              ),
             ),
-            error: (e, _) => _LoadError(
-              onRetry: () =>
-                  ref.invalidate(mealDetailControllerProvider(widget.id)),
+            error: (e, _) => _WithBack(
+              child: _LoadError(
+                onRetry: () =>
+                    ref.invalidate(mealDetailControllerProvider(widget.id)),
+              ),
             ),
             data: (detail) => _DetailBody(
               detail: detail,
@@ -1202,6 +1209,31 @@ class _AdminReviewBoxState extends ConsumerState<_AdminReviewBox> {
           ),
         ],
       ),
+    );
+  }
+}
+
+/// The back button over a body that has no header of its own.
+class _WithBack extends StatelessWidget {
+  const _WithBack({required this.child});
+
+  final Widget child;
+
+  @override
+  Widget build(BuildContext context) {
+    return Stack(
+      children: [
+        child,
+        Positioned(
+          top: AppSpacing.sm,
+          left: AppSpacing.md,
+          child: VanaRoundButton.back(
+            key: const ValueKey('meal_planning.detail_back'),
+            context: context,
+            onTap: () => context.canPop() ? context.pop() : context.go('/main'),
+          ),
+        ),
+      ],
     );
   }
 }

@@ -128,6 +128,8 @@ void main() {
   String? loadFailure;
   KrogerState current() =>
       container.read(krogerControllerProvider(plan)).requireValue;
+  List<String> names(List<KrogerLine> lines) =>
+      lines.map((l) => l.name).toList();
 
   /// Lets the delivery-area resolution `build` schedules run to completion.
   /// It is deliberately not part of the build future: the screen must not
@@ -371,9 +373,26 @@ void main() {
     // delivers. Defaulting to pickup is what made the feature inert there.
     expect(current().draft.modality, 'DELIVERY');
   });
+  test('a resolved Location matches on its own', () async {
+    // The shopper opened this to shop, so a Location arriving on a draft
+    // with unsearched lines is the run: no Match all tap, and the run's own
+    // report on the state.
+    await firstUse();
+    expect(current().draft.store, isNull);
+    expect(names(current().draft.unsearched), ['Broccoli']);
+    searches.clear();
+    await controller.setArea('35209');
+    expect(searches, ['Broccoli']);
+    expect(current().draft.lines.single.product?.upc, product.upc);
+    expect(current().draft.lines.single.approved, false);
+    expect(current().message, 'review_matches');
+  });
   test('a run that matched nothing says it matched nothing', () async {
+    // A Location whose catalogue has none of it: the run it triggers on
+    // arrival finds nothing, and says so rather than "review matches".
     found = false;
-    await controller.matchAll();
+    await controller.setArea('30301');
+    expect(current().draft.store?.id, locations['30301']);
     expect(current().draft.lines.single.product, null);
     expect(current().message, 'no_products');
   });
@@ -474,13 +493,20 @@ void main() {
   );
   test('a new delivery area clears the matches the old one made', () async {
     // Products are per-Location. Carrying a Spoke's matches into another
-    // market would send the shopper things that market cannot supply.
+    // market would send the shopper things that market cannot supply. The
+    // new Location then matches afresh: the approval is gone, and the
+    // product is the new market's, not the Spoke's.
     await reviewed();
+    catalog[locations['30301']!] = storeProduct;
+    searches.clear();
     await controller.setArea('30301');
     expect(current().area, '30301');
     expect(current().draft.store?.id, locations['30301']);
-    expect(current().draft.lines.single.product, null);
+    expect(searches, ['Broccoli']);
+    expect(current().draft.lines.single.product?.price, storeProduct.price);
+    expect(current().draft.lines.single.approved, false);
     expect(current().draft.ready, false);
+    expect(current().message, 'review_matches');
   });
   test(
     'source quantity edits revoke product approval without losing its selection',
@@ -739,28 +765,31 @@ void main() {
       expect(current().message, isNull);
       expect(current().connected, false);
       expect(current().busy, false);
-      expect(
-        calls.where((c) => c.$1 == 'cancel_connect').single.$2,
-        {'state': 'expected'},
-      );
+      expect(calls.where((c) => c.$1 == 'cancel_connect').single.$2, {
+        'state': 'expected',
+      });
       expect(calls.any((c) => c.$1 == 'exchange'), false);
     });
 
-    test('kroger.com answering with an error and no code is a cancel too', () async {
-      browserCallback =
-          'com.milkman.mealvanaendurance://callback?state=expected&error=access_denied';
-      await controller.connect();
-      expect(current().message, isNull);
-      expect(current().connected, false);
-      expect(calls.any((c) => c.$1 == 'cancel_connect'), true);
-      expect(calls.any((c) => c.$1 == 'exchange'), false);
-    });
+    test(
+      'kroger.com answering with an error and no code is a cancel too',
+      () async {
+        browserCallback =
+            'com.milkman.mealvanaendurance://callback?state=expected&error=access_denied';
+        await controller.connect();
+        expect(current().message, isNull);
+        expect(current().connected, false);
+        expect(calls.any((c) => c.$1 == 'cancel_connect'), true);
+        expect(calls.any((c) => c.$1 == 'exchange'), false);
+      },
+    );
 
     test('a cancel_connect the server refuses is swallowed', () async {
       browserThrows = PlatformException(code: 'CANCELED');
       final inner = remote.onCall!;
       remote.onCall = (action, data) async {
-        if (action == 'cancel_connect') throw const KrogerException('rate_limited');
+        if (action == 'cancel_connect')
+          throw const KrogerException('rate_limited');
         return inner(action, data);
       };
       await controller.connect();
@@ -803,18 +832,29 @@ void main() {
       expect(current().draft.store, isNotNull, reason: 'the device said 35209');
     });
 
-    test('Match all and a product search run unconnected with a store', () async {
-      expect(current().canChooseProduct, true);
-      await controller.matchAll();
-      expect(searches, ['Broccoli']);
-      expect(current().draft.matched.single.product?.upc, product.upc);
-      expect(current().message, 'review_matches', reason: 'the run\'s own report');
-      final chosen = await controller.search(
-        current().draft.lines.single.id,
-        'Broccoli',
-      );
-      expect(chosen, isNotEmpty);
-    });
+    test(
+      'Match all and a product search run unconnected with a store',
+      () async {
+        expect(current().canChooseProduct, true);
+        // The Location resolving already searched the line, unconnected.
+        expect(searches, ['Broccoli']);
+        expect(current().draft.matched.single.product?.upc, product.upc);
+        // Match all searches the unapproved line again, still unconnected.
+        await controller.matchAll();
+        expect(searches, ['Broccoli', 'Broccoli']);
+        expect(current().draft.matched.single.product?.upc, product.upc);
+        expect(
+          current().message,
+          'review_matches',
+          reason: 'the run\'s own report',
+        );
+        final chosen = await controller.search(
+          current().draft.lines.single.id,
+          'Broccoli',
+        );
+        expect(chosen, isNotEmpty);
+      },
+    );
 
     test('a sent draft, or no store, still refuses a product', () async {
       await firstUse();
@@ -1162,7 +1202,14 @@ void main() {
     ) async {
       final copy = loadDefaultContent();
       await showScreen(tester);
-      await tester.tap(find.text(copy['kroger.change_area']!));
+      // "Change" also sits on the matched line the Location's own run made;
+      // the area's is the one on the area row.
+      await tester.tap(
+        find.descendant(
+          of: find.byKey(const ValueKey('kroger.area')),
+          matching: find.text(copy['kroger.change_area']!),
+        ),
+      );
       await tester.pumpAndSettle();
       expect(find.text(copy['kroger.zip']!), findsOneWidget);
       expect(find.textContaining(store.name), findsNothing);
@@ -1332,15 +1379,27 @@ void main() {
     final matched = find.byKey(const ValueKey('kroger.matched'));
     final unmatched = find.byKey(const ValueKey('kroger.unmatched'));
     final unsearched = find.byKey(const ValueKey('kroger.unsearched'));
-    List<String> names(List<KrogerLine> lines) =>
-        lines.map((l) => l.name).toList();
 
-    test('nothing is said to have no match before anything is searched', () {
-      // setUp resolved a Location and ran no search. "Kroger has no match"
-      // is a claim about a search, and there has not been one.
-      expect(searches, isEmpty);
+    test(
+      'nothing is said to have no match without a Location to search',
+      () async {
+        // "Kroger has no match" is a claim about a search. With no Location
+        // there has been none, and the line waits as unsearched.
+        await firstUse();
+        searches.clear();
+        expect(current().draft.store, isNull);
+        expect(searches, isEmpty);
+        expect(current().draft.unmatched, isEmpty);
+        expect(names(current().draft.unsearched), ['Broccoli']);
+      },
+    );
+    test('the first load searches from the device\'s Location, untapped', () {
+      // setUp resolved a Location from the device, and that alone ran the
+      // search: the shopper opened this screen to shop.
+      expect(searches, ['Broccoli']);
+      expect(names(current().draft.matched), ['Broccoli']);
+      expect(current().draft.unsearched, isEmpty);
       expect(current().draft.unmatched, isEmpty);
-      expect(names(current().draft.unsearched), ['Broccoli']);
     });
     test(
       'after a run, only what Kroger returned nothing for is unmatched',
@@ -1355,13 +1414,15 @@ void main() {
     test(
       'a run that fails partway leaves unreached lines unanswered',
       () async {
-        // Broccoli is searched and Kroger has nothing; the run fails on Bread.
-        // Bread was never answered, so it is not Kroger's to have no match for.
+        // A new Location's run: Broccoli is searched and Kroger has nothing;
+        // the run fails on Bread. Bread was never answered, so it is not
+        // Kroger's to have no match for. The Location itself is kept.
         await twoLines();
         unmatchable = {'Broccoli'};
         unreachable = {'Bread'};
-        await controller.matchAll();
+        await controller.setArea('30301');
         expect(current().message, 'rate_limited');
+        expect(current().draft.store?.id, locations['30301']);
         expect(names(current().draft.unmatched), ['Broccoli']);
         expect(names(current().draft.unsearched), ['Bread']);
         // And the answer it did get is kept, not just shown.
@@ -1369,20 +1430,30 @@ void main() {
       },
     );
     test('a search the shopper runs for a line answers for it too', () async {
+      // Bread arrived after the Location's run, so it is unsearched until
+      // the shopper searches for it; Broccoli keeps the match that run made.
       await twoLines();
+      expect(names(current().draft.unsearched), ['Bread']);
       await controller.search(lineId('Bread'), 'Bread');
       expect(current().message, 'no_products');
       expect(names(current().draft.unmatched), ['Bread']);
-      expect(names(current().draft.unsearched), ['Broccoli']);
+      expect(names(current().draft.matched), ['Broccoli']);
+      expect(current().draft.unsearched, isEmpty);
     });
     test('a new Location takes the old answers with it', () async {
       // Catalogues are per-Location: the Spoke having no bread says nothing
-      // about what the next Location has.
+      // about what the next Location has, so the next Location is asked
+      // again — and here it has bread.
       await twoLines();
       await controller.matchAll();
+      expect(names(current().draft.unmatched), ['Bread']);
+      unmatchable = {};
+      searches.clear();
       await controller.setArea('30301');
+      expect(searches, ['Broccoli', 'Bread']);
       expect(current().draft.unmatched, isEmpty);
-      expect(names(current().draft.unsearched), ['Broccoli', 'Bread']);
+      expect(current().draft.unsearched, isEmpty);
+      expect(names(current().draft.matched), ['Broccoli', 'Bread']);
     });
     test(
       'a search that could not run shows no results, not old ones',
@@ -1402,7 +1473,13 @@ void main() {
         expect(await controller.search(lineId('Bread'), 'Bread'), isEmpty);
         held.complete(await answer('status', const {}));
         await refresh;
-        expect(current().draft.lines.every((l) => l.product == null), true);
+        // The refused search chose nothing for Bread; Broccoli keeps the
+        // match the Location's own run made.
+        expect(
+          current().draft.lines.firstWhere((l) => l.name == 'Bread').product,
+          isNull,
+        );
+        expect(names(current().draft.matched), ['Broccoli']);
       },
     );
     test(
@@ -1417,16 +1494,24 @@ void main() {
           isNotEmpty,
         );
         expect(current().draft.unmatched, isEmpty);
-        expect(names(current().draft.unsearched), ['Broccoli', 'Bread']);
+        expect(names(current().draft.unsearched), ['Bread']);
+        expect(names(current().draft.matched), ['Broccoli']);
       },
     );
     test('a different Kroger environment takes the answers with it', () async {
+      // The new environment's Location then asks again, and its own answers
+      // stand: here it has bread where certification did not.
       await twoLines();
       await controller.matchAll();
       expect(names(current().draft.unmatched), ['Bread']);
+      unmatchable = {};
+      searches.clear();
       await inProduction();
+      expect(current().environment, 'production');
+      expect(searches, ['Broccoli', 'Bread']);
       expect(current().draft.unmatched, isEmpty);
-      expect(names(current().draft.unsearched), ['Broccoli', 'Bread']);
+      expect(current().draft.unsearched, isEmpty);
+      expect(names(current().draft.matched), ['Broccoli', 'Bread']);
     });
     test('choosing a product answers the line', () async {
       await twoLines();
@@ -1441,7 +1526,9 @@ void main() {
         // No migration: a line without the flag reads as unanswered, which is
         // the one thing that is true of it. The draft is written out in the
         // shape the app stored before the flag existed, on the device and in
-        // the cloud row alike.
+        // the cloud row alike. The device says nothing here, so no Location
+        // arrives to search the line and its stored state is what shows.
+        deviceArea = null;
         final legacy = {
           'planId': plan,
           'store': {...store.toJson(), 'id': locations['35209']},
@@ -1477,11 +1564,21 @@ void main() {
         await restart();
         expect(current().draft.unmatched, isEmpty);
         expect(names(current().draft.unsearched), ['Broccoli']);
+        // Unanswered is searchable: once a Location does arrive, the stored
+        // Location is the same one, and the line is searched rather than
+        // left for dead.
+        deviceArea = '35209';
+        searches.clear();
+        await restart();
+        expect(searches, ['Broccoli']);
+        expect(names(current().draft.matched), ['Broccoli']);
       },
     );
-    testWidgets('before a run the screen promises nothing about Kroger', (
+    testWidgets('a line the run never saw is promised nothing about Kroger', (
       tester,
     ) async {
+      // Bread arrived after the Location's run. It is unsearched, not "no
+      // match", and the action that answers it is on the screen with it.
       final copy = loadDefaultContent();
       await tester.runAsync(twoLines);
       await showScreen(tester);
@@ -1494,13 +1591,18 @@ void main() {
         ),
         findsOneWidget,
       );
-      for (final name in ['Broccoli', 'Bread']) {
-        expect(
-          find.descendant(of: unsearched, matching: find.text(name)),
-          findsOneWidget,
-        );
-      }
-      // The action that answers them is on the screen with them.
+      expect(
+        find.descendant(of: unsearched, matching: find.text('Bread')),
+        findsOneWidget,
+      );
+      expect(
+        find.descendant(of: unsearched, matching: find.text('Broccoli')),
+        findsNothing,
+      );
+      expect(
+        find.descendant(of: matched, matching: find.text('Broccoli')),
+        findsOneWidget,
+      );
       expect(find.text(copy['kroger.match_all']!), findsOneWidget);
     });
 

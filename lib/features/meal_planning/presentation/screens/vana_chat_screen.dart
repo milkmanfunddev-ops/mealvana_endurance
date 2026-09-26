@@ -263,10 +263,14 @@ class _VanaChatScreenState extends ConsumerState<VanaChatScreen> {
               ),
               // A conversation whose history failed has no plan to show:
               // "Your plan · 0 meals" would read as a new plan (88-012).
+              // An empty draft shows no bar either: there is nothing to
+              // review yet, and the tray only takes room from the chat
+              // (Lee, 2026-09-26; supersedes mp-234's "0 meals").
               child:
                   isPlanning &&
                       state != null &&
-                      state.failedRead != VanaChatFailedRead.history
+                      state.failedRead != VanaChatFailedRead.history &&
+                      (plan?.meals.isNotEmpty ?? false)
                   ? PlanBar(
                       key: _planBarKey,
                       meals: plan?.meals ?? const [],
@@ -476,7 +480,8 @@ class _VanaChatScreenState extends ConsumerState<VanaChatScreen> {
     final content = ref.read(contentServiceProvider);
     final coverage = plan?.coverage;
     final callbacks = VanaPartCallbacks(
-      onTapMeal: (meal) => context.push('/food/meals/${meal.id}'),
+      onTapMeal: (meal) =>
+          context.push('/food/meals/${Uri.encodeComponent(meal.id)}'),
       onPickMeal: _pickMeal,
       // What is in this conversation's plan, plus this picker's picks at
       // once (before the pick's write returns).

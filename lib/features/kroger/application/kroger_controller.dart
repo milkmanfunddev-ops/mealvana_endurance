@@ -290,6 +290,12 @@ class KrogerController extends _$KrogerController {
       ),
     );
     _publish(state.value!.copyWith(area: area));
+    // A resolved Location is enough to match on: the shopper opened this
+    // screen to shop, so the first suggestions come without a tap.
+    if (!state.value!.draft.exported &&
+        state.value!.draft.unsearched.isNotEmpty) {
+      await _matchPending();
+    }
   }
 
   Future<KrogerState> _loadDraft() async {
@@ -452,6 +458,7 @@ class KrogerController extends _$KrogerController {
   Future<void> loadCloud() => _run(
     () async => _persist(_reconcile(await _repo.loadRemote(_user!, planId))),
   );
+
   /// Sign the shopper in at kroger.com. A cancelled sign-in — Cancel on the
   /// system alert, the X on the sheet, or kroger.com answering with an
   /// error and no code — is quiet (111-001): the screen stays as it was,
@@ -562,7 +569,13 @@ class KrogerController extends _$KrogerController {
   /// says what actually happened: a run that matched nothing, and a run that
   /// had nothing to match, are different outcomes and read differently.
   Future<void> matchAll() async {
-    await _run(() async {
+    await _run(_matchPending);
+  }
+
+  /// The body of [matchAll], run inside whichever action owns the turn: the
+  /// shopper's tap, or a Location arriving on a fresh draft.
+  Future<void> _matchPending() async {
+    {
       await _persist(_reconcile(state.value!.draft));
       if (state.value!.draft.included.isEmpty) {
         _publish(state.value!.copyWith(message: 'all_skipped'));
@@ -615,7 +628,7 @@ class KrogerController extends _$KrogerController {
               : 'review_matches',
         ),
       );
-    });
+    }
   }
 
   /// What Kroger's latest search for this line said: [noMatch] when it had

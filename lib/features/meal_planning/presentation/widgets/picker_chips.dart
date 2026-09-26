@@ -158,40 +158,51 @@ class PickerChips extends ConsumerWidget {
               ),
           ];
 
-    return Wrap(
-      spacing: AppSpacing.sm,
-      runSpacing: AppSpacing.xs,
-      children: [
-        if (showDraftWeek)
-          ChoiceChipButton(
-            key: const ValueKey('meal_planning.chip_draft_week'),
-            label: draftWeek,
-            emphasized: true,
-            enabled: enabled,
-            onTap: () => onPick(draftWeek),
-          ),
-        ...replies,
-        if (onShowMore != null)
-          ChoiceChipButton(
-            key: const ValueKey('meal_planning.chip_show_more'),
-            label: showMore,
-            onTap: onShowMore!,
-          ),
-        ChoiceChipButton(label: somethingElse, onTap: onSomethingElse),
+    // One row that scrolls sideways (Lee, 2026-09-26): eight chips in a
+    // Wrap took four lines under every picker. The replies come first, the
+    // filters next, and the doors out of the strip last.
+    final chips = <Widget>[
+      if (showDraftWeek)
         ChoiceChipButton(
-          key: const ValueKey('meal_planning.chip_browse_meals'),
-          label: browse,
-          enabled: onBrowse != null,
-          onTap: onBrowse ?? () {},
+          key: const ValueKey('meal_planning.chip_draft_week'),
+          label: draftWeek,
+          emphasized: true,
+          enabled: enabled,
+          onTap: () => onPick(draftWeek),
         ),
-        // mp-230 clause 4: the filters appear once the plan has a meal,
-        // whether the replies above are the app's or the turn's.
-        if (hasMeals) ...[
-          filter(ContentKeys.mpFilterNoRecipe),
-          filter(ContentKeys.mpFilterProtein),
-          filter(ContentKeys.mpFilterUnder20),
-        ],
+      ...replies,
+      if (onShowMore != null)
+        ChoiceChipButton(
+          key: const ValueKey('meal_planning.chip_show_more'),
+          label: showMore,
+          onTap: onShowMore!,
+        ),
+      // mp-230 clause 4: the filters appear once the plan has a meal,
+      // whether the replies above are the app's or the turn's.
+      if (hasMeals) ...[
+        filter(ContentKeys.mpFilterNoRecipe),
+        filter(ContentKeys.mpFilterProtein),
+        filter(ContentKeys.mpFilterUnder20),
       ],
+      ChoiceChipButton(label: somethingElse, onTap: onSomethingElse),
+      ChoiceChipButton(
+        key: const ValueKey('meal_planning.chip_browse_meals'),
+        label: browse,
+        enabled: onBrowse != null,
+        onTap: onBrowse ?? () {},
+      ),
+    ];
+    return SingleChildScrollView(
+      scrollDirection: Axis.horizontal,
+      clipBehavior: Clip.none,
+      child: Row(
+        children: [
+          for (final (i, chip) in chips.indexed) ...[
+            if (i > 0) const SizedBox(width: AppSpacing.sm),
+            chip,
+          ],
+        ],
+      ),
     );
   }
 }

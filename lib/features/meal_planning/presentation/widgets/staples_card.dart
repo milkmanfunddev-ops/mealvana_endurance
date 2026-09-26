@@ -14,10 +14,19 @@ import 'dashed_box.dart';
 /// plan. Suggest only: nothing is added until a row is tapped. The carb line
 /// shows how much of the target the current staples cover.
 class StaplesCard extends ConsumerWidget {
-  const StaplesCard({super.key, required this.part, required this.onTapMeal});
+  const StaplesCard({
+    super.key,
+    required this.part,
+    required this.onTapMeal,
+    this.pickedIds = const {},
+  });
 
   final VanaStaplesPart part;
   final ValueChanged<MealRef> onTapMeal;
+
+  /// Meal ids in the plan right now, which tick a row the part's own
+  /// snapshot did not (a pick made after the part arrived).
+  final Set<String> pickedIds;
 
   @override
   Widget build(BuildContext context, WidgetRef ref) {
@@ -81,7 +90,11 @@ class StaplesCard extends ConsumerWidget {
             ),
           const SizedBox(height: 6),
           for (final staple in part.meals)
-            _StapleRow(staple: staple, onTap: () => onTapMeal(staple.meal)),
+            _StapleRow(
+              staple: staple,
+              ticked: staple.ticked || pickedIds.contains(staple.meal.id),
+              onTap: () => onTapMeal(staple.meal),
+            ),
         ],
       ),
     );
@@ -91,9 +104,14 @@ class StaplesCard extends ConsumerWidget {
 /// One staple: the tick showing whether it is already in the plan, the name,
 /// and how often it has been logged ("12×") or that it is simply saved.
 class _StapleRow extends ConsumerWidget {
-  const _StapleRow({required this.staple, required this.onTap});
+  const _StapleRow({
+    required this.staple,
+    required this.ticked,
+    required this.onTap,
+  });
 
   final StapleMeal staple;
+  final bool ticked;
   final VoidCallback onTap;
 
   @override
@@ -114,14 +132,14 @@ class _StapleRow extends ConsumerWidget {
               width: 22,
               height: 22,
               decoration: BoxDecoration(
-                color: staple.ticked ? accent : Colors.transparent,
+                color: ticked ? accent : Colors.transparent,
                 borderRadius: BorderRadius.circular(6),
                 border: Border.all(
-                  color: staple.ticked ? accent : fg.withValues(alpha: 0.4),
+                  color: ticked ? accent : fg.withValues(alpha: 0.4),
                   width: 1.5,
                 ),
               ),
-              child: staple.ticked
+              child: ticked
                   ? const Icon(
                       Icons.check,
                       size: 14,

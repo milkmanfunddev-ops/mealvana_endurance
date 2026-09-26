@@ -23,8 +23,6 @@ import '../../domain/shopping_list.dart';
 import '../../domain/shopping_list_name.dart';
 import '../widgets/overflow_menu.dart';
 import '../widgets/shopping_list.dart';
-import '../widgets/youre_set_on_shopping.dart';
-import 'food_screen.dart';
 import '../../../kroger/application/kroger_availability.dart';
 
 /// The Shop with Kroger button's height, also reserved while Coverage is
@@ -37,15 +35,11 @@ const _krogerButtonHeight = 44.0;
 /// list (and Back to current list on an earlier one). A plan's list
 /// features the Kroger hand-off under the header. Lines end with one quiet
 /// "Add an item" row that opens the same sheet as Edit. Sharing lives in the
-/// Food screen's header via [ShoppingShareButton]. Right after a confirm the
-/// "you're set" card sits at the top of the new list ([YoureSetOnShopping],
-/// mp-235).
+/// Food screen's header via [ShoppingShareButton]. A confirm lands here on
+/// the list itself: the "you're set" card that used to sit on top (mp-235)
+/// was dropped (Lee, 2026-09-26), the chat's own card says the same thing.
 class ShoppingTab extends ConsumerWidget {
-  const ShoppingTab({super.key, this.onShowPlan});
-
-  /// Switch the Food screen to its Plan segment (the card's Plan row).
-  /// Without one, the Food tab is opened on Plan ([goToFoodTab]).
-  final VoidCallback? onShowPlan;
+  const ShoppingTab({super.key});
 
   @override
   Widget build(BuildContext context, WidgetRef ref) {
@@ -92,10 +86,6 @@ class ShoppingTab extends ConsumerWidget {
         HomeShellChrome.bottomChromeClearancePx,
       ),
       children: [
-        YoureSetOnShopping(
-          list: state,
-          onShowPlan: onShowPlan ?? () => goToFoodTab(context, FoodTab.plan),
-        ),
         _ListHeader(
           state: state,
           onRename: listId == null
@@ -201,9 +191,10 @@ class ShoppingTab extends ConsumerWidget {
     final content = ref.read(contentServiceProvider);
     final state = ref.read(shoppingListControllerProvider).value;
     final suggested = uniqueShoppingListName(
-      ContentKeys.format(content.getValue(ContentKeys.mpShoppingNewListDefault), {
-        'date': DateFormat.MMMd().format(DateTime.now()),
-      }),
+      ContentKeys.format(
+        content.getValue(ContentKeys.mpShoppingNewListDefault),
+        {'date': DateFormat.MMMd().format(DateTime.now())},
+      ),
       state?.knownNames ?? const [],
     );
     final name = await showAdaptiveModal<String>(
@@ -217,9 +208,8 @@ class ShoppingTab extends ConsumerWidget {
     await _guard(
       context,
       ref,
-      () => ref
-          .read(shoppingListControllerProvider.notifier)
-          .newList(name: name),
+      () =>
+          ref.read(shoppingListControllerProvider.notifier).newList(name: name),
       done: content.getValue(ContentKeys.mpShoppingNewListDone),
     );
   }
@@ -334,10 +324,7 @@ class ShoppingTab extends ConsumerWidget {
           mainAxisSize: MainAxisSize.min,
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
-            Text(
-              which,
-              style: const TextStyle(fontWeight: FontWeight.w600),
-            ),
+            Text(which, style: const TextStyle(fontWeight: FontWeight.w600)),
             const SizedBox(height: AppSpacing.xs),
             Text(
               content.getValue(
