@@ -1,4 +1,5 @@
 import 'dart:async';
+import 'dart:convert';
 
 import 'package:riverpod_annotation/riverpod_annotation.dart';
 
@@ -7,6 +8,7 @@ import '../../../shared/providers/user_id_provider.dart';
 import '../../../shared/services/app_external_deps.dart';
 import '../../../shared/services/logging_service.dart';
 import '../../nutrition_plan/domain/run_parameters.dart';
+import '../data/meal_plan_repository.dart';
 import '../data/shopping_tick_store.dart';
 import '../data/vana_action_client.dart';
 import '../data/vana_exceptions.dart';
@@ -98,6 +100,13 @@ class ShoppingListState {
   /// [previous].
   bool get hasAnyList => listId != null || previous.isNotEmpty;
 
+  /// The names the tab knows, on screen and in history: what a new list's
+  /// name must differ from (110-010, the rename rule of 89-015).
+  List<String> get knownNames => [
+    if (listId != null) listName,
+    for (final l in previous) l.name,
+  ];
+
   /// The meals a line was built from, in plan order.
   List<PlanMeal> sourcesOf(ShoppingItem item) => [
     for (final meal in meals)
@@ -140,11 +149,16 @@ class ShoppingListState {
 /// and dropped when the server answers. A transport failure keeps the tick
 /// on screen and in the store, marks the state offline, and the tick is
 /// replayed on the next build, on the next successful call, or by the
-/// retry timer. A refusal the server answers (any other error) rolls the
-/// tick back and rethrows so the screen can say so. The Drift mirror is
-/// never written here: the server keeps `meal_plans.shopping` from
-/// `shopping_items`, and a local replay of the mirror would clobber ticks
-/// made online.
+/// retry timer. A tick made on the offline copy has no row id: it waits in
+/// the store while the offline copy is on screen (the retry timer probes
+/// for the live list instead) and is matched by name once the plan's live
+/// list loads (110-001). A refusal the server answers (any other error)
+/// rolls the tick back and rethrows so the screen can say so.
+///
+/// The Drift mirror (`meal_plans.shopping`) is never replayed onto the
+/// server — that would clobber ticks made online — but every settled write
+/// on a plan's list is copied into it (110-003), so a cold offline start
+/// shows what this phone last saw.
 @riverpod
 class ShoppingListController extends _$ShoppingListController {
   /// The design's aisle order (05 §4).
@@ -168,8 +182,23 @@ class ShoppingListController extends _$ShoppingListController {
   /// The list the athlete opened from history; null = the most recent one.
   String? _openedListId;
 
+  /// The list New list just made (110-005): pinned open and never labelled
+  /// "An earlier list" while it stays the list the athlete is working on.
+  /// Cleared when the athlete opens another list or deletes it.
+  String? _madeListId;
+
   String? _userId;
   Timer? _retry;
+  bool _replaying = false;
+
+  /// The last state shown, kept across a rebuild (see [_isMirrorEcho]).
+  ShoppingListState? _last;
+
+  /// What this controller last wrote into the plan's Drift mirror
+  /// (110-003): the plan's id, its signature apart from the mirror, and the
+  /// mirror's JSON. The write echoes back through the plan stream and would
+  /// otherwise read as a plan edit and cost a re-read.
+  ({String planId, String signature, String shopping})? _mirrorWritten;
 
   @override
   FutureOr<ShoppingListState> build() async {
@@ -177,14 +206,19 @@ class ShoppingListController extends _$ShoppingListController {
     // previous build may have left.
     _retry?.cancel();
     _retry = null;
+    _replaying = false;
     ref.onDispose(() {
       _retry?.cancel();
       _retry = null;
+    });
+    listenSelf((_, next) {
+      if (next.value case final value?) _last = value;
     });
     _userId = await ref.watch(userIdProvider.future);
     // Every plan edit rebuilds the plan's list server-side, so the plan is
     // the signal to re-read; it is also the offline stand-in.
     final plan = await ref.watch(mealPlanControllerProvider.future);
+    if (_last case final last? when _isMirrorEcho(plan)) return last;
     ShoppingListState loaded;
     try {
       loaded = await _load(plan, listId: _openedListId);
@@ -202,6 +236,70 @@ class ShoppingListController extends _$ShoppingListController {
   VanaActionClient get _client => ref.read(vanaActionClientProvider);
   ShoppingTickStore get _ticks => ref.read(shoppingTickStoreProvider);
   AppLogger get _logger => ref.read(appExternalDepsProvider).logger;
+
+  /// True when [plan] is this controller's own mirror write coming back
+  /// through the Drift stream: same plan, nothing but the mirror changed,
+  /// and the mirror is what was written. Then the state on screen already
+  /// holds the server's answer and a re-read would only repeat it.
+  bool _isMirrorEcho(MealPlan? plan) {
+    final written = _mirrorWritten;
+    if (written == null || plan == null || plan.id != written.planId) {
+      return false;
+    }
+    return _planSignature(plan) == written.signature &&
+        _shoppingJson(plan.shopping) == written.shopping;
+  }
+
+  /// The plan apart from its shopping mirror: what a plan edit changes.
+  static String _planSignature(MealPlan plan) => [
+    plan.id,
+    plan.status.name,
+    plan.weekStart,
+    for (final m in plan.meals)
+      '${m.id}:${m.servings}:${m.swapsApplied.length}',
+  ].join('|');
+
+  static String _shoppingJson(List<ShoppingItem> items) =>
+      jsonEncode([for (final i in items) _plain(i).toJson()]);
+
+  /// The jsonb-shaped line the mirror holds (no row id, list id or source).
+  static ShoppingItem _plain(ShoppingItem i) => i is ShoppingListItem
+      ? ShoppingItem(
+          aisle: i.aisle,
+          name: i.name,
+          qty: i.qty,
+          checked: i.checked,
+          have: i.have,
+          fromMealIds: i.fromMealIds,
+        )
+      : i;
+
+  /// Copy a settled plan list into the local plan's mirror (110-003). Never
+  /// fails the write it follows: a mirror that lags is the old behaviour.
+  /// Running twice, or after a refresh, rewrites the same lines.
+  Future<void> _mirror(ShoppingListDetail list) async {
+    final planId = list.planId;
+    if (planId == null) return;
+    final plan = ref.read(mealPlanControllerProvider).value;
+    if (plan == null || plan.id != planId) return;
+    final shopping = _shoppingJson(list.items);
+    _mirrorWritten = (
+      planId: planId,
+      signature: _planSignature(plan),
+      shopping: shopping,
+    );
+    try {
+      await ref
+          .read(mealPlanRepositoryProvider)
+          .setShoppingMirror(planId, [for (final i in list.items) _plain(i)]);
+    } catch (e) {
+      _logger.warning(
+        'shopping mirror not updated',
+        context: _context,
+        error: e,
+      );
+    }
+  }
 
   Future<ShoppingListState> _load(MealPlan? plan, {String? listId}) async {
     final result = await _client.run(GetShoppingListAction(id: listId));
@@ -228,7 +326,9 @@ class ShoppingListController extends _$ShoppingListController {
       listId: list.id,
       listName: list.name,
       listDate: list.sortDate,
-      isCurrent: list.id == current,
+      // The server's first list is the default; the list New list just made
+      // is current too while it is pinned open (110-005).
+      isCurrent: list.id == current || list.id == _madeListId,
       planId: list.planId,
       isConfirmed: list.confirmedAt != null,
       items: list.items,
@@ -302,18 +402,49 @@ class ShoppingListController extends _$ShoppingListController {
 
   /// Send every queued tick that belongs to the list on screen. Public so
   /// the retry timer and a future reconnect hook share one path; safe to
-  /// call at any time (a no-op with nothing queued).
+  /// call at any time (a no-op with nothing queued, or while a replay is
+  /// already running).
+  ///
+  /// On the offline copy there are no row ids to write to, so this probes
+  /// for the live list instead (110-001): once it loads, the queued ticks
+  /// are matched to its rows by name and sent; until then they wait.
   Future<void> retryPending() async {
-    final current = state.value;
-    if (current == null) return;
-    state = AsyncData(await _replay(current));
+    if (_replaying) return;
+    _replaying = true;
+    try {
+      final current = state.value;
+      if (current == null) return;
+      if (current.listId != null) {
+        state = AsyncData(await _replay(current));
+        return;
+      }
+      ShoppingListState loaded;
+      try {
+        loaded = await _load(
+          ref.read(mealPlanControllerProvider).value,
+          listId: _openedListId,
+        );
+      } catch (e) {
+        _logger.warning(
+          'shopping list still unreachable; ticks wait',
+          context: _context,
+          error: e,
+        );
+        state = AsyncData(_offline(current));
+        return;
+      }
+      state = AsyncData(await _replay(loaded));
+    } finally {
+      _replaying = false;
+    }
   }
 
   /// [loaded] with its queued ticks sent (by row id, or by name on the
   /// plan's list for ticks made on the offline copy), each dropped from the
   /// store as the server answers. Stops at the first transport failure and
   /// overlays what is left, marked offline. A tick the server refuses, or
-  /// one whose line no longer exists, is dropped and logged.
+  /// one whose line the live list no longer has, is dropped and logged; a
+  /// tick with no row while the offline copy is on screen is kept (110-001).
   Future<ShoppingListState> _replay(ShoppingListState loaded) async {
     final userId = _userId;
     if (userId == null) return loaded;
@@ -324,6 +455,7 @@ class ShoppingListController extends _$ShoppingListController {
       }
       final rowId = tick.rowId ?? _rowNamed(current, tick.name)?.id;
       if (rowId == null) {
+        if (current.listId == null) continue; // no ids here; the live list has
         _logger.warning(
           'shopping tick dropped: no row for "${tick.name}"',
           context: _context,
@@ -340,6 +472,7 @@ class ShoppingListController extends _$ShoppingListController {
             _summariesWith(current, list),
             ref.read(mealPlanControllerProvider).value,
           );
+          unawaited(_mirror(list));
         }
         await _ticks.remove(userId, tick);
       } on VanaOfflineException catch (e) {
@@ -478,16 +611,28 @@ class ShoppingListController extends _$ShoppingListController {
   // ── Lists ─────────────────────────────────────────────────────────────────
 
   /// Start a new hand-made list and open it. The plan's own list stays in
-  /// history.
+  /// history and stays the tab's default, so the new list is pinned open
+  /// ([_openedListId]) and marked current ([_madeListId], 110-005). The
+  /// name follows the rename rule (89-015, 110-010): cleaned, capped, and
+  /// given the next free " (n)" among the lists the tab knows, the same way
+  /// the server names it, so the name shown is the name kept. No name
+  /// sends none and the server picks its default ("List · Sep 25").
   Future<void> newList({String? name}) async {
     final current = state.value ?? const ShoppingListState();
+    final clean = name == null ? '' : cleanShoppingListName(name);
+    final unique = clean.isEmpty
+        ? null
+        : uniqueShoppingListName(clean, current.knownNames);
+    final pinnedOpen = _openedListId;
+    final pinnedMade = _madeListId;
     state = await AsyncValue.guard(() async {
-      final made = await _client.run(CreateShoppingListAction(name: name));
+      final made = await _client.run(CreateShoppingListAction(name: unique));
       final list = made.shoppingList;
       if (list == null) {
         throw StateError('create_shopping_list returned no list');
       }
-      _openedListId = null; // the new list is the most recent, so no pin
+      _openedListId = list.id;
+      _madeListId = list.id;
       final lists = (await _client.run(
         const ListShoppingListsAction(),
       )).shoppingLists;
@@ -500,6 +645,8 @@ class ShoppingListController extends _$ShoppingListController {
     if (state.hasError) {
       final error = state.error!;
       final stack = state.stackTrace;
+      _openedListId = pinnedOpen;
+      _madeListId = pinnedMade;
       state = AsyncData(current);
       Error.throwWithStackTrace(error, stack ?? StackTrace.current);
     }
@@ -579,6 +726,8 @@ class ShoppingListController extends _$ShoppingListController {
     } else if (_openedListId == id) {
       _openedListId = null;
     }
+    final made = _madeListId;
+    if (_madeListId == id) _madeListId = null;
     state = await AsyncValue.guard(() async {
       await _client.run(DeleteShoppingListAction(id: id));
       return _load(
@@ -590,6 +739,7 @@ class ShoppingListController extends _$ShoppingListController {
       final error = state.error!;
       final stack = state.stackTrace;
       _openedListId = pinned;
+      _madeListId = made;
       state = AsyncData(current);
       Error.throwWithStackTrace(error, stack ?? StackTrace.current);
     }
@@ -615,6 +765,9 @@ class ShoppingListController extends _$ShoppingListController {
   Future<void> _switchTo(String? listId) async {
     final current = state.value ?? const ShoppingListState();
     _openedListId = listId;
+    // Opening another list ends the new list's turn as "current".
+    final made = _madeListId;
+    _madeListId = null;
     state = await AsyncValue.guard(
       () => _load(ref.read(mealPlanControllerProvider).value, listId: listId),
     );
@@ -622,6 +775,7 @@ class ShoppingListController extends _$ShoppingListController {
       final error = state.error!;
       final stack = state.stackTrace;
       _openedListId = current.isCurrent ? null : current.listId;
+      _madeListId = made;
       state = AsyncData(current);
       Error.throwWithStackTrace(error, stack ?? StackTrace.current);
     }
@@ -637,6 +791,7 @@ class ShoppingListController extends _$ShoppingListController {
       final result = await write();
       final list = result.shoppingList;
       if (list == null) return state.value ?? before;
+      unawaited(_mirror(list));
       return _fromDetail(
         list,
         _summariesWith(before, list),
@@ -650,9 +805,12 @@ class ShoppingListController extends _$ShoppingListController {
     state = next;
   }
 
-  /// The history the tab already holds, with the list on screen in front
-  /// — enough to keep [ShoppingListState.previous] right without a second
-  /// round trip.
+  /// The history the tab already holds with [list] folded in — enough to
+  /// keep [ShoppingListState.previous] right without a second round trip.
+  /// The server's order is kept (its default list first, `orderedRows`),
+  /// never re-sorted by date: a newer draft's or hand-made list must not
+  /// turn the list on screen into "An earlier list" after a tick or an add
+  /// (110-005, 115-001). The list on screen keeps the place it had.
   static List<ShoppingListSummary> _summariesWith(
     ShoppingListState before,
     ShoppingListDetail list,
@@ -661,9 +819,9 @@ class ShoppingListController extends _$ShoppingListController {
       for (final l in before.previous)
         if (l.id != list.id) l,
     ];
-    // Sorted the way the server sorts, so `isCurrent` reads the same here
-    // as after a fresh load — including while viewing an earlier list.
-    return [...others, list]..sort((a, b) => b.sortDate.compareTo(a.sortDate));
+    return before.isCurrent || list.id != before.listId
+        ? [list, ...others]
+        : [...others, list];
   }
 
   static ShoppingListItem? _rowFor(ShoppingListState s, ShoppingItem item) =>
