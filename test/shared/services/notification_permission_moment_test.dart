@@ -19,15 +19,22 @@ class _RecordingRemotePush implements RemotePushClient {
   final logins = <String>[];
   int starts = 0;
 
+  /// What the OS answers the ask with, and what it reports afterwards.
+  bool granted = true;
+
   @override
   void start(String appId, void Function(Map<String, dynamic>) onClickData) {
     starts++;
   }
 
   @override
-  Future<void> requestPermission({required bool fallbackToSettings}) async {
+  Future<bool> requestPermission({required bool fallbackToSettings}) async {
     permissionRequests.add(fallbackToSettings);
+    return granted;
   }
+
+  @override
+  Future<bool> permissionGranted() async => granted;
 
   @override
   void login(String externalId) => logins.add(externalId);
@@ -97,5 +104,52 @@ void main() {
     await NotificationService.initialize();
 
     expect(remotePush.permissionRequests, [false]);
+  });
+
+  // Ticket 138 (Finding 125-004, Lee 2026-09-26): the answer is stored, and
+  // follows later changes made in iOS Settings.
+  group('the answer is stored', () {
+    late List<bool> stored;
+
+    setUp(() {
+      stored = [];
+      NotificationService.configure(
+        const NoopAnalyticsTracker(),
+        oneSignalAppId: 'test-app-id',
+        onPermissionAnswer: (granted) async => stored.add(granted),
+      );
+    });
+
+    test('the ask reports what iOS answered', () async {
+      remotePush.granted = false;
+      await NotificationService.initialize();
+      await NotificationService.setRemotePushUserId('athlete-1');
+
+      expect(remotePush.permissionRequests, [false]);
+      expect(stored, [false]);
+    });
+
+    test('a change seen on resume is reported once', () async {
+      remotePush.granted = true;
+      await NotificationService.initialize();
+      await NotificationService.setRemotePushUserId('athlete-1');
+      expect(stored, [true]);
+
+      // Nothing changed: resume reports nothing new.
+      await NotificationService.refreshPermission();
+      expect(stored, [true]);
+
+      // Turned off in iOS Settings, then the app resumes.
+      remotePush.granted = false;
+      await NotificationService.refreshPermission();
+      await NotificationService.refreshPermission();
+      expect(stored, [true, false]);
+    });
+
+    test('nothing is reported before an athlete is attached', () async {
+      await NotificationService.initialize();
+      await NotificationService.refreshPermission();
+      expect(stored, isEmpty);
+    });
   });
 }

@@ -27,6 +27,7 @@ import '../../../shared/models/dirty_record_backup.dart';
 import '../presentation/widgets/dirty_record_recovery_dialog.dart';
 import '../../ai_credits/data/revenuecat_service.dart';
 import '../../auth/application/grace_claim_service.dart';
+import '../../auth/data/user_repository.dart';
 import '../../auth/presentation/providers/password_recovery_controller.dart';
 import '../../subscription/application/pro_gate.dart';
 import '../../subscription/application/subscription_status_provider.dart';
@@ -384,6 +385,15 @@ class AppStartupService {
       NotificationService.configure(
         _analytics,
         oneSignalAppId: config.oneSignalAppId,
+        // Ticket 138 (125-004): the OS's answer lands on the profile, local
+        // first, and follows later changes in iOS Settings on resume.
+        onPermissionAnswer: (granted) async {
+          final users = await ref.read(userRepositoryProvider.future);
+          final user = await users.getCurrentUser();
+          if (user != null) {
+            await users.setNotificationsEnabled(user.id, granted);
+          }
+        },
       );
 
       // Track app opened event with session ID

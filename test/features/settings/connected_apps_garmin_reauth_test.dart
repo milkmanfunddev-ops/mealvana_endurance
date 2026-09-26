@@ -26,7 +26,6 @@ import 'package:mealvana_endurance/shared/providers/user_id_provider.dart';
 import 'package:mealvana_endurance/shared/services/prefs_provider.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 
-import '../../helpers/fakes/fake_supabase_client.dart';
 import '../../helpers/widget_test_harness.dart';
 import '../meal_planning/presentation/helpers/test_content.dart';
 

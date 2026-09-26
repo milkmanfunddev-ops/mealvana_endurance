@@ -147,6 +147,7 @@ class UserDao extends DatabaseAccessor<AppDatabase> with _$UserDaoMixin {
         gutTrainingLevel: Value(profile.gutTraining.name),
         sweatRate: Value(profile.sweatRate.name),
         onboardingCompleted: Value(profile.onboardingCompleted),
+        notificationsEnabled: Value(profile.notificationsEnabled),
         createdAt: Value(profile.createdAt),
         updatedAt: Value(profile.updatedAt),
         appVersion: Value(profile.appVersion),
@@ -241,6 +242,7 @@ class UserDao extends DatabaseAccessor<AppDatabase> with _$UserDaoMixin {
         gutTrainingLevel: Value(profile.gutTraining.name),
         sweatRate: Value(profile.sweatRate.name),
         onboardingCompleted: Value(profile.onboardingCompleted),
+        notificationsEnabled: Value(profile.notificationsEnabled),
         updatedAt: Value(DateTime.now()),
         appVersion: Value(profile.appVersion),
         // Default pace/speed for workout estimation
@@ -415,6 +417,7 @@ class UserDao extends DatabaseAccessor<AppDatabase> with _$UserDaoMixin {
       updatedAt: dbUser.updatedAt,
       appVersion: dbUser.appVersion ?? '',
       swipeHintShown: dbUser.swipeHintShown,
+      notificationsEnabled: dbUser.notificationsEnabled,
       // Default pace/speed for workout estimation
       defaultRunningPaceMinPerMile: dbUser.defaultRunningPaceMinPerMile,
       defaultCyclingSpeedMph: dbUser.defaultCyclingSpeedMph,
