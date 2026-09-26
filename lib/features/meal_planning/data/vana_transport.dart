@@ -1,6 +1,7 @@
 import 'dart:async';
 import 'dart:convert';
 
+import 'package:flutter/foundation.dart' show visibleForTesting;
 import 'package:http/http.dart' as http;
 import 'package:supabase_flutter/supabase_flutter.dart';
 
@@ -39,6 +40,17 @@ class NdjsonResponse {
 /// [longActions]), or a stream whose headers have not come within
 /// [longTimeout], is dropped and raised as [VanaOfflineException], so the
 /// screen says it needs a connection and offers its retry.
+///
+/// A 401 is the server saying this session is not one it knows (testing-wave
+/// 117-011: a global logout elsewhere left the phone signed in, and Vana
+/// answered 401 eleven times while the card sat on "Looking at your day…").
+/// On a 401 the transport asks GoTrue to refresh the session ONCE. A refused
+/// refresh token means the server ended the session: the phone signs out
+/// locally and the router lands on Log In. A refresh that failed for a reason
+/// that may pass later (offline) leaves the session alone. Either way the
+/// call that got the 401 is not retried: it raises
+/// [VanaUnauthenticatedException] and the next tap uses whatever session is
+/// then current. Concurrent 401s share one refresh.
 class VanaTransport {
   VanaTransport({
     required SupabaseClient supabase,
@@ -138,6 +150,7 @@ class VanaTransport {
     if (streamed.statusCode < 200 || streamed.statusCode >= 300) {
       final responseBody = await streamed.stream.bytesToString();
       client.close();
+      if (streamed.statusCode == 401) await recoverSessionAfter401();
       throw mapErrorResponse(streamed.statusCode, responseBody);
     }
 
@@ -174,6 +187,7 @@ class VanaTransport {
     }
 
     if (response.statusCode < 200 || response.statusCode >= 300) {
+      if (response.statusCode == 401) await recoverSessionAfter401();
       throw mapErrorResponse(response.statusCode, response.body);
     }
 
@@ -184,6 +198,68 @@ class VanaTransport {
       response.body,
       error: 'invalid_response',
     );
+  }
+
+  Future<void>? _refreshInFlight;
+
+  /// The one refresh a 401 earns (117-011). Concurrent 401s (the eleven of
+  /// the Finding) await the same attempt; a 401 that arrives after it has
+  /// finished starts a new one, against whatever session is then held, so a
+  /// phone whose session GoTrue just dropped finds none and does nothing.
+  ///
+  /// Running twice: the second caller joins the first's future. After a
+  /// sign-out `_buildRequest` throws before any request, so there is no
+  /// further 401 to recover from.
+  @visibleForTesting
+  Future<void> recoverSessionAfter401() {
+    return _refreshInFlight ??= _refreshOrSignOut().whenComplete(
+      () => _refreshInFlight = null,
+    );
+  }
+
+  Future<void> _refreshOrSignOut() async {
+    final auth = _supabase.auth;
+    if (auth.currentSession == null) return;
+    try {
+      await auth.refreshSession();
+      _logger.info('Session refreshed after a 401', context: _context);
+    } on AuthRetryableFetchException catch (e) {
+      // The refresh could not reach GoTrue: not a verdict on the session.
+      _logger.warning(
+        'Session refresh after a 401 could not reach the server; staying '
+        'signed in',
+        context: _context,
+        error: e,
+      );
+    } on AuthException catch (e) {
+      // GoTrue refused the refresh token (or there was none): the server
+      // ended this session. GoTrue drops the local session itself on an
+      // invalid token; the explicit sign-out covers the cases where it did
+      // not, and is skipped when the session is already gone so the
+      // `signedOut` event fires once.
+      _logger.warning(
+        'Session refresh after a 401 was refused; signing out locally',
+        context: _context,
+        error: e,
+      );
+      if (auth.currentSession != null) {
+        try {
+          await auth.signOut(scope: SignOutScope.local);
+        } catch (signOutError) {
+          _logger.warning(
+            'Local sign-out after a refused refresh failed',
+            context: _context,
+            error: signOutError,
+          );
+        }
+      }
+    } catch (e) {
+      _logger.warning(
+        'Session refresh after a 401 failed; staying signed in',
+        context: _context,
+        error: e,
+      );
+    }
   }
 
   /// Map a non-2xx status + body to the typed exception (contract 02 §5).
