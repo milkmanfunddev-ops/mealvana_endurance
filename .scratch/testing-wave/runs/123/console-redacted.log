@@ -1,0 +1,765 @@
+2026-09-25 22:42:12.442093-0500 0xff8b3a   Default     0x0                  92575  0    Runner: (Flutter) flutter: The Dart VM service is listening on http://127.0.0.1:52880/2v0N95DdjJc=/
+2026-09-25 22:42:12.460871-0500 0xff8a8a   Default     0x0                  92575  0    Runner: (Flutter) Plugin AppLinksIosPlugin uses deprecated application lifecycle events. Please contact plugin maintainers and request UIScene lifecycle support. This will be required in a future version of Flutter. See https://docs.flutter.dev/release/breaking-changes/uiscenedelegate#migration-guide-for-flutter-plugins
+2026-09-25 22:42:12.463470-0500 0xff8a8a   Default     0x0                  92575  0    Runner: (Flutter) Plugin FlutterWebAuth2Plugin uses deprecated application lifecycle events. Please contact plugin maintainers and request UIScene lifecycle support. This will be required in a future version of Flutter. See https://docs.flutter.dev/release/breaking-changes/uiscenedelegate#migration-guide-for-flutter-plugins
+2026-09-25 22:42:12.468532-0500 0xff8a8a   Default     0x0                  92575  0    Runner: (Flutter) Plugin FLTGoogleSignInPlugin uses deprecated application lifecycle events. Please contact plugin maintainers and request UIScene lifecycle support. This will be required in a future version of Flutter. See https://docs.flutter.dev/release/breaking-changes/uiscenedelegate#migration-guide-for-flutter-plugins
+2026-09-25 22:42:14.044330-0500 0xff8a8a   Default     0x0                  92575  0    Runner: (Flutter) flutter: supabase.supabase_flutter: INFO: ***** Supabase init completed *****
+2026-09-25 22:42:14.202074-0500 0xff8a8a   Default     0x0                  92575  0    Runner: (Flutter) flutter: GoRouter: INFO: Full paths for routes:
+2026-09-25 22:42:14.202141-0500 0xff8a8a   Default     0x0                  92575  0    Runner: (Flutter) flutter:   => /privacy-consent
+2026-09-25 22:42:14.202173-0500 0xff8a8a   Default     0x0                  92575  0    Runner: (Flutter) flutter:   => /force-upgrade
+2026-09-25 22:42:14.202215-0500 0xff8a8a   Default     0x0                  92575  0    Runner: (Flutter) flutter:   => /welcome
+2026-09-25 22:42:14.202265-0500 0xff8a8a   Default     0x0                  92575  0    Runner: (Flutter) flutter:   => /onboarding
+2026-09-25 22:42:14.202298-0500 0xff8a8a   Default     0x0                  92575  0    Runner: (Flutter) flutter:   => /auth/post-onboarding
+2026-09-25 22:42:14.202332-0500 0xff8a8a   Default     0x0                  92575  0    Runner: (Flutter) flutter:   => /auth/email-signup
+2026-09-25 22:42:14.202381-0500 0xff8a8a   Default     0x0                  92575  0    Runner: (Flutter) flutter:   => /auth/email-login
+2026-09-25 22:42:14.202415-0500 0xff8a8a   Default     0x0                  92575  0    Runner: (Flutter) flutter:   => /auth/forgot-password
+2026-09-25 22:42:14.202451-0500 0xff8a8a   Default     0x0                  92575  0    Runner: (Flutter) flutter:   => /auth/verify-reset-code
+2026-09-25 22:42:14.202499-0500 0xff8a8a   Default     0x0                  92575  0    Runner: (Flutter) flutter:   => /auth/set-new-password
+2026-09-25 22:42:14.202537-0500 0xff8a8a   Default     0x0                  92575  0    Runner: (Flutter) flutter:   => /distancepacegut
+2026-09-25 22:42:14.202573-0500 0xff8a8a   Default     0x0                  92575  0    Runner: (Flutter) flutter:   => /distance-pace-gut-entry
+2026-09-25 22:42:14.202603-0500 0xff8a8a   Default     0x0                  92575  0    Runner: (Flutter) flutter:   => /main
+2026-09-25 22:42:14.202631-0500 0xff8a8a   Default     0x0                  92575  0    Runner: (Flutter) flutter:   => /coach-portal
+2026-09-25 22:42:14.202666-0500 0xff8a8a   Default     0x0                  92575  0    Runner: (Flutter) flutter:   => /plan
+2026-09-25 22:42:14.202712-0500 0xff8a8a   Default     0x0                  92575  0    Runner: (Flutter) flutter:   => /current-plan
+2026-09-25 22:42:14.202751-0500 0xff8a8a   Default     0x0                  92575  0    Runner: (Flutter) flutter:   => /fuel-log
+2026-09-25 22:42:14.202785-0500 0xff8a8a   Default     0x0                  92575  0    Runner: (Flutter) flutter:   => /adjust-macros
+2026-09-25 22:42:14.202819-0500 0xff8a8a   Default     0x0                  92575  0    Runner: (Flutter) flutter:   => /learn
+2026-09-25 22:42:14.202850-0500 0xff8a8a   Default     0x0                  92575  0    Runner: (Flutter) flutter:   => /learn/video
+2026-09-25 22:42:14.202880-0500 0xff8a8a   Default     0x0                  92575  0    Runner: (Flutter) flutter:   => /events
+2026-09-25 22:42:14.202910-0500 0xff8a8a   Default     0x0                  92575  0    Runner: (Flutter) flutter:   => /events/create
+2026-09-25 22:42:14.202943-0500 0xff8a8a   Default     0x0                  92575  0    Runner: (Flutter) flutter:   => /events/:eventId
+2026-09-25 22:42:14.202970-0500 0xff8a8a   Default     0x0                  92575  0    Runner: (Flutter) flutter:   => /events/:eventId/checklist
+2026-09-25 22:42:14.202998-0500 0xff8a8a   Default     0x0                  92575  0    Runner: (Flutter) flutter:   => /paywall
+2026-09-25 22:42:14.203022-0500 0xff8a8a   Default     0x0                  92575  0    Runner: (Flutter) flutter:   => /buy-credits
+2026-09-25 22:42:14.203054-0500 0xff8a8a   Default     0x0                  92575  0    Runner: (Flutter) flutter:   => /settings
+2026-09-25 22:42:14.203093-0500 0xff8a8a   Default     0x0                  92575  0    Runner: (Flutter) flutter:   => /settings/connected-apps
+2026-09-25 22:42:14.203123-0500 0xff8a8a   Default     0x0                  92575  0    Runner: (Flutter) flutter:   => /settings/privacy
+2026-09-25 22:42:14.203153-0500 0xff8a8a   Default     0x0                  92575  0    Runner: (Flutter) flutter:   => /settings/preferences
+2026-09-25 22:42:14.203182-0500 0xff8a8a   Default     0x0                  92575  0    Runner: (Flutter) flutter:   => /settings/sweat-profile
+2026-09-25 22:42:14.203250-0500 0xff8a8a   Default     0x0                  92575  0    Runner: (Flutter) flutter:   => /settings/sport-settings
+2026-09-25 22:42:14.203278-0500 0xff8a8a   Default     0x0                  92575  0    Runner: (Flutter) flutter:   => /settings/food-preferences-hub
+2026-09-25 22:42:14.203309-0500 0xff8a8a   Default     0x0                  92575  0    Runner: (Flutter) flutter:   => /settings/sport-preferences-hub
+2026-09-25 22:42:14.203337-0500 0xff8a8a   Default     0x0                  92575  0    Runner: (Flutter) flutter:   => /settings/nutrition-targets
+2026-09-25 22:42:14.203399-0500 0xff8a8a   Default     0x0                  92575  0    Runner: (Flutter) flutter:   => /settings/nutrition-profile
+2026-09-25 22:42:14.203426-0500 0xff8a8a   Default     0x0                  92575  0    Runner: (Flutter) flutter:   => /settings/templates
+2026-09-25 22:42:14.203456-0500 0xff8a8a   Default     0x0                  92575  0    Runner: (Flutter) flutter:   => /settings/coach-connection
+2026-09-25 22:42:14.203486-0500 0xff8a8a   Default     0x0                  92575  0    Runner: (Flutter) flutter:   => /settings/food-preferences-consolidated
+2026-09-25 22:42:14.203516-0500 0xff8a8a   Default     0x0                  92575  0    Runner: (Flutter) flutter:   => /settings/food-preferences
+2026-09-25 22:42:14.203545-0500 0xff8a8a   Default     0x0                  92575  0    Runner: (Flutter) flutter:   => /settings/dietary-preference
+2026-09-25 22:42:14.203578-0500 0xff8a8a   Default     0x0                  92575  0    Runner: (Flutter) flutter:   => /settings/allergies
+2026-09-25 22:42:14.203611-0500 0xff8a8a   Default     0x0                  92575  0    Runner: (Flutter) flutter:   => /settings/running-details
+2026-09-25 22:42:14.203638-0500 0xff8a8a   Default     0x0                  92575  0    Runner: (Flutter) flutter:   => /settings/cycling-details
+2026-09-25 22:42:14.203699-0500 0xff8a8a   Default     0x0                  92575  0    Runner: (Flutter) flutter:   => /settings/swimming-details
+2026-09-25 22:42:14.203730-0500 0xff8a8a   Default     0x0                  92575  0    Runner: (Flutter) flutter:   => /settings/food-preferences/add-food
+2026-09-25 22:42:14.203767-0500 0xff8a8a   Default     0x0                  92575  0    Runner: (Flutter) flutter:   => /settings/food-preferences/formula-library
+2026-09-25 22:42:14.203814-0500 0xff8a8a   Default     0x0                  92575  0    Runner: (Flutter) flutter:   =>   /settings/food-preferences/formula-library/before/:id
+2026-09-25 22:42:14.203842-0500 0xff8a8a   Default     0x0                  92575  0    Runner: (Flutter) flutter:   =>   /settings/food-preferences/formula-library/during/:id
+2026-09-25 22:42:14.203867-0500 0xff8a8a   Default     0x0                  92575  0    Runner: (Flutter) flutter:   =>   /settings/food-preferences/formula-library/after/:id
+2026-09-25 22:42:14.203900-0500 0xff8a8a   Default     0x0                  92575  0    Runner: (Flutter) flutter:   =>   /settings/food-preferences/formula-library/personal/create
+2026-09-25 22:42:14.203931-0500 0xff8a8a   Default     0x0                  92575  0    Runner: (Flutter) flutter:   =>   /settings/food-preferences/formula-library/personal/:id
+2026-09-25 22:42:14.203969-0500 0xff8a8a   Default     0x0                  92575  0    Runner: (Flutter) flutter:   => /help
+2026-09-25 22:42:14.204006-0500 0xff8a8a   Default     0x0                  92575  0    Runner: (Flutter) flutter:   => /swap-food
+2026-09-25 22:42:14.204040-0500 0xff8a8a   Default     0x0                  92575  0    Runner: (Flutter) flutter:   => /barcode-scanner
+2026-09-25 22:42:14.204071-0500 0xff8a8a   Default     0x0                  92575  0    Runner: (Flutter) flutter:   => /food-detail
+2026-09-25 22:42:14.204101-0500 0xff8a8a   Default     0x0                  92575  0    Runner: (Flutter) flutter:   => /carb-loading-select-food
+2026-09-25 22:42:14.204137-0500 0xff8a8a   Default     0x0                  92575  0    Runner: (Flutter) flutter:   => /create-custom-carb-loading-food
+2026-09-25 22:42:14.204175-0500 0xff8a8a   Default     0x0                  92575  0    Runner: (Flutter) flutter:   => /coach
+2026-09-25 22:42:14.204209-0500 0xff8a8a   Default     0x0                  92575  0    Runner: (Flutter) flutter:   => /coach/athlete/:relationshipId
+2026-09-25 22:42:14.204244-0500 0xff8a8a   Default     0x0                  92575  0    Runner: (Flutter) flutter:   => /my-coaches
+2026-09-25 22:42:14.204285-0500 0xff8a8a   Default     0x0                  92575  0    Runner: (Flutter) flutter:   => /athlete/feedback
+2026-09-25 22:42:14.204320-0500 0xff8a8a   Default     0x0                  92575  0    Runner: (Flutter) flutter:   => /coach/apply
+2026-09-25 22:42:14.204355-0500 0xff8a8a   Default     0x0                  92575  0    Runner: (Flutter) flutter:   => /coach-directory
+2026-09-25 22:42:14.204396-0500 0xff8a8a   Default     0x0                  92575  0    Runner: (Flutter) flutter:   => /chat/:relationshipId
+2026-09-25 22:42:14.204430-0500 0xff8a8a   Default     0x0                  92575  0    Runner: (Flutter) flutter:   => /meal-log/edit
+2026-09-25 22:42:14.204462-0500 0xff8a8a   Default     0x0                  92575  0    Runner: (Flutter) flutter:   => /meal-log/manual
+2026-09-25 22:42:14.204492-0500 0xff8a8a   Default     0x0                  92575  0    Runner: (Flutter) flutter:   => /meal-log/photo
+2026-09-25 22:42:14.204526-0500 0xff8a8a   Default     0x0                  92575  0    Runner: (Flutter) flutter:   => /meal-log/describe
+2026-09-25 22:42:14.204561-0500 0xff8a8a   Default     0x0                  92575  0    Runner: (Flutter) flutter:   => /meal-log/review
+2026-09-25 22:42:14.204592-0500 0xff8a8a   Default     0x0                  92575  0    Runner: (Flutter) flutter:   => /meal-log/recent-saved
+2026-09-25 22:42:14.204625-0500 0xff8a8a   Default     0x0                  92575  0    Runner: (Flutter) flutter:   => /meal-log/recipe
+2026-09-25 22:42:14.204666-0500 0xff8a8a   Default     0x0                  92575  0    Runner: (Flutter) flutter:   => /food
+2026-09-25 22:42:14.204701-0500 0xff8a8a   Default     0x0                  92575  0    Runner: (Flutter) flutter:   =>   /food/meals/recents
+2026-09-25 22:42:14.204737-0500 0xff8a8a   Default     0x0                  92575  0    Runner: (Flutter) flutter:   =>   /food/meals/:id
+2026-09-25 22:42:14.204765-0500 0xff8a8a   Default     0x0                  92575  0    Runner: (Flutter) flutter:   =>   /food/cook/:id
+2026-09-25 22:42:14.204796-0500 0xff8a8a   Default     0x0                  92575  0    Runner: (Flutter) flutter:   =>   /food/swap/:planMealId
+2026-09-25 22:42:14.204825-0500 0xff8a8a   Default     0x0                  92575  0    Runner: (Flutter) flutter:   =>   /food/kroger/:planId
+2026-09-25 22:42:14.204857-0500 0xff8a8a   Default     0x0                  92575  0    Runner: (Flutter) flutter:   =>   /food/plans/:id
+2026-09-25 22:42:14.204888-0500 0xff8a8a   Default     0x0                  92575  0    Runner: (Flutter) flutter:   => /vana
+2026-09-25 22:42:14.204919-0500 0xff8a8a   Default     0x0                  92575  0    Runner: (Flutter) flutter:   =>   /vana/browse
+2026-09-25 22:42:14.204987-0500 0xff8a8a   Default     0x0                  92575  0    Runner: (Flutter) flutter:   =>   /vana/conversations
+2026-09-25 22:42:14.205017-0500 0xff8a8a   Default     0x0                  92575  0    Runner: (Flutter) flutter:   => /settings/vana
+2026-09-25 22:42:14.205049-0500 0xff8a8a   Default     0x0                  92575  0    Runner: (Flutter) flutter:   => /jade
+2026-09-25 22:42:14.205080-0500 0xff8a8a   Default     0x0                  92575  0    Runner: (Flutter) flutter: known full paths for route names:
+2026-09-25 22:42:14.205107-0500 0xff8a8a   Default     0x0                  92575  0    Runner: (Flutter) flutter:   privacy-consent => /privacy-consent
+2026-09-25 22:42:14.205135-0500 0xff8a8a   Default     0x0                  92575  0    Runner: (Flutter) flutter:   force-upgrade => /force-upgrade
+2026-09-25 22:42:14.205166-0500 0xff8a8a   Default     0x0                  92575  0    Runner: (Flutter) flutter:   welcome => /welcome
+2026-09-25 22:42:14.205197-0500 0xff8a8a   Default     0x0                  92575  0    Runner: (Flutter) flutter:   onboarding => /onboarding
+2026-09-25 22:42:14.205247-0500 0xff8a8a   Default     0x0                  92575  0    Runner: (Flutter) flutter:   auth-post-onboarding => /auth/post-onboarding
+2026-09-25 22:42:14.205276-0500 0xff8a8a   Default     0x0                  92575  0    Runner: (Flutter) flutter:   auth-email-signup => /auth/email-signup
+2026-09-25 22:42:14.205306-0500 0xff8a8a   Default     0x0                  92575  0    Runner: (Flutter) flutter:   auth-email-login => /auth/email-login
+2026-09-25 22:42:14.205357-0500 0xff8a8a   Default     0x0                  92575  0    Runner: (Flutter) flutter:   auth-forgot-password => /auth/forgot-password
+2026-09-25 22:42:14.205384-0500 0xff8a8a   Default     0x0                  92575  0    Runner: (Flutter) flutter:   auth-verify-reset-code => /auth/verify-reset-code
+2026-09-25 22:42:14.205424-0500 0xff8a8a   Default     0x0                  92575  0    Runner: (Flutter) flutter:   auth-set-new-password => /auth/set-new-password
+2026-09-25 22:42:14.205465-0500 0xff8a8a   Default     0x0                  92575  0    Runner: (Flutter) flutter:   distancepacegut => /distancepacegut
+2026-09-25 22:42:14.205526-0500 0xff8a8a   Default     0x0                  92575  0    Runner: (Flutter) flutter:   distance-pace-gut-entry => /distance-pace-gut-entry
+2026-09-25 22:42:14.205562-0500 0xff8a8a   Default     0x0                  92575  0    Runner: (Flutter) flutter:   main => /main
+2026-09-25 22:42:14.205591-0500 0xff8a8a   Default     0x0                  92575  0    Runner: (Flutter) flutter:   coach-portal => /coach-portal
+2026-09-25 22:42:14.205621-0500 0xff8a8a   Default     0x0                  92575  0    Runner: (Flutter) flutter:   plan => /plan
+2026-09-25 22:42:14.205646-0500 0xff8a8a   Default     0x0                  92575  0    Runner: (Flutter) flutter:   current-plan => /current-plan
+2026-09-25 22:42:14.205675-0500 0xff8a8a   Default     0x0                  92575  0    Runner: (Flutter) flutter:   fuel-log => /fuel-log
+2026-09-25 22:42:14.205706-0500 0xff8a8a   Default     0x0                  92575  0    Runner: (Flutter) flutter:   adjust-macros => /adjust-macros
+2026-09-25 22:42:14.205739-0500 0xff8a8a   Default     0x0                  92575  0    Runner: (Flutter) flutter:   learn => /learn
+2026-09-25 22:42:14.205769-0500 0xff8a8a   Default     0x0                  92575  0    Runner: (Flutter) flutter:   learn-video => /learn/video
+2026-09-25 22:42:14.205798-0500 0xff8a8a   Default     0x0                  92575  0    Runner: (Flutter) flutter:   events-list => /events
+2026-09-25 22:42:14.205861-0500 0xff8a8a   Default     0x0                  92575  0    Runner: (Flutter) flutter:   events-create => /events/create
+2026-09-25 22:42:14.205890-0500 0xff8a8a   Default     0x0                  92575  0    Runner: (Flutter) flutter:   event-detail => /events/:eventId
+2026-09-25 22:42:14.205920-0500 0xff8a8a   Default     0x0                  92575  0    Runner: (Flutter) flutter:   race-checklist => /events/:eventId/checklist
+2026-09-25 22:42:14.205945-0500 0xff8a8a   Default     0x0                  92575  0    Runner: (Flutter) flutter:   paywall => /paywall
+2026-09-25 22:42:14.205970-0500 0xff8a8a   Default     0x0                  92575  0    Runner: (Flutter) flutter:   buy-credits => /buy-credits
+2026-09-25 22:42:14.205998-0500 0xff8a8a   Default     0x0                  92575  0    Runner: (Flutter) flutter:   settings => /settings
+2026-09-25 22:42:14.206027-0500 0xff8a8a   Default     0x0                  92575  0    Runner: (Flutter) flutter:   settings-connected-apps => /settings/connected-apps
+2026-09-25 22:42:14.206055-0500 0xff8a8a   Default     0x0                  92575  0    Runner: (Flutter) flutter:   settings-privacy => /settings/privacy
+2026-09-25 22:42:14.206083-0500 0xff8a8a   Default     0x0                  92575  0    Runner: (Flutter) flutter:   settings-preferences => /settings/preferences
+2026-09-25 22:42:14.206111-0500 0xff8a8a   Default     0x0                  92575  0    Runner: (Flutter) flutter:   settings-sweat-profile => /settings/sweat-profile
+2026-09-25 22:42:14.206141-0500 0xff8a8a   Default     0x0                  92575  0    Runner: (Flutter) flutter:   settings-sport-settings => /settings/sport-settings
+2026-09-25 22:42:14.206171-0500 0xff8a8a   Default     0x0                  92575  0    Runner: (Flutter) flutter:   settings-food-preferences-hub => /settings/food-preferences-hub
+2026-09-25 22:42:14.206203-0500 0xff8a8a   Default     0x0                  92575  0    Runner: (Flutter) flutter:   settings-sport-preferences-hub => /settings/sport-preferences-hub
+2026-09-25 22:42:14.206231-0500 0xff8a8a   Default     0x0                  92575  0    Runner: (Flutter) flutter:   settings-nutrition-targets => /settings/nutrition-targets
+2026-09-25 22:42:14.206258-0500 0xff8a8a   Default     0x0                  92575  0    Runner: (Flutter) flutter:   settings-nutrition-profile => /settings/nutrition-profile
+2026-09-25 22:42:14.206287-0500 0xff8a8a   Default     0x0                  92575  0    Runner: (Flutter) flutter:   settings-templates => /settings/templates
+2026-09-25 22:42:14.206313-0500 0xff8a8a   Default     0x0                  92575  0    Runner: (Flutter) flutter:   settings-coach-connection => /settings/coach-connection
+2026-09-25 22:42:14.206349-0500 0xff8a8a   Default     0x0                  92575  0    Runner: (Flutter) flutter:   settings-food-preferences-consolidated => /settings/food-preferences-consolidated
+2026-09-25 22:42:14.206381-0500 0xff8a8a   Default     0x0                  92575  0    Runner: (Flutter) flutter:   settings-food-preferences => /settings/food-preferences
+2026-09-25 22:42:14.206407-0500 0xff8a8a   Default     0x0                  92575  0    Runner: (Flutter) flutter:   settings-dietary-preference => /settings/dietary-preference
+2026-09-25 22:42:14.206436-0500 0xff8a8a   Default     0x0                  92575  0    Runner: (Flutter) flutter:   settings-allergies => /settings/allergies
+2026-09-25 22:42:14.206464-0500 0xff8a8a   Default     0x0                  92575  0    Runner: (Flutter) flutter:   settings-running-details => /settings/running-details
+2026-09-25 22:42:14.206491-0500 0xff8a8a   Default     0x0                  92575  0    Runner: (Flutter) flutter:   settings-cycling-details => /settings/cycling-details
+2026-09-25 22:42:14.206519-0500 0xff8a8a   Default     0x0                  92575  0    Runner: (Flutter) flutter:   settings-swimming-details => /settings/swimming-details
+2026-09-25 22:42:14.206548-0500 0xff8a8a   Default     0x0                  92575  0    Runner: (Flutter) flutter:   settings-add-food => /settings/food-preferences/add-food
+2026-09-25 22:42:14.206577-0500 0xff8a8a   Default     0x0                  92575  0    Runner: (Flutter) flutter:   settings-formula-library => /settings/food-preferences/formula-library
+2026-09-25 22:42:14.206602-0500 0xff8a8a   Default     0x0                  92575  0    Runner: (Flutter) flutter:   settings-formula-detail-before => /settings/food-preferences/formula-library/before/:id
+2026-09-25 22:42:14.206630-0500 0xff8a8a   Default     0x0                  92575  0    Runner: (Flutter) flutter:   settings-formula-detail-during => /settings/food-preferences/formula-library/during/:id
+2026-09-25 22:42:14.206661-0500 0xff8a8a   Default     0x0                  92575  0    Runner: (Flutter) flutter:   settings-formula-detail-after => /settings/food-preferences/formula-library/after/:id
+2026-09-25 22:42:14.206690-0500 0xff8a8a   Default     0x0                  92575  0    Runner: (Flutter) flutter:   settings-formula-personal-create => /settings/food-preferences/formula-library/personal/create
+2026-09-25 22:42:14.206722-0500 0xff8a8a   Default     0x0                  92575  0    Runner: (Flutter) flutter:   settings-formula-personal-edit => /settings/food-preferences/formula-library/personal/:id
+2026-09-25 22:42:14.206755-0500 0xff8a8a   Default     0x0                  92575  0    Runner: (Flutter) flutter:   help-feedback => /help
+2026-09-25 22:42:14.206834-0500 0xff8a8a   Default     0x0                  92575  0    Runner: (Flutter) flutter:   swap-food => /swap-food
+2026-09-25 22:42:14.206861-0500 0xff8a8a   Default     0x0                  92575  0    Runner: (Flutter) flutter:   barcode-scanner => /barcode-scanner
+2026-09-25 22:42:14.206890-0500 0xff8a8a   Default     0x0                  92575  0    Runner: (Flutter) flutter:   food-detail => /food-detail
+2026-09-25 22:42:14.206917-0500 0xff8a8a   Default     0x0                  92575  0    Runner: (Flutter) flutter:   carb-loading-select-food => /carb-loading-select-food
+2026-09-25 22:42:14.206947-0500 0xff8a8a   Default     0x0                  92575  0    Runner: (Flutter) flutter:   create-custom-carb-loading-food => /create-custom-carb-loading-food
+2026-09-25 22:42:14.206973-0500 0xff8a8a   Default     0x0                  92575  0    Runner: (Flutter) flutter:   coach-dashboard => /coach
+2026-09-25 22:42:14.206998-0500 0xff8a8a   Default     0x0                  92575  0    Runner: (Flutter) flutter:   coach-athlete-detail => /coach/athlete/:relationshipId
+2026-09-25 22:42:14.207027-0500 0xff8a8a   Default     0x0                  92575  0    Runner: (Flutter) flutter:   my-coaches => /my-coaches
+2026-09-25 22:42:14.207057-0500 0xff8a8a   Default     0x0                  92575  0    Runner: (Flutter) flutter:   athlete-feedback => /athlete/feedback
+2026-09-25 22:42:14.207088-0500 0xff8a8a   Default     0x0                  92575  0    Runner: (Flutter) flutter:   coach-apply => /coach/apply
+2026-09-25 22:42:14.207126-0500 0xff8a8a   Default     0x0                  92575  0    Runner: (Flutter) flutter:   coach-directory => /coach-directory
+2026-09-25 22:42:14.207153-0500 0xff8a8a   Default     0x0                  92575  0    Runner: (Flutter) flutter:   coach-chat => /chat/:relationshipId
+2026-09-25 22:42:14.207188-0500 0xff8a8a   Default     0x0                  92575  0    Runner: (Flutter) flutter:   meal-log-edit => /meal-log/edit
+2026-09-25 22:42:14.207216-0500 0xff8a8a   Default     0x0                  92575  0    Runner: (Flutter) flutter:   meal-log-manual => /meal-log/manual
+2026-09-25 22:42:14.207248-0500 0xff8a8a   Default     0x0                  92575  0    Runner: (Flutter) flutter:   meal-log-photo => /meal-log/photo
+2026-09-25 22:42:14.207277-0500 0xff8a8a   Default     0x0                  92575  0    Runner: (Flutter) flutter:   meal-log-describe => /meal-log/describe
+2026-09-25 22:42:14.207306-0500 0xff8a8a   Default     0x0                  92575  0    Runner: (Flutter) flutter:   meal-log-review => /meal-log/review
+2026-09-25 22:42:14.207333-0500 0xff8a8a   Default     0x0                  92575  0    Runner: (Flutter) flutter:   meal-log-recent-saved => /meal-log/recent-saved
+2026-09-25 22:42:14.207359-0500 0xff8a8a   Default     0x0                  92575  0    Runner: (Flutter) flutter:   meal-log-recipe => /meal-log/recipe
+2026-09-25 22:42:14.207387-0500 0xff8a8a   Default     0x0                  92575  0    Runner: (Flutter) flutter:   food => /food
+2026-09-25 22:42:14.207420-0500 0xff8a8a   Default     0x0                  92575  0    Runner: (Flutter) flutter:   food-meals-recents => /food/meals/recents
+2026-09-25 22:42:14.207454-0500 0xff8a8a   Default     0x0                  92575  0    Runner: (Flutter) flutter:   food-meal-detail => /food/meals/:id
+2026-09-25 22:42:14.207485-0500 0xff8a8a   Default     0x0                  92575  0    Runner: (Flutter) flutter:   food-cooking-mode => /food/cook/:id
+2026-09-25 22:42:14.207513-0500 0xff8a8a   Default     0x0                  92575  0    Runner: (Flutter) flutter:   food-swap-meal => /food/swap/:planMealId
+2026-09-25 22:42:14.207544-0500 0xff8a8a   Default     0x0                  92575  0    Runner: (Flutter) flutter:   food-kroger => /food/kroger/:planId
+2026-09-25 22:42:14.207573-0500 0xff8a8a   Default     0x0                  92575  0    Runner: (Flutter) flutter:   food-previous-plan => /food/plans/:id
+2026-09-25 22:42:14.207605-0500 0xff8a8a   Default     0x0                  92575  0    Runner: (Flutter) flutter:   vana-chat => /vana
+2026-09-25 22:42:14.207638-0500 0xff8a8a   Default     0x0                  92575  0    Runner: (Flutter) flutter:   vana-browse => /vana/browse
+2026-09-25 22:42:14.207666-0500 0xff8a8a   Default     0x0                  92575  0    Runner: (Flutter) flutter:   vana-conversations => /vana/conversations
+2026-09-25 22:42:14.207771-0500 0xff8a8a   Default     0x0                  92575  0    Runner: (Flutter) flutter:   settings-vana => /settings/vana
+2026-09-25 22:42:14.207802-0500 0xff8a8a   Default     0x0                  92575  0    Runner: (Flutter) flutter:   jade-chat => /jade
+2026-09-25 22:42:14.207829-0500 0xff8a8a   Default     0x0                  92575  0    Runner: (Flutter) flutter:
+2026-09-25 22:42:14.210812-0500 0xff8a8a   Default     0x0                  92575  0    Runner: (Flutter) flutter: GoRouter: INFO: setting initial location /
+2026-09-25 22:42:14.730663-0500 0xff8a8a   Default     0x0                  92575  0    Runner: (Flutter) flutter: [RevenueCatService] configured {store: test_store}
+2026-09-25 22:42:15.062253-0500 0xff8a8a   Default     0x0                  92575  0    Runner: (Flutter) flutter: [SubscriptionService] customer info updated {active: false, expires_at: null}
+2026-09-25 22:42:16.012562-0500 0xff8a8a   Default     0x0                  92575  0    Runner: (Flutter) flutter: GoRouter: INFO: No initial matches: /
+2026-09-25 22:42:16.030562-0500 0xff8a8a   Default     0x0                  92575  0    Runner: (Flutter) flutter: GoRouter: INFO: redirecting to RouteMatchList(/welcome)
+2026-09-25 22:42:16.053977-0500 0xff8a8a   Default     0x0                  92575  0    Runner: (Flutter) flutter: 📊 [ANALYTICS] app_opened {device_id: DBE9C549-9EBF-4194-A5D3-F64F49697DCA, session_id: 98295a1d-b5ee-475e-9e64-513da8a6e026, timestamp: 2026-09-25T22:42:16.053640}
+2026-09-25 22:42:16.068331-0500 0xff8a8a   Default     0x0                  92575  0    Runner: (Flutter) flutter: GoRouter: INFO: Using MaterialApp configuration
+2026-09-25 22:42:57.977376-0500 0xff8a8a   Default     0x0                  92575  0    Runner: (Flutter) flutter: 📊 [ANALYTICS] welcome_get_started_tapped {}
+2026-09-25 22:42:57.993789-0500 0xff8a8a   Default     0x0                  92575  0    Runner: (Flutter) flutter: GoRouter: INFO: pushing /onboarding
+2026-09-25 22:42:58.080721-0500 0xff8a8a   Default     0x0                  92575  0    Runner: (Flutter) flutter: 📊 [ANALYTICS] screen_viewed {screen_name: Sports Selection Onboarding, step_index: 0}
+2026-09-25 22:43:08.391785-0500 0xff8a8a   Default     0x0                  92575  0    Runner: (Flutter) flutter: 📊 [ANALYTICS] sports_selected {sports: [running], running: true, cycling: false, swimming: false, triathlon: false, count: 1}
+2026-09-25 22:43:08.393213-0500 0xff8a8a   Default     0x0                  92575  0    Runner: (Flutter) flutter: 📊 [ANALYTICS] onboarding_step_completed {step_name: sports_selection, step_index: 0}
+2026-09-25 22:43:08.454451-0500 0xff8a8a   Default     0x0                  92575  0    Runner: (Flutter) flutter: 📊 [ANALYTICS] screen_viewed {screen_name: Goals Onboarding, step_index: 1}
+2026-09-25 22:43:15.222932-0500 0xff8a8a   Default     0x0                  92575  0    Runner: (Flutter) flutter: 📊 [ANALYTICS] goals_selected {goals: [performance], count: 1}
+2026-09-25 22:43:15.223630-0500 0xff8a8a   Default     0x0                  92575  0    Runner: (Flutter) flutter: 📊 [ANALYTICS] onboarding_step_completed {step_name: goals, step_index: 1}
+2026-09-25 22:43:15.255857-0500 0xff8a8a   Default     0x0                  92575  0    Runner: (Flutter) flutter: 📊 [ANALYTICS] screen_viewed {screen_name: Pitfalls Onboarding, step_index: 2}
+2026-09-25 22:43:21.857993-0500 0xff8a8a   Default     0x0                  92575  0    Runner: (Flutter) flutter: 📊 [ANALYTICS] pitfalls_selected {pitfalls: [energy_crash], count: 1}
+2026-09-25 22:43:21.858989-0500 0xff8a8a   Default     0x0                  92575  0    Runner: (Flutter) flutter: 📊 [ANALYTICS] onboarding_step_completed {step_name: pitfalls, step_index: 2}
+2026-09-25 22:43:21.904618-0500 0xff8a8a   Default     0x0                  92575  0    Runner: (Flutter) flutter: 📊 [ANALYTICS] screen_viewed {screen_name: Connect Training Onboarding, step_index: 3}
+2026-09-25 22:43:21.944019-0500 0xff8a8a   Default     0x0                  92575  0    Runner: (Flutter) flutter: 🆕 Generated new temp user ID for onboarding: 6671e07a-6cb2-4702-9055-16077d5ff129
+2026-09-25 22:43:21.944212-0500 0xff8a8a   Default     0x0                  92575  0    Runner: (Flutter) flutter: 🔑 ConnectTrainingController: Using temp user ID: 6671e07a-6cb2-4702-9055-16077d5ff129
+2026-09-25 22:43:21.944253-0500 0xff8a8a   Default     0x0                  92575  0    Runner: (Flutter) flutter:    (user profile exists: false, onboardingCompleted: null)
+2026-09-25 22:43:21.944284-0500 0xff8a8a   Default     0x0                  92575  0    Runner: (Flutter) flutter:    (auth user: null, resolved user: null)
+2026-09-25 22:43:26.927408-0500 0xff8a8a   Default     0x0                  92575  0    Runner: (Flutter) flutter: 📊 [ANALYTICS] onboarding_step_completed {step_name: connect_training, step_index: 3}
+2026-09-25 22:43:27.016781-0500 0xff8a8a   Default     0x0                  92575  0    Runner: (Flutter) flutter: 📊 [ANALYTICS] screen_viewed {screen_name: Personal Info Onboarding, step_index: 4}
+2026-09-25 22:43:41.473485-0500 0xff8a8a   Default     0x0                  92575  0    Runner: (Flutter) flutter: 📊 [ANALYTICS] onboarding_step_completed {step_name: personal_info, step_index: 4}
+2026-09-25 22:43:41.504019-0500 0xff8a8a   Default     0x0                  92575  0    Runner: (Flutter) flutter: 📊 [ANALYTICS] screen_viewed {screen_name: Body Composition Onboarding, step_index: 5}
+2026-09-25 22:43:46.956681-0500 0xff8a8a   Default     0x0                  92575  0    Runner: (Flutter) flutter: 📊 [ANALYTICS] onboarding_step_completed {step_name: body_composition, step_index: 5}
+2026-09-25 22:43:47.108590-0500 0xff8a8a   Default     0x0                  92575  0    Runner: (Flutter) flutter: 📊 [ANALYTICS] screen_viewed {screen_name: Nutrition Settings Onboarding, step_index: 6}
+2026-09-25 22:43:53.724988-0500 0xff8a8a   Default     0x0                  92575  0    Runner: (Flutter) flutter: 📊 [ANALYTICS] onboarding_step_completed {step_name: nutrition_settings, step_index: 6}
+2026-09-25 22:43:53.806156-0500 0xff8a8a   Default     0x0                  92575  0    Runner: (Flutter) flutter: 📊 [ANALYTICS] screen_viewed {screen_name: Plan Reveal Onboarding, step_index: 7}
+2026-09-25 22:43:56.698764-0500 0xff8a8a   Default     0x0                  92575  0    Runner: (Flutter) flutter: 📊 [ANALYTICS] plan_preview_viewed {is_generic: false, used_training_data: false}
+2026-09-25 22:44:00.701482-0500 0xff8a8a   Default     0x0                  92575  0    Runner: (Flutter) flutter: 📊 [ANALYTICS] onboarding_step_completed {step_name: plan_reveal, step_index: 7}
+2026-09-25 22:44:00.767386-0500 0xff8a8a   Default     0x0                  92575  0    Runner: (Flutter) flutter: 📊 [ANALYTICS] screen_viewed {screen_name: Daily Plan Preview Onboarding, step_index: 8}
+2026-09-25 22:44:00.768338-0500 0xff8a8a   Default     0x0                  92575  0    Runner: (Flutter) flutter: 📊 [ANALYTICS] daily_preview_tab_viewed {tab: workout}
+2026-09-25 22:44:07.365952-0500 0xff8a8a   Default     0x0                  92575  0    Runner: (Flutter) flutter: 📊 [ANALYTICS] onboarding_step_completed {step_name: daily_plan_preview, step_index: 8}
+2026-09-25 22:44:07.367395-0500 0xff8a8a   Default     0x0                  92575  0    Runner: (Flutter) flutter: 📊 [ANALYTICS] onboarding_completed {step_count: 9, duration_sec: 69}
+2026-09-25 22:44:07.368517-0500 0xff8a8a   Default     0x0                  92575  0    Runner: (Flutter) flutter: GoRouter: INFO: pushing /auth/post-onboarding
+2026-09-25 22:44:07.397011-0500 0xff8a8a   Default     0x0                  92575  0    Runner: (Flutter) flutter: 📊 [ANALYTICS] screen_viewed {screen_name: Post-Onboarding Auth, mode: signup}
+2026-09-25 22:44:07.633949-0500 0xff8a8a   Default     0x0                  92575  0    Runner: (Flutter) flutter: [RevenueCatService] offerings served {offerings: credits(3), default(2), current: default}
+2026-09-25 22:44:07.635118-0500 0xff8a8a   Default     0x0                  92575  0    Runner: (Flutter) flutter: [SubscriptionService] offerings fetched {current: default, available: credits,default}
+2026-09-25 22:44:14.229845-0500 0xff8a8a   Default     0x0                  92575  0    Runner: (Flutter) flutter: GoRouter: INFO: pushing /auth/email-signup
+2026-09-25 22:44:14.251833-0500 0xff8a8a   Default     0x0                  92575  0    Runner: (Flutter) flutter: 📊 [ANALYTICS] screen_viewed {screen_name: Email Signup}
+2026-09-25 22:45:04.330471-0500 0xff8a8a   Default     0x0                  92575  0    Runner: (Flutter) flutter: 📊 [ANALYTICS] auth_flow_started {provider: email, source: post_onboarding_signup}
+2026-09-25 22:45:05.543878-0500 0xff8a8a   Default     0x0                  92575  0    Runner: (Flutter) flutter: 📊 [ANALYTICS] email_verification_required {user_id: 9863748e-3404-41a0-8fa0-2019d37a9537}
+2026-09-25 22:45:16.872081-0500 0xff8a8a   Default     0x0                  92575  0    Runner: (Flutter) flutter: 📊 [ANALYTICS] email_verification_completed {user_id: 9863748e-3404-41a0-8fa0-2019d37a9537, otp_type: signup}
+2026-09-25 22:45:16.903286-0500 0xff8a8a   Default     0x0                  92575  0    Runner: (Flutter) flutter: GoRouter: INFO: popping /welcome
+2026-09-25 22:45:16.923901-0500 0xff8a8a   Default     0x0                  92575  0    Runner: (Flutter) flutter: [SubscriptionService] customer info updated {active: false, expires_at: null}
+2026-09-25 22:45:17.137091-0500 0xff8a8a   Default     0x0                  92575  0    Runner: (Flutter) flutter: 📊 [ANALYTICS] user_registered {device_id: DBE9C549-9EBF-4194-A5D3-F64F49697DCA, timestamp: 2026-09-25T22:45:17.136780, registration_source: onboarding}
+2026-09-25 22:45:17.429280-0500 0xff8a8a   Default     0x0                  92575  0    Runner: (Flutter) flutter: [RevenueCatService] logged in
+2026-09-25 22:45:17.446565-0500 0xff8a8a   Default     0x0                  92575  0    Runner: (Flutter) flutter: [SubscriptionService] customer info fetched {active: false, expires_at: null, is_trial: false}
+2026-09-25 22:45:17.608456-0500 0xff8a8a   Default     0x0                  92575  0    Runner: (Flutter) flutter: ℹ️ No active Garmin integration to sync mapping for
+2026-09-25 22:45:17.614358-0500 0xff8a8a   Default     0x0                  92575  0    Runner: (Flutter) flutter: 📊 [ANALYTICS] dietary_preference_saved {preference: omnivore, skipped: false}
+2026-09-25 22:45:17.617023-0500 0xff8a8a   Default     0x0                  92575  0    Runner: (Flutter) flutter: 📊 [ANALYTICS] allergies_saved {allergies: [], count: 0, skipped: true}
+2026-09-25 22:45:17.629690-0500 0xff8a8a   Default     0x0                  92575  0    Runner: (Flutter) flutter: [SubscriptionService] customer info updated {active: false, expires_at: null}
+2026-09-25 22:45:17.633390-0500 0xff8a8a   Default     0x0                  92575  0    Runner: (Flutter) flutter: [SubscriptionService] customer info fetched {active: false, expires_at: null, is_trial: false}
+2026-09-25 22:45:17.784666-0500 0xff8a8a   Default     0x0                  92575  0    Runner: (Flutter) flutter: GoRouter: INFO: going to /paywall?onboarding=1
+2026-09-25 22:46:00.684648-0500 0xff8a8a   Default     0x0                  92575  0    Runner: (Flutter) flutter: [RevenueCatService] logIn skipped: already identified
+2026-09-25 22:46:00.686748-0500 0xff8a8a   Default     0x0                  92575  0    Runner: (Flutter) flutter: [RevenueCatService] purchase started {sku: mealvana_pro_monthly}
+2026-09-25 22:46:08.939924-0500 0xff8a8a   Default     0x0                  92575  0    Runner: (Flutter) flutter: [SubscriptionService] customer info updated {active: true, expires_at: 2026-09-26T03:51:08.000Z}
+2026-09-25 22:46:08.942272-0500 0xff8a8a   Default     0x0                  92575  0    Runner: (Flutter) flutter: [RevenueCatService] purchase succeeded {sku: mealvana_pro_monthly}
+2026-09-25 22:46:08.970118-0500 0xff8a8a   Default     0x0                  92575  0    Runner: (Flutter) flutter: GoRouter: INFO: redirecting to RouteMatchList(/main)
+2026-09-25 22:46:08.971160-0500 0xff8a8a   Default     0x0                  92575  0    Runner: (Flutter) flutter: [SubscriptionService] customer info fetched {active: true, expires_at: 2026-09-26T03:51:08.000Z, is_trial: false}
+2026-09-25 22:46:31.822477-0500 0xff8a8a   Default     0x0                  92575  0    Runner: (Flutter) flutter: 📊 [ANALYTICS] log_meal_opened {source: macro_dashboard, log_date: 2026-09-25, is_today: true}
+2026-09-25 22:46:31.822741-0500 0xff8a8a   Default     0x0                  92575  0    Runner: (Flutter) flutter: 📊 [ANALYTICS] diary_opened {source: macro_dashboard, log_date: 2026-09-25, is_today: true}
+2026-09-25 22:46:37.354684-0500 0xff8a8a   Default     0x0                  92575  0    Runner: (Flutter) flutter: 📊 [ANALYTICS] log_method_selected {method: manual}
+2026-09-25 22:47:03.846717-0500 0xff8a8a   Default     0x0                  92575  0    Runner: (Flutter) flutter: 📊 [ANALYTICS] meal_logged {slot: snack, source: manual, method: manual, log_date: 2026-09-25}
+2026-09-25 22:47:14.327455-0500 0xff8a8a   Default     0x0                  92575  0    Runner: (Flutter) flutter: 📊 [ANALYTICS] diary_closed {duration_sec: 42, items_logged: 1, log_date: 2026-09-25}
+2026-09-25 22:47:16.566282-0500 0xff8a8a   Default     0x0                  92575  0    Runner: (Flutter) flutter: GoRouter: INFO: pushing /settings
+2026-09-25 22:47:22.761511-0500 0xff8a8a   Default     0x0                  92575  0    Runner: (Flutter) flutter: 📊 [ANALYTICS] settings_subscription_tapped {}
+2026-09-25 22:47:22.872083-0500 0xff8a8a   Default     0x0                  92575  0    Runner: (Flutter) flutter: [SubscriptionService] customer info cache invalidated
+2026-09-25 22:47:22.974346-0500 0xff8a8a   Default     0x0                  92575  0    Runner: (Flutter) flutter: [SubscriptionService] customer info fetched {active: true, expires_at: 2026-09-26T03:51:08.000Z, is_trial: false}
+2026-09-25 22:48:18.476705-0500 0xffefec   Default     0x0                  95347  0    Runner: (Flutter) flutter: The Dart VM service is listening on http://127.0.0.1:55314/aCDkrMx-6Yc=/
+2026-09-25 22:48:18.502151-0500 0xffef90   Default     0x0                  95347  0    Runner: (Flutter) Plugin AppLinksIosPlugin uses deprecated application lifecycle events. Please contact plugin maintainers and request UIScene lifecycle support. This will be required in a future version of Flutter. See https://docs.flutter.dev/release/breaking-changes/uiscenedelegate#migration-guide-for-flutter-plugins
+2026-09-25 22:48:18.513137-0500 0xffef90   Default     0x0                  95347  0    Runner: (Flutter) Plugin FlutterWebAuth2Plugin uses deprecated application lifecycle events. Please contact plugin maintainers and request UIScene lifecycle support. This will be required in a future version of Flutter. See https://docs.flutter.dev/release/breaking-changes/uiscenedelegate#migration-guide-for-flutter-plugins
+2026-09-25 22:48:18.546245-0500 0xffef90   Default     0x0                  95347  0    Runner: (Flutter) Plugin FLTGoogleSignInPlugin uses deprecated application lifecycle events. Please contact plugin maintainers and request UIScene lifecycle support. This will be required in a future version of Flutter. See https://docs.flutter.dev/release/breaking-changes/uiscenedelegate#migration-guide-for-flutter-plugins
+2026-09-25 22:48:20.307242-0500 0xffef90   Default     0x0                  95347  0    Runner: (Flutter) flutter: supabase.supabase_flutter: INFO: ***** Supabase init completed *****
+2026-09-25 22:48:20.474390-0500 0xffef90   Default     0x0                  95347  0    Runner: (Flutter) flutter: GoRouter: INFO: Full paths for routes:
+2026-09-25 22:48:20.474463-0500 0xffef90   Default     0x0                  95347  0    Runner: (Flutter) flutter:   => /privacy-consent
+2026-09-25 22:48:20.474496-0500 0xffef90   Default     0x0                  95347  0    Runner: (Flutter) flutter:   => /force-upgrade
+2026-09-25 22:48:20.474544-0500 0xffef90   Default     0x0                  95347  0    Runner: (Flutter) flutter:   => /welcome
+2026-09-25 22:48:20.474601-0500 0xffef90   Default     0x0                  95347  0    Runner: (Flutter) flutter:   => /onboarding
+2026-09-25 22:48:20.474643-0500 0xffef90   Default     0x0                  95347  0    Runner: (Flutter) flutter:   => /auth/post-onboarding
+2026-09-25 22:48:20.474693-0500 0xffef90   Default     0x0                  95347  0    Runner: (Flutter) flutter:   => /auth/email-signup
+2026-09-25 22:48:20.474732-0500 0xffef90   Default     0x0                  95347  0    Runner: (Flutter) flutter:   => /auth/email-login
+2026-09-25 22:48:20.474770-0500 0xffef90   Default     0x0                  95347  0    Runner: (Flutter) flutter:   => /auth/forgot-password
+2026-09-25 22:48:20.474809-0500 0xffef90   Default     0x0                  95347  0    Runner: (Flutter) flutter:   => /auth/verify-reset-code
+2026-09-25 22:48:20.474842-0500 0xffef90   Default     0x0                  95347  0    Runner: (Flutter) flutter:   => /auth/set-new-password
+2026-09-25 22:48:20.474878-0500 0xffef90   Default     0x0                  95347  0    Runner: (Flutter) flutter:   => /distancepacegut
+2026-09-25 22:48:20.474913-0500 0xffef90   Default     0x0                  95347  0    Runner: (Flutter) flutter:   => /distance-pace-gut-entry
+2026-09-25 22:48:20.474944-0500 0xffef90   Default     0x0                  95347  0    Runner: (Flutter) flutter:   => /main
+2026-09-25 22:48:20.474977-0500 0xffef90   Default     0x0                  95347  0    Runner: (Flutter) flutter:   => /coach-portal
+2026-09-25 22:48:20.475022-0500 0xffef90   Default     0x0                  95347  0    Runner: (Flutter) flutter:   => /plan
+2026-09-25 22:48:20.475078-0500 0xffef90   Default     0x0                  95347  0    Runner: (Flutter) flutter:   => /current-plan
+2026-09-25 22:48:20.475118-0500 0xffef90   Default     0x0                  95347  0    Runner: (Flutter) flutter:   => /fuel-log
+2026-09-25 22:48:20.475164-0500 0xffef90   Default     0x0                  95347  0    Runner: (Flutter) flutter:   => /adjust-macros
+2026-09-25 22:48:20.475215-0500 0xffef90   Default     0x0                  95347  0    Runner: (Flutter) flutter:   => /learn
+2026-09-25 22:48:20.475245-0500 0xffef90   Default     0x0                  95347  0    Runner: (Flutter) flutter:   => /learn/video
+2026-09-25 22:48:20.475279-0500 0xffef90   Default     0x0                  95347  0    Runner: (Flutter) flutter:   => /events
+2026-09-25 22:48:20.475315-0500 0xffef90   Default     0x0                  95347  0    Runner: (Flutter) flutter:   => /events/create
+2026-09-25 22:48:20.475346-0500 0xffef90   Default     0x0                  95347  0    Runner: (Flutter) flutter:   => /events/:eventId
+2026-09-25 22:48:20.475377-0500 0xffef90   Default     0x0                  95347  0    Runner: (Flutter) flutter:   => /events/:eventId/checklist
+2026-09-25 22:48:20.475409-0500 0xffef90   Default     0x0                  95347  0    Runner: (Flutter) flutter:   => /paywall
+2026-09-25 22:48:20.475439-0500 0xffef90   Default     0x0                  95347  0    Runner: (Flutter) flutter:   => /buy-credits
+2026-09-25 22:48:20.475472-0500 0xffef90   Default     0x0                  95347  0    Runner: (Flutter) flutter:   => /settings
+2026-09-25 22:48:20.475501-0500 0xffef90   Default     0x0                  95347  0    Runner: (Flutter) flutter:   => /settings/connected-apps
+2026-09-25 22:48:20.475531-0500 0xffef90   Default     0x0                  95347  0    Runner: (Flutter) flutter:   => /settings/privacy
+2026-09-25 22:48:20.475561-0500 0xffef90   Default     0x0                  95347  0    Runner: (Flutter) flutter:   => /settings/preferences
+2026-09-25 22:48:20.475590-0500 0xffef90   Default     0x0                  95347  0    Runner: (Flutter) flutter:   => /settings/sweat-profile
+2026-09-25 22:48:20.475618-0500 0xffef90   Default     0x0                  95347  0    Runner: (Flutter) flutter:   => /settings/sport-settings
+2026-09-25 22:48:20.475652-0500 0xffef90   Default     0x0                  95347  0    Runner: (Flutter) flutter:   => /settings/food-preferences-hub
+2026-09-25 22:48:20.475680-0500 0xffef90   Default     0x0                  95347  0    Runner: (Flutter) flutter:   => /settings/sport-preferences-hub
+2026-09-25 22:48:20.475716-0500 0xffef90   Default     0x0                  95347  0    Runner: (Flutter) flutter:   => /settings/nutrition-targets
+2026-09-25 22:48:20.475752-0500 0xffef90   Default     0x0                  95347  0    Runner: (Flutter) flutter:   => /settings/nutrition-profile
+2026-09-25 22:48:20.475795-0500 0xffef90   Default     0x0                  95347  0    Runner: (Flutter) flutter:   => /settings/templates
+2026-09-25 22:48:20.475854-0500 0xffef90   Default     0x0                  95347  0    Runner: (Flutter) flutter:   => /settings/coach-connection
+2026-09-25 22:48:20.475895-0500 0xffef90   Default     0x0                  95347  0    Runner: (Flutter) flutter:   => /settings/food-preferences-consolidated
+2026-09-25 22:48:20.475939-0500 0xffef90   Default     0x0                  95347  0    Runner: (Flutter) flutter:   => /settings/food-preferences
+2026-09-25 22:48:20.475972-0500 0xffef90   Default     0x0                  95347  0    Runner: (Flutter) flutter:   => /settings/dietary-preference
+2026-09-25 22:48:20.476005-0500 0xffef90   Default     0x0                  95347  0    Runner: (Flutter) flutter:   => /settings/allergies
+2026-09-25 22:48:20.476044-0500 0xffef90   Default     0x0                  95347  0    Runner: (Flutter) flutter:   => /settings/running-details
+2026-09-25 22:48:20.476075-0500 0xffef90   Default     0x0                  95347  0    Runner: (Flutter) flutter:   => /settings/cycling-details
+2026-09-25 22:48:20.476115-0500 0xffef90   Default     0x0                  95347  0    Runner: (Flutter) flutter:   => /settings/swimming-details
+2026-09-25 22:48:20.476156-0500 0xffef90   Default     0x0                  95347  0    Runner: (Flutter) flutter:   => /settings/food-preferences/add-food
+2026-09-25 22:48:20.476199-0500 0xffef90   Default     0x0                  95347  0    Runner: (Flutter) flutter:   => /settings/food-preferences/formula-library
+2026-09-25 22:48:20.476229-0500 0xffef90   Default     0x0                  95347  0    Runner: (Flutter) flutter:   =>   /settings/food-preferences/formula-library/before/:id
+2026-09-25 22:48:20.476268-0500 0xffef90   Default     0x0                  95347  0    Runner: (Flutter) flutter:   =>   /settings/food-preferences/formula-library/during/:id
+2026-09-25 22:48:20.476301-0500 0xffef90   Default     0x0                  95347  0    Runner: (Flutter) flutter:   =>   /settings/food-preferences/formula-library/after/:id
+2026-09-25 22:48:20.476334-0500 0xffef90   Default     0x0                  95347  0    Runner: (Flutter) flutter:   =>   /settings/food-preferences/formula-library/personal/create
+2026-09-25 22:48:20.476368-0500 0xffef90   Default     0x0                  95347  0    Runner: (Flutter) flutter:   =>   /settings/food-preferences/formula-library/personal/:id
+2026-09-25 22:48:20.476406-0500 0xffef90   Default     0x0                  95347  0    Runner: (Flutter) flutter:   => /help
+2026-09-25 22:48:20.476441-0500 0xffef90   Default     0x0                  95347  0    Runner: (Flutter) flutter:   => /swap-food
+2026-09-25 22:48:20.476473-0500 0xffef90   Default     0x0                  95347  0    Runner: (Flutter) flutter:   => /barcode-scanner
+2026-09-25 22:48:20.476503-0500 0xffef90   Default     0x0                  95347  0    Runner: (Flutter) flutter:   => /food-detail
+2026-09-25 22:48:20.476535-0500 0xffef90   Default     0x0                  95347  0    Runner: (Flutter) flutter:   => /carb-loading-select-food
+2026-09-25 22:48:20.476566-0500 0xffef90   Default     0x0                  95347  0    Runner: (Flutter) flutter:   => /create-custom-carb-loading-food
+2026-09-25 22:48:20.476595-0500 0xffef90   Default     0x0                  95347  0    Runner: (Flutter) flutter:   => /coach
+2026-09-25 22:48:20.476631-0500 0xffef90   Default     0x0                  95347  0    Runner: (Flutter) flutter:   => /coach/athlete/:relationshipId
+2026-09-25 22:48:20.476661-0500 0xffef90   Default     0x0                  95347  0    Runner: (Flutter) flutter:   => /my-coaches
+2026-09-25 22:48:20.476691-0500 0xffef90   Default     0x0                  95347  0    Runner: (Flutter) flutter:   => /athlete/feedback
+2026-09-25 22:48:20.476751-0500 0xffef90   Default     0x0                  95347  0    Runner: (Flutter) flutter:   => /coach/apply
+2026-09-25 22:48:20.476779-0500 0xffef90   Default     0x0                  95347  0    Runner: (Flutter) flutter:   => /coach-directory
+2026-09-25 22:48:20.476807-0500 0xffef90   Default     0x0                  95347  0    Runner: (Flutter) flutter:   => /chat/:relationshipId
+2026-09-25 22:48:20.476837-0500 0xffef90   Default     0x0                  95347  0    Runner: (Flutter) flutter:   => /meal-log/edit
+2026-09-25 22:48:20.476872-0500 0xffef90   Default     0x0                  95347  0    Runner: (Flutter) flutter:   => /meal-log/manual
+2026-09-25 22:48:20.476900-0500 0xffef90   Default     0x0                  95347  0    Runner: (Flutter) flutter:   => /meal-log/photo
+2026-09-25 22:48:20.476928-0500 0xffef90   Default     0x0                  95347  0    Runner: (Flutter) flutter:   => /meal-log/describe
+2026-09-25 22:48:20.476956-0500 0xffef90   Default     0x0                  95347  0    Runner: (Flutter) flutter:   => /meal-log/review
+2026-09-25 22:48:20.476981-0500 0xffef90   Default     0x0                  95347  0    Runner: (Flutter) flutter:   => /meal-log/recent-saved
+2026-09-25 22:48:20.477013-0500 0xffef90   Default     0x0                  95347  0    Runner: (Flutter) flutter:   => /meal-log/recipe
+2026-09-25 22:48:20.477044-0500 0xffef90   Default     0x0                  95347  0    Runner: (Flutter) flutter:   => /food
+2026-09-25 22:48:20.477079-0500 0xffef90   Default     0x0                  95347  0    Runner: (Flutter) flutter:   =>   /food/meals/recents
+2026-09-25 22:48:20.477112-0500 0xffef90   Default     0x0                  95347  0    Runner: (Flutter) flutter:   =>   /food/meals/:id
+2026-09-25 22:48:20.477141-0500 0xffef90   Default     0x0                  95347  0    Runner: (Flutter) flutter:   =>   /food/cook/:id
+2026-09-25 22:48:20.477172-0500 0xffef90   Default     0x0                  95347  0    Runner: (Flutter) flutter:   =>   /food/swap/:planMealId
+2026-09-25 22:48:20.477203-0500 0xffef90   Default     0x0                  95347  0    Runner: (Flutter) flutter:   =>   /food/kroger/:planId
+2026-09-25 22:48:20.477233-0500 0xffef90   Default     0x0                  95347  0    Runner: (Flutter) flutter:   =>   /food/plans/:id
+2026-09-25 22:48:20.477261-0500 0xffef90   Default     0x0                  95347  0    Runner: (Flutter) flutter:   => /vana
+2026-09-25 22:48:20.477296-0500 0xffef90   Default     0x0                  95347  0    Runner: (Flutter) flutter:   =>   /vana/browse
+2026-09-25 22:48:20.477322-0500 0xffef90   Default     0x0                  95347  0    Runner: (Flutter) flutter:   =>   /vana/conversations
+2026-09-25 22:48:20.477352-0500 0xffef90   Default     0x0                  95347  0    Runner: (Flutter) flutter:   => /settings/vana
+2026-09-25 22:48:20.477382-0500 0xffef90   Default     0x0                  95347  0    Runner: (Flutter) flutter:   => /jade
+2026-09-25 22:48:20.477413-0500 0xffef90   Default     0x0                  95347  0    Runner: (Flutter) flutter: known full paths for route names:
+2026-09-25 22:48:20.477444-0500 0xffef90   Default     0x0                  95347  0    Runner: (Flutter) flutter:   privacy-consent => /privacy-consent
+2026-09-25 22:48:20.477470-0500 0xffef90   Default     0x0                  95347  0    Runner: (Flutter) flutter:   force-upgrade => /force-upgrade
+2026-09-25 22:48:20.477504-0500 0xffef90   Default     0x0                  95347  0    Runner: (Flutter) flutter:   welcome => /welcome
+2026-09-25 22:48:20.477531-0500 0xffef90   Default     0x0                  95347  0    Runner: (Flutter) flutter:   onboarding => /onboarding
+2026-09-25 22:48:20.477558-0500 0xffef90   Default     0x0                  95347  0    Runner: (Flutter) flutter:   auth-post-onboarding => /auth/post-onboarding
+2026-09-25 22:48:20.477585-0500 0xffef90   Default     0x0                  95347  0    Runner: (Flutter) flutter:   auth-email-signup => /auth/email-signup
+2026-09-25 22:48:20.477616-0500 0xffef90   Default     0x0                  95347  0    Runner: (Flutter) flutter:   auth-email-login => /auth/email-login
+2026-09-25 22:48:20.477644-0500 0xffef90   Default     0x0                  95347  0    Runner: (Flutter) flutter:   auth-forgot-password => /auth/forgot-password
+2026-09-25 22:48:20.477674-0500 0xffef90   Default     0x0                  95347  0    Runner: (Flutter) flutter:   auth-verify-reset-code => /auth/verify-reset-code
+2026-09-25 22:48:20.477711-0500 0xffef90   Default     0x0                  95347  0    Runner: (Flutter) flutter:   auth-set-new-password => /auth/set-new-password
+2026-09-25 22:48:20.477741-0500 0xffef90   Default     0x0                  95347  0    Runner: (Flutter) flutter:   distancepacegut => /distancepacegut
+2026-09-25 22:48:20.477767-0500 0xffef90   Default     0x0                  95347  0    Runner: (Flutter) flutter:   distance-pace-gut-entry => /distance-pace-gut-entry
+2026-09-25 22:48:20.477800-0500 0xffef90   Default     0x0                  95347  0    Runner: (Flutter) flutter:   main => /main
+2026-09-25 22:48:20.477835-0500 0xffef90   Default     0x0                  95347  0    Runner: (Flutter) flutter:   coach-portal => /coach-portal
+2026-09-25 22:48:20.477864-0500 0xffef90   Default     0x0                  95347  0    Runner: (Flutter) flutter:   plan => /plan
+2026-09-25 22:48:20.477890-0500 0xffef90   Default     0x0                  95347  0    Runner: (Flutter) flutter:   current-plan => /current-plan
+2026-09-25 22:48:20.477928-0500 0xffef90   Default     0x0                  95347  0    Runner: (Flutter) flutter:   fuel-log => /fuel-log
+2026-09-25 22:48:20.477955-0500 0xffef90   Default     0x0                  95347  0    Runner: (Flutter) flutter:   adjust-macros => /adjust-macros
+2026-09-25 22:48:20.477982-0500 0xffef90   Default     0x0                  95347  0    Runner: (Flutter) flutter:   learn => /learn
+2026-09-25 22:48:20.478008-0500 0xffef90   Default     0x0                  95347  0    Runner: (Flutter) flutter:   learn-video => /learn/video
+2026-09-25 22:48:20.478040-0500 0xffef90   Default     0x0                  95347  0    Runner: (Flutter) flutter:   events-list => /events
+2026-09-25 22:48:20.478072-0500 0xffef90   Default     0x0                  95347  0    Runner: (Flutter) flutter:   events-create => /events/create
+2026-09-25 22:48:20.478099-0500 0xffef90   Default     0x0                  95347  0    Runner: (Flutter) flutter:   event-detail => /events/:eventId
+2026-09-25 22:48:20.478135-0500 0xffef90   Default     0x0                  95347  0    Runner: (Flutter) flutter:   race-checklist => /events/:eventId/checklist
+2026-09-25 22:48:20.478168-0500 0xffef90   Default     0x0                  95347  0    Runner: (Flutter) flutter:   paywall => /paywall
+2026-09-25 22:48:20.478199-0500 0xffef90   Default     0x0                  95347  0    Runner: (Flutter) flutter:   buy-credits => /buy-credits
+2026-09-25 22:48:20.478227-0500 0xffef90   Default     0x0                  95347  0    Runner: (Flutter) flutter:   settings => /settings
+2026-09-25 22:48:20.478257-0500 0xffef90   Default     0x0                  95347  0    Runner: (Flutter) flutter:   settings-connected-apps => /settings/connected-apps
+2026-09-25 22:48:20.478291-0500 0xffef90   Default     0x0                  95347  0    Runner: (Flutter) flutter:   settings-privacy => /settings/privacy
+2026-09-25 22:48:20.478326-0500 0xffef90   Default     0x0                  95347  0    Runner: (Flutter) flutter:   settings-preferences => /settings/preferences
+2026-09-25 22:48:20.478355-0500 0xffef90   Default     0x0                  95347  0    Runner: (Flutter) flutter:   settings-sweat-profile => /settings/sweat-profile
+2026-09-25 22:48:20.478384-0500 0xffef90   Default     0x0                  95347  0    Runner: (Flutter) flutter:   settings-sport-settings => /settings/sport-settings
+2026-09-25 22:48:20.478414-0500 0xffef90   Default     0x0                  95347  0    Runner: (Flutter) flutter:   settings-food-preferences-hub => /settings/food-preferences-hub
+2026-09-25 22:48:20.478447-0500 0xffef90   Default     0x0                  95347  0    Runner: (Flutter) flutter:   settings-sport-preferences-hub => /settings/sport-preferences-hub
+2026-09-25 22:48:20.478476-0500 0xffef90   Default     0x0                  95347  0    Runner: (Flutter) flutter:   settings-nutrition-targets => /settings/nutrition-targets
+2026-09-25 22:48:20.478512-0500 0xffef90   Default     0x0                  95347  0    Runner: (Flutter) flutter:   settings-nutrition-profile => /settings/nutrition-profile
+2026-09-25 22:48:20.478541-0500 0xffef90   Default     0x0                  95347  0    Runner: (Flutter) flutter:   settings-templates => /settings/templates
+2026-09-25 22:48:20.478575-0500 0xffef90   Default     0x0                  95347  0    Runner: (Flutter) flutter:   settings-coach-connection => /settings/coach-connection
+2026-09-25 22:48:20.478606-0500 0xffef90   Default     0x0                  95347  0    Runner: (Flutter) flutter:   settings-food-preferences-consolidated => /settings/food-preferences-consolidated
+2026-09-25 22:48:20.478632-0500 0xffef90   Default     0x0                  95347  0    Runner: (Flutter) flutter:   settings-food-preferences => /settings/food-preferences
+2026-09-25 22:48:20.478665-0500 0xffef90   Default     0x0                  95347  0    Runner: (Flutter) flutter:   settings-dietary-preference => /settings/dietary-preference
+2026-09-25 22:48:20.478695-0500 0xffef90   Default     0x0                  95347  0    Runner: (Flutter) flutter:   settings-allergies => /settings/allergies
+2026-09-25 22:48:20.478725-0500 0xffef90   Default     0x0                  95347  0    Runner: (Flutter) flutter:   settings-running-details => /settings/running-details
+2026-09-25 22:48:20.478756-0500 0xffef90   Default     0x0                  95347  0    Runner: (Flutter) flutter:   settings-cycling-details => /settings/cycling-details
+2026-09-25 22:48:20.478790-0500 0xffef90   Default     0x0                  95347  0    Runner: (Flutter) flutter:   settings-swimming-details => /settings/swimming-details
+2026-09-25 22:48:20.478817-0500 0xffef90   Default     0x0                  95347  0    Runner: (Flutter) flutter:   settings-add-food => /settings/food-preferences/add-food
+2026-09-25 22:48:20.478848-0500 0xffef90   Default     0x0                  95347  0    Runner: (Flutter) flutter:   settings-formula-library => /settings/food-preferences/formula-library
+2026-09-25 22:48:20.478916-0500 0xffef90   Default     0x0                  95347  0    Runner: (Flutter) flutter:   settings-formula-detail-before => /settings/food-preferences/formula-library/before/:id
+2026-09-25 22:48:20.478978-0500 0xffef90   Default     0x0                  95347  0    Runner: (Flutter) flutter:   settings-formula-detail-during => /settings/food-preferences/formula-library/during/:id
+2026-09-25 22:48:20.479013-0500 0xffef90   Default     0x0                  95347  0    Runner: (Flutter) flutter:   settings-formula-detail-after => /settings/food-preferences/formula-library/after/:id
+2026-09-25 22:48:20.479045-0500 0xffef90   Default     0x0                  95347  0    Runner: (Flutter) flutter:   settings-formula-personal-create => /settings/food-preferences/formula-library/personal/create
+2026-09-25 22:48:20.479074-0500 0xffef90   Default     0x0                  95347  0    Runner: (Flutter) flutter:   settings-formula-personal-edit => /settings/food-preferences/formula-library/personal/:id
+2026-09-25 22:48:20.479104-0500 0xffef90   Default     0x0                  95347  0    Runner: (Flutter) flutter:   help-feedback => /help
+2026-09-25 22:48:20.479132-0500 0xffef90   Default     0x0                  95347  0    Runner: (Flutter) flutter:   swap-food => /swap-food
+2026-09-25 22:48:20.479161-0500 0xffef90   Default     0x0                  95347  0    Runner: (Flutter) flutter:   barcode-scanner => /barcode-scanner
+2026-09-25 22:48:20.479190-0500 0xffef90   Default     0x0                  95347  0    Runner: (Flutter) flutter:   food-detail => /food-detail
+2026-09-25 22:48:20.479217-0500 0xffef90   Default     0x0                  95347  0    Runner: (Flutter) flutter:   carb-loading-select-food => /carb-loading-select-food
+2026-09-25 22:48:20.479246-0500 0xffef90   Default     0x0                  95347  0    Runner: (Flutter) flutter:   create-custom-carb-loading-food => /create-custom-carb-loading-food
+2026-09-25 22:48:20.479274-0500 0xffef90   Default     0x0                  95347  0    Runner: (Flutter) flutter:   coach-dashboard => /coach
+2026-09-25 22:48:20.479300-0500 0xffef90   Default     0x0                  95347  0    Runner: (Flutter) flutter:   coach-athlete-detail => /coach/athlete/:relationshipId
+2026-09-25 22:48:20.479334-0500 0xffef90   Default     0x0                  95347  0    Runner: (Flutter) flutter:   my-coaches => /my-coaches
+2026-09-25 22:48:20.479366-0500 0xffef90   Default     0x0                  95347  0    Runner: (Flutter) flutter:   athlete-feedback => /athlete/feedback
+2026-09-25 22:48:20.479397-0500 0xffef90   Default     0x0                  95347  0    Runner: (Flutter) flutter:   coach-apply => /coach/apply
+2026-09-25 22:48:20.479452-0500 0xffef90   Default     0x0                  95347  0    Runner: (Flutter) flutter:   coach-directory => /coach-directory
+2026-09-25 22:48:20.479478-0500 0xffef90   Default     0x0                  95347  0    Runner: (Flutter) flutter:   coach-chat => /chat/:relationshipId
+2026-09-25 22:48:20.479508-0500 0xffef90   Default     0x0                  95347  0    Runner: (Flutter) flutter:   meal-log-edit => /meal-log/edit
+2026-09-25 22:48:20.479537-0500 0xffef90   Default     0x0                  95347  0    Runner: (Flutter) flutter:   meal-log-manual => /meal-log/manual
+2026-09-25 22:48:20.479572-0500 0xffef90   Default     0x0                  95347  0    Runner: (Flutter) flutter:   meal-log-photo => /meal-log/photo
+2026-09-25 22:48:20.479601-0500 0xffef90   Default     0x0                  95347  0    Runner: (Flutter) flutter:   meal-log-describe => /meal-log/describe
+2026-09-25 22:48:20.479629-0500 0xffef90   Default     0x0                  95347  0    Runner: (Flutter) flutter:   meal-log-review => /meal-log/review
+2026-09-25 22:48:20.479681-0500 0xffef90   Default     0x0                  95347  0    Runner: (Flutter) flutter:   meal-log-recent-saved => /meal-log/recent-saved
+2026-09-25 22:48:20.479717-0500 0xffef90   Default     0x0                  95347  0    Runner: (Flutter) flutter:   meal-log-recipe => /meal-log/recipe
+2026-09-25 22:48:20.479745-0500 0xffef90   Default     0x0                  95347  0    Runner: (Flutter) flutter:   food => /food
+2026-09-25 22:48:20.479774-0500 0xffef90   Default     0x0                  95347  0    Runner: (Flutter) flutter:   food-meals-recents => /food/meals/recents
+2026-09-25 22:48:20.479808-0500 0xffef90   Default     0x0                  95347  0    Runner: (Flutter) flutter:   food-meal-detail => /food/meals/:id
+2026-09-25 22:48:20.479856-0500 0xffef90   Default     0x0                  95347  0    Runner: (Flutter) flutter:   food-cooking-mode => /food/cook/:id
+2026-09-25 22:48:20.479889-0500 0xffef90   Default     0x0                  95347  0    Runner: (Flutter) flutter:   food-swap-meal => /food/swap/:planMealId
+2026-09-25 22:48:20.479951-0500 0xffef90   Default     0x0                  95347  0    Runner: (Flutter) flutter:   food-kroger => /food/kroger/:planId
+2026-09-25 22:48:20.480006-0500 0xffef90   Default     0x0                  95347  0    Runner: (Flutter) flutter:   food-previous-plan => /food/plans/:id
+2026-09-25 22:48:20.480035-0500 0xffef90   Default     0x0                  95347  0    Runner: (Flutter) flutter:   vana-chat => /vana
+2026-09-25 22:48:20.480066-0500 0xffef90   Default     0x0                  95347  0    Runner: (Flutter) flutter:   vana-browse => /vana/browse
+2026-09-25 22:48:20.480102-0500 0xffef90   Default     0x0                  95347  0    Runner: (Flutter) flutter:   vana-conversations => /vana/conversations
+2026-09-25 22:48:20.480132-0500 0xffef90   Default     0x0                  95347  0    Runner: (Flutter) flutter:   settings-vana => /settings/vana
+2026-09-25 22:48:20.480162-0500 0xffef90   Default     0x0                  95347  0    Runner: (Flutter) flutter:   jade-chat => /jade
+2026-09-25 22:48:20.480191-0500 0xffef90   Default     0x0                  95347  0    Runner: (Flutter) flutter:
+2026-09-25 22:48:20.483477-0500 0xffef90   Default     0x0                  95347  0    Runner: (Flutter) flutter: GoRouter: INFO: setting initial location /
+2026-09-25 22:48:20.710524-0500 0xffef90   Default     0x0                  95347  0    Runner: (Flutter) flutter: [RevenueCatService] logIn waiting for configure
+2026-09-25 22:48:20.843316-0500 0xffef90   Default     0x0                  95347  0    Runner: (Flutter) flutter: [RevenueCatService] logIn waiting for configure
+2026-09-25 22:48:20.983196-0500 0xffef90   Default     0x0                  95347  0    Runner: (Flutter) flutter: [SubscriptionService] customer info updated {active: true, expires_at: 2026-09-26T03:51:08.000Z}
+2026-09-25 22:48:21.007760-0500 0xffef90   Default     0x0                  95347  0    Runner: (Flutter) flutter: [RevenueCatService] configured {store: test_store}
+2026-09-25 22:48:21.134252-0500 0xffef90   Default     0x0                  95347  0    Runner: (Flutter) flutter: [RevenueCatService] logIn skipped: already identified
+2026-09-25 22:48:21.220530-0500 0xffef90   Default     0x0                  95347  0    Runner: (Flutter) flutter: [SubscriptionService] customer info fetched {active: true, expires_at: 2026-09-26T03:51:08.000Z, is_trial: false}
+2026-09-25 22:48:21.223266-0500 0xffef90   Default     0x0                  95347  0    Runner: (Flutter) flutter: [SubscriptionService] customer info fetched {active: true, expires_at: 2026-09-26T03:51:08.000Z, is_trial: false}
+2026-09-25 22:48:21.536174-0500 0xffef90   Default     0x0                  95347  0    Runner: (Flutter) flutter: ✅ Schema validation passed (40 tables verified)
+2026-09-25 22:48:21.556464-0500 0xffef90   Default     0x0                  95347  0    Runner: (Flutter) flutter: [RevenueCatService] logIn skipped: already identified
+2026-09-25 22:48:21.562531-0500 0xffef90   Default     0x0                  95347  0    Runner: (Flutter) flutter: [SubscriptionService] customer info fetched {active: true, expires_at: 2026-09-26T03:51:08.000Z, is_trial: false}
+2026-09-25 22:48:21.592545-0500 0xffef90   Default     0x0                  95347  0    Runner: (Flutter) flutter: GoRouter: INFO: No initial matches: /
+2026-09-25 22:48:21.607127-0500 0xffef90   Default     0x0                  95347  0    Runner: (Flutter) flutter: GoRouter: INFO: redirecting to RouteMatchList(/main)
+2026-09-25 22:48:21.669341-0500 0xffef90   Default     0x0                  95347  0    Runner: (Flutter) flutter: GoRouter: INFO: Using MaterialApp configuration
+2026-09-25 22:48:21.840419-0500 0xffef90   Default     0x0                  95347  0    Runner: (Flutter) flutter: 📊 [ANALYTICS] app_opened {device_id: DBE9C549-9EBF-4194-A5D3-F64F49697DCA, session_id: 17dccd21-6368-48d8-8cec-d63e5b9ecb83, timestamp: 2026-09-25T22:48:21.840160}
+2026-09-25 22:48:30.585778-0500 0xffef90   Default     0x0                  95347  0    Runner: (Flutter) flutter: GoRouter: INFO: pushing /settings
+2026-09-25 22:48:32.858146-0500 0xffef90   Default     0x0                  95347  0    Runner: (Flutter) flutter: 📊 [ANALYTICS] settings_subscription_tapped {}
+2026-09-25 22:48:32.914343-0500 0xffef90   Default     0x0                  95347  0    Runner: (Flutter) flutter: [SubscriptionService] customer info cache invalidated
+2026-09-25 22:48:33.065144-0500 0xffef90   Default     0x0                  95347  0    Runner: (Flutter) flutter: [SubscriptionService] customer info fetched {active: true, expires_at: 2026-09-26T03:51:08.000Z, is_trial: false}
+2026-09-25 22:48:51.056783-0500 0xffef90   Default     0x0                  95347  0    Runner: (Flutter) flutter: 📊 [ANALYTICS] settings_subscription_tapped {}
+2026-09-25 22:48:51.084896-0500 0xffef90   Default     0x0                  95347  0    Runner: (Flutter) flutter: [SubscriptionService] customer info cache invalidated
+2026-09-25 22:48:51.220632-0500 0xffef90   Default     0x0                  95347  0    Runner: (Flutter) flutter: [SubscriptionService] customer info fetched {active: true, expires_at: 2026-09-26T03:51:08.000Z, is_trial: false}
+2026-09-25 22:51:08.038900-0500 0xffef90   Default     0x0                  95347  0    Runner: (Flutter) flutter: [SubscriptionService] customer info fetched {active: true, expires_at: 2026-09-26T03:51:08.000Z, is_trial: false}
+2026-09-25 22:51:08.046393-0500 0xffef90   Default     0x0                  95347  0    Runner: (Flutter) flutter: [SubscriptionService] customer info cache invalidated
+2026-09-25 22:51:08.550900-0500 0xffef90   Default     0x0                  95347  0    Runner: (Flutter) flutter: [SubscriptionService] customer info updated {active: true, expires_at: 2026-09-26T03:56:08.000Z}
+2026-09-25 22:51:08.553329-0500 0xffef90   Default     0x0                  95347  0    Runner: (Flutter) flutter: [SubscriptionService] customer info fetched {active: true, expires_at: 2026-09-26T03:56:08.000Z, is_trial: false}
+2026-09-25 22:52:16.424632-0500 0xffef90   Default     0x0                  95347  0    Runner: (Flutter) flutter: GoRouter: INFO: popping /main
+2026-09-25 22:56:08.068546-0500 0xffef90   Default     0x0                  95347  0    Runner: (Flutter) flutter: [SubscriptionService] customer info fetched {active: true, expires_at: 2026-09-26T03:56:08.000Z, is_trial: false}
+2026-09-25 22:56:08.075886-0500 0xffef90   Default     0x0                  95347  0    Runner: (Flutter) flutter: [SubscriptionService] customer info cache invalidated
+2026-09-25 22:56:08.566407-0500 0xffef90   Default     0x0                  95347  0    Runner: (Flutter) flutter: [SubscriptionService] customer info updated {active: true, expires_at: 2026-09-26T04:01:08.000Z}
+2026-09-25 22:56:08.568018-0500 0xffef90   Default     0x0                  95347  0    Runner: (Flutter) flutter: [SubscriptionService] customer info fetched {active: true, expires_at: 2026-09-26T04:01:08.000Z, is_trial: false}
+2026-09-25 23:01:08.053339-0500 0xffef90   Default     0x0                  95347  0    Runner: (Flutter) flutter: [SubscriptionService] customer info fetched {active: true, expires_at: 2026-09-26T04:01:08.000Z, is_trial: false}
+2026-09-25 23:01:08.061782-0500 0xffef90   Default     0x0                  95347  0    Runner: (Flutter) flutter: [SubscriptionService] customer info cache invalidated
+2026-09-25 23:01:08.682947-0500 0xffef90   Default     0x0                  95347  0    Runner: (Flutter) flutter: [SubscriptionService] customer info updated {active: true, expires_at: 2026-09-26T04:06:08.000Z}
+2026-09-25 23:01:08.685242-0500 0xffef90   Default     0x0                  95347  0    Runner: (Flutter) flutter: [SubscriptionService] customer info fetched {active: true, expires_at: 2026-09-26T04:06:08.000Z, is_trial: false}
+2026-09-25 23:06:08.082798-0500 0xffef90   Default     0x0                  95347  0    Runner: (Flutter) flutter: [SubscriptionService] customer info fetched {active: true, expires_at: 2026-09-26T04:06:08.000Z, is_trial: false}
+2026-09-25 23:06:08.090906-0500 0xffef90   Default     0x0                  95347  0    Runner: (Flutter) flutter: [SubscriptionService] customer info cache invalidated
+2026-09-25 23:06:08.651260-0500 0xffef90   Default     0x0                  95347  0    Runner: (Flutter) flutter: [SubscriptionService] customer info updated {active: true, expires_at: 2026-09-26T04:11:08.000Z}
+2026-09-25 23:06:08.652808-0500 0xffef90   Default     0x0                  95347  0    Runner: (Flutter) flutter: [SubscriptionService] customer info fetched {active: true, expires_at: 2026-09-26T04:11:08.000Z, is_trial: false}
+2026-09-25 23:06:37.015943-0500 0xffef90   Default     0x0                  95347  0    Runner: (Flutter) flutter: GoRouter: INFO: pushing /settings
+2026-09-25 23:06:38.707590-0500 0xffef90   Default     0x0                  95347  0    Runner: (Flutter) flutter: 📊 [ANALYTICS] settings_subscription_tapped {}
+2026-09-25 23:06:38.742560-0500 0xffef90   Default     0x0                  95347  0    Runner: (Flutter) flutter: [SubscriptionService] customer info cache invalidated
+2026-09-25 23:06:38.810849-0500 0xffef90   Default     0x0                  95347  0    Runner: (Flutter) flutter: [SubscriptionService] customer info fetched {active: true, expires_at: 2026-09-26T04:11:08.000Z, is_trial: false}
+2026-09-25 23:07:09.870610-0500 0xffef90   Default     0x0                  95347  0    Runner: (Flutter) flutter: GoRouter: INFO: popping /main
+2026-09-25 23:11:08.041059-0500 0xffef90   Default     0x0                  95347  0    Runner: (Flutter) flutter: [SubscriptionService] customer info fetched {active: true, expires_at: 2026-09-26T04:11:08.000Z, is_trial: false}
+2026-09-25 23:11:08.048686-0500 0xffef90   Default     0x0                  95347  0    Runner: (Flutter) flutter: [SubscriptionService] customer info cache invalidated
+2026-09-25 23:11:08.472821-0500 0xffef90   Default     0x0                  95347  0    Runner: (Flutter) flutter: [SubscriptionService] customer info fetched {active: false, expires_at: 2026-09-26T04:11:08.000Z, is_trial: false}
+2026-09-25 23:11:08.488625-0500 0xffef90   Default     0x0                  95347  0    Runner: (Flutter) flutter: GoRouter: INFO: redirecting to RouteMatchList(/paywall)
+2026-09-25 23:11:08.889210-0500 0xffef90   Default     0x0                  95347  0    Runner: (Flutter) flutter: [RevenueCatService] offerings served {offerings: default(2), credits(3), current: default}
+2026-09-25 23:11:08.899467-0500 0xffef90   Default     0x0                  95347  0    Runner: (Flutter) flutter: [SubscriptionService] offerings fetched {current: default, available: default,credits}
+2026-09-25 23:12:23.817475-0500 0xffef90   Default     0x0                  95347  0    Runner: (Flutter) flutter: [SubscriptionService] customer info cache invalidated
+2026-09-25 23:12:23.895219-0500 0xffef90   Default     0x0                  95347  0    Runner: (Flutter) flutter: [SubscriptionService] customer info fetched {active: false, expires_at: 2026-09-26T04:11:08.000Z, is_trial: false}
+2026-09-25 23:12:38.991111-0500 0xffef90   Default     0x0                  95347  0    Runner: (Flutter) flutter: [RevenueCatService] logIn skipped: already identified
+2026-09-25 23:12:38.998896-0500 0xffef90   Default     0x0                  95347  0    Runner: (Flutter) flutter: [SubscriptionService] restore completed {active: false}
+2026-09-25 23:12:39.026895-0500 0xffef90   Default     0x0                  95347  0    Runner: (Flutter) flutter: [SubscriptionService] customer info fetched {active: false, expires_at: 2026-09-26T04:11:08.000Z, is_trial: false}
+2026-09-25 23:13:11.044846-0500 0xffef90   Default     0x0                  95347  0    Runner: (Flutter) flutter: GoRouter: INFO: No initial matches: /settings/subscription
+2026-09-25 23:13:11.046924-0500 0xffef90   Default     0x0                  95347  0    Runner: (Flutter) flutter: GoRouter: INFO: redirecting to RouteMatchList(/paywall)
+2026-09-25 23:13:19.192570-0500 0xffef90   Default     0x0                  95347  0    Runner: (Flutter) flutter: GoRouter: INFO: redirecting to RouteMatchList(/paywall)
+2026-09-25 23:13:59.259875-0500 0xffef90   Default     0x0                  95347  0    Runner: (Flutter) flutter: 📊 [ANALYTICS] settings_sign_out_tapped {}
+2026-09-25 23:13:59.547453-0500 0xffef90   Default     0x0                  95347  0    Runner: (Flutter) flutter: [SubscriptionService] customer info updated {active: false, expires_at: null}
+2026-09-25 23:13:59.548031-0500 0xffef90   Default     0x0                  95347  0    Runner: (Flutter) flutter: [RevenueCatService] logged out
+2026-09-25 23:13:59.596233-0500 0xffef90   Default     0x0                  95347  0    Runner: (Flutter) flutter: supabase.auth: INFO: Signing out user with scope: SignOutScope.local
+2026-09-25 23:13:59.606227-0500 0xffef90   Default     0x0                  95347  0    Runner: (Flutter) flutter: 📊 [ANALYTICS] user_signed_out {timestamp: 2026-09-25T23:13:59.605955, was_onboarding_signout: false}
+2026-09-25 23:13:59.619346-0500 0xffef90   Default     0x0                  95347  0    Runner: (Flutter) flutter: [SubscriptionService] customer info updated {active: false, expires_at: null}
+2026-09-25 23:13:59.675135-0500 0xffef90   Default     0x0                  95347  0    Runner: (Flutter) flutter: GoRouter: INFO: redirecting to RouteMatchList(/welcome)
+2026-09-25 23:14:15.262029-0500 0xffef90   Default     0x0                  95347  0    Runner: (Flutter) flutter: 📊 [ANALYTICS] welcome_login_tapped {}
+2026-09-25 23:14:15.262248-0500 0xffef90   Default     0x0                  95347  0    Runner: (Flutter) flutter: GoRouter: INFO: pushing /auth/post-onboarding?mode=login
+2026-09-25 23:14:15.296862-0500 0xffef90   Default     0x0                  95347  0    Runner: (Flutter) flutter: 📊 [ANALYTICS] screen_viewed {screen_name: Post-Onboarding Auth, mode: login}
+2026-09-25 23:14:21.324559-0500 0xffef90   Default     0x0                  95347  0    Runner: (Flutter) flutter: GoRouter: INFO: pushing /auth/email-login
+2026-09-25 23:14:21.340802-0500 0xffef90   Default     0x0                  95347  0    Runner: (Flutter) flutter: 📊 [ANALYTICS] screen_viewed {screen_name: Email Login}
+2026-09-25 23:14:51.711243-0500 0xffef90   Default     0x0                  95347  0    Runner: (Flutter) flutter: 📊 [ANALYTICS] auth_flow_started {provider: email, source: post_onboarding_login}
+2026-09-25 23:14:52.217453-0500 0xffef90   Default     0x0                  95347  0    Runner: (Flutter) flutter: [SubscriptionService] customer info updated {active: false, expires_at: null}
+2026-09-25 23:14:52.581244-0500 0xffef90   Default     0x0                  95347  0    Runner: (Flutter) flutter: [SubscriptionService] customer info updated {active: false, expires_at: 2026-09-26T04:11:08.000Z}
+2026-09-25 23:14:52.586551-0500 0xffef90   Default     0x0                  95347  0    Runner: (Flutter) flutter: [RevenueCatService] logged in
+2026-09-25 23:14:52.597899-0500 0xffef90   Default     0x0                  95347  0    Runner: (Flutter) flutter: [SubscriptionService] customer info fetched {active: false, expires_at: 2026-09-26T04:11:08.000Z, is_trial: false}
+2026-09-25 23:14:53.060037-0500 0xffef90   Default     0x0                  95347  0    Runner: (Flutter) flutter: 📊 [ANALYTICS] email_sign_in_success {user_id: 9863748e-3404-41a0-8fa0-2019d37a9537, migrated_data: false}
+2026-09-25 23:14:53.926239-0500 0xffef90   Default     0x0                  95347  0    Runner: (Flutter) flutter: 📊 [ANALYTICS] auth_flow_completed {provider: email, source: post_onboarding_login}
+2026-09-25 23:14:53.930421-0500 0xffef90   Default     0x0                  95347  0    Runner: (Flutter) flutter: [SubscriptionService] customer info updated {active: false, expires_at: 2026-09-26T04:11:08.000Z}
+2026-09-25 23:14:53.931165-0500 0xffef90   Default     0x0                  95347  0    Runner: (Flutter) flutter: GoRouter: INFO: popping /welcome
+2026-09-25 23:14:54.046807-0500 0xffef90   Default     0x0                  95347  0    Runner: (Flutter) flutter: [SubscriptionService] customer info fetched {active: false, expires_at: 2026-09-26T04:11:08.000Z, is_trial: false}
+2026-09-25 23:14:54.128534-0500 0xffef90   Default     0x0                  95347  0    Runner: (Flutter) flutter: GoRouter: INFO: going to /main
+2026-09-25 23:14:54.129031-0500 0xffef90   Default     0x0                  95347  0    Runner: (Flutter) flutter: GoRouter: INFO: redirecting to RouteMatchList(/paywall)
+2026-09-25 23:14:54.155458-0500 0xffef90   Default     0x0                  95347  0    Runner: (Flutter) flutter: [RevenueCatService] offerings served {offerings: credits(3), default(2), current: default}
+2026-09-25 23:14:54.155677-0500 0xffef90   Default     0x0                  95347  0    Runner: (Flutter) flutter: [SubscriptionService] offerings fetched {current: default, available: credits,default}
+2026-09-25 23:14:55.819907-0500 0xffef90   Default     0x0                  95347  0    Runner: (Flutter) flutter: [RevenueCatService] logIn skipped: already identified
+2026-09-25 23:14:55.822495-0500 0xffef90   Default     0x0                  95347  0    Runner: (Flutter) flutter: [RevenueCatService] purchase started {sku: mealvana_pro_annual}
+2026-09-25 23:15:26.676979-0500 0xffef90   Default     0x0                  95347  0    Runner: (Flutter) flutter: [RevenueCatService] purchase cancelled by user (platform channel) {sku: mealvana_pro_annual}
+2026-09-25 23:15:35.391210-0500 0xffef90   Default     0x0                  95347  0    Runner: (Flutter) flutter: [RevenueCatService] logIn skipped: already identified
+2026-09-25 23:15:35.391822-0500 0xffef90   Default     0x0                  95347  0    Runner: (Flutter) flutter: [RevenueCatService] purchase started {sku: mealvana_pro_annual}
+2026-09-25 23:15:46.659692-0500 0xffef90   Default     0x0                  95347  0    Runner: (Flutter) flutter: [RevenueCatService] purchase cancelled by user (platform channel) {sku: mealvana_pro_annual}
+2026-09-25 23:15:49.186640-0500 0xffef90   Default     0x0                  95347  0    Runner: (Flutter) flutter: [RevenueCatService] logIn skipped: already identified
+2026-09-25 23:15:49.186925-0500 0xffef90   Default     0x0                  95347  0    Runner: (Flutter) flutter: [RevenueCatService] purchase started {sku: mealvana_pro_monthly}
+2026-09-25 23:15:52.389051-0500 0xffef90   Default     0x0                  95347  0    Runner: (Flutter) flutter: [RevenueCatService] purchase failed (unexpected): PlatformException(42, Purchase failure simulated successfully in Test Store., {code: 42, message: Purchase failure simulated successfully in Test Store., readable_error_code: TEST_STORE_SIMULATED_PURCHASE_ERROR, userCancelled: false, underlyingErrorMessage: , readableErrorCode: TEST_STORE_SIMULATED_PURCHASE_ERROR}, null)
+2026-09-25 23:16:15.344281-0500 0xffef90   Default     0x0                  95347  0    Runner: (Flutter) flutter: [RevenueCatService] logIn skipped: already identified
+2026-09-25 23:16:15.344752-0500 0xffef90   Default     0x0                  95347  0    Runner: (Flutter) flutter: [RevenueCatService] purchase started {sku: mealvana_pro_monthly}
+2026-09-25 23:16:20.945586-0500 0xffef90   Default     0x0                  95347  0    Runner: (Flutter) flutter: [SubscriptionService] customer info updated {active: true, expires_at: 2026-09-26T04:21:20.000Z}
+2026-09-25 23:16:20.948496-0500 0xffef90   Default     0x0                  95347  0    Runner: (Flutter) flutter: [RevenueCatService] purchase succeeded {sku: mealvana_pro_monthly}
+2026-09-25 23:16:20.982280-0500 0xffef90   Default     0x0                  95347  0    Runner: (Flutter) flutter: GoRouter: INFO: redirecting to RouteMatchList(/main)
+2026-09-25 23:16:20.983278-0500 0xffef90   Default     0x0                  95347  0    Runner: (Flutter) flutter: [SubscriptionService] customer info fetched {active: true, expires_at: 2026-09-26T04:21:20.000Z, is_trial: false}
+2026-09-25 23:37:08.543701-0500 0x1020204  Default     0x0                  9583   0    Runner: (Flutter) flutter: The Dart VM service is listening on http://127.0.0.1:53485/lsOn0jDxvgs=/
+2026-09-25 23:37:08.560663-0500 0x1020188  Default     0x0                  9583   0    Runner: (Flutter) Plugin AppLinksIosPlugin uses deprecated application lifecycle events. Please contact plugin maintainers and request UIScene lifecycle support. This will be required in a future version of Flutter. See https://docs.flutter.dev/release/breaking-changes/uiscenedelegate#migration-guide-for-flutter-plugins
+2026-09-25 23:37:08.569505-0500 0x1020188  Default     0x0                  9583   0    Runner: (Flutter) Plugin FlutterWebAuth2Plugin uses deprecated application lifecycle events. Please contact plugin maintainers and request UIScene lifecycle support. This will be required in a future version of Flutter. See https://docs.flutter.dev/release/breaking-changes/uiscenedelegate#migration-guide-for-flutter-plugins
+2026-09-25 23:37:08.581817-0500 0x1020188  Default     0x0                  9583   0    Runner: (Flutter) Plugin FLTGoogleSignInPlugin uses deprecated application lifecycle events. Please contact plugin maintainers and request UIScene lifecycle support. This will be required in a future version of Flutter. See https://docs.flutter.dev/release/breaking-changes/uiscenedelegate#migration-guide-for-flutter-plugins
+2026-09-25 23:37:10.593829-0500 0x1020188  Default     0x0                  9583   0    Runner: (Flutter) flutter: supabase.supabase_flutter: INFO: ***** Supabase init completed *****
+2026-09-25 23:37:10.750493-0500 0x1020188  Default     0x0                  9583   0    Runner: (Flutter) flutter: GoRouter: INFO: Full paths for routes:
+2026-09-25 23:37:10.751429-0500 0x1020188  Default     0x0                  9583   0    Runner: (Flutter) flutter:   => /privacy-consent
+2026-09-25 23:37:10.751664-0500 0x1020188  Default     0x0                  9583   0    Runner: (Flutter) flutter:   => /force-upgrade
+2026-09-25 23:37:10.751859-0500 0x1020188  Default     0x0                  9583   0    Runner: (Flutter) flutter:   => /welcome
+2026-09-25 23:37:10.751922-0500 0x1020188  Default     0x0                  9583   0    Runner: (Flutter) flutter:   => /onboarding
+2026-09-25 23:37:10.751963-0500 0x1020188  Default     0x0                  9583   0    Runner: (Flutter) flutter:   => /auth/post-onboarding
+2026-09-25 23:37:10.751998-0500 0x1020188  Default     0x0                  9583   0    Runner: (Flutter) flutter:   => /auth/email-signup
+2026-09-25 23:37:10.752202-0500 0x1020188  Default     0x0                  9583   0    Runner: (Flutter) flutter:   => /auth/email-login
+2026-09-25 23:37:10.752257-0500 0x1020188  Default     0x0                  9583   0    Runner: (Flutter) flutter:   => /auth/forgot-password
+2026-09-25 23:37:10.752456-0500 0x1020188  Default     0x0                  9583   0    Runner: (Flutter) flutter:   => /auth/verify-reset-code
+2026-09-25 23:37:10.752499-0500 0x1020188  Default     0x0                  9583   0    Runner: (Flutter) flutter:   => /auth/set-new-password
+2026-09-25 23:37:10.752535-0500 0x1020188  Default     0x0                  9583   0    Runner: (Flutter) flutter:   => /distancepacegut
+2026-09-25 23:37:10.752574-0500 0x1020188  Default     0x0                  9583   0    Runner: (Flutter) flutter:   => /distance-pace-gut-entry
+2026-09-25 23:37:10.752606-0500 0x1020188  Default     0x0                  9583   0    Runner: (Flutter) flutter:   => /main
+2026-09-25 23:37:10.752642-0500 0x1020188  Default     0x0                  9583   0    Runner: (Flutter) flutter:   => /coach-portal
+2026-09-25 23:37:10.752689-0500 0x1020188  Default     0x0                  9583   0    Runner: (Flutter) flutter:   => /plan
+2026-09-25 23:37:10.752729-0500 0x1020188  Default     0x0                  9583   0    Runner: (Flutter) flutter:   => /current-plan
+2026-09-25 23:37:10.752777-0500 0x1020188  Default     0x0                  9583   0    Runner: (Flutter) flutter:   => /fuel-log
+2026-09-25 23:37:10.752819-0500 0x1020188  Default     0x0                  9583   0    Runner: (Flutter) flutter:   => /adjust-macros
+2026-09-25 23:37:10.752857-0500 0x1020188  Default     0x0                  9583   0    Runner: (Flutter) flutter:   => /learn
+2026-09-25 23:37:10.752907-0500 0x1020188  Default     0x0                  9583   0    Runner: (Flutter) flutter:   => /learn/video
+2026-09-25 23:37:10.752959-0500 0x1020188  Default     0x0                  9583   0    Runner: (Flutter) flutter:   => /events
+2026-09-25 23:37:10.753002-0500 0x1020188  Default     0x0                  9583   0    Runner: (Flutter) flutter:   => /events/create
+2026-09-25 23:37:10.753040-0500 0x1020188  Default     0x0                  9583   0    Runner: (Flutter) flutter:   => /events/:eventId
+2026-09-25 23:37:10.753074-0500 0x1020188  Default     0x0                  9583   0    Runner: (Flutter) flutter:   => /events/:eventId/checklist
+2026-09-25 23:37:10.753119-0500 0x1020188  Default     0x0                  9583   0    Runner: (Flutter) flutter:   => /paywall
+2026-09-25 23:37:10.753159-0500 0x1020188  Default     0x0                  9583   0    Runner: (Flutter) flutter:   => /buy-credits
+2026-09-25 23:37:10.753204-0500 0x1020188  Default     0x0                  9583   0    Runner: (Flutter) flutter:   => /settings
+2026-09-25 23:37:10.753253-0500 0x1020188  Default     0x0                  9583   0    Runner: (Flutter) flutter:   => /settings/connected-apps
+2026-09-25 23:37:10.753290-0500 0x1020188  Default     0x0                  9583   0    Runner: (Flutter) flutter:   => /settings/privacy
+2026-09-25 23:37:10.753329-0500 0x1020188  Default     0x0                  9583   0    Runner: (Flutter) flutter:   => /settings/preferences
+2026-09-25 23:37:10.753369-0500 0x1020188  Default     0x0                  9583   0    Runner: (Flutter) flutter:   => /settings/sweat-profile
+2026-09-25 23:37:10.753416-0500 0x1020188  Default     0x0                  9583   0    Runner: (Flutter) flutter:   => /settings/sport-settings
+2026-09-25 23:37:10.753454-0500 0x1020188  Default     0x0                  9583   0    Runner: (Flutter) flutter:   => /settings/food-preferences-hub
+2026-09-25 23:37:10.753496-0500 0x1020188  Default     0x0                  9583   0    Runner: (Flutter) flutter:   => /settings/sport-preferences-hub
+2026-09-25 23:37:10.753538-0500 0x1020188  Default     0x0                  9583   0    Runner: (Flutter) flutter:   => /settings/nutrition-targets
+2026-09-25 23:37:10.753578-0500 0x1020188  Default     0x0                  9583   0    Runner: (Flutter) flutter:   => /settings/nutrition-profile
+2026-09-25 23:37:10.753618-0500 0x1020188  Default     0x0                  9583   0    Runner: (Flutter) flutter:   => /settings/templates
+2026-09-25 23:37:10.753671-0500 0x1020188  Default     0x0                  9583   0    Runner: (Flutter) flutter:   => /settings/coach-connection
+2026-09-25 23:37:10.753723-0500 0x1020188  Default     0x0                  9583   0    Runner: (Flutter) flutter:   => /settings/food-preferences-consolidated
+2026-09-25 23:37:10.753770-0500 0x1020188  Default     0x0                  9583   0    Runner: (Flutter) flutter:   => /settings/food-preferences
+2026-09-25 23:37:10.753808-0500 0x1020188  Default     0x0                  9583   0    Runner: (Flutter) flutter:   => /settings/dietary-preference
+2026-09-25 23:37:10.753849-0500 0x1020188  Default     0x0                  9583   0    Runner: (Flutter) flutter:   => /settings/allergies
+2026-09-25 23:37:10.753886-0500 0x1020188  Default     0x0                  9583   0    Runner: (Flutter) flutter:   => /settings/running-details
+2026-09-25 23:37:10.753925-0500 0x1020188  Default     0x0                  9583   0    Runner: (Flutter) flutter:   => /settings/cycling-details
+2026-09-25 23:37:10.753961-0500 0x1020188  Default     0x0                  9583   0    Runner: (Flutter) flutter:   => /settings/swimming-details
+2026-09-25 23:37:10.753997-0500 0x1020188  Default     0x0                  9583   0    Runner: (Flutter) flutter:   => /settings/food-preferences/add-food
+2026-09-25 23:37:10.754038-0500 0x1020188  Default     0x0                  9583   0    Runner: (Flutter) flutter:   => /settings/food-preferences/formula-library
+2026-09-25 23:37:10.754074-0500 0x1020188  Default     0x0                  9583   0    Runner: (Flutter) flutter:   =>   /settings/food-preferences/formula-library/before/:id
+2026-09-25 23:37:10.754113-0500 0x1020188  Default     0x0                  9583   0    Runner: (Flutter) flutter:   =>   /settings/food-preferences/formula-library/during/:id
+2026-09-25 23:37:10.754146-0500 0x1020188  Default     0x0                  9583   0    Runner: (Flutter) flutter:   =>   /settings/food-preferences/formula-library/after/:id
+2026-09-25 23:37:10.754176-0500 0x1020188  Default     0x0                  9583   0    Runner: (Flutter) flutter:   =>   /settings/food-preferences/formula-library/personal/create
+2026-09-25 23:37:10.754222-0500 0x1020188  Default     0x0                  9583   0    Runner: (Flutter) flutter:   =>   /settings/food-preferences/formula-library/personal/:id
+2026-09-25 23:37:10.754266-0500 0x1020188  Default     0x0                  9583   0    Runner: (Flutter) flutter:   => /help
+2026-09-25 23:37:10.754305-0500 0x1020188  Default     0x0                  9583   0    Runner: (Flutter) flutter:   => /swap-food
+2026-09-25 23:37:10.754344-0500 0x1020188  Default     0x0                  9583   0    Runner: (Flutter) flutter:   => /barcode-scanner
+2026-09-25 23:37:10.754391-0500 0x1020188  Default     0x0                  9583   0    Runner: (Flutter) flutter:   => /food-detail
+2026-09-25 23:37:10.754429-0500 0x1020188  Default     0x0                  9583   0    Runner: (Flutter) flutter:   => /carb-loading-select-food
+2026-09-25 23:37:10.754469-0500 0x1020188  Default     0x0                  9583   0    Runner: (Flutter) flutter:   => /create-custom-carb-loading-food
+2026-09-25 23:37:10.754507-0500 0x1020188  Default     0x0                  9583   0    Runner: (Flutter) flutter:   => /coach
+2026-09-25 23:37:10.754581-0500 0x1020188  Default     0x0                  9583   0    Runner: (Flutter) flutter:   => /coach/athlete/:relationshipId
+2026-09-25 23:37:10.754623-0500 0x1020188  Default     0x0                  9583   0    Runner: (Flutter) flutter:   => /my-coaches
+2026-09-25 23:37:10.754657-0500 0x1020188  Default     0x0                  9583   0    Runner: (Flutter) flutter:   => /athlete/feedback
+2026-09-25 23:37:10.754705-0500 0x1020188  Default     0x0                  9583   0    Runner: (Flutter) flutter:   => /coach/apply
+2026-09-25 23:37:10.754747-0500 0x1020188  Default     0x0                  9583   0    Runner: (Flutter) flutter:   => /coach-directory
+2026-09-25 23:37:10.754781-0500 0x1020188  Default     0x0                  9583   0    Runner: (Flutter) flutter:   => /chat/:relationshipId
+2026-09-25 23:37:10.754820-0500 0x1020188  Default     0x0                  9583   0    Runner: (Flutter) flutter:   => /meal-log/edit
+2026-09-25 23:37:10.754856-0500 0x1020188  Default     0x0                  9583   0    Runner: (Flutter) flutter:   => /meal-log/manual
+2026-09-25 23:37:10.754895-0500 0x1020188  Default     0x0                  9583   0    Runner: (Flutter) flutter:   => /meal-log/photo
+2026-09-25 23:37:10.754934-0500 0x1020188  Default     0x0                  9583   0    Runner: (Flutter) flutter:   => /meal-log/describe
+2026-09-25 23:37:10.754969-0500 0x1020188  Default     0x0                  9583   0    Runner: (Flutter) flutter:   => /meal-log/review
+2026-09-25 23:37:10.755006-0500 0x1020188  Default     0x0                  9583   0    Runner: (Flutter) flutter:   => /meal-log/recent-saved
+2026-09-25 23:37:10.755038-0500 0x1020188  Default     0x0                  9583   0    Runner: (Flutter) flutter:   => /meal-log/recipe
+2026-09-25 23:37:10.755078-0500 0x1020188  Default     0x0                  9583   0    Runner: (Flutter) flutter:   => /food
+2026-09-25 23:37:10.755116-0500 0x1020188  Default     0x0                  9583   0    Runner: (Flutter) flutter:   =>   /food/meals/recents
+2026-09-25 23:37:10.755151-0500 0x1020188  Default     0x0                  9583   0    Runner: (Flutter) flutter:   =>   /food/meals/:id
+2026-09-25 23:37:10.755197-0500 0x1020188  Default     0x0                  9583   0    Runner: (Flutter) flutter:   =>   /food/cook/:id
+2026-09-25 23:37:10.755233-0500 0x1020188  Default     0x0                  9583   0    Runner: (Flutter) flutter:   =>   /food/swap/:planMealId
+2026-09-25 23:37:10.755269-0500 0x1020188  Default     0x0                  9583   0    Runner: (Flutter) flutter:   =>   /food/kroger/:planId
+2026-09-25 23:37:10.755304-0500 0x1020188  Default     0x0                  9583   0    Runner: (Flutter) flutter:   =>   /food/plans/:id
+2026-09-25 23:37:10.755347-0500 0x1020188  Default     0x0                  9583   0    Runner: (Flutter) flutter:   => /vana
+2026-09-25 23:37:10.755387-0500 0x1020188  Default     0x0                  9583   0    Runner: (Flutter) flutter:   =>   /vana/browse
+2026-09-25 23:37:10.755432-0500 0x1020188  Default     0x0                  9583   0    Runner: (Flutter) flutter:   =>   /vana/conversations
+2026-09-25 23:37:10.755473-0500 0x1020188  Default     0x0                  9583   0    Runner: (Flutter) flutter:   => /settings/vana
+2026-09-25 23:37:10.755506-0500 0x1020188  Default     0x0                  9583   0    Runner: (Flutter) flutter:   => /jade
+2026-09-25 23:37:10.755547-0500 0x1020188  Default     0x0                  9583   0    Runner: (Flutter) flutter: known full paths for route names:
+2026-09-25 23:37:10.755587-0500 0x1020188  Default     0x0                  9583   0    Runner: (Flutter) flutter:   privacy-consent => /privacy-consent
+2026-09-25 23:37:10.755633-0500 0x1020188  Default     0x0                  9583   0    Runner: (Flutter) flutter:   force-upgrade => /force-upgrade
+2026-09-25 23:37:10.755667-0500 0x1020188  Default     0x0                  9583   0    Runner: (Flutter) flutter:   welcome => /welcome
+2026-09-25 23:37:10.755707-0500 0x1020188  Default     0x0                  9583   0    Runner: (Flutter) flutter:   onboarding => /onboarding
+2026-09-25 23:37:10.755746-0500 0x1020188  Default     0x0                  9583   0    Runner: (Flutter) flutter:   auth-post-onboarding => /auth/post-onboarding
+2026-09-25 23:37:10.755781-0500 0x1020188  Default     0x0                  9583   0    Runner: (Flutter) flutter:   auth-email-signup => /auth/email-signup
+2026-09-25 23:37:10.755810-0500 0x1020188  Default     0x0                  9583   0    Runner: (Flutter) flutter:   auth-email-login => /auth/email-login
+2026-09-25 23:37:10.755840-0500 0x1020188  Default     0x0                  9583   0    Runner: (Flutter) flutter:   auth-forgot-password => /auth/forgot-password
+2026-09-25 23:37:10.755876-0500 0x1020188  Default     0x0                  9583   0    Runner: (Flutter) flutter:   auth-verify-reset-code => /auth/verify-reset-code
+2026-09-25 23:37:10.755918-0500 0x1020188  Default     0x0                  9583   0    Runner: (Flutter) flutter:   auth-set-new-password => /auth/set-new-password
+2026-09-25 23:37:10.755960-0500 0x1020188  Default     0x0                  9583   0    Runner: (Flutter) flutter:   distancepacegut => /distancepacegut
+2026-09-25 23:37:10.755999-0500 0x1020188  Default     0x0                  9583   0    Runner: (Flutter) flutter:   distance-pace-gut-entry => /distance-pace-gut-entry
+2026-09-25 23:37:10.756037-0500 0x1020188  Default     0x0                  9583   0    Runner: (Flutter) flutter:   main => /main
+2026-09-25 23:37:10.756072-0500 0x1020188  Default     0x0                  9583   0    Runner: (Flutter) flutter:   coach-portal => /coach-portal
+2026-09-25 23:37:10.756107-0500 0x1020188  Default     0x0                  9583   0    Runner: (Flutter) flutter:   plan => /plan
+2026-09-25 23:37:10.756146-0500 0x1020188  Default     0x0                  9583   0    Runner: (Flutter) flutter:   current-plan => /current-plan
+2026-09-25 23:37:10.756189-0500 0x1020188  Default     0x0                  9583   0    Runner: (Flutter) flutter:   fuel-log => /fuel-log
+2026-09-25 23:37:10.756226-0500 0x1020188  Default     0x0                  9583   0    Runner: (Flutter) flutter:   adjust-macros => /adjust-macros
+2026-09-25 23:37:10.756265-0500 0x1020188  Default     0x0                  9583   0    Runner: (Flutter) flutter:   learn => /learn
+2026-09-25 23:37:10.756312-0500 0x1020188  Default     0x0                  9583   0    Runner: (Flutter) flutter:   learn-video => /learn/video
+2026-09-25 23:37:10.756366-0500 0x1020188  Default     0x0                  9583   0    Runner: (Flutter) flutter:   events-list => /events
+2026-09-25 23:37:10.756404-0500 0x1020188  Default     0x0                  9583   0    Runner: (Flutter) flutter:   events-create => /events/create
+2026-09-25 23:37:10.756444-0500 0x1020188  Default     0x0                  9583   0    Runner: (Flutter) flutter:   event-detail => /events/:eventId
+2026-09-25 23:37:10.756481-0500 0x1020188  Default     0x0                  9583   0    Runner: (Flutter) flutter:   race-checklist => /events/:eventId/checklist
+2026-09-25 23:37:10.756514-0500 0x1020188  Default     0x0                  9583   0    Runner: (Flutter) flutter:   paywall => /paywall
+2026-09-25 23:37:10.756555-0500 0x1020188  Default     0x0                  9583   0    Runner: (Flutter) flutter:   buy-credits => /buy-credits
+2026-09-25 23:37:10.756604-0500 0x1020188  Default     0x0                  9583   0    Runner: (Flutter) flutter:   settings => /settings
+2026-09-25 23:37:10.756639-0500 0x1020188  Default     0x0                  9583   0    Runner: (Flutter) flutter:   settings-connected-apps => /settings/connected-apps
+2026-09-25 23:37:10.756684-0500 0x1020188  Default     0x0                  9583   0    Runner: (Flutter) flutter:   settings-privacy => /settings/privacy
+2026-09-25 23:37:10.756720-0500 0x1020188  Default     0x0                  9583   0    Runner: (Flutter) flutter:   settings-preferences => /settings/preferences
+2026-09-25 23:37:10.756759-0500 0x1020188  Default     0x0                  9583   0    Runner: (Flutter) flutter:   settings-sweat-profile => /settings/sweat-profile
+2026-09-25 23:37:10.756798-0500 0x1020188  Default     0x0                  9583   0    Runner: (Flutter) flutter:   settings-sport-settings => /settings/sport-settings
+2026-09-25 23:37:10.756841-0500 0x1020188  Default     0x0                  9583   0    Runner: (Flutter) flutter:   settings-food-preferences-hub => /settings/food-preferences-hub
+2026-09-25 23:37:10.756890-0500 0x1020188  Default     0x0                  9583   0    Runner: (Flutter) flutter:   settings-sport-preferences-hub => /settings/sport-preferences-hub
+2026-09-25 23:37:10.756927-0500 0x1020188  Default     0x0                  9583   0    Runner: (Flutter) flutter:   settings-nutrition-targets => /settings/nutrition-targets
+2026-09-25 23:37:10.756969-0500 0x1020188  Default     0x0                  9583   0    Runner: (Flutter) flutter:   settings-nutrition-profile => /settings/nutrition-profile
+2026-09-25 23:37:10.757007-0500 0x1020188  Default     0x0                  9583   0    Runner: (Flutter) flutter:   settings-templates => /settings/templates
+2026-09-25 23:37:10.757049-0500 0x1020188  Default     0x0                  9583   0    Runner: (Flutter) flutter:   settings-coach-connection => /settings/coach-connection
+2026-09-25 23:37:10.757089-0500 0x1020188  Default     0x0                  9583   0    Runner: (Flutter) flutter:   settings-food-preferences-consolidated => /settings/food-preferences-consolidated
+2026-09-25 23:37:10.757129-0500 0x1020188  Default     0x0                  9583   0    Runner: (Flutter) flutter:   settings-food-preferences => /settings/food-preferences
+2026-09-25 23:37:10.757178-0500 0x1020188  Default     0x0                  9583   0    Runner: (Flutter) flutter:   settings-dietary-preference => /settings/dietary-preference
+2026-09-25 23:37:10.757222-0500 0x1020188  Default     0x0                  9583   0    Runner: (Flutter) flutter:   settings-allergies => /settings/allergies
+2026-09-25 23:37:10.757271-0500 0x1020188  Default     0x0                  9583   0    Runner: (Flutter) flutter:   settings-running-details => /settings/running-details
+2026-09-25 23:37:10.757314-0500 0x1020188  Default     0x0                  9583   0    Runner: (Flutter) flutter:   settings-cycling-details => /settings/cycling-details
+2026-09-25 23:37:10.757353-0500 0x1020188  Default     0x0                  9583   0    Runner: (Flutter) flutter:   settings-swimming-details => /settings/swimming-details
+2026-09-25 23:37:10.757396-0500 0x1020188  Default     0x0                  9583   0    Runner: (Flutter) flutter:   settings-add-food => /settings/food-preferences/add-food
+2026-09-25 23:37:10.757434-0500 0x1020188  Default     0x0                  9583   0    Runner: (Flutter) flutter:   settings-formula-library => /settings/food-preferences/formula-library
+2026-09-25 23:37:10.757479-0500 0x1020188  Default     0x0                  9583   0    Runner: (Flutter) flutter:   settings-formula-detail-before => /settings/food-preferences/formula-library/before/:id
+2026-09-25 23:37:10.757517-0500 0x1020188  Default     0x0                  9583   0    Runner: (Flutter) flutter:   settings-formula-detail-during => /settings/food-preferences/formula-library/during/:id
+2026-09-25 23:37:10.757559-0500 0x1020188  Default     0x0                  9583   0    Runner: (Flutter) flutter:   settings-formula-detail-after => /settings/food-preferences/formula-library/after/:id
+2026-09-25 23:37:10.757597-0500 0x1020188  Default     0x0                  9583   0    Runner: (Flutter) flutter:   settings-formula-personal-create => /settings/food-preferences/formula-library/personal/create
+2026-09-25 23:37:10.757644-0500 0x1020188  Default     0x0                  9583   0    Runner: (Flutter) flutter:   settings-formula-personal-edit => /settings/food-preferences/formula-library/personal/:id
+2026-09-25 23:37:10.757683-0500 0x1020188  Default     0x0                  9583   0    Runner: (Flutter) flutter:   help-feedback => /help
+2026-09-25 23:37:10.757724-0500 0x1020188  Default     0x0                  9583   0    Runner: (Flutter) flutter:   swap-food => /swap-food
+2026-09-25 23:37:10.757763-0500 0x1020188  Default     0x0                  9583   0    Runner: (Flutter) flutter:   barcode-scanner => /barcode-scanner
+2026-09-25 23:37:10.757798-0500 0x1020188  Default     0x0                  9583   0    Runner: (Flutter) flutter:   food-detail => /food-detail
+2026-09-25 23:37:10.757848-0500 0x1020188  Default     0x0                  9583   0    Runner: (Flutter) flutter:   carb-loading-select-food => /carb-loading-select-food
+2026-09-25 23:37:10.757887-0500 0x1020188  Default     0x0                  9583   0    Runner: (Flutter) flutter:   create-custom-carb-loading-food => /create-custom-carb-loading-food
+2026-09-25 23:37:10.757923-0500 0x1020188  Default     0x0                  9583   0    Runner: (Flutter) flutter:   coach-dashboard => /coach
+2026-09-25 23:37:10.757957-0500 0x1020188  Default     0x0                  9583   0    Runner: (Flutter) flutter:   coach-athlete-detail => /coach/athlete/:relationshipId
+2026-09-25 23:37:10.757993-0500 0x1020188  Default     0x0                  9583   0    Runner: (Flutter) flutter:   my-coaches => /my-coaches
+2026-09-25 23:37:10.758040-0500 0x1020188  Default     0x0                  9583   0    Runner: (Flutter) flutter:   athlete-feedback => /athlete/feedback
+2026-09-25 23:37:10.758081-0500 0x1020188  Default     0x0                  9583   0    Runner: (Flutter) flutter:   coach-apply => /coach/apply
+2026-09-25 23:37:10.758119-0500 0x1020188  Default     0x0                  9583   0    Runner: (Flutter) flutter:   coach-directory => /coach-directory
+2026-09-25 23:37:10.758156-0500 0x1020188  Default     0x0                  9583   0    Runner: (Flutter) flutter:   coach-chat => /chat/:relationshipId
+2026-09-25 23:37:10.758193-0500 0x1020188  Default     0x0                  9583   0    Runner: (Flutter) flutter:   meal-log-edit => /meal-log/edit
+2026-09-25 23:37:10.758240-0500 0x1020188  Default     0x0                  9583   0    Runner: (Flutter) flutter:   meal-log-manual => /meal-log/manual
+2026-09-25 23:37:10.758278-0500 0x1020188  Default     0x0                  9583   0    Runner: (Flutter) flutter:   meal-log-photo => /meal-log/photo
+2026-09-25 23:37:10.758324-0500 0x1020188  Default     0x0                  9583   0    Runner: (Flutter) flutter:   meal-log-describe => /meal-log/describe
+2026-09-25 23:37:10.758360-0500 0x1020188  Default     0x0                  9583   0    Runner: (Flutter) flutter:   meal-log-review => /meal-log/review
+2026-09-25 23:37:10.758402-0500 0x1020188  Default     0x0                  9583   0    Runner: (Flutter) flutter:   meal-log-recent-saved => /meal-log/recent-saved
+2026-09-25 23:37:10.758441-0500 0x1020188  Default     0x0                  9583   0    Runner: (Flutter) flutter:   meal-log-recipe => /meal-log/recipe
+2026-09-25 23:37:10.758476-0500 0x1020188  Default     0x0                  9583   0    Runner: (Flutter) flutter:   food => /food
+2026-09-25 23:37:10.758521-0500 0x1020188  Default     0x0                  9583   0    Runner: (Flutter) flutter:   food-meals-recents => /food/meals/recents
+2026-09-25 23:37:10.758560-0500 0x1020188  Default     0x0                  9583   0    Runner: (Flutter) flutter:   food-meal-detail => /food/meals/:id
+2026-09-25 23:37:10.758602-0500 0x1020188  Default     0x0                  9583   0    Runner: (Flutter) flutter:   food-cooking-mode => /food/cook/:id
+2026-09-25 23:37:10.758640-0500 0x1020188  Default     0x0                  9583   0    Runner: (Flutter) flutter:   food-swap-meal => /food/swap/:planMealId
+2026-09-25 23:37:10.758678-0500 0x1020188  Default     0x0                  9583   0    Runner: (Flutter) flutter:   food-kroger => /food/kroger/:planId
+2026-09-25 23:37:10.758716-0500 0x1020188  Default     0x0                  9583   0    Runner: (Flutter) flutter:   food-previous-plan => /food/plans/:id
+2026-09-25 23:37:10.758751-0500 0x1020188  Default     0x0                  9583   0    Runner: (Flutter) flutter:   vana-chat => /vana
+2026-09-25 23:37:10.758785-0500 0x1020188  Default     0x0                  9583   0    Runner: (Flutter) flutter:   vana-browse => /vana/browse
+2026-09-25 23:37:10.758816-0500 0x1020188  Default     0x0                  9583   0    Runner: (Flutter) flutter:   vana-conversations => /vana/conversations
+2026-09-25 23:37:10.758852-0500 0x1020188  Default     0x0                  9583   0    Runner: (Flutter) flutter:   settings-vana => /settings/vana
+2026-09-25 23:37:10.758889-0500 0x1020188  Default     0x0                  9583   0    Runner: (Flutter) flutter:   jade-chat => /jade
+2026-09-25 23:37:10.758924-0500 0x1020188  Default     0x0                  9583   0    Runner: (Flutter) flutter:
+2026-09-25 23:37:10.762001-0500 0x1020188  Default     0x0                  9583   0    Runner: (Flutter) flutter: GoRouter: INFO: setting initial location /
+2026-09-25 23:37:10.990875-0500 0x1020188  Default     0x0                  9583   0    Runner: (Flutter) flutter: [RevenueCatService] logIn waiting for configure
+2026-09-25 23:37:11.138913-0500 0x1020188  Default     0x0                  9583   0    Runner: (Flutter) flutter: [RevenueCatService] logIn waiting for configure
+2026-09-25 23:37:11.383240-0500 0x1020188  Default     0x0                  9583   0    Runner: (Flutter) flutter: [SubscriptionService] customer info updated {active: true, expires_at: 2026-09-26T04:21:20.000Z}
+2026-09-25 23:37:11.408143-0500 0x1020188  Default     0x0                  9583   0    Runner: (Flutter) flutter: [RevenueCatService] configured {store: test_store}
+2026-09-25 23:37:11.503848-0500 0x1020188  Default     0x0                  9583   0    Runner: (Flutter) flutter: [RevenueCatService] logIn skipped: already identified
+2026-09-25 23:37:11.606046-0500 0x1020188  Default     0x0                  9583   0    Runner: (Flutter) flutter: [SubscriptionService] customer info fetched {active: true, expires_at: 2026-09-26T04:21:20.000Z, is_trial: false}
+2026-09-25 23:37:11.614561-0500 0x1020188  Default     0x0                  9583   0    Runner: (Flutter) flutter: [SubscriptionService] customer info fetched {active: true, expires_at: 2026-09-26T04:21:20.000Z, is_trial: false}
+2026-09-25 23:37:11.776001-0500 0x1020188  Default     0x0                  9583   0    Runner: (Flutter) flutter: \^[[38;5;208m┌───────────────────────────────────────────────────────────────────────────────────────────────────────────────────────\^[[0m
+2026-09-25 23:37:11.776085-0500 0x1020188  Default     0x0                  9583   0    Runner: (Flutter) flutter: \^[[38;5;208m│ ClientException with SocketException: Connection failed (OS Error: Network is unreachable, errno = 51), address = vlmtsdzpnjnavdgytcmi.supabase.co, port = 443, uri=https://vlmtsdzpnjnavdgytcmi.supabase.co/rest/v1/users?select=is_admin&id=eq.9863748e-3404-41a0-8fa0-2019d37a9537\^[[0m
+2026-09-25 23:37:11.776149-0500 0x1020188  Default     0x0                  9583   0    Runner: (Flutter) flutter: \^[[38;5;208m├┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄\^[[0m
+2026-09-25 23:37:11.776214-0500 0x1020188  Default     0x0                  9583   0    Runner: (Flutter) flutter: \^[[38;5;208m│ #0   PrettyAppLogger._logWithContext (package:mealvana_endurance/shared/services/logging_service.dart:342:15)\^[[0m
+2026-09-25 23:37:11.776264-0500 0x1020188  Default     0x0                  9583   0    Runner: (Flutter) flutter: \^[[38;5;208m│ #1   PrettyAppLogger.warning (package:mealvana_endurance/shared/services/logging_service.dart:161:5)\^[[0m
+2026-09-25 23:37:11.776308-0500 0x1020188  Default     0x0                  9583   0    Runner: (Flutter) flutter: \^[[38;5;208m│ #2   isAdmin (package:mealvana_endurance/shared/providers/is_admin_provider.dart:41:17)\^[[0m
+2026-09-25 23:37:11.776351-0500 0x1020188  Default     0x0                  9583   0    Runner: (Flutter) flutter: \^[[38;5;208m│ #3   <asynchronous suspension>\^[[0m
+2026-09-25 23:37:11.776403-0500 0x1020188  Default     0x0                  9583   0    Runner: (Flutter) flutter: \^[[38;5;208m├┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄\^[[0m
+2026-09-25 23:37:11.776490-0500 0x1020188  Default     0x0                  9583   0    Runner: (Flutter) flutter: \^[[38;5;208m│ 23:37:11.772 (+0:00:01.066226)\^[[0m
+2026-09-25 23:37:11.776542-0500 0x1020188  Default     0x0                  9583   0    Runner: (Flutter) flutter: \^[[38;5;208m├┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄\^[[0m
+2026-09-25 23:37:11.776586-0500 0x1020188  Default     0x0                  9583   0    Runner: (Flutter) flutter: \^[[38;5;208m│ ⚠️ [IS_ADMIN] is_admin read failed; treating as not admin\^[[0m
+2026-09-25 23:37:11.776658-0500 0x1020188  Default     0x0                  9583   0    Runner: (Flutter) flutter: \^[[38;5;208m└───────────────────────────────────────────────────────────────────────────────────────────────────────────────────────\^[[0m
+2026-09-25 23:37:11.882133-0500 0x1020188  Default     0x0                  9583   0    Runner: (Flutter) flutter: ✅ Schema validation passed (40 tables verified)
+2026-09-25 23:37:11.904129-0500 0x1020188  Default     0x0                  9583   0    Runner: (Flutter) flutter: [RevenueCatService] logIn skipped: already identified
+2026-09-25 23:37:11.919448-0500 0x1020188  Default     0x0                  9583   0    Runner: (Flutter) flutter: [SubscriptionService] customer info fetched {active: true, expires_at: 2026-09-26T04:21:20.000Z, is_trial: false}
+2026-09-25 23:37:11.936953-0500 0x1020188  Default     0x0                  9583   0    Runner: (Flutter) flutter: 📊 [ANALYTICS] app_opened {device_id: DBE9C549-9EBF-4194-A5D3-F64F49697DCA, session_id: 7cc5213a-b81c-4f8c-9955-3432b1f89b26, timestamp: 2026-09-25T23:37:11.936713}
+2026-09-25 23:37:11.983141-0500 0x1020188  Default     0x0                  9583   0    Runner: (Flutter) flutter: GoRouter: INFO: No initial matches: /
+2026-09-25 23:37:11.994877-0500 0x1020188  Default     0x0                  9583   0    Runner: (Flutter) flutter: GoRouter: INFO: redirecting to RouteMatchList(/paywall)
+2026-09-25 23:37:12.365028-0500 0x1020188  Default     0x0                  9583   0    Runner: (Flutter) flutter: [RevenueCatService] getOfferings failed: PlatformException(10, A network error has occurred. Could not connect to the server., {code: 10, message: A network error has occurred. Could not connect to the server., readable_error_code: NETWORK_ERROR, storeError: {message: Could not connect to the server., code: -1004, domain: NSURLErrorDomain}, underlyingErrorMessage: Could not connect to the server., readableErrorCode: NETWORK_ERROR}, null)
+2026-09-25 23:39:29.283069-0500 0x1020188  Default     0x0                  9583   0    Runner: (Flutter) flutter: [SubscriptionService] customer info updated {active: true, expires_at: 2026-09-26T04:41:20.000Z}
+2026-09-25 23:39:29.328607-0500 0x1020188  Default     0x0                  9583   0    Runner: (Flutter) flutter: GoRouter: INFO: redirecting to RouteMatchList(/main)
+2026-09-25 23:39:29.346953-0500 0x1020188  Default     0x0                  9583   0    Runner: (Flutter) flutter: GoRouter: INFO: Using MaterialApp configuration
+2026-09-25 23:39:47.124559-0500 0x1020188  Default     0x0                  9583   0    Runner: (Flutter) flutter: 📊 [ANALYTICS] log_meal_opened {source: macro_dashboard, log_date: 2026-09-25, is_today: true}
+2026-09-25 23:39:47.124802-0500 0x1020188  Default     0x0                  9583   0    Runner: (Flutter) flutter: 📊 [ANALYTICS] diary_opened {source: macro_dashboard, log_date: 2026-09-25, is_today: true}
+2026-09-25 23:39:49.244800-0500 0x1020188  Default     0x0                  9583   0    Runner: (Flutter) flutter: 📊 [ANALYTICS] log_method_selected {method: manual}
+2026-09-25 23:40:07.654171-0500 0x1020188  Default     0x0                  9583   0    Runner: (Flutter) flutter: 📊 [ANALYTICS] meal_logged {source: manual, method: manual, log_date: 2026-09-25}
+2026-09-25 23:40:10.177573-0500 0x1020188  Default     0x0                  9583   0    Runner: (Flutter) flutter: 📊 [ANALYTICS] diary_closed {duration_sec: 23, items_logged: 1, log_date: 2026-09-25}
+2026-09-25 23:40:12.478661-0500 0x1020188  Default     0x0                  9583   0    Runner: (Flutter) flutter: GoRouter: INFO: pushing /settings
+2026-09-25 23:40:14.225783-0500 0x1020188  Default     0x0                  9583   0    Runner: (Flutter) flutter: 📊 [ANALYTICS] settings_subscription_tapped {}
+2026-09-25 23:40:14.272596-0500 0x1020188  Default     0x0                  9583   0    Runner: (Flutter) flutter: [SubscriptionService] customer info cache invalidated
+2026-09-25 23:40:14.446115-0500 0x1020188  Default     0x0                  9583   0    Runner: (Flutter) flutter: [SubscriptionService] customer info fetched {active: true, expires_at: 2026-09-26T04:41:20.000Z, is_trial: false}
+2026-09-25 23:40:25.677725-0500 0x1020188  Default     0x0                  9583   0    Runner: (Flutter) flutter: GoRouter: INFO: popping /main
+2026-09-25 23:41:20.023561-0500 0x1020188  Default     0x0                  9583   0    Runner: (Flutter) flutter: [SubscriptionService] customer info fetched {active: true, expires_at: 2026-09-26T04:41:20.000Z, is_trial: false}
+2026-09-25 23:41:20.029057-0500 0x1020188  Default     0x0                  9583   0    Runner: (Flutter) flutter: [SubscriptionService] customer info cache invalidated
+2026-09-25 23:41:20.110886-0500 0x1020188  Default     0x0                  9583   0    Runner: (Flutter) flutter: [SubscriptionService] customer info fetched {active: false, expires_at: 2026-09-26T04:41:20.000Z, is_trial: false}
+2026-09-25 23:41:20.116985-0500 0x1020188  Default     0x0                  9583   0    Runner: (Flutter) flutter: GoRouter: INFO: redirecting to RouteMatchList(/paywall)
+2026-09-25 23:41:20.228203-0500 0x1020188  Default     0x0                  9583   0    Runner: (Flutter) flutter: [RevenueCatService] offerings served {offerings: default(2), credits(3), current: default}
+2026-09-25 23:41:20.228598-0500 0x1020188  Default     0x0                  9583   0    Runner: (Flutter) flutter: [SubscriptionService] offerings fetched {current: default, available: default,credits}
+2026-09-25 23:41:44.467570-0500 0x1020188  Default     0x0                  9583   0    Runner: (Flutter) flutter: [RevenueCatService] logIn skipped: already identified
+2026-09-25 23:41:44.468801-0500 0x1020188  Default     0x0                  9583   0    Runner: (Flutter) flutter: [RevenueCatService] purchase started {sku: mealvana_pro_annual}
+2026-09-25 23:41:47.968084-0500 0x1020188  Default     0x0                  9583   0    Runner: (Flutter) flutter: [SubscriptionService] customer info updated {active: true, expires_at: 2026-09-26T05:41:47.000Z}
+2026-09-25 23:41:47.973039-0500 0x1020188  Default     0x0                  9583   0    Runner: (Flutter) flutter: [RevenueCatService] purchase succeeded {sku: mealvana_pro_annual}
+2026-09-25 23:41:47.981782-0500 0x1020188  Default     0x0                  9583   0    Runner: (Flutter) flutter: GoRouter: INFO: redirecting to RouteMatchList(/main)
+2026-09-25 23:41:47.983905-0500 0x1020188  Default     0x0                  9583   0    Runner: (Flutter) flutter: [SubscriptionService] customer info fetched {active: true, expires_at: 2026-09-26T05:41:47.000Z, is_trial: false}
+2026-09-25 23:42:09.884149-0500 0x1020188  Default     0x0                  9583   0    Runner: (Flutter) flutter: GoRouter: INFO: pushing /settings
+2026-09-25 23:42:11.591218-0500 0x1020188  Default     0x0                  9583   0    Runner: (Flutter) flutter: 📊 [ANALYTICS] settings_subscription_tapped {}
+2026-09-25 23:42:11.618744-0500 0x1020188  Default     0x0                  9583   0    Runner: (Flutter) flutter: [SubscriptionService] customer info cache invalidated
+2026-09-25 23:42:11.957896-0500 0x1020188  Default     0x0                  9583   0    Runner: (Flutter) flutter: [SubscriptionService] customer info fetched {active: true, expires_at: 2026-09-26T05:41:47.000Z, is_trial: false}
+2026-09-25 23:42:40.183860-0500 0x1020188  Default     0x0                  9583   0    Runner: (Flutter) flutter: 📊 [ANALYTICS] settings_delete_account_tapped {}
+2026-09-25 23:42:41.936755-0500 0x1020188  Default     0x0                  9583   0    Runner: (Flutter) flutter: GoRouter: INFO: redirecting to RouteMatchList(/paywall)
+2026-09-25 23:42:42.038589-0500 0x1020188  Default     0x0                  9583   0    Runner: (Flutter) flutter: [SubscriptionService] customer info updated {active: false, expires_at: null}
+2026-09-25 23:42:42.040735-0500 0x1020188  Default     0x0                  9583   0    Runner: (Flutter) flutter: [RevenueCatService] logged out
+2026-09-25 23:42:42.579788-0500 0x1020188  Default     0x0                  9583   0    Runner: (Flutter) flutter: [RevenueCatService] offerings served {offerings: credits(3), default(2), current: default}
+2026-09-25 23:42:42.586402-0500 0x1020188  Default     0x0                  9583   0    Runner: (Flutter) flutter: [SubscriptionService] offerings fetched {current: default, available: credits,default}
+2026-09-25 23:42:42.865602-0500 0x1020188  Default     0x0                  9583   0    Runner: (Flutter) flutter: supabase.auth: INFO: Signing out user with scope: SignOutScope.local
+2026-09-25 23:42:42.875116-0500 0x1020188  Default     0x0                  9583   0    Runner: (Flutter) flutter: 📊 [ANALYTICS] user_signed_out {timestamp: 2026-09-25T23:42:42.874639, was_onboarding_signout: false}
+2026-09-25 23:42:42.903449-0500 0x1020188  Default     0x0                  9583   0    Runner: (Flutter) flutter: [SubscriptionService] customer info updated {active: false, expires_at: null}
+2026-09-25 23:42:42.927261-0500 0x1020188  Default     0x0                  9583   0    Runner: (Flutter) flutter: GoRouter: INFO: redirecting to RouteMatchList(/welcome)
