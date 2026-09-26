@@ -205,7 +205,6 @@
       <button id="menu" aria-label="Categories" aria-controls="nav" aria-expanded="false">☰ <span id="menuCount"></span></button>
       <input id="q" type="search" placeholder="Search" aria-label="Search">
       <select id="feat" aria-label="Feature"><option value="">All features</option></select>
-      <select id="who" aria-label="Who is ruling"><option value="">Who are you?</option><option>Lee</option><option>Xuan</option></select>
       <div class="status-line" id="status">Connecting.</div>
     </header>
     <main id="main"><div class="empty">Loading.</div></main>
@@ -219,7 +218,8 @@
   const $ = (s, r = document) => r.querySelector(s);
   const esc = s => String(s ?? '').replace(/[&<>"']/g, c => ({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));
   const state = { decisions: new Map(), verdicts: new Map(), chats: new Map(), tickets: new Map(), refs: new Map(), meta: {}, q: '', feat: '', pendingOnly: false, cat: '', db: null, sample: null, artifact: null, open: new Set(), inflight: new Map(), changes: new Map(), vocab: new Map(), termRe: null, sending: null, sentFlash: null, lastSent: null, toolsOk: false };
-  const featName = f => (state.meta.featureNames && state.meta.featureNames[f]) || f;
+  const FEATURE_NAMES = { mealplanning: 'Meal planning', paywall: 'Paywall', 'shopping-list': 'Shopping list', 'ai-cost': 'Cost cutting', misc: 'Miscellany' };
+  const featName = f => FEATURE_NAMES[f] || (state.meta.featureNames && state.meta.featureNames[f]) || f;
   const catKey = d => d.feature + '|' + d.category;
   const chatDocId = id => id.replace(/[^A-Za-z0-9_\-.~:@+]/g, '_').slice(0, 180);
 
@@ -511,7 +511,6 @@
       </div>`;
     }
     $('#status').textContent = `${all.length} decisions${state.db ? '' : ' · offline'}`;
-    $('#menuCount').textContent = pendTotal ? String(pendTotal) : '';
   }
 
   // Who is ruling. The platform tells the page nothing about the viewer, so each
@@ -573,7 +572,7 @@
       const refs = refsOf(d).map(cardText).join('\n\n');
       const glossary = termsUsed(d);
       const tickets = ticketsCiting(d.id);
-      return `You are explaining one product decision from the Mealvana Endurance app to Lee, the product owner, who is building it and needs to understand it well enough to build it and to judge it. Answer in plain words, short sentences, no em-dashes, no hedging, no bullet lists unless he asks for options. Define every term of art the first time you use it, with a concrete example when one helps. When a term is defined nowhere in the material, say so plainly instead of guessing. Keep answers under 250 words unless he asks for more. Do not invent facts beyond the material below and what the tools return.${state.toolsOk ? ' Use the tools to read a card, ticket or term the material names when the answer depends on it.' : ''} When Lee says what should change, agree the wording with him in the thread; the page turns the thread into record changes when he presses the draft button.${refsLine()}\n\nFEATURE PROBLEM STATEMENT:\n${problem}\n\nTHE DECISION (${d.id}, category ${d.category}, status ${eff(d).status}):\n${cardText(d)}\n${glossary ? `\nGLOSSARY TERMS THIS CARD USES:\n${glossary}\n` : ''}${refs ? `\nCARDS THIS DECISION NAMES, IN FULL:\n${refs}\n` : ''}${tickets ? `\nTICKETS THAT BUILT OR CITE IT:\n${tickets}\n` : ''}\nSIBLING DECISIONS IN THE SAME CATEGORY, ONE LINE EACH:\n${sib}`.slice(0, 60000);
+      return `You are explaining one product decision from the Mealvana Endurance app to Lee or Xuan, who need to understand it well enough to build it and to judge it. Answer in plain words, short sentences, no em-dashes, no hedging, no bullet lists unless he asks for options. Define every term of art the first time you use it, with a concrete example when one helps. When a term is defined nowhere in the material, say so plainly instead of guessing. Keep answers under 250 words unless he asks for more. Do not invent facts beyond the material below and what the tools return.${state.toolsOk ? ' Use the tools to read a card, ticket or term the material names when the answer depends on it.' : ''} The page is a read-only record of approved decisions; if the reader wants something changed, say it is changed in the terminal with Lee.${refsLine()}\n\nFEATURE PROBLEM STATEMENT:\n${problem}\n\nTHE DECISION (${d.id}, category ${d.category}, status ${eff(d).status}):\n${cardText(d)}\n${glossary ? `\nGLOSSARY TERMS THIS CARD USES:\n${glossary}\n` : ''}${refs ? `\nCARDS THIS DECISION NAMES, IN FULL:\n${refs}\n` : ''}${tickets ? `\nTICKETS THAT BUILT OR CITE IT:\n${tickets}\n` : ''}\nSIBLING DECISIONS IN THE SAME CATEGORY, ONE LINE EACH:\n${sib}`.slice(0, 60000);
     }
     const list = g.items.map(x => `- ${x.id} ${x.title} [${eff(x).status}]${x.kind === 'question' ? ' (open question: ' + x.question + ')' : ': ' + x.decision}`).join('\n');
     return `You are discussing one category of product decisions from the Mealvana Endurance app with Lee, the product owner. Answer in plain words, short sentences, no em-dashes, no hedging. Keep answers under 250 words unless he asks for more. Refer to decisions by their id. Do not invent facts beyond the material below. If the material does not say, say so.${state.toolsOk ? ' Use the tools to read a card, ticket, term or reference document when the answer depends on it.' : ''}${refsLine()}\n\nFEATURE PROBLEM STATEMENT:\n${problem}\n\nCATEGORY: ${g.category}\nDECISIONS:\n${list}`;
@@ -769,13 +768,6 @@
     window.scrollTo({ top: s.scrollY });
   }
   const _render = render; render = function () { const s = snapshotDrafts(); _render(); restoreDrafts(s); try { localStorage.setItem('ssot-cat', state.cat); } catch {} };
-
-  (function wireWho() {
-    const sel = $('#who');
-    const saved = who();
-    if ([...sel.options].some(o => o.value === saved)) sel.value = saved; else if (saved) { try { localStorage.removeItem('ssot-who'); } catch {} }
-    sel.addEventListener('change', () => { try { sel.value ? localStorage.setItem('ssot-who', sel.value) : localStorage.removeItem('ssot-who'); } catch {} });
-  })();
 
   render();
 
