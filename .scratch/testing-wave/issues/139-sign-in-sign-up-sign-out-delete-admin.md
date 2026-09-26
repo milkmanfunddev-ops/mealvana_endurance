@@ -1,6 +1,6 @@
 # 139: Sign-in, sign-up, sign-out, delete, admin
 
-**Status:** ready
+**Status:** in-progress (wave 42, 2026-09-26)
 **Blocked by:** none.
 **Next:** `/implement-lee testing-wave`
 **Model:** fable
