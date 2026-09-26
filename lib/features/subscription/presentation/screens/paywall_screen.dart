@@ -184,8 +184,11 @@ class _PaywallScreenState extends ConsumerState<PaywallScreen> {
     // status before it showed this screen, so the value is already there;
     // a synchronous read keeps the controller's loading state in the same
     // frame as the tap, so a second tap finds Continue disabled (121-008).
-    final returning =
-        ref.read(subscriptionStatusProvider).value?.hadPro ?? false;
+    // Only a status still resolving (a test host) is awaited.
+    final status = ref.read(subscriptionStatusProvider);
+    final returning = status.hasValue
+        ? status.value!.hadPro
+        : (await ref.read(subscriptionStatusProvider.future)).hadPro;
     final outcome = await ref
         .read(proPaywallControllerProvider.notifier)
         .buy(pkg);

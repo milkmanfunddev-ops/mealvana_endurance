@@ -32,6 +32,7 @@ import 'package:go_router/go_router.dart';
 import 'package:purchases_flutter/purchases_flutter.dart';
 
 import 'package:mealvana_endurance/features/content/application/content_service.dart';
+import 'package:mealvana_endurance/features/ai_credits/data/revenuecat_service.dart';
 import 'package:mealvana_endurance/features/settings/domain/account_deletion_entry.dart';
 import 'package:mealvana_endurance/features/settings/domain/sign_out_source.dart';
 import 'package:mealvana_endurance/features/settings/domain/settings_state.dart';
@@ -52,6 +53,7 @@ import 'package:mealvana_endurance/features/subscription/presentation/screens/pa
 import 'package:mealvana_endurance/features/subscription/presentation/screens/subscription_screen.dart';
 import 'package:mealvana_endurance/features/subscription/data/subscription_service.dart';
 import 'package:mealvana_endurance/shared/providers/is_admin_provider.dart';
+import 'package:mealvana_endurance/shared/services/connectivity_checker.dart';
 import 'package:mealvana_endurance/shared/widgets/kyle_design/materials/glass.dart';
 import 'package:mealvana_endurance/shared/services/privacy/privacy_links.dart';
 import 'package:mealvana_endurance/shared/widgets/kyle_design/buttons/overflow_menu_button.dart';
@@ -95,6 +97,23 @@ class _FixedStatus extends SubscriptionStatusController {
   final SubscriptionStatus status;
   @override
   Future<SubscriptionStatus> build() async => status;
+}
+
+/// A locked status that counts how often it is asked again.
+class _CountingStatus extends SubscriptionStatusController {
+  _CountingStatus(this.onRead);
+  final void Function() onRead;
+  @override
+  Future<SubscriptionStatus> build() async {
+    onRead();
+    return SubscriptionStatus.none;
+  }
+
+  @override
+  Future<void> refresh() async {
+    onRead();
+    state = const AsyncData(SubscriptionStatus.none);
+  }
 }
 
 /// A status the test opens by hand, as a redeemed Code's refresh does.
@@ -145,12 +164,17 @@ class _PlanWithManage extends SubscriptionScreenController {
 
 /// Records calls instead of touching the store.
 class _RecordingPaywall extends ProPaywallController {
-  _RecordingPaywall({this.restoreResult = true, this.holdAfterBuy = false});
-  final bool restoreResult;
+  _RecordingPaywall({
+    this.restoreResult = ProRestoreOutcome.unlocked,
+    this.holdAfterBuy = false,
+    this.buyResult = ProPurchaseOutcome.activated,
+  });
+  final ProRestoreOutcome restoreResult;
 
   /// Stays loading after an activated purchase, as the real controller does
   /// while the router replaces the paywall (05-004).
   final bool holdAfterBuy;
+  final ProPurchaseOutcome buyResult;
   int restoreCalls = 0;
   final bought = <String>[];
 
@@ -158,8 +182,12 @@ class _RecordingPaywall extends ProPaywallController {
   FutureOr<void> build() => null;
 
   @override
-  Future<bool> restore() async {
+  Future<ProRestoreOutcome> restore() async {
     restoreCalls++;
+    // The real controller leaves an unreachable store as an error state.
+    if (restoreResult == ProRestoreOutcome.unavailable) {
+      state = AsyncError(const RestoreUnavailable(), StackTrace.empty);
+    }
     return restoreResult;
   }
 
@@ -167,8 +195,24 @@ class _RecordingPaywall extends ProPaywallController {
   Future<ProPurchaseOutcome> buy(Package pkg) async {
     bought.add(pkg.storeProduct.identifier);
     if (holdAfterBuy) state = const AsyncLoading();
-    return ProPurchaseOutcome.activated;
+    // The real controller ends a refused purchase in an error state.
+    if (buyResult == ProPurchaseOutcome.failed) {
+      state = AsyncError(
+        StorePurchaseFailed(pkg.storeProduct.identifier),
+        StackTrace.empty,
+      );
+    }
+    return buyResult;
   }
+}
+
+/// The device's connectivity, driven by the test.
+class _FakeConnectivity extends ConnectivityChecker {
+  _FakeConnectivity();
+  final changes = StreamController<bool>.broadcast();
+
+  @override
+  Stream<bool> get onlineChanges => changes.stream;
 }
 
 /// Records sign-out / delete instead of touching Supabase.
@@ -217,10 +261,18 @@ List<Override> _overrides({
   SubscriptionStatus status = SubscriptionStatus.none,
   SubscriptionStatusController Function()? statusController,
   _ManageService? manage,
+  _FakeConnectivity? connectivity,
+  Future<PaywallPlans> Function(Ref)? plansReader,
+  Duration retryInterval = const Duration(seconds: 15),
 }) {
   final resolved = plans ?? PaywallPlans(monthly: _monthly, annual: _annual);
   return [
     contentServiceProvider.overrideWith(_testContentService),
+    // The connectivity platform channel is not there under test.
+    connectivityCheckerProvider.overrideWithValue(
+      connectivity ?? _FakeConnectivity(),
+    ),
+    paywallRetryIntervalProvider.overrideWithValue(retryInterval),
     paywallClipPlayerProvider.overrideWithValue(
       clip ?? () => FakePhoneClipPlayer(endOnStart: true),
     ),
@@ -228,7 +280,7 @@ List<Override> _overrides({
     subscriptionStatusProvider.overrideWith(
       statusController ?? () => _FixedStatus(status),
     ),
-    paywallPlansProvider.overrideWith((ref) async => resolved),
+    paywallPlansProvider.overrideWith(plansReader ?? (ref) async => resolved),
     paywallHasSubscriptionProvider.overrideWith((ref) async => hasSubscription),
     renewingStoreSubscriptionProvider.overrideWith(
       (ref) async => renewingSubscription,
@@ -804,7 +856,9 @@ void main() {
   testWidgets('Restore calls the controller and reports success', (
     tester,
   ) async {
-    final paywall = _RecordingPaywall(restoreResult: true);
+    final paywall = _RecordingPaywall(
+      restoreResult: ProRestoreOutcome.unlocked,
+    );
     await smokeScreen(
       tester,
       const PaywallScreen(),
@@ -822,7 +876,9 @@ void main() {
   });
 
   testWidgets('Restore with nothing to restore says so', (tester) async {
-    final paywall = _RecordingPaywall(restoreResult: false);
+    final paywall = _RecordingPaywall(
+      restoreResult: ProRestoreOutcome.nothingFound,
+    );
     await smokeScreen(
       tester,
       const PaywallScreen(),
@@ -837,6 +893,167 @@ void main() {
       find.text('No active subscription was found for this account.'),
       findsOneWidget,
     );
+  });
+
+  // 121-006: offline, Restore said "No active subscription was found"
+  // although the store was never reached.
+  testWidgets('Restore that could not reach the store says the check needs '
+      'a connection, never a verdict on the account', (tester) async {
+    final paywall = _RecordingPaywall(
+      restoreResult: ProRestoreOutcome.unavailable,
+    );
+    await smokeScreen(
+      tester,
+      const PaywallScreen(),
+      overrides: _overrides(paywall: () => paywall),
+    );
+
+    await _openMenu(tester);
+    await tester.tap(find.byKey(_restore));
+    await tester.pumpAndSettle();
+
+    expect(
+      find.text(_content['paywall.restore_unavailable']!),
+      findsOneWidget,
+    );
+    expect(
+      _content['paywall.restore_unavailable'],
+      contains('Connect to the internet'),
+    );
+    expect(
+      find.text('No active subscription was found for this account.'),
+      findsNothing,
+    );
+    expect(find.text('Purchase failed. Please try again.'), findsNothing);
+  });
+
+  // 121-005, 123-002: a refused purchase ended quiet, Continue live.
+  testWidgets('a purchase the store refuses says so, and Continue stays '
+      'live for another try', (tester) async {
+    final paywall = _RecordingPaywall(buyResult: ProPurchaseOutcome.failed);
+    await smokeScreen(
+      tester,
+      const PaywallScreen(),
+      overrides: _overrides(paywall: () => paywall),
+    );
+
+    await tester.tap(find.byKey(_continue));
+    await tester.pumpAndSettle();
+
+    expect(paywall.bought, ['me_pro_annual']);
+    expect(find.text(_content['paywall.purchase_failed']!), findsOneWidget);
+    expect(
+      tester.widget<KylePrimaryButton>(find.byKey(_continue)).onPressed,
+      isNotNull,
+    );
+    _expectMessageClearsThePlans(tester);
+  });
+
+  // 123-009: after an offline launch the paywall kept "Plans aren't
+  // available" and fetched nothing until a resume.
+  group('the paywall asks again while the plans are unavailable (123-009)', () {
+    /// Plans unavailable for the first [failures] reads, then the store's.
+    Future<PaywallPlans> Function(Ref) plansAfter(
+      int failures,
+      List<int> reads,
+    ) => (ref) async {
+      reads.add(reads.length + 1);
+      if (reads.length <= failures) return const PaywallPlans();
+      return PaywallPlans(monthly: _monthly, annual: _annual);
+    };
+
+    testWidgets('coming back online re-reads the plans and the customer '
+        'info', (tester) async {
+      final connectivity = _FakeConnectivity();
+      final reads = <int>[];
+      var statusReads = 0;
+      await smokeScreen(
+        tester,
+        const PaywallScreen(),
+        overrides: _overrides(
+          connectivity: connectivity,
+          plansReader: plansAfter(1, reads),
+          statusController: () => _CountingStatus(() => statusReads++),
+        ),
+      );
+      expect(
+        find.byKey(const ValueKey('paywall.pricing_unavailable')),
+        findsOneWidget,
+      );
+      expect(reads, [1]);
+      final statusReadsBefore = statusReads;
+
+      connectivity.changes.add(true);
+      await tester.pumpAndSettle();
+
+      expect(reads, [1, 2]);
+      expect(statusReads, greaterThan(statusReadsBefore));
+      expect(
+        find.byKey(const ValueKey('paywall.pricing_unavailable')),
+        findsNothing,
+      );
+      expect(find.byKey(_annualCard), findsOneWidget);
+      await connectivity.changes.close();
+    });
+
+    testWidgets('a short timer asks again too (a cut that keeps the '
+        'interface online), and stops once plans are there', (tester) async {
+      final reads = <int>[];
+      // The opening settle runs the clock on for a while; the interval is
+      // longer than that, and each step below advances exactly one tick.
+      const tick = Duration(seconds: 3);
+      await smokeScreen(
+        tester,
+        const PaywallScreen(),
+        overrides: _overrides(
+          plansReader: plansAfter(2, reads),
+          retryInterval: tick,
+        ),
+      );
+      final opened = reads.length;
+      expect(opened, greaterThanOrEqualTo(1));
+      expect(
+        find.byKey(const ValueKey('paywall.pricing_unavailable')),
+        findsOneWidget,
+      );
+
+      await tester.pump(tick);
+      await tester.pump();
+      expect(reads.length, opened + 1);
+
+      await tester.pump(tick);
+      await tester.pump();
+      expect(reads.length, opened + 2);
+      await tester.pumpAndSettle();
+      expect(find.byKey(_annualCard), findsOneWidget);
+
+      // Plans shown: the timer leaves them alone.
+      await tester.pump(tick * 2);
+      await tester.pump();
+      expect(reads.length, opened + 2);
+    });
+
+    testWidgets('going offline, or a tick with plans shown, asks nothing', (
+      tester,
+    ) async {
+      final connectivity = _FakeConnectivity();
+      final reads = <int>[];
+      await smokeScreen(
+        tester,
+        const PaywallScreen(),
+        overrides: _overrides(
+          connectivity: connectivity,
+          plansReader: plansAfter(0, reads),
+          retryInterval: const Duration(milliseconds: 200),
+        ),
+      );
+      connectivity.changes.add(false);
+      connectivity.changes.add(true);
+      await tester.pump(const Duration(milliseconds: 250));
+      await tester.pumpAndSettle();
+      expect(reads, [1]);
+      await connectivity.changes.close();
+    });
   });
 
   testWidgets('Manage subscription opens the management URL', (tester) async {
@@ -1204,15 +1421,36 @@ void main() {
       );
     });
 
-    testWidgets("a coach's Code entered by an athlete says the pairing is "
-        'asked for', (tester) async {
+    // Lee, 2026-09-26 (122-002): a coach's code pairs at once and names
+    // the coach.
+    testWidgets("a coach's Code entered by an athlete says who they are "
+        'paired with', (tester) async {
+      await openEntry(
+        tester,
+        const CodeRedeemed(
+          kind: RedeemedKind.paired,
+          coachUserId: 'c-1',
+          coachName: 'Kyle Coach',
+        ),
+      );
+      await enter(tester, 'COACH42');
+      expect(find.text("You're paired with Kyle Coach."), findsOneWidget);
+      expect(
+        _content['redeem_code.success_paired'],
+        "You're paired with {coach}.",
+      );
+    });
+
+    testWidgets('a coach with no name on record: paired with your coach', (
+      tester,
+    ) async {
       await openEntry(
         tester,
         const CodeRedeemed(kind: RedeemedKind.paired, coachUserId: 'c-1'),
       );
       await enter(tester, 'COACH42');
       expect(
-        find.text(_content['redeem_code.success_paired']!),
+        find.text(_content['redeem_code.success_paired_unnamed']!),
         findsOneWidget,
       );
     });
