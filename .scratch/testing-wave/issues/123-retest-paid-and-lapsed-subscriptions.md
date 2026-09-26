@@ -1,6 +1,6 @@
 # 123: Retest: paid and lapsed subscriptions
 
-**Status:** ready-for-agent
+**Status:** in-progress (wave 38, 2026-09-26)
 **Blocked by:** none.
 **Next:** `/implement-lee testing-wave`
 **Model:** opus

@@ -1,6 +1,6 @@
 # 122: Retest: codes, Grants and the admin with no Pro
 
-**Status:** ready-for-agent
+**Status:** in-progress (wave 38, 2026-09-26)
 **Blocked by:** none.
 **Pair with:** 118 (its 11-005 redeems DEVCOACH30 on a new athlete, a pending pairing to test@test.com). This run accepts and declines pairings as test@test.com (11-009): act only on your own athletes' pairings. Ticket 100 may run in the same wave on test@test.com: treat its rows as expected.
 **Next:** `/implement-lee testing-wave`
