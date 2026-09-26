@@ -69,13 +69,14 @@ class MacroDashboardScreen extends ConsumerWidget {
 
   @override
   Widget build(BuildContext context, WidgetRef ref) {
+    final me = MeTokens.of(context);
     // home-shell@v1 switchover (Xuan, 2026-09-06): the ViewTabs + WeekStrip
     // block left this surface with fuel_timeline_day_header.dart's deletion;
     // the shell's DateHeader + CalendarSheet own day navigation now
     // (macro-dashboard.md §home-shell recomposition). This screen remains
     // the day content's implementation, composed via [MacroDashboardBody].
     return Container(
-      color: MeTokens.blackberry,
+      color: me.ground,
       child: const SafeArea(bottom: false, child: MacroDashboardBody()),
     );
   }
@@ -178,6 +179,7 @@ class MacroDashboardScreen extends ConsumerWidget {
     bool picking,
   ) {
     final selectedDate = ref.watch(calendarSelectedDateProvider);
+    final me = MeTokens.of(context);
     // The Brick pill only appears when 2+ groupable workouts are adjacent,
     // and never while leg-picking is already running.
     final showBrick =
@@ -201,8 +203,8 @@ class MacroDashboardScreen extends ConsumerWidget {
                   child: _dashedPill(
                     key: const ValueKey('macro_dashboard.add_food'),
                     label: '+ Add Food',
-                    color: MeTokens.creamAlpha(0.8),
-                    borderColor: MeTokens.creamAlpha(0.25),
+                    color: me.inkAlpha(0.8),
+                    borderColor: me.inkAlpha(0.25),
                     onTap: () => openLogMealScreen(
                       context,
                       logDate: _ymd(selectedDate),
@@ -228,18 +230,14 @@ class MacroDashboardScreen extends ConsumerWidget {
                 // The divider is load-bearing: it separates "make something new"
                 // from "operate on what's already here".
                 const SizedBox(width: 8),
-                Container(
-                  width: 1,
-                  height: 20,
-                  color: MeTokens.creamAlpha(0.25),
-                ),
+                Container(width: 1, height: 20, color: me.inkAlpha(0.25)),
                 const SizedBox(width: 8),
                 _dashedPill(
                   key: const ValueKey('macro_dashboard.create_brick'),
                   label: 'Brick',
                   icon: Icons.link,
-                  color: MeTokens.creamAlpha(0.8),
-                  borderColor: MeTokens.creamAlpha(0.25),
+                  color: me.inkAlpha(0.8),
+                  borderColor: me.inkAlpha(0.25),
                   onTap: () => ref
                       .read(brickSelectionControllerProvider.notifier)
                       .enterSelectionMode(),
@@ -270,9 +268,7 @@ class MacroDashboardScreen extends ConsumerWidget {
           const SizedBox(width: 10),
           SizedBox(
             width: 16,
-            child: Center(
-              child: Container(width: 2, color: MeTokens.creamAlpha(0.12)),
-            ),
+            child: Center(child: Container(width: 2, color: me.inkAlpha(0.12))),
           ),
           const SizedBox(width: 10),
           Expanded(
@@ -359,6 +355,7 @@ class MacroDashboardScreen extends ConsumerWidget {
     List<Activity> dayWorkouts,
     bool picking,
   ) {
+    final me = MeTokens.of(context);
     // A created brick sits *inside* the timeline as an indented bracket — it
     // takes one time-dot like any other row, so the rail is never cut
     // (Notion 3a7e3fdb, problem A). The tile draws its own rail column.
@@ -389,7 +386,7 @@ class MacroDashboardScreen extends ConsumerWidget {
                   style: TextStyle(
                     fontFamily: 'Apercu',
                     fontSize: 10.5,
-                    color: MeTokens.creamAlpha(0.5),
+                    color: me.inkAlpha(0.5),
                     fontFeatures: const [FontFeature.tabularFigures()],
                   ),
                 ),
@@ -406,14 +403,11 @@ class MacroDashboardScreen extends ConsumerWidget {
                   Positioned(
                     top: 0,
                     bottom: 0,
-                    child: Container(
-                      width: 2,
-                      color: MeTokens.creamAlpha(0.12),
-                    ),
+                    child: Container(width: 2, color: me.inkAlpha(0.12)),
                   ),
                   Padding(
                     padding: const EdgeInsets.only(top: 5),
-                    child: _railDot(node),
+                    child: _railDot(me, node),
                   ),
                 ],
               ),
@@ -466,7 +460,7 @@ class MacroDashboardScreen extends ConsumerWidget {
     );
   }
 
-  Widget _railDot(DashboardNode node) {
+  Widget _railDot(MeSurfaceTokens me, DashboardNode node) {
     // Workouts are always teal on the rail; meals are orange. (The reference
     // rendering tints some meal dots electrolyte — that predates the tokens
     // ruling that electrolyte may only signify the burn/verified domain, so
@@ -479,7 +473,7 @@ class MacroDashboardScreen extends ConsumerWidget {
         size: const Size(11, 11),
         painter: _DottedRingPainter(
           color: node.isSkippedWorkout
-              ? MeTokens.creamAlpha(0.28)
+              ? me.inkAlpha(0.28)
               : node.isWorkout
               ? MeTokens.electrolyteAlpha(0.65)
               : MeTokens.orange,
@@ -492,7 +486,7 @@ class MacroDashboardScreen extends ConsumerWidget {
       decoration: BoxDecoration(
         shape: BoxShape.circle,
         color: color,
-        border: Border.all(color: MeTokens.blackberry, width: 2),
+        border: Border.all(color: me.ground, width: 2),
       ),
     );
   }
@@ -606,6 +600,7 @@ class MacroDashboardScreen extends ConsumerWidget {
 
   /// Step 2: the add row's slot while picking — "Pick legs to link · Cancel".
   Widget _pickLegsBar(WidgetRef ref) {
+    final me = MeTokens.of(ref.context);
     return Container(
       padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 9),
       decoration: BoxDecoration(
@@ -617,15 +612,13 @@ class MacroDashboardScreen extends ConsumerWidget {
         children: [
           const Icon(Icons.link, size: 14, color: MeTokens.orange),
           const SizedBox(width: 8),
-          Expanded(
-            child: Text('Pick legs to link', style: _brickText(MeTokens.cream)),
-          ),
+          Expanded(child: Text('Pick legs to link', style: _brickText(me.ink))),
           GestureDetector(
             key: const ValueKey('macro_dashboard.brick_cancel'),
             onTap: ref
                 .read(brickSelectionControllerProvider.notifier)
                 .exitSelectionMode,
-            child: Text('Cancel', style: _brickText(MeTokens.creamAlpha(0.75))),
+            child: Text('Cancel', style: _brickText(me.inkAlpha(0.75))),
           ),
         ],
       ),
@@ -643,6 +636,7 @@ class MacroDashboardScreen extends ConsumerWidget {
     List<Activity> dayWorkouts,
   ) {
     final notifier = ref.read(brickSelectionControllerProvider.notifier);
+    final me = MeTokens.of(ref.context);
     // Watch so the outline/number repaint as the selection changes.
     ref.watch(brickSelectionControllerProvider);
     final candidates = brickCandidateIds(
@@ -701,12 +695,12 @@ class MacroDashboardScreen extends ConsumerWidget {
                     ),
                     child: Text(
                       '$order',
-                      style: const TextStyle(
+                      style: TextStyle(
                         fontFamily: 'Apercu',
                         fontWeight: FontWeight.w700,
                         fontSize: 11,
                         height: 1.0,
-                        color: MeTokens.blackberry,
+                        color: me.ground,
                       ),
                     ),
                   ),
@@ -735,14 +729,10 @@ class MacroDashboardScreen extends ConsumerWidget {
   /// `Create Brick` outline button inside it.) These are the same intended
   /// colours, resolved against the ground once instead of per-frame against
   /// the timeline. Ruling request: `qa/intake/2026-09-09-overlay-material-boundary.md`.
-  static final Color _dockedPanelFill = Color.alphaBlend(
-    MeTokens.orangeAlpha(0.08),
-    MeTokens.blackberry,
-  );
-  static final Color _dockedHintFill = Color.alphaBlend(
-    MeTokens.creamAlpha(0.05),
-    MeTokens.blackberry,
-  );
+  static Color _dockedPanelFill(MeSurfaceTokens me) =>
+      Color.alphaBlend(MeTokens.orangeAlpha(0.08), me.ground);
+  static Color _dockedHintFill(MeSurfaceTokens me) =>
+      Color.alphaBlend(me.inkAlpha(0.05), me.ground);
 
   /// The docked LEG ORDER panel (step 2 → step 3): the chosen legs as ordered
   /// chips with a Swap affordance, over a full-width `Create Brick (n)` that
@@ -754,6 +744,7 @@ class MacroDashboardScreen extends ConsumerWidget {
     double bottomInset,
   ) {
     final selection = ref.watch(brickSelectionControllerProvider);
+    final me = MeTokens.of(context);
     final notifier = ref.read(brickSelectionControllerProvider.notifier);
     final legs = selection.selectedActivities;
     final dock = bottomInset + _dockGap(context);
@@ -764,7 +755,7 @@ class MacroDashboardScreen extends ConsumerWidget {
       margin: EdgeInsets.fromLTRB(18, 0, 18, dock),
       padding: const EdgeInsets.fromLTRB(14, 12, 14, 14),
       decoration: BoxDecoration(
-        color: _dockedPanelFill,
+        color: _dockedPanelFill(me),
         borderRadius: BorderRadius.circular(16),
         border: Border.all(color: MeTokens.orangeAlpha(0.35)),
       ),
@@ -781,7 +772,7 @@ class MacroDashboardScreen extends ConsumerWidget {
                     fontSize: 10.5,
                     letterSpacing: 1.2,
                     fontWeight: FontWeight.w600,
-                    color: MeTokens.creamAlpha(0.6),
+                    color: me.inkAlpha(0.6),
                   ),
                 ),
               ),
@@ -798,17 +789,13 @@ class MacroDashboardScreen extends ConsumerWidget {
                     Icon(
                       Icons.swap_horiz,
                       size: 15,
-                      color: canSwap
-                          ? MeTokens.electrolyte
-                          : MeTokens.creamAlpha(0.3),
+                      color: canSwap ? MeTokens.electrolyte : me.inkAlpha(0.3),
                     ),
                     const SizedBox(width: 5),
                     Text(
                       'Swap',
                       style: _brickText(
-                        canSwap
-                            ? MeTokens.electrolyte
-                            : MeTokens.creamAlpha(0.3),
+                        canSwap ? MeTokens.electrolyte : me.inkAlpha(0.3),
                       ),
                     ),
                   ],
@@ -826,10 +813,10 @@ class MacroDashboardScreen extends ConsumerWidget {
                     child: Icon(
                       Icons.arrow_forward,
                       size: 13,
-                      color: MeTokens.creamAlpha(0.5),
+                      color: me.inkAlpha(0.5),
                     ),
                   ),
-                Expanded(child: _legChip(legs[i], i + 1)),
+                Expanded(child: _legChip(me, legs[i], i + 1)),
               ],
             ],
           ),
@@ -848,21 +835,22 @@ class MacroDashboardScreen extends ConsumerWidget {
   }
 
   Widget _brickPickHint(WidgetRef ref, double dock) {
+    final me = MeTokens.of(ref.context);
     return Container(
       width: double.infinity,
       margin: EdgeInsets.fromLTRB(18, 0, 18, dock),
       padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 16),
       decoration: BoxDecoration(
-        color: _dockedHintFill,
+        color: _dockedHintFill(me),
         borderRadius: BorderRadius.circular(16),
-        border: Border.all(color: MeTokens.creamAlpha(0.12)),
+        border: Border.all(color: me.inkAlpha(0.12)),
       ),
       child: Row(
         children: [
           Expanded(
             child: Text(
               'Tap two or more activities to link into a brick',
-              style: _brickText(MeTokens.creamAlpha(0.6)),
+              style: _brickText(me.inkAlpha(0.6)),
             ),
           ),
           const SizedBox(width: 12),
@@ -874,6 +862,7 @@ class MacroDashboardScreen extends ConsumerWidget {
 
   /// Backs out of leg-picking: clears the selection and restores the add row.
   Widget _brickCancel(WidgetRef ref, {required String key}) {
+    final me = MeTokens.of(ref.context);
     return Semantics(
       button: true,
       label: 'Cancel brick',
@@ -885,20 +874,20 @@ class MacroDashboardScreen extends ConsumerWidget {
             .exitSelectionMode,
         child: Padding(
           padding: const EdgeInsets.symmetric(vertical: 4),
-          child: Text('Cancel', style: _brickText(MeTokens.creamAlpha(0.75))),
+          child: Text('Cancel', style: _brickText(me.inkAlpha(0.75))),
         ),
       ),
     );
   }
 
   /// One ordered leg chip: `① RUN`.
-  Widget _legChip(Activity activity, int order) {
+  Widget _legChip(MeSurfaceTokens me, Activity activity, int order) {
     return Container(
       padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 8),
       decoration: BoxDecoration(
-        color: MeTokens.creamAlpha(0.05),
+        color: me.inkAlpha(0.05),
         borderRadius: BorderRadius.circular(10),
-        border: Border.all(color: MeTokens.creamAlpha(0.12)),
+        border: Border.all(color: me.inkAlpha(0.12)),
       ),
       child: Row(
         children: [
@@ -912,12 +901,12 @@ class MacroDashboardScreen extends ConsumerWidget {
             ),
             child: Text(
               '$order',
-              style: const TextStyle(
+              style: TextStyle(
                 fontFamily: 'Apercu',
                 fontSize: 10,
                 height: 1.0,
                 fontWeight: FontWeight.w700,
-                color: MeTokens.blackberry,
+                color: me.ground,
               ),
             ),
           ),
@@ -927,10 +916,10 @@ class MacroDashboardScreen extends ConsumerWidget {
               activity.activityType.displayName.toUpperCase(),
               maxLines: 1,
               overflow: TextOverflow.ellipsis,
-              style: const TextStyle(
+              style: TextStyle(
                 fontFamily: 'Compadre',
                 fontSize: 13,
-                color: MeTokens.cream,
+                color: me.ink,
               ),
             ),
           ),
@@ -1371,6 +1360,7 @@ class _MacroDashboardBodyState extends ConsumerState<MacroDashboardBody> {
   Widget build(BuildContext context) {
     final view = ref.watch(macroDashboardViewProvider);
     final dayAsync = ref.watch(macroDashboardDayProvider);
+    final me = MeTokens.of(context);
     return dayAsync.when(
       // Same S-1 flicker-proofing as ever: repaint in place, never strobe
       // through a spinner on a recompute.
@@ -1382,10 +1372,7 @@ class _MacroDashboardBodyState extends ConsumerState<MacroDashboardBody> {
       error: (e, _) => Center(
         child: Text(
           'Could not load your day',
-          style: TextStyle(
-            fontFamily: 'Apercu',
-            color: MeTokens.creamAlpha(0.7),
-          ),
+          style: TextStyle(fontFamily: 'Apercu', color: me.inkAlpha(0.7)),
         ),
       ),
       data: (data) => _layout(context, view, data),
@@ -1398,6 +1385,7 @@ class _MacroDashboardBodyState extends ConsumerState<MacroDashboardBody> {
     DashboardData data,
   ) {
     const screen = MacroDashboardScreen();
+    final me = MeTokens.of(context);
     final nodes = data.nodes
         .where(
           (n) => switch (view.filter) {
@@ -1425,7 +1413,7 @@ class _MacroDashboardBodyState extends ConsumerState<MacroDashboardBody> {
           child: RefreshIndicator(
             key: const ValueKey('macro_dashboard.refresh'),
             color: MeTokens.electrolyte,
-            backgroundColor: MeTokens.blackberry,
+            backgroundColor: me.ground,
             edgeOffset: _blockHeight,
             onRefresh: _refreshDay,
             child: ListView(

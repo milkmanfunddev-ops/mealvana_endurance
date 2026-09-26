@@ -200,10 +200,16 @@ class AppMaterials {
 
   /// The dim gradient: `blackberry` 85% → 55% at half → transparent
   /// (export-exact stops).
-  static final List<Color> topFadeGradient = [
-    AppColors.blackberry.withValues(alpha: 0.85),
-    AppColors.blackberry.withValues(alpha: 0.55),
-    AppColors.blackberry.withValues(alpha: 0.0),
+  static final List<Color> topFadeGradient = topFadeGradientFor(
+    AppColors.blackberry,
+  );
+
+  /// The same stops over another ground: the Light theme dissolves the
+  /// timeline into cream, not blackberry (Finding 119-003).
+  static List<Color> topFadeGradientFor(Color ground) => [
+    ground.withValues(alpha: 0.85),
+    ground.withValues(alpha: 0.55),
+    ground.withValues(alpha: 0.0),
   ];
   static const List<double> topFadeGradientStops = [0.0, 0.5, 1.0];
 
