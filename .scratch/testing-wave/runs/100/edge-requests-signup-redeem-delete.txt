@@ -1,0 +1,20 @@
+[05:10:34] POST | 200 | https://vlmtsdzpnjnavdgytcmi.supabase.co/functions/v1/garmin-push
+[05:10:36] POST | 200 | https://vlmtsdzpnjnavdgytcmi.supabase.co/functions/v1/garmin-push
+[05:10:36] POST | 200 | https://vlmtsdzpnjnavdgytcmi.supabase.co/functions/v1/garmin-push
+[05:11:13] POST | 200 | https://vlmtsdzpnjnavdgytcmi.supabase.co/functions/v1/garmin-push
+[05:11:13] POST | 200 | https://vlmtsdzpnjnavdgytcmi.supabase.co/functions/v1/garmin-push
+[05:11:14] POST | 200 | https://vlmtsdzpnjnavdgytcmi.supabase.co/functions/v1/garmin-push
+[05:11:14] POST | 200 | https://vlmtsdzpnjnavdgytcmi.supabase.co/functions/v1/garmin-push
+[05:17:35] POST | 200 | https://vlmtsdzpnjnavdgytcmi.supabase.co/functions/v1/sync-all-data
+[05:17:41] POST | 200 | https://vlmtsdzpnjnavdgytcmi.supabase.co/functions/v1/vana-action
+[05:17:43] POST | 200 | https://vlmtsdzpnjnavdgytcmi.supabase.co/functions/v1/sync-all-data
+[05:18:51] POST | 200 | https://vlmtsdzpnjnavdgytcmi.supabase.co/functions/v1/redeem-code
+[05:19:16] POST | 200 | https://vlmtsdzpnjnavdgytcmi.supabase.co/functions/v1/vana-action
+[05:19:33] POST | 200 | https://vlmtsdzpnjnavdgytcmi.supabase.co/functions/v1/redeem-code
+[05:20:20] POST | 200 | https://vlmtsdzpnjnavdgytcmi.supabase.co/functions/v1/garmin-push
+[05:20:21] POST | 200 | https://vlmtsdzpnjnavdgytcmi.supabase.co/functions/v1/garmin-push
+[05:20:47] POST | 200 | https://vlmtsdzpnjnavdgytcmi.supabase.co/functions/v1/calculate-daily-macros-v6
+[05:21:37] POST | 200 | https://vlmtsdzpnjnavdgytcmi.supabase.co/functions/v1/sync-all-data
+[05:22:02] POST | 200 | https://vlmtsdzpnjnavdgytcmi.supabase.co/functions/v1/delete-user
+
+(18 rows)

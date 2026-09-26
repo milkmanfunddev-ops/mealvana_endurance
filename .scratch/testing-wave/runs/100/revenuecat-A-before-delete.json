@@ -1,0 +1,3 @@
+{"active_entitlements":{"items":[],"next_page":null,"object":"list","url":"https://api.revenuecat.com/v2/projects/proj77b3c48f/customers/53b50f2c-d13a-4d25-8b55-add47023cc5d/active_entitlements"},"experiment":null,"first_seen_at":1790417621456,"id":"53b50f2c-d13a-4d25-8b55-add47023cc5d","last_seen_app_version":"1.27.1","last_seen_at":1790417861034,"last_seen_country":"US","last_seen_platform":"iOS","last_seen_platform_version":"Version 26.2 (Build 23C54)","object":"customer","project_id":"proj77b3c48f"}
+
+HTTP 200

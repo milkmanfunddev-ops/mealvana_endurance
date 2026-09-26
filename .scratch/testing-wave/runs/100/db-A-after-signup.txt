@@ -1,0 +1,9 @@
+[
+ {
+  "id": "53b50f2c-d13a-4d25-8b55-add47023cc5d",
+  "email": "lee+e2e-100-20260926t1014z@rightpathprogramming.com",
+  "email_confirmed_at": "2026-09-26 10:17:40.566319+00",
+  "created_at": "2026-09-26 10:17:22.942109+00",
+  "public_users": 1
+ }
+]

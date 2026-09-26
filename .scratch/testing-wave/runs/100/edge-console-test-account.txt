@@ -1,0 +1,292 @@
+[05:18:49] booted (time: 30ms)
+[05:18:49] Listening on http://localhost:9999/
+[05:18:49] shutdown
+[05:18:51] [redeem-code] 53b50f2c-d13a-4d25-8b55-add47023cc5d redeemed coach code DEVCOACH30 → paired
+[05:18:53] shutdown
+[05:18:57] shutdown
+[05:19:15] booted (time: 80ms)
+[05:19:16] Listening on http://localhost:9999/
+[05:19:16] [vana-action] user=607f9dd5-6fa7-48ee-a628-720d4a0506a1 type=list_plans parts=- 282ms
+[05:19:33] booted (time: 51ms)
+[05:19:33] Listening on http://localhost:9999/
+[05:20:04] shutdown
+[05:20:20] booted (time: 42ms)
+[05:20:20] Listening on http://localhost:9999/
+[05:20:20] [garmin-auth] Expected client ID: "6e904d60-e9d6-48ff-b1e7-3f3e7ff20db6" (length: 36)
+[05:20:20] [garmin-auth] POST request, headers: {"accept":"*/*","accept-encoding":"gzip","accept-language":"*","baggage":"sb-request-id=01a0dd3a-e6d5-7b56-9038-0127ecc5eb56","cdn-loop":"cloudflare; loops=1","cf-connecting-ip":"54.177.102.95","cf-ew-via":"15","cf-ray":"a4118911b88f2c47-SJC","cf-visitor":"{\"scheme\":\"https\"}","cf-worker":"supabase.co","content-length":"2504","content-type":"application/json","garmin-client-id":"6e904d60-e9d6-48ff-b1e7-3f3e7ff20db6","host":"edge-runtime.supabase.com","sb-request-id":"01a0dd3a-e6d5-7b56-9038-0127ecc5eb56","traceparent":"00-5a927e509aeb63fc383eb3477e019370-1b174433ff83c9a9-01","user-agent":"Deno/2.1.4 (variant; SupabaseEdgeRuntime/1.76.0; ref=wvmvsodrvbkxfydabqed)","x-amzn-trace-id":"Root=1-6ab79c64-47414e2824e9e1a55304078a","x-forwarded-for":"54.177.102.95,54.177.102.95, 3.2.54.139","x-forwarded-port":"443","x-forwarded-proto":"https","x-garmin-fanout":"1"}
+[05:20:20] [garmin-push] record failed kind=stressDetails garminUserId=99cab55a-ab4f-4bf2-9c5c-3f0b1e4c61e1 summaryId=x4b763e2-6ab75150-4ac4 reason=no_user_mapping errorKind=none
+[05:20:20] [garmin-push] Processing complete: {"stressDetails":{"processed":0,"errors":1}}
+[05:20:21] booted (time: 35ms)
+[05:20:21] Listening on http://localhost:9999/
+[05:20:21] [garmin-auth] POST request, headers: {"accept":"*/*","accept-encoding":"gzip","accept-language":"*","baggage":"sb-request-id=01a0dd3a-eaea-770a-987d-be11881fb5f3","cdn-loop":"cloudflare; loops=1","cf-connecting-ip":"18.223.120.252","cf-ew-via":"15","cf-ray":"a4118917fe94a53e-CMH","cf-visitor":"{\"scheme\":\"https\"}","cf-worker":"supabase.co","content-length":"1116","content-type":"application/json","garmin-client-id":"6e904d60-e9d6-48ff-b1e7-3f3e7ff20db6","host":"edge-runtime.supabase.com","sb-request-id":"01a0dd3a-eaea-770a-987d-be11881fb5f3","traceparent":"00-ae6ae67e7d6f65e6c46bfa69584d8037-9db04a9145211b7b-01","user-agent":"Deno/2.1.4 (variant; SupabaseEdgeRuntime/1.76.0; ref=wvmvsodrvbkxfydabqed)","x-amzn-trace-id":"Root=1-6ab79c65-405ecc5c0fb6579e018a8e3e","x-forwarded-for":"18.223.120.252,18.223.120.252, 13.248.111.76","x-forwarded-port":"443","x-forwarded-proto":"https","x-garmin-fanout":"1"}
+[05:20:21] [garmin-auth] Expected client ID: "6e904d60-e9d6-48ff-b1e7-3f3e7ff20db6" (length: 36)
+[05:20:21] [garmin-push] record failed kind=epochs garminUserId=99cab55a-ab4f-4bf2-9c5c-3f0b1e4c61e1 summaryId=x4b763e2-6ab7941c-8 reason=no_user_mapping errorKind=none
+[05:20:21] [garmin-push] record failed kind=epochs garminUserId=99cab55a-ab4f-4bf2-9c5c-3f0b1e4c61e1 summaryId=x4b763e2-6ab797a0-8 reason=no_user_mapping errorKind=none
+[05:20:21] [garmin-push] record failed kind=epochs garminUserId=99cab55a-ab4f-4bf2-9c5c-3f0b1e4c61e1 summaryId=x4b763e2-6ab79b24-8 reason=no_user_mapping errorKind=none
+[05:20:21] [garmin-push] Processing complete: {"epochs":{"processed":0,"errors":3}}
+[05:20:30] shutdown
+[05:20:46] booted (time: 47ms)
+[05:20:46] Listening on http://localhost:9999/
+[05:20:47] sessionCost: unknown sport "other" — F4a zero-with-estimate-flag (session-demand.md F4a, RULED 2026-09-10)
+[05:20:47] sessionCost: unknown sport "other" — F4a zero-with-estimate-flag (session-demand.md F4a, RULED 2026-09-10)
+[05:20:47] sessionCost: unknown sport "other" — F4a zero-with-estimate-flag (session-demand.md F4a, RULED 2026-09-10)
+[05:20:47] sessionCost: unknown sport "other" — F4a zero-with-estimate-flag (session-demand.md F4a, RULED 2026-09-10)
+[05:20:47] sessionCost: unknown sport "other" — F4a zero-with-estimate-flag (session-demand.md F4a, RULED 2026-09-10)
+[05:20:47] sessionCost: unknown sport "other" — F4a zero-with-estimate-flag (session-demand.md F4a, RULED 2026-09-10)
+[05:20:47] sessionCost: unknown sport "other" — F4a zero-with-estimate-flag (session-demand.md F4a, RULED 2026-09-10)
+[05:20:47] sessionCost: unknown sport "other" — F4a zero-with-estimate-flag (session-demand.md F4a, RULED 2026-09-10)
+[05:20:48] shutdown
+[05:21:35] shutdown
+[05:21:36] shutdown
+[05:21:36] booted (time: 52ms)
+[05:21:36] Listening on http://localhost:9999/
+[05:21:36] Starting unified sync for user: 53b50f2c-d13a-4d25-8b55-add47023cc5d
+[05:21:36] Full sync (no timestamp provided)
+[05:21:37] User is an athlete with 1 relationships, fetching coach profiles...
+[05:21:37] Fetching profiles for 1 coaches
+[05:21:37] ✓ coach_profiles: 0 records
+[05:21:37] Sync completed: 74 total records (Incremental: false)
+[05:21:37] Errors: 0
+[05:22:01] booted (time: 35ms)
+[05:22:01] Listening on http://localhost:9999/
+[05:22:01] Deleting user account: 53b50f2c-d13a-4d25-8b55-add47023cc5d
+[05:22:01] shutdown
+[05:22:01] Deleted user from public.users: 53b50f2c-d13a-4d25-8b55-add47023cc5d
+[05:22:02] Successfully deleted auth account: 53b50f2c-d13a-4d25-8b55-add47023cc5d
+[05:22:02] Deleted RevenueCat customer: 53b50f2c-d13a-4d25-8b55-add47023cc5d
+[05:22:23] booted (time: 42ms)
+[05:22:23] Listening on http://localhost:9999/
+[05:22:23] [garmin-auth] POST request, headers: {"accept":"*/*","accept-encoding":"gzip","accept-language":"*","baggage":"sb-request-id=01a0dd3c-ca65-7b3d-8739-74a3aa6f81c5","cdn-loop":"cloudflare; loops=1","cf-connecting-ip":"3.137.175.50","cf-ew-via":"15","cf-ray":"a4118c172abe258a-CMH","cf-visitor":"{\"scheme\":\"https\"}","cf-worker":"supabase.co","content-length":"14304","content-type":"application/json","garmin-client-id":"6e904d60-e9d6-48ff-b1e7-3f3e7ff20db6","host":"edge-runtime.supabase.com","sb-request-id":"01a0dd3c-ca65-7b3d-8739-74a3aa6f81c5","traceparent":"00-487ec4ff313f157cc6bf968500fb069d-9a0a22bb38e45f14-01","user-agent":"Deno/2.1.4 (variant; SupabaseEdgeRuntime/1.76.0; ref=wvmvsodrvbkxfydabqed)","x-amzn-trace-id":"Root=1-6ab79cdf-1aeee28258ec82f854bbeac6","x-forwarded-for":"3.137.175.50,3.137.175.50, 13.248.111.78","x-forwarded-port":"443","x-forwarded-proto":"https","x-garmin-fanout":"1"}
+[05:22:23] [garmin-auth] Expected client ID: "6e904d60-e9d6-48ff-b1e7-3f3e7ff20db6" (length: 36)
+[05:22:24] [garmin-push] record failed kind=dailies garminUserId=99cab55a-ab4f-4bf2-9c5c-3f0b1e4c61e1 summaryId=x4b763e2-6ab75150-4ac4-0 reason=no_user_mapping errorKind=none
+[05:22:24] [garmin-push] Processing complete: {"dailies":{"processed":0,"errors":1}}
+[05:22:51] shutdown
+[05:23:05] booted (time: 55ms)
+[05:23:05] Listening on http://localhost:9999/
+[05:23:05] Starting unified sync for user: 607f9dd5-6fa7-48ee-a628-720d4a0506a1
+[05:23:05] Full sync (no timestamp provided)
+[05:23:06] User is a coach with 8 relationships
+[05:23:06] Skipping bulk athlete data sync - use on-demand sync per athlete instead
+[05:23:06] Sync completed: 465 total records (Incremental: false)
+[05:23:06] Errors: 0
+[05:23:07] booted (time: 26ms)
+[05:23:07] Listening on http://localhost:9999/
+[05:23:08] sessionCost: unknown sport "other" — F4a zero-with-estimate-flag (session-demand.md F4a, RULED 2026-09-10)
+[05:23:08] sessionCost: unknown sport "other" — F4a zero-with-estimate-flag (session-demand.md F4a, RULED 2026-09-10)
+[05:23:08] sessionCost: unknown sport "other" — F4a zero-with-estimate-flag (session-demand.md F4a, RULED 2026-09-10)
+[05:23:08] sessionCost: unknown sport "other" — F4a zero-with-estimate-flag (session-demand.md F4a, RULED 2026-09-10)
+[05:23:08] sessionCost: unknown sport "other" — F4a zero-with-estimate-flag (session-demand.md F4a, RULED 2026-09-10)
+[05:23:08] sessionCost: unknown sport "other" — F4a zero-with-estimate-flag (session-demand.md F4a, RULED 2026-09-10)
+[05:23:08] sessionCost: unknown sport "other" — F4a zero-with-estimate-flag (session-demand.md F4a, RULED 2026-09-10)
+[05:23:08] sessionCost: unknown sport "other" — F4a zero-with-estimate-flag (session-demand.md F4a, RULED 2026-09-10)
+[05:23:08] sessionCost: unknown sport "other" — F4a zero-with-estimate-flag (session-demand.md F4a, RULED 2026-09-10)
+[05:23:08] booted (time: 31ms)
+[05:23:08] Listening on http://localhost:9999/
+[05:23:08] sessionCost: unknown sport "other" — F4a zero-with-estimate-flag (session-demand.md F4a, RULED 2026-09-10)
+[05:23:08] sessionCost: unknown sport "other" — F4a zero-with-estimate-flag (session-demand.md F4a, RULED 2026-09-10)
+[05:23:08] sessionCost: unknown sport "other" — F4a zero-with-estimate-flag (session-demand.md F4a, RULED 2026-09-10)
+[05:23:08] sessionCost: unknown sport "other" — F4a zero-with-estimate-flag (session-demand.md F4a, RULED 2026-09-10)
+[05:23:08] sessionCost: unknown sport "other" — F4a zero-with-estimate-flag (session-demand.md F4a, RULED 2026-09-10)
+[05:23:08] sessionCost: unknown sport "other" — F4a zero-with-estimate-flag (session-demand.md F4a, RULED 2026-09-10)
+[05:23:08] sessionCost: unknown sport "other" — F4a zero-with-estimate-flag (session-demand.md F4a, RULED 2026-09-10)
+[05:23:08] sessionCost: unknown sport "other" — F4a zero-with-estimate-flag (session-demand.md F4a, RULED 2026-09-10)
+[05:23:16] shutdown
+[05:23:38] shutdown
+[05:24:20] shutdown
+[05:24:22] shutdown
+[05:24:23] shutdown
+[05:25:21] booted (time: 102ms)
+[05:25:21] Listening on http://localhost:9999/
+[05:25:24] [vana-action] user=607f9dd5-6fa7-48ee-a628-720d4a0506a1 type=get_home parts=batch 2667ms
+[05:26:36] shutdown
+[05:26:37] booted (time: 97ms)
+[05:26:37] Listening on http://localhost:9999/
+[05:26:40] [vana-action] user=607f9dd5-6fa7-48ee-a628-720d4a0506a1 type=rebuild_shopping_list parts=batch 2066ms
+[05:26:40] booted (time: 70ms)
+[05:26:40] Listening on http://localhost:9999/
+[05:26:40] booted (time: 127ms)
+[05:26:40] booted (time: 117ms)
+[05:26:40] Listening on http://localhost:9999/
+[05:26:40] Listening on http://localhost:9999/
+[05:26:41] [vana-action] user=607f9dd5-6fa7-48ee-a628-720d4a0506a1 type=get_shopping_list parts=- 178ms
+[05:26:41] [vana-action] user=607f9dd5-6fa7-48ee-a628-720d4a0506a1 type=get_shopping_list parts=- 283ms
+[05:26:41] booted (time: 70ms)
+[05:26:41] Listening on http://localhost:9999/
+[05:26:41] booted (time: 86ms)
+[05:26:41] Listening on http://localhost:9999/
+[05:26:42] [vana-action] user=607f9dd5-6fa7-48ee-a628-720d4a0506a1 type=list_shopping_lists parts=- 367ms
+[05:26:42] booted (time: 51ms)
+[05:26:42] Listening on http://localhost:9999/
+[05:26:42] [vana-action] user=607f9dd5-6fa7-48ee-a628-720d4a0506a1 type=list_shopping_lists parts=- 569ms
+[05:26:42] [vana-action] user=607f9dd5-6fa7-48ee-a628-720d4a0506a1 type=get_home parts=batch 1729ms
+[05:26:42] booted (time: 104ms)
+[05:26:42] booted (time: 72ms)
+[05:26:42] Listening on http://localhost:9999/
+[05:26:42] Listening on http://localhost:9999/
+[05:26:43] [vana-action] user=607f9dd5-6fa7-48ee-a628-720d4a0506a1 type=get_shopping_list parts=- 178ms
+[05:26:43] booted (time: 131ms)
+[05:26:43] Listening on http://localhost:9999/
+[05:26:44] [vana-action] user=607f9dd5-6fa7-48ee-a628-720d4a0506a1 type=list_shopping_lists parts=- 451ms
+[05:26:47] [vana] day notes for 9be88811-dd03-46e1-afcd-9403a69c7087: 1 of 7 days in 2332ms
+[05:26:50] booted (time: 126ms)
+[05:26:50] Listening on http://localhost:9999/
+[05:26:52] [vana-action] user=607f9dd5-6fa7-48ee-a628-720d4a0506a1 type=get_home parts=batch 1839ms
+[05:26:52] booted (time: 68ms)
+[05:26:52] Listening on http://localhost:9999/
+[05:26:53] [vana-action] user=607f9dd5-6fa7-48ee-a628-720d4a0506a1 type=get_shopping_list parts=- 333ms
+[05:26:53] booted (time: 98ms)
+[05:26:53] Listening on http://localhost:9999/
+[05:26:54] [vana-action] user=607f9dd5-6fa7-48ee-a628-720d4a0506a1 type=list_shopping_lists parts=- 592ms
+[05:26:54] booted (time: 52ms)
+[05:26:54] Listening on http://localhost:9999/
+[05:26:54] Starting unified sync for user: e5794d71-5a7c-4b59-8b4f-4e15fc119bb5
+[05:26:54] Full sync (no timestamp provided)
+[05:26:54] Sync completed: 73 total records (Incremental: false)
+[05:26:54] Errors: 0
+[05:27:52] shutdown
+[05:27:55] shutdown
+[05:27:55] shutdown
+[05:27:55] shutdown
+[05:27:56] shutdown
+[05:27:56] shutdown
+[05:27:57] shutdown
+[05:27:57] shutdown
+[05:27:57] shutdown
+[05:27:58] shutdown
+[05:28:05] shutdown
+[05:28:07] shutdown
+[05:28:08] shutdown
+[05:28:09] shutdown
+[05:28:10] booted (time: 94ms)
+[05:28:10] Listening on http://localhost:9999/
+[05:28:11] [vana-action] user=607f9dd5-6fa7-48ee-a628-720d4a0506a1 type=get_shopping_list parts=- 253ms
+[05:28:11] booted (time: 72ms)
+[05:28:11] Listening on http://localhost:9999/
+[05:28:12] [vana-action] user=607f9dd5-6fa7-48ee-a628-720d4a0506a1 type=list_shopping_lists parts=- 643ms
+[05:28:39] booted (time: 75ms)
+[05:28:39] Listening on http://localhost:9999/
+[05:28:39] [vana-action] user=607f9dd5-6fa7-48ee-a628-720d4a0506a1 type=get_shopping_list parts=- 218ms
+[05:28:40] booted (time: 104ms)
+[05:28:40] Listening on http://localhost:9999/
+[05:28:40] [vana-action] user=607f9dd5-6fa7-48ee-a628-720d4a0506a1 type=list_shopping_lists parts=- 418ms
+[05:29:07] booted (time: 95ms)
+[05:29:07] Listening on http://localhost:9999/
+[05:29:07] [vana-action] user=607f9dd5-6fa7-48ee-a628-720d4a0506a1 type=list_plans parts=- 138ms
+[05:29:25] shutdown
+[05:29:26] shutdown
+[05:29:39] booted (time: 30ms)
+[05:29:39] Listening on http://localhost:9999/
+[05:29:39] Full sync (no timestamp provided)
+[05:29:39] Starting unified sync for user: 16035302-6752-4549-8d7d-629c3e118d2b
+[05:29:39] Sync completed: 73 total records (Incremental: false)
+[05:29:39] Errors: 0
+[05:29:51] booted (time: 102ms)
+[05:29:51] Listening on http://localhost:9999/
+[05:29:51] [vana-action] user=607f9dd5-6fa7-48ee-a628-720d4a0506a1 type=get_plan parts=batch 102ms
+[05:29:54] shutdown
+[05:29:55] shutdown
+[05:30:04] booted (time: 48ms)
+[05:30:04] Listening on http://localhost:9999/
+[05:30:04] [rc-webhook] INITIAL_PURCHASE: active_until=2026-09-26T10:35:03.367Z period=NORMAL for 16035302-6752-4549-8d7d-629c3e118d2b
+[05:30:04] [rc-webhook] INITIAL_PURCHASE: allowance 4000000 → 16035302-6752-4549-8d7d-629c3e118d2b ({"balance":4000000,"granted":true,"allowance":4000000,"forfeited":0,"allowance_expires_at":"2026-09-26T10:35:03.367+00:00"})
+[05:30:04] booted (time: 28ms)
+[05:30:04] Listening on http://localhost:9999/
+[05:30:04] [CALC_MACROS] Garmin not connected for user 16035302-6752-4549-8d7d-629c3e118d2b — skipping week Garmin context
+[05:30:22] shutdown
+[05:30:54] shutdown
+[05:31:04] booted (time: 30ms)
+[05:31:04] Listening on http://localhost:9999/
+[05:31:04] Starting unified sync for user: e5794d71-5a7c-4b59-8b4f-4e15fc119bb5
+[05:31:04] Full sync (no timestamp provided)
+[05:31:04] Sync completed: 73 total records (Incremental: false)
+[05:31:04] Errors: 0
+[05:31:06] shutdown
+[05:31:19] shutdown
+[05:31:19] shutdown
+[05:31:38] booted (time: 128ms)
+[05:31:38] Listening on http://localhost:9999/
+[05:31:40] [vana-chat] user=607f9dd5-6fa7-48ee-a628-720d4a0506a1 conv=c51e1c64-77f6-417b-8b60-63a9ef7e86ab kind=general opener=true/plan model=anthropic/claude-haiku-4.5 context=built
+[05:31:42] [vana-chat] onFinish user=607f9dd5-6fa7-48ee-a628-720d4a0506a1 conv=c51e1c64-77f6-417b-8b60-63a9ef7e86ab in=10767 cache_read=0 out=145 steps=1 2296ms
+[05:31:44] booted (time: 33ms)
+[05:31:44] Listening on http://localhost:9999/
+[05:31:44] Starting unified sync for user: 16035302-6752-4549-8d7d-629c3e118d2b
+[05:31:44] Full sync (no timestamp provided)
+[05:31:44] Errors: 0
+[05:31:44] Sync completed: 73 total records (Incremental: false)
+[05:31:44] booted (time: 27ms)
+[05:31:44] Listening on http://localhost:9999/
+[05:31:44] [CALC_MACROS] Garmin not connected for user 16035302-6752-4549-8d7d-629c3e118d2b — skipping week Garmin context
+[05:32:04] booted (time: 74ms)
+[05:32:04] Listening on http://localhost:9999/
+[05:32:06] [vana-action] user=607f9dd5-6fa7-48ee-a628-720d4a0506a1 type=list_conversations parts=- 164ms
+[05:32:13] booted (time: 99ms)
+[05:32:13] Listening on http://localhost:9999/
+[05:32:14] [vana-action] user=607f9dd5-6fa7-48ee-a628-720d4a0506a1 type=list_conversations parts=- 567ms
+[05:32:19] shutdown
+[05:32:26] booted (time: 72ms)
+[05:32:26] Listening on http://localhost:9999/
+[05:32:27] [vana-action] user=607f9dd5-6fa7-48ee-a628-720d4a0506a1 type=get_plan parts=batch 234ms
+[05:32:53] shutdown
+[05:32:59] shutdown
+[05:32:59] shutdown
+[05:33:17] booted (time: 31ms)
+[05:33:17] Listening on http://localhost:9999/
+[05:33:17] Starting unified sync for user: 607f9dd5-6fa7-48ee-a628-720d4a0506a1
+[05:33:17] Full sync (no timestamp provided)
+[05:33:17] User is a coach with 8 relationships
+[05:33:17] Skipping bulk athlete data sync - use on-demand sync per athlete instead
+[05:33:17] Sync completed: 465 total records (Incremental: false)
+[05:33:17] Errors: 0
+[05:33:18] booted (time: 36ms)
+[05:33:18] Listening on http://localhost:9999/
+[05:33:18] sessionCost: unknown sport "other" — F4a zero-with-estimate-flag (session-demand.md F4a, RULED 2026-09-10)
+[05:33:18] sessionCost: unknown sport "other" — F4a zero-with-estimate-flag (session-demand.md F4a, RULED 2026-09-10)
+[05:33:18] sessionCost: unknown sport "other" — F4a zero-with-estimate-flag (session-demand.md F4a, RULED 2026-09-10)
+[05:33:18] sessionCost: unknown sport "other" — F4a zero-with-estimate-flag (session-demand.md F4a, RULED 2026-09-10)
+[05:33:18] sessionCost: unknown sport "other" — F4a zero-with-estimate-flag (session-demand.md F4a, RULED 2026-09-10)
+[05:33:18] sessionCost: unknown sport "other" — F4a zero-with-estimate-flag (session-demand.md F4a, RULED 2026-09-10)
+[05:33:18] sessionCost: unknown sport "other" — F4a zero-with-estimate-flag (session-demand.md F4a, RULED 2026-09-10)
+[05:33:18] sessionCost: unknown sport "other" — F4a zero-with-estimate-flag (session-demand.md F4a, RULED 2026-09-10)
+[05:33:18] sessionCost: unknown sport "other" — F4a zero-with-estimate-flag (session-demand.md F4a, RULED 2026-09-10)
+[05:33:19] shutdown
+[05:33:28] shutdown
+[05:33:41] shutdown
+[05:34:27] booted (time: 29ms)
+[05:34:27] booted (time: 28ms)
+[05:34:27] Listening on http://localhost:9999/
+[05:34:27] Listening on http://localhost:9999/
+[05:34:32] shutdown
+[05:34:33] shutdown
+[05:34:38] booted (time: 37ms)
+[05:34:38] 🔄 Lookup Product - Request received: { barcode: "00720579120045", open_food_facts_id: undefined }
+[05:34:38] 🔍 Lookup Product - Checking product catalog: 00720579120045
+[05:34:38] ℹ️ Lookup Product - Not in catalog, checking nutrition cache
+[05:34:39] ✅ Lookup Product - Cache hit (nutrition_products): { product_name: "RICE", origin: "usda_fdc" }
+[05:35:25] booted (time: 26ms)
+[05:35:25] 🔍 Lookup Product - Checking product catalog: 00720579120045
+[05:35:25] 🔄 Lookup Product - Request received: { barcode: "00720579120045", open_food_facts_id: undefined }
+[05:35:26] ℹ️ Lookup Product - Not in catalog, checking nutrition cache
+[05:35:26] ✅ Lookup Product - Cache hit (nutrition_products): { product_name: "RICE", origin: "usda_fdc" }
+[05:35:37] booted (time: 51ms)
+[05:35:37] Listening on http://localhost:9999/
+[05:35:37] Starting unified sync for user: 16035302-6752-4549-8d7d-629c3e118d2b
+[05:35:37] Full sync (no timestamp provided)
+[05:35:37] Errors: 0
+[05:35:37] Sync completed: 73 total records (Incremental: false)
+[05:35:42] shutdown
+[05:35:42] shutdown
+[05:35:53] shutdown
+[05:36:19] booted (time: 28ms)
+[05:36:19] Listening on http://localhost:9999/
+[05:36:19] Deleting user account: 16035302-6752-4549-8d7d-629c3e118d2b
+[05:36:19] Deleted user from public.users: 16035302-6752-4549-8d7d-629c3e118d2b
+[05:36:20] Successfully deleted auth account: 16035302-6752-4549-8d7d-629c3e118d2b
+[05:36:20] Deleted RevenueCat customer: 16035302-6752-4549-8d7d-629c3e118d2b
+[05:36:26] booted (time: 65ms)
+[05:36:26] Listening on http://localhost:9999/
+[05:36:27] [analyze-meal-photo] Analyzing photo for user 607f9dd5-6fa7-48ee-a628-720d4a0506a1, path: 607f9dd5-6fa7-48ee-a628-720d4a0506a1/b9991960-8712-472a-b5ca-b475f38debbe.jpg, model: anthropic/claude-sonnet-4.6
+[05:36:35] [analyze-meal-photo] Success for user 607f9dd5-6fa7-48ee-a628-720d4a0506a1: "Spaghetti Bolognese", 1 items, confidence=medium
+[05:36:40] shutdown
+[05:36:52] shutdown
+
+(290 rows)

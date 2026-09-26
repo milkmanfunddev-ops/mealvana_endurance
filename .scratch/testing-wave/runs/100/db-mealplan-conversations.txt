@@ -1,0 +1,83 @@
+[
+ {
+  "id": "7cc15497",
+  "title": "This week's plan",
+  "kind": "meal_planning",
+  "is_deleted": false,
+  "created_at": "2026-09-25 20:28:40.998913+00",
+  "last_message_at": "2026-09-25 20:28:45.821+00",
+  "plans": "9be88811:confirmed"
+ },
+ {
+  "id": "9db7c080",
+  "title": "This week's plan",
+  "kind": "meal_planning",
+  "is_deleted": false,
+  "created_at": "2026-09-25 20:25:07.083889+00",
+  "last_message_at": "2026-09-25 20:25:12.601+00",
+  "plans": "666be167:archived"
+ },
+ {
+  "id": "449da56d",
+  "title": "This week's plan",
+  "kind": "meal_planning",
+  "is_deleted": false,
+  "created_at": "2026-09-25 20:08:58.346517+00",
+  "last_message_at": "2026-09-25 20:09:31.671+00",
+  "plans": "8ebeb6da:confirmed"
+ },
+ {
+  "id": "ebac747d",
+  "title": "This week's plan",
+  "kind": "meal_planning",
+  "is_deleted": false,
+  "created_at": "2026-09-22 12:08:20.040052+00",
+  "last_message_at": "2026-09-25 19:58:16.807+00",
+  "plans": "15b6b4f4:archived"
+ },
+ {
+  "id": "d8efbdb3",
+  "title": "This week's plan",
+  "kind": "meal_planning",
+  "is_deleted": false,
+  "created_at": "2026-09-24 14:22:06.792991+00",
+  "last_message_at": "2026-09-24 14:23:07.843+00",
+  "plans": "54a02440:archived"
+ },
+ {
+  "id": "f6a0f7fa",
+  "title": "This week's plan",
+  "kind": "meal_planning",
+  "is_deleted": false,
+  "created_at": "2026-09-23 11:12:49.871104+00",
+  "last_message_at": "2026-09-23 11:16:17.649+00",
+  "plans": "be6abf2f:archived"
+ },
+ {
+  "id": "1f805690",
+  "title": "This week's plan",
+  "kind": "meal_planning",
+  "is_deleted": false,
+  "created_at": "2026-09-23 02:28:56.618667+00",
+  "last_message_at": "2026-09-23 02:32:34.376+00",
+  "plans": "b82409d9:archived"
+ },
+ {
+  "id": "0401b3d8",
+  "title": "This week's plan",
+  "kind": "meal_planning",
+  "is_deleted": false,
+  "created_at": "2026-09-23 02:24:32.023109+00",
+  "last_message_at": "2026-09-23 02:24:38.7+00",
+  "plans": "173cebb2:archived"
+ },
+ {
+  "id": "0b7df6f0",
+  "title": "This week's plan",
+  "kind": "meal_planning",
+  "is_deleted": false,
+  "created_at": "2026-09-22 11:59:09.757088+00",
+  "last_message_at": "2026-09-22 11:59:56.957+00",
+  "plans": "6f365c30:archived"
+ }
+]
