@@ -1,0 +1,8 @@
+# dirty rows, 10:23:18Z
+id|u|name|source|calories|log_date|needs_upload
+f85f8d23|607f9dd5|W39 T120 offline toast|manual|321|2026-09-26|1
+id|u|provider|is_active|last_sync_status|err|needs_upload|upd|lsync
+1d5c4700|607f9dd5|training_peaks|1|error|TrainingPeaksApiException: Token refresh failed: no answer (|1|2026-09-26 10:22:08|2026-09-26 10:22:08
+851541dd|607f9dd5|vdot|1|requires_reauth|Please reconnect your V.O2 account|0|2026-09-26 10:17:35|2026-09-26 10:17:35
+151c691a|607f9dd5|garmin|1|success||0|2026-09-19 08:56:12|2026-09-19 08:56:12
+52110f59|607f9dd5|final_surge|1|success||0|2026-09-26 10:17:37|2026-09-26 10:17:37

@@ -1,0 +1,30 @@
+# local Drift rows per user_id (test@test.com, offline, after the Manual log at 10:23:06Z, read at 10:23:18Z)
+# table  user:total(dirty)   dirty = needs_upload=1 where the column exists
+activities  607f9dd5:365(0)
+carb_loading_plans  607f9dd5:1(0)
+coaches  607f9dd5:1
+daily_macro_targets  607f9dd5:15(0)
+food_preferences_table  607f9dd5:9
+formula_pins  607f9dd5:33(0)
+integrations  607f9dd5:4(1)
+meal_logs  607f9dd5:108(1)
+meal_plans  607f9dd5:10(0)
+personal_formulas  607f9dd5:41(0)
+plan_meals  607f9dd5:43(0)
+saved_meals  607f9dd5:3(0)
+user_memories  607f9dd5:21(0)
+# tables without user_id that hold rows (dirty in brackets):
+carb_loading_days 3 [0]
+carb_loading_foods 27
+coach_athlete_relationships 8
+during_workout_templates 25
+foods 45
+post_workout_templates 21
+pre_workout_templates 29
+recipes 30
+sqlite_sequence 1
+template_foods 92
+users 1 [0]
+weather_forecasts_table 2
+# users rows (id prefix, email domain only):
+607f9dd5|@test.com
