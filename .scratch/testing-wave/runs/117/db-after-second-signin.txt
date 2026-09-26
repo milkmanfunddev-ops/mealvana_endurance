@@ -1,0 +1,4 @@
+# read at 2026-09-26T11:09:52Z, after the SECOND sign-in (11:09:19Z)
+day	provider	n	last_flag
+2026-09-21	training_peaks	1	2026-09-22 07:31:04+00
+(no rows)

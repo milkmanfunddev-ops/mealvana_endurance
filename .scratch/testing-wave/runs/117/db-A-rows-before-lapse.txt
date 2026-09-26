@@ -1,0 +1,5 @@
+# read at 2026-09-26T11:19:27Z: account A rows before sign-out
+id	name	slot	calories	carbs_g	log_date	eaten_at	is_deleted
+7f5ec2d5-498d-4931-b066-826d1ac92b65	W40-117 oats	breakfast	500	80.0	2026-09-26	2026-09-26 11:18:00+00	False
+id	title	status	scheduled_date_time	deleted_at
+e81de853-e610-4be8-999c-73531bbb5138	12 mi Run	planned	2026-09-26 07:30:00	

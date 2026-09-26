@@ -1,0 +1,5 @@
+# read at 2026-09-26T10:55:20Z: rows of this user touched in the last 10 min, with db now()
+id	scheduled_date_time	title	synced_from_provider	updated_at	last_synced_at	provider_deleted_at	db_now
+224b7b68-1201-476e-bda9-4184b88c5982	2026-10-03 07:00:00	Fast Finish	final_surge	2026-09-26 05:54:05.26556	2026-09-26 10:54:05.239146+00		2026-09-26 10:55:21.453744+00
+a50ba51b-af28-4f06-bfb6-76aca3adce4d	2026-10-01 07:00:00	Easy	final_surge	2026-09-26 05:54:05.238921	2026-09-26 10:54:05.236465+00		2026-09-26 10:55:21.453744+00
+81340e8f-c08c-48a6-b2c2-6e7d3dd412b7	2026-09-26 07:00:00	Run - Long Run	final_surge	2026-09-26 05:54:05.235982	2026-09-26 10:54:05.231436+00		2026-09-26 10:55:21.453744+00
