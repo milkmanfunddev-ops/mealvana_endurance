@@ -1,0 +1,17 @@
+03:55:46Z
+-- redemptions
+{"code": "E2EINFLUENCER", "redeemed_at": "2026-09-26 03:53:58.468272+00"}
+{"code": "E2EGIVE365", "redeemed_at": "2026-09-26 03:55:09.746716+00"}
+-- pairings (as athlete)
+-- coaches row
+-- user_entitlements
+{"period_type": "PROMOTIONAL", "active_until": "2027-09-26 03:55:09.816+00", "will_renew": false, "event_at": "2026-09-26 03:55:09.872+00"}
+-- RevenueCat
+== customer
+{"active_entitlements": {"items": [{"entitlement_id": "entla441faaeb4", "expires_at": 1821930909816}]}, "experiment": null, "first_seen_at": 1790394550966, "id": "fa80da99-c5e3-4ea8-a30c-b721bdaab79f", "last_seen_app_version": "1.27.1", "last_seen_at": 1790394739130, "last_seen_country": "US", "last_seen_platform": "iOS", "last_seen_platform_version": "Version 26.2 (Build 23C54)", "project_id": "proj77b3c48f"}
+== /active_entitlements
+{"items": [{"entitlement_id": "entla441faaeb4", "expires_at": 1821930909816}]}
+== /subscriptions
+{"items": [{"auto_renewal_status": "will_not_renew", "country": null, "current_period_ends_at": 1821930909816, "current_period_starts_at": 1790394909838, "customer_id": "fa80da99-c5e3-4ea8-a30c-b721bdaab79f", "ends_at": 1821930909816, "entitlements": {"items": [{"created_at": 1763486244738, "display_name": "Mealvana Endurance Pro", "id": "entla441faaeb4", "lookup_key": "pro", "project_id": "proj77b3c48f", "state": "active"}]}, "environment": "production", "gives_access": true, "id": "subPrmacdddb80ed83382277606b25e2b1ea49", "management_url": null, "original_customer_id": "$RCAnonymousID:4d864a127e9147b695572768be931665", "ownership": "purchased", "pending_changes": null, "pending_payment": false, "presented_offering_id": null, "product_id": null, "starts_at": 1790394909838, "status": "active", "store": "promotional", "store_subscription_identifier": "5c4526e32a20e82acee9f36e00c486df", "total_revenue_in_usd": {"commission": 0.0, "currency": "USD", "gross": 0.0, "proceeds": 0.0, "tax": 0.0}}]}
+== /attributes
+{"items": [{"name": "$attConsentStatus", "updated_at": 1790394738866, "value": "notDetermined"}, {"name": "influencer_code", "updated_at": 1790394838530, "value": "E2EINFLUENCER"}]}
