@@ -1,3 +1,5 @@
+import 'dart:async';
+
 import 'package:flutter/widgets.dart';
 import 'package:go_router/go_router.dart';
 
@@ -21,6 +23,14 @@ import 'package:go_router/go_router.dart';
 /// conventions: the coach path already uses `context.go('/plan', ...)` and
 /// Save Workout uses `context.go('/main')`.
 ///
+/// The push waits for the `go` to land (Finding 116-011). The production
+/// router's top-level `redirect` is `async`, so `go('/main')` applies on a
+/// later microtask; a `push` issued in the same tick based itself on the
+/// STALE stack and the form and Adjust Macros survived beneath the new plan.
+/// The helper now pushes only once the router reports the dashboard as its
+/// configuration, and gives up (leaving the athlete on the dashboard) if the
+/// redirect sends them somewhere else.
+///
 /// Athlete flow only — the coach path keeps its own `go('/plan')` handling.
 void showPlanAfterSuccessfulCreate(
   BuildContext context, {
@@ -28,18 +38,57 @@ void showPlanAfterSuccessfulCreate(
   bool fromTemplate = false,
 }) {
   final router = GoRouter.of(context);
-  // Reset the stack to the dashboard: this clears every imperatively pushed
-  // creation-flow route (new-activity form, sport input screens,
-  // adjust-macros) in one deterministic step, regardless of how deep the
-  // flow was or where it was entered from.
-  router.go('/main');
-  // Then show the freshly created plan on top, so back pops to the dashboard.
-  router.push(
-    '/current-plan',
-    extra: {
-      'activityId': activityId,
-      'isNewActivity': true,
-      if (fromTemplate) 'fromTemplate': true,
-    },
-  );
+  final delegate = router.routerDelegate;
+
+  void pushPlan() {
+    router.push(
+      '/current-plan',
+      extra: {
+        'activityId': activityId,
+        'isNewActivity': true,
+        if (fromTemplate) 'fromTemplate': true,
+      },
+    );
+  }
+
+  bool onDashboard() =>
+      delegate.currentConfiguration.uri.path == _dashboardLocation;
+
+  // Reset the stack to the dashboard: this clears every pushed creation-flow
+  // route (new-activity form, sport input screens, adjust-macros) in one
+  // deterministic step, regardless of how deep the flow was or where it was
+  // entered from.
+  router.go(_dashboardLocation);
+
+  // A synchronous parse (no async redirect) has already applied the go.
+  if (onDashboard()) {
+    pushPlan();
+    return;
+  }
+
+  // Otherwise wait for the router to land on the dashboard, then push the
+  // plan on top of the fresh stack. Runs at most once.
+  late final VoidCallback listener;
+  Timer? giveUp;
+  var done = false;
+  void finish({required bool push}) {
+    if (done) return;
+    done = true;
+    delegate.removeListener(listener);
+    giveUp?.cancel();
+    if (push) pushPlan();
+  }
+
+  listener = () {
+    if (onDashboard()) finish(push: true);
+  };
+  delegate.addListener(listener);
+  giveUp = Timer(_landingTimeout, () => finish(push: false));
 }
+
+const _dashboardLocation = '/main';
+
+/// How long the push waits for `go('/main')` to land before giving up. A
+/// redirect that sends the athlete elsewhere (paywall, sign-in) never lands
+/// on the dashboard, and the plan must not then be pushed over that screen.
+const _landingTimeout = Duration(seconds: 5);

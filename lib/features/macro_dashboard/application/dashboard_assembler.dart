@@ -297,65 +297,71 @@ class MacroDashboardAssembler {
   /// card at its own time.
   static const _mealCardWindow = Duration(minutes: 30);
 
-  /// Meal cards follow the clock (testing-wave ticket 59, finding 27-001):
-  /// each card sits at its first meal's time, and a same-type meal joins it
-  /// only when eaten within [_mealCardWindow] of that first meal. Grouping by
-  /// type alone filed a 3:43 PM snack under a 2:08 PM card.
+  /// Meal cards follow the clock (testing-wave ticket 59, finding 27-001;
+  /// ticket 137, finding 112-011): each card sits at its first meal's time,
+  /// and a meal joins the OPEN card only when it has the same type, was eaten
+  /// within [_mealCardWindow] of that card's first meal, and no other card
+  /// has opened since. Grouping by type alone filed a 3:43 PM snack under a
+  /// 2:08 PM card, and later filed a 6:30 PM "Any time" soup under 6:24 PM,
+  /// above a Lunch eaten at 6:25: a card closes the moment a meal of another
+  /// type opens its own card, so no card ever holds a meal eaten after a
+  /// later card opened.
   List<_TimedNode> _mealNodes(List<MealLog> meals) {
     DateTime timeOf(MealLog m) => m.eatenAt ?? m.createdAt;
+    int slotOrder(MealSlot? slot) => slot?.index ?? MealSlot.values.length;
 
-    final byType = <MealSlot?, List<MealLog>>{};
-    for (final m in meals.where((m) => !m.isDeleted)) {
-      byType.putIfAbsent(m.slot, () => []).add(m);
-    }
+    // One clock-ordered walk over the whole day. Same-minute meals order by
+    // meal type (breakfast → snack, then untagged) and then id, never by
+    // which type holds the newest meal — that arrival order swapped two
+    // 2:08 PM cards after a delete.
+    final entries = meals.where((m) => !m.isDeleted).toList(growable: false)
+      ..sort((a, b) {
+        final byTime = timeOf(a).compareTo(timeOf(b));
+        if (byTime != 0) return byTime;
+        final bySlot = slotOrder(a.slot).compareTo(slotOrder(b.slot));
+        return bySlot != 0 ? bySlot : a.id.compareTo(b.id);
+      });
 
     final nodes = <_TimedNode>[];
-    byType.forEach((slot, entries) {
-      entries.sort((a, b) {
-        final byTime = timeOf(a).compareTo(timeOf(b));
-        return byTime != 0 ? byTime : a.id.compareTo(b.id);
-      });
-      var card = <MealLog>[];
-      void close() {
-        if (card.isEmpty) return;
-        final time = timeOf(card.first);
-        nodes.add(
-          _TimedNode(
-            time,
-            DashboardNode.meals(
-              timeLabel: _timeLabel(time),
-              mealGroupLabel: slot?.label ?? 'Logged',
-              meals: [
-                for (final m in card)
-                  MealItemData(
-                    id: m.id,
-                    name: m.name,
-                    kcal: m.calories?.toDouble() ?? 0,
-                    carbsG: m.carbsG ?? 0,
-                    proteinG: m.proteinG ?? 0,
-                    fatG: m.fatG ?? 0,
-                    planned: m.eatenAt == null,
-                  ),
-              ],
-            ),
-            // Same-minute cards order by meal type (breakfast → snack, then
-            // untagged), never by which type holds the newest meal — that
-            // arrival order swapped two 2:08 PM cards after a delete.
-            tieBreak: slot?.index ?? MealSlot.values.length,
+    var card = <MealLog>[];
+    void close() {
+      if (card.isEmpty) return;
+      final slot = card.first.slot;
+      final time = timeOf(card.first);
+      nodes.add(
+        _TimedNode(
+          time,
+          DashboardNode.meals(
+            timeLabel: _timeLabel(time),
+            mealGroupLabel: slot?.label ?? 'Logged',
+            meals: [
+              for (final m in card)
+                MealItemData(
+                  id: m.id,
+                  name: m.name,
+                  kcal: m.calories?.toDouble() ?? 0,
+                  carbsG: m.carbsG ?? 0,
+                  proteinG: m.proteinG ?? 0,
+                  fatG: m.fatG ?? 0,
+                  planned: m.eatenAt == null,
+                ),
+            ],
           ),
-        );
-        card = <MealLog>[];
-      }
+          tieBreak: slotOrder(slot),
+        ),
+      );
+      card = <MealLog>[];
+    }
 
-      for (final m in entries) {
-        if (card.isNotEmpty &&
-            timeOf(m).difference(timeOf(card.first)) > _mealCardWindow) {
-          close();
-        }
-        card.add(m);
-      }
-      close();
-    });
+    for (final m in entries) {
+      final joins =
+          card.isNotEmpty &&
+          m.slot == card.first.slot &&
+          timeOf(m).difference(timeOf(card.first)) <= _mealCardWindow;
+      if (!joins) close();
+      card.add(m);
+    }
+    close();
     return nodes;
   }
 
@@ -581,7 +587,13 @@ class MacroDashboardAssembler {
       restingByEnd: targets.rmr,
       movementByEnd: targets.neatKcal ?? 0,
       workoutByEnd: doneKcal + plannedKcal,
-      digestionByEnd: 0.10 * targets.totalCalories,
+      // By day's end the engine's TEF is 10% of the TARGET; on a day that is
+      // over nothing more gets eaten, so the projection is 10% of what WAS
+      // eaten and meets the so-far column (intraday-display.md: "agreement
+      // at day's end by construction"; finding 116-010).
+      digestionByEnd: minutesSinceMidnight >= 1440
+          ? accrual.digestion
+          : 0.10 * targets.totalCalories,
       workoutMark: workoutMark,
       movementMark: movementMark,
       mealRows: mealRows,

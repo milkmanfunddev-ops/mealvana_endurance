@@ -190,6 +190,25 @@ class _SeededActivitiesController extends ActivitiesController {
   ];
 }
 
+/// Counts forced refreshes so the pull-to-refresh wiring (Finding 117-005)
+/// is pinned at the controller seam: a pull must run [forceRefresh] (the
+/// integration + repository sync that bypasses staleness), not [refresh].
+class _RefreshCountingActivitiesController
+    extends _SeededActivitiesController {
+  static int forced = 0;
+  static int plain = 0;
+
+  @override
+  Future<void> forceRefresh() async {
+    forced++;
+  }
+
+  @override
+  Future<void> refresh() async {
+    plain++;
+  }
+}
+
 class _SeededDailyMacrosController extends DailyMacrosController {
   @override
   Future<DailyMacrosState> build() async => DailyMacrosState(
@@ -223,10 +242,15 @@ class _SwitchableDailyMacrosController extends DailyMacrosController {
 List<Override> _dayOverrides({
   bool switchableMacros = false,
   Override? mealLogs,
+  bool countRefreshes = false,
 }) => [
   userIdProvider.overrideWith((ref) async => 'u1'),
   calendarSelectedDateProvider.overrideWith(_FixedSelectedDate.new),
-  activitiesControllerProvider.overrideWith(_SeededActivitiesController.new),
+  activitiesControllerProvider.overrideWith(
+    countRefreshes
+        ? _RefreshCountingActivitiesController.new
+        : _SeededActivitiesController.new,
+  ),
   dailyMacrosControllerProvider.overrideWith(
     switchableMacros
         ? _SwitchableDailyMacrosController.new
@@ -255,6 +279,43 @@ Future<void> _pumpDashboard(
 
 void main() {
   setUp(HeldTargets.clear);
+
+  // Finding 117-005 (Lee, 2026-09-26): a pull on the timeline syncs the
+  // connected apps. The pull reaches ActivitiesController.forceRefresh, the
+  // path that bypasses the staleness check; a plain refresh would be
+  // skipped as "data is fresh".
+  testWidgets('pull to refresh runs the activities force refresh', (
+    tester,
+  ) async {
+    _RefreshCountingActivitiesController.forced = 0;
+    _RefreshCountingActivitiesController.plain = 0;
+    await pumpSeeded(
+      tester,
+      const Scaffold(body: MacroDashboardScreen()),
+      overrides: _dayOverrides(countRefreshes: true),
+      settle: true,
+    );
+    expect(
+      find.byKey(const ValueKey('macro_dashboard.refresh')),
+      findsOneWidget,
+    );
+
+    // Pull from the lower half of the list, clear of the pinned block.
+    final list = find.byType(ListView);
+    final start = tester.getCenter(list) + const Offset(0, 120);
+    final gesture = await tester.startGesture(start);
+    for (var i = 0; i < 20; i++) {
+      await gesture.moveBy(const Offset(0, 20));
+      await tester.pump(const Duration(milliseconds: 16));
+    }
+    await gesture.up();
+    await tester.pump();
+    await tester.pump(const Duration(seconds: 1));
+    await tester.pumpAndSettle();
+
+    expect(_RefreshCountingActivitiesController.forced, 1);
+    expect(_RefreshCountingActivitiesController.plain, 0);
+  });
 
   // S-1 "same pump" across a targets recompute: when a skip / unskip /
   // profile edit invalidates the day's cached targets, the daily-macros

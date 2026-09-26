@@ -1177,6 +1177,12 @@ void main() {
       DateTime(now.year, now.month, now.day),
       reason: 'Today pill selects + navigates to the current day',
     );
+    expect(
+      find.byType(KyleCalendarSheet),
+      findsNothing,
+      reason: 'navigating dismisses the sheet, the same as a day tap '
+          '(Finding 117-004)',
+    );
   });
 
   // cs7_dot_mapping (Q1: dot slot <- workout-card.md v3 states)

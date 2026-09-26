@@ -28,11 +28,12 @@ class MealCard extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    final me = MeTokens.of(context);
     return Container(
       margin: const EdgeInsets.only(top: 6),
       decoration: BoxDecoration(
-        color: Colors.white.withValues(alpha: 0.045),
-        border: Border.all(color: MeTokens.creamAlpha(0.08)),
+        color: me.liftAlpha(0.045),
+        border: Border.all(color: me.inkAlpha(0.08)),
         borderRadius: BorderRadius.circular(14),
       ),
       clipBehavior: Clip.antiAlias,
@@ -51,11 +52,7 @@ class MealCard extends StatelessWidget {
                       shape: BoxShape.circle,
                       color: MeTokens.orange,
                     ),
-                    child: const Icon(
-                      Icons.restaurant,
-                      size: 14,
-                      color: MeTokens.blackberry,
-                    ),
+                    child: Icon(Icons.restaurant, size: 14, color: me.ground),
                   ),
                   const SizedBox(width: 11),
                   Expanded(
@@ -65,10 +62,10 @@ class MealCard extends StatelessWidget {
                         Text(
                           item.name,
                           overflow: TextOverflow.ellipsis,
-                          style: const TextStyle(
+                          style: TextStyle(
                             fontFamily: 'Compadre',
                             fontSize: 15,
-                            color: MeTokens.cream,
+                            color: me.ink,
                           ),
                         ),
                         if (showMacros) ...[
@@ -78,7 +75,7 @@ class MealCard extends StatelessWidget {
                               style: TextStyle(
                                 fontFamily: 'Apercu',
                                 fontSize: 11,
-                                color: MeTokens.creamAlpha(0.5),
+                                color: me.inkAlpha(0.5),
                                 fontFeatures: const [
                                   FontFeature.tabularFigures(),
                                 ],
@@ -86,8 +83,8 @@ class MealCard extends StatelessWidget {
                               children: [
                                 TextSpan(
                                   text: kcalStr(item.kcal),
-                                  style: const TextStyle(
-                                    color: MeTokens.cream,
+                                  style: TextStyle(
+                                    color: me.ink,
                                     fontWeight: FontWeight.w500,
                                   ),
                                 ),
@@ -124,7 +121,7 @@ class MealCard extends StatelessWidget {
                     style: TextStyle(
                       fontSize: 17,
                       height: 1,
-                      color: MeTokens.creamAlpha(0.4),
+                      color: me.inkAlpha(0.4),
                     ),
                   ),
                 ],
@@ -140,9 +137,9 @@ class MealCard extends StatelessWidget {
                     child: _pillButton(
                       label: 'Edit food',
                       onTap: onEdit,
-                      background: Colors.white.withValues(alpha: 0.05),
-                      borderColor: MeTokens.creamAlpha(0.12),
-                      ink: MeTokens.cream,
+                      background: me.liftAlpha(0.05),
+                      borderColor: me.inkAlpha(0.12),
+                      ink: me.ink,
                     ),
                   ),
                   const SizedBox(width: 10),

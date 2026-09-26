@@ -92,6 +92,31 @@ void main() {
     });
   });
 
+  group('finding 116-010: a finished day\'s digestion projection meets so far', () {
+    DashboardData assembleEaten(DateTime day, int kcal) => assembler.assemble(
+      selectedDate: day,
+      now: now,
+      activities: [plannedRun(day)],
+      meals: const [],
+      targets: targets(day),
+      consumed: ConsumedTotals(calories: kcal),
+      trackingOn: true,
+      profileWeightKg: weightKg,
+    );
+
+    test('a PAST day projects digestion of what was eaten, not the target', () {
+      final b = assembleEaten(DateTime(2026, 8, 15), 3353).breakdown!;
+      expect(b.digestionByEnd, closeTo(b.digestionSoFar, 0.001));
+      expect(b.digestionByEnd, closeTo(0.10 * 3353, 0.001));
+    });
+
+    test('TODAY keeps the engine\'s projection (10% of the target)', () {
+      final b = assembleEaten(DateTime(2026, 8, 22), 760).breakdown!;
+      expect(b.digestionSoFar, closeTo(76, 0.001));
+      expect(b.digestionByEnd, closeTo(0.10 * 3037, 0.001));
+    });
+  });
+
   group('BUG_CHECK: the sheet never claims time that has not passed', () {
     test('a future day accrues NOTHING so far — every row, not just some', () {
       final b = assemble(DateTime(2026, 8, 29)).breakdown!;

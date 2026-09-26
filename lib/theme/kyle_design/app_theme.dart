@@ -3,6 +3,7 @@ import 'package:flutter/services.dart';
 import 'package:mealvana_endurance/theme/kyle_design/app_colors.dart';
 import 'package:mealvana_endurance/theme/kyle_design/app_spacing.dart';
 import 'package:mealvana_endurance/theme/kyle_design/app_text_styles.dart';
+import 'package:mealvana_endurance/theme/kyle_design/me_surface_tokens.dart';
 
 /// Kyle's Design System Theme Configuration
 /// Implements dual theme system with exact Figma specifications
@@ -30,6 +31,7 @@ class AppTheme {
       useMaterial3: true,
       brightness: Brightness.light,
       colorScheme: colorScheme,
+      extensions: [MeSurfaceTokens.light],
       scaffoldBackgroundColor: AppColors.cream,
 
       // Typography
@@ -287,6 +289,7 @@ class AppTheme {
       useMaterial3: true,
       brightness: Brightness.dark,
       colorScheme: colorScheme,
+      extensions: const [MeSurfaceTokens.dark],
       scaffoldBackgroundColor: AppColors.blackberry,
 
       // Typography

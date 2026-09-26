@@ -22,10 +22,12 @@ library;
 
 import 'dart:ui';
 
-import 'package:flutter/widgets.dart';
+import 'package:flutter/material.dart';
 import 'package:liquid_glass_renderer/liquid_glass_renderer.dart';
 
+import '../../../../theme/kyle_design/app_colors.dart';
 import '../../../../theme/kyle_design/app_materials.dart';
+import '../../../../theme/kyle_design/me_surface_tokens.dart';
 
 /// Floating glass chrome: capsules, circles, and the compact header row.
 class GlassSurface extends StatelessWidget {
@@ -306,6 +308,12 @@ class GlassTopFade extends StatelessWidget {
               0.0,
               1.0,
             );
+            // The dissolve is the surface ground going opaque, so it follows
+            // the theme; a bare MaterialApp keeps the ratified blackberry.
+            final fade = AppMaterials.topFadeGradientFor(
+              Theme.of(context).extension<MeSurfaceTokens>()?.ground ??
+                  AppColors.blackberry,
+            );
             return Stack(
               fit: StackFit.expand,
               children: [
@@ -327,12 +335,7 @@ class GlassTopFade extends StatelessWidget {
                     gradient: LinearGradient(
                       begin: Alignment.topCenter,
                       end: Alignment.bottomCenter,
-                      colors: [
-                        AppMaterials.topFadeGradient[0],
-                        AppMaterials.topFadeGradient[0],
-                        AppMaterials.topFadeGradient[1],
-                        AppMaterials.topFadeGradient[2],
-                      ],
+                      colors: [fade[0], fade[0], fade[1], fade[2]],
                       stops: [0.0, fadeStart, midStop, 1.0],
                     ),
                   ),

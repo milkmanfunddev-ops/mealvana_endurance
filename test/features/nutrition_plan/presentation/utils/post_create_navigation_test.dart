@@ -24,9 +24,21 @@ void main() {
   late int createCount;
   late Object? currentPlanExtra;
 
-  GoRouter buildRouter() {
+  /// The production router's top-level `redirect` is `async` (an auth
+  /// check), so `go` applies on a later microtask. A `push` issued right
+  /// after it then bases on the STALE stack, and the spent creation flow
+  /// survives beneath the new plan (Finding 116-011: Back walked through
+  /// Adjust Your Macros and the filled form). [asyncRedirect] reproduces
+  /// that parse timing with stub screens.
+  GoRouter buildRouter({bool asyncRedirect = false}) {
     return GoRouter(
       initialLocation: '/main',
+      redirect: asyncRedirect
+          ? (context, state) async {
+              await Future<void>.delayed(Duration.zero);
+              return null;
+            }
+          : null,
       routes: [
         GoRoute(
           path: '/main',
@@ -79,8 +91,11 @@ void main() {
     currentPlanExtra = null;
   });
 
-  Future<GoRouter> pumpThroughSuccessfulCreate(WidgetTester tester) async {
-    final router = buildRouter();
+  Future<GoRouter> pumpThroughSuccessfulCreate(
+    WidgetTester tester, {
+    bool asyncRedirect = false,
+  }) async {
+    final router = buildRouter(asyncRedirect: asyncRedirect);
     await tester.pumpWidget(MaterialApp.router(routerConfig: router));
 
     // Dashboard -> + Add Activity -> form -> Generate -> Create succeeds.
@@ -127,6 +142,26 @@ void main() {
 
       // The single create is all that ever happened: the form cannot be
       // reached again with its unchanged inputs to fire a duplicate.
+      expect(createCount, 1);
+    },
+  );
+
+  testWidgets(
+    'finding 116-011: with an async redirect (the production router), back '
+    'from the new plan still lands on the dashboard',
+    (tester) async {
+      final router = await pumpThroughSuccessfulCreate(
+        tester,
+        asyncRedirect: true,
+      );
+      expect(find.text('plan-detail'), findsOneWidget);
+
+      router.pop();
+      await tester.pumpAndSettle();
+      expect(find.text('dashboard'), findsOneWidget);
+      expect(find.text('Create Plan'), findsNothing);
+      expect(find.text('new-activity-form'), findsNothing);
+      expect(router.canPop(), isFalse);
       expect(createCount, 1);
     },
   );

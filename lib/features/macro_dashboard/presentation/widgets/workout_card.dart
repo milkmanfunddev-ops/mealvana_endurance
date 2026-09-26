@@ -139,6 +139,7 @@ class _WorkoutCardState extends State<WorkoutCard> {
     final skipped = data.isSkipped;
     final width = MediaQuery.sizeOf(context).width;
     final commit = _canRightSwipe && _dx > width * 0.42;
+    final me = MeTokens.of(context);
 
     // Skins (reference rendering @ 5a22ca8, decorate()): done = solid fill +
     // solid electrolyte border; planned = dotted electrolyte edge; skipped =
@@ -148,19 +149,19 @@ class _WorkoutCardState extends State<WorkoutCard> {
     final Border? border;
     final Decoration? dottedEdge;
     if (done) {
-      fill = const Color.fromRGBO(54, 38, 62, 1);
+      fill = me.workoutDoneFill;
       border = Border.all(color: MeTokens.electrolyteAlpha(0.3));
       dottedEdge = null;
     } else if (skipped) {
-      fill = const Color.fromRGBO(255, 255, 255, 0.03);
+      fill = me.workoutSkippedFill;
       border = null;
       dottedEdge = DottedBorderDecoration(
-        color: MeTokens.creamAlpha(0.26),
+        color: me.inkAlpha(0.26),
         strokeWidth: 1.5,
         radius: 14,
       );
     } else {
-      fill = const Color.fromRGBO(55, 31, 57, 1);
+      fill = me.workoutPlannedFill;
       border = null;
       dottedEdge = DottedBorderDecoration(
         color: MeTokens.electrolyteAlpha(0.55),
@@ -236,16 +237,17 @@ class _WorkoutCardState extends State<WorkoutCard> {
   }
 
   Widget _doneUnderlay(bool commit) {
+    final me = MeTokens.of(context);
     final undoing = widget.data.isDone;
     final Color fill;
     final Color ink;
     if (undoing) {
-      fill = commit ? MeTokens.creamAlpha(0.9) : MeTokens.creamAlpha(0.13);
-      ink = commit ? MeTokens.blackberry : MeTokens.creamAlpha(0.75);
+      fill = commit ? me.inkAlpha(0.9) : me.inkAlpha(0.13);
+      ink = commit ? me.ground : me.inkAlpha(0.75);
     } else {
       // The done-swipe fill is electrolyte — the burn/verified domain.
       fill = commit ? MeTokens.electrolyte : MeTokens.electrolyteAlpha(0.22);
-      ink = commit ? MeTokens.blackberry : MeTokens.electrolyte;
+      ink = commit ? me.ground : MeTokens.electrolyte;
     }
     final opacity = ((_dx - 6) / 44).clamp(0.0, 1.0);
     return Container(
@@ -281,13 +283,14 @@ class _WorkoutCardState extends State<WorkoutCard> {
   /// skipped card; a passively skipped past-day card has nothing to un-skip,
   /// so the field carries no button (recovery there is G1 only).
   Widget _skipReveal() {
+    final me = MeTokens.of(context);
     final data = widget.data;
     final unskip = data.isSkipped && data.skipActive;
     final hasButton = !data.isSkipped || data.skipActive;
     return SizedBox(
       width: _skipRevealWidth,
       child: Container(
-        color: MeTokens.creamAlpha(0.14),
+        color: me.inkAlpha(0.14),
         child: hasButton
             ? Semantics(
                 button: true,
@@ -312,16 +315,16 @@ class _WorkoutCardState extends State<WorkoutCard> {
                       Icon(
                         unskip ? Icons.replay : Icons.block,
                         size: 16,
-                        color: MeTokens.cream,
+                        color: me.ink,
                       ),
                       const SizedBox(height: 4),
                       Text(
                         unskip ? 'Unskip' : 'Skip',
-                        style: const TextStyle(
+                        style: TextStyle(
                           fontFamily: 'Apercu',
                           fontSize: 11.5,
                           fontWeight: FontWeight.w500,
-                          color: MeTokens.cream,
+                          color: me.ink,
                         ),
                       ),
                     ],
@@ -334,13 +337,14 @@ class _WorkoutCardState extends State<WorkoutCard> {
   }
 
   Widget _iconDisc(bool done, bool skipped) {
+    final me = MeTokens.of(context);
     final icon = Icon(
       _sportIcon(widget.data.sport),
       size: 19,
       color: done
-          ? MeTokens.blackberry
+          ? me.ground
           : skipped
-          ? MeTokens.creamAlpha(0.42)
+          ? me.inkAlpha(0.42)
           : MeTokens.electrolyteAlpha(0.85),
     );
     if (done) {
@@ -362,9 +366,7 @@ class _WorkoutCardState extends State<WorkoutCard> {
       height: 40,
       child: CustomPaint(
         painter: _DottedCirclePainter(
-          color: skipped
-              ? MeTokens.creamAlpha(0.3)
-              : MeTokens.electrolyteAlpha(0.6),
+          color: skipped ? me.inkAlpha(0.3) : MeTokens.electrolyteAlpha(0.6),
           strokeWidth: 1.5,
         ),
         child: Center(child: icon),
@@ -380,25 +382,31 @@ class _WorkoutCardState extends State<WorkoutCard> {
   };
 
   Widget _body(bool done, bool skipped) {
+    final me = MeTokens.of(context);
     final data = widget.data;
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
       mainAxisSize: MainAxisSize.min,
       children: [
-        Row(
+        // The title gets its space first; the chip sits beside it when the
+        // row has room and wraps under it when it does not. In a Row the
+        // chip took its width first and squeezed "Swim" to "SW…" behind
+        // "verified · Final Surge" (Finding 100-002).
+        Wrap(
+          crossAxisAlignment: WrapCrossAlignment.center,
+          spacing: 8,
+          runSpacing: 4,
           children: [
-            Flexible(
-              child: Text(
-                data.name,
-                overflow: TextOverflow.ellipsis,
-                style: const TextStyle(
-                  fontFamily: 'Compadre',
-                  fontSize: 17,
-                  color: MeTokens.cream,
-                ),
+            Text(
+              data.name,
+              maxLines: 1,
+              overflow: TextOverflow.ellipsis,
+              style: TextStyle(
+                fontFamily: 'Compadre',
+                fontSize: 17,
+                color: me.ink,
               ),
             ),
-            const SizedBox(width: 8),
             _chip(done, skipped),
           ],
         ),
@@ -408,7 +416,7 @@ class _WorkoutCardState extends State<WorkoutCard> {
           style: TextStyle(
             fontFamily: 'Apercu',
             fontSize: 11,
-            color: MeTokens.creamAlpha(0.55),
+            color: me.inkAlpha(0.55),
             fontFeatures: const [FontFeature.tabularFigures()],
           ),
         ),
@@ -434,6 +442,7 @@ class _WorkoutCardState extends State<WorkoutCard> {
   }
 
   Widget _chip(bool done, bool skipped) {
+    final me = MeTokens.of(context);
     final data = widget.data;
     // Chip skins: done = electrolyte on translucent electrolyte; planned =
     // electrolyte outline; skipped = neutral (dimmed cream) — the chip is the
@@ -446,9 +455,9 @@ class _WorkoutCardState extends State<WorkoutCard> {
       chipBorder = null;
       ink = MeTokens.electrolyte;
     } else if (skipped) {
-      chipFill = MeTokens.creamAlpha(0.07);
-      chipBorder = Border.all(color: MeTokens.creamAlpha(0.22));
-      ink = MeTokens.creamAlpha(0.6);
+      chipFill = me.inkAlpha(0.07);
+      chipBorder = Border.all(color: me.inkAlpha(0.22));
+      ink = me.inkAlpha(0.6);
     } else {
       chipFill = MeTokens.electrolyteAlpha(0.1);
       chipBorder = Border.all(color: MeTokens.electrolyteAlpha(0.35));
@@ -468,14 +477,19 @@ class _WorkoutCardState extends State<WorkoutCard> {
             Icon(Icons.check, size: 9, color: ink),
             const SizedBox(width: 3),
           ],
-          Text(
-            data.chipLabel,
-            style: TextStyle(
-              fontFamily: 'Apercu',
-              fontSize: 9.5,
-              fontWeight: FontWeight.w500,
-              letterSpacing: 0.4,
-              color: ink,
+          // The chip shrinks before the title ever does (Finding 100-002).
+          Flexible(
+            child: Text(
+              data.chipLabel,
+              maxLines: 1,
+              overflow: TextOverflow.ellipsis,
+              style: TextStyle(
+                fontFamily: 'Apercu',
+                fontSize: 9.5,
+                fontWeight: FontWeight.w500,
+                letterSpacing: 0.4,
+                color: ink,
+              ),
             ),
           ),
         ],

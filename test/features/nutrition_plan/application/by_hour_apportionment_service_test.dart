@@ -5,6 +5,96 @@ import 'package:mealvana_endurance/features/nutrition_plan/domain/food_item_data
 import 'package:mealvana_endurance/features/nutrition_plan/domain/time_slot_assignment.dart';
 
 void main() {
+  // Finding 116-005: the 12 mi run's stored plan held 4.5 cups of sports
+  // drink (67 g) and 3 electrolyte capsules at hourIndex -1 while Hour 1 and
+  // Hour 2 read 0 g and 0 mg. Each hour gets an even share of the sip items.
+  group('sipShareForHour', () {
+    final drink = FoodItemData(
+      id: 'drink',
+      name: 'Sports Drink',
+      quantity: '4.5 cups',
+      isDrink: true,
+      timingCategory: TimingCategory.sipThroughout,
+      nutritionalInfo: const NutritionalInfo(carbs: 67, sodium: 595),
+    );
+    final capsule = FoodItemData(
+      id: 'capsule',
+      name: 'Electrolyte Capsule',
+      quantity: '3 capsules',
+      timingCategory: TimingCategory.sipThroughout,
+      nutritionalInfo: const NutritionalInfo(carbs: 0, sodium: 480),
+    );
+    final gel = FoodItemData(
+      id: 'gel',
+      name: 'Energy Gel',
+      quantity: '1 gel',
+      timingCategory: TimingCategory.quickConsume,
+      nutritionalInfo: const NutritionalInfo(carbs: 25, sodium: 100),
+    );
+
+    test('sip items spread evenly over the hours; placed items do not', () {
+      const data = ByHourData(
+        durationMinutes: 108,
+        assignments: [
+          TimeSlotAssignment(
+            foodItemId: 'drink',
+            timeSlot: TimeSlot(hourIndex: -1, slotIndex: 0),
+            isSipThroughout: true,
+          ),
+          TimeSlotAssignment(
+            foodItemId: 'capsule',
+            timeSlot: TimeSlot(hourIndex: -1, slotIndex: 0),
+            isSipThroughout: true,
+          ),
+          TimeSlotAssignment(
+            foodItemId: 'gel',
+            timeSlot: TimeSlot(hourIndex: 0, slotIndex: 1),
+          ),
+        ],
+      );
+
+      final share = ByHourSyncService.sipShareForHour(
+        summaryFoods: [drink, capsule, gel],
+        byHourData: data,
+      );
+
+      expect(data.totalHours, 2);
+      expect(share.carbsG, closeTo(33.5, 0.001));
+      expect(share.sodiumMg, closeTo((595 + 480) / 2, 0.001));
+    });
+
+    test('an adjusted sip quantity scales its share', () {
+      const data = ByHourData(
+        durationMinutes: 120,
+        assignments: [
+          TimeSlotAssignment(
+            foodItemId: 'drink',
+            timeSlot: TimeSlot(hourIndex: -1, slotIndex: 0),
+            isSipThroughout: true,
+            adjustedQuantity: 2.25, // half of the 4.5 cups
+          ),
+        ],
+      );
+
+      final share = ByHourSyncService.sipShareForHour(
+        summaryFoods: [drink],
+        byHourData: data,
+      );
+
+      expect(share.carbsG, closeTo(67 / 2 / 2, 0.001));
+    });
+
+    test('no sip items means no share', () {
+      const data = ByHourData(durationMinutes: 90, assignments: []);
+      final share = ByHourSyncService.sipShareForHour(
+        summaryFoods: [gel],
+        byHourData: data,
+      );
+      expect(share.carbsG, 0);
+      expect(share.sodiumMg, 0);
+    });
+  });
+
   // ========================================================================
   // Test helpers
   // ========================================================================

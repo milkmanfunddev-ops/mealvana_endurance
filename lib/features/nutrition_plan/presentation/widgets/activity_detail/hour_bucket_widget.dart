@@ -29,11 +29,18 @@ class HourBucketWidget extends StatefulWidget {
     this.onPlaceFromTray,
     this.onRemoveFromSlot,
     this.onAdjustSlotQuantity,
+    this.sipCarbsG = 0,
+    this.sipSodiumMg = 0,
   });
 
   final int hourIndex;
   final int slotCount;
   final List<TimeSlotAssignment> assignments;
+
+  /// This hour's share of the sip-throughout items (Finding 116-005):
+  /// counted in the hour's carb and sodium line, not placed in a slot.
+  final double sipCarbsG;
+  final double sipSodiumMg;
   final Map<String, FoodItemData> foodMap;
   final Color sectionColor;
   final String category;
@@ -98,8 +105,8 @@ class _HourBucketWidgetState extends State<HourBucketWidget> {
 
     return _HourMacros(
       calories: calories.round(),
-      carbs: carbs.round(),
-      sodium: sodium.round(),
+      carbs: (carbs + widget.sipCarbsG).round(),
+      sodium: (sodium + widget.sipSodiumMg).round(),
     );
   }
 
