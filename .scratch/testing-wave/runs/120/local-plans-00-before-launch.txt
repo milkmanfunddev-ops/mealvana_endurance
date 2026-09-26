@@ -1,0 +1,18 @@
+# local meal_plans (before launch)
+u|plan|status|week_start|del|dirty|updated_at|meals|names
+37129f7e|b035e41a|confirmed|2026-08-23|0|0|1788484167|2|Wholewheat pasta, mixed veg &  / Wheatberries, white bean & raw
+37129f7e|a3698b11|draft|2026-08-30|0|0|1788530603|4|Big salad — avocado, bell pepp / Greens, chickpeas, quinoa & ta / Rice, edamame & roasted caulif / Quinoa, tempeh & roasted peppe
+37129f7e|cbf31041|draft|2026-08-30|0|0|1788530536|4|Rice, black beans & avocado (n / Tofu, broccoli, red pepper sti / Rice, edamame & roasted caulif / Quinoa, tempeh & roasted peppe
+37129f7e|7907b242|draft|2026-09-06|0|0|1789047322|0|
+607f9dd5|968c5a59|draft|2026-08-23|0|0|1787928054|0|
+607f9dd5|a89fbf86|confirmed|2026-08-30|0|0|1788356779|3|Chicken breast & white rice wi / Marathon Bolognese over pasta / Chicken, jasmine rice & roaste
+607f9dd5|474a5568|archived|2026-09-06|0|0|1789139715|4|Wholewheat pasta, mixed veg &  / Quinoa, mixed veg & walnuts / Quinoa, black beans & roasted  / Rice, baked tofu & roasted bro
+607f9dd5|a5b4c73c|confirmed|2026-09-06|0|0|1789139714|4|Wheatberries, white bean & raw / Egg & Veggie Scramble / Quinoa, mixed veg & walnuts / Rice, seitan & roasted broccol
+607f9dd5|3b747b23|archived|2026-09-13|0|0|1789568933|6|Oats, bread, orange & black co / Toast with peanut butter & hon / Gluten-free cinnamon-raisin to / Banana with peanut butter / Greek yogurt with berries and  / Trail mix with dark chocolate
+607f9dd5|6e167344|archived|2026-09-13|0|0|1789581445|2|Egg & Veggie Scramble / Thai peanut lentil-pasta salad
+607f9dd5|fc9687ff|draft|2026-09-13|0|0|1789606372|1|Quinoa, mixed veg & walnuts
+607f9dd5|f2c0bc78|confirmed|2026-09-13|0|0|1789604830|6|Tofu, quinoa, spinach & chard  / Chilli non carne with kidney b / Wheatberries, white bean & raw / Egg & Veggie Scramble / Quinoa, mixed veg & walnuts / Rice, seitan & roasted broccol
+607f9dd5|be6abf2f|draft|2026-09-20|0|0|1790162168|5|Brown rice, zucchini & chickpe / Farro, white bean & roasted be / Spelt, lentil & raw pepper-car / Farro, chickpea & roasted caul / Wholewheat pasta, mixed veg & 
+607f9dd5|b82409d9|draft|2026-09-20|0|0|1790130572|0|
+607f9dd5|15b6b4f4|draft|2026-09-20|0|0|1790078927|4|Rice, black beans & roasted pl / Rice, black beans, guac & hot  / Käsespätzle with side salad / Injera with shiro wot (spiced 
+607f9dd5|6f365c30|draft|2026-09-20|0|0|1790078382|2|Wholewheat pasta, mixed veg &  / Egg & Veggie Scramble

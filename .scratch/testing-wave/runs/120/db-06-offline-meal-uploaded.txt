@@ -1,0 +1,3 @@
+# dev meal_logs for the offline log, read 10:33:30Z
+id|u|name|source|calories|carbs_g|protein_g|fat_g|log_date|created_at|updated_at
+f85f8d23|607f9dd5|W39 T120 offline toast|manual|321|45.0|12.0|9.0|2026-09-26|2026-09-26 10:23:07+00|2026-09-26 10:33:16.761513+00

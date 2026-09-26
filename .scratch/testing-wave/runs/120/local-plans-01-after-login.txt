@@ -1,0 +1,12 @@
+# local meal_plans (about 12 s after login)
+u|plan|status|week_start|del|dirty|updated_at|meals|names
+607f9dd5|968c5a59|draft|2026-08-23|0|0|1787928054|0|
+607f9dd5|a89fbf86|confirmed|2026-08-30|0|0|1788356779|3|Chicken breast & white rice wi / Marathon Bolognese over pasta / Chicken, jasmine rice & roaste
+607f9dd5|474a5568|archived|2026-09-06|0|0|1789139715|4|Wholewheat pasta, mixed veg &  / Quinoa, mixed veg & walnuts / Quinoa, black beans & roasted  / Rice, baked tofu & roasted bro
+607f9dd5|a5b4c73c|confirmed|2026-09-06|0|0|1789139714|4|Wheatberries, white bean & raw / Egg & Veggie Scramble / Quinoa, mixed veg & walnuts / Rice, seitan & roasted broccol
+607f9dd5|3b747b23|archived|2026-09-13|0|0|1789568933|6|Oats, bread, orange & black co / Toast with peanut butter & hon / Gluten-free cinnamon-raisin to / Banana with peanut butter / Greek yogurt with berries and  / Trail mix with dark chocolate
+607f9dd5|6e167344|archived|2026-09-13|0|0|1789581445|2|Egg & Veggie Scramble / Thai peanut lentil-pasta salad
+607f9dd5|f2c0bc78|confirmed|2026-09-13|0|0|1790366471|6|Tofu, quinoa, spinach & chard  / Chilli non carne with kidney b / Wheatberries, white bean & raw / Egg & Veggie Scramble / Quinoa, mixed veg & walnuts / Rice, seitan & roasted broccol
+607f9dd5|fc9687ff|draft|2026-09-13|0|0|1789606372|1|Quinoa, mixed veg & walnuts
+607f9dd5|50390c90|archived|2026-09-20|0|0|1790417861|1|Egg & Veggie Scramble
+607f9dd5|9be88811|confirmed|2026-09-20|0|0|1790417861|1|Sweet rice cake with jam
