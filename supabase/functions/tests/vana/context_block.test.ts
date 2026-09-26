@@ -11,7 +11,8 @@
  * the conversation row holds the block between turns.
  */
 import { assert, assertEquals } from 'https://deno.land/std@0.177.1/testing/asserts.ts';
-import { buildAthleteContext, contextBlock } from '../../_shared/vana/context.ts';
+import { buildAthleteContext, carbsAgainstTarget, contextBlock } from '../../_shared/vana/context.ts';
+import { OPENERS } from '../../_shared/vana/persona.ts';
 import { cachedContext } from '../../_shared/vana/context-cache.ts';
 import { rememberFact } from '../../_shared/vana/memory.ts';
 import { setServings } from '../../_shared/vana/plan.ts';
@@ -80,7 +81,8 @@ Deno.test('context block: every line, from producer-shaped rows', async () => {
   );
   // Today's weather is keyed off the race venue, not where the athlete lives — the gap ticket 07 closes.
   assertEquals(lineStartingWith(lines, 'WEATHER'), 'WEATHER Chattanooga, TN · 84°F, 10% rain · race day Chattanooga, TN · 84°F, 10% rain');
-  assertEquals(lineStartingWith(lines, 'LOGGED TODAY'), 'LOGGED TODAY 2 meals 125C · PLAN confirmed, 5 servings left · batch on · coverage dinners only');
+  // 134 (118-008): the carbs comparison is worked out in the block, in words, never left to the model.
+  assertEquals(lineStartingWith(lines, 'LOGGED TODAY'), 'LOGGED TODAY 2 meals 125C (125 g of carbs logged, 275 g to go to today\'s 400 g target) · PLAN confirmed, 5 servings left · batch on · coverage dinners only');
   assertEquals(lineStartingWith(lines, 'RECENT'), 'RECENT 09-07 Century ride 300m moderate — done');
   assertEquals(lineStartingWith(lines, 'LAST WEEK'), 'LAST WEEK 5 of 7 planned meals happened (skipped: travel)');
   assertEquals(
@@ -100,8 +102,25 @@ Deno.test('context block: an athlete with nothing on file still renders every li
   assertEquals(lineStartingWith(lines, 'MEMORIES'), 'MEMORIES none');
   assertEquals(
     lineStartingWith(lines, 'LOGGED TODAY'),
-    'LOGGED TODAY 0 meals 0C · PLAN none · batch never chosen · coverage never chosen',
+    'LOGGED TODAY 0 meals 0C (0 g of carbs logged, no carb target for today) · PLAN none · batch never chosen · coverage never chosen',
   );
+});
+
+// Testing-wave 134 (Finding 118-008): the opener said "tracking well toward 419" after 464 were logged, because the
+// block gave the model two numbers and left the comparison to it. The block states it, over or under, in words.
+Deno.test('context block: logged carbs are stated against today\'s target, over, under or on it', async () => {
+  const over = await build({ ...fixture(), meal_logs: [{ user_id: U, log_date: ANCHOR, carbs_g: 464, calories: 3000, is_deleted: false }], daily_macro_targets: [{ user_id: U, target_date: ANCHOR, carb_g: 419, prot_g: 117, fat_g: 70, tdee: 3064, session_kcal: 311, mode: 'fuel' }] });
+  assert(lineStartingWith(over.lines, 'LOGGED TODAY').includes('(464 g of carbs logged, 45 g over today\'s 419 g target)'), lineStartingWith(over.lines, 'LOGGED TODAY'));
+
+  const on = await build({ ...fixture(), meal_logs: [{ user_id: U, log_date: ANCHOR, carbs_g: 400, calories: 3000, is_deleted: false }] });
+  assert(lineStartingWith(on.lines, 'LOGGED TODAY').includes('(400 g of carbs logged, right on today\'s 400 g target)'), lineStartingWith(on.lines, 'LOGGED TODAY'));
+
+  assertEquals(carbsAgainstTarget(464, 419), '464 g of carbs logged, 45 g over today\'s 419 g target');
+  assertEquals(carbsAgainstTarget(125, 400), '125 g of carbs logged, 275 g to go to today\'s 400 g target');
+  assertEquals(carbsAgainstTarget(0, null), '0 g of carbs logged, no carb target for today');
+  // The general opener is told to take that line as given and to write grams as "g of carbs".
+  assert(OPENERS.general.includes('LOGGED TODAY line'), 'the opener names the line');
+  assert(OPENERS.general.includes('"g of carbs"'), 'and the unit wording');
 });
 
 Deno.test('context block: reads the athlete, and writes nothing', async () => {

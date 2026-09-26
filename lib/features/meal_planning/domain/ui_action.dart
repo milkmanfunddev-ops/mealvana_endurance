@@ -13,10 +13,22 @@ import 'vana_setting.dart';
 /// → that conversation's draft; else the week-level active plan. Both are
 /// optional on every action and emitted only when set.
 sealed class UiAction {
-  const UiAction({this.planId, this.conversationId, this.chip});
+  const UiAction({
+    this.planId,
+    this.conversationId,
+    this.chip,
+    this.requestId,
+  });
 
   final String? planId;
   final String? conversationId;
+
+  /// One id per user action for the writes the server dedupes
+  /// (`pick_meals`, `log_from_plan`, `save_meal`; testing-wave 134, #82).
+  /// A retry of the same action sends the same id; the server runs it once
+  /// and answers a repeat from the stored result. Null on every other
+  /// action.
+  final String? requestId;
 
   /// The label the athlete tapped, when this action is a fixed-label chip
   /// acting at once (mp-464, ticket 11): the server stores the tap as their
@@ -36,6 +48,7 @@ sealed class UiAction {
     if (planId != null) 'planId': planId,
     if (conversationId != null) 'conversationId': conversationId,
     if (chip != null) 'chip': chip,
+    if (requestId != null) 'requestId': requestId,
     ...payloadFields(),
   };
 
@@ -54,7 +67,7 @@ class MealPick {
 }
 
 /// Add one or more meals to the plan (`{meals[{source,id}], servings?,
-/// session?}`). Remote-ack.
+/// session?, requestId?}`). Remote-ack.
 class PickMealsAction extends UiAction {
   const PickMealsAction({
     required this.meals,
@@ -63,6 +76,7 @@ class PickMealsAction extends UiAction {
     this.sendSession = false,
     super.planId,
     super.conversationId,
+    super.requestId,
   });
 
   final List<MealPick> meals;
@@ -304,13 +318,15 @@ class ToggleShoppingAction extends UiAction {
   };
 }
 
-/// `{planMealId, mealType?}` — log one serving; decrements `servingsLeft`.
+/// `{planMealId, mealType?, requestId?}` — log one serving; decrements
+/// `servingsLeft`.
 class LogFromPlanAction extends UiAction {
   const LogFromPlanAction({
     required this.planMealId,
     this.mealType,
     super.planId,
     super.conversationId,
+    super.requestId,
   });
 
   final String planMealId;
@@ -551,9 +567,10 @@ class ListConversationsAction extends UiAction {
 
 // ── App-only actions (the Flutter client's read/write channel) ──────────────
 
-/// `{libraryMealId}` → `{meal: MealRef}` — the heart on the detail page.
+/// `{libraryMealId, requestId?}` → `{meal: MealRef}` — the heart on the
+/// detail page.
 class SaveMealAction extends UiAction {
-  const SaveMealAction({required this.libraryMealId});
+  const SaveMealAction({required this.libraryMealId, super.requestId});
 
   final String libraryMealId;
 

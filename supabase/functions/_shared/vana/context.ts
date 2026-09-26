@@ -114,6 +114,18 @@ export async function buildAthleteContext(v: VanaCtx, anchorDate?: string, deps:
   };
 }
 
+/** Today's carbs against the target, worked out in words (testing-wave 134, Finding 118-008): the opener said
+ *  "tracking well toward 419" after 464 were logged because the block gave it two numbers and left the comparison to
+ *  the model. The block now states it, and the general opener is told to use this line as given. */
+export function carbsAgainstTarget(loggedG: number, targetG: number | null): string {
+  const logged = `${loggedG} g of carbs logged`;
+  if (targetG == null) return `${logged}, no carb target for today`;
+  const diff = loggedG - targetG;
+  if (diff > 0) return `${logged}, ${diff} g over today's ${targetG} g target`;
+  if (diff < 0) return `${logged}, ${-diff} g to go to today's ${targetG} g target`;
+  return `${logged}, right on today's ${targetG} g target`;
+}
+
 /** Compact text block for the system prompt (~250 tokens). */
 export function contextBlock(c: AthleteContext): string {
   const w = c.week.workouts.slice(0, 8).map((x) => `${x.date.slice(5)} ${x.title}${x.minutes ? ` ${x.minutes}m` : ''}`).join('; ') || 'none';
@@ -126,7 +138,7 @@ export function contextBlock(c: AthleteContext): string {
     `HOLIDAYS ${c.holidays.length ? c.holidays.map((h) => `${h.name} ${h.date} (${h.daysOut === 0 ? 'today' : h.daysOut === 1 ? 'tomorrow' : `${h.daysOut}d`})`).join('; ') : 'none in the next 2 weeks'}`,
     `TARGETS (daily-macros service) today ${b ? `${b.kcal}kcal ≥${b.carbsG}C ≥${b.proteinG}P ${b.fatG}F · formulas ${b.sessionKcal}kcal · meal budget ${b.planningKcal}kcal (lunch+dinner ≈${b.lunchDinnerKcal})` : 'no target for today'} · week ${wk || 'none'}${c.budget.raceWeekCarbsG ? ` · race-week ≥${c.budget.raceWeekCarbsG}C` : ''}`,
     `WEATHER ${c.weather.today ?? 'n/a'}${c.weather.raceDay ? ` · race day ${c.weather.raceDay}` : ''}`,
-    `LOGGED TODAY ${c.loggedToday.count} meals ${c.loggedToday.carbsG}C · PLAN ${c.plan.exists ? `${c.plan.status}, ${c.plan.mealsLeft} servings left` : 'none'} · batch ${c.plan.batchKnown === false ? 'never chosen' : c.plan.batchCooking ? 'on' : 'off'} · coverage ${c.plan.coverageScope === 'dinners' ? 'dinners only' : c.plan.coverageScope === 'dinners_lunches' ? 'dinners and lunches' : c.plan.coverageScope === 'all' ? 'every meal' : 'never chosen'}`,
+    `LOGGED TODAY ${c.loggedToday.count} meals ${c.loggedToday.carbsG}C (${carbsAgainstTarget(c.loggedToday.carbsG, b?.carbsG ?? null)}) · PLAN ${c.plan.exists ? `${c.plan.status}, ${c.plan.mealsLeft} servings left` : 'none'} · batch ${c.plan.batchKnown === false ? 'never chosen' : c.plan.batchCooking ? 'on' : 'off'} · coverage ${c.plan.coverageScope === 'dinners' ? 'dinners only' : c.plan.coverageScope === 'dinners_lunches' ? 'dinners and lunches' : c.plan.coverageScope === 'all' ? 'every meal' : 'never chosen'}`,
     // mp-231 clause 1: the walk is the types they plan, in their order — the conversation visits these and nothing else.
     `WALK ${walkFor(c.plan.mealTypes, c.plan.coverageScope ?? null).join(' \u2192 ')}${(c.plan.mealTypes ?? []).length ? '' : ' (default \u2014 never chosen)'}`,
     `RECENT ${c.recentSession ? `${c.recentSession.date.slice(5)} ${c.recentSession.title}${c.recentSession.minutes ? ` ${c.recentSession.minutes}m` : ''}${c.recentSession.intensity ? ` ${c.recentSession.intensity}` : ''} — done` : 'no notable session in the last 2 days'}`,

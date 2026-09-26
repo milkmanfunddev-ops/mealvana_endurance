@@ -32,7 +32,7 @@ import type { AthleteContext, DaySlot, MealPlan } from './contracts.ts';
 const NotesZ = z.object({ notes: z.array(z.object({ date: z.string(), text: z.string() })).min(1).max(8) });
 
 export const DAY_NOTE_SYSTEM =
-  `You are Vana, an endurance-nutrition assistant. Write ONE short message (max 2 sentences, ≤ 30 words) for EACH of the dates listed, telling the athlete how to use their meal plan that day given their training. Be concrete: name a plan meal when it fits (e.g. "long ride → the rice bowl at lunch, extra serving at dinner"), mention the carb target only if it matters that day, keep rest days light. A date with meals already assigned is about those meals; a date with none may draw on any meal in the plan. Minimums framing, never weight or calorie-restriction language, no greetings, no emoji. Only use numbers that appear in the context, written as the athlete reads them: "412g carbs", "140g protein", never "412C" or "140P".`;
+  `You are Vana, an endurance-nutrition assistant. Write ONE short message (max 2 sentences, ≤ 30 words) for EACH of the dates listed, telling the athlete how to use their meal plan that day given their training. Be concrete: name a plan meal when it fits (e.g. "long ride → the rice bowl at lunch, extra serving at dinner"), mention the carb target only if it matters that day, keep rest days light. A date with meals already assigned is about those meals; a date with none may draw on any meal in the plan. Minimums framing, never weight or calorie-restriction language, no greetings, no emoji. Only use numbers that appear in the context, written as the athlete reads them: "412 g of carbs", "140 g of protein", never "412g carbs", "412C" or "140P".`;
 
 /** How long a claim is honoured before another request may take it over (an isolate that died mid-generation). */
 export const CLAIM_TTL_SECONDS = 120;
@@ -131,13 +131,27 @@ export const staleDates = (dates: string[], stored: { notes: Record<string, stri
   dates.filter((d) => !stored.notes[d]?.trim() || stored.keys[d] !== want[d]);
 
 /** The context block writes macros in the chat's shorthand ("≥412C ≥140P 70F", "412C/140P/3000kcal"), and Haiku copied
- *  the C into a note ("aim for 835C carbs", Finding 88-023). The notes' copy of the block spells them out instead; the
- *  chat's block is untouched (its tests and prompt cache read it byte for byte). */
+ *  the C into a note ("aim for 835C carbs", Finding 88-023). The notes' copy of the block spells them out instead, in
+ *  Lee's wording — "835 g of carbs", never macro shorthand (116-012, 2026-09-26); the chat's block is untouched (its
+ *  tests and prompt cache read it byte for byte). */
 export function contextInWords(block: string): string {
   return block
-    .replace(/(\d+)C(?=[\s/·)]|$)/gm, '$1g carbs')
-    .replace(/(\d+)P(?=[\s/·)]|$)/gm, '$1g protein')
-    .replace(/(\d+)F(?=[\s/·)]|$)/gm, '$1g fat');
+    .replace(/(\d+)C(?=[\s/·)]|$)/gm, '$1 g of carbs')
+    .replace(/(\d+)P(?=[\s/·)]|$)/gm, '$1 g of protein')
+    .replace(/(\d+)F(?=[\s/·)]|$)/gm, '$1 g of fat');
+}
+
+/** The check on the model's output (116-012): whatever shorthand Haiku still wrote — "835C", "835 C carbs", "835g
+ *  carbs", "835 grams of carbs", "835g of carb" — reads "835 g of carbs" in the stored note; protein and fat the same.
+ *  Anything else in the note is left alone. */
+export function ruledWording(text: string): string {
+  const macro = (letter: string, word: string, plural: string) =>
+    (s: string) => s
+      // "835C carbs" / "835C" / "835 C" (the block's shorthand, with or without the word after it)
+      .replace(new RegExp(`(\\d+)\\s?${letter}(?:\\s+(?:of\\s+)?${word}s?)?(?=[^A-Za-z]|$)`, 'g'), `$1 g of ${plural}`)
+      // "835g carbs" / "835 g carbs" / "835 grams of carbs" / "835g of carb"
+      .replace(new RegExp(`(\\d+)\\s?(?:g|grams?)\\s+(?:of\\s+)?${word}s?\\b`, 'gi'), `$1 g of ${plural}`);
+  return [macro('C', 'carb', 'carbs'), macro('P', 'protein', 'protein'), macro('F', 'fat', 'fat')].reduce((s, f) => f(s), text);
 }
 
 function notesPrompt(plan: MealPlan, ctx: AthleteContext, dates: string[]): string {
@@ -182,7 +196,7 @@ export async function generateDayNotes(v: VanaCtx, plan: MealPlan, anchorDate: s
     const { notes: written, inputTokens, outputTokens } = await deps.generate({ system: DAY_NOTE_SYSTEM, prompt: notesPrompt(plan, ctx, dirty), dates: dirty });
     const fresh: Record<string, string> = {};
     const keys: Record<string, string> = {};
-    for (const n of written) if (dirty.includes(n.date) && n.text.trim()) { fresh[n.date] = n.text.trim(); keys[n.date] = want[n.date]; }
+    for (const n of written) if (dirty.includes(n.date) && n.text.trim()) { fresh[n.date] = ruledWording(n.text.trim()); keys[n.date] = want[n.date]; }
     const notes = { ...stored.notes, ...fresh };
     await v.db.from('meal_plans').update({
       day_notes: notes,

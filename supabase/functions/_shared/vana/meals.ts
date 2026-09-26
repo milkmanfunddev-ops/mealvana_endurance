@@ -85,7 +85,9 @@ export async function libraryIngredients(v: VanaCtx, id: string): Promise<{ name
 }
 
 /** "Save to mine": copy a library meal into saved_meals (name, items from ingredients_json, macros, link, meal type, icon).
- *  Idempotent per (user, library_meal_id) — a second save returns the existing row. Embedding is best-effort. */
+ *  Idempotent per (user, library_meal_id) — a second save returns the existing row. Two saves in flight at once both
+ *  pass the check and both insert (testing-wave 134): after the insert the copies are read back and every one but the
+ *  earliest is soft-deleted, so both callers get the same row. Embedding is best-effort. */
 export async function saveLibraryMeal(v: VanaCtx, libraryMealId: string): Promise<MealRef> {
   const { data: existing } = await v.db.from('saved_meals').select('id').eq('user_id', v.userId).eq('library_meal_id', libraryMealId).eq('is_deleted', false).limit(1).maybeSingle();
   if (existing) return (await getMeal(v, 'saved', existing.id))!;
@@ -96,7 +98,18 @@ export async function saveLibraryMeal(v: VanaCtx, libraryMealId: string): Promis
   try { embedding = vec(await embedText(v, `${lib.meal_type}: ${lib.name}. Ingredients: ${lib.ingredients}`)); } catch { embedding = null; }
   const { data, error } = await v.db.from('saved_meals').insert({ user_id: v.userId, name: lib.name, items, calories: lib.kcal, carbs_g: lib.carbs_g, protein_g: lib.protein_g, fat_g: lib.fat_g, library_meal_id: lib.id, meal_types: [lib.meal_type], batch: lib.batch, icon: lib.icon ?? null, last_used_at: new Date().toISOString(), ...(embedding ? { embedding } : {}) }).select('id').single();
   if (error) throw new Error(error.message);
-  return (await getMeal(v, 'saved', data.id))!;
+  return (await getMeal(v, 'saved', await dedupeSavedCopies(v, libraryMealId, String(data.id))))!;
+}
+
+/** The one saved copy of a library meal that stays: the earliest non-deleted row. Any later copy (a save that raced
+ *  this one) is soft-deleted so My Foods never lists the meal twice. Returns the id to answer with. */
+async function dedupeSavedCopies(v: VanaCtx, libraryMealId: string, insertedId: string): Promise<string> {
+  const { data: copies } = await v.db.from('saved_meals').select('id, created_at').eq('user_id', v.userId).eq('library_meal_id', libraryMealId).eq('is_deleted', false).order('created_at', { ascending: true });
+  if (!copies || copies.length < 2) return insertedId;
+  const keep = String(copies[0].id);
+  const extra = copies.slice(1).map((c) => String(c.id));
+  await v.db.from('saved_meals').update({ is_deleted: true }).in('id', extra).eq('user_id', v.userId);
+  return keep;
 }
 
 // ---------------------------------------------------------------- detail / recents / notes / feedback

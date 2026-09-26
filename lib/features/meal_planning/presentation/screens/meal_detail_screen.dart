@@ -23,6 +23,7 @@ import '../../domain/vana_situation.dart';
 import '../widgets/vana_situation_scope.dart';
 import '../../domain/meal_source.dart';
 import '../../domain/ui_action.dart';
+import '../../domain/vana_conversation_kind.dart';
 import '../widgets/choice_chip_button.dart';
 import '../widgets/directions_origin_label.dart';
 import '../widgets/meal_photo_entry_points.dart';
@@ -49,6 +50,7 @@ class MealDetailScreen extends ConsumerStatefulWidget {
     required this.id,
     this.swapPlanMealId,
     this.pickConversationId,
+    this.pickKind = VanaConversationKind.mealPlanning,
   });
 
   final String id;
@@ -56,9 +58,11 @@ class MealDetailScreen extends ConsumerStatefulWidget {
   /// `plan_meals.id` when opened from the swap flow.
   final String? swapPlanMealId;
 
-  /// The conversation whose draft "Add to plan" writes into, when opened
-  /// from `/vana/browse`.
+  /// The conversation "Add to plan" was opened from (`/vana/browse`). Where
+  /// the pick lands follows [pickKind] (testing-wave 134, 118-004): a
+  /// planning chat's own draft, or the Plan tab's plan for a general chat.
   final String? pickConversationId;
+  final VanaConversationKind pickKind;
 
   @override
   ConsumerState<MealDetailScreen> createState() => _MealDetailScreenState();
@@ -107,6 +111,7 @@ class _MealDetailScreenState extends ConsumerState<MealDetailScreen> {
               detail: detail,
               swapPlanMealId: widget.swapPlanMealId,
               pickConversationId: widget.pickConversationId,
+              pickKind: widget.pickKind,
               notesController: _notesController,
             ),
           ),
@@ -121,12 +126,14 @@ class _DetailBody extends ConsumerStatefulWidget {
     required this.detail,
     required this.swapPlanMealId,
     required this.pickConversationId,
+    required this.pickKind,
     required this.notesController,
   });
 
   final MealDetail detail;
   final String? swapPlanMealId;
   final String? pickConversationId;
+  final VanaConversationKind pickKind;
   final TextEditingController notesController;
 
   @override
@@ -144,6 +151,9 @@ class _DetailBodyState extends ConsumerState<_DetailBody> {
   String? get swapPlanMealId => widget.swapPlanMealId;
   String? get pickConversationId => widget.pickConversationId;
   TextEditingController get notesController => widget.notesController;
+
+  bool get _pickIntoDraft =>
+      widget.pickKind == VanaConversationKind.mealPlanning;
 
   /// "Add to plan" is in flight — the button spins, no double-tap.
   bool _adding = false;
@@ -510,21 +520,23 @@ class _DetailBodyState extends ConsumerState<_DetailBody> {
     );
   }
 
-  /// [mealId] is already in the pick conversation's draft (library id, or
-  /// the saved uuid), matched the way the Browse screen ticks its cards.
+  /// [mealId] is already in the plan the pick lands on (the conversation's
+  /// draft, or the Plan tab's plan for a general chat), matched by library
+  /// id or saved uuid the way the Browse screen ticks its cards.
   bool _inDraft(String mealId) {
-    final draft = ref
-        .watch(conversationDraftProvider(pickConversationId!))
-        .value;
-    return draft?.meals.any(
+    final plan = _pickIntoDraft
+        ? ref.watch(conversationDraftProvider(pickConversationId!)).value
+        : ref.watch(mealPlanControllerProvider).value;
+    return plan?.meals.any(
           (m) => (m.libraryMealId ?? m.savedMealId) == mealId,
         ) ??
         false;
   }
 
-  /// "Add to plan" from the browse flow: pick into the conversation's draft
-  /// at the picker's default servings, toast, and pop `true` so the browse
-  /// screen ticks the card.
+  /// "Add to plan" from the browse flow: pick at the picker's default
+  /// servings, into the conversation's draft (planning) or the Plan tab's
+  /// plan (general), toast, and pop `true` so the browse screen ticks the
+  /// card.
   Future<void> _addToPlan(BuildContext context, WidgetRef ref) async {
     if (_adding) return;
     final content = ref.read(contentServiceProvider);
@@ -535,7 +547,7 @@ class _DetailBodyState extends ConsumerState<_DetailBody> {
           .pickMeals(
             [MealPick(source: detail.meal.source, id: detail.meal.id)],
             servings: VanaBrowseScreen.defaultServings,
-            conversationId: pickConversationId,
+            conversationId: _pickIntoDraft ? pickConversationId : null,
           );
       if (!context.mounted) return;
       MealvanaSnackbar.showSuccess(

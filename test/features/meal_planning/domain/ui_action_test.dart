@@ -54,6 +54,39 @@ void main() {
       );
     });
 
+    /// Testing-wave 134 (#82): the three dedupable writes carry the id.
+    test('pick_meals, log_from_plan and save_meal carry requestId when set', () {
+      const id = '6d1f5b0e-3f0b-4a3e-9d2e-000000000001';
+      check(
+        const PickMealsAction(
+          meals: [MealPick(source: MealSource.library, id: 'D-1')],
+          requestId: id,
+        ),
+        'pick_meals',
+        {
+          'requestId': id,
+          'meals': [
+            {'source': 'library', 'id': 'D-1'},
+          ],
+        },
+      );
+      check(
+        const LogFromPlanAction(planMealId: 'pm-1', requestId: id),
+        'log_from_plan',
+        {'requestId': id, 'planMealId': 'pm-1'},
+      );
+      check(
+        const SaveMealAction(libraryMealId: 'D-1', requestId: id),
+        'save_meal',
+        {'requestId': id, 'libraryMealId': 'D-1'},
+      );
+      check(
+        const SaveMealAction(libraryMealId: 'D-1'),
+        'save_meal',
+        {'libraryMealId': 'D-1'},
+      );
+    });
+
     test('pick_meals sendSession emits an explicit null', () {
       expect(
         const PickMealsAction(meals: [], sendSession: true).toPayloadJson(),

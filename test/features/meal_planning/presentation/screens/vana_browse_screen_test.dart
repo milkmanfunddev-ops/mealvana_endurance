@@ -17,6 +17,7 @@ import 'package:mealvana_endurance/features/meal_planning/domain/meal_source.dar
 import 'package:mealvana_endurance/features/meal_planning/domain/meal_type.dart';
 import 'package:mealvana_endurance/features/meal_planning/domain/plan_meal.dart';
 import 'package:mealvana_endurance/features/meal_planning/domain/ui_action.dart';
+import 'package:mealvana_endurance/features/meal_planning/domain/vana_conversation_kind.dart';
 import 'package:mealvana_endurance/features/meal_planning/presentation/screens/vana_browse_screen.dart';
 
 import '../../domain/fixture_helpers.dart';
@@ -90,9 +91,10 @@ void main() {
     required _RecordingPlanController plan,
     MealPlan? inPlan,
     MealCatalogState? catalogState,
+    VanaConversationKind kind = VanaConversationKind.mealPlanning,
   }) async {
     final router = GoRouter(
-      initialLocation: '/vana/browse?c=conv-1',
+      initialLocation: '/vana/browse?c=conv-1&mode=${kind.wire}',
       routes: [
         GoRoute(
           path: '/vana',
@@ -102,6 +104,11 @@ void main() {
               path: 'browse',
               builder: (_, state) => VanaBrowseScreen(
                 conversationId: state.uri.queryParameters['c']!,
+                kind:
+                    VanaConversationKind.fromWire(
+                      state.uri.queryParameters['mode'],
+                    ) ??
+                    VanaConversationKind.mealPlanning,
               ),
             ),
           ],
@@ -252,7 +259,10 @@ void main() {
 
   /// Testing-wave 18-001: a tap on the tick fell through to the card, whose
   /// body opened the detail, and its Add to plan added the meal again.
-  testWidgets('a tap on a ticked card picks nothing and opens nothing', (
+  /// Testing-wave 134 (118-004): a tap on a ticked card takes the meal out
+  /// of the conversation's draft again (`unpick_meal`, same scope as the
+  /// pick); it picks nothing and opens nothing.
+  testWidgets('a tap on a ticked card takes the meal out: no pick, no detail', (
     tester,
   ) async {
     final plan = _RecordingPlanController();
@@ -264,12 +274,18 @@ void main() {
     await tester.pump(const Duration(milliseconds: 300));
 
     expect(plan.picks, isEmpty);
+    final unpick = plan.unpicks.single;
+    expect(unpick.id, 'D-2');
+    expect(unpick.conversationId, 'conv-1');
     expect(
       find.byKey(const ValueKey('meal_planning.vana_browse_screen')),
       findsOneWidget,
       reason: 'the tap never reached the card body (no detail push)',
     );
-    expect(find.text(content['meal_planning.browse_added']!), findsWidgets);
+    expect(
+      find.text(content['meal_planning.browse_removed_toast']!),
+      findsOneWidget,
+    );
   });
 
   /// mp-678 (testing-wave 74 / 61-001): a meal with missing numbers stays
@@ -353,6 +369,92 @@ void main() {
     handle.dispose();
   });
 
+  /// Testing-wave 134 (118-004, Lee): a general conversation has no draft,
+  /// so its picks go into the plan the Plan tab shows (no conversation on
+  /// the wire), the ticks come from that plan, and a second tap on a ticked
+  /// card takes the meal out again.
+  group('from a general chat', () {
+    testWidgets('Add picks into the Plan tab\'s plan: no conversation scope', (
+      tester,
+    ) async {
+      final plan = _RecordingPlanController();
+      await pumpScreen(tester, plan: plan, kind: VanaConversationKind.general);
+
+      await tester.tap(addButton('D-1'));
+      await tester.pump();
+      await tester.pump(const Duration(milliseconds: 300));
+
+      final pick = plan.picks.single;
+      expect(pick.meals.single.id, 'D-1');
+      expect(pick.conversationId, isNull);
+      expect(pick.planId, isNull);
+      expect(
+        find.descendant(
+          of: addButton('D-1'),
+          matching: find.byIcon(Icons.check),
+        ),
+        findsOneWidget,
+      );
+    });
+
+    testWidgets('opens with the meals already in the Plan tab\'s plan ticked, '
+        'and a second tap on a ticked card takes the meal out', (tester) async {
+      final plan = _RecordingPlanController(
+        activePlan: planHolding(['D-2']).copyWith(conversationId: null),
+      );
+      await pumpScreen(tester, plan: plan, kind: VanaConversationKind.general);
+      await tester.pump();
+
+      expect(
+        find.descendant(
+          of: addButton('D-2'),
+          matching: find.byIcon(Icons.check),
+        ),
+        findsOneWidget,
+      );
+
+      await tester.tap(addButton('D-2'));
+      await tester.pump();
+      await tester.pump(const Duration(milliseconds: 300));
+
+      expect(plan.picks, isEmpty);
+      final unpick = plan.unpicks.single;
+      expect(unpick.id, 'D-2');
+      expect(unpick.source, MealSource.library);
+      expect(unpick.conversationId, isNull);
+      expect(
+        find.text(content['meal_planning.browse_removed_toast']!),
+        findsOneWidget,
+      );
+      // The controller's plan no longer holds it: the card is a plus again.
+      expect(
+        find.descendant(of: addButton('D-2'), matching: find.byIcon(Icons.add)),
+        findsOneWidget,
+      );
+    });
+
+    testWidgets('the detail opens with the chat\'s kind on its pick link', (
+      tester,
+    ) async {
+      final plan = _RecordingPlanController();
+      final router = await pumpScreen(
+        tester,
+        plan: plan,
+        kind: VanaConversationKind.general,
+      );
+      router.routerDelegate.addListener(() {});
+
+      String? pushed;
+      router.routeInformationProvider.addListener(() {
+        pushed = router.routeInformationProvider.value.uri.toString();
+      });
+      await tester.tap(find.text('Dal'));
+      await tester.pump();
+
+      expect(pushed, '/food/meals/D-2?pick=conv-1&mode=general');
+    });
+  });
+
   testWidgets('Done pops back to the chat', (tester) async {
     await pumpScreen(tester, plan: _RecordingPlanController());
 
@@ -377,15 +479,44 @@ class _FixedCatalogController extends MealCatalogController {
   FutureOr<MealCatalogState> build(CatalogSurface surface) => fixed;
 }
 
-/// Records every `pickMeals` instead of running the remote-ack action.
+/// Records every `pickMeals` / `unpickMeal` instead of running the
+/// remote-ack action. [activePlan] is the Plan tab's plan (a general chat's
+/// Browse reads its ticks off it); an unpick takes the meal out of it.
 class _RecordingPlanController extends MealPlanController {
-  _RecordingPlanController({this.failWith});
+  _RecordingPlanController({this.failWith, this.activePlan});
 
   final Object? failWith;
+  final MealPlan? activePlan;
   final List<PickMealsAction> picks = [];
+  final List<UnpickMealAction> unpicks = [];
 
   @override
-  Future<MealPlan?> build() async => null;
+  Future<MealPlan?> build() async => activePlan;
+
+  @override
+  Future<MealPlan?> unpickMeal(
+    MealSource source,
+    String id, {
+    String? conversationId,
+    String? planId,
+  }) async {
+    unpicks.add(
+      UnpickMealAction(source: source, id: id, conversationId: conversationId),
+    );
+    final current = state.value;
+    if (current != null) {
+      state = AsyncData(
+        current.copyWith(
+          meals: [
+            for (final m in current.meals)
+              if ((m.libraryMealId ?? m.savedMealId) != id) m,
+          ],
+          recomputeCoverage: true,
+        ),
+      );
+    }
+    return state.value;
+  }
 
   @override
   Future<MealPlan?> pickMeals(

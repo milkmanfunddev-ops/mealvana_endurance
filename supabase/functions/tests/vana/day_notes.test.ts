@@ -13,7 +13,7 @@
 import { assert, assertEquals } from 'https://deno.land/std@0.177.1/testing/asserts.ts';
 import { getPlanById } from '../../_shared/vana/plan.ts';
 import { buildAthleteContext } from '../../_shared/vana/context.ts';
-import { dayNoteInputs, dayNoteKeys, generateDayNotes, noteDates, contextInWords, CLAIM_TTL_SECONDS, DAY_NOTE_SYSTEM } from '../../_shared/vana/daynotes.ts';
+import { dayNoteInputs, dayNoteKeys, generateDayNotes, noteDates, contextInWords, ruledWording, CLAIM_TTL_SECONDS, DAY_NOTE_SYSTEM } from '../../_shared/vana/daynotes.ts';
 import type { DayNotesDeps } from '../../_shared/vana/daynotes.ts';
 import { testCtx, offlineDeps, TEST_USER_ID } from './support/vana_ctx.ts';
 import { fakeDb, type Row, type Tables } from './support/fake_db.ts';
@@ -179,18 +179,42 @@ Deno.test('the day-note prompt writes macros in words, never the NC / NP shortha
   const prompt = rec.calls[0].prompt;
   assert(!/\d+C(?=[\s/·)]|$)/m.test(prompt), `no "NC" left in:\n${prompt}`);
   assert(!/\d+P(?=[\s/·)]|$)/m.test(prompt), 'no "NP" either');
-  assert(prompt.includes('400g carbs'), 'the targets read in grams of carbs');
-  assert(prompt.includes('140g protein'));
+  assert(prompt.includes('400 g of carbs'), 'the targets read in grams of carbs, Lee\'s wording (116-012)');
+  assert(prompt.includes('140 g of protein'));
+  assert(!/\d+g carbs/.test(prompt), 'never the "400g carbs" shorthand either');
   assert(prompt.includes('2900kcal'), 'kcal is already a word and stays');
-  assert(DAY_NOTE_SYSTEM.includes('g carbs'), 'and the system prompt says how to write them');
+  assert(DAY_NOTE_SYSTEM.includes('"412 g of carbs", "140 g of protein"'), 'and the system prompt says how to write them');
 });
 
+// Testing-wave 134 (116-012, Lee): the note says "835 g of carbs", never macro shorthand.
 Deno.test('contextInWords: every macro shorthand the block uses, and nothing else', () => {
-  assertEquals(contextInWords('today 3000kcal ≥400C ≥140P 70F · formulas 600kcal'), 'today 3000kcal ≥400g carbs ≥140g protein 70g fat · formulas 600kcal');
-  assertEquals(contextInWords('week 09-09:400C/140P/3000kcal 09-10:410C/140P/3050kcal · race-week ≥500C'), 'week 09-09:400g carbs/140g protein/3000kcal 09-10:410g carbs/140g protein/3050kcal · race-week ≥500g carbs');
-  assertEquals(contextInWords('LOGGED TODAY 2 meals 125C · PLAN confirmed'), 'LOGGED TODAY 2 meals 125g carbs · PLAN confirmed');
+  assertEquals(contextInWords('today 3000kcal ≥400C ≥140P 70F · formulas 600kcal'), 'today 3000kcal ≥400 g of carbs ≥140 g of protein 70 g of fat · formulas 600kcal');
+  assertEquals(contextInWords('week 09-09:400C/140P/3000kcal 09-10:410C/140P/3050kcal · race-week ≥500C'), 'week 09-09:400 g of carbs/140 g of protein/3000kcal 09-10:410 g of carbs/140 g of protein/3050kcal · race-week ≥500 g of carbs');
+  assertEquals(contextInWords('LOGGED TODAY 2 meals 125C · PLAN confirmed'), 'LOGGED TODAY 2 meals 125 g of carbs · PLAN confirmed');
   // Dates, ids, times and day counts are not macros.
   assertEquals(contextInWords('RACE Chattanooga 70.3 2026-09-20 (11d) · D-048 · 07:00 Tempo run 60m'), 'RACE Chattanooga 70.3 2026-09-20 (11d) · D-048 · 07:00 Tempo run 60m');
+});
+
+Deno.test('ruledWording: whatever shorthand the model still wrote reads "N g of carbs" in the stored note', () => {
+  assertEquals(ruledWording('Long run day needs fuel—aim for 835C carbs; pasta at dinner.'), 'Long run day needs fuel—aim for 835 g of carbs; pasta at dinner.');
+  assertEquals(ruledWording('support the 835C target'), 'support the 835 g of carbs target');
+  assertEquals(ruledWording('At least 295g carbs and 140g protein, 70 g fat.'), 'At least 295 g of carbs and 140 g of protein, 70 g of fat.');
+  assertEquals(ruledWording('aim for 412 grams of carbs, 140P'), 'aim for 412 g of carbs, 140 g of protein');
+  assertEquals(ruledWording('412 g of carbs is the floor'), '412 g of carbs is the floor');
+  // Times, distances, temperatures in °F and plain words are not macros.
+  assertEquals(ruledWording('Ride at 07:00, 60m easy, 84°F; carbs first at lunch.'), 'Ride at 07:00, 60m easy, 84°F; carbs first at lunch.');
+});
+
+Deno.test('a stored note holds no NNNC and reads "g of carbs" even when the model wrote shorthand', async () => {
+  const v = testCtx(baseTables());
+  const plan = (await getPlanById(v, PLAN))!;
+  const rec: Recorder = { calls: [] };
+  await generateDayNotes(v, plan, ANCHOR, deps(rec, {
+    generate: ({ dates }) => Promise.resolve({ notes: dates.map((date, i) => ({ date, text: i === 0 ? 'Long run: aim for 835C carbs, 140g protein.' : `Day ${i}` })) }),
+  }));
+  const stored = v.fake.rows('meal_plans')[0].day_notes as Record<string, string>;
+  assertEquals(stored[DATES[0]], 'Long run: aim for 835 g of carbs, 140 g of protein.');
+  for (const text of Object.values(stored)) assert(!/\d+\s?C\b/.test(text) && !/\d+g carbs/.test(text), `shorthand left in "${text}"`);
 });
 
 Deno.test('a meal leaving the pool rewrites the unassigned days and leaves the assigned ones alone', async () => {

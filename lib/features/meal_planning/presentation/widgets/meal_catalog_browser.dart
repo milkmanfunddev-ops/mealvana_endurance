@@ -34,6 +34,7 @@ class MealCatalogBrowser extends ConsumerStatefulWidget {
     required this.onOpenMeal,
     this.onSeeAllRecents,
     this.onAddMeal,
+    this.onRemoveMeal,
     this.addedIds = const {},
     this.surface = CatalogSurface.mealsTab,
   });
@@ -50,6 +51,11 @@ class MealCatalogBrowser extends ConsumerStatefulWidget {
 
   /// Add-to-plan affordance on every card when set.
   final ValueChanged<MealRef>? onAddMeal;
+
+  /// A tap on a ticked card takes the meal out of the plan again
+  /// (testing-wave 134, 118-004). Without it a ticked card only says it is
+  /// in the plan.
+  final ValueChanged<MealRef>? onRemoveMeal;
 
   /// Meal ids already in the plan (or added this visit) — their Add button
   /// shows ticked and picks nothing.
@@ -108,11 +114,13 @@ class _MealCatalogBrowserState extends ConsumerState<MealCatalogBrowser> {
         added ? ContentKeys.mpBrowseAdded : ContentKeys.mpBrowseAdd,
       ),
       onTap: added
-          ? () => MealvanaSnackbar.showInfo(
-              context,
-              content.getValue(ContentKeys.mpBrowseAdded),
-              duration: MealvanaSnackbar.shortDuration,
-            )
+          ? (widget.onRemoveMeal != null
+                ? () => widget.onRemoveMeal!(meal)
+                : () => MealvanaSnackbar.showInfo(
+                    context,
+                    content.getValue(ContentKeys.mpBrowseAdded),
+                    duration: MealvanaSnackbar.shortDuration,
+                  ))
           : () => onAdd(meal),
     );
   }

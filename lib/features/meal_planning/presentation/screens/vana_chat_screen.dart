@@ -195,9 +195,13 @@ class _VanaChatScreenState extends ConsumerState<VanaChatScreen> {
     // the plan bar, chips and coverage read that draft off the chat state —
     // never the week's active plan, which is what the Plan tab shows and what
     // a fresh conversation must not inherit (a new plan starts empty).
+    // A general conversation has no draft: its Browse picks go into the Plan
+    // tab's plan, and its bar shows that plan once it holds a meal
+    // (testing-wave 134, 118-004).
     final plan = isPlanning
         ? chatAsync.value?.draftPlan
         : ref.watch(mealPlanControllerProvider).value;
+    final showsPlanBar = isPlanning || (plan != null && plan.meals.isNotEmpty);
     if (widget.startOpener) _maybeRequestOpener();
 
     return Scaffold(
@@ -264,7 +268,7 @@ class _VanaChatScreenState extends ConsumerState<VanaChatScreen> {
               // A conversation whose history failed has no plan to show:
               // "Your plan · 0 meals" would read as a new plan (88-012).
               child:
-                  isPlanning &&
+                  showsPlanBar &&
                       state != null &&
                       state.failedRead != VanaChatFailedRead.history
                   ? PlanBar(
@@ -280,36 +284,41 @@ class _VanaChatScreenState extends ConsumerState<VanaChatScreen> {
                       onServings: (meal, servings) {
                         // Local-first write (keyed by the plan-meal row, so
                         // it lands on this draft); the bar shows the result
-                        // at once.
-                        _controller.applyDraftPlan(
-                          plan!.copyWith(
-                            meals: [
-                              for (final m in plan.meals)
-                                if (m.id == meal.id)
-                                  m.copyWith(
-                                    servings: servings,
-                                    servingsLeft: servings,
-                                  )
-                                else
-                                  m,
-                            ],
-                            recomputeCoverage: true,
-                          ),
-                        );
+                        // at once. A general chat's bar follows the plan
+                        // controller, which the write updates.
+                        if (isPlanning) {
+                          _controller.applyDraftPlan(
+                            plan!.copyWith(
+                              meals: [
+                                for (final m in plan.meals)
+                                  if (m.id == meal.id)
+                                    m.copyWith(
+                                      servings: servings,
+                                      servingsLeft: servings,
+                                    )
+                                  else
+                                    m,
+                              ],
+                              recomputeCoverage: true,
+                            ),
+                          );
+                        }
                         ref
                             .read(mealPlanControllerProvider.notifier)
                             .setServings(meal.id, servings);
                       },
                       onRemove: (meal) {
-                        _controller.applyDraftPlan(
-                          plan!.copyWith(
-                            meals: [
-                              for (final m in plan.meals)
-                                if (m.id != meal.id) m,
-                            ],
-                            recomputeCoverage: true,
-                          ),
-                        );
+                        if (isPlanning) {
+                          _controller.applyDraftPlan(
+                            plan!.copyWith(
+                              meals: [
+                                for (final m in plan.meals)
+                                  if (m.id != meal.id) m,
+                              ],
+                              recomputeCoverage: true,
+                            ),
+                          );
+                        }
                         ref
                             .read(mealPlanControllerProvider.notifier)
                             .removeMeal(meal.id);
@@ -962,8 +971,13 @@ class _VanaChatScreenState extends ConsumerState<VanaChatScreen> {
       );
       return;
     }
-    await context.push('/vana/browse?c=$id');
-    if (mounted) await _controller.refreshDraft();
+    await context.push('/vana/browse?c=$id&mode=${widget.kind.wire}');
+    // A planning chat's bar reads the draft off the chat state: read it
+    // again. A general chat's bar follows the plan controller, which every
+    // pick already updated.
+    if (mounted && widget.kind == VanaConversationKind.mealPlanning) {
+      await _controller.refreshDraft();
+    }
   }
 
   /// "Use these" on a pantry card: record the items at once, with the app's
@@ -1189,6 +1203,7 @@ class _VanaChatScreenState extends ConsumerState<VanaChatScreen> {
 
   Future<void> _openReviewSheet(BuildContext context, MealPlan plan) {
     final planController = ref.read(mealPlanControllerProvider.notifier);
+    final isPlanning = widget.kind == VanaConversationKind.mealPlanning;
     return showReviewSheet(
       context: context,
       ref: ref,
@@ -1206,19 +1221,22 @@ class _VanaChatScreenState extends ConsumerState<VanaChatScreen> {
       onServings: _setDraftServings,
       onRemove: _removeFromDraft,
       // The sheet follows this conversation's draft while open, so a Remove
-      // or a stepper shows at once (88-004).
-      livePlan: vanaChatControllerProvider(
-        kind: widget.kind,
-        conversationId: _key,
-      ).select((chat) => chat.value?.draftPlan),
+      // or a stepper shows at once (88-004); a general chat's sheet follows
+      // the Plan tab's plan (134).
+      livePlan: isPlanning
+          ? vanaChatControllerProvider(
+              kind: widget.kind,
+              conversationId: _key,
+            ).select((chat) => chat.value?.draftPlan)
+          : mealPlanControllerProvider.select((p) => p.value),
       // The sheet shows THIS conversation's draft, so Confirm names it. An
       // unscoped confirm_plan lands on the week's active plan, which puts an
       // old confirmed plan first and archived the Draft on screen (16-001).
       // A failure throws into the sheet, which keeps the draft and says why
-      // (88-015).
+      // (88-015). A general chat's plan is the week's, so only its id.
       onConfirm: () => planController.confirmPlan(
         planId: plan.id,
-        conversationId: _conversationId,
+        conversationId: isPlanning ? _conversationId : null,
       ),
       // Confirmed → the shopping list is the next thing the athlete needs
       // (the server has just built it). `go` to the tab shell's Food tab

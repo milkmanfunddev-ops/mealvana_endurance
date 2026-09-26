@@ -6,6 +6,8 @@
  * Response 200: { parts: VanaPart[], ...extras }. The client folds any `batch` part into its plan state.
  *   A picker chip whose next step is Vana's (`next_picker`, ticket 12) answers { parts: [], toVana: true, reason }: nothing
  *   ran and nothing was stored, and the app sends the tap to vana-chat instead.
+ *   `pick_meals`, `log_from_plan` and `save_meal` take a `requestId` in the payload (testing-wave 134, #82): the same id
+ *   runs once and a repeat answers the stored result; a repeat while the first is still running is 409 {error:'in_progress'}.
  *   `confirm_plan` is a remote-ack write: the shopping list is built here, then ONE SQL transaction
  *   (`confirm_meal_plan`) confirms the plan and archives the week's other plans; day notes regenerate afterwards
  *   through `vana-day-notes` under EdgeRuntime.waitUntil (never awaited by the client).
@@ -21,6 +23,7 @@ import { authenticate } from '../_shared/vana/auth.ts';
 import { requirePro } from '../_shared/vana/entitlement.ts';
 import { runAction, extraAction } from '../_shared/vana/actions.ts';
 import { runTapped } from '../_shared/vana/chips.ts';
+import { withRequestId, RequestInProgressError } from '../_shared/vana/idempotency.ts';
 import { RateLimitedError } from '../_shared/vana/rate-limit.ts';
 import { BudgetRefusedError } from '../_shared/ai/credits.ts';
 import { gatewayRefusalResponse } from '../_shared/ai/gateway_error.ts';
@@ -48,11 +51,13 @@ serve(withSentry(async (req: Request) => {
     const payload = (body.payload ?? {}) as Record<string, unknown>;
     // A chip that acts at once (mp-464, ticket 11) carries its label as `chip`: the action runs as any other, then the tap
     // and what it produced are stored in the conversation and logged as a tap that drew nothing (chips.ts).
-    const result = await runTapped(v, body.type, payload, (await extraAction(v, body.type, payload)) ?? (await runAction(v, { type: body.type, payload })));
+    const execute = async () => (await extraAction(v, body.type, payload)) ?? (await runAction(v, { type: body.type, payload }));
+    const result = await runTapped(v, body.type, payload, await withRequestId(v, body.type, payload, execute));
     console.log(`[vana-action] user=${v.userId} type=${body.type}${result.tapMessageId ? ' chip' : result.toVana ? ' chip→vana' : ''} parts=${result.parts.map((p) => p.kind).join(',') || '-'} ${Date.now() - started}ms`);
     return jsonResponse(result);
   } catch (e) {
     if (e instanceof RateLimitedError) return jsonResponse({ error: 'rate_limited', retry_after_seconds: e.retryAfterSeconds }, 429);
+    if (e instanceof RequestInProgressError) return jsonResponse({ error: 'in_progress', request_id: e.requestId }, 409);
     // The pantry photo draws the budget (ticket 09): 402 is the top-up sheet, 503 is the wallet we could not read.
     if (e instanceof BudgetRefusedError) return jsonResponse(e.body, e.status);
     const refused = gatewayRefusalResponse(e, `vana-action ${body.type}`);
