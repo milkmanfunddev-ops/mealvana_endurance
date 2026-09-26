@@ -1,24 +1,53 @@
-/// The dev flavor's testing tools: the blue wrench (text scale, bold text,
+/// The dev flavor's testing tools: the wrench panel (text scale, bold text,
 /// colour-blindness simulation, locale, semantics debugger) and, in debug,
-/// the red issue checker. Mounted by the app shell (`root_app_widget.dart`)
-/// when the tester's Settings switch is on; prod never mounts it.
+/// the accessibility issue checker. Mounted by the app shell
+/// (`root_app_widget.dart`) when the tester's Settings switch is on; prod
+/// never mounts it.
 ///
-/// Where the button sits (finding 12-002, ticket 68): the package parks its
-/// buttons in the bottom-right corner, which is Ask Vana's slot — a tap on
-/// the launcher's centre opened the tools. The buttons now sit in the same
-/// column, just above the launcher, so the corner keeps its control and no
-/// other corner (date header, tab bar, back buttons) gains a stray one.
+/// One small pill at the top edge (testing-wave 100-001, 118-001, ticket
+/// 141). The package's two 48pt buttons sat in the bottom-right column and
+/// covered whatever a screen docked there: Ask Vana (12-002), then the right
+/// end of every full-width bottom button and a sheet row's ⋮ menu. Every
+/// corner at AppBar height belongs to a control (back buttons left, actions
+/// and the date header's gear right, the date title in the middle), so the
+/// pill hugs the very top edge: 18pt tall, straddling the status bar's empty
+/// bottom strip and the first 10pt under it, which is above where the date
+/// header's row (top padding 10) and an AppBar's title glyphs begin. A tap
+/// offers both tools; in a release build, where the checker cannot run, it
+/// opens the wrench panel straight away.
 ///
-/// How, without a fork of the package: the overlay positions its buttons
-/// with `SafeArea`, so this widget raises the bottom safe-area padding it
-/// sees to [DevTestingTools.floor] and hands the app underneath its real
-/// padding back. The tools panel shares the raised padding (a taller bottom
-/// margin on a dev-only sheet) — the one cosmetic cost.
+/// The pill is left out of the semantics tree on purpose: at 18pt it would
+/// fail the checker's own tap-target rule on every screen, and a dev-only
+/// control is not what VoiceOver testers are auditing. The menu it opens is
+/// made of named 48pt buttons.
+///
+/// The package's overlay is not used at all any more (it draws its own two
+/// buttons with no way to fold them); its checkers, wrapper and panel are
+/// mounted from `src/` here, as the release path already did for the panel.
 library;
 
 import 'dart:math' as math;
 
 import 'package:accessibility_tools/accessibility_tools.dart';
+// ignore: implementation_imports
+import 'package:accessibility_tools/src/accessibility_issue.dart';
+// ignore: implementation_imports
+import 'package:accessibility_tools/src/checker_manager.dart';
+// ignore: implementation_imports
+import 'package:accessibility_tools/src/checkers/checker_base.dart';
+// ignore: implementation_imports
+import 'package:accessibility_tools/src/checkers/image_label_checker.dart';
+// ignore: implementation_imports
+import 'package:accessibility_tools/src/checkers/input_label_checker.dart';
+// ignore: implementation_imports
+import 'package:accessibility_tools/src/checkers/minimum_tap_area_checker.dart';
+// ignore: implementation_imports
+import 'package:accessibility_tools/src/checkers/mixin.dart';
+// ignore: implementation_imports
+import 'package:accessibility_tools/src/checkers/semantic_label_checker.dart';
+// ignore: implementation_imports
+import 'package:accessibility_tools/src/floating_action_buttons.dart'
+    show toolsBoxMinSize;
 // ignore: implementation_imports
 import 'package:accessibility_tools/src/testing_tools/test_environment.dart';
 // ignore: implementation_imports
@@ -28,29 +57,26 @@ import 'package:accessibility_tools/src/testing_tools/testing_tools_wrapper.dart
 import 'package:flutter/foundation.dart';
 import 'package:flutter/material.dart';
 
-import 'kyle_design/navigation/vana_launcher.dart';
-
 /// Tree order:
 ///
-///     DevTestingTools (raised bottom padding)
-///       └ AccessibilityTools / _ReleaseTestingTools
-///           ├ TestingToolsWrapper(env override)
-///           │   └ real padding restored → child
-///           └ Overlay(panel + buttons)  ← reads the raised padding
+///     DevTestingTools
+///       └ _DevToolsOverlay
+///           ├ TestingToolsWrapper(env override) → child
+///           └ Overlay
+///               ├ _CheckerHost (debug: the issue rects)
+///               ├ the pill, and its menu while open
+///               └ TestingToolsPanel while open
 ///
-/// Which button appears where:
+/// Which tool the pill offers where:
 ///
-/// | build              | blue wrench | red checker |
-/// |--------------------|-------------|-------------|
-/// | dev + debug        | yes         | yes         |
-/// | dev + release      | yes         | no          |
+/// | build              | wrench panel | issue checker |
+/// |--------------------|--------------|---------------|
+/// | dev + debug        | yes          | yes           |
+/// | dev + release      | yes          | no            |
 ///
-/// The red checker is debug-only for a reason outside our control: its
-/// checkers read `RenderObject.debugSemantics` and `debugCreator`, which
-/// Flutter nulls out in release builds; `AccessibilityTools` itself
-/// short-circuits to `child` when `!kDebugMode`. So the release path mounts
-/// the half of the package that does work outside debug — the wrapper and
-/// the wrench panel — behind a button drawn to match the package's own.
+/// The checker is debug-only for a reason outside our control: its checkers
+/// read `RenderObject.debugSemantics` and `debugCreator`, which Flutter
+/// nulls out in release builds.
 class DevTestingTools extends StatelessWidget {
   const DevTestingTools({
     super.key,
@@ -60,125 +86,155 @@ class DevTestingTools extends StatelessWidget {
 
   final Widget child;
 
-  /// Mount the package's own overlay (wrench + red checker). Only renders in
-  /// debug builds; tests pass false to exercise the release overlay.
+  /// Run the accessibility checker and offer it from the pill. Only works in
+  /// debug builds; tests pass it explicitly to exercise both shapes.
   final bool withIssueChecker;
 
-  /// The bottom safe-area padding the tools overlay is shown: the launcher's
-  /// top edge (vana_companion.dart places it at [VanaLauncher.bottomInset]).
-  /// The overlay's own spacing above `SafeArea` is the gap.
-  static const double floor = VanaLauncher.bottomInset + VanaLauncher.size;
+  /// The pill's size and how far it reaches up into the status bar strip.
+  static const double pillWidth = 48;
+  static const double pillHeight = 18;
+  static const double pillOverlap = 8;
+
+  /// The pill's top edge for a screen with [topPadding] of status bar.
+  static double pillTop(double topPadding) =>
+      math.max(0, topPadding - pillOverlap);
+
+  static const Key pillKey = ValueKey('dev_tools.pill');
+  static const Key toolsMenuKey = ValueKey('dev_tools.menu_tools');
+  static const Key issuesMenuKey = ValueKey('dev_tools.menu_issues');
 
   @override
   Widget build(BuildContext context) {
-    final mq = MediaQuery.of(context);
-    final raised = mq.copyWith(
-      padding: mq.padding.copyWith(
-        bottom: math.max(mq.padding.bottom, floor),
-      ),
-      viewPadding: mq.viewPadding.copyWith(
-        bottom: math.max(mq.viewPadding.bottom, floor),
-      ),
-    );
-    // The wrapper's MediaQuery (text scale, bold text) sits between the
-    // overlay and the app, so the app's real padding goes back on top of it.
-    final app = Builder(
-      builder: (context) => MediaQuery(
-        data: MediaQuery.of(
-          context,
-        ).copyWith(padding: mq.padding, viewPadding: mq.viewPadding),
-        child: child,
-      ),
-    );
-    return MediaQuery(
-      data: raised,
-      child: withIssueChecker
-          ? _DebugAccessibilityTools(child: app)
-          : _ReleaseTestingTools(child: app),
-    );
+    return _DevToolsOverlay(withIssueChecker: withIssueChecker, child: child);
   }
 }
 
-/// Debug-only wrapper around [AccessibilityTools] that **resets the panel's
-/// state on every hot reload** by re-keying the widget.
-///
-/// Why: the package keeps its `TestEnvironment` (text scale, color mode,
-/// locale override, etc.) in `_AccessibilityToolsState`. Plain `setState`
-/// changes survive hot reload, which made the app stick at e.g. 3.1× text
-/// scale or grayscale between iterations with no obvious way to reset.
-///
-/// `reassemble` fires on every hot reload; bumping a counter and using it
-/// as the child's key forces Flutter to dispose the old `AccessibilityTools`
-/// and create a fresh one — wiping any panel overrides. Cold launches are
-/// also fresh because widget state starts empty. The re-key remounts the
-/// subtree down to the router's Navigator, whose GlobalKey keeps its routes.
-class _DebugAccessibilityTools extends StatefulWidget {
-  const _DebugAccessibilityTools({required this.child});
+class _DevToolsOverlay extends StatefulWidget {
+  const _DevToolsOverlay({required this.withIssueChecker, required this.child});
 
+  final bool withIssueChecker;
   final Widget child;
 
   @override
-  State<_DebugAccessibilityTools> createState() =>
-      _DebugAccessibilityToolsState();
+  State<_DevToolsOverlay> createState() => _DevToolsOverlayState();
 }
 
-class _DebugAccessibilityToolsState extends State<_DebugAccessibilityTools> {
-  int _resetGeneration = 0;
+class _DevToolsOverlayState extends State<_DevToolsOverlay> {
+  TestEnvironment _environment = const TestEnvironment();
+  bool _panelVisible = false;
+  bool _menuOpen = false;
+  bool _issuesVisible = false;
 
+  /// Built once the theme is known (the tap-area rule is per platform).
+  CheckerManager? _checker;
+
+  @override
+  void didChangeDependencies() {
+    super.didChangeDependencies();
+    if (!widget.withIssueChecker || _checker != null) return;
+    _checker = CheckerManager(
+      checkers: [
+        SemanticLabelChecker(),
+        MinimumTapAreaChecker(
+          minTapArea: MinimumTapAreas.material.forPlatform(
+            Theme.of(context).platform,
+          ),
+        ),
+        InputLabelChecker(),
+        ImageLabelChecker(),
+      ],
+      // Silence the per-rebuild console report (it flooded the logs and
+      // buried real errors). The on-screen rects still work.
+      logLevel: LogLevel.none,
+    );
+  }
+
+  /// Hot reload resets the panel's overrides. The package kept its
+  /// `TestEnvironment` across reloads, which stuck the app at e.g. 3.1× text
+  /// scale or grayscale between iterations with no obvious way back.
   @override
   void reassemble() {
     super.reassemble();
-    _resetGeneration++;
+    _environment = const TestEnvironment();
+    _panelVisible = false;
+    _menuOpen = false;
   }
 
   @override
-  Widget build(BuildContext context) {
-    return AccessibilityTools(
-      key: ValueKey('accessibility-tools-$_resetGeneration'),
-      // Silence the per-rebuild console report (it flooded the logs and buried
-      // real errors). The on-screen overlay + testing panel still work.
-      logLevel: LogLevel.none,
-      child: widget.child,
-    );
+  void dispose() {
+    _checker?.dispose();
+    super.dispose();
   }
-}
 
-/// The wrench panel for **release** builds (the installed dev app),
-/// reproducing the package's own overlay structure so QA sees identical
-/// chrome on device and in simulator.
-class _ReleaseTestingTools extends StatefulWidget {
-  const _ReleaseTestingTools({required this.child});
+  void _onPillTap() {
+    setState(() {
+      if (_checker == null) {
+        // One tool: straight to it.
+        _panelVisible = !_panelVisible;
+        _menuOpen = false;
+      } else if (_panelVisible) {
+        _panelVisible = false;
+      } else {
+        _menuOpen = !_menuOpen;
+      }
+    });
+  }
 
-  final Widget child;
+  void _openPanel() => setState(() {
+    _menuOpen = false;
+    _issuesVisible = false;
+    _panelVisible = true;
+  });
 
-  @override
-  State<_ReleaseTestingTools> createState() => _ReleaseTestingToolsState();
-}
-
-class _ReleaseTestingToolsState extends State<_ReleaseTestingTools> {
-  TestEnvironment _environment = const TestEnvironment();
-  bool _panelVisible = false;
+  void _toggleIssues() => setState(() {
+    _menuOpen = false;
+    _panelVisible = false;
+    _issuesVisible = !_issuesVisible;
+  });
 
   @override
   Widget build(BuildContext context) {
+    final checker = _checker;
+    final topPadding = MediaQuery.paddingOf(context).top;
+    final pillTop = DevTestingTools.pillTop(topPadding);
     return Stack(
       textDirection: TextDirection.ltr,
       children: [
-        // Inserts its own MediaQuery/Theme between the clamp and the app, so
-        // panel overrides reach app content while panel chrome stays clamped.
+        // Inserts its own MediaQuery/Theme between the shell's clamp and the
+        // app, so panel overrides reach app content while panel chrome stays
+        // clamped.
         TestingToolsWrapper(environment: _environment, child: widget.child),
         Overlay(
           initialEntries: [
+            if (checker != null)
+              OverlayEntry(
+                builder: (_) =>
+                    _CheckerHost(checker: checker, showIssues: _issuesVisible),
+              ),
             OverlayEntry(
-              builder: (context) => Positioned(
-                right: 10,
-                bottom: 10,
-                child: SafeArea(
-                  child: _TestingToolsButton(
-                    onPressed: () =>
-                        setState(() => _panelVisible = !_panelVisible),
+              builder: (context) => Stack(
+                children: [
+                  Positioned(
+                    top: pillTop,
+                    left: 0,
+                    right: 0,
+                    child: Center(child: _DevToolsPill(onTap: _onPillTap)),
                   ),
-                ),
+                  if (_menuOpen)
+                    Positioned(
+                      top: pillTop + DevTestingTools.pillHeight + 6,
+                      left: 0,
+                      right: 0,
+                      child: Center(
+                        child: _DevToolsMenu(
+                          checker: checker,
+                          issuesVisible: _issuesVisible,
+                          onTools: _openPanel,
+                          onIssues: _toggleIssues,
+                        ),
+                      ),
+                    ),
+                ],
               ),
             ),
             OverlayEntry(
@@ -199,35 +255,219 @@ class _ReleaseTestingToolsState extends State<_ReleaseTestingTools> {
   }
 }
 
-/// Blue wrench button. Matches the package's own `AccessibilityToolsToggle`
-/// (which lives in `src/` and isn't exported) so the two build modes look the
-/// same; its blue is the package's, not a brand colour.
-class _TestingToolsButton extends StatelessWidget {
-  const _TestingToolsButton({required this.onPressed});
+/// The one dev control: a 48×18 blue pill with the wrench. Out of the
+/// semantics tree (see the library comment).
+class _DevToolsPill extends StatelessWidget {
+  const _DevToolsPill({required this.onTap});
 
-  final VoidCallback onPressed;
+  final VoidCallback onTap;
 
   @override
   Widget build(BuildContext context) {
-    const label = 'Open testing tools';
-    return SizedBox.square(
-      dimension: 48,
-      child: Tooltip(
-        message: label,
-        child: FloatingActionButton(
-          onPressed: onPressed,
-          shape: const CircleBorder(),
-          elevation: 10,
-          hoverElevation: 10,
-          backgroundColor: Colors.blue,
-          child: const Icon(
-            Icons.build,
-            size: 24,
-            color: Colors.white,
-            semanticLabel: label,
+    return ExcludeSemantics(
+      child: GestureDetector(
+        key: DevTestingTools.pillKey,
+        behavior: HitTestBehavior.opaque,
+        onTap: onTap,
+        child: Container(
+          width: DevTestingTools.pillWidth,
+          height: DevTestingTools.pillHeight,
+          decoration: BoxDecoration(
+            // The package's own blue, not a brand colour.
+            color: Colors.blue,
+            borderRadius: BorderRadius.circular(9),
+            boxShadow: const [
+              BoxShadow(
+                color: Color(0x66000000),
+                blurRadius: 4,
+                offset: Offset(0, 1),
+              ),
+            ],
+          ),
+          child: const Icon(Icons.build, size: 12, color: Colors.white),
+        ),
+      ),
+    );
+  }
+}
+
+/// The two tools, as named 48pt buttons stacked under the pill.
+class _DevToolsMenu extends StatelessWidget {
+  const _DevToolsMenu({
+    required this.checker,
+    required this.issuesVisible,
+    required this.onTools,
+    required this.onIssues,
+  });
+
+  final CheckerManager? checker;
+  final bool issuesVisible;
+  final VoidCallback onTools;
+  final VoidCallback onIssues;
+
+  @override
+  Widget build(BuildContext context) {
+    final checker = this.checker;
+    // Stacked, not side by side: the labels are long and the row is a phone.
+    return Column(
+      mainAxisSize: MainAxisSize.min,
+      children: [
+        _DevToolsMenuButton(
+          key: DevTestingTools.toolsMenuKey,
+          label: 'Open testing tools',
+          icon: Icons.build,
+          color: Colors.blue,
+          onTap: onTools,
+        ),
+        if (checker != null) ...[
+          const SizedBox(height: 8),
+          AnimatedBuilder(
+            animation: checker,
+            builder: (context, _) {
+              final count = checker.issues.length;
+              final noun = count == 1 ? 'issue' : 'issues';
+              return _DevToolsMenuButton(
+                key: DevTestingTools.issuesMenuKey,
+                label: issuesVisible
+                    ? 'Hide accessibility issues'
+                    : 'Show $count accessibility $noun',
+                icon: Icons.accessibility_new,
+                color: count == 0 ? Colors.green : Colors.red,
+                onTap: onIssues,
+              );
+            },
+          ),
+        ],
+      ],
+    );
+  }
+}
+
+class _DevToolsMenuButton extends StatelessWidget {
+  const _DevToolsMenuButton({
+    super.key,
+    required this.label,
+    required this.icon,
+    required this.color,
+    required this.onTap,
+  });
+
+  final String label;
+  final IconData icon;
+  final Color color;
+  final VoidCallback onTap;
+
+  @override
+  Widget build(BuildContext context) {
+    return Semantics(
+      container: true,
+      button: true,
+      label: label,
+      child: Material(
+        color: color,
+        elevation: 6,
+        borderRadius: BorderRadius.circular(toolsBoxMinSize / 2),
+        child: InkWell(
+          borderRadius: BorderRadius.circular(toolsBoxMinSize / 2),
+          onTap: onTap,
+          child: ExcludeSemantics(
+            child: Container(
+              height: toolsBoxMinSize,
+              constraints: const BoxConstraints(maxWidth: 320),
+              padding: const EdgeInsets.symmetric(horizontal: 14),
+              child: Row(
+                mainAxisSize: MainAxisSize.min,
+                children: [
+                  Icon(icon, size: 18, color: Colors.white),
+                  const SizedBox(width: 8),
+                  Flexible(
+                    child: Text(
+                      label,
+                      overflow: TextOverflow.ellipsis,
+                      style: const TextStyle(
+                        color: Colors.white,
+                        fontSize: 13,
+                        fontWeight: FontWeight.w600,
+                      ),
+                    ),
+                  ),
+                ],
+              ),
+            ),
           ),
         ),
       ),
+    );
+  }
+}
+
+/// Runs the checkers whenever the semantics tree changes and, when asked,
+/// draws the package's warning box over every issue. The same scan the
+/// package's `AccessibilityTools` ran, without its buttons.
+class _CheckerHost extends StatefulWidget {
+  const _CheckerHost({required this.checker, required this.showIssues});
+
+  final CheckerManager checker;
+  final bool showIssues;
+
+  @override
+  State<_CheckerHost> createState() => _CheckerHostState();
+}
+
+class _CheckerHostState extends State<_CheckerHost> with SemanticUpdateMixin {
+  @override
+  void didUpdateSemantics() {
+    // Semantics are only available at the end of a frame; the next frame is
+    // the first chance to paint them.
+    WidgetsBinding.instance.addPostFrameCallback((_) {
+      if (mounted) widget.checker.update();
+    });
+  }
+
+  static Rect _inflateToMinimumSize(Rect rect) {
+    if (rect.shortestSide < toolsBoxMinSize) {
+      return Rect.fromCenter(
+        center: rect.center,
+        width: math.max(toolsBoxMinSize, rect.width),
+        height: math.max(toolsBoxMinSize, rect.height),
+      );
+    }
+    return rect;
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    return AnimatedBuilder(
+      animation: widget.checker,
+      builder: (context, _) {
+        if (!widget.showIssues) return const SizedBox.shrink();
+        final rects = <Rect, List<AccessibilityIssue>>{};
+        for (final issue in widget.checker.issues) {
+          if (!issue.renderObject.attached) continue;
+          rects.putIfAbsent(issue.renderObject.getGlobalRect(), () => []).add(
+            issue,
+          );
+        }
+        const errorBorderWidth = 5.0;
+        return Stack(
+          children: [
+            for (final entry in rects.entries)
+              Positioned.fromRect(
+                rect: _inflateToMinimumSize(
+                  entry.key,
+                ).inflate(errorBorderWidth),
+                child: WarningBox(
+                  borderWidth: errorBorderWidth,
+                  message: entry.value.map((e) => e.message).join('\n\n'),
+                  size: Size(
+                    math.max(5, entry.key.width) + errorBorderWidth,
+                    math.max(5, entry.key.height) + errorBorderWidth,
+                  ),
+                ),
+              ),
+          ],
+        );
+      },
     );
   }
 }
