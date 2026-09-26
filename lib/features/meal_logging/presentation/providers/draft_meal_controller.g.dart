@@ -68,7 +68,7 @@ final class DraftMealControllerProvider
 }
 
 String _$draftMealControllerHash() =>
-    r'24a5cb6f12dfb799a16c3bdaf9c9c808682bb04a';
+    r'ef916255d47db4a97e16683b30d17a15bdf02a8c';
 
 /// Accumulator controller for the in-progress build-a-meal draft, scoped to
 /// [logDate] (`yyyy-MM-dd`). Auto-disposes when `BuildMealScreen` closes (no

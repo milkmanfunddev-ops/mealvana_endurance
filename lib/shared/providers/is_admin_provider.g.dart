@@ -23,6 +23,15 @@ part of 'is_admin_provider.dart';
 /// `false` — the gate awaits it — and reads again once the network comes
 /// back or the app next resumes, so one bad start does not hide Team review
 /// for the whole session.
+///
+/// The auth stream REPLAYS every past event to each new subscriber (GoTrue's
+/// controller is a ReplaySubject). Comparing a replayed event's session to
+/// the user captured here re-invalidated this provider on every rebuild, and
+/// each rebuild subscribed again: a failing read every 25-70 ms for as long
+/// as the network was down, 4,421 times in one run (testing-wave 118-003,
+/// 119-004, 120-009). So an event is only a reason to re-read when the user
+/// GoTrue holds NOW differs from the one this build read for; a replay of an
+/// old sign-out changes nothing.
 
 @ProviderFor(isAdmin)
 const isAdminProvider = IsAdminProvider._();
@@ -42,6 +51,15 @@ const isAdminProvider = IsAdminProvider._();
 /// `false` — the gate awaits it — and reads again once the network comes
 /// back or the app next resumes, so one bad start does not hide Team review
 /// for the whole session.
+///
+/// The auth stream REPLAYS every past event to each new subscriber (GoTrue's
+/// controller is a ReplaySubject). Comparing a replayed event's session to
+/// the user captured here re-invalidated this provider on every rebuild, and
+/// each rebuild subscribed again: a failing read every 25-70 ms for as long
+/// as the network was down, 4,421 times in one run (testing-wave 118-003,
+/// 119-004, 120-009). So an event is only a reason to re-read when the user
+/// GoTrue holds NOW differs from the one this build read for; a replay of an
+/// old sign-out changes nothing.
 
 final class IsAdminProvider
     extends $FunctionalProvider<AsyncValue<bool>, bool, FutureOr<bool>>
@@ -61,6 +79,15 @@ final class IsAdminProvider
   /// `false` — the gate awaits it — and reads again once the network comes
   /// back or the app next resumes, so one bad start does not hide Team review
   /// for the whole session.
+  ///
+  /// The auth stream REPLAYS every past event to each new subscriber (GoTrue's
+  /// controller is a ReplaySubject). Comparing a replayed event's session to
+  /// the user captured here re-invalidated this provider on every rebuild, and
+  /// each rebuild subscribed again: a failing read every 25-70 ms for as long
+  /// as the network was down, 4,421 times in one run (testing-wave 118-003,
+  /// 119-004, 120-009). So an event is only a reason to re-read when the user
+  /// GoTrue holds NOW differs from the one this build read for; a replay of an
+  /// old sign-out changes nothing.
   const IsAdminProvider._()
     : super(
         from: null,
@@ -86,4 +113,4 @@ final class IsAdminProvider
   }
 }
 
-String _$isAdminHash() => r'91e145d6d04f241856e961735d72b28a86bfa970';
+String _$isAdminHash() => r'6629a6224ec297b4ad012d51959d74abb2b9020c';

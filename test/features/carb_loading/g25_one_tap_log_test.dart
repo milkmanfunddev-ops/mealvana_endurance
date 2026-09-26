@@ -63,7 +63,7 @@ class _FakeMealLogController extends MealLogController {
   Future<void> build() async {}
 
   @override
-  Future<void> logFromComponents({
+  Future<MealLog?> logFromComponents({
     required String name,
     MealSlot? slot,
     required String logDate,
@@ -103,6 +103,7 @@ class _FakeMealLogController extends MealLogController {
       ...ref.read(_logStore),
       log,
     ];
+    return log;
   }
 }
 
