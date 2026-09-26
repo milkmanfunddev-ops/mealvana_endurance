@@ -1,32 +1,20 @@
 # SSOT epilogue
 
-Every -lee skill and `/ssot` ends with this, unchanged. It puts what the run produced on the page
-and tells the ratifier what waits on them. Same conventions as `prologue.md` (`SYNC`, `URL`,
-`<feature>`, README first).
+Every -lee skill and `/ssot` ends with this, unchanged. It puts the record on the page. Same
+conventions as `prologue.md` (`SYNC`, `URL`, `RECORD`, README first). `<feature>` below is each
+section file whose cards changed in this run (`mealplanning`, `paywall`, `shopping-list`,
+`ai-cost`, `misc`), and `<file>` is `docs/ssot/decisions/<feature>.md`.
 
-## 0. Draw the screenless cards
+## 0. Drawn pictures, only when asked
 
-```
-SYNC undrawn .scratch/<feature>/decisions.md docs/ssot/decisions/<feature>.md
-```
-
-For every card it lists (a decision whose `screen:` starts with `none` and that has no `svg:`
-line), draw its mechanism: write a spec to `<scratch dir>/diagrams/<id>.json` in the shape at
-the top of `docs/ssot/decisions/_page/diagram.mjs` (a `flow` of boxes and arrows, or a
-`timeline`), with one worked example that uses the card's own numbers, then
-
-```
-SYNC draw <scratch dir>/diagrams/<id>.json docs/ssot/decisions/images/<feature>/<id>.svg
-SYNC attach-svg <file the card is in> <id> docs/ssot/decisions/images/<feature>/<id>.svg
-```
-
-The README's Drawn pictures section has the rules. A card that names a screen is not drawn. Run `undrawn` again: it must print
-`[]`. The SVG files are committed with the run.
+A drawn diagram is made only when Lee asks for one on a card (README, Drawn pictures):
+`SYNC draw <spec.json> docs/ssot/decisions/images/<feature>/<id>.svg`, then
+`SYNC attach-svg <file> <id> <svg>`.
 
 ## 0b. Capture the cards that name a screen
 
 ```
-SYNC pictures <feature> .scratch/<feature>/decisions.md docs/ssot/decisions/<feature>.md
+SYNC pictures <feature> <file>
 ```
 
 Every card with a screen and no picture gets one: the golden or design frame `screens.json`
@@ -40,14 +28,14 @@ committed with the run.
 ## 0c. Refresh the stale pictures
 
 ```
-SYNC stale .scratch/<feature>/decisions.md docs/ssot/decisions/<feature>.md
+SYNC stale <file>
 ```
 
 Every picture in use with its age and `stale` (the screen's code changed after it was taken;
 README, Captured pictures). When any is stale and a simulator is booted:
 
 ```
-SYNC refresh <feature> .scratch/<feature>/decisions.md docs/ssot/decisions/<feature>.md
+SYNC refresh <feature> <file>
 ```
 
 Read `refreshed` (a retake in place, or cards moved from a golden to the capture) and `skipped`
@@ -56,12 +44,11 @@ it again and deletes the asset it replaced. Nothing stale is left silent: a skip
 
 ## 1. Prepare the page documents
 
-For every feature whose record, proposals, glossary or tickets changed in this run:
+All five files together, so the page keeps its order:
 
 ```
-SYNC prepare docs/ssot/decisions/<feature>.md .scratch/<feature>/decisions.md \
-  --assets docs/ssot/decisions/_page/assets.json \
-  --tickets <feature>=.scratch/<feature>/issues --out <scratch dir>/out
+SYNC prepare RECORD --assets docs/ssot/decisions/_page/assets.json \
+  --glossary CONTEXT.md --out <scratch dir>/out
 ```
 
 ## 2. Upload new images once
@@ -87,42 +74,21 @@ again so the documents carry the new asset ids. The assets map is committed with
 ## 3. Reseed
 
 `write_db` `batch` on `URL` with each array in `<scratch dir>/out/_batches.json` as `writes`
-(the entries already carry `op`, `collection`, `doc_id`, `file_path`). Ids that were folded or
-deleted from the proposals are removed with `delete` on `decisions/<id>`. If `CONTEXT.md`'s
-glossary changed, reseed the `vocab` collection the same way (README, Vocabulary).
+(the entries already carry `op`, `collection`, `doc_id`, `file_path`, 50 per batch). Any id in
+the `decisions` collection that no record file holds any more is removed with `delete`. The
+template is redeployed only when its design changes (README).
 
-The database holds at most 5,000 documents across every collection (decisions, verdicts, chats,
-tickets, vocab); a backfill that would pass it stops and says so. A skill never publishes the
-page itself; the template is redeployed only when its design changes (README).
+## 4. Report
 
-## 4. Tell the ratifier
-
-Count what waits: `SYNC pending .scratch/<feature>/decisions.md` and the open questions in it.
-When the calling skill cannot go on until they rule (its `Next:` line is the "approve N
-decisions" form), send one phone push with Claude Code's PushNotification tool (a harness tool,
-not a repo one), under 200 characters, leading with the count: `N decisions wait for you on the
-SSOT page`. A run that merely leaves cards pending sends nothing; the report carries the count.
-The tool skips the push when they are at the terminal; that is fine.
-
-Report, then end the turn with a `Clear:` line and exactly one `Next:` line. `Clear:` says
-whether the ratifier can `/clear` now (yes when everything is committed and reseeded and
-nothing in this context is needed by the next command; otherwise no, with the one thing still
-open). `Next:` names the command and says in one clause what it does. When the next command
-is `/grill-with-docs-lee`, `/to-spec-lee`, `/to-tickets-lee` or `/implement-lee`, the line ends
-with `(on Fable: /model fable first)`; these run over many turns, so the ratifier picks the
-model for the session. `/ssot` sets Opus itself.
+End the turn with a `Clear:` line and exactly one `Next:` line. `Clear:` says whether Lee can
+`/clear` now (yes when everything is committed and reseeded; otherwise no, with the one thing
+still open). `Next:` names the command and says in one clause what it does. When the next
+command is `/grill-with-docs-lee`, `/to-spec-lee`, `/to-tickets-lee` or `/implement-lee`, the
+line ends with `(on Fable: /model fable first)`.
 
 ```
-Pushed: N proposals, N open questions, N images
-Pending on the page: N proposed, N open questions
+Record: N decisions · Waiting on Lee: N in the review queue
 Page: URL
 Clear: yes, all committed and on the page
 Next: /<command> (what it does, in one clause)
-```
-
-or, when the next step cannot start until they rule:
-
-```
-Clear: no, N verdicts still to apply
-Next: approve N decisions on the page, then /<command> (what it does)
 ```

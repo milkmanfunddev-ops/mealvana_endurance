@@ -199,19 +199,13 @@
   <nav id="nav">
     <h1>Mealvana Decisions</h1>
     <div id="navlist"><div class="hint">Loading decisions.</div></div>
-    <div class="legend">
-      <span class="pill proposed">proposed</span> <span class="pill queued">queued</span> <span class="pill approved">approved</span><br>
-      <span class="pill rejected">rejected</span> <span class="pill amended">amended</span> <span class="pill open">open</span>
-    </div>
   </nav>
   <div>
     <header>
       <button id="menu" aria-label="Categories" aria-controls="nav" aria-expanded="false">☰ <span id="menuCount"></span></button>
       <input id="q" type="search" placeholder="Search" aria-label="Search">
       <select id="feat" aria-label="Feature"><option value="">All features</option></select>
-      <label class="toggle"><input id="pendingOnly" type="checkbox"> pending only</label>
       <select id="who" aria-label="Who is ruling"><option value="">Who are you?</option><option>Lee</option><option>Xuan</option></select>
-      <button id="finishAll" class="primary" disabled>Finish all</button>
       <div class="status-line" id="status">Connecting.</div>
     </header>
     <main id="main"><div class="empty">Loading.</div></main>
@@ -265,11 +259,16 @@
     return matchesSearch(d);
   }
 
+  // The record's five sections and their subsections, in reading order (Lee, 2026-09-26).
+  const FEATURE_ORDER = ['mealplanning', 'paywall', 'shopping-list', 'ai-cost', 'misc'];
+  const CATEGORY_ORDER = ['Vana: who she is and how she talks', 'What Vana knows', "Vana's tools", 'Planning a week', 'Plan tab and meals', 'Recipes and cooking',
+    'Price and trial', 'Existing users', 'When Pro ends', 'Coach codes and restore', 'The paywall screen', 'Lists', 'Kroger', 'Models', 'Caching', 'Usage budget', 'Design system', 'Data and sync'];
   function sorted() {
-    const co = state.meta.categoryOrder || [];
+    const co = [...CATEGORY_ORDER, ...(state.meta.categoryOrder || [])];
     const ci = c => { const i = co.indexOf(c); return i < 0 ? 999 : i; };
+    const fi = f => { const i = FEATURE_ORDER.indexOf(f); return i < 0 ? 999 : i; };
     return [...state.decisions.values()].sort((a, b) =>
-      (a.feature || '').localeCompare(b.feature || '') || (ci(a.category) - ci(b.category)) ||
+      (fi(a.feature) - fi(b.feature)) || (a.feature || '').localeCompare(b.feature || '') || (ci(a.category) - ci(b.category)) ||
       (a.category || '').localeCompare(b.category || '') || ((a.order || 0) - (b.order || 0)) || a.id.localeCompare(b.id));
   }
   function groups() {
@@ -378,19 +377,9 @@
         ${why}
         ${alts}
         ${editBox}
-        <div class="acts">
-          <button class="approve ${approved ? 'on' : ''}" data-act="approve">${approved ? 'Approved' : 'Approve'}</button>
-          <button class="reject ${e.status === 'rejected' ? 'on' : ''}" data-act="reject">${e.status === 'rejected' ? 'Rejected' : 'Reject'}</button>
-          <button data-act="amend">Rewrite</button>
-          ${e.queued ? '<button data-act="undo">Undo</button>' : ''}
-        </div>
-        <div class="sub-form" data-form="reject"><textarea placeholder="Reason"></textarea><div class="row"><button data-act="reject-send" class="approve">Reject</button><button data-act="close">Cancel</button></div></div>
-        <div class="sub-form" data-form="amend">${amendForm}<div class="row"><button data-act="amend-send" class="approve">Send</button><button data-act="close">Cancel</button></div></div>
         <details class="more" ${state.open.has('more:' + d.id) ? 'open' : ''}><summary>More</summary>${more}</details>
         <details class="explain" ${open ? 'open' : ''}><summary>Ask</summary>
-          ${thread(d.id, 'Ask what a word means, why this was decided, or say what should change')}
-          <div class="row"><button data-act="suggest" ${state.sample && (state.chats.get(d.id) || { turns: [] }).turns.length ? '' : 'disabled'}>Draft the rewrite from this conversation</button></div>
-          ${myChanges.map(([id, v]) => changeCard(id, v)).join('')}
+          ${thread(d.id, 'Ask what a word means or why this was decided')}
         </details>
       </div>
     </section>`;
@@ -434,14 +423,10 @@
     const vis = g.items.filter(visible);
     let html = `<div class="cat-head"><div class="fname">${esc(featName(g.feature))}</div><h2>${esc(g.category)}</h2>
       <div class="tools">
-        <span class="hint">${g.pend} waiting · ${g.queued} queued${g.open ? ` · ${g.open} open` : ''}${finished ? ` · finished ${finished.slice(0, 10)}` : ''}</span>
-        ${g.pend ? `<button data-approve-all="${esc(g.key)}">Approve all ${g.pend}</button>` : ''}
-        <button class="primary" data-finish-cat="${esc(g.key)}" ${g.queued && state.artifact && !state.sending ? '' : 'disabled'}>${finishLabel(g.key, 'Finish category')}</button>
+        <span class="hint">${g.n} decision${g.n === 1 ? '' : 's'}</span>
       </div>${wordsIn(g)}</div>`;
     html += `<details class="discuss" ${state.open.has(catId) ? 'open' : ''} data-cat="${esc(g.key)}"><summary>Discuss this category</summary>
       ${thread(catId, '')}
-      <div class="row"><button data-act="suggest" ${state.sample ? '' : 'disabled'}>Suggest changes</button></div>
-      ${changes.map(([id, v]) => changeCard(id, v)).join('')}
     </details>`;
     const main = vis.filter(d => !d.detail), det = vis.filter(d => d.detail);
     html += main.length ? main.map(section).join('') : (det.length ? '' : '<div class="empty">Nothing here matches the pending filter or search.</div>');
@@ -450,31 +435,6 @@
       html += `<details class="detail-block" ${state.open.has('det:' + g.key) ? 'open' : ''} data-det="${esc(g.key)}"><summary><div class="detail-head"><h3>Implementation details · ${det.length}</h3><span class="hint">${detPend ? `${detPend} waiting. ` : ''}How things are built, not what the athlete sees. Open to read them.</span>${detPend ? `<button data-approve-details="${esc(g.key)}">Accept all ${detPend}</button>` : ''}</div></summary>${det.map(section).join('')}</details>`;
     }
     return html;
-  }
-
-  function workPage(feature) {
-    const feat = feature || (state.feat || [...state.decisions.values()][0]?.feature || '');
-    const tickets = [...state.tickets.values()].filter(t => !feat || t.feature === feat).sort((a, b) => (a.order || 0) - (b.order || 0));
-    const done = tickets.filter(t => t.state === 'done'), dropped = tickets.filter(t => t.state === 'dropped');
-    const next = tickets.filter(t => t.state !== 'done' && t.state !== 'dropped');
-    const all = sorted().filter(d => !feat || d.feature === feat);
-    const cited = new Set(tickets.flatMap(t => t.cites || []));
-    const pendingWork = all.filter(d => d.work === 'pending' && !GONE.includes(eff(d).status) && !cited.has(d.id));
-    const questions = all.filter(isOpenQ);
-    // Stale pictures, one row per picture: the cards on it, when it was taken, what moved.
-    const stale = new Map();
-    for (const d of all) if (d.captured?.stale && !GONE.includes(eff(d).status)) { const s = stale.get(d.image) || { key: d.captured.key, c: d.captured, cards: [] }; s.cards.push(d); stale.set(d.image, s); }
-    const goto = d => `<button data-goto-id="${esc(d.id)}">${esc(d.id)}</button>`;
-    const row = t => `<div class="t"><div class="num">${esc(t.number)}</div><div><div class="name">${esc(t.title)}</div><div class="st ${t.owed ? 'owed' : ''}">${esc(t.status || t.state)}${t.blockedBy && !/^none/i.test(t.blockedBy) ? ` · blocked by ${esc(t.blockedBy)}` : ''}</div>${(t.cites || []).length ? `<div class="cites">${t.cites.map(id => { const d = lookup(id); return d ? goto(d) : `<span class="hint">${esc(id)}</span>`; }).join('')}</div>` : ''}</div></div>`;
-    let html = `<div class="cat-head"><div class="fname">${esc(featName(feat))}</div><h2>Work</h2><div class="tools"><span class="hint">${done.length} done · ${next.length} ahead · ${pendingWork.length} not yet ticketed · ${questions.length} open question${questions.length === 1 ? '' : 's'} · ${stale.size} stale picture${stale.size === 1 ? '' : 's'}</span></div></div><div class="work">`;
-    html += `<h3>Not yet ticketed</h3><p class="lead">Decisions that reverse or extend what is built. Each becomes a ticket when the tooling cuts the next batch.</p>`;
-    html += pendingWork.length ? pendingWork.map(d => `<div class="d-row">${goto(d)}<span>${esc(d.title)}</span><span class="pill ${eff(d).status}">${eff(d).status}</span></div>`).join('') : '<p class="hint">Nothing waiting.</p>';
-    if (questions.length) { html += `<h3>Open questions</h3><p class="lead">Each needs a grilling before it can become work.</p>` + questions.map(d => `<div class="d-row">${goto(d)}<span>${esc(d.title)}</span></div>`).join(''); }
-    if (stale.size) { html += `<h3>Stale pictures</h3><p class="lead">The screen's code changed after the picture was taken. \`sync.mjs refresh ${esc(feat)}\` retakes them.</p>` + [...stale.values()].map(s => `<div class="d-row"><span>${esc(s.key)}</span>${ageLine(s.c)}<span class="cites">${s.cards.map(goto).join('')}</span></div>`).join(''); }
-    html += `<h3>Ahead</h3>` + (next.length ? next.map(row).join('') : '<p class="hint">No tickets waiting.</p>');
-    html += `<h3>Done</h3>` + (done.length ? done.map(row).join('') : '<p class="hint">Nothing yet.</p>');
-    if (dropped.length) html += `<h3>Dropped</h3>` + dropped.map(row).join('');
-    return html + '</div>';
   }
 
   // The reference documents are repo Markdown. Everything is escaped first, then a small set of
@@ -528,22 +488,17 @@
     if (featSel.options.length !== feats.length + 1) { featSel.innerHTML = '<option value="">All features</option>' + feats.map(f => `<option value="${esc(f)}">${esc(featName(f))}</option>`).join(''); featSel.value = state.feat; }
     const gs = groups();
     if (!gs.length) { nav.innerHTML = '<div class="hint">No decisions loaded yet.</div>'; main.innerHTML = '<div class="empty">Loading.</div>'; return; }
-    if (state.cat !== 'vocab' && state.cat !== 'work' && !(state.cat.startsWith('ref:') && state.refs.has(state.cat.slice(4))) && !gs.some(g => g.key === state.cat)) state.cat = (gs.find(g => g.pend) || gs[0]).key;
+    if (state.cat !== 'vocab' && !(state.cat.startsWith('ref:') && state.refs.has(state.cat.slice(4))) && !gs.some(g => g.key === state.cat)) state.cat = gs[0].key;
     let navHtml = '', lastF = null;
     for (const g of gs) {
       if (g.feature !== lastF) { navHtml += `${lastF !== null ? '</div>' : ''}<div class="feat"><div class="fname">${esc(featName(g.feature))}</div>`; lastF = g.feature; }
-      const done = !g.pend && !g.queued && (state.meta.finished && state.meta.finished[g.key]);
-      navHtml += `<button class="cat ${g.key === state.cat ? 'active' : ''}" data-goto="${esc(g.key)}"><span>${esc(g.category)}</span><span class="n ${g.pend ? 'pend' : ''}">${done ? '<span class="done">done</span> ' : ''}${g.open ? '<span class="q">' + g.open + '?</span> ' : ''}${g.pend ? g.pend + ' / ' : ''}${g.n}</span></button>`;
+      navHtml += `<button class="cat ${g.key === state.cat ? 'active' : ''}" data-goto="${esc(g.key)}"><span>${esc(g.category)}</span><span class="n">${g.n}</span></button>`;
     }
-    const ticketed = new Set([...state.tickets.values()].flatMap(t => t.cites || []));
-    const workPend = all.filter(d => d.work === 'pending' && !GONE.includes(eff(d).status) && !ticketed.has(d.id)).length;
-    nav.innerHTML = navHtml + '</div>' + `<div class="feat"><button class="cat ${state.cat === 'work' ? 'active' : ''}" data-goto="work"><span>Work</span><span class="n ${workPend ? 'pend' : ''}">${workPend ? workPend + ' / ' : ''}${state.tickets.size}</span></button><button class="cat ${state.cat === 'vocab' ? 'active' : ''}" data-goto="vocab"><span>Vocabulary</span><span class="n">${state.vocab.size}</span></button></div>` + (state.refs.size ? `<div class="feat"><div class="fname">Reference</div>${refsSorted().map(r => `<button class="cat ${state.cat === 'ref:' + r.id ? 'active' : ''}" data-goto="ref:${esc(r.id)}"><span>${esc(r.title)}</span></button>`).join('')}</div>` : '');
+    nav.innerHTML = navHtml + '</div>' + `<div class="feat"><button class="cat ${state.cat === 'vocab' ? 'active' : ''}" data-goto="vocab"><span>Vocabulary</span><span class="n">${state.vocab.size}</span></button></div>` + (state.refs.size ? `<div class="feat"><div class="fname">Reference</div>${refsSorted().map(r => `<button class="cat ${state.cat === 'ref:' + r.id ? 'active' : ''}" data-goto="ref:${esc(r.id)}"><span>${esc(r.title)}</span></button>`).join('')}</div>` : '');
     if (state.cat.startsWith('ref:')) {
       main.innerHTML = refPage(state.cat.slice(4));
     } else if (state.cat === 'vocab') {
       main.innerHTML = vocabPage();
-    } else if (state.cat === 'work') {
-      main.innerHTML = workPage(state.feat);
     } else if (state.q) {
       const hits = all.filter(visible);
       main.innerHTML = `<div class="cat-head"><div class="fname">Search</div><h2>${hits.length} match${hits.length === 1 ? '' : 'es'} for "${esc(state.q)}"</h2></div>` + (hits.map(section).join('') || '<div class="empty">Nothing matches.</div>');
@@ -555,11 +510,8 @@
         ${next ? `<button data-goto="${esc(next.key)}" class="primary">Next: ${esc(next.category)}</button>` : '<span class="hint">Last category.</span>'}
       </div>`;
     }
-    const pendTotal = all.filter(isPending).length, openQ = all.filter(isOpenQ).length, queued = [...state.verdicts.values()].filter(v => !v.applied).length;
-    const sent = state.lastSent ? ` · sent ${state.lastSent.n} to the terminal at ${state.lastSent.at.toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })}${queued ? ', waiting for it to apply' : ', applied'}` : '';
-    $('#status').textContent = `${pendTotal} waiting · ${queued} queued${openQ ? ` · ${openQ} open` : ''}${state.db ? '' : ' · offline'}${sent}`;
+    $('#status').textContent = `${all.length} decisions${state.db ? '' : ' · offline'}`;
     $('#menuCount').textContent = pendTotal ? String(pendTotal) : '';
-    const fa = $('#finishAll'); fa.textContent = finishLabel('all', 'Finish all'); fa.disabled = !!state.sending || !queued || !state.artifact;
   }
 
   // Who is ruling. The platform tells the page nothing about the viewer, so each
@@ -791,9 +743,6 @@
   $('#nav').addEventListener('click', ev => { const b = ev.target.closest('button[data-goto]'); if (!b) return; state.cat = b.dataset.goto; state.q = ''; $('#q').value = ''; setNav(false); render(); window.scrollTo({ top: 0 }); });
   $('#q').addEventListener('input', e => { state.q = e.target.value.trim().toLowerCase(); render(); });
   $('#feat').addEventListener('change', e => { state.feat = e.target.value; render(); });
-  $('#pendingOnly').addEventListener('change', e => { state.pendingOnly = e.target.checked; try { localStorage.setItem('ssot-pending', e.target.checked ? '1' : ''); } catch {} render(); });
-  $('#finishAll').addEventListener('click', () => finish());
-  try { const p = localStorage.getItem('ssot-pending'); state.pendingOnly = p === null ? true : !!p; $('#pendingOnly').checked = state.pendingOnly; } catch {}
   try { (JSON.parse(sessionStorage.getItem('ssot-open') || '[]')).forEach(id => state.open.add(id)); } catch {}
   try { state.cat = localStorage.getItem('ssot-cat') || ''; } catch {}
   // Every database change re-renders the column. Drafts, open forms, ticked clauses, focus and

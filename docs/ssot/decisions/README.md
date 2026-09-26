@@ -1,10 +1,29 @@
 # Decisions
 
-The single source of truth for product decisions. One markdown file per feature.
-No ruling enters a file here except on a ratifier's verdict (Lee or Xuan), given on the decisions page.
-Agents never edit these files by hand; the sync module in `_page/` applies verdicts, and its
-`attach-svg`, `attach-image` and `refresh` commands set a card's picture (Drawn pictures and
-Captured pictures below), which changes no ruling.
+The single source of truth for product decisions, written for Lee and Xuan. It holds approved
+decisions only: no proposals, open questions, tickets, spec cards, build notes or rejected cards
+(Lee, 2026-09-26). Five files, one per section:
+
+| File | Section | Subsections |
+|---|---|---|
+| `mealplanning.md` | Meal planning (Vana, recipes) | Vana: who she is and how she talks · What Vana knows · Vana's tools · Planning a week · Plan tab and meals · Recipes and cooking |
+| `paywall.md` | Paywall | Price and trial · Existing users · When Pro ends · Coach codes and restore · The paywall screen |
+| `shopping-list.md` | Shopping list (Kroger) | Lists · Kroger (no approved Kroger decisions yet) |
+| `ai-cost.md` | Cost cutting | Models · Caching · Usage budget |
+| `misc.md` | Miscellany | Design system · Data and sync |
+
+A subsection is a card's `category:`. The page shows them in this order (`FEATURE_ORDER` and
+`CATEGORY_ORDER` in `_page/index.html`); a new subsection is added there too.
+
+How a decision gets in: a skill puts the question to Lee in the terminal (AskUserQuestion, one
+question at a time, recommended answer first). His answer is the approval, and the skill writes
+the card straight into the record. Nothing waits on the page. A ruling that changes an existing
+card rewrites that card in place (newest ruling wins) with a history line; the old wording stays
+in git. Undecided items live in `.scratch/ssot/review-queue.md` until Lee answers them.
+
+Agents write these files only that way (a decision Lee approved in the terminal) or through the
+sync module's picture commands (`attach-svg`, `attach-image`, `pictures`, `refresh`), which change
+no ruling. The 2026-09-26 overhaul rewrote all five files by hand at Lee's direction, once.
 
 This folder is app-owned. It sits outside the QA mirror's rsync scope, so a sync
 from `../mealvana_endurance_qa` never touches it.
@@ -20,29 +39,20 @@ looks for in `~/.local/bin` (Captured pictures below).
 
 1. Install Node 20 or newer. The sync module is plain ESM with no dependencies.
 2. Test: `node --test docs/ssot/decisions/_page/sync.test.mjs` (all cases must pass).
-3. Apply verdicts: `node docs/ssot/decisions/_page/sync.mjs apply <verdicts.json> .scratch/<feature>/decisions.md docs/ssot/decisions/<feature>.md`.
-   `verdicts.json` is the page's queued verdicts: a Claude Code session reads the `verdicts`
-   collection with `read_db` (where `applied` is false) and saves it as that file. The Finish
-   button only wakes the watching session. `apply` writes only the two named files; the only
-   other commands that write a record are `attach-svg` (one `svg:` line) and `attach-image`
-   (the `image:` and `caption:` lines plus one dated history line saying where the picture came
-   from); `pictures` runs `attach-image` for every card that needs one, and `refresh` moves the
-   cards on a stale golden to a fresh capture with one such line (Captured pictures below).
-4. Open the page: the artifact link below. Lee shares it with each ratifier from the page's
-   share menu. Whoever opens it picks their name in the header once per browser, and every
-   verdict they give carries it as `by`. The platform tells the page nothing about the viewer,
-   so that chooser is the identity.
-5. Reseed the page after the files change:
-   `node docs/ssot/decisions/_page/sync.mjs prepare docs/ssot/decisions/<feature>.md .scratch/<feature>/decisions.md --assets docs/ssot/decisions/_page/assets.json --tickets <feature>=.scratch/<feature>/issues --out <dir>`,
-   then `write_db` the batches in `<dir>/_batches.json`. Redeploy `_page/index.html` only when
-   the page's design changes, always to the same artifact URL.
+3. Open the page: the artifact link below. It is a read-only record: no Approve, Reject or
+   Finish. Each card has an Ask thread for questions about it.
+4. Reseed the page after the files change:
+   `node docs/ssot/decisions/_page/sync.mjs prepare docs/ssot/decisions/{mealplanning,paywall,shopping-list,ai-cost,misc}.md --assets docs/ssot/decisions/_page/assets.json --glossary CONTEXT.md --out <dir>`,
+   then `write_db` the batches in `<dir>/_batches.json`, and delete from the `decisions`
+   collection any id the files no longer hold. Redeploy `_page/index.html` only when the page's
+   design changes, always to the same artifact URL.
 
 ## Where things live
 
 | What | Where |
 |---|---|
-| Approved, rejected, withdrawn decisions | `docs/ssot/decisions/<feature>.md` |
-| Proposals waiting on Lee | `.scratch/<feature>/decisions.md` |
+| Approved decisions | `docs/ssot/decisions/<section>.md` (the five files above) |
+| Items waiting on Lee | `.scratch/ssot/review-queue.md` |
 | New screenshots and drawn diagrams | `docs/ssot/decisions/images/<feature>/` (a capture is `<screen key>.png` beside a `<screen key>.json` sidecar with the commit and app version) |
 | Which screen a card's `screen:` line means, and how to reach it | `_page/screens.json` |
 | Existing screenshots elsewhere in the repo | referenced by path, never copied |
@@ -54,140 +64,43 @@ Artifact: https://claude.ai/code/artifact/2b18d770-da55-443e-8740-483a422db8ac
 ## File format
 
 ```
-# Decisions: <feature name>
+# Decisions: <section name>
 
 Feature: <slug>
-Feature name: <display name>
-Last extracted: <git sha>
+Feature name: <section name>
 
-## <slug>-001 · <Title in plain words>
-- category: <Category>
-- status: proposed | approved | rejected | withdrawn | amended | open | answered
+## mp-NNN · <The decision, as a short plain statement>
+- category: <subsection>
+- status: approved
+- folded: <older ids this card absorbed, optional>
 - image: <repo path> | none
 - caption: <one line, optional>
-- svg: <repo path of a drawn diagram; every screenless card has one, a compare where a choice was made, see Drawn pictures>
 - screen: <which app screen shows this, or "none (algorithm/data)">
-- source: <spec path; ticket NN; ADR; commit; grill <date>; Lee on the page <date>>
+- source: <where it came from>
 
-**Context.** Two to four sentences: what the thing is, where it shows up, what was true before.
+**Context.** One or two sentences: what the thing is and what was true before.
 
-**Question.** The one question this section answers, as a phrase. The page shows it first.
+**Question.** The one question this card answers.
 
-**Decision.** The answer in plain words, written for the ratifier, not for the next build agent
-(Lee, 2026-09-22): two to four sentences a newcomer can read, ending with one worked example
-that uses real dates, names or numbers. Every term of art is a glossary term (Vocabulary below)
-or is defined in the sentence that uses it; `sync.mjs unclear` lists the ones that are neither.
-The precise clauses a builder needs go in Details. A numbered clause list (`1. …` on its own
-line each) is still allowed and lets Lee tick the clauses he wants dropped in Rewrite.
+**Decision.** One to three plain sentences, with the real numbers or names where they matter.
 
 **Why.** One or two sentences.
 
 **What else was considered.** One sentence, or "none recorded".
 
-**What it touches.** Screens and services, one line.
-
-**Details.** Optional. The precise clauses, pixel sizes, timings and other numbers that belong below the fold.
-
-> 2026-09-13 approved
+> 2026-09-26 approved by Lee
 ```
 
-The `Spec` category holds what a spec decides: its test seams and its implementation and
-testing decisions, written by `/to-spec-lee` with `source: spec <feature> <date>`. The spec cites
-each card's id in parentheses at the end of the paragraph it came from, so `sync.mjs cite` can
-say which paragraphs stand, which were rejected, and which name no decision.
+What makes a card (Lee, 2026-09-26). One broad product decision a newcomer can read: "The
+assistant is called Vana", "Existing users get one free month", "We track usage, not credits",
+"You can have multiple shopping lists". Not a card: implementation detail (timings, step counts,
+which widget reports what), ticket breakdowns, test seams, build order, and behaviour of the app
+outside meal planning, Vana, recipes, the paywall, shopping lists, Kroger and cost cutting. Keep
+cards few: fold a new ruling into the card it belongs to rather than adding a sibling.
 
-The `Tickets` category holds a ticket breakdown as a record (it is approved in the terminal, not on the page), written by
-`/to-tickets-lee` with `source: tickets <feature> <date>`. Each card carries up to four more
-meta lines: `- ticket: NN` (the number its file will get), `- blocked: NN, NN` (the blockers the
-breakdown declared, optional), `- depends: <id>, <id>` (the decision ids the ticket relies
-on) and `- model: opus|fable` (the model the ticket's build agent runs on in `/implement-lee`;
-optional, `opus` when absent). The page shows the model as a "Built by" line under the Decision. Its **What it touches** line is a comma-separated list of repo paths; `sync.mjs ticket-plan`
-turns two tickets that touch the same path (or a directory one sits in) into a blocking edge,
-the lower number blocking the higher; the page shows the card's `blocked:` numbers as a
-"Blocked by" line under the Decision. `sync.mjs publish-tickets` writes the approved cards as
-ticket files under `.scratch/<feature>/issues/`: the local ticket template with the three header
-lines the Work page reads (`**Status:** ready-for-agent`, `**Blocked by:**` with each overlap
-edge annotated `(touches <path>)`, `**Next:**`), a `**Model:**` line, a `**Decisions:**` line citing the `depends:`
-ids and the card's own id, a `**Touches:**` line, the Details as `- [ ]` acceptance criteria,
-and a closing `Next:` line. It refuses while a ticket card is pending, a declared blocker is not
-a lower number, or a `depends:` id was rejected or withdrawn, and skips a number that already
-has a file.
-
-Two optional meta lines: `- detail: yes` marks a card as implementation detail (the page sinks it
-into a collapsed "Implementation details" block with its own Accept all), and `- work: pending`
-marks a decision that reverses or extends what is built and has no ticket yet (the page's Work
-page lists these as "Not yet ticketed").
-
-One card per product question. When a build leaves several cards that answer one question, fold
-them (`sync.mjs fold`) into one card with a clause list, and put the numbers in Details. The
-folded ids are named in the new card's history line and never reused.
-
-Cards already ruled fold the same way once Lee approves the grouping in the terminal (Lee,
-2026-09-22): `sync.mjs fold-ruled <plan.json> <proposals.md> <ssot.md> --by Lee`. Every member must
-be in the record with one shared status (approved, rejected or withdrawn). The new card keeps that
-status, takes the first member's place, carries every member's history line prefixed with its id,
-and lists the replaced ids in a `- folded: <ids>` meta line. The page, `cite` and the answered-by
-link on a question resolve an old id to the card that now carries it, and search finds it by the
-old id.
-
-When two approved cards contradict, the one approved most recently wins (Lee, 2026-09-22): the
-older card is amended to agree, with Lee's rule as its `**Lee said.**`, and waits on the page for
-approval like any amendment.
-
-An amended section carries two extra parts before the decision, `**Original.**`
-and `**Lee said.**`, and its `**Decision.**` is the rewrite awaiting approval.
-
-An open question is a section with `- kind: question`, `- status: open`, and
-`- linked: <id>` naming the decision it came from. Its parts are `**Context.**`,
-`**Question.**` (Lee's words), `**Why.**` (why it matters), `**What it touches.**`.
-It has no Approve button. The next `/to-spec-lee` or grill picks open questions up first.
-
-A decision that answers a question (`linked:` to a question that is `answered`) is what
-`sync.mjs linked` lists; `/to-spec-lee` states these in the spec first. A decision rejected or
-withdrawn after it answered leaves the question pointing at a ruling that no longer stands;
-`linked` marks it `stale` and the skills report it. There is no reopen path yet: the ratifier
-re-asks it on the page or in a grill.
-
-A question is closed by `sync.mjs answers <question id> <decision id> <proposals.md> <ssot.md>`.
-The question becomes `- status: answered` with a history line `> <date> answered by <decision id>`,
-and the decision (in either file) gets `- linked: <question id>`, appended after any link it
-already carries. Only an open question can be answered; anything else is refused and neither
-file is written.
-
-Every verdict may carry `by`, the name of who gave it. The history line then ends with the
-name: `> 2026-09-14 approved by Lee`, `> 2026-09-14 rejected by Xuan: too early`. A verdict
-without `by` still applies and writes the bare line. The page always sets `by` from the name
-chosen in its header and refuses a verdict while no name is chosen. A ruled card shows its
-newest verdict line as `approved by Lee, 09-14` (page documents carry a `ruled` summary from
-`sync.mjs`). Pressing Approve on an approved decision
-withdraws it (`> <date> withdrawn`); the earlier `approved` line stays.
-
-Each category has a "Talk this category through" thread. "Suggest changes" asks in-page Claude
-to turn that thread into a list of adds, edits and removals. Lee accepts or dismisses each one.
-Accepted items are `change` verdicts (`{verdict: 'change', accepted: true, scope, change: {op,
-id, title, context, decision, why, reason}}`). `sync.mjs apply` turns an add into a new proposed
-section, an edit into an amended section carrying the original, and a removal into a rejection.
-Nothing enters the SSOT file until Lee approves the resulting section like any other.
-
-"Finish this category" publishes only that category's queued verdicts and stamps
-`meta/state.finished[feature|category]`. "Finish everything" publishes them all.
-
-Applying verdicts is two steps. Clear-cut verdicts (approve, withdraw, reject with a reason)
-are applied at once. Anything with Lee's words in it (a rewrite request, a change card, a
-rejection that is really a question) is first synthesised in the terminal: the skill says what
-it thinks Lee meant, as rewrites, new decisions and open questions, and waits for his yes
-before writing any of it to `.scratch` or the page. Nothing from this step ever enters
-`docs/ssot/decisions/` directly.
-
-When Lee types into "Rewrite", the skill triages his words into three piles:
-a rewrite of that decision, new decisions he just made, and open questions. Each pile
-becomes its own section. His words are never pasted into a decision as-is.
-
-Every `>` line is a dated history entry. They are never removed.
-
-A ruling that reverses an approved decision (in a grill or on the page) is a new proposal whose
-Context names the id it reverses. The old card stays approved until a ratifier withdraws it on
-the page; nothing in the tooling withdraws it for them.
+Ids are `mp-NNN` in every file (`sync.mjs next-id` over all five files gives the next one) and are
+never reused. `folded:` lists the older ids a card absorbed, so a code comment citing an old id
+still finds its card (the page and search resolve it). Every `>` line is a dated history entry.
 
 ## Drawn pictures
 
@@ -297,24 +210,15 @@ with the definition on hover, and each category page lists the terms it uses. "A
 page queues a `term` verdict; `sync.mjs terms <verdicts.json> CONTEXT.md` appends accepted terms
 under their area heading after Lee confirms them in the terminal.
 
-## Explain and rewrite on the page
+## Ask on the page
 
 A card's face is the picture, the title, the context, the question, the decision, why and what
-else was considered, then Approve, Reject and Rewrite, so a card waiting for a ruling reads
-without opening anything (Lee, 2026-09-23, replacing the 09-22 face of question and decision
-only). Status, id, source, what it touches, details and the amend box are under More. A drawn
-pair is titled "Other option: …" and "This card's answer: …", never "rejected" or "decided",
-since the picture outlives the card's status. Every card's Ask thread runs on the default model tier (not the quick one) and reads
-the card in full, the cards it names in full, the glossary terms it uses, the tickets that cite
-it and one line per sibling; it also gets five page tools (read a card, search the cards, read a
-ticket, look up a term, read a reference document) where the viewer's plan allows tools. "Draft the rewrite from this
-conversation" turns the thread into change cards (edit this card, edit or remove another, add
-one), each with the record's parts. A change card the ratifier accepts shows on its card at once
-as "Rewrite accepted on the page", counts as queued, and is written to the record by the next
-prologue run (`sync.mjs apply` handles `change` verdicts; `about` names the card the thread was
-on). The page never writes the repo; the terminal does, on the next `/ssot` or -lee run.
-`sync.mjs unclear <files> --glossary CONTEXT.md` lists the backticked terms on card faces that
-no glossary entry defines.
+else was considered. There are no ruling buttons. A drawn pair is titled "Other option: …" and
+"This card's answer: …", never "rejected" or "decided". Every card's Ask thread runs on the
+default model tier and reads the card, the cards it names, the glossary terms it uses and one
+line per sibling, with page tools (read a card, search the cards, look up a term, read a
+reference document). The page never writes the repo. If a conversation on the page changes
+Lee's mind, the change is made in the terminal.
 
 ## Reference
 
@@ -327,53 +231,17 @@ and in-page Claude reads one in full with its fifth tool, `read_reference`, when
 touches it. The page renders the Markdown itself (headings, lists, tables, bold, italic, code)
 from escaped text, so nothing in the collection reaches the page as raw HTML.
 
-## Work page
-
-The page's Work entry lists, per feature: decisions with `work: pending` (not yet ticketed), open
-questions, and the tickets in `.scratch/<feature>/issues/` split into ahead and done. It also counts the
-feature's stale pictures and lists each with its cards (Captured pictures above). Tickets are
-seeded into the `tickets` collection by `prepare --tickets <feature>=<issues dir>`; their status,
-blockers and next line come from the three header lines every ticket carries, and every `mp-NNN`
-mentioned in a ticket becomes a link back to the decision.
-
 ## Skills
 
-`/ssot` in `.claude/skills/ssot/` opens the page and applies verdicts; `/ssot backfill <feature>`
-mines a feature's spec, tickets, ADRs and docs into proposals. Its `prologue.md` and `epilogue.md`
-are the steps every -lee skill runs before and after Matt Pocock's skill of the same name, and
-`matt.mjs <name>` prints the path of Matt's skill in the plugin cache (newest version; a missing
-file exits 1 with the path it looked for). Tests: `node --test .claude/skills/ssot/matt.test.mjs`.
-`/grill-with-docs-lee <feature> [<question id>]` in `.claude/skills/grill-with-docs-lee/` runs the
-prologue, follows Matt's grill-with-docs, and walks the feature's open questions first, one per
-round, in the ratifier's order; on `done` every ruling becomes a proposal, every answered question
-is closed through `answers`, and a ruling that fits no card becomes an open question in their
-words. `/to-spec-lee <feature>` in `.claude/skills/to-spec-lee/` runs the prologue, follows
-Matt's to-spec, and puts the spec's test seams and every new implementation and testing decision
-on the page as `Spec` category cards (Context opens with the spec's problem statement) instead of
-confirming them in the terminal; the spec cites each card's id from the start, and after the
-ratifier's Finish the prologue drops the rejected paragraphs. It ends with `Next: /to-tickets-lee`
-only when no `Spec` card is pending. `/to-tickets-lee <feature>` in `.claude/skills/to-tickets-lee/`
-runs the prologue, stops while any `Spec` card is proposed or amended (`sync.mjs pending
-<proposals.md> Spec`), follows Matt's to-tickets, and writes the breakdown as one
-`Tickets` card per ticket with its blockers, its touches and the decision ids it depends on;
-touches that overlap become blocking edges (`ticket-plan`). The ratifier approves the breakdown
-in the terminal, never on the page (Lee, 2026-09-21): the skill lists it there, and on the go
-applies an approve verdict to every card, so the page shows the tickets as a record. The ticket
-files are written (`publish-tickets`) only once every card is approved, each with the three header lines the Work page reads, a `**Decisions:**` line citing
-its ids, and a closing `Next:` line. `/implement-lee <feature>` in
-`.claude/skills/implement-lee/` runs the prologue and builds the tickets in waves. `sync.mjs
-wave` reads the ticket files' Status and Blocked-by lines for the frontier (every ready ticket
-whose blockers are done); `--open` marks the wave's tickets in progress, commits every file
-under the issues dir and logs the wave in `.scratch/<feature>/waves.json` with that commit as
-its base. One subagent per ticket follows Matt's implement in its own worktree beside the clone
-(`<clone>-waves/<feature>/NN-<slug>`, branch `wave/<feature>/NN-<slug>`) after checking its
-HEAD is the base; an agent claims a simulator from a pool of at most three when it needs a device and releases it after (`sync.mjs simulator claim|release`). The branches merge in ticket
-order with Matt's merge-conflict skill (generated files are regenerated, never resolved by
-hand); codegen, the full suite and one code review run once for the wave. `--close` records
-what merged, what failed and the elapsed time and sets each ticket's status (a wave ticket on
-neither list failed). Visual parity runs for a ticket citing a file under
-`docs/ssot/spec/design/renderings/`, the wave's build-time decisions go to the page as
-proposals without blocking the next wave, and the screens the wave touched are retaken.
+`/ssot` in `.claude/skills/ssot/` reseeds the page from the five files. Its `prologue.md` and
+`epilogue.md` are the steps every -lee skill runs before and after Matt Pocock's skill of the
+same name, and `matt.mjs <name>` prints the path of Matt's skill in the plugin cache.
+`/grill-with-docs-lee` puts each decision to Lee one at a time and writes the approved ones into
+the record. `/to-spec-lee` and `/to-tickets-lee` write the spec and the ticket files only; test
+seams, ship order and tickets are approved in the terminal and never become cards.
+`/implement-lee` builds tickets in waves (`sync.mjs wave`, below); a product decision that comes
+up during a build is asked of Lee in the terminal, or added to the review queue when he is not
+there, never written as a card on its own.
 
 ## Sync module
 
@@ -424,6 +292,10 @@ node docs/ssot/decisions/_page/sync.mjs wave <feature> <issues dir> --close <n> 
 node docs/ssot/decisions/_page/sync.mjs touched-screens --since <commit> [<file>...]   # registry screens drawn from the files changed since the commit (committed, uncommitted or untracked), as JSON
 node docs/ssot/decisions/_page/sync.mjs simulator claim <owner> [--wait <minutes>] | release <name|udid> | add <name> [--from <udid|name>] | drop <name|udid> | list [<prefix>]   # a pool of at most three wave simulators (dev simulator's type, runtime, app and data): claim one when a device is needed, release it right after; claim waits at the cap
 ```
+
+Retired with the page's ruling buttons (2026-09-26), kept only so old verdicts and tests still
+run: `apply`, `triage`, `answers`, `questions`, `linked`, `cite`, `pending`, `ticket-plan`,
+`publish-tickets`, `fold`, `fold-ruled`, `rewrite-apply`, `terms`. No skill calls them.
 
 `triage` sorts the page's verdicts the way the skills apply them: approve, withdraw and reject with
 a plain reason go to `clear.json`; a rewrite, an accepted change card, a new term, and a rejection

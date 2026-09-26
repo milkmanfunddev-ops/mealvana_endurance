@@ -1,17 +1,17 @@
 ---
 name: grill-with-docs-lee
-description: "Matt's grill-with-docs with the decision record around it: the feature's open questions first, one at a time, then his grill; on `done` every ruling is a proposal on the page. `/grill-with-docs-lee <feature> [<question id>]`."
+description: "Matt's grill-with-docs with the decision record around it: the waiting questions first, one at a time, then his grill; every ruling Lee gives is written straight into the record as an approved decision. `/grill-with-docs-lee <feature> [<id>]`."
 disable-model-invocation: true
 ---
 
-The decision record, its page and the sync commands: `docs/ssot/decisions/README.md`. Read it
-once per session. `SYNC` means `node docs/ssot/decisions/_page/sync.mjs`; `<feature>` is the
-slug in the argument; `<question id>`, if given, is the open question to start with.
+The decision record and its rules: `docs/ssot/decisions/README.md`. Read it once per session.
+`SYNC` means `node docs/ssot/decisions/_page/sync.mjs`; `<feature>` is the slug in the argument;
+`<id>`, if given, is the review-queue item to start with. `RECORD` is the five record files
+(`prologue.md`), `QUEUE` is `.scratch/ssot/review-queue.md`.
 
 ## 1. Catch up
 
-Run `.claude/skills/ssot/prologue.md` in full. If its step 5 left syntheses waiting for yes,
-stop there; the grill starts after the ratifier has answered.
+Run `.claude/skills/ssot/prologue.md`.
 
 ## 2. Find Matt's skill
 
@@ -22,65 +22,44 @@ node .claude/skills/ssot/matt.mjs grill-with-docs
 Read the file it prints and follow it. A non-zero exit is a stop: report the path it looked for
 and end the turn. His text stays in his file.
 
-## 3. Load what is already ruled
+## 3. Load what is ruled
 
-Before the first question, read:
+- `SYNC export RECORD`: every approved decision. These are settled; the grill cites them and
+  asks about none of them unless Lee wants to change one.
+- `QUEUE`: the unchecked items for this feature's section.
+- `CONTEXT.md` and `docs/adr/`, as Matt's skill expects. Xuan's spec answers are adopted, never
+  asked again.
 
-- `SYNC export docs/ssot/decisions/<feature>.md`: every approved, rejected and withdrawn
-  decision with its id. These are settled; the grill cites them and asks about none of them.
-  A ruling that reverses one follows the README (a new proposal naming the id it reverses).
-- `SYNC questions .scratch/<feature>/decisions.md docs/ssot/decisions/<feature>.md`: the open
-  questions in file order, each with the ratifier's words, context, why and touches.
-- `.scratch/<feature>/decisions.md`: what is already proposed. A pending proposal may come up in
-  a round when the ratifier wants to challenge it; it is proposed only once.
-- `CONTEXT.md` and `docs/adr/`, as Matt's skill expects.
+## 4. Waiting questions first, one at a time
 
-## 4. Open questions first, one at a time
+Put each unchecked `QUEUE` item for the section to Lee with AskUserQuestion, one question per
+call, the recommended answer first (Lee, 2026-09-25). Give the two or three lines of context
+that matter before the options. Facts are looked up, never asked. `skip` or `later` leaves it
+unchecked. When the queue is done, continue with Matt's grill from the frontier his skill
+computes, asking Lee's decisions the same way.
 
-Print the open questions as a numbered list, id and title only, with the count, and invite a
-different order in the same message. The order is the ratifier's: `<question id>` from the
-command line first, then the list order unless they name another. Then walk them one per round:
+## 5. Write each ruling as it lands
 
-- A round is one open question: its id, the question in their words, the two or three lines of
-  context that matter, and a recommended answer in Matt's round format. Follow-up questions that
-  the answer opens belong to the same open question and come in the next round, still one at a
-  time, before the next open question.
-- Facts are looked up (Matt's rule). Only the decision goes to the ratifier.
-- `skip`, `later` or `park` leaves the question open and moves on. A question is settled only by
-  a stated answer, and the next round opens by repeating that ruling in one sentence.
+A ruling is approved the moment Lee gives it. Write it into the record right away, in the
+README's format and rules ("What makes a card"):
 
-When every open question is settled or parked, continue with Matt's grill for the rest of the
-plan, from the frontier his skill computes.
+- it changes an existing card: rewrite that card in place so it states the new truth, add
+  `> <today> changed by Lee: <one clause>`; newest ruling wins;
+- it is new and belongs to an existing card's decision: fold it into that card;
+- it is new and broad enough to stand alone: a new card in the right section file and
+  subsection, id from `SYNC next-id RECORD`, `> <today> approved by Lee`;
+- it is implementation detail, a test seam or a work plan: it goes in the spec or the tickets,
+  never the record.
 
-## 5. On `done`
+Tick the `QUEUE` item it answered (`- [x] … → mp-NNN`). A ruling that cannot be stated yet
+stays in `QUEUE` as a question in Lee's words. Glossary terms and ADRs are written during the
+grill by the skills Matt's file names.
 
-The word `done` (or "that's enough", "stop here") ends the grill. Then, in this order:
+## 6. On `done`
 
-1. **Extract the rulings.** Walk the transcript from the first round. Every ruling becomes one
-   section in `.scratch/<feature>/decisions.md` in the README's file format: id from
-   `SYNC next-id`, status `proposed`, `source: grill <today>`, the category of the question it
-   answers or one reused from the record. **Question** is the question as asked; **Decision**
-   is the ruling; **Why** is the ratifier's reason, or the recommendation's when they took it;
-   **What else was considered** names the options the round offered; **What it touches** comes
-   from the question's touches line and what the round found in the code.
-2. **Link each answered question.** For each ruling that answers an open question:
-   `SYNC answers <question id> <decision id> .scratch/<feature>/decisions.md docs/ssot/decisions/<feature>.md`.
-   That marks the question `answered` with a dated history line and writes `linked:` on the
-   decision. A ruling that answers no open question carries no `linked:`.
-3. **Lose nothing.** A ruling you cannot state as a decision (they said something firm but the
-   round did not reach a shape a card can hold) becomes a new section with `kind: question`,
-   `status: open`, `linked:` to the decision or question it came from, and **Question** in
-   their words. A parked question stays exactly as it was.
-4. **Glossary and ADRs** were written during the grill by the skills Matt's file names. A
-   changed `CONTEXT.md` means the epilogue reseeds `vocab`.
-
-Then run `.claude/skills/ssot/epilogue.md`. Its report gains two lines ahead of `Pushed:`:
+Run `.claude/skills/ssot/epilogue.md`. Its report gains one line ahead of the others:
 
 ```
-Closed: N open questions (<ids>)
-Still open: N (<ids>)
-Pushed: N proposals, N open questions, N images
-Pending on the page: N proposed, N open questions
-Page: URL
+Ruled: N (<ids written or changed>) · Still waiting: N
 Next: /to-spec-lee <feature>
 ```

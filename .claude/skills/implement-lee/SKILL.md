@@ -1,20 +1,19 @@
 ---
 name: implement-lee
-description: "Matt's implement run as waves: every unblocked ticket builds at once, each by its own subagent in its own worktree; the wave merges in ticket order with codegen once, the suite once, one review, visual parity where a design rendering is cited, and its build-time decisions go to the page without blocking the next wave. `/implement-lee <feature>`."
+description: "Matt's implement run as waves: every unblocked ticket builds at once, each by its own subagent in its own worktree; the wave merges in ticket order with codegen once, the suite once, one review, visual parity where a design rendering is cited, and any product question a build raised goes to the review queue without blocking the next wave. `/implement-lee <feature>`."
 disable-model-invocation: true
 ---
 
 The decision record, its page and the sync commands: `docs/ssot/decisions/README.md`. Read it
 once per session. `SYNC` means `node docs/ssot/decisions/_page/sync.mjs`; `<feature>` is the
-slug in the argument; `PROPOSALS` is `.scratch/<feature>/decisions.md`, `RECORD` is
-`docs/ssot/decisions/<feature>.md`, `ISSUES` is `.scratch/<feature>/issues/`. CLAUDE.md's rules
+slug in the argument; `RECORD` is the five record files (`prologue.md`), `QUEUE` is
+`.scratch/ssot/review-queue.md`, `ISSUES` is `.scratch/<feature>/issues/`. CLAUDE.md's rules
 on parallel work (no stash, no shared index, codegen after annotation changes) bind every step
 below and every subagent.
 
 ## 1. Catch up
 
-Run `.claude/skills/ssot/prologue.md` in full. If its step 5 left syntheses waiting for yes,
-stop there; a wave starts after the ratifier has answered.
+Run `.claude/skills/ssot/prologue.md`.
 
 ## 2. Find Matt's skill
 
@@ -37,8 +36,8 @@ SYNC wave <feature> ISSUES
 It reads the ticket files' `Status` and `Blocked by` lines and prints `done`, `building` (a
 wave still open), `blocked` (with what each waits on), `uncommitted` (ticket files a worktree
 could not see) and `wave`: the frontier, one entry per ticket with its `branch`, `worktree`,
-`model`, `renderings` and `cites`. Also print `SYNC ticket-plan <feature> PROPOSALS RECORD` when the
-tickets came from `/to-tickets-lee`: a ticket whose card is not approved never enters a wave.
+`model`, `renderings` and `cites`. Tickets are approved in the terminal when they are cut, so
+every ready ticket file may enter a wave.
 
 - `wave` empty and `blocked` empty: everything is done. Report and end with `Next: /ssot`.
 - `wave` empty and `building` not: a wave is open from an earlier session. Read
@@ -96,7 +95,7 @@ not run.
 
 Spawn with the Agent tool (`subagent_type: "general-purpose"`, `run_in_background`, `model`
 set to the entry's `model`), one per ticket. The model comes from the ticket's `**Model:**`
-line, which the ratifier approved on the ticket card; a ticket file without one is `opus`. The
+line, which the ratifier approved with the breakdown; a ticket file without one is `opus`. The
 wave lead never changes it. The prompt carries, verbatim:
 
 - the worktree path, and the rule that every command runs there (`cd <worktree>` in each Bash
@@ -196,40 +195,35 @@ skill in `~/.claude/skills/visual-parity/`; its "control skill" is `sync.mjs cap
    pixels. Zero is parity. Investigate a nonzero count pixel by pixel. The fix goes in the app,
    never in the baseline or the harness.
 4. A tolerance the ratifier must rule on (a font the simulator lacks, a status bar, a rendering
-   that is itself out of date) is not silently accepted: it becomes a proposed decision in
-   step 7 with the diff image as its picture (copy the diff png to
-   `docs/ssot/decisions/images/<feature>/parity-<NN>-<name>.png`, then `SYNC attach-image
-   PROPOSALS <id> <png> --caption "<count> px differ from <rendering>"`) and the count in Details.
+   that is itself out of date) is not silently accepted: it goes in the report with the diff
+   image's path and the count, for Lee to rule on in the terminal.
 
 No booted simulator, or no drive for the screen: report "parity for NN not run: <why>", and
 the ticket stays done. The wave never blocks on a picture.
 
-## 7. The wave's decisions go to the page
+## 7. Product questions go to the review queue
 
-From each agent's report and the merged diff (`git diff <base>..HEAD --stat`, then the files
-that matter), write one card per build-time decision in `PROPOSALS`, the way `/ssot backfill`
-step 3 and 4 write one (README parts, id from `SYNC next-id` one at a time, `unslop`), with
-`source: wave <feature> N ticket NN`, the category the decision belongs to (reuse one from
-`SYNC export RECORD`; `Build` when none fits), a `screen:` line when it changed a screen (else
-`screen: none (...)`), and `linked:` to an open question it answers. A decision an agent could
-not make is an open question in the agent's words (`kind: question`, `status: open`). A parity
-tolerance from step 6 is a card with its diff picture. Nothing here waits. The cards are pushed
-and the next wave starts whether or not anyone has ruled.
+The record holds approved product decisions only (Lee, 2026-09-26). Implementation choices a
+wave made live in the commits and tickets and never become cards. A product question an agent
+could not settle from the record (what the athlete sees, pays or can do) is added to `QUEUE`
+under its section in the queue's format, with `Why pending: wave <feature> N ticket NN`, and
+named in the report. Nothing here waits; the next wave starts regardless. When Lee is at the
+terminal and the answer changes what gets built, ask him with AskUserQuestion instead and write
+the ruling into the record as `/grill-with-docs-lee` step 5 does.
 
 ## 8. Re-capture what the wave touched, push, report
 
 ```
 SYNC touched-screens --since <base>
-SYNC refresh <feature> PROPOSALS RECORD --only <the keys it printed, comma-separated>
+SYNC refresh <feature> docs/ssot/decisions/<feature>.md --only <the keys it printed, comma-separated>
 ```
 
 The first lists the registry screens drawn from any file the wave changed (committed since
 `base` or still in the working tree). The second retakes every picture on those screens
 whether stale or not, since their code changed, and leaves every other picture alone. No keys
 means nothing to retake. Then run `.claude/skills/ssot/epilogue.md`
-in full: it draws the screenless cards from step 7, captures the ones that name a screen,
-uploads what changed, reseeds the page and reports. This skill's `Next:` line is never the
-"approve N decisions" form, so the epilogue sends no push.
+in full: it captures the cards that name a screen, uploads what changed, reseeds the page and
+reports.
 
 The report, before the epilogue's lines:
 
@@ -237,7 +231,7 @@ The report, before the epilogue's lines:
 Wave N: T tickets (NN, NN, NN), M merged, F failed, elapsed <from waves.json>
 Suite: green (P passed) | red (files)     Review: K findings, J fixed
 Parity: NN zero-diff | NN <count> px, tolerance proposed as <id> | NN not run (<why>)
-Pushed: D decisions, Q open questions, I pictures retaken
+Queued: Q product questions, I pictures retaken
 Next frontier: NN, NN (or: none, everything done)
 ```
 
@@ -245,4 +239,4 @@ Then end the turn with the epilogue's `Clear:` line and one `Next:` line:
 
 - another wave waits: `Next: /implement-lee <feature> (builds tickets NN, NN in wave N+1)`;
 - a red suite stopped the wave: `Next: /diagnosing-bugs (the suite is red after wave N: <files>)`;
-- nothing left: `Next: /ssot (N decisions from the waves wait on the page)`.
+- nothing left: `Next: /ssot queue (N questions from the waves wait for Lee)`, or `/ssot` when the queue is empty.

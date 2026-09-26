@@ -8,9 +8,12 @@ Routing guide for agents in this repo. Keep it short; detail lives in `/docs`.
   shared services and widgets in `lib/shared/`, tokens in `lib/theme/`. Backend in `supabase/`.
 - Nutrition truth comes from the QA repo (`../mealvana_endurance_qa`), mirrored verbatim into
   `docs/ssot/`. Never edit `docs/ssot/` here; change it in the QA repo and re-sync.
-  Exception: `docs/ssot/decisions/` is app-owned and outside the mirror. Its decision records
-  (`<feature>.md`) are written only by a skill applying a ratifier's verdict (`_page/sync.mjs
-  apply`) or attaching a picture (`attach-svg`, `attach-image`, `pictures`, `refresh`), never by hand; the README, page template and images there are ordinary files.
+  Exception: `docs/ssot/decisions/` is app-owned and outside the mirror. Its five records
+  (`mealplanning`, `paywall`, `shopping-list`, `ai-cost`, `misc`) hold approved product
+  decisions only, and are written only by a skill recording a decision Lee approved in the
+  terminal, or attaching a picture (`attach-svg`, `attach-image`, `pictures`, `refresh`).
+  Undecided items wait in `.scratch/ssot/review-queue.md`. The README, page template and images
+  there are ordinary files.
   Exception: a design component spec written app-side goes in `docs/ssot/spec/design/components/`
   with status "PROPOSED … authored app-side, awaiting Xuan" (Lee, 2026-09-11); a QA sync must keep it.
 
