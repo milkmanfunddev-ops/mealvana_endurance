@@ -209,7 +209,7 @@ final class PurchaseControllerProvider
 }
 
 String _$purchaseControllerHash() =>
-    r'9830e199c03727d60cfc2c6ad4ca04b538976ee1';
+    r'f4fd724c762dfb9bffd304a51240d8309cdc09fe';
 
 /// Manages the purchase and restore flows for AI credit packs.
 ///

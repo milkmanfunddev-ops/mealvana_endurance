@@ -23,7 +23,7 @@ part of 'code_entry_controller.dart';
 ///
 /// A Code that changes coaching (mp-600, card mp-598) updates the app at
 /// once: a coach's own Code pulls the new `coaches` row, an athlete's coach
-/// Code pulls the pending pairing, and coach mode (Settings) and both
+/// Code pulls the new pairing (active at once), and coach mode (Settings) and both
 /// pairing lists (the athlete's My Coaches, the coach's dashboard) are
 /// rebuilt from it. The pull comes first because both lists sync only once
 /// per notifier, and Riverpod keeps the notifier across an invalidate.
@@ -51,7 +51,7 @@ const codeEntryControllerProvider = CodeEntryControllerProvider._();
 ///
 /// A Code that changes coaching (mp-600, card mp-598) updates the app at
 /// once: a coach's own Code pulls the new `coaches` row, an athlete's coach
-/// Code pulls the pending pairing, and coach mode (Settings) and both
+/// Code pulls the new pairing (active at once), and coach mode (Settings) and both
 /// pairing lists (the athlete's My Coaches, the coach's dashboard) are
 /// rebuilt from it. The pull comes first because both lists sync only once
 /// per notifier, and Riverpod keeps the notifier across an invalidate.
@@ -77,7 +77,7 @@ final class CodeEntryControllerProvider
   ///
   /// A Code that changes coaching (mp-600, card mp-598) updates the app at
   /// once: a coach's own Code pulls the new `coaches` row, an athlete's coach
-  /// Code pulls the pending pairing, and coach mode (Settings) and both
+  /// Code pulls the new pairing (active at once), and coach mode (Settings) and both
   /// pairing lists (the athlete's My Coaches, the coach's dashboard) are
   /// rebuilt from it. The pull comes first because both lists sync only once
   /// per notifier, and Riverpod keeps the notifier across an invalidate.
@@ -106,7 +106,7 @@ final class CodeEntryControllerProvider
 }
 
 String _$codeEntryControllerHash() =>
-    r'15e041e7088175bcaca8862b8970094c9bcadcce';
+    r'ad6c517e6a78812639ef21efb16ad31fb18a2ac0';
 
 /// Our own Code entry (mp-458), reached from Redeem code in the paywall's ⋯
 /// menu (mp-494) and on the Subscription screen (mp-495). Never the App
@@ -123,7 +123,7 @@ String _$codeEntryControllerHash() =>
 ///
 /// A Code that changes coaching (mp-600, card mp-598) updates the app at
 /// once: a coach's own Code pulls the new `coaches` row, an athlete's coach
-/// Code pulls the pending pairing, and coach mode (Settings) and both
+/// Code pulls the new pairing (active at once), and coach mode (Settings) and both
 /// pairing lists (the athlete's My Coaches, the coach's dashboard) are
 /// rebuilt from it. The pull comes first because both lists sync only once
 /// per notifier, and Riverpod keeps the notifier across an invalidate.

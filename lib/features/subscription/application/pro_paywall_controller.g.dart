@@ -189,7 +189,7 @@ final class ProPaywallControllerProvider
 }
 
 String _$proPaywallControllerHash() =>
-    r'1703aac7ee1fc61c5fda9973729af516aba3306e';
+    r'e4199479a898e5a66ddda30e59d570164c5f24f1';
 
 /// Drives purchase and restore for the paywall.
 ///
