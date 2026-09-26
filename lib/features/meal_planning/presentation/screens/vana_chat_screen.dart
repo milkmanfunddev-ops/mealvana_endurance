@@ -51,6 +51,7 @@ import '../widgets/vana_repeated_question.dart';
 import '../../../meal_logging/domain/meal_photo_capture.dart';
 import 'food_screen.dart';
 import '../../../../shared/core/pop_or_home.dart';
+import '../../../../shared/services/app_display_name_provider.dart';
 import '../widgets/write_failure_snackbar.dart';
 
 /// `/vana?mode=&c=` (05 §4) — the Vana chat for both kinds. Planning chats
@@ -645,6 +646,22 @@ class _VanaChatScreenState extends ConsumerState<VanaChatScreen> {
 
   // ── Composer ─────────────────────────────────────────────────────────────
 
+  /// The composer, measured so a message floats above it.
+  final _composerKey = GlobalKey();
+
+  /// How much of the screen's bottom a message keeps clear: the composer,
+  /// so the field stays tappable while the message shows (120-005). Floating
+  /// messages already stand above the bottom safe area.
+  double _composerClearance() {
+    if (!mounted) return 0;
+    final box = _composerKey.currentContext?.findRenderObject();
+    if (box is! RenderBox || !box.attached || !box.hasSize) return 0;
+    final media = MediaQuery.of(context);
+    final top = box.localToGlobal(Offset.zero).dy;
+    final clearance = media.size.height - top - media.viewPadding.bottom;
+    return clearance > 0 ? clearance : 0;
+  }
+
   Widget _buildComposer(
     BuildContext context,
     ContentService content,
@@ -673,6 +690,7 @@ class _VanaChatScreenState extends ConsumerState<VanaChatScreen> {
     // is being edited.
     final border = textColor.withValues(alpha: 0.18);
     return Padding(
+      key: _composerKey,
       padding: const EdgeInsets.fromLTRB(16, AppSpacing.sm, 16, AppSpacing.sm),
       child: Column(
         mainAxisSize: MainAxisSize.min,
@@ -768,9 +786,14 @@ class _VanaChatScreenState extends ConsumerState<VanaChatScreen> {
                         listeningTooltip: content.getValue(
                           ContentKeys.mpMicListening,
                         ),
-                        permissionMessage: content.getValue(
-                          ContentKeys.mpMicPermission,
+                        // Names the app as iOS Settings lists it, and floats
+                        // above the composer (120-005).
+                        permissionMessage: VanaMicButton.permissionMessageFor(
+                          content.getValue(ContentKeys.mpMicPermission),
+                          ref.watch(appDisplayNameProvider).value ??
+                              kDefaultAppDisplayName,
                         ),
+                        messageClearance: _composerClearance,
                         enabled: !locked,
                         onText: _dictated,
                         size: 36,
