@@ -9,7 +9,7 @@ Vana deno suite must be green after deletion, proving nothing depended on what w
 
 **Blocked by:** 04 (all twenty-two Scenarios converted — the JSON is the conversion source until then).
 
-**Status:** ready-for-agent
+**Status:** in-progress (wave 3, 2026-09-26)
 
 - [ ] Old harness directories are gone; nothing in the repo references them
 - [ ] A migration drops `eval_traces`; applied to dev

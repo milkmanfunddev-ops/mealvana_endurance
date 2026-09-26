@@ -11,7 +11,7 @@ deserved? Anchor wording adjusts here, before a full round bakes in twenty-odd j
 
 **Blocked by:** 03 (account ready), 04 (Scenario converted), 05 (capture and round files).
 
-**Status:** ready-for-agent
+**Status:** in-progress (wave 3, 2026-09-26)
 
 - [ ] One Scenario run end-to-end in the real app on web, screenshots taken as evidence
 - [ ] Transcript captured from the server's stored messages, not from memory
