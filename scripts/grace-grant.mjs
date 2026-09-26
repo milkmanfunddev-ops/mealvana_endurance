@@ -25,10 +25,16 @@
 //   --user <uid>         only this account (repeatable); still subject to the selection
 //   --all                required with --write when no --user is given
 //
+// Each grant made is also recorded in `public.pro_grants` as source 'grace'
+// (mp-615; apply migration 20260926070000_pro_grants_source.sql first), which
+// the Subscription screen labels from.
+//
 // Undo one account: RevenueCat dashboard → customer → revoke the promotional
 // entitlement and delete the founding_member attribute, or the v2 API
 // POST /projects/{id}/customers/{uid}/actions/revoke_granted_entitlement.
 
+import { createClient } from 'https://esm.sh/@supabase/supabase-js@2.39.3';
+import { recordGrantTo } from '../supabase/functions/_shared/grants/record.ts';
 import { makeRevenueCatClient } from '../supabase/functions/_shared/revenuecat/client.ts';
 import { formatOutcome, GRACE_DAYS, listAuthUsers, runGrace } from '../supabase/functions/_shared/grace/grace.ts';
 
@@ -89,13 +95,17 @@ async function main() {
   console.log(args.write ? 'WRITE RUN: grants are made' : 'DRY RUN: nothing is written');
   if (args.users.length) console.log(`only: ${args.users.join(', ')}`);
 
-  const users = await listAuthUsers({ url: `https://${ref}.supabase.co`, serviceRoleKey });
+  const url = `https://${ref}.supabase.co`;
+  const users = await listAuthUsers({ url, serviceRoleKey });
   const rc = makeRevenueCatClient({ secretKey, projectId });
+  // Each grant made is recorded as the grace month in `pro_grants` (mp-615).
+  const db = createClient(url, serviceRoleKey, { auth: { persistSession: false, autoRefreshToken: false } });
   const summary = await runGrace({
     users,
     rc,
     flipAt,
     write: args.write,
+    recordGrant: recordGrantTo(db),
     onlyIds: args.users.length ? args.users : undefined,
     log: (_line, user, outcome) => console.log(formatOutcome(user, outcome)),
   });

@@ -1,5 +1,6 @@
 import 'package:riverpod_annotation/riverpod_annotation.dart';
 
+import '../data/grant_source_repository.dart';
 import '../data/subscription_service.dart';
 import '../domain/entitlement.dart';
 import '../domain/grant.dart';
@@ -79,13 +80,19 @@ class SubscriptionScreenState {
   /// Pure: the screen's state for [status] on [now]. A founding member is
   /// one whose running plan is a founding product (`me_pro_*_founding`,
   /// mp-452); the free week outranks it, since its end date is the one that
-  /// matters. A running Grant shows as itself, with its days left (mp-558).
+  /// matters. A running Grant shows as itself, with its days left (mp-558),
+  /// and where it came from as the server recorded it ([grantRecords],
+  /// mp-615); with no matching record, as its length suggests.
   static SubscriptionScreenState from(
     SubscriptionStatus status, {
     required bool hasStoreSubscription,
     required DateTime now,
+    List<GrantRecord> grantRecords = const [],
   }) {
-    final grant = status.active ? status.grant : null;
+    final held = status.active ? status.grant : null;
+    final grant = held?.withSource(
+      GrantRecord.sourceFor(grantRecords, held.endsAt),
+    );
     final PlanStatus? plan;
     if (!status.active) {
       plan = null;
@@ -147,8 +154,9 @@ Future<void> subscriptionFreshOnOpen(Ref ref) =>
     ref.read(subscriptionStatusProvider.notifier).fetchFresh();
 
 /// The Subscription screen in Settings (mp-495): the plan's status from the
-/// status provider (RevenueCat, mp-279), whether there is a store
-/// subscription to manage, and where Manage subscription goes.
+/// status provider (RevenueCat, mp-279), where a Grant came from (the
+/// server's `pro_grants`, mp-615), whether there is a store subscription to
+/// manage, and where Manage subscription goes.
 ///
 /// Rebuilds whenever the status does, so a Code redeemed on the screen
 /// shows at once.
@@ -161,10 +169,16 @@ class SubscriptionScreenController extends _$SubscriptionScreenController {
     final hasStoreSubscription = await ref
         .read(subscriptionServiceProvider)
         .hasStoreSubscriptionOnRecord();
+    // Where a running Grant came from is the server's record (mp-615); asked
+    // only when there is a Grant to label.
+    final grantRecords = status.active && status.grant != null
+        ? await ref.read(grantSourceRepositoryProvider).recentGrants()
+        : const <GrantRecord>[];
     return SubscriptionScreenState.from(
       status,
       hasStoreSubscription: hasStoreSubscription,
       now: ref.read(subscriptionScreenClockProvider)(),
+      grantRecords: grantRecords,
     );
   }
 

@@ -167,8 +167,9 @@ String _$subscriptionFreshOnOpenHash() =>
     r'ecb01e5c151be763e6347b97f7307290492d3d86';
 
 /// The Subscription screen in Settings (mp-495): the plan's status from the
-/// status provider (RevenueCat, mp-279), whether there is a store
-/// subscription to manage, and where Manage subscription goes.
+/// status provider (RevenueCat, mp-279), where a Grant came from (the
+/// server's `pro_grants`, mp-615), whether there is a store subscription to
+/// manage, and where Manage subscription goes.
 ///
 /// Rebuilds whenever the status does, so a Code redeemed on the screen
 /// shows at once.
@@ -178,8 +179,9 @@ const subscriptionScreenControllerProvider =
     SubscriptionScreenControllerProvider._();
 
 /// The Subscription screen in Settings (mp-495): the plan's status from the
-/// status provider (RevenueCat, mp-279), whether there is a store
-/// subscription to manage, and where Manage subscription goes.
+/// status provider (RevenueCat, mp-279), where a Grant came from (the
+/// server's `pro_grants`, mp-615), whether there is a store subscription to
+/// manage, and where Manage subscription goes.
 ///
 /// Rebuilds whenever the status does, so a Code redeemed on the screen
 /// shows at once.
@@ -190,8 +192,9 @@ final class SubscriptionScreenControllerProvider
           SubscriptionScreenState
         > {
   /// The Subscription screen in Settings (mp-495): the plan's status from the
-  /// status provider (RevenueCat, mp-279), whether there is a store
-  /// subscription to manage, and where Manage subscription goes.
+  /// status provider (RevenueCat, mp-279), where a Grant came from (the
+  /// server's `pro_grants`, mp-615), whether there is a store subscription to
+  /// manage, and where Manage subscription goes.
   ///
   /// Rebuilds whenever the status does, so a Code redeemed on the screen
   /// shows at once.
@@ -215,11 +218,12 @@ final class SubscriptionScreenControllerProvider
 }
 
 String _$subscriptionScreenControllerHash() =>
-    r'9f9c3ce1271829e88261bb7d5fd6a5e6c03a362c';
+    r'3407c7e4c769d2091f2284afe55e295e674babd8';
 
 /// The Subscription screen in Settings (mp-495): the plan's status from the
-/// status provider (RevenueCat, mp-279), whether there is a store
-/// subscription to manage, and where Manage subscription goes.
+/// status provider (RevenueCat, mp-279), where a Grant came from (the
+/// server's `pro_grants`, mp-615), whether there is a store subscription to
+/// manage, and where Manage subscription goes.
 ///
 /// Rebuilds whenever the status does, so a Code redeemed on the screen
 /// shows at once.

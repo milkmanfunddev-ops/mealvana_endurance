@@ -41,11 +41,13 @@ import 'package:mealvana_endurance/features/settings/presentation/providers/sett
 import 'package:mealvana_endurance/features/settings/presentation/screens/settings_screen.dart';
 import 'package:mealvana_endurance/features/subscription/application/subscription_screen_controller.dart';
 import 'package:mealvana_endurance/features/subscription/application/subscription_status_provider.dart';
+import 'package:mealvana_endurance/features/subscription/data/grant_source_repository.dart';
 import 'package:mealvana_endurance/features/subscription/data/subscription_service.dart';
 import 'package:mealvana_endurance/features/subscription/data/user_entitlements_repository.dart';
 import 'package:mealvana_endurance/features/subscription/presentation/pro_gate_redirect.dart';
 import 'package:mealvana_endurance/features/subscription/presentation/screens/paywall_screen.dart';
 import 'package:mealvana_endurance/features/subscription/presentation/screens/subscription_screen.dart';
+import 'package:mealvana_endurance/features/subscription/domain/grant.dart';
 import 'package:mealvana_endurance/features/subscription/presentation/widgets/redeem_code_sheet.dart';
 import 'package:mealvana_endurance/shared/services/app_config.dart';
 import 'package:mealvana_endurance/shared/services/notification_service.dart';
@@ -60,6 +62,8 @@ import '../customer_info_fixtures.dart';
 class _MockSubscriptionService extends Mock implements SubscriptionService {}
 
 class _MockRepository extends Mock implements UserEntitlementsRepository {}
+
+class _MockGrantSources extends Mock implements GrantSourceRepository {}
 
 class _MockSupabase extends Mock implements SupabaseClient {}
 
@@ -122,11 +126,14 @@ const _redeem = ValueKey('subscription.redeem_code_button');
 void main() {
   late _MockSubscriptionService service;
   late _MockRepository repo;
+  late _MockGrantSources grantSources;
   late List<Uri> launched;
 
   setUp(() {
     service = _MockSubscriptionService();
     repo = _MockRepository();
+    grantSources = _MockGrantSources();
+    when(() => grantSources.recentGrants()).thenAnswer((_) async => const []);
     launched = [];
     when(() => repo.currentUserId).thenReturn(_userId);
     when(
@@ -154,6 +161,7 @@ void main() {
       mockAppExternalDeps(supabaseClient: supabase),
       subscriptionServiceProvider.overrideWithValue(service),
       userEntitlementsRepositoryProvider.overrideWithValue(repo),
+      grantSourceRepositoryProvider.overrideWithValue(grantSources),
       entitlementAnswerTimeoutProvider.overrideWithValue(
         const Duration(milliseconds: 60),
       ),
@@ -373,6 +381,31 @@ void main() {
       );
       expect(find.byKey(_manage), findsNothing);
       expect(find.byKey(_redeem), findsOneWidget);
+    });
+
+    testWidgets("a coach's own Code, as the server recorded it (mp-615)", (
+      tester,
+    ) async {
+      when(() => grantSources.recentGrants()).thenAnswer(
+        (_) async => [
+          GrantRecord(
+            source: GrantSource.coach,
+            grantedAt: DateTime.utc(2026, 10, 1, 10, 0, 2),
+            proDays: 30,
+          ),
+        ],
+      );
+      await pump(
+        tester,
+        info: customerInfoGraceGrant,
+        storeSubscription: false,
+      );
+      expect(textOf(tester, _status), _copy('subscription.status_grant_coach'));
+      expect(_copy('subscription.status_grant_coach'), 'Coach access');
+      expect(
+        textOf(tester, _date),
+        _copy('subscription.grant_days_left').replaceAll('{days}', '12'),
+      );
     });
 
     testWidgets('a Code, with its days left', (tester) async {

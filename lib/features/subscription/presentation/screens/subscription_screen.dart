@@ -235,6 +235,7 @@ class _PlanStatusCard extends StatelessWidget {
       PlanStatus.founding => ContentKeys.subscriptionStatusFounding,
       PlanStatus.grant => switch (state.grantSource) {
         GrantSource.legacyGrace => ContentKeys.subscriptionStatusGrantGrace,
+        GrantSource.coach => ContentKeys.subscriptionStatusGrantCoach,
         GrantSource.code || null => ContentKeys.subscriptionStatusGrantCode,
       },
     });

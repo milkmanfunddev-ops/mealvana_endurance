@@ -15,7 +15,9 @@
  *   - a still-anonymous caller, an account created at or after the flip, an
  *     account that was registered before the flip (the flip-day run's), and
  *     any claim before the flip get nothing;
- *   - a RevenueCat failure answers 502 and a later claim still grants.
+ *   - a RevenueCat failure answers 502 and a later claim still grants;
+ *   - the grant made is recorded in `pro_grants` as source 'grace', once
+ *     (mp-615), and a failed record never fails the claim.
  *
  * Run with:
  *   deno test --allow-all --node-modules-dir=none supabase/functions/grace-claim/handler.test.ts
@@ -25,6 +27,9 @@ import { describe, it } from 'https://deno.land/std@0.224.0/testing/bdd.ts';
 import { type ClaimCaller, makeGraceClaimHandler } from './handler.ts';
 import { FOUNDING_MEMBER_ATTRIBUTE, GRACE_DAYS } from '../_shared/grace/grace.ts';
 import { World } from '../tests/grace/support/revenuecat_world.ts';
+import { fakeDb, type FakeDb } from '../tests/vana/support/fake_db.ts';
+import { recordGrantTo } from '../_shared/grants/record.ts';
+import type { Db } from '../_shared/vana/env.ts';
 
 const DAY = 24 * 60 * 60 * 1000;
 const FLIP = new Date('2026-10-01T07:00:00Z');
@@ -46,12 +51,13 @@ function caller(over: Partial<ClaimCaller> = {}): ClaimCaller {
 async function claim(
   w: World,
   who: ClaimCaller | null,
-  opts: { flipAt?: Date | null; method?: string } = {},
+  opts: { flipAt?: Date | null; method?: string; db?: FakeDb } = {},
 ): Promise<{ status: number; body: Record<string, unknown> }> {
   const handler = makeGraceClaimHandler({
     caller: () => Promise.resolve(who),
     flipAt: () => (opts.flipAt === undefined ? FLIP : opts.flipAt),
     revenueCat: () => w.rc(),
+    recordGrant: opts.db ? recordGrantTo(opts.db as unknown as Db) : undefined,
     now: () => w.now,
     sleep: () => Promise.resolve(),
   });
@@ -111,6 +117,35 @@ describe('an old anonymous install that signed up after the flip', () => {
 
     const retry = await claim(w, caller());
     assertEquals(retry.body.status, 'granted');
+  });
+});
+
+describe('where the grant came from is recorded (mp-615)', () => {
+  const rows = (db: FakeDb) =>
+    db.rows('pro_grants').map((r) => ({ user_id: r.user_id, source: r.source, pro_days: r.pro_days }));
+
+  it('a granted claim is recorded as grace, once', async () => {
+    const w = new World(AFTER_FLIP).customer(OLD_INSTALL);
+    const db = fakeDb({ pro_grants: [] });
+    await claim(w, caller(), { db });
+    w.now += 60 * 60 * 1000;
+    await claim(w, caller(), { db });
+    assertEquals(rows(db), [{ user_id: OLD_INSTALL, source: 'grace', pro_days: GRACE_DAYS }]);
+  });
+
+  it('a claim RevenueCat could not grant is not recorded', async () => {
+    const w = new World(AFTER_FLIP).customer(OLD_INSTALL);
+    w.failures.set('/actions/grant_entitlement', [503, 503, 503]);
+    const db = fakeDb({ pro_grants: [] });
+    await claim(w, caller(), { db });
+    assertEquals(rows(db), []);
+  });
+
+  it('a failed record still answers granted', async () => {
+    const w = new World(AFTER_FLIP).customer(OLD_INSTALL);
+    const db = fakeDb({ pro_grants: [] }, { errors: { pro_grants: 'relation "pro_grants" does not exist' } });
+    const res = await claim(w, caller(), { db });
+    assertEquals(res.body, { ok: true, status: 'granted', pro_days: GRACE_DAYS });
   });
 });
 
