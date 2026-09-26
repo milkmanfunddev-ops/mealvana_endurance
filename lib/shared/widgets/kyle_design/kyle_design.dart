@@ -31,6 +31,8 @@ export 'data/dish_photo.dart';
 export 'data/phone_clip_frame.dart';
 export 'data/macro_pill_row.dart';
 export 'data/meal_image_mosaic.dart';
+export 'fueling/carb_load_bar.dart';
+export 'fueling/carb_slot_card.dart';
 export 'fueling/fuel_stat.dart';
 export 'fueling/feeding_card.dart';
 export 'fueling/hydration_check_control.dart';

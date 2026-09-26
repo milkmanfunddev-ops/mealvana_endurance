@@ -1,0 +1,39 @@
+{
+ "fingerprintId": "6a36938c8e97",
+ "provider": "garmin",
+ "stratum": {
+  "endpoint": "garmin/activity_raw",
+  "workoutType": "E_BIKE_FITNESS"
+ },
+ "optionalKeysInStratum": [
+  "totalElevationGainInMeters"
+ ],
+ "provenance": {
+  "source": "prod provider_raw_payloads",
+  "scrubbed": "server-side (corpus-export edge fn)",
+  "environment": "prod",
+  "exportedAt": "2026-09-21T00:53:23+00:00",
+  "note": "real-account (prod), promoted by ruling 2026-09-20",
+  "correction": "re-scrubbed under the default-deny standard (@v1.1 samples de-id erratum, ruled 2026-09-20); fingerprint unchanged, content re-destroyed"
+ },
+ "exemplar": {
+  "summaryId": "syn-5d662290",
+  "activityId": 28165439188,
+  "isWebUpload": false,
+  "activityName": "corpus placeholder",
+  "activityType": "E_BIKE_FITNESS",
+  "distanceInMeters": 579.8463250906362,
+  "durationInSeconds": 2974,
+  "activeKilocalories": 584,
+  "startTimeInSeconds": 1767225600,
+  "startTimeOffsetInSeconds": -16823,
+  "maxSpeedInMetersPerSecond": 2.1571166567161484,
+  "totalElevationGainInMeters": 3,
+  "totalElevationLossInMeters": 28,
+  "maxHeartRateInBeatsPerMinute": 182,
+  "maxPaceInMinutesPerKilometer": 6.204836624159947,
+  "averageSpeedInMetersPerSecond": 0.21921277488890384,
+  "averageHeartRateInBeatsPerMinute": 137,
+  "averagePaceInMinutesPerKilometer": 81.7386067965748
+ }
+}
