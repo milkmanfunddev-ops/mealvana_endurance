@@ -1,0 +1,42 @@
+{
+  "fetched_at": "2026-09-26T02:32:10Z",
+  "customer_http": 200,
+  "customer": {
+    "active_entitlements": {
+      "items": [
+        {
+          "entitlement_id": "entla441faaeb4",
+          "expires_at": 1790393508952,
+          "object": "customer.active_entitlement"
+        }
+      ],
+      "next_page": null,
+      "object": "list",
+      "url": "https://api.revenuecat.com/v2/projects/proj77b3c48f/customers/6e7ae347-7575-421d-9fe5-467b60fee52e/active_entitlements"
+    },
+    "experiment": null,
+    "first_seen_at": 1790389812084,
+    "id": "6e7ae347-7575-421d-9fe5-467b60fee52e",
+    "last_seen_app_version": "1.27.1",
+    "last_seen_at": 1790389890623,
+    "last_seen_country": "US",
+    "last_seen_platform": "iOS",
+    "last_seen_platform_version": "Version 26.2 (Build 23C54)",
+    "object": "customer",
+    "project_id": "proj77b3c48f"
+  },
+  "subscriptions": [
+    {
+      "id": "subTstffbb8a6fa9c43a89b1888594533c2dc8",
+      "status": "active",
+      "gives_access": true,
+      "auto_renewal_status": "will_renew",
+      "starts_at": "2026-09-26T02:31:48Z",
+      "current_period_ends_at": "2026-09-26T03:31:48Z",
+      "ends_at": "2026-09-26T03:31:48Z",
+      "product_id": "prodcaf0460693",
+      "store": "test_store",
+      "environment": "sandbox"
+    }
+  ]
+}
