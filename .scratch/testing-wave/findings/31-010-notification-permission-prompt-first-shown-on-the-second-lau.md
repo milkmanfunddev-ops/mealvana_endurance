@@ -1,7 +1,7 @@
 # 31-010 · Notification permission prompt: first shown on the second launch; test Allow and what it writes
 
 - kind: followup-test
-- status: triaged
+- status: closed
 - ticket: 31
 - run: w11-20260924T1648Z
 - screen: Timeline
@@ -29,3 +29,5 @@ Not run fully. This run tapped Don't Allow; notifications_enabled stayed false (
 
 Picked for retest ticket 109 (Lee, 2026-09-25: every open follow-up test folded into the planned runs, cap of ten lifted for this pass).
 Moved to retest ticket 125 when 109 was split (Lee, 2026-09-25).
+
+Run by retest ticket 125 (run w37-20260926T0221Z, build 72d3723e): fail, carried by new bug Finding 125-004 (the prompt comes on the second launch, not at sign-in, and Allow writes nothing to `users.notifications_enabled`).

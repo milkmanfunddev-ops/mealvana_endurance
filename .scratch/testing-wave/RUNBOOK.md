@@ -233,7 +233,8 @@ At the end of every run, stopped or not, in this order:
 4. Scan the console before committing it: `grep -nE 'eyJ[A-Za-z0-9_-]{10,}|Bearer |sk_|sbp_' RUNS/console.log`.
    Expect hits: the debug stream prints the app's shared preferences, session token included
    (IMPROVEMENTS #40). Cut only those lines and keep the rest as evidence:
-   `grep -vE 'eyJ[A-Za-z0-9_-]{10,}|Bearer |sk_|sbp_' RUNS/console.log > RUNS/console-redacted.log`,
+   `grep -F '(Flutter)' RUNS/console.log | grep -vE 'eyJ[A-Za-z0-9_-]{10,}|Bearer |sk_|sbp_' > RUNS/console-redacted.log`
+   (only the app's own lines: the raw stream is ~80 MB of OS debug lines in half an hour, #88),
    delete `console.log`, run the scan again on the redacted file (it must find nothing), and cite
    `console-redacted.log` in Findings.
 5. Commit `.scratch/testing-wave/findings/NN-*.md` and `RUNS` on your branch, explicit paths only.

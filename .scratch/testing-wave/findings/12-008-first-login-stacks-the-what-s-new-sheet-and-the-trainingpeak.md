@@ -27,3 +27,5 @@ Each sheet shows once, closes by swipe or its buttons, and "Closing this leaves 
 
 Picked for retest ticket 109 (Lee, 2026-09-25: every open follow-up test folded into the planned runs, cap of ten lifted for this pass).
 Moved to retest ticket 125 when 109 was split (Lee, 2026-09-25).
+
+Run by retest ticket 125 (run w37-20260926T0221Z, build 72d3723e): not run; What's New shows once on first login and closes cleanly, but the TrainingPeaks sharing sheet cannot show because test@test.com's TrainingPeaks connection needs a reconnect. Carried on by follow-up 125-006.

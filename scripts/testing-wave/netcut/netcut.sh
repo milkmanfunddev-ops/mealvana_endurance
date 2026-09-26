@@ -36,7 +36,12 @@ case "${1:-}" in
     echo "launched with netcut; network on. netcut.sh on $dir to cut it"
     ;;
   on)
-    dir="${2:?scratch folder}"; touch "$dir/offline.flag"; echo "offline since $(date -u +%H:%M:%SZ)"
+    dir="${2:?scratch folder}"
+    # Without the library the app was never launched through netcut, so the flag cuts nothing (125-005).
+    if [ ! -f "$dir/netcut.dylib" ]; then
+      echo "netcut.sh: no $dir/netcut.dylib; run netcut.sh launch <udid> $dir first. Still online." >&2; exit 1
+    fi
+    touch "$dir/offline.flag"; echo "offline since $(date -u +%H:%M:%SZ)"
     if [ "${3:-}" = "--relaunch" ]; then
       relaunch "${4:?usage: netcut.sh on <scratch> --relaunch <udid>}" "$(cd "$dir" && pwd)"
       echo "relaunched offline: no connection from before the cut is left open"

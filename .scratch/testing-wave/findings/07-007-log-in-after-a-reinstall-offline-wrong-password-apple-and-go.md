@@ -1,7 +1,7 @@
 # 07-007 · Log In after a reinstall: offline, wrong password, Apple and Google sign-in for a paid account, and a Lapsed account
 
 - kind: followup-test
-- status: triaged
+- status: closed
 - ticket: 07
 - run: w6-20260924T1118Z
 - screen: Log In
@@ -30,3 +30,5 @@ Not run (look-around, ticket 07). Seen on the way: the Log In screen came back f
 
 Picked for retest ticket 109 (Lee, 2026-09-25: every open follow-up test folded into the planned runs, cap of ten lifted for this pass).
 Moved to retest ticket 125 when 109 was split (Lee, 2026-09-25).
+
+Run by retest ticket 125 (run w37-20260926T0221Z, build 72d3723e): fail, carried by new bug Findings 125-002 (offline Log In reads as a wrong password) and 125-003 (a cancelled Google sign-in says "Sign in failed"); wrong-then-right passes; Apple and Google sign-in themselves not run (follow-up 125-009).

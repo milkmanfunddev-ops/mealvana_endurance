@@ -1,7 +1,7 @@
 # 06-007 · A paid account signs out offline, and cancels the Sign Out dialog once first
 
 - kind: followup-test
-- status: triaged
+- status: closed
 - ticket: 06
 - run: w6-20260924T1117Z
 - screen: Settings
@@ -31,3 +31,5 @@ Not run. This run only signed out online, which landed on welcome with no paywal
 
 Picked for retest ticket 109 (Lee, 2026-09-25: every open follow-up test folded into the planned runs, cap of ten lifted for this pass).
 Moved to retest ticket 125 when 109 was split (Lee, 2026-09-25).
+
+Run by retest ticket 125 (run w37-20260926T0221Z, build 72d3723e): fail, carried by new bug Finding 125-001 (Cancel works, but signing out a Test Store-paid account routes through the paywall; offline a full paywall frame shows before Welcome).

@@ -1,7 +1,7 @@
 # 32-005 · Verify your email: quit the app on the code screen and come back
 
 - kind: followup-test
-- status: triaged
+- status: closed
 - ticket: 32
 - run: w9-20260924T1447Z
 - screen: Verify your email
@@ -30,3 +30,5 @@ Not run (look-around, ticket 32).
 
 Picked for retest ticket 109 (Lee, 2026-09-25: every open follow-up test folded into the planned runs, cap of ten lifted for this pass).
 Moved to retest ticket 124 when 109 was split (Lee, 2026-09-25).
+
+Run by retest ticket 124 (run w37-20260926T0221Z, build 72d3723e): fail, carried by new bug Finding 124-001 (after quitting on the code screen, Log In says "check your credentials" for the unconfirmed email and offers no way back to the code).

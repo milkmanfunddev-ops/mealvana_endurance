@@ -1,6 +1,6 @@
 # 124: Account lifecycle: sign up, verify email and reset password
 
-**Status:** in-progress (wave 37, 2026-09-26)
+**Status:** done (wave 37, 2026-09-26)
 **Blocked by:** none.
 **Pair with:** 125 (same auth email budget). Dev allows 30 auth emails an hour across the wave: this run keeps to 20, 125 to 10.
 **Next:** `/implement-lee testing-wave`

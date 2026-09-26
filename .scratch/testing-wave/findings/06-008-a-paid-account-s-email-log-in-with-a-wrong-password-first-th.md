@@ -1,7 +1,7 @@
 # 06-008 · A paid account's email Log In with a wrong password first, then the right one
 
 - kind: followup-test
-- status: triaged
+- status: closed
 - ticket: 06
 - run: w6-20260924T1117Z
 - screen: Log In
@@ -29,3 +29,5 @@ Not run. This run signed in with the right password once.
 
 Picked for retest ticket 109 (Lee, 2026-09-25: every open follow-up test folded into the planned runs, cap of ten lifted for this pass).
 Moved to retest ticket 125 when 109 was split (Lee, 2026-09-25).
+
+Run by retest ticket 125 (run w37-20260926T0221Z, build 72d3723e): pass; a wrong password shows the error and stays on Log In, the right one opens the app with no paywall frame.

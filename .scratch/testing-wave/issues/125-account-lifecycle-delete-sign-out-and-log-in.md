@@ -1,6 +1,6 @@
 # 125: Account lifecycle: delete, sign out, log in and the first-login sheets
 
-**Status:** in-progress (wave 37, 2026-09-26)
+**Status:** done (wave 37, 2026-09-26)
 **Blocked by:** none.
 **Pair with:** 124 (same auth email budget): this run keeps to 10 auth emails an hour.
 **Next:** `/implement-lee testing-wave`

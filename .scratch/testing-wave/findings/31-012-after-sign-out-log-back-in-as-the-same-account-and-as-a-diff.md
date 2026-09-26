@@ -1,7 +1,7 @@
 # 31-012 · After sign-out: log back in as the same account and as a different account on the same phone
 
 - kind: followup-test
-- status: triaged
+- status: closed
 - ticket: 31
 - run: w11-20260924T1648Z
 - screen: Welcome
@@ -28,3 +28,5 @@ Not run. After this run's sign-out and relaunch the console still printed `[Subs
 
 Picked for retest ticket 109 (Lee, 2026-09-25: every open follow-up test folded into the planned runs, cap of ten lifted for this pass).
 Moved to retest ticket 125 when 109 was split (Lee, 2026-09-25).
+
+Run by retest ticket 125 (run w37-20260926T0221Z, build 72d3723e): pass; test@test.com came back to its plan and settings after sign-out and sign-in, and a second account on the same phone saw only its own paywall.

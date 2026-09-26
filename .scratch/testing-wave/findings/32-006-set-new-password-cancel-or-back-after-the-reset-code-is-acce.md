@@ -1,7 +1,7 @@
 # 32-006 · Set New Password: Cancel or back after the reset code is accepted
 
 - kind: followup-test
-- status: triaged
+- status: closed
 - ticket: 32
 - run: w9-20260924T1447Z
 - screen: Set New Password
@@ -31,3 +31,5 @@ Not run (look-around, ticket 32). The right code does open a signed-in recovery 
 
 Picked for retest ticket 109 (Lee, 2026-09-25: every open follow-up test folded into the planned runs, cap of ten lifted for this pass).
 Moved to retest ticket 124 when 109 was split (Lee, 2026-09-25).
+
+Run by retest ticket 124 (run w37-20260926T0221Z, build 72d3723e): fail, carried by new bug Finding 124-003 (Cancel, back or quitting after the right reset code leaves the phone signed in without the password).

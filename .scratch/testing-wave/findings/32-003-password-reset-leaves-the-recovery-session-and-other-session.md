@@ -1,7 +1,7 @@
 # 32-003 · Password reset leaves the recovery session and other sessions signed in
 
 - kind: bug
-- status: triaged
+- status: closed
 - ticket: 32
 - run: w9-20260924T1447Z
 - screen: Set New Password
@@ -33,3 +33,5 @@ the new 14:56:06Z sign-in. The app's sign-out also uses `SignOutScope.local`.
 
 Bug, fix ticket 108 (Lee, 2026-09-25: a password reset signs out every other session). Retest ticket 109.
 Moved to retest ticket 124 when 109 was split (Lee, 2026-09-25).
+
+Run by retest ticket 124 (run w37-20260926T0221Z, build 72d3723e): pass; right after Reset Password `auth.sessions` and `auth.refresh_tokens` held no rows for the account, a second session's refresh token got `refresh_token_not_found`, and the new sign-in is the only session.

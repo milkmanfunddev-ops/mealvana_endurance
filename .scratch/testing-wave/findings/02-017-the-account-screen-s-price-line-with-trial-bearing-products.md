@@ -26,3 +26,5 @@ Not run (look-around, ticket 02).
 
 Picked for retest ticket 109 (Lee, 2026-09-25: every open follow-up test folded into the planned runs, cap of ten lifted for this pass).
 Moved to retest ticket 124 when 109 was split (Lee, 2026-09-25).
+
+Run by retest ticket 124 (run w37-20260926T0221Z, build 72d3723e): not run; the Test Store products carry no intro offer, so the trial line cannot show on a simulator ("$9.95 a month or $69.00 a year. Cancel any time."). Needs the Apple sandbox on a device (ticket 13).

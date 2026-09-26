@@ -1,7 +1,7 @@
 # 125-005 · netcut.sh on --relaunch runs the app online without a word when netcut.dylib was never built
 
 - kind: idea
-- status: open
+- status: closed
 - ticket: 125
 - run: w37-20260926T0221Z
 - screen: none
@@ -23,3 +23,5 @@
 > 
 
 **Triage.**
+
+Fixed by the wave 37 lead: `netcut.sh on` now exits 1 with "Still online" when the scratch folder holds no `netcut.dylib` (IMPROVEMENTS #90).

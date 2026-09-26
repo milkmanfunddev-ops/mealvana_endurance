@@ -1,7 +1,7 @@
 # 02-009 · Delete account → Cancel on both confirm dialogs keeps the account and its session
 
 - kind: followup-test
-- status: triaged
+- status: closed
 - ticket: 02
 - run: w2-20260923T1442Z
 - screen: Paywall
@@ -26,3 +26,5 @@ Not run (look-around, ticket 02).
 
 Picked for retest ticket 109 (Lee, 2026-09-25: every open follow-up test folded into the planned runs, cap of ten lifted for this pass).
 Moved to retest ticket 125 when 109 was split (Lee, 2026-09-25).
+
+Run by retest ticket 125 (run w37-20260926T0221Z, build 72d3723e): pass; Cancel and tap-outside on the delete dialog, from Settings and from the paywall menu, keep the account, its rows and the session.

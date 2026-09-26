@@ -1,7 +1,7 @@
 # 07-009 · The What's New sheet shows again after a reinstall for an account that already dismissed it
 
 - kind: followup-test
-- status: triaged
+- status: closed
 - ticket: 07
 - run: w6-20260924T1118Z
 - screen: Timeline
@@ -28,3 +28,5 @@ Not decided here. In this run the same sheet showed again right after sign-in on
 
 Picked for retest ticket 109 (Lee, 2026-09-25: every open follow-up test folded into the planned runs, cap of ten lifted for this pass).
 Moved to retest ticket 125 when 109 was split (Lee, 2026-09-25).
+
+Run by retest ticket 125 (run w37-20260926T0221Z, build 72d3723e): pass; after a data wipe What's New shows again for an account that dismissed it: "seen" is kept per device (product question for the page pass).

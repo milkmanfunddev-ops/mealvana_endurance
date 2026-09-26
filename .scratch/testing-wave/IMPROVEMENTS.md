@@ -30,8 +30,28 @@ Each entry: what went wrong or cost time, where it was seen, and the suggested f
   own pairing. Suggested fix: never plan one ticket's start state on another run's throwaway
   account, since step 9 deletes it.
 
+- **#89 the show-password toggle put a password in the transcript (wave 37).** One of 124's taps
+  hit the eye icon on Sign Up; the element list and a screenshot then carried the typed password.
+  The agent deleted the screenshot and changed that account's password in the credentials file
+  before it was used, so nothing live leaked. Suggested fix: runbook step 5 says never tap the
+  eye icon, and after `CRED type` read the field back only as a count of dots.
+- **#91 the lead's code map was wrong twice (wave 37).** An Explore agent's map said the Log In
+  chooser has no Apple/Google buttons (it does) and that sign-up with an existing address shows
+  "Account Already Exists" (it does not: Supabase hides it, 124-002). Both agents checked the app
+  and noted it. Suggested fix: a map for the prompt says "from code, unverified" per line, and
+  anything a Finding's verdict hangs on is checked against the screen, not the map.
+
 ## Done
 
+- **#88 raw consoles of 80 MB (wave 37).** Both runs' log streams held 77-83 MB of OS debug
+  lines in 25 minutes. 124 kept only the app's lines; 125 committed all 77 MB, and the lead cut it
+  to the `(Flutter)` lines (4,053) and amended the commit before merging. Suggested fix: runbook
+  step 9's redaction keeps only `(Flutter)` lines (`grep -F '(Flutter)'`) before the token scan,
+  and the lead checks `git diff --numstat` for any file over 5 MB before merging. Done 09-26 (wave 37 lead): step 9 keeps only `(Flutter)` lines.
+- **#90 `netcut.sh on` ran online without a word (wave 37, idea 125-005).** 125 ran `on --relaunch`
+  before `launch` had built the library; the script printed "relaunched offline" while the app was
+  online, and two "offline" steps had to be redone. Done 09-26 (wave 37 lead): `on` exits 1 with
+  "Still online" when the scratch folder holds no `netcut.dylib`.
 - **#84 a run cannot delete an account that never signed in (wave 34).** 121's "Use a different
   email" check leaves the first address as an unconfirmed auth user (121-003) that the in-app
   delete cannot reach. Suggested fix: a lead-only `scripts/testing-wave/` helper that deletes an

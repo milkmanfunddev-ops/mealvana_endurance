@@ -1,7 +1,7 @@
 # 32-008 · No success message seen after Reset Password returns to Log In
 
 - kind: followup-test
-- status: triaged
+- status: closed
 - ticket: 32
 - run: w9-20260924T1447Z
 - screen: Set New Password
@@ -29,3 +29,5 @@ The app went back to Log In. The screenshot taken 4 s after the tap shows no mes
 
 Picked for retest ticket 109 (Lee, 2026-09-25: every open follow-up test folded into the planned runs, cap of ten lifted for this pass).
 Moved to retest ticket 124 when 109 was split (Lee, 2026-09-25).
+
+Run by retest ticket 124 (run w37-20260926T0221Z, build 72d3723e): pass; "Password reset successfully" shows on Log In from about 0.6 s to 4 s after the tap.
