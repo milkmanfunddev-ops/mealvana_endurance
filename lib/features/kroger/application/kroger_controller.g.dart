@@ -233,7 +233,7 @@ final class KrogerControllerProvider
   }
 }
 
-String _$krogerControllerHash() => r'042dc950e9d62440e037cfd87b4b9082b2247330';
+String _$krogerControllerHash() => r'5526d82a9f7d16d21199273b08297f1f5e0158ad';
 
 final class KrogerControllerFamily extends $Family
     with
