@@ -109,8 +109,8 @@ the contract.
 
 The corpus is `scenarios/`, one markdown file per Scenario. The index below lists every Scenario
 with its account and goal. A Scenario missing from this index does not belong to a round. All
-22 were converted from the old corpus (`evals/vana/scenarios/v1.json`, which stays on disk
-until ticket 06 deletes it). Every Scenario runs as judging-1, the shared test persona, until
+22 were converted from the old corpus (`evals/vana/scenarios/v1.json`, deleted by ticket 06).
+Every Scenario runs as judging-1, the shared test persona, until
 the persona accounts are spawned; each file says which persona it needs (`accounts.md`).
 
 | Scenario | Account | Goal |

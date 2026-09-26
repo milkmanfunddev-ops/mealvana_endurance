@@ -3,7 +3,7 @@
  * conversation stamped read-back so a second run writes nothing.
  *
  * The model call is injected. What is under test is the writing, the claiming, and the selection of
- * which conversation gets read — not the model's judgement, which the live evals cover.
+ * which conversation gets read — not the model's judgement, which the judging rounds cover.
  */
 import { assert, assertEquals } from 'https://deno.land/std@0.177.1/testing/asserts.ts';
 import { extractConversation, transcriptOf, extractionPrompt } from '../../_shared/vana/extract.ts';
