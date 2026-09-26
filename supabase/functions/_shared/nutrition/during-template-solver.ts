@@ -696,9 +696,14 @@ function generateDuringPhaseTemplateBySearch(
   const defaultCarbUpper = carbTarget > 0
     ? carbTarget * (MACRO_CONSTRAINT_RANGES.carbs.during?.max ?? 1.1)
     : Number.POSITIVE_INFINITY;
+  // The fill and the sports-drink top-up may never add carbs past the cap
+  // `validateDuringTotals` applies (1.1 x target). Before finding 117-016 the
+  // band high alone bounded them, and a band high above the cap (108 g for a
+  // 95 g target) let three carb-bearing tablets push every fitting candidate
+  // to 106 g, so the template was thrown away for a fill it chose itself.
   const carbUpper = prioritizeCarbTarget
     ? defaultCarbUpper
-    : (targets.carbs_high_g ?? defaultCarbUpper);
+    : Math.min(defaultCarbUpper, targets.carbs_high_g ?? defaultCarbUpper);
   const fluidTarget = targets.water_ml;
   const fluidUpper = targets.water_high_ml ??
     (fluidTarget > 0 ? fluidTarget * 1.1 : Number.POSITIVE_INFINITY);
@@ -807,6 +812,9 @@ function generateDuringPhaseTemplateBySearch(
       const score = scoreTotals(totals, targets) +
         resultFoods.reduce((sum, food) => sum + food.quantity, 0) * 0.05;
 
+      // A candidate that passes validation always outranks one that does not;
+      // only among equals does the score decide. (The previous `else if` let
+      // a failing candidate with a lower score replace a passing one.)
       if (
         issues.length === 0 &&
         (bestIssues.length > 0 || score < bestScore)
@@ -814,7 +822,10 @@ function generateDuringPhaseTemplateBySearch(
         bestFoods = resultFoods;
         bestScore = score;
         bestIssues = issues;
-      } else if (bestFoods === null || score < bestScore) {
+      } else if (
+        issues.length > 0 &&
+        (bestFoods === null || (bestIssues.length > 0 && score < bestScore))
+      ) {
         bestFoods = resultFoods;
         bestScore = score;
         bestIssues = issues;
@@ -978,9 +989,14 @@ export function generateDuringPhaseTemplate(
   const defaultCarbUpper = carbTarget > 0
     ? carbTarget * (MACRO_CONSTRAINT_RANGES.carbs.during?.max ?? 1.1)
     : Number.POSITIVE_INFINITY;
+  // The fill and the sports-drink top-up may never add carbs past the cap
+  // `validateDuringTotals` applies (1.1 x target). Before finding 117-016 the
+  // band high alone bounded them, and a band high above the cap (108 g for a
+  // 95 g target) let three carb-bearing tablets push every fitting candidate
+  // to 106 g, so the template was thrown away for a fill it chose itself.
   const carbUpper = prioritizeCarbTarget
     ? defaultCarbUpper
-    : (targets.carbs_high_g ?? defaultCarbUpper);
+    : Math.min(defaultCarbUpper, targets.carbs_high_g ?? defaultCarbUpper);
   const sodiumLower = targets.sodium_low_mg ??
     (sodiumTarget > 0 ? sodiumTarget * 0.9 : 0);
   const sodiumUpper = targets.sodium_high_mg ??
@@ -1376,6 +1392,31 @@ export function generateDuringPhaseTemplate(
     !!pinOverride;
 
   if (validationIssues.length > 0 && !allowShortfall) {
+    // One plain line for the function log: which template, which macro
+    // missed, what serving range each carb component was searched over, and
+    // the closest candidate. Both the optimized search and the sequential
+    // fill have failed by this point (finding 117-016).
+    const searched = Object.keys(carbRatios)
+      .map((foodName) => {
+        const food = foodsByName.get(foodName);
+        if (!food) return `${foodName} (missing from pool)`;
+        const cap = maxAllowedServingsForDuration(
+          food,
+          durationHours,
+          gutTrainingLevel,
+        );
+        const increment = food.min_increment ??
+          (food.is_indivisible ? 1 : 0.5);
+        return `${foodName} 0-${cap.toFixed(1)} by ${increment}`;
+      })
+      .join(", ");
+    const closest = resultFoods
+      .map((food) => `${food.display_name ?? food.food_id} x${food.quantity}`)
+      .join(", ");
+    console.log(
+      `[DURING-TEMPLATE] template ${template.template_number} (${template.name}) cannot fit: ` +
+        `${validationIssues.join("; ")}; searched ${searched}; closest ${closest || "nothing"}`,
+    );
     console.warn(
       `[DURING-TEMPLATE] VALIDATION FAILED: ${
         validationIssues.join("; ")
