@@ -14,6 +14,7 @@ import '../../../nutrition_plan/domain/run_parameters.dart';
 import '../providers/settings_controller.dart';
 import '../widgets/during_sport_override_section.dart';
 import '../widgets/nutrition_targets_help_bottom_sheet.dart';
+import '../../../../shared/widgets/inputs/field_name.dart';
 
 /// Screen for configuring default nutrition target overrides.
 /// Empty fields = use algorithm defaults (null).
@@ -782,49 +783,55 @@ class _NutritionTargetsScreenState
           const SizedBox(width: AppSpacing.sm),
           Expanded(
             flex: 2,
-            child: TextFormField(
-              key: fieldKey,
+            // Named by its target, not by the "Auto" placeholder (119-006).
+            child: FieldName(
+              name: label,
+              always: true,
               controller: controller,
-              keyboardType: const TextInputType.numberWithOptions(
-                decimal: true,
-              ),
-              inputFormatters: [
-                FilteringTextInputFormatter.allow(RegExp(r'[\d.]')),
-              ],
-              textAlign: TextAlign.center,
-              style: AppTextStyles.bodySmall.copyWith(
-                color: Theme.of(context).colorScheme.onSurface,
-              ),
-              decoration: InputDecoration(
-                isDense: true,
-                contentPadding: const EdgeInsets.symmetric(
-                  horizontal: AppSpacing.sm,
-                  vertical: AppSpacing.sm,
+              child: TextFormField(
+                key: fieldKey,
+                controller: controller,
+                keyboardType: const TextInputType.numberWithOptions(
+                  decimal: true,
                 ),
-                hintText: 'Auto',
-                hintStyle: AppTextStyles.bodySmall.copyWith(
-                  color: Theme.of(
-                    context,
-                  ).colorScheme.onSurface.withValues(alpha: 0.4),
+                inputFormatters: [
+                  FilteringTextInputFormatter.allow(RegExp(r'[\d.]')),
+                ],
+                textAlign: TextAlign.center,
+                style: AppTextStyles.bodySmall.copyWith(
+                  color: Theme.of(context).colorScheme.onSurface,
                 ),
-                border: OutlineInputBorder(
-                  borderRadius: BorderRadius.circular(8),
-                  borderSide: BorderSide(
+                decoration: InputDecoration(
+                  isDense: true,
+                  contentPadding: const EdgeInsets.symmetric(
+                    horizontal: AppSpacing.sm,
+                    vertical: AppSpacing.sm,
+                  ),
+                  hintText: 'Auto',
+                  hintStyle: AppTextStyles.bodySmall.copyWith(
                     color: Theme.of(
                       context,
-                    ).colorScheme.onSurface.withValues(alpha: 0.2),
+                    ).colorScheme.onSurface.withValues(alpha: 0.4),
+                  ),
+                  border: OutlineInputBorder(
+                    borderRadius: BorderRadius.circular(8),
+                    borderSide: BorderSide(
+                      color: Theme.of(
+                        context,
+                      ).colorScheme.onSurface.withValues(alpha: 0.2),
+                    ),
+                  ),
+                  enabledBorder: OutlineInputBorder(
+                    borderRadius: BorderRadius.circular(8),
+                    borderSide: BorderSide(
+                      color: Theme.of(
+                        context,
+                      ).colorScheme.onSurface.withValues(alpha: 0.2),
+                    ),
                   ),
                 ),
-                enabledBorder: OutlineInputBorder(
-                  borderRadius: BorderRadius.circular(8),
-                  borderSide: BorderSide(
-                    color: Theme.of(
-                      context,
-                    ).colorScheme.onSurface.withValues(alpha: 0.2),
-                  ),
-                ),
+                onChanged: (_) => _markChanged(),
               ),
-              onChanged: (_) => _markChanged(),
             ),
           ),
         ],

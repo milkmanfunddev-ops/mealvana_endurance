@@ -98,23 +98,18 @@ class PaywallScreen extends ConsumerStatefulWidget {
 }
 
 class _PaywallScreenState extends ConsumerState<PaywallScreen> {
-  /// The pinned plans tray, measured so a message floats above it.
-  final _plansKey = GlobalKey();
+  /// The features' own Scaffold, above the pinned plans: messages show in
+  /// it, so they float above the plans and Continue with nothing more than
+  /// their own margin. A message that covered them hid Continue for its
+  /// whole duration (11-005); lifting it with a bottom margin instead put
+  /// the margin inside the message's semantics box, so VoiceOver touch on
+  /// Continue or the plans read the message (118-006). Now the message's
+  /// box ends where the drawn message ends.
+  final _messagesKey = GlobalKey();
 
-  /// How much of the screen's bottom a message keeps clear: the plans and
-  /// Continue while they are on screen, nothing before (the clip) or after
-  /// (the paywall gone). A message that covered them hid Continue for its
-  /// whole duration (11-005). Floating messages already stand above the
-  /// bottom safe area, which the tray's height includes.
-  double _plansClearance() {
-    if (!mounted) return 0;
-    final box = _plansKey.currentContext?.findRenderObject();
-    if (box is! RenderBox || !box.attached || !box.hasSize) return 0;
-    final media = MediaQuery.of(context);
-    final top = box.localToGlobal(Offset.zero).dy;
-    final clearance = media.size.height - top - media.viewPadding.bottom;
-    return clearance > 0 ? clearance : 0;
-  }
+  /// Where a message shows: the features' Scaffold while it is on screen,
+  /// else the screen itself (the clip page, or the paywall on its way out).
+  BuildContext get _messageContext => _messagesKey.currentContext ?? context;
 
   Future<void> _buy(BuildContext context, WidgetRef ref, Package pkg) async {
     final content = ref.read(contentServiceProvider);
@@ -128,24 +123,22 @@ class _PaywallScreenState extends ConsumerState<PaywallScreen> {
     final outcome = await ref
         .read(proPaywallControllerProvider.notifier)
         .buy(pkg);
-    if (!context.mounted) return;
+    if (!context.mounted || !mounted) return;
 
     switch (outcome) {
       case ProPurchaseOutcome.activated:
         MealvanaSnackbar.showSuccess(
-          context,
+          _messageContext,
           content.getValue(
             returning
                 ? ContentKeys.paywallPurchaseSuccessReturning
                 : ContentKeys.paywallPurchaseSuccess,
           ),
-          bottomClearance: _plansClearance(),
         );
       case ProPurchaseOutcome.purchasedPending:
         MealvanaSnackbar.showWarning(
-          context,
+          _messageContext,
           content.getValue(ContentKeys.paywallPurchasePending),
-          bottomClearance: _plansClearance(),
         );
       case ProPurchaseOutcome.requiresAccount:
       case ProPurchaseOutcome.notSignedIn:
@@ -168,18 +161,16 @@ class _PaywallScreenState extends ConsumerState<PaywallScreen> {
     final active = await ref
         .read(proPaywallControllerProvider.notifier)
         .restore();
-    if (!context.mounted) return;
+    if (!context.mounted || !mounted) return;
     if (active) {
       MealvanaSnackbar.showSuccess(
-        context,
+        _messageContext,
         content.getValue(ContentKeys.paywallRestoreSuccess),
-        bottomClearance: _plansClearance(),
       );
     } else {
       MealvanaSnackbar.showInfo(
-        context,
+        _messageContext,
         content.getValue(ContentKeys.paywallRestoreNone),
-        bottomClearance: _plansClearance(),
       );
     }
   }
@@ -187,7 +178,7 @@ class _PaywallScreenState extends ConsumerState<PaywallScreen> {
   /// The Subscription screen's Manage (87-007): the store's page, or the
   /// message for the store the plan came from, never a fixed one here.
   Future<void> _manage(BuildContext context, WidgetRef ref) =>
-      openManageSubscription(context, ref, messageClearance: _plansClearance);
+      openManageSubscription(_messageContext, ref);
 
   Future<void> _openLink(
     BuildContext context,
@@ -202,11 +193,10 @@ class _PaywallScreenState extends ConsumerState<PaywallScreen> {
     } catch (_) {
       opened = false;
     }
-    if (!context.mounted || opened) return;
+    if (!context.mounted || !mounted || opened) return;
     MealvanaSnackbar.showError(
-      context,
+      _messageContext,
       content.getValue(ContentKeys.paywallLinkFailed),
-      bottomClearance: _plansClearance(),
     );
   }
 
@@ -328,9 +318,8 @@ class _PaywallScreenState extends ConsumerState<PaywallScreen> {
     ref.listen<AsyncValue<void>>(proPaywallControllerProvider, (_, next) {
       if (next is AsyncError) {
         MealvanaSnackbar.showError(
-          context,
+          _messageContext,
           content.getValue(ContentKeys.paywallPurchaseFailed),
-          bottomClearance: _plansClearance(),
         );
       }
     });
@@ -361,7 +350,7 @@ class _PaywallScreenState extends ConsumerState<PaywallScreen> {
         key: const ValueKey('paywall.redeem_code_button'),
         label: content.getValue(ContentKeys.redeemCodeButton),
         onSelected: () => unlessBusy(
-          () => openRedeemCode(context, ref, messageClearance: _plansClearance),
+          () => openRedeemCode(context, ref, host: _messageContext),
         ),
       ),
       if (hasSubscription)
@@ -427,76 +416,83 @@ class _PaywallScreenState extends ConsumerState<PaywallScreen> {
               ),
             ),
             Expanded(
-              child: SingleChildScrollView(
-                key: const ValueKey('paywall.scroll'),
-                padding: AppSpacing.screenPadding,
-                child: Column(
-                  crossAxisAlignment: CrossAxisAlignment.stretch,
-                  children: [
-                    // Reduce Motion: the clip's first frame stands in for the
-                    // clip (mp-493 §1).
-                    if (reduceMotion) ...[
-                      Center(
-                        child: SizedBox(
-                          width: 120,
-                          child: PhoneClipFrame(
-                            key: const ValueKey('paywall.clip_still'),
-                            player: clipPlayer,
-                            poster: clipPoster,
-                            aspectRatio: kPaywallClipAspectRatio,
-                            semanticLabel: clipLabel,
-                            still: true,
+              // Messages float above the plans inside this Scaffold, their
+              // semantics box no bigger than the drawn message (118-006).
+              child: ScaffoldMessenger(
+                child: Scaffold(
+                  key: _messagesKey,
+                  backgroundColor: Colors.transparent,
+                  body: SingleChildScrollView(
+                    key: const ValueKey('paywall.scroll'),
+                    padding: AppSpacing.screenPadding,
+                    child: Column(
+                      crossAxisAlignment: CrossAxisAlignment.stretch,
+                      children: [
+                        // Reduce Motion: the clip's first frame stands in for the
+                        // clip (mp-493 §1).
+                        if (reduceMotion) ...[
+                          Center(
+                            child: SizedBox(
+                              width: 120,
+                              child: PhoneClipFrame(
+                                key: const ValueKey('paywall.clip_still'),
+                                player: clipPlayer,
+                                poster: clipPoster,
+                                aspectRatio: kPaywallClipAspectRatio,
+                                semanticLabel: clipLabel,
+                                still: true,
+                              ),
+                            ),
                           ),
+                          const SizedBox(height: AppSpacing.xl),
+                        ],
+                        // The app's name and one line on what the prices below buy.
+                        // No hero, no pitch beyond that (Lee, 2026-09-16).
+                        Text(
+                          key: const ValueKey('paywall.title'),
+                          content.getValue(ContentKeys.paywallTitle),
+                          style: AppTextStyles.h1.copyWith(color: textColor),
+                          textAlign: TextAlign.center,
                         ),
-                      ),
-                      const SizedBox(height: AppSpacing.xl),
-                    ],
-                    // The app's name and one line on what the prices below buy.
-                    // No hero, no pitch beyond that (Lee, 2026-09-16).
-                    Text(
-                      key: const ValueKey('paywall.title'),
-                      content.getValue(ContentKeys.paywallTitle),
-                      style: AppTextStyles.h1.copyWith(color: textColor),
-                      textAlign: TextAlign.center,
-                    ),
-                    const SizedBox(height: AppSpacing.md),
-                    Text(
-                      key: const ValueKey('paywall.subtitle'),
-                      content.getValue(ContentKeys.paywallSubtitle),
-                      style: AppTextStyles.bodyMedium.copyWith(
-                        color: secondaryColor,
-                      ),
-                      textAlign: TextAlign.center,
-                    ),
+                        const SizedBox(height: AppSpacing.md),
+                        Text(
+                          key: const ValueKey('paywall.subtitle'),
+                          content.getValue(ContentKeys.paywallSubtitle),
+                          style: AppTextStyles.bodyMedium.copyWith(
+                            color: secondaryColor,
+                          ),
+                          textAlign: TextAlign.center,
+                        ),
 
-                    // Four headline features, the divider and the rest; the AI
-                    // features share the one Vana line (mp-493 §2).
-                    const SizedBox(height: AppSpacing.xxl),
-                    ProFeatureList(
-                      key: const ValueKey('paywall.features'),
-                      content: content,
-                    ),
+                        // Four headline features, the divider and the rest; the AI
+                        // features share the one Vana line (mp-493 §2).
+                        const SizedBox(height: AppSpacing.xxl),
+                        ProFeatureList(
+                          key: const ValueKey('paywall.features'),
+                          content: content,
+                        ),
 
-                    // Trial terms, the price after the trial, renewal and the
-                    // two links (mp-453 §4), whatever the store answered.
-                    const SizedBox(height: AppSpacing.xxl),
-                    _PaywallTerms(
-                      plans: plansAsync.value,
-                      content: content,
-                      color: secondaryColor,
-                      onTerms: () =>
-                          _openLink(context, ref, kTermsOfServiceUrl),
-                      onPrivacy: () =>
-                          _openLink(context, ref, kPrivacyPolicyUrl),
+                        // Trial terms, the price after the trial, renewal and the
+                        // two links (mp-453 §4), whatever the store answered.
+                        const SizedBox(height: AppSpacing.xxl),
+                        _PaywallTerms(
+                          plans: plansAsync.value,
+                          content: content,
+                          color: secondaryColor,
+                          onTerms: () =>
+                              _openLink(context, ref, kTermsOfServiceUrl),
+                          onPrivacy: () =>
+                              _openLink(context, ref, kPrivacyPolicyUrl),
+                        ),
+                        const SizedBox(height: AppSpacing.lg),
+                      ],
                     ),
-                    const SizedBox(height: AppSpacing.lg),
-                  ],
+                  ),
                 ),
               ),
             ),
             // The plans and the one Continue, pinned (mp-493 §3).
             _PlansTray(
-              key: _plansKey,
               plansAsync: plansAsync,
               content: content,
               isBusy: isBusy,
@@ -560,7 +556,6 @@ enum _Plan { annual, monthly }
 /// tray says so and Continue has nothing to buy.
 class _PlansTray extends StatefulWidget {
   const _PlansTray({
-    super.key,
     required this.plansAsync,
     required this.content,
     required this.isBusy,

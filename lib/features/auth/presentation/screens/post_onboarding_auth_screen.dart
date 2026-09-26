@@ -15,6 +15,7 @@ import '../../../daily_macros/data/daily_macro_targets_repository.dart';
 import '../../../daily_macros/presentation/providers/daily_macros_controller.dart';
 import '../../../onboarding/presentation/providers/onboarding_controller.dart';
 import '../../../onboarding/presentation/theme/onboarding_design_tokens.dart';
+import '../../../onboarding/presentation/widgets/onboarding_multi_select_step.dart';
 import '../../../onboarding/presentation/widgets/onboarding_step_scaffold.dart';
 import '../../../content/domain/content_keys.dart';
 import '../../application/email_auth_handoff.dart';
@@ -871,53 +872,38 @@ class _PostOnboardingAuthScreenState
           if (showBack)
             Opacity(
               opacity: isLoading ? 0.5 : 1.0,
-              child: InkWell(
+              // A button named "Back" (124-005: the AppBar title merged it
+              // out of the accessibility tree).
+              child: OnboardingBackCircle(
                 key: ValueKey(
                   isLogin
                       ? 'login_options.back_button'
                       : 'create_account.back_button',
                 ),
-                customBorder: const CircleBorder(),
-                onTap: isLoading
-                    ? null
-                    : () {
-                        // Sentry MEALVANA-ENDURANCE-DEV-5R: this screen can be
-                        // reached via context.go() (post-onboarding flow) as
-                        // well as push(), so guard against GoError "There is
-                        // nothing to pop". The go() arrival replaces the stack,
-                        // so in the redesigned flow canPop() is false for EVERY
-                        // new user landing here — the fallback must return to
-                        // the flow they came from, not /main: going to /main
-                        // would silently abandon all nine onboarding steps
-                        // before saveAllOnboardingData ever runs.
-                        if (context.canPop()) {
-                          context.pop();
-                        } else {
-                          // Nothing to pop. LOGIN mode: the person is not
-                          // signed in and just asked to go back, so /main
-                          // would strand an unauthenticated user in the app.
-                          // SIGNUP mode: return to the flow AT ITS LAST PAGE
-                          // (?page=last) — a bare /onboarding builds a fresh
-                          // PageView at page 0, rewinding the athlete nine
-                          // answered steps when they were one tap from saving.
-                          context.go(
-                            isLogin ? '/welcome' : '/onboarding?page=last',
-                          );
-                        }
-                      },
-                child: Container(
-                  width: 32,
-                  height: 32,
-                  decoration: BoxDecoration(
-                    color: OnbTokens.creamA(0.1),
-                    shape: BoxShape.circle,
-                  ),
-                  child: Icon(
-                    Icons.chevron_left,
-                    size: 18,
-                    color: OnbTokens.creamA(0.8),
-                  ),
-                ),
+                enabled: !isLoading,
+                onTap: () {
+                  // Sentry MEALVANA-ENDURANCE-DEV-5R: this screen can be
+                  // reached via context.go() (post-onboarding flow) as
+                  // well as push(), so guard against GoError "There is
+                  // nothing to pop". The go() arrival replaces the stack,
+                  // so in the redesigned flow canPop() is false for EVERY
+                  // new user landing here — the fallback must return to
+                  // the flow they came from, not /main: going to /main
+                  // would silently abandon all nine onboarding steps
+                  // before saveAllOnboardingData ever runs.
+                  if (context.canPop()) {
+                    context.pop();
+                  } else {
+                    // Nothing to pop. LOGIN mode: the person is not
+                    // signed in and just asked to go back, so /main
+                    // would strand an unauthenticated user in the app.
+                    // SIGNUP mode: return to the flow AT ITS LAST PAGE
+                    // (?page=last) — a bare /onboarding builds a fresh
+                    // PageView at page 0, rewinding the athlete nine
+                    // answered steps when they were one tap from saving.
+                    context.go(isLogin ? '/welcome' : '/onboarding?page=last');
+                  }
+                },
               ),
             ),
         ],

@@ -6,11 +6,17 @@
 // Ticket 104 (Finding 86-005): after "Don't Allow" the mic stays and a tap
 // says where to turn access back on; only a device with no speech engine at
 // all loses the button.
+//
+// Ticket 141 (Finding 120-005): the message names the app as the device
+// lists it ("Endurance Dev" on the dev build, not "Mealvana"), and floats
+// above the composer, which stays tappable while it shows.
 
 import 'package:flutter/material.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:mealvana_endurance/features/meal_planning/presentation/widgets/vana_mic_button.dart';
 import 'package:speech_to_text/speech_to_text.dart';
+
+import '../helpers/test_content.dart';
 
 class _FakeSpeech extends Fake implements SpeechToText {
   _FakeSpeech({this.grants = true, this.permitted = true});
@@ -72,6 +78,42 @@ Widget _host(SpeechToText speech) => MaterialApp(
         permissionMessage: _settingsMessage,
         speech: speech,
       ),
+    ),
+  ),
+);
+
+const _composerKey = ValueKey('test.composer');
+
+/// The mic inside a composer docked at the bottom, as the chat lays it out,
+/// with the composer's height as the message's clearance.
+Widget _composerHost(SpeechToText speech) => MaterialApp(
+  home: Scaffold(
+    body: Column(
+      children: [
+        const Expanded(child: SizedBox.expand()),
+        Builder(
+          builder: (context) => Container(
+            key: _composerKey,
+            height: 72,
+            color: Colors.white,
+            alignment: Alignment.centerRight,
+            child: VanaMicButton(
+              onText: (_) {},
+              tooltip: 'Dictate',
+              listeningTooltip: 'Listening',
+              permissionMessage: _settingsMessage,
+              messageClearance: () {
+                final box = context.findRenderObject() as RenderBox;
+                final media = MediaQuery.of(context);
+                return media.size.height -
+                    box.localToGlobal(Offset.zero).dy -
+                    media.viewPadding.bottom;
+              },
+              speech: speech,
+            ),
+          ),
+        ),
+      ],
     ),
   ),
 );
@@ -138,5 +180,40 @@ void main() {
     expect(speech.listenCalls, 0);
     expect(_mic, findsNothing);
     expect(find.text(_settingsMessage), findsNothing);
+  });
+
+  test('the Settings message names the app as the device lists it', () {
+    final template = loadDefaultContent()['meal_planning.mic_permission']!;
+    expect(template, contains('{app}'));
+
+    final message = VanaMicButton.permissionMessageFor(
+      template,
+      'Endurance Dev',
+    );
+    expect(message, contains('iOS Settings → Endurance Dev.'));
+    expect(message, isNot(contains('{app}')));
+    expect(message, isNot(contains('Mealvana')));
+  });
+
+  testWidgets('the Settings message floats above the composer, which stays '
+      'tappable while it shows', (tester) async {
+    final speech = _FakeSpeech(grants: false, permitted: false);
+    await tester.pumpWidget(_composerHost(speech));
+    await tester.pumpAndSettle();
+
+    await tester.tap(_mic);
+    await tester.pump();
+    await tester.pump(const Duration(milliseconds: 400));
+
+    expect(find.text(_settingsMessage), findsOneWidget);
+    // The SnackBar's own box includes its margin; the message is its surface.
+    final message = tester.getRect(
+      find
+          .descendant(of: find.byType(SnackBar), matching: find.byType(Material))
+          .first,
+    );
+    final composer = tester.getRect(find.byKey(_composerKey));
+    expect(message.bottom, lessThanOrEqualTo(composer.top));
+    expect(_mic.hitTestable(), findsOneWidget);
   });
 }

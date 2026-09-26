@@ -170,24 +170,7 @@ class OnboardingStepHeader extends StatelessWidget {
       child: Row(
         children: [
           if (onBack != null) ...[
-            InkWell(
-              key: backButtonKey,
-              customBorder: const CircleBorder(),
-              onTap: onBack,
-              child: Container(
-                width: 32,
-                height: 32,
-                decoration: BoxDecoration(
-                  color: OnbTokens.creamA(0.1),
-                  shape: BoxShape.circle,
-                ),
-                child: Icon(
-                  Icons.chevron_left,
-                  size: 18,
-                  color: OnbTokens.creamA(0.8),
-                ),
-              ),
-            ),
+            OnboardingBackCircle(key: backButtonKey, onTap: onBack!),
             const SizedBox(width: 14),
           ],
           for (var i = 0; i < totalSegments; i++) ...[
@@ -210,8 +193,57 @@ class OnboardingStepHeader extends StatelessWidget {
   }
 }
 
+/// The 32px cream-10% chevron circle every onboarding header and the auth
+/// screens draw for Back. One widget so it is a button named "Back" to a
+/// screen reader everywhere (testing-wave 118-005, 124-005: it read as an
+/// unnamed element, or was missing from the tree). The icon is decoration.
+class OnboardingBackCircle extends StatelessWidget {
+  const OnboardingBackCircle({
+    super.key,
+    required this.onTap,
+    this.enabled = true,
+  });
+
+  final VoidCallback onTap;
+
+  /// Drawn dimmed and inert while the owner is busy (the auth screens).
+  final bool enabled;
+
+  @override
+  Widget build(BuildContext context) {
+    return Semantics(
+      container: true,
+      button: true,
+      enabled: enabled,
+      label: MaterialLocalizations.of(context).backButtonTooltip,
+      child: InkWell(
+        customBorder: const CircleBorder(),
+        onTap: enabled ? onTap : null,
+        child: ExcludeSemantics(
+          child: Container(
+            width: 32,
+            height: 32,
+            decoration: BoxDecoration(
+              color: OnbTokens.creamA(0.1),
+              shape: BoxShape.circle,
+            ),
+            child: Icon(
+              Icons.chevron_left,
+              size: 18,
+              color: OnbTokens.creamA(0.8),
+            ),
+          ),
+        ),
+      ),
+    );
+  }
+}
+
 /// Spec primary CTA pill, shared by the step screens (identical values to
 /// the splash "Build My Plan" button, sans glow on step screens).
+///
+/// One named button to a screen reader, enabled or not: disabled, the pill
+/// used to be a label-less element the size of the screen (118-005).
 class OnboardingSpecCta extends StatelessWidget {
   const OnboardingSpecCta({
     super.key,
@@ -232,25 +264,33 @@ class OnboardingSpecCta extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    return SizedBox(
-      width: double.infinity,
-      child: Material(
-        color: enabled ? OnbTokens.orange : const Color(0x38F78B14),
-        borderRadius: BorderRadius.circular(OnbTokens.rPill),
-        child: InkWell(
-          key: buttonKey,
+    return Semantics(
+      container: true,
+      button: true,
+      enabled: enabled,
+      label: label,
+      child: SizedBox(
+        width: double.infinity,
+        child: Material(
+          color: enabled ? OnbTokens.orange : const Color(0x38F78B14),
           borderRadius: BorderRadius.circular(OnbTokens.rPill),
-          onTap: enabled ? onTap : null,
-          child: Padding(
-            padding: const EdgeInsets.all(16),
-            child: Text(
-              label,
-              textAlign: TextAlign.center,
-              style: TextStyle(
-                fontFamily: OnbTokens.fontDisplay,
-                fontWeight: FontWeight.w700,
-                fontSize: 17,
-                color: enabled ? OnbTokens.bg : OnbTokens.creamA(0.4),
+          child: InkWell(
+            key: buttonKey,
+            borderRadius: BorderRadius.circular(OnbTokens.rPill),
+            onTap: enabled ? onTap : null,
+            child: ExcludeSemantics(
+              child: Padding(
+                padding: const EdgeInsets.all(16),
+                child: Text(
+                  label,
+                  textAlign: TextAlign.center,
+                  style: TextStyle(
+                    fontFamily: OnbTokens.fontDisplay,
+                    fontWeight: FontWeight.w700,
+                    fontSize: 17,
+                    color: enabled ? OnbTokens.bg : OnbTokens.creamA(0.4),
+                  ),
+                ),
               ),
             ),
           ),
@@ -261,7 +301,8 @@ class OnboardingSpecCta extends StatelessWidget {
 }
 
 /// Spec option row: radius 15, cream-5% fill, 1px cream-12% border,
-/// padding 15/16; 26px checkbox (radius 7) + 14px gap + label.
+/// padding 15/16; 26px checkbox (radius 7) + 14px gap + label. To a screen
+/// reader, a button with a checked state (118-005: the tick was visual only).
 class _SpecOptionRow extends StatelessWidget {
   const _SpecOptionRow({
     super.key,
@@ -276,52 +317,63 @@ class _SpecOptionRow extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    return Material(
-      color: OnbTokens.creamA(0.05),
-      borderRadius: BorderRadius.circular(OnbTokens.rCard),
-      child: InkWell(
+    return Semantics(
+      container: true,
+      button: true,
+      checked: isSelected,
+      label: label,
+      child: Material(
+        color: OnbTokens.creamA(0.05),
         borderRadius: BorderRadius.circular(OnbTokens.rCard),
-        onTap: onTap,
-        child: Container(
-          decoration: BoxDecoration(
-            borderRadius: BorderRadius.circular(OnbTokens.rCard),
-            border: Border.all(color: OnbTokens.creamA(0.12)),
-          ),
-          padding: const EdgeInsets.symmetric(vertical: 15, horizontal: 16),
-          child: Row(
-            children: [
-              AnimatedContainer(
-                duration: const Duration(milliseconds: 120),
-                width: 26,
-                height: 26,
-                decoration: BoxDecoration(
-                  color: isSelected ? OnbTokens.teal : Colors.transparent,
-                  borderRadius: BorderRadius.circular(7),
-                  border: isSelected
-                      ? null
-                      : Border.all(color: OnbTokens.creamA(0.35), width: 1.5),
-                ),
-                child: isSelected
-                    ? const Icon(
-                        Icons.check,
-                        size: 16,
-                        color: Color(0xFF10221E),
-                      )
-                    : null,
+        child: InkWell(
+          borderRadius: BorderRadius.circular(OnbTokens.rCard),
+          onTap: onTap,
+          child: ExcludeSemantics(
+            child: Container(
+              decoration: BoxDecoration(
+                borderRadius: BorderRadius.circular(OnbTokens.rCard),
+                border: Border.all(color: OnbTokens.creamA(0.12)),
               ),
-              const SizedBox(width: 14),
-              Expanded(
-                child: Text(
-                  label,
-                  style: const TextStyle(
-                    fontFamily: OnbTokens.fontBody,
-                    fontSize: 16.5,
-                    fontWeight: FontWeight.w500,
-                    color: OnbTokens.cream,
+              padding: const EdgeInsets.symmetric(vertical: 15, horizontal: 16),
+              child: Row(
+                children: [
+                  AnimatedContainer(
+                    duration: const Duration(milliseconds: 120),
+                    width: 26,
+                    height: 26,
+                    decoration: BoxDecoration(
+                      color: isSelected ? OnbTokens.teal : Colors.transparent,
+                      borderRadius: BorderRadius.circular(7),
+                      border: isSelected
+                          ? null
+                          : Border.all(
+                              color: OnbTokens.creamA(0.35),
+                              width: 1.5,
+                            ),
+                    ),
+                    child: isSelected
+                        ? const Icon(
+                            Icons.check,
+                            size: 16,
+                            color: Color(0xFF10221E),
+                          )
+                        : null,
                   ),
-                ),
+                  const SizedBox(width: 14),
+                  Expanded(
+                    child: Text(
+                      label,
+                      style: const TextStyle(
+                        fontFamily: OnbTokens.fontBody,
+                        fontSize: 16.5,
+                        fontWeight: FontWeight.w500,
+                        color: OnbTokens.cream,
+                      ),
+                    ),
+                  ),
+                ],
               ),
-            ],
+            ),
           ),
         ),
       ),

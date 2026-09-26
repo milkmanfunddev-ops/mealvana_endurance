@@ -329,8 +329,9 @@ class _RootAppWidgetState extends ConsumerState<RootAppWidget>
 ///    scaling can't break layouts (cut-off CTAs, truncated labels). Bumping
 ///    the ceiling requires verifying every screen at the new value.
 /// 2. In the **dev flavor only**, mount the testing tools ([DevTestingTools]:
-///    the blue wrench panel and, in debug, the red issue checker). That file
-///    holds the tree, the per-build-mode table and where the button sits.
+///    one pill at the top edge offering the wrench panel and, in debug, the
+///    issue checker). That file holds the tree, the per-build-mode table and
+///    where the pill sits.
 ///
 /// The clamp wraps the *whole* tools tree so the panel chrome itself respects
 /// the ceiling (otherwise the panel UI renders at the raw OS scale, e.g. 3.1×
@@ -349,8 +350,7 @@ class _RootAppWidgetState extends ConsumerState<RootAppWidget>
 /// Flipping the switch swaps the wrapper around [child], which remounts the
 /// subtree down to the router's Navigator. The Navigator carries
 /// `sentryNavigatorKey` (a GlobalKey), so it and every route below it are
-/// reparented with their state intact; the hot-reload re-key in
-/// [DevTestingTools] already relies on the same behaviour.
+/// reparented with their state intact.
 class _AppShell extends ConsumerWidget {
   const _AppShell({required this.child, required this.isDev});
 

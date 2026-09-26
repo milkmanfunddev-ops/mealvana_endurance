@@ -29,9 +29,9 @@
 
 The onboarding back arrow and tile widgets are mapped from code, not checked on screen (unverified). Follow each control from its screen's route before editing. The theme dialog lives in `settings_screen.dart`.
 
-- [ ] Widget tests (`meetsGuideline(labeledTapTargetGuideline)` and `androidTapTargetGuideline` where they fit, plus semantics finders): each control in item 1 has its name, role and selected state. A filled name field keeps its label. The paywall message's semantics rect does not contain Continue's centre.
-- [ ] Widget test: the dev tools mount one button, inside the top safe area plus a small offset. No tools button hits a tap at the Welcome Build My Plan or paywall Continue right end.
-- [ ] Unit test: the shared countdown gives "8 weeks away" for 58 days and months beyond. Widget tests: Notify Me confirms once and is inert on a second tap; Learn with a failed fetch shows the offline state, not "No videos available yet"; the mic message carries the display name.
-- [ ] `flutter analyze` clean on touched files.
+- [x] Widget tests (`meetsGuideline(labeledTapTargetGuideline)` and `androidTapTargetGuideline` where they fit, plus semantics finders): each control in item 1 has its name, role and selected state. A filled name field keeps its label. The paywall message's semantics rect does not contain Continue's centre.
+- [x] Widget test: the dev tools mount one button, inside the top safe area plus a small offset. No tools button hits a tap at the Welcome Build My Plan or paywall Continue right end.
+- [x] Unit test: the shared countdown gives "8 weeks away" for 58 days and months beyond. Widget tests: Notify Me confirms once and is inert on a second tap; Learn with a failed fetch shows the offline state, not "No videos available yet"; the mic message carries the display name.
+- [x] `flutter analyze` clean on touched files.
 
 Next: /implement-lee testing-wave

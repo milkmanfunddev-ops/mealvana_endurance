@@ -38,6 +38,11 @@ class MealPhotoThumbnail extends ConsumerWidget {
                     height: 160,
                     width: double.infinity,
                     fit: BoxFit.cover,
+                    // Named for a screen reader (100-007): the athlete
+                    // learns which photo the numbers came from.
+                    semanticLabel: onTap != null
+                        ? 'Meal photo, tap to re-scan'
+                        : 'Photo being logged',
                     errorBuilder: (_, __, ___) => const SizedBox.shrink(),
                   ),
                   if (onTap != null)

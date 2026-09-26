@@ -7,6 +7,7 @@ import 'package:mealvana_endurance/shared/widgets/app_date_picker.dart';
 import 'package:mealvana_endurance/shared/widgets/kyle_design/kyle_design.dart';
 import '../../../../shared/widgets/navigation/figma_onboarding_footer.dart';
 import '../../../../shared/widgets/kyle_design/data/kyle_source_chip.dart';
+import '../../../../shared/widgets/inputs/field_name.dart';
 import '../../../integrations/presentation/providers/athlete_zones_provider.dart';
 import '../../../../shared/widgets/content_area.dart';
 import '../../../../shared/widgets/custom_app_bar_back_button.dart';
@@ -640,55 +641,64 @@ class _PreferencesScreenState extends ConsumerState<PreferencesScreen> {
     final isDark = theme.brightness == Brightness.dark;
     final isSelected = groupValue == value;
 
-    return GestureDetector(
+    // A button that reports selected (119-006: static text to VoiceOver).
+    return Semantics(
       key: radioKey,
-      onTap: () => onChanged(value),
-      child: Container(
-        height: 80,
-        decoration: BoxDecoration(
-          color: isSelected
-              ? (isDark ? AppColors.cream : AppColors.blackberry)
-              : Colors.transparent,
-          border: Border.all(
-            color: isDark ? AppColors.cream : AppColors.blackberry,
-            width: 2,
-          ),
-          borderRadius: BorderRadius.circular(15),
-        ),
-        child: Column(
-          mainAxisAlignment: MainAxisAlignment.center,
-          children: [
-            // Icon based on gender
-            Icon(
-              value == Gender.male
-                  ? FontAwesomeIcons.mars.data
-                  : value == Gender.female
-                  ? FontAwesomeIcons.venus.data
-                  : FontAwesomeIcons.genderless.data,
-              size: 28,
+      container: true,
+      button: true,
+      selected: isSelected,
+      label: title,
+      child: GestureDetector(
+        onTap: () => onChanged(value),
+        child: ExcludeSemantics(
+          child: Container(
+            height: 80,
+            decoration: BoxDecoration(
               color: isSelected
-                  ? (isDark ? AppColors.blackberry : AppColors.cream)
-                  : (isDark
-                        ? AppColors.cream.withValues(alpha: 0.5)
-                        : AppColors.blackberry.withValues(alpha: 0.5)),
-            ),
-            const SizedBox(height: 4),
-
-            // Text content
-            Text(
-              title.toUpperCase(),
-              style: AppTextStyles.smallLabel.copyWith(
-                fontSize: 9,
-                fontWeight: FontWeight.w700,
-                color: isSelected
-                    ? (isDark ? AppColors.blackberry : AppColors.cream)
-                    : (isDark
-                          ? AppColors.cream.withValues(alpha: 0.5)
-                          : AppColors.blackberry.withValues(alpha: 0.5)),
+                  ? (isDark ? AppColors.cream : AppColors.blackberry)
+                  : Colors.transparent,
+              border: Border.all(
+                color: isDark ? AppColors.cream : AppColors.blackberry,
+                width: 2,
               ),
-              textAlign: TextAlign.center,
+              borderRadius: BorderRadius.circular(15),
             ),
-          ],
+            child: Column(
+              mainAxisAlignment: MainAxisAlignment.center,
+              children: [
+                // Icon based on gender
+                Icon(
+                  value == Gender.male
+                      ? FontAwesomeIcons.mars.data
+                      : value == Gender.female
+                      ? FontAwesomeIcons.venus.data
+                      : FontAwesomeIcons.genderless.data,
+                  size: 28,
+                  color: isSelected
+                      ? (isDark ? AppColors.blackberry : AppColors.cream)
+                      : (isDark
+                            ? AppColors.cream.withValues(alpha: 0.5)
+                            : AppColors.blackberry.withValues(alpha: 0.5)),
+                ),
+                const SizedBox(height: 4),
+
+                // Text content
+                Text(
+                  title.toUpperCase(),
+                  style: AppTextStyles.smallLabel.copyWith(
+                    fontSize: 9,
+                    fontWeight: FontWeight.w700,
+                    color: isSelected
+                        ? (isDark ? AppColors.blackberry : AppColors.cream)
+                        : (isDark
+                              ? AppColors.cream.withValues(alpha: 0.5)
+                              : AppColors.blackberry.withValues(alpha: 0.5)),
+                  ),
+                  textAlign: TextAlign.center,
+                ),
+              ],
+            ),
+          ),
         ),
       ),
     );
@@ -708,62 +718,76 @@ class _PreferencesScreenState extends ConsumerState<PreferencesScreen> {
 
         const SizedBox(height: AppSpacing.sm),
 
-        InkWell(
-          key: const ValueKey('profile_edit.birthday_button'),
-          onTap: () async {
-            final selectedDate = await showAppDatePicker(
-              context: context,
-              initialDate:
-                  _birthday ??
-                  DateTime.now().subtract(const Duration(days: 365 * 30)),
-              firstDate: DateTime.now().subtract(
-                const Duration(days: 365 * 100),
-              ),
-              lastDate: DateTime.now().subtract(const Duration(days: 365 * 16)),
-            );
-            if (selectedDate != null) {
-              setState(() {
-                _birthday = selectedDate;
-              });
-              _markChanged();
-            }
-          },
-          borderRadius: AppRadius.inputRadius,
-          child: Container(
-            padding: const EdgeInsets.symmetric(
-              horizontal: AppSpacing.md,
-              vertical: AppSpacing.md,
-            ),
-            decoration: BoxDecoration(
-              color: Theme.of(context).colorScheme.surface,
-              border: Border.all(
-                color: Theme.of(
-                  context,
-                ).colorScheme.onSurface.withValues(alpha: 0.2),
-              ),
-              borderRadius: AppRadius.inputRadius,
-            ),
-            child: Row(
-              children: [
-                FaIcon(
-                  FontAwesomeIcons.calendar,
-                  size: AppIconSizes.controlIcon,
-                  color: Theme.of(context).colorScheme.onSurfaceVariant,
+        // Named "Birthday" with the date as its value (119-006: the date
+        // alone read as static text).
+        Semantics(
+          container: true,
+          button: true,
+          label: 'Birthday',
+          value: _birthday != null
+              ? '${_birthday!.month}/${_birthday!.day}/${_birthday!.year}'
+              : 'Select your birthday',
+          child: InkWell(
+            key: const ValueKey('profile_edit.birthday_button'),
+            onTap: () async {
+              final selectedDate = await showAppDatePicker(
+                context: context,
+                initialDate:
+                    _birthday ??
+                    DateTime.now().subtract(const Duration(days: 365 * 30)),
+                firstDate: DateTime.now().subtract(
+                  const Duration(days: 365 * 100),
                 ),
-                const SizedBox(width: AppSpacing.md),
-                Expanded(
-                  child: Text(
-                    _birthday != null
-                        ? '${_birthday!.month}/${_birthday!.day}/${_birthday!.year}'
-                        : 'Select your birthday',
-                    style: AppTextStyles.bodyMedium.copyWith(
-                      color: _birthday != null
-                          ? Theme.of(context).colorScheme.onSurface
-                          : Theme.of(context).colorScheme.onSurfaceVariant,
+                lastDate: DateTime.now().subtract(
+                  const Duration(days: 365 * 16),
+                ),
+              );
+              if (selectedDate != null) {
+                setState(() {
+                  _birthday = selectedDate;
+                });
+                _markChanged();
+              }
+            },
+            borderRadius: AppRadius.inputRadius,
+            child: Container(
+              padding: const EdgeInsets.symmetric(
+                horizontal: AppSpacing.md,
+                vertical: AppSpacing.md,
+              ),
+              decoration: BoxDecoration(
+                color: Theme.of(context).colorScheme.surface,
+                border: Border.all(
+                  color: Theme.of(
+                    context,
+                  ).colorScheme.onSurface.withValues(alpha: 0.2),
+                ),
+                borderRadius: AppRadius.inputRadius,
+              ),
+              child: ExcludeSemantics(
+                child: Row(
+                  children: [
+                    FaIcon(
+                      FontAwesomeIcons.calendar,
+                      size: AppIconSizes.controlIcon,
+                      color: Theme.of(context).colorScheme.onSurfaceVariant,
                     ),
-                  ),
+                    const SizedBox(width: AppSpacing.md),
+                    Expanded(
+                      child: Text(
+                        _birthday != null
+                            ? '${_birthday!.month}/${_birthday!.day}/${_birthday!.year}'
+                            : 'Select your birthday',
+                        style: AppTextStyles.bodyMedium.copyWith(
+                          color: _birthday != null
+                              ? Theme.of(context).colorScheme.onSurface
+                              : Theme.of(context).colorScheme.onSurfaceVariant,
+                        ),
+                      ),
+                    ),
+                  ],
                 ),
-              ],
+              ),
             ),
           ),
         ),
@@ -799,69 +823,76 @@ class _PreferencesScreenState extends ConsumerState<PreferencesScreen> {
           ),
           const SizedBox(height: AppSpacing.sm),
         ],
-        TextFormField(
-          key: fieldKey,
+        // Named for a screen reader: by its label all the time, or by its
+        // hint once the hint is gone (119-006).
+        FieldName(
+          name: label ?? hint,
+          always: label != null,
           controller: controller,
-          keyboardType: keyboardType,
-          textCapitalization: textCapitalization,
-          autocorrect: autocorrect,
-          autofillHints: autofillHints,
-          validator: validator,
-          onChanged: onChanged ?? (_) => _markChanged(),
-          decoration: InputDecoration(
-            hintText: hint,
-            hintStyle: AppTextStyles.bodyMedium.copyWith(
-              color: Theme.of(context).colorScheme.onSurfaceVariant,
-            ),
-            prefixIcon: Icon(
-              icon,
-              size: AppIconSizes.controlIcon,
-              color: Theme.of(context).colorScheme.onSurfaceVariant,
-            ),
-            suffix: suffix != null
-                ? Text(
-                    suffix,
-                    style: AppTextStyles.bodyMedium.copyWith(
-                      color: Theme.of(context).colorScheme.onSurfaceVariant,
-                    ),
-                  )
-                : null,
-            border: OutlineInputBorder(
-              borderRadius: AppRadius.inputRadius,
-              borderSide: BorderSide(
-                color: Theme.of(
-                  context,
-                ).colorScheme.onSurface.withValues(alpha: 0.2),
+          child: TextFormField(
+            key: fieldKey,
+            controller: controller,
+            keyboardType: keyboardType,
+            textCapitalization: textCapitalization,
+            autocorrect: autocorrect,
+            autofillHints: autofillHints,
+            validator: validator,
+            onChanged: onChanged ?? (_) => _markChanged(),
+            decoration: InputDecoration(
+              hintText: hint,
+              hintStyle: AppTextStyles.bodyMedium.copyWith(
+                color: Theme.of(context).colorScheme.onSurfaceVariant,
+              ),
+              prefixIcon: Icon(
+                icon,
+                size: AppIconSizes.controlIcon,
+                color: Theme.of(context).colorScheme.onSurfaceVariant,
+              ),
+              suffix: suffix != null
+                  ? Text(
+                      suffix,
+                      style: AppTextStyles.bodyMedium.copyWith(
+                        color: Theme.of(context).colorScheme.onSurfaceVariant,
+                      ),
+                    )
+                  : null,
+              border: OutlineInputBorder(
+                borderRadius: AppRadius.inputRadius,
+                borderSide: BorderSide(
+                  color: Theme.of(
+                    context,
+                  ).colorScheme.onSurface.withValues(alpha: 0.2),
+                ),
+              ),
+              enabledBorder: OutlineInputBorder(
+                borderRadius: AppRadius.inputRadius,
+                borderSide: BorderSide(
+                  color: Theme.of(
+                    context,
+                  ).colorScheme.onSurface.withValues(alpha: 0.2),
+                ),
+              ),
+              focusedBorder: OutlineInputBorder(
+                borderRadius: AppRadius.inputRadius,
+                borderSide: const BorderSide(color: AppColors.orange, width: 2),
+              ),
+              errorBorder: OutlineInputBorder(
+                borderRadius: AppRadius.inputRadius,
+                borderSide: const BorderSide(
+                  color: AppColors.dragonfruit,
+                  width: 2,
+                ),
+              ),
+              filled: true,
+              fillColor: Theme.of(context).colorScheme.surface,
+              contentPadding: const EdgeInsets.symmetric(
+                horizontal: AppSpacing.md,
+                vertical: AppSpacing.md,
               ),
             ),
-            enabledBorder: OutlineInputBorder(
-              borderRadius: AppRadius.inputRadius,
-              borderSide: BorderSide(
-                color: Theme.of(
-                  context,
-                ).colorScheme.onSurface.withValues(alpha: 0.2),
-              ),
+            style: AppTextStyles.bodyMedium.copyWith(
+              color: Theme.of(context).colorScheme.onSurface,
             ),
-            focusedBorder: OutlineInputBorder(
-              borderRadius: AppRadius.inputRadius,
-              borderSide: const BorderSide(color: AppColors.orange, width: 2),
-            ),
-            errorBorder: OutlineInputBorder(
-              borderRadius: AppRadius.inputRadius,
-              borderSide: const BorderSide(
-                color: AppColors.dragonfruit,
-                width: 2,
-              ),
-            ),
-            filled: true,
-            fillColor: Theme.of(context).colorScheme.surface,
-            contentPadding: const EdgeInsets.symmetric(
-              horizontal: AppSpacing.md,
-              vertical: AppSpacing.md,
-            ),
-          ),
-          style: AppTextStyles.bodyMedium.copyWith(
-            color: Theme.of(context).colorScheme.onSurface,
           ),
         ),
       ],

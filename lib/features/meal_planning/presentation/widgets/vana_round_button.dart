@@ -6,7 +6,8 @@ import '../../../../theme/kyle_design/app_colors.dart';
 /// A 44pt circular icon button on the raised surface — the prototype's
 /// `.v-backbtn`. Used for back / new-conversation / conversations across the
 /// meal-planning screens, which draw their headers in the body rather than in
-/// an [AppBar].
+/// an [AppBar]. To a screen reader it is a button named by its [tooltip]
+/// (testing-wave 118-005: it read as static text); the icon is decoration.
 class VanaRoundButton extends StatelessWidget {
   const VanaRoundButton({
     super.key,
@@ -48,25 +49,34 @@ class VanaRoundButton extends StatelessWidget {
   Widget build(BuildContext context) {
     final isDark = Theme.of(context).brightness == Brightness.dark;
 
-    return Tooltip(
-      message: tooltip,
-      child: Material(
-        color: flat
-            ? Colors.transparent
-            : (isDark ? AppColors.blackberryLight : AppColors.surfaceLight),
-        shape: const CircleBorder(),
-        child: InkWell(
-          onTap: onTap,
-          customBorder: const CircleBorder(),
-          child: SizedBox(
-            width: size,
-            height: size,
-            child: Center(
-              child: FaIcon(
-                icon,
-                size: iconSize,
-                color:
-                    color ?? (isDark ? AppColors.cream : AppColors.blackberry),
+    return Semantics(
+      container: true,
+      button: true,
+      label: tooltip,
+      child: Tooltip(
+        message: tooltip,
+        excludeFromSemantics: true,
+        child: Material(
+          color: flat
+              ? Colors.transparent
+              : (isDark ? AppColors.blackberryLight : AppColors.surfaceLight),
+          shape: const CircleBorder(),
+          child: InkWell(
+            onTap: onTap,
+            customBorder: const CircleBorder(),
+            child: SizedBox(
+              width: size,
+              height: size,
+              child: Center(
+                child: ExcludeSemantics(
+                  child: FaIcon(
+                    icon,
+                    size: iconSize,
+                    color:
+                        color ??
+                        (isDark ? AppColors.cream : AppColors.blackberry),
+                  ),
+                ),
               ),
             ),
           ),

@@ -1087,8 +1087,11 @@ class _SettingsScreenState extends ConsumerState<SettingsScreen> {
                   ThemeMode.light => 'appearance.light_button',
                   ThemeMode.dark => 'appearance.dark_button',
                 };
+                // Says which one is on (119-006: three buttons with no
+                // selected state).
                 return RadioListTile<ThemeMode>(
                   key: ValueKey(modeKey),
+                  selected: mode == currentMode,
                   title: Text(_getThemeModeName(mode)),
                   value: mode,
                   groupValue: currentMode,

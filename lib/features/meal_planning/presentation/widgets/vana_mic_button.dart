@@ -5,6 +5,7 @@ import 'package:speech_to_text/speech_recognition_result.dart';
 import 'package:speech_to_text/speech_to_text.dart';
 
 import '../../../../shared/widgets/kyle_design/feedback/mealvana_snackbar.dart';
+import '../../../content/domain/content_keys.dart';
 import '../../../../theme/kyle_design/app_colors.dart';
 import 'vana_round_button.dart';
 
@@ -17,7 +18,9 @@ import 'vana_round_button.dart';
 /// plugin whether permission is what failed: refused (iOS never asks twice)
 /// keeps the button, and every tap shows [permissionMessage] saying where to
 /// turn access back on; a device with no speech engine at all hides it
-/// (ticket 104, Finding 86-005). While listening the button fills
+/// (ticket 104, Finding 86-005). The message names the app as the device
+/// lists it and floats above the composer, which stays tappable while it
+/// shows (ticket 141, Finding 120-005). While listening the button fills
 /// electrolyte; tapping again stops.
 class VanaMicButton extends StatefulWidget {
   const VanaMicButton({
@@ -26,6 +29,7 @@ class VanaMicButton extends StatefulWidget {
     required this.tooltip,
     required this.listeningTooltip,
     required this.permissionMessage,
+    this.messageClearance,
     this.enabled = true,
     this.speech,
     this.size = 44,
@@ -39,8 +43,13 @@ class VanaMicButton extends StatefulWidget {
   final String listeningTooltip;
 
   /// Shown on a tap once the athlete has refused Speech Recognition or the
-  /// microphone: where in Settings to allow it.
+  /// microphone: where in Settings to allow it. Already formatted: the
+  /// caller fills in the app's display name (see [permissionMessageFor]).
   final String permissionMessage;
+
+  /// How much of the screen's bottom [permissionMessage] keeps clear: the
+  /// composer's height, so the field stays tappable while it shows.
+  final double Function()? messageClearance;
   final bool enabled;
 
   /// Injectable recogniser for tests.
@@ -50,6 +59,12 @@ class VanaMicButton extends StatefulWidget {
   /// composer pill).
   final double size;
   final bool flat;
+
+  /// The `meal_planning.mic_permission` text with `{app}` filled in: the
+  /// name the device lists the app under ("Endurance Dev" on the dev build,
+  /// "Mealvana" on prod), so the Settings path it names exists.
+  static String permissionMessageFor(String template, String appName) =>
+      ContentKeys.format(template, {'app': appName});
 
   @override
   State<VanaMicButton> createState() => _VanaMicButtonState();
@@ -114,6 +129,7 @@ class _VanaMicButtonState extends State<VanaMicButton> {
           context,
           widget.permissionMessage,
           duration: MealvanaSnackbar.longDuration,
+          bottomClearance: widget.messageClearance?.call() ?? 0,
         );
       }
       return;

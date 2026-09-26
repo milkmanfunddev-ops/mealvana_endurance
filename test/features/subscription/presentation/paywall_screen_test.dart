@@ -265,10 +265,13 @@ void _expectMessageClearsThePlans(WidgetTester tester) {
   );
   final plans = tester.getRect(find.byKey(const ValueKey('paywall.plans')));
   expect(message.bottom, lessThanOrEqualTo(plans.top));
-  expect(
-    find.byKey(const ValueKey('paywall.continue_button')).hitTestable(),
-    findsOneWidget,
-  );
+  final continueButton = find.byKey(const ValueKey('paywall.continue_button'));
+  expect(continueButton.hitTestable(), findsOneWidget);
+  // 118-006: the message's whole box, its semantics box, ends above the
+  // plans too, so VoiceOver touch on Continue or a plan reads those.
+  final box = tester.getRect(find.byType(SnackBar));
+  expect(box.bottom, lessThanOrEqualTo(plans.top));
+  expect(box.contains(tester.getCenter(continueButton)), isFalse);
 }
 
 Future<void> _openMenu(WidgetTester tester) async {

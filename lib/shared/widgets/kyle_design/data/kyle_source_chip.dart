@@ -20,11 +20,7 @@ import 'package:mealvana_endurance/theme/kyle_design/app_text_styles.dart';
 /// the tap-to-use affordance are likewise single widgets here. Proposed
 /// spec stub: `spec/design/components/source-chip.md`.
 class KyleSourceChip extends StatelessWidget {
-  const KyleSourceChip({
-    super.key,
-    required this.source,
-    this.value,
-  });
+  const KyleSourceChip({super.key, required this.source, this.value});
 
   /// Source display name ('Manual', 'TrainingPeaks', 'Garmin',
   /// 'Final Surge'). 'Manual' renders cream; every provider renders
@@ -109,23 +105,32 @@ class KyleTapToUseChip extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    return GestureDetector(
-      onTap: onTap,
-      child: Container(
-        padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 4),
-        decoration: BoxDecoration(
-          color: Colors.transparent,
-          borderRadius: BorderRadius.circular(100),
-          border: Border.all(color: AppColors.electrolyte),
-        ),
-        child: Text(
-          '$source · $value — tap to use',
-          style: const TextStyle(
-            fontFamily: AppTextStyles.apercu,
-            fontSize: 12,
-            fontStyle: FontStyle.italic,
-            fontWeight: FontWeight.w600,
-            color: AppColors.electrolyte,
+    final label = '$source · $value — tap to use';
+    // A button to a screen reader (119-006: it read as static text).
+    return Semantics(
+      container: true,
+      button: true,
+      label: label,
+      child: GestureDetector(
+        onTap: onTap,
+        child: ExcludeSemantics(
+          child: Container(
+            padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 4),
+            decoration: BoxDecoration(
+              color: Colors.transparent,
+              borderRadius: BorderRadius.circular(100),
+              border: Border.all(color: AppColors.electrolyte),
+            ),
+            child: Text(
+              label,
+              style: const TextStyle(
+                fontFamily: AppTextStyles.apercu,
+                fontSize: 12,
+                fontStyle: FontStyle.italic,
+                fontWeight: FontWeight.w600,
+                color: AppColors.electrolyte,
+              ),
+            ),
           ),
         ),
       ),
@@ -162,10 +167,12 @@ class KyleSourceProvenanceRow extends StatelessWidget {
       return const SizedBox.shrink();
     }
 
-    final conflict = manualValue != null &&
+    final conflict =
+        manualValue != null &&
         providerValue != null &&
         manualValue != providerValue;
-    final providerSourced = providerValue != null &&
+    final providerSourced =
+        providerValue != null &&
         (manualValue == null || manualValue == providerValue);
 
     return Wrap(
@@ -189,4 +196,3 @@ class KyleSourceProvenanceRow extends StatelessWidget {
     );
   }
 }
-

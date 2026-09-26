@@ -1187,6 +1187,13 @@ class ContentKeys {
   static const String barcodeScannerEnterSubmit =
       'barcode_scanner.enter_submit';
 
+  // Learn (testing-wave 141: 117-006 Notify Me answers, 117-008 offline)
+  static const String learnNotifyMe = 'learn.notify_me';
+  static const String learnNotifyMeNoted = 'learn.notify_me_noted';
+  static const String learnNotifyMeConfirm = 'learn.notify_me_confirm';
+  static const String learnOfflineMessage = 'learn.offline_message';
+  static const String learnRetry = 'learn.retry';
+
   /// Interpolates `{name}` placeholders in a content value:
   /// `format('Give me {n} seconds', {'n': 30})`.
   static String format(String value, Map<String, Object?> params) {
