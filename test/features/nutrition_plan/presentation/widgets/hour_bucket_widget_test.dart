@@ -100,6 +100,55 @@ void main() {
       },
     );
 
+    testWidgets('the hour line counts its share of the sip-throughout items '
+        '(Finding 116-005)', (tester) async {
+      final gel = FoodItemData(
+        id: 'gel-1',
+        name: 'Energy Gel',
+        quantity: '1 gel',
+        timingCategory: TimingCategory.quickConsume,
+        nutritionalInfo: const NutritionalInfo(
+          calories: 100,
+          carbs: 25,
+          sodium: 100,
+        ),
+      );
+
+      await tester.pumpWidget(
+        MaterialApp(
+          home: Scaffold(
+            body: HourBucketWidget(
+              hourIndex: 0,
+              slotCount: 4,
+              assignments: const [
+                TimeSlotAssignment(
+                  foodItemId: 'gel-1',
+                  timeSlot: TimeSlot(hourIndex: 0, slotIndex: 1),
+                  adjustedQuantity: 1.0,
+                  timingCategory: TimingCategory.quickConsume,
+                ),
+              ],
+              foodMap: {gel.id: gel},
+              // Half of a 67 g / 600 mg sports drink sipped over two hours.
+              sipCarbsG: 33.5,
+              sipSodiumMg: 300,
+              sectionColor: AppColors.orange,
+              category: 'during_run',
+              useImperial: true,
+              activityType: ActivityType.running,
+              onSwapFood: (_, __, ___) {},
+              onDeleteFood: (_, __) {},
+              onUpdateQuantity: (_, __, ___) {},
+              onMoveFoodToTimeSlot: (_, __, ___, ____) {},
+            ),
+          ),
+        ),
+      );
+
+      expect(find.textContaining('59g carbs'), findsOneWidget);
+      expect(find.textContaining('400mg sodium'), findsOneWidget);
+    });
+
     testWidgets(
       'uses timingCategory sipThroughout as backward-compatible signal',
       (tester) async {

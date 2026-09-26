@@ -8,6 +8,35 @@ import '../domain/unassigned_tray_item.dart';
 /// is always derived (summary qty − assigned qty), never stored.
 class ByHourSyncService {
   /// Parse the leading numeric quantity from a food's quantity string.
+  /// The share of the sip-throughout items (hourIndex -1) that lands in
+  /// EACH hour: every sip item's carbs and sodium, scaled to its assigned
+  /// quantity, spread evenly over [totalHours]. The per-hour lines add this
+  /// to the hour's own placements, so Hour 1 no longer reads 0 g while the
+  /// drink above it carries 67 g across both hours (Finding 116-005).
+  static ({double carbsG, double sodiumMg}) sipShareForHour({
+    required List<FoodItemData> summaryFoods,
+    required ByHourData byHourData,
+  }) {
+    final hours = byHourData.totalHours;
+    if (hours <= 0) return (carbsG: 0, sodiumMg: 0);
+    final foodMap = {for (final f in summaryFoods) f.id: f};
+    var carbs = 0.0;
+    var sodium = 0.0;
+    for (final a in byHourData.globalSipAssignments) {
+      final food = foodMap[a.foodItemId];
+      final info = food?.nutritionalInfo;
+      if (food == null || info == null) continue;
+      final scale = a.adjustedQuantity == null
+          ? 1.0
+          : (parseQuantity(food) > 0
+                ? a.adjustedQuantity! / parseQuantity(food)
+                : 1.0);
+      carbs += (info.carbs ?? 0) * scale;
+      sodium += (info.sodium ?? 0) * scale;
+    }
+    return (carbsG: carbs / hours, sodiumMg: sodium / hours);
+  }
+
   static double parseQuantity(FoodItemData food) {
     final match = RegExp(r'^([\d.]+)').firstMatch(food.quantity);
     if (match != null) {

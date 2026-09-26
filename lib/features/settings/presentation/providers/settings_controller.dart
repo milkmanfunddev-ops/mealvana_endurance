@@ -1,3 +1,4 @@
+import 'package:flutter/foundation.dart' show visibleForTesting;
 import 'dart:async';
 import 'package:mealvana_endurance/shared/database/database_provider.dart';
 import 'package:riverpod_annotation/riverpod_annotation.dart';
@@ -5,7 +6,12 @@ import '../../../integrations/presentation/providers/athlete_zones_provider.dart
 import 'package:supabase_flutter/supabase_flutter.dart' show HttpMethod;
 import '../../../../shared/services/app_external_deps.dart';
 import '../../../../shared/services/logging_service.dart';
+import '../../../../shared/domain/activity_type.dart';
+import '../../../../shared/providers/user_id_provider.dart';
 import '../../../activities/data/activities_repository.dart';
+import '../../../activities/domain/activity.dart';
+import '../../../nutrition_plan/application/resolved_during_target_resolver.dart';
+import '../../../nutrition_plan/data/macro_repository.dart';
 import '../../../auth/application/supabase_auth_service.dart';
 import '../../../auth/data/user_repository.dart';
 import '../../../auth/domain/user_preferences.dart';
@@ -594,6 +600,19 @@ class SettingsController extends _$SettingsController {
 
       await userRepository.updateUserProfile(updatedProfile);
 
+      // A during rate that just left the settings leaves its stored plans
+      // behind (Finding 116-003): flag them so they re-plan without it.
+      final removed = removedDuringRates(
+        existingProfile.nutritionTargetOverrides,
+        overrides,
+      );
+      if (removed.isNotEmpty && ref.mounted) {
+        await _flagPlansBuiltOnRemovedOverrides(
+          removed,
+          deviceId: existingProfile.deviceId,
+        );
+      }
+
       // Guard against the notifier being disposed during the async gap above.
       if (ref.mounted) {
         ref.invalidate(currentUserProvider);
@@ -605,6 +624,108 @@ class SettingsController extends _$SettingsController {
         errorMessage: null,
       );
     });
+  }
+
+  /// The during carb rates (g/h, by sport) present in [before] and gone or
+  /// changed in [after]. A stored plan built on one of these is stale.
+  @visibleForTesting
+  static Map<ActivityType, double> removedDuringRates(
+    NutritionTargetOverrides? before,
+    NutritionTargetOverrides? after,
+  ) {
+    final removed = <ActivityType, double>{};
+    for (final sport in const [
+      ActivityType.running,
+      ActivityType.cycling,
+      ActivityType.swimming,
+    ]) {
+      final was = before?.getDuring(sport)?.carbRateGPerH;
+      if (was == null || was <= 0) continue;
+      final now = after?.getDuring(sport)?.carbRateGPerH;
+      final kept =
+          now != null &&
+          (now - was).abs() <=
+              ResolvedDuringTargetResolver.defaultToleranceGPerH;
+      if (!kept) removed[sport] = was;
+    }
+    return removed;
+  }
+
+  /// Marks every not-yet-done activity whose stored plan carries a removed
+  /// override rate `needs_nutrition_refresh`, so the Activity detail shows
+  /// its stale-plan notice and the next regeneration plans without the
+  /// override. Without this the plan kept 50.4 g/h and the screen showed
+  /// 92 g below its band with nothing explaining why (Finding 116-003).
+  ///
+  /// Runs after the profile save and never fails it: a miss here leaves a
+  /// stale plan, which the athlete can still regenerate by hand. Running it
+  /// twice (two saves, or a save after a refresh) sets the same flag on the
+  /// same rows; the flag is cleared only by a regeneration.
+  Future<void> _flagPlansBuiltOnRemovedOverrides(
+    Map<ActivityType, double> removed, {
+    required String deviceId,
+  }) async {
+    final logger = ref.read(appLoggerProvider);
+    try {
+      final userId = await ref.read(userIdProvider.future);
+      final activitiesRepo = ref.read(activitiesRepositoryProvider);
+      final macroRepo = ref.read(macroRepositoryProvider);
+      final now = DateTime.now();
+      final today = DateTime(now.year, now.month, now.day);
+      final candidates = await activitiesRepo.getActivitiesForDateRange(
+        userId,
+        today,
+        today.add(const Duration(days: 730)),
+      );
+      var flagged = 0;
+      for (final a in candidates) {
+        if (a.status != ActivityStatus.planned) continue;
+        if (a.nutritionPlanData == null || a.needsNutritionRefresh) continue;
+        final was = removed[a.activityType];
+        if (was == null) continue;
+        final targets = await macroRepo.getCachedMacroTargetsForActivity(
+          a.id,
+          expectedActivityType: a.activityType,
+        );
+        final planRate =
+            targets?.duringRun.carbRateGPerH ??
+            _duringRateFromPlanData(a.nutritionPlanData);
+        if (planRate == null) continue;
+        if ((planRate - was).abs() >
+            ResolvedDuringTargetResolver.defaultToleranceGPerH) {
+          continue;
+        }
+        await activitiesRepo.updateActivity(
+          deviceId: deviceId,
+          activity: a.copyWith(needsNutritionRefresh: true),
+        );
+        flagged++;
+      }
+      logger.info(
+        'Flagged plans built on a removed during override',
+        context: 'SETTINGS',
+        data: {'removed': removed.toString(), 'flagged': flagged},
+      );
+    } catch (e, stackTrace) {
+      logger.warning(
+        'Could not flag plans built on a removed during override',
+        context: 'SETTINGS',
+        error: e,
+        stackTrace: stackTrace,
+      );
+    }
+  }
+
+  /// The stored plan's during carb rate, read from the plan JSON the way
+  /// ActivityDetailController reads it (`detailedMacroTargets.duringRun`).
+  static double? _duringRateFromPlanData(Map<String, dynamic>? planData) {
+    final detailed =
+        planData?['detailedMacroTargets'] ?? planData?['macroTargetsDetailed'];
+    if (detailed is! Map) return null;
+    final during = detailed['duringRun'];
+    if (during is! Map) return null;
+    final rate = during['carbRateGPerH'];
+    return rate is num ? rate.toDouble() : null;
   }
 
   /// Save profile changes (both local and Supabase)

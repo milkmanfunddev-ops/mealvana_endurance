@@ -1,3 +1,4 @@
+import '../../../weather/domain/forecast_window.dart';
 import 'dart:async';
 import 'package:flutter/material.dart';
 import 'package:riverpod_annotation/riverpod_annotation.dart';
@@ -336,6 +337,9 @@ class CyclingInputController extends _$CyclingInputController {
   /// Fetch location if this controller needs it and doesn't already have it.
   /// Called when this sport tab becomes active or the screen initializes.
   Future<void> fetchLocationIfNeeded() async {
+    // Only an upcoming activity inside the forecast window asks for
+    // location (Finding 100-004); a past or far-off date never does.
+    if (!ForecastWindow.covers(state.selectedDate)) return;
     if (!state.isLoadingLocation &&
         !state.isLoadingWeather &&
         state.location == null) {
@@ -432,9 +436,7 @@ class CyclingInputController extends _$CyclingInputController {
       // CP-6: the reset restores the AUTO SOURCE, not a flat constant — so the
       // provenance follows the value it restored. This is the second path that
       // seeds the CP-1 placeholders with no fetch failure anywhere (CP-5).
-      temperatureC: hasForecast
-          ? forecast.temperatureC
-          : _kDefaultTemperatureC,
+      temperatureC: hasForecast ? forecast.temperatureC : _kDefaultTemperatureC,
       humidityPct: hasForecast
           ? forecast.humidityPct.toDouble()
           : (isIndoor ? _kIndoorHumidityPct : _kDefaultHumidityPct),
@@ -657,6 +659,11 @@ class CyclingInputController extends _$CyclingInputController {
     // clamp), so a schedule change re-derives it unless manually set.
     _autoUpdateFuelingWindow();
 
+    // A date moved into the forecast window asks for location now; until
+    // then no prompt was spent (Finding 100-004).
+    if (state.location == null && ForecastWindow.covers(date)) {
+      fetchLocationIfNeeded();
+    }
     // Auto-fetch weather when date/time changes for outdoor rides if location is set
     // or if weather was previously fetched successfully (via GPS fallback).
     if (!isIndoor &&
