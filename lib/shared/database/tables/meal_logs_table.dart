@@ -59,6 +59,13 @@ class MealLogsTable extends Table {
 
   TextColumn get notes => text().nullable()();
 
+  /// How many servings of the meal this row holds (1 unless a quick log or a
+  /// Recent re-log was made at another count). Recent divides the row's
+  /// items and totals by it, so its rows and previews always show the
+  /// per-serving base and 1 serving means the original amount (112-012).
+  /// Mirrors Supabase `meal_logs.servings` (migration 20260926163500).
+  RealColumn get servings => real().withDefault(const Constant(1.0))();
+
   /// When the meal was eaten (user-adjustable), distinct from createdAt.
   DateTimeColumn get eatenAt => dateTime().nullable().named('eaten_at')();
 

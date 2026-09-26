@@ -34,6 +34,7 @@ MealLogEntry storedRow({String? slot}) => MealLogEntry(
   carbsG: 58,
   proteinG: 11,
   fatG: 6,
+  servings: 1,
   isDeleted: false,
   createdAt: DateTime.utc(2026, 9, 26, 12),
   updatedAt: DateTime.utc(2026, 9, 26, 12),

@@ -345,7 +345,15 @@ class AppDatabase extends _$AppDatabase {
   /// (testing-wave ticket 99, final-surge-completion.PROPOSED.md). Nullable;
   /// null reads as manual. Supabase app_config.current_schema_version must
   /// be bumped to 23 when the build carrying this ships.
-  int get schemaVersion => 23;
+  ///
+  /// v24: `meal_logs.servings` (REAL NOT NULL DEFAULT 1.0), the local mirror
+  /// of Supabase migration 20260926163500. A quick log or Recent re-log made
+  /// at 1.5 or 2 servings records the count, so Recent can show and re-log
+  /// the per-serving base instead of making the doubled row its new 1
+  /// serving (testing-wave 112-012). Supabase app_config
+  /// .current_schema_version must be bumped to 24 when the build carrying
+  /// this ships.
+  int get schemaVersion => 24;
 
   /// Ensure sync tracking columns exist for user-authored tables.
   /// Uses ALTER TABLE IF NOT EXISTS which is supported in modern SQLite (3.35+).
@@ -735,6 +743,16 @@ class AppDatabase extends _$AppDatabase {
         // user_version replays.
         if (from < 23) {
           await addColumn('activities', 'completion_type', 'TEXT');
+        }
+
+        // v24: the serving count a meal log was made at (112-012). Existing
+        // rows were logged at one serving, which the default records.
+        if (from < 24) {
+          await addColumn(
+            'meal_logs',
+            'servings',
+            'REAL NOT NULL DEFAULT 1.0',
+          );
         }
       },
 

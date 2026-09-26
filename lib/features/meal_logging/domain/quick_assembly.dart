@@ -4,6 +4,11 @@ import 'meal_component.dart';
 ///
 /// Macros are representative estimates for common endurance-athlete snacks.
 /// All calorie values satisfy: calories ≈ carbG*4 + proteinG*4 + fatG*9.
+/// Sodium comes from the matching single ingredient in
+/// `common_ingredients.dart`, scaled to the item's portion where the two
+/// differ (Eggs 2 large = 2 x Egg; toast 2 slices = 2 x Whole wheat bread).
+/// An item with no matching ingredient keeps sodium null: unknown, not 0
+/// (testing-wave 112-014).
 class QuickAssembly {
   const QuickAssembly({
     required this.name,
@@ -54,6 +59,7 @@ const List<QuickAssembly> kQuickAssemblies = [
         carbG: 27,
         proteinG: 1.3,
         fatG: 0.4,
+        sodiumMg: 1,
       ),
       MealComponent(
         name: 'Peanut butter',
@@ -62,6 +68,7 @@ const List<QuickAssembly> kQuickAssemblies = [
         carbG: 3.2,
         proteinG: 4.0,
         fatG: 8.0,
+        sodiumMg: 75,
       ),
     ],
   ),
@@ -76,6 +83,7 @@ const List<QuickAssembly> kQuickAssemblies = [
         carbG: 6.0,
         proteinG: 17.0,
         fatG: 0.7,
+        sodiumMg: 55,
       ),
       MealComponent(
         name: 'Honey',
@@ -84,6 +92,7 @@ const List<QuickAssembly> kQuickAssemblies = [
         carbG: 17.0,
         proteinG: 0.1,
         fatG: 0.0,
+        sodiumMg: 1,
       ),
     ],
   ),
@@ -106,6 +115,7 @@ const List<QuickAssembly> kQuickAssemblies = [
         carbG: 3.0,
         proteinG: 3.4,
         fatG: 9.0,
+        sodiumMg: 2,
       ),
     ],
   ),
@@ -120,6 +130,7 @@ const List<QuickAssembly> kQuickAssemblies = [
         carbG: 27.0,
         proteinG: 5.0,
         fatG: 2.5,
+        sodiumMg: 0,
       ),
       MealComponent(
         name: 'Raisins',
@@ -142,6 +153,7 @@ const List<QuickAssembly> kQuickAssemblies = [
         carbG: 1.2,
         proteinG: 12.0,
         fatG: 10.0,
+        sodiumMg: 142,
       ),
       MealComponent(
         name: 'Whole-grain toast',
@@ -150,6 +162,7 @@ const List<QuickAssembly> kQuickAssemblies = [
         carbG: 26.0,
         proteinG: 6.0,
         fatG: 2.0,
+        sodiumMg: 288,
       ),
     ],
   ),
@@ -164,6 +177,7 @@ const List<QuickAssembly> kQuickAssemblies = [
         carbG: 6.0,
         proteinG: 14.0,
         fatG: 2.5,
+        sodiumMg: 350,
       ),
       MealComponent(
         name: 'Mixed berries',
@@ -186,6 +200,7 @@ const List<QuickAssembly> kQuickAssemblies = [
         carbG: 4.0,
         proteinG: 25.0,
         fatG: 2.0,
+        sodiumMg: 60,
       ),
       MealComponent(
         name: 'Banana',
@@ -194,6 +209,7 @@ const List<QuickAssembly> kQuickAssemblies = [
         carbG: 27.0,
         proteinG: 1.3,
         fatG: 0.4,
+        sodiumMg: 1,
       ),
     ],
   ),
@@ -222,6 +238,7 @@ const List<QuickAssembly> kQuickAssemblies = [
         carbG: 25.0,
         proteinG: 0.5,
         fatG: 0.3,
+        sodiumMg: 2,
       ),
       MealComponent(
         name: 'Cheddar cheese',
@@ -230,6 +247,7 @@ const List<QuickAssembly> kQuickAssemblies = [
         carbG: 0.4,
         proteinG: 7.0,
         fatG: 9.0,
+        sodiumMg: 174,
       ),
     ],
   ),
