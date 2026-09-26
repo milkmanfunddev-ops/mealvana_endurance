@@ -29,8 +29,22 @@ Each entry: what went wrong or cost time, where it was seen, and the suggested f
   delete cannot reach. Suggested fix: a lead-only `scripts/testing-wave/` helper that deletes an
   unconfirmed `lee+e2e-*` auth user on dev by id, run at the close, so leftovers do not pile up.
 
+- **#86 one run of a pair saved no edge extract (wave 36).** 118 saved `edge-requests.txt` for
+  the whole window; 119 saved none. The lead read 118's, which covered both runs (one 502, filed
+  as 118-016). Suggested fix: in a paired wave the lead pulls one extract for the wave's window at
+  the close instead of relying on each run's.
+- **#87 a run's account delete removed the state the next ticket expected (wave 36).** 118's
+  ticket said its DEVCOACH30 redeem would leave a pending pairing for 122's 11-009; deleting 118's
+  account (runbook step 9) removed the pairing. The lead added a line to 122's Setup: make its
+  own pairing. Suggested fix: never plan one ticket's start state on another run's throwaway
+  account, since step 9 deletes it.
+
 ## Done
 
+- **#85 an agent's `SELECT *` printed live integration tokens (wave 36).** 119 read test@test.com's
+  `integrations` row with a star and the TrainingPeaks, V.O2, Garmin and Final Surge tokens landed
+  in its transcript (not on disk). Done 09-26 (wave 36 lead): the runbook's Dev database line says
+  to name columns, never `SELECT *`.
 - **#83 a prompt named a control that is not on screen (wave 34).** The lead told 112 to make its
   throwaway saved meal with the meal row's "save as favorite" star (`meal_log_row.dart`), found by
   grep. That row is not mounted on any screen (112-008); the agent found Build a meal's "Also save

@@ -1,7 +1,7 @@
 # 31-007 · Profile & Preferences: edit the Email field and save
 
 - kind: followup-test
-- status: triaged
+- status: closed
 - ticket: 31
 - run: w11-20260924T1648Z
 - screen: Profile & Preferences
@@ -27,3 +27,5 @@ Not run. The field is editable and the save writes public.users.email directly (
 
 Picked for retest ticket 93 (Lee, 2026-09-25: every open follow-up test folded into the planned runs, cap of ten lifted for this pass).
 Moved to retest ticket 119 when 93 was split (Lee, 2026-09-25).
+
+Run by retest ticket 119 (run w36-20260926T0031Z, build 72d3723e): fail, carried by new bug Finding 119-002 (the saved address changes public.users.email but not the login, and the next sign-in puts the old one back).

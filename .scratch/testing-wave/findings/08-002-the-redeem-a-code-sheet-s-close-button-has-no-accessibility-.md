@@ -1,7 +1,7 @@
 # 08-002 · The Redeem a code sheet's close button has no accessibility label, so VoiceOver reads it as button
 
 - kind: bug
-- status: triaged
+- status: closed
 - ticket: 08
 - run: w7-20260924T1216Z
 - screen: Redeem code sheet (from Subscription)
@@ -28,3 +28,5 @@ The button at {{338, 599}, {40, 40}} has `AXLabel: null`: the tree lists the tit
 **Triage.**
 Fix ticket 51 (Lee, 2026-09-25). Closed by the retest after it merges.
 Moved to retest ticket 118 when 93 was split (Lee, 2026-09-25).
+
+Run by retest ticket 118 (run w36-20260926T0031Z, build 72d3723e): pass; the Redeem sheet's close button reads "Close" from the paywall menu and from Subscription.

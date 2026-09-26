@@ -1,7 +1,7 @@
 # 31-002 · The water-bottle checkbox on Profile & Preferences tells accessibility nothing about its checked state
 
 - kind: bug
-- status: triaged
+- status: closed
 - ticket: 31
 - run: w11-20260924T1648Z
 - screen: Profile & Preferences
@@ -27,3 +27,5 @@ It is exposed only as StaticText "I run with a water bottle | This helps us esti
 **Triage.**
 Fix ticket 51 (Lee, 2026-09-25). Closed by the retest after it merges.
 Moved to retest ticket 119 when 93 was split (Lee, 2026-09-25).
+
+Run by retest ticket 119 (run w36-20260926T0031Z, build 72d3723e): pass; the water bottle is a CheckBox with value 0/1.

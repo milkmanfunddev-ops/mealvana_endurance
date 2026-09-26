@@ -150,6 +150,8 @@ Read, never write, unless your ticket's criteria name the write (a Grant, for ex
   RevenueCat MCP.
 - Dev database: `SELECT` statements only, through the Management API `database/query` on the dev
   project, as `docs/deployment/supabase-deploy-playbook.md` describes.
+  Name the columns, never `SELECT *`: `integrations` holds live access and refresh tokens, and
+  a star prints them into your transcript (#85).
 - Edge-function logs for the functions the scenario touched: `scripts/edge_logs.sh` (`-s
   function_edge_logs` for request lines). It exits 1 on any answer that is not rows, so "(no rows
   in window)" really means none.

@@ -1,7 +1,7 @@
 # 28-006 · The barcode button in the Log search bar has no accessibility label
 
 - kind: bug
-- status: triaged
+- status: closed
 - ticket: 28
 - run: w15-20260924T2040Z
 - screen: Log — Sep 23 (search bar); Build a Meal → Add food (search bar)
@@ -28,3 +28,5 @@ The tree lists the search TextField, the tabs and the other buttons, but no elem
 **Triage.**
 Fix ticket 51 (Lee, 2026-09-25). Closed by the retest after it merges.
 Moved to retest ticket 118 when 93 was split (Lee, 2026-09-25).
+
+Run by retest ticket 118 (run w36-20260926T0031Z, build 72d3723e): pass; Scan barcode and Search are labelled in both search bars, and the scanner's buttons too.

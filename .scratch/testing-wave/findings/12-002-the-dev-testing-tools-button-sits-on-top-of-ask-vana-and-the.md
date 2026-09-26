@@ -1,7 +1,7 @@
 # 12-002 · The dev testing-tools button sits on top of Ask Vana and the Vana Send button: tapping Ask Vana opened UI settings
 
 - kind: bug
-- status: triaged
+- status: closed
 - ticket: 12
 - run: w4-20260924T0417Z
 - screen: Timeline
@@ -31,3 +31,5 @@ The blue "Open testing tools" button (344,782 48×48 pt) overlaps Ask Vana (336,
 
 Fix ticket 68 (Lee, 2026-09-25). Closed by the retest after it merges.
 Moved to retest ticket 118 when 93 was split (Lee, 2026-09-25).
+
+Run by retest ticket 118 (run w36-20260926T0031Z, build 72d3723e): fail, carried by new bug Finding 118-001 (the testing-tools button now covers What's New "Got it", Welcome's Build My Plan, the paywall's Continue and Redeem); Ask Vana and Send pass.

@@ -1,7 +1,7 @@
 # 23-001 · Describe tab: the keyboard covers the Analyze button, only a thin strip of it shows above the keys
 
 - kind: bug
-- status: triaged
+- status: closed
 - ticket: 23
 - run: w13-20260924T1903Z
 - screen: Log a Meal (Describe)
@@ -24,3 +24,5 @@ The keyboard covers Analyze. The element list gives it a 14-pt tall visible fram
 **Triage.**
 Fix ticket 52 (Lee, 2026-09-25). Closed by the retest after it merges.
 Moved to retest ticket 118 when 93 was split (Lee, 2026-09-25).
+
+Run by retest ticket 118 (run w36-20260926T0031Z, build 72d3723e): pass; Analyze stays visible above the keyboard with 3 and 6 lines typed.

@@ -1,6 +1,6 @@
 # 21-004 · TrainingPeaks token refresh answers 400 and V.O2 asks to reconnect on every login of the dev test account
 - kind: bug
-- status: triaged
+- status: closed
 - ticket: 21
 - run: w17-20260924T2233Z
 - screen: none
@@ -26,3 +26,5 @@ The console shows, at 17:35:03-04 local (22:35 UTC): "Token refresh failed: Trai
 
 Fix ticket 64 (Lee, 2026-09-25). Closed by the retest after it merges.
 Moved to retest ticket 118 when 93 was split (Lee, 2026-09-25).
+
+Run by retest ticket 118 (run w36-20260926T0031Z, build 72d3723e): pass; the refused refresh is stored as requires_reauth and Connected Apps shows Reconnect for TrainingPeaks and V.O2. Announcing it outside Connected Apps is idea 118-007.

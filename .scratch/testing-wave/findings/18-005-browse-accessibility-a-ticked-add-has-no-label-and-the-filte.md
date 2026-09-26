@@ -1,7 +1,7 @@
 # 18-005 · Browse accessibility: a ticked Add has no label and the filter menu marks the active filter by colour only
 
 - kind: bug
-- status: triaged
+- status: closed
 - ticket: 18
 - run: w16-20260924T2100Z
 - screen: Browse meals
@@ -28,3 +28,5 @@ After the tick the button has no accessibility element at all: the card lists "A
 **Triage.**
 Fix ticket 51 (Lee, 2026-09-25). Closed by the retest after it merges.
 Moved to retest ticket 118 when 93 was split (Lee, 2026-09-25).
+
+Run by retest ticket 118 (run w36-20260926T0031Z, build 72d3723e): pass; a ticked "+" is a button labelled "In your plan" and active filters report Selected.

@@ -1,7 +1,7 @@
 # 11-005 · The success message after a redeem covers the paywall's Continue button
 
 - kind: bug
-- status: triaged
+- status: closed
 - ticket: 11
 - run: w5-20260924T0840Z
 - screen: Paywall
@@ -27,3 +27,5 @@ The green success message ("Code redeemed. Your coach will see your request to p
 **Triage.**
 Fix ticket 52 (Lee, 2026-09-25). Closed by the retest after it merges.
 Moved to retest ticket 118 when 93 was split (Lee, 2026-09-25).
+
+Run by retest ticket 118 (run w36-20260926T0031Z, build 72d3723e): pass; the message sits above the plans and Continue takes a tap while it shows. Its accessibility frame still covers Continue for VoiceOver: new bug Finding 118-006.

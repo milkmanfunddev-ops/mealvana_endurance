@@ -1,7 +1,7 @@
 # 31-005 · Profile & Preferences: leave with unsaved changes by the back arrow and by swipe-back
 
 - kind: followup-test
-- status: triaged
+- status: closed
 - ticket: 31
 - run: w11-20260924T1648Z
 - screen: Profile & Preferences
@@ -27,3 +27,5 @@ Not run.
 
 Picked for retest ticket 93 (Lee, 2026-09-25: every open follow-up test folded into the planned runs, cap of ten lifted for this pass).
 Moved to retest ticket 119 when 93 was split (Lee, 2026-09-25).
+
+Run by retest ticket 119 (run w36-20260926T0031Z, build 72d3723e): pass; back arrow, bottom arrow and swipe-back drop the change and write nothing. Asking first is idea 119-010.
