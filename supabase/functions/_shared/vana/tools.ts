@@ -6,7 +6,7 @@ import type { VanaPart, MealRef, MealContext, MealType, MealPlan, PlanMeal, Plan
 import { today, addDays, dayKey, dayName, weekStartFor } from './env.ts';
 import { pendingDebrief } from './opener.ts';
 import type { VanaCtx } from './env.ts';
-import { searchMeals, getMeal, rowToMealRef } from './meals.ts';
+import { searchMeals, getMeal } from './meals.ts';
 import { clampChips } from './schemas.ts';
 import { embedTexts, vec } from './embeddings.ts';
 import * as plan from './plan.ts';
@@ -188,7 +188,9 @@ export async function diagnoseStaples(v: VanaCtx): Promise<Extract<VanaPart, { k
     const t = top[i]; let ref: MealRef | null = null;
     if (t.row.saved_meal_id) ref = await getMeal(v, 'saved', t.row.saved_meal_id);
     if (!ref && vecs[i]) { const { data: hits } = await d.rpc('match_library', { p_embedding: vec(vecs[i]), p_meal_type: t.row.slot ?? null, p_limit: 1 }); const h = hits?.[0]; if (h && h.score >= 0.82) ref = await getMeal(v, 'library', h.id); }
-    if (!ref) ref = rowToMealRef({ source: 'saved', id: `log:${t.row.name}`, name: t.row.name, meal_type: t.row.slot ?? 'dinner', contexts: [], batch: false, kcal: t.row.calories, carbs_g: t.row.carbs_g, protein_g: t.row.protein_g, fat_g: t.row.fat_g, why: 'from your log', attribution: 'your log', ingredients: ((t.row.items ?? []) as { name?: string }[]).map((x) => x.name ?? '').filter(Boolean).join(', '), score: 1 });
+    // A log row that matches neither a saved meal nor the library has no id any tool can add or open: it is not a
+    // staple the athlete can tap, so it is left out (2026-09-26: a fabricated `log:` id pushed a dead detail route).
+    if (!ref) continue;
     meals.push({ ...ref, timesLogged: t.n, ticked: true });
   }
   for (const s of saved ?? []) {

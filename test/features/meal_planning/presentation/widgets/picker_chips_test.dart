@@ -114,6 +114,7 @@ void main() {
     );
     // The primary chip is present but disabled (opacity wrap, no gesture).
     await tester.tap(find.text('I like these'), warnIfMissed: false);
+    await tester.ensureVisible(find.text('Something else…'));
     await tester.tap(find.text('Something else…'), warnIfMissed: false);
     expect(picked, isEmpty);
     expect(somethingElse, 1);
@@ -196,6 +197,7 @@ void main() {
         isTrue,
       );
 
+      await tester.ensureVisible(find.text('Browse meals'));
       await tester.tap(find.text('Browse meals'));
       expect(opened, 1);
     });
@@ -210,6 +212,7 @@ void main() {
         enabled: false,
         onBrowse: () => opened++,
       );
+      await tester.ensureVisible(find.text('Browse meals'));
       await tester.tap(find.text('Browse meals'));
       expect(opened, 1);
     });
@@ -218,6 +221,7 @@ void main() {
       await pumpChips(tester, covered: 0, of: 14, hasMeals: false);
       expect(find.text('Browse meals'), findsOneWidget);
       // No gesture behind it — tapping does nothing and does not throw.
+      await tester.ensureVisible(find.text('Browse meals'));
       await tester.tap(find.text('Browse meals'), warnIfMissed: false);
     });
   });

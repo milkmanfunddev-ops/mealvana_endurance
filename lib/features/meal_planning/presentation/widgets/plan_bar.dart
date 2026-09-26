@@ -24,8 +24,9 @@ import 'stepper.dart';
 /// and re-minimizes on every new turn (05 §4) so Vana's reply is never hidden
 /// behind it. Minimized: "Your plan · N meals" and the Review action;
 /// expanded: a strip of tiles, each with its own × and servings stepper.
-/// An empty draft still shows, at "Your plan · 0 meals" (mp-234), with
-/// nothing to expand and nothing to review yet. Nothing here calls the model.
+/// The screen mounts it only once the draft has a meal (Lee, 2026-09-26);
+/// given none it still renders "Your plan · 0 meals" with nothing to expand
+/// and nothing to review. Nothing here calls the model.
 ///
 /// A draft another confirm archived ([onUseInstead] set; mp-241, mp-676)
 /// says the athlete confirmed a different plan for this week and this one is
@@ -241,15 +242,12 @@ class PlanBarState extends ConsumerState<PlanBar> {
                 ),
               ),
             ),
-          ] else if (!replaced && n < PlanBar.reviewAt) ...[
+          ] else if (!replaced && !empty && n < PlanBar.reviewAt) ...[
             const SizedBox(height: 4),
             Text(
-              empty
-                  ? content.getValue(ContentKeys.mpPlanBarEmpty)
-                  : ContentKeys.format(
-                      content.getValue(ContentKeys.mpPlanBarMore),
-                      {'n': PlanBar.reviewAt - n},
-                    ),
+              ContentKeys.format(content.getValue(ContentKeys.mpPlanBarMore), {
+                'n': PlanBar.reviewAt - n,
+              }),
               style: AppTextStyles.bodySmall.copyWith(color: secondary),
             ),
           ],

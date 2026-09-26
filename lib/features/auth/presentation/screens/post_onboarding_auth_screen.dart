@@ -6,6 +6,7 @@ import 'package:go_router/go_router.dart';
 import 'package:font_awesome_flutter/font_awesome_flutter.dart';
 import '../../../../shared/widgets/adaptive/adaptive.dart';
 import '../../../../shared/widgets/kyle_design/kyle_design.dart';
+import '../../../../shared/widgets/kyle_design/materials/glass.dart';
 import '../../../../shared/services/app_external_deps.dart';
 import '../../../../shared/services/logging_service.dart';
 import '../../../../shared/services/sync/sync_coordinator.dart';
@@ -931,64 +932,116 @@ class _PostOnboardingAuthScreenState
   }
 }
 
-/// Spec testimonial card: cream-5% fill, 1px teal-28% border, radius 15,
-/// 14/16 padding. Orange stars, Compadre 15 quote (uppercased for the
-/// unicase face), Apercu 11.5 cream-55% attribution. Content is the spec's,
-/// verbatim.
+/// The testimonial on a glass card (`glass` recipe, tokens §Materials):
+/// Xuan's photo in a circle beside her name, five small stars under it,
+/// and the quote in the body face. The quote reads as a sentence, not a
+/// heading (Lee, 2026-09-26: the unicase display face took the whole card).
+/// Content is the spec's, verbatim. The photo is `assets/images/xuan.jpg`
+/// when it exists; until then the disc shows her initial.
 class _TestimonialCard extends StatelessWidget {
   const _TestimonialCard();
 
+  static const _photo = AssetImage('assets/images/xuan.jpg');
+
   @override
   Widget build(BuildContext context) {
-    return Container(
+    return GlassSurface(
       key: const ValueKey('post_onboarding.testimonial'),
-      decoration: BoxDecoration(
-        color: OnbTokens.creamA(0.05),
-        borderRadius: BorderRadius.circular(OnbTokens.rCard),
-        border: Border.all(color: const Color(0x471CF9CF)), // teal 28%
-      ),
-      padding: const EdgeInsets.symmetric(vertical: 14, horizontal: 16),
-      // Spec: stars sit in a left column BESIDE the quote block.
-      child: Row(
-        crossAxisAlignment: CrossAxisAlignment.start,
-        children: [
-          const Text(
-            '★★★★★',
-            style: TextStyle(
-              fontFamily: OnbTokens.fontBody,
-              fontSize: 15,
-              color: OnbTokens.orange,
-            ),
-          ),
-          const SizedBox(width: 11),
-          Expanded(
-            child: Column(
-              crossAxisAlignment: CrossAxisAlignment.start,
+      borderRadius: BorderRadius.circular(OnbTokens.rCard),
+      child: Padding(
+        padding: const EdgeInsets.symmetric(vertical: 14, horizontal: 16),
+        child: Column(
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
+            Row(
               children: [
-                const Text(
-                  '“GETTING NUTRITION RIGHT IS HOW I FINISH MY TRAINING '
-                  'BLOCK STRONG AND TOE THE START LINE HEALTHY, FIT, '
-                  'AND READY.”',
-                  style: TextStyle(
-                    fontFamily: OnbTokens.fontLabel,
-                    fontSize: 15,
-                    height: 1.4,
-                    color: OnbTokens.cream,
+                const _XuanAvatar(image: _photo, size: 40),
+                const SizedBox(width: 12),
+                Expanded(
+                  child: Column(
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    children: [
+                      const Text(
+                        'Xuan H.',
+                        style: TextStyle(
+                          fontFamily: OnbTokens.fontDisplay,
+                          fontSize: 15,
+                          fontWeight: FontWeight.w700,
+                          color: OnbTokens.cream,
+                        ),
+                      ),
+                      Text(
+                        '6x marathoner · 2x half IM',
+                        style: TextStyle(
+                          fontFamily: OnbTokens.fontBody,
+                          fontSize: 11.5,
+                          color: OnbTokens.creamA(0.55),
+                        ),
+                      ),
+                    ],
                   ),
                 ),
-                const SizedBox(height: 7),
-                Text(
-                  'Xuan H. · 6x marathoner · 2x half IM',
-                  style: TextStyle(
-                    fontFamily: OnbTokens.fontBody,
-                    fontSize: 11.5,
-                    color: OnbTokens.creamA(0.55),
-                  ),
+                Row(
+                  mainAxisSize: MainAxisSize.min,
+                  children: [
+                    for (var i = 0; i < 5; i++)
+                      const Icon(
+                        Icons.star_rounded,
+                        size: 14,
+                        color: OnbTokens.orange,
+                      ),
+                  ],
                 ),
               ],
             ),
+            const SizedBox(height: 10),
+            Text(
+              '“Getting nutrition right is how I finish my training block '
+              'strong and toe the start line healthy, fit, and ready.”',
+              style: TextStyle(
+                fontFamily: OnbTokens.fontBody,
+                fontSize: 14,
+                height: 1.4,
+                color: OnbTokens.creamA(0.9),
+              ),
+            ),
+          ],
+        ),
+      ),
+    );
+  }
+}
+
+/// A round photo that falls back to an initial while the asset is missing.
+class _XuanAvatar extends StatelessWidget {
+  const _XuanAvatar({required this.image, required this.size});
+
+  final ImageProvider image;
+  final double size;
+
+  @override
+  Widget build(BuildContext context) {
+    return SizedBox(
+      width: size,
+      height: size,
+      child: ClipOval(
+        child: Image(
+          image: image,
+          fit: BoxFit.cover,
+          errorBuilder: (_, __, ___) => Container(
+            color: OnbTokens.orange40,
+            alignment: Alignment.center,
+            child: const Text(
+              'X',
+              style: TextStyle(
+                fontFamily: OnbTokens.fontDisplay,
+                fontSize: 18,
+                fontWeight: FontWeight.w700,
+                color: OnbTokens.cream,
+              ),
+            ),
           ),
-        ],
+        ),
       ),
     );
   }
@@ -1133,6 +1186,14 @@ class _TrialLine extends ConsumerWidget {
               {...prices, 'days': offer.freeDays},
             );
     }
-    return Text(text, style: kOnboardingSubtitleStyle);
+    // The terms of the purchase, read before the buttons: cream at nearly
+    // full strength, a size up from the login subtitle (Lee, 2026-09-26).
+    return Text(
+      text,
+      style: kOnboardingSubtitleStyle.copyWith(
+        fontSize: 15,
+        color: OnbTokens.creamA(0.9),
+      ),
+    );
   }
 }

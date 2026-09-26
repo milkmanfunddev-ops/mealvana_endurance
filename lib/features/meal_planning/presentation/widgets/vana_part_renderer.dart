@@ -174,7 +174,15 @@ class VanaPartRenderer extends ConsumerWidget {
           ],
         );
       case VanaStaplesPart p:
-        return StaplesCard(part: p, onTapMeal: callbacks.onTapMeal);
+        // "tap to add": a staple not yet in the plan is picked into it; one
+        // already there opens its detail. Nothing else is a route.
+        return StaplesCard(
+          part: p,
+          pickedIds: callbacks.pickedIds,
+          onTapMeal: (meal) => callbacks.pickedIds.contains(meal.id)
+              ? callbacks.onTapMeal(meal)
+              : callbacks.onPickMeal(meal, 1),
+        );
       case VanaRulePart p:
         return RuleChip(part: p, onAccept: () => callbacks.onAcceptRule(p));
       case VanaShoppingListPart p:

@@ -304,13 +304,17 @@ void main() {
     return read;
   }
 
-  testWidgets('a new meal-plan conversation shows "Your plan · 0 meals" '
+  // Lee, 2026-09-26: an empty draft shows no tray (supersedes mp-234).
+  testWidgets('a new meal-plan conversation shows no plan tray '
       'before any pick', (tester) async {
     await pumpNewPlan(tester);
     await settleTurn(tester);
 
     expect(chat.openers, [true], reason: 'the opener carries new_plan');
-    expect(barReads('0 meals'), findsOneWidget);
+    expect(
+      find.byKey(const ValueKey('meal_planning.plan_bar.hidden')),
+      findsOneWidget,
+    );
     // It is this conversation's (empty) draft, never this week's plan.
     expect(barReads('4 meals'), findsNothing);
 
