@@ -1,0 +1,5 @@
+Sat Sep 26 00:32:04 UTC 2026
+{"provider":"final_surge","last_sync_status":"success","last_sync_error":null,"last_sync_at":"2026-09-25 18:21:48+00","updated_at":"2026-09-25 23:21:50.256076+00"}
+{"provider":"garmin","last_sync_status":"success","last_sync_error":null,"last_sync_at":"2026-09-19 08:56:12.014+00","updated_at":"2026-09-19 08:56:12.195127+00"}
+{"provider":"training_peaks","last_sync_status":"requires_reauth","last_sync_error":"Token refresh refused. Please reconnect.","last_sync_at":"2026-09-25 18:38:06+00","updated_at":"2026-09-25 23:38:06.192881+00"}
+{"provider":"vdot","last_sync_status":"requires_reauth","last_sync_error":"Please reconnect your V.O2 account","last_sync_at":"2026-09-25 18:38:06+00","updated_at":"2026-09-25 23:38:06.677303+00"}

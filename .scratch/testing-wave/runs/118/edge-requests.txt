@@ -1,0 +1,36 @@
+[19:20:34] POST | 200 | https://vlmtsdzpnjnavdgytcmi.supabase.co/functions/v1/garmin-push
+[19:33:30] POST | 200 | https://vlmtsdzpnjnavdgytcmi.supabase.co/functions/v1/sync-all-data
+[19:33:34] POST | 200 | https://vlmtsdzpnjnavdgytcmi.supabase.co/functions/v1/calculate-daily-macros-v6
+[19:33:35] POST | 200 | https://vlmtsdzpnjnavdgytcmi.supabase.co/functions/v1/calculate-daily-macros-v6
+[19:37:11] POST | 200 | https://vlmtsdzpnjnavdgytcmi.supabase.co/functions/v1/sync-all-data
+[19:38:20] POST | 200 | https://vlmtsdzpnjnavdgytcmi.supabase.co/functions/v1/redeem-code
+[19:39:47] POST | 200 | https://vlmtsdzpnjnavdgytcmi.supabase.co/functions/v1/delete-user
+[19:40:51] POST | 200 | https://vlmtsdzpnjnavdgytcmi.supabase.co/functions/v1/sync-all-data
+[19:40:52] POST | 200 | https://vlmtsdzpnjnavdgytcmi.supabase.co/functions/v1/calculate-daily-macros-v6
+[19:42:32] POST | 502 | https://vlmtsdzpnjnavdgytcmi.supabase.co/functions/v1/garmin-backfill
+[19:43:14] POST | 200 | https://vlmtsdzpnjnavdgytcmi.supabase.co/functions/v1/vana-action
+[19:43:58] POST | 200 | https://vlmtsdzpnjnavdgytcmi.supabase.co/functions/v1/ensure-credits
+[19:43:58] POST | 200 | https://vlmtsdzpnjnavdgytcmi.supabase.co/functions/v1/ensure-credits
+[19:46:08] POST | 200 | https://vlmtsdzpnjnavdgytcmi.supabase.co/functions/v1/vana-chat
+[19:47:36] POST | 200 | https://vlmtsdzpnjnavdgytcmi.supabase.co/functions/v1/vana-action
+[19:47:36] POST | 200 | https://vlmtsdzpnjnavdgytcmi.supabase.co/functions/v1/vana-action
+[19:47:37] POST | 200 | https://vlmtsdzpnjnavdgytcmi.supabase.co/functions/v1/vana-action
+[19:47:38] POST | 200 | https://vlmtsdzpnjnavdgytcmi.supabase.co/functions/v1/vana-action
+[19:48:06] POST | 200 | https://vlmtsdzpnjnavdgytcmi.supabase.co/functions/v1/vana-action
+[19:48:43] POST | 200 | https://vlmtsdzpnjnavdgytcmi.supabase.co/functions/v1/sync-all-data
+[19:49:11] POST | 200 | https://vlmtsdzpnjnavdgytcmi.supabase.co/functions/v1/revenuecat-webhook
+[19:49:11] POST | 200 | https://vlmtsdzpnjnavdgytcmi.supabase.co/functions/v1/calculate-daily-macros-v6
+[19:53:00] POST | 200 | https://vlmtsdzpnjnavdgytcmi.supabase.co/functions/v1/sync-all-data
+[19:53:01] POST | 200 | https://vlmtsdzpnjnavdgytcmi.supabase.co/functions/v1/calculate-daily-macros-v6
+[19:53:45] POST | 200 | https://vlmtsdzpnjnavdgytcmi.supabase.co/functions/v1/delete-user
+[19:54:28] POST | 200 | https://vlmtsdzpnjnavdgytcmi.supabase.co/functions/v1/sync-all-data
+[19:54:29] POST | 200 | https://vlmtsdzpnjnavdgytcmi.supabase.co/functions/v1/calculate-daily-macros-v6
+[19:57:47] POST | 200 | https://vlmtsdzpnjnavdgytcmi.supabase.co/functions/v1/garmin-push
+[19:57:49] POST | 200 | https://vlmtsdzpnjnavdgytcmi.supabase.co/functions/v1/garmin-push
+[19:58:19] POST | 200 | https://vlmtsdzpnjnavdgytcmi.supabase.co/functions/v1/garmin-push
+[19:58:22] POST | 200 | https://vlmtsdzpnjnavdgytcmi.supabase.co/functions/v1/garmin-push
+[19:58:32] POST | 200 | https://vlmtsdzpnjnavdgytcmi.supabase.co/functions/v1/garmin-push
+[19:59:34] POST | 200 | https://vlmtsdzpnjnavdgytcmi.supabase.co/functions/v1/garmin-push
+[19:59:34] POST | 200 | https://vlmtsdzpnjnavdgytcmi.supabase.co/functions/v1/garmin-push
+
+(34 rows)
