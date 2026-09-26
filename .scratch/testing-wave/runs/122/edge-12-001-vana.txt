@@ -1,0 +1,3 @@
+[22:44:50] POST | 403 | https://vlmtsdzpnjnavdgytcmi.supabase.co/functions/v1/vana-chat
+
+(1 rows)

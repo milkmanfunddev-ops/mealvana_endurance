@@ -1,0 +1,2 @@
+{"auth_users": 0, "users": 0, "pairings": 0, "redemptions": 0}
+{"doc_url": "https://errors.rev.cat/resource-missing", "message": "Could not find customer ID associated with this project", "retryable": false, "type": "resource_missing"}

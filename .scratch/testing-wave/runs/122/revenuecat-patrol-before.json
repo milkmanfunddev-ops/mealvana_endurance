@@ -1,0 +1,8 @@
+== customer
+{"active_entitlements": {"items": []}, "experiment": null, "first_seen_at": 1783100925170, "id": "37129f7e-d0b8-4748-b584-e3af0575b8b4", "last_seen_app_version": "1.27.0", "last_seen_at": 1790193291522, "last_seen_country": "US", "last_seen_platform": "iOS", "last_seen_platform_version": "Version 26.2 (Build 23C54)", "project_id": "proj77b3c48f"}
+== /active_entitlements
+{"items": []}
+== /subscriptions
+{"items": []}
+== /attributes
+{"items": [{"name": "$attConsentStatus", "updated_at": 1783100924899, "value": "notDetermined"}]}

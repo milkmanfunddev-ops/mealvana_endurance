@@ -1,0 +1,1 @@
+{"id": "37129f7e-d0b8-4748-b584-e3af0575b8b4", "is_admin": true, "period_type": "eval", "active_until": "2026-09-16 19:05:27.870091+00", "will_renew": false, "event_at": "2026-09-15 19:05:27.870091+00", "vana_calls": 1019, "last_call": "2026-09-22 12:16:33.171912+00"}

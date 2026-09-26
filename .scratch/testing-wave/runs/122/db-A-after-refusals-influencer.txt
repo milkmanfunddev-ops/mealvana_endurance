@@ -1,0 +1,15 @@
+03:54:18Z
+-- redemptions
+{"code": "E2EINFLUENCER", "redeemed_at": "2026-09-26 03:53:58.468272+00"}
+-- pairings (as athlete)
+-- coaches row
+-- user_entitlements
+-- RevenueCat
+== customer
+{"active_entitlements": {"items": []}, "experiment": null, "first_seen_at": 1790394550966, "id": "fa80da99-c5e3-4ea8-a30c-b721bdaab79f", "last_seen_app_version": "1.27.1", "last_seen_at": 1790394739130, "last_seen_country": "US", "last_seen_platform": "iOS", "last_seen_platform_version": "Version 26.2 (Build 23C54)", "project_id": "proj77b3c48f"}
+== /active_entitlements
+{"items": []}
+== /subscriptions
+{"items": []}
+== /attributes
+{"items": [{"name": "$attConsentStatus", "updated_at": 1790394738866, "value": "notDetermined"}, {"name": "influencer_code", "updated_at": 1790394838530, "value": "E2EINFLUENCER"}]}

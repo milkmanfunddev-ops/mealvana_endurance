@@ -1,0 +1,7 @@
+-- redemptions
+{"code": "E2ECOACHF6B77D3A", "redeemed_at": "2026-09-26 04:08:08.908369+00"}
+-- pairings (as athlete)
+-- coaches row
+{"application_status": "approved", "approved_at": "2026-09-26 04:08:08.932+00"}
+-- user_entitlements
+{"period_type": "PROMOTIONAL", "active_until": "2026-09-27 04:08:09.156+00", "will_renew": false, "event_at": "2026-09-26 04:08:09.27+00"}
