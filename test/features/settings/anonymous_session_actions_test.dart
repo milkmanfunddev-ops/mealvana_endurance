@@ -32,6 +32,7 @@ import 'package:mealvana_endurance/features/auth/application/auth_service.dart'
 import 'package:mealvana_endurance/features/auth/data/user_repository.dart';
 import 'package:mealvana_endurance/features/coach_mode/data/coach_repository.dart';
 import 'package:mealvana_endurance/features/settings/domain/settings_state.dart';
+import 'package:mealvana_endurance/features/settings/domain/sign_out_source.dart';
 import 'package:mealvana_endurance/features/settings/presentation/providers/settings_controller.dart';
 import 'package:mealvana_endurance/features/settings/presentation/screens/settings_screen.dart';
 import 'package:mealvana_endurance/shared/services/app_config.dart';
@@ -60,7 +61,8 @@ class _SeededSettingsController extends SettingsController {
   FutureOr<SettingsState> build() => _seed;
 
   @override
-  Future<void> signOut() async => _spy.calls++;
+  Future<void> signOut({SignOutSource source = SignOutSource.settings}) async =>
+      _spy.calls++;
 }
 
 // ─── Seeds ───────────────────────────────────────────────────────────────────

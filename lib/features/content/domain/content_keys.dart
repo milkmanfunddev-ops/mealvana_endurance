@@ -188,6 +188,10 @@ class ContentKeys {
   // the athlete's unsynced changes stay on the phone for the next sign-in.
   static const String settingsSignOutUnsyncedKept =
       'settings.sign_out_unsynced_kept';
+  // Delete account when `delete-user` gave no 200 (testing-wave 121-007):
+  // nothing was deleted, the athlete stays signed in.
+  static const String settingsDeleteNeedsConnection =
+      'settings.delete_needs_connection';
   // The Profile & Preferences screen's own title (31-014): the settings
   // screen, not onboarding's "Tell us about yourself".
   static const String settingsProfilePreferencesTitle =

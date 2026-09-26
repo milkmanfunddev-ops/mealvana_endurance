@@ -9,6 +9,8 @@ import '../../../../shared/widgets/kyle_design/kyle_design.dart';
 import '../../../content/application/content_service.dart';
 import '../../../content/domain/content_keys.dart';
 import '../../../settings/domain/account_deletion_entry.dart';
+import '../../../settings/domain/account_deletion_exceptions.dart';
+import '../../../settings/domain/sign_out_source.dart';
 import '../../../settings/presentation/providers/settings_controller.dart';
 import '../../application/pro_paywall_controller.dart';
 import '../../application/subscription_screen_controller.dart';
@@ -273,7 +275,9 @@ class _PaywallScreenState extends ConsumerState<PaywallScreen> {
     // signs out of Supabase. The auth listener re-routes a session-less
     // route to /welcome by itself; the explicit go is the same belt and
     // braces Settings wears.
-    await ref.read(settingsControllerProvider.notifier).signOut();
+    await ref
+        .read(settingsControllerProvider.notifier)
+        .signOut(source: SignOutSource.paywall);
     if (context.mounted) GoRouter.maybeOf(context)?.go('/welcome');
   }
 
@@ -299,9 +303,20 @@ class _PaywallScreenState extends ConsumerState<PaywallScreen> {
       onManage: () => _manage(context, ref),
     );
     if (!confirmed || !context.mounted) return;
-    await ref
-        .read(settingsControllerProvider.notifier)
-        .deleteAccount(from: AccountDeletionEntry.paywall);
+    try {
+      await ref
+          .read(settingsControllerProvider.notifier)
+          .deleteAccount(from: AccountDeletionEntry.paywall);
+    } on AccountDeletionNeedsConnectionException {
+      // Nothing was deleted (121-007): still signed in, still here.
+      if (context.mounted) {
+        MealvanaSnackbar.showError(
+          _messageContext,
+          content.getValue(ContentKeys.settingsDeleteNeedsConnection),
+        );
+      }
+      return;
+    }
     if (context.mounted) GoRouter.maybeOf(context)?.go('/welcome');
   }
 

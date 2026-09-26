@@ -329,7 +329,8 @@
     "sign_out_confirm_body": "You'll need to sign in again to use Mealvana. Your data stays with your account.",
     "connection_reconnect_button": "Reconnect",
     "connection_needs_reconnect": "Sign in again to keep your workouts syncing.",
-    "sign_out_unsynced_kept": "You're offline, so your unsynced changes stay on this phone and sync the next time you sign in."
+    "sign_out_unsynced_kept": "You're offline, so your unsynced changes stay on this phone and sync the next time you sign in.",
+    "delete_needs_connection": "Deleting your account needs a connection. Nothing was deleted; try again when you're online."
   },
   "cycling_preferences": {
     "ftp_label": "FTP (Functional Threshold Power)",

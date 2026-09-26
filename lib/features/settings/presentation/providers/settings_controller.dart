@@ -3,7 +3,8 @@ import 'dart:async';
 import 'package:mealvana_endurance/shared/database/database_provider.dart';
 import 'package:riverpod_annotation/riverpod_annotation.dart';
 import '../../../integrations/presentation/providers/athlete_zones_provider.dart';
-import 'package:supabase_flutter/supabase_flutter.dart' show HttpMethod;
+import 'package:supabase_flutter/supabase_flutter.dart'
+    show FunctionResponse, HttpMethod;
 import '../../../../shared/services/app_external_deps.dart';
 import '../../../../shared/services/logging_service.dart';
 import '../../../../shared/domain/activity_type.dart';
@@ -38,6 +39,8 @@ import '../../../meal_planning/data/user_memory_repository.dart';
 import '../../../../shared/data/syncable_repository.dart';
 import '../../../nutrition_plan/presentation/providers/macro_targets_controller.dart';
 import '../../../onboarding/application/onboarding_snapshot_service.dart';
+import '../../domain/account_deletion_exceptions.dart';
+import '../../domain/sign_out_source.dart';
 import '../../../onboarding/data/onboarding_survey_repository.dart';
 import '../../../personal_templates/data/personal_templates_repository.dart';
 import '../../../subscription/application/subscription_status_provider.dart';
@@ -848,10 +851,19 @@ class SettingsController extends _$SettingsController {
 
   /// Sign out the current user, leaving nothing the server holds on the phone.
   ///
-  /// Order: upload what is still dirty, drop the onboarding prefs, forget the
-  /// Pro entitlement and log the RevenueCat SDK out, delete the account's
-  /// synced local rows, then sign out of Supabase (whose `signedOut` event
-  /// invalidates the user providers and sends GoRouter to /welcome).
+  /// Order: upload what is still dirty, drop the onboarding prefs, delete the
+  /// account's synced local rows, sign out of Supabase (whose `signedOut`
+  /// event invalidates the user providers and sends GoRouter to /welcome),
+  /// and only then forget the Pro entitlement and log the RevenueCat SDK out.
+  ///
+  /// The status clears AFTER Supabase (testing-wave 125-001): clearing it
+  /// first closed the Gate while the session was still live, so the router
+  /// showed the paywall for a moment on the way to Welcome. The clear still
+  /// runs on every path, so the next account on this device never reads the
+  /// outgoing user's subscription (Findings 03-002, 32-002).
+  ///
+  /// [source] names the screen that asked (Settings or the paywall), for the
+  /// `settings_sign_out_tapped` event only (120-007).
   ///
   /// Ticket 102 (Lee, 2026-09-25): the wipe keeps every row that still needs
   /// upload, so an offline sign-out loses nothing; those rows upload at the
@@ -867,7 +879,7 @@ class SettingsController extends _$SettingsController {
   /// settingsControllerProvider after it has been disposed", which skipped
   /// the entitlement clear (Finding 02-003) and, silently, the pre-logout
   /// upload. Nothing here touches `ref` or `state` after the first await.
-  Future<void> signOut() async {
+  Future<void> signOut({SignOutSource source = SignOutSource.settings}) async {
     final deps = ref.read(appExternalDepsProvider);
     final supabaseClient = deps.supabaseClient;
     final analytics = deps.analytics;
@@ -885,7 +897,10 @@ class SettingsController extends _$SettingsController {
     // later, by which time their futures no longer need the Ref.
     final syncRepos = currentUser == null ? null : _captureSyncRepositories();
 
-    await analytics.track('settings_sign_out_tapped');
+    await analytics.track(
+      'settings_sign_out_tapped',
+      properties: {'source': source.analyticsValue},
+    );
 
     // Upload dirty records BEFORE the local rows are deleted below. What
     // fails to upload stays on the phone (the wipe keeps dirty rows).
@@ -912,19 +927,6 @@ class SettingsController extends _$SettingsController {
     // would let a later startup resurrect it under a different account.
     await prefs.remove(OnboardingSnapshotService.prefsKey);
 
-    // Forget the Pro entitlement and return the RevenueCat SDK to an
-    // anonymous customer, so the next account on this device never reads the
-    // outgoing user's subscription (Findings 03-002, 32-002).
-    try {
-      await subscriptionStatus.clear();
-    } catch (e) {
-      logger.error(
-        'Pro entitlement clear failed',
-        context: 'SETTINGS',
-        error: e,
-      );
-    }
-
     // Delete the account's synced local rows (Finding 14-004). Rows the
     // upload above did not land stay for the next sign-in (ticket 102).
     if (currentUser != null) {
@@ -950,8 +952,28 @@ class SettingsController extends _$SettingsController {
     // Say so (Finding 86-007): one line on the Welcome screen.
     signOutNotice.set(uploadFailed.isEmpty ? null : unsyncedKeptLine);
 
-    // Sign out from Supabase (triggers AuthChangeEvent.signedOut)
-    await supabaseClient.auth.signOut();
+    // Sign out from Supabase (triggers AuthChangeEvent.signedOut). GoTrue
+    // drops the local session and fires the event before its server call,
+    // so the router is on its way to Welcome by the time the clear below
+    // runs, and a failed server call still leaves the phone signed out.
+    try {
+      await supabaseClient.auth.signOut();
+    } finally {
+      // Forget the Pro entitlement and return the RevenueCat SDK to an
+      // anonymous customer, so the next account on this device never reads
+      // the outgoing user's subscription (Findings 03-002, 32-002). After
+      // the sign-out on purpose (125-001): the Gate closing first sent the
+      // router through /paywall.
+      try {
+        await subscriptionStatus.clear();
+      } catch (e) {
+        logger.error(
+          'Pro entitlement clear failed',
+          context: 'SETTINGS',
+          error: e,
+        );
+      }
+    }
   }
 
   /// Marker in the failed-upload set when the whole pre-logout upload threw.
@@ -1046,6 +1068,27 @@ class SettingsController extends _$SettingsController {
   /// 2. Clear user's local data (with WHERE user_id filter)
   /// 3. Sign out to trigger auth state change which rebuilds UI
   ///
+  /// The server's answer is the ack (testing-wave 121-007, 121-009): when
+  /// `delete-user` cannot be reached or answers anything but 200, nothing
+  /// else runs. The local rows, the RevenueCat identity and the session all
+  /// stay, the state shown is left as it was, and
+  /// [AccountDeletionNeedsConnectionException] reaches the screen, which
+  /// says the delete needs a connection. This is the one write path that
+  /// rethrows past `AsyncValue.guard`: a half-deleted account (rows gone,
+  /// account alive) is worse than a delete that did not happen.
+  ///
+  /// Running twice: a second tap while the first is in flight sends a second
+  /// `delete-user`; the function deletes once and the second call answers
+  /// 401 (no user for the token), which stops that second run before it
+  /// touches anything, while the first finishes the wipe. A retry after a
+  /// failure repeats only the function call, which is idempotent.
+  ///
+  /// After a successful delete the local sign-out still makes one server
+  /// call: supabase_flutter has no local-only sign-out (`signOut(scope:
+  /// local)` drops the session, fires `signedOut`, then POSTs /logout with
+  /// the old token). GoTrue answers that 403 for a deleted user and the SDK
+  /// swallows 401/403/404 itself, so the 403 in the logs is expected.
+  ///
   /// [from] names the screen that asked, for the analytics event only.
   Future<void> deleteAccount({
     AccountDeletionEntry from = AccountDeletionEntry.settings,
@@ -1073,40 +1116,41 @@ class SettingsController extends _$SettingsController {
       // Track delete account event, named for where it was asked (04-001)
       await analytics.track(from.analyticsEvent);
 
-      // If authenticated, call the delete-user Edge Function
-      // This deletes from both auth.users and public.users (with CASCADE)
+      // The delete-user Edge Function deletes auth.users and public.users
+      // (with CASCADE). Its 200 is the ack everything below waits for.
+      logger.info('Calling delete-user Edge Function', context: 'SETTINGS');
+      final FunctionResponse response;
       try {
-        logger.info('Calling delete-user Edge Function', context: 'SETTINGS');
-
-        final response = await supabaseClient.functions.invoke(
+        response = await supabaseClient.functions.invoke(
           'delete-user',
           method: HttpMethod.post,
           body: {}, // No body needed - user ID comes from JWT
         );
-
-        if (response.status != 200) {
-          final errorData = response.data;
-          final errorMessage = errorData?['message'] ?? 'Unknown error';
-          logger.error(
-            'delete-user Edge Function failed',
-            context: 'SETTINGS',
-            data: {'status': response.status, 'message': errorMessage},
-          );
-          // Continue with local cleanup even if server deletion fails
-        } else {
-          logger.info(
-            'User deleted from Supabase successfully',
-            context: 'SETTINGS',
-          );
-        }
       } catch (e) {
+        // Unreachable, or the SDK raised the non-2xx itself.
         logger.error(
           'Error calling delete-user Edge Function',
           context: 'SETTINGS',
           error: e,
         );
-        // Continue with local cleanup even if edge function call fails
+        throw AccountDeletionNeedsConnectionException(e.toString());
       }
+
+      if (response.status != 200) {
+        final errorData = response.data;
+        final errorMessage = errorData is Map
+            ? errorData['message'] ?? 'Unknown error'
+            : 'Unknown error';
+        logger.error(
+          'delete-user Edge Function failed',
+          context: 'SETTINGS',
+          data: {'status': response.status, 'message': errorMessage},
+        );
+        throw AccountDeletionNeedsConnectionException(
+          'delete-user answered ${response.status}: $errorMessage',
+        );
+      }
+      logger.info('User deleted from Supabase successfully', context: 'SETTINGS');
 
       // Forget the Pro entitlement and log the RevenueCat SDK out, as
       // sign-out does: the deleted account's customer must not linger.
@@ -1144,6 +1188,12 @@ class SettingsController extends _$SettingsController {
       // Return current state (will be refreshed)
       return previousState.requireValue;
     });
+
+    // The server did not confirm: nothing local changed, so the shown state
+    // stays as it was and the screen hears why (121-007).
+    if (result.error case final AccountDeletionNeedsConnectionException e) {
+      throw e;
+    }
 
     // The sign-out above invalidates this controller; if that already
     // happened the assignment below would throw UnmountedRefException.
