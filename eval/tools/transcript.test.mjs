@@ -75,7 +75,7 @@ test('an opener turn shows the opener flag, the variant, and the hidden opener p
   assert.match(md, /Meals tab/);
 });
 
-test('a huge tool output is truncated with a marker unless full is asked for', () => {
+test('a huge tool output is full by default and truncated with a marker only when clipping is asked for', () => {
   const big = 'x'.repeat(5000);
   const row = assistantRow({
     parts: [

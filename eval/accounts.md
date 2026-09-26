@@ -22,9 +22,9 @@ setup state, and the Scenarios each account serves.
 
 | Slug | Persona | Scenarios | Setup notes |
 |------|---------|-----------|-------------|
-| `test-athlete` | Everyday-name dev test account; actually a dense vegetarian triathlete in an IRONMAN build (see below) | pilot + the corpus's dense/race-persona Scenarios until the corpus conversion pins them | Pro to 2027-09-15 (RevenueCat promotional, pre-dates `pro_grants`); wallet topped to $50 2026-09-26; persona fields set same day |
+| `judging-1` | Everyday-name dev test account; actually a dense vegetarian triathlete in an IRONMAN build (see below) | pilot + the corpus's dense/race-persona Scenarios until the corpus conversion pins them | Pro to 2027-09-15 (RevenueCat promotional, pre-dates `pro_grants`); wallet topped to $50 2026-09-26; persona fields set same day |
 
-### `test-athlete` — the persona in full
+### `judging-1` — the persona in full
 
 The existing dev test account (the "Dev admin" row in `secrets/test_accounts.md`; it is also
 `is_admin`, which the Gate would honor anyway — the Scenario runs on its real Pro, not on that).
@@ -80,7 +80,7 @@ Everything except the persona shape is one command; the shape is per-account SQL
    (`first_name`, `dietary_preference`, `allergies`, `gut_training_level`, `home_city`,
    `home_lat`, `home_lon`, `home_timezone`), `activities` (the coming week's sessions),
    `events` (the race), `onboarding_surveys.goals` (note `completed_at` is NOT NULL), and a
-   meal plan in the state the Scenarios assume. For `test-athlete` the writes were:
+   meal plan in the state the Scenarios assume. For `judging-1` the writes were:
 
    ```sql
    update public.users set home_city='Baton Rouge', home_lat=30.4515, home_lon=-91.1581,
@@ -91,7 +91,7 @@ Everything except the persona shape is one command; the shape is per-account SQL
    ```
 
    (Training, diet and the plan already matched the persona, so they were left as found.)
-4. **Verify by hand before the first round**: sign the account in on the dev auth API and POST
+4. **Verified 2026-09-26 (wave 2): the request streamed a full reply, no `pro_required`/`insufficient_credits`, ledger reserve settled at real cost**: sign the account in on the dev auth API and POST
    one message to the deployed `vana-chat`
    (`https://vlmtsdzpnjnavdgytcmi.supabase.co/functions/v1/vana-chat`, body
    `{message, kind: 'general'|'meal_planning', timezone}`) — expect NDJSON stream lines ending

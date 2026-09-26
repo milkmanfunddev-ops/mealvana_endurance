@@ -8,6 +8,15 @@ in brackets are the other cards folded into the same question.
 
 ## Meal planning
 
+- VANA-PERSONA-001 · Round 001 would run all 22 Scenarios on the one shared account (judging-1:
+  dense vegetarian triathlete, 17 sessions/week, IRONMAN build), but several Scenarios assume
+  other personas (omnivore dense at 6 sessions, sparse newcomer, offseason). Run round 001 on
+  judging-1 as-is and treat persona mismatches as findings, or spawn the four persona accounts
+  first (the recipe exists in `eval/accounts.md`)?
+  Recommend: run round 001 on judging-1 as-is; spawn personas only for Scenarios whose persona
+  is load-bearing (vegetarian, sparse) before round 002.
+  Why pending: wave vana-judging 2 tickets 03+04 left the one-account stand-in unresolved.
+
 
 ## Paywall
 

@@ -14,7 +14,7 @@ const DEFAULT_MAX_PART_CHARS = 2000;
 const json = (value, maxChars) => {
   const s = JSON.stringify(value, null, 2) ?? String(value);
   if (maxChars == null || s.length <= maxChars) return s;
-  return `${s.slice(0, maxChars)}\n… [truncated, ${maxChars} of ${s.length} chars shown — run with --full for everything]`;
+  return `${s.slice(0, maxChars)}\n… [truncated, ${maxChars} of ${s.length} chars shown — run without --clip for everything]`;
 };
 
 const seconds = (ms) => `${(ms / 1000).toFixed(1)}s`;

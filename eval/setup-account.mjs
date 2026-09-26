@@ -32,8 +32,7 @@
 
 import { readFileSync } from 'node:fs';
 
-const DEV_REF = 'vlmtsdzpnjnavdgytcmi';
-const PROD_REF = 'wvmvsodrvbkxfydabqed';
+const DEV_REF = 'vlmtsdzpnjnavdgytcmi'; // hardcoded: this recipe is dev only
 const RC_PROJECT_ID = 'proj77b3c48f'; // one RevenueCat project serves dev and prod
 const RC_BASE = `https://api.revenuecat.com/v2/projects/${RC_PROJECT_ID}`;
 const DAY_MS = 24 * 60 * 60 * 1000;
@@ -48,12 +47,6 @@ function secretFromEnvOrFile(envKey, file, lineKey) {
     return line ? line.slice(lineKey.length + 1).trim() : null;
   } catch {
     return null;
-  }
-}
-
-function assertDev() {
-  if (process.env.EVAL_REF && process.env.EVAL_REF !== DEV_REF) {
-    throw new Error(`refusing ref "${process.env.EVAL_REF}": this recipe is dev only`);
   }
 }
 
@@ -199,7 +192,6 @@ const [cmd, email] = args.filter(a => !a.startsWith('--'));
 if (cmd !== 'status' && cmd !== 'setup') die('usage: setup-account.mjs status|setup <email> [--days N] [--target MICRO] [--wait-ms N]');
 if (!email || !email.includes('@')) die('an email is required');
 
-assertDev();
 const token = secretFromEnvOrFile('SUPABASE_ACCESS_TOKEN', 'supabase_management_api.env', 'SUPABASE_MANAGEMENT_TOKEN');
 if (!token) die('no SUPABASE_ACCESS_TOKEN (env or main clone secrets)');
 const rcKey = secretFromEnvOrFile('REVENUECAT_SECRET_KEY', 'revenuecat.env', 'REVENUECAT_SECRET_KEY');

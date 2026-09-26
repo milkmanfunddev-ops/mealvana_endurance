@@ -15,7 +15,8 @@
 //       writes eval/runs/001/<slug>.transcript.md   (the round layout in eval/README.md)
 //   … --out <path>    write anywhere else instead (e.g. a scratch dir outside /eval when
 //                     verifying plumbing against a private account's conversation)
-//   … --full          no tool-output truncation (default: each input/output clipped at 2000
+//   … --clip          clip each tool input/output at 2000 chars (default: full — the Mark is
+//                     based on the exact conversation, so nothing is clipped unless asked)
 //                     chars with a marker; a picker's 24-meal tail is otherwise unreadable)
 //
 // Exit 2: usage. Exit 1: nothing found / query failed.
@@ -31,11 +32,11 @@ const EMAIL = /^[^\s'";]+@[^\s'";]+$/;
 
 function usage(message) {
   if (message) console.error(`capture-transcript: ${message}`);
-  console.error('usage: capture-transcript.mjs --account <email> [--conversation <uuid>] [--round <NNN> --scenario <slug> | --out <path>] [--full] [--ref dev]');
+  console.error('usage: capture-transcript.mjs --account <email> [--conversation <uuid>] [--round <NNN> --scenario <slug> | --out <path>] [--clip] [--ref dev]');
   process.exit(message ? 2 : 0);
 }
 
-const args = { full: false };
+const args = { clip: false };
 for (let i = 2; i < process.argv.length; i++) {
   const a = process.argv[i];
   const value = () => {
@@ -49,7 +50,7 @@ for (let i = 2; i < process.argv.length; i++) {
   else if (a === '--scenario') args.scenario = value();
   else if (a === '--out') args.out = value();
   else if (a === '--ref') args.ref = value();
-  else if (a === '--full') args.full = true;
+  else if (a === '--clip') args.clip = true;
   else if (a === '--help' || a === '-h') usage();
   else usage(`unknown flag ${a}`);
 }
@@ -110,7 +111,7 @@ if (messages.length === 0) {
 
 const markdown = renderTranscript(
   { conversation, account: actualEmail, userId, messages },
-  { maxPartChars: args.full ? null : undefined },
+  { maxPartChars: args.clip ? undefined : null },
 );
 
 const outPath = args.out
