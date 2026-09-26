@@ -4,6 +4,10 @@ import 'package:riverpod_annotation/riverpod_annotation.dart';
 import 'package:supabase_flutter/supabase_flutter.dart';
 
 import '../../../shared/services/app_external_deps.dart';
+import '../../coach_mode/application/coach_service.dart';
+import '../../coach_mode/presentation/providers/coach_dashboard_controller.dart';
+import '../../coach_mode/presentation/providers/my_coaches_controller.dart';
+import '../../settings/presentation/providers/settings_controller.dart';
 import '../data/subscription_service.dart';
 import '../domain/code_redemption.dart';
 import 'subscription_status_provider.dart';
@@ -22,6 +26,13 @@ part 'code_entry_controller.g.dart';
 /// server, so the SDK's cached status still says locked: it is dropped and
 /// the status provider asked again, which opens the gate and moves the
 /// person into the app, as after the grace claim.
+///
+/// A Code that changes coaching (mp-600, card mp-598) updates the app at
+/// once: a coach's own Code pulls the new `coaches` row, an athlete's coach
+/// Code pulls the pending pairing, and coach mode (Settings) and both
+/// pairing lists (the athlete's My Coaches, the coach's dashboard) are
+/// rebuilt from it. The pull comes first because both lists sync only once
+/// per notifier, and Riverpod keeps the notifier across an invalidate.
 ///
 /// keepAlive for the same reason as [ProPaywallController]: the entry only
 /// `ref.read`s the notifier, and a redemption in flight must finish its
@@ -54,9 +65,40 @@ class CodeEntryController extends _$CodeEntryController {
         await ref.read(subscriptionServiceProvider).forgetCachedStatus();
         await ref.read(subscriptionStatusProvider.notifier).refresh();
       }
+      if (result is CodeRedeemed) await _refreshCoaching(result.kind);
       return result;
     });
     return state.value;
+  }
+
+  /// Pull what the Code changed in coaching and rebuild coach mode and the
+  /// pairing lists. Never throws: the Code is redeemed either way, and a
+  /// failed pull leaves the lists to their own sync.
+  Future<void> _refreshCoaching(RedeemedKind kind) async {
+    if (kind != RedeemedKind.coach && kind != RedeemedKind.paired) return;
+    final coachService = ref.read(coachServiceProvider);
+    try {
+      if (kind == RedeemedKind.coach) {
+        await coachService.syncCurrentCoachDataFromSupabase();
+      } else {
+        await coachService.syncRelationshipsFromSupabase();
+        await coachService.syncMyCoachesData();
+      }
+    } catch (e, st) {
+      ref
+          .read(appExternalDepsProvider)
+          .logger
+          .error(
+            'Coaching refresh after a Code failed',
+            context: 'CODES',
+            error: e,
+            stackTrace: st,
+          );
+    }
+    ref
+      ..invalidate(settingsControllerProvider)
+      ..invalidate(myCoachesControllerProvider)
+      ..invalidate(coachDashboardControllerProvider);
   }
 
   Future<Object?> _invoke(String code) async {

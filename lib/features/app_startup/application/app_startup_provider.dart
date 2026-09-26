@@ -202,6 +202,14 @@ class AppStartup extends _$AppStartup {
       // Sync happens after OAuth sign-in (for new device logins)
       // Returning users see cached data and can pull-to-refresh
 
+      // 2a. GRACE CLAIM RETRY (mp-561): an old install whose grace-month
+      // claim got no answer claims again, before the gate reads the status.
+      // A no-op for everyone else; never throws.
+      await PerformanceTelemetry.measure(
+        'startup.grace_claim_retry',
+        startupService.retryPendingGraceClaim,
+      );
+
       // 2b. THE APP GATE: configure RevenueCat and resolve the subscription
       // status before the router can send anyone past '/'. Bounded by the
       // status controller's own wait (mp-284); never throws.

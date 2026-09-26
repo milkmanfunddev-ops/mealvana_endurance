@@ -26,6 +26,7 @@ import '../../../shared/services/dirty_record_backup_service.dart';
 import '../../../shared/models/dirty_record_backup.dart';
 import '../presentation/widgets/dirty_record_recovery_dialog.dart';
 import '../../ai_credits/data/revenuecat_service.dart';
+import '../../auth/application/grace_claim_service.dart';
 import '../../subscription/application/pro_gate.dart';
 import '../../subscription/application/subscription_status_provider.dart';
 
@@ -416,6 +417,25 @@ class AppStartupService {
     } catch (e, stackTrace) {
       _logger.error(
         'RevenueCat configure failed',
+        context: 'APP_STARTUP',
+        error: e,
+        stackTrace: stackTrace,
+      );
+    }
+  }
+
+  /// Try again a grace claim that got no answer on an earlier run (mp-561,
+  /// card mp-555): an old install signed up, but the `grace-claim` call
+  /// failed or never finished. [GraceClaimService.retryPending] claims only
+  /// for the signed-in account it marked, so every other start costs one
+  /// preferences read. Runs before [initializeAppGate], so a granted month
+  /// opens the app on this start. Never throws.
+  Future<void> retryPendingGraceClaim() async {
+    try {
+      await ref.read(graceClaimServiceProvider).retryPending();
+    } catch (e, stackTrace) {
+      _logger.error(
+        'Grace claim retry failed',
         context: 'APP_STARTUP',
         error: e,
         stackTrace: stackTrace,
