@@ -5,6 +5,7 @@ import 'package:uuid/uuid.dart';
 import '../data/meal_log_repository.dart';
 import '../data/saved_meals_repository.dart';
 import '../domain/consumed_totals.dart';
+import '../domain/macro_rounding.dart';
 import '../domain/meal_component.dart';
 import '../domain/meal_log.dart';
 import '../domain/meal_log_source.dart';
@@ -113,7 +114,9 @@ class MealLoggingService {
   /// describe-to-AI, and detailed-manual flows).
   ///
   /// Totals are computed by summing [components] so the caller does not need to
-  /// aggregate them manually.
+  /// aggregate them manually. [servings] is the count the components were
+  /// already scaled to (a Common ingredient at 1.5); it is recorded on the
+  /// row so Recent can show the per-serving base (112-012).
   Future<MealLog> logFromComponents({
     required String userId,
     required String name,
@@ -126,6 +129,7 @@ class MealLoggingService {
     DateTime? eatenAt,
     String? savedMealId,
     String? recipeId,
+    double servings = 1,
   }) {
     final totals = _sumComponents(components);
     final now = DateTime.now();
@@ -146,6 +150,7 @@ class MealLoggingService {
       recipeId: recipeId,
       savedMealId: savedMealId,
       notes: notes,
+      servings: servings,
       eatenAt: eatenAt,
       createdAt: now,
       updatedAt: now,
@@ -172,6 +177,10 @@ class MealLoggingService {
     DateTime? eatenAt,
     double servings = 1,
   }) {
+    // Recent hands over the per-serving base ([MealLog.perServing]); a
+    // caller holding the row itself is brought to the base first, so
+    // [servings] always counts from the original amount (112-012).
+    final base = original.perServing();
     double? scale(double? v) => v == null ? null : v * servings;
     final now = DateTime.now();
     final log = MealLog(
@@ -179,22 +188,22 @@ class MealLoggingService {
       userId: userId,
       logDate: logDate,
       slot: slot,
-      name: original.name,
-      source: original.source,
+      name: base.name,
+      source: base.source,
       components: [
-        for (final c in original.components)
-          scaleComponentForRelog(c, servings),
+        for (final c in base.components) scaleComponentForRelog(c, servings),
       ],
-      calories: original.calories == null
+      calories: base.calories == null
           ? null
-          : (original.calories! * servings).round(),
-      carbsG: scale(original.carbsG),
-      proteinG: scale(original.proteinG),
-      fatG: scale(original.fatG),
-      sodiumMg: scale(original.sodiumMg),
-      photoPath: original.photoPath,
-      recipeId: original.recipeId,
-      savedMealId: original.savedMealId,
+          : (base.calories! * servings).round(),
+      carbsG: roundMacro(scale(base.carbsG)),
+      proteinG: roundMacro(scale(base.proteinG)),
+      fatG: roundMacro(scale(base.fatG)),
+      sodiumMg: roundSodium(scale(base.sodiumMg)),
+      photoPath: base.photoPath,
+      recipeId: base.recipeId,
+      savedMealId: base.savedMealId,
+      servings: servings,
       eatenAt: eatenAt,
       createdAt: now,
       updatedAt: now,
@@ -300,12 +309,14 @@ class MealLoggingService {
       name: params.recipeName,
       portion: '${_formatServings(s)} ${s == 1 ? 'serving' : 'servings'}',
       calories: (params.caloriesPerServing * s).round(),
-      carbG: params.carbsGPerServing * s,
-      proteinG: params.proteinGPerServing * s,
-      fatG: params.fatGPerServing * s,
-      sodiumMg: params.sodiumMgPerServing != null
-          ? params.sodiumMgPerServing! * s
-          : null,
+      carbG: roundMacro(params.carbsGPerServing * s),
+      proteinG: roundMacro(params.proteinGPerServing * s),
+      fatG: roundMacro(params.fatGPerServing * s),
+      sodiumMg: roundSodium(
+        params.sodiumMgPerServing != null
+            ? params.sodiumMgPerServing! * s
+            : null,
+      ),
     );
 
     return logFromComponents(
@@ -318,6 +329,7 @@ class MealLoggingService {
       recipeId: params.recipeId,
       notes: notes,
       eatenAt: eatenAt,
+      servings: s,
     );
   }
 

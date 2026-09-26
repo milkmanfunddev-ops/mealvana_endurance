@@ -116,6 +116,7 @@ void main() {
         photoPath: any(named: 'photoPath'),
         notes: any(named: 'notes'),
         eatenAt: any(named: 'eatenAt'),
+        servings: any(named: 'servings'),
       ),
     ).thenAnswer((_) async {
       await _yield();

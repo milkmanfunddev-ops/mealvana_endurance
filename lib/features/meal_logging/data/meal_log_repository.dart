@@ -13,6 +13,7 @@ import '../../../shared/database/database_provider.dart';
 import '../../../shared/services/app_external_deps.dart';
 import '../../../shared/services/logging_service.dart';
 import '../../../shared/services/sentry/sentry_reporter.dart';
+import '../../../shared/services/sync/sync_coordinator.dart';
 import '../../../shared/services/sync/sync_dependency_graph.dart';
 import '../domain/meal_log.dart';
 
@@ -21,11 +22,14 @@ part 'meal_log_repository.g.dart';
 @riverpod
 MealLogRepository mealLogRepository(Ref ref) {
   final deps = ref.read(appExternalDepsProvider);
+  // The coordinator is keepAlive, so the notifier outlives this provider.
+  final sync = ref.read(syncCoordinatorProvider.notifier);
   return MealLogRepository(
     supabase: Supabase.instance.client,
     database: ref.read(appDatabaseProvider),
     logger: ref.read(appLoggerProvider),
     sentry: deps.sentry,
+    onUploadFailed: () => sync.markUploadRetryOwed('meal_logs'),
   );
 }
 
@@ -41,6 +45,12 @@ MealLogRepository mealLogRepository(Ref ref) {
 /// - **Upload**: [uploadDirtyRecords] upserts via `onConflict: 'id'` (primary
 ///   key — never column-based `onConflict` due to the PostgREST partial-index
 ///   gotcha documented in MEMORY.md).
+/// - **Retry**: an immediate upload that fails (offline, a timed-out insert)
+///   leaves the row dirty and tells the coordinator, through
+///   [onUploadFailed], that `meal_logs` is owed a retry. The coordinator then
+///   runs the upload on the next `ensureSynced` (opening Log a Meal, the
+///   timeline, pull-to-refresh) even while the table is fresh, and when the
+///   network comes back or the app resumes (testing-wave 112-001).
 ///
 /// **DateTime ↔ Supabase.** Drift stores [DateTime] columns as Unix timestamps
 /// locally. [toSupabaseJson] converts to UTC ISO-8601 strings.
@@ -52,15 +62,21 @@ class MealLogRepository with SyncableRepository {
     required AppDatabase database,
     required AppLogger logger,
     required SentryReporter sentry,
+    void Function()? onUploadFailed,
   }) : _supabase = supabase,
        _database = database,
        _logger = logger,
-       _sentry = sentry;
+       _sentry = sentry,
+       _onUploadFailed = onUploadFailed;
 
   final SupabaseClient _supabase;
   final AppDatabase _database;
   final AppLogger _logger;
   final SentryReporter _sentry;
+
+  /// Called after an immediate upload fails and its rows stay dirty, so the
+  /// sync coordinator marks this repository owed a retry.
+  final void Function()? _onUploadFailed;
 
   static const _uuid = Uuid();
 
@@ -268,8 +284,10 @@ class MealLogRepository with SyncableRepository {
   }
 
   /// Most recent non-deleted logs for [userId], newest first, up to [limit]
-  /// rows. Deduplicated by lowercase name so the "Recent" section shows unique
-  /// meal types rather than duplicating the same meal logged many times.
+  /// rows, each at its per-serving base ([MealLog.perServing]), so the
+  /// "Recent" section shows unique meals and 1 serving always means the
+  /// original amount (112-012). Deduplicated by lowercase name plus the
+  /// items' names: two same-named meals with different items both show.
   ///
   /// Deduplication is performed in Dart (not SQL) for portability.
   Future<List<MealLog>> getRecentLogs(String userId, {int limit = 25}) async =>
@@ -299,14 +317,21 @@ class MealLogRepository with SyncableRepository {
     for (final entry in entries) {
       final log = MealLog.fromDriftEntry(entry);
       if (log == null) continue;
-      final key = log.name.toLowerCase().trim();
-      if (seen.add(key)) {
-        result.add(log);
+      if (seen.add(_recentKey(log))) {
+        result.add(log.perServing());
         if (result.length >= limit) break;
       }
     }
 
     return result;
+  }
+
+  /// Name plus item names, lowercased: a re-log at another serving count has
+  /// the same items (scaled) and folds in; a one-line copy of a two-item meal
+  /// does not.
+  static String _recentKey(MealLog log) {
+    final items = log.components.map((c) => c.name.toLowerCase().trim());
+    return '${log.name.toLowerCase().trim()}|${items.join('|')}';
   }
 
   // ========================================================================
@@ -602,6 +627,7 @@ class MealLogRepository with SyncableRepository {
           stackTrace: stackTrace,
           data: {'logId': log.id},
         );
+        _onUploadFailed?.call();
         unawaited(
           _sentry.reportNetworkError(
             e,
@@ -615,8 +641,8 @@ class MealLogRepository with SyncableRepository {
   }
 
   /// Fire-and-forget bulk upsert for [insertLogs] — one round-trip for the
-  /// whole batch instead of N per-row uploads. Rows stay dirty on failure so
-  /// the normal sync path retries them.
+  /// whole batch instead of N per-row uploads. Rows stay dirty on failure and
+  /// the coordinator is told a retry is owed.
   void _scheduleImmediateBulkUpload(List<MealLog> logs) {
     if (logs.isEmpty) return;
     unawaited(() async {
@@ -633,6 +659,7 @@ class MealLogRepository with SyncableRepository {
           stackTrace: stackTrace,
           data: {'count': logs.length},
         );
+        _onUploadFailed?.call();
         unawaited(
           _sentry.reportNetworkError(
             e,
