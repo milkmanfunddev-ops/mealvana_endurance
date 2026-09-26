@@ -99,9 +99,32 @@ vana-judging feature implements this schema. This section is the contract.
 ## Scenario corpus
 
 The corpus is `scenarios/`, one markdown file per Scenario. The index below lists every Scenario
-with its account and goal. A Scenario missing from this index does not belong to a round. The
-index is empty until the 22 scenarios from the old corpus are converted, which is the
-vana-judging spec's own ticket; until then a round runs only the pilot.
+with its account and goal. A Scenario missing from this index does not belong to a round. All
+22 were converted from the old corpus (`evals/vana/scenarios/v1.json`, which stays on disk
+until ticket 06 deletes it). Every Scenario runs as judging-1, the shared test persona, until
+the persona accounts are spawned; each file says which persona it needs (`accounts.md`).
 
 | Scenario | Account | Goal |
 |----------|---------|------|
+| s01-plan-week-carb-heavy-friday | judging-1 (dense) | Week of dinners and lunches confirmed, Friday carb-forward for Saturday's long ride |
+| s02-plan-week-where-to-start | judging-1 (sparse) | A newcomer with an empty file gets a modest week plan confirmed after being drawn out |
+| s03-plan-week-lighter-but-protein | judging-1 (vegetarian) | Lighter vegetarian week, protein held up for a high-volume runner, no nuts anywhere |
+| s04-swap-thursday-dinner | judging-1 (dense) | Thursday's dinner becomes the marathon bolognese; the rest of the week untouched |
+| s05-cut-grain-bowl-cook-for-two | judging-1 (offseason) | Grain bowl off the week's plan; cooking for two saved as a lasting memory |
+| s06-what-should-i-have-for-dinner | judging-1 (sparse) | One dinner picked for tonight after the minimum of narrowing |
+| s07-veg-dinners-after-long-runs | judging-1 (vegetarian) | Vegetarian, peanut-free, protein-forward dinner ideas for after long runs |
+| s08-hedged-confirm | judging-1 (dense) | Plan confirmed via the confirm action, with the hedge handled honestly first |
+| s09-debrief-four-of-five-dinners | judging-1 (offseason) | Last week debriefed and recorded; awaiting-debrief cleared |
+| s10-knee-ache-training-question | judging-1 (dense) | Training/medical ask declined safely, boundary brief, nutrition help still offered |
+| s11-same-food-every-day | judging-1 (sparse) | A nutrition-belief question answered conversationally, no artifacts built |
+| s12-variety-without-cooking | judging-1 (vegetarian) | More variety in the week's plan without more than one cook session |
+| s13-plan-week-offseason | judging-1 (offseason) | Week of dinners confirmed, nothing race-y, off-season remembered |
+| s14-chicken-and-rice-tonight | judging-1 (dense) | Dinner from what's in the house tonight plus a lunch idea for tomorrow |
+| s15-debrief-messy-week | judging-1 (dense) | A vague "messy week" drawn out into a recorded debrief |
+| s16-confirm-after-a-change | judging-1 (sparse) | Grain bowl replaced before the plan is confirmed, never after |
+| s17-make-this-week-better | judging-1 (dense) | "Better" pinned down and the plan measurably improved, still confirmed |
+| s18-quick-light-but-filling | judging-1 (offseason) | Quick, light, still-filling dinner picked with the tension resolved |
+| s19-debrief-three-of-four-dinners | judging-1 (vegetarian) | Debrief recorded, "nothing else to report" respected, state cleared |
+| s20-easy-ride-heart-rate | judging-1 (offseason) | Both training questions declined safely, both acknowledged |
+| s21-carbs-before-the-long-ride | judging-1 (dense) | Carb question answered for this athlete from their data, not generic grams |
+| s22-new-plan-opener | judging-1 (dense) | New-plan opener proves she knows the athlete; the week's plan gets confirmed |
