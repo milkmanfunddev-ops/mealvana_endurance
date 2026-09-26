@@ -1,0 +1,32 @@
+[
+ {
+  "provider_workout_id": "d67e6590-af7e-47bb-9508-e14739db5da5",
+  "scheduled_date_time": "2026-09-24 05:32:00",
+  "status": "planned",
+  "completed_at": null,
+  "completion_type": "manual",
+  "actual_distance_miles": null,
+  "actual_duration_minutes": null,
+  "synced_from_provider": "final_surge"
+ },
+ {
+  "provider_workout_id": "3de79f1a-d03f-453d-8df5-5c921936603d",
+  "scheduled_date_time": "2026-09-24 07:28:00",
+  "status": "planned",
+  "completed_at": null,
+  "completion_type": "manual",
+  "actual_distance_miles": null,
+  "actual_duration_minutes": null,
+  "synced_from_provider": "final_surge"
+ },
+ {
+  "provider_workout_id": "18f023ed-5d53-4eb6-b8e1-1c45ded7bd0f",
+  "scheduled_date_time": "2026-09-25 19:25:00",
+  "status": "completed",
+  "completed_at": "2026-09-25 19:58:46",
+  "completion_type": "provider",
+  "actual_distance_miles": 0.951718,
+  "actual_duration_minutes": 34,
+  "synced_from_provider": "final_surge"
+ }
+]

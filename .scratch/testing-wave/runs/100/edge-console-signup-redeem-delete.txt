@@ -1,0 +1,141 @@
+[05:10:34] booted (time: 61ms)
+[05:10:34] Listening on http://localhost:9999/
+[05:10:34] [garmin-auth] POST request, headers: {"accept":"*/*","accept-encoding":"gzip","accept-language":"*","baggage":"sb-request-id=01a0dd31-f6b6-70f2-9d60-af2fde33301c","cdn-loop":"cloudflare; loops=1","cf-connecting-ip":"54.183.17.37","cf-ew-via":"15","cf-ray":"a4117ac50a18963f-SJC","cf-visitor":"{\"scheme\":\"https\"}","cf-worker":"supabase.co","content-length":"1786","content-type":"application/json","garmin-client-id":"6e904d60-e9d6-48ff-b1e7-3f3e7ff20db6","host":"edge-runtime.supabase.com","sb-request-id":"01a0dd31-f6b6-70f2-9d60-af2fde33301c","traceparent":"00-ffc70cfdacc35a1f97b0cd8185d3cf96-0d2beca610501ba4-01","user-agent":"Deno/2.1.4 (variant; SupabaseEdgeRuntime/1.76.0; ref=wvmvsodrvbkxfydabqed)","x-amzn-trace-id":"Root=1-6ab79a1a-28132e060c81eab50cab51b4","x-forwarded-for":"54.183.17.37,54.183.17.37, 3.2.54.113","x-forwarded-port":"443","x-forwarded-proto":"https","x-garmin-fanout":"1"}
+[05:10:34] [garmin-auth] Expected client ID: "6e904d60-e9d6-48ff-b1e7-3f3e7ff20db6" (length: 36)
+[05:10:35] [garmin-push] record failed kind=stressDetails garminUserId=6cdc3940-149b-46bf-a470-e9a617e63d39 summaryId=x4f4359c-6ab74340-567c reason=no_user_mapping errorKind=none
+[05:10:35] [garmin-push] Processing complete: {"stressDetails":{"processed":0,"errors":1}}
+[05:10:36] booted (time: 44ms)
+[05:10:36] Listening on http://localhost:9999/
+[05:10:36] [garmin-auth] Expected client ID: "6e904d60-e9d6-48ff-b1e7-3f3e7ff20db6" (length: 36)
+[05:10:36] [garmin-auth] POST request, headers: {"accept":"*/*","accept-encoding":"gzip","accept-language":"*","baggage":"sb-request-id=01a0dd31-fe6d-7ed5-a565-eb4e83c2a4d0","cdn-loop":"cloudflare; loops=1","cf-connecting-ip":"18.225.9.78","cf-ew-via":"15","cf-ray":"a4117ad0c8e8231f-CMH","cf-visitor":"{\"scheme\":\"https\"}","cf-worker":"supabase.co","content-length":"2154","content-type":"application/json","garmin-client-id":"6e904d60-e9d6-48ff-b1e7-3f3e7ff20db6","host":"edge-runtime.supabase.com","sb-request-id":"01a0dd31-fe6d-7ed5-a565-eb4e83c2a4d0","traceparent":"00-2cb8a7719c07bf034340357671b91571-66d70fdb898426fe-01","user-agent":"Deno/2.1.4 (variant; SupabaseEdgeRuntime/1.76.0; ref=wvmvsodrvbkxfydabqed)","x-amzn-trace-id":"Root=1-6ab79a1c-01168b971673162630b299da","x-forwarded-for":"18.225.9.78,18.225.9.78, 13.248.111.53","x-forwarded-port":"443","x-forwarded-proto":"https","x-garmin-fanout":"1"}
+[05:10:36] [garmin-push] Processing complete: {"dailies":{"processed":0,"errors":1}}
+[05:10:36] [garmin-push] record failed kind=dailies garminUserId=6cdc3940-149b-46bf-a470-e9a617e63d39 summaryId=x4f4359c-6ab74340-567c-0 reason=no_user_mapping errorKind=none
+[05:10:36] booted (time: 34ms)
+[05:10:36] Listening on http://localhost:9999/
+[05:10:36] [garmin-auth] POST request, headers: {"accept":"*/*","accept-encoding":"gzip","accept-language":"*","baggage":"sb-request-id=01a0dd32-0018-7b9a-8430-76115a2e7fb5","cdn-loop":"cloudflare; loops=1","cf-connecting-ip":"18.226.28.38","cf-ew-via":"15","cf-ray":"a4117ad36b23a3ae-CMH","cf-visitor":"{\"scheme\":\"https\"}","cf-worker":"supabase.co","content-length":"8155","content-type":"application/json","garmin-client-id":"6e904d60-e9d6-48ff-b1e7-3f3e7ff20db6","host":"edge-runtime.supabase.com","sb-request-id":"01a0dd32-0018-7b9a-8430-76115a2e7fb5","traceparent":"00-5c6b25c5f83460f2bdb0c3acc0030952-c51db6a823dbf3e2-01","user-agent":"Deno/2.1.4 (variant; SupabaseEdgeRuntime/1.76.0; ref=wvmvsodrvbkxfydabqed)","x-amzn-trace-id":"Root=1-6ab79a1c-3ba7e680512f93906f36970c","x-forwarded-for":"18.226.28.38,18.226.28.38, 13.248.111.54","x-forwarded-port":"443","x-forwarded-proto":"https","x-garmin-fanout":"1"}
+[05:10:36] [garmin-auth] Expected client ID: "6e904d60-e9d6-48ff-b1e7-3f3e7ff20db6" (length: 36)
+[05:10:36] [garmin-push] record failed kind=epochs garminUserId=6cdc3940-149b-46bf-a470-e9a617e63d39 summaryId=x4f4359c-6ab75858-8 reason=no_user_mapping errorKind=none
+[05:10:36] [garmin-push] record failed kind=epochs garminUserId=6cdc3940-149b-46bf-a470-e9a617e63d39 summaryId=x4f4359c-6ab75bdc-8 reason=no_user_mapping errorKind=none
+[05:10:36] [garmin-push] record failed kind=epochs garminUserId=6cdc3940-149b-46bf-a470-e9a617e63d39 summaryId=x4f4359c-6ab75f60-8 reason=no_user_mapping errorKind=none
+[05:10:37] [garmin-push] record failed kind=epochs garminUserId=6cdc3940-149b-46bf-a470-e9a617e63d39 summaryId=x4f4359c-6ab762e4-8 reason=no_user_mapping errorKind=none
+[05:10:37] [garmin-push] record failed kind=epochs garminUserId=6cdc3940-149b-46bf-a470-e9a617e63d39 summaryId=x4f4359c-6ab76668-8 reason=no_user_mapping errorKind=none
+[05:10:37] [garmin-push] record failed kind=epochs garminUserId=6cdc3940-149b-46bf-a470-e9a617e63d39 summaryId=x4f4359c-6ab769ec-8 reason=no_user_mapping errorKind=none
+[05:10:37] [garmin-push] record failed kind=epochs garminUserId=6cdc3940-149b-46bf-a470-e9a617e63d39 summaryId=x4f4359c-6ab76d70-8 reason=no_user_mapping errorKind=none
+[05:10:37] [garmin-push] record failed kind=epochs garminUserId=6cdc3940-149b-46bf-a470-e9a617e63d39 summaryId=x4f4359c-6ab770f4-8 reason=no_user_mapping errorKind=none
+[05:10:37] [garmin-push] record failed kind=epochs garminUserId=6cdc3940-149b-46bf-a470-e9a617e63d39 summaryId=x4f4359c-6ab77478-8 reason=no_user_mapping errorKind=none
+[05:10:37] [garmin-push] record failed kind=epochs garminUserId=6cdc3940-149b-46bf-a470-e9a617e63d39 summaryId=x4f4359c-6ab777fc-8 reason=no_user_mapping errorKind=none
+[05:10:37] [garmin-push] record failed kind=epochs garminUserId=6cdc3940-149b-46bf-a470-e9a617e63d39 summaryId=x4f4359c-6ab77b80-8 reason=no_user_mapping errorKind=none
+[05:10:37] [garmin-push] record failed kind=epochs garminUserId=6cdc3940-149b-46bf-a470-e9a617e63d39 summaryId=x4f4359c-6ab77f04-8 reason=no_user_mapping errorKind=none
+[05:10:37] [garmin-push] record failed kind=epochs garminUserId=6cdc3940-149b-46bf-a470-e9a617e63d39 summaryId=x4f4359c-6ab78288-8 reason=no_user_mapping errorKind=none
+[05:10:37] [garmin-push] record failed kind=epochs garminUserId=6cdc3940-149b-46bf-a470-e9a617e63d39 summaryId=x4f4359c-6ab7860c-8 reason=no_user_mapping errorKind=none
+[05:10:37] [garmin-push] record failed kind=epochs garminUserId=6cdc3940-149b-46bf-a470-e9a617e63d39 summaryId=x4f4359c-6ab78990-8 reason=no_user_mapping errorKind=none
+[05:10:37] [garmin-push] record failed kind=epochs garminUserId=6cdc3940-149b-46bf-a470-e9a617e63d39 summaryId=x4f4359c-6ab78d14-8 reason=no_user_mapping errorKind=none
+[05:10:37] [garmin-push] record failed kind=epochs garminUserId=6cdc3940-149b-46bf-a470-e9a617e63d39 summaryId=x4f4359c-6ab79098-6 reason=no_user_mapping errorKind=none
+[05:10:37] [garmin-push] record failed kind=epochs garminUserId=6cdc3940-149b-46bf-a470-e9a617e63d39 summaryId=x4f4359c-6ab79098-8 reason=no_user_mapping errorKind=none
+[05:10:37] [garmin-push] record failed kind=epochs garminUserId=6cdc3940-149b-46bf-a470-e9a617e63d39 summaryId=x4f4359c-6ab7941c-6 reason=no_user_mapping errorKind=none
+[05:10:37] [garmin-push] record failed kind=epochs garminUserId=6cdc3940-149b-46bf-a470-e9a617e63d39 summaryId=x4f4359c-6ab7941c-8 reason=no_user_mapping errorKind=none
+[05:10:37] [garmin-push] record failed kind=epochs garminUserId=6cdc3940-149b-46bf-a470-e9a617e63d39 summaryId=x4f4359c-6ab797a0-6 reason=no_user_mapping errorKind=none
+[05:10:37] [garmin-push] Processing complete: {"epochs":{"processed":0,"errors":22}}
+[05:10:37] [garmin-push] record failed kind=epochs garminUserId=6cdc3940-149b-46bf-a470-e9a617e63d39 summaryId=x4f4359c-6ab797a0-8 reason=no_user_mapping errorKind=none
+[05:11:13] booted (time: 33ms)
+[05:11:13] booted (time: 33ms)
+[05:11:13] Listening on http://localhost:9999/
+[05:11:13] [garmin-auth] POST request, headers: {"accept":"*/*","accept-encoding":"gzip","accept-language":"*","baggage":"sb-request-id=01a0dd32-8df1-792b-89dd-aefc48d75e68","cdn-loop":"cloudflare; loops=1","cf-connecting-ip":"3.141.153.202","cf-ew-via":"15","cf-ray":"a4117bb65cf14afc-CMH","cf-visitor":"{\"scheme\":\"https\"}","cf-worker":"supabase.co","content-length":"6801","content-type":"application/json","garmin-client-id":"6e904d60-e9d6-48ff-b1e7-3f3e7ff20db6","host":"edge-runtime.supabase.com","sb-request-id":"01a0dd32-8df1-792b-89dd-aefc48d75e68","traceparent":"00-0e8b80ee83a11b94c2981dd789ab66dc-76fd7598a69e65ca-01","user-agent":"Deno/2.1.4 (variant; SupabaseEdgeRuntime/1.76.0; ref=wvmvsodrvbkxfydabqed)","x-amzn-trace-id":"Root=1-6ab79a41-2db964bd2f6ca8c974cbaae4","x-forwarded-for":"3.141.153.202,3.141.153.202, 13.248.111.48","x-forwarded-port":"443","x-forwarded-proto":"https","x-garmin-fanout":"1"}
+[05:11:13] [garmin-auth] Expected client ID: "6e904d60-e9d6-48ff-b1e7-3f3e7ff20db6" (length: 36)
+[05:11:13] Listening on http://localhost:9999/
+[05:11:13] [garmin-auth] Expected client ID: "6e904d60-e9d6-48ff-b1e7-3f3e7ff20db6" (length: 36)
+[05:11:13] [garmin-auth] POST request, headers: {"accept":"*/*","accept-encoding":"gzip","accept-language":"*","baggage":"sb-request-id=01a0dd32-8df5-71fa-877b-0c61587f4d3d","cdn-loop":"cloudflare; loops=1","cf-connecting-ip":"18.144.244.44","cf-ew-via":"15","cf-ray":"a4117bb66a8e78eb-SJC","cf-visitor":"{\"scheme\":\"https\"}","cf-worker":"supabase.co","content-length":"13830","content-type":"application/json","garmin-client-id":"6e904d60-e9d6-48ff-b1e7-3f3e7ff20db6","host":"edge-runtime.supabase.com","sb-request-id":"01a0dd32-8df5-71fa-877b-0c61587f4d3d","traceparent":"00-08de12119c9603b2bddc89e6674eaa46-2c19209f31f26c7f-01","user-agent":"Deno/2.1.4 (variant; SupabaseEdgeRuntime/1.76.0; ref=wvmvsodrvbkxfydabqed)","x-amzn-trace-id":"Root=1-6ab79a41-1a7d0ea576de2a09641211d6","x-forwarded-for":"18.144.244.44,18.144.244.44, 3.2.54.117","x-forwarded-port":"443","x-forwarded-proto":"https","x-garmin-fanout":"1"}
+[05:11:13] [garmin-push] Processing complete: {"sleeps":{"processed":1,"errors":0}}
+[05:11:13] [garmin-push] Processing complete: {"dailies":{"processed":1,"errors":0}}
+[05:11:14] booted (time: 42ms)
+[05:11:14] Listening on http://localhost:9999/
+[05:11:14] [garmin-auth] Expected client ID: "6e904d60-e9d6-48ff-b1e7-3f3e7ff20db6" (length: 36)
+[05:11:14] [garmin-auth] POST request, headers: {"accept":"*/*","accept-encoding":"gzip","accept-language":"*","baggage":"sb-request-id=01a0dd32-92e5-79dd-ac3c-1e5f73dcacf3","cdn-loop":"cloudflare; loops=1","cf-connecting-ip":"54.193.130.254","cf-ew-via":"15","cf-ray":"a4117bbe4ac8f997-SJC","cf-visitor":"{\"scheme\":\"https\"}","cf-worker":"supabase.co","content-length":"2529","content-type":"application/json","garmin-client-id":"6e904d60-e9d6-48ff-b1e7-3f3e7ff20db6","host":"edge-runtime.supabase.com","sb-request-id":"01a0dd32-92e5-79dd-ac3c-1e5f73dcacf3","traceparent":"00-ed2e6f0e0008114a047facf3f7a8fb64-cd3fb1247e354a31-01","user-agent":"Deno/2.1.4 (variant; SupabaseEdgeRuntime/1.76.0; ref=wvmvsodrvbkxfydabqed)","x-amzn-trace-id":"Root=1-6ab79a42-7dfbe46c758dc8434608daa5","x-forwarded-for":"54.193.130.254,54.193.130.254, 3.2.54.118","x-forwarded-port":"443","x-forwarded-proto":"https","x-garmin-fanout":"1"}
+[05:11:14] [garmin-push] Processing complete: {"stressDetails":{"processed":1,"errors":0}}
+[05:11:14] booted (time: 35ms)
+[05:11:14] Listening on http://localhost:9999/
+[05:11:14] [garmin-auth] Expected client ID: "6e904d60-e9d6-48ff-b1e7-3f3e7ff20db6" (length: 36)
+[05:11:14] [garmin-auth] POST request, headers: {"accept":"*/*","accept-encoding":"gzip","accept-language":"*","baggage":"sb-request-id=01a0dd32-93ce-7426-9a4c-a33cc40bb3a0","cdn-loop":"cloudflare; loops=1","cf-connecting-ip":"3.21.246.109","cf-ew-via":"15","cf-ray":"a4117bbfbbc33337-CMH","cf-visitor":"{\"scheme\":\"https\"}","cf-worker":"supabase.co","content-length":"750","content-type":"application/json","garmin-client-id":"6e904d60-e9d6-48ff-b1e7-3f3e7ff20db6","host":"edge-runtime.supabase.com","sb-request-id":"01a0dd32-93ce-7426-9a4c-a33cc40bb3a0","traceparent":"00-9fc05b153ce28ebfe724e4a78e7bb127-1c519422e358e96e-01","user-agent":"Deno/2.1.4 (variant; SupabaseEdgeRuntime/1.76.0; ref=wvmvsodrvbkxfydabqed)","x-amzn-trace-id":"Root=1-6ab79a42-27e31fb7314b2f8b2c1b58eb","x-forwarded-for":"3.21.246.109,3.21.246.109, 13.248.111.75","x-forwarded-port":"443","x-forwarded-proto":"https","x-garmin-fanout":"1"}
+[05:11:14] [garmin-push] Processing complete: {"epochs":{"processed":2,"errors":0}}
+[05:11:49] shutdown
+[05:11:51] shutdown
+[05:11:51] shutdown
+[05:12:28] shutdown
+[05:12:28] shutdown
+[05:12:29] shutdown
+[05:12:29] shutdown
+[05:17:34] booted (time: 30ms)
+[05:17:34] Listening on http://localhost:9999/
+[05:17:34] Starting unified sync for user: 607f9dd5-6fa7-48ee-a628-720d4a0506a1
+[05:17:34] Full sync (no timestamp provided)
+[05:17:35] User is a coach with 8 relationships
+[05:17:35] Skipping bulk athlete data sync - use on-demand sync per athlete instead
+[05:17:35] Sync completed: 463 total records (Incremental: false)
+[05:17:35] Errors: 0
+[05:17:38] booted (time: 77ms)
+[05:17:38] Listening on http://localhost:9999/
+[05:17:41] [vana-action] user=607f9dd5-6fa7-48ee-a628-720d4a0506a1 type=get_home parts=batch 2389ms
+[05:17:42] booted (time: 31ms)
+[05:17:42] Listening on http://localhost:9999/
+[05:17:42] Full sync (no timestamp provided)
+[05:17:42] Starting unified sync for user: 53b50f2c-d13a-4d25-8b55-add47023cc5d
+[05:17:43] Errors: 0
+[05:17:43] Sync completed: 73 total records (Incremental: false)
+[05:18:49] booted (time: 30ms)
+[05:18:49] Listening on http://localhost:9999/
+[05:18:49] shutdown
+[05:18:51] [redeem-code] 53b50f2c-d13a-4d25-8b55-add47023cc5d redeemed coach code DEVCOACH30 → paired
+[05:18:53] shutdown
+[05:18:57] shutdown
+[05:19:15] booted (time: 80ms)
+[05:19:16] Listening on http://localhost:9999/
+[05:19:16] [vana-action] user=607f9dd5-6fa7-48ee-a628-720d4a0506a1 type=list_plans parts=- 282ms
+[05:19:33] booted (time: 51ms)
+[05:19:33] Listening on http://localhost:9999/
+[05:20:04] shutdown
+[05:20:20] booted (time: 42ms)
+[05:20:20] Listening on http://localhost:9999/
+[05:20:20] [garmin-auth] Expected client ID: "6e904d60-e9d6-48ff-b1e7-3f3e7ff20db6" (length: 36)
+[05:20:20] [garmin-auth] POST request, headers: {"accept":"*/*","accept-encoding":"gzip","accept-language":"*","baggage":"sb-request-id=01a0dd3a-e6d5-7b56-9038-0127ecc5eb56","cdn-loop":"cloudflare; loops=1","cf-connecting-ip":"54.177.102.95","cf-ew-via":"15","cf-ray":"a4118911b88f2c47-SJC","cf-visitor":"{\"scheme\":\"https\"}","cf-worker":"supabase.co","content-length":"2504","content-type":"application/json","garmin-client-id":"6e904d60-e9d6-48ff-b1e7-3f3e7ff20db6","host":"edge-runtime.supabase.com","sb-request-id":"01a0dd3a-e6d5-7b56-9038-0127ecc5eb56","traceparent":"00-5a927e509aeb63fc383eb3477e019370-1b174433ff83c9a9-01","user-agent":"Deno/2.1.4 (variant; SupabaseEdgeRuntime/1.76.0; ref=wvmvsodrvbkxfydabqed)","x-amzn-trace-id":"Root=1-6ab79c64-47414e2824e9e1a55304078a","x-forwarded-for":"54.177.102.95,54.177.102.95, 3.2.54.139","x-forwarded-port":"443","x-forwarded-proto":"https","x-garmin-fanout":"1"}
+[05:20:20] [garmin-push] record failed kind=stressDetails garminUserId=99cab55a-ab4f-4bf2-9c5c-3f0b1e4c61e1 summaryId=x4b763e2-6ab75150-4ac4 reason=no_user_mapping errorKind=none
+[05:20:20] [garmin-push] Processing complete: {"stressDetails":{"processed":0,"errors":1}}
+[05:20:21] booted (time: 35ms)
+[05:20:21] Listening on http://localhost:9999/
+[05:20:21] [garmin-auth] POST request, headers: {"accept":"*/*","accept-encoding":"gzip","accept-language":"*","baggage":"sb-request-id=01a0dd3a-eaea-770a-987d-be11881fb5f3","cdn-loop":"cloudflare; loops=1","cf-connecting-ip":"18.223.120.252","cf-ew-via":"15","cf-ray":"a4118917fe94a53e-CMH","cf-visitor":"{\"scheme\":\"https\"}","cf-worker":"supabase.co","content-length":"1116","content-type":"application/json","garmin-client-id":"6e904d60-e9d6-48ff-b1e7-3f3e7ff20db6","host":"edge-runtime.supabase.com","sb-request-id":"01a0dd3a-eaea-770a-987d-be11881fb5f3","traceparent":"00-ae6ae67e7d6f65e6c46bfa69584d8037-9db04a9145211b7b-01","user-agent":"Deno/2.1.4 (variant; SupabaseEdgeRuntime/1.76.0; ref=wvmvsodrvbkxfydabqed)","x-amzn-trace-id":"Root=1-6ab79c65-405ecc5c0fb6579e018a8e3e","x-forwarded-for":"18.223.120.252,18.223.120.252, 13.248.111.76","x-forwarded-port":"443","x-forwarded-proto":"https","x-garmin-fanout":"1"}
+[05:20:21] [garmin-auth] Expected client ID: "6e904d60-e9d6-48ff-b1e7-3f3e7ff20db6" (length: 36)
+[05:20:21] [garmin-push] record failed kind=epochs garminUserId=99cab55a-ab4f-4bf2-9c5c-3f0b1e4c61e1 summaryId=x4b763e2-6ab7941c-8 reason=no_user_mapping errorKind=none
+[05:20:21] [garmin-push] record failed kind=epochs garminUserId=99cab55a-ab4f-4bf2-9c5c-3f0b1e4c61e1 summaryId=x4b763e2-6ab797a0-8 reason=no_user_mapping errorKind=none
+[05:20:21] [garmin-push] record failed kind=epochs garminUserId=99cab55a-ab4f-4bf2-9c5c-3f0b1e4c61e1 summaryId=x4b763e2-6ab79b24-8 reason=no_user_mapping errorKind=none
+[05:20:21] [garmin-push] Processing complete: {"epochs":{"processed":0,"errors":3}}
+[05:20:30] shutdown
+[05:20:46] booted (time: 47ms)
+[05:20:46] Listening on http://localhost:9999/
+[05:20:47] sessionCost: unknown sport "other" — F4a zero-with-estimate-flag (session-demand.md F4a, RULED 2026-09-10)
+[05:20:47] sessionCost: unknown sport "other" — F4a zero-with-estimate-flag (session-demand.md F4a, RULED 2026-09-10)
+[05:20:47] sessionCost: unknown sport "other" — F4a zero-with-estimate-flag (session-demand.md F4a, RULED 2026-09-10)
+[05:20:47] sessionCost: unknown sport "other" — F4a zero-with-estimate-flag (session-demand.md F4a, RULED 2026-09-10)
+[05:20:47] sessionCost: unknown sport "other" — F4a zero-with-estimate-flag (session-demand.md F4a, RULED 2026-09-10)
+[05:20:47] sessionCost: unknown sport "other" — F4a zero-with-estimate-flag (session-demand.md F4a, RULED 2026-09-10)
+[05:20:47] sessionCost: unknown sport "other" — F4a zero-with-estimate-flag (session-demand.md F4a, RULED 2026-09-10)
+[05:20:47] sessionCost: unknown sport "other" — F4a zero-with-estimate-flag (session-demand.md F4a, RULED 2026-09-10)
+[05:20:48] shutdown
+[05:21:35] shutdown
+[05:21:36] shutdown
+[05:21:36] booted (time: 52ms)
+[05:21:36] Listening on http://localhost:9999/
+[05:21:36] Starting unified sync for user: 53b50f2c-d13a-4d25-8b55-add47023cc5d
+[05:21:36] Full sync (no timestamp provided)
+[05:21:37] User is an athlete with 1 relationships, fetching coach profiles...
+[05:21:37] Fetching profiles for 1 coaches
+[05:21:37] ✓ coach_profiles: 0 records
+[05:21:37] Sync completed: 74 total records (Incremental: false)
+[05:21:37] Errors: 0
+[05:22:01] booted (time: 35ms)
+[05:22:01] Listening on http://localhost:9999/
+[05:22:01] Deleting user account: 53b50f2c-d13a-4d25-8b55-add47023cc5d
+[05:22:01] shutdown
+[05:22:01] Deleted user from public.users: 53b50f2c-d13a-4d25-8b55-add47023cc5d
+[05:22:02] Successfully deleted auth account: 53b50f2c-d13a-4d25-8b55-add47023cc5d
+[05:22:02] Deleted RevenueCat customer: 53b50f2c-d13a-4d25-8b55-add47023cc5d
+
+(139 rows)
