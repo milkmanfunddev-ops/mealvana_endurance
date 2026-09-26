@@ -21,10 +21,10 @@
 
 The runbook rule from #82 (a ticket that adds a timeout or retry lists each write and whether it is safe to repeat) is ticket 142's.
 
-- [ ] Controller tests through the real notifier (`meal_plan_controller_test.dart`, `meal_detail_controller_test.dart`): each of the three writes sends a `requestId`, and its retry sends the same one; a Browse pick sends no conversation scope and shows in the Plan tab's plan; a second tap unpicks.
-- [ ] Repository test (`meal_plan_repository_test.dart`): applying a pulled confirmed plan leaves a newer local draft a draft; a local confirm still archives the week's others. First-read test (`meal_plan_controller_first_read_test.dart`): after sign-in, online, the stale local plan is not emitted before the pull.
-- [ ] Widget test: after Browse Done the chat's plan bar shows the pick with Remove; `/vana?c=<general id>` opens as general.
-- [ ] Deno tests: a repeated `requestId` runs `pick_meals`, `log_from_plan` and `save_meal` once and returns the same result; the day-note context and output hold no `NNNC` and read "g of carbs"; the context states logged carbs against the target, over or under.
-- [ ] `flutter analyze` clean on touched files; deno vana tests. Deploy (vana-action, vana-chat, vana-day-notes, all sharing `_shared/vana`) and apply the request-id migration to dev: wave lead.
+- [x] Controller tests through the real notifier (`meal_plan_controller_test.dart`, `meal_detail_controller_test.dart`): each of the three writes sends a `requestId`, and its retry sends the same one; a Browse pick sends no conversation scope and shows in the Plan tab's plan; a second tap unpicks.
+- [x] Repository test (`meal_plan_repository_test.dart`): applying a pulled confirmed plan leaves a newer local draft a draft; a local confirm still archives the week's others. First-read test (`meal_plan_controller_first_read_test.dart`): after sign-in, online, the stale local plan is not emitted before the pull.
+- [x] Widget test: after Browse Done the chat's plan bar shows the pick with Remove; `/vana?c=<general id>` opens as general.
+- [x] Deno tests: a repeated `requestId` runs `pick_meals`, `log_from_plan` and `save_meal` once and returns the same result; the day-note context and output hold no `NNNC` and read "g of carbs"; the context states logged carbs against the target, over or under.
+- [x] `flutter analyze` clean on touched files; deno vana tests. Deploy (vana-action, vana-chat, vana-day-notes, all sharing `_shared/vana`) and apply the request-id migration to dev: wave lead. (analyze clean and vana deno suite 477/477 green in the worktree; deploy and migration still the lead's)
 
 Next: /implement-lee testing-wave
