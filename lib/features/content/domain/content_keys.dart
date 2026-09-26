@@ -811,6 +811,26 @@ class ContentKeys {
       'meal_planning.shopping_previous_current';
   static const String mpShoppingWeekPlan = 'meal_planning.shopping_week_plan';
   static const String mpShoppingWeekOf = 'meal_planning.shopping_week_of';
+  // Shopping tab, testing-wave ticket 133 (2026-09-26).
+  static const String mpShoppingPreviousOffline =
+      'meal_planning.shopping_previous_offline';
+  static const String mpShoppingItemCountOne =
+      'meal_planning.shopping_item_count_one';
+  static const String mpShoppingServingsOne =
+      'meal_planning.shopping_servings_one';
+  static const String mpShoppingServingsMany =
+      'meal_planning.shopping_servings_many';
+  static const String mpShoppingMealsOne = 'meal_planning.shopping_meals_one';
+  static const String mpShoppingMealsMany =
+      'meal_planning.shopping_meals_many';
+  static const String mpShoppingTotalsFor =
+      'meal_planning.shopping_totals_for';
+  static const String mpShoppingNewListTitle =
+      'meal_planning.shopping_new_list_title';
+  static const String mpShoppingNewListDefault =
+      'meal_planning.shopping_new_list_default';
+  static const String mpShoppingNewListCreate =
+      'meal_planning.shopping_new_list_create';
   static const String mpSettingsVanaTitle = 'meal_planning.settings_vana_title';
   static const String mpSettingsBatch = 'meal_planning.settings_batch';
   static const String mpSettingsBatchSub = 'meal_planning.settings_batch_sub';
@@ -1047,6 +1067,11 @@ class ContentKeys {
   /// shopper doubles their groceries.
   static const String krogerSendAgain = 'kroger.send_again';
   static const String krogerSendAgainConfirm = 'kroger.send_again_confirm';
+
+  /// Add to Kroger cart before a Kroger sign-in (111-002): matching needs a
+  /// store, not a shopper, so the button shows for everyone and asks the
+  /// shopper to connect when they tap it unconnected.
+  static const String krogerSendConnectFirst = 'kroger.send_connect_first';
   static const String krogerSent = 'kroger.sent';
   static const String krogerUnknown = 'kroger.unknown';
   static const String krogerSending = 'kroger.sending';

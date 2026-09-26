@@ -7,17 +7,25 @@ import '../../../../features/content/domain/content_keys.dart';
 import '../../../../shared/widgets/kyle_design/feedback/mealvana_snackbar.dart';
 import '../../../../theme/kyle_design/app_colors.dart';
 import '../../application/shopping_list_controller.dart';
+import '../screens/shopping_tab.dart' show shoppingListNameInWords;
 
-/// Shares the confirmed plan's shopping list as plain text. Lives in the
-/// Food screen's header beside the settings gear (2026-09-03 — moved from
-/// the bottom of the list), so it renders its own share origin.
+/// Shares the list on screen as plain text, titled with the list's name
+/// (110-011, Lee: "Week of Sep 20", "Race week extras"). Lives in the Food
+/// screen's header beside the settings gear (2026-09-03 — moved from the
+/// bottom of the list), so it renders its own share origin.
 class ShoppingShareButton extends ConsumerWidget {
   const ShoppingShareButton({super.key});
+
+  /// The share text's title and subject: the list's name in words, or the
+  /// untitled fallback for a list with none (the offline copy).
+  static String titleFor(ContentService content, ShoppingListState state) =>
+      state.listName.isEmpty
+      ? content.getValue(ContentKeys.mpShoppingListUntitled)
+      : shoppingListNameInWords(content, state.listName);
 
   @override
   Widget build(BuildContext context, WidgetRef ref) {
     final content = ref.read(contentServiceProvider);
-    final shareTitle = content.getValue(ContentKeys.mpShoppingShareTitle);
     final shareAction = content.getValue(ContentKeys.mpShoppingShareAction);
 
     return IconButton(
@@ -28,6 +36,7 @@ class ShoppingShareButton extends ConsumerWidget {
           _nothingToShare(context, content, offline: state?.isOffline ?? false);
           return;
         }
+        final shareTitle = titleFor(content, state);
         // Counts what is left to buy, not what is ticked (89-002).
         final summary = ContentKeys.format(
           content.getValue(
