@@ -7,7 +7,7 @@ scripts, generated review app); drop the dev-only `eval_traces` table with a mig
 the `onTrace` hook in the chat pipeline untouched — the deno test suite depends on it. The
 Vana deno suite must be green after deletion, proving nothing depended on what was removed.
 
-**Blocked by:** 04 (all 22 Scenarios converted — the JSON is the conversion source until then).
+**Blocked by:** 04 (all twenty-two Scenarios converted — the JSON is the conversion source until then).
 
 **Status:** ready-for-agent
 

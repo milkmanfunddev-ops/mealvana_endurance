@@ -9,7 +9,7 @@ the fix, but the suite being green is the regression net for ticket 06's deletio
 
 **Blocked by:** None (can start immediately).
 
-**Status:** ready-for-agent
+**Status:** in-progress (wave 1, 2026-09-26)
 
 - [ ] The failing guardrails test (pantry photo through the shared module) passes
 - [ ] The full Vana deno test suite is green
