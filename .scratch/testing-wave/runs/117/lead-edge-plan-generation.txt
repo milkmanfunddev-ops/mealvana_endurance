@@ -1,0 +1,77 @@
+[06:17:05] booted (time: 45ms)
+[06:17:05] Listening on http://localhost:9999/
+[06:17:06] 📦 Loaded templates: 29 food, 4 drink, 0 electrolyte
+[06:17:06] [PINS] Loaded pins for user: before=0, during=0, after=0, personal=0
+[06:17:06] [FORMULA-CASCADE] phase=before:top_up source=default_formula pins_in_scope=0 formula=Applesauce Pouch (Top-Off)(35ce685d-0cf6-5d59-a83f-f89312eae496) reason=no_pin_for_scope
+[06:17:06] [FORMULA-CASCADE] phase=before:snack source=default_formula pins_in_scope=0 formula=Toast + Jam(c7c52d4f-82fa-4889-afdc-88ccfda4e93b) reason=no_pin_for_scope
+[06:17:06] ✅ V4 macros calculated successfully: {
+[06:17:24] booted (time: 39ms)
+[06:17:24] booted (time: 47ms)
+[06:17:24] booted (time: 68ms)
+[06:17:24] Listening on http://localhost:9999/
+[06:17:24] Listening on http://localhost:9999/
+[06:17:24] Listening on http://localhost:9999/
+[06:17:24] [PLAN-V3-TIMING] parse_input completed in 1ms
+[06:17:24] [PLAN-V3] Full input: pre_run={carbs_g: 83, protein_g: 10, water_ml: 408, sodium_mg: undefined}, during_run={carbs_g: 95, sodium_mg: 1071, water_ml: 1298}, post_run={carbs_g: 68, protein_g: 24, sodium_mg: 357, water_ml: 1296}, du
+[06:17:24] [PLAN-V3] Starting plan generation (activity=running, hours_before=1.2166666666666666)
+[06:17:24] [PLAN-V3-PREFS] liked(0)=[] | willing(0)=[] | disliked(0)=[]
+[06:17:25] [PLAN-V3-TIMING] fetch_user_pins completed in 141ms
+[06:17:25] [PINS] Loaded pins for user: before=0, during=0, after=0, personal=0
+[06:17:25] [PLAN-V3] Pre targets (from input): carbs=83g [72-93], protein=10g [0-17], sodium=0mg [0-0], water=408ml [0-680], type=snack
+[06:17:25] [PLAN-V3] Generating before phase with Algorithm C (hours_before=1.2166666666666666)
+[06:17:25] [PLAN-V3] Using provided pre_run_selections (2 phases)
+[06:17:25] [PLAN-V3] Generating during phase (running, gut=moderate, duration=108min)
+[06:17:25] [PLAN-V3] Generating after phase (running, diet=omnivore, allergies=none, after_pins=0, pinsSupplied=false)
+[06:17:25] [PLAN-V3-SUBST] user_foods substitution is disabled by policy — before-phase components come from the curated catalog only
+[06:17:25] [PLAN-V3] Fetched 4 template_foods for 4 component names
+[06:17:25] [PLAN-V3] snack: 2 foods (exploded), carbs=60g
+[06:17:25] [PLAN-V3] top_up: 2 foods (exploded), carbs=22g
+[06:17:25] [PLAN-V3-TIMING] before_phase completed in 68ms
+[06:17:25] [PWT-QUERY] Fetched 21 active post-workout templates
+[06:17:25] [TMPL-FOODS-AFTER] Filtering template_foods for categories: after_run, activity_type: running, filter: activity_types.is.null,activity_types.ov.{running}
+[06:17:25] [TMPL-FOODS-DURING-CONSTRAINTS] Filtering for categories: during_run, activity: running
+[06:17:25] [DWT-QUERY] Fetched 25 active during workout templates
+[06:17:25] [TMPL-FOODS-AFTER] Found 31 template foods for running
+[06:17:25] [TMPL-FOODS-DURING-CONSTRAINTS] Found 23 template foods
+[06:17:25] [PLAN-V3-TIMING] during_template_select completed in 0ms (candidates=4, selected=1)
+[06:17:25] [DURING-TEMPLATE] Generating quantities for template 1 (Gel + Water): carbs=95g, sodium=1071mg, fluid=1298ml, duration=108min (1.8hr), gut=moderate
+[06:17:25] [DURING-TEMPLATE] Selected template 1 (Gel + Water) score=0, 4 candidates
+[06:17:25] [DURING-TEMPLATE] Selecting template: activity=running (mapped=running), duration=108min (bracket=90-150 min), gut=moderate
+[06:17:25] [PLAN-V3-TIMING] during_pool_queries completed in 232ms (templates=25, foods=22, pinnedComponents=0)
+[06:17:25] [DURING-TEMPLATE] VALIDATION FAILED: carbs 112% (106g/95g) — returning null (will fall back to rule solver)
+[06:17:25] [DURING-TEMPLATE] Optimized quantity search failed for template 1; trying sequential fill
+[06:17:25] [DURING-TEMPLATE] Water: 5 servings = 1200ml
+[06:17:25] [DURING-TEMPLATE] Electrolyte: electrolyte_tablet x3 = 900mg sodium, 0ml fluid
+[06:17:25] [DURING-TEMPLATE-SEARCH] Best candidate failed validation: carbs 112% (106g/95g)
+[06:17:25] [DURING-TEMPLATE] Final: 3 foods, carbs=106g/95g, sodium=1120mg/1071mg, fluid=1280ml/1298ml
+[06:17:25] [DURING-TEMPLATE] energy_gel: 4 servings = 100g carbs, 220mg sodium, 80ml fluid
+[06:17:25] [DURING-TEMPLATE] Generating quantities for template 2 ((Gel + Water) + Sports Drink): carbs=95g, sodium=1071mg, fluid=1298ml, duration=108min (1.8hr), gut=moderate
+[06:17:25] [PLAN-V3-TIMING] during_phase_total completed in 243ms (path=template)
+[06:17:25] [PLAN-V3-TIMING] during_template_solve completed in 10ms (result=success, tried=2)
+[06:17:25] [DURING-TEMPLATE-SEARCH] Selected optimized quantities: carbs=93g/95g, sodium=1075mg/1071mg, fluid=1340ml/1298ml
+[06:17:25] [PLAN-V3] Template solver succeeded: template 2 ((Gel + Water) + Sports Drink)
+[06:17:25] [DURING-GAP-FILL] Added energy_chews +0.5 servings (+13g carbs)
+[06:17:25] [DURING-GAP-FILL] Fill complete: +13g carbs, now 105g/95g
+[06:17:25] [FORMULA-CASCADE] phase=during source=default_formula pins_in_scope=0 formula=(Gel + Water) + Sports Drink(ef02c939-03db-4fab-8886-8fde45dea1bf) reason=no_pin_for_scope
+[06:17:25] [PLAN-V3-TIMING] during_phase completed in 243ms
+[06:17:25] [TMPL-FOODS-AFTER] Widening: fetched 13 out-of-scope component foods (crackers, jam, peanut_butter, milk, toaster_waffle, cream_cheese, oatmeal, honey, toast, apple, mixed_berries, granola, granola_bar)
+[06:17:25] [POST-TEMPLATE] Random tiebreak across 7 templates with travel=in_bag, prep=grab_and_go; picked 4 (Waffle + Banana + Protein Shake)
+[06:17:25] [TMPL-FOODS-AFTER] 44 curated template foods in pool (user_foods excluded by policy)
+[06:17:25] [PLAN-V3-TIMING] after_template_queries completed in 265ms (templates=21, foods=43, pinnedComponents=0, extraComponents=29)
+[06:17:25] [PLAN-V3-TIMING] after_template_select completed in 0ms (candidates=21, top=4)
+[06:17:25] [POST-TEMPLATE] Selecting: activity=running (mapped=running), diet=omnivore, allergies=none, pins=0
+[06:17:25] [PLAN-V3-TIMING] request_total completed in 412ms
+[06:17:25] [PLAN-V3] Plan generated successfully (plan_id=8118a2e7-290a-4558-9a20-ed9660289a25)
+[06:17:25] [PLAN-V3-TIMING] after_phase completed in 266ms
+[06:17:25] [PLAN-V3] After phase out of range (non-fatal): carbs=51.4 not in [54.0, 82.0]; water=398 not in [1037, 1555]; protein=33.3 not in [19.0, 29.0]
+[06:17:25] [PLAN-V3] After-phase foods: Banana(carbs=27,protein=1,qty=1), Toaster Waffle(carbs=15,protein=2,qty=1), Whey Protein Shake (RTD)(carbs=9,protein=30,qty=1)
+[06:17:25] [PLAN-V3] Post-workout template selected: 4 (Waffle + Banana + Protein Shake) [ephemeral default formula]
+[06:17:25] [PLAN-V3-TIMING] after_phase_total completed in 265ms (path=template)
+[06:17:25] [FORMULA-CASCADE] phase=after source=default_formula pins_in_scope=0 formula=Waffle + Banana + Protein Shake(89c6f0ca-0714-4fcd-9fdf-a4a1cdf13703) reason=no_pin_for_scope
+[06:17:25] [PLAN-V3] Plan result: before_subphases=snack,top_up, during_foods=5, after_foods=3
+[06:17:25] [PLAN-V3-TIMING] validation completed in 0ms
+[06:17:25] [PLAN-V3-TIMING] after_template_render completed in 0ms (result=success)
+[06:17:25] [POST-TEMPLATE] Rendered template 4 (Waffle + Banana + Protein Shake): Banana ×1, Toaster Waffle ×1, Whey Protein Shake (RTD) ×1
+[06:17:57] booted (time: 27ms)
+[06:17:57] Listening on http://localhost:9999/
+[06:17:57] [CALC_MACROS] Garmin not connected for user 69f071a8-74d9-4567-84b4-19d7a7c75a95 — skipping week Garmin context
