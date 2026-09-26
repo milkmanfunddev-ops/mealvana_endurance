@@ -1,0 +1,8 @@
+Application|Endurance Dev||0,0,402x874
+GenericElement|Dismiss
+Open testing tools||0,0,402x874
+StaticText|Theme Mode||85,310,232x26
+Button|System||85,352,232x80
+Button|Light||85,432,232x80
+Button|Dark||85,512,232x80
+Button|Open testing tools||344,732,48x48

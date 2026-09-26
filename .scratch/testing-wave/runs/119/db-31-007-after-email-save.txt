@@ -1,0 +1,1 @@
+[{"public_email":"lee+e2e-119-20260926T0046Z-new@rightpathprogramming.com","auth_email":"lee+e2e-119-20260926t0046z@rightpathprogramming.com","email_change":"","updated_at":"2026-09-26 00:51:31.049943+00","now":"2026-09-26 00:51:41.559539+00"}]

@@ -1,0 +1,27 @@
+# 119-012 · Profile & Preferences: save offline, then sign out while still offline
+
+- kind: followup-test
+- status: open
+- ticket: 119
+- run: w36-20260926T0031Z
+- screen: Profile & Preferences
+- decision: 
+
+**Steps.**
+1. On a throwaway account, cut the network (`netcut.sh on --relaunch`), change a field on Profile & Preferences, Save.
+2. Still offline, Settings > Sign Out > Sign out.
+3. Back online, sign in again and read the field in the app and by SQL.
+
+**Expected.**
+The Sign out dialog says "Your data stays with your account": the change reaches the server, or sign-out warns that unsent changes will be lost.
+
+**Actual.**
+Not run. 119-001 showed the unsent profile change waits for sign-out's own upload; offline that upload cannot succeed.
+
+**Evidence.**
+- runs/119/30-signout-dialog.png: "Your data stays with your account."
+
+**Decision quote.**
+> 
+
+**Triage.**
