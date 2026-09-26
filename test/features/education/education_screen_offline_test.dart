@@ -28,7 +28,7 @@ EducationContent _lesson(String id) => EducationContent(
 );
 
 /// Learn over [repo], whose first answer is stubbed before the pump.
-Future<void> pumpLearn(WidgetTester tester, _MockRepo repo) => smokeScreen(
+Future<void> _pumpLearn(WidgetTester tester, _MockRepo repo) => smokeScreen(
   tester,
   const EducationScreen(),
   overrides: [
@@ -46,7 +46,7 @@ void main() {
     when(() => repo.getPublishedContent()).thenAnswer(
       (_) async => throw const EducationUnavailableException('offline'),
     );
-    await pumpLearn(tester, repo);
+    await _pumpLearn(tester, repo);
 
     expect(find.byKey(const ValueKey('learn.offline')), findsOneWidget);
     expect(find.text(_content['learn.offline_message']!), findsOneWidget);
@@ -68,7 +68,7 @@ void main() {
   ) async {
     final repo = _MockRepo();
     when(() => repo.getPublishedContent()).thenAnswer((_) async => []);
-    await pumpLearn(tester, repo);
+    await _pumpLearn(tester, repo);
 
     expect(find.text('No videos available yet'), findsOneWidget);
     expect(find.byKey(const ValueKey('learn.offline')), findsNothing);
