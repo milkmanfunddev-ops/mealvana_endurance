@@ -1,3 +1,5 @@
+import 'dart:convert';
+
 import 'package:drift/drift.dart';
 import '../app_database.dart';
 import '../tables/user_profiles.dart';
@@ -57,7 +59,8 @@ class UserDao extends DatabaseAccessor<AppDatabase> with _$UserDaoMixin {
     final result =
         await (select(userProfilesTable)
               ..where(
-                (u) => u.authUserId.equals(authUserId) | u.id.equals(authUserId),
+                (u) =>
+                    u.authUserId.equals(authUserId) | u.id.equals(authUserId),
               )
               ..orderBy([(u) => OrderingTerm.desc(u.updatedAt)])
               ..limit(1))
@@ -212,6 +215,31 @@ class UserDao extends DatabaseAccessor<AppDatabase> with _$UserDaoMixin {
         needsUpload: Value(needsUpload),
       ),
     );
+  }
+
+  /// Clears `needs_upload` after [uploaded] reached the server, but only if
+  /// the stored row would still upload the same payload. A local write that landed
+  /// while the upload was in flight keeps the row dirty, so the newer copy
+  /// goes up on the next pass. `updated_at` alone cannot tell them apart: it
+  /// is stored to the second, and ticket 138's owed-upload retry runs in the
+  /// same second as the onboarding writes that follow it (Finding 03-009).
+  /// Returns whether the flag was cleared.
+  Future<bool> clearNeedsUploadIfUnchanged(UserProfileEntry uploaded) {
+    return transaction(() async {
+      final current = await (select(
+        userProfilesTable,
+      )..where((t) => t.id.equals(uploaded.id))).getSingleOrNull();
+      // Compared as the upload payload: the data class's == is identity for
+      // converted columns, so it would never match a re-read row.
+      if (current == null ||
+          jsonEncode(toDomainProfile(current).toJson()) !=
+              jsonEncode(toDomainProfile(uploaded).toJson())) {
+        return false;
+      }
+      await (update(userProfilesTable)..where((t) => t.id.equals(uploaded.id)))
+          .write(const UserProfilesTableCompanion(needsUpload: Value(false)));
+      return true;
+    });
   }
 
   /// Update user profile

@@ -31,12 +31,25 @@ import 'package:mealvana_endurance/features/onboarding/domain/onboarding_draft.d
 import 'package:mealvana_endurance/features/onboarding/presentation/providers/onboarding_controller.dart';
 import 'package:mealvana_endurance/shared/database/app_database.dart';
 import 'package:mealvana_endurance/shared/services/app_external_deps.dart';
+import 'package:mealvana_endurance/shared/services/connectivity_checker.dart';
 import 'package:mealvana_endurance/shared/services/sentry/sentry_reporter.dart';
 import 'package:mealvana_endurance/shared/services/sync/entity_sync/user_sync_handler.dart';
 
 import '../../helpers/widget_test_harness.dart';
 
 class _MockUser extends Mock implements User {}
+
+/// No platform channel in a test VM: the SyncCoordinator's owed-upload
+/// retry (ticket 138) listens here instead of `connectivity_plus`.
+class _StubConnectivity extends ConnectivityChecker {
+  const _StubConnectivity();
+
+  @override
+  Future<bool> isOnline() async => true;
+
+  @override
+  Stream<bool> get onlineChanges => const Stream<bool>.empty();
+}
 
 /// The uid GoTrue hands back once the athlete has signed up.
 const _accountUid = '00000000-0000-0000-0000-0000000000ac';
@@ -175,6 +188,9 @@ void main() {
           sentryReporterProvider.overrideWithValue(sentry),
           sharedPreferencesProvider.overrideWithValue(prefs),
           inMemoryDatabaseOverride(db),
+          connectivityCheckerProvider.overrideWithValue(
+            const _StubConnectivity(),
+          ),
           // These two providers build from Supabase.instance, which does not
           // exist in a test VM; same repositories, explicit construction.
           onboardingSurveyRepositoryProvider.overrideWithValue(

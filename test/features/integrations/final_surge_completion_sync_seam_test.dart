@@ -69,6 +69,18 @@ void main() {
         error: any(named: 'error'),
       ),
     ).thenAnswer((_) async {});
+    // The past-week lookback (Finding 100-006, ticket 138) answers empty;
+    // every payload here arrives through the upcoming feed.
+    when(
+      () => api.getWorkoutsByDateRange(
+        any(),
+        startDate: any(named: 'startDate'),
+        endDate: any(named: 'endDate'),
+      ),
+    ).thenAnswer(
+      (_) async =>
+          const FinalSurgeWorkoutsResponse(success: true, workouts: []),
+    );
 
     service = FinalSurgeSyncService(
       apiClient: api,

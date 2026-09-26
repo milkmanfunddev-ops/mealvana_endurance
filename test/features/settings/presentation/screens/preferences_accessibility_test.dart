@@ -33,6 +33,7 @@ class _SeededSettingsController extends SettingsController {
     paceUnitLabel: 'Pace',
     gutTrainingLabel: 'Gut Training',
     saveButtonText: 'Save',
+    email: 'xuan@example.com',
   );
 }
 
@@ -132,11 +133,12 @@ void main() {
     final handle = tester.ensureSemantics();
     await _pumpPreferences(tester);
 
-    final email = find.byKey(const ValueKey('profile_edit.email_field'));
-    expect(
-      (await _visibleSemantics(tester, _editable(email))).label,
-      startsWith('Email'),
-    );
+    // Email is the login email, read-only text (ticket 138, 119-002): one
+    // node that carries its label and the address.
+    final email = find.byKey(const ValueKey('profile_edit.email_value'));
+    final emailNode = await _visibleSemantics(tester, email);
+    expect(emailNode.label, startsWith('Your login email'));
+    expect(emailNode.label, contains('xuan@example.com'));
 
     final first = find.byKey(const ValueKey('profile_edit.first_name_field'));
     expect(
@@ -150,9 +152,7 @@ void main() {
       isSemantics(isTextField: true, label: 'First name', value: 'Xuan'),
     );
 
-    final birthday = find.byKey(
-      const ValueKey('profile_edit.birthday_button'),
-    );
+    final birthday = find.byKey(const ValueKey('profile_edit.birthday_button'));
     expect(
       await _visibleSemantics(tester, birthday),
       isSemantics(

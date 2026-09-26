@@ -1,6 +1,6 @@
 import 'dart:async';
 
-import 'package:drift/drift.dart' show Value, Variable;
+import 'package:drift/drift.dart' show Variable;
 import 'package:riverpod_annotation/riverpod_annotation.dart';
 import 'package:supabase_flutter/supabase_flutter.dart';
 import '../domain/user_preferences.dart';
@@ -131,13 +131,12 @@ class UserRepository with SyncableRepository {
       // .replace of the earlier snapshot: a concurrent local edit landing
       // between the read and this write would otherwise be reverted wholesale
       // AND un-dirtied — local and server permanently diverged. The
-      // updatedAt guard narrows it further: an edit that landed mid-upload
-      // bumps updatedAt, the guard misses, the row stays dirty, and the NEW
-      // value uploads on the next pass instead of being silently dropped.
-      await (database.update(database.userProfilesTable)
-            ..where((t) => t.id.equals(userId))
-            ..where((t) => t.updatedAt.equals(dirtyUser.updatedAt)))
-          .write(const UserProfilesTableCompanion(needsUpload: Value(false)));
+      // unchanged-row guard narrows it further: an edit that landed
+      // mid-upload changes the row, the guard misses, the row stays dirty,
+      // and the NEW value uploads on the next pass instead of being silently
+      // dropped. It compares the whole row, not updatedAt, which is stored
+      // to the second (see clearNeedsUploadIfUnchanged).
+      await database.userDao.clearNeedsUploadIfUnchanged(dirtyUser);
 
       sentry.addBreadcrumb(
         message: 'Uploaded dirty user profile to Supabase',

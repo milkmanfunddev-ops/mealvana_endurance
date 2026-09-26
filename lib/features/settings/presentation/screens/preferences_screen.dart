@@ -851,48 +851,54 @@ class _PreferencesScreenState extends ConsumerState<PreferencesScreen> {
     Key? valueKey,
   }) {
     final scheme = Theme.of(context).colorScheme;
-    return Column(
-      crossAxisAlignment: CrossAxisAlignment.start,
-      children: [
-        Text(
-          label,
-          style: AppTextStyles.bodyMedium.copyWith(
-            color: scheme.onSurface,
-            fontWeight: FontWeight.w500,
+    // One node for the screen reader: the label names the value, as a text
+    // field's label does (ticket 141's named-field rule).
+    return MergeSemantics(
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          Text(
+            label,
+            style: AppTextStyles.bodyMedium.copyWith(
+              color: scheme.onSurface,
+              fontWeight: FontWeight.w500,
+            ),
           ),
-        ),
-        const SizedBox(height: AppSpacing.sm),
-        Container(
-          width: double.infinity,
-          padding: const EdgeInsets.symmetric(
-            horizontal: AppSpacing.md,
-            vertical: AppSpacing.md,
-          ),
-          decoration: BoxDecoration(
-            borderRadius: AppRadius.inputRadius,
-            border: Border.all(color: scheme.onSurface.withValues(alpha: 0.12)),
-          ),
-          child: Row(
-            children: [
-              Icon(
-                icon,
-                size: AppIconSizes.controlIcon,
-                color: scheme.onSurfaceVariant,
+          const SizedBox(height: AppSpacing.sm),
+          Container(
+            width: double.infinity,
+            padding: const EdgeInsets.symmetric(
+              horizontal: AppSpacing.md,
+              vertical: AppSpacing.md,
+            ),
+            decoration: BoxDecoration(
+              borderRadius: AppRadius.inputRadius,
+              border: Border.all(
+                color: scheme.onSurface.withValues(alpha: 0.12),
               ),
-              const SizedBox(width: AppSpacing.sm),
-              Expanded(
-                child: Text(
-                  value,
-                  key: valueKey,
-                  style: AppTextStyles.bodyMedium.copyWith(
-                    color: scheme.onSurfaceVariant,
+            ),
+            child: Row(
+              children: [
+                Icon(
+                  icon,
+                  size: AppIconSizes.controlIcon,
+                  color: scheme.onSurfaceVariant,
+                ),
+                const SizedBox(width: AppSpacing.sm),
+                Expanded(
+                  child: Text(
+                    value,
+                    key: valueKey,
+                    style: AppTextStyles.bodyMedium.copyWith(
+                      color: scheme.onSurfaceVariant,
+                    ),
                   ),
                 ),
-              ),
-            ],
+              ],
+            ),
           ),
-        ),
-      ],
+        ],
+      ),
     );
   }
 

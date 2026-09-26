@@ -184,6 +184,19 @@ void main() {
     when(
       () => mockTransformer.extractWorkoutId(any()),
     ).thenReturn('workout-default');
+
+    // syncWorkouts also reads the past week by date range (Finding 100-006,
+    // ticket 138). Default: no late completions in the lookback window.
+    when(
+      () => mockApiClient.getWorkoutsByDateRange(
+        any(),
+        startDate: any(named: 'startDate'),
+        endDate: any(named: 'endDate'),
+      ),
+    ).thenAnswer(
+      (_) async =>
+          const FinalSurgeWorkoutsResponse(success: true, workouts: []),
+    );
   });
 
   // -------------------------------------------------------------------------
