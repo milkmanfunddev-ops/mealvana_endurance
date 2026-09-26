@@ -18,3 +18,5 @@ deserved? Anchor wording adjusts here, before a full round bakes in twenty-odd j
 - [ ] Mark, dimension breakdown, and verdict written to the round files (prose + JSON)
 - [ ] Lee has read transcript and verdict and confirmed the anchors calibrate (or adjusted
       them, recorded in the Rubric's history)
+
+Board: report the Run to the live judging board as it runs, per `eval/board/README.md`.

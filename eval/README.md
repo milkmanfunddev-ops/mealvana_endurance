@@ -18,6 +18,8 @@ of every Scenario).
   persona, goal, opening turn, required beats, and Examiner notes.
 - `runs/`. Round results, one directory per round.
 - `improvements.md`. The master Improvement backlog and its recording conventions.
+- `board/`. The live judging board, published as a claude.ai artifact, and how the Examiner
+  reports to it while a round runs.
 - `accounts.md`. Persona accounts mapped to the Scenarios they serve. Credentials never live in
   this directory; they go in the secrets directory.
 
@@ -71,8 +73,9 @@ note in the prose. It does not overwrite the original Run's entry.
 
 ## JSON sidecar convention
 
-Every round writes a machine-readable sidecar next to the prose, so the future visual artifact,
-which is a separate effort, renders from data instead of re-parsing prose. Ticket 05 of the
+Every round writes a machine-readable sidecar next to the prose, so the visual artifact renders
+from data instead of re-parsing prose. That artifact is the judging board in `board/`; the
+Examiner mirrors each Run's sidecar object into it as the round runs (`board/README.md`). Ticket 05 of the
 vana-judging feature implements this schema. This section is the contract.
 
 - `round`. The round number as a string, for example `"001"`.
