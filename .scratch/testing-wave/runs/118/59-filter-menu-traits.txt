@@ -1,0 +1,7 @@
+{"l":"Any type","traits":["Button","Scrollable","TextOperationsAvailable"]}
+{"l":"Breakfast","traits":["Button","Scrollable","TextOperationsAvailable"]}
+{"l":"Lunch","traits":["Button","Scrollable","TextOperationsAvailable"]}
+{"l":"Dinner","traits":["Scrollable","Button","TextOperationsAvailable","Selected"]}
+{"l":"Snack","traits":["Button","Scrollable","TextOperationsAvailable"]}
+{"l":"No recipe only","traits":["Button","Scrollable","TextOperationsAvailable"]}
+{"l":"Recipes","traits":["Scrollable","Button","TextOperationsAvailable","Selected"]}

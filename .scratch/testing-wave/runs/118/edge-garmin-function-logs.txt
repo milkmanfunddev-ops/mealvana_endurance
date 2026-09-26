@@ -1,0 +1,4 @@
+[19:49:11] [CALC_MACROS] Garmin not connected for user b232e944-ff53-4c79-a8d9-5c823e54c47c — skipping week Garmin context
+[19:53:01] [CALC_MACROS] Garmin not connected for user b232e944-ff53-4c79-a8d9-5c823e54c47c — skipping week Garmin context
+
+(2 rows)

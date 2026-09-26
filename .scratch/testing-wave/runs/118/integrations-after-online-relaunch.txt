@@ -1,0 +1,5 @@
+Sat Sep 26 00:57:12 UTC 2026
+vdot|requires_reauth|Please reconnect your V.O2 account|0
+training_peaks|requires_reauth|Token refresh refused. Please reconnect.|0
+{"provider":"vdot","last_sync_status":"requires_reauth","err":"Please reconnect your V.O2 account","updated_at":"2026-09-26 00:56:39.742909+00"}
+{"provider":"training_peaks","last_sync_status":"requires_reauth","err":"Token refresh refused. Please reconnect.","updated_at":"2026-09-26 00:56:39.28164+00"}
