@@ -3,16 +3,24 @@
 /// (`customer_info_fixtures.dart`, docs/test/README.md Seam tests): which of
 /// trial, active, founding member or ended the plan is, the date that goes
 /// with it, and whether Upgrade and Manage subscription belong on the screen;
-/// a Grant with where it came from and its days left (mp-558).
+/// a Grant with where it came from and its days left (mp-558), where it came
+/// from read from the server's `pro_grants` rows, fed at the wire, and from
+/// its length only when no row matches (mp-615).
 library;
+
+import 'dart:convert';
 
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:flutter_test/flutter_test.dart';
+import 'package:http/http.dart' as http;
+import 'package:http/testing.dart';
 import 'package:mocktail/mocktail.dart';
 import 'package:purchases_flutter/purchases_flutter.dart';
+import 'package:supabase_flutter/supabase_flutter.dart';
 
 import 'package:mealvana_endurance/features/subscription/application/subscription_screen_controller.dart';
 import 'package:mealvana_endurance/features/subscription/application/subscription_status_provider.dart';
+import 'package:mealvana_endurance/features/subscription/data/grant_source_repository.dart';
 import 'package:mealvana_endurance/features/subscription/data/subscription_service.dart';
 import 'package:mealvana_endurance/features/subscription/data/user_entitlements_repository.dart';
 import 'package:mealvana_endurance/features/subscription/domain/entitlement.dart';
@@ -40,6 +48,26 @@ class _NoopScheduler implements LocalNotificationScheduler {
 }
 
 const _userId = 'u-1';
+
+/// The real repository over PostgREST answering [rows] as `pro_grants`
+/// holds them; null [rows] answers as the network being down.
+GrantSourceRepository _grantRows(List<Map<String, Object?>>? rows) =>
+    GrantSourceRepository(
+      supabase: SupabaseClient(
+        'https://example.supabase.co',
+        'anon',
+        httpClient: MockClient((req) async {
+          if (rows == null) throw http.ClientException('offline');
+          return http.Response(
+            jsonEncode(rows),
+            200,
+            headers: {'content-type': 'application/json'},
+            request: req,
+          );
+        }),
+      ),
+      currentUserId: () => _userId,
+    );
 
 /// 19 October 2026, midday UTC: the day mp-558's example opens Settings.
 final _today = DateTime.utc(2026, 10, 19, 12);
@@ -70,6 +98,7 @@ void main() {
     required CustomerInfo info,
     bool storeSubscription = true,
     bool keepOpen = true,
+    List<Map<String, Object?>>? grantRows = const [],
   }) {
     when(() => service.fetchStatus()).thenAnswer((_) async => statusOf(info));
     when(
@@ -79,6 +108,7 @@ void main() {
       overrides: [
         subscriptionServiceProvider.overrideWithValue(service),
         userEntitlementsRepositoryProvider.overrideWithValue(repo),
+        grantSourceRepositoryProvider.overrideWithValue(_grantRows(grantRows)),
         entitlementAnswerTimeoutProvider.overrideWithValue(
           const Duration(milliseconds: 60),
         ),
@@ -180,6 +210,73 @@ void main() {
       expect(s.grantSource, GrantSource.code);
       expect(s.daysLeft, 338); // 19 October 2026 to 22 September 2027
       expect(s.canManage, isFalse);
+    });
+
+    test("a coach's own 30-day Code reads as the coach's, not the grace "
+        'month, from its server record (mp-615)', () async {
+      final s = await read(
+        container(
+          info: customerInfoGraceGrant,
+          storeSubscription: false,
+          grantRows: [
+            {
+              'source': 'coach',
+              'pro_days': 30,
+              'granted_at': '2026-10-01T10:00:01.52+00:00',
+            },
+          ],
+        ),
+      );
+      expect(s.plan, PlanStatus.grant);
+      expect(s.grantSource, GrantSource.coach);
+      expect(s.daysLeft, 12);
+    });
+
+    test('a recorded grace month reads as the grace month', () async {
+      final s = await read(
+        container(
+          info: customerInfoGraceGrant,
+          storeSubscription: false,
+          grantRows: [
+            {
+              'source': 'grace',
+              'pro_days': 30,
+              'granted_at': '2026-10-01T10:00:00+00:00',
+            },
+          ],
+        ),
+      );
+      expect(s.grantSource, GrantSource.legacyGrace);
+    });
+
+    test('a row for an earlier Grant says nothing about the running one: '
+        'its length decides', () async {
+      final s = await read(
+        container(
+          info: customerInfoGranted,
+          storeSubscription: false,
+          grantRows: [
+            {
+              'source': 'coach',
+              'pro_days': 30,
+              'granted_at': '2026-06-01T09:00:00+00:00',
+            },
+          ],
+        ),
+      );
+      expect(s.grantSource, GrantSource.code);
+    });
+
+    test('offline, the source is read from its length', () async {
+      final s = await read(
+        container(
+          info: customerInfoGraceGrant,
+          storeSubscription: false,
+          grantRows: null,
+        ),
+      );
+      expect(s.plan, PlanStatus.grant);
+      expect(s.grantSource, GrantSource.legacyGrace);
     });
 
     test('a store subscription is no Grant', () async {

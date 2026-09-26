@@ -19,7 +19,9 @@
  *                                flip is the flip-day run's
  *
  * "Once" is RevenueCat's own record, read by applyGrace: a caller already
- * holding a covering grant and the attribute gets nothing more.
+ * holding a covering grant and the attribute gets nothing more. A grant made
+ * here is recorded in `pro_grants` as source 'grace' (mp-615), which the
+ * Subscription screen labels from.
  *
  * Answers:
  *   200 { ok: true, status: 'granted' | 'marked' | 'already', pro_days }
@@ -31,6 +33,7 @@
  */
 import { corsHeaders } from '../_shared/cors.ts';
 import { applyGrace, type AuthUser, claimsGrace, GRACE_DAYS } from '../_shared/grace/grace.ts';
+import type { RecordGrant } from '../_shared/grants/record.ts';
 import type { RevenueCatClient } from '../_shared/revenuecat/client.ts';
 
 /** The caller as GoTrue's getUser returns it (the fields the claim reads). */
@@ -48,6 +51,8 @@ export interface GraceClaimDeps {
   flipAt: () => Date | null;
   /** RevenueCat's REST API; throws when the secret key is not configured. */
   revenueCat: () => RevenueCatClient;
+  /** Records the grant as the grace month in `pro_grants` (mp-615); never throws. */
+  recordGrant?: RecordGrant;
   now?: () => number;
   sleep?: (ms: number) => Promise<void>;
 }
@@ -95,7 +100,12 @@ export function makeGraceClaimHandler(deps: GraceClaimDeps) {
       console.error('[grace-claim] RevenueCat client unavailable:', (e as Error).message);
       return json({ error: 'store_unavailable' }, 502);
     }
-    const outcome = await applyGrace(rc, caller.userId, { flipAt, write: true, sleep: deps.sleep });
+    const outcome = await applyGrace(rc, caller.userId, {
+      flipAt,
+      write: true,
+      sleep: deps.sleep,
+      recordGrant: deps.recordGrant,
+    });
     console.log(`[grace-claim] ${caller.userId} → ${outcome.status}${outcome.error ? `: ${outcome.error}` : ''}`);
     switch (outcome.status) {
       case 'granted':

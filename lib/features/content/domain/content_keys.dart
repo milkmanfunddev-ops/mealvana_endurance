@@ -1118,12 +1118,15 @@ class ContentKeys {
   static const String subscriptionIncludesHeader =
       'subscription.includes_header';
 
-  // A Grant on the Subscription screen (mp-558): where it came from, as the
-  // status, and its days left. `{days}` is the whole days until it ends.
+  // A Grant on the Subscription screen (mp-558, mp-615): where it came from,
+  // as the status, and its days left. `{days}` is the whole days until it
+  // ends.
   static const String subscriptionStatusGrantGrace =
       'subscription.status_grant_grace';
   static const String subscriptionStatusGrantCode =
       'subscription.status_grant_code';
+  static const String subscriptionStatusGrantCoach =
+      'subscription.status_grant_coach';
   static const String subscriptionGrantDaysLeft =
       'subscription.grant_days_left';
   static const String subscriptionGrantOneDayLeft =

@@ -20,6 +20,7 @@
 import { serve } from 'https://deno.land/std@0.224.0/http/server.ts';
 import { createClient } from 'https://esm.sh/@supabase/supabase-js@2.39.3';
 import { initSentry, withSentry } from '../_shared/sentry.ts';
+import { recordGrantTo } from '../_shared/grants/record.ts';
 import { makeRevenueCatClient, type RevenueCatClient } from '../_shared/revenuecat/client.ts';
 import { SUPABASE_SERVICE_ROLE_KEY, SUPABASE_URL } from '../_shared/vana/env.ts';
 import { type ClaimCaller, makeGraceClaimHandler } from './handler.ts';
@@ -60,6 +61,7 @@ function flipAt(): Date | null {
 serve(withSentry(makeGraceClaimHandler({
   caller: callerFrom,
   flipAt,
+  recordGrant: recordGrantTo(admin),
   revenueCat: () =>
     revenueCat ??= makeRevenueCatClient({
       secretKey: Deno.env.get('REVENUECAT_SECRET_KEY') ?? '',

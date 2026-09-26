@@ -23,6 +23,9 @@
  *                                    the coach accepts
  *   giveaway                         `perk_days` (365) of `pro`, once
  *
+ * Each grant of `pro` is recorded in `pro_grants` with its source, 'coach' or
+ * 'code' (mp-615), which the Subscription screen labels from.
+ *
  * If a RevenueCat call or a write fails after the claim, the claim is released,
  * so the caller can try again and a code is never spent on nothing.
  *
@@ -43,6 +46,7 @@
  * reason and the caller tries another code.
  */
 import { corsHeaders } from '../_shared/cors.ts';
+import { type GrantSource, recordGrantTo } from '../_shared/grants/record.ts';
 import { RevenueCatError, type RevenueCatClient } from '../_shared/revenuecat/client.ts';
 import type { Db } from '../_shared/vana/env.ts';
 
@@ -210,13 +214,13 @@ async function apply(
   isOwner: boolean,
 ): Promise<Record<string, unknown>> {
   if (row.type === 'giveaway') {
-    await grant(deps, caller.userId, row.perk_days);
+    await grant(deps, db, caller.userId, row.perk_days, 'code');
     return { kind: 'giveaway', pro_days: row.perk_days };
   }
 
   if (row.type === 'coach' && isOwner) {
     await markCoach(db, caller);
-    await grant(deps, caller.userId, row.perk_days);
+    await grant(deps, db, caller.userId, row.perk_days, 'coach');
     return { kind: 'coach', pro_days: row.perk_days };
   }
 
@@ -235,13 +239,19 @@ async function apply(
   return pairsWith ? { kind: 'paired', coach_user_id: pairsWith } : { kind: 'attributed' };
 }
 
-async function grant(deps: RedeemDeps, userId: string, days: number): Promise<void> {
+/**
+ * Grant [days] of `pro`, then record where it came from in `pro_grants`
+ * (mp-615): 'code' for a giveaway, 'coach' for a coach's own code. The record
+ * never fails the redemption; the grant is already made.
+ */
+async function grant(deps: RedeemDeps, db: Db, userId: string, days: number, source: GrantSource): Promise<void> {
   if (!(days > 0)) return;
   try {
     await withCustomer(deps.revenueCat(), userId, (rc) => rc.grantPro(userId, days));
   } catch (e) {
     throw new AfterClaimError(502, 'store_unavailable', `grantPro failed: ${(e as Error).message}`);
   }
+  await recordGrantTo(db)(userId, source, days);
 }
 
 /**

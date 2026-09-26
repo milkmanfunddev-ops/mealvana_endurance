@@ -21,6 +21,7 @@ import {
   runGrace,
   selectGraceAccounts,
 } from './grace.ts';
+import type { GrantSource, RecordGrant } from '../grants/record.ts';
 
 const DAY = 24 * 60 * 60 * 1000;
 const FLIP = new Date('2026-10-01T07:00:00Z');
@@ -74,9 +75,19 @@ function world() {
 const noSleep = () => Promise.resolve();
 const quiet = () => {};
 
-async function run(w: World, opts: { write: boolean; onlyIds?: string[] }) {
+async function run(w: World, opts: { write: boolean; onlyIds?: string[]; recordGrant?: RecordGrant }) {
   const users = await listAuthUsers({ url: SUPABASE_URL, serviceRoleKey: SERVICE_KEY, fetch: w.fetch, perPage: 2 });
-  return runGrace({ users, rc: w.rc(), flipAt: FLIP, write: opts.write, onlyIds: opts.onlyIds, log: quiet, sleep: noSleep, now: () => w.now });
+  return runGrace({
+    users,
+    rc: w.rc(),
+    flipAt: FLIP,
+    write: opts.write,
+    onlyIds: opts.onlyIds,
+    log: quiet,
+    sleep: noSleep,
+    now: () => w.now,
+    recordGrant: opts.recordGrant,
+  });
 }
 
 // ---------------------------------------------------------------------------
@@ -204,6 +215,32 @@ describe('runGrace: the write run', () => {
     const summary = await run(w, { write: true, onlyIds: [OLD.id] });
     assertEquals(summary.outcomes[0].status, 'granted');
     assertEquals(w.writes.filter((x) => x === `grant ${OLD.id}`).length, 1);
+  });
+});
+
+describe('runGrace: where each grant came from (mp-615)', () => {
+  it('records each grant it makes as grace, and nothing for an account it only marks or leaves', async () => {
+    const w = world();
+    const recorded: { user: string; source: GrantSource; days: number }[] = [];
+    const recordGrant: RecordGrant = (user, source, days) => {
+      recorded.push({ user, source, days });
+      return Promise.resolve();
+    };
+    await run(w, { write: true, recordGrant });
+    const grantedIds = w.writes.filter((x) => x.startsWith('grant ')).map((x) => x.slice('grant '.length));
+    assertEquals(recorded.map((r) => r.user).sort(), grantedIds.sort());
+    assert(recorded.every((r) => r.source === 'grace' && r.days === GRACE_DAYS));
+    assert(!recorded.some((r) => r.user === COMPED.id));
+
+    recorded.length = 0;
+    await run(w, { write: true, recordGrant });
+    assertEquals(recorded, []);
+  });
+
+  it('a dry run records nothing', async () => {
+    const recorded: string[] = [];
+    await run(world(), { write: false, recordGrant: (user) => (recorded.push(user), Promise.resolve()) });
+    assertEquals(recorded, []);
   });
 });
 

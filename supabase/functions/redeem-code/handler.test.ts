@@ -19,7 +19,9 @@
  *     account that redeemed it is deleted;
  *   - a wrong, not-yet-valid, expired or used code gets a plain reason, and
  *     nothing is written or granted;
- *   - only a signed-in (not anonymous) caller gets in.
+ *   - only a signed-in (not anonymous) caller gets in;
+ *   - each grant of pro is recorded in `pro_grants` with its source, 'coach'
+ *     or 'code' (mp-615), and a failed record never fails the redemption.
  *
  * Run with:
  *   deno test --allow-read --allow-write --allow-env --allow-sys --node-modules-dir=none \
@@ -127,12 +129,20 @@ function deleteAccount(db: FakeDb, userId: string): void {
   }
 }
 
-function world(codes: Row[], extra: Record<string, Row[]> = {}): FakeDb {
+function world(codes: Row[], extra: Record<string, Row[]> = {}, errors?: Record<string, string>): FakeDb {
   // deno-lint-ignore no-explicit-any
   const rpc = { code_claim: (args: any) => claimRpc(db)(args) };
   const db: FakeDb = fakeDb(
-    { codes, users: users(), code_redemptions: [], coaches: [], coach_athlete_relationships: [], ...extra },
-    { rpc },
+    {
+      codes,
+      users: users(),
+      code_redemptions: [],
+      coaches: [],
+      coach_athlete_relationships: [],
+      pro_grants: [],
+      ...extra,
+    },
+    { rpc, errors },
   );
   return db;
 }
@@ -541,6 +551,47 @@ describe('a giveaway code', () => {
     deleteAccount(db, WINNER);
     assertEquals((await redeem(db, rc, signedIn(SECOND_WINNER), { code: 'WIN2026' })).body.ok, true);
     refusedWith(await redeem(db, rc, signedIn(ATHLETE), { code: 'WIN2026' }), 'used');
+  });
+});
+
+describe('where a grant came from is recorded (mp-615)', () => {
+  const sources = (db: FakeDb) =>
+    db.rows('pro_grants').map((r) => ({ user_id: r.user_id, source: r.source, pro_days: r.pro_days }));
+
+  it("a coach's own code is recorded as coach", async () => {
+    const db = world([code({})]);
+    await redeem(db, fakeRc(), signedIn(COACH), { code: 'KYLE30' });
+    assertEquals(sources(db), [{ user_id: COACH, source: 'coach', pro_days: 30 }]);
+  });
+
+  it('a giveaway is recorded as code', async () => {
+    const db = world([code({ code: 'WIN2026', type: 'giveaway', owner_user_id: null, perk_days: 365 })]);
+    await redeem(db, fakeRc(), signedIn(WINNER), { code: 'WIN2026' });
+    assertEquals(sources(db), [{ user_id: WINNER, source: 'code', pro_days: 365 }]);
+  });
+
+  it('an athlete pairing through a coach code gets no pro, so nothing is recorded', async () => {
+    const db = world([code({})]);
+    await redeem(db, fakeRc(), signedIn(ATHLETE), { code: 'KYLE30' });
+    assertEquals(sources(db), []);
+  });
+
+  it('a grant RevenueCat refuses is not recorded', async () => {
+    const db = world([code({})]);
+    const rc = fakeRc();
+    rc.failGrant = new RevenueCatError('RevenueCat POST → 503', 503);
+    await redeem(db, rc, signedIn(COACH), { code: 'KYLE30' });
+    assertEquals(sources(db), []);
+  });
+
+  it('a failed record still answers the redemption and keeps the claim', async () => {
+    const db = world([code({})], {}, { pro_grants: 'relation "pro_grants" does not exist' });
+    const rc = fakeRc();
+    const res = await redeem(db, rc, signedIn(COACH), { code: 'KYLE30' });
+    assertEquals(res.status, 200);
+    assertEquals(res.body.kind, 'coach');
+    assertEquals(rc.grants, [{ user: COACH, days: 30 }]);
+    assertEquals(db.rows('code_redemptions').map((r) => r.user_id), [COACH]);
   });
 });
 

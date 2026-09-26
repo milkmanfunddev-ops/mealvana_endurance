@@ -24,6 +24,7 @@
  * Pure of Deno globals: fetch, the clock and sleep are injected.
  */
 
+import type { RecordGrant } from '../grants/record.ts';
 import { type RevenueCatClient, RevenueCatError } from '../revenuecat/client.ts';
 
 export const GRACE_DAYS = 30;
@@ -110,6 +111,11 @@ export interface GraceOptions {
   flipAt: Date;
   write: boolean;
   sleep?: (ms: number) => Promise<void>;
+  /**
+   * Records each grant made as the grace month (`pro_grants`, mp-615), so the
+   * app labels it from the server rather than from its length. Never throws.
+   */
+  recordGrant?: RecordGrant;
 }
 
 const defaultSleep = (ms: number) => new Promise<void>((r) => setTimeout(r, ms));
@@ -142,7 +148,10 @@ export async function applyGrace(rc: RevenueCatClient, userId: string, opts: Gra
     if (!opts.write) return { userId, status: covered ? 'would_mark' : 'would_grant', grantEndBefore };
 
     if (attributes === null) await withRetry(sleep, () => rc.createCustomer(userId));
-    if (!covered) await withRetry(sleep, () => rc.grantPro(userId, GRACE_DAYS));
+    if (!covered) {
+      await withRetry(sleep, () => rc.grantPro(userId, GRACE_DAYS));
+      await opts.recordGrant?.(userId, 'grace', GRACE_DAYS);
+    }
     if (!founding) await withRetry(sleep, () => rc.setAttributes(userId, { [FOUNDING_MEMBER_ATTRIBUTE]: 'true' }));
     return { userId, status: covered ? 'marked' : 'granted', grantEndBefore };
   } catch (e) {

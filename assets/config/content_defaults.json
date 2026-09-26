@@ -941,6 +941,7 @@
     "includes_header": "What your plan includes",
     "status_grant_grace": "Grace month",
     "status_grant_code": "Pro from a code",
+    "status_grant_coach": "Coach access",
     "grant_days_left": "{days} days left",
     "grant_one_day_left": "1 day left",
     "grant_last_day": "Last day today",
