@@ -121,10 +121,27 @@ class MealPlanController extends _$MealPlanController {
   /// and never done twice. Removed on success, so the next tap on the same
   /// row is a new action with a new id. Kept across `invalidate` like
   /// [_logsInFlight]: a refresh must not turn a retry into a new write.
-  final Map<String, String> _pendingRequestIds = {};
+  ///
+  /// An id is a retry's only for [_requestIdLifetime] after it was minted:
+  /// a tap long after a failed one is a new action (another serving of the
+  /// same batch row, the same meal picked again next week), and replaying
+  /// the old id there would answer it from the stored result and write
+  /// nothing (wave 43 review).
+  final Map<String, ({String id, DateTime minted})> _pendingRequestIds = {};
 
-  String _requestIdFor(String actionKey) =>
-      _pendingRequestIds.putIfAbsent(actionKey, const Uuid().v4);
+  static const _requestIdLifetime = Duration(minutes: 2);
+
+  String _requestIdFor(String actionKey) {
+    final now = DateTime.now();
+    final pending = _pendingRequestIds[actionKey];
+    if (pending != null &&
+        now.difference(pending.minted) < _requestIdLifetime) {
+      return pending.id;
+    }
+    final id = const Uuid().v4();
+    _pendingRequestIds[actionKey] = (id: id, minted: now);
+    return id;
+  }
 
   /// After a write landed: the next call for [actionKey] is a new action.
   /// After a failure the id stays for the retry. Runs twice at once only if

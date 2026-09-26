@@ -173,6 +173,9 @@ export async function deregisterGarminForUser(
     const resp = await doFetch(GARMIN_DEREGISTRATION_URL, {
       method: 'DELETE',
       headers: { Authorization: `Bearer ${accessToken}` },
+      // A hung Garmin must not hold account deletion to the function's wall
+      // clock; a timeout is a 'failed' outcome, which never blocks (wave 43 review).
+      signal: AbortSignal.timeout(10_000),
     });
     if (resp.ok) {
       console.log(`${prefix} Garmin registration deleted for user ${userId}`);

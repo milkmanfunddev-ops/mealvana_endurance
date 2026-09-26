@@ -12,7 +12,8 @@ part of 'conversation_kind_provider.dart';
 /// link that names the conversation but not its mode (`/vana?c=<id>`).
 /// Null when the conversation is not the athlete's or does not exist; the
 /// route then falls back to meal planning, as it always did
-/// (testing-wave 134, Finding 118-004).
+/// (testing-wave 134, Finding 118-004). Fails fast: offline, Riverpod's
+/// default retries held the spinner ~38 s before the fallback.
 
 @ProviderFor(conversationKind)
 const conversationKindProvider = ConversationKindFamily._();
@@ -21,7 +22,8 @@ const conversationKindProvider = ConversationKindFamily._();
 /// link that names the conversation but not its mode (`/vana?c=<id>`).
 /// Null when the conversation is not the athlete's or does not exist; the
 /// route then falls back to meal planning, as it always did
-/// (testing-wave 134, Finding 118-004).
+/// (testing-wave 134, Finding 118-004). Fails fast: offline, Riverpod's
+/// default retries held the spinner ~38 s before the fallback.
 
 final class ConversationKindProvider
     extends
@@ -37,12 +39,13 @@ final class ConversationKindProvider
   /// link that names the conversation but not its mode (`/vana?c=<id>`).
   /// Null when the conversation is not the athlete's or does not exist; the
   /// route then falls back to meal planning, as it always did
-  /// (testing-wave 134, Finding 118-004).
+  /// (testing-wave 134, Finding 118-004). Fails fast: offline, Riverpod's
+  /// default retries held the spinner ~38 s before the fallback.
   const ConversationKindProvider._({
     required ConversationKindFamily super.from,
     required String super.argument,
   }) : super(
-         retry: null,
+         retry: failFast,
          name: r'conversationKindProvider',
          isAutoDispose: true,
          dependencies: null,
@@ -82,19 +85,20 @@ final class ConversationKindProvider
   }
 }
 
-String _$conversationKindHash() => r'3c3976cf1325a5e3a3eee94943e6f3d54258e082';
+String _$conversationKindHash() => r'94e201d2d5432049a1632e7ee70545a09bbc7ce6';
 
 /// The kind of an existing Vana conversation, read from the server, for a
 /// link that names the conversation but not its mode (`/vana?c=<id>`).
 /// Null when the conversation is not the athlete's or does not exist; the
 /// route then falls back to meal planning, as it always did
-/// (testing-wave 134, Finding 118-004).
+/// (testing-wave 134, Finding 118-004). Fails fast: offline, Riverpod's
+/// default retries held the spinner ~38 s before the fallback.
 
 final class ConversationKindFamily extends $Family
     with $FunctionalFamilyOverride<FutureOr<VanaConversationKind?>, String> {
   const ConversationKindFamily._()
     : super(
-        retry: null,
+        retry: failFast,
         name: r'conversationKindProvider',
         dependencies: null,
         $allTransitiveDependencies: null,
@@ -105,7 +109,8 @@ final class ConversationKindFamily extends $Family
   /// link that names the conversation but not its mode (`/vana?c=<id>`).
   /// Null when the conversation is not the athlete's or does not exist; the
   /// route then falls back to meal planning, as it always did
-  /// (testing-wave 134, Finding 118-004).
+  /// (testing-wave 134, Finding 118-004). Fails fast: offline, Riverpod's
+  /// default retries held the spinner ~38 s before the fallback.
 
   ConversationKindProvider call(String id) =>
       ConversationKindProvider._(argument: id, from: this);
