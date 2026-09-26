@@ -43,7 +43,6 @@ import 'package:mealvana_endurance/features/auth/presentation/providers/post_onb
 import 'package:mealvana_endurance/features/auth/presentation/providers/password_recovery_controller.dart';
 
 // Activities list screen
-import 'package:mealvana_endurance/features/activities/presentation/screens/activities_list_screen.dart';
 
 // Mealvana AI chat screen + controller override
 import 'package:mealvana_endurance/features/ai_coach/presentation/screens/ai_coach_chat_screen.dart';
@@ -207,16 +206,9 @@ void main() {
     });
   });
 
-  group('Activities list screen smoke test', () {
-    // ActivitiesListScreen watches several async providers (activitiesController,
-    // allEventsProvider, nextUpcomingEventProvider, carbLoadingDaysForRange).
-    // Seeding all of them is complex; settle:false is the right trade-off here —
-    // we assert the screen builds without crashing while in the error state
-    // (no auth session → AsyncError → _buildErrorState).
-    testWidgets('ActivitiesListScreen builds without overflow', (tester) async {
-      await smokeScreen(tester, const ActivitiesListScreen(), settle: false);
-    });
-  });
+  // ActivitiesListScreen smoke removed with the screen itself — orphaned
+  // since the home-shell switchover, deleted by carb-loading@v1's dead-code
+  // retirement (commit 09f8cce7).
 
   group('Mealvana AI chat screen smoke test', () {
     testWidgets('AiCoachChatScreen builds (seeded empty state)', (

@@ -1,0 +1,32 @@
+{
+ "fingerprintId": "bb5e553cb31c",
+ "provider": "garmin",
+ "stratum": {
+  "endpoint": "garmin/activity_detail_raw",
+  "workoutType": "INDOOR_CARDIO"
+ },
+ "optionalKeysInStratum": [
+  "steps"
+ ],
+ "provenance": {
+  "source": "prod provider_raw_payloads",
+  "scrubbed": "server-side (corpus-export edge fn)",
+  "environment": "prod",
+  "exportedAt": "2026-09-21T00:53:23+00:00",
+  "note": "real-account (prod), promoted by ruling 2026-09-20",
+  "correction": "re-scrubbed under the default-deny standard (@v1.1 samples de-id erratum, ruled 2026-09-20); fingerprint unchanged, content re-destroyed"
+ },
+ "exemplar": {
+  "steps": 1490,
+  "activityId": 26777551097,
+  "isWebUpload": false,
+  "activityName": "corpus placeholder",
+  "activityType": "INDOOR_CARDIO",
+  "durationInSeconds": 2783,
+  "activeKilocalories": 420,
+  "startTimeInSeconds": 1767225600,
+  "startTimeOffsetInSeconds": -14941,
+  "maxHeartRateInBeatsPerMinute": 160,
+  "averageHeartRateInBeatsPerMinute": 109
+ }
+}

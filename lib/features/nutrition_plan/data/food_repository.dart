@@ -1,6 +1,8 @@
 import 'dart:async';
 import 'dart:convert';
 
+import 'package:flutter/foundation.dart' show visibleForTesting;
+
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:supabase_flutter/supabase_flutter.dart';
 import 'package:drift/drift.dart';
@@ -71,7 +73,7 @@ class FoodRepository with SyncableRepository {
           .order('name', ascending: true);
 
       // Clear existing foods and repopulate (using existing sync logic)
-      await _syncFoodsToLocalDatabase(response as List<dynamic>);
+      await syncFoodsToLocalDatabase(response as List<dynamic>);
 
       // Update last sync timestamp
       await setLastSyncTime(DateTime.now());
@@ -143,7 +145,7 @@ class FoodRepository with SyncableRepository {
           .toList();
 
       // Sync foods to local database for offline access
-      await _syncFoodsToLocalDatabase(genericFoodsData);
+      await syncFoodsToLocalDatabase(genericFoodsData);
       return foods;
     } catch (e) {
       _logger.error(
@@ -982,7 +984,12 @@ class FoodRepository with SyncableRepository {
 
   /// Sync foods from Supabase response to local database
   /// This ensures that food IDs returned by edge functions can be resolved locally
-  Future<void> _syncFoodsToLocalDatabase(
+  /// The wire→local mapper for the foods mirror. Exposed for the G26 seam,
+  /// which feeds it producer-shaped `select * from foods` rows to prove the
+  /// seed migration's rows survive local sync pickup — the mapper itself is
+  /// the unit under test there, so the test must not re-implement it.
+  @visibleForTesting
+  Future<void> syncFoodsToLocalDatabase(
     List<dynamic> supabaseFoodsData,
   ) async {
     try {
@@ -1070,7 +1077,7 @@ class FoodRepository with SyncableRepository {
   Future<void> syncFromDownloadedData({required List<dynamic> foods}) async {
     try {
       // Reuse existing sync logic that clears and repopulates foods table
-      await _syncFoodsToLocalDatabase(foods);
+      await syncFoodsToLocalDatabase(foods);
     } catch (e, stackTrace) {
       _logger.error(
         'Nutrition foods sync failed',

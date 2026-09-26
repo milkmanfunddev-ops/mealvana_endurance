@@ -19,6 +19,7 @@ import '../../features/meal_planning/presentation/widgets/vana_companion.dart';
 import '../core/app_router.dart';
 import '../services/app_config.dart';
 import '../services/app_external_deps.dart';
+import '../../features/carb_loading/presentation/providers/carb_nudge_coordinator.dart';
 import '../services/auth/auth_listener_service.dart';
 import '../services/notification_service.dart';
 import '../../features/daily_macros/data/daily_macro_targets_repository.dart';
@@ -39,6 +40,10 @@ import 'shake_to_report.dart';
 /// - MaterialApp.builder wraps the router child with AppStartupWidget
 /// - This allows deep links to be processed while app initializes
 /// - Critical for OAuth redirects (e.g., com.milkman.mealvanaendurance://auth-callback)
+/// G27: where a carb-load nudge tap lands — the event's details screen.
+/// Pure so the L2 pins the mapping without pumping the root widget.
+String notificationRouteForCarbEvent(String eventId) => '/events/$eventId';
+
 class RootAppWidget extends ConsumerStatefulWidget {
   const RootAppWidget({super.key});
 
@@ -46,10 +51,12 @@ class RootAppWidget extends ConsumerStatefulWidget {
   ConsumerState<RootAppWidget> createState() => _RootAppWidgetState();
 }
 
-class _RootAppWidgetState extends ConsumerState<RootAppWidget> {
+class _RootAppWidgetState extends ConsumerState<RootAppWidget>
+    with WidgetsBindingObserver {
   @override
   void initState() {
     super.initState();
+    WidgetsBinding.instance.addObserver(this);
 
     NotificationService.setNavigationHandler(_handleNotificationNavigation);
 
@@ -76,11 +83,23 @@ class _RootAppWidgetState extends ConsumerState<RootAppWidget> {
       if (pendingActivityId != null && pendingActivityId.isNotEmpty) {
         _handleNotificationNavigation(pendingActivityId, pendingType);
       }
+      // G27: first-frame nudge sweep (arm/disarm + on-open catch-up).
+      ref.read(carbNudgeCoordinatorProvider.notifier).run();
     });
   }
 
   @override
+  void didChangeAppLifecycleState(AppLifecycleState state) {
+    super.didChangeAppLifecycleState(state);
+    // G27: the on-open catch-up also runs on every foreground resume.
+    if (state == AppLifecycleState.resumed) {
+      ref.read(carbNudgeCoordinatorProvider.notifier).run();
+    }
+  }
+
+  @override
   void dispose() {
+    WidgetsBinding.instance.removeObserver(this);
     NotificationService.setNavigationHandler(null);
     NotificationService.setDailyMacroCacheInvalidator(null);
     super.dispose();
@@ -97,6 +116,13 @@ class _RootAppWidgetState extends ConsumerState<RootAppWidget> {
     }
 
     final router = ref.read(AppRouter.routerProvider);
+
+    // G27: the carb-load nudge lands the athlete on the event's details
+    // screen (the Set Up Carb Loading row lives there).
+    if (type == 'carb_event') {
+      router.go(notificationRouteForCarbEvent(activityId));
+      return;
+    }
 
     // Both activity-upload and reminder notifications now route to the
     // activity-detail screen. ActivityDetailScreen owns the conditional

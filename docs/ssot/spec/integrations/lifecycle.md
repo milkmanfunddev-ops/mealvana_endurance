@@ -124,6 +124,55 @@ row remains. The privacy declaration (`docs/privacy/app_store_privacy_details.md
 no provider and no retention period. Ratify either "indefinite retention, deliberately" or
 concrete windows → **Q-INT1**.
 
+**L-7 — RULED (Xuan, 2026-09-20, post-ratification addition; corpus interview):**
+Retention is now windowed for raw and permanent for the de-identified corpus:
+1. **Raw provider payloads get a 90-day TTL** — `garmin_health_data` raw types
+   (`activity_raw`/`activity_detail_raw`/future sample-level types) and the new
+   `provider_raw_payloads` table (below). Transformed `activities` rows are unaffected.
+2. **FS/TP raw IS retained** (revises the corpus intake's inline-only proposal): a separate
+   server-side table — `provider_raw_payloads(user_id, provider, provider_workout_id,
+   fetched_at, last_modified, data jsonb)` — fed by a phone→server upload during sync,
+   **one row per (provider workout id, LastModifiedDate)** — an edited workout inserts a
+   NEW versioned row rather than replacing the old (edits are rare; both corpus and
+   forensics see every version); a re-fetch with an unchanged `LastModifiedDate` writes
+   nothing (never one row per sync pass). *(Versioning clarified same-interview, Xuan
+   2026-09-20, on qa-33's catch.)* Separate table, never a
+   column on `activities`: TTL lifecycle differs, unmatched payloads must be kept, and
+   the activities table syncs to devices.
+3. **Sample-level `activityDetails` + HRV capture graduates to prod** under the same
+   90-day TTL (extends the dev/self-consented capture of 2026-09-14).
+   **AMENDED (Xuan, 2026-09-20, DI-25 halt — option B): GPS sample points are STRIPPED AT
+   INGEST** — route-level location never rests on our servers, in any environment; the
+   retained sample streams are the physiological curves (HR/pace/power, swim lengths),
+   which is what fueling forensics uses. The corpus was already GPS-free by the de-id
+   standard; this extends the same posture to the raw forensic store.
+4. **The TTL purge job doubles as a TWO-SIDED meter** (second side ruled 2026-09-20,
+   same interview): each sweep logs raw-table sizes and row counts to an audit table and
+   ALERTS both ways —
+   **over-size**: raw tables collectively exceed 2 GB or database storage exceeds 60% of
+   plan (resurfaces this ruling for re-evaluation); and
+   **under-arrival**: a declarative expected-flows table `(flow, precondition, min_rows,
+   window)` — e.g. ≥1 `provider_raw_payloads` row per provider per 7 days given ≥1 active
+   connection; ≥1 Garmin `activity_raw` per 48 h given ≥1 active Garmin athlete; once the
+   casing fix ships, ≥1 populated `tss_planned` per 14 days given ≥1 exposure-observed
+   athlete — fires the same alert when a flow yields zero rows in its window while its
+   precondition held. This is DI-13c's populated twin ON A SCHEDULE, and the systemic fix
+   for the silently-broken-sync class (`last_sync_status` lies; zero-rows-despite-active
+   -connections cannot). **Deliberate exclusion:** corpus-exemplar novelty is NOT an
+   arrival flow — novelty decaying to zero is the design working.
+   `qa/scripts/query-ledger.sh` gains size-audit + liveness arms for on-demand reads.
+   **Dead-man clause (ruled 2026-09-20):** the alert runs inside the sweep, so a dead
+   scheduler silences its own alarm — the audit row's freshness is therefore watched from
+   OUTSIDE the scheduler: a lightweight client-side check during sync fires a Sentry
+   warning when the newest audit row is older than 48 h, and the land-bundle dev
+   attestation includes observing the first real sweep row on dev.
+5. **The permanent record is the de-identified corpus**: one exemplar per novel shape,
+   scrubbed per the ratified standard (content destroyed, structure verbatim, timestamps
+   shifted), promoted to `qa/vectors/integrations/samples/<provider>/`. Promotion runs
+   NOW; the privacy-declaration line rides the next terms update rather than gating it.
+   Scrubbing is server-side only; raw never leaves the server un-scrubbed.
+Authority: `intake/2026-09-14-real-payload-test-corpus.md` + Addenda 1–3, Q-INT1.
+
 ## L-8 — Token custody `[divergence → Q-INT8]`
 Proposed rule: **one custodian per provider** — `integrations` is the sole token store,
 plaintext-in-Postgres is acknowledged and RLS on it is verified. Today:

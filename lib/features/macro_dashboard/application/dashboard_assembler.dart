@@ -7,6 +7,7 @@ import '../../meal_logging/domain/meal_log.dart';
 import '../../meal_logging/domain/meal_slot.dart';
 import '../../nutrition_plan/application/daily_baseline_calculator.dart';
 import '../../../shared/domain/session_input_resolver.dart';
+import '../domain/carb_dashboard_models.dart';
 import '../domain/dashboard_models.dart';
 import '../domain/workout_state_resolver.dart';
 
@@ -17,6 +18,7 @@ class DashboardData {
     required this.energy,
     required this.trackingOn,
     this.breakdown,
+    this.carb,
   });
 
   final List<DashboardNode> nodes;
@@ -27,6 +29,20 @@ class DashboardData {
 
   /// Extra quantities for the Breakdown Pager; null when no targets exist.
   final BreakdownData? breakdown;
+
+  /// Loading-day surfaces (carb-loading-dashboard.md). Null on a regular
+  /// day — CD-1: no carb surface exists in the DOM. Attached by the day
+  /// provider, not this assembler (the carb math has its own builder).
+  final CarbDashboardData? carb;
+
+  DashboardData withCarb(CarbDashboardData? carb, List<DashboardNode> nodes) =>
+      DashboardData(
+        nodes: nodes,
+        energy: energy,
+        trackingOn: trackingOn,
+        breakdown: breakdown,
+        carb: carb,
+      );
 }
 
 /// Pure builder for the macro dashboard (surfaces/macro-dashboard.md).

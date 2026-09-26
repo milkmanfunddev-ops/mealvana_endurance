@@ -1,5 +1,8 @@
 import 'package:flutter/material.dart';
 
+import '../../../../shared/widgets/kyle_design/kyle_design.dart'
+    show CarbLoadBar;
+import '../../domain/carb_dashboard_models.dart';
 import '../../domain/dashboard_models.dart';
 import '../me_tokens.dart';
 
@@ -22,6 +25,8 @@ class EnergySummaryCard extends StatelessWidget {
     required this.data,
     required this.onToggleExpanded,
     this.onFullBreakdown,
+    this.carb,
+    this.onCarbBreakdown,
   });
 
   final DashboardFilter face;
@@ -33,6 +38,15 @@ class EnergySummaryCard extends StatelessWidget {
 
   /// E2: opens the face's sheet (outside this contract).
   final VoidCallback? onFullBreakdown;
+
+  /// LOAD face data (energy-card.md §LOAD-face, Q-D9 form). Non-null only
+  /// on loading days — the surface chooses the face, never the filter lens
+  /// (CD-1); when set, LOAD replaces the All-lens face.
+  final CarbLoadFaceData? carb;
+
+  /// E2 on LOAD: opens the carb-loading breakdown page (never the
+  /// net-balance pager).
+  final VoidCallback? onCarbBreakdown;
 
   @override
   Widget build(BuildContext context) {
@@ -77,18 +91,141 @@ class EnergySummaryCard extends StatelessWidget {
   }
 
   Widget _faceContent() {
+    // LOAD replaces the All-lens face on loading days (CD-1); Workout and
+    // Meals stay one tap away, untouched.
+    final load = carb;
     if (!expanded) {
       return switch (face) {
+        DashboardFilter.all when load != null => _collapsedLoad(load),
         DashboardFilter.all => _collapsedAll(),
         DashboardFilter.workout => _collapsedWorkout(),
         DashboardFilter.meals => _collapsedMeals(),
       };
     }
     return switch (face) {
+      DashboardFilter.all when load != null => _expandedLoad(load),
       DashboardFilter.all => _expandedAll(),
       DashboardFilter.workout => _expandedWorkout(),
       DashboardFilter.meals => _expandedMeals(),
     };
+  }
+
+  // -------------------------------------------------------------------
+  // LOAD face (energy-card.md §LOAD-face amendment, Q-D9 form). Strings
+  // arrive from the assembler's copy register verbatim (P-3).
+  // -------------------------------------------------------------------
+
+  Widget _collapsedLoad(CarbLoadFaceData load) {
+    return Column(
+      crossAxisAlignment: CrossAxisAlignment.start,
+      mainAxisSize: MainAxisSize.min,
+      children: [
+        _label(load.labelLine),
+        const SizedBox(height: 8),
+        Row(
+          crossAxisAlignment: CrossAxisAlignment.center,
+          children: [
+            // Bar two thirds, pace words one third — one row.
+            Expanded(
+              flex: 2,
+              child: CarbLoadBar(
+                fillFrac: load.fillFrac,
+                tickFrac: load.tickFrac,
+                loaded: load.loaded,
+              ),
+            ),
+            const SizedBox(width: 12),
+            Expanded(
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.end,
+                mainAxisSize: MainAxisSize.min,
+                children: [
+                  Text(
+                    load.paceMainStr,
+                    maxLines: 1,
+                    overflow: TextOverflow.ellipsis,
+                    // Carb figures are intake side → orange (Q-D3).
+                    style: TextStyle(
+                      fontFamily: 'Sansita',
+                      fontWeight: FontWeight.w700,
+                      fontSize: load.paceMainIsWord ? 18 : 21,
+                      height: 1.05,
+                      color: MeTokens.orange,
+                    ),
+                  ),
+                  const SizedBox(height: 2),
+                  Text(
+                    load.paceSubStr,
+                    maxLines: 1,
+                    overflow: TextOverflow.ellipsis,
+                    style: TextStyle(
+                      fontFamily: 'Apercu',
+                      fontSize: 10.5,
+                      color: MeTokens.creamAlpha(0.55),
+                    ),
+                  ),
+                ],
+              ),
+            ),
+          ],
+        ),
+      ],
+    );
+  }
+
+  Widget _expandedLoad(CarbLoadFaceData load) {
+    return Column(
+      crossAxisAlignment: CrossAxisAlignment.start,
+      mainAxisSize: MainAxisSize.min,
+      children: [
+        _label(load.labelLine),
+        const SizedBox(height: 7),
+        Row(
+          crossAxisAlignment: CrossAxisAlignment.baseline,
+          textBaseline: TextBaseline.alphabetic,
+          children: [
+            Text(
+              load.eatenOfTargetStr,
+              style: const TextStyle(
+                fontFamily: 'Sansita',
+                fontWeight: FontWeight.w700,
+                fontSize: 25,
+                height: 1,
+                color: MeTokens.orange,
+              ),
+            ),
+            const SizedBox(width: 8),
+            // Registered form: to-go clamps at 0 (never negative, never a
+            // worded substitute).
+            _unit(load.toGoStr),
+          ],
+        ),
+        const SizedBox(height: 10),
+        CarbLoadBar(
+          fillFrac: load.fillFrac,
+          tickFrac: load.tickFrac,
+          loaded: load.loaded,
+          height: 8,
+        ),
+        if (load.paceByNowStr != null) ...[
+          const SizedBox(height: 6),
+          Text(
+            load.paceByNowStr!,
+            style: TextStyle(
+              fontFamily: 'Apercu',
+              fontSize: 10.5,
+              color: MeTokens.creamAlpha(0.5),
+            ),
+          ),
+        ],
+        const SizedBox(height: 12),
+        // E2 on LOAD: the carb breakdown page, never the net-balance pager.
+        _fullBreakdownButton(
+          onTap: onCarbBreakdown,
+          keyName: 'macro_dashboard.carb_full_breakdown',
+        ),
+      ],
+    );
   }
 
   // -------------------------------------------------------------------
@@ -581,12 +718,15 @@ class EnergySummaryCard extends StatelessWidget {
     );
   }
 
-  Widget _fullBreakdownButton() {
+  Widget _fullBreakdownButton({
+    VoidCallback? onTap,
+    String keyName = 'macro_dashboard.full_breakdown',
+  }) {
     return Padding(
       padding: const EdgeInsets.only(top: 13),
       child: GestureDetector(
-        key: const ValueKey('macro_dashboard.full_breakdown'),
-        onTap: onFullBreakdown,
+        key: ValueKey(keyName),
+        onTap: onTap ?? onFullBreakdown,
         child: Container(
           padding: const EdgeInsets.symmetric(horizontal: 13, vertical: 6),
           decoration: BoxDecoration(

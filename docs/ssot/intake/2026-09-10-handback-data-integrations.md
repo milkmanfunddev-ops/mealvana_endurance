@@ -100,6 +100,16 @@ implementation is gated green.
       Consumed counterparts from fuel_log_data at log time. Build AFTER the sandbox
       probe confirms TP accepts the plan-PUT post-completion (the shipped Feedback
       path implies it does).
+      **IMPLEMENTED 2026-09-14 (ships in 1.27.0; app commits feat 821c1385 + fix
+      4f0ad533): `formatLoggedPlanBlock` re-renders the [Mealvana Fuel Plan] block
+      as planned · consumed and replaces it in-place at fuel-log completion. Pre =
+      absolute planned · consumed per field; During = per-hour rates on carb/water/
+      sodium (RULED Xuan 2026-09-14). The build gate (post-completion plan-PUT) is
+      cleared by the shipped Feedback path AND the 1.27.0 prod writeback smoke. That
+      same prod smoke caught a lost-update race — the completion feedback push and
+      the logged-plan re-push were concurrent GET→PUT on the one Description field;
+      fixed by sequencing them (feedback block preserved via the `(?! Feedback)`
+      strip lookahead). Verified live on Lee's production TP.**
       Delimiter robustness fix: the fuel terminator [/Mealvana] is a PREFIX of
       [/Mealvana Feedback] — a truncated fuel block would make the strip regex swallow
       the feedback block (athlete notes included). Fix: negative lookahead

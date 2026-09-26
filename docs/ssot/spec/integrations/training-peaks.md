@@ -33,6 +33,20 @@ clauses: [`OPEN-QUESTIONS.md`](OPEN-QUESTIONS.md). App-repo-relative paths.
    (`training_peaks_sync_service.dart:16-31` vs `:216-241`).
 
 ## TP-2 — Stored: the rows TP writes `[observed — the producer contract]`
+
+> **Provider facts (live-verified 2026-09-18; ruled into the record 2026-09-20):**
+> 1. **Planned-load exposure is per-ACCOUNT**: premium-featured and training-plan athletes
+>    receive decimal `TssPlanned`/`IFPlanned` on `/v2/workouts` (list and by-id); a basic
+>    account receives present-but-null keys even for values the athlete hand-typed
+>    (mirror-specimen proof, `runs/2026-09-18-tp-premium-trial-probe.md`).
+> 2. **`IsPremium` does not track feature state**: reads `false` on a premium-featured
+>    trial. Never a predicate (see payload-usage-map §6 item 7).
+> 3. **`Structure` unreachable under our OAuth grant**, every route, every tier (§1.6 of
+>    payload-usage-map); file-export scope requested 2026-09-20.
+> 4. Access tokens live ~30 minutes; only a freshly-synced row authenticates.
+> 5. Key sets vary per instance (46–48 keys): optional keys (`Description`,
+>    `PreActivityComment`) are DROPPED when empty, while load keys are present-and-null —
+>    the corpus fingerprint's three-state alphabet exists for this.
 `TrainingPeaksTransformer` (`lib/features/integrations/application/training_peaks_transformer.dart`):
 1. Row: `synced_from_provider='training_peaks'`, `provider_workout_id` = Int64-as-string,
    `provider_workout_url` synthesized against the **prod** host even in sandbox

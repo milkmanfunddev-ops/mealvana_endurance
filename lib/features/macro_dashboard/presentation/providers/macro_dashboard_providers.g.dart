@@ -62,4 +62,4 @@ final class MacroDashboardDayProvider
   }
 }
 
-String _$macroDashboardDayHash() => r'cf7501a18b3e41cfec66710885c38e2264736ce3';
+String _$macroDashboardDayHash() => r'0da22b715b25697f1f515e098d0f86e36c0efd5a';

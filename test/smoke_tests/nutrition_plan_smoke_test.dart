@@ -225,7 +225,9 @@ void main() {
     // -----------------------------------------------------------------------
     // lib/features/carb_loading/presentation/screens/carb_loading_screen.dart
     // was a pure mock-data screen with 0 nav references. File deleted.
-    // The live carb-loading entry point is carb_loading_day_detail_page.dart.
+    // carb_loading_day_detail_page.dart is NO release-1 entry point
+    // (carb-loading@v1: athlete routes land on the dashboard surfaces);
+    // it survives only for the coach portal, whose fate is queued.
 
     // -----------------------------------------------------------------------
     // 9. CarbLoadingFoodSelectionScreen

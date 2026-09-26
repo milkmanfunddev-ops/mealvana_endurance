@@ -144,31 +144,32 @@ void main() {
       );
     });
 
-    test('unknown protocol falls back to 8g/kg', () {
+    // 1-day protocol (Q-CL3a, carb-loading@v1)
+    test('1-day: day -1 → 11g/kg', () {
       expect(
-        service.getCarbProtocolForDay(protocolDays: 5, daysBeforeRace: 3),
-        8.0,
+        service.getCarbProtocolForDay(protocolDays: 1, daysBeforeRace: 1),
+        11.0,
       );
     });
 
-    // NOTE BUG CHECK: The 2-day protocol uses daysBeforeRace == 2 → 9g/kg, else → 11g/kg.
-    // If you accidentally pass daysBeforeRace: 0 (the race day itself) it falls through
-    // to the else branch and returns 11g/kg instead of 8g/kg default.
-    // This verifies the else-branch behaviour.
-    test(
-      '2-day: daysBeforeRace=0 falls to else → returns 11g/kg (documents current behaviour)',
-      () {
-        // This is not a valid call but documents that there is no guard for race-day.
-        final result = service.getCarbProtocolForDay(
-          protocolDays: 2,
-          daysBeforeRace: 0,
-        );
-        expect(
-          result,
-          11.0,
-        ); // documents current (possibly surprising) behaviour
-      },
-    );
+    test('unknown protocol THROWS (no silent 8g/kg fallback)', () {
+      // carb-loading@v1: the engine refuses invalid protocols instead of
+      // pricing them at a plausible-looking default.
+      expect(
+        () => service.getCarbProtocolForDay(protocolDays: 5, daysBeforeRace: 3),
+        throwsArgumentError,
+      );
+    });
+
+    // carb-loading@v1: race morning is NOT a loading day — the old code
+    // fell through to 11g/kg here; the engine now throws, closing exactly
+    // the unguarded-race-day gap this test used to document.
+    test('daysBeforeRace=0 THROWS (race morning is not a loading day)', () {
+      expect(
+        () => service.getCarbProtocolForDay(protocolDays: 2, daysBeforeRace: 0),
+        throwsArgumentError,
+      );
+    });
   });
 
   // ---------------------------------------------------------------------------

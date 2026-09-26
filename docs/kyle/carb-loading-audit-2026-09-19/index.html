@@ -1,0 +1,550 @@
+<title>Carb Loading Walkthrough</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Bricolage+Grotesque:opsz,wght@12..96,600;12..96,800&family=Archivo:wght@400;500;600&family=DM+Mono:wght@400;500&display=swap">
+
+<style>
+  :root {
+    /* light palette — the app's cream side */
+    --ground:      #F3EFE2;
+    --surface:     #FBF9F1;
+    --surface-2:   #EDE7D7;
+    --ink:         #381633;
+    --ink-2:       #6B4A63;
+    --ink-3:       #93798C;
+    --rule:        #DCD3C2;
+
+    --blocker:     #B01576;
+    --major:       #B4620A;
+    --minor:       #8A6408;
+    --good:        #0C7A66;
+
+    --blocker-bg:  #F7DCEE;
+    --major-bg:    #F9E6CE;
+    --minor-bg:    #F7EDCB;
+    --good-bg:     #D3F2EA;
+
+    --shot-frame:  #DCD3C2;
+    --shadow:      0 1px 2px rgba(56,22,51,.08), 0 8px 24px rgba(56,22,51,.06);
+
+    --display: "Bricolage Grotesque", "Trebuchet MS", sans-serif;
+    --body: "Archivo", "Helvetica Neue", Arial, sans-serif;
+    --mono: "DM Mono", ui-monospace, "SF Mono", Menlo, monospace;
+  }
+
+  @media (prefers-color-scheme: dark) {
+    :root:not([data-theme="light"]) {
+      --ground:     #240E20;
+      --surface:    #32132E;
+      --surface-2:  #3F1B3A;
+      --ink:        #F8F6EB;
+      --ink-2:      #C9B4C3;
+      --ink-3:      #9B8195;
+      --rule:       #4C2545;
+
+      --blocker:    #FF5CBE;
+      --major:      #F78B14;
+      --minor:      #FFC629;
+      --good:       #1CF9CF;
+
+      --blocker-bg: #4A1038;
+      --major-bg:   #45250C;
+      --minor-bg:   #40320B;
+      --good-bg:    #0D3F38;
+
+      --shot-frame: #4C2545;
+      --shadow:     0 1px 2px rgba(0,0,0,.4), 0 10px 30px rgba(0,0,0,.35);
+    }
+  }
+  :root[data-theme="dark"] {
+    --ground:     #240E20;
+    --surface:    #32132E;
+    --surface-2:  #3F1B3A;
+    --ink:        #F8F6EB;
+    --ink-2:      #C9B4C3;
+    --ink-3:      #9B8195;
+    --rule:       #4C2545;
+
+    --blocker:    #FF5CBE;
+    --major:      #F78B14;
+    --minor:      #FFC629;
+    --good:       #1CF9CF;
+
+    --blocker-bg: #4A1038;
+    --major-bg:   #45250C;
+    --minor-bg:   #40320B;
+    --good-bg:    #0D3F38;
+
+    --shot-frame: #4C2545;
+    --shadow:     0 1px 2px rgba(0,0,0,.4), 0 10px 30px rgba(0,0,0,.35);
+  }
+
+  body {
+    margin: 0;
+    background: var(--ground);
+    color: var(--ink);
+    font-family: var(--body);
+    font-size: 16px;
+    line-height: 1.6;
+    -webkit-font-smoothing: antialiased;
+  }
+
+  .wrap {
+    max-width: 1040px;
+    margin: 0 auto;
+    padding-inline: 20px;
+    padding-block: 0 96px;
+  }
+
+  h1, h2, h3 { font-family: var(--display); text-wrap: balance; margin: 0; }
+  h1 { font-size: clamp(2.1rem, 6vw, 3.4rem); font-weight: 800; line-height: 1.02; letter-spacing: -.02em; }
+  h2 { font-size: clamp(1.35rem, 3.4vw, 1.85rem); font-weight: 700; letter-spacing: -.01em; }
+  h3 { font-size: 1.06rem; font-weight: 600; }
+  p { margin: 0; max-width: 68ch; }
+
+  .eyebrow {
+    font-family: var(--mono);
+    font-size: .72rem;
+    letter-spacing: .14em;
+    text-transform: uppercase;
+    color: var(--ink-3);
+  }
+
+  /* ---------- masthead ---------- */
+  header.masthead {
+    padding-block: 72px 44px;
+    border-bottom: 1px solid var(--rule);
+    display: flex;
+    flex-direction: column;
+    gap: 20px;
+  }
+  .lede { font-size: 1.12rem; color: var(--ink-2); }
+  .runmeta {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 6px 26px;
+    font-family: var(--mono);
+    font-size: .78rem;
+    color: var(--ink-3);
+    padding-top: 6px;
+  }
+  .runmeta b { color: var(--ink-2); font-weight: 500; }
+
+  /* ---------- verdict strip ---------- */
+  .verdict {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(170px, 1fr));
+    gap: 1px;
+    background: var(--rule);
+    border: 1px solid var(--rule);
+    border-radius: 3px;
+    overflow: hidden;
+    margin-top: 40px;
+  }
+  .verdict div { background: var(--surface); padding: 18px 20px; display: flex; flex-direction: column; gap: 3px; }
+  .verdict .n { font-family: var(--display); font-size: 2rem; font-weight: 800; line-height: 1; font-variant-numeric: tabular-nums; }
+  .verdict .k { font-family: var(--mono); font-size: .7rem; letter-spacing: .1em; text-transform: uppercase; color: var(--ink-3); }
+
+  section { padding-block: 56px 0; }
+  .sec-head { display: flex; flex-direction: column; gap: 10px; margin-bottom: 28px; }
+
+  /* ---------- route ---------- */
+  ol.route { list-style: none; margin: 0; padding: 0; display: flex; flex-direction: column; gap: 0; }
+  ol.route li {
+    display: grid;
+    grid-template-columns: 54px 1fr;
+    gap: 18px;
+    padding: 16px 0;
+    border-bottom: 1px dashed var(--rule);
+    align-items: start;
+  }
+  ol.route li:last-child { border-bottom: 0; }
+  .step {
+    font-family: var(--mono);
+    font-size: .72rem;
+    letter-spacing: .08em;
+    color: var(--ink-3);
+    padding-top: 3px;
+  }
+  ol.route .what { font-weight: 600; }
+  ol.route .note { color: var(--ink-2); font-size: .94rem; }
+  ol.route li.dead .what { color: var(--blocker); }
+  ol.route li.dead .step { color: var(--blocker); }
+
+  /* ---------- table ---------- */
+  .tablewrap { overflow-x: auto; border: 1px solid var(--rule); border-radius: 3px; background: var(--surface); }
+  table { border-collapse: collapse; width: 100%; font-variant-numeric: tabular-nums; min-width: 520px; }
+  th, td { text-align: left; padding: 11px 16px; border-bottom: 1px solid var(--rule); }
+  th {
+    font-family: var(--mono); font-size: .7rem; letter-spacing: .1em;
+    text-transform: uppercase; color: var(--ink-3); font-weight: 400;
+    background: var(--surface-2);
+  }
+  td { font-size: .93rem; }
+  td.num { font-family: var(--mono); }
+  tr:last-child td { border-bottom: 0; }
+  tr.race td { color: var(--ink-3); font-style: italic; }
+  .peak { color: var(--major); font-weight: 600; }
+
+  caption { caption-side: bottom; text-align: left; padding: 12px 16px; font-size: .84rem; color: var(--ink-3); }
+
+  /* ---------- findings ---------- */
+  .findings { display: flex; flex-direction: column; gap: 14px; }
+  article.f {
+    background: var(--surface);
+    border: 1px solid var(--rule);
+    border-left: 4px solid var(--rule);
+    border-radius: 3px;
+    padding: 20px 22px;
+    display: flex;
+    flex-direction: column;
+    gap: 10px;
+  }
+  article.f.blocker { border-left-color: var(--blocker); }
+  article.f.major   { border-left-color: var(--major); }
+  article.f.minor   { border-left-color: var(--minor); }
+
+  .f-top { display: flex; flex-wrap: wrap; align-items: baseline; gap: 10px 14px; }
+  .chip {
+    font-family: var(--mono);
+    font-size: .64rem;
+    letter-spacing: .12em;
+    text-transform: uppercase;
+    padding: 3px 8px;
+    border-radius: 2px;
+    white-space: nowrap;
+  }
+  .chip.blocker { background: var(--blocker-bg); color: var(--blocker); }
+  .chip.major   { background: var(--major-bg);   color: var(--major); }
+  .chip.minor   { background: var(--minor-bg);   color: var(--minor); }
+  .chip.good    { background: var(--good-bg);    color: var(--good); }
+
+  article.f p { font-size: .95rem; color: var(--ink-2); }
+  article.f p strong { color: var(--ink); font-weight: 600; }
+  .src {
+    font-family: var(--mono);
+    font-size: .76rem;
+    color: var(--ink-3);
+    word-break: break-word;
+  }
+  .evidence {
+    font-family: var(--mono); font-size: .72rem; letter-spacing: .06em;
+    color: var(--ink-3); text-transform: uppercase;
+  }
+  .evidence a { color: var(--ink-2); }
+
+  /* ---------- works list ---------- */
+  ul.works { list-style: none; margin: 0; padding: 0; display: grid; grid-template-columns: repeat(auto-fit, minmax(270px, 1fr)); gap: 12px; }
+  ul.works li {
+    background: var(--surface);
+    border: 1px solid var(--rule);
+    border-radius: 3px;
+    padding: 15px 17px;
+    font-size: .93rem;
+    color: var(--ink-2);
+    display: flex; flex-direction: column; gap: 4px;
+  }
+  ul.works b { color: var(--ink); font-family: var(--body); font-weight: 600; font-size: .97rem; }
+
+  /* ---------- gallery ---------- */
+  .gallery { display: grid; grid-template-columns: repeat(auto-fill, minmax(190px, 1fr)); gap: 22px; }
+  figure { margin: 0; display: flex; flex-direction: column; gap: 9px; }
+  figure button {
+    padding: 0; border: 1px solid var(--shot-frame); background: var(--surface);
+    border-radius: 12px; overflow: hidden; cursor: zoom-in; display: block; line-height: 0;
+    box-shadow: var(--shadow);
+  }
+  figure img { display: block; width: 100%; height: auto; }
+  figcaption { font-size: .82rem; color: var(--ink-2); line-height: 1.45; }
+  figcaption b { display: block; font-family: var(--mono); font-size: .68rem; letter-spacing: .1em;
+                 text-transform: uppercase; color: var(--ink-3); font-weight: 400; margin-bottom: 2px; }
+
+  dialog.lb {
+    border: 0; padding: 0; background: transparent; max-width: 96vw; max-height: 94vh;
+  }
+  dialog.lb::backdrop { background: rgba(20,6,18,.88); }
+  dialog.lb img { max-width: 96vw; max-height: 94vh; width: auto; border-radius: 14px; display: block; }
+
+  a { color: var(--blocker); text-underline-offset: 3px; }
+  :focus-visible { outline: 2px solid var(--good); outline-offset: 3px; }
+
+  footer {
+    margin-top: 72px; padding-top: 28px; border-top: 1px solid var(--rule);
+    font-size: .86rem; color: var(--ink-3);
+    display: flex; flex-direction: column; gap: 8px;
+  }
+  footer code { font-family: var(--mono); font-size: .82rem; color: var(--ink-2); }
+
+  @media (prefers-reduced-motion: reduce) { * { animation: none !important; transition: none !important; } }
+</style>
+
+<div class="wrap">
+
+  <header class="masthead">
+    <span class="eyebrow">Simulator walkthrough · iPhone 17 · dev flavour · 19 Sep 2026</span>
+    <h1>Carb loading, start to&nbsp;dead&nbsp;end</h1>
+    <p class="lede">I built an Ironman 70.3 Augusta on 28 September, started the 3-Day Classic protocol, and used the loading page as an athlete would. The protocol maths is sound. Everything around it — how you get back in, what it counts toward, how you tap 544 grams into it — is not.</p>
+    <div class="runmeta">
+      <span><b>Event</b> Ironman 70.3 Augusta · Mon 28 Sep 2026</span>
+      <span><b>Protocol</b> 3-Day Classic</span>
+      <span><b>Athlete</b> 149.9 lb / 68 kg</span>
+      <span><b>Branch</b> mealplanning</span>
+    </div>
+  </header>
+
+  <div class="verdict">
+    <div><span class="n">1</span><span class="k">times the page is reachable</span></div>
+    <div><span class="n">0</span><span class="k">routes to day 2 or 3</span></div>
+    <div><span class="n">60</span><span class="k">food chips on one day</span></div>
+    <div><span class="n">5½</span><span class="k">phone screens, empty</span></div>
+  </div>
+
+  <section>
+    <div class="sec-head">
+      <span class="eyebrow">The route I took</span>
+      <h2>Five taps in, and the door locks behind you</h2>
+    </div>
+    <ol class="route">
+      <li>
+        <span class="step">01</span>
+        <div>
+          <div class="what">Events → New Event → Triathlon → Half Ironman / 70.3</div>
+          <div class="note">Name, date 28 Sep, create. Clean. The autocomplete misfired — see finding 12.</div>
+        </div>
+      </li>
+      <li>
+        <span class="step">02</span>
+        <div>
+          <div class="what">Event Details → Create Carb Loading Plan</div>
+          <div class="note">One of three buttons under “Nutrition Planning”. Nothing on the page says what a carb loading plan is or when it would start.</div>
+        </div>
+      </li>
+      <li>
+        <span class="step">03</span>
+        <div>
+          <div class="what">Choose Carb Loading Protocol → Select 3-Day Protocol</div>
+          <div class="note">Two cards, 3-Day Classic recommended. This screen is a different design language from the rest of the app.</div>
+        </div>
+      </li>
+      <li>
+        <span class="step">04</span>
+        <div>
+          <div class="what">Lands directly on Carb Loading Day 1 — Friday, Sep 25</div>
+          <div class="note">No plan overview, no “here are your three days”. Straight into one day’s logging surface.</div>
+        </div>
+      </li>
+      <li class="dead">
+        <span class="step">05</span>
+        <div>
+          <div class="what">Tap Done → dropped to the Events list. The page is now gone.</div>
+          <div class="note">Day 1 is never reachable again. Day 2 and Day 3 were never reachable at all.</div>
+        </div>
+      </li>
+    </ol>
+  </section>
+
+  <section>
+    <div class="sec-head">
+      <span class="eyebrow">What the generator produced</span>
+      <h2>The plan is right — you just can’t see two thirds of it</h2>
+    </div>
+    <div class="tablewrap">
+      <table>
+        <caption>Read out of the device database, because only the first row has a screen. The protocol card promises 7–9 g·kg⁻¹ for days 3–2 out and 9–12 for the day before; the generator picked the midpoints.</caption>
+        <thead>
+          <tr><th>Day</th><th>Date</th><th>Target</th><th>Rate</th><th>Reachable in the app</th></tr>
+        </thead>
+        <tbody>
+          <tr><td>Day 1</td><td>Fri 25 Sep</td><td class="num">544 g</td><td class="num">8.0 g·kg⁻¹</td><td>Once, at creation</td></tr>
+          <tr><td>Day 2</td><td>Sat 26 Sep</td><td class="num">544 g</td><td class="num">8.0 g·kg⁻¹</td><td>Never</td></tr>
+          <tr><td>Day 3</td><td>Sun 27 Sep</td><td class="num peak">680 g</td><td class="num peak">10.0 g·kg⁻¹</td><td>Never</td></tr>
+          <tr class="race"><td>Race</td><td>Mon 28 Sep</td><td class="num">—</td><td class="num">—</td><td>Event Details</td></tr>
+        </tbody>
+      </table>
+    </div>
+    <p style="margin-top:18px; color: var(--ink-2); font-size:.95rem;">Day 1 splits its 544 g as breakfast 136 · morning snack 54 · lunch 136 · afternoon snack 82 · dinner 109 · evening snack 27 (25/10/25/15/20/5 %). The plan row also carries its own <code class="src">daily_carb_target_grams = 590</code> — the three-day average — which no screen ever shows and which contradicts all three day targets.</p>
+  </section>
+
+  <section>
+    <div class="sec-head">
+      <span class="eyebrow">Credit where it’s due</span>
+      <h2>What already works</h2>
+    </div>
+    <ul class="works">
+      <li><b>The protocol science</b> Real citations on the cards — Sherman, Burke, Bergström &amp; Hultman, Fairchild. Rates and phases match the literature.</li>
+      <li><b>Body-weight personalisation</b> 68 kg × 8 g·kg⁻¹ = 544 g, computed correctly and surfaced in Edit Target with the athlete’s own weight.</li>
+      <li><b>Inline quantity steppers</b> Tap a chip and it becomes a −/+ pill in place. Fast, no dialog, no page change. This is the best interaction in the feature.</li>
+      <li><b>Overload warning</b> Cross the day target and an orange “OVERLOADED BY 32G” banner appears under the total. The right idea, at the wrong altitude — see finding 6.</li>
+      <li><b>Meal-aware food lists</b> Breakfast offers bagels and oats, lunch offers pasta and potatoes. Only three distinct lists underneath, but the intent is right.</li>
+      <li><b>Escape hatches</b> Reset Progress is confirmed before it fires. Edit Target offers both g·kg⁻¹ and total grams. Custom foods and barcode scan are both wired in.</li>
+    </ul>
+  </section>
+
+  <section>
+    <div class="sec-head">
+      <span class="eyebrow">12 findings, worst first</span>
+      <h2>Pain points</h2>
+    </div>
+    <div class="findings">
+
+      <article class="f blocker">
+        <div class="f-top"><span class="chip blocker">Blocker</span><h3>1 · The page is a one-shot</h3></div>
+        <p>Carb Loading Day 1 is pushed with <code class="src">pushReplacement</code> the instant the plan is created, and that is the only navigation to it in the whole app. Afterwards the button relabels to <strong>Edit Carb Loading Plan</strong>, which re-opens the protocol chooser; picking a protocol calls the update branch, shows a snackbar, and leaves you on Event Details. Days 2 and 3 have no route at any point.</p>
+        <p class="src">lib/features/events/presentation/widgets/event_action_buttons_card.dart:186–265</p>
+        <p class="evidence">Evidence · <a href="#s-25">Edit → snackbar dead end</a>, <a href="#s-20">Done → Events list</a></p>
+      </article>
+
+      <article class="f blocker">
+        <div class="f-top"><span class="chip blocker">Blocker</span><h3>2 · Logged carbs never reach the rest of the app</h3></div>
+        <p>The day page totals its meals correctly on screen, but <code class="src">carb_loading_days.logged_carbs_grams</code> is never written — it stayed <strong>0</strong> with 179 g logged. That column is what the coach portal renders as the athlete’s progress, what the old dashboard card drew its bar from, and what syncs to Supabase. A coach watching an athlete carb load sees 0/544 g forever.</p>
+        <p class="src">Read at portal_athlete_detail_panel.dart:488 and carb_loading_day_card.dart:19; written by nobody. The update path exists (carb_loading_repository.dart:503) and has no caller.</p>
+      </article>
+
+      <article class="f blocker">
+        <div class="f-top"><span class="chip blocker">Blocker</span><h3>3 · Carb loading is a parallel universe</h3></div>
+        <p>Nothing outside <code class="src">lib/features/carb_loading</code> reads the meals table. With 179 g logged against Friday 25 September, the Timeline for that day shows <strong>+0 kcal, “on track”, and an empty feed</strong>; the calendar puts no dot on 25, 26 or 27, nor on race day. An athlete mid-load has to log every bagel twice or accept that one of the two surfaces is lying.</p>
+        <p class="evidence">Evidence · <a href="#s-36">Timeline, Fri 25 Sep</a>, <a href="#s-35">September calendar</a></p>
+      </article>
+
+      <article class="f blocker">
+        <div class="f-top"><span class="chip blocker">Blocker</span><h3>4 · Re-picking a protocol silently destroys logged food</h3></div>
+        <p>Choosing a protocol on an existing plan regenerates the day rows with fresh IDs and drops their meals. No warning, no confirmation — just “Updated to 3-day carb loading plan!”. Since the protocol chooser is the <em>only</em> thing “Edit Carb Loading Plan” opens, the one route back into the feature is also the one that wipes it.</p>
+      </article>
+
+      <article class="f major">
+        <div class="f-top"><span class="chip major">Major</span><h3>5 · Sixty chips, one per line, five and a half screens</h3></div>
+        <p>Day 1 opens with about <strong>60 tappable food chips</strong> stacked one per row before anything is logged — roughly 5½ phone screens of scrolling at 0 g. Lunch and dinner are served the identical 7-item list; the three snack slots are served the identical 12-item list. The morning snack alone — a 54 g target — fills a whole screen with twelve chips.</p>
+        <p class="evidence">Evidence · <a href="#s-12">Day 1 at rest</a>, <a href="#s-34">Morning snack, 12 chips for 54 g</a></p>
+      </article>
+
+      <article class="f major">
+        <div class="f-top"><span class="chip major">Major</span><h3>6 · You can’t see what you’ve eaten</h3></div>
+        <p>Selected chips stay in place among the unselected ones rather than collecting anywhere, so “what have I actually had today” means scanning 60 rows for teal. And the per-meal badge never warns: eight bagels in a 136 g breakfast reads <strong>576/136g</strong> in a calm teal pill. Only the day total turns orange.</p>
+        <p class="evidence">Evidence · <a href="#s-33">Partially logged day</a>, <a href="#s-15">576/136g still teal</a></p>
+      </article>
+
+      <article class="f major">
+        <div class="f-top"><span class="chip major">Major</span><h3>7 · Chip order reshuffles between refreshes</h3></div>
+        <p>Breakfast opened as Cereal, Banana, Bagel, Toast, Pancake, Waffle… and came back from the food picker as Waffle, Toast, Smoothie, Pancake, Orange juice, Oats, Cereal, Banana, Bagel. Nothing is pinned, nothing is sorted. Three of eight scripted taps landed on the wrong food because the list moved underneath them — a real athlete will do the same with their thumb.</p>
+      </article>
+
+      <article class="f major">
+        <div class="f-top"><span class="chip major">Major</span><h3>8 · Carbs only, for a race where fluid and sodium are the protocol</h3></div>
+        <p>Every surface counts grams of carbohydrate and nothing else — no calories, protein, fat, fibre, fluid or sodium, and <code class="src">daily_calorie_target</code> on the plan row is empty. Eating 680 g of carbohydrate on a Sunday is also ~2,700 kcal and a large fluid and sodium job; the page never mentions the last part. Fibre matters too, and the day before a 70.3 it matters in the other direction.</p>
+      </article>
+
+      <article class="f major">
+        <div class="f-top"><span class="chip major">Major</span><h3>9 · Plan and log are the same act</h3></div>
+        <p>Adding a chip is logging it as consumed — there is no way to lay out tomorrow’s 544 g in advance and then tick it off. For a protocol whose entire point is preparing three days ahead, the page only supports the present tense. “Mark Complete” also surfaces the moment the day total crosses target even when five of six meals are empty.</p>
+      </article>
+
+      <article class="f major">
+        <div class="f-top"><span class="chip major">Major</span><h3>10 · The protocol screen is off-brand, and some of it is invisible</h3></div>
+        <p>The phase cards render as <strong>white Material cards with cream titles</strong> — “3–2 days out” and “1 day out” are unreadable. The Show&nbsp;/&nbsp;Hide Details toggle is near-invisible on the dark ground; I tapped it blind. Around them: pale-blue Material chips, a Material-green RECOMMENDED badge, emoji section markers, and a title that truncates to “Choose Carb Loading Pr…”. The file paints with <code class="src">Color(0xFF4CAF50)</code> and <code class="src">Colors.grey[600]</code> directly, against the one-token-registry rule.</p>
+        <p class="src">lib/features/carb_loading/presentation/screens/carb_loading_protocol_selection_screen.dart</p>
+        <p class="evidence">Evidence · <a href="#s-10">Invisible phase titles</a>, <a href="#s-11">Both cards</a></p>
+      </article>
+
+      <article class="f major">
+        <div class="f-top"><span class="chip major">Major</span><h3>11 · The food picker wastes four fifths of the screen</h3></div>
+        <p>Rows carry enormous vertical dead space — four items per screen, with stark white circular fork-and-knife placeholders that read as broken images. Tapping a food replaces the entire list with a quantity editor in place, with no way back to the list and the search box cleared. The quantity is a bare <strong>“1.0”</strong> with no unit, and only carbohydrate is shown.</p>
+        <p class="evidence">Evidence · <a href="#s-26">Add Food to Breakfast</a>, <a href="#s-30">Quantity editor</a></p>
+      </article>
+
+      <article class="f minor">
+        <div class="f-top"><span class="chip minor">Smaller things</span><h3>12 · Seven that each cost a few seconds</h3></div>
+        <p><strong>Guidance contradicts itself</strong> — the protocol card says 7–9 g·kg⁻¹ for days 3–2 out; Edit Target’s help text says “8-12g/kg per day during carb loading”. <strong>“Best For” ignores the event you came from</strong> — reached from a 70.3, the 3-Day Classic still lists Marathon, Half Marathon, Long distance races, with no triathlon anywhere. <strong>Event search relevance</strong> — typing the exact name “Ironman 70.3 Augusta” returned Cozumel and Valdivia; typing “Augusta 70.3 (probe)” found the real IRONMAN 70.3 Augusta (27 Sep 2026). <strong>The EVENT INFORMATION card renders empty.</strong> <strong>The Create Custom Food FAB</strong> clips the “Search Open Food Facts” button beneath it. <strong>The custom food form</strong> asks for both “Food Name” and “Display Name (with serving)”, and offers “Snacks” beside Morning, Afternoon and Evening Snack. <strong>Reset Progress fires without a confirmation toast</strong> — the totals just drop to zero.</p>
+      </article>
+
+    </div>
+  </section>
+
+  <section>
+    <div class="sec-head">
+      <span class="eyebrow">Already built, never wired</span>
+      <h2>The multi-day view exists in the repo</h2>
+    </div>
+    <p style="color:var(--ink-2);">Six widgets in this feature have zero references anywhere in <code class="src">lib/</code> — including the day tabs that would have solved finding 1:</p>
+    <div class="tablewrap" style="margin-top:18px;">
+      <table>
+        <thead><tr><th>File</th><th>Lines</th><th>What it would have done</th></tr></thead>
+        <tbody>
+          <tr><td class="src">carb_loading_day_tabs.dart</td><td class="num">—</td><td>Day 1 / 2 / 3 switcher</td></tr>
+          <tr><td class="src">carb_loading_header_card.dart</td><td class="num">145</td><td>Plan-level header</td></tr>
+          <tr><td class="src">carb_loading_meal_section.dart</td><td class="num">244</td><td>Extracted meal section</td></tr>
+          <tr><td class="src">daily_carb_progress_widget.dart</td><td class="num">120</td><td>Progress ring / bar</td></tr>
+          <tr><td class="src">daily_progress_widget.dart</td><td class="num">120</td><td>Duplicate of the above</td></tr>
+          <tr><td class="src">race_info_modal.dart</td><td class="num">324</td><td>Race context on the loading page</td></tr>
+        </tbody>
+        <caption>The only list of carb-loading days that was ever built lives in <code class="src">activities_list_screen.dart</code>, which is itself orphaned — the home-shell redesign replaced it and nothing routes there any more. That is where the dashboard card went.</caption>
+      </table>
+    </div>
+  </section>
+
+  <section>
+    <div class="sec-head">
+      <span class="eyebrow">Every screen I saw</span>
+      <h2>Screenshots</h2>
+    </div>
+    <div class="gallery">
+
+      <figure id="s-08"><button type="button" data-src="shots/08_after_create.png"><img src="shots/08_after_create.png" alt="Event Details for Ironman 70.3 Augusta with three nutrition planning buttons" loading="lazy"></button><figcaption><b>Entry point</b>Event Details. “Create Carb Loading Plan” is the only way in. The EVENT INFORMATION card above it is empty.</figcaption></figure>
+
+      <figure id="s-09"><button type="button" data-src="shots/09_protocol_select.png"><img src="shots/09_protocol_select.png" alt="Protocol selection screen with 3-Day Classic and 2-Day Quick cards" loading="lazy"></button><figcaption><b>Protocol chooser</b>Material chips and badges on the brand ground. Title truncates. “Best For” never mentions triathlon.</figcaption></figure>
+
+      <figure id="s-10"><button type="button" data-src="shots/10_protocol_details.png"><img src="shots/10_protocol_details.png" alt="Expanded protocol details showing a white card with an unreadable title" loading="lazy"></button><figcaption><b>Finding 10</b>Expanded. The phase card is white; its title “3–2 days out” is cream on white and effectively invisible.</figcaption></figure>
+
+      <figure id="s-11"><button type="button" data-src="shots/11_protocol_phases.png"><img src="shots/11_protocol_phases.png" alt="Both protocol phase cards, second title also unreadable" loading="lazy"></button><figcaption><b>Finding 10</b>“1 day out” disappears the same way. The two phase cards are also different widths.</figcaption></figure>
+
+      <figure id="s-12"><button type="button" data-src="shots/12_after_select.png"><img src="shots/12_after_select.png" alt="Carb Loading Day 1 at rest showing 0g of 544g and nine breakfast chips" loading="lazy"></button><figcaption><b>The page, at rest</b>Day 1, Friday 25 Sep. 0 g of 544 g, and nine breakfast chips one per line before you scroll.</figcaption></figure>
+
+      <figure id="s-33"><button type="button" data-src="shots/33_filled_top.png"><img src="shots/33_filled_top.png" alt="Day 1 partially logged, selected and unselected chips intermixed" loading="lazy"></button><figcaption><b>Finding 6</b>179 g logged. Teal steppers sit wherever they happened to be in the list — there is no “what I’ve eaten”.</figcaption></figure>
+
+      <figure id="s-34"><button type="button" data-src="shots/34_filled_mid.png"><img src="shots/34_filled_mid.png" alt="Morning snack section filling an entire screen with twelve chips" loading="lazy"></button><figcaption><b>Finding 5</b>One snack slot, 54 g target, twelve chips, a full screen. This repeats three times per day.</figcaption></figure>
+
+      <figure id="s-15"><button type="button" data-src="shots/15_overload.png"><img src="shots/15_overload.png" alt="Day total overloaded banner while the breakfast badge stays teal" loading="lazy"></button><figcaption><b>Finding 6</b>Day total warns at 576/544. Breakfast, four times over its 136 g, stays calm teal.</figcaption></figure>
+
+      <figure id="s-16"><button type="button" data-src="shots/16_edit_target.png"><img src="shots/16_edit_target.png" alt="Edit Carb Target dialog showing body weight and 8.0 g per kg" loading="lazy"></button><figcaption><b>Edit Target</b>The best-built dialog in the feature. Its help text says 8–12 g·kg⁻¹; the protocol card said 7–9.</figcaption></figure>
+
+      <figure id="s-26"><button type="button" data-src="shots/26_food_selection.png"><img src="shots/26_food_selection.png" alt="Add Food to Breakfast list with four items and large gaps" loading="lazy"></button><figcaption><b>Finding 11</b>Four items per screen. The white circular placeholders read as broken images.</figcaption></figure>
+
+      <figure id="s-29"><button type="button" data-src="shots/29_search_rice.png"><img src="shots/29_search_rice.png" alt="Search results for rice with three catalog suggestions" loading="lazy"></button><figcaption><b>Search</b>Works, and falls back to Open Food Facts — but that button sits under the FAB.</figcaption></figure>
+
+      <figure id="s-30"><button type="button" data-src="shots/30_after_add.png"><img src="shots/30_after_add.png" alt="Quantity editor replacing the food list, showing 1.0 with no unit" loading="lazy"></button><figcaption><b>Finding 11</b>Selecting a food swaps the list for this, in place. “1.0” of what? Carbs are the only number.</figcaption></figure>
+
+      <figure id="s-32"><button type="button" data-src="shots/32_custom_food.png"><img src="shots/32_custom_food.png" alt="Create Custom Food form with two name fields and overlapping meal tags" loading="lazy"></button><figcaption><b>Custom food</b>Two name fields, and “Snacks” offered beside the three specific snack slots.</figcaption></figure>
+
+      <figure id="s-25"><button type="button" data-src="shots/25_after_edit_protocol.png"><img src="shots/25_after_edit_protocol.png" alt="Event Details with a snackbar reading Updated to 3-day carb loading plan" loading="lazy"></button><figcaption><b>Finding 1 &amp; 4</b>“Edit Carb Loading Plan” ends here: a snackbar, no navigation, and the logged food quietly gone.</figcaption></figure>
+
+      <figure id="s-20"><button type="button" data-src="shots/20_after_done.png"><img src="shots/20_after_done.png" alt="Events list after tapping Done on the carb loading day" loading="lazy"></button><figcaption><b>Finding 1</b>Done on Day 1 drops you past Event Details to the Events list. The page is now unreachable.</figcaption></figure>
+
+      <figure id="s-36"><button type="button" data-src="shots/36_timeline_sep25.png"><img src="shots/36_timeline_sep25.png" alt="Timeline for Friday 25 September showing plus zero kcal and an empty feed" loading="lazy"></button><figcaption><b>Finding 3</b>Friday 25 Sep with 179 g logged in the carb plan: +0 kcal, “on track”, nothing in the feed.</figcaption></figure>
+
+      <figure id="s-35"><button type="button" data-src="shots/35_timeline_sep25.png"><img src="shots/35_timeline_sep25.png" alt="September calendar with dots on the 15th, 17th and 18th but nothing on 25 to 28" loading="lazy"></button><figcaption><b>Finding 3</b>The calendar dots workouts on 15, 17, 18 — and nothing on the three loading days or race day.</figcaption></figure>
+
+    </div>
+  </section>
+
+  <footer>
+    <span>Walked on a booted iPhone 17 simulator against the installed dev build of <code>mealplanning</code>. <code>lib/features/carb_loading</code> has had no commits since 10 September, so the build is current for this feature; the local Flutter (3.41.6) cannot resolve the branch, which now wants 3.47.5 for <code>sign_in_with_apple ^8.2.0</code>.</span>
+    <span>Days 2 and 3 are reported from the device database rather than screenshots because the app has no route to them. Two events were left on the dev account: <em>Ironman 70.3 Augusta</em> and <em>Augusta 70.3 (probe)</em>.</span>
+  </footer>
+
+</div>
+
+<dialog class="lb" id="lb"><img id="lbimg" src="" alt=""></dialog>
+
+<script>
+  (function () {
+    var lb = document.getElementById('lb');
+    var img = document.getElementById('lbimg');
+    document.querySelectorAll('figure button').forEach(function (b) {
+      b.addEventListener('click', function () {
+        img.src = b.dataset.src;
+        img.alt = b.querySelector('img').alt;
+        if (lb.showModal) lb.showModal();
+      });
+    });
+    lb.addEventListener('click', function () { lb.close(); });
+  })();
+</script>

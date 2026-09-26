@@ -7,6 +7,7 @@
 library;
 
 import '../../activities/domain/activity.dart';
+import 'carb_dashboard_models.dart';
 
 /// The workout card's state machine — exactly one state at a time
 /// (workout-card.md, states table).
@@ -240,17 +241,30 @@ class DashboardNode {
     required WorkoutCardData this.workout,
     this.brick,
   }) : mealGroupLabel = null,
-       meals = const [];
+       meals = const [],
+       carbSlot = null;
 
   const DashboardNode.meals({
     required this.timeLabel,
     required String this.mealGroupLabel,
     required this.meals,
   }) : workout = null,
-       brick = null;
+       brick = null,
+       carbSlot = null;
+
+  /// A loading-day slot group (CD-3: the six slots ARE the loading-day meal
+  /// timeline; workout/event nodes interleave by clock).
+  const DashboardNode.carbSlot({
+    required this.timeLabel,
+    required CarbSlotCardData this.carbSlot,
+  }) : workout = null,
+       brick = null,
+       mealGroupLabel = null,
+       meals = const [];
 
   final String timeLabel;
   final WorkoutCardData? workout;
+  final CarbSlotCardData? carbSlot;
 
   /// CANDIDATE (not ratified — see the brick note in macro_dashboard_screen):
   /// the created brick itself when this workout row IS a brick, so the
@@ -263,6 +277,7 @@ class DashboardNode {
 
   bool get isWorkout => workout != null;
   bool get isBrick => brick != null;
+  bool get isCarbSlot => carbSlot != null;
 
   /// S-7: a SKIPPED card has lost its timeline slot — it renders with no
   /// timestamp ([timeLabel] is empty), tucked after every timed card of its
@@ -273,6 +288,7 @@ class DashboardNode {
   /// and skipped.
   bool get railDashed =>
       isWorkout && !(workout!.isDone) ||
+      (isCarbSlot && carbSlot!.isEmpty) ||
       (!isWorkout && meals.isNotEmpty && meals.every((m) => m.suggested));
 }
 

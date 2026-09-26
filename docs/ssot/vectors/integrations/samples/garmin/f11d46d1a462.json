@@ -1,0 +1,31 @@
+{
+ "fingerprintId": "f11d46d1a462",
+ "provider": "garmin",
+ "stratum": {
+  "endpoint": "garmin/activity_raw",
+  "workoutType": "ELLIPTICAL"
+ },
+ "optionalKeysInStratum": [],
+ "provenance": {
+  "source": "dev provider_raw_payloads",
+  "scrubbed": "server-side (corpus-export edge fn)",
+  "environment": "dev",
+  "exportedAt": "2026-09-21T00:53:24+00:00",
+  "note": "real-account (dev Garmin athletes), promoted by ruling 2026-09-20",
+  "correction": "re-scrubbed under the default-deny standard (@v1.1 samples de-id erratum, ruled 2026-09-20); fingerprint unchanged, content re-destroyed"
+ },
+ "exemplar": {
+  "steps": 4719,
+  "summaryId": "syn-a7399335",
+  "activityId": 27314190003,
+  "isWebUpload": false,
+  "activityName": "corpus placeholder",
+  "activityType": "corpus placeholder",
+  "durationInSeconds": 1459,
+  "activeKilocalories": 182,
+  "startTimeInSeconds": 1767225600,
+  "startTimeOffsetInSeconds": -16194,
+  "maxHeartRateInBeatsPerMinute": 112,
+  "averageHeartRateInBeatsPerMinute": 101
+ }
+}

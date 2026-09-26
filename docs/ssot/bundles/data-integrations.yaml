@@ -91,3 +91,13 @@ deviations:
     note: >
       Headerless inbound requests accepted + ping SSRF (Q-INT9 RULED: engineering
       remediation tracked app-side, not a spec clause). NOT blessed by this bundle.
+
+# NOTE 2026-09-20 (corpus interview rulings — apply-ruling batch, branch qa/real-payload-corpus):
+#   Pinned artifacts moved by post-ratification additions: lifecycle.md (L-7 retention RULED:
+#   90-day raw TTL, provider_raw_payloads window, corpus promotion), payload-usage-map.md
+#   (§1 suspect-source, §1.6/§1.7 provider facts, §6 item 7 re-doc, §7.1 confirm + §7.3 scope),
+#   training-peaks.md (TP-2 provider facts), OPEN-QUESTIONS.md (Q-INT1 RULED, Q-INT29 row+narrowing).
+#   Intake resolved: 2026-09-14-real-payload-test-corpus, 2026-09-18-q-int29-tp-disposition,
+#   2026-09-18-tp-ispremium-flag-unreliable-three-gates. Impact class (b) throughout.
+#   Recommend immutable point re-tag by ship-bundle once merged; coordinate with
+#   qa/data-integrations-v1.1 (qa-33) — its register/spec edits will conflict-merge with these.

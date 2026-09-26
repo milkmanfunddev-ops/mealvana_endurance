@@ -689,13 +689,18 @@ class AppRouter {
           },
         ),
 
+        // Event details — G27's carb-load nudge deep-links here (the Set Up
+        // Carb Loading row lives on this screen). Declared AFTER
+        // /events/create so the literal segment wins over :eventId.
         // One event — where Vana's event and carb-loading hand-offs land
         // (mp-265). Static `/events/create` above precedes it.
         GoRoute(
           path: '/events/:eventId',
           name: 'event-detail',
-          builder: (context, state) =>
-              EventDetailScreen(eventId: state.pathParameters['eventId']!),
+          builder: (context, state) {
+            final eventId = state.pathParameters['eventId']!;
+            return EventDetailScreen(eventId: eventId);
+          },
         ),
 
         // Race Day Checklist - Gear checklist for an event

@@ -1,0 +1,31 @@
+{
+ "fingerprintId": "a32e3884b0bb",
+ "provider": "garmin",
+ "stratum": {
+  "endpoint": "garmin/activity_raw",
+  "workoutType": "MOBILITY"
+ },
+ "optionalKeysInStratum": [],
+ "provenance": {
+  "source": "prod provider_raw_payloads",
+  "scrubbed": "server-side (corpus-export edge fn)",
+  "environment": "prod",
+  "exportedAt": "2026-09-21T00:53:23+00:00",
+  "note": "real-account (prod), promoted by ruling 2026-09-20",
+  "correction": "re-scrubbed under the default-deny standard (@v1.1 samples de-id erratum, ruled 2026-09-20); fingerprint unchanged, content re-destroyed"
+ },
+ "exemplar": {
+  "steps": 13,
+  "summaryId": "syn-2bcb3f59",
+  "activityId": 28566772248,
+  "isWebUpload": false,
+  "activityName": "corpus placeholder",
+  "activityType": "MOBILITY",
+  "durationInSeconds": 864,
+  "activeKilocalories": 78,
+  "startTimeInSeconds": 1767225600,
+  "startTimeOffsetInSeconds": -16841,
+  "maxHeartRateInBeatsPerMinute": 130,
+  "averageHeartRateInBeatsPerMinute": 99
+ }
+}

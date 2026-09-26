@@ -1,0 +1,59 @@
+{
+ "fingerprintId": "08a16044f9f1",
+ "provider": "garmin",
+ "stratum": {
+  "endpoint": "garmin/activity_raw",
+  "workoutType": "RUNNING"
+ },
+ "optionalKeysInStratum": [
+  "activeKilocalories",
+  "averageHeartRateInBeatsPerMinute",
+  "averagePaceInMinutesPerKilometer",
+  "averageRunCadenceInStepsPerMinute",
+  "averageSpeedInMetersPerSecond",
+  "distanceInMeters",
+  "durationInSeconds",
+  "manual",
+  "maxHeartRateInBeatsPerMinute",
+  "maxPaceInMinutesPerKilometer",
+  "maxRunCadenceInStepsPerMinute",
+  "maxSpeedInMetersPerSecond",
+  "parentSummaryId",
+  "startingLatitudeInDegree",
+  "startingLongitudeInDegree",
+  "steps",
+  "totalElevationGainInMeters",
+  "totalElevationLossInMeters"
+ ],
+ "provenance": {
+  "source": "prod provider_raw_payloads",
+  "scrubbed": "server-side (corpus-export edge fn)",
+  "environment": "prod",
+  "exportedAt": "2026-09-21T00:53:23+00:00",
+  "note": "real-account (prod), promoted by ruling 2026-09-20",
+  "correction": "re-scrubbed under the default-deny standard (@v1.1 samples de-id erratum, ruled 2026-09-20); fingerprint unchanged, content re-destroyed"
+ },
+ "exemplar": {
+  "steps": 5687,
+  "summaryId": "syn-500e5fad",
+  "activityId": 20425634147,
+  "isWebUpload": false,
+  "activityName": "corpus placeholder",
+  "activityType": "RUNNING",
+  "distanceInMeters": 3528.3857988171344,
+  "durationInSeconds": 1913,
+  "activeKilocalories": 435,
+  "startTimeInSeconds": 1767225600,
+  "startTimeOffsetInSeconds": -16931,
+  "maxSpeedInMetersPerSecond": 3.9142558650459365,
+  "totalElevationGainInMeters": 76.94918957737292,
+  "totalElevationLossInMeters": 68.44134786045926,
+  "maxHeartRateInBeatsPerMinute": 231,
+  "maxPaceInMinutesPerKilometer": 5.692180286795251,
+  "averageSpeedInMetersPerSecond": 2.051621153055884,
+  "maxRunCadenceInStepsPerMinute": 157,
+  "averageHeartRateInBeatsPerMinute": 193,
+  "averagePaceInMinutesPerKilometer": 10.096614674817522,
+  "averageRunCadenceInStepsPerMinute": 120.30297979004183
+ }
+}
