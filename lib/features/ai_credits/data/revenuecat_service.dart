@@ -10,6 +10,34 @@ import '../../../shared/services/sentry/sentry_reporter.dart';
 
 part 'revenuecat_service.g.dart';
 
+/// What the store answered to [RevenueCatService.purchase].
+///
+/// A cancel is the person's own doing and stays quiet; a failure is the
+/// store's or the SDK's, and the screen says so. The two used to share one
+/// `false` (121-005, 123-002).
+enum StorePurchaseResult {
+  /// The store confirmed the purchase.
+  purchased,
+
+  /// The person dismissed the store sheet.
+  cancelled,
+
+  /// The store or the SDK refused, or the SDK is not configured.
+  failed,
+}
+
+/// A store failure, thrown inside a controller's `AsyncValue.guard` so the
+/// state ends in an error. [RevenueCatService] has already reported the
+/// failure itself; a controller that sees this need not report it again.
+class StorePurchaseFailed implements Exception {
+  const StorePurchaseFailed(this.sku);
+
+  final String sku;
+
+  @override
+  String toString() => 'StorePurchaseFailed($sku)';
+}
+
 /// Kept alive because this wraps a process-wide native singleton. Under
 /// autoDispose the instance that startup configured was thrown away, and every
 /// later read built a fresh, unconfigured one.
@@ -382,12 +410,16 @@ class RevenueCatService {
 
   /// Purchase [pkg] through the native store.
   ///
-  /// Returns true on success, false on cancellation or any error.
-  /// Never throws so the controller can safely use the return value.
+  /// Answers what happened ([StorePurchaseResult]): the store confirmed, the
+  /// person dismissed the sheet, or the store or the SDK refused. Never
+  /// throws, so a controller can switch on the answer. A cancel and a
+  /// failure are kept apart (121-005, 123-002): a controller that treated
+  /// both as a cancel left a refused purchase silent.
   ///
   /// A user cancelling is reported as a breadcrumb, not an error — it is a
   /// normal outcome and would otherwise drown the real failures in Sentry.
-  Future<bool> purchase(Package pkg) async {
+  /// A failure is reported here, once; callers need not report it again.
+  Future<StorePurchaseResult> purchase(Package pkg) async {
     final sku = pkg.storeProduct.identifier;
 
     if (!_configured) {
@@ -396,18 +428,18 @@ class RevenueCatService {
         StateError('RevenueCat SDK not configured'),
         tags: {'sku': sku},
       );
-      return false;
+      return StorePurchaseResult.failed;
     }
 
     _crumb('purchase started', {'sku': sku});
     try {
       await _sdk.purchase(PurchaseParams.package(pkg));
       _crumb('purchase succeeded', {'sku': sku});
-      return true;
+      return StorePurchaseResult.purchased;
     } on PurchasesError catch (e, st) {
       if (e.code == PurchasesErrorCode.purchaseCancelledError) {
         _crumb('purchase cancelled by user', {'sku': sku});
-        return false;
+        return StorePurchaseResult.cancelled;
       }
       _report(
         'purchase failed',
@@ -415,7 +447,7 @@ class RevenueCatService {
         stackTrace: st,
         tags: {'sku': sku, 'rc_error_code': e.code.name},
       );
-      return false;
+      return StorePurchaseResult.failed;
     } catch (e, st) {
       // A user tapping Cancel does not always arrive as a typed
       // `PurchasesError`. purchases_flutter also surfaces it raw, as a
@@ -427,7 +459,7 @@ class RevenueCatService {
       // purchase is the system working.
       if (e is PlatformException && _isUserCancellation(e)) {
         _crumb('purchase cancelled by user (platform channel)', {'sku': sku});
-        return false;
+        return StorePurchaseResult.cancelled;
       }
       _report(
         'purchase failed (unexpected)',
@@ -435,7 +467,7 @@ class RevenueCatService {
         stackTrace: st,
         tags: {'sku': sku},
       );
-      return false;
+      return StorePurchaseResult.failed;
     }
   }
 

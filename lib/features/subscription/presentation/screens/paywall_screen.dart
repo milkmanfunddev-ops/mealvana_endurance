@@ -1,9 +1,12 @@
+import 'dart:async';
+
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
 import 'package:purchases_flutter/purchases_flutter.dart';
 import 'package:url_launcher/url_launcher.dart';
 
+import '../../../../shared/services/connectivity_checker.dart';
 import '../../../../shared/services/privacy/privacy_links.dart';
 import '../../../../shared/widgets/kyle_design/kyle_design.dart';
 import '../../../content/application/content_service.dart';
@@ -45,6 +48,16 @@ final paywallClipPlayerProvider = Provider<PhoneClipPlayer Function()>(
 /// The clip's first frame. A provider so widget tests need no asset decode.
 final paywallClipPosterProvider = Provider<ImageProvider>(
   (_) => const AssetImage(kPaywallClipPosterAsset),
+);
+
+/// How often the paywall asks again for its plans and the customer info
+/// while the plans are unavailable (123-009): an offline launch leaves
+/// "Plans aren't available" with nothing fetching until a resume. The
+/// connectivity stream fires on a real network change; a cut that keeps the
+/// interface "online" (netcut) is caught by this timer. A provider so widget
+/// tests can shorten it.
+final paywallRetryIntervalProvider = Provider<Duration>(
+  (_) => const Duration(seconds: 15),
 );
 
 /// The paywall route's page: always a plain full-screen page (mp-280,
@@ -113,15 +126,66 @@ class _PaywallScreenState extends ConsumerState<PaywallScreen> {
   /// else the screen itself (the clip page, or the paywall on its way out).
   BuildContext get _messageContext => _messagesKey.currentContext ?? context;
 
+  /// The retry while the plans are unavailable (123-009): a timer and the
+  /// connectivity stream, both asking [_retryWhileUnavailable].
+  Timer? _retryTimer;
+  StreamSubscription<bool>? _onlineSub;
+  bool _retrying = false;
+
+  @override
+  void initState() {
+    super.initState();
+    _retryTimer = Timer.periodic(
+      ref.read(paywallRetryIntervalProvider),
+      (_) => _retryWhileUnavailable(),
+    );
+    // The platform channel is not there in a widget test: an error on the
+    // stream ends the subscription and leaves the timer to do the work.
+    _onlineSub = ref
+        .read(connectivityCheckerProvider)
+        .onlineChanges
+        .listen((online) {
+          if (online) _retryWhileUnavailable();
+        }, onError: (Object _) {});
+  }
+
+  @override
+  void dispose() {
+    _retryTimer?.cancel();
+    _onlineSub?.cancel();
+    super.dispose();
+  }
+
+  /// Ask for the plans and the customer info again, only while the plans
+  /// are unavailable (no offering, or the read failed) and no read is in
+  /// flight. Run twice at once (a tick and a reconnect together) the second
+  /// call finds [_retrying] set and does nothing; after a refresh, the next
+  /// tick sees plans and stops. Both reads are idempotent.
+  Future<void> _retryWhileUnavailable() async {
+    if (!mounted || _retrying) return;
+    final plans = ref.read(paywallPlansProvider);
+    if (plans.isLoading) return;
+    final unavailable = plans.hasError || (plans.value?.isEmpty ?? true);
+    if (!unavailable) return;
+    _retrying = true;
+    try {
+      ref.invalidate(paywallPlansProvider);
+      await ref.read(subscriptionStatusProvider.notifier).refresh();
+    } finally {
+      _retrying = false;
+    }
+  }
+
   Future<void> _buy(BuildContext context, WidgetRef ref, Package pkg) async {
     final content = ref.read(contentServiceProvider);
     // Read before the purchase: once Pro is active every status says
     // `hadPro`, so only the status before the buy tells a returning account
     // (its Pro ended, 10-002) from a new one. The router resolved the
-    // status before it showed this screen, so the future is already done.
-    final returning = (await ref.read(
-      subscriptionStatusProvider.future,
-    )).hadPro;
+    // status before it showed this screen, so the value is already there;
+    // a synchronous read keeps the controller's loading state in the same
+    // frame as the tap, so a second tap finds Continue disabled (121-008).
+    final returning =
+        ref.read(subscriptionStatusProvider).value?.hadPro ?? false;
     final outcome = await ref
         .read(proPaywallControllerProvider.notifier)
         .buy(pkg);
@@ -151,6 +215,7 @@ class _PaywallScreenState extends ConsumerState<PaywallScreen> {
           queryParameters: {'mode': 'signup'},
         );
       case ProPurchaseOutcome.cancelled:
+      case ProPurchaseOutcome.busy:
         break;
       case ProPurchaseOutcome.failed:
         // The ref.listen below already surfaces the AsyncError.
@@ -160,20 +225,28 @@ class _PaywallScreenState extends ConsumerState<PaywallScreen> {
 
   Future<void> _restore(BuildContext context, WidgetRef ref) async {
     final content = ref.read(contentServiceProvider);
-    final active = await ref
+    final outcome = await ref
         .read(proPaywallControllerProvider.notifier)
         .restore();
     if (!context.mounted || !mounted) return;
-    if (active) {
-      MealvanaSnackbar.showSuccess(
-        _messageContext,
-        content.getValue(ContentKeys.paywallRestoreSuccess),
-      );
-    } else {
-      MealvanaSnackbar.showInfo(
-        _messageContext,
-        content.getValue(ContentKeys.paywallRestoreNone),
-      );
+    switch (outcome) {
+      case ProRestoreOutcome.unlocked:
+        MealvanaSnackbar.showSuccess(
+          _messageContext,
+          content.getValue(ContentKeys.paywallRestoreSuccess),
+        );
+      case ProRestoreOutcome.nothingFound:
+        MealvanaSnackbar.showInfo(
+          _messageContext,
+          content.getValue(ContentKeys.paywallRestoreNone),
+        );
+      case ProRestoreOutcome.unavailable:
+      case ProRestoreOutcome.failed:
+        // No answer from the store is no verdict on the account (121-006).
+        MealvanaSnackbar.showError(
+          _messageContext,
+          content.getValue(ContentKeys.paywallRestoreUnavailable),
+        );
     }
   }
 
@@ -331,7 +404,8 @@ class _PaywallScreenState extends ConsumerState<PaywallScreen> {
     final isBusy = paywallState is AsyncLoading;
 
     ref.listen<AsyncValue<void>>(proPaywallControllerProvider, (_, next) {
-      if (next is AsyncError) {
+      // A restore's own failure is said by [_restore], with the right words.
+      if (next is AsyncError && next.error is! RestoreUnavailable) {
         MealvanaSnackbar.showError(
           _messageContext,
           content.getValue(ContentKeys.paywallPurchaseFailed),

@@ -114,6 +114,7 @@
     "trial_reminder_title": "Your free week ends in two days",
     "trial_reminder_body_monthly": "After that it's {price} a month. You can cancel any time. Tap to manage your subscription.",
     "trial_reminder_body_annual": "After that it's {price} a year. You can cancel any time. Tap to manage your subscription.",
+    "restore_unavailable": "We couldn't check your purchases. Connect to the internet and try again.",
     "clip_label": "Mealvana Endurance in use: the fuelling timeline, Vana answering, then a week's meal plan.",
     "close_label": "Close",
     "more_label": "More options",
@@ -986,7 +987,7 @@
     "submit": "Redeem",
     "success_coach": "You're set up as a coach, with {days} days of Pro.",
     "success_giveaway": "Code redeemed. You have {days} days of Pro.",
-    "success_paired": "Code redeemed. Your coach will see your request to pair.",
+    "success_paired": "You're paired with {coach}.",
     "success_attributed": "Code redeemed.",
     "refused_not_found": "We don't recognise that code. Check it and try again.",
     "refused_not_yet_valid": "That code isn't active yet.",
@@ -998,7 +999,16 @@
     "refused_too_long": "That code is too long. No code is longer than 32 characters.",
     "refused_other": "That code can't be used.",
     "failed_sign_in": "Sign in to redeem a code.",
-    "failed_unavailable": "We couldn't redeem that code just now. Try again in a moment."
+    "failed_unavailable": "We couldn't redeem that code just now. Try again in a moment.",
+    "success_coach_one_day": "You're set up as a coach, with 1 day of Pro.",
+    "success_giveaway_one_day": "Code redeemed. You have 1 day of Pro.",
+    "success_paired_unnamed": "You're paired with your coach.",
+    "refused_pro_active": "You already have Pro.",
+    "refused_pro_active_grant": "You already have free Pro until {date}."
+  },
+  "coach_connection": {
+    "paired_with": "Paired with {coach}",
+    "paired": "Paired with your coach"
   },
   "barcode_scanner": {
     "no_camera": "This device doesn't have a camera we can use for scanning. Type the barcode with Enter below, or search for the food by name.",

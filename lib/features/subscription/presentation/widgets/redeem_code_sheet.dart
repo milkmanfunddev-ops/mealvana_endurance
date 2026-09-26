@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
+import 'package:intl/intl.dart';
 
 import '../../../../shared/widgets/kyle_design/kyle_design.dart';
 import '../../../../shared/widgets/kyle_design/materials/glass_sheet.dart';
@@ -41,15 +42,29 @@ Future<void> openRedeemCode(
   );
 }
 
-/// The words for what [redeemed] did.
+/// The words for what [redeemed] did: one day of Pro in the singular
+/// (122-006); a coach code names the coach it paired with (122-002).
 String redeemedMessage(ContentService content, CodeRedeemed redeemed) {
+  final oneDay = redeemed.proDays == 1;
   final key = switch (redeemed.kind) {
-    RedeemedKind.coach => ContentKeys.redeemCodeSuccessCoach,
-    RedeemedKind.giveaway => ContentKeys.redeemCodeSuccessGiveaway,
-    RedeemedKind.paired => ContentKeys.redeemCodeSuccessPaired,
+    RedeemedKind.coach =>
+      oneDay
+          ? ContentKeys.redeemCodeSuccessCoachOneDay
+          : ContentKeys.redeemCodeSuccessCoach,
+    RedeemedKind.giveaway =>
+      oneDay
+          ? ContentKeys.redeemCodeSuccessGiveawayOneDay
+          : ContentKeys.redeemCodeSuccessGiveaway,
+    RedeemedKind.paired =>
+      redeemed.coachName == null
+          ? ContentKeys.redeemCodeSuccessPairedUnnamed
+          : ContentKeys.redeemCodeSuccessPaired,
     RedeemedKind.attributed => ContentKeys.redeemCodeSuccessAttributed,
   };
-  return ContentKeys.format(content.getValue(key), {'days': redeemed.proDays});
+  return ContentKeys.format(content.getValue(key), {
+    'days': redeemed.proDays,
+    'coach': redeemed.coachName ?? '',
+  });
 }
 
 /// The words for why a Code was refused, or why no answer came back; null
@@ -93,6 +108,14 @@ String? redeemProblem(
     CodeRefusal.tooLong => content.getValue(
       ContentKeys.redeemCodeRefusedTooLong,
     ),
+    // 122-001: free Pro says until when; a subscription just says so.
+    CodeRefusal.proActive =>
+      value.proIsGrant && value.proUntil != null
+          ? ContentKeys.format(
+              content.getValue(ContentKeys.redeemCodeRefusedProActiveGrant),
+              {'date': DateFormat.yMMMMd().format(value.proUntil!.toLocal())},
+            )
+          : content.getValue(ContentKeys.redeemCodeRefusedProActive),
     CodeRefusal.other =>
       value.serverMessage ??
           content.getValue(ContentKeys.redeemCodeRefusedOther),
@@ -125,6 +148,9 @@ class RedeemCodeSheet extends ConsumerStatefulWidget {
   /// and `MAX_CODE_LENGTH` in redeem-code both say 32 (11-004).
   static const maxCodeLength = 32;
 
+  /// What the field keeps: letters, digits and spaces (122-007).
+  static final codeCharacters = RegExp(r'[A-Za-z0-9 ]');
+
   static const fieldKey = ValueKey('redeem_code.field');
   static const submitKey = ValueKey('redeem_code.submit');
   static const problemKey = ValueKey('redeem_code.problem');
@@ -144,7 +170,9 @@ class _RedeemCodeSheetState extends ConsumerState<RedeemCodeSheet> {
 
   Future<void> _submit() async {
     if (_code.text.trim().isEmpty) return;
-    if (ref.read(codeEntryControllerProvider).isLoading) return;
+    if (CodeEntryController.isBusy(ref.read(codeEntryControllerProvider))) {
+      return;
+    }
     final content = ref.read(contentServiceProvider);
     final host = widget.host;
     final result = await ref
@@ -168,6 +196,9 @@ class _RedeemCodeSheetState extends ConsumerState<RedeemCodeSheet> {
   Widget build(BuildContext context) {
     final content = ref.watch(contentServiceProvider);
     final state = ref.watch(codeEntryControllerProvider);
+    // Busy from the tap until the answer, and past a success until the sheet
+    // has closed (122-005).
+    final busy = CodeEntryController.isBusy(state);
     final problem = redeemProblem(content, state);
     String t(String key) => content.getValue(key);
 
@@ -200,9 +231,16 @@ class _RedeemCodeSheetState extends ConsumerState<RedeemCodeSheet> {
             controller: _code,
             hintText: t(ContentKeys.redeemCodeHint),
             autofocus: true,
-            enabled: !state.isLoading,
+            enabled: !busy,
             keyboardType: TextInputType.visiblePassword,
+            // A Code is letters, digits and the spaces it is printed with;
+            // iOS's ". " for a double space and its smart punctuation never
+            // reach the field (122-007).
+            autocorrect: false,
+            smartDashesType: SmartDashesType.disabled,
+            smartQuotesType: SmartQuotesType.disabled,
             inputFormatters: [
+              FilteringTextInputFormatter.allow(RedeemCodeSheet.codeCharacters),
               LengthLimitingTextInputFormatter(RedeemCodeSheet.maxCodeLength),
               _UpperCase(),
             ],
@@ -229,10 +267,8 @@ class _RedeemCodeSheetState extends ConsumerState<RedeemCodeSheet> {
           KylePrimaryButton(
             key: RedeemCodeSheet.submitKey,
             text: t(ContentKeys.redeemCodeSubmit),
-            isLoading: state.isLoading,
-            onPressed: state.isLoading || _code.text.trim().isEmpty
-                ? null
-                : _submit,
+            isLoading: busy,
+            onPressed: busy || _code.text.trim().isEmpty ? null : _submit,
           ),
         ],
       ),

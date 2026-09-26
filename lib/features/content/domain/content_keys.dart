@@ -80,6 +80,9 @@ class ContentKeys {
       'paywall.trial_reminder_body_monthly';
   static const String paywallTrialReminderBodyAnnual =
       'paywall.trial_reminder_body_annual';
+  // A restore that never reached the store (offline): no verdict on the
+  // account (121-006).
+  static const String paywallRestoreUnavailable = 'paywall.restore_unavailable';
 
   // Post-onboarding account screen: the trial line (mp-279 terms).
   static const String postOnboardingTrialLine =
@@ -1220,6 +1223,25 @@ class ContentKeys {
   static const String redeemCodeFailedSignIn = 'redeem_code.failed_sign_in';
   static const String redeemCodeFailedUnavailable =
       'redeem_code.failed_unavailable';
+  // One day of Pro reads in the singular (122-006); a coach code pairs at
+  // once and names the coach (122-002, 122-003; `{coach}`), or not when the
+  // coach has no name on record; a giveaway is refused while any Pro is
+  // active (122-001): free Pro until `{date}`, or a subscription.
+  static const String redeemCodeSuccessCoachOneDay =
+      'redeem_code.success_coach_one_day';
+  static const String redeemCodeSuccessGiveawayOneDay =
+      'redeem_code.success_giveaway_one_day';
+  static const String redeemCodeSuccessPairedUnnamed =
+      'redeem_code.success_paired_unnamed';
+  static const String redeemCodeRefusedProActive =
+      'redeem_code.refused_pro_active';
+  static const String redeemCodeRefusedProActiveGrant =
+      'redeem_code.refused_pro_active_grant';
+
+  // Coach Connection (Settings): the paired line, with the coach's name
+  // (`{coach}`) or without one (122-003).
+  static const String coachConnectionPairedWith = 'coach_connection.paired_with';
+  static const String coachConnectionPaired = 'coach_connection.paired';
 
   // Barcode scanner (testing-wave 28-004: the no-camera path)
   static const String barcodeScannerNoCamera = 'barcode_scanner.no_camera';
