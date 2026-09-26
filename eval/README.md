@@ -73,6 +73,9 @@ runs/001/
 A confirmatory re-run of a Scenario adds a `rerun` entry for that Scenario in the sidecar and a
 note in the prose. It does not overwrite the original Run's entry.
 
+One round is named `pilot` instead of a number: the pilot gate Run (protocol step 1), which
+calibrates the anchors before round 001 counts.
+
 ## JSON sidecar convention
 
 Every round writes a machine-readable sidecar next to the prose, so the visual artifact renders
