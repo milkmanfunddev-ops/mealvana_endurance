@@ -75,8 +75,9 @@ note in the prose. It does not overwrite the original Run's entry.
 
 Every round writes a machine-readable sidecar next to the prose, so the visual artifact renders
 from data instead of re-parsing prose. That artifact is the judging board in `board/`; the
-Examiner mirrors each Run's sidecar object into it as the round runs (`board/README.md`). Ticket 05 of the
-vana-judging feature implements this schema. This section is the contract.
+Examiner mirrors each Run's sidecar object into it as the round runs (`board/README.md`). The
+tools in `tools/` (vana-judging ticket 05) assemble both files from one input; this section is
+the contract.
 
 - `round`. The round number as a string, for example `"001"`.
 - `date`. The ISO date the round closed.
@@ -85,15 +86,21 @@ vana-judging feature implements this schema. This section is the contract.
     extension.
   - `account`. The account slug from `accounts.md`.
   - `rerun`. True only for a confirmatory re-run.
-  - `dimensions`. The ten dimension Marks, keyed by the dimension names as they appear in
-    `rubric.md`, in kebab-case. Each value is 0, 25, 50, 75, or 100.
-  - `weighted_mark`. The weighted sum on the 0 to 100 scale.
+  - `dimensions`. The ten dimension Marks, keyed by the rubric's dimension names in kebab-case
+    with `&` dropped ("Tool use & data ops" becomes `tool-use-data-ops`). The exact keys, once,
+    in rubric order: `dietitian-judgment`, `task-success`, `concision-restraint`,
+    `interactivity`, `tool-use-data-ops`, `memory-personalization`, `reliability`, `opener`,
+    `instruction-following`, `recovery-boundaries`. Each value is 0, 25, 50, 75, or 100.
+  - `weighted_mark`. The weighted sum on the 0 to 100 scale, computed from the weights in
+    `rubric.md`.
   - `robotic_cap_applied`. True when the robotic hard cap from `rubric.md` was applied. When
-    true, `weighted_mark` is the capped value.
+    true, `weighted_mark` is the capped value: the raw weighted sum brought down to 50 when it
+    was higher.
   - `verdict`. The verdict text.
   - `improvements`. The IDs of the Improvements this Run motivated or touched, for example
     `["IMP-003"]`.
-- `average_mark`. The round's average Mark.
+- `average_mark`. The round's average Mark, over each Scenario's effective Mark — the re-run's
+  Mark when a Scenario has one, else its Run's (round protocol step 7).
 - `passed`. True when the average is 90 or higher and no single Mark is below 80.
 
 ## Scenario corpus
