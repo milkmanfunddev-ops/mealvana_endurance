@@ -222,6 +222,10 @@ At the end of every run, stopped or not, in this order:
 
 1. Delete the account you created through the app's delete-account flow (unless the ticket keeps
    it), and set its state with `CRED update <address> --state deleted` (or `delete-failed`).
+   An address that never finished sign-up (an unconfirmed auth user the in-app delete cannot
+   reach) is not deleted by you: name it and its auth user id in `RUNS/notes.md` under
+   "Leftover accounts", and the wave lead removes it at the close with
+   `node scripts/testing-wave/sweep-accounts.mjs delete --id <id> --apply` (IMPROVEMENTS #84).
 2. Stop every background process the run started: each helper loop (a watcher, a poller) keeps
    its PID in `SCRATCH/<name>.pid` when started and is killed by that PID here (#67). Then stop your log stream (`kill $(cat SCRATCH/logstream.pid)`; never `pkill`/`killall log`, which
    ends the other run's console too) and terminate the app on the simulator.
@@ -350,4 +354,7 @@ the above and follows this instead:
    route and lists every call site in Touches, not only the button the Finding named (Lee,
    2026-09-25, #64).
 4. `SYNC simulator drop <name>` for every wave simulator; `wave --close`; remove the worktrees.
+   Delete each run's "Leftover accounts" (`sweep-accounts.mjs delete --id <id> --apply`, #84).
+   Pull one edge-log extract for the whole wave's window yourself rather than relying on each
+   run's (#86).
 5. Append what the wave taught to `IMPROVEMENTS.md` and move anything fixed to Done.

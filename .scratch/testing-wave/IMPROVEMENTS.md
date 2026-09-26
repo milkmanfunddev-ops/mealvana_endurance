@@ -24,15 +24,6 @@ Each entry: what went wrong or cost time, where it was seen, and the suggested f
   ticket that adds a timeout or a retry to a write names each write it covers and says whether
   the server call is idempotent; a non-idempotent one gets a key or no timeout.
 
-- **#84 a run cannot delete an account that never signed in (wave 34).** 121's "Use a different
-  email" check leaves the first address as an unconfirmed auth user (121-003) that the in-app
-  delete cannot reach. Suggested fix: a lead-only `scripts/testing-wave/` helper that deletes an
-  unconfirmed `lee+e2e-*` auth user on dev by id, run at the close, so leftovers do not pile up.
-
-- **#86 one run of a pair saved no edge extract (wave 36).** 118 saved `edge-requests.txt` for
-  the whole window; 119 saved none. The lead read 118's, which covered both runs (one 502, filed
-  as 118-016). Suggested fix: in a paired wave the lead pulls one extract for the wave's window at
-  the close instead of relying on each run's.
 - **#87 a run's account delete removed the state the next ticket expected (wave 36).** 118's
   ticket said its DEVCOACH30 redeem would leave a pending pairing for 122's 11-009; deleting 118's
   account (runbook step 9) removed the pairing. The lead added a line to 122's Setup: make its
@@ -41,6 +32,14 @@ Each entry: what went wrong or cost time, where it was seen, and the suggested f
 
 ## Done
 
+- **#84 a run cannot delete an account that never signed in (wave 34).** 121's "Use a different
+  email" check leaves the first address as an unconfirmed auth user (121-003) that the in-app
+  delete cannot reach. Suggested fix: a lead-only `scripts/testing-wave/` helper that deletes an
+  unconfirmed `lee+e2e-*` auth user on dev by id, run at the close, so leftovers do not pile up. Done 09-26 (wave 37 lead): no new script needed, `sweep-accounts.mjs delete --id` already reads `auth.users`; runbook step 9 has the run name the leftover in notes.md and the lead delete it at the close.
+- **#86 one run of a pair saved no edge extract (wave 36).** 118 saved `edge-requests.txt` for
+  the whole window; 119 saved none. The lead read 118's, which covered both runs (one 502, filed
+  as 118-016). Suggested fix: in a paired wave the lead pulls one extract for the wave's window at
+  the close instead of relying on each run's. Done 09-26 (wave 37 lead): after-the-wave step 4 has the lead pull one extract for the wave's window.
 - **#85 an agent's `SELECT *` printed live integration tokens (wave 36).** 119 read test@test.com's
   `integrations` row with a star and the TrainingPeaks, V.O2, Garmin and Final Surge tokens landed
   in its transcript (not on disk). Done 09-26 (wave 36 lead): the runbook's Dev database line says
