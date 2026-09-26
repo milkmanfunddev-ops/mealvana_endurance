@@ -1,6 +1,6 @@
 # 100: Retest the fixes of 94 to 99
 
-**Status:** ready-for-agent
+**Status:** in-progress (wave 39, 2026-09-26)
 **Blocked by:** 101.
 **Next:** `/implement-lee testing-wave`
 **Model:** opus
