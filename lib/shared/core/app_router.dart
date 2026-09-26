@@ -90,7 +90,7 @@ import '../../features/meal_planning/presentation/screens/meal_detail_screen.dar
 import '../../features/meal_planning/presentation/screens/recents_screen.dart';
 import '../../features/meal_planning/presentation/screens/swap_meal_screen.dart';
 import '../../features/meal_planning/presentation/screens/vana_browse_screen.dart';
-import '../../features/meal_planning/presentation/screens/vana_chat_screen.dart';
+import '../../features/meal_planning/presentation/screens/vana_chat_route.dart';
 import '../../features/meal_planning/presentation/screens/vana_conversations_screen.dart';
 import '../../features/meal_planning/presentation/screens/vana_settings_screen.dart';
 import '../../features/meal_planning/presentation/widgets/vana_companion.dart';
@@ -1178,9 +1178,16 @@ class AppRouter {
               builder: (context, state) => MealDetailScreen(
                 id: state.pathParameters['id']!,
                 swapPlanMealId: state.uri.queryParameters['swap'],
-                // `pick=<conversationId>` (from the Vana browse screen)
-                // adds "Add to plan" scoped to that conversation's draft.
+                // `pick=<conversationId>&mode=<kind>` (from the Vana browse
+                // screen) adds "Add to plan": into that conversation's
+                // draft for a planning chat, into the Plan tab's plan for a
+                // general one (134, 118-004).
                 pickConversationId: state.uri.queryParameters['pick'],
+                pickKind:
+                    VanaConversationKind.fromWire(
+                      state.uri.queryParameters['mode'],
+                    ) ??
+                    VanaConversationKind.mealPlanning,
               ),
             ),
             GoRoute(
@@ -1218,16 +1225,20 @@ class AppRouter {
           path: '/vana',
           name: 'vana-chat',
           builder: (context, state) {
-            final kind = switch (state.uri.queryParameters['mode']) {
-              'general' => VanaConversationKind.general,
-              _ => VanaConversationKind.mealPlanning,
-            };
+            // No `mode` with an existing conversation: the conversation's
+            // own kind decides (testing-wave 134, 118-004); a new one with
+            // no mode is meal planning as before.
             final c = state.uri.queryParameters['c'];
-            return VanaChatScreen(
-              kind: kind,
+            final mode = VanaConversationKind.fromWire(
+              state.uri.queryParameters['mode'],
+            );
+            final resumes = c != null && c != 'new';
+            return VanaChatRoute(
+              kind:
+                  mode ?? (resumes ? null : VanaConversationKind.mealPlanning),
               // `c=new` starts a fresh conversation and streams the opener;
               // any other id resumes that conversation.
-              conversationId: (c == null || c == 'new') ? null : c,
+              conversationId: resumes ? c : null,
               startOpener: c == 'new',
               // `intent=new_plan` (the Plan tab's "New meal plan"): the opener
               // starts a fresh plan instead of asking about the one on the tab.
@@ -1235,8 +1246,10 @@ class AppRouter {
             );
           },
           routes: [
-            // `/vana/browse?c=<conversationId>` — pick from the whole
-            // catalog into that conversation's draft; no id → back to chat.
+            // `/vana/browse?c=<conversationId>&mode=<kind>` — pick from the
+            // whole catalog: into that conversation's draft for a planning
+            // chat, into the Plan tab's plan for a general one (134,
+            // 118-004); no id → back to chat.
             GoRoute(
               path: 'browse',
               name: 'vana-browse',
@@ -1244,6 +1257,11 @@ class AppRouter {
                   state.uri.queryParameters['c'] == null ? '/vana' : null,
               builder: (context, state) => VanaBrowseScreen(
                 conversationId: state.uri.queryParameters['c']!,
+                kind:
+                    VanaConversationKind.fromWire(
+                      state.uri.queryParameters['mode'],
+                    ) ??
+                    VanaConversationKind.mealPlanning,
               ),
             ),
             GoRoute(

@@ -541,6 +541,9 @@ class ContentKeys {
   static const String mpBrowseAdd = 'meal_planning.browse_add';
   static const String mpBrowseAdded = 'meal_planning.browse_added';
   static const String mpBrowseAddedToast = 'meal_planning.browse_added_toast';
+  // A second tap on a ticked Browse card takes the meal out (134, 118-004).
+  static const String mpBrowseRemovedToast =
+      'meal_planning.browse_removed_toast';
   // A meal with missing numbers stays listed, but can't go in a plan (mp-678).
   static const String mpBrowseNoNumbers = 'meal_planning.browse_no_numbers';
   static const String mpMicTooltip = 'meal_planning.mic_tooltip';
@@ -846,10 +849,8 @@ class ContentKeys {
   static const String mpShoppingServingsMany =
       'meal_planning.shopping_servings_many';
   static const String mpShoppingMealsOne = 'meal_planning.shopping_meals_one';
-  static const String mpShoppingMealsMany =
-      'meal_planning.shopping_meals_many';
-  static const String mpShoppingTotalsFor =
-      'meal_planning.shopping_totals_for';
+  static const String mpShoppingMealsMany = 'meal_planning.shopping_meals_many';
+  static const String mpShoppingTotalsFor = 'meal_planning.shopping_totals_for';
   static const String mpShoppingNewListTitle =
       'meal_planning.shopping_new_list_title';
   static const String mpShoppingNewListDefault =

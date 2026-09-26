@@ -638,6 +638,7 @@
     "browse_add": "Add to plan",
     "browse_added": "In your plan",
     "browse_added_toast": "Added to your plan",
+    "browse_removed_toast": "Taken out of your plan",
     "browse_no_numbers": "Can't go in a plan yet: its nutrition numbers are missing",
     "mic_tooltip": "Dictate",
     "mic_listening": "Listening…",

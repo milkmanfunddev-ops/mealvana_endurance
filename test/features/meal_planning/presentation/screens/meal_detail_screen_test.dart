@@ -18,6 +18,7 @@ import 'package:mealvana_endurance/features/meal_planning/domain/cooking_session
 import 'package:mealvana_endurance/features/meal_planning/domain/directions_origin.dart';
 import 'package:mealvana_endurance/features/meal_planning/domain/meal_detail.dart';
 import 'package:mealvana_endurance/features/meal_planning/domain/meal_plan.dart';
+import 'package:mealvana_endurance/features/meal_planning/domain/vana_conversation_kind.dart';
 import 'package:mealvana_endurance/features/meal_planning/domain/meal_ref.dart';
 import 'package:mealvana_endurance/features/meal_planning/domain/meal_source.dart';
 import 'package:mealvana_endurance/features/meal_planning/domain/meal_type.dart';
@@ -83,7 +84,9 @@ void main() {
         overrides: [
           contentServiceProvider.overrideWith(testContentService),
           isAdminProvider.overrideWith((ref) async => admin),
-          internalDeviceFlagProvider.overrideWith(() => StubInternalDeviceFlag(isTester)),
+          internalDeviceFlagProvider.overrideWith(
+            () => StubInternalDeviceFlag(isTester),
+          ),
           mealDetailControllerProvider('D-100').overrideWith(() => controller),
           noSavedCopy,
         ],
@@ -315,7 +318,9 @@ void main() {
         ProviderScope(
           overrides: [
             contentServiceProvider.overrideWith(testContentService),
-            internalDeviceFlagProvider.overrideWith(() => StubInternalDeviceFlag(false)),
+            internalDeviceFlagProvider.overrideWith(
+              () => StubInternalDeviceFlag(false),
+            ),
             mealDetailControllerProvider(
               d.meal.id,
             ).overrideWith(() => _FixedDetailController(d)),
@@ -356,7 +361,8 @@ void main() {
         tester,
         fromProducer({
           'photo': {
-            'url': 'https://vlmtsdzpnjnavdgytcmi.supabase.co/storage/v1/'
+            'url':
+                'https://vlmtsdzpnjnavdgytcmi.supabase.co/storage/v1/'
                 'object/public/meal-images/photos/D-048.jpg',
             'credit': null,
             'creditUrl': null,
@@ -439,6 +445,7 @@ void main() {
       required _RecordingPlanController plan,
       String? pick = 'conv-1',
       MealPlan? draft,
+      VanaConversationKind kind = VanaConversationKind.mealPlanning,
     }) async {
       final router = GoRouter(
         initialLocation: '/browse/detail',
@@ -449,8 +456,11 @@ void main() {
             routes: [
               GoRoute(
                 path: 'detail',
-                builder: (_, __) =>
-                    MealDetailScreen(id: 'D-100', pickConversationId: pick),
+                builder: (_, __) => MealDetailScreen(
+                  id: 'D-100',
+                  pickConversationId: pick,
+                  pickKind: kind,
+                ),
               ),
             ],
           ),
@@ -460,16 +470,18 @@ void main() {
         ProviderScope(
           overrides: [
             contentServiceProvider.overrideWith(testContentService),
-            internalDeviceFlagProvider.overrideWith(() => StubInternalDeviceFlag(false)),
+            internalDeviceFlagProvider.overrideWith(
+              () => StubInternalDeviceFlag(false),
+            ),
             mealDetailControllerProvider(
               'D-100',
             ).overrideWith(() => _FixedDetailController(detail)),
             noSavedCopy,
             mealPlanControllerProvider.overrideWith(() => plan),
             if (pick != null)
-              conversationDraftProvider(pick).overrideWith(
-                (ref) => Stream.value(draft),
-              ),
+              conversationDraftProvider(
+                pick,
+              ).overrideWith((ref) => Stream.value(draft)),
           ],
           child: MaterialApp.router(routerConfig: router),
         ),
@@ -508,6 +520,53 @@ void main() {
       // Popped back to the browse screen.
       expect(find.text('browse'), findsOneWidget);
       expect(addButton(), findsNothing);
+    });
+
+    /// Testing-wave 134 (118-004): from a general chat the pick goes into
+    /// the Plan tab's plan, so it carries no conversation, and "In your
+    /// plan" reads that plan.
+    testWidgets('from a general chat, picks into the Plan tab\'s plan with no '
+        'conversation scope', (tester) async {
+      final plan = _RecordingPlanController();
+      await pumpPick(tester, plan: plan, kind: VanaConversationKind.general);
+
+      await tester.ensureVisible(addButton());
+      await tester.tap(addButton());
+      await tester.pumpAndSettle();
+
+      final pick = plan.picks.single;
+      expect(pick.meals.single.id, 'D-100');
+      expect(pick.conversationId, isNull);
+      expect(find.text('browse'), findsOneWidget);
+    });
+
+    testWidgets('from a general chat, a meal already in the Plan tab\'s plan '
+        'says "In your plan"', (tester) async {
+      final fixture = VanaActionResult.fromJson(loadFixture('batch')).plan!;
+      final tabPlan = fixture.copyWith(
+        conversationId: null,
+        meals: [
+          PlanMeal(
+            id: 'pm-1',
+            planId: fixture.id,
+            source: MealSource.library,
+            libraryMealId: 'D-100',
+            name: detail.meal.name,
+            mealType: MealType.dinner,
+            servings: 4,
+            servingsLeft: 4,
+          ),
+        ],
+      );
+      final plan = _RecordingPlanController(activePlan: tabPlan);
+      await pumpPick(tester, plan: plan, kind: VanaConversationKind.general);
+      await tester.pump();
+
+      expect(addButton(), findsNothing);
+      expect(
+        find.byKey(const ValueKey('meal_planning.detail_in_plan')),
+        findsOneWidget,
+      );
     });
 
     testWidgets(
@@ -631,7 +690,9 @@ void main() {
         ProviderScope(
           overrides: [
             contentServiceProvider.overrideWith(testContentService),
-            internalDeviceFlagProvider.overrideWith(() => StubInternalDeviceFlag(false)),
+            internalDeviceFlagProvider.overrideWith(
+              () => StubInternalDeviceFlag(false),
+            ),
             isAdminProvider.overrideWith((ref) async => false),
             mealDetailControllerProvider(
               'D-100',
@@ -747,11 +808,15 @@ class _FixedDetailController extends MealDetailController {
 }
 
 /// Records every `pickMeals` instead of running the remote-ack action.
+/// [activePlan] is the Plan tab's plan a general chat's pick reads.
 class _RecordingPlanController extends MealPlanController {
+  _RecordingPlanController({this.activePlan});
+
+  final MealPlan? activePlan;
   final List<PickMealsAction> picks = [];
 
   @override
-  Future<MealPlan?> build() async => null;
+  Future<MealPlan?> build() async => activePlan;
 
   @override
   Future<MealPlan?> pickMeals(

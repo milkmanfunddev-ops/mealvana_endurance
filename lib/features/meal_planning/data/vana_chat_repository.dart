@@ -205,6 +205,21 @@ class VanaChatRepository {
   // (`VanaConversationsController`, ticket 126): the server picks each row's
   // plan, so the app never keeps a second pick rule.
 
+  /// The kind of an existing conversation, or null when it is not the
+  /// athlete's (RLS) or does not exist. `/vana?c=<id>` with no `mode` reads
+  /// it so a general conversation opened by link is not shown as a meal
+  /// plan (testing-wave 134, 118-004).
+  Future<VanaConversationKind?> fetchConversationKind(
+    String conversationId,
+  ) async {
+    final row = await _supabase
+        .from('vana_conversations')
+        .select('kind')
+        .eq('id', conversationId)
+        .maybeSingle();
+    return VanaConversationKind.fromWire(row?['kind'] as String?);
+  }
+
   /// Insert an empty conversation of [kind] and return its id. RLS: owner
   /// insert (`Users manage own vana conversations`).
   Future<String> createConversation(VanaConversationKind kind) async {

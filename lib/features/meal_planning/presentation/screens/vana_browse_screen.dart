@@ -9,24 +9,41 @@ import '../../../../theme/kyle_design/app_colors.dart';
 import '../../../../theme/kyle_design/app_text_styles.dart';
 import '../../application/meal_catalog_controller.dart';
 import '../../application/meal_plan_controller.dart';
+import '../../application/vana_chat_controller.dart';
+import '../../domain/meal_plan.dart';
 import '../../domain/meal_ref.dart';
 import '../../domain/ui_action.dart';
+import '../../domain/vana_conversation_kind.dart';
 import '../widgets/meal_catalog_browser.dart';
 import '../widgets/vana_round_button.dart';
 import '../../../../shared/core/pop_or_home.dart';
 import '../widgets/write_failure_snackbar.dart';
 
-/// `/vana/browse?c=<conversationId>` — "Browse meals" from the Vana chat
-/// (Lee, 2026-09-03: "browse all of our recipes and assign them to the meal
-/// plan"). The Meals tab's catalog browser with an Add affordance on every
-/// card: a tap picks the meal into THIS conversation's draft (remote-ack
-/// `pick_meals`, the picker's default servings), ticks the card and toasts;
-/// the card body opens the detail with `?pick=` so "Add to plan" is there
-/// too. "Done" pops back to the chat, which reloads its draft.
+/// `/vana/browse?c=<conversationId>&mode=<kind>` — "Browse meals" from the
+/// Vana chat (Lee, 2026-09-03: "browse all of our recipes and assign them to
+/// the meal plan"). The Meals tab's catalog browser with an Add affordance
+/// on every card: a tap picks the meal (remote-ack `pick_meals`, the
+/// picker's default servings), ticks the card and toasts; a second tap on a
+/// ticked card takes it out again (`unpick_meal`); the card body opens the
+/// detail with `?pick=` so "Add to plan" is there too. "Done" pops back to
+/// the chat.
+///
+/// Where a pick lands follows the chat's [kind] (testing-wave 134, Lee
+/// 2026-09-26, 118-004): a meal-planning conversation keeps its picks in its
+/// own draft; a general conversation has no draft, so its picks go into the
+/// plan the Plan tab shows, or start one, and the chat's plan bar shows that
+/// plan.
 class VanaBrowseScreen extends ConsumerStatefulWidget {
-  const VanaBrowseScreen({super.key, required this.conversationId});
+  const VanaBrowseScreen({
+    super.key,
+    required this.conversationId,
+    this.kind = VanaConversationKind.mealPlanning,
+  });
 
   final String conversationId;
+  final VanaConversationKind kind;
+
+  bool get isPlanning => kind == VanaConversationKind.mealPlanning;
 
   /// Same default the picker carousel uses when the server sends none
   /// (`VanaMealPickerPart.defaultServings`).
@@ -38,19 +55,24 @@ class VanaBrowseScreen extends ConsumerStatefulWidget {
 
 class _VanaBrowseScreenState extends ConsumerState<VanaBrowseScreen> {
   /// Picks that landed this visit — ticked at once, before the plan watch
-  /// re-emits. What is already in the conversation's plan comes from
-  /// [conversationDraftProvider], so a reopened Browse shows it ticked and
-  /// never adds it again (testing-wave 18-003).
+  /// re-emits. What is already in the plan comes from the plan itself
+  /// ([conversationDraftProvider] for a planning chat,
+  /// [mealPlanControllerProvider] for a general one), so a reopened Browse
+  /// shows it ticked and never adds it again (testing-wave 18-003).
   final Set<String> _added = {};
   final Set<String> _inFlight = {};
+
+  /// The conversation scope a pick carries: the planning chat's own draft,
+  /// nothing for a general chat (the week's active plan, or a new draft).
+  String? get _scope => widget.isPlanning ? widget.conversationId : null;
 
   @override
   Widget build(BuildContext context) {
     final content = ref.read(contentServiceProvider);
-    final inPlan = ref
-        .watch(conversationDraftProvider(widget.conversationId))
-        .value
-        ?.meals
+    final plan = widget.isPlanning
+        ? ref.watch(conversationDraftProvider(widget.conversationId)).value
+        : ref.watch(mealPlanControllerProvider).value;
+    final inPlan = plan?.meals
         .map((m) => m.libraryMealId ?? m.savedMealId)
         .nonNulls
         .toSet();
@@ -104,6 +126,7 @@ class _VanaBrowseScreenState extends ConsumerState<VanaBrowseScreen> {
               child: MealCatalogBrowser(
                 onOpenMeal: _openDetail,
                 onAddMeal: _add,
+                onRemoveMeal: _remove,
                 addedIds: {..._added, ...?inPlan},
                 surface: CatalogSurface.browse,
               ),
@@ -117,7 +140,8 @@ class _VanaBrowseScreenState extends ConsumerState<VanaBrowseScreen> {
   /// The detail pops `true` when its "Add to plan" landed — tick the card.
   Future<void> _openDetail(MealRef meal) async {
     final added = await context.push<bool>(
-      '/food/meals/${meal.id}?pick=${widget.conversationId}',
+      '/food/meals/${meal.id}?pick=${widget.conversationId}'
+      '&mode=${widget.kind.wire}',
     );
     if (added == true && mounted) setState(() => _added.add(meal.id));
   }
@@ -127,13 +151,14 @@ class _VanaBrowseScreenState extends ConsumerState<VanaBrowseScreen> {
     final content = ref.read(contentServiceProvider);
     _inFlight.add(meal.id);
     try {
-      await ref
+      final plan = await ref
           .read(mealPlanControllerProvider.notifier)
           .pickMeals(
             [MealPick(source: meal.source, id: meal.id)],
             servings: VanaBrowseScreen.defaultServings,
-            conversationId: widget.conversationId,
+            conversationId: _scope,
           );
+      _mirrorIntoChat(plan);
       if (!mounted) return;
       setState(() => _added.add(meal.id));
       MealvanaSnackbar.showSuccess(
@@ -147,5 +172,45 @@ class _VanaBrowseScreenState extends ConsumerState<VanaBrowseScreen> {
     } finally {
       _inFlight.remove(meal.id);
     }
+  }
+
+  /// A second tap on a ticked card: take the meal out again (`unpick_meal`,
+  /// the same scope the pick used). The card un-ticks on the ack.
+  Future<void> _remove(MealRef meal) async {
+    if (_inFlight.contains(meal.id)) return;
+    final content = ref.read(contentServiceProvider);
+    _inFlight.add(meal.id);
+    try {
+      final plan = await ref
+          .read(mealPlanControllerProvider.notifier)
+          .unpickMeal(meal.source, meal.id, conversationId: _scope);
+      _mirrorIntoChat(plan);
+      if (!mounted) return;
+      setState(() => _added.remove(meal.id));
+      MealvanaSnackbar.showSuccess(
+        context,
+        content.getValue(ContentKeys.mpBrowseRemovedToast),
+        duration: MealvanaSnackbar.shortDuration,
+      );
+    } on Exception catch (e) {
+      if (mounted) showWriteFailure(context, content, e);
+    } finally {
+      _inFlight.remove(meal.id);
+    }
+  }
+
+  /// A planning chat's plan bar reads the draft off the chat state, which
+  /// only the chat's own `refreshDraft` after Browse used to refill; a Browse
+  /// opened another way (a link) left the bar at "0 meals" over a draft that
+  /// held the pick (110-009). The plan the server answered goes straight
+  /// into the chat controller when one is open for this conversation. A
+  /// general chat's bar reads the plan controller, which the pick updated.
+  void _mirrorIntoChat(MealPlan? plan) {
+    if (plan == null || !widget.isPlanning) return;
+    final chat = vanaChatControllerProvider(
+      kind: widget.kind,
+      conversationId: widget.conversationId,
+    );
+    if (ref.exists(chat)) ref.read(chat.notifier).applyDraftPlan(plan);
   }
 }
