@@ -10,6 +10,7 @@ import '../notification_service.dart';
 import '../sync/sync_coordinator.dart';
 import '../../database/database_provider.dart';
 import '../../../features/food_preferences/data/food_preferences_repository.dart';
+import '../../providers/fresh_sign_in_provider.dart';
 import '../../providers/user_id_provider.dart';
 import '../../core/app_router.dart';
 import '../../../features/settings/presentation/providers/settings_controller.dart';
@@ -90,6 +91,12 @@ class AuthListenerService {
     ) async {
       final event = data.event;
       final session = data.session;
+
+      // Before anything awaits: the plan controller's rebuild on this same
+      // event must find the flag set (testing-wave 134, 120-001).
+      if (event == AuthChangeEvent.signedIn && session != null) {
+        _ref.read(freshSignInProvider.notifier).mark();
+      }
 
       _logger.info(
         'Auth state changed',

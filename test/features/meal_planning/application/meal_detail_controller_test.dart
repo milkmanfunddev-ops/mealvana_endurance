@@ -9,6 +9,11 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:mealvana_endurance/features/meal_planning/application/meal_detail_controller.dart';
 import 'package:mealvana_endurance/features/meal_planning/data/meal_review_repository.dart';
+import 'package:mealvana_endurance/features/meal_planning/data/vana_action_client.dart';
+import 'package:mealvana_endurance/features/meal_planning/data/vana_exceptions.dart';
+import 'package:mealvana_endurance/features/meal_planning/domain/ui_action.dart';
+import 'package:mealvana_endurance/features/meal_logging/data/saved_meals_repository.dart';
+import 'package:mealvana_endurance/shared/data/syncable_repository.dart';
 import 'package:mealvana_endurance/features/meal_planning/domain/meal_detail.dart';
 import 'package:mealvana_endurance/features/meal_planning/domain/meal_ref.dart';
 import 'package:mealvana_endurance/features/meal_planning/domain/meal_source.dart';
@@ -32,6 +37,42 @@ class _RecordingReviewRepository implements MealReviewRepository {
     rows.add(review.toRow('user-1'));
     return 'review-${rows.length}';
   }
+}
+
+/// `save_meal` on the wire: fails as many times as [failures] says, then
+/// answers the saved copy. Records every action it saw.
+class _SaveMealClient extends Fake implements VanaActionClient {
+  _SaveMealClient({this.failures = 0});
+  int failures;
+  final List<SaveMealAction> calls = [];
+
+  @override
+  Future<VanaActionResult> run(UiAction action) async {
+    calls.add(action as SaveMealAction);
+    if (failures > 0) {
+      failures--;
+      throw VanaOfflineException(TimeoutException('slow'));
+    }
+    return VanaActionResult(
+      parts: const [],
+      extras: {
+        'meal': MealRef(
+          source: MealSource.saved,
+          id: 'saved-1',
+          name: 'Marathon Bolognese over pasta',
+          mealType: MealType.dinner,
+          libraryMealId: action.libraryMealId,
+        ).toJson(),
+      },
+    );
+  }
+}
+
+/// The resync after a save is not what these tests are about.
+class _QuietSavedMeals extends Fake implements SavedMealsRepository {
+  @override
+  Future<SyncResult> syncFromRemote(String userId) async =>
+      SyncResult.successful(0);
 }
 
 class _SeededDetailController extends MealDetailController {
@@ -77,6 +118,58 @@ void main() {
       ).overrideWith(() => _SeededDetailController(seed)),
     ]);
   }
+
+  /// Testing-wave 134 (#82): the heart's `save_meal` carries a `requestId`;
+  /// a retry after a timeout sends the same one, and a save that landed is
+  /// done — a later save is a new request.
+  group('saveToMine requestId', () {
+    late _SaveMealClient client;
+
+    ProviderContainer saving({int failures = 0}) {
+      client = _SaveMealClient(failures: failures);
+      return testContainer([
+        ...baseOverrides(),
+        vanaActionClientProvider.overrideWithValue(client),
+        savedMealsRepositoryProvider.overrideWithValue(_QuietSavedMeals()),
+        mealDetailControllerProvider(
+          'D-048',
+        ).overrideWith(() => _SeededDetailController(_detail())),
+      ]);
+    }
+
+    test('sends a requestId, and the retry after a timeout sends the same '
+        'one', () async {
+      final c = saving(failures: 1);
+      final notifier = c.read(mealDetailControllerProvider('D-048').notifier);
+      await c.read(mealDetailControllerProvider('D-048').future);
+
+      await expectLater(notifier.saveToMine, throwsA(isA<VanaOfflineException>()));
+      final saved = await notifier.saveToMine();
+      await settle(); // the resync after a save finishes before teardown
+
+      expect(saved!.id, 'saved-1');
+      expect(client.calls, hasLength(2));
+      expect(client.calls.first.requestId, isNotNull);
+      expect(client.calls.last.requestId, client.calls.first.requestId);
+      expect(client.calls.first.toPayloadJson(), {
+        'requestId': client.calls.first.requestId,
+        'libraryMealId': 'D-048',
+      });
+    });
+
+    test('a save that landed is finished: the next save is a new request',
+        () async {
+      final c = saving();
+      final notifier = c.read(mealDetailControllerProvider('D-048').notifier);
+      await c.read(mealDetailControllerProvider('D-048').future);
+
+      await notifier.saveToMine();
+      await notifier.saveToMine();
+      await settle();
+
+      expect(client.calls.first.requestId, isNot(client.calls.last.requestId));
+    });
+  });
 
   test('a review writes one meal_reviews row shaped for the insert', () async {
     final container = containerFor(_detail(), 'D-048');

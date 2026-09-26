@@ -754,9 +754,18 @@ class MealPlanRepository with SyncableRepository {
 
   /// Write a server `batch` payload into Drift as truth: the plan row, every
   /// meal it lists (clean), and drop local meals the server no longer has.
-  /// A confirmed plan also archives the week's other local plans, mirroring
-  /// `confirm_meal_plan`.
-  Future<void> applyServerPlan(MealPlan plan, {required String userId}) async {
+  ///
+  /// With [archiveSiblings] (the `confirm_plan` ack only) the week's other
+  /// local plans are archived too, mirroring what `confirm_meal_plan` just
+  /// did on the server. Every other apply is a pull, and a pull gives each
+  /// plan the status the server sent and nothing more: a draft started after
+  /// the week's confirm stays a draft here as it does on the server
+  /// (testing-wave 134, Finding 120-002).
+  Future<void> applyServerPlan(
+    MealPlan plan, {
+    required String userId,
+    bool archiveSiblings = false,
+  }) async {
     final now = DateTime.now();
     await _database.transaction(() async {
       final existing = await _livePlan(plan.id);
@@ -794,7 +803,7 @@ class MealPlanRepository with SyncableRepository {
         _database.planMealsTable,
       )..where((t) => t.planId.equals(plan.id) & t.id.isIn(keep).not())).go();
 
-      if (plan.isConfirmed) {
+      if (archiveSiblings && plan.isConfirmed) {
         await (_database.update(_database.mealPlansTable)..where(
               (t) =>
                   t.userId.equals(userId) &

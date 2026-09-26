@@ -393,7 +393,11 @@ void main() {
           recomputeCoverage: true,
         );
 
-        await repo.applyServerPlan(confirmed, userId: _user);
+        await repo.applyServerPlan(
+          confirmed,
+          userId: _user,
+          archiveSiblings: true,
+        );
 
         final active = await repo.getActivePlan(_user, _week);
         expect(active!.id, 'plan-1');
@@ -408,6 +412,51 @@ void main() {
           db.mealPlansTable,
         )..where((t) => t.id.equals('plan-2'))).getSingle();
         expect(sibling.status, 'archived');
+      },
+    );
+
+    /// Testing-wave 134 (Finding 120-002): a pull applies a confirmed plan
+    /// too, and a draft started after the week's confirm must stay a draft
+    /// here as it does on dev. Only the local confirm archives.
+    test(
+      'a pulled confirmed plan leaves a newer local draft a draft',
+      () async {
+        await seed();
+        await db
+            .into(db.mealPlansTable)
+            .insert(
+              MealPlansTableCompanion.insert(
+                id: const Value('plan-newer'),
+                userId: _user,
+                weekStart: _week,
+                createdAt: _now.add(const Duration(days: 1)),
+                updatedAt: _now.add(const Duration(days: 1)),
+              ),
+            );
+        final fixture = loadFixture('confirm_plan');
+        final part =
+            VanaPart.fromJson(
+                  (fixture['parts'] as List).first as Map<String, dynamic>,
+                )!
+                as VanaBatchPart;
+        final confirmed = part.plan.copyWith(
+          id: 'plan-1',
+          weekStart: _week,
+          meals: [
+            for (final m in part.plan.meals.take(1))
+              m.copyWith(planId: 'plan-1'),
+          ],
+          recomputeCoverage: true,
+        );
+
+        await repo.applyServerPlan(confirmed, userId: _user);
+
+        final newer = await (db.select(
+          db.mealPlansTable,
+        )..where((t) => t.id.equals('plan-newer'))).getSingle();
+        expect(newer.status, 'draft');
+        // The confirmed plan still wins the week for the Plan tab.
+        expect((await repo.getActivePlan(_user, _week))!.id, 'plan-1');
       },
     );
   });

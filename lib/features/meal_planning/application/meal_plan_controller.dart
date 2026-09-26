@@ -1,7 +1,9 @@
 import 'dart:async';
 
 import 'package:riverpod_annotation/riverpod_annotation.dart';
+import 'package:uuid/uuid.dart';
 
+import '../../../shared/providers/fresh_sign_in_provider.dart';
 import '../../../shared/providers/user_id_provider.dart';
 import '../../../shared/services/app_external_deps.dart';
 import '../../../shared/services/connectivity_checker.dart';
@@ -112,6 +114,31 @@ class MealPlanController extends _$MealPlanController {
   /// refresh must still be joined, and each write removes only its own entry.
   final Map<String, Future<VanaLoggedPart?>> _logsInFlight = {};
 
+  /// The `requestId` of each dedupable write that has not succeeded yet, by
+  /// the action it stands for (testing-wave 134, #82): a retry after "needs
+  /// a connection" or a server error sends the same id, so a write the
+  /// server finished after we hung up is answered from its stored result
+  /// and never done twice. Removed on success, so the next tap on the same
+  /// row is a new action with a new id. Kept across `invalidate` like
+  /// [_logsInFlight]: a refresh must not turn a retry into a new write.
+  final Map<String, String> _pendingRequestIds = {};
+
+  String _requestIdFor(String actionKey) =>
+      _pendingRequestIds.putIfAbsent(actionKey, const Uuid().v4);
+
+  /// After a write landed: the next call for [actionKey] is a new action.
+  /// After a failure the id stays for the retry. Runs twice at once only if
+  /// two calls share a key, which the callers prevent ([logFromPlan] joins,
+  /// the Browse screen holds a card's Add while one is on the wire).
+  Future<T> _withRequestId<T>(
+    String actionKey,
+    Future<T> Function(String requestId) send,
+  ) async {
+    final result = await send(_requestIdFor(actionKey));
+    _pendingRequestIds.remove(actionKey);
+    return result;
+  }
+
   /// The week this controller is bound to (`YYYY-MM-DD`, on the athlete's
   /// week-start day — Sunday by default).
   String get weekStart => _weekStart ?? weekStartFor();
@@ -156,16 +183,24 @@ class MealPlanController extends _$MealPlanController {
           },
         );
     final local = await completer.future;
-    if (local != null) return local;
+    // The first read after a sign-in in this process waits for the pull even
+    // over a local plan: the rows this account left on the phone may be
+    // stale (a draft dev has since archived, 120-001), and the tab must not
+    // show them for a second before the pull replaces them. A normal launch
+    // (restored session) stays local-first.
+    final freshSignIn = ref.read(freshSignInProvider);
+    if (local != null && !freshSignIn) return local;
 
-    // Nothing local. Offline, that is the answer. Online, the server may
-    // hold the week's plan (a fresh install, a plan confirmed on another
-    // device): wait for the sync so the screen shows loading meanwhile,
-    // then read what it wrote. The sync dedupes with itself, so this is the
-    // same round trip, not a second one; a fresh stamp makes it a no-op.
+    // Nothing local, or a fresh sign-in. Offline, what is local is the
+    // answer. Online, the server may hold the week's plan (a fresh install,
+    // a plan confirmed on another device): wait for the sync so the screen
+    // shows loading meanwhile, then read what it wrote. The sync dedupes
+    // with itself, so this is the same round trip, not a second one; a fresh
+    // stamp makes it a no-op.
     final online = await ref.read(connectivityCheckerProvider).isOnline();
-    if (!online) return null;
+    if (!online) return local;
     await synced.timeout(firstReadBound, onTimeout: () {});
+    if (freshSignIn) ref.read(freshSignInProvider.notifier).clear();
     return _repo.getActivePlan(userId, _weekStart!);
   }
 
@@ -339,7 +374,10 @@ class MealPlanController extends _$MealPlanController {
   // ── Remote-ack edits ──────────────────────────────────────────────────────
 
   /// Add meals to the plan (`pick_meals`). [conversationId] scopes the write
-  /// to that conversation's draft; otherwise the week-level active plan.
+  /// to that conversation's draft; otherwise the week-level active plan
+  /// (the Plan tab's, or a new draft for the week). Carries a `requestId`
+  /// keyed by the meals and the scope, so a retry of the same pick is the
+  /// same request to the server.
   Future<MealPlan?> pickMeals(
     List<MealPick> meals, {
     int? servings,
@@ -348,12 +386,38 @@ class MealPlanController extends _$MealPlanController {
     String? conversationId,
     String? planId,
   }) async {
+    final ids = meals.map((m) => '${m.source.wire}/${m.id}').toList()..sort();
+    final key = 'pick_meals:${planId ?? ''}:${conversationId ?? ''}:$ids';
+    return _withRequestId(
+      key,
+      (requestId) => _remoteAck(
+        PickMealsAction(
+          meals: meals,
+          servings: servings,
+          session: session,
+          sendSession: sendSession,
+          conversationId: conversationId,
+          planId: planId,
+          requestId: requestId,
+        ),
+        (r) => r.plan,
+      ),
+    );
+  }
+
+  /// Take a meal out by its source reference (`unpick_meal`): the second tap
+  /// on a ticked Browse card (testing-wave 134, 118-004). Same scope rule as
+  /// [pickMeals]. Idempotent by nature, so no `requestId`.
+  Future<MealPlan?> unpickMeal(
+    MealSource source,
+    String id, {
+    String? conversationId,
+    String? planId,
+  }) async {
     return _remoteAck(
-      PickMealsAction(
-        meals: meals,
-        servings: servings,
-        session: session,
-        sendSession: sendSession,
+      UnpickMealAction(
+        source: source,
+        id: id,
         conversationId: conversationId,
         planId: planId,
       ),
@@ -509,14 +573,23 @@ class MealPlanController extends _$MealPlanController {
   /// id, and servings_left one lower). Remote-ack: nothing moves until the
   /// server answers, and a failure leaves the row as it was and rethrows.
   /// A call for a row already being logged joins that call, so a double tap
-  /// logs one serving. Returns the `logged` part.
+  /// logs one serving. A tap after a failure retries with the same
+  /// `requestId`, so a write that landed after the timeout is not logged
+  /// twice (#82). Returns the `logged` part.
   Future<VanaLoggedPart?> logFromPlan(String planMealId, {MealType? mealType}) {
     final inFlight = _logsInFlight[planMealId];
     if (inFlight != null) return inFlight;
     final logs = _logsInFlight;
-    final log = _remoteAck(
-      LogFromPlanAction(planMealId: planMealId, mealType: mealType),
-      (r) => r.parts.whereType<VanaLoggedPart>().firstOrNull,
+    final log = _withRequestId(
+      'log_from_plan:$planMealId',
+      (requestId) => _remoteAck(
+        LogFromPlanAction(
+          planMealId: planMealId,
+          mealType: mealType,
+          requestId: requestId,
+        ),
+        (r) => r.parts.whereType<VanaLoggedPart>().firstOrNull,
+      ),
     ).whenComplete(() {
       // A block body: returning the removed Future would make whenComplete
       // wait on itself.
@@ -583,7 +656,15 @@ class MealPlanController extends _$MealPlanController {
     final outcome = await AsyncValue.guard(() async {
       final result = await _actions.run(action);
       final plan = result.plan;
-      if (plan != null) await _repo.applyServerPlan(plan, userId: userId);
+      if (plan != null) {
+        await _repo.applyServerPlan(
+          plan,
+          userId: userId,
+          // Only the confirm ack archives the week's other plans locally,
+          // as the server just did; a pulled plan never does (120-002).
+          archiveSiblings: action is ConfirmPlanAction,
+        );
+      }
       return result;
     });
 

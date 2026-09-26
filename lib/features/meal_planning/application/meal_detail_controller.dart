@@ -1,6 +1,7 @@
 import 'dart:async';
 
 import 'package:riverpod_annotation/riverpod_annotation.dart';
+import 'package:uuid/uuid.dart';
 
 import '../../../shared/providers/app_version_provider.dart';
 import '../../../shared/providers/user_id_provider.dart';
@@ -46,8 +47,18 @@ class MealDetailController extends _$MealDetailController {
       ref.read(mealLibraryRemoteDataSourceProvider);
   AppLogger get _logger => ref.read(appExternalDepsProvider).logger;
 
+  /// The `requestId` of a `save_meal` that has not succeeded yet, so the
+  /// retry after a failure is the same request to the server and a save
+  /// that landed after the timeout is not made twice (testing-wave 134,
+  /// #82). Reset in [build]: Riverpod reuses the notifier across an
+  /// invalidate, and a fresh detail is a fresh action.
+  String? _saveRequestId;
+
   @override
-  FutureOr<MealDetail> build(String id) => _remote.getMeal(id);
+  FutureOr<MealDetail> build(String id) {
+    _saveRequestId = null;
+    return _remote.getMeal(id);
+  }
 
   Future<void> refresh() async {
     state = const AsyncLoading();
@@ -110,9 +121,11 @@ class MealDetailController extends _$MealDetailController {
   Future<MealRef?> saveToMine() async {
     final current = state.value;
     if (current == null || current.meal.source == MealSource.saved) return null;
+    final requestId = _saveRequestId ??= const Uuid().v4();
     final result = await ref
         .read(vanaActionClientProvider)
-        .run(SaveMealAction(libraryMealId: current.meal.id));
+        .run(SaveMealAction(libraryMealId: current.meal.id, requestId: requestId));
+    _saveRequestId = null;
     final saved = result.savedMealRef;
     unawaited(_resyncSavedMeals());
     return saved;

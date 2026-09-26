@@ -5,6 +5,7 @@ library;
 import 'dart:async';
 import 'dart:convert';
 
+import 'package:drift/drift.dart' show Value;
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:mealvana_endurance/features/meal_planning/application/home_service.dart';
@@ -823,6 +824,231 @@ void main() {
   /// card on Food > Shopping. The card reads [youreSetControllerProvider];
   /// the confirm writes it through the real notifier from the producer's
   /// own `confirm_plan` answer (fixture), never from a plan built here.
+  /// Testing-wave 134 (IMPROVEMENTS #82): the phone mints one `requestId`
+  /// per user action and its retry sends the same one, so a write the server
+  /// finished after the 20 s timeout is answered from its stored result and
+  /// never done twice. A write that landed is a finished action: the next
+  /// tap is a new one with a new id.
+  group('requestId (#82)', () {
+    const pick = [MealPick(source: MealSource.library, id: 'D-048')];
+
+    test('pickMeals sends a requestId and its retry sends the same one', () async {
+      var failNext = true;
+      actions = _FakeActionClient((action) {
+        if (failNext) {
+          failNext = false;
+          throw VanaOfflineException(TimeoutException('slow'));
+        }
+        return batchResult(action);
+      });
+      final c = controller();
+      await c.future;
+
+      await expectLater(
+        () => c.pickMeals(pick, servings: 4, conversationId: 'conv-1'),
+        throwsA(isA<VanaOfflineException>()),
+      );
+      await c.pickMeals(pick, servings: 4, conversationId: 'conv-1');
+
+      final sent = actions.calls.whereType<PickMealsAction>().toList();
+      expect(sent, hasLength(2));
+      expect(sent.first.requestId, isNotNull);
+      expect(sent.first.requestId, isNotEmpty);
+      expect(sent.last.requestId, sent.first.requestId, reason: 'a retry');
+      expect(sent.first.toPayloadJson()['requestId'], sent.first.requestId);
+    });
+
+    test('after a pick lands, the same pick again is a new request', () async {
+      final c = controller();
+      await c.future;
+
+      await c.pickMeals(pick, servings: 4);
+      await c.pickMeals(pick, servings: 4);
+
+      final sent = actions.calls.whereType<PickMealsAction>().toList();
+      expect(sent.first.requestId, isNot(sent.last.requestId));
+    });
+
+    test('a different pick, or the same one in another scope, is its own '
+        'request', () async {
+      final c = controller();
+      await c.future;
+      var failAll = true;
+      actions = _FakeActionClient((action) {
+        if (failAll) throw const VanaServerException(500, 'boom');
+        return batchResult(action);
+      });
+      final c2 = controller();
+      await c2.future;
+      failAll = true;
+
+      Future<void> tryPick(List<MealPick> meals, {String? conv}) =>
+          expectLater(
+            () => c2.pickMeals(meals, conversationId: conv),
+            throwsA(isA<VanaServerException>()),
+          );
+      await tryPick(pick, conv: 'conv-1');
+      await tryPick(pick, conv: 'conv-2');
+      await tryPick(const [MealPick(source: MealSource.saved, id: 'uuid')]);
+
+      final ids = actions.calls
+          .whereType<PickMealsAction>()
+          .map((a) => a.requestId)
+          .toSet();
+      expect(ids, hasLength(3));
+      expect(c.state.hasValue, isTrue);
+    });
+
+    test('logFromPlan sends a requestId and its retry sends the same one', () async {
+      var failNext = true;
+      actions = _FakeActionClient((action) {
+        if (failNext) {
+          failNext = false;
+          throw const VanaServerException(500, 'boom');
+        }
+        return VanaActionResult.fromJson({
+          'parts': [
+            {
+              'kind': 'logged',
+              'planMealId': 'pm-1',
+              'name': 'Meal pm-1',
+              'servingsLeft': 3,
+            },
+          ],
+          'logId': 'log-1',
+        });
+      });
+      final c = controller();
+      await c.future;
+
+      await expectLater(
+        () => c.logFromPlan('pm-1'),
+        throwsA(isA<VanaServerException>()),
+      );
+      await c.logFromPlan('pm-1');
+      // Landed: the next "Ate it" on the row is a second serving, a new id.
+      await c.logFromPlan('pm-1');
+
+      final sent = actions.calls.whereType<LogFromPlanAction>().toList();
+      expect(sent, hasLength(3));
+      expect(sent[0].requestId, isNotNull);
+      expect(sent[1].requestId, sent[0].requestId, reason: 'the retry');
+      expect(sent[2].requestId, isNot(sent[0].requestId), reason: 'new tap');
+    });
+
+    test('offline, the id minted for the refused pick is the one sent once '
+        'online', () async {
+      connectivity.online = false;
+      final c = controller();
+      await c.future;
+      await expectLater(
+        () => c.pickMeals(pick),
+        throwsA(isA<NeedsConnectionException>()),
+      );
+      expect(actions.calls, isEmpty);
+
+      connectivity.online = true;
+      await c.pickMeals(pick);
+      expect(actions.calls.whereType<PickMealsAction>().single.requestId, isNotNull);
+    });
+  });
+
+  /// Testing-wave 134 (118-004): a Browse pick from a general chat goes into
+  /// the Plan tab's plan, so it carries no conversation; a second tap on the
+  /// ticked card takes the meal out again.
+  group('Browse from a general chat', () {
+    test('pickMeals without a conversation sends no scope, and the plan it '
+        'answers is the one the Plan tab shows', () async {
+      final c = controller();
+      await c.future;
+
+      final plan = await c.pickMeals(
+        const [MealPick(source: MealSource.library, id: 'D-048')],
+        servings: 4,
+      );
+
+      final sent = actions.calls.whereType<PickMealsAction>().single;
+      expect(sent.conversationId, isNull);
+      expect(sent.planId, isNull);
+      expect(sent.toPayloadJson().keys, isNot(contains('conversationId')));
+      expect(c.state.value!.id, plan!.id, reason: 'the Plan tab reads it');
+    });
+
+    test('unpickMeal sends unpick_meal by source reference, unscoped', () async {
+      final c = controller();
+      await c.future;
+
+      await c.unpickMeal(MealSource.library, 'D-048');
+
+      final sent = actions.calls.whereType<UnpickMealAction>().single;
+      expect(sent.toPayloadJson(), {'source': 'library', 'id': 'D-048'});
+    });
+
+    test('unpickMeal from a planning chat keeps the conversation scope', () async {
+      final c = controller();
+      await c.future;
+
+      await c.unpickMeal(MealSource.saved, 'uuid', conversationId: 'conv-1');
+
+      final sent = actions.calls.whereType<UnpickMealAction>().single;
+      expect(sent.conversationId, 'conv-1');
+    });
+  });
+
+  /// Testing-wave 134 (120-002): only the confirm's own ack archives the
+  /// week's other local plans; a pulled confirmed plan leaves a newer draft
+  /// a draft, as the server does.
+  group('archiving the week\'s other plans', () {
+    Future<void> addDraft(String id) => db
+        .into(db.mealPlansTable)
+        .insert(
+          MealPlansTableCompanion.insert(
+            id: Value(id),
+            userId: _user,
+            weekStart: weekStartFor(),
+            createdAt: _now,
+            updatedAt: _now,
+          ),
+        );
+
+    Future<String> statusOf(String id) async => (await (db.select(
+      db.mealPlansTable,
+    )..where((t) => t.id.equals(id))).getSingle()).status;
+
+    VanaActionResult confirmedResult(UiAction action) {
+      final plan = VanaActionResult.fromJson(
+        loadFixture('confirm_plan'),
+      ).plan!.copyWith(weekStart: weekStartFor());
+      return VanaActionResult(
+        parts: [VanaBatchPart(plan: plan)],
+        extras: const {},
+      );
+    }
+
+    test('the confirm ack archives the sibling draft', () async {
+      actions = _FakeActionClient(confirmedResult);
+      final c = controller();
+      await c.future;
+      await addDraft('plan-newer');
+
+      await c.confirmPlan(planId: 'plan-1');
+
+      expect(await statusOf('plan-newer'), 'archived');
+    });
+
+    test('a pulled confirmed plan (get_plan) leaves the sibling draft a draft',
+        () async {
+      actions = _FakeActionClient(confirmedResult);
+      final c = controller();
+      await c.future;
+      await addDraft('plan-newer');
+
+      await c.applyServerPlan(confirmedResult(const GetPlanAction()).plan!);
+
+      expect(await statusOf('plan-newer'), 'draft');
+    });
+  });
+
   group("you're set card (mp-235)", () {
     VanaActionResult confirmAnswer(UiAction action) {
       if (action is GetPlanAction) {
@@ -1050,8 +1276,9 @@ void main() {
         final sent = gated.calls.whereType<LogFromPlanAction>().single;
         expect(sent.toJson(), {
           'type': 'log_from_plan',
-          'payload': {'planMealId': 'pm-1'},
+          'payload': {'requestId': sent.requestId, 'planMealId': 'pm-1'},
         });
+        expect(sent.requestId, isNotNull, reason: 'one id per tap (#82)');
         // Nothing moves before the server answers: no optimistic decrement.
         expect(leftOf(await repo.getPlanById('plan-1')), 4);
         expect(leftOf(c.state.value), 4);

@@ -21,6 +21,7 @@ import 'package:mealvana_endurance/features/meal_planning/domain/week_start.dart
 import 'package:mealvana_endurance/shared/data/syncable_repository.dart';
 import 'package:mealvana_endurance/shared/database/app_database.dart';
 import 'package:mealvana_endurance/shared/database/database_provider.dart';
+import 'package:mealvana_endurance/shared/providers/fresh_sign_in_provider.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 
 import '../helpers/container.dart';
@@ -118,15 +119,32 @@ void main() {
 
   tearDown(() => db.close());
 
-  MealPlanController controller() {
-    final container = testContainer([
+  late ProviderContainer container;
+
+  MealPlanController controller({bool freshSignIn = false}) {
+    container = testContainer([
       ...baseOverrides(connectivity: connectivity, sync: sync),
       appDatabaseProvider.overrideWithValue(db),
       mealPlanRepositoryProvider.overrideWithValue(repo),
       vanaActionClientProvider.overrideWithValue(_NoActions()),
     ]);
+    if (freshSignIn) container.read(freshSignInProvider.notifier).mark();
     container.listen(mealPlanControllerProvider, (_, __) {});
     return container.read(mealPlanControllerProvider.notifier);
+  }
+
+  /// The account's own rows left on the phone from an older build: the plan
+  /// as a 5-meal draft, while dev now holds it confirmed with one meal
+  /// (Finding 120-001).
+  Future<void> leaveStaleRows() async {
+    remote.plans = [
+      {..._planRow(weekStartFor()), 'status': 'draft'},
+    ];
+    remote.meals = [for (var i = 1; i <= 5; i++) _mealRow('stale-$i')];
+    await repo.syncFromRemote(_user);
+    remote.plans = [_planRow(weekStartFor())];
+    remote.meals = [_mealRow('pm-1')];
+    remote.calls.clear();
   }
 
   test('with nothing local, the first read is loading until the server '
@@ -164,6 +182,41 @@ void main() {
 
     final plan = await c.future.timeout(const Duration(seconds: 2));
     expect(plan, isNull);
+  });
+
+  /// Testing-wave 134 (Finding 120-001): the first Plan tab frame after Log
+  /// In showed the account's stale local draft for about a second. On the
+  /// first read after a sign-in in this process, online, the controller
+  /// waits for the pull as it does with nothing local.
+  test('after a sign-in, online, the stale local plan is never emitted: '
+      'loading until the pull, then the server\'s plan', () async {
+    await leaveStaleRows();
+    final server = sync.gate = Completer<void>();
+    final c = controller(freshSignIn: true);
+    await settle();
+
+    expect(c.state.isLoading, isTrue);
+    expect(c.state.value, isNull, reason: 'never the stale 5-meal draft');
+
+    server.complete();
+    final plan = await c.future;
+    expect(plan!.meals.map((m) => m.id), ['pm-1']);
+    expect(plan.status.wire, 'confirmed');
+    expect(
+      container.read(freshSignInProvider),
+      isFalse,
+      reason: 'consumed: a later rebuild is local-first again',
+    );
+  });
+
+  test('after a sign-in, offline, the local plan answers at once', () async {
+    await leaveStaleRows();
+    connectivity.online = false;
+    sync.gate = Completer<void>(); // never answered: the wire is down
+    final c = controller(freshSignIn: true);
+
+    final plan = await c.future.timeout(const Duration(seconds: 2));
+    expect(plan!.meals, hasLength(5), reason: 'offline shows what is here');
   });
 
   test('a plan already local answers at once; the sync runs behind', () async {
