@@ -1,6 +1,6 @@
 # 117: Retest: timeline week walk, cold starts, sign-in sheets, Learn and Events
 
-**Status:** ready-for-agent
+**Status:** in-progress (wave 40, 2026-09-26)
 **Blocked by:** none.
 **Next:** `/implement-lee testing-wave`
 **Model:** opus

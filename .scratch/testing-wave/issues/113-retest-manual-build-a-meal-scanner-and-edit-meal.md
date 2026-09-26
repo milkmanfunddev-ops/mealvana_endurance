@@ -1,6 +1,6 @@
 # 113: Retest: Manual, Build a Meal, the barcode scanner and Edit Meal
 
-**Status:** ready-for-agent
+**Status:** in-progress (wave 40, 2026-09-26)
 **Blocked by:** none.
 **Next:** `/implement-lee testing-wave`
 **Model:** opus
