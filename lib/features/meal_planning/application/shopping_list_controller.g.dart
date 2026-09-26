@@ -22,11 +22,16 @@ part of 'shopping_list_controller.dart';
 /// and dropped when the server answers. A transport failure keeps the tick
 /// on screen and in the store, marks the state offline, and the tick is
 /// replayed on the next build, on the next successful call, or by the
-/// retry timer. A refusal the server answers (any other error) rolls the
-/// tick back and rethrows so the screen can say so. The Drift mirror is
-/// never written here: the server keeps `meal_plans.shopping` from
-/// `shopping_items`, and a local replay of the mirror would clobber ticks
-/// made online.
+/// retry timer. A tick made on the offline copy has no row id: it waits in
+/// the store while the offline copy is on screen (the retry timer probes
+/// for the live list instead) and is matched by name once the plan's live
+/// list loads (110-001). A refusal the server answers (any other error)
+/// rolls the tick back and rethrows so the screen can say so.
+///
+/// The Drift mirror (`meal_plans.shopping`) is never replayed onto the
+/// server — that would clobber ticks made online — but every settled write
+/// on a plan's list is copied into it (110-003), so a cold offline start
+/// shows what this phone last saw.
 
 @ProviderFor(ShoppingListController)
 const shoppingListControllerProvider = ShoppingListControllerProvider._();
@@ -45,11 +50,16 @@ const shoppingListControllerProvider = ShoppingListControllerProvider._();
 /// and dropped when the server answers. A transport failure keeps the tick
 /// on screen and in the store, marks the state offline, and the tick is
 /// replayed on the next build, on the next successful call, or by the
-/// retry timer. A refusal the server answers (any other error) rolls the
-/// tick back and rethrows so the screen can say so. The Drift mirror is
-/// never written here: the server keeps `meal_plans.shopping` from
-/// `shopping_items`, and a local replay of the mirror would clobber ticks
-/// made online.
+/// retry timer. A tick made on the offline copy has no row id: it waits in
+/// the store while the offline copy is on screen (the retry timer probes
+/// for the live list instead) and is matched by name once the plan's live
+/// list loads (110-001). A refusal the server answers (any other error)
+/// rolls the tick back and rethrows so the screen can say so.
+///
+/// The Drift mirror (`meal_plans.shopping`) is never replayed onto the
+/// server — that would clobber ticks made online — but every settled write
+/// on a plan's list is copied into it (110-003), so a cold offline start
+/// shows what this phone last saw.
 final class ShoppingListControllerProvider
     extends $AsyncNotifierProvider<ShoppingListController, ShoppingListState> {
   /// Reads the most recent list (or the one opened from "Previous lists")
@@ -66,11 +76,16 @@ final class ShoppingListControllerProvider
   /// and dropped when the server answers. A transport failure keeps the tick
   /// on screen and in the store, marks the state offline, and the tick is
   /// replayed on the next build, on the next successful call, or by the
-  /// retry timer. A refusal the server answers (any other error) rolls the
-  /// tick back and rethrows so the screen can say so. The Drift mirror is
-  /// never written here: the server keeps `meal_plans.shopping` from
-  /// `shopping_items`, and a local replay of the mirror would clobber ticks
-  /// made online.
+  /// retry timer. A tick made on the offline copy has no row id: it waits in
+  /// the store while the offline copy is on screen (the retry timer probes
+  /// for the live list instead) and is matched by name once the plan's live
+  /// list loads (110-001). A refusal the server answers (any other error)
+  /// rolls the tick back and rethrows so the screen can say so.
+  ///
+  /// The Drift mirror (`meal_plans.shopping`) is never replayed onto the
+  /// server — that would clobber ticks made online — but every settled write
+  /// on a plan's list is copied into it (110-003), so a cold offline start
+  /// shows what this phone last saw.
   const ShoppingListControllerProvider._()
     : super(
         from: null,
@@ -91,7 +106,7 @@ final class ShoppingListControllerProvider
 }
 
 String _$shoppingListControllerHash() =>
-    r'bec1854827044ef9e41729d51c0f261c180a6c0b';
+    r'aece6b2f635e4c302647938886c1611f14f1dd14';
 
 /// Reads the most recent list (or the one opened from "Previous lists")
 /// through `vana-action`, groups it by aisle, and routes every edit — tick,
@@ -107,11 +122,16 @@ String _$shoppingListControllerHash() =>
 /// and dropped when the server answers. A transport failure keeps the tick
 /// on screen and in the store, marks the state offline, and the tick is
 /// replayed on the next build, on the next successful call, or by the
-/// retry timer. A refusal the server answers (any other error) rolls the
-/// tick back and rethrows so the screen can say so. The Drift mirror is
-/// never written here: the server keeps `meal_plans.shopping` from
-/// `shopping_items`, and a local replay of the mirror would clobber ticks
-/// made online.
+/// retry timer. A tick made on the offline copy has no row id: it waits in
+/// the store while the offline copy is on screen (the retry timer probes
+/// for the live list instead) and is matched by name once the plan's live
+/// list loads (110-001). A refusal the server answers (any other error)
+/// rolls the tick back and rethrows so the screen can say so.
+///
+/// The Drift mirror (`meal_plans.shopping`) is never replayed onto the
+/// server — that would clobber ticks made online — but every settled write
+/// on a plan's list is copied into it (110-003), so a cold offline start
+/// shows what this phone last saw.
 
 abstract class _$ShoppingListController
     extends $AsyncNotifier<ShoppingListState> {
