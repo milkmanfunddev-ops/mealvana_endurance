@@ -1,6 +1,6 @@
 # 142: Harness: slow network, seeded start states, runbook rules
 
-**Status:** ready
+**Status:** done (wave lead, 2026-09-26)
 **Blocked by:** none.
 **Next:** `/implement-lee testing-wave`
 **Model:** opus
