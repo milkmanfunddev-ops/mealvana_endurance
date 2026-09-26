@@ -1,0 +1,35 @@
+[22:45:18] Starting unified sync for user: 9863748e-3404-41a0-8fa0-2019d37a9537
+[22:46:09] [CALC_MACROS] Garmin not connected for user 9863748e-3404-41a0-8fa0-2019d37a9537 — skipping week Garmin context
+[22:46:09] [rc-webhook] INITIAL_PURCHASE: active_until=2026-09-26T03:51:08.040Z period=NORMAL for 9863748e-3404-41a0-8fa0-2019d37a9537
+[22:46:10] [rc-webhook] INITIAL_PURCHASE: allowance 4000000 → 9863748e-3404-41a0-8fa0-2019d37a9537 ({"balance":4000000,"granted":true,"allowance":4000000,"forfeited":0,"allowance_expires_at":"2026-09-26T03:51:08.04+00:00"})
+[22:51:09] [rc-webhook] RENEWAL: active_until=2026-09-26T03:56:08.040Z period=NORMAL for 9863748e-3404-41a0-8fa0-2019d37a9537
+[22:51:10] [rc-webhook] RENEWAL: allowance 4000000 → 9863748e-3404-41a0-8fa0-2019d37a9537 ({"balance":4400000,"granted":true,"allowance":4000000,"forfeited":4000000,"allowance_expires_at":"2026-09-26T03:56:08.04+00:00"})
+[22:56:08] [rc-webhook] RENEWAL: active_until=2026-09-26T04:01:08.040Z period=NORMAL for 9863748e-3404-41a0-8fa0-2019d37a9537
+[22:56:09] [rc-webhook] RENEWAL: allowance 4000000 → 9863748e-3404-41a0-8fa0-2019d37a9537 ({"balance":4400000,"granted":true,"allowance":4000000,"forfeited":4000000,"allowance_expires_at":"2026-09-26T04:01:08.04+00:00"})
+[23:01:09] [rc-webhook] RENEWAL: active_until=2026-09-26T04:06:08.040Z period=NORMAL for 9863748e-3404-41a0-8fa0-2019d37a9537
+[23:01:09] [rc-webhook] RENEWAL: allowance 4000000 → 9863748e-3404-41a0-8fa0-2019d37a9537 ({"balance":4400000,"granted":true,"allowance":4000000,"forfeited":4000000,"allowance_expires_at":"2026-09-26T04:06:08.04+00:00"})
+[23:06:08] [rc-webhook] RENEWAL: active_until=2026-09-26T04:11:08.040Z period=NORMAL for 9863748e-3404-41a0-8fa0-2019d37a9537
+[23:06:09] [rc-webhook] RENEWAL: allowance 4000000 → 9863748e-3404-41a0-8fa0-2019d37a9537 ({"balance":4400000,"granted":true,"allowance":4000000,"forfeited":4000000,"allowance_expires_at":"2026-09-26T04:11:08.04+00:00"})
+[23:11:08] [rc-webhook] EXPIRATION: active_until=2026-09-26T04:11:08.040Z period=NORMAL for 9863748e-3404-41a0-8fa0-2019d37a9537
+[23:11:08] [rc-webhook] EXPIRATION: allowance forfeited for 9863748e-3404-41a0-8fa0-2019d37a9537 ({"balance":400000,"allowance":0,"forfeited":4000000})
+[23:14:53] Starting unified sync for user: 9863748e-3404-41a0-8fa0-2019d37a9537
+[23:16:21] [rc-webhook] INITIAL_PURCHASE: active_until=2026-09-26T04:21:20.435Z period=NORMAL for 9863748e-3404-41a0-8fa0-2019d37a9537
+[23:16:21] [rc-webhook] INITIAL_PURCHASE: allowance 4000000 → 9863748e-3404-41a0-8fa0-2019d37a9537 ({"balance":4400000,"granted":true,"allowance":4000000,"forfeited":0,"allowance_expires_at":"2026-09-26T04:21:20.435+00:00"})
+[23:16:21] [CALC_MACROS] Garmin not connected for user 9863748e-3404-41a0-8fa0-2019d37a9537 — skipping week Garmin context
+[23:23:52] [rc-webhook] RENEWAL: active_until=2026-09-26T04:26:20.435Z period=NORMAL for 9863748e-3404-41a0-8fa0-2019d37a9537
+[23:23:52] [rc-webhook] RENEWAL: allowance 4000000 → 9863748e-3404-41a0-8fa0-2019d37a9537 ({"balance":4400000,"granted":true,"allowance":4000000,"forfeited":4000000,"allowance_expires_at":"2026-09-26T04:26:20.435+00:00"})
+[23:27:50] [rc-webhook] RENEWAL: active_until=2026-09-26T04:31:20.435Z period=NORMAL for 9863748e-3404-41a0-8fa0-2019d37a9537
+[23:27:50] [rc-webhook] RENEWAL: allowance 4000000 → 9863748e-3404-41a0-8fa0-2019d37a9537 ({"balance":4400000,"granted":true,"allowance":4000000,"forfeited":4000000,"allowance_expires_at":"2026-09-26T04:31:20.435+00:00"})
+[23:31:49] [rc-webhook] RENEWAL: active_until=2026-09-26T04:36:20.435Z period=NORMAL for 9863748e-3404-41a0-8fa0-2019d37a9537
+[23:31:49] [rc-webhook] RENEWAL: allowance 4000000 → 9863748e-3404-41a0-8fa0-2019d37a9537 ({"balance":4400000,"granted":true,"allowance":4000000,"forfeited":4000000,"allowance_expires_at":"2026-09-26T04:36:20.435+00:00"})
+[23:39:29] [rc-webhook] RENEWAL: active_until=2026-09-26T04:41:20.435Z period=NORMAL for 9863748e-3404-41a0-8fa0-2019d37a9537
+[23:39:29] [rc-webhook] RENEWAL: allowance 4000000 → 9863748e-3404-41a0-8fa0-2019d37a9537 ({"balance":4400000,"granted":true,"allowance":4000000,"forfeited":4000000,"allowance_expires_at":"2026-09-26T04:41:20.435+00:00"})
+[23:41:49] [rc-webhook] INITIAL_PURCHASE: active_until=2026-09-26T05:41:47.468Z period=NORMAL for 9863748e-3404-41a0-8fa0-2019d37a9537
+[23:41:49] [rc-webhook] INITIAL_PURCHASE: allowance 4000000 → 9863748e-3404-41a0-8fa0-2019d37a9537 ({"balance":4400000,"granted":true,"allowance":4000000,"forfeited":4000000,"allowance_expires_at":"2026-09-26T05:41:47.468+00:00"})
+[23:42:12] [rc-webhook] EXPIRATION: active_until=2026-09-26T05:41:47.468Z period=NORMAL for 9863748e-3404-41a0-8fa0-2019d37a9537
+[23:42:40] Deleting user account: 9863748e-3404-41a0-8fa0-2019d37a9537
+[23:42:41] Deleted user from public.users: 9863748e-3404-41a0-8fa0-2019d37a9537
+[23:42:41] Successfully deleted auth account: 9863748e-3404-41a0-8fa0-2019d37a9537
+[23:42:41] Deleted RevenueCat customer: 9863748e-3404-41a0-8fa0-2019d37a9537
+
+(33 rows)
