@@ -20,6 +20,15 @@ in brackets are the other cards folded into the same question.
 
 ## Miscellany
 
+- CI-001 · CLAUDE.md says "Codemagic never runs Patrol or integration tests", yet `codemagic.yaml`
+  still carries hand-maintained Patrol target lists in its (disabled) `integration-tests` and
+  `integration-tests-develop` workflows, and the CI contract test requires them to match the M1
+  list. Delete the lists and let the contract test read only the M1 workflow, or keep them and
+  reword CLAUDE.md?
+  Recommend: delete the Codemagic Patrol lists (the lanes are disabled and cost-ruled out anyway);
+  keep the contract test comparing M1 against `scripts/patrol-targets.mjs` only.
+  Why pending: wave vana-judging 1 ticket 02's CI fix (093d0fef) deepened the existing divergence.
+
 
 ## Built 2026-09-26, live on dev
 
