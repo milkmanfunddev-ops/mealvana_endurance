@@ -19,12 +19,15 @@ import '../../domain/code_redemption.dart';
 /// Code or a giveaway opens the gate, and the router may replace the paywall
 /// (and the sheet with it) before the answer is back.
 ///
-/// [messageClearance] is how much of the screen's bottom the message must
-/// stay above, asked for when the message is said: the paywall's plans and
-/// Continue (11-005). Nothing is kept clear without it.
+/// [host] is where the message is said for preference while it is still on
+/// screen: the paywall's own message Scaffold above its plans (11-005,
+/// 118-006). [messageClearance] is how much of the screen's bottom the
+/// message must stay above when it is said through the root navigator
+/// instead. Nothing is kept clear without either.
 Future<void> openRedeemCode(
   BuildContext context,
   WidgetRef ref, {
+  BuildContext? host,
   double Function()? messageClearance,
 }) async {
   ref.read(codeEntryControllerProvider.notifier).reset();
@@ -32,6 +35,7 @@ Future<void> openRedeemCode(
     context,
     builder: (_) => RedeemCodeSheet(
       host: Navigator.of(context, rootNavigator: true).context,
+      messageHost: host,
       messageClearance: messageClearance,
     ),
   );
@@ -99,10 +103,20 @@ String? redeemProblem(
 /// under the field and the sheet stays open for another try; a Code that did
 /// something closes it.
 class RedeemCodeSheet extends ConsumerStatefulWidget {
-  const RedeemCodeSheet({super.key, required this.host, this.messageClearance});
+  const RedeemCodeSheet({
+    super.key,
+    required this.host,
+    this.messageHost,
+    this.messageClearance,
+  });
 
   /// Where the success is said: outlives the sheet and the screen under it.
   final BuildContext host;
+
+  /// Said here for preference while it is still mounted: a Scaffold that
+  /// keeps the message above the screen's docked controls (the paywall's
+  /// plans, 118-006). Gone with the screen, [host] carries the message.
+  final BuildContext? messageHost;
 
   /// The bottom space the success message keeps clear (see [openRedeemCode]).
   final double Function()? messageClearance;
@@ -137,7 +151,10 @@ class _RedeemCodeSheetState extends ConsumerState<RedeemCodeSheet> {
         .read(codeEntryControllerProvider.notifier)
         .redeem(_code.text);
     if (result is! CodeRedeemed) return;
-    if (host.mounted) {
+    final preferred = widget.messageHost;
+    if (preferred != null && preferred.mounted) {
+      MealvanaSnackbar.showSuccess(preferred, redeemedMessage(content, result));
+    } else if (host.mounted) {
       MealvanaSnackbar.showSuccess(
         host,
         redeemedMessage(content, result),
