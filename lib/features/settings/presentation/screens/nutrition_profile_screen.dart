@@ -378,6 +378,14 @@ class _NutritionProfileScreenState
               const SizedBox(height: 6),
               _buildBodyCompProvenanceRow(
                 fromGarmin: _weightFromGarmin,
+                currentValue: _weightController.text,
+                garminValue: _garminBodyComp?.weightKg == null
+                    ? null
+                    : (_useMetric
+                        ? _garminBodyComp!.weightKg!.toStringAsFixed(1)
+                        : UnitFormatter.kgToPounds(_garminBodyComp!.weightKg!)
+                            .round()
+                            .toString()),
                 garminValueLabel: _garminBodyComp?.weightKg == null
                     ? null
                     : (_useMetric
@@ -451,6 +459,8 @@ class _NutritionProfileScreenState
               const SizedBox(height: 6),
               _buildBodyCompProvenanceRow(
                 fromGarmin: _bodyFatFromGarmin,
+                currentValue: _bodyFatController.text,
+                garminValue: _garminBodyComp?.bodyFatPct?.toStringAsFixed(1),
                 garminValueLabel: _garminBodyComp?.bodyFatPct == null
                     ? null
                     : '${_garminBodyComp!.bodyFatPct!.toStringAsFixed(1)} %',
@@ -541,16 +551,26 @@ class _NutritionProfileScreenState
   /// window, tap-to-use for the older-Garmin/newer-manual case.
   /// Newest-wins precedence itself is preserved as built (the autofill
   /// above); the chips only SAY what happened.
+  /// [currentValue] is the field's text and [garminValue] the Garmin reading
+  /// formatted exactly as the field would show it. When they read the same,
+  /// the tap-to-use chip stays away and only the source pill shows (Finding
+  /// 119-007; Xuan's 2026-09-13 rule: a provider badges only when the values
+  /// differ).
   Widget _buildBodyCompProvenanceRow({
     required bool fromGarmin,
     required String? garminValueLabel,
     required VoidCallback? onAdoptGarmin,
+    String? currentValue,
+    String? garminValue,
     String? tpValueLabel,
     VoidCallback? onAdoptTp,
   }) {
     final garminStale = _garminBodyComp != null &&
         DateTime.now().difference(_garminBodyComp!.measurementTime) >
             const Duration(days: 30);
+    final garminDiffers = garminValue == null ||
+        currentValue == null ||
+        garminValue.trim() != currentValue.trim();
     return Wrap(
       spacing: 8,
       runSpacing: 6,
@@ -560,7 +580,10 @@ class _NutritionProfileScreenState
         if (fromGarmin && garminStale) const KyleStaleChip(),
         // Older-Garmin/newer-manual: the manual value stands, the Garmin
         // reading stays one tap away (never a modal).
-        if (!fromGarmin && garminValueLabel != null && onAdoptGarmin != null)
+        if (!fromGarmin &&
+            garminDiffers &&
+            garminValueLabel != null &&
+            onAdoptGarmin != null)
           KyleTapToUseChip(
             source: 'Garmin',
             value: garminValueLabel,

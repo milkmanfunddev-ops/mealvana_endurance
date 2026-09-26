@@ -156,7 +156,7 @@ final class IntegrationsRepositoryProvider
 }
 
 String _$integrationsRepositoryHash() =>
-    r'9216aa72e31fcc8c9aeb6bfaac9f977ac5da799b';
+    r'3db22bc4f529b5ad61766e71f158758fe10aa5ee';
 
 /// Provider for Final Surge OAuth service
 

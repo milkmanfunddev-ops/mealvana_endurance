@@ -442,6 +442,11 @@ class _ConnectedAppsScreenState extends ConsumerState<ConnectedAppsScreen> {
           onDisconnect: () => _disconnectGarmin(context, ref),
           onSync: () => _refreshGarminWithState(context, ref),
           showSyncButton: data.isGarminConnected,
+          // Ticket 138 (118-016): Garmin's "Token is not active" shows
+          // Reconnect like the other providers.
+          needsReconnect: data.garminNeedsReauth,
+          reconnectLabel: reconnectLabel,
+          reconnectNote: reconnectNote,
         ),
         if (data.isGarminConnected)
           Padding(
@@ -451,9 +456,8 @@ class _ConnectedAppsScreenState extends ConsumerState<ConnectedAppsScreen> {
               top: AppSpacing.xs,
             ),
             child: Text(
-              'Garmin syncs automatically when your watch uploads to Garmin '
-              'Connect. Tap Refresh to pull any activities that arrived while '
-              'the app was closed.',
+              // Finding 119-008: the button reads Sync Now, so does the note.
+              content.getValue(ContentKeys.connectionsGarminSyncNote),
               style: AppTextStyles.bodySmall.copyWith(color: onSurfaceVariant),
             ),
           ),

@@ -1032,5 +1032,17 @@
     "notify_me_confirm": "We'll let you know",
     "offline_message": "Couldn't load the lessons. Check your connection and try again.",
     "retry": "Retry"
+  },
+  "profile_edit": {
+    "email_login_label": "Your login email",
+    "discard_title": "Discard changes?",
+    "discard_body": "Your edits to your profile will be lost.",
+    "discard": "Discard",
+    "keep_editing": "Keep editing"
+  },
+  "connections": {
+    "garmin_sync_note": "Garmin syncs automatically when your watch uploads to Garmin Connect. Tap Sync Now to pull any activities that arrived while the app was closed.",
+    "reconnect_notice": "{provider} needs you to sign in again to keep syncing.",
+    "reconnect_notice_action": "Reconnect"
   }
 }

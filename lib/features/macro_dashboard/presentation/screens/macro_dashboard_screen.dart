@@ -22,6 +22,7 @@ import '../../../content/application/content_service.dart';
 import '../../../content/domain/content_keys.dart';
 import '../../../meal_logging/domain/meal_log.dart';
 import '../../../fuel_timeline/presentation/widgets/timeline_brick_tile.dart';
+import '../../../integrations/presentation/widgets/reconnect_notice.dart';
 import '../../../meal_logging/presentation/providers/meal_log_providers.dart';
 import '../../../meal_logging/presentation/screens/log_meal_screen.dart';
 import '../../../../shared/widgets/kyle_design/kyle_design.dart'
@@ -1471,6 +1472,9 @@ class _MacroDashboardBodyState extends ConsumerState<MacroDashboardBody> {
                     MacroDashboardScreen._dockGap(context),
               ),
               children: [
+                // Ticket 138 (118-007): a connected app that needs signing
+                // in again is announced once, here, with Reconnect.
+                const ReconnectNotice(),
                 for (final node in nodes)
                   screen._railRow(
                     context,

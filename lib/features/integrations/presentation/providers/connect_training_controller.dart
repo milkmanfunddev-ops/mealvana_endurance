@@ -3,6 +3,7 @@ import 'dart:async';
 import 'package:flutter/foundation.dart';
 import 'package:riverpod_annotation/riverpod_annotation.dart';
 import 'package:shared_preferences/shared_preferences.dart';
+import 'package:supabase_flutter/supabase_flutter.dart' show FunctionException;
 import 'package:uuid/uuid.dart';
 
 import '../../../../shared/database/database_provider.dart';
@@ -81,6 +82,7 @@ class ConnectTrainingState {
     this.finalSurgeNeedsReauth = false,
     this.trainingPeaksNeedsReauth = false,
     this.vdotNeedsReauth = false,
+    this.garminNeedsReauth = false,
     this.isNetworkError = false,
   });
 
@@ -118,6 +120,10 @@ class ConnectTrainingState {
 
   /// True if V.O2 refused the token refresh and the user needs to reconnect
   final bool vdotNeedsReauth;
+
+  /// True if Garmin answered "Token is not active" and the user needs to
+  /// reconnect (ticket 138, Finding 118-016)
+  final bool garminNeedsReauth;
 
   /// True if the last error was a network error (transient, can retry)
   final bool isNetworkError;
@@ -157,6 +163,7 @@ class ConnectTrainingState {
     bool? finalSurgeNeedsReauth,
     bool? trainingPeaksNeedsReauth,
     bool? vdotNeedsReauth,
+    bool? garminNeedsReauth,
     bool? isNetworkError,
   }) {
     return ConnectTrainingState(
@@ -203,6 +210,7 @@ class ConnectTrainingState {
       trainingPeaksNeedsReauth:
           trainingPeaksNeedsReauth ?? this.trainingPeaksNeedsReauth,
       vdotNeedsReauth: vdotNeedsReauth ?? this.vdotNeedsReauth,
+      garminNeedsReauth: garminNeedsReauth ?? this.garminNeedsReauth,
       isNetworkError: isNetworkError ?? this.isNetworkError,
     );
   }
@@ -448,6 +456,7 @@ class ConnectTrainingController extends _$ConnectTrainingController {
       trainingPeaksNeedsReauth:
           trainingPeaksIntegration?.needsReconnect ?? false,
       vdotNeedsReauth: vdotIntegration?.needsReconnect ?? false,
+      garminNeedsReauth: garminIntegration?.needsReconnect ?? false,
     );
   }
 
@@ -948,6 +957,10 @@ class ConnectTrainingController extends _$ConnectTrainingController {
             '[syncGarmin] backfill HTTP ${response.status}: ${response.data}',
           );
         }
+        if (_isBackfillReauth(response.status, response.data)) {
+          await _markGarminNeedsReauth();
+          return false;
+        }
         if (_isTransientBackfillFailure(response.status, '${response.data}')) {
           await _scheduleGarminBackfillRetrySoon();
         }
@@ -992,6 +1005,10 @@ class ConnectTrainingController extends _$ConnectTrainingController {
       // cooldown (the data never got queued, so waiting 6h would needlessly delay
       // the user's weight/body-fat backfill). Genuinely unexpected errors keep
       // the full stack trace.
+      if (e is FunctionException && _isBackfillReauth(e.status, e.details)) {
+        await _markGarminNeedsReauth();
+        return false;
+      }
       final transient = _isTransientBackfillFailure(null, '$e');
       if (kDebugMode) {
         if (transient) {
@@ -1007,6 +1024,35 @@ class ConnectTrainingController extends _$ConnectTrainingController {
         await _scheduleGarminBackfillRetrySoon();
       }
       return false;
+    }
+  }
+
+  /// garmin-backfill answers 401 with `requires_reauth: true` when Garmin
+  /// said "Token is not active" (Finding 118-016): the athlete must sign in
+  /// again, so this is never a transient retry.
+  bool _isBackfillReauth(int status, Object? data) =>
+      status == 401 && data is Map && data['requires_reauth'] == true;
+
+  /// Mirrors the server's `requires_reauth` on the local garmin row (the
+  /// server stamped its own), so Connected Apps shows Reconnect now and the
+  /// Reconnect notice fires through the repository hook. Repeating it is
+  /// safe: the same status is written again and the notice is remembered.
+  Future<void> _markGarminNeedsReauth() async {
+    if (!ref.mounted) return;
+    final userId = _currentUserId;
+    if (userId == null) return;
+    await ref
+        .read(integrationsRepositoryProvider)
+        .updateSyncStatus(
+          userId,
+          'garmin',
+          status: requiresReauthStatus,
+          error: 'Garmin needs you to sign in again. Please reconnect.',
+        );
+    if (!ref.mounted) return;
+    final current = state.value;
+    if (current != null) {
+      state = AsyncData(current.copyWith(garminNeedsReauth: true));
     }
   }
 

@@ -1266,6 +1266,24 @@ class ContentKeys {
   static const String learnOfflineMessage = 'learn.offline_message';
   static const String learnRetry = 'learn.retry';
 
+  // Profile & Preferences (testing-wave 138: 119-002 read-only email,
+  // 119-010 Discard changes? on leaving)
+  static const String profileEditEmailLoginLabel =
+      'profile_edit.email_login_label';
+  static const String profileEditDiscardTitle = 'profile_edit.discard_title';
+  static const String profileEditDiscardBody = 'profile_edit.discard_body';
+  static const String profileEditDiscard = 'profile_edit.discard';
+  static const String profileEditKeepEditing = 'profile_edit.keep_editing';
+
+  // Connected apps (testing-wave 138: 118-007 Reconnect notice, 119-008
+  // the Garmin note names Sync Now)
+  static const String connectionsGarminSyncNote =
+      'connections.garmin_sync_note';
+  static const String connectionsReconnectNotice =
+      'connections.reconnect_notice';
+  static const String connectionsReconnectNoticeAction =
+      'connections.reconnect_notice_action';
+
   /// Interpolates `{name}` placeholders in a content value:
   /// `format('Give me {n} seconds', {'n': 30})`.
   static String format(String value, Map<String, Object?> params) {
