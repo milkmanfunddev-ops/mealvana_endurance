@@ -1,6 +1,6 @@
 # 141: Accessibility, dev buttons, small fixes
 
-**Status:** ready
+**Status:** in-progress (wave 41, 2026-09-26)
 **Blocked by:** none.
 **Next:** `/implement-lee testing-wave`
 **Model:** fable
