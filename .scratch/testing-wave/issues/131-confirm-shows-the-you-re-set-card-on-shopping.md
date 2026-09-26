@@ -21,3 +21,13 @@ Lee's ruling (2026-09-25): **both confirms land on Food > Shopping with the tab 
 - [x] No hardcoded strings; `flutter analyze` clean on touched files.
 
 Next: /implement-lee testing-wave
+
+## Build notes (wave 35)
+
+Open for Lee (no page writes during a fix wave):
+- Adjust on the card opens the plan's own Vana conversation (or a new planning one) without sending anything, and closes the card.
+- The earlier-plan screen's Confirm now lands on Food > Shopping too, instead of popping back to Plan.
+- "Open shopping list" is dropped from the card on Shopping (the athlete is already there).
+- The Vana moment pill still collapses the tab bar on purpose. If 88-016's small bubble was the pill rather than a scroll, landing can still show it collapsed; only a device retest tells.
+
+Review follow-ups not fixed (minor): a Lay-it-across tap on plan B's card can join plan A's in-flight request and silently show nothing; a slow Plan-tab or earlier-plan confirm lands on Shopping even if the athlete backed out meanwhile.
