@@ -347,6 +347,15 @@ class MealLog {
     double? proteinG,
     double? fatG,
     double? sodiumMg,
+
+    /// Each `clear*` sets that total to `null` (unknown) regardless of the
+    /// matching argument: `x ?? this.x` cannot express "the user emptied the
+    /// field" (testing-wave 113-002).
+    bool clearCalories = false,
+    bool clearCarbsG = false,
+    bool clearProteinG = false,
+    bool clearFatG = false,
+    bool clearSodiumMg = false,
     String? photoPath,
     String? recipeId,
     String? savedMealId,
@@ -368,11 +377,11 @@ class MealLog {
       name: name ?? this.name,
       source: source ?? this.source,
       components: components ?? this.components,
-      calories: calories ?? this.calories,
-      carbsG: carbsG ?? this.carbsG,
-      proteinG: proteinG ?? this.proteinG,
-      fatG: fatG ?? this.fatG,
-      sodiumMg: sodiumMg ?? this.sodiumMg,
+      calories: clearCalories ? null : (calories ?? this.calories),
+      carbsG: clearCarbsG ? null : (carbsG ?? this.carbsG),
+      proteinG: clearProteinG ? null : (proteinG ?? this.proteinG),
+      fatG: clearFatG ? null : (fatG ?? this.fatG),
+      sodiumMg: clearSodiumMg ? null : (sodiumMg ?? this.sodiumMg),
       photoPath: photoPath ?? this.photoPath,
       recipeId: recipeId ?? this.recipeId,
       savedMealId: savedMealId ?? this.savedMealId,

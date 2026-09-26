@@ -353,6 +353,45 @@ class SavedMealsRepository with SyncableRepository {
     _scheduleImmediateUpload(tombstone, label: 'delete');
   }
 
+  /// Undo a [softDelete]: clears the tombstone, re-dirties the row and
+  /// schedules an upload so the restore reaches other devices (testing-wave
+  /// 112-005). No-op if no deleted row exists, so a second Undo, or an Undo
+  /// after the row was restored by a sync, changes nothing.
+  Future<void> restore(String mealId) async {
+    final row =
+        await (_database.select(_database.savedMealsTable)
+              ..where((t) => t.id.equals(mealId) & t.isDeleted.equals(true))
+              ..limit(1))
+            .getSingleOrNull();
+    if (row == null) return;
+
+    final now = DateTime.now();
+    await (_database.update(
+      _database.savedMealsTable,
+    )..where((t) => t.id.equals(mealId))).write(
+      SavedMealsTableCompanion(
+        isDeleted: const Value(false),
+        updatedAt: Value(now),
+        needsUpload: const Value(true),
+        localUpdatedAt: Value(now),
+      ),
+    );
+
+    _logger.info(
+      'Restored saved meal',
+      context: 'SAVED_MEALS_REPOSITORY',
+      data: {'mealId': mealId},
+    );
+
+    final restored = SavedMeal.fromDriftEntry(row).copyWith(
+      isDeleted: false,
+      updatedAt: now,
+      needsUpload: true,
+      localUpdatedAt: now,
+    );
+    _scheduleImmediateUpload(restored, label: 'restore');
+  }
+
   // ========================================================================
   // Remote Hydration
   // ========================================================================
@@ -430,12 +469,20 @@ class SavedMealsRepository with SyncableRepository {
     return upsertedCount;
   }
 
+  /// The one PostgREST upsert every write goes through; `onConflict: 'id'`
+  /// always (never a partial-unique-index column). Overridable so a seam
+  /// test can run the real repository on an in-memory Drift without a
+  /// Supabase client.
+  @protected
+  @visibleForTesting
+  Future<void> sendUpsert(Map<String, dynamic> row) async {
+    await _supabase.from('saved_meals').upsert(row, onConflict: 'id');
+  }
+
   void _scheduleImmediateUpload(SavedMeal meal, {required String label}) {
     unawaited(() async {
       try {
-        await _supabase
-            .from('saved_meals')
-            .upsert(meal.toSupabaseJson(), onConflict: 'id');
+        await sendUpsert(meal.toSupabaseJson());
         await _clearDirtyFlag(meal.id);
       } catch (e, stackTrace) {
         _logger.warning(

@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 
 import '../../../../shared/widgets/swipe_action_background.dart';
+import '../../domain/consumed_totals.dart' show MealTotals;
 import '../../domain/meal_component.dart';
 import '../../domain/portion_quantity.dart';
 
@@ -33,10 +34,18 @@ class MealComponentEditor extends StatefulWidget {
 class _MealComponentEditorState extends State<MealComponentEditor> {
   late List<MealComponent> _items;
 
+  /// One id per row, handed out in order and never reused. Rows are keyed
+  /// by this, not by the component: a Quick add combo adds the same
+  /// [MealComponent] instances each time, and two rows sharing an
+  /// `ObjectKey` threw "Duplicate keys found" on the second add (113-001).
+  late List<int> _rowIds;
+  int _nextRowId = 0;
+
   @override
   void initState() {
     super.initState();
     _items = List<MealComponent>.from(widget.initialComponents);
+    _rowIds = [for (var i = 0; i < _items.length; i++) _nextRowId++];
   }
 
   Future<void> _editItem(int index) async {
@@ -55,7 +64,10 @@ class _MealComponentEditorState extends State<MealComponentEditor> {
   }
 
   void _deleteItem(int index) {
-    setState(() => _items.removeAt(index));
+    setState(() {
+      _items.removeAt(index);
+      _rowIds.removeAt(index);
+    });
     widget.onComponentsChanged(List.unmodifiable(_items));
   }
 
@@ -91,18 +103,13 @@ class _MealComponentEditorState extends State<MealComponentEditor> {
     );
   }
 
-  int get _totalCalories =>
-      _items.fold(0, (sum, item) => sum + (item.calories ?? 0));
-  double get _totalCarbG =>
-      _items.fold(0.0, (sum, item) => sum + (item.carbG ?? 0));
-  double get _totalProteinG =>
-      _items.fold(0.0, (sum, item) => sum + (item.proteinG ?? 0));
-  double get _totalFatG =>
-      _items.fold(0.0, (sum, item) => sum + (item.fatG ?? 0));
+  /// A macro no item carries reads "—", never 0 (null ≠ 0, 113-004).
+  static String _g(double? v) => v == null ? '\u2014' : v.toStringAsFixed(0);
 
   @override
   Widget build(BuildContext context) {
     final theme = Theme.of(context);
+    final totals = MealTotals.ofComponents(_items);
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
@@ -145,7 +152,7 @@ class _MealComponentEditorState extends State<MealComponentEditor> {
           // timeline + Activity Detail food rows). confirmDismiss returns false
           // so the actions run via callbacks without a structural dismiss.
           return Dismissible(
-            key: ObjectKey(item),
+            key: ValueKey('meal_component_row_${_rowIds[i]}'),
             direction: widget.onRequestSwap == null
                 ? DismissDirection.startToEnd
                 : DismissDirection.horizontal,
@@ -191,10 +198,10 @@ class _MealComponentEditorState extends State<MealComponentEditor> {
               const SizedBox(width: 8),
               Flexible(
                 child: Text(
-                  '$_totalCalories kcal  '
-                  'C ${_totalCarbG.toStringAsFixed(0)}g  '
-                  'P ${_totalProteinG.toStringAsFixed(0)}g  '
-                  'F ${_totalFatG.toStringAsFixed(0)}g',
+                  '${totals.calories ?? '\u2014'} kcal  '
+                  'C ${_g(totals.carbsG)}g  '
+                  'P ${_g(totals.proteinG)}g  '
+                  'F ${_g(totals.fatG)}g',
                   style: theme.textTheme.bodySmall?.copyWith(
                     fontWeight: FontWeight.w600,
                   ),

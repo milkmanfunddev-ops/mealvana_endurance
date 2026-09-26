@@ -116,6 +116,10 @@ class WorkoutCardData {
 }
 
 /// One logged (or suggested) meal item.
+///
+/// The four numbers are null when the log never had them (a Manual entry
+/// with the field left blank): the card shows "—", and the day's sums skip
+/// the row for that macro. `null ≠ 0` (testing-wave 113-004).
 class MealItemData {
   const MealItemData({
     required this.id,
@@ -130,10 +134,10 @@ class MealItemData {
 
   final String id;
   final String name;
-  final double kcal;
-  final double carbsG;
-  final double proteinG;
-  final double fatG;
+  final double? kcal;
+  final double? carbsG;
+  final double? proteinG;
+  final double? fatG;
   final bool suggested;
 
   /// Scheduled but not yet eaten (§3: reduces nothing until eaten; feeds
@@ -223,10 +227,12 @@ class BreakdownMealRow {
 
   final String name;
   final String timeLabel;
-  final double kcal;
-  final double carbsG;
-  final double proteinG;
-  final double fatG;
+
+  /// Null when the log never had the number (see [MealItemData]).
+  final double? kcal;
+  final double? carbsG;
+  final double? proteinG;
+  final double? fatG;
   final bool planned;
 }
 
@@ -367,6 +373,16 @@ class EnergyWorkoutRow {
 
 /// Locale-stable thousands formatting matching the reference rendering
 /// (1,205 / 4,152).
+/// The face of an unknown number: a log that never had it (113-004).
+const String unknownNumberStr = '\u2014';
+
+/// [kcalStr] for a number that may be unknown.
+String kcalStrOrUnknown(num? v) => v == null ? unknownNumberStr : kcalStr(v);
+
+/// A rounded macro gram count, or "—" when unknown.
+String macroStrOrUnknown(double? v) =>
+    v == null ? unknownNumberStr : v.round().toString();
+
 String kcalStr(num v) {
   final s = v.round().abs().toString();
   final b = StringBuffer();

@@ -60,6 +60,8 @@ class _ManualLogFormState extends ConsumerState<ManualLogForm> {
 
   final _formKey = GlobalKey<FormState>();
   final _nameCtrl = TextEditingController();
+  final _nameFocus = FocusNode();
+  final _nameFieldKey = GlobalKey();
   final _calCtrl = TextEditingController();
   final _carbCtrl = TextEditingController();
   final _protCtrl = TextEditingController();
@@ -79,6 +81,7 @@ class _ManualLogFormState extends ConsumerState<ManualLogForm> {
 
   @override
   void dispose() {
+    _nameFocus.dispose();
     _nameCtrl.dispose();
     _calCtrl.dispose();
     _carbCtrl.dispose();
@@ -108,7 +111,20 @@ class _ManualLogFormState extends ConsumerState<ManualLogForm> {
   }
 
   Future<void> _submit() async {
-    if (!_formKey.currentState!.validate()) return;
+    if (!_formKey.currentState!.validate()) {
+      // The only validator is the name's, and Save sits below the fold:
+      // "Name is required" was showing above the scrolled view (113-005).
+      final fieldContext = _nameFieldKey.currentContext;
+      if (fieldContext != null) {
+        await Scrollable.ensureVisible(
+          fieldContext,
+          alignment: 0.2,
+          duration: const Duration(milliseconds: 200),
+        );
+      }
+      if (mounted) _nameFocus.requestFocus();
+      return;
+    }
     FocusScope.of(context).unfocus();
 
     await ref
@@ -161,17 +177,21 @@ class _ManualLogFormState extends ConsumerState<ManualLogForm> {
           const SizedBox(height: AppSpacing.md),
 
           // Name
-          TextFormField(
-            key: const ValueKey('manual_log.name_field'),
-            controller: _nameCtrl,
-            decoration: const InputDecoration(
-              labelText: 'Meal name',
-              hintText: 'e.g. Oatmeal with banana',
-              border: OutlineInputBorder(),
+          KeyedSubtree(
+            key: _nameFieldKey,
+            child: TextFormField(
+              key: const ValueKey('manual_log.name_field'),
+              controller: _nameCtrl,
+              focusNode: _nameFocus,
+              decoration: const InputDecoration(
+                labelText: 'Meal name',
+                hintText: 'e.g. Oatmeal with banana',
+                border: OutlineInputBorder(),
+              ),
+              textCapitalization: TextCapitalization.sentences,
+              validator: (v) =>
+                  (v == null || v.trim().isEmpty) ? 'Name is required' : null,
             ),
-            textCapitalization: TextCapitalization.sentences,
-            validator: (v) =>
-                (v == null || v.trim().isEmpty) ? 'Name is required' : null,
           ),
           const SizedBox(height: AppSpacing.md),
 

@@ -979,7 +979,22 @@
     "enter_title": "Enter a barcode",
     "enter_body": "Type the number printed under the barcode.",
     "enter_hint": "8 to 14 digits",
-    "enter_submit": "Look it up"
+    "enter_submit": "Look it up",
+    "enter_length": "A barcode has 8 to 14 digits.",
+    "typed_invalid": "That number isn't a barcode we recognise. Check the digits printed under the barcode and type them again."
+  },
+  "meal_log_actions": {
+    "saved_meal_removed": "Saved meal removed",
+    "undo": "Undo",
+    "save_as_favorite": "Save as favorite",
+    "saved_as_favorite": "Saved as a favorite",
+    "save_as_favorite_failed": "Could not save the favorite. Please try again."
+  },
+  "build_meal": {
+    "discard_title": "Discard this meal?",
+    "discard_body": "The foods you added will be lost.",
+    "discard": "Discard",
+    "keep_building": "Keep building"
   },
   "learn": {
     "notify_me": "Notify Me",

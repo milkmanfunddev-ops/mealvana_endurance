@@ -1833,7 +1833,7 @@ class _TodaysFuelPageState extends State<_TodaysFuelPage> {
                   TextSpan(
                     children: [
                       TextSpan(
-                        text: kcalStr(m.kcal),
+                        text: kcalStrOrUnknown(m.kcal),
                         style: TextStyle(
                           fontFamily: 'Apercu Mono',
                           fontSize: 13,
@@ -1862,7 +1862,7 @@ class _TodaysFuelPageState extends State<_TodaysFuelPage> {
                     ),
                     children: [
                       TextSpan(
-                        text: '${m.carbsG.round()}',
+                        text: macroStrOrUnknown(m.carbsG),
                         style: const TextStyle(color: MeTokens.electrolyte),
                       ),
                       TextSpan(
@@ -1870,7 +1870,7 @@ class _TodaysFuelPageState extends State<_TodaysFuelPage> {
                         style: TextStyle(color: me.inkAlpha(0.3)),
                       ),
                       TextSpan(
-                        text: '${m.proteinG.round()}',
+                        text: macroStrOrUnknown(m.proteinG),
                         style: const TextStyle(color: MeTokens.proteinAccent),
                       ),
                       TextSpan(
@@ -1878,7 +1878,7 @@ class _TodaysFuelPageState extends State<_TodaysFuelPage> {
                         style: TextStyle(color: me.inkAlpha(0.3)),
                       ),
                       TextSpan(
-                        text: '${m.fatG.round()}',
+                        text: macroStrOrUnknown(m.fatG),
                         style: const TextStyle(color: MeTokens.fatAccent),
                       ),
                     ],

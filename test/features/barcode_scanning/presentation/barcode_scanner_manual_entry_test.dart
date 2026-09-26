@@ -221,6 +221,8 @@ void main() {
           find.byKey(const ValueKey('barcode.enter_field')),
           '3017620422003',
         );
+        // Look it up enables once the entry has 8 to 14 digits (113-006).
+        await tester.pump();
         await tester.tap(find.byKey(const ValueKey('barcode.enter_submit')));
         await tester.pump();
         await tester.pump(const Duration(milliseconds: 600));
@@ -241,6 +243,80 @@ void main() {
         // Meal-log context: the same pop a scan does, straight to the caller.
         expect(popped, [_nutella]);
         expect(find.text('open scanner'), findsOneWidget);
+      },
+    );
+
+    testWidgets('refuses 5 digits: Look it up disabled, the length said', (
+      tester,
+    ) async {
+      await openScanner(tester);
+      await noCamera(tester);
+
+      await tester.tap(find.byKey(const ValueKey('barcode.enter_button')));
+      await tester.pump();
+      await tester.pump(const Duration(milliseconds: 600));
+
+      await tester.enterText(
+        find.byKey(const ValueKey('barcode.enter_field')),
+        '12345',
+      );
+      await tester.pump();
+
+      expect(
+        find.text(content['barcode_scanner.enter_length']!),
+        findsOneWidget,
+      );
+      await tester.tap(find.byKey(const ValueKey('barcode.enter_submit')));
+      await tester.pump();
+      await tester.pump(const Duration(milliseconds: 600));
+      verifyNever(() => scanner.scanBarcode(any()));
+      expect(
+        find.text(content['barcode_scanner.enter_title']!),
+        findsOneWidget,
+        reason: 'the sheet stays open',
+      );
+
+      // Eight digits is a barcode: the message goes, the button works.
+      await tester.enterText(
+        find.byKey(const ValueKey('barcode.enter_field')),
+        '12345678',
+      );
+      await tester.pump();
+      expect(find.text(content['barcode_scanner.enter_length']!), findsNothing);
+    });
+
+    testWidgets(
+      'a typed number the format check refuses is told in typing words',
+      (tester) async {
+        // Ten digits pass the sheet (8 to 14) but not the service's set
+        // (8, 12, 13, 14). The scan message would say "try scanning again".
+        when(() => scanner.scanBarcode('1234567890')).thenAnswer(
+          (_) async => const BarcodeScanResult.invalidFormat(
+            barcode: '1234567890',
+            message: 'Invalid barcode format. Please try scanning again.',
+          ),
+        );
+        await openScanner(tester);
+        await noCamera(tester);
+
+        await tester.tap(find.byKey(const ValueKey('barcode.enter_button')));
+        await tester.pump();
+        await tester.pump(const Duration(milliseconds: 600));
+        await tester.enterText(
+          find.byKey(const ValueKey('barcode.enter_field')),
+          '1234567890',
+        );
+        await tester.pump();
+        await tester.tap(find.byKey(const ValueKey('barcode.enter_submit')));
+        await tester.pump();
+        await tester.pump(const Duration(milliseconds: 600));
+        await tester.pump(const Duration(milliseconds: 600));
+
+        expect(
+          find.text(content['barcode_scanner.typed_invalid']!),
+          findsOneWidget,
+        );
+        expect(find.textContaining('scanning again'), findsNothing);
       },
     );
 

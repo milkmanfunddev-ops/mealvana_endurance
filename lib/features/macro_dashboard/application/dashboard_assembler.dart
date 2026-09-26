@@ -339,10 +339,11 @@ class MacroDashboardAssembler {
                 MealItemData(
                   id: m.id,
                   name: m.name,
-                  kcal: m.calories?.toDouble() ?? 0,
-                  carbsG: m.carbsG ?? 0,
-                  proteinG: m.proteinG ?? 0,
-                  fatG: m.fatG ?? 0,
+                  // Unknown stays unknown: the card shows "—" (113-004).
+                  kcal: m.calories?.toDouble(),
+                  carbsG: m.carbsG,
+                  proteinG: m.proteinG,
+                  fatG: m.fatG,
                   planned: m.eatenAt == null,
                 ),
             ],
@@ -554,19 +555,20 @@ class MacroDashboardAssembler {
           timeLabel: m.eatenAt == null
               ? '~${_timeLabel(m.createdAt)}'
               : _timeLabel(m.eatenAt!),
-          kcal: m.calories?.toDouble() ?? 0,
-          carbsG: m.carbsG ?? 0,
-          proteinG: m.proteinG ?? 0,
-          fatG: m.fatG ?? 0,
+          kcal: m.calories?.toDouble(),
+          carbsG: m.carbsG,
+          proteinG: m.proteinG,
+          fatG: m.fatG,
           planned: m.eatenAt == null,
         ),
     ]..sort((a, b) => (a.planned ? 1 : 0).compareTo(b.planned ? 1 : 0));
 
+    // Sums skip an unknown macro, as the day's sodium already does (null ≠ 0).
     var plannedC = 0.0, plannedP = 0.0, plannedF = 0.0;
     for (final r in mealRows.where((r) => r.planned)) {
-      plannedC += r.carbsG;
-      plannedP += r.proteinG;
-      plannedF += r.fatG;
+      plannedC += r.carbsG ?? 0;
+      plannedP += r.proteinG ?? 0;
+      plannedF += r.fatG ?? 0;
     }
 
     // Weekly carb periodization: this week's cached targets + training load

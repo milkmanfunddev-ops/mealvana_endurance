@@ -18,6 +18,9 @@ import '../../../activities/presentation/providers/brick_selection_controller.da
 import '../../../activities/presentation/widgets/brick_ungroup_dialog.dart';
 import '../../../activities/presentation/widgets/brick_validation_error_dialog.dart';
 import '../../../calendar/presentation/providers/calendar_selected_date_provider.dart';
+import '../../../content/application/content_service.dart';
+import '../../../content/domain/content_keys.dart';
+import '../../../meal_logging/domain/meal_log.dart';
 import '../../../fuel_timeline/presentation/widgets/timeline_brick_tile.dart';
 import '../../../meal_logging/presentation/providers/meal_log_providers.dart';
 import '../../../meal_logging/presentation/screens/log_meal_screen.dart';
@@ -1183,9 +1186,51 @@ class MacroDashboardScreen extends ConsumerWidget {
             onToggle: () => notifier.toggleMealExpanded(item.id),
             onRemove: () => _removeMeal(context, ref, item.id),
             onEdit: () => _editMeal(context, ref, item.id),
+            onSaveAsFavorite: () => _saveMealAsFavorite(context, ref, item.id),
+            saveAsFavoriteLabel: ref
+                .read(contentServiceProvider)
+                .getValue(ContentKeys.mealLogActionsSaveAsFavorite),
           ),
       ],
     );
+  }
+
+  /// Saves the logged meal as a favourite from its own row (Lee, 112-008):
+  /// the real log goes in, so the favourite carries the row's totals. A
+  /// second tap makes a second favourite of the same meal; the row does
+  /// not remember it was saved.
+  Future<void> _saveMealAsFavorite(
+    BuildContext context,
+    WidgetRef ref,
+    String logId,
+  ) async {
+    final log = _findLog(ref, logId);
+    if (log == null) return;
+    final content = ref.read(contentServiceProvider);
+    final saved = await ref
+        .read(mealLogControllerProvider.notifier)
+        .saveLogAsFavorite(log);
+    if (!context.mounted) return;
+    if (saved != null) {
+      MealvanaSnackbar.showSuccess(
+        context,
+        content.getValue(ContentKeys.mealLogActionsSavedAsFavorite),
+      );
+    } else {
+      MealvanaSnackbar.showError(
+        context,
+        content.getValue(ContentKeys.mealLogActionsSaveAsFavoriteFailed),
+      );
+    }
+  }
+
+  MealLog? _findLog(WidgetRef ref, String logId) {
+    final dateStr = _ymd(ref.read(calendarSelectedDateProvider));
+    final logs = ref.read(mealLogsForDateProvider(dateStr)).value ?? const [];
+    for (final log in logs) {
+      if (log.id == logId) return log;
+    }
+    return null;
   }
 
   /// Soft-deletes the meal with undo — same contract as the diary's
@@ -1206,14 +1251,8 @@ class MacroDashboardScreen extends ConsumerWidget {
   }
 
   void _editMeal(BuildContext context, WidgetRef ref, String logId) {
-    final dateStr = _ymd(ref.read(calendarSelectedDateProvider));
-    final logs = ref.read(mealLogsForDateProvider(dateStr)).value ?? const [];
-    for (final log in logs) {
-      if (log.id == logId) {
-        context.push('/meal-log/edit', extra: {'log': log});
-        return;
-      }
-    }
+    final log = _findLog(ref, logId);
+    if (log != null) context.push('/meal-log/edit', extra: {'log': log});
   }
 }
 

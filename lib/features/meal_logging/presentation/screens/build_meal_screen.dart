@@ -13,12 +13,15 @@ import '../../../../shared/widgets/kyle_design/kyle_design.dart';
 import '../../../barcode_scanning/application/catalog_search_service.dart';
 import '../../../barcode_scanning/application/food_mapping_service.dart';
 import '../../../barcode_scanning/application/product_detail_service.dart';
+import '../../../content/application/content_service.dart';
+import '../../../content/domain/content_keys.dart';
 import '../../../nutrition_plan/data/food_repository.dart';
 import '../../../nutrition_plan/domain/food.dart';
 import '../../../nutrition_plan/domain/food_item.dart';
 import '../../../nutrition_plan/presentation/widgets/new_activity/shared/activity_name_field.dart';
 import '../../../recipes/application/recipe_service.dart';
 import '../../../recipes/domain/recipe.dart';
+import '../../domain/consumed_totals.dart' show MealTotals;
 import '../../domain/meal_component.dart';
 import '../../domain/meal_log.dart';
 import '../../domain/recipe_ingredient_split.dart';
@@ -172,6 +175,41 @@ class _BuildMealScreenState extends ConsumerState<BuildMealScreen> {
     );
   }
 
+  String _text(String key) => ref.read(contentServiceProvider).getValue(key);
+
+  /// Back (the app bar's or the swipe) from a non-empty draft asks Discard /
+  /// Keep building (Lee, 113-007): the auto-disposed draft would otherwise
+  /// vanish with the screen. An empty draft leaves without asking. A save
+  /// pops programmatically and never reaches here.
+  Future<void> _onPopInvoked(bool didPop) async {
+    if (didPop) return;
+    final draft = ref.read(draftMealControllerProvider(widget.logDate));
+    if (draft.isEmpty) {
+      if (mounted) Navigator.of(context).pop();
+      return;
+    }
+    final discard = await showDialog<bool>(
+      context: context,
+      builder: (ctx) => AlertDialog(
+        title: Text(_text(ContentKeys.buildMealDiscardTitle)),
+        content: Text(_text(ContentKeys.buildMealDiscardBody)),
+        actions: [
+          TextButton(
+            key: const ValueKey('build_meal.keep_building'),
+            onPressed: () => Navigator.of(ctx).pop(false),
+            child: Text(_text(ContentKeys.buildMealKeepBuilding)),
+          ),
+          TextButton(
+            key: const ValueKey('build_meal.discard'),
+            onPressed: () => Navigator.of(ctx).pop(true),
+            child: Text(_text(ContentKeys.buildMealDiscard)),
+          ),
+        ],
+      ),
+    );
+    if (discard == true && mounted) Navigator.of(context).pop();
+  }
+
   Future<void> _logMeal() async {
     _unfocus();
     setState(() => _isSaving = true);
@@ -196,27 +234,33 @@ class _BuildMealScreenState extends ConsumerState<BuildMealScreen> {
     final textColor = isDark ? AppColors.cream : AppColors.blackberry;
     final draft = ref.watch(draftMealControllerProvider(widget.logDate));
 
-    return Scaffold(
-      backgroundColor: bg,
-      resizeToAvoidBottomInset: true,
-      appBar: AppBar(
+    return PopScope(
+      canPop: false,
+      onPopInvokedWithResult: (didPop, _) => _onPopInvoked(didPop),
+      child: Scaffold(
         backgroundColor: bg,
-        elevation: 0,
-        scrolledUnderElevation: 0,
-        leading: const CustomAppBarBackButton(
-          key: ValueKey('build_meal.back_button'),
+        resizeToAvoidBottomInset: true,
+        appBar: AppBar(
+          backgroundColor: bg,
+          elevation: 0,
+          scrolledUnderElevation: 0,
+          // maybePop so the PopScope guard above sees the tap.
+          leading: CustomAppBarBackButton(
+            key: const ValueKey('build_meal.back_button'),
+            onPressed: () => Navigator.of(context).maybePop(),
+          ),
+          title: Text(
+            'Build a Meal',
+            style: AppTextStyles.sectionTitle.copyWith(color: textColor),
+          ),
         ),
-        title: Text(
-          'Build a Meal',
-          style: AppTextStyles.sectionTitle.copyWith(color: textColor),
-        ),
+        body: draft.isEmpty
+            ? _buildEmptyState(context, textColor)
+            : _buildContent(context, draft, textColor),
+        bottomNavigationBar: draft.isEmpty
+            ? null
+            : SafeArea(top: false, child: _buildBottomBar(context, draft)),
       ),
-      body: draft.isEmpty
-          ? _buildEmptyState(context, textColor)
-          : _buildContent(context, draft, textColor),
-      bottomNavigationBar: draft.isEmpty
-          ? null
-          : SafeArea(top: false, child: _buildBottomBar(context, draft)),
     );
   }
 
@@ -386,7 +430,10 @@ class _BuildMealScreenState extends ConsumerState<BuildMealScreen> {
     final isDark = Theme.of(context).brightness == Brightness.dark;
     final bg = isDark ? AppColors.blackberry : AppColors.cream;
     final textColor = isDark ? AppColors.cream : AppColors.blackberry;
-    final totals = draft.totals;
+    // A macro no item carries reads "—", never 0 (113-004): a product with
+    // no nutrition data adds nothing known.
+    final totals = MealTotals.ofComponents(draft.components);
+    String g(double? v) => v == null ? '\u2014' : v.toStringAsFixed(0);
 
     return Material(
       color: bg,
@@ -410,10 +457,11 @@ class _BuildMealScreenState extends ConsumerState<BuildMealScreen> {
           crossAxisAlignment: CrossAxisAlignment.stretch,
           children: [
             Text(
-              '${totals.calories} kcal  ·  '
-              'C ${totals.carbsG.toStringAsFixed(0)}g  '
-              'P ${totals.proteinG.toStringAsFixed(0)}g  '
-              'F ${totals.fatG.toStringAsFixed(0)}g',
+              '${totals.calories ?? '\u2014'} kcal  ·  '
+              'C ${g(totals.carbsG)}g  '
+              'P ${g(totals.proteinG)}g  '
+              'F ${g(totals.fatG)}g',
+              key: const ValueKey('build_meal.totals'),
               style: AppTextStyles.bodySmall.copyWith(
                 color: textColor.withValues(alpha: 0.75),
               ),
