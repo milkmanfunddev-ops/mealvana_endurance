@@ -308,13 +308,13 @@ class _PaywallScreenState extends ConsumerState<PaywallScreen> {
           .read(settingsControllerProvider.notifier)
           .deleteAccount(from: AccountDeletionEntry.paywall);
     } on AccountDeletionNeedsConnectionException {
-      // Nothing was deleted (121-007): still signed in, still here.
-      if (context.mounted) {
-        MealvanaSnackbar.showError(
-          _messageContext,
-          content.getValue(ContentKeys.settingsDeleteNeedsConnection),
-        );
-      }
+      // Nothing was deleted (121-007): still signed in, still here. Shown
+      // in the messages Scaffold above the plans, as the other lines are.
+      if (!mounted) return;
+      MealvanaSnackbar.showError(
+        _messageContext,
+        content.getValue(ContentKeys.settingsDeleteNeedsConnection),
+      );
       return;
     }
     if (context.mounted) GoRouter.maybeOf(context)?.go('/welcome');
