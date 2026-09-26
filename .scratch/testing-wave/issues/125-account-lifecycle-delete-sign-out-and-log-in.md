@@ -19,8 +19,8 @@
 
 **Touches:** nothing (read only), except the accounts the run creates and deletes.
 
-- [ ] Runs by the runbook: a slot taken and released, the console saved to the run folder, a look-around on every screen visited, every new problem written as a Finding and nothing fixed.
-- [ ] Every account made is deleted through the app at the end (or marked `delete-failed` with a Finding), and `CRED` rows updated.
-- [ ] Each retest and follow-up has a verdict in `RUNS/verdicts.md`, evidence under `runs/125/`.
+- [x] Runs by the runbook: a slot taken and released, the console saved to the run folder, a look-around on every screen visited, every new problem written as a Finding and nothing fixed.
+- [x] Every account made is deleted through the app at the end (or marked `delete-failed` with a Finding), and `CRED` rows updated.
+- [x] Each retest and follow-up has a verdict in `RUNS/verdicts.md`, evidence under `runs/125/`.
 
 Next: /implement-lee testing-wave

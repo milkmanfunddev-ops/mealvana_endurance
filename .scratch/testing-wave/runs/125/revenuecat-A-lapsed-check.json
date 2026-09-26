@@ -1,0 +1,36 @@
+{
+  "fetched_at": "2026-09-26T02:40:49Z",
+  "customer_http": 200,
+  "customer": {
+    "active_entitlements": {
+      "items": [],
+      "next_page": null,
+      "object": "list",
+      "url": "https://api.revenuecat.com/v2/projects/proj77b3c48f/customers/12cf0439-e824-4556-a4e5-891e94d9a5f4/active_entitlements"
+    },
+    "experiment": null,
+    "first_seen_at": 1790389599289,
+    "id": "12cf0439-e824-4556-a4e5-891e94d9a5f4",
+    "last_seen_app_version": "1.27.1",
+    "last_seen_at": 1790389730882,
+    "last_seen_country": "US",
+    "last_seen_platform": "iOS",
+    "last_seen_platform_version": "Version 26.2 (Build 23C54)",
+    "object": "customer",
+    "project_id": "proj77b3c48f"
+  },
+  "subscriptions": [
+    {
+      "id": "subTst2299ece41677a048f2b0706e796ff81a",
+      "status": "active",
+      "gives_access": true,
+      "auto_renewal_status": "will_renew",
+      "starts_at": "2026-09-26T02:29:18Z",
+      "current_period_ends_at": "2026-09-26T02:39:18Z",
+      "ends_at": "2026-09-26T02:39:18Z",
+      "product_id": "prod350601b768",
+      "store": "test_store",
+      "environment": "sandbox"
+    }
+  ]
+}
