@@ -9,11 +9,20 @@
 /// status and asks RevenueCat again, so the gate opens without a restart.
 library;
 
+import 'dart:async';
+
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:mocktail/mocktail.dart';
 import 'package:supabase_flutter/supabase_flutter.dart';
 
+import 'package:mealvana_endurance/features/coach_mode/application/coach_service.dart';
+import 'package:mealvana_endurance/features/coach_mode/domain/coach.dart';
+import 'package:mealvana_endurance/features/coach_mode/domain/coach_athlete_relationship.dart';
+import 'package:mealvana_endurance/features/coach_mode/presentation/providers/coach_dashboard_controller.dart';
+import 'package:mealvana_endurance/features/coach_mode/presentation/providers/my_coaches_controller.dart';
+import 'package:mealvana_endurance/features/settings/domain/settings_state.dart';
+import 'package:mealvana_endurance/features/settings/presentation/providers/settings_controller.dart';
 import 'package:mealvana_endurance/features/subscription/application/code_entry_controller.dart';
 import 'package:mealvana_endurance/features/subscription/application/pro_paywall_controller.dart';
 import 'package:mealvana_endurance/features/subscription/application/subscription_status_provider.dart';
@@ -33,6 +42,20 @@ class _MockFunctions extends Mock implements FunctionsClient {}
 class _MockSubscriptionService extends Mock implements SubscriptionService {}
 
 class _MockRepository extends Mock implements UserEntitlementsRepository {}
+
+class _MockCoachService extends Mock implements CoachService {}
+
+/// Settings (where coach mode lives) counting its builds; its own content
+/// and profile reads are out of scope here.
+class _CountingSettings extends SettingsController {
+  static int builds = 0;
+
+  @override
+  FutureOr<SettingsState> build() {
+    builds++;
+    return Completer<SettingsState>().future;
+  }
+}
 
 class _NoopScheduler implements LocalNotificationScheduler {
   @override
@@ -66,8 +89,25 @@ void main() {
   late _MockSubscriptionService service;
   late _MockRepository repo;
   late bool cacheDropped;
+  late _MockCoachService coaches;
 
   setUp(() {
+    coaches = _MockCoachService();
+    _CountingSettings.builds = 0;
+    when(
+      () => coaches.syncCurrentCoachDataFromSupabase(),
+    ).thenAnswer((_) async => false);
+    when(
+      () => coaches.syncRelationshipsFromSupabase(),
+    ).thenAnswer((_) async => []);
+    when(() => coaches.syncMyCoachesData()).thenAnswer((_) async {});
+    when(() => coaches.syncMyAthletesProfiles()).thenAnswer((_) async {});
+    when(() => coaches.getMyCoaches()).thenAnswer((_) async => []);
+    when(() => coaches.getPendingCoachRequests()).thenAnswer((_) async => []);
+    when(() => coaches.getCurrentCoachInfo()).thenAnswer((_) async => null);
+    when(() => coaches.getMyAthletes()).thenAnswer((_) async => []);
+    when(() => coaches.getPendingAthleteRequests()).thenAnswer((_) async => []);
+
     functions = _MockFunctions();
     service = _MockSubscriptionService();
     repo = _MockRepository();
@@ -111,6 +151,8 @@ void main() {
           const Duration(milliseconds: 60),
         ),
         localNotificationSchedulerProvider.overrideWithValue(_NoopScheduler()),
+        coachServiceProvider.overrideWithValue(coaches),
+        settingsControllerProvider.overrideWith(_CountingSettings.new),
         subscriptionClockProvider.overrideWithValue(
           () => customerInfoFetchedAt,
         ),
@@ -216,6 +258,120 @@ void main() {
 
       expect((result! as CodeRedeemed).kind, RedeemedKind.attributed);
       verifyNever(() => service.forgetCachedStatus());
+    });
+  });
+
+  // mp-600 (card mp-598): a Code that changes coaching updates the app at
+  // once. The pairing lists are the REAL controllers over a faked
+  // CoachService: what they show after the Code is what the pull brought.
+  group('a Code that changes coaching refreshes coach mode and the '
+      'pairings', () {
+    final now = DateTime.utc(2026, 9, 26);
+    final pending = CoachAthleteRelationship(
+      id: 'rel-1',
+      coachUserId: 'coach-9',
+      athleteUserId: _userId,
+      requestedBy: 'athlete',
+      requestedAt: now,
+      createdAt: now,
+      updatedAt: now,
+    );
+
+    Future<void> settle() => Future<void>.delayed(Duration.zero);
+
+    test("an athlete's coach Code: the pending pairing shows in My Coaches "
+        'at once', () async {
+      answer200({'ok': true, 'kind': 'paired', 'coach_user_id': 'coach-9'});
+      final c = container();
+      final list = c.listen(myCoachesControllerProvider, (_, _) {});
+      addTearDown(list.close);
+      final settings = c.listen(settingsControllerProvider, (_, _) {});
+      addTearDown(settings.close);
+      expect(
+        (await c.read(myCoachesControllerProvider.future)).pendingRequests,
+        isEmpty,
+      );
+      await settle(); // the list's own one-time background sync
+      clearInteractions(coaches);
+      final settingsBuilds = _CountingSettings.builds;
+
+      // The server opened the pairing; the pull brings it into the local DB.
+      when(
+        () => coaches.syncRelationshipsFromSupabase(),
+      ).thenAnswer((_) async => [pending]);
+      when(
+        () => coaches.getPendingCoachRequests(),
+      ).thenAnswer((_) async => [pending]);
+
+      await c.read(codeEntryControllerProvider.notifier).redeem('COACH42');
+
+      verify(() => coaches.syncRelationshipsFromSupabase()).called(1);
+      verify(() => coaches.syncMyCoachesData()).called(1);
+      final shown = await c.read(myCoachesControllerProvider.future);
+      expect(shown.pendingRequests.map((r) => r.coachUserId), ['coach-9']);
+      await settle();
+      expect(_CountingSettings.builds, greaterThan(settingsBuilds));
+    });
+
+    test("a coach's own Code: coach mode and the dashboard are rebuilt from "
+        'the new coach record', () async {
+      answer200({'ok': true, 'kind': 'coach', 'pro_days': 30});
+      final c = container();
+      final dash = c.listen(coachDashboardControllerProvider, (_, _) {});
+      addTearDown(dash.close);
+      final settings = c.listen(settingsControllerProvider, (_, _) {});
+      addTearDown(settings.close);
+      expect(
+        (await c.read(coachDashboardControllerProvider.future)).isCoach,
+        isFalse,
+      );
+      final settingsBuilds = _CountingSettings.builds;
+
+      // The server wrote an approved coaches row; the pull brings it local.
+      when(
+        () => coaches.syncCurrentCoachDataFromSupabase(),
+      ).thenAnswer((_) async => true);
+      when(() => coaches.getCurrentCoachInfo()).thenAnswer(
+        (_) async =>
+            const CoachInfo(userId: _userId, deviceId: 'd-1', isCoach: true),
+      );
+
+      await c.read(codeEntryControllerProvider.notifier).redeem('coach42');
+
+      expect(
+        (await c.read(coachDashboardControllerProvider.future)).isCoach,
+        isTrue,
+      );
+      await settle();
+      expect(_CountingSettings.builds, greaterThan(settingsBuilds));
+    });
+
+    test('a failed pull still leaves the Code redeemed', () async {
+      answer200({'ok': true, 'kind': 'paired', 'coach_user_id': 'coach-9'});
+      when(
+        () => coaches.syncRelationshipsFromSupabase(),
+      ).thenThrow(Exception('offline'));
+      final c = container();
+
+      final result = await c
+          .read(codeEntryControllerProvider.notifier)
+          .redeem('COACH42');
+
+      expect((result! as CodeRedeemed).kind, RedeemedKind.paired);
+      expect(c.read(codeEntryControllerProvider).hasError, isFalse);
+    });
+
+    test('a giveaway or influencer Code leaves coaching alone', () async {
+      for (final body in [
+        {'ok': true, 'kind': 'giveaway', 'pro_days': 365},
+        {'ok': true, 'kind': 'attributed'},
+      ]) {
+        answer200(body);
+        final c = container();
+        await c.read(codeEntryControllerProvider.notifier).redeem('X');
+      }
+      verifyNever(() => coaches.syncRelationshipsFromSupabase());
+      verifyNever(() => coaches.syncCurrentCoachDataFromSupabase());
     });
   });
 

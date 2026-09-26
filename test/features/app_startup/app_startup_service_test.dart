@@ -44,6 +44,7 @@ import 'package:supabase_flutter/supabase_flutter.dart' hide AuthException;
 import 'package:mealvana_endurance/features/ai_credits/data/revenuecat_service.dart';
 import 'package:mealvana_endurance/features/app_startup/application/app_startup_provider.dart';
 import 'package:mealvana_endurance/features/app_startup/application/app_startup_service.dart';
+import 'package:mealvana_endurance/features/auth/application/grace_claim_service.dart';
 import 'package:mealvana_endurance/features/nutrition_plan/data/food_repository.dart';
 import 'package:mealvana_endurance/features/subscription/application/pro_gate.dart';
 import 'package:mealvana_endurance/features/subscription/application/subscription_status_provider.dart';
@@ -82,6 +83,8 @@ class _MockEntitlementsRepository extends Mock
     implements UserEntitlementsRepository {}
 
 class _MockScheduler extends Mock implements LocalNotificationScheduler {}
+
+class _MockFunctions extends Mock implements FunctionsClient {}
 
 /// Stands in for the native RevenueCat SDK and records the order of calls.
 class _FakeRevenueCatSdk implements RevenueCatSdk {
@@ -144,6 +147,9 @@ class _FakeUser extends Fake implements User {
   @override
   final String id;
   _FakeUser(this.id);
+
+  @override
+  bool get isAnonymous => false;
 }
 
 /// BuildContext stub that reports mounted=false so DirtyRecordRecoveryDialog
@@ -296,7 +302,10 @@ void main() {
   });
 
   /// Builds a ProviderContainer wired to test doubles.
-  ProviderContainer makeContainer({MockFoodRepository? foodRepo}) {
+  ProviderContainer makeContainer({
+    MockFoodRepository? foodRepo,
+    GraceClaimService? graceClaim,
+  }) {
     final deps = AppExternalDeps(
       supabaseClient: mockSupabase,
       logger: mockLogger,
@@ -311,6 +320,8 @@ void main() {
         appDatabaseProvider.overrideWithValue(database),
         if (foodRepo != null)
           foodRepositoryProvider.overrideWithValue(foodRepo),
+        if (graceClaim != null)
+          graceClaimServiceProvider.overrideWithValue(graceClaim),
       ],
     );
   }
@@ -504,6 +515,82 @@ void main() {
       await service.initializeAppGate();
 
       expect(sdk.calls, ['configure']);
+    });
+  });
+
+  // ─── retryPendingGraceClaim: mp-561 (card mp-555) ─────────────────────────
+  //
+  // An old install whose grace claim got no answer claims again at the next
+  // start. The claim service is the real one over in-memory preferences;
+  // only the `grace-claim` function is faked.
+
+  group('retryPendingGraceClaim', () {
+    const userId = 'old-install-user';
+    late _MockFunctions functions;
+    late _MockSubscriptionService subscription;
+
+    Future<(ProviderContainer, SharedPreferences)> graceContainer(
+      Map<String, Object> stored,
+    ) async {
+      SharedPreferences.setMockInitialValues(stored);
+      final prefs = await SharedPreferences.getInstance();
+      final container = makeContainer(
+        graceClaim: GraceClaimService(
+          supabase: mockSupabase,
+          subscriptions: subscription,
+          logger: mockLogger,
+          prefs: prefs,
+        ),
+      );
+      addTearDown(container.dispose);
+      return (container, prefs);
+    }
+
+    setUp(() {
+      functions = _MockFunctions();
+      subscription = _MockSubscriptionService();
+      when(() => subscription.forgetCachedStatus()).thenAnswer((_) async {});
+      when(() => mockSupabase.functions).thenReturn(functions);
+      when(() => mockAuth.currentUser).thenReturn(_FakeUser(userId));
+    });
+
+    test('a marked account claims again and the mark clears', () async {
+      when(() => functions.invoke('grace-claim')).thenAnswer(
+        (_) async => FunctionResponse(
+          status: 200,
+          data: {'ok': true, 'status': 'granted', 'pro_days': 30},
+        ),
+      );
+      final (container, prefs) = await graceContainer({
+        GraceClaimService.pendingKey: userId,
+      });
+
+      await container.read(appStartupServiceProvider).retryPendingGraceClaim();
+
+      verify(() => functions.invoke('grace-claim')).called(1);
+      verify(() => subscription.forgetCachedStatus()).called(1);
+      expect(prefs.getString(GraceClaimService.pendingKey), isNull);
+    });
+
+    test('no mark: startup asks nothing', () async {
+      final (container, _) = await graceContainer({});
+
+      await container.read(appStartupServiceProvider).retryPendingGraceClaim();
+
+      verifyNever(() => functions.invoke(any()));
+    });
+
+    test('a retry with no answer does not throw and keeps the mark', () async {
+      when(
+        () => functions.invoke('grace-claim'),
+      ).thenAnswer((_) async => throw Exception('SocketException'));
+      final (container, prefs) = await graceContainer({
+        GraceClaimService.pendingKey: userId,
+      });
+
+      await container.read(appStartupServiceProvider).retryPendingGraceClaim();
+
+      expect(prefs.getString(GraceClaimService.pendingKey), userId);
     });
   });
 

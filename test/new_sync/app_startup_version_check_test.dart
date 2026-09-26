@@ -169,6 +169,9 @@ void main() {
       when(
         () => mockAppStartupService.initializeAppGate(),
       ).thenAnswer((_) async {});
+      when(
+        () => mockAppStartupService.retryPendingGraceClaim(),
+      ).thenAnswer((_) async {});
 
       // Mock database provider is needed but won't be called during version check
       // We need to override it to prevent real database initialization
@@ -307,6 +310,9 @@ void main() {
       ).thenAnswer((_) async {});
       when(
         () => mockAppStartupService.initializeAppGate(),
+      ).thenAnswer((_) async {});
+      when(
+        () => mockAppStartupService.retryPendingGraceClaim(),
       ).thenAnswer((_) async {});
 
       final containerWithDb = ProviderContainer(

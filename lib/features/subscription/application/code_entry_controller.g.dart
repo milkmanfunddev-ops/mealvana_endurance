@@ -21,6 +21,13 @@ part of 'code_entry_controller.dart';
 /// the status provider asked again, which opens the gate and moves the
 /// person into the app, as after the grace claim.
 ///
+/// A Code that changes coaching (mp-600, card mp-598) updates the app at
+/// once: a coach's own Code pulls the new `coaches` row, an athlete's coach
+/// Code pulls the pending pairing, and coach mode (Settings) and both
+/// pairing lists (the athlete's My Coaches, the coach's dashboard) are
+/// rebuilt from it. The pull comes first because both lists sync only once
+/// per notifier, and Riverpod keeps the notifier across an invalidate.
+///
 /// keepAlive for the same reason as [ProPaywallController]: the entry only
 /// `ref.read`s the notifier, and a redemption in flight must finish its
 /// status refresh even if the sheet is closed under it. [reset] clears the
@@ -42,6 +49,13 @@ const codeEntryControllerProvider = CodeEntryControllerProvider._();
 /// the status provider asked again, which opens the gate and moves the
 /// person into the app, as after the grace claim.
 ///
+/// A Code that changes coaching (mp-600, card mp-598) updates the app at
+/// once: a coach's own Code pulls the new `coaches` row, an athlete's coach
+/// Code pulls the pending pairing, and coach mode (Settings) and both
+/// pairing lists (the athlete's My Coaches, the coach's dashboard) are
+/// rebuilt from it. The pull comes first because both lists sync only once
+/// per notifier, and Riverpod keeps the notifier across an invalidate.
+///
 /// keepAlive for the same reason as [ProPaywallController]: the entry only
 /// `ref.read`s the notifier, and a redemption in flight must finish its
 /// status refresh even if the sheet is closed under it. [reset] clears the
@@ -60,6 +74,13 @@ final class CodeEntryControllerProvider
   /// server, so the SDK's cached status still says locked: it is dropped and
   /// the status provider asked again, which opens the gate and moves the
   /// person into the app, as after the grace claim.
+  ///
+  /// A Code that changes coaching (mp-600, card mp-598) updates the app at
+  /// once: a coach's own Code pulls the new `coaches` row, an athlete's coach
+  /// Code pulls the pending pairing, and coach mode (Settings) and both
+  /// pairing lists (the athlete's My Coaches, the coach's dashboard) are
+  /// rebuilt from it. The pull comes first because both lists sync only once
+  /// per notifier, and Riverpod keeps the notifier across an invalidate.
   ///
   /// keepAlive for the same reason as [ProPaywallController]: the entry only
   /// `ref.read`s the notifier, and a redemption in flight must finish its
@@ -85,7 +106,7 @@ final class CodeEntryControllerProvider
 }
 
 String _$codeEntryControllerHash() =>
-    r'dd9a67d710ba2251a6747e20ca557bc3c684f3e0';
+    r'15e041e7088175bcaca8862b8970094c9bcadcce';
 
 /// Our own Code entry (mp-458), reached from Redeem code in the paywall's ⋯
 /// menu (mp-494) and on the Subscription screen (mp-495). Never the App
@@ -99,6 +120,13 @@ String _$codeEntryControllerHash() =>
 /// server, so the SDK's cached status still says locked: it is dropped and
 /// the status provider asked again, which opens the gate and moves the
 /// person into the app, as after the grace claim.
+///
+/// A Code that changes coaching (mp-600, card mp-598) updates the app at
+/// once: a coach's own Code pulls the new `coaches` row, an athlete's coach
+/// Code pulls the pending pairing, and coach mode (Settings) and both
+/// pairing lists (the athlete's My Coaches, the coach's dashboard) are
+/// rebuilt from it. The pull comes first because both lists sync only once
+/// per notifier, and Riverpod keeps the notifier across an invalidate.
 ///
 /// keepAlive for the same reason as [ProPaywallController]: the entry only
 /// `ref.read`s the notifier, and a redemption in flight must finish its
