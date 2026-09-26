@@ -528,3 +528,33 @@ _Avoid_: Issue, error report, bug ticket
 **Follow-up test**:
 A scenario nobody has run yet, which an agent wrote down while looking over a screen for other paths through it and other ways it could break. Together they are the backlog each later round draws from.
 _Avoid_: Additional test, test idea
+
+### Judging Vana
+
+**Scenario**:
+A saved script for one conversation with Vana: the account it runs as, that account's persona, the goal the conversation must achieve, and the opening turn plus any required beats. The corpus of Scenarios is kept in the repo so Vana can be judged again after every change.
+_Avoid_: Test case, prompt, eval (a Scenario is never a single message)
+
+**Run**:
+One execution of one Scenario against the real app: the conversation itself, judged from its Transcript plus what the app did. Scores compare Runs of the same Scenario.
+_Avoid_: Attempt, eval run
+
+**Examiner**:
+The model session that holds the conversation with Vana in the app and Marks each Run against the Rubric. It plays the athlete, improvising within the Scenario, and writes the verdict that feeds Improvements.
+_Avoid_: Judge (that is the frozen image pipeline's model call), grader
+
+**Mark**:
+One Run's number, 0 to 100, the weighted combination of its Rubric dimension marks. An Eval round passes at an average of 90 with no single Mark below 80.
+_Avoid_: Score, rating (both are the meal library's text ranking)
+
+**Rubric**:
+The fixed list of dimensions and weights every Run is Marked against, with written anchors so different Examiner sessions mark alike. Lee owns it; the Examiner drafts and he approves.
+_Avoid_: Scoring system, parameters
+
+**Improvement**:
+A proposed change to Vana — her prompt, Context block, Tools or models — recorded with the Run that motivated it, and pending until applied and re-judged. The Improvement backlog is the loop: Mark, improve, re-run.
+_Avoid_: Fix (an Improvement is not yet a change), ticket (it may become one)
+
+**Eval round**:
+One pass of every Scenario in the corpus, one Run each, producing the round's average Mark and every Run's verdict. The number the project works to raise is the round's average.
+_Avoid_: Eval run (a Run is one Scenario), pass
