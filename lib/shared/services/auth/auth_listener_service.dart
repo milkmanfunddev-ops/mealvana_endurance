@@ -22,6 +22,7 @@ import '../../../features/carb_loading/presentation/providers/carb_loading_food_
 import '../../../features/calendar/presentation/providers/calendar_controller.dart';
 import '../../../features/integrations/presentation/providers/connect_training_controller.dart';
 import '../../../features/nutrition_plan/presentation/providers/macro_targets_controller.dart';
+import '../../../features/meal_planning/application/youre_set_controller.dart';
 
 const _onboardingTempUserIdKey = 'onboarding_temp_user_id';
 
@@ -215,6 +216,8 @@ class AuthListenerService {
 
       // Nutrition plan
       _ref.invalidate(macroTargetsControllerProvider);
+      // The "you're set" card owed to this account's confirm (mp-235).
+      _ref.invalidate(youreSetControllerProvider);
 
       // Notify GoRouter to re-evaluate redirects on the current route.
       // The redirect function checks Supabase session directly and

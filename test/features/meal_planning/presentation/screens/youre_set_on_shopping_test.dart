@@ -10,6 +10,7 @@
 /// notifier from the producer's `confirm_plan` answer.
 library;
 
+import 'package:flutter/foundation.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:flutter_test/flutter_test.dart';
@@ -32,7 +33,6 @@ import 'package:mealvana_endurance/features/meal_planning/presentation/screens/f
 import 'package:mealvana_endurance/features/meal_planning/presentation/screens/plan_tab.dart';
 import 'package:mealvana_endurance/features/meal_planning/presentation/screens/shopping_tab.dart';
 import 'package:mealvana_endurance/features/meal_planning/presentation/widgets/vana_situation_scope.dart';
-import 'package:mealvana_endurance/features/meal_planning/presentation/widgets/youre_set_on_shopping.dart';
 import 'package:mealvana_endurance/features/nutrition_plan/domain/run_parameters.dart';
 import 'package:mealvana_endurance/shared/providers/unit_system_provider.dart';
 
@@ -95,6 +95,7 @@ void main() {
     MealPlan? current,
     FoodTab initialTab = FoodTab.plan,
     ShoppingListState? list,
+    ValueListenable<bool>? visible,
   }) async {
     tester.view.physicalSize = const Size(800, 2400);
     tester.view.devicePixelRatio = 1;
@@ -104,7 +105,15 @@ void main() {
       routes: [
         GoRoute(
           path: '/',
-          builder: (_, _) => FoodScreen(initialTab: initialTab),
+          builder: (_, _) => visible == null
+              ? FoodScreen(initialTab: initialTab)
+              : ValueListenableBuilder<bool>(
+                  valueListenable: visible,
+                  builder: (_, v, _) => VanaSituationVisibility(
+                    visible: v,
+                    child: FoodScreen(initialTab: initialTab),
+                  ),
+                ),
         ),
         GoRoute(
           path: '/vana',
@@ -281,41 +290,20 @@ void main() {
   });
 
   testWidgets('the shell leaving the Food tab clears the card', (tester) async {
-    plan = _FakePlanController(confirmed, confirmed, week);
     final visible = ValueNotifier<bool>(true);
     addTearDown(visible.dispose);
-    await tester.pumpWidget(
-      ProviderScope(
-        overrides: [
-          contentServiceProvider.overrideWith(testContentService),
-          mealPlanControllerProvider.overrideWith(() => plan),
-        ],
-        child: MaterialApp(
-          home: Scaffold(
-            body: ValueListenableBuilder<bool>(
-              valueListenable: visible,
-              builder: (_, v, _) => VanaSituationVisibility(
-                visible: v,
-                child: SingleChildScrollView(
-                  child: YoureSetOnShopping(
-                    list: listFor(confirmed.id),
-                    onShowPlan: () {},
-                  ),
-                ),
-              ),
-            ),
-          ),
-        ),
-      ),
-    );
-    container = ProviderScope.containerOf(
-      tester.element(find.byType(YoureSetOnShopping)),
+    await pumpFood(
+      tester,
+      current: confirmed,
+      initialTab: FoodTab.shopping,
+      visible: visible,
     );
     container.read(youreSetControllerProvider.notifier).confirmed(confirmed.id);
     await settle(tester);
     expect(find.byKey(_card), findsOneWidget);
 
-    // The athlete taps another tab in the shell, then comes back.
+    // The athlete taps another tab in the shell, then comes back. The Food
+    // screen watches this, not the card, which may be scrolled away.
     visible.value = false;
     await settle(tester);
     visible.value = true;

@@ -74,6 +74,23 @@ class _FoodScreenState extends ConsumerState<FoodScreen> {
     }
   }
 
+  bool? _visible;
+
+  // The shell keeps a left tab built, so leaving the Food tab is a
+  // visibility flip, not a dispose. Watched here rather than on the card,
+  // which is off screen while the list scrolls or loads (mp-235).
+  @override
+  void didChangeDependencies() {
+    super.didChangeDependencies();
+    final visible = VanaSituationVisibility.of(context);
+    final left = _visible == true && !visible;
+    _visible = visible;
+    if (left) {
+      final card = ref.read(youreSetControllerProvider.notifier);
+      WidgetsBinding.instance.addPostFrameCallback((_) => card.dismiss());
+    }
+  }
+
   void _select(FoodTab tab) {
     if (!mounted) return;
     _leaving(tab);

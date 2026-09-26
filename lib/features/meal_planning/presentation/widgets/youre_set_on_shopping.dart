@@ -9,7 +9,6 @@ import '../../application/shopping_list_controller.dart';
 import '../../application/youre_set_controller.dart';
 import '../../domain/vana_part.dart';
 import 'confirmed_card.dart';
-import 'vana_situation_scope.dart';
 import 'week_card.dart';
 import 'write_failure_snackbar.dart';
 
@@ -17,9 +16,9 @@ import 'write_failure_snackbar.dart';
 /// (mp-235, ticket 131), then the week once it is laid across.
 ///
 /// Draws only over the list of the plan just confirmed
-/// ([youreSetControllerProvider]); nothing otherwise. Closing it, or the
-/// shell leaving the Food tab, clears it for good; the Food screen clears it
-/// when its segment leaves Shopping.
+/// ([youreSetControllerProvider]); nothing otherwise. Closing it clears it
+/// for good; the Food screen clears it when its segment leaves Shopping or
+/// the shell leaves the Food tab.
 class YoureSetOnShopping extends ConsumerStatefulWidget {
   const YoureSetOnShopping({
     super.key,
@@ -38,23 +37,6 @@ class YoureSetOnShopping extends ConsumerStatefulWidget {
 }
 
 class _YoureSetOnShoppingState extends ConsumerState<YoureSetOnShopping> {
-  bool? _visible;
-
-  @override
-  void didChangeDependencies() {
-    super.didChangeDependencies();
-    // The shell keeps a left tab built, so leaving is a visibility flip,
-    // not a dispose.
-    final visible = VanaSituationVisibility.of(context);
-    final left = _visible == true && !visible;
-    _visible = visible;
-    if (left) {
-      WidgetsBinding.instance.addPostFrameCallback((_) {
-        if (mounted) _dismiss();
-      });
-    }
-  }
-
   void _dismiss() => ref.read(youreSetControllerProvider.notifier).dismiss();
 
   Future<void> _layAcross() async {
