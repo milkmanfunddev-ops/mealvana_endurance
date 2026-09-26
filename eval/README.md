@@ -22,6 +22,8 @@ of every Scenario).
   reports to it while a round runs.
 - `accounts.md`. Persona accounts mapped to the Scenarios they serve. Credentials never live in
   this directory; they go in the secrets directory.
+- `setup-account.mjs`. The grant/top-up half of the account recipe (`accounts.md` has the rest):
+  makes one account hold Pro and wallet budget, idempotently, dev only.
 
 Everything under `/eval` is committed and nothing here is gitignored. The corpus and the round
 history are meant to be read months from now.
