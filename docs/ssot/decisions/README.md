@@ -37,6 +37,8 @@ from `../mealvana_endurance_qa` never touches it.
 
 ## Fresh clone
 
+Step-by-step for an agent, with the exact tool calls: `RUNNING-THE-PAGE.md` beside this file.
+
 Everything here runs from a checkout of this repo. Nothing reads a user name or a session id;
 every path is repo-relative, and the page's data lives in the artifact's own database, not on
 anyone's laptop. Two things are read from the home directory: Matt Pocock's skills plugin in
