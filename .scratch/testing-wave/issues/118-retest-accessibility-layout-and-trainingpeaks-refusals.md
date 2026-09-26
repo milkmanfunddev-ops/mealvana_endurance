@@ -1,6 +1,6 @@
 # 118: Retest: accessibility, layout, TrainingPeaks refusals and the dev button
 
-**Status:** ready-for-agent
+**Status:** in-progress (wave 36, 2026-09-26)
 **Blocked by:** none.
 **Pair with:** 119 (Profile & Preferences, same account): 21-004 and 64-001 may leave test@test.com's TrainingPeaks connection marked as needing reconnection, which 119's 31-006 chips and 31-013 Connected Apps read. 122: this run's 11-005 redeems DEVCOACH30 on a new athlete, a pending pairing to test@test.com as coach; 122 accepts and declines pairings (11-009). Each checks only its own athletes' pairings.
 **Next:** `/implement-lee testing-wave`

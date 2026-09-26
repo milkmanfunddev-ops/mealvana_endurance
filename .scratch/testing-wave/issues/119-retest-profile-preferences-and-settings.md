@@ -1,6 +1,6 @@
 # 119: Retest: Profile & Preferences and the Settings rows
 
-**Status:** ready-for-agent
+**Status:** in-progress (wave 36, 2026-09-26)
 **Blocked by:** none.
 **Pair with:** 118 (may mark test@test.com's TrainingPeaks connection as needing reconnection), and 120 (its 86-010 taps the same TrainingPeaks name chip and saves on test@test.com). This run saves test@test.com's water bottle (31-002, 31-008) and a chip (31-006). Each checks only its own saves, with times in `notes.md`.
 **Next:** `/implement-lee testing-wave`
