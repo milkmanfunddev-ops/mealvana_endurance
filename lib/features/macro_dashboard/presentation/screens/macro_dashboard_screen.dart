@@ -1351,6 +1351,22 @@ class _MacroDashboardBodyState extends ConsumerState<MacroDashboardBody> {
     }
   }
 
+  /// The pull's work: a forced sync of the activities table and every
+  /// connected integration (the controller's own 20 s timeout bounds it),
+  /// then the day's recompute, so the indicator stays until the timeline
+  /// shows the fetched change. Both are reads followed by an invalidate:
+  /// a second pull after a refresh repeats them safely, and the indicator
+  /// refuses a second pull while one is in flight.
+  Future<void> _refreshDay() async {
+    await ref.read(activitiesControllerProvider.notifier).forceRefresh();
+    if (!mounted) return;
+    try {
+      await ref.read(macroDashboardDayProvider.future);
+    } catch (_) {
+      // The day surface reports its own error state; the pull is over.
+    }
+  }
+
   @override
   Widget build(BuildContext context) {
     final view = ref.watch(macroDashboardViewProvider);
@@ -1400,24 +1416,45 @@ class _MacroDashboardBodyState extends ConsumerState<MacroDashboardBody> {
         // The timeline runs full-height beneath the block and dissolves
         // under its backdrop as it scrolls up.
         Positioned.fill(
-          child: ListView(
-            padding: EdgeInsets.fromLTRB(
-              18,
-              _blockHeight,
-              18,
-              // Whatever occupies the bottom edge, plus one gap above it,
-              // so the LAST card scrolls fully clear of it rather than
-              // landing flush against it. While picking that occupant is
-              // the docked panel (already measured with its own clearance);
-              // otherwise it is the shell's bottom chrome. Gated on
-              // `picking` so no phantom padding survives the unmount.
-              (picking ? _dockHeight : widget.bottomInset) +
-                  MacroDashboardScreen._dockGap(context),
+          // Pull to refresh syncs the connected apps and the activities
+          // table, bypassing the staleness check (Lee, 2026-09-26, Finding
+          // 117-005): an athlete whose coach moved a FinalSurge workout
+          // had no manual way to fetch it. The spinner drops in below the
+          // pinned block. Day-to-day navigation stays with the header
+          // chevrons: no screen-level horizontal swipe (dh5).
+          child: RefreshIndicator(
+            key: const ValueKey('macro_dashboard.refresh'),
+            color: MeTokens.electrolyte,
+            backgroundColor: MeTokens.blackberry,
+            edgeOffset: _blockHeight,
+            onRefresh: _refreshDay,
+            child: ListView(
+              physics: const AlwaysScrollableScrollPhysics(),
+              padding: EdgeInsets.fromLTRB(
+                18,
+                _blockHeight,
+                18,
+                // Whatever occupies the bottom edge, plus one gap above it,
+                // so the LAST card scrolls fully clear of it rather than
+                // landing flush against it. While picking that occupant is
+                // the docked panel (already measured with its own clearance);
+                // otherwise it is the shell's bottom chrome. Gated on
+                // `picking` so no phantom padding survives the unmount.
+                (picking ? _dockHeight : widget.bottomInset) +
+                    MacroDashboardScreen._dockGap(context),
+              ),
+              children: [
+                for (final node in nodes)
+                  screen._railRow(
+                    context,
+                    ref,
+                    view,
+                    node,
+                    dayWorkouts,
+                    picking,
+                  ),
+              ],
             ),
-            children: [
-              for (final node in nodes)
-                screen._railRow(context, ref, view, node, dayWorkouts, picking),
-            ],
           ),
         ),
         // The pinned instrument block (never scrolls) on its dissolve.
