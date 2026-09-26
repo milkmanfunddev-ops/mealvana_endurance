@@ -5,11 +5,11 @@ conventions as `prologue.md` (`SYNC`, `URL`, `RECORD`, README first). `<feature>
 section file whose cards changed in this run (`mealplanning`, `paywall`, `shopping-list`,
 `ai-cost`, `misc`), and `<file>` is `docs/ssot/decisions/<feature>.md`.
 
-## 0. Drawn pictures, only when asked
+## 0. Every card has a picture
 
-A drawn diagram is made only when Lee asks for one on a card (README, Drawn pictures):
-`SYNC draw <spec.json> docs/ssot/decisions/images/<feature>/<id>.svg`, then
-`SYNC attach-svg <file> <id> <svg>`.
+Every card has a picture (README, Drawn pictures). If this run wrote or changed a card that has
+no `image:` and no `svg:`, run the `ssot-pictures` agent (`.claude/agents/ssot-pictures.md`) on
+those ids. It draws a diagram that explains the card, not one that restates it.
 
 ## 0b. Capture the cards that name a screen
 

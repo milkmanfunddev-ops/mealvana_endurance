@@ -123,14 +123,14 @@ test('approve moves a section from proposals to the record with a dated status l
   assert.doesNotMatch(serialize(proposals), /sm-001/);
 });
 
-test('approve on an already-approved id marks it withdrawn and keeps the earlier history line', () => {
+test('approve on an already-approved id is a sign-off: it stays approved and gains a history line', () => {
   const proposals = parse(fixture), ssot = emptySsot();
   apply({ 'sm-001': { verdict: 'approve', at } }, proposals, ssot);
-  const r = apply({ 'sm-001': { verdict: 'approve', at: '2026-09-15T10:00:00Z' } }, proposals, ssot);
-  assert.deepEqual(r.applied, [{ id: 'sm-001', to: 'withdrawn' }]);
+  const r = apply({ 'sm-001': { verdict: 'approve', at: '2026-09-15T10:00:00Z', by: 'Xuan' } }, proposals, ssot);
+  assert.deepEqual(r.applied, [{ id: 'sm-001', to: 'approved' }]);
   const text = serialize(ssot);
-  assert.match(text, /^- status: withdrawn$/m);
-  assert.match(text, /^> 2026-09-14 approved\n> 2026-09-15 withdrawn$/m);
+  assert.match(text, /^- status: approved$/m);
+  assert.match(text, /^> 2026-09-14 approved\n> 2026-09-15 approved by Xuan$/m);
 });
 
 test('reject records the reason in the record file', () => {
@@ -187,7 +187,7 @@ test('a verdict carrying `by` names the giver in the history line; one without s
   const text = serialize(ssot);
   assert.match(text, /^> 2026-09-14 approved by Xuan$/m);
   assert.match(text, /^> 2026-09-14 rejected: no$/m);
-  const r2 = apply({ 'sm-001': { verdict: 'approve', at, by: 'Lee' } }, proposals, ssot);
+  const r2 = apply({ 'sm-001': { verdict: 'withdraw', at, by: 'Lee' } }, proposals, ssot);
   assert.deepEqual(r2.applied, [{ id: 'sm-001', to: 'withdrawn' }]);
   assert.match(serialize(ssot), /^> 2026-09-14 withdrawn by Lee$/m);
   const p2 = parse(fixture);
@@ -367,7 +367,7 @@ test('a page document says who ruled and when, from its last verdict line', () =
   assert.equal(toDocuments(folded)[0].ruled, null);
   assert.equal(toDocuments(folded)[1].ruled, null);
   // The latest ruling wins: approved then withdrawn shows withdrawn.
-  apply({ 'sm-001': { verdict: 'approve', at: '2026-09-15T10:00:00Z', by: 'Lee' } }, proposals, ssot, '2026-09-15');
+  apply({ 'sm-001': { verdict: 'withdraw', at: '2026-09-15T10:00:00Z', by: 'Lee' } }, proposals, ssot, '2026-09-15');
   assert.deepEqual(toDocuments(ssot)[0].ruled, { status: 'withdrawn', by: 'Lee', date: '2026-09-15' });
   // Change cards name their acceptor too; the reason after ':' never leaks into the name.
   const p2 = parse(fixture), s2 = emptySsot();

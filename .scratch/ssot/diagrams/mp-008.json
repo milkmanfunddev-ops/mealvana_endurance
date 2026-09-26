@@ -1,0 +1,4 @@
+{"kind":"compare","title":"The first line is about the athlete",
+"left":{"head":"Other option","lines":["\"Hi! How can I help?\"","plus example-question","chips or an intro card,","or a wait while the last","chat is summarised"]},
+"right":{"head":"This card's answer","lines":["\"Tonight's run is at","5:30. Want me to walk","you through fuelling it?\"","→ sent at once, from","what she already holds"]},
+"example":["She leads with the most relevant thing she knows:","the next workout, the weather, what is on screen,","or something the athlete told her before."]}

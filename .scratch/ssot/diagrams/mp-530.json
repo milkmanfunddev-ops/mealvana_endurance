@@ -1,1 +1,5 @@
-{"kind":"flow","title":"Who the grace month covers","rows":[[{"id":"acct","label":"Registered account,\ncreated before the flip","tone":"ink"}],[{"id":"ask","label":"Grant to at least\nflip + 30 days?","tone":"pending"}],[{"id":"mark","label":"Mark founding\nonly","tone":"muted"},{"id":"grant","label":"Grant 30 days,\nthen mark founding","tone":"ok"}]],"edges":[{"from":"acct","to":"ask"},{"from":"ask","to":"mark","label":"yes"},{"from":"ask","to":"grant","label":"no"}],"example":["Dev dry run: 76 selected, 75 grant, 1 mark only","Second run on the same account: grants nobody"]}
+{"kind":"timeline","title":"Accounts made before the paywall","steps":[
+{"at":"24 Sep (a week before)","label":"Email to existing users: a free month is coming.","tone":"muted"},
+{"at":"1 Oct (planned)","label":"Lee switches the paywall on. Every existing account,\nsubscribers and team too, gets 30 days of Pro\nand the founding-member mark.","tone":"accent"},
+{"at":"31 Oct","label":"The free month ends; the account needs Pro.","tone":"ink"}],
+"example":["Example: free access already running to 15 Nov","is kept as it is; that account only gets the mark."]}

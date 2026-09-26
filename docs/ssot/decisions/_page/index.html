@@ -205,6 +205,8 @@
       <button id="menu" aria-label="Categories" aria-controls="nav" aria-expanded="false">☰ <span id="menuCount"></span></button>
       <input id="q" type="search" placeholder="Search" aria-label="Search">
       <select id="feat" aria-label="Feature"><option value="">All features</option></select>
+      <select id="who" aria-label="Who is ruling"><option value="">Who are you?</option><option>Lee</option><option>Xuan</option></select>
+      <button id="finishAll" class="primary" disabled>Finish all</button>
       <div class="status-line" id="status">Connecting.</div>
     </header>
     <main id="main"><div class="empty">Loading.</div></main>
@@ -377,9 +379,19 @@
         ${why}
         ${alts}
         ${editBox}
+        <div class="acts">
+          <button class="approve ${e.queued && v && v.verdict === 'approve' ? 'on' : ''}" data-act="approve">${e.queued && v && v.verdict === 'approve' ? 'Approved' : 'Approve'}</button>
+          <button class="reject ${e.status === 'rejected' ? 'on' : ''}" data-act="reject">${e.status === 'rejected' ? 'Rejected' : 'Reject'}</button>
+          <button data-act="amend">Rewrite</button>
+          ${e.queued ? '<button data-act="undo">Undo</button>' : ''}
+        </div>
+        <div class="sub-form" data-form="reject"><textarea placeholder="Reason"></textarea><div class="row"><button data-act="reject-send" class="approve">Reject</button><button data-act="close">Cancel</button></div></div>
+        <div class="sub-form" data-form="amend">${amendForm}<div class="row"><button data-act="amend-send" class="approve">Send</button><button data-act="close">Cancel</button></div></div>
         <details class="more" ${state.open.has('more:' + d.id) ? 'open' : ''}><summary>More</summary>${more}</details>
         <details class="explain" ${open ? 'open' : ''}><summary>Ask</summary>
-          ${thread(d.id, 'Ask what a word means or why this was decided')}
+          ${thread(d.id, 'Ask what a word means, why this was decided, or say what should change')}
+          <div class="row"><button data-act="suggest" ${state.sample && (state.chats.get(d.id) || { turns: [] }).turns.length ? '' : 'disabled'}>Draft the rewrite from this conversation</button></div>
+          ${myChanges.map(([id, v]) => changeCard(id, v)).join('')}
         </details>
       </div>
     </section>`;
@@ -423,10 +435,14 @@
     const vis = g.items.filter(visible);
     let html = `<div class="cat-head"><div class="fname">${esc(featName(g.feature))}</div><h2>${esc(g.category)}</h2>
       <div class="tools">
-        <span class="hint">${g.n} decision${g.n === 1 ? '' : 's'}</span>
+        <span class="hint">${g.n} decision${g.n === 1 ? '' : 's'}${g.queued ? ` · ${g.queued} queued` : ''}${finished ? ` · finished ${finished.slice(0, 10)}` : ''}</span>
+        ${g.pend ? `<button data-approve-all="${esc(g.key)}">Approve all ${g.pend}</button>` : ''}
+        <button class="primary" data-finish-cat="${esc(g.key)}" ${g.queued && state.artifact && !state.sending ? '' : 'disabled'}>${finishLabel(g.key, 'Finish category')}</button>
       </div>${wordsIn(g)}</div>`;
     html += `<details class="discuss" ${state.open.has(catId) ? 'open' : ''} data-cat="${esc(g.key)}"><summary>Discuss this category</summary>
       ${thread(catId, '')}
+      <div class="row"><button data-act="suggest" ${state.sample ? '' : 'disabled'}>Suggest changes</button></div>
+      ${changes.map(([id, v]) => changeCard(id, v)).join('')}
     </details>`;
     const main = vis.filter(d => !d.detail), det = vis.filter(d => d.detail);
     html += main.length ? main.map(section).join('') : (det.length ? '' : '<div class="empty">Nothing here matches the pending filter or search.</div>');
@@ -488,11 +504,12 @@
     if (featSel.options.length !== feats.length + 1) { featSel.innerHTML = '<option value="">All features</option>' + feats.map(f => `<option value="${esc(f)}">${esc(featName(f))}</option>`).join(''); featSel.value = state.feat; }
     const gs = groups();
     if (!gs.length) { nav.innerHTML = '<div class="hint">No decisions loaded yet.</div>'; main.innerHTML = '<div class="empty">Loading.</div>'; return; }
-    if (state.cat !== 'vocab' && !(state.cat.startsWith('ref:') && state.refs.has(state.cat.slice(4))) && !gs.some(g => g.key === state.cat)) state.cat = gs[0].key;
+    if (state.cat !== 'vocab' && !(state.cat.startsWith('ref:') && state.refs.has(state.cat.slice(4))) && !gs.some(g => g.key === state.cat)) state.cat = (gs.find(g => g.pend) || gs[0]).key;
     let navHtml = '', lastF = null;
     for (const g of gs) {
       if (g.feature !== lastF) { navHtml += `${lastF !== null ? '</div>' : ''}<div class="feat"><div class="fname">${esc(featName(g.feature))}</div>`; lastF = g.feature; }
-      navHtml += `<button class="cat ${g.key === state.cat ? 'active' : ''}" data-goto="${esc(g.key)}"><span>${esc(g.category)}</span><span class="n">${g.n}</span></button>`;
+      const done = !g.pend && !g.queued && (state.meta.finished && state.meta.finished[g.key]);
+      navHtml += `<button class="cat ${g.key === state.cat ? 'active' : ''}" data-goto="${esc(g.key)}"><span>${esc(g.category)}</span><span class="n ${g.pend ? 'pend' : ''}">${done ? '<span class="done">done</span> ' : ''}${g.open ? '<span class="q">' + g.open + '?</span> ' : ''}${g.pend ? g.pend + ' / ' : ''}${g.n}</span></button>`;
     }
     nav.innerHTML = navHtml + '</div>' + `<div class="feat"><button class="cat ${state.cat === 'vocab' ? 'active' : ''}" data-goto="vocab"><span>Vocabulary</span><span class="n">${state.vocab.size}</span></button></div>` + (state.refs.size ? `<div class="feat"><div class="fname">Reference</div>${refsSorted().map(r => `<button class="cat ${state.cat === 'ref:' + r.id ? 'active' : ''}" data-goto="ref:${esc(r.id)}"><span>${esc(r.title)}</span></button>`).join('')}</div>` : '');
     if (state.cat.startsWith('ref:')) {
@@ -510,7 +527,11 @@
         ${next ? `<button data-goto="${esc(next.key)}" class="primary">Next: ${esc(next.category)}</button>` : '<span class="hint">Last category.</span>'}
       </div>`;
     }
-    $('#status').textContent = `${all.length} decisions${state.db ? '' : ' · offline'}`;
+    const pendTotal = all.filter(isPending).length, openQ = all.filter(isOpenQ).length, queued = [...state.verdicts.values()].filter(v => !v.applied).length;
+    const sent = state.lastSent ? ` · sent ${state.lastSent.n} to the terminal at ${state.lastSent.at.toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })}${queued ? ', waiting for it to apply' : ', applied'}` : '';
+    $('#status').textContent = `${all.length} decisions · ${queued} queued${state.db ? '' : ' · offline'}${sent}`;
+    $('#menuCount').textContent = queued ? String(queued) : '';
+    const fa = $('#finishAll'); fa.textContent = finishLabel('all', 'Finish all'); fa.disabled = !!state.sending || !queued || !state.artifact;
   }
 
   // Who is ruling. The platform tells the page nothing about the viewer, so each
@@ -572,7 +593,7 @@
       const refs = refsOf(d).map(cardText).join('\n\n');
       const glossary = termsUsed(d);
       const tickets = ticketsCiting(d.id);
-      return `You are explaining one product decision from the Mealvana Endurance app to Lee or Xuan, who need to understand it well enough to build it and to judge it. Answer in plain words, short sentences, no em-dashes, no hedging, no bullet lists unless he asks for options. Define every term of art the first time you use it, with a concrete example when one helps. When a term is defined nowhere in the material, say so plainly instead of guessing. Keep answers under 250 words unless he asks for more. Do not invent facts beyond the material below and what the tools return.${state.toolsOk ? ' Use the tools to read a card, ticket or term the material names when the answer depends on it.' : ''} The page is a read-only record of approved decisions; if the reader wants something changed, say it is changed in the terminal with Lee.${refsLine()}\n\nFEATURE PROBLEM STATEMENT:\n${problem}\n\nTHE DECISION (${d.id}, category ${d.category}, status ${eff(d).status}):\n${cardText(d)}\n${glossary ? `\nGLOSSARY TERMS THIS CARD USES:\n${glossary}\n` : ''}${refs ? `\nCARDS THIS DECISION NAMES, IN FULL:\n${refs}\n` : ''}${tickets ? `\nTICKETS THAT BUILT OR CITE IT:\n${tickets}\n` : ''}\nSIBLING DECISIONS IN THE SAME CATEGORY, ONE LINE EACH:\n${sib}`.slice(0, 60000);
+      return `You are explaining one approved product decision from the Mealvana Endurance app to Lee or Xuan, who need to understand it well enough to build it and to judge it. Answer in plain words, short sentences, no em-dashes, no hedging, no bullet lists unless he asks for options. Define every term of art the first time you use it, with a concrete example when one helps. When a term is defined nowhere in the material, say so plainly instead of guessing. Keep answers under 250 words unless he asks for more. Do not invent facts beyond the material below and what the tools return.${state.toolsOk ? ' Use the tools to read a card, ticket or term the material names when the answer depends on it.' : ''} When Lee says what should change, agree the wording with him in the thread; the page turns the thread into record changes when he presses the draft button.${refsLine()}\n\nFEATURE PROBLEM STATEMENT:\n${problem}\n\nTHE DECISION (${d.id}, category ${d.category}, status ${eff(d).status}):\n${cardText(d)}\n${glossary ? `\nGLOSSARY TERMS THIS CARD USES:\n${glossary}\n` : ''}${refs ? `\nCARDS THIS DECISION NAMES, IN FULL:\n${refs}\n` : ''}${tickets ? `\nTICKETS THAT BUILT OR CITE IT:\n${tickets}\n` : ''}\nSIBLING DECISIONS IN THE SAME CATEGORY, ONE LINE EACH:\n${sib}`.slice(0, 60000);
     }
     const list = g.items.map(x => `- ${x.id} ${x.title} [${eff(x).status}]${x.kind === 'question' ? ' (open question: ' + x.question + ')' : ': ' + x.decision}`).join('\n');
     return `You are discussing one category of product decisions from the Mealvana Endurance app with Lee, the product owner. Answer in plain words, short sentences, no em-dashes, no hedging. Keep answers under 250 words unless he asks for more. Refer to decisions by their id. Do not invent facts beyond the material below. If the material does not say, say so.${state.toolsOk ? ' Use the tools to read a card, ticket, term or reference document when the answer depends on it.' : ''}${refsLine()}\n\nFEATURE PROBLEM STATEMENT:\n${problem}\n\nCATEGORY: ${g.category}\nDECISIONS:\n${list}`;
@@ -696,7 +717,7 @@
     const sec = b.closest('section.d'); if (!sec) return;
     const d = state.decisions.get(sec.dataset.id); if (!d) return;
     const e = eff(d), act = b.dataset.act;
-    if (act === 'approve') return verdict(d.id, e.status === 'approved' ? 'withdraw' : 'approve');
+    if (act === 'approve') return verdict(d.id, 'approve');
     if (act === 'reject' || act === 'amend') { sec.querySelectorAll('.sub-form').forEach(f => f.classList.toggle('open', f.dataset.form === act && !f.classList.contains('open'))); const ta = sec.querySelector(`.sub-form[data-form=${act}] textarea`); if (ta) ta.focus(); return; }
     if (act === 'close') { sec.querySelectorAll('.sub-form').forEach(f => f.classList.remove('open')); return; }
     if (act === 'reject-send') return verdict(d.id, 'reject', sec.querySelector('.sub-form[data-form=reject] textarea').value.trim());
@@ -742,6 +763,7 @@
   $('#nav').addEventListener('click', ev => { const b = ev.target.closest('button[data-goto]'); if (!b) return; state.cat = b.dataset.goto; state.q = ''; $('#q').value = ''; setNav(false); render(); window.scrollTo({ top: 0 }); });
   $('#q').addEventListener('input', e => { state.q = e.target.value.trim().toLowerCase(); render(); });
   $('#feat').addEventListener('change', e => { state.feat = e.target.value; render(); });
+  $('#finishAll').addEventListener('click', () => finish());
   try { (JSON.parse(sessionStorage.getItem('ssot-open') || '[]')).forEach(id => state.open.add(id)); } catch {}
   try { state.cat = localStorage.getItem('ssot-cat') || ''; } catch {}
   // Every database change re-renders the column. Drafts, open forms, ticked clauses, focus and
@@ -768,6 +790,13 @@
     window.scrollTo({ top: s.scrollY });
   }
   const _render = render; render = function () { const s = snapshotDrafts(); _render(); restoreDrafts(s); try { localStorage.setItem('ssot-cat', state.cat); } catch {} };
+
+  (function wireWho() {
+    const sel = $('#who');
+    const saved = who();
+    if ([...sel.options].some(o => o.value === saved)) sel.value = saved; else if (saved) { try { localStorage.removeItem('ssot-who'); } catch {} }
+    sel.addEventListener('change', () => { try { sel.value ? localStorage.setItem('ssot-who', sel.value) : localStorage.removeItem('ssot-who'); } catch {} });
+  })();
 
   render();
 

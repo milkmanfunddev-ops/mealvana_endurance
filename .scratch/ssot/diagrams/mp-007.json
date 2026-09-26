@@ -1,0 +1,8 @@
+{"kind":"timeline","title":"Example: the first turns of a new plan",
+"steps":[
+{"at":"Athlete","label":"Taps New meal plan","tone":"muted"},
+{"at":"Vana: a read of the week","label":"\"Big week: two runs midweek and a long ride\non Saturday.\" No meals yet","tone":"accent"},
+{"at":"Vana: one question","label":"\"Who's eating with you this week?\"","tone":"accent"},
+{"at":"Athlete answers","label":"\"Just me and my partner.\""},
+{"at":"First meal picker","label":"Follows the answer: meals for two","tone":"ok"},
+{"at":"If the athlete asks something off topic","label":"She answers it in full, then offers to get back\nto picking. The draft is kept","tone":"muted"}]}

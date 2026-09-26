@@ -7,6 +7,7 @@ Feature name: Paywall
 - category: Price and trial
 - status: approved
 - image: none
+- svg: docs/ssot/decisions/images/paywall/mp-266.svg
 - screen: Paywall
 - source: Lee on the page 2026-09-14; grill 2026-09-15
 - folded: mp-052, mp-270, mp-279
@@ -27,6 +28,7 @@ Feature name: Paywall
 - category: Price and trial
 - status: approved
 - image: none
+- svg: docs/ssot/decisions/images/paywall/mp-429.svg
 - screen: Paywall
 - source: docs/revenuecat-spec-for-lee.md (Xuan, revised 2026-09-16); spec paywall 2026-09-21
 - folded: mp-452, mp-453, mp-506, mp-655
@@ -48,6 +50,7 @@ Feature name: Paywall
 - category: Price and trial
 - status: approved
 - image: none
+- svg: docs/ssot/decisions/images/paywall/mp-417.svg
 - screen: Paywall
 - source: Lee in the terminal 2026-09-16; wave paywall 1 ticket 08
 - folded: mp-459, mp-508, mp-509, mp-563, mp-667
@@ -69,6 +72,7 @@ Feature name: Paywall
 - category: Price and trial
 - status: approved
 - image: none
+- svg: docs/ssot/decisions/images/paywall/mp-528.svg
 - screen: none (a notification)
 - source: spec paywall 2026-09-21; wave paywall 2 ticket 04; Lee in the terminal 2026-09-22
 - folded: mp-456, mp-540
@@ -89,6 +93,7 @@ Feature name: Paywall
 - category: Existing users
 - status: approved
 - image: none
+- svg: docs/ssot/decisions/images/paywall/mp-530.svg
 - screen: none (a script Lee runs when the paywall goes live)
 - source: spec paywall 2026-09-21; wave paywall 2 ticket 06; Lee in the terminal 2026-09-22
 - folded: mp-283, mp-455, mp-541, mp-542
@@ -109,6 +114,7 @@ Feature name: Paywall
 - category: Existing users
 - status: approved
 - image: none
+- svg: docs/ssot/decisions/images/paywall/mp-555.svg
 - screen: Account screen
 - source: wave paywall 3 ticket 09
 - folded: mp-554, mp-561
@@ -132,6 +138,8 @@ Feature name: Paywall
 - status: approved
 - folded: mp-614, mp-616
 - image: none
+- svg: docs/ssot/decisions/images/paywall/mp-280.svg
+- noshot: shows the old $69.00 / $9.95 prices, which predate mp-429
 - screen: Paywall
 - source: grill 2026-09-15; Lee in the terminal 2026-09-23
 
@@ -147,12 +155,15 @@ Feature name: Paywall
 
 > 2026-09-26 overhaul: rewritten from mp-280
 > 2026-09-26 decided by Claude (Lee's delegation): recorded as built, checked in code (mp-614); no separate ended state on the Subscription screen (mp-616)
+> 2026-09-26 picture reused from docs/ssot/decisions/images/mealplanning/paywall-lapsed.png
+> 2026-09-26 screenshot removed: docs/ssot/decisions/images/mealplanning/paywall-lapsed.png (shows the old $69.00 / $9.95 prices, which predate mp-429)
 
 ## mp-505 · Without Pro, every AI feature is refused
 - category: When Pro ends
 - status: approved
 - folded: mp-654
 - image: none
+- svg: docs/ssot/decisions/images/paywall/mp-505.svg
 - screen: none (algorithm/data)
 - source: spec paywall 2026-09-21; wave paywall 1 ticket 02
 
@@ -173,6 +184,7 @@ Feature name: Paywall
 - category: When Pro ends
 - status: approved
 - image: none
+- svg: docs/ssot/decisions/images/paywall/mp-609.svg
 - screen: none (algorithm/data)
 - source: grill 2026-09-15; wave mealplanning 2 ticket 19; Lee in the terminal 2026-09-23 and 2026-09-25
 - folded: mp-284, mp-285, mp-317, mp-335, mp-454, mp-503, mp-679, mp-684, mp-686
@@ -194,6 +206,7 @@ Feature name: Paywall
 - category: When Pro ends
 - status: approved
 - image: none
+- svg: docs/ssot/decisions/images/paywall/mp-416.svg
 - screen: Paywall
 - source: Lee in the terminal 2026-09-16
 
@@ -213,6 +226,7 @@ Feature name: Paywall
 - category: Coach codes and restore
 - status: approved
 - image: none
+- svg: docs/ssot/decisions/images/paywall/mp-535.svg
 - screen: none (algorithm/data)
 - source: docs/revenuecat-spec-for-lee.md (Xuan); wave paywall 2 ticket 07
 - folded: mp-286, mp-458
@@ -297,6 +311,7 @@ Feature name: Paywall
 - category: The paywall screen
 - status: approved
 - image: none
+- svg: docs/ssot/decisions/images/paywall/mp-538.svg
 - screen: Paywall
 - source: wave paywall 2 ticket 14
 

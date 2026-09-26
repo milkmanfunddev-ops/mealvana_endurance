@@ -7,6 +7,7 @@ Feature name: Meal planning
 - category: Vana: who she is and how she talks
 - status: approved
 - image: none
+- svg: docs/ssot/decisions/images/mealplanning/mp-001-2.svg
 - screen: Vana chat
 - source: synthesis-and-recommendations.md; memory 08-26
 
@@ -48,6 +49,7 @@ Feature name: Meal planning
 - status: approved
 - folded: mp-012, mp-546
 - image: none
+- svg: docs/ssot/decisions/images/mealplanning/mp-214.svg
 - screen: Vana chat
 - source: Lee on the page 2026-09-13, rejecting mp-011
 
@@ -68,6 +70,7 @@ Feature name: Meal planning
 - category: Vana: who she is and how she talks
 - status: approved
 - image: none
+- svg: docs/ssot/decisions/images/mealplanning/mp-006-2.svg
 - screen: Vana chat
 - source: vana-chatbot-update-plan.md
 
@@ -88,6 +91,7 @@ Feature name: Meal planning
 - status: approved
 - folded: mp-010, mp-268, mp-278
 - image: none
+- svg: docs/ssot/decisions/images/mealplanning/mp-008.svg
 - screen: Vana chat
 - source: CONTEXT.md; memory 09-11; commit 1dedc493
 
@@ -108,6 +112,7 @@ Feature name: Meal planning
 - status: approved
 - folded: mp-003, mp-058, mp-443
 - image: none
+- svg: docs/ssot/decisions/images/mealplanning/mp-275.svg
 - screen: Plan tab
 - source: grill 2026-09-15
 
@@ -149,6 +154,7 @@ Feature name: Meal planning
 - status: approved
 - folded: mp-224, mp-226, mp-227, mp-228, mp-229, mp-421
 - image: none
+- svg: docs/ssot/decisions/images/mealplanning/mp-223.svg
 - screen: Any screen with the launcher
 - source: ticket 09; vana-moment.md; archive ticket 13; ticket 10; memory 09-11
 
@@ -170,6 +176,7 @@ Feature name: Meal planning
 - status: approved
 - folded: mp-246, mp-427, mp-547
 - image: none
+- svg: docs/ssot/decisions/images/mealplanning/mp-245-2.svg
 - screen: Vana chat
 - source: spec.md; ticket 01; 02-contract.md; archive ticket 01
 
@@ -191,6 +198,7 @@ Feature name: Meal planning
 - status: approved
 - folded: mp-020, mp-021, mp-023, mp-042
 - image: none
+- svg: docs/ssot/decisions/images/mealplanning/mp-273.svg
 - screen: none (algorithm/data)
 - source: grill 2026-09-15
 
@@ -211,6 +219,7 @@ Feature name: Meal planning
 - status: approved
 - folded: mp-044, mp-045, mp-274
 - image: none
+- svg: docs/ssot/decisions/images/mealplanning/mp-043-2.svg
 - screen: none (algorithm/data)
 - source: spec.md; archive ticket 04
 
@@ -230,7 +239,9 @@ Feature name: Meal planning
 - category: What Vana knows
 - status: approved
 - folded: mp-024, mp-025, mp-027, mp-028, mp-029, mp-030, mp-031, mp-037, mp-040, mp-277, mp-419
-- image: none
+- image: docs/ssot/decisions/images/mealplanning/vana-settings.png
+- caption: What Vana knows: every Memory in one list, each row with a delete button
+- svg: docs/ssot/decisions/images/mealplanning/mp-022-2.svg
 - screen: Vana settings
 - source: spec.md; CONTEXT.md
 
@@ -246,11 +257,13 @@ Feature name: Meal planning
 
 > 2026-09-26 overhaul: rewritten from mp-022, mp-024, mp-025, mp-027, mp-028, mp-029, mp-030, mp-031, mp-037, mp-040, mp-277
 > 2026-09-26 approved by Lee: memory as built, checked in code (mp-419)
+> 2026-09-26 picture captured at 1.27.0+3, 7dda7d94
 
 ## mp-041 · Coach mode never reads an athlete's Doll
 - category: What Vana knows
 - status: approved
 - image: none
+- svg: docs/ssot/decisions/images/mealplanning/mp-041-2.svg
 - screen: none (algorithm/data)
 - source: spec.md
 
@@ -292,6 +305,7 @@ Feature name: Meal planning
 - status: approved
 - folded: mp-233
 - image: none
+- svg: docs/ssot/decisions/images/mealplanning/mp-005.svg
 - screen: none (algorithm/data)
 - source: synthesis-and-recommendations.md
 
@@ -312,6 +326,7 @@ Feature name: Meal planning
 - status: approved
 - folded: mp-213
 - image: none
+- svg: docs/ssot/decisions/images/mealplanning/mp-007.svg
 - screen: Vana chat
 - source: vana-chatbot-update-plan.md; memory 09-03
 
@@ -332,6 +347,7 @@ Feature name: Meal planning
 - status: approved
 - folded: mp-230, mp-272, mp-620
 - image: none
+- svg: docs/ssot/decisions/images/mealplanning/mp-231.svg
 - screen: Vana chat
 - source: memory 08-31; 02-contract.md; memory 09-03; vana-chatbot-update-plan.md
 
@@ -351,7 +367,9 @@ Feature name: Meal planning
 - category: Planning a week
 - status: approved
 - folded: mp-269, mp-424, mp-593, mp-608, mp-425
-- image: none
+- image: docs/ssot/decisions/images/mealplanning/vana-settings.png
+- caption: Meal planning settings Vana reads: batch cooking, week start, plan length
+- svg: docs/ssot/decisions/images/mealplanning/mp-232.svg
 - screen: Vana settings
 - source: prototype-rebuild-spec.md; 05-flutter-feature.md
 
@@ -368,12 +386,14 @@ Feature name: Meal planning
 > 2026-09-26 overhaul: rewritten from mp-232, mp-269, mp-593, mp-608
 > 2026-09-26 approved by Lee: start day and a 3 to 14 day length (mp-424)
 > 2026-09-26 approved by Lee: batch plan shape, checked in code (mp-425)
+> 2026-09-26 picture captured at 1.27.0+3, 7dda7d94
 
 ## mp-234 · The draft sits in the plan bar, and Confirm lands on the shopping list
 - category: Planning a week
 - status: approved
 - folded: mp-235, mp-652
 - image: none
+- svg: docs/ssot/decisions/images/mealplanning/mp-234.svg
 - screen: Vana chat plan bar
 - source: 02-contract.md; plan-tab-v2.md; 05-flutter-feature.md; memory 09-03
 
@@ -393,7 +413,8 @@ Feature name: Meal planning
 - category: Plan tab and meals
 - status: approved
 - folded: mp-139
-- image: none
+- image: docs/ssot/decisions/images/mealplanning/plan-tab.png
+- caption: The Food tab opens on Plan, with Vana's note for the day at the top
 - screen: Food tab
 - source: synthesis-and-recommendations.md; 05-flutter-feature.md
 
@@ -408,6 +429,7 @@ Feature name: Meal planning
 **What else was considered.** A separate tab that opens on the chat.
 
 > 2026-09-26 overhaul: rewritten from mp-238, mp-139
+> 2026-09-26 picture captured at 1.27.0+3, 0e20c2f0
 
 ## mp-675 · Plans are a list the athlete can reuse
 - category: Plan tab and meals
@@ -437,6 +459,7 @@ Feature name: Meal planning
 - category: Plan tab and meals
 - status: approved
 - image: none
+- svg: docs/ssot/decisions/images/mealplanning/mp-004-2.svg
 - screen: Plan tab
 - source: synthesis-and-recommendations.md
 
@@ -497,6 +520,7 @@ Feature name: Meal planning
 - status: approved
 - folded: mp-145
 - image: none
+- svg: docs/ssot/decisions/images/mealplanning/mp-418.svg
 - screen: Plan tab
 - source: Lee, from the category discussion on 2026-09-17
 
@@ -538,6 +562,7 @@ Feature name: Meal planning
 - category: Recipes and cooking
 - status: approved
 - image: none
+- svg: docs/ssot/decisions/images/mealplanning/mp-146-2.svg
 - screen: Meal detail
 - source: memory 09-01; 05-flutter-feature.md
 

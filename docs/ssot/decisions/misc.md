@@ -28,6 +28,7 @@ Feature name: Miscellany
 - category: Design system
 - status: approved
 - image: none
+- svg: docs/ssot/decisions/images/misc/mp-261.svg
 - screen: Vana chat, Plan tab
 - source: memory 09-07; memory 09-04; OPEN-QUESTIONS.md
 
@@ -47,6 +48,7 @@ Feature name: Miscellany
 - category: Data and sync
 - status: approved
 - image: none
+- svg: docs/ssot/decisions/images/misc/mp-252.svg
 - screen: none (algorithm/data)
 - source: README; 02-contract.md; 03-backend.md
 
@@ -66,6 +68,7 @@ Feature name: Miscellany
 - category: Data and sync
 - status: approved
 - image: none
+- svg: docs/ssot/decisions/images/misc/mp-254.svg
 - screen: Plan tab
 - source: 05-flutter-feature.md; plan-tab-v2.md; memory 09-01
 
@@ -85,6 +88,7 @@ Feature name: Miscellany
 - category: Data and sync
 - status: approved
 - image: none
+- svg: docs/ssot/decisions/images/misc/mp-257.svg
 - screen: none (algorithm/data)
 - source: spec.md; ticket 02; memory 09-10
 

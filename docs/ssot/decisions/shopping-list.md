@@ -8,6 +8,7 @@ Feature name: Shopping list
 - status: approved
 - folded: mp-692, mp-695, mp-669
 - image: none
+- svg: docs/ssot/decisions/images/shopping-list/mp-244.svg
 - screen: Shopping tab
 - source: plan-tab-v2.md; 05-flutter-feature.md; memory 09-07; memory 09-02
 
@@ -28,7 +29,8 @@ Feature name: Shopping list
 ## mp-697 · The list is grouped by aisle, in imperial units, and each item leads back to its meals
 - category: Lists
 - status: approved
-- image: none
+- image: docs/ssot/decisions/images/mealplanning/shopping-tab.png
+- caption: Items in aisle groups, each with a checkbox and an imperial quantity.
 - screen: Shopping tab
 - source: plan-tab-v2.md; memory 09-07; Lee on the page 2026-09-14
 
@@ -43,11 +45,13 @@ Feature name: Shopping list
 **What else was considered.** A metric default. A per-row "have it" switch and a pickup button.
 
 > 2026-09-26 overhaul: split out of mp-244
+> 2026-09-26 picture captured at 1.27.0+3, 36bea725
 
 ## mp-039 · Shopping lists carry no prices, deals or coupons
 - category: Lists
 - status: approved
 - image: none
+- svg: docs/ssot/decisions/images/shopping-list/mp-039.svg
 - screen: none (algorithm/data)
 - source: vana-chatbot-update-plan.md
 

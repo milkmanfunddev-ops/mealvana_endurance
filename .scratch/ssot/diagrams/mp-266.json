@@ -1,13 +1,6 @@
-{
-  "kind": "timeline",
-  "title": "A new account: trial, then purchase",
-  "steps": [
-    { "at": "Day 1", "label": "Signs up.\nWhole app open, meal planning included.", "tone": "ok" },
-    { "at": "Day 7", "label": "Last day of the trial.\nEverything still open.", "tone": "pending" },
-    { "at": "Day 8", "label": "Trial over. Tapping the launcher\nopens the paywall: buy or stop.", "tone": "no" }
-  ],
-  "example": [
-    "Signed up 1 Sep: trial runs 1 to 7 Sep, paywall from 8 Sep.",
-    "Buy: $9.99 a month or $69.99 a year. No free tier, no Pro tier."
-  ]
-}
+{"kind":"timeline","title":"One free week, then the store charges","steps":[
+{"at":"Day 1","label":"Subscribes in the store with a card on file.\nPays nothing; the whole app is open.","tone":"ok"},
+{"at":"Days 2 to 7","label":"Still free. Can cancel in the store any time.","tone":"ok"},
+{"at":"Day 8","label":"The store charges, unless they cancelled.\nNo free tier and no Pro tier to fall back to.","tone":"accent"},
+{"at":"Any later account","label":"No second trial for the same person.","tone":"muted"}],
+"example":["Example: subscribes 1 Oct, free to 7 Oct,","first charge 8 Oct. The store keeps the clock."]}

@@ -1,1 +1,6 @@
-{"kind":"timeline","title":"The day-five reminder","steps":[{"at":"Purchase","label":"RevenueCat confirms the trial\nand its end date","tone":"accent"},{"at":"Scheduled","label":"10:00 local, two days\nbefore the trial ends","tone":"ok"},{"at":"App open","label":"won't renew, sign-out or\naccount deleted: cancelled","tone":"no"},{"at":"Fires","label":"price after, cancel any time;\ntap opens the store page","tone":"pending"}],"example":["Trial ends 29 Sep 15:30, annual at founding price","Reminder at 27 Sep 10:00: \"... $99.99 a year\"","Signs out on 26 Sep: reminder cancelled"]}
+{"kind":"timeline","title":"The reminder before the first charge","steps":[
+{"at":"1 Oct","label":"Starts the trial. Notifications off?\nOne line asks them to turn them on.","tone":"ok"},
+{"at":"6 Oct, 10:00","label":"Phone notification: the price they will pay,\nand that they can cancel any time.","tone":"accent"},
+{"at":"Tap","label":"Opens the page where they manage\nthe subscription.","tone":"ink"},
+{"at":"8 Oct","label":"Trial ends; the store charges if not cancelled.","tone":"muted"}],
+"example":["Example week. If the trial will not renew,","the 6 Oct reminder is cancelled."]}

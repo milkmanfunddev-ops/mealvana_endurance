@@ -10,8 +10,10 @@ Routing guide for agents in this repo. Keep it short; detail lives in `/docs`.
   `docs/ssot/`. Never edit `docs/ssot/` here; change it in the QA repo and re-sync.
   Exception: `docs/ssot/decisions/` is app-owned and outside the mirror. Its five records
   (`mealplanning`, `paywall`, `shopping-list`, `ai-cost`, `misc`) hold approved product
-  decisions only, and are written only by a skill recording a decision Lee approved in the
-  terminal, or attaching a picture (`attach-svg`, `attach-image`, `pictures`, `refresh`).
+  decisions only (a decision is one broad product ruling, not implementation detail, a ticket or
+  an open question; README "What makes a card"), and are written only by a skill recording a
+  decision Lee approved in the terminal or a sign-off given on the page, or attaching a picture
+  (`attach-svg`, `attach-image`, `pictures`, `refresh`, the `ssot-pictures` agent).
   Undecided items wait in `.scratch/ssot/review-queue.md`. The README, page template and images
   there are ordinary files.
   Exception: a design component spec written app-side goes in `docs/ssot/spec/design/components/`

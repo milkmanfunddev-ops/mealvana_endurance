@@ -1,1 +1,6 @@
-{"kind":"flow","title":"An old anonymous install signs up","rows":[[{"id":"open","label":"opens new build\nanonymous session"}],[{"id":"acct","label":"account screen\nno back button","tone":"accent"}],[{"id":"link","label":"sign-up links\nonto old user","tone":"ok"},{"id":"claim","label":"grace claim","tone":"ok"}],[{"id":"gate","label":"gate reads\nthe grant"}]],"edges":[{"from":"open","to":"acct","label":"any route"},{"from":"acct","to":"link"},{"from":"link","to":"claim"},{"from":"claim","to":"gate"}],"example":["No server profile, or offline:","the phone's profile is kept under the","same user and queued for upload."]}
+{"kind":"flow","title":"An install with no account, after the update","rows":[
+[{"id":"open","label":"Opens the new version\n(no account yet)"}],
+[{"id":"su","label":"Sign-up, no skip","tone":"accent"},{"id":"si","label":"Signs in to an\nexisting account","tone":"muted"}],
+[{"id":"keep","label":"Entries kept +\nfree month","tone":"ok"},{"id":"none","label":"No second month","tone":"no"}]],
+"edges":[{"from":"open","to":"su"},{"from":"open","to":"si"},{"from":"su","to":"keep"},{"from":"si","to":"none"}],
+"example":["Claim fails (say, offline)? The app tries","again at the next start."]}

@@ -1,0 +1,8 @@
+{"kind":"flow","title":"Onboarding ends in an account, then the paywall","rows":[
+[{"id":"ob","label":"Onboarding answers\nkept on the phone"}],
+[{"id":"acct","label":"Account screen\nsays what the trial costs","tone":"accent"}],
+[{"id":"code","label":"6-digit code\n(when confirmation is on)","tone":"muted"}],
+[{"id":"move","label":"Answers move to\nthe new account","tone":"ok"}],
+[{"id":"pw","label":"Paywall","tone":"ok"}]],
+"edges":[{"from":"ob","to":"acct"},{"from":"acct","to":"code"},{"from":"code","to":"move"},{"from":"move","to":"pw"}],
+"example":["No guest mode: there is no way past","the account screen without signing up."]}

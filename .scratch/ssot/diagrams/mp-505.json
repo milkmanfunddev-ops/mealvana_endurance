@@ -1,1 +1,6 @@
-{"kind":"flow","title":"Five AI functions check first","rows":[[{"id":"in","label":"Signed-in call\n(describe, photo x2,\ncoach, old chat)","tone":"ink"}],[{"id":"row","label":"Entitlement row\nactive?","tone":"pending"}],[{"id":"go","label":"Yes: credits,\nthen the model","tone":"ok"},{"id":"no","label":"No: 403\npro_required","tone":"no"}]],"edges":[{"from":"in","to":"row"},{"from":"row","to":"go"},{"from":"row","to":"no"}],"example":["Lapsed account with 50 bought credits","describe-meal answers pro_required before the wallet is read"]}
+{"kind":"flow","title":"An AI request from an account without Pro","rows":[
+[{"id":"ask","label":"Vana, meal description,\nmeal photo or coach insight"}],
+[{"id":"app","label":"App checks first","tone":"accent"},{"id":"srv","label":"Server checks\nbefore spending","tone":"accent"}],
+[{"id":"pw","label":"Paywall opens,\neven offline","tone":"no"},{"id":"ref","label":"Refused,\nnothing spent","tone":"no"}]],
+"edges":[{"from":"ask","to":"app"},{"from":"ask","to":"srv"},{"from":"app","to":"pw","label":"no Pro"},{"from":"srv","to":"ref","label":"no Pro"}],
+"example":["Example: a lapsed account with bought budget","left asks Vana for a plan. Refused all the same."]}

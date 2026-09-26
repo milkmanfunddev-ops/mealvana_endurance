@@ -1,0 +1,6 @@
+{"kind":"flow","title":"Where \"has this person paid?\" comes from","rows":[
+[{"id":"rc","label":"RevenueCat\n(both stores)","tone":"ok"}],
+[{"id":"srv","label":"Server: a copy,\nnever grants"},{"id":"ph","label":"Phone: a saved\ncopy, never grants"}],
+[{"id":"yes","label":"Saved copy:\nin, even offline","tone":"ok"},{"id":"no","label":"No copy yet:\nlocked till online","tone":"no"}]],
+"edges":[{"from":"rc","to":"srv"},{"from":"rc","to":"ph"},{"from":"ph","to":"yes"},{"from":"ph","to":"no"}],
+"example":["Example: a renewing plan expires 9:00 and the","renewal lands 9:10. The copy holds to 9:15, so no","lockout. A cancelled plan or a grant ends at 9:00."]}
