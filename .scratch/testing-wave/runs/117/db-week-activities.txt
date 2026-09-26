@@ -1,0 +1,28 @@
+# read at 2026-09-26T10:56:14Z: week Sun 09-20 .. Sat 09-26 activities, not deleted
+day	t	title	status	activity_type	synced_from_provider	provider_deleted
+2026-09-20	07:00	Bike - Long Ride	planned	cycling	final_surge	False
+2026-09-20	07:00	Foam Rolling Routine	planned	other	final_surge	False
+2026-09-20	07:08	Run	planned	running	final_surge	False
+2026-09-21	06:25	Swim	planned	swimming	final_surge	False
+2026-09-21	07:00	Corpus Tempo Run	planned	running	training_peaks	True
+2026-09-21	11:57	R-CORE Routine	planned	other	final_surge	False
+2026-09-21	16:45	12 mi Run	planned	running		False
+2026-09-22	05:49	Speedwork	planned	running	final_surge	False
+2026-09-22	07:00	Corpus Endurance Ride	planned	cycling	training_peaks	False
+2026-09-22	07:00	Foam Rolling Routine	planned	other	final_surge	False
+2026-09-22	07:00	Warm Up Routine	planned	other	final_surge	False
+2026-09-23	07:00	Bike	planned	cycling	final_surge	False
+2026-09-23	07:00	Corpus Strength Block	planned	other	training_peaks	False
+2026-09-23	07:00	R-CORE Routine	planned	other	final_surge	False
+2026-09-23	07:00	Swim	planned	swimming	final_surge	False
+2026-09-23	21:00	Patrol Brick 1790211454281	planned	brick		False
+2026-09-24	05:32	Easy	planned	running	final_surge	False
+2026-09-24	07:00	Foam Rolling Routine	planned	other	final_surge	False
+2026-09-24	07:00	Rad Device Test Swim	planned	swimming	training_peaks	False
+2026-09-24	07:28	Run	planned	running	final_surge	False
+2026-09-24	20:45	Patrol H5 1790210557462	planned	running		False
+2026-09-24	20:45	Patrol H5 1790210599230	planned	running		False
+2026-09-25	07:00	R-CORE Routine	planned	other	final_surge	False
+2026-09-25	19:25	Swim	completed	swimming	final_surge	False
+2026-09-26	07:00	Foam Rolling Routine	planned	other	final_surge	False
+2026-09-26	07:00	Run - Long Run	planned	running	final_surge	False

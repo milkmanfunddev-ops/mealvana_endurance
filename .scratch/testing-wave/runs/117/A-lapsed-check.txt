@@ -1,0 +1,6 @@
+# read at 2026-09-26T11:24:51Z: A after sign-out (11:20:01Z), expecting lapse
+period_type	active_until	event_at	will_renew	now
+NORMAL	2026-09-26 11:23:46.454+00	2026-09-26 11:18:46.717+00	True	2026-09-26 11:24:51.767316+00
+## customers/69f071a8-74d9-4567-84b4-19d7a7c75a95/active_entitlements
+## customers/69f071a8-74d9-4567-84b4-19d7a7c75a95/subscriptions
+{'status': 'active', 'auto_renewal_status': 'will_renew', 'current_period_ends_at': 1790421826454, 'starts_at': 1790421226454, 'store': 'test_store', 'product_id': 'prod350601b768', 'gives_access': True}

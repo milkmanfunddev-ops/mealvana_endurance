@@ -1,0 +1,1 @@
+{'object': 'error', 'status': None, 'auto_renewal_status': None, 'current_period_ends_at': None, 'gives_access': None, 'type': 'unprocessable_entity_error', 'message': 'Cannot cancel subscription because it is not a Web Billing subscription', 'code': None}

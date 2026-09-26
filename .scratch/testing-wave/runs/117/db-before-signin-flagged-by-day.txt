@@ -1,0 +1,3 @@
+# read at 2026-09-26T10:52:31Z, BEFORE sign-in: flagged provider rows by day (all time)
+day	provider	n	first_flag	last_flag
+2026-09-21	training_peaks	1	2026-09-22 07:31:04+00	2026-09-22 07:31:04+00

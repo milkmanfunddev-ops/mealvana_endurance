@@ -1,0 +1,12 @@
+# read at 2026-09-26T11:40:01Z: A after resubscribe (11:39:13Z)
+period_type	active_until	event_at	will_renew
+NORMAL	2026-09-26 11:44:15.57+00	2026-09-26 11:39:15.735+00	True
+## customers/69f071a8-74d9-4567-84b4-19d7a7c75a95/active_entitlements
+{'entitlement_id': 'entla441faaeb4', 'expires_at': 1790423055570}
+## customers/69f071a8-74d9-4567-84b4-19d7a7c75a95/subscriptions
+{'status': 'active', 'auto_renewal_status': 'will_not_renew', 'current_period_ends_at': 1790422726454, 'starts_at': 1790421226454, 'store': 'test_store', 'product_id': 'prod350601b768', 'gives_access': True}
+{'status': 'active', 'auto_renewal_status': 'will_renew', 'current_period_ends_at': 1790423055570, 'starts_at': 1790422755570, 'store': 'test_store', 'product_id': 'prod350601b768', 'gives_access': True}
+name	calories	eaten_at	is_deleted
+W40-117 oats	500	2026-09-26 11:18:00+00	False
+title	status	scheduled_date_time	deleted_at
+12 mi Run	planned	2026-09-26 07:30:00	

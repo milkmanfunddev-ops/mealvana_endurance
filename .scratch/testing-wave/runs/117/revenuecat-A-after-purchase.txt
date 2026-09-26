@@ -1,0 +1,5 @@
+# read at 2026-09-26T11:14:23Z
+## customers/69f071a8-74d9-4567-84b4-19d7a7c75a95/active_entitlements
+{'entitlement_id': 'entla441faaeb4', 'expires_at': 1790421526454}
+## customers/69f071a8-74d9-4567-84b4-19d7a7c75a95/subscriptions
+{'status': 'active', 'auto_renewal_status': 'will_renew', 'current_period_ends_at': 1790421526454, 'starts_at': 1790421226454, 'store': 'test_store', 'product_id': 'prod350601b768', 'gives_access': True}
