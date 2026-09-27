@@ -95,7 +95,7 @@ class CarbLoadingController extends _$CarbLoadingController {
       unawaited(
         ref
             .read(carbLoadNudgeServiceProvider)
-            .disarmEvent(eventId)
+            .disarmEvent(eventId, reason: 'plan_created')
             .catchError((_) {}),
       );
     } catch (e) {
