@@ -408,6 +408,15 @@ class NotificationService {
   /// segment instead, since the tap arrives through the plugin as a bare
   /// string with no room for structured data. An explicitly passed value
   /// wins over a parsed one; both being absent reports "unknown".
+  /// Test entry point for the tap dispatch (G29). The plugin delivers taps
+  /// through a private callback, so the analytics branches are otherwise
+  /// unreachable from a unit test.
+  @visibleForTesting
+  static void handleNotificationPayloadForTest(
+    String payload, {
+    String? copyVariant,
+  }) => _handleNotificationPayload(payload, copyVariant: copyVariant);
+
   static void _handleNotificationPayload(
     String payload, {
     String? copyVariant,
@@ -424,6 +433,20 @@ class NotificationService {
         _analytics.trackReminderClicked(
           deviceId: 'unknown', // Will be set properly when app identifies user
           activityId: activityId,
+        );
+      } else if (type == 'carb_event') {
+        // G29: the race-window carb-load nudge's tap. `activityId` carries
+        // the EVENT id here (the payload parser is type-agnostic). Headline
+        // metric for this CTA is scheduled -> tapped, so this is the
+        // measured half of it; conversion is a server-side join against
+        // carb_loading_plans, never a client event (qa pin 2026-09-27).
+        _analytics.track(
+          'notif_tapped',
+          properties: {
+            'cta': 'carb_load',
+            'cta_transport': 'local',
+            'event_id': activityId,
+          },
         );
       } else if (type == 'activity') {
         _analytics.track(
