@@ -8,9 +8,11 @@
 // SharedPreferences (mock store — the restart-survival cases build a fresh
 // service over the same store), and an injected clock.
 import 'package:flutter_test/flutter_test.dart';
+import 'package:mocktail/mocktail.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 import 'package:mealvana_endurance/features/carb_loading/application/carb_load_nudge_service.dart';
 import 'package:mealvana_endurance/features/carb_loading/domain/carb_nudge_engine.dart';
+import 'package:mealvana_endurance/shared/services/analytics/analytics_tracker.dart';
 import 'package:mealvana_endurance/shared/services/notification_service.dart';
 import 'package:mealvana_endurance/shared/widgets/root_app_widget.dart';
 
@@ -53,6 +55,17 @@ class RecordingGateway implements CarbNudgeGateway {
     required String payload,
   }) async =>
       calls.add(_Call('show', id, title: title, body: body, payload: payload));
+
+  @override
+  Future<bool> notificationsEnabled() async => true;
+}
+
+/// G29 wired analytics into the service; these cases assert DELIVERY
+/// behaviour, so a no-op tracker keeps them focused. The event stream itself
+/// is pinned in g29_carb_nudge_telemetry_test.dart.
+class _SilentAnalytics extends Fake implements AnalyticsTracker {
+  @override
+  Future<void> track(String eventName, {Map<String, dynamic>? properties}) async {}
 }
 
 void main() {
@@ -68,6 +81,7 @@ void main() {
     return CarbLoadNudgeService(
       gateway: gateway,
       prefs: prefs,
+      analytics: _SilentAnalytics(),
       clock: () => now,
     );
   }
@@ -169,6 +183,29 @@ void main() {
     await s4.evaluateOnOpen(events: [event], eventIdsWithPlan: {});
     expect(gateway.shows, hasLength(1),
         reason: 'app arrived mid-window after 06:00 — catch-up covers it');
+  });
+
+  test(
+      'nudge-once-per-day REGRESSION: opening after the 06:00 fire on a '
+      'NON-FINAL window day must not nudge a second time', () async {
+    // Found 2026-09-27 while writing the G29 telemetry reds. armEvent used to
+    // REPLACE the armed-day record with only the remaining (future) fires,
+    // erasing the evidence that today had already fired — so the catch-up
+    // ran again the same morning. It escaped the original suite because the
+    // only "after the fire" case ran on race-1, where no fires remain and
+    // armEvent is never reached, so the record survived by accident.
+    final s0 = await service(DateTime(2026, 9, 24, 12));
+    await s0.armEvent(event); // arms -2 and -1
+    gateway.calls.clear();
+
+    // race-2, 09:00 — today's 06:00 fire already delivered, and the -1 fire
+    // is still ahead, so the sweep re-arms on this pass.
+    final s1 = await service(DateTime(2026, 9, 25, 9));
+    await s1.evaluateOnOpen(events: [event], eventIdsWithPlan: {});
+
+    expect(gateway.shows, isEmpty,
+        reason: "the day's scheduled fire already delivered — a catch-up "
+            'here is the second nudge of the day');
   });
 
   test('nudge-never-on-race-day: no fire, no catch-up on race morning',

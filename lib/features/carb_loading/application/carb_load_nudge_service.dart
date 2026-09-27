@@ -1,6 +1,8 @@
 import 'package:riverpod_annotation/riverpod_annotation.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 
+import '../../../shared/services/analytics/analytics_tracker.dart';
+import '../../../shared/services/app_external_deps.dart';
 import '../../../shared/services/notification_service.dart';
 import '../../../shared/services/prefs_provider.dart';
 import '../domain/carb_nudge_engine.dart';
@@ -27,6 +29,12 @@ abstract class CarbNudgeGateway {
     required String body,
     required String payload,
   });
+
+  /// Whether the OS will actually deliver. Read at SCHEDULE time so the
+  /// silent permission bail inside the plugin layer becomes visible in
+  /// analytics (`notif_scheduled` with notifications_enabled=false) rather
+  /// than vanishing (qa pin 2026-09-27).
+  Future<bool> notificationsEnabled();
 }
 
 class NotificationServiceCarbNudgeGateway implements CarbNudgeGateway {
@@ -47,6 +55,10 @@ class NotificationServiceCarbNudgeGateway implements CarbNudgeGateway {
 
   @override
   Future<void> cancel(int id) => NotificationService.cancelById(id);
+
+  @override
+  Future<bool> notificationsEnabled() =>
+      NotificationService.areNotificationsEnabled();
 
   @override
   Future<void> show({
@@ -82,14 +94,26 @@ class CarbLoadNudgeService {
   CarbLoadNudgeService({
     required CarbNudgeGateway gateway,
     required SharedPreferences prefs,
+    required AnalyticsTracker analytics,
     DateTime Function()? clock,
   }) : _gateway = gateway,
        _prefs = prefs,
+       _analytics = analytics,
        _clock = clock ?? DateTime.now;
 
   final CarbNudgeGateway _gateway;
   final SharedPreferences _prefs;
+  final AnalyticsTracker _analytics;
   final DateTime Function() _clock;
+
+  /// Shared discriminators on every nudge event (qa pin 2026-09-27): the
+  /// 09-17 CTA schema's vocabulary, so this CTA joins the others. Consumers
+  /// MUST read `cta_transport` before comparing rates — a local "fired" and
+  /// a remote "sent" are not the same measurement.
+  static const Map<String, dynamic> _ctaProps = {
+    'cta': 'carb_load',
+    'cta_transport': 'local',
+  };
 
   static const _shownDayKey = 'carb_nudge_last_shown_day';
   static String _armedKey(String eventId) => 'carb_nudge_armed_$eventId';
@@ -102,11 +126,20 @@ class CarbLoadNudgeService {
   /// full id set first, then schedules what's still ahead of the clock.
   Future<void> armEvent(CarbNudgeEvent event) async {
     final now = _clock();
+    // Days already armed BEFORE this re-arm. A fire whose time has passed may
+    // have delivered, and that fact never stops being true — if we dropped it
+    // the catch-up would lose its only evidence and nudge a second time the
+    // same day (ruled: at most one per day across both paths).
+    final previouslyArmed =
+        _prefs.getStringList(_armedKey(event.id)) ?? const <String>[];
     await disarmEvent(event.id);
     final fires = CarbNudgeEngine.remainingFires(
       raceDate: event.raceDate,
       now: now,
     );
+    // Read once per arm, not per fire: the answer cannot change mid-loop and
+    // the plugin layer would otherwise swallow a denial silently.
+    final enabled = await _gateway.notificationsEnabled();
     for (final fireAt in fires) {
       final daysBefore = CarbNudgeEngine.daysBeforeFor(
         raceDate: event.raceDate,
@@ -119,21 +152,47 @@ class CarbLoadNudgeService {
         fireAt: fireAt,
         payload: CarbNudgeEngine.payload(event.id),
       );
+      await _analytics.track(
+        'notif_scheduled',
+        properties: {
+          ..._ctaProps,
+          'event_id': event.id,
+          'days_before': daysBefore,
+          'fire_at': fireAt.toIso8601String(),
+          'notifications_enabled': enabled,
+        },
+      );
     }
     // The armed-day record is the catch-up's evidence that a scheduled fire
     // existed for a given day (delivery itself is the OS's, unobservable).
-    await _prefs.setStringList(
-      _armedKey(event.id),
-      fires.map(_dayStr).toList(),
-    );
+    // Carry forward past days rather than replacing: see [previouslyArmed].
+    final today = _dayStr(now);
+    final armedDays = <String>{
+      ...previouslyArmed.where((d) => d.compareTo(today) <= 0),
+      ...fires.map(_dayStr),
+    }.toList()
+      ..sort();
+    await _prefs.setStringList(_armedKey(event.id), armedDays);
   }
 
-  /// Cancel every fire for the event (plan created, or event gone).
-  Future<void> disarmEvent(String eventId) async {
+  /// Cancel every fire for the event. [reason] is the pinned vocabulary —
+  /// plan_created | event_deleted | window_passed | permission_lost — so
+  /// "scheduled but never tapped" decomposes into *couldn't have fired* vs
+  /// *fired and was ignored*. Null means bookkeeping (the idempotent clear
+  /// inside armEvent), which emits nothing: a re-arm reports itself through
+  /// fresh notif_scheduled rows, not a cancel/re-arm pair.
+  Future<void> disarmEvent(String eventId, {String? reason}) async {
     for (final id in CarbNudgeEngine.allNotificationIds(eventId)) {
       await _gateway.cancel(id);
     }
+    final hadArmed =
+        (_prefs.getStringList(_armedKey(eventId)) ?? const []).isNotEmpty;
     await _prefs.remove(_armedKey(eventId));
+    if (reason == null || !hadArmed) return;
+    await _analytics.track(
+      'notif_cancelled',
+      properties: {..._ctaProps, 'event_id': eventId, 'reason': reason},
+    );
   }
 
   /// The open/resume pass: keeps every event's armed state matching
@@ -148,7 +207,14 @@ class CarbLoadNudgeService {
 
     for (final event in events) {
       if (eventIdsWithPlan.contains(event.id)) {
-        await disarmEvent(event.id);
+        await disarmEvent(event.id, reason: 'plan_created');
+      } else if (!CarbNudgeEngine.inWindow(
+            raceDate: event.raceDate,
+            now: now,
+          ) &&
+          !now.isBefore(event.raceDate)) {
+        // Race reached/passed with the window never converted.
+        await disarmEvent(event.id, reason: 'window_passed');
       } else if (CarbNudgeEngine.remainingFires(
         raceDate: event.raceDate,
         now: now,
@@ -195,6 +261,20 @@ class CarbLoadNudgeService {
         body: CarbNudgeEngine.body(event.name),
         payload: CarbNudgeEngine.payload(event.id),
       );
+      // The ONLY show the app genuinely observes. The 06:00 scheduled fires
+      // are delivered by the OS with no callback, so they get no fired event
+      // — inventing one would repeat the biased-proxy error the 09-17 item
+      // documents (a tap opens the app, so tapped fires look delivered and
+      // un-tapped ones do not; CTR inflates toward 100%).
+      await _analytics.track(
+        'notif_fired',
+        properties: {
+          ..._ctaProps,
+          'event_id': event.id,
+          'days_before': daysBefore,
+          'path': 'catchup',
+        },
+      );
       await _prefs.setString(_shownDayKey, today);
       return; // at most one nudge per day, full stop
     }
@@ -205,4 +285,5 @@ class CarbLoadNudgeService {
 CarbLoadNudgeService carbLoadNudgeService(Ref ref) => CarbLoadNudgeService(
   gateway: NotificationServiceCarbNudgeGateway(),
   prefs: ref.watch(sharedPreferencesProvider),
+  analytics: ref.watch(appExternalDepsProvider).analytics,
 );
