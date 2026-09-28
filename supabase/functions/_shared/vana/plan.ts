@@ -172,13 +172,14 @@ export async function setBrief(v: VanaCtx, brief: string, scope?: PlanScope | nu
 /** Confirm: the shopping list is built here (TS grocery aggregation), then ONE SQL transaction — `confirm_meal_plan` —
  *  stores it, flips status → confirmed and archives every other non-archived plan for the same athlete-week. The
  *  client gets its remote ack from that single call. */
-export async function confirmPlan(v: VanaCtx, scope?: PlanScope | null): Promise<MealPlan> {
+export async function confirmPlan(v: VanaCtx, scope?: PlanScope | null, opts: { onConfirmed?: () => void } = {}): Promise<MealPlan> {
   const target = (await resolvePlan(v, scope, true))!;
   // The plan is still a draft here, and a draft builds no list (110-012): `confirm` is what makes this build one.
   const plan = await refreshShopping(v, target.id, { confirm: true });
   const { data, error } = await v.db.rpc('confirm_meal_plan', { p_plan_id: plan.id, p_shopping: plan.shopping });
   if (error) throw new Error(`confirm_meal_plan: ${error.message}`);
   if (!data) throw new Error('confirm_meal_plan returned nothing');
+  opts.onConfirmed?.(); // committed: from here the plan is the week's confirmed plan, whatever fails after
   await markListConfirmed(v, plan.id); // the plan's list (shopping.ts) sorts to the top of the Shopping tab from now
   await dropDraftListsAfterArchive(v, plan.weekStart); // the drafts the confirm archived take their lists with them
   return hydrate(v, Array.isArray(data) ? data[0] : data);
@@ -295,20 +296,23 @@ export async function renamePlan(v: VanaCtx, id: string, name: string): Promise<
  *  for a copy too; one that can no longer be added is left out rather than copied blind. A copy that ends up with no
  *  meals confirms nothing: it is soft-deleted and the call fails, so an empty plan never replaces this week's.
  *  Writes, in order: (1) the copy's `meal_plans` row, (2) its `plan_meals` rows, (3) its list, (4) `confirm_meal_plan`,
- *  one transaction. A failure after (1) soft-deletes the copy, so no draft row is left behind; the athlete's plan for
- *  the week is untouched until (4). vana-action dedupes the action by `requestId` (idempotency.ts), so a double tap or
+ *  one transaction. A failure after (1) and before (4) commits soft-deletes the copy, so no draft row is left behind;
+ *  the athlete's plan for the week is untouched until (4). Once (4) has committed the copy IS the week's plan (the old
+ *  one is archived), so a later failure (the list stamp, the read back) leaves it standing and only fails the call. vana-action dedupes the action by `requestId` (idempotency.ts), so a double tap or
  *  a retry after the phone's timeout confirms one copy, not two. */
 export async function usePlanAgain(v: VanaCtx, id: string): Promise<MealPlan> {
   const source = await getPlanById(v, id);
   if (!source) throw new Error('plan not found');
   const weekStart = await currentWeekStart(v);
   const target = await insertDraft(v, weekStart, null, source.name ?? null);
+  let confirmed = false;
   try {
     await copyMeals(v, source, target, 'use again');
     const copied = (await getPlanById(v, target.id))!;
     if (!copied.meals.length) throw new Error('use_plan_again: no meals could be copied from that plan');
-    return await confirmPlan(v, { planId: target.id });
+    return await confirmPlan(v, { planId: target.id }, { onConfirmed: () => { confirmed = true; } });
   } catch (e) {
+    if (confirmed) throw e; // the copy is this week's confirmed plan now: never delete it
     const { error } = await v.db.from('meal_plans').update({ is_deleted: true, updated_at: new Date().toISOString() }).eq('id', target.id).eq('user_id', v.userId);
     if (error) console.warn('[plan] use again failed and its copy was not removed', target.id, error.message);
     throw e;

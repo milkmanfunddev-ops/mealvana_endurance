@@ -164,6 +164,23 @@ Deno.test('usePlanAgain: a plan whose meals cannot be copied confirms nothing an
   assertEquals(v.fake.tables.meal_plans.filter((r) => r.is_deleted !== true).length, rows);
 });
 
+Deno.test('usePlanAgain: a failure after confirm_meal_plan committed leaves the copy confirmed, not deleted (162 fix 1)', async () => {
+  const v = account();
+  // The RPC commits; the list stamp that follows it then fails.
+  const rpc = v.fake.rpc.bind(v.fake);
+  const from = v.fake.from.bind(v.fake);
+  let committed = false;
+  // deno-lint-ignore no-explicit-any
+  (v.fake as any).rpc = async (name: string, args?: unknown) => { const out = await rpc(name, args); if (name === 'confirm_meal_plan' && !out.error) committed = true; return out; };
+  // deno-lint-ignore no-explicit-any
+  (v.fake as any).from = (table: string) => { if (committed && table === 'shopping_lists') throw new Error('list stamp failed'); return from(table); };
+  await assertRejects(() => usePlanAgain(v, SEP14), Error, 'list stamp failed');
+  assert(committed);
+  const copy = v.fake.rows('meal_plans').find((r) => r.week_start === WS && r.id !== THIS_WEEK)!;
+  assertEquals([copy.status, copy.is_deleted], ['confirmed', false]);
+  assertEquals((await getPlanById(v, THIS_WEEK))!.status, 'archived');
+});
+
 Deno.test('usePlanAgain: a plan that is not there says so', async () => {
   await assertRejects(() => usePlanAgain(account(), 'nope'), Error, 'plan not found');
 });
