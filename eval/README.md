@@ -1,5 +1,10 @@
 # Judging Vana
 
+> **Superseded 2026-09-28.** Vana evaluation moved to `../mealvana_eval`: a web app that calls a
+> `vana-eval` edge function directly, with no app and no Examiner. This directory stays as the
+> seed data it imports (`scenarios/`, `rubric.md`) and the record of the pilot. `improvements.md`
+> (IMP-001..004) is still open. Glossary: `../mealvana_eval/CONTEXT.md`.
+
 This directory is the judging system's home. An Examiner, which is a Claude session playing a
 test athlete, signs into the real app, holds the conversations described by saved Scenarios, and
 Marks each Run against `rubric.md`. Every Run's verdict feeds `improvements.md`; improvements get

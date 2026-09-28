@@ -1,9 +1,9 @@
 # Spec: Vana judging system (AI-as-judge evals)
 
-Status: ready-for-agent
+Status: wontfix (superseded 2026-09-28 by eval-v2 in `../mealvana_eval`; see its `.scratch/eval-v2/decisions.md`)
 Feature: vana-judging
 Grilled: 2026-09-26 (`/grill-with-docs`, rounds 1–3, all questions answered)
-Glossary: the terms below are defined in `CONTEXT.md` under "Judging Vana" — Scenario, Run,
+Glossary (historical): these terms were defined in `CONTEXT.md` under "Judging Vana", now moved to `../mealvana_eval/CONTEXT.md`, where Examiner is retired — Scenario, Run,
 Examiner, Mark, Rubric, Improvement, Eval round. Use them, not synonyms.
 
 ## Problem Statement

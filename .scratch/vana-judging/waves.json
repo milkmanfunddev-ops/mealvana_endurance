@@ -36,5 +36,17 @@
     "failed": [],
     "suite": "green",
     "elapsed": "15m"
+  },
+  {
+    "number": 3,
+    "tickets": [
+      "06",
+      "07"
+    ],
+    "base": "34dedca03cb06394ee8a282a225261c82d6e7bfc",
+    "branch": "mealplanning",
+    "startedAt": "2026-09-26T17:05:14.836Z",
+    "closedAt": "2026-09-28T00:00:00.000Z",
+    "note": "06 merged; 07 pilot Run done, calibration dropped: superseded by eval-v2"
   }
 ]

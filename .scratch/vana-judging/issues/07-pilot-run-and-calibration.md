@@ -1,5 +1,7 @@
 # 07: Pilot Run and Rubric calibration
 
+Status: wontfix (superseded 2026-09-28 by eval-v2 in `../mealvana_eval`; the pilot Run happened (Mark 71.25); calibration sign-off is dropped)
+
 **What to build:** The first real judged Run, as the acceptance test for the whole system. The
 wave lead (not a worktree agent — this is app-driving and judging) launches the app on the web
 build against dev, signs in as the fixed-up test account, runs one converted Scenario
