@@ -12,6 +12,8 @@ import '../../../../shared/screens/food_detail_screen.dart';
 import '../../../content/application/content_service.dart';
 import '../../../content/domain/content_keys.dart';
 import '../../application/barcode_scanner_service.dart';
+import '../../application/supabase_barcode_service.dart'
+    show SupabaseBarcodeService;
 import '../../../nutrition_plan/domain/food.dart';
 
 /// Barcode Scanner Screen - Kyle's Design System
@@ -325,7 +327,8 @@ class _BarcodeScannerScreenState extends ConsumerState<BarcodeScannerScreen>
     } else if (result.isInvalidFormat) {
       _trackLookupFailed('invalid_format', result.barcode);
       // The service's message is about scanning; a typed number that the
-      // format check refuses (say 10 digits) is told to check what it typed.
+      // format check refuses is told to check what it typed. The sheet
+      // already holds the service's lengths, so this is a fallback.
       _showInvalidFormatResult(
         result.barcode,
         _lastEntryTyped
@@ -1025,12 +1028,13 @@ class _EnterBarcodeSheet extends StatefulWidget {
   final String hint;
   final String submit;
 
-  /// Shown under the field while the entry is outside 8 to 14 digits; Look
-  /// it up stays disabled until it is (113-006).
+  /// Shown under the field while the entry is not 8, 12, 13 or 14 digits;
+  /// Look it up stays disabled until it is (113-006; Lee 2026-09-28,
+  /// ticket 163). The set is the service's, so the sheet never lets through
+  /// a number the lookup would refuse.
   final String lengthMessage;
 
-  static const int minDigits = 8;
-  static const int maxDigits = 14;
+  static const Set<int> allowedLengths = SupabaseBarcodeService.validLengths;
 
   @override
   State<_EnterBarcodeSheet> createState() => _EnterBarcodeSheetState();
@@ -1054,12 +1058,11 @@ class _EnterBarcodeSheetState extends State<_EnterBarcodeSheet> {
   String get _digits => _controller.text.replaceAll(RegExp(r'\D'), '');
 
   bool get _lengthOk =>
-      _digits.length >= _EnterBarcodeSheet.minDigits &&
-      _digits.length <= _EnterBarcodeSheet.maxDigits;
+      _EnterBarcodeSheet.allowedLengths.contains(_digits.length);
 
-  /// Closes the sheet with the typed digits; an entry outside 8 to 14
-  /// digits stays open (the button is disabled; this covers the keyboard's
-  /// Done).
+  /// Closes the sheet with the typed digits; an entry that is not 8, 12, 13
+  /// or 14 digits stays open (the button is disabled; this covers the
+  /// keyboard's Done).
   void _submit(String value) {
     if (!_lengthOk) return;
     Navigator.of(context).pop(_digits);

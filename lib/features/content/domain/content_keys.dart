@@ -1271,6 +1271,9 @@ class ContentKeys {
   static const String mealLogActionsUndo = 'meal_log_actions.undo';
   static const String mealLogActionsSaveAsFavorite =
       'meal_log_actions.save_as_favorite';
+  // A meal that is already a favourite (testing-wave 163, Lee 2026-09-28)
+  static const String mealLogActionsInFavorites =
+      'meal_log_actions.in_favorites';
   static const String mealLogActionsSavedAsFavorite =
       'meal_log_actions.saved_as_favorite';
   static const String mealLogActionsSaveAsFavoriteFailed =

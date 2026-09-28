@@ -20,7 +20,9 @@ import '../../../activities/presentation/widgets/brick_validation_error_dialog.d
 import '../../../calendar/presentation/providers/calendar_selected_date_provider.dart';
 import '../../../content/application/content_service.dart';
 import '../../../content/domain/content_keys.dart';
+import '../../../meal_logging/domain/meal_favorite_match.dart';
 import '../../../meal_logging/domain/meal_log.dart';
+import '../../../meal_logging/domain/saved_meal.dart';
 import '../../../fuel_timeline/presentation/widgets/timeline_brick_tile.dart';
 import '../../../integrations/presentation/widgets/reconnect_notice.dart';
 import '../../../meal_logging/presentation/providers/meal_log_providers.dart';
@@ -1175,31 +1177,67 @@ class MacroDashboardScreen extends ConsumerWidget {
     DashboardNode node,
   ) {
     final notifier = ref.read(macroDashboardViewProvider.notifier);
+    final content = ref.read(contentServiceProvider);
+    // A meal that is already a favourite reads "In favorites" and takes no
+    // tap (Lee, 2026-09-28, ticket 163). While the favourites are still
+    // loading every card offers the save; the controller refuses a
+    // duplicate on its own, so a tap in that window is still safe.
+    final favorites =
+        ref.watch(savedMealsProvider).asData?.value ?? const <SavedMeal>[];
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
         for (final item in node.meals)
-          MealCard(
-            key: ValueKey('macro_dashboard.meal_${item.id}'),
-            item: item,
+          _mealCard(
+            context,
+            ref,
+            item,
             expanded: view.expandedMealId == item.id,
             showMacros: view.trackingOn,
+            inFavorites: switch (_findLog(ref, item.id)) {
+              final log? => existingFavoriteFor(log, favorites) != null,
+              null => false,
+            },
+            saveLabel: content.getValue(ContentKeys.mealLogActionsSaveAsFavorite),
+            inFavoritesLabel: content.getValue(
+              ContentKeys.mealLogActionsInFavorites,
+            ),
             onToggle: () => notifier.toggleMealExpanded(item.id),
-            onRemove: () => _removeMeal(context, ref, item.id),
-            onEdit: () => _editMeal(context, ref, item.id),
-            onSaveAsFavorite: () => _saveMealAsFavorite(context, ref, item.id),
-            saveAsFavoriteLabel: ref
-                .read(contentServiceProvider)
-                .getValue(ContentKeys.mealLogActionsSaveAsFavorite),
           ),
       ],
     );
   }
 
+  Widget _mealCard(
+    BuildContext context,
+    WidgetRef ref,
+    MealItemData item, {
+    required bool expanded,
+    required bool showMacros,
+    required bool inFavorites,
+    required String saveLabel,
+    required String inFavoritesLabel,
+    required VoidCallback onToggle,
+  }) {
+    return MealCard(
+      key: ValueKey('macro_dashboard.meal_${item.id}'),
+      item: item,
+      expanded: expanded,
+      showMacros: showMacros,
+      onToggle: onToggle,
+      onRemove: () => _removeMeal(context, ref, item.id),
+      onEdit: () => _editMeal(context, ref, item.id),
+      onSaveAsFavorite: inFavorites
+          ? null
+          : () => _saveMealAsFavorite(context, ref, item.id),
+      saveAsFavoriteLabel: inFavorites ? inFavoritesLabel : saveLabel,
+    );
+  }
+
   /// Saves the logged meal as a favourite from its own row (Lee, 112-008):
-  /// the real log goes in, so the favourite carries the row's totals. A
-  /// second tap makes a second favourite of the same meal; the row does
-  /// not remember it was saved.
+  /// the real log goes in, so the favourite carries the row's totals. The
+  /// controller hands back the existing favourite when the meal already is
+  /// one, so nothing is saved twice (ticket 163).
   Future<void> _saveMealAsFavorite(
     BuildContext context,
     WidgetRef ref,

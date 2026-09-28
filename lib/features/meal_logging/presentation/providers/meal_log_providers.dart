@@ -18,6 +18,7 @@ import '../../data/meal_log_repository.dart';
 import '../../data/saved_meals_repository.dart';
 import '../../domain/consumed_totals.dart';
 import '../../domain/meal_component.dart';
+import '../../domain/meal_favorite_match.dart';
 import '../../domain/meal_log.dart';
 import '../../domain/meal_log_source.dart';
 import '../../domain/meal_slot.dart';
@@ -602,14 +603,44 @@ class MealLogController extends _$MealLogController {
   /// Save a log entry as a user favorite. The favourite copies [log]'s name,
   /// items and stored totals, so callers pass the row as written (112-007).
   /// Returns the favourite, or null when the write failed.
+  ///
+  /// A meal that is already a favourite is never saved twice (Lee,
+  /// 2026-09-28, ticket 163): the existing favourite comes back and nothing
+  /// is written. A new favourite is pointed at from the log row
+  /// (`saved_meal_id`) so later lookups need no name match. [customName]
+  /// asks for a differently named favourite, so it skips the check.
   Future<SavedMeal?> saveLogAsFavorite(
     MealLog log, {
     String? customName,
   }) async {
     SavedMeal? saved;
     await _runGuarded((service) async {
-      saved = await service.saveLogAsFavorite(log, customName: customName);
+      // Read before the await: the row's screen may close mid-action.
+      final savedMealsRepo = ref.read(savedMealsRepositoryProvider);
+      if (customName == null) {
+        final favorites = await savedMealsRepo
+            .watchSavedMeals(log.userId)
+            .first;
+        final existing = existingFavoriteFor(log, favorites);
+        if (existing != null) {
+          saved = existing;
+          return;
+        }
+      }
+
+      final made = await service.saveLogAsFavorite(
+        log,
+        customName: customName,
+      );
+      saved = made;
       if (ref.mounted) ref.invalidate(savedMealsProvider);
+
+      // The log row points at the favourite it made (as a Build a Meal save
+      // does, 113-009); the favourites list above is the fallback for rows
+      // that predate the pointer.
+      if (log.savedMealId != made.id) {
+        await service.updateLog(log.copyWith(savedMealId: made.id));
+      }
 
       await _trackEvent('meal_saved_as_favorite', {
         'log_id': log.id,

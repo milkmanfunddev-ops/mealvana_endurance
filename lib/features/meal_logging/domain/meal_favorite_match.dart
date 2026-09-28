@@ -45,3 +45,20 @@ SavedMeal? findFavoriteMatch(MealLog log, List<SavedMeal> favorites) {
   }
   return null;
 }
+
+/// The favourite [log] already is, if any (Lee, 2026-09-28, ticket 163).
+///
+/// The log's `saved_meal_id` pointer wins: a log made from a favourite, or
+/// one that made a favourite, carries it, and it survives a rename of the
+/// favourite. A row with no pointer (or whose favourite is gone from
+/// [favorites], which holds live rows only) falls back to the name + item
+/// signature ([findFavoriteMatch]).
+SavedMeal? existingFavoriteFor(MealLog log, List<SavedMeal> favorites) {
+  final pointer = log.savedMealId;
+  if (pointer != null) {
+    for (final meal in favorites) {
+      if (meal.id == pointer) return meal;
+    }
+  }
+  return findFavoriteMatch(log, favorites);
+}

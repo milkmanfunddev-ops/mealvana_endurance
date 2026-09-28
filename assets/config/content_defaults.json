@@ -1019,15 +1019,16 @@
     "enter_label": "Enter",
     "enter_title": "Enter a barcode",
     "enter_body": "Type the number printed under the barcode.",
-    "enter_hint": "8 to 14 digits",
+    "enter_hint": "8, 12, 13 or 14 digits",
     "enter_submit": "Look it up",
-    "enter_length": "A barcode has 8 to 14 digits.",
-    "typed_invalid": "That number isn't a barcode we recognise. Check the digits printed under the barcode and type them again."
+    "enter_length": "Barcodes are 8, 12, 13 or 14 digits.",
+    "typed_invalid": "Barcodes are 8, 12, 13 or 14 digits. Check the number printed under the barcode and type it again."
   },
   "meal_log_actions": {
     "saved_meal_removed": "Saved meal removed",
     "undo": "Undo",
     "save_as_favorite": "Save as favorite",
+    "in_favorites": "In favorites",
     "saved_as_favorite": "Saved as a favorite",
     "save_as_favorite_failed": "Could not save the favorite. Please try again."
   },

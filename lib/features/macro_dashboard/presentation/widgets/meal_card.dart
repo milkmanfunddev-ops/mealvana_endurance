@@ -28,8 +28,10 @@ class MealCard extends StatelessWidget {
   final VoidCallback? onRemove;
   final VoidCallback? onEdit;
 
-  /// "Save as favorite" in the expanded ⋯ (Lee, 112-008). Shown only when
-  /// both the callback and its label (from the content system) are given.
+  /// "Save as favorite" in the expanded ⋯ (Lee, 112-008). Shown when its
+  /// label (from the content system) is given. A meal that is already a
+  /// favourite gets the "In favorites" label and no callback, so the pill
+  /// reads as state and a tap saves nothing (Lee, 2026-09-28, ticket 163).
   final VoidCallback? onSaveAsFavorite;
   final String? saveAsFavoriteLabel;
 
@@ -164,8 +166,7 @@ class MealCard extends StatelessWidget {
                       ),
                     ],
                   ),
-                  if (onSaveAsFavorite != null &&
-                      saveAsFavoriteLabel != null) ...[
+                  if (saveAsFavoriteLabel != null) ...[
                     const SizedBox(height: 8),
                     _pillButton(
                       key: ValueKey('macro_dashboard.meal_${item.id}.favorite'),
@@ -173,7 +174,10 @@ class MealCard extends StatelessWidget {
                       onTap: onSaveAsFavorite,
                       background: me.liftAlpha(0.05),
                       borderColor: me.inkAlpha(0.12),
-                      ink: me.ink,
+                      // No callback = already a favourite: shown quieter.
+                      ink: onSaveAsFavorite == null
+                          ? me.inkAlpha(0.55)
+                          : me.ink,
                     ),
                   ],
                 ],
