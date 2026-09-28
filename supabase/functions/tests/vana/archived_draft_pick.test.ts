@@ -6,6 +6,7 @@
  */
 import { assertEquals, assertRejects } from 'https://deno.land/std@0.177.1/testing/asserts.ts';
 import { addMeal, ArchivedPlanError, ARCHIVED_PLAN_PICK_REFUSAL, getConversationPlan } from '../../_shared/vana/plan.ts';
+import { runAction } from '../../_shared/vana/actions.ts';
 import { today, weekStartFor } from '../../_shared/vana/env.ts';
 import { testCtx, TEST_USER_ID } from './support/vana_ctx.ts';
 import type { MealRef } from '../../_shared/vana/contracts.ts';
@@ -41,6 +42,7 @@ function week(replacedConfirmedAt: string | null = null) {
       planRow(LIVE, LIVE_CONV, 'draft', null, '2026-09-24T11:00:00Z'),
     ],
     plan_meals: [mealRow('m1', CONFIRMED, 'D-001'), mealRow('m2', REPLACED, 'D-100'), mealRow('m3', LIVE, 'D-300')],
+    meal_library: [{ id: 'D-200', name: 'D-200', meal_type: 'dinner', contexts: [], batch: true, kcal: 700, carbs_g: 70, protein_g: 35, fat_g: 18, ingredients: 'rice', source: 'the library' }],
   }, { defaults: listDefaults });
 }
 
@@ -82,4 +84,15 @@ Deno.test('a live draft in another conversation still takes the pick', async () 
   const out = await addMeal(v, ref('D-200'), 4, null, { conversationId: LIVE_CONV });
   assertEquals(out.id, LIVE);
   assertEquals(out.meals.map((m) => m.libraryMealId).sort(), ['D-200', 'D-300']);
+});
+
+// Ticket 162 (88-005): the app's Browse and picker cards reach the server as `pick_meals` with the conversation; that
+// path ends at addMeal too, so the archived draft takes nothing and the refusal is the same line.
+Deno.test('pick_meals into the replaced draft\'s conversation is refused through the action, nothing written', async () => {
+  const v = week();
+  const before = v.fake.writes.length;
+  const err = await assertRejects(() => runAction(v, { type: 'pick_meals', payload: { conversationId: REPLACED_CONV, meals: [{ source: 'library', id: 'D-200' }], servings: 4 } }), ArchivedPlanError);
+  assertEquals(err.message, ARCHIVED_PLAN_PICK_REFUSAL);
+  assertEquals(v.fake.writes.slice(before), []);
+  assertEquals(v.fake.rows('plan_meals').filter((m) => m.plan_id === REPLACED).map((m) => m.library_meal_id), ['D-100']);
 });

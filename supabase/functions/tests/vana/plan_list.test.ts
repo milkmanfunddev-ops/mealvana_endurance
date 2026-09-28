@@ -4,6 +4,9 @@
  * (mp-677). Example from the ruling: the draft fc9687ff, made after that week's plan f2c0bc78 was confirmed, does not
  * appear; f2c0bc78 does.
  *
+ * Ticket 162 (Lee 2026-09-28, 89-006): Use this plan again confirms at once. The copy is this week's confirmed plan,
+ * the plan it replaces is archived as on any confirm, its list is built, and no draft row is left anywhere.
+ *
  * Rows are producer-shaped: what `meal_plans` / `plan_meals` / `meal_library` return, snake_case and all. `confirmed_at`
  * is the column migration 20260925150000 adds and `confirm_meal_plan` stamps; a plan a later plan replaced is archived
  * with it set, a draft archived by another plan's confirm is archived without it.
@@ -12,6 +15,7 @@ import { assert, assertEquals, assertRejects } from 'https://deno.land/std@0.177
 import { listPlans, usePlanAgain, renamePlan, getPlanById, setServings } from '../../_shared/vana/plan.ts';
 import { deletePlan } from '../../_shared/vana/writes.ts';
 import { extraAction } from '../../_shared/vana/actions.ts';
+import { IDEMPOTENT_ACTIONS } from '../../_shared/vana/idempotency.ts';
 import { addDays, today, weekStartFor } from '../../_shared/vana/env.ts';
 import { testCtx, TEST_USER_ID } from './support/vana_ctx.ts';
 
@@ -35,10 +39,15 @@ const mealRow = (id: string, planId: string, libraryId: string, name: string, se
 });
 const lib = (id: string, name: string) => ({ id, name, meal_type: 'dinner', contexts: [], batch: true, kcal: 650, carbs_g: 70, protein_g: 35, fat_g: 18, ingredients: 'rice', source: 'the library' });
 
+const listDefaults = {
+  shopping_lists: { name: '', plan_id: null, confirmed_at: null, updated_at: new Date().toISOString() },
+  shopping_items: { qty: '', aisle: 'Other', checked: false, have: false, source: 'manual', from_meal_ids: [], edited: false, position: 0 },
+};
+
 function account() {
   const sep14 = addDays(WS, -21);
   const sep13 = addDays(WS, -14);
-  return testCtx({
+  const v: ReturnType<typeof testCtx> = testCtx({
     meal_plans: [
       planRow(THIS_WEEK, WS, 'confirmed', { confirmed_at: `${WS}T10:00:00Z` }),
       planRow(SEP14, sep14, 'archived', { name: 'Race block', confirmed_at: `${sep14}T10:00:00Z` }),
@@ -56,8 +65,21 @@ function account() {
       mealRow('l1', LEFTOVER, 'D-006', 'Quinoa, mixed veg & walnuts', 9, 0),
       mealRow('w1', SWEPT, 'D-007', 'Pesto pasta', 2, 0),
     ],
-    meal_library: [lib('D-001', 'Lentil bolognese'), lib('D-002', 'Chicken rice bowl'), lib('D-003', 'Tofu stir fry'), lib('D-004', 'Mushroom risotto'), lib('D-100', 'Salmon traybake')],
+    meal_library: [lib('D-001', 'Lentil bolognese'), lib('D-002', 'Chicken rice bowl'), lib('D-003', 'Tofu stir fry'), lib('D-004', 'Mushroom risotto'), lib('D-005', 'Mushroom risotto'), lib('D-100', 'Salmon traybake')],
+  }, {
+    defaults: listDefaults,
+    rpc: {
+      // What the SQL function does: archive the week's other plans, confirm the target, stamp confirmed_at once.
+      confirm_meal_plan: (args: { p_plan_id: string; p_shopping: unknown }) => {
+        const rows = v.fake.rows('meal_plans');
+        const target = rows.find((r) => r.id === args.p_plan_id)!;
+        for (const r of rows) if (r.week_start === target.week_start && r.id !== target.id && r.status !== 'archived') r.status = 'archived';
+        target.status = 'confirmed'; target.confirmed_at ??= new Date().toISOString(); target.shopping = args.p_shopping;
+        return target;
+      },
+    },
   });
+  return v;
 }
 
 // ---------------------------------------------------------------- drafts are not listed (mp-677)
@@ -68,44 +90,62 @@ Deno.test('listPlans: confirmed plans are listed, including ones a later plan re
   assertEquals(out.find((p) => p.id === CONFIRMED_OLD)?.name, null);
 });
 
-// ---------------------------------------------------------------- use again (mp-675)
-Deno.test('usePlanAgain: copies the plan\'s meals into a new draft for this week, and leaves the earlier plan as it was', async () => {
+// ---------------------------------------------------------------- use again (mp-675, ticket 162: confirms at once)
+Deno.test('usePlanAgain: the copy is this week\'s confirmed plan with the earlier plan\'s name and meals; the earlier plan is as it was', async () => {
   const v = account();
   const copy = await usePlanAgain(v, SEP14);
 
   assert(copy.id !== SEP14 && copy.id !== THIS_WEEK);
   assertEquals(copy.weekStart, WS);
-  assertEquals(copy.status, 'draft');
+  assertEquals(copy.status, 'confirmed');
   assertEquals(copy.name, 'Race block');
   assertEquals(copy.meals.map((m) => [m.name, m.servings, m.servingsLeft]), [['Lentil bolognese', 3, 3], ['Chicken rice bowl', 4, 4], ['Tofu stir fry', 2, 2], ['Mushroom risotto', 3, 3]]);
+  // Confirmed, so its list is built and confirmed with it (110-012).
+  const list = v.fake.rows('shopping_lists').find((r) => r.plan_id === copy.id);
+  assertEquals(list != null && list.confirmed_at != null, true, 'the copy has a confirmed list');
 
-  // The earlier plan keeps its four meals; this week's confirmed plan is untouched until the copy is confirmed (mp-674).
+  // The earlier plan keeps its four meals and stays where it was in the list.
   const before = (await getPlanById(v, SEP14))!;
   assertEquals(before.status, 'archived');
   assertEquals(before.meals.map((m) => m.id), ['s1', 's2', 's3', 's4']);
-  assertEquals((await getPlanById(v, THIS_WEEK))!.status, 'confirmed');
-  // The copy is a draft, so it is not in the list until it is confirmed.
-  assertEquals((await listPlans(v)).some((p) => p.id === copy.id), false);
+  // The plan this week had is replaced: archived with its confirmed_at, so it stays listed (mp-674).
+  const replaced = (await getPlanById(v, THIS_WEEK))!;
+  assertEquals(replaced.status, 'archived');
+  assertEquals(v.fake.rows('meal_plans').find((r) => r.id === THIS_WEEK)!.confirmed_at != null, true);
+  // The list leads with the copy; the replaced plan and the earlier ones follow.
+  assertEquals((await listPlans(v)).map((p) => p.id), [copy.id, THIS_WEEK, CONFIRMED_OLD, SEP14]);
+  // No draft row was left anywhere in the week.
+  assertEquals(v.fake.rows('meal_plans').filter((r) => r.week_start === WS && r.status === 'draft'), []);
 });
 
-Deno.test('usePlanAgain twice: the week keeps one live conversation-less draft; a conversation\'s draft is untouched (73-001, mp-241)', async () => {
+Deno.test('usePlanAgain: a conversation\'s live draft in the week is archived like any confirm archives it (mp-241)', async () => {
   const v = account();
   const CONVO_DRAFT = 'cccccccc-0000-4000-8000-000000000001';
   v.fake.tables.meal_plans.push(planRow(CONVO_DRAFT, WS, 'draft', { conversation_id: 'conv-1', updated_at: `${WS}T11:00:00Z` }));
 
+  const copy = await usePlanAgain(v, SEP14);
+  assertEquals(copy.status, 'confirmed');
+  assertEquals((await getPlanById(v, CONVO_DRAFT))!.status, 'archived');
+  // Nothing in an earlier week moved.
+  assertEquals((await getPlanById(v, LEFTOVER))!.status, 'draft');
+});
+
+Deno.test('usePlanAgain twice: each copy confirms and replaces the one before; the week holds one confirmed plan', async () => {
+  const v = account();
   const first = await usePlanAgain(v, SEP14);
   const second = await usePlanAgain(v, CONFIRMED_OLD);
   assert(first.id !== second.id);
-
-  const rows = v.fake.tables.meal_plans.filter((r) => r.week_start === WS && r.status !== 'archived');
-  const liveConversationless = rows.filter((r) => r.conversation_id == null && r.status === 'draft').map((r) => r.id);
-  assertEquals(liveConversationless, [second.id]);
+  const live = v.fake.tables.meal_plans.filter((r) => r.week_start === WS && r.status !== 'archived').map((r) => r.id);
+  assertEquals(live, [second.id]);
   assertEquals((await getPlanById(v, first.id))!.status, 'archived');
-  // Vana's own draft (mp-241) and the confirmed plan are left as they were.
-  assertEquals((await getPlanById(v, CONVO_DRAFT))!.status, 'draft');
-  assertEquals((await getPlanById(v, THIS_WEEK))!.status, 'confirmed');
-  // Nothing in an earlier week moved either.
-  assertEquals((await getPlanById(v, LEFTOVER))!.status, 'draft');
+});
+
+Deno.test('usePlanAgain with no plan this week: confirms the copy the same way, nothing to replace', async () => {
+  const v = account();
+  v.fake.tables.meal_plans = v.fake.tables.meal_plans.filter((r) => r.id !== THIS_WEEK);
+  const copy = await usePlanAgain(v, SEP14);
+  assertEquals([copy.status, copy.weekStart, copy.meals.length], ['confirmed', WS, 4]);
+  assertEquals((await listPlans(v)).map((p) => p.id), [copy.id, CONFIRMED_OLD, SEP14]);
 });
 
 Deno.test('usePlanAgain: a meal the library no longer has is left out rather than copied blind', async () => {
@@ -113,6 +153,15 @@ Deno.test('usePlanAgain: a meal the library no longer has is left out rather tha
   v.fake.tables.meal_library = v.fake.tables.meal_library.filter((m) => m.id !== 'D-003');
   const copy = await usePlanAgain(v, SEP14);
   assertEquals(copy.meals.map((m) => m.name), ['Lentil bolognese', 'Chicken rice bowl', 'Mushroom risotto']);
+});
+
+Deno.test('usePlanAgain: a plan whose meals cannot be copied confirms nothing and leaves no row behind', async () => {
+  const v = account();
+  v.fake.tables.meal_library = v.fake.tables.meal_library.filter((m) => m.id !== 'D-005');
+  const rows = v.fake.tables.meal_plans.length;
+  await assertRejects(() => usePlanAgain(v, CONFIRMED_OLD), Error, 'no meals');
+  assertEquals((await getPlanById(v, THIS_WEEK))!.status, 'confirmed');
+  assertEquals(v.fake.tables.meal_plans.filter((r) => r.is_deleted !== true).length, rows);
 });
 
 Deno.test('usePlanAgain: a plan that is not there says so', async () => {
@@ -149,5 +198,11 @@ Deno.test('vana-action: rename_plan and use_plan_again answer a batch part with 
   assertEquals((renamed!.parts[0] as unknown as { plan: { id: string; name: string } }).plan.name, 'Build week');
   const again = await extraAction(v, 'use_plan_again', { id: SEP14 });
   const plan = (again!.parts[0] as unknown as { kind: string; plan: { weekStart: string; status: string; meals: unknown[] } });
-  assertEquals([plan.kind, plan.plan.weekStart, plan.plan.status, plan.plan.meals.length], ['batch', WS, 'draft', 4]);
+  assertEquals([plan.kind, plan.plan.weekStart, plan.plan.status, plan.plan.meals.length], ['batch', WS, 'confirmed', 4]);
+  // Like confirm_plan, the shopping list rides along as its own part: the app lands on Shopping.
+  assertEquals(again!.parts[1]?.kind, 'shopping_list');
+});
+
+Deno.test('vana-action: use_plan_again is deduped by requestId, so a double tap or a retry after a timeout confirms one copy', () => {
+  assert(IDEMPOTENT_ACTIONS.has('use_plan_again'));
 });

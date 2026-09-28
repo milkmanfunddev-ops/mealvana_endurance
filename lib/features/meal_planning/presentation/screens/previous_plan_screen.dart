@@ -17,6 +17,7 @@ import '../../domain/meal_plan.dart';
 import '../widgets/overflow_menu.dart';
 import '../widgets/plan_summary.dart';
 import '../widgets/plan_tile.dart';
+import '../widgets/replace_plan_dialog.dart';
 import '../widgets/stepper.dart';
 import '../widgets/vana_round_button.dart';
 import '../../../../shared/core/pop_or_home.dart';
@@ -25,9 +26,10 @@ import 'food_screen.dart';
 /// An earlier plan (`/food/plans/:id`): its name, if the athlete gave it
 /// one, over the week and meal count, then the same rows the Plan tab draws.
 /// Plans are a list (mp-675): each row's servings step and its ⋮ removes
-/// it; the header's ⋮ renames the plan, uses it again as this week's new
-/// draft, or deletes it. A draft (the copy Use again made) has a Confirm
-/// that makes it this week's plan. The back button is the way back.
+/// it; the header's ⋮ renames the plan, uses it again as this week's plan
+/// (confirmed at once, Lee 2026-09-28), or deletes it. A draft opened here
+/// has a Confirm that makes it this week's plan. The back button is the way
+/// back.
 class PreviousPlanScreen extends ConsumerWidget {
   const PreviousPlanScreen({super.key, required this.planId});
 
@@ -176,16 +178,21 @@ class PreviousPlanScreen extends ConsumerWidget {
     await _run(context, ref, () => _notifier(ref).rename(name));
   }
 
+  /// Use this plan again confirms the copy at once (Lee 2026-09-28, ticket
+  /// 162): it asks first when the week has a plan to replace, and lands on
+  /// Food > Shopping as every confirm does (mp-235), where the list is.
   Future<void> _useAgain(BuildContext context, WidgetRef ref) async {
     final content = ref.read(contentServiceProvider);
+    if (!await confirmReplaceWeekPlan(context, ref) || !context.mounted) return;
+    // Taken before the await: the view goes with the navigation.
+    final router = GoRouter.of(context);
     final copy = await _run(context, ref, () => _notifier(ref).useAgain());
     if (copy == null || !context.mounted) return;
     MealvanaSnackbar.showSuccess(
       context,
       content.getValue(ContentKeys.mpPreviousPlanUseAgainDone),
     );
-    // The draft opens in this view, where its Confirm makes it this week's.
-    context.pushReplacement('/food/plans/${copy.id}');
+    router.go(foodTabLocation(FoodTab.shopping), extra: foodTabRequest());
   }
 
   Future<void> _delete(BuildContext context, WidgetRef ref) async {

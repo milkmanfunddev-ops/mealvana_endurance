@@ -46,6 +46,17 @@ class _IdleRepo extends Fake implements VanaChatRepository {
   /// The ids the server gives new conversations, in order.
   final List<String> names = [];
 
+  /// The general conversation the server holds for today, when this device
+  /// holds none (88-001), and how often it was asked.
+  String? serverToday;
+  int lookups = 0;
+
+  @override
+  Future<String?> fetchGeneralConversationForDay(String day) async {
+    lookups++;
+    return serverToday;
+  }
+
   /// What each turn said the athlete was looking at.
   final List<VanaSituation?> situations = [];
 
@@ -107,6 +118,56 @@ void main() {
   test('the first sheet of the day has no conversation yet', () async {
     final c = containerFor('user-1');
     expect(await open(c), isNull);
+    expect(repo.lookups, 1, reason: 'the server was asked once');
+  });
+
+  /// Ticket 162 (Finding 88-001): a new install held nothing for the day and
+  /// started a second general conversation, paying for a second opener. The
+  /// server's conversation for today is found and held instead.
+  group('a device holding nothing for the day (88-001)', () {
+    test('continues today\'s conversation from the server, and holds '
+        'it', () async {
+      repo.serverToday = 'conv-server';
+      final c = containerFor('user-1');
+
+      expect(await notifier(c).openToday(), 'conv-server');
+      // Held on the device now: the next open, and a cold start, read it
+      // back without asking again.
+      expect(await open(c), 'conv-server');
+      final restarted = containerFor('user-1');
+      expect(await open(restarted), 'conv-server');
+      expect(repo.lookups, 1);
+      // No unnamed conversation was armed, so nothing new gets named.
+      expect(repo.names, isEmpty);
+      expect(repo.situations, isEmpty, reason: 'no opener was sent');
+    });
+
+    test('with none on the server, the day starts as before', () async {
+      repo.serverToday = null;
+      repo.names.add('conv-day');
+      final c = containerFor('user-1');
+
+      expect(await notifier(c).openToday(), isNull);
+      await c
+          .read(
+            vanaChatControllerProvider(
+              kind: VanaConversationKind.general,
+            ).notifier,
+          )
+          .loadOpener();
+      expect(await notifier(c).openToday(), 'conv-day');
+    });
+
+    test('the next day asks the server again for that day', () async {
+      repo.serverToday = 'conv-yesterday';
+      final c = containerFor('user-1');
+      expect(await open(c), 'conv-yesterday');
+
+      now = DateTime(2026, 9, 11, 0, 5);
+      repo.serverToday = null;
+      expect(await open(c), isNull);
+      expect(repo.lookups, 2);
+    });
   });
 
   test(

@@ -102,14 +102,18 @@ class _DraftActions extends Fake implements VanaActionClient {
 
 /// Records what "Use this plan instead" asked to copy, answering the copy.
 class _RecordingPlan extends MealPlanController {
-  _RecordingPlan(this.copy);
+  _RecordingPlan(this.copy, {this.weekPlan});
 
   final MealPlan copy;
+
+  /// This week's plan on the tab, if any: what "Use this plan instead"
+  /// asks before replacing (ticket 162).
+  final MealPlan? weekPlan;
   final List<String> usedAgain = [];
   int confirms = 0;
 
   @override
-  Future<MealPlan?> build() async => null;
+  Future<MealPlan?> build() async => weekPlan;
 
   @override
   Future<void> applyServerPlan(MealPlan plan) async {}
@@ -184,11 +188,11 @@ void main() {
 
   late _RecordingPlan plan;
 
-  Future<void> pumpScreen(WidgetTester tester) async {
+  Future<void> pumpScreen(WidgetTester tester, {MealPlan? weekPlan}) async {
     tester.view.physicalSize = const Size(800, 3200);
     tester.view.devicePixelRatio = 1;
     addTearDown(tester.view.reset);
-    plan = _RecordingPlan(copy);
+    plan = _RecordingPlan(copy, weekPlan: weekPlan);
     final router = GoRouter(
       initialLocation: '/vana',
       routes: [
@@ -199,12 +203,12 @@ void main() {
             conversationId: 'conv-1',
           ),
         ),
-        // Where the copy opens: the plan view, whose Confirm makes it
-        // this week's plan (ticket 73).
+        // Where the confirmed copy lands: Food > Shopping, as every
+        // confirm (mp-235; ticket 162).
         GoRoute(
-          path: '/food/plans/:id',
+          path: '/main',
           builder: (_, state) =>
-              Scaffold(body: Text('plan ${state.pathParameters['id']}')),
+              Scaffold(body: Text('main ${state.uri.query}')),
         ),
       ],
     );
@@ -278,9 +282,11 @@ void main() {
     },
   );
 
+  /// Ticket 162 (Lee 2026-09-28): Use this plan instead confirms the copy
+  /// at once. With no plan on the tab there is nothing to ask; the copy is
+  /// this week's plan and the view lands on Food > Shopping.
   testWidgets(
-    'Use this plan instead copies the plan as this week\'s new draft and '
-    'opens it',
+    'Use this plan instead confirms the copy and lands on Shopping',
     (tester) async {
       await pumpScreen(tester);
 
@@ -289,8 +295,52 @@ void main() {
       );
       await tester.pumpAndSettle();
 
+      expect(
+        find.byKey(const ValueKey('meal_planning.replace_plan_confirm')),
+        findsNothing,
+      );
       expect(plan.usedAgain, [archived.id]);
-      expect(find.text('plan plan-copy'), findsOneWidget);
+      expect(find.text('main tab=food&food=shopping'), findsOneWidget);
+    },
+  );
+
+  testWidgets(
+    'over a confirmed plan, Use this plan instead asks first; Keep current '
+    'sends nothing',
+    (tester) async {
+      await pumpScreen(
+        tester,
+        weekPlan: archived.copyWith(
+          id: 'plan-this-week',
+          status: MealPlanStatus.confirmed,
+        ),
+      );
+
+      await tester.tap(
+        find.byKey(const ValueKey('meal_planning.plan_bar.use_instead')),
+      );
+      await tester.pumpAndSettle();
+      expect(
+        find.byKey(const ValueKey('meal_planning.replace_plan_confirm')),
+        findsOneWidget,
+      );
+      await tester.tap(
+        find.byKey(const ValueKey('meal_planning.replace_plan_cancel')),
+      );
+      await tester.pumpAndSettle();
+      expect(plan.usedAgain, isEmpty);
+      expect(find.byType(VanaChatScreen), findsOneWidget);
+
+      await tester.tap(
+        find.byKey(const ValueKey('meal_planning.plan_bar.use_instead')),
+      );
+      await tester.pumpAndSettle();
+      await tester.tap(
+        find.byKey(const ValueKey('meal_planning.replace_plan_go')),
+      );
+      await tester.pumpAndSettle();
+      expect(plan.usedAgain, [archived.id]);
+      expect(find.text('main tab=food&food=shopping'), findsOneWidget);
     },
   );
 }

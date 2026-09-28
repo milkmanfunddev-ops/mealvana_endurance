@@ -37,6 +37,7 @@ import '../../application/vana_settings_controller.dart';
 import '../widgets/picker_chips.dart';
 import '../widgets/plan_bar.dart';
 import '../widgets/plan_conversation_title.dart';
+import '../widgets/replace_plan_dialog.dart';
 import '../widgets/review_sheet.dart';
 import '../widgets/vana_attach_sheet.dart';
 import '../../../../shared/widgets/kyle_design/icons/vana_avatar.dart';
@@ -519,8 +520,12 @@ class _VanaChatScreenState extends ConsumerState<VanaChatScreen> {
       // Playtest §10: the Undo on a receipt card runs the write's own undo.
       onUndoReceipt: _controller.undoReceipt,
       // Disabled until the opener's response header has named the
-      // conversation — there is no draft to browse into before that.
-      onBrowseMeals: (state.conversationId ?? widget.conversationId) == null
+      // conversation — there is no draft to browse into before that — and
+      // in a conversation whose draft another confirm archived: it is
+      // read-only (mp-675; ticket 162, 88-005), the bar says so.
+      onBrowseMeals:
+          (state.conversationId ?? widget.conversationId) == null ||
+              plan?.status == MealPlanStatus.archived
           ? null
           : _openBrowse,
     );
@@ -951,6 +956,16 @@ class _VanaChatScreenState extends ConsumerState<VanaChatScreen> {
   /// (the plan bar and coverage read it off the chat state).
   Future<void> _openBrowse() async {
     final id = _conversationId;
+    if (_draftReplaced) {
+      // The attach sheet's Browse in a read-only conversation (ticket 162):
+      // the same note the plan bar shows, nothing opened.
+      final content = ref.read(contentServiceProvider);
+      MealvanaSnackbar.showWarning(
+        context,
+        content.getValue(ContentKeys.mpPlanBarReplaced),
+      );
+      return;
+    }
     if (id == null) {
       // No draft to browse into until the opener has named the
       // conversation: say why, never nothing (88-011).
@@ -1066,6 +1081,22 @@ class _VanaChatScreenState extends ConsumerState<VanaChatScreen> {
       excludeIds: MealSheet.planMealIds(plan?.meals ?? const []),
     );
   }
+
+  /// Whether this planning conversation's draft was replaced by a different
+  /// confirmed plan (mp-675): it is read-only, and no add goes into it.
+  bool get _draftReplaced =>
+      widget.kind == VanaConversationKind.mealPlanning &&
+      ref
+              .read(
+                vanaChatControllerProvider(
+                  kind: widget.kind,
+                  conversationId: _key,
+                ),
+              )
+              .value
+              ?.draftPlan
+              ?.status ==
+          MealPlanStatus.archived;
 
   /// The live conversation id (the opener's response header fills it in
   /// for a `c=new` conversation), else the route's.
@@ -1252,11 +1283,13 @@ class _VanaChatScreenState extends ConsumerState<VanaChatScreen> {
   }
 
   /// "Use this plan instead" (mp-676): copy the archived draft into this
-  /// week as a new draft (ticket 73's `use_plan_again`) and open the copy in
-  /// the plan view, whose Confirm makes it this week's plan. This
-  /// conversation keeps its archived draft.
+  /// week and confirm it at once (`use_plan_again`; Lee 2026-09-28, ticket
+  /// 162), asking first when the week has a plan to replace. Then Food >
+  /// Shopping, as every confirm (mp-235). This conversation keeps its
+  /// archived draft.
   Future<void> _useInstead(BuildContext context, MealPlan plan) async {
     final content = ref.read(contentServiceProvider);
+    if (!await confirmReplaceWeekPlan(context, ref) || !context.mounted) return;
     try {
       final copy = await ref
           .read(mealPlanControllerProvider.notifier)
@@ -1266,7 +1299,7 @@ class _VanaChatScreenState extends ConsumerState<VanaChatScreen> {
         context,
         content.getValue(ContentKeys.mpPreviousPlanUseAgainDone),
       );
-      unawaited(context.push('/food/plans/${copy.id}'));
+      goToFoodTab(context, FoodTab.shopping);
     } on NeedsConnectionException {
       if (context.mounted) {
         MealvanaSnackbar.showWarning(

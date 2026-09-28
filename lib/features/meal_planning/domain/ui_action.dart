@@ -513,11 +513,14 @@ class RenamePlanAction extends UiAction {
   Map<String, Object?> payloadFields() => {'id': id, 'name': name};
 }
 
-/// `{id}` → `{parts: [batch]}` — the plan [id] copied into this week as a
-/// new draft (mp-675). The answer is the draft; the earlier plan is left as
-/// it was, and this week's plan is untouched until the draft is confirmed.
+/// `{id, requestId?}` → `{parts: [batch, shopping_list]}` — the plan [id]
+/// copied into this week and confirmed at once (mp-675; Lee 2026-09-28,
+/// ticket 162). The answer is the confirmed copy; the plan the week had is
+/// archived as on any confirm and the earlier plan is left as it was. The
+/// server dedupes it by [requestId] like `pick_meals`: a retry of the same
+/// tap confirms one copy.
 class UsePlanAgainAction extends UiAction {
-  const UsePlanAgainAction({required this.id});
+  const UsePlanAgainAction({required this.id, super.requestId});
 
   final String id;
 

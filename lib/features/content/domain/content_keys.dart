@@ -445,6 +445,14 @@ class ContentKeys {
       'meal_planning.previous_plan_use_again';
   static const String mpPreviousPlanUseAgainDone =
       'meal_planning.previous_plan_use_again_done';
+  static const String mpPreviousPlanReplaceTitle =
+      'meal_planning.previous_plan_replace_title';
+  static const String mpPreviousPlanReplaceBody =
+      'meal_planning.previous_plan_replace_body';
+  static const String mpPreviousPlanReplaceConfirm =
+      'meal_planning.previous_plan_replace_confirm';
+  static const String mpPreviousPlanReplaceCancel =
+      'meal_planning.previous_plan_replace_cancel';
   static const String mpPreviousPlanDeleteBody =
       'meal_planning.previous_plan_delete_body';
   static const String mpPreviousPlanMissing =

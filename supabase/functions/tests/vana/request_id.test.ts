@@ -154,7 +154,8 @@ Deno.test('no requestId, or an action outside the three, runs every time as befo
   await withRequestId(v, 'set_servings', { requestId: REQ }, run);
   assertEquals(runs, 4);
   assertEquals(v.fake.writes.length, 0);
-  assertEquals([...IDEMPOTENT_ACTIONS].sort(), ['log_from_plan', 'pick_meals', 'save_meal']);
+  // use_plan_again joined the set with ticket 162: it confirms a fresh copy on every run.
+  assertEquals([...IDEMPOTENT_ACTIONS].sort(), ['log_from_plan', 'pick_meals', 'save_meal', 'use_plan_again']);
 });
 
 Deno.test('the claim RPC missing (a project the migration has not reached) fails open: the write runs unguarded', async () => {
