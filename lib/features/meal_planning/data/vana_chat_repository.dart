@@ -81,6 +81,7 @@ class VanaChatRepository {
     required SupabaseClient supabase,
     required AppLogger logger,
     required this.functionName,
+    this.ambientLookupTimeout = const Duration(seconds: 5),
   }) : _transport = transport,
        _supabase = supabase,
        _logger = logger;
@@ -88,6 +89,11 @@ class VanaChatRepository {
   final VanaTransport _transport;
   final SupabaseClient _supabase;
   final AppLogger _logger;
+
+  /// How long [fetchGeneralConversationForDay] waits before treating the
+  /// day as having no conversation (ticket 162): the ambient chat's first
+  /// entry waits on it, so a slow network never holds the chat closed.
+  final Duration ambientLookupTimeout;
 
   /// `vana-chat` (Vana) or `jade-chat` (legacy 1.23.x alias).
   final String functionName;
@@ -228,13 +234,15 @@ class VanaChatRepository {
   /// message during it: a tool write clears `context_day` on every
   /// conversation until its next turn (context-cache.ts), so the message
   /// time is the second key. Null when there is none, and null on a failed
-  /// read (logged), which the caller treats as none: the day's first entry
-  /// then starts a conversation as before.
+  /// read or one slower than [ambientLookupTimeout] (logged), which the
+  /// caller treats as none: the day's first entry then starts a
+  /// conversation as before.
   Future<String?> fetchGeneralConversationForDay(String day) async {
     final userId = _transport.currentUserId;
     if (userId == null) return null;
     final start = DateTime.parse(day); // local midnight
-    final end = start.add(const Duration(days: 1));
+    // The next local midnight: a DST change day is 23 or 25 hours long.
+    final end = DateTime(start.year, start.month, start.day + 1);
     try {
       final row = await _supabase
           .from('vana_conversations')
@@ -249,7 +257,8 @@ class VanaChatRepository {
           )
           .order('last_message_at', ascending: false)
           .limit(1)
-          .maybeSingle();
+          .maybeSingle()
+          .timeout(ambientLookupTimeout);
       return row?['id'] as String?;
     } catch (e) {
       _logger.info(

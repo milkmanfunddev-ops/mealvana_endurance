@@ -3,9 +3,12 @@
 /// parser (`parts` first, `content + metadata.ui_parts` fallback).
 library;
 
+import 'dart:async';
 import 'dart:convert';
 
 import 'package:flutter_test/flutter_test.dart';
+import 'package:http/http.dart' as http;
+import 'package:http/testing.dart';
 import 'package:mealvana_endurance/features/ai_credits/domain/insufficient_credits_exception.dart';
 import 'package:mealvana_endurance/features/meal_planning/data/vana_chat_repository.dart';
 import 'package:mealvana_endurance/features/meal_planning/data/vana_exceptions.dart';
@@ -14,6 +17,8 @@ import 'package:mealvana_endurance/features/meal_planning/domain/vana_input_mode
 import 'package:mealvana_endurance/features/meal_planning/domain/vana_message.dart';
 import 'package:mealvana_endurance/features/meal_planning/domain/vana_part.dart';
 import 'package:mealvana_endurance/features/meal_planning/domain/vana_stream_event.dart';
+
+import 'package:supabase_flutter/supabase_flutter.dart';
 
 import '../domain/fixture_helpers.dart';
 import '../helpers/fakes.dart';
@@ -376,6 +381,72 @@ void main() {
         );
       },
     );
+  });
+
+  /// Ticket 162 fix 2: the ambient chat's server lookup for the day's
+  /// general conversation. PostgREST is a real client over a fake HTTP one,
+  /// so the filter checked is the one the request carried.
+  group('fetchGeneralConversationForDay', () {
+    final h = TransportHarness(status: 200, body: '');
+    final requests = <http.Request>[];
+
+    VanaChatRepository repo(
+      Future<http.Response> Function(http.Request) answer, {
+      Duration? lookupTimeout,
+    }) => VanaChatRepository(
+      transport: h.transport,
+      supabase: SupabaseClient(
+        'https://example.supabase.co',
+        'anon',
+        httpClient: MockClient((r) async {
+          requests.add(r);
+          final res = await answer(r);
+          // PostgREST reads the request back off the response.
+          return http.Response(res.body, res.statusCode, request: r);
+        }),
+      ),
+      logger: h.logger,
+      functionName: 'vana-chat',
+      ambientLookupTimeout: lookupTimeout ?? const Duration(seconds: 5),
+    );
+
+    setUp(requests.clear);
+
+    test('answers the newest general conversation the server has', () async {
+      final id = await repo(
+        (_) async => http.Response(
+          jsonEncode([
+            {'id': 'conv-9'},
+          ]),
+          200,
+        ),
+      ).fetchGeneralConversationForDay('2026-09-28');
+      expect(id, 'conv-9');
+    });
+
+    test('a lookup that hangs falls back to none after the timeout, so the '
+        'caller starts a conversation as before', () async {
+      final never = Completer<http.Response>();
+      final id = await repo(
+        (_) => never.future,
+        lookupTimeout: const Duration(milliseconds: 50),
+      ).fetchGeneralConversationForDay('2026-09-28');
+      expect(id, isNull);
+      expect(requests, hasLength(1));
+    });
+
+    test('the day ends at the next local midnight, not 24 hours on (a DST '
+        'change day is 25 hours long)', () async {
+      // 2026-11-01 is the US fall-back day. In a zone without DST the two
+      // agree; in one with it (Lee's, America/Chicago) 24 hours after
+      // midnight is 23:00 the same day.
+      await repo(
+        (_) async => http.Response('null', 200),
+      ).fetchGeneralConversationForDay('2026-11-01');
+      final or = requests.single.url.queryParameters['or']!;
+      final end = RegExp(r'last_message_at\.lt\.([^)]+)').firstMatch(or)!;
+      expect(DateTime.parse(end.group(1)!), DateTime(2026, 11, 2).toUtc());
+    });
   });
 
   group('messageFromRow', () {
