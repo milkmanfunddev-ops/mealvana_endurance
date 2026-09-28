@@ -4,8 +4,8 @@
  * stay in Previous lists.
  *
  * Every server path that archives a draft: confirm (the `confirm_meal_plan` SQL function archives the week's other
- * plans, mp-241), `new_plan` (newPlan), and `use_plan_again` (usePlanAgain archives the week's conversation-less
- * draft). Rows are producer-shaped: what `meal_plans` / `shopping_lists` / `shopping_items` return. A plan that was
+ * plans, mp-241), `new_plan` (newPlan), and `use_plan_again` (usePlanAgain confirms the copy, so it archives the
+ * week's plans as confirm does; ticket 162). Rows are producer-shaped: what `meal_plans` / `shopping_lists` / `shopping_items` return. A plan that was
  * ever confirmed carries `confirmed_at` (migration 20260925150100); its list carries its own `confirmed_at`
  * (markListConfirmed).
  */
@@ -120,15 +120,19 @@ Deno.test('new_plan on the confirmed plan: it is archived but keeps its list (it
   assertEquals(listIds(v).length, 6);
 });
 
-Deno.test("use_plan_again: the Plan tab's draft it replaces loses its list; conversation drafts and the confirmed plan keep theirs", async () => {
+// Ticket 162 (Lee 2026-09-28): use_plan_again confirms the copy at once, so it archives the week's plans the way any
+// confirm does. Every draft loses its list; the replaced confirmed plan, the earlier plan and a hand-made list stay.
+Deno.test("use_plan_again: the week's drafts lose their lists; the copy gets a confirmed list; the replaced plan, an earlier plan and a hand-made list keep theirs", async () => {
   const v = account();
   const copy = await usePlanAgain(v, EARLIER);
-  assertEquals(v.fake.rows('meal_plans').find((r) => r.id === TAB_DRAFT)!.status, 'archived');
+  assertEquals(copy.status, 'confirmed');
+  for (const id of [TAB_DRAFT, MONDAY_DRAFT, WEDNESDAY_DRAFT, OLD_CONFIRMED]) assertEquals(v.fake.rows('meal_plans').find((r) => r.id === id)!.status, 'archived', id);
   const ids = listIds(v);
-  assertEquals(ids.includes('L-tab'), false);
-  for (const kept of ['L-confirmed', 'L-monday', 'L-wednesday', 'L-earlier', 'L-hand']) assertEquals(ids.includes(kept), true, kept);
-  // The copy is a draft: no list until it is confirmed (110-012, Lee 09-26); its mirror still holds the lines.
-  assertEquals(v.fake.rows('shopping_lists').some((r) => r.plan_id === copy.id), false);
+  for (const gone of ['L-tab', 'L-monday', 'L-wednesday']) assertEquals(ids.includes(gone), false, gone);
+  for (const kept of ['L-confirmed', 'L-earlier', 'L-hand']) assertEquals(ids.includes(kept), true, kept);
+  const list = v.fake.rows('shopping_lists').find((r) => r.plan_id === copy.id);
+  assertEquals(list != null && list.confirmed_at != null, true, 'the copy has a confirmed list');
+  assertEquals(v.fake.rows('shopping_items').filter((r) => r.list_id === list!.id).length > 0, true);
   assertEquals(copy.shopping.length > 0, true);
 });
 

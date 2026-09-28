@@ -174,8 +174,10 @@ export interface UiAction {
     // one `vana_calls` row with no model and `input_mode: 'tap'`, and answers `tapMessageId` / `messageId` beside `parts`.
     | 'same_as_last_time' | 'draft_week' | 'plan_week' | 'ask_pantry' | 'open_shopping_list'
     // additive 2026-09-25 (mp-675, testing-wave 73): plans are a list. rename_plan{id, name} → {parts:[batch]} (an empty name
-    // clears it) · use_plan_again{id} → {parts:[batch]}, the earlier plan copied into this week as a new draft. Editing an
-    // earlier plan's meals is set_servings / remove_meal by planMealId; deleting it is delete_plan{id}.
+    // clears it) · use_plan_again{id, requestId?} → {parts:[batch, shopping_list]}, the earlier plan copied into this week
+    // and confirmed at once (Lee 2026-09-28, ticket 162): the plan the week had is archived as on any confirm, the copy's
+    // list is built, and no draft is made. `requestId` dedupes it like pick_meals. Editing an earlier plan's meals is
+    // set_servings / remove_meal by planMealId; deleting it is delete_plan{id}.
     | 'rename_plan' | 'use_plan_again';
   payload: Record<string, unknown>;
 }

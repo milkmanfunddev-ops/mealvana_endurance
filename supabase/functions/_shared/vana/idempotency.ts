@@ -10,14 +10,15 @@
  *  that arrives while the first is still running is refused as `in_progress` (409). A run that throws releases its
  *  claim so the retry runs again. A `running` row older than the TTL is taken over (an isolate torn down mid-write).
  *
- *  Only the three write types the ruling names are covered; every other action, and any call without a `requestId`,
+ *  Only the three write types the ruling names, plus `use_plan_again` (ticket 162), are covered; every other action, and any call without a `requestId`,
  *  runs as before. A claim that cannot be asked for (the RPC missing on a project the migration has not reached, a
  *  database error) fails OPEN: the table is a safety net behind the phone's own in-flight guards, never a gate. */
 import type { VanaCtx } from './env.ts';
 import type { ActionResult } from './actions.ts';
 
-/** The writes a `requestId` dedupes. `unpick_meal` is idempotent by nature (removing twice removes once). */
-export const IDEMPOTENT_ACTIONS: ReadonlySet<string> = new Set(['pick_meals', 'log_from_plan', 'save_meal']);
+/** The writes a `requestId` dedupes. `unpick_meal` is idempotent by nature (removing twice removes once).
+ *  `use_plan_again` (ticket 162) confirms a fresh copy on every run, so a repeat would confirm a second copy over the first. */
+export const IDEMPOTENT_ACTIONS: ReadonlySet<string> = new Set(['pick_meals', 'log_from_plan', 'save_meal', 'use_plan_again']);
 export const REQUEST_ID_MAX = 64;
 /** How long a `running` claim is honoured before another request may take it over. */
 export const REQUEST_TTL_SECONDS = 120;
