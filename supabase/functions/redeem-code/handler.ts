@@ -43,7 +43,7 @@
  *                                        yet, expired, used, already redeemed
  *                                        by this caller, the caller's own
  *                                        influencer code, a coach code from a
- *                                        coach the caller is already paired
+ *                                        coach the caller has an active pairing
  *                                        with (already_paired), or a giveaway
  *                                        while Pro is active (pro_active, with
  *                                        `pro_until` and `grant`)
@@ -97,7 +97,7 @@ export const REFUSALS = {
   used: 'That code has already been used.',
   already_redeemed: "You've already used that code.",
   own_code: "That's your own code. Share it with your athletes.",
-  already_paired: "You've already asked this coach to pair.",
+  already_paired: "You're already paired with this coach.",
   pro_active: 'You already have Pro.',
 } as const;
 export type Refusal = keyof typeof REFUSALS;
@@ -200,9 +200,10 @@ export function makeRedeemHandler(deps: RedeemDeps) {
     const isOwner = row.owner_user_id === caller.userId;
     if (row.type === 'influencer' && isOwner) return refuse('own_code');
 
-    // A coach the caller has already asked, or is paired with: a second code
-    // of theirs would spend a claim and overwrite `coach_code` for nothing
-    // (11-002, ticket 95). The same code again keeps its own answer.
+    // A coach the caller is already paired with: a second code of theirs
+    // would spend a claim and overwrite `coach_code` for nothing (11-002,
+    // ticket 95). The same code again keeps its own answer. A pending request
+    // is not a pairing: the code accepts it (ticket 164; Lee, 2026-09-28).
     if (row.type === 'coach' && !isOwner && row.owner_user_id) {
       const paired = await alreadyPaired(db, row, caller.userId);
       if (paired === 'error') return json({ error: 'server_error' }, 500);
@@ -408,8 +409,9 @@ async function markCoach(db: Db, caller: Caller): Promise<void> {
  * (`CoachRepository.createRelationship`, requested_by 'athlete'), active at
  * once with `accepted_at` set: the coach's code is their invitation, so
  * nothing waits on the coach (Lee, 2026-09-26; 122-002, 122-003; this touches
- * mp-535). A pairing already pending or active is left as it is; a declined
- * or archived one is opened again. One row per pair
+ * mp-535). An active pairing is left as it is; a pending request is accepted
+ * by the code, and a declined or archived pairing is opened again (Lee,
+ * 2026-09-28; ticket 164). One row per pair
  * (`unique (coach_user_id, athlete_user_id)`).
  */
 async function openPairing(db: Db, coachUserId: string, athleteUserId: string): Promise<void> {
@@ -423,7 +425,7 @@ async function openPairing(db: Db, coachUserId: string, athleteUserId: string): 
 
   const stamp = new Date().toISOString();
   const rel = existing as { id: string; status: string } | null;
-  if (rel && (rel.status === 'pending' || rel.status === 'active')) return;
+  if (rel?.status === 'active') return;
 
   if (rel) {
     const { error } = await db
@@ -457,10 +459,11 @@ async function openPairing(db: Db, coachUserId: string, athleteUserId: string): 
 }
 
 /**
- * Whether the caller already has a pending or active pairing with the code's
- * coach: 'already_redeemed' when it was this very code, 'already_paired' for
- * another code of the same coach or a pairing made some other way, null when
- * there is none. Only reads; nothing is claimed or written.
+ * Whether the caller already has an active pairing with the code's coach:
+ * 'already_redeemed' when it was this very code, 'already_paired' for another
+ * code of the same coach or a pairing made some other way, null when there is
+ * none (a pending, declined or archived row is none). Only reads; nothing is
+ * claimed or written.
  */
 async function alreadyPaired(
   db: Db,
@@ -478,7 +481,7 @@ async function alreadyPaired(
     return 'error';
   }
   const status = (rel as { status: string } | null)?.status;
-  if (status !== 'pending' && status !== 'active') return null;
+  if (status !== 'active') return null;
 
   const { data: mine, error: mineError } = await db
     .from('code_redemptions')
