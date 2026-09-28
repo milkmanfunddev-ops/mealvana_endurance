@@ -27,6 +27,7 @@ import 'package:mealvana_endurance/features/auth/application/auth_service.dart'
 import 'package:mealvana_endurance/features/auth/data/user_repository.dart';
 import 'package:mealvana_endurance/features/auth/domain/user_preferences.dart';
 import 'package:mealvana_endurance/features/calendar/presentation/providers/calendar_selected_date_provider.dart';
+import 'package:mealvana_endurance/features/content/application/content_service.dart';
 import 'package:mealvana_endurance/features/daily_macros/domain/daily_macro_targets.dart';
 import 'package:mealvana_endurance/features/daily_macros/presentation/providers/daily_macros_controller.dart';
 import 'package:mealvana_endurance/features/macro_dashboard/presentation/providers/macro_dashboard_providers.dart';
@@ -37,6 +38,7 @@ import 'package:mealvana_endurance/features/meal_logging/domain/consumed_totals.
 import 'package:mealvana_endurance/features/meal_logging/domain/meal_log.dart';
 import 'package:mealvana_endurance/features/meal_logging/domain/meal_log_source.dart';
 import 'package:mealvana_endurance/features/meal_logging/domain/meal_slot.dart';
+import 'package:mealvana_endurance/features/meal_logging/domain/saved_meal.dart';
 import 'package:mealvana_endurance/features/meal_logging/presentation/providers/meal_log_providers.dart';
 import 'package:mealvana_endurance/shared/database/app_database.dart'
     hide Activity;
@@ -46,6 +48,7 @@ import 'package:mealvana_endurance/shared/services/app_config.dart';
 import 'package:mealvana_endurance/shared/services/preferences_service.dart';
 
 import '../../helpers/widget_test_harness.dart';
+import '../meal_planning/presentation/helpers/test_content.dart';
 
 // ---------------------------------------------------------------------------
 // Canonical mock day (goldens manifest): verified 8:00 swim, planned 5:30 run,
@@ -138,6 +141,7 @@ class _MockUserRepository extends Mock implements UserRepository {}
 class _RecordingMealLogController extends MealLogController {
   static final deleted = <String>[];
   static final restored = <String>[];
+  static final favorited = <String>[];
 
   @override
   Future<void> deleteLog(String logId) async {
@@ -148,7 +152,28 @@ class _RecordingMealLogController extends MealLogController {
   Future<void> restoreLog(String logId) async {
     restored.add(logId);
   }
+
+  @override
+  Future<SavedMeal?> saveLogAsFavorite(
+    MealLog log, {
+    String? customName,
+  }) async {
+    favorited.add(log.id);
+    return null;
+  }
 }
+
+/// The bagel already saved as a favourite, as the row is stored: same name
+/// and (no) items, its own id, no link back to the log.
+SavedMeal _bagelFavorite() => SavedMeal(
+  id: 'fav-bagel',
+  userId: 'u1',
+  name: 'Everything Bagel',
+  components: const [],
+  calories: 574,
+  createdAt: _day,
+  updatedAt: _day,
+);
 
 UserProfile _userProfile() => UserProfile(
   id: 'u1',
@@ -600,6 +625,87 @@ void main() {
     await tester.tap(find.text('Undo'));
     await tester.pumpAndSettle();
     expect(_RecordingMealLogController.restored, ['m1']);
+  });
+
+  // Ticket 163, ruling 9 (Lee, 2026-09-28): a logged meal that is already a
+  // favourite reads "In favorites" where "Save as favorite" was, and a tap
+  // on it saves nothing. The match is the row's saved_meal_id pointer or, as
+  // here, the name + item signature of a favourite saved before the pointer.
+  group('163 / ruling 9: an existing favourite', () {
+    late Map<String, String> content;
+    setUpAll(() => content = loadDefaultContent());
+
+    Future<void> pumpWithFavorites(
+      WidgetTester tester,
+      List<SavedMeal> favorites,
+    ) async {
+      _RecordingMealLogController.favorited.clear();
+      await pumpSeeded(
+        tester,
+        const Scaffold(body: MacroDashboardScreen()),
+        settle: true,
+        overrides: [
+          ..._dayOverrides(),
+          contentServiceProvider.overrideWith(testContentService),
+          savedMealsProvider.overrideWith((ref) => Stream.value(favorites)),
+          mealLogControllerProvider.overrideWith(
+            _RecordingMealLogController.new,
+          ),
+        ],
+      );
+      await tester.tap(find.byKey(const ValueKey('macro_dashboard.meal_m1')));
+      await tester.pumpAndSettle();
+    }
+
+    testWidgets('reads "In favorites" and a tap saves nothing', (
+      tester,
+    ) async {
+      await pumpWithFavorites(tester, [_bagelFavorite()]);
+
+      final pill = find.byKey(
+        const ValueKey('macro_dashboard.meal_m1.favorite'),
+      );
+      expect(pill, findsOneWidget);
+      expect(
+        find.descendant(
+          of: pill,
+          matching: find.text(content['meal_log_actions.in_favorites']!),
+        ),
+        findsOneWidget,
+      );
+      expect(
+        find.text(content['meal_log_actions.save_as_favorite']!),
+        findsNothing,
+      );
+
+      await tester.tap(pill);
+      await tester.pumpAndSettle();
+      expect(_RecordingMealLogController.favorited, isEmpty);
+      expect(
+        find.text(content['meal_log_actions.saved_as_favorite']!),
+        findsNothing,
+      );
+    });
+
+    testWidgets('a meal that is not a favourite still offers Save as favorite', (
+      tester,
+    ) async {
+      await pumpWithFavorites(tester, const []);
+
+      final pill = find.byKey(
+        const ValueKey('macro_dashboard.meal_m1.favorite'),
+      );
+      expect(
+        find.descendant(
+          of: pill,
+          matching: find.text(content['meal_log_actions.save_as_favorite']!),
+        ),
+        findsOneWidget,
+      );
+      await tester.tap(pill);
+      await tester.pumpAndSettle();
+      expect(_RecordingMealLogController.favorited, ['m1']);
+    });
   });
 
   // The delete/restore write path through the REAL notifier → repository →

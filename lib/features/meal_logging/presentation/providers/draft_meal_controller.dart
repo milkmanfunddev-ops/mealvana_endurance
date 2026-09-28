@@ -224,12 +224,9 @@ class DraftMealController extends _$DraftMealController {
     if (result is! AsyncData || written == null) return false;
 
     if (alsoSaveAsFavorite) {
-      final favorite = await controller.saveLogAsFavorite(written);
-      if (favorite != null && ref.mounted) {
-        // Provenance only: the same items and totals go back in, so
-        // repeating this write changes nothing but `updated_at`.
-        await controller.updateLog(written.copyWith(savedMealId: favorite.id));
-      }
+      // The controller points the log row at the favourite it makes
+      // (`saved_meal_id`, 113-009; ticket 163).
+      await controller.saveLogAsFavorite(written);
     }
 
     if (ref.mounted) clear();
