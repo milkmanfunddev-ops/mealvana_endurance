@@ -75,7 +75,7 @@ export async function requirePro(admin: Db, userId: string, nowMs: number = Date
  * non-boolean value answers false: the gate fails closed, as the cache read
  * does.
  */
-async function isAdmin(admin: Db, userId: string): Promise<boolean> {
+export async function isAdmin(admin: Db, userId: string): Promise<boolean> {
   try {
     const { data, error } = await admin.from('users').select('is_admin').eq('id', userId).maybeSingle();
     if (error) {
