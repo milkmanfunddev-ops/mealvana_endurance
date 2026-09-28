@@ -36,6 +36,7 @@ an "✅ APPLIED" note.
 | Path | Meaning |
 |------|---------|
 | `*.sql` (loose) | Outstanding migrations, idempotent, hand-applied. Today: `20260814120000_activities_two_time_and_tombstone.sql`, `20260814121000_plan_recalc_log.sql` (daily-macros-dashboard bundle). |
+| `*.sql` (loose, DEV ONLY) | Applied to dev and never to prod, so they stay loose for good; each says so in its header. Today: `20260928140000_vana_eval_run_users.sql` (vana-eval, eval-v2 ticket 02). |
 | `_archived/` | Every migration file we've ever written, in one place — applied migrations, data-seed migrations, the disabled pre-Oct-2025 base-schema attempts (`.sql.skip`), and a couple drafted-but-never-applied ones. We don't run these directly. |
 
 ## ⚠️ `supabase db push` will fail (issue #29)
