@@ -1118,6 +1118,15 @@ class _VanaChatScreenState extends ConsumerState<VanaChatScreen> {
 
   Future<void> _pickMeal(MealRef meal, int servings) async {
     final content = ref.read(contentServiceProvider);
+    if (_draftReplaced) {
+      // A card in a read-only conversation (ticket 162 fix 3): no tick, no
+      // write, the same note the plan bar shows.
+      MealvanaSnackbar.showWarning(
+        context,
+        content.getValue(ContentKeys.mpPlanBarReplaced),
+      );
+      return;
+    }
     setState(
       () => _pickedInCurrentPicker = {..._pickedInCurrentPicker, meal.id},
     );
@@ -1134,8 +1143,17 @@ class _VanaChatScreenState extends ConsumerState<VanaChatScreen> {
             ),
       );
     } on Exception catch (e) {
-      // Offline says so, whether refused before sending or cut off (88-013).
-      if (mounted) showWriteFailure(context, content, e);
+      // The pick never landed: take the optimistic tick back off, and say
+      // why. Offline says so, whether refused before sending or cut off
+      // (88-013).
+      if (mounted) {
+        setState(
+          () =>
+              _pickedInCurrentPicker = {..._pickedInCurrentPicker}
+                ..remove(meal.id),
+        );
+        showWriteFailure(context, content, e);
+      }
     }
   }
 

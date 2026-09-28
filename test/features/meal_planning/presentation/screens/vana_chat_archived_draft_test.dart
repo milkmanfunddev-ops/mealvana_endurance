@@ -26,8 +26,12 @@ import 'package:mealvana_endurance/features/meal_planning/application/meal_plan_
 import 'package:mealvana_endurance/features/meal_planning/data/user_memory_repository.dart';
 import 'package:mealvana_endurance/features/meal_planning/data/vana_action_client.dart';
 import 'package:mealvana_endurance/features/meal_planning/data/vana_chat_repository.dart';
+import 'package:mealvana_endurance/features/meal_planning/domain/cooking_session.dart';
 import 'package:mealvana_endurance/features/meal_planning/domain/meal_plan.dart';
 import 'package:mealvana_endurance/features/meal_planning/domain/meal_plan_status.dart';
+import 'package:mealvana_endurance/features/meal_planning/domain/meal_ref.dart';
+import 'package:mealvana_endurance/features/meal_planning/domain/meal_source.dart';
+import 'package:mealvana_endurance/features/meal_planning/domain/meal_type.dart';
 import 'package:mealvana_endurance/features/meal_planning/domain/ui_action.dart';
 import 'package:mealvana_endurance/features/meal_planning/domain/user_memory.dart';
 import 'package:mealvana_endurance/features/meal_planning/domain/vana_conversation_kind.dart';
@@ -111,6 +115,7 @@ class _RecordingPlan extends MealPlanController {
   final MealPlan? weekPlan;
   final List<String> usedAgain = [];
   int confirms = 0;
+  int picks = 0;
 
   @override
   Future<MealPlan?> build() async => weekPlan;
@@ -122,6 +127,19 @@ class _RecordingPlan extends MealPlanController {
   Future<MealPlan?> usePlanAgain(String id) async {
     usedAgain.add(id);
     return copy;
+  }
+
+  @override
+  Future<MealPlan?> pickMeals(
+    List<MealPick> meals, {
+    int? servings,
+    CookingSession? session,
+    bool sendSession = false,
+    String? conversationId,
+    String? planId,
+  }) async {
+    picks++;
+    return null;
   }
 
   @override
@@ -183,6 +201,27 @@ void main() {
       content: 'Two dinners are in.',
       parts: const [],
       createdAt: DateTime(2026, 9, 22, 7, 8),
+    ),
+    VanaMessage(
+      id: 'a-2',
+      conversationId: 'conv-1',
+      role: VanaMessageRole.assistant,
+      content: 'Another dinner?',
+      parts: const [
+        VanaMealPickerPart(
+          title: 'Dinners',
+          mealType: MealType.dinner,
+          meals: [
+            MealRef(
+              source: MealSource.library,
+              id: 'D-777',
+              name: 'Salmon quinoa bowl',
+              mealType: MealType.dinner,
+            ),
+          ],
+        ),
+      ],
+      createdAt: DateTime(2026, 9, 22, 7, 9),
     ),
   ];
 
@@ -285,24 +324,23 @@ void main() {
   /// Ticket 162 (Lee 2026-09-28): Use this plan instead confirms the copy
   /// at once. With no plan on the tab there is nothing to ask; the copy is
   /// this week's plan and the view lands on Food > Shopping.
-  testWidgets(
-    'Use this plan instead confirms the copy and lands on Shopping',
-    (tester) async {
-      await pumpScreen(tester);
+  testWidgets('Use this plan instead confirms the copy and lands on Shopping', (
+    tester,
+  ) async {
+    await pumpScreen(tester);
 
-      await tester.tap(
-        find.byKey(const ValueKey('meal_planning.plan_bar.use_instead')),
-      );
-      await tester.pumpAndSettle();
+    await tester.tap(
+      find.byKey(const ValueKey('meal_planning.plan_bar.use_instead')),
+    );
+    await tester.pumpAndSettle();
 
-      expect(
-        find.byKey(const ValueKey('meal_planning.replace_plan_confirm')),
-        findsNothing,
-      );
-      expect(plan.usedAgain, [archived.id]);
-      expect(find.text('main tab=food&food=shopping'), findsOneWidget);
-    },
-  );
+    expect(
+      find.byKey(const ValueKey('meal_planning.replace_plan_confirm')),
+      findsNothing,
+    );
+    expect(plan.usedAgain, [archived.id]);
+    expect(find.text('main tab=food&food=shopping'), findsOneWidget);
+  });
 
   testWidgets(
     'over a confirmed plan, Use this plan instead asks first; Keep current '
@@ -343,4 +381,28 @@ void main() {
       expect(find.text('main tab=food&food=shopping'), findsOneWidget);
     },
   );
+
+  /// Ticket 162 fix 3: a card in the replaced draft's chat adds nothing.
+  /// The tap writes nothing, the card stays un-ticked, and the replaced-plan
+  /// note says why.
+  testWidgets('tapping a meal card in the archived-draft chat writes nothing '
+      'and leaves it un-ticked', (tester) async {
+    await pumpScreen(tester);
+
+    final tick = find.byKey(const ValueKey('meal_planning.picker_tick_D-777'));
+    expect(tick, findsOneWidget);
+    await tester.tap(tick);
+    await tester.pump();
+    await tester.pump(const Duration(milliseconds: 50));
+
+    expect(plan.picks, 0, reason: 'no write into the archived draft');
+    expect(
+      find.descendant(of: tick, matching: find.byIcon(Icons.check)),
+      findsNothing,
+    );
+    expect(
+      find.text(content['meal_planning.plan_bar_replaced']!),
+      findsWidgets,
+    );
+  });
 }
