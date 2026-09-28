@@ -192,7 +192,8 @@ Deno.test('an earlier plan\'s servings are edited in place, on that plan', async
 });
 
 // ---------------------------------------------------------------- the vana-action wiring
-Deno.test('vana-action: rename_plan and use_plan_again answer a batch part with the plan', async () => {
+// use_plan_again fires the day-notes refresh under waitUntil (like confirm_plan); its fetch outlives the test.
+Deno.test({ name: 'vana-action: rename_plan and use_plan_again answer a batch part with the plan', sanitizeOps: false, sanitizeResources: false, fn: async () => {
   const v = account();
   const renamed = await extraAction(v, 'rename_plan', { id: SEP14, name: 'Build week' });
   assertEquals((renamed!.parts[0] as unknown as { plan: { id: string; name: string } }).plan.name, 'Build week');
@@ -201,7 +202,7 @@ Deno.test('vana-action: rename_plan and use_plan_again answer a batch part with 
   assertEquals([plan.kind, plan.plan.weekStart, plan.plan.status, plan.plan.meals.length], ['batch', WS, 'confirmed', 4]);
   // Like confirm_plan, the shopping list rides along as its own part: the app lands on Shopping.
   assertEquals(again!.parts[1]?.kind, 'shopping_list');
-});
+} });
 
 Deno.test('vana-action: use_plan_again is deduped by requestId, so a double tap or a retry after a timeout confirms one copy', () => {
   assert(IDEMPOTENT_ACTIONS.has('use_plan_again'));
