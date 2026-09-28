@@ -15,6 +15,6 @@
 
 **Touches:** lib/features/meal_planning/presentation/screens/shopping_tab.dart, lib/features/kroger/application/kroger_controller.dart, lib/features/kroger/presentation/kroger_screen.dart, supabase/functions/redeem-code/handler.ts, assets/config/content_defaults.json
 
-- [ ] Seam test through the real notifier: a successful connect started from Add to cart goes on into the send. A cancelled connect does not.
-- [ ] Deno test: the already-paired refusal carries the new copy, and a declined or archived pairing reopens.
-- [ ] `flutter analyze` clean on touched files.
+- [x] Seam test through the real notifier: a successful connect started from Add to cart goes on into the send. A cancelled connect does not.
+- [x] Deno test: the already-paired refusal carries the new copy, and a declined or archived pairing reopens.
+- [x] `flutter analyze` clean on touched files.
