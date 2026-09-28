@@ -221,6 +221,21 @@ Deno.test({ name: 'vana-action: rename_plan and use_plan_again answer a batch pa
   assertEquals(again!.parts[1]?.kind, 'shopping_list');
 } });
 
+// Ticket 162 fix 1: the week is the athlete's, not UTC's. The app sends its local date the way confirm_plan does; a
+// Saturday-evening tap west of UTC is already Sunday in UTC, which would put the copy in next week.
+Deno.test({ name: 'vana-action: use_plan_again copies into the week of the client\'s local date; no date is today\'s week', sanitizeOps: false, sanitizeResources: false, fn: async () => {
+  const v = account();
+  const localDay = addDays(WS, -1); // the last day of the week before, in the athlete's calendar
+  const again = await extraAction(v, 'use_plan_again', { id: SEP14, date: localDay });
+  const copy = (again!.parts[0] as unknown as { plan: { weekStart: string; status: string } }).plan;
+  assertEquals([copy.weekStart, copy.status], [weekStartFor(localDay), 'confirmed']);
+  assertEquals((await getPlanById(v, THIS_WEEK))!.status, 'confirmed', 'this week\'s plan is not the one replaced');
+
+  const w = account();
+  const fallback = await extraAction(w, 'use_plan_again', { id: SEP14 });
+  assertEquals((fallback!.parts[0] as unknown as { plan: { weekStart: string } }).plan.weekStart, WS);
+} });
+
 Deno.test('vana-action: use_plan_again is deduped by requestId, so a double tap or a retry after a timeout confirms one copy', () => {
   assert(IDEMPOTENT_ACTIONS.has('use_plan_again'));
 });

@@ -520,15 +520,22 @@ class RenamePlanAction extends UiAction {
 /// server dedupes it by [requestId] like `pick_meals`: a retry of the same
 /// tap confirms one copy.
 class UsePlanAgainAction extends UiAction {
-  const UsePlanAgainAction({required this.id, super.requestId});
+  const UsePlanAgainAction({required this.id, this.date, super.requestId});
 
   final String id;
+
+  /// `YYYY-MM-DD`, the athlete's local day: the copy goes into that day's
+  /// week (ticket 162). The server defaults to its UTC today.
+  final String? date;
 
   @override
   String get type => 'use_plan_again';
 
   @override
-  Map<String, Object?> payloadFields() => {'id': id};
+  Map<String, Object?> payloadFields() => {
+    'id': id,
+    if (date != null) 'date': date,
+  };
 }
 
 /// `{}` → `{parts: [], plans: [...]}`.

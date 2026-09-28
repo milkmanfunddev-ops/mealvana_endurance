@@ -221,6 +221,17 @@ void main() {
       );
     });
 
+    // Ticket 162 fix 1: the copy goes into the athlete's local week, so the
+    // local date rides along as confirm_plan's does.
+    test('use_plan_again', () {
+      check(const UsePlanAgainAction(id: 'p1'), 'use_plan_again', {'id': 'p1'});
+      check(
+        const UsePlanAgainAction(id: 'p1', date: '2026-09-26'),
+        'use_plan_again',
+        {'id': 'p1', 'date': '2026-09-26'},
+      );
+    });
+
     test('toggle_shopping', () {
       check(
         const ToggleShoppingAction(

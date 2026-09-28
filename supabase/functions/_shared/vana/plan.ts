@@ -288,6 +288,7 @@ export async function renamePlan(v: VanaCtx, id: string, name: string): Promise<
   return (await getPlanById(v, id))!;
 }
 /** `use_plan_again` (mp-675; Lee 2026-09-28, ticket 162): an earlier plan copied into this week and confirmed at once,
+ *  "this week" being the week of [date], the athlete's local day (defaults to today(), UTC),
  *  its name and meals with it. "You either confirm or you don't": a draft lives only in its Vana chat, so the copy is
  *  never left as one. The confirm is `confirmPlan`'s, so the plan this week had is archived with its `confirmed_at`
  *  (it stays in the list, mp-674), every draft in the week is archived with it (mp-241) and the copy's shopping list
@@ -300,10 +301,10 @@ export async function renamePlan(v: VanaCtx, id: string, name: string): Promise<
  *  the athlete's plan for the week is untouched until (4). Once (4) has committed the copy IS the week's plan (the old
  *  one is archived), so a later failure (the list stamp, the read back) leaves it standing and only fails the call. vana-action dedupes the action by `requestId` (idempotency.ts), so a double tap or
  *  a retry after the phone's timeout confirms one copy, not two. */
-export async function usePlanAgain(v: VanaCtx, id: string): Promise<MealPlan> {
+export async function usePlanAgain(v: VanaCtx, id: string, date: string = today()): Promise<MealPlan> {
   const source = await getPlanById(v, id);
   if (!source) throw new Error('plan not found');
-  const weekStart = await currentWeekStart(v);
+  const weekStart = await currentWeekStart(v, date); // the athlete's local day (the app sends it), not UTC's
   const target = await insertDraft(v, weekStart, null, source.name ?? null);
   let confirmed = false;
   try {

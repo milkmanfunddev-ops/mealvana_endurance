@@ -577,7 +577,9 @@ class MealPlanController extends _$MealPlanController {
     final plan = await _withRequestId(
       'use_plan_again:$id',
       (requestId) => _remoteAck(
-        UsePlanAgainAction(id: id, requestId: requestId),
+        // The local day picks the week: the server's today() is UTC, a
+        // day ahead on a Saturday evening west of it (ticket 162).
+        UsePlanAgainAction(id: id, date: todayIso(), requestId: requestId),
         (r) => r.plan,
       ),
     );

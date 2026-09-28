@@ -597,6 +597,11 @@ void main() {
         final sent = actions.calls.whereType<UsePlanAgainAction>().single;
         expect(sent.id, 'plan-sep14');
         expect(sent.requestId, isNotNull);
+        expect(
+          sent.date,
+          todayIso(),
+          reason: 'the local day picks the week, not the server\'s UTC day',
+        );
         expect(copy!.status, MealPlanStatus.confirmed);
         expect(c.state.value!.id, 'plan-copy');
         expect(c.state.value!.status, MealPlanStatus.confirmed);
