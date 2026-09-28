@@ -15,6 +15,7 @@ import '../data/vana_exceptions.dart';
 import '../domain/cooking_session.dart';
 import '../domain/day_plan.dart';
 import '../domain/meal_plan.dart';
+import '../domain/meal_plan_status.dart';
 import '../domain/meal_source.dart';
 import '../domain/meal_type.dart';
 import '../domain/plan_meal.dart';
@@ -403,6 +404,20 @@ class MealPlanController extends _$MealPlanController {
     String? conversationId,
     String? planId,
   }) async {
+    // A conversation whose draft another confirm archived is read-only
+    // (mp-675, mp-683; ticket 162, 88-005): refused here before anything is
+    // sent, as the server refuses it, so Browse and the picker's cards
+    // never write into the archived plan. Drift holds the conversation's
+    // plan once the chat has read it; with nothing local the server's
+    // refusal stands.
+    if (conversationId != null && planId == null) {
+      final local = await _repo
+          .watchConversationPlan(await _resolveUserId(), conversationId)
+          .first;
+      if (local?.status == MealPlanStatus.archived) {
+        throw ReplacedDraftException(conversationId);
+      }
+    }
     final ids = meals.map((m) => '${m.source.wire}/${m.id}').toList()..sort();
     final key = 'pick_meals:${planId ?? ''}:${conversationId ?? ''}:$ids';
     return _withRequestId(

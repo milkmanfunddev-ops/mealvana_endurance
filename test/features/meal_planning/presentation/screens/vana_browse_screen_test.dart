@@ -12,6 +12,7 @@ import 'package:mealvana_endurance/features/meal_planning/data/vana_action_clien
 import 'package:mealvana_endurance/features/meal_planning/data/vana_exceptions.dart';
 import 'package:mealvana_endurance/features/meal_planning/domain/cooking_session.dart';
 import 'package:mealvana_endurance/features/meal_planning/domain/meal_plan.dart';
+import 'package:mealvana_endurance/features/meal_planning/domain/meal_plan_status.dart';
 import 'package:mealvana_endurance/features/meal_planning/domain/meal_ref.dart';
 import 'package:mealvana_endurance/features/meal_planning/domain/meal_source.dart';
 import 'package:mealvana_endurance/features/meal_planning/domain/meal_type.dart';
@@ -208,6 +209,56 @@ void main() {
       find.text(content['meal_planning.needs_connection']!),
       findsOneWidget,
     );
+  });
+
+  /// Ticket 162 (Finding 88-005; mp-675): a conversation whose draft another
+  /// confirm archived is read-only. Browse reached in it refuses an Add with
+  /// the replaced-plan note and sends nothing; the controller's own refusal
+  /// ([ReplacedDraftException]) shows the same note.
+  group('a replaced draft (88-005)', () {
+    testWidgets('Add refuses with the replaced-plan note, nothing sent', (
+      tester,
+    ) async {
+      final plan = _RecordingPlanController();
+      await pumpScreen(
+        tester,
+        plan: plan,
+        inPlan: planHolding(['D-1']).copyWith(status: MealPlanStatus.archived),
+      );
+
+      await tester.tap(addButton('D-2'));
+      await tester.pump();
+      await tester.pump(const Duration(milliseconds: 300));
+
+      expect(plan.picks, isEmpty);
+      expect(
+        find.text(content['meal_planning.plan_bar_replaced']!),
+        findsOneWidget,
+      );
+      expect(
+        find.descendant(of: addButton('D-2'), matching: find.byIcon(Icons.add)),
+        findsOneWidget,
+      );
+    });
+
+    testWidgets('the controller\'s refusal shows the same note', (
+      tester,
+    ) async {
+      final plan = _RecordingPlanController(
+        failWith: const ReplacedDraftException('conv-1'),
+      );
+      await pumpScreen(tester, plan: plan);
+
+      await tester.tap(addButton('D-2'));
+      await tester.pump();
+      await tester.pump(const Duration(milliseconds: 300));
+
+      expect(plan.picks, hasLength(1));
+      expect(
+        find.text(content['meal_planning.plan_bar_replaced']!),
+        findsOneWidget,
+      );
+    });
   });
 
   /// Testing-wave 129 (Finding 88-013): a pick cut off by the network fell

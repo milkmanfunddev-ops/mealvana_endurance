@@ -220,6 +220,48 @@ class VanaChatRepository {
     return VanaConversationKind.fromWire(row?['kind'] as String?);
   }
 
+  /// The athlete's general conversation for [day] (`YYYY-MM-DD`, their local
+  /// day) on the server, for a device that holds none for the day: a new
+  /// install, or the app's data cleared (VS-5; ticket 162, Finding 88-001).
+  /// The newest general conversation whose context was built for that day
+  /// (`context_day`, the day the turn was anchored to) or that last had a
+  /// message during it: a tool write clears `context_day` on every
+  /// conversation until its next turn (context-cache.ts), so the message
+  /// time is the second key. Null when there is none, and null on a failed
+  /// read (logged), which the caller treats as none: the day's first entry
+  /// then starts a conversation as before.
+  Future<String?> fetchGeneralConversationForDay(String day) async {
+    final userId = _transport.currentUserId;
+    if (userId == null) return null;
+    final start = DateTime.parse(day); // local midnight
+    final end = start.add(const Duration(days: 1));
+    try {
+      final row = await _supabase
+          .from('vana_conversations')
+          .select('id')
+          .eq('user_id', userId)
+          .eq('kind', VanaConversationKind.general.wire)
+          .eq('is_deleted', false)
+          .or(
+            'context_day.eq.$day,'
+            'and(last_message_at.gte.${start.toUtc().toIso8601String()},'
+            'last_message_at.lt.${end.toUtc().toIso8601String()})',
+          )
+          .order('last_message_at', ascending: false)
+          .limit(1)
+          .maybeSingle();
+      return row?['id'] as String?;
+    } catch (e) {
+      _logger.info(
+        'today\'s general conversation not read from the server; starting '
+        'the day locally',
+        context: _context,
+        data: {'day': day, 'error': '$e'},
+      );
+      return null;
+    }
+  }
+
   /// Insert an empty conversation of [kind] and return its id. RLS: owner
   /// insert (`Users manage own vana conversations`).
   Future<String> createConversation(VanaConversationKind kind) async {

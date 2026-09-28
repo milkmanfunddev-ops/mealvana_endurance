@@ -51,7 +51,9 @@ DateTime Function() vanaClock(Ref ref) => DateTime.now;
 /// has one. It is read at open time (`ref.refresh(...future)`), so a sheet
 /// opened after midnight starts a new conversation even if the app never
 /// restarted. The sheet holds the id it opened with for its whole life and
-/// calls [adopt] once the server names a new conversation.
+/// calls [adopt] once the server names a new conversation. A device holding
+/// nothing for the day asks the server for the day's conversation first
+/// (88-001), so a new install continues the day rather than starting over.
 ///
 /// It also says when that conversation is idle (mp-288): when the sheet
 /// closes ([sheetClosed]), when the app goes to the background, and when a
@@ -85,11 +87,45 @@ class VanaAmbientConversation extends _$VanaAmbientConversation {
     ref.onDispose(lifecycle.dispose);
 
     final userId = await ref.watch(userIdProvider.future);
-    final id = ref
-        .read(vanaAmbientStoreProvider)
-        .read(userId: userId, day: _today());
+    final store = ref.read(vanaAmbientStoreProvider);
+    final day = _today();
+    var id = store.read(userId: userId, day: day);
+    if (id == null) {
+      // The device holds nothing for the day, but the server may: a new
+      // install, or the app's data cleared, must continue today's
+      // conversation rather than start a second one and pay for its
+      // opener (VS-5; ticket 162, Finding 88-001). Found, it is held like
+      // one the sheet adopted, so the next open reads it off the device.
+      id = await _fromServer(userId, day);
+      if (id != null) {
+        await store.write(userId: userId, day: day, conversationId: id);
+      }
+    }
     _hold(id, userId);
     return id;
+  }
+
+  /// The server lookup on the wire, shared by builds running at once: two
+  /// entry points opening the day together (the launcher and its note
+  /// card, a refresh over a build still in flight) ask once.
+  Future<String?>? _lookup;
+  String? _lookupFor;
+
+  Future<String?> _fromServer(String userId, String day) {
+    final key = '$userId|$day';
+    if (_lookup case final pending? when _lookupFor == key) return pending;
+    _lookupFor = key;
+    final lookup = ref
+        .read(vanaChatRepositoryProvider)
+        .fetchGeneralConversationForDay(day)
+        .whenComplete(() {
+          if (_lookupFor == key) {
+            _lookup = null;
+            _lookupFor = null;
+          }
+        });
+    _lookup = lookup;
+    return lookup;
   }
 
   /// Today's conversation for an entry point that continues the day, read at

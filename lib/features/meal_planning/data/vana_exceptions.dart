@@ -133,6 +133,21 @@ class NeedsConnectionException extends VanaException {
   String toString() => 'NeedsConnectionException($operation)';
 }
 
+/// Thrown by [MealPlanController.pickMeals] before anything is sent when the
+/// conversation's draft was replaced by a different confirmed plan (mp-675,
+/// mp-683; ticket 162, Finding 88-005): that draft is read-only in its chat,
+/// and the server refuses the add the same way. The screen shows the
+/// replaced-plan note.
+class ReplacedDraftException extends VanaException {
+  const ReplacedDraftException(this.conversationId);
+
+  /// The conversation whose draft was replaced.
+  final String conversationId;
+
+  @override
+  String toString() => 'ReplacedDraftException($conversationId)';
+}
+
 /// Whether [error] means the write never reached the server for want of a
 /// connection: refused before sending ([NeedsConnectionException]), or the
 /// transport could not connect or timed out ([VanaOfflineException]). The

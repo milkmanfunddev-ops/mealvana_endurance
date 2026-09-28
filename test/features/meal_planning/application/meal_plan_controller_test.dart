@@ -637,6 +637,42 @@ void main() {
       expect(ids[2], isNot(ids[1]), reason: 'a tap after success is new');
     });
 
+    /// Ticket 162 (Finding 88-005; mp-675, mp-683): a conversation whose
+    /// draft another confirm archived is read-only. A pick scoped to it is
+    /// refused before anything is sent, with the exception the screens
+    /// turn into the replaced-plan note.
+    test('pickMeals into a replaced draft\'s conversation is refused before '
+        'sending', () async {
+      remote.plans = [
+        {..._planRow(weekStartFor()), 'status': 'confirmed'},
+        {
+          ..._planRow(weekStartFor()),
+          'id': 'plan-old',
+          'status': 'archived',
+          'conversation_id': 'conv-old',
+        },
+      ];
+      await repo.syncFromRemote(_user);
+      final c = controller();
+      await c.future;
+
+      await expectLater(
+        () => c.pickMeals(
+          [const MealPick(source: MealSource.library, id: 'D-001')],
+          servings: 4,
+          conversationId: 'conv-old',
+        ),
+        throwsA(
+          isA<ReplacedDraftException>().having(
+            (e) => e.conversationId,
+            'conversationId',
+            'conv-old',
+          ),
+        ),
+      );
+      expect(actions.calls.whereType<PickMealsAction>(), isEmpty);
+    });
+
     test('usePlanAgain offline sends nothing', () async {
       connectivity.online = false;
       final c = controller();

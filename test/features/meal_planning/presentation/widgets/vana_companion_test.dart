@@ -45,6 +45,11 @@ import '../helpers/test_content.dart';
 const _launcher = ValueKey('vana_sheet.launcher');
 
 class _FakeChatRepo extends Fake implements VanaChatRepository {
+  /// This device holds nothing for the day and neither does the server
+  /// (ticket 162, 88-001): the day starts as before.
+  @override
+  Future<String?> fetchGeneralConversationForDay(String day) async => null;
+
   final List<Map<String, Object?>> calls = [];
   final List<String> fetched = [];
   List<VanaMessage> history = const [];
