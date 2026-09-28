@@ -18,8 +18,8 @@ import { CHAT_MODEL, localDate, waitUntil } from './env.ts';
 import type { VanaCtx } from './env.ts';
 import { buildAthleteContext, contextBlock } from './context.ts';
 import { cachedContext } from './context-cache.ts';
-import { makeVanaTools } from './tools.ts';
-import { PLANNING_PROMPT, GENERAL_PROMPT, OPENERS, NEW_PLAN_OPENER, NEW_PLAN_STANDING, checkinOpener, debriefOpener } from './persona.ts';
+import { makeVanaTools, offeredTools, UnknownOverrideError, type ToolOverrides } from './tools.ts';
+import { personaPrompt, OPENERS, NEW_PLAN_OPENER, NEW_PLAN_STANDING, checkinOpener, debriefOpener, type PersonaOverrides } from './persona.ts';
 import { completeCall, reserveCall } from './rate-limit.ts';
 import { readSummaries, writeSummary, writeOnIdle, defaultExtractDeps, defaultSummaryDeps, type ExtractDeps, type StoredSummary, type SummaryDeps } from './extract.ts';
 import { inViewSection, resolveSituation, SITUATION_MARK, type Situation } from './situation.ts';
@@ -97,7 +97,6 @@ export function shownMealIds(messages: UIMessage[]): string[] {
   }
   return [...ids];
 }
-const promptFor = (kind: ConversationKind) => (kind === 'general' ? GENERAL_PROMPT : PLANNING_PROMPT);
 
 // Opener variants (plan Phase 3) live in opener.ts — pure, so tests import them without the AI SDK.
 async function loadOpenerInput(v: VanaCtx, t: string) {
@@ -339,9 +338,9 @@ const weekdayOf = (iso: string) => ['Sunday', 'Monday', 'Tuesday', 'Wednesday', 
  *  the context changes on a plan write or a new day. With a marker on each, a rebuild misses only the context and
  *  the messages after it; the tools and persona in front of it (about 12,000 tokens) are read from the cache. The
  *  standing extra (NEW PLAN, DEBRIEF PENDING) belongs to the context message, since it changes when the context does. */
-export function systemMessages(kind: ConversationKind, ctx: AthleteContext, todayIso: string, extra = '', personaTtl: '1h' | null = PERSONA_CACHE_TTL): SystemModelMessage[] {
+export function systemMessages(kind: ConversationKind, ctx: AthleteContext, todayIso: string, extra = '', personaTtl: '1h' | null = PERSONA_CACHE_TTL, persona: PersonaOverrides = {}): SystemModelMessage[] {
   return [
-    { role: 'system', content: promptFor(kind), providerOptions: { anthropic: { cacheControl: personaTtl ? { type: 'ephemeral', ttl: personaTtl } : { type: 'ephemeral' } } } },
+    { role: 'system', content: personaPrompt(kind, persona), providerOptions: { anthropic: { cacheControl: personaTtl ? { type: 'ephemeral', ttl: personaTtl } : { type: 'ephemeral' } } } },
     { role: 'system', content: `--- CONTEXT (today ${todayIso}, ${weekdayOf(todayIso)}) ---\n${contextBlock(ctx)}${extra}`, providerOptions: { anthropic: { cacheControl: { type: 'ephemeral' } } } },
   ];
 }
@@ -399,6 +398,16 @@ export interface ChatRunOpts {
    *  tracing seam (the deleted evals harness was its only caller; the judging system reads the persisted
    *  tables instead); production leaves it unset. */
   onTrace?: (t: TurnTrace) => void;
+  /** One Run's replacements (`vana-eval`, eval-v2 ticket 01). `vana-chat` never passes this. */
+  overrides?: VanaOverrides;
+}
+/** What a Run may change about Vana for itself alone: persona sections, the model, the tools that are on (by name, out
+ *  of the kind's set) and the tools' and parameters' descriptions. Anything left out is what the app runs. The replayed
+ *  history keeps the kind's full tool set, so a stored tool part reads the same whichever tools are on. */
+export interface VanaOverrides extends ToolOverrides {
+  persona?: PersonaOverrides;
+  /** A gateway model id, spelled as the catalogue spells it. */
+  model?: string;
 }
 /** What a finished turn cost, as handed to `afterFinish`. */
 export interface FinishedUsage { inputTokens: number; outputTokens: number; cacheReadTokens: number | null; cacheWriteTokens: number | null; gatewayCostUsd: number | null; model: string }
@@ -441,6 +450,8 @@ export async function runChat(v: VanaCtx, body: ChatBody, opts: ChatRunOpts): Pr
   const message = (body.message ?? '').trim();
   const anchorDate = body.anchor_date ?? localDate(body.timezone);
   const persist = opts.persist !== false;
+  const o = opts.overrides ?? {};
+  const model = o.model ?? CHAT_MODEL;
   // History comes from the server: an existing conversation's rows + the new user turn. `opener` (or no message on a planning
   // conversation) means "write Vana's first turn".
   let messages: UIMessage[] = [];
@@ -463,7 +474,7 @@ export async function runChat(v: VanaCtx, body: ChatBody, opts: ChatRunOpts): Pr
   // which is the one its row was always logged under.
   const bucket = opener ? 'vana.opener' : 'vana.chat';
   const loggedName = `${bucket}.${kind}`;
-  const reserved = await reserveCall(v.admin, v.userId, bucket, { functionName: loggedName, model: CHAT_MODEL });
+  const reserved = await reserveCall(v.admin, v.userId, bucket, { functionName: loggedName, model });
   if (!reserved.allowed) return { ok: false, status: 429, body: { error: 'rate_limited', retry_after_seconds: reserved.retryAfterSeconds, retryAfterSeconds: reserved.retryAfterSeconds } };
   const callId = reserved.callId;
   const last = [...messages].reverse().find((m) => m.role === 'user');
@@ -494,6 +505,10 @@ export async function runChat(v: VanaCtx, body: ChatBody, opts: ChatRunOpts): Pr
   const newPlanConversation = newPlan || (convKind === 'meal_planning' && !opener && persist && !!convId && (await conversationIsNewPlan(v, convId)));
   const [situation, inView] = newPlanConversation ? [NEW_PLAN_SITUATION, null] : await Promise.all([resolveSituation(v, body.situation), inViewSection(v, body.situation, anchorDate)]);
   const tools = makeVanaTools(v, ctx, convKind, { scope, conversationId: convId || null, shownIds: shownMealIds(messages) });
+  // A bad name is a 400, never a Run that silently measured the app's tools. It is caught here, after the reservation:
+  // the names depend on the conversation's kind. Only vana-eval passes overrides, and its throwaway user goes at the end.
+  let offered: typeof tools;
+  try { offered = offeredTools(tools, o); } catch (e) { if (e instanceof UnknownOverrideError) return { ok: false, status: 400, body: { error: 'bad_override', detail: e.message } }; throw e; }
   // A pure vent is answered by the content-managed row alone; a complaint that also asks something still gets its answer.
   const silenceFeedback = silenceAfterFeedback(lastText);
   const started = Date.now();
@@ -523,14 +538,14 @@ export async function runChat(v: VanaCtx, body: ChatBody, opts: ChatRunOpts): Pr
   const modelMessages = withSituation(await replayModelMessages(replayed, tools), situation, inView);
   const general = convKind === 'general';
   const tag = `[${opts.functionName}]`;
-  console.log(`${tag} user=${v.userId} conv=${convId || '(ephemeral)'} kind=${convKind} opener=${opener}${opener ? `/${openerVariant}${newPlan ? '/new_plan' : ''}` : ''} model=${CHAT_MODEL} context=${reused ? 'reused' : 'built'}`);
+  console.log(`${tag} user=${v.userId} conv=${convId || '(ephemeral)'} kind=${convKind} opener=${opener}${opener ? `/${openerVariant}${newPlan ? '/new_plan' : ''}` : ''} model=${model} context=${reused ? 'reused' : 'built'}`);
 
-  const system = systemMessages(convKind, ctx, anchorDate, extraContext);
+  const system = systemMessages(convKind, ctx, anchorDate, extraContext, PERSONA_CACHE_TTL, o.persona);
   const result = streamText({
-    model: CHAT_MODEL,
+    model,
     system,
     messages: modelMessages,
-    tools,
+    tools: offered,
     maxOutputTokens: MAX_OUTPUT_TOKENS,
     // deno-lint-ignore no-explicit-any
     stopWhen: chatStopWhen(general, silenceFeedback) as any,
@@ -538,7 +553,7 @@ export async function runChat(v: VanaCtx, body: ChatBody, opts: ChatRunOpts): Pr
     headers: chatHeaders(convId),
     // A stream that fails is a call the athlete did not get: its reservation goes back. The hold settles once, so an
     // onFinish that follows an error changes nothing.
-    onError: ({ error }) => { console.error(`${tag} stream error:`, (error as Error)?.message ?? error); opts.onTrace?.({ kind: convKind, opener, openerVariant, newPlan, functionName: opts.functionName, model: CHAT_MODEL, anchorDate, situation: note, inView, openerText: opener ? openerText : null, doll: ctx, contextReused: reused, system: { persona: String(system[0].content), context: String(system[1].content) }, tools: Object.keys(tools), modelMessages, durationMs: Date.now() - started, text: '', steps: [], usage: null, totalUsage: null, error: String((error as Error)?.message ?? error) }); if (opts.onFailure) waitUntil(opts.onFailure(error).catch((e) => console.error(`${tag} onFailure threw:`, (e as Error).message))); },
+    onError: ({ error }) => { console.error(`${tag} stream error:`, (error as Error)?.message ?? error); opts.onTrace?.({ kind: convKind, opener, openerVariant, newPlan, functionName: opts.functionName, model, anchorDate, situation: note, inView, openerText: opener ? openerText : null, doll: ctx, contextReused: reused, system: { persona: String(system[0].content), context: String(system[1].content) }, tools: Object.keys(offered), modelMessages, durationMs: Date.now() - started, text: '', steps: [], usage: null, totalUsage: null, error: String((error as Error)?.message ?? error) }); if (opts.onFailure) waitUntil(opts.onFailure(error).catch((e) => console.error(`${tag} onFailure threw:`, (e as Error).message))); },
     onFinish: ({ text, steps, usage, totalUsage }) => {
       const u = totalUsage ?? usage;
       const inputTokens = u?.inputTokens ?? 0; const outputTokens = u?.outputTokens ?? 0;
@@ -548,7 +563,7 @@ export async function runChat(v: VanaCtx, body: ChatBody, opts: ChatRunOpts): Pr
       const metrics = callMetrics(steps as unknown[], u);
       // Called before the persistence task so a harness sees the trace the moment the stream ends; the rows it also
       // waits on are written by the task below (its inserts land on the harness's fake db).
-      opts.onTrace?.({ kind: convKind, opener, openerVariant, newPlan, functionName: opts.functionName, model: CHAT_MODEL, anchorDate, situation: note, inView, openerText: opener ? openerText : null, doll: ctx, contextReused: reused, system: { persona: String(system[0].content), context: String(system[1].content) }, tools: Object.keys(tools), modelMessages, durationMs: Date.now() - started, text, steps: steps as unknown[], usage, totalUsage });
+      opts.onTrace?.({ kind: convKind, opener, openerVariant, newPlan, functionName: opts.functionName, model, anchorDate, situation: note, inView, openerText: opener ? openerText : null, doll: ctx, contextReused: reused, system: { persona: String(system[0].content), context: String(system[1].content) }, tools: Object.keys(offered), modelMessages, durationMs: Date.now() - started, text, steps: steps as unknown[], usage, totalUsage });
       const task = (async () => {
         try {
           if (persist) {
@@ -568,10 +583,10 @@ export async function runChat(v: VanaCtx, body: ChatBody, opts: ChatRunOpts): Pr
           const sub = await subscriberState(v.admin, v.userId);
           const cost = { ...metrics, debited: opts.debited === true, inputMode, subscriberPeriodType: sub.periodType, subscriberActiveUntil: sub.activeUntil };
           if (callId) await completeCall(v.admin, callId, { inputTokens, outputTokens, functionName, conversationId: convId || null, ...cost });
-          else await logCall(v.admin, { userId: v.userId, conversationId: convId || null, functionName, model: CHAT_MODEL, inputTokens, outputTokens, ...cost });
+          else await logCall(v.admin, { userId: v.userId, conversationId: convId || null, functionName, model, inputTokens, outputTokens, ...cost });
           // `ai_usage.cost_usd` exists for exactly this and was never filled from chat; the gateway's charge goes in both logs.
-          await logAiUsage(v.admin, { userId: v.userId, functionName: opts.functionName, model: CHAT_MODEL, inputTokens, outputTokens, costUsd: metrics.gatewayCostUsd ?? null });
-          await opts.afterFinish?.({ inputTokens, outputTokens, cacheReadTokens: metrics.cacheReadTokens ?? null, cacheWriteTokens: metrics.cacheWriteTokens ?? null, gatewayCostUsd: metrics.gatewayCostUsd ?? null, model: CHAT_MODEL });
+          await logAiUsage(v.admin, { userId: v.userId, functionName: opts.functionName, model, inputTokens, outputTokens, costUsd: metrics.gatewayCostUsd ?? null });
+          await opts.afterFinish?.({ inputTokens, outputTokens, cacheReadTokens: metrics.cacheReadTokens ?? null, cacheWriteTokens: metrics.cacheWriteTokens ?? null, gatewayCostUsd: metrics.gatewayCostUsd ?? null, model });
           console.log(`${tag} onFinish user=${v.userId} conv=${convId || '(ephemeral)'} in=${inputTokens} cache_read=${cacheRead} out=${outputTokens} steps=${steps.length} ${Date.now() - started}ms`);
         } catch (e) { console.error(`${tag} onFinish task failed:`, (e as Error).message); }
       })();

@@ -248,6 +248,36 @@ export function makeVanaTools(v: VanaCtx, ctx: AthleteContext, kind: Conversatio
   const { planDay: _pd, setDaySlot: _sds, handOff: _ho, ...collection } = all;
   return collection;
 }
+/** An override that names a tool or parameter the kind does not have. */
+export class UnknownOverrideError extends Error {}
+/** A Run's replacement description for one tool, and for any of its parameters by name (eval-v2 ticket 01). */
+export interface ToolDescriptionOverride { description?: string; parameters?: Record<string, string> }
+export interface ToolOverrides {
+  /** The tools that are on, by name, out of the kind's set. Absent = all of them. */
+  tools?: string[];
+  /** Top-level parameters only: every tool's input is a flat z.object. */
+  toolDescriptions?: Record<string, ToolDescriptionOverride>;
+}
+/** The tools a Run offers the model: the kind's set narrowed to `tools`, with any descriptions replaced. The execute and
+ *  compact model view are the kind's own, so a tool behaves the same whatever it is called. A name that is not one of
+ *  the kind's tools or parameters throws: an override that silently did nothing would be a Run measuring the wrong
+ *  thing. With no overrides the set comes back as it was given. */
+// deno-lint-ignore no-explicit-any
+export function offeredTools<T extends Record<string, any>>(tools: T, o: ToolOverrides = {}): T {
+  const refuse = (what: string, name: string): never => { throw new UnknownOverrideError(`override names an unknown ${what}: ${name}`); };
+  for (const name of [...(o.tools ?? []), ...Object.keys(o.toolDescriptions ?? {})]) if (!(name in tools)) refuse('tool', name);
+  const out: Record<string, unknown> = {};
+  for (const [name, t] of Object.entries(tools)) {
+    if (o.tools && !o.tools.includes(name)) continue;
+    const d = o.toolDescriptions?.[name];
+    if (!d) { out[name] = t; continue; }
+    const input = t.inputSchema as z.AnyZodObject;
+    const shape = input.shape as Record<string, z.ZodTypeAny>;
+    const params = Object.entries(d.parameters ?? {}).map(([k, text]) => [k, (shape[k] ?? refuse('parameter', `${name}.${k}`)).describe(text)]);
+    out[name] = { ...t, ...(d.description != null ? { description: d.description } : {}), ...(params.length ? { inputSchema: input.extend(Object.fromEntries(params)) } : {}) };
+  }
+  return out as T;
+}
 function makeAllTools(v: VanaCtx, ctx: AthleteContext, opts: ToolOpts = {}) {
   const scope = opts.scope ?? null;
   const shown = new Set(opts.shownIds ?? []);
