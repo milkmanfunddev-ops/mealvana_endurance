@@ -37,6 +37,7 @@ import '../../application/vana_settings_controller.dart';
 import '../widgets/picker_chips.dart';
 import '../widgets/plan_bar.dart';
 import '../widgets/plan_conversation_title.dart';
+import '../widgets/replace_plan_dialog.dart';
 import '../widgets/review_sheet.dart';
 import '../widgets/vana_attach_sheet.dart';
 import '../../../../shared/widgets/kyle_design/icons/vana_avatar.dart';
@@ -1252,11 +1253,13 @@ class _VanaChatScreenState extends ConsumerState<VanaChatScreen> {
   }
 
   /// "Use this plan instead" (mp-676): copy the archived draft into this
-  /// week as a new draft (ticket 73's `use_plan_again`) and open the copy in
-  /// the plan view, whose Confirm makes it this week's plan. This
-  /// conversation keeps its archived draft.
+  /// week and confirm it at once (`use_plan_again`; Lee 2026-09-28, ticket
+  /// 162), asking first when the week has a plan to replace. Then Food >
+  /// Shopping, as every confirm (mp-235). This conversation keeps its
+  /// archived draft.
   Future<void> _useInstead(BuildContext context, MealPlan plan) async {
     final content = ref.read(contentServiceProvider);
+    if (!await confirmReplaceWeekPlan(context, ref) || !context.mounted) return;
     try {
       final copy = await ref
           .read(mealPlanControllerProvider.notifier)
@@ -1266,7 +1269,7 @@ class _VanaChatScreenState extends ConsumerState<VanaChatScreen> {
         context,
         content.getValue(ContentKeys.mpPreviousPlanUseAgainDone),
       );
-      unawaited(context.push('/food/plans/${copy.id}'));
+      goToFoodTab(context, FoodTab.shopping);
     } on NeedsConnectionException {
       if (context.mounted) {
         MealvanaSnackbar.showWarning(

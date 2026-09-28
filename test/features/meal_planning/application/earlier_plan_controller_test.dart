@@ -5,8 +5,9 @@
 /// The stand-in for `vana-action` answers in the server's own shape: every
 /// plan edit a `batch` part whose plan is what `hydrate` in `plan.ts` emits
 /// (the contract fixture's plan, re-stamped as an archived plan with a
-/// `name`), `delete_plan` a receipt and no batch, and `use_plan_again` a
-/// fresh draft for this week with the same meals under new row ids.
+/// `name`), `delete_plan` a receipt and no batch, and `use_plan_again` the
+/// confirmed copy for this week with the same meals under new row ids
+/// (ticket 162: it confirms at once).
 library;
 
 import 'dart:async';
@@ -28,12 +29,24 @@ import '../helpers/fakes.dart';
 
 /// This week's plan on the tab, and a record of what was folded into Drift.
 class _TabController extends MealPlanController {
+  _TabController(this.server);
+
+  final _Server server;
   final List<MealPlan> applied = [];
   final List<String?> confirmed = [];
+  final List<String> usedAgain = [];
   int refreshed = 0;
 
   @override
   FutureOr<MealPlan?> build() => null;
+
+  /// The tab's own use-again (ticket 162): the server confirms the copy and
+  /// the tab folds it in. Its seam test is meal_plan_controller_test.dart.
+  @override
+  Future<MealPlan?> usePlanAgain(String id) async {
+    usedAgain.add(id);
+    return (await server.run(UsePlanAgainAction(id: id))).plan;
+  }
 
   @override
   Future<void> applyServerPlan(MealPlan plan) async => applied.add(plan);
@@ -77,6 +90,21 @@ class _Server extends Fake implements VanaActionClient {
     final fail = failWith;
     if (fail != null) throw fail;
     switch (action) {
+      case ListPlansAction():
+        return VanaActionResult.fromJson({
+          'parts': const [],
+          'plans': [
+            for (final p in plans.values)
+              {
+                'id': p['id'],
+                'weekStart': p['weekStart'],
+                'status': p['status'],
+                'batchCooking': true,
+                'name': p['name'],
+                'mealCount': (p['meals'] as List).length,
+              },
+          ],
+        });
       case GetPlanAction(:final id):
         final plan = plans[id];
         return VanaActionResult.fromJson({
@@ -122,7 +150,7 @@ class _Server extends Fake implements VanaActionClient {
           ...source,
           'id': 'plan-copy',
           'weekStart': '2026-10-04',
-          'status': 'draft',
+          'status': 'confirmed',
           'conversationId': null,
           'meals': [
             for (final (i, m)
@@ -169,7 +197,7 @@ void main() {
       m['planId'] = earlierId;
     }
     server = _Server({earlierId: earlierJson});
-    tab = _TabController();
+    tab = _TabController(server);
     connectivity = StubConnectivity();
   });
 
@@ -252,29 +280,42 @@ void main() {
     },
   );
 
-  test('use again: a new draft for this week goes to the Plan tab, and the '
-      'earlier plan stays as it was', () async {
+  /// Ticket 162 (Lee 2026-09-28): Use this plan again confirms the copy at
+  /// once through the tab's own use-again, so the copy lands as this week's
+  /// plan; the earlier plan stays as it was, and the list is read again
+  /// (it gains the copy and the plan it replaced).
+  test('use again: the copy is confirmed through the tab, the earlier plan '
+      'stays as it was, and the list is re-read', () async {
     final (c, notifier) = await opened();
     final before = c.read(earlierPlanProvider(earlierId)).value!;
+    final list = c.listen(previousPlansProvider, (_, _) {});
+    addTearDown(list.close);
+    await c.read(previousPlansProvider.future);
+    final listReads = server.calls.whereType<ListPlansAction>().length;
 
     final copy = await notifier.useAgain();
 
-    expect((server.calls.last as UsePlanAgainAction).toJson(), {
-      'type': 'use_plan_again',
-      'payload': {'id': earlierId},
-    });
+    expect(tab.usedAgain, [earlierId]);
+    expect((server.calls.last as UsePlanAgainAction).id, earlierId);
     expect(copy, isNotNull);
     expect(copy!.id, 'plan-copy');
-    expect(copy.status, MealPlanStatus.draft);
+    expect(copy.status, MealPlanStatus.confirmed);
     expect(copy.weekStart, '2026-10-04');
     expect(
       copy.meals.map((m) => (m.name, m.servings)),
       before.meals.map((m) => (m.name, m.servings)),
     );
-    expect(tab.applied.single.id, 'plan-copy');
+    // Nothing is folded into Drift here: the tab's use-again did that.
+    expect(tab.applied, isEmpty);
     final after = c.read(earlierPlanProvider(earlierId)).value!;
     expect(after.id, earlierId);
     expect(after.status, MealPlanStatus.archived);
+    await c.read(previousPlansProvider.future);
+    expect(
+      server.calls.whereType<ListPlansAction>().length,
+      listReads + 1,
+      reason: 'the list is read again after the confirm',
+    );
   });
 
   test(

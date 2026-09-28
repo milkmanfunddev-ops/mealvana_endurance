@@ -18,6 +18,7 @@ import 'package:mealvana_endurance/features/meal_planning/data/vana_action_clien
 import 'package:mealvana_endurance/features/meal_planning/data/vana_exceptions.dart';
 import 'package:mealvana_endurance/features/meal_planning/domain/home_payload.dart';
 import 'package:mealvana_endurance/features/meal_planning/domain/meal_plan.dart';
+import 'package:mealvana_endurance/features/meal_planning/domain/meal_plan_status.dart';
 import 'package:mealvana_endurance/features/meal_planning/domain/meal_source.dart';
 import 'package:mealvana_endurance/features/meal_planning/domain/plan_rule.dart';
 import 'package:mealvana_endurance/features/meal_planning/domain/ui_action.dart';
@@ -560,36 +561,81 @@ void main() {
       });
     });
 
-    /// Testing-wave 15-001 (ticket 71, mp-676): "Use this plan instead" on a
-    /// conversation whose draft another confirm archived copies it into this
-    /// week as a new draft (`use_plan_again`, mp-675). The copy lands in
-    /// Drift; the tab keeps showing the plan it had until the copy is
-    /// confirmed.
+    /// Ticket 162 (Lee 2026-09-28, 89-006; supersedes 15-001's draft copy):
+    /// Use this plan again / Use this plan instead confirm the copy at once.
+    /// The server answers the confirmed copy; it becomes the plan on the
+    /// tab, the week's other plans are archived locally as after a confirm,
+    /// and the tap carries a requestId its retry reuses.
     test(
-      'usePlanAgain copies the plan into a new draft and keeps the tab\'s plan',
+      'usePlanAgain folds the confirmed copy in as the tab\'s plan and '
+      'archives the plan it replaced',
       () async {
-        // The week already has a confirmed plan: that is what archived the
-        // conversation's draft.
+        // The week already has a confirmed plan: the one being replaced.
         remote.plans = [
           {..._planRow(weekStartFor()), 'status': 'confirmed'},
         ];
         await repo.syncFromRemote(_user);
+        actions = _FakeActionClient((action) {
+          if (action is! UsePlanAgainAction) return batchResult(action);
+          final plan = VanaActionResult.fromJson(loadFixture('batch')).plan!
+              .copyWith(
+                id: 'plan-copy',
+                weekStart: weekStartFor(),
+                status: MealPlanStatus.confirmed,
+              );
+          return VanaActionResult(
+            parts: [VanaBatchPart(plan: plan)],
+            extras: const {},
+          );
+        });
         final c = controller();
         await c.future;
+        expect(c.state.value!.id, 'plan-1');
 
-        final copy = await c.usePlanAgain('archived-draft');
+        final copy = await c.usePlanAgain('plan-sep14');
 
         final sent = actions.calls.whereType<UsePlanAgainAction>().single;
-        expect(sent.toJson(), {
-          'type': 'use_plan_again',
-          'payload': {'id': 'archived-draft'},
-        });
-        expect(copy, isNotNull);
-        expect(await repo.getPlanById(copy!.id), isNotNull);
-        expect(copy.meals, hasLength(2));
-        expect(c.state.value!.id, 'plan-1');
+        expect(sent.id, 'plan-sep14');
+        expect(sent.requestId, isNotNull);
+        expect(copy!.status, MealPlanStatus.confirmed);
+        expect(c.state.value!.id, 'plan-copy');
+        expect(c.state.value!.status, MealPlanStatus.confirmed);
+        expect(
+          (await repo.getPlanById('plan-1'))!.status,
+          MealPlanStatus.archived,
+        );
+        expect(actions.calls.whereType<ConfirmPlanAction>(), isEmpty);
       },
     );
+
+    test('usePlanAgain retries with the same requestId after a failure, '
+        'and a new tap after success mints a new one', () async {
+      var fail = true;
+      actions = _FakeActionClient((action) {
+        if (action is UsePlanAgainAction && fail) {
+          throw const VanaServerException(500, '{"error":"boom"}');
+        }
+        return batchResult(action);
+      });
+      final c = controller();
+      await c.future;
+
+      await expectLater(
+        () => c.usePlanAgain('plan-sep14'),
+        throwsA(isA<VanaServerException>()),
+      );
+      fail = false;
+      await c.usePlanAgain('plan-sep14');
+      await c.usePlanAgain('plan-sep14');
+
+      final ids = actions.calls
+          .whereType<UsePlanAgainAction>()
+          .map((a) => a.requestId)
+          .toList();
+      expect(ids, hasLength(3));
+      expect(ids[0], ids[1], reason: 'the retry is the same request');
+      expect(ids[2], isNot(ids[1]), reason: 'a tap after success is new');
+    });
 
     test('usePlanAgain offline sends nothing', () async {
       connectivity.online = false;

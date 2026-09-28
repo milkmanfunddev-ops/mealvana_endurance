@@ -42,7 +42,8 @@ Future<List<MealPlanSummary>> previousPlans(Ref ref) async {
 /// One earlier plan by id (`/food/plans/:id`), straight from the server
 /// (`get_plan {id}`); `null` when the server no longer has it. Plans are a
 /// list (mp-675): the athlete edits an earlier plan's meals and servings,
-/// renames it, deletes it, or uses it again as this week's new draft.
+/// renames it, deletes it, or uses it again as this week's plan (confirmed
+/// at once, Lee 2026-09-28).
 ///
 /// History is server-only, like the list: every write here is remote-ack
 /// through `vana-action` and refuses offline before sending anything
@@ -99,13 +100,16 @@ class EarlierPlan extends _$EarlierPlan {
     if (ref.mounted) ref.invalidate(previousPlansProvider);
   }
 
-  /// Copy this plan into this week as a new draft (`use_plan_again`). The
-  /// draft goes to Drift so the Plan tab knows it; this plan is unchanged.
-  /// Returns the draft, which the caller opens to confirm.
+  /// Copy this plan into this week and confirm it at once (`use_plan_again`;
+  /// Lee 2026-09-28, ticket 162). The confirm is [MealPlanController]'s, so
+  /// the copy lands on the Plan tab with the week's other plans archived,
+  /// and what every confirm does follows. This plan is unchanged; the list
+  /// gains the copy and the plan it replaced, so it is read again. Returns
+  /// the confirmed copy. Refuses offline and rethrows a failure, as
+  /// [MealPlanController.usePlanAgain] does.
   Future<MealPlan?> useAgain() async {
-    final result = await _send(UsePlanAgainAction(id: id));
-    final copy = result.plan;
-    if (copy != null) await _tab.applyServerPlan(copy);
+    final copy = await _tab.usePlanAgain(id);
+    _listChanged();
     return copy;
   }
 

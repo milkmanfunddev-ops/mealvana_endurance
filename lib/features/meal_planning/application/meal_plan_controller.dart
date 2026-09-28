@@ -469,16 +469,20 @@ class MealPlanController extends _$MealPlanController {
       ),
       (r) => r.plan,
     );
-    if (plan != null) {
-      // mp-235: every confirm lands on Food > Shopping, and the "you're
-      // set" card waits there for this plan.
-      ref.read(youreSetControllerProvider.notifier).confirmed(plan.id);
-      // Phase 3.5: with the device toggle on, a confirmed plan gets its
-      // check-in + debrief local notifications. Fire-and-forget — a
-      // scheduling failure never fails the confirm.
-      unawaited(_scheduleReminders(plan));
-    }
+    if (plan != null) _confirmed(plan);
     return plan;
+  }
+
+  /// What every confirm does once the server has answered, whichever
+  /// action confirmed the plan ([confirmPlan], [usePlanAgain]).
+  void _confirmed(MealPlan plan) {
+    // mp-235: every confirm lands on Food > Shopping, and the "you're
+    // set" card waits there for this plan.
+    ref.read(youreSetControllerProvider.notifier).confirmed(plan.id);
+    // Phase 3.5: with the device toggle on, a confirmed plan gets its
+    // check-in + debrief local notifications. Fire-and-forget — a
+    // scheduling failure never fails the confirm.
+    unawaited(_scheduleReminders(plan));
   }
 
   /// Rebuild the plan's shopping list from its meals
@@ -544,19 +548,26 @@ class MealPlanController extends _$MealPlanController {
     );
   }
 
-  /// Copy plan [id] into this week as a new draft (`use_plan_again`,
-  /// mp-675): a conversation's draft another confirm archived offers "Use
-  /// this plan instead" (mp-676). The copy goes to Drift so the Plan tab
-  /// knows it, but [state] is left alone: this week's plan stays on the tab
-  /// until the copy is confirmed. Returns the copy, which the caller opens.
-  /// Remote-ack: refuses offline before sending, and a failure rethrows.
+  /// Copy plan [id] into this week and confirm it at once (`use_plan_again`,
+  /// mp-675; Lee 2026-09-28, ticket 162): Previous plans' "Use this plan
+  /// again" and the replaced draft's "Use this plan instead" (mp-676). The
+  /// server archives the plan the week had as on any confirm, so the copy
+  /// is folded into Drift with its siblings archived, the way
+  /// [confirmPlan]'s answer is, and it becomes the plan on the tab. Then
+  /// what every confirm does ([_confirmed]). Remote-ack: refuses offline
+  /// before sending, and a failure rethrows. One `requestId` per tap, kept
+  /// for its retry, so a double tap or a retry after the transport's
+  /// timeout confirms one copy (the server dedupes it).
   Future<MealPlan?> usePlanAgain(String id) async {
-    final online = await ref.read(connectivityCheckerProvider).isOnline();
-    if (!online) throw const NeedsConnectionException('use_plan_again');
-    final result = await _actions.run(UsePlanAgainAction(id: id));
-    final copy = result.plan;
-    if (copy != null) await applyServerPlan(copy);
-    return copy;
+    final plan = await _withRequestId(
+      'use_plan_again:$id',
+      (requestId) => _remoteAck(
+        UsePlanAgainAction(id: id, requestId: requestId),
+        (r) => r.plan,
+      ),
+    );
+    if (plan != null) _confirmed(plan);
+    return plan;
   }
 
   /// Delete a plan outright (`delete_plan`), [id] naming it and the active
@@ -677,9 +688,11 @@ class MealPlanController extends _$MealPlanController {
         await _repo.applyServerPlan(
           plan,
           userId: userId,
-          // Only the confirm ack archives the week's other plans locally,
+          // Only a confirm's ack archives the week's other plans locally,
           // as the server just did; a pulled plan never does (120-002).
-          archiveSiblings: action is ConfirmPlanAction,
+          // Use again confirms its copy on the server (ticket 162).
+          archiveSiblings:
+              action is ConfirmPlanAction || action is UsePlanAgainAction,
         );
       }
       return result;
