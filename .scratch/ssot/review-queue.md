@@ -38,6 +38,18 @@ in brackets are the other cards folded into the same question.
   keep the contract test comparing M1 against `scripts/patrol-targets.mjs` only.
   Why pending: wave vana-judging 1 ticket 02's CI fix (093d0fef) deepened the existing divergence.
 
+- XUAN-TW-001 · From testing-wave fix 137 and the energy card (Lee queued these for Xuan, 2026-09-28;
+  detail in `.scratch/testing-wave/review-20260928.md` items 20-21 and the Finding files):
+  (a) CS-6 says the month sheet stays open on Today, but fix 137 closes it: which one?
+  (b) light-theme accent colours measure ~1.3:1 on cream: change the tokens?
+  (c) `validateDuringTotals` keeps a strict 1.1 cap inside the plan's own band: intended?
+  (d) the override info icon cannot stay without a new server snapshot field: add the field or drop the icon?
+  (e) 112-009 balance details read "0 kcal to target" when eaten is 1,570 kcal over;
+  (f) 116-009 a past day's Meals header reads INTAKE TODAY; (g) 117-003 a past day's Workout card
+  reads TODAY'S WORKOUT. (e)-(g) are wording on the energy card she ratified.
+  Recommend: (e)-(g) "1,570 kcal over", "INTAKE · SEP 23", "WORKOUT · SEP 23".
+  Why pending: her spec wording; Lee asked that nothing change until she answers.
+
 
 ## Built 2026-09-26, live on dev
 
