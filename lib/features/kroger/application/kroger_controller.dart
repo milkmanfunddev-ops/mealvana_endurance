@@ -465,46 +465,63 @@ class KrogerController extends _$KrogerController {
   /// with Connect Kroger back and no message, and the server drops that
   /// attempt's `kroger_oauth_sessions` row (`cancel_connect`).
   Future<void> connect() async {
+    await _run(_connect);
+  }
+
+  /// Add to Kroger cart for a shopper not yet signed in (ticket 164; Lee,
+  /// 2026-09-28): the sign-in and the send are one action, so a completed
+  /// sign-in goes straight on into the send and the shopper is not asked to
+  /// tap again. A cancelled or failed sign-in ends here, as [connect] does.
+  /// One `_run` holds both, so a second tap while the sign-in is open is
+  /// refused and a sign-in finishing after a refresh sends nothing.
+  Future<void> connectAndExport() async {
     await _run(() async {
-      if (kIsWeb) throw const KrogerException('mobile_only');
-      final start = await _repo.remote.call('connect');
-      final redirect = Uri.parse(start['redirect'] as String);
-      final String callback;
-      try {
-        callback = await ref.read(krogerBrowserProvider)(
-          start['url'] as String,
-          redirect.scheme,
-        );
-      } on PlatformException catch (e) {
-        if (!_isCancel(e)) rethrow;
-        await _cancelConnect(start['state']);
-        return;
-      }
-      final result = Uri.parse(callback);
-      if (result.scheme != redirect.scheme ||
-          result.host != redirect.host ||
-          result.path != redirect.path ||
-          result.queryParameters['state'] != start['state']) {
-        throw const KrogerException('invalid_oauth_state');
-      }
-      if (result.queryParameters['error'] != null ||
-          result.queryParameters['code'] == null) {
-        await _cancelConnect(start['state']);
-        return;
-      }
-      await _repo.remote.call('exchange', {
-        'code': result.queryParameters['code'],
-        'state': start['state'],
-      });
-      _publish(
-        // The exchange replaced any connection the other environment left.
-        state.value!.copyWith(
-          connected: true,
-          clearOtherEnvironment: true,
-          clearUnavailableReason: true,
-        ),
-      );
+      if (await _connect()) await _export();
     });
+  }
+
+  /// The body of [connect], inside whichever action owns the turn. True
+  /// when the shopper is now connected; false when they cancelled.
+  Future<bool> _connect() async {
+    if (kIsWeb) throw const KrogerException('mobile_only');
+    final start = await _repo.remote.call('connect');
+    final redirect = Uri.parse(start['redirect'] as String);
+    final String callback;
+    try {
+      callback = await ref.read(krogerBrowserProvider)(
+        start['url'] as String,
+        redirect.scheme,
+      );
+    } on PlatformException catch (e) {
+      if (!_isCancel(e)) rethrow;
+      await _cancelConnect(start['state']);
+      return false;
+    }
+    final result = Uri.parse(callback);
+    if (result.scheme != redirect.scheme ||
+        result.host != redirect.host ||
+        result.path != redirect.path ||
+        result.queryParameters['state'] != start['state']) {
+      throw const KrogerException('invalid_oauth_state');
+    }
+    if (result.queryParameters['error'] != null ||
+        result.queryParameters['code'] == null) {
+      await _cancelConnect(start['state']);
+      return false;
+    }
+    await _repo.remote.call('exchange', {
+      'code': result.queryParameters['code'],
+      'state': start['state'],
+    });
+    _publish(
+      // The exchange replaced any connection the other environment left.
+      state.value!.copyWith(
+        connected: true,
+        clearOtherEnvironment: true,
+        clearUnavailableReason: true,
+      ),
+    );
+    return true;
   }
 
   /// Best effort: the row expires on its own and the next connect deletes
@@ -746,7 +763,13 @@ class KrogerController extends _$KrogerController {
   /// repeated tap, a retried request and a reloaded screen all arrive
   /// without it and are refused by the server's own record of the send.
   Future<void> export({bool resend = false}) async {
-    await _run(() async {
+    await _run(() => _export(resend: resend));
+  }
+
+  /// The body of [export], inside whichever action owns the turn: the
+  /// shopper's tap, or the sign-in that [connectAndExport] just completed.
+  Future<void> _export({bool resend = false}) async {
+    {
       final draft = _reconcile(state.value!.draft);
       await _persist(draft);
       if (!(resend ? draft.resendable : draft.ready)) {
@@ -815,7 +838,7 @@ class KrogerController extends _$KrogerController {
         // that failed, and says nothing. The button stays for another try.
         if (state.value!.draft.sent) await _openKroger();
       }
-    });
+    }
   }
 
   /// Kroger's cart, where the shopper picks a delivery slot, adds what

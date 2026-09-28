@@ -376,7 +376,9 @@ class _Body extends ConsumerWidget {
         // draft that is not `ready` on its own, whatever the button says.
         // Shown to every shopper, connected or not (111-002): the cart write
         // is the one thing that needs a Kroger sign-in, so an unconnected
-        // shopper is asked to connect here, and only here.
+        // shopper is asked to connect here, and only here. That sheet is the
+        // send's confirmation too: a completed sign-in goes straight on into
+        // the send, with no second tap (164; Lee, 2026-09-28).
         if (view.available && !view.draft.exported)
           KylePrimaryButton(
             key: const ValueKey('kroger.export'),
@@ -390,7 +392,7 @@ class _Body extends ConsumerWidget {
                         ContentKeys.krogerSendConnectFirst,
                         confirmKey: ContentKeys.krogerConnect,
                       )) {
-                        await controller.connect();
+                        await controller.connectAndExport();
                       }
                       return;
                     }
