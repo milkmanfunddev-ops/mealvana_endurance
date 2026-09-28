@@ -14,8 +14,9 @@ import 'package:mealvana_endurance/features/meal_logging/presentation/widgets/me
 void main() {
   final now = DateTime(2026, 6, 13);
 
-  MealLog log() => MealLog(
+  MealLog log({String? savedMealId}) => MealLog(
     id: 'log-1',
+    savedMealId: savedMealId,
     userId: 'u1',
     logDate: '2026-06-13',
     slot: MealSlot.lunch,
@@ -30,17 +31,20 @@ void main() {
     updatedAt: now,
   );
 
-  Widget host({VoidCallback? onDelete, VoidCallback? onEdit}) => ProviderScope(
+  Widget host({
+    VoidCallback? onDelete,
+    VoidCallback? onEdit,
+    MealLog? entry,
+    List<SavedMeal> favorites = const [],
+  }) => ProviderScope(
     overrides: [
       // Keep the favorite lookup off the real DB stack.
-      savedMealsProvider.overrideWith(
-        (ref) => Stream.value(const <SavedMeal>[]),
-      ),
+      savedMealsProvider.overrideWith((ref) => Stream.value(favorites)),
     ],
     child: MaterialApp(
       home: Scaffold(
         body: MealLogRow(
-          log: log(),
+          log: entry ?? log(),
           onDelete: onDelete ?? () {},
           onEdit: onEdit ?? () {},
         ),
@@ -88,4 +92,30 @@ void main() {
       expect(find.text('Chicken rice bowl'), findsOneWidget);
     });
   }
+
+  /// Ticket 163: the row asks the same question the dashboard does. A log
+  /// made from a favourite points at it, and it is still that favourite
+  /// after the favourite was renamed, so the star is filled.
+  testWidgets('a log pointing at a renamed favourite shows the filled star', (
+    tester,
+  ) async {
+    final renamed = SavedMeal(
+      id: 'fav-1',
+      userId: 'u1',
+      name: 'My usual lunch',
+      components: const [],
+      createdAt: now,
+      updatedAt: now,
+    );
+    await tester.pumpWidget(
+      host(
+        entry: log(savedMealId: 'fav-1'),
+        favorites: [renamed],
+      ),
+    );
+    await tester.pump();
+
+    expect(find.byIcon(Icons.star), findsOneWidget);
+    expect(find.byIcon(Icons.star_border), findsNothing);
+  });
 }
