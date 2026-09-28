@@ -7,8 +7,8 @@
  * figure. The RPC rows here are shaped like the SQL returns them (jsonb
  * objects, micro-dollars), never like this module's own output.
  *
- * `CREDITS_ENFORCED` is read from the env at import time, so the module is
- * imported dynamically after the env is set. No test here asserts a price:
+ * `creditsEnforced()` reads the env per call, so a test can arrange its own
+ * enforcement without re-importing the module. No test here asserts a price:
  * the real cost is checked against `realCostMicro`, the one function that
  * prices, not against a number.
  *
@@ -151,15 +151,19 @@ Deno.test('a settle that fails in the database is logged, never thrown at the at
 });
 
 Deno.test('with enforcement off nothing is reserved and settle is a no-op', async () => {
+  const wasEnforced = Deno.env.get('AI_CREDITS_ENFORCED');
   Deno.env.set('AI_CREDITS_ENFORCED', 'false');
-  const off = await import('./credits.ts?off');
-  Deno.env.set('AI_CREDITS_ENFORCED', 'true');
-  const { client, calls } = fakeClient({});
-  const r = await off.reserveBudget(client, 'user-1', 'vana-chat');
-  assert(r.allowed);
-  await r.hold.settle({ gatewayCostUsd: 0.01 });
-  await r.hold.refund();
-  assertEquals(calls, []);
+  try {
+    const { client, calls } = fakeClient({});
+    const r = await credits.reserveBudget(client, 'user-1', 'vana-chat');
+    assert(r.allowed);
+    await r.hold.settle({ gatewayCostUsd: 0.01 });
+    await r.hold.refund();
+    assertEquals(calls, []);
+  } finally {
+    if (wasEnforced === undefined) Deno.env.delete('AI_CREDITS_ENFORCED');
+    else Deno.env.set('AI_CREDITS_ENFORCED', wasEnforced);
+  }
 });
 
 Deno.test('the status the app reads: a share of the month, the refill date, bought extra as a share of a month', () => {

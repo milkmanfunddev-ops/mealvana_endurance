@@ -154,6 +154,8 @@ Deno.test('a chat turn over the limit is a 429 from runChat, with no model call'
 
 Deno.test('the pantry photo goes through the same module', async () => {
   // The budget (ticket 09) is reserved ahead of the limiter; a wallet with room lets the limiter be the one that refuses.
+  // The hold only exists under enforcement, so the test arranges the env itself (credits.ts reads it per call) —
+  // green must not depend on another suite's file having set the flag first.
   const settled: unknown[] = [];
   const v = testCtx(world({ vana_calls: [0, 1, 2].map((i) => callRow('vana.pantry_photo', 5, i)) }), {
     rpc: {
@@ -161,10 +163,17 @@ Deno.test('the pantry photo goes through the same module', async () => {
       ai_budget_settle: (a: unknown) => { settled.push(a); return null; },
     },
   });
-  await assertRejects(
-    () => extraAction(v, 'pantry_photo', { conversationId: CONV, photoPath: `${U}/fridge.jpg` }),
-    RateLimitedError,
-  );
+  const wasEnforced = Deno.env.get('AI_CREDITS_ENFORCED');
+  Deno.env.set('AI_CREDITS_ENFORCED', 'true');
+  try {
+    await assertRejects(
+      () => extraAction(v, 'pantry_photo', { conversationId: CONV, photoPath: `${U}/fridge.jpg` }),
+      RateLimitedError,
+    );
+  } finally {
+    if (wasEnforced === undefined) Deno.env.delete('AI_CREDITS_ENFORCED');
+    else Deno.env.set('AI_CREDITS_ENFORCED', wasEnforced);
+  }
   // Refused before the download and before the model: no assistant row, no reservation left behind, the budget hold refunded.
   assertEquals(v.fake.rows('vana_messages').length, 2);
   assertEquals(v.fake.rows('vana_calls').length, 3);

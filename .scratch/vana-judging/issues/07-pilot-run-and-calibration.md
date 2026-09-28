@@ -11,10 +11,12 @@ deserved? Anchor wording adjusts here, before a full round bakes in twenty-odd j
 
 **Blocked by:** 03 (account ready), 04 (Scenario converted), 05 (capture and round files).
 
-**Status:** ready-for-agent
+**Status:** in-progress (wave 3, 2026-09-26)
 
 - [ ] One Scenario run end-to-end in the real app on web, screenshots taken as evidence
 - [ ] Transcript captured from the server's stored messages, not from memory
 - [ ] Mark, dimension breakdown, and verdict written to the round files (prose + JSON)
 - [ ] Lee has read transcript and verdict and confirmed the anchors calibrate (or adjusted
       them, recorded in the Rubric's history)
+
+Board: report the Run to the live judging board as it runs, per `eval/board/README.md`.

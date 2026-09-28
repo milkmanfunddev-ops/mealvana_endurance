@@ -19,7 +19,7 @@ import '../../application/pro_paywall_controller.dart';
 import '../../application/subscription_screen_controller.dart';
 import '../../application/subscription_status_provider.dart';
 import '../pro_gate_redirect.dart';
-import '../widgets/pro_feature_list.dart';
+import '../widgets/pro_feature_carousel.dart';
 import '../widgets/redeem_code_sheet.dart';
 import 'subscription_screen.dart' show openManageSubscription;
 
@@ -31,18 +31,22 @@ final paywallUrlLauncherProvider = Provider<Future<bool> Function(Uri uri)>(
       (uri) => launchUrl(uri, mode: LaunchMode.externalApplication),
 );
 
-/// The clip the paywall opens on: about four seconds of the dev app recorded
-/// from the simulator (timeline, Vana answering, a week's meal plan), silent,
-/// 540×1174. Its first frame is the poster and the Reduce Motion still.
+/// The clip at the head of the paywall: about four seconds of the dev app
+/// recorded from the simulator (timeline, Vana answering, a week's meal
+/// plan), silent, 540×1174, looping. Its first frame is the poster and the
+/// Reduce Motion still.
 const kPaywallClipAsset = 'assets/video/paywall_clip.mp4';
 const kPaywallClipPosterAsset = 'assets/video/paywall_clip_first.jpg';
 const kPaywallClipAspectRatio = 540 / 1174;
+
+/// How much of the page's width the clip takes (Lee, 2026-09-26).
+const kPaywallClipWidthFactor = 0.32;
 
 /// Makes the clip's player. A provider so widget tests drive a fake instead
 /// of the `video_player` platform channel.
 final paywallClipPlayerProvider = Provider<PhoneClipPlayer Function()>(
   (_) =>
-      () => VideoPhoneClipPlayer(asset: kPaywallClipAsset),
+      () => VideoPhoneClipPlayer(asset: kPaywallClipAsset, loop: true),
 );
 
 /// The clip's first frame. A provider so widget tests need no asset decode.
@@ -73,15 +77,19 @@ Page<void> paywallRoutePage(GoRouterState state) => MaterialPage<void>(
 /// The paywall — where an inactive account lands after sign-in and stays
 /// (mp-280), in Bevel's layout with our branding (mp-493).
 ///
-/// It opens on a clip of our own app, then slides to the features. The two
-/// plan cards stay pinned above one Continue button through the whole
-/// scroll; annual is selected by default and carries its saving and its
-/// per-month price, worked out from the store's prices (mp-493 §3). Prices
-/// come from RevenueCat's Current Offering (mp-453): while it is `founding`,
-/// each plan shows the founding price with the normal one struck through,
-/// under a "Founding member" line. Under the features sit the trial terms,
-/// the price after the trial, the renewal terms and links to the terms and
-/// privacy policy (mp-453 §4).
+/// One page (Lee, 2026-09-26): a clip of our own app loops silently at its
+/// head, small and centred; under it the title and subtitle, then the four
+/// headline features as a swiped carousel ([ProFeatureCarousel]; the "also
+/// includes" rows stay on the Subscription screen), then the terms. With
+/// Reduce Motion the clip's first frame stands in for it. The two plan
+/// cards stay pinned above one Continue button through the whole scroll;
+/// annual is selected by default and carries its saving and its per-month
+/// price, worked out from the store's prices (mp-493 §3). Prices come from
+/// RevenueCat's Current Offering (mp-453): while it is `founding`, each plan
+/// shows the founding price with the normal one struck through, under a
+/// "Founding member" line. Under the features sit the trial terms, the price
+/// after the trial, the renewal terms and links to the terms and privacy
+/// policy (mp-453 §4).
 ///
 /// Everything secondary is behind the one ⋯ button (mp-494): Restore
 /// purchases, Redeem code (our own Code entry, mp-458; this is the update
@@ -123,7 +131,7 @@ class _PaywallScreenState extends ConsumerState<PaywallScreen> {
   final _messagesKey = GlobalKey();
 
   /// Where a message shows: the features' Scaffold while it is on screen,
-  /// else the screen itself (the clip page, or the paywall on its way out).
+  /// else the screen itself (the paywall on its way out).
   BuildContext get _messageContext => _messagesKey.currentContext ?? context;
 
   /// The retry while the plans are unavailable (123-009): a timer and the
@@ -464,177 +472,135 @@ class _PaywallScreenState extends ConsumerState<PaywallScreen> {
       ),
     ];
 
+    final reduceMotion = SlideOverPager.reduceMotionOf(context);
+
     return Scaffold(
       key: const ValueKey('paywall.screen'),
       backgroundColor: isDark ? AppColors.blackberry : AppColors.cream,
-      body: _PaywallPages(
-        // Page one: the clip of our own app, silent, in the phone frame
-        // (mp-493 §1). A tap skips it.
-        clip: (onEnded) => PhoneClipFrame(
-          key: const ValueKey('paywall.clip'),
-          player: clipPlayer,
-          poster: clipPoster,
-          aspectRatio: kPaywallClipAspectRatio,
-          semanticLabel: clipLabel,
-          onEnded: onEnded,
-        ),
-        // Page two: the ⋯ button, the features scrolling, and the plans
-        // pinned under them with the one Continue.
-        features: (reduceMotion) => Column(
-          crossAxisAlignment: CrossAxisAlignment.stretch,
-          children: [
-            SafeArea(
-              bottom: false,
-              child: Padding(
-                padding: const EdgeInsets.fromLTRB(
-                  AppSpacing.md,
-                  AppSpacing.xs,
-                  AppSpacing.md,
-                  0,
-                ),
-                child: Row(
-                  children: [
-                    const Spacer(),
-                    OverflowMenuButton(
-                      key: const ValueKey('paywall.more_button'),
-                      semanticLabel: content.getValue(
-                        ContentKeys.paywallMoreLabel,
-                      ),
-                      color: textColor,
-                      entries: menu,
+      body: Column(
+        crossAxisAlignment: CrossAxisAlignment.stretch,
+        children: [
+          // The ⋯ button, then the page scrolling, and the plans pinned
+          // under it with the one Continue.
+          SafeArea(
+            bottom: false,
+            child: Padding(
+              padding: const EdgeInsets.fromLTRB(
+                AppSpacing.md,
+                AppSpacing.xs,
+                AppSpacing.md,
+                0,
+              ),
+              child: Row(
+                children: [
+                  const Spacer(),
+                  OverflowMenuButton(
+                    key: const ValueKey('paywall.more_button'),
+                    semanticLabel: content.getValue(
+                      ContentKeys.paywallMoreLabel,
                     ),
-                  ],
-                ),
+                    color: textColor,
+                    entries: menu,
+                  ),
+                ],
               ),
             ),
-            Expanded(
-              // Messages float above the plans inside this Scaffold, their
-              // semantics box no bigger than the drawn message (118-006).
-              child: ScaffoldMessenger(
-                child: Scaffold(
-                  key: _messagesKey,
-                  backgroundColor: Colors.transparent,
-                  body: SingleChildScrollView(
-                    key: const ValueKey('paywall.scroll'),
-                    padding: AppSpacing.screenPadding,
-                    child: Column(
-                      crossAxisAlignment: CrossAxisAlignment.stretch,
-                      children: [
-                        // Reduce Motion: the clip's first frame stands in for the
-                        // clip (mp-493 §1).
-                        if (reduceMotion) ...[
-                          Center(
-                            child: SizedBox(
-                              width: 120,
-                              child: PhoneClipFrame(
-                                key: const ValueKey('paywall.clip_still'),
-                                player: clipPlayer,
-                                poster: clipPoster,
-                                aspectRatio: kPaywallClipAspectRatio,
-                                semanticLabel: clipLabel,
-                                still: true,
-                              ),
-                            ),
-                          ),
-                          const SizedBox(height: AppSpacing.xl),
-                        ],
-                        // The app's name and one line on what the prices below buy.
-                        // No hero, no pitch beyond that (Lee, 2026-09-16).
-                        Text(
-                          key: const ValueKey('paywall.title'),
-                          content.getValue(ContentKeys.paywallTitle),
-                          style: AppTextStyles.h1.copyWith(color: textColor),
-                          textAlign: TextAlign.center,
+          ),
+          Expanded(
+            // Messages float above the plans inside this Scaffold, their
+            // semantics box no bigger than the drawn message (118-006).
+            child: ScaffoldMessenger(
+              child: Scaffold(
+                key: _messagesKey,
+                backgroundColor: Colors.transparent,
+                body: SingleChildScrollView(
+                  key: const ValueKey('paywall.scroll'),
+                  padding: AppSpacing.screenPadding,
+                  child: Column(
+                    crossAxisAlignment: CrossAxisAlignment.stretch,
+                    children: [
+                      // The clip of our own app at the head of the page,
+                      // silent and looping, in the phone frame (mp-493 §1;
+                      // one page, Lee 2026-09-26). Nothing waits on it and
+                      // a tap does nothing. Reduce Motion: its first frame.
+                      Center(
+                        child: FractionallySizedBox(
+                          widthFactor: kPaywallClipWidthFactor,
+                          child: reduceMotion
+                              ? PhoneClipFrame(
+                                  key: const ValueKey('paywall.clip_still'),
+                                  player: clipPlayer,
+                                  poster: clipPoster,
+                                  aspectRatio: kPaywallClipAspectRatio,
+                                  semanticLabel: clipLabel,
+                                  still: true,
+                                )
+                              : PhoneClipFrame(
+                                  key: const ValueKey('paywall.clip'),
+                                  player: clipPlayer,
+                                  poster: clipPoster,
+                                  aspectRatio: kPaywallClipAspectRatio,
+                                  semanticLabel: clipLabel,
+                                ),
                         ),
-                        const SizedBox(height: AppSpacing.md),
-                        Text(
-                          key: const ValueKey('paywall.subtitle'),
-                          content.getValue(ContentKeys.paywallSubtitle),
-                          style: AppTextStyles.bodyMedium.copyWith(
-                            color: secondaryColor,
-                          ),
-                          textAlign: TextAlign.center,
-                        ),
-
-                        // Four headline features, the divider and the rest; the AI
-                        // features share the one Vana line (mp-493 §2).
-                        const SizedBox(height: AppSpacing.xxl),
-                        ProFeatureList(
-                          key: const ValueKey('paywall.features'),
-                          content: content,
-                        ),
-
-                        // Trial terms, the price after the trial, renewal and the
-                        // two links (mp-453 §4), whatever the store answered.
-                        const SizedBox(height: AppSpacing.xxl),
-                        _PaywallTerms(
-                          plans: plansAsync.value,
-                          content: content,
+                      ),
+                      const SizedBox(height: AppSpacing.lg),
+                      // The app's name and one line on what the prices below
+                      // buy. No hero, no pitch beyond that (Lee, 2026-09-16).
+                      Text(
+                        key: const ValueKey('paywall.title'),
+                        content.getValue(ContentKeys.paywallTitle),
+                        style: AppTextStyles.h1.copyWith(color: textColor),
+                        textAlign: TextAlign.center,
+                      ),
+                      const SizedBox(height: AppSpacing.md),
+                      Text(
+                        key: const ValueKey('paywall.subtitle'),
+                        content.getValue(ContentKeys.paywallSubtitle),
+                        style: AppTextStyles.bodyMedium.copyWith(
                           color: secondaryColor,
-                          onTerms: () =>
-                              _openLink(context, ref, kTermsOfServiceUrl),
-                          onPrivacy: () =>
-                              _openLink(context, ref, kPrivacyPolicyUrl),
                         ),
-                        const SizedBox(height: AppSpacing.lg),
-                      ],
-                    ),
+                        textAlign: TextAlign.center,
+                      ),
+
+                      // The four headline features, swiped (Lee 2026-09-26,
+                      // in place of mp-493 §2's list); the AI features share
+                      // the one Vana card.
+                      const SizedBox(height: AppSpacing.lg),
+                      ProFeatureCarousel(
+                        key: const ValueKey('paywall.features'),
+                        content: content,
+                      ),
+
+                      // Trial terms, the price after the trial, renewal and
+                      // the two links (mp-453 §4), whatever the store answered.
+                      const SizedBox(height: AppSpacing.xl),
+                      _PaywallTerms(
+                        plans: plansAsync.value,
+                        content: content,
+                        color: secondaryColor,
+                        onTerms: () =>
+                            _openLink(context, ref, kTermsOfServiceUrl),
+                        onPrivacy: () =>
+                            _openLink(context, ref, kPrivacyPolicyUrl),
+                      ),
+                      const SizedBox(height: AppSpacing.lg),
+                    ],
                   ),
                 ),
               ),
             ),
-            // The plans and the one Continue, pinned (mp-493 §3).
-            _PlansTray(
-              plansAsync: plansAsync,
-              content: content,
-              isBusy: isBusy,
-              secondaryColor: secondaryColor,
-              onContinue: (pkg) => _buy(context, ref, pkg),
-            ),
-          ],
-        ),
-      ),
-    );
-  }
-}
-
-/// The two pages of the paywall: the clip, then the features and plans.
-/// The clip's end (or a tap on it) moves the page on; Reduce Motion starts
-/// on the features with the clip's first frame at their head.
-class _PaywallPages extends StatefulWidget {
-  const _PaywallPages({required this.clip, required this.features});
-
-  final Widget Function(VoidCallback onEnded) clip;
-  final Widget Function(bool reduceMotion) features;
-
-  @override
-  State<_PaywallPages> createState() => _PaywallPagesState();
-}
-
-class _PaywallPagesState extends State<_PaywallPages> {
-  bool _clipDone = false;
-
-  void _moveOn() {
-    if (!_clipDone && mounted) setState(() => _clipDone = true);
-  }
-
-  @override
-  Widget build(BuildContext context) {
-    final reduceMotion = SlideOverPager.reduceMotionOf(context);
-    return SlideOverPager(
-      showSecond: _clipDone || reduceMotion,
-      first: GestureDetector(
-        key: const ValueKey('paywall.clip_page'),
-        behavior: HitTestBehavior.opaque,
-        onTap: _moveOn,
-        child: SafeArea(
-          child: Padding(
-            padding: const EdgeInsets.all(AppSpacing.xxl),
-            child: Center(child: widget.clip(_moveOn)),
           ),
-        ),
+          // The plans and the one Continue, pinned (mp-493 §3).
+          _PlansTray(
+            plansAsync: plansAsync,
+            content: content,
+            isBusy: isBusy,
+            secondaryColor: secondaryColor,
+            onContinue: (pkg) => _buy(context, ref, pkg),
+          ),
+        ],
       ),
-      second: widget.features(reduceMotion),
     );
   }
 }

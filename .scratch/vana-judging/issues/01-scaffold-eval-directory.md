@@ -11,7 +11,7 @@ accounts to Scenarios (credentials never here — secrets directory only), and e
 
 **Blocked by:** None (can start immediately).
 
-**Status:** in-progress (wave 1, 2026-09-26)
+**Status:** done (wave 1, 2026-09-26)
 
 - [ ] `/eval` contains README, rubric.md (already present), improvements.md, accounts.md,
       scenarios/ and runs/

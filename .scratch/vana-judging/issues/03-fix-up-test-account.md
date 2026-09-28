@@ -10,7 +10,7 @@ offseason) are spawned by the same recipe as the corpus grows — document the r
 
 **Blocked by:** 01 (scaffold — the accounts map lives there).
 
-**Status:** ready-for-agent
+**Status:** done (wave 2, 2026-09-26)
 
 - [ ] The account holds Pro with a live Expiry and the wallet shows budget available
 - [ ] A hand request to the chat function with the account's JWT streams a reply (no

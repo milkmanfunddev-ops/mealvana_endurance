@@ -1,0 +1,502 @@
+<title>Vana Judging Board</title>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Sansita:wght@700;800&display=swap">
+<style>
+  :root {
+    --plane: #f8f6eb;          /* Mealvana cream */
+    --surface: #fffdf6;
+    --ink: #2a1226;            /* plum-black */
+    --ink-2: #5b4a58;
+    --muted: #8a7f87;
+    --hair: #e4dfd3;
+    --axis: #c9c2b4;
+    --accent: #f78b14;         /* Mealvana orange */
+    --accent-ink: #b45f05;
+    --plum: #381633;
+    --yolk: #ffc629;
+    --good: #0ca30c; --good-ink: #006300;
+    --warn: #fab219; --warn-ink: #7a5200;
+    --crit: #d03b3b; --crit-ink: #a02626;
+    --seq-1: #cde2fb; --seq-2: #9ec5f4; --seq-3: #5598e7; --seq-4: #256abf; --seq-5: #104281;
+    --bar: #2a78d6;
+    --live: #0ca30c;
+    --pill-bg: rgba(56,22,51,0.06);
+    --shadow: 0 1px 2px rgba(42,18,38,0.06);
+  }
+  @media (prefers-color-scheme: dark) {
+    :root:not([data-theme="light"]) {
+      color-scheme: dark;
+      --plane: #150b13; --surface: #1f1320; --ink: #f4eef1; --ink-2: #c9bcc5; --muted: #8f838c;
+      --hair: #33262f; --axis: #4a3a45; --accent: #ffa04a; --accent-ink: #ffb266; --plum: #e9d3e3;
+      --good-ink: #3ec33e; --warn-ink: #ffcc55; --crit-ink: #ff7a7a;
+      --seq-1: #1c3556; --seq-2: #1f4f8c; --seq-3: #2f6fc0; --seq-4: #5598e7; --seq-5: #9ec5f4;
+      --bar: #3987e5; --pill-bg: rgba(255,255,255,0.08); --shadow: none;
+    }
+  }
+  :root[data-theme="dark"] {
+    color-scheme: dark;
+    --plane: #150b13; --surface: #1f1320; --ink: #f4eef1; --ink-2: #c9bcc5; --muted: #8f838c;
+    --hair: #33262f; --axis: #4a3a45; --accent: #ffa04a; --accent-ink: #ffb266; --plum: #e9d3e3;
+    --good-ink: #3ec33e; --warn-ink: #ffcc55; --crit-ink: #ff7a7a;
+    --seq-1: #1c3556; --seq-2: #1f4f8c; --seq-3: #2f6fc0; --seq-4: #5598e7; --seq-5: #9ec5f4;
+    --bar: #3987e5; --pill-bg: rgba(255,255,255,0.08); --shadow: none;
+  }
+  * { box-sizing: border-box; }
+  body { background: var(--plane); color: var(--ink); font: 14px/1.5 system-ui, -apple-system, "Segoe UI", sans-serif; margin: 0; }
+  .wrap { max-width: 1120px; margin: 0 auto; padding-block: 20px 48px; padding-inline: 16px; display: grid; gap: 22px; }
+  h1, h2 { font-family: Sansita, Georgia, serif; text-wrap: balance; margin: 0; letter-spacing: 0.005em; }
+  h1 { font-size: 30px; font-weight: 800; color: var(--plum); }
+  h2 { font-size: 18px; font-weight: 700; }
+  .eyebrow { font-size: 11px; text-transform: uppercase; letter-spacing: 0.08em; color: var(--muted); font-weight: 600; }
+  header { display: flex; flex-wrap: wrap; align-items: flex-end; justify-content: space-between; gap: 12px 24px; }
+  header p { margin: 4px 0 0; color: var(--ink-2); max-width: 60ch; }
+  .controls { display: flex; flex-wrap: wrap; gap: 8px; align-items: center; }
+  select, button { font: inherit; color: var(--ink); background: var(--surface); border: 1px solid var(--hair); border-radius: 8px; padding: 6px 10px; }
+  button { cursor: pointer; }
+  button:hover { border-color: var(--axis); }
+  button:focus-visible, select:focus-visible, details summary:focus-visible { outline: 2px solid var(--accent); outline-offset: 2px; }
+  .banner { border: 1px dashed var(--axis); border-radius: 10px; padding: 10px 14px; color: var(--ink-2); background: var(--surface); }
+  .banner b { color: var(--accent-ink); }
+
+  /* live strip */
+  .live { display: grid; grid-template-columns: 1fr; gap: 12px; background: var(--surface); border: 1px solid var(--hair); border-radius: 12px; padding: 14px 16px; box-shadow: var(--shadow); }
+  @media (min-width: 760px) { .live { grid-template-columns: minmax(0, 1.1fr) minmax(0, 1fr); } }
+  .live-head { display: flex; align-items: center; gap: 10px; flex-wrap: wrap; }
+  .dot { width: 10px; height: 10px; border-radius: 50%; background: var(--muted); flex: none; }
+  .dot.on { background: var(--live); box-shadow: 0 0 0 0 rgba(12,163,12,0.5); animation: pulse 1.6s ease-out infinite; }
+  @keyframes pulse { to { box-shadow: 0 0 0 9px rgba(12,163,12,0); } }
+  @media (prefers-reduced-motion: reduce) { .dot.on { animation: none; } }
+  .live-title { font-weight: 600; }
+  .live-meta { color: var(--muted); font-size: 12.5px; }
+  .live-note { color: var(--ink-2); margin-top: 6px; }
+  .log { font-family: ui-monospace, SFMono-Regular, Menlo, monospace; font-size: 12px; line-height: 1.5; max-height: 168px; overflow: auto; border-left: 2px solid var(--hair); padding-left: 10px; display: grid; gap: 2px; }
+  .log time { color: var(--muted); margin-right: 8px; font-variant-numeric: tabular-nums; }
+  .log .empty { color: var(--muted); font-family: inherit; }
+
+  /* tiles */
+  .tiles { display: grid; grid-template-columns: repeat(auto-fit, minmax(150px, 1fr)); gap: 12px; }
+  .tile { background: var(--surface); border: 1px solid var(--hair); border-radius: 12px; padding: 12px 14px; box-shadow: var(--shadow); display: grid; gap: 2px; align-content: start; }
+  .tile .val { font-size: 30px; font-weight: 700; line-height: 1.1; font-family: Sansita, Georgia, serif; }
+  .tile .sub { color: var(--muted); font-size: 12px; }
+  .tile.verdict .val { font-size: 22px; }
+  .status { display: inline-flex; align-items: center; gap: 6px; border-radius: 999px; padding: 2px 9px; font-size: 12px; font-weight: 600; background: var(--pill-bg); color: var(--ink-2); white-space: nowrap; }
+  .status.good { color: var(--good-ink); } .status.warn { color: var(--warn-ink); } .status.crit { color: var(--crit-ink); }
+  .status i { width: 8px; height: 8px; border-radius: 50%; background: currentColor; display: inline-block; }
+
+  /* panels */
+  .panel { background: var(--surface); border: 1px solid var(--hair); border-radius: 12px; padding: 14px 16px 16px; box-shadow: var(--shadow); display: grid; gap: 10px; }
+  .panel-head { display: flex; justify-content: space-between; align-items: baseline; flex-wrap: wrap; gap: 6px 16px; }
+  .panel-head .hint { color: var(--muted); font-size: 12.5px; }
+  .two { display: grid; grid-template-columns: 1fr; gap: 22px; }
+  @media (min-width: 900px) { .two { grid-template-columns: 3fr 2fr; } }
+  .scroll { overflow-x: auto; }
+  svg text { font-family: system-ui, -apple-system, "Segoe UI", sans-serif; fill: var(--ink-2); }
+  svg .tick { fill: var(--muted); font-size: 11px; }
+  svg .grid { stroke: var(--hair); stroke-width: 1; }
+  svg .ref { stroke: var(--axis); stroke-width: 1; stroke-dasharray: 3 3; }
+  svg .ref-label { fill: var(--muted); font-size: 10.5px; }
+  svg .bar { fill: var(--bar); }
+  svg .bar.low { fill: var(--crit); }
+  svg .bar.running { fill: none; stroke: var(--axis); stroke-dasharray: 4 3; }
+  svg .lbl { font-size: 12px; fill: var(--ink); }
+  svg .lbl.dim { fill: var(--muted); }
+  svg .num { font-size: 12px; font-variant-numeric: tabular-nums; fill: var(--ink); font-weight: 600; }
+  svg .hit { fill: transparent; }
+  svg .hit:hover + .bar, svg g:hover .bar { filter: brightness(0.9); }
+  .tip { position: fixed; pointer-events: none; background: var(--ink); color: var(--plane); padding: 6px 9px; border-radius: 6px; font-size: 12px; z-index: 9; max-width: 260px; display: none; }
+  .legend { display: flex; gap: 14px; flex-wrap: wrap; font-size: 12px; color: var(--ink-2); }
+  .legend span { display: inline-flex; align-items: center; gap: 6px; }
+  .sw { width: 14px; height: 10px; border-radius: 2px; display: inline-block; }
+
+  /* heatmap */
+  table.heat { border-collapse: separate; border-spacing: 2px; font-size: 12px; min-width: 640px; }
+  table.heat th { font-weight: 600; color: var(--muted); text-align: left; padding: 2px 6px; white-space: nowrap; }
+  table.heat th.dim { writing-mode: vertical-rl; transform: rotate(180deg); text-align: left; padding: 6px 0; font-size: 11px; height: 160px; vertical-align: bottom; }
+  table.heat td { width: 40px; height: 26px; text-align: center; border-radius: 4px; font-variant-numeric: tabular-nums; color: var(--ink); }
+  table.heat td.row { width: auto; text-align: left; padding: 0 8px; white-space: nowrap; background: transparent; }
+  table.heat td.q0 { background: transparent; border: 1px solid var(--hair); color: var(--crit-ink); }
+  table.heat td.q25 { background: var(--seq-1); } table.heat td.q50 { background: var(--seq-2); }
+  table.heat td.q75 { background: var(--seq-3); color: #fff; } table.heat td.q100 { background: var(--seq-5); color: #fff; }
+  table.heat td.na { background: transparent; color: var(--muted); }
+  table.heat td.mark { font-weight: 700; background: transparent; }
+  .ramp { display: inline-flex; align-items: center; gap: 4px; font-size: 12px; color: var(--muted); }
+  .ramp i { width: 18px; height: 10px; border-radius: 2px; display: inline-block; }
+
+  /* runs */
+  .runs { display: grid; gap: 8px; }
+  details.run { border: 1px solid var(--hair); border-radius: 10px; background: var(--surface); }
+  details.run summary { list-style: none; cursor: pointer; display: grid; grid-template-columns: auto 1fr auto; gap: 10px 14px; align-items: center; padding: 10px 14px; }
+  details.run summary::-webkit-details-marker { display: none; }
+  .mark-big { font-family: Sansita, Georgia, serif; font-size: 24px; font-weight: 700; min-width: 48px; text-align: right; font-variant-numeric: tabular-nums; }
+  .mark-big.low { color: var(--crit-ink); } .mark-big.pending { color: var(--muted); font-size: 16px; }
+  .run-name { font-weight: 600; overflow-wrap: anywhere; }
+  .run-sub { color: var(--muted); font-size: 12px; }
+  .run-body { padding: 0 14px 14px; border-top: 1px solid var(--hair); display: grid; gap: 12px; padding-top: 12px; }
+  .dims { display: grid; grid-template-columns: repeat(auto-fill, minmax(190px, 1fr)); gap: 6px 16px; font-size: 12.5px; }
+  .dims div { display: grid; grid-template-columns: 1fr auto; gap: 8px; align-items: center; }
+  .dims .track { grid-column: 1 / -1; height: 5px; background: var(--hair); border-radius: 3px; overflow: hidden; }
+  .dims .track i { display: block; height: 100%; background: var(--bar); border-radius: 3px; }
+  .verdict { white-space: pre-wrap; max-width: 78ch; color: var(--ink-2); }
+  .chips { display: flex; gap: 6px; flex-wrap: wrap; }
+  .chip { font-size: 12px; padding: 1px 8px; border-radius: 999px; background: var(--pill-bg); color: var(--plum); font-weight: 600; }
+  .cap { color: var(--crit-ink); font-weight: 600; font-size: 12px; }
+
+  table.imp { width: 100%; border-collapse: collapse; font-size: 13px; }
+  table.imp th { text-align: left; font-weight: 600; color: var(--muted); font-size: 12px; padding: 6px 8px; border-bottom: 1px solid var(--hair); }
+  table.imp td { padding: 8px; border-bottom: 1px solid var(--hair); vertical-align: top; }
+  table.imp td.id { white-space: nowrap; font-weight: 600; }
+  .muted { color: var(--muted); }
+  .empty-state { color: var(--muted); padding: 10px 0; }
+  footer { color: var(--muted); font-size: 12.5px; max-width: 78ch; }
+  footer code { font-family: ui-monospace, Menlo, monospace; font-size: 12px; background: var(--pill-bg); padding: 0 4px; border-radius: 4px; }
+</style>
+
+<div class="wrap">
+  <header>
+    <div>
+      <div class="eyebrow">Judging Vana · eval rounds</div>
+      <h1>Vana Judging Board</h1>
+      <p>The Examiner's rounds as they run: each Run's Mark against the pass bar (average 90, no Run below 80), the ten Rubric dimensions, verdicts, and the Improvement backlog.</p>
+    </div>
+    <div class="controls">
+      <label for="round-select" class="eyebrow">Round</label>
+      <select id="round-select" aria-label="Round"></select>
+      <button id="example-btn" type="button" hidden>Show example round</button>
+    </div>
+  </header>
+
+  <div class="banner" id="banner" hidden></div>
+
+  <section class="live" aria-label="Live">
+    <div>
+      <div class="live-head"><span class="dot" id="live-dot"></span><span class="live-title" id="live-title">Examiner idle</span><span class="live-meta" id="live-meta"></span></div>
+      <div class="live-note" id="live-note"></div>
+    </div>
+    <div class="log" id="live-log"><span class="empty">No log lines yet.</span></div>
+  </section>
+
+  <section class="tiles" aria-label="Round summary">
+    <div class="tile"><span class="eyebrow">Average Mark</span><span class="val" id="t-avg">–</span><span class="sub">pass bar 90</span></div>
+    <div class="tile"><span class="eyebrow">Lowest Mark</span><span class="val" id="t-low">–</span><span class="sub">floor 80</span></div>
+    <div class="tile"><span class="eyebrow">Runs marked</span><span class="val" id="t-runs">–</span><span class="sub" id="t-runs-sub">of the corpus</span></div>
+    <div class="tile"><span class="eyebrow">Robotic caps</span><span class="val" id="t-caps">–</span><span class="sub">Runs capped at 50</span></div>
+    <div class="tile verdict"><span class="eyebrow">Round</span><span class="val" id="t-verdict">–</span><span class="sub" id="t-verdict-sub"></span></div>
+  </section>
+
+  <div class="two">
+    <section class="panel" aria-label="Marks by Scenario">
+      <div class="panel-head"><h2>Marks by Scenario</h2><span class="hint">corpus order · dashed rows are still running</span></div>
+      <div class="scroll" id="bars"></div>
+      <div class="legend"><span><i class="sw" style="background:var(--bar)"></i>Mark at or above 80</span><span><i class="sw" style="background:var(--crit)"></i>Below the 80 floor</span><span><i class="sw" style="border:1px dashed var(--axis)"></i>Running</span></div>
+    </section>
+    <section class="panel" aria-label="Average by round">
+      <div class="panel-head"><h2>Average by round</h2><span class="hint">the number the loop raises</span></div>
+      <div class="scroll" id="trend"></div>
+    </section>
+  </div>
+
+  <section class="panel" aria-label="Dimension marks">
+    <div class="panel-head"><h2>Dimension marks</h2><span class="ramp">0 <i style="border:1px solid var(--hair)"></i> 25 <i style="background:var(--seq-1)"></i> 50 <i style="background:var(--seq-2)"></i> 75 <i style="background:var(--seq-3)"></i> 100 <i style="background:var(--seq-5)"></i></span></div>
+    <div class="scroll" id="heat"></div>
+  </section>
+
+  <section class="panel" aria-label="Runs">
+    <div class="panel-head"><h2>Runs and verdicts</h2><span class="hint" id="runs-hint"></span></div>
+    <div class="runs" id="runs"></div>
+  </section>
+
+  <section class="panel" aria-label="Improvements">
+    <div class="panel-head"><h2>Improvement backlog</h2><span class="hint" id="imp-hint"></span></div>
+    <div class="scroll" id="imps"></div>
+  </section>
+
+  <footer>
+    The Examiner reports here through the artifact's data store. One document per Run in <code>runs</code> (id <code>&lt;round&gt;-&lt;scenario&gt;</code>, <code>-rerun</code> for a confirmatory re-run), one per round in <code>rounds</code>, the heartbeat in <code>live/current</code>, and one per Improvement in <code>improvements</code>. Field names match the round.json sidecar described in <code>eval/README.md</code>; the reporting steps are in <code>eval/board/README.md</code>.
+  </footer>
+</div>
+<div class="tip" id="tip"></div>
+
+<script>
+(function () {
+  const DIMS = [
+    ["dietitian-judgment", "Dietitian judgment", 20],
+    ["task-success", "Task success", 15],
+    ["concision-restraint", "Concision & restraint", 10],
+    ["interactivity", "Interactivity", 10],
+    ["tool-use-data-ops", "Tool use & data ops", 10],
+    ["memory-personalization", "Memory & personalization", 10],
+    ["reliability", "Reliability", 10],
+    ["opener", "Opener", 5],
+    ["instruction-following", "Instruction-following", 5],
+    ["recovery-boundaries", "Recovery & boundaries", 5],
+  ];
+  const PASS_AVG = 90, FLOOR = 80, CAP = 50;
+  const $ = (id) => document.getElementById(id);
+  const esc = (s) => String(s ?? "").replace(/[&<>"']/g, (c) => ({ "&": "&amp;", "<": "&lt;", ">": "&gt;", '"': "&quot;", "'": "&#39;" }[c]));
+
+  // ---------- state ----------
+  const state = { rounds: {}, runs: {}, improvements: {}, live: null, selected: null, example: false, connected: false };
+  const subs = [];
+
+  function computeMark(run) {
+    if (typeof run.weighted_mark === "number") return run.weighted_mark;
+    if (!run.dimensions) return null;
+    let sum = 0, w = 0;
+    for (const [k, , weight] of DIMS) { const v = run.dimensions[k]; if (typeof v === "number") { sum += v * weight; w += weight; } }
+    if (!w) return null;
+    const mark = Math.round(sum / w);
+    return run.robotic_cap_applied ? Math.min(mark, CAP) : mark;
+  }
+  const isMarked = (r) => r.status === "marked" || (r.status == null && computeMark(r) != null);
+
+  function roundView(roundId) {
+    const round = state.rounds[roundId] || { round: roundId };
+    const all = Object.values(state.runs).filter((r) => r.round === roundId);
+    // One row per scenario: the re-run replaces the original in the round's numbers.
+    const byScenario = new Map();
+    for (const r of all) {
+      const cur = byScenario.get(r.scenario);
+      if (!cur || (r.rerun && !cur.rerun)) byScenario.set(r.scenario, r);
+    }
+    const corpus = Array.isArray(round.corpus) && round.corpus.length ? round.corpus : [...byScenario.keys()].sort();
+    const rows = corpus.map((slug) => {
+      const r = byScenario.get(slug);
+      return { scenario: slug, run: r || null, mark: r && isMarked(r) ? computeMark(r) : null, original: r && r.rerun ? all.find((x) => x.scenario === slug && !x.rerun) : null };
+    });
+    for (const [slug, r] of byScenario) if (!corpus.includes(slug)) rows.push({ scenario: slug, run: r, mark: isMarked(r) ? computeMark(r) : null, original: null });
+    const marks = rows.map((r) => r.mark).filter((m) => m != null);
+    const avg = marks.length ? Math.round((marks.reduce((a, b) => a + b, 0) / marks.length) * 10) / 10 : null;
+    const low = marks.length ? Math.min(...marks) : null;
+    const caps = rows.filter((r) => r.run && r.run.robotic_cap_applied).length;
+    const complete = corpus.length > 0 && marks.length >= corpus.length;
+    const passed = typeof round.passed === "boolean" ? round.passed : complete && avg >= PASS_AVG && low >= FLOOR;
+    return { round, rows, marks, avg: round.average_mark ?? avg, low, caps, complete, passed, corpusSize: corpus.length, all };
+  }
+
+  // ---------- render ----------
+  function render() {
+    renderLive();
+    const ids = Object.keys(state.rounds).concat(Object.values(state.runs).map((r) => r.round)).filter(Boolean);
+    const roundIds = [...new Set(ids)].sort();
+    if (!state.selected || !roundIds.includes(state.selected)) state.selected = roundIds[roundIds.length - 1] || null;
+    const sel = $("round-select");
+    sel.innerHTML = roundIds.length ? roundIds.map((id) => `<option value="${esc(id)}"${id === state.selected ? " selected" : ""}>Round ${esc(id)}${state.rounds[id]?.status === "open" ? " · open" : ""}</option>`).join("") : `<option>No rounds yet</option>`;
+    sel.disabled = !roundIds.length;
+
+    if (!state.selected) { renderEmptyRound(); renderTrend([]); renderImps(); return; }
+    const v = roundView(state.selected);
+    renderTiles(v); renderBars(v); renderHeat(v); renderRuns(v);
+    renderTrend(roundIds.map((id) => ({ id, ...roundView(id) })));
+    renderImps();
+  }
+
+  function renderEmptyRound() {
+    for (const id of ["t-avg", "t-low", "t-runs", "t-caps", "t-verdict"]) $(id).textContent = "–";
+    $("t-runs-sub").textContent = "of the corpus"; $("t-verdict-sub").textContent = "";
+    $("bars").innerHTML = `<div class="empty-state">No Run has been recorded. The first Mark appears here the moment the Examiner writes it.</div>`;
+    $("heat").innerHTML = ""; $("runs").innerHTML = `<div class="empty-state">Nothing to show yet.</div>`; $("runs-hint").textContent = "";
+  }
+
+  function renderLive() {
+    const l = state.live;
+    const dot = $("live-dot"), title = $("live-title"), meta = $("live-meta"), note = $("live-note"), log = $("live-log");
+    if (!l) { dot.className = "dot"; title.textContent = "Examiner idle"; meta.textContent = state.connected ? "no heartbeat" : ""; note.textContent = ""; log.innerHTML = `<span class="empty">No log lines yet.</span>`; return; }
+    const ageMs = l.updated_at ? Date.now() - Date.parse(l.updated_at) : Infinity;
+    const active = l.phase && l.phase !== "idle" && ageMs < 5 * 60 * 1000;
+    dot.className = "dot" + (active ? " on" : "");
+    const phaseWord = { talking: "talking to Vana", capturing: "capturing the transcript", marking: "marking", idle: "idle" }[l.phase] || l.phase || "idle";
+    title.textContent = l.scenario ? `${phaseWord} · ${l.scenario}` : `Examiner ${phaseWord}`;
+    meta.textContent = [l.round ? `round ${l.round}` : null, l.account ? `as ${l.account}` : null, l.turn != null ? `turn ${l.turn}` : null, l.updated_at ? `${ago(ageMs)}` : null].filter(Boolean).join(" · ");
+    note.textContent = l.note || "";
+    const lines = Array.isArray(l.log) ? l.log.slice(-60) : [];
+    log.innerHTML = lines.length ? lines.map((e) => `<div><time>${esc(fmtTime(e.t))}</time>${esc(e.text)}</div>`).join("") : `<span class="empty">No log lines yet.</span>`;
+    log.scrollTop = log.scrollHeight;
+  }
+  function ago(ms) { if (!isFinite(ms)) return ""; const s = Math.round(ms / 1000); if (s < 60) return `${s}s ago`; const m = Math.round(s / 60); if (m < 60) return `${m} min ago`; return `${Math.round(m / 60)} h ago`; }
+  function fmtTime(t) { if (!t) return ""; const d = new Date(t); return isNaN(d) ? String(t) : d.toLocaleTimeString([], { hour: "2-digit", minute: "2-digit", second: "2-digit" }); }
+
+  function renderTiles(v) {
+    $("t-avg").textContent = v.avg != null ? v.avg : "–";
+    $("t-avg").style.color = v.avg == null ? "" : v.avg >= PASS_AVG ? "var(--good-ink)" : "";
+    $("t-low").textContent = v.low != null ? v.low : "–";
+    $("t-low").style.color = v.low == null ? "" : v.low < FLOOR ? "var(--crit-ink)" : "";
+    $("t-runs").textContent = `${v.marks.length}${v.corpusSize ? " / " + v.corpusSize : ""}`;
+    $("t-runs-sub").textContent = v.corpusSize ? "of the corpus" : "corpus size unknown";
+    $("t-caps").textContent = v.caps;
+    const vd = $("t-verdict"), vs = $("t-verdict-sub");
+    if (v.round.status === "closed" || v.complete) {
+      vd.innerHTML = v.passed ? `<span class="status good"><i></i>Passed</span>` : `<span class="status crit"><i></i>Not yet</span>`;
+      vs.textContent = v.passed ? `closed ${v.round.date || ""}` : v.avg < PASS_AVG ? `average ${v.avg} is under 90` : `a Run is under 80`;
+    } else {
+      vd.innerHTML = `<span class="status warn"><i></i>In progress</span>`;
+      vs.textContent = v.corpusSize ? `${v.corpusSize - v.marks.length} Runs to go` : "";
+    }
+  }
+
+  function renderBars(v) {
+    const rows = v.rows;
+    if (!rows.length) { $("bars").innerHTML = `<div class="empty-state">No Runs in this round yet.</div>`; return; }
+    const W = 640, L = 210, R = 44, rowH = 24, top = 22, H = top + rows.length * rowH + 8;
+    const x = (m) => L + (m / 100) * (W - L - R);
+    let s = `<svg viewBox="0 0 ${W} ${H}" width="100%" style="min-width:560px;display:block" role="img" aria-label="Mark per Scenario">`;
+    for (const t of [0, 25, 50, 75, 100]) s += `<line class="grid" x1="${x(t)}" x2="${x(t)}" y1="${top - 6}" y2="${H - 8}"/><text class="tick" x="${x(t)}" y="${top - 10}" text-anchor="middle">${t}</text>`;
+    s += `<line class="ref" x1="${x(FLOOR)}" x2="${x(FLOOR)}" y1="${top - 6}" y2="${H - 8}"/><text class="ref-label" x="${x(FLOOR) - 3}" y="${H - 2}" text-anchor="end">floor 80</text>`;
+    s += `<line class="ref" x1="${x(PASS_AVG)}" x2="${x(PASS_AVG)}" y1="${top - 6}" y2="${H - 8}"/><text class="ref-label" x="${x(PASS_AVG) + 3}" y="${H - 2}">pass 90</text>`;
+    rows.forEach((r, i) => {
+      const y = top + i * rowH, name = trunc(r.scenario, 30);
+      const tipText = r.mark != null ? `${r.scenario}: Mark ${r.mark}${r.run.robotic_cap_applied ? " (robotic cap)" : ""}${r.run.rerun ? " · re-run" : ""}` : r.run ? `${r.scenario}: ${r.run.status || "running"}` : `${r.scenario}: not run yet`;
+      s += `<g data-tip="${esc(tipText)}"><rect class="hit" x="0" y="${y}" width="${W}" height="${rowH}"/>`;
+      s += `<text class="lbl${r.mark == null ? " dim" : ""}" x="${L - 8}" y="${y + rowH / 2 + 4}" text-anchor="end">${esc(name)}${r.run && r.run.rerun ? " ↻" : ""}</text>`;
+      if (r.mark != null) {
+        s += `<rect class="bar${r.mark < FLOOR ? " low" : ""}" x="${x(0)}" y="${y + 5}" width="${Math.max(2, x(r.mark) - x(0))}" height="${rowH - 10}" rx="3"/>`;
+        s += `<text class="num" x="${x(r.mark) + 6}" y="${y + rowH / 2 + 4}">${r.mark}</text>`;
+        if (r.run.robotic_cap_applied) s += `<text class="tick" x="${x(r.mark) + 28}" y="${y + rowH / 2 + 4}">cap</text>`;
+      } else if (r.run) {
+        s += `<rect class="bar running" x="${x(0)}" y="${y + 5}" width="${x(100) - x(0)}" height="${rowH - 10}" rx="3"/>`;
+      } else {
+        s += `<line class="grid" x1="${x(0)}" x2="${x(0) + 8}" y1="${y + rowH / 2}" y2="${y + rowH / 2}"/>`;
+      }
+      s += `</g>`;
+    });
+    s += `</svg>`;
+    $("bars").innerHTML = s;
+  }
+  function trunc(s, n) { s = String(s); return s.length > n ? s.slice(0, n - 1) + "…" : s; }
+
+  function renderHeat(v) {
+    const rows = v.rows.filter((r) => r.run && r.run.dimensions);
+    if (!rows.length) { $("heat").innerHTML = `<div class="empty-state">Dimension marks appear once a Run is marked.</div>`; return; }
+    let h = `<table class="heat"><thead><tr><th></th>${DIMS.map(([, n, w]) => `<th class="dim" title="weight ${w}">${esc(n)} (${w})</th>`).join("")}<th>Mark</th></tr></thead><tbody>`;
+    for (const r of rows) {
+      h += `<tr><td class="row">${esc(trunc(r.scenario, 34))}</td>`;
+      for (const [k] of DIMS) { const val = r.run.dimensions[k]; h += typeof val === "number" ? `<td class="q${val}" title="${esc(r.scenario)} · ${val}">${val}</td>` : `<td class="na">·</td>`; }
+      h += `<td class="mark${r.mark != null && r.mark < FLOOR ? " low" : ""}">${r.mark ?? "·"}</td></tr>`;
+    }
+    h += `</tbody></table>`;
+    $("heat").innerHTML = h;
+  }
+
+  function renderTrend(rounds) {
+    const pts = rounds.filter((r) => r.avg != null);
+    if (!pts.length) { $("trend").innerHTML = `<div class="empty-state">The first round's average will plot here; the line grows as rounds close.</div>`; return; }
+    const W = 360, H = 200, L = 34, R = 16, T = 18, B = 28;
+    const n = pts.length, x = (i) => n === 1 ? (L + W - R) / 2 : L + (i / (n - 1)) * (W - L - R);
+    const y = (m) => T + (1 - m / 100) * (H - T - B);
+    let s = `<svg viewBox="0 0 ${W} ${H}" width="100%" style="display:block" role="img" aria-label="Average Mark by round">`;
+    for (const t of [0, 50, 100]) s += `<line class="grid" x1="${L}" x2="${W - R}" y1="${y(t)}" y2="${y(t)}"/><text class="tick" x="${L - 6}" y="${y(t) + 4}" text-anchor="end">${t}</text>`;
+    s += `<line class="ref" x1="${L}" x2="${W - R}" y1="${y(PASS_AVG)}" y2="${y(PASS_AVG)}"/><text class="ref-label" x="${W - R}" y="${y(PASS_AVG) - 4}" text-anchor="end">pass 90</text>`;
+    if (n > 1) s += `<polyline fill="none" stroke="var(--bar)" stroke-width="2" points="${pts.map((p, i) => `${x(i)},${y(p.avg)}`).join(" ")}"/>`;
+    pts.forEach((p, i) => {
+      s += `<g data-tip="Round ${esc(p.id)}: average ${p.avg}${p.complete ? "" : " (in progress)"}"><circle cx="${x(i)}" cy="${y(p.avg)}" r="${i === n - 1 ? 5 : 4}" fill="${p.complete ? "var(--bar)" : "var(--surface)"}" stroke="var(--bar)" stroke-width="2"/>`;
+      s += `<text class="tick" x="${x(i)}" y="${H - 8}" text-anchor="middle">${esc(p.id)}</text>`;
+      if (i === n - 1) s += `<text class="num" x="${x(i)}" y="${y(p.avg) - 10}" text-anchor="middle">${p.avg}</text>`;
+      s += `</g>`;
+    });
+    s += `</svg>`;
+    $("trend").innerHTML = s;
+  }
+
+  function renderRuns(v) {
+    const list = v.all.slice().sort((a, b) => (Date.parse(b.finished_at || b.started_at || 0) || 0) - (Date.parse(a.finished_at || a.started_at || 0) || 0));
+    $("runs-hint").textContent = list.length ? `${list.length} recorded, newest first` : "";
+    if (!list.length) { $("runs").innerHTML = `<div class="empty-state">No Runs recorded in this round.</div>`; return; }
+    $("runs").innerHTML = list.map((r, i) => {
+      const mark = isMarked(r) ? computeMark(r) : null;
+      const markHtml = mark != null ? `<span class="mark-big${mark < FLOOR ? " low" : ""}">${mark}</span>` : `<span class="mark-big pending">${esc(r.status || "running")}</span>`;
+      const sub = [r.account ? `as ${r.account}` : null, r.rerun ? "confirmatory re-run" : null, r.turns != null ? `${r.turns} turns` : null, r.finished_at ? fmtDate(r.finished_at) : r.started_at ? `started ${fmtTime(r.started_at)}` : null].filter(Boolean).join(" · ");
+      const dims = r.dimensions ? `<div class="dims">${DIMS.map(([k, n, w]) => { const val = r.dimensions[k]; return `<div><span>${esc(n)} <span class="muted">(${w})</span></span><b>${typeof val === "number" ? val : "·"}</b><span class="track"><i style="width:${typeof val === "number" ? val : 0}%"></i></span></div>`; }).join("")}</div>` : "";
+      const cap = r.robotic_cap_applied ? `<div class="cap">Robotic hard cap applied: the Mark is held at ${CAP}.</div>` : "";
+      const verdict = r.verdict ? `<div><div class="eyebrow">Verdict</div><div class="verdict">${esc(r.verdict)}</div></div>` : `<div class="muted">No verdict written yet.</div>`;
+      const imps = Array.isArray(r.improvements) && r.improvements.length ? `<div class="chips">${r.improvements.map((id) => `<span class="chip" title="${esc(state.improvements[id]?.what || "")}">${esc(id)}</span>`).join("")}</div>` : "";
+      return `<details class="run"${i === 0 && mark != null ? " open" : ""}><summary>${markHtml}<div><div class="run-name">${esc(r.scenario)}</div><div class="run-sub">${esc(sub)}</div></div>${r.robotic_cap_applied ? `<span class="status crit"><i></i>capped</span>` : mark != null ? `<span class="status ${mark >= PASS_AVG ? "good" : mark >= FLOOR ? "" : "crit"}"><i></i>${mark >= PASS_AVG ? "above 90" : mark >= FLOOR ? "80 to 89" : "below 80"}</span>` : `<span class="status warn"><i></i>live</span>`}</summary><div class="run-body">${cap}${dims}${verdict}${imps}</div></details>`;
+    }).join("");
+  }
+  function fmtDate(t) { const d = new Date(t); return isNaN(d) ? String(t) : d.toLocaleString([], { month: "short", day: "numeric", hour: "2-digit", minute: "2-digit" }); }
+
+  function renderImps() {
+    const list = Object.values(state.improvements).sort((a, b) => String(a.id).localeCompare(String(b.id)));
+    const counts = {};
+    for (const i of list) counts[i.status] = (counts[i.status] || 0) + 1;
+    $("imp-hint").textContent = list.length ? Object.entries(counts).map(([k, n]) => `${n} ${k}`).join(" · ") : "";
+    if (!list.length) { $("imps").innerHTML = `<div class="empty-state">Empty. The pilot Run and round 001 fill it.</div>`; return; }
+    const cls = { pending: "warn", applied: "good", reverted: "crit", ticketed: "" };
+    $("imps").innerHTML = `<table class="imp"><thead><tr><th>ID</th><th>What</th><th>Why</th><th>Motivating Run</th><th>Status</th></tr></thead><tbody>${list.map((i) => `<tr><td class="id">${esc(i.id)}</td><td>${esc(i.what)}</td><td class="muted">${esc(i.why)}</td><td class="muted">${esc(i.motivating_run)}</td><td><span class="status ${cls[i.status] ?? ""}"><i></i>${esc(i.status)}</span>${i.commits ? `<div class="muted" style="font-size:11px">${esc([].concat(i.commits).join(", "))}</div>` : ""}</td></tr>`).join("")}</tbody></table>`;
+  }
+
+  // tooltips
+  const tip = $("tip");
+  document.addEventListener("mousemove", (e) => {
+    const g = e.target.closest && e.target.closest("[data-tip]");
+    if (!g) { tip.style.display = "none"; return; }
+    tip.textContent = g.getAttribute("data-tip"); tip.style.display = "block";
+    tip.style.left = Math.min(window.innerWidth - 270, e.clientX + 12) + "px"; tip.style.top = e.clientY + 14 + "px";
+  });
+  $("round-select").addEventListener("change", (e) => { state.selected = e.target.value; render(); });
+  setInterval(renderLive, 15000);
+
+  // ---------- example data (shown only when the store is empty or unreachable) ----------
+  const EXAMPLE = (() => {
+    const slugs = ["pre-run-breakfast-reframe", "long-ride-fuel-plan", "vegetarian-week-rebuild", "post-race-debrief", "cilantro-allergy-correction", "offseason-taper-week"];
+    const dims = [[100, 75, 100, 75, 100, 75, 100, 100, 100, 75], [75, 100, 75, 75, 75, 100, 100, 75, 100, 100], [100, 100, 100, 100, 75, 100, 100, 75, 100, 100], [50, 75, 25, 50, 75, 50, 100, 25, 50, 75], [75, 75, 100, 100, 75, 100, 100, 100, 100, 100], null];
+    const runs = {};
+    slugs.forEach((slug, i) => {
+      const d = dims[i];
+      const run = { round: "001", scenario: slug, account: "dev-test", rerun: false, started_at: "2026-09-26T14:00:00Z" };
+      if (d) {
+        run.dimensions = Object.fromEntries(DIMS.map(([k], j) => [k, d[j]]));
+        run.robotic_cap_applied = i === 3;
+        run.status = "marked"; run.turns = 8 + i * 2; run.finished_at = `2026-09-26T14:${20 + i * 5}:00Z`;
+        run.verdict = i === 3 ? "Read as a state machine from turn 3: every reply restated the athlete's data and asked the next checklist question. The robot showed when the athlete said the race was cancelled and Vana carried on planning race-day fuel." : "Warm and specific. One soft brush: two questions in a single reply on turn 5.";
+        run.improvements = i === 3 ? ["IMP-001", "IMP-002"] : i === 1 ? ["IMP-003"] : [];
+      } else { run.status = "talking"; }
+      runs[`001-${slug}`] = run;
+    });
+    return {
+      rounds: { "001": { round: "001", status: "open", started_at: "2026-09-26T14:00:00Z", corpus: slugs } },
+      runs,
+      improvements: {
+        "IMP-001": { id: "IMP-001", what: "Add to the system prompt: when the athlete changes the premise, drop the plan and ask what changed.", why: "Vana kept planning race-day fuel after the race was cancelled.", motivating_run: "runs/001/post-race-debrief", status: "pending" },
+        "IMP-002": { id: "IMP-002", what: "Remove the data read-out from the opener template guidance.", why: "Openers restate the week's numbers before saying anything human.", motivating_run: "runs/001/post-race-debrief", status: "applied", commits: ["a1b2c3d"] },
+        "IMP-003": { id: "IMP-003", what: "Shopping-list CRUD tool for Vana.", why: "She promised to update the list and could not.", motivating_run: "runs/001/long-ride-fuel-plan", status: "ticketed" },
+      },
+      live: { round: "001", scenario: "offseason-taper-week", account: "dev-test", phase: "talking", turn: 4, note: "Athlete has just said the taper starts Monday; waiting on Vana's reply.", updated_at: new Date().toISOString(), log: [
+        { t: new Date(Date.now() - 200000).toISOString(), text: "signed in as dev-test on :8080" },
+        { t: new Date(Date.now() - 170000).toISOString(), text: "opening turn sent" },
+        { t: new Date(Date.now() - 90000).toISOString(), text: "turn 3: Vana asked about last week's long run" },
+        { t: new Date(Date.now() - 20000).toISOString(), text: "turn 4: athlete mentions taper" },
+      ] },
+    };
+  })();
+  function showExample() {
+    state.example = true;
+    Object.assign(state, { rounds: EXAMPLE.rounds, runs: EXAMPLE.runs, improvements: EXAMPLE.improvements, live: EXAMPLE.live, selected: "001" });
+    $("banner").innerHTML = `<b>Example data.</b> These Scenarios, Marks and verdicts are made up to show the layout. Real rounds replace them as soon as the Examiner writes the first document.`;
+    $("banner").hidden = false;
+    render();
+  }
+  $("example-btn").addEventListener("click", showExample);
+
+  // ---------- data store ----------
+  function storeIsEmpty() { return !Object.keys(state.rounds).length && !Object.keys(state.runs).length && !state.live; }
+  function clearExampleIfReal() {
+    if (state.example) { state.example = false; state.rounds = {}; state.runs = {}; state.improvements = {}; state.live = null; state.selected = null; $("banner").hidden = true; }
+  }
+  async function connect() {
+    render();
+    const db = window.claude && window.claude.use ? await window.claude.use("db").catch(() => null) : null;
+    if (!db) {
+      $("banner").innerHTML = `<b>Not connected to the data store.</b> Open this page from claude.ai to see live rounds. Showing example data.`;
+      $("banner").hidden = false; showExample(); $("example-btn").hidden = false; return;
+    }
+    state.connected = true;
+    const onErr = (e) => { $("banner").innerHTML = `<b>Store error:</b> ${esc(e && e.code)}. Reload the page.`; $("banner").hidden = false; };
+    let firstLoads = 0; const arrived = () => { firstLoads++; if (firstLoads === 4 && storeIsEmpty()) { $("example-btn").hidden = false; $("banner").innerHTML = `<b>No round has been reported yet.</b> The board fills as the Examiner writes Runs. Press “Show example round” to see the layout.`; $("banner").hidden = false; } };
+    // An empty snapshot never overwrites the example view; a real document always does.
+    const collect = (snap, target) => { if (state.example && snap.empty) return; clearExampleIfReal(); const next = {}; snap.docs.forEach((d) => { if (d.exists) next[d.id] = { ...d.data(), _id: d.id }; }); state[target] = next; render(); };
+    subs.push(db.collection("runs").onSnapshot((s) => { collect(s, "runs"); arrived(); }, onErr));
+    subs.push(db.collection("rounds").onSnapshot((s) => { collect(s, "rounds"); arrived(); }, onErr));
+    subs.push(db.collection("improvements").onSnapshot((s) => { collect(s, "improvements"); arrived(); }, onErr));
+    subs.push(db.doc("live/current").onSnapshot((d) => { if (state.example && !d.exists) { arrived(); return; } clearExampleIfReal(); state.live = d.exists ? d.data() : null; arrived(); render(); }, onErr));
+  }
+  connect();
+})();
+</script>

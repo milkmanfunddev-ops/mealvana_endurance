@@ -4,11 +4,13 @@
 /// (PROPOSED Lee 2026-09-21, authored app-side, awaiting Xuan).
 ///
 /// A short, silent recording of our own app playing inside a phone-shaped
-/// glass frame (mp-493 §1, §6). First use: the paywall's opening page.
+/// glass frame (mp-493 §1, §6). First use: the head of the paywall's one
+/// page, looping (Lee 2026-09-26).
 ///
 /// Contracts held here:
-/// * **PCF-1** — the clip plays muted, once; the [poster] (the clip's first
-///   frame) holds the screen until the first frame plays.
+/// * **PCF-1** — the clip plays muted, once, or looping when the caller asks
+///   ([VideoPhoneClipPlayer.loop]); the [poster] (the clip's first frame)
+///   holds the screen until the first frame plays.
 /// * **PCF-2** — [onEnded] fires exactly once: when the clip ends, when it
 ///   fails, or when it has not started within [loadTimeout]. A page that
 ///   waits on the clip never waits forever.
@@ -41,7 +43,7 @@ abstract class PhoneClipPlayer {
   /// The current phase; the frame listens to it.
   ValueListenable<PhoneClipPhase> get phase;
 
-  /// Loads the clip and plays it once, muted.
+  /// Loads the clip and plays it, muted.
   Future<void> start();
 
   /// The decoded video, sized to fill its parent.
@@ -50,14 +52,18 @@ abstract class PhoneClipPlayer {
   void dispose();
 }
 
-/// Plays a bundled video asset once, muted, mixing with other audio so it
-/// never interrupts the athlete's music.
+/// Plays a bundled video asset muted, once or looping ([loop]), mixing with
+/// other audio so it never interrupts the athlete's music.
 class VideoPhoneClipPlayer implements PhoneClipPlayer {
-  VideoPhoneClipPlayer({required String asset})
+  VideoPhoneClipPlayer({required String asset, this.loop = false})
     : _controller = VideoPlayerController.asset(
         asset,
         videoPlayerOptions: VideoPlayerOptions(mixWithOthers: true),
       );
+
+  /// PCF-1: play round and round instead of once. A looping clip never
+  /// reports [PhoneClipPhase.ended].
+  final bool loop;
 
   final VideoPlayerController _controller;
   final ValueNotifier<PhoneClipPhase> _phase = ValueNotifier(
@@ -96,7 +102,7 @@ class VideoPhoneClipPlayer implements PhoneClipPlayer {
       await _controller.initialize();
       if (_disposed) return;
       await _controller.setVolume(0);
-      await _controller.setLooping(false);
+      await _controller.setLooping(loop);
       await _controller.play();
     } catch (_) {
       _set(PhoneClipPhase.failed);

@@ -1,6 +1,6 @@
 /// phone-clip-frame spec (PROPOSED v1, paywall ticket 14 — mp-493 §1, §6):
-///   PCF-1  the clip plays muted, once, inside the frame; the poster holds
-///          the screen until the first frame plays
+///   PCF-1  the clip plays muted, once (or looping when asked), inside the
+///          frame; the poster holds the screen until the first frame plays
 ///   PCF-2  the end of the clip is reported once; a clip that fails or never
 ///          starts reports the end too, so a page never waits on it
 ///   PCF-3  still: the poster alone, no player is ever made

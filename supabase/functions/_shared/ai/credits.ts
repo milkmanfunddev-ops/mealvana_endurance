@@ -40,7 +40,10 @@ import { budgetStatus, monthlyBudget, trialBudget, type BudgetStatus, type Walle
 import { realCostMicro, type RealCostInput } from './usage.ts';
 import { AI_UNAVAILABLE } from './gateway_error.ts';
 
-export const CREDITS_ENFORCED = Deno.env.get('AI_CREDITS_ENFORCED') === 'true';
+/** Read per call, not captured at import: a deployed isolate's env never changes, so it is the
+ *  same value there, while one test process can arrange its own env per test (the guardrail
+ *  suite turns enforcement on for the one test whose hold must exist to be refunded). */
+export const creditsEnforced = () => Deno.env.get('AI_CREDITS_ENFORCED') === 'true';
 
 const env = (key: string) => Deno.env.get(key);
 
@@ -130,7 +133,7 @@ function makeHold(client: Client, kind: BudgetKind, estimate: number, reservatio
  */
 export async function reserveBudget(client: Client, userId: string, kind: BudgetKind, ref: string = kind): Promise<BudgetReservation> {
   const estimate = budgetEstimate(kind);
-  if (!CREDITS_ENFORCED) {
+  if (!creditsEnforced()) {
     return { allowed: true, hold: makeHold(client, kind, estimate, null), status: { share_used: null, refill_at: null, bought_extra_share: 0 } };
   }
   try {

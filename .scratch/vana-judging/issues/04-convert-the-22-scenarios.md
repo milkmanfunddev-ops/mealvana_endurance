@@ -11,7 +11,7 @@ conversion can be diffed against the source.
 
 **Blocked by:** 01 (scaffold — scenarios/ and the index live there).
 
-**Status:** ready-for-agent
+**Status:** done (wave 2, 2026-09-26)
 
 - [ ] 22 markdown Scenario files exist, named with their scenario ids, indexed in the README
 - [ ] Every file carries account/persona, goal, opening turn, and at least one required beat

@@ -5,6 +5,8 @@
 -- RLS on, no policies: only the service role reads or writes it. Human-authored artefacts (scenarios, annotations)
 -- live in the repo; this table is the bulk machine-written layer (Lee, 2026-09-23).
 
+-- Dropped on dev by 20260926170000_drop_eval_traces.sql (vana-judging ticket 06);
+-- never applied to prod. The evals/vana README this header cited was deleted with the old harness.
 create table if not exists public.eval_traces (
   id uuid primary key default gen_random_uuid(),
   created_at timestamptz not null default now(),

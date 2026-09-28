@@ -8,6 +8,15 @@ in brackets are the other cards folded into the same question.
 
 ## Meal planning
 
+- VANA-PERSONA-001 · Round 001 would run all 22 Scenarios on the one shared account (judging-1:
+  dense vegetarian triathlete, 17 sessions/week, IRONMAN build), but several Scenarios assume
+  other personas (omnivore dense at 6 sessions, sparse newcomer, offseason). Run round 001 on
+  judging-1 as-is and treat persona mismatches as findings, or spawn the four persona accounts
+  first (the recipe exists in `eval/accounts.md`)?
+  Recommend: run round 001 on judging-1 as-is; spawn personas only for Scenarios whose persona
+  is load-bearing (vegetarian, sparse) before round 002.
+  Why pending: wave vana-judging 2 tickets 03+04 left the one-account stand-in unresolved.
+
 
 ## Paywall
 
@@ -19,6 +28,15 @@ in brackets are the other cards folded into the same question.
 
 
 ## Miscellany
+
+- CI-001 · CLAUDE.md says "Codemagic never runs Patrol or integration tests", yet `codemagic.yaml`
+  still carries hand-maintained Patrol target lists in its (disabled) `integration-tests` and
+  `integration-tests-develop` workflows, and the CI contract test requires them to match the M1
+  list. Delete the lists and let the contract test read only the M1 workflow, or keep them and
+  reword CLAUDE.md?
+  Recommend: delete the Codemagic Patrol lists (the lanes are disabled and cost-ruled out anyway);
+  keep the contract test comparing M1 against `scripts/patrol-targets.mjs` only.
+  Why pending: wave vana-judging 1 ticket 02's CI fix (093d0fef) deepened the existing divergence.
 
 
 ## Built 2026-09-26, live on dev
