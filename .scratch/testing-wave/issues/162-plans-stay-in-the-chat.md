@@ -1,6 +1,6 @@
 # 162: Plans stay in the chat
 
-**Status:** ready-for-agent
+**Status:** in-progress (wave 44, 2026-09-28)
 **Blocked by:** none.
 **Next:** `/implement-lee testing-wave`
 **Model:** fable
