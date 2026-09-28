@@ -8,7 +8,7 @@
 import { assert, assertEquals } from 'https://deno.land/std@0.177.1/testing/asserts.ts';
 import { MockLanguageModelV3, MockProviderV3, convertArrayToReadableStream } from 'npm:ai@6.0.277/test';
 import { runChat, systemMessages, type TurnTrace, type VanaOverrides } from '../../_shared/vana/chat.ts';
-import { PERSONA_SECTIONS } from '../../_shared/vana/persona.ts';
+import { PERSONA_SECTIONS, OPENERS } from '../../_shared/vana/persona.ts';
 import { buildAthleteContext } from '../../_shared/vana/context.ts';
 import { makeVanaTools } from '../../_shared/vana/tools.ts';
 import { CHAT_MODEL } from '../../_shared/vana/env.ts';
@@ -137,5 +137,25 @@ Deno.test('an override naming a tool or parameter that does not exist is a 400 a
       assert(!run.ok && String(run.body.detail).endsWith(name), `names ${name}`);
       assertEquals(gw.seen.length, 0, 'the model is never called');
     } finally { gw.restore(); }
+  }
+});
+
+Deno.test('an opener override is the first message the model reads, whichever opener the turn would have sent', async () => {
+  for (const kind of ['general', 'meal_planning'] as const) {
+    const v = testCtx({ users: [{ id: U, first_name: 'Lee', allergies: [] }] });
+    await v.db.from('vana_conversations').insert({ id: CONV, user_id: U, kind, context: await buildAthleteContext(v, ANCHOR, offlineDeps()), context_day: ANCHOR });
+    const sent = async (overrides?: VanaOverrides) => {
+      const gw = mockGateway(); const traces: TurnTrace[] = [];
+      try {
+        const run = await runChat(v, { opener: true, conversation_id: CONV, kind, anchor_date: ANCHOR }, { functionName: 'vana-eval', onTrace: (t) => traces.push(t), overrides });
+        assert(run.ok); await run.response.text();
+      } finally { gw.restore(); }
+      const first = (gw.seen[0].options.prompt as { role: string; content: { type: string; text: string }[] }[]).find((m) => m.role === 'user')!;
+      return { text: first.content.map((p) => p.text).join('\n'), trace: traces[0] };
+    };
+    assertEquals((await sent()).text, OPENERS[kind], `${kind}: the app's opener with none given`);
+    const over = await sent({ opener: '[Test opener. One sentence.]' });
+    assertEquals(over.text, '[Test opener. One sentence.]', `${kind}: the override replaces it`);
+    assertEquals(over.trace.openerText, '[Test opener. One sentence.]', `${kind}: the trace records it`);
   }
 });

@@ -406,6 +406,9 @@ export interface ChatRunOpts {
  *  history keeps the kind's full tool set, so a stored tool part reads the same whichever tools are on. */
 export interface VanaOverrides extends ToolOverrides {
   persona?: PersonaOverrides;
+  /** On an opener turn, the text sent in place of whichever opener the turn picked (plan, new plan, check-in, debrief,
+   *  a moment's or the screen's). What the pick does besides the text, such as stamping a check-in, still happens. */
+  opener?: string;
   /** A gateway model id, spelled as the catalogue spells it. */
   model?: string;
 }
@@ -533,6 +536,7 @@ export async function runChat(v: VanaCtx, body: ChatBody, opts: ChatRunOpts): Pr
     else if (variant.kind === 'checkin') { openerText = checkinOpener(variant.plan, variant.cookDate, variant.session, anchorDate); await v.db.from('meal_plans').update({ checkin_done_at: new Date().toISOString() }).eq('id', variant.plan.id).eq('user_id', v.userId); }
     else if (variant.kind === 'debrief') openerText = debriefOpener(variant.plan);
   }
+  if (opener && o.opener != null) openerText = o.opener;
   // The opener's first message goes through the same conversion a stored turn does, so its replay is the same bytes.
   const replayed = opener ? [openerMessage(openerText)] : await replayHistory(v, convId, messages);
   const modelMessages = withSituation(await replayModelMessages(replayed, tools), situation, inView);
