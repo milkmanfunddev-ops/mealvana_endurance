@@ -278,6 +278,15 @@ export function offeredTools<T extends Record<string, any>>(tools: T, o: ToolOve
   }
   return out as T;
 }
+/** What a Run may override about each tool, as the app runs it: its description and each top-level parameter's, by
+ *  name ('' where a parameter has none). For vana-eval's `defaults`. */
+// deno-lint-ignore no-explicit-any
+export function describeTools(tools: Record<string, any>): Record<string, Required<ToolDescriptionOverride>> {
+  return Object.fromEntries(Object.entries(tools).map(([name, t]) => [name, {
+    description: t.description ?? '',
+    parameters: Object.fromEntries(Object.entries((t.inputSchema as z.AnyZodObject).shape as Record<string, z.ZodTypeAny>).map(([k, s]) => [k, s.description ?? ''])),
+  }]));
+}
 function makeAllTools(v: VanaCtx, ctx: AthleteContext, opts: ToolOpts = {}) {
   const scope = opts.scope ?? null;
   const shown = new Set(opts.shownIds ?? []);

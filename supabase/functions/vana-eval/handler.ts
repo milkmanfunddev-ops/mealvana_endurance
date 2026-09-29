@@ -15,6 +15,9 @@
  *       they were not stored within PERSIST_WAIT_MS: the caller treats the turn as failed and sends no next turn.
  *       Pre-stream: 400 {error:'bad_override'} as runChat returns it · 404 {error:'no_copy'}.
  *   {action:'end', run_user_id}      → 200 {before, after}. Deletes the copy.
+ *   {action:'defaults'}              → 200 {model, persona: {<section>: text}, kinds: {<kind>: {persona: [<section>],
+ *       tools: {<name>: {description, parameters: {<name>: description}}}}}}: what a Run's overrides replace, as the
+ *       app runs it, so the eval app can show it and send back only what changed. Reads nothing and writes nothing.
  *   {action:'sweep'}                 → 200 {deleted}: copies older than COPY_MAX_AGE_MS, left by a Run that died,
  *       including an auth user marked as a copy whose vana_eval_run_users row was never written.
  *   401 {error:'unauthenticated'} · 403 {error:'admin_required'} before anything else happens.
@@ -25,10 +28,13 @@
  * cost stays on record once and is never counted twice.
  */
 import { runChat, type ChatBody, type TurnTrace, type VanaOverrides } from '../_shared/vana/chat.ts';
+import { PERSONA_SECTIONS, type PersonaSection } from '../_shared/vana/persona.ts';
+import { describeTools, makeVanaTools } from '../_shared/vana/tools.ts';
+import type { AthleteContext, ConversationKind } from '../_shared/vana/contracts.ts';
 import { isAdmin } from '../_shared/vana/entitlement.ts';
 import { ndjsonHeaders } from '../_shared/vana/stream.ts';
 import { jsonResponse as json } from '../_shared/responses.ts';
-import type { Db, VanaCtx } from '../_shared/vana/env.ts';
+import { CHAT_MODEL, type Db, type VanaCtx } from '../_shared/vana/env.ts';
 import { BadSnapshotError, COPY_MAX_AGE_MS, parseSnapshot, readCopy, removeCopyRows, seedCopy, type AthleteSnapshot } from './copy.ts';
 
 /** The auth admin, as far as copies need it. */
@@ -105,6 +111,16 @@ function traceStep(s: any) {
     providerMetadata: s.providerMetadata ?? null,
     modelId: s.response?.modelId ?? null,
   };
+}
+
+/** The persona sections each kind is built from, in order (persona.ts personaPrompt). */
+const KIND_PERSONA: Record<ConversationKind, PersonaSection[]> = { meal_planning: ['core', 'writeRules', 'planning'], general: ['general', 'writeRules', 'generalAfterWrites'] };
+
+/** What a Run's overrides replace, as the app runs it. Building the tools only makes their definitions, so they are
+ *  built for no one: nothing is read or run. */
+function defaults() {
+  const kind = (k: ConversationKind) => ({ persona: KIND_PERSONA[k], tools: describeTools(makeVanaTools({} as VanaCtx, {} as AthleteContext, k)) });
+  return { model: CHAT_MODEL, persona: PERSONA_SECTIONS, kinds: { meal_planning: kind('meal_planning'), general: kind('general') } };
 }
 
 export function makeVanaEvalHandler(deps: VanaEvalDeps) {
@@ -229,7 +245,8 @@ export function makeVanaEvalHandler(deps: VanaEvalDeps) {
         case 'turn': return await turn(body);
         case 'end': return await end(body);
         case 'sweep': return json({ deleted: await sweep() });
-        default: return json({ error: 'invalid_body', details: "action must be 'start', 'turn', 'end' or 'sweep'" }, 400);
+        case 'defaults': return json(defaults());
+        default: return json({ error: 'invalid_body', details: "action must be 'start', 'turn', 'end', 'sweep' or 'defaults'" }, 400);
       }
     } catch (e) {
       console.error('[vana-eval] failed:', e);

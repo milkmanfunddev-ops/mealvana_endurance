@@ -10,6 +10,10 @@ import { MockLanguageModelV3, MockProviderV3, convertArrayToReadableStream } fro
 import { makeVanaEvalHandler, type CopyAuth } from '../../vana-eval/handler.ts';
 import type { AthleteSnapshot } from '../../vana-eval/copy.ts';
 import { testCtx, type TestCtx } from './support/vana_ctx.ts';
+import { PERSONA_SECTIONS } from '../../_shared/vana/persona.ts';
+import { makeVanaTools } from '../../_shared/vana/tools.ts';
+import { CHAT_MODEL } from '../../_shared/vana/env.ts';
+import type { AthleteContext } from '../../_shared/vana/contracts.ts';
 
 const ADMIN = 'aaaaaaaa-aaaa-4aaa-8aaa-aaaaaaaaaaaa';
 const ATHLETE = 'bbbbbbbb-bbbb-4bbb-8bbb-bbbbbbbbbbbb';
@@ -115,7 +119,7 @@ async function start(h: ReturnType<typeof harness>) {
 Deno.test('a caller who is not an admin is refused before any user is created', async () => {
   const h = harness();
   for (const who of ['athlete', 'nobody']) {
-    for (const body of [{ action: 'start', snapshot: SNAPSHOT }, { action: 'sweep' }, { action: 'end', run_user_id: ADMIN }]) {
+    for (const body of [{ action: 'start', snapshot: SNAPSHOT }, { action: 'sweep' }, { action: 'end', run_user_id: ADMIN }, { action: 'defaults' }]) {
       const r = await h.call(body, who);
       assertEquals(r.status, who === 'athlete' ? 403 : 401);
     }
@@ -266,4 +270,27 @@ Deno.test('the sweep also removes a copy whose Run died before it was recorded',
   h.advance(3 * 3600_000);
   assertEquals((await (await h.call({ action: 'sweep' })).json()).deleted, ['orphan']);
   assertEquals(h.authUsers.size, 0);
+});
+
+Deno.test("defaults show what a Run may override, as the app runs it: the model, each persona section, and each kind's tools with their descriptions", async () => {
+  const h = harness();
+  const r = await h.call({ action: 'defaults' });
+  assertEquals(r.status, 200);
+  const d = await r.json();
+  assertEquals(d.model, CHAT_MODEL);
+  assertEquals(d.persona, PERSONA_SECTIONS);
+  assertEquals(d.kinds.meal_planning.persona, ['core', 'writeRules', 'planning']);
+  assertEquals(d.kinds.general.persona, ['general', 'writeRules', 'generalAfterWrites']);
+  for (const kind of ['general', 'meal_planning'] as const) {
+    // deno-lint-ignore no-explicit-any
+    const tools = makeVanaTools(h.v, {} as AthleteContext, kind, {}) as Record<string, any>;
+    assertEquals(Object.keys(d.kinds[kind].tools), Object.keys(tools), `${kind}: every tool of the kind, in order`);
+    for (const [name, t] of Object.entries(tools)) {
+      assertEquals(d.kinds[kind].tools[name].description, t.description, `${kind}: ${name}'s description`);
+      const params = Object.fromEntries(Object.entries(t.inputSchema.shape).map(([k, s]) => [k, (s as { description?: string }).description ?? '']));
+      assertEquals(d.kinds[kind].tools[name].parameters, params, `${kind}: ${name}'s parameters`);
+    }
+  }
+  assertEquals(d.kinds.general.tools.dayGuidance.parameters.date !== undefined, true, 'a parameter is listed even with no description');
+  assertEquals(h.v.fake.writes.length, 0, 'nothing was written');
 });
