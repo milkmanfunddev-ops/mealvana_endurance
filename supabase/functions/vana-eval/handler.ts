@@ -78,18 +78,26 @@ const within = (p: Promise<unknown>, ms: number) => {
 };
 
 /** One step as the trace carries it: what the model said, every tool call with its input, every result with its
- *  full output, every tool error, the usage, and the gateway generation id to look its cost up by. */
+ *  full output and the compact form the model was sent (`modelOutput`, from `toModelOutput`), every tool error, the
+ *  usage, and the gateway generation id to look its cost up by. */
 // deno-lint-ignore no-explicit-any
 function traceStep(s: any) {
   // deno-lint-ignore no-explicit-any
   const content = (s.content ?? []) as any[];
+  // What the SDK sent the model for each result, by call id: the tool messages among the step's response messages.
+  const sent = new Map<string, unknown>();
+  // deno-lint-ignore no-explicit-any
+  for (const m of (s.response?.messages ?? []) as any[]) {
+    if (m.role !== 'tool' || !Array.isArray(m.content)) continue;
+    for (const p of m.content) if (p.type === 'tool-result') sent.set(p.toolCallId, p.output);
+  }
   return {
     text: s.text ?? '',
     reasoningText: s.reasoningText ?? null,
     // deno-lint-ignore no-explicit-any
     toolCalls: (s.toolCalls ?? []).map((c: any) => ({ toolCallId: c.toolCallId, toolName: c.toolName, input: c.input })),
     // deno-lint-ignore no-explicit-any
-    toolResults: (s.toolResults ?? []).map((r: any) => ({ toolCallId: r.toolCallId, toolName: r.toolName, input: r.input, output: r.output })),
+    toolResults: (s.toolResults ?? []).map((r: any) => ({ toolCallId: r.toolCallId, toolName: r.toolName, input: r.input, output: r.output, modelOutput: sent.get(r.toolCallId) ?? null })),
     toolErrors: content.filter((p) => p.type === 'tool-error').map((p) => ({ toolCallId: p.toolCallId, toolName: p.toolName, input: p.input, error: String(p.error?.message ?? p.error) })),
     finishReason: s.finishReason ?? null,
     usage: s.usage ?? null,
