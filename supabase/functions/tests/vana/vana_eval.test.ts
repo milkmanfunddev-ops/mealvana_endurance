@@ -168,6 +168,8 @@ Deno.test('a three-turn conversation keeps its history, and each trace carries f
     assertEquals(step0.toolCalls, [{ toolCallId: step0.toolCalls[0].toolCallId, toolName: 'getWorkouts', input: { days: 7 } }]);
     assertEquals(step0.toolResults[0].input, { days: 7 });
     assertEquals(step0.toolResults[0].output.map((a: { title: string }) => a.title), ['Tempo run'], "the output is the copy's own workouts");
+    assertEquals(step0.toolResults[0].modelOutput?.type, 'json', "the model's view of the result, as the SDK sent it");
+    assertEquals(step0.toolResults[0].modelOutput.value.map((a: { title: string }) => a.title), ['Tempo run']);
     assertEquals(trace1.trace.steps.map((s: { generationId: string }) => s.generationId), ['gen_1', 'gen_2'], 'a gateway generation id per step');
     assert(trace1.trace.system.persona.length > 0 && trace1.trace.system.context.includes('Sam'), 'system prompt and Context block');
     assert(trace1.trace.tools.includes('getWorkouts'), 'tools offered');
