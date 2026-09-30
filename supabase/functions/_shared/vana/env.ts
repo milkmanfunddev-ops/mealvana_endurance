@@ -26,6 +26,9 @@ export interface VanaCtx {
   userId: string;
   /** The caller's raw JWT — forwarded to `vana-day-notes` for background regeneration. */
   token: string;
+  /** The Langfuse environment this request's Traces and Scores carry in place of the project's own. `vana-eval` sets
+   *  `experiment`, so a Run never mixes with dev or prod traffic; everything else leaves it unset. */
+  environment?: 'dev' | 'production' | 'experiment';
 }
 
 // Model ids are spelled the way the gateway catalogue spells them (https://ai-gateway.vercel.sh/v1/models,

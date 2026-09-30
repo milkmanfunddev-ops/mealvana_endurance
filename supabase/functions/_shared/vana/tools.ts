@@ -18,6 +18,7 @@ import { suggestedPantry } from './pantry.ts';
 import { invalidateContext } from './context-cache.ts';
 import { weatherLine, geocode } from './weather.ts';
 import * as writes from './writes.ts';
+import { recordScore } from '../langfuse/scores.ts';
 
 const MealTypeZ = z.enum(['breakfast', 'lunch', 'dinner', 'snack']);
 const ContextZ = z.enum(['everyday', 'pre-session', 'recovery', 'rest-day', 'race-week', 'carb-load', 'travel']);
@@ -302,6 +303,9 @@ function makeAllTools(v: VanaCtx, ctx: AthleteContext, opts: ToolOpts = {}) {
       const { error } = await v.db.from('user_feedback').insert({ user_id: v.userId, source: 'vana_chat', conversation_id: opts.conversationId ?? scope?.conversationId ?? null, rating, message, metadata: { about, sentiment, kind: scope ? 'meal_planning' : 'general' } });
       if (error) { console.error(`[vana] saveFeedback insert failed user=${v.userId}:`, error.message); throw new Error('feedback_not_saved'); }
       console.log(`[vana] saveFeedback user=${v.userId} about=${about} sentiment=${sentiment}`);
+      // The opinion, as a Score on the Conversation's Session (langfuse ticket 13): -1 negative, 1 positive, 0 neither.
+      const feedbackConversation = opts.conversationId ?? scope?.conversationId;
+      if (feedbackConversation) recordScore({ name: 'athlete_feedback', value: rating ?? 0, dataType: 'NUMERIC', sessionId: feedbackConversation, comment: `${about}: ${message}`, environment: v.environment });
       return { kind: 'feedback_saved', message, sentiment, about };
     } }),
     // mp-265 clause 4 (ticket 27): when the athlete is trying to do something the app already has a screen for, Vana does

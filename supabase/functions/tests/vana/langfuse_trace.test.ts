@@ -70,10 +70,10 @@ function edgeRuntime(): { background: Promise<unknown>[]; settled: () => Promise
 }
 
 interface Turn { reply: string; spans: ReadableSpan[]; callRow: Record<string, unknown>; settled: FinishedUsage[]; traces: TurnTrace[]; modelCalls: number }
-type Script = Parameters<typeof mockGateway>[0] & { opts?: Partial<ChatRunOpts> };
+type Script = Parameters<typeof mockGateway>[0] & { opts?: Partial<ChatRunOpts>; environment?: 'experiment' };
 /** One two-step turn on an existing conversation. `tracing` undefined is the app with no Langfuse keys. */
 async function turn(tracing: Tracing | undefined, collector?: InMemorySpanExporter, script: Script = {}): Promise<Turn> {
-  const v = testCtx({ users: [{ id: U, first_name: 'Lee', allergies: [] }], activities: [] });
+  const v = Object.assign(testCtx({ users: [{ id: U, first_name: 'Lee', allergies: [] }], activities: [] }), { environment: script.environment });
   const ctx = await buildAthleteContext(v, ANCHOR, offlineDeps());
   await v.db.from('vana_conversations').insert({ id: CONV, user_id: U, kind: 'general', context: ctx, context_day: ANCHOR, last_message_at: `${ANCHOR}T08:00:00Z` });
   const gw = mockGateway(script); const rt = edgeRuntime();
@@ -168,7 +168,7 @@ Deno.test('an embedding call made inside a Turn sends no observation', async () 
 
 Deno.test("the dev-only eval function's Turn is in the experiment environment and still hands over its full detail", async () => {
   const { collector, tracing } = collected();
-  const { spans, traces } = await turn(tracing, collector, { opts: { functionName: 'vana-eval', environment: 'experiment' } });
+  const { spans, traces } = await turn(tracing, collector, { opts: { functionName: 'vana-eval' }, environment: 'experiment' });
   for (const s of spans) assertEquals(s.attributes['langfuse.environment'], 'experiment', `${s.name}: kept apart from dev and prod`);
   assertEquals(traces.length, 1, 'the callback received the Turn');
   // deno-lint-ignore no-explicit-any

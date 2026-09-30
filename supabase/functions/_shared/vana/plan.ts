@@ -20,6 +20,7 @@ import { ensureSavedMealIngredients, backfillPlanIngredients } from './saved-ing
 import { resolveMealIcon } from './meal-icon.ts';
 import { coverageOf, defaultSession, hasNutritionNumbers, servingsToCover } from './plan-math.ts';
 import { syncPlanList, markListConfirmed, markListConfirmedIfUnset, toggleByName, dropArchivedDraftLists } from './shopping.ts';
+import { recordScore } from '../langfuse/scores.ts';
 
 export interface PlanScope { planId?: string | null; conversationId?: string | null }
 
@@ -181,6 +182,9 @@ export async function confirmPlan(v: VanaCtx, scope?: PlanScope | null): Promise
   if (!data) throw new Error('confirm_meal_plan returned nothing');
   await markListConfirmed(v, plan.id); // the plan's list (shopping.ts) sorts to the top of the Shopping tab from now
   await dropDraftListsAfterArchive(v, plan.weekStart); // the drafts the confirm archived take their lists with them
+  // The planning Conversation's outcome, as a Score on its Session (langfuse ticket 13). A plan confirmed outside any
+  // Conversation (a copy made on the Plan tab) has no Session to carry one.
+  if (target.conversationId) recordScore({ name: 'plan_confirmed', value: 1, dataType: 'BOOLEAN', sessionId: target.conversationId, environment: v.environment });
   return hydrate(v, Array.isArray(data) ? data[0] : data);
 }
 /** Rebuild the plan's lines from its meals. Since 2026-09-16 the lines live in `shopping_lists` / `shopping_items`
