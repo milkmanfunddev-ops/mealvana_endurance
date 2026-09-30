@@ -6,7 +6,7 @@
 
 **Owner:** Lee (with Xuan where named).
 
-**Status:** ready-for-human
+**Status:** for Lee and Xuan
 
 - [ ] One annotation queue exists with the `review_pass_fail` and `review_note` score configs
 - [ ] The whole conversation is readable on the item Xuan opens

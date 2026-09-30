@@ -6,7 +6,7 @@
 
 **Owner:** Lee (with Xuan where named).
 
-**Status:** ready-for-human
+**Status:** for Lee: two rulings and the token
 
 - [ ] Lee has ruled on the Mixpanel project and on athletes without analytics consent
 - [ ] An athlete who declined analytics has no AI activity joined to them in Mixpanel

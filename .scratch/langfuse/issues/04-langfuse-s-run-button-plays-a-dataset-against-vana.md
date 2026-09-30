@@ -6,7 +6,7 @@
 
 **Owner:** `../mealvana_eval` agent.
 
-**Status:** ready-for-agent
+**Status:** owned by the `../mealvana_eval` agent (it marks this `done` when finished)
 
 - [ ] A correctly signed request is accepted at once; a bad signature is refused
 - [ ] Each Dataset item starts from a fresh Eval athlete copy

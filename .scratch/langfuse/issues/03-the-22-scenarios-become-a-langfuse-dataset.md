@@ -6,7 +6,7 @@
 
 **Owner:** `../mealvana_eval` agent. Touches no app code: a script plus Langfuse. The Scenario files it reads are in `mealvana_endurance/eval/scenarios`.
 
-**Status:** ready-for-agent
+**Status:** owned by the `../mealvana_eval` agent (it marks this `done` when finished)
 
 - [ ] One dataset exists in Langfuse holding all 22 Scenarios as Dataset items in the contract shape
 - [ ] Each item's `evalAthlete` names an Eval athlete that exists in the dev project

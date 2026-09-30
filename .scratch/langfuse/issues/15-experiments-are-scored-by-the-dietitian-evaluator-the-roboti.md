@@ -6,7 +6,7 @@
 
 **Owner:** `../mealvana_eval` agent. Touches no app code: evaluators live in Langfuse.
 
-**Status:** ready-for-agent
+**Status:** owned by the `../mealvana_eval` agent (it marks this `done` when finished)
 
 - [ ] The Dietitian evaluator and the robotic check exist in Langfuse, target Experiments, run on Haiku 4.5 and return yes or no with a reason
 - [ ] Their Scores use the `dietitian` and `robotic` score configs

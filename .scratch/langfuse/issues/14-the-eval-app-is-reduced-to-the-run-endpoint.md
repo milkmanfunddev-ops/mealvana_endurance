@@ -6,7 +6,7 @@
 
 **Owner:** `../mealvana_eval` agent.
 
-**Status:** ready-for-agent
+**Status:** owned by the `../mealvana_eval` agent (it marks this `done` when finished)
 
 - [ ] The screens, Judge, Rubric, Marks and Scenario store are deleted
 - [ ] The uncommitted eval-v2 ticket 08 work is discarded except any Run override the Run settings use

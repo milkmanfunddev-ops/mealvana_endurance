@@ -6,7 +6,7 @@
 
 **Owner:** Lee (with Xuan where named).
 
-**Status:** ready-for-human
+**Status:** for Lee: browser work, needs his go
 
 - [ ] The project is renamed from "My Project"
 - [ ] Xuan is invited as Member and has signed in

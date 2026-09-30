@@ -6,7 +6,7 @@
 
 **Owner:** `mealvana_endurance` lead, on Lee's go.
 
-**Status:** ready-for-human
+**Status:** lead-run, waits for Lee's go
 
 - [ ] The privacy documents from ticket 06 are published
 - [ ] Every prompt has a `production` label on the intended version

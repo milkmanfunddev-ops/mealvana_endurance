@@ -6,7 +6,7 @@
 
 **Owner:** `../mealvana_eval` agent. Touches no app code until Lee rules: a dataset and an Experiment in Langfuse.
 
-**Status:** ready-for-agent
+**Status:** owned by the `../mealvana_eval` agent (it marks this `done` when finished)
 
 - [ ] A dataset of real meal descriptions and photos from dev exists, with the macros a person accepts as right
 - [ ] Both models are run over it and compared side by side in Langfuse

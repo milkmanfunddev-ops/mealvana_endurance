@@ -6,7 +6,7 @@
 
 **Owner:** `../mealvana_eval` agent. Touches no code: Gateway and Langfuse settings only.
 
-**Status:** ready-for-agent
+**Status:** owned by the `../mealvana_eval` agent (it marks this `done` when finished)
 
 - [ ] The evals Gateway key has a $20 monthly budget, confirmed by reading it back
 - [ ] Langfuse has one model connection using the Gateway's OpenAI-compatible endpoint and the evals key, with Haiku 4.5 and Sonnet 5.5 as named models and Haiku 4.5 as the default
