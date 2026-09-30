@@ -29,7 +29,7 @@ import { logAiUsage } from '../ai/usage.ts';
 import { defaultTracing, type Tracing } from '../langfuse/tracing.ts';
 import { promptSourceFromEnv, type PromptSource } from '../langfuse/prompts.ts';
 import type { VanaPart, AthleteContext, ConversationSummary, ConversationPlan, ConversationKind } from './contracts.ts';
-import { getConversationPlan, getPlan, snapshotPlan } from './plan.ts';
+import { getConversationPlan, getPlan, scoreDraftLeftBehind, snapshotPlan } from './plan.ts';
 import { addDays, weekStartFor } from './env.ts';
 import { pickOpener, pendingDebrief, NEW_PLAN_SITUATION, OPENER_REPLAY_ID_PREFIX, type OpenerVariant } from './opener.ts';
 import { getPlanPeriod } from './memory.ts';
@@ -494,6 +494,9 @@ export async function runChat(v: VanaCtx, body: ChatBody, opts: ChatRunOpts): Pr
   const lastText = last ? textOf(last) : '';
   const conv = persist ? await ensureConversation(v, body.conversation_id ?? null, kind) : { id: '', kind };
   const convId = conv.id; const convKind = conv.kind;
+  // A planning conversation that has just been created: the Draft the one before it left unconfirmed is abandoned
+  // (langfuse ticket 13). Scored in the background; the Turn does not wait.
+  if (persist && convKind === 'meal_planning' && convId !== body.conversation_id) waitUntil(scoreDraftLeftBehind(v, convId));
   // A moment's opener lands in the day's conversation mid-thread (VM-1): that is not the conversation's first turn.
   const intoThread = opener && persist && !!body.conversation_id && (await conversationHasTurns(v, convId));
   // The opener reads what exists and never waits (mp-278): the memory table and the newest episodes as they stand.

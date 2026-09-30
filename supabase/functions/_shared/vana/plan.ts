@@ -170,6 +170,30 @@ export async function setBatchCooking(v: VanaCtx, on: boolean, scope?: PlanScope
   return (await getPlanById(v, plan.id))!;
 }
 export async function setBrief(v: VanaCtx, brief: string, scope?: PlanScope | null) { const p = (await resolvePlan(v, scope, true))!; await v.db.from('meal_plans').update({ brief }).eq('id', p.id); }
+/** A planning Conversation's outcome when its Draft is given up (langfuse ticket 13; Lee, 2026-09-30): `plan_confirmed`
+ *  = no on the Conversation's Session. A Draft is abandoned when it is archived or deleted unconfirmed, or when the
+ *  athlete opens a new planning conversation while it sits unconfirmed. One with no meals in it never counts (nothing
+ *  was being planned), and one that belongs to no Conversation has no Session to carry the Score. */
+export function scoreAbandonedDraft(v: VanaCtx, draft: MealPlan | null): void {
+  if (!draft || draft.status !== 'draft' || !draft.conversationId || !draft.meals.length) return;
+  recordScore({ name: 'plan_confirmed', value: 0, dataType: 'BOOLEAN', sessionId: draft.conversationId, environment: v.environment });
+}
+/** The Drafts a confirm of `planId` will archive: the week's other unconfirmed plans that a Conversation owns. */
+async function draftsAConfirmArchives(v: VanaCtx, planId: string, weekStart: string): Promise<MealPlan[]> {
+  const { data } = await v.db.from('meal_plans').select('id').eq('user_id', v.userId).eq('week_start', weekStart).eq('status', 'draft').eq('is_deleted', false).neq('id', planId);
+  const drafts = await Promise.all(((data ?? []) as { id: string }[]).map((r) => getPlanById(v, r.id)));
+  return drafts.filter((d): d is MealPlan => !!d);
+}
+/** A new planning conversation has opened: the Draft the planning conversation before it left unconfirmed is abandoned.
+ *  Only the one before is looked at, so a Draft is scored when the next conversation opens and not again at every one
+ *  after. Never throws; it runs in the background of a Turn. */
+export async function scoreDraftLeftBehind(v: VanaCtx, newConversationId: string): Promise<void> {
+  try {
+    const { data: before } = await v.db.from('vana_conversations').select('id').eq('user_id', v.userId).eq('kind', 'meal_planning').eq('is_deleted', false).neq('id', newConversationId).order('created_at', { ascending: false }).limit(1);
+    const previous = ((before ?? []) as { id: string }[])[0];
+    if (previous) scoreAbandonedDraft(v, await getConversationPlan(v, previous.id, false));
+  } catch (e) { console.error('[plan] scoring the Draft left behind failed:', (e as Error).message); }
+}
 /** Confirm: the shopping list is built here (TS grocery aggregation), then ONE SQL transaction — `confirm_meal_plan` —
  *  stores it, flips status → confirmed and archives every other non-archived plan for the same athlete-week. The
  *  client gets its remote ack from that single call. */
@@ -177,6 +201,7 @@ export async function confirmPlan(v: VanaCtx, scope?: PlanScope | null): Promise
   const target = (await resolvePlan(v, scope, true))!;
   // The plan is still a draft here, and a draft builds no list (110-012): `confirm` is what makes this build one.
   const plan = await refreshShopping(v, target.id, { confirm: true });
+  const displaced = await draftsAConfirmArchives(v, plan.id, plan.weekStart);
   const { data, error } = await v.db.rpc('confirm_meal_plan', { p_plan_id: plan.id, p_shopping: plan.shopping });
   if (error) throw new Error(`confirm_meal_plan: ${error.message}`);
   if (!data) throw new Error('confirm_meal_plan returned nothing');
@@ -185,6 +210,7 @@ export async function confirmPlan(v: VanaCtx, scope?: PlanScope | null): Promise
   // The planning Conversation's outcome, as a Score on its Session (langfuse ticket 13). A plan confirmed outside any
   // Conversation (a copy made on the Plan tab) has no Session to carry one.
   if (target.conversationId) recordScore({ name: 'plan_confirmed', value: 1, dataType: 'BOOLEAN', sessionId: target.conversationId, environment: v.environment });
+  for (const draft of displaced) scoreAbandonedDraft(v, draft);
   return hydrate(v, Array.isArray(data) ? data[0] : data);
 }
 /** Rebuild the plan's lines from its meals. Since 2026-09-16 the lines live in `shopping_lists` / `shopping_items`
@@ -323,6 +349,7 @@ export async function newPlan(v: VanaCtx, scope?: PlanScope | null): Promise<Mea
   if (cur) {
     await v.db.from('meal_plans').update({ status: 'archived', updated_at: new Date().toISOString() }).eq('id', cur.id);
     await dropDraftListsAfterArchive(v, cur.weekStart); // a draft's list goes with it; a once-confirmed plan keeps its list
+    scoreAbandonedDraft(v, cur);
   }
   const conversationId = scope?.conversationId ?? cur?.conversationId ?? null;
   const fresh = await insertDraft(v, cur?.weekStart ?? await currentWeekStart(v), conversationId);

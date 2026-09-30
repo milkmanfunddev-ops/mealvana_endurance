@@ -75,6 +75,7 @@ export async function deletePlan(v: VanaCtx, id: string | null, scope: PlanScope
   if (ask) return ask;
   const { error } = await v.admin.from('meal_plans').update({ is_deleted: true, updated_at: new Date().toISOString() }).eq('id', cur.id).eq('user_id', v.userId);
   if (error) throw new Error(error.message);
+  plan.scoreAbandonedDraft(v, cur);
   await invalidateContext(v);
   console.log(`[vana] deletePlan user=${v.userId} id=${cur.id} week=${cur.weekStart}`);
   return receipt('delete_plan', 'plan', `Deleted the plan for ${label}`, cur.id, { id: cur.id });

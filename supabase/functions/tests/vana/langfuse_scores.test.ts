@@ -8,7 +8,8 @@
  * itself is driven against a stub of Langfuse's API behind `fetch`, answering in the shape Langfuse answers.
  */
 import { assert, assertEquals } from 'https://deno.land/std@0.177.1/testing/asserts.ts';
-import { confirmPlan } from '../../_shared/vana/plan.ts';
+import { confirmPlan, newPlan, scoreDraftLeftBehind } from '../../_shared/vana/plan.ts';
+import { deletePlan } from '../../_shared/vana/writes.ts';
 import { makeVanaTools } from '../../_shared/vana/tools.ts';
 import { today, weekStartFor } from '../../_shared/vana/env.ts';
 import { langfuseScoreSender, setScoreSender, type Score } from '../../_shared/langfuse/scores.ts';
@@ -118,6 +119,81 @@ Deno.test('a Score that cannot be written leaves the feedback saved and acknowle
     assertEquals(out, { kind: 'feedback_saved', message: 'you keep suggesting fish', sentiment: 'negative', about: 'vana' });
     assertEquals(v.fake.rows('user_feedback').length, 1);
   }, true);
+});
+
+// ---------------------------------------------------------------- an abandoned Draft (Lee, 2026-09-30)
+// A Draft holding at least one meal is abandoned when it is archived or deleted unconfirmed, or when the athlete opens
+// a new planning conversation while it sits unconfirmed.
+
+const NO = (sessionId: string): Score => ({ name: 'plan_confirmed', value: 0, dataType: 'BOOLEAN', sessionId, environment: undefined });
+const OTHER = '99999999-0000-4000-8000-000000000009';
+const OTHER_CONV = 'aaaaaaaa-0000-4000-8000-000000000009';
+const NEW_CONV = 'bbbbbbbb-0000-4000-8000-00000000000b';
+const conversationRow = (id: string, createdAt: string, kind = 'meal_planning') => ({ id, user_id: U, kind, is_deleted: false, created_at: createdAt });
+
+Deno.test('New plan in a conversation whose Draft holds a meal writes plan_confirmed = no', async () => {
+  const v = draftOf(CONV);
+  await recording(async (sent) => {
+    await newPlan(v, { conversationId: CONV });
+    assertEquals(sent, [NO(CONV)]);
+  });
+});
+
+Deno.test('a Draft with no meals in it is never abandoned: nothing was being planned', async () => {
+  const v = draftOf(CONV);
+  v.fake.tables.plan_meals = [];
+  await recording(async (sent) => {
+    await newPlan(v, { conversationId: CONV });
+    assertEquals(sent, []);
+  });
+});
+
+Deno.test('deleting an unconfirmed Draft writes plan_confirmed = no; deleting a confirmed plan writes nothing', async () => {
+  const draft = draftOf(CONV);
+  await recording(async (sent) => {
+    await deletePlan(draft, DRAFT, null, true);
+    assertEquals(sent, [NO(CONV)]);
+  });
+  const confirmed = draftOf(CONV);
+  confirmed.fake.rows('meal_plans')[0].status = 'confirmed';
+  await recording(async (sent) => {
+    await deletePlan(confirmed, DRAFT, null, true);
+    assertEquals(sent, []);
+  });
+});
+
+Deno.test("confirming one plan writes no for another conversation's Draft the confirm archives", async () => {
+  const v = draftOf(CONV);
+  v.fake.tables.meal_plans.push({ ...planRow(OTHER_CONV), id: OTHER });
+  v.fake.tables.plan_meals.push({ ...mealRow, id: 'm9', plan_id: OTHER });
+  await recording(async (sent) => {
+    await confirmPlan(v, { conversationId: CONV });
+    assertEquals(sent.map((s) => [s.sessionId, s.value]).sort(), [[OTHER_CONV, 0], [CONV, 1]].sort());
+  });
+});
+
+Deno.test('opening a new planning conversation writes no for the Draft the one before it left unconfirmed, once', async () => {
+  const v = draftOf(CONV);
+  v.fake.tables.vana_conversations = [conversationRow(CONV, '2026-09-24T09:00:00Z'), conversationRow(NEW_CONV, '2026-09-25T09:00:00Z')];
+  await recording(async (sent) => {
+    await scoreDraftLeftBehind(v, NEW_CONV);
+    assertEquals(sent, [NO(CONV)]);
+    // A third conversation looks at the one before it, not at the first again.
+    const THIRD = 'cccccccc-0000-4000-8000-00000000000c';
+    v.fake.tables.vana_conversations.push(conversationRow(THIRD, '2026-09-26T09:00:00Z'));
+    await scoreDraftLeftBehind(v, THIRD);
+    assertEquals(sent.length, 1, 'the first Draft is not scored a second time');
+  });
+});
+
+Deno.test('a new planning conversation after a confirmed plan writes nothing', async () => {
+  const v = draftOf(CONV);
+  v.fake.rows('meal_plans')[0].status = 'confirmed';
+  v.fake.tables.vana_conversations = [conversationRow(CONV, '2026-09-24T09:00:00Z'), conversationRow(NEW_CONV, '2026-09-25T09:00:00Z')];
+  await recording(async (sent) => {
+    await scoreDraftLeftBehind(v, NEW_CONV);
+    assertEquals(sent, []);
+  });
 });
 
 // ---------------------------------------------------------------- the sender, against Langfuse's API
