@@ -1,3 +1,4 @@
+import 'dart:async';
 import 'package:accessibility_tools/accessibility_tools.dart';
 // The testing-tools panel is not exported from the package barrel, but it is
 // the only half of the package that survives a release build: the issue
@@ -26,6 +27,7 @@ import '../services/app_external_deps.dart';
 import '../../features/carb_loading/presentation/providers/carb_nudge_coordinator.dart';
 import '../../features/nutrition_plan/application/night_before_nudge_service.dart';
 import '../../features/nutrition_plan/presentation/providers/night_before_nudge_coordinator.dart';
+import '../../features/activities/data/activities_repository.dart';
 import '../services/auth/auth_listener_service.dart';
 import '../services/notification_service.dart';
 import '../services/notification_intent_routes.dart';
@@ -162,9 +164,55 @@ class _RootAppWidgetState extends ConsumerState<RootAppWidget>
     }
 
     final destination = destinationForIntent(type, activityId);
+
+    // plan_workout lands on the CREATE-PLAN flow, which pre-fills only from
+    // the extras it is handed (it self-loads for brick alone). Hydrate from
+    // the workout, then navigate. If the lookup fails the athlete still lands
+    // on the right screen with the workout linked — blank beats wrong.
+    if (type == 'plan_workout') {
+      unawaited(_goPrefilled(activityId, destination));
+      return;
+    }
+
     ref
         .read(AppRouter.routerProvider)
         .go(destination.location, extra: destination.extra);
+  }
+
+  Future<void> _goPrefilled(
+    String activityId,
+    NotificationDestination destination,
+  ) async {
+    var extra = destination.extra;
+    try {
+      final userId = ref
+          .read(appExternalDepsProvider)
+          .supabaseClient
+          .auth
+          .currentUser
+          ?.id;
+      final activity = userId == null
+          ? null
+          : await ref
+                .read(activitiesRepositoryProvider)
+                .getActivityById(userId, activityId);
+      if (activity != null) {
+        extra = hydratePlanWorkoutExtra(
+          activityId: activityId,
+          activityTypeName: activity.activityType.name,
+          scheduledDateTime: activity.scheduledDateTime,
+          title: activity.title,
+          durationMinutes: activity.durationMinutes,
+          distanceMiles: activity.distanceMiles,
+        );
+      }
+    } catch (_) {
+      // Fall through with the bare id — see above.
+    }
+    if (!mounted) return;
+    ref
+        .read(AppRouter.routerProvider)
+        .go(destination.location, extra: extra);
   }
 
   /// Replays a held tap once the router can honour it.

@@ -18,10 +18,88 @@ void main() {
     expect(d.extra, isNull);
   });
 
-  test('plan_workout lands on the workout screen with its activity', () {
+  test('plan_workout lands on the CREATE-PLAN flow, not activity detail', () {
+    // Ruled 2026-09-30: the nudge only fires when no plan exists, so the
+    // landing must be the interface that makes one.
     final d = destinationForIntent('plan_workout', id);
-    expect(d.location, '/plan');
+    expect(d.location, '/distancepacegut');
     expect(d.extra, {'activityId': id});
+  });
+
+  group('hydratePlanWorkoutExtra', () {
+    test('a run carries distance; the sport tab is selected', () {
+      final e = hydratePlanWorkoutExtra(
+        activityId: id,
+        activityTypeName: 'running',
+        scheduledDateTime: DateTime(2026, 10, 2, 7, 0),
+        title: 'Long run',
+        durationMinutes: 135,
+        distanceMiles: 13.1,
+      );
+      expect(e['activityType'], 'running');
+      expect(e['initialDate'], DateTime(2026, 10, 2, 7, 0));
+      expect(e['initialTitle'], 'Long run');
+      expect(e['initialDurationMinutes'], 135);
+      expect(e['distance'], 13.1);
+    });
+
+    test('a RIDE never carries distance or pace into run-shaped keys', () {
+      // Cycling's initializer does not read initialDistance, and it
+      // reinterprets initialPace as 60/pace to get mph — passing either would
+      // quietly turn a ride into wrong numbers on screen.
+      final e = hydratePlanWorkoutExtra(
+        activityId: id,
+        activityTypeName: 'cycling',
+        scheduledDateTime: DateTime(2026, 10, 2, 7, 0),
+        title: 'Long ride',
+        durationMinutes: 150,
+        distanceMiles: 40,
+      );
+      expect(e['activityType'], 'cycling');
+      expect(e['initialDurationMinutes'], 150);
+      expect(e.containsKey('distance'), isFalse);
+      expect(e.containsKey('goalPace'), isFalse);
+      expect(e.containsKey('initialPace'), isFalse);
+    });
+
+    test('pace is never passed for any sport', () {
+      for (final sport in ['running', 'cycling', 'swimming', 'brick']) {
+        final e = hydratePlanWorkoutExtra(
+          activityId: id,
+          activityTypeName: sport,
+          scheduledDateTime: DateTime(2026, 10, 2, 7, 0),
+          title: 't',
+          durationMinutes: 120,
+          distanceMiles: 10,
+        );
+        expect(e.containsKey('goalPace'), isFalse, reason: sport);
+        expect(e.containsKey('initialPace'), isFalse, reason: sport);
+      }
+    });
+
+    test('an unknown sport picks no tab rather than the wrong one', () {
+      final e = hydratePlanWorkoutExtra(
+        activityId: id,
+        activityTypeName: 'triathlon',
+        scheduledDateTime: DateTime(2026, 10, 2, 7, 0),
+        title: 'Race',
+      );
+      expect(e.containsKey('activityType'), isFalse);
+      expect(e['activityId'], id);
+    });
+
+    test('missing duration and distance are omitted, not zeroed', () {
+      final e = hydratePlanWorkoutExtra(
+        activityId: id,
+        activityTypeName: 'running',
+        scheduledDateTime: DateTime(2026, 10, 2, 7, 0),
+        title: 'Run',
+        durationMinutes: 0,
+        distanceMiles: 0,
+      );
+      expect(e.containsKey('initialDurationMinutes'), isFalse);
+      expect(e.containsKey('distance'), isFalse);
+    });
   });
 
   test('the existing typed payloads are unchanged', () {

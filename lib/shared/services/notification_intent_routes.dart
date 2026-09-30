@@ -49,11 +49,20 @@ NotificationDestination destinationForIntent(String? intent, String id) {
     case 'carb_event':
       return NotificationDestination('/events/$id');
 
-    // Night-before long-workout nudge: tomorrow's workout.
-    // The screen is the default, not a ruling — it reroutes by editing this
-    // line once the chat surface exists.
+    // Night-before long-workout nudge → the CREATE-PLAN flow for that
+    // workout, pre-filled (ruled 2026-09-30, IMG_9137). Not activity detail:
+    // the nudge only fires when no plan exists, so the landing has to be the
+    // interface that makes one.
+    //
+    // The caller is expected to HYDRATE this extra with the workout's
+    // sport/date/name/duration/distance before navigating — see
+    // `hydratePlanWorkoutExtra`. This function stays pure, so the id alone is
+    // the floor: a blank-but-linked form, never a wrong screen.
     case 'plan_workout':
-      return NotificationDestination('/plan', extra: {'activityId': id});
+      return NotificationDestination(
+        '/distancepacegut',
+        extra: {'activityId': id},
+      );
 
     // `recover:<activityId>` goes here — one line, when it is ruled.
 
@@ -63,5 +72,63 @@ NotificationDestination destinationForIntent(String? intent, String id) {
       // ActivityDetailScreen owns the conditional redirect into the fuel-log
       // surface, so this deliberately does not push /fuel-log itself.
       return NotificationDestination('/plan', extra: {'activityId': id});
+  }
+}
+
+/// Fills a `plan_workout` destination's extra with the workout's own data, so
+/// the create-plan screen opens PRE-FILLED rather than blank-but-linked.
+///
+/// WHY THIS IS NOT IN THE TABLE. `NewActivityScreen` does not hydrate itself
+/// from an activityId (it self-loads for BRICK only); every pre-filled field
+/// comes from the extras its caller passes. That needs an activity lookup,
+/// which is async and belongs at the dispatch site — the table stays a pure
+/// (intent, id) -> screen decision.
+///
+/// WHY SO FEW FIELDS, DELIBERATELY. The keys are NOT interchangeable across
+/// sports, and a wrong one is worse than a missing one — a missing field is
+/// blank and the athlete fills it; a wrong field is a lie they may not notice:
+///   - `initialDistance` is read by RUNNING (miles) and SWIMMING (miles, then
+///     converted to metres). Cycling's initializer does not read it.
+///   - `initialPace` is min/mile and is read by RUNNING — but CYCLING
+///     reinterprets it as `60.0 / pace` to get mph. Passing one activity's
+///     pace blindly would quietly turn a ride's pace into a speed. So pace is
+///     NOT passed at all; the athlete sets it on the screen.
+///   - date, title, duration and the sport tab are safe for every sport.
+Map<String, dynamic> hydratePlanWorkoutExtra({
+  required String activityId,
+  required String activityTypeName,
+  required DateTime scheduledDateTime,
+  required String title,
+  int? durationMinutes,
+  double? distanceMiles,
+}) {
+  final sport = _sportTabName(activityTypeName);
+  return {
+    'activityId': activityId,
+    if (sport != null) 'activityType': sport,
+    'initialDate': scheduledDateTime,
+    'initialTitle': title,
+    if (durationMinutes != null && durationMinutes > 0)
+      'initialDurationMinutes': durationMinutes,
+    // Only where the target sport's initializer actually reads it.
+    if (distanceMiles != null &&
+        distanceMiles > 0 &&
+        (sport == 'running' || sport == 'swimming'))
+      'distance': distanceMiles,
+  };
+}
+
+/// The four strings `NewActivityScreen._getSportTabFromActivityType` accepts.
+/// Anything else returns null and the screen keeps its default tab rather than
+/// being sent to a sport the workout is not.
+String? _sportTabName(String activityTypeName) {
+  switch (activityTypeName) {
+    case 'running':
+    case 'cycling':
+    case 'swimming':
+    case 'brick':
+      return activityTypeName;
+    default:
+      return null;
   }
 }
