@@ -1,5 +1,6 @@
 /**
- * A described meal and a meal photo as Langfuse receives them (langfuse ticket 09).
+ * A described meal and a meal photo as Langfuse receives them (langfuse ticket 09), and worded and modelled as
+ * Langfuse holds them (ticket 11).
  *
  * Each function's real `index.ts` runs in-process through the serve harness: its own auth, gate, budget, limiter and
  * model call. Supabase is a stub behind `fetch`, the model is a mock behind the AI SDK's default provider, and a span
@@ -14,6 +15,8 @@ import { assert, assertEquals } from 'https://deno.land/std@0.177.1/testing/asse
 import { MockLanguageModelV3, MockProviderV3 } from 'npm:ai@6.0.277/test';
 import { InMemorySpanExporter, type ReadableSpan, type SpanExporter } from 'npm:@opentelemetry/sdk-trace-base@2.11.0';
 import { createTracing, setDefaultTracing, type Tracing } from '../_shared/langfuse/tracing.ts';
+import { setPromptFetch } from '../_shared/langfuse/prompts.ts';
+import { MEAL_ANALYSIS_CACHE_OPTIONS } from '../_shared/meal_analysis/prompt.ts';
 import { type Call, loadFunction, setStubEnv, STUB_SUPABASE_URL } from './paywall/support/serve_harness.ts';
 
 export const USER = 'c18d3737-0000-4000-8000-0000000000a1';
@@ -36,6 +39,8 @@ type CallOptions = any;
 export interface Seen {
   /** Each model call, as the provider received it. */
   modelCalls: { modelId: string; options: CallOptions }[];
+  /** What the limiter was asked to reserve: the Call log row as it is first written. */
+  reserved: Record<string, unknown>[];
   /** The patch that finished the Call log row. */
   callLog: Record<string, unknown>[];
   /** What the budget reservation was settled to. */
@@ -51,7 +56,7 @@ const json = (body: unknown, status = 200) => new Response(JSON.stringify(body),
 /** Runs `body` with an active subscriber behind `fetch`, the model mocked and the background-work hook recorded.
  *  Resolves once everything the function handed to the hook has settled. */
 export async function withMealWorld<T>(body: (seen: Seen) => Promise<T>, model: { fail?: boolean } = {}): Promise<T> {
-  const seen: Seen = { modelCalls: [], callLog: [], settled: [], media: [], elsewhere: [] };
+  const seen: Seen = { modelCalls: [], reserved: [], callLog: [], settled: [], media: [], elsewhere: [] };
   // deno-lint-ignore no-explicit-any
   const g = globalThis as any;
   const before = { fetch: g.fetch, provider: g.AI_SDK_DEFAULT_PROVIDER, runtime: g.EdgeRuntime };
@@ -90,7 +95,7 @@ export async function withMealWorld<T>(body: (seen: Seen) => Promise<T>, model: 
       }
       case '/rest/v1/rpc/ai_budget_reserve': return json({ allowed: true, reservation_id: 'res-stub', balance: 4_000_000, allowance: 0, allowance_monthly: 0, allowance_expires_at: null });
       case '/rest/v1/rpc/ai_budget_settle': seen.settled.push(await req.json()); return json({ settled: true });
-      case '/rest/v1/rpc/vana_reserve_call': return json('call-1');
+      case '/rest/v1/rpc/vana_reserve_call': seen.reserved.push(await req.json()); return json('call-1');
       case '/rest/v1/vana_calls': if (req.method === 'PATCH') seen.callLog.push(await req.json()); return json([]);
       case '/rest/v1/ai_usage': return json([], 201);
       default:
@@ -129,6 +134,9 @@ export interface MealFunction {
   request: Record<string, unknown>;
   /** What the root observation's input must hold, given the collected root. */
   input: (root: ReadableSpan) => void;
+  /** The function's prompt: its name in Langfuse, the copy bundled in code, and the model that runs when the prompt's
+   *  config names none. */
+  prompt: { name: string; bundledText: string; bundledModel: string };
 }
 
 export function mealAnalysisIsTraced(f: MealFunction): { call: () => Promise<Call> } {
@@ -206,6 +214,59 @@ export function mealAnalysisIsTraced(f: MealFunction): { call: () => Promise<Cal
       assertEquals(root.attributes['langfuse.observation.level'], 'ERROR');
       assertEquals(root.attributes['langfuse.observation.status_message'], 'the gateway refused');
     } finally { setDefaultTracing(null); }
+  });
+
+  // ---- wording and model (langfuse ticket 11)
+
+  /** One call, with Langfuse's prompt API answering as `fetchPrompt` does. Returns what the model was sent and the rest. */
+  const worded = async (fetchPrompt: Parameters<typeof setPromptFetch>[0]) => {
+    setPromptFetch(fetchPrompt);
+    const { collector } = collecting();
+    try {
+      const out = await withMealWorld(async (seen) => { const res = await (await call())(post(f.fn, f.request)); return { status: res.status, body: await res.json(), seen }; });
+      const sent = out.seen.modelCalls[0];
+      const system = (sent.options.prompt as { role: string; content: string; providerOptions?: unknown }[]).filter((m) => m.role === 'system');
+      const root = collector.getFinishedSpans().find((s) => s.name === f.fn)!;
+      return { ...out, sent, system, origin: root.attributes['langfuse.trace.metadata.promptSource'] };
+    } finally { setDefaultTracing(null); setPromptFetch(null); }
+  };
+
+  test(`${f.fn}: the instructions and the model are the ones Langfuse holds`, async () => {
+    const asked: string[][] = [];
+    const r = await worded((name, label) => { asked.push([name, label]); return Promise.resolve({ text: 'Wording from Langfuse.', version: 7, config: { model: 'anthropic/claude-sonnet-5.5' } }); });
+    assertEquals(r.status, 200);
+    assertEquals(asked, [[f.prompt.name, 'latest']], 'asked for by name');
+    assertEquals(r.system.map((m) => m.content), ['Wording from Langfuse.'], "the instructions are the prompt's text");
+    assertEquals(r.system[0].providerOptions, MEAL_ANALYSIS_CACHE_OPTIONS, 'the cache marker is unchanged');
+    assertEquals(r.sent.modelId, 'anthropic/claude-sonnet-5.5', "the model is the one the prompt's config names");
+    assertEquals(r.seen.reserved[0].p_model, 'anthropic/claude-sonnet-5.5', 'the Call log names the model that ran');
+    assertEquals(r.body._usage.model, 'anthropic/claude-sonnet-5.5');
+    assertEquals(r.sent.options.responseFormat?.type, 'json', 'the output schema is still the one in code');
+    assert(JSON.stringify(r.sent.options.responseFormat.schema).includes('sodium_mg'));
+    assertEquals(r.origin, 'langfuse', 'the Trace says where the wording came from');
+  });
+
+  test(`${f.fn}: when Langfuse cannot be reached the bundled copy and its model run, and the Trace says so`, async () => {
+    const r = await worded(() => Promise.reject(new Error('langfuse is down')));
+    assertEquals(r.status, 200);
+    assertEquals(r.system.map((m) => m.content), [f.prompt.bundledText]);
+    assertEquals(r.sent.modelId, f.prompt.bundledModel);
+    assertEquals(r.origin, 'fallback');
+  });
+
+  test(`${f.fn}: a prompt whose config names no model, or an Opus model, runs on the bundled model`, async () => {
+    const none = await worded(() => Promise.resolve({ text: 'Wording from Langfuse.', version: 3 }));
+    assertEquals(none.sent.modelId, f.prompt.bundledModel, 'no model named');
+    const opus = await worded(() => Promise.resolve({ text: 'Wording from Langfuse.', version: 4, config: { model: 'anthropic/claude-opus-5.5' } }));
+    assertEquals(opus.sent.modelId, f.prompt.bundledModel, 'no call runs on Opus');
+    assertEquals(opus.system.map((m) => m.content), ['Wording from Langfuse.'], 'the wording still comes from Langfuse');
+  });
+
+  test(`${f.fn}: with no Langfuse to ask, the model is sent the instructions and model it was sent before`, async () => {
+    const r = await worded(null);
+    assertEquals(r.system.map((m) => m.content), [f.prompt.bundledText]);
+    assertEquals(r.sent.modelId, f.prompt.bundledModel);
+    assertEquals(r.origin, 'bundled');
   });
 
   return { call };

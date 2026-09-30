@@ -13,7 +13,12 @@
  * remembered for a shorter time, so an outage costs one timeout and not one per Turn.
  *
  * Prompts are templates: `{{name}}` is filled by the caller (`compilePrompt`). What fills them stays in code.
+ *
+ * A prompt that is one model call's instructions also names that call's model, in its config (`callPrompt`). The
+ * environment variable that used to pick the model is what runs when the config names none.
  */
+import { background } from './runtime.ts';
+
 export type PromptLabel = 'latest' | 'production';
 
 export interface FetchedPrompt { text: string; version: number; config?: Record<string, unknown> }
@@ -136,4 +141,50 @@ export function promptSourceFromEnv(bundled: Record<string, string>, background:
     fetchPrompt: publicKey && secretKey ? langfuseFetchPrompt({ publicKey, secretKey, baseUrl: Deno.env.get('LANGFUSE_BASE_URL') ?? 'https://us.cloud.langfuse.com' }) : undefined,
     bundled, background,
   });
+}
+
+let fetchInPlace: { fetchPrompt: FetchPrompt; label: PromptLabel } | null = null;
+let fetchChanges = 0;
+/** In place of Langfuse's prompt API for every instance source, for a test that drives a function through its own
+ *  entry point. Null puts Langfuse back. Either way what the sources held is dropped. */
+export function setPromptFetch(fetchPrompt: FetchPrompt | null, label: PromptLabel = 'latest'): void {
+  fetchInPlace = fetchPrompt ? { fetchPrompt, label } : null;
+  fetchChanges++;
+}
+
+/** A module's prompt source for the function instance: built from the function secrets on first use and kept, so what
+ *  it fetched is held between calls. `bundled` is the module's copy of each of its prompts, by name. */
+export function instancePrompts(bundled: Record<string, string>): PromptSource {
+  let built: { source: PromptSource; at: number } | null = null;
+  const source = () => {
+    if (!built || built.at !== fetchChanges) {
+      built = { at: fetchChanges, source: fetchInPlace ? createPromptSource({ ...fetchInPlace, bundled, background }) : promptSourceFromEnv(bundled, background) };
+    }
+    return built.source;
+  };
+  return { resolve: (names) => source().resolve(names) };
+}
+
+/** Where a call's wording came from, as its Trace records it: Langfuse, the bundled copy standing in for a failed
+ *  fetch, or the bundled copy because there is no Langfuse to ask. */
+export type PromptOrigin = 'langfuse' | 'fallback' | 'bundled';
+export const promptOrigin = (prompts: readonly ResolvedPrompt[]): PromptOrigin =>
+  prompts.some((p) => p.fallback) ? 'fallback' : prompts.some((p) => p.version != null) ? 'langfuse' : 'bundled';
+
+/** One model call's instructions and model. */
+export interface CallPrompt { text: string; model: string; origin: PromptOrigin; prompt: ResolvedPrompt }
+
+/** The model a prompt's config names, or `bundledModel` when it names none. No call may run on an Opus model (langfuse
+ *  spec, "Models"), so a config that names one is refused and the bundled model runs. */
+export function modelOf(prompt: ResolvedPrompt, bundledModel: string): string {
+  const named = prompt.config.model;
+  if (typeof named !== 'string' || !named.trim()) return bundledModel;
+  if (/opus/i.test(named)) { warn(`prompt "${prompt.name}" names an Opus model, using ${bundledModel}`, named); return bundledModel; }
+  return named.trim();
+}
+
+/** The prompt one model call runs on: its text and its model, from Langfuse or the bundled copy. Never rejects. */
+export async function callPrompt(source: PromptSource, name: string, bundledModel: string): Promise<CallPrompt> {
+  const prompt = (await source.resolve([name]))[name];
+  return { text: prompt.text, model: modelOf(prompt, bundledModel), origin: promptOrigin([prompt]), prompt };
 }

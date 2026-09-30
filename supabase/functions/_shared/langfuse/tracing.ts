@@ -29,6 +29,7 @@ import { AsyncLocalStorageContextManager } from 'npm:@opentelemetry/context-asyn
 import { LangfuseSpanProcessor } from 'npm:@langfuse/otel@5.11.1';
 import { propagateAttributes } from 'npm:@langfuse/core@5.11.1';
 import { gatewayCostUsd } from '../ai/usage.ts';
+import { background } from './runtime.ts';
 
 export type TracingEnvironment = 'dev' | 'production' | 'experiment';
 
@@ -79,13 +80,6 @@ export interface Tracing {
 
 const NO_ROOT: TurnRoot = { finish: () => {}, fail: () => {} };
 const NO_TRACING: Tracing = { telemetry: () => ({ isEnabled: false }), turn: (_a, fn) => fn(NO_ROOT), call: (_a, fn) => fn(), flush: () => Promise.resolve() };
-
-/** The runtime's background-work hook: what keeps a flush alive after the response. Detached where there is none. */
-function background(p: Promise<unknown>): void {
-  // deno-lint-ignore no-explicit-any
-  const rt = (globalThis as any).EdgeRuntime;
-  if (rt?.waitUntil) rt.waitUntil(p); else void p.catch(() => {});
-}
 
 const warn = (what: string, e: unknown) => console.error(`[langfuse] ${what}:`, (e as Error)?.message ?? e);
 const serialized = (v: unknown): string => (typeof v === 'string' ? v : JSON.stringify(v));

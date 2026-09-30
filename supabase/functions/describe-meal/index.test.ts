@@ -443,11 +443,12 @@ oneCallOneRow({
 });
 
 // ---------------------------------------------------------------------------
-// I. A described meal is traced to Langfuse (langfuse ticket 09)
+// I. A described meal is traced to Langfuse, and worded there (langfuse tickets 09, 11)
 // ---------------------------------------------------------------------------
 
 mealAnalysisIsTraced({
   fn: 'describe-meal',
   request: { description: 'two eggs on toast with butter and OJ' },
   input: (root) => assertEquals(root.attributes['langfuse.observation.input'], 'two eggs on toast with butter and OJ', "the athlete's words"),
+  prompt: { name: 'vana/meal/describe', bundledText: DESCRIBE_MEAL_INSTRUCTIONS, bundledModel: DESCRIBE_MEAL_MODEL },
 });

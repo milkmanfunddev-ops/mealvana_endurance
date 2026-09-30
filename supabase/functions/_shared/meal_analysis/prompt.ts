@@ -18,7 +18,12 @@
  * shape is now right, so the day the instructions grow — or the day the
  * minimum drops — the cache starts working with no further change. The saving
  * that is real today is the photo downscale, on the client.
+ *
+ * The instructions live in Langfuse (langfuse ticket 11), one prompt per function, with the function's model in the
+ * prompt's config. The text below is the bundled copy: what runs when Langfuse cannot be reached, and what each
+ * prompt was created from. The shape, the cache marker and the output schema stay in code.
  */
+import { instancePrompts } from '../langfuse/prompts.ts';
 
 /**
  * The cache marker: a one-hour lifetime rather than the default five minutes,
@@ -94,8 +99,19 @@ ${SHARED_RULES}
 
 Return your answer as structured JSON matching the requested schema.`;
 
-// The AI SDK's message types are not imported here: this module is pure data and
-// the functions pass its result straight to `generateObject`.
+/** The two prompts by their names in Langfuse. */
+export const DESCRIBE_MEAL_PROMPT = 'vana/meal/describe';
+export const MEAL_PHOTO_PROMPT = 'vana/meal/photo';
+/** The bundled copy of each, by name. */
+export const MEAL_PROMPT_TEMPLATES = {
+  [DESCRIBE_MEAL_PROMPT]: DESCRIBE_MEAL_INSTRUCTIONS,
+  [MEAL_PHOTO_PROMPT]: MEAL_PHOTO_INSTRUCTIONS,
+} as const;
+/** The function instance's source for them: held between calls, so most calls fetch nothing. */
+export const mealPrompts = instancePrompts(MEAL_PROMPT_TEMPLATES);
+
+// The AI SDK's message types are not imported here: the functions pass this
+// module's result straight to `generateObject`.
 type TextPart = { type: 'text'; text: string };
 type ImagePart = { type: 'image'; image: string; mediaType: string };
 /** The cached, athlete-free prefix. */
@@ -128,25 +144,28 @@ function instructions(content: string): InstructionMessage {
   return { role: 'system', content, providerOptions: MEAL_ANALYSIS_CACHE_OPTIONS };
 }
 
-/** A described meal: fixed instructions, then the athlete's words and nothing else. */
-export function describeMealPrompt(description: string): MealAnalysisPrompt {
+/** A described meal: fixed instructions, then the athlete's words and nothing else. `wording` is the instructions as
+ *  Langfuse holds them; left out, the bundled copy. */
+export function describeMealPrompt(description: string, wording: string = DESCRIBE_MEAL_INSTRUCTIONS): MealAnalysisPrompt {
   return {
-    system: instructions(DESCRIBE_MEAL_INSTRUCTIONS),
+    system: instructions(wording),
     messages: [{ role: 'user', content: [{ type: 'text', text: description.trim() }] }],
   };
 }
 
-/** A meal photo: fixed instructions, then the photo and any words typed with it. */
+/** A meal photo: fixed instructions, then the photo and any words typed with it. `wording` is the instructions as
+ *  Langfuse holds them; left out, the bundled copy. */
 export function mealPhotoPrompt(
-  { base64Image, mediaType, description }: {
+  { base64Image, mediaType, description, wording = MEAL_PHOTO_INSTRUCTIONS }: {
     base64Image: string;
     mediaType: string;
     description?: string;
+    wording?: string;
   },
 ): MealAnalysisPrompt {
   const words = description?.trim() ?? '';
   return {
-    system: instructions(MEAL_PHOTO_INSTRUCTIONS),
+    system: instructions(wording),
     messages: [{
       role: 'user',
       content: [

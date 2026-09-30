@@ -48,7 +48,11 @@ import {
   NOT_FOOD_STATUS,
   sentToAthlete,
 } from "../_shared/meal_analysis/finalize.ts";
-import { describeMealPrompt } from "../_shared/meal_analysis/prompt.ts";
+import {
+  DESCRIBE_MEAL_PROMPT,
+  describeMealPrompt,
+  mealPrompts,
+} from "../_shared/meal_analysis/prompt.ts";
 import { initSentry, withSentry } from "../_shared/sentry.ts";
 import { refuseUnlessPro } from "../_shared/vana/entitlement.ts";
 import { type BudgetHold, reserveBudget } from "../_shared/ai/credits.ts";
@@ -56,6 +60,7 @@ import { reserveCall } from "../_shared/vana/rate-limit.ts";
 import { finishMealCall } from "../_shared/meal_analysis/call_log.ts";
 import { cacheReadTokens, cacheWriteTokens } from "../_shared/vana/stream.ts";
 import { defaultTracing } from "../_shared/langfuse/tracing.ts";
+import { callPrompt } from "../_shared/langfuse/prompts.ts";
 
 // ---------------------------------------------------------------------------
 // Environment
@@ -156,9 +161,14 @@ serve(withSentry(async (req: Request) => {
       );
     }
 
+    // The instructions and the model are the ones Langfuse holds (langfuse ticket 11); `DESCRIBE_MEAL_MODEL` is what
+    // runs when the prompt names no model, and the bundled instructions when Langfuse cannot be reached.
+    const wording = await callPrompt(mealPrompts, DESCRIBE_MEAL_PROMPT, DESCRIBE_MEAL_MODEL);
+    const model = wording.model;
+
     console.log(
       `[describe-meal] Processing description for user ${user.id}, ` +
-        `length: ${description.length} chars, model: ${DESCRIBE_MEAL_MODEL}`,
+        `length: ${description.length} chars, model: ${model}`,
     );
 
     // ── Service-role client (reused for credits + call log/ai_usage logging) ─
@@ -182,7 +192,7 @@ serve(withSentry(async (req: Request) => {
       serviceClient,
       user.id,
       "vana.describe_meal",
-      { model: DESCRIBE_MEAL_MODEL },
+      { model },
     );
     if (!reserved.allowed) {
       await hold.refund();
@@ -198,14 +208,20 @@ serve(withSentry(async (req: Request) => {
     // The call is one Trace in Langfuse (langfuse ticket 09): the athlete's words in, the analysis they were sent out.
     const tracing = defaultTracing();
     const result = await tracing.call(
-      { name: "describe-meal", userId: user.id, tags: ["describe-meal"], input: description.trim() },
+      {
+        name: "describe-meal",
+        userId: user.id,
+        tags: ["describe-meal"],
+        metadata: { promptSource: wording.origin },
+        input: description.trim(),
+      },
       () =>
         generateObject({
           experimental_telemetry: tracing.telemetry("describe-meal"),
-          model: DESCRIBE_MEAL_MODEL as Parameters<typeof generateObject>[0]["model"],
+          model: model as Parameters<typeof generateObject>[0]["model"],
           schema: MealAnalysisRequestSchema,
           maxOutputTokens: 1000,
-          ...describeMealPrompt(description),
+          ...describeMealPrompt(description, wording.text),
           allowSystemInMessages: false,
           providerOptions: {
             gateway: {
@@ -237,7 +253,7 @@ serve(withSentry(async (req: Request) => {
         userId: user.id,
         callId: reserved.callId,
         bucket: "vana.describe_meal",
-        model: DESCRIBE_MEAL_MODEL,
+        model,
         usage,
         providerMetadata: result.providerMetadata,
       }),
@@ -249,7 +265,7 @@ serve(withSentry(async (req: Request) => {
       logAiUsage(serviceClient, {
         userId: user.id,
         functionName: "describe-meal",
-        model: DESCRIBE_MEAL_MODEL,
+        model,
         inputTokens: usage?.inputTokens ?? 0,
         outputTokens: usage?.outputTokens ?? 0,
         costUsd,
@@ -261,7 +277,7 @@ serve(withSentry(async (req: Request) => {
     (globalThis as any).EdgeRuntime?.waitUntil?.(
       hold.settle({
         gatewayCostUsd: costUsd,
-        model: DESCRIBE_MEAL_MODEL,
+        model,
         inputTokens: usage?.inputTokens ?? 0,
         outputTokens: usage?.outputTokens ?? 0,
         cacheReadTokens: cacheReadTokens(usage),
@@ -287,7 +303,7 @@ serve(withSentry(async (req: Request) => {
       _usage: {
         input_tokens: usage?.inputTokens ?? 0,
         output_tokens: usage?.outputTokens ?? 0,
-        model: DESCRIBE_MEAL_MODEL,
+        model,
         cost_usd: costUsd,
       },
     });

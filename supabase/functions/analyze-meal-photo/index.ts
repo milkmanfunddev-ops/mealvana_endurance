@@ -51,7 +51,11 @@ import {
   NOT_FOOD_STATUS,
   sentToAthlete,
 } from "../_shared/meal_analysis/finalize.ts";
-import { mealPhotoPrompt } from "../_shared/meal_analysis/prompt.ts";
+import {
+  MEAL_PHOTO_PROMPT,
+  mealPhotoPrompt,
+  mealPrompts,
+} from "../_shared/meal_analysis/prompt.ts";
 import { initSentry, withSentry } from "../_shared/sentry.ts";
 import { refuseUnlessPro } from "../_shared/vana/entitlement.ts";
 import { type BudgetHold, reserveBudget } from "../_shared/ai/credits.ts";
@@ -59,6 +63,7 @@ import { reserveCall } from "../_shared/vana/rate-limit.ts";
 import { finishMealCall } from "../_shared/meal_analysis/call_log.ts";
 import { cacheReadTokens, cacheWriteTokens } from "../_shared/vana/stream.ts";
 import { defaultTracing } from "../_shared/langfuse/tracing.ts";
+import { callPrompt } from "../_shared/langfuse/prompts.ts";
 
 // ---------------------------------------------------------------------------
 // Environment
@@ -180,6 +185,11 @@ serve(withSentry(async (req: Request) => {
     }
     hold = budget.hold;
 
+    // The instructions and the model are the ones Langfuse holds (langfuse ticket 11); `ANALYZE_MEAL_PHOTO_MODEL` is
+    // what runs when the prompt names no model, and the bundled instructions when Langfuse cannot be reached.
+    const wording = await callPrompt(mealPrompts, MEAL_PHOTO_PROMPT, ANALYZE_MEAL_PHOTO_MODEL);
+    const model = wording.model;
+
     // ── Rate limit ───────────────────────────────────────────────────────────
     // The same shared Vana limiter as chat, on the server (mp-469 criterion 3): the row is written before the
     // model runs, so photos fired in parallel cannot race past the window. The refusal carries a code, never
@@ -188,7 +198,7 @@ serve(withSentry(async (req: Request) => {
       serviceClient,
       user.id,
       "vana.meal_photo",
-      { model: ANALYZE_MEAL_PHOTO_MODEL },
+      { model },
     );
     if (!reserved.allowed) {
       await hold.refund();
@@ -236,7 +246,7 @@ serve(withSentry(async (req: Request) => {
       : "image/jpeg";
 
     console.log(
-      `[analyze-meal-photo] Analyzing photo for user ${user.id}, path: ${photoPath}, model: ${ANALYZE_MEAL_PHOTO_MODEL}`,
+      `[analyze-meal-photo] Analyzing photo for user ${user.id}, path: ${photoPath}, model: ${model}`,
     );
 
     // Call Claude via Vercel AI Gateway.
@@ -253,15 +263,16 @@ serve(withSentry(async (req: Request) => {
           name: "analyze-meal-photo",
           userId: user.id,
           tags: ["analyze-meal-photo"],
+          metadata: { promptSource: wording.origin },
           input: { photo: `data:${mimeType};base64,${base64Image}`, ...(description ? { description } : {}) },
         },
         () =>
           generateObject({
             experimental_telemetry: tracing.telemetry("analyze-meal-photo"),
-            model: ANALYZE_MEAL_PHOTO_MODEL as Parameters<typeof generateObject>[0]["model"],
+            model: model as Parameters<typeof generateObject>[0]["model"],
             schema: MealAnalysisRequestSchema,
             maxOutputTokens: 1000,
-            ...mealPhotoPrompt({ base64Image, mediaType: mimeType, description }),
+            ...mealPhotoPrompt({ base64Image, mediaType: mimeType, description, wording: wording.text }),
             allowSystemInMessages: false,
             providerOptions: {
               gateway: {
@@ -284,7 +295,7 @@ serve(withSentry(async (req: Request) => {
         errStr.includes("not_food") || errStr.toLowerCase().includes("not food")
       ) {
         // The model ran and reported nothing usable about its cost: the reservation stands as the charge.
-        await hold.settle({ model: ANALYZE_MEAL_PHOTO_MODEL });
+        await hold.settle({ model });
         return jsonResponse(NOT_FOOD_BODY, NOT_FOOD_STATUS);
       }
       throw aiError;
@@ -306,7 +317,7 @@ serve(withSentry(async (req: Request) => {
         userId: user.id,
         callId: reserved.callId,
         bucket: "vana.meal_photo",
-        model: ANALYZE_MEAL_PHOTO_MODEL,
+        model,
         usage,
         providerMetadata: result.providerMetadata,
       }),
@@ -318,7 +329,7 @@ serve(withSentry(async (req: Request) => {
       logAiUsage(serviceClient, {
         userId: user.id,
         functionName: "analyze-meal-photo",
-        model: ANALYZE_MEAL_PHOTO_MODEL,
+        model,
         inputTokens: usage?.inputTokens ?? 0,
         outputTokens: usage?.outputTokens ?? 0,
         costUsd,
@@ -330,7 +341,7 @@ serve(withSentry(async (req: Request) => {
     (globalThis as any).EdgeRuntime?.waitUntil?.(
       hold.settle({
         gatewayCostUsd: costUsd,
-        model: ANALYZE_MEAL_PHOTO_MODEL,
+        model,
         inputTokens: usage?.inputTokens ?? 0,
         outputTokens: usage?.outputTokens ?? 0,
         cacheReadTokens: cacheReadTokens(usage),
@@ -356,7 +367,7 @@ serve(withSentry(async (req: Request) => {
       _usage: {
         input_tokens: usage?.inputTokens ?? 0,
         output_tokens: usage?.outputTokens ?? 0,
-        model: ANALYZE_MEAL_PHOTO_MODEL,
+        model,
         cost_usd: costUsd,
       },
     });

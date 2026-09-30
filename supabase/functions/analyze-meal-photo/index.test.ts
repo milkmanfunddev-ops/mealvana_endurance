@@ -478,7 +478,7 @@ oneCallOneRow({
 });
 
 // ---------------------------------------------------------------------------
-// A meal photo is traced to Langfuse, photo included (langfuse ticket 09)
+// A meal photo is traced to Langfuse, photo included, and worded there (langfuse tickets 09, 11)
 // ---------------------------------------------------------------------------
 
 const PHOTO_REQUEST = { photo_path: `${USER}/lunch.jpg`, description: 'the sauce is pesto' };
@@ -490,6 +490,7 @@ const traced = mealAnalysisIsTraced({
     assertEquals(input.description, 'the sauce is pesto', 'the words typed with the photo');
     assert(String(input.photo).startsWith('@@@langfuseMedia:type=image/jpeg|'), `the photo, as a reference to Langfuse's copy: ${input.photo}`);
   },
+  prompt: { name: 'vana/meal/photo', bundledText: MEAL_PHOTO_INSTRUCTIONS, bundledModel: ANALYZE_MEAL_PHOTO_MODEL },
 });
 
 Deno.test({
