@@ -2,8 +2,8 @@
 
 Written 2026-09-30, at the start of a `/grill-with-docs` session. Lee is replacing the bespoke
 eval and observability work with Langfuse and wants every Langfuse feature that fits: tracing,
-cost breakdowns, prompt management, evals, experiments, and review by Xuan. Nothing has been
-decided yet. Every item under "Open questions" still needs Lee's answer.
+cost breakdowns, prompt management, evals, experiments, and review by Xuan. The grilling
+finished the same day; Lee's decisions are under "Decisions" at the end.
 
 The notes one level up (`../README.md`, `../research.md`, `../alternatives-and-costs.md`,
 2026-09-29) argued against adopting Langfuse and preferred the "lean" option. Lee has overruled
@@ -17,6 +17,8 @@ that. Read them for background only.
 | `02-prompts-evals.md` | Prompt management, scores, LLM-as-a-judge, annotation queues, datasets, experiments (SDK, UI, remote), multi-turn simulation, error-analysis method |
 | `03-hosting-pricing.md` | Cloud plans, self-host architecture and cost, EE-gated features, running both, migration, privacy |
 | `04-video-summary.md` | "Langfuse Walkthrough" (Langfuse channel, 2026-09-18, youtube `THfB4p2xCFY`) mapped onto Vana |
+| `05-simulation-and-evaluators.md` | Whether Langfuse can run simulated conversations itself (no), the least code we own, the evaluator gallery, judges through the Gateway |
+| `06-true-cost-and-vercel-hosting.md` | Getting the Gateway's exact charge onto a generation, and staying on Supabase Edge versus moving to Vercel |
 | `video-transcript.md` | Timestamped paraphrase of the video (not verbatim) with the `yt-dlp` command to pull exact captions |
 
 ## Current state
@@ -160,109 +162,83 @@ using AI Gateway `"provider/model"` strings. There is no OpenTelemetry and no
 15. **Ownership.** ClickHouse acquired Langfuse on 2026-01-16. The MIT license and Cloud are
     stated to continue unchanged.
 
-## Open questions, round 1
+## Corrections to the facts above
 
-Each question lists its options and the recommendation (➡️). None of them is answered yet.
+- Fact 5: through the Gateway the model name that reaches Langfuse is the upstream ID
+  (`claude-haiku-4-5-20251001`), which does match Langfuse's built-in prices. Estimated cost
+  equalled the Gateway's charge to 8 decimals in five probe calls (`06`, section A).
+- Fact 5: a v4 dashboard widget can group cost by `userId` as a top-N table or bar.
 
-**Q1 Hosting.**
-- (a) Cloud only, on Core.
-- (b) Cloud on Hobby.
-- (c) Self-host.
-- (d) Both.
+## Decisions (Lee, 2026-09-30)
 
-➡️ (a) Cloud Core, US region. Self-hosting adds nothing Xuan needs, and running both doubles the
-work while prompts, scores and datasets never sync.
+**Scope**
+- The pivot is complete. The eval app's screens, Judge, Mark, Rubric and Scenario store go.
+  Langfuse's vocabulary replaces the eval glossary (`CONTEXT.md`, "Judging Vana").
+- Turn, Step and Conversation stay as app words: a Turn is a trace, a Step a generation, a
+  Conversation a session.
+- The Call log, Wallet and Monthly budget stay and keep enforcing spend. Langfuse shows cost.
 
-**Q2 What gets traced.**
-- (a) The eval app only.
-- (b) (a) plus dev edge functions.
-- (c) (b) plus prod: every AI call site above.
+**Hosting and plan**
+- Langfuse Cloud, US region, Hobby. Stay on Hobby until a limit is actually hit; with one
+  annotation queue allowed, delete each queue before making the next.
+- A Docker Langfuse on Lee's Mac comes later, as a sandbox for trying features and heavy
+  experiment batches. Deployed edge functions cannot reach it, so Cloud is where Xuan works and
+  where dev and prod traces go.
+- Vana stays on Supabase Edge. Prove tracing with one dev deploy; if the SDK fails there, send
+  OTLP by hand.
+- The orchestrator-with-subagents idea gets its own grilling after tracing exists, then a
+  Langfuse experiment compares it with today's single Vana.
 
-➡️ (c). Live judges, review queues and cost per athlete all need real traffic.
+**Tracing**
+- Dev first, then prod once dev is proven and the privacy documents name Langfuse. Prod sends
+  everything, meal photos included.
+- Trace every chat Turn, describe-meal, meal photo and the background calls. Leave embeddings out.
+- Langfuse shows the Gateway's true charge on each generation.
 
-**Q3 Projects and environments.**
-- (a) One project, with environments `production`, `development` and `eval`.
-- (b) Separate prod and dev projects.
+**Prompts**
+- All static prompt text and each call's model choice move to Langfuse. The Context block builder
+  and tool definitions stay in code. Code carries a bundled copy for outages.
+- Dev reads the `latest` label and prod reads `production`. Moving `production` is publishing;
+  moving it back is the undo. No `staging` label and no gate.
 
-➡️ (a). Datasets, prompts, judges and queues belong to a project, so a prod failure can become
-a dataset item and a prompt can be promoted from dev to prod in one place.
+**Evaluation**
+- Start with Langfuse's ready-made user-signal evaluators to flag conversations for review.
+- Two custom evaluators from day one: the dietitian evaluator and the robotic check. Others come
+  from what review finds. Tool expectations become code checks.
+- The dietitian evaluator is pass or fail, tuned to agree with Xuan's labels. Dr. Mitchell is
+  out of scope.
+- The 22 Scenarios in `eval/scenarios` carry over as the first dataset.
+- Experiments on full Vana run through one endpoint: `../mealvana_eval` stripped to the Custom
+  Experiment webhook on Vercel.
+- Xuan has the Member role and does everything: review, corrections, prompts, starting runs.
 
-**Q4 Athlete data in prod traces.** This covers the Context block (profile, workouts, meals,
-macros, memories) and meal photos.
-- (a) Send everything, with 90-day retention and Langfuse added to the subprocessors in
-  `docs/privacy`.
-- (b) Send everything except photos.
-- (c) Mask identifying fields.
+**Models and spend**
+- Never Opus. Evaluators start on Haiku 4.5 and move to Sonnet 5.5 only if agreement with Xuan
+  is poor. Simulated athlete on Haiku 4.5. Vana chat stays on Haiku 4.5. Describe-meal and meal
+  photo move from Sonnet 4.6 to Sonnet 5.5 after one experiment confirms quality.
+- The Gateway's prepaid credits are the overall backstop. The evals key gets its own $20 monthly
+  budget so evaluators and experiments cannot drain prod's balance.
 
-➡️ (a). Also confirm that nutrition data is not PHI for us.
+**Athlete feedback**
+- First: a conversation-signal evaluator (corrections, repeats, frustration) and a Score when a
+  plan is confirmed or its Draft abandoned.
+- Later, as its own ticket: thumbs down with a reason picker.
+- Not doing: a signal for planned meals being logged later, or for swapping a meal Vana placed
+  (the athlete ticks meals from the Meal picker; Vana rarely places them).
+- Wiredash and shake-to-report stay for general bug reports.
 
-**Q5 The eval app's role.**
-- (a) The eval app stays the runner and Langfuse becomes the record and UI.
-  - Scenarios become dataset items and Runs become experiment runs.
-  - The Simulated athlete, `vana-eval` and the data diff stay.
-  - Tickets 09–11 are dropped in favour of Langfuse comparison.
-- (b) Build both systems in full.
-- (c) Retire the eval app.
+**Tooling**
+- The Langfuse skill, CLI and MCP server (read and write) are installed; keys in
+  `secrets/langfuse.env`.
 
-➡️ (a). Langfuse's simulation guide has the same shape as ours but no simulator.
+**Order of work**
+1. Prove tracing on dev: one function, the trace arrives, its cost equals the Call log's.
+2. Trace every call site on dev with user, session and true cost.
+3. Move prompts into Langfuse.
+4. Strip the eval repo to the Run endpoint; carry the Scenarios into a dataset.
+5. Flag evaluators, dietitian evaluator, robotic check, first review queue with Xuan.
+6. Privacy documents updated, then prod tracing on.
+7. Later and separate: thumbs down UI, Docker sandbox, orchestrator comparison.
 
-**Q6 Prompt management.**
-- (a) Move every prompt into Langfuse, fetched at runtime in prod, with a copy in code as
-  fallback.
-- (b) Dev and eval only.
-- (c) Record the prompt version in metadata only.
-
-➡️ (a). The fetch cost is small and the copy in code covers outages. The tradeoff: when the
-fallback serves, that generation loses its prompt link.
-
-**Q7 Where cost truth lives.**
-- (a) The budget, Wallet and Call log stay in code as the enforcement. We send the exact Gateway
-  cost into Langfuse for analysis.
-- (b) Langfuse estimates cost from custom prices.
-- (c) Langfuse replaces the Call log.
-
-➡️ (a). Budget enforcement must not depend on a third party.
-
-**Q8 Flutter.**
-- (a) No direct Langfuse link. Server traces carry the user and use the conversation as the
-  session.
-  - Add a new thumbs up/down on each Vana reply: the app calls `vana-action`, which posts a
-    Langfuse score.
-  - `saveFeedback` also becomes a score.
-- (b) Same, with no thumbs UI.
-- (c) The app posts scores directly with the public key.
-
-➡️ (a). The thumbs UI is a product decision for Lee.
-
-**Q9 Xuan's jobs in Langfuse** (multi-select).
-- (a) Review queues.
-- (b) Edit and promote prompts.
-- (c) Start Custom Experiments.
-- (d) Dashboards only.
-
-➡️ (a) + (b) + (c), with the Member role.
-
-## Later rounds (blocked on round 1)
-
-- **The Judge and Mark versus Langfuse's binary judge-per-failure-mode pattern.**
-  - Whether our Judge posts scores through the API or becomes managed evaluators.
-  - How a conversation-level judgement is represented.
-  - The glossary clash: our CONTEXT says avoid "score", but Langfuse's primitive is the Score.
-- **Live LLM-as-judge on sampled prod traffic.** Which failure modes, what sampling rate, which
-  judge model (through the Gateway's OpenAI-compatible endpoint), and the monthly cost ceiling.
-- **Error-analysis loop.** Queue design (a flagged queue plus a random-sample queue), who codes
-  failures, and where the failure taxonomy lives.
-- **Datasets.** Seeding from existing Scenarios, prod-trace-to-dataset flow, reference-based
-  versus reference-free datasets, and whether experiments gate CI.
-- **Runtime.** A Deno and Sentry OpenTelemetry coexistence canary; whether the edge functions
-  move to AI SDK 7; flush and latency impact on streaming chat.
-- **Trace shape for a Vana Turn.** Mapping trace, generation, tool and step, plus where
-  `onTrace` fits. Also whether to trace embeddings, background extraction and the changelog
-  script.
-- **Dashboards and alerts.** Cost per athlete, feature, model and prompt version; spend and
-  error alerts to Slack.
-- **Langfuse MCP server and coding-agent skill.** Read-only or write access, and for whom.
-- **Secrets.** Where keys live: `secrets/langfuse.env`, Supabase function secrets for dev and
-  prod, and Vercel env for the eval app.
-- **Sequencing.** Where this sits relative to the testing-wave fixes and eval-v2 ticket 08's
-  uncommitted work. The eval-v2 spec's "Langfuse optional later" clause needs rewriting.
+Langfuse work starts now, alongside the testing-wave fix tickets. The uncommitted eval-v2 ticket
+08 work is discarded except the Run overrides, if the Run button's settings need them.

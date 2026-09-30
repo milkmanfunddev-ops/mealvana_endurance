@@ -531,4 +531,48 @@ _Avoid_: Additional test, test idea
 
 ### Judging Vana
 
-Scenarios, Eval athletes, Runs, the Judge, Marks and the Rubric are defined in the eval repo's glossary, `../mealvana_eval/CONTEXT.md`. The `vana-eval` edge function and the `eval` schema live here; the web app lives there.
+Vana is judged in Langfuse, and its words are used for its own things. The eval repo's older words (Scenario, Run, Eval round, Judge, Mark, Rubric) are retired.
+
+**Trace**:
+Langfuse's record of one Turn: every Step and Tool call inside it, with what each read, wrote and cost.
+_Avoid_: Log, Turn trace
+
+**Generation**:
+Langfuse's record of one Step, the single model call, with its tokens and cost.
+_Avoid_: LLM call, completion
+
+**Session**:
+Langfuse's grouping of the traces of one Conversation.
+_Avoid_: Thread
+
+**Dataset item**:
+One saved test conversation to put to Vana: the Eval athlete it starts from, the persona and goal of the Simulated athlete, the opening turn and any Tool expectations.
+_Avoid_: Scenario (retired), test case
+
+**Experiment**:
+One pass of a dataset through Vana under one set of settings, such as a prompt version or a model, judged and kept beside earlier passes for comparison.
+_Avoid_: Eval round, Run (both retired)
+
+**Evaluator**:
+Something that scores Vana's work: a model given one question to answer about a conversation, or a check written in code. Each one looks for one thing.
+_Avoid_: Judge, grader (the Image Judge is a different thing and keeps its name)
+
+**Score**:
+One judgement recorded against a trace, a session or an experiment, from an Evaluator, a reviewer or an athlete. Usually yes or no, with the reason.
+_Avoid_: Mark (retired), rating (the meal library's text ranking)
+
+**Dietitian evaluator**:
+The Evaluator that answers whether a sports dietitian would say this to this athlete. It is tuned until it agrees with Xuan's own pass-or-fail labels.
+_Avoid_: Dietitian judgment (the retired Rubric dimension)
+
+**Simulated athlete**:
+The model that plays the athlete in an Experiment, improvising within its persona and goal and answering Vana's choices in words, never by tapping.
+_Avoid_: Examiner (retired), user bot
+
+**Eval athlete**:
+A stored snapshot of everything Vana reads about one person. Every Experiment item starts from a fresh copy, so what Vana writes never changes the snapshot.
+_Avoid_: Test account, persona (a persona is how the Simulated athlete talks, not the data)
+
+**Tool expectation**:
+Something a Dataset item declares Vana must or must not do with her Tools. Checked by code, never by a model.
+_Avoid_: Assertion, tool test
