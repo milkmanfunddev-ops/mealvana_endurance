@@ -22,7 +22,9 @@ import { TURN_TOKEN_CEILING, chatStopWhen, runChat, tokenBudgetIs } from '../../
 import { extraAction } from '../../_shared/vana/actions.ts';
 import { testCtx, TEST_USER_ID } from './support/vana_ctx.ts';
 import type { Row, Tables } from './support/fake_db.ts';
-import { assertOneTrace, failingExporter, generations, withTracedModel } from './support/traced_call.ts';
+import { assertOneTrace, failingExporter, generations, LANGFUSE_MODEL, LANGFUSE_WORDING, originOf, userTextOf, withPrompts, withTracedModel } from './support/traced_call.ts';
+import { PANTRY_PHOTO_INSTRUCTIONS } from '../../_shared/vana/pantry.ts';
+import { TOOL_MODEL } from '../../_shared/vana/env.ts';
 
 const U = TEST_USER_ID;
 const CONV = 'conv-guardrails';
@@ -299,4 +301,28 @@ Deno.test('Langfuse being down changes nothing a pantry photo writes or settles'
   assertEquals(traced.settled.length, 1);
   const stable = ({ id: _i, created_at: _c, ...r }: Row) => r;
   assertEquals(stable(pantryCall(traced.v)), stable(pantryCall(plain.v)), 'the same Call log row');
+});
+
+// ---------------------------------------------------------------- the pantry photo's wording and model (langfuse ticket 12)
+
+Deno.test("the pantry photo's instructions and model are the ones Langfuse holds", async () => {
+  const { v } = pantryCtx();
+  await withPrompts('held', (asked) => withTracedModel(PANTRY_ANSWER, PANTRY_COST, async (w) => {
+    await pantryPhoto(v);
+    assertEquals(asked, [['vana/background/pantry-photo', 'latest']], 'asked for by name');
+    assertEquals(userTextOf(w.modelCalls[0]), [LANGFUSE_WORDING], 'the instructions sit where they sat: after the photo');
+    assertEquals(w.modelCalls[0].modelId, LANGFUSE_MODEL, "the model the prompt's config names");
+    assertEquals(pantryCall(v).model, LANGFUSE_MODEL, 'the Call log names the model that ran');
+    assertEquals(originOf(await w.spans()), 'langfuse');
+  }));
+});
+
+Deno.test('when Langfuse cannot be reached the pantry photo runs on the bundled copy and the tool model, and the Trace says so', async () => {
+  const { v } = pantryCtx();
+  await withPrompts('down', () => withTracedModel(PANTRY_ANSWER, PANTRY_COST, async (w) => {
+    await pantryPhoto(v);
+    assertEquals(userTextOf(w.modelCalls[0]), [PANTRY_PHOTO_INSTRUCTIONS]);
+    assertEquals(w.modelCalls[0].modelId, TOOL_MODEL);
+    assertEquals(originOf(await w.spans()), 'fallback');
+  }));
 });

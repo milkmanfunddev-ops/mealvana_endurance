@@ -53,22 +53,27 @@ Deno.test('the background setting is apart from the chat setting: moving one doe
 
 const read = (p: string) => Deno.readTextFileSync(new URL(p, import.meta.url));
 
-Deno.test('the memory extraction, the rolling summary and the ingredient list all read the background setting', () => {
+// Since langfuse ticket 12 each job's model is named in its prompt's config in Langfuse. The background setting is what
+// runs when the config names none or Langfuse cannot be reached (extract, compaction and saved_ingredients tests drive
+// both through the real call); this pins that the three still fall back to it and to no other setting.
+Deno.test('the memory extraction, the rolling summary and the ingredient list all fall back to the background setting', () => {
   for (const file of ['../../_shared/vana/extract.ts', '../../_shared/vana/saved-ingredients.ts']) {
     const src = read(file);
     assert(src.includes('backgroundModel'), `${file} does not read the background setting`);
     assert(!/\bTOOL_MODEL\b/.test(src), `${file} still reads TOOL_MODEL`);
     assert(!/\bCHAT_MODEL\b/.test(src), `${file} reads the chat setting`);
   }
-  // Both extraction jobs live in extract.ts and each makes its own generateObject call; both must be moved.
+  // Both extraction jobs live in extract.ts and each resolves its own prompt; both must fall back to the setting.
   const extract = read('../../_shared/vana/extract.ts');
   assertEquals(
-    extract.match(/generateObject\(\{ model: backgroundModel\(\)/g)?.length,
+    extract.match(/callPrompt\(prompts, (EXTRACTION|SUMMARY)_PROMPT, backgroundModel\(\)\)/g)?.length,
     2,
-    'extract.ts should hand the background model to both generateObject calls (the extraction and the rolling summary)',
+    'extract.ts should fall back to the background model for both calls (the extraction and the rolling summary)',
   );
-  // And the ledger row records the model that was actually spent, not a stale constant.
-  assert(/functionName: 'vana\.ingredients', model: backgroundModel\(\)/.test(read('../../_shared/vana/saved-ingredients.ts')));
+  const ingredients = read('../../_shared/vana/saved-ingredients.ts');
+  assert(/callPrompt\(prompts, INGREDIENTS_PROMPT, backgroundModel\(\)\)/.test(ingredients));
+  // And the ledger row records the model that actually ran, not a stale constant.
+  assert(/functionName: 'vana\.ingredients', model: wording\.model/.test(ingredients));
 });
 
 /**

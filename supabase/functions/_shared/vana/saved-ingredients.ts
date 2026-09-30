@@ -24,6 +24,7 @@ import { logCall } from './log.ts';
 import { checkRateLimit } from './rate-limit.ts';
 import { gatewayCostUsd } from '../ai/usage.ts';
 import { defaultTracing } from '../langfuse/tracing.ts';
+import { callPrompt, instancePrompts } from '../langfuse/prompts.ts';
 
 /** A saved_meals.items row as the app and the server write it (either name key; either quantity key). */
 export interface SavedItem { name?: string; food_name?: string; portion?: string | number | null; quantity?: string | number | null; serving?: string | number | null; calories?: number | null; carb_g?: number | null; carbs_g?: number | null; protein_g?: number | null; fat_g?: number | null; role?: string | null }
@@ -70,6 +71,13 @@ export const INGREDIENTS_SYSTEM = `You write the shopping ingredients for ONE se
 - The per-serving macros are given as a sanity check: your amounts should roughly add up to them. Do not invent ingredients the dish would not have.
 - Between 2 and 12 lines. Names lower-case, singular where natural ("egg" not "eggs" is fine either way).`;
 
+/** The prompt by its name in Langfuse (langfuse ticket 12). The text above is the bundled copy: what runs when
+ *  Langfuse cannot be reached, and what the prompt was created from. Its config names the model;
+ *  `VANA_BACKGROUND_MODEL` is what runs when it names none. */
+export const INGREDIENTS_PROMPT = 'vana/background/saved-meal-ingredients';
+export const INGREDIENTS_PROMPT_TEMPLATES = { [INGREDIENTS_PROMPT]: INGREDIENTS_SYSTEM } as const;
+const prompts = instancePrompts(INGREDIENTS_PROMPT_TEMPLATES);
+
 export function ingredientsPrompt(meal: { name: string; items: SavedItem[]; notes?: string | null; calories?: number | null; carbsG?: number | null; proteinG?: number | null; fatG?: number | null }): string {
   const macros = [['kcal', meal.calories], ['carbs g', meal.carbsG], ['protein g', meal.proteinG], ['fat g', meal.fatG]].filter(([, v]) => v != null).map(([k, v]) => `${k} ${v}`).join(', ');
   const items = meal.items.map((i) => `- ${itemName(i)}${itemQty(i) ? ` (${itemQty(i)})` : ''}`).join('\n');
@@ -90,12 +98,12 @@ export function toStoredIngredients(out: IngredientsOut): SavedIngredient[] {
 
 export interface IngredientDeps {
   /** The one model call. Injected so a test drives the writer from a fixed answer. */
-  generate: (input: { system: string; prompt: string }) => Promise<{ object: IngredientsOut; inputTokens?: number; outputTokens?: number; gatewayCostUsd?: number | null }>;
+  generate: (input: { system: string; prompt: string; model: string }) => Promise<{ object: IngredientsOut; inputTokens?: number; outputTokens?: number; gatewayCostUsd?: number | null }>;
 }
 /** Mutable on purpose: plan.ts calls the hook without a deps argument, so a test swaps `generate` here. */
 export const ingredientDeps: IngredientDeps = {
-  generate: async ({ system, prompt }) => {
-    const { object, usage, providerMetadata } = await generateObject({ model: backgroundModel(), experimental_telemetry: defaultTracing().telemetry('vana.ingredients'), schema: IngredientsZ, maxOutputTokens: 500, system, prompt });
+  generate: async ({ system, prompt, model }) => {
+    const { object, usage, providerMetadata } = await generateObject({ model, experimental_telemetry: defaultTracing().telemetry('vana.ingredients'), schema: IngredientsZ, maxOutputTokens: 500, system, prompt });
     return { object, inputTokens: usage?.inputTokens, outputTokens: usage?.outputTokens, gatewayCostUsd: gatewayCostUsd(providerMetadata) };
   },
 };
@@ -108,14 +116,15 @@ export async function extractIngredients(v: VanaCtx, saved: SavedRow, deps: Ingr
   const started = Date.now();
   const prompt = ingredientsPrompt({ name: saved.name, items: (saved.items ?? []) as SavedItem[], notes: saved.notes, calories: saved.calories, carbsG: saved.carbs_g == null ? null : Number(saved.carbs_g), proteinG: saved.protein_g == null ? null : Number(saved.protein_g), fatG: saved.fat_g == null ? null : Number(saved.fat_g) });
   // The call is a Trace of its own (langfuse ticket 10). A saved meal belongs to no Conversation, so it carries no Session.
+  const wording = await callPrompt(prompts, INGREDIENTS_PROMPT, backgroundModel());
   const { object, inputTokens, outputTokens, gatewayCostUsd: cost } = await defaultTracing().call(
-    { name: 'vana-saved-meal-ingredients', userId: v.userId, tags: ['background'], input: prompt },
-    () => deps.generate({ system: INGREDIENTS_SYSTEM, prompt }), (r) => r.object);
+    { name: 'vana-saved-meal-ingredients', userId: v.userId, tags: ['background'], metadata: { promptSource: wording.origin }, input: prompt },
+    () => deps.generate({ system: wording.text, prompt, model: wording.model }), (r) => r.object);
   const rows = toStoredIngredients(object);
   if (!rows.length) return null;
   const { data, error } = await v.db.from('saved_meals').update({ ingredients_json: rows, updated_at: new Date().toISOString() }).eq('id', saved.id).eq('user_id', v.userId).is('ingredients_json', null).select('id');
   if (error) throw new Error(error.message);
-  await logCall(v.admin, { userId: v.userId, functionName: 'vana.ingredients', model: backgroundModel(), inputTokens, outputTokens, gatewayCostUsd: cost });
+  await logCall(v.admin, { userId: v.userId, functionName: 'vana.ingredients', model: wording.model, inputTokens, outputTokens, gatewayCostUsd: cost });
   console.log(`[vana] ingredients for ${saved.id}: ${rows.length} line(s) in ${Date.now() - started}ms`);
   return (data ?? []).length ? rows : null;
 }

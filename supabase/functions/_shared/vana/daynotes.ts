@@ -30,11 +30,19 @@ import { checkRateLimit } from './rate-limit.ts';
 import type { AthleteContext, DaySlot, MealPlan } from './contracts.ts';
 import { gatewayCostUsd } from '../ai/usage.ts';
 import { defaultTracing } from '../langfuse/tracing.ts';
+import { callPrompt, instancePrompts } from '../langfuse/prompts.ts';
 
 const NotesZ = z.object({ notes: z.array(z.object({ date: z.string(), text: z.string() })).min(1).max(8) });
 
 export const DAY_NOTE_SYSTEM =
   `You are Vana, an endurance-nutrition assistant. Write ONE short message (max 2 sentences, ≤ 30 words) for EACH of the dates listed, telling the athlete how to use their meal plan that day given their training. Be concrete: name a plan meal when it fits (e.g. "long ride → the rice bowl at lunch, extra serving at dinner"), mention the carb target only if it matters that day, keep rest days light. A date with meals already assigned is about those meals; a date with none may draw on any meal in the plan. Minimums framing, never weight or calorie-restriction language, no greetings, no emoji. Only use numbers that appear in the context, written as the athlete reads them: "412 g of carbs", "140 g of protein", never "412g carbs", "412C" or "140P".`;
+
+/** The prompt by its name in Langfuse (langfuse ticket 12). The text above is the bundled copy: what runs when
+ *  Langfuse cannot be reached, and what the prompt was created from. Its config names the model; `VANA_TOOL_MODEL` is
+ *  what runs when it names none. */
+export const DAY_NOTES_PROMPT = 'vana/background/day-notes';
+export const DAY_NOTES_PROMPT_TEMPLATES = { [DAY_NOTES_PROMPT]: DAY_NOTE_SYSTEM } as const;
+const prompts = instancePrompts(DAY_NOTES_PROMPT_TEMPLATES);
 
 /** How long a claim is honoured before another request may take it over (an isolate that died mid-generation). */
 export const CLAIM_TTL_SECONDS = 120;
@@ -42,7 +50,7 @@ const SLOTS: readonly DaySlot[] = ['breakfast', 'lunch', 'dinner', 'snack'];
 
 export interface DayNotesDeps {
   /** The one model call. Injected so a test drives the writer from a fixed set of notes. */
-  generate: (input: { system: string; prompt: string; dates: string[] }) => Promise<{ notes: { date: string; text: string }[]; inputTokens?: number; outputTokens?: number; gatewayCostUsd?: number | null }>;
+  generate: (input: { system: string; prompt: string; dates: string[]; model: string }) => Promise<{ notes: { date: string; text: string }[]; inputTokens?: number; outputTokens?: number; gatewayCostUsd?: number | null }>;
   /** The athlete context the notes and the fingerprints are both read from. */
   buildContext: (v: VanaCtx, anchorDate: string) => Promise<AthleteContext>;
   /** A token → this request owns the plan's generation and releases it with that token. `true` → the claim could not
@@ -56,8 +64,8 @@ export interface DayNotesDeps {
 }
 
 export const defaultDayNotesDeps: DayNotesDeps = {
-  generate: async ({ system, prompt }) => {
-    const { object, usage, providerMetadata } = await generateObject({ model: TOOL_MODEL, experimental_telemetry: defaultTracing().telemetry('vana.daynotes'), schema: NotesZ, maxOutputTokens: 900, system, prompt });
+  generate: async ({ system, prompt, model }) => {
+    const { object, usage, providerMetadata } = await generateObject({ model, experimental_telemetry: defaultTracing().telemetry('vana.daynotes'), schema: NotesZ, maxOutputTokens: 900, system, prompt });
     return { notes: object.notes, inputTokens: usage?.inputTokens, outputTokens: usage?.outputTokens, gatewayCostUsd: gatewayCostUsd(providerMetadata) };
   },
   buildContext: (v, anchorDate) => buildAthleteContext(v, anchorDate),
@@ -197,9 +205,10 @@ export async function generateDayNotes(v: VanaCtx, plan: MealPlan, anchorDate: s
     if (plan.dayNotesStale !== false) await v.db.from('meal_plans').update({ day_notes_stale: false }).eq('id', plan.id);
     // The call is a Trace of its own (langfuse ticket 10). The notes belong to a plan, so it carries no Session.
     const prompt = notesPrompt(plan, ctx, dirty);
+    const wording = await callPrompt(prompts, DAY_NOTES_PROMPT, TOOL_MODEL);
     const { notes: written, inputTokens, outputTokens, gatewayCostUsd: cost } = await defaultTracing().call(
-      { name: 'vana-day-notes', userId: v.userId, tags: ['background'], input: prompt },
-      () => deps.generate({ system: DAY_NOTE_SYSTEM, prompt, dates: dirty }), (r) => r.notes);
+      { name: 'vana-day-notes', userId: v.userId, tags: ['background'], metadata: { promptSource: wording.origin }, input: prompt },
+      () => deps.generate({ system: wording.text, prompt, dates: dirty, model: wording.model }), (r) => r.notes);
     const fresh: Record<string, string> = {};
     const keys: Record<string, string> = {};
     for (const n of written) if (dirty.includes(n.date) && n.text.trim()) { fresh[n.date] = ruledWording(n.text.trim()); keys[n.date] = want[n.date]; }
@@ -209,7 +218,7 @@ export async function generateDayNotes(v: VanaCtx, plan: MealPlan, anchorDate: s
       day_notes_keys: { ...stored.keys, ...keys },
       day_notes_at: new Date().toISOString(),
     }).eq('id', plan.id);
-    await logCall(v.admin, { userId: v.userId, functionName: 'vana.daynotes', model: TOOL_MODEL, inputTokens, outputTokens, gatewayCostUsd: cost });
+    await logCall(v.admin, { userId: v.userId, functionName: 'vana.daynotes', model: wording.model, inputTokens, outputTokens, gatewayCostUsd: cost });
     console.log(`[vana] day notes for ${plan.id}: ${dirty.length} of ${dates.length} days in ${Date.now() - started}ms`);
     return notes;
   } catch (e) {

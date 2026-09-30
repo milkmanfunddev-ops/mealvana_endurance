@@ -3,10 +3,10 @@
 import type { UiAction, VanaPart, DaySlot, DayPlan, ShoppingItem, MealType } from './contracts.ts';
 import type { UIMessage } from 'npm:ai@6.0.277';
 import type { VanaCtx } from './env.ts';
-import { today, TOOL_MODEL } from './env.ts';
+import { today } from './env.ts';
 import * as plan from './plan.ts';
 import { setSetting, forgetMemory, listMemories, isCoverageScope, isDayKey, isPeriodDays, isMealTypes, PERIOD_DAYS_MIN, PERIOD_DAYS_MAX, type SettingValue } from './memory.ts';
-import { detectPantryFromPhoto, persistAssistantPart } from './pantry.ts';
+import { detectPantryFromPhoto, pantryPhotoWording, persistAssistantPart } from './pantry.ts';
 import { completeCall, reserveCallOrThrow } from './rate-limit.ts';
 import { reserveBudgetOrThrow } from '../ai/credits.ts';
 import { diagnoseStaples, dayGuidance, dayGuidanceLine, draftWeekPlan, mealPickerPart, planDayPart, planWeekPart, type PickerArgs } from './tools.ts';
@@ -145,10 +145,12 @@ export async function extraAction(v: VanaCtx, type: string, p: Record<string, an
       // for the budget and 429 rate_limited for the limiter, and a reservation the limiter or the model failed goes back.
       const hold = await reserveBudgetOrThrow(v.admin, v.userId, 'vana-pantry-photo');
       let callId: string | null;
-      try { callId = await reserveCallOrThrow(v.admin, v.userId, 'vana.pantry_photo', { model: TOOL_MODEL }); } catch (e) { await hold.refund(); throw e; }
+      // The model is the one the pantry photo's prompt names in Langfuse (langfuse ticket 12), so the reserved row names it.
+      const wording = await pantryPhotoWording();
+      try { callId = await reserveCallOrThrow(v.admin, v.userId, 'vana.pantry_photo', { model: wording.model }); } catch (e) { await hold.refund(); throw e; }
       let part;
       try {
-        part = await detectPantryFromPhoto(v, String(pick(p, 'photoPath', 'photo_path')), async (t) => { await completeCall(v.admin, callId, { inputTokens: t.inputTokens, outputTokens: t.outputTokens, cacheReadTokens: t.cacheReadTokens, cacheWriteTokens: t.cacheWriteTokens, gatewayCostUsd: t.gatewayCostUsd, steps: 1, debited: true, conversationId }); await hold.settle(t); }, conversationId);
+        part = await detectPantryFromPhoto(v, String(pick(p, 'photoPath', 'photo_path')), { conversationId, wording, onUsage: async (t) => { await completeCall(v.admin, callId, { inputTokens: t.inputTokens, outputTokens: t.outputTokens, cacheReadTokens: t.cacheReadTokens, cacheWriteTokens: t.cacheWriteTokens, gatewayCostUsd: t.gatewayCostUsd, steps: 1, debited: true, conversationId }); await hold.settle(t); } });
       } catch (e) { await hold.refund(); throw e; }
       const messageId = await persistAssistantPart(v, conversationId, part, part.items.length ? 'Here is what I could see — untick anything that is wrong, add what I missed, then tap Use these.' : 'I could not spot food in that photo. Add what you have and tap Use these.'); return { parts: [part], messageId }; }
     case 'rewind': {

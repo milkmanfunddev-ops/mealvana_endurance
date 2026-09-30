@@ -1,5 +1,6 @@
 /**
- * What a test needs to watch one background model call leave for Langfuse (langfuse ticket 10): a mock model behind
+ * What a test needs to watch one background model call leave for Langfuse (langfuse ticket 10) and take its wording
+ * and model from Langfuse (ticket 12): a fake in place of Langfuse's prompt API; a mock model behind
  * the AI SDK's default provider, answering one structured object with the gateway's charge the way the gateway
  * reports it; a span collector in place of Langfuse's exporter, installed as the function instance's tracing; and the
  * runtime's background-work hook, recorded so the flush can be waited for.
@@ -8,6 +9,7 @@ import { assert, assertEquals } from 'https://deno.land/std@0.177.1/testing/asse
 import { MockLanguageModelV3, MockProviderV3 } from 'npm:ai@6.0.277/test';
 import { InMemorySpanExporter, type ReadableSpan, type SpanExporter } from 'npm:@opentelemetry/sdk-trace-base@2.11.0';
 import { createTracing, setDefaultTracing } from '../../../_shared/langfuse/tracing.ts';
+import { setPromptFetch } from '../../../_shared/langfuse/prompts.ts';
 
 // deno-lint-ignore no-explicit-any
 type CallOptions = any;
@@ -96,3 +98,26 @@ export function assertOneTrace(spans: ReadableSpan[], want: { name: string; user
   assertEquals(costOf(costed[0])!.total, want.cost, "Langfuse's cost equals vana_calls.gateway_cost_usd");
   return roots[0];
 }
+
+// ---------------------------------------------------------------- wording and model (langfuse ticket 12)
+
+export const LANGFUSE_WORDING = 'Wording from Langfuse.';
+export const LANGFUSE_MODEL = 'anthropic/claude-sonnet-5.5';
+
+/** Runs `body` with Langfuse's prompt API answering every name with `LANGFUSE_WORDING` and `LANGFUSE_MODEL`
+ *  (`held`), or failing (`down`). `asked` is each prompt asked for, as [name, label]. */
+export async function withPrompts<T>(langfuse: 'held' | 'down', body: (asked: string[][]) => Promise<T>): Promise<T> {
+  const asked: string[][] = [];
+  setPromptFetch((name, label) => {
+    asked.push([name, label]);
+    return langfuse === 'down' ? Promise.reject(new Error('langfuse is down')) : Promise.resolve({ text: LANGFUSE_WORDING, version: 7, config: { model: LANGFUSE_MODEL } });
+  });
+  try { return await body(asked); } finally { setPromptFetch(null); }
+}
+/** The system messages a model call was sent. */
+export const systemOf = (call: ModelCall): string[] => (call.options.prompt as { role: string; content: string }[]).filter((m) => m.role === 'system').map((m) => m.content);
+/** The text parts of the user message a model call was sent. */
+export const userTextOf = (call: ModelCall): string[] => (call.options.prompt as { role: string; content: { type: string; text?: string }[] }[])
+  .filter((m) => m.role === 'user').flatMap((m) => m.content).filter((part) => part.type === 'text').map((part) => part.text ?? '');
+/** Where the Trace says the call's wording came from. */
+export const originOf = (spans: ReadableSpan[]) => spans.find((s) => !s.parentSpanContext)?.attributes['langfuse.trace.metadata.promptSource'];

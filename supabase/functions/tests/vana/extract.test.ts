@@ -6,12 +6,13 @@
  * which conversation gets read — not the model's judgement, which the judging rounds cover.
  */
 import { assert, assertEquals } from 'https://deno.land/std@0.177.1/testing/asserts.ts';
-import { extractConversation, transcriptOf, extractionPrompt } from '../../_shared/vana/extract.ts';
+import { extractConversation, transcriptOf, extractionPrompt, EXTRACTOR_SYSTEM } from '../../_shared/vana/extract.ts';
 import type { Extraction, ExtractDeps } from '../../_shared/vana/extract.ts';
 import { listMemories, episodeFor } from '../../_shared/vana/memory.ts';
 import { testCtx, TEST_USER_ID } from './support/vana_ctx.ts';
 import type { Row, Tables } from './support/fake_db.ts';
-import { assertOneTrace, failingExporter, withTracedModel } from './support/traced_call.ts';
+import { assertOneTrace, failingExporter, LANGFUSE_MODEL, LANGFUSE_WORDING, originOf, systemOf, withPrompts, withTracedModel } from './support/traced_call.ts';
+import { backgroundModel } from '../../_shared/vana/env.ts';
 
 const U = TEST_USER_ID;
 const CONV = 'conv-yesterday';
@@ -175,4 +176,29 @@ Deno.test('Langfuse being down changes nothing an extraction writes', async () =
   await withTracedModel(TWO_FACTS, EXTRACTION_COST, () => extractConversation(traced, CONV), { exporter: failingExporter });
   assertEquals(extractionWrites(traced), extractionWrites(plain));
   assertEquals(extractionWrites(traced).memories.length, 3, 'two notes and the episode');
+});
+
+// ---------------------------------------------------------------- wording and model (langfuse ticket 12)
+
+Deno.test("the extraction's instructions and model are the ones Langfuse holds", async () => {
+  const v = testCtx(world());
+  await withPrompts('held', (asked) => withTracedModel(TWO_FACTS, EXTRACTION_COST, async (w) => {
+    await extractConversation(v, CONV);
+    assertEquals(asked, [['vana/background/extraction', 'latest']], 'asked for by name');
+    assertEquals(systemOf(w.modelCalls[0]), [LANGFUSE_WORDING]);
+    assertEquals(w.modelCalls[0].modelId, LANGFUSE_MODEL, "the model the prompt's config names");
+    assertEquals(v.fake.writesTo('vana_calls', 'insert').find((c) => c.values.function_name === 'vana.extract')!.values.model, LANGFUSE_MODEL, 'the Call log names the model that ran');
+    assertEquals(w.modelCalls[0].options.responseFormat?.type, 'json', 'the output schema is still the one in code');
+    assertEquals(originOf(await w.spans()), 'langfuse');
+  }));
+});
+
+Deno.test('when Langfuse cannot be reached the extraction runs on the bundled copy and the background model, and the Trace says so', async () => {
+  const v = testCtx(world());
+  await withPrompts('down', () => withTracedModel(TWO_FACTS, EXTRACTION_COST, async (w) => {
+    assertEquals((await extractConversation(v, CONV)).memories, 2);
+    assertEquals(systemOf(w.modelCalls[0]), [EXTRACTOR_SYSTEM]);
+    assertEquals(w.modelCalls[0].modelId, backgroundModel());
+    assertEquals(originOf(await w.spans()), 'fallback');
+  }));
 });

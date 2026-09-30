@@ -13,11 +13,12 @@ import { assert, assertEquals } from 'https://deno.land/std@0.177.1/testing/asse
 import type { UIMessage } from 'npm:ai@6.0.277';
 import { compactHistory, conversationMessages, replayHistory, summaryDueAt, summaryIndexAt, SUMMARY_CHUNK, SUMMARY_LEAD, VERBATIM_CAP } from '../../_shared/vana/chat.ts';
 import type { ReplayDeps } from '../../_shared/vana/chat.ts';
-import { parseSummaries, renderSummaries, writeSummary } from '../../_shared/vana/extract.ts';
+import { parseSummaries, renderSummaries, writeSummary, SUMMARY_SYSTEM } from '../../_shared/vana/extract.ts';
 import type { SummaryDeps } from '../../_shared/vana/extract.ts';
 import { testCtx, TEST_USER_ID } from './support/vana_ctx.ts';
 import type { Row, Tables } from './support/fake_db.ts';
-import { assertOneTrace, failingExporter, withTracedModel } from './support/traced_call.ts';
+import { assertOneTrace, failingExporter, LANGFUSE_MODEL, LANGFUSE_WORDING, originOf, systemOf, withPrompts, withTracedModel } from './support/traced_call.ts';
+import { backgroundModel } from '../../_shared/vana/env.ts';
 
 const U = TEST_USER_ID;
 const CONV = 'conv-long';
@@ -335,4 +336,28 @@ Deno.test('Langfuse being down changes nothing a rolling summary writes', async 
   await withTracedModel({ summary: SUMMARY_20 }, SUMMARY_COST, async () => await writeSummary(traced, CONV, 20, await history(traced)), { exporter: failingExporter });
   assertEquals(summaryWrites(traced), summaryWrites(plain));
   assertEquals(summaryWrites(traced).summary[1], 20);
+});
+
+// ---------------------------------------------------------------- wording and model (langfuse ticket 12)
+
+Deno.test("the rolling summary's instructions and model are the ones Langfuse holds", async () => {
+  const v = testCtx(world(30));
+  await withPrompts('held', (asked) => withTracedModel({ summary: SUMMARY_20 }, SUMMARY_COST, async (w) => {
+    await writeSummary(v, CONV, 20, await history(v));
+    assertEquals(asked, [['vana/background/summary', 'latest']], 'asked for by name');
+    assertEquals(systemOf(w.modelCalls[0]), [LANGFUSE_WORDING]);
+    assertEquals(w.modelCalls[0].modelId, LANGFUSE_MODEL, "the model the prompt's config names");
+    assertEquals(v.fake.writesTo('vana_calls', 'insert').find((c) => c.values.function_name === 'vana.summary')!.values.model, LANGFUSE_MODEL, 'the Call log names the model that ran');
+    assertEquals(originOf(await w.spans()), 'langfuse');
+  }));
+});
+
+Deno.test('when Langfuse cannot be reached the rolling summary runs on the bundled copy and the background model, and the Trace says so', async () => {
+  const v = testCtx(world(30));
+  await withPrompts('down', () => withTracedModel({ summary: SUMMARY_20 }, SUMMARY_COST, async (w) => {
+    assertEquals(await writeSummary(v, CONV, 20, await history(v)), { index: 20, text: SUMMARY_20 });
+    assertEquals(systemOf(w.modelCalls[0]), [SUMMARY_SYSTEM]);
+    assertEquals(w.modelCalls[0].modelId, backgroundModel());
+    assertEquals(originOf(await w.spans()), 'fallback');
+  }));
 });

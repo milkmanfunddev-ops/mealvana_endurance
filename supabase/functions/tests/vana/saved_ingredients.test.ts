@@ -4,13 +4,14 @@
  * extracts ingredients once (model faked) when such a meal joins a plan; the grocery builder prefers them.
  */
 import { assert, assertEquals } from 'https://deno.land/std@0.177.1/testing/asserts.ts';
-import { isDishLevel, hasQuantityUnit, ensureSavedMealIngredients, extractIngredients, toStoredIngredients, ingredientsPrompt, ingredientDeps } from '../../_shared/vana/saved-ingredients.ts';
+import { isDishLevel, hasQuantityUnit, ensureSavedMealIngredients, extractIngredients, toStoredIngredients, ingredientsPrompt, ingredientDeps, INGREDIENTS_SYSTEM } from '../../_shared/vana/saved-ingredients.ts';
 import type { IngredientDeps, IngredientsOut } from '../../_shared/vana/saved-ingredients.ts';
 import { savedMealIngredients, buildShoppingList } from '../../_shared/vana/grocery.ts';
 import { addMealById, getPlanById } from '../../_shared/vana/plan.ts';
 import { testCtx, TEST_USER_ID } from './support/vana_ctx.ts';
 import type { Row, Tables } from './support/fake_db.ts';
-import { assertOneTrace, failingExporter, withTracedModel } from './support/traced_call.ts';
+import { assertOneTrace, failingExporter, LANGFUSE_MODEL, LANGFUSE_WORDING, originOf, systemOf, withPrompts, withTracedModel } from './support/traced_call.ts';
+import { backgroundModel } from '../../_shared/vana/env.ts';
 
 const U = TEST_USER_ID;
 const SCRAMBLE_ID = 'fd993bbb-a13a-43e7-a662-ea71ed2ae64a';
@@ -217,4 +218,28 @@ Deno.test("Langfuse being down changes nothing a saved meal's ingredient list wr
   await withTracedModel(SCRAMBLE_OUT, INGREDIENTS_COST, () => ensureSavedMealIngredients(traced, SCRAMBLE_ID), { exporter: failingExporter });
   assertEquals(ingredientWrites(traced), ingredientWrites(plain));
   assertEquals(ingredientWrites(traced).ingredients, toStoredIngredients(SCRAMBLE_OUT));
+});
+
+// ---------------------------------------------------------------- wording and model (langfuse ticket 12)
+
+Deno.test("the ingredient list's instructions and model are the ones Langfuse holds", async () => {
+  const v = testCtx({ saved_meals: [scramble()], vana_calls: [] });
+  await withPrompts('held', (asked) => withTracedModel(SCRAMBLE_OUT, INGREDIENTS_COST, async (w) => {
+    assertEquals(await ensureSavedMealIngredients(v, SCRAMBLE_ID), 'extracted');
+    assertEquals(asked, [['vana/background/saved-meal-ingredients', 'latest']], 'asked for by name');
+    assertEquals(systemOf(w.modelCalls[0]), [LANGFUSE_WORDING]);
+    assertEquals(w.modelCalls[0].modelId, LANGFUSE_MODEL, "the model the prompt's config names");
+    assertEquals(v.fake.writesTo('vana_calls', 'insert').find((c) => c.values.function_name === 'vana.ingredients')!.values.model, LANGFUSE_MODEL, 'the Call log names the model that ran');
+    assertEquals(originOf(await w.spans()), 'langfuse');
+  }));
+});
+
+Deno.test('when Langfuse cannot be reached the ingredient list runs on the bundled copy and the background model, and the Trace says so', async () => {
+  const v = testCtx({ saved_meals: [scramble()], vana_calls: [] });
+  await withPrompts('down', () => withTracedModel(SCRAMBLE_OUT, INGREDIENTS_COST, async (w) => {
+    assertEquals(await ensureSavedMealIngredients(v, SCRAMBLE_ID), 'extracted');
+    assertEquals(systemOf(w.modelCalls[0]), [INGREDIENTS_SYSTEM]);
+    assertEquals(w.modelCalls[0].modelId, backgroundModel());
+    assertEquals(originOf(await w.spans()), 'fallback');
+  }));
 });

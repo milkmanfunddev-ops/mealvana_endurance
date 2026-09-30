@@ -20,7 +20,8 @@ import { fakeDb, type Row, type Tables } from './support/fake_db.ts';
 import { VANA_COLUMN_DEFAULTS } from './support/vana_ctx.ts';
 import type { VanaCtx } from '../../_shared/vana/env.ts';
 import type { MealPlan } from '../../_shared/vana/contracts.ts';
-import { assertOneTrace, failingExporter, withTracedModel } from './support/traced_call.ts';
+import { assertOneTrace, failingExporter, LANGFUSE_MODEL, LANGFUSE_WORDING, originOf, systemOf, userTextOf, withPrompts, withTracedModel } from './support/traced_call.ts';
+import { TOOL_MODEL } from '../../_shared/vana/env.ts';
 
 const U = TEST_USER_ID;
 const PLAN = 'aaaaaaaa-0000-4000-8000-000000000013';
@@ -386,4 +387,30 @@ Deno.test('Langfuse being down changes nothing the day notes write', async () =>
   await withTracedModel(NOTES_ANSWER, NOTES_COST, async () => await generateDayNotes(traced, (await getPlanById(traced, PLAN))!, ANCHOR, tracedDeps()), { exporter: failingExporter });
   assertEquals(noteWrites(traced), noteWrites(plain));
   assertEquals(Object.keys(noteWrites(traced).notes as Record<string, string>).length, 7);
+});
+
+// ================================================================ wording and model (langfuse ticket 12)
+
+Deno.test("the day notes' instructions and model are the ones Langfuse holds; the Context block is still built by code", async () => {
+  const v = testCtx(baseTables());
+  await withPrompts('held', (asked) => withTracedModel(NOTES_ANSWER, NOTES_COST, async (w) => {
+    await generateDayNotes(v, (await getPlanById(v, PLAN))!, ANCHOR, tracedDeps());
+    assertEquals(asked, [['vana/background/day-notes', 'latest']], 'asked for by name');
+    assertEquals(systemOf(w.modelCalls[0]), [LANGFUSE_WORDING]);
+    assertEquals(w.modelCalls[0].modelId, LANGFUSE_MODEL, "the model the prompt's config names");
+    assertEquals(v.fake.writesTo('vana_calls', 'insert').find((c) => c.values.function_name === 'vana.daynotes')!.values.model, LANGFUSE_MODEL, 'the Call log names the model that ran');
+    const [sent] = userTextOf(w.modelCalls[0]);
+    assert(sent.includes('--- CONTEXT ---') && sent.includes('--- DATES ---'), 'the athlete\'s context and plan, from code');
+    assertEquals(originOf(await w.spans()), 'langfuse');
+  }));
+});
+
+Deno.test('when Langfuse cannot be reached the day notes run on the bundled copy and the tool model, and the Trace says so', async () => {
+  const v = testCtx(baseTables());
+  await withPrompts('down', () => withTracedModel(NOTES_ANSWER, NOTES_COST, async (w) => {
+    await generateDayNotes(v, (await getPlanById(v, PLAN))!, ANCHOR, tracedDeps());
+    assertEquals(systemOf(w.modelCalls[0]), [DAY_NOTE_SYSTEM]);
+    assertEquals(w.modelCalls[0].modelId, TOOL_MODEL);
+    assertEquals(originOf(await w.spans()), 'fallback');
+  }));
 });

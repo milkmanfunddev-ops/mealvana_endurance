@@ -32,6 +32,7 @@ import { OPENER_REPLAY_ID_PREFIX } from './opener.ts';
 import { SITUATION_MARK } from './situation.ts';
 import { gatewayCostUsd } from '../ai/usage.ts';
 import { defaultTracing } from '../langfuse/tracing.ts';
+import { callPrompt, instancePrompts } from '../langfuse/prompts.ts';
 
 /** Zero to three margin notes, and always exactly one episode sentence. */
 export const ExtractionZ = z.object({
@@ -58,11 +59,11 @@ export interface TranscriptLine { role: 'user' | 'assistant'; text: string }
 
 export interface ExtractDeps {
   /** The one model call. Injected so a test drives the writer from a fixed extraction. */
-  generate: (input: { system: string; prompt: string }) => Promise<{ object: Extraction; inputTokens?: number; outputTokens?: number; gatewayCostUsd?: number | null }>;
+  generate: (input: { system: string; prompt: string; model: string }) => Promise<{ object: Extraction; inputTokens?: number; outputTokens?: number; gatewayCostUsd?: number | null }>;
 }
 export const defaultExtractDeps: ExtractDeps = {
-  generate: async ({ system, prompt }) => {
-    const { object, usage, providerMetadata } = await generateObject({ model: backgroundModel(), experimental_telemetry: defaultTracing().telemetry('vana.extract'), schema: ExtractionZ, maxOutputTokens: 400, system, prompt });
+  generate: async ({ system, prompt, model }) => {
+    const { object, usage, providerMetadata } = await generateObject({ model, experimental_telemetry: defaultTracing().telemetry('vana.extract'), schema: ExtractionZ, maxOutputTokens: 400, system, prompt });
     return { object, inputTokens: usage?.inputTokens, outputTokens: usage?.outputTokens, gatewayCostUsd: gatewayCostUsd(providerMetadata) };
   },
 };
@@ -115,9 +116,10 @@ export async function extractConversation(v: VanaCtx, conversationId: string, de
     const started = Date.now();
     // The call is a Trace of its own in the Conversation's Session (langfuse ticket 10): what was read, what was kept.
     const prompt = extractionPrompt(lines, existing);
+    const wording = await callPrompt(prompts, EXTRACTION_PROMPT, backgroundModel());
     const { object, inputTokens, outputTokens, gatewayCostUsd: cost } = await defaultTracing().call(
-      { name: 'vana-memory-extraction', userId: v.userId, sessionId: conversationId, tags: ['background'], input: prompt },
-      () => deps.generate({ system: EXTRACTOR_SYSTEM, prompt }), (r) => r.object);
+      { name: 'vana-memory-extraction', userId: v.userId, sessionId: conversationId, tags: ['background'], metadata: { promptSource: wording.origin }, input: prompt },
+      () => deps.generate({ system: wording.text, prompt, model: wording.model }), (r) => r.object);
 
     let written = 0;
     for (const m of object.memories.slice(0, 3)) {
@@ -128,7 +130,7 @@ export async function extractConversation(v: VanaCtx, conversationId: string, de
     }
     const episode = object.episode.trim() || null;
     if (episode) await writeEpisode(v, conversationId, episode);
-    await logCall(v.admin, { userId: v.userId, conversationId, functionName: 'vana.extract', model: backgroundModel(), inputTokens, outputTokens, gatewayCostUsd: cost });
+    await logCall(v.admin, { userId: v.userId, conversationId, functionName: 'vana.extract', model: wording.model, inputTokens, outputTokens, gatewayCostUsd: cost });
     console.log(`[vana] read back ${conversationId}: ${written} memory(ies) in ${Date.now() - started}ms`);
     return { conversationId, memories: written, episode };
   } catch (e) {
@@ -163,12 +165,20 @@ export const SUMMARY_SYSTEM = `You read the opening of a conversation between an
 
 THE SUMMARY — one paragraph, at most 150 words, saying what these messages established, so a later reply can pick up exactly where they left off. Keep every specific a later reply would need: names, numbers, days, the meals they picked or turned down, constraints, decisions, anything they asked Vana to remember. When a PREVIOUS SUMMARY is given, fold it in: the paragraph must still carry what it carried. Not a list of topics, not advice, nothing Vana should do next. Write nothing else.`;
 
+/** The two prompts by their names in Langfuse (langfuse ticket 12). The texts above are the bundled copies: what runs
+ *  when Langfuse cannot be reached, and what each prompt was created from. Each prompt's config names its model;
+ *  `VANA_BACKGROUND_MODEL` is what runs when it names none. */
+export const EXTRACTION_PROMPT = 'vana/background/extraction';
+export const SUMMARY_PROMPT = 'vana/background/summary';
+export const EXTRACT_PROMPT_TEMPLATES = { [EXTRACTION_PROMPT]: EXTRACTOR_SYSTEM, [SUMMARY_PROMPT]: SUMMARY_SYSTEM } as const;
+const prompts = instancePrompts(EXTRACT_PROMPT_TEMPLATES);
+
 export interface SummaryDeps {
-  generate: (input: { system: string; prompt: string }) => Promise<{ object: { summary: string }; inputTokens?: number; outputTokens?: number; gatewayCostUsd?: number | null }>;
+  generate: (input: { system: string; prompt: string; model: string }) => Promise<{ object: { summary: string }; inputTokens?: number; outputTokens?: number; gatewayCostUsd?: number | null }>;
 }
 export const defaultSummaryDeps: SummaryDeps = {
-  generate: async ({ system, prompt }) => {
-    const { object, usage, providerMetadata } = await generateObject({ model: backgroundModel(), experimental_telemetry: defaultTracing().telemetry('vana.summary'), schema: SummaryZ, maxOutputTokens: 400, system, prompt });
+  generate: async ({ system, prompt, model }) => {
+    const { object, usage, providerMetadata } = await generateObject({ model, experimental_telemetry: defaultTracing().telemetry('vana.summary'), schema: SummaryZ, maxOutputTokens: 400, system, prompt });
     return { object, inputTokens: usage?.inputTokens, outputTokens: usage?.outputTokens, gatewayCostUsd: gatewayCostUsd(providerMetadata) };
   },
 };
@@ -243,10 +253,11 @@ export async function writeSummary(v: VanaCtx, conversationId: string, target: n
     const lines = transcriptFromMessages(messages.slice(from, target));
     if (!lines.length) return null;
     const prompt = summaryPrompt(previous, lines, from, target);
+    const wording = await callPrompt(prompts, SUMMARY_PROMPT, backgroundModel());
     const { object, inputTokens, outputTokens, gatewayCostUsd: cost } = await defaultTracing().call(
-      { name: 'vana-summary', userId: v.userId, sessionId: conversationId, tags: ['background'], input: prompt },
-      () => deps.generate({ system: SUMMARY_SYSTEM, prompt }), (r) => r.object);
-    await logCall(v.admin, { userId: v.userId, conversationId, functionName: 'vana.summary', model: backgroundModel(), inputTokens, outputTokens, gatewayCostUsd: cost });
+      { name: 'vana-summary', userId: v.userId, sessionId: conversationId, tags: ['background'], metadata: { promptSource: wording.origin }, input: prompt },
+      () => deps.generate({ system: wording.text, prompt, model: wording.model }), (r) => r.object);
+    await logCall(v.admin, { userId: v.userId, conversationId, functionName: 'vana.summary', model: wording.model, inputTokens, outputTokens, gatewayCostUsd: cost });
     const text = object.summary.replace(/\s+/g, ' ').trim();
     if (!text) return null;
     // Whatever landed while the model was thinking wins if it is newer: never roll the row back.
