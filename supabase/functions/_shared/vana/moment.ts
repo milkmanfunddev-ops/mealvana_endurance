@@ -7,7 +7,7 @@
  * Like the Situation, a moment carries ids and one number, never text: the server reads the names itself.
  */
 import type { VanaCtx } from './env.ts';
-import { MAKE_IT_THEIRS, OPENERS } from './persona.ts';
+import { BUNDLED_WORDING, type Wording } from './persona.ts';
 import { resolveSituation, screenFor, type EntityKind, type Situation } from './situation.ts';
 
 /**
@@ -121,13 +121,13 @@ export async function recoverySession(v: VanaCtx, m: MomentRef): Promise<Recover
 
 /** A moment's copy is a contract (the times, the window, the two replies), so what makes it theirs rides inside those
  *  sentences and never adds one, and only when it changes how this session should be fuelled. */
-const MOMENT_THEIRS = `${MAKE_IT_THEIRS} In a moment the clause lives inside your 1–2 sentences and only when it changes how this session is fuelled — a diet, a food they rely on or avoid, what they planned for this session in LAST TALKS; it never changes the times, the window or the two replies.`;
+const momentTheirs = (w: Wording) => `${w.makeItTheirs} In a moment the clause lives inside your 1–2 sentences and only when it changes how this session is fuelled — a diet, a food they rely on or avoid, what they planned for this session in LAST TALKS; it never changes the times, the window or the two replies.`;
 
 /** The first user message for a pre-workout moment. It ends in exactly two replies: the sheet shows at most two. */
-export function preWorkoutOpener(s: MomentSession): string {
+export function preWorkoutOpener(s: MomentSession, w: Wording = BUNDLED_WORDING): string {
   const bits = [s.activityType, s.durationMinutes ? `${s.durationMinutes} min` : null].filter(Boolean).join(', ');
   const window = s.windowOpensAt ? `; its pre-workout fuelling window opened at ${s.windowOpensAt}` : '';
-  return `[MOMENT opener — the athlete did not open this to ask anything: the app raised it because the pre-workout fuelling window for today's session is open and nothing has been logged since it opened. The session: "${s.title}"${bits ? ` (${bits})` : ''} starts at ${s.startsAt}${window}. Write 1–2 sentences that name the session, its start time and when the window opened. Then call askChoice once, with the question "Want me to walk you through fuelling it?" and exactly two options: ["Walk me through it", "I'll handle it"]. Do not ask that question in your sentences as well, and do not suggest meals or list foods yet. ${MOMENT_THEIRS} No greeting.]`;
+  return `[MOMENT opener — the athlete did not open this to ask anything: the app raised it because the pre-workout fuelling window for today's session is open and nothing has been logged since it opened. The session: "${s.title}"${bits ? ` (${bits})` : ''} starts at ${s.startsAt}${window}. Write 1–2 sentences that name the session, its start time and when the window opened. Then call askChoice once, with the question "Want me to walk you through fuelling it?" and exactly two options: ["Walk me through it", "I'll handle it"]. Do not ask that question in your sentences as well, and do not suggest meals or list foods yet. ${momentTheirs(w)} No greeting.]`;
 }
 
 /**
@@ -136,9 +136,9 @@ export function preWorkoutOpener(s: MomentSession): string {
  * branch's ~2 h meal anchor must never be presented as a window; with a session 8–24 h away, leaning earlier rather than later
  * today. Protein (~20–30 g within a couple of hours) holds in both.
  */
-export function recoveryOpener(s: RecoverySession): string {
+export function recoveryOpener(s: RecoverySession, w: Wording = BUNDLED_WORDING): string {
   const lead = `[MOMENT opener — the athlete did not open this to ask anything: the app raised it because a session today has finished and nothing has been logged since it ended. The session: "${s.title}" (${s.activityType}, ${s.durationMinutes} min) finished at ${s.endedAt}.`;
-  const tail = `Do not ask that question in your sentences as well, and do not suggest meals or list foods yet. Never say "within 30 minutes" or "within the hour". ${MOMENT_THEIRS} No greeting.]`;
+  const tail = `Do not ask that question in your sentences as well, and do not suggest meals or list foods yet. Never say "within 30 minutes" or "within the hour". ${momentTheirs(w)} No greeting.]`;
   if (s.urgentUntil && s.next) {
     return `${lead} The next session, "${s.next.title}", starts ${s.next.when}: under 8 hours away, so recovery is urgent. Start refuelling now and keep carbs coming through the next 4 hours, until ${s.urgentUntil}, with ~20–30 g of protein within the first couple of hours. Write 1–2 sentences that name the finished session and the next one, and say that. Then call askChoice once, with the question "Want help picking what to eat now?" and exactly two options: ["Help me pick", "I've got it"]. ${tail}`;
   }
@@ -168,11 +168,6 @@ export async function screenUnderneath(v: VanaCtx, raw: unknown): Promise<string
   return said && said !== bare ? said : null;
 }
 
-/** The first user message for a general conversation opened over a screen that names something (mp-268 clause 1). */
-export function situationOpener(said: string): string {
-  return `[New conversation, opened over the screen they are on: right now they are ${said}. Open on that: your first sentence is about it and what it means for how they fuel or eat, from the CONTEXT (an event: how far out it is and what the build toward it asks; a meal: how it fits today's targets or session; a session: how to fuel it). "I see you are…" is fine; a readout of the screen is not. If something in the CONTEXT outranks it right now (a race tomorrow, a session starting soon), say that in a second sentence, never instead. ${MAKE_IT_THEIRS} Then askChoice with exactly two things you can help with about it. No greeting.]`;
-}
-
 export type GeneralOpenerVariant = 'plan' | 'moment' | 'situation';
 
 /**
@@ -180,17 +175,17 @@ export type GeneralOpenerVariant = 'plan' | 'moment' | 'situation';
  * device raised); else one on the screen underneath, when the Situation names an event, a meal or a session of theirs;
  * else the personal general opener (mp-268 clause 2).
  */
-export async function generalOpener(v: VanaCtx, body: { moment?: unknown; situation?: unknown }): Promise<{ text: string; variant: GeneralOpenerVariant }> {
+export async function generalOpener(v: VanaCtx, body: { moment?: unknown; situation?: unknown }, w: Wording = BUNDLED_WORDING): Promise<{ text: string; variant: GeneralOpenerVariant }> {
   const ref = parseMoment(body.moment);
   let text: string | null = null;
   if (ref?.kind === 'pre_workout') {
     const session = await momentSession(v, ref);
-    if (session) text = preWorkoutOpener(session);
+    if (session) text = preWorkoutOpener(session, w);
   } else if (ref?.kind === 'recovery') {
     const session = await recoverySession(v, ref);
-    if (session) text = recoveryOpener(session);
+    if (session) text = recoveryOpener(session, w);
   }
   if (text) return { text, variant: 'moment' };
   const said = await screenUnderneath(v, body.situation);
-  return said ? { text: situationOpener(said), variant: 'situation' } : { text: OPENERS.general, variant: 'plan' };
+  return said ? { text: w.situationOpener(said), variant: 'situation' } : { text: w.openers.general, variant: 'plan' };
 }

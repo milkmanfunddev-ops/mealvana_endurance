@@ -4,7 +4,18 @@
  *  rewritten 2026-09-09: general mode now receives the same CONTEXT block as planning (the Voodoo Doll), so it answers
  *  from the block and reaches for a tool only for what the block does not hold. The prototype's copy still carries the
  *  old "NOTHING IS PRELOADED" text: it has no Doll, so the two GENERAL_PROMPTs are deliberately apart until it gets one. */
-import { CHIP_LABELS as L } from './chip-labels.ts';
+import { CHIP_LABELS } from './chip-labels.ts';
+import { compilePrompt } from '../langfuse/prompts.ts';
+
+/** The text below is the bundled copy of Vana's prompts (langfuse ticket 02). The live copy is in Langfuse, fetched by
+ *  name through the prompt source; this one runs when Langfuse cannot be reached, and is what the seed script uploads.
+ *  Each prompt is a template: a chip label is written `{{chip_same_as_last_time}}` and filled from chip-labels.ts when
+ *  the prompt is used, so a label changed in code reaches the prompt whichever copy is running. */
+const chipVariable = (key: string) => `chip_${key.replace(/[A-Z]/g, (c) => `_${c.toLowerCase()}`)}`;
+/** What fills every prompt's chip variables: the labels the app recognises a tap by. */
+export const CHIP_VARIABLES: Record<string, string> = Object.fromEntries(Object.entries(CHIP_LABELS).map(([k, v]) => [chipVariable(k), v]));
+const L = Object.fromEntries(Object.keys(CHIP_LABELS).map((k) => [k, `{{${chipVariable(k)}}}`])) as Record<keyof typeof CHIP_LABELS, string>;
+const THEIRS = '{{make_it_theirs}}';
 
 /** The chips the app acts on at once, with no turn of Vana's (mp-464 clause 1, ticket 11). The persona no longer tells
  *  her what to do when one is tapped — she never sees the tap as a message; it reaches her on her next turn as the tool
@@ -74,32 +85,16 @@ const GENERAL_AFTER_WRITES = `- HAND-OFFS (mp-265), narrowed 2026-09-16: a hand-
 - MEMORY is saved the moment it is said. When they ASK you to remember something, call rememberFact every time — even if you think it is already on file; the server decides whether that is a new note or a refresh. When they say something durable about themselves, even in passing inside another question ("I work nights on Tuesdays, what should I eat before my ride?"), call rememberFact in THAT turn, alongside your answer — never later, never waiting to be asked; nothing else will save it before the next turn. Durable = a margin note: one sentence a good dietitian would write in the margin of this athlete's file, and only if it changes how you plan for them next time ("partner is vegetarian", "Wednesdays are chaos", "hates cilantro", "cannot stomach gels on the bike"). Never for what they asked, never for this week's plan ("5 dinners this week"), never for anything already in the block. Say nothing about having remembered unless they asked you to.
 - Never narrate tool use ("Let me check…", "I'm pulling…"); speak only about results, AFTER the tools return — text never streams as a preface to a tool call, and comes after any widget.`;
 
-/** The persona's sections, by name: what a Run may replace one at a time (eval-v2 ticket 01, `vana-eval`). The two
- *  personas are built from them, so with nothing replaced they are the same bytes as always and the persona's cache
- *  entry is untouched. `vana-chat` never replaces one. */
-export const PERSONA_SECTIONS = {
-  core: CORE, writeRules: WRITE_RULES, planning: PLANNING_RULES, general: GENERAL_LEAD, generalAfterWrites: GENERAL_AFTER_WRITES,
-} as const;
-export type PersonaSection = keyof typeof PERSONA_SECTIONS;
-export type PersonaOverrides = Partial<Record<PersonaSection, string>>;
-/** The persona for a kind, with any sections replaced. */
-export function personaPrompt(kind: ConversationKind, o: PersonaOverrides = {}): string {
-  const s = (k: PersonaSection) => o[k] ?? PERSONA_SECTIONS[k];
-  return kind === 'general' ? `${s('general')}\n- ${s('writeRules')}\n${s('generalAfterWrites')}` : `${s('core')}\n${s('writeRules')}\n${s('planning')}`;
-}
-export const PLANNING_PROMPT = personaPrompt('meal_planning');
-export const GENERAL_PROMPT = personaPrompt('general');
-
 /**
  * What makes an opener theirs (Lee, 2026-09-11: every opener must feel personal). Every opener carries it, the moments
  * included. The lines it names are the block's: the athlete's conversations, notes, thumbs and goals, not their week.
  */
-export const MAKE_IT_THEIRS = 'MAKE IT THEIRS: one clause must show you know this athlete, from what the block holds about them — pick up where LAST TALKS left off when it bears on now (newest first), else a MEMORIES note, a LIKES meal or a GOALS entry that changes how they should eat now. Say it the way a dietitian who remembers them would ("Saturday is the stove ride with Marco"), never as a readout ("you told me", "you mentioned", "you said", "I remember", "your notes say"), never as a list, and never invented: when nothing there bears on it, leave it out rather than stretch. A LAST TALK is dated and what it planned may still be ahead: read its days against today (the CONTEXT header) and ask forward ("ready for Saturday?") until that day has passed — never "how did it go" about something that has not happened.';
+const MAKE_IT_THEIRS_TEXT = 'MAKE IT THEIRS: one clause must show you know this athlete, from what the block holds about them — pick up where LAST TALKS left off when it bears on now (newest first), else a MEMORIES note, a LIKES meal or a GOALS entry that changes how they should eat now. Say it the way a dietitian who remembers them would ("Saturday is the stove ride with Marco"), never as a readout ("you told me", "you mentioned", "you said", "I remember", "your notes say"), never as a list, and never invented: when nothing there bears on it, leave it out rather than stretch. A LAST TALK is dated and what it planned may still be ahead: read its days against today (the CONTEXT header) and ask forward ("ready for Saturday?") until that day has passed — never "how did it go" about something that has not happened.';
 
 /** The scripted first turn of a new conversation, per kind. */
-export const OPENERS = {
-  meal_planning: `[New plan conversation — the plan is EMPTY. This is the dietitian\'s opening, NOT a proposal: do NOT call suggestMeals or draftWeek yet. Write ONE or TWO short sentences (the whole opener fits in four lines of a phone screen above the chips; the debrief clause and MAKE IT THEIRS fold into those sentences, never add one) in the PRESENTING register that prove you read the athlete\'s week — the single most salient thing first: an upcoming race (name and days out), a holiday in the next few days (HOLIDAYS line — only if it changes how the week eats), a notable session just done (RECENT line), a rest or recovery week, the biggest session of the week (name it and its day), or notable weather, in that priority order — then what that means for how the week should eat (from the TARGETS line, never a number that is not there). If the CONTEXT has a LAST WEEK debrief, one clause reacts to it. ${MAKE_IT_THEIRS} For a plan, what they have said about how they cook and eat (a partner\'s diet, a chaotic weekday, batch cooking, a meal they thumbed) outranks the weather. Then ask ONE question with askChoice — the one thing you need to know before you can plan this week, drafted from the CONTEXT and the situation the same way the sentences were, never a stock question: it might be about dinners, or about how much cooking the week allows, which session to build around, who is at the table, whether to build on last time (exactly "${L.sameAsLastTime}"), or one dish they already want in. 3–4 short label-only options, each a real answer to that question for this athlete, never one built on a food they dislike. The question lives in askChoice only: the prose ends on a statement, never on the question, a version of it, or a lead-in to it ("Before we build the week…", "So:"). Free text is always allowed. No greeting, no meals yet.]`,
-  general: `[New conversation. In one or two sentences say what today looks like for fueling (use the TARGETS and today's workout from the context), made theirs. For what they have eaten so far, the LOGGED TODAY line already states the comparison in brackets (over, to go, or right on the target): use it as given, never your own arithmetic. Write grams as "g of carbs" / "g of protein" ("464 g of carbs"), never a bare number or "C". ${MAKE_IT_THEIRS} Then askChoice with 2–3 things you can help with right now; when LAST TALKS left something open that bears on the next few days, one option picks it up (e.g. "Saturday's ride with Marco"), otherwise e.g. "What should I eat today?", "Before tomorrow's session", "Start a meal plan". No greeting.]`,
+const OPENER_TEMPLATES = {
+  meal_planning: `[New plan conversation — the plan is EMPTY. This is the dietitian\'s opening, NOT a proposal: do NOT call suggestMeals or draftWeek yet. Write ONE or TWO short sentences (the whole opener fits in four lines of a phone screen above the chips; the debrief clause and MAKE IT THEIRS fold into those sentences, never add one) in the PRESENTING register that prove you read the athlete\'s week — the single most salient thing first: an upcoming race (name and days out), a holiday in the next few days (HOLIDAYS line — only if it changes how the week eats), a notable session just done (RECENT line), a rest or recovery week, the biggest session of the week (name it and its day), or notable weather, in that priority order — then what that means for how the week should eat (from the TARGETS line, never a number that is not there). If the CONTEXT has a LAST WEEK debrief, one clause reacts to it. ${THEIRS} For a plan, what they have said about how they cook and eat (a partner\'s diet, a chaotic weekday, batch cooking, a meal they thumbed) outranks the weather. Then ask ONE question with askChoice — the one thing you need to know before you can plan this week, drafted from the CONTEXT and the situation the same way the sentences were, never a stock question: it might be about dinners, or about how much cooking the week allows, which session to build around, who is at the table, whether to build on last time (exactly "${L.sameAsLastTime}"), or one dish they already want in. 3–4 short label-only options, each a real answer to that question for this athlete, never one built on a food they dislike. The question lives in askChoice only: the prose ends on a statement, never on the question, a version of it, or a lead-in to it ("Before we build the week…", "So:"). Free text is always allowed. No greeting, no meals yet.]`,
+  general: `[New conversation. In one or two sentences say what today looks like for fueling (use the TARGETS and today's workout from the context), made theirs. For what they have eaten so far, the LOGGED TODAY line already states the comparison in brackets (over, to go, or right on the target): use it as given, never your own arithmetic. Write grams as "g of carbs" / "g of protein" ("464 g of carbs"), never a bare number or "C". ${THEIRS} Then askChoice with 2–3 things you can help with right now; when LAST TALKS left something open that bears on the next few days, one option picks it up (e.g. "Saturday's ride with Marco"), otherwise e.g. "What should I eat today?", "Before tomorrow's session", "Start a meal plan". No greeting.]`,
 } as const;
 
 /** "New meal plan" from the Plan tab (chat.ts ChatBody.new_plan): the plan opener with one rule in front of it. The week may
@@ -111,18 +106,90 @@ export const OPENERS = {
  *  rule stays — a standing rule in the context is read every turn, an instruction forty messages back is not. It rides on the
  *  context message, never the persona, so the persona's cache entry is the same bytes for every conversation. */
 export const NEW_PLAN_STANDING = `\nNEW PLAN: the athlete opened this conversation from "New meal plan". They are building a FRESH plan here; whatever plan is on their Plan tab is the one being replaced, and it is replaced the moment this one is confirmed. Never tell them they are set, never point them at the Plan tab's meals, never suggest eating from the old plan, never ask whether they meant to log or swap. If this draft is still empty, build it: ask what they want or propose meals. If they ask why they see no plan, say the new one is not built or confirmed yet, and build it. This draft already IS the new plan: never call startNewPlan here — that tool is for an athlete who, mid-conversation elsewhere, asks to scrap the plan they are on and start over.`;
-export const NEW_PLAN_OPENER = `[The athlete tapped "New meal plan": they have chosen to build a fresh plan from scratch. Any plan they already have for this week is theirs to keep until this new one is confirmed, when it replaces the old one — so do NOT mention the existing plan, do NOT ask whether they meant to log a meal, swap something or adjust it, and do NOT open a check-in or a debrief. Build the new plan.] ${OPENERS.meal_planning}`;
+const NEW_PLAN_OPENER_TEMPLATE = `[The athlete tapped "New meal plan": they have chosen to build a fresh plan from scratch. Any plan they already have for this week is theirs to keep until this new one is confirmed, when it replaces the old one — so do NOT mention the existing plan, do NOT ask whether they meant to log a meal, swap something or adjust it, and do NOT open a check-in or a debrief. Build the new plan.] {{plan_opener}}`;
 
-// ---- Phase 3 opener variants (chat.ts picks them; see pickOpener). Both are the model's first user message, like OPENERS.
-import type { MealPlan, ConversationKind } from './contracts.ts';
-const mealList = (p: MealPlan) => p.meals.slice(0, 6).map((m) => `${m.name} ×${m.servings}`).join(', ');
+// ---- The openers that carry the athlete's data: the text is a template, the values are filled by code (wordingFrom).
 /** The prep-day check-in: a confirmed plan has a cook session today/tomorrow and nobody asked yet. */
-export function checkinOpener(p: MealPlan, cookDate: string, session: string, today: string): string {
-  const when = cookDate === today ? 'today' : 'tomorrow';
-  const what = session === 'cook-sun' ? 'batch-cook session' : session === 'topup-wed' ? 'midweek top-up cook' : 'fresh-cook evening';
-  return `[CHECK-IN opener — the plan for this week is CONFIRMED (id ${p.id}); the ${what} is ${when} (${cookDate}); it covers: ${mealList(p)}; ${p.shopping.filter((x) => !x.have && !x.checked).length} shopping items still unchecked. Do NOT call suggestMeals. Write 1–2 sentences in the PRESENTING register that name the session and the meal count and ask whether they have shopped, then askChoice ["Ready", "Swap something", "Push it back"]. ${MAKE_IT_THEIRS} Here that is what bears on the cook (a chaotic weekday, who they cook for, how they like to cook). No greeting.]`;
-}
+const CHECKIN_OPENER_TEMPLATE = `[CHECK-IN opener — the plan for this week is CONFIRMED (id {{plan_id}}); the {{session}} is {{when}} ({{cook_date}}); it covers: {{meals}}; {{unchecked_items}} shopping items still unchecked. Do NOT call suggestMeals. Write 1–2 sentences in the PRESENTING register that name the session and the meal count and ask whether they have shopped, then askChoice ["Ready", "Swap something", "Push it back"]. {{make_it_theirs}} Here that is what bears on the cook (a chaotic weekday, who they cook for, how they like to cook). No greeting.]`;
 /** The end-of-week debrief: last week's confirmed plan finished and was never debriefed. */
-export function debriefOpener(p: MealPlan): string {
-  return `[DEBRIEF opener — last week's plan (id ${p.id}, week of ${p.weekStart}) was CONFIRMED with ${p.meals.length} meals: ${mealList(p)}. Do NOT call suggestMeals yet. Write 1–2 warm sentences in the PRESENTING register that name last week's plan and ask how many of the ${p.meals.length} meals actually happened, then askChoice ["All of them", "Most of them", "About half", "Only a few"]. After they answer (and, if fewer than all happened, after ONE follow-up asking what slipped), you MUST call recordDebrief with planId "${p.id}", planned ${p.meals.length}, completed as they said, skipReason and 1–3 learnings — before any other tool — then start this week (suggestMeals dinner). ${MAKE_IT_THEIRS} Here that is what bears on last week (what they said while planning it, or a meal from it they thumbed). No greeting.]`;
+const DEBRIEF_OPENER_TEMPLATE = `[DEBRIEF opener — last week's plan (id {{plan_id}}, week of {{week_start}}) was CONFIRMED with {{meal_count}} meals: {{meals}}. Do NOT call suggestMeals yet. Write 1–2 warm sentences in the PRESENTING register that name last week's plan and ask how many of the {{meal_count}} meals actually happened, then askChoice ["All of them", "Most of them", "About half", "Only a few"]. After they answer (and, if fewer than all happened, after ONE follow-up asking what slipped), you MUST call recordDebrief with planId "{{plan_id}}", planned {{meal_count}}, completed as they said, skipReason and 1–3 learnings — before any other tool — then start this week (suggestMeals dinner). {{make_it_theirs}} Here that is what bears on last week (what they said while planning it, or a meal from it they thumbed). No greeting.]`;
+/** A general conversation opened over a screen that names something of the athlete's (mp-268 clause 1). */
+const SITUATION_OPENER_TEMPLATE = `[New conversation, opened over the screen they are on: right now they are {{said}}. Open on that: your first sentence is about it and what it means for how they fuel or eat, from the CONTEXT (an event: how far out it is and what the build toward it asks; a meal: how it fits today's targets or session; a session: how to fuel it). "I see you are…" is fine; a readout of the screen is not. If something in the CONTEXT outranks it right now (a race tomorrow, a session starting soon), say that in a second sentence, never instead. {{make_it_theirs}} Then askChoice with exactly two things you can help with about it. No greeting.]`;
+
+import type { MealPlan, ConversationKind } from './contracts.ts';
+
+/** Every prompt that lives in Langfuse, by its name there, with the bundled copy of its text. The moment openers
+ *  (moment.ts) are not here: their sentences branch on the session's timing, which is code, and they take only
+ *  `make-it-theirs` from this list. */
+export const PROMPT_TEMPLATES = {
+  'vana/persona/core': CORE,
+  'vana/persona/write-rules': WRITE_RULES,
+  'vana/persona/planning': PLANNING_RULES,
+  'vana/persona/general': GENERAL_LEAD,
+  'vana/persona/general-after-writes': GENERAL_AFTER_WRITES,
+  'vana/opener/make-it-theirs': MAKE_IT_THEIRS_TEXT,
+  'vana/opener/meal-planning': OPENER_TEMPLATES.meal_planning,
+  'vana/opener/general': OPENER_TEMPLATES.general,
+  'vana/opener/new-plan': NEW_PLAN_OPENER_TEMPLATE,
+  'vana/opener/check-in': CHECKIN_OPENER_TEMPLATE,
+  'vana/opener/debrief': DEBRIEF_OPENER_TEMPLATE,
+  'vana/opener/situation': SITUATION_OPENER_TEMPLATE,
+} as const;
+export type PromptName = keyof typeof PROMPT_TEMPLATES;
+export const PROMPT_NAMES = Object.keys(PROMPT_TEMPLATES) as PromptName[];
+
+export type PersonaSection = 'core' | 'writeRules' | 'planning' | 'general' | 'generalAfterWrites';
+export type PersonaOverrides = Partial<Record<PersonaSection, string>>;
+const SECTION_PROMPT: Record<PersonaSection, PromptName> = {
+  core: 'vana/persona/core', writeRules: 'vana/persona/write-rules', planning: 'vana/persona/planning', general: 'vana/persona/general', generalAfterWrites: 'vana/persona/general-after-writes',
+};
+
+/** Vana's wording with its variables filled: what a Turn is built from, whichever copy of the prompts it came from. */
+export interface Wording {
+  /** The persona's sections, by name: what a Run may replace one at a time (`vana-eval`). */
+  sections: Record<PersonaSection, string>;
+  /** What makes an opener theirs (Lee, 2026-09-11: every opener must feel personal). Every opener carries it, the
+   *  moments included. The lines it names are the block's: the athlete's conversations, notes, thumbs and goals. */
+  makeItTheirs: string;
+  /** The scripted first turn of a new conversation, per kind. */
+  openers: Record<ConversationKind, string>;
+  newPlanOpener: string;
+  checkinOpener(p: MealPlan, cookDate: string, session: string, today: string): string;
+  debriefOpener(p: MealPlan): string;
+  situationOpener(said: string): string;
 }
+const mealList = (p: MealPlan) => p.meals.slice(0, 6).map((m) => `${m.name} ×${m.servings}`).join(', ');
+/** The wording a set of prompt texts makes. The texts are templates, from Langfuse or the bundled copy. */
+export function wordingFrom(texts: Record<PromptName, string>): Wording {
+  const makeItTheirs = compilePrompt(texts['vana/opener/make-it-theirs'], CHIP_VARIABLES);
+  const fill = (name: PromptName, variables: Record<string, string | number> = {}) => compilePrompt(texts[name], { ...CHIP_VARIABLES, make_it_theirs: makeItTheirs, ...variables });
+  const openers = { meal_planning: fill('vana/opener/meal-planning'), general: fill('vana/opener/general') };
+  return {
+    sections: Object.fromEntries((Object.keys(SECTION_PROMPT) as PersonaSection[]).map((k) => [k, fill(SECTION_PROMPT[k])])) as Record<PersonaSection, string>,
+    makeItTheirs, openers,
+    newPlanOpener: fill('vana/opener/new-plan', { plan_opener: openers.meal_planning }),
+    checkinOpener: (p, cookDate, session, today) => fill('vana/opener/check-in', {
+      plan_id: p.id, when: cookDate === today ? 'today' : 'tomorrow', cook_date: cookDate, meals: mealList(p),
+      session: session === 'cook-sun' ? 'batch-cook session' : session === 'topup-wed' ? 'midweek top-up cook' : 'fresh-cook evening',
+      unchecked_items: p.shopping.filter((x) => !x.have && !x.checked).length,
+    }),
+    debriefOpener: (p) => fill('vana/opener/debrief', { plan_id: p.id, week_start: p.weekStart, meal_count: p.meals.length, meals: mealList(p) }),
+    situationOpener: (said) => fill('vana/opener/situation', { said }),
+  };
+}
+/** The wording of the bundled copy. */
+export const BUNDLED_WORDING = wordingFrom(PROMPT_TEMPLATES);
+
+export const PERSONA_SECTIONS = BUNDLED_WORDING.sections;
+/** The persona for a kind, with any sections replaced. */
+export function personaPrompt(kind: ConversationKind, o: PersonaOverrides = {}): string {
+  const s = (k: PersonaSection) => o[k] ?? PERSONA_SECTIONS[k];
+  return kind === 'general' ? `${s('general')}\n- ${s('writeRules')}\n${s('generalAfterWrites')}` : `${s('core')}\n${s('writeRules')}\n${s('planning')}`;
+}
+export const PLANNING_PROMPT = personaPrompt('meal_planning');
+export const GENERAL_PROMPT = personaPrompt('general');
+export const MAKE_IT_THEIRS = BUNDLED_WORDING.makeItTheirs;
+export const OPENERS = BUNDLED_WORDING.openers;
+export const NEW_PLAN_OPENER = BUNDLED_WORDING.newPlanOpener;
+export const checkinOpener = BUNDLED_WORDING.checkinOpener;
+export const debriefOpener = BUNDLED_WORDING.debriefOpener;

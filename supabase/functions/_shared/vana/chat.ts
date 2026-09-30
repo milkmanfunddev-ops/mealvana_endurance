@@ -19,7 +19,7 @@ import type { VanaCtx } from './env.ts';
 import { buildAthleteContext, contextBlock } from './context.ts';
 import { cachedContext } from './context-cache.ts';
 import { makeVanaTools, offeredTools, UnknownOverrideError, type ToolOverrides } from './tools.ts';
-import { personaPrompt, OPENERS, NEW_PLAN_OPENER, NEW_PLAN_STANDING, checkinOpener, debriefOpener, type PersonaOverrides } from './persona.ts';
+import { personaPrompt, NEW_PLAN_STANDING, PROMPT_NAMES, PROMPT_TEMPLATES, wordingFrom, type PersonaOverrides, type PromptName } from './persona.ts';
 import { completeCall, reserveCall } from './rate-limit.ts';
 import { readSummaries, writeSummary, writeOnIdle, defaultExtractDeps, defaultSummaryDeps, type ExtractDeps, type StoredSummary, type SummaryDeps } from './extract.ts';
 import { inViewSection, resolveSituation, SITUATION_MARK, type Situation } from './situation.ts';
@@ -27,6 +27,7 @@ import { asInputMode, callMetrics, logCall, type InputMode } from './log.ts';
 import { subscriberState } from './subscriber.ts';
 import { logAiUsage } from '../ai/usage.ts';
 import { defaultTracing, type Tracing } from '../langfuse/tracing.ts';
+import { promptSourceFromEnv, type PromptSource } from '../langfuse/prompts.ts';
 import type { VanaPart, AthleteContext, ConversationSummary, ConversationPlan, ConversationKind } from './contracts.ts';
 import { getConversationPlan, getPlan, snapshotPlan } from './plan.ts';
 import { addDays, weekStartFor } from './env.ts';
@@ -403,6 +404,8 @@ export interface ChatRunOpts {
   overrides?: VanaOverrides;
   /** Where the Turn's Trace goes. Langfuse, from the function secrets, unless a test passes its own. */
   tracing?: Tracing;
+  /** Where Vana's wording comes from. Langfuse, from the function secrets, unless a test passes its own. */
+  prompts?: PromptSource;
 }
 /** What a Run may change about Vana for itself alone: persona sections, the model, the tools that are on (by name, out
  *  of the kind's set) and the tools' and parameters' descriptions. Anything left out is what the app runs. The replayed
@@ -448,6 +451,10 @@ export function idleSignal(v: VanaCtx, body: ChatBody, background: (p: Promise<u
   if (id) background(writeOnIdle(v, id, deps));
   return { idle: true, conversation_id: id };
 }
+
+let promptsFromEnv: PromptSource | null = null;
+/** The function instance's prompt source: one per instance, so what it fetched is kept between Turns. */
+const defaultPrompts = (): PromptSource => (promptsFromEnv ??= promptSourceFromEnv(PROMPT_TEMPLATES, waitUntil));
 
 export async function runChat(v: VanaCtx, body: ChatBody, opts: ChatRunOpts): Promise<ChatOutcome> {
   const idle = opts.persist !== false ? idleSignal(v, body) : null;
@@ -521,23 +528,28 @@ export async function runChat(v: VanaCtx, body: ChatBody, opts: ChatRunOpts): Pr
   // The screen line this turn carries, stored with the row it rides on (mp-420 clause 5).
   const note = situationNote(situation, inView);
   if (last && !opener && persist) { await v.db.from('vana_messages').insert(userMessageRow({ conversationId: convId, userId: v.userId, text: lastText, parts: last.parts, situation: note })); await touch(v, convId, lastText); }
-  let openerText: string = OPENERS[convKind]; let openerVariant: OpenerVariant['kind'] | GeneralOpenerVariant = 'plan'; let extraContext = '';
+  // Vana's wording (langfuse ticket 02): the persona and the openers as Langfuse holds them, or the bundled copy when it
+  // cannot be reached. Held in the instance between Turns, so most Turns fetch nothing.
+  const prompts = await (opts.prompts ?? defaultPrompts()).resolve(PROMPT_NAMES);
+  const wording = wordingFrom(Object.fromEntries(PROMPT_NAMES.map((n) => [n, prompts[n].text])) as Record<PromptName, string>);
+  const promptSource = PROMPT_NAMES.some((n) => prompts[n].fallback) ? 'fallback' : PROMPT_NAMES.some((n) => prompts[n].version != null) ? 'langfuse' : 'bundled';
+  let openerText: string = wording.openers[convKind]; let openerVariant: OpenerVariant['kind'] | GeneralOpenerVariant = 'plan'; let extraContext = '';
   // The athlete's very first conversation of any kind gets a server-authored `feedback_prompt` part after the opener
   // ("Give feedback for me here" → the app's own feedback sheet). Appended to the stream and the persisted row; the model
   // never sees or writes it, so it cannot be paraphrased away.
   const firstConversation = opener && persist && !intoThread && (await priorConversationCount(v, convId)) === 0;
   const trailingParts: VanaPart[] = firstConversation ? [{ kind: 'feedback_prompt' }] : [];
   // A moment's opener goes into the day's conversation even when it already has a thread (VM-1).
-  if (convKind === 'general' && opener) ({ text: openerText, variant: openerVariant } = await generalOpener(v, body));
+  if (convKind === 'general' && opener) ({ text: openerText, variant: openerVariant } = await generalOpener(v, body, wording));
   if (convKind === 'meal_planning') {
     const openerInput = await loadOpenerInput(v, anchorDate);
     // The opener's synthetic user message is never stored, so later turns need the pending debrief restated in the context.
     if (newPlanConversation) extraContext = NEW_PLAN_STANDING;
     const pending = pendingDebrief(openerInput); if (pending && !newPlanConversation) extraContext = `\nDEBRIEF PENDING last week's plan id ${pending.id} (${pending.meals.length} meals: ${pending.meals.map((m) => m.name).join(', ')}) — recordDebrief has not been called yet`;
     const variant = opener ? pickOpener({ ...openerInput, newPlan }) : ({ kind: 'plan' } as OpenerVariant); openerVariant = variant.kind;
-    if (newPlan) openerText = NEW_PLAN_OPENER;
-    else if (variant.kind === 'checkin') { openerText = checkinOpener(variant.plan, variant.cookDate, variant.session, anchorDate); await v.db.from('meal_plans').update({ checkin_done_at: new Date().toISOString() }).eq('id', variant.plan.id).eq('user_id', v.userId); }
-    else if (variant.kind === 'debrief') openerText = debriefOpener(variant.plan);
+    if (newPlan) openerText = wording.newPlanOpener;
+    else if (variant.kind === 'checkin') { openerText = wording.checkinOpener(variant.plan, variant.cookDate, variant.session, anchorDate); await v.db.from('meal_plans').update({ checkin_done_at: new Date().toISOString() }).eq('id', variant.plan.id).eq('user_id', v.userId); }
+    else if (variant.kind === 'debrief') openerText = wording.debriefOpener(variant.plan);
   }
   if (opener && o.opener != null) openerText = o.opener;
   // The opener's first message goes through the same conversion a stored turn does, so its replay is the same bytes.
@@ -547,11 +559,11 @@ export async function runChat(v: VanaCtx, body: ChatBody, opts: ChatRunOpts): Pr
   const tag = `[${opts.functionName}]`;
   console.log(`${tag} user=${v.userId} conv=${convId || '(ephemeral)'} kind=${convKind} opener=${opener}${opener ? `/${openerVariant}${newPlan ? '/new_plan' : ''}` : ''} model=${model} context=${reused ? 'reused' : 'built'}`);
 
-  const system = systemMessages(convKind, ctx, anchorDate, extraContext, PERSONA_CACHE_TTL, o.persona);
+  const system = systemMessages(convKind, ctx, anchorDate, extraContext, PERSONA_CACHE_TTL, { ...wording.sections, ...o.persona });
   // The Turn's Trace (langfuse ticket 01): the root observation is open while the stream runs, so every Step and Tool
   // call nests under it, and is ended by whichever of onFinish and onError comes first.
   const tracing = opts.tracing ?? defaultTracing();
-  const result = tracing.turn({ name: 'vana-turn', userId: v.userId, sessionId: convId, metadata: { kind: convKind }, input: opener ? openerText : lastText }, (root) => streamText({
+  const result = tracing.turn({ name: 'vana-turn', userId: v.userId, sessionId: convId, metadata: { kind: convKind, promptSource }, input: opener ? openerText : lastText }, (root) => streamText({
     experimental_telemetry: tracing.telemetry(opts.functionName),
     model,
     system,
