@@ -5,6 +5,7 @@ import '../../../shared/services/analytics/analytics_events.dart';
 import '../../../shared/services/analytics/analytics_tracker.dart';
 import '../../../shared/domain/activity_type.dart';
 import '../../../shared/services/notification_service.dart';
+import '../../../shared/services/app_config.dart';
 import '../../../shared/services/prefs_provider.dart';
 import '../domain/night_before_nudge_engine.dart';
 
@@ -67,15 +68,23 @@ class NightBeforeNudgeService {
     required SharedPreferences prefs,
     required AnalyticsTracker analytics,
     DateTime Function()? clock,
+    bool fastFire = false,
   }) : _gateway = gateway,
        _prefs = prefs,
        _analytics = analytics,
+       _fastFire = fastFire,
        _clock = clock ?? DateTime.now;
 
   final NightBeforeNudgeGateway _gateway;
   final SharedPreferences _prefs;
   final AnalyticsTracker _analytics;
   final DateTime Function() _clock;
+
+  /// DEV ONLY. Fires two minutes from now instead of 19:00-the-evening-before,
+  /// so a nudge can be exercised on a device without waiting for the evening.
+  /// Set from the provider, which requires BOTH the dev flavor and an explicit
+  /// dart-define — a prod build cannot reach this even if the flag is passed.
+  final bool _fastFire;
 
   /// Activity ids currently armed — the set we may need to cancel later.
   static const _armedKey = 'night_before_nudge_armed';
@@ -94,38 +103,61 @@ class NightBeforeNudgeService {
     final armed = (_prefs.getStringList(_armedKey) ?? const []).toSet();
 
     for (final w in workouts) {
+      // Ruled 2026-09-30 (second pass): having a plan no longer means silence,
+      // it means a DIFFERENT nudge. So plan-existence selects the variant
+      // rather than gating the arm.
+      final variant = w.hasPlan
+          ? NightBeforeVariant.rehearse
+          : NightBeforeVariant.noPlan;
+
+      final fireAt = _fastFire
+          ? now.add(const Duration(minutes: 2))
+          : NightBeforeNudgeEngine.fireInstantFor(w.start);
+
       final shouldArm =
           NightBeforeNudgeEngine.isLong(w.durationMinutes) &&
-          !w.hasPlan &&
-          NightBeforeNudgeEngine.isFireAhead(workoutStart: w.start, now: now);
+          (_fastFire || fireAt.isAfter(now));
 
       final id = NightBeforeNudgeEngine.notificationId(w.id);
+      // Keyed by variant: a workout that swaps no_plan -> rehearse must be
+      // able to report `sent` again. Keyed by id alone, the swap would fire a
+      // notification the funnel never recorded.
+      final armKey = '${w.id}|${variant.tag}';
 
       if (!shouldArm) {
         // Idempotent: cancelling an id that was never scheduled is a no-op,
         // and this is the path that honours "skip entirely when a plan
         // exists" for a plan created AFTER arming.
-        if (armed.contains(w.id)) {
+        if (armed.any((k) => k.startsWith('${w.id}|'))) {
           await _gateway.cancel(id);
-          armed.remove(w.id);
+          armed.removeWhere((k) => k.startsWith('${w.id}|'));
         }
         continue;
       }
 
-      // Re-arm unconditionally: the workout's time or duration may have moved
-      // since it was scheduled, and zonedSchedule replaces by id.
+      // Re-arm unconditionally: the workout's time, duration or PLAN STATE may
+      // have moved since it was scheduled, and zonedSchedule replaces by id.
+      // This is also the swap-on-late-plan path — same slot, new variant.
       await _gateway.cancel(id);
+      // Drop only the OTHER variant's key, never this one: removing this
+      // variant's key would make `armed.add` succeed on every sweep and
+      // re-report `sent` each time, inflating the funnel denominator.
+      armed.removeWhere((k) => k.startsWith('${w.id}|') && k != armKey);
       await _gateway.schedule(
         id: id,
-        title: NightBeforeNudgeEngine.titleFor(w.type),
-        body: NightBeforeNudgeEngine.body(
-          NightBeforeNudgeEngine.formatDuration(w.durationMinutes!),
-        ),
-        fireAt: NightBeforeNudgeEngine.fireInstantFor(w.start),
-        payload: NightBeforeNudgeEngine.payload(w.id),
+        title: variant == NightBeforeVariant.noPlan
+            ? NightBeforeNudgeEngine.titleFor(w.type)
+            : NightBeforeNudgeEngine.rehearseTitle,
+        body: variant == NightBeforeVariant.noPlan
+            ? NightBeforeNudgeEngine.body(
+                NightBeforeNudgeEngine.formatDuration(w.durationMinutes!),
+              )
+            : NightBeforeNudgeEngine.rehearseBody(w.type),
+        fireAt: fireAt,
+        payload: NightBeforeNudgeEngine.payloadFor(w.id, variant),
       );
 
-      if (armed.add(w.id)) {
+      if (armed.add(armKey)) {
         // "Sent" at arm time, deliberately. A local notification's actual
         // delivery is the OS's business and is not observable to us, so this
         // is the closest honest signal — a scheduled nudge that the OS drops
@@ -133,7 +165,8 @@ class NightBeforeNudgeService {
         await _analytics.trackNightBeforeNudgeSent(
           activityId: w.id,
           durationMinutes: w.durationMinutes!,
-          scheduledFor: NightBeforeNudgeEngine.fireInstantFor(w.start),
+          scheduledFor: fireAt,
+          variant: variant.tag,
         );
       }
     }
@@ -143,8 +176,20 @@ class NightBeforeNudgeService {
   }
 
   /// Records a tap so a plan created soon after can be attributed to it.
-  Future<void> recordTap(String activityId) async {
-    await _analytics.trackNightBeforeNudgeTapped(activityId: activityId);
+  ///
+  /// Only the no-plan variant seeds attribution: a rehearse tap lands on a
+  /// plan that already exists, so "a plan appeared afterwards" would be
+  /// meaningless there. The rehearse variant HAS NO SUCCESS SIGNAL YET —
+  /// whoever adds one should not read its silence as failure.
+  Future<void> recordTap(
+    String activityId, {
+    NightBeforeVariant variant = NightBeforeVariant.noPlan,
+  }) async {
+    await _analytics.trackNightBeforeNudgeTapped(
+      activityId: activityId,
+      variant: variant.tag,
+    );
+    if (variant != NightBeforeVariant.noPlan) return;
     await _prefs.setString(
       _tappedKey,
       '$activityId|${_clock().millisecondsSinceEpoch}',
@@ -196,10 +241,18 @@ class NightBeforeNudgeService {
   }
 }
 
+/// DEV-ONLY fire-time override, opt-in at build time:
+///   flutter run --flavor dev --dart-define=NUDGE_FAST_FIRE=true
+/// It requires BOTH the compile-time define AND the dev flavor at runtime, so
+/// a prod build cannot take this path even if the define is passed.
+const bool _nudgeFastFireDefine = bool.fromEnvironment('NUDGE_FAST_FIRE');
+
 final nightBeforeNudgeServiceProvider = Provider<NightBeforeNudgeService>(
   (ref) => NightBeforeNudgeService(
     gateway: const NotificationServiceNightBeforeGateway(),
     prefs: ref.watch(sharedPreferencesProvider),
     analytics: ref.watch(analyticsTrackerProvider),
+    fastFire:
+        _nudgeFastFireDefine && ref.watch(appConfigProvider).devModeEnabled,
   ),
 );

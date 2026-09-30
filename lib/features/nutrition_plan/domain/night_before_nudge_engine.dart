@@ -20,6 +20,19 @@ import '../../../shared/domain/activity_type.dart';
 /// scheduled local notification carries whatever it was built with until it
 /// fires. Anything read from here is at least readable in one place when the
 /// ruling moves.
+/// Which nudge a long workout gets. Ruled 2026-09-30 (second pass): a workout
+/// that already HAS a plan no longer stays silent — it gets a rehearse prompt.
+enum NightBeforeVariant {
+  /// No fuelling plan yet: go make one.
+  noPlan,
+
+  /// Plan exists: go over it tonight.
+  rehearse;
+
+  /// Stable string for analytics and the armed-state key.
+  String get tag => this == NightBeforeVariant.noPlan ? 'no_plan' : 'rehearse';
+}
+
 class NightBeforeNudgeEngine {
   const NightBeforeNudgeEngine._();
 
@@ -105,11 +118,52 @@ class NightBeforeNudgeEngine {
   }) => fireInstantFor(workoutStart).isAfter(now);
 
   /// The tap payload. `parseTypedNotificationPayload` splits it back into
-  /// (type: plan_workout, activityId), and the intent table routes it.
-  static String payload(String activityId) => 'plan_workout:$activityId';
+  /// (intent, activityId), and the intent table routes it.
+  ///
+  /// The two variants carry DIFFERENT intents on purpose — they land on
+  /// different screens (make a plan vs. read the one you have), so overloading
+  /// one intent would force the landing to re-derive plan-existence at tap
+  /// time, which is the state that changed underneath us in the first place.
+  static String payloadFor(String activityId, NightBeforeVariant variant) =>
+      variant == NightBeforeVariant.noPlan
+      ? 'plan_workout:$activityId'
+      : 'rehearse_plan:$activityId';
+
+  /// The sport word inside the rehearse line: "your long run / ride / brick".
+  static String sportWord(ActivityType? type) {
+    switch (type) {
+      case ActivityType.running:
+        return 'run';
+      case ActivityType.cycling:
+        return 'ride';
+      case ActivityType.swimming:
+        return 'swim';
+      case ActivityType.brick:
+      case ActivityType.multisport:
+        return 'brick';
+      case ActivityType.triathlon:
+      case ActivityType.duathlon:
+      case ActivityType.other:
+      case null:
+        return 'workout';
+    }
+  }
+
+  /// Rehearse-variant copy, approved 2026-09-30. Xuan's sentence is the body
+  /// verbatim; the title carries the register. Revisable like the other copy.
+  static const String rehearseTitle = "Rehearse tomorrow's fueling";
+
+  static String rehearseBody(ActivityType? type) =>
+      'Rehearse your nutrition plan for your long ${sportWord(type)}. '
+      "Get 'em ready!";
 
   /// Stable per-activity id, so re-arming replaces rather than duplicates.
   /// Distinct from the carb nudge's ids by the prefix in the hashed string.
+  ///
+  /// Deliberately NOT varied by variant: a plan appearing after arming must
+  /// REPLACE the pending no-plan nudge at the same slot, not leave both
+  /// scheduled. One workout, one pending notification, whichever variant it
+  /// currently deserves.
   static int notificationId(String activityId) =>
       ('night_before_nudge:$activityId').hashCode & 0x7fffffff;
 }

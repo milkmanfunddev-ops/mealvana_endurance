@@ -26,6 +26,7 @@ import '../services/app_config.dart';
 import '../services/app_external_deps.dart';
 import '../../features/carb_loading/presentation/providers/carb_nudge_coordinator.dart';
 import '../../features/nutrition_plan/application/night_before_nudge_service.dart';
+import '../../features/nutrition_plan/domain/night_before_nudge_engine.dart';
 import '../../features/nutrition_plan/presentation/providers/night_before_nudge_coordinator.dart';
 import '../../features/activities/data/activities_repository.dart';
 import '../services/auth/auth_listener_service.dart';
@@ -158,9 +159,17 @@ class _RootAppWidgetState extends ConsumerState<RootAppWidget>
 
     // The tap is the attribution anchor for "did the nudge cause a plan".
     // Recorded before navigating so a slow write cannot lose it to the
-    // screen transition.
-    if (type == 'plan_workout') {
-      ref.read(nightBeforeNudgeServiceProvider).recordTap(activityId);
+    // screen transition. The intent carries the variant — only the no-plan
+    // one seeds plan attribution.
+    if (type == 'plan_workout' || type == 'rehearse_plan') {
+      ref
+          .read(nightBeforeNudgeServiceProvider)
+          .recordTap(
+            activityId,
+            variant: type == 'rehearse_plan'
+                ? NightBeforeVariant.rehearse
+                : NightBeforeVariant.noPlan,
+          );
     }
 
     final destination = destinationForIntent(type, activityId);

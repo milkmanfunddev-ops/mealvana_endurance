@@ -112,8 +112,29 @@ void main() {
       expect(NightBeforeNudgeEngine.formatDuration(90), '1 h 30 m');
     });
 
-    test('the payload carries the intent, not a screen', () {
-      expect(NightBeforeNudgeEngine.payload('abc'), 'plan_workout:abc');
+    test('each variant carries its own intent, not a screen', () {
+      expect(
+        NightBeforeNudgeEngine.payloadFor('abc', NightBeforeVariant.noPlan),
+        'plan_workout:abc',
+      );
+      expect(
+        NightBeforeNudgeEngine.payloadFor('abc', NightBeforeVariant.rehearse),
+        'rehearse_plan:abc',
+      );
+    });
+
+    test('the rehearse sport word follows the title mapping', () {
+      expect(NightBeforeNudgeEngine.rehearseBody(ActivityType.cycling),
+          "Rehearse your nutrition plan for your long ride. Get 'em ready!");
+      expect(NightBeforeNudgeEngine.rehearseBody(ActivityType.swimming),
+          contains('long swim'));
+      expect(NightBeforeNudgeEngine.rehearseBody(ActivityType.brick),
+          contains('long brick'));
+      // Unmapped sports get the neutral word, never another sport's.
+      expect(NightBeforeNudgeEngine.rehearseBody(ActivityType.triathlon),
+          contains('long workout'));
+      expect(NightBeforeNudgeEngine.rehearseBody(null),
+          contains('long workout'));
     });
   });
 
@@ -208,8 +229,8 @@ void main() {
       expect(events.map((e) => e.name), contains('night_before_nudge_sent'));
     });
 
-    test('SKIPS ENTIRELY when a plan already exists — no variant, no nag',
-        () async {
+    test('a planned workout gets the REHEARSE variant, not silence', () async {
+      // Ruled 2026-09-30 (second pass), replacing "skip entirely".
       await build().evaluate([(
         id: 'act-long',
         start: tomorrowLong.start,
@@ -218,16 +239,23 @@ void main() {
         type: ActivityType.running,
       )]);
 
-      expect(gateway.scheduled, isEmpty);
-      expect(events.where((e) => e.name == 'night_before_nudge_sent'), isEmpty);
+      final s = gateway.scheduled.single;
+      expect(s.title, "Rehearse tomorrow's fueling");
+      expect(s.body,
+          "Rehearse your nutrition plan for your long run. Get 'em ready!");
+      expect(s.payload, 'rehearse_plan:act-long');
+      expect(
+        events.firstWhere((e) => e.name == 'night_before_nudge_sent')
+            .props?['variant'],
+        'rehearse',
+      );
     });
 
-    test('a plan created AFTER arming cancels the pending nudge', () async {
+    test('a plan created AFTER arming SWAPS the variant at the same slot',
+        () async {
       await build().evaluate([tomorrowLong]);
-      expect(gateway.scheduled, hasLength(1));
+      expect(gateway.scheduled.single.payload, 'plan_workout:act-long');
 
-      // Same workout, now planned. The athlete must not be told to do
-      // something they have already done.
       await build().evaluate([(
         id: 'act-long',
         start: tomorrowLong.start,
@@ -236,9 +264,54 @@ void main() {
         type: ActivityType.running,
       )]);
 
+      // Same fire instant, same notification id, new variant — not cancelled
+      // into silence, and not two pending notifications.
+      expect(gateway.scheduled, hasLength(2));
+      expect(gateway.scheduled.last.payload, 'rehearse_plan:act-long');
+      expect(gateway.scheduled.last.fireAt, gateway.scheduled.first.fireAt);
+      expect(gateway.scheduled.last.id, gateway.scheduled.first.id);
+    });
+
+    test('the swap reports sent again — the funnel must not lose it', () async {
+      // Keyed by id alone this would be suppressed, firing a notification no
+      // event ever recorded.
+      await build().evaluate([tomorrowLong]);
+      await build().evaluate([(
+        id: 'act-long',
+        start: tomorrowLong.start,
+        durationMinutes: 135,
+        hasPlan: true,
+        type: ActivityType.running,
+      )]);
+
+      final sent = events.where((e) => e.name == 'night_before_nudge_sent');
+      expect(sent, hasLength(2));
+      expect(sent.map((e) => e.props?['variant']), ['no_plan', 'rehearse']);
+    });
+
+    test('a rehearse tap does not seed plan attribution', () async {
+      final service = build();
+      await service.recordTap('act-long',
+          variant: NightBeforeVariant.rehearse);
+
+      await service.evaluate([(
+        id: 'act-long',
+        start: tomorrowLong.start,
+        durationMinutes: 135,
+        hasPlan: true,
+        type: ActivityType.running,
+      )]);
+
+      // The plan already existed; "a plan appeared after the tap" is
+      // meaningless for this variant.
       expect(
-        gateway.cancelled,
-        contains(NightBeforeNudgeEngine.notificationId('act-long')),
+        events.where((e) => e.name == 'night_before_nudge_plan_created'),
+        isEmpty,
+      );
+      expect(
+        events.firstWhere((e) => e.name == 'night_before_nudge_tapped')
+            .props?['variant'],
+        'rehearse',
       );
     });
 
