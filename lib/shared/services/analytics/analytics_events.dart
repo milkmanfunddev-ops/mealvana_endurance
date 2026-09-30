@@ -16,6 +16,52 @@ extension AnalyticsEvents on AnalyticsTracker {
     );
   }
 
+  // --- Night-before long-workout nudge (ruled 2026-09-30) -----------------
+  // Instrumentation is part of the spec, not an optional extra: V3 reads the
+  // planned-before-start rate for long workouts against a 13.7% baseline, and
+  // a nudge that cannot be measured cannot be judged.
+
+  /// Armed a nudge. "Sent" at ARM time — a local notification's delivery is
+  /// the OS's business and is not observable to us, so a dropped one counts
+  /// here and simply never gets tapped.
+  Future<void> trackNightBeforeNudgeSent({
+    required String activityId,
+    required int durationMinutes,
+    required DateTime scheduledFor,
+  }) {
+    return track(
+      'night_before_nudge_sent',
+      properties: {
+        'activity_id': activityId,
+        'duration_minutes': durationMinutes,
+        'scheduled_for': scheduledFor.toIso8601String(),
+      },
+    );
+  }
+
+  /// The athlete tapped the nudge.
+  Future<void> trackNightBeforeNudgeTapped({required String activityId}) {
+    return track(
+      'night_before_nudge_tapped',
+      properties: {'activity_id': activityId},
+    );
+  }
+
+  /// A fuelling plan exists for a workout tapped through within the
+  /// attribution window — the conversion the nudge exists to cause.
+  Future<void> trackNightBeforeNudgePlanCreated({
+    required String activityId,
+    required int minutesAfterTap,
+  }) {
+    return track(
+      'night_before_nudge_plan_created',
+      properties: {
+        'activity_id': activityId,
+        'minutes_after_tap': minutesAfterTap,
+      },
+    );
+  }
+
   Future<void> trackAppOpened({
     required String deviceId,
     required String sessionId,

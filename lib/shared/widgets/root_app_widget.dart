@@ -24,6 +24,8 @@ import '../core/app_router.dart';
 import '../services/app_config.dart';
 import '../services/app_external_deps.dart';
 import '../../features/carb_loading/presentation/providers/carb_nudge_coordinator.dart';
+import '../../features/nutrition_plan/application/night_before_nudge_service.dart';
+import '../../features/nutrition_plan/presentation/providers/night_before_nudge_coordinator.dart';
 import '../services/auth/auth_listener_service.dart';
 import '../services/notification_service.dart';
 import '../services/notification_intent_routes.dart';
@@ -92,6 +94,8 @@ class _RootAppWidgetState extends ConsumerState<RootAppWidget>
       }
       // G27: first-frame nudge sweep (arm/disarm + on-open catch-up).
       ref.read(carbNudgeCoordinatorProvider.notifier).run();
+      // Night-before long-workout nudge: same sweep shape, same fail-soft.
+      ref.read(nightBeforeNudgeCoordinatorProvider).run();
     });
   }
 
@@ -101,6 +105,7 @@ class _RootAppWidgetState extends ConsumerState<RootAppWidget>
     // G27: the on-open catch-up also runs on every foreground resume.
     if (state == AppLifecycleState.resumed) {
       ref.read(carbNudgeCoordinatorProvider.notifier).run();
+      ref.read(nightBeforeNudgeCoordinatorProvider).run();
     }
   }
 
@@ -147,6 +152,13 @@ class _RootAppWidgetState extends ConsumerState<RootAppWidget>
     if (!_isRoutableNow()) {
       _deferredTap = (id: activityId, type: type);
       return;
+    }
+
+    // The tap is the attribution anchor for "did the nudge cause a plan".
+    // Recorded before navigating so a slow write cannot lose it to the
+    // screen transition.
+    if (type == 'plan_workout') {
+      ref.read(nightBeforeNudgeServiceProvider).recordTap(activityId);
     }
 
     final destination = destinationForIntent(type, activityId);
