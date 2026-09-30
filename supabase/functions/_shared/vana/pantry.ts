@@ -9,6 +9,7 @@ import type { VanaPart } from './contracts.ts';
 import { getPlan } from './plan.ts';
 import { gatewayCostUsd, logAiUsage } from '../ai/usage.ts';
 import { cacheReadTokens, cacheWriteTokens } from './stream.ts';
+import { defaultTracing } from '../langfuse/tracing.ts';
 
 export type PantryPart = Extract<VanaPart, { kind: 'pantry' }>;
 const norm = (s: string) => s.toLowerCase().replace(/[^a-z0-9 ]/g, ' ').replace(/\s+/g, ' ').trim();
@@ -37,16 +38,19 @@ const PantryVisionZ = z.object({ isFoodStorage: z.boolean().describe('true when 
 export interface PantryUsage { inputTokens: number; outputTokens: number; cacheReadTokens: number | null; cacheWriteTokens: number | null; gatewayCostUsd: number | null; model: string }
 /** `onUsage` reports what the vision call cost, so the caller can finish the `vana_calls` row that reserved its
  *  place in the limiter (mp-469) and settle the budget reservation to the real cost (mp-436). */
-export async function detectPantryFromPhoto(v: VanaCtx, photoPath: string, onUsage?: (t: PantryUsage) => Promise<void>): Promise<PantryPart> {
+/** `conversationId` is the Conversation the photo was taken in: the Session its Trace carries (langfuse ticket 10). */
+export async function detectPantryFromPhoto(v: VanaCtx, photoPath: string, onUsage?: (t: PantryUsage) => Promise<void>, conversationId?: string | null): Promise<PantryPart> {
   if (!photoPath.startsWith(`${v.userId}/`)) throw new Error('photo does not belong to this user');
   const { data: blob, error } = await v.admin.storage.from('meal-photos').download(photoPath);
   if (error || !blob) throw new Error(`could not read photo: ${error?.message ?? 'unknown'}`);
   const bytes = new Uint8Array(await blob.arrayBuffer()); let bin = ''; for (let i = 0; i < bytes.length; i += 8192) bin += String.fromCharCode(...bytes.subarray(i, i + 8192));
   const ext = photoPath.split('.').pop()?.toLowerCase(); const mediaType = ext === 'png' ? 'image/png' : ext === 'webp' ? 'image/webp' : 'image/jpeg';
-  const r = await generateObject({
-    model: TOOL_MODEL as Parameters<typeof generateObject>[0]['model'], schema: PantryVisionZ, maxOutputTokens: 400,
-    messages: [{ role: 'user', content: [{ type: 'image', image: btoa(bin), mediaType }, { type: 'text', text: 'List the food ingredients visible in this fridge/pantry photo as plain names (e.g. "eggs", "spinach", "greek yogurt"). Skip condiments you cannot identify, packaging text and non-food. If it is not a food-storage photo, set isFoodStorage=false and return no items.' }] }],
-  });
+  // The call is a Trace of its own. The photo goes as image data, which Langfuse stores; no signed URL is sent.
+  const tracing = defaultTracing(); const image = btoa(bin);
+  const r = await tracing.call({ name: 'vana-pantry-photo', userId: v.userId, sessionId: conversationId, tags: ['pantry-photo'], input: { photo: `data:${mediaType};base64,${image}` } }, () => generateObject({
+    model: TOOL_MODEL as Parameters<typeof generateObject>[0]['model'], experimental_telemetry: tracing.telemetry('vana-pantry-photo'), schema: PantryVisionZ, maxOutputTokens: 400,
+    messages: [{ role: 'user', content: [{ type: 'image', image, mediaType }, { type: 'text', text: 'List the food ingredients visible in this fridge/pantry photo as plain names (e.g. "eggs", "spinach", "greek yogurt"). Skip condiments you cannot identify, packaging text and non-food. If it is not a food-storage photo, set isFoodStorage=false and return no items.' }] }],
+  }), (out) => out.object);
   const u = r.usage; const costUsd = gatewayCostUsd(r.providerMetadata);
   await logAiUsage(v.admin, { userId: v.userId, functionName: 'vana-pantry-photo', model: TOOL_MODEL, inputTokens: u?.inputTokens ?? 0, outputTokens: u?.outputTokens ?? 0, costUsd });
   await onUsage?.({ inputTokens: u?.inputTokens ?? 0, outputTokens: u?.outputTokens ?? 0, cacheReadTokens: cacheReadTokens(u), cacheWriteTokens: cacheWriteTokens(u), gatewayCostUsd: costUsd, model: TOOL_MODEL });

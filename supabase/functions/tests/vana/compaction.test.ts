@@ -13,10 +13,11 @@ import { assert, assertEquals } from 'https://deno.land/std@0.177.1/testing/asse
 import type { UIMessage } from 'npm:ai@6.0.277';
 import { compactHistory, conversationMessages, replayHistory, summaryDueAt, summaryIndexAt, SUMMARY_CHUNK, SUMMARY_LEAD, VERBATIM_CAP } from '../../_shared/vana/chat.ts';
 import type { ReplayDeps } from '../../_shared/vana/chat.ts';
-import { parseSummaries, renderSummaries } from '../../_shared/vana/extract.ts';
+import { parseSummaries, renderSummaries, writeSummary } from '../../_shared/vana/extract.ts';
 import type { SummaryDeps } from '../../_shared/vana/extract.ts';
 import { testCtx, TEST_USER_ID } from './support/vana_ctx.ts';
 import type { Row, Tables } from './support/fake_db.ts';
+import { assertOneTrace, failingExporter, withTracedModel } from './support/traced_call.ts';
 
 const U = TEST_USER_ID;
 const CONV = 'conv-long';
@@ -304,4 +305,34 @@ Deno.test('an ephemeral turn has no conversation row to summarise onto', async (
   const replayed = await replayHistory(v, '', await history(v), deps);
   assertEquals(replayed.length, 45);
   assertEquals(deps.tasks.length, 0);
+});
+
+// ---------------------------------------------------------------- the Trace (langfuse ticket 10)
+// The model is the real call here, behind a mock provider: the Trace is made where the model is called.
+
+const SUMMARY_COST = '0.00094';
+const summaryWrites = (v: ReturnType<typeof testCtx>) => ({
+  summary: [row(v).summary, row(v).summary_index],
+  calls: v.fake.writesTo('vana_calls', 'insert').map((w) => [w.values.function_name, w.values.model, w.values.input_tokens, w.values.output_tokens, w.values.gateway_cost_usd]),
+});
+
+Deno.test('a rolling summary is one Trace in its Conversation, with the cost the Call log records', async () => {
+  const v = testCtx(world(30));
+  await withTracedModel({ summary: SUMMARY_20 }, SUMMARY_COST, async (w) => {
+    const part = await writeSummary(v, CONV, 20, await history(v));
+    assertEquals(part, { index: 20, text: SUMMARY_20 });
+    const call = v.fake.writesTo('vana_calls', 'insert').find((c) => c.values.function_name === 'vana.summary')!.values;
+    assertEquals(call.gateway_cost_usd, Number(SUMMARY_COST), "the Call log holds the gateway's charge");
+    const root = assertOneTrace(await w.spans(), { name: 'vana-summary', userId: U, sessionId: CONV, cost: call.gateway_cost_usd as number });
+    assert(String(root.attributes['langfuse.observation.input']).includes(TURN_THREE), 'the messages it summarised');
+    assertEquals(JSON.parse(String(root.attributes['langfuse.observation.output'])), { summary: SUMMARY_20 });
+  });
+});
+
+Deno.test('Langfuse being down changes nothing a rolling summary writes', async () => {
+  const plain = testCtx(world(30)); const traced = testCtx(world(30));
+  await withTracedModel({ summary: SUMMARY_20 }, SUMMARY_COST, async () => await writeSummary(plain, CONV, 20, await history(plain)), { exporter: null });
+  await withTracedModel({ summary: SUMMARY_20 }, SUMMARY_COST, async () => await writeSummary(traced, CONV, 20, await history(traced)), { exporter: failingExporter });
+  assertEquals(summaryWrites(traced), summaryWrites(plain));
+  assertEquals(summaryWrites(traced).summary[1], 20);
 });

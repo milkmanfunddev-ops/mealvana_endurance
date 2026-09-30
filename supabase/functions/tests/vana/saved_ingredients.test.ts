@@ -10,6 +10,7 @@ import { savedMealIngredients, buildShoppingList } from '../../_shared/vana/groc
 import { addMealById, getPlanById } from '../../_shared/vana/plan.ts';
 import { testCtx, TEST_USER_ID } from './support/vana_ctx.ts';
 import type { Row, Tables } from './support/fake_db.ts';
+import { assertOneTrace, failingExporter, withTracedModel } from './support/traced_call.ts';
 
 const U = TEST_USER_ID;
 const SCRAMBLE_ID = 'fd993bbb-a13a-43e7-a662-ea71ed2ae64a';
@@ -186,4 +187,34 @@ Deno.test('refreshShopping backfills a dish-level saved meal already in the plan
     await refreshShopping(v, 'p1');
     assertEquals(calls.length, 1);
   } finally { ingredientDeps.generate = real; }
+});
+
+// ---------------------------------------------------------------- the Trace (langfuse ticket 10)
+// The model is the real call here, behind a mock provider: the Trace is made where the model is called.
+
+const INGREDIENTS_COST = '0.00061';
+const ingredientWrites = (v: ReturnType<typeof testCtx>) => ({
+  ingredients: v.fake.rows('saved_meals')[0].ingredients_json,
+  calls: v.fake.writesTo('vana_calls', 'insert').map((w) => [w.values.function_name, w.values.model, w.values.input_tokens, w.values.output_tokens, w.values.gateway_cost_usd]),
+});
+
+Deno.test("a saved meal's ingredient list is one Trace for the athlete, with the cost the Call log records", async () => {
+  const v = testCtx({ saved_meals: [scramble()], vana_calls: [] });
+  await withTracedModel(SCRAMBLE_OUT, INGREDIENTS_COST, async (w) => {
+    assertEquals(await ensureSavedMealIngredients(v, SCRAMBLE_ID), 'extracted');
+    const call = v.fake.writesTo('vana_calls', 'insert').find((c) => c.values.function_name === 'vana.ingredients')!.values;
+    assertEquals(call.gateway_cost_usd, Number(INGREDIENTS_COST), "the Call log holds the gateway's charge");
+    // A saved meal belongs to no Conversation, so the Trace carries no Session.
+    const root = assertOneTrace(await w.spans(), { name: 'vana-saved-meal-ingredients', userId: U, sessionId: undefined, cost: call.gateway_cost_usd as number });
+    assert(String(root.attributes['langfuse.observation.input']).includes('DISH: Egg & Veggie Scramble'));
+    assertEquals(JSON.parse(String(root.attributes['langfuse.observation.output'])), SCRAMBLE_OUT);
+  });
+});
+
+Deno.test("Langfuse being down changes nothing a saved meal's ingredient list writes", async () => {
+  const plain = testCtx({ saved_meals: [scramble()], vana_calls: [] }); const traced = testCtx({ saved_meals: [scramble()], vana_calls: [] });
+  await withTracedModel(SCRAMBLE_OUT, INGREDIENTS_COST, () => ensureSavedMealIngredients(plain, SCRAMBLE_ID), { exporter: null });
+  await withTracedModel(SCRAMBLE_OUT, INGREDIENTS_COST, () => ensureSavedMealIngredients(traced, SCRAMBLE_ID), { exporter: failingExporter });
+  assertEquals(ingredientWrites(traced), ingredientWrites(plain));
+  assertEquals(ingredientWrites(traced).ingredients, toStoredIngredients(SCRAMBLE_OUT));
 });

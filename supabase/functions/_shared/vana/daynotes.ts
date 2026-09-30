@@ -28,6 +28,8 @@ import { getPlan } from './plan.ts';
 import { logCall } from './log.ts';
 import { checkRateLimit } from './rate-limit.ts';
 import type { AthleteContext, DaySlot, MealPlan } from './contracts.ts';
+import { gatewayCostUsd } from '../ai/usage.ts';
+import { defaultTracing } from '../langfuse/tracing.ts';
 
 const NotesZ = z.object({ notes: z.array(z.object({ date: z.string(), text: z.string() })).min(1).max(8) });
 
@@ -40,7 +42,7 @@ const SLOTS: readonly DaySlot[] = ['breakfast', 'lunch', 'dinner', 'snack'];
 
 export interface DayNotesDeps {
   /** The one model call. Injected so a test drives the writer from a fixed set of notes. */
-  generate: (input: { system: string; prompt: string; dates: string[] }) => Promise<{ notes: { date: string; text: string }[]; inputTokens?: number; outputTokens?: number }>;
+  generate: (input: { system: string; prompt: string; dates: string[] }) => Promise<{ notes: { date: string; text: string }[]; inputTokens?: number; outputTokens?: number; gatewayCostUsd?: number | null }>;
   /** The athlete context the notes and the fingerprints are both read from. */
   buildContext: (v: VanaCtx, anchorDate: string) => Promise<AthleteContext>;
   /** A token → this request owns the plan's generation and releases it with that token. `true` → the claim could not
@@ -55,8 +57,8 @@ export interface DayNotesDeps {
 
 export const defaultDayNotesDeps: DayNotesDeps = {
   generate: async ({ system, prompt }) => {
-    const { object, usage } = await generateObject({ model: TOOL_MODEL, schema: NotesZ, maxOutputTokens: 900, system, prompt });
-    return { notes: object.notes, inputTokens: usage?.inputTokens, outputTokens: usage?.outputTokens };
+    const { object, usage, providerMetadata } = await generateObject({ model: TOOL_MODEL, experimental_telemetry: defaultTracing().telemetry('vana.daynotes'), schema: NotesZ, maxOutputTokens: 900, system, prompt });
+    return { notes: object.notes, inputTokens: usage?.inputTokens, outputTokens: usage?.outputTokens, gatewayCostUsd: gatewayCostUsd(providerMetadata) };
   },
   buildContext: (v, anchorDate) => buildAthleteContext(v, anchorDate),
   claim: async (v, planId) => {
@@ -193,7 +195,11 @@ export async function generateDayNotes(v: VanaCtx, plan: MealPlan, anchorDate: s
     // The flag comes down BEFORE the model runs, never after: an edit that lands while we generate raises it again,
     // and our write below must not lower it over that edit (its days would stay wrong until the next plan change).
     if (plan.dayNotesStale !== false) await v.db.from('meal_plans').update({ day_notes_stale: false }).eq('id', plan.id);
-    const { notes: written, inputTokens, outputTokens } = await deps.generate({ system: DAY_NOTE_SYSTEM, prompt: notesPrompt(plan, ctx, dirty), dates: dirty });
+    // The call is a Trace of its own (langfuse ticket 10). The notes belong to a plan, so it carries no Session.
+    const prompt = notesPrompt(plan, ctx, dirty);
+    const { notes: written, inputTokens, outputTokens, gatewayCostUsd: cost } = await defaultTracing().call(
+      { name: 'vana-day-notes', userId: v.userId, tags: ['background'], input: prompt },
+      () => deps.generate({ system: DAY_NOTE_SYSTEM, prompt, dates: dirty }), (r) => r.notes);
     const fresh: Record<string, string> = {};
     const keys: Record<string, string> = {};
     for (const n of written) if (dirty.includes(n.date) && n.text.trim()) { fresh[n.date] = ruledWording(n.text.trim()); keys[n.date] = want[n.date]; }
@@ -203,7 +209,7 @@ export async function generateDayNotes(v: VanaCtx, plan: MealPlan, anchorDate: s
       day_notes_keys: { ...stored.keys, ...keys },
       day_notes_at: new Date().toISOString(),
     }).eq('id', plan.id);
-    await logCall(v.admin, { userId: v.userId, functionName: 'vana.daynotes', model: TOOL_MODEL, inputTokens, outputTokens });
+    await logCall(v.admin, { userId: v.userId, functionName: 'vana.daynotes', model: TOOL_MODEL, inputTokens, outputTokens, gatewayCostUsd: cost });
     console.log(`[vana] day notes for ${plan.id}: ${dirty.length} of ${dates.length} days in ${Date.now() - started}ms`);
     return notes;
   } catch (e) {

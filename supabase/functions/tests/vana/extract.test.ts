@@ -11,6 +11,7 @@ import type { Extraction, ExtractDeps } from '../../_shared/vana/extract.ts';
 import { listMemories, episodeFor } from '../../_shared/vana/memory.ts';
 import { testCtx, TEST_USER_ID } from './support/vana_ctx.ts';
 import type { Row, Tables } from './support/fake_db.ts';
+import { assertOneTrace, failingExporter, withTracedModel } from './support/traced_call.ts';
 
 const U = TEST_USER_ID;
 const CONV = 'conv-yesterday';
@@ -143,4 +144,35 @@ Deno.test('the prompt names what is already on file so the extractor does not re
   const p = extractionPrompt([{ role: 'user', text: 'Hi' }], ['Hates cilantro']);
   assert(p.includes('- Hates cilantro'));
   assert(p.includes('ATHLETE: Hi'));
+});
+
+// ---------------------------------------------------------------- the Trace (langfuse ticket 10)
+// The model is the real call here, behind a mock provider: the Trace is made where the model is called.
+
+const EXTRACTION_COST = '0.00118';
+const extractionWrites = (v: ReturnType<typeof testCtx>) => ({
+  memories: v.fake.rows('user_memories').map((m) => [m.kind, m.key ?? null, m.fact]),
+  calls: v.fake.writesTo('vana_calls', 'insert').map((w) => [w.values.function_name, w.values.model, w.values.input_tokens, w.values.output_tokens, w.values.gateway_cost_usd]),
+  readBack: v.fake.rows('vana_conversations')[0].read_back_at != null,
+});
+
+Deno.test('an extraction is one Trace in its Conversation, with the cost the Call log records', async () => {
+  const v = testCtx(world());
+  await withTracedModel(TWO_FACTS, EXTRACTION_COST, async (w) => {
+    const out = await extractConversation(v, CONV);
+    assertEquals(out.memories, 2);
+    const call = v.fake.writesTo('vana_calls', 'insert').find((c) => c.values.function_name === 'vana.extract')!.values;
+    assertEquals(call.gateway_cost_usd, Number(EXTRACTION_COST), "the Call log holds the gateway's charge");
+    const root = assertOneTrace(await w.spans(), { name: 'vana-memory-extraction', userId: U, sessionId: CONV, cost: call.gateway_cost_usd as number });
+    assert(String(root.attributes['langfuse.observation.input']).includes('Wednesdays are chaos'), 'the transcript the extractor read');
+    assertEquals(JSON.parse(String(root.attributes['langfuse.observation.output'])), TWO_FACTS, 'what it decided to keep');
+  });
+});
+
+Deno.test('Langfuse being down changes nothing an extraction writes', async () => {
+  const plain = testCtx(world()); const traced = testCtx(world());
+  await withTracedModel(TWO_FACTS, EXTRACTION_COST, () => extractConversation(plain, CONV), { exporter: null });
+  await withTracedModel(TWO_FACTS, EXTRACTION_COST, () => extractConversation(traced, CONV), { exporter: failingExporter });
+  assertEquals(extractionWrites(traced), extractionWrites(plain));
+  assertEquals(extractionWrites(traced).memories.length, 3, 'two notes and the episode');
 });

@@ -148,7 +148,7 @@ export async function extraAction(v: VanaCtx, type: string, p: Record<string, an
       try { callId = await reserveCallOrThrow(v.admin, v.userId, 'vana.pantry_photo', { model: TOOL_MODEL }); } catch (e) { await hold.refund(); throw e; }
       let part;
       try {
-        part = await detectPantryFromPhoto(v, String(pick(p, 'photoPath', 'photo_path')), async (t) => { await completeCall(v.admin, callId, { inputTokens: t.inputTokens, outputTokens: t.outputTokens, cacheReadTokens: t.cacheReadTokens, cacheWriteTokens: t.cacheWriteTokens, gatewayCostUsd: t.gatewayCostUsd, steps: 1, debited: true, conversationId }); await hold.settle(t); });
+        part = await detectPantryFromPhoto(v, String(pick(p, 'photoPath', 'photo_path')), async (t) => { await completeCall(v.admin, callId, { inputTokens: t.inputTokens, outputTokens: t.outputTokens, cacheReadTokens: t.cacheReadTokens, cacheWriteTokens: t.cacheWriteTokens, gatewayCostUsd: t.gatewayCostUsd, steps: 1, debited: true, conversationId }); await hold.settle(t); }, conversationId);
       } catch (e) { await hold.refund(); throw e; }
       const messageId = await persistAssistantPart(v, conversationId, part, part.items.length ? 'Here is what I could see — untick anything that is wrong, add what I missed, then tap Use these.' : 'I could not spot food in that photo. Add what you have and tap Use these.'); return { parts: [part], messageId }; }
     case 'rewind': {

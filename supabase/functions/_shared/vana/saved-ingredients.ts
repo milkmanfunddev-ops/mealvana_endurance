@@ -22,6 +22,8 @@ import { backgroundModel } from './env.ts';
 import type { VanaCtx } from './env.ts';
 import { logCall } from './log.ts';
 import { checkRateLimit } from './rate-limit.ts';
+import { gatewayCostUsd } from '../ai/usage.ts';
+import { defaultTracing } from '../langfuse/tracing.ts';
 
 /** A saved_meals.items row as the app and the server write it (either name key; either quantity key). */
 export interface SavedItem { name?: string; food_name?: string; portion?: string | number | null; quantity?: string | number | null; serving?: string | number | null; calories?: number | null; carb_g?: number | null; carbs_g?: number | null; protein_g?: number | null; fat_g?: number | null; role?: string | null }
@@ -88,13 +90,13 @@ export function toStoredIngredients(out: IngredientsOut): SavedIngredient[] {
 
 export interface IngredientDeps {
   /** The one model call. Injected so a test drives the writer from a fixed answer. */
-  generate: (input: { system: string; prompt: string }) => Promise<{ object: IngredientsOut; inputTokens?: number; outputTokens?: number }>;
+  generate: (input: { system: string; prompt: string }) => Promise<{ object: IngredientsOut; inputTokens?: number; outputTokens?: number; gatewayCostUsd?: number | null }>;
 }
 /** Mutable on purpose: plan.ts calls the hook without a deps argument, so a test swaps `generate` here. */
 export const ingredientDeps: IngredientDeps = {
   generate: async ({ system, prompt }) => {
-    const { object, usage } = await generateObject({ model: backgroundModel(), schema: IngredientsZ, maxOutputTokens: 500, system, prompt });
-    return { object, inputTokens: usage?.inputTokens, outputTokens: usage?.outputTokens };
+    const { object, usage, providerMetadata } = await generateObject({ model: backgroundModel(), experimental_telemetry: defaultTracing().telemetry('vana.ingredients'), schema: IngredientsZ, maxOutputTokens: 500, system, prompt });
+    return { object, inputTokens: usage?.inputTokens, outputTokens: usage?.outputTokens, gatewayCostUsd: gatewayCostUsd(providerMetadata) };
   },
 };
 
@@ -104,12 +106,16 @@ type SavedRow = Record<string, any>;
 /** One model call, then the conditional write. Returns the rows written, or null when the column was already set. */
 export async function extractIngredients(v: VanaCtx, saved: SavedRow, deps: IngredientDeps = ingredientDeps): Promise<SavedIngredient[] | null> {
   const started = Date.now();
-  const { object, inputTokens, outputTokens } = await deps.generate({ system: INGREDIENTS_SYSTEM, prompt: ingredientsPrompt({ name: saved.name, items: (saved.items ?? []) as SavedItem[], notes: saved.notes, calories: saved.calories, carbsG: saved.carbs_g == null ? null : Number(saved.carbs_g), proteinG: saved.protein_g == null ? null : Number(saved.protein_g), fatG: saved.fat_g == null ? null : Number(saved.fat_g) }) });
+  const prompt = ingredientsPrompt({ name: saved.name, items: (saved.items ?? []) as SavedItem[], notes: saved.notes, calories: saved.calories, carbsG: saved.carbs_g == null ? null : Number(saved.carbs_g), proteinG: saved.protein_g == null ? null : Number(saved.protein_g), fatG: saved.fat_g == null ? null : Number(saved.fat_g) });
+  // The call is a Trace of its own (langfuse ticket 10). A saved meal belongs to no Conversation, so it carries no Session.
+  const { object, inputTokens, outputTokens, gatewayCostUsd: cost } = await defaultTracing().call(
+    { name: 'vana-saved-meal-ingredients', userId: v.userId, tags: ['background'], input: prompt },
+    () => deps.generate({ system: INGREDIENTS_SYSTEM, prompt }), (r) => r.object);
   const rows = toStoredIngredients(object);
   if (!rows.length) return null;
   const { data, error } = await v.db.from('saved_meals').update({ ingredients_json: rows, updated_at: new Date().toISOString() }).eq('id', saved.id).eq('user_id', v.userId).is('ingredients_json', null).select('id');
   if (error) throw new Error(error.message);
-  await logCall(v.admin, { userId: v.userId, functionName: 'vana.ingredients', model: backgroundModel(), inputTokens, outputTokens });
+  await logCall(v.admin, { userId: v.userId, functionName: 'vana.ingredients', model: backgroundModel(), inputTokens, outputTokens, gatewayCostUsd: cost });
   console.log(`[vana] ingredients for ${saved.id}: ${rows.length} line(s) in ${Date.now() - started}ms`);
   return (data ?? []).length ? rows : null;
 }

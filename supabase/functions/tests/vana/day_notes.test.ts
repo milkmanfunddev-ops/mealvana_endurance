@@ -13,13 +13,14 @@
 import { assert, assertEquals } from 'https://deno.land/std@0.177.1/testing/asserts.ts';
 import { getPlanById } from '../../_shared/vana/plan.ts';
 import { buildAthleteContext } from '../../_shared/vana/context.ts';
-import { dayNoteInputs, dayNoteKeys, generateDayNotes, noteDates, contextInWords, ruledWording, CLAIM_TTL_SECONDS, DAY_NOTE_SYSTEM } from '../../_shared/vana/daynotes.ts';
+import { dayNoteInputs, dayNoteKeys, defaultDayNotesDeps, generateDayNotes, noteDates, contextInWords, ruledWording, CLAIM_TTL_SECONDS, DAY_NOTE_SYSTEM } from '../../_shared/vana/daynotes.ts';
 import type { DayNotesDeps } from '../../_shared/vana/daynotes.ts';
 import { testCtx, offlineDeps, TEST_USER_ID } from './support/vana_ctx.ts';
 import { fakeDb, type Row, type Tables } from './support/fake_db.ts';
 import { VANA_COLUMN_DEFAULTS } from './support/vana_ctx.ts';
 import type { VanaCtx } from '../../_shared/vana/env.ts';
 import type { MealPlan } from '../../_shared/vana/contracts.ts';
+import { assertOneTrace, failingExporter, withTracedModel } from './support/traced_call.ts';
 
 const U = TEST_USER_ID;
 const PLAN = 'aaaaaaaa-0000-4000-8000-000000000013';
@@ -350,4 +351,39 @@ Deno.test('an edit that lands while the notes are being written keeps the plan m
   }));
   const after = (await getPlanById(a, PLAN))!;
   assertEquals(after.dayNotesStale, true, "the winner's write did not lower the flag over the edit");
+});
+
+// ================================================================ the Trace (langfuse ticket 10)
+// The model is the real call here, behind a mock provider: the Trace is made where the model is called.
+
+const NOTES_COST = '0.00231';
+const NOTES_ANSWER = { notes: DATES.map((d) => ({ date: d, text: `Eat the dinner on ${d}.` })) };
+/** The shipped model call, with the context and the claim kept offline. */
+const tracedDeps = (): DayNotesDeps => ({ ...defaultDayNotesDeps, buildContext: (v, anchor) => buildAthleteContext(v, anchor, offlineDeps()), claim: () => Promise.resolve(true), release: () => Promise.resolve() });
+const noteWrites = (v: ReturnType<typeof testCtx>) => ({
+  notes: v.fake.rows('meal_plans')[0].day_notes,
+  keys: v.fake.rows('meal_plans')[0].day_notes_keys,
+  calls: v.fake.writesTo('vana_calls', 'insert').map((w) => [w.values.function_name, w.values.model, w.values.input_tokens, w.values.output_tokens, w.values.gateway_cost_usd]),
+});
+
+Deno.test('writing the day notes is one Trace for the athlete, with the cost the Call log records', async () => {
+  const v = testCtx(baseTables());
+  await withTracedModel(NOTES_ANSWER, NOTES_COST, async (w) => {
+    const notes = await generateDayNotes(v, (await getPlanById(v, PLAN))!, ANCHOR, tracedDeps());
+    assertEquals(Object.keys(notes).sort(), DATES);
+    const call = v.fake.writesTo('vana_calls', 'insert').find((c) => c.values.function_name === 'vana.daynotes')!.values;
+    assertEquals(call.gateway_cost_usd, Number(NOTES_COST), "the Call log holds the gateway's charge");
+    // The notes belong to a plan, not to a Conversation, so the Trace carries no Session.
+    const root = assertOneTrace(await w.spans(), { name: 'vana-day-notes', userId: U, sessionId: undefined, cost: call.gateway_cost_usd as number });
+    assert(String(root.attributes['langfuse.observation.input']).includes('--- DATES ---'), 'the plan and the dates it wrote for');
+    assertEquals(JSON.parse(String(root.attributes['langfuse.observation.output'])), NOTES_ANSWER.notes);
+  });
+});
+
+Deno.test('Langfuse being down changes nothing the day notes write', async () => {
+  const plain = testCtx(baseTables()); const traced = testCtx(baseTables());
+  await withTracedModel(NOTES_ANSWER, NOTES_COST, async () => await generateDayNotes(plain, (await getPlanById(plain, PLAN))!, ANCHOR, tracedDeps()), { exporter: null });
+  await withTracedModel(NOTES_ANSWER, NOTES_COST, async () => await generateDayNotes(traced, (await getPlanById(traced, PLAN))!, ANCHOR, tracedDeps()), { exporter: failingExporter });
+  assertEquals(noteWrites(traced), noteWrites(plain));
+  assertEquals(Object.keys(noteWrites(traced).notes as Record<string, string>).length, 7);
 });

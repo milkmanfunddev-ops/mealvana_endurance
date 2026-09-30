@@ -22,6 +22,7 @@ import { TURN_TOKEN_CEILING, chatStopWhen, runChat, tokenBudgetIs } from '../../
 import { extraAction } from '../../_shared/vana/actions.ts';
 import { testCtx, TEST_USER_ID } from './support/vana_ctx.ts';
 import type { Row, Tables } from './support/fake_db.ts';
+import { assertOneTrace, failingExporter, generations, withTracedModel } from './support/traced_call.ts';
 
 const U = TEST_USER_ID;
 const CONV = 'conv-guardrails';
@@ -242,4 +243,60 @@ Deno.test('reserveCallOrThrow carries the bucket and the wait', async () => {
   assert(e instanceof RateLimitedError);
   assertEquals(e.fn, 'vana.pantry_photo');
   assertEquals(e.retryAfterSeconds, 60);
+});
+
+// ---------------------------------------------------------------- the pantry photo's Trace (langfuse ticket 10)
+// The action runs as `vana-action` runs it; the model is the real call behind a mock provider and the photo a stub
+// in Storage.
+
+const PANTRY_COST = '0.00412';
+const PANTRY_ANSWER = { isFoodStorage: true, items: ['eggs', 'spinach', 'greek yogurt'] };
+const FRIDGE = new Uint8Array([0xff, 0xd8, 0xff, 0xe0, ...Array.from({ length: 400 }, (_, i) => (i * 53) % 256)]);
+/** A wallet with room and a photo in Storage. */
+function pantryCtx() {
+  const settled: unknown[] = [];
+  const v = testCtx(world(), { rpc: {
+    ai_budget_reserve: () => ({ allowed: true, reservation_id: 'hold-1', share_used: 0, refill_at: null, bought_extra_share: 0 }),
+    ai_budget_settle: (a: unknown) => { settled.push(a); return null; },
+  } });
+  // deno-lint-ignore no-explicit-any
+  (v.admin as any).storage = { from: () => ({ download: () => Promise.resolve({ data: new Blob([FRIDGE], { type: 'image/jpeg' }), error: null }) }) };
+  return { v, settled };
+}
+async function pantryPhoto(v: ReturnType<typeof testCtx>) {
+  const wasEnforced = Deno.env.get('AI_CREDITS_ENFORCED');
+  Deno.env.set('AI_CREDITS_ENFORCED', 'true');
+  try { return await extraAction(v, 'pantry_photo', { conversationId: CONV, photoPath: `${U}/fridge.jpg` }); }
+  finally { if (wasEnforced === undefined) Deno.env.delete('AI_CREDITS_ENFORCED'); else Deno.env.set('AI_CREDITS_ENFORCED', wasEnforced); }
+}
+const pantryCall = (v: ReturnType<typeof testCtx>) => v.fake.rows('vana_calls').find((r) => String(r.function_name).startsWith('vana.pantry_photo'))!;
+
+Deno.test('a pantry photo is one Trace in its Conversation, photo included, with the cost the Call log records', async () => {
+  const { v } = pantryCtx();
+  await withTracedModel(PANTRY_ANSWER, PANTRY_COST, async (w) => {
+    const out = await pantryPhoto(v);
+    assertEquals(out?.parts[0].kind, 'pantry');
+    const call = pantryCall(v);
+    assertEquals(call.gateway_cost_usd, Number(PANTRY_COST));
+    const spans = await w.spans();
+    const root = assertOneTrace(spans, { name: 'vana-pantry-photo', userId: U, sessionId: CONV, cost: call.gateway_cost_usd as number });
+    assert(String(JSON.parse(String(root.attributes['langfuse.observation.input'])).photo).startsWith('@@@langfuseMedia:type=image/jpeg|'), "the photo, as a reference to Langfuse's copy");
+    assertEquals(JSON.parse(String(root.attributes['langfuse.observation.output'])), PANTRY_ANSWER);
+    assert(String(generations(spans)[0].attributes['ai.prompt.messages']).includes('@@@langfuseMedia:type=image/jpeg|'), 'and on the Generation');
+    let binary = ''; for (const b of FRIDGE) binary += String.fromCharCode(b);
+    for (const s of spans) for (const [key, value] of Object.entries(s.attributes)) assert(!String(value).includes(btoa(binary)), `${s.name} ${key}: the raw bytes are not left inline`);
+    assert(w.media.length >= 1, "Langfuse's media store was offered the photo");
+    for (const m of w.media) assertEquals([m.contentType, m.contentLength], ['image/jpeg', FRIDGE.length], 'the whole photo');
+  });
+});
+
+Deno.test('Langfuse being down changes nothing a pantry photo writes or settles', async () => {
+  const plain = pantryCtx(); const traced = pantryCtx();
+  const outPlain = await withTracedModel(PANTRY_ANSWER, PANTRY_COST, () => pantryPhoto(plain.v), { exporter: null });
+  const outTraced = await withTracedModel(PANTRY_ANSWER, PANTRY_COST, () => pantryPhoto(traced.v), { exporter: failingExporter });
+  assertEquals(outTraced?.parts, outPlain?.parts, 'the same part goes back to the athlete');
+  assertEquals(traced.settled, plain.settled, 'the same settlement');
+  assertEquals(traced.settled.length, 1);
+  const stable = ({ id: _i, created_at: _c, ...r }: Row) => r;
+  assertEquals(stable(pantryCall(traced.v)), stable(pantryCall(plain.v)), 'the same Call log row');
 });
