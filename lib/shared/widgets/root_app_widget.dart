@@ -18,6 +18,7 @@ import 'package:flutter_screenutil/flutter_screenutil.dart';
 import 'package:wiredash/wiredash.dart';
 import '../../theme/kyle_design/app_theme.dart';
 import '../../theme/kyle_design/theme_provider.dart';
+import '../../features/app_startup/application/app_startup_provider.dart';
 import '../../features/app_startup/presentation/widgets/app_startup_widget.dart';
 import '../core/app_router.dart';
 import '../services/app_config.dart';
@@ -25,6 +26,7 @@ import '../services/app_external_deps.dart';
 import '../../features/carb_loading/presentation/providers/carb_nudge_coordinator.dart';
 import '../services/auth/auth_listener_service.dart';
 import '../services/notification_service.dart';
+import '../services/notification_intent_routes.dart';
 import '../../features/daily_macros/data/daily_macro_targets_repository.dart';
 import '../../features/auth/application/auth_service.dart';
 import '../services/support/support_identity.dart';
@@ -40,7 +42,10 @@ import '../services/support/support_identity.dart';
 /// - Critical for OAuth redirects (e.g., com.milkman.mealvanaendurance://auth-callback)
 /// G27: where a carb-load nudge tap lands — the event's details screen.
 /// Pure so the L2 pins the mapping without pumping the root widget.
-String notificationRouteForCarbEvent(String eventId) => '/events/$eventId';
+/// Kept as the carb-nudge's named entry point; the table in
+/// notification_intent_routes.dart is the single decision point.
+String notificationRouteForCarbEvent(String eventId) =>
+    destinationForIntent('carb_event', eventId).location;
 
 class RootAppWidget extends ConsumerStatefulWidget {
   const RootAppWidget({super.key});
@@ -75,6 +80,10 @@ class _RootAppWidgetState extends ConsumerState<RootAppWidget>
     });
 
     WidgetsBinding.instance.addPostFrameCallback((_) {
+      // A tap that launched the app may already be waiting here: the plugin's
+      // launch details are read during deferred startup, which can land either
+      // side of this frame. Whichever way it lands, _handleNotificationNavigation
+      // holds the tap until the router can honour it.
       final pendingActivityId =
           NotificationService.getPendingNavigationActivityId();
       final pendingType = NotificationService.getPendingNavigationType();
@@ -103,28 +112,66 @@ class _RootAppWidgetState extends ConsumerState<RootAppWidget>
     super.dispose();
   }
 
+  /// A tap that arrived before the router could honour it.
+  ///
+  /// Cold start only: see [_isRoutableNow]. Held rather than dropped, and
+  /// replayed the moment startup resolves.
+  ({String id, String? type})? _deferredTap;
+
+  /// Can a deep link survive the root redirect right now?
+  ///
+  /// THE BUG THIS ANSWERS (2026-09-30). A notification tap that launches the
+  /// app from killed used to navigate straight into the router while startup
+  /// was still resolving. The global redirect reads `appStartupProvider`, and
+  /// until that has data every protected route falls through to the startup
+  /// branch and is sent to `/main` — so the athlete landed on the Timeline
+  /// holding a nudge that told them to go somewhere else. It was not the two
+  /// navigations racing so much as the deep link being evaluated in a window
+  /// where the router could only answer "/main".
+  ///
+  /// Backgrounded taps never hit this: startup has long since resolved, which
+  /// is exactly why the bug read as cold-start-only.
+  bool _isRoutableNow() {
+    final startup = ref.read(appStartupProvider);
+    return startup.maybeWhen(
+      data: (d) =>
+          !d.forceUpgradeRequired && !d.resyncRequired && d.user != null,
+      orElse: () => false,
+    );
+  }
+
   void _handleNotificationNavigation(String activityId, String? type) {
     if (!mounted || activityId.isEmpty) return;
 
-    final router = ref.read(AppRouter.routerProvider);
-
-    // G27: the carb-load nudge lands the athlete on the event's details
-    // screen (the Set Up Carb Loading row lives there).
-    if (type == 'carb_event') {
-      router.go(notificationRouteForCarbEvent(activityId));
+    // Hold it. Dropping the tap is the failure; arriving late is not.
+    if (!_isRoutableNow()) {
+      _deferredTap = (id: activityId, type: type);
       return;
     }
 
-    // Both activity-upload and reminder notifications now route to the
-    // activity-detail screen. ActivityDetailScreen owns the conditional
-    // redirect into the fuel-log surface (only when completed + plan exists
-    // + not yet logged), which avoids the "no plan" empty-state flash that
-    // happened when we unconditionally pushed /fuel-log on top from here.
-    router.go('/plan', extra: {'activityId': activityId});
+    final destination = destinationForIntent(type, activityId);
+    ref
+        .read(AppRouter.routerProvider)
+        .go(destination.location, extra: destination.extra);
+  }
+
+  /// Replays a held tap once the router can honour it.
+  void _flushDeferredTap() {
+    final tap = _deferredTap;
+    if (tap == null || !_isRoutableNow()) return;
+    _deferredTap = null;
+    _handleNotificationNavigation(tap.id, tap.type);
   }
 
   @override
   Widget build(BuildContext context) {
+    // The held-tap release. Startup resolving is the signal that the router
+    // can answer with something other than /main, so a cold-start deep link
+    // is replayed here rather than being lost to the root redirect.
+    ref.listen(appStartupProvider, (_, __) {
+      if (mounted) _flushDeferredTap();
+    });
+
     // Initialize auth listener ONCE at app startup
     // This is a singleton that lives for the lifetime of the app
     // It listens for auth state changes, invalidates user-specific providers,
