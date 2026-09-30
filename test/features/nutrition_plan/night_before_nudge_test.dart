@@ -60,11 +60,13 @@ void main() {
       final morning = DateTime(2026, 10, 3, 6, 0);
       final evening = DateTime(2026, 10, 3, 22, 0);
       expect(
-        NightBeforeNudgeEngine.fireInstantFor(morning),
+        NightBeforeNudgeEngine.fireInstantFor(
+            morning, NightBeforeVariant.noPlan),
         DateTime(2026, 10, 2, 19, 0),
       );
       expect(
-        NightBeforeNudgeEngine.fireInstantFor(evening),
+        NightBeforeNudgeEngine.fireInstantFor(
+            evening, NightBeforeVariant.noPlan),
         DateTime(2026, 10, 2, 19, 0),
       );
     });
@@ -75,6 +77,7 @@ void main() {
         NightBeforeNudgeEngine.isFireAhead(
           workoutStart: workout,
           now: DateTime(2026, 10, 2, 18, 59),
+          variant: NightBeforeVariant.noPlan,
         ),
         isTrue,
       );
@@ -82,10 +85,26 @@ void main() {
         NightBeforeNudgeEngine.isFireAhead(
           workoutStart: workout,
           now: DateTime(2026, 10, 2, 19, 1),
+          variant: NightBeforeVariant.noPlan,
         ),
         isFalse,
       );
     });
+  });
+
+  test('rehearse fires 30 minutes after the no-plan nudge, never together', () {
+    // Ruled 2026-09-30: an athlete with a mixed calendar can earn both on one
+    // evening; stacked at one instant they read as a duplicate.
+    final workout = DateTime(2026, 10, 3, 6, 0);
+    final noPlan =
+        NightBeforeNudgeEngine.fireInstantFor(workout, NightBeforeVariant.noPlan);
+    final rehearse = NightBeforeNudgeEngine.fireInstantFor(
+        workout, NightBeforeVariant.rehearse);
+
+    expect(noPlan, DateTime(2026, 10, 2, 19, 0));
+    expect(rehearse, DateTime(2026, 10, 2, 19, 30));
+    expect(rehearse.difference(noPlan), const Duration(minutes: 30));
+    expect(rehearse, isNot(noPlan));
   });
 
   group('copy, approved 2026-09-30', () {
@@ -240,6 +259,7 @@ void main() {
       )]);
 
       final s = gateway.scheduled.single;
+      expect(s.fireAt, DateTime(2026, 10, 1, 19, 30));
       expect(s.title, "Rehearse tomorrow's fueling");
       expect(s.body,
           "Rehearse your nutrition plan for your long run. Get 'em ready!");
@@ -264,12 +284,13 @@ void main() {
         type: ActivityType.running,
       )]);
 
-      // Same fire instant, same notification id, new variant — not cancelled
-      // into silence, and not two pending notifications.
+      // Same notification id (so it replaces rather than duplicating), but the
+      // fire time MOVES with the variant: 19:00 -> 19:30.
       expect(gateway.scheduled, hasLength(2));
       expect(gateway.scheduled.last.payload, 'rehearse_plan:act-long');
-      expect(gateway.scheduled.last.fireAt, gateway.scheduled.first.fireAt);
       expect(gateway.scheduled.last.id, gateway.scheduled.first.id);
+      expect(gateway.scheduled.first.fireAt, DateTime(2026, 10, 1, 19, 0));
+      expect(gateway.scheduled.last.fireAt, DateTime(2026, 10, 1, 19, 30));
     });
 
     test('the swap reports sent again — the funnel must not lose it', () async {

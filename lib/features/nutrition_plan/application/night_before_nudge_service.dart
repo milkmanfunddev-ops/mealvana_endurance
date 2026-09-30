@@ -110,9 +110,15 @@ class NightBeforeNudgeService {
           ? NightBeforeVariant.rehearse
           : NightBeforeVariant.noPlan;
 
+      // Under the dev override the variants keep their relative offset, so the
+      // "never stack" property still holds while testing on a device.
       final fireAt = _fastFire
-          ? now.add(const Duration(minutes: 2))
-          : NightBeforeNudgeEngine.fireInstantFor(w.start);
+          ? now.add(
+              Duration(
+                minutes: variant == NightBeforeVariant.noPlan ? 2 : 3,
+              ),
+            )
+          : NightBeforeNudgeEngine.fireInstantFor(w.start, variant);
 
       final shouldArm =
           NightBeforeNudgeEngine.isLong(w.durationMinutes) &&

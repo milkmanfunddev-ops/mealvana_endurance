@@ -39,8 +39,16 @@ class NightBeforeNudgeEngine {
   /// A workout is LONG at or above this planned duration. Inclusive.
   static const int longThresholdMinutes = 90;
 
-  /// Local fire hour, the evening before the workout.
+  /// Local fire hour, the evening before the workout. Both variants share the
+  /// hour; they differ by minute so they can never land on the same instant.
   static const int fireHour = 19;
+
+  /// Minute past [fireHour] for each variant. Ruled 2026-09-30: the rehearse
+  /// prompt is offset to 19:30 so a no-plan nudge and a rehearse nudge — which
+  /// an athlete with a mixed calendar can receive on the same evening — never
+  /// stack at one instant and read as a duplicate.
+  static int fireMinuteFor(NightBeforeVariant variant) =>
+      variant == NightBeforeVariant.noPlan ? 0 : 30;
 
   /// Approved copy, 2026-09-30, cheerful register.
   ///
@@ -106,16 +114,20 @@ class NightBeforeNudgeEngine {
   /// 06:00 workout and a 22:00 workout on the same day share one nudge the
   /// evening before, and a subtraction would put the first one's nudge at
   /// 06:00 the previous morning.
-  static DateTime fireInstantFor(DateTime workoutStart) => _dateOnly(
-    workoutStart,
-  ).subtract(const Duration(days: 1)).add(const Duration(hours: fireHour));
+  static DateTime fireInstantFor(
+    DateTime workoutStart,
+    NightBeforeVariant variant,
+  ) => _dateOnly(workoutStart)
+      .subtract(const Duration(days: 1))
+      .add(Duration(hours: fireHour, minutes: fireMinuteFor(variant)));
 
   /// Whether the fire instant for [workoutStart] is still ahead of [now].
   /// A workout whose evening has already passed is never back-scheduled.
   static bool isFireAhead({
     required DateTime workoutStart,
     required DateTime now,
-  }) => fireInstantFor(workoutStart).isAfter(now);
+    required NightBeforeVariant variant,
+  }) => fireInstantFor(workoutStart, variant).isAfter(now);
 
   /// The tap payload. `parseTypedNotificationPayload` splits it back into
   /// (intent, activityId), and the intent table routes it.
