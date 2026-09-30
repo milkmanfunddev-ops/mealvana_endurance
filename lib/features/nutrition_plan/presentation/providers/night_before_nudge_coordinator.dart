@@ -60,6 +60,7 @@ class NightBeforeNudgeCoordinator {
           start: start,
           durationMinutes: a.durationMinutes,
           hasPlan: plan != null,
+          type: a.activityType,
         ));
       }
 

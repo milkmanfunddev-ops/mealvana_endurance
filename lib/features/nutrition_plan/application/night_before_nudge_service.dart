@@ -3,6 +3,7 @@ import 'package:shared_preferences/shared_preferences.dart';
 
 import '../../../shared/services/analytics/analytics_events.dart';
 import '../../../shared/services/analytics/analytics_tracker.dart';
+import '../../../shared/domain/activity_type.dart';
 import '../../../shared/services/notification_service.dart';
 import '../../../shared/services/prefs_provider.dart';
 import '../domain/night_before_nudge_engine.dart';
@@ -13,6 +14,7 @@ typedef NightBeforeWorkout = ({
   DateTime start,
   int? durationMinutes,
   bool hasPlan,
+  ActivityType? type,
 });
 
 /// The scheduling surface, behind a seam so the service is testable without
@@ -115,7 +117,7 @@ class NightBeforeNudgeService {
       await _gateway.cancel(id);
       await _gateway.schedule(
         id: id,
-        title: NightBeforeNudgeEngine.title,
+        title: NightBeforeNudgeEngine.titleFor(w.type),
         body: NightBeforeNudgeEngine.body(
           NightBeforeNudgeEngine.formatDuration(w.durationMinutes!),
         ),
