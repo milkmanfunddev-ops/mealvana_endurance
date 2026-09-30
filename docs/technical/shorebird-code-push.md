@@ -122,6 +122,24 @@ the support@mealvana.io account owns the org). The current key lives in
 `secrets/shorebird.env` — `set -a; source secrets/shorebird.env; set +a`.
 No `shorebird login` needed.
 
+> **If `secrets/shorebird.env` is missing, mint a new key — do not go hunting.**
+> It went missing once already (2026-09-29): the file is machine-local, lives
+> outside any git repo, and was never recreated after the Shorebird org handover
+> left "CI token rotation" open. There is nowhere to recover it from — CI's copy
+> lives in Codemagic's `shorebird_credentials` env group, which is **write-only**
+> in their UI, and `shorebird login:ci` has been **removed** ("use API keys
+> instead"). A browser session in the console does NOT authenticate the CLI; only
+> the env var does. So: create a NEW key in the console and write it straight from
+> the clipboard so the value never lands in a shell history or an agent transcript:
+>
+> ```bash
+> umask 077 && printf 'SHOREBIRD_TOKEN=%s\n' "$(pbpaste)" > secrets/shorebird.env
+> ```
+>
+> **Do not revoke the pre-existing key** — that one is Codemagic's, and killing it
+> breaks `prod-ios-patch`, `dev-ios-patch` and `prod-android-patch`. Two active
+> keys is the correct steady state: one for CI, one local.
+
 Every one of these has cost someone an hour.
 
 ```bash
@@ -164,6 +182,17 @@ devices jump straight to the newest patch number.
 - **Detach it.** The AOT link alone takes ~7.5 min, the whole patch ~15. Any
   wrapper timeout shorter than that kills it mid-flight. Log to a file; piping
   to `tail` buffers everything and you see nothing.
+  **Agent/harness runs: `nohup … &` is NOT enough.** Claude Code kills the
+  process group when the tool call returns, so the build dies mid-Xcode-build.
+  Use the harness's own background runner (`run_in_background`) instead. Worse,
+  a killed run leaves corrupt intermediates that the NEXT run happily reuses:
+  the tell is an "Xcode archive done" in seconds rather than ~2 min, followed by
+  a nonsense error (2026-09-29: `PrivacyInfo.xcprivacy couldn't be opened`, for a
+  file that was present, tracked, and referenced nowhere in the pbxproj). If a
+  build fails strangely, `rm -rf build ios/Pods ios/.symlinks
+  ios/Flutter/ephemeral ios/Runner.xcworkspace/xcshareddata/swiftpm`, restore
+  `ios/`, re-run `pub get` with Shorebird's Flutter, and try again before
+  debugging the error message itself.
 - **Copy the `.env*` files in.** They're gitignored, and the build fails without
   them ("No file or variants found for asset: .env").
 - **`--allow-asset-diffs` suppresses a real warning — read every diff before you
@@ -190,6 +219,19 @@ tracks the newest release across *all* platforms, so it reads `None` even when
 your iOS patch shipped fine.
 
 Patches apply on the **next app restart**, not immediately.
+
+> **"Hasn't arrived" and "didn't work" look identical from the user's chair.**
+> This recurs on EVERY patch, so rule it out first before debugging anything.
+> A device download-then-applies across two cold starts, and Mission Control's
+> adoption figure **lags** (2026-09-29: it still read "1 of 10 · updated 16
+> minutes ago" while the reporter's handset had already taken the patch and
+> flipped from broken to correct). So:
+> - Don't trust the console counter as a real-time signal — it is a trailing one.
+> - The reliable test is **behaviour on one device before and after**, in
+>   release mode.
+> - When someone reports "still broken", establish *which build they are on*
+>   before treating it as a regression. On the 1.28.0 patch the same person saw
+>   the old symptom and the fixed behaviour on the same handset ~30 min apart.
 
 ## Source of truth
 
