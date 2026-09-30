@@ -138,6 +138,24 @@ numbers that are wrong on prod were wrong on dev too.
 - **`_shared` changes are bundled at deploy time** — every function that imports the changed module
   must be redeployed. `git diff origin/develop --stat supabase/functions/_shared` tells you the blast
   radius; grep importers to build the deploy list.
+- **…but blast radius is the IMPORT CLOSURE, not the `_shared` folder.** A function can import
+  straight out of another function's directory, and that edge is invisible to a `_shared` diff.
+  Live example (found 2026-09-30 pre-flighting the carb-band deploy): `3cf3ee42` changed
+  `generate-macros-v4/pre-workout.ts`, which is **not** under `_shared/`, so the rule above
+  answers "one function". But `generate-nutrition-plan-v3/before-phase.ts:21` imports
+  `../generate-macros-v4/pre-workout.ts`, so plan-v3 bundles the changed code too and had to be
+  redeployed with it. Checking the documented way alone would have under-deployed and left prod
+  half-fixed — the silent kind of half, since both functions answer 200 either way.
+  So: after the `_shared` diff, also grep for importers of *every changed path*, e.g.
+  `grep -rn "<changed-file-basename>" supabase/functions --include=*.ts | grep -v "^supabase/functions/<its-own-dir>/"`,
+  and deploy the closure.
+  **The standing edge to remember** (as of 2026-09-30, the only cross-function one in the tree):
+  `generate-nutrition-plan-v3` imports from `generate-macros-v4` in **9 places**. Most are
+  `import type`, which erases at runtime and cannot change a bundle — but `before-phase.ts:21`
+  (`pre-workout.ts`) and `:44` (`ingredient-pools.ts`) are **value** imports, and those do.
+  Default assumption: **a `generate-macros-v4` change is a `generate-nutrition-plan-v3` change
+  until you have checked which kind of import carries it.** The reverse does not hold — nothing
+  imports plan-v3.
 - **Frozen functions.** A folder carrying a `FROZEN` marker is a legacy version kept for
   not-yet-updated clients. The wrappers refuse to deploy it without `--force-legacy`; you have no reason
   to pass that flag.
