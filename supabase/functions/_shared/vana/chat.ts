@@ -26,7 +26,7 @@ import { inViewSection, resolveSituation, SITUATION_MARK, type Situation } from 
 import { asInputMode, callMetrics, logCall, type InputMode } from './log.ts';
 import { subscriberState } from './subscriber.ts';
 import { logAiUsage } from '../ai/usage.ts';
-import { defaultTracing, type Tracing } from '../langfuse/tracing.ts';
+import { defaultTracing, type Tracing, type TracingEnvironment } from '../langfuse/tracing.ts';
 import { promptSourceFromEnv, type PromptSource } from '../langfuse/prompts.ts';
 import type { VanaPart, AthleteContext, ConversationSummary, ConversationPlan, ConversationKind } from './contracts.ts';
 import { getConversationPlan, getPlan, snapshotPlan } from './plan.ts';
@@ -404,6 +404,9 @@ export interface ChatRunOpts {
   overrides?: VanaOverrides;
   /** Where the Turn's Trace goes. Langfuse, from the function secrets, unless a test passes its own. */
   tracing?: Tracing;
+  /** The environment the Turn's Trace carries in place of the project's own. `vana-eval` passes `experiment`, so a
+   *  Run's Turns never mix with dev or prod traffic. */
+  environment?: TracingEnvironment;
   /** Where Vana's wording comes from. Langfuse, from the function secrets, unless a test passes its own. */
   prompts?: PromptSource;
 }
@@ -563,7 +566,7 @@ export async function runChat(v: VanaCtx, body: ChatBody, opts: ChatRunOpts): Pr
   // The Turn's Trace (langfuse ticket 01): the root observation is open while the stream runs, so every Step and Tool
   // call nests under it, and is ended by whichever of onFinish and onError comes first.
   const tracing = opts.tracing ?? defaultTracing();
-  const result = tracing.turn({ name: 'vana-turn', userId: v.userId, sessionId: convId, metadata: { kind: convKind, promptSource }, input: opener ? openerText : lastText }, (root) => streamText({
+  const result = tracing.turn({ name: 'vana-turn', userId: v.userId, sessionId: convId, environment: opts.environment, metadata: { kind: convKind, promptSource }, tags: [opts.functionName, convKind, opener ? 'opener' : 'message'], input: opener ? openerText : lastText }, (root) => streamText({
     experimental_telemetry: tracing.telemetry(opts.functionName),
     model,
     system,

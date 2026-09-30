@@ -10,7 +10,7 @@
 import { assert, assertEquals } from 'https://deno.land/std@0.177.1/testing/asserts.ts';
 import { MockLanguageModelV3, MockProviderV3, convertArrayToReadableStream } from 'npm:ai@6.0.277/test';
 import { InMemorySpanExporter, type ReadableSpan, type SpanExporter } from 'npm:@opentelemetry/sdk-trace-base@2.11.0';
-import { runChat, type FinishedUsage } from '../../_shared/vana/chat.ts';
+import { runChat, systemMessages, type ChatRunOpts, type FinishedUsage, type TurnTrace } from '../../_shared/vana/chat.ts';
 import { createTracing, type Tracing } from '../../_shared/langfuse/tracing.ts';
 import { buildAthleteContext } from '../../_shared/vana/context.ts';
 import { testCtx, offlineDeps, TEST_USER_ID } from './support/vana_ctx.ts';
@@ -25,19 +25,22 @@ const STEP_COSTS = ['0.000125', '0.00034'];
 type CallOptions = any;
 const usage = { inputTokens: { total: 10, noCache: 10, cacheRead: 0, cacheWrite: 0 }, outputTokens: { total: 5, text: 5, reasoning: 0 } };
 
-/** A mock default provider for the test's duration: the first model call asks for the athlete's workouts, the second
- *  answers. Each finish part carries that step's gateway charge. */
-function mockGateway(): { calls: number; restore: () => void } {
+/** A mock default provider for the test's duration: the first model call calls a Tool (the athlete's workouts unless
+ *  the test names another), the second answers. Each finish part carries that step's gateway charge. `fail` is a
+ *  model call the gateway refused. */
+function mockGateway(script: { tool?: { name: string; input: unknown }; fail?: boolean } = {}): { calls: number; restore: () => void } {
+  const tool = script.tool ?? { name: 'getWorkouts', input: { days: 7 } };
   const state = { calls: 0, restore: () => {} };
   const finish = (reason: 'stop' | 'tool-calls', cost: string) => ({ type: 'finish', finishReason: { unified: reason, raw: reason }, usage, providerMetadata: { gateway: { generationId: `gen_${state.calls}`, cost } } });
   const model = (modelId: string) => new MockLanguageModelV3({
     modelId,
     doStream: (options: CallOptions) => {
       state.calls++;
+      if (script.fail) return Promise.reject(new Error('the gateway refused'));
       const answering = (options.prompt as { role: string }[]).at(-1)?.role === 'tool';
       const parts = answering
         ? [{ type: 'text-start', id: 't' }, { type: 'text-delta', id: 't', delta: 'Nothing on the calendar, so eat normally.' }, { type: 'text-end', id: 't' }, finish('stop', STEP_COSTS[1])]
-        : [{ type: 'tool-call', toolCallId: 'c1', toolName: 'getWorkouts', input: JSON.stringify({ days: 7 }) }, finish('tool-calls', STEP_COSTS[0])];
+        : [{ type: 'tool-call', toolCallId: 'c1', toolName: tool.name, input: JSON.stringify(tool.input) }, finish('tool-calls', STEP_COSTS[0])];
       // deno-lint-ignore no-explicit-any
       return Promise.resolve({ stream: convertArrayToReadableStream([{ type: 'stream-start', warnings: [] }, ...parts] as any) });
     },
@@ -66,23 +69,23 @@ function edgeRuntime(): { background: Promise<unknown>[]; settled: () => Promise
   };
 }
 
-interface Turn { reply: string; spans: ReadableSpan[]; callRow: Record<string, unknown>; settled: FinishedUsage[] }
+interface Turn { reply: string; spans: ReadableSpan[]; callRow: Record<string, unknown>; settled: FinishedUsage[]; traces: TurnTrace[]; modelCalls: number }
+type Script = Parameters<typeof mockGateway>[0] & { opts?: Partial<ChatRunOpts> };
 /** One two-step turn on an existing conversation. `tracing` undefined is the app with no Langfuse keys. */
-async function turn(tracing: Tracing | undefined, collector?: InMemorySpanExporter): Promise<Turn> {
+async function turn(tracing: Tracing | undefined, collector?: InMemorySpanExporter, script: Script = {}): Promise<Turn> {
   const v = testCtx({ users: [{ id: U, first_name: 'Lee', allergies: [] }], activities: [] });
   const ctx = await buildAthleteContext(v, ANCHOR, offlineDeps());
   await v.db.from('vana_conversations').insert({ id: CONV, user_id: U, kind: 'general', context: ctx, context_day: ANCHOR, last_message_at: `${ANCHOR}T08:00:00Z` });
-  const gw = mockGateway(); const rt = edgeRuntime();
-  const settled: FinishedUsage[] = [];
+  const gw = mockGateway(script); const rt = edgeRuntime();
+  const settled: FinishedUsage[] = []; const traces: TurnTrace[] = [];
   try {
     const run = await runChat(v, { message: 'what is on this week', conversation_id: CONV, kind: 'general', anchor_date: ANCHOR },
-      { functionName: 'vana-chat', tracing, afterFinish: (u) => { settled.push(u); return Promise.resolve(); } });
+      { functionName: 'vana-chat', tracing, afterFinish: (u) => { settled.push(u); return Promise.resolve(); }, onTrace: (t) => traces.push(t), ...script.opts });
     assert(run.ok, `the turn ran: ${JSON.stringify(run)}`);
     const reply = await run.response.text();
     await rt.settled();
-    assertEquals(gw.calls, 2, 'a tool step and an answering step');
     const callRow = v.fake.tables.vana_calls.at(-1)!;
-    return { reply, spans: collector?.getFinishedSpans() ?? [], callRow, settled };
+    return { reply, spans: collector?.getFinishedSpans() ?? [], callRow, settled, traces, modelCalls: gw.calls };
   } finally { gw.restore(); rt.restore(); }
 }
 
@@ -110,9 +113,70 @@ Deno.test('a Turn is one Trace under a vana-turn root, carrying the athlete and 
     assertEquals(s.attributes['langfuse.environment'], 'dev', `${s.name}: the environment`);
     assertEquals(s.attributes['langfuse.release'], 'test-release', `${s.name}: the release`);
     assertEquals(s.attributes['langfuse.trace.metadata.kind'], 'general', `${s.name}: the conversation kind`);
+    assertEquals(s.attributes['langfuse.trace.tags'], ['vana-chat', 'general', 'message'], `${s.name}: the tags`);
   }
   assertEquals(generations(spans).length, 2, 'one Generation per Step');
   assertEquals(spans.filter((s) => s.name === 'ai.toolCall').map((s) => s.attributes['ai.toolCall.name']), ['getWorkouts'], 'one observation per Tool call');
+});
+
+Deno.test('a Tool call shows what Vana sent and what came back, and each Step shows the persona and Context block she read', async () => {
+  const { collector, tracing } = collected();
+  const { spans, traces } = await turn(tracing, collector);
+  const [tool] = spans.filter((s) => s.name === 'ai.toolCall');
+  assertEquals(JSON.parse(String(tool.attributes['ai.toolCall.args'])), { days: 7 }, 'what Vana sent');
+  // deno-lint-ignore no-explicit-any
+  assertEquals(JSON.parse(String(tool.attributes['ai.toolCall.result'])), (traces[0].steps as any[])[0].toolResults[0].output, 'what came back');
+  const [persona, context] = systemMessages('general', traces[0].doll, ANCHOR).map((m) => String(m.content));
+  for (const g of generations(spans)) {
+    const system = (JSON.parse(String(g.attributes['ai.prompt.messages'])) as { role: string; content: string }[]).filter((m) => m.role === 'system').map((m) => m.content);
+    assertEquals(system, [persona, context], 'the persona, then the Context block, as the model was sent them');
+  }
+});
+
+Deno.test('a failed Turn is an error on its Trace', async () => {
+  const { collector, tracing } = collected();
+  const { spans, reply } = await turn(tracing, collector, { fail: true });
+  assert(reply.includes('"type":"error"'), `the athlete is told the turn failed: ${reply}`);
+  const root = spans.find((s) => s.name === 'vana-turn')!;
+  assertEquals(root.attributes['langfuse.observation.level'], 'ERROR');
+  assertEquals(root.attributes['langfuse.observation.status_message'], 'the gateway refused');
+  assertEquals(root.attributes['user.id'], U, 'still tied to the athlete, so it is found by filter');
+});
+
+Deno.test('an embedding call made inside a Turn sends no observation', async () => {
+  const { collector, tracing } = collected();
+  // The remember tool embeds its sentence through the gateway; the gateway here is a stub behind fetch.
+  const realFetch = globalThis.fetch; const keyBefore = Deno.env.get('AI_GATEWAY_API_KEY');
+  let embedded = 0;
+  Deno.env.set('AI_GATEWAY_API_KEY', 'gateway-not-real');
+  globalThis.fetch = ((input: Request | URL | string) => {
+    const url = String(input instanceof Request ? input.url : input);
+    if (!url.endsWith('/embedding-model')) return Promise.reject(new Error(`unexpected request: ${url}`));
+    embedded++;
+    return Promise.resolve(new Response(JSON.stringify({ embeddings: [[0.1, 0.2, 0.3]], usage: { tokens: 4 } }), { headers: { 'content-type': 'application/json' } }));
+  }) as typeof fetch;
+  try {
+    const { spans } = await turn(tracing, collector, { tool: { name: 'rememberFact', input: { kind: 'preference', fact: 'Hates cilantro.', confidence: 0.8 } } });
+    assertEquals(embedded, 1, 'the sentence was embedded');
+    assertEquals(spans.map((s) => s.name).filter((n) => /embed/i.test(n)), [], 'no embedding span is exported');
+    assertEquals(spans.filter((s) => s.name === 'ai.toolCall').map((s) => s.attributes['ai.toolCall.name']), ['rememberFact']);
+  } finally {
+    globalThis.fetch = realFetch;
+    if (keyBefore == null) Deno.env.delete('AI_GATEWAY_API_KEY'); else Deno.env.set('AI_GATEWAY_API_KEY', keyBefore);
+  }
+});
+
+Deno.test("the dev-only eval function's Turn is in the experiment environment and still hands over its full detail", async () => {
+  const { collector, tracing } = collected();
+  const { spans, traces } = await turn(tracing, collector, { opts: { functionName: 'vana-eval', environment: 'experiment' } });
+  for (const s of spans) assertEquals(s.attributes['langfuse.environment'], 'experiment', `${s.name}: kept apart from dev and prod`);
+  assertEquals(traces.length, 1, 'the callback received the Turn');
+  // deno-lint-ignore no-explicit-any
+  const steps = traces[0].steps as any[];
+  assertEquals(steps.length, 2);
+  assertEquals(steps[0].toolCalls.map((c: { toolName: string; input: unknown }) => [c.toolName, c.input]), [['getWorkouts', { days: 7 }]]);
+  assert(steps[0].toolResults[0].output != null, 'the full tool result, not only its name');
+  assertEquals(traces[0].text, 'Nothing on the calendar, so eat normally.');
 });
 
 Deno.test("each Generation's cost is the gateway's charge, and the Trace total is the Call log's figure", async () => {

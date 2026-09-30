@@ -194,6 +194,8 @@ export function makeVanaEvalHandler(deps: VanaEvalDeps) {
     const chatBody: ChatBody = { message: body.message as string | undefined, opener: body.opener === true, conversation_id: (body.conversation_id as string | undefined) ?? null, kind: body.kind as string | undefined, anchor_date: body.anchor_date as string | undefined, timezone: body.timezone as string | undefined, new_plan: body.new_plan === true, situation: (body.situation ?? null) as ChatBody['situation'], moment: body.moment };
     const run = await runChat(v, chatBody, {
       functionName: 'vana-eval',
+      // A Run's Turns are kept apart from dev and prod traffic in Langfuse.
+      environment: 'experiment',
       overrides: (body.overrides ?? undefined) as VanaOverrides | undefined,
       onTrace: (t) => { trace = t; },
       // The last thing runChat's persistence task does, so the turn's rows are stored when it runs.
