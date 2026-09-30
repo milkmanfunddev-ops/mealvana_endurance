@@ -28,6 +28,7 @@ extension AnalyticsEvents on AnalyticsTracker {
     required String activityId,
     required int durationMinutes,
     required DateTime scheduledFor,
+    required String variant,
   }) {
     return track(
       'night_before_nudge_sent',
@@ -35,15 +36,21 @@ extension AnalyticsEvents on AnalyticsTracker {
         'activity_id': activityId,
         'duration_minutes': durationMinutes,
         'scheduled_for': scheduledFor.toIso8601String(),
+        // 'no_plan' | 'rehearse'. V3's plan-created rate reads the no_plan
+        // variant only; rehearse has no success signal yet.
+        'variant': variant,
       },
     );
   }
 
   /// The athlete tapped the nudge.
-  Future<void> trackNightBeforeNudgeTapped({required String activityId}) {
+  Future<void> trackNightBeforeNudgeTapped({
+    required String activityId,
+    required String variant,
+  }) {
     return track(
       'night_before_nudge_tapped',
-      properties: {'activity_id': activityId},
+      properties: {'activity_id': activityId, 'variant': variant},
     );
   }
 

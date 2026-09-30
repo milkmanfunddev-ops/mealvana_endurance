@@ -64,6 +64,12 @@ NotificationDestination destinationForIntent(String? intent, String id) {
         extra: {'activityId': id},
       );
 
+    // Rehearse variant (ruled 2026-09-30): the plan already exists, so this
+    // lands on the plan itself rather than the flow that creates one. This is
+    // where plan_workout pointed before the create-plan ruling moved it.
+    case 'rehearse_plan':
+      return NotificationDestination('/plan', extra: {'activityId': id});
+
     // `recover:<activityId>` goes here — one line, when it is ruled.
 
     case 'reminder':
