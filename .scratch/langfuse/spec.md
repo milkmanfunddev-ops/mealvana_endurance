@@ -204,6 +204,18 @@ Working with agents
 65. As Lee, I want agents able to create and change prompts, datasets and evaluators, so that
     setup work is not done by hand in the UI.
 
+Dashboards, the project's look, and Mixpanel
+
+66. As Lee, I want one "Vana" dashboard showing spend by model, by athlete, by entry point and by
+    prompt version, calls per day, latency, errors and evaluator pass rates, so that I open one
+    page to see how Vana is doing.
+67. As Lee, I want the Langfuse project named for Mealvana with Xuan invited as a Member, so that
+    the workspace is ready for her.
+68. As Lee, I want Langfuse's observations and Scores sent to Mixpanel under the same athlete
+    identity the app uses, so that AI use and quality sit beside product analytics.
+69. As an athlete who declined analytics, I want my AI activity kept out of Mixpanel, so that my
+    consent choice is honoured on the server as well as in the app.
+
 ## Implementation Decisions
 
 Hosting and accounts
@@ -334,6 +346,26 @@ Privacy
 - Before prod tracing is turned on, the privacy policy and the App Store privacy details name
   Langfuse as a processor of conversation content, profile data, food logs and meal photos.
 
+Dashboards, project setup and Mixpanel
+
+- Dashboard widgets, the dashboard and score configs are created through Langfuse's API or CLI,
+  so they are repeatable. Work that only the web UI allows (project name, inviting Xuan, the
+  Mixpanel integration, alerts) is done in the browser as part of its ticket.
+- Already created on 2026-09-30, ahead of the tickets: a "Vana" dashboard with ten widgets, and
+  six score configs (`review_pass_fail`, `review_note`, `dietitian`, `robotic`,
+  `plan_confirmed`, `athlete_feedback`). The ticket checks them against real traces and adjusts.
+- Hobby allows 30 API requests a minute; setup scripts pace themselves.
+- Langfuse's Mixpanel integration is set in project settings with the Mixpanel region and
+  project token. It exports one event per observation and per Score, hourly, with no
+  conversation content. Langfuse's user id becomes Mixpanel's `distinct_id`; the app already
+  identifies athletes in Mixpanel by the same auth id, so the two join without extra work.
+- One Langfuse project can export to one Mixpanel project, and dev and prod traces share the
+  Langfuse project. Which Mixpanel project receives the export is decided in the ticket.
+- The app sends nothing to Mixpanel until the athlete consents. The server-side export has no
+  such gate, so a Trace for an athlete without analytics consent carries no user id that
+  Mixpanel could join on, or the export is not enabled until that is solved. Decided in the
+  ticket with Lee.
+
 Order of work
 
 1. One dev function traced; the Trace arrives and its cost equals the Call log's.
@@ -342,6 +374,8 @@ Order of work
 4. The eval repo reduced to the Run endpoint; the Scenarios carried into a dataset.
 5. Flag evaluators, Dietitian evaluator, robotic check, plan-outcome Scores, first queue.
 6. Privacy documents updated; prod tracing on.
+7. Dashboard checked against real traces, project named, Xuan invited, alerts set, Mixpanel
+   export enabled.
 
 ## Testing Decisions
 
