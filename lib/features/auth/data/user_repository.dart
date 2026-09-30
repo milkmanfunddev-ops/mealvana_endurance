@@ -607,6 +607,9 @@ class UserRepository with SyncableRepository {
         onboardingCompleted: false, // User needs to complete onboarding again
         createdAt: DateTime.now(),
         updatedAt: DateTime.now(),
+        // Placeholder: this reset path has no Ref to read the running
+        // version from. AuthService.reconcileAppVersion() corrects it on the
+        // next cold start — see app_version_service.dart.
         appVersion: '1.0.0',
       );
 

@@ -26,6 +26,7 @@ import '../../../shared/services/dirty_record_backup_service.dart';
 import '../../../shared/models/dirty_record_backup.dart';
 import '../presentation/widgets/dirty_record_recovery_dialog.dart';
 import '../../ai_credits/data/revenuecat_service.dart';
+import '../../auth/application/auth_service.dart';
 import '../../subscription/application/subscription_status_provider.dart';
 
 /// Service responsible for providing individual startup operations using Drift
@@ -288,6 +289,19 @@ class AppStartupService {
         await PerformanceTelemetry.measure(
           'deferred.revenuecat',
           _initializeRevenueCat,
+        );
+
+        // 7. Record the version this launch is running.
+        // Written once at account creation, users.app_version decays into a
+        // record of what the athlete INSTALLED; reconciling per launch is what
+        // makes it answer "has this athlete taken the update", which every
+        // rollout reading depends on. Self-healing too: profiles created by
+        // the reset paths, which cannot reach a provider, are corrected here on
+        // the next cold start.
+        if (!ref.mounted) return;
+        await PerformanceTelemetry.measure(
+          'deferred.app_version',
+          ref.read(authServiceProvider).reconcileAppVersion,
         );
       } catch (e, stackTrace) {
         // Skip logging if the scope was disposed mid-chain — `_logger` reads
