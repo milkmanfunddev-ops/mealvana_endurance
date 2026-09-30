@@ -6,16 +6,16 @@
 
 **Owner:** `mealvana_endurance` agent.
 
-**Status:** ready-for-agent
+**Status:** done
 
-- [ ] Langfuse keys are function secrets on the dev project and are passed to the tracing module explicitly
-- [ ] A Turn through the real `runChat` with the mock model and a span collector yields one Trace carrying the athlete and the Conversation as Session
-- [ ] Each Generation's cost equals the Gateway charge the mock reported, the same number the Call log stores, and Langfuse does not add an inferred cost on top
-- [ ] A failing exporter changes neither the reply, the Call log nor the budget settlement
-- [ ] The flush runs after the response through the runtime's background-work hook and adds no wait to the reply
-- [ ] Sentry's setup is untouched and still reports
-- [ ] Deployed check on dev: one real Turn appears in Langfuse within a minute, and its total cost equals that Turn's Call log row
-- [ ] The ticket records which route worked (SDK or hand-built OTLP) under Comments
+- [x] Langfuse keys are function secrets on the dev project and are passed to the tracing module explicitly
+- [x] A Turn through the real `runChat` with the mock model and a span collector yields one Trace carrying the athlete and the Conversation as Session
+- [x] Each Generation's cost equals the Gateway charge the mock reported, the same number the Call log stores, and Langfuse does not add an inferred cost on top
+- [x] A failing exporter changes neither the reply, the Call log nor the budget settlement
+- [x] The flush runs after the response through the runtime's background-work hook and adds no wait to the reply
+- [x] Sentry's setup is untouched and still reports
+- [x] Deployed check on dev: one real Turn appears in Langfuse within a minute, and its total cost equals that Turn's Call log row
+- [x] The ticket records which route worked (SDK or hand-built OTLP) under Comments
 
 **Shared contracts** (fixed so tickets can be built in parallel; change one only by changing every ticket that cites it):
 
@@ -24,3 +24,23 @@
 - *Experiment item output.* `transcript` (every turn in order), `toolCalls` (name and arguments, in order), `writes` (a summary of what Vana changed in the Eval athlete copy).
 
 Spec: `.scratch/langfuse/spec.md`. Decisions: `docs/langfuse/pivot/REPORT.md`. Words: `CONTEXT.md`, "Judging Vana". Langfuse access: `secrets/langfuse.env`, the `langfuse` skill, CLI and MCP server. Hobby allows 30 API requests a minute; pace any setup script.
+
+## Comments
+
+2026-09-30. The SDK route worked on the deployed Edge runtime; hand-built OTLP was not needed. `@langfuse/otel` 5.11.1
+on an isolated `BasicTracerProvider` (OpenTelemetry 2.11.0, pinned), immediate export, flush under
+`EdgeRuntime.waitUntil` after the persistence task. Module: `supabase/functions/_shared/langfuse/tracing.ts`; tests:
+`supabase/functions/tests/vana/langfuse_trace.test.ts`.
+
+Deployed check on dev (`vana-chat` only; `jade-chat` and `vana-eval` still run the old bundle until ticket 08 deploys
+them): two Turns in conversation `d007e409-2d05-4e0f-ad7b-a84b591e52ec` arrived within 20 seconds. Trace
+`013a4f0f6793c7a4b6d66103c3921969`, two Steps, 0.02045925 + 0.00182245 = 0.0222817, against
+`vana_calls.gateway_cost_usd` 0.022281699999999998. Trace `df641507bac0a7f9cc5a1553a32c11ab`, one Step, 0.0018117 on
+both sides. Langfuse marks the cost as provided and adds no inferred cost.
+
+Found on the deployed runtime: the request already has a span in the active context, which Langfuse never receives, so
+the root is started as a new trace (`root: true`). The exporter sends `x-langfuse-ingestion-version: 4` as an added
+header; the SDK does not set it.
+
+Dev function secrets set: `LANGFUSE_PUBLIC_KEY`, `LANGFUSE_SECRET_KEY`, `LANGFUSE_BASE_URL`,
+`LANGFUSE_TRACING_ENVIRONMENT=dev`. No release is set yet (`LANGFUSE_RELEASE`, else `SENTRY_RELEASE`); ticket 08 owns it.

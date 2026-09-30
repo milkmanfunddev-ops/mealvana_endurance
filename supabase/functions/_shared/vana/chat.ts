@@ -26,6 +26,7 @@ import { inViewSection, resolveSituation, SITUATION_MARK, type Situation } from 
 import { asInputMode, callMetrics, logCall, type InputMode } from './log.ts';
 import { subscriberState } from './subscriber.ts';
 import { logAiUsage } from '../ai/usage.ts';
+import { defaultTracing, type Tracing } from '../langfuse/tracing.ts';
 import type { VanaPart, AthleteContext, ConversationSummary, ConversationPlan, ConversationKind } from './contracts.ts';
 import { getConversationPlan, getPlan, snapshotPlan } from './plan.ts';
 import { addDays, weekStartFor } from './env.ts';
@@ -400,6 +401,8 @@ export interface ChatRunOpts {
   onTrace?: (t: TurnTrace) => void;
   /** One Run's replacements (`vana-eval`, eval-v2 ticket 01). `vana-chat` never passes this. */
   overrides?: VanaOverrides;
+  /** Where the Turn's Trace goes. Langfuse, from the function secrets, unless a test passes its own. */
+  tracing?: Tracing;
 }
 /** What a Run may change about Vana for itself alone: persona sections, the model, the tools that are on (by name, out
  *  of the kind's set) and the tools' and parameters' descriptions. Anything left out is what the app runs. The replayed
@@ -545,7 +548,11 @@ export async function runChat(v: VanaCtx, body: ChatBody, opts: ChatRunOpts): Pr
   console.log(`${tag} user=${v.userId} conv=${convId || '(ephemeral)'} kind=${convKind} opener=${opener}${opener ? `/${openerVariant}${newPlan ? '/new_plan' : ''}` : ''} model=${model} context=${reused ? 'reused' : 'built'}`);
 
   const system = systemMessages(convKind, ctx, anchorDate, extraContext, PERSONA_CACHE_TTL, o.persona);
-  const result = streamText({
+  // The Turn's Trace (langfuse ticket 01): the root observation is open while the stream runs, so every Step and Tool
+  // call nests under it, and is ended by whichever of onFinish and onError comes first.
+  const tracing = opts.tracing ?? defaultTracing();
+  const result = tracing.turn({ name: 'vana-turn', userId: v.userId, sessionId: convId, metadata: { kind: convKind }, input: opener ? openerText : lastText }, (root) => streamText({
+    experimental_telemetry: tracing.telemetry(opts.functionName),
     model,
     system,
     messages: modelMessages,
@@ -557,7 +564,7 @@ export async function runChat(v: VanaCtx, body: ChatBody, opts: ChatRunOpts): Pr
     headers: chatHeaders(convId),
     // A stream that fails is a call the athlete did not get: its reservation goes back. The hold settles once, so an
     // onFinish that follows an error changes nothing.
-    onError: ({ error }) => { console.error(`${tag} stream error:`, (error as Error)?.message ?? error); opts.onTrace?.({ kind: convKind, opener, openerVariant, newPlan, functionName: opts.functionName, model, anchorDate, situation: note, inView, openerText: opener ? openerText : null, doll: ctx, contextReused: reused, system: { persona: String(system[0].content), context: String(system[1].content) }, tools: Object.keys(offered), modelMessages, durationMs: Date.now() - started, text: '', steps: [], usage: null, totalUsage: null, error: String((error as Error)?.message ?? error) }); if (opts.onFailure) waitUntil(opts.onFailure(error).catch((e) => console.error(`${tag} onFailure threw:`, (e as Error).message))); },
+    onError: ({ error }) => { console.error(`${tag} stream error:`, (error as Error)?.message ?? error); root.fail(error); waitUntil(tracing.flush()); opts.onTrace?.({ kind: convKind, opener, openerVariant, newPlan, functionName: opts.functionName, model, anchorDate, situation: note, inView, openerText: opener ? openerText : null, doll: ctx, contextReused: reused, system: { persona: String(system[0].content), context: String(system[1].content) }, tools: Object.keys(offered), modelMessages, durationMs: Date.now() - started, text: '', steps: [], usage: null, totalUsage: null, error: String((error as Error)?.message ?? error) }); if (opts.onFailure) waitUntil(opts.onFailure(error).catch((e) => console.error(`${tag} onFailure threw:`, (e as Error).message))); },
     onFinish: ({ text, steps, usage, totalUsage }) => {
       const u = totalUsage ?? usage;
       const inputTokens = u?.inputTokens ?? 0; const outputTokens = u?.outputTokens ?? 0;
@@ -565,6 +572,8 @@ export async function runChat(v: VanaCtx, body: ChatBody, opts: ChatRunOpts): Pr
       // What the turn cost us, out of what the SDK handed back: the cache both directions, the steps, the FIRST step's
       // prompt (the only one that can read the shared prefix from cache) and the gateway's own charge (mp-420 clause 6).
       const metrics = callMetrics(steps as unknown[], u);
+      // deno-lint-ignore no-explicit-any
+      root.finish({ output: text, toolCalls: (steps as any[]).flatMap((s) => (s.toolCalls ?? []).map((c: { toolName: string }) => c.toolName)) });
       // Called before the persistence task so a harness sees the trace the moment the stream ends; the rows it also
       // waits on are written by the task below (its inserts land on the harness's fake db).
       opts.onTrace?.({ kind: convKind, opener, openerVariant, newPlan, functionName: opts.functionName, model, anchorDate, situation: note, inView, openerText: opener ? openerText : null, doll: ctx, contextReused: reused, system: { persona: String(system[0].content), context: String(system[1].content) }, tools: Object.keys(offered), modelMessages, durationMs: Date.now() - started, text, steps: steps as unknown[], usage, totalUsage });
@@ -593,10 +602,12 @@ export async function runChat(v: VanaCtx, body: ChatBody, opts: ChatRunOpts): Pr
           await opts.afterFinish?.({ inputTokens, outputTokens, cacheReadTokens: metrics.cacheReadTokens ?? null, cacheWriteTokens: metrics.cacheWriteTokens ?? null, gatewayCostUsd: metrics.gatewayCostUsd ?? null, model });
           console.log(`${tag} onFinish user=${v.userId} conv=${convId || '(ephemeral)'} in=${inputTokens} cache_read=${cacheRead} out=${outputTokens} steps=${steps.length} ${Date.now() - started}ms`);
         } catch (e) { console.error(`${tag} onFinish task failed:`, (e as Error).message); }
+        // After the rows: the SDK ends its own outer span once this callback returns, and the flush must see it.
+        await tracing.flush();
       })();
       waitUntil(task);
     },
-  });
+  }));
   const headers = ndjsonHeaders({ 'x-conversation-id': convId, 'x-vana-kind': convKind });
   return { ok: true, response: new Response(ndjsonFromFullStream(result.fullStream, { tag, trailingParts, silenceAfterFeedback: silenceFeedback }), { status: 200, headers }) };
 }
