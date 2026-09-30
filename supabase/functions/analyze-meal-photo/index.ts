@@ -49,6 +49,7 @@ import {
   finalizeAnalysis,
   NOT_FOOD_BODY,
   NOT_FOOD_STATUS,
+  sentToAthlete,
 } from "../_shared/meal_analysis/finalize.ts";
 import { mealPhotoPrompt } from "../_shared/meal_analysis/prompt.ts";
 import { initSentry, withSentry } from "../_shared/sentry.ts";
@@ -57,6 +58,7 @@ import { type BudgetHold, reserveBudget } from "../_shared/ai/credits.ts";
 import { reserveCall } from "../_shared/vana/rate-limit.ts";
 import { finishMealCall } from "../_shared/meal_analysis/call_log.ts";
 import { cacheReadTokens, cacheWriteTokens } from "../_shared/vana/stream.ts";
+import { defaultTracing } from "../_shared/langfuse/tracing.ts";
 
 // ---------------------------------------------------------------------------
 // Environment
@@ -242,23 +244,38 @@ serve(withSentry(async (req: Request) => {
     // marker; the photo and any words typed with it go last (ai-cost ticket 08, mp-473).
     let result;
     try {
-      result = await generateObject({
-        model: ANALYZE_MEAL_PHOTO_MODEL as Parameters<typeof generateObject>[0]["model"],
-        schema: MealAnalysisRequestSchema,
-        maxOutputTokens: 1000,
-        ...mealPhotoPrompt({ base64Image, mediaType: mimeType, description }),
-        allowSystemInMessages: false,
-        providerOptions: {
-          gateway: {
-            user: user.id,
-            tags: [
-              "feature:meal-analyze",
-              description ? "modality:photo_text" : "modality:photo",
-              "function:analyze-meal-photo",
-            ],
-          },
+      // The call is one Trace in Langfuse (langfuse ticket 09). The photo goes as image data, which Langfuse's SDK
+      // moves into its own media store and replaces with a reference; a signed Storage URL would stop rendering
+      // when it expired.
+      const tracing = defaultTracing();
+      result = await tracing.call(
+        {
+          name: "analyze-meal-photo",
+          userId: user.id,
+          tags: ["analyze-meal-photo"],
+          input: { photo: `data:${mimeType};base64,${base64Image}`, ...(description ? { description } : {}) },
         },
-      });
+        () =>
+          generateObject({
+            experimental_telemetry: tracing.telemetry("analyze-meal-photo"),
+            model: ANALYZE_MEAL_PHOTO_MODEL as Parameters<typeof generateObject>[0]["model"],
+            schema: MealAnalysisRequestSchema,
+            maxOutputTokens: 1000,
+            ...mealPhotoPrompt({ base64Image, mediaType: mimeType, description }),
+            allowSystemInMessages: false,
+            providerOptions: {
+              gateway: {
+                user: user.id,
+                tags: [
+                  "feature:meal-analyze",
+                  description ? "modality:photo_text" : "modality:photo",
+                  "function:analyze-meal-photo",
+                ],
+              },
+            },
+          }),
+        (r) => sentToAthlete(finalizeAnalysis(r.object, { eatenAt: body.eaten_at })),
+      );
     } catch (aiError) {
       // `not_food` is part of the schema now, so this arm is only for a model that
       // answers with the bare flag and fails the parse. Same code, same status.

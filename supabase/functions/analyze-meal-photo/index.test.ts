@@ -49,6 +49,8 @@ import {
 } from '../_shared/meal_analysis/prompt.ts';
 import { ANALYZE_MEAL_PHOTO_MODEL } from '../_shared/ai/model.ts';
 import { oneCallOneRow } from '../tests/meal_analysis_call_log.ts';
+import { collecting, generations, mealAnalysisIsTraced, PHOTO_BYTES, post, USER, withMealWorld } from '../tests/meal_analysis_trace.ts';
+import { setDefaultTracing } from '../_shared/langfuse/tracing.ts';
 
 // ---------------------------------------------------------------------------
 // A. MealAnalysisSchema — shape validation
@@ -473,4 +475,50 @@ oneCallOneRow({
   source: new URL('./index.ts', import.meta.url),
   bucket: 'vana.meal_photo',
   model: ANALYZE_MEAL_PHOTO_MODEL,
+});
+
+// ---------------------------------------------------------------------------
+// A meal photo is traced to Langfuse, photo included (langfuse ticket 09)
+// ---------------------------------------------------------------------------
+
+const PHOTO_REQUEST = { photo_path: `${USER}/lunch.jpg`, description: 'the sauce is pesto' };
+const traced = mealAnalysisIsTraced({
+  fn: 'analyze-meal-photo',
+  request: PHOTO_REQUEST,
+  input: (root) => {
+    const input = JSON.parse(String(root.attributes['langfuse.observation.input']));
+    assertEquals(input.description, 'the sauce is pesto', 'the words typed with the photo');
+    assert(String(input.photo).startsWith('@@@langfuseMedia:type=image/jpeg|'), `the photo, as a reference to Langfuse's copy: ${input.photo}`);
+  },
+});
+
+Deno.test({
+  name: 'analyze-meal-photo: the photo is handed to Langfuse as image data, and no signed URL or raw bytes ride on a span',
+  sanitizeOps: false, sanitizeResources: false,
+  fn: async () => {
+    const { collector } = collecting();
+    try {
+      const seen = await withMealWorld(async (seen) => { await (await (await traced.call())(post('analyze-meal-photo', PHOTO_REQUEST))).body?.cancel(); return seen; });
+      const spans = collector.getFinishedSpans();
+      const [generation] = generations(spans);
+      const sent = String(generation.attributes['ai.prompt.messages']);
+      assert(sent.includes('@@@langfuseMedia:type=image/jpeg|'), 'the Generation shows the photo through a media reference');
+      // What the model itself was sent is untouched: the bytes, not a reference.
+      const part = seen.modelCalls[0].options.prompt.at(-1).content.find((p: { type: string }) => p.type === 'file');
+      assert(part, 'the model received the photo');
+      let binary = ''; for (const b of PHOTO_BYTES) binary += String.fromCharCode(b);
+      const base64 = btoa(binary);
+      for (const s of spans) for (const [key, value] of Object.entries(s.attributes)) {
+        assert(!String(value).includes(base64), `${s.name} ${key}: the raw bytes are not left inline`);
+        assert(!/token=|\/object\/sign\//.test(String(value)), `${s.name} ${key}: no signed URL`);
+      }
+      assert(seen.media.length >= 1, "Langfuse's media store was offered the photo");
+      for (const m of seen.media) {
+        assertEquals(m.contentType, 'image/jpeg');
+        assertEquals(m.contentLength, PHOTO_BYTES.length, 'the whole photo');
+        assertEquals(m.field, 'input');
+      }
+      assertEquals(seen.elsewhere, [], 'nothing went anywhere else');
+    } finally { setDefaultTracing(null); }
+  },
 });

@@ -46,6 +46,7 @@ import {
   finalizeAnalysis,
   NOT_FOOD_BODY,
   NOT_FOOD_STATUS,
+  sentToAthlete,
 } from "../_shared/meal_analysis/finalize.ts";
 import { describeMealPrompt } from "../_shared/meal_analysis/prompt.ts";
 import { initSentry, withSentry } from "../_shared/sentry.ts";
@@ -54,6 +55,7 @@ import { type BudgetHold, reserveBudget } from "../_shared/ai/credits.ts";
 import { reserveCall } from "../_shared/vana/rate-limit.ts";
 import { finishMealCall } from "../_shared/meal_analysis/call_log.ts";
 import { cacheReadTokens, cacheWriteTokens } from "../_shared/vana/stream.ts";
+import { defaultTracing } from "../_shared/langfuse/tracing.ts";
 
 // ---------------------------------------------------------------------------
 // Environment
@@ -193,23 +195,31 @@ serve(withSentry(async (req: Request) => {
     // Call Claude via Vercel AI Gateway.
     // The fixed instructions go first in their own system message with a one-hour cache
     // marker; the athlete's words go last, on their own (ai-cost ticket 08, mp-473).
-    const result = await generateObject({
-      model: DESCRIBE_MEAL_MODEL as Parameters<typeof generateObject>[0]["model"],
-      schema: MealAnalysisRequestSchema,
-      maxOutputTokens: 1000,
-      ...describeMealPrompt(description),
-      allowSystemInMessages: false,
-      providerOptions: {
-        gateway: {
-          user: user.id,
-          tags: [
-            "feature:meal-analyze",
-            "modality:text",
-            "function:describe-meal",
-          ],
-        },
-      },
-    });
+    // The call is one Trace in Langfuse (langfuse ticket 09): the athlete's words in, the analysis they were sent out.
+    const tracing = defaultTracing();
+    const result = await tracing.call(
+      { name: "describe-meal", userId: user.id, tags: ["describe-meal"], input: description.trim() },
+      () =>
+        generateObject({
+          experimental_telemetry: tracing.telemetry("describe-meal"),
+          model: DESCRIBE_MEAL_MODEL as Parameters<typeof generateObject>[0]["model"],
+          schema: MealAnalysisRequestSchema,
+          maxOutputTokens: 1000,
+          ...describeMealPrompt(description),
+          allowSystemInMessages: false,
+          providerOptions: {
+            gateway: {
+              user: user.id,
+              tags: [
+                "feature:meal-analyze",
+                "modality:text",
+                "function:describe-meal",
+              ],
+            },
+          },
+        }),
+      (r) => sentToAthlete(finalizeAnalysis(r.object, { eatenAt: body.eaten_at })),
+    );
 
     // The totals are ours, not the model's, and "not food" is an answer rather than a
     // parse failure (ai-cost ticket 08, mp-473). The meal type follows the eaten-at clock (mp-672).

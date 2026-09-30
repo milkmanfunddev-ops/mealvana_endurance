@@ -45,6 +45,7 @@ import {
 import { budgetEstimate } from '../_shared/ai/credits.ts';
 import { DESCRIBE_MEAL_MODEL } from '../_shared/ai/model.ts';
 import { oneCallOneRow } from '../tests/meal_analysis_call_log.ts';
+import { mealAnalysisIsTraced } from '../tests/meal_analysis_trace.ts';
 
 // ---------------------------------------------------------------------------
 // A. description validation rules (mirrors index.ts handler logic)
@@ -439,4 +440,14 @@ oneCallOneRow({
   source: new URL('./index.ts', import.meta.url),
   bucket: 'vana.describe_meal',
   model: DESCRIBE_MEAL_MODEL,
+});
+
+// ---------------------------------------------------------------------------
+// I. A described meal is traced to Langfuse (langfuse ticket 09)
+// ---------------------------------------------------------------------------
+
+mealAnalysisIsTraced({
+  fn: 'describe-meal',
+  request: { description: 'two eggs on toast with butter and OJ' },
+  input: (root) => assertEquals(root.attributes['langfuse.observation.input'], 'two eggs on toast with butter and OJ', "the athlete's words"),
 });

@@ -86,3 +86,7 @@ export const NOT_FOOD_BODY = { error: 'not_food' } as const;
 
 /** HTTP status for the not-food answer. Unchanged from before, so older app builds still map it. */
 export const NOT_FOOD_STATUS = 422;
+
+/** What the athlete is answered with, as one value: the analysis, or the not-food body. What a Trace shows as the
+ *  call's output. */
+export const sentToAthlete = (f: FinalizedAnalysis): MealAnalysis | typeof NOT_FOOD_BODY => (f.notFood ? NOT_FOOD_BODY : f.analysis);

@@ -14,6 +14,10 @@
  * Langfuse skips its own price inference for an observation that arrives with a cost, so nothing is counted twice.
  * The hook (`onEnding`) is marked experimental in OpenTelemetry, which is why the versions below are pinned.
  *
+ * Photos: a photo sent to a model is image data on its Generation, which Langfuse's SDK uploads to its media store
+ * and replaces with a reference, so the photo stays visible and no expiring signed URL is sent. The same hook takes
+ * the bytes off the SDK's outer span, where they would otherwise ride inline.
+ *
  * Export is immediate (one request per ended span) and `flush()` is handed to the runtime's background-work hook after
  * the response, so a reply never waits on Langfuse. The SDK reads `process.env`, never `Deno.env`: keys are passed in.
  *
@@ -65,12 +69,23 @@ export interface Tracing {
   telemetry(functionId: string): { isEnabled: boolean; functionId?: string; tracer?: Tracer };
   /** Runs `fn` inside a new root observation. `fn` runs exactly once whether or not tracing works. */
   turn<T>(attributes: TurnAttributes, fn: (root: TurnRoot) => T): T;
+  /** One model call that is a Trace of its own (a described meal, a background job). The root ends with what `fn`
+   *  resolves to, as `output` reads it, or as an error with what it rejects with; the flush is handed to the runtime's
+   *  background-work hook. What `fn` resolves to or rejects with is the caller's, unchanged. */
+  call<T>(attributes: TurnAttributes, fn: () => Promise<T>, output?: (result: T) => unknown): Promise<T>;
   /** Resolves when every ended span has been sent. Never rejects. */
   flush(): Promise<void>;
 }
 
 const NO_ROOT: TurnRoot = { finish: () => {}, fail: () => {} };
-const NO_TRACING: Tracing = { telemetry: () => ({ isEnabled: false }), turn: (_a, fn) => fn(NO_ROOT), flush: () => Promise.resolve() };
+const NO_TRACING: Tracing = { telemetry: () => ({ isEnabled: false }), turn: (_a, fn) => fn(NO_ROOT), call: (_a, fn) => fn(), flush: () => Promise.resolve() };
+
+/** The runtime's background-work hook: what keeps a flush alive after the response. Detached where there is none. */
+function background(p: Promise<unknown>): void {
+  // deno-lint-ignore no-explicit-any
+  const rt = (globalThis as any).EdgeRuntime;
+  if (rt?.waitUntil) rt.waitUntil(p); else void p.catch(() => {});
+}
 
 const warn = (what: string, e: unknown) => console.error(`[langfuse] ${what}:`, (e as Error)?.message ?? e);
 const serialized = (v: unknown): string => (typeof v === 'string' ? v : JSON.stringify(v));
@@ -78,16 +93,38 @@ const serialized = (v: unknown): string => (typeof v === 'string' ? v : JSON.str
 /** The AI SDK's model-call spans, which Langfuse reads as Generations. The outer `ai.streamText` / `ai.generateObject`
  *  span holds the last step's provider metadata too; costing it would count that step twice. */
 const MODEL_CALL = /\.do(Generate|Stream)$/;
-/** Copies the gateway's charge onto each model-call span while it is still writable. */
-const gatewayCost = {
+const IMAGE_NOTE = '(image: shown on the Generation under this span)';
+/** The outer span's prompt with any image bytes replaced by a note, or null when it holds none. The SDK records the
+ *  prompt there as the caller passed it, in a shape Langfuse's media handling does not read, so a photo would ride
+ *  inline on it as base64. The Generation under it carries the same photo as a reference to Langfuse's stored copy. */
+function withoutImageBytes(prompt: string): string | null {
+  if (!prompt.includes('"image"') && !prompt.includes('"file"')) return null;
+  const parsed = JSON.parse(prompt) as { messages?: { content?: unknown }[] };
+  let changed = false;
+  for (const message of Array.isArray(parsed?.messages) ? parsed.messages : []) {
+    for (const part of (Array.isArray(message?.content) ? message.content : []) as Record<string, unknown>[]) {
+      if (part?.type !== 'image' && part?.type !== 'file') continue;
+      for (const key of ['image', 'data']) if (typeof part[key] === 'string' && !/^https?:/.test(part[key] as string)) { part[key] = IMAGE_NOTE; changed = true; }
+    }
+  }
+  return changed ? JSON.stringify(parsed) : null;
+}
+/** What is changed on a span while it is still writable: the gateway's charge goes onto each model-call span, and
+ *  image bytes come off the SDK's outer span. */
+const beforeExport = {
   onStart() {}, onEnd() {}, forceFlush: () => Promise.resolve(), shutdown: () => Promise.resolve(),
   onEnding(span: Span & { name: string; attributes: Record<string, unknown> }) {
     try {
-      if (!MODEL_CALL.test(span.name)) return;
+      if (!MODEL_CALL.test(span.name)) {
+        const prompt = span.attributes['ai.prompt'];
+        const without = typeof prompt === 'string' ? withoutImageBytes(prompt) : null;
+        if (without != null) span.setAttribute('ai.prompt', without);
+        return;
+      }
       const raw = span.attributes['ai.response.providerMetadata'];
       const cost = typeof raw === 'string' ? gatewayCostUsd(JSON.parse(raw)) : null;
       if (cost != null) span.setAttribute('langfuse.observation.cost_details', JSON.stringify({ total: cost }));
-    } catch (e) { warn('cost hook failed', e); }
+    } catch (e) { warn('span hook failed', e); }
   },
 } as SpanProcessor;
 
@@ -109,7 +146,7 @@ export function createTracing(config: TracingConfig): Tracing {
       // Spans sent without this header are read through the legacy path and can lag by minutes.
       additionalHeaders: { 'x-langfuse-ingestion-version': '4' },
     });
-    const provider = new BasicTracerProvider({ spanProcessors: [gatewayCost, langfuse] });
+    const provider = new BasicTracerProvider({ spanProcessors: [beforeExport, langfuse] });
     ensureContextManager();
     // The scope names are read by Langfuse: `ai` marks AI SDK spans, `langfuse-sdk` its own observations.
     const aiTracer = provider.getTracer('ai');
@@ -134,8 +171,14 @@ export function createTracing(config: TracingConfig): Tracing {
       } };
     };
 
-    return {
+    const tracing: Tracing = {
       telemetry: (functionId) => ({ isEnabled: true, functionId, tracer: aiTracer }),
+      call<T>(a: TurnAttributes, fn: () => Promise<T>, output: (result: T) => unknown = (r) => r): Promise<T> {
+        return tracing.turn(a, (root) => fn().then(
+          (result) => { try { root.finish({ output: output(result) }); } catch (e) { warn('reading the output failed', e); root.finish({}); } return result; },
+          (error) => { root.fail(error); throw error; },
+        ).finally(() => background(tracing.flush())));
+      },
       turn<T>(a: TurnAttributes, fn: (root: TurnRoot) => T): T {
         // `fn` is the Turn: it runs once, and what it throws is the caller's to see. Only the tracing around it is guarded.
         let ran = false; let result!: T; let thrown: { error: unknown } | null = null;
@@ -153,12 +196,17 @@ export function createTracing(config: TracingConfig): Tracing {
       // A task later, not now: a caller flushing from an SDK callback is ahead of the SDK ending its own outer span.
       flush: () => new Promise<void>((r) => setTimeout(r, 0)).then(() => langfuse.forceFlush()).catch((e) => warn('flush failed', e)),
     };
+    return tracing;
   } catch (e) { warn('setup failed, tracing is off', e); return NO_TRACING; }
 }
 
 let fromEnv: Tracing | null = null;
+let inPlace: Tracing | null = null;
+/** In place of the instance's tracing, for a test that drives a function through its own entry point. Null puts it back. */
+export function setDefaultTracing(tracing: Tracing | null): void { inPlace = tracing; }
 /** The function instance's tracing, built once from the function secrets. With no keys set it does nothing. */
 export function defaultTracing(): Tracing {
+  if (inPlace) return inPlace;
   if (fromEnv) return fromEnv;
   const environment = Deno.env.get('LANGFUSE_TRACING_ENVIRONMENT');
   fromEnv = createTracing({
