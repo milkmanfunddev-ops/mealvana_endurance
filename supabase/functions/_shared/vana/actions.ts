@@ -143,10 +143,11 @@ export async function extraAction(v: VanaCtx, type: string, p: Record<string, an
       // A fridge photo is a vision call: it draws the monthly budget (mp-430, ticket 09) and is limited by the same shared
       // module as chat, both counted when it starts (mp-469 criterion 3). A refusal throws; vana-action answers 402 / 503
       // for the budget and 429 rate_limited for the limiter, and a reservation the limiter or the model failed goes back.
+      // The model is the one the pantry photo's prompt names in Langfuse (langfuse ticket 12), so the reserved row names
+      // it. Resolved before anything is reserved, so nothing is held while it is fetched.
+      const wording = await pantryPhotoWording();
       const hold = await reserveBudgetOrThrow(v.admin, v.userId, 'vana-pantry-photo');
       let callId: string | null;
-      // The model is the one the pantry photo's prompt names in Langfuse (langfuse ticket 12), so the reserved row names it.
-      const wording = await pantryPhotoWording();
       try { callId = await reserveCallOrThrow(v.admin, v.userId, 'vana.pantry_photo', { model: wording.model }); } catch (e) { await hold.refund(); throw e; }
       let part;
       try {

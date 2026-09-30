@@ -374,10 +374,18 @@ Deno.test('writing the day notes is one Trace for the athlete, with the cost the
     assertEquals(Object.keys(notes).sort(), DATES);
     const call = v.fake.writesTo('vana_calls', 'insert').find((c) => c.values.function_name === 'vana.daynotes')!.values;
     assertEquals(call.gateway_cost_usd, Number(NOTES_COST), "the Call log holds the gateway's charge");
-    // The notes belong to a plan, not to a Conversation, so the Trace carries no Session.
+    // This plan was built on the Plan tab, in no Conversation, so the Trace carries no Session.
     const root = assertOneTrace(await w.spans(), { name: 'vana-day-notes', userId: U, sessionId: undefined, cost: call.gateway_cost_usd as number });
     assert(String(root.attributes['langfuse.observation.input']).includes('--- DATES ---'), 'the plan and the dates it wrote for');
     assertEquals(JSON.parse(String(root.attributes['langfuse.observation.output'])), NOTES_ANSWER.notes);
+  });
+});
+
+Deno.test("day notes for a plan a Conversation built are traced in that Conversation's Session", async () => {
+  const v = testCtx(baseTables({ meal_plans: [planRow({ conversation_id: 'conv-plan' })] }));
+  await withTracedModel(NOTES_ANSWER, NOTES_COST, async (w) => {
+    await generateDayNotes(v, (await getPlanById(v, PLAN))!, ANCHOR, tracedDeps());
+    for (const s of await w.spans()) assertEquals(s.attributes['session.id'], 'conv-plan', s.name);
   });
 });
 

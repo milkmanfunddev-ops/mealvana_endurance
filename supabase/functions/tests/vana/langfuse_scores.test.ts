@@ -63,7 +63,7 @@ Deno.test('confirming a plan writes plan_confirmed = yes against the planning Co
   });
 });
 
-Deno.test('a Run\'s confirm is scored in the experiment environment', async () => {
+Deno.test('a confirm made in an Experiment is scored in the experiment environment', async () => {
   const v = { ...draftOf(CONV), environment: 'experiment' as const };
   await recording(async (sent) => {
     await confirmPlan(v, { conversationId: CONV });
@@ -90,16 +90,25 @@ Deno.test('a Score that cannot be written leaves the confirm as it was', async (
 });
 
 Deno.test("the feedback tool writes athlete_feedback with the athlete's rating against its Conversation", async () => {
-  for (const [sentiment, value] of [['positive', 1], ['negative', -1], ['neutral', 0]] as const) {
+  for (const [sentiment, value] of [['positive', 1], ['negative', -1]] as const) {
     const v = testCtx({ user_feedback: [] });
     await recording(async (sent) => {
       const out = await planningTools(v).saveFeedback.execute(feedback(sentiment), {});
       assertEquals(out.kind, 'feedback_saved');
       assertEquals(sent, [{ name: 'athlete_feedback', value, dataType: 'NUMERIC', sessionId: CONV, comment: 'vana: you keep suggesting fish', environment: undefined }], sentiment);
-      // The same rating the feedback row holds, where it holds one.
-      assertEquals(v.fake.rows('user_feedback')[0].rating, sentiment === 'neutral' ? null : value);
+      // The same rating the feedback row holds.
+      assertEquals(v.fake.rows('user_feedback')[0].rating, value);
     });
   }
+});
+
+Deno.test('feedback that is neither positive nor negative has no rating, so it writes no Score', async () => {
+  const v = testCtx({ user_feedback: [] });
+  await recording(async (sent) => {
+    assertEquals((await planningTools(v).saveFeedback.execute(feedback('neutral'), {})).kind, 'feedback_saved');
+    assertEquals(v.fake.rows('user_feedback')[0].rating, null);
+    assertEquals(sent, []);
+  });
 });
 
 Deno.test('a Score that cannot be written leaves the feedback saved and acknowledged', async () => {

@@ -186,7 +186,7 @@ export function makeVanaEvalHandler(deps: VanaEvalDeps) {
     if (!copy) return json({ error: 'no_copy' }, 404);
     if (body.message != null && (typeof body.message !== 'string' || body.message.length > MAX_MESSAGE_LENGTH)) return json({ error: 'invalid_body', details: `message must be a string of at most ${MAX_MESSAGE_LENGTH} characters` }, 400);
     const token = await auth.signIn(copy.email, await copyPassword(deps.secret, copy.email));
-    // A Run's Traces and Scores are kept apart from dev and prod traffic in Langfuse.
+    // An Experiment's Traces and Scores are kept apart from dev and prod traffic in Langfuse.
     const v: VanaCtx = { ...deps.ctxFor(copy.user_id, token), environment: 'experiment' };
 
     let trace: TurnTrace | null = null;

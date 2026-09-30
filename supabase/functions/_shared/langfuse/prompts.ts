@@ -143,12 +143,12 @@ export function promptSourceFromEnv(bundled: Record<string, string>, background:
   });
 }
 
-let fetchInPlace: { fetchPrompt: FetchPrompt; label: PromptLabel } | null = null;
+let fetchInPlace: FetchPrompt | null = null;
 let fetchChanges = 0;
 /** In place of Langfuse's prompt API for every instance source, for a test that drives a function through its own
  *  entry point. Null puts Langfuse back. Either way what the sources held is dropped. */
-export function setPromptFetch(fetchPrompt: FetchPrompt | null, label: PromptLabel = 'latest'): void {
-  fetchInPlace = fetchPrompt ? { fetchPrompt, label } : null;
+export function setPromptFetch(fetchPrompt: FetchPrompt | null): void {
+  fetchInPlace = fetchPrompt;
   fetchChanges++;
 }
 
@@ -158,7 +158,7 @@ export function instancePrompts(bundled: Record<string, string>): PromptSource {
   let built: { source: PromptSource; at: number } | null = null;
   const source = () => {
     if (!built || built.at !== fetchChanges) {
-      built = { at: fetchChanges, source: fetchInPlace ? createPromptSource({ ...fetchInPlace, bundled, background }) : promptSourceFromEnv(bundled, background) };
+      built = { at: fetchChanges, source: fetchInPlace ? createPromptSource({ label: 'latest', fetchPrompt: fetchInPlace, bundled, background }) : promptSourceFromEnv(bundled, background) };
     }
     return built.source;
   };

@@ -203,11 +203,12 @@ export async function generateDayNotes(v: VanaCtx, plan: MealPlan, anchorDate: s
     // The flag comes down BEFORE the model runs, never after: an edit that lands while we generate raises it again,
     // and our write below must not lower it over that edit (its days would stay wrong until the next plan change).
     if (plan.dayNotesStale !== false) await v.db.from('meal_plans').update({ day_notes_stale: false }).eq('id', plan.id);
-    // The call is a Trace of its own (langfuse ticket 10). The notes belong to a plan, so it carries no Session.
+    // The call is a Trace of its own (langfuse ticket 10), in the Session of the Conversation that built the plan when
+    // one did.
     const prompt = notesPrompt(plan, ctx, dirty);
     const wording = await callPrompt(prompts, DAY_NOTES_PROMPT, TOOL_MODEL);
     const { notes: written, inputTokens, outputTokens, gatewayCostUsd: cost } = await defaultTracing().call(
-      { name: 'vana-day-notes', userId: v.userId, tags: ['background'], metadata: { promptSource: wording.origin }, input: prompt },
+      { name: 'vana-day-notes', userId: v.userId, sessionId: plan.conversationId, environment: v.environment, tags: ['background'], metadata: { promptSource: wording.origin }, input: prompt },
       () => deps.generate({ system: wording.text, prompt, dates: dirty, model: wording.model }), (r) => r.notes);
     const fresh: Record<string, string> = {};
     const keys: Record<string, string> = {};

@@ -12,6 +12,7 @@
  * when AI_GATEWAY_API_KEY is set (same convention as `_shared/ai/model.ts`).
  */
 import type { SupabaseClient } from 'https://esm.sh/@supabase/supabase-js@2.39.3';
+import type { TracingEnvironment } from '../langfuse/tracing.ts';
 
 // deno-lint-ignore no-explicit-any
 export type Db = SupabaseClient<any, 'public', any>;
@@ -27,8 +28,8 @@ export interface VanaCtx {
   /** The caller's raw JWT — forwarded to `vana-day-notes` for background regeneration. */
   token: string;
   /** The Langfuse environment this request's Traces and Scores carry in place of the project's own. `vana-eval` sets
-   *  `experiment`, so a Run never mixes with dev or prod traffic; everything else leaves it unset. */
-  environment?: 'dev' | 'production' | 'experiment';
+   *  `experiment`, so an Experiment never mixes with dev or prod traffic; everything else leaves it unset. */
+  environment?: TracingEnvironment;
 }
 
 // Model ids are spelled the way the gateway catalogue spells them (https://ai-gateway.vercel.sh/v1/models,
