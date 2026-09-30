@@ -4,6 +4,8 @@
 
 **Blocked by:** None (can start immediately)
 
+**Owner:** `../mealvana_eval` agent. Touches no app code: a script plus Langfuse. The Scenario files it reads are in `mealvana_endurance/eval/scenarios`.
+
 **Status:** ready-for-agent
 
 - [ ] One dataset exists in Langfuse holding all 22 Scenarios as Dataset items in the contract shape

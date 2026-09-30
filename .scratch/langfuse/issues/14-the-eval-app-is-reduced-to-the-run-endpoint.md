@@ -4,6 +4,8 @@
 
 **Blocked by:** 04
 
+**Owner:** `../mealvana_eval` agent.
+
 **Status:** ready-for-agent
 
 - [ ] The screens, Judge, Rubric, Marks and Scenario store are deleted

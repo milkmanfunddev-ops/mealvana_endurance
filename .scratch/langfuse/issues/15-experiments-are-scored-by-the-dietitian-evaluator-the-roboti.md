@@ -4,6 +4,8 @@
 
 **Blocked by:** 03, 04, 05
 
+**Owner:** `../mealvana_eval` agent. Touches no app code: evaluators live in Langfuse.
+
 **Status:** ready-for-agent
 
 - [ ] The Dietitian evaluator and the robotic check exist in Langfuse, target Experiments, run on Haiku 4.5 and return yes or no with a reason

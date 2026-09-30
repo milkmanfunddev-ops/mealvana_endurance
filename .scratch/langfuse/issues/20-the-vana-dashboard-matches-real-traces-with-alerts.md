@@ -4,6 +4,8 @@
 
 **Blocked by:** 08, 09, 10
 
+**Owner:** `mealvana_endurance` agent.
+
 **Status:** ready-for-agent
 
 - [ ] Every widget shows data from dev traces and its breakdown reads sensibly

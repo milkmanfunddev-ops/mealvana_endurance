@@ -4,6 +4,8 @@
 
 **Blocked by:** 06, 08, 09, 10, 11, 12, 18
 
+**Owner:** `mealvana_endurance` lead, on Lee's go.
+
 **Status:** ready-for-human
 
 - [ ] The privacy documents from ticket 06 are published

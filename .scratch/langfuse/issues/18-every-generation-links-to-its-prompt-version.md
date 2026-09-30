@@ -4,6 +4,8 @@
 
 **Blocked by:** 08, 09, 10, 11, 12
 
+**Owner:** `mealvana_endurance` agent.
+
 **Status:** ready-for-agent
 
 - [ ] A chat Turn's Generations link to the persona version used

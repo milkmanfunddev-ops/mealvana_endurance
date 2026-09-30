@@ -4,6 +4,8 @@
 
 **Blocked by:** 01
 
+**Owner:** `mealvana_endurance` agent.
+
 **Status:** ready-for-agent
 
 - [ ] Each of the five calls sends one Trace named for what it does, with the athlete as user

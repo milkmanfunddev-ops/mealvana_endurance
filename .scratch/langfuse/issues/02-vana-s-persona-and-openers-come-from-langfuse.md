@@ -4,6 +4,8 @@
 
 **Blocked by:** None (can start immediately)
 
+**Owner:** `mealvana_endurance` agent.
+
 **Status:** ready-for-agent
 
 - [ ] The persona sections and openers exist in Langfuse with the text the code has today, each with a `production` label

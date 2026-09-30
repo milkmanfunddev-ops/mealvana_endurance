@@ -4,6 +4,8 @@
 
 **Blocked by:** 05, 08
 
+**Owner:** `mealvana_endurance` agent.
+
 **Status:** ready-for-agent
 
 - [ ] The evaluators target the `vana-turn` root observation in the `dev` environment, never whole traces

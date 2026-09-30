@@ -4,6 +4,8 @@
 
 **Blocked by:** None (can start immediately)
 
+**Owner:** `../mealvana_eval` agent.
+
 **Status:** ready-for-agent
 
 - [ ] A correctly signed request is accepted at once; a bad signature is refused

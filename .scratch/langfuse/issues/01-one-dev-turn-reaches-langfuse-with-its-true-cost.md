@@ -4,6 +4,8 @@
 
 **Blocked by:** None (can start immediately)
 
+**Owner:** `mealvana_endurance` agent.
+
 **Status:** ready-for-agent
 
 - [ ] Langfuse keys are function secrets on the dev project and are passed to the tracing module explicitly

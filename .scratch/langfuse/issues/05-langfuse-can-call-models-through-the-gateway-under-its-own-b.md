@@ -4,6 +4,8 @@
 
 **Blocked by:** None (can start immediately)
 
+**Owner:** `../mealvana_eval` agent. Touches no code: Gateway and Langfuse settings only.
+
 **Status:** ready-for-agent
 
 - [ ] The evals Gateway key has a $20 monthly budget, confirmed by reading it back

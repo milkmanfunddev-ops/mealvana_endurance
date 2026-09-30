@@ -4,6 +4,8 @@
 
 **Blocked by:** 07, 15, 16
 
+**Owner:** Lee (with Xuan where named).
+
 **Status:** ready-for-human
 
 - [ ] One annotation queue exists with the `review_pass_fail` and `review_note` score configs

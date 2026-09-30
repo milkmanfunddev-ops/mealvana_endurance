@@ -4,6 +4,8 @@
 
 **Blocked by:** 11
 
+**Owner:** `../mealvana_eval` agent. Touches no app code until Lee rules: a dataset and an Experiment in Langfuse.
+
 **Status:** ready-for-agent
 
 - [ ] A dataset of real meal descriptions and photos from dev exists, with the macros a person accepts as right

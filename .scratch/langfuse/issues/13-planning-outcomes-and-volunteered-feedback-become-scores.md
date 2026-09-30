@@ -4,6 +4,8 @@
 
 **Blocked by:** 01
 
+**Owner:** `mealvana_endurance` agent.
+
 **Status:** ready-for-agent
 
 - [ ] Confirming a plan writes `plan_confirmed` = yes; abandoning a Draft writes it = no

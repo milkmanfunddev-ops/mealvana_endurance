@@ -4,6 +4,8 @@
 
 **Blocked by:** 22
 
+**Owner:** Lee (with Xuan where named).
+
 **Status:** ready-for-human
 
 - [ ] Lee has ruled on the Mixpanel project and on athletes without analytics consent

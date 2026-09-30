@@ -4,6 +4,8 @@
 
 **Blocked by:** 02
 
+**Owner:** `mealvana_endurance` agent.
+
 **Status:** ready-for-agent
 
 - [ ] All five prompts exist in Langfuse with today's text and a `production` label

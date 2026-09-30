@@ -4,6 +4,8 @@
 
 **Blocked by:** 01
 
+**Owner:** `mealvana_endurance` agent.
+
 **Status:** ready-for-agent
 
 - [ ] The root observation follows the Turn root contract

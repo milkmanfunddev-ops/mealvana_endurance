@@ -4,6 +4,8 @@
 
 **Blocked by:** 02, 04
 
+**Owner:** `../mealvana_eval` agent. The Run settings half is built there. The dev-only eval function's half (accepting a prompt label or version in place of the persona override) lives in `mealvana_endurance` and is done by that repo's agent, as the last step of this ticket.
+
 **Status:** ready-for-agent
 
 - [ ] A label or version in the Run settings is the persona Vana runs on for every item
