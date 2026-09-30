@@ -10,6 +10,7 @@ import '../domain/user_preferences.dart';
 import '../../onboarding/domain/dietary_preference.dart';
 import '../../onboarding/domain/allergy.dart';
 import '../../../shared/services/app_external_deps.dart';
+import '../../../shared/services/app_version_service.dart';
 import '../../../shared/services/logging_service.dart';
 import '../../../shared/services/sentry/sentry_reporter.dart';
 
@@ -87,8 +88,10 @@ class AuthService {
         data: {'device_id': deviceId, 'user_id': effectiveUserId},
       );
 
-      // Get app version
-      const appVersion = '1.0.0';
+      // The version this build is actually running — never a constant. A
+      // hardcoded value here is what made users.app_version useless for
+      // reading a rollout (see app_version_service.dart).
+      final appVersion = await ref.read(runningAppVersionProvider.future);
 
       // Create UserProfile with Supabase auth fields
       final now = DateTime.now();
@@ -585,6 +588,47 @@ class AuthService {
       'hasPreferences': preferences != null,
       'preferredFoodCount': preferences?.length ?? 0,
     };
+  }
+
+  /// Bring `users.app_version` up to date with the build that is running.
+  ///
+  /// Writing the version only at account creation is its own defect: an
+  /// athlete who installed at 1.24.0 and has since updated six times still
+  /// reports 1.24.0, so the column ages into a record of what people
+  /// INSTALLED rather than what they are RUNNING. Called once per launch from
+  /// the deferred startup chain, so a version change is picked up on the first
+  /// cold start after an update.
+  ///
+  /// Offline-first: the local row is authoritative and `needsUpload: true`
+  /// lets DataSyncService carry it, so this never blocks startup on a network
+  /// round trip.
+  Future<void> reconcileAppVersion() async {
+    try {
+      final running = await ref.read(runningAppVersionProvider.future);
+      final userRepo = await _userRepository;
+      final profile = await userRepo.getCurrentUser();
+
+      // No profile yet (pre-onboarding): creation writes the right value.
+      if (profile == null) return;
+      if (profile.appVersion == running) return;
+
+      await userRepo.updateUserProfile(
+        profile.copyWith(appVersion: running),
+        needsUpload: true,
+      );
+
+      _logger.info(
+        'app_version reconciled',
+        context: 'AUTH',
+        data: {'was': profile.appVersion, 'now': running},
+      );
+    } catch (e) {
+      // Telemetry about the fleet must never cost anyone a launch.
+      _logger.warning(
+        'app_version reconcile failed (non-fatal): $e',
+        context: 'AUTH',
+      );
+    }
   }
 }
 

@@ -842,6 +842,8 @@ class AuthMigrationService {
         runsWithWaterBottle: false,
         gutTraining: GutTraining.moderate,
         onboardingCompleted: false,
+        // Placeholder, as in user_repository's reset path: no Ref here.
+        // reconcileAppVersion() corrects it on the next cold start.
         appVersion: '1.0.0',
         createdAt: now,
         updatedAt: now,
