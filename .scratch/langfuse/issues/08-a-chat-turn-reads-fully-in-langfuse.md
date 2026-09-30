@@ -6,20 +6,25 @@
 
 **Owner:** `mealvana_endurance` agent.
 
-**Status:** ready-for-agent
+**Status:** done (2026-09-30), one thing open for Lee: the release
 
-- [ ] The root observation follows the Turn root contract
-- [ ] One Generation per Step, one tool observation per Tool call
+- [x] The root observation follows the Turn root contract
+- [x] One Generation per Step, one tool observation per Tool call
 - [ ] User, Session, environment, release, conversation kind and tags are on every observation
-- [ ] A failed Turn shows as an error on its Trace
-- [ ] Embedding calls produce no exported span
-- [ ] The dev-only eval function still receives the Turn's full detail through its existing callback
-- [ ] Deployed check on dev: a Turn that calls Tools reads correctly in Langfuse, and the Session view shows the Conversation in order
+- [x] A failed Turn shows as an error on its Trace
+- [x] Embedding calls produce no exported span
+- [x] The dev-only eval function still receives the Turn's full detail through its existing callback
+- [x] Deployed check on dev: a Turn that calls Tools reads correctly in Langfuse, and the Session view shows the Conversation in order
 
 **Shared contracts** (fixed so tickets can be built in parallel; change one only by changing every ticket that cites it):
 
 - *Turn root.* A chat Turn's root observation is named `vana-turn`. Its input is the athlete's message (or the opener's hidden prompt), its output is Vana's reply, and its metadata lists the Tool calls in order. It carries the athlete as user, the Conversation as Session, the environment (`dev`, `production` or `experiment`), the release and the conversation kind.
 - *Dataset item.* Input: `evalAthlete` (a reference, never the data), `persona`, `goal`, `openingTurn`, `scriptedTurns` (may be empty), `maxTurns`. Expected output: `toolExpectations`.
 - *Experiment item output.* `transcript` (every turn in order), `toolCalls` (name and arguments, in order), `writes` (a summary of what Vana changed in the Eval athlete copy).
+
+2026-09-30. Built and checked on dev (vana-chat, jade-chat and vana-eval deployed):
+- A real Turn that called `getWorkouts` reads in Langfuse as `vana-turn` with two Generations and one Tool observation, in Session `2086b38a-…`, environment `dev`, tags `vana-chat, general, message`. Its two Generations cost 0.0026322 + 0.00258075, the Call log row's 0.00521295.
+- vana-eval's Turns carry the `experiment` environment (it rides on the Vana context, so its Scores and background Traces do too).
+- Open: no observation carries a release on dev, because the project has neither `LANGFUSE_RELEASE` nor `SENTRY_RELEASE` set. The code sends it when one exists. Lee to say what the release is (a function secret set at deploy, or left out).
 
 Spec: `.scratch/langfuse/spec.md`. Decisions: `docs/langfuse/pivot/REPORT.md`. Words: `CONTEXT.md`, "Judging Vana". Langfuse access: `secrets/langfuse.env`, the `langfuse` skill, CLI and MCP server. Hobby allows 30 API requests a minute; pace any setup script.
