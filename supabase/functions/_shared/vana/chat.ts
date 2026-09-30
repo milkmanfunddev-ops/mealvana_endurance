@@ -577,6 +577,8 @@ export async function runChat(v: VanaCtx, body: ChatBody, opts: ChatRunOpts): Pr
     // A stream that fails is a call the athlete did not get: its reservation goes back. The hold settles once, so an
     // onFinish that follows an error changes nothing.
     onError: ({ error }) => { console.error(`${tag} stream error:`, (error as Error)?.message ?? error); root.fail(error); waitUntil(tracing.flush()); opts.onTrace?.({ kind: convKind, opener, openerVariant, newPlan, functionName: opts.functionName, model, anchorDate, situation: note, inView, openerText: opener ? openerText : null, doll: ctx, contextReused: reused, system: { persona: String(system[0].content), context: String(system[1].content) }, tools: Object.keys(offered), modelMessages, durationMs: Date.now() - started, text: '', steps: [], usage: null, totalUsage: null, error: String((error as Error)?.message ?? error) }); if (opts.onFailure) waitUntil(opts.onFailure(error).catch((e) => console.error(`${tag} onFailure threw:`, (e as Error).message))); },
+    // A Turn cut short still ends its root, so what ran of it reaches Langfuse.
+    onAbort: () => { root.fail('aborted'); waitUntil(tracing.flush()); },
     onFinish: ({ text, steps, usage, totalUsage }) => {
       const u = totalUsage ?? usage;
       const inputTokens = u?.inputTokens ?? 0; const outputTokens = u?.outputTokens ?? 0;

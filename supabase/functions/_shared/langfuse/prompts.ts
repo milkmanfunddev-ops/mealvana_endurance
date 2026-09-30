@@ -47,6 +47,8 @@ export interface PromptSourceConfig {
   retryMs?: number;
   /** How long a Turn waits for a prompt it does not hold. */
   timeoutMs?: number;
+  /** How long a background refresh may take. Longer, since no Turn is waiting: a slow Langfuse still gets through. */
+  refreshTimeoutMs?: number;
   now?: () => number;
   /** Where the background refresh runs. EdgeRuntime.waitUntil in production. */
   background?: (p: Promise<unknown>) => void;
@@ -56,12 +58,12 @@ const warn = (what: string, e: unknown) => console.error(`[langfuse] ${what}:`, 
 
 /** Fills a template's `{{name}}` variables. A variable with no value is left as written, the way Langfuse leaves it. */
 export function compilePrompt(template: string, variables: Record<string, string | number>): string {
-  return template.replace(/\{\{\s*(\w+)\s*\}\}/g, (whole, name: string) => (name in variables ? String(variables[name]) : whole));
+  return template.replace(/\{\{\s*(\w+)\s*\}\}/g, (whole, name: string) => (Object.hasOwn(variables, name) ? String(variables[name]) : whole));
 }
 
 export function createPromptSource(config: PromptSourceConfig): PromptSource {
   const { label, fetchPrompt, bundled } = config;
-  const ttlMs = config.ttlMs ?? 60_000; const retryMs = config.retryMs ?? 15_000; const timeoutMs = config.timeoutMs ?? 1_500;
+  const ttlMs = config.ttlMs ?? 60_000; const retryMs = config.retryMs ?? 15_000; const timeoutMs = config.timeoutMs ?? 1_500; const refreshTimeoutMs = config.refreshTimeoutMs ?? 10_000;
   const now = config.now ?? Date.now;
   const background = config.background ?? ((p) => void p.catch(() => {}));
   const kept = new Map<string, { prompt: ResolvedPrompt; until: number }>();
@@ -72,11 +74,11 @@ export function createPromptSource(config: PromptSourceConfig): PromptSource {
     return { name, text: bundled[name], version: null, config: {}, fallback };
   };
   /** One fetch per name at a time. It always settles: on any failure the bundled copy (or the prompt already held). */
-  const load = (name: string, fetch: FetchPrompt): Promise<ResolvedPrompt> => {
+  const load = (name: string, fetch: FetchPrompt, waitMs: number): Promise<ResolvedPrompt> => {
     const running = inFlight.get(name);
     if (running) return running;
     let timer: number | undefined;
-    const timeout = new Promise<never>((_, reject) => { timer = setTimeout(() => reject(new Error(`timed out after ${timeoutMs}ms`)), timeoutMs); });
+    const timeout = new Promise<never>((_, reject) => { timer = setTimeout(() => reject(new Error(`timed out after ${waitMs}ms`)), waitMs); });
     const p = Promise.race([Promise.resolve().then(() => fetch(name, label)), timeout])
       .then((f): ResolvedPrompt => {
         if (typeof f?.text !== 'string' || !f.text) throw new Error('empty prompt');
@@ -97,8 +99,8 @@ export function createPromptSource(config: PromptSourceConfig): PromptSource {
   const one = (name: string): Promise<ResolvedPrompt> => {
     if (!fetchPrompt) return Promise.resolve(bundledCopy(name, false));
     const held = kept.get(name);
-    if (!held) return load(name, fetchPrompt);
-    if (held.until <= now()) background(load(name, fetchPrompt));
+    if (!held) return load(name, fetchPrompt, timeoutMs);
+    if (held.until <= now()) background(load(name, fetchPrompt, refreshTimeoutMs));
     return Promise.resolve(held.prompt);
   };
 
@@ -122,8 +124,9 @@ export function langfuseFetchPrompt(keys: { publicKey: string; secretKey: string
   };
 }
 
-/** The label a project asks for: `production` on prod, `latest` everywhere else. */
-export const promptLabelFor = (environment: string | undefined): PromptLabel => (environment === 'production' ? 'production' : 'latest');
+/** The label a project asks for: `latest` on dev, `production` everywhere else. A project whose environment is unset
+ *  or misspelt gets `production`, so an unpublished edit can only ever reach a project that says it is dev. */
+export const promptLabelFor = (environment: string | undefined): PromptLabel => (environment === 'dev' ? 'latest' : 'production');
 
 /** The function instance's prompt source, from the function secrets. With no keys set every prompt is the bundled copy. */
 export function promptSourceFromEnv(bundled: Record<string, string>, background: (p: Promise<unknown>) => void): PromptSource {

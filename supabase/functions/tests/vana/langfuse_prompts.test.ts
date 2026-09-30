@@ -7,7 +7,7 @@ import { assert, assertEquals } from 'https://deno.land/std@0.177.1/testing/asse
 import { MockLanguageModelV3, MockProviderV3, convertArrayToReadableStream } from 'npm:ai@6.0.277/test';
 import { InMemorySpanExporter } from 'npm:@opentelemetry/sdk-trace-base@2.11.0';
 import { runChat, systemMessages, type ChatBody } from '../../_shared/vana/chat.ts';
-import { createPromptSource, type FetchPrompt, type PromptLabel, type PromptSource } from '../../_shared/langfuse/prompts.ts';
+import { createPromptSource, promptLabelFor, type FetchPrompt, type PromptLabel, type PromptSource } from '../../_shared/langfuse/prompts.ts';
 import { createTracing } from '../../_shared/langfuse/tracing.ts';
 import { PROMPT_TEMPLATES, OPENERS, NEW_PLAN_OPENER } from '../../_shared/vana/persona.ts';
 import { CHIP_LABELS } from '../../_shared/vana/chip-labels.ts';
@@ -147,6 +147,11 @@ Deno.test('a kept prompt past its time is served while it is fetched again in th
   await Promise.all(background);
   assertEquals((await prompts.resolve(['p'])).p, { name: 'p', text: 'second', version: 2, config: {}, fallback: false });
   assertEquals(asked.length, 2);
+});
+
+Deno.test('only a project that says it is dev asks for `latest`', () => {
+  assertEquals(promptLabelFor('dev'), 'latest');
+  for (const environment of ['production', undefined, '', 'prod', 'Dev']) assertEquals(promptLabelFor(environment), 'production', String(environment));
 });
 
 Deno.test('with no Langfuse to ask, and with Langfuse holding today\'s text, the model is sent the same bytes', async () => {

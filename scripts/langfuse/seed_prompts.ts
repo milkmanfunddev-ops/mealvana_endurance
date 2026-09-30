@@ -19,7 +19,7 @@ const pause = () => new Promise((r) => setTimeout(r, 2_200));
 
 let created = 0;
 for (const [name, prompt] of Object.entries(PROMPT_TEMPLATES)) {
-  const existing = await fetch(`${base}/api/public/v2/prompts/${encodeURIComponent(name)}`, { headers });
+  const existing = await fetch(`${base}/api/public/v2/prompts/${encodeURIComponent(name)}?label=latest`, { headers });
   await existing.body?.cancel();
   await pause();
   if (existing.ok) { console.log(`exists   ${name}`); continue; }

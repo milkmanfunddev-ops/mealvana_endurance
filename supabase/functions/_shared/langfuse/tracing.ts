@@ -139,7 +139,7 @@ export function createTracing(config: TracingConfig): Tracing {
       turn<T>(a: TurnAttributes, fn: (root: TurnRoot) => T): T {
         // `fn` is the Turn: it runs once, and what it throws is the caller's to see. Only the tracing around it is guarded.
         let ran = false; let result!: T; let thrown: { error: unknown } | null = null;
-        const run = (root: TurnRoot) => { ran = true; try { result = fn(root); } catch (error) { thrown = { error }; } };
+        const run = (root: TurnRoot) => { ran = true; try { result = fn(root); } catch (error) { thrown = { error }; root.fail(error); } };
         try {
           propagateAttributes({ userId: a.userId, sessionId: a.sessionId || undefined, environment: a.environment, traceName: a.name, metadata: a.metadata, tags: a.tags }, () => {
             const { span, root } = open(a);
@@ -150,7 +150,8 @@ export function createTracing(config: TracingConfig): Tracing {
         if (thrown) throw (thrown as { error: unknown }).error;
         return result;
       },
-      flush: () => langfuse.forceFlush().catch((e) => warn('flush failed', e)),
+      // A task later, not now: a caller flushing from an SDK callback is ahead of the SDK ending its own outer span.
+      flush: () => new Promise<void>((r) => setTimeout(r, 0)).then(() => langfuse.forceFlush()).catch((e) => warn('flush failed', e)),
     };
   } catch (e) { warn('setup failed, tracing is off', e); return NO_TRACING; }
 }
