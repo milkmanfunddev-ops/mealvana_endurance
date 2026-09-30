@@ -64,9 +64,8 @@ export interface TurnAttributes {
   tags?: string[];
   /** The prompt the Turn's Generations link to. A bundled copy links to nothing. */
   prompt?: PromptRef | null;
-  /** Every prompt the Turn was built from, by name, with its Langfuse version (null for a bundled copy). For a Turn
-   *  built from more than one: a Generation links to one prompt only, so the rest are listed on the root. */
-  promptVersions?: Record<string, number | null>;
+  /** What only the root carries, by name: read on the Trace and by evaluators, never filtered on. Any JSON value. */
+  detail?: Record<string, unknown>;
   /** What the athlete sent. */
   input?: unknown;
 }
@@ -170,7 +169,7 @@ export function createTracing(config: TracingConfig): Tracing {
       const span = rootTracer.startSpan(a.name, { root: true, attributes: {
         'langfuse.observation.type': 'span',
         ...(a.input == null ? {} : { 'langfuse.observation.input': serialized(a.input) }),
-        ...(a.promptVersions ? { 'langfuse.observation.metadata.promptVersions': JSON.stringify(a.promptVersions) } : {}),
+        ...Object.fromEntries(Object.entries(a.detail ?? {}).filter(([, value]) => value != null).map(([key, value]) => [`langfuse.observation.metadata.${key}`, JSON.stringify(value)])),
       } });
       let ended = false;
       const end = (write: () => void) => { if (ended) return; ended = true; try { write(); span.end(); } catch (e) { warn('ending the root failed', e); } };

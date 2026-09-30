@@ -70,12 +70,13 @@ function edgeRuntime(): { background: Promise<unknown>[]; settled: () => Promise
 }
 
 interface Turn { reply: string; spans: ReadableSpan[]; callRow: Record<string, unknown>; settled: FinishedUsage[]; traces: TurnTrace[]; modelCalls: number }
-type Script = Parameters<typeof mockGateway>[0] & { opts?: Partial<ChatRunOpts>; environment?: 'experiment' };
+type Script = Parameters<typeof mockGateway>[0] & { opts?: Partial<ChatRunOpts>; environment?: 'experiment'; stored?: Record<string, unknown>[] };
 /** One two-step turn on an existing conversation. `tracing` undefined is the app with no Langfuse keys. */
 async function turn(tracing: Tracing | undefined, collector?: InMemorySpanExporter, script: Script = {}): Promise<Turn> {
   const v = Object.assign(testCtx({ users: [{ id: U, first_name: 'Lee', allergies: [] }], activities: [] }), { environment: script.environment });
   const ctx = await buildAthleteContext(v, ANCHOR, offlineDeps());
   await v.db.from('vana_conversations').insert({ id: CONV, user_id: U, kind: 'general', context: ctx, context_day: ANCHOR, last_message_at: `${ANCHOR}T08:00:00Z` });
+  for (const row of script.stored ?? []) await v.db.from('vana_messages').insert({ conversation_id: CONV, user_id: U, ...row });
   const gw = mockGateway(script); const rt = edgeRuntime();
   const settled: FinishedUsage[] = []; const traces: TurnTrace[] = [];
   try {
@@ -117,6 +118,25 @@ Deno.test('a Turn is one Trace under a vana-turn root, carrying the athlete and 
   }
   assertEquals(generations(spans).length, 2, 'one Generation per Step');
   assertEquals(spans.filter((s) => s.name === 'ai.toolCall').map((s) => s.attributes['ai.toolCall.name']), ['getWorkouts'], 'one observation per Tool call');
+});
+
+Deno.test("the root lists the turns before this one, so an evaluator can tell a correction or a repeat from a first ask", async () => {
+  const { collector, tracing } = collected();
+  const long = 'Rest day. '.repeat(200);
+  const { spans } = await turn(tracing, collector, { stored: [
+    { id: 'm1', role: 'user', content: 'what is on this week', parts: [{ type: 'text', text: 'what is on this week' }], created_at: `${ANCHOR}T08:00:00Z` },
+    { id: 'm2', role: 'assistant', content: null, parts: [{ type: 'text', text: long }], created_at: `${ANCHOR}T08:00:05Z` },
+  ] });
+  const root = spans.find((s) => s.name === 'vana-turn')!;
+  assertEquals(root.attributes['langfuse.observation.input'], 'what is on this week', 'the input is still this message alone');
+  const history = JSON.parse(String(root.attributes['langfuse.observation.metadata.history']));
+  assertEquals(history.map((h: { role: string }) => h.role), ['user', 'assistant'], 'this message is not in its own history');
+  assertEquals(history[0].text, 'what is on this week');
+  assert(history[1].text.startsWith('Rest day.') && history[1].text.length <= 601, 'a long turn is cut short');
+  // A first message has no history to list.
+  const first = collected();
+  const alone = await turn(first.tracing, first.collector);
+  assertEquals(alone.spans.find((s) => s.name === 'vana-turn')!.attributes['langfuse.observation.metadata.history'], undefined);
 });
 
 Deno.test('a Tool call shows what Vana sent and what came back, and each Step shows the persona and Context block she read', async () => {

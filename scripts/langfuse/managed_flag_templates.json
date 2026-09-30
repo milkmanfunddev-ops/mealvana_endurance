@@ -1,0 +1,86 @@
+[
+  {
+    "key": "user-disagreement",
+    "name": "Detect User Disagreement",
+    "maintainer": "langfuse",
+    "evaluator": {
+      "type": "LLM_AS_JUDGE",
+      "promptMessages": [
+        {
+          "role": "user",
+          "content": "You are an expert user-disagreement evaluator for AI conversations.\nYou will receive the conversation history and the last user message.\nYour job is to decide whether the last user message shows that the user perceives the assistant to have made an unjustified mistake or taken the wrong approach.\n\n## Scope\n- Judge the user's reaction to the assistant's prior response or approach, not whether the assistant was objectively wrong.\n- Use conversation history only to establish whether the user is responding to a prior assistant message and to clarify references.\n- If there is no prior assistant response, return false.\n\n## Golden Rule\nReturn true only when the user clearly rejects, corrects, challenges, or repeatedly redirects the assistant's prior response or approach. A neutral follow-up, clarification, or report of an external problem is not disagreement.\n\n## Strong signals of disagreement\n- Direct rejection or correction: \"No, that is not what I asked,\" \"That answer is incorrect,\" or \"You misunderstood the question.\"\n- A request to undo or restart the assistant's work: \"Revert that,\" \"Go back,\" or \"Start over.\"\n- A frustrated challenge to the assistant's reasoning: \"Why did you assume that?\" or \"Where did you get that?\"\n- Repeated steering that shows the assistant is still taking the wrong approach.\n\n## Not disagreement\n- A polite request for clarification, more detail, or another example.\n- Collaborative debugging that does not reject the assistant's approach.\n- A report that an external product or system is broken without criticism of the assistant.\n- General frustration that is not directed at the assistant's previous response.\n\n## Decision Rules\n1. Check whether the last user message refers to or responds to a prior assistant response.\n2. Return true when the user clearly signals that the assistant made an error or is proceeding incorrectly.\n3. Return false when the message is a neutral clarification, follow-up request, or ambiguous reaction.\n4. Do not treat capital letters, exclamation marks, or frustration alone as disagreement without a clear connection to the assistant's prior response.\n\n## Examples\n- \"No, that is not what I asked. I need the export as CSV.\" → true\n- \"Why did you assume I wanted to delete the project?\" → true\n- \"Please revert that change and start over.\" → true\n- \"Thanks, that helps. Can you add more detail?\" → false\n- \"The app still shows a 500 error.\" → false\n\nTrue if the user perceives an assistant error or wrong direction, false otherwise.\nConversation history: {{conversation_history}}\nLast user message: {{last_user_message}}"
+        }
+      ],
+      "variables": [
+        {
+          "name": "conversation_history",
+          "defaultMapping": {
+            "field": "input"
+          }
+        },
+        {
+          "name": "last_user_message",
+          "defaultMapping": {
+            "field": "input"
+          }
+        }
+      ],
+      "outputDefinition": {
+        "dataType": "BOOLEAN",
+        "score": {
+          "description": "Boolean verdict."
+        },
+        "reasoning": {
+          "description": "One concise sentence."
+        }
+      }
+    }
+  },
+  {
+    "key": "all-caps",
+    "name": "Detect User Frustration (ALL CAPS)",
+    "maintainer": "langfuse",
+    "evaluator": {
+      "type": "CODE",
+      "language": "TYPESCRIPT",
+      "source": "function evaluate(ctx: EvaluationContext): EvaluationResult {\n  /**\n   * \"All CAPS\" — true when the latest user message has >= 4 letters and\n   * >= 70% of them are uppercase. Counts ASCII letters only, so digits,\n   * punctuation, and emoji don't affect the ratio.\n   */\n  const extractText = (value: unknown): string => {\n    if (typeof value === \"string\") return value;\n    if (Array.isArray(value)) {\n      return value.map((item) => extractText(item)).filter(Boolean).join(\"\\n\");\n    }\n    if (value !== null && typeof value === \"object\") {\n      const record = value as Record<string, unknown>;\n      if (\"content\" in record) return extractText(record.content);\n      if (\"text\" in record) return extractText(record.text);\n      if (\"parts\" in record) return extractText(record.parts);\n    }\n    return \"\";\n  };\n\n  // Accept all three input shapes: string, message array, { messages: [...] }.\n  const input = ctx.observation.input;\n  const inputRecord =\n    input !== null && typeof input === \"object\" && !Array.isArray(input)\n      ? (input as Record<string, unknown>)\n      : null;\n  const messages = Array.isArray(input)\n    ? input\n    : Array.isArray(inputRecord?.messages)\n      ? inputRecord.messages\n      : [];\n\n  // Default to the last message, then walk backwards for the latest user turn.\n  let message = messages[messages.length - 1];\n  for (let index = messages.length - 1; index >= 0; index -= 1) {\n    const candidate = messages[index];\n    if (candidate === null || typeof candidate !== \"object\") continue;\n    const record = candidate as Record<string, unknown>;\n    const role = record.role ?? record.type; // some SDKs use `type` for role\n    if (role === \"user\" || role === \"human\") {\n      message = candidate;\n      break;\n    }\n  }\n\n  // No messages at all: fall back to the whole input object.\n  const text = typeof input === \"string\" ? input : extractText(message ?? input);\n\n  const letters = text.match(/[A-Za-z]/g) ?? [];\n  const uppercaseLetters = text.match(/[A-Z]/g) ?? [];\n  const uppercaseRatio = letters.length === 0 ? 0 : uppercaseLetters.length / letters.length;\n  // 4-letter floor keeps \"OK\" and \"WTF\" out; 0.7 allows one lowercase word.\n  const isAllCaps = letters.length >= 4 && uppercaseRatio >= 0.7;\n\n  const reasoning =\n    letters.length < 4\n      ? `${letters.length} letters, too short`\n      : `${Math.round(uppercaseRatio * 100)}% uppercase of ${letters.length} letters`;\n\n  return {\n    scores: [\n      {\n        name: \"All CAPS\",\n        value: isAllCaps,\n        dataType: \"BOOLEAN\",\n        comment: reasoning,\n        metadata: {\n          rule: \"all_caps\",\n          letterCount: letters.length,\n          uppercaseCount: uppercaseLetters.length,\n          uppercaseRatio,\n          minLetters: 4,\n          ratioThreshold: 0.7,\n        },\n      },\n    ],\n  };\n}"
+    }
+  },
+  {
+    "key": "user-distress",
+    "name": "Detect User Distress",
+    "maintainer": "langfuse",
+    "evaluator": {
+      "type": "LLM_AS_JUDGE",
+      "promptMessages": [
+        {
+          "role": "user",
+          "content": "You are an expert user-distress evaluator for AI conversations.\nYou will receive the conversation history and the last user message.\nYour job is to decide whether the last user message expresses meaningful user distress.\n\n## Scope\n- Judge the user's expressed emotional state, not the quality of the assistant's response or the severity of an underlying product issue.\n- Use conversation history only to clarify references, escalation, or tone. Base the verdict on the last user message.\n- Do not infer distress that the user does not express.\n\n## Golden Rule\nScore true only when the last user message clearly conveys a strong negative emotional state, such as intense frustration, anger, panic, hostility, feeling overwhelmed, or repeated profanity. Ordinary dissatisfaction, a neutral correction, or a report of a technical failure is not enough on its own.\n\n## Strong signals of distress\n- Explicit intense emotion: \"I'm furious,\" \"I can't take this anymore,\" or \"This is making me panic.\"\n- Hostile or highly escalated language: insults, aggressive demands, or repeated profanity.\n- Clear overwhelm or loss of patience after a problem, such as \"Nothing works and I've tried everything.\"\n\n## Not distress\n- A polite request for clarification or a neutral report of an error.\n- Constructive feedback, a factual correction, or a request to retry.\n- Brief annoyance without strong emotional language, such as \"This is confusing\" or \"Please fix this.\"\n\n## Decision Rules\n1. Evaluate the last user message first; use history only to resolve meaning or determine whether an apparently mild message is part of clear escalation.\n2. Return true when at least one strong distress signal is explicit and materially affects the user's message.\n3. Return false when the evidence is ambiguous, when the user is merely dissatisfied, or when the message discusses a problem without expressing meaningful distress.\n4. Do not use capital letters, exclamation marks, or profanity alone as conclusive evidence; consider their intensity and context.\n\n## Examples\n- \"This is completely broken and I'm furious.\" → true\n- \"I can't take this anymore—nothing works.\" → true\n- \"What the hell is going on? I've tried everything.\" → true\n- \"This is confusing, can you explain again?\" → false\n- \"I think there might be an error in step 2.\" → false\n- \"The export failed with a 500 error. Please fix it.\" → false\n\nConversation history: {{conversation_history}}\nLast user message: {{last_user_message}}"
+        }
+      ],
+      "variables": [
+        {
+          "name": "conversation_history",
+          "defaultMapping": {
+            "field": "input"
+          }
+        },
+        {
+          "name": "last_user_message",
+          "defaultMapping": {
+            "field": "input"
+          }
+        }
+      ],
+      "outputDefinition": {
+        "dataType": "BOOLEAN",
+        "score": {
+          "description": "True if distress is present, false otherwise."
+        },
+        "reasoning": {
+          "description": "One concise sentence citing the relevant distress signal or why the message does not meet the threshold."
+        }
+      }
+    }
+  }
+]
