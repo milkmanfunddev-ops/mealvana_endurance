@@ -264,6 +264,7 @@ serve(withSentry(async (req: Request) => {
           userId: user.id,
           tags: ["analyze-meal-photo"],
           metadata: { promptSource: wording.origin },
+          prompt: wording.prompt,
           input: { photo: `data:${mimeType};base64,${base64Image}`, ...(description ? { description } : {}) },
         },
         () =>

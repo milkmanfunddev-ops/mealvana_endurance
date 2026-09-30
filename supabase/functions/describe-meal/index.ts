@@ -213,6 +213,7 @@ serve(withSentry(async (req: Request) => {
         userId: user.id,
         tags: ["describe-meal"],
         metadata: { promptSource: wording.origin },
+        prompt: wording.prompt,
         input: description.trim(),
       },
       () =>

@@ -22,7 +22,7 @@ import { TURN_TOKEN_CEILING, chatStopWhen, runChat, tokenBudgetIs } from '../../
 import { extraAction } from '../../_shared/vana/actions.ts';
 import { testCtx, TEST_USER_ID } from './support/vana_ctx.ts';
 import type { Row, Tables } from './support/fake_db.ts';
-import { assertOneTrace, failingExporter, generations, LANGFUSE_MODEL, LANGFUSE_WORDING, originOf, userTextOf, withPrompts, withTracedModel } from './support/traced_call.ts';
+import { assertOneTrace, failingExporter, generations, LANGFUSE_MODEL, LANGFUSE_WORDING, originOf, promptLinksOf, userTextOf, withPrompts, withTracedModel } from './support/traced_call.ts';
 import { PANTRY_PHOTO_INSTRUCTIONS } from '../../_shared/vana/pantry.ts';
 import { TOOL_MODEL } from '../../_shared/vana/env.ts';
 
@@ -314,6 +314,7 @@ Deno.test("the pantry photo's instructions and model are the ones Langfuse holds
     assertEquals(w.modelCalls[0].modelId, LANGFUSE_MODEL, "the model the prompt's config names");
     assertEquals(pantryCall(v).model, LANGFUSE_MODEL, 'the Call log names the model that ran');
     assertEquals(originOf(await w.spans()), 'langfuse');
+    assertEquals(promptLinksOf(await w.spans()), [['vana/background/pantry-photo', 7]], 'the Generation links to the prompt version it ran on');
   }));
 });
 
@@ -324,5 +325,6 @@ Deno.test('when Langfuse cannot be reached the pantry photo runs on the bundled 
     assertEquals(userTextOf(w.modelCalls[0]), [PANTRY_PHOTO_INSTRUCTIONS]);
     assertEquals(w.modelCalls[0].modelId, TOOL_MODEL);
     assertEquals(originOf(await w.spans()), 'fallback');
+    assertEquals(promptLinksOf(await w.spans()), [null], 'the bundled copy links to no prompt');
   }));
 });

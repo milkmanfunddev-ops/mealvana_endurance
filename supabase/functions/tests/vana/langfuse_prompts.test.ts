@@ -6,7 +6,7 @@
 import { assert, assertEquals } from 'https://deno.land/std@0.177.1/testing/asserts.ts';
 import { MockLanguageModelV3, MockProviderV3, convertArrayToReadableStream } from 'npm:ai@6.0.277/test';
 import { InMemorySpanExporter } from 'npm:@opentelemetry/sdk-trace-base@2.11.0';
-import { runChat, systemMessages, type ChatBody } from '../../_shared/vana/chat.ts';
+import { runChat, systemMessages, type ChatBody, type VanaOverrides } from '../../_shared/vana/chat.ts';
 import { createPromptSource, promptLabelFor, type FetchPrompt, type PromptLabel, type PromptSource } from '../../_shared/langfuse/prompts.ts';
 import { createTracing } from '../../_shared/langfuse/tracing.ts';
 import { PROMPT_TEMPLATES, OPENERS, NEW_PLAN_OPENER } from '../../_shared/vana/persona.ts';
@@ -14,6 +14,7 @@ import { CHIP_LABELS } from '../../_shared/vana/chip-labels.ts';
 import { buildAthleteContext } from '../../_shared/vana/context.ts';
 import type { ConversationKind } from '../../_shared/vana/contracts.ts';
 import { testCtx, offlineDeps, TEST_USER_ID } from './support/vana_ctx.ts';
+import { promptLinksOf } from './support/traced_call.ts';
 
 const U = TEST_USER_ID;
 const ANCHOR = '2026-09-09';
@@ -57,14 +58,14 @@ const source = (label: PromptLabel, fetchPrompt: FetchPrompt | undefined, over: 
   createPromptSource({ label, fetchPrompt, bundled: PROMPT_TEMPLATES, ...over });
 
 /** One turn on a conversation whose context is already built, so nothing leaves the process. */
-async function turn(kind: ConversationKind, body: Partial<ChatBody>, prompts: PromptSource | undefined, collector?: InMemorySpanExporter) {
+async function turn(kind: ConversationKind, body: Partial<ChatBody>, prompts: PromptSource | undefined, collector?: InMemorySpanExporter, overrides?: VanaOverrides) {
   const v = testCtx({ users: [{ id: U, first_name: 'Lee', allergies: [] }] });
   const ctx = await buildAthleteContext(v, ANCHOR, offlineDeps());
   await v.db.from('vana_conversations').insert({ id: CONV, user_id: U, kind, context: ctx, context_day: ANCHOR, last_message_at: `${ANCHOR}T08:00:00Z` });
   const tracing = collector ? createTracing({ publicKey: 'pk', secretKey: 'sk', environment: 'dev', exporter: collector }) : undefined;
   const gw = mockGateway();
   try {
-    const run = await runChat(v, { conversation_id: CONV, kind, anchor_date: ANCHOR, ...body }, { functionName: 'vana-chat', prompts, tracing });
+    const run = await runChat(v, { conversation_id: CONV, kind, anchor_date: ANCHOR, ...body }, { functionName: 'vana-chat', prompts, tracing, overrides });
     assert(run.ok, `the turn ran: ${JSON.stringify(run)}`);
     const reply = await run.response.text();
     await new Promise((r) => setTimeout(r, 0));
@@ -116,6 +117,7 @@ Deno.test('when the prompt source fails or times out the Turn completes on the b
     assertEquals(systemTexts(call), systemMessages('general', ctx, ANCHOR).map((m) => m.content), `${what}: the bundled persona, then the context`);
     const root = collector.getFinishedSpans().find((s) => s.name === 'vana-turn')!;
     assertEquals(root.attributes['langfuse.trace.metadata.promptSource'], 'fallback', `${what}: the Trace records the fallback`);
+    assertEquals(promptLinksOf(collector.getFinishedSpans()), [null], `${what}: the bundled copy links to no prompt`);
   }
   // A Turn worded from Langfuse says that instead.
   const collector = new InMemorySpanExporter();
@@ -152,6 +154,27 @@ Deno.test('a kept prompt past its time is served while it is fetched again in th
 Deno.test('only a project that says it is dev asks for `latest`', () => {
   assertEquals(promptLabelFor('dev'), 'latest');
   for (const environment of ['production', undefined, '', 'prod', 'Dev']) assertEquals(promptLabelFor(environment), 'production', String(environment));
+});
+
+Deno.test("a Turn's Generations link to the version of the persona section its kind leads with", async () => {
+  const versions: Record<string, number> = { 'vana/persona/core': 4, 'vana/persona/general': 9 };
+  const fetchPrompt: FetchPrompt = (name) => Promise.resolve({ text: `[${name}]`, version: versions[name] ?? 2 });
+  for (const [kind, link] of [['general', ['vana/persona/general', 9]], ['meal_planning', ['vana/persona/core', 4]]] as const) {
+    const collector = new InMemorySpanExporter();
+    await turn(kind, { message: 'what should I eat today' }, source('latest', fetchPrompt), collector);
+    assertEquals(promptLinksOf(collector.getFinishedSpans()), [[...link]], kind);
+    // Every prompt the Turn was built from, with its version, is on the root: a Generation links to one prompt only.
+    const root = collector.getFinishedSpans().find((s) => s.name === 'vana-turn')!;
+    const all = JSON.parse(String(root.attributes['langfuse.observation.metadata.promptVersions']));
+    assertEquals(all['vana/persona/core'], 4); assertEquals(all['vana/persona/write-rules'], 2);
+    assertEquals(Object.keys(all).sort(), Object.keys(PROMPT_TEMPLATES).sort());
+  }
+});
+
+Deno.test("a Run that replaces the leading persona section links to no prompt: its text is no version's", async () => {
+  const collector = new InMemorySpanExporter();
+  await turn('general', { message: 'hi' }, source('latest', fakePromptApi().fetchPrompt), collector, { persona: { general: 'A section written for this Run.' } });
+  assertEquals(promptLinksOf(collector.getFinishedSpans()), [null]);
 });
 
 Deno.test('with no Langfuse to ask, and with Langfuse holding today\'s text, the model is sent the same bytes', async () => {

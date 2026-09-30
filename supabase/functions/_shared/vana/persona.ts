@@ -186,6 +186,11 @@ export function personaPrompt(kind: ConversationKind, o: PersonaOverrides = {}):
   const s = (k: PersonaSection) => o[k] ?? PERSONA_SECTIONS[k];
   return kind === 'general' ? `${s('general')}\n- ${s('writeRules')}\n${s('generalAfterWrites')}` : `${s('core')}\n${s('writeRules')}\n${s('planning')}`;
 }
+/** The section a kind's persona opens with, and its prompt in Langfuse: the one a Turn's Generations link to. */
+export function leadPersonaPrompt(kind: ConversationKind): { section: PersonaSection; name: PromptName } {
+  const section: PersonaSection = kind === 'general' ? 'general' : 'core';
+  return { section, name: SECTION_PROMPT[section] };
+}
 export const PLANNING_PROMPT = personaPrompt('meal_planning');
 export const GENERAL_PROMPT = personaPrompt('general');
 export const MAKE_IT_THEIRS = BUNDLED_WORDING.makeItTheirs;

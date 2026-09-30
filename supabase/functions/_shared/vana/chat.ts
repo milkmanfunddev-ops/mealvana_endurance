@@ -19,7 +19,7 @@ import type { VanaCtx } from './env.ts';
 import { buildAthleteContext, contextBlock } from './context.ts';
 import { cachedContext } from './context-cache.ts';
 import { makeVanaTools, offeredTools, UnknownOverrideError, type ToolOverrides } from './tools.ts';
-import { personaPrompt, NEW_PLAN_STANDING, PROMPT_NAMES, PROMPT_TEMPLATES, wordingFrom, type PersonaOverrides, type PromptName } from './persona.ts';
+import { personaPrompt, leadPersonaPrompt, NEW_PLAN_STANDING, PROMPT_NAMES, PROMPT_TEMPLATES, wordingFrom, type PersonaOverrides, type PromptName } from './persona.ts';
 import { completeCall, reserveCall } from './rate-limit.ts';
 import { readSummaries, writeSummary, writeOnIdle, defaultExtractDeps, defaultSummaryDeps, type ExtractDeps, type StoredSummary, type SummaryDeps } from './extract.ts';
 import { inViewSection, resolveSituation, SITUATION_MARK, type Situation } from './situation.ts';
@@ -566,7 +566,12 @@ export async function runChat(v: VanaCtx, body: ChatBody, opts: ChatRunOpts): Pr
   // The Turn's Trace (langfuse ticket 01): the root observation is open while the stream runs, so every Step and Tool
   // call nests under it, and is ended by whichever of onFinish and onError comes first.
   const tracing = opts.tracing ?? defaultTracing();
-  const result = tracing.turn({ name: 'vana-turn', userId: v.userId, sessionId: convId, environment: v.environment, metadata: { kind: convKind, promptSource }, tags: [opts.functionName, convKind, opener ? 'opener' : 'message'], input: opener ? openerText : lastText }, (root) => streamText({
+  // Each Generation links to one prompt version (langfuse ticket 18): the persona section the kind leads with, unless a
+  // Run replaced it. Every prompt's version is listed on the root.
+  const lead = leadPersonaPrompt(convKind);
+  const linkedPrompt = o.persona?.[lead.section] == null ? prompts[lead.name] : null;
+  const promptVersions = Object.fromEntries(PROMPT_NAMES.map((n) => [n, prompts[n].fallback ? null : prompts[n].version]));
+  const result = tracing.turn({ name: 'vana-turn', userId: v.userId, sessionId: convId, environment: v.environment, metadata: { kind: convKind, promptSource }, prompt: linkedPrompt, promptVersions, tags: [opts.functionName, convKind, opener ? 'opener' : 'message'], input: opener ? openerText : lastText }, (root) => streamText({
     experimental_telemetry: tracing.telemetry(opts.functionName),
     model,
     system,

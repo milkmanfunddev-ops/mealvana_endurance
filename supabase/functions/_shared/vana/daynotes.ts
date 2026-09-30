@@ -208,7 +208,7 @@ export async function generateDayNotes(v: VanaCtx, plan: MealPlan, anchorDate: s
     const prompt = notesPrompt(plan, ctx, dirty);
     const wording = await callPrompt(prompts, DAY_NOTES_PROMPT, TOOL_MODEL);
     const { notes: written, inputTokens, outputTokens, gatewayCostUsd: cost } = await defaultTracing().call(
-      { name: 'vana-day-notes', userId: v.userId, sessionId: plan.conversationId, environment: v.environment, tags: ['background'], metadata: { promptSource: wording.origin }, input: prompt },
+      { name: 'vana-day-notes', userId: v.userId, sessionId: plan.conversationId, environment: v.environment, tags: ['background'], metadata: { promptSource: wording.origin }, prompt: wording.prompt, input: prompt },
       () => deps.generate({ system: wording.text, prompt, dates: dirty, model: wording.model }), (r) => r.notes);
     const fresh: Record<string, string> = {};
     const keys: Record<string, string> = {};

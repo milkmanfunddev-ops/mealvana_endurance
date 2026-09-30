@@ -118,7 +118,7 @@ export async function extractConversation(v: VanaCtx, conversationId: string, de
     const prompt = extractionPrompt(lines, existing);
     const wording = await callPrompt(prompts, EXTRACTION_PROMPT, backgroundModel());
     const { object, inputTokens, outputTokens, gatewayCostUsd: cost } = await defaultTracing().call(
-      { name: 'vana-memory-extraction', userId: v.userId, sessionId: conversationId, environment: v.environment, tags: ['background'], metadata: { promptSource: wording.origin }, input: prompt },
+      { name: 'vana-memory-extraction', userId: v.userId, sessionId: conversationId, environment: v.environment, tags: ['background'], metadata: { promptSource: wording.origin }, prompt: wording.prompt, input: prompt },
       () => deps.generate({ system: wording.text, prompt, model: wording.model }), (r) => r.object);
 
     let written = 0;
@@ -255,7 +255,7 @@ export async function writeSummary(v: VanaCtx, conversationId: string, target: n
     const prompt = summaryPrompt(previous, lines, from, target);
     const wording = await callPrompt(prompts, SUMMARY_PROMPT, backgroundModel());
     const { object, inputTokens, outputTokens, gatewayCostUsd: cost } = await defaultTracing().call(
-      { name: 'vana-summary', userId: v.userId, sessionId: conversationId, environment: v.environment, tags: ['background'], metadata: { promptSource: wording.origin }, input: prompt },
+      { name: 'vana-summary', userId: v.userId, sessionId: conversationId, environment: v.environment, tags: ['background'], metadata: { promptSource: wording.origin }, prompt: wording.prompt, input: prompt },
       () => deps.generate({ system: wording.text, prompt, model: wording.model }), (r) => r.object);
     await logCall(v.admin, { userId: v.userId, conversationId, functionName: 'vana.summary', model: wording.model, inputTokens, outputTokens, gatewayCostUsd: cost });
     const text = object.summary.replace(/\s+/g, ' ').trim();

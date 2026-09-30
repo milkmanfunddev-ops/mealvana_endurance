@@ -21,6 +21,10 @@
  * Export is immediate (one request per ended span) and `flush()` is handed to the runtime's background-work hook after
  * the response, so a reply never waits on Langfuse. The SDK reads `process.env`, never `Deno.env`: keys are passed in.
  *
+ * Prompt versions: a Turn names the Langfuse prompt its model calls ran on, and the same hook links each Generation to
+ * that name and version, so Langfuse can total spend and Scores per version. A bundled copy is no version and links to
+ * nothing.
+ *
  * Tracing never changes a Turn. Every entry point here catches and logs; with no keys it does nothing at all.
  */
 import { context, trace, SpanStatusCode, type Span, type Tracer } from 'npm:@opentelemetry/api@1.9.0';
@@ -44,6 +48,9 @@ export interface TracingConfig {
   exporter?: SpanExporter;
 }
 
+/** A prompt as a Turn ran on it: its Langfuse version, or the bundled copy (no version, or standing in as fallback). */
+export interface PromptRef { name: string; version: number | null; fallback: boolean }
+
 export interface TurnAttributes {
   /** The root observation's name, and the Trace's: the entry point (`vana-turn` for a chat Turn). */
   name: string;
@@ -55,6 +62,11 @@ export interface TurnAttributes {
   /** Filterable facts about the Turn, propagated to every observation. Values are short strings. */
   metadata?: Record<string, string>;
   tags?: string[];
+  /** The prompt the Turn's Generations link to. A bundled copy links to nothing. */
+  prompt?: PromptRef | null;
+  /** Every prompt the Turn was built from, by name, with its Langfuse version (null for a bundled copy). For a Turn
+   *  built from more than one: a Generation links to one prompt only, so the rest are listed on the root. */
+  promptVersions?: Record<string, number | null>;
   /** What the athlete sent. */
   input?: unknown;
 }
@@ -103,8 +115,10 @@ function withoutImageBytes(prompt: string): string | null {
   }
   return changed ? JSON.stringify(parsed) : null;
 }
-/** What is changed on a span while it is still writable: the gateway's charge goes onto each model-call span, and
- *  image bytes come off the SDK's outer span. */
+const PROMPT_NAME = 'langfuse.trace.metadata.promptName';
+const PROMPT_VERSION = 'langfuse.trace.metadata.promptVersion';
+/** What is changed on a span while it is still writable: the gateway's charge and the prompt version go onto each
+ *  model-call span, and image bytes come off the SDK's outer span. */
 const beforeExport = {
   onStart() {}, onEnd() {}, forceFlush: () => Promise.resolve(), shutdown: () => Promise.resolve(),
   onEnding(span: Span & { name: string; attributes: Record<string, unknown> }) {
@@ -114,6 +128,11 @@ const beforeExport = {
         const without = typeof prompt === 'string' ? withoutImageBytes(prompt) : null;
         if (without != null) span.setAttribute('ai.prompt', without);
         return;
+      }
+      const name = span.attributes[PROMPT_NAME]; const version = Number(span.attributes[PROMPT_VERSION]);
+      if (typeof name === 'string' && Number.isInteger(version)) {
+        span.setAttribute('langfuse.observation.prompt.name', name);
+        span.setAttribute('langfuse.observation.prompt.version', version);
       }
       const raw = span.attributes['ai.response.providerMetadata'];
       const cost = typeof raw === 'string' ? gatewayCostUsd(JSON.parse(raw)) : null;
@@ -148,7 +167,11 @@ export function createTracing(config: TracingConfig): Tracing {
 
     const open = (a: TurnAttributes): { span: Span; root: TurnRoot } => {
       // `root`: the deployed runtime has a request span of its own in the active context, which Langfuse never receives.
-      const span = rootTracer.startSpan(a.name, { root: true, attributes: { 'langfuse.observation.type': 'span', ...(a.input == null ? {} : { 'langfuse.observation.input': serialized(a.input) }) } });
+      const span = rootTracer.startSpan(a.name, { root: true, attributes: {
+        'langfuse.observation.type': 'span',
+        ...(a.input == null ? {} : { 'langfuse.observation.input': serialized(a.input) }),
+        ...(a.promptVersions ? { 'langfuse.observation.metadata.promptVersions': JSON.stringify(a.promptVersions) } : {}),
+      } });
       let ended = false;
       const end = (write: () => void) => { if (ended) return; ended = true; try { write(); span.end(); } catch (e) { warn('ending the root failed', e); } };
       return { span, root: {
@@ -177,8 +200,10 @@ export function createTracing(config: TracingConfig): Tracing {
         // `fn` is the Turn: it runs once, and what it throws is the caller's to see. Only the tracing around it is guarded.
         let ran = false; let result!: T; let thrown: { error: unknown } | null = null;
         const run = (root: TurnRoot) => { ran = true; try { result = fn(root); } catch (error) { thrown = { error }; root.fail(error); } };
+        // Propagated like the rest, so the span hook finds the prompt on each model call made inside the Turn.
+        const linked: Record<string, string> = a.prompt && a.prompt.version != null && !a.prompt.fallback ? { promptName: a.prompt.name, promptVersion: String(a.prompt.version) } : {};
         try {
-          propagateAttributes({ userId: a.userId, sessionId: a.sessionId || undefined, environment: a.environment, traceName: a.name, metadata: a.metadata, tags: a.tags }, () => {
+          propagateAttributes({ userId: a.userId, sessionId: a.sessionId || undefined, environment: a.environment, traceName: a.name, metadata: { ...a.metadata, ...linked }, tags: a.tags }, () => {
             const { span, root } = open(a);
             context.with(trace.setSpan(context.active(), span), () => run(root));
           });

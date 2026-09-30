@@ -17,6 +17,7 @@ import { InMemorySpanExporter, type ReadableSpan, type SpanExporter } from 'npm:
 import { createTracing, setDefaultTracing, type Tracing } from '../_shared/langfuse/tracing.ts';
 import { setPromptFetch } from '../_shared/langfuse/prompts.ts';
 import { MEAL_ANALYSIS_CACHE_OPTIONS } from '../_shared/meal_analysis/prompt.ts';
+import { promptLinksOf } from './vana/support/traced_call.ts';
 import { type Call, loadFunction, setStubEnv, STUB_SUPABASE_URL } from './paywall/support/serve_harness.ts';
 
 export const USER = 'c18d3737-0000-4000-8000-0000000000a1';
@@ -227,7 +228,7 @@ export function mealAnalysisIsTraced(f: MealFunction): { call: () => Promise<Cal
       const sent = out.seen.modelCalls[0];
       const system = (sent.options.prompt as { role: string; content: string; providerOptions?: unknown }[]).filter((m) => m.role === 'system');
       const root = collector.getFinishedSpans().find((s) => s.name === f.fn)!;
-      return { ...out, sent, system, origin: root.attributes['langfuse.trace.metadata.promptSource'] };
+      return { ...out, sent, system, origin: root.attributes['langfuse.trace.metadata.promptSource'], links: promptLinksOf(collector.getFinishedSpans()) };
     } finally { setDefaultTracing(null); setPromptFetch(null); }
   };
 
@@ -244,6 +245,7 @@ export function mealAnalysisIsTraced(f: MealFunction): { call: () => Promise<Cal
     assertEquals(r.sent.options.responseFormat?.type, 'json', 'the output schema is still the one in code');
     assert(JSON.stringify(r.sent.options.responseFormat.schema).includes('sodium_mg'));
     assertEquals(r.origin, 'langfuse', 'the Trace says where the wording came from');
+    assertEquals(r.links, [[f.prompt.name, 7]], 'the Generation links to the prompt version it ran on');
   });
 
   test(`${f.fn}: when Langfuse cannot be reached the bundled copy and its model run, and the Trace says so`, async () => {
@@ -252,6 +254,7 @@ export function mealAnalysisIsTraced(f: MealFunction): { call: () => Promise<Cal
     assertEquals(r.system.map((m) => m.content), [f.prompt.bundledText]);
     assertEquals(r.sent.modelId, f.prompt.bundledModel);
     assertEquals(r.origin, 'fallback');
+    assertEquals(r.links, [null], 'the bundled copy links to no prompt');
   });
 
   test(`${f.fn}: a prompt whose config names no model, or an Opus model, runs on the bundled model`, async () => {
@@ -267,6 +270,7 @@ export function mealAnalysisIsTraced(f: MealFunction): { call: () => Promise<Cal
     assertEquals(r.system.map((m) => m.content), [f.prompt.bundledText]);
     assertEquals(r.sent.modelId, f.prompt.bundledModel);
     assertEquals(r.origin, 'bundled');
+    assertEquals(r.links, [null]);
   });
 
   return { call };

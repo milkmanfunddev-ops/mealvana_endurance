@@ -10,7 +10,7 @@ import { savedMealIngredients, buildShoppingList } from '../../_shared/vana/groc
 import { addMealById, getPlanById } from '../../_shared/vana/plan.ts';
 import { testCtx, TEST_USER_ID } from './support/vana_ctx.ts';
 import type { Row, Tables } from './support/fake_db.ts';
-import { assertOneTrace, failingExporter, LANGFUSE_MODEL, LANGFUSE_WORDING, originOf, systemOf, withPrompts, withTracedModel } from './support/traced_call.ts';
+import { assertOneTrace, failingExporter, LANGFUSE_MODEL, LANGFUSE_WORDING, originOf, promptLinksOf, systemOf, withPrompts, withTracedModel } from './support/traced_call.ts';
 import { backgroundModel } from '../../_shared/vana/env.ts';
 
 const U = TEST_USER_ID;
@@ -231,6 +231,7 @@ Deno.test("the ingredient list's instructions and model are the ones Langfuse ho
     assertEquals(w.modelCalls[0].modelId, LANGFUSE_MODEL, "the model the prompt's config names");
     assertEquals(v.fake.writesTo('vana_calls', 'insert').find((c) => c.values.function_name === 'vana.ingredients')!.values.model, LANGFUSE_MODEL, 'the Call log names the model that ran');
     assertEquals(originOf(await w.spans()), 'langfuse');
+    assertEquals(promptLinksOf(await w.spans()), [['vana/background/saved-meal-ingredients', 7]], 'the Generation links to the prompt version it ran on');
   }));
 });
 
@@ -241,5 +242,6 @@ Deno.test('when Langfuse cannot be reached the ingredient list runs on the bundl
     assertEquals(systemOf(w.modelCalls[0]), [INGREDIENTS_SYSTEM]);
     assertEquals(w.modelCalls[0].modelId, backgroundModel());
     assertEquals(originOf(await w.spans()), 'fallback');
+    assertEquals(promptLinksOf(await w.spans()), [null], 'the bundled copy links to no prompt');
   }));
 });

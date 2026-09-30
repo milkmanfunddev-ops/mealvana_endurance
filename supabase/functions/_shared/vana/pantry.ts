@@ -61,7 +61,7 @@ export async function detectPantryFromPhoto(v: VanaCtx, photoPath: string, opts:
   const wording = opts.wording ?? await pantryPhotoWording(); const model = wording.model;
   // The call is a Trace of its own. The photo goes as image data, which Langfuse stores; no signed URL is sent.
   const tracing = defaultTracing(); const image = btoa(bin);
-  const r = await tracing.call({ name: 'vana-pantry-photo', userId: v.userId, sessionId: opts.conversationId, environment: v.environment, tags: ['pantry-photo'], metadata: { promptSource: wording.origin }, input: { photo: `data:${mediaType};base64,${image}` } }, () => generateObject({
+  const r = await tracing.call({ name: 'vana-pantry-photo', userId: v.userId, sessionId: opts.conversationId, environment: v.environment, tags: ['pantry-photo'], metadata: { promptSource: wording.origin }, prompt: wording.prompt, input: { photo: `data:${mediaType};base64,${image}` } }, () => generateObject({
     model: model as Parameters<typeof generateObject>[0]['model'], experimental_telemetry: tracing.telemetry('vana-pantry-photo'), schema: PantryVisionZ, maxOutputTokens: 400,
     messages: [{ role: 'user', content: [{ type: 'image', image, mediaType }, { type: 'text', text: wording.text }] }],
   }), (out) => out.object);

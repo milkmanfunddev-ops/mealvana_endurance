@@ -11,7 +11,7 @@ import type { Extraction, ExtractDeps } from '../../_shared/vana/extract.ts';
 import { listMemories, episodeFor } from '../../_shared/vana/memory.ts';
 import { testCtx, TEST_USER_ID } from './support/vana_ctx.ts';
 import type { Row, Tables } from './support/fake_db.ts';
-import { assertOneTrace, failingExporter, LANGFUSE_MODEL, LANGFUSE_WORDING, originOf, systemOf, withPrompts, withTracedModel } from './support/traced_call.ts';
+import { assertOneTrace, failingExporter, LANGFUSE_MODEL, LANGFUSE_WORDING, originOf, promptLinksOf, systemOf, withPrompts, withTracedModel } from './support/traced_call.ts';
 import { backgroundModel } from '../../_shared/vana/env.ts';
 
 const U = TEST_USER_ID;
@@ -190,6 +190,7 @@ Deno.test("the extraction's instructions and model are the ones Langfuse holds",
     assertEquals(v.fake.writesTo('vana_calls', 'insert').find((c) => c.values.function_name === 'vana.extract')!.values.model, LANGFUSE_MODEL, 'the Call log names the model that ran');
     assertEquals(w.modelCalls[0].options.responseFormat?.type, 'json', 'the output schema is still the one in code');
     assertEquals(originOf(await w.spans()), 'langfuse');
+    assertEquals(promptLinksOf(await w.spans()), [['vana/background/extraction', 7]], 'the Generation links to the prompt version it ran on');
   }));
 });
 
@@ -200,5 +201,6 @@ Deno.test('when Langfuse cannot be reached the extraction runs on the bundled co
     assertEquals(systemOf(w.modelCalls[0]), [EXTRACTOR_SYSTEM]);
     assertEquals(w.modelCalls[0].modelId, backgroundModel());
     assertEquals(originOf(await w.spans()), 'fallback');
+    assertEquals(promptLinksOf(await w.spans()), [null], 'the bundled copy links to no prompt');
   }));
 });

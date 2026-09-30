@@ -118,7 +118,7 @@ export async function extractIngredients(v: VanaCtx, saved: SavedRow, deps: Ingr
   // The call is a Trace of its own (langfuse ticket 10). A saved meal belongs to no Conversation, so it carries no Session.
   const wording = await callPrompt(prompts, INGREDIENTS_PROMPT, backgroundModel());
   const { object, inputTokens, outputTokens, gatewayCostUsd: cost } = await defaultTracing().call(
-    { name: 'vana-saved-meal-ingredients', userId: v.userId, environment: v.environment, tags: ['background'], metadata: { promptSource: wording.origin }, input: prompt },
+    { name: 'vana-saved-meal-ingredients', userId: v.userId, environment: v.environment, tags: ['background'], metadata: { promptSource: wording.origin }, prompt: wording.prompt, input: prompt },
     () => deps.generate({ system: wording.text, prompt, model: wording.model }), (r) => r.object);
   const rows = toStoredIngredients(object);
   if (!rows.length) return null;

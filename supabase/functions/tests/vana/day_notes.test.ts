@@ -20,7 +20,7 @@ import { fakeDb, type Row, type Tables } from './support/fake_db.ts';
 import { VANA_COLUMN_DEFAULTS } from './support/vana_ctx.ts';
 import type { VanaCtx } from '../../_shared/vana/env.ts';
 import type { MealPlan } from '../../_shared/vana/contracts.ts';
-import { assertOneTrace, failingExporter, LANGFUSE_MODEL, LANGFUSE_WORDING, originOf, systemOf, userTextOf, withPrompts, withTracedModel } from './support/traced_call.ts';
+import { assertOneTrace, failingExporter, LANGFUSE_MODEL, LANGFUSE_WORDING, originOf, promptLinksOf, systemOf, userTextOf, withPrompts, withTracedModel } from './support/traced_call.ts';
 import { TOOL_MODEL } from '../../_shared/vana/env.ts';
 
 const U = TEST_USER_ID;
@@ -410,6 +410,7 @@ Deno.test("the day notes' instructions and model are the ones Langfuse holds; th
     const [sent] = userTextOf(w.modelCalls[0]);
     assert(sent.includes('--- CONTEXT ---') && sent.includes('--- DATES ---'), 'the athlete\'s context and plan, from code');
     assertEquals(originOf(await w.spans()), 'langfuse');
+    assertEquals(promptLinksOf(await w.spans()), [['vana/background/day-notes', 7]], 'the Generation links to the prompt version it ran on');
   }));
 });
 
@@ -420,5 +421,6 @@ Deno.test('when Langfuse cannot be reached the day notes run on the bundled copy
     assertEquals(systemOf(w.modelCalls[0]), [DAY_NOTE_SYSTEM]);
     assertEquals(w.modelCalls[0].modelId, TOOL_MODEL);
     assertEquals(originOf(await w.spans()), 'fallback');
+    assertEquals(promptLinksOf(await w.spans()), [null], 'the bundled copy links to no prompt');
   }));
 });

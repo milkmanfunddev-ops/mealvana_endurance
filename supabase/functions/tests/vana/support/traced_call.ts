@@ -119,5 +119,8 @@ export const systemOf = (call: ModelCall): string[] => (call.options.prompt as {
 /** The text parts of the user message a model call was sent. */
 export const userTextOf = (call: ModelCall): string[] => (call.options.prompt as { role: string; content: { type: string; text?: string }[] }[])
   .filter((m) => m.role === 'user').flatMap((m) => m.content).filter((part) => part.type === 'text').map((part) => part.text ?? '');
+/** The prompt each Generation links to, as [name, version], or null for one that links to none (langfuse ticket 18). */
+export const promptLinksOf = (spans: ReadableSpan[]) => generations(spans).map((s) =>
+  s.attributes['langfuse.observation.prompt.name'] == null ? null : [s.attributes['langfuse.observation.prompt.name'], s.attributes['langfuse.observation.prompt.version']]);
 /** Where the Trace says the call's wording came from. */
 export const originOf = (spans: ReadableSpan[]) => spans.find((s) => !s.parentSpanContext)?.attributes['langfuse.trace.metadata.promptSource'];
