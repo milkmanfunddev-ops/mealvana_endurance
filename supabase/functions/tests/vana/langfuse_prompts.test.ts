@@ -171,9 +171,9 @@ Deno.test("a Turn's Generations link to the version of the persona section its k
   }
 });
 
-Deno.test("a Run that replaces the leading persona section links to no prompt: its text is no version's", async () => {
+Deno.test("a Run that replaces a persona section links to no prompt: its persona is no version's", async () => {
   const collector = new InMemorySpanExporter();
-  await turn('general', { message: 'hi' }, source('latest', fakePromptApi().fetchPrompt), collector, { persona: { general: 'A section written for this Run.' } });
+  await turn('general', { message: 'hi' }, source('latest', fakePromptApi().fetchPrompt), collector, { persona: { writeRules: 'A section written for this Run.' } });
   assertEquals(promptLinksOf(collector.getFinishedSpans()), [null]);
 });
 

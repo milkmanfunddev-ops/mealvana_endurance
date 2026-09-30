@@ -383,8 +383,8 @@ export interface ChatBody { message?: string; conversation_id?: string | null; k
    *  saving the fixed-label chips make is measurable against the chip taps that still cost a turn. Anything else, and
    *  the scripted opener, is null: the request is never refused over it. */
   input_mode?: string }
-/** How much of the conversation a Turn's root lists for the evaluators: the last few turns, each cut short. */
-const HISTORY_TURNS = 6;
+/** How much of the conversation a Turn's root lists for the evaluators: the last few messages, each cut short. */
+const HISTORY_MESSAGES = 6;
 const HISTORY_CHARS = 600;
 export interface ChatRunOpts {
   /** `ai_usage.function_name` / log tag: 'vana-chat' | 'jade-chat'. */
@@ -570,13 +570,13 @@ export async function runChat(v: VanaCtx, body: ChatBody, opts: ChatRunOpts): Pr
   // call nests under it, and is ended by whichever of onFinish and onError comes first.
   const tracing = opts.tracing ?? defaultTracing();
   // Each Generation links to one prompt version (langfuse ticket 18): the persona section the kind leads with, unless a
-  // Run replaced it. Every prompt's version is listed on the root.
+  // Run replaced any section. Every prompt's version is listed on the root.
   const lead = leadPersonaPrompt(convKind);
-  const linkedPrompt = o.persona?.[lead.section] == null ? prompts[lead.name] : null;
+  const linkedPrompt = Object.keys(o.persona ?? {}).length ? null : prompts[lead.name];
   const promptVersions = Object.fromEntries(PROMPT_NAMES.map((n) => [n, prompts[n].fallback ? null : prompts[n].version]));
   // The turns before this one, for the flag evaluators (langfuse ticket 16): the root's input is this message alone, and
   // a correction or a repeat only reads as one beside what came before.
-  const history = opener ? [] : transcriptFromMessages(message ? messages.slice(0, -1) : messages).slice(-HISTORY_TURNS).map((l) => ({ role: l.role, text: l.text.length > HISTORY_CHARS ? `${l.text.slice(0, HISTORY_CHARS)}…` : l.text }));
+  const history = opener ? [] : transcriptFromMessages(messages.slice(0, last ? messages.indexOf(last) : messages.length)).slice(-HISTORY_MESSAGES).map((l) => ({ role: l.role, text: l.text.length > HISTORY_CHARS ? `${l.text.slice(0, HISTORY_CHARS)}…` : l.text }));
   const result = tracing.turn({ name: 'vana-turn', userId: v.userId, sessionId: convId, environment: v.environment, metadata: { kind: convKind, promptSource }, prompt: linkedPrompt, detail: { promptVersions, history: history.length ? history : null }, tags: [opts.functionName, convKind, opener ? 'opener' : 'message'], input: opener ? openerText : lastText }, (root) => streamText({
     experimental_telemetry: tracing.telemetry(opts.functionName),
     model,

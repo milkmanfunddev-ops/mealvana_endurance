@@ -6,12 +6,25 @@
 
 **Owner:** `mealvana_endurance` agent.
 
-**Status:** ready-for-agent
+**Status:** done except the two alerts, which need the browser and Lee's go (2026-09-30)
 
-- [ ] Every widget shows data from dev traces and its breakdown reads sensibly
-- [ ] Spend by entry point uses the real Trace names
-- [ ] Top athletes by spend shows athletes, not blanks
+- [x] Every widget shows data from dev traces and its breakdown reads sensibly
+- [x] Spend by entry point uses the real Trace names
+- [x] Top athletes by spend shows athletes, not blanks
 - [ ] The two Hobby alerts are set: daily spend and error rate
-- [ ] Widgets and dashboard are changed through the API or CLI so the setup is repeatable
+- [x] Widgets and dashboard are changed through the API or CLI so the setup is repeatable
+
+2026-09-30. `scripts/langfuse/setup_dashboard.ts` sets all ten widgets and prints how many rows each returns from real data. What changed and why:
+- Spend per day by model, Spend by entry point, Top athletes by spend, Spend by prompt version: now Generations only. Before, every span and Tool call added a blank-model row.
+- Spend by entry point: real names are `vana-turn`, `describe-meal`, `analyze-meal-photo` and the `vana-*` background calls. Calls with no Trace name are left out. Those are the eval app's simulated athlete ($0.033 so far), which is for the `../mealvana_eval` agent to name.
+- Top athletes by spend: ten rows, no blank. The blank was the same simulated-athlete calls.
+- Latency p95 by entry point: root observations only, so it is the whole Turn and not each span inside it.
+- Time to first token p95: chat Generations only. The other calls do not stream and showed as empty lines.
+- Model calls per day: Generations only. It counted every observation before.
+- Spend by prompt version: has rows since ticket 18. Its blank row is calls that link to no version. A widget cannot filter on the prompt name, so the row stays.
+- Evaluator pass rate and Scores recorded: have rows since ticket 16. For the flag evaluators "yes" means flagged. The pass-rate widget also charts `plan_confirmed`, which is a yes/no Score and not an evaluator.
+- No widget filters on environment. The dashboard's own environment filter picks dev, production or experiment.
+- Errors per day: failed observations only, by Trace name. Before, it charted every observation by level and the errors were a sliver. The 22 errors on 09-30 are all `experiment-item-run` roots from the eval app's runs.
+- Alerts, not done: Langfuse has no public API or CLI action that creates an alert (`listAlerts` shows none). They are set in the browser, which is a standing rule and needs Lee's go. Proposed: daily spend over $1.50 (the figure the Call log's cost alert uses) and error observations over 5% of a day's roots, both on `dev` until ticket 22.
 
 Spec: `.scratch/langfuse/spec.md`. Decisions: `docs/langfuse/pivot/REPORT.md`. Words: `CONTEXT.md`, "Judging Vana". Langfuse access: `secrets/langfuse.env`, the `langfuse` skill, CLI and MCP server. Hobby allows 30 API requests a minute; pace any setup script.

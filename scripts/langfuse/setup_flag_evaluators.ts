@@ -87,13 +87,17 @@ async function api(method: string, path: string, body?: unknown) {
 
 const held = (await api('GET', '/api/public/v2/evaluators?limit=100')).data as { id: string; name: string }[];
 const assignments: Record<string, unknown>[] = [];
+let created = 0;
 for (const e of EVALUATORS) {
   const name = e.body.name as string;
   let id = held.find((h) => h.name === name)?.id;
   if (id) console.log(`exists   evaluator ${name}`);
-  else { id = (await api('POST', '/api/public/v2/evaluators', e.body)).id as string; console.log(`created  evaluator ${name}`); }
+  else { id = (await api('POST', '/api/public/v2/evaluators', e.body)).id as string; created++; console.log(`created  evaluator ${name}`); }
   assignments.push({ evaluatorId: id, ...(e.mapping ? { variableMapping: e.mapping } : {}) });
 }
 const rules = (await api('GET', '/api/public/v2/evaluation-rules?limit=100')).data as { id: string; name: string }[];
-if (rules.some((r) => r.name === RULE)) console.log(`exists   rule "${RULE}"`);
+const rule = rules.find((r) => r.name === RULE);
+// An evaluator made on this run is not on a rule made on an earlier one, so the rule is given the full list again.
+if (rule && created) { await api('PATCH', `/api/public/v2/evaluation-rules/${rule.id}`, { evaluatorAssignments: assignments }); console.log(`updated  rule "${RULE}" with ${created} new evaluator(s)`); }
+else if (rule) console.log(`exists   rule "${RULE}"`);
 else { await api('POST', '/api/public/v2/evaluation-rules', { name: RULE, enabled: true, sampling: 1, filter: FILTER, evaluatorAssignments: assignments }); console.log(`created  rule "${RULE}"`); }
