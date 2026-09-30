@@ -5,7 +5,7 @@
 addition; see "The plan band" below). The v2 in-window `1–4 g/kg` band clause is SUPERSEDED.**
 **Engine:** `OfflineMacroCalculator.calculatePreWorkoutTargets`
 (`app/lib/features/nutrition_plan/data/offline_macro_calculator.dart:98`), mirrors
-`generate-macros-v4/pre-workout.ts`. **Code implements v1.**
+`generate-macros-v4/pre-workout.ts`. **Code implements the amended band (both engines, `3cf3ee42`, 2026-09-04).**
 **Reasoning, close calls and concerns:** [`pre-workout.notes.md`](./pre-workout.notes.md).
 
 > This file is the executable contract. Every "why" lives in the notes file.
@@ -197,7 +197,7 @@ tag (`meal` / `snack` / `top_off` → the class defined there); the tag's rules 
 | Field | Type | Notes |
 |---|---|---|
 | `carbsG` | double | exact g; **plan total** across all tiers |
-| `carbsLowG` / `carbsHighG` | double | plan-level permissible range — **cited 1–4 g/kg inside the window** |
+| `carbsLowG` / `carbsHighG` | double | plan-level permissible range — **`target ± 12.5 %` in all cases** (amended 2026-09-04; the in-window "cited 1–4 g/kg" width is SUPERSEDED) |
 | `tiers` | array | ordered, furthest-out first; each `{tier, carbsG, rangeLowG, rangeHighG, composition}` |
 | `targetBasis` | string | `"evidenced_band"` · `"design_choice"` · `"none"` |
 
@@ -205,8 +205,8 @@ tag (`meal` / `snack` / `top_off` → the class defined there); the tag's rules 
 `pre-workout-food-composition.md`** — this spec only carries the tag through, it does not define it.
 
 **Two ranges, two jobs — do not present them alike.** `carbsLowG`/`carbsHighG` is the **plan-level
-permissible range** (headroom — the whole plan: cited 1–4 g/kg inside the window, ±12.5 % of the
-total outside it). `rangeLowG`/`rangeHighG` on each tier is the **food-match window**: ±12.5 % of
+permissible range** (headroom — the whole plan: `target ± 12.5 %` in ALL cases —
+amended 2026-09-04; the superseded in-window width was the cited 1–4 g/kg). `rangeLowG`/`rangeHighG` on each tier is the **food-match window**: ±12.5 % of
 that feeding's portion. Same tolerance, two scopes — the first is *what the plan may be*, the second
 is *how loosely one feeding may be matched*. Notes §3.4.
 

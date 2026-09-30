@@ -237,9 +237,14 @@ class OfflineMacroCalculator {
   /// SSOT: pre-workout-carbs.md v2.
   static const double citedMinWorkoutMin = 60.0;
 
-  /// Cited dose band, g/kg. SSOT: pre-workout-carbs.md v2 — Thomas 2016
-  /// Table 2, verbatim (origin Burke 2011 Table II).
-  static const double carbBandLowGPerKg = 1.0;
+  /// Upper bound of the cited dose, g/kg. SSOT: pre-workout-carbs.md v2 —
+  /// Thomas 2016 Table 2 (origin Burke 2011 Table II).
+  ///
+  /// Its lower-bound sibling was deleted 2026-09-30. The ruled plan band is
+  /// target ± 12.5% in ALL cases (`3cf3ee42`), so nothing reads a 1 g/kg floor
+  /// any more — but it survived as a constant that still looked normative,
+  /// which is how a superseded band gets quietly re-adopted by whoever reads
+  /// this file next.
   static const double carbBandHighGPerKg = 4.0;
 
   /// Pre-workout carbohydrate plan.
