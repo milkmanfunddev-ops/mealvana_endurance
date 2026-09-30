@@ -127,8 +127,39 @@ Advertising ID, Other Data.
 | Sentry     | Crash / performance / masked session replay | Crash, Performance, Other Diagnostic Data, User ID (device id via `setUserContext()`) |
 | OneSignal  | Push notifications | User ID, push token |
 | RevenueCat | Subscription / entitlement state | User ID, purchase state |
+| Langfuse (**proposed**, see below) | Record of what the AI assistant did, for quality review | User ID, conversation content, the profile and training facts the assistant read, food logs, meal photos |
 
 None of these are ad networks or data brokers. None receive data for advertising purposes.
+
+### Langfuse (proposed 2026-09-30, not yet in effect for real users)
+
+Status: **PROPOSED, awaiting Lee's approval.** Today only the dev project sends anything to Langfuse.
+Production sends nothing until the wording in `langfuse_privacy_wording.md` is approved and published
+(langfuse ticket 22 waits on it).
+
+Once production tracing is on, each AI call the server makes (a chat turn with Vana, describe-meal,
+meal photo analysis, and the background calls that write memories, summaries and day notes) is
+copied to Langfuse Cloud (US region) from our Supabase edge functions. The app itself never talks to
+Langfuse. A copy holds the account's User ID, the athlete's message and Vana's reply, the profile
+and training facts Vana read to answer (first name, diet and allergies, targets, the week's
+sessions, races, saved notes), the food logs and plans her tools read or wrote, and, for meal photo
+analysis, the photo. Purpose: App Functionality (reviewing and improving answer quality). Not
+advertising, not tracking.
+
+**Label changes this needs, to check before production tracing is turned on:**
+
+1. **User Content → Photos or Videos**: the label says "Not collected". A meal photo the athlete
+   takes is sent to our server and would be stored by Langfuse, linked to their User ID. Declare it:
+   Linked, not Tracking, App Functionality.
+2. **User Content → Other User Content**: chat messages typed to Vana are user content stored with
+   a third party, linked to the User ID. Declare it: Linked, not Tracking, App Functionality.
+3. Health, Fitness and User ID are already declared Linked with App Functionality. No change.
+4. Both additions also go in `ios/Runner/PrivacyInfo.xcprivacy` first, per the rule at the top.
+
+Found while checking, and not caused by Langfuse: items 1 and 2 already describe what the app does
+today. Meal photos and chat messages already reach our server, and the AI model provider behind it
+(Anthropic, through the Vercel AI Gateway), and neither the label nor the processor table above
+names them. That gap exists with or without Langfuse and should be closed in the same edit.
 
 ## Also declared in the manifest
 

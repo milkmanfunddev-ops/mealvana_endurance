@@ -113,6 +113,7 @@ first-party product code.
 | Sentry       | Crashes, performance traces, error-only session replay (masked), with device id attached via `setUserContext()` | Crash, Performance, Other Diagnostic, User ID |
 | OneSignal    | Push notification delivery (device/push token)                       | User ID |
 | RevenueCat   | Subscription / purchase state                                        | User ID |
+| Langfuse (**proposed**, production not yet on) | A copy of each AI call made by the server: conversation content, the profile and training facts read, food logs, meal photos. See `app_store_privacy_details.md`, "Langfuse" | Health, Fitness, User ID; **would add User Content (Photos, Other)** |
 
 ## Maintenance
 
