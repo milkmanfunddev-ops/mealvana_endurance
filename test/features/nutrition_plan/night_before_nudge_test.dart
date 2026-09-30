@@ -5,11 +5,11 @@
 // now" and revisable. A test that fails because the copy changed is doing its
 // job: it forces the change to be deliberate rather than incidental.
 import 'package:flutter_test/flutter_test.dart';
-import 'package:mocktail/mocktail.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 
 import 'package:mealvana_endurance/features/nutrition_plan/application/night_before_nudge_service.dart';
 import 'package:mealvana_endurance/features/nutrition_plan/domain/night_before_nudge_engine.dart';
+import 'package:mealvana_endurance/shared/domain/activity_type.dart';
 import 'package:mealvana_endurance/shared/services/analytics/analytics_tracker.dart';
 
 class _FakeGateway implements NightBeforeNudgeGateway {
@@ -90,13 +90,17 @@ void main() {
 
   group('copy, approved 2026-09-30', () {
     test('reads as the ruled sentence once title and body are joined', () {
-      expect(NightBeforeNudgeEngine.title, 'Long run tomorrow');
+      expect(
+        NightBeforeNudgeEngine.titleFor(ActivityType.running),
+        'Long run tomorrow',
+      );
       expect(
         NightBeforeNudgeEngine.body('2 h 15 m'),
         '2 h 15 m planned. Set your fueling plan tonight.',
       );
       expect(
-        '${NightBeforeNudgeEngine.title} — ${NightBeforeNudgeEngine.body("2 h 15 m")}',
+        '${NightBeforeNudgeEngine.titleFor(ActivityType.running)} — '
+        '${NightBeforeNudgeEngine.body("2 h 15 m")}',
         'Long run tomorrow — 2 h 15 m planned. Set your fueling plan tonight.',
       );
     });
@@ -113,6 +117,57 @@ void main() {
     });
   });
 
+  group('title is sport-aware (ruled 2026-09-30, second pass)', () {
+    test('each named sport gets its own word', () {
+      expect(NightBeforeNudgeEngine.titleFor(ActivityType.running),
+          'Long run tomorrow');
+      expect(NightBeforeNudgeEngine.titleFor(ActivityType.cycling),
+          'Long ride tomorrow');
+      expect(NightBeforeNudgeEngine.titleFor(ActivityType.swimming),
+          'Long swim tomorrow');
+      expect(NightBeforeNudgeEngine.titleFor(ActivityType.brick),
+          'Brick workout tomorrow');
+      expect(NightBeforeNudgeEngine.titleFor(ActivityType.multisport),
+          'Brick workout tomorrow');
+    });
+
+    test('nothing unmapped is ever called a run — that was the bug', () {
+      // The trigger is duration, not sport, so a fixed "Long run" announced a
+      // 2-hour ride as a run. Every fallback must be neutral.
+      for (final t in [
+        ActivityType.triathlon,
+        ActivityType.duathlon,
+        ActivityType.other,
+        null,
+      ]) {
+        expect(NightBeforeNudgeEngine.titleFor(t), 'Long workout tomorrow',
+            reason: '$t must not borrow another sport\'s name');
+      }
+    });
+
+    test('a ride is announced as a ride, end to end', () async {
+      SharedPreferences.setMockInitialValues({});
+      final prefs = await SharedPreferences.getInstance();
+      final gateway = _FakeGateway();
+      await NightBeforeNudgeService(
+        gateway: gateway,
+        prefs: prefs,
+        analytics: _RecordingTracker([]),
+        clock: () => DateTime(2026, 10, 1, 9, 0),
+      ).evaluate([(
+        id: 'act-ride',
+        start: DateTime(2026, 10, 2, 7, 0),
+        durationMinutes: 150,
+        hasPlan: false,
+        type: ActivityType.cycling,
+      )]);
+
+      expect(gateway.scheduled.single.title, 'Long ride tomorrow');
+      expect(gateway.scheduled.single.body,
+          '2 h 30 m planned. Set your fueling plan tonight.');
+    });
+  });
+
   group('service', () {
     late _FakeGateway gateway;
     late SharedPreferences prefs;
@@ -124,6 +179,7 @@ void main() {
       start: DateTime(2026, 10, 2, 7, 0),
       durationMinutes: 135 as int?,
       hasPlan: false,
+      type: ActivityType.running,
     );
 
     setUp(() async {
@@ -159,6 +215,7 @@ void main() {
         start: tomorrowLong.start,
         durationMinutes: 135,
         hasPlan: true,
+        type: ActivityType.running,
       )]);
 
       expect(gateway.scheduled, isEmpty);
@@ -176,6 +233,7 @@ void main() {
         start: tomorrowLong.start,
         durationMinutes: 135,
         hasPlan: true,
+        type: ActivityType.running,
       )]);
 
       expect(
@@ -190,6 +248,7 @@ void main() {
         start: tomorrowLong.start,
         durationMinutes: 60,
         hasPlan: false,
+        type: ActivityType.running,
       )]);
       expect(gateway.scheduled, isEmpty);
     });
@@ -215,6 +274,7 @@ void main() {
         start: tomorrowLong.start,
         durationMinutes: 135,
         hasPlan: true,
+        type: ActivityType.running,
       )]);
 
       expect(
@@ -245,6 +305,7 @@ void main() {
         start: tomorrowLong.start,
         durationMinutes: 135,
         hasPlan: true,
+        type: ActivityType.running,
       )]);
 
       expect(

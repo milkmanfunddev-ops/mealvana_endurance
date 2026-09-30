@@ -1,3 +1,5 @@
+import '../../../shared/domain/activity_type.dart';
+
 /// The night-before long-workout nudge — pure rules and copy.
 ///
 /// RULED 2026-09-30 (Xuan). The durable parts, which do not change without a
@@ -33,7 +35,33 @@ class NightBeforeNudgeEngine {
   /// planned. Set your fueling plan tonight." A notification needs a title and
   /// a body, so the em-dash is the split: every word survives, and iOS renders
   /// the two lines the way the sentence reads.
-  static const String title = 'Long run tomorrow';
+  ///
+  /// SPORT-AWARE, ruled 2026-09-30 (second pass): "long run / long ride /
+  /// brick workout instead of a generic name". The trigger is DURATION, not
+  /// sport, so a fixed "Long run" announced a 2-hour ride as a run — that was
+  /// the bug this replaces. The neutral fallback is never wrong, which is why
+  /// anything unmapped lands there rather than guessing a sport.
+  static String titleFor(ActivityType? type) {
+    switch (type) {
+      case ActivityType.running:
+        return 'Long run tomorrow';
+      case ActivityType.cycling:
+        return 'Long ride tomorrow';
+      case ActivityType.swimming:
+        return 'Long swim tomorrow';
+      case ActivityType.brick:
+      case ActivityType.multisport:
+        return 'Brick workout tomorrow';
+      // triathlon and duathlon are deliberately NOT called bricks: the ruling
+      // named brick/multi-sport, and a race is not a brick workout. They take
+      // the neutral title until someone rules otherwise.
+      case ActivityType.triathlon:
+      case ActivityType.duathlon:
+      case ActivityType.other:
+      case null:
+        return 'Long workout tomorrow';
+    }
+  }
 
   /// Approved copy, 2026-09-30. [duration] is [formatDuration]'s output.
   static String body(String duration) =>
