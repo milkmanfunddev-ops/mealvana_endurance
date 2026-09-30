@@ -29,9 +29,9 @@ const named = (column: string): Filter => ({ column, operator: 'is not empty', v
 const WIDGETS: Widget[] = [
   { name: 'Spend per day by model', description: 'What the Gateway charged each day, split by model.', view: 'observations', chartType: 'AREA_TIME_SERIES',
     dimensions: ['providedModelName'], metrics: [['totalCost', 'sum']], filters: [GENERATIONS] },
-  { name: 'Top athletes by spend', description: 'The ten athletes who cost the most in the selected period. Calls that carry no athlete (the eval app\'s simulated athlete) are left out.', view: 'observations', chartType: 'HORIZONTAL_BAR',
+  { name: 'Top athletes by spend', description: 'The ten athletes who cost the most in the selected period. An `eval-athlete:` row is the eval app\'s simulated athlete, not a person. Calls that carry no user are left out.', view: 'observations', chartType: 'HORIZONTAL_BAR',
     dimensions: ['userId'], metrics: [['totalCost', 'sum']], filters: [GENERATIONS, named('userId')], chartConfig: { type: 'HORIZONTAL_BAR', row_limit: 10 } },
-  { name: 'Spend by entry point', description: 'Cost by Trace name: vana-turn (chat), describe-meal, analyze-meal-photo and the vana-* background calls. Calls with no Trace name (the eval app\'s simulated athlete) are left out.', view: 'observations', chartType: 'HORIZONTAL_BAR',
+  { name: 'Spend by entry point', description: 'Cost by Trace name: vana-turn (chat), describe-meal, analyze-meal-photo and the vana-* background calls. `vana-experiment` is the eval app\'s runs. Calls with no Trace name are left out.', view: 'observations', chartType: 'HORIZONTAL_BAR',
     dimensions: ['traceName'], metrics: [['totalCost', 'sum']], filters: [GENERATIONS, named('traceName')] },
   { name: 'Model calls per day', was: 'Observations per day', description: 'How many model calls ran each day, by environment. The evaluators\' own calls show under Langfuse\'s environments.', view: 'observations', chartType: 'BAR_TIME_SERIES',
     dimensions: ['environment'], metrics: [['count', 'count']], filters: [GENERATIONS] },
