@@ -158,9 +158,7 @@ class NightBeforeNudgeService {
             ? NightBeforeNudgeEngine.titleFor(w.type)
             : NightBeforeNudgeEngine.rehearseTitle,
         body: variant == NightBeforeVariant.noPlan
-            ? NightBeforeNudgeEngine.body(
-                NightBeforeNudgeEngine.formatDuration(w.durationMinutes!),
-              )
+            ? NightBeforeNudgeEngine.noPlanBody
             : NightBeforeNudgeEngine.rehearseBody(w.type),
         fireAt: fireAt,
         payload: NightBeforeNudgeEngine.payloadFor(w.id, variant),
