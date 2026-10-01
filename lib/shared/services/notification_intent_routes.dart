@@ -93,8 +93,12 @@ NotificationDestination destinationForIntent(String? intent, String id) {
 /// WHY SO FEW FIELDS, DELIBERATELY. The keys are NOT interchangeable across
 /// sports, and a wrong one is worse than a missing one — a missing field is
 /// blank and the athlete fills it; a wrong field is a lie they may not notice:
-///   - `initialDistance` is read by RUNNING (miles) and SWIMMING (miles, then
-///     converted to metres). Cycling's initializer does not read it.
+///   - `initialDistance` is read by RUNNING (miles), SWIMMING (miles, then
+///     converted to metres) and CYCLING (miles). I first shipped this without
+///     the cycling case on a mis-read of that initializer — corrected
+///     2026-10-01 after reading it properly; it calls `updateDistance` at
+///     new_activity_screen.dart:383. Brick is still excluded: it self-loads
+///     from the activity and does not read the pre-fill extras.
 ///   - `initialPace` is min/mile and is read by RUNNING — but CYCLING
 ///     reinterprets it as `60.0 / pace` to get mph. Passing one activity's
 ///     pace blindly would quietly turn a ride's pace into a speed. So pace is
@@ -119,7 +123,7 @@ Map<String, dynamic> hydratePlanWorkoutExtra({
     // Only where the target sport's initializer actually reads it.
     if (distanceMiles != null &&
         distanceMiles > 0 &&
-        (sport == 'running' || sport == 'swimming'))
+        (sport == 'running' || sport == 'swimming' || sport == 'cycling'))
       'distance': distanceMiles,
   };
 }
