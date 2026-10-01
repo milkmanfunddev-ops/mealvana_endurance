@@ -152,6 +152,68 @@ class ActivitiesRepository with SyncableRepository {
     }
   }
 
+  /// Estimate and PERSIST a duration for any of [activities] that is a planned
+  /// workout carrying a distance but no duration. Returns the list with the
+  /// estimated rows replaced; rows it does not touch come back identical.
+  ///
+  /// WHY THIS EXISTS AS WELL AS THE IMPORT SEAM. The import seam only runs when
+  /// the importer WRITES, and a provider re-sync of an UNCHANGED row writes
+  /// nothing: ChangeDetectionService classifies it `unchanged` and the sync
+  /// service makes no repository call at all (probed 2026-10-01 — local NULL vs
+  /// remote NULL gives unchanged=1, updated=0). So every workout already sitting
+  /// in an athlete's calendar was unreachable from the import seam — not just a
+  /// test fixture, the entire existing backlog. A feature whose purpose is "do
+  /// not silently miss the long workout" cannot be built so that it silently
+  /// misses all of them.
+  ///
+  /// Called from the night-before sweep, which already reads exactly these rows
+  /// to decide what to arm, so this adds no query and no startup cost. The
+  /// estimate is persisted rather than computed per sweep so that the row
+  /// carries its own provenance (`duration_source='estimated'`) for any surface
+  /// that shows it, and so it is estimated once rather than every resume.
+  ///
+  /// Safety is inherited whole from [_withEstimatedDuration]: never overwrites a
+  /// provider or athlete duration, never touches a completed or deleted row,
+  /// never throws. A row that gains an estimate is marked dirty and queued for
+  /// upload like any other local-first write.
+  Future<List<domain.Activity>> estimateMissingDurations(
+    List<domain.Activity> activities,
+  ) async {
+    final out = <domain.Activity>[];
+    for (final activity in activities) {
+      final estimated = await _withEstimatedDuration(activity);
+      if (estimated.durationMinutes == activity.durationMinutes) {
+        out.add(activity);
+        continue;
+      }
+
+      try {
+        final now = DateTime.now();
+        final persisted = estimated.copyWith(
+          needsUpload: true,
+          localUpdatedAt: now,
+          updatedAt: now,
+        );
+        await _saveToDrift(persisted);
+        await _queueImmediateActivityUpsertById(
+          persisted.id,
+          operation: 'duration_estimate',
+        );
+        out.add(persisted);
+      } catch (e, stackTrace) {
+        _logger.warning(
+          'Could not persist an estimated duration; leaving the row as it was',
+          context: 'ACTIVITIES_REPOSITORY',
+          error: e,
+          stackTrace: stackTrace,
+          data: {'activityId': activity.id},
+        );
+        out.add(activity);
+      }
+    }
+    return out;
+  }
+
   /// The athlete's usual pace for [sport], from their own completed sessions
   /// inside [UsualPaceEngine.window].
   ///

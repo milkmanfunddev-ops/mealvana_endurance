@@ -38,13 +38,22 @@ class NightBeforeNudgeCoordinator {
 
       final now = DateTime.now();
       final today = DateTime(now.year, now.month, now.day);
-      final activities = await ref
-          .read(activitiesRepositoryProvider)
-          .getActivitiesForDateRange(
-            userId,
-            today,
-            today.add(const Duration(days: 3)),
-          );
+      final repo = ref.read(activitiesRepositoryProvider);
+      final rawActivities = await repo.getActivitiesForDateRange(
+        userId,
+        today,
+        today.add(const Duration(days: 3)),
+      );
+
+      // Fill in a duration for the distance-only workouts FIRST, because the
+      // `isLong` filter below is exactly where a NULL duration silently drops
+      // out — the miss this nudge exists to prevent.
+      //
+      // The import seam cannot cover these: a provider re-sync of an unchanged
+      // row writes nothing, so every workout already on the calendar was
+      // unreachable from it. This sweep already reads these rows, so the
+      // estimate costs no extra query.
+      final activities = await repo.estimateMissingDurations(rawActivities);
 
       final planRepo = await ref.read(nutritionPlanRepositoryProvider.future);
       final candidates = <NightBeforeWorkout>[];
@@ -64,9 +73,19 @@ class NightBeforeNudgeCoordinator {
         ));
       }
 
+      // Say what the sweep did. The standing lesson from the DI-25 and launch
+      // seams: a path that can fail silently must write down what it did —
+      // armed-for-tomorrow and never-armed looked identical from outside, and
+      // an estimate that did not happen looks the same as a short workout.
+      final estimatedCount = activities
+          .where((a) => a.isDurationEstimated)
+          .length;
       // ignore: avoid_print
-      print('[NIGHT_BEFORE] sweep userId=$userId activities=${activities.length} '
-          'longCandidates=${candidates.length}');
+      print(
+        '[NIGHT_BEFORE] sweep userId=$userId activities=${activities.length} '
+        'estimatedDurations=$estimatedCount '
+        'longCandidates=${candidates.length}',
+      );
       await ref.read(nightBeforeNudgeServiceProvider).evaluate(candidates);
     } catch (e, stackTrace) {
       ref
