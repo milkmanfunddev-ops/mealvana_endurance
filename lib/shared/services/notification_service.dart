@@ -83,10 +83,12 @@ class NotificationService {
       iOS: iosSettings,
     );
 
+    LaunchTrail.add('plugin.initialize() starting (handler not yet attached)');
     await _plugin.initialize(
       initializationSettings,
       onDidReceiveNotificationResponse: _onNotificationTapped,
     );
+    LaunchTrail.add('plugin.initialize() done (handler attached)');
 
     // Handle cold-start launches from notification taps.
     final launchDetails = await _plugin.getNotificationAppLaunchDetails();
@@ -323,6 +325,14 @@ class NotificationService {
   }
 
   static void _onNotificationTapped(NotificationResponse response) {
+    // CALLBACK ENTRY. If this line ever appears on a killed-app tap, the
+    // response IS being delivered and the launch-details path is simply the
+    // wrong door — the fix would then be to hold from here. If it never
+    // appears, iOS delivered the tap to nobody.
+    LaunchTrail.add(
+      'onDidReceiveNotificationResponse payload=${response.payload} '
+      'actionId=${response.actionId} type=${response.notificationResponseType}',
+    );
     if (response.payload == null) return;
 
     final payload = response.payload!;

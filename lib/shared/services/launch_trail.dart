@@ -41,6 +41,20 @@ class LaunchTrail {
         await prefs.setString(_previousKey, _previous!);
       }
       _prefs = prefs;
+
+      // Native-side observations, written by AppDelegate into the same
+      // UserDefaults store (shared_preferences prefixes keys with "flutter.").
+      // These answer whether our delegate assignment actually TOOK and whether
+      // anything re-claimed it afterwards — the theory-free version of the
+      // question four candidates have now failed to settle.
+      for (final k in const [
+        'ios_launch_options',
+        'ios_delegate_at_launch',
+        'ios_delegate_after_delay',
+      ]) {
+        final v = prefs.getString(k);
+        if (v != null) _events.insert(0, 'native $k=$v');
+      }
       _persist();
     } catch (_) {
       // A recorder that breaks the app it is recording is worse than no

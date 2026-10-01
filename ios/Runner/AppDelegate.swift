@@ -42,6 +42,38 @@ import MetricKit
 
     GeneratedPluginRegistrant.register(with: self)
 
+    // INSTRUMENTATION (2026-10-01). Four candidate fixes have now been refuted
+    // on hardware while the tape kept reading didNotificationLaunchApp=false,
+    // so this round tapes FACTS instead of proposing a fifth theory.
+    //
+    // Written into UserDefaults with the "flutter." prefix that
+    // shared_preferences uses, so the Dart-side recorder reads them back and
+    // shows them in the on-device dialog — no cable, no console, and it
+    // survives release builds where print() is invisible.
+    let defaults = UserDefaults.standard
+
+    // Did iOS hand this launch a notification at all? If this is empty on a
+    // tap-launch, the response is not arriving through the UIKit launch path
+    // and no delegate work will ever surface it.
+    let launchKeys = launchOptions?.keys.map { $0.rawValue }.joined(separator: ",") ?? "(none)"
+    defaults.set(launchKeys, forKey: "flutter.ios_launch_options")
+
+    // Did our assignment actually take, and who holds it now?
+    let atLaunch = UNUserNotificationCenter.current().delegate
+    defaults.set(
+      atLaunch.map { String(describing: type(of: $0)) } ?? "(nil)",
+      forKey: "flutter.ios_delegate_at_launch"
+    )
+
+    // …and does anything re-claim it once OneSignal has initialised from Dart?
+    DispatchQueue.main.asyncAfter(deadline: .now() + 6) {
+      let later = UNUserNotificationCenter.current().delegate
+      UserDefaults.standard.set(
+        later.map { String(describing: type(of: $0)) } ?? "(nil)",
+        forKey: "flutter.ios_delegate_after_delay"
+      )
+    }
+
     // Subscribe to Apple MetricKit and forward payloads into Sentry. Passive
     // (iOS already collects this) — see MetricKitReporter.swift. Registered here
     // so we're subscribed before iOS delivers the launch-time daily payload;
