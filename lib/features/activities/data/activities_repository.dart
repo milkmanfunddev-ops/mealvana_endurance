@@ -14,6 +14,7 @@ import '../../../shared/domain/activity_type.dart';
 import '../../../shared/data/syncable_repository.dart';
 import '../domain/activity.dart' as domain;
 import '../domain/brick_metadata.dart';
+import '../domain/usual_pace.dart';
 import 'activity_mapper.dart';
 import '../application/activity_deduplication_service.dart';
 
@@ -66,6 +67,135 @@ class ActivitiesRepository with SyncableRepository {
 
   /// Expose mapper for use by ActivitiesService and other consumers.
   ActivityMapper get mapper => _mapper;
+
+  // ========================================================================
+  // Estimated duration for distance-only provider imports (P3)
+  // ========================================================================
+
+  /// Usual-pace reads, keyed `userId|sport`. A provider sync writes rows in a
+  /// batch; without this the estimate costs one history query per row.
+  final Map<String, ({DateTime at, UsualPace pace})> _usualPaceCache = {};
+
+  static const Duration _usualPaceCacheTtl = Duration(minutes: 5);
+
+  /// Fill in a missing [domain.Activity.durationMinutes] from distance and the
+  /// athlete's usual pace, marked `duration_source='estimated'`
+  /// (RULED 2026-09-30, Xuan).
+  ///
+  /// WHY THE SEAM IS HERE. Four sync services — Final Surge, TrainingPeaks,
+  /// Runna, VDOT — reconcile their own payloads across six `transform` call
+  /// sites, so there is no single shared provider transform to hook. What they
+  /// DO all share is the pair of write seams below, which are the last point
+  /// before a row is persisted. Applying the estimate there lands it exactly
+  /// once per imported row regardless of which service brought it in, instead
+  /// of sprinkling the same rule across four services and hoping they stay in
+  /// step.
+  ///
+  /// The three ruled clauses collapse into the guards:
+  ///   * a non-null duration is provider- or athlete-supplied, so it is never
+  ///     touched — which is also the whole of "re-estimate only while still
+  ///     estimated": [_mergeProviderUpdate] treats duration as provider-owned
+  ///     and lets a re-sync null it, and a nulled duration is exactly a row
+  ///     that needs estimating again;
+  ///   * no distance means nothing to derive from.
+  ///
+  /// COMPLETED AND DELETED ROWS ARE EXCLUDED ON PURPOSE. An invented duration
+  /// on a finished session would read as what the athlete actually did. The
+  /// estimate exists only to decide whether a PLANNED workout clears the
+  /// 90-minute long threshold, and only planned rows reach the nudge.
+  ///
+  /// Never throws: a failed estimate leaves the import exactly as it arrived.
+  Future<domain.Activity> _withEstimatedDuration(
+    domain.Activity activity,
+  ) async {
+    if (activity.durationMinutes != null) return activity;
+    final miles = activity.distanceMiles;
+    if (miles == null || miles <= 0) return activity;
+    if (activity.isCompleted ||
+        activity.status == domain.ActivityStatus.deleted) {
+      return activity;
+    }
+
+    try {
+      final pace = await _usualPaceFor(activity.userId, activity.activityType);
+      final minutes = (miles * pace.minutesPerMile).round();
+      if (minutes <= 0) return activity;
+
+      _logger.info(
+        'Estimated duration for distance-only import',
+        context: 'ACTIVITIES_REPOSITORY',
+        data: {
+          'activityId': activity.id,
+          'provider': activity.syncedFromProvider,
+          'sport': activity.activityType.name,
+          'distanceMiles': miles,
+          'minutesPerMile': pace.minutesPerMile,
+          'paceSource': pace.source.name,
+          'paceSamples': pace.sampleCount,
+          'durationMinutes': minutes,
+        },
+      );
+
+      return activity.copyWith(
+        durationMinutes: minutes,
+        durationSource: 'estimated',
+      );
+    } catch (e, stackTrace) {
+      _logger.warning(
+        'Duration estimate failed; importing the row unchanged',
+        context: 'ACTIVITIES_REPOSITORY',
+        error: e,
+        stackTrace: stackTrace,
+        data: {'activityId': activity.id},
+      );
+      return activity;
+    }
+  }
+
+  /// The athlete's usual pace for [sport], from their own completed sessions
+  /// inside [UsualPaceEngine.window].
+  ///
+  /// A planned duration counts as evidence only when we did not invent it
+  /// (`duration_source` null) — otherwise estimates would feed the pace that
+  /// produces estimates. Rows hidden by a provider disconnect still count:
+  /// hiding withdraws a workout's nutrition demand, not the fact that the
+  /// athlete ran it.
+  Future<UsualPace> _usualPaceFor(String userId, ActivityType sport) async {
+    final key = '${userId.toLowerCase()}|${sport.name}';
+    final cached = _usualPaceCache[key];
+    if (cached != null &&
+        DateTime.now().difference(cached.at) < _usualPaceCacheTtl) {
+      return cached.pace;
+    }
+
+    final since = DateTime.now().subtract(UsualPaceEngine.window);
+    final rows =
+        await (_database.select(_database.activitiesTable)..where(
+              (tbl) =>
+                  tbl.userId.lower().equals(userId.toLowerCase()) &
+                  tbl.activityType.equals(sport.name) &
+                  tbl.status.equals('completed') &
+                  tbl.deletedAt.isNull() &
+                  // Archived brick segments would count their parent twice.
+                  tbl.brickId.isNull() &
+                  tbl.scheduledDateTime.isBiggerOrEqualValue(since),
+            ))
+            .get();
+
+    final samples = <CompletedSample>[];
+    for (final row in rows) {
+      final duration =
+          row.actualDurationMinutes ??
+          (row.durationSource == null ? row.durationMinutes : null);
+      final distance = row.actualDistanceMiles ?? row.distanceMiles;
+      if (duration == null || distance == null) continue;
+      samples.add((distanceMiles: distance, durationMinutes: duration));
+    }
+
+    final pace = UsualPaceEngine.from(samples, sport);
+    _usualPaceCache[key] = (at: DateTime.now(), pace: pace);
+    return pace;
+  }
 
   // ========================================================================
   // SyncableRepository Implementation
@@ -1281,7 +1411,8 @@ class ActivitiesRepository with SyncableRepository {
       }
 
       // No existing provider workout found: create a new row
-      final activityWithFlags = activity.copyWith(
+      final estimated = await _withEstimatedDuration(activity);
+      final activityWithFlags = estimated.copyWith(
         id: '', // Force INSERT by clearing ID
         needsUpload: true,
         localUpdatedAt: DateTime.now(),
@@ -2060,7 +2191,10 @@ class ActivitiesRepository with SyncableRepository {
       final keepRefreshFlag = existing?.needsNutritionRefresh == true;
 
       final now = DateTime.now();
-      final activityWithFlags = merged.copyWith(
+      // Post-merge on purpose: the merge treats duration as provider-owned, so
+      // this sees the value that is about to be written, not the incoming one.
+      final estimated = await _withEstimatedDuration(merged);
+      final activityWithFlags = estimated.copyWith(
         needsNutritionRefresh: keepRefreshFlag
             ? true
             : activity.needsNutritionRefresh,
