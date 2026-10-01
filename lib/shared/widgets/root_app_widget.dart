@@ -22,6 +22,7 @@ import '../../theme/kyle_design/theme_provider.dart';
 import '../../features/app_startup/application/app_startup_provider.dart';
 import '../../features/app_startup/presentation/widgets/app_startup_widget.dart';
 import '../core/app_router.dart';
+import '../../main.dart' show sentryNavigatorKey;
 import '../services/app_config.dart';
 import '../services/app_external_deps.dart';
 import '../../features/carb_loading/presentation/providers/carb_nudge_coordinator.dart';
@@ -32,6 +33,7 @@ import '../../features/activities/data/activities_repository.dart';
 import '../services/auth/auth_listener_service.dart';
 import '../services/notification_service.dart';
 import '../services/notification_intent_routes.dart';
+import '../services/launch_trail.dart';
 import '../../features/daily_macros/data/daily_macro_targets_repository.dart';
 import '../../features/auth/application/auth_service.dart';
 import '../services/support/support_identity.dart';
@@ -95,6 +97,39 @@ class _RootAppWidgetState extends ConsumerState<RootAppWidget>
       if (pendingActivityId != null && pendingActivityId.isNotEmpty) {
         _handleNotificationNavigation(pendingActivityId, pendingType);
       }
+      // DEV ONLY: show this launch's tape on screen a few seconds in, so a
+      // killed-app tap can be diagnosed on the device with nothing attached.
+      // Release builds cannot print, and the failing launch is the one nobody
+      // can watch — so the app shows its own working.
+      if (ref.read(appConfigProvider).devModeEnabled) {
+        Future.delayed(const Duration(seconds: 4), () {
+          if (!mounted || LaunchTrail.isEmpty) return;
+          // Read the context AFTER the gap, from the global key, and bail if
+          // the tree moved on — the lint's actual concern.
+          final ctx = sentryNavigatorKey.currentContext;
+          if (ctx == null || !ctx.mounted) return;
+          // ignore: use_build_context_synchronously
+          showDialog<void>(
+            context: ctx,
+            builder: (c) => AlertDialog(
+              title: const Text('Launch trail (dev)'),
+              content: SingleChildScrollView(
+                child: SelectableText(
+                  LaunchTrail.text,
+                  style: const TextStyle(fontSize: 11, height: 1.4),
+                ),
+              ),
+              actions: [
+                TextButton(
+                  onPressed: () => Navigator.of(c).pop(),
+                  child: const Text('Dismiss'),
+                ),
+              ],
+            ),
+          );
+        });
+      }
+
       // G27: first-frame nudge sweep (arm/disarm + on-open catch-up).
       ref.read(carbNudgeCoordinatorProvider.notifier).run();
       // Night-before long-workout nudge: same sweep shape, same fail-soft.
@@ -153,13 +188,11 @@ class _RootAppWidgetState extends ConsumerState<RootAppWidget>
 
     // Hold it. Dropping the tap is the failure; arriving late is not.
     if (!_isRoutableNow()) {
-      // ignore: avoid_print
-      print('[LAUNCH] HELD id=$activityId type=$type (startup not routable)');
+      LaunchTrail.add('HELD id=$activityId type=$type (startup not routable)');
       _deferredTap = (id: activityId, type: type);
       return;
     }
-    // ignore: avoid_print
-    print('[LAUNCH] routing id=$activityId type=$type');
+    LaunchTrail.add('routing id=$activityId type=$type');
 
     // The tap is the attribution anchor for "did the nudge cause a plan".
     // Recorded before navigating so a slow write cannot lose it to the
@@ -226,14 +259,14 @@ class _RootAppWidgetState extends ConsumerState<RootAppWidget>
     ref
         .read(AppRouter.routerProvider)
         .go(destination.location, extra: extra);
+    LaunchTrail.add('navigated(prefilled) -> ${destination.location}');
   }
 
   /// Replays a held tap once the router can honour it.
   void _flushDeferredTap() {
     final tap = _deferredTap;
     if (tap == null || !_isRoutableNow()) return;
-    // ignore: avoid_print
-    print('[LAUNCH] REPLAY id=${tap.id} type=${tap.type}');
+    LaunchTrail.add('REPLAY id=${tap.id} type=${tap.type}');
     _deferredTap = null;
     _handleNotificationNavigation(tap.id, tap.type);
   }
