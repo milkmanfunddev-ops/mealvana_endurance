@@ -360,7 +360,27 @@ class ChangeDetectionService {
         newActivity.paceTargetMinutesPerMile) {
       return true;
     }
-    if (oldActivity.durationMinutes != newActivity.durationMinutes) return true;
+    // OUR OWN ESTIMATE MUST NOT MASQUERADE AS A PROVIDER-SIDE CHANGE.
+    //
+    // P3 fills a NULL duration from the athlete's usual pace and marks the row
+    // duration_source='estimated'. A naive comparison then reads local 140 vs
+    // remote null as a change on EVERY later sync, forever: the row is
+    // reclassified as a minor update, _mergeProviderUpdate nulls the duration
+    // again (it is provider-owned), the importer re-estimates the same number,
+    // and the row is written and re-uploaded for nothing. Same value every
+    // time, so no corruption — but perpetual churn, and every sync reporting
+    // phantom updated rows.
+    //
+    // So compare the AUTHORITATIVE duration. Our estimate reads as absent
+    // while the provider still sends nothing, which makes the row genuinely
+    // unchanged. A real duration arriving later (null -> 88) still differs and
+    // still wins, which is the case this must not break.
+    final oldDuration =
+        (oldActivity.durationSource == 'estimated' &&
+            newActivity.durationMinutes == null)
+        ? null
+        : oldActivity.durationMinutes;
+    if (oldDuration != newActivity.durationMinutes) return true;
     if (oldActivity.distanceMiles != newActivity.distanceMiles) return true;
     if (oldActivity.intensityLevel != newActivity.intensityLevel) return true;
     if (oldActivity.workoutSubtype != newActivity.workoutSubtype) return true;
