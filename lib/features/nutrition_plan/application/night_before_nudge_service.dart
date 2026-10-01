@@ -99,6 +99,14 @@ class NightBeforeNudgeService {
   /// afterwards can be attributed to the nudge.
   static const _tappedKey = 'night_before_nudge_tapped';
 
+  /// How far apart two nudges sharing a base instant are spaced.
+  ///
+  /// Anything greater than zero fixes the collision; 30s keeps a handful of
+  /// nudges inside the same minute or two of 19:00, which is what the ruling
+  /// means by "the evening before". The grouping in [evaluate] guarantees a
+  /// slot can never push a nudge into another base's slot range.
+  static const int _staggerStepSeconds = 30;
+
   /// How long after a tap a new plan still counts as "the nudge worked".
   static const Duration attributionWindow = Duration(hours: 24);
 
@@ -114,7 +122,47 @@ class NightBeforeNudgeService {
       'nudge evaluate candidates=${workouts.length} fastFire=$_fastFire',
     );
     final armed = (_prefs.getStringList(_armedKey) ?? const []).toSet();
+    final candidateIds = workouts.map((w) => w.id).toSet();
 
+    // RECONCILE THE ARMED SET DOWNWARD, not just candidates upward.
+    //
+    // The per-workout loop below can only disarm something it still SEES. A
+    // workout that has left the calendar entirely — deleted, rescheduled out of
+    // the window — never appears as a candidate, so its pending notification
+    // was never cancelled and fired anyway. Observed 2026-10-01: a nudge fired
+    // for a DELETED brick and landed on a create screen for a dead workout.
+    //
+    // So walk the armed set first and cancel anything no longer a candidate.
+    // This also retires the variant question for such a row: a deleted workout
+    // has no correct variant.
+    for (final key in armed.toList()) {
+      final split = key.lastIndexOf('|');
+      final armedId = split > 0 ? key.substring(0, split) : key;
+      if (candidateIds.contains(armedId)) continue;
+      await _gateway.cancel(NightBeforeNudgeEngine.notificationId(armedId));
+      armed.remove(key);
+      LaunchTrail.add('nudge DISARMED id=$armedId (gone from the calendar)');
+    }
+
+    // THE COLLISION FIX. Two nudges at the same instant mean ONE delivery.
+    //
+    // `fireInstantFor` returns the evening-before date at 19:00, so EVERY
+    // same-day no-plan nudge used to land on exactly 19:00:00.000 — and iOS
+    // delivers one of two same-instant legacy notifications. The per-workout
+    // ruling ("each workout gets its own nudge") was therefore defeated at the
+    // delivery layer for precisely the multi-sport athlete the feature targets.
+    // Evidenced on device 2026-10-01: five armed, the 40-mi ride paired to the
+    // microsecond with a rehearse nudge on every re-arm and never once
+    // delivered, while the one nudge with an instant to itself always did.
+    //
+    // So the stagger is computed WITHIN each identical base instant: group the
+    // candidates by the base they resolve to, order each group by id so the
+    // slots are deterministic and survive a re-arm, and space them 30s apart.
+    // Grouping rather than one global index is what keeps the offset from ever
+    // walking into another group's base — the noPlan and rehearse bases are 30
+    // minutes apart, and a slot can only ever move a nudge within its own
+    // group.
+    final bases = <String, ({NightBeforeVariant variant, DateTime base})>{};
     for (final w in workouts) {
       // Ruled 2026-09-30 (second pass): having a plan no longer means silence,
       // it means a DIFFERENT nudge. So plan-existence selects the variant
@@ -122,11 +170,42 @@ class NightBeforeNudgeService {
       final variant = w.hasPlan
           ? NightBeforeVariant.rehearse
           : NightBeforeVariant.noPlan;
+      bases[w.id] = (
+        variant: variant,
+        // The dev override needs no variant offset: one workout has one
+        // notification id and only ever one armed variant, so the two can
+        // never coexist. The old per-variant base was what made the stagger
+        // collide — a 60s variant gap is an exact multiple of the 30s step, so
+        // a rehearse nudge landed on top of the no-plan nudge two slots later.
+        base: _fastFire
+            ? now.add(const Duration(minutes: 2))
+            : NightBeforeNudgeEngine.fireInstantFor(w.start, variant),
+      );
+    }
 
+    final slots = <String, int>{};
+    final byBase = <String, List<String>>{};
+    for (final entry in bases.entries) {
+      byBase
+          .putIfAbsent(entry.value.base.toIso8601String(), () => <String>[])
+          .add(entry.key);
+    }
+    for (final ids in byBase.values) {
+      ids.sort();
+      for (var i = 0; i < ids.length; i++) {
+        slots[ids[i]] = i;
+      }
+    }
+
+    for (final w in workouts) {
+      final variant = bases[w.id]!.variant;
       final armKeyForFire = '${w.id}|${variant.tag}';
+      final staggered = bases[w.id]!.base.add(
+        Duration(seconds: _staggerStepSeconds * (slots[w.id] ?? 0)),
+      );
       final fireAt = _fastFire
-          ? _fastFireInstant(armKeyForFire, now, variant, workouts.indexOf(w))
-          : NightBeforeNudgeEngine.fireInstantFor(w.start, variant);
+          ? _heldFastFireInstant(armKeyForFire, now, staggered)
+          : staggered;
 
       final shouldArm =
           NightBeforeNudgeEngine.isLong(w.durationMinutes) &&
@@ -203,30 +282,26 @@ class NightBeforeNudgeService {
 
   /// The dev override's fire instant, chosen ONCE per armKey and then held.
   ///
-  /// WHY THIS IS NOT JUST `now + 2min`. It was, and that made device testing
-  /// self-defeating. `evaluate` re-arms unconditionally on every open and
+  /// WHY A HOLD EXISTS. `evaluate` re-arms unconditionally on every open and
   /// resume — correct, because a workout's time, duration or plan state may
-  /// have moved — and under the override the instant was recomputed from
-  /// `now` each time. So every touch of the app pushed every pending nudge two
-  /// minutes further away. Observed 2026-10-01: resumes at 10:45:58, 10:46:02
-  /// and 10:52:16 meant a two-minute fuse was re-lit before it could ever
-  /// burn down, and the ride and brick nudges never fired at all.
+  /// have moved — and under the override the instant is derived from `now`. So
+  /// every touch of the app pushed every pending nudge further away. Observed
+  /// 2026-10-01: resumes at 10:45:58, 10:46:02 and 10:52:16 re-lit a
+  /// two-minute fuse before it could ever burn down, and the ride and brick
+  /// nudges never fired at all.
   ///
-  /// Production has no such problem and is deliberately left alone:
-  /// [NightBeforeNudgeEngine.fireInstantFor] derives the instant from the
-  /// WORKOUT's start, so re-arming reschedules the same 19:00 and the churn
-  /// cannot happen. This is a dev-only defect with a dev-only fix.
+  /// Production needs no hold and does not get one: [NightBeforeNudgeEngine.fireInstantFor]
+  /// derives the instant from the WORKOUT's start, so re-arming reschedules
+  /// the same 19:00.
   ///
-  /// The per-workout stagger matters for the same reason. The old offsets
-  /// separated the two VARIANTS but not the workouts, so three no-plan
-  /// candidates all fired at the identical instant — which is also what made
-  /// "does iOS coalesce same-second notifications?" unanswerable. Spacing them
-  /// 30 seconds apart removes the question instead of investigating it.
-  DateTime _fastFireInstant(
+  /// [candidate] is the already-staggered instant. Holding the FINAL value
+  /// matters: holding a pre-stagger base and re-applying the slot would let a
+  /// changed candidate list move a held nudge back on top of another one,
+  /// which is the collision this release is fixing.
+  DateTime _heldFastFireInstant(
     String armKey,
     DateTime now,
-    NightBeforeVariant variant,
-    int position,
+    DateTime candidate,
   ) {
     final held = _prefs.getStringList(_fastFireAtKey) ?? const <String>[];
     final kept = <String>[];
@@ -246,17 +321,11 @@ class NightBeforeNudgeService {
 
     if (mine != null) return mine;
 
-    final chosen = now.add(
-      Duration(
-        minutes: variant == NightBeforeVariant.noPlan ? 2 : 3,
-        seconds: 30 * (position < 0 ? 0 : position),
-      ),
-    );
-    kept.add('$armKey@${chosen.toIso8601String()}');
+    kept.add('$armKey@${candidate.toIso8601String()}');
     // Fire-and-forget: a dev-only bookkeeping write must not make the sweep
     // async-fragile, and a lost write only costs one re-stagger.
     _prefs.setStringList(_fastFireAtKey, kept);
-    return chosen;
+    return candidate;
   }
 
   /// Records a tap so a plan created soon after can be attributed to it.
