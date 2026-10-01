@@ -121,6 +121,9 @@ class _RootAppWidgetState extends ConsumerState<RootAppWidget>
   int _trailShownAt = -1;
   void _showTrailDialog() {
     if (!mounted || LaunchTrail.isEmpty) return;
+    // Only when the tape concerns a notification — see
+    // LaunchTrail.hasNotificationEvidence for why this guard exists.
+    if (!LaunchTrail.hasNotificationEvidence) return;
     if (LaunchTrail.length == _trailShownAt)
       return; // nothing new since last time
     _trailShownAt = LaunchTrail.length;

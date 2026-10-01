@@ -130,6 +130,30 @@ class LaunchTrail {
 
   static bool get isEmpty => _events.isEmpty;
 
+  /// Whether this tape has anything to do with a NOTIFICATION.
+  ///
+  /// Gates the dev-only on-screen dialog. Without this it fired on every dev
+  /// launch, because AppDelegate's instrumentation always writes at least
+  /// `ios_launch_options`, so the tape is never empty on iOS. A modal
+  /// AlertDialog four seconds into every launch is not just noise: it put a
+  /// modal route over the login screen and made the log-in button
+  /// non-hit-testable, which failed every authenticating Patrol flow
+  /// (integration gate, 2026-10-01). The iOS keyboard cannot do that — it is
+  /// not a Flutter widget — but a modal route can, and did.
+  ///
+  /// So the dialog now appears only for the case it was built for: a launch or
+  /// resume that actually carried a notification. An ordinary launch records
+  /// its tape silently and shows nothing.
+  static bool get hasNotificationEvidence {
+    final tape = text;
+    return tape.contains('payload=') ||
+        tape.contains('willpresent') ||
+        tape.contains('routing id=') ||
+        tape.contains('HELD ') ||
+        tape.contains('REPLAY ') ||
+        tape.contains('navigated(');
+  }
+
   /// How many lines the tape holds — used to tell "nothing new since I last
   /// looked" from "a tap just added lines".
   static int get length => _events.length;
