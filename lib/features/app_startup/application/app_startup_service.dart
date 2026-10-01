@@ -241,6 +241,29 @@ class AppStartupService {
   /// IMPORTANT: On Android, DeviceInfoPlugin can deadlock if called during
   /// app startup. By deferring these to post-frame, we avoid the deadlock
   /// while still initializing everything promptly.
+  /// One deferred startup step: timed, and ISOLATED.
+  ///
+  /// The chain used to be six awaits inside a single try/catch, so the first
+  /// failure skipped everything after it. That is how a device-info or
+  /// analytics hiccup could stop the notification plugin from ever reading the
+  /// payload that launched the app. A step that fails now logs and the chain
+  /// continues — these are all best-effort services, and none of them is a
+  /// reason to abandon the others.
+  Future<void> _deferredStep(String name, Future<void> Function() body) async {
+    try {
+      await PerformanceTelemetry.measure(name, body);
+    } catch (e, stackTrace) {
+      if (ref.mounted) {
+        _logger.error(
+          'Deferred step failed: $name',
+          context: 'DEFERRED_INIT',
+          error: e,
+          stackTrace: stackTrace,
+        );
+      }
+    }
+  }
+
   Future<void> initializeDeferredServices() async {
     // Wait for first frame to render before initializing these services
     // This avoids Android DeviceInfoPlugin deadlock
@@ -252,43 +275,43 @@ class AppStartupService {
       // before any post-async-gap `ref` use (including logging).
       if (!ref.mounted) return;
       try {
-        // 1. Initialize device info (safe after first frame)
-        await PerformanceTelemetry.measure(
-          'deferred.device_info',
-          DeviceInfoService.instance.initialize,
-        );
-
-        // 2. Initialize analytics with device ID
-        await PerformanceTelemetry.measure(
-          'deferred.analytics',
-          _initializeAnalytics,
-        );
-
-        // 3. Initialize local notifications and tap callbacks
-        await PerformanceTelemetry.measure(
+        // 1. Local notifications FIRST, and this ordering is load-bearing.
+        //
+        // `NotificationService.initialize()` is what reads
+        // `getNotificationAppLaunchDetails` — the payload of the notification
+        // that LAUNCHED this process. Until it runs, a tap that cold-started
+        // the app does not exist as far as the app is concerned. It used to
+        // sit third, behind device-info and analytics, inside one shared
+        // try/catch: anything that threw above it meant the launch payload was
+        // never read at all and the athlete silently landed on the dashboard
+        // (observed on a physical device in release mode, 2026-09-30).
+        //
+        // Every step is now fault-isolated too, so one failure can no longer
+        // swallow the rest of the chain.
+        await _deferredStep(
           'deferred.notifications',
           NotificationService.initialize,
         );
 
-        // 4. Check user session for analytics identification
-        await PerformanceTelemetry.measure(
-          'deferred.user_session',
-          checkUserSession,
+        // 2. Initialize device info (safe after first frame)
+        await _deferredStep(
+          'deferred.device_info',
+          DeviceInfoService.instance.initialize,
         );
+
+        // 3. Initialize analytics with device ID
+        await _deferredStep('deferred.analytics', _initializeAnalytics);
+
+        // 4. Check user session for analytics identification
+        await _deferredStep('deferred.user_session', checkUserSession);
 
         // 5. Sync is_coach status from Supabase (for coach mode)
         // This picks up any admin approvals since last app launch
-        await PerformanceTelemetry.measure(
-          'deferred.coach_status',
-          _syncCoachStatus,
-        );
+        await _deferredStep('deferred.coach_status', _syncCoachStatus);
 
         // 6. Initialize RevenueCat for AI credits.
         // No-op unless aiCreditsEnabled + a RevenueCat key are configured.
-        await PerformanceTelemetry.measure(
-          'deferred.revenuecat',
-          _initializeRevenueCat,
-        );
+        await _deferredStep('deferred.revenuecat', _initializeRevenueCat);
 
         // 7. Record the version this launch is running.
         // Written once at account creation, users.app_version decays into a
@@ -298,7 +321,7 @@ class AppStartupService {
         // the reset paths, which cannot reach a provider, are corrected here on
         // the next cold start.
         if (!ref.mounted) return;
-        await PerformanceTelemetry.measure(
+        await _deferredStep(
           'deferred.app_version',
           ref.read(authServiceProvider).reconcileAppVersion,
         );
