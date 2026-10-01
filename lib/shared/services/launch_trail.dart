@@ -51,6 +51,9 @@ class LaunchTrail {
         'ios_launch_options',
         'ios_delegate_at_launch',
         'ios_delegate_after_delay',
+        'ios_legacy_launch_class',
+        'ios_legacy_launch_userinfo',
+        'ios_legacy_launch_payload',
       ]) {
         final v = prefs.getString(k);
         if (v != null) _events.insert(0, 'native $k=$v');
