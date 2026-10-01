@@ -3,6 +3,7 @@ import 'package:flutter_test/flutter_test.dart';
 import 'package:mealvana_endurance/features/activities/application/activity_deduplication_service.dart';
 import 'package:mealvana_endurance/features/activities/data/activities_repository.dart';
 import 'package:mealvana_endurance/features/activities/domain/activity.dart';
+import 'package:mealvana_endurance/features/nutrition_plan/domain/night_before_nudge_engine.dart';
 import 'package:mealvana_endurance/shared/database/app_database.dart'
     hide Activity;
 import 'package:mealvana_endurance/shared/domain/activity_type.dart';
@@ -345,6 +346,169 @@ void main() {
       expect(second.id, first.id);
       expect(second.durationMinutes, 130);
       expect(second.durationSource, 'estimated');
+    });
+  });
+
+  /// THE ROWS THE IMPORT SEAM CANNOT REACH.
+  ///
+  /// A provider re-sync of an UNCHANGED workout writes nothing — change
+  /// detection classifies it `unchanged` and the sync service makes no
+  /// repository call (probed 2026-10-01: local NULL vs remote NULL gives
+  /// unchanged=1, updated=0). Every workout already on the athlete's calendar
+  /// was therefore invisible to the import seam. `estimateMissingDurations` is
+  /// what the night-before sweep calls to close that, and these are Xuan's two
+  /// live fixtures in test form.
+  group('estimateMissingDurations (the sweep half)', () {
+    /// Write the row straight to Drift — this is a workout that is ALREADY in
+    /// the calendar, which is the whole point: it never passes through the
+    /// import seam.
+    Future<Activity> seedOnCalendar({
+      required String id,
+      required String title,
+      required double distanceMiles,
+      ActivityType activityType = ActivityType.running,
+      int? durationMinutes,
+      String? durationSource,
+      ActivityStatus status = ActivityStatus.planned,
+    }) async {
+      final activity = Activity(
+        id: id,
+        userId: userId,
+        activityType: activityType,
+        title: title,
+        status: status,
+        scheduledDateTime: now.add(const Duration(days: 1)),
+        distanceMiles: distanceMiles,
+        durationMinutes: durationMinutes,
+        durationSource: durationSource,
+        syncedFromProvider: 'final_surge',
+        providerWorkoutId: 'fs-$id',
+        createdAt: now,
+        updatedAt: now,
+      );
+      await database
+          .into(database.activitiesTable)
+          .insert(repository.mapper.toCompanion(activity));
+      return activity;
+    }
+
+    test('the 14 mi Long Run fixture becomes nudge-eligible', () async {
+      final seeded = await seedOnCalendar(
+        id: 'fixture-run',
+        title: '14 mi Long Run',
+        distanceMiles: 14.0,
+      );
+      expect(seeded.durationMinutes, isNull, reason: 'the broken state');
+      expect(
+        NightBeforeNudgeEngine.isLong(seeded.durationMinutes),
+        isFalse,
+        reason: 'which is exactly how it fell out of the sweep',
+      );
+
+      final out = await repository.estimateMissingDurations([seeded]);
+
+      // 14 miles at the ruled running fallback of 10:00/mile.
+      expect(out.single.durationMinutes, 140);
+      expect(out.single.durationSource, 'estimated');
+      expect(
+        NightBeforeNudgeEngine.isLong(out.single.durationMinutes),
+        isTrue,
+        reason: 'nudge-eligible in the SAME sweep that estimated it',
+      );
+    });
+
+    test('the 40 mi Ride fixture becomes nudge-eligible', () async {
+      final seeded = await seedOnCalendar(
+        id: 'fixture-ride',
+        title: '40 mi Ride',
+        distanceMiles: 40.0,
+        activityType: ActivityType.cycling,
+      );
+
+      final out = await repository.estimateMissingDurations([seeded]);
+
+      // 40 miles at the ruled cycling fallback of 15 mph (4:00/mile).
+      expect(out.single.durationMinutes, 160);
+      expect(out.single.durationSource, 'estimated');
+      expect(NightBeforeNudgeEngine.isLong(out.single.durationMinutes), isTrue);
+    });
+
+    test('the estimate is PERSISTED and marked dirty for upload', () async {
+      final seeded = await seedOnCalendar(
+        id: 'fixture-persist',
+        title: '14 mi Long Run',
+        distanceMiles: 14.0,
+      );
+
+      await repository.estimateMissingDurations([seeded]);
+
+      // Re-read through the repository, not the returned object: the point is
+      // that the row on disk changed, so the next sweep estimates nothing and
+      // any surface can see the provenance.
+      final reread = await repository.getActivitiesForDateRange(
+        userId,
+        now.subtract(const Duration(days: 1)),
+        now.add(const Duration(days: 3)),
+      );
+      final row = reread.firstWhere((a) => a.id == 'fixture-persist');
+      expect(row.durationMinutes, 140);
+      expect(row.durationSource, 'estimated');
+      expect(row.isDurationEstimated, isTrue);
+      expect(row.needsUpload, isTrue, reason: 'local-first write, then upload');
+    });
+
+    test(
+      'a second sweep over an already-estimated row changes nothing',
+      () async {
+        final seeded = await seedOnCalendar(
+          id: 'fixture-idempotent',
+          title: '14 mi Long Run',
+          distanceMiles: 14.0,
+        );
+
+        final first = await repository.estimateMissingDurations([seeded]);
+        final second = await repository.estimateMissingDurations(first);
+
+        expect(second.single.durationMinutes, 140);
+        expect(second.single.durationSource, 'estimated');
+        expect(
+          second.single.localUpdatedAt,
+          first.single.localUpdatedAt,
+          reason: 'no write on the second pass — not re-estimated every resume',
+        );
+      },
+    );
+
+    test('rows it must not touch come back identical', () async {
+      final provided = await seedOnCalendar(
+        id: 'fixture-provided',
+        title: '10 mi with a time',
+        distanceMiles: 10.0,
+        durationMinutes: 73,
+      );
+      final noDistance = await seedOnCalendar(
+        id: 'fixture-nodistance',
+        title: 'Easy run',
+        distanceMiles: 0,
+      );
+      final done = await seedOnCalendar(
+        id: 'fixture-completed',
+        title: 'Yesterday',
+        distanceMiles: 14.0,
+        status: ActivityStatus.completed,
+      );
+
+      final out = await repository.estimateMissingDurations([
+        provided,
+        noDistance,
+        done,
+      ]);
+
+      expect(out[0].durationMinutes, 73);
+      expect(out[0].durationSource, isNull);
+      expect(out[1].durationMinutes, isNull);
+      expect(out[2].durationMinutes, isNull, reason: 'never invent an actual');
+      expect(out[2].durationSource, isNull);
     });
   });
 }
