@@ -187,6 +187,61 @@ import MetricKit
     )
   }
 
+  /// FOREGROUND DELIVERY — the fire nobody could see.
+  ///
+  /// A scheduled nudge whose instant passes while the app is in the FOREGROUND
+  /// produces no banner by default: iOS asks the delegate what to do, and the
+  /// default answer is "nothing". That is indistinguishable from a nudge that
+  /// was never scheduled, which is exactly the ambiguity that cost a device
+  /// round — the ride and brick nudges "never appeared", with no way to tell
+  /// a swallowed delivery from a missing arm.
+  ///
+  /// So: tape every foreground delivery, and ask for the banner anyway. In a
+  /// dev build a visible banner is the whole point of testing with a short
+  /// fuse; in production the 19:00 fire lands on a closed app and this path is
+  /// not reached. The counter makes repeats legible rather than collapsing
+  /// them into one indistinguishable line.
+  override func userNotificationCenter(
+    _ center: UNUserNotificationCenter,
+    willPresent notification: UNNotification,
+    withCompletionHandler completionHandler: @escaping (UNNotificationPresentationOptions) -> Void
+  ) {
+    let defaults = UserDefaults.standard
+    let info = notification.request.content.userInfo
+    let count = defaults.integer(forKey: "ios_un_willpresent_count") + 1
+    defaults.set(count, forKey: "ios_un_willpresent_count")
+
+    // Only OURS. `payload` is flutter_local_notifications' marker, so a
+    // OneSignal push does not carry it. We answer only for our own
+    // notifications and hand everything else to the chain untouched — the
+    // completion handler must be called EXACTLY once, so claiming a push we
+    // did not schedule would either double-call it or silently swallow
+    // OneSignal's own foreground handling.
+    guard let payload = info["payload"] as? String, !payload.isEmpty else {
+      defaults.set(
+        "#\(count) NOT-OURS (passed to chain)",
+        forKey: "flutter.ios_un_willpresent"
+      )
+      super.userNotificationCenter(
+        center,
+        willPresent: notification,
+        withCompletionHandler: completionHandler
+      )
+      return
+    }
+
+    defaults.set(
+      "#\(count) payload=\(payload) at=\(ISO8601DateFormatter().string(from: Date()))",
+      forKey: "flutter.ios_un_willpresent"
+    )
+
+    if #available(iOS 14.0, *) {
+      completionHandler([.banner, .list, .sound])
+    } else {
+      completionHandler([.alert, .sound])
+    }
+  }
+
   /// THE LEGACY RESUME DOOR — the sibling of the launch-key fix.
   ///
   /// Our nudges are scheduled as UIConcreteLocalNotification (tape, 2026-10-01).

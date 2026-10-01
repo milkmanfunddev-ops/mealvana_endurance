@@ -121,7 +121,8 @@ class _RootAppWidgetState extends ConsumerState<RootAppWidget>
   int _trailShownAt = -1;
   void _showTrailDialog() {
     if (!mounted || LaunchTrail.isEmpty) return;
-    if (LaunchTrail.length == _trailShownAt) return; // nothing new since last time
+    if (LaunchTrail.length == _trailShownAt)
+      return; // nothing new since last time
     _trailShownAt = LaunchTrail.length;
     final ctx = sentryNavigatorKey.currentContext;
     if (ctx == null || !ctx.mounted) return;
@@ -151,6 +152,10 @@ class _RootAppWidgetState extends ConsumerState<RootAppWidget>
     super.didChangeAppLifecycleState(state);
     if (state == AppLifecycleState.resumed) {
       LaunchTrail.add('app resumed');
+      // Pick up anything AppDelegate wrote while we were away — a foreground
+      // delivery or a backgrounded tap lands after `begin()` has already run,
+      // so a launch-only read can never show it.
+      LaunchTrail.pullNative();
       if (ref.read(appConfigProvider).devModeEnabled) {
         Future.delayed(const Duration(seconds: 3), _showTrailDialog);
       }
@@ -271,9 +276,7 @@ class _RootAppWidgetState extends ConsumerState<RootAppWidget>
       // Fall through with the bare id — see above.
     }
     if (!mounted) return;
-    ref
-        .read(AppRouter.routerProvider)
-        .go(destination.location, extra: extra);
+    ref.read(AppRouter.routerProvider).go(destination.location, extra: extra);
     LaunchTrail.add('navigated(prefilled) -> ${destination.location}');
   }
 

@@ -28,6 +28,28 @@ class LaunchTrail {
   static SharedPreferences? _prefs;
   static String? _previous;
 
+  /// Native-side observations, written by AppDelegate into the same UserDefaults
+  /// store (shared_preferences prefixes keys with "flutter.").
+  ///
+  /// Some of these are written DURING a session, not at launch — a foreground
+  /// delivery or a backgrounded tap — so they are re-read on resume by
+  /// [pullNative], not only once by [begin].
+  static const _nativeKeys = [
+    'ios_launch_options',
+    'ios_delegate_at_launch',
+    'ios_delegate_after_delay',
+    'ios_legacy_launch_class',
+    'ios_legacy_launch_userinfo',
+    'ios_legacy_launch_payload',
+    'ios_un_response_payload',
+    'ios_legacy_resume_payload',
+    'ios_un_willpresent',
+  ];
+
+  /// The last value taped for each native key, so a resume only adds a line
+  /// when something actually changed.
+  static final Map<String, String> _nativeSeen = {};
+
   /// Roll the last tape aside and start a fresh one. Call once, early.
   ///
   /// Events recorded before this runs are not lost: they buffer in memory and
@@ -42,26 +64,41 @@ class LaunchTrail {
       }
       _prefs = prefs;
 
-      // Native-side observations, written by AppDelegate into the same
-      // UserDefaults store (shared_preferences prefixes keys with "flutter.").
-      // These answer whether our delegate assignment actually TOOK and whether
-      // anything re-claimed it afterwards — the theory-free version of the
-      // question four candidates have now failed to settle.
-      for (final k in const [
-        'ios_launch_options',
-        'ios_delegate_at_launch',
-        'ios_delegate_after_delay',
-        'ios_legacy_launch_class',
-        'ios_legacy_launch_userinfo',
-        'ios_legacy_launch_payload',
-      ]) {
+      for (final k in _nativeKeys) {
         final v = prefs.getString(k);
-        if (v != null) _events.insert(0, 'native $k=$v');
+        if (v != null) {
+          _nativeSeen[k] = v;
+          _events.insert(0, 'native $k=$v');
+        }
       }
       _persist();
     } catch (_) {
       // A recorder that breaks the app it is recording is worse than no
       // recorder. Memory-only from here.
+    }
+  }
+
+  /// Re-read the native keys and tape anything that changed since last look.
+  ///
+  /// WHY A SECOND READ EXISTS. [begin] runs once, at launch. But a notification
+  /// that arrives while the app is already open — a foreground delivery, or a
+  /// backgrounded tap — is written by AppDelegate AFTER that read, so a
+  /// launch-only read can never show it. This is called on resume, just before
+  /// the trail dialog, so the dev build can see what the OS did while it was
+  /// away.
+  static void pullNative() {
+    final prefs = _prefs;
+    if (prefs == null) return;
+    try {
+      for (final k in _nativeKeys) {
+        final v = prefs.getString(k);
+        if (v == null || v.isEmpty) continue;
+        if (_nativeSeen[k] == v) continue;
+        _nativeSeen[k] = v;
+        add('native $k=$v');
+      }
+    } catch (_) {
+      /* best effort — a recorder must not break what it records */
     }
   }
 
