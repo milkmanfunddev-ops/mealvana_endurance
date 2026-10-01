@@ -301,7 +301,7 @@ class AppDatabase extends _$AppDatabase {
   /// app_config.current_schema_version must be bumped to 20 when the build
   /// carrying this ships. NOTE: on develop, Vana holds v21 — nothing of Vana
   /// may live at or below v20.
-  int get schemaVersion => 20;
+  int get schemaVersion => 22;
 
   /// Ensure sync tracking columns exist for user-authored tables.
   /// Uses ALTER TABLE IF NOT EXISTS which is supported in modern SQLite (3.35+).
@@ -613,6 +613,37 @@ class AppDatabase extends _$AppDatabase {
           await addColumn('users', 'has_bento_box', 'INTEGER');
           await addColumn('users', 'typical_wetsuit', 'INTEGER');
           await addColumn('users', 'typical_swim_cap_type', 'TEXT');
+        }
+
+        // v21 is RESERVED, not skipped. `develop` owns it for the Vana tables
+        // (user_entitlements, meal_plans, plan_meals, user_memories), which
+        // this release branch does not carry. The step exists and does nothing
+        // so the ladder has no hole: a prod device at v20 walks 21 harmlessly
+        // on its way to 22, and a dev device already at 21 keeps the tables it
+        // has. When the two lineages merge, develop's real v21 body belongs
+        // here and this placeholder goes.
+        if (from < 21) {
+          // Intentionally empty — see above.
+        }
+
+        // v22, NOT v21 — and the gap is deliberate. `develop` already uses
+        // schemaVersion 21 for the Vana tables (user_entitlements, meal_plans,
+        // plan_meals, user_memories). If this release ALSO claimed 21, a device
+        // carrying develop's v21 from a dev TestFlight would have from == to,
+        // Drift would skip onUpgrade entirely, duration_source would never be
+        // added, and the startup integrity check would recover the only way it
+        // can — by deleting and rebuilding the local database. That is exactly
+        // the July 2026 wipe (DEV-60/61) the schema guard test was written for.
+        //
+        // Taking 22 means a device from either lineage runs this step. When the
+        // release work is cherry-picked to develop, this step must be
+        // RENUMBERED above whatever develop holds by then — merging it as-is
+        // would recreate the collision from the other side.
+        if (from < 22) {
+          // P3 (ruled 2026-09-30): provenance for an importer-derived duration.
+          // Written only as 'estimated'; NULL means authoritative, so nothing
+          // needs back-filling and no existing row changes meaning.
+          await addColumn('activities', 'duration_source', 'TEXT');
         }
       },
 

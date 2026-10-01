@@ -108,9 +108,15 @@ void main() {
 /// 2026-09-11 re-pin at the SAME version: v20 is unreleased (this branch owns
 /// it; Vana holds v21 on develop) and gained the eight users sport-preference
 /// columns after the Stage E walk found saves silently dropping them.
-const _pinnedVersion = 20;
+///
+/// 2026-10-01: v22 for `activities.duration_source` (P3). It SKIPS 21
+/// deliberately — develop holds 21 for the Vana tables, and a release that also
+/// claimed 21 would leave a dev-TestFlight device with from == to, so Drift
+/// would skip onUpgrade and the integrity check would wipe the local database:
+/// the very failure this guard exists for, arriving from the other direction.
+const _pinnedVersion = 22;
 const _pinnedFingerprint =
-    'baf82b771b985da2163739fe00f1d2be779dad1df3e97a424fbfe3341ea4ded0';
+    '242db9fc97e1e64101fa5ba39fd7110d1f04ca51d16c60da80063d9f722c1d2a';
 
 /// The migration ladder in app_database.dart starts at `from < 7`; versions
 /// 1–6 predate it and were consolidated. Only guard from here upward.

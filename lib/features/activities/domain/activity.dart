@@ -23,6 +23,7 @@ class Activity {
     // Activity parameters (shared)
     this.distanceMiles,
     this.durationMinutes,
+    this.durationSource,
     this.paceTargetMinutesPerMile,
     this.intensityLevel,
 
@@ -134,6 +135,16 @@ class Activity {
   // Activity parameters (shared)
   final double? distanceMiles;
   final int? durationMinutes;
+
+  /// Provenance for [durationMinutes]. Only ever `'estimated'`, set by the
+  /// importer when it derived the duration from distance and usual pace.
+  /// NULL means authoritative — provider-supplied, athlete-entered or legacy —
+  /// and an authoritative duration is never overwritten (ruled 2026-09-30).
+  final String? durationSource;
+
+  /// True when this duration is the importer's estimate rather than a number
+  /// anyone supplied. The single test all three ruled clauses reduce to.
+  bool get isDurationEstimated => durationSource == 'estimated';
   final double? paceTargetMinutesPerMile;
   final IntensityLevel? intensityLevel;
 
@@ -269,6 +280,7 @@ class Activity {
       'caloriesBurned': caloriesBurned,
       'distanceMiles': distanceMiles,
       'durationMinutes': durationMinutes,
+      'durationSource': durationSource,
       'paceTargetMinutesPerMile': paceTargetMinutesPerMile,
       'intensityLevel': intensityLevel?.name,
       'cyclingSpeedMph': cyclingSpeedMph,
@@ -335,6 +347,7 @@ class Activity {
     ActivityStatus? status,
     double? distanceMiles,
     int? durationMinutes,
+    String? durationSource,
     double? paceTargetMinutesPerMile,
     IntensityLevel? intensityLevel,
     double? cyclingSpeedMph,
@@ -407,6 +420,7 @@ class Activity {
       status: status ?? this.status,
       distanceMiles: distanceMiles ?? this.distanceMiles,
       durationMinutes: durationMinutes ?? this.durationMinutes,
+      durationSource: durationSource ?? this.durationSource,
       paceTargetMinutesPerMile:
           paceTargetMinutesPerMile ?? this.paceTargetMinutesPerMile,
       intensityLevel: intensityLevel ?? this.intensityLevel,
@@ -490,6 +504,7 @@ class Activity {
         other.status == status &&
         other.distanceMiles == distanceMiles &&
         other.durationMinutes == durationMinutes &&
+        other.durationSource == durationSource &&
         other.paceTargetMinutesPerMile == paceTargetMinutesPerMile &&
         other.intensityLevel == intensityLevel &&
         other.cyclingSpeedMph == cyclingSpeedMph &&
@@ -613,7 +628,10 @@ class Activity {
           parentSummaryId,
           isParent,
         ) ^
-        (hiddenByDisconnect == true ? 0x1 : 0x0);
+        (hiddenByDisconnect == true ? 0x1 : 0x0) ^
+        // Object.hash caps at 20 positional args and all three groups are
+        // full, so this folds in on its own rather than forcing a reshuffle.
+        durationSource.hashCode;
   }
 
   @override

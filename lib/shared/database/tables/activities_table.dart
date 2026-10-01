@@ -44,6 +44,20 @@ class ActivitiesTable extends Table {
   RealColumn get distanceMiles => real().nullable().named('distance_miles')();
   IntColumn get durationMinutes =>
       integer().nullable().named('duration_minutes')();
+
+  /// Where [durationMinutes] came from. Written ONLY as `'estimated'`, and only
+  /// by the importer when it derived the duration from distance and usual pace
+  /// (ruled 2026-09-30).
+  ///
+  /// NULL means authoritative — provider-supplied, athlete-entered, or legacy.
+  /// That asymmetry is deliberate: the three ruled clauses ("mark it
+  /// estimated", "never overwrite a provider or athlete duration",
+  /// "re-estimate only while still estimated") all reduce to a single test,
+  /// `durationSource == 'estimated'`, and nothing has to be back-filled or
+  /// written on any other path to make them hold. A row we did not estimate is
+  /// one we must not touch, and absence says exactly that.
+  TextColumn get durationSource =>
+      text().nullable().named('duration_source')();
   RealColumn get paceTargetMinutesPerMile =>
       real().nullable().named('pace_target_minutes_per_mile')();
   TextColumn get intensityLevel => text().nullable().named(

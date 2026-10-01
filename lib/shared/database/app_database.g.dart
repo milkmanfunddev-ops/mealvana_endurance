@@ -10910,6 +10910,17 @@ class $ActivitiesTableTable extends ActivitiesTable
     type: DriftSqlType.int,
     requiredDuringInsert: false,
   );
+  static const VerificationMeta _durationSourceMeta = const VerificationMeta(
+    'durationSource',
+  );
+  @override
+  late final GeneratedColumn<String> durationSource = GeneratedColumn<String>(
+    'duration_source',
+    aliasedName,
+    true,
+    type: DriftSqlType.string,
+    requiredDuringInsert: false,
+  );
   static const VerificationMeta _paceTargetMinutesPerMileMeta =
       const VerificationMeta('paceTargetMinutesPerMile');
   @override
@@ -11596,6 +11607,7 @@ class $ActivitiesTableTable extends ActivitiesTable
     caloriesBurned,
     distanceMiles,
     durationMinutes,
+    durationSource,
     paceTargetMinutesPerMile,
     intensityLevel,
     cyclingSpeedMph,
@@ -11754,6 +11766,15 @@ class $ActivitiesTableTable extends ActivitiesTable
         durationMinutes.isAcceptableOrUnknown(
           data['duration_minutes']!,
           _durationMinutesMeta,
+        ),
+      );
+    }
+    if (data.containsKey('duration_source')) {
+      context.handle(
+        _durationSourceMeta,
+        durationSource.isAcceptableOrUnknown(
+          data['duration_source']!,
+          _durationSourceMeta,
         ),
       );
     }
@@ -12306,6 +12327,10 @@ class $ActivitiesTableTable extends ActivitiesTable
         DriftSqlType.int,
         data['${effectivePrefix}duration_minutes'],
       ),
+      durationSource: attachedDatabase.typeMapping.read(
+        DriftSqlType.string,
+        data['${effectivePrefix}duration_source'],
+      ),
       paceTargetMinutesPerMile: attachedDatabase.typeMapping.read(
         DriftSqlType.double,
         data['${effectivePrefix}pace_target_minutes_per_mile'],
@@ -12563,6 +12588,19 @@ class Activity extends DataClass implements Insertable<Activity> {
   final double? caloriesBurned;
   final double? distanceMiles;
   final int? durationMinutes;
+
+  /// Where [durationMinutes] came from. Written ONLY as `'estimated'`, and only
+  /// by the importer when it derived the duration from distance and usual pace
+  /// (ruled 2026-09-30).
+  ///
+  /// NULL means authoritative — provider-supplied, athlete-entered, or legacy.
+  /// That asymmetry is deliberate: the three ruled clauses ("mark it
+  /// estimated", "never overwrite a provider or athlete duration",
+  /// "re-estimate only while still estimated") all reduce to a single test,
+  /// `durationSource == 'estimated'`, and nothing has to be back-filled or
+  /// written on any other path to make them hold. A row we did not estimate is
+  /// one we must not touch, and absence says exactly that.
+  final String? durationSource;
   final double? paceTargetMinutesPerMile;
   final String? intensityLevel;
   final double? cyclingSpeedMph;
@@ -12634,6 +12672,7 @@ class Activity extends DataClass implements Insertable<Activity> {
     this.caloriesBurned,
     this.distanceMiles,
     this.durationMinutes,
+    this.durationSource,
     this.paceTargetMinutesPerMile,
     this.intensityLevel,
     this.cyclingSpeedMph,
@@ -12717,6 +12756,9 @@ class Activity extends DataClass implements Insertable<Activity> {
     }
     if (!nullToAbsent || durationMinutes != null) {
       map['duration_minutes'] = Variable<int>(durationMinutes);
+    }
+    if (!nullToAbsent || durationSource != null) {
+      map['duration_source'] = Variable<String>(durationSource);
     }
     if (!nullToAbsent || paceTargetMinutesPerMile != null) {
       map['pace_target_minutes_per_mile'] = Variable<double>(
@@ -12919,6 +12961,9 @@ class Activity extends DataClass implements Insertable<Activity> {
       durationMinutes: durationMinutes == null && nullToAbsent
           ? const Value.absent()
           : Value(durationMinutes),
+      durationSource: durationSource == null && nullToAbsent
+          ? const Value.absent()
+          : Value(durationSource),
       paceTargetMinutesPerMile: paceTargetMinutesPerMile == null && nullToAbsent
           ? const Value.absent()
           : Value(paceTargetMinutesPerMile),
@@ -13105,6 +13150,7 @@ class Activity extends DataClass implements Insertable<Activity> {
       caloriesBurned: serializer.fromJson<double?>(json['caloriesBurned']),
       distanceMiles: serializer.fromJson<double?>(json['distanceMiles']),
       durationMinutes: serializer.fromJson<int?>(json['durationMinutes']),
+      durationSource: serializer.fromJson<String?>(json['durationSource']),
       paceTargetMinutesPerMile: serializer.fromJson<double?>(
         json['paceTargetMinutesPerMile'],
       ),
@@ -13225,6 +13271,7 @@ class Activity extends DataClass implements Insertable<Activity> {
       'caloriesBurned': serializer.toJson<double?>(caloriesBurned),
       'distanceMiles': serializer.toJson<double?>(distanceMiles),
       'durationMinutes': serializer.toJson<int?>(durationMinutes),
+      'durationSource': serializer.toJson<String?>(durationSource),
       'paceTargetMinutesPerMile': serializer.toJson<double?>(
         paceTargetMinutesPerMile,
       ),
@@ -13309,6 +13356,7 @@ class Activity extends DataClass implements Insertable<Activity> {
     Value<double?> caloriesBurned = const Value.absent(),
     Value<double?> distanceMiles = const Value.absent(),
     Value<int?> durationMinutes = const Value.absent(),
+    Value<String?> durationSource = const Value.absent(),
     Value<double?> paceTargetMinutesPerMile = const Value.absent(),
     Value<String?> intensityLevel = const Value.absent(),
     Value<double?> cyclingSpeedMph = const Value.absent(),
@@ -13386,6 +13434,9 @@ class Activity extends DataClass implements Insertable<Activity> {
     durationMinutes: durationMinutes.present
         ? durationMinutes.value
         : this.durationMinutes,
+    durationSource: durationSource.present
+        ? durationSource.value
+        : this.durationSource,
     paceTargetMinutesPerMile: paceTargetMinutesPerMile.present
         ? paceTargetMinutesPerMile.value
         : this.paceTargetMinutesPerMile,
@@ -13551,6 +13602,9 @@ class Activity extends DataClass implements Insertable<Activity> {
       durationMinutes: data.durationMinutes.present
           ? data.durationMinutes.value
           : this.durationMinutes,
+      durationSource: data.durationSource.present
+          ? data.durationSource.value
+          : this.durationSource,
       paceTargetMinutesPerMile: data.paceTargetMinutesPerMile.present
           ? data.paceTargetMinutesPerMile.value
           : this.paceTargetMinutesPerMile,
@@ -13723,6 +13777,7 @@ class Activity extends DataClass implements Insertable<Activity> {
           ..write('caloriesBurned: $caloriesBurned, ')
           ..write('distanceMiles: $distanceMiles, ')
           ..write('durationMinutes: $durationMinutes, ')
+          ..write('durationSource: $durationSource, ')
           ..write('paceTargetMinutesPerMile: $paceTargetMinutesPerMile, ')
           ..write('intensityLevel: $intensityLevel, ')
           ..write('cyclingSpeedMph: $cyclingSpeedMph, ')
@@ -13799,6 +13854,7 @@ class Activity extends DataClass implements Insertable<Activity> {
     caloriesBurned,
     distanceMiles,
     durationMinutes,
+    durationSource,
     paceTargetMinutesPerMile,
     intensityLevel,
     cyclingSpeedMph,
@@ -13874,6 +13930,7 @@ class Activity extends DataClass implements Insertable<Activity> {
           other.caloriesBurned == this.caloriesBurned &&
           other.distanceMiles == this.distanceMiles &&
           other.durationMinutes == this.durationMinutes &&
+          other.durationSource == this.durationSource &&
           other.paceTargetMinutesPerMile == this.paceTargetMinutesPerMile &&
           other.intensityLevel == this.intensityLevel &&
           other.cyclingSpeedMph == this.cyclingSpeedMph &&
@@ -13947,6 +14004,7 @@ class ActivitiesTableCompanion extends UpdateCompanion<Activity> {
   final Value<double?> caloriesBurned;
   final Value<double?> distanceMiles;
   final Value<int?> durationMinutes;
+  final Value<String?> durationSource;
   final Value<double?> paceTargetMinutesPerMile;
   final Value<String?> intensityLevel;
   final Value<double?> cyclingSpeedMph;
@@ -14019,6 +14077,7 @@ class ActivitiesTableCompanion extends UpdateCompanion<Activity> {
     this.caloriesBurned = const Value.absent(),
     this.distanceMiles = const Value.absent(),
     this.durationMinutes = const Value.absent(),
+    this.durationSource = const Value.absent(),
     this.paceTargetMinutesPerMile = const Value.absent(),
     this.intensityLevel = const Value.absent(),
     this.cyclingSpeedMph = const Value.absent(),
@@ -14092,6 +14151,7 @@ class ActivitiesTableCompanion extends UpdateCompanion<Activity> {
     this.caloriesBurned = const Value.absent(),
     this.distanceMiles = const Value.absent(),
     this.durationMinutes = const Value.absent(),
+    this.durationSource = const Value.absent(),
     this.paceTargetMinutesPerMile = const Value.absent(),
     this.intensityLevel = const Value.absent(),
     this.cyclingSpeedMph = const Value.absent(),
@@ -14170,6 +14230,7 @@ class ActivitiesTableCompanion extends UpdateCompanion<Activity> {
     Expression<double>? caloriesBurned,
     Expression<double>? distanceMiles,
     Expression<int>? durationMinutes,
+    Expression<String>? durationSource,
     Expression<double>? paceTargetMinutesPerMile,
     Expression<String>? intensityLevel,
     Expression<double>? cyclingSpeedMph,
@@ -14243,6 +14304,7 @@ class ActivitiesTableCompanion extends UpdateCompanion<Activity> {
       if (caloriesBurned != null) 'calories_burned': caloriesBurned,
       if (distanceMiles != null) 'distance_miles': distanceMiles,
       if (durationMinutes != null) 'duration_minutes': durationMinutes,
+      if (durationSource != null) 'duration_source': durationSource,
       if (paceTargetMinutesPerMile != null)
         'pace_target_minutes_per_mile': paceTargetMinutesPerMile,
       if (intensityLevel != null) 'intensity_level': intensityLevel,
@@ -14335,6 +14397,7 @@ class ActivitiesTableCompanion extends UpdateCompanion<Activity> {
     Value<double?>? caloriesBurned,
     Value<double?>? distanceMiles,
     Value<int?>? durationMinutes,
+    Value<String?>? durationSource,
     Value<double?>? paceTargetMinutesPerMile,
     Value<String?>? intensityLevel,
     Value<double?>? cyclingSpeedMph,
@@ -14408,6 +14471,7 @@ class ActivitiesTableCompanion extends UpdateCompanion<Activity> {
       caloriesBurned: caloriesBurned ?? this.caloriesBurned,
       distanceMiles: distanceMiles ?? this.distanceMiles,
       durationMinutes: durationMinutes ?? this.durationMinutes,
+      durationSource: durationSource ?? this.durationSource,
       paceTargetMinutesPerMile:
           paceTargetMinutesPerMile ?? this.paceTargetMinutesPerMile,
       intensityLevel: intensityLevel ?? this.intensityLevel,
@@ -14514,6 +14578,9 @@ class ActivitiesTableCompanion extends UpdateCompanion<Activity> {
     }
     if (durationMinutes.present) {
       map['duration_minutes'] = Variable<int>(durationMinutes.value);
+    }
+    if (durationSource.present) {
+      map['duration_source'] = Variable<String>(durationSource.value);
     }
     if (paceTargetMinutesPerMile.present) {
       map['pace_target_minutes_per_mile'] = Variable<double>(
@@ -14734,6 +14801,7 @@ class ActivitiesTableCompanion extends UpdateCompanion<Activity> {
           ..write('caloriesBurned: $caloriesBurned, ')
           ..write('distanceMiles: $distanceMiles, ')
           ..write('durationMinutes: $durationMinutes, ')
+          ..write('durationSource: $durationSource, ')
           ..write('paceTargetMinutesPerMile: $paceTargetMinutesPerMile, ')
           ..write('intensityLevel: $intensityLevel, ')
           ..write('cyclingSpeedMph: $cyclingSpeedMph, ')
@@ -47671,6 +47739,7 @@ typedef $$ActivitiesTableTableCreateCompanionBuilder =
       Value<double?> caloriesBurned,
       Value<double?> distanceMiles,
       Value<int?> durationMinutes,
+      Value<String?> durationSource,
       Value<double?> paceTargetMinutesPerMile,
       Value<String?> intensityLevel,
       Value<double?> cyclingSpeedMph,
@@ -47745,6 +47814,7 @@ typedef $$ActivitiesTableTableUpdateCompanionBuilder =
       Value<double?> caloriesBurned,
       Value<double?> distanceMiles,
       Value<int?> durationMinutes,
+      Value<String?> durationSource,
       Value<double?> paceTargetMinutesPerMile,
       Value<String?> intensityLevel,
       Value<double?> cyclingSpeedMph,
@@ -47868,6 +47938,11 @@ class $$ActivitiesTableTableFilterComposer
 
   ColumnFilters<int> get durationMinutes => $composableBuilder(
     column: $table.durationMinutes,
+    builder: (column) => ColumnFilters(column),
+  );
+
+  ColumnFilters<String> get durationSource => $composableBuilder(
+    column: $table.durationSource,
     builder: (column) => ColumnFilters(column),
   );
 
@@ -48231,6 +48306,11 @@ class $$ActivitiesTableTableOrderingComposer
     builder: (column) => ColumnOrderings(column),
   );
 
+  ColumnOrderings<String> get durationSource => $composableBuilder(
+    column: $table.durationSource,
+    builder: (column) => ColumnOrderings(column),
+  );
+
   ColumnOrderings<double> get paceTargetMinutesPerMile => $composableBuilder(
     column: $table.paceTargetMinutesPerMile,
     builder: (column) => ColumnOrderings(column),
@@ -48583,6 +48663,11 @@ class $$ActivitiesTableTableAnnotationComposer
     builder: (column) => column,
   );
 
+  GeneratedColumn<String> get durationSource => $composableBuilder(
+    column: $table.durationSource,
+    builder: (column) => column,
+  );
+
   GeneratedColumn<double> get paceTargetMinutesPerMile => $composableBuilder(
     column: $table.paceTargetMinutesPerMile,
     builder: (column) => column,
@@ -48901,6 +48986,7 @@ class $$ActivitiesTableTableTableManager
                 Value<double?> caloriesBurned = const Value.absent(),
                 Value<double?> distanceMiles = const Value.absent(),
                 Value<int?> durationMinutes = const Value.absent(),
+                Value<String?> durationSource = const Value.absent(),
                 Value<double?> paceTargetMinutesPerMile = const Value.absent(),
                 Value<String?> intensityLevel = const Value.absent(),
                 Value<double?> cyclingSpeedMph = const Value.absent(),
@@ -48973,6 +49059,7 @@ class $$ActivitiesTableTableTableManager
                 caloriesBurned: caloriesBurned,
                 distanceMiles: distanceMiles,
                 durationMinutes: durationMinutes,
+                durationSource: durationSource,
                 paceTargetMinutesPerMile: paceTargetMinutesPerMile,
                 intensityLevel: intensityLevel,
                 cyclingSpeedMph: cyclingSpeedMph,
@@ -49047,6 +49134,7 @@ class $$ActivitiesTableTableTableManager
                 Value<double?> caloriesBurned = const Value.absent(),
                 Value<double?> distanceMiles = const Value.absent(),
                 Value<int?> durationMinutes = const Value.absent(),
+                Value<String?> durationSource = const Value.absent(),
                 Value<double?> paceTargetMinutesPerMile = const Value.absent(),
                 Value<String?> intensityLevel = const Value.absent(),
                 Value<double?> cyclingSpeedMph = const Value.absent(),
@@ -49119,6 +49207,7 @@ class $$ActivitiesTableTableTableManager
                 caloriesBurned: caloriesBurned,
                 distanceMiles: distanceMiles,
                 durationMinutes: durationMinutes,
+                durationSource: durationSource,
                 paceTargetMinutesPerMile: paceTargetMinutesPerMile,
                 intensityLevel: intensityLevel,
                 cyclingSpeedMph: cyclingSpeedMph,
