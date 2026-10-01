@@ -497,11 +497,22 @@ class NotificationService {
   static Future<void> consumeLegacyResumeTap() async {
     try {
       final prefs = await SharedPreferences.getInstance();
-      final payload = prefs.getString('ios_legacy_resume_payload');
-      if (payload == null || payload.isEmpty) return;
-      await prefs.remove('ios_legacy_resume_payload');
-      LaunchTrail.add('legacy_resume payload=$payload (consumed)');
-      _handleNotificationPayload(payload);
+      // Two doors can leave a backgrounded tap here, and which one fired is
+      // the attribution the next tape needs:
+      //   ios_un_response_payload  — the LIVE door (UN delegate we claim)
+      //   ios_legacy_resume_payload — the legacy fallback, only consulted by
+      //                               UIKit when no UN delegate exists
+      for (final key in const [
+        'ios_un_response_payload',
+        'ios_legacy_resume_payload',
+      ]) {
+        final payload = prefs.getString(key);
+        if (payload == null || payload.isEmpty) continue;
+        await prefs.remove(key);
+        LaunchTrail.add('$key payload=$payload (consumed)');
+        _handleNotificationPayload(payload);
+        return;
+      }
     } catch (e) {
       LaunchTrail.add('legacy_resume read failed: $e');
     }

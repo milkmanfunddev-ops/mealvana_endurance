@@ -43,10 +43,11 @@ void main() {
       expect(e['distance'], 13.1);
     });
 
-    test('a RIDE never carries distance or pace into run-shaped keys', () {
-      // Cycling's initializer does not read initialDistance, and it
-      // reinterprets initialPace as 60/pace to get mph — passing either would
-      // quietly turn a ride into wrong numbers on screen.
+    test('a RIDE carries distance but never pace', () {
+      // Cycling DOES read initialDistance (new_activity_screen.dart:383), so a
+      // ride pre-fills its distance like any other sport. It also reinterprets
+      // initialPace as 60/pace to get mph, so pace stays out — passing it would
+      // quietly turn a ride's pace into a speed.
       final e = hydratePlanWorkoutExtra(
         activityId: id,
         activityTypeName: 'cycling',
@@ -57,7 +58,7 @@ void main() {
       );
       expect(e['activityType'], 'cycling');
       expect(e['initialDurationMinutes'], 150);
-      expect(e.containsKey('distance'), isFalse);
+      expect(e['distance'], 40);
       expect(e.containsKey('goalPace'), isFalse);
       expect(e.containsKey('initialPace'), isFalse);
     });

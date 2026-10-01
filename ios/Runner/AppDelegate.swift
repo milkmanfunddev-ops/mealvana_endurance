@@ -53,7 +53,26 @@ import MetricKit
     // So: give the chain back. The instrumentation below still records WHO
     // holds the delegate, which turns this revert into a measurement rather
     // than a guess — if backgrounded recovers, the claim was the regression.
-    //   UNUserNotificationCenter.current().delegate = self   <- deliberately not set
+    // CLAIM THE UN DELEGATE, BEFORE ONESIGNAL INITIALISES.
+    //
+    // Evidence (tapes, 2026-10-01): with no claim, `ios_delegate_at_launch` reads
+    // OSUNUserNotificationCenterDelegate — OneSignal holds it, nothing of ours is
+    // in the chain, and a BACKGROUNDED tap on our notification goes nowhere. The
+    // legacy `application:didReceiveLocalNotification` door is never consulted
+    // either, because UIKit only falls back to it when NO UN delegate exists.
+    //
+    // Claiming alone was ALSO not enough (08a0bb127): that build showed
+    // ios_delegate_at_launch=AppDelegate and backgrounded still failed, which
+    // says FlutterAppDelegate's own forwarding does not carry the response to
+    // flutter_local_notifications. So we claim AND implement
+    // `didReceive(response)` ourselves below — delegate plus door, not delegate
+    // and hope.
+    //
+    // OneSignal's SDK forwards to whatever delegate preceded it, which is why
+    // this is set BEFORE plugin registration and before OneSignal initialises
+    // from Dart. Push delivery is the thing this could plausibly disturb, and
+    // it is being explicitly re-tested before the cut.
+    UNUserNotificationCenter.current().delegate = self
 
     GeneratedPluginRegistrant.register(with: self)
 
@@ -132,6 +151,40 @@ import MetricKit
     }
 
     return super.application(application, didFinishLaunchingWithOptions: launchOptions)
+  }
+
+  /// THE LIVE RESUME DOOR — a tap while the app is BACKGROUNDED.
+  ///
+  /// Since iOS 10 every notification response, including one for a
+  /// legacy-scheduled notification, is delivered here when a UN delegate
+  /// exists. We claim that delegate in didFinishLaunching, so this is the
+  /// method that actually runs; the legacy `didReceiveLocalNotification`
+  /// below is kept only as a belt-and-braces fallback for the case where
+  /// something strips our claim.
+  ///
+  /// We extract the payload OURSELVES rather than trusting the chain to carry
+  /// it: a build that claimed the delegate and relied on forwarding
+  /// (08a0bb127) left backgrounded taps dead, which is the evidence that the
+  /// forwarding does not reach flutter_local_notifications.
+  ///
+  /// `super` is still called, so anything else in the chain — OneSignal's
+  /// handling of its OWN notifications in particular — keeps working.
+  override func userNotificationCenter(
+    _ center: UNUserNotificationCenter,
+    didReceive response: UNNotificationResponse,
+    withCompletionHandler completionHandler: @escaping () -> Void
+  ) {
+    let info = response.notification.request.content.userInfo
+    let defaults = UserDefaults.standard
+    defaults.set(String(describing: info), forKey: "flutter.ios_un_response_userinfo")
+    if let payload = info["payload"] as? String, !payload.isEmpty {
+      defaults.set(payload, forKey: "flutter.ios_un_response_payload")
+    }
+    super.userNotificationCenter(
+      center,
+      didReceive: response,
+      withCompletionHandler: completionHandler
+    )
   }
 
   /// THE LEGACY RESUME DOOR — the sibling of the launch-key fix.
