@@ -103,30 +103,7 @@ class _RootAppWidgetState extends ConsumerState<RootAppWidget>
       // can watch — so the app shows its own working.
       if (ref.read(appConfigProvider).devModeEnabled) {
         Future.delayed(const Duration(seconds: 4), () {
-          if (!mounted || LaunchTrail.isEmpty) return;
-          // Read the context AFTER the gap, from the global key, and bail if
-          // the tree moved on — the lint's actual concern.
-          final ctx = sentryNavigatorKey.currentContext;
-          if (ctx == null || !ctx.mounted) return;
-          // ignore: use_build_context_synchronously
-          showDialog<void>(
-            context: ctx,
-            builder: (c) => AlertDialog(
-              title: const Text('Launch trail (dev)'),
-              content: SingleChildScrollView(
-                child: SelectableText(
-                  LaunchTrail.text,
-                  style: const TextStyle(fontSize: 11, height: 1.4),
-                ),
-              ),
-              actions: [
-                TextButton(
-                  onPressed: () => Navigator.of(c).pop(),
-                  child: const Text('Dismiss'),
-                ),
-              ],
-            ),
-          );
+          _showTrailDialog();
         });
       }
 
@@ -137,9 +114,47 @@ class _RootAppWidgetState extends ConsumerState<RootAppWidget>
     });
   }
 
+  /// Dev-only: put the current tape on screen. Used on launch AND on resume —
+  /// a BACKGROUNDED tap produces no new launch, so without the resume path the
+  /// backgrounded case is unobservable on device, which is how it stayed
+  /// "presumed working" until someone finally tried it.
+  int _trailShownAt = -1;
+  void _showTrailDialog() {
+    if (!mounted || LaunchTrail.isEmpty) return;
+    if (LaunchTrail.length == _trailShownAt) return; // nothing new since last time
+    _trailShownAt = LaunchTrail.length;
+    final ctx = sentryNavigatorKey.currentContext;
+    if (ctx == null || !ctx.mounted) return;
+    // ignore: use_build_context_synchronously
+    showDialog<void>(
+      context: ctx,
+      builder: (c) => AlertDialog(
+        title: const Text('Launch trail (dev)'),
+        content: SingleChildScrollView(
+          child: SelectableText(
+            LaunchTrail.text,
+            style: const TextStyle(fontSize: 11, height: 1.4),
+          ),
+        ),
+        actions: [
+          TextButton(
+            onPressed: () => Navigator.of(c).pop(),
+            child: const Text('Dismiss'),
+          ),
+        ],
+      ),
+    );
+  }
+
   @override
   void didChangeAppLifecycleState(AppLifecycleState state) {
     super.didChangeAppLifecycleState(state);
+    if (state == AppLifecycleState.resumed) {
+      LaunchTrail.add('app resumed');
+      if (ref.read(appConfigProvider).devModeEnabled) {
+        Future.delayed(const Duration(seconds: 3), _showTrailDialog);
+      }
+    }
     // G27: the on-open catch-up also runs on every foreground resume.
     if (state == AppLifecycleState.resumed) {
       ref.read(carbNudgeCoordinatorProvider.notifier).run();

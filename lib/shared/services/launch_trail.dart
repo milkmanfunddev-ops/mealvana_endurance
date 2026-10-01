@@ -92,4 +92,8 @@ class LaunchTrail {
   static String? get previous => _previous;
 
   static bool get isEmpty => _events.isEmpty;
+
+  /// How many lines the tape holds — used to tell "nothing new since I last
+  /// looked" from "a tap just added lines".
+  static int get length => _events.length;
 }
