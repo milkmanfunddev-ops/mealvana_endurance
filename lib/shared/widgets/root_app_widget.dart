@@ -240,9 +240,25 @@ class _RootAppWidgetState extends ConsumerState<RootAppWidget>
       return;
     }
 
-    ref
-        .read(AppRouter.routerProvider)
-        .go(destination.location, extra: destination.extra);
+    _deepLinkTo(destination.location, destination.extra);
+  }
+
+  /// A deep link must leave a way back.
+  ///
+  /// `go` REPLACES the navigation stack, so a nudge tap landed on the create
+  /// screen with nothing beneath it: the top-left back control had nothing to
+  /// pop and the athlete was trapped with no way out but force-quitting
+  /// (filed 2026-10-01). Every shipping nudge tap lands there, so this is the
+  /// flagship landing, not an edge case.
+  ///
+  /// Seed home, then push, so back behaves exactly as it does when the screen
+  /// is reached by hand. Safe to do synchronously here because the caller has
+  /// already cleared `_isRoutableNow()` — the app is past the auth/startup
+  /// gate, so '/' will not redirect out from under the push.
+  void _deepLinkTo(String location, Object? extra) {
+    final router = ref.read(AppRouter.routerProvider);
+    router.go('/');
+    router.push(location, extra: extra);
   }
 
   Future<void> _goPrefilled(
@@ -276,7 +292,7 @@ class _RootAppWidgetState extends ConsumerState<RootAppWidget>
       // Fall through with the bare id — see above.
     }
     if (!mounted) return;
-    ref.read(AppRouter.routerProvider).go(destination.location, extra: extra);
+    _deepLinkTo(destination.location, extra);
     LaunchTrail.add('navigated(prefilled) -> ${destination.location}');
   }
 
