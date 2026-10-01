@@ -71,7 +71,7 @@ final class FoodSearchControllerProvider
 }
 
 String _$foodSearchControllerHash() =>
-    r'3d952e6c33bb5f129d5550d7beca5acbde9d903c';
+    r'7f12aa6537d4b433b383e229e06b1ef3956d7daa';
 
 /// Shared food search controller keyed by screen name.
 ///

@@ -115,8 +115,13 @@ void main() {
 /// would skip onUpgrade and the integrity check would wipe the local database:
 /// the very failure this guard exists for, arriving from the other direction.
 const _pinnedVersion = 22;
+// Re-pinned 2026-10-01 at the develop sync: develop's v22 schema is the
+// release line's PLUS the Vana tables (user_entitlements, meal_plans,
+// plan_meals, user_memories), so the two lineages legitimately carry
+// different fingerprints at the same version number until they converge.
+// The release line's value was 242db9fc97e1…; this is develop's.
 const _pinnedFingerprint =
-    '242db9fc97e1e64101fa5ba39fd7110d1f04ca51d16c60da80063d9f722c1d2a';
+    'bf2ff574cb0bc2026d0b4ac18b40aa59c78340e04e138fe99dbb6c99ec94840a';
 
 /// The migration ladder in app_database.dart starts at `from < 7`; versions
 /// 1–6 predate it and were consolidated. Only guard from here upward.
