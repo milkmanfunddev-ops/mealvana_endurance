@@ -327,7 +327,13 @@ class AppDatabase extends _$AppDatabase {
   /// notes meal_types batch library_meal_id`). Ships with Vana (1.28.0);
   /// Supabase app_config.current_schema_version must be bumped to 21 when
   /// that build ships.
-  int get schemaVersion => 21;
+  ///
+  /// v22: `activities.duration_source` (P3, ruled 2026-09-30) — provenance for
+  /// an importer-derived duration. Shipped to prod in 1.29.0, whose lineage
+  /// carries an EMPTY v21 (it never had Vana); the number is shared across
+  /// both lineages on purpose — see the onUpgrade comment at the v22 step.
+  /// Supabase app_config pointers move to 22 at that release's P7.
+  int get schemaVersion => 22;
 
   /// Ensure sync tracking columns exist for user-authored tables.
   /// Uses ALTER TABLE IF NOT EXISTS which is supported in modern SQLite (3.35+).
@@ -677,6 +683,24 @@ class AppDatabase extends _$AppDatabase {
             'INTEGER NOT NULL DEFAULT 0',
           );
           await addColumn('template_foods', 'solvent_min_ml', 'REAL');
+        }
+
+        // v22: `activities.duration_source` (P3, ruled 2026-09-30). 22 and not
+        // an extension of v21 because the 1.29.0 RELEASE line shipped this
+        // column at v22 above an EMPTY v21 (that lineage never carried Vana) —
+        // the two lineages must agree on what each number means, or a device
+        // crossing between builds hits from == to, Drift skips onUpgrade
+        // entirely, and the startup integrity check recovers the only way it
+        // can: by deleting and rebuilding the local database (the July 2026
+        // wipe, DEV-60/61). With both lineages at 22: a develop device at 21
+        // adds the column here; a release-line device at 22 changes nothing.
+        // (A release-line device moving ONTO a develop build also skips the
+        // v21 body — Vana tables absent — and takes the documented
+        // delete-and-resync recovery; the branching cleanup is the real fix.)
+        if (from < 22) {
+          // Written only as 'estimated'; NULL means authoritative, so nothing
+          // needs back-filling and no existing row changes meaning.
+          await addColumn('activities', 'duration_source', 'TEXT');
         }
       },
 
