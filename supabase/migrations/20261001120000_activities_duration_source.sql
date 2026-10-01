@@ -14,8 +14,18 @@
 --
 -- Additive and nullable, so it is safe to apply at any time and in either
 -- order relative to the app release: an older client never selects it, a newer
--- client does not require it. No app_config change accompanies this — the
--- Drift version moves 20 -> 21 but no resync is implied.
+-- client does not require it.
+--
+-- DRIFT VERSION: 21 -> 22, not 20 -> 21. v21 is reserved as a no-op upgrade
+-- step because develop already spends it on the Vana tables; shipping this as
+-- v21 would make `from == to` for a develop-built client, skip onUpgrade
+-- entirely, and trip the local-DB wipe (the July 2026 DEV-60/61 failure).
+--
+-- This column implies no resync of its own. The `app_config` pointers still
+-- move to 22 at P7 step 1 for hygiene (§7: `current` should equal the shipped
+-- Drift version); clients on 20 or 21 stay inside the compatibility window
+-- because min_supported_schema_version is far below them, so they read `ok`
+-- rather than resyncing. Nothing here touches the support floor.
 ALTER TABLE public.activities
   ADD COLUMN IF NOT EXISTS duration_source TEXT;
 
