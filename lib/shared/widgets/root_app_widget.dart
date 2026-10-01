@@ -153,9 +153,13 @@ class _RootAppWidgetState extends ConsumerState<RootAppWidget>
 
     // Hold it. Dropping the tap is the failure; arriving late is not.
     if (!_isRoutableNow()) {
+      // ignore: avoid_print
+      print('[LAUNCH] HELD id=$activityId type=$type (startup not routable)');
       _deferredTap = (id: activityId, type: type);
       return;
     }
+    // ignore: avoid_print
+    print('[LAUNCH] routing id=$activityId type=$type');
 
     // The tap is the attribution anchor for "did the nudge cause a plan".
     // Recorded before navigating so a slow write cannot lose it to the
@@ -228,6 +232,8 @@ class _RootAppWidgetState extends ConsumerState<RootAppWidget>
   void _flushDeferredTap() {
     final tap = _deferredTap;
     if (tap == null || !_isRoutableNow()) return;
+    // ignore: avoid_print
+    print('[LAUNCH] REPLAY id=${tap.id} type=${tap.type}');
     _deferredTap = null;
     _handleNotificationNavigation(tap.id, tap.type);
   }

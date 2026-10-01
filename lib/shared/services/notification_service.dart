@@ -89,6 +89,13 @@ class NotificationService {
 
     // Handle cold-start launches from notification taps.
     final launchDetails = await _plugin.getNotificationAppLaunchDetails();
+    // The cold-start seam. Until this line runs, a tap that launched the app
+    // does not exist to us; logging what it returned is the only way to tell
+    // "no tap" from "tap we never read".
+    // ignore: avoid_print
+    print('[LAUNCH] didNotificationLaunchApp='
+        '${launchDetails?.didNotificationLaunchApp} '
+        'payload=${launchDetails?.notificationResponse?.payload}');
     final launchResponse = launchDetails?.notificationResponse;
     final launchPayload = launchResponse?.payload;
     if (launchDetails?.didNotificationLaunchApp == true &&
@@ -406,6 +413,9 @@ class NotificationService {
 
   static void _dispatchNavigation(String activityId, String? type) {
     final handler = _navigationHandler;
+    // ignore: avoid_print
+    print('[LAUNCH] dispatch id=$activityId type=$type '
+        'handlerSet=${handler != null}');
     if (handler != null) {
       handler(activityId, type);
       return;

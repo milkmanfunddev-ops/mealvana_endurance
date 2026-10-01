@@ -100,6 +100,9 @@ class NightBeforeNudgeService {
   /// the rules, and attribute any plan created since the last tap.
   Future<void> evaluate(List<NightBeforeWorkout> workouts) async {
     final now = _clock();
+    // ignore: avoid_print
+    print('[NIGHT_BEFORE] evaluate candidates=${workouts.length} '
+        'fastFire=$_fastFire now=$now');
     final armed = (_prefs.getStringList(_armedKey) ?? const []).toSet();
 
     for (final w in workouts) {
@@ -162,6 +165,13 @@ class NightBeforeNudgeService {
         fireAt: fireAt,
         payload: NightBeforeNudgeEngine.payloadFor(w.id, variant),
       );
+
+      // Deliberate, permanent diagnostics. The DI-25 lesson applies here too:
+      // a scheduling path whose only evidence is a notification that may or may
+      // not appear is indistinguishable from one that never ran.
+      // ignore: avoid_print
+      print('[NIGHT_BEFORE] armed id=${w.id} variant=${variant.tag} '
+          'fireAt=$fireAt fastFire=$_fastFire title="${variant == NightBeforeVariant.noPlan ? NightBeforeNudgeEngine.titleFor(w.type) : NightBeforeNudgeEngine.rehearseTitle}"');
 
       if (armed.add(armKey)) {
         // "Sent" at arm time, deliberately. A local notification's actual
