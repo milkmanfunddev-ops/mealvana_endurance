@@ -462,6 +462,28 @@ class NotificationService {
     _pendingNavigationType = type;
   }
 
+  /// Collect a legacy BACKGROUNDED tap, if iOS left one for us.
+  ///
+  /// The launch path is handled in [initialize]; this is its resume sibling.
+  /// Called from the root widget on every foreground resume, because a
+  /// backgrounded tap produces no new launch and so never reaches
+  /// `getNotificationAppLaunchDetails`.
+  ///
+  /// CONSUMED, like the launch key: cleared the instant it is read, or every
+  /// later resume would re-navigate off a tap the athlete made once.
+  static Future<void> consumeLegacyResumeTap() async {
+    try {
+      final prefs = await SharedPreferences.getInstance();
+      final payload = prefs.getString('ios_legacy_resume_payload');
+      if (payload == null || payload.isEmpty) return;
+      await prefs.remove('ios_legacy_resume_payload');
+      LaunchTrail.add('legacy_resume payload=$payload (consumed)');
+      _handleNotificationPayload(payload);
+    } catch (e) {
+      LaunchTrail.add('legacy_resume read failed: $e');
+    }
+  }
+
   static Future<bool> requestPermissions() async {
     if (!_isInitialized) {
       await initialize();

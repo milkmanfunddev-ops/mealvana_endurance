@@ -38,7 +38,22 @@ import MetricKit
     // casting would silently yield nil; a direct assignment turns that exact
     // risk into a COMPILE ERROR instead of a silent no-op, which is the whole
     // lesson of this bug.
-    UNUserNotificationCenter.current().delegate = self
+    // REVERTED 2026-10-01. 08a0bb127 claimed this delegate; the tape proved the
+    // claim TOOK and held, and it did NOT fix the killed-app tap — f24828e6a's
+    // legacy-key consume did, and that path reads launchOptions and never
+    // touches this delegate.
+    //
+    // Meanwhile the BACKGROUNDED tap, which worked on 1.28.0, stopped working.
+    // The notification is scheduled legacy (UIConcreteLocalNotification), so a
+    // backgrounded tap is delivered through the legacy response path, and
+    // whatever used to carry it ran through a delegate chain this assignment
+    // inserted itself into. Claiming a delegate we do not forward from is the
+    // obvious way to break exactly that.
+    //
+    // So: give the chain back. The instrumentation below still records WHO
+    // holds the delegate, which turns this revert into a measurement rather
+    // than a guess — if backgrounded recovers, the claim was the regression.
+    //   UNUserNotificationCenter.current().delegate = self   <- deliberately not set
 
     GeneratedPluginRegistrant.register(with: self)
 
@@ -117,5 +132,30 @@ import MetricKit
     }
 
     return super.application(application, didFinishLaunchingWithOptions: launchOptions)
+  }
+
+  /// THE LEGACY RESUME DOOR — the sibling of the launch-key fix.
+  ///
+  /// Our nudges are scheduled as UIConcreteLocalNotification (tape, 2026-10-01).
+  /// A tap that LAUNCHES the app arrives in `launchOptions` and is handled in
+  /// didFinishLaunching above. A tap while the app is merely BACKGROUNDED does
+  /// not go there at all — it arrives here, through the UILocalNotification
+  /// response method deprecated since iOS 10. Nothing implemented this, so a
+  /// backgrounded tap resumed the app wherever it already was and went nowhere
+  /// (observed: it "landed" on whatever tab was open).
+  ///
+  /// Same shape as the launch fix: lift the payload out, leave it where Dart
+  /// collects it on resume, and let the existing dispatch do the rest.
+  override func application(
+    _ application: UIApplication,
+    didReceive notification: UILocalNotification
+  ) {
+    let defaults = UserDefaults.standard
+    let info = notification.userInfo ?? [:]
+    defaults.set(String(describing: info), forKey: "flutter.ios_legacy_resume_userinfo")
+    if let payload = info["payload"] as? String, !payload.isEmpty {
+      defaults.set(payload, forKey: "flutter.ios_legacy_resume_payload")
+    }
+    super.application(application, didReceive: notification)
   }
 }
