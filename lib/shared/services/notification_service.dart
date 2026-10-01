@@ -1,6 +1,7 @@
 import 'package:flutter/foundation.dart';
 import 'package:flutter_local_notifications/flutter_local_notifications.dart';
 import 'package:onesignal_flutter/onesignal_flutter.dart';
+import 'package:shared_preferences/shared_preferences.dart';
 import 'package:timezone/data/latest_all.dart' as tz;
 import 'package:timezone/timezone.dart' as tz;
 
@@ -102,6 +103,31 @@ class NotificationService {
     );
     final launchResponse = launchDetails?.notificationResponse;
     final launchPayload = launchResponse?.payload;
+    // THE LEGACY LAUNCH FALLBACK. On iOS the tap can arrive through the
+    // deprecated UILocalNotification launch key instead of the UN path, in
+    // which case `launchDetails` is empty and no callback ever fires — see
+    // AppDelegate. The payload is lifted out there; consume it here so the
+    // rest of the chain is unchanged.
+    //
+    // CONSUMED, not merely read: the key is cleared immediately, or every
+    // subsequent cold start would re-navigate to a workout the athlete
+    // already dealt with days ago.
+    if (launchDetails?.didNotificationLaunchApp != true) {
+      try {
+        final prefs = await SharedPreferences.getInstance();
+        final legacy = prefs.getString('ios_legacy_launch_payload');
+        if (legacy != null && legacy.isNotEmpty) {
+          await prefs.remove('ios_legacy_launch_payload');
+          LaunchTrail.add('legacy_launch payload=$legacy (consumed)');
+          _handleNotificationPayload(legacy);
+          _isInitialized = true;
+          return;
+        }
+      } catch (e) {
+        LaunchTrail.add('legacy_launch read failed: $e');
+      }
+    }
+
     if (launchDetails?.didNotificationLaunchApp == true &&
         launchPayload != null &&
         launchPayload.isNotEmpty) {

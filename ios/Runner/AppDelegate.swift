@@ -65,6 +65,39 @@ import MetricKit
       forKey: "flutter.ios_delegate_at_launch"
     )
 
+    // THE LEGACY LAUNCH PATH — this is the actual bug (tape IMG_9145,
+    // 2026-10-01). iOS hands a killed-app nudge tap to the app through
+    // `UIApplicationLaunchOptionsLocalNotificationKey`, the UILocalNotification
+    // route deprecated since iOS 10. flutter_local_notifications 19.4.1 is a
+    // modern UN-based plugin: it never looks there, and legacy delivery never
+    // fires the UN delegate callback either. That combination produces exactly
+    // what four rounds of tape showed — didNotificationLaunchApp=false,
+    // payload=null, and no callback line at all — while the payload sat in
+    // launchOptions the entire time.
+    //
+    // So read it out and hand it to Dart. Everything downstream (hold, replay,
+    // the intent table) already works; it was only ever starved of the tap.
+    //
+    // The raw class and userInfo are taped too: if the payload key is not
+    // where we expect, the next tape says so in one glance instead of costing
+    // another round.
+    if let raw = launchOptions?[UIApplication.LaunchOptionsKey.localNotification] {
+      defaults.set(String(describing: type(of: raw)), forKey: "flutter.ios_legacy_launch_class")
+
+      var info: [AnyHashable: Any]?
+      if let legacy = raw as? UILocalNotification {
+        info = legacy.userInfo
+      } else if let dict = raw as? [AnyHashable: Any] {
+        info = dict
+      }
+      defaults.set(String(describing: info ?? [:]), forKey: "flutter.ios_legacy_launch_userinfo")
+
+      // flutter_local_notifications carries our string under "payload".
+      if let payload = info?["payload"] as? String, !payload.isEmpty {
+        defaults.set(payload, forKey: "flutter.ios_legacy_launch_payload")
+      }
+    }
+
     // …and does anything re-claim it once OneSignal has initialised from Dart?
     DispatchQueue.main.asyncAfter(deadline: .now() + 6) {
       let later = UNUserNotificationCenter.current().delegate
