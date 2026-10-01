@@ -55,4 +55,4 @@ final class CarbLoadNudgeServiceProvider
 }
 
 String _$carbLoadNudgeServiceHash() =>
-    r'9df1faf013c8a520ec3032930bd42215f974b13b';
+    r'78917460de9432e6d3f4e71f6078dda78df38763';
