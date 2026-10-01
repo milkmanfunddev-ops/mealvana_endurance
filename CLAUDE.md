@@ -32,6 +32,9 @@ mealvana_endurance/
 ```
 
 ## Non-Negotiable Rules
+- Testing anything that notifies, schedules, or deep-links — or hunting device logs/tapes —
+  invoke the `notification-testing` skill FIRST (`.claude/skills/notification-testing/`); it
+  carries the paid-for device protocol. Push-stack facts: `ops/docs/messaging-relay-and-testing.md`.
 - Enforce FOA layers: `presentation -> application -> domain <- data`.
 - Keep UI screens UI-only (state, navigation, composition, validation).
 - Put business logic in controllers/services (API calls, transforms, calculations, analytics).
