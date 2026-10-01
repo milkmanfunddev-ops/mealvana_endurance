@@ -7,6 +7,7 @@ import '../../application/night_before_nudge_service.dart';
 import '../../data/nutrition_plan_repository.dart';
 import '../../domain/night_before_nudge_engine.dart';
 import '../../../../shared/services/launch_trail.dart';
+import '../../../activities/domain/activity.dart';
 
 /// The open/resume sweep that keeps the night-before nudge in step with what
 /// is actually on the calendar.
@@ -63,6 +64,12 @@ class NightBeforeNudgeCoordinator {
         // Only the long ones are worth a plan lookup — the lookup reads the
         // activity row's embedded plan JSON, so this keeps the sweep cheap on
         // a busy calendar.
+        // A workout that is not going to happen gets no nudge. The date-range
+        // read already drops soft-deleted and brick-archived rows, but NOT a
+        // skipped one, nor a tombstone whose deleted_at was never set — and
+        // nothing downstream would catch it, because the sweep's only other
+        // test is duration (2026-10-01: a nudge fired for a deleted brick).
+        if (!_nudgeable(a.status)) continue;
         if (!NightBeforeNudgeEngine.isLong(a.durationMinutes)) continue;
         final plan = await planRepo.getNutritionPlanByActivityId(userId, a.id);
         candidates.add((
@@ -99,6 +106,20 @@ class NightBeforeNudgeCoordinator {
       _running = false;
     }
   }
+
+  /// Statuses a nudge is for: a workout still ahead of the athlete.
+  ///
+  /// Deliberately a whitelist. A new status should default to "no nudge" and
+  /// have to argue its way in, rather than silently inheriting one.
+  static bool _nudgeable(ActivityStatus status) => switch (status) {
+    ActivityStatus.draft ||
+    ActivityStatus.planned ||
+    ActivityStatus.inProgress => true,
+    ActivityStatus.completed ||
+    ActivityStatus.skipped ||
+    ActivityStatus.archivedForBrick ||
+    ActivityStatus.deleted => false,
+  };
 }
 
 final nightBeforeNudgeCoordinatorProvider =

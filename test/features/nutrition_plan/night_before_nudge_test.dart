@@ -498,9 +498,6 @@ void main() {
     });
 
     test('three candidates do not all fire at the same instant', () async {
-      // The old offsets separated the two VARIANTS but not the WORKOUTS, so
-      // three no-plan candidates shared one instant — which is also what made
-      // "does iOS coalesce same-second notifications?" unanswerable.
       await at(t0).evaluate([
         workout('act-run', ActivityType.running),
         workout('act-ride', ActivityType.cycling),
@@ -553,6 +550,217 @@ void main() {
       expect(gateway.scheduled.map((e) => e.fireAt).toSet(), {
         DateTime(2026, 10, 1, 19, 0),
       });
+    });
+  });
+
+  /// TWO NUDGES AT ONE INSTANT MEAN ONE DELIVERY.
+  ///
+  /// `fireInstantFor` returns the evening-before date at 19:00, so every
+  /// same-day no-plan nudge landed on exactly 19:00:00.000 and iOS delivered
+  /// ONE of them. The per-workout ruling — each workout gets its own nudge —
+  /// was defeated at the delivery layer for exactly the multi-sport athlete the
+  /// feature targets.
+  ///
+  /// Evidenced on device 2026-10-01: five armed; the 40-mi ride paired to the
+  /// microsecond with a rehearse nudge on every re-arm and never once
+  /// delivered, while the one nudge that had an instant to itself always did.
+  group('fire instants never collide', () {
+    late _FakeGateway gateway;
+    late SharedPreferences prefs;
+
+    final now = DateTime(2026, 10, 1, 9, 0);
+
+    ({
+      String id,
+      DateTime start,
+      int? durationMinutes,
+      bool hasPlan,
+      ActivityType type,
+    })
+    w(String id, {bool hasPlan = false, int day = 2, int hour = 7}) => (
+      id: id,
+      start: DateTime(2026, 10, day, hour, 0),
+      durationMinutes: 135 as int?,
+      hasPlan: hasPlan,
+      type: ActivityType.running,
+    );
+
+    setUp(() async {
+      SharedPreferences.setMockInitialValues({});
+      prefs = await SharedPreferences.getInstance();
+      gateway = _FakeGateway();
+    });
+
+    NightBeforeNudgeService build({bool fastFire = false}) =>
+        NightBeforeNudgeService(
+          gateway: gateway,
+          prefs: prefs,
+          analytics: const NoopAnalyticsTracker(),
+          clock: () => now,
+          fastFire: fastFire,
+        );
+
+    test(
+      'three same-day no-plan workouts get three distinct instants',
+      () async {
+        await build().evaluate([w('act-a'), w('act-b'), w('act-c')]);
+
+        final instants = gateway.scheduled.map((e) => e.fireAt).toList();
+        expect(instants, hasLength(3));
+        expect(
+          instants.toSet(),
+          hasLength(3),
+          reason:
+              'all three used to be 19:00:00.000 and only one was delivered',
+        );
+        // Still "the evening before at 19:00": three slots 30s apart span
+        // 19:00:00 to 19:01:00, which is the ruling's evening, not a new time.
+        expect(instants.every((i) => i.day == 1 && i.hour == 19), isTrue);
+        expect(
+          instants.every(
+            (i) =>
+                i.difference(DateTime(2026, 10, 1, 19)) <
+                const Duration(minutes: 2),
+          ),
+          isTrue,
+        );
+      },
+    );
+
+    test('a no-plan and a rehearse nudge never share an instant', () async {
+      // THE EXACT TAPE PATTERN: a rehearse nudge landed on top of a no-plan
+      // nudge two slots later, because the 60s variant gap was an exact
+      // multiple of the 30s stagger step.
+      await build().evaluate([
+        w('act-a', hasPlan: true),
+        w('act-b'),
+        w('act-c'),
+        w('act-d', hasPlan: true),
+        w('act-e'),
+      ]);
+
+      final instants = gateway.scheduled.map((e) => e.fireAt).toList();
+      expect(instants, hasLength(5));
+      expect(
+        instants.toSet(),
+        hasLength(5),
+        reason: 'five armed must mean five distinct instants',
+      );
+    });
+
+    test('and the same holds under the dev override', () async {
+      await build(fastFire: true).evaluate([
+        w('act-a', hasPlan: true),
+        w('act-b'),
+        w('act-c'),
+        w('act-d', hasPlan: true),
+        w('act-e'),
+      ]);
+
+      expect(gateway.scheduled.map((e) => e.fireAt).toSet(), hasLength(5));
+    });
+
+    test('slots are stable across re-arms, so a held fuse stays put', () async {
+      final service = build(fastFire: true);
+      final list = [w('act-c'), w('act-a'), w('act-b')];
+
+      await service.evaluate(list);
+      final first = {for (final e in gateway.scheduled) e.id: e.fireAt};
+
+      // Re-arm with the list in a DIFFERENT order: slots are ordered by id, so
+      // query order must not move anyone's instant.
+      gateway.scheduled.clear();
+      await service.evaluate([list[1], list[2], list[0]]);
+      final second = {for (final e in gateway.scheduled) e.id: e.fireAt};
+
+      expect(second, first);
+    });
+
+    test('workouts on different days do not interfere', () async {
+      await build().evaluate([
+        w('act-a', day: 2),
+        w('act-b', day: 3),
+        w('act-c', day: 4),
+      ]);
+
+      final instants = gateway.scheduled.map((e) => e.fireAt).toList()..sort();
+      // Each is alone in its own base group, so each sits exactly on 19:00.
+      expect(instants.map((i) => i.second).toSet(), {0});
+      expect(instants.map((i) => i.day).toList(), [1, 2, 3]);
+    });
+  });
+
+  /// A NUDGE MUST NOT FIRE FOR A WORKOUT THAT IS GONE.
+  ///
+  /// Observed 2026-10-01: a nudge fired for a DELETED brick and landed on a
+  /// create screen for a dead workout. The per-workout loop can only disarm
+  /// what it still SEES, and a deleted workout never appears as a candidate —
+  /// so its pending notification was never reconciled.
+  group('armed-set reconciliation', () {
+    late _FakeGateway gateway;
+    late SharedPreferences prefs;
+
+    final now = DateTime(2026, 10, 1, 9, 0);
+    final long = (
+      id: 'act-long',
+      start: DateTime(2026, 10, 2, 7, 0),
+      durationMinutes: 135 as int?,
+      hasPlan: false,
+      type: ActivityType.running,
+    );
+
+    setUp(() async {
+      SharedPreferences.setMockInitialValues({});
+      prefs = await SharedPreferences.getInstance();
+      gateway = _FakeGateway();
+    });
+
+    NightBeforeNudgeService build() => NightBeforeNudgeService(
+      gateway: gateway,
+      prefs: prefs,
+      analytics: const NoopAnalyticsTracker(),
+      clock: () => now,
+    );
+
+    test('a workout that leaves the calendar is cancelled', () async {
+      await build().evaluate([long]);
+      expect(gateway.scheduled, hasLength(1));
+      final armedId = gateway.scheduled.single.id;
+
+      // The next sweep no longer sees it: deleted, or moved out of the window.
+      gateway.cancelled.clear();
+      await build().evaluate([]);
+
+      expect(
+        gateway.cancelled,
+        contains(armedId),
+        reason: 'the pending notification must be cancelled, not left to fire',
+      );
+    });
+
+    test('and it is not cancelled again on every later sweep', () async {
+      await build().evaluate([long]);
+      await build().evaluate([]);
+      gateway.cancelled.clear();
+      await build().evaluate([]);
+
+      expect(
+        gateway.cancelled,
+        isEmpty,
+        reason:
+            'the armed entry is gone, so there is nothing left to reconcile',
+      );
+    });
+
+    test('a still-present workout is left armed', () async {
+      await build().evaluate([long]);
+      gateway.cancelled.clear();
+      gateway.scheduled.clear();
+      await build().evaluate([long]);
+
+      // Re-arming cancels-then-schedules by design; what must NOT happen is
+      // the reconciliation pass dropping it.
+      expect(gateway.scheduled, hasLength(1));
     });
   });
 }
