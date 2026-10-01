@@ -7,6 +7,7 @@ import 'package:timezone/timezone.dart' as tz;
 import '../utils/platform_io.dart'
     if (dart.library.html) '../utils/platform_web.dart';
 import 'analytics/analytics_events.dart';
+import 'launch_trail.dart';
 import 'analytics/analytics_tracker.dart';
 
 class NotificationService {
@@ -92,10 +93,11 @@ class NotificationService {
     // The cold-start seam. Until this line runs, a tap that launched the app
     // does not exist to us; logging what it returned is the only way to tell
     // "no tap" from "tap we never read".
-    // ignore: avoid_print
-    print('[LAUNCH] didNotificationLaunchApp='
-        '${launchDetails?.didNotificationLaunchApp} '
-        'payload=${launchDetails?.notificationResponse?.payload}');
+    LaunchTrail.add(
+      'launchDetails didNotificationLaunchApp='
+      '${launchDetails?.didNotificationLaunchApp} '
+      'payload=${launchDetails?.notificationResponse?.payload}',
+    );
     final launchResponse = launchDetails?.notificationResponse;
     final launchPayload = launchResponse?.payload;
     if (launchDetails?.didNotificationLaunchApp == true &&
@@ -436,9 +438,9 @@ class NotificationService {
 
   static void _dispatchNavigation(String activityId, String? type) {
     final handler = _navigationHandler;
-    // ignore: avoid_print
-    print('[LAUNCH] dispatch id=$activityId type=$type '
-        'handlerSet=${handler != null}');
+    LaunchTrail.add(
+      'dispatch id=$activityId type=$type handlerSet=${handler != null}',
+    );
     if (handler != null) {
       handler(activityId, type);
       return;

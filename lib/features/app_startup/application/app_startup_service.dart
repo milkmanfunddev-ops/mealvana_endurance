@@ -27,6 +27,7 @@ import '../../../shared/models/dirty_record_backup.dart';
 import '../presentation/widgets/dirty_record_recovery_dialog.dart';
 import '../../ai_credits/data/revenuecat_service.dart';
 import '../../auth/application/auth_service.dart';
+import '../../../shared/services/launch_trail.dart';
 import '../../subscription/application/subscription_status_provider.dart';
 
 /// Service responsible for providing individual startup operations using Drift
@@ -276,6 +277,9 @@ class AppStartupService {
       // before any post-async-gap `ref` use (including logging).
       if (!ref.mounted) return;
       try {
+        // 0. Start the tape BEFORE anything can record to it.
+        await LaunchTrail.begin();
+
         // 1. Local notifications FIRST, and this ordering is load-bearing.
         //
         // `NotificationService.initialize()` is what reads
