@@ -107,28 +107,46 @@ void main() {
     expect(rehearse, isNot(noPlan));
   });
 
-  group('copy, approved 2026-09-30', () {
-    test('reads as the ruled sentence once title and body are joined', () {
-      expect(
-        NightBeforeNudgeEngine.titleFor(ActivityType.running),
-        'Long run tomorrow',
-      );
-      expect(
-        NightBeforeNudgeEngine.body('2 h 15 m'),
-        '2 h 15 m planned. Set your fueling plan tonight.',
-      );
-      expect(
-        '${NightBeforeNudgeEngine.titleFor(ActivityType.running)} — '
-        '${NightBeforeNudgeEngine.body("2 h 15 m")}',
-        'Long run tomorrow — 2 h 15 m planned. Set your fueling plan tonight.',
-      );
+  group('no-plan copy, RE-RULED 2026-09-30 (duration removed)', () {
+    test('the ruled sentence, per sport', () {
+      expect(NightBeforeNudgeEngine.titleFor(ActivityType.running),
+          'Plan fueling for your long run tomorrow!');
+      expect(NightBeforeNudgeEngine.titleFor(ActivityType.cycling),
+          'Plan fueling for your long ride tomorrow!');
+      expect(NightBeforeNudgeEngine.titleFor(ActivityType.swimming),
+          'Plan fueling for your long swim tomorrow!');
+      expect(NightBeforeNudgeEngine.titleFor(ActivityType.brick),
+          'Plan fueling for your long brick workout tomorrow!');
     });
 
-    test('duration formats as the ruling s example', () {
-      expect(NightBeforeNudgeEngine.formatDuration(135), '2 h 15 m');
-      expect(NightBeforeNudgeEngine.formatDuration(120), '2 h',
-          reason: 'a whole hour drops the empty minutes');
-      expect(NightBeforeNudgeEngine.formatDuration(90), '1 h 30 m');
+    test('an unmapped sport says workout, never another sport', () {
+      for (final t in [
+        ActivityType.triathlon,
+        ActivityType.duathlon,
+        ActivityType.other,
+        null,
+      ]) {
+        expect(NightBeforeNudgeEngine.titleFor(t),
+            'Plan fueling for your long workout tomorrow!',
+            reason: '$t must not borrow a sport word');
+      }
+    });
+
+    test('NO DURATION appears anywhere in the copy', () {
+      // The whole point of the re-ruling: "long brick is enough".
+      for (final t in [
+        ActivityType.running,
+        ActivityType.cycling,
+        ActivityType.brick,
+        null,
+      ]) {
+        final title = NightBeforeNudgeEngine.titleFor(t);
+        expect(RegExp(r'\d').hasMatch(title), isFalse,
+            reason: 'no digits: $title');
+        expect(title.contains(' h '), isFalse);
+        expect(title.contains(' m '), isFalse);
+      }
+      expect(NightBeforeNudgeEngine.noPlanBody, isEmpty);
     });
 
     test('each variant carries its own intent, not a screen', () {
@@ -142,69 +160,15 @@ void main() {
       );
     });
 
-    test('the rehearse sport word follows the title mapping', () {
+    test('the rehearse line is UNCHANGED and keeps its own phrasing', () {
+      // Ruled separately: rehearse says "your long brick", the no-plan
+      // sentence says "your long brick workout". Not a typo — two rulings.
+      expect(NightBeforeNudgeEngine.rehearseBody(ActivityType.brick),
+          "Rehearse your nutrition plan for your long brick. Get 'em ready!");
+      expect(NightBeforeNudgeEngine.titleFor(ActivityType.brick),
+          contains('brick workout'));
       expect(NightBeforeNudgeEngine.rehearseBody(ActivityType.cycling),
           "Rehearse your nutrition plan for your long ride. Get 'em ready!");
-      expect(NightBeforeNudgeEngine.rehearseBody(ActivityType.swimming),
-          contains('long swim'));
-      expect(NightBeforeNudgeEngine.rehearseBody(ActivityType.brick),
-          contains('long brick'));
-      // Unmapped sports get the neutral word, never another sport's.
-      expect(NightBeforeNudgeEngine.rehearseBody(ActivityType.triathlon),
-          contains('long workout'));
-      expect(NightBeforeNudgeEngine.rehearseBody(null),
-          contains('long workout'));
-    });
-  });
-
-  group('title is sport-aware (ruled 2026-09-30, second pass)', () {
-    test('each named sport gets its own word', () {
-      expect(NightBeforeNudgeEngine.titleFor(ActivityType.running),
-          'Long run tomorrow');
-      expect(NightBeforeNudgeEngine.titleFor(ActivityType.cycling),
-          'Long ride tomorrow');
-      expect(NightBeforeNudgeEngine.titleFor(ActivityType.swimming),
-          'Long swim tomorrow');
-      expect(NightBeforeNudgeEngine.titleFor(ActivityType.brick),
-          'Brick workout tomorrow');
-      expect(NightBeforeNudgeEngine.titleFor(ActivityType.multisport),
-          'Brick workout tomorrow');
-    });
-
-    test('nothing unmapped is ever called a run — that was the bug', () {
-      // The trigger is duration, not sport, so a fixed "Long run" announced a
-      // 2-hour ride as a run. Every fallback must be neutral.
-      for (final t in [
-        ActivityType.triathlon,
-        ActivityType.duathlon,
-        ActivityType.other,
-        null,
-      ]) {
-        expect(NightBeforeNudgeEngine.titleFor(t), 'Long workout tomorrow',
-            reason: '$t must not borrow another sport\'s name');
-      }
-    });
-
-    test('a ride is announced as a ride, end to end', () async {
-      SharedPreferences.setMockInitialValues({});
-      final prefs = await SharedPreferences.getInstance();
-      final gateway = _FakeGateway();
-      await NightBeforeNudgeService(
-        gateway: gateway,
-        prefs: prefs,
-        analytics: _RecordingTracker([]),
-        clock: () => DateTime(2026, 10, 1, 9, 0),
-      ).evaluate([(
-        id: 'act-ride',
-        start: DateTime(2026, 10, 2, 7, 0),
-        durationMinutes: 150,
-        hasPlan: false,
-        type: ActivityType.cycling,
-      )]);
-
-      expect(gateway.scheduled.single.title, 'Long ride tomorrow');
-      expect(gateway.scheduled.single.body,
-          '2 h 30 m planned. Set your fueling plan tonight.');
     });
   });
 
@@ -242,8 +206,8 @@ void main() {
       expect(gateway.scheduled, hasLength(1));
       final s = gateway.scheduled.single;
       expect(s.fireAt, DateTime(2026, 10, 1, 19, 0));
-      expect(s.title, 'Long run tomorrow');
-      expect(s.body, '2 h 15 m planned. Set your fueling plan tonight.');
+      expect(s.title, 'Plan fueling for your long run tomorrow!');
+      expect(s.body, isEmpty);
       expect(s.payload, 'plan_workout:act-long');
       expect(events.map((e) => e.name), contains('night_before_nudge_sent'));
     });

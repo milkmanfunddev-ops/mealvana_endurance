@@ -50,52 +50,47 @@ class NightBeforeNudgeEngine {
   static int fireMinuteFor(NightBeforeVariant variant) =>
       variant == NightBeforeVariant.noPlan ? 0 : 30;
 
-  /// Approved copy, 2026-09-30, cheerful register.
+  /// No-plan copy, RE-RULED 2026-09-30 (Xuan), superseding the first version.
+  /// His sentence verbatim, generalised by sport:
+  ///   "Plan fueling for your long brick workout tomorrow!"
   ///
-  /// The ruling approved one sentence: "Long run tomorrow — [duration]
-  /// planned. Set your fueling plan tonight." A notification needs a title and
-  /// a body, so the em-dash is the split: every word survives, and iOS renders
-  /// the two lines the way the sentence reads.
+  /// DURATION IS GONE — "long brick is enough", his words. The previous copy
+  /// led with "2 h 15 m planned"; that number is no longer in the notification
+  /// at all, and `formatDuration` went with it rather than lingering as dead
+  /// code that still looks normative.
   ///
-  /// SPORT-AWARE, ruled 2026-09-30 (second pass): "long run / long ride /
-  /// brick workout instead of a generic name". The trigger is DURATION, not
-  /// sport, so a fixed "Long run" announced a 2-hour ride as a run — that was
-  /// the bug this replaces. The neutral fallback is never wrong, which is why
-  /// anything unmapped lands there rather than guessing a sport.
-  static String titleFor(ActivityType? type) {
+  /// The whole sentence is the TITLE and the body is empty. It is short enough
+  /// to read as one line, and splitting it would either repeat the sport word
+  /// or invent a second sentence nobody ruled.
+  static String titleFor(ActivityType? type) =>
+      'Plan fueling for your long ${sportPhrase(type)} tomorrow!';
+
+  /// Deliberately empty: see [titleFor]. Kept as a named thing so the call
+  /// site reads as a decision rather than an accident.
+  static const String noPlanBody = '';
+
+  /// The sport phrase inside the no-plan sentence. Brick reads "brick workout"
+  /// here — "your long brick workout tomorrow" is his wording — while the
+  /// rehearse line says "your long brick"; the two sentences were ruled
+  /// separately and their phrasing genuinely differs.
+  static String sportPhrase(ActivityType? type) {
     switch (type) {
       case ActivityType.running:
-        return 'Long run tomorrow';
+        return 'run';
       case ActivityType.cycling:
-        return 'Long ride tomorrow';
+        return 'ride';
       case ActivityType.swimming:
-        return 'Long swim tomorrow';
+        return 'swim';
       case ActivityType.brick:
       case ActivityType.multisport:
-        return 'Brick workout tomorrow';
-      // triathlon and duathlon are deliberately NOT called bricks: the ruling
-      // named brick/multi-sport, and a race is not a brick workout. They take
-      // the neutral title until someone rules otherwise.
+        return 'brick workout';
+      // Never borrow another sport's word for an unmapped type.
       case ActivityType.triathlon:
       case ActivityType.duathlon:
       case ActivityType.other:
       case null:
-        return 'Long workout tomorrow';
+        return 'workout';
     }
-  }
-
-  /// Approved copy, 2026-09-30. [duration] is [formatDuration]'s output.
-  static String body(String duration) =>
-      '$duration planned. Set your fueling plan tonight.';
-
-  /// `2 h 15 m`, per the ruling's example. A whole hour drops the empty
-  /// minutes rather than reading "2 h 0 m".
-  static String formatDuration(int minutes) {
-    final h = minutes ~/ 60;
-    final m = minutes % 60;
-    if (h == 0) return '$m m';
-    if (m == 0) return '$h h';
-    return '$h h $m m';
   }
 
   /// Is this workout long enough to nudge for?
