@@ -64,6 +64,9 @@ class NightBeforeNudgeCoordinator {
         ));
       }
 
+      // ignore: avoid_print
+      print('[NIGHT_BEFORE] sweep userId=$userId activities=${activities.length} '
+          'longCandidates=${candidates.length}');
       await ref.read(nightBeforeNudgeServiceProvider).evaluate(candidates);
     } catch (e, stackTrace) {
       ref
