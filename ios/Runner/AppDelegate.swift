@@ -1,5 +1,6 @@
 import Flutter
 import UIKit
+import UserNotifications
 import flutter_local_notifications
 import MetricKit
 
@@ -14,12 +15,30 @@ import MetricKit
       GeneratedPluginRegistrant.register(with: registry)
     }
 
-    // Note: we deliberately do NOT set UNUserNotificationCenter.current().delegate
-    // here. FlutterAppDelegate already manages the delegate via the local
-    // notifications and OneSignal plugins' swizzling — assigning self (which
-    // doesn't conform to UNUserNotificationCenterDelegate) would silently
-    // wipe that out via `as?` returning nil and break OneSignal's APNs token
-    // capture path.
+    // CLAIM THE NOTIFICATION DELEGATE, EARLY AND EXPLICITLY.
+    //
+    // Why this changed (2026-09-30). A notification tap that launched the app
+    // from KILLED never reached Dart: the in-app recorder taped
+    // `didNotificationLaunchApp=false payload=null` on a real device, which
+    // means flutter_local_notifications never saw the response at all — not
+    // that we routed it wrongly.
+    //
+    // The cause is the delegate chain. UNUserNotificationCenter has exactly
+    // ONE delegate. OneSignal's iOS SDK swizzles it and FORWARDS to whatever
+    // delegate was set BEFORE it initialises — but nothing was, because this
+    // block previously set none at all. With no prior delegate to forward to,
+    // the local-notification response had nowhere to go, and the plugin's
+    // launch-details capture came up empty.
+    //
+    // Setting it here, before `GeneratedPluginRegistrant.register`, gives
+    // OneSignal something to forward to. FlutterAppDelegate conforms to
+    // UNUserNotificationCenterDelegate and relays to registered plugins.
+    //
+    // DIRECT ASSIGNMENT ON PURPOSE — no `as?`. The previous note worried that
+    // casting would silently yield nil; a direct assignment turns that exact
+    // risk into a COMPILE ERROR instead of a silent no-op, which is the whole
+    // lesson of this bug.
+    UNUserNotificationCenter.current().delegate = self
 
     GeneratedPluginRegistrant.register(with: self)
 
