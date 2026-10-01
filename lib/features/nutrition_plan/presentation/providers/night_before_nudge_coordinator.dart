@@ -6,6 +6,7 @@ import '../../../activities/data/activities_repository.dart';
 import '../../application/night_before_nudge_service.dart';
 import '../../data/nutrition_plan_repository.dart';
 import '../../domain/night_before_nudge_engine.dart';
+import '../../../../shared/services/launch_trail.dart';
 
 /// The open/resume sweep that keeps the night-before nudge in step with what
 /// is actually on the calendar.
@@ -80,11 +81,9 @@ class NightBeforeNudgeCoordinator {
       final estimatedCount = activities
           .where((a) => a.isDurationEstimated)
           .length;
-      // ignore: avoid_print
-      print(
-        '[NIGHT_BEFORE] sweep userId=$userId activities=${activities.length} '
-        'estimatedDurations=$estimatedCount '
-        'longCandidates=${candidates.length}',
+      LaunchTrail.add(
+        'nudge sweep activities=${activities.length} '
+        'estimated=$estimatedCount longCandidates=${candidates.length}',
       );
       await ref.read(nightBeforeNudgeServiceProvider).evaluate(candidates);
     } catch (e, stackTrace) {

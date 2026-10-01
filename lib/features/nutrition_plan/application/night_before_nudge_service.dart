@@ -8,6 +8,7 @@ import '../../../shared/services/notification_service.dart';
 import '../../../shared/services/app_config.dart';
 import '../../../shared/services/prefs_provider.dart';
 import '../domain/night_before_nudge_engine.dart';
+import '../../../shared/services/launch_trail.dart';
 
 /// One long workout the night-before nudge may fire for.
 typedef NightBeforeWorkout = ({
@@ -89,6 +90,11 @@ class NightBeforeNudgeService {
   /// Activity ids currently armed — the set we may need to cancel later.
   static const _armedKey = 'night_before_nudge_armed';
 
+  /// Dev-override bookkeeping: the fire instant already chosen for an armKey,
+  /// so a resume does not move it. Production never reads this — see
+  /// [_fastFireInstant].
+  static const _fastFireAtKey = 'night_before_nudge_fast_fire_at';
+
   /// `<activityId>|<epochMs>` for the most recent tap, so a plan created
   /// afterwards can be attributed to the nudge.
   static const _tappedKey = 'night_before_nudge_tapped';
@@ -100,9 +106,13 @@ class NightBeforeNudgeService {
   /// the rules, and attribute any plan created since the last tap.
   Future<void> evaluate(List<NightBeforeWorkout> workouts) async {
     final now = _clock();
-    // ignore: avoid_print
-    print('[NIGHT_BEFORE] evaluate candidates=${workouts.length} '
-        'fastFire=$_fastFire now=$now');
+    // Taped, not just printed. `print` is invisible in a release build, which
+    // is why the on-device trail dialog showed launch lines and nothing about
+    // the sweep — so a nudge that never armed and one that armed and was
+    // swallowed looked identical (Xuan, 2026-10-01: "contains no log").
+    LaunchTrail.add(
+      'nudge evaluate candidates=${workouts.length} fastFire=$_fastFire',
+    );
     final armed = (_prefs.getStringList(_armedKey) ?? const []).toSet();
 
     for (final w in workouts) {
@@ -113,14 +123,9 @@ class NightBeforeNudgeService {
           ? NightBeforeVariant.rehearse
           : NightBeforeVariant.noPlan;
 
-      // Under the dev override the variants keep their relative offset, so the
-      // "never stack" property still holds while testing on a device.
+      final armKeyForFire = '${w.id}|${variant.tag}';
       final fireAt = _fastFire
-          ? now.add(
-              Duration(
-                minutes: variant == NightBeforeVariant.noPlan ? 2 : 3,
-              ),
-            )
+          ? _fastFireInstant(armKeyForFire, now, variant, workouts.indexOf(w))
           : NightBeforeNudgeEngine.fireInstantFor(w.start, variant);
 
       final shouldArm =
@@ -131,7 +136,7 @@ class NightBeforeNudgeService {
       // Keyed by variant: a workout that swaps no_plan -> rehearse must be
       // able to report `sent` again. Keyed by id alone, the swap would fire a
       // notification the funnel never recorded.
-      final armKey = '${w.id}|${variant.tag}';
+      final armKey = armKeyForFire;
 
       if (!shouldArm) {
         // Idempotent: cancelling an id that was never scheduled is a no-op,
@@ -140,6 +145,12 @@ class NightBeforeNudgeService {
         if (armed.any((k) => k.startsWith('${w.id}|'))) {
           await _gateway.cancel(id);
           armed.removeWhere((k) => k.startsWith('${w.id}|'));
+          LaunchTrail.add('nudge DISARMED id=${w.id} (no longer eligible)');
+        } else {
+          LaunchTrail.add(
+            'nudge skip id=${w.id} duration=${w.durationMinutes} '
+            'long=${NightBeforeNudgeEngine.isLong(w.durationMinutes)}',
+          );
         }
         continue;
       }
@@ -167,9 +178,10 @@ class NightBeforeNudgeService {
       // Deliberate, permanent diagnostics. The DI-25 lesson applies here too:
       // a scheduling path whose only evidence is a notification that may or may
       // not appear is indistinguishable from one that never ran.
-      // ignore: avoid_print
-      print('[NIGHT_BEFORE] armed id=${w.id} variant=${variant.tag} '
-          'fireAt=$fireAt fastFire=$_fastFire title="${variant == NightBeforeVariant.noPlan ? NightBeforeNudgeEngine.titleFor(w.type) : NightBeforeNudgeEngine.rehearseTitle}"');
+      LaunchTrail.add(
+        'nudge ARMED id=${w.id} variant=${variant.tag} fireAt=$fireAt '
+        'notifId=$id fastFire=$_fastFire',
+      );
 
       if (armed.add(armKey)) {
         // "Sent" at arm time, deliberately. A local notification's actual
@@ -187,6 +199,64 @@ class NightBeforeNudgeService {
 
     await _prefs.setStringList(_armedKey, armed.toList());
     await _attributePlanCreation(workouts, now);
+  }
+
+  /// The dev override's fire instant, chosen ONCE per armKey and then held.
+  ///
+  /// WHY THIS IS NOT JUST `now + 2min`. It was, and that made device testing
+  /// self-defeating. `evaluate` re-arms unconditionally on every open and
+  /// resume — correct, because a workout's time, duration or plan state may
+  /// have moved — and under the override the instant was recomputed from
+  /// `now` each time. So every touch of the app pushed every pending nudge two
+  /// minutes further away. Observed 2026-10-01: resumes at 10:45:58, 10:46:02
+  /// and 10:52:16 meant a two-minute fuse was re-lit before it could ever
+  /// burn down, and the ride and brick nudges never fired at all.
+  ///
+  /// Production has no such problem and is deliberately left alone:
+  /// [NightBeforeNudgeEngine.fireInstantFor] derives the instant from the
+  /// WORKOUT's start, so re-arming reschedules the same 19:00 and the churn
+  /// cannot happen. This is a dev-only defect with a dev-only fix.
+  ///
+  /// The per-workout stagger matters for the same reason. The old offsets
+  /// separated the two VARIANTS but not the workouts, so three no-plan
+  /// candidates all fired at the identical instant — which is also what made
+  /// "does iOS coalesce same-second notifications?" unanswerable. Spacing them
+  /// 30 seconds apart removes the question instead of investigating it.
+  DateTime _fastFireInstant(
+    String armKey,
+    DateTime now,
+    NightBeforeVariant variant,
+    int position,
+  ) {
+    final held = _prefs.getStringList(_fastFireAtKey) ?? const <String>[];
+    final kept = <String>[];
+    DateTime? mine;
+
+    for (final entry in held) {
+      final split = entry.lastIndexOf('@');
+      if (split <= 0) continue;
+      final key = entry.substring(0, split);
+      final at = DateTime.tryParse(entry.substring(split + 1));
+      // Drop instants that have passed: that nudge has fired (or been missed),
+      // and the next sweep should be free to arm a fresh one.
+      if (at == null || !at.isAfter(now)) continue;
+      kept.add(entry);
+      if (key == armKey) mine = at;
+    }
+
+    if (mine != null) return mine;
+
+    final chosen = now.add(
+      Duration(
+        minutes: variant == NightBeforeVariant.noPlan ? 2 : 3,
+        seconds: 30 * (position < 0 ? 0 : position),
+      ),
+    );
+    kept.add('$armKey@${chosen.toIso8601String()}');
+    // Fire-and-forget: a dev-only bookkeeping write must not make the sweep
+    // async-fragile, and a lost write only costs one re-stagger.
+    _prefs.setStringList(_fastFireAtKey, kept);
+    return chosen;
   }
 
   /// Records a tap so a plan created soon after can be attributed to it.
