@@ -166,7 +166,37 @@ class NotificationService {
       // invalid_identifier:true after APNs rejects a delivery. fallbackToSettings
       // is false so previously-denied users don't get hijacked into Settings.
       try {
-        await OneSignal.Notifications.requestPermission(false);
+        final granted = await OneSignal.Notifications.requestPermission(false);
+
+        // HEAL THE ONE-WAY OPT-OUT DOOR (2026-10-01, the unreachable-player
+        // Critical's mechanism — a player with a VALID APNs token but
+        // enabled=false / notification_types=-30, i.e. SDK-level opted out).
+        //
+        // The app's only optOut() lives in the settings reset button, whose
+        // own comment admits its optOut→optIn sequence can race; and until
+        // this line, NOTHING outside that same button ever called optIn().
+        // So a device that ever landed opted out — through the race, or
+        // through SDK state inherited from an older install — stayed
+        // unreachable forever, every session faithfully re-reporting
+        // enabled=false on a perfectly good token.
+        //
+        // The permission gate is load-bearing, not hygiene: the SDK's optIn()
+        // "will prompt the user for push notifications permission" when it is
+        // missing, and this init deliberately never hijacks previously-denied
+        // users (fallbackToSettings: false above). With permission granted,
+        // optIn() only flips the opt flag — idempotent, promptless, and it
+        // silently heals the fleet on next app open.
+        //
+        // `optedIn == false` on purpose (it is a bool?): null means the SDK
+        // has not reported state yet — do nothing on unknown; the next launch
+        // sees cached state and heals then.
+        if (shouldHealPushOptOut(
+          permissionGranted: granted,
+          optedIn: OneSignal.User.pushSubscription.optedIn,
+        )) {
+          await OneSignal.User.pushSubscription.optIn();
+          debugPrint('OneSignal: healed SDK-level push opt-out');
+        }
       } catch (e) {
         debugPrint('OneSignal requestPermission failed: $e');
       }
@@ -570,6 +600,19 @@ class NotificationService {
     }
 
     return false;
+  }
+
+  /// The heal decision for an SDK-level push opt-out, kept pure so the rule
+  /// is testable without the OneSignal static SDK: heal exactly when the OS
+  /// permission is granted AND the SDK explicitly reports opted out. Never on
+  /// unknown (null) state, and never without permission — optIn() would
+  /// prompt, and previously-denied users are deliberately left alone.
+  @visibleForTesting
+  static bool shouldHealPushOptOut({
+    required bool permissionGranted,
+    required bool? optedIn,
+  }) {
+    return permissionGranted && optedIn == false;
   }
 
   static Future<bool> areNotificationsEnabled() async {

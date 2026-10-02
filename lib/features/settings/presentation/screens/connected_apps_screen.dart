@@ -1134,10 +1134,7 @@ class _ConnectedAppsScreenState extends ConsumerState<ConnectedAppsScreen> {
   /// clears the connection and HIDES the provider's data — it comes back on
   /// reconnect. "Also delete my synced data" is the explicit, destructive
   /// alternative. Returns null when the athlete cancels.
-  Future<bool?> _confirmDisconnect(
-    BuildContext context,
-    String providerName,
-  ) {
+  Future<bool?> _confirmDisconnect(BuildContext context, String providerName) {
     return showDialog<bool>(
       context: context,
       builder: (dialogContext) => AlertDialog(
@@ -1196,10 +1193,7 @@ class _ConnectedAppsScreenState extends ConsumerState<ConnectedAppsScreen> {
     }
   }
 
-  Future<void> _disconnectGarmin(
-    BuildContext context,
-    WidgetRef ref,
-  ) async {
+  Future<void> _disconnectGarmin(BuildContext context, WidgetRef ref) async {
     final alsoDelete = await _confirmDisconnect(context, 'Garmin Connect');
     if (alsoDelete == null) return;
     final controller = ref.read(connectTrainingControllerProvider.notifier);
@@ -1314,10 +1308,7 @@ class _ConnectedAppsScreenState extends ConsumerState<ConnectedAppsScreen> {
     }
   }
 
-  Future<void> _disconnectVdot(
-    BuildContext context,
-    WidgetRef ref,
-  ) async {
+  Future<void> _disconnectVdot(BuildContext context, WidgetRef ref) async {
     final alsoDelete = await _confirmDisconnect(context, 'V.O2');
     if (alsoDelete == null) return;
     final controller = ref.read(connectTrainingControllerProvider.notifier);
@@ -1405,10 +1396,7 @@ class _ConnectedAppsScreenState extends ConsumerState<ConnectedAppsScreen> {
     }
   }
 
-  Future<void> _disconnectRunna(
-    BuildContext context,
-    WidgetRef ref,
-  ) async {
+  Future<void> _disconnectRunna(BuildContext context, WidgetRef ref) async {
     final alsoDelete = await _confirmDisconnect(context, 'Runna');
     if (alsoDelete == null) return;
     final controller = ref.read(connectTrainingControllerProvider.notifier);
@@ -1504,13 +1492,24 @@ class _ConnectedAppsScreenState extends ConsumerState<ConnectedAppsScreen> {
   Future<void> _resetPushNotifications(BuildContext context) async {
     final messenger = ScaffoldMessenger.maybeOf(context);
     MealvanaSnackbar.showLoading(context, 'Resetting push notifications...');
+    // DE-RACED 2026-10-01. The previous shape was optOut → 300ms sleep →
+    // optIn, and its own comment admitted the sleep existed because the pair
+    // "sometimes races". When optIn lost that race, the device was left
+    // SDK-opted-out server-side on a valid token (notification_types=-30) —
+    // and since nothing else in the app called optIn() back then, that state
+    // was permanent: the unreachable-player Critical's mechanism, witnessed
+    // live on 2026-10-01. A sleep is a bet; the loop below is a verification.
+    var healed = false;
     try {
       await OneSignal.User.pushSubscription.optOut();
-      // Tiny delay so OneSignal has time to register the optOut state
-      // before we flip it back. Without this the second call sometimes
-      // races and the cached state isn't fully cleared.
       await Future<void>.delayed(const Duration(milliseconds: 300));
-      await OneSignal.User.pushSubscription.optIn();
+      // optIn and then VERIFY the SDK reports opted-in, retrying the flip
+      // rather than trusting one call. Bounded: ~3s worst case.
+      for (var attempt = 0; attempt < 5 && !healed; attempt++) {
+        await OneSignal.User.pushSubscription.optIn();
+        await Future<void>.delayed(const Duration(milliseconds: 400));
+        healed = OneSignal.User.pushSubscription.optedIn == true;
+      }
     } catch (e) {
       messenger?.hideCurrentSnackBar();
       if (!context.mounted) return;
@@ -1523,11 +1522,21 @@ class _ConnectedAppsScreenState extends ConsumerState<ConnectedAppsScreen> {
     }
     messenger?.hideCurrentSnackBar();
     if (!context.mounted) return;
-    MealvanaSnackbar.showSuccess(
-      context,
-      'Push notifications reset. Restart the app to complete.',
-      duration: const Duration(seconds: 5),
-    );
+    if (healed) {
+      MealvanaSnackbar.showSuccess(
+        context,
+        'Push notifications reset. Restart the app to complete.',
+        duration: const Duration(seconds: 5),
+      );
+    } else {
+      // The old code showed success unconditionally here, which is how a
+      // failed reset masqueraded as a fixed one. Say what actually happened.
+      MealvanaSnackbar.showError(
+        context,
+        'Reset did not confirm — still opted out. Try again.',
+        duration: const Duration(seconds: 5),
+      );
+    }
   }
 
   // ============================================================
