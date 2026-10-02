@@ -16,6 +16,8 @@
 2026-10-02. Lee approved the wording. Still outside this repo: paste it into the website policy, update the App Store label (and `PrivacyInfo.xcprivacy`) per `app_store_privacy_details.md`. The account-deletion ruling is still open.
 
 2026-10-02. Published. The website's policy is a Sanity document (`legalDoc` `legal-d92443f92af0`, project `sigrvh1t`), not a file in `../me_website_new`, so it was patched and published through Sanity rather than committed. Added under Disclosure: "AI Features and Service Providers" with the approved Langfuse paragraph, a line naming Anthropic and the Vercel AI Gateway as the model providers (the draft said to add them in the same edit), and the staff/automated review sentence; under Data Retention: the 30-day sentence; Last Updated set to October 2, 2026. Still open: the account-deletion ruling.
+- Found while checking: the new wording is live at https://endurance.mealvana.io/privacy (the Sanity site). But https://www.mealvana.io/privacy-policy, the URL the app and the App Store link to, is still the Webflow site and shows the May 7, 2025 policy. Webflow is not editable from this repo. Lee to say whether the app's link moves to endurance.mealvana.io/privacy or the Webflow page gets the same text.
+- The page header shows "Last updated: Oct 1, 2026" for the date 2026-10-02: the site's formatDate renders a date-only value in a US timezone, a day early. Pre-existing, in `../me_website_new` `packages/web/src/lib/utils.ts`.
 
 Spec: `.scratch/langfuse/spec.md`. Decisions: `docs/langfuse/pivot/REPORT.md`. Words: `CONTEXT.md`, "Judging Vana". Langfuse access: `secrets/langfuse.env`, the `langfuse` skill, CLI and MCP server. Hobby allows 30 API requests a minute; pace any setup script.
 
