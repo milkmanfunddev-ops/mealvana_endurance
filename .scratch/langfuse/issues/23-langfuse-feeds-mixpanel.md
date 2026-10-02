@@ -13,4 +13,6 @@
 - [ ] The integration is enabled with the right region and token
 - [ ] `[Langfuse] Observation` and `[Langfuse] Score` events appear in Mixpanel on a known athlete's profile
 
+2026-10-02, Lee: the Mixpanel token is in `.env.prod.local` / `.env.dev.local` (`MIXPANEL_PROJECT_TOKEN`), not pasted by hand. The two rulings (which project; athletes without analytics consent) are still open, and the ticket waits on 22.
+
 Spec: `.scratch/langfuse/spec.md`. Decisions: `docs/langfuse/pivot/REPORT.md`. Words: `CONTEXT.md`, "Judging Vana". Langfuse access: `secrets/langfuse.env`, the `langfuse` skill, CLI and MCP server. Hobby allows 30 API requests a minute; pace any setup script.

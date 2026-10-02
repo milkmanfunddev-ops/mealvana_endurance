@@ -6,12 +6,14 @@
 
 **Owner:** `mealvana_endurance` agent.
 
-**Status:** drafted, waits for Lee to approve the wording
+**Status:** wording approved by Lee 2026-10-02; the website policy and the App Store label are still to be updated (outside this repo)
 
 - [x] The privacy documents in the repo name Langfuse, what it receives and why
 - [x] The App Store privacy details are checked against what is sent and any change needed is listed
-- [ ] Lee has approved the wording
+- [x] Lee has approved the wording
 - [x] Onboarding body copy is not edited
+
+2026-10-02. Lee approved the wording. Still outside this repo: paste it into the website policy, update the App Store label (and `PrivacyInfo.xcprivacy`) per `app_store_privacy_details.md`. The account-deletion ruling is still open.
 
 Spec: `.scratch/langfuse/spec.md`. Decisions: `docs/langfuse/pivot/REPORT.md`. Words: `CONTEXT.md`, "Judging Vana". Langfuse access: `secrets/langfuse.env`, the `langfuse` skill, CLI and MCP server. Hobby allows 30 API requests a minute; pace any setup script.
 

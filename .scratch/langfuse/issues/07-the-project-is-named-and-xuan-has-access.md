@@ -6,10 +6,12 @@
 
 **Owner:** Lee (with Xuan where named).
 
-**Status:** for Lee: browser work, needs his go
+**Status:** project renamed 2026-10-02; Xuan's invite waits (Lee, 2026-10-02: not yet)
 
-- [ ] The project is renamed from "My Project"
+- [x] The project is renamed from "My Project"
 - [ ] Xuan is invited as Member and has signed in
 - [ ] Lee and Xuan are the two users on Hobby
+
+2026-10-02. Renamed "Mealvana Vana" in Settings (Lee: any name is fine). Xuan is not invited yet; Lee said not to worry about her reviewing for now.
 
 Spec: `.scratch/langfuse/spec.md`. Decisions: `docs/langfuse/pivot/REPORT.md`. Words: `CONTEXT.md`, "Judging Vana". Langfuse access: `secrets/langfuse.env`, the `langfuse` skill, CLI and MCP server. Hobby allows 30 API requests a minute; pace any setup script.
