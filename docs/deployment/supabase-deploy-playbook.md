@@ -296,5 +296,7 @@ also the moment frozen functions from §6 can be deleted.
 | data-integrations@v1 (Drift 19→20, capture + matcher tier + TP write-back, ships 1.27.0) | `../ops/docs/deploys/2026-09-data-integration.md` | opened 2026-09-11; pre-work done (branch cut + v21 renumber); Stage A not started |
 | real-payload-corpus@v1 (provider_raw_payloads + first pg_cron sweep + corpus fns; no Drift change) | `../ops/docs/deploys/2026-09-real-payload-corpus.md` | LANDED 2026-09-20 (qa main d5d6f15, app 47425562 on release/1.27.0); DI-25 capture fix deployed dev+prod 2026-09-23 (garmin-push v52, garmin-backfill v19); backfill + flows seeding open |
 | 1.27.1 auth/onboarding bugfix patch (no schema, no Drift change; off the 1.27.0 release tree) | `../ops/docs/deploys/2026-09-1.27.1-auth-bugfix.md` | RELEASED 2026-09-23 (live on the App Store); P9 cleanup open |
+| carb-loading@v1.1 / 1.28.0 (no Drift change; foods seed + plan_date repair + race-window nudge) | `../ops/docs/deploys/2026-09-carb-loading-1.28.0.md` | RELEASED 2026-09-26; OTA patch #1 2026-09-29; P9 open |
+| night-before nudge + iOS notification seam + P3 / 1.29.0 (Drift 21→22 on develop, `activities.duration_source`) | `../ops/docs/deploys/2026-10-1.29.0-nudge.md` | RELEASED 2026-10-02; P7 step 1 done (pointers→22); heal ships via OTA patch #2; P9: reachability metric |
 
 Add a row when you start a runbook; update the status column when it closes.
