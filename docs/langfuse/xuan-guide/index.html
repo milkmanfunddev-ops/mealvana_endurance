@@ -162,7 +162,12 @@ dialog img{display:block;max-width:100%;max-height:92vh;border-radius:6px}
       <p><b>Human Annotation → Vana review.</b> A queue of past conversations. Read one, mark <b>Pass</b> or <b>Fail</b> (would a sports dietitian have said this?), one line on the first thing that went wrong, <b>Mark Completed</b>. Your verdicts teach the automatic judge.</p>
       <figure><img src="img/queue-item.jpg" alt="A review item: the conversation on the left, Pass/Fail and a note on the right"></figure></div></li>
     <li><span class="num">B</span><div class="step">
-      <p><b>Datasets → vana-scenarios → Experiments → Run experiment → via Webhook → Run.</b> Plays 22 saved scenarios against Vana and grades each. 15 to 20 minutes, about a dollar. For checking nothing got worse after a bigger change, not for exploring.</p>
+      <p><b>Datasets → vana-scenarios → Experiments → Run experiment → via Webhook → Run.</b> Plays saved scenarios against Vana with a simulated athlete and grades each one. Use <b>via Webhook</b>, not via User Interface (that one has no tools and no athlete file).</p>
+      <p>All 22 take 15 to 20 minutes and about a dollar. To play one, add an <code>items</code> line to the config box before clicking Run. The ids are on the dataset's Items tab.</p>
+      <pre style="margin:0 0 10px;padding:12px 14px;border:1px solid var(--line);border-radius:8px;background:var(--panel);font-size:.9rem;overflow-x:auto">{
+  "model": "anthropic/claude-haiku-4.5",
+  "items": ["vana-scenario-s06"]
+}</pre>
       <figure><img src="img/experiments-tab.jpg" alt="Past experiment runs with the Run experiment button"></figure></div></li>
   </ol>
   <div class="note"><span class="num">!</span><p>Anything odd, ask Lee. Nothing in Langfuse is hard to undo.</p></div>
