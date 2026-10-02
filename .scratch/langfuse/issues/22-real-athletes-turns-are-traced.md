@@ -8,7 +8,7 @@
 
 **Status:** lead-run, waits for Lee's go
 
-- [ ] The privacy documents from ticket 06 are published
+- [x] The privacy documents from ticket 06 are published (website policy, 2026-10-02; App Store label waits for the next release)
 - [ ] Every prompt has a `production` label on the intended version
 - [ ] Langfuse keys are function secrets on the prod project
 - [ ] Deployed check on prod: one real Turn and one meal photo appear in Langfuse, and each cost equals its Call log row

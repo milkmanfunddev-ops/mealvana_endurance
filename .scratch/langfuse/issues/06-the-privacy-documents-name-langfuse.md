@@ -6,7 +6,7 @@
 
 **Owner:** `mealvana_endurance` agent.
 
-**Status:** wording approved by Lee 2026-10-02; the website policy and the App Store label are still to be updated (outside this repo)
+**Status:** done (2026-10-02); the App Store label change is listed in `docs/privacy/app_store_privacy_details.md` and waits for the next app release
 
 - [x] The privacy documents in the repo name Langfuse, what it receives and why
 - [x] The App Store privacy details are checked against what is sent and any change needed is listed
@@ -14,6 +14,8 @@
 - [x] Onboarding body copy is not edited
 
 2026-10-02. Lee approved the wording. Still outside this repo: paste it into the website policy, update the App Store label (and `PrivacyInfo.xcprivacy`) per `app_store_privacy_details.md`. The account-deletion ruling is still open.
+
+2026-10-02. Published. The website's policy is a Sanity document (`legalDoc` `legal-d92443f92af0`, project `sigrvh1t`), not a file in `../me_website_new`, so it was patched and published through Sanity rather than committed. Added under Disclosure: "AI Features and Service Providers" with the approved Langfuse paragraph, a line naming Anthropic and the Vercel AI Gateway as the model providers (the draft said to add them in the same edit), and the staff/automated review sentence; under Data Retention: the 30-day sentence; Last Updated set to October 2, 2026. Still open: the account-deletion ruling.
 
 Spec: `.scratch/langfuse/spec.md`. Decisions: `docs/langfuse/pivot/REPORT.md`. Words: `CONTEXT.md`, "Judging Vana". Langfuse access: `secrets/langfuse.env`, the `langfuse` skill, CLI and MCP server. Hobby allows 30 API requests a minute; pace any setup script.
 

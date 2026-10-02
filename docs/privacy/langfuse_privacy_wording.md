@@ -1,6 +1,6 @@
 # Privacy policy wording for Langfuse
 
-**Status: APPROVED by Lee, 2026-10-02. Not yet published: the website policy and App Store label still need the edit.**
+**Status: PUBLISHED on the website 2026-10-02 (Sanity `legalDoc` `legal-d92443f92af0`). The App Store label edit waits for the next release.**
 
 Written 2026-09-30 for langfuse ticket 06. Production tracing (ticket 22) waits on this being
 approved and the policy at https://www.mealvana.io/privacy-policy being updated. The policy text
