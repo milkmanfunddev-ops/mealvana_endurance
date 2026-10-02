@@ -190,12 +190,43 @@ class NotificationService {
         // `optedIn == false` on purpose (it is a bool?): null means the SDK
         // has not reported state yet — do nothing on unknown; the next launch
         // sees cached state and heals then.
+        // THE READ MUST WAIT FOR HYDRATION (patch #2's lesson, 2026-10-01).
+        // This app calls OneSignal.initialize() without await, and the Dart
+        // side hydrates `optedIn` inside initialize's own lifecycle futures on
+        // a DIFFERENT method channel than requestPermission — so a one-shot
+        // read here can land before hydration, see null, and skip the heal
+        // deterministically on fast launches. Poll briefly instead: bounded at
+        // ~3s, exits on first non-null, and still never acts on unknown.
+        var optedIn = OneSignal.User.pushSubscription.optedIn;
+        var waitedMs = 0;
+        while (optedIn == null && waitedMs < 3000) {
+          await Future<void>.delayed(const Duration(milliseconds: 300));
+          waitedMs += 300;
+          optedIn = OneSignal.User.pushSubscription.optedIn;
+        }
+
+        // TAPED, NOT debugPrint'd — the first patch's heal was invisible in
+        // release, which made "patch not applied" and "heal did not fire"
+        // indistinguishable from outside: the silent-path rule biting the fix
+        // that exists because of the silent-path rule. The tape answers, on
+        // the device, with nothing attached: did it run, what did it read,
+        // what did it do, what was the state afterwards.
+        LaunchTrail.add(
+          'push heal: permission=$granted optedIn=$optedIn '
+          '(hydration wait ${waitedMs}ms)',
+        );
         if (shouldHealPushOptOut(
           permissionGranted: granted,
-          optedIn: OneSignal.User.pushSubscription.optedIn,
+          optedIn: optedIn,
         )) {
           await OneSignal.User.pushSubscription.optIn();
-          debugPrint('OneSignal: healed SDK-level push opt-out');
+          await Future<void>.delayed(const Duration(milliseconds: 500));
+          LaunchTrail.add(
+            'push heal: optIn() called → post optedIn='
+            '${OneSignal.User.pushSubscription.optedIn}',
+          );
+        } else {
+          LaunchTrail.add('push heal: no action');
         }
       } catch (e) {
         debugPrint('OneSignal requestPermission failed: $e');
