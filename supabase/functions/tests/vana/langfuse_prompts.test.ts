@@ -80,10 +80,10 @@ Deno.test("the persona is the prompt source's text, asked for by `latest` on dev
   for (const label of ['latest', 'production'] as const) {
     const api = fakePromptApi();
     const general = await turn('general', { message: 'what should I eat today' }, source(label, api.fetchPrompt));
-    assertEquals(systemTexts(general.call)[0], '[vana/persona/general as Langfuse holds it]\n- [vana/persona/write-rules as Langfuse holds it]\n[vana/persona/general-after-writes as Langfuse holds it]');
+    assertEquals(systemTexts(general.call)[0], '[vana/persona/every-chat as Langfuse holds it]\n[vana/persona/write-rules as Langfuse holds it]\n[vana/persona/general-chat as Langfuse holds it]');
     assert(api.asked.length > 0 && api.asked.every((a) => a.label === label), `every prompt was asked for by ${label}`);
     const planning = await turn('meal_planning', { message: 'dinners first' }, source(label, api.fetchPrompt));
-    assertEquals(systemTexts(planning.call)[0], '[vana/persona/core as Langfuse holds it]\n[vana/persona/write-rules as Langfuse holds it]\n[vana/persona/planning as Langfuse holds it]');
+    assertEquals(systemTexts(planning.call)[0], '[vana/persona/every-chat as Langfuse holds it]\n[vana/persona/write-rules as Langfuse holds it]\n[vana/persona/planning-chat as Langfuse holds it]');
   }
 });
 
@@ -102,7 +102,7 @@ Deno.test("an opener is the prompt source's text, with what makes it theirs and 
 });
 
 Deno.test('chip labels in a persona section are filled from code, whichever copy of the prompt runs', async () => {
-  const api = fakePromptApi({ 'vana/persona/planning': 'After confirmPlan offer "{{chip_open_shopping_list}}" and "{{chip_adjust}}".' });
+  const api = fakePromptApi({ 'vana/persona/planning-chat': 'After confirmPlan offer "{{chip_open_shopping_list}}" and "{{chip_adjust}}".' });
   const { call } = await turn('meal_planning', { message: 'confirm' }, source('latest', api.fetchPrompt));
   assert(systemTexts(call)[0].endsWith(`After confirmPlan offer "${CHIP_LABELS.openShoppingList}" and "${CHIP_LABELS.adjust}".`));
 });
@@ -156,17 +156,17 @@ Deno.test('only a project that says it is dev asks for `latest`', () => {
   for (const environment of ['production', undefined, '', 'prod', 'Dev']) assertEquals(promptLabelFor(environment), 'production', String(environment));
 });
 
-Deno.test("a Turn's Generations link to the version of the persona section its kind leads with", async () => {
-  const versions: Record<string, number> = { 'vana/persona/core': 4, 'vana/persona/general': 9 };
+Deno.test("a Turn's Generations link to the version of the persona section that is its kind's own", async () => {
+  const versions: Record<string, number> = { 'vana/persona/planning-chat': 4, 'vana/persona/general-chat': 9 };
   const fetchPrompt: FetchPrompt = (name) => Promise.resolve({ text: `[${name}]`, version: versions[name] ?? 2 });
-  for (const [kind, link] of [['general', ['vana/persona/general', 9]], ['meal_planning', ['vana/persona/core', 4]]] as const) {
+  for (const [kind, link] of [['general', ['vana/persona/general-chat', 9]], ['meal_planning', ['vana/persona/planning-chat', 4]]] as const) {
     const collector = new InMemorySpanExporter();
     await turn(kind, { message: 'what should I eat today' }, source('latest', fetchPrompt), collector);
     assertEquals(promptLinksOf(collector.getFinishedSpans()), [[...link]], kind);
     // Every prompt the Turn was built from, with its version, is on the root: a Generation links to one prompt only.
     const root = collector.getFinishedSpans().find((s) => s.name === 'vana-turn')!;
     const all = JSON.parse(String(root.attributes['langfuse.observation.metadata.promptVersions']));
-    assertEquals(all['vana/persona/core'], 4); assertEquals(all['vana/persona/write-rules'], 2);
+    assertEquals(all['vana/persona/planning-chat'], 4); assertEquals(all['vana/persona/write-rules'], 2);
     assertEquals(Object.keys(all).sort(), Object.keys(PROMPT_TEMPLATES).sort());
   }
 });

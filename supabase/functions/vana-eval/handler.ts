@@ -28,7 +28,7 @@
  * cost stays on record once and is never counted twice.
  */
 import { runChat, type ChatBody, type TurnTrace, type VanaOverrides } from '../_shared/vana/chat.ts';
-import { PERSONA_SECTIONS, type PersonaSection } from '../_shared/vana/persona.ts';
+import { PERSONA_SECTIONS, personaSectionsOf } from '../_shared/vana/persona.ts';
 import { describeTools, makeVanaTools } from '../_shared/vana/tools.ts';
 import type { AthleteContext, ConversationKind } from '../_shared/vana/contracts.ts';
 import { isAdmin } from '../_shared/vana/entitlement.ts';
@@ -113,13 +113,11 @@ function traceStep(s: any) {
   };
 }
 
-/** The persona sections each kind is built from, in order (persona.ts personaPrompt). */
-const KIND_PERSONA: Record<ConversationKind, PersonaSection[]> = { meal_planning: ['core', 'writeRules', 'planning'], general: ['general', 'writeRules', 'generalAfterWrites'] };
 
 /** What a Run's overrides replace, as the app runs it. Building the tools only makes their definitions, so they are
  *  built for no one: nothing is read or run. */
 function defaults() {
-  const kind = (k: ConversationKind) => ({ persona: KIND_PERSONA[k], tools: describeTools(makeVanaTools({} as VanaCtx, {} as AthleteContext, k)) });
+  const kind = (k: ConversationKind) => ({ persona: personaSectionsOf(k), tools: describeTools(makeVanaTools({} as VanaCtx, {} as AthleteContext, k)) });
   return { model: CHAT_MODEL, persona: PERSONA_SECTIONS, kinds: { meal_planning: kind('meal_planning'), general: kind('general') } };
 }
 

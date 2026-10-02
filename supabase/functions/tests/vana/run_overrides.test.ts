@@ -90,12 +90,12 @@ Deno.test('an empty overrides object sends the same bytes as none', async () => 
 Deno.test('a persona section override replaces that section in the system prompt, for either kind', async () => {
   const general = await turn('general', { persona: { writeRules: 'WRITES: test rule.' } });
   const persona = systemTexts(general.call.options)[0];
-  assert(persona.includes('- WRITES: test rule.'), 'the replaced section is in the general persona');
+  assert(persona.includes('\nWRITES: test rule.\n'), 'the replaced section is in the general persona');
   assert(!persona.includes(PERSONA_SECTIONS.writeRules), 'the original section is gone');
-  assert(persona.startsWith(PERSONA_SECTIONS.general) && persona.endsWith(PERSONA_SECTIONS.generalAfterWrites), 'the sections around it are untouched');
+  assert(persona.startsWith(PERSONA_SECTIONS.everyChat) && persona.endsWith(PERSONA_SECTIONS.generalChat), 'the sections around it are untouched');
   assertEquals(general.trace.system.persona, persona, 'the trace records the persona that was sent');
 
-  const planning = await turn('meal_planning', { persona: { core: 'You are Vana, under test.', planning: 'PLAN: test rules.' } });
+  const planning = await turn('meal_planning', { persona: { everyChat: 'You are Vana, under test.', planningChat: 'PLAN: test rules.' } });
   assertEquals(systemTexts(planning.call.options)[0], `You are Vana, under test.\n${PERSONA_SECTIONS.writeRules}\nPLAN: test rules.`);
 });
 

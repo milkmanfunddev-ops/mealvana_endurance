@@ -19,7 +19,7 @@ import type { VanaCtx } from './env.ts';
 import { buildAthleteContext, contextBlock } from './context.ts';
 import { cachedContext } from './context-cache.ts';
 import { makeVanaTools, offeredTools, UnknownOverrideError, type ToolOverrides } from './tools.ts';
-import { personaPrompt, leadPersonaPrompt, NEW_PLAN_STANDING, PROMPT_NAMES, PROMPT_TEMPLATES, wordingFrom, type PersonaOverrides, type PromptName } from './persona.ts';
+import { personaPrompt, personaSectionsOf, kindPersonaPrompt, NEW_PLAN_STANDING, PROMPT_NAMES, PROMPT_TEMPLATES, wordingFrom, type PersonaOverrides, type PromptName } from './persona.ts';
 import { completeCall, reserveCall } from './rate-limit.ts';
 import { readSummaries, writeSummary, writeOnIdle, transcriptFromMessages, defaultExtractDeps, defaultSummaryDeps, type ExtractDeps, type StoredSummary, type SummaryDeps } from './extract.ts';
 import { inViewSection, resolveSituation, SITUATION_MARK, type Situation } from './situation.ts';
@@ -528,6 +528,10 @@ export async function runChat(v: VanaCtx, body: ChatBody, opts: ChatRunOpts): Pr
   // the names depend on the conversation's kind. Only vana-eval passes overrides, and its throwaway user goes at the end.
   let offered: typeof tools;
   try { offered = offeredTools(tools, o); } catch (e) { if (e instanceof UnknownOverrideError) return { ok: false, status: 400, body: { error: 'bad_override', detail: e.message } }; throw e; }
+  // A section this kind's persona is not built from would change nothing, so it is refused the same way: a Run recorded
+  // against sections that have since been renamed must not run again as if its override still applied.
+  const strangers = Object.keys(o.persona ?? {}).filter((k) => !(personaSectionsOf(convKind) as string[]).includes(k));
+  if (strangers.length) return { ok: false, status: 400, body: { error: 'bad_override', detail: `not a section of the ${convKind} persona: ${strangers.join(', ')}` } };
   // A pure vent is answered by the content-managed row alone; a complaint that also asks something still gets its answer.
   const silenceFeedback = silenceAfterFeedback(lastText);
   const started = Date.now();
@@ -569,10 +573,10 @@ export async function runChat(v: VanaCtx, body: ChatBody, opts: ChatRunOpts): Pr
   // The Turn's Trace (langfuse ticket 01): the root observation is open while the stream runs, so every Step and Tool
   // call nests under it, and is ended by whichever of onFinish and onError comes first.
   const tracing = opts.tracing ?? defaultTracing();
-  // Each Generation links to one prompt version (langfuse ticket 18): the persona section the kind leads with, unless a
+  // Each Generation links to one prompt version (langfuse ticket 18): the persona section that is the kind's own, unless a
   // Run replaced any section. Every prompt's version is listed on the root.
-  const lead = leadPersonaPrompt(convKind);
-  const linkedPrompt = Object.keys(o.persona ?? {}).length ? null : prompts[lead.name];
+  const own = kindPersonaPrompt(convKind);
+  const linkedPrompt = Object.keys(o.persona ?? {}).length ? null : prompts[own.name];
   const promptVersions = Object.fromEntries(PROMPT_NAMES.map((n) => [n, prompts[n].fallback ? null : prompts[n].version]));
   // The turns before this one, for the flag evaluators (langfuse ticket 16): the root's input is this message alone, and
   // a correction or a repeat only reads as one beside what came before.

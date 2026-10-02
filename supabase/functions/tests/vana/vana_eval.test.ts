@@ -195,7 +195,7 @@ Deno.test("overrides reach the model call, and Vana's writes land on the copy", 
   const gw = mockGateway();
   try {
     const overrides = {
-      model: 'anthropic/claude-sonnet-5', tools: ['saveFeedback'], persona: { general: 'You are Vana, under test.' },
+      model: 'anthropic/claude-sonnet-5', tools: ['saveFeedback'], persona: { everyChat: 'You are Vana, under test.' },
       toolDescriptions: { saveFeedback: { description: 'Test: file feedback.', parameters: { message: 'Test: their words.' } } },
     };
     const t = await lines(await h.call({ action: 'turn', run_user_id: copy, message: 'the app is broken', kind: 'general', overrides }));
@@ -207,6 +207,9 @@ Deno.test("overrides reach the model call, and Vana's writes land on the copy", 
     assertEquals([tool.name, tool.description, tool.inputSchema.properties.message.description], ['saveFeedback', 'Test: file feedback.', 'Test: their words.']);
     const bad = await h.call({ action: 'turn', run_user_id: copy, message: 'hi', kind: 'general', overrides: { tools: ['noSuchTool'] } });
     assertEquals(bad.status, 400);
+    // A section the kind's persona is not built from (here, one from before the sections were renamed) is refused too.
+    const stale = await h.call({ action: 'turn', run_user_id: copy, message: 'hi', kind: 'general', overrides: { persona: { core: 'You are Vana.' } } });
+    assertEquals(stale.status, 400);
   } finally { gw.restore(); }
   const feedback = h.v.fake.rows('user_feedback');
   assertEquals(feedback.map((r) => r.user_id), [copy], 'the feedback row is the copy\'s');
@@ -279,8 +282,8 @@ Deno.test("defaults show what a Run may override, as the app runs it: the model,
   const d = await r.json();
   assertEquals(d.model, CHAT_MODEL);
   assertEquals(d.persona, PERSONA_SECTIONS);
-  assertEquals(d.kinds.meal_planning.persona, ['core', 'writeRules', 'planning']);
-  assertEquals(d.kinds.general.persona, ['general', 'writeRules', 'generalAfterWrites']);
+  assertEquals(d.kinds.meal_planning.persona, ['everyChat', 'writeRules', 'planningChat']);
+  assertEquals(d.kinds.general.persona, ['everyChat', 'writeRules', 'generalChat']);
   for (const kind of ['general', 'meal_planning'] as const) {
     // deno-lint-ignore no-explicit-any
     const tools = makeVanaTools(h.v, {} as AthleteContext, kind, {}) as Record<string, any>;
