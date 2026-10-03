@@ -283,6 +283,12 @@ also the moment frozen functions from §6 can be deleted.
 5. **Edge functions never deploy from CI.** Nothing deploys on merge.
 6. **Backups.** Prod has no automatic backups on the current plan (confirmed 2026-08-19; Lee owns the
    fix). Until it exists: commit a schema-only dump after every prod apply as the baseline.
+   **Dump tooling (amended 2026-10-01, Xuan):** take prod dumps with `pg_dump` **>= the server
+   major** (client 18.6 vs server 17.4 today) — forward-compatible is the supported direction;
+   never regenerate with an older tool to avoid diff churn. State the pg_dump version in the
+   commit message. Caveat: pg18 dumps carry `\restrict`/`\unrestrict` markers that BREAK replay
+   with psql < 18 — replay with psql >= 18 or strip the markers first. The one-time format churn
+   (identifier quoting, the markers) was accepted so later diffs stay readable.
 7. **Notion / cut cards.** Run `/release-cut` on every cut (see `CLAUDE.md`).
 
 ---
