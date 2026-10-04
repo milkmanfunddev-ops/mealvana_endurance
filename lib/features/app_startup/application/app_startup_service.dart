@@ -293,10 +293,21 @@ class AppStartupService {
         //
         // Every step is now fault-isolated too, so one failure can no longer
         // swallow the rest of the chain.
-        await _deferredStep(
-          'deferred.notifications',
-          NotificationService.initialize,
-        );
+        await _deferredStep('deferred.notifications', () async {
+          // The OneSignal app id must be in hand BEFORE initialize() runs —
+          // it used to arrive via configure() in deferred.analytics, two
+          // steps later, so the 1.29.0 "notifications FIRST" reorder left
+          // _initializeOneSignal() bailing on an empty id on every fresh
+          // install, fleet-wide (patch #3, 2026-10-03). Analytics consent is
+          // NOT a gate here: this is push registration, not tracking — the
+          // OS permission prompt is push's own consent. The analytics
+          // tracker still only attaches in deferred.analytics, after
+          // consent, so tap-event tracking is unchanged.
+          NotificationService.configureRemotePush(
+            oneSignalAppId: ref.read(appConfigProvider).oneSignalAppId,
+          );
+          await NotificationService.initialize();
+        });
 
         // 2. Initialize device info (safe after first frame)
         await _deferredStep(

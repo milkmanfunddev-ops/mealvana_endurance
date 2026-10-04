@@ -1,3 +1,5 @@
+import 'dart:async';
+
 import 'package:flutter/foundation.dart';
 import 'package:flutter_local_notifications/flutter_local_notifications.dart';
 import 'package:onesignal_flutter/onesignal_flutter.dart';
@@ -39,10 +41,55 @@ class NotificationService {
     String oneSignalAppId = '',
   }) {
     _analytics = tracker;
+    configureRemotePush(oneSignalAppId: oneSignalAppId);
+  }
+
+  /// Hands the OneSignal app id to this service — and, if `initialize()` has
+  /// ALREADY run without one, arms OneSignal right now instead of silently
+  /// keeping the dead state.
+  ///
+  /// WHY THIS EXISTS (patch #3, 2026-10-03 — the fleet-wide silent-SDK bug).
+  /// The 1.29.0 startup reorder (2c63d3e26) made `deferred.notifications` the
+  /// FIRST deferred step, which is load-bearing for the launch payload — but
+  /// the app id used to arrive via `configure()` inside `deferred.analytics`,
+  /// two steps LATER. So `_initializeOneSignal()` always saw an empty app id,
+  /// bailed, and nothing ever retried: no user, no login, no permission
+  /// prompt, no heal — on every fresh 1.29.0 install, fleet-wide, invisibly.
+  /// Two days of device forensics (reinstalls, reboot, keychain theories)
+  /// were spent on what was an ordering bug in our own chain.
+  ///
+  /// The fix is TWO-SIDED so step order can never disarm push again:
+  /// the startup chain now passes the app id BEFORE `initialize()` runs
+  /// (app_startup_service, deferred.notifications), AND this method arms
+  /// OneSignal itself whenever the id arrives after the fact. Either side
+  /// alone closes the bug; together, no future reorder reopens it.
+  static void configureRemotePush({required String oneSignalAppId}) {
     _oneSignalAppId = oneSignalAppId.trim();
+    if (_isInitialized &&
+        !_isOneSignalInitialized &&
+        _oneSignalAppId.isNotEmpty &&
+        !kIsWeb) {
+      LaunchTrail.add(
+        'onesignal: app id arrived AFTER initialize() — arming now '
+        '(ordering guard, patch #3)',
+      );
+      unawaited(_initializeOneSignal());
+    }
   }
 
   static bool get isRemotePushConfigured => _oneSignalAppId.isNotEmpty;
+
+  /// Test seams for the patch-#3 ordering guard. `initialize()` cannot run in
+  /// a unit test (flutter_local_notifications needs a platform), so tests
+  /// simulate its completed state and drive the OneSignal arm directly.
+  @visibleForTesting
+  static void debugMarkInitializedForTest({bool oneSignal = false}) {
+    _isInitialized = true;
+    _isOneSignalInitialized = oneSignal;
+  }
+
+  @visibleForTesting
+  static Future<void> debugInitializeOneSignal() => _initializeOneSignal();
 
   /// Registers a callback for notification-tap deep linking.
   /// If no handler is set, taps are stored as pending navigation.
@@ -140,7 +187,19 @@ class NotificationService {
   }
 
   static Future<void> _initializeOneSignal() async {
-    if (_oneSignalAppId.isEmpty || _isOneSignalInitialized || kIsWeb) {
+    if (_isOneSignalInitialized || kIsWeb) {
+      return;
+    }
+    if (_oneSignalAppId.isEmpty) {
+      // THE SILENT PATH THAT HID THE FLEET BUG FOR TWO DAYS (2026-10-01→03):
+      // this bail is correct behavior, but leaving no trace made "SDK wedged
+      // on-device" and "we never gave it an app id" indistinguishable from
+      // outside. If this line appears WITHOUT a later "arming now" line, the
+      // startup chain is misordered again.
+      LaunchTrail.add(
+        'onesignal init: SKIPPED — no app id configured yet '
+        '(configureRemotePush() will arm when it arrives)',
+      );
       return;
     }
 
