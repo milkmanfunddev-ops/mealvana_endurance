@@ -35,6 +35,12 @@ mealvana_endurance/
 - Testing anything that notifies, schedules, or deep-links — or hunting device logs/tapes —
   invoke the `notification-testing` skill FIRST (`.claude/skills/notification-testing/`); it
   carries the paid-for device protocol. Push-stack facts: `ops/docs/messaging-relay-and-testing.md`.
+- **D9 (ratified 2026-10-03): silent paths must write down what they did.** Any early return,
+  swallowed error, skipped step or guard bail in startup, sync, notification/push or
+  payment paths — one whose failure no user would notice — must record that it happened in a
+  PROD-readable channel (LaunchTrail tape + Sentry breadcrumb/warning, or a server log). A
+  dev-only viewer does not count. Case that bought it: a silent `return` on an empty OneSignal
+  app id disabled push for every fresh 1.29.0 install and hid for two days.
 - Enforce FOA layers: `presentation -> application -> domain <- data`.
 - Keep UI screens UI-only (state, navigation, composition, validation).
 - Put business logic in controllers/services (API calls, transforms, calculations, analytics).
