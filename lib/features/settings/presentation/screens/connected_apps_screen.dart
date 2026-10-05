@@ -17,6 +17,7 @@ import '../../../onboarding/presentation/widgets/onboarding_multi_select_step.da
 import '../../../onboarding/presentation/widgets/onboarding_week_chart_card.dart';
 import '../../../../shared/services/app_external_deps.dart';
 import '../../../../shared/services/notification_service.dart';
+import '../../../../shared/services/launch_trail.dart';
 import '../../../../shared/services/preferences_service.dart';
 import '../../../../shared/widgets/content_area.dart';
 import '../../../../shared/widgets/kyle_design/sheets/tp_writeback_consent_sheet.dart';
@@ -154,10 +155,18 @@ class _ConnectedAppsScreenState extends ConsumerState<ConnectedAppsScreen> {
         leading: const CustomAppBarBackButton(
           key: ValueKey('connected_apps.back_button'),
         ),
-        title: Text(
-          key: const ValueKey('connected_apps.title'),
-          'Connected Apps',
-          style: AppTextStyles.sectionTitle.copyWith(color: onSurface),
+        // Long-press the title to read the LaunchTrail tape ON PROD. The
+        // trail records every notification-path event in release builds, but
+        // its only viewer was dev-gated — so prod devices kept writing down
+        // answers nobody could read (bitten 2026-10-01 and again 2026-10-03).
+        // Read-only, undiscoverable by accident, no dev-mode flag involved.
+        title: GestureDetector(
+          onLongPress: () => _showLaunchTrail(context),
+          child: Text(
+            key: const ValueKey('connected_apps.title'),
+            'Connected Apps',
+            style: AppTextStyles.sectionTitle.copyWith(color: onSurface),
+          ),
         ),
         centerTitle: true,
       ),
@@ -1489,6 +1498,38 @@ class _ConnectedAppsScreenState extends ConsumerState<ConnectedAppsScreen> {
   /// and re-runs registerForRemoteNotifications. Used as a manual escape
   /// hatch when push notifications stop arriving despite iOS Settings
   /// reporting permission as granted.
+  /// The prod tape reader. Shows this launch's trail and the previous
+  /// launch's, newest at the bottom — enough to reconstruct a notification
+  /// tap's full routing after the fact on any build.
+  void _showLaunchTrail(BuildContext context) {
+    final previous = LaunchTrail.previous;
+    showDialog<void>(
+      context: context,
+      builder: (c) => AlertDialog(
+        title: const Text('Launch trail'),
+        content: SingleChildScrollView(
+          child: SelectableText(
+            [
+              if (previous != null && previous.isNotEmpty) ...[
+                '--- previous launch ---',
+                previous,
+              ],
+              '--- this launch ---',
+              LaunchTrail.text.isEmpty ? '(empty)' : LaunchTrail.text,
+            ].join('\n'),
+            style: const TextStyle(fontSize: 11, height: 1.4),
+          ),
+        ),
+        actions: [
+          TextButton(
+            onPressed: () => Navigator.of(c).pop(),
+            child: const Text('Dismiss'),
+          ),
+        ],
+      ),
+    );
+  }
+
   Future<void> _resetPushNotifications(BuildContext context) async {
     final messenger = ScaffoldMessenger.maybeOf(context);
     MealvanaSnackbar.showLoading(context, 'Resetting push notifications...');

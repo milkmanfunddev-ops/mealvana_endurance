@@ -262,6 +262,10 @@ class _RootAppWidgetState extends ConsumerState<RootAppWidget>
     final router = ref.read(AppRouter.routerProvider);
     router.go('/');
     router.push(location, extra: extra);
+    // Taped so a later "canPop=false" back-fallback can be read against
+    // whether the stack WAS seeded here — the 2026-10-03 regression's open
+    // question is what un-seeded it afterwards.
+    LaunchTrail.add('deepLinkTo $location (seeded / beneath)');
   }
 
   Future<void> _goPrefilled(
