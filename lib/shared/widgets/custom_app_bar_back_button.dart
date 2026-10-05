@@ -1,4 +1,7 @@
 import 'package:flutter/material.dart';
+import 'package:go_router/go_router.dart';
+
+import '../services/launch_trail.dart';
 
 /// Branded app bar back button used across the app.
 ///
@@ -42,6 +45,18 @@ class _CustomAppBarBackButtonState extends State<CustomAppBarBackButton> {
       final navigator = Navigator.of(context);
       if (navigator.canPop()) {
         navigator.pop();
+      } else {
+        // A visible back control must never do NOTHING. A stackless arrival
+        // (deep link whose seeded stack was later rebuilt out from under it,
+        // or any future door that forgets to seed one) used to leave the
+        // athlete trapped here with force-quit as the only exit — witnessed
+        // on the nudge-tap create page 2026-10-01 and AGAIN 2026-10-03 after
+        // the seeded-stack fix had demonstrably run (see
+        // ops/data/bug-reports/2026-10-04-nudge-tap-back-button-dead-again.md).
+        // Home is always a correct "back" from a dead-end, and the tape line
+        // turns the next stackless arrival into evidence instead of a mystery.
+        LaunchTrail.add('back fallback: canPop=false — going home');
+        GoRouter.of(context).go('/');
       }
     }
 
