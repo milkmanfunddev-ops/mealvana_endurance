@@ -8,6 +8,7 @@ import 'package:image_picker/image_picker.dart';
 
 import '../../../../shared/widgets/kyle_design/kyle_design.dart';
 import '../../../../shared/services/app_external_deps.dart';
+import '../../../../shared/services/report/report.dart';
 import '../../../ai_credits/domain/insufficient_credits_exception.dart';
 import '../../../ai_credits/presentation/insufficient_credits_paywall.dart';
 import '../../../ai_credits/presentation/widgets/token_pill.dart';
@@ -62,7 +63,17 @@ class _PhotoCaptureScreenState extends ConsumerState<PhotoCaptureScreen> {
         imageQuality: 85,
         maxWidth: 1200,
       );
-    } catch (_) {
+    } catch (e, st) {
+      // Permission denied or no camera: the app lives with it.
+      ref
+          .read(reportProvider)
+          .degraded(
+            e,
+            stackTrace: st,
+            area: 'meal_logging',
+            message: 'photo capture: image picker failed',
+            extra: {'method': method},
+          );
       if (mounted) {
         MealvanaSnackbar.showError(
           context,
@@ -130,6 +141,13 @@ class _PhotoCaptureScreenState extends ConsumerState<PhotoCaptureScreen> {
           'latency_ms': stopwatch.elapsedMilliseconds,
         },
       );
+      ref
+          .read(reportProvider)
+          .note(
+            'photo capture: out of credits, paywall shown',
+            area: 'meal_logging',
+            data: {'method': method},
+          );
       maybeShowInsufficientCreditsPaywall(e);
     } on MealAiException catch (e) {
       stopwatch.stop();
@@ -141,6 +159,15 @@ class _PhotoCaptureScreenState extends ConsumerState<PhotoCaptureScreen> {
           'latency_ms': stopwatch.elapsedMilliseconds,
         },
       );
+      // The service already reports the underlying failure; this is the
+      // user-facing branch.
+      ref
+          .read(reportProvider)
+          .note(
+            'photo capture failed: ${e.kind.name}',
+            area: 'meal_logging',
+            data: {'method': method, 'debug': e.debugMessage},
+          );
       if (!mounted) return;
       switch (e.kind) {
         case MealAiFailureKind.notFood:
@@ -153,7 +180,16 @@ class _PhotoCaptureScreenState extends ConsumerState<PhotoCaptureScreen> {
           MealvanaSnackbar.showError(context, e.userMessage);
           break;
       }
-    } catch (_) {
+    } catch (e, st) {
+      ref
+          .read(reportProvider)
+          .fault(
+            e,
+            stackTrace: st,
+            area: 'meal_logging',
+            message: 'photo capture: unexpected failure',
+            extra: {'method': method},
+          );
       stopwatch.stop();
       analytics.track(
         'meal_ai_failed',

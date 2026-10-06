@@ -39,10 +39,13 @@ import 'package:mealvana_endurance/features/meal_logging/domain/quick_assembly.d
 import 'package:mealvana_endurance/features/meal_logging/domain/saved_meal.dart';
 import 'package:mealvana_endurance/shared/database/app_database.dart';
 import 'package:mealvana_endurance/shared/services/logging_service.dart';
+import 'package:mealvana_endurance/shared/services/report/report.dart';
 import 'package:mealvana_endurance/shared/services/sentry/sentry_reporter.dart';
 import 'package:mocktail/mocktail.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 import 'package:supabase_flutter/supabase_flutter.dart';
+
+import '../../helpers/fakes/recording_report.dart';
 
 // ─── Mocks ───────────────────────────────────────────────────────────────────
 
@@ -1662,6 +1665,7 @@ void main() {
     late MockGoTrueClient mockAuth;
     late MockSupabaseFunctions mockFunctions;
     late MealAiService service;
+    late RecordingReport report;
 
     const fakeUserId = 'user-abc';
 
@@ -1684,7 +1688,8 @@ void main() {
         ),
       );
 
-      service = MealAiService(supabase: mockSupabase);
+      report = RecordingReport();
+      service = MealAiService(supabase: mockSupabase, report: report);
     });
 
     test('describeMeal returns MealAnalysisResult on 200 success', () async {
@@ -1823,7 +1828,7 @@ void main() {
           ),
         ).thenThrow(StorageException('Upload failed'));
 
-        expect(
+        await expectLater(
           () => service.analyzePhotoBytes(Uint8List(0)),
           throwsA(
             isA<MealAiException>().having(
@@ -1833,6 +1838,10 @@ void main() {
             ),
           ),
         );
+        // The upload failure is reported, not only wrapped for the UI.
+        expect(report.faults, hasLength(1));
+        expect(report.faults.single.error, isA<StorageException>());
+        expect(report.faults.single.area, 'meal_logging');
       },
     );
 
@@ -1954,7 +1963,12 @@ void main() {
       }
     });
 
-    test('corrupted items JSON silently returns empty list', () {
+    test('corrupted items JSON returns empty list and reports Degraded', () {
+      final report = RecordingReport();
+      final previous = SentryReport.global;
+      SentryReport.global = report;
+      addTearDown(() => SentryReport.global = previous);
+
       // Build a Supabase JSON with a malformed items string (not JSONB).
       final json = {
         'id': 'log-x',
@@ -1972,6 +1986,8 @@ void main() {
       final log = MealLog.fromSupabaseJson(json);
       expect(log, isNotNull);
       expect(log!.components, isEmpty);
+      expect(report.degradeds, hasLength(1));
+      expect(report.degradeds.single.area, 'meal_logging');
     });
   });
 }

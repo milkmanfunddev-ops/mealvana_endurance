@@ -3,6 +3,7 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
 
 import '../../../../shared/services/app_external_deps.dart';
+import '../../../../shared/services/report/report.dart';
 import '../../../../shared/widgets/kyle_design/kyle_design.dart';
 import '../../../recipes/application/recipe_service.dart';
 import '../../../recipes/domain/recipe.dart';
@@ -77,7 +78,15 @@ class _RecipePickerScreenState extends ConsumerState<RecipePickerScreen> {
         _filtered = all;
         _isLoading = false;
       });
-    } catch (_) {
+    } catch (e, st) {
+      ref
+          .read(reportProvider)
+          .fault(
+            e,
+            stackTrace: st,
+            area: 'meal_logging',
+            message: 'recipe picker failed to load recipes',
+          );
       if (mounted) setState(() => _isLoading = false);
     }
   }

@@ -83,10 +83,6 @@ printInCatch lib/features/integrations/presentation/providers/connect_training_c
 printInCatch lib/features/integrations/presentation/providers/connect_training_controller.dart :: } catch (e) {
 printInCatch lib/features/integrations/presentation/providers/connect_training_controller.dart :: } catch (e) {
 printInCatch lib/features/integrations/presentation/providers/connect_training_controller.dart :: } catch (e) {
-printInCatch lib/features/meal_logging/application/meal_ai_service.dart :: } catch (e) {
-printInCatch lib/features/meal_logging/application/meal_ai_service.dart :: } catch (e) {
-printInCatch lib/features/meal_logging/application/meal_ai_service.dart :: } catch (e) {
-printInCatch lib/features/meal_logging/application/meal_ai_service.dart :: } on StorageException catch (e) {
 printInCatch lib/features/nutrition_plan/presentation/screens/swap_food_screen.dart :: } catch (e, stackTrace) {
 printInCatch lib/features/nutrition_plan/presentation/screens/swap_food_screen.dart :: } catch (e) {
 printInCatch lib/features/nutrition_plan/presentation/screens/swap_food_screen.dart :: } catch (e) {
@@ -346,38 +342,6 @@ unreportedCatch lib/features/macro_dashboard/presentation/screens/macro_dashboar
 unreportedCatch lib/features/macro_dashboard/presentation/screens/macro_dashboard_screen.dart :: } on BrickCreationException catch (e) {
 unreportedCatch lib/features/macro_dashboard/presentation/screens/macro_dashboard_screen.dart :: } on BrickUngroupException catch (e) {
 unreportedCatch lib/features/macro_dashboard/presentation/screens/macro_dashboard_screen.dart :: } on BrickValidationException catch (e) {
-unreportedCatch lib/features/meal_logging/domain/meal_log.dart :: } catch (_) {
-unreportedCatch lib/features/meal_logging/domain/saved_meal.dart :: } catch (_) {
-unreportedCatch lib/features/meal_logging/domain/saved_meal.dart :: } catch (_) {
-unreportedCatch lib/features/meal_logging/presentation/providers/meal_log_providers.dart :: } catch (_) {
-unreportedCatch lib/features/meal_logging/presentation/providers/meal_log_providers.dart :: } catch (_) {
-unreportedCatch lib/features/meal_logging/presentation/screens/build_meal_screen.dart :: } catch (_) {
-unreportedCatch lib/features/meal_logging/presentation/screens/build_meal_screen.dart :: } catch (_) {
-unreportedCatch lib/features/meal_logging/presentation/screens/build_meal_screen.dart :: } catch (_) {
-unreportedCatch lib/features/meal_logging/presentation/screens/build_meal_screen.dart :: } catch (_) {
-unreportedCatch lib/features/meal_logging/presentation/screens/describe_meal_screen.dart :: } catch (_) {
-unreportedCatch lib/features/meal_logging/presentation/screens/describe_meal_screen.dart :: } on InsufficientCreditsException catch (e) {
-unreportedCatch lib/features/meal_logging/presentation/screens/describe_meal_screen.dart :: } on MealAiException catch (e) {
-unreportedCatch lib/features/meal_logging/presentation/screens/edit_meal_log_screen.dart :: } catch (_) {
-unreportedCatch lib/features/meal_logging/presentation/screens/edit_meal_log_screen.dart :: } catch (_) {
-unreportedCatch lib/features/meal_logging/presentation/screens/edit_meal_log_screen.dart :: } on InsufficientCreditsException catch (e) {
-unreportedCatch lib/features/meal_logging/presentation/screens/edit_meal_log_screen.dart :: } on MealAiException catch (e) {
-unreportedCatch lib/features/meal_logging/presentation/screens/log_meal_screen.dart :: } catch (_) {
-unreportedCatch lib/features/meal_logging/presentation/screens/log_meal_screen.dart :: } catch (_) {
-unreportedCatch lib/features/meal_logging/presentation/screens/log_meal_screen.dart :: } catch (_) {
-unreportedCatch lib/features/meal_logging/presentation/screens/log_meal_screen.dart :: } catch (_) {
-unreportedCatch lib/features/meal_logging/presentation/screens/log_meal_screen.dart :: } catch (_) {
-unreportedCatch lib/features/meal_logging/presentation/screens/log_meal_screen.dart :: } catch (_) {
-unreportedCatch lib/features/meal_logging/presentation/screens/log_meal_screen.dart :: } catch (_) {
-unreportedCatch lib/features/meal_logging/presentation/screens/log_meal_screen.dart :: } catch (_) {}
-unreportedCatch lib/features/meal_logging/presentation/screens/log_meal_screen.dart :: } catch (e) {
-unreportedCatch lib/features/meal_logging/presentation/screens/log_meal_screen.dart :: } on InsufficientCreditsException catch (e) {
-unreportedCatch lib/features/meal_logging/presentation/screens/log_meal_screen.dart :: } on MealAiException catch (e) {
-unreportedCatch lib/features/meal_logging/presentation/screens/photo_capture_screen.dart :: } catch (_) {
-unreportedCatch lib/features/meal_logging/presentation/screens/photo_capture_screen.dart :: } catch (_) {
-unreportedCatch lib/features/meal_logging/presentation/screens/photo_capture_screen.dart :: } on InsufficientCreditsException catch (e) {
-unreportedCatch lib/features/meal_logging/presentation/screens/photo_capture_screen.dart :: } on MealAiException catch (e) {
-unreportedCatch lib/features/meal_logging/presentation/screens/recipe_picker_screen.dart :: } catch (_) {
 unreportedCatch lib/features/meal_planning/application/meal_plan_controller.dart :: } on VanaException catch (e) {
 unreportedCatch lib/features/meal_planning/data/meal_plan_repository.dart :: } catch (_) {
 unreportedCatch lib/features/meal_planning/data/meal_plan_repository.dart :: } catch (_) {
