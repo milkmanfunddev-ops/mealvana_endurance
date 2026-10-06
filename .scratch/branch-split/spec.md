@@ -128,10 +128,22 @@ Phase B (after the testing round):
 4. Local branches: `git branch -f develop develop-next`, `git branch -f mealplanning mealplanning-next`; keep
    `sentry` and the tags.
 
+## Hard rule (Lee, 2026-10-06): no paywall, no shopping list on develop
+`develop-next` must contain NO subscription paywall and NO shopping list. Both arrived with the meal-planning merge:
+`origin/release/1.29.0` has no `lib/features/subscription/`, no `lib/features/kroger/`, zero files named
+`*shopping*` and zero subscription-paywall files, so the rebuild drops them by construction; the only thing to do is
+never cherry-pick them back and resolve every Sentry-rebase conflict under `lib/features/subscription/**`,
+`**/shopping*`, `**/kroger*` as DELETED. Two things on the release line are NOT this paywall and stay: the
+AI-credits wall `lib/features/ai_credits/presentation/insufficient_credits_paywall.dart` (the pre-existing credits
+system, shipped in prod) and the `revenuecat-webhook` edge function + its docs (shipped). If Lee wants those gone
+too, that is a separate product decision, not this spec.
+
 ## Testing Decisions
 - Phase A acceptance is mechanical: suite green (known red only), analyze clean, the restricted diff in A2 reads as
   "release's shape or meal-planning removal" only, `grep -rn "meal_planning\|vana\|isProGatedPath" lib/ test/`
-  returns nothing on `develop-next`, `grep -rn "sentry_flutter" lib/` only under `lib/shared/services/report/`
+  returns nothing on `develop-next`, `ls lib/features/subscription lib/features/kroger` both fail, `git ls-files |
+  grep -i "shopping\|paywall"` lists only the Patrol `paywall_render_flow_test.dart` (delete it too; it tests a screen
+  that does not exist) and the ai_credits file above, `grep -rn "sentry_flutter" lib/` only under `lib/shared/services/report/`
   and `lib/shared/core/bootstrap/`, and the Sentry debug-console probes (ticket 15, Developer/Tester role) still
   exist.
 - Phase B acceptance: `git merge-base --is-ancestor develop-next mealplanning-next` true; `grep -rn

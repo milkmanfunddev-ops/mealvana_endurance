@@ -23,7 +23,7 @@ every event handled. Both happen in this round because they share the build, the
 
 ## Solution
 
-1. Port the testing-wave harness (not its tickets or findings) onto `develop-next`.
+1. Make the testing-wave a reusable system that lives on every branch (§ 1), seeded from the one on `mealplanning`.
 2. Cut a develop ticket set: the testing-wave test tickets whose screens exist on develop-next, plus one Sentry
    ticket (the leftovers) and one ticket per Sentry fix area that needs a device check.
 3. Run waves: two or three simulators, one agent per ticket, Findings filed, lead triages in the terminal with Lee.
@@ -45,15 +45,39 @@ every event handled. Both happen in this round because they share the build, the
 
 ## Implementation Decisions
 
-### 1. Port the harness
-- Cherry-pick (or copy at the file level, if the commits are entangled with meal planning) from `origin/mealplanning`:
-  `scripts/testing-wave/` (lock, cost, findings, state, cred, clear-app.sh, test_accounts.template.md, run logs
-  excluded), `.scratch/testing-wave/spec.md`, `RUNBOOK.md`, `IMPROVEMENTS.md`, `findings/TEMPLATE.md`,
-  `app-build.json` (reset its commit to null so the lead builds first), `docs/ssot/decisions/_page/sync.mjs` ONLY if
-  `simulator claim` is not already on develop-next (check; it may be), `.claude/skills/implement-lee/`,
-  `test/scripts/testing-wave/*.test.mjs` (`node --test test/scripts/testing-wave/*.test.mjs` must pass).
-- Edit the ported RUNBOOK/spec where they name meal-planning things (Vana cost kinds stay, they are harmless; the
-  Kroger/Plans references in examples go). Record each edit in IMPROVEMENTS.md.
+### 1. The testing-wave as a reusable system (Lee, 2026-10-06: "not a port; a system we reuse")
+One system, committed on the trunk (`develop-next`, so every branch inherits it by merge), with durable ledgers that
+every round appends to and per-round working folders that are disposable. Layout:
+- `docs/testing-wave/README.md` — what the system is, the three ledgers, how a round starts and ends (≤ 1 page).
+- `docs/testing-wave/RUNBOOK.md` and `docs/testing-wave/SPEC.md` — the run procedure and its rules, moved from
+  mealplanning's `.scratch/testing-wave/RUNBOOK.md` / `spec.md`, de-branded of meal-planning examples (Vana cost
+  kinds stay; they are no-ops on a branch without Vana). Branch-specific facts (which screens exist) never go here;
+  they go in the round's ticket set.
+- The three ledgers Lee asked for, append-only, each row dated and pointing at its round:
+  - `docs/testing-wave/IMPROVEMENTS.md` — ways to improve the testing process (seeded with mealplanning's 90 entries,
+    status preserved).
+  - `docs/testing-wave/BUGS.md` — bugs found by testing, across rounds: id, round, ticket, title, kind, status
+    (triaged / fixed @sha / wontfix with the ruling), the fix ticket. Seeded from mealplanning's 556 Findings INDEX.
+  - `docs/testing-wave/COVERAGE.md` — additional tests to consider: every `followup-test` and `idea` Finding, plus
+    screens no ticket has covered yet (the round's cold-start ticket lists them). Seeded from the 235 follow-ups
+    and the retest drafts 143–161.
+- `scripts/testing-wave/` — the tools, unchanged in purpose: `lock.mjs`, `cost.mjs`, `state.mjs`, `cred.mjs`,
+  `clear-app.sh`, `test_accounts.template.md`, and `findings.mjs` gaining two commands: `findings.mjs ledger
+  <round>` (appends a round's Findings to BUGS.md / COVERAGE.md, idempotent by Finding id) and `findings.mjs round
+  new <name>` (creates the round folder from templates). `simulator claim` stays in
+  `docs/ssot/decisions/_page/sync.mjs` if that file exists on develop-next; otherwise move the simulator subcommands
+  into `scripts/testing-wave/simulator.mjs` and leave a one-line shim. Node tests in `test/scripts/testing-wave/`.
+- `.scratch/testing-wave/rounds/<round>/` — the disposable per-round tracker: `issues/NN-*.md`, `findings/`,
+  `runs/`, `app-build.json`, `TRIAGE.md`. This round is `develop-2026-10`. On Phase B's merge, mealplanning's old
+  `.scratch/testing-wave/{issues,findings,runs,retest-drafts,…}` move to `rounds/mealplanning-2026-09/` with
+  `git mv` so history survives; its RUNBOOK/spec/IMPROVEMENTS are superseded by `docs/testing-wave/`.
+- `.claude/skills/testing-wave/SKILL.md` — user-invocable `/testing-wave <round> [--only NN,..]`: the wave lead's
+  routine from the RUNBOOK (open the round, build once if code changed, claim simulators, spawn one Opus agent per
+  ticket with the prompt template, merge, `findings index`, triage in the terminal, `findings ledger`, update
+  IMPROVEMENTS). It replaces mealplanning's `.claude/skills/implement-lee` for testing; that skill's wave mechanics
+  are the source for it. Subagents on Opus, Fable is the lead only (`feedback-subagents-run-on-opus`).
+- Seeding is a one-time `git show origin/mealplanning:<path>` of each source file into its new home, then the ledger
+  import; after that nothing is ever copied between branches again, it merges.
 - Credentials: `secrets/test_accounts.md` already exists in the main clone (gitignored). Do not open it; `CRED list`.
 - Simulators: the pool and `simulator claim` copy the dev simulator; the lead builds `develop-next` once with
   `scripts/run_dev.sh` from a clean worktree, installs it on the dev simulator, and records the sha in
@@ -62,11 +86,12 @@ every event handled. Both happen in this round because they share the build, the
 ### 2. The ticket set (`.scratch/develop-roundup/issues/NN-*.md`, testing-wave ticket format)
 Start from the testing-wave test tickets on `origin/mealplanning` (`.scratch/testing-wave/issues/01-32`) and keep
 the ones whose screens exist on develop-next. Expected keep list (verify each by grepping develop-next for the
-screen): 02 delete account + signup sweep, 04–12 paywall/subscription (RevenueCat paywall predates meal planning;
-drop any step about the Food tab or Pro gate), 23–28 meal logging (describe, photo, manual/build, recent/common,
-edit/delete, barcode on a simulator), 29 cold start every tab, 30 timeline + fuelling plan, 31 settings/profile/
-sign-out, 32 signup code + forgot password. Drop: 01 (harness), 03 (Patrol), 13 (Lee's phone), 14–22 (Plans, Vana,
-Shopping, Kroger). Add:
+screen): 02 delete account + signup sweep (drop its paywall-menu steps), 23–28 meal logging (describe, photo,
+manual/build, recent/common, edit/delete, barcode on a simulator), 29 cold start every tab, 30 timeline + fuelling
+plan, 31 settings/profile/sign-out, 32 signup code + forgot password. Drop: 01 (harness), 03 (Patrol), 04–13 (the
+subscription paywall, Test Store, redeem code, Pro gate: NONE of that exists on develop-next, by Lee's rule in the
+branch-split spec), 14–22 (Plans, Vana, Shopping, Kroger). Add an **AI credits** ticket instead (the pre-existing
+credits system: balance, the insufficient-credits wall, a Jade/describe call spending a credit). Add:
 - **Integrations** (Garmin, TrainingPeaks, FinalSurge, VDOT, Runna): connect, sync, disconnect, with the Sentry
   ticket-19/22 changes (a dead Garmin token → Degraded 409 path, TP write-back edit window) as explicit steps.
   Credentials via `CRED`; `secrets/integration_test.env` holds API creds (never print).
