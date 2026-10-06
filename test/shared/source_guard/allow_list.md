@@ -38,6 +38,7 @@ unreportedCatch lib/features/meal_planning/data/vana_transport.dart :: } on Form
 unreportedCatch lib/features/integrations/application/tp_writeback_service.dart :: } on IntegrationApiException catch (e) {  :: delegates to handleApiException, which classifies every status through Report (403 degraded, 404 note, else degraded); the guard only sees the block text
 unreportedCatch lib/features/integrations/application/tp_writeback_service.dart :: } on IntegrationApiException catch (e) {  :: same as above (feedback push)
 unreportedCatch lib/features/integrations/application/tp_writeback_service.dart :: } on IntegrationApiException catch (e) {  :: same as above (plan removal)
+unreportedCatch lib/features/nutrition_plan/presentation/providers/swap_food_controller.dart :: } catch (_) {  :: the catch is the mounted test: reading `state` on a disposed notifier throws and Riverpod exposes no mounted flag here
 
 ## baseline
 
@@ -56,12 +57,7 @@ printInCatch lib/features/integrations/presentation/providers/connect_training_c
 printInCatch lib/features/integrations/presentation/providers/connect_training_controller.dart :: } catch (e) {
 printInCatch lib/features/integrations/presentation/providers/connect_training_controller.dart :: } catch (e) {
 printInCatch lib/features/integrations/presentation/providers/connect_training_controller.dart :: } catch (e) {
-printInCatch lib/features/nutrition_plan/presentation/screens/swap_food_screen.dart :: } catch (e, stackTrace) {
-printInCatch lib/features/nutrition_plan/presentation/screens/swap_food_screen.dart :: } catch (e) {
-printInCatch lib/features/nutrition_plan/presentation/screens/swap_food_screen.dart :: } catch (e) {
-printInCatch lib/features/settings/presentation/screens/debug_screen.dart :: } catch (e, stackTrace) {
 sentryImport lib/features/macro_dashboard/application/dashboard_transient_telemetry.dart :: import 'package:sentry_flutter/sentry_flutter.dart';
-sentryImport lib/features/nutrition_plan/presentation/providers/macro_targets_controller.dart :: import 'package:sentry_flutter/sentry_flutter.dart';
 sentryImport lib/shared/services/performance_telemetry.dart :: import 'package:sentry_flutter/sentry_flutter.dart';
 sentryImport lib/shared/services/sentry/sentry_reporter.dart :: import 'package:sentry_flutter/sentry_flutter.dart' show SentryLevel;
 unreportedCatch lib/features/activities/data/activities_repository.dart :: } catch (_) {
@@ -190,45 +186,6 @@ unreportedCatch lib/features/macro_dashboard/presentation/screens/macro_dashboar
 unreportedCatch lib/features/macro_dashboard/presentation/screens/macro_dashboard_screen.dart :: } on BrickCreationException catch (e) {
 unreportedCatch lib/features/macro_dashboard/presentation/screens/macro_dashboard_screen.dart :: } on BrickUngroupException catch (e) {
 unreportedCatch lib/features/macro_dashboard/presentation/screens/macro_dashboard_screen.dart :: } on BrickValidationException catch (e) {
-unreportedCatch lib/features/nutrition_plan/application/brick_macro_service.dart :: } catch (_) {
-unreportedCatch lib/features/nutrition_plan/application/client_plan/client_food_pool_service.dart :: } catch (_) {}
-unreportedCatch lib/features/nutrition_plan/application/client_plan/client_plan_service.dart :: } catch (_) {
-unreportedCatch lib/features/nutrition_plan/application/client_plan/client_plan_service.dart :: } catch (_) {}
-unreportedCatch lib/features/nutrition_plan/application/macro_generation_service.dart :: } catch (_) {
-unreportedCatch lib/features/nutrition_plan/data/nutrition_plan_repository.dart :: } catch (_) {
-unreportedCatch lib/features/nutrition_plan/data/template_foods_repository.dart :: } catch (_) {
-unreportedCatch lib/features/nutrition_plan/data/template_foods_repository.dart :: } catch (_) {
-unreportedCatch lib/features/nutrition_plan/data/transparency_feedback_store.dart :: } catch (_) {
-unreportedCatch lib/features/nutrition_plan/domain/nutrition_target_overrides.dart :: } catch (_) {
-unreportedCatch lib/features/nutrition_plan/domain/solver_food.dart :: } catch (_) {}
-unreportedCatch lib/features/nutrition_plan/presentation/providers/activity_detail_controller.dart :: } catch (_) {
-unreportedCatch lib/features/nutrition_plan/presentation/providers/activity_detail_controller.dart :: } catch (e) {
-unreportedCatch lib/features/nutrition_plan/presentation/providers/activity_detail_controller.dart :: } catch (e) {
-unreportedCatch lib/features/nutrition_plan/presentation/providers/activity_detail_controller.dart :: } catch (e) {
-unreportedCatch lib/features/nutrition_plan/presentation/providers/cycling_input_controller.dart :: } catch (e) {
-unreportedCatch lib/features/nutrition_plan/presentation/providers/cycling_input_controller.dart :: } catch (e) {
-unreportedCatch lib/features/nutrition_plan/presentation/providers/macro_targets_controller.dart :: } catch (e) {
-unreportedCatch lib/features/nutrition_plan/presentation/providers/night_before_nudge_coordinator.dart :: } catch (e, stackTrace) {
-unreportedCatch lib/features/nutrition_plan/presentation/providers/running_input_controller.dart :: } catch (e) {
-unreportedCatch lib/features/nutrition_plan/presentation/providers/running_input_controller.dart :: } catch (e) {
-unreportedCatch lib/features/nutrition_plan/presentation/providers/swap_food_controller.dart :: } catch (_) {
-unreportedCatch lib/features/nutrition_plan/presentation/providers/swap_food_controller.dart :: } catch (_) {}
-unreportedCatch lib/features/nutrition_plan/presentation/providers/swimming_input_controller.dart :: } catch (e) {
-unreportedCatch lib/features/nutrition_plan/presentation/providers/swimming_input_controller.dart :: } catch (e) {
-unreportedCatch lib/features/nutrition_plan/presentation/screens/activity_detail_screen.dart :: } catch (e) {
-unreportedCatch lib/features/nutrition_plan/presentation/screens/activity_detail_screen.dart :: } catch (e) {
-unreportedCatch lib/features/nutrition_plan/presentation/screens/activity_detail_screen.dart :: } catch (e) {
-unreportedCatch lib/features/nutrition_plan/presentation/screens/adjust_macros_screen.dart :: } catch (e) {
-unreportedCatch lib/features/nutrition_plan/presentation/screens/fuel_log_screen.dart :: } catch (_) {
-unreportedCatch lib/features/nutrition_plan/presentation/screens/swap_food_screen.dart :: } catch (e, stackTrace) {
-unreportedCatch lib/features/nutrition_plan/presentation/screens/swap_food_screen.dart :: } catch (e) {
-unreportedCatch lib/features/nutrition_plan/presentation/screens/swap_food_screen.dart :: } catch (e) {
-unreportedCatch lib/features/nutrition_plan/presentation/screens/swap_food_screen.dart :: } catch (e) {
-unreportedCatch lib/features/nutrition_plan/presentation/screens/swap_food_screen.dart :: } catch (e) {
-unreportedCatch lib/features/nutrition_plan/presentation/screens/swap_food_screen.dart :: } catch (e) {
-unreportedCatch lib/features/nutrition_plan/presentation/screens/swap_food_screen.dart :: } catch (e) {
-unreportedCatch lib/features/nutrition_plan/presentation/widgets/activity_detail/nutrient_full_story_section.dart :: } catch (_) {}
-unreportedCatch lib/features/nutrition_plan/presentation/widgets/adjust_macros/edit_macros_dialog_widget.dart :: } catch (e) {
 unreportedCatch lib/features/onboarding/application/onboarding_snapshot_service.dart :: } catch (_) {
 unreportedCatch lib/features/onboarding/application/onboarding_snapshot_service.dart :: } catch (e, stackTrace) {
 unreportedCatch lib/features/onboarding/presentation/providers/onboarding_preview_providers.dart :: } catch (_) {
@@ -251,23 +208,6 @@ unreportedCatch lib/features/personal_templates/domain/personal_template.dart ::
 unreportedCatch lib/features/race_checklist/presentation/screens/race_checklist_screen.dart :: } catch (e) {
 unreportedCatch lib/features/recipes/data/repositories/recipe_repository.dart :: } catch (_) {
 unreportedCatch lib/features/recipes/presentation/screens/recipes_screen.dart :: } catch (e) {
-unreportedCatch lib/features/settings/presentation/providers/settings_controller.dart :: } catch (e) {
-unreportedCatch lib/features/settings/presentation/screens/coach_connection_screen.dart :: } catch (_) {
-unreportedCatch lib/features/settings/presentation/screens/coach_connection_screen.dart :: } catch (_) {
-unreportedCatch lib/features/settings/presentation/screens/coach_connection_screen.dart :: } catch (_) {
-unreportedCatch lib/features/settings/presentation/screens/connected_apps_screen.dart :: } catch (_) {
-unreportedCatch lib/features/settings/presentation/screens/connected_apps_screen.dart :: } catch (_) {
-unreportedCatch lib/features/settings/presentation/screens/connected_apps_screen.dart :: } catch (e) {
-unreportedCatch lib/features/settings/presentation/screens/debug_screen.dart :: } catch (e, stackTrace) {
-unreportedCatch lib/features/settings/presentation/screens/food_preferences_screen.dart :: } catch (e) {
-unreportedCatch lib/features/settings/presentation/screens/food_settings_consolidated_screen.dart :: } catch (e) {
-unreportedCatch lib/features/settings/presentation/screens/nutrition_profile_screen.dart :: } catch (_) {
-unreportedCatch lib/features/settings/presentation/screens/nutrition_profile_screen.dart :: } catch (_) {
-unreportedCatch lib/features/settings/presentation/screens/nutrition_profile_screen.dart :: } catch (_) {
-unreportedCatch lib/features/settings/presentation/screens/nutrition_profile_screen.dart :: } catch (e) {
-unreportedCatch lib/features/settings/presentation/screens/nutrition_targets_screen.dart :: } catch (_) {
-unreportedCatch lib/features/settings/presentation/screens/nutrition_targets_screen.dart :: } catch (e) {
-unreportedCatch lib/features/settings/presentation/screens/preferences_screen.dart :: } catch (e) {
 unreportedCatch lib/features/sharing/application/email_service.dart :: } catch (e) {
 unreportedCatch lib/features/sharing/presentation/providers/share_form_controller.dart :: } catch (e) {
 unreportedCatch lib/features/user_foods/data/user_foods_repository.dart :: } catch (_) {

@@ -3,6 +3,7 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
 
 import '../../../../shared/providers/user_id_provider.dart';
+import '../../../../shared/services/report/report.dart';
 import '../../../../shared/widgets/custom_app_bar_back_button.dart';
 import '../../../../shared/widgets/kyle_design/feedback/mealvana_snackbar.dart';
 import '../../../../shared/widgets/content_area.dart';
@@ -21,6 +22,12 @@ class CoachConnectionScreen extends ConsumerStatefulWidget {
 }
 
 class _CoachConnectionScreenState extends ConsumerState<CoachConnectionScreen> {
+  static const String _area = 'coach_mode';
+
+  /// Taken in [initState]: a catch that runs after the widget unmounted
+  /// cannot touch `ref`.
+  late final Report _report;
+
   bool _isLoading = true;
   bool _isConnecting = false;
   String? _coachName;
@@ -32,6 +39,7 @@ class _CoachConnectionScreenState extends ConsumerState<CoachConnectionScreen> {
   @override
   void initState() {
     super.initState();
+    _report = ref.read(reportProvider);
     _loadState();
   }
 
@@ -56,7 +64,13 @@ class _CoachConnectionScreenState extends ConsumerState<CoachConnectionScreen> {
         _coachUserId = coach?.coachUserId;
         _coachName = coach?.coachName;
       });
-    } catch (_) {
+    } catch (e, stackTrace) {
+      _report.fault(
+        e,
+        stackTrace: stackTrace,
+        area: _area,
+        message: 'Loading the athlete\'s coach connection failed',
+      );
       if (!mounted) return;
       setState(() => _isLoading = false);
     }
@@ -93,7 +107,13 @@ class _CoachConnectionScreenState extends ConsumerState<CoachConnectionScreen> {
           _codeError = _buildFailureMessage(result.failureReason);
         });
       }
-    } catch (_) {
+    } catch (e, stackTrace) {
+      _report.fault(
+        e,
+        stackTrace: stackTrace,
+        area: _area,
+        message: 'Connecting to a coach by pairing code threw',
+      );
       if (!mounted) return;
       setState(() {
         _isConnecting = false;
@@ -169,7 +189,13 @@ class _CoachConnectionScreenState extends ConsumerState<CoachConnectionScreen> {
       } else {
         MealvanaSnackbar.showError(context, 'Failed to disconnect');
       }
-    } catch (_) {
+    } catch (e, stackTrace) {
+      _report.fault(
+        e,
+        stackTrace: stackTrace,
+        area: _area,
+        message: 'Disconnecting from the coach threw',
+      );
       if (!mounted) return;
       MealvanaSnackbar.showError(context, 'Failed to disconnect');
     }

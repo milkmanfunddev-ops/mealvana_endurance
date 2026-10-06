@@ -35,6 +35,7 @@ import '../../domain/nutrition_target_overrides.dart';
 import '../../../../shared/domain/activity_type.dart';
 import '../../../settings/presentation/providers/settings_controller.dart';
 import 'package:mealvana_endurance/core/utils/debug_logger.dart';
+import 'package:mealvana_endurance/shared/services/report/report.dart';
 import '../../../integrations/presentation/providers/tp_writeback_providers.dart';
 import '../../../activities/presentation/providers/activities_controller.dart';
 import '../../../calendar/presentation/providers/calendar_controller.dart';
@@ -58,6 +59,12 @@ class ActivityDetailController extends _$ActivityDetailController {
   static const String _detailedMacroTargetsKey = 'detailedMacroTargets';
 
   AppLogger get _logger => ref.read(appLoggerProvider);
+
+  /// Fire-and-forget pushes outlive the provider; once it is disposed the
+  /// global instance (the one `reportProvider` built) takes the report.
+  Report get _report =>
+      ref.mounted ? ref.read(reportProvider) : SentryReport.global;
+  static const String _area = 'nutrition_plan';
   ActivitiesService get _activitiesService =>
       ref.read(activitiesServiceProvider);
   AuthService get _authService => ref.read(authServiceProvider);
@@ -327,6 +334,7 @@ class ActivityDetailController extends _$ActivityDetailController {
           macroRepository: macroRepo,
           authService: _authService,
           analytics: analytics,
+          report: _report,
         );
         final segments = currentState.macroTargets?.brickSegments;
         final segmentOrder = segments?.map((s) => s.sport).toList() ?? const [];
@@ -345,6 +353,7 @@ class ActivityDetailController extends _$ActivityDetailController {
           macroRepository: macroRepo,
           authService: _authService,
           analytics: analytics,
+          report: _report,
         );
         final distanceMiles = activity.distanceMiles ?? 5.0;
         final paceMinPerMile = activity.paceTargetMinutesPerMile ?? 9.0;
@@ -366,6 +375,7 @@ class ActivityDetailController extends _$ActivityDetailController {
           macroRepository: macroRepo,
           authService: _authService,
           analytics: analytics,
+          report: _report,
         );
         final distanceMiles = activity.distanceMiles ?? 20.0;
         final speedMph = activity.cyclingSpeedMph ?? 15.0;
@@ -644,8 +654,13 @@ class ActivityDetailController extends _$ActivityDetailController {
       if (raw is! Map) continue;
       try {
         return MacroTargets.fromJson(Map<String, dynamic>.from(raw));
-      } catch (_) {
-        // Ignore malformed payloads and continue trying other candidates.
+      } catch (e) {
+        // Try the next candidate key, but say this one was unreadable.
+        _report.note(
+          'Stored detailed macro targets did not parse; trying next key',
+          area: _area,
+          data: {'error': e.toString()},
+        );
       }
     }
     return null;
@@ -2421,8 +2436,15 @@ class ActivityDetailController extends _$ActivityDetailController {
     try {
       final analytics = ref.read(appExternalDepsProvider);
       analytics.analytics.track(event, properties: properties);
-    } catch (e) {
-      // Silently fail analytics
+    } catch (e, stackTrace) {
+      // Analytics must never block the flow, but a throwing tracker is a bug.
+      _report.fault(
+        e,
+        stackTrace: stackTrace,
+        area: _area,
+        message: 'Analytics track threw',
+        extra: {'event': event},
+      );
     }
   }
 
@@ -2820,7 +2842,13 @@ class ActivityDetailController extends _$ActivityDetailController {
   bool checkSwipeHintShown(SharedPreferences prefs) {
     try {
       return prefs.getBool(swipeHintShownKey) ?? false;
-    } catch (e) {
+    } catch (e, stackTrace) {
+      _report.fault(
+        e,
+        stackTrace: stackTrace,
+        area: _area,
+        message: 'Reading the swipe-hint flag failed; hint treated as shown',
+      );
       return true; // Assume shown on error
     }
   }
@@ -2829,8 +2857,13 @@ class ActivityDetailController extends _$ActivityDetailController {
   Future<void> markSwipeHintShown(SharedPreferences prefs) async {
     try {
       await prefs.setBool(swipeHintShownKey, true);
-    } catch (e) {
-      // Silently fail
+    } catch (e, stackTrace) {
+      await _report.fault(
+        e,
+        stackTrace: stackTrace,
+        area: _area,
+        message: 'Writing the swipe-hint flag failed; hint will show again',
+      );
     }
   }
 
@@ -2842,6 +2875,9 @@ class ActivityDetailController extends _$ActivityDetailController {
     int rating,
     String? notes,
   ) async {
+    // Fire-and-forget: the provider may be disposed by the time this fails,
+    // so take the report before the first await.
+    final report = _report;
     try {
       final service = await ref.read(tpWritebackServiceProvider.future);
       await service.pushCompletionFeedback(
@@ -2850,8 +2886,14 @@ class ActivityDetailController extends _$ActivityDetailController {
         rating: rating,
         notes: notes,
       );
-    } catch (e) {
-      DebugLogger.error('TP feedback push failed (non-blocking): $e');
+    } catch (e, stackTrace) {
+      await report.fault(
+        e,
+        stackTrace: stackTrace,
+        area: 'training_peaks',
+        message: 'TP completion feedback push failed (non-blocking)',
+        extra: {'activityId': activity.id},
+      );
     }
   }
 
@@ -2863,6 +2905,9 @@ class ActivityDetailController extends _$ActivityDetailController {
     NutritionPlan plan, {
     FuelLogData? fuelLog,
   }) async {
+    // Fire-and-forget: the provider may be disposed by the time this fails,
+    // so take the report before the first await.
+    final report = _report;
     try {
       final service = await ref.read(tpWritebackServiceProvider.future);
       await service.pushPlanToWorkout(
@@ -2871,8 +2916,14 @@ class ActivityDetailController extends _$ActivityDetailController {
         plan: plan,
         fuelLog: fuelLog,
       );
-    } catch (e) {
-      DebugLogger.error('TP write-back failed (non-blocking): $e');
+    } catch (e, stackTrace) {
+      await report.fault(
+        e,
+        stackTrace: stackTrace,
+        area: 'training_peaks',
+        message: 'TP plan write-back failed (non-blocking)',
+        extra: {'activityId': activity.id},
+      );
     }
   }
 }

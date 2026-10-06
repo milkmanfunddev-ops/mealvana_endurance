@@ -8,6 +8,7 @@ import 'package:mealvana_endurance/shared/widgets/kyle_design/kyle_design.dart';
 import '../../../../shared/widgets/navigation/figma_onboarding_footer.dart';
 import '../../../../shared/widgets/kyle_design/data/kyle_source_chip.dart';
 import '../../../integrations/presentation/providers/athlete_zones_provider.dart';
+import '../../../../shared/services/report/report.dart';
 import '../../../../shared/widgets/content_area.dart';
 import '../providers/settings_controller.dart';
 import '../../../auth/domain/user_preferences.dart';
@@ -111,6 +112,8 @@ class _PreferencesScreenState extends ConsumerState<PreferencesScreen> {
     });
 
     final controller = ref.read(settingsControllerProvider.notifier);
+    // Before the first await: a catch after unmount cannot touch `ref`.
+    final report = ref.read(reportProvider);
 
     try {
       // weight/height intentionally not passed — those fields now live in
@@ -145,7 +148,13 @@ class _PreferencesScreenState extends ConsumerState<PreferencesScreen> {
         // Go back to settings screen
         Navigator.of(context).pop();
       }
-    } catch (e) {
+    } catch (e, stackTrace) {
+      report.fault(
+        e,
+        stackTrace: stackTrace,
+        area: 'settings',
+        message: 'Saving preferences failed',
+      );
       if (mounted) {
         setState(() {
           _isSaving = false;
@@ -382,12 +391,11 @@ class _PreferencesScreenState extends ConsumerState<PreferencesScreen> {
 
   ({String? name, String? birthMonth, String? gender})? get _tpIdentity =>
       _userId == null
-          ? null
-          : ref.watch(tpAthleteIdentityProvider(_userId!)).value;
-
-  String? get _fsName => _userId == null
       ? null
-      : ref.watch(fsAthleteNameProvider(_userId!)).value;
+      : ref.watch(tpAthleteIdentityProvider(_userId!)).value;
+
+  String? get _fsName =>
+      _userId == null ? null : ref.watch(fsAthleteNameProvider(_userId!)).value;
 
   /// Identity badges (Xuan rulings 2026-09-13): EVERY provider with a
   /// non-null value shows its badge, primary first (TP, then FS for name).
@@ -467,12 +475,23 @@ class _PreferencesScreenState extends ConsumerState<PreferencesScreen> {
     final year = int.tryParse(birthMonth.substring(0, 4));
     final month = int.tryParse(birthMonth.substring(5, 7));
     if (year == null || month == null) return const SizedBox.shrink();
-    final matches = _birthday != null &&
+    final matches =
+        _birthday != null &&
         _birthday!.year == year &&
         _birthday!.month == month;
     const monthNames = [
-      'Jan', 'Feb', 'Mar', 'Apr', 'May', 'Jun',
-      'Jul', 'Aug', 'Sep', 'Oct', 'Nov', 'Dec',
+      'Jan',
+      'Feb',
+      'Mar',
+      'Apr',
+      'May',
+      'Jun',
+      'Jul',
+      'Aug',
+      'Sep',
+      'Oct',
+      'Nov',
+      'Dec',
     ];
     return Padding(
       padding: const EdgeInsets.only(top: 8),

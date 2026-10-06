@@ -3,6 +3,7 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
 import '../../../../shared/domain/activity_type.dart';
 import '../../../../shared/widgets/content_area.dart';
+import '../../../../shared/services/report/report.dart';
 import '../../../../shared/widgets/kyle_design/kyle_design.dart';
 import '../../../integrations/presentation/widgets/garmin_attribution_message.dart';
 import '../../domain/carb_adjustment_level.dart';
@@ -320,7 +321,15 @@ class _FuelLogScreenState extends ConsumerState<FuelLogScreen> {
     if (raw == null) return null;
     try {
       return FuelLogData.fromJson(raw);
-    } catch (_) {
+    } catch (e, stackTrace) {
+      ref
+          .read(reportProvider)
+          .degraded(
+            e,
+            stackTrace: stackTrace,
+            area: 'nutrition_plan',
+            message: 'Stored fuel log unreadable; starting an empty one',
+          );
       return null;
     }
   }

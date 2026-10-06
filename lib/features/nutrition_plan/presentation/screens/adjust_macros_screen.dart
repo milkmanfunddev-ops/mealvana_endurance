@@ -10,6 +10,7 @@ import '../utils/post_create_navigation.dart';
 import '../../../../shared/widgets/generating_plan_overlay.dart';
 import '../../../../shared/widgets/kyle_design/kyle_design.dart';
 import '../../../../shared/services/app_external_deps.dart';
+import '../../../../shared/services/report/report.dart';
 import '../providers/macro_targets_controller.dart';
 import '../../../activities/domain/brick_metadata.dart';
 import '../../domain/macro_targets.dart' as domain;
@@ -595,6 +596,8 @@ class _AdjustMacrosScreenState extends ConsumerState<AdjustMacrosScreen> {
 
   Future<void> _handleCreatePlan(BuildContext context, WidgetRef ref) async {
     final logger = ref.read(appExternalDepsProvider).logger;
+    // Before the first await: a catch after unmount cannot touch `ref`.
+    final report = ref.read(reportProvider);
     ref
         .read(appExternalDepsProvider)
         .analytics
@@ -621,7 +624,15 @@ class _AdjustMacrosScreenState extends ConsumerState<AdjustMacrosScreen> {
       activityId = await ref
           .read(macroTargetsControllerProvider.notifier)
           .createNutritionPlan();
-    } catch (e) {
+    } catch (e, stackTrace) {
+      // The controller reports failures it captures in state; one that
+      // escapes to the screen is unexpected.
+      report.fault(
+        e,
+        stackTrace: stackTrace,
+        area: 'nutrition_plan',
+        message: 'Create plan threw past the controller',
+      );
       if (!context.mounted) return;
       MealvanaSnackbar.showError(
         context,

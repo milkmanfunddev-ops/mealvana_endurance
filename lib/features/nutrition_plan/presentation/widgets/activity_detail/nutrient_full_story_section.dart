@@ -3,6 +3,7 @@ import 'package:flutter/services.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 
 import '../../../../../shared/services/analytics/analytics_tracker.dart';
+import '../../../../../shared/services/report/report.dart';
 import '../../../../../theme/kyle_design/app_colors.dart';
 import '../../../../auth/domain/user_preferences.dart';
 import '../../../../settings/presentation/providers/settings_controller.dart';
@@ -123,7 +124,17 @@ class _NutrientFullStorySectionState
               if (planId != null) 'plan_id': planId,
             },
           );
-    } catch (_) {}
+    } catch (e, stackTrace) {
+      ref
+          .read(reportProvider)
+          .fault(
+            e,
+            stackTrace: stackTrace,
+            area: 'nutrition_plan',
+            message: 'Analytics track threw',
+            extra: {'event': 'nutrition_transparency_viewed'},
+          );
+    }
   }
 
   @override

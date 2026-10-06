@@ -18,6 +18,7 @@ import '../../../onboarding/presentation/widgets/onboarding_week_chart_card.dart
 import '../../../../shared/services/app_external_deps.dart';
 import '../../../../shared/services/notification_service.dart';
 import '../../../../shared/services/preferences_service.dart';
+import '../../../../shared/services/report/report.dart';
 import '../../../../shared/widgets/content_area.dart';
 import '../../../../shared/widgets/kyle_design/sheets/tp_writeback_consent_sheet.dart';
 import '../widgets/tp_writeback_toggle_row.dart';
@@ -739,8 +740,18 @@ class _ConnectedAppsScreenState extends ConsumerState<ConnectedAppsScreen> {
           .read(appExternalDepsProvider)
           .analytics
           .track('connect_training_declined');
-    } catch (_) {
-      // Analytics must never block onboarding navigation.
+    } catch (e, stackTrace) {
+      // Analytics must never block onboarding navigation, but a throwing
+      // tracker is a bug.
+      ref
+          .read(reportProvider)
+          .fault(
+            e,
+            stackTrace: stackTrace,
+            area: 'settings',
+            message: 'Analytics track threw',
+            extra: {'event': 'connect_training_declined'},
+          );
     }
     widget.onContinue?.call();
   }
@@ -851,8 +862,18 @@ class _ConnectedAppsScreenState extends ConsumerState<ConnectedAppsScreen> {
               'integration_notify_me_tapped',
               properties: {'provider': provider, 'source': 'onboarding'},
             );
-      } catch (_) {
-        // Analytics must never block onboarding.
+      } catch (e, stackTrace) {
+        // Analytics must never block onboarding, but a throwing tracker is
+        // a bug.
+        ref
+            .read(reportProvider)
+            .fault(
+              e,
+              stackTrace: stackTrace,
+              area: 'settings',
+              message: 'Analytics track threw',
+              extra: {'event': 'integration_notify_me_tapped'},
+            );
       }
     } else {
       ref
@@ -1500,6 +1521,8 @@ class _ConnectedAppsScreenState extends ConsumerState<ConnectedAppsScreen> {
     // was permanent: the unreachable-player Critical's mechanism, witnessed
     // live on 2026-10-01. A sleep is a bet; the loop below is a verification.
     var healed = false;
+    // Before the first await: a catch after unmount cannot touch `ref`.
+    final report = ref.read(reportProvider);
     try {
       await OneSignal.User.pushSubscription.optOut();
       await Future<void>.delayed(const Duration(milliseconds: 300));
@@ -1510,7 +1533,13 @@ class _ConnectedAppsScreenState extends ConsumerState<ConnectedAppsScreen> {
         await Future<void>.delayed(const Duration(milliseconds: 400));
         healed = OneSignal.User.pushSubscription.optedIn == true;
       }
-    } catch (e) {
+    } catch (e, stackTrace) {
+      await report.fault(
+        e,
+        stackTrace: stackTrace,
+        area: 'push',
+        message: 'Manual push-subscription reset threw',
+      );
       messenger?.hideCurrentSnackBar();
       if (!context.mounted) return;
       MealvanaSnackbar.showError(

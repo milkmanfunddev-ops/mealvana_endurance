@@ -8,6 +8,7 @@ import '../../../onboarding/domain/allergy.dart';
 import '../../../auth/application/auth_service.dart';
 import '../../../onboarding/presentation/providers/onboarding_controller.dart';
 import '../../../../shared/services/app_external_deps.dart';
+import '../../../../shared/services/report/report.dart';
 import '../../../../shared/widgets/selection/figma_radio_option_card.dart';
 import '../../../../shared/widgets/selection/figma_checkbox_card.dart';
 import '../../../../shared/widgets/content_area.dart';
@@ -61,6 +62,8 @@ class _FoodSettingsConsolidatedScreenState
 
   Future<void> _loadCurrentSettings() async {
     setState(() => _isLoading = true);
+    // Before the first await: a catch after unmount cannot touch `ref`.
+    final report = ref.read(reportProvider);
     try {
       final authService = ref.read(authServiceProvider);
       final user = await authService.getCurrentUser();
@@ -80,7 +83,13 @@ class _FoodSettingsConsolidatedScreenState
           _isLoading = false;
         });
       }
-    } catch (e) {
+    } catch (e, stackTrace) {
+      report.fault(
+        e,
+        stackTrace: stackTrace,
+        area: 'settings',
+        message: 'Loading dietary preference and allergies failed',
+      );
       if (mounted) {
         setState(() => _isLoading = false);
       }

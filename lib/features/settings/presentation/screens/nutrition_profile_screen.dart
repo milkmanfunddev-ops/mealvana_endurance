@@ -7,6 +7,7 @@ import '../../../../shared/widgets/kyle_design/kyle_design.dart';
 import '../../../../shared/widgets/custom_app_bar_back_button.dart';
 import '../../../../shared/widgets/content_area.dart';
 import '../../../../shared/providers/unit_system_provider.dart';
+import '../../../../shared/services/report/report.dart';
 import '../../../../shared/utils/unit_formatter.dart';
 import '../../../daily_macros/application/daily_macro_service.dart';
 import '../../../daily_macros/domain/enums.dart';
@@ -28,6 +29,12 @@ class NutritionProfileScreen extends ConsumerStatefulWidget {
 
 class _NutritionProfileScreenState
     extends ConsumerState<NutritionProfileScreen> {
+  static const String _area = 'settings';
+
+  /// Taken in [initState]: a catch that runs after the widget unmounted
+  /// cannot touch `ref`.
+  late final Report _report;
+
   final _weightController = TextEditingController();
   final _heightFeetController = TextEditingController();
   final _heightInchesController = TextEditingController();
@@ -62,6 +69,7 @@ class _NutritionProfileScreenState
   @override
   void initState() {
     super.initState();
+    _report = ref.read(reportProvider);
     _loadCurrentValues();
   }
 
@@ -147,8 +155,14 @@ class _NutritionProfileScreenState
           _useMetric = true;
         });
       }
-    } catch (_) {
+    } catch (e, stackTrace) {
       // Non-fatal — default to imperial display.
+      _report.fault(
+        e,
+        stackTrace: stackTrace,
+        area: _area,
+        message: 'Unit preference unavailable; imperial display kept',
+      );
     }
 
     // Garmin auto-fill: if Garmin's latest body-comp reading is authoritative
@@ -163,8 +177,14 @@ class _NutritionProfileScreenState
       if (mounted && tpWeight != null) {
         setState(() => _tpWeightKg = tpWeight);
       }
-    } catch (_) {
+    } catch (e, stackTrace) {
       // Non-fatal — badge simply stays absent.
+      _report.degraded(
+        e,
+        stackTrace: stackTrace,
+        area: 'training_peaks',
+        message: 'TP athlete weight unavailable; provenance badge absent',
+      );
     }
 
     try {
@@ -202,8 +222,14 @@ class _NutritionProfileScreenState
           _bodyFatFromGarmin = true;
         });
       }
-    } catch (_) {
+    } catch (e, stackTrace) {
       // Non-fatal — Garmin auto-fill is best-effort.
+      _report.degraded(
+        e,
+        stackTrace: stackTrace,
+        area: 'garmin',
+        message: 'Garmin body-composition auto-fill failed; fields left as is',
+      );
     }
   }
 
@@ -292,7 +318,13 @@ class _NutritionProfileScreenState
           _isSaving = false;
         });
       }
-    } catch (e) {
+    } catch (e, stackTrace) {
+      _report.fault(
+        e,
+        stackTrace: stackTrace,
+        area: _area,
+        message: 'Saving the nutrition profile failed',
+      );
       if (mounted) {
         MealvanaSnackbar.showError(context, 'Failed to save: $e');
         setState(() => _isSaving = false);
@@ -381,8 +413,8 @@ class _NutritionProfileScreenState
                 garminValueLabel: _garminBodyComp?.weightKg == null
                     ? null
                     : (_useMetric
-                        ? '${_garminBodyComp!.weightKg!.toStringAsFixed(1)} kg'
-                        : '${UnitFormatter.kgToPounds(_garminBodyComp!.weightKg!).round()} lb'),
+                          ? '${_garminBodyComp!.weightKg!.toStringAsFixed(1)} kg'
+                          : '${UnitFormatter.kgToPounds(_garminBodyComp!.weightKg!).round()} lb'),
                 onAdoptGarmin: _garminBodyComp?.weightKg == null
                     ? null
                     : () {
@@ -402,17 +434,17 @@ class _NutritionProfileScreenState
                 tpValueLabel: _tpWeightKg == null
                     ? null
                     : (_useMetric
-                        ? '${_tpWeightKg!.toStringAsFixed(1)} kg'
-                        : '${UnitFormatter.kgToPounds(_tpWeightKg!).round()} lb'),
+                          ? '${_tpWeightKg!.toStringAsFixed(1)} kg'
+                          : '${UnitFormatter.kgToPounds(_tpWeightKg!).round()} lb'),
                 onAdoptTp: _tpWeightKg == null
                     ? null
                     : () {
                         setState(() {
                           _weightController.text = _useMetric
                               ? _tpWeightKg!.toStringAsFixed(1)
-                              : UnitFormatter.kgToPounds(_tpWeightKg!)
-                                  .round()
-                                  .toString();
+                              : UnitFormatter.kgToPounds(
+                                  _tpWeightKg!,
+                                ).round().toString();
                         });
                         _markChanged();
                       },
@@ -458,8 +490,8 @@ class _NutritionProfileScreenState
                     ? null
                     : () {
                         setState(() {
-                          _bodyFatController.text =
-                              _garminBodyComp!.bodyFatPct!.toStringAsFixed(1);
+                          _bodyFatController.text = _garminBodyComp!.bodyFatPct!
+                              .toStringAsFixed(1);
                           _bodyFatFromGarmin = true;
                         });
                         _markChanged();
@@ -548,7 +580,8 @@ class _NutritionProfileScreenState
     String? tpValueLabel,
     VoidCallback? onAdoptTp,
   }) {
-    final garminStale = _garminBodyComp != null &&
+    final garminStale =
+        _garminBodyComp != null &&
         DateTime.now().difference(_garminBodyComp!.measurementTime) >
             const Duration(days: 30);
     return Wrap(

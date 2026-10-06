@@ -7,6 +7,7 @@ import '../../data/template_foods_repository.dart';
 import '../providers/activity_detail_controller.dart';
 import '../../../../shared/services/app_external_deps.dart';
 import '../../../../shared/services/logging_service.dart';
+import '../../../../shared/services/report/report.dart';
 import '../../../../shared/database/database_provider.dart';
 import '../../../../shared/services/food_management/user_food_crud_service.dart';
 import '../../../../shared/services/food_management/food_recommendation_service.dart';
@@ -143,6 +144,9 @@ class SwapFoodController extends _$SwapFoodController {
   /// Note: Using `late` (not `late final`) because build() can be called multiple times
   late AppLogger _logger;
 
+  /// Cached for the same reason as [_logger]: reads after disposal throw.
+  late Report _report;
+
   /// Helper to check if provider is still mounted before state updates
   bool get _isMounted {
     try {
@@ -150,6 +154,7 @@ class SwapFoodController extends _$SwapFoodController {
       state;
       return true;
     } catch (_) {
+      // The catch IS the mounted test (allow-list: reasoned).
       return false;
     }
   }
@@ -158,6 +163,7 @@ class SwapFoodController extends _$SwapFoodController {
   FutureOr<SwapFoodState> build(SwapFoodParams params) async {
     // Cache logger immediately in build() to avoid UnmountedRefException
     _logger = ref.read(appExternalDepsProvider).logger;
+    _report = ref.read(reportProvider);
 
     // Auto-initialize with foods based on original food's product type
     return await _loadFoodsForSwapping(params);
@@ -340,7 +346,13 @@ class SwapFoodController extends _$SwapFoodController {
       if (parsed is List) {
         categories = parsed.cast<String>();
       }
-    } catch (_) {}
+    } catch (e) {
+      _report.note(
+        'Template food categories unreadable; food shown without categories',
+        area: 'nutrition_plan',
+        data: {'foodId': entry.id.toString(), 'error': e.toString()},
+      );
+    }
 
     return Food(
       id: entry.id as String,

@@ -13,6 +13,7 @@ import '../../auth/domain/user_preferences.dart';
 import '../../../shared/domain/activity_type.dart';
 import '../../../shared/services/analytics/analytics_tracker.dart';
 import '../../../shared/services/analytics/analytics_events.dart';
+import '../../../shared/services/report/report.dart';
 import 'package:mealvana_endurance/core/utils/debug_logger.dart';
 
 /// Service responsible for generating macro targets by calling edge functions.
@@ -52,7 +53,12 @@ class MacroGenerationService {
     required this.macroRepository,
     required this.authService,
     required this.analytics,
-  });
+    Report? report,
+  }) : _report = report;
+
+  final Report? _report;
+  Report get _r => _report ?? SentryReport.global;
+  static const String _area = 'nutrition_plan';
 
   final SupabaseClient supabaseClient;
   final MacroRepository macroRepository;
@@ -592,27 +598,38 @@ class MacroGenerationService {
 
       try {
         activityType = ActivityType.values.byName(activityTypeString);
-      } catch (e) {
-        DebugLogger.warning(
-          '⚠️ EDGE FUNCTION: Could not parse activity type "$activityTypeString", using $expectedActivityType',
+      } catch (e, stackTrace) {
+        _r.degraded(
+          e,
+          stackTrace: stackTrace,
+          area: _area,
+          message:
+              'Edge function returned unknown activity type '
+              '"$activityTypeString"; using ${expectedActivityType.name}',
         );
       }
 
       calculationRule =
           macrosData['pre_run_carbs_rule'] ?? 'Generated from edge function';
-    } on SocketException catch (e) {
-      DebugLogger.warning(
-        '📵 EDGE FUNCTION: Network unavailable (SocketException: $e) — using offline fallback',
+    } on SocketException catch (e, stackTrace) {
+      _r.degraded(
+        e,
+        stackTrace: stackTrace,
+        area: _area,
+        message: 'Macro edge function unreachable; using offline fallback',
       );
       macrosData = _computeOfflineMacros(requestData, expectedActivityType);
       calculationRule = 'offline_fallback';
-    } on TimeoutException catch (e) {
-      DebugLogger.warning(
-        '⏱️ EDGE FUNCTION: Timeout ($e) — using offline fallback',
+    } on TimeoutException catch (e, stackTrace) {
+      _r.degraded(
+        e,
+        stackTrace: stackTrace,
+        area: _area,
+        message: 'Macro edge function timed out; using offline fallback',
       );
       macrosData = _computeOfflineMacros(requestData, expectedActivityType);
       calculationRule = 'offline_fallback';
-    } catch (e) {
+    } catch (e, stackTrace) {
       // Re-check: if the error message suggests a host-lookup / network failure,
       // fall back offline. Otherwise rethrow (HTTP 4xx / logic errors must propagate).
       final msg = e.toString().toLowerCase();
@@ -621,8 +638,12 @@ class MacroGenerationService {
           msg.contains('connection refused') ||
           msg.contains('no address associated') ||
           msg.contains('clientexception')) {
-        DebugLogger.warning(
-          '📵 EDGE FUNCTION: Network failure ($e) — using offline fallback',
+        _r.degraded(
+          e,
+          stackTrace: stackTrace,
+          area: _area,
+          message:
+              'Macro edge function network failure; using offline fallback',
         );
         macrosData = _computeOfflineMacros(requestData, expectedActivityType);
         calculationRule = 'offline_fallback';
@@ -727,7 +748,7 @@ class MacroGenerationService {
         bodyWeightKg: weightKg,
         timeBeforeWorkoutMin: timeBeforeMin,
         workoutDurationMin: durationMin,
-        );
+      );
       overlaid['pre_run_carb_tiers'] ??= carbs.tiers
           .map(
             (t) => {
@@ -780,7 +801,7 @@ class MacroGenerationService {
           distanceMiles: distanceMiles,
           paceMinPerMile: paceMinPerMile,
           hoursBefore: hoursBefore,
-              gutTraining: gutTraining,
+          gutTraining: gutTraining,
           sweatRateCategory: sweatRateCategory,
           sweatSodiumCat: sweatSodiumCat,
           tempC: tempC,
@@ -801,7 +822,7 @@ class MacroGenerationService {
           speedMph: speedMph,
           terrain: terrain,
           hoursBefore: hoursBefore,
-              gutTraining: gutTraining,
+          gutTraining: gutTraining,
           sweatRateCategory: sweatRateCategory,
           sweatSodiumCat: sweatSodiumCat,
           tempC: tempC,
@@ -840,7 +861,7 @@ class MacroGenerationService {
           distanceMiles: 0,
           paceMinPerMile: 10,
           hoursBefore: hoursBefore,
-              gutTraining: gutTraining,
+          gutTraining: gutTraining,
         );
     }
   }
@@ -1040,10 +1061,15 @@ class MacroGenerationService {
       if (value is int) return value.toDouble();
       if (value is String) return double.tryParse(value) ?? 0.0;
       return (value as num).toDouble();
-    } catch (e) {
-      DebugLogger.error(
-        '❌ DEBUG: Error converting field "$fieldName" with value "$value" '
-        '(${value.runtimeType}) to double: $e',
+    } catch (e, stackTrace) {
+      _r.degraded(
+        e,
+        stackTrace: stackTrace,
+        area: _area,
+        message:
+            'Macro field "$fieldName" (${value.runtimeType}) could not be '
+            'read as a number; defaulted to 0',
+        extra: {'field': fieldName, 'value': value.toString()},
       );
       return 0.0;
     }
@@ -1054,11 +1080,14 @@ class MacroGenerationService {
     if (value is double) return value;
     if (value is int) return value.toDouble();
     if (value is String) return double.tryParse(value);
-    try {
-      return (value as num).toDouble();
-    } catch (_) {
-      return null;
-    }
+    // Not null, num or String: the payload shape drifted. A nullable field
+    // tolerates it, but the drift must be visible.
+    _r.note(
+      'Macro numeric field had unexpected type; treated as absent',
+      area: _area,
+      data: {'type': value.runtimeType.toString(), 'value': value.toString()},
+    );
+    return null;
   }
 
   List<double> _toDoubleList(
