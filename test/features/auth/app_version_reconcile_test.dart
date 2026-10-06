@@ -22,8 +22,9 @@ import 'package:mealvana_endurance/features/auth/data/user_repository.dart';
 import 'package:mealvana_endurance/features/auth/domain/user_preferences.dart';
 import 'package:mealvana_endurance/features/nutrition_plan/domain/run_parameters.dart';
 import 'package:mealvana_endurance/shared/services/app_version_service.dart';
+import 'package:mealvana_endurance/shared/services/report/report.dart';
 
-import '../../helpers/widget_test_harness.dart';
+import '../../helpers/fakes/recording_report.dart';
 
 class _MockUserRepository extends Mock implements UserRepository {}
 
@@ -60,9 +61,9 @@ void main() {
   ProviderContainer containerWith({required String running}) {
     final container = ProviderContainer(
       overrides: [
-        // The service logs through AppExternalDeps; without this the logger
-        // itself throws and the reconcile looks broken when it is not.
-        mockAppExternalDeps(),
+        // The service reports through Report; a recording one keeps the
+        // reconcile's own outcome the only thing under test.
+        reportProvider.overrideWithValue(RecordingReport()),
         runningAppVersionProvider.overrideWith((ref) async => running),
         userRepositoryProvider.overrideWith((ref) async => repo),
       ],
@@ -74,70 +75,80 @@ void main() {
   setUp(() {
     repo = _MockUserRepository();
     when(
-      () => repo.updateUserProfile(any(), needsUpload: any(named: 'needsUpload')),
+      () =>
+          repo.updateUserProfile(any(), needsUpload: any(named: 'needsUpload')),
     ).thenAnswer((_) async {});
   });
 
   test('a stale stored version is rewritten to the running one', () async {
-    when(() => repo.getCurrentUser())
-        .thenAnswer((_) async => _profile(appVersion: '1.0.0'));
+    when(
+      () => repo.getCurrentUser(),
+    ).thenAnswer((_) async => _profile(appVersion: '1.0.0'));
 
-    await containerWith(running: '1.28.0')
-        .read(authServiceProvider)
-        .reconcileAppVersion();
+    await containerWith(
+      running: '1.28.0',
+    ).read(authServiceProvider).reconcileAppVersion();
 
-    final captured = verify(
-      () => repo.updateUserProfile(captureAny(), needsUpload: true),
-    ).captured.single as UserProfile;
+    final captured =
+        verify(
+              () => repo.updateUserProfile(captureAny(), needsUpload: true),
+            ).captured.single
+            as UserProfile;
     expect(captured.appVersion, '1.28.0');
   });
 
   test('offline-first: the update is queued, never written through', () async {
-    when(() => repo.getCurrentUser())
-        .thenAnswer((_) async => _profile(appVersion: '1.24.0'));
+    when(
+      () => repo.getCurrentUser(),
+    ).thenAnswer((_) async => _profile(appVersion: '1.24.0'));
 
-    await containerWith(running: '1.28.0')
-        .read(authServiceProvider)
-        .reconcileAppVersion();
+    await containerWith(
+      running: '1.28.0',
+    ).read(authServiceProvider).reconcileAppVersion();
 
     // needsUpload: false would make a launch wait on Supabase.
     verifyNever(() => repo.updateUserProfile(any(), needsUpload: false));
   });
 
   test('an up-to-date version writes nothing', () async {
-    when(() => repo.getCurrentUser())
-        .thenAnswer((_) async => _profile(appVersion: '1.28.0'));
+    when(
+      () => repo.getCurrentUser(),
+    ).thenAnswer((_) async => _profile(appVersion: '1.28.0'));
 
-    await containerWith(running: '1.28.0')
-        .read(authServiceProvider)
-        .reconcileAppVersion();
+    await containerWith(
+      running: '1.28.0',
+    ).read(authServiceProvider).reconcileAppVersion();
 
     verifyNever(
-      () => repo.updateUserProfile(any(), needsUpload: any(named: 'needsUpload')),
+      () =>
+          repo.updateUserProfile(any(), needsUpload: any(named: 'needsUpload')),
     );
   });
 
   test('no profile yet (pre-onboarding) is not an error', () async {
     when(() => repo.getCurrentUser()).thenAnswer((_) async => null);
 
-    await containerWith(running: '1.28.0')
-        .read(authServiceProvider)
-        .reconcileAppVersion();
+    await containerWith(
+      running: '1.28.0',
+    ).read(authServiceProvider).reconcileAppVersion();
 
     verifyNever(
-      () => repo.updateUserProfile(any(), needsUpload: any(named: 'needsUpload')),
+      () =>
+          repo.updateUserProfile(any(), needsUpload: any(named: 'needsUpload')),
     );
   });
 
-  test('a repository failure never propagates — telemetry cannot cost a launch',
-      () async {
-    when(() => repo.getCurrentUser()).thenThrow(StateError('db closed'));
+  test(
+    'a repository failure never propagates — telemetry cannot cost a launch',
+    () async {
+      when(() => repo.getCurrentUser()).thenThrow(StateError('db closed'));
 
-    await expectLater(
-      containerWith(running: '1.28.0')
-          .read(authServiceProvider)
-          .reconcileAppVersion(),
-      completes,
-    );
-  });
+      await expectLater(
+        containerWith(
+          running: '1.28.0',
+        ).read(authServiceProvider).reconcileAppVersion(),
+        completes,
+      );
+    },
+  );
 }

@@ -21,6 +21,7 @@ import 'package:mealvana_endurance/shared/database/app_database.dart';
 import 'package:mealvana_endurance/shared/domain/activity_type.dart';
 
 import '../../helpers/fakes/fake_supabase_client.dart';
+import '../../helpers/fakes/recording_report.dart';
 import '../../helpers/widget_test_harness.dart';
 
 class _MockCarbLoadingRepository extends Mock
@@ -37,13 +38,12 @@ void main() {
     repo = EventsRepository(
       supabase: fakeSupabaseClient(),
       database: db,
-      logger: MockAppLogger(),
       carbLoadingRepository: _MockCarbLoadingRepository(),
-      sentry: mockSentryReporter(),
+      report: RecordingReport(),
     );
     service = ProviderEventImportService(
       eventsRepository: repo,
-      logger: MockAppLogger(),
+      report: RecordingReport(),
     );
   });
 
@@ -70,8 +70,11 @@ void main() {
       final row = (await rows()).single;
       expect(row.eventName, 'IM NC 70.3');
       expect(row.origin, 'training_peaks');
-      expect(row.startTime, isNotNull,
-          reason: 'the events list buckets on start_time');
+      expect(
+        row.startTime,
+        isNotNull,
+        reason: 'the events list buckets on start_time',
+      );
     });
 
     test('re-import dedupes — never a duplicate beside the first', () async {
@@ -86,7 +89,9 @@ void main() {
     test('D-2c: a LEGACY (null-origin) match flips to the provider; a '
         'manual match is exempt', () async {
       final now = DateTime(2026, 9, 1);
-      await db.into(db.eventsTable).insert(
+      await db
+          .into(db.eventsTable)
+          .insert(
             EventsTableCompanion.insert(
               id: const Value('legacy'),
               userId: userId,
@@ -97,7 +102,9 @@ void main() {
               updatedAt: now,
             ),
           );
-      await db.into(db.eventsTable).insert(
+      await db
+          .into(db.eventsTable)
+          .insert(
             EventsTableCompanion.insert(
               id: const Value('mine'),
               userId: userId,
@@ -121,17 +128,22 @@ void main() {
       ]);
 
       final byId = {for (final r in await rows()) r.id: r};
-      expect(byId['legacy']!.origin, 'training_peaks',
-          reason: 'legacy row flips on dedupe-match');
-      expect(byId['mine']!.origin, 'manual',
-          reason: 'manual rows are athlete-owned — never flipped back');
+      expect(
+        byId['legacy']!.origin,
+        'training_peaks',
+        reason: 'legacy row flips on dedupe-match',
+      );
+      expect(
+        byId['mine']!.origin,
+        'manual',
+        reason: 'manual rows are athlete-owned — never flipped back',
+      );
       expect(byId.length, 2, reason: 'no duplicates created');
     });
   });
 
   group('Final Surge race candidates', () {
-    test('creates with origin final_surge and dedupes on re-import',
-        () async {
+    test('creates with origin final_surge and dedupes on re-import', () async {
       final candidate = FinalSurgeRaceCandidate(
         providerWorkoutId: 'fs-w1',
         activityId: 'act-1',

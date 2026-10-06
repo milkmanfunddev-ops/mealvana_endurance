@@ -161,11 +161,9 @@ FinalSurgeApiClient finalSurgeApiClient(Ref ref) {
 @Riverpod(keepAlive: true)
 IntegrationsRepository integrationsRepository(Ref ref) {
   final database = ref.watch(appDatabaseProvider);
-  final deps = ref.watch(appExternalDepsProvider);
   return IntegrationsRepository(
     database: database,
     supabase: Supabase.instance.client,
-    logger: deps.logger,
     report: ref.read(reportProvider),
   );
 }
@@ -201,6 +199,7 @@ FinalSurgeTransformer finalSurgeTransformer(Ref ref) {
 ProviderRawPayloadsRepository providerRawPayloadsRepository(Ref ref) {
   return ProviderRawPayloadsRepository(
     supabase: ref.read(appExternalDepsProvider).supabaseClient,
+    report: ref.read(reportProvider),
   );
 }
 

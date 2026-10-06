@@ -3,7 +3,7 @@ import 'package:supabase_flutter/supabase_flutter.dart';
 import '../../../shared/database/app_database.dart';
 import '../../../shared/database/database_provider.dart';
 import '../../../shared/services/app_external_deps.dart';
-import '../../../shared/services/sentry/sentry_reporter.dart';
+import '../../../shared/services/report/report.dart';
 import '../data/user_repository.dart';
 import '../domain/user_preferences.dart';
 
@@ -20,13 +20,13 @@ class AuthMigrationService {
     required this.userRepository,
     required this.database,
     required this.supabase,
-    required this.sentry,
+    required this.report,
   });
 
   final UserRepository userRepository;
   final AppDatabase database;
   final SupabaseClient supabase;
-  final SentryReporter sentry;
+  final Report report;
 
   /// Migrate all data from anonymous user to OAuth user when signing into existing account
   /// This is called when account linking fails (account already exists) and user chooses to sign in
@@ -42,8 +42,8 @@ class AuthMigrationService {
         fromAnonymousUserId,
       );
       if (anonymousProfile == null) {
-        sentry.addBreadcrumb(
-          message: 'No anonymous profile found to migrate',
+        report.breadcrumb(
+          'No anonymous profile found to migrate',
           category: 'auth',
           data: {'from_user_id': fromAnonymousUserId},
         );
@@ -72,10 +72,9 @@ class AuthMigrationService {
         if (await userRepository.hasLocalDataWorthMigrating(
           fromAnonymousUserId,
         )) {
-          sentry.addBreadcrumb(
-            message:
-                'OAuth data probe failed with un-uploaded anon data present '
-                '- aborting migration rather than guessing',
+          report.breadcrumb(
+            'OAuth data probe failed with un-uploaded anon data present '
+            '- aborting migration rather than guessing',
             category: 'auth',
             data: {'error': e.toString()},
           );
@@ -83,9 +82,8 @@ class AuthMigrationService {
         }
         // Nothing local to lose: assume the account has data (Scenario A),
         // which then merely clears empty anon tables.
-        sentry.addBreadcrumb(
-          message:
-              'Error checking OAuth user data - assuming exists to prevent data loss',
+        report.breadcrumb(
+          'Error checking OAuth user data - assuming exists to prevent data loss',
           category: 'auth',
           data: {'error': e.toString()},
         );
@@ -97,9 +95,8 @@ class AuthMigrationService {
         // - OAuth user has historical data on server (e.g., 50 activities from last year)
         // - Anonymous user has test/onboarding data from new device (e.g., 1 test activity)
         // - CORRECT BEHAVIOR: Keep OAuth data, discard anonymous data
-        sentry.addBreadcrumb(
-          message:
-              'OAuth user exists on server - preserving existing data, discarding anonymous data',
+        report.breadcrumb(
+          'OAuth user exists on server - preserving existing data, discarding anonymous data',
           category: 'auth',
           data: {
             'oauth_user_id': toOAuthUserId,
@@ -120,9 +117,8 @@ class AuthMigrationService {
         );
         await userRepository.saveUserProfile(oauthProfile);
 
-        sentry.addBreadcrumb(
-          message:
-              'Cleared anonymous data - OAuth user data will sync from server',
+        report.breadcrumb(
+          'Cleared anonymous data - OAuth user data will sync from server',
           category: 'auth',
           data: {
             'oauth_user_id': toOAuthUserId,
@@ -134,8 +130,8 @@ class AuthMigrationService {
         // - OAuth user has NO data on server
         // - Anonymous user has fresh onboarding data from this device
         // - CORRECT BEHAVIOR: Keep anonymous data, migrate it to OAuth user
-        sentry.addBreadcrumb(
-          message: 'New OAuth account - migrating anonymous user data',
+        report.breadcrumb(
+          'New OAuth account - migrating anonymous user data',
           category: 'auth',
           data: {
             'oauth_user_id': toOAuthUserId,
@@ -170,9 +166,8 @@ class AuthMigrationService {
           authProvider: authProvider,
         );
 
-        sentry.addBreadcrumb(
-          message:
-              'Successfully migrated anonymous user data to new OAuth user',
+        report.breadcrumb(
+          'Successfully migrated anonymous user data to new OAuth user',
           category: 'auth',
           data: {
             'from_user_id': fromAnonymousUserId,
@@ -181,11 +176,11 @@ class AuthMigrationService {
         );
       }
     } catch (e, stackTrace) {
-      await sentry.reportDatabaseError(
+      await report.fault(
         e,
-        operation: 'migrateAnonymousUserData',
-        table: 'multiple',
         stackTrace: stackTrace,
+        area: 'database',
+        tags: {'operation': 'migrateAnonymousUserData', 'table': 'multiple'},
       );
       rethrow;
     }
@@ -197,24 +192,24 @@ class AuthMigrationService {
     try {
       await supabase.from('users').delete().eq('id', anonymousUserId);
 
-      sentry.addBreadcrumb(
-        message: 'Deleted anonymous user from Supabase',
+      report.breadcrumb(
+        'Deleted anonymous user from Supabase',
         category: 'auth',
         data: {'anonymous_user_id': anonymousUserId},
       );
     } catch (e, stackTrace) {
       // Log but don't throw - user may not exist in Supabase
-      sentry.addBreadcrumb(
-        message:
-            'Failed to delete anonymous user from Supabase (may not exist)',
+      report.breadcrumb(
+        'Failed to delete anonymous user from Supabase (may not exist)',
         category: 'auth',
         data: {'error': e.toString()},
       );
-      await sentry.reportNetworkError(
+      await report.degraded(
         e,
-        url: 'supabase:users:delete',
-        method: 'DELETE',
         stackTrace: stackTrace,
+        area: 'network',
+        tags: {'method': 'DELETE'},
+        extra: {'url': 'supabase:users:delete'},
       );
     }
   }
@@ -259,17 +254,18 @@ class AuthMigrationService {
         'updated_at': DateTime.now().toIso8601String(),
       }, onConflict: 'id');
 
-      sentry.addBreadcrumb(
-        message: 'Upserted OAuth user in Supabase with anonymous profile data',
+      report.breadcrumb(
+        'Upserted OAuth user in Supabase with anonymous profile data',
         category: 'auth',
         data: {'oauth_user_id': oauthUserId, 'auth_provider': authProvider},
       );
     } catch (e, stackTrace) {
-      await sentry.reportNetworkError(
+      await report.degraded(
         e,
-        url: 'supabase:users:upsert',
-        method: 'UPSERT',
         stackTrace: stackTrace,
+        area: 'network',
+        tags: {'method': 'UPSERT'},
+        extra: {'url': 'supabase:users:upsert'},
       );
       rethrow;
     }
@@ -287,8 +283,8 @@ class AuthMigrationService {
     try {
       await supabase.from('events').delete().eq('user_id', toUserId);
     } catch (e) {
-      sentry.addBreadcrumb(
-        message: 'Failed to delete OAuth user events (may not exist)',
+      report.breadcrumb(
+        'Failed to delete OAuth user events (may not exist)',
         category: 'auth',
         data: {'error': e.toString()},
       );
@@ -299,8 +295,8 @@ class AuthMigrationService {
           .update({'user_id': toUserId})
           .eq('user_id', fromUserId);
     } catch (e) {
-      sentry.addBreadcrumb(
-        message: 'Failed to migrate events (may not exist)',
+      report.breadcrumb(
+        'Failed to migrate events (may not exist)',
         category: 'auth',
         data: {'error': e.toString()},
       );
@@ -311,8 +307,8 @@ class AuthMigrationService {
     try {
       await supabase.from('activities').delete().eq('user_id', toUserId);
     } catch (e) {
-      sentry.addBreadcrumb(
-        message: 'Failed to delete OAuth user activities (may not exist)',
+      report.breadcrumb(
+        'Failed to delete OAuth user activities (may not exist)',
         category: 'auth',
         data: {'error': e.toString()},
       );
@@ -323,8 +319,8 @@ class AuthMigrationService {
           .update({'user_id': toUserId})
           .eq('user_id', fromUserId);
     } catch (e) {
-      sentry.addBreadcrumb(
-        message: 'Failed to migrate activities (may not exist)',
+      report.breadcrumb(
+        'Failed to migrate activities (may not exist)',
         category: 'auth',
         data: {'error': e.toString()},
       );
@@ -335,8 +331,8 @@ class AuthMigrationService {
     try {
       await supabase.from('food_preferences').delete().eq('user_id', toUserId);
     } catch (e) {
-      sentry.addBreadcrumb(
-        message: 'Failed to delete OAuth user food_preferences (may not exist)',
+      report.breadcrumb(
+        'Failed to delete OAuth user food_preferences (may not exist)',
         category: 'auth',
         data: {'error': e.toString()},
       );
@@ -347,8 +343,8 @@ class AuthMigrationService {
           .update({'user_id': toUserId})
           .eq('user_id', fromUserId);
     } catch (e) {
-      sentry.addBreadcrumb(
-        message: 'Failed to migrate food_preferences (may not exist)',
+      report.breadcrumb(
+        'Failed to migrate food_preferences (may not exist)',
         category: 'auth',
         data: {'error': e.toString()},
       );
@@ -359,8 +355,8 @@ class AuthMigrationService {
     try {
       await supabase.from('user_foods').delete().eq('user_id', toUserId);
     } catch (e) {
-      sentry.addBreadcrumb(
-        message: 'Failed to delete OAuth user user_foods (may not exist)',
+      report.breadcrumb(
+        'Failed to delete OAuth user user_foods (may not exist)',
         category: 'auth',
         data: {'error': e.toString()},
       );
@@ -371,8 +367,8 @@ class AuthMigrationService {
           .update({'user_id': toUserId})
           .eq('user_id', fromUserId);
     } catch (e) {
-      sentry.addBreadcrumb(
-        message: 'Failed to migrate user_foods (may not exist)',
+      report.breadcrumb(
+        'Failed to migrate user_foods (may not exist)',
         category: 'auth',
         data: {'error': e.toString()},
       );
@@ -388,9 +384,8 @@ class AuthMigrationService {
           .delete()
           .eq('user_id', toUserId);
     } catch (e) {
-      sentry.addBreadcrumb(
-        message:
-            'Failed to delete OAuth user carb_loading_plans (may not exist)',
+      report.breadcrumb(
+        'Failed to delete OAuth user carb_loading_plans (may not exist)',
         category: 'auth',
         data: {'error': e.toString()},
       );
@@ -404,8 +399,8 @@ class AuthMigrationService {
           .update({'user_id': toUserId})
           .eq('user_id', fromUserId);
     } catch (e) {
-      sentry.addBreadcrumb(
-        message: 'Failed to migrate carb_loading_plans (may not exist)',
+      report.breadcrumb(
+        'Failed to migrate carb_loading_plans (may not exist)',
         category: 'auth',
         data: {'error': e.toString()},
       );
@@ -539,8 +534,8 @@ class AuthMigrationService {
       ]);
     });
 
-    sentry.addBreadcrumb(
-      message: 'Cleared anonymous user local data',
+    report.breadcrumb(
+      'Cleared anonymous user local data',
       category: 'auth',
       data: {'anonymous_user_id': anonymousUserId},
     );
@@ -580,8 +575,8 @@ class AuthMigrationService {
 
       if (needsMigration) {
         // SCENARIO 1: Sign-In with Migration (user ID changed)
-        sentry.addBreadcrumb(
-          message: 'Auth complete - migrating anonymous user data',
+        report.breadcrumb(
+          'Auth complete - migrating anonymous user data',
           category: 'auth',
           data: {
             'scenario': 'migration',
@@ -610,8 +605,8 @@ class AuthMigrationService {
         }
       } else if (preservedUserId) {
         // SCENARIO 2: Account Linking (user ID preserved)
-        sentry.addBreadcrumb(
-          message: 'Auth complete - account linked',
+        report.breadcrumb(
+          'Auth complete - account linked',
           category: 'auth',
           data: {
             'scenario': 'linking',
@@ -625,8 +620,8 @@ class AuthMigrationService {
         await _handleFreshLogin(newUserId, authProvider);
       } else {
         // SCENARIO 3: Fresh Login (no migration needed)
-        sentry.addBreadcrumb(
-          message: 'Auth complete - fresh login',
+        report.breadcrumb(
+          'Auth complete - fresh login',
           category: 'auth',
           data: {
             'scenario': 'fresh_login',
@@ -640,11 +635,11 @@ class AuthMigrationService {
 
       return dataMigrated;
     } catch (e, stackTrace) {
-      await sentry.reportDatabaseError(
+      await report.fault(
         e,
-        operation: 'completeAuthentication',
-        table: 'user_profiles',
         stackTrace: stackTrace,
+        area: 'database',
+        tags: {'operation': 'completeAuthentication', 'table': 'user_profiles'},
       );
       rethrow;
     }
@@ -682,8 +677,8 @@ class AuthMigrationService {
             await userRepository.checkUserHasData(previousUserId);
 
         if (hasDataToMigrate) {
-          sentry.addBreadcrumb(
-            message: 'Migrating anonymous user data during sign-in',
+          report.breadcrumb(
+            'Migrating anonymous user data during sign-in',
             category: 'auth',
             data: {
               'from_user_id': previousUserId,
@@ -699,8 +694,8 @@ class AuthMigrationService {
           );
           dataMigrated = true;
         } else {
-          sentry.addBreadcrumb(
-            message: 'Skipping migration - anonymous user has no data',
+          report.breadcrumb(
+            'Skipping migration - anonymous user has no data',
             category: 'auth',
             data: {
               'anonymous_user_id': previousUserId,
@@ -716,9 +711,8 @@ class AuthMigrationService {
             );
           } catch (e) {
             if (e.toString().contains('No current user found')) {
-              sentry.addBreadcrumb(
-                message:
-                    'User missing during auth update - treating as fresh login',
+              report.breadcrumb(
+                'User missing during auth update - treating as fresh login',
                 category: 'auth',
               );
               await _handleFreshLogin(newUserId, authProvider);
@@ -732,8 +726,8 @@ class AuthMigrationService {
         // This handles:
         // - User signing back into their existing account
         // - User was not anonymous before sign-in
-        sentry.addBreadcrumb(
-          message: 'Updating auth provider (no migration needed)',
+        report.breadcrumb(
+          'Updating auth provider (no migration needed)',
           category: 'auth',
           data: {
             'user_id': newUserId,
@@ -748,11 +742,11 @@ class AuthMigrationService {
 
       return dataMigrated;
     } catch (e, stackTrace) {
-      await sentry.reportDatabaseError(
+      await report.fault(
         e,
-        operation: 'handleSignInCompletion',
-        table: 'user_profiles',
         stackTrace: stackTrace,
+        area: 'database',
+        tags: {'operation': 'handleSignInCompletion', 'table': 'user_profiles'},
       );
       rethrow;
     }
@@ -760,8 +754,8 @@ class AuthMigrationService {
 
   /// Handle fresh login (fetch remote profile or create new in Supabase)
   Future<void> _handleFreshLogin(String userId, String authProvider) async {
-    sentry.addBreadcrumb(
-      message: 'Starting fresh login flow',
+    report.breadcrumb(
+      'Starting fresh login flow',
       category: 'auth',
       data: {'user_id': userId, 'auth_provider': authProvider},
     );
@@ -774,8 +768,8 @@ class AuthMigrationService {
     if (remoteProfile != null) {
       // User exists in Supabase - update profile directly (no second lookup)
       // This fixes the "No current user found" error by avoiding getCurrentUser() race condition
-      sentry.addBreadcrumb(
-        message: 'Fresh login - profile found in Supabase, updating directly',
+      report.breadcrumb(
+        'Fresh login - profile found in Supabase, updating directly',
         category: 'auth',
         data: {
           'user_id': userId,
@@ -809,8 +803,8 @@ class AuthMigrationService {
       // background sync retries — no silently-dropped flip.
       await userRepository.updateUserProfile(updatedProfile);
 
-      sentry.addBreadcrumb(
-        message: 'Fresh login - profile updated successfully',
+      report.breadcrumb(
+        'Fresh login - profile updated successfully',
         category: 'auth',
         data: {
           'user_id': userId,
@@ -821,8 +815,8 @@ class AuthMigrationService {
     } else {
       // CRITICAL: Profile not found in Supabase - create it NOW
       // This happens when user signs in for first time or after local DB wipe
-      sentry.addBreadcrumb(
-        message: 'Fresh login - profile NOT found in Supabase, creating it',
+      report.breadcrumb(
+        'Fresh login - profile NOT found in Supabase, creating it',
         category: 'auth',
         data: {'user_id': userId, 'auth_provider': authProvider},
       );
@@ -852,8 +846,8 @@ class AuthMigrationService {
       await userRepository.saveUserProfile(newProfile);
       await userRepository.createUserInSupabase(userId, newProfile);
 
-      sentry.addBreadcrumb(
-        message: 'Fresh login - new profile created successfully',
+      report.breadcrumb(
+        'Fresh login - new profile created successfully',
         category: 'auth',
         data: {
           'user_id': userId,
@@ -872,12 +866,12 @@ Future<AuthMigrationService> authMigrationService(Ref ref) async {
   final userRepository = await ref.watch(userRepositoryProvider.future);
   final database = ref.watch(appDatabaseProvider);
   final supabase = ref.watch(appExternalDepsProvider).supabaseClient;
-  final sentry = ref.watch(sentryReporterProvider);
+  final report = ref.watch(reportProvider);
 
   return AuthMigrationService(
     userRepository: userRepository,
     database: database,
     supabase: supabase,
-    sentry: sentry,
+    report: report,
   );
 }

@@ -14,20 +14,16 @@ import 'package:mealvana_endurance/features/events/data/events_repository.dart';
 import 'package:mealvana_endurance/features/events/domain/event.dart' as domain;
 import 'package:mealvana_endurance/shared/database/app_database.dart';
 import 'package:mealvana_endurance/shared/domain/activity_type.dart';
-import 'package:mealvana_endurance/shared/services/logging_service.dart';
-import 'package:mealvana_endurance/shared/services/sentry/sentry_reporter.dart';
+import 'package:mealvana_endurance/shared/services/report/report.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 import 'package:supabase_flutter/supabase_flutter.dart';
+import '../../helpers/fakes/recording_report.dart';
 
 // ---------------------------------------------------------------------------
 // Mocks
 // ---------------------------------------------------------------------------
 
 class MockSupabaseClient extends Mock implements SupabaseClient {}
-
-class MockAppLogger extends Mock implements AppLogger {}
-
-class MockSentryReporter extends Mock implements SentryReporter {}
 
 class MockCarbLoadingRepository extends Mock implements CarbLoadingRepository {}
 
@@ -38,68 +34,15 @@ class MockCarbLoadingRepository extends Mock implements CarbLoadingRepository {}
 EventsRepository _makeRepo(
   AppDatabase database, {
   SupabaseClient? supabase,
-  AppLogger? logger,
-  SentryReporter? sentry,
+  Report? report,
   CarbLoadingRepository? carb,
 }) {
   return EventsRepository(
     supabase: supabase ?? MockSupabaseClient(),
     database: database,
-    logger: logger ?? _silentLogger(),
     carbLoadingRepository: carb ?? MockCarbLoadingRepository(),
-    sentry: sentry ?? MockSentryReporter(),
+    report: report ?? RecordingReport(),
   );
-}
-
-MockAppLogger _silentLogger() {
-  final m = MockAppLogger();
-  when(
-    () => m.info(
-      any(),
-      context: any(named: 'context'),
-      data: any(named: 'data'),
-    ),
-  ).thenReturn(null);
-  when(
-    () => m.debug(
-      any(),
-      context: any(named: 'context'),
-      data: any(named: 'data'),
-    ),
-  ).thenReturn(null);
-  when(
-    () => m.error(
-      any(),
-      context: any(named: 'context'),
-      error: any(named: 'error'),
-      stackTrace: any(named: 'stackTrace'),
-      data: any(named: 'data'),
-    ),
-  ).thenReturn(null);
-  when(
-    () => m.warning(
-      any(),
-      context: any(named: 'context'),
-      error: any(named: 'error'),
-      data: any(named: 'data'),
-    ),
-  ).thenReturn(null);
-  return m;
-}
-
-MockSentryReporter _silentSentry() {
-  final m = MockSentryReporter();
-  when(
-    () => m.reportNetworkError(
-      any(),
-      url: any(named: 'url'),
-      method: any(named: 'method'),
-      statusCode: any(named: 'statusCode'),
-      timeout: any(named: 'timeout'),
-      stackTrace: any(named: 'stackTrace'),
-    ),
-  ).thenAnswer((_) async {});
-  return m;
 }
 
 /// Returns an EventsRepository whose Supabase client always throws, so all
@@ -107,7 +50,7 @@ MockSentryReporter _silentSentry() {
 EventsRepository _offlineRepo(AppDatabase db, {CarbLoadingRepository? carb}) {
   final mockSupa = MockSupabaseClient();
   when(() => mockSupa.from(any())).thenThrow(Exception('network'));
-  return _makeRepo(db, supabase: mockSupa, sentry: _silentSentry(), carb: carb);
+  return _makeRepo(db, supabase: mockSupa, carb: carb);
 }
 
 /// Minimal domain Event for tests.
@@ -606,7 +549,7 @@ void main() {
     test('syncFromRemote returns failed result when Supabase throws', () async {
       final mockSupa = MockSupabaseClient();
       when(() => mockSupa.from(any())).thenThrow(Exception('Network error'));
-      final repo = _makeRepo(db, supabase: mockSupa, sentry: _silentSentry());
+      final repo = _makeRepo(db, supabase: mockSupa);
 
       final result = await repo.syncFromRemote('user-1');
 

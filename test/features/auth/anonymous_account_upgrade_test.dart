@@ -131,8 +131,6 @@ AppExternalDeps _deps(SupabaseClient client) {
   return AppExternalDeps(
     analytics: analytics,
     supabaseClient: client,
-    sentry: MockSentryReporter(),
-    logger: MockAppLogger(),
     sharedPreferences: MockSharedPreferences(),
   );
 }

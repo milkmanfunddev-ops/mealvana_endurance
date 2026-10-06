@@ -747,7 +747,7 @@ class SettingsController extends _$SettingsController {
     // Capture all dependencies BEFORE signOut (which disposes this controller)
     final supabaseClient = ref.read(appExternalDepsProvider).supabaseClient;
     final analytics = ref.read(appExternalDepsProvider).analytics;
-    final logger = ref.read(appExternalDepsProvider).logger;
+    final report = ref.read(reportProvider);
     final prefs = ref.read(sharedPreferencesProvider);
 
     // Track sign out event
@@ -762,7 +762,7 @@ class SettingsController extends _$SettingsController {
         await _uploadDirtyBeforeLogout(currentUser.id);
       } catch (e) {
         // Log error but continue with sign-out
-        logger.error('Pre-logout upload failed', context: 'SETTINGS', error: e);
+        report.fault(e, area: 'SETTINGS', message: 'Pre-logout upload failed');
       }
     }
 
@@ -780,10 +780,10 @@ class SettingsController extends _$SettingsController {
     try {
       await ref.read(subscriptionStatusProvider.notifier).clear();
     } catch (e) {
-      logger.error(
-        'Pro entitlement clear failed',
-        context: 'SETTINGS',
-        error: e,
+      report.fault(
+        e,
+        area: 'SETTINGS',
+        message: 'Pro entitlement clear failed',
       );
     }
 
@@ -800,7 +800,7 @@ class SettingsController extends _$SettingsController {
   /// `UploadResult.failed()`, so every result is checked here and the
   /// failures logged — an unchecked call looks identical to a success.
   Future<void> _uploadDirtyBeforeLogout(String userId) async {
-    final logger = ref.read(appExternalDepsProvider).logger;
+    final report = ref.read(reportProvider);
     final activitiesRepo = ref.read(activitiesRepositoryProvider);
     final eventsRepo = ref.read(eventsRepositoryProvider);
     final carbLoadingRepo = ref.read(carbLoadingRepositoryProvider);
@@ -836,10 +836,13 @@ class SettingsController extends _$SettingsController {
     for (var i = 0; i < repos.length; i++) {
       final result = results[i];
       if (result.success) continue;
-      logger.error(
-        'Pre-logout upload failed for ${repos[i].repositoryKey}',
-        context: 'SETTINGS',
-        data: {'repository': repos[i].repositoryKey, 'error': result.error},
+      report.fault(
+        LoggedFault(
+          'Pre-logout upload failed for ${repos[i].repositoryKey}',
+          context: 'SETTINGS',
+        ),
+        area: 'SETTINGS',
+        extra: {'repository': repos[i].repositoryKey, 'error': result.error},
       );
     }
   }
@@ -853,7 +856,7 @@ class SettingsController extends _$SettingsController {
     state = await AsyncValue.guard(() async {
       final supabaseClient = ref.read(appExternalDepsProvider).supabaseClient;
       final analytics = ref.read(appExternalDepsProvider).analytics;
-      final logger = ref.read(appExternalDepsProvider).logger;
+      final report = ref.read(reportProvider);
       final database = ref.read(appDatabaseProvider);
       final currentUserId = supabaseClient.auth.currentUser?.id;
 
@@ -867,7 +870,7 @@ class SettingsController extends _$SettingsController {
       // If authenticated, call the delete-user Edge Function
       // This deletes from both auth.users and public.users (with CASCADE)
       try {
-        logger.info('Calling delete-user Edge Function', context: 'SETTINGS');
+        report.info('Calling delete-user Edge Function', area: 'SETTINGS');
 
         final response = await supabaseClient.functions.invoke(
           'delete-user',
@@ -878,23 +881,26 @@ class SettingsController extends _$SettingsController {
         if (response.status != 200) {
           final errorData = response.data;
           final errorMessage = errorData?['message'] ?? 'Unknown error';
-          logger.error(
-            'delete-user Edge Function failed',
-            context: 'SETTINGS',
-            data: {'status': response.status, 'message': errorMessage},
+          report.fault(
+            LoggedFault(
+              'delete-user Edge Function failed',
+              context: 'SETTINGS',
+            ),
+            area: 'SETTINGS',
+            extra: {'status': response.status, 'message': errorMessage},
           );
           // Continue with local cleanup even if server deletion fails
         } else {
-          logger.info(
+          report.info(
             'User deleted from Supabase successfully',
-            context: 'SETTINGS',
+            area: 'SETTINGS',
           );
         }
       } catch (e) {
-        logger.error(
-          'Error calling delete-user Edge Function',
-          context: 'SETTINGS',
-          error: e,
+        report.fault(
+          e,
+          area: 'SETTINGS',
+          message: 'Error calling delete-user Edge Function',
         );
         // Continue with local cleanup even if edge function call fails
       }

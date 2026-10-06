@@ -11,7 +11,6 @@ import '../../../auth/domain/user_preferences.dart';
 import '../../../nutrition_plan/data/food_repository.dart';
 import '../../../../shared/services/app_external_deps.dart';
 import '../../../../shared/services/report/report.dart';
-import '../../../../core/utils/debug_logger.dart';
 import '../../../nutrition_plan/domain/food_item.dart';
 import '../../../../shared/services/food_management/fuel_predicate.dart';
 import '../../../nutrition_plan/domain/food.dart';
@@ -168,7 +167,7 @@ class _FoodPreferencesScreenState extends ConsumerState<FoodPreferencesScreen> {
   }
 
   Future<void> _loadFoods() async {
-    DebugLogger.info('[FOOD_PREFS] Starting food preferences load...');
+    _report.info('Starting food preferences load', area: _area);
 
     try {
       final foodRepository = ref.read(foodRepositoryProvider);
@@ -305,8 +304,10 @@ class _FoodPreferencesScreenState extends ConsumerState<FoodPreferencesScreen> {
       // Seed search controller after food data loads
       _seedSearchController();
 
-      DebugLogger.info(
-        '[FOOD_PREFS] Load completed (${primaryFoods.length} primary, ${userFoods.length} user)',
+      _report.info(
+        'Food preferences load completed',
+        area: _area,
+        data: {'primary': primaryFoods.length, 'user': userFoods.length},
       );
     } catch (e, stackTrace) {
       _report.fault(

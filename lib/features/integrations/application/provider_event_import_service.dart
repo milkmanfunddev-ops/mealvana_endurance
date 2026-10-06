@@ -1,7 +1,7 @@
 import 'package:flutter/foundation.dart';
 import 'package:riverpod_annotation/riverpod_annotation.dart';
 
-import '../../../shared/services/logging_service.dart';
+import '../../../shared/services/report/report.dart';
 import '../../events/data/events_repository.dart';
 import '../../events/domain/event.dart' as domain;
 import 'final_surge_sync_service.dart';
@@ -13,7 +13,7 @@ part 'provider_event_import_service.g.dart';
 ProviderEventImportService providerEventImportService(Ref ref) {
   return ProviderEventImportService(
     eventsRepository: ref.read(eventsRepositoryProvider),
-    logger: ref.read(appLoggerProvider),
+    report: ref.read(reportProvider),
   );
 }
 
@@ -29,12 +29,12 @@ ProviderEventImportService providerEventImportService(Ref ref) {
 class ProviderEventImportService {
   ProviderEventImportService({
     required EventsRepository eventsRepository,
-    required AppLogger logger,
+    required Report report,
   }) : _eventsRepository = eventsRepository,
-       _logger = logger;
+       _report = report;
 
   final EventsRepository _eventsRepository;
-  final AppLogger _logger;
+  final Report _report;
 
   /// Save TrainingPeaks events. Returns the number of newly created rows.
   ///
@@ -88,12 +88,12 @@ class ProviderEventImportService {
         );
         saved++;
       } catch (e, stackTrace) {
-        _logger.warning(
-          'Failed to save TrainingPeaks event',
-          context: 'EVENT_IMPORT',
-          error: e,
+        _report.degraded(
+          e,
           stackTrace: stackTrace,
-          data: {'eventName': event.eventName},
+          area: 'EVENT_IMPORT',
+          extra: {'eventName': event.eventName},
+          message: 'Failed to save TrainingPeaks event',
         );
       }
     }
@@ -166,12 +166,12 @@ class ProviderEventImportService {
         );
         saved++;
       } catch (e, stackTrace) {
-        _logger.warning(
-          'Failed to save Final Surge race event',
-          context: 'EVENT_IMPORT',
-          error: e,
+        _report.degraded(
+          e,
           stackTrace: stackTrace,
-          data: {'eventName': eventName},
+          area: 'EVENT_IMPORT',
+          extra: {'eventName': eventName},
+          message: 'Failed to save Final Surge race event',
         );
       }
     }
