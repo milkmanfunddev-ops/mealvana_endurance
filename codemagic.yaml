@@ -83,31 +83,75 @@ definitions:
         shorebird doctor
 
     - &upload_sentry_symbols
-      # Upload debug symbols / source maps to Sentry so stack traces are
-      # de-obfuscated in the Sentry dashboard.
+      # Upload debug symbols to Sentry so release stack traces read as app
+      # code: the iOS dSYM (build/ios/archive), the Android .so symbols
+      # (build/app/intermediates) and, when the Android build ran R8, its
+      # mapping.txt under the UUID the Sentry Gradle plugin stamped into the
+      # bundle (android/app/build.gradle.kts). Web source maps go through
+      # scripts/build_web.sh on Vercel, not through here.
       #
-      # OPTIONAL / NON-BLOCKING: this is observability, not a release gate.
-      # Symbol upload must NEVER fail a build or block TestFlight delivery.
-      # If SENTRY_AUTH_TOKEN is missing or the upload errors, we warn and
-      # continue so the IPA still publishes.
+      # RELEASE WORKFLOWS ONLY (sentry ticket 14). The develop auto-cut
+      # (dev-ios) must not reference this anchor: it would spend paid minutes
+      # on symbols nobody reads, and before 2026-10-06 it uploaded them to
+      # the PROD project. test/shared/ci_config_contract_test.dart enforces
+      # which workflows carry the step.
       #
-      # To enable actual symbol upload: add SENTRY_AUTH_TOKEN to the
-      # Codemagic variable group (mealvana_dev and/or mealvana_prod).
-      # Create the token at https://sentry.io/settings/account/api/auth-tokens/
-      # with scopes: project:releases, org:read. Then in Codemagic:
-      #   Team Settings → Environment variables → add SENTRY_AUTH_TOKEN
-      #   to the relevant variable group(s).
+      # LOUD, NOT OPTIONAL. The step fails the build when SENTRY_AUTH_TOKEN is
+      # missing or any upload fails; a release whose symbols did not land is
+      # a release whose crashes cannot be read. The token lives in the
+      # mealvana_prod variable group (scopes: project:releases, project:write,
+      # org:read; create at https://sentry.io/settings/account/api/auth-tokens/).
       #
-      # The sentry: block in pubspec.yaml already has org: milkman-24 and
-      # project: mealvana-endurance configured for the plugin.
+      # Project per flavor: SENTRY_PROJECT follows FLUTTER_ENV, so a dev-flavor
+      # release (dev-android, manual) lands in mealvana-endurance-dev and a
+      # prod-flavor release in mealvana-endurance. pubspec.yaml deliberately
+      # names no project, so a run without SENTRY_PROJECT refuses instead of
+      # defaulting to prod. Release name must match what the SDK reports at
+      # runtime (lib/shared/core/bootstrap/bootstrap.dart:
+      # mealvana_endurance@<version>+<build>) — pubspec's own build number is
+      # NOT it, because the resolver steps above pass --build-number.
       name: Upload debug symbols to Sentry
       script: |
+        set -e
         if [ -z "$SENTRY_AUTH_TOKEN" ]; then
-          echo "⚠️  SENTRY_AUTH_TOKEN not set — skipping Sentry symbol upload (non-blocking)."
-          exit 0
+          echo "ERROR: SENTRY_AUTH_TOKEN is not set. Release builds must upload symbols;"
+          echo "add it to the mealvana_prod variable group (Team settings → Environment variables)."
+          exit 1
         fi
-        dart run sentry_dart_plugin || \
-          echo "⚠️  Sentry symbol upload failed — continuing anyway (non-blocking)."
+        case "$FLUTTER_ENV" in
+          prod) export SENTRY_PROJECT=mealvana-endurance ;;
+          dev)  export SENTRY_PROJECT=mealvana-endurance-dev ;;
+          *)
+            echo "ERROR: FLUTTER_ENV='$FLUTTER_ENV' is not a flavor; cannot pick a Sentry project."
+            exit 1
+            ;;
+        esac
+        export SENTRY_ORG=milkman-24
+        VERSION=$(sed -nE 's/^version:[[:space:]]*([0-9]+\.[0-9]+\.[0-9]+).*/\1/p' pubspec.yaml)
+        if [ -z "$BUILD_NUMBER" ]; then
+          BUILD_NUMBER=$(sed -nE 's/^version:.*\+([0-9]+).*/\1/p' pubspec.yaml)
+          echo "BUILD_NUMBER not resolved by an earlier step; using pubspec build number $BUILD_NUMBER"
+        fi
+        export SENTRY_RELEASE="mealvana_endurance@${VERSION}+${BUILD_NUMBER}"
+        export SENTRY_DIST="$BUILD_NUMBER"
+        echo "Uploading symbols to $SENTRY_ORG/$SENTRY_PROJECT as $SENTRY_RELEASE"
+        dart run sentry_dart_plugin
+
+        MAPPING=$(find build/app/outputs/mapping -name mapping.txt 2>/dev/null | head -1)
+        if [ -n "$MAPPING" ]; then
+          META=$(find build/app -name sentry-debug-meta.properties 2>/dev/null | head -1)
+          UUID=$(sed -nE 's/^io\.sentry\.ProguardUuids=(.*)$/\1/p' "$META")
+          if [ -z "$UUID" ]; then
+            echo "ERROR: $MAPPING exists but no io.sentry.ProguardUuids was stamped into the bundle;"
+            echo "the Sentry Gradle plugin in android/app/build.gradle.kts did not run."
+            exit 1
+          fi
+          # The plugin run above downloaded its own sentry-cli to this path.
+          .dart_tool/pub/bin/sentry_dart_plugin/sentry-cli upload-proguard \
+            --org "$SENTRY_ORG" --project "$SENTRY_PROJECT" --uuid "$UUID" "$MAPPING"
+        else
+          echo "No Android mapping.txt in this build (iOS or non-R8 build); nothing to upload-proguard."
+        fi
 
     - &install_cocoapods
       name: Install CocoaPods dependencies
@@ -525,7 +569,9 @@ workflows:
           echo "You can now create patches using dev-ios-patch workflow"
           echo "=========================================="
 
-      - *upload_sentry_symbols
+      # No *upload_sentry_symbols here (sentry ticket 14): the develop
+      # auto-cut spends no minutes on symbols. Dev-flavor symbols upload on
+      # demand with the local command in docs/technical/sentry-integration.md.
 
     artifacts:
       - build/ios/ipa/*.ipa
@@ -613,7 +659,9 @@ workflows:
             --target lib/main_dev.dart \
             --build-number=$BUILD_NUMBER
 
-      - *upload_sentry_symbols
+      # No *upload_sentry_symbols (sentry ticket 14): dev lanes never upload
+      # symbols from CI. Upload on demand with the local command in
+      # docs/technical/sentry-integration.md (SENTRY_PROJECT=mealvana-endurance-dev).
 
     artifacts:
       - build/**/outputs/**/*.aab

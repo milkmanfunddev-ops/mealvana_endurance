@@ -234,6 +234,107 @@ void main() {
     });
   });
 
+  group('symbols upload in release builds only (sentry ticket 14)', () {
+    const stepName = 'Upload debug symbols to Sentry';
+
+    // The step as the workflow actually carries it (a YAML alias resolves to
+    // the anchored map), not a substring of the blob — the explanatory
+    // comments on other steps name this step too.
+    YamlMap? symbolStepOf(String name) {
+      final steps = workflow(name)['scripts'] as YamlList?;
+      for (final step in steps ?? const []) {
+        if (step is YamlMap && step['name'] == stepName) return step;
+      }
+      return null;
+    }
+
+    test('the develop auto-cut and the dev lanes upload no symbols', () {
+      // Before 2026-10-06 dev-ios ran the upload on every develop push: paid
+      // minutes, and the symbols landed in the PROD project.
+      for (final name in ['dev-ios', 'dev-android', 'dev-ios-patch']) {
+        expect(
+          symbolStepOf(name),
+          isNull,
+          reason:
+              '$name carries "$stepName". Dev lanes never upload symbols from '
+              'CI; the on-demand command is in docs/technical/sentry-integration.md.',
+        );
+        expect(
+          scriptsOf(name),
+          isNot(contains('sentry_dart_plugin')),
+          reason: '$name runs sentry_dart_plugin by some other step.',
+        );
+      }
+    });
+
+    test('every release workflow carries the upload step', () {
+      for (final name in ['prod-ios', 'prod-android', 'main-ios', 'main-android']) {
+        expect(
+          symbolStepOf(name),
+          isNotNull,
+          reason:
+              '$name is a prod release workflow without "$stepName" — its '
+              'crashes would arrive unsymbolicated.',
+        );
+      }
+    });
+
+    test('the step picks the Sentry project from the flavor', () {
+      final script = symbolStepOf('prod-ios')!['script'].toString();
+      expect(script, contains('SENTRY_PROJECT=mealvana-endurance-dev'));
+      expect(script, contains('SENTRY_PROJECT=mealvana-endurance '));
+      expect(
+        script,
+        contains(r'case "$FLUTTER_ENV"'),
+        reason: 'Project selection must key off FLUTTER_ENV, not a default.',
+      );
+    });
+
+    test('a missing SENTRY_AUTH_TOKEN fails the step instead of skipping', () async {
+      // Run the real script with no token. It must exit non-zero before it
+      // reaches `dart run`, so the proof needs no Dart, no network, no build.
+      final script = symbolStepOf('prod-ios')!['script'].toString();
+      final result = await Process.run(
+        'bash',
+        ['-c', script],
+        environment: {'PATH': '/usr/bin:/bin', 'FLUTTER_ENV': 'prod'},
+        includeParentEnvironment: false,
+        workingDirectory: repoRoot.path,
+      );
+      expect(
+        result.exitCode,
+        isNot(0),
+        reason:
+            'With SENTRY_AUTH_TOKEN unset the step exited 0 — a release would '
+            'publish with no symbols and nobody would know.\n'
+            'stdout: ${result.stdout}\nstderr: ${result.stderr}',
+      );
+      expect(result.stdout.toString(), contains('SENTRY_AUTH_TOKEN'));
+      expect(
+        script,
+        isNot(contains('continuing anyway')),
+        reason: 'The old non-blocking fallback is back.',
+      );
+    }, skip: !Platform.isMacOS && !Platform.isLinux ? 'needs bash' : null);
+
+    test('pubspec names no Sentry project, so a run must say which one', () {
+      final pubspec =
+          loadYaml(File('${repoRoot.path}/pubspec.yaml').readAsStringSync())
+              as YamlMap;
+      final sentry = pubspec['sentry'] as YamlMap?;
+      expect(sentry, isNotNull, reason: 'pubspec.yaml lost its sentry: block.');
+      expect(
+        sentry!.containsKey('project'),
+        isFalse,
+        reason:
+            'pubspec.yaml sets sentry.project — a dev upload that forgets '
+            'SENTRY_PROJECT lands in that project (it was prod).',
+      );
+      expect(sentry['upload_debug_symbols'], isTrue);
+      expect(sentry['upload_source_maps'], isTrue);
+    });
+  });
+
   group('flows that must never run automatically', () {
     test('the exclusion list is not vacuous — every named flow exists', () {
       // Without this, a RENAME turns each exclusion assertion below into a

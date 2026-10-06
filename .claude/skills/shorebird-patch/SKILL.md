@@ -40,7 +40,12 @@ workflows: `codemagic.yaml` (`*-ios-patch`, `*-android-patch`).
 5. **Verify**: `shorebird patches list --release-version=<v>` (the release's
    own list — the app-level latest_patch_number lies across platforms), then
    the console release page.
-6. **Android** goes through Codemagic only (keystore constraint — see doc);
+6. **Upload the patch's symbols to Sentry** from the same worktree, right
+   after the patch ships — the doc's "Upload the patch's symbols" section has
+   the command (`SENTRY_PROJECT` + `SENTRY_RELEASE=<the --release-version>` +
+   `dart run sentry_dart_plugin`). A patch is a new snapshot; skip this and
+   every crash on it reads as hex. Record the release in the cut card.
+7. **Android** goes through Codemagic only (keystore constraint — see doc);
    pin its RELEASE_VERSION in `codemagic.yaml` on the backport branch.
 
 ## Guardrails
