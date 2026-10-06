@@ -199,12 +199,16 @@ Future<void> _runMealvanaApp(
   );
 
   // 1. SentryWidget: screenshots and session replay
-  // 2. ProviderScope: Riverpod, with the provider-failure net attached
+  // 2. ProviderScope: Riverpod, with the provider-failure net attached. The
+  //    observer and the retry hook are one object so a retried failure is a
+  //    breadcrumb, not an event (spec § Riverpod).
   // 3. RootAppWidget: MaterialApp.router with Wiredash and AppStartupWidget
+  final providerNet = SentryProviderObserver();
   runApp(
     SentryWidget(
       child: ProviderScope(
-        observers: const [SentryProviderObserver()],
+        observers: [providerNet],
+        retry: providerNet.retry,
         overrides: [
           appConfigProvider.overrideWithValue(config),
           sharedPreferencesProvider.overrideWithValue(sharedPreferences),
