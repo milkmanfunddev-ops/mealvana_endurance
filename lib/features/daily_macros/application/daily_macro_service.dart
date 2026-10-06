@@ -475,7 +475,9 @@ class DailyMacroService {
       final data = response.data as Map<String, dynamic>;
       final dayResults = (data['days'] as List).cast<Map<String, dynamic>>();
 
-      // 4. Parse results, save to cache, merge with cached entries
+      // 4. Parse results, save to cache (one batch locally, one upsert
+      //    remotely: ticket 24, Sentry DEV-97), merge with cached entries.
+      final computed = <DailyMacroTargets>[];
       for (int j = 0; j < dayResults.length; j++) {
         final weekIdx = dayIndexMap[j]!;
         final day = startOfWeek.add(Duration(days: weekIdx));
@@ -486,11 +488,11 @@ class DailyMacroService {
           targetDate: day,
           json: dayResults[j],
         );
-
-        await _repository.saveToLocal(targets);
-        _repository.saveToRemote(targets); // fire and forget
+        computed.add(targets);
         cached[weekIdx] = targets;
       }
+      await _repository.saveAllToLocal(computed);
+      _repository.saveAllToRemote(computed); // fire and forget
 
       return List.generate(7, (i) => cached[i]);
     } on DailyMacroCalculationException {
