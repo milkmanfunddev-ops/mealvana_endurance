@@ -317,7 +317,9 @@ What the app does instead (`lib/shared/core/bootstrap/sentry_replay_sampling.dar
 - To re-roll the fleet, bump the `_cohortKey` suffix. It is pure Dart, so it can ship in a
   Shorebird patch.
 - Unarmed installs still attach a screenshot of the error moment, the stack trace and up to 100
-  breadcrumbs.
+  breadcrumbs. The screenshot is taken only while the app is resumed
+  (`sentry_screenshot_gate.dart`): a background capture on Android builds an offscreen Impeller
+  GLES surface, which crashed prod in Flutter 3.47.x (ticket 21, flutter/flutter#193899).
 - `test/shared/core/bootstrap/sentry_replay_sampling_test.dart` guards the 1.0-or-0.0 rule.
 
 Revisit if upstream fixes the idle cost:

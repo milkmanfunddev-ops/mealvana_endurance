@@ -36,6 +36,7 @@ import '../../widgets/root_app_widget.dart';
 import 'sentry_event_filter.dart';
 import 'sentry_flavor_settings.dart';
 import 'sentry_replay_sampling.dart';
+import 'sentry_screenshot_gate.dart';
 
 export 'sentry_flavor_settings.dart' show AppFlavor;
 
@@ -181,6 +182,9 @@ void _configureSentry(
   // Screenshots on error and the feedback form need the navigator.
   options.navigatorKey = appNavigatorKey;
   options.attachScreenshot = true;
+  // Only while resumed: a background capture builds an offscreen GLES
+  // surface, which crashed Android prod (ticket 21, MEALVANA-ENDURANCE-CR).
+  options.beforeCaptureScreenshot = foregroundOnlyScreenshots();
 }
 
 /// Runs inside the SDK's `appRunner` (or directly when Sentry is disabled).
