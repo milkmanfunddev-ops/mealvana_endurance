@@ -149,6 +149,8 @@ dev_dependencies:
 
   # Testing
   mocktail: ^1.0.4
+  # Fake video platform for the disposal-safe controller test (Sentry DEV-9R).
+  video_player_platform_interface: ^6.6.0
   patrol: ^4.5.0
   
   # Code Generation
