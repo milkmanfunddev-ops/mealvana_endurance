@@ -173,7 +173,8 @@ flutter:
   # the material Icons class.
   uses-material-design: true
   assets:
-    - .env
+    # Only the flavor files are loaded (bootstrap.dart _loadConfig). The root `.env` holds
+    # server-side secrets for scripts and edge functions and must never ship in a bundle.
     - .env.dev.local
     - .env.prod.local
     - shorebird.yaml
