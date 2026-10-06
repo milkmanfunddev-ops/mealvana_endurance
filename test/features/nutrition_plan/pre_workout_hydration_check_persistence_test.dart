@@ -29,19 +29,14 @@ import 'package:mealvana_endurance/features/nutrition_plan/domain/macro_targets.
 import 'package:mealvana_endurance/features/nutrition_plan/domain/nutrition_plan.dart';
 import 'package:mealvana_endurance/features/nutrition_plan/domain/pre_workout_hydration_check.dart';
 import 'package:mealvana_endurance/shared/database/app_database.dart';
-import 'package:mealvana_endurance/shared/services/logging_service.dart';
-import 'package:mealvana_endurance/shared/services/sentry/sentry_reporter.dart';
 import 'package:mocktail/mocktail.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 import 'package:supabase_flutter/supabase_flutter.dart';
 
+import '../../helpers/fakes/recording_report.dart';
 import 'pre_workout_before_card_fixtures.dart';
 
 class MockSupabaseClient extends Mock implements SupabaseClient {}
-
-class MockAppLogger extends Mock implements AppLogger {}
-
-class MockSentryReporter extends Mock implements SentryReporter {}
 
 class MockActivityDeduplicationService extends Mock
     implements ActivityDeduplicationService {}
@@ -57,8 +52,6 @@ void main() {
 
   late AppDatabase database;
   late ActivitiesRepository repository;
-  late MockAppLogger logger;
-  late MockSentryReporter sentry;
 
   setUpAll(() {
     SharedPreferences.setMockInitialValues({});
@@ -66,55 +59,10 @@ void main() {
 
   setUp(() {
     database = AppDatabase.forTesting(NativeDatabase.memory());
-    logger = MockAppLogger();
-    sentry = MockSentryReporter();
-    when(
-      () => logger.info(
-        any(),
-        context: any(named: 'context'),
-        data: any(named: 'data'),
-      ),
-    ).thenReturn(null);
-    when(
-      () => logger.debug(
-        any(),
-        context: any(named: 'context'),
-        data: any(named: 'data'),
-      ),
-    ).thenReturn(null);
-    when(
-      () => logger.warning(
-        any(),
-        context: any(named: 'context'),
-        error: any(named: 'error'),
-        stackTrace: any(named: 'stackTrace'),
-        data: any(named: 'data'),
-      ),
-    ).thenReturn(null);
-    when(
-      () => logger.error(
-        any(),
-        context: any(named: 'context'),
-        error: any(named: 'error'),
-        stackTrace: any(named: 'stackTrace'),
-        data: any(named: 'data'),
-      ),
-    ).thenReturn(null);
-    when(
-      () => sentry.reportNetworkError(
-        any(),
-        url: any(named: 'url'),
-        method: any(named: 'method'),
-        statusCode: any(named: 'statusCode'),
-        timeout: any(named: 'timeout'),
-        stackTrace: any(named: 'stackTrace'),
-      ),
-    ).thenAnswer((_) async {});
     repository = ActivitiesRepository(
       supabase: MockSupabaseClient(),
       database: database,
-      logger: logger,
-      sentry: sentry,
+      report: RecordingReport(),
       deduplicationService: MockActivityDeduplicationService(),
     );
   });

@@ -1,11 +1,11 @@
 import 'dart:convert';
 
-import 'package:mealvana_endurance/core/utils/debug_logger.dart';
 import 'package:riverpod_annotation/riverpod_annotation.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 
 import '../../../shared/domain/activity_type.dart';
 import '../../../shared/services/app_external_deps.dart';
+import '../../../shared/services/report/report.dart';
 import '../domain/macro_targets.dart';
 import '../domain/pre_run_macros_wire.dart';
 import 'offline_macro_calculator.dart';
@@ -76,10 +76,15 @@ abstract class MacroRepository {
 
 /// Implementation of macro repository
 class MacroRepositoryImpl implements MacroRepository {
-  const MacroRepositoryImpl({required SharedPreferences sharedPreferences})
-    : _prefs = sharedPreferences;
+  const MacroRepositoryImpl({
+    required SharedPreferences sharedPreferences,
+    Report? report,
+  }) : _prefs = sharedPreferences,
+       _report = report;
 
   final SharedPreferences _prefs;
+  final Report? _report;
+  Report get _r => _report ?? SentryReport.global;
 
   static const _cachedKey = 'macro_targets.cached';
   static const _originalKey = 'macro_targets.original';
@@ -606,8 +611,12 @@ class MacroRepositoryImpl implements MacroRepository {
       final decoded = jsonDecode(raw) as Map<String, dynamic>;
       return MacroTargets.fromJson(decoded);
     } catch (error, stackTrace) {
-      DebugLogger.error('Failed to decode cached macro targets', error: error);
-      DebugLogger.debug(stackTrace.toString());
+      _r.fault(
+        error,
+        stackTrace: stackTrace,
+        area: 'nutrition_plan',
+        message: 'Failed to decode cached macro targets',
+      );
       return null;
     }
   }
@@ -625,5 +634,8 @@ class MacroRepositoryImpl implements MacroRepository {
 @riverpod
 MacroRepository macroRepository(Ref ref) {
   final prefs = ref.watch(sharedPreferencesProvider);
-  return MacroRepositoryImpl(sharedPreferences: prefs);
+  return MacroRepositoryImpl(
+    sharedPreferences: prefs,
+    report: ref.watch(reportProvider),
+  );
 }

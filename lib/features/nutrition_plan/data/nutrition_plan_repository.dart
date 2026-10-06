@@ -1,7 +1,6 @@
 import 'dart:convert';
 
 import 'package:drift/drift.dart';
-import 'package:mealvana_endurance/core/utils/debug_logger.dart';
 import 'package:riverpod_annotation/riverpod_annotation.dart';
 import 'package:supabase_flutter/supabase_flutter.dart';
 
@@ -83,8 +82,9 @@ class NutritionPlanRepository {
         return;
       }
 
-      DebugLogger.info(
+      report.info(
         '💾 Caching plan locally: planId=${plan.id}, userId=$userId, activityId=$activityId',
+        area: 'nutrition_plan',
       );
 
       final planJson = json.encode(plan.toJson());
@@ -92,7 +92,7 @@ class NutritionPlanRepository {
         activityId: activityId,
         planData: planJson,
       );
-      DebugLogger.info('✅ Plan cached on activity row');
+      report.info('✅ Plan cached on activity row', area: 'nutrition_plan');
     } catch (e, stackTrace) {
       await report.fault(
         e,
@@ -115,15 +115,19 @@ class NutritionPlanRepository {
     String userId,
     String activityId,
   ) async {
-    DebugLogger.info(
+    report.info(
       '🔍 Getting nutrition plan for activityId: $activityId, userId: $userId',
+      area: 'nutrition_plan',
     );
 
     try {
       // Get activity with nutrition plan data
       final activity = await _getActivityRowWithPlan(activityId);
       if (activity == null) {
-        DebugLogger.info('No nutrition plan found for activity $activityId');
+        report.info(
+          'No nutrition plan found for activity $activityId',
+          area: 'nutrition_plan',
+        );
         return null;
       }
 
@@ -144,7 +148,10 @@ class NutritionPlanRepository {
 
   /// Get latest nutrition plan (local activities only)
   Future<domain.NutritionPlan?> getLatestNutritionPlan(String userId) async {
-    DebugLogger.info('🔍 Getting latest nutrition plan for userId: $userId');
+    report.info(
+      '🔍 Getting latest nutrition plan for userId: $userId',
+      area: 'nutrition_plan',
+    );
     return await getLatestCachedPlan(userId);
   }
 
@@ -156,7 +163,10 @@ class NutritionPlanRepository {
   /// Delete nutrition plan data for an activity (soft delete)
   Future<bool> deleteNutritionPlanForActivity(String activityId) async {
     try {
-      DebugLogger.info('🗑️ Clearing nutrition plan for activity $activityId');
+      report.info(
+        '🗑️ Clearing nutrition plan for activity $activityId',
+        area: 'nutrition_plan',
+      );
 
       await database.activityDao.clearActivityNutritionPlan(activityId);
 
@@ -214,8 +224,9 @@ class NutritionPlanRepository {
         planData: jsonEncode(planJson),
       );
 
-      DebugLogger.info(
+      report.info(
         '✅ Plan run date updated: activityId=$activityId, runDateTime=$runDateTime',
+        area: 'nutrition_plan',
       );
     } catch (e) {
       // The error propagates; the caller owns the report.
@@ -237,7 +248,10 @@ class NutritionPlanRepository {
   Future<List<domain.NutritionPlan>> getPlansPendingFeedback(
     String userId,
   ) async {
-    DebugLogger.info('🔍 Getting plans pending feedback for userId: $userId');
+    report.info(
+      '🔍 Getting plans pending feedback for userId: $userId',
+      area: 'nutrition_plan',
+    );
 
     try {
       final now = DateTime.now();
@@ -275,7 +289,10 @@ class NutritionPlanRepository {
         }
       }
 
-      DebugLogger.info('Found ${plans.length} plans pending feedback');
+      report.info(
+        'Found ${plans.length} plans pending feedback',
+        area: 'nutrition_plan',
+      );
       return plans;
     } catch (e, stackTrace) {
       await report.fault(
@@ -294,7 +311,10 @@ class NutritionPlanRepository {
   Future<List<domain.NutritionPlan>> getUserNutritionPlans(
     String userId,
   ) async {
-    DebugLogger.info('🔍 Getting all nutrition plans for userId: $userId');
+    report.info(
+      '🔍 Getting all nutrition plans for userId: $userId',
+      area: 'nutrition_plan',
+    );
 
     try {
       // Query all activities with nutrition plan data
@@ -324,7 +344,10 @@ class NutritionPlanRepository {
         }
       }
 
-      DebugLogger.info('Found ${plans.length} nutrition plans');
+      report.info(
+        'Found ${plans.length} nutrition plans',
+        area: 'nutrition_plan',
+      );
       return plans;
     } catch (e, stackTrace) {
       await report.fault(

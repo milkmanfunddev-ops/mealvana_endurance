@@ -8,7 +8,7 @@ import 'package:supabase_flutter/supabase_flutter.dart';
 import 'package:drift/drift.dart';
 import '../domain/food_item.dart';
 import '../../../shared/services/app_external_deps.dart';
-import '../../../shared/services/logging_service.dart';
+import '../../../shared/services/report/report.dart';
 import '../../../shared/database/app_database.dart';
 import '../../../shared/database/database_provider.dart';
 import '../../../shared/data/syncable_repository.dart';
@@ -20,12 +20,12 @@ import '../../onboarding/domain/dietary_preference.dart';
 /// Replaces the hardcoded FoodDatabase with dynamic data
 /// Implements SyncableRepository for new sync architecture
 class FoodRepository with SyncableRepository {
-  FoodRepository(this._supabase, this._database, {AppLogger? logger})
-    : _logger = logger ?? const NoopAppLogger();
+  FoodRepository(this._supabase, this._database, {required Report report})
+    : _report = report;
 
   final SupabaseClient _supabase;
   final AppDatabase _database;
-  final AppLogger _logger;
+  final Report _report;
 
   // ========================================================================
   // SyncableRepository Implementation
@@ -46,9 +46,9 @@ class FoodRepository with SyncableRepository {
     // First check if local database has any foods
     final localFoods = await _database.select(_database.foodsTable).get();
     if (localFoods.isEmpty) {
-      _logger.debug(
+      _report.debug(
         'Forcing sync - no local foods found',
-        context: 'FOOD_REPOSITORY',
+        area: 'FOOD_REPOSITORY',
       );
       return true; // Force sync regardless of timestamp
     }
@@ -60,9 +60,9 @@ class FoodRepository with SyncableRepository {
   @override
   Future<SyncResult> syncFromRemote(String userId) async {
     try {
-      _logger.info(
+      _report.info(
         'Syncing foods from Supabase',
-        context: 'FOOD_REPOSITORY',
+        area: 'FOOD_REPOSITORY',
         data: {'note': 'Global reference data - userId not used'},
       );
 
@@ -78,19 +78,19 @@ class FoodRepository with SyncableRepository {
       // Update last sync timestamp
       await setLastSyncTime(DateTime.now());
 
-      _logger.info(
+      _report.info(
         'Foods synced successfully',
-        context: 'FOOD_REPOSITORY',
+        area: 'FOOD_REPOSITORY',
         data: {'count': response.length},
       );
 
       return SyncResult.successful(response.length);
     } catch (e, stackTrace) {
-      _logger.error(
-        'Failed to sync foods from remote',
-        context: 'FOOD_REPOSITORY',
-        error: e,
+      _report.fault(
+        e,
         stackTrace: stackTrace,
+        area: 'FOOD_REPOSITORY',
+        message: 'Failed to sync foods from remote',
       );
       return SyncResult.failed(e.toString());
     }
@@ -100,9 +100,9 @@ class FoodRepository with SyncableRepository {
   Future<UploadResult> uploadDirtyRecords(String userId) async {
     // Foods are read-only reference data managed by backend
     // No dirty records to upload
-    _logger.debug(
+    _report.debug(
       'Foods are read-only - no dirty records to upload',
-      context: 'FOOD_REPOSITORY',
+      area: 'FOOD_REPOSITORY',
     );
     return UploadResult.nothingToUpload();
   }
@@ -148,10 +148,10 @@ class FoodRepository with SyncableRepository {
       await syncFoodsToLocalDatabase(genericFoodsData);
       return foods;
     } catch (e) {
-      _logger.error(
-        'Error fetching generic foods from get-foods Edge Function',
-        context: 'FoodRepository',
-        error: e,
+      _report.fault(
+        e,
+        area: 'FoodRepository',
+        message: 'Error fetching generic foods from get-foods Edge Function',
       );
       // Fallback to empty list - app should still work without foods
       return [];
@@ -205,10 +205,10 @@ class FoodRepository with SyncableRepository {
       final List<dynamic> data = response as List<dynamic>;
       return data.map((json) => _mapTemplateFoodToFoodItem(json)).toList();
     } catch (e) {
-      _logger.error(
-        'Error fetching primary preference foods from template_foods',
-        context: 'FoodRepository',
-        error: e,
+      _report.fault(
+        e,
+        area: 'FoodRepository',
+        message: 'Error fetching primary preference foods from template_foods',
       );
       // Fallback to empty list
       return [];
@@ -264,10 +264,11 @@ class FoodRepository with SyncableRepository {
       final List<dynamic> data = response as List<dynamic>;
       return data.map((json) => _mapTemplateFoodToFoodItem(json)).toList();
     } catch (e) {
-      _logger.error(
-        'Error fetching additional preference foods from template_foods',
-        context: 'FoodRepository',
-        error: e,
+      _report.fault(
+        e,
+        area: 'FoodRepository',
+        message:
+            'Error fetching additional preference foods from template_foods',
       );
       // Fallback to empty list
       return [];
@@ -300,11 +301,11 @@ class FoodRepository with SyncableRepository {
       }).toList();
       return filteredFoods;
     } catch (e) {
-      _logger.error(
-        'Error fetching foods by category',
-        context: 'FoodRepository',
-        data: {'category': category.name},
-        error: e,
+      _report.fault(
+        e,
+        area: 'FoodRepository',
+        extra: {'category': category.name},
+        message: 'Error fetching foods by category',
       );
       return [];
     }
@@ -334,11 +335,11 @@ class FoodRepository with SyncableRepository {
 
       return null;
     } catch (e) {
-      _logger.error(
-        'Error fetching food by ID from local database',
-        context: 'FoodRepository',
-        data: {'foodId': id},
-        error: e,
+      _report.fault(
+        e,
+        area: 'FoodRepository',
+        extra: {'foodId': id},
+        message: 'Error fetching food by ID from local database',
       );
       return null;
     }
@@ -358,11 +359,11 @@ class FoodRepository with SyncableRepository {
 
       return null;
     } catch (e) {
-      _logger.error(
-        'Error fetching food by name from local database',
-        context: 'FoodRepository',
-        data: {'foodName': name},
-        error: e,
+      _report.fault(
+        e,
+        area: 'FoodRepository',
+        extra: {'foodName': name},
+        message: 'Error fetching food by name from local database',
       );
       return null;
     }
@@ -382,11 +383,11 @@ class FoodRepository with SyncableRepository {
       }).toList();
       return preferredFoods;
     } catch (e) {
-      _logger.error(
-        'Error fetching preferred foods',
-        context: 'FoodRepository',
-        data: {'category': category.name},
-        error: e,
+      _report.fault(
+        e,
+        area: 'FoodRepository',
+        extra: {'category': category.name},
+        message: 'Error fetching preferred foods',
       );
       return [];
     }
@@ -409,11 +410,11 @@ class FoodRepository with SyncableRepository {
           .toList();
       return foods;
     } catch (e) {
-      _logger.error(
-        'Error searching foods',
-        context: 'FoodRepository',
-        data: {'searchQuery': query},
-        error: e,
+      _report.fault(
+        e,
+        area: 'FoodRepository',
+        extra: {'searchQuery': query},
+        message: 'Error searching foods',
       );
       return [];
     }
@@ -470,9 +471,9 @@ class FoodRepository with SyncableRepository {
         }
       }
 
-      _logger.info(
+      _report.info(
         'Found ${foodsToAvoid.length} foods to avoid based on diet/allergies',
-        context: 'FoodRepository',
+        area: 'FoodRepository',
         data: {
           'dietaryPreference': dietaryPreference?.name,
           'allergiesCount': allergies.length,
@@ -482,14 +483,14 @@ class FoodRepository with SyncableRepository {
 
       return foodsToAvoid;
     } catch (e) {
-      _logger.error(
-        'Error fetching foods to avoid',
-        context: 'FoodRepository',
-        data: {
+      _report.fault(
+        e,
+        area: 'FoodRepository',
+        extra: {
           'dietaryPreference': dietaryPreference?.name,
           'allergiesCount': allergies.length,
         },
-        error: e,
+        message: 'Error fetching foods to avoid',
       );
       // Return empty list on error - don't block onboarding
       return [];
@@ -841,11 +842,11 @@ class FoodRepository with SyncableRepository {
       }
       return null;
     } catch (e) {
-      _logger.error(
-        'Error fetching food by barcode',
-        context: 'FoodRepository',
-        data: {'barcode': barcode},
-        error: e,
+      _report.fault(
+        e,
+        area: 'FoodRepository',
+        extra: {'barcode': barcode},
+        message: 'Error fetching food by barcode',
       );
       return null;
     }
@@ -864,11 +865,11 @@ class FoodRepository with SyncableRepository {
 
       return _parseCategoriesArray(food.categories);
     } catch (e) {
-      _logger.error(
-        'Error fetching food categories',
-        context: 'FoodRepository',
-        data: {'foodId': foodId},
-        error: e,
+      _report.fault(
+        e,
+        area: 'FoodRepository',
+        extra: {'foodId': foodId},
+        message: 'Error fetching food categories',
       );
       return [];
     }
@@ -887,11 +888,11 @@ class FoodRepository with SyncableRepository {
 
       return _parseCategoriesArray(userFood.categories);
     } catch (e) {
-      _logger.error(
-        'Error fetching user food categories',
-        context: 'FoodRepository',
-        data: {'userFoodId': userFoodId},
-        error: e,
+      _report.fault(
+        e,
+        area: 'FoodRepository',
+        extra: {'userFoodId': userFoodId},
+        message: 'Error fetching user food categories',
       );
       return [];
     }
@@ -972,11 +973,11 @@ class FoodRepository with SyncableRepository {
 
       return [];
     } catch (e) {
-      _logger.error(
-        'Error parsing categories array',
-        context: 'FoodRepository',
-        data: {'categoriesStr': categoriesStr},
-        error: e,
+      _report.fault(
+        e,
+        area: 'FoodRepository',
+        extra: {'categoriesStr': categoriesStr},
+        message: 'Error parsing categories array',
       );
       return [];
     }
@@ -989,9 +990,7 @@ class FoodRepository with SyncableRepository {
   /// seed migration's rows survive local sync pickup — the mapper itself is
   /// the unit under test there, so the test must not re-implement it.
   @visibleForTesting
-  Future<void> syncFoodsToLocalDatabase(
-    List<dynamic> supabaseFoodsData,
-  ) async {
+  Future<void> syncFoodsToLocalDatabase(List<dynamic> supabaseFoodsData) async {
     try {
       // Clear existing foods to avoid duplicates
       await _database.delete(_database.foodsTable).go();
@@ -1062,10 +1061,10 @@ class FoodRepository with SyncableRepository {
         }
       });
     } catch (e) {
-      _logger.error(
-        'Error syncing foods to local database',
-        context: 'FoodRepository',
-        error: e,
+      _report.fault(
+        e,
+        area: 'FoodRepository',
+        message: 'Error syncing foods to local database',
       );
       // Don't rethrow - app should continue even if sync fails
     }
@@ -1079,11 +1078,11 @@ class FoodRepository with SyncableRepository {
       // Reuse existing sync logic that clears and repopulates foods table
       await syncFoodsToLocalDatabase(foods);
     } catch (e, stackTrace) {
-      _logger.error(
-        'Nutrition foods sync failed',
-        context: 'FOOD_REPOSITORY',
-        error: e,
+      _report.fault(
+        e,
         stackTrace: stackTrace,
+        area: 'FOOD_REPOSITORY',
+        message: 'Nutrition foods sync failed',
       );
       rethrow;
     }
@@ -1093,9 +1092,8 @@ class FoodRepository with SyncableRepository {
 /// Riverpod provider for FoodRepository
 final foodRepositoryProvider = Provider<FoodRepository>((ref) {
   final database = ref.watch(appDatabaseProvider);
-  final logger = ref.watch(appLoggerProvider);
   final supabase = ref.watch(appExternalDepsProvider).supabaseClient;
-  return FoodRepository(supabase, database, logger: logger);
+  return FoodRepository(supabase, database, report: ref.watch(reportProvider));
 });
 
 /// Provider for all foods (cached)

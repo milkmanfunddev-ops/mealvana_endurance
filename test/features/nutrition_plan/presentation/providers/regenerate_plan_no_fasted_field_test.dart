@@ -10,8 +10,6 @@ import 'package:mealvana_endurance/features/nutrition_plan/presentation/provider
 import 'package:mealvana_endurance/shared/domain/activity_type.dart';
 import 'package:mealvana_endurance/shared/services/analytics/analytics_tracker.dart';
 import 'package:mealvana_endurance/shared/services/app_external_deps.dart';
-import 'package:mealvana_endurance/shared/services/logging_service.dart';
-import 'package:mealvana_endurance/shared/services/sentry/sentry_reporter.dart';
 import 'package:mocktail/mocktail.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 import 'package:supabase_flutter/supabase_flutter.dart';
@@ -39,8 +37,6 @@ class MockMacroRepository extends Mock implements MacroRepository {}
 class MockSupabaseClient extends Mock implements SupabaseClient {}
 
 class MockFunctionsClient extends Mock implements FunctionsClient {}
-
-class MockSentryReporter extends Mock implements SentryReporter {}
 
 class MockSharedPreferences extends Mock implements SharedPreferences {}
 
@@ -127,8 +123,6 @@ void main() {
           AppExternalDeps(
             analytics: analytics,
             supabaseClient: supabaseClient,
-            sentry: MockSentryReporter(),
-            logger: NoopAppLogger(),
             sharedPreferences: MockSharedPreferences(),
           ),
         ),

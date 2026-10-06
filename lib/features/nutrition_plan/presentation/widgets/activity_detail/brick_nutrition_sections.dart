@@ -1,7 +1,7 @@
 import 'package:flutter/foundation.dart';
 import 'package:flutter/material.dart';
 import 'package:font_awesome_flutter/font_awesome_flutter.dart';
-import '../../../../../core/utils/debug_logger.dart';
+import 'package:mealvana_endurance/shared/services/report/report.dart';
 import '../../../../../shared/domain/activity_type.dart';
 import '../../../../../shared/widgets/kyle_design/kyle_design.dart';
 import '../../../../activities/domain/activity.dart';
@@ -13,7 +13,6 @@ import '../../../domain/time_slot_assignment.dart';
 import 'pre_workout_before_card.dart';
 import '../../../application/pre_workout_before_card_assembler.dart';
 import '../../../domain/fueling_window_limits.dart';
-import '../../../domain/pre_workout_before_card_model.dart';
 import '../../../domain/pre_workout_hydration_check.dart';
 import 'dismissible_food_item.dart';
 import 'during_phase_section_widget.dart';
@@ -123,14 +122,16 @@ class BrickNutritionSections extends StatelessWidget {
     var duringIndex = 0;
 
     if (kDebugMode) {
-      DebugLogger.info(
+      SentryReport.global.info(
         '[BRICK_NUTRITION] build: sections=${sortedSections.length}, '
         'brickMetadata=${brick.brickMetadata}, '
         'segmentOrder=${brick.brickMetadata?.segmentOrder ?? fallbackSegmentOrder}',
+        area: 'nutrition_plan',
       );
       for (final section in sortedSections) {
-        DebugLogger.info(
+        SentryReport.global.info(
           '[BRICK_NUTRITION] raw section: id=${section.id}, title=${section.title}',
+          area: 'nutrition_plan',
         );
       }
     }
@@ -234,10 +235,11 @@ class BrickNutritionSections extends StatelessWidget {
     );
 
     if (kDebugMode) {
-      DebugLogger.info(
+      SentryReport.global.info(
         '[BRICK_NUTRITION] render: id=${section.id}, title=${section.title}, '
         'displayTitle=$displayTitle, sportType=$sportType, '
         'isDuring=$isDuring, duringIndex=$duringIndex, category=$category',
+        area: 'nutrition_plan',
       );
     }
 

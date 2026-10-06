@@ -6,7 +6,7 @@ import '../../../../shared/services/app_external_deps.dart';
 import '../../../../theme/app_theme.dart';
 import '../../domain/food_item_data.dart';
 import 'editable_expandable_food_item.dart';
-import 'package:mealvana_endurance/core/utils/debug_logger.dart';
+import 'package:mealvana_endurance/shared/services/report/report.dart';
 
 /// Swipeable food item with dismiss actions
 /// Left-to-right swipe: Swap action (blue/primary button)
@@ -37,6 +37,11 @@ class SwipeableFoodItem extends ConsumerStatefulWidget {
 
 class _SwipeableFoodItemState extends ConsumerState<SwipeableFoodItem>
     with TickerProviderStateMixin {
+  /// `ref` throws once the widget is disposed; late async callbacks fall back
+  /// to the global instance (the one `reportProvider` built).
+  Report get _report =>
+      mounted ? ref.read(reportProvider) : SentryReport.global;
+
   late AnimationController _hintController;
   late AnimationController _backgroundController;
   late AnimationController _pulseController;
@@ -93,18 +98,26 @@ class _SwipeableFoodItemState extends ConsumerState<SwipeableFoodItem>
       final prefs = ref.read(sharedPreferencesProvider);
       final hasShown = prefs.getBool('swipe_hint_shown') ?? false;
 
-      DebugLogger.info('🎯 SharedPreferences check: hasShown = $hasShown');
+      _report.info(
+        '🎯 SharedPreferences check: hasShown = $hasShown',
+        area: 'nutrition_plan',
+      );
 
       if (!hasShown && mounted && !_hasInteracted) {
-        DebugLogger.info('🚀 Starting animation');
+        _report.info('🚀 Starting animation', area: 'nutrition_plan');
         _startHintAnimation();
       } else {
-        DebugLogger.debug(
+        _report.debug(
           '⏭️ Skipping animation: hasShown=$hasShown, mounted=$mounted, hasInteracted=$_hasInteracted',
+          area: 'nutrition_plan',
         );
       }
     } catch (e) {
-      DebugLogger.error('❌ SharedPreferences error: $e');
+      _report.fault(
+        e,
+        message: '❌ SharedPreferences error: $e',
+        area: 'nutrition_plan',
+      );
       // If there's an error, don't show the animation to be safe
     }
   }
@@ -208,7 +221,10 @@ class _SwipeableFoodItemState extends ConsumerState<SwipeableFoodItem>
 
   void _onInteraction() {
     if (!_hasInteracted) {
-      DebugLogger.debug('👆 User interaction detected - stopping animation');
+      _report.debug(
+        '👆 User interaction detected - stopping animation',
+        area: 'nutrition_plan',
+      );
       setState(() {
         _hasInteracted = true;
         _showHintBackground = false;
@@ -219,19 +235,30 @@ class _SwipeableFoodItemState extends ConsumerState<SwipeableFoodItem>
 
       // Mark hint as shown in SharedPreferences (fire and forget)
       if (widget.isFirstInBeforeRun) {
-        DebugLogger.info('💾 Attempting to mark swipe hint as shown');
+        _report.info(
+          '💾 Attempting to mark swipe hint as shown',
+          area: 'nutrition_plan',
+        );
         try {
           final prefs = ref.read(sharedPreferencesProvider);
           prefs.setBool('swipe_hint_shown', true).then((success) {
-            DebugLogger.info(
+            _report.info(
               '✅ Successfully marked swipe hint as shown: $success',
+              area: 'nutrition_plan',
             );
             // Verify it was saved
             final hasShown = prefs.getBool('swipe_hint_shown') ?? false;
-            DebugLogger.info('🔍 Verification: hasShown = $hasShown');
+            _report.info(
+              '🔍 Verification: hasShown = $hasShown',
+              area: 'nutrition_plan',
+            );
           });
         } catch (e) {
-          DebugLogger.error('❌ Failed to mark swipe hint as shown: $e');
+          _report.fault(
+            e,
+            message: '❌ Failed to mark swipe hint as shown: $e',
+            area: 'nutrition_plan',
+          );
         }
       }
     }

@@ -5,7 +5,7 @@ import '../domain/food_item_data.dart';
 import '../domain/macro_shortfall.dart';
 import '../domain/time_slot_assignment.dart';
 import '../domain/transition_identity.dart';
-import 'package:mealvana_endurance/core/utils/debug_logger.dart';
+import 'package:mealvana_endurance/shared/services/report/report.dart';
 import 'package:mealvana_endurance/features/formula_kit/domain/pin_decision.dart';
 
 /// Mapper for converting NutritionPlan to/from JSON formats
@@ -68,7 +68,11 @@ class NutritionPlanMapper {
         final parsedData = jsonDecode(json['plan_data']);
         planData = parsedData is Map<String, dynamic> ? parsedData : null;
       } catch (e) {
-        DebugLogger.error('Error parsing plan_data string: $e');
+        SentryReport.global.fault(
+          e,
+          message: 'Error parsing plan_data string: $e',
+          area: 'nutrition_plan',
+        );
         planData = null;
       }
     } else if (json['plan_data'] is Map<String, dynamic>) {
@@ -90,7 +94,11 @@ class NutritionPlanMapper {
               )
               .toList();
         } catch (e) {
-          DebugLogger.error('Error parsing sections from sections array: $e');
+          SentryReport.global.fault(
+            e,
+            message: 'Error parsing sections from sections array: $e',
+            area: 'nutrition_plan',
+          );
           sections = [];
         }
       }
@@ -219,12 +227,13 @@ class NutritionPlanMapper {
             final macroTargetsMap = planData['macro_targets'] is Map
                 ? Map<String, dynamic>.from(planData['macro_targets'] as Map)
                 : null;
-            DebugLogger.info(
+            SentryReport.global.info(
               '🎯 OVERRIDE DEBUG [3/5]: fromSupabaseJson - macro_targets found=${macroTargetsMap != null}, '
               'planData keys=${planData.keys.toList()}, '
               'pre_run type=${macroTargetsMap?['pre_run']?.runtimeType}, '
               'during_run type=${macroTargetsMap?['during_run']?.runtimeType}, '
               'post_run type=${macroTargetsMap?['post_run']?.runtimeType}',
+              area: 'nutrition_plan',
             );
             if (macroTargetsMap != null) {
               sections = parsedSections.map((section) {
@@ -240,10 +249,11 @@ class NutritionPlanMapper {
                   phaseTargets = Map<String, dynamic>.from(rawTargets);
                 }
                 if (phaseTargets != null) {
-                  DebugLogger.info(
+                  SentryReport.global.info(
                     '🎯 OVERRIDE DEBUG [3/5]: Applying targets to section ${section.id}: '
                     'carbs=${phaseTargets['carbs_g']}, protein=${phaseTargets['protein_g']}, '
                     'sodium=${phaseTargets['sodium_mg']}, fluids=${phaseTargets['water_ml']}',
+                    area: 'nutrition_plan',
                   );
                   return section.copyWith(
                     carbsTarget: (phaseTargets['carbs_g'] as num?)?.toDouble(),
@@ -272,24 +282,29 @@ class NutritionPlanMapper {
                         ?.toDouble(),
                   );
                 }
-                DebugLogger.info(
+                SentryReport.global.info(
                   '🎯 OVERRIDE DEBUG [3/5]: No phaseTargets for section ${section.id}',
+                  area: 'nutrition_plan',
                 );
                 return section;
               }).toList();
             } else {
-              DebugLogger.info(
+              SentryReport.global.info(
                 '🎯 OVERRIDE DEBUG [3/5]: macro_targets NOT found in planData - targets will be null!',
+                area: 'nutrition_plan',
               );
               sections = parsedSections;
             }
-            DebugLogger.info(
+            SentryReport.global.info(
               '✅ Parsed ${sections.length} sections from Edge Function format',
+              area: 'nutrition_plan',
             );
           } // end of non-brick else block
         } catch (e) {
-          DebugLogger.error(
-            'Error parsing sections from Edge Function format: $e',
+          SentryReport.global.fault(
+            e,
+            message: 'Error parsing sections from Edge Function format: $e',
+            area: 'nutrition_plan',
           );
           sections = [];
         }
@@ -304,7 +319,11 @@ class NutritionPlanMapper {
           planData['macroTargets'] as Map<String, dynamic>,
         );
       } catch (e) {
-        DebugLogger.error('Error parsing macroTargets: $e');
+        SentryReport.global.fault(
+          e,
+          message: 'Error parsing macroTargets: $e',
+          area: 'nutrition_plan',
+        );
         macroTargets = null;
       }
     }
@@ -390,7 +409,11 @@ class NutritionPlanMapper {
               : null,
         );
       } catch (e) {
-        DebugLogger.error('Error parsing macro_targets (snake_case): $e');
+        SentryReport.global.fault(
+          e,
+          message: 'Error parsing macro_targets (snake_case): $e',
+          area: 'nutrition_plan',
+        );
       }
     }
 
@@ -450,14 +473,18 @@ class NutritionPlanMapper {
         : null;
 
     // 1. Before Brick — parse V2 sub-phases (meal/snack/top_up) or V1 flat list
-    DebugLogger.info(
+    SentryReport.global.info(
       'Brick V2: plan keys=${plan.keys.toList()}, before type=${plan['before'].runtimeType}',
+      area: 'nutrition_plan',
     );
     if (plan['before'] is Map) {
       final beforeMap = plan['before'] as Map<String, dynamic>;
       final subPhases = <BeforeSubPhase>[];
 
-      DebugLogger.info('Brick V2: before keys=${beforeMap.keys.toList()}');
+      SentryReport.global.info(
+        'Brick V2: before keys=${beforeMap.keys.toList()}',
+        area: 'nutrition_plan',
+      );
 
       for (final key in ['meal', 'snack', 'top_up']) {
         if (beforeMap[key] is Map) {
@@ -712,8 +739,9 @@ class NutritionPlanMapper {
       );
     }
 
-    DebugLogger.info(
+    SentryReport.global.info(
       'Brick V2: ${sections.length} sections in order: ${sections.map((s) => s.title).toList()}',
+      area: 'nutrition_plan',
     );
 
     return sections;

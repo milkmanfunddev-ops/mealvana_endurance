@@ -1,8 +1,7 @@
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import '../../auth/application/auth_service.dart';
 import '../../auth/domain/user_preferences.dart';
-import '../../../shared/services/logging_service.dart';
-import '../../../shared/services/app_external_deps.dart';
+import '../../../shared/services/report/report.dart';
 
 /// Service for resolving user food preferences with safe defaults
 class FoodPreferenceResolver {
@@ -10,7 +9,7 @@ class FoodPreferenceResolver {
   final Ref ref;
 
   AuthService get _authService => ref.read(authServiceProvider);
-  AppLogger get _logger => ref.read(appExternalDepsProvider).logger;
+  Report get _report => ref.read(reportProvider);
 
   /// Resolve food preferences, falling back to a small, safe default set when none are saved.
   Future<PreferenceResolutionResult> resolveFoodPreferences(
@@ -26,10 +25,13 @@ class FoodPreferenceResolver {
 
     // Use defaults instead of failing, and try to persist them for future calls.
     final defaults = buildDefaultFoodPreferences();
-    _logger.warning(
-      'No food preferences found. Using default set for LLM generation.',
-      context: 'FOOD_PREFERENCE_RESOLVER',
-      data: {'default_count': defaults.length},
+    _report.degraded(
+      LoggedFault(
+        'No food preferences found. Using default set for LLM generation.',
+        context: 'FOOD_PREFERENCE_RESOLVER',
+      ),
+      area: 'FOOD_PREFERENCE_RESOLVER',
+      extra: {'default_count': defaults.length},
     );
 
     try {
@@ -42,18 +44,18 @@ class FoodPreferenceResolver {
         defaults,
         sliderLevels: defaultLevels,
       );
-      _logger.info(
+      _report.info(
         'Default food preferences saved for user',
-        context: 'FOOD_PREFERENCE_RESOLVER',
+        area: 'FOOD_PREFERENCE_RESOLVER',
         data: {'user_id': userId, 'count': defaults.length},
       );
     } catch (e, stackTrace) {
       // Non-fatal: proceed with defaults even if persistence fails.
-      _logger.warning(
-        'Failed to persist default food preferences',
-        context: 'FOOD_PREFERENCE_RESOLVER',
-        error: e,
+      _report.degraded(
+        e,
         stackTrace: stackTrace,
+        area: 'FOOD_PREFERENCE_RESOLVER',
+        message: 'Failed to persist default food preferences',
       );
     }
 

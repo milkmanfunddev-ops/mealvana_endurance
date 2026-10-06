@@ -21,7 +21,6 @@ import '../../domain/pre_workout_hydration_check.dart';
 import '../../../auth/application/auth_service.dart';
 import '../../../activities/domain/activity_reminder.dart';
 import '../../../activities/data/activities_repository.dart';
-import '../../../../shared/services/logging_service.dart';
 import '../../../../shared/services/app_external_deps.dart';
 import '../../../../shared/services/analytics/analytics_tracker.dart';
 import '../../application/resolved_during_target_resolver.dart';
@@ -34,7 +33,6 @@ import '../../domain/fuel_log_data.dart';
 import '../../domain/nutrition_target_overrides.dart';
 import '../../../../shared/domain/activity_type.dart';
 import '../../../settings/presentation/providers/settings_controller.dart';
-import 'package:mealvana_endurance/core/utils/debug_logger.dart';
 import 'package:mealvana_endurance/shared/services/report/report.dart';
 import '../../../integrations/presentation/providers/tp_writeback_providers.dart';
 import '../../../activities/presentation/providers/activities_controller.dart';
@@ -57,8 +55,6 @@ part 'activity_detail_controller.g.dart';
 @riverpod
 class ActivityDetailController extends _$ActivityDetailController {
   static const String _detailedMacroTargetsKey = 'detailedMacroTargets';
-
-  AppLogger get _logger => ref.read(appLoggerProvider);
 
   /// Fire-and-forget pushes outlive the provider; once it is disposed the
   /// global instance (the one `reportProvider` built) takes the report.
@@ -86,9 +82,9 @@ class ActivityDetailController extends _$ActivityDetailController {
 
     // DIAGNOSTIC LOGGING: Track user ID source for debugging
     final authUser = await _authService.getCurrentUser();
-    _logger.info(
+    _report.info(
       'Loading activity detail',
-      context: 'ACTIVITY_DETAIL_CONTROLLER',
+      area: 'ACTIVITY_DETAIL_CONTROLLER',
       data: {
         'activityId': activityId,
         'userIdFromProvider': userId,
@@ -112,10 +108,10 @@ class ActivityDetailController extends _$ActivityDetailController {
         await repo.refreshActivityFromRemote(activityId);
       } catch (e) {
         // Non-fatal: fall back to local data if network unavailable
-        _logger.warning(
-          'Could not sync activity from remote; using local data',
-          context: 'ACTIVITY_DETAIL_CONTROLLER',
-          error: e,
+        _report.degraded(
+          e,
+          area: 'ACTIVITY_DETAIL_CONTROLLER',
+          message: 'Could not sync activity from remote; using local data',
         );
       }
     }
@@ -126,10 +122,13 @@ class ActivityDetailController extends _$ActivityDetailController {
     );
 
     if (activity == null) {
-      _logger.error(
-        'Activity not found in database',
-        context: 'ACTIVITY_DETAIL_CONTROLLER',
-        data: {
+      _report.fault(
+        LoggedFault(
+          'Activity not found in database',
+          context: 'ACTIVITY_DETAIL_CONTROLLER',
+        ),
+        area: 'ACTIVITY_DETAIL_CONTROLLER',
+        extra: {
           'activityId': activityId,
           'userId': userId,
           'authUserId': authUser?.id,
@@ -147,20 +146,28 @@ class ActivityDetailController extends _$ActivityDetailController {
         activityId,
       );
       if (nutritionPlan != null) {
-        _logger.info('Loaded nutrition plan for activity: ${nutritionPlan.id}');
+        _report.info(
+          'Loaded nutrition plan for activity: ${nutritionPlan.id}',
+          area: 'nutrition_plan',
+        );
         // Debug: log section targets from stored plan
         for (final section in nutritionPlan.sections) {
-          _logger.info(
+          _report.info(
             '🎯 OVERRIDE DEBUG [5/5]: Loaded plan section "${section.id}": '
             'carbsTarget=${section.carbsTarget}, proteinTarget=${section.proteinTarget}, '
             'sodiumTarget=${section.sodiumTarget}, fluidsTarget=${section.fluidsTarget}',
+            area: 'nutrition_plan',
           );
         }
         // Enrich food items with displayNamePlural/servingSize from template_foods
         nutritionPlan = await _enrichFoodItemsFromTemplateFoods(nutritionPlan);
       }
     } catch (e) {
-      _logger.error('Error loading nutrition plan for activity', error: e);
+      _report.fault(
+        e,
+        area: 'nutrition_plan',
+        message: 'Error loading nutrition plan for activity',
+      );
     }
 
     // Reverse-lookup event name from linked event
@@ -170,7 +177,11 @@ class ActivityDetailController extends _$ActivityDetailController {
       final event = await eventsRepo.getEventForActivity(activityId);
       eventName = event?.eventName;
     } catch (e) {
-      _logger.warning('Failed to look up event for activity: $e');
+      _report.degraded(
+        e,
+        message: 'Failed to look up event for activity: $e',
+        area: 'nutrition_plan',
+      );
     }
 
     // Load completion if exists
@@ -203,7 +214,11 @@ class ActivityDetailController extends _$ActivityDetailController {
         expectedActivityType: activity.activityType,
       );
     } catch (e) {
-      _logger.warning('Failed to load activity-scoped macro targets: $e');
+      _report.degraded(
+        e,
+        message: 'Failed to load activity-scoped macro targets: $e',
+        area: 'nutrition_plan',
+      );
     }
 
     macroTargets ??= _extractDetailedMacroTargetsFromPlanData(
@@ -218,7 +233,11 @@ class ActivityDetailController extends _$ActivityDetailController {
         final macroRepo = ref.read(macroRepositoryProvider);
         await macroRepo.saveMacroTargetsForActivity(activityId, macroTargets);
       } catch (e) {
-        _logger.warning('Failed to persist activity-scoped macro targets: $e');
+        _report.degraded(
+          e,
+          message: 'Failed to persist activity-scoped macro targets: $e',
+          area: 'nutrition_plan',
+        );
       }
     }
     final staleDuringTarget = await _hasStaleDuringTarget(
@@ -284,10 +303,10 @@ class ActivityDetailController extends _$ActivityDetailController {
       await repo.refreshActivityFromRemote(activityId);
       ref.invalidateSelf();
     } catch (e) {
-      _logger.warning(
-        'Force refresh failed',
-        context: 'ACTIVITY_DETAIL_CONTROLLER',
-        error: e,
+      _report.degraded(
+        e,
+        area: 'ACTIVITY_DETAIL_CONTROLLER',
+        message: 'Force refresh failed',
       );
       ref.invalidateSelf();
     }
@@ -398,9 +417,9 @@ class ActivityDetailController extends _$ActivityDetailController {
 
       if (freshTargets != null) {
         await macroRepo.saveMacroTargetsForActivity(activityId, freshTargets);
-        _logger.info(
+        _report.info(
           'regeneratePlan: fresh MacroTargets saved for activity',
-          context: 'ACTIVITY_DETAIL_CONTROLLER',
+          area: 'ACTIVITY_DETAIL_CONTROLLER',
           data: {
             'activityId': activityId,
             'activityType': activity.activityType.name,
@@ -408,10 +427,10 @@ class ActivityDetailController extends _$ActivityDetailController {
         );
       }
     } catch (e) {
-      _logger.warning(
-        'regeneratePlan failed; falling back to forceRefresh',
-        context: 'ACTIVITY_DETAIL_CONTROLLER',
-        error: e,
+      _report.degraded(
+        e,
+        area: 'ACTIVITY_DETAIL_CONTROLLER',
+        message: 'regeneratePlan failed; falling back to forceRefresh',
       );
     }
 
@@ -462,7 +481,11 @@ class ActivityDetailController extends _$ActivityDetailController {
           isNewActivity: false, // No longer a new activity after first save
         );
       } catch (error) {
-        _logger.error('Error saving activity', error: error);
+        _report.fault(
+          error,
+          area: 'nutrition_plan',
+          message: 'Error saving activity',
+        );
         rethrow;
       }
     });
@@ -476,7 +499,13 @@ class ActivityDetailController extends _$ActivityDetailController {
     try {
       final user = await _authService.getCurrentUser();
       if (user == null) {
-        _logger.warning('Cannot save nutrition plan: no user found');
+        _report.degraded(
+          LoggedFault(
+            'Cannot save nutrition plan: no user found',
+            context: 'nutrition_plan',
+          ),
+          area: 'nutrition_plan',
+        );
         return;
       }
 
@@ -486,7 +515,13 @@ class ActivityDetailController extends _$ActivityDetailController {
         activityId,
       );
       if (activity == null) {
-        _logger.warning('Cannot save nutrition plan: activity not found');
+        _report.degraded(
+          LoggedFault(
+            'Cannot save nutrition plan: activity not found',
+            context: 'nutrition_plan',
+          ),
+          area: 'nutrition_plan',
+        );
         return;
       }
 
@@ -509,9 +544,16 @@ class ActivityDetailController extends _$ActivityDetailController {
       // Fire-and-forget write-back to TrainingPeaks (never blocks save)
       unawaited(_pushToTrainingPeaks(user.id, updatedActivity, plan));
 
-      DebugLogger.info('Nutrition plan saved to activity $activityId');
+      _report.info(
+        'Nutrition plan saved to activity $activityId',
+        area: 'nutrition_plan',
+      );
     } catch (e) {
-      _logger.error('Error saving nutrition plan to activity', error: e);
+      _report.fault(
+        e,
+        area: 'nutrition_plan',
+        message: 'Error saving nutrition plan to activity',
+      );
       rethrow;
     }
   }
@@ -533,7 +575,13 @@ class ActivityDetailController extends _$ActivityDetailController {
         plan == null ||
         targets == null ||
         activity == null) {
-      _logger.warning('answerHydrationCheck: no plan / targets / activity');
+      _report.degraded(
+        LoggedFault(
+          'answerHydrationCheck: no plan / targets / activity',
+          context: 'nutrition_plan',
+        ),
+        area: 'nutrition_plan',
+      );
       return;
     }
     final weightPounds = ref
@@ -543,7 +591,13 @@ class ActivityDetailController extends _$ActivityDetailController {
     if (weightPounds == null || weightPounds <= 0) {
       // Absent weight ⇒ absent numbers: the recompute is a body-weight
       // function, so there is no honest target to move (no 70-kg stand-in).
-      _logger.warning('answerHydrationCheck: no body weight on the profile');
+      _report.degraded(
+        LoggedFault(
+          'answerHydrationCheck: no body weight on the profile',
+          context: 'nutrition_plan',
+        ),
+        area: 'nutrition_plan',
+      );
       return;
     }
 
@@ -616,7 +670,11 @@ class ActivityDetailController extends _$ActivityDetailController {
           .read(macroRepositoryProvider)
           .saveMacroTargetsForActivity(activityId, write.targets);
     } catch (e) {
-      _logger.warning('hydration check: failed to refresh targets cache: $e');
+      _report.degraded(
+        e,
+        message: 'hydration check: failed to refresh targets cache: $e',
+        area: 'nutrition_plan',
+      );
     }
     await _saveNutritionPlanToActivity(activityId, write.plan);
   }
@@ -944,7 +1002,11 @@ class ActivityDetailController extends _$ActivityDetailController {
 
         return currentState.copyWith(isCompleting: false);
       } catch (error) {
-        _logger.error('Error completing activity', error: error);
+        _report.fault(
+          error,
+          area: 'nutrition_plan',
+          message: 'Error completing activity',
+        );
         rethrow;
       }
     });
@@ -973,13 +1035,22 @@ class ActivityDetailController extends _$ActivityDetailController {
         nutritionPlan: plan,
       );
       if (baseRate == null) {
-        _logger.info('Skipping carb feedback: activity not eligible');
+        _report.info(
+          'Skipping carb feedback: activity not eligible',
+          area: 'nutrition_plan',
+        );
         return;
       }
 
       final user = await _authService.getCurrentUser();
       if (user == null) {
-        _logger.warning('Cannot apply carb feedback: no user');
+        _report.degraded(
+          LoggedFault(
+            'Cannot apply carb feedback: no user',
+            context: 'nutrition_plan',
+          ),
+          area: 'nutrition_plan',
+        );
         return;
       }
 
@@ -1014,9 +1085,9 @@ class ActivityDetailController extends _$ActivityDetailController {
       final settingsController = ref.read(settingsControllerProvider.notifier);
       await settingsController.saveNutritionTargetOverrides(updatedOverrides);
 
-      _logger.info(
+      _report.info(
         'Carb feedback applied',
-        context: 'ACTIVITY_DETAIL_CONTROLLER',
+        area: 'ACTIVITY_DETAIL_CONTROLLER',
         data: {
           'level': level.name,
           'baseRate': baseRate,
@@ -1053,10 +1124,11 @@ class ActivityDetailController extends _$ActivityDetailController {
         },
       );
     } catch (e, stackTrace) {
-      _logger.error(
-        'Error applying carb feedback',
-        error: e,
+      _report.fault(
+        e,
         stackTrace: stackTrace,
+        area: 'nutrition_plan',
+        message: 'Error applying carb feedback',
       );
     }
   }
@@ -1139,7 +1211,11 @@ class ActivityDetailController extends _$ActivityDetailController {
 
         return currentState;
       } catch (error) {
-        _logger.error('Error updating workout notes', error: error);
+        _report.fault(
+          error,
+          area: 'nutrition_plan',
+          message: 'Error updating workout notes',
+        );
         rethrow;
       }
     });
@@ -1176,7 +1252,11 @@ class ActivityDetailController extends _$ActivityDetailController {
 
         return currentState;
       } catch (error) {
-        _logger.error('Error updating completion rating', error: error);
+        _report.fault(
+          error,
+          area: 'nutrition_plan',
+          message: 'Error updating completion rating',
+        );
         rethrow;
       }
     });
@@ -1218,7 +1298,11 @@ class ActivityDetailController extends _$ActivityDetailController {
         ref.invalidateSelf();
         return currentState;
       } catch (error) {
-        _logger.error('Error updating completion feedback', error: error);
+        _report.fault(
+          error,
+          area: 'nutrition_plan',
+          message: 'Error updating completion feedback',
+        );
         rethrow;
       }
     });
@@ -1233,7 +1317,13 @@ class ActivityDetailController extends _$ActivityDetailController {
     try {
       final user = await _authService.getCurrentUser();
       if (user == null || user.id.isEmpty) {
-        _logger.warning('Cannot update schedule: user not authenticated');
+        _report.degraded(
+          LoggedFault(
+            'Cannot update schedule: user not authenticated',
+            context: 'nutrition_plan',
+          ),
+          area: 'nutrition_plan',
+        );
         return;
       }
 
@@ -1262,19 +1352,20 @@ class ActivityDetailController extends _$ActivityDetailController {
       ref.invalidate(activitiesControllerProvider);
       ref.invalidate(calendarControllerProvider);
 
-      _logger.info(
+      _report.info(
         'Schedule updated and saved',
-        context: 'ACTIVITY_DETAIL_CONTROLLER',
+        area: 'ACTIVITY_DETAIL_CONTROLLER',
         data: {
           'activityId': activityId,
           'newDateTime': newDateTime.toIso8601String(),
         },
       );
     } catch (e, stackTrace) {
-      _logger.error(
-        'Error updating scheduled date/time',
-        error: e,
+      _report.fault(
+        e,
         stackTrace: stackTrace,
+        area: 'nutrition_plan',
+        message: 'Error updating scheduled date/time',
       );
     }
   }
@@ -1396,7 +1487,11 @@ class ActivityDetailController extends _$ActivityDetailController {
 
       return plan.copyWith(sections: enrichedSections);
     } catch (e) {
-      _logger.warning('Failed to enrich food items from template_foods: $e');
+      _report.degraded(
+        e,
+        message: 'Failed to enrich food items from template_foods: $e',
+        area: 'nutrition_plan',
+      );
       return plan;
     }
   }
@@ -1604,7 +1699,13 @@ class ActivityDetailController extends _$ActivityDetailController {
   }) async {
     final currentState = state.value;
     if (currentState?.nutritionPlan == null) {
-      _logger.warning('Cannot $operationName: no nutrition plan');
+      _report.degraded(
+        LoggedFault(
+          'Cannot $operationName: no nutrition plan',
+          context: 'nutrition_plan',
+        ),
+        area: 'nutrition_plan',
+      );
       return;
     }
 
@@ -1697,21 +1798,23 @@ class ActivityDetailController extends _$ActivityDetailController {
       final activity = currentState.activity;
       if (activity != null) {
         await _saveNutritionPlanToActivity(activity.id, updatedPlan);
-        _logger.info(
+        _report.info(
           '$operationName: Auto-saved nutrition plan to prevent data loss',
+          area: 'nutrition_plan',
         );
       }
 
-      _logger.info(
+      _report.info(
         '$operationName SUCCESS',
-        context: 'ActivityDetailController',
+        area: 'ActivityDetailController',
         data: {'category': category, 'updatedPlanId': updatedPlan.id},
       );
     } catch (error, stackTrace) {
-      _logger.error(
-        'Error in $operationName',
-        error: error,
+      _report.fault(
+        error,
         stackTrace: stackTrace,
+        area: 'nutrition_plan',
+        message: 'Error in $operationName',
       );
       state = AsyncValue.error(error, stackTrace);
     }
@@ -1724,9 +1827,9 @@ class ActivityDetailController extends _$ActivityDetailController {
     String category, {
     double? customAmount,
   }) async {
-    _logger.info(
+    _report.info(
       'swapFoodItem ENTRY',
-      context: 'ActivityDetailController',
+      area: 'ActivityDetailController',
       data: {
         'oldFoodId': oldFoodId,
         'newFoodName': newFood?.name ?? 'null',
@@ -1753,9 +1856,9 @@ class ActivityDetailController extends _$ActivityDetailController {
     String category, {
     double? customAmount,
   }) async {
-    _logger.info(
+    _report.info(
       'addFoodItem ENTRY',
-      context: 'ActivityDetailController',
+      area: 'ActivityDetailController',
       data: {
         'foodName': food?.name ?? 'null',
         'category': category,
@@ -1782,9 +1885,9 @@ class ActivityDetailController extends _$ActivityDetailController {
 
   /// Delete a food item from the nutrition plan
   Future<void> deleteFoodItem(String foodId, String category) async {
-    _logger.info(
+    _report.info(
       'deleteFoodItem ENTRY',
-      context: 'ActivityDetailController',
+      area: 'ActivityDetailController',
       data: {'foodId': foodId, 'category': category},
     );
 
@@ -1801,9 +1904,9 @@ class ActivityDetailController extends _$ActivityDetailController {
     String category,
     double newQuantity,
   ) async {
-    _logger.info(
+    _report.info(
       'updateFoodQuantity ENTRY',
-      context: 'ActivityDetailController',
+      area: 'ActivityDetailController',
       data: {
         'foodId': foodId,
         'category': category,
@@ -1892,8 +1995,12 @@ class ActivityDetailController extends _$ActivityDetailController {
   ) async {
     final currentState = state.value;
     if (currentState?.nutritionPlan == null) {
-      _logger.warning(
-        'Cannot updateSubPhaseQuantityWithScaling: no nutrition plan',
+      _report.degraded(
+        LoggedFault(
+          'Cannot updateSubPhaseQuantityWithScaling: no nutrition plan',
+          context: 'nutrition_plan',
+        ),
+        area: 'nutrition_plan',
       );
       return;
     }
@@ -1942,14 +2049,15 @@ class ActivityDetailController extends _$ActivityDetailController {
       final activity = currentState.activity;
       if (activity != null) {
         await _saveNutritionPlanToActivity(activity.id, updatedPlan);
-        _logger.info(
+        _report.info(
           'updateSubPhaseQuantityWithScaling: Auto-saved nutrition plan',
+          area: 'nutrition_plan',
         );
       }
 
-      _logger.info(
+      _report.info(
         'updateSubPhaseQuantityWithScaling SUCCESS',
-        context: 'ActivityDetailController',
+        area: 'ActivityDetailController',
         data: {
           'subPhaseIndex': subPhaseIndex,
           'foodIndex': foodIndex,
@@ -1957,10 +2065,11 @@ class ActivityDetailController extends _$ActivityDetailController {
         },
       );
     } catch (error, stackTrace) {
-      _logger.error(
-        'Error in updateSubPhaseQuantityWithScaling',
-        error: error,
+      _report.fault(
+        error,
         stackTrace: stackTrace,
+        area: 'nutrition_plan',
+        message: 'Error in updateSubPhaseQuantityWithScaling',
       );
       state = AsyncValue.error(error, stackTrace);
     }
@@ -2022,9 +2131,9 @@ class ActivityDetailController extends _$ActivityDetailController {
       await _saveNutritionPlanToActivity(activity.id, updatedPlan);
     }
 
-    _logger.info(
+    _report.info(
       'initializeByHourData SUCCESS',
-      context: 'ActivityDetailController',
+      area: 'ActivityDetailController',
       data: {
         'category': category,
         'durationMinutes': durationMinutes,
@@ -2420,12 +2529,12 @@ class ActivityDetailController extends _$ActivityDetailController {
 
       return true;
     } catch (e, stackTrace) {
-      _logger.error(
-        'Failed to delete activity',
-        context: 'ACTIVITY_DETAIL_CONTROLLER',
-        error: e,
+      _report.fault(
+        e,
         stackTrace: stackTrace,
-        data: {'activityId': activityId},
+        area: 'ACTIVITY_DETAIL_CONTROLLER',
+        extra: {'activityId': activityId},
+        message: 'Failed to delete activity',
       );
       return false;
     }
@@ -2714,9 +2823,10 @@ class ActivityDetailController extends _$ActivityDetailController {
           clearFuelLogData: true,
         );
       } catch (error) {
-        _logger.error(
-          'Error saving fuel log and completing activity',
-          error: error,
+        _report.fault(
+          error,
+          area: 'nutrition_plan',
+          message: 'Error saving fuel log and completing activity',
         );
         rethrow;
       }
@@ -2778,7 +2888,11 @@ class ActivityDetailController extends _$ActivityDetailController {
           clearFuelLogData: true,
         );
       } catch (error) {
-        _logger.error('Error updating fuel log', error: error);
+        _report.fault(
+          error,
+          area: 'nutrition_plan',
+          message: 'Error updating fuel log',
+        );
         rethrow;
       }
     });
@@ -2823,10 +2937,11 @@ class ActivityDetailController extends _$ActivityDetailController {
     try {
       return FuelLogData.fromJson(rawData);
     } catch (e) {
-      _logger.warning(
-        'Failed to parse saved fuel log; falling back to plan defaults',
-        context: 'ACTIVITY_DETAIL_CONTROLLER',
-        error: e,
+      _report.degraded(
+        e,
+        area: 'ACTIVITY_DETAIL_CONTROLLER',
+        message:
+            'Failed to parse saved fuel log; falling back to plan defaults',
       );
       return null;
     }

@@ -5,7 +5,7 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import '../../../../theme/app_theme.dart';
 import '../../domain/food_item_data.dart';
 import '../../../../shared/widgets/food_icon.dart';
-import '../../../../shared/services/app_external_deps.dart';
+import '../../../../shared/services/report/report.dart';
 
 /// Expandable food item with quantity editing capabilities
 /// Shows food icon, name, quantity with collapsible details and quantity controls
@@ -133,19 +133,21 @@ class _EditableExpandableFoodItemState extends State<EditableExpandableFoodItem>
     if (!_hasLocalChanges) return;
 
     final container = ProviderScope.containerOf(context);
-    final logger = container.read(appExternalDepsProvider).logger;
-    logger.userAction(
-      'User updated food quantity',
-      action: 'quantity_change',
-      screen: 'current_plan',
-      data: {
-        'foodId': widget.foodItem.id,
-        'foodName': widget.foodItem.name,
-        'oldQuantity': _originalQuantity,
-        'newQuantity': _currentQuantity,
-        'category': widget.category,
-      },
-    );
+    container
+        .read(reportProvider)
+        .info(
+          'User updated food quantity',
+          area: 'user_action',
+          data: {
+            'foodId': widget.foodItem.id,
+            'foodName': widget.foodItem.name,
+            'oldQuantity': _originalQuantity,
+            'newQuantity': _currentQuantity,
+            'category': widget.category,
+            'action': 'quantity_change',
+            'screen': 'current_plan',
+          },
+        );
 
     _hasLocalChanges = false;
 

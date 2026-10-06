@@ -14,7 +14,6 @@ import '../../../shared/domain/activity_type.dart';
 import '../../../shared/services/analytics/analytics_tracker.dart';
 import '../../../shared/services/analytics/analytics_events.dart';
 import '../../../shared/services/report/report.dart';
-import 'package:mealvana_endurance/core/utils/debug_logger.dart';
 
 /// Service responsible for generating macro targets by calling edge functions.
 ///
@@ -138,11 +137,15 @@ class MacroGenerationService {
     IntensityDistribution? intensity,
     NutritionTargetOverrides? overrides,
   }) async {
-    DebugLogger.info(
+    _r.info(
       '🚴 MACRO SERVICE: generateCyclingMacros called - distance: ${distanceMiles}mi, speed: ${speedMph}mph',
+      area: 'nutrition_plan',
     );
 
-    DebugLogger.info('🚴 MACRO SERVICE: Building request data...');
+    _r.info(
+      '🚴 MACRO SERVICE: Building request data...',
+      area: 'nutrition_plan',
+    );
     final requestData = await _buildCyclingRequestData(
       distanceMiles: distanceMiles,
       speedMph: speedMph,
@@ -159,8 +162,9 @@ class MacroGenerationService {
     // device_id is read by the edge function to look up active formula pins
     // (Formula Kit PR 2 substep 5b-followup, 2026-05-22).
     requestData['device_id'] = deviceId;
-    DebugLogger.info(
+    _r.info(
       '🚴 MACRO SERVICE: Request data built, calling edge function...',
+      area: 'nutrition_plan',
     );
 
     final rawTargets = await _callGenerateMacrosEdgeFunction(
@@ -169,12 +173,16 @@ class MacroGenerationService {
       overrides: overrides,
     );
     final macroTargets = _stampConditionsSource(rawTargets, conditionsSource);
-    DebugLogger.info(
+    _r.info(
       '🚴 MACRO SERVICE: Edge function returned, caching targets...',
+      area: 'nutrition_plan',
     );
 
     await _cacheMacroTargets(macroTargets, activityId: activityId);
-    DebugLogger.info('🚴 MACRO SERVICE: Targets cached, tracking analytics...');
+    _r.info(
+      '🚴 MACRO SERVICE: Targets cached, tracking analytics...',
+      area: 'nutrition_plan',
+    );
 
     await analytics.trackPlanGenerated(
       deviceId: deviceId,
@@ -185,8 +193,9 @@ class MacroGenerationService {
       totalCalories: macroTargets.metrics.caloriesNetKcal.round(),
       totalCarbs: _calculateTotalCarbs(macroTargets),
     );
-    DebugLogger.info(
+    _r.info(
       '🚴 MACRO SERVICE: Analytics tracked, returning macro targets',
+      area: 'nutrition_plan',
     );
 
     return macroTargets;
@@ -206,11 +215,15 @@ class MacroGenerationService {
     IntensityDistribution? intensity,
     NutritionTargetOverrides? overrides,
   }) async {
-    DebugLogger.info(
+    _r.info(
       '🏊 MACRO SERVICE: generateSwimmingMacros called - distance: ${distanceMeters}m, pace: ${paceSecondsper100m}s/100m',
+      area: 'nutrition_plan',
     );
 
-    DebugLogger.info('🏊 MACRO SERVICE: Building request data...');
+    _r.info(
+      '🏊 MACRO SERVICE: Building request data...',
+      area: 'nutrition_plan',
+    );
     final requestData = await _buildSwimmingRequestData(
       distanceMeters: distanceMeters,
       paceSecondsper100m: paceSecondsper100m,
@@ -224,8 +237,9 @@ class MacroGenerationService {
     // device_id is read by the edge function to look up active formula pins
     // (Formula Kit PR 2 substep 5b-followup, 2026-05-22).
     requestData['device_id'] = deviceId;
-    DebugLogger.info(
+    _r.info(
       '🏊 MACRO SERVICE: Request data built, calling edge function...',
+      area: 'nutrition_plan',
     );
 
     final macroTargets = await _callGenerateMacrosEdgeFunction(
@@ -233,12 +247,16 @@ class MacroGenerationService {
       expectedActivityType: ActivityType.swimming,
       overrides: overrides,
     );
-    DebugLogger.info(
+    _r.info(
       '🏊 MACRO SERVICE: Edge function returned, caching targets...',
+      area: 'nutrition_plan',
     );
 
     await _cacheMacroTargets(macroTargets, activityId: activityId);
-    DebugLogger.info('🏊 MACRO SERVICE: Targets cached, tracking analytics...');
+    _r.info(
+      '🏊 MACRO SERVICE: Targets cached, tracking analytics...',
+      area: 'nutrition_plan',
+    );
 
     await analytics.trackPlanGenerated(
       deviceId: deviceId,
@@ -249,8 +267,9 @@ class MacroGenerationService {
       totalCalories: macroTargets.metrics.caloriesNetKcal.round(),
       totalCarbs: _calculateTotalCarbs(macroTargets),
     );
-    DebugLogger.info(
+    _r.info(
       '🏊 MACRO SERVICE: Analytics tracked, returning macro targets',
+      area: 'nutrition_plan',
     );
 
     return macroTargets;
@@ -548,11 +567,13 @@ class MacroGenerationService {
     // them; old clients omit this flag and get byte-identical telemetry.
     requestData['emit_ephemeral_default_formula'] = true;
 
-    DebugLogger.info(
+    _r.info(
       '🌐 EDGE FUNCTION: Calling generate-macros-v4 for ${expectedActivityType.name}...',
+      area: 'nutrition_plan',
     );
-    DebugLogger.info(
+    _r.info(
       '📤 EDGE FUNCTION: Request payload: ${requestData.toString().substring(0, 200)}...',
+      area: 'nutrition_plan',
     );
 
     Map<String, dynamic> macrosData;
@@ -565,35 +586,50 @@ class MacroGenerationService {
         body: requestData,
       );
 
-      DebugLogger.info('📥 EDGE FUNCTION: Response status: ${response.status}');
+      _r.info(
+        '📥 EDGE FUNCTION: Response status: ${response.status}',
+        area: 'nutrition_plan',
+      );
 
       if (response.status >= 400) {
         final data = response.data as Map<String, dynamic>?;
         final errorMessage =
             data?['message'] ?? 'Failed to generate macro targets';
-        DebugLogger.error(
-          '❌ EDGE FUNCTION: HTTP error ${response.status}: $errorMessage',
+        _r.fault(
+          LoggedFault(
+            '❌ EDGE FUNCTION: HTTP error ${response.status}: $errorMessage',
+            context: 'nutrition_plan',
+          ),
+          area: 'nutrition_plan',
         );
         throw Exception(errorMessage);
       }
 
       final data = response.data as Map<String, dynamic>;
-      DebugLogger.info(
+      _r.info(
         '📊 EDGE FUNCTION: Response data keys: ${data.keys.toList()}',
+        area: 'nutrition_plan',
       );
 
       if (data['success'] != true) {
         final errorMessage =
             data['message'] ?? 'Failed to generate macro targets';
-        DebugLogger.error('❌ EDGE FUNCTION: Success=false: $errorMessage');
+        _r.fault(
+          LoggedFault(
+            '❌ EDGE FUNCTION: Success=false: $errorMessage',
+            context: 'nutrition_plan',
+          ),
+          area: 'nutrition_plan',
+        );
         throw Exception(errorMessage);
       }
 
       macrosData = data['macros'] as Map<String, dynamic>;
       final activityTypeString =
           data['activity_type'] as String? ?? expectedActivityType.name;
-      DebugLogger.info(
+      _r.info(
         '✅ EDGE FUNCTION: Got macros data with ${macrosData.keys.length} keys',
+        area: 'nutrition_plan',
       );
 
       try {
@@ -653,8 +689,9 @@ class MacroGenerationService {
     }
 
     final macroTargets = _parseMacroTargets(macrosData, activityType);
-    DebugLogger.info(
+    _r.info(
       '✅ EDGE FUNCTION: Successfully parsed macro targets - preRun carbs: ${macroTargets.preRun.carbsG}g, total burn: ${macroTargets.metrics.caloriesNetKcal}kcal, rule: $calculationRule',
+      area: 'nutrition_plan',
     );
 
     if (calculationRule == 'offline_fallback') {
