@@ -6,7 +6,7 @@ import '../../../activities/domain/activity.dart';
 import '../../../events/data/events_repository.dart';
 import '../../../events/domain/event.dart';
 import '../../../../shared/domain/activity_type.dart';
-import '../../../../shared/services/logging_service.dart';
+import '../../../../shared/services/report/report.dart';
 import '../../../../shared/database/app_database.dart' as db;
 import '../../../auth/application/auth_service.dart' as auth_service;
 import '../../../auth/application/supabase_auth_service.dart' as supabase_auth;
@@ -72,7 +72,7 @@ class CalendarController extends _$CalendarController {
   CalendarService get _calendarService => ref.read(calendarServiceProvider);
   ActivitiesService get _activitiesService =>
       ref.read(activitiesServiceProvider);
-  AppLogger get _logger => ref.read(appLoggerProvider);
+  Report get _report => ref.read(reportProvider);
   auth_service.AuthService get _authService =>
       ref.read(auth_service.authServiceProvider);
 
@@ -128,7 +128,11 @@ class CalendarController extends _$CalendarController {
         carbLoadingDays: carbLoadingDays,
       );
     } catch (e) {
-      _logger.error('Error loading week activities', error: e);
+      _report.fault(
+        e,
+        area: 'calendar',
+        message: 'Error loading week activities',
+      );
       throw Exception('Failed to load activities: $e');
     }
   }
@@ -172,7 +176,7 @@ class CalendarController extends _$CalendarController {
 
       return createdActivity.id;
     } catch (e) {
-      _logger.error('Error creating activity', error: e);
+      _report.fault(e, area: 'calendar', message: 'Error creating activity');
       rethrow;
     }
   }
@@ -191,7 +195,7 @@ class CalendarController extends _$CalendarController {
       // Refresh activities
       ref.invalidateSelf();
     } catch (e) {
-      _logger.error('Error updating activity', error: e);
+      _report.fault(e, area: 'calendar', message: 'Error updating activity');
       rethrow;
     }
   }
@@ -206,7 +210,7 @@ class CalendarController extends _$CalendarController {
       ref.invalidate(allEventsControllerProvider);
       ref.invalidate(nextUpcomingEventProvider);
     } catch (e) {
-      _logger.error('Error updating event', error: e);
+      _report.fault(e, area: 'calendar', message: 'Error updating event');
       rethrow;
     }
   }
@@ -227,7 +231,7 @@ class CalendarController extends _$CalendarController {
       ref.invalidate(allEventsControllerProvider);
       ref.invalidate(nextUpcomingEventProvider);
     } catch (e) {
-      _logger.error('Error deleting activity', error: e);
+      _report.fault(e, area: 'calendar', message: 'Error deleting activity');
     }
   }
 
@@ -239,7 +243,11 @@ class CalendarController extends _$CalendarController {
       // Refresh activities to update the list
       ref.invalidateSelf();
     } catch (e) {
-      _logger.error('Error deleting carb loading day', error: e);
+      _report.fault(
+        e,
+        area: 'calendar',
+        message: 'Error deleting carb loading day',
+      );
     }
   }
 
@@ -302,7 +310,7 @@ class CalendarController extends _$CalendarController {
       ref.invalidate(allEventsControllerProvider);
       ref.invalidate(nextUpcomingEventProvider);
     } catch (e) {
-      _logger.error('Error creating event', error: e);
+      _report.fault(e, area: 'calendar', message: 'Error creating event');
     }
   }
 
@@ -376,11 +384,14 @@ class CalendarController extends _$CalendarController {
       // Refresh activities to show new carb loading days
       ref.invalidateSelf();
     } catch (e) {
-      _logger.error('Error creating carb loading plan', error: e);
+      _report.fault(
+        e,
+        area: 'calendar',
+        message: 'Error creating carb loading plan',
+      );
       rethrow;
     }
   }
-
 }
 
 /// All Events Controller - separate from calendar week view
@@ -388,7 +399,7 @@ class CalendarController extends _$CalendarController {
 @riverpod
 class AllEventsController extends _$AllEventsController {
   CalendarService get _calendarService => ref.read(calendarServiceProvider);
-  AppLogger get _logger => ref.read(appLoggerProvider);
+  Report get _report => ref.read(reportProvider);
   auth_service.AuthService get _authService =>
       ref.read(auth_service.authServiceProvider);
 
@@ -414,7 +425,11 @@ class AllEventsController extends _$AllEventsController {
 
       return CalendarState.data(activities: activities, events: events);
     } catch (e) {
-      _logger.error('Error loading all activities', error: e);
+      _report.fault(
+        e,
+        area: 'calendar',
+        message: 'Error loading all activities',
+      );
       throw Exception('Failed to load all activities: $e');
     }
   }
@@ -433,7 +448,7 @@ Future<({Activity? activity, Event event})> eventDetail(
   String eventId,
 ) async {
   final service = ref.read(calendarServiceProvider);
-  final logger = ref.read(appLoggerProvider);
+  final report = ref.read(reportProvider);
   final authService = ref.read(auth_service.authServiceProvider);
 
   // Watch auth state to trigger rebuilds on sign in/out
@@ -458,7 +473,7 @@ Future<({Activity? activity, Event event})> eventDetail(
 
     return (activity: activity, event: event);
   } catch (e) {
-    logger.error('Error loading event detail', error: e);
+    report.fault(e, area: 'calendar', message: 'Error loading event detail');
     rethrow;
   }
 }
@@ -471,7 +486,7 @@ Future<({Activity activity, Event? event})> activityDetail(
   String activityId,
 ) async {
   final service = ref.read(calendarServiceProvider);
-  final logger = ref.read(appLoggerProvider);
+  final report = ref.read(reportProvider);
   final authService = ref.read(auth_service.authServiceProvider);
 
   // Watch auth state to trigger rebuilds on sign in/out
@@ -493,7 +508,7 @@ Future<({Activity activity, Event? event})> activityDetail(
 
     return (activity: activity, event: event);
   } catch (e) {
-    logger.error('Error loading activity detail', error: e);
+    report.fault(e, area: 'calendar', message: 'Error loading activity detail');
     rethrow;
   }
 }
@@ -503,7 +518,7 @@ Future<({Activity activity, Event? event})> activityDetail(
 @riverpod
 Future<Event?> nextUpcomingEvent(Ref ref) async {
   final service = ref.read(calendarServiceProvider);
-  final logger = ref.read(appLoggerProvider);
+  final report = ref.read(reportProvider);
   final authService = ref.read(auth_service.authServiceProvider);
 
   // Watch auth state to trigger rebuilds on sign in/out
@@ -539,8 +554,11 @@ Future<Event?> nextUpcomingEvent(Ref ref) async {
         try {
           eventDate = DateTime.parse(event.startTime!);
         } catch (e) {
-          logger.warning(
-            'nextUpcomingEvent: Could not parse startTime for event ${event.id}: ${event.startTime}',
+          report.degraded(
+            LoggedFault(
+              'nextUpcomingEvent: Could not parse startTime for event ${event.id}: ${event.startTime}',
+            ),
+            area: 'calendar',
           );
         }
       }
@@ -548,8 +566,11 @@ Future<Event?> nextUpcomingEvent(Ref ref) async {
       if (eventDate != null) {
         eventsWithDates.add((event: event, eventDate: eventDate));
       } else {
-        logger.warning(
-          'nextUpcomingEvent: Event ${event.id} has no date (no activity and no startTime)',
+        report.degraded(
+          LoggedFault(
+            'nextUpcomingEvent: Event ${event.id} has no date (no activity and no startTime)',
+          ),
+          area: 'calendar',
         );
       }
     }
@@ -577,10 +598,11 @@ Future<Event?> nextUpcomingEvent(Ref ref) async {
     final result = upcomingEvents.isEmpty ? null : upcomingEvents.first.event;
     return result;
   } catch (e, stackTrace) {
-    logger.error(
-      'Error loading next upcoming event',
-      error: e,
+    report.fault(
+      e,
       stackTrace: stackTrace,
+      area: 'calendar',
+      message: 'Error loading next upcoming event',
     );
     return null;
   }

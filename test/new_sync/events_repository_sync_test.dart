@@ -1,27 +1,22 @@
 import 'package:flutter_test/flutter_test.dart';
 import 'package:mealvana_endurance/features/events/data/events_repository.dart';
 import 'package:mealvana_endurance/shared/database/app_database.dart';
-import 'package:mealvana_endurance/shared/services/logging_service.dart';
-import 'package:mealvana_endurance/shared/services/sentry/sentry_reporter.dart';
 import 'package:mealvana_endurance/features/carb_loading/data/carb_loading_repository.dart';
 import 'package:drift/native.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 import 'package:supabase_flutter/supabase_flutter.dart';
 import 'package:mocktail/mocktail.dart';
 
+import '../helpers/fakes/recording_report.dart';
+
 // Mocks
 class MockSupabaseClient extends Mock implements SupabaseClient {}
-
-class MockAppLogger extends Mock implements AppLogger {}
-
-class MockSentryReporter extends Mock implements SentryReporter {}
 
 class MockCarbLoadingRepository extends Mock implements CarbLoadingRepository {}
 
 void main() {
   late AppDatabase database;
-  late MockAppLogger mockLogger;
-  late MockSentryReporter mockSentry;
+  late RecordingReport report;
   late MockCarbLoadingRepository mockCarbLoadingRepository;
 
   const testUserId = 'test-user-123';
@@ -34,42 +29,8 @@ void main() {
     database = AppDatabase.forTesting(NativeDatabase.memory());
 
     // Create mocks
-    mockLogger = MockAppLogger();
-    mockSentry = MockSentryReporter();
+    report = RecordingReport();
     mockCarbLoadingRepository = MockCarbLoadingRepository();
-
-    // Set up logger to not throw on method calls
-    when(
-      () => mockLogger.info(
-        any(),
-        context: any(named: 'context'),
-        data: any(named: 'data'),
-      ),
-    ).thenReturn(null);
-    when(
-      () => mockLogger.debug(
-        any(),
-        context: any(named: 'context'),
-        data: any(named: 'data'),
-      ),
-    ).thenReturn(null);
-    when(
-      () => mockLogger.error(
-        any(),
-        context: any(named: 'context'),
-        error: any(named: 'error'),
-        stackTrace: any(named: 'stackTrace'),
-        data: any(named: 'data'),
-      ),
-    ).thenReturn(null);
-    when(
-      () => mockLogger.warning(
-        any(),
-        context: any(named: 'context'),
-        error: any(named: 'error'),
-        data: any(named: 'data'),
-      ),
-    ).thenReturn(null);
   });
 
   tearDown(() async {
@@ -82,9 +43,8 @@ void main() {
       final repository = EventsRepository(
         supabase: mockSupabase,
         database: database,
-        logger: mockLogger,
+        report: report,
         carbLoadingRepository: mockCarbLoadingRepository,
-        sentry: mockSentry,
       );
 
       expect(repository.repositoryKey, 'events');
@@ -95,9 +55,8 @@ void main() {
       final repository = EventsRepository(
         supabase: mockSupabase,
         database: database,
-        logger: mockLogger,
+        report: report,
         carbLoadingRepository: mockCarbLoadingRepository,
-        sentry: mockSentry,
       );
 
       // activities is required because events.activity_id has an FK to
@@ -111,9 +70,8 @@ void main() {
       final repository = EventsRepository(
         supabase: mockSupabase,
         database: database,
-        logger: mockLogger,
+        report: report,
         carbLoadingRepository: mockCarbLoadingRepository,
-        sentry: mockSentry,
       );
 
       final isStale = await repository.isStale();
@@ -125,9 +83,8 @@ void main() {
       final repository = EventsRepository(
         supabase: mockSupabase,
         database: database,
-        logger: mockLogger,
+        report: report,
         carbLoadingRepository: mockCarbLoadingRepository,
-        sentry: mockSentry,
       );
 
       await repository.setLastSyncTime(DateTime.now());
@@ -142,9 +99,8 @@ void main() {
         final repository = EventsRepository(
           supabase: mockSupabase,
           database: database,
-          logger: mockLogger,
+          report: report,
           carbLoadingRepository: mockCarbLoadingRepository,
-          sentry: mockSentry,
         );
 
         final oldSync = DateTime.now().subtract(const Duration(hours: 25));
@@ -161,9 +117,8 @@ void main() {
       final repository = EventsRepository(
         supabase: mockSupabase,
         database: database,
-        logger: mockLogger,
+        report: report,
         carbLoadingRepository: mockCarbLoadingRepository,
-        sentry: mockSentry,
       );
 
       final timestamp = await repository.getLastSyncTime();
@@ -175,9 +130,8 @@ void main() {
       final repository = EventsRepository(
         supabase: mockSupabase,
         database: database,
-        logger: mockLogger,
+        report: report,
         carbLoadingRepository: mockCarbLoadingRepository,
-        sentry: mockSentry,
       );
 
       final now = DateTime.now();
@@ -195,9 +149,8 @@ void main() {
       final repository = EventsRepository(
         supabase: mockSupabase,
         database: database,
-        logger: mockLogger,
+        report: report,
         carbLoadingRepository: mockCarbLoadingRepository,
-        sentry: mockSentry,
       );
 
       // Act

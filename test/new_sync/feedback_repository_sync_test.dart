@@ -1,8 +1,6 @@
 import 'package:flutter_test/flutter_test.dart';
 import 'package:mealvana_endurance/features/feedback/data/feedback_repository.dart';
 import 'package:mealvana_endurance/shared/database/app_database.dart';
-import 'package:mealvana_endurance/shared/services/logging_service.dart';
-import 'package:mealvana_endurance/shared/services/sentry/sentry_reporter.dart';
 import 'package:mealvana_endurance/shared/data/syncable_repository.dart';
 import 'package:drift/drift.dart';
 import 'package:drift/native.dart';
@@ -10,19 +8,16 @@ import 'package:supabase_flutter/supabase_flutter.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 import 'package:mocktail/mocktail.dart';
 
+import '../helpers/fakes/recording_report.dart';
+
 // Mocks
 class MockSupabaseClient extends Mock implements SupabaseClient {}
-
-class MockAppLogger extends Mock implements AppLogger {}
-
-class MockSentryReporter extends Mock implements SentryReporter {}
 
 void main() {
   late AppDatabase database;
   late FeedbackRepository repository;
   late MockSupabaseClient mockSupabase;
-  late MockAppLogger mockLogger;
-  late MockSentryReporter mockSentry;
+  late RecordingReport report;
 
   const testUserId = 'test-user-123';
 
@@ -34,49 +29,10 @@ void main() {
     database = AppDatabase.forTesting(NativeDatabase.memory());
 
     // Create mocks
-    mockLogger = MockAppLogger();
+    report = RecordingReport();
     mockSupabase = MockSupabaseClient();
-    mockSentry = MockSentryReporter();
 
-    // Set up logger to not throw on method calls
-    when(
-      () => mockLogger.info(
-        any(),
-        context: any(named: 'context'),
-        data: any(named: 'data'),
-      ),
-    ).thenReturn(null);
-    when(
-      () => mockLogger.debug(
-        any(),
-        context: any(named: 'context'),
-        data: any(named: 'data'),
-      ),
-    ).thenReturn(null);
-    when(
-      () => mockLogger.error(
-        any(),
-        context: any(named: 'context'),
-        error: any(named: 'error'),
-        stackTrace: any(named: 'stackTrace'),
-        data: any(named: 'data'),
-      ),
-    ).thenReturn(null);
-    when(
-      () => mockLogger.warning(
-        any(),
-        context: any(named: 'context'),
-        error: any(named: 'error'),
-        data: any(named: 'data'),
-      ),
-    ).thenReturn(null);
-
-    repository = FeedbackRepository(
-      database,
-      mockLogger,
-      mockSupabase,
-      mockSentry,
-    );
+    repository = FeedbackRepository(database, report, mockSupabase);
   });
 
   tearDown(() async {

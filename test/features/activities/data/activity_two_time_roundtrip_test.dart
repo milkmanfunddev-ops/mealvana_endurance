@@ -7,7 +7,8 @@ import 'package:mealvana_endurance/features/activities/domain/activity.dart'
     as domain;
 import 'package:mealvana_endurance/shared/database/app_database.dart';
 import 'package:mealvana_endurance/shared/domain/activity_type.dart';
-import 'package:mealvana_endurance/shared/services/logging_service.dart';
+
+import '../../../helpers/fakes/recording_report.dart';
 
 /// Serialization round-trip for the daily-macros bundle columns:
 /// planned_time / actual_time / calories_burned + the 'deleted' tombstone
@@ -15,7 +16,7 @@ import 'package:mealvana_endurance/shared/services/logging_service.dart';
 /// Drift row → upload payload → JSON wire → domain. A drop at any seam
 /// either resurrects deleted workouts or loses the two-time model.
 void main() {
-  final mapper = ActivityMapper(logger: NoopAppLogger());
+  final mapper = ActivityMapper(report: RecordingReport());
 
   final createdAt = DateTime(2026, 8, 1, 6);
   final updatedAt = DateTime(2026, 8, 10, 9);

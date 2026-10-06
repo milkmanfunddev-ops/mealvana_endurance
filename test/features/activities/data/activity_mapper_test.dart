@@ -4,10 +4,11 @@ import 'package:mealvana_endurance/features/activities/domain/activity.dart'
     as domain;
 import 'package:mealvana_endurance/shared/database/app_database.dart' as db;
 import 'package:mealvana_endurance/shared/domain/activity_type.dart';
-import 'package:mealvana_endurance/shared/services/logging_service.dart';
+
+import '../../../helpers/fakes/recording_report.dart';
 
 void main() {
-  final mapper = ActivityMapper(logger: NoopAppLogger());
+  final mapper = ActivityMapper(report: RecordingReport());
 
   final createdAt = DateTime(2026, 7, 1, 6);
   final updatedAt = DateTime(2026, 7, 16, 9);

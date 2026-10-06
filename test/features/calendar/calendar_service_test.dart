@@ -10,16 +10,14 @@ import 'package:mealvana_endurance/features/activities/domain/activity.dart'
     as domain;
 import 'package:mealvana_endurance/shared/database/app_database.dart';
 import 'package:mealvana_endurance/shared/domain/activity_type.dart';
-import 'package:mealvana_endurance/shared/services/logging_service.dart';
+
+import '../../helpers/fakes/recording_report.dart';
 
 class MockActivitiesService extends Mock implements ActivitiesService {}
-
-class MockAppLogger extends Mock implements AppLogger {}
 
 void main() {
   late AppDatabase db;
   late MockActivitiesService mockActivitiesService;
-  late MockAppLogger mockLogger;
   late CalendarService service;
 
   const testUserId = 'user-abc-123';
@@ -45,41 +43,10 @@ void main() {
   setUp(() async {
     db = AppDatabase.forTesting(NativeDatabase.memory());
     mockActivitiesService = MockActivitiesService();
-    mockLogger = MockAppLogger();
 
     // Stub all logger calls
-    when(
-      () => mockLogger.info(
-        any(),
-        context: any(named: 'context'),
-        data: any(named: 'data'),
-      ),
-    ).thenReturn(null);
-    when(
-      () => mockLogger.debug(
-        any(),
-        context: any(named: 'context'),
-        data: any(named: 'data'),
-      ),
-    ).thenReturn(null);
-    when(
-      () => mockLogger.warning(
-        any(),
-        context: any(named: 'context'),
-        data: any(named: 'data'),
-      ),
-    ).thenReturn(null);
-    when(
-      () => mockLogger.error(
-        any(),
-        context: any(named: 'context'),
-        error: any(named: 'error'),
-        stackTrace: any(named: 'stackTrace'),
-        data: any(named: 'data'),
-      ),
-    ).thenReturn(null);
 
-    service = CalendarService(db, mockLogger, mockActivitiesService);
+    service = CalendarService(db, RecordingReport(), mockActivitiesService);
   });
 
   tearDown(() async {

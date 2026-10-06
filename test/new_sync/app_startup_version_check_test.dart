@@ -9,9 +9,7 @@ import 'package:mealvana_endurance/features/app_startup/application/app_startup_
 import 'package:mealvana_endurance/shared/services/version_check_service.dart';
 import 'package:mealvana_endurance/shared/services/app_external_deps.dart';
 import 'package:mealvana_endurance/shared/services/privacy/privacy_region_service.dart';
-import 'package:mealvana_endurance/shared/services/logging_service.dart';
 import 'package:mealvana_endurance/shared/services/report/report.dart';
-import 'package:mealvana_endurance/shared/services/sentry/sentry_reporter.dart';
 import 'package:mealvana_endurance/shared/services/analytics/analytics_tracker.dart';
 import 'package:mealvana_endurance/shared/models/version_check_result.dart';
 import 'package:mealvana_endurance/shared/database/app_database.dart';
@@ -28,10 +26,6 @@ class MockAppStartupService extends Mock implements AppStartupService {}
 class MockSupabaseClient extends Mock implements SupabaseClient {}
 
 class MockGoTrueClient extends Mock implements GoTrueClient {}
-
-class MockAppLogger extends Mock implements AppLogger {}
-
-class MockSentryReporter extends Mock implements SentryReporter {}
 
 class MockAnalyticsTracker extends Mock implements AnalyticsTracker {}
 
@@ -55,9 +49,7 @@ void main() {
     late MockAppStartupService mockAppStartupService;
     late MockSupabaseClient mockSupabaseClient;
     late MockGoTrueClient mockGoTrueClient;
-    late MockAppLogger mockLogger;
     late RecordingReport report;
-    late MockSentryReporter mockSentry;
     late MockAnalyticsTracker mockAnalytics;
     late MockAppDatabase mockDatabase;
     late MockUserDao mockUserDao;
@@ -70,9 +62,7 @@ void main() {
       mockAppStartupService = MockAppStartupService();
       mockSupabaseClient = MockSupabaseClient();
       mockGoTrueClient = MockGoTrueClient();
-      mockLogger = MockAppLogger();
       report = RecordingReport();
-      mockSentry = MockSentryReporter();
       mockAnalytics = MockAnalyticsTracker();
       mockDatabase = MockAppDatabase();
       mockUserDao = MockUserDao();
@@ -90,27 +80,6 @@ void main() {
       when(() => mockSupabaseClient.auth).thenReturn(mockGoTrueClient);
       when(() => mockGoTrueClient.currentSession).thenReturn(null);
       when(
-        () => mockLogger.info(any(), context: any(named: 'context')),
-      ).thenReturn(null);
-      when(
-        () => mockLogger.warning(any(), context: any(named: 'context')),
-      ).thenReturn(null);
-      when(
-        () => mockLogger.error(
-          any(),
-          context: any(named: 'context'),
-          error: any(named: 'error'),
-          stackTrace: any(named: 'stackTrace'),
-        ),
-      ).thenReturn(null);
-      when(
-        () => mockSentry.addBreadcrumb(
-          message: any(named: 'message'),
-          category: any(named: 'category'),
-          data: any(named: 'data'),
-        ),
-      ).thenReturn(null);
-      when(
         () => mockVersionCheckService.performSchemaResync(
           any(),
           targetSchemaVersion: any(named: 'targetSchemaVersion'),
@@ -127,8 +96,7 @@ void main() {
       // Setup AppExternalDeps
       final mockAppExternalDeps = AppExternalDeps(
         supabaseClient: mockSupabaseClient,
-        logger: mockLogger,
-        sentry: mockSentry,
+        report: report,
         analytics: mockAnalytics,
         sharedPreferences: mockSharedPreferences,
       );
@@ -180,13 +148,13 @@ void main() {
           appExternalDepsProvider.overrideWithValue(
             AppExternalDeps(
               supabaseClient: mockSupabaseClient,
-              logger: mockLogger,
-              sentry: mockSentry,
+              report: report,
               analytics: mockAnalytics,
               sharedPreferences: mockSharedPreferences,
             ),
           ),
           appDatabaseProvider.overrideWithValue(mockDatabase),
+          reportProvider.overrideWithValue(report),
           privacyRegionServiceProvider.overrideWithValue(
             mockPrivacyRegionService,
           ),
@@ -203,12 +171,15 @@ void main() {
 
       // Verify version check was called
       verify(() => mockVersionCheckService.checkVersion()).called(1);
-      verify(
-        () => mockLogger.info(
-          'Version check passed - continuing with normal startup',
-          context: 'VERSION_CHECK',
+      expect(
+        report.calls.where(
+          (c) =>
+              c.severity == 'info' &&
+              c.message ==
+                  'Version check passed - continuing with normal startup',
         ),
-      ).called(1);
+        hasLength(1),
+      );
 
       containerWithDb.dispose();
     });
@@ -310,13 +281,13 @@ void main() {
           appExternalDepsProvider.overrideWithValue(
             AppExternalDeps(
               supabaseClient: mockSupabaseClient,
-              logger: mockLogger,
-              sentry: mockSentry,
+              report: report,
               analytics: mockAnalytics,
               sharedPreferences: mockSharedPreferences,
             ),
           ),
           appDatabaseProvider.overrideWithValue(mockDatabase),
+          reportProvider.overrideWithValue(report),
           privacyRegionServiceProvider.overrideWithValue(
             mockPrivacyRegionService,
           ),

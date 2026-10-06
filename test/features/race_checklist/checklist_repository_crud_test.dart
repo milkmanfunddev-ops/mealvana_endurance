@@ -5,63 +5,19 @@ library;
 
 import 'package:drift/native.dart';
 import 'package:flutter_test/flutter_test.dart';
-import 'package:mocktail/mocktail.dart';
 import 'package:mealvana_endurance/features/race_checklist/application/gear_template_service.dart';
 import 'package:mealvana_endurance/features/race_checklist/data/checklist_repository.dart';
 import 'package:mealvana_endurance/shared/database/app_database.dart';
 import 'package:mealvana_endurance/shared/domain/activity_type.dart';
-import 'package:mealvana_endurance/shared/services/logging_service.dart';
 
-// ---------------------------------------------------------------------------
-// Mocks
-// ---------------------------------------------------------------------------
-
-class MockAppLogger extends Mock implements AppLogger {}
+import '../../helpers/fakes/recording_report.dart';
 
 // ---------------------------------------------------------------------------
 // Helpers
 // ---------------------------------------------------------------------------
 
-MockAppLogger _silentLogger() {
-  final m = MockAppLogger();
-  when(
-    () => m.info(
-      any(),
-      context: any(named: 'context'),
-      data: any(named: 'data'),
-    ),
-  ).thenReturn(null);
-  when(
-    () => m.debug(
-      any(),
-      context: any(named: 'context'),
-      data: any(named: 'data'),
-    ),
-  ).thenReturn(null);
-  when(
-    () => m.error(
-      any(),
-      context: any(named: 'context'),
-      error: any(named: 'error'),
-      stackTrace: any(named: 'stackTrace'),
-      data: any(named: 'data'),
-    ),
-  ).thenReturn(null);
-  when(
-    () => m.warning(
-      any(),
-      context: any(named: 'context'),
-      error: any(named: 'error'),
-      data: any(named: 'data'),
-    ),
-  ).thenReturn(null);
-  // Overloads without positional args
-  when(() => m.error(any(), error: any(named: 'error'))).thenReturn(null);
-  return m;
-}
-
 ChecklistRepository _makeRepo(AppDatabase db) {
-  return ChecklistRepository(db, _silentLogger());
+  return ChecklistRepository(db, RecordingReport());
 }
 
 // ---------------------------------------------------------------------------
