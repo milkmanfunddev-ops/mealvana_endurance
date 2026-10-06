@@ -9,20 +9,17 @@ import 'package:drift/drift.dart' hide isNull, isNotNull;
 import 'package:mealvana_endurance/shared/database/app_database.dart';
 import 'package:mealvana_endurance/shared/database/database_provider.dart';
 import 'package:mealvana_endurance/shared/services/analytics/analytics_tracker.dart';
-import 'package:mealvana_endurance/shared/services/sentry/sentry_reporter.dart';
-import 'package:mealvana_endurance/shared/services/logging_service.dart';
+import 'package:mealvana_endurance/shared/services/report/report.dart';
 
 import '../helpers/fakes/recording_analytics_tracker.dart';
-import '../helpers/fakes/recording_sentry_reporter.dart';
-import '../helpers/fakes/recording_app_logger.dart';
+import '../helpers/fakes/recording_report.dart';
 import '../helpers/utils/console_logging.dart';
 
 void main() {
   group('App Startup Provider Tests', () {
     late AppDatabase database;
     late RecordingAnalyticsTracker analytics;
-    late RecordingSentryReporter sentry;
-    late RecordingAppLogger logger;
+    late RecordingReport report;
     late ProviderContainer container;
 
     setUp(() {
@@ -31,8 +28,7 @@ void main() {
 
       // Create recording mocks
       analytics = RecordingAnalyticsTracker();
-      sentry = RecordingSentryReporter();
-      logger = RecordingAppLogger();
+      report = RecordingReport();
     });
 
     tearDown(() async {
@@ -46,8 +42,7 @@ void main() {
 
       // Clear mock data
       analytics.clear();
-      sentry.clear();
-      logger.clear();
+      report.calls.clear();
     });
 
     /// Helper to create container with mocked dependencies
@@ -56,8 +51,7 @@ void main() {
         overrides: [
           appDatabaseProvider.overrideWithValue(database),
           analyticsTrackerProvider.overrideWith((ref) => analytics),
-          sentryReporterProvider.overrideWith((ref) => sentry),
-          appLoggerProvider.overrideWith((ref) => logger),
+          reportProvider.overrideWithValue(report),
         ],
       );
     }
@@ -68,8 +62,7 @@ void main() {
       logTestSetup({
         'database': 'in-memory SQLite (empty)',
         'analytics': 'RecordingAnalyticsTracker',
-        'sentry': 'RecordingSentryReporter',
-        'logger': 'RecordingAppLogger',
+        'report': 'RecordingReport',
       });
 
       container = createTestContainer();
@@ -221,35 +214,6 @@ void main() {
       logTestPass('Incomplete onboarding state verified');
     });
 
-    test('tracks operations in Sentry breadcrumbs', () async {
-      logTestHeading('App Startup - Sentry Breadcrumb Tracking');
-
-      container = createTestContainer();
-
-      // Add a breadcrumb directly to test the recording
-      sentry.addBreadcrumb(
-        message: 'App startup completed successfully',
-        category: 'app_lifecycle',
-        data: {'startup_time': DateTime.now().toIso8601String()},
-      );
-
-      logSection('Verifying Sentry breadcrumbs');
-
-      final startupBreadcrumbs = sentry.findBreadcrumbs('app_lifecycle');
-
-      logTestResult('breadcrumb_count', startupBreadcrumbs.length);
-
-      logAssertion(
-        'Startup breadcrumb recorded',
-        passed: startupBreadcrumbs.isNotEmpty,
-        reason: 'App lifecycle should track startup',
-      );
-
-      expect(startupBreadcrumbs.length, greaterThan(0));
-
-      logTestPass('Sentry breadcrumb tracking verified');
-    });
-
     test('analytics tracker records initialization', () async {
       logTestHeading('App Startup - Analytics Initialization');
 
@@ -271,36 +235,6 @@ void main() {
       expect(analytics.isInitialized, isTrue);
 
       logTestPass('Analytics initialization verified');
-    });
-
-    test('logger records startup messages', () async {
-      logTestHeading('App Startup - Logger Recording');
-
-      container = createTestContainer();
-
-      // Log some startup messages
-      logger.info('App startup beginning', context: 'APP_STARTUP');
-      logger.debug('Initializing database', context: 'DATABASE');
-      logger.info('Startup complete', context: 'APP_STARTUP');
-
-      logSection('Verifying logger records');
-
-      final infoLogs = logger.findByLevel('info');
-      final debugLogs = logger.findByLevel('debug');
-
-      logTestResult('info_log_count', infoLogs.length);
-      logTestResult('debug_log_count', debugLogs.length);
-
-      logAssertion(
-        'Info logs recorded',
-        passed: infoLogs.length >= 2,
-        reason: 'Should have startup info logs',
-      );
-
-      expect(infoLogs.length, greaterThanOrEqualTo(2));
-      expect(debugLogs.length, greaterThanOrEqualTo(1));
-
-      logTestPass('Logger recording verified');
     });
 
     test('in-memory database is isolated between tests', () async {

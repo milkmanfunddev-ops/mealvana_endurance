@@ -3,8 +3,7 @@ import 'dart:convert';
 import 'package:riverpod_annotation/riverpod_annotation.dart';
 import 'package:supabase_flutter/supabase_flutter.dart';
 
-import '../app_external_deps.dart';
-import '../logging_service.dart';
+import '../report/report.dart';
 import '../supabase/supabase_client_provider.dart';
 
 part 'nutrition_product_search_service.g.dart';
@@ -134,10 +133,10 @@ class NutritionProductSearchResult {
 /// Facts hits). Server-side, so it works on Flutter web without the CORS
 /// issues the direct-to-OpenFoodFacts CGI call has.
 class NutritionProductSearchService {
-  NutritionProductSearchService(this._supabase, this._logger);
+  NutritionProductSearchService(this._supabase, this._report);
 
   final SupabaseClient _supabase;
-  final AppLogger _logger;
+  final Report _report;
 
   /// Search nutrition_products by name/brand. Returns empty list on failure
   /// (silent fallback) — this is a supplementary source, not critical path.
@@ -166,19 +165,21 @@ class NutritionProductSearchService {
         }
       }
 
-      _logger.warning(
-        'Nutrition product search returned non-success',
-        context: 'NutritionProductSearchService',
-        data: {'status': response.status, 'query': query},
+      _report.degraded(
+        const LoggedFault('Nutrition product search returned non-success'),
+        area: 'food_management',
+        extra: {'status': response.status, 'query': query},
       );
       return [];
     } catch (e) {
       // Fail silently — this is a supplementary source layered on top of
       // catalog + local results.
-      _logger.warning(
-        'Nutrition product search failed, returning empty results',
-        context: 'NutritionProductSearchService',
-        data: {'query': query, 'error': e.toString()},
+      _report.degraded(
+        const LoggedFault(
+          'Nutrition product search failed, returning empty results',
+        ),
+        area: 'food_management',
+        extra: {'query': query, 'error': e.toString()},
       );
       return [];
     }
@@ -188,6 +189,6 @@ class NutritionProductSearchService {
 @riverpod
 NutritionProductSearchService nutritionProductSearchService(Ref ref) {
   final supabase = ref.read(supabaseClientProvider);
-  final logger = ref.read(appExternalDepsProvider).logger;
-  return NutritionProductSearchService(supabase, logger);
+  final report = ref.read(reportProvider);
+  return NutritionProductSearchService(supabase, report);
 }

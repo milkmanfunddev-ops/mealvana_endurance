@@ -2,7 +2,7 @@ import 'dart:async';
 import 'package:geolocator/geolocator.dart';
 import 'package:location_iq/location_iq.dart';
 import 'package:riverpod_annotation/riverpod_annotation.dart';
-import '../services/logging_service.dart';
+import 'report/report.dart';
 import '../data/repositories/location_repository.dart';
 import '../../features/weather/domain/location.dart' as domain;
 
@@ -23,20 +23,21 @@ enum LocationFailureReason {
 @riverpod
 LocationService locationService(Ref ref) {
   return LocationService(
-    logger: ref.watch(appLoggerProvider),
+    report: ref.watch(reportProvider),
     locationRepository: ref.watch(locationRepositoryProvider),
   );
 }
 
 class LocationService {
-  final AppLogger logger;
+  final Report _report;
   final LocationRepository locationRepository;
   static const Duration _failureCooldown = Duration(minutes: 2);
   static DateTime? _lastFailureAt;
   static LocationFailureReason? _lastFailureReason;
   final String _instanceId = DateTime.now().microsecondsSinceEpoch.toString();
 
-  LocationService({required this.logger, required this.locationRepository});
+  LocationService({required Report report, required this.locationRepository})
+    : _report = report;
 
   LocationFailureReason? getLastFailureReason() => _lastFailureReason;
 
@@ -58,10 +59,11 @@ class LocationService {
         longitude: lastKnown.longitude,
       );
     } catch (e, stackTrace) {
-      logger.error(
-        'Error getting last known location',
-        error: e,
+      _report.fault(
+        e,
         stackTrace: stackTrace,
+        area: 'location',
+        message: 'Error getting last known location',
       );
       return null;
     }
@@ -71,9 +73,9 @@ class LocationService {
   /// Returns null if permission denied or location unavailable
   Future<domain.Location?> getCurrentLocation() async {
     try {
-      logger.debug(
+      _report.debug(
         'Starting location fetch',
-        context: 'LocationService',
+        area: 'location',
         data: {
           'instance_id': _instanceId,
           'cooldown_active': _isInFailureCooldown(),
@@ -83,16 +85,19 @@ class LocationService {
       if (_isInFailureCooldown()) {
         final lastKnown = await _getLastKnownLocation();
         if (lastKnown != null) {
-          logger.info(
+          _report.info(
             'Using last known location during cooldown',
-            context: 'LocationService',
+            area: 'location',
           );
           _lastFailureReason = null;
           return lastKnown;
         }
-        logger.warning(
-          'Skipping location fetch due to recent failure',
-          context: 'LocationService',
+        _report.degraded(
+          const LoggedFault(
+            'Skipping location fetch due to recent failure',
+            context: 'location',
+          ),
+          area: 'location',
         );
         _lastFailureReason = LocationFailureReason.recentFailure;
         return null;
@@ -100,15 +105,18 @@ class LocationService {
 
       // Check if location services are enabled
       final serviceEnabled = await Geolocator.isLocationServiceEnabled();
-      logger.debug(
+      _report.debug(
         'Location services enabled',
-        context: 'LocationService',
+        area: 'location',
         data: {'enabled': serviceEnabled},
       );
       if (!serviceEnabled) {
-        logger.warning(
-          'Location services are disabled',
-          context: 'LocationService',
+        _report.degraded(
+          const LoggedFault(
+            'Location services are disabled',
+            context: 'location',
+          ),
+          area: 'location',
         );
         _lastFailureReason = LocationFailureReason.servicesDisabled;
         return null;
@@ -116,9 +124,9 @@ class LocationService {
 
       // Check permission status
       LocationPermission permission = await Geolocator.checkPermission();
-      logger.debug(
+      _report.debug(
         'Location permission status',
-        context: 'LocationService',
+        area: 'location',
         data: {'permission': permission.name},
       );
 
@@ -126,22 +134,28 @@ class LocationService {
         // Request permission
         permission = await Geolocator.requestPermission();
         if (permission == LocationPermission.denied) {
-          logger.warning('Location permission denied by user');
+          _report.degraded(
+            const LoggedFault('Location permission denied by user'),
+            area: 'location',
+          );
           _lastFailureReason = LocationFailureReason.permissionDenied;
           return null;
         }
       }
 
       if (permission == LocationPermission.deniedForever) {
-        logger.warning('Location permission permanently denied');
+        _report.degraded(
+          const LoggedFault('Location permission permanently denied'),
+          area: 'location',
+        );
         _lastFailureReason = LocationFailureReason.permissionDeniedForever;
         return null;
       }
 
       // Get current position
-      logger.debug(
+      _report.debug(
         'Requesting current position',
-        context: 'LocationService',
+        area: 'location',
         data: {'accuracy': 'low', 'timeout_seconds': 20},
       );
       final position = await Geolocator.getCurrentPosition(
@@ -151,9 +165,9 @@ class LocationService {
 
       _lastFailureAt = null;
       _lastFailureReason = null;
-      logger.debug(
+      _report.debug(
         'Location acquired',
-        context: 'LocationService',
+        area: 'location',
         data: {'lat': position.latitude, 'lng': position.longitude},
       );
       return domain.Location(
@@ -162,25 +176,29 @@ class LocationService {
       );
     } catch (e, stackTrace) {
       if (e is TimeoutException) {
-        logger.warning(
-          'Location request timed out',
-          context: 'LocationService',
+        _report.degraded(
+          const LoggedFault('Location request timed out', context: 'location'),
+          area: 'location',
         );
         _lastFailureReason = LocationFailureReason.timeout;
       } else {
-        logger.error(
-          'Error getting current location',
-          error: e,
+        _report.fault(
+          e,
           stackTrace: stackTrace,
+          area: 'location',
+          message: 'Error getting current location',
         );
         _lastFailureReason = LocationFailureReason.unknown;
       }
 
       final lastKnown = await _getLastKnownLocation();
       if (lastKnown != null) {
-        logger.warning(
-          'Using last known location after failure',
-          context: 'LocationService',
+        _report.degraded(
+          const LoggedFault(
+            'Using last known location after failure',
+            context: 'location',
+          ),
+          area: 'location',
         );
         return lastKnown;
       }
@@ -197,7 +215,11 @@ class LocationService {
       return permission == LocationPermission.always ||
           permission == LocationPermission.whileInUse;
     } catch (e) {
-      logger.error('Error checking location permission', error: e);
+      _report.fault(
+        e,
+        area: 'location',
+        message: 'Error checking location permission',
+      );
       return false;
     }
   }
@@ -209,7 +231,11 @@ class LocationService {
       return permission == LocationPermission.always ||
           permission == LocationPermission.whileInUse;
     } catch (e) {
-      logger.error('Error requesting location permission', error: e);
+      _report.fault(
+        e,
+        area: 'location',
+        message: 'Error requesting location permission',
+      );
       return false;
     }
   }
@@ -219,7 +245,11 @@ class LocationService {
     try {
       return await Geolocator.openLocationSettings();
     } catch (e) {
-      logger.error('Error opening location settings', error: e);
+      _report.fault(
+        e,
+        area: 'location',
+        message: 'Error opening location settings',
+      );
       return false;
     }
   }
@@ -229,7 +259,7 @@ class LocationService {
     try {
       return await Geolocator.openAppSettings();
     } catch (e) {
-      logger.error('Error opening app settings', error: e);
+      _report.fault(e, area: 'location', message: 'Error opening app settings');
       return false;
     }
   }
@@ -252,10 +282,11 @@ class LocationService {
     try {
       return await locationRepository.searchLocations(query, limit: limit);
     } catch (e, stackTrace) {
-      logger.error(
-        'Error searching locations',
-        error: e,
+      _report.fault(
+        e,
         stackTrace: stackTrace,
+        area: 'location',
+        message: 'Error searching locations',
       );
       return [];
     }
@@ -268,7 +299,12 @@ class LocationService {
     try {
       return await locationRepository.geocode(address);
     } catch (e, stackTrace) {
-      logger.error('Error geocoding address', error: e, stackTrace: stackTrace);
+      _report.fault(
+        e,
+        stackTrace: stackTrace,
+        area: 'location',
+        message: 'Error geocoding address',
+      );
       return [];
     }
   }
@@ -286,10 +322,11 @@ class LocationService {
         longitude: longitude,
       );
     } catch (e, stackTrace) {
-      logger.error(
-        'Error reverse geocoding coordinates',
-        error: e,
+      _report.fault(
+        e,
         stackTrace: stackTrace,
+        area: 'location',
+        message: 'Error reverse geocoding coordinates',
       );
       return null;
     }

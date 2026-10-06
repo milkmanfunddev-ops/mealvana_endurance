@@ -4,7 +4,6 @@ import 'package:riverpod_annotation/riverpod_annotation.dart';
 import '../../../database/app_database.dart';
 import '../../../database/database_provider.dart';
 import '../../../utils/sync_type_converters.dart';
-import '../../logging_service.dart';
 import '../../report/report.dart';
 
 part 'event_sync_handler.g.dart';
@@ -13,23 +12,17 @@ part 'event_sync_handler.g.dart';
 EventSyncHandler eventSyncHandler(Ref ref) {
   return EventSyncHandler(
     database: ref.read(appDatabaseProvider),
-    logger: ref.read(appLoggerProvider),
     report: ref.read(reportProvider),
   );
 }
 
 /// Handles sync operations for Event entities.
 class EventSyncHandler {
-  const EventSyncHandler({
-    required AppDatabase database,
-    required AppLogger logger,
-    Report? report,
-  }) : _database = database,
-       _logger = logger,
-       _report = report;
+  const EventSyncHandler({required AppDatabase database, Report? report})
+    : _database = database,
+      _report = report;
 
   final AppDatabase _database;
-  final AppLogger _logger;
   final Report? _report;
 
   /// Injected by the provider; tests may pass a `RecordingReport`.
@@ -126,10 +119,7 @@ class EventSyncHandler {
         await upsertEvent(eventMap, eventMap['user_id'] as String);
       }
 
-      _logger.info(
-        'Synced ${events.length} athlete events',
-        context: 'EVENT_SYNC',
-      );
+      _r.info('Synced ${events.length} athlete events', area: 'sync');
     } catch (e, stackTrace) {
       // Don't rethrow - continue with other syncs
       await _r.fault(

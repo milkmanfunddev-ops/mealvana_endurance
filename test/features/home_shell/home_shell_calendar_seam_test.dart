@@ -20,52 +20,13 @@ import 'package:mealvana_endurance/features/meal_logging/domain/meal_slot.dart';
 import 'package:mealvana_endurance/shared/database/app_database.dart'
     hide Activity;
 import 'package:mealvana_endurance/shared/domain/activity_type.dart';
-import 'package:mealvana_endurance/shared/services/logging_service.dart';
-import 'package:mealvana_endurance/shared/services/sentry/sentry_reporter.dart';
 import 'package:mealvana_endurance/shared/widgets/kyle_design/navigation/kyle_calendar_sheet.dart';
+
+import '../../helpers/fakes/recording_report.dart';
 import 'package:mocktail/mocktail.dart';
 import 'package:supabase_flutter/supabase_flutter.dart';
 
 class _MockSupabaseClient extends Mock implements SupabaseClient {}
-
-class _MockAppLogger extends Mock implements AppLogger {}
-
-class _MockSentryReporter extends Mock implements SentryReporter {}
-
-void _stubLogger(_MockAppLogger logger) {
-  when(
-    () => logger.info(
-      any(),
-      context: any(named: 'context'),
-      data: any(named: 'data'),
-    ),
-  ).thenReturn(null);
-  when(
-    () => logger.debug(
-      any(),
-      context: any(named: 'context'),
-      data: any(named: 'data'),
-    ),
-  ).thenReturn(null);
-  when(
-    () => logger.warning(
-      any(),
-      context: any(named: 'context'),
-      error: any(named: 'error'),
-      stackTrace: any(named: 'stackTrace'),
-      data: any(named: 'data'),
-    ),
-  ).thenReturn(null);
-  when(
-    () => logger.error(
-      any(),
-      context: any(named: 'context'),
-      error: any(named: 'error'),
-      stackTrace: any(named: 'stackTrace'),
-      data: any(named: 'data'),
-    ),
-  ).thenReturn(null);
-}
 
 MealLog _producerLog({
   required String id,
@@ -122,24 +83,10 @@ void main() {
 
     setUp(() {
       database = AppDatabase.forTesting(NativeDatabase.memory());
-      final logger = _MockAppLogger();
-      _stubLogger(logger);
-      final sentry = _MockSentryReporter();
-      when(
-        () => sentry.reportNetworkError(
-          any(),
-          url: any(named: 'url'),
-          method: any(named: 'method'),
-          statusCode: any(named: 'statusCode'),
-          timeout: any(named: 'timeout'),
-          stackTrace: any(named: 'stackTrace'),
-        ),
-      ).thenAnswer((_) async {});
       repository = MealLogRepository(
         supabase: _MockSupabaseClient(),
         database: database,
-        logger: logger,
-        sentry: sentry,
+        report: RecordingReport(),
       );
     });
 
@@ -237,11 +184,18 @@ void main() {
         activities: [crossed],
         loggedDates: const {},
       );
-      expect(days[11]?.dot, CalendarDotState.done,
-          reason: 'displayTime (actual ?? planned ?? scheduled) buckets the '
-              '11th');
-      expect(days[10], isNull,
-          reason: 'the divergent scheduled_date_time key must NOT be used');
+      expect(
+        days[11]?.dot,
+        CalendarDotState.done,
+        reason:
+            'displayTime (actual ?? planned ?? scheduled) buckets the '
+            '11th',
+      );
+      expect(
+        days[10],
+        isNull,
+        reason: 'the divergent scheduled_date_time key must NOT be used',
+      );
     });
 
     test('a legacy row predating the two-time columns falls back to '

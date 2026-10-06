@@ -2,7 +2,6 @@ import 'dart:async';
 import 'package:connectivity_plus/connectivity_plus.dart';
 import 'package:flutter/foundation.dart' show visibleForTesting;
 import 'package:riverpod_annotation/riverpod_annotation.dart';
-import '../logging_service.dart';
 import '../report/report.dart';
 import 'data_sync_service.dart';
 import 'sync_dependency_graph.dart';
@@ -93,7 +92,6 @@ class SyncCoordinator extends _$SyncCoordinator {
     return SyncState.idle;
   }
 
-  AppLogger get _logger => ref.read(appLoggerProvider);
   DataSyncService get _dataSyncService => ref.read(dataSyncServiceProvider);
   Report get _report => ref.read(reportProvider);
 
@@ -140,9 +138,9 @@ class SyncCoordinator extends _$SyncCoordinator {
 
     // 1. Prevent infinite loops - if already syncing this repo, return
     if (_syncingNow.contains(repoKey)) {
-      _logger.debug(
+      _report.debug(
         'Skipping sync - already in progress',
-        context: 'SYNC_COORDINATOR',
+        area: 'sync',
         data: {'repoKey': repoKey},
       );
       return;
@@ -150,9 +148,9 @@ class SyncCoordinator extends _$SyncCoordinator {
 
     final inFlightSync = _inFlightSyncs[repoKey];
     if (inFlightSync != null) {
-      _logger.debug(
+      _report.debug(
         'Awaiting in-flight sync',
-        context: 'SYNC_COORDINATOR',
+        area: 'sync',
         data: {'repoKey': repoKey},
       );
       await inFlightSync;
@@ -166,9 +164,9 @@ class SyncCoordinator extends _$SyncCoordinator {
     try {
       // 2. Rate limiting - skip if recently failed (cooldown period)
       if (_isInFailureCooldown(repoKey)) {
-        _logger.debug(
+        _report.debug(
           'Skipping sync - in failure cooldown',
-          context: 'SYNC_COORDINATOR',
+          area: 'sync',
           data: {
             'repoKey': repoKey,
             'failureCount': _failureCount[repoKey] ?? 0,
@@ -180,9 +178,9 @@ class SyncCoordinator extends _$SyncCoordinator {
 
       // 3. Check if data is stale - if fresh, return immediately
       if (!await _isStale(repoKey, repository)) {
-        _logger.debug(
+        _report.debug(
           'Skipping sync - data is fresh',
-          context: 'SYNC_COORDINATOR',
+          area: 'sync',
           data: {'repoKey': repoKey},
         );
         return;
@@ -223,9 +221,9 @@ class SyncCoordinator extends _$SyncCoordinator {
       _lastSyncTimes[repoKey] = DateTime.now();
       _clearFailureTracking(repoKey);
 
-      _logger.info(
+      _report.info(
         'Repository synced successfully',
-        context: 'SYNC_COORDINATOR',
+        area: 'sync',
         data: {'repoKey': repoKey},
       );
     } catch (e, stackTrace) {
@@ -529,9 +527,9 @@ class SyncCoordinator extends _$SyncCoordinator {
           }
 
           skipped.add(repoKey);
-          _logger.info(
+          _report.info(
             'Skipping dirty record upload for $repoKey - dependency failed',
-            context: 'SYNC_COORDINATOR',
+            area: 'sync',
             data: {'repository': repoKey, 'blockedBy': blockedBy},
           );
         }
@@ -651,7 +649,7 @@ class SyncCoordinator extends _$SyncCoordinator {
       await prefs.remove('${repoKey}_last_sync');
     }
 
-    _logger.info('Repository sync state reset', context: 'SYNC_COORDINATOR');
+    _report.info('Repository sync state reset', area: 'sync');
   }
 
   /// Force sync a repository, bypassing the staleness check.
@@ -675,9 +673,9 @@ class SyncCoordinator extends _$SyncCoordinator {
   }) async {
     // Prevent concurrent syncs of the same repo
     if (_syncingNow.contains(repoKey)) {
-      _logger.debug(
+      _report.debug(
         'Force sync skipped - already in progress',
-        context: 'SYNC_COORDINATOR',
+        area: 'sync',
         data: {'repoKey': repoKey},
       );
       return;
@@ -699,9 +697,9 @@ class SyncCoordinator extends _$SyncCoordinator {
     _syncingNow.add(repoKey);
 
     try {
-      _logger.info(
+      _report.info(
         'Force sync started',
-        context: 'SYNC_COORDINATOR',
+        area: 'sync',
         data: {'repoKey': repoKey},
       );
 
@@ -726,9 +724,9 @@ class SyncCoordinator extends _$SyncCoordinator {
       _lastSyncTimes[repoKey] = DateTime.now();
       _clearFailureTracking(repoKey);
 
-      _logger.info(
+      _report.info(
         'Force sync completed successfully',
-        context: 'SYNC_COORDINATOR',
+        area: 'sync',
         data: {'repoKey': repoKey},
       );
     } catch (e, stackTrace) {
@@ -757,9 +755,9 @@ class SyncCoordinator extends _$SyncCoordinator {
     SyncableRepository? eventsRepo,
     SyncableRepository? carbLoadingPlansRepo,
   }) async {
-    _logger.info(
+    _report.info(
       'Full force sync started',
-      context: 'SYNC_COORDINATOR',
+      area: 'sync',
       data: {'userId': userId},
     );
 
@@ -785,9 +783,9 @@ class SyncCoordinator extends _$SyncCoordinator {
     // Invalidate all related providers
     _invalidateAllProviders();
 
-    _logger.info(
+    _report.info(
       'Full force sync completed',
-      context: 'SYNC_COORDINATOR',
+      area: 'sync',
       data: {'userId': userId},
     );
   }
