@@ -951,7 +951,7 @@ class TrainingPeaksSyncService {
         stackTrace: st,
         area: _area,
         message: 'TrainingPeaks token refresh failed; reconnect required',
-        extra: {'statusCode': e.statusCode},
+        extra: e.reportExtra,
       );
       throw const TrainingPeaksTokenExpiredException();
     }

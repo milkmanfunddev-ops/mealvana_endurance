@@ -19,6 +19,23 @@ class IntegrationApiException implements Exception {
   final bool isRetryable;
   final String? provider; // 'final_surge', 'training_peaks', etc.
 
+  /// The most of a response body that goes into a Report's `extra`.
+  static const maxReportedBodyChars = 1000;
+
+  /// Status and clipped response body for a Report's `extra`. `toString()`
+  /// drops the body outside debug builds, so without this a prod 4xx reaches
+  /// Sentry with no clue what the provider objected to.
+  Map<String, dynamic> get reportExtra {
+    final b = body;
+    return {
+      'statusCode': statusCode,
+      if (b != null)
+        'responseBody': b.length > maxReportedBodyChars
+            ? b.substring(0, maxReportedBodyChars)
+            : b,
+    };
+  }
+
   @override
   String toString() {
     final buffer = StringBuffer('IntegrationApiException');

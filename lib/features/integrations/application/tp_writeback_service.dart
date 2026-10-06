@@ -24,22 +24,73 @@ class TpWritebackService {
     required AppDatabase database,
     SupabaseClient? supabase,
     Report? report,
+    DateTime Function()? clock,
   }) : _apiClient = apiClient,
        _oauthService = oauthService,
        _preferencesService = preferencesService,
        _db = database,
        _supabase = supabase,
-       _report = report;
+       _report = report,
+       _clock = clock ?? DateTime.now;
 
   final TrainingPeaksApiClient _apiClient;
   final TrainingPeaksOAuthService _oauthService;
   final PreferencesService _preferencesService;
   final AppDatabase _db;
   final Report? _report;
+  final DateTime Function() _clock;
 
   Report get _r => _report ?? SentryReport.global;
 
   static const _area = 'training_peaks';
+
+  /// TrainingPeaks refuses a `PUT /v2/workouts/plan/{id}` with a 400 once the
+  /// workout's `WorkoutDay` is more than 7 days in the past or more than a
+  /// year ahead (docs/integration/api-exploration/training-peaks/writeback.md
+  /// § Constraints). Prod MEALVANA-ENDURANCE-CY (a plan saved 14 days after
+  /// its workout day) and C7 (the disconnect strip walking months-old
+  /// workouts) were this refusal.
+  static const tpEditWindowPastDays = 7;
+  static const tpEditWindowFutureDays = 365;
+
+  /// Whether TP will accept a plan write for [workout], judged from the
+  /// `WorkoutDay` the GET returned (a naive local date; the time is ignored).
+  /// An unreadable `WorkoutDay` counts as inside: TP decides, and a refusal
+  /// is reported with its body.
+  @visibleForTesting
+  static bool isWithinTpEditWindow(
+    Map<String, dynamic> workout, {
+    required DateTime now,
+  }) {
+    final raw = workout['WorkoutDay'];
+    final parsed = raw is String ? DateTime.tryParse(raw) : null;
+    if (parsed == null) return true;
+    final day = DateTime.utc(parsed.year, parsed.month, parsed.day);
+    final today = DateTime.utc(now.year, now.month, now.day);
+    final daysPast = today.difference(day).inDays;
+    return daysPast <= tpEditWindowPastDays &&
+        -daysPast <= tpEditWindowFutureDays;
+  }
+
+  /// Checks the edit window before a PUT. Outside it, records the skip (D9)
+  /// and returns false; the caller leaves the workout untouched.
+  Future<bool> _insideEditWindow(
+    Map<String, dynamic> workout,
+    String workoutId, {
+    required String op,
+  }) async {
+    if (isWithinTpEditWindow(workout, now: _clock())) return true;
+    await _r.note(
+      'TP write-back skipped: workout outside TP edit window',
+      area: _area,
+      data: {
+        'workoutId': workoutId,
+        'workoutDay': workout['WorkoutDay'],
+        'op': op,
+      },
+    );
+    return false;
+  }
 
   /// Server-side ledger custodian (TP-5/Q-INT16 as amended 2026-09-11):
   /// NO push happens without its ledger row. Nullable only for legacy
@@ -255,6 +306,14 @@ class TpWritebackService {
         workoutIdStr,
         includeDescription: true,
       );
+      if (!await _insideEditWindow(workout, workoutIdStr, op: 'plan')) {
+        await _closeLedgerRow(
+          ledgerId,
+          success: false,
+          error: 'outside_edit_window',
+        );
+        return;
+      }
       final existingDesc = workout['Description'] as String? ?? '';
       final updatedDesc = TpWritebackFormatter.mergeBlockIntoDescription(
         existingDesc,
@@ -324,7 +383,8 @@ class TpWritebackService {
           e,
           stackTrace: st,
           area: _area,
-          message: 'TP write-back: token still expired after refresh; push abandoned',
+          message:
+              'TP write-back: token still expired after refresh; push abandoned',
           extra: {'workoutId': workoutIdStr},
         );
       }
@@ -413,6 +473,14 @@ class TpWritebackService {
         workoutIdStr,
         includeDescription: true,
       );
+      if (!await _insideEditWindow(workout, workoutIdStr, op: 'feedback')) {
+        await _closeLedgerRow(
+          ledgerId,
+          success: false,
+          error: 'outside_edit_window',
+        );
+        return;
+      }
       final existingDesc = workout['Description'] as String? ?? '';
       final updatedDesc = TpWritebackFormatter.mergeFeedbackIntoDescription(
         existingDesc,
@@ -492,7 +560,8 @@ class TpWritebackService {
           existingDesc,
         );
 
-        if (strippedDesc != existingDesc) {
+        if (strippedDesc != existingDesc &&
+            await _insideEditWindow(workout, workoutIdStr, op: 'remove')) {
           final updatedWorkout = Map<String, dynamic>.from(workout);
           updatedWorkout['Description'] = strippedDesc;
 
@@ -531,7 +600,8 @@ class TpWritebackService {
           existingDesc,
         );
 
-        if (strippedDesc != existingDesc) {
+        if (strippedDesc != existingDesc &&
+            await _insideEditWindow(workout, workoutIdStr, op: 'remove')) {
           final updatedWorkout = Map<String, dynamic>.from(workout);
           updatedWorkout['Description'] = strippedDesc;
           await _apiClient.updatePlannedWorkout(
@@ -582,7 +652,12 @@ class TpWritebackService {
             strippedDesc = TpWritebackFormatter.stripFeedbackFromDescription(
               strippedDesc,
             );
-            if (strippedDesc != existingDesc) {
+            if (strippedDesc != existingDesc &&
+                await _insideEditWindow(
+                  workout,
+                  workoutIdStr,
+                  op: 'disconnect',
+                )) {
               final updatedWorkout = Map<String, dynamic>.from(workout);
               updatedWorkout['Description'] = strippedDesc;
               await _apiClient.updatePlannedWorkout(
@@ -599,7 +674,10 @@ class TpWritebackService {
               stackTrace: st,
               area: _area,
               message: 'TP write-back: disconnect strip failed for one workout',
-              extra: {'workoutId': entry.tpWorkoutId.toString()},
+              extra: {
+                'workoutId': entry.tpWorkoutId.toString(),
+                if (e is IntegrationApiException) ...e.reportExtra,
+              },
             );
           }
         }
@@ -666,8 +744,9 @@ class TpWritebackService {
       await _r.degraded(
         e,
         area: _area,
-        message: 'TP write-back: 403; TP refused the push, future attempts blocked',
-        extra: {'workoutId': workoutId},
+        message:
+            'TP write-back: 403; TP refused the push, future attempts blocked',
+        extra: {'workoutId': workoutId, ...e.reportExtra},
       );
     } else if (status == 404) {
       // Workout deleted from TP — clean up tracking
@@ -685,7 +764,7 @@ class TpWritebackService {
         stackTrace: StackTrace.current,
         area: _area,
         message: 'TP write-back: push rejected by TP API',
-        extra: {'statusCode': status, 'workoutId': workoutId},
+        extra: {'workoutId': workoutId, ...e.reportExtra},
       );
     }
   }
