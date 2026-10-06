@@ -1,7 +1,6 @@
 import 'package:flutter_test/flutter_test.dart';
 import 'package:mealvana_endurance/features/coach_mode/data/coach_repository.dart';
 import 'package:mealvana_endurance/shared/database/app_database.dart';
-import 'package:mealvana_endurance/shared/services/logging_service.dart';
 import 'package:mocktail/mocktail.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 import 'package:supabase_flutter/supabase_flutter.dart';
@@ -13,14 +12,11 @@ class MockSupabaseClient extends Mock implements SupabaseClient {}
 
 class MockAppDatabase extends Mock implements AppDatabase {}
 
-class MockAppLogger extends Mock implements AppLogger {}
-
 void main() {
   TestWidgetsFlutterBinding.ensureInitialized();
 
   late MockSupabaseClient mockSupabase;
   late MockAppDatabase mockDatabase;
-  late MockAppLogger mockLogger;
   late RecordingReport report;
   late CoachRepository repository;
 
@@ -32,46 +28,11 @@ void main() {
   setUp(() {
     mockSupabase = MockSupabaseClient();
     mockDatabase = MockAppDatabase();
-    mockLogger = MockAppLogger();
     report = RecordingReport();
-
-    // Setup default logger behavior
-    when(
-      () => mockLogger.info(
-        any(),
-        context: any(named: 'context'),
-        data: any(named: 'data'),
-      ),
-    ).thenReturn(null);
-    when(
-      () => mockLogger.debug(
-        any(),
-        context: any(named: 'context'),
-        data: any(named: 'data'),
-      ),
-    ).thenReturn(null);
-    when(
-      () => mockLogger.error(
-        any(),
-        context: any(named: 'context'),
-        error: any(named: 'error'),
-        stackTrace: any(named: 'stackTrace'),
-        data: any(named: 'data'),
-      ),
-    ).thenReturn(null);
-    when(
-      () => mockLogger.warning(
-        any(),
-        context: any(named: 'context'),
-        error: any(named: 'error'),
-        data: any(named: 'data'),
-      ),
-    ).thenReturn(null);
 
     repository = CoachRepository(
       supabase: mockSupabase,
       database: mockDatabase,
-      logger: mockLogger,
       report: report,
     );
   });

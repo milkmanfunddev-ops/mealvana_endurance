@@ -1,4 +1,3 @@
-import '../../../shared/services/report/report.dart';
 import 'day_plan.dart';
 import 'meal_plan.dart';
 import 'meal_ref.dart';
@@ -7,6 +6,7 @@ import 'plan_rule.dart';
 import 'shopping_item.dart';
 import 'user_memory.dart';
 import 'wire_record.dart';
+import '../../../shared/domain/decode_issue.dart';
 
 /// A tool result that renders in the chat — `VanaPart` in `contracts.ts`
 /// (`kind` discriminant). The UI renders parts, never raw JSON.
@@ -22,37 +22,40 @@ sealed class VanaPart extends WireRecord {
 
   /// Returns `null` for an unknown `kind` or malformed JSON so callers can
   /// filter with `whereType<VanaPart>()`.
-  static VanaPart? fromJson(Map<String, dynamic> json) {
+  static VanaPart? fromJson(
+    Map<String, dynamic> json, {
+    DecodeIssue onIssue = ignoreDecodeIssue,
+  }) {
     try {
       switch (json['kind']) {
         case 'choices':
           return VanaChoicesPart.fromJson(json);
         case 'meal_picker':
-          return VanaMealPickerPart.fromJson(json);
+          return VanaMealPickerPart.fromJson(json, onIssue: onIssue);
         case 'staples':
-          return VanaStaplesPart.fromJson(json);
+          return VanaStaplesPart.fromJson(json, onIssue: onIssue);
         case 'batch':
-          return VanaBatchPart.fromJson(json);
+          return VanaBatchPart.fromJson(json, onIssue: onIssue);
         case 'rule':
           return VanaRulePart.fromJson(json);
         case 'shopping_list':
-          return VanaShoppingListPart.fromJson(json);
+          return VanaShoppingListPart.fromJson(json, onIssue: onIssue);
         case 'day_guidance':
-          return VanaDayGuidancePart.fromJson(json);
+          return VanaDayGuidancePart.fromJson(json, onIssue: onIssue);
         case 'memory_saved':
           return VanaMemorySavedPart.fromJson(json);
         case 'logged':
           return VanaLoggedPart.fromJson(json);
         case 'day':
-          return VanaDayPart.fromJson(json);
+          return VanaDayPart.fromJson(json, onIssue: onIssue);
         case 'brief':
           return VanaBriefPart.fromJson(json);
         case 'pantry':
-          return VanaPantryPart.fromJson(json);
+          return VanaPantryPart.fromJson(json, onIssue: onIssue);
         case 'week':
-          return VanaWeekPart.fromJson(json);
+          return VanaWeekPart.fromJson(json, onIssue: onIssue);
         case 'debrief':
-          return VanaDebriefPart.fromJson(json);
+          return VanaDebriefPart.fromJson(json, onIssue: onIssue);
         default:
           return null;
       }
@@ -60,33 +63,34 @@ sealed class VanaPart extends WireRecord {
       // A part of a KNOWN kind that did not parse (unknown kinds return null
       // above without an exception): the server broke the wire contract; the
       // part is dropped and the rest of the turn renders.
-      SentryReport.global.degraded(
-        e,
+      onIssue(
+        'vana ui part of a known kind (${json['kind']}) did not parse; '
+        'part dropped',
+        error: e,
         stackTrace: st,
-        area: 'meal_planning',
-        message: 'vana ui part of a known kind did not parse; part dropped',
-        extra: {'kind': json['kind']?.toString()},
       );
       return null;
     } on TypeError catch (e, st) {
-      SentryReport.global.degraded(
-        e,
+      onIssue(
+        'vana ui part of a known kind (${json['kind']}) had wrong types; '
+        'part dropped',
+        error: e,
         stackTrace: st,
-        area: 'meal_planning',
-        message: 'vana ui part of a known kind had wrong types; part dropped',
-        extra: {'kind': json['kind']?.toString()},
       );
       return null;
     }
   }
 
   /// Parse a list, dropping unknown/malformed entries.
-  static List<VanaPart> listFromJson(Object? raw) {
+  static List<VanaPart> listFromJson(
+    Object? raw, {
+    DecodeIssue onIssue = ignoreDecodeIssue,
+  }) {
     if (raw is! List) return const [];
     return List.unmodifiable([
       for (final item in raw)
         if (asJsonMap(item) case final map?)
-          if (fromJson(map) case final part?) part,
+          if (fromJson(map, onIssue: onIssue) case final part?) part,
     ]);
   }
 }
@@ -176,14 +180,16 @@ class VanaMealPickerPart extends VanaPart {
   @override
   String get kind => 'meal_picker';
 
-  factory VanaMealPickerPart.fromJson(Map<String, dynamic> json) =>
-      VanaMealPickerPart(
-        title: readString(json, 'title') ?? '',
-        mealType: MealType.fromWire(readString(json, 'mealType')),
-        meals: readRecordList(json, 'meals', MealRef.fromJson),
-        multi: readBool(json, 'multi') ?? false,
-        defaultServings: readInt(json, 'defaultServings') ?? 4,
-      );
+  factory VanaMealPickerPart.fromJson(
+    Map<String, dynamic> json, {
+    DecodeIssue onIssue = ignoreDecodeIssue,
+  }) => VanaMealPickerPart(
+    title: readString(json, 'title') ?? '',
+    mealType: MealType.fromWire(readString(json, 'mealType')),
+    meals: readRecordList(json, 'meals', MealRef.fromJson, onIssue: onIssue),
+    multi: readBool(json, 'multi') ?? false,
+    defaultServings: readInt(json, 'defaultServings') ?? 4,
+  );
 
   @override
   Map<String, dynamic> toJson() => {
@@ -229,14 +235,16 @@ class VanaStaplesPart extends VanaPart {
   @override
   String get kind => 'staples';
 
-  factory VanaStaplesPart.fromJson(Map<String, dynamic> json) =>
-      VanaStaplesPart(
-        meals: readRecordList(json, 'meals', StapleMeal.fromJson),
-        planCarbsPerDay: readInt(json, 'planCarbsPerDay'),
-        targetCarbsPerDay: readInt(json, 'targetCarbsPerDay'),
-        covered: readInt(json, 'covered'),
-        of: readInt(json, 'of'),
-      );
+  factory VanaStaplesPart.fromJson(
+    Map<String, dynamic> json, {
+    DecodeIssue onIssue = ignoreDecodeIssue,
+  }) => VanaStaplesPart(
+    meals: readRecordList(json, 'meals', StapleMeal.fromJson, onIssue: onIssue),
+    planCarbsPerDay: readInt(json, 'planCarbsPerDay'),
+    targetCarbsPerDay: readInt(json, 'targetCarbsPerDay'),
+    covered: readInt(json, 'covered'),
+    of: readInt(json, 'of'),
+  );
 
   @override
   Map<String, dynamic> toJson() => {
@@ -272,8 +280,12 @@ class VanaBatchPart extends VanaPart {
   @override
   String get kind => 'batch';
 
-  factory VanaBatchPart.fromJson(Map<String, dynamic> json) =>
-      VanaBatchPart(plan: MealPlan.fromJson(requireJsonMap(json, 'plan')));
+  factory VanaBatchPart.fromJson(
+    Map<String, dynamic> json, {
+    DecodeIssue onIssue = ignoreDecodeIssue,
+  }) => VanaBatchPart(
+    plan: MealPlan.fromJson(requireJsonMap(json, 'plan'), onIssue: onIssue),
+  );
 
   @override
   Map<String, dynamic> toJson() => {'kind': kind, 'plan': plan.toJson()};
@@ -341,12 +353,19 @@ class VanaShoppingListPart extends VanaPart {
         ],
       );
 
-  factory VanaShoppingListPart.fromJson(Map<String, dynamic> json) =>
-      VanaShoppingListPart(
-        items: readRecordList(json, 'items', ShoppingItem.fromJson),
-        itemCount: readInt(json, 'itemCount') ?? 0,
-        skipped: readStringList(json, 'skipped'),
-      );
+  factory VanaShoppingListPart.fromJson(
+    Map<String, dynamic> json, {
+    DecodeIssue onIssue = ignoreDecodeIssue,
+  }) => VanaShoppingListPart(
+    items: readRecordList(
+      json,
+      'items',
+      ShoppingItem.fromJson,
+      onIssue: onIssue,
+    ),
+    itemCount: readInt(json, 'itemCount') ?? 0,
+    skipped: readStringList(json, 'skipped'),
+  );
 
   @override
   Map<String, dynamic> toJson() => {
@@ -389,15 +408,22 @@ class VanaDayGuidancePart extends VanaPart {
   @override
   String get kind => 'day_guidance';
 
-  factory VanaDayGuidancePart.fromJson(Map<String, dynamic> json) =>
-      VanaDayGuidancePart(
-        date: requireString(json, 'date'),
-        label: readString(json, 'label') ?? '',
-        workout: readString(json, 'workout'),
-        minCarbsG: readInt(json, 'minCarbsG') ?? 0,
-        note: readString(json, 'note') ?? '',
-        suggestions: readRecordList(json, 'suggestions', MealRef.fromJson),
-      );
+  factory VanaDayGuidancePart.fromJson(
+    Map<String, dynamic> json, {
+    DecodeIssue onIssue = ignoreDecodeIssue,
+  }) => VanaDayGuidancePart(
+    date: requireString(json, 'date'),
+    label: readString(json, 'label') ?? '',
+    workout: readString(json, 'workout'),
+    minCarbsG: readInt(json, 'minCarbsG') ?? 0,
+    note: readString(json, 'note') ?? '',
+    suggestions: readRecordList(
+      json,
+      'suggestions',
+      MealRef.fromJson,
+      onIssue: onIssue,
+    ),
+  );
 
   @override
   Map<String, dynamic> toJson() => {
@@ -507,11 +533,15 @@ class VanaDayPart extends VanaPart {
   @override
   String get kind => 'day';
 
-  factory VanaDayPart.fromJson(Map<String, dynamic> json) => VanaDayPart(
+  factory VanaDayPart.fromJson(
+    Map<String, dynamic> json, {
+    DecodeIssue onIssue = ignoreDecodeIssue,
+  }) => VanaDayPart(
     date: requireString(json, 'date'),
     label: readString(json, 'label') ?? '',
     slots: DayPlan.fromJson(
       asJsonMap(json['slots']) ?? const <String, dynamic>{},
+      onIssue: onIssue,
     ),
     filled: List.unmodifiable(
       readStringList(
@@ -650,9 +680,12 @@ class VanaPantryPart extends VanaPart {
   @override
   String get kind => 'pantry';
 
-  factory VanaPantryPart.fromJson(Map<String, dynamic> json) => VanaPantryPart(
+  factory VanaPantryPart.fromJson(
+    Map<String, dynamic> json, {
+    DecodeIssue onIssue = ignoreDecodeIssue,
+  }) => VanaPantryPart(
     title: readString(json, 'title'),
-    items: readRecordList(json, 'items', PantryItem.fromJson),
+    items: readRecordList(json, 'items', PantryItem.fromJson, onIssue: onIssue),
     allowCustom: readBool(json, 'allowCustom') ?? true,
     origin:
         PantryOrigin.fromWire(readString(json, 'origin')) ??
@@ -692,8 +725,17 @@ class VanaWeekPart extends VanaPart {
   @override
   String get kind => 'week';
 
-  factory VanaWeekPart.fromJson(Map<String, dynamic> json) =>
-      VanaWeekPart(days: readRecordList(json, 'days', VanaDayPart.fromJson));
+  factory VanaWeekPart.fromJson(
+    Map<String, dynamic> json, {
+    DecodeIssue onIssue = ignoreDecodeIssue,
+  }) => VanaWeekPart(
+    days: readRecordList(
+      json,
+      'days',
+      (m) => VanaDayPart.fromJson(m, onIssue: onIssue),
+      onIssue: onIssue,
+    ),
+  );
 
   @override
   Map<String, dynamic> toJson() => {
@@ -726,14 +768,21 @@ class VanaDebriefPart extends VanaPart {
   @override
   String get kind => 'debrief';
 
-  factory VanaDebriefPart.fromJson(Map<String, dynamic> json) =>
-      VanaDebriefPart(
-        planId: requireString(json, 'planId'),
-        completed: readInt(json, 'completed') ?? 0,
-        planned: readInt(json, 'planned') ?? 0,
-        skipReason: readString(json, 'skipReason'),
-        memories: readRecordList(json, 'memories', UserMemory.fromJson),
-      );
+  factory VanaDebriefPart.fromJson(
+    Map<String, dynamic> json, {
+    DecodeIssue onIssue = ignoreDecodeIssue,
+  }) => VanaDebriefPart(
+    planId: requireString(json, 'planId'),
+    completed: readInt(json, 'completed') ?? 0,
+    planned: readInt(json, 'planned') ?? 0,
+    skipReason: readString(json, 'skipReason'),
+    memories: readRecordList(
+      json,
+      'memories',
+      UserMemory.fromJson,
+      onIssue: onIssue,
+    ),
+  );
 
   @override
   Map<String, dynamic> toJson() => {

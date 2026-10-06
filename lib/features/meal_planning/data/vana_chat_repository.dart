@@ -5,7 +5,6 @@ import 'package:supabase_flutter/supabase_flutter.dart';
 
 import '../../../shared/services/app_config.dart';
 import '../../../shared/services/app_external_deps.dart';
-import '../../../shared/services/logging_service.dart';
 import '../domain/vana_conversation.dart';
 import '../domain/vana_conversation_kind.dart';
 import '../domain/vana_message.dart';
@@ -14,6 +13,9 @@ import '../domain/vana_stream_event.dart';
 import '../domain/wire_record.dart';
 import 'vana_exceptions.dart';
 import 'vana_transport.dart';
+import '../../../shared/domain/decode_issue.dart';
+import '../../../shared/services/report/decode_issue_report.dart';
+import '../../../shared/services/report/report.dart';
 
 part 'vana_chat_repository.g.dart';
 
@@ -26,7 +28,6 @@ VanaTransport vanaTransport(Ref ref) {
   return VanaTransport(
     supabase: deps.supabaseClient,
     config: ref.watch(appConfigProvider),
-    logger: deps.logger,
     report: deps.report,
   );
 }
@@ -38,7 +39,7 @@ VanaChatRepository vanaChatRepository(Ref ref) {
   return VanaChatRepository(
     transport: ref.watch(vanaTransportProvider),
     supabase: deps.supabaseClient,
-    logger: deps.logger,
+    report: deps.report,
     functionName: 'vana-chat',
   );
 }
@@ -78,20 +79,18 @@ class VanaChatRepository {
   VanaChatRepository({
     required VanaTransport transport,
     required SupabaseClient supabase,
-    required AppLogger logger,
+    required Report report,
     required this.functionName,
   }) : _transport = transport,
        _supabase = supabase,
-       _logger = logger;
+       _report = report;
 
   final VanaTransport _transport;
   final SupabaseClient _supabase;
-  final AppLogger _logger;
+  final Report _report;
 
   /// `vana-chat` (Vana) or `jade-chat` (legacy 1.23.x alias).
   final String functionName;
-
-  static const _context = 'VANA_CHAT_REPOSITORY';
 
   // ── Streaming ──────────────────────────────────────────────────────────────
 
@@ -128,16 +127,21 @@ class VanaChatRepository {
     final resolvedKind =
         VanaConversationKind.fromWire(response.headers['x-vana-kind']) ?? kind;
 
-    _logger.info(
+    _report.info(
       'streamChat conv=$resolvedId kind=${resolvedKind.wire}',
-      context: _context,
+      area: 'meal_planning',
     );
 
     return VanaChatResponse(
       conversationId: resolvedId,
       kind: resolvedKind,
       events: response.lines
-          .map(VanaStreamEvent.fromJson)
+          .map(
+            (json) => VanaStreamEvent.fromJson(
+              json,
+              onIssue: _report.decodeIssue('meal_planning'),
+            ),
+          )
           .where((e) => e != null)
           .cast<VanaStreamEvent>(),
     );
@@ -170,11 +174,11 @@ class VanaChatRepository {
             if (_conversationFromRow(map) case final c?) c,
       ];
     } catch (e, st) {
-      _logger.error(
-        'fetchConversations(${kind.wire}) failed',
-        context: _context,
-        error: e,
+      _report.fault(
+        e,
         stackTrace: st,
+        area: 'meal_planning',
+        message: 'fetchConversations(${kind.wire}) failed',
       );
       rethrow;
     }
@@ -212,17 +216,18 @@ class VanaChatRepository {
           )
           .eq('conversation_id', conversationId)
           .order('created_at', ascending: true);
+      final onIssue = _report.decodeIssue('meal_planning');
       return [
         for (final row in rows as List<dynamic>)
           if (asJsonMap(row) case final map?)
-            if (messageFromRow(map) case final m?) m,
+            if (messageFromRow(map, onIssue: onIssue) case final m?) m,
       ];
     } catch (e, st) {
-      _logger.error(
-        'fetchMessages($conversationId) failed',
-        context: _context,
-        error: e,
+      _report.fault(
+        e,
         stackTrace: st,
+        area: 'meal_planning',
+        message: 'fetchMessages($conversationId) failed',
       );
       rethrow;
     }
@@ -230,7 +235,10 @@ class VanaChatRepository {
 
   /// Row → [VanaMessage]. Public for the parser test; returns null when the
   /// row has no usable id/role.
-  static VanaMessage? messageFromRow(Map<String, dynamic> row) {
+  static VanaMessage? messageFromRow(
+    Map<String, dynamic> row, {
+    DecodeIssue onIssue = ignoreDecodeIssue,
+  }) {
     final id = readString(row, 'id');
     final role = VanaMessageRole.fromWire(readString(row, 'role'));
     if (id == null || role == null) return null;
@@ -266,7 +274,7 @@ class VanaChatRepository {
         } else if (type.startsWith('tool-') || type == 'dynamic-tool') {
           final output = asJsonMap(part['output']);
           if (output == null) continue;
-          final parsed = VanaPart.fromJson(output);
+          final parsed = VanaPart.fromJson(output, onIssue: onIssue);
           if (parsed != null) ui.add(parsed);
         }
       }
@@ -275,7 +283,7 @@ class VanaChatRepository {
     } else {
       final metadata = asJsonMap(row['metadata']) ?? const <String, dynamic>{};
       text = content;
-      parts = VanaPart.listFromJson(metadata['ui_parts']);
+      parts = VanaPart.listFromJson(metadata['ui_parts'], onIssue: onIssue);
     }
 
     return VanaMessage(

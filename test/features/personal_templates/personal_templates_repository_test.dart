@@ -6,20 +6,16 @@ import 'package:flutter_test/flutter_test.dart';
 import 'package:mealvana_endurance/features/personal_templates/data/personal_templates_repository.dart';
 import 'package:mealvana_endurance/features/personal_templates/domain/personal_template.dart';
 import 'package:mealvana_endurance/shared/database/app_database.dart';
-import 'package:mealvana_endurance/shared/services/logging_service.dart';
-import 'package:mealvana_endurance/shared/services/sentry/sentry_reporter.dart';
 import 'package:mocktail/mocktail.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 import 'package:supabase_flutter/supabase_flutter.dart';
+
+import '../../helpers/fakes/recording_report.dart';
 
 // ============================================================
 // Mocks
 // ============================================================
 class MockSupabaseClient extends Mock implements SupabaseClient {}
-
-class MockAppLogger extends Mock implements AppLogger {}
-
-class MockSentryReporter extends Mock implements SentryReporter {}
 
 // ============================================================
 // Helpers
@@ -105,8 +101,6 @@ void main() {
 
   late AppDatabase database;
   late MockSupabaseClient mockSupabase;
-  late MockAppLogger mockLogger;
-  late MockSentryReporter mockSentry;
   late PersonalTemplatesRepository repository;
 
   const testUserId = 'user-abc';
@@ -119,56 +113,11 @@ void main() {
   setUp(() {
     database = AppDatabase.forTesting(NativeDatabase.memory());
     mockSupabase = MockSupabaseClient();
-    mockLogger = MockAppLogger();
-    mockSentry = MockSentryReporter();
-
-    // Permissive logger stubs
-    when(
-      () => mockLogger.info(
-        any(),
-        context: any(named: 'context'),
-        data: any(named: 'data'),
-      ),
-    ).thenReturn(null);
-    when(
-      () => mockLogger.debug(
-        any(),
-        context: any(named: 'context'),
-        data: any(named: 'data'),
-      ),
-    ).thenReturn(null);
-    when(
-      () => mockLogger.warning(
-        any(),
-        context: any(named: 'context'),
-        error: any(named: 'error'),
-        stackTrace: any(named: 'stackTrace'),
-        data: any(named: 'data'),
-      ),
-    ).thenReturn(null);
-    when(
-      () => mockLogger.error(
-        any(),
-        context: any(named: 'context'),
-        error: any(named: 'error'),
-        stackTrace: any(named: 'stackTrace'),
-        data: any(named: 'data'),
-      ),
-    ).thenReturn(null);
-    when(
-      () => mockSentry.reportNetworkError(
-        any(),
-        url: any(named: 'url'),
-        method: any(named: 'method'),
-        stackTrace: any(named: 'stackTrace'),
-      ),
-    ).thenAnswer((_) async {});
 
     repository = PersonalTemplatesRepository(
       supabase: mockSupabase,
       database: database,
-      logger: mockLogger,
-      sentry: mockSentry,
+      report: RecordingReport(),
     );
   });
 

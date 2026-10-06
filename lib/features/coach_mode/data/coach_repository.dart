@@ -8,7 +8,6 @@ import 'package:uuid/uuid.dart';
 
 import '../../../shared/database/app_database.dart';
 import '../../../shared/database/database_provider.dart';
-import '../../../shared/services/logging_service.dart';
 import '../../../shared/services/report/report.dart';
 import '../../../shared/services/sync/sync_dependency_graph.dart';
 import '../../../shared/data/syncable_repository.dart';
@@ -23,7 +22,6 @@ CoachRepository coachRepository(Ref ref) {
   return CoachRepository(
     supabase: Supabase.instance.client,
     database: ref.read(appDatabaseProvider),
-    logger: ref.read(appLoggerProvider),
     report: ref.read(reportProvider),
   );
 }
@@ -36,16 +34,13 @@ class CoachRepository with SyncableRepository {
   const CoachRepository({
     required SupabaseClient supabase,
     required AppDatabase database,
-    required AppLogger logger,
     Report? report,
   }) : _supabase = supabase,
        _database = database,
-       _logger = logger,
        _report = report;
 
   final SupabaseClient _supabase;
   final AppDatabase _database;
-  final AppLogger _logger;
   final Report? _report;
   Report get _r => _report ?? SentryReport.global;
 
@@ -65,9 +60,9 @@ class CoachRepository with SyncableRepository {
   @override
   Future<SyncResult> syncFromRemote(String userId) async {
     try {
-      _logger.info(
+      _r.info(
         'Syncing coach data from Supabase',
-        context: 'COACH_REPOSITORY',
+        area: 'coach_mode',
         data: {'userId': userId},
       );
 
@@ -191,9 +186,9 @@ class CoachRepository with SyncableRepository {
       // Update last sync timestamp
       await setLastSyncTime(DateTime.now());
 
-      _logger.info(
+      _r.info(
         'Successfully synced coach data',
-        context: 'COACH_REPOSITORY',
+        area: 'coach_mode',
         data: {
           'userId': userId,
           'coachRecord': coachResponse != null ? 1 : 0,
@@ -218,9 +213,9 @@ class CoachRepository with SyncableRepository {
   @override
   Future<UploadResult> uploadDirtyRecords(String userId) async {
     try {
-      _logger.info(
+      _r.info(
         'Uploading dirty coach records to Supabase',
-        context: 'COACH_REPOSITORY',
+        area: 'coach_mode',
         data: {'userId': userId},
       );
 
@@ -233,9 +228,9 @@ class CoachRepository with SyncableRepository {
       // because there are no dirty records to upload - all changes are already synced
       // to Supabase immediately when they occur.
 
-      _logger.debug(
+      _r.debug(
         'CoachRepository uses dual-write pattern - no dirty records to upload',
-        context: 'COACH_REPOSITORY',
+        area: 'coach_mode',
         data: {'userId': userId},
       );
 
@@ -1031,9 +1026,9 @@ class CoachRepository with SyncableRepository {
             );
       }
 
-      _logger.info(
+      _r.info(
         'Synced ${results.length} coach records from Supabase',
-        context: 'COACH_REPOSITORY',
+        area: 'coach_mode',
       );
     } catch (e, stackTrace) {
       _r.fault(
@@ -1098,9 +1093,9 @@ class CoachRepository with SyncableRepository {
         }
       }
 
-      _logger.info(
+      _r.info(
         'Synced ${results.length} athlete profiles from Supabase',
-        context: 'COACH_REPOSITORY',
+        area: 'coach_mode',
       );
     } catch (e, stackTrace) {
       _r.fault(
@@ -1166,9 +1161,9 @@ class CoachRepository with SyncableRepository {
             mode: InsertMode.insertOrReplace,
           );
 
-      _logger.info(
+      _r.info(
         'Created activity for athlete',
-        context: 'COACH_REPOSITORY',
+        area: 'coach_mode',
         data: {'activityId': id, 'athleteUserId': athleteUserId},
       );
 
@@ -1239,9 +1234,9 @@ class CoachRepository with SyncableRepository {
             mode: InsertMode.insertOrReplace,
           );
 
-      _logger.info(
+      _r.info(
         'Created event for athlete',
-        context: 'COACH_REPOSITORY',
+        area: 'coach_mode',
         data: {'eventId': id, 'athleteUserId': athleteUserId},
       );
 
@@ -1327,9 +1322,9 @@ class CoachRepository with SyncableRepository {
         ),
       );
 
-      _logger.info(
+      _r.info(
         'Updated athlete profile',
-        context: 'COACH_REPOSITORY',
+        area: 'coach_mode',
         data: {
           'athleteUserId': athleteUserId,
           'updatedFields': updates.keys.toList(),
@@ -1376,9 +1371,9 @@ class CoachRepository with SyncableRepository {
         ),
       );
 
-      _logger.info(
+      _r.info(
         'Updated athlete nutrition targets',
-        context: 'COACH_REPOSITORY',
+        area: 'coach_mode',
         data: {
           'athleteUserId': athleteUserId,
           'hasOverrides': overridesJson != null,
@@ -1824,9 +1819,9 @@ class CoachRepository with SyncableRepository {
             ),
           );
 
-      _logger.info(
+      _r.info(
         'Generated pairing code for user',
-        context: 'COACH_REPOSITORY',
+        area: 'coach_mode',
         data: {
           'userId': userId,
           'code': code,
@@ -1941,9 +1936,9 @@ class CoachRepository with SyncableRepository {
         requestedBy: 'coach',
       );
 
-      _logger.info(
+      _r.info(
         'Connected via pairing code',
-        context: 'COACH_REPOSITORY',
+        area: 'coach_mode',
         data: {
           'code': normalizedCode,
           'coachUserId': coachUserId,
@@ -2259,9 +2254,9 @@ class CoachRepository with SyncableRepository {
             ),
           );
 
-      _logger.info(
+      _r.info(
         'Generated coach pairing code',
-        context: 'COACH_REPOSITORY',
+        area: 'coach_mode',
         data: {
           'coachUserId': coachUserId,
           'code': code,
@@ -2403,9 +2398,9 @@ class CoachRepository with SyncableRepository {
         requestedBy: 'coach',
       );
 
-      _logger.info(
+      _r.info(
         'Athlete connected via coach pairing code',
-        context: 'COACH_REPOSITORY',
+        area: 'coach_mode',
         data: {
           'code': normalizedCode,
           'coachUserId': coachUserId,

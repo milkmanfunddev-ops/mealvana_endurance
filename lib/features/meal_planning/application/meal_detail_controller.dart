@@ -3,8 +3,6 @@ import 'dart:async';
 import 'package:riverpod_annotation/riverpod_annotation.dart';
 
 import '../../../shared/providers/user_id_provider.dart';
-import '../../../shared/services/app_external_deps.dart';
-import '../../../shared/services/logging_service.dart';
 import '../../meal_logging/data/saved_meals_repository.dart';
 import '../data/meal_library_remote_data_source.dart';
 import '../data/vana_action_client.dart';
@@ -12,6 +10,7 @@ import '../domain/meal_detail.dart';
 import '../domain/meal_ref.dart';
 import '../domain/meal_source.dart';
 import '../domain/ui_action.dart';
+import '../../../shared/services/report/report.dart';
 
 part 'meal_detail_controller.g.dart';
 
@@ -27,7 +26,7 @@ part 'meal_detail_controller.g.dart';
 class MealDetailController extends _$MealDetailController {
   MealLibraryRemoteDataSource get _remote =>
       ref.read(mealLibraryRemoteDataSourceProvider);
-  AppLogger get _logger => ref.read(appExternalDepsProvider).logger;
+  Report get _report => ref.read(reportProvider);
 
   @override
   FutureOr<MealDetail> build(String id) => _remote.getMeal(id);
@@ -61,11 +60,11 @@ class MealDetailController extends _$MealDetailController {
       state = AsyncData(_withVote(state.value ?? current, stored));
     } catch (e, st) {
       if (!ref.mounted) return;
-      _logger.warning(
-        'set_meal_feedback failed; vote rolled back',
-        context: 'MEAL_DETAIL_CONTROLLER',
-        error: e,
+      _report.degraded(
+        e,
         stackTrace: st,
+        area: 'meal_planning',
+        message: 'set_meal_feedback failed; vote rolled back',
       );
       state = AsyncData(_withVote(state.value ?? current, current.vote));
       rethrow;
@@ -108,17 +107,20 @@ class MealDetailController extends _$MealDetailController {
           .read(savedMealsRepositoryProvider)
           .syncFromRemote(userId);
       if (!result.success) {
-        _logger.warning(
-          'saved_meals resync after save_meal failed',
-          context: 'MEAL_DETAIL_CONTROLLER',
-          data: {'error': result.error},
+        _report.degraded(
+          LoggedFault(
+            'saved_meals resync after save_meal failed',
+            context: 'MEAL_DETAIL_CONTROLLER',
+          ),
+          area: 'meal_planning',
+          extra: {'error': result.error},
         );
       }
     } catch (e) {
-      _logger.warning(
-        'saved_meals resync after save_meal threw',
-        context: 'MEAL_DETAIL_CONTROLLER',
-        error: e,
+      _report.degraded(
+        e,
+        area: 'meal_planning',
+        message: 'saved_meals resync after save_meal threw',
       );
     }
   }

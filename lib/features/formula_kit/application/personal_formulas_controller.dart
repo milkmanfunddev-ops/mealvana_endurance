@@ -3,6 +3,7 @@ import 'dart:async';
 import 'package:riverpod_annotation/riverpod_annotation.dart';
 
 import '../../../shared/services/app_external_deps.dart';
+import '../../../shared/services/report/report.dart';
 import '../../auth/data/user_repository.dart';
 import '../data/personal_formulas_repository.dart';
 import 'component_conflict_hydration.dart';
@@ -29,15 +30,18 @@ class PersonalFormulasController extends _$PersonalFormulasController {
   FutureOr<List<PersonalFormula>> build() async {
     final userRepo = await ref.read(userRepositoryProvider.future);
     final repo = ref.read(personalFormulasRepositoryProvider);
-    final logger = ref.read(appExternalDepsProvider).logger;
+    final report = ref.read(reportProvider);
 
     final user = await userRepo.getCurrentUser();
     final userId = user?.id;
     if (userId == null) {
-      logger.warning(
-        'PersonalFormulasController build with no authenticated user — '
-        'returning empty list',
-        context: 'FORMULA_KIT',
+      report.degraded(
+        LoggedFault(
+          'PersonalFormulasController build with no authenticated user — '
+          'returning empty list',
+          context: 'FORMULA_KIT',
+        ),
+        area: 'formula_kit',
       );
       return const [];
     }

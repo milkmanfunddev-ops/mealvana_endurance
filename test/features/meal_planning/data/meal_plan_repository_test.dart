@@ -93,7 +93,7 @@ void main() {
     remote = RecordingMealPlanRemote();
     repo = MealPlanRepository(
       database: db,
-      logger: FakeLogger(),
+      report: RecordingReport(),
       remote: remote,
     );
   });

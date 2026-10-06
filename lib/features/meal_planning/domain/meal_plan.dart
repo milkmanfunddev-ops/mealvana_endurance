@@ -5,6 +5,7 @@ import 'plan_meal.dart';
 import 'plan_rule.dart';
 import 'shopping_item.dart';
 import 'wire_record.dart';
+import '../../../shared/domain/decode_issue.dart';
 
 /// A `meal_plans` row with its children — `MealPlan` in `contracts.ts`.
 ///
@@ -57,14 +58,24 @@ class MealPlan extends WireRecord {
 
   /// Parses the wire shape. When `coverage` is absent (a locally built
   /// plan), it is computed with [PlanCoverageService].
-  factory MealPlan.fromJson(Map<String, dynamic> json) {
-    final meals = readRecordList(json, 'meals', PlanMeal.fromJson);
+  factory MealPlan.fromJson(
+    Map<String, dynamic> json, {
+    DecodeIssue onIssue = ignoreDecodeIssue,
+  }) {
+    final meals = readRecordList(
+      json,
+      'meals',
+      (m) => PlanMeal.fromJson(m, onIssue: onIssue),
+      onIssue: onIssue,
+    );
     final coverageJson = asJsonMap(json['coverage']);
     final daysJson = asJsonMap(json['days']) ?? const <String, dynamic>{};
     final days = <String, DayPlan>{};
     for (final entry in daysJson.entries) {
       final map = asJsonMap(entry.value);
-      if (map != null) days[entry.key] = DayPlan.fromJson(map);
+      if (map != null) {
+        days[entry.key] = DayPlan.fromJson(map, onIssue: onIssue);
+      }
     }
     return MealPlan(
       id: requireString(json, 'id'),
@@ -74,9 +85,14 @@ class MealPlan extends WireRecord {
       days: Map.unmodifiable(days),
       conversationId: readString(json, 'conversationId'),
       brief: readString(json, 'brief'),
-      rules: readRecordList(json, 'rules', PlanRule.fromJson),
+      rules: readRecordList(json, 'rules', PlanRule.fromJson, onIssue: onIssue),
       meals: meals,
-      shopping: readRecordList(json, 'shopping', ShoppingItem.fromJson),
+      shopping: readRecordList(
+        json,
+        'shopping',
+        ShoppingItem.fromJson,
+        onIssue: onIssue,
+      ),
       dayNotes: readStringMap(json, 'dayNotes'),
       dayNotesStale: readBool(json, 'dayNotesStale') ?? false,
       coverage: coverageJson == null

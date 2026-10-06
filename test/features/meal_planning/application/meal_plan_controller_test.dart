@@ -111,7 +111,7 @@ void main() {
       ..meals = [_mealRow('pm-1'), _mealRow('pm-2')];
     repo = MealPlanRepository(
       database: db,
-      logger: FakeLogger(),
+      report: RecordingReport(),
       remote: remote,
     );
     await repo.syncFromRemote(_user);

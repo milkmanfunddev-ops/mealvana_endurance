@@ -4,7 +4,6 @@ library;
 import 'dart:async';
 import 'dart:convert';
 
-import 'package:flutter_test/flutter_test.dart';
 import 'package:http/http.dart' as http;
 import 'package:http/testing.dart';
 import 'package:mealvana_endurance/features/meal_planning/data/meal_plan_remote.dart';
@@ -12,46 +11,12 @@ import 'package:mealvana_endurance/features/meal_planning/data/user_memory_repos
 import 'package:mealvana_endurance/features/meal_planning/data/vana_transport.dart';
 import 'package:mealvana_endurance/shared/services/app_config.dart';
 import 'package:mealvana_endurance/shared/services/connectivity_checker.dart';
-import 'package:mealvana_endurance/shared/services/logging_service.dart';
 import 'package:mocktail/mocktail.dart';
 import 'package:supabase_flutter/supabase_flutter.dart';
 
-// ── Logger ──────────────────────────────────────────────────────────────────
+import '../../../helpers/fakes/recording_report.dart';
 
-class FakeLogger extends Fake implements AppLogger {
-  final List<String> errors = [];
-  final List<String> warnings = [];
-
-  @override
-  void debug(
-    String message, {
-    String? context,
-    Map<String, dynamic>? data,
-    dynamic error,
-    StackTrace? stackTrace,
-  }) {}
-
-  @override
-  void info(String message, {String? context, Map<String, dynamic>? data}) {}
-
-  @override
-  void warning(
-    String message, {
-    String? context,
-    Map<String, dynamic>? data,
-    dynamic error,
-    StackTrace? stackTrace,
-  }) => warnings.add(message);
-
-  @override
-  void error(
-    String message, {
-    String? context,
-    Map<String, dynamic>? data,
-    dynamic error,
-    StackTrace? stackTrace,
-  }) => errors.add(message);
-}
+export '../../../helpers/fakes/recording_report.dart';
 
 // ── Connectivity ────────────────────────────────────────────────────────────
 
@@ -122,21 +87,21 @@ class TransportHarness {
     this.headers = const {},
     bool signedIn = true,
     this.throwOnSend,
-  }) : logger = FakeLogger(),
+  }) : report = RecordingReport(),
        supabase = supabaseWithSession(signedIn: signedIn);
 
   final int status;
   final String body;
   final Map<String, String> headers;
   final Object? throwOnSend;
-  final FakeLogger logger;
+  final RecordingReport report;
   final SupabaseClient supabase;
   final List<RecordedRequest> requests = [];
 
   late final VanaTransport transport = VanaTransport(
     supabase: supabase,
     config: testConfig(),
-    logger: logger,
+    report: report,
     clientFactory: () => MockClient.streaming((request, bodyStream) async {
       final raw = await bodyStream.bytesToString();
       requests.add(

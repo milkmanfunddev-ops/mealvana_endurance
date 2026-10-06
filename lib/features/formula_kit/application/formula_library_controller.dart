@@ -200,7 +200,7 @@ class FormulaLibraryController extends _$FormulaLibraryController {
     final templateFoodsRepo = ref.read(templateFoodsRepositoryProvider);
     final pinsRepo = ref.read(formulaPinsRepositoryProvider);
     final userRepo = await ref.read(userRepositoryProvider.future);
-    final logger = ref.read(appExternalDepsProvider).logger;
+    final report = ref.read(reportProvider);
 
     // On-demand sync: only if Drift cache is empty/stale, fetch from Supabase
     // before reading. Keeps the screen useful offline for repeat visits.
@@ -252,10 +252,13 @@ class FormulaLibraryController extends _$FormulaLibraryController {
         await pinsRepo.syncFromRemote(userId);
       }
     } else {
-      logger.warning(
-        'FormulaLibraryController build with no authenticated user — '
-        'catalogs synced, pins read from local cache only',
-        context: 'FORMULA_KIT',
+      report.degraded(
+        LoggedFault(
+          'FormulaLibraryController build with no authenticated user — '
+          'catalogs synced, pins read from local cache only',
+          context: 'FORMULA_KIT',
+        ),
+        area: 'formula_kit',
       );
     }
 

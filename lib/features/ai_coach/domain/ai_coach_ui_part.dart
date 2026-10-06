@@ -1,4 +1,4 @@
-import '../../../shared/services/report/report.dart';
+import '../../../shared/domain/decode_issue.dart';
 import '../../meal_logging/domain/meal_component.dart';
 import '../../meal_logging/domain/meal_slot.dart';
 
@@ -72,7 +72,10 @@ sealed class AiCoachUiPart {
   ///
   /// Returns null when the `kind` is unrecognised or the JSON is malformed,
   /// so callers can safely filter with `whereType<AiCoachUiPart>()`.
-  static AiCoachUiPart? fromJson(Map<String, dynamic> json) {
+  static AiCoachUiPart? fromJson(
+    Map<String, dynamic> json, {
+    DecodeIssue onIssue = ignoreDecodeIssue,
+  }) {
     try {
       final kind = json['kind'] as String?;
       switch (kind) {
@@ -85,12 +88,11 @@ sealed class AiCoachUiPart {
           return null;
       }
     } catch (e, st) {
-      SentryReport.global.degraded(
-        e,
+      onIssue(
+        'jade ui part of a known kind (${json['kind']}) did not parse; '
+        'part dropped',
+        error: e,
         stackTrace: st,
-        area: 'ai_coach',
-        message: 'jade ui part of a known kind did not parse; part dropped',
-        extra: {'kind': json['kind']?.toString()},
       );
       return null;
     }

@@ -15,7 +15,7 @@ import '../domain/fixture_helpers.dart';
 import '../helpers/fakes.dart';
 
 VanaActionClient _client(TransportHarness h) =>
-    VanaActionClient(transport: h.transport, logger: h.logger);
+    VanaActionClient(transport: h.transport, report: h.report);
 
 void main() {
   test('pick_meals posts {type, payload} and folds the batch part', () async {

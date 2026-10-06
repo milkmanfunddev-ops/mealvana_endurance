@@ -10,7 +10,6 @@ import '../../../shared/data/syncable_repository.dart';
 import '../../../shared/database/app_database.dart';
 import '../../../shared/database/database_provider.dart';
 import '../../../shared/services/app_external_deps.dart';
-import '../../../shared/services/logging_service.dart';
 import '../../../shared/services/report/report.dart';
 import '../../../shared/services/sync/sync_dependency_graph.dart';
 import '../domain/memory_kind.dart';
@@ -24,7 +23,6 @@ UserMemoryRepository userMemoryRepository(Ref ref) {
   final deps = ref.watch(appExternalDepsProvider);
   return UserMemoryRepository(
     database: ref.watch(appDatabaseProvider),
-    logger: deps.logger,
     remote: SupabaseUserMemoryRemote(deps.supabaseClient),
     report: deps.report,
   );
@@ -102,22 +100,18 @@ class SupabaseUserMemoryRemote implements UserMemoryRemote {
 class UserMemoryRepository with SyncableRepository {
   UserMemoryRepository({
     required AppDatabase database,
-    required AppLogger logger,
     required UserMemoryRemote remote,
     Report? report,
   }) : _database = database,
-       _logger = logger,
        _remote = remote,
        _report = report;
 
   final AppDatabase _database;
-  final AppLogger _logger;
   final UserMemoryRemote _remote;
   final Report? _report;
 
   Report get _r => _report ?? SentryReport.global;
 
-  static const _context = 'USER_MEMORY_REPOSITORY';
   static const _uuid = Uuid();
 
   Future<SyncResult>? _inflightSync;
@@ -179,9 +173,9 @@ class UserMemoryRepository with SyncableRepository {
         return upserted;
       });
       await setLastSyncTime(DateTime.now());
-      _logger.info(
+      _r.info(
         'Synced user memories',
-        context: _context,
+        area: 'meal_planning',
         data: {'userId': userId, 'count': count},
       );
       return SyncResult.successful(count);
@@ -253,9 +247,9 @@ class UserMemoryRepository with SyncableRepository {
         }
       });
 
-      _logger.info(
+      _r.info(
         'Uploaded dirty user memories',
-        context: _context,
+        area: 'meal_planning',
         data: {'count': payload.length, 'remapped': idRemap.length},
       );
       return UploadResult.successful(payload.length);
@@ -358,9 +352,9 @@ class UserMemoryRepository with SyncableRepository {
     await _database
         .into(_database.userMemoriesTable)
         .insert(companion, mode: InsertMode.insertOrReplace);
-    _logger.info(
+    _r.info(
       'Set Vana setting',
-      context: _context,
+      area: 'meal_planning',
       data: {'key': setting.wire, 'value': value},
     );
     final row = await (_database.select(

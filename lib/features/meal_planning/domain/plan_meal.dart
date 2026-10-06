@@ -3,6 +3,7 @@ import 'meal_icon.dart';
 import 'meal_source.dart';
 import 'meal_type.dart';
 import 'wire_record.dart';
+import '../../../shared/domain/decode_issue.dart';
 
 /// A `plan_meals` row — `PlanMeal` in `contracts.ts`.
 class PlanMeal extends WireRecord {
@@ -50,7 +51,10 @@ class PlanMeal extends WireRecord {
   /// Icon key copied from the source meal at add/swap time.
   final MealIcon? icon;
 
-  factory PlanMeal.fromJson(Map<String, dynamic> json) {
+  factory PlanMeal.fromJson(
+    Map<String, dynamic> json, {
+    DecodeIssue onIssue = ignoreDecodeIssue,
+  }) {
     return PlanMeal(
       id: requireString(json, 'id'),
       planId: requireString(json, 'planId'),
@@ -66,8 +70,18 @@ class PlanMeal extends WireRecord {
       carbsG: readDouble(json, 'carbsG'),
       proteinG: readDouble(json, 'proteinG'),
       fatG: readDouble(json, 'fatG'),
-      swapsApplied: readRecordList(json, 'swapsApplied', SwapApplied.fromJson),
-      comments: readRecordList(json, 'comments', PlanComment.fromJson),
+      swapsApplied: readRecordList(
+        json,
+        'swapsApplied',
+        SwapApplied.fromJson,
+        onIssue: onIssue,
+      ),
+      comments: readRecordList(
+        json,
+        'comments',
+        PlanComment.fromJson,
+        onIssue: onIssue,
+      ),
       position: readInt(json, 'position') ?? 0,
       icon: MealIcon.fromWire(readString(json, 'icon')),
     );

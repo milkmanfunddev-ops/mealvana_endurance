@@ -1,8 +1,8 @@
 import 'dart:convert';
 
-import '../../../shared/services/report/report.dart';
 import 'vana_part.dart';
 import 'wire_record.dart';
+import '../../../shared/domain/decode_issue.dart';
 
 /// One NDJSON line from `POST vana-chat` (contract 02 §5):
 ///
@@ -21,37 +21,40 @@ sealed class VanaStreamEvent extends WireRecord {
   /// Parse one raw NDJSON line. Returns `null` for blank lines, non-JSON,
   /// unknown `type`s, and a `ui` line whose part kind is unknown (the caller
   /// drops it — same rule as [VanaPart.fromJson]).
-  static VanaStreamEvent? fromJsonLine(String line) {
+  static VanaStreamEvent? fromJsonLine(
+    String line, {
+    DecodeIssue onIssue = ignoreDecodeIssue,
+  }) {
     final trimmed = line.trim();
     if (trimmed.isEmpty) return null;
     final Object? decoded;
     try {
       decoded = jsonDecode(trimmed);
     } on FormatException catch (e, st) {
-      SentryReport.global.degraded(
-        e,
+      final head = trimmed.length > 200 ? trimmed.substring(0, 200) : trimmed;
+      onIssue(
+        'vana NDJSON line is not JSON; line dropped: $head',
+        error: e,
         stackTrace: st,
-        area: 'meal_planning',
-        message: 'vana NDJSON line is not JSON; line dropped',
-        extra: {
-          'line': trimmed.length > 200 ? trimmed.substring(0, 200) : trimmed,
-        },
       );
       return null;
     }
     final json = asJsonMap(decoded);
     if (json == null) return null;
-    return fromJson(json);
+    return fromJson(json, onIssue: onIssue);
   }
 
-  static VanaStreamEvent? fromJson(Map<String, dynamic> json) {
+  static VanaStreamEvent? fromJson(
+    Map<String, dynamic> json, {
+    DecodeIssue onIssue = ignoreDecodeIssue,
+  }) {
     switch (json['type']) {
       case 'text':
         return VanaTextEvent(readString(json, 'delta') ?? '');
       case 'ui':
         final partJson = asJsonMap(json['part']);
         if (partJson == null) return null;
-        final part = VanaPart.fromJson(partJson);
+        final part = VanaPart.fromJson(partJson, onIssue: onIssue);
         return part == null ? null : VanaUiEvent(part);
       case 'status':
         return VanaStatusEvent(readString(json, 'tool') ?? '');

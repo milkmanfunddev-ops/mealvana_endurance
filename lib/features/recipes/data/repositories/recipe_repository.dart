@@ -8,7 +8,6 @@ import '../../../../shared/data/syncable_repository.dart';
 import '../../../../shared/database/app_database.dart';
 import '../../../../shared/database/database_provider.dart';
 import '../../../../shared/services/app_external_deps.dart';
-import '../../../../shared/services/logging_service.dart';
 import '../../domain/recipe.dart';
 import '../../../../shared/services/report/report.dart';
 
@@ -25,17 +24,11 @@ import '../../../../shared/services/report/report.dart';
 ///   on [Recipe] objects coming from the cache — the UI can layer its own
 ///   favourite state on top if needed later.
 class RecipeRepository with SyncableRepository {
-  RecipeRepository(
-    this._supabase,
-    this._database, {
-    AppLogger? logger,
-    Report? report,
-  }) : _logger = logger ?? const NoopAppLogger(),
-       _reportOverride = report;
+  RecipeRepository(this._supabase, this._database, {Report? report})
+    : _reportOverride = report;
 
   final SupabaseClient _supabase;
   final AppDatabase _database;
-  final AppLogger _logger;
   final Report? _reportOverride;
 
   Report get _report => _reportOverride ?? SentryReport.global;
@@ -60,10 +53,7 @@ class RecipeRepository with SyncableRepository {
       _database.recipesTable,
     )..where((t) => t.isActive.equals(true))).get();
     if (localRows.isEmpty) {
-      _logger.debug(
-        'Forcing sync — no local recipes found',
-        context: 'RECIPE_REPO',
-      );
+      _report.debug('Forcing sync — no local recipes found', area: 'recipes');
       return true;
     }
     // Legacy-cache detection: rows whose type isn't a current wire value
@@ -73,9 +63,9 @@ class RecipeRepository with SyncableRepository {
     // instead of after the 24 h window.
     final knownTypes = RecipeType.values.map((t) => t.wireValue).toSet();
     if (localRows.any((row) => !knownTypes.contains(row.type))) {
-      _logger.debug(
+      _report.debug(
         'Forcing sync — cached recipes use legacy category values',
-        context: 'RECIPE_REPO',
+        area: 'recipes',
       );
       return true;
     }
@@ -88,7 +78,7 @@ class RecipeRepository with SyncableRepository {
   @override
   Future<SyncResult> syncFromRemote(String userId) async {
     try {
-      _logger.info('Syncing recipes from Supabase', context: 'RECIPE_REPO');
+      _report.info('Syncing recipes from Supabase', area: 'recipes');
 
       final response = await _supabase
           .from('recipes')
@@ -99,9 +89,9 @@ class RecipeRepository with SyncableRepository {
       await _syncToLocalDatabase(response as List<dynamic>);
       await setLastSyncTime(DateTime.now());
 
-      _logger.info(
+      _report.info(
         'Recipes synced successfully',
-        context: 'RECIPE_REPO',
+        area: 'recipes',
         data: {'count': response.length},
       );
 
@@ -331,12 +321,7 @@ class RecipeRepository with SyncableRepository {
 
 final recipeRepositoryProvider = Provider<RecipeRepository>((ref) {
   final database = ref.watch(appDatabaseProvider);
-  final logger = ref.watch(appLoggerProvider);
+  final report = ref.watch(reportProvider);
   final supabase = ref.watch(appExternalDepsProvider).supabaseClient;
-  return RecipeRepository(
-    supabase,
-    database,
-    logger: logger,
-    report: ref.watch(reportProvider),
-  );
+  return RecipeRepository(supabase, database, report: report);
 });

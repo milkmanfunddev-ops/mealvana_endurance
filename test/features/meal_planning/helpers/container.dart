@@ -1,7 +1,6 @@
 /// ProviderContainer wiring shared by the meal-planning controller tests.
 library;
 
-import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:riverpod_annotation/riverpod_annotation.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:mealvana_endurance/shared/data/syncable_repository.dart';
@@ -9,16 +8,13 @@ import 'package:mealvana_endurance/shared/providers/user_id_provider.dart';
 import 'package:mealvana_endurance/shared/services/analytics/analytics_tracker.dart';
 import 'package:mealvana_endurance/shared/services/app_external_deps.dart';
 import 'package:mealvana_endurance/shared/services/connectivity_checker.dart';
-import 'package:mealvana_endurance/shared/services/sentry/sentry_reporter.dart';
+import 'package:mealvana_endurance/shared/services/report/report.dart';
 import 'package:mealvana_endurance/shared/services/sync/sync_coordinator.dart';
-import 'package:mocktail/mocktail.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 
 import 'fakes.dart';
 
 class _FakeAnalytics extends Fake implements AnalyticsTracker {}
-
-class _FakeSentry extends Fake implements SentryReporter {}
 
 class _FakePrefs extends Fake implements SharedPreferences {}
 
@@ -46,29 +42,32 @@ class NoopSyncCoordinator extends SyncCoordinator {
   }
 }
 
-AppExternalDeps testDeps({FakeLogger? logger}) => AppExternalDeps(
+AppExternalDeps testDeps({Report? report}) => AppExternalDeps(
   analytics: _FakeAnalytics(),
   supabaseClient: supabaseWithSession(),
-  sentry: _FakeSentry(),
-  logger: logger ?? FakeLogger(),
   sharedPreferences: _FakePrefs(),
+  report: report ?? RecordingReport(),
 );
 
 /// Base overrides every controller test wants: a signed-in user, fake
 /// external deps, a no-op sync coordinator and a stubbed connectivity.
 List<Override> baseOverrides({
   String userId = 'user-1',
-  FakeLogger? logger,
+  RecordingReport? report,
   StubConnectivity? connectivity,
   NoopSyncCoordinator? sync,
-}) => [
-  userIdProvider.overrideWith((ref) async => userId),
-  appExternalDepsProvider.overrideWithValue(testDeps(logger: logger)),
-  connectivityCheckerProvider.overrideWithValue(
-    connectivity ?? StubConnectivity(),
-  ),
-  syncCoordinatorProvider.overrideWith(() => sync ?? NoopSyncCoordinator()),
-];
+}) {
+  final r = report ?? RecordingReport();
+  return [
+    userIdProvider.overrideWith((ref) async => userId),
+    reportProvider.overrideWithValue(r),
+    appExternalDepsProvider.overrideWithValue(testDeps(report: r)),
+    connectivityCheckerProvider.overrideWithValue(
+      connectivity ?? StubConnectivity(),
+    ),
+    syncCoordinatorProvider.overrideWith(() => sync ?? NoopSyncCoordinator()),
+  ];
+}
 
 ProviderContainer testContainer(List<Override> overrides) {
   final container = ProviderContainer(overrides: overrides);

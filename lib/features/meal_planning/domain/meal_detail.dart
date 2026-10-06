@@ -1,6 +1,7 @@
 import 'directions_origin.dart';
 import 'meal_ref.dart';
 import 'wire_record.dart';
+import '../../../shared/domain/decode_issue.dart';
 
 /// What the meal detail page and cooking mode need — `MealDetail` in
 /// `contracts.ts`; built by the `get_meal` action for a library id or a
@@ -52,9 +53,17 @@ class MealDetail extends WireRecord {
 
   bool get hasSteps => methodSteps.isNotEmpty;
 
-  factory MealDetail.fromJson(Map<String, dynamic> json) => MealDetail(
+  factory MealDetail.fromJson(
+    Map<String, dynamic> json, {
+    DecodeIssue onIssue = ignoreDecodeIssue,
+  }) => MealDetail(
     meal: MealRef.fromJson(requireJsonMap(json, 'meal')),
-    ingredients: readRecordList(json, 'ingredients', MealIngredient.fromJson),
+    ingredients: readRecordList(
+      json,
+      'ingredients',
+      MealIngredient.fromJson,
+      onIssue: onIssue,
+    ),
     methodSteps: readStringList(json, 'methodSteps'),
     directions: MealDirections.fromJson(
       asJsonMap(json['directions']) ?? const <String, dynamic>{},

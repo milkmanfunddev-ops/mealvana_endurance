@@ -1,5 +1,6 @@
 import 'vana_part.dart';
 import 'wire_record.dart';
+import '../../../shared/domain/decode_issue.dart';
 
 /// Who authored a [VanaMessage].
 enum VanaMessageRole {
@@ -50,12 +51,15 @@ class VanaMessage extends WireRecord {
 
   bool get isUser => role == VanaMessageRole.user;
 
-  factory VanaMessage.fromJson(Map<String, dynamic> json) => VanaMessage(
+  factory VanaMessage.fromJson(
+    Map<String, dynamic> json, {
+    DecodeIssue onIssue = ignoreDecodeIssue,
+  }) => VanaMessage(
     id: requireString(json, 'id'),
     conversationId: readString(json, 'conversationId') ?? '',
     role: VanaMessageRole.requireWire(readString(json, 'role')),
     content: readString(json, 'content') ?? '',
-    parts: VanaPart.listFromJson(json['parts']),
+    parts: VanaPart.listFromJson(json['parts'], onIssue: onIssue),
     createdAt:
         DateTime.tryParse(readString(json, 'createdAt') ?? '') ??
         DateTime.fromMillisecondsSinceEpoch(0, isUtc: true),

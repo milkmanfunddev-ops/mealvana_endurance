@@ -9,8 +9,8 @@ import '../../../shared/data/syncable_repository.dart';
 import '../../../shared/database/app_database.dart';
 import '../../../shared/database/database_provider.dart';
 import '../../../shared/services/app_external_deps.dart';
-import '../../../shared/services/logging_service.dart';
 import '../../../shared/services/sync/sync_dependency_graph.dart';
+import '../../../shared/services/report/report.dart';
 
 /// Repository for pre-workout templates (read-only reference data).
 ///
@@ -25,12 +25,12 @@ class PreWorkoutTemplatesRepository with SyncableRepository {
   PreWorkoutTemplatesRepository(
     this._supabase,
     this._database, {
-    AppLogger? logger,
-  }) : _logger = logger ?? const NoopAppLogger();
+    Report? report,
+  }) : _report = report ?? const NoopReport();
 
   final SupabaseClient _supabase;
   final AppDatabase _database;
-  final AppLogger _logger;
+  final Report _report;
 
   // ========================================================================
   // SyncableRepository Implementation
@@ -49,9 +49,9 @@ class PreWorkoutTemplatesRepository with SyncableRepository {
       _database.preWorkoutTemplatesTable,
     )..where((t) => t.isActive.equals(true))).get();
     if (localRows.isEmpty) {
-      _logger.debug(
+      _report.debug(
         'Forcing sync - no local pre-workout templates found',
-        context: 'PRE_WORKOUT_TEMPLATES_REPO',
+        area: 'formula_kit',
       );
       return true;
     }
@@ -61,9 +61,9 @@ class PreWorkoutTemplatesRepository with SyncableRepository {
   @override
   Future<SyncResult> syncFromRemote(String userId) async {
     try {
-      _logger.info(
+      _report.info(
         'Syncing pre-workout templates from Supabase',
-        context: 'PRE_WORKOUT_TEMPLATES_REPO',
+        area: 'formula_kit',
       );
 
       final response = await _supabase
@@ -75,19 +75,19 @@ class PreWorkoutTemplatesRepository with SyncableRepository {
       await _syncToLocalDatabase(response as List<dynamic>);
       await setLastSyncTime(DateTime.now());
 
-      _logger.info(
+      _report.info(
         'Pre-workout templates synced successfully',
-        context: 'PRE_WORKOUT_TEMPLATES_REPO',
+        area: 'formula_kit',
         data: {'count': response.length},
       );
 
       return SyncResult.successful(response.length);
     } catch (e, stackTrace) {
-      _logger.error(
-        'Failed to sync pre-workout templates from remote',
-        context: 'PRE_WORKOUT_TEMPLATES_REPO',
-        error: e,
+      _report.fault(
+        e,
         stackTrace: stackTrace,
+        area: 'formula_kit',
+        message: 'Failed to sync pre-workout templates from remote',
       );
       return SyncResult.failed(e.toString());
     }
@@ -210,7 +210,7 @@ class PreWorkoutTemplatesRepository with SyncableRepository {
 final preWorkoutTemplatesRepositoryProvider =
     Provider<PreWorkoutTemplatesRepository>((ref) {
       final database = ref.watch(appDatabaseProvider);
-      final logger = ref.watch(appLoggerProvider);
+      final report = ref.watch(reportProvider);
       final supabase = ref.watch(appExternalDepsProvider).supabaseClient;
-      return PreWorkoutTemplatesRepository(supabase, database, logger: logger);
+      return PreWorkoutTemplatesRepository(supabase, database, report: report);
     });

@@ -1,9 +1,9 @@
 import 'package:riverpod_annotation/riverpod_annotation.dart';
 import 'package:supabase_flutter/supabase_flutter.dart';
 
-import '../../../../shared/services/logging_service.dart';
 import '../../../../shared/services/sync/data_sync_service.dart';
 import 'activity_coach_feedback_provider.dart';
+import '../../../../shared/services/report/report.dart';
 
 part 'activity_coach_feedback_sync_provider.g.dart';
 
@@ -17,7 +17,7 @@ part 'activity_coach_feedback_sync_provider.g.dart';
 @riverpod
 Future<void> activityCoachFeedbackSync(Ref ref, String activityId) async {
   final syncService = ref.read(dataSyncServiceProvider);
-  final logger = ref.read(appLoggerProvider);
+  final report = ref.read(reportProvider);
 
   // 1. Initial sync: pull latest coach messages for this activity
   await syncService.syncCoachMessagesForActivity(activityId);
@@ -47,9 +47,9 @@ Future<void> activityCoachFeedbackSync(Ref ref, String activityId) async {
           value: activityId,
         ),
         callback: (payload) {
-          logger.info(
+          report.info(
             'Realtime activity feedback received',
-            context: 'ACTIVITY_FEEDBACK_SYNC',
+            area: 'coach_mode',
             data: {
               'activityId': activityId,
               'eventType': payload.eventType.toString(),
@@ -68,17 +68,17 @@ Future<void> activityCoachFeedbackSync(Ref ref, String activityId) async {
       )
       .subscribe();
 
-  logger.info(
+  report.info(
     'Subscribed to realtime activity feedback',
-    context: 'ACTIVITY_FEEDBACK_SYNC',
+    area: 'coach_mode',
     data: {'activityId': activityId, 'channelName': channelName},
   );
 
   // Clean up subscription when provider is disposed
   ref.onDispose(() {
-    logger.info(
+    report.info(
       'Unsubscribing from realtime activity feedback',
-      context: 'ACTIVITY_FEEDBACK_SYNC',
+      area: 'coach_mode',
       data: {'channelName': channelName},
     );
     channel.unsubscribe();

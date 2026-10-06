@@ -104,7 +104,6 @@ class CoachActivityDetailController extends _$CoachActivityDetailController {
   }
 
   Future<CoachActivityDetailState> _loadActivity(String activityId) async {
-    final logger = ref.read(appExternalDepsProvider).logger;
     final repository = ref.read(activitiesRepositoryProvider);
     final activity = await repository.getRemoteActivityById(activityId);
 
@@ -112,9 +111,9 @@ class CoachActivityDetailController extends _$CoachActivityDetailController {
       throw Exception('Activity not found');
     }
 
-    logger.warning(
+    _report.info(
       'Coach activity detail loaded remote activity',
-      context: 'COACH_ACTIVITY_DETAIL',
+      area: 'coach_mode',
       data: {
         'activityId': activity.id,
         'ownerUserId': activity.userId,
@@ -127,9 +126,9 @@ class CoachActivityDetailController extends _$CoachActivityDetailController {
     NutritionPlan? plan;
     if (activity.nutritionPlanData != null) {
       plan = NutritionPlanMapper.fromJson(activity.nutritionPlanData!);
-      logger.warning(
+      _report.info(
         'Coach activity detail parsed nutrition plan',
-        context: 'COACH_ACTIVITY_DETAIL',
+        area: 'coach_mode',
         data: {'activityId': activity.id, 'sectionCount': plan.sections.length},
       );
     }

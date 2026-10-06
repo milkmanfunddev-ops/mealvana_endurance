@@ -17,7 +17,6 @@ import 'package:mocktail/mocktail.dart';
 import 'package:mealvana_endurance/features/recipes/data/repositories/recipe_repository.dart';
 import 'package:mealvana_endurance/features/recipes/domain/recipe.dart';
 import 'package:mealvana_endurance/shared/database/app_database.dart';
-import 'package:mealvana_endurance/shared/services/logging_service.dart';
 import 'package:mealvana_endurance/shared/services/report/report.dart';
 
 import '../../helpers/fakes/recording_report.dart';
@@ -31,8 +30,6 @@ import 'package:supabase_flutter/supabase_flutter.dart';
 
 class MockSupabaseClient extends Mock implements SupabaseClient {}
 
-class MockAppLogger extends Mock implements AppLogger {}
-
 // ---------------------------------------------------------------------------
 // Helpers
 // ---------------------------------------------------------------------------
@@ -41,14 +38,12 @@ class MockAppLogger extends Mock implements AppLogger {}
 RecipeRepository _makeRepo(
   AppDatabase db, {
   SupabaseClient? supabase,
-  AppLogger? logger,
   Report? report,
 }) {
   return RecipeRepository(
     supabase ?? MockSupabaseClient(),
     db,
-    logger: logger ?? const NoopAppLogger(),
-    report: report,
+    report: report ?? RecordingReport(),
   );
 }
 
@@ -709,7 +704,7 @@ void main() {
       final repoWithStorage = RecipeRepository(
         mockSupa,
         db,
-        logger: const NoopAppLogger(),
+        report: RecordingReport(),
       );
       final recipes = await repoWithStorage.getAllRecipes();
       expect(
@@ -736,7 +731,7 @@ void main() {
       final repoWithStorage = RecipeRepository(
         mockSupa,
         db,
-        logger: const NoopAppLogger(),
+        report: RecordingReport(),
       );
       final recipes = await repoWithStorage.getAllRecipes();
       expect(recipes.first.imageUrl, fullUrl);

@@ -48,7 +48,7 @@ void main() {
     remote = RecordingUserMemoryRemote();
     repo = UserMemoryRepository(
       database: db,
-      logger: FakeLogger(),
+      report: RecordingReport(),
       remote: remote,
     );
   });

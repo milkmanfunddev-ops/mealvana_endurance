@@ -7,23 +7,20 @@ import 'package:supabase_flutter/supabase_flutter.dart';
 
 import '../../../shared/database/app_database.dart';
 import '../../../shared/database/database_provider.dart';
-import '../../../shared/services/logging_service.dart';
-import '../../../shared/services/sentry/sentry_reporter.dart';
-import '../../../shared/services/app_external_deps.dart';
 import '../../../shared/data/syncable_repository.dart';
 import '../../../shared/services/sync/sync_dependency_graph.dart';
 import '../domain/personal_template.dart';
+import '../../../shared/services/report/decode_issue_report.dart';
+import '../../../shared/services/report/report.dart';
 
 part 'personal_templates_repository.g.dart';
 
 @riverpod
 PersonalTemplatesRepository personalTemplatesRepository(Ref ref) {
-  final deps = ref.read(appExternalDepsProvider);
   return PersonalTemplatesRepository(
     supabase: Supabase.instance.client,
     database: ref.read(appDatabaseProvider),
-    logger: ref.read(appLoggerProvider),
-    sentry: deps.sentry,
+    report: ref.read(reportProvider),
   );
 }
 
@@ -33,17 +30,21 @@ class PersonalTemplatesRepository with SyncableRepository {
   const PersonalTemplatesRepository({
     required SupabaseClient supabase,
     required AppDatabase database,
-    required AppLogger logger,
-    required SentryReporter sentry,
+    required Report report,
   }) : _supabase = supabase,
        _database = database,
-       _logger = logger,
-       _sentry = sentry;
+       _report = report;
 
   final SupabaseClient _supabase;
   final AppDatabase _database;
-  final AppLogger _logger;
-  final SentryReporter _sentry;
+  final Report _report;
+
+  /// Drift row → domain, reporting a malformed JSON column as Degraded.
+  PersonalTemplate _fromEntry(PersonalTemplateEntry entry) =>
+      PersonalTemplate.fromDriftEntry(
+        entry,
+        onIssue: _report.decodeIssue('personal_templates'),
+      );
 
   // ========================================================================
   // SyncableRepository Implementation
@@ -59,9 +60,9 @@ class PersonalTemplatesRepository with SyncableRepository {
   @override
   Future<SyncResult> syncFromRemote(String userId) async {
     try {
-      _logger.info(
+      _report.info(
         'Syncing personal templates from Supabase',
-        context: 'PERSONAL_TEMPLATES_REPOSITORY',
+        area: 'personal_templates',
         data: {'userId': userId},
       );
 
@@ -78,20 +79,20 @@ class PersonalTemplatesRepository with SyncableRepository {
 
       await setLastSyncTime(DateTime.now());
 
-      _logger.info(
+      _report.info(
         'Successfully synced personal templates from Supabase',
-        context: 'PERSONAL_TEMPLATES_REPOSITORY',
+        area: 'personal_templates',
         data: {'userId': userId, 'count': syncedCount},
       );
 
       return SyncResult.successful(syncedCount);
     } catch (e, stackTrace) {
-      _logger.error(
-        'Failed to sync personal templates from Supabase',
-        context: 'PERSONAL_TEMPLATES_REPOSITORY',
-        error: e,
+      _report.fault(
+        e,
         stackTrace: stackTrace,
-        data: {'userId': userId},
+        area: 'personal_templates',
+        extra: {'userId': userId},
+        message: 'Failed to sync personal templates from Supabase',
       );
       return SyncResult.failed(e.toString());
     }
@@ -136,10 +137,13 @@ class PersonalTemplatesRepository with SyncableRepository {
     });
 
     if (dirtyIds.isNotEmpty) {
-      _logger.warning(
-        'Skipped remote template overwrite for dirty local rows',
-        context: 'PERSONAL_TEMPLATES_REPOSITORY',
-        data: {
+      _report.degraded(
+        LoggedFault(
+          'Skipped remote template overwrite for dirty local rows',
+          context: 'PERSONAL_TEMPLATES_REPOSITORY',
+        ),
+        area: 'personal_templates',
+        extra: {
           'skippedCount': dirtyIds.length,
           'totalRemote': remoteById.length,
         },
@@ -152,9 +156,9 @@ class PersonalTemplatesRepository with SyncableRepository {
   @override
   Future<UploadResult> uploadDirtyRecords(String userId) async {
     try {
-      _logger.info(
+      _report.info(
         'Uploading dirty personal templates to Supabase',
-        context: 'PERSONAL_TEMPLATES_REPOSITORY',
+        area: 'personal_templates',
         data: {'userId': userId},
       );
 
@@ -168,14 +172,14 @@ class PersonalTemplatesRepository with SyncableRepository {
         return UploadResult.nothingToUpload();
       }
 
-      _logger.debug(
+      _report.debug(
         'Found dirty personal templates to upload',
-        context: 'PERSONAL_TEMPLATES_REPOSITORY',
+        area: 'personal_templates',
         data: {'count': dirtyRecords.length},
       );
 
       final templatesToUpload = dirtyRecords.map((record) {
-        return PersonalTemplate.fromDriftEntry(record).toSupabaseJson();
+        return _fromEntry(record).toSupabaseJson();
       }).toList();
 
       // CRITICAL: Use onConflict: 'id' to avoid PostgREST partial index issues
@@ -194,20 +198,20 @@ class PersonalTemplatesRepository with SyncableRepository {
         }
       });
 
-      _logger.info(
+      _report.info(
         'Successfully uploaded dirty personal templates',
-        context: 'PERSONAL_TEMPLATES_REPOSITORY',
+        area: 'personal_templates',
         data: {'count': dirtyRecords.length},
       );
 
       return UploadResult.successful(dirtyRecords.length);
     } catch (e, stackTrace) {
-      _logger.error(
-        'Failed to upload dirty personal templates',
-        context: 'PERSONAL_TEMPLATES_REPOSITORY',
-        error: e,
+      _report.fault(
+        e,
         stackTrace: stackTrace,
-        data: {'userId': userId},
+        area: 'personal_templates',
+        extra: {'userId': userId},
+        message: 'Failed to upload dirty personal templates',
       );
       return UploadResult.failed(e.toString());
     }
@@ -225,13 +229,13 @@ class PersonalTemplatesRepository with SyncableRepository {
         ..orderBy([(tbl) => OrderingTerm.desc(tbl.updatedAt)]);
 
       final entries = await query.get();
-      return entries.map(PersonalTemplate.fromDriftEntry).toList();
+      return entries.map(_fromEntry).toList();
     } catch (e, stackTrace) {
-      _logger.error(
-        'Failed to get templates for user',
-        context: 'PERSONAL_TEMPLATES_REPOSITORY',
-        error: e,
+      _report.fault(
+        e,
         stackTrace: stackTrace,
+        area: 'personal_templates',
+        message: 'Failed to get templates for user',
       );
       rethrow;
     }
@@ -252,13 +256,13 @@ class PersonalTemplatesRepository with SyncableRepository {
         ..orderBy([(tbl) => OrderingTerm.desc(tbl.updatedAt)]);
 
       final entries = await query.get();
-      return entries.map(PersonalTemplate.fromDriftEntry).toList();
+      return entries.map(_fromEntry).toList();
     } catch (e, stackTrace) {
-      _logger.error(
-        'Failed to get templates for sport',
-        context: 'PERSONAL_TEMPLATES_REPOSITORY',
-        error: e,
+      _report.fault(
+        e,
         stackTrace: stackTrace,
+        area: 'personal_templates',
+        message: 'Failed to get templates for sport',
       );
       rethrow;
     }
@@ -281,13 +285,13 @@ class PersonalTemplatesRepository with SyncableRepository {
         ..orderBy([(tbl) => OrderingTerm.desc(tbl.updatedAt)]);
 
       final entries = await query.get();
-      return entries.map(PersonalTemplate.fromDriftEntry).toList();
+      return entries.map(_fromEntry).toList();
     } catch (e, stackTrace) {
-      _logger.error(
-        'Failed to get templates for brick',
-        context: 'PERSONAL_TEMPLATES_REPOSITORY',
-        error: e,
+      _report.fault(
+        e,
         stackTrace: stackTrace,
+        area: 'personal_templates',
+        message: 'Failed to get templates for brick',
       );
       rethrow;
     }
@@ -300,13 +304,13 @@ class PersonalTemplatesRepository with SyncableRepository {
         ..where((tbl) => tbl.id.equals(id));
 
       final entry = await query.getSingleOrNull();
-      return entry != null ? PersonalTemplate.fromDriftEntry(entry) : null;
+      return entry != null ? _fromEntry(entry) : null;
     } catch (e, stackTrace) {
-      _logger.error(
-        'Failed to get template by ID',
-        context: 'PERSONAL_TEMPLATES_REPOSITORY',
-        error: e,
+      _report.fault(
+        e,
         stackTrace: stackTrace,
+        area: 'personal_templates',
+        message: 'Failed to get template by ID',
       );
       rethrow;
     }
@@ -325,13 +329,13 @@ class PersonalTemplatesRepository with SyncableRepository {
           .into(_database.personalTemplatesTable)
           .insertReturning(companion);
 
-      _logger.info(
+      _report.info(
         'Created personal template',
-        context: 'PERSONAL_TEMPLATES_REPOSITORY',
+        area: 'personal_templates',
         data: {'templateId': insertedRow.id, 'name': template.name},
       );
 
-      final created = PersonalTemplate.fromDriftEntry(insertedRow);
+      final created = _fromEntry(insertedRow);
 
       // Attempt immediate upload (non-blocking)
       unawaited(() async {
@@ -341,29 +345,30 @@ class PersonalTemplatesRepository with SyncableRepository {
               .upsert(created.toSupabaseJson(), onConflict: 'id');
           await _clearDirtyFlag(created.id);
         } catch (e, stackTrace) {
-          _logger.warning(
-            'Immediate upload failed; template stays dirty for retry',
-            context: 'PERSONAL_TEMPLATES_REPOSITORY',
-            error: e,
-            stackTrace: stackTrace,
-            data: {'templateId': created.id},
-          );
-          _sentry.reportNetworkError(
+          _report.degraded(
             e,
-            url: 'supabase:personal_templates:create',
-            method: 'UPSERT',
             stackTrace: stackTrace,
+            area: 'personal_templates',
+            extra: {'templateId': created.id},
+            message: 'Immediate upload failed; template stays dirty for retry',
+          );
+          _report.degraded(
+            e,
+            stackTrace: stackTrace,
+            area: 'network',
+            tags: {'method': 'UPSERT'},
+            extra: {'url': 'supabase:personal_templates:create'},
           );
         }
       }());
 
       return created;
     } catch (e, stackTrace) {
-      _logger.error(
-        'Failed to create personal template',
-        context: 'PERSONAL_TEMPLATES_REPOSITORY',
-        error: e,
+      _report.fault(
+        e,
         stackTrace: stackTrace,
+        area: 'personal_templates',
+        message: 'Failed to create personal template',
       );
       rethrow;
     }
@@ -383,9 +388,9 @@ class PersonalTemplatesRepository with SyncableRepository {
         ),
       );
 
-      _logger.info(
+      _report.info(
         'Updated personal template name',
-        context: 'PERSONAL_TEMPLATES_REPOSITORY',
+        area: 'personal_templates',
         data: {'templateId': id, 'newName': newName},
       );
 
@@ -400,21 +405,21 @@ class PersonalTemplatesRepository with SyncableRepository {
             await _clearDirtyFlag(id);
           }
         } catch (e, stackTrace) {
-          _logger.warning(
-            'Immediate upload failed; template stays dirty for retry',
-            context: 'PERSONAL_TEMPLATES_REPOSITORY',
-            error: e,
+          _report.degraded(
+            e,
             stackTrace: stackTrace,
-            data: {'templateId': id},
+            area: 'personal_templates',
+            extra: {'templateId': id},
+            message: 'Immediate upload failed; template stays dirty for retry',
           );
         }
       }());
     } catch (e, stackTrace) {
-      _logger.error(
-        'Failed to update personal template name',
-        context: 'PERSONAL_TEMPLATES_REPOSITORY',
-        error: e,
+      _report.fault(
+        e,
         stackTrace: stackTrace,
+        area: 'personal_templates',
+        message: 'Failed to update personal template name',
       );
       rethrow;
     }
@@ -428,9 +433,9 @@ class PersonalTemplatesRepository with SyncableRepository {
         _database.personalTemplatesTable,
       )..where((tbl) => tbl.id.equals(id))).go();
 
-      _logger.info(
+      _report.info(
         'Deleted personal template locally',
-        context: 'PERSONAL_TEMPLATES_REPOSITORY',
+        area: 'personal_templates',
         data: {'templateId': id},
       );
 
@@ -443,27 +448,28 @@ class PersonalTemplatesRepository with SyncableRepository {
               .eq('id', id)
               .eq('user_id', userId);
         } catch (e, stackTrace) {
-          _logger.warning(
-            'Failed to delete template from Supabase',
-            context: 'PERSONAL_TEMPLATES_REPOSITORY',
-            error: e,
-            stackTrace: stackTrace,
-            data: {'templateId': id},
-          );
-          _sentry.reportNetworkError(
+          _report.degraded(
             e,
-            url: 'supabase:personal_templates:delete',
-            method: 'DELETE',
             stackTrace: stackTrace,
+            area: 'personal_templates',
+            extra: {'templateId': id},
+            message: 'Failed to delete template from Supabase',
+          );
+          _report.degraded(
+            e,
+            stackTrace: stackTrace,
+            area: 'network',
+            tags: {'method': 'DELETE'},
+            extra: {'url': 'supabase:personal_templates:delete'},
           );
         }
       }());
     } catch (e, stackTrace) {
-      _logger.error(
-        'Failed to delete personal template',
-        context: 'PERSONAL_TEMPLATES_REPOSITORY',
-        error: e,
+      _report.fault(
+        e,
         stackTrace: stackTrace,
+        area: 'personal_templates',
+        message: 'Failed to delete personal template',
       );
       rethrow;
     }
@@ -478,11 +484,11 @@ class PersonalTemplatesRepository with SyncableRepository {
       final entries = await query.get();
       return entries.length;
     } catch (e, stackTrace) {
-      _logger.error(
-        'Failed to get template count',
-        context: 'PERSONAL_TEMPLATES_REPOSITORY',
-        error: e,
+      _report.fault(
+        e,
         stackTrace: stackTrace,
+        area: 'personal_templates',
+        message: 'Failed to get template count',
       );
       rethrow;
     }

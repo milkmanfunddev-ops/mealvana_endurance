@@ -21,7 +21,7 @@ VanaChatRepository _repo(TransportHarness h, {String fn = 'vana-chat'}) =>
     VanaChatRepository(
       transport: h.transport,
       supabase: h.supabase,
-      logger: h.logger,
+      report: h.report,
       functionName: fn,
     );
 

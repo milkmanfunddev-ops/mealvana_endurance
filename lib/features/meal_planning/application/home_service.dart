@@ -4,37 +4,40 @@ import 'package:riverpod_annotation/riverpod_annotation.dart';
 
 import '../../../shared/services/app_external_deps.dart';
 import '../../../shared/services/connectivity_checker.dart';
-import '../../../shared/services/logging_service.dart';
 import '../data/vana_action_client.dart';
 import '../domain/home_payload.dart';
 import '../domain/ui_action.dart';
 import '../domain/week_start.dart';
 import 'meal_plan_controller.dart';
+import '../../../shared/services/report/report.dart';
 
 part 'home_service.g.dart';
 
 @riverpod
 HomeService homeService(Ref ref) => HomeService(
   actions: ref.watch(vanaActionClientProvider),
-  logger: ref.watch(appExternalDepsProvider).logger,
+  report: ref.watch(appExternalDepsProvider).report,
 );
 
 /// `get_home{date}` → [HomePayload]: everything the Plan tab needs in one
 /// call, no model involved. The payload's `batch` is folded into
 /// [MealPlanController] by the caller so the local plan matches.
 class HomeService {
-  HomeService({required VanaActionClient actions, required AppLogger logger})
+  HomeService({required VanaActionClient actions, required Report report})
     : _actions = actions,
-      _logger = logger;
+      _report = report;
 
   final VanaActionClient _actions;
-  final AppLogger _logger;
+  final Report _report;
 
   Future<HomePayload> fetch({String? date}) async {
     final result = await _actions.run(GetHomeAction(date: date));
     final home = result.home;
     if (home == null) {
-      _logger.error('get_home returned no home payload', context: 'HOME');
+      _report.fault(
+        LoggedFault('get_home returned no home payload', context: 'HOME'),
+        area: 'meal_planning',
+      );
       throw StateError('get_home returned no home payload');
     }
     return home;

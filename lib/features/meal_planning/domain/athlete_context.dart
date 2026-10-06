@@ -1,6 +1,7 @@
 import 'day_target.dart';
 import 'user_memory.dart';
 import 'wire_record.dart';
+import '../../../shared/domain/decode_issue.dart';
 
 /// `AthleteContext` in `contracts.ts` — the deterministic per-turn context
 /// the server injects for the model. Contract 02 §2 calls it server-internal,
@@ -31,27 +32,44 @@ class AthleteContext extends WireRecord {
   /// Top ~10 by recency/relevance.
   final List<UserMemory> memories;
 
-  factory AthleteContext.fromJson(Map<String, dynamic> json) => AthleteContext(
+  factory AthleteContext.fromJson(
+    Map<String, dynamic> json, {
+    DecodeIssue onIssue = ignoreDecodeIssue,
+  }) => AthleteContext(
     profile: AthleteProfileContext.fromJson(
       asJsonMap(json['profile']) ?? const {},
     ),
-    week: AthleteWeekContext.fromJson(asJsonMap(json['week']) ?? const {}),
+    week: AthleteWeekContext.fromJson(
+      asJsonMap(json['week']) ?? const {},
+      onIssue: onIssue,
+    ),
     race: switch (asJsonMap(json['race'])) {
       final map? => AthleteRaceContext.fromJson(map),
       null => null,
     },
     budget: AthleteBudgetContext.fromJson(
       asJsonMap(json['budget']) ?? const {},
+      onIssue: onIssue,
     ),
     weather: AthleteWeatherContext.fromJson(
       asJsonMap(json['weather']) ?? const {},
     ),
-    holidays: readRecordList(json, 'holidays', AthleteHoliday.fromJson),
+    holidays: readRecordList(
+      json,
+      'holidays',
+      AthleteHoliday.fromJson,
+      onIssue: onIssue,
+    ),
     loggedToday: AthleteLoggedToday.fromJson(
       asJsonMap(json['loggedToday']) ?? const {},
     ),
     plan: AthletePlanContext.fromJson(asJsonMap(json['plan']) ?? const {}),
-    memories: readRecordList(json, 'memories', UserMemory.fromJson),
+    memories: readRecordList(
+      json,
+      'memories',
+      UserMemory.fromJson,
+      onIssue: onIssue,
+    ),
   );
 
   @override
@@ -172,18 +190,21 @@ class AthleteWeekContext extends WireRecord {
   final double loadScore;
   final List<AthleteWorkoutContext> workouts;
 
-  factory AthleteWeekContext.fromJson(Map<String, dynamic> json) =>
-      AthleteWeekContext(
-        start: readString(json, 'start') ?? '',
-        character: readString(json, 'character') ?? '',
-        anchor: readString(json, 'anchor'),
-        loadScore: readDouble(json, 'loadScore') ?? 0,
-        workouts: readRecordList(
-          json,
-          'workouts',
-          AthleteWorkoutContext.fromJson,
-        ),
-      );
+  factory AthleteWeekContext.fromJson(
+    Map<String, dynamic> json, {
+    DecodeIssue onIssue = ignoreDecodeIssue,
+  }) => AthleteWeekContext(
+    start: readString(json, 'start') ?? '',
+    character: readString(json, 'character') ?? '',
+    anchor: readString(json, 'anchor'),
+    loadScore: readDouble(json, 'loadScore') ?? 0,
+    workouts: readRecordList(
+      json,
+      'workouts',
+      AthleteWorkoutContext.fromJson,
+      onIssue: onIssue,
+    ),
+  );
 
   @override
   Map<String, dynamic> toJson() => {
@@ -237,15 +258,17 @@ class AthleteBudgetContext extends WireRecord {
   final List<DayTarget> week;
   final int? raceWeekCarbsG;
 
-  factory AthleteBudgetContext.fromJson(Map<String, dynamic> json) =>
-      AthleteBudgetContext(
-        today: switch (asJsonMap(json['today'])) {
-          final map? => DayTarget.fromJson(map),
-          null => null,
-        },
-        week: readRecordList(json, 'week', DayTarget.fromJson),
-        raceWeekCarbsG: readInt(json, 'raceWeekCarbsG'),
-      );
+  factory AthleteBudgetContext.fromJson(
+    Map<String, dynamic> json, {
+    DecodeIssue onIssue = ignoreDecodeIssue,
+  }) => AthleteBudgetContext(
+    today: switch (asJsonMap(json['today'])) {
+      final map? => DayTarget.fromJson(map),
+      null => null,
+    },
+    week: readRecordList(json, 'week', DayTarget.fromJson, onIssue: onIssue),
+    raceWeekCarbsG: readInt(json, 'raceWeekCarbsG'),
+  );
 
   @override
   Map<String, dynamic> toJson() => {

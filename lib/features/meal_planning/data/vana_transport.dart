@@ -5,7 +5,6 @@ import 'package:http/http.dart' as http;
 import 'package:supabase_flutter/supabase_flutter.dart';
 
 import '../../../shared/services/app_config.dart';
-import '../../../shared/services/logging_service.dart';
 import '../../../shared/services/report/report.dart';
 import '../../ai_credits/domain/insufficient_credits_exception.dart';
 import 'vana_exceptions.dart';
@@ -38,18 +37,15 @@ class VanaTransport {
   VanaTransport({
     required SupabaseClient supabase,
     required AppConfig config,
-    required AppLogger logger,
     HttpClientFactory? clientFactory,
     Report? report,
   }) : _supabase = supabase,
        _config = config,
-       _logger = logger,
        _clientFactory = clientFactory ?? http.Client.new,
        _report = report;
 
   final SupabaseClient _supabase;
   final AppConfig _config;
-  final AppLogger _logger;
   final HttpClientFactory _clientFactory;
   final Report? _report;
 
@@ -87,7 +83,7 @@ class VanaTransport {
     Map<String, dynamic> body,
   ) async {
     final request = _buildRequest(functionName, body);
-    _logger.info('POST ${request.url} (stream)', context: _context);
+    _r.info('POST ${request.url} (stream)', area: 'meal_planning');
 
     final client = _clientFactory();
     http.StreamedResponse streamed;
@@ -124,7 +120,7 @@ class VanaTransport {
     Map<String, dynamic> body,
   ) async {
     final request = _buildRequest(functionName, body);
-    _logger.info('POST ${request.url}', context: _context);
+    _r.info('POST ${request.url}', area: 'meal_planning');
 
     final client = _clientFactory();
     http.Response response;

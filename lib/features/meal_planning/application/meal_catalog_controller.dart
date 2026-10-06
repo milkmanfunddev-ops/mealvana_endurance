@@ -3,9 +3,7 @@ import 'dart:async';
 import 'package:riverpod_annotation/riverpod_annotation.dart';
 
 import '../../../shared/providers/user_id_provider.dart';
-import '../../../shared/services/app_external_deps.dart';
 import '../../../shared/services/connectivity_checker.dart';
-import '../../../shared/services/logging_service.dart';
 import '../../meal_logging/data/meal_log_repository.dart';
 import '../../meal_logging/data/saved_meals_repository.dart';
 import '../../meal_logging/domain/saved_meal.dart';
@@ -15,6 +13,7 @@ import '../domain/meal_ref.dart';
 import '../domain/meal_source.dart';
 import '../domain/meal_type.dart';
 import 'meal_ref_mapping.dart';
+import '../../../shared/services/report/report.dart';
 
 part 'meal_catalog_controller.g.dart';
 
@@ -108,7 +107,7 @@ class MealCatalogController extends _$MealCatalogController {
 
   MealLibraryRemoteDataSource get _remote =>
       ref.read(mealLibraryRemoteDataSourceProvider);
-  AppLogger get _logger => ref.read(appExternalDepsProvider).logger;
+  Report get _report => ref.read(reportProvider);
 
   Timer? _debounce;
   int _searchSeq = 0;
@@ -216,11 +215,11 @@ class MealCatalogController extends _$MealCatalogController {
         ),
       );
     } catch (e, st) {
-      _logger.warning(
-        'Catalog rails: server load failed (local rails kept)',
-        context: 'MEAL_CATALOG_CONTROLLER',
-        error: e,
+      _report.degraded(
+        e,
         stackTrace: st,
+        area: 'meal_planning',
+        message: 'Catalog rails: server load failed (local rails kept)',
       );
     }
   }
@@ -330,11 +329,11 @@ class MealCatalogController extends _$MealCatalogController {
       );
     } catch (e, st) {
       if (!ref.mounted || seq != _searchSeq) return;
-      _logger.warning(
-        'Catalog search failed',
-        context: 'MEAL_CATALOG_CONTROLLER',
-        error: e,
+      _report.degraded(
+        e,
         stackTrace: st,
+        area: 'meal_planning',
+        message: 'Catalog search failed',
       );
       state = AsyncData(
         state.value!.copyWith(isSearching: false, searchError: e),

@@ -4,7 +4,6 @@ import 'package:flutter_test/flutter_test.dart';
 import 'package:mealvana_endurance/features/formula_kit/data/formula_pins_repository.dart';
 import 'package:mealvana_endurance/features/formula_kit/domain/formula_pin.dart';
 import 'package:mealvana_endurance/shared/database/app_database.dart';
-import 'package:mealvana_endurance/shared/services/logging_service.dart';
 import 'package:mocktail/mocktail.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 import 'package:supabase_flutter/supabase_flutter.dart';
@@ -30,14 +29,11 @@ import '../../../helpers/fakes/recording_report.dart';
 
 class MockSupabaseClient extends Mock implements SupabaseClient {}
 
-class MockAppLogger extends Mock implements AppLogger {}
-
 void main() {
   TestWidgetsFlutterBinding.ensureInitialized();
 
   late AppDatabase database;
   late MockSupabaseClient mockSupabase;
-  late MockAppLogger mockLogger;
   late RecordingReport report;
   late FormulaPinsRepository repository;
 
@@ -53,42 +49,7 @@ void main() {
   setUp(() {
     database = AppDatabase.forTesting(NativeDatabase.memory());
     mockSupabase = MockSupabaseClient();
-    mockLogger = MockAppLogger();
     report = RecordingReport();
-
-    // Permissive logger stubs — production logs are fire-and-forget noise here.
-    when(
-      () => mockLogger.info(
-        any(),
-        context: any(named: 'context'),
-        data: any(named: 'data'),
-      ),
-    ).thenReturn(null);
-    when(
-      () => mockLogger.debug(
-        any(),
-        context: any(named: 'context'),
-        data: any(named: 'data'),
-      ),
-    ).thenReturn(null);
-    when(
-      () => mockLogger.warning(
-        any(),
-        context: any(named: 'context'),
-        error: any(named: 'error'),
-        stackTrace: any(named: 'stackTrace'),
-        data: any(named: 'data'),
-      ),
-    ).thenReturn(null);
-    when(
-      () => mockLogger.error(
-        any(),
-        context: any(named: 'context'),
-        error: any(named: 'error'),
-        stackTrace: any(named: 'stackTrace'),
-        data: any(named: 'data'),
-      ),
-    ).thenReturn(null);
 
     // pin()/unpin() fire-and-forget the upload to Supabase. The mock client
     // throws on any unstubbed method call, which surfaces as a rejected
@@ -97,7 +58,6 @@ void main() {
     repository = FormulaPinsRepository(
       supabase: mockSupabase,
       database: database,
-      logger: mockLogger,
       report: report,
     );
   });

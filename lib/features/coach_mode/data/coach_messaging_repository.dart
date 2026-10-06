@@ -7,21 +7,17 @@ import 'package:uuid/uuid.dart';
 
 import '../../../shared/database/app_database.dart';
 import '../../../shared/database/database_provider.dart';
-import '../../../shared/services/logging_service.dart';
-import '../../../shared/services/sentry/sentry_reporter.dart';
-import '../../../shared/services/app_external_deps.dart';
 import '../domain/coach_message.dart';
+import '../../../shared/services/report/report.dart';
 
 part 'coach_messaging_repository.g.dart';
 
 @riverpod
 CoachMessagingRepository coachMessagingRepository(Ref ref) {
-  final deps = ref.read(appExternalDepsProvider);
   return CoachMessagingRepository(
     supabase: Supabase.instance.client,
     database: ref.read(appDatabaseProvider),
-    logger: ref.read(appLoggerProvider),
-    sentry: deps.sentry,
+    report: ref.read(reportProvider),
   );
 }
 
@@ -31,17 +27,14 @@ class CoachMessagingRepository {
   const CoachMessagingRepository({
     required SupabaseClient supabase,
     required AppDatabase database,
-    required AppLogger logger,
-    required SentryReporter sentry,
+    required Report report,
   }) : _supabase = supabase,
        _database = database,
-       _logger = logger,
-       _sentry = sentry;
+       _report = report;
 
   final SupabaseClient _supabase;
   final AppDatabase _database;
-  final AppLogger _logger;
-  final SentryReporter _sentry;
+  final Report _report;
 
   static const _uuid = Uuid();
 
@@ -116,11 +109,11 @@ class CoachMessagingRepository {
 
       return messages;
     } catch (e, stackTrace) {
-      _logger.error(
-        'Failed to get general chat messages from Supabase',
-        context: 'COACH_MESSAGING_REPOSITORY',
-        error: e,
+      _report.fault(
+        e,
         stackTrace: stackTrace,
+        area: 'coach_mode',
+        message: 'Failed to get general chat messages from Supabase',
       );
       rethrow;
     }
@@ -148,11 +141,11 @@ class CoachMessagingRepository {
       final results = await query.get();
       return results.map(_mapToMessageDomain).toList();
     } catch (e, stackTrace) {
-      _logger.error(
-        'Failed to get messages for conversation',
-        context: 'COACH_MESSAGING_REPOSITORY',
-        error: e,
+      _report.fault(
+        e,
         stackTrace: stackTrace,
+        area: 'coach_mode',
+        message: 'Failed to get messages for conversation',
       );
       rethrow;
     }
@@ -171,11 +164,11 @@ class CoachMessagingRepository {
 
       return results.map(_mapToMessageDomain).toList();
     } catch (e, stackTrace) {
-      _logger.error(
-        'Failed to get messages for nutrition plan',
-        context: 'COACH_MESSAGING_REPOSITORY',
-        error: e,
+      _report.fault(
+        e,
         stackTrace: stackTrace,
+        area: 'coach_mode',
+        message: 'Failed to get messages for nutrition plan',
       );
       rethrow;
     }
@@ -192,11 +185,11 @@ class CoachMessagingRepository {
 
       return results.map(_mapToMessageDomain).toList();
     } catch (e, stackTrace) {
-      _logger.error(
-        'Failed to get messages for activity',
-        context: 'COACH_MESSAGING_REPOSITORY',
-        error: e,
+      _report.fault(
+        e,
         stackTrace: stackTrace,
+        area: 'coach_mode',
+        message: 'Failed to get messages for activity',
       );
       rethrow;
     }
@@ -219,11 +212,11 @@ class CoachMessagingRepository {
 
       return results.length;
     } catch (e, stackTrace) {
-      _logger.error(
-        'Failed to get unread message count',
-        context: 'COACH_MESSAGING_REPOSITORY',
-        error: e,
+      _report.fault(
+        e,
         stackTrace: stackTrace,
+        area: 'coach_mode',
+        message: 'Failed to get unread message count',
       );
       return 0;
     }
@@ -262,18 +255,19 @@ class CoachMessagingRepository {
           'updated_at': now.toIso8601String(),
         });
       } catch (e, stackTrace) {
-        _logger.warning(
-          'Immediate upload failed; record stays dirty for retry',
-          context: 'COACH_MESSAGING_REPOSITORY',
-          error: e,
-          stackTrace: stackTrace,
-          data: {'operation': 'send_message', 'recordId': id},
-        );
-        _sentry.reportNetworkError(
+        _report.degraded(
           e,
-          url: 'supabase:coach_messages:send_message',
-          method: 'INSERT',
           stackTrace: stackTrace,
+          area: 'coach_mode',
+          extra: {'operation': 'send_message', 'recordId': id},
+          message: 'Immediate upload failed; record stays dirty for retry',
+        );
+        _report.degraded(
+          e,
+          stackTrace: stackTrace,
+          area: 'network',
+          tags: {'method': 'INSERT'},
+          extra: {'url': 'supabase:coach_messages:send_message'},
         );
         throw StateError('Failed to send message remotely');
       }
@@ -307,11 +301,11 @@ class CoachMessagingRepository {
         updatedAt: now,
       );
     } catch (e, stackTrace) {
-      _logger.error(
-        'Failed to send message',
-        context: 'COACH_MESSAGING_REPOSITORY',
-        error: e,
+      _report.fault(
+        e,
         stackTrace: stackTrace,
+        area: 'coach_mode',
+        message: 'Failed to send message',
       );
       rethrow;
     }
@@ -343,18 +337,19 @@ class CoachMessagingRepository {
           // activity_id and nutrition_plan_id are NULL for general chat
         });
       } catch (e, stackTrace) {
-        _logger.warning(
-          'Immediate upload failed; record stays dirty for retry',
-          context: 'COACH_MESSAGING_REPOSITORY',
-          error: e,
-          stackTrace: stackTrace,
-          data: {'operation': 'send_chat_message', 'recordId': id},
-        );
-        _sentry.reportNetworkError(
+        _report.degraded(
           e,
-          url: 'supabase:coach_messages:send_chat_message',
-          method: 'INSERT',
           stackTrace: stackTrace,
+          area: 'coach_mode',
+          extra: {'operation': 'send_chat_message', 'recordId': id},
+          message: 'Immediate upload failed; record stays dirty for retry',
+        );
+        _report.degraded(
+          e,
+          stackTrace: stackTrace,
+          area: 'network',
+          tags: {'method': 'INSERT'},
+          extra: {'url': 'supabase:coach_messages:send_chat_message'},
         );
         throw StateError('Failed to send chat message remotely');
       }
@@ -383,11 +378,11 @@ class CoachMessagingRepository {
         updatedAt: now,
       );
     } catch (e, stackTrace) {
-      _logger.error(
-        'Failed to send chat message to Supabase',
-        context: 'COACH_MESSAGING_REPOSITORY',
-        error: e,
+      _report.fault(
+        e,
         stackTrace: stackTrace,
+        area: 'coach_mode',
+        message: 'Failed to send chat message to Supabase',
       );
       rethrow;
     }
@@ -416,11 +411,11 @@ class CoachMessagingRepository {
             ),
           );
     } catch (e, stackTrace) {
-      _logger.error(
-        'Failed to mark messages as read',
-        context: 'COACH_MESSAGING_REPOSITORY',
-        error: e,
+      _report.fault(
+        e,
         stackTrace: stackTrace,
+        area: 'coach_mode',
+        message: 'Failed to mark messages as read',
       );
       rethrow;
     }
@@ -433,11 +428,11 @@ class CoachMessagingRepository {
         _database.coachMessagesTable,
       )..where((t) => t.id.equals(messageId))).go();
     } catch (e, stackTrace) {
-      _logger.error(
-        'Failed to delete message',
-        context: 'COACH_MESSAGING_REPOSITORY',
-        error: e,
+      _report.fault(
+        e,
         stackTrace: stackTrace,
+        area: 'coach_mode',
+        message: 'Failed to delete message',
       );
       rethrow;
     }
@@ -456,9 +451,9 @@ class CoachMessagingRepository {
   }) {
     final channelName = 'chat:$coachUserId:$athleteUserId';
 
-    _logger.info(
+    _report.info(
       'Setting up realtime subscription for conversation',
-      context: 'COACH_MESSAGING_REPOSITORY',
+      area: 'coach_mode',
       data: {
         'channelName': channelName,
         'coachUserId': coachUserId,
@@ -475,9 +470,9 @@ class CoachMessagingRepository {
           // REMOVED FILTER: Let all messages through, filter in callback
           // This ensures we don't miss messages due to overly restrictive filters
           callback: (payload) {
-            _logger.info(
+            _report.info(
               'Realtime event received',
-              context: 'COACH_MESSAGING_REPOSITORY',
+              area: 'coach_mode',
               data: {
                 'eventType': payload.eventType.toString(),
                 'table': payload.table,
@@ -495,9 +490,9 @@ class CoachMessagingRepository {
 
               if (messageCoachUserId != coachUserId ||
                   messageAthleteUserId != athleteUserId) {
-                _logger.info(
+                _report.info(
                   'Message not for our conversation, skipping',
-                  context: 'COACH_MESSAGING_REPOSITORY',
+                  area: 'coach_mode',
                   data: {
                     'expected_coach_user_id': coachUserId,
                     'expected_athlete_user_id': athleteUserId,
@@ -523,16 +518,16 @@ class CoachMessagingRepository {
 
               // Only notify for general messages (not activity/plan comments)
               if (message.isGeneralMessage) {
-                _logger.info(
+                _report.info(
                   'Calling onNewMessage callback',
-                  context: 'COACH_MESSAGING_REPOSITORY',
+                  area: 'coach_mode',
                   data: {'messageId': message.id},
                 );
                 onNewMessage(message);
               } else {
-                _logger.info(
+                _report.info(
                   'Message is not a general message, skipping',
-                  context: 'COACH_MESSAGING_REPOSITORY',
+                  area: 'coach_mode',
                   data: {
                     'messageId': message.id,
                     'isActivityComment': message.isActivityComment,
@@ -541,20 +536,20 @@ class CoachMessagingRepository {
                 );
               }
             } catch (e, stackTrace) {
-              _logger.error(
-                'Failed to parse realtime message',
-                context: 'COACH_MESSAGING_REPOSITORY',
-                error: e,
+              _report.fault(
+                e,
                 stackTrace: stackTrace,
+                area: 'coach_mode',
+                message: 'Failed to parse realtime message',
               );
             }
           },
         )
         .subscribe();
 
-    _logger.info(
+    _report.info(
       'Realtime subscription created and subscribed',
-      context: 'COACH_MESSAGING_REPOSITORY',
+      area: 'coach_mode',
       data: {'channelName': channelName},
     );
 
@@ -567,11 +562,11 @@ class CoachMessagingRepository {
       await channel.unsubscribe();
       await _supabase.removeChannel(channel);
     } catch (e, stackTrace) {
-      _logger.error(
-        'Failed to unsubscribe from conversation',
-        context: 'COACH_MESSAGING_REPOSITORY',
-        error: e,
+      _report.fault(
+        e,
         stackTrace: stackTrace,
+        area: 'coach_mode',
+        message: 'Failed to unsubscribe from conversation',
       );
     }
   }
