@@ -1,9 +1,12 @@
+import 'dart:async';
+
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:go_router/go_router.dart';
 import 'package:mealvana_endurance/features/content/application/content_service.dart';
 import 'package:mealvana_endurance/features/daily_macros/presentation/providers/daily_macros_controller.dart';
+import 'package:mealvana_endurance/features/meal_planning/application/meal_plan_controller.dart';
 import 'package:mealvana_endurance/features/meal_planning/application/plan_meal_photos.dart';
 import 'package:mealvana_endurance/features/meal_planning/application/previous_plans.dart';
 import 'package:mealvana_endurance/features/meal_planning/application/vana_settings_controller.dart';
@@ -38,6 +41,7 @@ void main() {
     WidgetTester tester, {
     required Map<String, MealPlan> plans,
     required String id,
+    MealPlan? weekPlan,
   }) async {
     recorder = _Log();
     final router = GoRouter(
@@ -70,6 +74,9 @@ void main() {
           contentServiceProvider.overrideWith(testContentService),
           earlierPlanProvider.overrideWith(
             () => _RecordingEarlierPlan(plans, recorder),
+          ),
+          mealPlanControllerProvider.overrideWith(
+            () => _WeekPlanController(weekPlan),
           ),
           planMealPhotosProvider.overrideWith((ref, key) async => const {}),
           vanaSettingsControllerProvider.overrideWith(
@@ -197,27 +204,84 @@ void main() {
     expect(find.text('plan tab'), findsOneWidget);
   });
 
-  testWidgets('Use this plan again opens the new draft, which has a Confirm', (
-    tester,
-  ) async {
+  /// Ticket 162 (Lee 2026-09-28, 89-006): Use this plan again confirms at
+  /// once. With a plan this week it asks "Replace this week's plan with this
+  /// one?"; on Replace the copy is confirmed and the view lands on Food >
+  /// Shopping as every confirm does (mp-235). No draft is opened.
+  testWidgets('Use this plan again asks to replace this week\'s plan, then '
+      'confirms and lands on Shopping', (tester) async {
     await pumpScreen(
       tester,
-      plans: {earlier.id: earlier, draft.id: draft},
+      plans: {earlier.id: earlier},
       id: earlier.id,
+      weekPlan: fixture.copyWith(
+        id: 'plan-this-week',
+        status: MealPlanStatus.confirmed,
+      ),
     );
 
     await openMenuItem(tester, 'meal_planning.previous_plan_use_again');
 
-    expect(recorder.usedAgain, 1);
-    // The earlier plan's view was replaced by the draft's.
     expect(
-      tester.widget<PreviousPlanScreen>(find.byType(PreviousPlanScreen)).planId,
-      draft.id,
-    );
-    expect(
-      find.byKey(const ValueKey('meal_planning.btn_confirm')),
+      find.byKey(const ValueKey('meal_planning.replace_plan_confirm')),
       findsOneWidget,
     );
+    expect(recorder.usedAgain, 0, reason: 'nothing sent before the answer');
+
+    await tester.tap(find.byKey(const ValueKey('meal_planning.replace_plan_go')));
+    await tester.pumpAndSettle();
+
+    expect(recorder.usedAgain, 1);
+    expect(find.byType(PreviousPlanScreen), findsNothing);
+    expect(find.text('main tab=food&food=shopping'), findsOneWidget);
+  });
+
+  testWidgets('Keep current sends nothing and stays on the plan', (
+    tester,
+  ) async {
+    await pumpScreen(
+      tester,
+      plans: {earlier.id: earlier},
+      id: earlier.id,
+      weekPlan: fixture.copyWith(
+        id: 'plan-this-week',
+        status: MealPlanStatus.confirmed,
+      ),
+    );
+
+    await openMenuItem(tester, 'meal_planning.previous_plan_use_again');
+    await tester.tap(
+      find.byKey(const ValueKey('meal_planning.replace_plan_cancel')),
+    );
+    await tester.pumpAndSettle();
+
+    expect(recorder.usedAgain, 0);
+    expect(find.byType(PreviousPlanScreen), findsOneWidget);
+  });
+
+  testWidgets('with no confirmed plan this week, Use this plan again '
+      'confirms without asking', (tester) async {
+    await pumpScreen(
+      tester,
+      plans: {earlier.id: earlier},
+      id: earlier.id,
+      weekPlan: null,
+    );
+
+    await openMenuItem(tester, 'meal_planning.previous_plan_use_again');
+
+    expect(
+      find.byKey(const ValueKey('meal_planning.replace_plan_confirm')),
+      findsNothing,
+    );
+    expect(recorder.usedAgain, 1);
+    expect(find.text('main tab=food&food=shopping'), findsOneWidget);
+  });
+
+  testWidgets('a draft opened here confirms from its own Confirm', (
+    tester,
+  ) async {
+    await pumpScreen(tester, plans: {draft.id: draft}, id: draft.id);
 
     await tester.tap(find.byKey(const ValueKey('meal_planning.btn_confirm')));
     await tester.pumpAndSettle();
@@ -278,7 +342,10 @@ class _RecordingEarlierPlan extends EarlierPlan {
   @override
   Future<MealPlan?> useAgain() async {
     log.usedAgain++;
-    return plans['plan-copy'];
+    return plans.values.first.copyWith(
+      id: 'plan-copy',
+      status: MealPlanStatus.confirmed,
+    );
   }
 
   @override
@@ -294,4 +361,14 @@ class _NoMacrosController extends DailyMacrosController {
   @override
   Future<DailyMacrosState> build() async =>
       throw StateError('no macros in this test');
+}
+
+/// This week's plan on the tab: what the replace question is asked over.
+class _WeekPlanController extends MealPlanController {
+  _WeekPlanController(this.plan);
+
+  final MealPlan? plan;
+
+  @override
+  FutureOr<MealPlan?> build() => plan;
 }

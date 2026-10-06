@@ -54,11 +54,12 @@ class MealLogRow extends ConsumerWidget {
     final proteinG = log.proteinG;
     final fatG = log.fatG;
 
-    // Favorite lookup — matched by name + component signature since
-    // `saved_meals` has no back-link column to the originating log (item 23).
+    // Favorite lookup — the log's `saved_meal_id` first, then the name +
+    // component signature: the same question the dashboard asks, so the two
+    // agree (ticket 163).
     final favoritesAsync = ref.watch(savedMealsProvider);
     final favorites = favoritesAsync.asData?.value ?? const <SavedMeal>[];
-    final matchedFavorite = findFavoriteMatch(log, favorites);
+    final matchedFavorite = existingFavoriteFor(log, favorites);
 
     // Both directions delete (unified card interaction 391e3fdb).
     // confirmDismiss fires the delete and returns false so the row leaves via

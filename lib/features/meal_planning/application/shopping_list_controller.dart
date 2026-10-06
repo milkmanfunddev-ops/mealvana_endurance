@@ -885,9 +885,12 @@ class ShoppingListController extends _$ShoppingListController {
 
   // ── Projections ───────────────────────────────────────────────────────────
 
-  /// The offline stand-in: the active plan's mirrored lines, no list id.
+  /// The offline stand-in: the confirmed plan's mirrored lines, no list id.
+  /// A draft has no shopping list (110-012), so its mirror is never shown
+  /// as one: with no confirmed plan this week the offline copy is empty
+  /// (Lee 2026-09-28, ticket 162 item 5).
   static ShoppingListState fromPlan(MealPlan? plan) {
-    if (plan == null) return const ShoppingListState();
+    if (plan == null || !plan.isConfirmed) return const ShoppingListState();
     final servings = plan.meals.fold<int>(0, (sum, m) => sum + m.servings);
     return _build(
       planId: plan.id,

@@ -11,6 +11,7 @@ import '../../application/meal_catalog_controller.dart';
 import '../../application/meal_plan_controller.dart';
 import '../../application/vana_chat_controller.dart';
 import '../../domain/meal_plan.dart';
+import '../../domain/meal_plan_status.dart';
 import '../../domain/meal_ref.dart';
 import '../../domain/ui_action.dart';
 import '../../domain/vana_conversation_kind.dart';
@@ -149,6 +150,20 @@ class _VanaBrowseScreenState extends ConsumerState<VanaBrowseScreen> {
   Future<void> _add(MealRef meal) async {
     if (_inFlight.contains(meal.id) || _added.contains(meal.id)) return;
     final content = ref.read(contentServiceProvider);
+    // A planning conversation whose draft another confirm archived is
+    // read-only (mp-675; ticket 162, 88-005): the chat no longer offers
+    // Browse, and one reached another way refuses with the same note,
+    // before anything is sent. The controller refuses it too.
+    final draft = widget.isPlanning
+        ? ref.read(conversationDraftProvider(widget.conversationId)).value
+        : null;
+    if (draft?.status == MealPlanStatus.archived) {
+      MealvanaSnackbar.showWarning(
+        context,
+        content.getValue(ContentKeys.mpPlanBarReplaced),
+      );
+      return;
+    }
     _inFlight.add(meal.id);
     try {
       final plan = await ref

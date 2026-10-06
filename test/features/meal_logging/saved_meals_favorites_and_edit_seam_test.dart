@@ -366,46 +366,8 @@ void main() {
       );
     }
 
-    Future<void> pumpEdit(WidgetTester tester, MealLog log) async {
-      final router = GoRouter(
-        initialLocation: '/',
-        routes: [
-          GoRoute(
-            path: '/',
-            builder: (context, _) => Scaffold(
-              body: Center(
-                child: ElevatedButton(
-                  onPressed: () => context.push('/edit', extra: {'log': log}),
-                  child: const Text('open'),
-                ),
-              ),
-            ),
-          ),
-          GoRoute(path: '/edit', builder: (_, _) => const EditMealLogScreen()),
-        ],
-      );
-      addTearDown(router.dispose);
-      await tester.pumpWidget(
-        ProviderScope(
-          overrides: overrides,
-          child: MaterialApp.router(routerConfig: router),
-        ),
-      );
-      await tester.pump();
-      await tester.tap(find.text('open'));
-      await tester.pump();
-      await tester.pump(const Duration(milliseconds: 300));
-      expect(find.text('Edit Meal'), findsOneWidget);
-    }
-
-    Future<void> save(WidgetTester tester) async {
-      final button = find.text('Save changes');
-      await tester.ensureVisible(button);
-      await tester.tap(button);
-      await tester.pump();
-      await tester.pump(const Duration(milliseconds: 300));
-      await tester.pump(const Duration(milliseconds: 300));
-    }
+    Future<void> pumpEdit(WidgetTester tester, MealLog log) =>
+        pumpEditScreen(tester, log, overrides);
 
     testWidgets('"250.5" stores 251 and untouched macros keep their value', (
       tester,
@@ -466,6 +428,296 @@ void main() {
       expect(row.carbsG, 30.2);
     });
   });
+
+  // Ticket 163, ruling 8 (Lee, 2026-09-28): editing a 2-serving log's items
+  // keeps servings at 2. Items are stored at the amount eaten (112-012), so
+  // the totals are the sum of the stored items and Recent's per-serving base
+  // is that sum divided by 2.
+  group('163 / ruling 8: an item edit keeps the servings count', () {
+    /// A Recent re-log at 2 servings as the app stores it: every item and
+    /// total already doubled, `servings` 2.
+    MealLog twoServings() {
+      final now = DateTime(2026, 9, 28, 7, 30);
+      return MealLog(
+        id: 'log-two-servings',
+        userId: _user,
+        logDate: _logDate,
+        name: 'Oatmeal + raisins',
+        source: MealLogSource.manual,
+        components: [
+          MealComponent.fromJson(const {
+            'name': 'Oatmeal',
+            'portion': '2 cups',
+            'calories': 300,
+            'carb_g': 54,
+            'protein_g': 10,
+            'fat_g': 6,
+          }),
+          MealComponent.fromJson(const {
+            'name': 'Raisins',
+            'portion': '2 small boxes',
+            'calories': 260,
+            'carb_g': 68,
+            'protein_g': 2,
+          }),
+        ],
+        calories: 560,
+        carbsG: 122,
+        proteinG: 12,
+        fatG: 6,
+        servings: 2,
+        eatenAt: now,
+        createdAt: now,
+        updatedAt: now,
+      );
+    }
+
+    final banana = MealComponent.fromJson(const {
+      'name': 'Banana',
+      'portion': '1 medium',
+      'calories': 105,
+      'carb_g': 27,
+      'protein_g': 1,
+    });
+
+    test('adding a food through the real notifier keeps servings 2', () async {
+      final container = ProviderContainer(overrides: overrides);
+      addTearDown(container.dispose);
+      final sub = container.listen(mealLogControllerProvider, (_, _) {});
+      addTearDown(sub.close);
+      final log = await logs.insertLog(twoServings());
+
+      await container
+          .read(mealLogControllerProvider.notifier)
+          .updateLog(log.copyWith(components: [...log.components, banana]));
+      expect(container.read(mealLogControllerProvider), isA<AsyncData>());
+
+      final row = (await logRows()).single;
+      expect(row.servings, 2);
+      expect(row.calories, 665, reason: 'the sum of the stored items');
+      expect(row.carbsG, 149);
+      expect(row.proteinG, 13);
+      expect(row.fatG, 6);
+      expect(row.needsUpload, isFalse, reason: 'the cut wire took the row');
+      expect(logs.sent.last['servings'], 2);
+    });
+
+    test(
+      'removing a food through the real notifier keeps servings 2 and the '
+      'per-serving base halves the new total',
+      () async {
+        final container = ProviderContainer(overrides: overrides);
+        addTearDown(container.dispose);
+        final sub = container.listen(mealLogControllerProvider, (_, _) {});
+        addTearDown(sub.close);
+        final log = await logs.insertLog(twoServings());
+
+        await container
+            .read(mealLogControllerProvider.notifier)
+            .updateLog(log.copyWith(components: [log.components.first]));
+        expect(container.read(mealLogControllerProvider), isA<AsyncData>());
+
+        final row = (await logRows()).single;
+        expect(row.servings, 2);
+        expect(row.calories, 300);
+        expect(row.carbsG, 54);
+
+        final stored = MealLog.fromDriftEntry(row)!;
+        final base = stored.perServing();
+        expect(base.servings, 1);
+        expect(base.calories, 150, reason: 'Recent shows one serving');
+        expect(base.components.single.calories, 150);
+      },
+    );
+
+    testWidgets('Edit Meal: swiping an item away and saving keeps servings 2', (
+      tester,
+    ) async {
+      await logs.insertLog(twoServings());
+      await pumpEditScreen(tester, twoServings(), overrides);
+
+      // Swipe left→right on the first item (Oatmeal) removes it.
+      await tester.drag(find.byType(Dismissible).first, const Offset(400, 0));
+      await tester.pump();
+      await tester.pump(const Duration(milliseconds: 400));
+      expect(find.text('Oatmeal'), findsNothing);
+
+      final button = find.text('Save changes');
+      await tester.ensureVisible(button);
+      await tester.tap(button);
+      await tester.pump();
+      await tester.pump(const Duration(milliseconds: 300));
+      await tester.pump(const Duration(milliseconds: 300));
+
+      final row = (await logRows()).single;
+      expect(row.servings, 2);
+      expect(row.calories, 260, reason: 'the raisins at two servings');
+      expect(row.carbsG, 68);
+      expect(find.text('Edit Meal'), findsNothing, reason: 'saved and popped');
+    });
+  });
+
+  // Ticket 163, ruling 9 (Lee, 2026-09-28): a meal that is already a
+  // favourite is never saved twice. The match is the log's `saved_meal_id`
+  // pointer, or the name + item signature ([findFavoriteMatch]) when the row
+  // predates the pointer.
+  group('163 / ruling 9: an existing favourite is never saved twice', () {
+    MealLog oatmealLog({String? savedMealId}) {
+      final now = DateTime(2026, 9, 28, 8);
+      return MealLog(
+        id: 'log-oatmeal',
+        userId: _user,
+        logDate: _logDate,
+        name: 'Oatmeal + raisins',
+        source: MealLogSource.manual,
+        components: _oatmealAndRaisins(),
+        calories: 280,
+        carbsG: 61,
+        proteinG: 6,
+        fatG: 3,
+        savedMealId: savedMealId,
+        createdAt: now,
+        updatedAt: now,
+      );
+    }
+
+    test('the first save writes the row and points the log at it', () async {
+      final container = ProviderContainer(overrides: overrides);
+      addTearDown(container.dispose);
+      final sub = container.listen(mealLogControllerProvider, (_, _) {});
+      addTearDown(sub.close);
+      final log = await logs.insertLog(oatmealLog());
+
+      final favorite = await container
+          .read(mealLogControllerProvider.notifier)
+          .saveLogAsFavorite(log);
+
+      expect(favorite, isNotNull);
+      expect((await savedRows()).single.id, favorite!.id);
+      expect(
+        (await logRows()).single.savedMealId,
+        favorite.id,
+        reason: 'the log row points at the favourite it made',
+      );
+    });
+
+    test('a second save of the same meal adds no row', () async {
+      final container = ProviderContainer(overrides: overrides);
+      addTearDown(container.dispose);
+      final sub = container.listen(mealLogControllerProvider, (_, _) {});
+      addTearDown(sub.close);
+      final log = await logs.insertLog(oatmealLog());
+      final notifier = container.read(mealLogControllerProvider.notifier);
+
+      final first = await notifier.saveLogAsFavorite(log);
+      final again = await notifier.saveLogAsFavorite(log);
+
+      expect(again?.id, first!.id, reason: 'the existing favourite is handed back');
+      expect((await savedRows()).length, 1);
+      expect(
+        analytics.events.where((e) => e.name == 'meal_saved_as_favorite'),
+        hasLength(1),
+        reason: 'nothing was saved the second time',
+      );
+    });
+
+    test(
+      'a log with no pointer that matches a favourite by name + items adds no row',
+      () async {
+        final container = ProviderContainer(overrides: overrides);
+        addTearDown(container.dispose);
+        final sub = container.listen(mealLogControllerProvider, (_, _) {});
+        addTearDown(sub.close);
+        final now = DateTime(2026, 9, 20, 8);
+        final existing = await saved.saveMeal(
+          SavedMeal(
+            id: '',
+            userId: _user,
+            name: 'oatmeal + raisins',
+            components: _oatmealAndRaisins(),
+            calories: 280,
+            createdAt: now,
+            updatedAt: now,
+          ),
+        );
+        final log = await logs.insertLog(oatmealLog());
+
+        final result = await container
+            .read(mealLogControllerProvider.notifier)
+            .saveLogAsFavorite(log);
+
+        expect(result?.id, existing.id);
+        expect((await savedRows()).length, 1);
+      },
+    );
+
+    test('a favourite that was deleted does not block a new save', () async {
+      final container = ProviderContainer(overrides: overrides);
+      addTearDown(container.dispose);
+      final sub = container.listen(mealLogControllerProvider, (_, _) {});
+      addTearDown(sub.close);
+      final notifier = container.read(mealLogControllerProvider.notifier);
+      final log = await logs.insertLog(oatmealLog());
+
+      final first = await notifier.saveLogAsFavorite(log);
+      await notifier.deleteSavedMeal(first!.id);
+      // The row as it now stands (with the pointer at the deleted favourite).
+      final second = await notifier.saveLogAsFavorite(
+        MealLog.fromDriftEntry((await logRows()).single)!,
+      );
+
+      expect(second, isNotNull);
+      expect(second!.id, isNot(first.id));
+      final rows = await savedRows();
+      expect(rows.where((r) => !r.isDeleted).length, 1);
+    });
+  });
+}
+
+/// Mounts [EditMealLogScreen] through a GoRoute carrying [log] as its extra.
+Future<void> pumpEditScreen(
+  WidgetTester tester,
+  MealLog log,
+  List<Override> overrides,
+) async {
+  final router = GoRouter(
+    initialLocation: '/',
+    routes: [
+      GoRoute(
+        path: '/',
+        builder: (context, _) => Scaffold(
+          body: Center(
+            child: ElevatedButton(
+              onPressed: () => context.push('/edit', extra: {'log': log}),
+              child: const Text('open'),
+            ),
+          ),
+        ),
+      ),
+      GoRoute(path: '/edit', builder: (_, _) => const EditMealLogScreen()),
+    ],
+  );
+  addTearDown(router.dispose);
+  await tester.pumpWidget(
+    ProviderScope(
+      overrides: overrides,
+      child: MaterialApp.router(routerConfig: router),
+    ),
+  );
+  await tester.pump();
+  await tester.tap(find.text('open'));
+  await tester.pump();
+  await tester.pump(const Duration(milliseconds: 300));
+  expect(find.text('Edit Meal'), findsOneWidget);
+}
+
+Future<void> save(WidgetTester tester) async {
+  final button = find.text('Save changes');
+  await tester.ensureVisible(button);
+  await tester.tap(button);
+  await tester.pump();
+  await tester.pump(const Duration(milliseconds: 300));
+  await tester.pump(const Duration(milliseconds: 300));
 }
 
 class _MockPrefs extends Mock implements SharedPreferences {}

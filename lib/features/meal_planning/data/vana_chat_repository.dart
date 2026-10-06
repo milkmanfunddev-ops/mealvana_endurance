@@ -81,6 +81,7 @@ class VanaChatRepository {
     required SupabaseClient supabase,
     required AppLogger logger,
     required this.functionName,
+    this.ambientLookupTimeout = const Duration(seconds: 5),
   }) : _transport = transport,
        _supabase = supabase,
        _logger = logger;
@@ -88,6 +89,11 @@ class VanaChatRepository {
   final VanaTransport _transport;
   final SupabaseClient _supabase;
   final AppLogger _logger;
+
+  /// How long [fetchGeneralConversationForDay] waits before treating the
+  /// day as having no conversation (ticket 162): the ambient chat's first
+  /// entry waits on it, so a slow network never holds the chat closed.
+  final Duration ambientLookupTimeout;
 
   /// `vana-chat` (Vana) or `jade-chat` (legacy 1.23.x alias).
   final String functionName;
@@ -218,6 +224,51 @@ class VanaChatRepository {
         .eq('id', conversationId)
         .maybeSingle();
     return VanaConversationKind.fromWire(row?['kind'] as String?);
+  }
+
+  /// The athlete's general conversation for [day] (`YYYY-MM-DD`, their local
+  /// day) on the server, for a device that holds none for the day: a new
+  /// install, or the app's data cleared (VS-5; ticket 162, Finding 88-001).
+  /// The newest general conversation whose context was built for that day
+  /// (`context_day`, the day the turn was anchored to) or that last had a
+  /// message during it: a tool write clears `context_day` on every
+  /// conversation until its next turn (context-cache.ts), so the message
+  /// time is the second key. Null when there is none, and null on a failed
+  /// read or one slower than [ambientLookupTimeout] (logged), which the
+  /// caller treats as none: the day's first entry then starts a
+  /// conversation as before.
+  Future<String?> fetchGeneralConversationForDay(String day) async {
+    final userId = _transport.currentUserId;
+    if (userId == null) return null;
+    final start = DateTime.parse(day); // local midnight
+    // The next local midnight: a DST change day is 23 or 25 hours long.
+    final end = DateTime(start.year, start.month, start.day + 1);
+    try {
+      final row = await _supabase
+          .from('vana_conversations')
+          .select('id')
+          .eq('user_id', userId)
+          .eq('kind', VanaConversationKind.general.wire)
+          .eq('is_deleted', false)
+          .or(
+            'context_day.eq.$day,'
+            'and(last_message_at.gte.${start.toUtc().toIso8601String()},'
+            'last_message_at.lt.${end.toUtc().toIso8601String()})',
+          )
+          .order('last_message_at', ascending: false)
+          .limit(1)
+          .maybeSingle()
+          .timeout(ambientLookupTimeout);
+      return row?['id'] as String?;
+    } catch (e) {
+      _logger.info(
+        'today\'s general conversation not read from the server; starting '
+        'the day locally',
+        context: _context,
+        data: {'day': day, 'error': '$e'},
+      );
+      return null;
+    }
   }
 
   /// Insert an empty conversation of [kind] and return its id. RLS: owner

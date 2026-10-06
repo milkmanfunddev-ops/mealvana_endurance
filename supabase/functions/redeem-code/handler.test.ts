@@ -388,28 +388,53 @@ describe('an athlete entering a coach code', () => {
     assertEquals(res2.body.coach_name, null);
   });
 
-  // Finding 11-002, ticket 95 (Lee, 2026-09-25): a code from a coach the
-  // athlete has already asked (pending) or is paired with (active) says so,
-  // spends no claim and leaves the first code in coach_code.
-  for (const status of ['pending', 'active'] as const) {
-    it(`a second code from a coach with a ${status} pairing is refused: no claim, coach_code kept`, async () => {
-      const first = code({});
-      const second = code({ code: 'KYLE18' });
-      const db = world([first, second]);
-      const rc = fakeRc();
-      assertEquals((await redeem(db, rc, signedIn(ATHLETE), { code: 'KYLE30' })).body.kind, 'paired');
-      db.rows('coach_athlete_relationships')[0].status = status;
-      const writesBefore = db.writes.length;
+  // Finding 11-002, ticket 95 (Lee, 2026-09-25): a second code from a coach
+  // the athlete is already paired with says so, spends no claim and leaves
+  // the first code in coach_code. Ticket 164 (Lee, 2026-09-28): the refusal
+  // is for an active pairing only, and its copy says "paired", not "asked".
+  it('a second code from a coach with an active pairing is refused: no claim, coach_code kept', async () => {
+    const first = code({});
+    const second = code({ code: 'KYLE18' });
+    const db = world([first, second]);
+    const rc = fakeRc();
+    assertEquals((await redeem(db, rc, signedIn(ATHLETE), { code: 'KYLE30' })).body.kind, 'paired');
+    const writesBefore = db.writes.length;
 
-      refusedWith(await redeem(db, rc, signedIn(ATHLETE), { code: 'KYLE18' }), 'already_paired');
+    const res = await redeem(db, rc, signedIn(ATHLETE), { code: 'KYLE18' });
+    refusedWith(res, 'already_paired');
+    assertEquals(res.body.message, "You're already paired with this coach.");
 
-      assertEquals(db.rows('code_redemptions').map((r) => r.code_id), [first.id], 'no claim on the second code');
-      assertEquals(rc.attributes, [{ user: ATHLETE, attributes: { coach_code: 'KYLE30' } }]);
-      assertEquals(db.writes.length, writesBefore, 'nothing written');
-      assertEquals(db.rows('coach_athlete_relationships').length, 1);
-      assertEquals(db.rows('coach_athlete_relationships')[0].status, status);
+    assertEquals(db.rows('code_redemptions').map((r) => r.code_id), [first.id], 'no claim on the second code');
+    assertEquals(rc.attributes, [{ user: ATHLETE, attributes: { coach_code: 'KYLE30' } }]);
+    assertEquals(db.writes.length, writesBefore, 'nothing written');
+    assertEquals(db.rows('coach_athlete_relationships').length, 1);
+    assertEquals(db.rows('coach_athlete_relationships')[0].status, 'active');
+  });
+
+  it("a pending request to the coach is accepted by the coach's code: active, one row", async () => {
+    const db = world([code({})], {
+      coach_athlete_relationships: [{
+        id: 'rel-1',
+        coach_user_id: COACH,
+        athlete_user_id: ATHLETE,
+        status: 'pending',
+        requested_by: 'athlete',
+        requested_at: iso(NOW - DAY),
+        accepted_at: null,
+      }],
     });
-  }
+    const rc = fakeRc();
+    const res = await redeem(db, rc, signedIn(ATHLETE), { code: 'KYLE30' });
+    assertEquals(res.body.kind, 'paired');
+    assertEquals(res.body.coach_user_id, COACH);
+    const pairs = db.rows('coach_athlete_relationships');
+    assertEquals(pairs.length, 1);
+    assertEquals(pairs[0].id, 'rel-1');
+    assertEquals(pairs[0].status, 'active');
+    assert(pairs[0].accepted_at, 'accepted');
+    assertEquals(rc.attributes, [{ user: ATHLETE, attributes: { coach_code: 'KYLE30' } }]);
+    assertEquals(db.rows('code_redemptions').length, 1);
+  });
 
   it('a coach code from a coach already paired some other way is refused the same way', async () => {
     const db = world([code({})], {
@@ -468,6 +493,30 @@ describe('an athlete entering a coach code', () => {
     assertEquals(pairs[0].archived_at, null);
     assertEquals(pairs[0].declined_at, null);
     assert(pairs[0].accepted_at && pairs[0].accepted_at !== iso(NOW - 3 * DAY), 'accepted anew');
+  });
+
+  it('after a declined pairing the code opens it again: active, accepted, declined_at cleared', async () => {
+    const db = world([code({})], {
+      coach_athlete_relationships: [{
+        id: 'rel-1',
+        coach_user_id: COACH,
+        athlete_user_id: ATHLETE,
+        status: 'declined',
+        requested_by: 'athlete',
+        requested_at: iso(NOW - 3 * DAY),
+        accepted_at: null,
+        declined_at: iso(NOW - 2 * DAY),
+      }],
+    });
+    const rc = fakeRc();
+    const res = await redeem(db, rc, signedIn(ATHLETE), { code: 'KYLE30' });
+    assertEquals(res.body.kind, 'paired');
+    const pairs = db.rows('coach_athlete_relationships');
+    assertEquals(pairs.length, 1);
+    assertEquals(pairs[0].id, 'rel-1');
+    assertEquals(pairs[0].status, 'active');
+    assertEquals(pairs[0].declined_at, null);
+    assert(pairs[0].accepted_at, 'accepted');
   });
 
   it('an attribute RevenueCat refuses answers 502 and frees the claim', async () => {

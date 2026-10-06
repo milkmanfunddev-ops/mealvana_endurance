@@ -199,10 +199,15 @@ export async function extraAction(v: VanaCtx, type: string, p: Record<string, an
       return { parts: [await deletePlan(v, p.id ? String(p.id) : null, scope, true)] };
     }
     case 'undo_receipt': return { parts: [await undoReceipt(v, p)] };
-    // ---- additive 2026-09-25 (mp-675, testing-wave 73): plans are a list. rename_plan{id, name} · use_plan_again{id} (an
-    // earlier plan copied into this week as a new draft; confirming it replaces this week's plan like any new plan).
+    // ---- additive 2026-09-25 (mp-675, testing-wave 73): plans are a list. rename_plan{id, name} · use_plan_again{id, requestId?}
+    // (an earlier plan copied into this week and confirmed at once, Lee 2026-09-28 / ticket 162: it answers what
+    // confirm_plan answers, the batch and the list, and regenerates the day notes the same way).
     case 'rename_plan': return { parts: [{ kind: 'batch', plan: await plan.renamePlan(v, String(p.id), String(p.name ?? '')) }] };
-    case 'use_plan_again': return { parts: [{ kind: 'batch', plan: await plan.usePlanAgain(v, String(p.id)) }] };
+    // `date` (additive, ticket 162): the athlete's local day, as confirm_plan's; missing or malformed is today() (UTC).
+    case 'use_plan_again': {
+      const date = typeof p.date === 'string' && /^\d{4}-\d{2}-\d{2}$/.test(p.date) ? p.date : today();
+      const pl = await plan.usePlanAgain(v, String(p.id), date); refreshDayNotesSoon(v, date, pl.id); return { parts: [{ kind: 'batch', plan: pl }, shop(pl.shopping)] };
+    }
     default: return null;
   }
 }

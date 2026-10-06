@@ -13,6 +13,7 @@ import 'package:mealvana_endurance/features/meal_planning/application/vana_setti
 import 'package:mealvana_endurance/features/meal_planning/domain/home_payload.dart';
 import 'package:mealvana_endurance/features/meal_planning/data/vana_exceptions.dart';
 import 'package:mealvana_endurance/features/meal_planning/domain/meal_plan.dart';
+import 'package:mealvana_endurance/features/meal_planning/domain/meal_plan_status.dart';
 import 'package:mealvana_endurance/features/meal_planning/domain/meal_plan_summary.dart';
 import 'package:mealvana_endurance/features/meal_planning/domain/meal_type.dart';
 import 'package:mealvana_endurance/features/meal_planning/domain/vana_part.dart';
@@ -194,13 +195,52 @@ void main() {
   });
 
   /// Lee's 09-16 demo: there was no way to delete a plan by hand. The menu
-  /// belongs to the plan, so it only exists when there is one.
-  testWidgets('no plan means no plan menu', (tester) async {
-    await pumpTab(tester, plan: _FakePlanController(null));
+  /// belongs to the plan, so with no plan and nothing earlier to reach
+  /// there is none.
+  testWidgets('no plan and no earlier plans means no plan menu', (
+    tester,
+  ) async {
+    await pumpTab(tester, plan: _FakePlanController(null), previous: const []);
     expect(
       find.byKey(const ValueKey('meal_planning.plan_overflow')),
       findsNothing,
     );
+  });
+
+  /// Ticket 162 (Finding 89-012): at the start of a week the tab had no ⋮,
+  /// so Previous plans and Use this plan again could not be reached. With
+  /// earlier plans the ⋮ shows, offering Previous plans alone; the items
+  /// that need a plan on the tab stay hidden.
+  testWidgets('no plan this week but earlier plans: the ⋮ offers Previous '
+      'plans only', (tester) async {
+    await pumpTab(
+      tester,
+      plan: _FakePlanController(null),
+      previous: [
+        MealPlanSummary(
+          id: 'plan-sep14',
+          weekStart: '2026-09-14',
+          status: MealPlanStatus.archived,
+          mealCount: 4,
+        ),
+      ],
+    );
+    final menu = find.byKey(const ValueKey('meal_planning.plan_overflow'));
+    expect(menu, findsOneWidget);
+    expect(
+      find.byKey(const ValueKey('meal_planning.empty_plan_title')),
+      findsOneWidget,
+    );
+
+    await tester.tap(menu);
+    await settle(tester);
+    expect(
+      find.byKey(const ValueKey('meal_planning.plan_previous')),
+      findsOneWidget,
+    );
+    for (final hidden in ['plan_new', 'plan_rebuild_list', 'plan_delete']) {
+      expect(find.byKey(ValueKey('meal_planning.$hidden')), findsNothing);
+    }
   });
 
   testWidgets('a plan with meals carries the ⋮ with all three plan actions', (

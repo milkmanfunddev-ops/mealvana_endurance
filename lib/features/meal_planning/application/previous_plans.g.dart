@@ -99,7 +99,8 @@ String _$previousPlansHash() => r'2312c2ab0c45436ca9ebfd5a44e402297b07e0b3';
 /// One earlier plan by id (`/food/plans/:id`), straight from the server
 /// (`get_plan {id}`); `null` when the server no longer has it. Plans are a
 /// list (mp-675): the athlete edits an earlier plan's meals and servings,
-/// renames it, deletes it, or uses it again as this week's new draft.
+/// renames it, deletes it, or uses it again as this week's plan (confirmed
+/// at once, Lee 2026-09-28).
 ///
 /// History is server-only, like the list: every write here is remote-ack
 /// through `vana-action` and refuses offline before sending anything
@@ -118,7 +119,8 @@ const earlierPlanProvider = EarlierPlanFamily._();
 /// One earlier plan by id (`/food/plans/:id`), straight from the server
 /// (`get_plan {id}`); `null` when the server no longer has it. Plans are a
 /// list (mp-675): the athlete edits an earlier plan's meals and servings,
-/// renames it, deletes it, or uses it again as this week's new draft.
+/// renames it, deletes it, or uses it again as this week's plan (confirmed
+/// at once, Lee 2026-09-28).
 ///
 /// History is server-only, like the list: every write here is remote-ack
 /// through `vana-action` and refuses offline before sending anything
@@ -135,7 +137,8 @@ final class EarlierPlanProvider
   /// One earlier plan by id (`/food/plans/:id`), straight from the server
   /// (`get_plan {id}`); `null` when the server no longer has it. Plans are a
   /// list (mp-675): the athlete edits an earlier plan's meals and servings,
-  /// renames it, deletes it, or uses it again as this week's new draft.
+  /// renames it, deletes it, or uses it again as this week's plan (confirmed
+  /// at once, Lee 2026-09-28).
   ///
   /// History is server-only, like the list: every write here is remote-ack
   /// through `vana-action` and refuses offline before sending anything
@@ -183,12 +186,13 @@ final class EarlierPlanProvider
   }
 }
 
-String _$earlierPlanHash() => r'82bd4f703c8edbb3c07eceb8703fda01eb55c302';
+String _$earlierPlanHash() => r'85933eb47e3e5e253a1252709bc7f2d2b1480024';
 
 /// One earlier plan by id (`/food/plans/:id`), straight from the server
 /// (`get_plan {id}`); `null` when the server no longer has it. Plans are a
 /// list (mp-675): the athlete edits an earlier plan's meals and servings,
-/// renames it, deletes it, or uses it again as this week's new draft.
+/// renames it, deletes it, or uses it again as this week's plan (confirmed
+/// at once, Lee 2026-09-28).
 ///
 /// History is server-only, like the list: every write here is remote-ack
 /// through `vana-action` and refuses offline before sending anything
@@ -222,7 +226,8 @@ final class EarlierPlanFamily extends $Family
   /// One earlier plan by id (`/food/plans/:id`), straight from the server
   /// (`get_plan {id}`); `null` when the server no longer has it. Plans are a
   /// list (mp-675): the athlete edits an earlier plan's meals and servings,
-  /// renames it, deletes it, or uses it again as this week's new draft.
+  /// renames it, deletes it, or uses it again as this week's plan (confirmed
+  /// at once, Lee 2026-09-28).
   ///
   /// History is server-only, like the list: every write here is remote-ack
   /// through `vana-action` and refuses offline before sending anything
@@ -245,7 +250,8 @@ final class EarlierPlanFamily extends $Family
 /// One earlier plan by id (`/food/plans/:id`), straight from the server
 /// (`get_plan {id}`); `null` when the server no longer has it. Plans are a
 /// list (mp-675): the athlete edits an earlier plan's meals and servings,
-/// renames it, deletes it, or uses it again as this week's new draft.
+/// renames it, deletes it, or uses it again as this week's plan (confirmed
+/// at once, Lee 2026-09-28).
 ///
 /// History is server-only, like the list: every write here is remote-ack
 /// through `vana-action` and refuses offline before sending anything

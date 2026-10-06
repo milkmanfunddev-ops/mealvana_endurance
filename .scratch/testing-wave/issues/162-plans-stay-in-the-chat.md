@@ -22,7 +22,7 @@
 
 These files were located by grep, not traced. Follow each flow from its screen before editing. Deploy the changed edge functions to dev per the playbook.
 
-- [ ] Deno tests: use-again confirms and archives the previous confirmed plan with no draft left. A meal add to an archived plan is refused.
-- [ ] Seam tests through the real notifiers: use-again yields a confirmed plan and a rebuilt list. With an empty ambient store and a server-side conversation for today, no new conversation is created. A replaced draft's chat refuses an add.
-- [ ] Widget tests: the Plan tab shows its menu with no plan this week when earlier plans exist. The Shopping tab shows no lines for a draft.
-- [ ] `flutter analyze` clean on touched files.
+- [x] Deno tests: use-again confirms and archives the previous confirmed plan with no draft left. A meal add to an archived plan is refused.
+- [x] Seam tests through the real notifiers: use-again yields a confirmed plan and a rebuilt list. With an empty ambient store and a server-side conversation for today, no new conversation is created. A replaced draft's chat refuses an add.
+- [x] Widget tests: the Plan tab shows its menu with no plan this week when earlier plans exist. The Shopping tab shows no lines for a draft.
+- [x] `flutter analyze` clean on touched files.

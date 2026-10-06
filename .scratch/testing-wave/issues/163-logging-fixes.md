@@ -16,6 +16,6 @@
 
 **Touches:** lib/features/meal_logging/presentation/screens/edit_meal_log_screen.dart, lib/features/meal_logging/application/meal_logging_service.dart, lib/features/meal_logging/domain/meal_log.dart, lib/features/meal_logging/presentation/widgets/meal_log_row.dart, lib/features/macro_dashboard/presentation/widgets/meal_card.dart, lib/features/macro_dashboard/presentation/screens/macro_dashboard_screen.dart, lib/features/barcode_scanning/presentation/screens/barcode_scanner_screen.dart, lib/features/barcode_scanning/application/barcode_scanner_service.dart, lib/features/content/domain/content_keys.dart, assets/config/content_defaults.json
 
-- [ ] Seam test through the real notifier: an item edit on a 2-serving log keeps servings 2 and the scaled totals.
-- [ ] Widget tests: an existing favorite shows "In favorites", and a tap adds no saved-meal row. The barcode sheet accepts 8, 12, 13 and 14 digits and rejects 9 to 11 with the new error.
-- [ ] `flutter analyze` clean on touched files.
+- [x] Seam test through the real notifier: an item edit on a 2-serving log keeps servings 2 and the scaled totals.
+- [x] Widget tests: an existing favorite shows "In favorites", and a tap adds no saved-meal row. The barcode sheet accepts 8, 12, 13 and 14 digits and rejects 9 to 11 with the new error.
+- [x] `flutter analyze` clean on touched files.

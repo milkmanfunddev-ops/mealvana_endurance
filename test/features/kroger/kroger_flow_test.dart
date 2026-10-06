@@ -110,6 +110,10 @@ void main() {
   var ambiguous = false;
   var browserCallback = '';
   Object? browserThrows;
+
+  /// When set, the fake browser stays open until it completes: a sign-in the
+  /// shopper is still in the middle of.
+  Completer<void>? browserGate;
   var account = 'user-a';
   var found = true;
   late Map<String, KrogerProduct> catalog;
@@ -147,6 +151,7 @@ void main() {
     ambiguous = false;
     browserCallback = '';
     browserThrows = null;
+    browserGate = null;
     account = 'user-a';
     found = true;
     // Each Location has its own catalogue. The Spoke's Broccoli has no price
@@ -227,6 +232,7 @@ void main() {
         krogerShoppingEnabledProvider.overrideWithValue(true),
         krogerBrowserProvider.overrideWith(
           (ref) => (url, scheme) async {
+            if (browserGate != null) await browserGate!.future;
             if (browserThrows != null) throw browserThrows!;
             return browserCallback;
           },
@@ -788,8 +794,9 @@ void main() {
       browserThrows = PlatformException(code: 'CANCELED');
       final inner = remote.onCall!;
       remote.onCall = (action, data) async {
-        if (action == 'cancel_connect')
+        if (action == 'cancel_connect') {
           throw const KrogerException('rate_limited');
+        }
         return inner(action, data);
       };
       await controller.connect();
@@ -889,6 +896,129 @@ void main() {
       await tester.pumpAndSettle();
       expect(exports, 0);
       expect(current().connected, false);
+    });
+  });
+
+  // Ticket 164 (Lee, 2026-09-28): a shopper who connects from Add to Kroger
+  // cart is not asked to tap it again; the send follows the sign-in.
+  group('Add to Kroger cart carries on after Connect (164)', () {
+    late List<(String, Map<String, dynamic>)> calls;
+    int count(String action) => calls.where((c) => c.$1 == action).length;
+    setUp(() async {
+      calls = [];
+      status = {
+        'available': true,
+        'connected': false,
+        'environment': 'certification',
+      };
+      final inner = remote.onCall!;
+      remote.onCall = (action, data) async {
+        calls.add((action, data));
+        if (action == 'connect') {
+          return {
+            'url': 'https://api-ce.kroger.com/v1/connect/oauth2/authorize',
+            'redirect': 'com.milkman.mealvanaendurance://callback',
+            'state': 'expected',
+          };
+        }
+        if (action == 'cancel_connect' || action == 'exchange') return {};
+        return inner(action, data);
+      };
+      browserCallback =
+          'com.milkman.mealvanaendurance://callback?state=expected&code=test-code';
+      await restart();
+      await reviewed();
+      expect(current().connected, false);
+      expect(current().draft.ready, true);
+    });
+
+    test('a completed sign-in goes straight on into the send', () async {
+      await controller.connectAndExport();
+      expect(count('exchange'), 1);
+      expect(current().connected, true);
+      expect(exports, 1);
+      expect(current().draft.receiptStatus, 'sent');
+      expect(current().busy, false);
+      expect(current().message, isNull);
+    });
+
+    test('a cancelled sign-in sends nothing and is quiet', () async {
+      browserThrows = PlatformException(code: 'CANCELED');
+      await controller.connectAndExport();
+      expect(count('cancel_connect'), 1);
+      expect(count('exchange'), 0);
+      expect(exports, 0);
+      expect(current().connected, false);
+      expect(current().message, isNull);
+      expect(current().busy, false);
+    });
+
+    test('kroger.com answering with an error sends nothing either', () async {
+      browserCallback =
+          'com.milkman.mealvanaendurance://callback?state=expected&error=access_denied';
+      await controller.connectAndExport();
+      expect(count('exchange'), 0);
+      expect(exports, 0);
+      expect(current().connected, false);
+    });
+
+    test('a failed exchange reports itself and sends nothing', () async {
+      final inner = remote.onCall!;
+      remote.onCall = (action, data) async {
+        if (action == 'exchange') throw const KrogerException('unavailable');
+        return inner(action, data);
+      };
+      await controller.connectAndExport();
+      expect(exports, 0);
+      expect(current().connected, false);
+      expect(current().message, 'unavailable');
+    });
+
+    test(
+      'tapped twice while the sign-in is open: one sign-in, one send',
+      () async {
+        browserGate = Completer<void>();
+        final first = controller.connectAndExport();
+        await Future<void>.delayed(Duration.zero);
+        expect(current().busy, true);
+        final second = controller.connectAndExport();
+        browserGate!.complete();
+        await Future.wait([first, second]);
+        expect(count('connect'), 1);
+        expect(count('exchange'), 1);
+        expect(exports, 1);
+      },
+    );
+
+    test('a sign-in finishing after a refresh sends nothing onto the new '
+        'session', () async {
+      browserGate = Completer<void>();
+      final pending = controller.connectAndExport();
+      await Future<void>.delayed(Duration.zero);
+      await restart();
+      browserGate!.complete();
+      await pending;
+      expect(exports, 0);
+      expect(current().connected, false);
+      expect(current().busy, false);
+    });
+
+    testWidgets('from the screen: Connect on the sheet, then the send, with '
+        'no second confirmation', (tester) async {
+      await showScreen(tester);
+      final copy = loadDefaultContent();
+      await tester.tap(find.byKey(const ValueKey('kroger.export')));
+      await tester.pumpAndSettle();
+      expect(find.text(copy['kroger.send_connect_first']!), findsOneWidget);
+      // The sheet's Connect Kroger (built last), not the body's.
+      await tester.tap(
+        find.widgetWithText(KylePrimaryButton, copy['kroger.connect']!).last,
+      );
+      await tester.pumpAndSettle();
+      expect(find.text(copy['kroger.send_confirm']!), findsNothing);
+      expect(exports, 1);
+      expect(current().connected, true);
+      expect(current().draft.receiptStatus, 'sent');
     });
   });
 

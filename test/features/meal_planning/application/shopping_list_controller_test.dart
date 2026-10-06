@@ -223,7 +223,11 @@ void main() {
   setUp(() async {
     SharedPreferences.setMockInitialValues({});
     prefs = await SharedPreferences.getInstance();
-    plan = VanaActionResult.fromJson(loadFixture('batch')).plan!;
+    // This week's confirmed plan: only a confirmed plan has a list, and only
+    // its mirror stands in offline (110-012; ticket 162 item 5).
+    plan = VanaActionResult.fromJson(
+      loadFixture('batch'),
+    ).plan!.copyWith(status: MealPlanStatus.confirmed);
     // The plan's Drift row: the offline copy's source and the mirror a
     // settled tick is copied into (110-003).
     db = AppDatabase.memory();
@@ -515,15 +519,15 @@ void main() {
 
   test("names this week's confirmed plan, so Previous lists can mark its list "
       '(19-005); a draft names none', () async {
-    final draft = makeContainer();
+    final draft = makeContainer(
+      withPlan: plan.copyWith(status: MealPlanStatus.draft),
+    );
     expect(
       (await draft.read(shoppingListControllerProvider.future)).weekPlanId,
       isNull,
     );
 
-    final confirmed = makeContainer(
-      withPlan: plan.copyWith(status: MealPlanStatus.confirmed),
-    );
+    final confirmed = makeContainer();
     final state = await confirmed.read(shoppingListControllerProvider.future);
     expect(state.weekPlanId, plan.id);
     // it survives a local edit of the state
@@ -1045,6 +1049,29 @@ void main() {
     final after = c.read(shoppingListControllerProvider).value!;
     expect(after.items.map((i) => i.name), before.items.map((i) => i.name));
     expect(after.listId, 'list-plan');
+  });
+
+  /// Ticket 162 item 5 (Lee 2026-09-28, from 133): a draft has no shopping
+  /// list, so with no confirmed plan this week the offline copy is empty
+  /// rather than the draft's lines.
+  test('server unreachable with a draft this week: no offline copy, no '
+      'lines', () async {
+    server.failWith = StateError('offline');
+    final c = makeContainer(
+      withPlan: plan.copyWith(status: MealPlanStatus.draft),
+    );
+    final state = await c.read(shoppingListControllerProvider.future);
+
+    expect(state.listId, isNull);
+    expect(state.planId, isNull);
+    expect(state.items, isEmpty);
+    expect(state.isOffline, isTrue);
+    expect(
+      ShoppingListController.fromPlan(
+        plan.copyWith(status: MealPlanStatus.draft),
+      ).items,
+      isEmpty,
+    );
   });
 
   test('server unreachable: the plan mirror stands in, read-only', () async {

@@ -14,6 +14,7 @@ import '../../../../theme/kyle_design/app_spacing.dart';
 import '../../../../theme/kyle_design/app_text_styles.dart';
 import '../../application/home_service.dart';
 import '../../application/meal_plan_controller.dart';
+import '../../application/previous_plans.dart';
 import '../../application/vana_ambient_conversation_controller.dart';
 import '../../application/vana_settings_controller.dart';
 import '../../data/vana_exceptions.dart';
@@ -90,9 +91,23 @@ class PlanTab extends ConsumerWidget {
           const SizedBox(height: AppSpacing.md),
           if (loading)
             const _LoadingPlanCard()
-          else if (plan == null || plan.meals.isEmpty)
-            const _EmptyPlanCard()
-          else ...[
+          else if (plan == null || plan.meals.isEmpty) ...[
+            // No plan this week, but earlier plans to reach (Finding 89-012,
+            // ticket 162): the ⋮ shows with Previous plans alone. Items that
+            // need a plan on the tab stay hidden. Watched only here, so a
+            // tab with a plan never reads the list.
+            if (ref.watch(previousPlansProvider).value?.isNotEmpty ?? false)
+              Align(
+                alignment: Alignment.centerRight,
+                child: PlanOverflowMenu(
+                  onPrevious: () => showPreviousPlansSheet(
+                    context: context,
+                    onOpen: (id) => context.push('/food/plans/$id'),
+                  ),
+                ),
+              ),
+            const _EmptyPlanCard(),
+          ] else ...[
             // The plan's header: its week and meal count, the ⋮ on the right.
             // (The "This week's plan" overline above it went on 2026-09-16.)
             Row(

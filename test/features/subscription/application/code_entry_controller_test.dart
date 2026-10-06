@@ -81,7 +81,7 @@ const _refusals = {
   'used': 'That code has already been used.',
   'already_redeemed': "You've already used that code.",
   'own_code': "That's your own code. Share it with your athletes.",
-  'already_paired': "You've already asked this coach to pair.",
+  'already_paired': "You're already paired with this coach.",
 };
 
 void main() {

@@ -100,9 +100,9 @@ export async function addMeal(v: VanaCtx, ref: MealRef, servings?: number | null
   return refreshShopping(v, plan.id);
 }
 /** The line a pick on an archived plan gets back, the tool's error Vana relays: the plan bar there offers
- *  "Use this plan instead" (plan_bar.dart), which copies it into this week as a new draft that takes meals. */
+ *  "Use this plan instead" (plan_bar.dart), which makes it this week's confirmed plan, and that plan takes meals (ticket 162). */
 export const ARCHIVED_PLAN_PICK_REFUSAL =
-  'plan is read-only: a different plan was confirmed for this week, so no meals can be added here. Tap "Use this plan instead" on the plan bar to copy it into a new draft you can add to.';
+  'plan is read-only: a different plan was confirmed for this week, so no meals can be added here. Tap "Use this plan instead" on the plan bar to make it this week\'s plan, which you can add to.';
 export class ArchivedPlanError extends Error { constructor() { super(ARCHIVED_PLAN_PICK_REFUSAL); this.name = 'ArchivedPlanError'; } }
 /** A conversation's lookup (`getConversationPlan`) still finds its draft after another confirm archived it: the plan bar
  *  reads it back read-only. A pick must not land there (mp-683, under mp-675), and an earlier plan takes no new meals
@@ -197,7 +197,7 @@ export async function scoreDraftLeftBehind(v: VanaCtx, newConversationId: string
 /** Confirm: the shopping list is built here (TS grocery aggregation), then ONE SQL transaction — `confirm_meal_plan` —
  *  stores it, flips status → confirmed and archives every other non-archived plan for the same athlete-week. The
  *  client gets its remote ack from that single call. */
-export async function confirmPlan(v: VanaCtx, scope?: PlanScope | null): Promise<MealPlan> {
+export async function confirmPlan(v: VanaCtx, scope?: PlanScope | null, opts: { onConfirmed?: () => void } = {}): Promise<MealPlan> {
   const target = (await resolvePlan(v, scope, true))!;
   // The plan is still a draft here, and a draft builds no list (110-012): `confirm` is what makes this build one.
   const plan = await refreshShopping(v, target.id, { confirm: true });
@@ -205,6 +205,7 @@ export async function confirmPlan(v: VanaCtx, scope?: PlanScope | null): Promise
   const { data, error } = await v.db.rpc('confirm_meal_plan', { p_plan_id: plan.id, p_shopping: plan.shopping });
   if (error) throw new Error(`confirm_meal_plan: ${error.message}`);
   if (!data) throw new Error('confirm_meal_plan returned nothing');
+  opts.onConfirmed?.(); // committed: from here the plan is the week's confirmed plan, whatever fails after
   await markListConfirmed(v, plan.id); // the plan's list (shopping.ts) sorts to the top of the Shopping tab from now
   await dropDraftListsAfterArchive(v, plan.weekStart); // the drafts the confirm archived take their lists with them
   // The planning Conversation's outcome, as a Score on its Session (langfuse ticket 13). A plan confirmed outside any
@@ -316,25 +317,37 @@ export async function renamePlan(v: VanaCtx, id: string, name: string): Promise<
   if (error) throw new Error(error.message);
   return (await getPlanById(v, id))!;
 }
-/** `use_plan_again` (mp-675): an earlier plan copied into this week as a new draft, its name and meals with it. The earlier
- *  plan is left as it was, and this week's plan is untouched until the copy is confirmed, which replaces it the way any
- *  new plan's confirm does (`confirm_meal_plan`; mp-674). The copy has no conversation: it is the Plan tab's. Meals go in
- *  through `addMealById`, fresh from the library or the saved meal, so every guard on adding a meal holds for a copy
- *  too; one that can no longer be added is left out rather than copied blind.
- *  The copy takes the place of any earlier conversation-less draft for the week (73-001): that draft is archived first,
- *  so the week never holds a live draft the athlete cannot reach. A conversation's own draft (mp-241) and the
- *  confirmed plan are left alone. */
-export async function usePlanAgain(v: VanaCtx, id: string): Promise<MealPlan> {
+/** `use_plan_again` (mp-675; Lee 2026-09-28, ticket 162): an earlier plan copied into this week and confirmed at once,
+ *  "this week" being the week of [date], the athlete's local day (defaults to today(), UTC),
+ *  its name and meals with it. "You either confirm or you don't": a draft lives only in its Vana chat, so the copy is
+ *  never left as one. The confirm is `confirmPlan`'s, so the plan this week had is archived with its `confirmed_at`
+ *  (it stays in the list, mp-674), every draft in the week is archived with it (mp-241) and the copy's shopping list
+ *  is built. The earlier plan is left as it was. The copy has no conversation: it is the Plan tab's.
+ *  Meals go in through `addMealById`, fresh from the library or the saved meal, so every guard on adding a meal holds
+ *  for a copy too; one that can no longer be added is left out rather than copied blind. A copy that ends up with no
+ *  meals confirms nothing: it is soft-deleted and the call fails, so an empty plan never replaces this week's.
+ *  Writes, in order: (1) the copy's `meal_plans` row, (2) its `plan_meals` rows, (3) its list, (4) `confirm_meal_plan`,
+ *  one transaction. A failure after (1) and before (4) commits soft-deletes the copy, so no draft row is left behind;
+ *  the athlete's plan for the week is untouched until (4). Once (4) has committed the copy IS the week's plan (the old
+ *  one is archived), so a later failure (the list stamp, the read back) leaves it standing and only fails the call. vana-action dedupes the action by `requestId` (idempotency.ts), so a double tap or
+ *  a retry after the phone's timeout confirms one copy, not two. */
+export async function usePlanAgain(v: VanaCtx, id: string, date: string = today()): Promise<MealPlan> {
   const source = await getPlanById(v, id);
   if (!source) throw new Error('plan not found');
-  const weekStart = await currentWeekStart(v);
-  const { error } = await v.db.from('meal_plans').update({ status: 'archived', updated_at: new Date().toISOString() })
-    .eq('user_id', v.userId).eq('week_start', weekStart).eq('status', 'draft').is('conversation_id', null).eq('is_deleted', false);
-  if (error) throw new Error(`use_plan_again: ${error.message}`);
-  await dropDraftListsAfterArchive(v, weekStart);
+  const weekStart = await currentWeekStart(v, date); // the athlete's local day (the app sends it), not UTC's
   const target = await insertDraft(v, weekStart, null, source.name ?? null);
-  await copyMeals(v, source, target, 'use again');
-  return refreshShopping(v, target.id);
+  let confirmed = false;
+  try {
+    await copyMeals(v, source, target, 'use again');
+    const copied = (await getPlanById(v, target.id))!;
+    if (!copied.meals.length) throw new Error('use_plan_again: no meals could be copied from that plan');
+    return await confirmPlan(v, { planId: target.id }, { onConfirmed: () => { confirmed = true; } });
+  } catch (e) {
+    if (confirmed) throw e; // the copy is this week's confirmed plan now: never delete it
+    const { error } = await v.db.from('meal_plans').update({ is_deleted: true, updated_at: new Date().toISOString() }).eq('id', target.id).eq('user_id', v.userId);
+    if (error) console.warn('[plan] use again failed and its copy was not removed', target.id, error.message);
+    throw e;
+  }
 }
 /** A draft archived here takes its list with it (ticket 101; shopping.ts `dropArchivedDraftLists`). The archive has
  *  already landed, so a failed clean-up is logged, not thrown: the next archive in the week, or the migration's

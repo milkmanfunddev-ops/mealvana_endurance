@@ -183,8 +183,8 @@ void main() {
     expect(find.byType(RedeemCodeSheet), findsOneWidget);
   });
 
-  testWidgets('a Code from a coach already asked to pair is said so, in the '
-      'app\'s words (11-002, ticket 95)', (tester) async {
+  testWidgets('a Code from a coach already paired with is said so, in the '
+      'app\'s words (11-002, ticket 95; copy from ticket 164)', (tester) async {
     final entry = RecordingCodeEntry(
       const CodeRefused(reason: CodeRefusal.alreadyPaired),
     );
@@ -197,11 +197,11 @@ void main() {
 
     expect(
       tester.widget<Text>(find.byKey(RedeemCodeSheet.problemKey)).data,
-      "You've already asked this coach to pair.",
+      "You're already paired with this coach.",
     );
     expect(
       _content['redeem_code.refused_already_paired'],
-      "You've already asked this coach to pair.",
+      "You're already paired with this coach.",
     );
     expect(find.byType(RedeemCodeSheet), findsOneWidget);
   });

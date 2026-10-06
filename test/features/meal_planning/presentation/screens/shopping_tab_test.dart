@@ -10,6 +10,8 @@ import 'package:intl/intl.dart';
 import 'package:mealvana_endurance/features/content/domain/content_keys.dart';
 import 'package:mealvana_endurance/shared/widgets/kyle_design/buttons/primary_button.dart';
 import 'package:mealvana_endurance/features/meal_planning/application/shopping_list_controller.dart';
+import 'package:mealvana_endurance/features/meal_planning/data/vana_action_client.dart';
+import 'package:mealvana_endurance/features/meal_planning/domain/meal_plan_status.dart';
 import 'package:mealvana_endurance/features/kroger/application/kroger_availability.dart';
 import 'package:mealvana_endurance/features/meal_planning/domain/shopping_item.dart';
 import 'package:mealvana_endurance/features/meal_planning/domain/shopping_list.dart';
@@ -20,6 +22,7 @@ import 'package:mealvana_endurance/features/nutrition_plan/domain/run_parameters
 import 'package:mealvana_endurance/shared/providers/unit_system_provider.dart';
 import 'package:mealvana_endurance/theme/kyle_design/app_spacing.dart';
 
+import '../../domain/fixture_helpers.dart';
 import '../helpers/test_content.dart';
 
 /// The share action moved from the bottom of the list into the Food screen's
@@ -790,6 +793,37 @@ void _redesignTests() {
       expect(
         find.text(content[ContentKeys.mpShoppingDeletePlanListBody]!),
         findsNothing,
+      );
+    });
+
+    /// Ticket 162 item 5 (Lee 2026-09-28): a draft has no shopping list, so
+    /// its offline copy is nothing: the tab shows no lines, never the
+    /// draft's.
+    testWidgets("a draft's offline copy shows no lines", (tester) async {
+      final content = loadDefaultContent();
+      final draft = VanaActionResult.fromJson(
+        loadFixture('batch'),
+      ).plan!.copyWith(status: MealPlanStatus.draft);
+      expect(draft.shopping, isNotEmpty, reason: 'the mirror holds lines');
+
+      await _pumpTab(
+        tester,
+        ShoppingListController.fromPlan(draft).copyWith(isOffline: true),
+      );
+
+      expect(
+        find.byWidgetPredicate((w) {
+          final key = w.key;
+          return key is ValueKey<String> &&
+              key.value.startsWith('meal_planning.shopping_row_');
+        }),
+        findsNothing,
+      );
+      // Offline with nothing to show says so (89-001), never the draft's
+      // lines and never the first-run card.
+      expect(
+        find.text(content['meal_planning.shopping_offline_empty']!),
+        findsOneWidget,
       );
     });
 

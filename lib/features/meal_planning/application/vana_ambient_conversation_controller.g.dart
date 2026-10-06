@@ -67,7 +67,9 @@ String _$vanaClockHash() => r'8ea0cfb6354214b8bafdc1215fba11ffead9b96f';
 /// has one. It is read at open time (`ref.refresh(...future)`), so a sheet
 /// opened after midnight starts a new conversation even if the app never
 /// restarted. The sheet holds the id it opened with for its whole life and
-/// calls [adopt] once the server names a new conversation.
+/// calls [adopt] once the server names a new conversation. A device holding
+/// nothing for the day asks the server for the day's conversation first
+/// (88-001), so a new install continues the day rather than starting over.
 ///
 /// It also says when that conversation is idle (mp-288): when the sheet
 /// closes ([sheetClosed]), when the app goes to the background, and when a
@@ -92,7 +94,9 @@ const vanaAmbientConversationProvider = VanaAmbientConversationProvider._();
 /// has one. It is read at open time (`ref.refresh(...future)`), so a sheet
 /// opened after midnight starts a new conversation even if the app never
 /// restarted. The sheet holds the id it opened with for its whole life and
-/// calls [adopt] once the server names a new conversation.
+/// calls [adopt] once the server names a new conversation. A device holding
+/// nothing for the day asks the server for the day's conversation first
+/// (88-001), so a new install continues the day rather than starting over.
 ///
 /// It also says when that conversation is idle (mp-288): when the sheet
 /// closes ([sheetClosed]), when the app goes to the background, and when a
@@ -115,7 +119,9 @@ final class VanaAmbientConversationProvider
   /// has one. It is read at open time (`ref.refresh(...future)`), so a sheet
   /// opened after midnight starts a new conversation even if the app never
   /// restarted. The sheet holds the id it opened with for its whole life and
-  /// calls [adopt] once the server names a new conversation.
+  /// calls [adopt] once the server names a new conversation. A device holding
+  /// nothing for the day asks the server for the day's conversation first
+  /// (88-001), so a new install continues the day rather than starting over.
   ///
   /// It also says when that conversation is idle (mp-288): when the sheet
   /// closes ([sheetClosed]), when the app goes to the background, and when a
@@ -149,7 +155,7 @@ final class VanaAmbientConversationProvider
 }
 
 String _$vanaAmbientConversationHash() =>
-    r'7f860dd83da3533926ea888f36e7b5a551b3cedc';
+    r'b7e7da810ff047005aa30cee43d3ef3568a55908';
 
 /// The ambient conversation behind the Vana sheet: one general conversation
 /// per person per day (vana-sheet spec VS-5).
@@ -158,7 +164,9 @@ String _$vanaAmbientConversationHash() =>
 /// has one. It is read at open time (`ref.refresh(...future)`), so a sheet
 /// opened after midnight starts a new conversation even if the app never
 /// restarted. The sheet holds the id it opened with for its whole life and
-/// calls [adopt] once the server names a new conversation.
+/// calls [adopt] once the server names a new conversation. A device holding
+/// nothing for the day asks the server for the day's conversation first
+/// (88-001), so a new install continues the day rather than starting over.
 ///
 /// It also says when that conversation is idle (mp-288): when the sheet
 /// closes ([sheetClosed]), when the app goes to the background, and when a

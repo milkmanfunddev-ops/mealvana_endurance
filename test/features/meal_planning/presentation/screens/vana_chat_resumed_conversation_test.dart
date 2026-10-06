@@ -31,6 +31,7 @@ import 'package:mealvana_endurance/features/meal_planning/application/meal_plan_
 import 'package:mealvana_endurance/features/meal_planning/data/user_memory_repository.dart';
 import 'package:mealvana_endurance/features/meal_planning/data/vana_action_client.dart';
 import 'package:mealvana_endurance/features/meal_planning/data/vana_chat_repository.dart';
+import 'package:mealvana_endurance/features/meal_planning/domain/cooking_session.dart';
 import 'package:mealvana_endurance/features/meal_planning/domain/meal_plan.dart';
 import 'package:mealvana_endurance/features/meal_planning/domain/meal_plan_status.dart';
 import 'package:mealvana_endurance/features/meal_planning/domain/meal_ref.dart';
@@ -124,6 +125,24 @@ class _NoActivePlan extends MealPlanController {
 
   @override
   Future<void> applyServerPlan(MealPlan plan) async {}
+}
+
+/// A pick the server refuses: the write throws after the optimistic tick.
+class _FailingPick extends _NoActivePlan {
+  int picks = 0;
+
+  @override
+  Future<MealPlan?> pickMeals(
+    List<MealPick> meals, {
+    int? servings,
+    CookingSession? session,
+    bool sendSession = false,
+    String? conversationId,
+    String? planId,
+  }) async {
+    picks++;
+    throw Exception('server refused');
+  }
 }
 
 class _FakeMemoryRepo extends Fake implements UserMemoryRepository {
@@ -228,6 +247,7 @@ void main() {
     List<VanaMessage>? messages,
     String? title,
     VanaConversationPlan? rowPlan,
+    MealPlanController Function()? planController,
   }) async {
     tester.view.physicalSize = const Size(800, 3200);
     tester.view.devicePixelRatio = 1;
@@ -253,7 +273,9 @@ void main() {
           vanaChatRepositoryProvider.overrideWithValue(
             _ChatRepo(history: messages ?? history()),
           ),
-          mealPlanControllerProvider.overrideWith(_NoActivePlan.new),
+          mealPlanControllerProvider.overrideWith(
+            planController ?? _NoActivePlan.new,
+          ),
           userMemoryRepositoryProvider.overrideWithValue(_FakeMemoryRepo()),
           vanaActionClientProvider.overrideWithValue(
             _PlanActions(
@@ -303,6 +325,23 @@ void main() {
       expect(ticked('D-024'), findsOneWidget);
       expect(ticked('D-099'), findsNothing);
     });
+
+    testWidgets(
+      'a pick whose write fails takes its tick back off (162 fix 3)',
+      (tester) async {
+        final failing = _FailingPick();
+        await pumpScreen(tester, planController: () => failing);
+
+        await tester.tap(
+          find.byKey(const ValueKey('meal_planning.picker_tick_D-099')),
+        );
+        await tester.pump();
+        await tester.pump(const Duration(milliseconds: 50));
+
+        expect(failing.picks, 1);
+        expect(ticked('D-099'), findsNothing);
+      },
+    );
 
     testWidgets('with no plan, no card is ticked', (tester) async {
       await pumpScreen(tester);

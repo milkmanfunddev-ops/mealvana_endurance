@@ -106,6 +106,11 @@ VanaMessage _message(String id, VanaMessageRole role, String text) =>
 /// and asks with two replies; what a turn streams is stored, so a second
 /// sheet reads it back.
 class _FakeChatRepo extends Fake implements VanaChatRepository {
+  /// This device holds nothing for the day and neither does the server
+  /// (ticket 162, 88-001): the day starts as before.
+  @override
+  Future<String?> fetchGeneralConversationForDay(String day) async => null;
+
   final List<Map<String, Object?>> calls = [];
   List<VanaMessage> history = [];
 

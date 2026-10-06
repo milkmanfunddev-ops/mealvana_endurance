@@ -445,6 +445,14 @@ class ContentKeys {
       'meal_planning.previous_plan_use_again';
   static const String mpPreviousPlanUseAgainDone =
       'meal_planning.previous_plan_use_again_done';
+  static const String mpPreviousPlanReplaceTitle =
+      'meal_planning.previous_plan_replace_title';
+  static const String mpPreviousPlanReplaceBody =
+      'meal_planning.previous_plan_replace_body';
+  static const String mpPreviousPlanReplaceConfirm =
+      'meal_planning.previous_plan_replace_confirm';
+  static const String mpPreviousPlanReplaceCancel =
+      'meal_planning.previous_plan_replace_cancel';
   static const String mpPreviousPlanDeleteBody =
       'meal_planning.previous_plan_delete_body';
   static const String mpPreviousPlanMissing =
@@ -1271,6 +1279,9 @@ class ContentKeys {
   static const String mealLogActionsUndo = 'meal_log_actions.undo';
   static const String mealLogActionsSaveAsFavorite =
       'meal_log_actions.save_as_favorite';
+  // A meal that is already a favourite (testing-wave 163, Lee 2026-09-28)
+  static const String mealLogActionsInFavorites =
+      'meal_log_actions.in_favorites';
   static const String mealLogActionsSavedAsFavorite =
       'meal_log_actions.saved_as_favorite';
   static const String mealLogActionsSaveAsFavoriteFailed =
