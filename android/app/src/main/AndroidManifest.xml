@@ -54,6 +54,22 @@
       </intent-filter>
     </activity>
 
+    <!-- Sign in with Apple on Android (ticket 17). The plugin's own manifest is
+         empty, so the app declares its callback activity. The Apple return URL
+         (supabase/functions/apple-signin-callback) redirects to
+         intent://callback?...;scheme=signinwithapple, which lands here. -->
+    <activity
+        android:name="com.aboutyou.dart_packages.sign_in_with_apple.SignInWithAppleCallback"
+        android:exported="true">
+      <intent-filter>
+        <action android:name="android.intent.action.VIEW"/>
+        <category android:name="android.intent.category.DEFAULT"/>
+        <category android:name="android.intent.category.BROWSABLE"/>
+        <data android:scheme="signinwithapple"/>
+        <data android:path="callback"/>
+      </intent-filter>
+    </activity>
+
     <!-- Google Sign-In Configuration -->
     <meta-data
         android:name="com.google.android.gms.auth.api.signin.GoogleSignInOptions$SERVER_CLIENT_ID"
