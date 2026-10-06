@@ -10,6 +10,7 @@ import 'package:image_picker/image_picker.dart';
 import 'package:intl/intl.dart';
 
 import '../../../../shared/services/app_config.dart';
+import '../../../../shared/services/report/report.dart';
 import '../../../../shared/widgets/custom_app_bar_back_button.dart';
 import '../../../../shared/widgets/kyle_design/kyle_design.dart';
 import '../../../ai_credits/domain/insufficient_credits_exception.dart';
@@ -194,7 +195,16 @@ class _EditMealLogScreenState extends ConsumerState<EditMealLogScreen> {
         imageQuality: 85,
         maxWidth: 1000,
       );
-    } catch (_) {
+    } catch (e, st) {
+      // Permission denied or no camera: the app lives with it.
+      ref
+          .read(reportProvider)
+          .degraded(
+            e,
+            stackTrace: st,
+            area: 'meal_logging',
+            message: 'rescan photo: image picker failed',
+          );
       if (mounted) {
         MealvanaSnackbar.showError(
           context,
@@ -242,15 +252,38 @@ class _EditMealLogScreenState extends ConsumerState<EditMealLogScreen> {
         );
       }
     } on InsufficientCreditsException catch (e) {
+      ref
+          .read(reportProvider)
+          .note(
+            'rescan photo: out of credits, paywall shown',
+            area: 'meal_logging',
+          );
       maybeShowInsufficientCreditsPaywall(e);
     } on MealAiException catch (e) {
+      // The service already reports the underlying failure; this is the
+      // user-facing branch.
+      ref
+          .read(reportProvider)
+          .note(
+            'rescan photo failed: ${e.kind.name}',
+            area: 'meal_logging',
+            data: {'debug': e.debugMessage},
+          );
       if (!mounted) return;
       if (e.kind == MealAiFailureKind.notFood) {
         MealvanaSnackbar.showWarning(context, e.userMessage);
       } else {
         MealvanaSnackbar.showError(context, e.userMessage);
       }
-    } catch (_) {
+    } catch (e, st) {
+      ref
+          .read(reportProvider)
+          .fault(
+            e,
+            stackTrace: st,
+            area: 'meal_logging',
+            message: 'rescan photo: unexpected failure',
+          );
       if (mounted) {
         MealvanaSnackbar.showError(
           context,

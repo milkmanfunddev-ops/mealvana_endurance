@@ -3,6 +3,7 @@ import 'dart:convert';
 import 'package:drift/drift.dart';
 
 import '../../../shared/database/app_database.dart';
+import '../../../shared/services/report/report.dart';
 import 'consumed_totals.dart';
 import 'meal_component.dart';
 import 'meal_log_source.dart';
@@ -345,7 +346,16 @@ class MealLog {
     try {
       final decoded = jsonDecode(raw);
       return _coerceComponents(decoded);
-    } catch (_) {
+    } catch (e, st) {
+      // A row with an unreadable items column shows as empty rather than
+      // taking the diary down; the row itself is the evidence.
+      SentryReport.global.degraded(
+        e,
+        stackTrace: st,
+        area: 'meal_logging',
+        message: 'meal_log items column did not decode',
+        extra: {'raw_length': raw.length},
+      );
       return const [];
     }
   }

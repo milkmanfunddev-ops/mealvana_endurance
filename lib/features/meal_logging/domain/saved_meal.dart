@@ -3,6 +3,7 @@ import 'dart:convert';
 import 'package:drift/drift.dart'; // Value<T>
 
 import '../../../shared/database/app_database.dart';
+import '../../../shared/services/report/report.dart';
 import 'meal_component.dart';
 
 /// Immutable domain model for an explicit user favorite ("My Meals").
@@ -255,7 +256,14 @@ class SavedMeal {
     try {
       final decoded = jsonDecode(raw);
       return _coerceComponents(decoded);
-    } catch (_) {
+    } catch (e, st) {
+      SentryReport.global.degraded(
+        e,
+        stackTrace: st,
+        area: 'meal_logging',
+        message: 'saved_meal items column did not decode',
+        extra: {'raw_length': raw.length},
+      );
       return const [];
     }
   }
@@ -265,7 +273,14 @@ class SavedMeal {
     if (raw == null || raw.isEmpty || raw == '[]') return const [];
     try {
       return _coerceStringList(jsonDecode(raw));
-    } catch (_) {
+    } catch (e, st) {
+      SentryReport.global.degraded(
+        e,
+        stackTrace: st,
+        area: 'meal_logging',
+        message: 'saved_meal meal_types column did not decode',
+        extra: {'raw_length': raw.length},
+      );
       return const [];
     }
   }
