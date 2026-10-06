@@ -75,6 +75,11 @@ IntegrationModel _runnaIntegration() => const IntegrationModel(
   providerAthleteId: 'abcd1234',
 );
 
+/// The integration coordinator's own faults, told apart from the shared
+/// [SyncCoordinator]'s by the `provider` extra only the former sets.
+bool _isProviderFault(RecordedReport f) =>
+    f.area == 'sync' && (f.extra?.containsKey('provider') ?? false);
+
 void main() {
   TestWidgetsFlutterBinding.ensureInitialized();
 
@@ -161,9 +166,10 @@ void main() {
       expect(note.area, 'sync');
       expect(note.data, containsPair('provider', 'runna'));
       expect(note.data, containsPair('error', 'Bad feed'));
-      // Only the coordinator's own area: the shared SyncCoordinator fake in
-      // this harness raises its own faults under other areas.
-      expect(report.faults.where((f) => f.area == 'sync'), isEmpty);
+      // Only this coordinator's own faults (they carry a `provider` extra):
+      // the shared SyncCoordinator in this harness raises its own `sync`
+      // faults when the mocked repository returns null.
+      expect(report.faults.where(_isProviderFault), isEmpty);
     });
 
     test('a sync service that throws is a Fault and arms the cooldown', () async {
@@ -175,7 +181,7 @@ void main() {
       await sut.ensureIntegrationsSynced(_userId);
       await sut.ensureIntegrationsSynced(_userId);
 
-      final fault = report.faults.singleWhere((f) => f.area == 'sync');
+      final fault = report.faults.singleWhere(_isProviderFault);
       expect(fault.error, isA<StateError>());
       expect(fault.extra, containsPair('provider', 'runna'));
       verify(() => runnaSync.syncWorkouts(_userId)).called(1);
