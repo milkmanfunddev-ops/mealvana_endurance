@@ -13,6 +13,7 @@ import '../../../../shared/services/app_external_deps.dart';
 import '../../../../shared/widgets/adaptive/adaptive.dart';
 import '../../../../shared/widgets/custom_app_bar_back_button.dart';
 import '../providers/settings_controller.dart';
+import '../../../../shared/services/app_config.dart';
 import 'debug_screen.dart';
 
 /// Settings Screen - Kyle's Design System + Database Integration RESTORED
@@ -25,10 +26,6 @@ class SettingsScreen extends ConsumerStatefulWidget {
 }
 
 class _SettingsScreenState extends ConsumerState<SettingsScreen> {
-  // Triple-tap debug feature (Profile & Preferences row → DebugScreen)
-  int _tapCount = 0;
-  DateTime? _lastTapTime;
-
   // 7-tap reveal for "Developer / Tester" analytics exclusion section
   int _versionTapCount = 0;
   DateTime? _lastVersionTapTime;
@@ -47,31 +44,6 @@ class _SettingsScreenState extends ConsumerState<SettingsScreen> {
         setState(() => _showTesterSection = true);
       }
     });
-  }
-
-  void _handleProfileTap() {
-    final now = DateTime.now();
-
-    // Reset counter if more than 2 seconds since last tap
-    if (_lastTapTime != null &&
-        now.difference(_lastTapTime!) > const Duration(seconds: 2)) {
-      _tapCount = 0;
-    }
-
-    _tapCount++;
-    _lastTapTime = now;
-
-    debugPrint('🐛 Settings tap detected! Tap count: $_tapCount');
-
-    if (_tapCount == 3) {
-      _tapCount = 0; // Reset counter
-      debugPrint('🎉 Triple tap detected! Opening debug screen...');
-
-      // Navigate to debug screen
-      Navigator.of(
-        context,
-      ).push(MaterialPageRoute(builder: (context) => const DebugScreen()));
-    }
   }
 
   /// Counts taps on the version text. Seven taps within 3-second windows
@@ -400,7 +372,43 @@ class _SettingsScreenState extends ConsumerState<SettingsScreen> {
               ),
             ),
             _buildDeviceIdRow(context),
+            if (ref.read(appConfigProvider).appEnvironment == 'dev')
+              _buildDebugConsoleRow(context),
           ],
+        ),
+      ),
+    );
+  }
+
+  /// Opens the debug console (Report log, manual sync, Sentry pipeline
+  /// probes). Dev flavor only, behind the tester gate; the old triple-tap on
+  /// the Profile row never fired because the row's own InkWell won the
+  /// gesture.
+  Widget _buildDebugConsoleRow(BuildContext context) {
+    return Material(
+      type: MaterialType.transparency,
+      child: ListTile(
+        key: const ValueKey('settings.debug_console_row'),
+        contentPadding: EdgeInsets.zero,
+        dense: true,
+        title: Text(
+          'Debug console',
+          style: AppTextStyles.bodySmall.copyWith(
+            color: Theme.of(context).colorScheme.onSurface,
+          ),
+        ),
+        subtitle: Text(
+          'Report log, manual sync, Sentry pipeline probes',
+          style: AppTextStyles.bodySmall.copyWith(
+            color: Theme.of(context).colorScheme.onSurfaceVariant,
+          ),
+        ),
+        trailing: const Icon(Icons.chevron_right, size: 18),
+        onTap: () => Navigator.of(context).push(
+          MaterialPageRoute(
+            settings: const RouteSettings(name: '/settings/debug-console'),
+            builder: (context) => const DebugScreen(),
+          ),
         ),
       ),
     );
@@ -665,23 +673,18 @@ class _SettingsScreenState extends ConsumerState<SettingsScreen> {
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
-          // Profile & Preferences (with triple-tap gesture for debug)
-          GestureDetector(
-            onTap: _handleProfileTap,
-            behavior: HitTestBehavior.opaque,
-            excludeFromSemantics: true,
-            child: _buildQuickLink(
-              context: context,
-              rowKey: const ValueKey('settings.profile_row'),
-              icon: FontAwesomeIcons.user.data,
-              title: 'Profile & Preferences',
-              subtitle: 'Edit your profile, units, and preferences',
-              onTap: () {
-                final analytics = ref.read(appExternalDepsProvider);
-                analytics.analytics.track('settings_preferences_tapped');
-                context.push('/settings/preferences');
-              },
-            ),
+          // Profile & Preferences
+          _buildQuickLink(
+            context: context,
+            rowKey: const ValueKey('settings.profile_row'),
+            icon: FontAwesomeIcons.user.data,
+            title: 'Profile & Preferences',
+            subtitle: 'Edit your profile, units, and preferences',
+            onTap: () {
+              final analytics = ref.read(appExternalDepsProvider);
+              analytics.analytics.track('settings_preferences_tapped');
+              context.push('/settings/preferences');
+            },
           ),
 
           const SizedBox(height: AppSpacing.sm),

@@ -19,6 +19,9 @@ part 'athlete_zones_provider.g.dart';
 @riverpod
 Future<AthleteZones?> athleteZones(Ref ref, String userId) async {
   final repository = ref.watch(integrationsRepositoryProvider);
+  // Before the first await: the provider may be disposed while the lookup
+  // runs, and `ref` cannot be used after that.
+  final onIssue = ref.read(reportProvider).decodeIssue('training_peaks');
 
   // Check Training Peaks integration first (primary source of zones)
   final tpIntegration = await repository.getIntegration(
@@ -30,7 +33,7 @@ Future<AthleteZones?> athleteZones(Ref ref, String userId) async {
       tpIntegration.athleteZonesJson != null) {
     return AthleteZones.fromJsonString(
       tpIntegration.athleteZonesJson,
-      onIssue: ref.read(reportProvider).decodeIssue('training_peaks'),
+      onIssue: onIssue,
     );
   }
 

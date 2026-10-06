@@ -161,11 +161,35 @@ all text and images.
 
 ## The dev debug screen
 
-Triple-tap the Profile & Preferences row in Settings to open `DebugScreen`. Its log view reads `ReportLog`, an
-in-memory ring of the last 500 lines that `Report` mirrored. Every `fault`, `degraded`, `note`,
-`info` and `debug` call lands there with its level, area, data and error. Nothing else writes to
-it. You can filter by level, copy to the clipboard, or clear it. It is a dev convenience and does
-not count as a D9 channel.
+In a dev-flavor build, tap the version text in Settings seven times (or mark the device
+internal) to reveal the Developer / Tester section, then tap "Debug console" to open
+`DebugScreen`. Prod builds have no entry point. Its log view reads
+`ReportLog`, an in-memory ring of the last 500 lines that `Report` mirrored. Every `fault`,
+`degraded`, `note`, `info` and `debug` call lands there with its level, area, data and error.
+Nothing else writes to it. You can filter by level, copy to the clipboard, or clear it. It is a dev
+convenience and does not count as a D9 channel.
+
+### Proving the pipeline on a device
+
+The screen's "Sentry pipeline" section (collapsed by default) fires one report of each class
+through `ReportPipelineProbe` (`lib/features/settings/application/report_pipeline_probe.dart`).
+Every probe lands in area `debug` with a `probe` tag, so the events are easy to find and never
+mistaken for a real failure.
+
+| Button | What it does | What to expect in the dev project |
+|---|---|---|
+| Throw a Fault | `report.fault(ReportProbeFault)` | one `error` event, tags `severity:fault`, `probe:fault` |
+| Raise a Degraded | `report.degraded(ReportProbeDegraded)` | one `warning` event, `probe:degraded` |
+| Note, then throw | `report.note(...)` then `report.fault(...)` | one `error` event whose breadcrumbs carry the `note.debug` crumb; no event for the Note itself (`debug` is not a promoted area) |
+| Edge: bad payload | `functions.invoke('get-foods', body: 'not json')` | one event in environment `edge-dev` tagged `edge_function:get-foods`; the app records only a Note for the 400 |
+| Crash (unhandled) | throws from the next frame, outside `Report` | one `error` event with `handled: false`, mechanism `FlutterError`; no Mixpanel fan-out |
+
+Each Fault and Degraded also produces one Mixpanel `error_reported` event. In a dev build the
+tracker is the no-op echo, so the event shows in the simulator console as
+`📊 [ANALYTICS] error_reported {...}` rather than in Mixpanel. Every event should carry the Supabase
+user id, the `role`, `device_id` and `shorebird_patch` tags, and a PostgREST breadcrumb trail; none
+should have a replay attached. The run that first proved this, with event ids, is recorded in
+`.scratch/sentry/issues/15-device-check-and-the-doc.md`.
 
 ## Bootstrap
 

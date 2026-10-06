@@ -8,10 +8,10 @@
 
 - [x] `pubspec` resolves the latest stable 9.x SDK packages and `sentry_supabase`; codegen and analyzer clean
 - [x] One `bootstrap(flavor)`; the four `main*` files are thin; `SentryFlutter.init` uses `appRunner`, with no `runZonedGuarded`, `FlutterError.onError` or `PlatformDispatcher.onError` set by app code
-- [ ] (device, ticket 15) A forced crash in a dev build shows in the dev project with `handled: false` and mechanism `FlutterError`
+- [x] (device, ticket 15, 2026-10-06) A forced crash in a dev build shows in the dev project with `handled: false` and mechanism `FlutterError` (event `dcbc87f1c3404011926d7e5b706dfaf8`)
 - [x] No prod DSN literal remains in app code; a dev build with no DSN reports nothing and logs a Fault to the console
-- [x] (wired; device confirms) Events carry `user.id` = Supabase user id, tags `role`, `device_id`, `shorebird_patch`; no email anywhere in an event; `sendDefaultPii` false
-- [ ] (device, ticket 15) A PostgREST call appears as a breadcrumb and span on a dev event; `sentry-trace` reaches the edge request headers
+- [x] (device confirmed, ticket 15, 2026-10-06) Events carry `user.id` = Supabase user id, tags `role`, `device_id`, `shorebird_patch`; no email anywhere in an event; `sendDefaultPii` false
+- [ ] (device, ticket 15, 2026-10-06) PostgREST `http` breadcrumbs confirmed on the dev events; `sentry-trace` / `traceparent` on the edge request headers still unverified (the edge wrapper attaches no request entry, so the headers are not visible from Sentry; needs an edge log line)
 - [x] Full suite green
 
 ## Build notes (2026-10-06)
