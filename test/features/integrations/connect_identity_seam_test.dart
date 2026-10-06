@@ -107,11 +107,8 @@ void main() {
     final activitiesRepository = ActivitiesRepository(
       supabase: supabase,
       database: db,
-      logger: MockAppLogger(),
-      sentry: mockSentryReporter(),
-      deduplicationService: ActivityDeduplicationService(
-        logger: MockAppLogger(),
-      ),
+      report: RecordingReport(),
+      deduplicationService: ActivityDeduplicationService(),
     );
 
     container = ProviderContainer(

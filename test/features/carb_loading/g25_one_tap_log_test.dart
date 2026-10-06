@@ -117,7 +117,11 @@ void main() {
   /// Seeds the local mirror the way the app does: post-G26 WIRE rows
   /// through the REAL sync mapper — the sync pickup is part of the proof.
   Future<void> seedFoodsMirror() async {
-    final foodRepository = FoodRepository(MockSupabaseClient(), db);
+    final foodRepository = FoodRepository(
+      MockSupabaseClient(),
+      db,
+      report: RecordingReport(),
+    );
     await foodRepository.syncFoodsToLocalDatabase(wireFoodRowsPostSeed);
   }
 
