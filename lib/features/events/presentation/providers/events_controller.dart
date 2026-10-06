@@ -8,7 +8,7 @@ import '../../../carb_loading/presentation/providers/carb_nudge_coordinator.dart
 import '../../../macro_dashboard/presentation/providers/carb_dashboard_providers.dart';
 import '../../domain/event.dart';
 import '../../../activities/domain/activity.dart';
-import '../../../../shared/services/logging_service.dart';
+import '../../../../shared/services/report/report.dart';
 import '../../../../shared/providers/user_id_provider.dart';
 import '../../../../shared/domain/activity_type.dart';
 import '../../../../shared/services/sync/sync_coordinator.dart';
@@ -41,7 +41,7 @@ class EventsController extends _$EventsController {
   Future<void> _backgroundSync(String userId) async {
     final repo = ref.read(eventsRepositoryProvider);
     final syncCoordinator = ref.read(syncCoordinatorProvider.notifier);
-    final logger = ref.read(appLoggerProvider);
+    final report = ref.read(reportProvider);
 
     try {
       final wasStale = await repo.isStale();
@@ -56,10 +56,10 @@ class EventsController extends _$EventsController {
         ref.invalidateSelf();
       }
     } catch (e) {
-      logger.warning(
-        'Background sync failed',
-        context: 'EVENTS_CONTROLLER',
-        data: {'error': e.toString()},
+      report.degraded(
+        LoggedFault('Background sync failed'),
+        area: 'events',
+        extra: {'error': e.toString()},
       );
     }
   }
@@ -93,7 +93,7 @@ class EventsController extends _$EventsController {
     // CRITICAL: Cache ALL ref-dependent values BEFORE any async operations
     // to avoid "Ref disposed" errors if provider rebuilds during async work
     final service = ref.read(eventsServiceProvider);
-    final logger = ref.read(appLoggerProvider);
+    final report = ref.read(reportProvider);
 
     try {
       // Read deviceId BEFORE async operations
@@ -134,8 +134,8 @@ class EventsController extends _$EventsController {
 
       return createdEvent.id;
     } catch (e) {
-      // Use cached logger (safe - no ref access)
-      logger.error('Error creating event', error: e);
+      // Use cached report (safe - no ref access)
+      report.fault(e, area: 'events', message: 'Error creating event');
       rethrow;
     } finally {
       keepAliveLink.close();
@@ -149,7 +149,7 @@ class EventsController extends _$EventsController {
 
     // CRITICAL: Cache ALL ref-dependent values BEFORE any async operations
     final service = ref.read(eventsServiceProvider);
-    final logger = ref.read(appLoggerProvider);
+    final report = ref.read(reportProvider);
 
     try {
       final deviceIdValue = await ref.read(userIdProvider.future);
@@ -175,7 +175,7 @@ class EventsController extends _$EventsController {
       ref.invalidate(activitiesControllerProvider);
       ref.invalidate(allActivitiesProvider);
     } catch (e) {
-      logger.error('Error updating event', error: e);
+      report.fault(e, area: 'events', message: 'Error updating event');
       rethrow;
     } finally {
       keepAliveLink.close();
@@ -189,7 +189,7 @@ class EventsController extends _$EventsController {
 
     // CRITICAL: Cache ALL ref-dependent values BEFORE any async operations
     final service = ref.read(eventsServiceProvider);
-    final logger = ref.read(appLoggerProvider);
+    final report = ref.read(reportProvider);
 
     try {
       final deviceIdValue = await ref.read(userIdProvider.future);
@@ -217,7 +217,7 @@ class EventsController extends _$EventsController {
       ref.invalidate(activitiesControllerProvider);
       ref.invalidate(allActivitiesProvider);
     } catch (e) {
-      logger.error('Error deleting event', error: e);
+      report.fault(e, area: 'events', message: 'Error deleting event');
       rethrow;
     } finally {
       keepAliveLink.close();
@@ -228,13 +228,13 @@ class EventsController extends _$EventsController {
   Future<Event?> getEventById(String eventId) async {
     // CRITICAL: Cache ALL ref-dependent values BEFORE any async operations
     final service = ref.read(eventsServiceProvider);
-    final logger = ref.read(appLoggerProvider);
+    final report = ref.read(reportProvider);
 
     try {
       final userId = await ref.read(userIdProvider.future);
       return await service.getEventById(userId, eventId);
     } catch (e) {
-      logger.error('Error getting event by ID', error: e);
+      report.fault(e, area: 'events', message: 'Error getting event by ID');
       rethrow;
     }
   }
@@ -243,12 +243,16 @@ class EventsController extends _$EventsController {
   Future<Event?> getEventForActivity(String activityId) async {
     // CRITICAL: Cache ALL ref-dependent values BEFORE any async operations
     final service = ref.read(eventsServiceProvider);
-    final logger = ref.read(appLoggerProvider);
+    final report = ref.read(reportProvider);
 
     try {
       return await service.getEventForActivity(activityId);
     } catch (e) {
-      logger.error('Error getting event for activity', error: e);
+      report.fault(
+        e,
+        area: 'events',
+        message: 'Error getting event for activity',
+      );
       rethrow;
     }
   }
@@ -263,7 +267,7 @@ class EventsController extends _$EventsController {
   /// Use this for pull-to-refresh when user explicitly wants fresh data,
   /// or when athlete needs to see coach-made changes immediately.
   Future<void> forceRefresh() async {
-    final logger = ref.read(appLoggerProvider);
+    final report = ref.read(reportProvider);
 
     try {
       final userId = await ref.read(userIdProvider.future);
@@ -282,7 +286,7 @@ class EventsController extends _$EventsController {
       ref.invalidate(nextUpcomingEventProvider);
       ref.invalidate(allEventsProvider);
     } catch (e) {
-      logger.error('Error during force refresh', error: e);
+      report.fault(e, area: 'events', message: 'Error during force refresh');
       // Still invalidate to show whatever data we have
       ref.invalidateSelf();
     }
@@ -298,7 +302,7 @@ Future<({Activity? activity, Event event})> eventDetail(
   String eventId, {
   String? forUserId,
 }) async {
-  final logger = ref.read(appLoggerProvider);
+  final report = ref.read(reportProvider);
   final String userId = forUserId ?? await ref.read(userIdProvider.future);
 
   // Sync events from remote if stale (respects 1-hour staleness threshold).
@@ -308,10 +312,10 @@ Future<({Activity? activity, Event event})> eventDetail(
     final syncCoordinator = ref.read(syncCoordinatorProvider.notifier);
     await syncCoordinator.ensureSynced('events', userId, repository: repo);
   } catch (e) {
-    logger.warning(
-      'Could not sync events from remote; using local data',
-      context: 'EVENT_DETAIL',
-      data: {'error': e.toString()},
+    report.degraded(
+      LoggedFault('Could not sync events from remote; using local data'),
+      area: 'events',
+      extra: {'error': e.toString()},
     );
   }
 
@@ -319,10 +323,10 @@ Future<({Activity? activity, Event event})> eventDetail(
   final activitiesService = ref.read(activitiesServiceProvider);
   final event = await eventsService.getEventById(userId, eventId);
   if (event == null) {
-    logger.error(
-      'EventDetail: Event not found',
-      context: 'EVENT_DETAIL',
-      data: {'eventId': eventId, 'userId': userId},
+    report.fault(
+      LoggedFault('EventDetail: Event not found'),
+      area: 'events',
+      extra: {'eventId': eventId, 'userId': userId},
     );
     throw Exception('Event not found: $eventId');
   }
@@ -365,11 +369,8 @@ Future<({Event event, DateTime eventDate})?> nextUpcomingEvent(Ref ref) async {
 
     // Try parsing startTime first (precise time with timezone)
     if (event.startTime != null && event.startTime!.isNotEmpty) {
-      try {
-        eventDateTime = DateTime.parse(event.startTime!);
-      } catch (_) {
-        // Invalid startTime format, fall through to eventDate
-      }
+      // Invalid startTime format leaves null and falls through to eventDate.
+      eventDateTime = DateTime.tryParse(event.startTime!);
     }
 
     // Fall back to eventDate (primary date for calendar)

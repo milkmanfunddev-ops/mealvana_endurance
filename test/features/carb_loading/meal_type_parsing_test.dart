@@ -1,6 +1,8 @@
 import 'package:flutter_test/flutter_test.dart';
 import 'package:mealvana_endurance/features/carb_loading/domain/meal_type.dart';
 
+import '../../helpers/fakes/recording_report.dart';
+
 /// `parseMealTypeIds` replaced three copy-pasted `_parseMealTypesArray`
 /// methods that had already drifted apart: two did a bare `int.parse()` and
 /// would THROW on a name string like 'breakfast', while the third handled both.
@@ -79,6 +81,15 @@ void main() {
 
     test('malformed JSON -> [] rather than an exception', () {
       expect(parseMealTypeIds('[1,2'), isA<List<int>>());
+    });
+
+    test('invalid JSON inside brackets -> [] and one Fault', () {
+      // Bracketed, so it takes the JSON branch; the trailing comma makes
+      // jsonDecode throw, which is the catch under test.
+      final report = RecordingReport();
+      expect(parseMealTypeIds('[1,]', report: report), <int>[]);
+      expect(report.faults, hasLength(1));
+      expect(report.faults.single.area, 'carb_loading');
     });
 
     test('bare single value', () {

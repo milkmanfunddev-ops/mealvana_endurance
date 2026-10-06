@@ -13,6 +13,7 @@ import '../../../../shared/database/app_database.dart' as db;
 import '../../application/nutrition_plan_navigation.dart';
 import '../../domain/event.dart';
 import '../providers/events_controller.dart';
+import 'package:mealvana_endurance/shared/services/report/report.dart';
 
 /// Event action buttons card showing nutrition planning and carb loading actions
 class EventActionButtonsCard extends ConsumerWidget {
@@ -243,7 +244,15 @@ class EventActionButtonsCard extends ConsumerWidget {
               : null,
         );
       }
-    } catch (e) {
+    } catch (e, stackTrace) {
+      ref
+          .read(reportProvider)
+          .fault(
+            e,
+            stackTrace: stackTrace,
+            area: 'events',
+            message: 'Creating a carb-loading plan from the event failed',
+          );
       if (context.mounted) {
         MealvanaSnackbar.showError(context, 'Error creating plan: $e');
       }

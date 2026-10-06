@@ -6,6 +6,7 @@ import '../../../shared/database/database_provider.dart';
 import '../data/carb_loading_user_food_repository.dart';
 import '../domain/carb_loading_user_food.dart' as domain;
 import '../domain/meal_type.dart' as domain;
+import '../../../shared/services/report/report.dart';
 
 part 'food_import_service.g.dart';
 
@@ -15,11 +16,16 @@ class FoodImportService {
   const FoodImportService({
     required AppDatabase database,
     required CarbLoadingUserFoodRepository userFoodRepository,
+    Report? report,
   }) : _database = database,
-       _userFoodRepository = userFoodRepository;
+       _userFoodRepository = userFoodRepository,
+       _reportOverride = report;
 
   final AppDatabase _database;
   final CarbLoadingUserFoodRepository _userFoodRepository;
+  final Report? _reportOverride;
+
+  Report get _report => _reportOverride ?? SentryReport.global;
 
   /// Import a food from the foods table
   Future<domain.CarbLoadingUserFood> importFromFoodsTable({
@@ -320,7 +326,16 @@ class FoodImportService {
       }
 
       return [];
-    } catch (e) {
+    } catch (e, stackTrace) {
+      // Neither Postgres-array nor JSON shape: the row still imports, without
+      // categories.
+      _report.fault(
+        e,
+        stackTrace: stackTrace,
+        area: 'carb_loading',
+        message: 'Food categories column unparseable; importing without them',
+        extra: {'categories': categoriesStr},
+      );
       return [];
     }
   }
@@ -356,5 +371,6 @@ FoodImportService foodImportService(Ref ref) {
   return FoodImportService(
     database: ref.watch(appDatabaseProvider),
     userFoodRepository: ref.watch(carbLoadingUserFoodRepositoryProvider),
+    report: ref.watch(reportProvider),
   );
 }

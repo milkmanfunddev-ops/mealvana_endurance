@@ -15,6 +15,7 @@ import '../providers/onboarding_preview_providers.dart';
 import '../theme/onboarding_design_tokens.dart';
 import '../widgets/onboarding_build_loader.dart';
 import '../widgets/onboarding_step_scaffold.dart';
+import 'package:mealvana_endurance/shared/services/report/report.dart';
 
 /// Display name for the reveal's "we read your plan" card — same brand
 /// names the connect-training rows use (`connected_apps_screen.dart`).
@@ -434,8 +435,16 @@ class _PlanRevealScreenState extends ConsumerState<PlanRevealScreen> {
           .read(appExternalDepsProvider)
           .analytics
           .track('sweat_test_link_tapped');
-    } catch (_) {
+    } catch (e, stackTrace) {
       // Analytics must never block onboarding.
+      ref
+          .read(reportProvider)
+          .fault(
+            e,
+            stackTrace: stackTrace,
+            area: 'onboarding',
+            message: 'analytics: sweat_test_link_tapped not tracked',
+          );
     }
     // Deliberately no deep link mid-onboarding — just point at Settings.
     MealvanaSnackbar.showInfo(
@@ -471,8 +480,16 @@ class _PlanRevealScreenState extends ConsumerState<PlanRevealScreen> {
               'to': clamped.round(),
             },
           );
-    } catch (_) {
+    } catch (e, stackTrace) {
       // Analytics must never block onboarding.
+      ref
+          .read(reportProvider)
+          .fault(
+            e,
+            stackTrace: stackTrace,
+            area: 'onboarding',
+            message: 'analytics: plan_target_edited not tracked',
+          );
     }
   }
 

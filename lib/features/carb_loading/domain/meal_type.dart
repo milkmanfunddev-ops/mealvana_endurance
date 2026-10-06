@@ -1,4 +1,5 @@
 import 'dart:convert';
+import '../../../shared/services/report/report.dart';
 
 /// Meal type for carb loading (breakfast, lunch, dinner, snacks)
 /// Maps to meal_types database table
@@ -52,7 +53,7 @@ enum MealType {
 ///
 /// Unknown names fall back to breakfast (matching [MealType.fromName]) rather
 /// than throwing — a bad tag must not break a user's carb loading day.
-List<int> parseMealTypeIds(String? raw) {
+List<int> parseMealTypeIds(String? raw, {Report? report}) {
   if (raw == null || raw.isEmpty) return [];
 
   int nameOrIdToId(String token) {
@@ -86,8 +87,16 @@ List<int> parseMealTypeIds(String? raw) {
 
     // Bare single value.
     return [nameOrIdToId(value)];
-  } catch (_) {
-    // Malformed data must not take the screen down.
+  } catch (e, stackTrace) {
+    // Malformed data must not take the screen down; it is still a bug in
+    // whatever wrote the column.
+    (report ?? SentryReport.global).fault(
+      e,
+      stackTrace: stackTrace,
+      area: 'carb_loading',
+      message: 'meal_types column unparseable; treating as none',
+      extra: {'raw': raw},
+    );
     return [];
   }
 }

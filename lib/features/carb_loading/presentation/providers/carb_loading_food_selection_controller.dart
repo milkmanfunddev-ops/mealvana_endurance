@@ -18,6 +18,7 @@ import '../../../../shared/database/database_provider.dart';
 import '../../../../shared/providers/user_id_provider.dart';
 import '../../../../shared/services/sync/sync_coordinator.dart';
 import '../../../../shared/utils/search_strategy.dart';
+import '../../../../shared/services/report/report.dart';
 
 part 'carb_loading_food_selection_controller.g.dart';
 
@@ -316,7 +317,15 @@ class CarbLoadingFoodSelectionController
           ),
         );
       }
-    } catch (e) {
+    } catch (e, stackTrace) {
+      ref
+          .read(reportProvider)
+          .fault(
+            e,
+            stackTrace: stackTrace,
+            area: 'carb_loading',
+            message: 'Open Food Facts search failed; results cleared',
+          );
       if (state.value != null) {
         state = AsyncData(
           state.value!.copyWith(

@@ -47,12 +47,8 @@ class CalendarDateIndicators extends StatelessWidget {
   bool _hasEventOnDate() {
     return events.any((event) {
       if (event.startTime != null) {
-        try {
-          final eventDate = DateTime.parse(event.startTime!);
-          return _isSameDay(eventDate, date);
-        } catch (e) {
-          return false;
-        }
+        final eventDate = DateTime.tryParse(event.startTime!);
+        return eventDate != null && _isSameDay(eventDate, date);
       }
       return false;
     });

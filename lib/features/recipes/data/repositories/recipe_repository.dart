@@ -10,6 +10,7 @@ import '../../../../shared/database/database_provider.dart';
 import '../../../../shared/services/app_external_deps.dart';
 import '../../../../shared/services/logging_service.dart';
 import '../../domain/recipe.dart';
+import '../../../../shared/services/report/report.dart';
 
 /// Repository for the curated recipe catalog.
 ///
@@ -24,12 +25,20 @@ import '../../domain/recipe.dart';
 ///   on [Recipe] objects coming from the cache — the UI can layer its own
 ///   favourite state on top if needed later.
 class RecipeRepository with SyncableRepository {
-  RecipeRepository(this._supabase, this._database, {AppLogger? logger})
-    : _logger = logger ?? const NoopAppLogger();
+  RecipeRepository(
+    this._supabase,
+    this._database, {
+    AppLogger? logger,
+    Report? report,
+  }) : _logger = logger ?? const NoopAppLogger(),
+       _reportOverride = report;
 
   final SupabaseClient _supabase;
   final AppDatabase _database;
   final AppLogger _logger;
+  final Report? _reportOverride;
+
+  Report get _report => _reportOverride ?? SentryReport.global;
 
   // ========================================================================
   // SyncableRepository Implementation
@@ -98,11 +107,11 @@ class RecipeRepository with SyncableRepository {
 
       return SyncResult.successful(response.length);
     } catch (e, stackTrace) {
-      _logger.error(
-        'Failed to sync recipes from remote',
-        context: 'RECIPE_REPO',
-        error: e,
+      _report.fault(
+        e,
         stackTrace: stackTrace,
+        area: 'recipes',
+        message: 'Failed to sync recipes from remote',
       );
       return SyncResult.failed(e.toString());
     }
@@ -248,8 +257,15 @@ class RecipeRepository with SyncableRepository {
       if (decoded is List) {
         return decoded.cast<String>();
       }
-    } catch (_) {
-      // Fall through to empty list on malformed data.
+    } catch (e, stackTrace) {
+      // We wrote this column ourselves; malformed JSON here is a bug. The
+      // recipe still renders, minus the list.
+      _report.fault(
+        e,
+        stackTrace: stackTrace,
+        area: 'recipes',
+        message: 'Cached recipe list column is not valid JSON',
+      );
     }
     return [];
   }
@@ -317,5 +333,10 @@ final recipeRepositoryProvider = Provider<RecipeRepository>((ref) {
   final database = ref.watch(appDatabaseProvider);
   final logger = ref.watch(appLoggerProvider);
   final supabase = ref.watch(appExternalDepsProvider).supabaseClient;
-  return RecipeRepository(supabase, database, logger: logger);
+  return RecipeRepository(
+    supabase,
+    database,
+    logger: logger,
+    report: ref.watch(reportProvider),
+  );
 });

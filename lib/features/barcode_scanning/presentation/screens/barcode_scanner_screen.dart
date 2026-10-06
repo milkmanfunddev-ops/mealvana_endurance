@@ -9,6 +9,7 @@ import '../../../../shared/services/app_external_deps.dart';
 import '../../../../shared/screens/food_detail_screen.dart';
 import '../../application/barcode_scanner_service.dart';
 import '../../../nutrition_plan/domain/food.dart';
+import 'package:mealvana_endurance/shared/services/report/report.dart';
 
 /// Barcode Scanner Screen - Kyle's Design System
 /// Unified scanner for all contexts (swap, add, preferences, carb loading)
@@ -126,8 +127,15 @@ class _BarcodeScannerScreenState extends ConsumerState<BarcodeScannerScreen>
     _isStartingScanner = true;
     try {
       await _controller?.start();
-    } on MobileScannerException catch (_) {
-      // Already starting / still initializing — ignore, benign race.
+    } on MobileScannerException catch (e) {
+      // Already starting / still initializing — benign race, start skipped.
+      ref
+          .read(reportProvider)
+          .note(
+            'scanner start skipped: controller still initializing',
+            area: 'barcode_scanning',
+            data: {'code': e.errorCode.name},
+          );
     } finally {
       _isStartingScanner = false;
     }
@@ -136,8 +144,15 @@ class _BarcodeScannerScreenState extends ConsumerState<BarcodeScannerScreen>
   Future<void> _safeStopScanner() async {
     try {
       await _controller?.stop();
-    } on MobileScannerException catch (_) {
+    } on MobileScannerException catch (e) {
       // Not initialized yet — nothing to stop.
+      ref
+          .read(reportProvider)
+          .note(
+            'scanner stop skipped: controller not initialized',
+            area: 'barcode_scanning',
+            data: {'code': e.errorCode.name},
+          );
     }
   }
 
@@ -228,7 +243,16 @@ class _BarcodeScannerScreenState extends ConsumerState<BarcodeScannerScreen>
         _lastScanResult = result; // Store the result
         _showLookupResult(result);
       }
-    } catch (e) {
+    } catch (e, stackTrace) {
+      ref
+          .read(reportProvider)
+          .fault(
+            e,
+            stackTrace: stackTrace,
+            area: 'barcode_scanning',
+            message: 'Barcode lookup failed',
+            extra: {'barcode': barcode},
+          );
       // Close loading dialog and show error
       if (mounted) {
         Navigator.of(context).pop();

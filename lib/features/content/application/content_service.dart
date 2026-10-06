@@ -1,6 +1,7 @@
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import '../data/content_repository.dart';
 import '../domain/app_content.dart';
+import '../../../shared/services/report/report.dart';
 
 /// Application service for managing app content
 /// Follows the Andrea Bizzotto pattern with Ref for dependency injection
@@ -26,17 +27,44 @@ class ContentService {
 
   /// Check for updates in background without blocking the UI
   void _checkForUpdatesInBackground() {
-    // Don't await this - let it run in background
-    _contentRepository
-        .refreshContent()
-        .then((latestContent) {
-          // Update in-memory cache with refreshed content
-          _cachedContent = latestContent;
-        })
-        .catchError((error) {
-          // Silently handle errors - app continues with cached/default content
-          // Log error but don't print in production
-        });
+    // Don't await this - let it run in background.
+    //
+    // The try/catch is not redundant with the .catchError below: it covers a
+    // repository that throws SYNCHRONOUSLY, before any Future exists to
+    // attach a handler to. Because initialize() is never awaited (the
+    // provider kicks it on create), such a throw becomes an unhandled zone
+    // error with no owner — it surfaces against whatever unrelated test or
+    // frame happens to be running.
+    try {
+      _contentRepository
+          .refreshContent()
+          .then((latestContent) {
+            // Update in-memory cache with refreshed content
+            _cachedContent = latestContent;
+          })
+          .catchError((Object error, StackTrace stackTrace) {
+            // The app continues on cached/default content.
+            ref
+                .read(reportProvider)
+                .fault(
+                  error,
+                  stackTrace: stackTrace,
+                  area: 'content',
+                  message: 'Background content refresh failed',
+                );
+          });
+    } catch (e, stackTrace) {
+      // Same policy as the async path: the app continues on cached/default
+      // content.
+      ref
+          .read(reportProvider)
+          .fault(
+            e,
+            stackTrace: stackTrace,
+            area: 'content',
+            message: 'Background content refresh threw synchronously',
+          );
+    }
   }
 
   /// Get a content value by key with fallback (lightning-fast from memory)
@@ -52,7 +80,15 @@ class ContentService {
       final refreshedContent = await _contentRepository.refreshContent();
       _cachedContent = refreshedContent;
       return true;
-    } catch (e) {
+    } catch (e, stackTrace) {
+      ref
+          .read(reportProvider)
+          .fault(
+            e,
+            stackTrace: stackTrace,
+            area: 'content',
+            message: 'Manual content refresh failed',
+          );
       return false;
     }
   }

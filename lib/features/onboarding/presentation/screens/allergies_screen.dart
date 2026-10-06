@@ -12,6 +12,7 @@ import '../../../../shared/core/screen_mode.dart';
 import '../../../../shared/widgets/selection/figma_checkbox_card.dart';
 import '../../../../shared/widgets/navigation/figma_onboarding_footer.dart';
 import '../../../../shared/widgets/adaptive/adaptive.dart';
+import 'package:mealvana_endurance/shared/services/report/report.dart';
 
 /// Allergies Screen - Unified for both onboarding and settings
 ///
@@ -100,7 +101,15 @@ class _AllergiesScreenState extends ConsumerState<AllergiesScreen> {
           _isLoading = false;
         });
       }
-    } catch (e) {
+    } catch (e, stackTrace) {
+      ref
+          .read(reportProvider)
+          .fault(
+            e,
+            stackTrace: stackTrace,
+            area: 'onboarding',
+            message: 'Loading current allergies failed; showing defaults',
+          );
       if (mounted) {
         setState(() => _isLoading = false);
       }

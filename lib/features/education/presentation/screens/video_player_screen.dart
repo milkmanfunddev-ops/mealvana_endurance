@@ -6,6 +6,7 @@ import '../../../../shared/services/analytics/analytics_tracker.dart';
 import '../../../../shared/services/app_external_deps.dart';
 import '../../../../shared/widgets/kyle_design/kyle_design.dart';
 import '../../../../shared/widgets/custom_app_bar_back_button.dart';
+import '../../../../shared/services/report/report.dart';
 
 /// Full-screen video player using chewie + video_player
 class VideoPlayerScreen extends ConsumerStatefulWidget {
@@ -36,6 +37,10 @@ class _VideoPlayerScreenState extends ConsumerState<VideoPlayerScreen> {
   /// which is where the watch-completion event fires.
   AnalyticsTracker? _analytics;
 
+  /// Same reason as [_analytics]: resolved in [initState] so [dispose] can
+  /// report without touching `ref`.
+  Report _report = const NoopReport();
+
   /// Furthest point reached, not the position at dispose. Scrubbing backwards
   /// before closing would otherwise report a lower `percent_watched` than the
   /// user actually watched.
@@ -44,9 +49,17 @@ class _VideoPlayerScreenState extends ConsumerState<VideoPlayerScreen> {
   @override
   void initState() {
     super.initState();
+    _report = ref.read(reportProvider);
     try {
       _analytics = ref.read(appExternalDepsProvider).analytics;
-    } catch (_) {}
+    } catch (e, stackTrace) {
+      _report.fault(
+        e,
+        stackTrace: stackTrace,
+        area: 'education',
+        message: 'analytics tracker unavailable; video events will not track',
+      );
+    }
     _initializePlayer();
   }
 
@@ -91,7 +104,14 @@ class _VideoPlayerScreenState extends ConsumerState<VideoPlayerScreen> {
           'duration_sec': duration.inSeconds,
         },
       );
-    } catch (_) {}
+    } catch (e, stackTrace) {
+      _report.fault(
+        e,
+        stackTrace: stackTrace,
+        area: 'education',
+        message: 'analytics: education_video_completed not tracked',
+      );
+    }
   }
 
   Future<void> _initializePlayer() async {
@@ -133,7 +153,14 @@ class _VideoPlayerScreenState extends ConsumerState<VideoPlayerScreen> {
         ),
       );
       if (mounted) setState(() {});
-    } catch (e) {
+    } catch (e, stackTrace) {
+      _report.fault(
+        e,
+        stackTrace: stackTrace,
+        area: 'education',
+        message: 'Video player failed to initialise',
+        extra: {'videoUrl': widget.videoUrl},
+      );
       if (mounted) {
         setState(() {
           _hasError = true;

@@ -14,6 +14,7 @@ import '../../application/dashboard_transient_telemetry.dart';
 import '../../domain/carb_dashboard_models.dart';
 import '../../domain/dashboard_models.dart';
 import 'carb_dashboard_providers.dart';
+import '../../../../shared/services/report/report.dart';
 
 part 'macro_dashboard_providers.g.dart';
 
@@ -79,10 +80,18 @@ Future<DashboardData> macroDashboardDay(Ref ref) async {
       // Same lb→kg factor the engine payload uses (daily_macro_service).
       profileWeightKg = weightPounds * 0.453592;
     }
-  } catch (_) {
+  } catch (e, stackTrace) {
     // Profile unreachable → leave null; the assembler's fallback chain
     // (targets.weightKg → honest absence) keeps the surface truthful, and a
     // profile read failure must not take the whole dashboard down.
+    ref
+        .read(reportProvider)
+        .fault(
+          e,
+          stackTrace: stackTrace,
+          area: 'macro_dashboard',
+          message: 'Profile weight read failed; pricing with engine weight',
+        );
   }
 
   bool onSelectedDay(DateTime d) =>
@@ -119,7 +128,16 @@ Future<DashboardData> macroDashboardDay(Ref ref) async {
   CarbDashboardData? carb;
   try {
     carb = await ref.watch(carbDashboardForDateProvider(dateStr).future);
-  } catch (_) {
+  } catch (e, stackTrace) {
+    ref
+        .read(reportProvider)
+        .fault(
+          e,
+          stackTrace: stackTrace,
+          area: 'macro_dashboard',
+          message: 'Carb-plan lookup failed; rendering the ordinary day',
+          extra: {'date': dateStr},
+        );
     carb = null;
   }
   if (carb == null) return assembled;

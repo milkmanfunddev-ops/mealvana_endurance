@@ -11,6 +11,7 @@ import '../../../nutrition_plan/domain/nutrition_plan.dart';
 import '../../../../shared/services/analytics/analytics_tracker.dart';
 import '../../../../shared/database/app_database.dart';
 import '../../../../shared/database/database_provider.dart';
+import '../../../../shared/services/report/report.dart';
 
 part 'share_form_controller.g.dart';
 
@@ -195,7 +196,16 @@ class ShareFormController extends _$ShareFormController {
       );
 
       return result;
-    } catch (e) {
+    } catch (e, stackTrace) {
+      ref
+          .read(reportProvider)
+          .fault(
+            e,
+            stackTrace: stackTrace,
+            area: 'sharing',
+            message: 'Plan share failed before the email was sent',
+            extra: {'planId': nutritionPlan.id},
+          );
       await _analytics.track(
         'plan_share_failed',
         properties: {

@@ -18,6 +18,9 @@ import 'package:mealvana_endurance/features/recipes/data/repositories/recipe_rep
 import 'package:mealvana_endurance/features/recipes/domain/recipe.dart';
 import 'package:mealvana_endurance/shared/database/app_database.dart';
 import 'package:mealvana_endurance/shared/services/logging_service.dart';
+import 'package:mealvana_endurance/shared/services/report/report.dart';
+
+import '../../helpers/fakes/recording_report.dart';
 import 'package:drift/drift.dart' hide isNull, isNotNull;
 import 'package:shared_preferences/shared_preferences.dart';
 import 'package:supabase_flutter/supabase_flutter.dart';
@@ -39,11 +42,13 @@ RecipeRepository _makeRepo(
   AppDatabase db, {
   SupabaseClient? supabase,
   AppLogger? logger,
+  Report? report,
 }) {
   return RecipeRepository(
     supabase ?? MockSupabaseClient(),
     db,
     logger: logger ?? const NoopAppLogger(),
+    report: report,
   );
 }
 
@@ -345,7 +350,8 @@ void main() {
     test(
       'handles malformed JSON ingredients gracefully (returns empty list)',
       () async {
-        final repo = _makeRepo(db);
+        final report = RecordingReport();
+        final repo = _makeRepo(db, report: report);
         await db
             .into(db.recipesTable)
             .insert(
@@ -366,6 +372,9 @@ void main() {
         // Should not crash; falls back to empty list.
         expect(r.ingredients, isEmpty);
         expect(r.instructions, ['step 1']);
+        // And the bad column is a Fault, not a silent fallback.
+        expect(report.faults, hasLength(1));
+        expect(report.faults.single.area, 'recipes');
       },
     );
   });

@@ -4,6 +4,8 @@ import 'package:mealvana_endurance/features/onboarding/application/onboarding_sn
 import 'package:mealvana_endurance/features/onboarding/domain/onboarding_draft.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 
+import '../../helpers/fakes/recording_report.dart';
+
 void main() {
   TestWidgetsFlutterBinding.ensureInitialized();
 
@@ -52,15 +54,19 @@ void main() {
     expect(restoredDraft.pitfalls, {OnboardingPitfall.gutIssues});
   });
 
-  test('corrupt snapshot is dropped, not thrown', () async {
+  test('corrupt snapshot is dropped, not thrown, and reported', () async {
     SharedPreferences.setMockInitialValues({
       OnboardingSnapshotService.prefsKey: '{not-json',
     });
-    final service = OnboardingSnapshotService();
+    final report = RecordingReport();
+    final service = OnboardingSnapshotService(report: report);
     expect(await service.readSnapshot(), isNull);
     // And the corrupt payload was cleared.
     final prefs = await SharedPreferences.getInstance();
     expect(prefs.getString(OnboardingSnapshotService.prefsKey), isNull);
+    // The silent drop leaves a Fault behind it (rule D9).
+    expect(report.faults, hasLength(1));
+    expect(report.faults.single.area, 'onboarding');
   });
 
   test('clearSnapshot removes the payload', () async {
