@@ -144,8 +144,10 @@ class _CoachChatScreenState extends ConsumerState<CoachChatScreen> {
   }
 
   Widget _buildErrorView(BuildContext context, String error, bool isDark) {
+    // Scrolls: the raw error text has no length bound, and a long one ran
+    // this Column 17,000+ px past the bottom of the portal's Chat tab.
     return Center(
-      child: Padding(
+      child: SingleChildScrollView(
         padding: const EdgeInsets.all(24),
         child: Column(
           mainAxisAlignment: MainAxisAlignment.center,

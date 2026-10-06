@@ -63,7 +63,6 @@ class _PortalAthleteDetailPanelState
     super.dispose();
   }
 
-  @override
   /// The coach's own unit preference — `unitSystemProvider` resolves to the
   /// logged-in user, not the athlete being viewed.
   DistanceUnit _distanceUnit() =>
@@ -72,6 +71,7 @@ class _PortalAthleteDetailPanelState
       ? DistanceUnit.kilometers
       : DistanceUnit.miles;
 
+  @override
   Widget build(BuildContext context) {
     final detailAsync = ref.watch(
       athleteDetailControllerProvider(widget.relationshipId),
@@ -90,8 +90,10 @@ class _PortalAthleteDetailPanelState
   }
 
   Widget _buildErrorView(String error) {
+    // Scrolls: the raw error text has no length bound and overflowed the
+    // panel's bottom by thousands of px when long.
     return Center(
-      child: Padding(
+      child: SingleChildScrollView(
         padding: const EdgeInsets.all(24),
         child: Column(
           mainAxisAlignment: MainAxisAlignment.center,

@@ -33,10 +33,20 @@ class MealComponentEditor extends StatefulWidget {
 class _MealComponentEditorState extends State<MealComponentEditor> {
   late List<MealComponent> _items;
 
+  /// One id per row, parallel to [_items], so each Dismissible keeps a key
+  /// that is unique and survives edits and deletes. Keying by the component
+  /// itself (`ObjectKey(item)`) broke when one [MealComponent] instance sat
+  /// in the list twice — e.g. starting a build from the same logged meal
+  /// twice copies the same instances in again — and Flutter threw "Duplicate
+  /// keys found" (Sentry DEV-9Y / DEV-9Z).
+  late List<int> _rowIds;
+  int _nextRowId = 0;
+
   @override
   void initState() {
     super.initState();
     _items = List<MealComponent>.from(widget.initialComponents);
+    _rowIds = [for (var i = 0; i < _items.length; i++) _nextRowId++];
   }
 
   Future<void> _editItem(int index) async {
@@ -55,7 +65,10 @@ class _MealComponentEditorState extends State<MealComponentEditor> {
   }
 
   void _deleteItem(int index) {
-    setState(() => _items.removeAt(index));
+    setState(() {
+      _items.removeAt(index);
+      _rowIds.removeAt(index);
+    });
     widget.onComponentsChanged(List.unmodifiable(_items));
   }
 
@@ -145,7 +158,7 @@ class _MealComponentEditorState extends State<MealComponentEditor> {
           // timeline + Activity Detail food rows). confirmDismiss returns false
           // so the actions run via callbacks without a structural dismiss.
           return Dismissible(
-            key: ObjectKey(item),
+            key: ValueKey<int>(_rowIds[i]),
             direction: widget.onRequestSwap == null
                 ? DismissDirection.startToEnd
                 : DismissDirection.horizontal,

@@ -45,19 +45,23 @@ class EventHeaderCard extends StatelessWidget {
                   size: AppIconSizes.sm,
                 ),
                 const SizedBox(width: AppSpacing.xs),
-                Text(
-                  key: const ValueKey('event_details.event_date'),
-                  activity != null
-                      ? DateFormat(
-                          'EEEE, MMMM d, yyyy',
-                        ).format(activity!.scheduledDateTime)
-                      : event.startTime != null
-                      ? DateFormat(
-                          'EEEE, MMMM d, yyyy',
-                        ).format(DateTime.parse(event.startTime!))
-                      : 'Date TBD',
-                  style: AppTextStyles.bodyLarge.copyWith(
-                    color: Theme.of(context).colorScheme.onSurface,
+                // Flexible: a long weekday + month date overflowed this Row
+                // on a 402-wide phone (Sentry DEV-5S, 26-36 px).
+                Flexible(
+                  child: Text(
+                    key: const ValueKey('event_details.event_date'),
+                    activity != null
+                        ? DateFormat(
+                            'EEEE, MMMM d, yyyy',
+                          ).format(activity!.scheduledDateTime)
+                        : event.startTime != null
+                        ? DateFormat(
+                            'EEEE, MMMM d, yyyy',
+                          ).format(DateTime.parse(event.startTime!))
+                        : 'Date TBD',
+                    style: AppTextStyles.bodyLarge.copyWith(
+                      color: Theme.of(context).colorScheme.onSurface,
+                    ),
                   ),
                 ),
               ],
