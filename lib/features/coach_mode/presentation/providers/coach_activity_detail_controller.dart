@@ -8,6 +8,7 @@ import 'package:riverpod_annotation/riverpod_annotation.dart';
 import 'package:uuid/uuid.dart';
 import '../../../../shared/domain/write_consistency.dart';
 import '../../../../shared/services/app_external_deps.dart';
+import '../../../../shared/services/report/report.dart';
 import '../../../../shared/providers/user_id_provider.dart';
 import '../../../activities/application/activities_service.dart';
 import '../../../activities/data/activities_repository.dart';
@@ -75,12 +76,20 @@ class CoachActivityDetailState {
 /// Controller for the coach view of an activity
 @riverpod
 class CoachActivityDetailController extends _$CoachActivityDetailController {
+  Report get _report => ref.read(reportProvider);
+
   void _trackAnalytics(String event, Map<String, dynamic> properties) {
     try {
       final deps = ref.read(appExternalDepsProvider);
       deps.analytics.track(event, properties: properties);
-    } catch (_) {
+    } catch (e, stackTrace) {
       // Analytics failures should never block UI interactions.
+      _report.degraded(
+        e,
+        stackTrace: stackTrace,
+        area: 'coach_mode',
+        message: 'Analytics track failed: $event',
+      );
     }
   }
 
@@ -200,7 +209,14 @@ class CoachActivityDetailController extends _$CoachActivityDetailController {
             activityOwnerId: activity.userId,
           );
       return true;
-    } catch (_) {
+    } catch (e, stackTrace) {
+      _report.fault(
+        e,
+        stackTrace: stackTrace,
+        area: 'coach_mode',
+        message: 'Coach delete of athlete activity failed',
+        extra: {'activityId': activity.id},
+      );
       return false;
     }
   }
@@ -346,6 +362,12 @@ class CoachActivityDetailController extends _$CoachActivityDetailController {
         );
       }
     } catch (error, stackTrace) {
+      _report.fault(
+        error,
+        stackTrace: stackTrace,
+        area: 'coach_mode',
+        message: 'Coach nutrition plan update failed',
+      );
       state = AsyncValue.error(error, stackTrace);
     }
   }
@@ -542,8 +564,15 @@ class CoachActivityDetailController extends _$CoachActivityDetailController {
     try {
       final fuelLog = FuelLogData.fromJson(rawData);
       state = AsyncData(currentState.copyWith(fuelLogData: fuelLog));
-    } catch (_) {
-      // Silently fail - fuel log data may be malformed
+    } catch (e, stackTrace) {
+      // The view shows no fuel log; the malformed row is what to look at.
+      _report.degraded(
+        e,
+        stackTrace: stackTrace,
+        area: 'coach_mode',
+        message: 'Stored fuel log unreadable; not shown to coach',
+        extra: {'activityId': currentState.activity?.id},
+      );
     }
   }
 

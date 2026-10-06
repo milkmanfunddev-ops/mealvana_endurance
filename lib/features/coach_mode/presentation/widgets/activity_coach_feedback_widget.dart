@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:supabase_flutter/supabase_flutter.dart';
 import '../../../../shared/database/database_provider.dart';
+import '../../../../shared/services/report/report.dart';
 import '../../../../shared/widgets/kyle_design/feedback/mealvana_snackbar.dart';
 import '../../application/coach_service.dart';
 import '../../domain/coach_message.dart';
@@ -134,7 +135,16 @@ class _ActivityCoachFeedbackWidgetState
       if (mounted) {
         MealvanaSnackbar.showSuccess(context, 'Comment sent');
       }
-    } catch (e) {
+    } catch (e, stackTrace) {
+      ref
+          .read(reportProvider)
+          .fault(
+            e,
+            stackTrace: stackTrace,
+            area: 'coach_mode',
+            message: 'Coach activity comment send failed',
+            extra: {'activityId': widget.activityId},
+          );
       if (mounted) {
         MealvanaSnackbar.showError(context, 'Failed to send comment: $e');
       }

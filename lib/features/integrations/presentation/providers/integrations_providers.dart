@@ -10,6 +10,7 @@ import '../../../../shared/services/app_config.dart';
 import '../../../activities/data/activities_repository.dart';
 import '../../application/change_detection_service.dart';
 import '../../../../shared/services/app_external_deps.dart';
+import '../../../../shared/services/report/report.dart';
 import '../../../../shared/services/sentry/sentry_reporter.dart';
 import '../../application/final_surge_oauth_service.dart';
 import '../../application/final_surge_sync_service.dart';
@@ -166,7 +167,7 @@ IntegrationsRepository integrationsRepository(Ref ref) {
     database: database,
     supabase: Supabase.instance.client,
     logger: deps.logger,
-    sentry: deps.sentry,
+    report: ref.read(reportProvider),
   );
 }
 
@@ -435,7 +436,17 @@ Future<GarminBodyCompData?> garminLastBodyComp(Ref ref, String userId) async {
       bodyFatPct: bodyFatPct,
       measurementTime: measurementTime,
     );
-  } catch (_) {
+  } catch (e, stackTrace) {
+    // Consumers show "no body-comp data"; the lookup failure must not be
+    // mistaken for that.
+    ref
+        .read(reportProvider)
+        .degraded(
+          e,
+          stackTrace: stackTrace,
+          area: 'garmin',
+          message: 'Garmin body-composition lookup failed; showing none',
+        );
     return null;
   }
 }

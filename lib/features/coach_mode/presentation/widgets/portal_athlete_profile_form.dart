@@ -5,6 +5,7 @@ import 'package:mealvana_endurance/shared/widgets/kyle_design/inputs/kyle_switch
 import '../../../../theme/kyle_design/app_colors.dart';
 import '../../../../shared/widgets/kyle_design/feedback/mealvana_snackbar.dart';
 import '../../../../shared/providers/unit_system_provider.dart';
+import '../../../../shared/services/report/report.dart';
 import '../../../../shared/utils/unit_formatter.dart';
 import '../../../auth/domain/user_preferences.dart';
 import '../../../nutrition_plan/domain/run_parameters.dart';
@@ -152,7 +153,15 @@ class _PortalAthleteProfileFormState
             )
             .refresh();
       }
-    } catch (e) {
+    } catch (e, stackTrace) {
+      ref
+          .read(reportProvider)
+          .fault(
+            e,
+            stackTrace: stackTrace,
+            area: 'coach_mode',
+            message: 'Coach athlete profile save failed',
+          );
       if (mounted) {
         MealvanaSnackbar.showError(context, 'Failed to save: ${e.toString()}');
       }

@@ -2,6 +2,7 @@ import 'dart:async';
 
 import 'package:riverpod_annotation/riverpod_annotation.dart';
 
+import '../../../../shared/services/report/report.dart';
 import '../../application/coach_service.dart';
 import '../../domain/coach.dart';
 
@@ -47,7 +48,15 @@ class CoachDirectoryController extends _$CoachDirectoryController {
     try {
       final coaches = await _coachService.getAvailableCoaches();
       return CoachDirectoryState(coaches: coaches);
-    } catch (e) {
+    } catch (e, stackTrace) {
+      ref
+          .read(reportProvider)
+          .fault(
+            e,
+            stackTrace: stackTrace,
+            area: 'coach_mode',
+            message: 'Coach directory load failed',
+          );
       return CoachDirectoryState(error: 'Failed to load coaches: $e');
     }
   }
@@ -80,7 +89,16 @@ class CoachDirectoryController extends _$CoachDirectoryController {
         );
         return false;
       }
-    } catch (e) {
+    } catch (e, stackTrace) {
+      ref
+          .read(reportProvider)
+          .fault(
+            e,
+            stackTrace: stackTrace,
+            area: 'coach_mode',
+            message: 'Coach connection request failed',
+            extra: {'coachUserId': coachUserId},
+          );
       state = AsyncData(
         currentState.copyWith(
           isLoading: false,

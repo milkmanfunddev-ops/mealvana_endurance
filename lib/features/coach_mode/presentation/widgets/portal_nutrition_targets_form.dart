@@ -4,6 +4,7 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 
 import '../../../../shared/widgets/kyle_design/feedback/mealvana_snackbar.dart';
 import '../../../../shared/providers/unit_system_provider.dart';
+import '../../../../shared/services/report/report.dart';
 import '../../../../shared/utils/unit_formatter.dart';
 import '../../../../theme/kyle_design/app_colors.dart';
 import '../../../nutrition_plan/domain/nutrition_target_overrides.dart';
@@ -266,7 +267,15 @@ class _PortalNutritionTargetsFormState
         _hasChanges = false;
       });
       MealvanaSnackbar.showSuccess(context, 'Nutrition targets saved');
-    } catch (e) {
+    } catch (e, stackTrace) {
+      ref
+          .read(reportProvider)
+          .fault(
+            e,
+            stackTrace: stackTrace,
+            area: 'coach_mode',
+            message: 'Coach nutrition targets save failed',
+          );
       if (!mounted) return;
       setState(() => _isSaving = false);
       MealvanaSnackbar.showError(context, 'Failed to save targets');
@@ -311,7 +320,15 @@ class _PortalNutritionTargetsFormState
         _hasChanges = false;
       });
       MealvanaSnackbar.showSuccess(context, 'Targets reset to defaults');
-    } catch (e) {
+    } catch (e, stackTrace) {
+      ref
+          .read(reportProvider)
+          .fault(
+            e,
+            stackTrace: stackTrace,
+            area: 'coach_mode',
+            message: 'Coach nutrition targets reset failed',
+          );
       if (!mounted) return;
       setState(() => _isSaving = false);
       MealvanaSnackbar.showError(context, 'Failed to reset targets');

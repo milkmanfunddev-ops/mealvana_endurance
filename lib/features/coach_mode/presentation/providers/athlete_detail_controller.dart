@@ -13,6 +13,7 @@ import '../../../carb_loading/domain/carb_loading_plan_simple.dart';
 import '../../../nutrition_plan/domain/nutrition_target_overrides.dart';
 import '../../../carb_loading/application/carb_loading_service.dart';
 import '../../../../shared/providers/user_id_provider.dart';
+import '../../../../shared/services/report/report.dart';
 import '../../application/coach_service.dart';
 import '../../data/coach_repository.dart';
 import '../../domain/coach_athlete_relationship.dart';
@@ -188,7 +189,16 @@ class AthleteDetailController extends _$AthleteDetailController {
         carbLoadingPlans: carbLoadingPlans,
         carbLoadingDays: carbLoadingDays,
       );
-    } catch (e) {
+    } catch (e, stackTrace) {
+      ref
+          .read(reportProvider)
+          .fault(
+            e,
+            stackTrace: stackTrace,
+            area: 'coach_mode',
+            message: 'Athlete detail load failed',
+            extra: {'relationshipId': relationshipId},
+          );
       return AthleteDetailState(
         relationship: _createPlaceholderRelationship(relationshipId),
         error: 'Failed to load athlete details: ${e.toString()}',
@@ -328,7 +338,15 @@ class AthleteDetailController extends _$AthleteDetailController {
           ),
         );
       }
-    } catch (e) {
+    } catch (e, stackTrace) {
+      ref
+          .read(reportProvider)
+          .fault(
+            e,
+            stackTrace: stackTrace,
+            area: 'coach_mode',
+            message: 'Coach message send failed',
+          );
       state = AsyncData(
         currentState.copyWith(
           isLoading: false,
@@ -355,7 +373,16 @@ class AthleteDetailController extends _$AthleteDetailController {
       state = AsyncData(
         currentState.copyWith(messages: updatedMessages, isLoading: false),
       );
-    } catch (e) {
+    } catch (e, stackTrace) {
+      ref
+          .read(reportProvider)
+          .fault(
+            e,
+            stackTrace: stackTrace,
+            area: 'coach_mode',
+            message: 'Coach message delete failed',
+            extra: {'messageId': messageId},
+          );
       state = AsyncData(
         currentState.copyWith(
           isLoading: false,

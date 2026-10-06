@@ -1,5 +1,6 @@
 import 'package:riverpod_annotation/riverpod_annotation.dart';
 
+import '../../../../shared/services/report/report.dart';
 import '../../application/coach_service.dart';
 
 part 'invite_athlete_controller.g.dart';
@@ -25,6 +26,15 @@ class InviteAthleteController extends _$InviteAthleteController {
       state = const AsyncData(null);
       return relationship != null;
     } catch (e, stack) {
+      ref
+          .read(reportProvider)
+          .fault(
+            e,
+            stackTrace: stack,
+            area: 'coach_mode',
+            message: 'Invite athlete failed',
+            extra: {'athleteUserId': athleteUserId},
+          );
       state = AsyncError(e, stack);
       return false;
     }

@@ -5,7 +5,7 @@ import 'package:drift/drift.dart';
 import 'package:riverpod_annotation/riverpod_annotation.dart';
 
 import '../../../../shared/database/database_provider.dart';
-import '../../../../shared/services/logging_service.dart';
+import '../../../../shared/services/report/report.dart';
 import '../../../../shared/services/sync/data_sync_service.dart';
 import '../../../nutrition_plan/domain/fuel_log_data.dart';
 import '../../application/coach_service.dart';
@@ -260,7 +260,7 @@ class ReportsDateRange {
 class CoachReportsController extends _$CoachReportsController {
   CoachService get _coachService => ref.read(coachServiceProvider);
   DataSyncService get _syncService => ref.read(dataSyncServiceProvider);
-  AppLogger get _logger => ref.read(appLoggerProvider);
+  Report get _report => ref.read(reportProvider);
 
   @override
   FutureOr<CoachReportsState> build() async {
@@ -279,11 +279,12 @@ class CoachReportsController extends _$CoachReportsController {
       athletes
           .where((a) => a.athleteUserId.isNotEmpty)
           .map((a) => _syncService.syncAthleteData(a.athleteUserId)),
-    ).catchError((e) {
-      _logger.warning(
-        'Some athlete syncs failed',
-        context: 'COACH_REPORTS',
-        error: e,
+    ).catchError((Object e, StackTrace st) {
+      _report.degraded(
+        e,
+        stackTrace: st,
+        area: 'coach_mode',
+        message: 'Some athlete syncs failed; overview uses local data',
       );
       return <void>[];
     });
@@ -384,11 +385,13 @@ class CoachReportsController extends _$CoachReportsController {
                     : null),
           ),
         );
-      } catch (e) {
-        _logger.warning(
-          'Failed to load overview for $athleteId',
-          context: 'COACH_REPORTS',
-          error: e,
+      } catch (e, stackTrace) {
+        _report.degraded(
+          e,
+          stackTrace: stackTrace,
+          area: 'coach_mode',
+          message: 'Athlete overview failed to load; shown without numbers',
+          extra: {'athleteId': athleteId},
         );
         overviews.add(AthleteOverview(relationship: athlete));
       }
@@ -408,11 +411,16 @@ class CoachReportsController extends _$CoachReportsController {
     final today = DateTime(now.year, now.month, now.day);
 
     // Sync this athlete's data
-    await _syncService.syncAthleteData(athleteId).catchError((e) {
-      _logger.warning(
-        'Sync failed for $athleteId',
-        context: 'COACH_REPORTS',
-        error: e,
+    await _syncService.syncAthleteData(athleteId).catchError((
+      Object e,
+      StackTrace st,
+    ) {
+      _report.degraded(
+        e,
+        stackTrace: st,
+        area: 'coach_mode',
+        message: 'Athlete sync failed; report uses local data',
+        extra: {'athleteId': athleteId},
       );
     });
 
@@ -498,11 +506,13 @@ class CoachReportsController extends _$CoachReportsController {
             satisfactionRating = fuelLog.overallSatisfaction;
             nutritionRating = fuelLog.nutritionRating;
             notes = fuelLog.notes;
-          } catch (e) {
-            _logger.warning(
-              'Failed to parse fuel log for ${a.id}',
-              context: 'COACH_REPORTS',
-              error: e,
+          } catch (e, stackTrace) {
+            _report.degraded(
+              e,
+              stackTrace: stackTrace,
+              area: 'coach_mode',
+              message: 'Stored fuel log unreadable; actuals omitted',
+              extra: {'activityId': a.id},
             );
           }
         }
@@ -670,7 +680,14 @@ class CoachReportsController extends _$CoachReportsController {
         return decoded.map((k, v) => MapEntry(k.toString(), v));
       }
       return null;
-    } catch (_) {
+    } catch (e, stackTrace) {
+      _report.degraded(
+        e,
+        stackTrace: stackTrace,
+        area: 'coach_mode',
+        message: 'Stored nutrition JSON unreadable; treated as absent',
+        extra: {'length': raw.length},
+      );
       return null;
     }
   }
@@ -819,7 +836,13 @@ class CoachReportsController extends _$CoachReportsController {
         total += item.actualNutritionalInfo?.calories ?? 0;
       }
       return total > 0 ? total : null;
-    } catch (_) {
+    } catch (e, stackTrace) {
+      _report.degraded(
+        e,
+        stackTrace: stackTrace,
+        area: 'coach_mode',
+        message: 'Stored fuel log unreadable; actual calories omitted',
+      );
       return null;
     }
   }

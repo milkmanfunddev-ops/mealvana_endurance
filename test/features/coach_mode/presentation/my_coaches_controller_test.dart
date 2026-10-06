@@ -8,6 +8,9 @@ import 'package:mealvana_endurance/features/coach_mode/application/coach_service
 import 'package:mealvana_endurance/features/coach_mode/domain/coach_athlete_relationship.dart';
 import 'package:mealvana_endurance/features/coach_mode/presentation/providers/my_coaches_controller.dart';
 import 'package:mealvana_endurance/shared/services/logging_service.dart';
+import 'package:mealvana_endurance/shared/services/report/report.dart';
+
+import '../../../helpers/fakes/recording_report.dart';
 
 // ---------------------------------------------------------------------------
 // Mocks
@@ -81,10 +84,12 @@ CoachAthleteRelationship _makeRelationship({
 void main() {
   late _MockCoachService coachService;
   late _FakeLogger logger;
+  late RecordingReport report;
 
   setUp(() {
     coachService = _MockCoachService();
     logger = _FakeLogger();
+    report = RecordingReport();
 
     // Background sync stubs
     when(
@@ -98,6 +103,7 @@ void main() {
       overrides: [
         coachServiceProvider.overrideWithValue(coachService),
         appLoggerProvider.overrideWithValue(logger),
+        reportProvider.overrideWithValue(report),
       ],
     );
     addTearDown(c.dispose);
@@ -170,6 +176,10 @@ void main() {
 
       expect(state.error, isNotNull);
       expect(state.activeCoaches, isEmpty);
+
+      // The load failure also leaves the device as a coach_mode Fault.
+      expect(report.faults, hasLength(1));
+      expect(report.faults.single.area, 'coach_mode');
     });
   });
 

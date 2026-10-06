@@ -5,6 +5,7 @@ import 'package:supabase_flutter/supabase_flutter.dart';
 import 'package:uuid/uuid.dart';
 
 import '../../../../shared/services/logging_service.dart';
+import '../../../../shared/services/report/report.dart';
 import '../../application/coach_service.dart';
 import '../../domain/coach_athlete_relationship.dart';
 import '../../domain/coach_chat_state.dart';
@@ -271,8 +272,16 @@ class CoachChatController extends _$CoachChatController {
         // Failed: Update status to failed, keep in pending
         _markMessageAsFailed(optimisticMessage.id);
       }
-    } catch (e) {
+    } catch (e, stackTrace) {
       // Failed: Update status to failed, keep in pending for retry
+      ref
+          .read(reportProvider)
+          .fault(
+            e,
+            stackTrace: stackTrace,
+            area: 'coach_mode',
+            message: 'Coach chat send failed; message kept as pending',
+          );
       _markMessageAsFailed(optimisticMessage.id);
     }
   }
@@ -371,7 +380,15 @@ class CoachChatController extends _$CoachChatController {
         } else {
           _markMessageAsFailed(message.id);
         }
-      } catch (e) {
+      } catch (e, stackTrace) {
+        ref
+            .read(reportProvider)
+            .fault(
+              e,
+              stackTrace: stackTrace,
+              area: 'coach_mode',
+              message: 'Coach chat retry failed; message kept as pending',
+            );
         _markMessageAsFailed(message.id);
       }
     }

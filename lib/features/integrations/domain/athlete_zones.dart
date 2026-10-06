@@ -1,5 +1,7 @@
 import 'dart:convert';
 
+import '../../../shared/services/report/report.dart';
+
 /// Domain models for athlete training zones from Training Peaks.
 ///
 /// Training Peaks provides zone configurations for:
@@ -112,13 +114,24 @@ class AthleteZones {
   /// Serialize to JSON string for database storage
   String toJsonString() => jsonEncode(toJson());
 
-  /// Deserialize from JSON string
+  /// Deserialize from JSON string.
+  ///
+  /// A stored blob that no longer parses is dropped (zones fall back to
+  /// defaults), and reported so the corruption is not silent. A static parser
+  /// has no injection point, so this goes through the global `Report`.
   static AthleteZones? fromJsonString(String? jsonString) {
     if (jsonString == null || jsonString.isEmpty) return null;
     try {
       final json = jsonDecode(jsonString) as Map<String, dynamic>;
       return AthleteZones.fromJson(json);
-    } catch (_) {
+    } catch (e, stackTrace) {
+      SentryReport.global.degraded(
+        e,
+        stackTrace: stackTrace,
+        area: 'training_peaks',
+        message: 'Stored athlete zones JSON unreadable; zones dropped',
+        extra: {'length': jsonString.length},
+      );
       return null;
     }
   }

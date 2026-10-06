@@ -14,6 +14,7 @@ import '../../../calendar/presentation/widgets/calendar_week_view_kyle.dart';
 import '../../../calendar/presentation/widgets/calendar_month_view_kyle.dart';
 import '../../../../shared/widgets/kyle_design/feedback/mealvana_snackbar.dart';
 import '../../../../shared/providers/user_id_provider.dart';
+import '../../../../shared/services/report/report.dart';
 import '../../domain/coach_athlete_relationship.dart';
 import '../../../carb_loading/presentation/screens/carb_loading_day_detail_page.dart';
 import '../../../activities/application/activities_service.dart';
@@ -440,7 +441,15 @@ class _PortalAthleteDetailPanelState
 
       if (!mounted) return;
       MealvanaSnackbar.showSuccess(context, 'Carb loading plan created');
-    } catch (e) {
+    } catch (e, stackTrace) {
+      ref
+          .read(reportProvider)
+          .fault(
+            e,
+            stackTrace: stackTrace,
+            area: 'coach_mode',
+            message: 'Coach carb-loading plan create failed',
+          );
       if (!mounted) return;
       MealvanaSnackbar.showError(context, 'Failed to create plan: $e');
     }
@@ -600,7 +609,16 @@ class _PortalAthleteDetailPanelState
       if (mounted) {
         MealvanaSnackbar.showSuccess(context, 'Carb loading plan deleted');
       }
-    } catch (e) {
+    } catch (e, stackTrace) {
+      ref
+          .read(reportProvider)
+          .fault(
+            e,
+            stackTrace: stackTrace,
+            area: 'coach_mode',
+            message: 'Coach carb-loading plan delete failed',
+            extra: {'eventId': carbEvent.id},
+          );
       if (mounted) {
         MealvanaSnackbar.showError(context, 'Failed to delete plan: $e');
       }
@@ -824,7 +842,16 @@ class _PortalAthleteDetailPanelState
       await ref
           .read(athleteDetailControllerProvider(widget.relationshipId).notifier)
           .refresh();
-    } catch (e) {
+    } catch (e, stackTrace) {
+      ref
+          .read(reportProvider)
+          .fault(
+            e,
+            stackTrace: stackTrace,
+            area: 'coach_mode',
+            message: 'Coach delete of athlete activity failed',
+            extra: {'activityId': activity.id},
+          );
       if (!mounted) return;
       MealvanaSnackbar.showError(context, 'Failed to delete activity: $e');
     }
