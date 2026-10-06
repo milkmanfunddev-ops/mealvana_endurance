@@ -166,7 +166,7 @@ IntegrationsRepository integrationsRepository(Ref ref) {
     database: database,
     supabase: Supabase.instance.client,
     logger: deps.logger,
-    sentry: deps.sentry,
+    report: ref.read(reportProvider),
   );
 }
 
@@ -439,7 +439,17 @@ Future<GarminBodyCompData?> garminLastBodyComp(Ref ref, String userId) async {
       bodyFatPct: bodyFatPct,
       measurementTime: measurementTime,
     );
-  } catch (_) {
+  } catch (e, stackTrace) {
+    // Consumers show "no body-comp data"; the lookup failure must not be
+    // mistaken for that.
+    ref
+        .read(reportProvider)
+        .degraded(
+          e,
+          stackTrace: stackTrace,
+          area: 'garmin',
+          message: 'Garmin body-composition lookup failed; showing none',
+        );
     return null;
   }
 }

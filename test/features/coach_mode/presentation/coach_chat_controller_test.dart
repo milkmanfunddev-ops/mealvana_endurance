@@ -10,6 +10,9 @@ import 'package:mealvana_endurance/features/coach_mode/domain/coach_athlete_rela
 import 'package:mealvana_endurance/features/coach_mode/domain/coach_message.dart';
 import 'package:mealvana_endurance/features/coach_mode/presentation/providers/coach_chat_controller.dart';
 import 'package:mealvana_endurance/shared/services/logging_service.dart';
+import 'package:mealvana_endurance/shared/services/report/report.dart';
+
+import '../../../helpers/fakes/recording_report.dart';
 
 // ---------------------------------------------------------------------------
 // Mocks
@@ -109,6 +112,7 @@ CoachMessage _sampleMessage({
 void main() {
   late _MockCoachService coachService;
   late _FakeLogger logger;
+  late RecordingReport report;
   late _FakeRealtimeChannel fakeChannel;
 
   setUpAll(() {
@@ -118,6 +122,7 @@ void main() {
   setUp(() {
     coachService = _MockCoachService();
     logger = _FakeLogger();
+    report = RecordingReport();
     fakeChannel = _FakeRealtimeChannel();
 
     // Default stubs for the build() path
@@ -161,6 +166,7 @@ void main() {
       overrides: [
         coachServiceProvider.overrideWithValue(coachService),
         appLoggerProvider.overrideWithValue(logger),
+        reportProvider.overrideWithValue(report),
       ],
     );
     addTearDown(c.dispose);
@@ -353,6 +359,9 @@ void main() {
           isNotNull,
           reason: 'Error must be surfaced to the user on send failure.',
         );
+        // And the failure leaves the device as a coach_mode Fault.
+        expect(report.faults, hasLength(1));
+        expect(report.faults.single.area, 'coach_mode');
       },
     );
 

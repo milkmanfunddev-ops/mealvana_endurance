@@ -2,7 +2,7 @@ import 'dart:async';
 
 import 'package:riverpod_annotation/riverpod_annotation.dart';
 
-import '../../../../shared/services/logging_service.dart';
+import '../../../../shared/services/report/report.dart';
 import '../../application/coach_service.dart';
 import '../../domain/coach_athlete_relationship.dart';
 
@@ -66,7 +66,15 @@ class MyCoachesController extends _$MyCoachesController {
         activeCoaches: activeCoaches,
         pendingRequests: pendingRequests,
       );
-    } catch (e) {
+    } catch (e, stackTrace) {
+      ref
+          .read(reportProvider)
+          .fault(
+            e,
+            stackTrace: stackTrace,
+            area: 'coach_mode',
+            message: 'My coaches load failed',
+          );
       return MyCoachesState(error: 'Failed to load coaches: $e');
     }
   }
@@ -79,7 +87,7 @@ class MyCoachesController extends _$MyCoachesController {
   Future<void> _backgroundSync() async {
     if (_hasSynced) return;
     final coachService = ref.read(coachServiceProvider);
-    final logger = ref.read(appLoggerProvider);
+    final report = ref.read(reportProvider);
 
     try {
       await coachService.syncRelationshipsFromSupabase();
@@ -89,11 +97,11 @@ class MyCoachesController extends _$MyCoachesController {
       ref.invalidateSelf();
     } catch (e, stackTrace) {
       _hasSynced = true; // Don't retry on failure within same lifecycle
-      logger.error(
-        'Background sync failed',
-        context: 'MY_COACHES_CONTROLLER',
-        error: e,
+      report.fault(
+        e,
         stackTrace: stackTrace,
+        area: 'coach_mode',
+        message: 'My coaches background sync failed',
       );
     }
   }
@@ -129,7 +137,16 @@ class MyCoachesController extends _$MyCoachesController {
           ),
         );
       }
-    } catch (e) {
+    } catch (e, stackTrace) {
+      ref
+          .read(reportProvider)
+          .fault(
+            e,
+            stackTrace: stackTrace,
+            area: 'coach_mode',
+            message: 'Accept coach request failed',
+            extra: {'relationshipId': relationshipId},
+          );
       state = AsyncData(
         currentState.copyWith(
           isLoading: false,
@@ -159,7 +176,16 @@ class MyCoachesController extends _$MyCoachesController {
           isLoading: false,
         ),
       );
-    } catch (e) {
+    } catch (e, stackTrace) {
+      ref
+          .read(reportProvider)
+          .fault(
+            e,
+            stackTrace: stackTrace,
+            area: 'coach_mode',
+            message: 'Decline coach request failed',
+            extra: {'relationshipId': relationshipId},
+          );
       state = AsyncData(
         currentState.copyWith(
           isLoading: false,

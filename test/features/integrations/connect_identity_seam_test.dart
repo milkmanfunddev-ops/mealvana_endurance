@@ -97,7 +97,6 @@ void main() {
       database: db,
       supabase: supabase,
       logger: MockAppLogger(),
-      sentry: mockSentryReporter(),
     );
 
     oauth = _MockFinalSurgeOAuth();

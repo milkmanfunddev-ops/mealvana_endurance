@@ -7,7 +7,7 @@ import 'package:uuid/uuid.dart';
 import '../../../shared/data/syncable_repository.dart';
 import '../../../shared/database/app_database.dart';
 import '../../../shared/services/logging_service.dart';
-import '../../../shared/services/sentry/sentry_reporter.dart';
+import '../../../shared/services/report/report.dart';
 import '../../../shared/services/sync/sync_dependency_graph.dart';
 import '../domain/integration.dart';
 
@@ -24,16 +24,17 @@ class IntegrationsRepository with SyncableRepository {
     required AppDatabase database,
     required SupabaseClient supabase,
     required AppLogger logger,
-    required SentryReporter sentry,
+    Report? report,
   }) : _db = database,
        _supabase = supabase,
        _logger = logger,
-       _sentry = sentry;
+       _report = report;
 
   final AppDatabase _db;
   final SupabaseClient _supabase;
   final AppLogger _logger;
-  final SentryReporter _sentry;
+  final Report? _report;
+  Report get _r => _report ?? SentryReport.global;
   static const _uuid = Uuid();
 
   // ==========================================================================
@@ -100,18 +101,12 @@ class IntegrationsRepository with SyncableRepository {
 
       return SyncResult.successful(upserted);
     } catch (e, stackTrace) {
-      _logger.error(
-        'Failed to sync integrations from Supabase',
-        context: 'INTEGRATIONS_REPOSITORY',
-        error: e,
-        stackTrace: stackTrace,
-        data: {'userId': userId},
-      );
-      _sentry.reportNetworkError(
+      _r.fault(
         e,
-        url: 'supabase:integrations:select',
-        method: 'SELECT',
         stackTrace: stackTrace,
+        area: 'sync',
+        message: 'Failed to sync integrations from Supabase',
+        extra: {'userId': userId},
       );
       return SyncResult.failed(e.toString());
     }
@@ -130,11 +125,14 @@ class IntegrationsRepository with SyncableRepository {
           .eq('id', userId)
           .maybeSingle();
       return row != null;
-    } catch (e) {
-      _logger.warning(
-        'Could not confirm remote user row; deferring integration upload',
-        context: 'INTEGRATIONS_REPOSITORY',
-        data: {'userId': userId, 'error': e.toString()},
+    } catch (e, stackTrace) {
+      _r.degraded(
+        e,
+        stackTrace: stackTrace,
+        area: 'sync',
+        message:
+            'Could not confirm remote user row; deferring integration upload',
+        extra: {'userId': userId},
       );
       return false;
     }
@@ -207,18 +205,12 @@ class IntegrationsRepository with SyncableRepository {
 
       return UploadResult.successful(ids.length);
     } catch (e, stackTrace) {
-      _logger.error(
-        'Failed to upload dirty integrations',
-        context: 'INTEGRATIONS_REPOSITORY',
-        error: e,
-        stackTrace: stackTrace,
-        data: {'userId': userId},
-      );
-      _sentry.reportNetworkError(
+      _r.fault(
         e,
-        url: 'supabase:integrations:upsert',
-        method: 'UPSERT',
         stackTrace: stackTrace,
+        area: 'sync',
+        message: 'Failed to upload dirty integrations',
+        extra: {'userId': userId},
       );
       return UploadResult.failed(e.toString());
     }
@@ -343,18 +335,13 @@ class IntegrationsRepository with SyncableRepository {
           .eq('user_id', userId)
           .eq('provider', provider);
     } catch (e, stackTrace) {
-      _logger.warning(
-        'Failed to delete integration from Supabase; local row already removed',
-        context: 'INTEGRATIONS_REPOSITORY',
-        error: e,
-        stackTrace: stackTrace,
-        data: {'userId': userId, 'provider': provider},
-      );
-      _sentry.reportNetworkError(
+      _r.degraded(
         e,
-        url: 'supabase:integrations:delete',
-        method: 'DELETE',
         stackTrace: stackTrace,
+        area: 'integrations',
+        message:
+            'Failed to delete integration from Supabase; local row already removed',
+        extra: {'userId': userId, 'provider': provider},
       );
     }
   }
@@ -499,13 +486,27 @@ class IntegrationsRepository with SyncableRepository {
       // new user immediately. uploadDirtyRecords will retry anything missed.
       try {
         await uploadDirtyRecords(toUserId);
-      } catch (_) {
-        // swallow — dirty flag remains, will retry later
+      } catch (e, stackTrace) {
+        // Dirty flag remains; the next upload pass retries.
+        _r.degraded(
+          e,
+          stackTrace: stackTrace,
+          area: 'sync',
+          message: 'Migrated integrations push failed; rows stay dirty',
+          extra: {'toUserId': toUserId, 'migrated': result},
+        );
       }
 
       return result;
-    } catch (e) {
+    } catch (e, stackTrace) {
       // Migration is best-effort; don't throw.
+      _r.fault(
+        e,
+        stackTrace: stackTrace,
+        area: 'sync',
+        message: 'Integration user-id migration failed',
+        extra: {'fromUserId': fromUserId, 'toUserId': toUserId},
+      );
       return 0;
     }
   }
@@ -545,18 +546,13 @@ class IntegrationsRepository with SyncableRepository {
             ..where((t) => t.id.equals(model.id!)))
           .write(const IntegrationsTableCompanion(needsUpload: Value(false)));
     } catch (e, stackTrace) {
-      _logger.warning(
-        'Immediate integration upload failed; row stays dirty for retry',
-        context: 'INTEGRATIONS_REPOSITORY',
-        error: e,
-        stackTrace: stackTrace,
-        data: {'userId': model.userId, 'provider': model.provider},
-      );
-      _sentry.reportNetworkError(
+      _r.degraded(
         e,
-        url: 'supabase:integrations:upsert',
-        method: 'UPSERT',
         stackTrace: stackTrace,
+        area: 'sync',
+        message:
+            'Immediate integration upload failed; row stays dirty for retry',
+        extra: {'userId': model.userId, 'provider': model.provider},
       );
     }
   }
@@ -685,7 +681,12 @@ class IntegrationsRepository with SyncableRepository {
     if (raw == null || raw.isEmpty) return null;
     try {
       return jsonDecode(raw);
-    } catch (_) {
+    } catch (e) {
+      _r.note(
+        'Athlete zones JSON malformed; uploading the raw string',
+        area: 'integrations',
+        data: {'error': e.toString(), 'length': raw.length},
+      );
       return raw;
     }
   }

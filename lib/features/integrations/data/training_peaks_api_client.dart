@@ -2,6 +2,7 @@ import 'dart:convert';
 import 'package:flutter/foundation.dart';
 import 'package:http/http.dart' as http;
 
+import '../../../shared/services/report/report.dart';
 import '../domain/http_retry_client.dart';
 import '../domain/integration_exceptions.dart';
 
@@ -31,6 +32,7 @@ class TrainingPeaksApiClient {
     bool useSandbox = true,
     http.Client? httpClient,
     RetryConfig? retryConfig,
+    Report? report,
   }) : _clientId = clientId,
        _clientSecret = clientSecret,
        _appVersion = appVersion,
@@ -41,7 +43,8 @@ class TrainingPeaksApiClient {
            ? 'https://api.sandbox.trainingpeaks.com'
            : 'https://api.trainingpeaks.com',
        _httpClient = httpClient ?? http.Client(),
-       _retryConfig = retryConfig ?? RetryConfig.defaultConfig;
+       _retryConfig = retryConfig ?? RetryConfig.defaultConfig,
+       _report = report;
 
   static const _provider = 'training_peaks';
 
@@ -52,6 +55,8 @@ class TrainingPeaksApiClient {
   final String _apiBaseUrl;
   final http.Client _httpClient;
   final RetryConfig _retryConfig;
+  final Report? _report;
+  Report get _r => _report ?? SentryReport.global;
 
   /// User-Agent header format: [client_id]/[Version Number]
   /// Per TrainingPeaks API requirements: https://github.com/TrainingPeaks/PartnersAPI/wiki#api-requests
@@ -365,13 +370,15 @@ class TrainingPeaksApiClient {
             }
           }
         }
-      } catch (e) {
+      } catch (e, stackTrace) {
         // Skip individual day errors, continue with other days
-        if (kDebugMode) {
-          print(
-            '   ⚠️ Error fetching events for ${_formatDate(currentDate)}: $e',
-          );
-        }
+        _r.degraded(
+          e,
+          stackTrace: stackTrace,
+          area: _provider,
+          message: 'TrainingPeaks event fetch failed for one day; day skipped',
+          extra: {'date': _formatDate(currentDate)},
+        );
       }
       currentDate = currentDate.add(const Duration(days: 1));
     }

@@ -5,6 +5,7 @@ import 'package:flutter/services.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
 
+import '../../../../shared/services/report/report.dart';
 import '../../../../shared/widgets/kyle_design/feedback/mealvana_snackbar.dart';
 import '../../../../theme/kyle_design/app_colors.dart';
 import '../../application/coach_service.dart';
@@ -356,7 +357,15 @@ class _CoachCodeGeneratorDialogState
           _startCountdown();
         }
       });
-    } catch (_) {
+    } catch (e, stackTrace) {
+      ref
+          .read(reportProvider)
+          .degraded(
+            e,
+            stackTrace: stackTrace,
+            area: 'coach_mode',
+            message: 'Active coach pairing code lookup failed; none shown',
+          );
       if (!mounted) return;
       setState(() => _isLoading = false);
     }
@@ -406,7 +415,15 @@ class _CoachCodeGeneratorDialogState
         _codeExpiresAt = DateTime.now().toUtc().add(const Duration(hours: 24));
       });
       _startCountdown();
-    } catch (_) {
+    } catch (e, stackTrace) {
+      ref
+          .read(reportProvider)
+          .fault(
+            e,
+            stackTrace: stackTrace,
+            area: 'coach_mode',
+            message: 'Coach pairing code generation failed',
+          );
       if (!mounted) return;
       setState(() {
         _isGenerating = false;

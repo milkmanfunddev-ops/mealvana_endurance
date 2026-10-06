@@ -39,24 +39,13 @@ unreportedCatch lib/features/integrations/application/tp_writeback_service.dart 
 unreportedCatch lib/features/integrations/application/tp_writeback_service.dart :: } on IntegrationApiException catch (e) {  :: same as above (feedback push)
 unreportedCatch lib/features/integrations/application/tp_writeback_service.dart :: } on IntegrationApiException catch (e) {  :: same as above (plan removal)
 unreportedCatch lib/features/nutrition_plan/presentation/providers/swap_food_controller.dart :: } catch (_) {  :: the catch is the mounted test: reading `state` on a disposed notifier throws and Riverpod exposes no mounted flag here
+unreportedCatch lib/features/integrations/data/vdot_api_client.dart :: } catch (_) {  :: the body is read as JSON only to pick out an error message; a non-JSON body (HTML error page) is an expected input and the raw text is the fallback output
 
 ## baseline
 
 printInCatch lib/features/carb_loading/presentation/screens/carb_loading_food_selection_screen.dart :: } catch (e, stackTrace) {
 printInCatch lib/features/carb_loading/presentation/screens/carb_loading_food_selection_screen.dart :: } catch (e) {
 printInCatch lib/features/carb_loading/presentation/screens/carb_loading_food_selection_screen.dart :: } catch (e) {
-printInCatch lib/features/integrations/data/training_peaks_api_client.dart :: } catch (e) {
-printInCatch lib/features/integrations/domain/http_retry_client.dart :: } on RateLimitException catch (e) {
-printInCatch lib/features/integrations/domain/http_retry_client.dart :: } on ServerException catch (e) {
-printInCatch lib/features/integrations/domain/http_retry_client.dart :: } on SocketException catch (e) {
-printInCatch lib/features/integrations/domain/http_retry_client.dart :: } on TimeoutException catch (_) {
-printInCatch lib/features/integrations/presentation/providers/connect_training_controller.dart :: } catch (e, st) {
-printInCatch lib/features/integrations/presentation/providers/connect_training_controller.dart :: } catch (e, stackTrace) {
-printInCatch lib/features/integrations/presentation/providers/connect_training_controller.dart :: } catch (e, stackTrace) {
-printInCatch lib/features/integrations/presentation/providers/connect_training_controller.dart :: } catch (e) {
-printInCatch lib/features/integrations/presentation/providers/connect_training_controller.dart :: } catch (e) {
-printInCatch lib/features/integrations/presentation/providers/connect_training_controller.dart :: } catch (e) {
-printInCatch lib/features/integrations/presentation/providers/connect_training_controller.dart :: } catch (e) {
 sentryImport lib/features/macro_dashboard/application/dashboard_transient_telemetry.dart :: import 'package:sentry_flutter/sentry_flutter.dart';
 sentryImport lib/shared/services/performance_telemetry.dart :: import 'package:sentry_flutter/sentry_flutter.dart';
 sentryImport lib/shared/services/sentry/sentry_reporter.dart :: import 'package:sentry_flutter/sentry_flutter.dart' show SentryLevel;
@@ -87,37 +76,6 @@ unreportedCatch lib/features/carb_loading/presentation/screens/carb_loading_food
 unreportedCatch lib/features/carb_loading/presentation/screens/carb_loading_food_selection_screen.dart :: } catch (e) {
 unreportedCatch lib/features/carb_loading/presentation/screens/carb_loading_protocol_selection_screen.dart :: } catch (_) {}
 unreportedCatch lib/features/carb_loading/presentation/screens/create_custom_carb_loading_food_screen.dart :: } catch (e) {
-unreportedCatch lib/features/coach_mode/data/coach_repository.dart :: } catch (_) {
-unreportedCatch lib/features/coach_mode/presentation/providers/athlete_detail_controller.dart :: } catch (e) {
-unreportedCatch lib/features/coach_mode/presentation/providers/athlete_detail_controller.dart :: } catch (e) {
-unreportedCatch lib/features/coach_mode/presentation/providers/athlete_detail_controller.dart :: } catch (e) {
-unreportedCatch lib/features/coach_mode/presentation/providers/coach_activity_detail_controller.dart :: } catch (_) {
-unreportedCatch lib/features/coach_mode/presentation/providers/coach_activity_detail_controller.dart :: } catch (_) {
-unreportedCatch lib/features/coach_mode/presentation/providers/coach_activity_detail_controller.dart :: } catch (_) {
-unreportedCatch lib/features/coach_mode/presentation/providers/coach_activity_detail_controller.dart :: } catch (error, stackTrace) {
-unreportedCatch lib/features/coach_mode/presentation/providers/coach_chat_controller.dart :: } catch (e) {
-unreportedCatch lib/features/coach_mode/presentation/providers/coach_chat_controller.dart :: } catch (e) {
-unreportedCatch lib/features/coach_mode/presentation/providers/coach_dashboard_controller.dart :: } catch (e) {
-unreportedCatch lib/features/coach_mode/presentation/providers/coach_dashboard_controller.dart :: } catch (e) {
-unreportedCatch lib/features/coach_mode/presentation/providers/coach_dashboard_controller.dart :: } catch (e) {
-unreportedCatch lib/features/coach_mode/presentation/providers/coach_dashboard_controller.dart :: } catch (e) {
-unreportedCatch lib/features/coach_mode/presentation/providers/coach_directory_controller.dart :: } catch (e) {
-unreportedCatch lib/features/coach_mode/presentation/providers/coach_directory_controller.dart :: } catch (e) {
-unreportedCatch lib/features/coach_mode/presentation/providers/coach_reports_controller.dart :: } catch (_) {
-unreportedCatch lib/features/coach_mode/presentation/providers/coach_reports_controller.dart :: } catch (_) {
-unreportedCatch lib/features/coach_mode/presentation/providers/invite_athlete_controller.dart :: } catch (e, stack) {
-unreportedCatch lib/features/coach_mode/presentation/providers/my_coaches_controller.dart :: } catch (e) {
-unreportedCatch lib/features/coach_mode/presentation/providers/my_coaches_controller.dart :: } catch (e) {
-unreportedCatch lib/features/coach_mode/presentation/providers/my_coaches_controller.dart :: } catch (e) {
-unreportedCatch lib/features/coach_mode/presentation/widgets/activity_coach_feedback_widget.dart :: } catch (e) {
-unreportedCatch lib/features/coach_mode/presentation/widgets/portal_athlete_detail_panel.dart :: } catch (e) {
-unreportedCatch lib/features/coach_mode/presentation/widgets/portal_athlete_detail_panel.dart :: } catch (e) {
-unreportedCatch lib/features/coach_mode/presentation/widgets/portal_athlete_detail_panel.dart :: } catch (e) {
-unreportedCatch lib/features/coach_mode/presentation/widgets/portal_athlete_profile_form.dart :: } catch (e) {
-unreportedCatch lib/features/coach_mode/presentation/widgets/portal_nutrition_targets_form.dart :: } catch (e) {
-unreportedCatch lib/features/coach_mode/presentation/widgets/portal_nutrition_targets_form.dart :: } catch (e) {
-unreportedCatch lib/features/coach_mode/presentation/widgets/portal_sidebar.dart :: } catch (_) {
-unreportedCatch lib/features/coach_mode/presentation/widgets/portal_sidebar.dart :: } catch (_) {
 unreportedCatch lib/features/content/application/content_service.dart :: } catch (_) {
 unreportedCatch lib/features/content/application/content_service.dart :: } catch (_) {
 unreportedCatch lib/features/content/application/content_service.dart :: } catch (e) {
@@ -135,45 +93,6 @@ unreportedCatch lib/features/events/presentation/screens/event_form_screen.dart 
 unreportedCatch lib/features/events/presentation/screens/events_list_screen.dart :: } catch (e) {
 unreportedCatch lib/features/events/presentation/widgets/event_action_buttons_card.dart :: } catch (e) {
 unreportedCatch lib/features/fuel_timeline/presentation/widgets/energy_breakdown_sheet.dart :: } catch (_) {}
-unreportedCatch lib/features/integrations/data/integrations_repository.dart :: } catch (_) {
-unreportedCatch lib/features/integrations/data/integrations_repository.dart :: } catch (_) {
-unreportedCatch lib/features/integrations/data/integrations_repository.dart :: } catch (e) {
-unreportedCatch lib/features/integrations/data/training_peaks_api_client.dart :: } catch (e) {
-unreportedCatch lib/features/integrations/data/vdot_api_client.dart :: } catch (_) {
-unreportedCatch lib/features/integrations/domain/athlete_zones.dart :: } catch (_) {
-unreportedCatch lib/features/integrations/domain/integration.dart :: } catch (_) {
-unreportedCatch lib/features/integrations/presentation/providers/connect_training_controller.dart :: } catch (_) {
-unreportedCatch lib/features/integrations/presentation/providers/connect_training_controller.dart :: } catch (_) {
-unreportedCatch lib/features/integrations/presentation/providers/connect_training_controller.dart :: } catch (_) {
-unreportedCatch lib/features/integrations/presentation/providers/connect_training_controller.dart :: } catch (_) {}
-unreportedCatch lib/features/integrations/presentation/providers/connect_training_controller.dart :: } catch (_) {}
-unreportedCatch lib/features/integrations/presentation/providers/connect_training_controller.dart :: } catch (_) {}
-unreportedCatch lib/features/integrations/presentation/providers/connect_training_controller.dart :: } catch (_) {}
-unreportedCatch lib/features/integrations/presentation/providers/connect_training_controller.dart :: } catch (_) {}
-unreportedCatch lib/features/integrations/presentation/providers/connect_training_controller.dart :: } catch (_) {}
-unreportedCatch lib/features/integrations/presentation/providers/connect_training_controller.dart :: } catch (_) {}
-unreportedCatch lib/features/integrations/presentation/providers/connect_training_controller.dart :: } catch (_) {}
-unreportedCatch lib/features/integrations/presentation/providers/connect_training_controller.dart :: } catch (e, st) {
-unreportedCatch lib/features/integrations/presentation/providers/connect_training_controller.dart :: } catch (e, stackTrace) {
-unreportedCatch lib/features/integrations/presentation/providers/connect_training_controller.dart :: } catch (e, stackTrace) {
-unreportedCatch lib/features/integrations/presentation/providers/connect_training_controller.dart :: } catch (e, stackTrace) {
-unreportedCatch lib/features/integrations/presentation/providers/connect_training_controller.dart :: } catch (e, stackTrace) {
-unreportedCatch lib/features/integrations/presentation/providers/connect_training_controller.dart :: } catch (e, stackTrace) {
-unreportedCatch lib/features/integrations/presentation/providers/connect_training_controller.dart :: } catch (e, stackTrace) {
-unreportedCatch lib/features/integrations/presentation/providers/connect_training_controller.dart :: } catch (e, stackTrace) {
-unreportedCatch lib/features/integrations/presentation/providers/connect_training_controller.dart :: } catch (e, stackTrace) {
-unreportedCatch lib/features/integrations/presentation/providers/connect_training_controller.dart :: } catch (e, stackTrace) {
-unreportedCatch lib/features/integrations/presentation/providers/connect_training_controller.dart :: } catch (e, stackTrace) {
-unreportedCatch lib/features/integrations/presentation/providers/connect_training_controller.dart :: } catch (e, stackTrace) {
-unreportedCatch lib/features/integrations/presentation/providers/connect_training_controller.dart :: } catch (e, stackTrace) {
-unreportedCatch lib/features/integrations/presentation/providers/connect_training_controller.dart :: } catch (e, stackTrace) {
-unreportedCatch lib/features/integrations/presentation/providers/connect_training_controller.dart :: } catch (e, stackTrace) {
-unreportedCatch lib/features/integrations/presentation/providers/connect_training_controller.dart :: } catch (e) {
-unreportedCatch lib/features/integrations/presentation/providers/connect_training_controller.dart :: } catch (e) {
-unreportedCatch lib/features/integrations/presentation/providers/connect_training_controller.dart :: } catch (e) {
-unreportedCatch lib/features/integrations/presentation/providers/connect_training_controller.dart :: } catch (e) {
-unreportedCatch lib/features/integrations/presentation/providers/connect_training_controller.dart :: } on FormatException catch (e) {
-unreportedCatch lib/features/integrations/presentation/providers/integrations_providers.dart :: } catch (_) {
 unreportedCatch lib/features/macro_dashboard/presentation/providers/macro_dashboard_providers.dart :: } catch (_) {
 unreportedCatch lib/features/macro_dashboard/presentation/providers/macro_dashboard_providers.dart :: } catch (_) {
 unreportedCatch lib/features/macro_dashboard/presentation/screens/macro_dashboard_screen.dart :: } catch (_) {
