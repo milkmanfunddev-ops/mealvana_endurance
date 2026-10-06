@@ -1,5 +1,6 @@
 import 'dart:convert';
 
+import '../../../shared/services/report/report.dart';
 import 'vana_part.dart';
 import 'wire_record.dart';
 
@@ -26,7 +27,16 @@ sealed class VanaStreamEvent extends WireRecord {
     final Object? decoded;
     try {
       decoded = jsonDecode(trimmed);
-    } on FormatException {
+    } on FormatException catch (e, st) {
+      SentryReport.global.degraded(
+        e,
+        stackTrace: st,
+        area: 'meal_planning',
+        message: 'vana NDJSON line is not JSON; line dropped',
+        extra: {
+          'line': trimmed.length > 200 ? trimmed.substring(0, 200) : trimmed,
+        },
+      );
       return null;
     }
     final json = asJsonMap(decoded);

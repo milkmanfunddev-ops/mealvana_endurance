@@ -1,10 +1,10 @@
 import 'dart:async';
 
-import 'package:flutter/foundation.dart' show debugPrint;
 import 'package:riverpod_annotation/riverpod_annotation.dart';
 import 'package:supabase_flutter/supabase_flutter.dart';
 
 import '../../../shared/services/logging_service.dart';
+import '../../../shared/services/report/report.dart';
 import '../../../shared/services/supabase/supabase_client_provider.dart';
 import '../../ai_credits/domain/insufficient_credits_exception.dart';
 import '../../meal_planning/data/vana_chat_repository.dart';
@@ -125,13 +125,20 @@ class AiCoachChatRepository {
     required SupabaseClient supabase,
     required VanaChatRepository transport,
     required AppLogger logger,
+    Report? report,
   }) : _supabase = supabase,
        _transport = transport,
-       _logger = logger;
+       _logger = logger,
+       _report = report;
 
   final SupabaseClient _supabase;
   final VanaChatRepository _transport;
   final AppLogger _logger;
+  final Report? _report;
+
+  Report get _r => _report ?? SentryReport.global;
+
+  static const _area = 'ai_coach';
 
   // ── Conversations ──────────────────────────────────────────────────────────
 
@@ -153,10 +160,11 @@ class AiCoachChatRepository {
           )
           .toList();
     } catch (e, st) {
-      _logger.error(
-        'AiCoachChatRepository.fetchConversations failed',
-        error: e,
+      await _r.fault(
+        e,
         stackTrace: st,
+        area: _area,
+        message: 'AiCoachChatRepository.fetchConversations failed',
       );
       rethrow;
     }
@@ -180,10 +188,12 @@ class AiCoachChatRepository {
           .map((row) => AiCoachMessage.fromJson(row as Map<String, dynamic>))
           .toList();
     } catch (e, st) {
-      _logger.error(
-        'AiCoachChatRepository.fetchMessages($conversationId) failed',
-        error: e,
+      await _r.fault(
+        e,
         stackTrace: st,
+        area: _area,
+        message: 'AiCoachChatRepository.fetchMessages failed',
+        extra: {'conversation_id': conversationId},
       );
       rethrow;
     }
@@ -339,9 +349,13 @@ class AiCoachChatRepository {
           // Future protocol additions (e.g. `status`) — ignore.
           return null;
       }
-    } catch (e) {
-      debugPrint(
-        '[AiCoachChatRepository] NDJSON parse error on line: $json — $e',
+    } catch (e, st) {
+      _r.fault(
+        e,
+        stackTrace: st,
+        area: _area,
+        message: 'jade-chat NDJSON line did not parse; line dropped',
+        extra: {'type': json['type']?.toString()},
       );
       return null;
     }
@@ -365,5 +379,6 @@ AiCoachChatRepository aiCoachChatRepository(Ref ref) {
       functionName: 'jade-chat',
     ),
     logger: logger,
+    report: ref.watch(reportProvider),
   );
 }

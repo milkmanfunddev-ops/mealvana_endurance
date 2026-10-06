@@ -4,11 +4,10 @@ import 'package:drift/drift.dart';
 import 'package:flutter/foundation.dart' show visibleForTesting;
 import 'package:riverpod_annotation/riverpod_annotation.dart';
 import 'package:supabase_flutter/supabase_flutter.dart';
-import 'package:sentry_flutter/sentry_flutter.dart';
 
 import '../../../shared/database/app_database.dart';
 import '../../../shared/database/database_provider.dart';
-import '../../../shared/services/sentry/sentry_reporter.dart';
+import '../../../shared/services/report/report.dart';
 import '../domain/daily_macro_targets.dart';
 import '../domain/enums.dart';
 
@@ -19,7 +18,7 @@ DailyMacroTargetsRepository dailyMacroTargetsRepository(Ref ref) {
   return DailyMacroTargetsRepository(
     database: ref.read(appDatabaseProvider),
     supabase: Supabase.instance.client,
-    sentry: ref.read(sentryReporterProvider),
+    report: ref.read(reportProvider),
   );
 }
 
@@ -27,15 +26,19 @@ class DailyMacroTargetsRepository {
   DailyMacroTargetsRepository({
     required AppDatabase database,
     required SupabaseClient supabase,
-    SentryReporter sentry = const NoopSentryReporter(),
+    Report? report,
   }) : _database = database,
        _supabase = supabase,
-       _sentry = sentry;
+       _report = report;
 
   final AppDatabase _database;
   final SupabaseClient _supabase;
-  final SentryReporter _sentry;
+  final Report? _report;
   bool _reportedRemoteSaveFailureThisSession = false;
+
+  Report get _r => _report ?? SentryReport.global;
+
+  static const _area = 'daily_macros';
 
   /// The engine version a cached day must carry to be served. Rows with an
   /// OLDER `algorithm_version` are treated as misses so the next read
@@ -229,12 +232,18 @@ class DailyMacroTargetsRepository {
   /// before the column was populated) and corrupt payloads read as absent —
   /// the domain's own defaults then apply, and the display layer must treat a
   /// missing weight as missing, never as a stand-in constant.
-  static Map<String, dynamic>? _decodeCalculationInput(String? raw) {
+  Map<String, dynamic>? _decodeCalculationInput(String? raw) {
     if (raw == null || raw.isEmpty) return null;
     try {
       final decoded = jsonDecode(raw);
       return decoded is Map ? decoded.cast<String, dynamic>() : null;
-    } catch (_) {
+    } catch (e, st) {
+      _r.degraded(
+        e,
+        stackTrace: st,
+        area: _area,
+        message: 'cached calculation_input JSON malformed; read as absent',
+      );
       return null;
     }
   }
@@ -245,28 +254,27 @@ class DailyMacroTargetsRepository {
       await _supabase
           .from('daily_macro_targets')
           .upsert(targets.toJson(), onConflict: 'user_id,target_date');
-    } catch (e) {
+    } catch (e, st) {
       // Don't rethrow - remote save failures shouldn't block the UI. Do make
       // them visible: RLS/user-id mismatches previously disappeared here and
-      // made remote cache health impossible to diagnose.
-      _sentry.addBreadcrumb(
-        message: 'Daily macro remote save failed',
-        category: 'daily_macros.remote_cache',
-        level: SentryLevel.warning,
-        data: {'error_type': e.runtimeType.toString()},
-      );
-      if (!_reportedRemoteSaveFailureThisSession) {
-        _reportedRemoteSaveFailureThisSession = true;
-        await _sentry.captureMessage(
-          'Daily macro remote save failed',
-          level: SentryLevel.warning,
-          tags: {
-            'component': 'daily_macros',
-            'operation': 'remote_cache_save',
-            'error_type': e.runtimeType.toString(),
-          },
+      // made remote cache health impossible to diagnose. One event per
+      // session (a week overview saves seven days); the rest are Notes.
+      if (_reportedRemoteSaveFailureThisSession) {
+        await _r.note(
+          'Daily macro remote save failed again this session',
+          area: _area,
+          data: {'error_type': e.runtimeType.toString()},
         );
+        return;
       }
+      _reportedRemoteSaveFailureThisSession = true;
+      await _r.fault(
+        e,
+        stackTrace: st,
+        area: _area,
+        message: 'Daily macro remote save failed',
+        tags: {'operation': 'remote_cache_save'},
+      );
     }
   }
 

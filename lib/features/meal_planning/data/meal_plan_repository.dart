@@ -9,6 +9,7 @@ import '../../../shared/database/app_database.dart';
 import '../../../shared/database/database_provider.dart';
 import '../../../shared/services/app_external_deps.dart';
 import '../../../shared/services/logging_service.dart';
+import '../../../shared/services/report/report.dart';
 import '../../../shared/services/sync/sync_dependency_graph.dart';
 import '../domain/cooking_session.dart';
 import '../domain/day_plan.dart';
@@ -35,6 +36,7 @@ MealPlanRepository mealPlanRepository(Ref ref) {
     database: ref.watch(appDatabaseProvider),
     logger: deps.logger,
     remote: SupabaseMealPlanRemote(deps.supabaseClient),
+    report: deps.report,
   );
 }
 
@@ -62,13 +64,18 @@ class MealPlanRepository with SyncableRepository {
     required AppDatabase database,
     required AppLogger logger,
     required MealPlanRemote remote,
+    Report? report,
   }) : _database = database,
        _logger = logger,
-       _remote = remote;
+       _remote = remote,
+       _report = report;
 
   final AppDatabase _database;
   final AppLogger _logger;
   final MealPlanRemote _remote;
+  final Report? _report;
+
+  Report get _r => _report ?? SentryReport.global;
 
   static const _context = 'MEAL_PLAN_REPOSITORY';
 
@@ -174,12 +181,12 @@ class MealPlanRepository with SyncableRepository {
       );
       return SyncResult.successful(count);
     } catch (e, st) {
-      _logger.error(
-        'Failed to sync meal plans from Supabase',
-        context: _context,
-        error: e,
+      await _r.fault(
+        e,
         stackTrace: st,
-        data: {'userId': userId},
+        area: 'sync',
+        message: 'Failed to sync meal plans from Supabase',
+        tags: {'repository': 'meal_plans'},
       );
       return SyncResult.failed(e.toString());
     }
@@ -245,12 +252,12 @@ class MealPlanRepository with SyncableRepository {
 
       return UploadResult.successful(count);
     } catch (e, st) {
-      _logger.error(
-        'Failed to upload dirty meal-plan edits',
-        context: _context,
-        error: e,
+      await _r.fault(
+        e,
         stackTrace: st,
-        data: {'userId': userId},
+        area: 'sync',
+        message: 'Failed to upload dirty meal-plan edits',
+        tags: {'repository': 'meal_plans'},
       );
       return UploadResult.failed(e.toString());
     }
@@ -365,6 +372,10 @@ class MealPlanRepository with SyncableRepository {
       decoded = jsonDecode(raw);
     } on FormatException {
       decoded = raw;
+      await _r.note(
+        'coverage scope stored as a bare string; read as-is',
+        area: 'meal_planning',
+      );
     }
     return decoded == _coverageScopeDinners
         ? PlanCoverageService.dinnerOnlySlots
@@ -922,8 +933,16 @@ class MealPlanRepository with SyncableRepository {
             if (asJsonMap(item) case final map?) map,
         ];
       }
-    } catch (_) {
-      // Malformed local JSON — treat as empty.
+    } catch (e, st) {
+      // Malformed local JSON — treat as empty. Static helper: the global is
+      // the only `Report` in reach; a column this repository wrote should
+      // always decode.
+      SentryReport.global.degraded(
+        e,
+        stackTrace: st,
+        area: 'meal_planning',
+        message: 'local meal-plan JSON list column malformed; read as empty',
+      );
     }
     return const [];
   }
@@ -932,8 +951,14 @@ class MealPlanRepository with SyncableRepository {
     try {
       final decoded = jsonDecode(raw);
       if (decoded is Map) return Map<String, dynamic>.from(decoded);
-    } catch (_) {
+    } catch (e, st) {
       // Malformed local JSON — treat as empty.
+      SentryReport.global.degraded(
+        e,
+        stackTrace: st,
+        area: 'meal_planning',
+        message: 'local meal-plan JSON map column malformed; read as empty',
+      );
     }
     return <String, dynamic>{};
   }

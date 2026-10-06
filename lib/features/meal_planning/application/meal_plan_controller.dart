@@ -3,9 +3,8 @@ import 'dart:async';
 import 'package:riverpod_annotation/riverpod_annotation.dart';
 
 import '../../../shared/providers/user_id_provider.dart';
-import '../../../shared/services/app_external_deps.dart';
 import '../../../shared/services/connectivity_checker.dart';
-import '../../../shared/services/logging_service.dart';
+import '../../../shared/services/report/report.dart';
 import '../../../shared/services/sync/sync_coordinator.dart';
 import '../data/meal_plan_repository.dart';
 import '../data/vana_action_client.dart';
@@ -44,9 +43,9 @@ part 'meal_plan_controller.g.dart';
 class MealPlanController extends _$MealPlanController {
   MealPlanRepository get _repo => ref.read(mealPlanRepositoryProvider);
   VanaActionClient get _actions => ref.read(vanaActionClientProvider);
-  AppLogger get _logger => ref.read(appExternalDepsProvider).logger;
+  Report get _r => ref.read(reportProvider);
 
-  static const _context = 'MEAL_PLAN_CONTROLLER';
+  static const _area = 'meal_planning';
 
   StreamSubscription<MealPlan?>? _subscription;
   String? _userId;
@@ -98,11 +97,13 @@ class MealPlanController extends _$MealPlanController {
       await ref
           .read(syncCoordinatorProvider.notifier)
           .ensureSynced('meal_plans', userId, repository: _repo);
-    } catch (e) {
-      _logger.warning(
-        'meal_plans ensureSynced failed (non-fatal)',
-        context: _context,
-        error: e,
+    } catch (e, st) {
+      await _r.fault(
+        e,
+        stackTrace: st,
+        area: 'sync',
+        message: 'meal_plans ensureSynced failed (non-fatal)',
+        tags: {'repository': 'meal_plans'},
       );
     }
   }
@@ -187,9 +188,10 @@ class MealPlanController extends _$MealPlanController {
     unawaited(() async {
       final result = await _repo.uploadDirtyRecords(userId);
       if (!result.success) {
-        _logger.warning(
+        // The repository reported the Fault; this is the branch record.
+        await _r.note(
           'Deferred meal-plan upload failed; rows stay dirty',
-          context: _context,
+          area: _area,
           data: {'error': result.error},
         );
         return;
@@ -207,10 +209,10 @@ class MealPlanController extends _$MealPlanController {
       final plan = result.plan;
       if (plan != null) await _repo.applyServerPlan(plan, userId: userId);
     } on VanaException catch (e) {
-      _logger.debug(
+      await _r.note(
         'Plan re-read after upload skipped',
-        context: _context,
-        error: e,
+        area: _area,
+        data: {'error': e.toString()},
       );
     }
   }
@@ -275,11 +277,13 @@ class MealPlanController extends _$MealPlanController {
       final reminders = ref.read(planReminderServiceProvider);
       if (!reminders.remindersEnabled) return;
       await reminders.scheduleForPlan(plan);
-    } catch (e) {
-      _logger.warning(
-        'plan reminders not scheduled (non-fatal)',
-        context: _context,
-        error: e,
+    } catch (e, st) {
+      await _r.fault(
+        e,
+        stackTrace: st,
+        area: 'push',
+        message: 'plan reminders not scheduled (non-fatal)',
+        extra: {'plan_id': plan.id},
       );
     }
   }
@@ -352,10 +356,10 @@ class MealPlanController extends _$MealPlanController {
 
     final pending = await _repo.uploadDirtyRecords(userId);
     if (!pending.success) {
-      _logger.warning(
+      await _r.note(
         'Could not flush local edits before ${action.type}; proceeding',
-        context: _context,
-        data: {'error': pending.error},
+        area: _area,
+        data: {'error': pending.error, 'action': action.type},
       );
     }
 

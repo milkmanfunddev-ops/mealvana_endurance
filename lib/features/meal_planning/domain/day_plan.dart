@@ -1,3 +1,4 @@
+import '../../../shared/services/report/report.dart';
 import 'meal_source.dart';
 import 'meal_type.dart';
 import 'wire_record.dart';
@@ -83,8 +84,15 @@ class DayPlan extends WireRecord {
       }
       try {
         slots[slot] = DaySlotRef.fromJson(map);
-      } on FormatException {
+      } on FormatException catch (e, st) {
         // Malformed ref — treat as empty rather than fail the day.
+        SentryReport.global.degraded(
+          e,
+          stackTrace: st,
+          area: 'meal_planning',
+          message: 'day slot ref malformed; slot read as empty',
+          extra: {'slot': entry.key},
+        );
         slots[slot] = null;
       }
     }

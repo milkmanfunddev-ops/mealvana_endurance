@@ -9,6 +9,7 @@ import '../../../calendar/presentation/providers/calendar_selected_date_provider
 import '../../../activities/domain/activity.dart';
 import '../../../activities/presentation/providers/activities_controller.dart';
 import '../../../../shared/services/performance_telemetry.dart';
+import '../../../../shared/services/report/report.dart';
 import '../../application/daily_macro_service.dart';
 import '../../data/daily_macro_targets_repository.dart';
 import '../../domain/daily_macro_targets.dart';
@@ -238,12 +239,26 @@ class DailyMacrosController extends _$DailyMacrosController {
           final newCachedCount = result.where((e) => e != null).length;
           if (newCachedCount > priorCachedCount && ref.mounted) {
             ref.invalidateSelf();
-          } else if (kDebugMode) {
-            print(
-              'DailyMacrosController: week calc made no progress; not re-invalidating.',
-            );
+          } else if (ref.mounted) {
+            ref
+                .read(reportProvider)
+                .note(
+                  'week calc made no progress; not re-invalidating',
+                  area: 'daily_macros',
+                  data: {'cached': newCachedCount, 'prior': priorCachedCount},
+                );
           }
-        } on DailyMacroCalculationException catch (e) {
+        } on DailyMacroCalculationException catch (e, st) {
+          if (ref.mounted) {
+            ref
+                .read(reportProvider)
+                .degraded(
+                  e,
+                  stackTrace: st,
+                  area: 'daily_macros',
+                  message: 'week calculation failed; reason shown to athlete',
+                );
+          }
           final current = ref.mounted ? state.value : null;
           if (current != null) {
             state = AsyncData(
@@ -253,7 +268,17 @@ class DailyMacrosController extends _$DailyMacrosController {
               ),
             );
           }
-        } catch (e) {
+        } catch (e, st) {
+          if (ref.mounted) {
+            ref
+                .read(reportProvider)
+                .fault(
+                  e,
+                  stackTrace: st,
+                  area: 'daily_macros',
+                  message: 'week calculation threw outside the typed path',
+                );
+          }
           final current = ref.mounted ? state.value : null;
           if (current != null) {
             state = AsyncData(

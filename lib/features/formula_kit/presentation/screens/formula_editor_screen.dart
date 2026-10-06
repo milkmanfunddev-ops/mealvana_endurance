@@ -5,6 +5,7 @@ import 'package:mealvana_endurance/shared/widgets/kyle_design/kyle_design.dart';
 import 'package:mealvana_endurance/shared/widgets/custom_app_bar_back_button.dart';
 import 'package:mealvana_endurance/shared/widgets/adaptive/adaptive.dart';
 import 'package:mealvana_endurance/shared/services/app_config.dart';
+import 'package:mealvana_endurance/shared/services/report/report.dart';
 
 import '../../../nutrition_plan/domain/food_item_data.dart';
 import '../../../nutrition_plan/domain/solver_food.dart';
@@ -103,7 +104,15 @@ class _FormulaEditorScreenState extends ConsumerState<FormulaEditorScreen> {
             phase: _currentPhase,
             source: 'detail',
           );
-    } catch (err) {
+    } catch (err, st) {
+      ref
+          .read(reportProvider)
+          .fault(
+            err,
+            stackTrace: st,
+            area: 'formula_kit',
+            message: 'conflicted pin completion failed',
+          );
       if (mounted) {
         MealvanaSnackbar.showError(context, 'Couldn\'t update pin: $err');
       }

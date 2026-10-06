@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
+import 'package:mealvana_endurance/shared/services/report/report.dart';
 import 'package:mealvana_endurance/shared/widgets/kyle_design/kyle_design.dart';
 
 import '../../application/athlete_conflict_profile_provider.dart';
@@ -74,7 +75,15 @@ mixin PinConflictCardState<T extends ConsumerStatefulWidget>
     setState(() => _allergyWarningVisible = false);
     try {
       await completePin();
-    } catch (e) {
+    } catch (e, st) {
+      ref
+          .read(reportProvider)
+          .fault(
+            e,
+            stackTrace: st,
+            area: 'formula_kit',
+            message: 'conflict card pin-anyway failed',
+          );
       if (mounted) {
         MealvanaSnackbar.showError(context, 'Couldn\'t update pin: $e');
       }
@@ -84,7 +93,15 @@ mixin PinConflictCardState<T extends ConsumerStatefulWidget>
   Future<void> _unpin() async {
     try {
       await completePin(); // toggle: currently pinned → unpins.
-    } catch (e) {
+    } catch (e, st) {
+      ref
+          .read(reportProvider)
+          .fault(
+            e,
+            stackTrace: st,
+            area: 'formula_kit',
+            message: 'conflict card unpin failed',
+          );
       if (mounted) {
         MealvanaSnackbar.showError(context, 'Couldn\'t update pin: $e');
       }

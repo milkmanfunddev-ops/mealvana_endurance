@@ -6,6 +6,7 @@ import 'package:supabase_flutter/supabase_flutter.dart';
 
 import '../../../shared/services/app_config.dart';
 import '../../../shared/services/logging_service.dart';
+import '../../../shared/services/report/report.dart';
 import '../../ai_credits/domain/insufficient_credits_exception.dart';
 import 'vana_exceptions.dart';
 
@@ -39,17 +40,23 @@ class VanaTransport {
     required AppConfig config,
     required AppLogger logger,
     HttpClientFactory? clientFactory,
+    Report? report,
   }) : _supabase = supabase,
        _config = config,
        _logger = logger,
-       _clientFactory = clientFactory ?? http.Client.new;
+       _clientFactory = clientFactory ?? http.Client.new,
+       _report = report;
 
   final SupabaseClient _supabase;
   final AppConfig _config;
   final AppLogger _logger;
   final HttpClientFactory _clientFactory;
+  final Report? _report;
+
+  Report get _r => _report ?? SentryReport.global;
 
   static const _context = 'VANA_TRANSPORT';
+  static const _area = 'meal_planning';
 
   SupabaseClient get supabase => _supabase;
 
@@ -88,11 +95,13 @@ class VanaTransport {
       streamed = await client.send(request);
     } catch (e, st) {
       client.close();
-      _logger.error(
-        'Network error streaming $functionName',
-        context: _context,
-        error: e,
+      // `fault` downgrades the socket/DNS cases to Degraded on its own.
+      await _r.fault(
+        e,
         stackTrace: st,
+        area: _area,
+        message: 'Network error streaming $functionName',
+        extra: {'function': functionName},
       );
       throw VanaOfflineException(e);
     }
@@ -122,11 +131,12 @@ class VanaTransport {
     try {
       response = await http.Response.fromStream(await client.send(request));
     } catch (e, st) {
-      _logger.error(
-        'Network error calling $functionName',
-        context: _context,
-        error: e,
+      await _r.fault(
+        e,
         stackTrace: st,
+        area: _area,
+        message: 'Network error calling $functionName',
+        extra: {'function': functionName},
       );
       throw VanaOfflineException(e);
     } finally {
@@ -148,7 +158,19 @@ class VanaTransport {
 
   /// Map a non-2xx status + body to the typed exception (contract 02 §5).
   Exception mapErrorResponse(int statusCode, String body) {
-    _logger.error('Vana HTTP $statusCode: $body', context: _context);
+    // 401 / 403 / 429 are the spec's expected outcomes (Degraded); any other
+    // non-2xx is the server failing on us.
+    final httpFailure = LoggedFault('Vana HTTP $statusCode', context: _context);
+    final extra = <String, dynamic>{
+      'status': statusCode,
+      'body': body.length > 500 ? body.substring(0, 500) : body,
+    };
+    switch (statusCode) {
+      case 401 || 403 || 429:
+        _r.degraded(httpFailure, area: _area, extra: extra);
+      default:
+        _r.fault(httpFailure, area: _area, extra: extra);
+    }
     final json = _tryDecode(body);
     final map = json is Map<String, dynamic> ? json : const <String, dynamic>{};
     final error = map['error'];
@@ -214,10 +236,10 @@ class VanaTransport {
     if (trimmed.isEmpty) return null;
     final decoded = _tryDecode(trimmed);
     if (decoded is Map<String, dynamic>) return decoded;
-    _logger.warning(
-      'Skipping non-object NDJSON line',
-      context: _context,
-      data: {
+    _r.degraded(
+      const LoggedFault('Skipping non-object NDJSON line'),
+      area: _area,
+      extra: {
         'line': trimmed.length > 200 ? trimmed.substring(0, 200) : trimmed,
       },
     );

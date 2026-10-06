@@ -14,6 +14,8 @@ import '../../../../theme/kyle_design/app_text_styles.dart';
 import '../../application/home_service.dart';
 import '../../application/meal_plan_controller.dart';
 import '../../application/vana_settings_controller.dart';
+import '../../../../shared/services/report/report.dart';
+import '../../application/vana_failure_report.dart';
 import '../../data/vana_exceptions.dart';
 import '../../domain/meal_plan_status.dart';
 import '../../domain/plan_meal.dart';
@@ -56,19 +58,17 @@ class PlanTab extends ConsumerWidget {
         children: [
           // Vana's note for today always has a slot — it carries the entry
           // point into the chat even before there is a plan to talk about.
-          _DayNoteCard(
-            text: home?.vana.text,
-            loading: home == null,
-          ),
+          _DayNoteCard(text: home?.vana.text, loading: home == null),
           const SizedBox(height: AppSpacing.md),
           Text(
             content.getValue(ContentKeys.mpPlanSectionTitle).toUpperCase(),
             key: const ValueKey('meal_planning.plan_section'),
             style: AppTextStyles.overline.copyWith(
-              color: (Theme.of(context).brightness == Brightness.dark
-                      ? AppColors.cream
-                      : AppColors.blackberry)
-                  .withValues(alpha: 0.6),
+              color:
+                  (Theme.of(context).brightness == Brightness.dark
+                          ? AppColors.cream
+                          : AppColors.blackberry)
+                      .withValues(alpha: 0.6),
             ),
           ),
           const SizedBox(height: AppSpacing.sm),
@@ -150,7 +150,9 @@ class PlanTab extends ConsumerWidget {
               id: meal.libraryMealId ?? meal.savedMealId ?? '',
             ),
           ], servings: meal.servings);
-        } on Exception {
+        } on Exception catch (e, st) {
+          final report = ref.read(reportProvider);
+          report.vanaFailure(e, st, operation: 'pick_meals (undo remove)');
           if (context.mounted) {
             MealvanaSnackbar.showError(
               context,
@@ -310,13 +312,17 @@ class _ConfirmButtonState extends ConsumerState<_ConfirmButton> {
             );
           }
         } on NeedsConnectionException {
+          final report = ref.read(reportProvider);
+          report.vanaNeedsConnection('confirm_plan');
           if (context.mounted) {
             MealvanaSnackbar.showWarning(
               context,
               content.getValue(ContentKeys.mpNeedsConnection),
             );
           }
-        } on Exception {
+        } on Exception catch (e, st) {
+          final report = ref.read(reportProvider);
+          report.vanaFailure(e, st, operation: 'confirm_plan');
           if (context.mounted) {
             MealvanaSnackbar.showError(
               context,

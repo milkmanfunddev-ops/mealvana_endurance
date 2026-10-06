@@ -1,3 +1,4 @@
+import '../../../shared/services/report/report.dart';
 import 'ai_coach_ui_part.dart';
 
 /// Role of a message participant in a Mealvana AI conversation.
@@ -67,8 +68,15 @@ class AiCoachMessage {
           }
         }
       }
-    } catch (_) {
-      // Malformed metadata — silently ignore; uiParts stays empty.
+    } catch (e, st) {
+      // Malformed metadata — uiParts stays empty; the message still renders.
+      SentryReport.global.degraded(
+        e,
+        stackTrace: st,
+        area: 'ai_coach',
+        message: 'jade_messages metadata.ui_parts malformed; parts dropped',
+        extra: {'message_id': json['id']?.toString()},
+      );
     }
 
     return AiCoachMessage(

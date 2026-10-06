@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:font_awesome_flutter/font_awesome_flutter.dart';
+import 'package:mealvana_endurance/shared/services/report/report.dart';
 import 'package:mealvana_endurance/shared/widgets/kyle_design/kyle_design.dart';
 
 import '../../application/formula_pin_controller.dart';
@@ -212,7 +213,16 @@ Widget _conflictAwarePinButton({
       }
       try {
         await toggle();
-      } catch (e) {
+      } catch (e, st) {
+        ref
+            .read(reportProvider)
+            .fault(
+              e,
+              stackTrace: st,
+              area: 'formula_kit',
+              message: 'pin toggle failed',
+              extra: {'template_id': templateId, 'pinning': isPinning},
+            );
         if (context.mounted) _showError(context, e);
         return;
       }
