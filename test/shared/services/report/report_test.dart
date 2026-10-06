@@ -350,7 +350,7 @@ void main() {
       // so let that settle before forcing the batcher to flush.
       await Future<void>.delayed(Duration.zero);
       // ignore: invalid_use_of_internal_member
-      Sentry.currentHub.options.logBatcher.flush();
+      await Sentry.currentHub.options.telemetryProcessor.flush();
       await Future<void>.delayed(Duration.zero);
 
       final logs = await transport.logs();
@@ -384,6 +384,21 @@ void main() {
       expect(event.tags, containsPair('role', 'coach'));
     });
 
+    test('setUser carries the device id as a searchable tag', () async {
+      await report.setUser('user-123', role: 'athlete', deviceId: 'dev-9');
+      await report.fault(StateError('x'));
+      final event = transport.events.single;
+      expect(event.tags, containsPair('device_id', 'dev-9'));
+      expect(event.user?.id, 'user-123');
+    });
+
+    test('clearUser removes the device id too', () async {
+      await report.setUser('user-123', role: 'athlete', deviceId: 'dev-9');
+      await report.clearUser();
+      await report.fault(StateError('x'));
+      expect(transport.events.single.tags, isNot(contains('device_id')));
+    });
+
     test('clearUser removes both', () async {
       await report.setUser('user-123', role: 'athlete');
       await report.clearUser();
@@ -415,7 +430,7 @@ void main() {
       await noop.setUser('u', role: 'athlete');
       await noop.clearUser();
       // ignore: invalid_use_of_internal_member
-      Sentry.currentHub.options.logBatcher.flush();
+      await Sentry.currentHub.options.telemetryProcessor.flush();
       expect(transport.envelopes, isEmpty);
       expect(tracked, isEmpty);
       expect(storage.getLogs(), isEmpty);
@@ -470,7 +485,7 @@ void main() {
       logger.debug('world');
       await Future<void>.delayed(Duration.zero);
       // ignore: invalid_use_of_internal_member
-      Sentry.currentHub.options.logBatcher.flush();
+      await Sentry.currentHub.options.telemetryProcessor.flush();
       await Future<void>.delayed(Duration.zero);
       expect(transport.events, isEmpty);
       expect(await transport.logs(), hasLength(2));

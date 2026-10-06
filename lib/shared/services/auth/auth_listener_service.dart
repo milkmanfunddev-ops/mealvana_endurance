@@ -5,6 +5,7 @@ import 'package:supabase_flutter/supabase_flutter.dart';
 import '../app_external_deps.dart';
 import '../logging_service.dart';
 import '../sentry/sentry_reporter.dart';
+import '../report/report_identity.dart';
 import '../analytics/analytics_tracker.dart';
 import '../notification_service.dart';
 import '../sync/sync_coordinator.dart';
@@ -142,6 +143,7 @@ class AuthListenerService {
     );
 
     await NotificationService.clearRemotePushUserId();
+    await syncReportIdentity(_ref);
 
     _sentry.addBreadcrumb(
       message: wasOnboardingSignOut
@@ -238,6 +240,7 @@ class AuthListenerService {
   /// Handle sign-in event
   Future<void> _handleSignedIn(String userId) async {
     await NotificationService.setRemotePushUserId(userId);
+    await syncReportIdentity(_ref);
 
     _sentry.addBreadcrumb(
       message: 'User signed in',

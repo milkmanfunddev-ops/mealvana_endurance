@@ -1,7 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:go_router/go_router.dart';
 
-import '../../../main.dart' show sentryNavigatorKey;
+import '../../../shared/core/bootstrap/bootstrap.dart' show appNavigatorKey;
 import '../domain/insufficient_credits_exception.dart';
 
 /// Surfaces the AI-credits paywall when an AI call fails with a 402.
@@ -11,7 +11,7 @@ import '../domain/insufficient_credits_exception.dart';
 /// `true` so the caller can stop its normal error handling. Returns `false`
 /// for any other error.
 ///
-/// Uses the global [sentryNavigatorKey] (the app router's navigator key) so it
+/// Uses the global [appNavigatorKey] (the app router's navigator key) so it
 /// works from controllers without a [BuildContext] as well as from widgets.
 /// The dialog is scheduled on the next frame, making it safe to call from
 /// `catch` blocks, `ref.listen` callbacks, and async gaps.
@@ -19,7 +19,7 @@ bool maybeShowInsufficientCreditsPaywall(Object? error) {
   if (error is! InsufficientCreditsException) return false;
 
   WidgetsBinding.instance.addPostFrameCallback((_) {
-    final context = sentryNavigatorKey.currentContext;
+    final context = appNavigatorKey.currentContext;
     if (context == null) return;
 
     showDialog<void>(

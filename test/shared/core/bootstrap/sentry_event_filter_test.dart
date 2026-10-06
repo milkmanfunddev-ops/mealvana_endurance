@@ -12,7 +12,7 @@ import 'package:http/http.dart' as http;
 import 'package:sentry_flutter/sentry_flutter.dart';
 import 'package:supabase_flutter/supabase_flutter.dart' show PostgrestException;
 
-import 'package:mealvana_endurance/shared/services/sentry/sentry_event_filter.dart';
+import 'package:mealvana_endurance/shared/core/bootstrap/sentry_event_filter.dart';
 
 /// The filter turned [event] into a tagged warning (an expected failure).
 bool isDowngraded(SentryEvent event) {

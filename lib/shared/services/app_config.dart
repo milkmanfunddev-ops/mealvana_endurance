@@ -40,7 +40,6 @@ class AppConfig {
     this.proPurchaseEnabled = false,
     this.analyticsDevEnabled = false,
     this.enableDebugLogging = false,
-    this.enableSentryProfiling = false,
   });
 
   // Supabase configuration
@@ -209,7 +208,6 @@ class AppConfig {
 
   // Feature flags / debug settings
   final bool enableDebugLogging;
-  final bool enableSentryProfiling;
 
   /// Helper methods
   bool get isProduction => appEnvironment == 'prod' && !devModeEnabled;
@@ -242,11 +240,9 @@ class AppConfig {
       supabaseSecretKey: dotenv.get('SUPABASE_SECRET_KEY', fallback: ''),
 
       // Sentry configuration - read from loaded .env file
-      sentryDsn: dotenv.get(
-        'SENTRY_DSN',
-        fallback:
-            'https://00d9cb3e5fc60c90fd5ca3ed2bf690c5@o4509882392969216.ingest.us.sentry.io/4509882394083328',
-      ),
+      // No fallback on purpose: an empty DSN disables Sentry for the run
+      // (bootstrap.dart). The old prod-DSN fallback put dev events in prod.
+      sentryDsn: dotenv.get('SENTRY_DSN', fallback: ''),
       sentryEnvironment: dotenv.get(
         'SENTRY_ENVIRONMENT',
         fallback: isDevMode ? 'development' : 'production',
@@ -380,7 +376,6 @@ class AppConfig {
 
       // Debug settings
       enableDebugLogging: kDebugMode,
-      enableSentryProfiling: !kDebugMode, // Disabled in debug due to iOS crash
     );
   }
 
@@ -422,7 +417,6 @@ class AppConfig {
     bool proPurchaseEnabled = false,
     bool analyticsDevEnabled = false,
     bool enableDebugLogging = true,
-    bool enableSentryProfiling = false,
   }) {
     return AppConfig(
       supabaseUrl: supabaseUrl ?? 'http://localhost:54321',
@@ -462,7 +456,6 @@ class AppConfig {
       proPurchaseEnabled: proPurchaseEnabled,
       analyticsDevEnabled: analyticsDevEnabled,
       enableDebugLogging: enableDebugLogging,
-      enableSentryProfiling: enableSentryProfiling,
     );
   }
 
@@ -497,11 +490,8 @@ class AppConfig {
     const supabasePublishableKey = String.fromEnvironment(
       'SUPABASE_PUBLISHABLE_KEY',
     );
-    const sentryDsn = String.fromEnvironment(
-      'SENTRY_DSN',
-      defaultValue:
-          'https://00d9cb3e5fc60c90fd5ca3ed2bf690c5@o4509882392969216.ingest.us.sentry.io/4509882394083328',
-    );
+    // No fallback on purpose: an empty DSN disables Sentry (bootstrap.dart).
+    const sentryDsn = String.fromEnvironment('SENTRY_DSN');
     const sentryEnvironment = String.fromEnvironment('SENTRY_ENVIRONMENT');
     const mixpanelToken = String.fromEnvironment('MIXPANEL_PROJECT_TOKEN');
     const oneSignalAppId = String.fromEnvironment('ONESIGNAL_APP_ID');
@@ -666,7 +656,6 @@ class AppConfig {
 
       // Debug settings
       enableDebugLogging: kDebugMode,
-      enableSentryProfiling: false, // Disable profiling on web
     );
   }
 }
