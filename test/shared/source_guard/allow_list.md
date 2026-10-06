@@ -21,6 +21,9 @@ import). Lines starting with `>` are notes.
 
 ## reasoned
 
+unreportedCatch lib/shared/services/sentry/sentry_provider_observer.dart :: } on ArgumentError {  :: Expando refuses primitive keys; the catch is the type test, the primitive goes to its own set
+unreportedCatch lib/shared/services/sentry/sentry_provider_observer.dart :: } on ArgumentError {  :: same as above, the mark side of the pair
+
 ## baseline
 
 printInCatch lib/features/ai_coach/data/ai_coach_chat_repository.dart :: } catch (e) {
@@ -104,7 +107,6 @@ sentryImport lib/features/nutrition_plan/presentation/providers/macro_targets_co
 sentryImport lib/shared/core/app_router.dart :: import 'package:sentry_flutter/sentry_flutter.dart';
 sentryImport lib/shared/database/connection_native.dart :: import 'package:sentry_drift/sentry_drift.dart';
 sentryImport lib/shared/services/performance_telemetry.dart :: import 'package:sentry_flutter/sentry_flutter.dart';
-sentryImport lib/shared/services/sentry/sentry_provider_observer.dart :: import 'package:sentry_flutter/sentry_flutter.dart';
 sentryImport lib/shared/services/sentry/sentry_reporter.dart :: import 'package:sentry_flutter/sentry_flutter.dart' show SentryLevel;
 sentryImport lib/shared/services/sync/data_sync_service.dart :: import 'package:sentry_flutter/sentry_flutter.dart';
 sentryImport lib/shared/services/sync/sync_coordinator.dart :: import 'package:sentry_flutter/sentry_flutter.dart';
