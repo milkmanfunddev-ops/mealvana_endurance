@@ -9,7 +9,7 @@ class FoodPreferenceResolver {
   final Ref ref;
 
   AuthService get _authService => ref.read(authServiceProvider);
-  Report get _report => ref.read(reportProvider);
+  Report get _report => ref.report;
 
   /// Resolve food preferences, falling back to a small, safe default set when none are saved.
   Future<PreferenceResolutionResult> resolveFoodPreferences(

@@ -27,12 +27,26 @@ Future<DayTimelineResult> fuelTimelineDay(Ref ref) async {
   final selectedDate = ref.watch(calendarSelectedDateProvider);
   final dateStr = _ymd(selectedDate);
 
-  final macrosState = await ref.watch(dailyMacrosControllerProvider.future);
-  final meals = await ref.watch(mealLogsForDateProvider(dateStr).future);
-  final consumed = await ref.watch(
+  // Start every watch before the first await: once this provider is
+  // disposed mid-build, any ref.watch after an async gap throws.
+  final macrosFuture = ref.watch(dailyMacrosControllerProvider.future);
+  final mealsFuture = ref.watch(mealLogsForDateProvider(dateStr).future);
+  final consumedFuture = ref.watch(
     consumedTotalsForDateProvider(dateStr).future,
   );
-  final allActivities = await ref.watch(activitiesControllerProvider.future);
+  final activitiesFuture = ref.watch(activitiesControllerProvider.future);
+  final eventsFuture = ref.watch(allEventsProvider.future);
+  final carbWindowFuture = ref.watch(
+    carbLoadingDaysForRangeProvider(
+      selectedDate.subtract(const Duration(days: 7)),
+      selectedDate.add(const Duration(days: 7)),
+    ).future,
+  );
+
+  final macrosState = await macrosFuture;
+  final meals = await mealsFuture;
+  final consumed = await consumedFuture;
+  final allActivities = await activitiesFuture;
 
   bool onSelectedDay(DateTime d) =>
       d.year == selectedDate.year &&
@@ -44,7 +58,7 @@ Future<DayTimelineResult> fuelTimelineDay(Ref ref) async {
       .toList(growable: false);
 
   // Events + carb-loading days on the selected day. Both are cheap local reads.
-  final allEvents = await ref.watch(allEventsProvider.future);
+  final allEvents = await eventsFuture;
   final dayEvents = allEvents
       .where((e) {
         final date = e.eventDate;
@@ -55,12 +69,7 @@ Future<DayTimelineResult> fuelTimelineDay(Ref ref) async {
   // Query a 1-week window around the day (covers any protocol length) and keep
   // the days that fall on the selected date. Counting days per plan in the
   // window gives the "Day N of M" total without a separate plans fetch.
-  final carbWindow = await ref.watch(
-    carbLoadingDaysForRangeProvider(
-      selectedDate.subtract(const Duration(days: 7)),
-      selectedDate.add(const Duration(days: 7)),
-    ).future,
-  );
+  final carbWindow = await carbWindowFuture;
   final carbDaysTyped = carbWindow.cast<CarbLoadingDay>();
   final planTotalDaysById = <String, int>{};
   for (final d in carbDaysTyped) {

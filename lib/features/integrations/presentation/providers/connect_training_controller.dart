@@ -521,8 +521,7 @@ class ConnectTrainingController extends _$ConnectTrainingController {
   /// The app's `Report`. Several paths here outlive this auto-dispose
   /// provider (OAuth round trips, delayed invalidations); reading `ref` after
   /// disposal throws, so a stale controller reports through the global.
-  Report get _report =>
-      ref.mounted ? ref.read(reportProvider) : SentryReport.global;
+  Report get _report => ref.report;
 
   /// Analytics must never block a connect/import, but a tracker that throws
   /// is still a bug; the one catch here reports it instead of eight silent
@@ -668,11 +667,15 @@ class ConnectTrainingController extends _$ConnectTrainingController {
     bool alsoDeleteData = false,
   }) async {
     if (_currentUserId == null) return;
+    // Captured before the awaits: the hide/purge below runs after the
+    // disconnect round trip and must still complete if this provider was
+    // disposed meanwhile.
+    final deps = _providerDataDeps(providerId);
     try {
       await disconnect();
       final removedWorkouts = alsoDeleteData
-          ? await _purgeProviderData(providerId)
-          : await _hideProviderData(providerId);
+          ? await _purgeProviderData(providerId, deps)
+          : await _hideProviderData(providerId, deps);
       // The awaits above are async gaps on an auto-dispose provider —
       // writing state through a stale ref throws UnmountedRefException
       // (Sentry MEALVANA-ENDURANCE-AV family). The disconnect and the purge
@@ -693,16 +696,41 @@ class ConnectTrainingController extends _$ConnectTrainingController {
     }
   }
 
+  _ProviderDataDeps _providerDataDeps(String providerId) {
+    // The macro-window step is best effort (see _invalidateMacroWindows): a
+    // repository that cannot be built is reported now and the step skipped,
+    // and the disconnect itself goes on.
+    DailyMacroTargetsRepository? macroTargetsRepo;
+    try {
+      macroTargetsRepo = ref.read(dailyMacroTargetsRepositoryProvider);
+    } catch (e, stackTrace) {
+      _report.integrationFailure(
+        providerId,
+        'invalidate_macros',
+        e,
+        stackTrace,
+      );
+    }
+    return (
+      activitiesRepo: _activitiesRepo,
+      externalDeps: ref.read(appExternalDepsProvider),
+      macroTargetsRepo: macroTargetsRepo,
+    );
+  }
+
   /// Q-INT2 default path: soft-hide the provider's rows (and, for Garmin,
   /// best-effort flag the server-side wellness store), then invalidate the
   /// cached macro windows so the plan re-runs without the hidden sessions.
-  Future<int> _hideProviderData(String providerId) async {
+  Future<int> _hideProviderData(
+    String providerId,
+    _ProviderDataDeps deps,
+  ) async {
     final userId = _currentUserId;
     if (userId == null) return 0;
 
     var hidden = 0;
     try {
-      hidden = await _activitiesRepo.hideActivitiesForProviderDisconnect(
+      hidden = await deps.activitiesRepo.hideActivitiesForProviderDisconnect(
         userId: userId,
         provider: providerId,
       );
@@ -715,7 +743,7 @@ class ConnectTrainingController extends _$ConnectTrainingController {
       // a network failure must not fail the disconnect (the tokens are
       // already gone), and the flag is re-appliable.
       try {
-        final supabaseClient = ref.read(appExternalDepsProvider).supabaseClient;
+        final supabaseClient = deps.externalDeps.supabaseClient;
         await supabaseClient
             .from('garmin_health_data')
             .update({'hidden_by_disconnect': true})
@@ -728,24 +756,30 @@ class ConnectTrainingController extends _$ConnectTrainingController {
     // The provider's identity prefill leaves with it, same as the purge
     // path — onboarding-only, a no-op after onboarding completes.
     try {
-      ref
-          .read(onboardingControllerProvider.notifier)
-          .clearIntegrationAutofill();
+      if (ref.mounted) {
+        ref
+            .read(onboardingControllerProvider.notifier)
+            .clearIntegrationAutofill();
+      }
     } catch (e, stackTrace) {
       _report.integrationFailure(providerId, 'hide_autofill', e, stackTrace);
     }
 
-    await _invalidateMacroWindows(userId, providerId);
+    await _invalidateMacroWindows(userId, providerId, deps);
     return hidden;
   }
 
   /// F27: the engine inputs changed (sessions hidden or purged) — drop the
   /// cached macro windows so the next read recalculates.
-  Future<void> _invalidateMacroWindows(String userId, String providerId) async {
+  Future<void> _invalidateMacroWindows(
+    String userId,
+    String providerId,
+    _ProviderDataDeps deps,
+  ) async {
+    final macroTargetsRepo = deps.macroTargetsRepo;
+    if (macroTargetsRepo == null) return; // reported when deps were read
     try {
-      await ref
-          .read(dailyMacroTargetsRepositoryProvider)
-          .invalidateAllForUser(userId);
+      await macroTargetsRepo.invalidateAllForUser(userId);
     } catch (e, stackTrace) {
       _report.integrationFailure(
         providerId,
@@ -764,13 +798,17 @@ class ConnectTrainingController extends _$ConnectTrainingController {
   /// Failures here are reported but never fail the disconnect itself — the
   /// integration is already gone by this point, and leaving the user
   /// "still connected" would be worse than leaving stale rows.
-  Future<int> _purgeProviderData(String providerId) async {
+  Future<int> _purgeProviderData(
+    String providerId,
+    _ProviderDataDeps deps,
+  ) async {
     final userId = _currentUserId;
     if (userId == null) return 0;
 
     var removed = 0;
     try {
-      final activities = await _activitiesRepo.getActivitiesByUserAndProvider(
+      final activities = await deps.activitiesRepo
+          .getActivitiesByUserAndProvider(
         userId,
         providerId,
       );
@@ -778,7 +816,7 @@ class ConnectTrainingController extends _$ConnectTrainingController {
         // Hard delete, deliberately NOT the tombstone path: a disconnect
         // wipe must not leave status='deleted' rows around, or the matcher
         // would suppress re-import when the athlete reconnects later.
-        await _activitiesRepo.hardDeleteActivityForProviderPurge(
+        await deps.activitiesRepo.hardDeleteActivityForProviderPurge(
           userId: userId,
           activityId: activity.id,
         );
@@ -792,7 +830,7 @@ class ConnectTrainingController extends _$ConnectTrainingController {
       // Explicit "also delete my synced data": the wellness store and the
       // users mirrors go too (Q-INT2 hard-purge half). Best effort.
       try {
-        final supabaseClient = ref.read(appExternalDepsProvider).supabaseClient;
+        final supabaseClient = deps.externalDeps.supabaseClient;
         await supabaseClient
             .from('garmin_health_data')
             .delete()
@@ -814,7 +852,7 @@ class ConnectTrainingController extends _$ConnectTrainingController {
       // leaves these rows: they surface nowhere and age out via the 90-day
       // TTL regardless.
       try {
-        final supabaseClient = ref.read(appExternalDepsProvider).supabaseClient;
+        final supabaseClient = deps.externalDeps.supabaseClient;
         await supabaseClient
             .from('provider_raw_payloads')
             .delete()
@@ -830,15 +868,17 @@ class ConnectTrainingController extends _$ConnectTrainingController {
       }
     }
 
-    await _invalidateMacroWindows(userId, providerId);
+    await _invalidateMacroWindows(userId, providerId, deps);
 
     // Onboarding-only: drop the personal details this provider pre-filled.
     // No-op once onboarding is over — by then the values live on the saved
     // profile and are the athlete's to edit in Settings.
     try {
-      ref
-          .read(onboardingControllerProvider.notifier)
-          .clearIntegrationAutofill();
+      if (ref.mounted) {
+        ref
+            .read(onboardingControllerProvider.notifier)
+            .clearIntegrationAutofill();
+      }
     } catch (e, stackTrace) {
       _report.integrationFailure(providerId, 'purge_autofill', e, stackTrace);
     }
@@ -1240,6 +1280,7 @@ class ConnectTrainingController extends _$ConnectTrainingController {
             .read(integrationSyncCoordinatorProvider.notifier)
             .markProviderSynced('vdot');
       }
+      if (!ref.mounted) return result;
 
       state = AsyncData(state.value!.copyWith(importProgress: 0.8));
       _invalidateCalendar();
@@ -1312,6 +1353,7 @@ class ConnectTrainingController extends _$ConnectTrainingController {
       }
       return false;
     }
+    final integrationsRepo = ref.read(integrationsRepositoryProvider);
 
     state = AsyncData(
       state.value!.copyWith(
@@ -1341,7 +1383,6 @@ class ConnectTrainingController extends _$ConnectTrainingController {
       // events is fine (a fresh plan may be empty); non-ICS content throws.
       await _runnaSync.probeFeed(normalized);
 
-      final integrationsRepo = ref.read(integrationsRepositoryProvider);
       await integrationsRepo.upsertIntegration(
         IntegrationModel(
           userId: _currentUserId!,
@@ -1761,6 +1802,7 @@ class ConnectTrainingController extends _$ConnectTrainingController {
       await ref
           .read(integrationSyncCoordinatorProvider.notifier)
           .markProviderSynced(providerId);
+      if (!ref.mounted) return result;
 
       // Invalidate calendar to refresh UI
       state = AsyncData(state.value!.copyWith(importProgress: 0.8));
@@ -1894,6 +1936,8 @@ class ConnectTrainingController extends _$ConnectTrainingController {
       alsoDeleteData: alsoDeleteData,
       providerId: 'training_peaks',
       disconnect: () async {
+        // Read before the awaits below; awaited after the write-back cleanup.
+        final oauthServiceFuture = _trainingPeaksOAuth..ignore();
         // Q-INT16: strip the pushed [Mealvana ...] blocks and purge the
         // write-back ledger BEFORE the tokens go (the strip needs them).
         // Best effort — never blocks the disconnect.
@@ -1909,7 +1953,7 @@ class ConnectTrainingController extends _$ConnectTrainingController {
             message: 'TP write-back cleanup skipped on disconnect',
           );
         }
-        final oauthService = await _trainingPeaksOAuth;
+        final oauthService = await oauthServiceFuture;
         await oauthService.disconnect(_currentUserId!);
       },
       updateState: () => state.value!.copyWith(
@@ -2146,3 +2190,11 @@ extension _IntegrationFailureReport on Report {
     );
   }
 }
+
+/// The dependencies a disconnect's hide/purge needs, read before the
+/// disconnect round trip so the removal survives this provider's disposal.
+typedef _ProviderDataDeps = ({
+  ActivitiesRepository activitiesRepo,
+  AppExternalDeps externalDeps,
+  DailyMacroTargetsRepository? macroTargetsRepo,
+});

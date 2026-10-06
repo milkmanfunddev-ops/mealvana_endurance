@@ -208,8 +208,7 @@ class CyclingFormState {
 class CyclingInputController extends _$CyclingInputController {
   /// Reads after disposal throw; a disposed notifier reports through the
   /// global instance (the one `reportProvider` built).
-  Report get _report =>
-      ref.mounted ? ref.read(reportProvider) : SentryReport.global;
+  Report get _report => ref.report;
 
   WeatherService get _weatherService => ref.read(weatherServiceProvider);
   Completer<void>? _preferencesLoadedCompleter;

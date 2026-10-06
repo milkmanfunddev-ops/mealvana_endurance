@@ -34,7 +34,7 @@ part 'oauth_service.g.dart';
 /// Follows Andrea Bizzotto's AsyncNotifier pattern with @riverpod
 @riverpod
 class OAuthService extends _$OAuthService {
-  Report get _report => ref.read(reportProvider);
+  Report get _report => ref.report;
   SupabaseClient get _supabase =>
       ref.read(appExternalDepsProvider).supabaseClient;
   AnalyticsTracker get _analytics => ref.read(analyticsTrackerProvider);

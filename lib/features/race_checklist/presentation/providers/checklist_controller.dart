@@ -22,7 +22,7 @@ class ChecklistController extends _$ChecklistController {
   ChecklistRepository get _repository => ref.read(checklistRepositoryProvider);
   GearTemplateService get _gearService => ref.read(gearTemplateServiceProvider);
   EventsService get _eventsService => ref.read(eventsServiceProvider);
-  Report get _report => ref.read(reportProvider);
+  Report get _report => ref.report;
 
   @override
   Future<List<ChecklistItem>> build(String eventId) async {
@@ -33,12 +33,16 @@ class ChecklistController extends _$ChecklistController {
   /// Load existing checklist or create a new one if it doesn't exist
   /// Always regenerates nutrition items from current nutrition plan to stay in sync
   Future<List<ChecklistItem>> _loadOrCreateChecklist(String eventId) async {
+    final report = _report;
     try {
+      // Read before the first await: this auto-dispose provider can be
+      // disposed mid-load.
+      final repository = _repository;
       // Check if checklist already exists
-      final exists = await _repository.checklistExists(eventId);
+      final exists = await repository.checklistExists(eventId);
 
       if (exists) {
-        _report.debug(
+        report.debug(
           'Loading existing checklist for event $eventId',
           area: 'race_checklist',
         );
@@ -47,14 +51,19 @@ class ChecklistController extends _$ChecklistController {
         await _syncNutritionItems(eventId);
 
         // Return updated checklist
-        return await _repository.getChecklistForEvent(eventId);
+        return await repository.getChecklistForEvent(eventId);
       }
 
       // Checklist doesn't exist - generate it
-      _report.info(
+      report.info(
         'Generating new checklist for event $eventId',
         area: 'race_checklist',
       );
+
+      // Disposed mid-load: the result would be discarded anyway.
+      if (!ref.mounted) return const <ChecklistItem>[];
+      final gearService = _gearService;
+      final eventsService = _eventsService;
 
       // Get user profile
       final userRepo = await ref.read(userRepositoryProvider.future);
@@ -65,33 +74,34 @@ class ChecklistController extends _$ChecklistController {
       final userId = userProfile.id;
 
       // Get event details for event type
-      final event = await _eventsService.getEventById(userId, eventId);
+      final event = await eventsService.getEventById(userId, eventId);
       if (event == null) {
         throw Exception('Event not found: $eventId');
       }
 
       // Generate gear list based on event type and user gender
-      final gearItems = _gearService.generateGearList(
+      final gearItems = gearService.generateGearList(
         eventType: event.eventType,
         userGender: userProfile.gender.name,
         eventSubtype: event.eventSubtype,
       );
 
-      _report.info(
+      report.info(
         'Generated ${gearItems.length} items for ${event.eventType.displayName}',
         area: 'race_checklist',
       );
 
       // Create gear checklist items in database
-      await _repository.createChecklistItems(
+      await repository.createChecklistItems(
         eventId: eventId,
         userId: userId,
         gearItems: gearItems,
         category: 'gear',
       );
 
-      // Check if nutrition plan exists for this event
-      if (event.activityId != null) {
+      // Check if nutrition plan exists for this event. Disposed mid-load:
+      // the next load sees the checklist and syncs nutrition items then.
+      if (event.activityId != null && ref.mounted) {
         final nutritionPlanRepo = await ref.read(
           nutritionPlanRepositoryProvider.future,
         );
@@ -103,13 +113,13 @@ class ChecklistController extends _$ChecklistController {
           final nutritionItems = _extractNutritionItems(nutritionPlan);
 
           if (nutritionItems.isNotEmpty) {
-            _report.info(
+            report.info(
               'Generated ${nutritionItems.length} nutrition items from plan',
               area: 'race_checklist',
             );
 
             // Create nutrition checklist items
-            await _repository.createChecklistItems(
+            await repository.createChecklistItems(
               eventId: eventId,
               userId: userId,
               gearItems: nutritionItems,
@@ -120,9 +130,9 @@ class ChecklistController extends _$ChecklistController {
       }
 
       // Return the newly created items (both gear and nutrition)
-      return await _repository.getChecklistForEvent(eventId);
+      return await repository.getChecklistForEvent(eventId);
     } catch (e, stackTrace) {
-      _report.fault(
+      report.fault(
         e,
         stackTrace: stackTrace,
         area: 'race_checklist',
@@ -135,12 +145,18 @@ class ChecklistController extends _$ChecklistController {
   /// Sync nutrition items with current nutrition plan
   /// Deletes old nutrition items and regenerates from current plan
   Future<void> _syncNutritionItems(String eventId) async {
+    // Called after the caller's first await: the provider may already be
+    // disposed, and its load result would be discarded anyway.
+    if (!ref.mounted) return;
+    final report = _report;
     try {
+      final repository = _repository;
+      final eventsService = _eventsService;
       // Get user profile
       final userRepo = await ref.read(userRepositoryProvider.future);
       final userProfile = await userRepo.getCurrentUser();
       if (userProfile == null) {
-        _report.degraded(
+        report.degraded(
           LoggedFault('Cannot sync nutrition items: User not logged in'),
           area: 'race_checklist',
         );
@@ -149,9 +165,9 @@ class ChecklistController extends _$ChecklistController {
       final userId = userProfile.id;
 
       // Get event details
-      final event = await _eventsService.getEventById(userId, eventId);
+      final event = await eventsService.getEventById(userId, eventId);
       if (event == null) {
-        _report.degraded(
+        report.degraded(
           LoggedFault('Cannot sync nutrition items: Event not found'),
           area: 'race_checklist',
         );
@@ -159,10 +175,11 @@ class ChecklistController extends _$ChecklistController {
       }
 
       // Delete existing nutrition items
-      await _repository.deleteNutritionItemsForEvent(eventId);
+      await repository.deleteNutritionItemsForEvent(eventId);
 
-      // Check if nutrition plan exists for this event
-      if (event.activityId != null) {
+      // Check if nutrition plan exists for this event. Disposed mid-sync:
+      // the next load re-syncs nutrition items.
+      if (event.activityId != null && ref.mounted) {
         final nutritionPlanRepo = await ref.read(
           nutritionPlanRepositoryProvider.future,
         );
@@ -174,13 +191,13 @@ class ChecklistController extends _$ChecklistController {
           final nutritionItems = _extractNutritionItems(nutritionPlan);
 
           if (nutritionItems.isNotEmpty) {
-            _report.info(
+            report.info(
               'Synced ${nutritionItems.length} nutrition items from plan',
               area: 'race_checklist',
             );
 
             // Create nutrition checklist items
-            await _repository.createChecklistItems(
+            await repository.createChecklistItems(
               eventId: eventId,
               userId: userId,
               gearItems: nutritionItems,
@@ -188,14 +205,14 @@ class ChecklistController extends _$ChecklistController {
             );
           }
         } else {
-          _report.debug(
+          report.debug(
             'No nutrition plan found for event $eventId',
             area: 'race_checklist',
           );
         }
       }
     } catch (e, stackTrace) {
-      _report.fault(
+      report.fault(
         e,
         stackTrace: stackTrace,
         area: 'race_checklist',
@@ -290,16 +307,17 @@ class ChecklistController extends _$ChecklistController {
     );
 
     // Persist to database
+    final report = _report;
     try {
       await _repository.toggleItemChecked(itemId, isChecked);
     } catch (e) {
-      _report.fault(
+      report.fault(
         e,
         area: 'race_checklist',
         message: 'Error toggling item $itemId',
       );
       // Revert on error by refreshing from database
-      ref.invalidateSelf();
+      if (ref.mounted) ref.invalidateSelf();
     }
   }
 
@@ -309,29 +327,32 @@ class ChecklistController extends _$ChecklistController {
     String category = 'gear',
   ]) async {
     state = const AsyncLoading();
+    final repository = _repository;
+    final report = _report;
 
-    state = await AsyncValue.guard(() async {
+    final result = await AsyncValue.guard(() async {
       final userRepo = await ref.read(userRepositoryProvider.future);
       final userProfile = await userRepo.getCurrentUser();
       if (userProfile == null) {
         throw Exception('User not logged in');
       }
 
-      await _repository.addCustomItem(
+      await repository.addCustomItem(
         eventId: eventId,
         userId: userProfile.id,
         itemName: itemName,
         category: category,
       );
 
-      _report.info(
+      report.info(
         'Added custom item "$itemName" to $category category',
         area: 'race_checklist',
       );
 
       // Reload checklist
-      return await _repository.getChecklistForEvent(eventId);
+      return await repository.getChecklistForEvent(eventId);
     });
+    if (ref.mounted) state = result;
   }
 
   /// Delete an item from the checklist
@@ -341,16 +362,17 @@ class ChecklistController extends _$ChecklistController {
       state.value?.where((item) => item.id != itemId).toList() ?? [],
     );
 
+    final report = _report;
     try {
       await _repository.deleteItem(itemId);
     } catch (e) {
-      _report.fault(
+      report.fault(
         e,
         area: 'race_checklist',
         message: 'Error deleting item $itemId',
       );
       // Revert on error
-      ref.invalidateSelf();
+      if (ref.mounted) ref.invalidateSelf();
     }
   }
 
@@ -358,13 +380,14 @@ class ChecklistController extends _$ChecklistController {
   Future<void> regenerateChecklist() async {
     state = const AsyncLoading();
 
-    state = await AsyncValue.guard(() async {
+    final result = await AsyncValue.guard(() async {
       // Delete existing checklist
       await _repository.deleteChecklistForEvent(eventId);
 
       // Create new one
       return await _loadOrCreateChecklist(eventId);
     });
+    if (ref.mounted) state = result;
   }
 
   /// Refresh the checklist from database

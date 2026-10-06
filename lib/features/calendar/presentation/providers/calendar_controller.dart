@@ -72,7 +72,7 @@ class CalendarController extends _$CalendarController {
   CalendarService get _calendarService => ref.read(calendarServiceProvider);
   ActivitiesService get _activitiesService =>
       ref.read(activitiesServiceProvider);
-  Report get _report => ref.read(reportProvider);
+  Report get _report => ref.report;
   auth_service.AuthService get _authService =>
       ref.read(auth_service.authServiceProvider);
 
@@ -89,30 +89,34 @@ class CalendarController extends _$CalendarController {
   /// Load activities for current week
   Future<void> loadWeekActivities(DateTime weekStart) async {
     state = const AsyncLoading();
-    state = await AsyncValue.guard(() async {
+    final result = await AsyncValue.guard(() async {
       return await _loadWeekActivities(weekStart);
     });
+    if (ref.mounted) state = result;
   }
 
   Future<CalendarState> _loadWeekActivities(DateTime weekStart) async {
+    final authService = _authService;
+    final calendarService = _calendarService;
+    final report = _report;
     try {
       // Get current user's device ID
-      final user = await _authService.getCurrentUser();
+      final user = await authService.getCurrentUser();
       final userId = user?.id ?? 'unknown';
 
-      final activities = await _calendarService.getActivitiesForWeek(
+      final activities = await calendarService.getActivitiesForWeek(
         userId,
         weekStart,
       );
 
       // Get ALL events (not just for this week) so they show as dots on the calendar
       // The calendar shows a 2-year range, so we need events across that entire range
-      final events = await _calendarService.getAllEvents(userId);
+      final events = await calendarService.getAllEvents(userId);
 
       // Fetch ALL carb loading days (not just for this week)
       // Carb loading days can be far in the future for upcoming events
       // IMPORTANT: Pass userId to ensure only current user's days are returned
-      final carbLoadingDays = await _calendarService.getCarbLoadingDaysForRange(
+      final carbLoadingDays = await calendarService.getCarbLoadingDaysForRange(
         userId: userId,
         startDate: DateTime.now().subtract(
           const Duration(days: 365),
@@ -128,7 +132,7 @@ class CalendarController extends _$CalendarController {
         carbLoadingDays: carbLoadingDays,
       );
     } catch (e) {
-      _report.fault(
+      report.fault(
         e,
         area: 'calendar',
         message: 'Error loading week activities',
@@ -152,13 +156,16 @@ class CalendarController extends _$CalendarController {
     String? reminderTimeOfDay,
     bool reminderRecurring = false,
   }) async {
+    final authService = _authService;
+    final activitiesService = _activitiesService;
+    final report = _report;
     try {
       // Get current user's device ID (stored in id field) and userId
-      final user = await _authService.getCurrentUser();
+      final user = await authService.getCurrentUser();
       final deviceId = user?.id ?? 'unknown';
       final userId = user?.id ?? 'unknown';
 
-      final createdActivity = await _activitiesService.createActivity(
+      final createdActivity = await activitiesService.createActivity(
         deviceId: deviceId,
         userId: userId,
         activityType: activityType,
@@ -172,78 +179,92 @@ class CalendarController extends _$CalendarController {
       );
 
       // Refresh activities
-      ref.invalidateSelf();
+      if (ref.mounted) ref.invalidateSelf();
 
       return createdActivity.id;
     } catch (e) {
-      _report.fault(e, area: 'calendar', message: 'Error creating activity');
+      report.fault(e, area: 'calendar', message: 'Error creating activity');
       rethrow;
     }
   }
 
   /// Update an existing activity
   Future<void> updateActivity(Activity activity) async {
+    final authService = _authService;
+    final activitiesService = _activitiesService;
+    final report = _report;
     try {
-      final user = await _authService.getCurrentUser();
+      final user = await authService.getCurrentUser();
       final deviceId = user?.id ?? 'unknown';
 
-      await _activitiesService.updateActivity(
+      await activitiesService.updateActivity(
         deviceId: deviceId,
         activity: activity,
       );
 
       // Refresh activities
-      ref.invalidateSelf();
+      if (ref.mounted) ref.invalidateSelf();
     } catch (e) {
-      _report.fault(e, area: 'calendar', message: 'Error updating activity');
+      report.fault(e, area: 'calendar', message: 'Error updating activity');
       rethrow;
     }
   }
 
   /// Update an existing event
   Future<void> updateEvent(Event event) async {
+    final calendarService = _calendarService;
+    final report = _report;
     try {
-      await _calendarService.updateEvent(event);
+      await calendarService.updateEvent(event);
 
       // Refresh activities and upcoming event providers
-      ref.invalidateSelf();
-      ref.invalidate(allEventsControllerProvider);
-      ref.invalidate(nextUpcomingEventProvider);
+      if (ref.mounted) {
+        ref.invalidateSelf();
+        ref.invalidate(allEventsControllerProvider);
+        ref.invalidate(nextUpcomingEventProvider);
+      }
     } catch (e) {
-      _report.fault(e, area: 'calendar', message: 'Error updating event');
+      report.fault(e, area: 'calendar', message: 'Error updating event');
       rethrow;
     }
   }
 
   /// Delete an activity and its associated event/carb loading
   Future<void> deleteActivity(String activityId) async {
+    final authService = _authService;
+    final calendarService = _calendarService;
+    final report = _report;
     try {
-      final user = await _authService.getCurrentUser();
+      final user = await authService.getCurrentUser();
       final deviceId = user?.id ?? 'unknown';
 
-      await _calendarService.deleteActivity(
+      await calendarService.deleteActivity(
         deviceId: deviceId,
         activityId: activityId,
       );
 
       // Refresh activities and upcoming event providers
-      ref.invalidateSelf();
-      ref.invalidate(allEventsControllerProvider);
-      ref.invalidate(nextUpcomingEventProvider);
+      if (ref.mounted) {
+        ref.invalidateSelf();
+        ref.invalidate(allEventsControllerProvider);
+        ref.invalidate(nextUpcomingEventProvider);
+      }
     } catch (e) {
-      _report.fault(e, area: 'calendar', message: 'Error deleting activity');
+      report.fault(e, area: 'calendar', message: 'Error deleting activity');
     }
   }
 
   /// Delete a carb loading day
   Future<void> deleteCarbLoadingDay(String carbLoadingDayId) async {
+    final calendarService = _calendarService;
+    final report = _report;
     try {
-      await _calendarService.deleteCarbLoadingDay(carbLoadingDayId);
+      await calendarService.deleteCarbLoadingDay(carbLoadingDayId);
 
       // Refresh activities to update the list
-      ref.invalidateSelf();
+      if (ref.mounted) ref.invalidateSelf();
     } catch (e) {
-      _report.fault(
+      report.fault(
         e,
         area: 'calendar',
         message: 'Error deleting carb loading day',
@@ -270,9 +291,12 @@ class CalendarController extends _$CalendarController {
     bool hasCarbLoading = false,
     int? carbLoadingDays,
   }) async {
+    final authService = _authService;
+    final report = _report;
+    final eventsRepo = ref.read(eventsRepositoryProvider);
     try {
       // Get current user's device ID
-      final user = await _authService.getCurrentUser();
+      final user = await authService.getCurrentUser();
       final userId = user?.id ?? 'unknown';
 
       // Parse eventDate from startTime for calendar display
@@ -282,7 +306,6 @@ class CalendarController extends _$CalendarController {
       }
 
       final now = DateTime.now();
-      final eventsRepo = ref.read(eventsRepositoryProvider);
       await eventsRepo.createEvent(
         deviceId: userId,
         event: Event(
@@ -306,11 +329,13 @@ class CalendarController extends _$CalendarController {
       );
 
       // Refresh activities and upcoming event providers
-      ref.invalidateSelf();
-      ref.invalidate(allEventsControllerProvider);
-      ref.invalidate(nextUpcomingEventProvider);
+      if (ref.mounted) {
+        ref.invalidateSelf();
+        ref.invalidate(allEventsControllerProvider);
+        ref.invalidate(nextUpcomingEventProvider);
+      }
     } catch (e) {
-      _report.fault(e, area: 'calendar', message: 'Error creating event');
+      report.fault(e, area: 'calendar', message: 'Error creating event');
     }
   }
 
@@ -318,6 +343,7 @@ class CalendarController extends _$CalendarController {
   Future<List<Activity>> getActivitiesForDate(DateTime date) async {
     final weekStart = _getWeekStart(date);
     await loadWeekActivities(weekStart);
+    if (!ref.mounted) return [];
     return state.when(
       data: (data) => data.activities
           .where(
@@ -368,12 +394,15 @@ class CalendarController extends _$CalendarController {
     required DateTime raceDate,
     required double bodyWeightPounds,
   }) async {
+    final authService = _authService;
+    final calendarService = _calendarService;
+    final report = _report;
     try {
       // Get current user's device ID
-      final user = await _authService.getCurrentUser();
+      final user = await authService.getCurrentUser();
       final userId = user?.id ?? 'unknown';
 
-      await _calendarService.createCarbLoadingPlan(
+      await calendarService.createCarbLoadingPlan(
         userId: userId,
         eventId: eventId,
         protocolDays: protocolDays,
@@ -382,9 +411,9 @@ class CalendarController extends _$CalendarController {
       );
 
       // Refresh activities to show new carb loading days
-      ref.invalidateSelf();
+      if (ref.mounted) ref.invalidateSelf();
     } catch (e) {
-      _report.fault(
+      report.fault(
         e,
         area: 'calendar',
         message: 'Error creating carb loading plan',
@@ -399,7 +428,7 @@ class CalendarController extends _$CalendarController {
 @riverpod
 class AllEventsController extends _$AllEventsController {
   CalendarService get _calendarService => ref.read(calendarServiceProvider);
-  Report get _report => ref.read(reportProvider);
+  Report get _report => ref.report;
   auth_service.AuthService get _authService =>
       ref.read(auth_service.authServiceProvider);
 
@@ -413,19 +442,22 @@ class AllEventsController extends _$AllEventsController {
   }
 
   Future<CalendarState> _loadAllActivities() async {
+    final authService = _authService;
+    final calendarService = _calendarService;
+    final report = _report;
     try {
       // Get current user's device ID
-      final user = await _authService.getCurrentUser();
+      final user = await authService.getCurrentUser();
       final userId = user?.id ?? 'unknown';
 
-      final activities = await _calendarService.getAllActivities(userId);
+      final activities = await calendarService.getAllActivities(userId);
 
       // Get all events (events are now separate from activities)
-      final events = await _calendarService.getAllEvents(userId);
+      final events = await calendarService.getAllEvents(userId);
 
       return CalendarState.data(activities: activities, events: events);
     } catch (e) {
-      _report.fault(
+      report.fault(
         e,
         area: 'calendar',
         message: 'Error loading all activities',

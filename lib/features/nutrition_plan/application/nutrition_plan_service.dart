@@ -29,7 +29,7 @@ class NutritionPlanService {
   FoodRepository get _foodRepository => ref.read(foodRepositoryProvider);
   ClientPlanService get _clientPlanService =>
       ref.read(clientPlanServiceProvider);
-  Report get _report => ref.read(reportProvider);
+  Report get _report => ref.report;
 
   // Nutrition calculator removed - all logic moved to Edge Functions
 

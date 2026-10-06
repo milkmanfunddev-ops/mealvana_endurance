@@ -110,11 +110,14 @@ class FormulaEditorController extends _$FormulaEditorController {
 
   @override
   FutureOr<FormulaDraft> build(String? formulaId, FormulaPhase phase) async {
+    // Read before the first await; only an edit of a saved formula needs it.
+    final repo = formulaId != null
+        ? ref.read(personalFormulasRepositoryProvider)
+        : null;
     final userRepo = await ref.read(userRepositoryProvider.future);
     _userId = (await userRepo.getCurrentUser())?.id;
 
-    if (formulaId != null) {
-      final repo = ref.read(personalFormulasRepositoryProvider);
+    if (formulaId != null && repo != null) {
       final existing = await repo.getById(formulaId);
       if (existing != null) {
         return FormulaDraft(

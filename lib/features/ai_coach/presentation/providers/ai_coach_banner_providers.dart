@@ -18,6 +18,8 @@ part 'ai_coach_banner_providers.g.dart';
 ///   - error    → false (never throws)
 @riverpod
 Future<bool> aiCoachHasBaseline(Ref ref) async {
+  final report = ref.read(reportProvider);
+  final mealLogRepo = ref.read(mealLogRepositoryProvider);
   try {
     final userRepo = await ref.read(userRepositoryProvider.future);
     final user = await userRepo.getCurrentUser();
@@ -25,19 +27,15 @@ Future<bool> aiCoachHasBaseline(Ref ref) async {
     if (userId == null) return false;
 
     final since = DateTime.now().subtract(const Duration(days: 14));
-    final count = await ref
-        .read(mealLogRepositoryProvider)
-        .countLogsSince(userId, since);
+    final count = await mealLogRepo.countLogsSince(userId, since);
     return count > 0;
   } catch (e, st) {
-    ref
-        .read(reportProvider)
-        .fault(
-          e,
-          stackTrace: st,
-          area: 'ai_coach',
-          message: 'baseline check failed; banner hidden',
-        );
+    report.fault(
+      e,
+      stackTrace: st,
+      area: 'ai_coach',
+      message: 'baseline check failed; banner hidden',
+    );
     return false;
   }
 }

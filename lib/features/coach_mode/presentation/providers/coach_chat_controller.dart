@@ -18,7 +18,7 @@ part 'coach_chat_controller.g.dart';
 @riverpod
 class CoachChatController extends _$CoachChatController {
   CoachService get _coachService => ref.read(coachServiceProvider);
-  Report get _report => ref.read(reportProvider);
+  Report get _report => ref.report;
 
   RealtimeChannel? _channel;
 
@@ -38,20 +38,19 @@ class CoachChatController extends _$CoachChatController {
   }
 
   Future<CoachChatState> _loadChat(String relationshipId) async {
+    final coachService = _coachService;
     // Sync relationships and coach data first
-    await _coachService.syncRelationshipsFromSupabase();
-    await _coachService.syncMyCoachesData();
+    await coachService.syncRelationshipsFromSupabase();
+    await coachService.syncMyCoachesData();
 
     // Get relationship details
-    final relationship = await _coachService.getRelationshipById(
-      relationshipId,
-    );
+    final relationship = await coachService.getRelationshipById(relationshipId);
     if (relationship == null) {
       throw Exception('Relationship not found');
     }
 
     // Get current user ID
-    final currentUserId = await _coachService.getCurrentUserId();
+    final currentUserId = await coachService.getCurrentUserId();
     if (currentUserId == null) {
       throw Exception('User not found');
     }
@@ -63,25 +62,28 @@ class CoachChatController extends _$CoachChatController {
     }
 
     // Get general chat messages only (no activity/plan comments)
-    final messages = await _coachService.getGeneralChatMessages(
+    final messages = await coachService.getGeneralChatMessages(
       coachUserId: relationship.coachUserId,
       athleteUserId: relationship.athleteUserId,
     );
+
+    final loaded = CoachChatState(
+      relationship: relationship,
+      messages: messages,
+      currentUserId: currentUserId,
+    );
+    if (!ref.mounted) return loaded;
 
     // Subscribe to realtime updates
     _subscribeToMessages(relationship);
 
     // Mark messages as read
-    await _coachService.markConversationAsRead(
+    await coachService.markConversationAsRead(
       coachUserId: relationship.coachUserId,
       athleteUserId: relationship.athleteUserId,
     );
 
-    return CoachChatState(
-      relationship: relationship,
-      messages: messages,
-      currentUserId: currentUserId,
-    );
+    return loaded;
   }
 
   void _subscribeToMessages(CoachAthleteRelationship relationship) {
@@ -239,13 +241,17 @@ class CoachChatController extends _$CoachChatController {
       ),
     );
 
+    final coachService = _coachService;
+    final report = ref.read(reportProvider);
+
     // Try to send to Supabase
     try {
-      final sentMessage = await _coachService.sendChatMessage(
+      final sentMessage = await coachService.sendChatMessage(
         coachUserId: currentState.relationship.coachUserId,
         athleteUserId: currentState.relationship.athleteUserId,
         messageText: messageText.trim(),
       );
+      if (!ref.mounted) return;
 
       if (sentMessage != null) {
         // Success: Remove from pending, add to messages
@@ -273,20 +279,19 @@ class CoachChatController extends _$CoachChatController {
       }
     } catch (e, stackTrace) {
       // Failed: Update status to failed, keep in pending for retry
-      ref
-          .read(reportProvider)
-          .fault(
-            e,
-            stackTrace: stackTrace,
-            area: 'coach_mode',
-            message: 'Coach chat send failed; message kept as pending',
-          );
+      report.fault(
+        e,
+        stackTrace: stackTrace,
+        area: 'coach_mode',
+        message: 'Coach chat send failed; message kept as pending',
+      );
       _markMessageAsFailed(optimisticMessage.id);
     }
   }
 
   /// Mark a pending message as failed
   void _markMessageAsFailed(String messageId) {
+    if (!ref.mounted) return;
     final currentState = state.value;
     if (currentState == null) return;
 
@@ -311,9 +316,10 @@ class CoachChatController extends _$CoachChatController {
     if (currentState == null) return;
 
     state = const AsyncLoading();
-    state = await AsyncValue.guard(
+    final result = await AsyncValue.guard(
       () => _loadChat(currentState.relationship.id),
     );
+    if (ref.mounted) state = result;
   }
 
   /// Clear error
@@ -347,14 +353,18 @@ class CoachChatController extends _$CoachChatController {
       currentState.copyWith(pendingMessages: updatedPending, error: null),
     );
 
+    final coachService = _coachService;
+    final report = ref.read(reportProvider);
+
     // Retry each failed message
     for (final message in failedMessages) {
       try {
-        final sentMessage = await _coachService.sendChatMessage(
+        final sentMessage = await coachService.sendChatMessage(
           coachUserId: message.coachUserId,
           athleteUserId: message.athleteUserId,
           messageText: message.messageText,
         );
+        if (!ref.mounted) return;
 
         if (sentMessage != null) {
           // Success: Remove from pending, add to messages
@@ -380,14 +390,12 @@ class CoachChatController extends _$CoachChatController {
           _markMessageAsFailed(message.id);
         }
       } catch (e, stackTrace) {
-        ref
-            .read(reportProvider)
-            .fault(
-              e,
-              stackTrace: stackTrace,
-              area: 'coach_mode',
-              message: 'Coach chat retry failed; message kept as pending',
-            );
+        report.fault(
+          e,
+          stackTrace: stackTrace,
+          area: 'coach_mode',
+          message: 'Coach chat retry failed; message kept as pending',
+        );
         _markMessageAsFailed(message.id);
       }
     }

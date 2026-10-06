@@ -58,14 +58,25 @@ class ActivityDetailController extends _$ActivityDetailController {
 
   /// Fire-and-forget pushes outlive the provider; once it is disposed the
   /// global instance (the one `reportProvider` built) takes the report.
-  Report get _report =>
-      ref.mounted ? ref.read(reportProvider) : SentryReport.global;
+  Report get _report => ref.report;
   static const String _area = 'nutrition_plan';
+
+  // Captured at the top of each build, before any await: most methods here
+  // call these after async gaps, when this auto-dispose provider may be
+  // disposed and `ref.read` would throw. A subclass whose build does not run
+  // this one (test stubs) reads them through `ref` instead.
+  ActivitiesService? _activitiesServiceCache;
+  AuthService? _authServiceCache;
+  FoodOperationsService? _foodOpsServiceCache;
+  AnalyticsTracker? _analyticsCache;
   ActivitiesService get _activitiesService =>
-      ref.read(activitiesServiceProvider);
-  AuthService get _authService => ref.read(authServiceProvider);
+      _activitiesServiceCache ?? ref.read(activitiesServiceProvider);
+  AuthService get _authService =>
+      _authServiceCache ?? ref.read(authServiceProvider);
   FoodOperationsService get _foodOpsService =>
-      ref.read(foodOperationsServiceProvider);
+      _foodOpsServiceCache ?? ref.read(foodOperationsServiceProvider);
+  AnalyticsTracker get _analytics =>
+      _analyticsCache ?? ref.read(appExternalDepsProvider).analytics;
 
   Future<NutritionPlanRepository> get _nutritionPlanRepository async =>
       await ref.read(nutritionPlanRepositoryProvider.future);
@@ -75,6 +86,14 @@ class ActivityDetailController extends _$ActivityDetailController {
     required String activityId,
     bool isNewActivity = false,
   }) async {
+    _activitiesServiceCache = ref.read(activitiesServiceProvider);
+    _authServiceCache = ref.read(authServiceProvider);
+    _foodOpsServiceCache = ref.read(foodOperationsServiceProvider);
+    _analyticsCache = ref.read(appExternalDepsProvider).analytics;
+    final activitiesRepo = ref.read(activitiesRepositoryProvider);
+    final eventsRepo = ref.read(eventsRepositoryProvider);
+    final macroRepo = ref.read(macroRepositoryProvider);
+
     // CRITICAL FIX: Use userIdProvider (same source as ActivitiesController)
     // This was causing user ID mismatch bug where activities created with one ID
     // were being queried with a different ID
@@ -104,8 +123,7 @@ class ActivityDetailController extends _$ActivityDetailController {
     // avoids the round-trip entirely on the hot create→view path.)
     if (!isNewActivity) {
       try {
-        final repo = ref.read(activitiesRepositoryProvider);
-        await repo.refreshActivityFromRemote(activityId);
+        await activitiesRepo.refreshActivityFromRemote(activityId);
       } catch (e) {
         // Non-fatal: fall back to local data if network unavailable
         _report.degraded(
@@ -140,8 +158,9 @@ class ActivityDetailController extends _$ActivityDetailController {
     // Load nutrition plan from activity's nutritionPlanData field
     NutritionPlan? nutritionPlan;
     try {
-      final repository = await _nutritionPlanRepository;
-      nutritionPlan = await repository.getNutritionPlanByActivityId(
+      // Disposed mid-build: the result is discarded, skip the plan load.
+      final repository = ref.mounted ? await _nutritionPlanRepository : null;
+      nutritionPlan = await repository?.getNutritionPlanByActivityId(
         userId,
         activityId,
       );
@@ -173,7 +192,6 @@ class ActivityDetailController extends _$ActivityDetailController {
     // Reverse-lookup event name from linked event
     String? eventName;
     try {
-      final eventsRepo = ref.read(eventsRepositoryProvider);
       final event = await eventsRepo.getEventForActivity(activityId);
       eventName = event?.eventName;
     } catch (e) {
@@ -208,7 +226,6 @@ class ActivityDetailController extends _$ActivityDetailController {
     // Priority: activity-scoped cache -> embedded snapshot -> deterministic derivation.
     MacroTargets? macroTargets;
     try {
-      final macroRepo = ref.read(macroRepositoryProvider);
       macroTargets = await macroRepo.getCachedMacroTargetsForActivity(
         activityId,
         expectedActivityType: activity.activityType,
@@ -230,7 +247,6 @@ class ActivityDetailController extends _$ActivityDetailController {
     );
     if (macroTargets != null) {
       try {
-        final macroRepo = ref.read(macroRepositoryProvider);
         await macroRepo.saveMacroTargetsForActivity(activityId, macroTargets);
       } catch (e) {
         _report.degraded(
@@ -301,14 +317,14 @@ class ActivityDetailController extends _$ActivityDetailController {
     try {
       final repo = ref.read(activitiesRepositoryProvider);
       await repo.refreshActivityFromRemote(activityId);
-      ref.invalidateSelf();
+      if (ref.mounted) ref.invalidateSelf();
     } catch (e) {
       _report.degraded(
         e,
         area: 'nutrition_plan',
         message: 'Force refresh failed',
       );
-      ref.invalidateSelf();
+      if (ref.mounted) ref.invalidateSelf();
     }
   }
 
@@ -330,6 +346,10 @@ class ActivityDetailController extends _$ActivityDetailController {
     final activity = currentState.activity;
     if (activity == null) return;
 
+    final analytics = ref.read(analyticsTrackerProvider);
+    final macroRepo = ref.read(macroRepositoryProvider);
+    final supabaseClient = ref.read(appExternalDepsProvider).supabaseClient;
+
     final user = await _authService.getCurrentUser();
     if (user == null) return;
     final deviceId = user.id;
@@ -339,10 +359,6 @@ class ActivityDetailController extends _$ActivityDetailController {
     final tempC = storedDuring?.tempC;
     final humidityPct = storedDuring?.humidityPct;
     final isIndoor = storedDuring?.isIndoor ?? false;
-
-    final analytics = ref.read(analyticsTrackerProvider);
-    final macroRepo = ref.read(macroRepositoryProvider);
-    final supabaseClient = ref.read(appExternalDepsProvider).supabaseClient;
 
     try {
       MacroTargets? freshTargets;
@@ -435,7 +451,7 @@ class ActivityDetailController extends _$ActivityDetailController {
     }
 
     // Always invalidate so UI picks up the updated MacroTargets.
-    ref.invalidateSelf();
+    if (ref.mounted) ref.invalidateSelf();
   }
 
   /// Save activity and any nutrition plan changes
@@ -445,7 +461,7 @@ class ActivityDetailController extends _$ActivityDetailController {
 
     state = AsyncData(currentState.copyWith(isSaving: true));
 
-    state = await AsyncValue.guard(() async {
+    final result = await AsyncValue.guard(() async {
       try {
         final user = await _authService.getCurrentUser();
         if (user == null || user.id.isEmpty) {
@@ -489,6 +505,7 @@ class ActivityDetailController extends _$ActivityDetailController {
         rethrow;
       }
     });
+    if (ref.mounted) state = result;
   }
 
   /// Save nutrition plan to activity's nutritionPlanData field
@@ -496,6 +513,10 @@ class ActivityDetailController extends _$ActivityDetailController {
     String activityId,
     NutritionPlan plan,
   ) async {
+    // Snapshot before the first await: reading `state` after this provider
+    // is disposed would throw and abort the save. Callers may already be
+    // past an await; null keeps the targets already stored on the row.
+    final macroTargets = ref.mounted ? state.value?.macroTargets : null;
     try {
       final user = await _authService.getCurrentUser();
       if (user == null) {
@@ -530,7 +551,7 @@ class ActivityDetailController extends _$ActivityDetailController {
         nutritionPlanData: _buildNutritionPlanData(
           plan: plan,
           existingPlanData: activity.nutritionPlanData,
-          macroTargets: state.value?.macroTargets,
+          macroTargets: macroTargets,
         ),
         needsNutritionRefresh: false,
         updatedAt: DateTime.now(),
@@ -966,7 +987,7 @@ class ActivityDetailController extends _$ActivityDetailController {
 
     state = AsyncData(currentState.copyWith(isCompleting: true));
 
-    state = await AsyncValue.guard(() async {
+    final result = await AsyncValue.guard(() async {
       try {
         final user = await _authService.getCurrentUser();
         if (user == null || user.id.isEmpty) {
@@ -998,7 +1019,7 @@ class ActivityDetailController extends _$ActivityDetailController {
         );
 
         // Reload activity to get updated completion data
-        ref.invalidateSelf();
+        if (ref.mounted) ref.invalidateSelf();
 
         return currentState.copyWith(isCompleting: false);
       } catch (error) {
@@ -1010,6 +1031,7 @@ class ActivityDetailController extends _$ActivityDetailController {
         rethrow;
       }
     });
+    if (ref.mounted) state = result;
   }
 
   /// Apply carb feedback adjustment to the user's nutrition target overrides.
@@ -1026,6 +1048,9 @@ class ActivityDetailController extends _$ActivityDetailController {
     // In edit mode we do apply factor=1.0 to revert prior adjustments.
     if (level == CarbAdjustmentLevel.justRight && !isEdit) return;
 
+    // Read before the first await: this provider can be disposed while the
+    // user lookup is in flight, and the save must still happen.
+    final settingsController = ref.read(settingsControllerProvider.notifier);
     try {
       final currentState = state.value;
       final activity = currentState?.activity;
@@ -1082,7 +1107,6 @@ class ActivityDetailController extends _$ActivityDetailController {
       }
 
       // Save via settings controller
-      final settingsController = ref.read(settingsControllerProvider.notifier);
       await settingsController.saveNutritionTargetOverrides(updatedOverrides);
 
       _report.info(
@@ -1187,7 +1211,7 @@ class ActivityDetailController extends _$ActivityDetailController {
       return;
     }
 
-    state = await AsyncValue.guard(() async {
+    final result = await AsyncValue.guard(() async {
       try {
         final user = await _authService.getCurrentUser();
         if (user == null || user.id.isEmpty) {
@@ -1207,7 +1231,7 @@ class ActivityDetailController extends _$ActivityDetailController {
         );
 
         // Reload activity to get updated completion data
-        ref.invalidateSelf();
+        if (ref.mounted) ref.invalidateSelf();
 
         return currentState;
       } catch (error) {
@@ -1219,6 +1243,7 @@ class ActivityDetailController extends _$ActivityDetailController {
         rethrow;
       }
     });
+    if (ref.mounted) state = result;
   }
 
   /// Update completion rating for a completed activity
@@ -1230,7 +1255,7 @@ class ActivityDetailController extends _$ActivityDetailController {
       return;
     }
 
-    state = await AsyncValue.guard(() async {
+    final result = await AsyncValue.guard(() async {
       try {
         final user = await _authService.getCurrentUser();
         if (user == null || user.id.isEmpty) {
@@ -1248,7 +1273,7 @@ class ActivityDetailController extends _$ActivityDetailController {
           activity: updatedActivity,
         );
 
-        ref.invalidateSelf();
+        if (ref.mounted) ref.invalidateSelf();
 
         return currentState;
       } catch (error) {
@@ -1260,6 +1285,7 @@ class ActivityDetailController extends _$ActivityDetailController {
         rethrow;
       }
     });
+    if (ref.mounted) state = result;
   }
 
   /// Update completion feedback for an already-completed activity.
@@ -1275,7 +1301,7 @@ class ActivityDetailController extends _$ActivityDetailController {
       return;
     }
 
-    state = await AsyncValue.guard(() async {
+    final result = await AsyncValue.guard(() async {
       try {
         final user = await _authService.getCurrentUser();
         if (user == null || user.id.isEmpty) {
@@ -1295,7 +1321,7 @@ class ActivityDetailController extends _$ActivityDetailController {
           activity: updatedActivity,
         );
 
-        ref.invalidateSelf();
+        if (ref.mounted) ref.invalidateSelf();
         return currentState;
       } catch (error) {
         _report.fault(
@@ -1306,6 +1332,7 @@ class ActivityDetailController extends _$ActivityDetailController {
         rethrow;
       }
     });
+    if (ref.mounted) state = result;
   }
 
   /// Update scheduled date/time
@@ -1334,13 +1361,15 @@ class ActivityDetailController extends _$ActivityDetailController {
       );
 
       // Update local state immediately for UI responsiveness
-      state = AsyncData(
-        currentState.copyWith(
-          scheduledDateTime: newDateTime,
-          activity: updatedActivity,
-          hasUnsavedChanges: false,
-        ),
-      );
+      if (ref.mounted) {
+        state = AsyncData(
+          currentState.copyWith(
+            scheduledDateTime: newDateTime,
+            activity: updatedActivity,
+            hasUnsavedChanges: false,
+          ),
+        );
+      }
 
       // Save to database
       await _activitiesService.updateActivity(
@@ -1349,8 +1378,10 @@ class ActivityDetailController extends _$ActivityDetailController {
       );
 
       // Invalidate activities list and calendar so they reflect the new date
-      ref.invalidate(activitiesControllerProvider);
-      ref.invalidate(calendarControllerProvider);
+      if (ref.mounted) {
+        ref.invalidate(activitiesControllerProvider);
+        ref.invalidate(calendarControllerProvider);
+      }
 
       _report.info(
         'Schedule updated and saved',
@@ -1816,7 +1847,7 @@ class ActivityDetailController extends _$ActivityDetailController {
         area: 'nutrition_plan',
         message: 'Error in $operationName',
       );
-      state = AsyncValue.error(error, stackTrace);
+      if (ref.mounted) state = AsyncValue.error(error, stackTrace);
     }
   }
 
@@ -2071,7 +2102,7 @@ class ActivityDetailController extends _$ActivityDetailController {
         area: 'nutrition_plan',
         message: 'Error in updateSubPhaseQuantityWithScaling',
       );
-      state = AsyncValue.error(error, stackTrace);
+      if (ref.mounted) state = AsyncValue.error(error, stackTrace);
     }
   }
 
@@ -2520,7 +2551,7 @@ class ActivityDetailController extends _$ActivityDetailController {
       // Invalidate the activities list so dashboards/timelines that watch it
       // (fuel timeline, daily macros, calendar) drop this activity's card
       // immediately instead of showing it until their next unrelated rebuild.
-      ref.invalidate(activitiesControllerProvider);
+      if (ref.mounted) ref.invalidate(activitiesControllerProvider);
 
       _trackAnalytics('activity_deleted', {
         'activity_id': activityId,
@@ -2543,8 +2574,7 @@ class ActivityDetailController extends _$ActivityDetailController {
   /// Track an analytics event
   void _trackAnalytics(String event, Map<String, dynamic> properties) {
     try {
-      final analytics = ref.read(appExternalDepsProvider);
-      analytics.analytics.track(event, properties: properties);
+      _analytics.track(event, properties: properties);
     } catch (e, stackTrace) {
       // Analytics must never block the flow, but a throwing tracker is a bug.
       _report.fault(
@@ -2741,7 +2771,7 @@ class ActivityDetailController extends _$ActivityDetailController {
 
     state = AsyncData(currentState.copyWith(isCompleting: true));
 
-    state = await AsyncValue.guard(() async {
+    final result = await AsyncValue.guard(() async {
       try {
         final user = await _authService.getCurrentUser();
         if (user == null || user.id.isEmpty) {
@@ -2809,7 +2839,7 @@ class ActivityDetailController extends _$ActivityDetailController {
         });
 
         // Reload activity to get updated data
-        ref.invalidateSelf();
+        if (ref.mounted) ref.invalidateSelf();
 
         // Carry the just-saved activity forward so any display that resolves
         // fuel data from `activity.fuelLogData` (e.g. the carbs/hr card after
@@ -2831,6 +2861,7 @@ class ActivityDetailController extends _$ActivityDetailController {
         rethrow;
       }
     });
+    if (ref.mounted) state = result;
   }
 
   /// Save edits to an already-completed activity's fuel log.
@@ -2852,7 +2883,7 @@ class ActivityDetailController extends _$ActivityDetailController {
 
     state = AsyncData(currentState.copyWith(isSaving: true));
 
-    state = await AsyncValue.guard(() async {
+    final result = await AsyncValue.guard(() async {
       try {
         final user = await _authService.getCurrentUser();
         if (user == null || user.id.isEmpty) {
@@ -2880,7 +2911,7 @@ class ActivityDetailController extends _$ActivityDetailController {
           activity: updatedActivity,
         );
 
-        ref.invalidateSelf();
+        if (ref.mounted) ref.invalidateSelf();
         return currentState.copyWith(
           activity: updatedActivity,
           isSaving: false,
@@ -2896,6 +2927,7 @@ class ActivityDetailController extends _$ActivityDetailController {
         rethrow;
       }
     });
+    if (ref.mounted) state = result;
   }
 
   /// Toggle between planned and actual view modes for completed activities.
@@ -2993,6 +3025,16 @@ class ActivityDetailController extends _$ActivityDetailController {
     // Fire-and-forget: the provider may be disposed by the time this fails,
     // so take the report before the first await.
     final report = _report;
+    if (!ref.mounted) {
+      // Called after the caller's await; the provider is gone, so the
+      // write-back service cannot be read. Written down (rule D9).
+      report.note(
+        'TP completion feedback push skipped: activity detail disposed',
+        area: 'training_peaks',
+        data: {'activityId': activity.id},
+      );
+      return;
+    }
     try {
       final service = await ref.read(tpWritebackServiceProvider.future);
       await service.pushCompletionFeedback(
@@ -3023,6 +3065,16 @@ class ActivityDetailController extends _$ActivityDetailController {
     // Fire-and-forget: the provider may be disposed by the time this fails,
     // so take the report before the first await.
     final report = _report;
+    if (!ref.mounted) {
+      // Called after the caller's await; the provider is gone, so the
+      // write-back service cannot be read. Written down (rule D9).
+      report.note(
+        'TP plan write-back skipped: activity detail disposed',
+        area: 'training_peaks',
+        data: {'activityId': activity.id},
+      );
+      return;
+    }
     try {
       final service = await ref.read(tpWritebackServiceProvider.future);
       await service.pushPlanToWorkout(

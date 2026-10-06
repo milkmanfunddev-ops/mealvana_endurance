@@ -15,7 +15,7 @@ class LLMResponseParser {
 
   FoodDataTransformationService get _transformationService =>
       ref.read(foodDataTransformationServiceProvider);
-  Report get _report => ref.read(reportProvider);
+  Report get _report => ref.report;
 
   /// Convert LLM response format to our NutritionPlan domain model
   /// Made public to allow reuse for algorithmic fallback responses

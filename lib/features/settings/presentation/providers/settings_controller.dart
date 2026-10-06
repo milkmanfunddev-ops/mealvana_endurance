@@ -202,7 +202,10 @@ class SettingsController extends _$SettingsController {
     // conflict + tap-to-use instead). Persisted through the normal update
     // path after this build settles; the next build converges (manual ==
     // TP -> no further write).
-    if (displayProfile?.id != null) {
+    // `ref` is read after the profile awaits above: skip the prefill when this
+    // auto-dispose build was disposed meanwhile (its result is discarded).
+    // Sentry MEALVANA-ENDURANCE-CK / DEV-93.
+    if (displayProfile?.id != null && ref.mounted) {
       final zones = await ref.read(
         athleteZonesProvider(displayProfile!.id).future,
       );
@@ -214,11 +217,14 @@ class SettingsController extends _$SettingsController {
           displayProfile.cssPacePer100mSeconds == null ||
           displayProfile.cssPacePer100mSeconds == 0;
       if ((ftpEmpty && tpFtp != null) || (cssEmpty && tpCss != null)) {
+        // The microtask outlives this build: by the time it runs the
+        // provider may be gone (Sentry MEALVANA-ENDURANCE-C9 / CA). The next
+        // build re-derives the same prefill, so a skipped write is not lost.
         Future.microtask(() async {
-          if (ftpEmpty && tpFtp != null) {
+          if (ftpEmpty && tpFtp != null && ref.mounted) {
             await updateCyclingPreferences(ftpWatts: tpFtp);
           }
-          if (cssEmpty && tpCss != null) {
+          if (cssEmpty && tpCss != null && ref.mounted) {
             await updateSwimmingPreferences(cssPacePer100mSeconds: tpCss);
           }
         });
@@ -554,7 +560,7 @@ class SettingsController extends _$SettingsController {
     final currentState = state.value;
     if (currentState == null) return;
 
-    state = await AsyncValue.guard(() async {
+    final result = await AsyncValue.guard(() async {
       final userRepository = await _userRepository;
       final existingProfile = await userRepository.getCurrentUser();
 
@@ -619,6 +625,9 @@ class SettingsController extends _$SettingsController {
         errorMessage: null,
       );
     });
+    // The save above completed; only the UI state is dropped when this
+    // auto-dispose controller was disposed during it.
+    if (ref.mounted) state = result;
   }
 
   /// Save profile changes (both local and Supabase)
@@ -626,7 +635,8 @@ class SettingsController extends _$SettingsController {
     final currentState = state.value;
     if (currentState == null) return;
 
-    state = await AsyncValue.guard(() async {
+    final dailyMacroService = ref.read(dailyMacroServiceProvider);
+    final result = await AsyncValue.guard(() async {
       final userRepository = await _userRepository;
       final existingProfile = await userRepository.getCurrentUser();
 
@@ -688,21 +698,20 @@ class SettingsController extends _$SettingsController {
 
       // Ensure other providers see the updated profile immediately.
       // Guard against the notifier being disposed during the async gap above.
-      if (ref.mounted) {
-        ref.invalidate(currentUserProvider);
+      if (ref.mounted) ref.invalidate(currentUserProvider);
 
-        // Q-016: sex / birthday / height / weight are engine inputs — a
-        // MANUAL write to any of them invalidates today + future cached
-        // daily plans (never past) and refreshes the visible day.
-        if (DailyMacroService.engineInputsDiffer(
-          existingProfile,
-          updatedProfile,
-        )) {
-          await ref
-              .read(dailyMacroServiceProvider)
-              .invalidateForManualInputChange(updatedProfile.id);
-          if (ref.mounted) ref.invalidate(dailyMacrosControllerProvider);
-        }
+      // Q-016: sex / birthday / height / weight are engine inputs — a
+      // MANUAL write to any of them invalidates today + future cached
+      // daily plans (never past) and refreshes the visible day. The cache
+      // invalidation runs even when this controller was disposed mid-save.
+      if (DailyMacroService.engineInputsDiffer(
+        existingProfile,
+        updatedProfile,
+      )) {
+        await dailyMacroService.invalidateForManualInputChange(
+          updatedProfile.id,
+        );
+        if (ref.mounted) ref.invalidate(dailyMacrosControllerProvider);
       }
 
       return currentState.copyWith(
@@ -714,6 +723,9 @@ class SettingsController extends _$SettingsController {
         authUserId: updatedProfile.authUserId,
       );
     });
+    // The save above completed; only the UI state is dropped when this
+    // auto-dispose controller was disposed during it.
+    if (ref.mounted) state = result;
   }
 
   /// Refresh content from backend
@@ -746,6 +758,7 @@ class SettingsController extends _$SettingsController {
     final analytics = ref.read(appExternalDepsProvider).analytics;
     final report = ref.read(reportProvider);
     final prefs = ref.read(sharedPreferencesProvider);
+    final subscriptionStatus = ref.read(subscriptionStatusProvider.notifier);
 
     // Track sign out event
     await analytics.track('settings_sign_out_tapped');
@@ -785,13 +798,16 @@ class SettingsController extends _$SettingsController {
     final eventsRepo = ref.read(eventsRepositoryProvider);
     final carbLoadingRepo = ref.read(carbLoadingRepositoryProvider);
     final feedbackRepo = ref.read(feedbackRepositoryProvider);
-    final foodPrefsRepo = await ref.read(
-      foodPreferencesRepositoryProvider.future,
-    );
-    final userRepo = await ref.read(userRepositoryProvider.future);
-
     final mealLogRepo = ref.read(mealLogRepositoryProvider);
     final savedMealsRepo = ref.read(savedMealsRepositoryProvider);
+    // Both futures are taken before either await, so no `ref` use follows
+    // an async gap.
+    final foodPrefsRepoFuture = ref.read(
+      foodPreferencesRepositoryProvider.future,
+    );
+    final userRepoFuture = ref.read(userRepositoryProvider.future);
+    final foodPrefsRepo = await foodPrefsRepoFuture;
+    final userRepo = await userRepoFuture;
 
     final repos = <SyncableRepository>[
       activitiesRepo,
@@ -828,11 +844,13 @@ class SettingsController extends _$SettingsController {
   /// 2. Clear user's local data (with WHERE user_id filter)
   /// 3. Sign out to trigger auth state change which rebuilds UI
   Future<void> deleteAccount() async {
-    state = await AsyncValue.guard(() async {
+    final result = await AsyncValue.guard(() async {
       final supabaseClient = ref.read(appExternalDepsProvider).supabaseClient;
       final analytics = ref.read(appExternalDepsProvider).analytics;
       final report = ref.read(reportProvider);
       final database = ref.read(appDatabaseProvider);
+      final prefs = ref.read(sharedPreferencesProvider);
+      final stateBefore = state;
       final currentUserId = supabaseClient.auth.currentUser?.id;
 
       if (currentUserId == null) {
@@ -889,7 +907,6 @@ class SettingsController extends _$SettingsController {
 
       // Clear the temp user ID from SharedPreferences
       // This ensures a new user won't inherit the previous user's integration status
-      final prefs = ref.read(sharedPreferencesProvider);
       await prefs.remove(_onboardingTempUserIdKey);
 
       // The deleted account's onboarding snapshot must not survive to be
@@ -902,21 +919,24 @@ class SettingsController extends _$SettingsController {
       } catch (e, stackTrace) {
         // The account is already gone server-side, so a failed sign-out is
         // survivable; the auth listener still needs to see it, so say so.
-        await ref
-            .read(reportProvider)
-            .degraded(
-              e,
-              stackTrace: stackTrace,
-              area: 'auth',
-              message: 'Sign-out after account deletion failed',
-            );
+        await report.degraded(
+          e,
+          stackTrace: stackTrace,
+          area: 'auth',
+          message: 'Sign-out after account deletion failed',
+        );
       }
 
       // Wait a moment for auth state listener to complete
       await Future.delayed(const Duration(milliseconds: 1000));
 
-      // Return current state (will be refreshed)
-      return state.requireValue;
+      // Return current state (will be refreshed). Sign-out usually disposes
+      // this controller by now (Sentry MEALVANA-ENDURANCE-BZ), so fall back
+      // to the state captured before the first await.
+      return ref.mounted ? state.requireValue : stateBefore.requireValue;
     });
+    // The save above completed; only the UI state is dropped when this
+    // auto-dispose controller was disposed during it.
+    if (ref.mounted) state = result;
   }
 }

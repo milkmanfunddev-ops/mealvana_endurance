@@ -45,9 +45,9 @@ class FormulaPinState {
 class FormulaPinController extends _$FormulaPinController {
   @override
   FutureOr<FormulaPinState> build() async {
-    final userRepo = await ref.read(userRepositoryProvider.future);
     final pinsRepo = ref.read(formulaPinsRepositoryProvider);
     final report = ref.read(reportProvider);
+    final userRepo = await ref.read(userRepositoryProvider.future);
 
     final user = await userRepo.getCurrentUser();
     final userId = user?.id;
@@ -110,12 +110,14 @@ class FormulaPinController extends _$FormulaPinController {
     final current = state.value;
     if (current == null) return;
 
+    final pinsRepo = ref.read(formulaPinsRepositoryProvider);
+    final report = ref.read(reportProvider);
+    final analytics = ref.read(appExternalDepsProvider).analytics;
     final userRepo = await ref.read(userRepositoryProvider.future);
     final user = await userRepo.getCurrentUser();
     final userId = user?.id;
     if (userId == null) return;
 
-    final pinsRepo = ref.read(formulaPinsRepositoryProvider);
     final wasPinned = current.pinnedTemplateIds.contains(templateId);
 
     // Optimistic flip — UI updates immediately.
@@ -125,7 +127,9 @@ class FormulaPinController extends _$FormulaPinController {
     } else {
       nextIds.add(templateId);
     }
-    state = AsyncData(current.copyWith(pinnedTemplateIds: nextIds));
+    if (ref.mounted) {
+      state = AsyncData(current.copyWith(pinnedTemplateIds: nextIds));
+    }
 
     try {
       if (wasPinned) {
@@ -139,8 +143,7 @@ class FormulaPinController extends _$FormulaPinController {
       }
     } catch (e, st) {
       // Revert optimistic state on failure.
-      state = AsyncData(current);
-      final report = ref.read(reportProvider);
+      if (ref.mounted) state = AsyncData(current);
       report.fault(
         e,
         stackTrace: st,
@@ -170,7 +173,7 @@ class FormulaPinController extends _$FormulaPinController {
     if (durationBrackets != null && durationBrackets.isNotEmpty) {
       payload['duration_brackets'] = durationBrackets;
     }
-    await _track(eventName, payload);
+    await analytics.track(eventName, properties: payload);
   }
 
   /// Convenience for Before card / detail — extracts scope metadata from a
@@ -242,10 +245,5 @@ class FormulaPinController extends _$FormulaPinController {
       // This fallback is only hit if togglePin is called without an override.
       TemplateKind.personalFormula => FormulaPhase.before,
     };
-  }
-
-  Future<void> _track(String event, Map<String, dynamic> properties) async {
-    final analytics = ref.read(appExternalDepsProvider).analytics;
-    await analytics.track(event, properties: properties);
   }
 }

@@ -93,7 +93,7 @@ class SyncCoordinator extends _$SyncCoordinator {
   }
 
   DataSyncService get _dataSyncService => ref.read(dataSyncServiceProvider);
-  Report get _report => ref.read(reportProvider);
+  Report get _report => ref.report;
 
   /// Ensures a repository's data is fresh (synced within staleness threshold).
   ///

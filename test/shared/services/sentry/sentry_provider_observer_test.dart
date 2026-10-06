@@ -4,6 +4,8 @@
 // A real `ProviderContainer` carries the observer and its retry hook; the
 // observer reports through a real `SentryReport` whose SDK transport is
 // in-memory. Assertions are on what left: events, their tags, breadcrumbs.
+import 'dart:async';
+
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:flutter_riverpod/misc.dart' show ProviderException;
 import 'package:flutter_test/flutter_test.dart';
@@ -332,4 +334,61 @@ void main() {
       expect(transport.events, hasLength(1));
     },
   );
+
+  // Ticket 18: Sentry MEALVANA-ENDURANCE-CN / DEV-6T / DEV-6D. A Patrol test
+  // unmounts the app while userIdProvider is retrying a signed-out build;
+  // every provider awaiting its `.future` then fails with "disposed during
+  // loading state". That is the teardown, not a bug.
+  test('a failure that arrives after the container was disposed is a '
+      'breadcrumb, not an event', () async {
+    final net = SentryProviderObserver(
+      report: report,
+      retryPolicy: (_, _) => const Duration(minutes: 1),
+    );
+    final scope = ProviderContainer(observers: [net], retry: net.retry);
+    final userId = FutureProvider<String>(
+      (ref) async => throw Exception('No user profile found'),
+      name: 'userIdProvider',
+    );
+    final allEvents = FutureProvider.autoDispose<int>(
+      (ref) async => (await ref.read(userId.future)).length,
+      name: 'allEventsProvider',
+    );
+    scope.listen(allEvents, (_, _) {});
+    await flush();
+
+    scope.dispose();
+    await flush();
+
+    expect(transport.events, isEmpty);
+    final skipped = ofCategory(await breadcrumbs(), riverpodDuplicateCategory);
+    expect(
+      skipped.map((c) => c.data?['reason']),
+      contains('container disposed'),
+    );
+  });
+
+  // Ticket 18: Sentry MEALVANA-ENDURANCE-CP / DEV-9D and the rest of the
+  // UnmountedRefException set. A disposed provider's own build that touches
+  // `ref` after an await lost a result nobody is waiting for.
+  test('a provider whose own build reads its Ref after disposal is Degraded, '
+      'tagged disposed_mid_build', () async {
+    final gate = Completer<void>();
+    final service = Provider<int>((ref) => 1, name: 'eventsServiceProvider');
+    final allEvents = FutureProvider.autoDispose<int>((ref) async {
+      await gate.future;
+      return ref.read(service);
+    }, name: 'allEventsProvider');
+
+    final sub = container.listen(allEvents, (_, _) {});
+    sub.close();
+    await container.pump();
+    gate.complete();
+    await flush();
+
+    final event = transport.events.single;
+    expect(event.level, SentryLevel.warning);
+    expect(event.tags, containsPair('riverpod_lifecycle', disposedMidBuildTag));
+    expect(event.tags, containsPair('provider', 'allEventsProvider'));
+  });
 }

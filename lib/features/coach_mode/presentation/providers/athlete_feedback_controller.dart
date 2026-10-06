@@ -35,19 +35,20 @@ class AthleteFeedbackController extends _$AthleteFeedbackController {
 
   /// Load local messages immediately, sync in background
   Future<AthleteFeedbackState> _loadMessages() async {
+    final coachService = _coachService;
     // 1. Load local data IMMEDIATELY
-    final coaches = await _coachService.getMyCoaches();
+    final coaches = await coachService.getMyCoaches();
 
     if (coaches.isEmpty) {
       // Still try background sync - we may not have synced relationships yet
-      unawaited(_backgroundSync());
+      if (ref.mounted) unawaited(_backgroundSync());
       return const AthleteFeedbackState();
     }
 
     final allMessages = <CoachMessage>[];
 
     for (final relationship in coaches) {
-      final messages = await _coachService.getConversation(
+      final messages = await coachService.getConversation(
         coachUserId: relationship.coachUserId,
         athleteUserId: relationship.athleteUserId,
       );
@@ -59,7 +60,7 @@ class AthleteFeedbackController extends _$AthleteFeedbackController {
     allMessages.sort((a, b) => b.createdAt.compareTo(a.createdAt));
 
     // 2. Background sync (fire-and-forget) - fixes bug where new coach messages weren't showing
-    unawaited(_backgroundSync());
+    if (ref.mounted) unawaited(_backgroundSync());
 
     return AthleteFeedbackState(allMessages: allMessages);
   }

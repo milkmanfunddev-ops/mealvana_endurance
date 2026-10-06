@@ -147,18 +147,6 @@ class SwapFoodController extends _$SwapFoodController {
   /// Note: Using `late` (not `late final`) because build() can be called multiple times
   late Report _report;
 
-  /// Helper to check if provider is still mounted before state updates
-  bool get _isMounted {
-    try {
-      // Accessing state when unmounted throws
-      state;
-      return true;
-    } catch (_) {
-      // The catch IS the mounted test (allow-list: reasoned).
-      return false;
-    }
-  }
-
   @override
   FutureOr<SwapFoodState> build(SwapFoodParams params) async {
     // Cache report immediately in build() to avoid UnmountedRefException
@@ -169,21 +157,32 @@ class SwapFoodController extends _$SwapFoodController {
   }
 
   Future<SwapFoodState> _loadFoodsForSwapping(SwapFoodParams params) async {
+    // Read before the first await: this auto-dispose provider can be
+    // disposed mid-load.
+    final authService = ref.read(authServiceProvider);
+    final syncCoordinator = ref.read(syncCoordinatorProvider.notifier);
+    final userFoodCrudService = ref.read(userFoodCrudServiceProvider);
+    final recommendationService = ref.read(foodRecommendationServiceProvider);
+    final templateFoodsRepo = ref.read(templateFoodsRepositoryProvider);
     try {
       // Get current user's ID — uses Supabase auth session to find the correct
       // local profile, matching how saveUserFood() stores the user_id.
-      final authService = ref.read(authServiceProvider);
       final currentUser = await authService.getCurrentUser();
       final userId = currentUser?.id ?? 'unknown';
 
       // Ensure user_foods are synced from remote (pulls down after re-login)
       try {
-        final userFoodsRepo = await ref.read(
-          userFoodsRepositoryProvider.future,
-        );
-        await ref
-            .read(syncCoordinatorProvider.notifier)
-            .ensureSynced('user_foods', userId, repository: userFoodsRepo);
+        // Disposed mid-load: the result is discarded, skip the sync.
+        if (ref.mounted) {
+          final userFoodsRepo = await ref.read(
+            userFoodsRepositoryProvider.future,
+          );
+          await syncCoordinator.ensureSynced(
+            'user_foods',
+            userId,
+            repository: userFoodsRepo,
+          );
+        }
       } catch (e) {
         _report.degraded(
           LoggedFault(
@@ -197,7 +196,12 @@ class SwapFoodController extends _$SwapFoodController {
 
       // Resolve product type ID for swap scenarios (needs to happen before recommendations)
       final String? productTypeId = params.originalFoodId != null
-          ? await _getProductTypeId(params.originalFoodId!)
+          ? await _getProductTypeId(
+              params.originalFoodId!,
+              templateFoodsRepo: templateFoodsRepo,
+              userFoodService: userFoodCrudService,
+              authService: authService,
+            )
           : null;
 
       // Run independent operations in parallel:
@@ -206,8 +210,8 @@ class SwapFoodController extends _$SwapFoodController {
       // 3. Load template foods for search + recommendations (local DB)
       final results = await Future.wait([
         authService.getFoodPreferences(userId),
-        ref.read(userFoodCrudServiceProvider).getUserFoods(userId),
-        _loadTemplateFoodsAsFood(userId),
+        userFoodCrudService.getUserFoods(userId),
+        _loadTemplateFoodsAsFood(userId, templateFoodsRepo),
       ]);
 
       final preferences = results[0] as Map<String, FoodPreference>? ?? {};
@@ -217,7 +221,6 @@ class SwapFoodController extends _$SwapFoodController {
       final userFoodIds = userFoods.map((f) => f.id).toSet();
 
       // Build recommendations from pre-loaded template foods (no network call)
-      final recommendationService = ref.read(foodRecommendationServiceProvider);
       final recommendations = recommendationService.sortByPreferences(
         _filterForRecommendations(
           templateFoods,
@@ -253,8 +256,10 @@ class SwapFoodController extends _$SwapFoodController {
 
   /// Load template foods from local Drift cache as Food domain objects.
   /// Falls back to remote sync if local cache is empty.
-  Future<List<Food>> _loadTemplateFoodsAsFood(String userId) async {
-    final templateFoodsRepo = ref.read(templateFoodsRepositoryProvider);
+  Future<List<Food>> _loadTemplateFoodsAsFood(
+    String userId,
+    TemplateFoodsRepository templateFoodsRepo,
+  ) async {
     var entries = await templateFoodsRepo.getAllTemplateFoods();
     if (entries.isEmpty) {
       final syncResult = await templateFoodsRepo.syncFromRemote(userId);
@@ -303,10 +308,17 @@ class SwapFoodController extends _$SwapFoodController {
   }
 
   /// Get product type ID for a food
-  Future<String?> _getProductTypeId(String foodId) async {
+  ///
+  /// Dependencies come from the caller, which reads them before its first
+  /// await (this runs mid-build, after async gaps).
+  Future<String?> _getProductTypeId(
+    String foodId, {
+    required TemplateFoodsRepository templateFoodsRepo,
+    required UserFoodCrudService userFoodService,
+    required AuthService authService,
+  }) async {
     try {
       // Try template foods first (local Drift query)
-      final templateFoodsRepo = ref.read(templateFoodsRepositoryProvider);
       final allTemplateFoods = await templateFoodsRepo.getAllTemplateFoods();
       for (final tf in allTemplateFoods) {
         if (tf.id == foodId) {
@@ -315,8 +327,6 @@ class SwapFoodController extends _$SwapFoodController {
       }
 
       // Search in user foods
-      final userFoodService = ref.read(userFoodCrudServiceProvider);
-      final authService = ref.read(authServiceProvider);
       final currentUser = await authService.getCurrentUser();
       final userId = currentUser?.id ?? 'unknown';
 
@@ -442,17 +452,19 @@ class SwapFoodController extends _$SwapFoodController {
     final dynamic activityDetailController;
     final dynamic controllerState;
 
+    // The notifier is read before the await so this provider being disposed
+    // mid-wait cannot strand the write.
     if (params.isCoachView) {
       final provider = coachActivityDetailControllerProvider(params.activityId);
-      controllerState = await ref.read(provider.future);
       activityDetailController = ref.read(provider.notifier);
+      controllerState = await ref.read(provider.future);
     } else {
       final provider = activityDetailControllerProvider(
         activityId: params.activityId,
         isNewActivity: params.isNewActivity,
       );
-      controllerState = await ref.read(provider.future);
       activityDetailController = ref.read(provider.notifier);
+      controllerState = await ref.read(provider.future);
     }
 
     if (controllerState.nutritionPlan == null) {
@@ -506,17 +518,19 @@ class SwapFoodController extends _$SwapFoodController {
     final dynamic activityDetailController;
     final dynamic controllerState;
 
+    // The notifier is read before the await so this provider being disposed
+    // mid-wait cannot strand the write.
     if (params.isCoachView) {
       final provider = coachActivityDetailControllerProvider(params.activityId);
-      controllerState = await ref.read(provider.future);
       activityDetailController = ref.read(provider.notifier);
+      controllerState = await ref.read(provider.future);
     } else {
       final provider = activityDetailControllerProvider(
         activityId: params.activityId,
         isNewActivity: params.isNewActivity,
       );
-      controllerState = await ref.read(provider.future);
       activityDetailController = ref.read(provider.notifier);
+      controllerState = await ref.read(provider.future);
     }
 
     if (controllerState.nutritionPlan == null) {
@@ -578,12 +592,12 @@ class SwapFoodController extends _$SwapFoodController {
     await future;
 
     // Select food after rebuild if provided
-    if (selectAfterRefresh != null && _isMounted) {
+    if (selectAfterRefresh != null && ref.mounted) {
       selectFood(selectAfterRefresh);
     }
 
     // Expand My Foods section after rebuild if requested
-    if (expandMyFoods && _isMounted) {
+    if (expandMyFoods && ref.mounted) {
       final freshState = state.value;
       if (freshState != null) {
         state = AsyncValue.data(freshState.copyWith(isMyFoodsExpanded: true));

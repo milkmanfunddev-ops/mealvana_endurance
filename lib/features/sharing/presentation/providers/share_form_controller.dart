@@ -61,11 +61,14 @@ class ShareFormController extends _$ShareFormController {
 
   @override
   FutureOr<ShareFormState> build(NutritionPlan nutritionPlan) async {
+    final database = _database;
+    final contentService = _contentService;
+
     // Get sender name from database
-    final user = await _database.userDao.getCurrentUserProfile();
+    final user = await database.userDao.getCurrentUserProfile();
     final userEntry = user != null
-        ? await (_database.select(
-            _database.userProfilesTable,
+        ? await (database.select(
+            database.userProfilesTable,
           )..where((u) => u.id.equals(user.id))).getSingleOrNull()
         : null;
     final senderName = userEntry?.senderName ?? '';
@@ -74,7 +77,7 @@ class ShareFormController extends _$ShareFormController {
         ? DateFormat('MMMM d, yyyy').format(nutritionPlan.runDateTime!)
         : 'TBD';
 
-    final defaultSubjectTemplate = _contentService.getValue(
+    final defaultSubjectTemplate = contentService.getValue(
       'sharing.subject_default',
       defaultValue: 'Nutrition Plan on {date}',
     );
@@ -83,7 +86,7 @@ class ShareFormController extends _$ShareFormController {
       activityDate,
     );
 
-    final defaultComments = _contentService.getValue(
+    final defaultComments = contentService.getValue(
       'sharing.comments_default',
       defaultValue: "Here's my nutrition plan from Mealvana Endurance",
     );
@@ -132,8 +135,16 @@ class ShareFormController extends _$ShareFormController {
 
     state = AsyncValue.data(currentState.copyWith(isSending: true));
 
+    // Read before the first await: the screen can leave mid-send and dispose
+    // this provider, but the send and its bookkeeping still finish.
+    final report = ref.read(reportProvider);
+    final pdfService = _pdfService;
+    final emailService = _emailService;
+    final analytics = _analytics;
+    final database = _database;
+
     try {
-      final pdfBytes = await _pdfService.generateNutritionPlanPdf(
+      final pdfBytes = await pdfService.generateNutritionPlanPdf(
         nutritionPlan: nutritionPlan,
         sentDate: DateTime.now(),
         senderName: currentState.senderName.isNotEmpty
@@ -152,7 +163,7 @@ class ShareFormController extends _$ShareFormController {
             : null,
       );
 
-      final result = await _emailService.sendNutritionPlanEmail(
+      final result = await emailService.sendNutritionPlanEmail(
         formData: formData,
         pdfBytes: pdfBytes,
       );
@@ -160,10 +171,10 @@ class ShareFormController extends _$ShareFormController {
       if (result.success) {
         // Save sender name to database if provided
         if (currentState.senderName.isNotEmpty) {
-          final user = await _database.userDao.getCurrentUserProfile();
+          final user = await database.userDao.getCurrentUserProfile();
           if (user != null) {
-            await (_database.update(
-              _database.userProfilesTable,
+            await (database.update(
+              database.userProfilesTable,
             )..where((u) => u.id.equals(user.id))).write(
               UserProfilesTableCompanion(
                 senderName: Value(currentState.senderName),
@@ -173,7 +184,7 @@ class ShareFormController extends _$ShareFormController {
           }
         }
 
-        await _analytics.track(
+        await analytics.track(
           'plan_shared',
           properties: {
             'plan_id': nutritionPlan.id,
@@ -182,7 +193,7 @@ class ShareFormController extends _$ShareFormController {
           },
         );
       } else {
-        await _analytics.track(
+        await analytics.track(
           'plan_share_failed',
           properties: {
             'plan_id': nutritionPlan.id,
@@ -191,22 +202,22 @@ class ShareFormController extends _$ShareFormController {
         );
       }
 
-      state = AsyncValue.data(
-        currentState.copyWith(isSending: false, lastResult: result),
-      );
+      if (ref.mounted) {
+        state = AsyncValue.data(
+          currentState.copyWith(isSending: false, lastResult: result),
+        );
+      }
 
       return result;
     } catch (e, stackTrace) {
-      ref
-          .read(reportProvider)
-          .fault(
-            e,
-            stackTrace: stackTrace,
-            area: 'sharing',
-            message: 'Plan share failed before the email was sent',
-            extra: {'planId': nutritionPlan.id},
-          );
-      await _analytics.track(
+      report.fault(
+        e,
+        stackTrace: stackTrace,
+        area: 'sharing',
+        message: 'Plan share failed before the email was sent',
+        extra: {'planId': nutritionPlan.id},
+      );
+      await analytics.track(
         'plan_share_failed',
         properties: {
           'plan_id': nutritionPlan.id,
@@ -215,9 +226,11 @@ class ShareFormController extends _$ShareFormController {
       );
 
       final errorResult = ShareResult.failure(error: e.toString());
-      state = AsyncValue.data(
-        currentState.copyWith(isSending: false, lastResult: errorResult),
-      );
+      if (ref.mounted) {
+        state = AsyncValue.data(
+          currentState.copyWith(isSending: false, lastResult: errorResult),
+        );
+      }
       return errorResult;
     }
   }

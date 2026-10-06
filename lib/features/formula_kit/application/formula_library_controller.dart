@@ -199,8 +199,8 @@ class FormulaLibraryController extends _$FormulaLibraryController {
     final postRepo = ref.read(postWorkoutTemplatesRepositoryProvider);
     final templateFoodsRepo = ref.read(templateFoodsRepositoryProvider);
     final pinsRepo = ref.read(formulaPinsRepositoryProvider);
-    final userRepo = await ref.read(userRepositoryProvider.future);
     final report = ref.read(reportProvider);
+    final userRepo = await ref.read(userRepositoryProvider.future);
 
     // On-demand sync: only if Drift cache is empty/stale, fetch from Supabase
     // before reading. Keeps the screen useful offline for repeat visits.
@@ -624,6 +624,9 @@ class FormulaLibraryController extends _$FormulaLibraryController {
     String formulaId,
     FormulaPhase phase,
   ) async {
+    final preWorkoutRepo = ref.read(preWorkoutTemplatesRepositoryProvider);
+    final duringRepo = ref.read(duringWorkoutTemplatesRepositoryProvider);
+    final postRepo = ref.read(postWorkoutTemplatesRepositoryProvider);
     final templateFoods = await ref
         .read(templateFoodsRepositoryProvider)
         .getAllTemplateFoods();
@@ -636,17 +639,13 @@ class FormulaLibraryController extends _$FormulaLibraryController {
 
     switch (phase) {
       case FormulaPhase.before:
-        final entries = await ref
-            .read(preWorkoutTemplatesRepositoryProvider)
-            .getAll();
+        final entries = await preWorkoutRepo.getAll();
         final e = _firstById(entries, formulaId, (x) => x.id);
         if (e == null) return const [];
         names = _decodeStringArray(e.componentFoodNames);
         quantities = _decodeQuantityMap(e.componentQuantities);
       case FormulaPhase.during:
-        final entries = await ref
-            .read(duringWorkoutTemplatesRepositoryProvider)
-            .getAll();
+        final entries = await duringRepo.getAll();
         final e = _firstById(entries, formulaId, (x) => x.id);
         if (e == null) return const [];
         names = _decodeStringArray(e.componentFoodNames);
@@ -655,9 +654,7 @@ class FormulaLibraryController extends _$FormulaLibraryController {
       // quantity-less in the editor (the solver derives amounts), so this
       // default is never user-visible.
       case FormulaPhase.after:
-        final entries = await ref
-            .read(postWorkoutTemplatesRepositoryProvider)
-            .getAll();
+        final entries = await postRepo.getAll();
         final e = _firstById(entries, formulaId, (x) => x.id);
         if (e == null) return const [];
         names = _decodeStringArray(e.componentFoodNames);

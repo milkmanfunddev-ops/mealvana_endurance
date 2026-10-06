@@ -23,7 +23,7 @@ class BrickActionsController extends _$BrickActionsController {
   ActivitiesService get _service => ref.read(activitiesServiceProvider);
   ActivitiesRepository get _repository =>
       ref.read(activitiesRepositoryProvider);
-  Report get _report => ref.read(reportProvider);
+  Report get _report => ref.report;
   SchemaRecoveryService get _schemaRecovery =>
       ref.read(schemaRecoveryServiceProvider);
 

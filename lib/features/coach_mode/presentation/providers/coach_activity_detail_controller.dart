@@ -76,7 +76,7 @@ class CoachActivityDetailState {
 /// Controller for the coach view of an activity
 @riverpod
 class CoachActivityDetailController extends _$CoachActivityDetailController {
-  Report get _report => ref.read(reportProvider);
+  Report get _report => ref.report;
 
   void _trackAnalytics(String event, Map<String, dynamic> properties) {
     try {
@@ -105,13 +105,14 @@ class CoachActivityDetailController extends _$CoachActivityDetailController {
 
   Future<CoachActivityDetailState> _loadActivity(String activityId) async {
     final repository = ref.read(activitiesRepositoryProvider);
+    final report = _report;
     final activity = await repository.getRemoteActivityById(activityId);
 
     if (activity == null) {
       throw Exception('Activity not found');
     }
 
-    _report.info(
+    report.info(
       'Coach activity detail loaded remote activity',
       area: 'coach_mode',
       data: {
@@ -126,7 +127,7 @@ class CoachActivityDetailController extends _$CoachActivityDetailController {
     NutritionPlan? plan;
     if (activity.nutritionPlanData != null) {
       plan = NutritionPlanMapper.fromJson(activity.nutritionPlanData!);
-      _report.info(
+      report.info(
         'Coach activity detail parsed nutrition plan',
         area: 'coach_mode',
         data: {'activityId': activity.id, 'sectionCount': plan.sections.length},
@@ -165,10 +166,10 @@ class CoachActivityDetailController extends _$CoachActivityDetailController {
 
     state = AsyncData(currentState.copyWith(isSaving: true));
 
-    state = await AsyncValue.guard(() async {
+    final activitiesService = ref.read(activitiesServiceProvider);
+    final result = await AsyncValue.guard(() async {
       final activity = currentState.activity!;
       final coachUserId = await ref.read(userIdProvider.future);
-      final activitiesService = ref.read(activitiesServiceProvider);
 
       final updatedActivity = activity.copyWith(
         scheduledDateTime: currentState.scheduledDateTime,
@@ -188,6 +189,7 @@ class CoachActivityDetailController extends _$CoachActivityDetailController {
         hasUnsavedChanges: false,
       );
     });
+    if (ref.mounted) state = result;
   }
 
   /// Delete the current activity as a coach.
@@ -196,20 +198,20 @@ class CoachActivityDetailController extends _$CoachActivityDetailController {
     final currentState = state.value;
     final activity = currentState?.activity;
     if (activity == null) return false;
+    final activitiesService = ref.read(activitiesServiceProvider);
+    final report = _report;
 
     try {
       final coachUserId = await ref.read(userIdProvider.future);
-      await ref
-          .read(activitiesServiceProvider)
-          .deleteActivity(
-            deviceId: coachUserId,
-            activityId: activity.id,
-            currentUserId: coachUserId,
-            activityOwnerId: activity.userId,
-          );
+      await activitiesService.deleteActivity(
+        deviceId: coachUserId,
+        activityId: activity.id,
+        currentUserId: coachUserId,
+        activityOwnerId: activity.userId,
+      );
       return true;
     } catch (e, stackTrace) {
-      _report.fault(
+      report.fault(
         e,
         stackTrace: stackTrace,
         area: 'coach_mode',
@@ -323,6 +325,8 @@ class CoachActivityDetailController extends _$CoachActivityDetailController {
     final currentPlan = currentState!.nutritionPlan!;
 
     state = AsyncData(currentState.copyWith(hasUnsavedChanges: true));
+    final activitiesService = ref.read(activitiesServiceProvider);
+    final report = _report;
 
     try {
       final updatedSections = currentPlan.sections.map((section) {
@@ -348,7 +352,6 @@ class CoachActivityDetailController extends _$CoachActivityDetailController {
       final activity = currentState.activity;
       if (activity != null) {
         final coachUserId = await ref.read(userIdProvider.future);
-        final activitiesService = ref.read(activitiesServiceProvider);
         final updatedActivity = activity.copyWith(
           nutritionPlanData: updatedPlan.toJson(),
           updatedAt: DateTime.now(),
@@ -361,13 +364,13 @@ class CoachActivityDetailController extends _$CoachActivityDetailController {
         );
       }
     } catch (error, stackTrace) {
-      _report.fault(
+      report.fault(
         error,
         stackTrace: stackTrace,
         area: 'coach_mode',
         message: 'Coach nutrition plan update failed',
       );
-      state = AsyncValue.error(error, stackTrace);
+      if (ref.mounted) state = AsyncValue.error(error, stackTrace);
     }
   }
 
@@ -483,10 +486,10 @@ class CoachActivityDetailController extends _$CoachActivityDetailController {
 
     state = AsyncData(currentState.copyWith(isCompleting: true));
 
-    state = await AsyncValue.guard(() async {
+    final activitiesService = ref.read(activitiesServiceProvider);
+    final result = await AsyncValue.guard(() async {
       final activity = currentState.activity!;
       final coachUserId = await ref.read(userIdProvider.future);
-      final activitiesService = ref.read(activitiesServiceProvider);
 
       final completedActivity = activity.copyWith(
         status: ActivityStatus.completed,
@@ -507,6 +510,7 @@ class CoachActivityDetailController extends _$CoachActivityDetailController {
         activity: completedActivity,
       );
     });
+    if (ref.mounted) state = result;
   }
 
   /// Update completion rating for a completed activity (coach view)
@@ -514,12 +518,12 @@ class CoachActivityDetailController extends _$CoachActivityDetailController {
     final currentState = state.value;
     if (currentState == null || currentState.activity == null) return;
 
-    state = await AsyncValue.guard(() async {
+    final activitiesService = ref.read(activitiesServiceProvider);
+    final result = await AsyncValue.guard(() async {
       final updatedActivity = currentState.activity!.copyWith(
         completionRating: rating,
       );
       final coachUserId = await ref.read(userIdProvider.future);
-      final activitiesService = ref.read(activitiesServiceProvider);
 
       await activitiesService.updateActivity(
         deviceId: coachUserId,
@@ -530,6 +534,7 @@ class CoachActivityDetailController extends _$CoachActivityDetailController {
 
       return currentState.copyWith(activity: updatedActivity);
     });
+    if (ref.mounted) state = result;
   }
 
   /// Toggle between planned and actual view modes for completed activities.
@@ -580,12 +585,12 @@ class CoachActivityDetailController extends _$CoachActivityDetailController {
     final currentState = state.value;
     if (currentState == null || currentState.activity == null) return;
 
-    state = await AsyncValue.guard(() async {
+    final activitiesService = ref.read(activitiesServiceProvider);
+    final result = await AsyncValue.guard(() async {
       final updatedActivity = currentState.activity!.copyWith(
         completionNotes: notes,
       );
       final coachUserId = await ref.read(userIdProvider.future);
-      final activitiesService = ref.read(activitiesServiceProvider);
 
       await activitiesService.updateActivity(
         deviceId: coachUserId,
@@ -596,5 +601,6 @@ class CoachActivityDetailController extends _$CoachActivityDetailController {
 
       return currentState.copyWith(activity: updatedActivity);
     });
+    if (ref.mounted) state = result;
   }
 }

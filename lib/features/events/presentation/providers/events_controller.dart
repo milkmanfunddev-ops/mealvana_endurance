@@ -31,7 +31,9 @@ class EventsController extends _$EventsController {
     // 1. Load local data IMMEDIATELY
     final localData = await service.getAllEvents(userId);
 
-    // 2. Background sync (fire-and-forget)
+    // 2. Background sync (fire-and-forget). It reads `ref`, so skip it when
+    // this build was disposed during the awaits above; its result is discarded.
+    if (!ref.mounted) return localData;
     unawaited(_backgroundSync(userId));
 
     return localData;
@@ -268,27 +270,28 @@ class EventsController extends _$EventsController {
   /// or when athlete needs to see coach-made changes immediately.
   Future<void> forceRefresh() async {
     final report = ref.read(reportProvider);
+    final syncCoordinator = ref.read(syncCoordinatorProvider.notifier);
+    final repository = ref.read(eventsRepositoryProvider);
 
     try {
       final userId = await ref.read(userIdProvider.future);
 
       // Force sync from Supabase (bypasses 24h staleness check)
-      await ref
-          .read(syncCoordinatorProvider.notifier)
-          .forceSyncRepository(
-            'events',
-            userId,
-            repository: ref.read(eventsRepositoryProvider),
-          );
+      await syncCoordinator.forceSyncRepository(
+        'events',
+        userId,
+        repository: repository,
+      );
 
       // Invalidate to reload with fresh data
+      if (!ref.mounted) return;
       ref.invalidateSelf();
       ref.invalidate(nextUpcomingEventProvider);
       ref.invalidate(allEventsProvider);
     } catch (e) {
       report.fault(e, area: 'events', message: 'Error during force refresh');
       // Still invalidate to show whatever data we have
-      ref.invalidateSelf();
+      if (ref.mounted) ref.invalidateSelf();
     }
   }
 }
@@ -302,14 +305,19 @@ Future<({Activity? activity, Event event})> eventDetail(
   String eventId, {
   String? forUserId,
 }) async {
+  // Every `ref` read happens before the first await: this auto-dispose family
+  // is often disposed mid-load when the detail screen pops, and a read after
+  // that throws UnmountedRefException (Sentry MEALVANA-ENDURANCE-D1).
   final report = ref.read(reportProvider);
+  final repo = ref.read(eventsRepositoryProvider);
+  final syncCoordinator = ref.read(syncCoordinatorProvider.notifier);
+  final eventsService = ref.read(eventsServiceProvider);
+  final activitiesService = ref.read(activitiesServiceProvider);
   final String userId = forUserId ?? await ref.read(userIdProvider.future);
 
   // Sync events from remote if stale (respects 1-hour staleness threshold).
   // This ensures coach-created changes (e.g. hasCarbLoading flag) are visible.
   try {
-    final repo = ref.read(eventsRepositoryProvider);
-    final syncCoordinator = ref.read(syncCoordinatorProvider.notifier);
     await syncCoordinator.ensureSynced('events', userId, repository: repo);
   } catch (e) {
     report.degraded(
@@ -319,8 +327,6 @@ Future<({Activity? activity, Event event})> eventDetail(
     );
   }
 
-  final eventsService = ref.read(eventsServiceProvider);
-  final activitiesService = ref.read(activitiesServiceProvider);
   final event = await eventsService.getEventById(userId, eventId);
   if (event == null) {
     report.fault(
@@ -345,8 +351,14 @@ Future<({Activity? activity, Event event})> eventDetail(
 /// Provider for getting all events
 @riverpod
 Future<List<Event>> allEvents(Ref ref) async {
-  final userId = await ref.read(userIdProvider.future);
+  // Read the service before awaiting the user id: the screens that watch this
+  // auto-dispose provider often leave while the id is still loading, and a
+  // `ref.read` after that throws UnmountedRefException (Sentry
+  // MEALVANA-ENDURANCE-CP / DEV-9D). Once disposed, the result is discarded,
+  // so skip the query too.
   final service = ref.read(eventsServiceProvider);
+  final userId = await ref.read(userIdProvider.future);
+  if (!ref.mounted) return const <Event>[];
   return await service.getAllEvents(userId);
 }
 
@@ -354,8 +366,8 @@ Future<List<Event>> allEvents(Ref ref) async {
 @riverpod
 Future<({Event event, DateTime eventDate})?> nextUpcomingEvent(Ref ref) async {
   final now = DateTime.now();
-  final userId = await ref.read(userIdProvider.future);
   final eventsService = ref.read(eventsServiceProvider);
+  final userId = await ref.read(userIdProvider.future);
 
   // Get all events
   final events = await eventsService.getAllEvents(userId);

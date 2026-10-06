@@ -863,10 +863,10 @@ class AuthMigrationService {
 /// Uses a simple async function provider (NOT AsyncNotifier) to prevent disposal during auth flows
 @riverpod
 Future<AuthMigrationService> authMigrationService(Ref ref) async {
-  final userRepository = await ref.watch(userRepositoryProvider.future);
   final database = ref.watch(appDatabaseProvider);
   final supabase = ref.watch(appExternalDepsProvider).supabaseClient;
   final report = ref.watch(reportProvider);
+  final userRepository = await ref.watch(userRepositoryProvider.future);
 
   return AuthMigrationService(
     userRepository: userRepository,

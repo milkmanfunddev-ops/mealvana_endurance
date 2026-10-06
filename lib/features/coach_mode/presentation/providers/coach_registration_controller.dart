@@ -10,7 +10,7 @@ part 'coach_registration_controller.g.dart';
 @riverpod
 class CoachRegistrationController extends _$CoachRegistrationController {
   CoachService get _coachService => ref.read(coachServiceProvider);
-  Report get _report => ref.read(reportProvider);
+  Report get _report => ref.report;
 
   @override
   FutureOr<void> build() {
@@ -26,9 +26,11 @@ class CoachRegistrationController extends _$CoachRegistrationController {
     String? bio,
   }) async {
     state = const AsyncLoading();
+    final coachService = _coachService;
+    final report = _report;
 
-    state = await AsyncValue.guard(() async {
-      final success = await _coachService.submitCoachApplication(
+    final result = await AsyncValue.guard(() async {
+      final success = await coachService.submitCoachApplication(
         firstName: firstName,
         lastName: lastName,
         email: email,
@@ -36,7 +38,7 @@ class CoachRegistrationController extends _$CoachRegistrationController {
       );
 
       if (!success) {
-        _report.degraded(
+        report.degraded(
           LoggedFault(
             'Coach application submission failed',
             context: 'COACH_REGISTRATION_CONTROLLER',
@@ -49,6 +51,7 @@ class CoachRegistrationController extends _$CoachRegistrationController {
       return;
     });
 
-    return !state.hasError;
+    if (ref.mounted) state = result;
+    return !result.hasError;
   }
 }

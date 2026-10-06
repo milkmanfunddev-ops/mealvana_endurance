@@ -17,25 +17,25 @@ class InviteAthleteController extends _$InviteAthleteController {
   /// Send an invitation to an athlete
   Future<bool> inviteAthlete({required String athleteUserId}) async {
     state = const AsyncLoading();
+    final coachService = _coachService;
+    final report = ref.read(reportProvider);
 
     try {
-      final relationship = await _coachService.inviteAthlete(
+      final relationship = await coachService.inviteAthlete(
         athleteUserId: athleteUserId,
       );
 
-      state = const AsyncData(null);
+      if (ref.mounted) state = const AsyncData(null);
       return relationship != null;
     } catch (e, stack) {
-      ref
-          .read(reportProvider)
-          .fault(
-            e,
-            stackTrace: stack,
-            area: 'coach_mode',
-            message: 'Invite athlete failed',
-            extra: {'athleteUserId': athleteUserId},
-          );
-      state = AsyncError(e, stack);
+      report.fault(
+        e,
+        stackTrace: stack,
+        area: 'coach_mode',
+        message: 'Invite athlete failed',
+        extra: {'athleteUserId': athleteUserId},
+      );
+      if (ref.mounted) state = AsyncError(e, stack);
       return false;
     }
   }
