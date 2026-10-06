@@ -46,7 +46,16 @@ enum ExpectedFailure {
 
   /// The SDK reported an HTTP failure whose caller already substitutes a
   /// fallback (today: the weather forecast). Not offline; handled.
-  handledFallback('handled_fallback');
+  handledFallback('handled_fallback'),
+
+  /// The athlete is not entitled to Pro and the server said so (Vana's 403
+  /// `pro_required`). The UI routes to the paywall; nothing failed.
+  notEntitled('not_entitled'),
+
+  /// A typed refusal the UI already shows (Vana's 429, a Code that could not
+  /// be redeemed). Where it has a cause, the cause is reported at the catch
+  /// site that built the refusal; the refusal itself is not a second Fault.
+  handledRefusal('handled_refusal');
 
   const ExpectedFailure(this.tag);
 
@@ -132,6 +141,22 @@ expectedFailureNeedles = <MapEntry<String, ExpectedFailure>>[
   MapEntry('Invalid Refresh Token', ExpectedFailure.expiredSession),
   MapEntry('JWT expired', ExpectedFailure.expiredSession),
   MapEntry('session_expired', ExpectedFailure.expiredSession),
+  // Ticket 24 (DEV-90, DEV-91): Vana's 401, or no session at all. The
+  // transport already sends the HTTP status as a Degraded; the exception it
+  // throws then fails the provider, and the Riverpod observer used to send it
+  // again as a Fault.
+  MapEntry('VanaUnauthenticatedException', ExpectedFailure.expiredSession),
+  // --- Expected refusals (ticket 24) ---
+  // DEV-9C: Vana's 403 `pro_required`, same path as the 401 above.
+  MapEntry('ProRequiredException', ExpectedFailure.notEntitled),
+  // Vana's 429; the UI says "give me N seconds".
+  MapEntry('VanaRateLimitedException', ExpectedFailure.handledRefusal),
+  // DEV-9A: the Code entry's `CodeRedeemFailure(unavailable | signInRequired)`
+  // lands in the notifier's AsyncError and reached Sentry as a Fault through
+  // the observer. The entry shows "try again"; the cause (a 5xx from
+  // redeem-code, offline) is reported where `_invoke` caught it, and the
+  // function reports its own 5xx from the edge.
+  MapEntry('CodeRedeemFailure(', ExpectedFailure.handledRefusal),
   // --- Sign-in with a provider account that has no Mealvana account ---
   MapEntry('OAuthAccountNotFoundException', ExpectedFailure.accountNotFound),
   // --- RevenueCat / StoreKit: cancelled purchase, store unreachable ---

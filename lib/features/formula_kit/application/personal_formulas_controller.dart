@@ -53,12 +53,14 @@ class PersonalFormulasController extends _$PersonalFormulasController {
     final formulas = await repo.getFormulasForUser(userId);
     // FP-4c/FP-8: the cards and editor evaluate conflicts from component
     // metadata; refresh it from the catalog so pre-fix rows (no keys, or
-    // stale empty snapshots) label correctly.
+    // stale empty snapshots) label correctly. One catalog read for the whole
+    // list (ticket 24, Sentry DEV-89: it was one per formula).
+    final hydrated = await hydrateComponentConflictMetadataAll(ref, [
+      for (final f in formulas) f.components,
+    ]);
     return [
-      for (final f in formulas)
-        f.copyWith(
-          components: await hydrateComponentConflictMetadata(ref, f.components),
-        ),
+      for (var i = 0; i < formulas.length; i++)
+        formulas[i].copyWith(components: hydrated[i]),
     ];
   }
 

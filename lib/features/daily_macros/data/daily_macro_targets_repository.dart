@@ -169,42 +169,59 @@ class DailyMacroTargetsRepository {
     return map;
   }
 
+  static const String _upsertLocalSql =
+      '''INSERT OR REPLACE INTO daily_macro_targets
+         (id, user_id, target_date, carb_g, prot_g, fat_g, tdee, rmr, session_kcal,
+          neat_kcal, tef_kcal, mode, ea, ea_status, calculation_input,
+          algorithm_version, needs_upload, created_at, updated_at)
+         VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)''';
+
   /// Save macro targets to local Drift database
   Future<void> saveToLocal(DailyMacroTargets targets) async {
+    await _database.customStatement(_upsertLocalSql, _localRow(targets));
+  }
+
+  /// Save several days in one batch: one transaction, one round-trip.
+  ///
+  /// Ticket 24 (Sentry DEV-97, N+1 on `main`): the week calculation saved
+  /// each computed day with its own INSERT (and its own remote POST, see
+  /// [saveAllToRemote]).
+  Future<void> saveAllToLocal(List<DailyMacroTargets> days) async {
+    if (days.isEmpty) return;
+    await _database.batch((batch) {
+      for (final targets in days) {
+        batch.customStatement(_upsertLocalSql, _localRow(targets));
+      }
+    });
+  }
+
+  static List<Object?> _localRow(DailyMacroTargets targets) {
     final normalizedDate = DateTime(
       targets.targetDate.year,
       targets.targetDate.month,
       targets.targetDate.day,
     );
-
-    await _database.customStatement(
-      '''INSERT OR REPLACE INTO daily_macro_targets
-         (id, user_id, target_date, carb_g, prot_g, fat_g, tdee, rmr, session_kcal,
-          neat_kcal, tef_kcal, mode, ea, ea_status, calculation_input,
-          algorithm_version, needs_upload, created_at, updated_at)
-         VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)''',
-      [
-        targets.id,
-        targets.userId,
-        normalizedDate.millisecondsSinceEpoch,
-        targets.carbG,
-        targets.protG,
-        targets.fatG,
-        targets.tdee,
-        targets.rmr,
-        targets.sessionKcal,
-        targets.neatKcal,
-        targets.tefKcal,
-        targets.mode,
-        targets.ea,
-        targets.eaStatus?.dbValue,
-        _encodeCalculationInput(targets),
-        targets.algorithmVersion,
-        0, // needs_upload = false (just calculated)
-        targets.createdAt.millisecondsSinceEpoch,
-        targets.updatedAt.millisecondsSinceEpoch,
-      ],
-    );
+    return [
+      targets.id,
+      targets.userId,
+      normalizedDate.millisecondsSinceEpoch,
+      targets.carbG,
+      targets.protG,
+      targets.fatG,
+      targets.tdee,
+      targets.rmr,
+      targets.sessionKcal,
+      targets.neatKcal,
+      targets.tefKcal,
+      targets.mode,
+      targets.ea,
+      targets.eaStatus?.dbValue,
+      _encodeCalculationInput(targets),
+      targets.algorithmVersion,
+      0, // needs_upload = false (just calculated)
+      targets.createdAt.millisecondsSinceEpoch,
+      targets.updatedAt.millisecondsSinceEpoch,
+    ];
   }
 
   /// The engine inputs the domain model carries but the scalar columns don't.
@@ -249,11 +266,21 @@ class DailyMacroTargetsRepository {
   }
 
   /// Save macro targets to Supabase
-  Future<void> saveToRemote(DailyMacroTargets targets) async {
+  Future<void> saveToRemote(DailyMacroTargets targets) =>
+      _upsertRemote(targets.toJson(), days: 1);
+
+  /// Save several days to Supabase in ONE upsert request (ticket 24, Sentry
+  /// DEV-97: the week calculation sent one POST per day).
+  Future<void> saveAllToRemote(List<DailyMacroTargets> days) async {
+    if (days.isEmpty) return;
+    await _upsertRemote([for (final d in days) d.toJson()], days: days.length);
+  }
+
+  Future<void> _upsertRemote(Object values, {required int days}) async {
     try {
       await _supabase
           .from('daily_macro_targets')
-          .upsert(targets.toJson(), onConflict: 'user_id,target_date');
+          .upsert(values, onConflict: 'user_id,target_date');
     } catch (e, st) {
       // Don't rethrow - remote save failures shouldn't block the UI. Do make
       // them visible: RLS/user-id mismatches previously disappeared here and
@@ -263,7 +290,7 @@ class DailyMacroTargetsRepository {
         await _r.note(
           'Daily macro remote save failed again this session',
           area: _area,
-          data: {'error_type': e.runtimeType.toString()},
+          data: {'error_type': e.runtimeType.toString(), 'days': days},
         );
         return;
       }
@@ -274,6 +301,7 @@ class DailyMacroTargetsRepository {
         area: _area,
         message: 'Daily macro remote save failed',
         tags: {'operation': 'remote_cache_save'},
+        extra: {'days': days},
       );
     }
   }
