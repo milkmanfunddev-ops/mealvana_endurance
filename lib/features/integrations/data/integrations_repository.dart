@@ -134,6 +134,56 @@ class IntegrationsRepository with SyncableRepository {
     }
   }
 
+  /// Whether rows owned by [userId] can pass the `integrations` policies and
+  /// foreign key right now. Every remote write (the dirty-record pass and the
+  /// immediate push) asks this first; a `false` leaves the rows dirty for the
+  /// next pass, which is the offline-first contract.
+  ///
+  /// 1. Session guard (RLS 42501, Sentry MEALVANA-ENDURANCE-3W). The insert
+  ///    policy is `auth.uid() = user_id`. A writer that captured the previous
+  ///    user's id (a provider sync or connect still in flight across sign-out,
+  ///    then Get Started on the welcome screen signs in a fresh anonymous
+  ///    user) used to push that row under the new session and the server
+  ///    rejected it. Signed out entirely is the same mismatch. The rows stay
+  ///    dirty under their owner and upload when that owner signs back in.
+  /// 2. Parent-row guard (FK 23503, same issue). During onboarding a provider
+  ///    is connected before the profile is written remotely, so the upsert
+  ///    lands before the `users` row exists. The sync graph's
+  ///    `integrations: ['users']` only asks the users repository to sync
+  ///    first; it does not guarantee a row was produced.
+  Future<bool> _remoteWriteAllowed(
+    String userId, {
+    required String path,
+    required int rows,
+  }) async {
+    final sessionUserId = _supabase.auth.currentUser?.id;
+    if (sessionUserId != userId) {
+      // D9: a skipped sync step, so a promoted Note.
+      await _r.note(
+        'Integration upload skipped: rows belong to a user other than the session',
+        area: 'sync',
+        data: {
+          'rowUserId': userId,
+          'sessionUserId': sessionUserId,
+          'hasSession': sessionUserId != null,
+          'path': path,
+          'deferred': rows,
+        },
+      );
+      return false;
+    }
+
+    if (!await _remoteUserExists(userId)) {
+      _r.info(
+        'Deferring integration upload: user row not yet remote',
+        area: 'integrations',
+        data: {'userId': userId, 'path': path, 'deferred': rows},
+      );
+      return false;
+    }
+    return true;
+  }
+
   @override
   Future<UploadResult> uploadDirtyRecords(String userId) async {
     try {
@@ -147,25 +197,11 @@ class IntegrationsRepository with SyncableRepository {
         return UploadResult.nothingToUpload();
       }
 
-      // Parent-row guard for integrations_user_id_fkey.
-      //
-      // During onboarding the user connects a training provider before the
-      // profile has been written remotely, so this upsert lands before the
-      // `users` row exists and Postgres rejects it with 23503 (Sentry
-      // MEALVANA-ENDURANCE-3W — 339 occurrences, still live on 1.22.0+88).
-      //
-      // The sync graph already declares `integrations: ['users']`, but that
-      // only guarantees the users repository is *asked* to sync first — it
-      // does not guarantee a row was actually produced, which is exactly the
-      // onboarding case. So check for the parent directly and, when it isn't
-      // there yet, leave the rows dirty and defer. They upload on the next
-      // sync once the profile lands, which is the offline-first contract.
-      if (!await _remoteUserExists(userId)) {
-        _r.info(
-          'Deferring integration upload: user row not yet remote',
-          area: 'integrations',
-          data: {'userId': userId, 'deferred': dirty.length},
-        );
+      if (!await _remoteWriteAllowed(
+        userId,
+        path: 'upload_dirty',
+        rows: dirty.length,
+      )) {
         return UploadResult.nothingToUpload();
       }
 
@@ -534,6 +570,14 @@ class IntegrationsRepository with SyncableRepository {
   Future<void> _pushToSupabase(IntegrationModel model) async {
     if (model.id == null) return;
     try {
+      if (!await _remoteWriteAllowed(
+        model.userId,
+        path: 'immediate',
+        rows: 1,
+      )) {
+        return;
+      }
+
       await _supabase
           .from('integrations')
           .upsert(_modelToSupabaseJson(model), onConflict: 'id');
