@@ -32,7 +32,7 @@ void main() {
     report = RecordingReport();
     mockSupabase = MockSupabaseClient();
 
-    repository = FeedbackRepository(database, report, mockSupabase);
+    repository = FeedbackRepository(database, mockSupabase, report);
   });
 
   tearDown(() async {
