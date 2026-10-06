@@ -1,4 +1,4 @@
-import '../../../shared/services/report/report.dart';
+import '../../../shared/domain/decode_issue.dart';
 import 'ai_coach_ui_part.dart';
 
 /// Role of a message participant in a Mealvana AI conversation.
@@ -52,7 +52,10 @@ class AiCoachMessage {
   /// For the in-flight streaming message they are accumulated live.
   final List<AiCoachUiPart> uiParts;
 
-  factory AiCoachMessage.fromJson(Map<String, dynamic> json) {
+  factory AiCoachMessage.fromJson(
+    Map<String, dynamic> json, {
+    DecodeIssue onIssue = ignoreDecodeIssue,
+  }) {
     // Parse ui_parts from metadata.ui_parts (jsonb).
     final uiParts = <AiCoachUiPart>[];
     try {
@@ -62,7 +65,7 @@ class AiCoachMessage {
         if (rawParts is List) {
           for (final p in rawParts) {
             if (p is Map<String, dynamic>) {
-              final part = AiCoachUiPart.fromJson(p);
+              final part = AiCoachUiPart.fromJson(p, onIssue: onIssue);
               if (part != null) uiParts.add(part);
             }
           }
@@ -70,12 +73,11 @@ class AiCoachMessage {
       }
     } catch (e, st) {
       // Malformed metadata — uiParts stays empty; the message still renders.
-      SentryReport.global.degraded(
-        e,
+      onIssue(
+        'jade_messages metadata.ui_parts malformed on message '
+        '${json['id']}; parts dropped',
+        error: e,
         stackTrace: st,
-        area: 'ai_coach',
-        message: 'jade_messages metadata.ui_parts malformed; parts dropped',
-        extra: {'message_id': json['id']?.toString()},
       );
     }
 

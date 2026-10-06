@@ -4,11 +4,11 @@ import 'package:riverpod_annotation/riverpod_annotation.dart';
 import 'package:uuid/uuid.dart';
 
 import '../../../../shared/providers/user_id_provider.dart';
-import '../../../../shared/services/logging_service.dart';
 import '../../data/personal_templates_repository.dart';
 import '../../domain/personal_template.dart';
 import '../../../activities/domain/activity.dart';
 import '../../../nutrition_plan/domain/nutrition_plan.dart';
+import '../../../../shared/services/report/report.dart';
 
 part 'personal_templates_controller.g.dart';
 
@@ -23,7 +23,7 @@ enum SaveTemplateResult { success, limitReached, error }
 class PersonalTemplatesController extends _$PersonalTemplatesController {
   PersonalTemplatesRepository get _repository =>
       ref.read(personalTemplatesRepositoryProvider);
-  AppLogger get _logger => ref.read(appLoggerProvider);
+  Report get _report => ref.read(reportProvider);
 
   @override
   FutureOr<List<PersonalTemplate>> build() async {
@@ -93,11 +93,11 @@ class PersonalTemplatesController extends _$PersonalTemplatesController {
       return SaveTemplateResult.success;
     } catch (e, stackTrace) {
       if (ref.mounted) {
-        _logger.error(
-          'Failed to save template',
-          context: 'PERSONAL_TEMPLATES_CONTROLLER',
-          error: e,
+        _report.fault(
+          e,
           stackTrace: stackTrace,
+          area: 'personal_templates',
+          message: 'Failed to save template',
         );
       }
       return SaveTemplateResult.error;
@@ -130,11 +130,11 @@ class PersonalTemplatesController extends _$PersonalTemplatesController {
       ref.invalidateSelf();
     } catch (e, stackTrace) {
       if (!ref.mounted) rethrow;
-      _logger.error(
-        'Failed to rename template',
-        context: 'PERSONAL_TEMPLATES_CONTROLLER',
-        error: e,
+      _report.fault(
+        e,
         stackTrace: stackTrace,
+        area: 'personal_templates',
+        message: 'Failed to rename template',
       );
       rethrow;
     }
@@ -150,11 +150,11 @@ class PersonalTemplatesController extends _$PersonalTemplatesController {
       ref.invalidateSelf();
     } catch (e, stackTrace) {
       if (!ref.mounted) rethrow;
-      _logger.error(
-        'Failed to delete template',
-        context: 'PERSONAL_TEMPLATES_CONTROLLER',
-        error: e,
+      _report.fault(
+        e,
         stackTrace: stackTrace,
+        area: 'personal_templates',
+        message: 'Failed to delete template',
       );
       rethrow;
     }

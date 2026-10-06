@@ -4,7 +4,6 @@ import 'package:riverpod_annotation/riverpod_annotation.dart';
 import 'package:supabase_flutter/supabase_flutter.dart';
 import 'package:uuid/uuid.dart';
 
-import '../../../../shared/services/logging_service.dart';
 import '../../../../shared/services/report/report.dart';
 import '../../application/coach_service.dart';
 import '../../domain/coach_athlete_relationship.dart';
@@ -19,7 +18,7 @@ part 'coach_chat_controller.g.dart';
 @riverpod
 class CoachChatController extends _$CoachChatController {
   CoachService get _coachService => ref.read(coachServiceProvider);
-  AppLogger get _logger => ref.read(appLoggerProvider);
+  Report get _report => ref.read(reportProvider);
 
   RealtimeChannel? _channel;
 
@@ -97,9 +96,9 @@ class CoachChatController extends _$CoachChatController {
   }
 
   void _handleNewMessage(CoachMessage message) {
-    _logger.info(
+    _report.info(
       'Handling new message from realtime subscription',
-      context: 'COACH_CHAT_CONTROLLER',
+      area: 'coach_mode',
       data: {
         'messageId': message.id,
         'senderUserId': message.senderUserId,
@@ -112,18 +111,21 @@ class CoachChatController extends _$CoachChatController {
 
     final currentState = state.value;
     if (currentState == null) {
-      _logger.warning(
-        'Current state is null, cannot handle new message',
-        context: 'COACH_CHAT_CONTROLLER',
+      _report.degraded(
+        LoggedFault(
+          'Current state is null, cannot handle new message',
+          context: 'COACH_CHAT_CONTROLLER',
+        ),
+        area: 'coach_mode',
       );
       return;
     }
 
     // Avoid duplicates (message might already be added optimistically)
     if (currentState.messages.any((m) => m.id == message.id)) {
-      _logger.info(
+      _report.info(
         'Message already exists in messages list, skipping duplicate',
-        context: 'COACH_CHAT_CONTROLLER',
+        area: 'coach_mode',
         data: {'messageId': message.id},
       );
       return;
@@ -131,9 +133,9 @@ class CoachChatController extends _$CoachChatController {
 
     // Also check pending messages
     if (currentState.pendingMessages.any((m) => m.id == message.id)) {
-      _logger.info(
+      _report.info(
         'Message exists in pending messages, removing from pending',
-        context: 'COACH_CHAT_CONTROLLER',
+        area: 'coach_mode',
         data: {'messageId': message.id},
       );
 
@@ -161,9 +163,9 @@ class CoachChatController extends _$CoachChatController {
     final updatedMessages = [...currentState.messages, message];
     _stableSort(updatedMessages);
 
-    _logger.info(
+    _report.info(
       'Adding new message to chat',
-      context: 'COACH_CHAT_CONTROLLER',
+      area: 'coach_mode',
       data: {'messageId': message.id, 'totalMessages': updatedMessages.length},
     );
 
@@ -171,10 +173,7 @@ class CoachChatController extends _$CoachChatController {
 
     // Mark as read if not sent by current user
     if (message.senderUserId != currentState.currentUserId) {
-      _logger.info(
-        'Marking conversation as read',
-        context: 'COACH_CHAT_CONTROLLER',
-      );
+      _report.info('Marking conversation as read', area: 'coach_mode');
       _coachService.markConversationAsRead(
         coachUserId: currentState.relationship.coachUserId,
         athleteUserId: currentState.relationship.athleteUserId,

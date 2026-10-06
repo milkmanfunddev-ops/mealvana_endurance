@@ -2,9 +2,9 @@ import 'dart:async';
 
 import 'package:riverpod_annotation/riverpod_annotation.dart';
 
-import '../../../../shared/services/logging_service.dart';
 import '../../application/coach_service.dart';
 import '../../domain/coach_message.dart';
+import '../../../../shared/services/report/report.dart';
 
 part 'athlete_feedback_controller.g.dart';
 
@@ -67,7 +67,7 @@ class AthleteFeedbackController extends _$AthleteFeedbackController {
   /// Background sync: fetches latest relationships and coach data, then refreshes UI
   Future<void> _backgroundSync() async {
     final coachService = ref.read(coachServiceProvider);
-    final logger = ref.read(appLoggerProvider);
+    final report = ref.read(reportProvider);
 
     try {
       await coachService.syncRelationshipsFromSupabase();
@@ -75,11 +75,11 @@ class AthleteFeedbackController extends _$AthleteFeedbackController {
       if (!ref.mounted) return;
       ref.invalidateSelf();
     } catch (e, stackTrace) {
-      logger.error(
-        'Background sync failed',
-        context: 'ATHLETE_FEEDBACK_CONTROLLER',
-        error: e,
+      report.fault(
+        e,
         stackTrace: stackTrace,
+        area: 'coach_mode',
+        message: 'Background sync failed',
       );
     }
   }

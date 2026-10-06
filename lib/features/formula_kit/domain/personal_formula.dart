@@ -3,7 +3,7 @@ import 'dart:convert';
 import 'package:drift/drift.dart';
 
 import '../../../shared/database/app_database.dart';
-import '../../../shared/services/report/report.dart';
+import '../../../shared/domain/decode_issue.dart';
 import 'formula_phase.dart';
 import 'formula_pin.dart' show TemplateKind;
 
@@ -131,7 +131,10 @@ class PersonalFormula {
   /// doesn't recognize (forward-compat). Callers should skip null results and
   /// log the unknown value. `source_template_kind`, when present but
   /// unrecognized, decodes to `null` (it's optional metadata, not a gate).
-  static PersonalFormula? fromDriftEntry(PersonalFormulaEntry entry) {
+  static PersonalFormula? fromDriftEntry(
+    PersonalFormulaEntry entry, {
+    DecodeIssue onIssue = ignoreDecodeIssue,
+  }) {
     final provenance = FormulaProvenance.fromWireValue(entry.provenance);
     final phase = FormulaPhase.fromWireValue(entry.phase);
     if (provenance == null || phase == null) return null;
@@ -146,11 +149,11 @@ class PersonalFormula {
       sourceTemplateKind: TemplateKind.fromWireValue(entry.sourceTemplateKind),
       subPhase: entry.subPhase,
       digestSpeed: entry.digestSpeed,
-      activities: _decodeStringList(entry.activities),
-      durations: _decodeStringList(entry.durations),
+      activities: _decodeStringList(entry.activities, onIssue),
+      durations: _decodeStringList(entry.durations, onIssue),
       gutTraining: entry.gutTraining,
       travelFriendliness: entry.travelFriendliness,
-      components: _decodeComponents(entry.components),
+      components: _decodeComponents(entry.components, onIssue),
       notes: entry.notes,
       coachInsightText: entry.coachInsightText,
       coachInsightMarker: entry.coachInsightMarker,
@@ -240,7 +243,10 @@ class PersonalFormula {
   ///
   /// Returns `null` on unrecognized provenance/phase (forward-compat), matching
   /// [fromDriftEntry].
-  static PersonalFormula? fromSupabaseJson(Map<String, dynamic> json) {
+  static PersonalFormula? fromSupabaseJson(
+    Map<String, dynamic> json, {
+    DecodeIssue onIssue = ignoreDecodeIssue,
+  }) {
     final provenance = FormulaProvenance.fromWireValue(
       json['provenance'] as String?,
     );
@@ -259,11 +265,11 @@ class PersonalFormula {
       ),
       subPhase: json['sub_phase'] as String?,
       digestSpeed: json['digest_speed'] as String?,
-      activities: _coerceStringList(json['activities']),
-      durations: _coerceStringList(json['durations']),
+      activities: _coerceStringList(json['activities'], onIssue),
+      durations: _coerceStringList(json['durations'], onIssue),
       gutTraining: json['gut_training'] as String?,
       travelFriendliness: json['travel_friendliness'] as String?,
-      components: _coerceComponents(json['components']),
+      components: _coerceComponents(json['components'], onIssue),
       notes: json['notes'] as String?,
       coachInsightText: json['coach_insight_text'] as String?,
       coachInsightMarker: json['coach_insight_marker'] as String?,
@@ -349,48 +355,51 @@ class PersonalFormula {
 
   // ── JSON helpers ─────────────────────────────────────────────────────────
 
-  static List<String>? _decodeStringList(String? raw) {
+  static List<String>? _decodeStringList(String? raw, DecodeIssue onIssue) {
     if (raw == null) return null;
     try {
       return (jsonDecode(raw) as List).map((e) => e.toString()).toList();
     } catch (e, st) {
-      // The formula still loads with this field empty. Static helper: the
-      // global is the only `Report` in reach.
-      SentryReport.global.degraded(
-        e,
+      // The formula still loads with this field empty.
+      onIssue(
+        'personal formula string list JSON malformed; read as empty',
+        error: e,
         stackTrace: st,
-        area: 'formula_kit',
-        message: 'personal formula string list JSON malformed; read as empty',
       );
       return null;
     }
   }
 
-  static List<String>? _coerceStringList(Object? raw) {
+  static List<String>? _coerceStringList(Object? raw, DecodeIssue onIssue) {
     if (raw == null) return null;
     if (raw is List) return raw.map((e) => e.toString()).toList();
-    if (raw is String) return _decodeStringList(raw);
+    if (raw is String) return _decodeStringList(raw, onIssue);
     return null;
   }
 
-  static List<Map<String, dynamic>> _decodeComponents(String? raw) {
+  static List<Map<String, dynamic>> _decodeComponents(
+    String? raw,
+    DecodeIssue onIssue,
+  ) {
     if (raw == null || raw.isEmpty) return const [];
     try {
       final decoded = jsonDecode(raw);
-      return _coerceComponents(decoded);
+      return _coerceComponents(decoded, onIssue);
     } catch (e, st) {
-      SentryReport.global.degraded(
-        e,
+      onIssue(
+        'personal formula components JSON malformed; read as empty',
+        error: e,
         stackTrace: st,
-        area: 'formula_kit',
-        message: 'personal formula components JSON malformed; read as empty',
       );
       return const [];
     }
   }
 
-  static List<Map<String, dynamic>> _coerceComponents(Object? raw) {
-    if (raw is String) return _decodeComponents(raw);
+  static List<Map<String, dynamic>> _coerceComponents(
+    Object? raw,
+    DecodeIssue onIssue,
+  ) {
+    if (raw is String) return _decodeComponents(raw, onIssue);
     if (raw is List) {
       return raw
           .whereType<Map>()

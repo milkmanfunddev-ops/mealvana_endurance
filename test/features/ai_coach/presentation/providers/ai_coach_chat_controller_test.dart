@@ -5,32 +5,13 @@ import 'package:mealvana_endurance/features/ai_coach/data/ai_coach_chat_reposito
 import 'package:mealvana_endurance/features/ai_coach/domain/ai_coach_conversation.dart';
 import 'package:mealvana_endurance/features/ai_coach/domain/ai_coach_message.dart';
 import 'package:mealvana_endurance/features/ai_coach/presentation/providers/ai_coach_chat_controller.dart';
-import 'package:mealvana_endurance/shared/services/logging_service.dart';
+import 'package:mealvana_endurance/shared/services/report/report.dart';
+
+import '../../../../helpers/fakes/recording_report.dart';
 
 // ---------------------------------------------------------------------------
 // Mocks
 // ---------------------------------------------------------------------------
-
-class _FakeLogger extends Fake implements AppLogger {
-  @override
-  void info(String message, {String? context, Map<String, dynamic>? data}) {}
-  @override
-  void error(
-    String message, {
-    String? context,
-    Map<String, dynamic>? data,
-    dynamic error,
-    StackTrace? stackTrace,
-  }) {}
-  @override
-  void warning(
-    String message, {
-    String? context,
-    Map<String, dynamic>? data,
-    dynamic error,
-    StackTrace? stackTrace,
-  }) {}
-}
 
 class _FakeContentService extends Fake implements ContentService {
   @override
@@ -83,11 +64,11 @@ class _MockRepository extends Fake implements AiCoachChatRepository {
 
 void main() {
   group('AiCoachChatController.build – conversation resume', () {
-    late _FakeLogger logger;
+    late RecordingReport report;
     late _FakeContentService contentService;
 
     setUp(() {
-      logger = _FakeLogger();
+      report = RecordingReport();
       contentService = _FakeContentService();
     });
 
@@ -95,7 +76,7 @@ void main() {
       final container = ProviderContainer(
         overrides: [
           aiCoachChatRepositoryProvider.overrideWithValue(repository),
-          appLoggerProvider.overrideWithValue(logger),
+          reportProvider.overrideWithValue(report),
           contentServiceProvider.overrideWithValue(contentService),
         ],
       );

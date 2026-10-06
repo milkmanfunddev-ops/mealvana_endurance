@@ -16,18 +16,12 @@ import 'package:mealvana_endurance/features/formula_kit/application/formula_edit
 import 'package:mealvana_endurance/features/formula_kit/domain/formula_phase.dart';
 import 'package:mealvana_endurance/features/nutrition_plan/domain/food.dart';
 import 'package:mealvana_endurance/shared/services/app_external_deps.dart';
-import 'package:mealvana_endurance/shared/services/logging_service.dart';
-import 'package:mealvana_endurance/shared/services/sentry/sentry_reporter.dart';
 
 import '../../helpers/fakes/recording_analytics_tracker.dart';
 
 class _MockUserRepository extends Mock implements UserRepository {}
 
 class _MockSupabaseClient extends Mock implements SupabaseClient {}
-
-class _MockSentryReporter extends Mock implements SentryReporter {}
-
-class _MockAppLogger extends Mock implements AppLogger {}
 
 class _MockSharedPreferences extends Mock implements SharedPreferences {}
 
@@ -54,8 +48,6 @@ void main() {
           AppExternalDeps(
             analytics: analytics,
             supabaseClient: _MockSupabaseClient(),
-            sentry: _MockSentryReporter(),
-            logger: _MockAppLogger(),
             sharedPreferences: _MockSharedPreferences(),
           ),
         ),

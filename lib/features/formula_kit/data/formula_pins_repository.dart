@@ -11,7 +11,6 @@ import '../../../shared/data/syncable_repository.dart';
 import '../../../shared/database/app_database.dart';
 import '../../../shared/database/database_provider.dart';
 import '../../../shared/services/app_external_deps.dart';
-import '../../../shared/services/logging_service.dart';
 import '../../../shared/services/report/report.dart';
 import '../../../shared/services/sync/sync_dependency_graph.dart';
 import '../domain/formula_pin.dart';
@@ -24,7 +23,6 @@ FormulaPinsRepository formulaPinsRepository(Ref ref) {
   return FormulaPinsRepository(
     supabase: Supabase.instance.client,
     database: ref.read(appDatabaseProvider),
-    logger: ref.read(appLoggerProvider),
     report: deps.report,
   );
 }
@@ -46,16 +44,13 @@ class FormulaPinsRepository with SyncableRepository {
   FormulaPinsRepository({
     required SupabaseClient supabase,
     required AppDatabase database,
-    required AppLogger logger,
     Report? report,
   }) : _supabase = supabase,
        _database = database,
-       _logger = logger,
        _report = report;
 
   final SupabaseClient _supabase;
   final AppDatabase _database;
-  final AppLogger _logger;
   final Report? _report;
 
   Report get _r => _report ?? SentryReport.global;
@@ -117,9 +112,9 @@ class FormulaPinsRepository with SyncableRepository {
       if (confirmedEmpty) {
         return super.isStale();
       }
-      _logger.info(
+      _r.info(
         'Forcing sync - no active local formula pins and remote not yet confirmed empty',
-        context: 'FORMULA_PINS_REPOSITORY',
+        area: 'formula_kit',
       );
       return true;
     }
@@ -132,9 +127,9 @@ class FormulaPinsRepository with SyncableRepository {
     // FormulaPinController both call this on build).
     final inflight = _inflightSync;
     if (inflight != null) {
-      _logger.debug(
+      _r.debug(
         'syncFromRemote: coalescing into in-flight sync',
-        context: 'FORMULA_PINS_REPOSITORY',
+        area: 'formula_kit',
         data: {'userId': userId},
       );
       return inflight;
@@ -150,9 +145,9 @@ class FormulaPinsRepository with SyncableRepository {
 
   Future<SyncResult> _syncFromRemoteImpl(String userId) async {
     try {
-      _logger.info(
+      _r.info(
         'Syncing formula pins from Supabase',
-        context: 'FORMULA_PINS_REPOSITORY',
+        area: 'formula_kit',
         data: {'userId': userId},
       );
 
@@ -169,9 +164,9 @@ class FormulaPinsRepository with SyncableRepository {
       await setLastSyncTime(DateTime.now());
       await _refreshConfirmedEmptySentinel();
 
-      _logger.info(
+      _r.info(
         'Successfully synced formula pins from Supabase',
-        context: 'FORMULA_PINS_REPOSITORY',
+        area: 'formula_kit',
         data: {'userId': userId, 'count': syncedCount},
       );
 
@@ -255,10 +250,13 @@ class FormulaPinsRepository with SyncableRepository {
     });
 
     if (dirtyIds.isNotEmpty) {
-      _logger.warning(
-        'Skipped remote pin overwrite for dirty local rows',
-        context: 'FORMULA_PINS_REPOSITORY',
-        data: {
+      _r.degraded(
+        LoggedFault(
+          'Skipped remote pin overwrite for dirty local rows',
+          context: 'FORMULA_PINS_REPOSITORY',
+        ),
+        area: 'formula_kit',
+        extra: {
           'skippedCount': dirtyIds.length,
           'totalRemote': remoteById.length,
         },
@@ -271,9 +269,9 @@ class FormulaPinsRepository with SyncableRepository {
   @override
   Future<UploadResult> uploadDirtyRecords(String userId) async {
     try {
-      _logger.info(
+      _r.info(
         'Uploading dirty formula pins to Supabase',
-        context: 'FORMULA_PINS_REPOSITORY',
+        area: 'formula_kit',
         data: {'userId': userId},
       );
 
@@ -287,9 +285,9 @@ class FormulaPinsRepository with SyncableRepository {
         return UploadResult.nothingToUpload();
       }
 
-      _logger.debug(
+      _r.debug(
         'Found dirty formula pins to upload',
-        context: 'FORMULA_PINS_REPOSITORY',
+        area: 'formula_kit',
         data: {'count': dirtyRecords.length},
       );
 
@@ -323,9 +321,9 @@ class FormulaPinsRepository with SyncableRepository {
         }
       });
 
-      _logger.info(
+      _r.info(
         'Successfully uploaded dirty formula pins',
-        context: 'FORMULA_PINS_REPOSITORY',
+        area: 'formula_kit',
         data: {'count': decodedPins.length},
       );
 
@@ -456,9 +454,9 @@ class FormulaPinsRepository with SyncableRepository {
     // confirmed-empty sentinel so isStale() doesn't gate behind it.
     await _clearConfirmedEmptySentinel();
 
-    _logger.info(
+    _r.info(
       'Pinned formula',
-      context: 'FORMULA_PINS_REPOSITORY',
+      area: 'formula_kit',
       data: {'pinId': pin.id, 'templateId': templateId, 'kind': kind.wireValue},
     );
 
@@ -500,9 +498,9 @@ class FormulaPinsRepository with SyncableRepository {
       ),
     );
 
-    _logger.info(
+    _r.info(
       'Unpinned formula',
-      context: 'FORMULA_PINS_REPOSITORY',
+      area: 'formula_kit',
       data: {
         'pinId': active.id,
         'templateId': templateId,
@@ -577,10 +575,13 @@ class FormulaPinsRepository with SyncableRepository {
   }
 
   void _logUnknownTemplateKind(FormulaPinEntry entry) {
-    _logger.warning(
-      'Skipping formula pin with unknown template_kind',
-      context: 'FORMULA_PINS_REPOSITORY',
-      data: {'pin_id': entry.id, 'template_kind': entry.templateKind},
+    _r.degraded(
+      LoggedFault(
+        'Skipping formula pin with unknown template_kind',
+        context: 'FORMULA_PINS_REPOSITORY',
+      ),
+      area: 'formula_kit',
+      extra: {'pin_id': entry.id, 'template_kind': entry.templateKind},
     );
     unawaited(
       _r.degraded(

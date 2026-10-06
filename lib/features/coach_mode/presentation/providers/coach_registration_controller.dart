@@ -3,14 +3,14 @@ import 'dart:async';
 import 'package:riverpod_annotation/riverpod_annotation.dart';
 
 import '../../application/coach_service.dart';
-import '../../../../shared/services/logging_service.dart';
+import '../../../../shared/services/report/report.dart';
 
 part 'coach_registration_controller.g.dart';
 
 @riverpod
 class CoachRegistrationController extends _$CoachRegistrationController {
   CoachService get _coachService => ref.read(coachServiceProvider);
-  AppLogger get _logger => ref.read(appLoggerProvider);
+  Report get _report => ref.read(reportProvider);
 
   @override
   FutureOr<void> build() {
@@ -36,9 +36,12 @@ class CoachRegistrationController extends _$CoachRegistrationController {
       );
 
       if (!success) {
-        _logger.warning(
-          'Coach application submission failed',
-          context: 'COACH_REGISTRATION_CONTROLLER',
+        _report.degraded(
+          LoggedFault(
+            'Coach application submission failed',
+            context: 'COACH_REGISTRATION_CONTROLLER',
+          ),
+          area: 'coach_mode',
         );
         throw Exception('Failed to submit application. Please try again.');
       }

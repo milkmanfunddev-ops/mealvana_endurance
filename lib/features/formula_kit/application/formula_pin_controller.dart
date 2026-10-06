@@ -3,6 +3,7 @@ import 'dart:async';
 import 'package:riverpod_annotation/riverpod_annotation.dart';
 
 import '../../../shared/services/app_external_deps.dart';
+import '../../../shared/services/report/report.dart';
 import '../../auth/data/user_repository.dart';
 import '../data/formula_pins_repository.dart';
 import '../domain/formula_phase.dart';
@@ -46,15 +47,18 @@ class FormulaPinController extends _$FormulaPinController {
   FutureOr<FormulaPinState> build() async {
     final userRepo = await ref.read(userRepositoryProvider.future);
     final pinsRepo = ref.read(formulaPinsRepositoryProvider);
-    final logger = ref.read(appExternalDepsProvider).logger;
+    final report = ref.read(reportProvider);
 
     final user = await userRepo.getCurrentUser();
     final userId = user?.id;
     if (userId == null) {
-      logger.warning(
-        'FormulaPinController build with no authenticated user — '
-        'returning empty pin set',
-        context: 'FORMULA_KIT',
+      report.degraded(
+        LoggedFault(
+          'FormulaPinController build with no authenticated user — '
+          'returning empty pin set',
+          context: 'FORMULA_KIT',
+        ),
+        area: 'formula_kit',
       );
       return FormulaPinState.empty;
     }
@@ -136,17 +140,17 @@ class FormulaPinController extends _$FormulaPinController {
     } catch (e, st) {
       // Revert optimistic state on failure.
       state = AsyncData(current);
-      final logger = ref.read(appExternalDepsProvider).logger;
-      logger.error(
-        'Failed to toggle pin',
-        context: 'FORMULA_KIT',
-        error: e,
+      final report = ref.read(reportProvider);
+      report.fault(
+        e,
         stackTrace: st,
-        data: {
+        area: 'formula_kit',
+        extra: {
           'template_id': templateId,
           'kind': kind.wireValue,
           'was_pinned': wasPinned,
         },
+        message: 'Failed to toggle pin',
       );
       rethrow;
     }

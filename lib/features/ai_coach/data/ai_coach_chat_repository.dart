@@ -7,7 +7,7 @@ import 'package:supabase_flutter/supabase_flutter.dart';
 
 import '../../ai_credits/domain/insufficient_credits_exception.dart';
 import '../../../shared/services/app_config.dart';
-import '../../../shared/services/logging_service.dart';
+import '../../../shared/services/report/decode_issue_report.dart';
 import '../../../shared/services/report/report.dart';
 import '../../../shared/services/supabase/supabase_client_provider.dart';
 import '../domain/ai_coach_conversation.dart';
@@ -122,16 +122,13 @@ class AiCoachChatRepository {
   AiCoachChatRepository({
     required SupabaseClient supabase,
     required AppConfig config,
-    required AppLogger logger,
     Report? report,
   }) : _supabase = supabase,
        _config = config,
-       _logger = logger,
        _report = report;
 
   final SupabaseClient _supabase;
   final AppConfig _config;
-  final AppLogger _logger;
   final Report? _report;
 
   Report get _r => _report ?? SentryReport.global;
@@ -183,7 +180,12 @@ class AiCoachChatRepository {
           .order('created_at', ascending: true);
 
       return (response as List<dynamic>)
-          .map((row) => AiCoachMessage.fromJson(row as Map<String, dynamic>))
+          .map(
+            (row) => AiCoachMessage.fromJson(
+              row as Map<String, dynamic>,
+              onIssue: _r.decodeIssue(_area),
+            ),
+          )
           .toList();
     } catch (e, st) {
       await _r.fault(
@@ -284,25 +286,36 @@ class AiCoachChatRepository {
       ..headers['Content-Type'] = 'application/json'
       ..body = jsonEncode(bodyMap);
 
-    _logger.info('AiCoachChatRepository._streamRequest → $uri');
+    _r.info('AiCoachChatRepository._streamRequest → $uri', area: _area);
 
     http.StreamedResponse streamed;
     try {
       streamed = await http.Client().send(request);
     } catch (e, st) {
-      _logger.error(
-        'AiCoachChatRepository._streamRequest network error',
-        error: e,
+      // Offline is an expected state, not a defect: degraded, then the typed
+      // error the presentation layer already handles.
+      await _r.degraded(
+        e,
         stackTrace: st,
+        area: _area,
+        message: 'AiCoachChatRepository._streamRequest network error',
       );
       throw AiCoachChatOfflineError(e);
     }
 
     if (streamed.statusCode != 200) {
       final responseBody = await streamed.stream.bytesToString();
-      _logger.error(
-        'AiCoachChatRepository._streamRequest HTTP ${streamed.statusCode}: $responseBody',
-      );
+      // 402 is the credits wall (expected, handled below); anything else is a
+      // server-side defect worth an event.
+      if (streamed.statusCode != 402) {
+        await _r.fault(
+          LoggedFault(
+            'AiCoachChatRepository._streamRequest HTTP ${streamed.statusCode}',
+          ),
+          area: _area,
+          extra: {'status': streamed.statusCode, 'body': responseBody},
+        );
+      }
       // 402 → out of AI credits. Throw the typed exception so the presentation
       // layer can route the user to the buy-credits paywall.
       if (streamed.statusCode == 402) {
@@ -316,8 +329,9 @@ class AiCoachChatRepository {
     final resolvedConversationId =
         streamed.headers['x-conversation-id'] ?? fallbackConversationId ?? '';
 
-    _logger.info(
+    _r.info(
       'AiCoachChatRepository._streamRequest: conv=$resolvedConversationId streaming NDJSON',
+      area: 'ai_coach',
     );
 
     return AiCoachSendResult(
@@ -406,7 +420,10 @@ class AiCoachChatRepository {
         case 'ui':
           final partJson = json['part'];
           if (partJson is! Map<String, dynamic>) return null;
-          final part = AiCoachUiPart.fromJson(partJson);
+          final part = AiCoachUiPart.fromJson(
+            partJson,
+            onIssue: _r.decodeIssue(_area),
+          );
           if (part == null) return null; // unknown kind — skip
           return AiCoachUiPartEvent(part);
 
@@ -415,7 +432,10 @@ class AiCoachChatRepository {
 
         case 'error':
           final message = (json['message'] as String?) ?? 'Unknown error';
-          _logger.error('AiCoachChatRepository: server error event: $message');
+          _r.fault(
+            LoggedFault('AiCoachChatRepository: server error event: $message'),
+            area: 'ai_coach',
+          );
           return AiCoachStreamErrorEvent(message);
 
         default:
@@ -444,7 +464,6 @@ AiCoachChatRepository aiCoachChatRepository(Ref ref) {
   return AiCoachChatRepository(
     supabase: ref.watch(supabaseClientProvider),
     config: ref.watch(appConfigProvider),
-    logger: ref.watch(appLoggerProvider),
     report: ref.watch(reportProvider),
   );
 }
