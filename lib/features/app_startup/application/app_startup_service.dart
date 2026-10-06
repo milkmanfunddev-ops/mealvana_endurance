@@ -13,7 +13,6 @@ import '../../../shared/services/app_config.dart';
 import '../../../shared/services/analytics/analytics_tracker.dart';
 import '../../../shared/services/analytics/internal_user_service.dart';
 import '../../../shared/services/privacy/analytics_consent.dart';
-import '../../../shared/services/logging_service.dart';
 import '../../../shared/services/report/report.dart';
 import '../../../shared/services/report/report_identity.dart';
 import '../../../shared/services/report/performance_telemetry.dart';
@@ -45,7 +44,6 @@ class AppStartupService {
   bool _analyticsInitialized = false;
 
   Report get _report => ref.read(reportProvider);
-  AppLogger get _logger => ref.read(appExternalDepsProvider).logger;
   AnalyticsTracker get _analytics =>
       ref.read(appExternalDepsProvider).analytics;
   SupabaseClient get _supabase =>
@@ -416,9 +414,9 @@ class AppStartupService {
     // without consent, so this is belt-and-braces — but it is the check that
     // stops `Mixpanel.init` from ever being called.
     if (!ref.read(analyticsConsentProvider).allowsAnalytics) {
-      _logger.info(
+      _report.info(
         'Analytics initialization skipped — no consent on file',
-        context: 'ANALYTICS',
+        area: 'startup',
       );
       return;
     }
@@ -680,7 +678,7 @@ class AppStartupService {
   /// Returns true if backup was handled (uploaded or discarded), false if no backup exists
   Future<bool> checkAndHandleDirtyRecordBackup(BuildContext context) async {
     try {
-      final backupService = DirtyRecordBackupService(logger: _logger);
+      final backupService = DirtyRecordBackupService(report: _report);
 
       // Check if backup exists
       final hasBackup = await backupService.hasBackup();
@@ -744,8 +742,9 @@ class AppStartupService {
       // Delete backup file regardless of choice
       await backupService.deleteBackup();
 
-      _logger.info(
+      _report.info(
         'Dirty record backup handled successfully',
+        area: 'startup',
         data: {
           'choice': userChoice.name,
           'record_count': backup.totalRecordCount,
@@ -794,8 +793,9 @@ class AppStartupService {
 
         successCount += records.length;
 
-        _logger.info(
+        _report.info(
           'Successfully uploaded backup records',
+          area: 'startup',
           data: {
             'repository': repositoryKey,
             'table': tableName,
@@ -821,8 +821,9 @@ class AppStartupService {
     }
 
     // Log final results
-    _logger.info(
+    _report.info(
       'Backup upload completed',
+      area: 'startup',
       data: {
         'total_records': backup.totalRecordCount,
         'success_count': successCount,

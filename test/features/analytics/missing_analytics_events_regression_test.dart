@@ -24,21 +24,17 @@ import 'package:mealvana_endurance/features/integrations/application/integration
 import 'package:mealvana_endurance/shared/domain/activity_type.dart';
 import 'package:mealvana_endurance/shared/providers/user_id_provider.dart';
 import 'package:mealvana_endurance/shared/services/app_external_deps.dart';
-import 'package:mealvana_endurance/shared/services/logging_service.dart';
-import 'package:mealvana_endurance/shared/services/sentry/sentry_reporter.dart';
+import 'package:mealvana_endurance/shared/services/report/report.dart';
 import 'package:mealvana_endurance/shared/services/sync/sync_coordinator.dart';
 
 import '../../helpers/fakes/recording_analytics_tracker.dart';
+import '../../helpers/fakes/recording_report.dart';
 
 class _MockActivitiesService extends Mock implements ActivitiesService {}
 
 class _MockActivitiesRepository extends Mock implements ActivitiesRepository {}
 
 class _MockSupabaseClient extends Mock implements SupabaseClient {}
-
-class _MockSentryReporter extends Mock implements SentryReporter {}
-
-class _MockAppLogger extends Mock implements AppLogger {}
 
 class _MockSharedPreferences extends Mock implements SharedPreferences {}
 
@@ -71,38 +67,14 @@ void main() {
     late RecordingAnalyticsTracker analytics;
     late _MockActivitiesService mockService;
     late _MockActivitiesRepository mockRepo;
-    late _MockAppLogger mockLogger;
+    late RecordingReport report;
     late ProviderContainer container;
 
     setUp(() {
       analytics = RecordingAnalyticsTracker();
       mockService = _MockActivitiesService();
       mockRepo = _MockActivitiesRepository();
-      mockLogger = _MockAppLogger();
-
-      // Stub logger calls
-      when(
-        () => mockLogger.info(
-          any(),
-          context: any(named: 'context'),
-          data: any(named: 'data'),
-        ),
-      ).thenReturn(null);
-      when(
-        () => mockLogger.error(
-          any(),
-          context: any(named: 'context'),
-          error: any(named: 'error'),
-          stackTrace: any(named: 'stackTrace'),
-        ),
-      ).thenReturn(null);
-      when(
-        () => mockLogger.warning(
-          any(),
-          context: any(named: 'context'),
-          error: any(named: 'error'),
-        ),
-      ).thenReturn(null);
+      report = RecordingReport();
 
       // Stub service calls used in build()
       when(
@@ -121,12 +93,11 @@ void main() {
             AppExternalDeps(
               analytics: analytics,
               supabaseClient: _MockSupabaseClient(),
-              sentry: _MockSentryReporter(),
-              logger: mockLogger,
               sharedPreferences: _MockSharedPreferences(),
+              report: report,
             ),
           ),
-          appLoggerProvider.overrideWithValue(mockLogger),
+          reportProvider.overrideWithValue(report),
           activitiesServiceProvider.overrideWithValue(mockService),
           activitiesRepositoryProvider.overrideWithValue(mockRepo),
           userIdProvider.overrideWith((ref) async => _testUserId),

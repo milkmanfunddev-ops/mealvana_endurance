@@ -3,8 +3,7 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:supabase_flutter/supabase_flutter.dart';
 
 import '../app_external_deps.dart';
-import '../logging_service.dart';
-import '../sentry/sentry_reporter.dart';
+import '../report/report.dart';
 import '../report/report_identity.dart';
 import '../analytics/analytics_tracker.dart';
 import '../notification_service.dart';
@@ -47,17 +46,18 @@ class AuthListenerService {
   // Accessors for dependencies
   SupabaseClient get _supabase =>
       _ref.read(appExternalDepsProvider).supabaseClient;
-  AppLogger get _logger => _ref.read(appExternalDepsProvider).logger;
-  SentryReporter get _sentry => _ref.read(appExternalDepsProvider).sentry;
+  Report get _report => _ref.read(reportProvider);
   AnalyticsTracker get _analytics =>
       _ref.read(appExternalDepsProvider).analytics;
 
   /// Initialize the auth listener. Should only be called ONCE at app startup.
   void initialize() {
     if (_isInitialized) {
-      _logger.warning(
-        'AuthListenerService.initialize() called more than once - ignoring',
-        context: 'AUTH_LISTENER',
+      _report.degraded(
+        const LoggedFault(
+          'AuthListenerService.initialize() called more than once - ignoring',
+        ),
+        area: 'auth',
       );
       return;
     }
@@ -65,9 +65,9 @@ class AuthListenerService {
     _isInitialized = true;
     _setupAuthStateListener();
 
-    _logger.info(
+    _report.info(
       'AuthListenerService initialized - listening for auth state changes',
-      context: 'AUTH_LISTENER',
+      area: 'auth',
     );
   }
 
@@ -87,9 +87,9 @@ class AuthListenerService {
       final event = data.event;
       final session = data.session;
 
-      _logger.info(
+      _report.info(
         'Auth state changed',
-        context: 'AUTH_LISTENER',
+        area: 'auth',
         data: {
           'event': event.name,
           'has_session': session != null,
@@ -145,8 +145,8 @@ class AuthListenerService {
     await NotificationService.clearRemotePushUserId();
     await syncReportIdentity(_ref);
 
-    _sentry.addBreadcrumb(
-      message: wasOnboardingSignOut
+    _report.breadcrumb(
+      wasOnboardingSignOut
           ? 'Onboarding signout - preserving cached data'
           : 'User signed out - invalidating user providers',
       category: 'auth',
@@ -159,9 +159,9 @@ class AuthListenerService {
     // Skip provider invalidation during onboarding sign-out
     // This preserves cached onboarding data for saveAllOnboardingData()
     if (wasOnboardingSignOut) {
-      _logger.info(
+      _report.info(
         'Onboarding sign-out - skipping provider invalidation',
-        context: 'AUTH_LISTENER',
+        area: 'auth',
       );
       return;
     }
@@ -213,22 +213,16 @@ class AuthListenerService {
       // redirects to /welcome when no session exists.
       _ref.read(authChangeNotifierProvider).notify();
 
-      _logger.info(
+      _report.info(
         'User-specific providers invalidated after sign-out',
-        context: 'AUTH_LISTENER',
+        area: 'auth',
       );
     } catch (e, stackTrace) {
-      _logger.error(
-        'Failed to handle sign-out',
-        context: 'AUTH_LISTENER',
-        error: e,
-        stackTrace: stackTrace,
-      );
-
-      await _sentry.reportCriticalError(
+      await _report.fault(
         e,
         stackTrace: stackTrace,
-        context: 'sign_out_handler_failed',
+        area: 'auth',
+        message: 'Failed to handle sign-out',
         tags: {
           'error_type': 'sign_out_handler_failed',
           'operation': 'sign_out_handler',
@@ -242,17 +236,17 @@ class AuthListenerService {
     await NotificationService.setRemotePushUserId(userId);
     await syncReportIdentity(_ref);
 
-    _sentry.addBreadcrumb(
-      message: 'User signed in',
+    _report.breadcrumb(
+      'User signed in',
       category: 'auth',
       data: {'user_id': userId, 'timestamp': DateTime.now().toIso8601String()},
     );
 
     _ref.invalidate(userIdProvider);
 
-    _logger.info(
+    _report.info(
       'User signed in - controllers will sync on demand via ensureSynced()',
-      context: 'AUTH_LISTENER',
+      area: 'auth',
       data: {'user_id': userId},
     );
   }

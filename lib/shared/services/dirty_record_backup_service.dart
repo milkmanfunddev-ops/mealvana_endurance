@@ -3,7 +3,7 @@ import 'dart:io';
 
 import 'package:path_provider/path_provider.dart';
 import 'package:mealvana_endurance/shared/models/dirty_record_backup.dart';
-import 'package:mealvana_endurance/shared/services/logging_service.dart';
+import 'package:mealvana_endurance/shared/services/report/report.dart';
 
 /// Service for backing up and recovering dirty records.
 ///
@@ -25,9 +25,9 @@ import 'package:mealvana_endurance/shared/services/logging_service.dart';
 /// 4. Delete backup file after successful upload or user discard
 class DirtyRecordBackupService {
   static const String _backupFileName = 'dirty_records_backup.json';
-  final AppLogger _logger;
+  final Report _report;
 
-  DirtyRecordBackupService({required AppLogger logger}) : _logger = logger;
+  DirtyRecordBackupService({required Report report}) : _report = report;
 
   /// Get the backup file path in Application Support directory
   Future<File> _getBackupFile() async {
@@ -49,8 +49,9 @@ class DirtyRecordBackupService {
       // Write to file
       await backupFile.writeAsString(jsonString);
 
-      _logger.info(
+      _report.info(
         'Dirty records backed up successfully',
+        area: 'sync',
         data: {
           'record_count': backup.totalRecordCount,
           'repositories': backup.dirtyRecords.keys.toList(),
@@ -58,10 +59,11 @@ class DirtyRecordBackupService {
         },
       );
     } catch (e, stackTrace) {
-      _logger.error(
-        'Failed to backup dirty records',
-        error: e,
+      _report.fault(
+        e,
         stackTrace: stackTrace,
+        area: 'sync',
+        message: 'Failed to backup dirty records',
       );
       rethrow;
     }
@@ -73,10 +75,11 @@ class DirtyRecordBackupService {
       final backupFile = await _getBackupFile();
       return await backupFile.exists();
     } catch (e, stackTrace) {
-      _logger.error(
-        'Failed to check for backup file',
-        error: e,
+      _report.fault(
+        e,
         stackTrace: stackTrace,
+        area: 'sync',
+        message: 'Failed to check for backup file',
       );
       return false;
     }
@@ -99,8 +102,9 @@ class DirtyRecordBackupService {
       final json = jsonDecode(jsonString) as Map<String, dynamic>;
       final backup = DirtyRecordBackup.fromJson(json);
 
-      _logger.info(
+      _report.info(
         'Dirty record backup recovered',
+        area: 'sync',
         data: {
           'backup_created_at': backup.backupCreatedAt.toIso8601String(),
           'record_count': backup.totalRecordCount,
@@ -112,10 +116,11 @@ class DirtyRecordBackupService {
 
       return backup;
     } catch (e, stackTrace) {
-      _logger.error(
-        'Failed to recover backup',
-        error: e,
+      _report.fault(
+        e,
         stackTrace: stackTrace,
+        area: 'sync',
+        message: 'Failed to recover backup',
       );
       // Return null instead of rethrowing - we don't want to block app startup
       return null;
@@ -132,13 +137,14 @@ class DirtyRecordBackupService {
 
       if (await backupFile.exists()) {
         await backupFile.delete();
-        _logger.info('Dirty record backup deleted');
+        _report.info('Dirty record backup deleted', area: 'sync');
       }
     } catch (e, stackTrace) {
-      _logger.error(
-        'Failed to delete backup file',
-        error: e,
+      _report.fault(
+        e,
         stackTrace: stackTrace,
+        area: 'sync',
+        message: 'Failed to delete backup file',
       );
       rethrow;
     }

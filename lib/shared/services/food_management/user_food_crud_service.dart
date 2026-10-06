@@ -6,37 +6,28 @@ import 'package:uuid/uuid.dart';
 import '../../../features/nutrition_plan/domain/food.dart';
 import '../../database/database_provider.dart';
 import '../../database/app_database.dart';
-import '../app_external_deps.dart';
-import '../logging_service.dart';
-import '../sentry/sentry_reporter.dart';
+import '../report/report.dart';
+import '../supabase/supabase_client_provider.dart';
 import 'product_type_mapper.dart';
 
 /// Provider for UserFoodCrudService
 final userFoodCrudServiceProvider = Provider<UserFoodCrudService>((ref) {
   final database = ref.read(appDatabaseProvider);
-  final deps = ref.read(appExternalDepsProvider);
   return UserFoodCrudService(
     database,
-    deps.logger,
-    deps.supabaseClient,
-    deps.sentry,
+    ref.read(reportProvider),
+    ref.read(supabaseClientProvider),
   );
 });
 
 /// Service for managing user's custom foods
 /// Handles CRUD operations for user_foods table with local-first approach
 class UserFoodCrudService {
-  UserFoodCrudService(
-    this._database,
-    this._logger,
-    this._supabase,
-    this._sentry,
-  );
+  UserFoodCrudService(this._database, this._report, this._supabase);
 
   final AppDatabase _database;
-  final AppLogger _logger;
+  final Report _report;
   final SupabaseClient _supabase;
-  final SentryReporter _sentry;
   static const _uuid = Uuid();
 
   /// Load user foods for a user
@@ -50,11 +41,11 @@ class UserFoodCrudService {
           .toList();
       return foods;
     } catch (e) {
-      _logger.error(
-        'Error loading user foods',
-        context: 'UserFoodCrudService',
-        data: {'userId': userId},
-        error: e,
+      _report.fault(
+        e,
+        area: 'food_management',
+        extra: {'userId': userId},
+        message: 'Error loading user foods',
       );
       return [];
     }
@@ -69,7 +60,7 @@ class UserFoodCrudService {
     try {
       final normalizedProductType = normalizeProductType(
         food.productTypeId,
-        logger: _logger,
+        report: _report,
       );
       // Get current user's ID using Supabase auth session for correct UUID
       final currentAuthUserId = _supabase.auth.currentUser?.id;
@@ -126,27 +117,28 @@ class UserFoodCrudService {
             barcode: barcode,
           );
         } catch (e, stackTrace) {
-          _logger.warning(
-            'Immediate upload failed; record stays dirty for retry',
-            context: 'USER_FOOD_CRUD',
-            error: e,
-            stackTrace: stackTrace,
-            data: {'operation': 'create', 'recordId': foodId},
-          );
-          _sentry.reportNetworkError(
+          _report.degraded(
             e,
-            url: 'supabase:user_foods:create',
-            method: 'UPSERT',
             stackTrace: stackTrace,
+            area: 'food_management',
+            extra: {'operation': 'create', 'recordId': foodId},
+            message: 'Immediate upload failed; record stays dirty for retry',
+          );
+          _report.degraded(
+            e,
+            stackTrace: stackTrace,
+            area: 'network',
+            tags: {'method': 'UPSERT'},
+            extra: {'url': 'supabase:user_foods:create'},
           );
         }
       }());
     } catch (e) {
-      _logger.error(
-        'Error saving user food',
-        context: 'UserFoodCrudService',
-        data: {'foodName': food.name},
-        error: e,
+      _report.fault(
+        e,
+        area: 'food_management',
+        extra: {'foodName': food.name},
+        message: 'Error saving user food',
       );
       rethrow;
     }
@@ -179,7 +171,7 @@ class UserFoodCrudService {
 
       // Normalize product type if provided
       final normalizedProductType = productTypeId != null
-          ? normalizeProductType(productTypeId, logger: _logger)
+          ? normalizeProductType(productTypeId, report: _report)
           : null;
 
       // OFFLINE-FIRST: Update Drift IMMEDIATELY
@@ -225,18 +217,19 @@ class UserFoodCrudService {
               categoryNames: categoryNames,
             );
           } catch (e, stackTrace) {
-            _logger.warning(
-              'Immediate upload failed; record stays dirty for retry',
-              context: 'USER_FOOD_CRUD',
-              error: e,
-              stackTrace: stackTrace,
-              data: {'operation': 'update', 'recordId': foodId},
-            );
-            _sentry.reportNetworkError(
+            _report.degraded(
               e,
-              url: 'supabase:user_foods:update',
-              method: 'UPDATE',
               stackTrace: stackTrace,
+              area: 'food_management',
+              extra: {'operation': 'update', 'recordId': foodId},
+              message: 'Immediate upload failed; record stays dirty for retry',
+            );
+            _report.degraded(
+              e,
+              stackTrace: stackTrace,
+              area: 'network',
+              tags: {'method': 'UPDATE'},
+              extra: {'url': 'supabase:user_foods:update'},
             );
           }
         }());
@@ -244,11 +237,11 @@ class UserFoodCrudService {
 
       return success;
     } catch (e) {
-      _logger.error(
-        'Error updating user food',
-        context: 'UserFoodCrudService',
-        data: {'foodId': foodId},
-        error: e,
+      _report.fault(
+        e,
+        area: 'food_management',
+        extra: {'foodId': foodId},
+        message: 'Error updating user food',
       );
       rethrow;
     }
@@ -272,27 +265,28 @@ class UserFoodCrudService {
         try {
           await _uploadUserFoodDeletion(deviceId, foodId);
         } catch (e, stackTrace) {
-          _logger.warning(
-            'Immediate upload failed; record stays dirty for retry',
-            context: 'USER_FOOD_CRUD',
-            error: e,
-            stackTrace: stackTrace,
-            data: {'operation': 'delete', 'recordId': foodId},
-          );
-          _sentry.reportNetworkError(
+          _report.degraded(
             e,
-            url: 'supabase:user_foods:delete',
-            method: 'UPDATE',
             stackTrace: stackTrace,
+            area: 'food_management',
+            extra: {'operation': 'delete', 'recordId': foodId},
+            message: 'Immediate upload failed; record stays dirty for retry',
+          );
+          _report.degraded(
+            e,
+            stackTrace: stackTrace,
+            area: 'network',
+            tags: {'method': 'UPDATE'},
+            extra: {'url': 'supabase:user_foods:delete'},
           );
         }
       }());
     } catch (e) {
-      _logger.error(
-        'Error deleting user food',
-        context: 'UserFoodCrudService',
-        data: {'foodId': foodId},
-        error: e,
+      _report.fault(
+        e,
+        area: 'food_management',
+        extra: {'foodId': foodId},
+        message: 'Error deleting user food',
       );
       rethrow;
     }
@@ -309,7 +303,7 @@ class UserFoodCrudService {
   }) async {
     final normalizedProductType = normalizeProductType(
       food.productTypeId,
-      logger: _logger,
+      report: _report,
     );
 
     await _supabase.from('user_foods').upsert({
@@ -459,11 +453,11 @@ class UserFoodCrudService {
         (userFood) => userFood.clientFoodId == foodId || userFood.id == foodId,
       );
     } catch (e) {
-      _logger.error(
-        'Error checking if food is user food',
-        context: 'UserFoodCrudService',
-        data: {'foodId': foodId},
-        error: e,
+      _report.fault(
+        e,
+        area: 'food_management',
+        extra: {'foodId': foodId},
+        message: 'Error checking if food is user food',
       );
       return false;
     }
@@ -572,7 +566,11 @@ class UserFoodCrudService {
           return List<String>.from(decoded);
         }
       } catch (e) {
-        _logger.warning('Failed to parse JSON categories: $trimmed', error: e);
+        _report.degraded(
+          e,
+          area: 'food_management',
+          message: 'Failed to parse JSON categories: $trimmed',
+        );
       }
     }
 

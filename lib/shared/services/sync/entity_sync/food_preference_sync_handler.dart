@@ -3,7 +3,6 @@ import 'package:riverpod_annotation/riverpod_annotation.dart';
 import '../../../database/app_database.dart';
 import '../../../database/database_provider.dart';
 import '../../../../features/auth/domain/user_preferences.dart';
-import '../../logging_service.dart';
 import '../../report/report.dart';
 
 part 'food_preference_sync_handler.g.dart';
@@ -12,7 +11,6 @@ part 'food_preference_sync_handler.g.dart';
 FoodPreferenceSyncHandler foodPreferenceSyncHandler(Ref ref) {
   return FoodPreferenceSyncHandler(
     database: ref.read(appDatabaseProvider),
-    logger: ref.read(appLoggerProvider),
     report: ref.read(reportProvider),
   );
 }
@@ -21,14 +19,11 @@ FoodPreferenceSyncHandler foodPreferenceSyncHandler(Ref ref) {
 class FoodPreferenceSyncHandler {
   const FoodPreferenceSyncHandler({
     required AppDatabase database,
-    required AppLogger logger,
     Report? report,
   }) : _database = database,
-       _logger = logger,
        _report = report;
 
   final AppDatabase _database;
-  final AppLogger _logger;
   final Report? _report;
 
   /// Injected by the provider; tests may pass a `RecordingReport`.
@@ -48,9 +43,9 @@ class FoodPreferenceSyncHandler {
       final firstPref = foodPreferences.first as Map<String, dynamic>;
       final userId = firstPref['user_id'] as String?;
       if (userId == null) {
-        _logger.warning(
-          'Food preferences missing user_id, skipping sync',
-          context: 'FOOD_PREF_SYNC',
+        _r.degraded(
+          const LoggedFault('Food preferences missing user_id, skipping sync'),
+          area: 'sync',
         );
         return;
       }
@@ -84,9 +79,11 @@ class FoodPreferenceSyncHandler {
         final localPrefs = await _database.foodPreferencesDao
             .getUserFoodPreferences(userId);
         if (localPrefs.isNotEmpty) {
-          _logger.warning(
-            'Server returned empty food_preferences but local has ${localPrefs.length} items - keeping local data',
-            context: 'FOOD_PREF_SYNC',
+          _r.degraded(
+            LoggedFault(
+              'Server returned empty food_preferences but local has ${localPrefs.length} items - keeping local data',
+            ),
+            area: 'sync',
           );
           return;
         }

@@ -10,7 +10,6 @@ import '../models/version_check_result.dart';
 import '../models/dirty_record_backup.dart';
 import '../models/upload_error.dart';
 import 'dirty_record_backup_service.dart';
-import 'logging_service.dart';
 import 'report/report.dart';
 import 'sync/sync_dependency_graph.dart';
 
@@ -39,23 +38,21 @@ part 'version_check_service.g.dart';
 VersionCheckService versionCheckService(Ref ref) {
   final supabase = Supabase.instance.client;
   final database = ref.watch(appDatabaseProvider);
-  final logger = ref.read(appLoggerProvider);
-  final backupService = DirtyRecordBackupService(logger: logger);
+  final report = ref.read(reportProvider);
+  final backupService = DirtyRecordBackupService(report: report);
 
   return VersionCheckService(
     supabase: supabase,
     database: database,
-    logger: logger,
     backupService: backupService,
     ref: ref,
-    report: ref.read(reportProvider),
+    report: report,
   );
 }
 
 class VersionCheckService {
   final SupabaseClient _supabase;
   final AppDatabase _database;
-  final AppLogger _logger;
   final Report? _report;
   final DirtyRecordBackupService _backupService;
   final Ref _ref;
@@ -78,13 +75,11 @@ class VersionCheckService {
   VersionCheckService({
     required SupabaseClient supabase,
     required AppDatabase database,
-    required AppLogger logger,
     required DirtyRecordBackupService backupService,
     required Ref ref,
     Report? report,
   }) : _supabase = supabase,
        _database = database,
-       _logger = logger,
        _report = report,
        _backupService = backupService,
        _ref = ref;
@@ -205,9 +200,9 @@ class VersionCheckService {
   }) async {
     wasDeferredForDataProtection = false;
     try {
-      _logger.info(
+      _r.info(
         'Starting schema resync',
-        context: 'VERSION_CHECK_SERVICE',
+        area: 'sync',
         data: {
           'userId': userId ?? 'null',
           'localSchema': _database.schemaVersion,
@@ -273,9 +268,9 @@ class VersionCheckService {
           await _backupService.backupDirtyRecords(backup);
         }
       } else {
-        _logger.info(
+        _r.info(
           'Skipping dirty record upload - no userId available',
-          context: 'VERSION_CHECK_SERVICE',
+          area: 'sync',
         );
       }
 
@@ -302,10 +297,7 @@ class VersionCheckService {
       }
 
       // Step 4: Delete the database files
-      _logger.info(
-        'Deleting database for schema resync',
-        context: 'VERSION_CHECK_SERVICE',
-      );
+      _r.info('Deleting database for schema resync', area: 'sync');
 
       await AppDatabase.deleteAndResync(
         reason: 'remote_schema_version_resync',
@@ -322,9 +314,9 @@ class VersionCheckService {
         await prefs.remove('${key}_last_sync');
       }
 
-      _logger.info(
+      _r.info(
         'Schema resync completed successfully',
-        context: 'VERSION_CHECK_SERVICE',
+        area: 'sync',
         data: {
           'dirtyRecordsBackedUp': uploadErrors.isNotEmpty,
           'staleness_timestamps_cleared': repoKeys.length,

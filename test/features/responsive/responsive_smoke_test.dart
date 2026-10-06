@@ -10,17 +10,11 @@ import 'package:mealvana_endurance/features/onboarding/presentation/screens/spor
 import 'package:mealvana_endurance/features/onboarding/presentation/screens/welcome_screen.dart';
 import 'package:mealvana_endurance/shared/services/analytics/analytics_tracker.dart';
 import 'package:mealvana_endurance/shared/services/app_external_deps.dart';
-import 'package:mealvana_endurance/shared/services/logging_service.dart';
-import 'package:mealvana_endurance/shared/services/sentry/sentry_reporter.dart';
 import '../../helpers/responsive_test_harness.dart';
 
 class _MockAnalyticsTracker extends Mock implements AnalyticsTracker {}
 
 class _MockSupabaseClient extends Mock implements SupabaseClient {}
-
-class _MockSentryReporter extends Mock implements SentryReporter {}
-
-class _MockAppLogger extends Mock implements AppLogger {}
 
 class _MockSharedPreferences extends Mock implements SharedPreferences {}
 
@@ -35,8 +29,6 @@ _responsiveOverrides() {
       AppExternalDeps(
         analytics: analytics,
         supabaseClient: _MockSupabaseClient(),
-        sentry: _MockSentryReporter(),
-        logger: _MockAppLogger(),
         sharedPreferences: _MockSharedPreferences(),
       ),
     ),
