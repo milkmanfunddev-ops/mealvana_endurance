@@ -1130,10 +1130,14 @@ QueryExecutor _openConnection() {
   final executor = openNativeConnection();
   final factory = AppDatabase.queryInterceptorFactory;
   if (factory == null) {
-    SentryReport.global.note(
-      'Database opened without a query interceptor; no database spans',
-      area: 'database',
-    );
+    // The bootstrap installs the interceptor on native only; on web its
+    // absence is the design, not a silent loss.
+    if (!kIsWeb) {
+      SentryReport.global.note(
+        'Database opened without a query interceptor; no database spans',
+        area: 'database',
+      );
+    }
     return executor;
   }
   return executor.interceptWith(factory());

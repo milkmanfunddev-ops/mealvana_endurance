@@ -6,11 +6,11 @@
 
 **Status:** done (2026-10-06, wave 3; parts merged on `sentry`)
 
-- [ ] No baseline entry remains for the nutrition-plan feature or the other directories in scope; the guard test is green
-- [ ] No `print`, `debugPrint`, logger-only or empty catch remains in scope; each is a `Report` call, a rethrow, or a reasoned allow-list entry
-- [ ] No direct Sentry SDK import remains in scope
-- [ ] The ticket records each site's classification (Fault / Degraded / Note / removed / reasoned)
-- [ ] Existing tests in scope still pass; where a catch becomes a Fault on a tested path, the test asserts the report through `NoopReport` or the transport, not console output
+- [x] No baseline entry remains for the nutrition-plan feature or the other directories in scope; the guard test is green
+- [x] No `print`, `debugPrint`, logger-only or empty catch remains in scope; each is a `Report` call, a rethrow, or a reasoned allow-list entry
+- [x] No direct Sentry SDK import remains in scope
+- [x] The ticket records each site's classification (Fault / Degraded / Note / removed / reasoned)
+- [x] Existing tests in scope still pass; where a catch becomes a Fault on a tested path, the test asserts the report through `NoopReport` or the transport, not console output
 
 ## Sites (part A: `lib/features/nutrition_plan/**`, `lib/features/settings/**`)
 

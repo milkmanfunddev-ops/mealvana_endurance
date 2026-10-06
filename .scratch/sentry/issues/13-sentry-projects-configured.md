@@ -31,7 +31,7 @@ rule list, each bound to a per-project "Issue Stream" detector (prod 6006611, de
 | 3 | Inbound filter browser-extensions | dev | off | on | same, dev |
 | 3 | Inbound filter legacy-browsers | dev | off | on | same, dev |
 | 4 | Issue alert rules | prod | 2569558 "Send a notification for high priority issues" (new/existing high-priority, no env, every 30 min, email issue_owners) | 6123426 "New issue" (`first_seen_event`) + 6123429 "Regression" (`regression_event`); env `production`; frequency 1440 min; email → team `milkman` (4509882393034752), fallthrough ActiveMembers | `POST /organizations/milkman-24/workflows/` ×2 → 201; `DELETE .../workflows/2569558/` → 204 |
-| 4 | Issue alert rules | dev | 2679920 same default rule | 6123430 "New issue" + 6123431 "Regression", same config, detector 6062021 | `POST` ×2 → 201; `DELETE .../workflows/2679920/` → 204 |
+| 4 | Issue alert rules | dev | 2679920 same default rule | none (spec: dev gets the weekly report only; the two production-filtered rules created first, 6123430/6123431, could never fire on `development` events and were deleted at code review) | `POST` ×2 → 201; `DELETE .../workflows/2679920/` → 204; `DELETE .../workflows/6123430/`, `/6123431/` → 204 |
 | 4 | Pull-request rule | org | 5648553 "Send a notification when pull requests are ready" (never fired) | deleted | `DELETE .../workflows/5648553/` → 204 |
 | 5 | Digests min/max | prod | 300 s / 1800 s | 1800 s / 3600 s | `PUT /projects/milkman-24/mealvana-endurance/` `{"digestsMinDelay":1800,"digestsMaxDelay":3600}` → 200 |
 | 5 | Digests min/max | dev | 300 s / 1800 s | 1800 s / 3600 s | same, dev |
