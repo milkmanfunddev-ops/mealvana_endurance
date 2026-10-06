@@ -10,7 +10,7 @@ import 'dart:math';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 
-import 'package:mealvana_endurance/shared/services/sentry/sentry_replay_sampling.dart';
+import 'package:mealvana_endurance/shared/core/bootstrap/sentry_replay_sampling.dart';
 
 /// Deterministic stand-in for [Random], so cohort assignment is testable.
 class _FixedRandom implements Random {

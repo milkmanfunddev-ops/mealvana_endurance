@@ -6,7 +6,7 @@ import 'package:sentry_flutter/sentry_flutter.dart';
 import '../../features/app_startup/application/app_startup_provider.dart';
 import '../services/app_external_deps.dart';
 import '../services/app_config.dart';
-import '../../main.dart' show sentryNavigatorKey;
+import 'bootstrap/bootstrap.dart' show appNavigatorKey;
 
 // Import all screens
 import '../../features/app_startup/presentation/screens/force_upgrade_screen.dart';
@@ -109,7 +109,7 @@ class AppRouter {
       initialLocation: '/',
       refreshListenable: authChangeNotifier,
       // Use Sentry navigator key for screenshot capture in feedback widget
-      navigatorKey: sentryNavigatorKey,
+      navigatorKey: appNavigatorKey,
       // SentryNavigatorObserver records screen transitions as Sentry breadcrumbs
       // and navigation spans for performance monitoring.
       observers: [SentryNavigatorObserver()],

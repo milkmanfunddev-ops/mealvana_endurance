@@ -1,7 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:flutter/scheduler.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
-import 'package:package_info_plus/package_info_plus.dart';
 import 'package:uuid/uuid.dart';
 import 'dart:async';
 import 'package:shared_preferences/shared_preferences.dart';
@@ -16,6 +15,8 @@ import '../../../shared/services/analytics/internal_user_service.dart';
 import '../../../shared/services/privacy/analytics_consent.dart';
 import '../../../shared/services/logging_service.dart';
 import '../../../shared/services/sentry/sentry_reporter.dart';
+import '../../../shared/services/report/report.dart';
+import '../../../shared/services/report/report_identity.dart';
 import '../../../shared/services/performance_telemetry.dart';
 import '../../../shared/services/notification_service.dart';
 import '../../../shared/database/database_provider.dart';
@@ -324,6 +325,12 @@ class AppStartupService {
         // This picks up any admin approvals since last app launch
         await _deferredStep('deferred.coach_status', _syncCoachStatus);
 
+        // 5b. Role and device_id tags on every following Sentry event.
+        await _deferredStep(
+          'deferred.report_identity',
+          () => syncReportIdentity(ref),
+        );
+
         // 6. Initialize RevenueCat for AI credits.
         // No-op unless aiCreditsEnabled + a RevenueCat key are configured.
         await _deferredStep('deferred.revenuecat', _initializeRevenueCat);
@@ -511,28 +518,26 @@ class AppStartupService {
     }
   }
 
-  /// Set Sentry user context during app startup
-  /// Uses Supabase auth ID (not device ID) to avoid DeviceInfoPlugin deadlock
+  /// Put the Supabase user id on every event from the first frame on. Cheap
+  /// and local: role and device id follow in `deferred.report_identity`
+  /// (the coach lookup and the device plugin both wait for the first frame).
   Future<void> setSentryUserContext() async {
+    final report = ref.read(reportProvider);
     try {
-      // Use Supabase auth ID if available, otherwise defer to later
-      final supabaseUser = _supabase.auth.currentUser;
-      final userId = supabaseUser?.id ?? 'anonymous';
-
-      // Derive version dynamically so it stays accurate across releases.
-      final packageInfo = await PackageInfo.fromPlatform();
-      final appVersion = '${packageInfo.version}+${packageInfo.buildNumber}';
-
-      await _sentry.setUserContext(deviceId: userId, appVersion: appVersion);
+      final userId = _supabase.auth.currentUser?.id;
+      if (userId == null) {
+        await report.clearUser();
+      } else {
+        await report.setUser(userId);
+      }
     } catch (e, stackTrace) {
-      // Don't use Sentry to report Sentry initialization errors
-      _logger.error(
-        'Sentry user context error',
-        context: 'SENTRY',
-        error: e,
+      // The app continues without identity; the next event says why.
+      await report.degraded(
+        e,
         stackTrace: stackTrace,
+        area: 'startup',
+        message: 'Report identity: startup setUser failed',
       );
-      // Don't rethrow - app should continue even if Sentry fails
     }
   }
 

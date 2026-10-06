@@ -22,7 +22,7 @@ import '../../theme/kyle_design/theme_provider.dart';
 import '../../features/app_startup/application/app_startup_provider.dart';
 import '../../features/app_startup/presentation/widgets/app_startup_widget.dart';
 import '../core/app_router.dart';
-import '../../main.dart' show sentryNavigatorKey;
+import '../core/bootstrap/bootstrap.dart' show appNavigatorKey;
 import '../services/app_config.dart';
 import '../services/app_external_deps.dart';
 import '../../features/carb_loading/presentation/providers/carb_nudge_coordinator.dart';
@@ -127,7 +127,7 @@ class _RootAppWidgetState extends ConsumerState<RootAppWidget>
     if (LaunchTrail.length == _trailShownAt)
       return; // nothing new since last time
     _trailShownAt = LaunchTrail.length;
-    final ctx = sentryNavigatorKey.currentContext;
+    final ctx = appNavigatorKey.currentContext;
     if (ctx == null || !ctx.mounted) return;
     // ignore: use_build_context_synchronously
     showDialog<void>(

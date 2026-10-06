@@ -109,9 +109,10 @@ abstract class Report {
     Map<String, dynamic>? data,
   });
 
-  /// Identity for every following event: Supabase user id and role
-  /// (`athlete` or `coach`). Never an email.
-  Future<void> setUser(String id, {String? role});
+  /// Identity for every following event: Supabase user id as the Sentry
+  /// user, with `role` (`athlete` or `coach`) and `device_id` as searchable
+  /// tags. Never an email.
+  Future<void> setUser(String id, {String? role, String? deviceId});
 
   Future<void> clearUser();
 
@@ -434,10 +435,11 @@ class SentryReport implements Report {
   }
 
   @override
-  Future<void> setUser(String id, {String? role}) async {
+  Future<void> setUser(String id, {String? role, String? deviceId}) async {
     await _hub.configureScope((scope) async {
       await scope.setUser(SentryUser(id: id));
       if (role != null) await scope.setTag('role', role);
+      if (deviceId != null) await scope.setTag('device_id', deviceId);
     });
   }
 
@@ -446,6 +448,7 @@ class SentryReport implements Report {
     await _hub.configureScope((scope) async {
       await scope.setUser(null);
       await scope.removeTag('role');
+      await scope.removeTag('device_id');
     });
   }
 
@@ -458,8 +461,8 @@ class SentryReport implements Report {
     Map<String, dynamic>? data,
   ) {
     if (!_hub.isEnabled) return;
-    final attributes = <String, SentryLogAttribute>{
-      if (area != null) 'area': SentryLogAttribute.string(area),
+    final attributes = <String, SentryAttribute>{
+      if (area != null) 'area': SentryAttribute.string(area),
       if (data != null)
         for (final entry in data.entries) entry.key: _attribute(entry.value),
     };
@@ -480,11 +483,11 @@ class SentryReport implements Report {
     }
   }
 
-  static SentryLogAttribute _attribute(Object? value) => switch (value) {
-    bool v => SentryLogAttribute.bool(v),
-    int v => SentryLogAttribute.int(v),
-    double v => SentryLogAttribute.double(v),
-    _ => SentryLogAttribute.string(value.toString()),
+  static SentryAttribute _attribute(Object? value) => switch (value) {
+    bool v => SentryAttribute.bool(v),
+    int v => SentryAttribute.int(v),
+    double v => SentryAttribute.double(v),
+    _ => SentryAttribute.string(value.toString()),
   };
 
   /// Legacy callers pass `context: 'SYNC'`; the area vocabulary is lower
@@ -594,7 +597,7 @@ class NoopReport implements Report {
   }) {}
 
   @override
-  Future<void> setUser(String id, {String? role}) async {}
+  Future<void> setUser(String id, {String? role, String? deviceId}) async {}
 
   @override
   Future<void> clearUser() async {}

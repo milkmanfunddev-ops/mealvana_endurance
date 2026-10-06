@@ -1,7 +1,7 @@
 import 'package:flutter/foundation.dart';
 import 'package:sentry_flutter/sentry_flutter.dart';
 
-import '../report/expected_failures.dart';
+import '../../services/report/expected_failures.dart';
 
 /// The one `beforeSend` every flavour entry point installs.
 ///

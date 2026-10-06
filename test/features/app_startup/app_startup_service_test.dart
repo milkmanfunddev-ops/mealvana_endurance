@@ -3,7 +3,7 @@
 // Unit tests for AppStartupService business logic.
 //
 // Scope:
-//  - setSentryUserContext: anonymous vs authenticated user, PackageInfo wiring,
+//  - setSentryUserContext: signed-out clears identity, signed-in sets the user id,
 //    error-tolerant (does not rethrow)
 //  - checkUserSession: user present -> analytics.identifyUser called;
 //    no user -> no throw; analytics failure -> no throw
@@ -47,6 +47,7 @@ import 'package:mealvana_endurance/shared/database/database_provider.dart';
 import 'package:mealvana_endurance/shared/services/analytics/analytics_tracker.dart';
 import 'package:mealvana_endurance/shared/services/app_external_deps.dart';
 import 'package:mealvana_endurance/shared/services/logging_service.dart';
+import 'package:mealvana_endurance/shared/services/report/report.dart';
 import 'package:mealvana_endurance/shared/services/sentry/sentry_reporter.dart';
 
 // ─── Mock declarations ────────────────────────────────────────────────────────
@@ -314,73 +315,61 @@ void main() {
   // ─── setSentryUserContext ────────────────────────────────────────────────────
 
   group('setSentryUserContext', () {
-    test('passes "anonymous" when no Supabase user is logged in', () async {
+    // Identity goes through `Report` (ticket 02): the Supabase user id is the
+    // Sentry user from the first frame; role and device_id follow in the
+    // deferred `report_identity` step.
+    late _RecordingReport report;
+
+    ProviderContainer makeReportContainer() {
+      report = _RecordingReport();
+      final deps = AppExternalDeps(
+        supabaseClient: mockSupabase,
+        logger: mockLogger,
+        sentry: mockSentry,
+        analytics: mockAnalytics,
+        sharedPreferences: mockPrefs,
+        report: report,
+      );
+      return ProviderContainer(
+        overrides: [
+          appExternalDepsProvider.overrideWithValue(deps),
+          reportProvider.overrideWithValue(report),
+          appDatabaseProvider.overrideWithValue(database),
+        ],
+      );
+    }
+
+    test('clears the user when no Supabase user is logged in', () async {
       when(() => mockAuth.currentUser).thenReturn(null);
 
-      final container = makeContainer();
-      final service = container.read(appStartupServiceProvider);
+      final container = makeReportContainer();
+      await container.read(appStartupServiceProvider).setSentryUserContext();
 
-      await service.setSentryUserContext();
-
-      verify(
-        () => mockSentry.setUserContext(
-          deviceId: 'anonymous',
-          appVersion: '1.12.0+60',
-        ),
-      ).called(1);
-
+      expect(report.userIds, isEmpty);
+      expect(report.cleared, 1);
       container.dispose();
     });
 
-    test('passes Supabase user id when logged in', () async {
+    test('sets the Supabase user id when logged in', () async {
       when(() => mockAuth.currentUser).thenReturn(_FakeUser('user-abc-123'));
 
-      final container = makeContainer();
-      final service = container.read(appStartupServiceProvider);
+      final container = makeReportContainer();
+      await container.read(appStartupServiceProvider).setSentryUserContext();
 
-      await service.setSentryUserContext();
-
-      verify(
-        () => mockSentry.setUserContext(
-          deviceId: 'user-abc-123',
-          appVersion: '1.12.0+60',
-        ),
-      ).called(1);
-
+      expect(report.userIds, ['user-abc-123']);
+      expect(report.cleared, 0);
       container.dispose();
     });
 
-    test('does not rethrow when Sentry call fails', () async {
-      when(
-        () => mockSentry.setUserContext(
-          deviceId: any(named: 'deviceId'),
-          appVersion: any(named: 'appVersion'),
-        ),
-      ).thenThrow(Exception('Sentry network error'));
+    test('does not rethrow when identity cannot be read; reports Degraded', () async {
+      when(() => mockAuth.currentUser).thenThrow(Exception('auth not ready'));
 
-      final container = makeContainer();
+      final container = makeReportContainer();
       final service = container.read(appStartupServiceProvider);
 
       await expectLater(service.setSentryUserContext(), completes);
-
+      expect(report.degradedAreas, ['startup']);
       container.dispose();
-    });
-
-    test('appVersion format is version+buildNumber (semver+build)', () async {
-      // Verify the format "1.12.0+60" — not just "1.12.0"
-      final container = makeContainer();
-      final service = container.read(appStartupServiceProvider);
-
-      await service.setSentryUserContext();
-
-      final captured = verify(
-        () => mockSentry.setUserContext(
-          deviceId: any(named: 'deviceId'),
-          appVersion: captureAny(named: 'appVersion'),
-        ),
-      ).captured;
-
-      expect(captured.last, contains('+'));
     });
   });
 
@@ -739,4 +728,34 @@ void main() {
       expect(knownKeys.contains(unknownKey), isFalse);
     });
   });
+}
+
+/// Records what the startup service tells `Report` about identity.
+class _RecordingReport extends NoopReport {
+  final List<String> userIds = [];
+  final List<String?> degradedAreas = [];
+  int cleared = 0;
+
+  @override
+  Future<void> setUser(String id, {String? role, String? deviceId}) async {
+    userIds.add(id);
+  }
+
+  @override
+  Future<void> clearUser() async {
+    cleared++;
+  }
+
+  @override
+  Future<void> degraded(
+    Object error, {
+    StackTrace? stackTrace,
+    String? area,
+    Map<String, String>? tags,
+    Map<String, dynamic>? extra,
+    String? message,
+    List<String>? fingerprint,
+  }) async {
+    degradedAreas.add(area);
+  }
 }
