@@ -102,22 +102,12 @@ Future<void> main() async {
         options.sendDefaultPii = false;
         options.maxBreadcrumbs = 100;
 
-        options.beforeSend = (event, hint) {
-          // Device diagnostics (MetricKit hangs/CPU exceptions) are captured at
-          // info level by design and must not be swept up by this drop.
-          if (!kDebugMode &&
-              !isDiagnosticEvent(event) &&
-              (event.level == SentryLevel.debug ||
-                  event.level == SentryLevel.info)) {
-            return null;
-          }
-          // Drop known low-signal noise (offline/DNS, transient TLS resets,
-          // cancelled sign-ins, debug assertions, test-runner failures).
-          if (isSentryNoise(event)) {
-            return null;
-          }
-          return event;
-        };
+        // One filter for every flavour: drops test-runner leaks, downgrades
+        // expected failures to warnings, drops info/debug in release builds.
+        options.beforeSend = (event, hint) => filterSentryEvent(event);
+
+        // Structured logs (Report.info / Report.debug) need this in 9.x.
+        options.enableLogs = true;
 
         options.navigatorKey = sentryNavigatorKey;
         options.attachScreenshot = true;

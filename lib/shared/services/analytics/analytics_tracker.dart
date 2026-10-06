@@ -404,7 +404,8 @@ class NoopAnalyticsTracker implements AnalyticsTracker {
 /// reports with `is_internal != true` while still being *visible* as team usage.
 /// A tester who wants nothing sent at all now uses Settings → Privacy, which
 /// lands on the consent gate above.
-final analyticsTrackerProvider = Provider<AnalyticsTracker>((ref) {
+final Provider<AnalyticsTracker> analyticsTrackerProvider =
+    Provider<AnalyticsTracker>((ref) {
   final config = ref.watch(appConfigProvider);
   final consent = ref.watch(analyticsConsentProvider);
 
