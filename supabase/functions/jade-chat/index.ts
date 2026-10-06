@@ -61,7 +61,7 @@ import { AI_COACH_MODEL } from '../_shared/ai/model.ts';
 import { logAiUsage } from '../_shared/ai/usage.ts';
 import { buildSystemPrompt } from '../_shared/ai_coach/persona.ts';
 import { makeAiCoachTools } from '../_shared/ai_coach/tools.ts';
-import { initSentry, withSentry } from '../_shared/sentry.ts';
+import { captureEdgeError, initSentry, withSentry } from '../_shared/sentry.ts';
 import { ensureAndCheckCredits, debitForUsage, insufficientCreditsBody } from '../_shared/ai/credits.ts';
 
 // ---------------------------------------------------------------------------
@@ -150,11 +150,11 @@ async function requireUser(req: Request) {
   const { data: { user }, error } = await adminClient.auth.getUser(token);
 
   if (error || !user) {
-    console.error('[jade-chat] Auth error:', error);
+    // Expected client fault: a breadcrumb, not an event.
     return {
       user: null,
       token: null,
-      response: errorResponse('Invalid or expired authentication token', 401),
+      response: errorResponse('Invalid or expired authentication token', 401, error?.message),
     };
   }
 
@@ -179,7 +179,7 @@ async function hasBaseline(serviceClient: SupabaseClient<any, any, any>, userId:
     .gte('log_date', sinceStr);
 
   if (error) {
-    console.error('[jade-chat] hasBaseline check error:', error);
+    captureEdgeError(error, { message: '[jade-chat] hasBaseline check error' });
     return false;
   }
   return (count ?? 0) > 0;
@@ -198,7 +198,7 @@ async function unitSystemFor(serviceClient: SupabaseClient<any, any, any>, userI
     .maybeSingle();
 
   if (error) {
-    console.error('[jade-chat] unit_system lookup error:', error);
+    captureEdgeError(error, { message: '[jade-chat] unit_system lookup error' });
   }
   // Matches the client default (users.unit_system defaults to 'imperial').
   return data?.unit_system === 'metric' ? 'metric' : 'imperial';
@@ -223,7 +223,7 @@ function todayInTz(timezone: string): string {
 // Initialise Sentry once per cold-start. No-op when SENTRY_DSN is not set.
 initSentry();
 
-serve(withSentry(async (req: Request) => {
+serve(withSentry('jade-chat', async (req: Request) => {
   // Handle CORS preflight — must use expanded headers
   if (req.method === 'OPTIONS') {
     return new Response('ok', { headers: chatCorsHeaders });
@@ -236,7 +236,7 @@ serve(withSentry(async (req: Request) => {
   // Validate AI Gateway key is configured before doing any real work
   const aiGatewayApiKey = Deno.env.get('AI_GATEWAY_API_KEY');
   if (!aiGatewayApiKey) {
-    console.error('[jade-chat] AI_GATEWAY_API_KEY secret is not set');
+    // errorResponse() captures a 5xx as a Sentry message.
     return errorResponse('AI service is not configured. Please contact support.', 500);
   }
 
@@ -320,7 +320,6 @@ serve(withSentry(async (req: Request) => {
         .maybeSingle();
 
       if (convError) {
-        console.error('[jade-chat] conversation lookup error:', convError);
         return serverError(convError);
       }
       if (!conv) {
@@ -347,7 +346,6 @@ serve(withSentry(async (req: Request) => {
         .single();
 
       if (createError || !newConv) {
-        console.error('[jade-chat] conversation create error:', createError);
         return serverError(createError ?? new Error('Failed to create conversation'));
       }
 
@@ -366,8 +364,8 @@ serve(withSentry(async (req: Request) => {
       });
 
     if (userMsgError) {
-      console.error('[jade-chat] user message persist error:', userMsgError);
-      // Non-fatal — don't abort; log and continue
+      // Non-fatal — don't abort; report and continue
+      captureEdgeError(userMsgError, { message: '[jade-chat] user message persist error' });
     }
 
     // ── Load prior conversation history ─────────────────────────────────────
@@ -379,7 +377,7 @@ serve(withSentry(async (req: Request) => {
       .limit(HISTORY_LIMIT + 1); // +1 because we just inserted the user turn
 
     if (historyError) {
-      console.error('[jade-chat] history load error:', historyError);
+      captureEdgeError(historyError, { message: '[jade-chat] history load error' });
     }
 
     // Reverse to chronological order; exclude the message we just inserted
@@ -464,14 +462,14 @@ serve(withSentry(async (req: Request) => {
             });
 
           if (assistantMsgError) {
-            console.error('[jade-chat] assistant message persist error:', assistantMsgError);
+            captureEdgeError(assistantMsgError, { message: '[jade-chat] assistant message persist error' });
           }
 
           const { error: bumpError } = await serviceClient
             .from('jade_conversations')
             .update({ updated_at: new Date().toISOString() })
             .eq('id', resolvedConversationId);
-          if (bumpError) console.error('[jade-chat] conversation bump error:', bumpError);
+          if (bumpError) captureEdgeError(bumpError, { message: '[jade-chat] conversation bump error' });
 
           const { error: logError } = await serviceClient
             .from('jade_calls')
@@ -483,7 +481,7 @@ serve(withSentry(async (req: Request) => {
               input_tokens: usage?.inputTokens ?? 0,
               output_tokens: usage?.outputTokens ?? 0,
             });
-          if (logError) console.error('[jade-chat] jade_calls log error:', logError);
+          if (logError) captureEdgeError(logError, { message: '[jade-chat] jade_calls log error' });
 
           // Also record in the canonical, prod-safe ai_usage ledger (used for
           // per-user token visibility + future throttling). Already inside the
@@ -559,7 +557,7 @@ serve(withSentry(async (req: Request) => {
                 part.error instanceof Error
                   ? part.error.message
                   : String(part.error ?? 'Unknown stream error');
-              console.error('[jade-chat] fullStream error part:', errMsg);
+              captureEdgeError(part.error ?? new Error(errMsg), { message: '[jade-chat] fullStream error part' });
               controller.enqueue(
                 encoder.encode(ndjsonLine({ type: 'error', message: errMsg })),
               );
@@ -572,7 +570,7 @@ serve(withSentry(async (req: Request) => {
           controller.close();
         } catch (err) {
           const errMsg = err instanceof Error ? err.message : String(err);
-          console.error('[jade-chat] stream consumer error:', errMsg);
+          captureEdgeError(err, { message: '[jade-chat] stream consumer error' });
           try {
             controller.enqueue(
               encoder.encode(ndjsonLine({ type: 'error', message: errMsg })),
@@ -599,7 +597,6 @@ serve(withSentry(async (req: Request) => {
     });
 
   } catch (error) {
-    console.error('[jade-chat] Fatal error:', error);
     return serverError(error);
   }
 }));

@@ -27,7 +27,12 @@ import { serve } from 'https://deno.land/std@0.224.0/http/server.ts';
 import { createClient } from 'https://esm.sh/@supabase/supabase-js@2.39.3';
 import { handleCors } from '../_shared/cors.ts';
 import { errorResponse, successResponse } from '../_shared/responses.ts';
-import { initSentry, withSentry } from '../_shared/sentry.ts';
+import {
+  captureEdgeError,
+  captureEdgeMessage,
+  initSentry,
+  withSentry,
+} from '../_shared/sentry.ts';
 
 const SUPABASE_URL = Deno.env.get('SUPABASE_URL') ?? '';
 const SUPABASE_SERVICE_ROLE_KEY =
@@ -174,17 +179,21 @@ async function ensureFreshGarminToken(
     });
 
     if (!resp.ok) {
-      console.error(
-        `[garmin-backfill] Token refresh failed (${resp.status}):`,
-        await resp.text(),
-      );
+      const text = await resp.text();
+      captureEdgeMessage('[garmin-backfill] Token refresh failed', {
+        level: 'warning',
+        extra: { userId, status: resp.status, body: text.slice(0, 500) },
+      });
       return mapping.access_token;
     }
 
     const json = await resp.json();
     const newAccessToken = json.access_token as string | undefined;
     if (!newAccessToken) {
-      console.error('[garmin-backfill] Token refresh missing access_token');
+      captureEdgeMessage('[garmin-backfill] Token refresh missing access_token', {
+        level: 'warning',
+        extra: { userId },
+      });
       return mapping.access_token;
     }
     const newRefreshToken =
@@ -205,15 +214,20 @@ async function ensureFreshGarminToken(
       .eq('provider', 'garmin');
 
     if (updateErr) {
-      console.error(
-        '[garmin-backfill] Failed to persist refreshed token:',
-        updateErr,
-      );
+      captureEdgeError(updateErr, {
+        message: '[garmin-backfill] Failed to persist refreshed token',
+        level: 'warning',
+        extra: { userId },
+      });
     }
 
     return newAccessToken;
   } catch (err) {
-    console.error('[garmin-backfill] Token refresh error:', err);
+    captureEdgeError(err, {
+      message: '[garmin-backfill] Token refresh error',
+      level: 'warning',
+      extra: { userId },
+    });
     return mapping.access_token;
   }
 }
@@ -221,7 +235,7 @@ async function ensureFreshGarminToken(
 // Initialise Sentry once per cold-start. No-op when SENTRY_DSN is not set.
 initSentry();
 
-serve(withSentry(async (req: Request) => {
+serve(withSentry('garmin-backfill', async (req: Request) => {
   const corsResponse = handleCors(req);
   if (corsResponse) return corsResponse;
 
@@ -273,8 +287,13 @@ serve(withSentry(async (req: Request) => {
       .maybeSingle();
 
     if (mappingErr) {
-      console.error('[garmin-backfill] Integration lookup error:', mappingErr);
-      return errorResponse('Failed to look up Garmin connection', 500);
+      return errorResponse(
+        'Failed to look up Garmin connection',
+        500,
+        undefined,
+        undefined,
+        mappingErr,
+      );
     }
     if (!mapping?.access_token) {
       return errorResponse(
@@ -328,9 +347,15 @@ serve(withSentry(async (req: Request) => {
         if (!resp.ok) {
           const text = await resp.text();
           errors[summaryType] = text.slice(0, 500);
-          console.error(
-            `[garmin-backfill] ${summaryType} → ${resp.status}: ${text}`,
-          );
+          captureEdgeMessage(`[garmin-backfill] ${summaryType} backfill rejected`, {
+            level: 'warning',
+            extra: {
+              userId: user.id,
+              summaryType,
+              status: resp.status,
+              body: text.slice(0, 500),
+            },
+          });
         } else {
           console.log(
             `[garmin-backfill] ${summaryType} queued (status ${resp.status}) for user ${user.id}, window ${startSec}-${endSec}`,
@@ -338,7 +363,10 @@ serve(withSentry(async (req: Request) => {
         }
       } catch (err) {
         errors[summaryType] = String(err);
-        console.error(`[garmin-backfill] ${summaryType} fetch error:`, err);
+        captureEdgeError(err, {
+          message: `[garmin-backfill] ${summaryType} fetch error`,
+          extra: { userId: user.id, summaryType },
+        });
       }
     }
 
@@ -359,7 +387,12 @@ serve(withSentry(async (req: Request) => {
       window: { start_seconds: startSec, end_seconds: endSec },
     });
   } catch (err) {
-    console.error('[garmin-backfill] Fatal error:', err);
-    return errorResponse('Internal server error', 500, String(err));
+    return errorResponse(
+      'Internal server error',
+      500,
+      String(err),
+      undefined,
+      err,
+    );
   }
 }));

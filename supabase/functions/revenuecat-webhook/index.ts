@@ -36,6 +36,7 @@
 
 import { serve } from 'https://deno.land/std@0.224.0/http/server.ts';
 import { createClient } from 'https://esm.sh/@supabase/supabase-js@2.39.3';
+import { captureEdgeError, captureEdgeMessage, edgeBreadcrumb, initSentry, withSentry } from '../_shared/sentry.ts';
 
 const SUPABASE_URL = Deno.env.get('SUPABASE_URL') ?? '';
 const SUPABASE_SERVICE_ROLE_KEY = Deno.env.get('SUPABASE_SERVICE_ROLE_KEY') ?? '';
@@ -63,7 +64,7 @@ function productCredits(): Record<string, number> {
     const parsed = JSON.parse(raw);
     if (parsed && typeof parsed === 'object') return parsed as Record<string, number>;
   } catch (e) {
-    console.error('[rc-webhook] bad RC_PRODUCT_CREDITS JSON, using defaults:', e);
+    captureEdgeError(e, { message: '[rc-webhook] bad RC_PRODUCT_CREDITS JSON, using defaults', level: 'warning' });
   }
   return DEFAULT_PRODUCT_CREDITS;
 }
@@ -78,17 +79,19 @@ function json(body: unknown, status = 200): Response {
   });
 }
 
-serve(async (req: Request) => {
+initSentry();
+
+serve(withSentry('revenuecat-webhook', async (req: Request) => {
   if (req.method !== 'POST') return json({ error: 'Method not allowed' }, 405);
 
   // ── Verify shared secret ──────────────────────────────────────────────────
   if (!WEBHOOK_SECRET) {
-    console.error('[rc-webhook] REVENUECAT_WEBHOOK_SECRET not set');
+    captureEdgeMessage('[rc-webhook] REVENUECAT_WEBHOOK_SECRET not set');
     return json({ error: 'Webhook not configured' }, 500);
   }
   const auth = req.headers.get('Authorization') ?? '';
   if (auth !== WEBHOOK_SECRET) {
-    console.error('[rc-webhook] Authorization mismatch');
+    edgeBreadcrumb('[rc-webhook] Authorization mismatch');
     return json({ error: 'Unauthorized' }, 401);
   }
 
@@ -119,7 +122,7 @@ serve(async (req: Request) => {
   }
 
   if (!appUserId || !eventId) {
-    console.error(`[rc-webhook] missing app_user_id or event id (user=${appUserId} id=${eventId})`);
+    edgeBreadcrumb('[rc-webhook] missing app_user_id or event id', { appUserId, eventId });
     return json({ error: 'Missing app_user_id or event id' }, 400);
   }
 
@@ -148,13 +151,13 @@ serve(async (req: Request) => {
         );
         return json({ ok: true, ignored: 'user_not_in_project' });
       }
-      console.error('[rc-webhook] grant_credits error:', error.message);
+      captureEdgeError(error, { message: '[rc-webhook] grant_credits error', extra: { appUserId, eventId, productId, credits } });
       return json({ error: 'grant failed' }, 500);
     }
     console.log(`[rc-webhook] granted ${credits} credits to ${appUserId} (product=${productId}, balance=${data})`);
     return json({ ok: true, granted: credits, balance: data });
   } catch (e) {
-    console.error('[rc-webhook] exception:', e);
+    captureEdgeError(e, { message: '[rc-webhook] grant exception', extra: { appUserId, eventId, productId } });
     return json({ error: 'internal error' }, 500);
   }
-});
+}));

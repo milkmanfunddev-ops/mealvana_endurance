@@ -7,7 +7,7 @@ const CUSTOM_SCHEME = "com.milkman.mealvanaendurance://callback";
 // Initialise Sentry once per cold-start. No-op when SENTRY_DSN is not set.
 initSentry();
 
-serve(withSentry(async (req: Request) => {
+serve(withSentry("garmin-oauth-callback", async (req: Request) => {
   // Handle CORS preflight
   const corsResponse = handleCors(req);
   if (corsResponse) return corsResponse;

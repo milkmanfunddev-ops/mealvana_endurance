@@ -19,7 +19,7 @@ import {
   validationError,
   serverError,
 } from '../_shared/responses.ts';
-import { initSentry, withSentry } from '../_shared/sentry.ts';
+import { initSentry, withSentry, captureEdgeError } from '../_shared/sentry.ts';
 import type {
   DailyMacroInput,
   GarminActivityForSession,
@@ -210,7 +210,7 @@ async function attachGarminContext(
 
     return augmented;
   } catch (err) {
-    console.error('[CALC_MACROS] attachGarminContext error — proceeding without Garmin context', err);
+    captureEdgeError(err, { message: '[CALC_MACROS] attachGarminContext error — proceeding without Garmin context', level: 'warning', extra: { userId, date } });
     return input;
   }
 }
@@ -353,7 +353,7 @@ async function attachWeekGarminContext(
       days: augmentedDays,
     };
   } catch (err) {
-    console.error('[CALC_MACROS] attachWeekGarminContext error — proceeding without Garmin context', err);
+    captureEdgeError(err, { message: '[CALC_MACROS] attachWeekGarminContext error — proceeding without Garmin context', level: 'warning', extra: { userId } });
     return input;
   }
 }
@@ -365,7 +365,7 @@ async function attachWeekGarminContext(
 // Initialise Sentry once per cold-start. No-op when SENTRY_DSN is not set.
 initSentry();
 
-serve(withSentry(async (req) => {
+serve(withSentry('calculate-daily-macros-v6', async (req) => {
   // Handle CORS preflight
   const corsResponse = handleCors(req);
   if (corsResponse) return corsResponse;
@@ -455,7 +455,6 @@ serve(withSentry(async (req) => {
 
     return jsonResponse(result);
   } catch (error) {
-    console.error('[CALCULATE_DAILY_MACROS_ERROR]', error);
     return serverError(error);
   }
 }));

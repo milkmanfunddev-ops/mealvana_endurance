@@ -1,6 +1,6 @@
 import { serve } from 'https://deno.land/std@0.224.0/http/server.ts';
 import { createClient } from 'https://esm.sh/@supabase/supabase-js@2.38.4';
-import { initSentry, withSentry } from '../_shared/sentry.ts';
+import { captureEdgeError, initSentry, withSentry } from '../_shared/sentry.ts';
 
 const corsHeaders = {
   'Access-Control-Allow-Origin': '*',
@@ -10,7 +10,7 @@ const corsHeaders = {
 // Initialise Sentry once per cold-start. No-op when SENTRY_DSN is not set.
 initSentry();
 
-serve(withSentry(async (req) => {
+serve(withSentry('sync-all-data', async (req) => {
   // Handle CORS preflight
   if (req.method === 'OPTIONS') {
     return new Response('ok', {
@@ -115,7 +115,7 @@ serve(withSentry(async (req) => {
         const error = result.status === 'fulfilled' ? result.value.error : result.reason;
         response.errors[key] = error?.message || 'Unknown error';
         response.data[key] = [];
-        console.error(`✗ ${key}: ${response.errors[key]}`);
+        captureEdgeError(error, { message: `✗ ${key}`, level: 'warning', extra: { userId: user_id, key } });
       }
     };
     // Extract all data (PHASE 1: User profile added first)
@@ -126,7 +126,7 @@ serve(withSentry(async (req) => {
       const error = userProfileResult.status === 'fulfilled' ? userProfileResult.value.error : userProfileResult.reason;
       response.errors.user_profile = error?.message || 'Unknown error';
       response.data.user_profile = null;
-      console.error(`✗ user_profile: ${response.errors.user_profile}`);
+      captureEdgeError(error, { message: '✗ user_profile', level: 'warning', extra: { userId: user_id } });
     }
     extractData(nutritionFoodsResult, 'nutrition_foods');
     extractData(carbLoadingFoodsResult, 'carb_loading_foods');
@@ -148,7 +148,7 @@ serve(withSentry(async (req) => {
       response.data.coach_record = null;
       const error = coachStatusResult.status === 'fulfilled' ? coachStatusResult.value.error : coachStatusResult.reason;
       if (error) {
-        console.error(`✗ coach_record: ${error?.message || 'Unknown error'}`);
+        captureEdgeError(error, { message: '✗ coach_record', level: 'warning', extra: { userId: user_id } });
       }
     }
 
@@ -190,7 +190,7 @@ serve(withSentry(async (req) => {
           .in('id', coachUserIds);
 
         if (coachProfilesResult.error) {
-          console.error(`✗ coach_profiles: ${coachProfilesResult.error.message}`);
+          captureEdgeError(coachProfilesResult.error, { message: '✗ coach_profiles', level: 'warning', extra: { userId: user_id } });
           response.data.coach_profiles = [];
         } else {
           response.data.coach_profiles = coachProfilesResult.data || [];
@@ -231,7 +231,7 @@ serve(withSentry(async (req) => {
       }
     });
   } catch (error) {
-    console.error('Unexpected error in sync-all-data:', error);
+    captureEdgeError(error, { message: 'Unexpected error in sync-all-data' });
     return new Response(JSON.stringify({
       success: false,
       error: error.message || 'Unknown error',

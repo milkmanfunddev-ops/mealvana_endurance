@@ -16,6 +16,7 @@ import { tool } from 'npm:ai@6';
 import { z } from 'npm:zod@3';
 import type { SupabaseClient } from 'https://esm.sh/@supabase/supabase-js@2.39.3';
 import { getInSeasonProduce } from './in_season.ts';
+import { captureEdgeError } from '../sentry.ts';
 
 // ---------------------------------------------------------------------------
 // Context
@@ -90,10 +91,10 @@ export function makeAiCoachTools(ctx: AiCoachToolContext) {
         ]);
 
         if (profileRes.error) {
-          console.error('[jade-chat/getUserProfile] profile error:', profileRes.error);
+          captureEdgeError(profileRes.error, { message: '[jade-chat/getUserProfile] profile error', extra: { userId } });
         }
         if (prefsRes.error) {
-          console.error('[jade-chat/getUserProfile] prefs error:', prefsRes.error);
+          captureEdgeError(prefsRes.error, { message: '[jade-chat/getUserProfile] prefs error', extra: { userId } });
         }
 
         return {
@@ -124,7 +125,7 @@ export function makeAiCoachTools(ctx: AiCoachToolContext) {
           .order('target_date');
 
         if (error) {
-          console.error('[jade-chat/getMacroTargets] error:', error);
+          captureEdgeError(error, { message: '[jade-chat/getMacroTargets] error', extra: { userId, start_date, end_date } });
           return { error: error.message, data: [] };
         }
         return { data: data ?? [] };
@@ -179,7 +180,7 @@ export function makeAiCoachTools(ctx: AiCoachToolContext) {
           .order('scheduled_date_time');
 
         if (error) {
-          console.error('[jade-chat/getWorkouts] error:', error);
+          captureEdgeError(error, { message: '[jade-chat/getWorkouts] error', extra: { userId, startDate, endDate } });
           return { error: error.message, data: [] };
         }
         return { data: data ?? [], date_range: { start: startDate, end: endDate } };
@@ -218,7 +219,7 @@ export function makeAiCoachTools(ctx: AiCoachToolContext) {
           .order('event_date');
 
         if (error) {
-          console.error('[jade-chat/getUpcomingEvents] error:', error);
+          captureEdgeError(error, { message: '[jade-chat/getUpcomingEvents] error', extra: { userId } });
           return { error: error.message, data: [] };
         }
         return { data: data ?? [] };
@@ -252,7 +253,7 @@ export function makeAiCoachTools(ctx: AiCoachToolContext) {
           .order('eaten_at', { ascending: true, nullsFirst: true });
 
         if (error) {
-          console.error('[jade-chat/getLoggedMeals] error:', error);
+          captureEdgeError(error, { message: '[jade-chat/getLoggedMeals] error', extra: { userId, start_date, end_date } });
           return { error: error.message, data: [] };
         }
         return { data: data ?? [] };
@@ -290,7 +291,7 @@ export function makeAiCoachTools(ctx: AiCoachToolContext) {
           .limit(limit);
 
         if (error) {
-          console.error('[jade-chat/getSavedMeals] error:', error);
+          captureEdgeError(error, { message: '[jade-chat/getSavedMeals] error', extra: { userId } });
           return { error: error.message, data: [] };
         }
         return { data: data ?? [] };
@@ -362,7 +363,7 @@ export function makeAiCoachTools(ctx: AiCoachToolContext) {
 
           return { available: true, forecast };
         } catch (err) {
-          console.error('[jade-chat/getWeather] fetch error:', err);
+          captureEdgeError(err, { message: '[jade-chat/getWeather] fetch error', level: 'warning', extra: { userId } });
           return { available: false, reason: 'weather fetch failed' };
         }
       },
@@ -562,7 +563,7 @@ export function makeAiCoachTools(ctx: AiCoachToolContext) {
           .single();
 
         if (error) {
-          console.error('[jade-chat/logBaselineMeal] insert error:', error);
+          captureEdgeError(error, { message: '[jade-chat/logBaselineMeal] insert error', extra: { userId } });
           return { success: false, error: error.message };
         }
 

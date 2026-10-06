@@ -34,12 +34,15 @@ import { serve } from 'https://deno.land/std@0.224.0/http/server.ts';
 import { createClient } from 'https://esm.sh/@supabase/supabase-js@2.39.3';
 import { handleCors } from '../_shared/cors.ts';
 import { errorResponse, jsonResponse, serverError } from '../_shared/responses.ts';
+import { initSentry, withSentry } from '../_shared/sentry.ts';
 import { CREDITS_ENFORCED, FREE_MONTHLY_CREDITS } from '../_shared/ai/credits.ts';
 
 const SUPABASE_URL = Deno.env.get('SUPABASE_URL') ?? '';
 const SUPABASE_SERVICE_ROLE_KEY = Deno.env.get('SUPABASE_SERVICE_ROLE_KEY') ?? '';
 
-serve(async (req) => {
+initSentry();
+
+serve(withSentry('ensure-credits', async (req) => {
   const cors = handleCors(req);
   if (cors) return cors;
 
@@ -50,8 +53,8 @@ serve(async (req) => {
     const admin = createClient(SUPABASE_URL, SUPABASE_SERVICE_ROLE_KEY);
     const { data: { user }, error: authError } = await admin.auth.getUser(token);
     if (authError || !user) {
-      console.error('[ensure-credits] auth error:', authError);
-      return errorResponse('Invalid or expired token', 401);
+      // Expected client fault: a breadcrumb, not an event.
+      return errorResponse('Invalid or expired token', 401, authError?.message);
     }
 
     const { data, error } = await admin.rpc('ensure_free_credits', {
@@ -60,8 +63,7 @@ serve(async (req) => {
     });
 
     if (error) {
-      console.error('[ensure-credits] ensure_free_credits error:', error.message);
-      return serverError('Could not provision wallet');
+      return serverError(error, false, 'Could not provision wallet');
     }
 
     return jsonResponse({
@@ -70,7 +72,6 @@ serve(async (req) => {
       enforced: CREDITS_ENFORCED,
     });
   } catch (e) {
-    console.error('[ensure-credits] unexpected error:', e);
-    return serverError('Unexpected error');
+    return serverError(e, false, 'Unexpected error');
   }
-});
+}));

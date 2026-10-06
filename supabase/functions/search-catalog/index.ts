@@ -29,7 +29,7 @@ import { initSentry, withSentry } from '../_shared/sentry.ts';
 // Initialise Sentry once per cold-start. No-op when SENTRY_DSN is not set.
 initSentry();
 
-serve(withSentry(async (req) => {
+serve(withSentry('search-catalog', async (req) => {
   // Handle CORS preflight
   const corsResponse = handleCors(req);
   if (corsResponse) return corsResponse;
@@ -69,8 +69,7 @@ serve(withSentry(async (req) => {
     });
 
     if (error) {
-      console.error('Catalog search error:', error);
-      return errorResponse('Search failed', 500, error.message);
+      return errorResponse('Search failed', 500, error.message, undefined, error);
     }
 
     // Map rows to response shape

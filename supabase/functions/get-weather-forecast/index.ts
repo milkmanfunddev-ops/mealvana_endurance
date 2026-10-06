@@ -1,5 +1,5 @@
 import { serve } from "https://deno.land/std@0.224.0/http/server.ts";
-import { initSentry, withSentry } from "../_shared/sentry.ts";
+import { captureEdgeError, initSentry, withSentry } from "../_shared/sentry.ts";
 
 const corsHeaders = {
   'Access-Control-Allow-Origin': '*',
@@ -19,7 +19,7 @@ initSentry();
  * - Historical forecasts (0-92 days back)
  * - Graceful fallback to defaults
  */
-serve(withSentry(async (req) => {
+serve(withSentry("get-weather-forecast", async (req) => {
   // Handle CORS preflight requests
   if (req.method === 'OPTIONS') {
     return new Response('ok', {
@@ -106,7 +106,7 @@ serve(withSentry(async (req) => {
       }
     });
   } catch (error) {
-    console.error('❌ Error fetching weather:', error);
+    captureEdgeError(error, { message: '❌ Error fetching weather', level: 'warning' });
     // Return defaults on error (fail silently)
     return new Response(JSON.stringify({
       success: true,
