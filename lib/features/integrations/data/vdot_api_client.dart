@@ -4,7 +4,7 @@ import 'dart:io';
 import 'package:flutter/foundation.dart';
 import 'package:http/http.dart' as http;
 
-import '../domain/http_retry_client.dart';
+import 'http_retry_client.dart';
 import '../domain/integration_exceptions.dart';
 
 /// API client for the V.O2 (VDOT) REST API.

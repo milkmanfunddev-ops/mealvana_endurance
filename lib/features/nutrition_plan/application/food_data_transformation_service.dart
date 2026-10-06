@@ -30,7 +30,7 @@ class FoodDataTransformationService {
           'Food not found in local database',
           context: 'FOOD_TRANSFORMATION',
         ),
-        area: 'FOOD_TRANSFORMATION',
+        area: 'nutrition_plan',
         extra: {
           'food_id': foodId,
           'quantity': quantity,

@@ -286,6 +286,21 @@ void main() {
       expect(transport.events, hasLength(2));
     });
 
+    test('a LoggedFault with an id in its message groups with its siblings',
+        () async {
+      await report.fault(
+        LoggedFault('No plan found for event: 3f2a1b2c-1111-2222-3333-444455556666'),
+      );
+      await report.fault(
+        LoggedFault('No plan found for event: 9e9e9e9e-aaaa-bbbb-cccc-dddddddddddd'),
+      );
+      await report.fault(LoggedFault('Vana HTTP 502'));
+      final prints = transport.events.map((e) => e.fingerprint).toList();
+      expect(prints[0], ['logged-fault', 'No plan found for event: <id>']);
+      expect(prints[1], prints[0]);
+      expect(prints[2], ['logged-fault', 'Vana HTTP <n>']);
+    });
+
     test('a LoggedFault groups on its message', () async {
       await report.fault(const LoggedFault('Plan generation returned null'));
       final event = transport.events.single;

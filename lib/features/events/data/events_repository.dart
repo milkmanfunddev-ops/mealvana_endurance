@@ -59,7 +59,7 @@ class EventsRepository with SyncableRepository {
     try {
       _report.info(
         'Syncing events from Supabase',
-        area: 'EVENTS_REPOSITORY',
+        area: 'events',
         data: {'userId': userId},
       );
 
@@ -79,7 +79,7 @@ class EventsRepository with SyncableRepository {
 
       _report.info(
         'Successfully synced events from Supabase',
-        area: 'EVENTS_REPOSITORY',
+        area: 'events',
         data: {'userId': userId, 'count': syncedCount},
       );
 
@@ -88,7 +88,7 @@ class EventsRepository with SyncableRepository {
       _report.fault(
         e,
         stackTrace: stackTrace,
-        area: 'EVENTS_REPOSITORY',
+        area: 'events',
         extra: {'userId': userId},
         message: 'Failed to sync events from Supabase',
       );
@@ -144,7 +144,7 @@ class EventsRepository with SyncableRepository {
           'Skipped remote event overwrite for dirty local rows',
           context: 'EVENTS_REPOSITORY',
         ),
-        area: 'EVENTS_REPOSITORY',
+        area: 'events',
         extra: {
           'skippedCount': dirtyIds.length,
           'totalRemote': remoteById.length,
@@ -160,7 +160,7 @@ class EventsRepository with SyncableRepository {
     try {
       _report.info(
         'Uploading dirty events to Supabase',
-        area: 'EVENTS_REPOSITORY',
+        area: 'events',
         data: {'userId': userId},
       );
 
@@ -177,7 +177,7 @@ class EventsRepository with SyncableRepository {
 
       _report.debug(
         'Found dirty events to upload',
-        area: 'EVENTS_REPOSITORY',
+        area: 'events',
         data: {'count': dirtyRecords.length},
       );
 
@@ -201,7 +201,7 @@ class EventsRepository with SyncableRepository {
 
       _report.info(
         'Successfully uploaded dirty events',
-        area: 'EVENTS_REPOSITORY',
+        area: 'events',
         data: {'count': dirtyRecords.length},
       );
 
@@ -210,7 +210,7 @@ class EventsRepository with SyncableRepository {
       _report.fault(
         e,
         stackTrace: stackTrace,
-        area: 'EVENTS_REPOSITORY',
+        area: 'events',
         extra: {'userId': userId},
         message: 'Failed to upload dirty events',
       );
@@ -257,14 +257,14 @@ class EventsRepository with SyncableRepository {
           _report.info(
             'Deferred event upload: users row not created yet; '
             'record stays dirty for retry',
-            area: 'EVENTS_REPOSITORY',
+            area: 'events',
             data: {'operation': 'create', 'recordId': createdEvent.id},
           );
         } else {
           _report.degraded(
             e,
             stackTrace: stackTrace,
-            area: 'EVENTS_REPOSITORY',
+            area: 'events',
             tags: {'method': 'INSERT'},
             extra: {
               'operation': 'create',
@@ -290,7 +290,7 @@ class EventsRepository with SyncableRepository {
       _report.fault(
         e,
         stackTrace: stackTrace,
-        area: 'EVENTS_REPOSITORY',
+        area: 'events',
         message: 'Failed to create event',
       );
       rethrow;
@@ -321,7 +321,7 @@ class EventsRepository with SyncableRepository {
           _report.degraded(
             e,
             stackTrace: stackTrace,
-            area: 'EVENTS_REPOSITORY',
+            area: 'events',
             tags: {'method': 'UPSERT'},
             extra: {
               'operation': 'update',
@@ -341,7 +341,7 @@ class EventsRepository with SyncableRepository {
             _report.degraded(
               e,
               stackTrace: stackTrace,
-              area: 'EVENTS_REPOSITORY',
+              area: 'events',
               tags: {'method': 'UPSERT'},
               extra: {
                 'operation': 'update',
@@ -359,7 +359,7 @@ class EventsRepository with SyncableRepository {
       _report.fault(
         e,
         stackTrace: stackTrace,
-        area: 'EVENTS_REPOSITORY',
+        area: 'events',
         message: 'Failed to update event',
       );
       rethrow;
@@ -399,7 +399,7 @@ class EventsRepository with SyncableRepository {
         )..where((tbl) => tbl.id.equals(activityId))).go();
         _report.info(
           'CASCADE deleted activity $activityId for event $eventId',
-          area: 'EVENTS_REPOSITORY',
+          area: 'events',
         );
       }
 
@@ -418,7 +418,7 @@ class EventsRepository with SyncableRepository {
             _report.degraded(
               e,
               stackTrace: stackTrace,
-              area: 'EVENTS_REPOSITORY',
+              area: 'events',
               tags: {'method': 'DELETE'},
               extra: {
                 'operation': 'delete',
@@ -434,7 +434,7 @@ class EventsRepository with SyncableRepository {
       _report.fault(
         e,
         stackTrace: stackTrace,
-        area: 'EVENTS_REPOSITORY',
+        area: 'events',
         message: 'Failed to delete event',
       );
       rethrow;
@@ -454,7 +454,7 @@ class EventsRepository with SyncableRepository {
       _report.fault(
         e,
         stackTrace: stackTrace,
-        area: 'EVENTS_REPOSITORY',
+        area: 'events',
         message: 'Failed to get events',
       );
       rethrow;
@@ -480,7 +480,7 @@ class EventsRepository with SyncableRepository {
             'Found duplicate events with same ID',
             context: 'EVENTS_REPOSITORY',
           ),
-          area: 'EVENTS_REPOSITORY',
+          area: 'events',
           extra: {'eventId': eventId, 'count': events.length},
         );
       }
@@ -490,7 +490,7 @@ class EventsRepository with SyncableRepository {
       _report.fault(
         e,
         stackTrace: stackTrace,
-        area: 'EVENTS_REPOSITORY',
+        area: 'events',
         message: 'Failed to get event by ID',
       );
       rethrow;
@@ -509,7 +509,7 @@ class EventsRepository with SyncableRepository {
       _report.fault(
         e,
         stackTrace: stackTrace,
-        area: 'EVENTS_REPOSITORY',
+        area: 'events',
         message: 'Failed to get event for activity',
       );
       rethrow;
@@ -547,7 +547,7 @@ class EventsRepository with SyncableRepository {
       _report.fault(
         e,
         stackTrace: stackTrace,
-        area: 'EVENTS_REPOSITORY',
+        area: 'events',
         extra: {
           'userId': userId,
           'eventName': eventName,
@@ -604,7 +604,7 @@ class EventsRepository with SyncableRepository {
 
       _report.debug(
         'Created new event',
-        area: 'EVENTS_REPOSITORY',
+        area: 'events',
         data: {'eventId': insertedRow.id},
       );
 
@@ -652,7 +652,7 @@ class EventsRepository with SyncableRepository {
 
       _report.debug(
         'Updated existing event',
-        area: 'EVENTS_REPOSITORY',
+        area: 'events',
         data: {'eventId': event.id},
       );
 
@@ -688,7 +688,7 @@ class EventsRepository with SyncableRepository {
 
       _report.info(
         'Event uploaded to Supabase with UUID',
-        area: 'EVENTS_REPOSITORY',
+        area: 'events',
         data: {'eventId': event.id},
       );
 

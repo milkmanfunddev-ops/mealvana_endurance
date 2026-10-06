@@ -74,7 +74,7 @@ class ClientPlanService {
 
     _report.info(
       'Client solver: generating plan for ${activityType.displayName}',
-      area: 'CLIENT_PLAN_SERVICE',
+      area: 'nutrition_plan',
     );
 
     // Each phase runs its solver, then the electrolyte<->water pairing
@@ -274,12 +274,12 @@ class ClientPlanService {
             'the pairing could not be enforced (${result.conflict!.name})',
             context: 'CLIENT_PLAN_SERVICE',
           ),
-          area: 'CLIENT_PLAN_SERVICE',
+          area: 'nutrition_plan',
         );
       } else if (result.changed) {
         _report.info(
           '$phase phase: added water alongside a dry electrolyte item',
-          area: 'CLIENT_PLAN_SERVICE',
+          area: 'nutrition_plan',
         );
       }
       return result.items;
@@ -330,7 +330,7 @@ class ClientPlanService {
       if (templateResult != null && templateResult.isNotEmpty) {
         _report.info(
           'Before phase: using template-based selection (${templateResult.length} foods)',
-          area: 'CLIENT_PLAN_SERVICE',
+          area: 'nutrition_plan',
         );
         return templateResult;
       }
@@ -417,7 +417,7 @@ class ClientPlanService {
             'No foods available for during phase (rule solver)',
             context: 'CLIENT_PLAN_SERVICE',
           ),
-          area: 'CLIENT_PLAN_SERVICE',
+          area: 'nutrition_plan',
         );
         return [];
       }
@@ -446,7 +446,7 @@ class ClientPlanService {
         // Rule solver produced nothing — fall back to generic greedy
         _report.info(
           'During rule solver produced no selections; falling back to greedy',
-          area: 'CLIENT_PLAN_SERVICE',
+          area: 'nutrition_plan',
         );
         return _solvePhase(
           userId: userId,
@@ -458,7 +458,7 @@ class ClientPlanService {
 
       _report.info(
         'During phase (rule solver): ${selections.length} foods selected',
-        area: 'CLIENT_PLAN_SERVICE',
+        area: 'nutrition_plan',
       );
 
       return selections.map((s) {
@@ -579,7 +579,7 @@ class ClientPlanService {
       _report.info(
         'Client solver: honoring pinned personal formula "${match.name}" '
         'for ${phase.wireValue} (${items.length} foods)',
-        area: 'CLIENT_PLAN_SERVICE',
+        area: 'nutrition_plan',
       );
       return items;
     } catch (e, stackTrace) {
@@ -825,7 +825,7 @@ class ClientPlanService {
               'water source available',
               context: 'CLIENT_PLAN_SERVICE',
             ),
-            area: 'CLIENT_PLAN_SERVICE',
+            area: 'nutrition_plan',
           );
         }
       }
@@ -854,7 +854,7 @@ class ClientPlanService {
             'No foods available for $phase phase',
             context: 'CLIENT_PLAN_SERVICE',
           ),
-          area: 'CLIENT_PLAN_SERVICE',
+          area: 'nutrition_plan',
         );
         return [];
       }
@@ -869,7 +869,7 @@ class ClientPlanService {
 
       _report.info(
         '$phase phase: ${selections.length} foods selected',
-        area: 'CLIENT_PLAN_SERVICE',
+        area: 'nutrition_plan',
       );
 
       return selections.map((s) {

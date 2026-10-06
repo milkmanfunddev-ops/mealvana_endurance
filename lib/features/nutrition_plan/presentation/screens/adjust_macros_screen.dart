@@ -614,10 +614,10 @@ class _AdjustMacrosScreenState extends ConsumerState<AdjustMacrosScreen> {
         );
 
     final macroStateBefore = ref.read(macroTargetsControllerProvider).value;
-    report.degraded(
-      LoggedFault('Coach create-plan tapped', context: 'ADJUST_MACROS_SCREEN'),
-      area: 'ADJUST_MACROS_SCREEN',
-      extra: {
+    report.info(
+      'Coach create-plan tapped',
+      area: 'nutrition_plan',
+      data: {
         'activityId': macroStateBefore?.activityId,
         'eventId': macroStateBefore?.eventId,
         'forUserId': macroStateBefore?.forUserId,
@@ -654,13 +654,10 @@ class _AdjustMacrosScreenState extends ConsumerState<AdjustMacrosScreen> {
 
       if (isCoachView) {
         // Force a fresh route load so we don't surface stale pre-generation state.
-        report.degraded(
-          LoggedFault(
-            'Coach create-plan navigating to fresh activity detail route',
-            context: 'ADJUST_MACROS_SCREEN',
-          ),
-          area: 'ADJUST_MACROS_SCREEN',
-          extra: {'activityId': activityId, 'isCoachView': true},
+        report.info(
+          'Coach create-plan navigating to fresh activity detail route',
+          area: 'nutrition_plan',
+          data: {'activityId': activityId, 'isCoachView': true},
         );
         context.go(
           '/plan',
@@ -693,7 +690,7 @@ class _AdjustMacrosScreenState extends ConsumerState<AdjustMacrosScreen> {
                 context: 'ADJUST_MACROS_SCREEN',
               ),
           stackTrace: asyncState.stackTrace,
-          area: 'ADJUST_MACROS_SCREEN',
+          area: 'nutrition_plan',
           extra: {
             'activityId': macroStateBefore?.activityId,
             'eventId': macroStateBefore?.eventId,

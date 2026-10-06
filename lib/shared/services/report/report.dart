@@ -63,6 +63,20 @@ class LoggedFault implements Exception {
   final String message;
   final String? context;
 
+  /// The message with ids, numbers and hex blobs replaced, so one fault
+  /// written as `'No plan for event: $eventId'` is one Sentry issue, not one
+  /// per event. Used as the event fingerprint unless the caller sets one.
+  String get groupingKey => message
+      .replaceAll(_uuid, '<id>')
+      .replaceAll(_hex, '<hex>')
+      .replaceAll(_number, '<n>');
+
+  static final RegExp _uuid = RegExp(
+    r'[0-9a-fA-F]{8}-[0-9a-fA-F]{4}-[0-9a-fA-F]{4}-[0-9a-fA-F]{4}-[0-9a-fA-F]{12}',
+  );
+  static final RegExp _hex = RegExp(r'\b[0-9a-fA-F]{16,}\b');
+  static final RegExp _number = RegExp(r'\b\d+(\.\d+)?\b');
+
   @override
   String toString() => message;
 }
@@ -144,7 +158,7 @@ class SentryReport implements Report {
   final Logger _consoleLogger;
 
   /// Zone marker set while the Mixpanel fan-out runs. The analytics tracker
-  /// logs its own failures through the logger alias, which lands back here;
+  /// reports its own failures through `Report`, which lands back here;
   /// a Fault raised anywhere under that call, including after its awaits, is
   /// still captured to Sentry but is not fanned out again, so the two can
   /// never chase each other. A zone value survives async gaps; a flag on the
@@ -317,7 +331,11 @@ class SentryReport implements Report {
           if (extra != null && extra.isNotEmpty) {
             await scope.setContexts('diagnostic', extra);
           }
-          if (fingerprint != null) scope.fingerprint = fingerprint;
+          if (fingerprint != null) {
+            scope.fingerprint = fingerprint;
+          } else if (error is LoggedFault) {
+            scope.fingerprint = ['logged-fault', error.groupingKey];
+          }
         },
       );
     } catch (sdkError) {

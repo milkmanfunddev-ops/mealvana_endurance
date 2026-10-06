@@ -35,12 +35,15 @@ class SupabaseBarcodeService {
           message: 'Product not found in nutrition databases',
         );
       }
-    } on ProductDetailException catch (e) {
-      // ProductDetailService already reported the cause (Fault or Degraded);
-      // a second event here would double-count it.
-      _report.note(
-        'ProductDetailService error: ${e.message}',
+    } on ProductDetailException catch (e, stackTrace) {
+      // ProductDetailService throws without reporting; this is the one
+      // report for every lookup failure (not found, bad response, timeout).
+      _report.degraded(
+        e,
+        stackTrace: stackTrace,
         area: 'barcode_scanning',
+        message: 'Product detail lookup failed',
+        extra: {'barcode': barcode},
       );
 
       return BarcodeResult.error(barcode: barcode, message: e.message);

@@ -52,7 +52,7 @@ class CarbLoadingUserFoodRepository {
           if (food.mealTypes == null) return false;
           final mealTypes = parseMealTypeIds(
             food.mealTypes,
-            onIssue: _report.decodeIssue('carb_loading'),
+            onIssue: _report.decodeIssue('carb_loading', severity: ReportSeverity.fault),
           );
           return mealTypes.contains(mealTypeId);
         })
@@ -203,7 +203,7 @@ class CarbLoadingUserFoodRepository {
   ) {
     final mealTypeIds = parseMealTypeIds(
       food.mealTypes,
-      onIssue: _report.decodeIssue('carb_loading'),
+      onIssue: _report.decodeIssue('carb_loading', severity: ReportSeverity.fault),
     );
 
     return domain.CarbLoadingUserFood.fromDatabase(
@@ -252,7 +252,7 @@ class CarbLoadingUserFoodRepository {
                 if (food.mealTypes == null) return false;
                 final mealTypes = parseMealTypeIds(
                   food.mealTypes,
-                  onIssue: _report.decodeIssue('carb_loading'),
+                  onIssue: _report.decodeIssue('carb_loading', severity: ReportSeverity.fault),
                 );
                 return mealTypes.contains(mealTypeId);
               })

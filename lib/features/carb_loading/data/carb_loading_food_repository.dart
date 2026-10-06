@@ -202,7 +202,7 @@ class CarbLoadingFoodRepository with SyncableRepository {
 
           final mealTypes = parseMealTypeIds(
             food.mealTypes,
-            onIssue: _report.decodeIssue('carb_loading'),
+            onIssue: _report.decodeIssue('carb_loading', severity: ReportSeverity.fault),
           );
           final matches = mealTypes.isEmpty || mealTypes.contains(mealTypeId);
 
@@ -256,7 +256,7 @@ class CarbLoadingFoodRepository with SyncableRepository {
   domain.CarbLoadingFood _convertToFoodDomain(CarbLoadingFood food) {
     final mealTypeIds = parseMealTypeIds(
       food.mealTypes,
-      onIssue: _report.decodeIssue('carb_loading'),
+      onIssue: _report.decodeIssue('carb_loading', severity: ReportSeverity.fault),
     );
 
     return domain.CarbLoadingFood.fromDatabase(
@@ -293,7 +293,7 @@ class CarbLoadingFoodRepository with SyncableRepository {
                 if (food.mealTypes == null) return false;
                 final mealTypes = parseMealTypeIds(
                   food.mealTypes,
-                  onIssue: _report.decodeIssue('carb_loading'),
+                  onIssue: _report.decodeIssue('carb_loading', severity: ReportSeverity.fault),
                 );
                 return mealTypes.contains(mealTypeId);
               })

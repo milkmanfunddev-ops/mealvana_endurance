@@ -30,7 +30,7 @@ class FoodPreferenceResolver {
         'No food preferences found. Using default set for LLM generation.',
         context: 'FOOD_PREFERENCE_RESOLVER',
       ),
-      area: 'FOOD_PREFERENCE_RESOLVER',
+      area: 'nutrition_plan',
       extra: {'default_count': defaults.length},
     );
 
@@ -46,7 +46,7 @@ class FoodPreferenceResolver {
       );
       _report.info(
         'Default food preferences saved for user',
-        area: 'FOOD_PREFERENCE_RESOLVER',
+        area: 'nutrition_plan',
         data: {'user_id': userId, 'count': defaults.length},
       );
     } catch (e, stackTrace) {
@@ -54,7 +54,7 @@ class FoodPreferenceResolver {
       _report.degraded(
         e,
         stackTrace: stackTrace,
-        area: 'FOOD_PREFERENCE_RESOLVER',
+        area: 'nutrition_plan',
         message: 'Failed to persist default food preferences',
       );
     }

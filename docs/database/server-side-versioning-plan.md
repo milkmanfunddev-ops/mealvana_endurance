@@ -789,7 +789,7 @@ import 'package:package_info_plus/package_info_plus.dart';
 import 'package:riverpod_annotation/riverpod_annotation.dart';
 import 'package:supabase_flutter/supabase_flutter.dart';
 
-import 'logging_service.dart';
+import 'report/report.dart';
 import 'sync/sync_state_store.dart';
 
 part 'version_check_service.g.dart';

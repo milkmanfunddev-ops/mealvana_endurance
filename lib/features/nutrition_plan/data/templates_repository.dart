@@ -43,7 +43,7 @@ class TemplatesRepository with SyncableRepository {
     if (localCount.isEmpty) {
       _report.debug(
         'Forcing sync - no local templates found',
-        area: 'TEMPLATES_REPO',
+        area: 'nutrition_plan',
       );
       return true;
     }
@@ -53,7 +53,7 @@ class TemplatesRepository with SyncableRepository {
   @override
   Future<SyncResult> syncFromRemote(String userId) async {
     try {
-      _report.info('Syncing templates from Supabase', area: 'TEMPLATES_REPO');
+      _report.info('Syncing templates from Supabase', area: 'nutrition_plan');
 
       final response = await _supabase
           .from('templates')
@@ -66,7 +66,7 @@ class TemplatesRepository with SyncableRepository {
 
       _report.info(
         'Templates synced successfully',
-        area: 'TEMPLATES_REPO',
+        area: 'nutrition_plan',
         data: {'count': response.length},
       );
 
@@ -75,7 +75,7 @@ class TemplatesRepository with SyncableRepository {
       _report.fault(
         e,
         stackTrace: stackTrace,
-        area: 'TEMPLATES_REPO',
+        area: 'nutrition_plan',
         message: 'Failed to sync templates from remote',
       );
       return SyncResult.failed(e.toString());

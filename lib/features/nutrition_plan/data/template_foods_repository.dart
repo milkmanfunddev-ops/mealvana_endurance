@@ -45,7 +45,7 @@ class TemplateFoodsRepository with SyncableRepository {
     if (localCount.isEmpty) {
       _r.debug(
         'Forcing sync - no local template foods found',
-        area: 'TEMPLATE_FOODS_REPO',
+        area: 'nutrition_plan',
       );
       return true;
     }
@@ -57,7 +57,7 @@ class TemplateFoodsRepository with SyncableRepository {
     try {
       _r.info(
         'Syncing template foods from Supabase',
-        area: 'TEMPLATE_FOODS_REPO',
+        area: 'nutrition_plan',
       );
 
       final response = await _supabase
@@ -71,7 +71,7 @@ class TemplateFoodsRepository with SyncableRepository {
 
       _r.info(
         'Template foods synced successfully',
-        area: 'TEMPLATE_FOODS_REPO',
+        area: 'nutrition_plan',
         data: {'count': response.length},
       );
 
@@ -80,7 +80,7 @@ class TemplateFoodsRepository with SyncableRepository {
       _r.fault(
         e,
         stackTrace: stackTrace,
-        area: 'TEMPLATE_FOODS_REPO',
+        area: 'nutrition_plan',
         message: 'Failed to sync template foods from remote',
       );
       return SyncResult.failed(e.toString());

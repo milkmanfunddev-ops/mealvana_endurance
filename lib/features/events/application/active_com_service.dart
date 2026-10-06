@@ -38,7 +38,7 @@ class ActiveComService {
         'searchEvents called but active.com search is deprecated. Use searchPublicEvents instead.',
         context: 'ACTIVE_COM_SERVICE',
       ),
-      area: 'ACTIVE_COM_SERVICE',
+      area: 'events',
     );
     return [];
   }

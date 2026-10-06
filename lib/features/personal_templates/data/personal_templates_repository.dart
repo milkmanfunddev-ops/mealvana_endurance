@@ -43,7 +43,7 @@ class PersonalTemplatesRepository with SyncableRepository {
   PersonalTemplate _fromEntry(PersonalTemplateEntry entry) =>
       PersonalTemplate.fromDriftEntry(
         entry,
-        onIssue: _report.decodeIssue('personal_templates'),
+        onIssue: _report.decodeIssue('personal_templates', severity: ReportSeverity.fault),
       );
 
   // ========================================================================

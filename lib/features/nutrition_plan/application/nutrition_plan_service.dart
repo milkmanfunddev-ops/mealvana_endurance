@@ -214,14 +214,14 @@ class NutritionPlanService {
     try {
       _report.info(
         'Generating plan via V2 template system',
-        area: 'NUTRITION_PLAN_SERVICE',
+        area: 'nutrition_plan',
       );
       _report.info(
         '🎯 OVERRIDE DEBUG [2/5]: Sending to V2 edge function: '
         'pre_carbs=${macroTargets.preRun.carbsG}, pre_protein=${macroTargets.preRun.proteinG}, pre_sodium=${macroTargets.preRun.sodiumMg}, pre_fluids=${macroTargets.preRun.fluidsMl}, '
         'during_carbs=${macroTargets.duringRun.carbTotalG}, during_sodium=${macroTargets.duringRun.sodiumTotalMg}, during_fluids=${macroTargets.duringRun.fluidTotalMl}, '
         'post_carbs=${macroTargets.postRun.carbsG}, post_protein=${macroTargets.postRun.proteinG}, post_sodium=${macroTargets.postRun.sodiumMg}, post_fluids=${macroTargets.postRun.fluidsMl}',
-        area: 'NUTRITION_PLAN_SERVICE',
+        area: 'nutrition_plan',
       );
 
       final supabase = ref.read(appExternalDepsProvider).supabaseClient;
@@ -381,7 +381,7 @@ class NutritionPlanService {
         'pre_run={carbs_g: ${(requestData['macro_targets'] as Map?)?['pre_run']?['carbs_g']}, protein_g: ${(requestData['macro_targets'] as Map?)?['pre_run']?['protein_g']}, water_ml: ${(requestData['macro_targets'] as Map?)?['pre_run']?['water_ml']}, sodium_mg: ${(requestData['macro_targets'] as Map?)?['pre_run']?['sodium_mg']}}, '
         'during_run={carbs_g: ${(requestData['macro_targets'] as Map?)?['during_run']?['carbs_g']}, sodium_mg: ${(requestData['macro_targets'] as Map?)?['during_run']?['sodium_mg']}, water_ml: ${(requestData['macro_targets'] as Map?)?['during_run']?['water_ml']}}, '
         'post_run={carbs_g: ${(requestData['macro_targets'] as Map?)?['post_run']?['carbs_g']}, protein_g: ${(requestData['macro_targets'] as Map?)?['post_run']?['protein_g']}, sodium_mg: ${(requestData['macro_targets'] as Map?)?['post_run']?['sodium_mg']}, water_ml: ${(requestData['macro_targets'] as Map?)?['post_run']?['water_ml']}}',
-        area: 'NUTRITION_PLAN_SERVICE',
+        area: 'nutrition_plan',
       );
 
       // Retry transient errors (502/503/504) with exponential backoff.
@@ -404,7 +404,7 @@ class NutritionPlanService {
                 'V2 timed out, retrying in ${delayMs}ms (attempt ${attempt + 1}/$maxRetries)',
                 context: 'NUTRITION_PLAN_SERVICE',
               ),
-              area: 'NUTRITION_PLAN_SERVICE',
+              area: 'nutrition_plan',
             );
             await Future.delayed(Duration(milliseconds: delayMs));
             continue;
@@ -418,7 +418,7 @@ class NutritionPlanService {
                 'V2 transient error (${e.status} ${e.reasonPhrase}), retrying in ${delayMs}ms (attempt ${attempt + 1}/$maxRetries)',
                 context: 'NUTRITION_PLAN_SERVICE',
               ),
-              area: 'NUTRITION_PLAN_SERVICE',
+              area: 'nutrition_plan',
             );
             await Future.delayed(Duration(milliseconds: delayMs));
             continue;
@@ -444,7 +444,7 @@ class NutritionPlanService {
         'before_keys=${beforeFoods is Map ? beforeFoods.keys.toList() : 'N/A'}, '
         'during_food_count=${duringFoods is Map ? (duringFoods['foods'] as List?)?.length ?? 0 : (duringFoods is List ? duringFoods.length : 0)}, '
         'after_food_count=${afterFoods is List ? afterFoods.length : 0}',
-        area: 'NUTRITION_PLAN_SERVICE',
+        area: 'nutrition_plan',
       );
 
       // Parse the v2 response into NutritionPlan
@@ -467,7 +467,7 @@ class NutritionPlanService {
           '🎯 OVERRIDE DEBUG [4/5]: V2 plan section "${section.id}": '
           'carbsTarget=${section.carbsTarget}, proteinTarget=${section.proteinTarget}, '
           'sodiumTarget=${section.sodiumTarget}, fluidsTarget=${section.fluidsTarget}',
-          area: 'NUTRITION_PLAN_SERVICE',
+          area: 'nutrition_plan',
         );
       }
 
@@ -479,7 +479,7 @@ class NutritionPlanService {
       _report.fault(
         e,
         stackTrace: stackTrace,
-        area: 'NUTRITION_PLAN_SERVICE',
+        area: 'nutrition_plan',
         message: '❌ [V3-FAILED] V3 edge function failed. Error: $e',
       );
 
@@ -520,7 +520,7 @@ class NutritionPlanService {
             'Using client-side nutrition solver after V3 failure',
             context: 'NUTRITION_PLAN_SERVICE',
           ),
-          area: 'NUTRITION_PLAN_SERVICE',
+          area: 'nutrition_plan',
         );
         return await _clientPlanService.generatePlan(
           userId: resolvedUserId,
@@ -534,7 +534,7 @@ class NutritionPlanService {
       } catch (fallbackError) {
         _report.degraded(
           fallbackError,
-          area: 'NUTRITION_PLAN_SERVICE',
+          area: 'nutrition_plan',
           message:
               'Client-side nutrition solver failed; using generic local fallback',
         );
