@@ -8,6 +8,8 @@ import 'package:mocktail/mocktail.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 import 'package:supabase_flutter/supabase_flutter.dart';
 
+import '../helpers/fakes/recording_report.dart';
+
 // Mocks
 class MockSupabaseClient extends Mock implements SupabaseClient {}
 
@@ -27,6 +29,7 @@ void main() {
   late MockAppDatabase mockDatabase;
   late MockAppLogger mockLogger;
   late MockSentryReporter mockSentry;
+  late RecordingReport report;
   late ActivitiesRepository repository;
 
   setUpAll(() async {
@@ -39,6 +42,7 @@ void main() {
     mockDatabase = MockAppDatabase();
     mockLogger = MockAppLogger();
     mockSentry = MockSentryReporter();
+    report = RecordingReport();
 
     // Setup default logger behavior to avoid null errors
     when(
@@ -89,6 +93,7 @@ void main() {
       database: mockDatabase,
       logger: mockLogger,
       sentry: mockSentry,
+      report: report,
       deduplicationService: MockActivityDeduplicationService(),
     );
   });
@@ -167,16 +172,11 @@ void main() {
         expect(result.success, isFalse);
         expect(result.error, contains('Network error'));
 
-        // Verify error was logged
-        verify(
-          () => mockLogger.error(
-            any(),
-            context: 'ACTIVITIES_REPOSITORY',
-            error: any(named: 'error'),
-            stackTrace: any(named: 'stackTrace'),
-            data: any(named: 'data'),
-          ),
-        ).called(1);
+        // The swallowed failure is a Fault through Report (ticket 09c), not
+        // a logger line.
+        final fault = report.faults.single;
+        expect(fault.area, 'activities');
+        expect(fault.error.toString(), contains('Network error'));
       },
     );
   });
