@@ -16,6 +16,7 @@ import '../../../daily_macros/presentation/providers/daily_macros_controller.dar
 import '../../../onboarding/presentation/providers/onboarding_controller.dart';
 import '../../../onboarding/presentation/theme/onboarding_design_tokens.dart';
 import '../../../onboarding/presentation/widgets/onboarding_step_scaffold.dart';
+import '../../application/apple_web_authentication.dart';
 import '../../application/auth_service.dart';
 import '../providers/post_onboarding_auth_controller.dart';
 import '../../domain/auth_exceptions.dart';
@@ -751,8 +752,9 @@ class _PostOnboardingAuthScreenState
                 ],
 
                 // Apple Sign-In button (iOS/Android only) — spec primary:
-                // orange filled pill.
-                if (!kIsWeb) ...[
+                // orange filled pill. Hidden on an Android build with no
+                // Apple Services ID (it could only fail; ticket 17).
+                if (!kIsWeb && ref.watch(appleSignInAvailableProvider)) ...[
                   _SpecAuthButton(
                     key: ValueKey(
                       isLogin

@@ -11,6 +11,7 @@ import 'package:supabase_flutter/supabase_flutter.dart'
 import 'package:supabase_flutter/supabase_flutter.dart'
     as supabase
     show AuthException;
+import '../../../shared/services/app_config.dart';
 import '../../../shared/services/app_external_deps.dart';
 import '../../../shared/services/analytics/analytics_tracker.dart';
 import '../../../shared/services/report/report.dart';
@@ -21,6 +22,7 @@ import '../../../shared/utils/platform_io.dart'
 import '../../activities/presentation/providers/activities_controller.dart';
 import '../../events/presentation/providers/events_controller.dart';
 import '../domain/auth_exceptions.dart';
+import 'apple_web_authentication.dart';
 import 'auth_migration_service.dart';
 
 part 'oauth_service.g.dart';
@@ -36,6 +38,19 @@ class OAuthService extends _$OAuthService {
   SupabaseClient get _supabase =>
       ref.read(appExternalDepsProvider).supabaseClient;
   AnalyticsTracker get _analytics => ref.read(analyticsTrackerProvider);
+
+  /// Android needs `webAuthenticationOptions` (Services ID + return URL);
+  /// iOS gets `null` and uses the native sheet. See
+  /// `apple_web_authentication.dart` (ticket 17).
+  WebAuthenticationOptions? get _appleWebAuthenticationOptions {
+    if (kIsWeb) return null;
+    final config = ref.read(appConfigProvider);
+    return appleWebAuthenticationOptions(
+      isAndroid: PlatformInfo.isAndroid,
+      servicesId: config.appleAuthServicesId,
+      supabaseUrl: config.supabaseUrl,
+    );
+  }
 
   // Google Sign-In instance (lazy initialized)
   GoogleSignIn? _googleSignIn;
@@ -140,6 +155,7 @@ class OAuthService extends _$OAuthService {
           AppleIDAuthorizationScopes.fullName,
         ],
         nonce: hashedNonce,
+        webAuthenticationOptions: _appleWebAuthenticationOptions,
       );
 
       _report.info(
@@ -564,6 +580,7 @@ class OAuthService extends _$OAuthService {
           AppleIDAuthorizationScopes.fullName,
         ],
         nonce: hashedNonce,
+        webAuthenticationOptions: _appleWebAuthenticationOptions,
       );
 
       // Sign in (switches session to this user)
