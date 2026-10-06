@@ -6,20 +6,20 @@ import 'package:supabase_flutter/supabase_flutter.dart';
 import '../../../shared/database/app_database.dart';
 import '../../../shared/database/database_provider.dart';
 import '../../../shared/services/app_external_deps.dart';
-import '../../../shared/services/logging_service.dart';
+import '../../../shared/services/report/report.dart';
 import '../domain/entitlement.dart';
 
 part 'user_entitlements_repository.g.dart';
 
-/// Reads its Supabase client and logger from [appExternalDepsProvider] (the
-/// seam the widget-test harness mocks) rather than `Supabase.instance`.
+/// Reads its Supabase client from [appExternalDepsProvider] (the seam the
+/// widget-test harness mocks) rather than `Supabase.instance`.
 @riverpod
 UserEntitlementsRepository userEntitlementsRepository(Ref ref) {
   final deps = ref.watch(appExternalDepsProvider);
   return UserEntitlementsRepository(
     supabase: deps.supabaseClient,
     database: ref.watch(appDatabaseProvider),
-    logger: deps.logger,
+    report: ref.watch(reportProvider),
   );
 }
 
@@ -35,16 +35,18 @@ class UserEntitlementsRepository {
   UserEntitlementsRepository({
     required SupabaseClient supabase,
     required AppDatabase database,
-    required AppLogger logger,
+    Report? report,
   }) : _supabase = supabase,
        _database = database,
-       _logger = logger;
+       _report = report;
 
   final SupabaseClient _supabase;
   final AppDatabase _database;
-  final AppLogger _logger;
+  final Report? _report;
 
-  static const _context = 'USER_ENTITLEMENTS_REPOSITORY';
+  Report get _r => _report ?? SentryReport.global;
+
+  static const _area = 'subscription';
   static const _table = 'user_entitlements';
 
   /// The signed-in user's id, or null.
@@ -83,12 +85,14 @@ class UserEntitlementsRepository {
           .eq('id', userId);
       return true;
     } catch (e, stackTrace) {
-      _logger.warning(
-        'Failed to mirror the internal tester flag to users.is_internal',
-        context: _context,
-        error: e,
+      // Expected to fail offline; the next status resolve retries it.
+      await _r.degraded(
+        e,
         stackTrace: stackTrace,
-        data: {'userId': userId, 'value': value},
+        area: _area,
+        message:
+            'Failed to mirror the internal tester flag to users.is_internal',
+        extra: {'userId': userId, 'value': value},
       );
       return false;
     }
@@ -113,12 +117,14 @@ class UserEntitlementsRepository {
           .eq('entitlement', entitlement.key)
           .maybeSingle();
     } catch (e, stackTrace) {
-      _logger.warning(
-        'Failed to read user_entitlements from Supabase',
-        context: _context,
-        error: e,
+      // Offline is downgraded by `fault` itself; anything else (RLS, shape)
+      // is a real failure of the server-side paywall read.
+      await _r.fault(
+        e,
         stackTrace: stackTrace,
-        data: {'userId': userId, 'entitlement': entitlement.key},
+        area: _area,
+        message: 'Failed to read user_entitlements from Supabase',
+        extra: {'userId': userId, 'entitlement': entitlement.key},
       );
       return null;
     }
@@ -141,12 +147,12 @@ class UserEntitlementsRepository {
           );
     } catch (e, stackTrace) {
       // Cache write failures must not hide a successful remote read.
-      _logger.error(
-        'Failed to cache user_entitlements row',
-        context: _context,
-        error: e,
+      await _r.fault(
+        e,
         stackTrace: stackTrace,
-        data: {'userId': userId},
+        area: _area,
+        message: 'Failed to cache user_entitlements row',
+        extra: {'userId': userId},
       );
     }
     if (row == null) return SubscriptionStatus.none;
@@ -183,11 +189,11 @@ class UserEntitlementsRepository {
         now: now ?? DateTime.now().toUtc(),
       );
     } catch (e, stackTrace) {
-      _logger.error(
-        'Failed to read cached user_entitlements row',
-        context: _context,
-        error: e,
+      await _r.fault(
+        e,
         stackTrace: stackTrace,
+        area: _area,
+        message: 'Failed to read cached user_entitlements row',
       );
       return null;
     }
@@ -199,11 +205,11 @@ class UserEntitlementsRepository {
     try {
       await _database.delete(_database.userEntitlementsTable).go();
     } catch (e, stackTrace) {
-      _logger.error(
-        'Failed to clear user_entitlements cache',
-        context: _context,
-        error: e,
+      await _r.fault(
+        e,
         stackTrace: stackTrace,
+        area: _area,
+        message: 'Failed to clear user_entitlements cache',
       );
     }
   }

@@ -12,6 +12,7 @@ import '../utils/platform_io.dart'
 import 'analytics/analytics_events.dart';
 import 'launch_trail.dart';
 import 'analytics/analytics_tracker.dart';
+import 'report/report.dart';
 
 class NotificationService {
   static final FlutterLocalNotificationsPlugin _plugin =
@@ -26,6 +27,17 @@ class NotificationService {
   static Future<void> Function(DateTime date)? _dailyMacroCacheInvalidator;
   static AnalyticsTracker _analytics = const NoopAnalyticsTracker();
   static String _oneSignalAppId = '';
+
+  /// Where every swallowed failure and silent bail in the push path goes
+  /// (area `push`, whose Notes rule D9 promotes to warning events). Null means
+  /// [SentryReport.global]; tests inject a recording fake.
+  static Report? _report;
+  static Report get _r => _report ?? SentryReport.global;
+
+  @visibleForTesting
+  static void debugSetReport(Report? report) {
+    _report = report;
+  }
 
   /// Registers a callback invoked when a Garmin activity-upload notification
   /// carries a [scheduled_date]. The callback should invalidate the macro
@@ -170,8 +182,14 @@ class NotificationService {
           _isInitialized = true;
           return;
         }
-      } catch (e) {
+      } catch (e, st) {
         LaunchTrail.add('legacy_launch read failed: $e');
+        await _r.fault(
+          e,
+          stackTrace: st,
+          area: 'push',
+          message: 'legacy iOS launch payload could not be read',
+        );
       }
     }
 
@@ -199,6 +217,13 @@ class NotificationService {
       LaunchTrail.add(
         'onesignal init: SKIPPED — no app id configured yet '
         '(configureRemotePush() will arm when it arrives)',
+      );
+      // The tape is dev-readable; the Note is the PROD-readable half (D9),
+      // promoted to a warning event because the area is `push`.
+      await _r.note(
+        'onesignal init skipped: no app id configured yet',
+        area: 'push',
+        data: {'initialized': _isInitialized},
       );
       return;
     }
@@ -287,14 +312,26 @@ class NotificationService {
         } else {
           LaunchTrail.add('push heal: no action');
         }
-      } catch (e) {
-        debugPrint('OneSignal requestPermission failed: $e');
+      } catch (e, st) {
+        // Permission + heal is the opt-out door; a failure here leaves a
+        // device with a valid token unreachable.
+        await _r.fault(
+          e,
+          stackTrace: st,
+          area: 'push',
+          message: 'OneSignal requestPermission / opt-out heal failed',
+        );
       }
 
       _isOneSignalInitialized = true;
       await _syncRemotePushUserIdentity();
-    } catch (e) {
-      debugPrint('OneSignal init failed: $e');
+    } catch (e, st) {
+      await _r.fault(
+        e,
+        stackTrace: st,
+        area: 'push',
+        message: 'OneSignal init failed',
+      );
     }
   }
 
@@ -405,8 +442,16 @@ class NotificationService {
         OneSignal.login(targetUserId);
       }
       _lastSyncedRemoteUserId = targetUserId;
-    } catch (e) {
-      debugPrint('OneSignal user identity sync failed: $e');
+    } catch (e, st) {
+      // An unsynced alias is the `invalid_aliases` bug: every server push
+      // to this athlete fails while OneSignal answers 200.
+      await _r.fault(
+        e,
+        stackTrace: st,
+        area: 'push',
+        message: 'OneSignal user identity sync failed',
+        extra: {'detach': targetUserId == null},
+      );
     }
   }
 
@@ -633,8 +678,14 @@ class NotificationService {
         _handleNotificationPayload(payload);
         return;
       }
-    } catch (e) {
+    } catch (e, st) {
       LaunchTrail.add('legacy_resume read failed: $e');
+      await _r.fault(
+        e,
+        stackTrace: st,
+        area: 'push',
+        message: 'legacy iOS resume payload could not be read',
+      );
     }
   }
 
@@ -663,8 +714,13 @@ class NotificationService {
       if (_isOneSignalInitialized) {
         try {
           await OneSignal.Notifications.requestPermission(true);
-        } catch (e) {
-          debugPrint('OneSignal requestPermission (explicit) failed: $e');
+        } catch (e, st) {
+          await _r.fault(
+            e,
+            stackTrace: st,
+            area: 'push',
+            message: 'OneSignal requestPermission (explicit) failed',
+          );
         }
       }
       if (iosPlugin != null) {

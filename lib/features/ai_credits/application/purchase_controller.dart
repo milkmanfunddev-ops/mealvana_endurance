@@ -1,11 +1,10 @@
 import 'dart:async';
 
-import 'package:flutter/foundation.dart';
 import 'package:purchases_flutter/purchases_flutter.dart';
 import 'package:riverpod_annotation/riverpod_annotation.dart';
 
 import '../../../shared/services/analytics/internal_user_service.dart';
-import '../../../shared/services/sentry/sentry_reporter.dart';
+import '../../../shared/services/report/report.dart';
 import '../data/credits_repository.dart';
 import '../data/revenuecat_service.dart';
 import '../domain/credit_packs.dart';
@@ -110,6 +109,12 @@ Future<List<Package>> visibleCreditPackages(Ref ref) async {
 @Riverpod(keepAlive: true)
 class PurchaseController extends _$PurchaseController {
   RevenueCatService get _rcService => ref.read(revenueCatServiceProvider);
+  Report get _report => ref.read(reportProvider);
+
+  /// Store contact and the money path report under `payments`; the wallet
+  /// bookkeeping around it under `credits`.
+  static const _payments = 'payments';
+  static const _credits = 'credits';
 
   @override
   FutureOr<void> build() {
@@ -126,7 +131,6 @@ class PurchaseController extends _$PurchaseController {
     state = const AsyncLoading();
 
     final sku = pkg.storeProduct.identifier;
-    final sentry = ref.read(sentryReporterProvider);
     var outcome = PurchaseOutcome.failed;
 
     // Hard precondition: never contact the store without a signed-in user.
@@ -137,9 +141,9 @@ class PurchaseController extends _$PurchaseController {
     final userId = repo.currentUserId;
     if (userId == null || userId.isEmpty) {
       state = const AsyncData(null);
-      await sentry.reportCriticalError(
+      await _report.fault(
         StateError('Purchase attempted with no signed-in user (sku: $sku)'),
-        context: 'ai_credits',
+        area: _payments,
         tags: {'rc_operation': 'buy_unauthenticated', 'sku': sku},
       );
       return PurchaseOutcome.notSignedIn;
@@ -150,9 +154,9 @@ class PurchaseController extends _$PurchaseController {
     // purchase-drop-off investigation can see it happened.
     if (repo.isAnonymousUser) {
       state = const AsyncData(null);
-      sentry.addBreadcrumb(
-        message: 'purchase blocked: anonymous session',
-        category: 'ai_credits',
+      _report.breadcrumb(
+        'purchase blocked: anonymous session',
+        category: _payments,
         data: {'sku': sku},
       );
       return PurchaseOutcome.requiresAccount;
@@ -188,12 +192,12 @@ class PurchaseController extends _$PurchaseController {
         // failure in the whole feature and it is completely invisible from the
         // client side otherwise — the store is happy, the app just shows a
         // stale balance.
-        await sentry.reportCriticalError(
+        await _report.fault(
           StateError(
             'RevenueCat purchase completed but the wallet balance never '
             'increased after polling (sku: $sku)',
           ),
-          context: 'ai_credits',
+          area: _payments,
           tags: {
             'rc_operation': 'purchase_not_credited',
             'sku': sku,
@@ -206,10 +210,10 @@ class PurchaseController extends _$PurchaseController {
     if (state is AsyncError) {
       final err = state as AsyncError;
       outcome = PurchaseOutcome.failed;
-      await sentry.reportCriticalError(
+      await _report.fault(
         err.error,
         stackTrace: err.stackTrace,
-        context: 'ai_credits',
+        area: _payments,
         tags: {'rc_operation': 'buy', 'sku': sku},
       );
     }
@@ -239,7 +243,15 @@ class PurchaseController extends _$PurchaseController {
     try {
       final wallet = await ref.read(creditsControllerProvider.future);
       return wallet.balance;
-    } catch (_) {
+    } catch (e) {
+      // The pre-purchase baseline decides whether the webhook's credit is
+      // seen; starting from 0 can only over-report "credited", never hide a
+      // charge. Written down because it is a silent branch on the money path.
+      await _report.note(
+        'pre-purchase balance unknown; assuming 0',
+        area: _payments,
+        data: {'error': e.toString()},
+      );
       return 0;
     }
   }
@@ -260,36 +272,38 @@ class PurchaseController extends _$PurchaseController {
       try {
         final wallet = await ref.read(creditsControllerProvider.future);
         if (wallet.balance > previousBalance) {
-          debugPrint(
-            '[PurchaseController] balance updated '
-            '($previousBalance → ${wallet.balance}) '
-            'after ${attempt + 1} attempt(s)',
+          _report.breadcrumb(
+            'credit balance updated after purchase',
+            category: _credits,
+            data: {
+              'previous': previousBalance,
+              'balance': wallet.balance,
+              'attempts': attempt + 1,
+            },
           );
           return true;
         }
       } catch (e) {
         // Not fatal on its own — a later attempt may still succeed — so this
-        // is a breadcrumb. Exhausting every attempt is what gets reported.
-        debugPrint(
-          '[PurchaseController] poll attempt ${attempt + 1} error: $e',
+        // is a Note (a breadcrumb in `credits`). Exhausting every attempt is
+        // what the caller reports as a Fault.
+        await _report.note(
+          'credit balance poll attempt failed',
+          area: _credits,
+          data: {'attempt': attempt + 1, 'error': e.toString()},
         );
-        ref
-            .read(sentryReporterProvider)
-            .addBreadcrumb(
-              message: 'credit balance poll attempt failed',
-              category: 'ai_credits',
-              data: {'attempt': attempt + 1, 'error': e.toString()},
-            );
       }
     }
 
     // Final refresh regardless — let the controller settle.
     ref.invalidate(creditsControllerProvider);
-    // Deliberately not behind kDebugMode: release-mode dev builds are the ones
-    // testers run, and this line is the difference between a diagnosable
-    // "purchase went through, grant never arrived" and total silence.
-    debugPrint(
-      '[PurchaseController] balance poll exhausted after $maxAttempts attempt(s)',
+    // Rides the caller's "purchased but not credited" Fault as a breadcrumb,
+    // so a release-mode dev build (what testers run) still tells "purchase
+    // went through, grant never arrived" apart from total silence.
+    _report.breadcrumb(
+      'credit balance poll exhausted',
+      category: _credits,
+      data: {'attempts': maxAttempts, 'previous': previousBalance},
     );
     return false;
   }

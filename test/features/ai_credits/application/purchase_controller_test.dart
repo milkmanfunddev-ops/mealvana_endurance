@@ -39,8 +39,10 @@ import 'package:mealvana_endurance/features/ai_credits/data/credits_repository.d
 import 'package:mealvana_endurance/features/ai_credits/data/revenuecat_service.dart';
 import 'package:mealvana_endurance/features/ai_credits/domain/credit_wallet.dart';
 import 'package:mealvana_endurance/shared/services/prefs_provider.dart';
-import 'package:mealvana_endurance/shared/services/sentry/sentry_reporter.dart';
+import 'package:mealvana_endurance/shared/services/report/report.dart';
 import 'package:shared_preferences/shared_preferences.dart';
+
+import '../../../helpers/fakes/recording_report.dart';
 
 // ---------------------------------------------------------------------------
 // Mocks
@@ -84,6 +86,9 @@ typedef _Cleanup = void Function();
 
 late SharedPreferences _prefs;
 
+/// What the controller reported during the test; reset per test in setUp.
+late RecordingReport _report;
+
 (ProviderContainer, _Cleanup) _buildContainer({
   required _MockRevenueCatService rcService,
   required _MockCreditsRepository creditsRepo,
@@ -93,9 +98,9 @@ late SharedPreferences _prefs;
       revenueCatServiceProvider.overrideWithValue(rcService),
       creditsRepositoryProvider.overrideWithValue(creditsRepo),
       sharedPreferencesProvider.overrideWithValue(_prefs),
-      // Keep the real Sentry SDK out of unit tests; the controller now reports
-      // purchase failures through this provider.
-      sentryReporterProvider.overrideWithValue(const NoopSentryReporter()),
+      // Keep the real Sentry SDK out of unit tests; the controller reports
+      // purchase failures through this provider and tests assert on it.
+      reportProvider.overrideWithValue(_report),
     ],
   );
 
@@ -137,6 +142,7 @@ void main() {
   setUp(() async {
     SharedPreferences.setMockInitialValues({});
     _prefs = await SharedPreferences.getInstance();
+    _report = RecordingReport();
     rcService = _MockRevenueCatService();
     creditsRepo = _MockCreditsRepository();
     fakePackage = _FakePackage();
@@ -680,6 +686,13 @@ void main() {
 
       expect(outcome, PurchaseOutcome.notSignedIn);
       verifyNever(() => rcService.purchase(any()));
+      // A purchase attempt with nobody to credit is a Fault on the money path.
+      expect(_report.faults, hasLength(1));
+      expect(_report.faults.single.area, 'payments');
+      expect(
+        _report.faults.single.tags?['rc_operation'],
+        'buy_unauthenticated',
+      );
     });
 
     test('anonymous user → PurchaseOutcome.requiresAccount and the store is '

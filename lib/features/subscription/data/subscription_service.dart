@@ -2,7 +2,7 @@ import 'package:flutter/foundation.dart';
 import 'package:purchases_flutter/purchases_flutter.dart';
 import 'package:riverpod_annotation/riverpod_annotation.dart';
 
-import '../../../shared/services/sentry/sentry_reporter.dart';
+import '../../../shared/services/report/report.dart';
 import '../../ai_credits/data/revenuecat_service.dart';
 import '../domain/entitlement.dart';
 
@@ -20,7 +20,7 @@ const String kProOfferingId = 'default';
 SubscriptionService subscriptionService(Ref ref) {
   return SubscriptionService(
     revenueCat: ref.watch(revenueCatServiceProvider),
-    sentry: ref.watch(sentryReporterProvider),
+    report: ref.watch(reportProvider),
   );
 }
 
@@ -30,17 +30,20 @@ SubscriptionService subscriptionService(Ref ref) {
 ///
 /// Same contract as [RevenueCatService]: every method is safe before the SDK
 /// is configured (returns null / no-ops), never throws, and reports every
-/// failure to Sentry with a breadcrumb trail so a "Pro never unlocked" report
-/// arrives with the fetch/listener sequence attached.
+/// failure through [Report] with a breadcrumb trail so a "Pro never unlocked"
+/// report arrives with the fetch/listener sequence attached.
 class SubscriptionService {
-  SubscriptionService({
-    required RevenueCatService revenueCat,
-    required SentryReporter sentry,
-  }) : _revenueCat = revenueCat,
-       _sentry = sentry;
+  SubscriptionService({required RevenueCatService revenueCat, Report? report})
+    : _revenueCat = revenueCat,
+      _report = report;
 
   final RevenueCatService _revenueCat;
-  final SentryReporter _sentry;
+  final Report? _report;
+
+  Report get _r => _report ?? SentryReport.global;
+
+  /// Store calls report under `payments`, like [RevenueCatService].
+  static const _area = 'payments';
 
   /// The single app-level CustomerInfo listener, as registered with the SDK.
   /// One slot (not a list) so a provider rebuild can replace it without
@@ -51,22 +54,7 @@ class SubscriptionService {
   bool get isAvailable => RevenueCatService.isConfigured;
 
   void _crumb(String message, [Map<String, dynamic>? data]) {
-    debugPrint('[SubscriptionService] $message${data == null ? '' : ' $data'}');
-    _sentry.addBreadcrumb(
-      message: message,
-      category: 'subscription',
-      data: data,
-    );
-  }
-
-  void _report(String message, Object error, {StackTrace? stackTrace}) {
-    debugPrint('[SubscriptionService] $message: $error');
-    _sentry.reportCriticalError(
-      error,
-      stackTrace: stackTrace,
-      context: 'subscription',
-      tags: {'rc_operation': message},
-    );
+    _r.breadcrumb(message, category: 'subscription', data: data);
   }
 
   /// The Pro status RevenueCat currently holds for the identified customer.
@@ -88,7 +76,13 @@ class SubscriptionService {
       });
       return status;
     } catch (e, st) {
-      _report('getCustomerInfo failed', e, stackTrace: st);
+      await _r.fault(
+        e,
+        stackTrace: st,
+        area: _area,
+        message: 'getCustomerInfo failed',
+        tags: const {'rc_operation': 'getCustomerInfo failed'},
+      );
       return null;
     }
   }
@@ -152,7 +146,13 @@ class SubscriptionService {
       _crumb('restore completed', {'pro_active': status.active});
       return status;
     } catch (e, st) {
-      _report('restorePurchases failed', e, stackTrace: st);
+      await _r.fault(
+        e,
+        stackTrace: st,
+        area: _area,
+        message: 'restorePurchases failed',
+        tags: const {'rc_operation': 'restorePurchases failed'},
+      );
       return null;
     }
   }

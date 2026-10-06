@@ -14,32 +14,10 @@ import 'package:supabase_flutter/supabase_flutter.dart';
 import 'package:mealvana_endurance/features/subscription/data/user_entitlements_repository.dart';
 import 'package:mealvana_endurance/features/subscription/domain/entitlement.dart';
 import 'package:mealvana_endurance/shared/database/app_database.dart';
-import 'package:mealvana_endurance/shared/services/logging_service.dart';
+
+import '../../../helpers/fakes/recording_report.dart';
 
 class _MockSupabaseClient extends Mock implements SupabaseClient {}
-
-class _FakeLogger extends Fake implements AppLogger {
-  @override
-  void info(String message, {String? context, Map<String, dynamic>? data}) {}
-
-  @override
-  void warning(
-    String message, {
-    String? context,
-    Object? error,
-    StackTrace? stackTrace,
-    Map<String, dynamic>? data,
-  }) {}
-
-  @override
-  void error(
-    String message, {
-    String? context,
-    Object? error,
-    StackTrace? stackTrace,
-    Map<String, dynamic>? data,
-  }) {}
-}
 
 final _now = DateTime.utc(2026, 9, 1, 12);
 
@@ -112,14 +90,16 @@ void main() {
 
   group('Drift cache', () {
     late AppDatabase db;
+    late RecordingReport report;
     late UserEntitlementsRepository repo;
 
     setUp(() {
       db = AppDatabase.memory();
+      report = RecordingReport();
       repo = UserEntitlementsRepository(
         supabase: _MockSupabaseClient(),
         database: db,
-        logger: _FakeLogger(),
+        report: report,
       );
     });
 
@@ -188,7 +168,7 @@ void main() {
         final r = UserEntitlementsRepository(
           supabase: client,
           database: db,
-          logger: _FakeLogger(),
+          report: report,
         );
 
         expect(await r.mirrorInternalFlag('user-1', true), isTrue);
@@ -208,9 +188,13 @@ void main() {
         final r = UserEntitlementsRepository(
           supabase: client,
           database: db,
-          logger: _FakeLogger(),
+          report: report,
         );
         expect(await r.mirrorInternalFlag('user-1', true), isFalse);
+        // Expected-but-bad: the next resolve retries, so Degraded, not Fault.
+        expect(report.degradeds, hasLength(1));
+        expect(report.degradeds.single.area, 'subscription');
+        expect(report.faults, isEmpty);
       },
     );
 
@@ -222,7 +206,7 @@ void main() {
       final r = UserEntitlementsRepository(
         supabase: client,
         database: db,
-        logger: _FakeLogger(),
+        report: report,
       );
       expect(r.currentUserId, isNull);
       expect(r.isAnonymousUser, isFalse);

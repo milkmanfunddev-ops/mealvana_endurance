@@ -18,7 +18,10 @@ import 'package:mealvana_endurance/features/ai_credits/application/credits_contr
 import 'package:mealvana_endurance/features/ai_credits/data/credits_repository.dart';
 import 'package:mealvana_endurance/features/ai_credits/domain/credit_wallet.dart';
 import 'package:mealvana_endurance/shared/services/prefs_provider.dart';
+import 'package:mealvana_endurance/shared/services/report/report.dart';
 import 'package:shared_preferences/shared_preferences.dart';
+
+import '../../../helpers/fakes/recording_report.dart';
 
 // ---------------------------------------------------------------------------
 // Mocks
@@ -40,11 +43,15 @@ const _wallet0 = CreditWallet.zero;
 /// requested, so it must be a real (mock-backed) instance, not a stub.
 late SharedPreferences _prefs;
 
+/// What the controller reported; reset per test in setUp.
+late RecordingReport _report;
+
 ProviderContainer _container(_MockCreditsRepository repo) {
   final c = ProviderContainer(
     overrides: [
       creditsRepositoryProvider.overrideWithValue(repo),
       sharedPreferencesProvider.overrideWithValue(_prefs),
+      reportProvider.overrideWithValue(_report),
     ],
   );
   addTearDown(c.dispose);
@@ -61,6 +68,7 @@ void main() {
   setUp(() async {
     SharedPreferences.setMockInitialValues({});
     _prefs = await SharedPreferences.getInstance();
+    _report = RecordingReport();
     repo = _MockCreditsRepository();
     when(() => repo.currentUserId).thenReturn(_testUserId);
     when(
@@ -194,6 +202,10 @@ void main() {
               'post-purchase balance — so a throwing build hangs a purchase '
               'instead of failing it.',
         );
+        // Degrading silently is the D9 failure mode; the zero must be
+        // accompanied by a Fault so the stale number is visible in prod.
+        expect(_report.faults, hasLength(1));
+        expect(_report.faults.single.area, 'credits');
       },
     );
 
