@@ -221,7 +221,10 @@ Per-flavor settings come from one table in `sentry_flavor_settings.dart`:
 2. Downgrade expected failures that reached the SDK without passing through `Report` (SDK HTTP
    errors, uncaught throws) to `warning`, tagged `expected_failure`. SDK-reported failures of
    `get-weather-forecast` are downgraded as `handled_fallback`, because the caller substitutes a
-   default forecast.
+   default forecast. A 502 from `garmin-backfill` or `kroger` is `upstream_unavailable` (the
+   function's upstream, Garmin or Kroger, failed and said so), and a 504 from any Supabase
+   endpoint is `gateway_timeout`. Both also carry `http_endpoint:<function or table>`. Every other
+   SDK-reported 5xx stays a Fault (`classifyHandledHttpFailure`, ticket 19).
 3. In release builds, drop `debug` and `info` events, except those tagged `metrickit`. Structured
    logs are not events and pass untouched.
 

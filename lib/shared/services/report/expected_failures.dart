@@ -28,7 +28,18 @@ enum ExpectedFailure {
 
   /// The SDK reported an HTTP failure whose caller already substitutes a
   /// fallback (today: the weather forecast). Not offline; handled.
-  handledFallback('handled_fallback');
+  handledFallback('handled_fallback'),
+
+  /// An edge function answered 502 because ITS upstream failed (Garmin's
+  /// backfill API for `garmin-backfill`, Kroger for `kroger`) and said so;
+  /// the caller already degrades. Ticket 19.
+  upstreamUnavailable('upstream_unavailable'),
+
+  /// A gateway between the app and Supabase answered 504: Supabase's own
+  /// gateway during a platform blip or row-lock pile-up, or a network
+  /// middlebox on the athlete's side that never reached Supabase at all.
+  /// Never the app's code. Ticket 19.
+  gatewayTimeout('gateway_timeout');
 
   const ExpectedFailure(this.tag);
 
