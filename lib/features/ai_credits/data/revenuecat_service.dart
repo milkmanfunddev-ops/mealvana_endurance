@@ -4,7 +4,7 @@ import 'package:purchases_flutter/purchases_flutter.dart';
 import 'package:riverpod_annotation/riverpod_annotation.dart';
 
 import '../../../shared/services/app_config.dart';
-import '../../../shared/services/sentry/sentry_reporter.dart';
+import '../../../shared/services/report/report.dart';
 
 part 'revenuecat_service.g.dart';
 
@@ -15,7 +15,7 @@ part 'revenuecat_service.g.dart';
 RevenueCatService revenueCatService(Ref ref) {
   return RevenueCatService(
     config: ref.watch(appConfigProvider),
-    sentry: ref.watch(sentryReporterProvider),
+    report: ref.watch(reportProvider),
   );
 }
 
@@ -29,19 +29,27 @@ RevenueCatService revenueCatService(Ref ref) {
 /// In those cases the methods are no-ops or return null/false rather than
 /// throwing, so the feature flag can be flipped without crashing the app.
 ///
-/// **Every failure path reports to Sentry.** This class swallows errors by
-/// design so a store outage can never crash a purchase screen — which
+/// **Every failure path reports through [Report].** This class swallows errors
+/// by design so a store outage can never crash a purchase screen — which
 /// previously meant a failed purchase produced *no signal anywhere*: the
 /// diagnostics were all behind `kDebugMode`, which is false in the release-mode
 /// dev builds testers actually run. Breadcrumbs record the happy path too, so a
 /// Sentry event arrives with the configure/offerings/purchase sequence attached.
+/// A cancelled purchase or an unreachable store is on the expected-failure
+/// list, so `fault` downgrades those to a warning on its own.
 class RevenueCatService {
-  RevenueCatService({required AppConfig config, required SentryReporter sentry})
+  RevenueCatService({required AppConfig config, Report? report})
     : _config = config,
-      _sentry = sentry;
+      _report = report;
 
   final AppConfig _config;
-  final SentryReporter _sentry;
+  final Report? _report;
+
+  Report get _r => _report ?? SentryReport.global;
+
+  /// Store and purchase code reports under `payments` (rule D9 promotes its
+  /// Notes to warning events).
+  static const _area = 'payments';
 
   /// Static because [Purchases] is a process-wide native singleton: once it has
   /// been configured, it is configured for every instance of this wrapper.
@@ -65,33 +73,18 @@ class RevenueCatService {
   /// native SDK shows its own non-brandable confirmation dialog.
   bool get isTestStore => _config.revenueCatApiKey.startsWith('test_');
 
-  /// Log both to the console and to Sentry.
-  ///
-  /// `debugPrint` is deliberately *not* wrapped in `kDebugMode` — release-mode
-  /// dev builds are exactly the ones testers run, and silencing them there is
-  /// what left a failed purchase with no trace at all.
-  void _report(
-    String message,
-    Object error, {
-    StackTrace? stackTrace,
-    Map<String, String> tags = const {},
-  }) {
-    debugPrint('[RevenueCatService] $message: $error');
-    _sentry.reportCriticalError(
-      error,
-      stackTrace: stackTrace,
-      context: 'revenuecat',
-      tags: {
-        'rc_operation': message,
-        'rc_store': isTestStore ? 'test_store' : 'native_store',
-        ...tags,
-      },
-    );
-  }
+  /// Tags every RevenueCat Fault carries: the operation and which store.
+  Map<String, String> _tags(
+    String operation, [
+    Map<String, String> extra = const {},
+  ]) => {
+    'rc_operation': operation,
+    'rc_store': isTestStore ? 'test_store' : 'native_store',
+    ...extra,
+  };
 
   void _crumb(String message, [Map<String, dynamic>? data]) {
-    debugPrint('[RevenueCatService] $message${data == null ? '' : ' $data'}');
-    _sentry.addBreadcrumb(message: message, category: 'revenuecat', data: data);
+    _r.breadcrumb(message, category: 'revenuecat', data: data);
   }
 
   /// The API-key prefix the native RevenueCat SDK requires for the current
@@ -154,13 +147,15 @@ class RevenueCatService {
     // Guard against a wrong-platform / malformed key reaching the native SDK,
     // which would crash the app rather than throw a catchable Dart error.
     if (!_isKeyValidForPlatform(_config.revenueCatApiKey)) {
-      _report(
-        'configure skipped: wrong-platform API key',
+      await _r.fault(
         StateError(
           'RevenueCat API key does not match required prefix '
           '"$_requiredKeyPrefix" for this platform; RevenueCat is disabled '
           'for this session',
         ),
+        area: _area,
+        message: 'configure skipped: wrong-platform API key',
+        tags: _tags('configure skipped: wrong-platform API key'),
       );
       return;
     }
@@ -189,7 +184,13 @@ class RevenueCatService {
       _configured = true;
       _crumb('configured', {'store': isTestStore ? 'test_store' : 'native'});
     } catch (e, st) {
-      _report('configure failed', e, stackTrace: st);
+      await _r.fault(
+        e,
+        stackTrace: st,
+        area: _area,
+        message: 'configure failed',
+        tags: _tags('configure failed'),
+      );
     }
   }
 
@@ -209,7 +210,13 @@ class RevenueCatService {
       await Purchases.logIn(userId);
       _crumb('logged in');
     } catch (e, st) {
-      _report('logIn failed', e, stackTrace: st);
+      await _r.fault(
+        e,
+        stackTrace: st,
+        area: _area,
+        message: 'logIn failed',
+        tags: _tags('logIn failed'),
+      );
     }
   }
 
@@ -236,7 +243,13 @@ class RevenueCatService {
       });
       return offerings;
     } catch (e, st) {
-      _report('getOfferings failed', e, stackTrace: st);
+      await _r.fault(
+        e,
+        stackTrace: st,
+        area: _area,
+        message: 'getOfferings failed',
+        tags: _tags('getOfferings failed'),
+      );
       return null;
     }
   }
@@ -252,10 +265,11 @@ class RevenueCatService {
     final sku = pkg.storeProduct.identifier;
 
     if (!_configured) {
-      _report(
-        'purchase attempted before configure',
+      await _r.fault(
         StateError('RevenueCat SDK not configured'),
-        tags: {'sku': sku},
+        area: _area,
+        message: 'purchase attempted before configure',
+        tags: _tags('purchase attempted before configure', {'sku': sku}),
       );
       return false;
     }
@@ -270,11 +284,15 @@ class RevenueCatService {
         _crumb('purchase cancelled by user', {'sku': sku});
         return false;
       }
-      _report(
-        'purchase failed',
+      await _r.fault(
         e,
         stackTrace: st,
-        tags: {'sku': sku, 'rc_error_code': e.code.name},
+        area: _area,
+        message: 'purchase failed',
+        tags: _tags('purchase failed', {
+          'sku': sku,
+          'rc_error_code': e.code.name,
+        }),
       );
       return false;
     } catch (e, st) {
@@ -290,11 +308,12 @@ class RevenueCatService {
         _crumb('purchase cancelled by user (platform channel)', {'sku': sku});
         return false;
       }
-      _report(
-        'purchase failed (unexpected)',
+      await _r.fault(
         e,
         stackTrace: st,
-        tags: {'sku': sku},
+        area: _area,
+        message: 'purchase failed (unexpected)',
+        tags: _tags('purchase failed (unexpected)', {'sku': sku}),
       );
       return false;
     }
@@ -335,7 +354,13 @@ class RevenueCatService {
       await Purchases.restorePurchases();
       _crumb('restore completed');
     } catch (e, st) {
-      _report('restore failed', e, stackTrace: st);
+      await _r.fault(
+        e,
+        stackTrace: st,
+        area: _area,
+        message: 'restore failed',
+        tags: _tags('restore failed'),
+      );
     }
   }
 }

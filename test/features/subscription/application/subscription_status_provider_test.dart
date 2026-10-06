@@ -17,6 +17,9 @@ import 'package:mealvana_endurance/features/subscription/data/subscription_servi
 import 'package:mealvana_endurance/features/subscription/data/user_entitlements_repository.dart';
 import 'package:mealvana_endurance/features/subscription/domain/entitlement.dart';
 import 'package:mealvana_endurance/shared/services/analytics/internal_user_service.dart';
+import 'package:mealvana_endurance/shared/services/report/report.dart';
+
+import '../../../helpers/fakes/recording_report.dart';
 
 class _MockSubscriptionService extends Mock implements SubscriptionService {}
 
@@ -59,6 +62,7 @@ final _serverActive = SubscriptionStatus(
 void main() {
   late _MockSubscriptionService service;
   late _MockRepository repo;
+  late RecordingReport report;
 
   /// The listener the controller registered with the service, so a test can
   /// simulate a RevenueCat CustomerInfo push.
@@ -69,6 +73,7 @@ void main() {
   setUp(() {
     service = _MockSubscriptionService();
     repo = _MockRepository();
+    report = RecordingReport();
     capturedListener = null;
 
     when(() => repo.currentUserId).thenReturn(_userId);
@@ -97,6 +102,7 @@ void main() {
         subscriptionServiceProvider.overrideWithValue(service),
         userEntitlementsRepositoryProvider.overrideWithValue(repo),
         internalDeviceFlagProvider.overrideWith(() => _FixedFlag(internal)),
+        reportProvider.overrideWithValue(report),
       ],
     );
     addTearDown(c.dispose);
@@ -179,6 +185,9 @@ void main() {
       final c = container();
       expect(await resolve(c), SubscriptionStatus.none);
       expect(c.read(subscriptionStatusProvider).hasError, isFalse);
+      // "Not Pro" because something broke must not look like "not Pro".
+      expect(report.faults, hasLength(1));
+      expect(report.faults.single.area, 'subscription');
     });
 
     test('… or to the tester grant on an internal device', () async {

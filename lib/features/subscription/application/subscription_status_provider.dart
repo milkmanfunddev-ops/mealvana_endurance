@@ -1,9 +1,9 @@
 import 'dart:async';
 
-import 'package:flutter/foundation.dart';
 import 'package:riverpod_annotation/riverpod_annotation.dart';
 
 import '../../../shared/services/analytics/internal_user_service.dart';
+import '../../../shared/services/report/report.dart';
 import '../data/subscription_service.dart';
 import '../data/user_entitlements_repository.dart';
 import '../domain/entitlement.dart';
@@ -76,8 +76,16 @@ class SubscriptionStatusController extends _$SubscriptionStatusController {
 
     try {
       return await _resolve(internal: internal);
-    } catch (e) {
-      debugPrint('[SubscriptionStatus] build failed, degrading: $e');
+    } catch (e, st) {
+      await ref
+          .read(reportProvider)
+          .fault(
+            e,
+            stackTrace: st,
+            area: 'subscription',
+            message: 'subscription status resolve failed; degrading to none',
+            extra: {'internal': internal},
+          );
       return internal ? kInternalProStatus : SubscriptionStatus.none;
     }
   }

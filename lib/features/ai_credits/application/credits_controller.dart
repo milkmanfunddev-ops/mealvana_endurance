@@ -6,6 +6,7 @@ import 'package:supabase_flutter/supabase_flutter.dart';
 import 'package:riverpod_annotation/riverpod_annotation.dart';
 
 import '../../../shared/services/preferences_service.dart';
+import '../../../shared/services/report/report.dart';
 import '../data/credits_repository.dart';
 import '../domain/credit_wallet.dart';
 
@@ -68,10 +69,17 @@ class CreditsController extends _$CreditsController {
       final balance = await _ensureOncePerMonth();
       if (balance != null) return CreditWallet(balance: balance);
       return await _repo.fetchWallet();
-    } catch (e) {
+    } catch (e, st) {
       // Both repository calls already swallow their own errors, so reaching
       // here means something unexpected. Degrade rather than error out.
-      debugPrint('[CreditsController] build failed, showing zero: $e');
+      await ref
+          .read(reportProvider)
+          .fault(
+            e,
+            stackTrace: st,
+            area: 'credits',
+            message: 'CreditsController build failed; showing zero',
+          );
       return CreditWallet.zero;
     }
   }
@@ -95,9 +103,13 @@ class CreditsController extends _$CreditsController {
       _walletChannel = null;
     }
     _walletChannel = _repo.subscribeToWallet((wallet) {
-      debugPrint(
-        '[CreditsController] wallet updated remotely → ${wallet.balance}',
-      );
+      ref
+          .read(reportProvider)
+          .debug(
+            'wallet updated remotely',
+            area: 'credits',
+            data: {'balance': wallet.balance},
+          );
       state = AsyncData(wallet);
     });
 

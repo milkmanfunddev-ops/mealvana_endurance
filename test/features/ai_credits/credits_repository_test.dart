@@ -10,13 +10,13 @@
 /// - CreditWallet.fromMap parses all fields correctly.
 library;
 
-import 'dart:async';
-
 import 'package:flutter_test/flutter_test.dart';
 import 'package:mealvana_endurance/features/ai_credits/data/credits_repository.dart';
 import 'package:mealvana_endurance/features/ai_credits/domain/credit_wallet.dart';
 import 'package:mocktail/mocktail.dart';
 import 'package:supabase_flutter/supabase_flutter.dart';
+
+import '../../helpers/fakes/recording_report.dart';
 
 // ---------------------------------------------------------------------------
 // Mocks
@@ -43,14 +43,16 @@ void main() {
 
   late MockSupabaseClient mockSupabase;
   late MockGoTrueClient mockGoTrue;
+  late RecordingReport report;
   late CreditsRepository repository;
 
   setUp(() {
     mockSupabase = MockSupabaseClient();
     mockGoTrue = MockGoTrueClient();
+    report = RecordingReport();
     when(() => mockSupabase.auth).thenReturn(mockGoTrue);
 
-    repository = CreditsRepository(supabase: mockSupabase);
+    repository = CreditsRepository(supabase: mockSupabase, report: report);
   });
 
   // ---------------------------------------------------------------------------
@@ -157,6 +159,9 @@ void main() {
 
       final wallet = await repository.fetchWallet();
       expect(wallet.balance, 0, reason: 'Should degrade gracefully to zero');
+      // The zero is a stand-in, not the truth; the read failure is a Fault.
+      expect(report.faults, hasLength(1));
+      expect(report.faults.single.area, 'credits');
     });
   });
 

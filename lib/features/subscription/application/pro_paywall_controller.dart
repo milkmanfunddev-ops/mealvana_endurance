@@ -4,7 +4,7 @@ import 'package:purchases_flutter/purchases_flutter.dart';
 import 'package:riverpod_annotation/riverpod_annotation.dart';
 
 import '../../../shared/services/app_config.dart';
-import '../../../shared/services/sentry/sentry_reporter.dart';
+import '../../../shared/services/report/report.dart';
 import '../../ai_credits/data/revenuecat_service.dart';
 import '../data/subscription_service.dart';
 import '../data/user_entitlements_repository.dart';
@@ -76,11 +76,11 @@ class ProPaywallController extends _$ProPaywallController {
   /// the status provider.
   Future<ProPurchaseOutcome> buy(Package pkg) async {
     final sku = pkg.storeProduct.identifier;
-    final sentry = ref.read(sentryReporterProvider);
+    final report = ref.read(reportProvider);
 
     if (!ref.read(appConfigProvider).proPurchaseEnabled) {
-      sentry.addBreadcrumb(
-        message: 'pro purchase blocked: PRO_PURCHASE_ENABLED off',
+      report.breadcrumb(
+        'pro purchase blocked: PRO_PURCHASE_ENABLED off',
         category: 'subscription',
         data: {'sku': sku},
       );
@@ -89,16 +89,16 @@ class ProPaywallController extends _$ProPaywallController {
 
     final userId = _repo.currentUserId;
     if (userId == null || userId.isEmpty) {
-      await sentry.reportCriticalError(
+      await report.fault(
         StateError('Pro purchase attempted with no signed-in user (sku: $sku)'),
-        context: 'subscription',
+        area: 'payments',
         tags: {'rc_operation': 'buy_unauthenticated', 'sku': sku},
       );
       return ProPurchaseOutcome.notSignedIn;
     }
     if (_repo.isAnonymousUser) {
-      sentry.addBreadcrumb(
-        message: 'pro purchase blocked: anonymous session',
+      report.breadcrumb(
+        'pro purchase blocked: anonymous session',
         category: 'subscription',
         data: {'sku': sku},
       );
@@ -124,9 +124,11 @@ class ProPaywallController extends _$ProPaywallController {
           ? ProPurchaseOutcome.activated
           : ProPurchaseOutcome.purchasedPending;
       if (!status.active) {
-        sentry.addBreadcrumb(
-          message: 'pro purchase completed but status not yet active',
-          category: 'subscription',
+        // Money moved, Pro has not flipped: a silent branch on the payments
+        // path, so a Note (promoted to a warning) rather than a breadcrumb.
+        await report.note(
+          'pro purchase completed but status not yet active',
+          area: 'payments',
           data: {'sku': sku},
         );
       }
@@ -135,10 +137,10 @@ class ProPaywallController extends _$ProPaywallController {
     if (state is AsyncError) {
       final err = state as AsyncError;
       outcome = ProPurchaseOutcome.failed;
-      await sentry.reportCriticalError(
+      await report.fault(
         err.error,
         stackTrace: err.stackTrace,
-        context: 'subscription',
+        area: 'payments',
         tags: {'rc_operation': 'buy', 'sku': sku},
       );
     }

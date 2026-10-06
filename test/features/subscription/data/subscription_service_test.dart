@@ -13,7 +13,7 @@ import 'package:purchases_flutter/purchases_flutter.dart';
 import 'package:mealvana_endurance/features/ai_credits/data/revenuecat_service.dart';
 import 'package:mealvana_endurance/features/subscription/data/subscription_service.dart';
 import 'package:mealvana_endurance/features/subscription/domain/entitlement.dart';
-import 'package:mealvana_endurance/shared/services/sentry/sentry_reporter.dart';
+import 'package:mealvana_endurance/shared/services/report/report.dart';
 
 class _MockRevenueCatService extends Mock implements RevenueCatService {}
 
@@ -59,10 +59,7 @@ void main() {
 
   setUp(() {
     rc = _MockRevenueCatService();
-    service = SubscriptionService(
-      revenueCat: rc,
-      sentry: const NoopSentryReporter(),
-    );
+    service = SubscriptionService(revenueCat: rc, report: const NoopReport());
   });
 
   group('statusFromEntitlement', () {
