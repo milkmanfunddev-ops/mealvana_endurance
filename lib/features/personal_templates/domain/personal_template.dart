@@ -3,7 +3,7 @@ import 'dart:convert';
 import 'package:drift/drift.dart';
 
 import '../../../shared/database/app_database.dart';
-import '../../../shared/services/report/report.dart';
+import '../../../shared/domain/decode_issue.dart';
 
 /// Domain model for personal nutrition plan templates
 class PersonalTemplate {
@@ -50,20 +50,20 @@ class PersonalTemplate {
   final DateTime? localUpdatedAt;
 
   /// Convert from Drift database entry
-  factory PersonalTemplate.fromDriftEntry(PersonalTemplateEntry entry) {
-    // Domain factory with no injection point: the global Report is the only
-    // handle. Both columns are written by this app, so a decode failure is a
-    // bug, not bad input; the template still loads, minus the field.
+  factory PersonalTemplate.fromDriftEntry(
+    PersonalTemplateEntry entry, {
+    DecodeIssue onIssue = ignoreDecodeIssue,
+  }) {
+    // Both columns are written by this app, so a decode failure is a bug, not
+    // bad input; the template still loads, minus the field.
     Map<String, dynamic> planData;
     try {
       planData = jsonDecode(entry.planData) as Map<String, dynamic>;
     } catch (e, stackTrace) {
-      SentryReport.global.fault(
-        e,
+      onIssue(
+        'Template ${entry.id} planData is not valid JSON; loaded empty',
+        error: e,
         stackTrace: stackTrace,
-        area: 'personal_templates',
-        message: 'Template planData is not valid JSON; loaded empty',
-        extra: {'templateId': entry.id},
       );
       planData = {};
     }
@@ -74,12 +74,10 @@ class PersonalTemplate {
         segmentOrder = (jsonDecode(entry.brickSegmentOrder!) as List)
             .cast<String>();
       } catch (e, stackTrace) {
-        SentryReport.global.fault(
-          e,
+        onIssue(
+          'Template ${entry.id} brickSegmentOrder is not valid JSON; dropped',
+          error: e,
           stackTrace: stackTrace,
-          area: 'personal_templates',
-          message: 'Template brickSegmentOrder is not valid JSON; dropped',
-          extra: {'templateId': entry.id},
         );
         segmentOrder = null;
       }

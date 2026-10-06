@@ -3,12 +3,12 @@ import 'dart:async';
 import 'package:riverpod_annotation/riverpod_annotation.dart';
 
 import '../../../../features/content/application/content_service.dart';
-import '../../../../shared/services/logging_service.dart';
 import '../../../ai_credits/domain/insufficient_credits_exception.dart';
 import '../../../ai_credits/presentation/insufficient_credits_paywall.dart';
 import '../../data/ai_coach_chat_repository.dart';
 import '../../domain/ai_coach_message.dart';
 import '../../domain/ai_coach_ui_part.dart';
+import '../../../../shared/services/report/report.dart';
 
 part 'ai_coach_chat_controller.g.dart';
 
@@ -79,7 +79,7 @@ class AiCoachChatController extends _$AiCoachChatController {
   AiCoachChatRepository get _repository =>
       ref.read(aiCoachChatRepositoryProvider);
   ContentService get _contentService => ref.read(contentServiceProvider);
-  AppLogger get _logger => ref.read(appLoggerProvider);
+  Report get _report => ref.read(reportProvider);
 
   @override
   FutureOr<AiCoachChatState> build() async {
@@ -95,9 +95,10 @@ class AiCoachChatController extends _$AiCoachChatController {
         );
       }
     } catch (e) {
-      _logger.error(
-        'AiCoachChatController.build: failed to resume conversation',
-        error: e,
+      _report.fault(
+        e,
+        area: 'ai_coach',
+        message: 'AiCoachChatController.build: failed to resume conversation',
       );
     }
     return const AiCoachChatState();
@@ -208,8 +209,11 @@ class AiCoachChatController extends _$AiCoachChatController {
             ),
           );
         } else if (event is AiCoachStreamErrorEvent) {
-          _logger.error(
-            'AiCoachChatController: server stream error: ${event.message}',
+          _report.fault(
+            LoggedFault(
+              'AiCoachChatController: server stream error: ${event.message}',
+            ),
+            area: 'ai_coach',
           );
           // Surface as a snackbar but don't roll back the partial text.
           // The done event will still arrive (or stream will close) after this.
@@ -230,13 +234,18 @@ class AiCoachChatController extends _$AiCoachChatController {
         );
       }
 
-      _logger.info(
+      _report.info(
         'AiCoachChatController.send complete: conv=$resolvedConversationId '
         'uiParts=${accumulatedUiParts.length}',
+        area: 'ai_coach',
       );
     } on AiCoachChatOfflineError catch (e) {
       if (!ref.mounted) return;
-      _logger.error('AiCoachChatController.send offline', error: e);
+      _report.degraded(
+        e,
+        area: 'ai_coach',
+        message: 'AiCoachChatController.send offline',
+      );
       _handleSendError(
         currentState,
         _contentService.getValue(
@@ -246,7 +255,11 @@ class AiCoachChatController extends _$AiCoachChatController {
       );
     } on InsufficientCreditsException catch (e) {
       if (!ref.mounted) return;
-      _logger.error('AiCoachChatController.send out of AI credits', error: e);
+      _report.degraded(
+        e,
+        area: 'ai_coach',
+        message: 'AiCoachChatController.send out of AI credits',
+      );
       maybeShowInsufficientCreditsPaywall(e);
       _handleSendError(
         currentState,
@@ -254,7 +267,11 @@ class AiCoachChatController extends _$AiCoachChatController {
       );
     } on AiCoachChatServerError catch (e) {
       if (!ref.mounted) return;
-      _logger.error('AiCoachChatController.send server error', error: e);
+      _report.fault(
+        e,
+        area: 'ai_coach',
+        message: 'AiCoachChatController.send server error',
+      );
       final msg = e.statusCode == 401
           ? _contentService.getValue(
               'ai_coach.error_unauthorized',
@@ -267,10 +284,11 @@ class AiCoachChatController extends _$AiCoachChatController {
       _handleSendError(currentState, msg);
     } catch (e, st) {
       if (!ref.mounted) return;
-      _logger.error(
-        'AiCoachChatController.send unexpected',
-        error: e,
+      _report.fault(
+        e,
         stackTrace: st,
+        area: 'ai_coach',
+        message: 'AiCoachChatController.send unexpected',
       );
       _handleSendError(
         currentState,
@@ -384,9 +402,10 @@ class AiCoachChatController extends _$AiCoachChatController {
       // Opener is optional; if the provider is gone there's nothing to restore
       // and nothing safe to log against a disposed ref.
       if (!ref.mounted) return;
-      _logger.error(
-        'AiCoachChatController.loadOpener failed (non-fatal)',
-        error: e,
+      _report.fault(
+        e,
+        area: 'ai_coach',
+        message: 'AiCoachChatController.loadOpener failed (non-fatal)',
       );
       state = const AsyncData(AiCoachChatState());
     }

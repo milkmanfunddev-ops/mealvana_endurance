@@ -1,5 +1,4 @@
 // ignore_for_file: avoid_implementing_value_types
-import 'dart:async';
 
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:flutter_test/flutter_test.dart';
@@ -8,7 +7,6 @@ import 'package:mealvana_endurance/features/coach_mode/application/coach_service
 import 'package:mealvana_endurance/features/coach_mode/domain/coach.dart';
 import 'package:mealvana_endurance/features/coach_mode/domain/coach_athlete_relationship.dart';
 import 'package:mealvana_endurance/features/coach_mode/presentation/providers/coach_dashboard_controller.dart';
-import 'package:mealvana_endurance/shared/services/logging_service.dart';
 import 'package:mealvana_endurance/shared/services/report/report.dart';
 
 import '../../../helpers/fakes/recording_report.dart';
@@ -18,38 +16,6 @@ import '../../../helpers/fakes/recording_report.dart';
 // ---------------------------------------------------------------------------
 
 class _MockCoachService extends Mock implements CoachService {}
-
-class _FakeLogger extends Fake implements AppLogger {
-  @override
-  void info(String message, {String? context, Map<String, dynamic>? data}) {}
-
-  @override
-  void error(
-    String message, {
-    String? context,
-    Map<String, dynamic>? data,
-    dynamic error,
-    StackTrace? stackTrace,
-  }) {}
-
-  @override
-  void warning(
-    String message, {
-    String? context,
-    Map<String, dynamic>? data,
-    dynamic error,
-    StackTrace? stackTrace,
-  }) {}
-
-  @override
-  void debug(
-    String message, {
-    String? context,
-    Map<String, dynamic>? data,
-    dynamic error,
-    StackTrace? stackTrace,
-  }) {}
-}
 
 // ---------------------------------------------------------------------------
 // Helpers
@@ -90,12 +56,10 @@ CoachAthleteRelationship _makeRelationship({
 
 void main() {
   late _MockCoachService coachService;
-  late _FakeLogger logger;
   late RecordingReport report;
 
   setUp(() {
     coachService = _MockCoachService();
-    logger = _FakeLogger();
     report = RecordingReport();
 
     // Default stub: background sync completes silently
@@ -109,7 +73,6 @@ void main() {
     final c = ProviderContainer(
       overrides: [
         coachServiceProvider.overrideWithValue(coachService),
-        appLoggerProvider.overrideWithValue(logger),
         reportProvider.overrideWithValue(report),
       ],
     );

@@ -8,7 +8,7 @@ import '../../../shared/data/syncable_repository.dart';
 import '../../../shared/database/app_database.dart';
 import '../../../shared/database/database_provider.dart';
 import '../../../shared/services/app_external_deps.dart';
-import '../../../shared/services/logging_service.dart';
+import '../../../shared/services/report/decode_issue_report.dart';
 import '../../../shared/services/report/report.dart';
 import '../../../shared/services/sync/sync_dependency_graph.dart';
 import '../domain/cooking_session.dart';
@@ -34,7 +34,6 @@ MealPlanRepository mealPlanRepository(Ref ref) {
   final deps = ref.watch(appExternalDepsProvider);
   return MealPlanRepository(
     database: ref.watch(appDatabaseProvider),
-    logger: deps.logger,
     remote: SupabaseMealPlanRemote(deps.supabaseClient),
     report: deps.report,
   );
@@ -62,22 +61,17 @@ MealPlanRepository mealPlanRepository(Ref ref) {
 class MealPlanRepository with SyncableRepository {
   MealPlanRepository({
     required AppDatabase database,
-    required AppLogger logger,
     required MealPlanRemote remote,
     Report? report,
   }) : _database = database,
-       _logger = logger,
        _remote = remote,
        _report = report;
 
   final AppDatabase _database;
-  final AppLogger _logger;
   final MealPlanRemote _remote;
   final Report? _report;
 
   Report get _r => _report ?? SentryReport.global;
-
-  static const _context = 'MEAL_PLAN_REPOSITORY';
 
   Future<SyncResult>? _inflightSync;
 
@@ -107,9 +101,9 @@ class MealPlanRepository with SyncableRepository {
 
   Future<SyncResult> _syncFromRemoteImpl(String userId) async {
     try {
-      _logger.info(
+      _r.info(
         'Syncing meal plans from Supabase',
-        context: _context,
+        area: 'meal_planning',
         data: {'userId': userId},
       );
 
@@ -174,9 +168,9 @@ class MealPlanRepository with SyncableRepository {
       });
 
       await setLastSyncTime(DateTime.now());
-      _logger.info(
+      _r.info(
         'Synced meal plans from Supabase',
-        context: _context,
+        area: 'meal_planning',
         data: {'userId': userId, 'rows': count, 'plans': planIds.length},
       );
       return SyncResult.successful(count);
@@ -209,9 +203,9 @@ class MealPlanRepository with SyncableRepository {
         return UploadResult.nothingToUpload();
       }
 
-      _logger.info(
+      _r.info(
         'Uploading dirty meal-plan edits',
-        context: _context,
+        area: 'meal_planning',
         data: {'meals': dirtyMeals.length, 'plans': dirtyPlans.length},
       );
 
@@ -440,9 +434,9 @@ class MealPlanRepository with SyncableRepository {
       );
       await _markDayNotesStale(row.planId, now);
     });
-    _logger.info(
+    _r.info(
       'Set servings',
-      context: _context,
+      area: 'meal_planning',
       data: {'planMealId': planMealId, 'servings': servings},
     );
   }
@@ -466,9 +460,9 @@ class MealPlanRepository with SyncableRepository {
       );
       await _markDayNotesStale(row.planId, now);
     });
-    _logger.info(
+    _r.info(
       'Removed plan meal',
-      context: _context,
+      area: 'meal_planning',
       data: {'planMealId': planMealId},
     );
   }
@@ -645,9 +639,9 @@ class MealPlanRepository with SyncableRepository {
             );
       }
     });
-    _logger.info(
+    _r.info(
       'Applied server plan',
-      context: _context,
+      area: 'meal_planning',
       data: {
         'planId': plan.id,
         'status': plan.status.wire,
@@ -690,11 +684,12 @@ class MealPlanRepository with SyncableRepository {
             ? byPosition
             : a.createdAt.compareTo(b.createdAt);
       });
+    final onIssue = _r.decodeIssue('meal_planning');
     final daysJson = _decodeMap(plan.days);
     final days = <String, DayPlan>{
       for (final entry in daysJson.entries)
         if (asJsonMap(entry.value) case final map?)
-          entry.key: DayPlan.fromJson(map),
+          entry.key: DayPlan.fromJson(map, onIssue: onIssue),
     };
     final planMeals = sorted.map(_planMealFromEntry).toList(growable: false);
     return MealPlan(
@@ -709,12 +704,14 @@ class MealPlanRepository with SyncableRepository {
         {'r': _decodeList(plan.rules)},
         'r',
         PlanRule.fromJson,
+        onIssue: onIssue,
       ),
       meals: planMeals,
       shopping: readRecordList(
         {'s': _decodeList(plan.shopping)},
         's',
         ShoppingItem.fromJson,
+        onIssue: onIssue,
       ),
       dayNotes: readStringMap({'d': _decodeMap(plan.dayNotes)}, 'd'),
       dayNotesStale: plan.dayNotesStale,
@@ -725,7 +722,7 @@ class MealPlanRepository with SyncableRepository {
     );
   }
 
-  static PlanMeal _planMealFromEntry(PlanMealEntry e) => PlanMeal(
+  PlanMeal _planMealFromEntry(PlanMealEntry e) => PlanMeal(
     id: e.id,
     planId: e.planId,
     source: MealSource.fromWire(e.source) ?? MealSource.library,
@@ -744,11 +741,13 @@ class MealPlanRepository with SyncableRepository {
       {'s': _decodeList(e.swapsApplied)},
       's',
       SwapApplied.fromJson,
+      onIssue: _r.decodeIssue('meal_planning'),
     ),
     comments: readRecordList(
       {'c': _decodeList(e.comments)},
       'c',
       PlanComment.fromJson,
+      onIssue: _r.decodeIssue('meal_planning'),
     ),
     position: e.position,
     icon: MealIcon.fromWire(e.icon),

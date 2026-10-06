@@ -1,7 +1,6 @@
 import 'package:riverpod_annotation/riverpod_annotation.dart';
 
 import '../../../shared/services/app_external_deps.dart';
-import '../../../shared/services/logging_service.dart';
 import '../domain/home_payload.dart';
 import '../domain/meal_detail.dart';
 import '../domain/meal_plan.dart';
@@ -12,6 +11,9 @@ import '../domain/vana_part.dart';
 import '../domain/wire_record.dart';
 import 'vana_chat_repository.dart';
 import 'vana_transport.dart';
+import '../../../shared/domain/decode_issue.dart';
+import '../../../shared/services/report/decode_issue_report.dart';
+import '../../../shared/services/report/report.dart';
 
 part 'vana_action_client.g.dart';
 
@@ -19,16 +21,24 @@ part 'vana_action_client.g.dart';
 VanaActionClient vanaActionClient(Ref ref) {
   return VanaActionClient(
     transport: ref.watch(vanaTransportProvider),
-    logger: ref.watch(appExternalDepsProvider).logger,
+    report: ref.watch(appExternalDepsProvider).report,
   );
 }
 
 /// `POST vana-action` result: `{parts: VanaPart[], ...extras}` (contract 02
 /// §4). Typed accessors read the extras the app-only actions add.
 class VanaActionResult {
-  const VanaActionResult({required this.parts, required this.extras});
+  const VanaActionResult({
+    required this.parts,
+    required this.extras,
+    this.onIssue = ignoreDecodeIssue,
+  });
 
   final List<VanaPart> parts;
+
+  /// Where the typed accessors below report a malformed extra (the client
+  /// passes `report.decodeIssue`); ignored by default.
+  final DecodeIssue onIssue;
 
   /// Everything except `parts`, as sent (`home`, `meal`, `meals`,
   /// `memories`, `plans`, `notes`, `vote`, `logId`).
@@ -45,13 +55,13 @@ class VanaActionResult {
 
   /// `get_home` → `home`.
   HomePayload? get home => switch (asJsonMap(extras['home'])) {
-    final map? => HomePayload.fromJson(map),
+    final map? => HomePayload.fromJson(map, onIssue: onIssue),
     null => null,
   };
 
   /// `get_meal` → `meal` (a [MealDetail]).
   MealDetail? get mealDetail => switch (asJsonMap(extras['meal'])) {
-    final map? => MealDetail.fromJson(map),
+    final map? => MealDetail.fromJson(map, onIssue: onIssue),
     null => null,
   };
 
@@ -63,11 +73,11 @@ class VanaActionResult {
 
   /// `recent_meals` → `meals`.
   List<RecentMeal> get recentMeals =>
-      readRecordList(extras, 'meals', RecentMeal.fromJson);
+      readRecordList(extras, 'meals', RecentMeal.fromJson, onIssue: onIssue);
 
   /// `list_memories` / `delete_memory` → `memories`.
   List<UserMemory> get memories =>
-      readRecordList(extras, 'memories', UserMemory.fromJson);
+      readRecordList(extras, 'memories', UserMemory.fromJson, onIssue: onIssue);
 
   /// `set_meal_feedback` → `vote`.
   int? get vote => readInt(extras, 'vote');
@@ -85,14 +95,17 @@ class VanaActionResult {
   /// carries the returned `pantry` part).
   String? get messageId => readString(extras, 'messageId');
 
-  factory VanaActionResult.fromJson(Map<String, dynamic> json) =>
-      VanaActionResult(
-        parts: VanaPart.listFromJson(json['parts']),
-        extras: {
-          for (final entry in json.entries)
-            if (entry.key != 'parts') entry.key: entry.value,
-        },
-      );
+  factory VanaActionResult.fromJson(
+    Map<String, dynamic> json, {
+    DecodeIssue onIssue = ignoreDecodeIssue,
+  }) => VanaActionResult(
+    parts: VanaPart.listFromJson(json['parts'], onIssue: onIssue),
+    onIssue: onIssue,
+    extras: {
+      for (final entry in json.entries)
+        if (entry.key != 'parts') entry.key: entry.value,
+    },
+  );
 }
 
 /// Model-free edits and reads against the `vana-action` edge function.
@@ -104,24 +117,25 @@ class VanaActionResult {
 class VanaActionClient {
   VanaActionClient({
     required VanaTransport transport,
-    required AppLogger logger,
+    required Report report,
     this.functionName = 'vana-action',
   }) : _transport = transport,
-       _logger = logger;
+       _report = report;
 
   final VanaTransport _transport;
-  final AppLogger _logger;
+  final Report _report;
   final String functionName;
-
-  static const _context = 'VANA_ACTION_CLIENT';
 
   Future<VanaActionResult> run(UiAction action) async {
     final started = DateTime.now();
     final json = await _transport.postJson(functionName, action.toJson());
-    final result = VanaActionResult.fromJson(json);
-    _logger.info(
+    final result = VanaActionResult.fromJson(
+      json,
+      onIssue: _report.decodeIssue('meal_planning'),
+    );
+    _report.info(
       'action ${action.type} → ${result.parts.map((p) => p.kind).join(',')}',
-      context: _context,
+      area: 'meal_planning',
       data: {
         'ms': DateTime.now().difference(started).inMilliseconds,
         'extras': result.extras.keys.toList(),

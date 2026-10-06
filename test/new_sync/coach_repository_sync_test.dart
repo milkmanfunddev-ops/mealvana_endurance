@@ -30,8 +30,6 @@ void main() {
     mockDatabase = MockAppDatabase();
     report = RecordingReport();
 
-    // Setup default logger behavior
-
     repository = CoachRepository(
       supabase: mockSupabase,
       database: mockDatabase,

@@ -3,7 +3,7 @@ import 'dart:async';
 import 'package:riverpod_annotation/riverpod_annotation.dart';
 import 'package:supabase_flutter/supabase_flutter.dart';
 
-import '../../../shared/services/logging_service.dart';
+import '../../../shared/services/report/decode_issue_report.dart';
 import '../../../shared/services/report/report.dart';
 import '../../../shared/services/supabase/supabase_client_provider.dart';
 import '../../ai_credits/domain/insufficient_credits_exception.dart';
@@ -124,16 +124,13 @@ class AiCoachChatRepository {
   AiCoachChatRepository({
     required SupabaseClient supabase,
     required VanaChatRepository transport,
-    required AppLogger logger,
     Report? report,
   }) : _supabase = supabase,
        _transport = transport,
-       _logger = logger,
        _report = report;
 
   final SupabaseClient _supabase;
   final VanaChatRepository _transport;
-  final AppLogger _logger;
   final Report? _report;
 
   Report get _r => _report ?? SentryReport.global;
@@ -185,7 +182,12 @@ class AiCoachChatRepository {
           .order('created_at', ascending: true);
 
       return (response as List<dynamic>)
-          .map((row) => AiCoachMessage.fromJson(row as Map<String, dynamic>))
+          .map(
+            (row) => AiCoachMessage.fromJson(
+              row as Map<String, dynamic>,
+              onIssue: _r.decodeIssue(_area),
+            ),
+          )
           .toList();
     } catch (e, st) {
       await _r.fault(
@@ -280,7 +282,10 @@ class AiCoachChatRepository {
     Map<String, dynamic> bodyMap, {
     required String? fallbackConversationId,
   }) async {
-    _logger.info('AiCoachChatRepository._streamRequest → jade-chat');
+    _r.info(
+      'AiCoachChatRepository._streamRequest → jade-chat',
+      area: 'ai_coach',
+    );
 
     final NdjsonResponse response;
     try {
@@ -302,8 +307,9 @@ class AiCoachChatRepository {
     final resolvedConversationId =
         response.conversationId ?? fallbackConversationId ?? '';
 
-    _logger.info(
+    _r.info(
       'AiCoachChatRepository._streamRequest: conv=$resolvedConversationId streaming NDJSON',
+      area: 'ai_coach',
     );
 
     return AiCoachSendResult(
@@ -333,7 +339,10 @@ class AiCoachChatRepository {
         case 'ui':
           final partJson = json['part'];
           if (partJson is! Map<String, dynamic>) return null;
-          final part = AiCoachUiPart.fromJson(partJson);
+          final part = AiCoachUiPart.fromJson(
+            partJson,
+            onIssue: _r.decodeIssue(_area),
+          );
           if (part == null) return null; // unknown kind — skip
           return AiCoachUiPartEvent(part);
 
@@ -342,7 +351,10 @@ class AiCoachChatRepository {
 
         case 'error':
           final message = (json['message'] as String?) ?? 'Unknown error';
-          _logger.error('AiCoachChatRepository: server error event: $message');
+          _r.fault(
+            LoggedFault('AiCoachChatRepository: server error event: $message'),
+            area: 'ai_coach',
+          );
           return AiCoachStreamErrorEvent(message);
 
         default:
@@ -369,16 +381,15 @@ class AiCoachChatRepository {
 @riverpod
 AiCoachChatRepository aiCoachChatRepository(Ref ref) {
   final supabase = ref.watch(supabaseClientProvider);
-  final logger = ref.watch(appLoggerProvider);
+  final report = ref.watch(reportProvider);
   return AiCoachChatRepository(
     supabase: supabase,
     transport: VanaChatRepository(
       transport: ref.watch(vanaTransportProvider),
       supabase: supabase,
-      logger: logger,
+      report: report,
       functionName: 'jade-chat',
     ),
-    logger: logger,
-    report: ref.watch(reportProvider),
+    report: report,
   );
 }

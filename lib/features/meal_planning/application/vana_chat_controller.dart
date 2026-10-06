@@ -4,8 +4,6 @@ import 'dart:typed_data';
 import 'package:riverpod_annotation/riverpod_annotation.dart';
 
 import '../../../shared/providers/user_id_provider.dart';
-import '../../../shared/services/app_external_deps.dart';
-import '../../../shared/services/logging_service.dart';
 import '../../ai_credits/domain/insufficient_credits_exception.dart';
 import '../../meal_logging/application/meal_ai_service.dart';
 import '../data/user_memory_repository.dart';
@@ -20,6 +18,7 @@ import '../domain/vana_part.dart';
 import '../domain/vana_stream_event.dart';
 import '../domain/week_start.dart';
 import 'meal_plan_controller.dart';
+import '../../../shared/services/report/report.dart';
 
 part 'vana_chat_controller.g.dart';
 
@@ -118,7 +117,7 @@ class VanaChatState {
 class VanaChatController extends _$VanaChatController {
   VanaChatRepository get _repo => ref.read(vanaChatRepositoryProvider);
   VanaActionClient get _actions => ref.read(vanaActionClientProvider);
-  AppLogger get _logger => ref.read(appExternalDepsProvider).logger;
+  Report get _report => ref.read(reportProvider);
 
   /// The client-raised `status` tool name while a fridge photo is being
   /// read (`VanaStatusCopy` maps it to copy).
@@ -154,12 +153,12 @@ class VanaChatController extends _$VanaChatController {
         historyLoaded: true,
       );
     } catch (e, st) {
-      _logger.error(
-        'Failed to load Vana history',
-        context: _context,
-        error: e,
+      _report.fault(
+        e,
         stackTrace: st,
-        data: {'conversationId': conversationId},
+        area: 'meal_planning',
+        extra: {'conversationId': conversationId},
+        message: 'Failed to load Vana history',
       );
       return VanaChatState(
         kind: kind,
@@ -180,10 +179,10 @@ class VanaChatController extends _$VanaChatController {
       );
       return draft.plan;
     } catch (e) {
-      _logger.warning(
-        'conversation draft not loaded — keeping the current view',
-        context: _context,
-        error: e,
+      _report.degraded(
+        e,
+        area: 'meal_planning',
+        message: 'conversation draft not loaded — keeping the current view',
       );
       return null;
     }
@@ -273,9 +272,9 @@ class VanaChatController extends _$VanaChatController {
       final plan = result.plan;
       if (plan != null) await _foldPlan(plan);
       if (!ref.mounted) return;
-      _logger.info(
+      _report.info(
         'rewind → removed ${result.removed ?? '?'} message(s)',
-        context: _context,
+        area: 'meal_planning',
         data: {'conversationId': conversationId, 'messageId': messageId},
       );
       // No batch back means the snapshot had no plan: the local draft is
@@ -292,12 +291,12 @@ class VanaChatController extends _$VanaChatController {
       await _turn(rewound, message: trimmed, opener: false);
     } catch (e, st) {
       if (!ref.mounted) return;
-      _logger.error(
-        'Vana rewind failed',
-        context: _context,
-        error: e,
+      _report.fault(
+        e,
         stackTrace: st,
-        data: {'conversationId': conversationId, 'messageId': messageId},
+        area: 'meal_planning',
+        extra: {'conversationId': conversationId, 'messageId': messageId},
+        message: 'Vana rewind failed',
       );
       state = AsyncData(
         current.copyWith(
@@ -381,11 +380,11 @@ class VanaChatController extends _$VanaChatController {
       );
     } catch (e, st) {
       if (!ref.mounted) return;
-      _logger.error(
-        'Vana pantry photo failed',
-        context: _context,
-        error: e,
+      _report.fault(
+        e,
         stackTrace: st,
+        area: 'meal_planning',
+        message: 'Vana pantry photo failed',
       );
       // Roll back the placeholder; keep the conversation id if one was made.
       state = AsyncData(
@@ -415,11 +414,11 @@ class VanaChatController extends _$VanaChatController {
         );
       } catch (e, st) {
         if (!ref.mounted) return;
-        _logger.error(
-          'set_pantry failed',
-          context: _context,
-          error: e,
+        _report.fault(
+          e,
           stackTrace: st,
+          area: 'meal_planning',
+          message: 'set_pantry failed',
         );
         state = AsyncData(current.copyWith(error: _errorKind(e)));
         return;
@@ -508,12 +507,12 @@ class VanaChatController extends _$VanaChatController {
       );
     } catch (e, st) {
       if (!ref.mounted) return;
-      _logger.error(
-        'Vana turn failed',
-        context: _context,
-        error: e,
+      _report.fault(
+        e,
         stackTrace: st,
-        data: {'kind': kind.wire, 'opener': opener},
+        area: 'meal_planning',
+        extra: {'kind': kind.wire, 'opener': opener},
+        message: 'Vana turn failed',
       );
       // Roll back the optimistic pair; keep everything that was persisted.
       state = AsyncData(
@@ -572,7 +571,10 @@ class VanaChatController extends _$VanaChatController {
           statusTool: tool,
         );
       case VanaErrorEvent(:final message):
-        _logger.error('Vana stream error: $message', context: _context);
+        _report.fault(
+          LoggedFault('Vana stream error: $message', context: _context),
+          area: 'meal_planning',
+        );
         return current.copyWith(
           conversationId: conversationId,
           error: VanaChatErrorKind.server,
@@ -601,11 +603,11 @@ class VanaChatController extends _$VanaChatController {
     try {
       await ref.read(mealPlanControllerProvider.notifier).applyServerPlan(plan);
     } catch (e, st) {
-      _logger.error(
-        'Failed to fold batch part into the plan',
-        context: _context,
-        error: e,
+      _report.fault(
+        e,
         stackTrace: st,
+        area: 'meal_planning',
+        message: 'Failed to fold batch part into the plan',
       );
     }
   }
@@ -617,10 +619,10 @@ class VanaChatController extends _$VanaChatController {
           .read(userMemoryRepositoryProvider)
           .applyServerMemory(part.memory, userId: userId);
     } catch (e) {
-      _logger.warning(
-        'Failed to store memory_saved part locally',
-        context: _context,
-        error: e,
+      _report.degraded(
+        e,
+        area: 'meal_planning',
+        message: 'Failed to store memory_saved part locally',
       );
     }
   }

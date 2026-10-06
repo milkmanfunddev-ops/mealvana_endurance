@@ -4,13 +4,13 @@ import 'package:supabase_flutter/supabase_flutter.dart';
 import '../../../features/auth/domain/user_preferences.dart' as domain;
 import '../../../shared/database/app_database.dart';
 import '../../../shared/database/database_provider.dart';
-import '../../../shared/services/logging_service.dart';
 import '../data/coach_repository.dart';
 import '../data/coach_messaging_repository.dart';
 import '../domain/coach.dart';
 import '../domain/coach_athlete_relationship.dart';
 import '../domain/coach_message.dart';
 import '../domain/pairing_code_connection_result.dart';
+import '../../../shared/services/report/report.dart';
 
 part 'coach_service.g.dart';
 
@@ -20,7 +20,7 @@ CoachService coachService(Ref ref) {
     repository: ref.read(coachRepositoryProvider),
     messagingRepository: ref.read(coachMessagingRepositoryProvider),
     database: ref.read(appDatabaseProvider),
-    logger: ref.read(appLoggerProvider),
+    report: ref.read(reportProvider),
     supabase: Supabase.instance.client,
   );
 }
@@ -33,18 +33,18 @@ class CoachService {
     required CoachRepository repository,
     required CoachMessagingRepository messagingRepository,
     required AppDatabase database,
-    required AppLogger logger,
+    required Report report,
     required SupabaseClient supabase,
   }) : _repository = repository,
        _messagingRepository = messagingRepository,
        _database = database,
-       _logger = logger,
+       _report = report,
        _supabase = supabase;
 
   final CoachRepository _repository;
   final CoachMessagingRepository _messagingRepository;
   final AppDatabase _database;
-  final AppLogger _logger;
+  final Report _report;
   final SupabaseClient _supabase;
 
   /// Get the current authenticated user's ID from Supabase
@@ -69,10 +69,10 @@ class CoachService {
       if (profile == null) return false;
       return await _repository.isUserApprovedCoach(profile.id);
     } catch (e) {
-      _logger.warning(
-        'Failed to check coach status',
-        context: 'COACH_SERVICE',
-        data: {'error': e.toString()},
+      _report.degraded(
+        LoggedFault('Failed to check coach status', context: 'COACH_SERVICE'),
+        area: 'coach_mode',
+        extra: {'error': e.toString()},
       );
       return false;
     }
@@ -86,11 +86,11 @@ class CoachService {
 
       return await _repository.getCoachRecordForUser(profile.id);
     } catch (e, stackTrace) {
-      _logger.error(
-        'Failed to get current coach record',
-        context: 'COACH_SERVICE',
-        error: e,
+      _report.fault(
+        e,
         stackTrace: stackTrace,
+        area: 'coach_mode',
+        message: 'Failed to get current coach record',
       );
       return null;
     }
@@ -105,11 +105,11 @@ class CoachService {
 
       return await _repository.getCoachInfoByUserId(profile.id);
     } catch (e, stackTrace) {
-      _logger.error(
-        'Failed to get current coach info',
-        context: 'COACH_SERVICE',
-        error: e,
+      _report.fault(
+        e,
         stackTrace: stackTrace,
+        area: 'coach_mode',
+        message: 'Failed to get current coach info',
       );
       return null;
     }
@@ -124,20 +124,23 @@ class CoachService {
 
       final result = await _repository.syncFromRemote(profile.id);
       if (!result.success) {
-        _logger.warning(
-          'Coach data sync did not complete successfully',
-          context: 'COACH_SERVICE',
-          data: {'userId': profile.id, 'error': result.error},
+        _report.degraded(
+          LoggedFault(
+            'Coach data sync did not complete successfully',
+            context: 'COACH_SERVICE',
+          ),
+          area: 'coach_mode',
+          extra: {'userId': profile.id, 'error': result.error},
         );
       }
 
       return await _repository.isUserApprovedCoach(profile.id);
     } catch (e, stackTrace) {
-      _logger.error(
-        'Failed to sync current coach data from Supabase',
-        context: 'COACH_SERVICE',
-        error: e,
+      _report.fault(
+        e,
         stackTrace: stackTrace,
+        area: 'coach_mode',
+        message: 'Failed to sync current coach data from Supabase',
       );
       return false;
     }
@@ -159,11 +162,11 @@ class CoachService {
 
       return await _repository.getActiveRelationshipsForCoach(profile.id);
     } catch (e, stackTrace) {
-      _logger.error(
-        'Failed to get athletes',
-        context: 'COACH_SERVICE',
-        error: e,
+      _report.fault(
+        e,
         stackTrace: stackTrace,
+        area: 'coach_mode',
+        message: 'Failed to get athletes',
       );
       return [];
     }
@@ -182,11 +185,11 @@ class CoachService {
       final all = await _repository.getRelationshipsForCoach(profile.id);
       return all.where((r) => r.status == RelationshipStatus.pending).toList();
     } catch (e, stackTrace) {
-      _logger.error(
-        'Failed to get pending requests',
-        context: 'COACH_SERVICE',
-        error: e,
+      _report.fault(
+        e,
         stackTrace: stackTrace,
+        area: 'coach_mode',
+        message: 'Failed to get pending requests',
       );
       return [];
     }
@@ -201,9 +204,12 @@ class CoachService {
     try {
       final profile = await _getCurrentProfile();
       if (profile == null) {
-        _logger.warning(
-          'Cannot invite athlete: no user profile',
-          context: 'COACH_SERVICE',
+        _report.degraded(
+          LoggedFault(
+            'Cannot invite athlete: no user profile',
+            context: 'COACH_SERVICE',
+          ),
+          area: 'coach_mode',
         );
         return null;
       }
@@ -211,9 +217,12 @@ class CoachService {
       // Check coaches table for approved status
       final isCoach = await _repository.isUserApprovedCoach(profile.id);
       if (!isCoach) {
-        _logger.warning(
-          'Cannot invite athlete: user is not a coach',
-          context: 'COACH_SERVICE',
+        _report.degraded(
+          LoggedFault(
+            'Cannot invite athlete: user is not a coach',
+            context: 'COACH_SERVICE',
+          ),
+          area: 'coach_mode',
         );
         return null;
       }
@@ -223,19 +232,22 @@ class CoachService {
         athleteCode,
       );
       if (athleteUserId == null) {
-        _logger.warning(
-          'Athlete not found by code',
-          context: 'COACH_SERVICE',
-          data: {'athleteCode': athleteCode},
+        _report.degraded(
+          LoggedFault('Athlete not found by code', context: 'COACH_SERVICE'),
+          area: 'coach_mode',
+          extra: {'athleteCode': athleteCode},
         );
         return null;
       }
 
       // Prevent inviting yourself
       if (athleteUserId == profile.id) {
-        _logger.warning(
-          'Cannot invite yourself as an athlete',
-          context: 'COACH_SERVICE',
+        _report.degraded(
+          LoggedFault(
+            'Cannot invite yourself as an athlete',
+            context: 'COACH_SERVICE',
+          ),
+          area: 'coach_mode',
         );
         return null;
       }
@@ -246,11 +258,11 @@ class CoachService {
         requestedBy: 'coach',
       );
     } catch (e, stackTrace) {
-      _logger.error(
-        'Failed to invite athlete by code',
-        context: 'COACH_SERVICE',
-        error: e,
+      _report.fault(
+        e,
         stackTrace: stackTrace,
+        area: 'coach_mode',
+        message: 'Failed to invite athlete by code',
       );
       rethrow;
     }
@@ -263,9 +275,12 @@ class CoachService {
     try {
       final profile = await _getCurrentProfile();
       if (profile == null) {
-        _logger.warning(
-          'Cannot invite athlete: no user profile',
-          context: 'COACH_SERVICE',
+        _report.degraded(
+          LoggedFault(
+            'Cannot invite athlete: no user profile',
+            context: 'COACH_SERVICE',
+          ),
+          area: 'coach_mode',
         );
         return null;
       }
@@ -273,9 +288,12 @@ class CoachService {
       // Check coaches table for approved status
       final isCoach = await _repository.isUserApprovedCoach(profile.id);
       if (!isCoach) {
-        _logger.warning(
-          'Cannot invite athlete: user is not a coach',
-          context: 'COACH_SERVICE',
+        _report.degraded(
+          LoggedFault(
+            'Cannot invite athlete: user is not a coach',
+            context: 'COACH_SERVICE',
+          ),
+          area: 'coach_mode',
         );
         return null;
       }
@@ -286,11 +304,11 @@ class CoachService {
         requestedBy: 'coach',
       );
     } catch (e, stackTrace) {
-      _logger.error(
-        'Failed to invite athlete',
-        context: 'COACH_SERVICE',
-        error: e,
+      _report.fault(
+        e,
         stackTrace: stackTrace,
+        area: 'coach_mode',
+        message: 'Failed to invite athlete',
       );
       rethrow;
     }
@@ -313,9 +331,12 @@ class CoachService {
     try {
       final profile = await _getCurrentProfile();
       if (profile == null) {
-        _logger.warning(
-          'Cannot connect: no user profile',
-          context: 'COACH_SERVICE',
+        _report.degraded(
+          LoggedFault(
+            'Cannot connect: no user profile',
+            context: 'COACH_SERVICE',
+          ),
+          area: 'coach_mode',
         );
         return PairingCodeConnectResult.failure(
           PairingCodeConnectFailureReason.noUserProfile,
@@ -327,10 +348,13 @@ class CoachService {
         isCoach = await syncCurrentCoachDataFromSupabase();
       }
       if (!isCoach) {
-        _logger.warning(
-          'Cannot connect: user is not a coach',
-          context: 'COACH_SERVICE',
-          data: {'coachUserId': profile.id},
+        _report.degraded(
+          LoggedFault(
+            'Cannot connect: user is not a coach',
+            context: 'COACH_SERVICE',
+          ),
+          area: 'coach_mode',
+          extra: {'coachUserId': profile.id},
         );
         return PairingCodeConnectResult.failure(
           PairingCodeConnectFailureReason.notApprovedCoach,
@@ -342,10 +366,13 @@ class CoachService {
         coachUserId: profile.id,
       );
       if (!result.isSuccess) {
-        _logger.warning(
-          'Pairing code connection returned no relationship',
-          context: 'COACH_SERVICE',
-          data: {
+        _report.degraded(
+          LoggedFault(
+            'Pairing code connection returned no relationship',
+            context: 'COACH_SERVICE',
+          ),
+          area: 'coach_mode',
+          extra: {
             'coachUserId': profile.id,
             'code': code,
             'failureReason': result.failureReason?.name,
@@ -354,11 +381,11 @@ class CoachService {
       }
       return result;
     } catch (e, stackTrace) {
-      _logger.error(
-        'Failed to connect via pairing code',
-        context: 'COACH_SERVICE',
-        error: e,
+      _report.fault(
+        e,
         stackTrace: stackTrace,
+        area: 'coach_mode',
+        message: 'Failed to connect via pairing code',
       );
       return PairingCodeConnectResult.failure(
         PairingCodeConnectFailureReason.unknown,
@@ -373,11 +400,11 @@ class CoachService {
     try {
       return await _repository.acceptRelationship(relationshipId);
     } catch (e, stackTrace) {
-      _logger.error(
-        'Failed to accept athlete request',
-        context: 'COACH_SERVICE',
-        error: e,
+      _report.fault(
+        e,
         stackTrace: stackTrace,
+        area: 'coach_mode',
+        message: 'Failed to accept athlete request',
       );
       rethrow;
     }
@@ -390,11 +417,11 @@ class CoachService {
     try {
       return await _repository.declineRelationship(relationshipId);
     } catch (e, stackTrace) {
-      _logger.error(
-        'Failed to decline athlete request',
-        context: 'COACH_SERVICE',
-        error: e,
+      _report.fault(
+        e,
         stackTrace: stackTrace,
+        area: 'coach_mode',
+        message: 'Failed to decline athlete request',
       );
       rethrow;
     }
@@ -407,11 +434,11 @@ class CoachService {
     try {
       return await _repository.archiveRelationship(relationshipId);
     } catch (e, stackTrace) {
-      _logger.error(
-        'Failed to archive athlete',
-        context: 'COACH_SERVICE',
-        error: e,
+      _report.fault(
+        e,
         stackTrace: stackTrace,
+        area: 'coach_mode',
+        message: 'Failed to archive athlete',
       );
       rethrow;
     }
@@ -440,11 +467,11 @@ class CoachService {
         distanceMiles: distanceMiles,
       );
     } catch (e, stackTrace) {
-      _logger.error(
-        'Failed to create activity for athlete',
-        context: 'COACH_SERVICE',
-        error: e,
+      _report.fault(
+        e,
         stackTrace: stackTrace,
+        area: 'coach_mode',
+        message: 'Failed to create activity for athlete',
       );
       rethrow;
     }
@@ -473,11 +500,11 @@ class CoachService {
         goalTimeMinutes: goalTimeMinutes,
       );
     } catch (e, stackTrace) {
-      _logger.error(
-        'Failed to create event for athlete',
-        context: 'COACH_SERVICE',
-        error: e,
+      _report.fault(
+        e,
         stackTrace: stackTrace,
+        area: 'coach_mode',
+        message: 'Failed to create event for athlete',
       );
       rethrow;
     }
@@ -517,11 +544,11 @@ class CoachService {
         giSensitivity: giSensitivity,
       );
     } catch (e, stackTrace) {
-      _logger.error(
-        'Failed to update athlete profile',
-        context: 'COACH_SERVICE',
-        error: e,
+      _report.fault(
+        e,
         stackTrace: stackTrace,
+        area: 'coach_mode',
+        message: 'Failed to update athlete profile',
       );
       rethrow;
     }
@@ -540,11 +567,11 @@ class CoachService {
       final all = await _repository.getRelationshipsForAthlete(profile.id);
       return all.where((r) => r.status == RelationshipStatus.active).toList();
     } catch (e, stackTrace) {
-      _logger.error(
-        'Failed to get coaches',
-        context: 'COACH_SERVICE',
-        error: e,
+      _report.fault(
+        e,
         stackTrace: stackTrace,
+        area: 'coach_mode',
+        message: 'Failed to get coaches',
       );
       return [];
     }
@@ -565,11 +592,11 @@ class CoachService {
           )
           .toList();
     } catch (e, stackTrace) {
-      _logger.error(
-        'Failed to get pending coach requests',
-        context: 'COACH_SERVICE',
-        error: e,
+      _report.fault(
+        e,
         stackTrace: stackTrace,
+        area: 'coach_mode',
+        message: 'Failed to get pending coach requests',
       );
       return [];
     }
@@ -582,11 +609,11 @@ class CoachService {
     try {
       return await _repository.acceptRelationship(relationshipId);
     } catch (e, stackTrace) {
-      _logger.error(
-        'Failed to accept coach request',
-        context: 'COACH_SERVICE',
-        error: e,
+      _report.fault(
+        e,
         stackTrace: stackTrace,
+        area: 'coach_mode',
+        message: 'Failed to accept coach request',
       );
       rethrow;
     }
@@ -599,11 +626,11 @@ class CoachService {
     try {
       return await _repository.declineRelationship(relationshipId);
     } catch (e, stackTrace) {
-      _logger.error(
-        'Failed to decline coach request',
-        context: 'COACH_SERVICE',
-        error: e,
+      _report.fault(
+        e,
         stackTrace: stackTrace,
+        area: 'coach_mode',
+        message: 'Failed to decline coach request',
       );
       rethrow;
     }
@@ -626,11 +653,11 @@ class CoachService {
         limit: limit,
       );
     } catch (e, stackTrace) {
-      _logger.error(
-        'Failed to get conversation',
-        context: 'COACH_SERVICE',
-        error: e,
+      _report.fault(
+        e,
         stackTrace: stackTrace,
+        area: 'coach_mode',
+        message: 'Failed to get conversation',
       );
       return [];
     }
@@ -645,11 +672,11 @@ class CoachService {
         nutritionPlanId,
       );
     } catch (e, stackTrace) {
-      _logger.error(
-        'Failed to get nutrition plan comments',
-        context: 'COACH_SERVICE',
-        error: e,
+      _report.fault(
+        e,
         stackTrace: stackTrace,
+        area: 'coach_mode',
+        message: 'Failed to get nutrition plan comments',
       );
       return [];
     }
@@ -660,11 +687,11 @@ class CoachService {
     try {
       return await _messagingRepository.getMessagesForActivity(activityId);
     } catch (e, stackTrace) {
-      _logger.error(
-        'Failed to get activity comments',
-        context: 'COACH_SERVICE',
-        error: e,
+      _report.fault(
+        e,
         stackTrace: stackTrace,
+        area: 'coach_mode',
+        message: 'Failed to get activity comments',
       );
       return [];
     }
@@ -678,11 +705,11 @@ class CoachService {
 
       return await _messagingRepository.getUnreadMessageCount(profile.id);
     } catch (e, stackTrace) {
-      _logger.error(
-        'Failed to get unread message count',
-        context: 'COACH_SERVICE',
-        error: e,
+      _report.fault(
+        e,
         stackTrace: stackTrace,
+        area: 'coach_mode',
+        message: 'Failed to get unread message count',
       );
       return 0;
     }
@@ -699,9 +726,12 @@ class CoachService {
     try {
       final profile = await _getCurrentProfile();
       if (profile == null) {
-        _logger.warning(
-          'Cannot send message: no user profile',
-          context: 'COACH_SERVICE',
+        _report.degraded(
+          LoggedFault(
+            'Cannot send message: no user profile',
+            context: 'COACH_SERVICE',
+          ),
+          area: 'coach_mode',
         );
         return null;
       }
@@ -715,11 +745,11 @@ class CoachService {
         activityId: activityId,
       );
     } catch (e, stackTrace) {
-      _logger.error(
-        'Failed to send message',
-        context: 'COACH_SERVICE',
-        error: e,
+      _report.fault(
+        e,
         stackTrace: stackTrace,
+        area: 'coach_mode',
+        message: 'Failed to send message',
       );
       rethrow;
     }
@@ -740,11 +770,11 @@ class CoachService {
         readerUserId: profile.id,
       );
     } catch (e, stackTrace) {
-      _logger.error(
-        'Failed to mark conversation as read',
-        context: 'COACH_SERVICE',
-        error: e,
+      _report.fault(
+        e,
         stackTrace: stackTrace,
+        area: 'coach_mode',
+        message: 'Failed to mark conversation as read',
       );
     }
   }
@@ -754,11 +784,11 @@ class CoachService {
     try {
       await _messagingRepository.deleteMessage(messageId);
     } catch (e, stackTrace) {
-      _logger.error(
-        'Failed to delete message',
-        context: 'COACH_SERVICE',
-        error: e,
+      _report.fault(
+        e,
         stackTrace: stackTrace,
+        area: 'coach_mode',
+        message: 'Failed to delete message',
       );
       rethrow;
     }
@@ -782,11 +812,11 @@ class CoachService {
         limit: limit,
       );
     } catch (e, stackTrace) {
-      _logger.error(
-        'Failed to get general chat messages',
-        context: 'COACH_SERVICE',
-        error: e,
+      _report.fault(
+        e,
         stackTrace: stackTrace,
+        area: 'coach_mode',
+        message: 'Failed to get general chat messages',
       );
       return [];
     }
@@ -821,9 +851,12 @@ class CoachService {
     try {
       final profile = await _getCurrentProfile();
       if (profile == null) {
-        _logger.warning(
-          'Cannot send chat message: no user profile',
-          context: 'COACH_SERVICE',
+        _report.degraded(
+          LoggedFault(
+            'Cannot send chat message: no user profile',
+            context: 'COACH_SERVICE',
+          ),
+          area: 'coach_mode',
         );
         return null;
       }
@@ -835,11 +868,11 @@ class CoachService {
         messageText: messageText,
       );
     } catch (e, stackTrace) {
-      _logger.error(
-        'Failed to send chat message',
-        context: 'COACH_SERVICE',
-        error: e,
+      _report.fault(
+        e,
         stackTrace: stackTrace,
+        area: 'coach_mode',
+        message: 'Failed to send chat message',
       );
       rethrow;
     }
@@ -852,11 +885,11 @@ class CoachService {
     try {
       return await _repository.getRelationshipById(relationshipId);
     } catch (e, stackTrace) {
-      _logger.error(
-        'Failed to get relationship by ID',
-        context: 'COACH_SERVICE',
-        error: e,
+      _report.fault(
+        e,
         stackTrace: stackTrace,
+        area: 'coach_mode',
+        message: 'Failed to get relationship by ID',
       );
       return null;
     }
@@ -877,11 +910,11 @@ class CoachService {
     try {
       return await _repository.getActiveCoaches();
     } catch (e, stackTrace) {
-      _logger.error(
-        'Failed to get available coaches',
-        context: 'COACH_SERVICE',
-        error: e,
+      _report.fault(
+        e,
         stackTrace: stackTrace,
+        area: 'coach_mode',
+        message: 'Failed to get available coaches',
       );
       return [];
     }
@@ -892,9 +925,12 @@ class CoachService {
     try {
       final profile = await _getCurrentProfile();
       if (profile == null) {
-        _logger.warning(
-          'Cannot request coach: no user profile',
-          context: 'COACH_SERVICE',
+        _report.degraded(
+          LoggedFault(
+            'Cannot request coach: no user profile',
+            context: 'COACH_SERVICE',
+          ),
+          area: 'coach_mode',
         );
         return false;
       }
@@ -907,11 +943,11 @@ class CoachService {
 
       return true;
     } catch (e, stackTrace) {
-      _logger.error(
-        'Failed to request coach connection',
-        context: 'COACH_SERVICE',
-        error: e,
+      _report.fault(
+        e,
         stackTrace: stackTrace,
+        area: 'coach_mode',
+        message: 'Failed to request coach connection',
       );
       return false;
     }
@@ -932,9 +968,12 @@ class CoachService {
     try {
       final profile = await _getCurrentProfile();
       if (profile == null) {
-        _logger.warning(
-          'Cannot submit coach application: no user profile',
-          context: 'COACH_SERVICE',
+        _report.degraded(
+          LoggedFault(
+            'Cannot submit coach application: no user profile',
+            context: 'COACH_SERVICE',
+          ),
+          area: 'coach_mode',
         );
         return false;
       }
@@ -947,11 +986,11 @@ class CoachService {
         bio: bio,
       );
     } catch (e, stackTrace) {
-      _logger.error(
-        'Failed to submit coach application',
-        context: 'COACH_SERVICE',
-        error: e,
+      _report.fault(
+        e,
         stackTrace: stackTrace,
+        area: 'coach_mode',
+        message: 'Failed to submit coach application',
       );
       return false;
     }
@@ -970,11 +1009,11 @@ class CoachService {
 
       return await _repository.syncRelationshipsFromSupabase(profile.id);
     } catch (e, stackTrace) {
-      _logger.error(
-        'Failed to sync relationships from Supabase',
-        context: 'COACH_SERVICE',
-        error: e,
+      _report.fault(
+        e,
         stackTrace: stackTrace,
+        area: 'coach_mode',
+        message: 'Failed to sync relationships from Supabase',
       );
       return [];
     }
@@ -1003,11 +1042,11 @@ class CoachService {
       // Sync coach data from Supabase
       await _repository.syncCoachesFromSupabase(coachUserIds);
     } catch (e, stackTrace) {
-      _logger.error(
-        'Failed to sync my coaches data',
-        context: 'COACH_SERVICE',
-        error: e,
+      _report.fault(
+        e,
         stackTrace: stackTrace,
+        area: 'coach_mode',
+        message: 'Failed to sync my coaches data',
       );
       // Don't rethrow - this is not critical for app functionality
     }
@@ -1040,11 +1079,11 @@ class CoachService {
       // Sync athlete profiles from Supabase
       await _repository.syncAthleteProfilesFromSupabase(athleteUserIds);
     } catch (e, stackTrace) {
-      _logger.error(
-        'Failed to sync my athletes profiles',
-        context: 'COACH_SERVICE',
-        error: e,
+      _report.fault(
+        e,
         stackTrace: stackTrace,
+        area: 'coach_mode',
+        message: 'Failed to sync my athletes profiles',
       );
       // Don't rethrow - this is not critical for app functionality
     }
@@ -1064,11 +1103,11 @@ class CoachService {
         onRelationshipChanged: onRelationshipChanged,
       );
     } catch (e, stackTrace) {
-      _logger.error(
-        'Failed to subscribe to relationship changes',
-        context: 'COACH_SERVICE',
-        error: e,
+      _report.fault(
+        e,
         stackTrace: stackTrace,
+        area: 'coach_mode',
+        message: 'Failed to subscribe to relationship changes',
       );
       return null;
     }
@@ -1105,11 +1144,11 @@ class CoachService {
 
       return await _repository.generateCoachPairingCode(profile.id);
     } catch (e, stackTrace) {
-      _logger.error(
-        'Failed to generate coach pairing code',
-        context: 'COACH_SERVICE',
-        error: e,
+      _report.fault(
+        e,
         stackTrace: stackTrace,
+        area: 'coach_mode',
+        message: 'Failed to generate coach pairing code',
       );
       rethrow;
     }
@@ -1124,11 +1163,11 @@ class CoachService {
 
       return await _repository.getActiveCoachPairingCode(profile.id);
     } catch (e, stackTrace) {
-      _logger.error(
-        'Failed to get active coach pairing code',
-        context: 'COACH_SERVICE',
-        error: e,
+      _report.fault(
+        e,
         stackTrace: stackTrace,
+        area: 'coach_mode',
+        message: 'Failed to get active coach pairing code',
       );
       return null;
     }
@@ -1152,11 +1191,11 @@ class CoachService {
         athleteUserId: profile.id,
       );
     } catch (e, stackTrace) {
-      _logger.error(
-        'Failed to connect via coach code as athlete',
-        context: 'COACH_SERVICE',
-        error: e,
+      _report.fault(
+        e,
         stackTrace: stackTrace,
+        area: 'coach_mode',
+        message: 'Failed to connect via coach code as athlete',
       );
       return PairingCodeConnectResult.failure(
         PairingCodeConnectFailureReason.unknown,
@@ -1175,11 +1214,11 @@ class CoachService {
       // Fetch latest status from Supabase coaches table
       return await _repository.fetchIsCoachFromSupabase(profile.id) ?? false;
     } catch (e, stackTrace) {
-      _logger.error(
-        'Failed to check coach status from Supabase',
-        context: 'COACH_SERVICE',
-        error: e,
+      _report.fault(
+        e,
         stackTrace: stackTrace,
+        area: 'coach_mode',
+        message: 'Failed to check coach status from Supabase',
       );
       return false;
     }

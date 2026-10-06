@@ -9,7 +9,7 @@
 /// against `test/features/meal_planning/fixtures/*.json`.
 library;
 
-import '../../../shared/services/report/report.dart';
+import '../../../shared/domain/decode_issue.dart';
 
 /// Base class for wire records: value equality via the JSON projection.
 ///
@@ -139,20 +139,19 @@ List<Map<String, dynamic>> readMapList(Map<String, dynamic> json, String key) {
 List<T> readRecordList<T>(
   Map<String, dynamic> json,
   String key,
-  T Function(Map<String, dynamic>) parse,
-) {
+  T Function(Map<String, dynamic>) parse, {
+  DecodeIssue onIssue = ignoreDecodeIssue,
+}) {
   final out = <T>[];
   for (final map in readMapList(json, key)) {
     try {
       out.add(parse(map));
     } on FormatException catch (e, st) {
       // Skip unparseable entries; the server broke the contract for one row.
-      SentryReport.global.degraded(
-        e,
+      onIssue(
+        'wire record in "$key" ($T) did not parse; entry dropped',
+        error: e,
         stackTrace: st,
-        area: 'meal_planning',
-        message: 'wire record in "$key" did not parse; entry dropped',
-        extra: {'key': key, 'type': T.toString()},
       );
     }
   }

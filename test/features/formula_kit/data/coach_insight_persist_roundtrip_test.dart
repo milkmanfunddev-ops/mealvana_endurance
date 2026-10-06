@@ -4,7 +4,6 @@ import 'package:mealvana_endurance/features/formula_kit/data/personal_formulas_r
 import 'package:mealvana_endurance/features/formula_kit/domain/formula_phase.dart';
 import 'package:mealvana_endurance/features/formula_kit/domain/personal_formula.dart';
 import 'package:mealvana_endurance/shared/database/app_database.dart';
-import 'package:mealvana_endurance/shared/services/logging_service.dart';
 import 'package:mocktail/mocktail.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 import 'package:supabase_flutter/supabase_flutter.dart';
@@ -28,8 +27,6 @@ import '../../../helpers/fakes/recording_report.dart';
 // provider rebuild/navigation-return) and assert the insight survived.
 class MockSupabaseClient extends Mock implements SupabaseClient {}
 
-class MockAppLogger extends Mock implements AppLogger {}
-
 void main() {
   TestWidgetsFlutterBinding.ensureInitialized();
 
@@ -45,29 +42,11 @@ void main() {
   setUp(() {
     database = AppDatabase.forTesting(NativeDatabase.memory());
     final mockSupabase = MockSupabaseClient();
-    final mockLogger = MockAppLogger();
     final report = RecordingReport();
 
-    when(
-      () => mockLogger.info(
-        any(),
-        context: any(named: 'context'),
-        data: any(named: 'data'),
-      ),
-    ).thenReturn(null);
-    when(
-      () => mockLogger.warning(
-        any(),
-        context: any(named: 'context'),
-        error: any(named: 'error'),
-        stackTrace: any(named: 'stackTrace'),
-        data: any(named: 'data'),
-      ),
-    ).thenReturn(null);
     repository = PersonalFormulasRepository(
       supabase: mockSupabase,
       database: database,
-      logger: mockLogger,
       report: report,
     );
   });

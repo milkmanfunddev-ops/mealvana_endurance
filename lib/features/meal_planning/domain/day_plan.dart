@@ -1,7 +1,7 @@
-import '../../../shared/services/report/report.dart';
 import 'meal_source.dart';
 import 'meal_type.dart';
 import 'wire_record.dart';
+import '../../../shared/domain/decode_issue.dart';
 
 /// What a day-planner slot points at — `DaySlotRef` in `contracts.ts`.
 class DaySlotRef extends WireRecord {
@@ -72,7 +72,10 @@ class DayPlan extends WireRecord {
       if (entry.value != null) entry.key,
   ];
 
-  factory DayPlan.fromJson(Map<String, dynamic> json) {
+  factory DayPlan.fromJson(
+    Map<String, dynamic> json, {
+    DecodeIssue onIssue = ignoreDecodeIssue,
+  }) {
     final slots = <MealType, DaySlotRef?>{};
     for (final entry in json.entries) {
       final slot = MealType.fromWire(entry.key);
@@ -86,12 +89,10 @@ class DayPlan extends WireRecord {
         slots[slot] = DaySlotRef.fromJson(map);
       } on FormatException catch (e, st) {
         // Malformed ref — treat as empty rather than fail the day.
-        SentryReport.global.degraded(
-          e,
+        onIssue(
+          'day slot ref "${entry.key}" malformed; slot read as empty',
+          error: e,
           stackTrace: st,
-          area: 'meal_planning',
-          message: 'day slot ref malformed; slot read as empty',
-          extra: {'slot': entry.key},
         );
         slots[slot] = null;
       }

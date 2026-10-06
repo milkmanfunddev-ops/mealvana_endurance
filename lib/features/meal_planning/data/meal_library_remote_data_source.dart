@@ -2,7 +2,6 @@ import 'package:riverpod_annotation/riverpod_annotation.dart';
 import 'package:supabase_flutter/supabase_flutter.dart';
 
 import '../../../shared/services/app_external_deps.dart';
-import '../../../shared/services/logging_service.dart';
 import '../domain/meal_context.dart';
 import '../domain/meal_detail.dart';
 import '../domain/meal_icon_classifier.dart';
@@ -13,6 +12,7 @@ import '../domain/ui_action.dart';
 import '../domain/wire_record.dart';
 import 'vana_action_client.dart';
 import 'vana_exceptions.dart';
+import '../../../shared/services/report/report.dart';
 
 part 'meal_library_remote_data_source.g.dart';
 
@@ -22,7 +22,7 @@ MealLibraryRemoteDataSource mealLibraryRemoteDataSource(Ref ref) {
   return MealLibraryRemoteDataSource(
     supabase: deps.supabaseClient,
     actions: ref.watch(vanaActionClientProvider),
-    logger: deps.logger,
+    report: deps.report,
   );
 }
 
@@ -51,16 +51,14 @@ class MealLibraryRemoteDataSource {
   MealLibraryRemoteDataSource({
     required SupabaseClient supabase,
     required VanaActionClient actions,
-    required AppLogger logger,
+    required Report report,
   }) : _supabase = supabase,
        _actions = actions,
-       _logger = logger;
+       _report = report;
 
   final SupabaseClient _supabase;
   final VanaActionClient _actions;
-  final AppLogger _logger;
-
-  static const _context = 'MEAL_LIBRARY_REMOTE';
+  final Report _report;
 
   String get _userId =>
       _supabase.auth.currentUser?.id ??
@@ -117,9 +115,9 @@ class MealLibraryRemoteDataSource {
       out.add(ref);
       if (out.length >= limit) break;
     }
-    _logger.debug(
+    _report.debug(
       'search_meals → ${out.length}',
-      context: _context,
+      area: 'meal_planning',
       data: {'query': query, 'mealType': mealType?.wire, 'kind': kind?.wire},
     );
     return out;

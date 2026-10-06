@@ -4,6 +4,7 @@ import 'day_target.dart';
 import 'user_memory.dart';
 import 'vana_part.dart';
 import 'wire_record.dart';
+import '../../../shared/domain/decode_issue.dart';
 
 /// The `home` object returned by the `get_home` action (prototype
 /// `homePayload()`): everything the Food → Plan screen needs in one call, no
@@ -51,30 +52,52 @@ class HomePayload extends WireRecord {
   final HomeVanaNote vana;
   final List<UserMemory> memories;
 
-  factory HomePayload.fromJson(Map<String, dynamic> json) => HomePayload(
-    context: AthleteContext.fromJson(requireJsonMap(json, 'context')),
+  factory HomePayload.fromJson(
+    Map<String, dynamic> json, {
+    DecodeIssue onIssue = ignoreDecodeIssue,
+  }) => HomePayload(
+    context: AthleteContext.fromJson(
+      requireJsonMap(json, 'context'),
+      onIssue: onIssue,
+    ),
     brief: readString(json, 'brief'),
-    day: VanaDayGuidancePart.fromJson(requireJsonMap(json, 'day')),
+    day: VanaDayGuidancePart.fromJson(
+      requireJsonMap(json, 'day'),
+      onIssue: onIssue,
+    ),
     target: switch (asJsonMap(json['target'])) {
       final map? => DayTarget.fromJson(map),
       null => null,
     },
-    weekTargets: readRecordList(json, 'weekTargets', DayTarget.fromJson),
+    weekTargets: readRecordList(
+      json,
+      'weekTargets',
+      DayTarget.fromJson,
+      onIssue: onIssue,
+    ),
     staples: switch (asJsonMap(json['staples'])) {
-      final map? => VanaStaplesPart.fromJson(map),
+      final map? => VanaStaplesPart.fromJson(map, onIssue: onIssue),
       null => null,
     },
     batch: switch (asJsonMap(json['batch'])) {
-      final map? => VanaBatchPart.fromJson(map),
+      final map? => VanaBatchPart.fromJson(map, onIssue: onIssue),
       null => null,
     },
     shopping: switch (asJsonMap(json['shopping'])) {
-      final map? => VanaShoppingListPart.fromJson(map),
+      final map? => VanaShoppingListPart.fromJson(map, onIssue: onIssue),
       null => null,
     },
-    days: HomeDays.fromJson(asJsonMap(json['days']) ?? const {}),
+    days: HomeDays.fromJson(
+      asJsonMap(json['days']) ?? const {},
+      onIssue: onIssue,
+    ),
     vana: HomeVanaNote.fromJson(asJsonMap(json['vana']) ?? const {}),
-    memories: readRecordList(json, 'memories', UserMemory.fromJson),
+    memories: readRecordList(
+      json,
+      'memories',
+      UserMemory.fromJson,
+      onIssue: onIssue,
+    ),
   );
 
   @override
@@ -126,9 +149,15 @@ class HomeDays extends WireRecord {
   final String date;
   final DayPlan slots;
 
-  factory HomeDays.fromJson(Map<String, dynamic> json) => HomeDays(
+  factory HomeDays.fromJson(
+    Map<String, dynamic> json, {
+    DecodeIssue onIssue = ignoreDecodeIssue,
+  }) => HomeDays(
     date: readString(json, 'date') ?? '',
-    slots: DayPlan.fromJson(asJsonMap(json['slots']) ?? const {}),
+    slots: DayPlan.fromJson(
+      asJsonMap(json['slots']) ?? const {},
+      onIssue: onIssue,
+    ),
   );
 
   @override

@@ -11,7 +11,7 @@ import '../../../shared/data/syncable_repository.dart';
 import '../../../shared/database/app_database.dart';
 import '../../../shared/database/database_provider.dart';
 import '../../../shared/services/app_external_deps.dart';
-import '../../../shared/services/logging_service.dart';
+import '../../../shared/services/report/decode_issue_report.dart';
 import '../../../shared/services/report/report.dart';
 import '../../../shared/services/sync/sync_dependency_graph.dart';
 import '../domain/formula_phase.dart';
@@ -25,7 +25,6 @@ PersonalFormulasRepository personalFormulasRepository(Ref ref) {
   return PersonalFormulasRepository(
     supabase: Supabase.instance.client,
     database: ref.read(appDatabaseProvider),
-    logger: ref.read(appLoggerProvider),
     report: deps.report,
   );
 }
@@ -46,16 +45,13 @@ class PersonalFormulasRepository with SyncableRepository {
   PersonalFormulasRepository({
     required SupabaseClient supabase,
     required AppDatabase database,
-    required AppLogger logger,
     Report? report,
   }) : _supabase = supabase,
        _database = database,
-       _logger = logger,
        _report = report;
 
   final SupabaseClient _supabase;
   final AppDatabase _database;
-  final AppLogger _logger;
   final Report? _report;
 
   Report get _r => _report ?? SentryReport.global;
@@ -99,10 +95,10 @@ class PersonalFormulasRepository with SyncableRepository {
       if (confirmedEmpty) {
         return super.isStale();
       }
-      _logger.info(
+      _r.info(
         'Forcing sync - no active local personal formulas and remote not yet '
         'confirmed empty',
-        context: 'PERSONAL_FORMULAS_REPOSITORY',
+        area: 'formula_kit',
       );
       return true;
     }
@@ -113,9 +109,9 @@ class PersonalFormulasRepository with SyncableRepository {
   Future<SyncResult> syncFromRemote(String userId) async {
     final inflight = _inflightSync;
     if (inflight != null) {
-      _logger.debug(
+      _r.debug(
         'syncFromRemote: coalescing into in-flight sync',
-        context: 'PERSONAL_FORMULAS_REPOSITORY',
+        area: 'formula_kit',
         data: {'userId': userId},
       );
       return inflight;
@@ -131,9 +127,9 @@ class PersonalFormulasRepository with SyncableRepository {
 
   Future<SyncResult> _syncFromRemoteImpl(String userId) async {
     try {
-      _logger.info(
+      _r.info(
         'Syncing personal formulas from Supabase',
-        context: 'PERSONAL_FORMULAS_REPOSITORY',
+        area: 'formula_kit',
         data: {'userId': userId},
       );
 
@@ -152,9 +148,9 @@ class PersonalFormulasRepository with SyncableRepository {
       await setLastSyncTime(DateTime.now());
       await _refreshConfirmedEmptySentinel();
 
-      _logger.info(
+      _r.info(
         'Successfully synced personal formulas from Supabase',
-        context: 'PERSONAL_FORMULAS_REPOSITORY',
+        area: 'formula_kit',
         data: {'userId': userId, 'count': syncedCount},
       );
 
@@ -224,7 +220,10 @@ class PersonalFormulasRepository with SyncableRepository {
       for (final entry in remoteById.entries) {
         if (dirtyIds.contains(entry.key)) continue;
 
-        final formula = PersonalFormula.fromSupabaseJson(entry.value);
+        final formula = PersonalFormula.fromSupabaseJson(
+          entry.value,
+          onIssue: _r.decodeIssue(_area),
+        );
         if (formula == null) {
           // Unknown provenance/phase wire value (forward-compat) — skip.
           skippedUnparseable++;
@@ -242,20 +241,26 @@ class PersonalFormulasRepository with SyncableRepository {
     });
 
     if (dirtyIds.isNotEmpty) {
-      _logger.warning(
-        'Skipped remote formula overwrite for dirty local rows',
-        context: 'PERSONAL_FORMULAS_REPOSITORY',
-        data: {
+      _r.degraded(
+        LoggedFault(
+          'Skipped remote formula overwrite for dirty local rows',
+          context: 'PERSONAL_FORMULAS_REPOSITORY',
+        ),
+        area: 'formula_kit',
+        extra: {
           'skippedCount': dirtyIds.length,
           'totalRemote': remoteById.length,
         },
       );
     }
     if (skippedUnparseable > 0) {
-      _logger.warning(
-        'Skipped remote formulas with unknown provenance/phase',
-        context: 'PERSONAL_FORMULAS_REPOSITORY',
-        data: {'skippedCount': skippedUnparseable},
+      _r.degraded(
+        LoggedFault(
+          'Skipped remote formulas with unknown provenance/phase',
+          context: 'PERSONAL_FORMULAS_REPOSITORY',
+        ),
+        area: 'formula_kit',
+        extra: {'skippedCount': skippedUnparseable},
       );
     }
 
@@ -265,9 +270,9 @@ class PersonalFormulasRepository with SyncableRepository {
   @override
   Future<UploadResult> uploadDirtyRecords(String userId) async {
     try {
-      _logger.info(
+      _r.info(
         'Uploading dirty personal formulas to Supabase',
-        context: 'PERSONAL_FORMULAS_REPOSITORY',
+        area: 'formula_kit',
         data: {'userId': userId},
       );
 
@@ -304,9 +309,9 @@ class PersonalFormulasRepository with SyncableRepository {
         }
       });
 
-      _logger.info(
+      _r.info(
         'Successfully uploaded dirty personal formulas',
-        context: 'PERSONAL_FORMULAS_REPOSITORY',
+        area: 'formula_kit',
         data: {'count': decoded.length},
       );
 
@@ -353,7 +358,7 @@ class PersonalFormulasRepository with SyncableRepository {
               ..limit(1))
             .getSingleOrNull();
     if (row == null) return null;
-    return PersonalFormula.fromDriftEntry(row);
+    return PersonalFormula.fromDriftEntry(row, onIssue: _r.decodeIssue(_area));
   }
 
   /// Count of active formulas for [userId], optionally per [phase]. Distinct
@@ -391,9 +396,9 @@ class PersonalFormulasRepository with SyncableRepository {
 
     await _clearConfirmedEmptySentinel();
 
-    _logger.info(
+    _r.info(
       'Created personal formula',
-      context: 'PERSONAL_FORMULAS_REPOSITORY',
+      area: 'formula_kit',
       data: {'formulaId': toSave.id, 'phase': toSave.phase.wireValue},
     );
 
@@ -415,9 +420,9 @@ class PersonalFormulasRepository with SyncableRepository {
           ..where((tbl) => tbl.id.equals(toSave.id)))
         .write(toSave.toDriftCompanion());
 
-    _logger.info(
+    _r.info(
       'Updated personal formula',
-      context: 'PERSONAL_FORMULAS_REPOSITORY',
+      area: 'formula_kit',
       data: {'formulaId': toSave.id},
     );
 
@@ -449,9 +454,9 @@ class PersonalFormulasRepository with SyncableRepository {
       ),
     );
 
-    _logger.info(
+    _r.info(
       'Soft-deleted personal formula',
-      context: 'PERSONAL_FORMULAS_REPOSITORY',
+      area: 'formula_kit',
       data: {'formulaId': id},
     );
 
@@ -515,7 +520,10 @@ class PersonalFormulasRepository with SyncableRepository {
   List<PersonalFormula> _decodeEntries(Iterable<PersonalFormulaEntry> entries) {
     final result = <PersonalFormula>[];
     for (final entry in entries) {
-      final formula = PersonalFormula.fromDriftEntry(entry);
+      final formula = PersonalFormula.fromDriftEntry(
+        entry,
+        onIssue: _r.decodeIssue(_area),
+      );
       if (formula == null) {
         _logUnknownFormula(entry);
         continue;
@@ -526,10 +534,13 @@ class PersonalFormulasRepository with SyncableRepository {
   }
 
   void _logUnknownFormula(PersonalFormulaEntry entry) {
-    _logger.warning(
-      'Skipping personal formula with unknown provenance/phase',
-      context: 'PERSONAL_FORMULAS_REPOSITORY',
-      data: {
+    _r.degraded(
+      LoggedFault(
+        'Skipping personal formula with unknown provenance/phase',
+        context: 'PERSONAL_FORMULAS_REPOSITORY',
+      ),
+      area: 'formula_kit',
+      extra: {
         'formula_id': entry.id,
         'provenance': entry.provenance,
         'phase': entry.phase,

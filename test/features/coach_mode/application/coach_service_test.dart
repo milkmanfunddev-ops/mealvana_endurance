@@ -1,15 +1,12 @@
 // ignore_for_file: avoid_implementing_value_types
-import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:mocktail/mocktail.dart';
-import 'package:mealvana_endurance/features/coach_mode/application/coach_service.dart';
 import 'package:mealvana_endurance/features/coach_mode/data/coach_repository.dart';
 import 'package:mealvana_endurance/features/coach_mode/data/coach_messaging_repository.dart';
 import 'package:mealvana_endurance/features/coach_mode/domain/coach.dart';
 import 'package:mealvana_endurance/features/coach_mode/domain/coach_athlete_relationship.dart';
 import 'package:mealvana_endurance/features/coach_mode/domain/coach_message.dart';
 import 'package:mealvana_endurance/features/coach_mode/domain/pairing_code_connection_result.dart';
-import 'package:mealvana_endurance/shared/services/logging_service.dart';
 
 // ---------------------------------------------------------------------------
 // Mocks
@@ -19,38 +16,6 @@ class _MockCoachRepository extends Mock implements CoachRepository {}
 
 class _MockMessagingRepository extends Mock
     implements CoachMessagingRepository {}
-
-class _FakeLogger extends Fake implements AppLogger {
-  @override
-  void info(String message, {String? context, Map<String, dynamic>? data}) {}
-
-  @override
-  void error(
-    String message, {
-    String? context,
-    Map<String, dynamic>? data,
-    dynamic error,
-    StackTrace? stackTrace,
-  }) {}
-
-  @override
-  void warning(
-    String message, {
-    String? context,
-    Map<String, dynamic>? data,
-    dynamic error,
-    StackTrace? stackTrace,
-  }) {}
-
-  @override
-  void debug(
-    String message, {
-    String? context,
-    Map<String, dynamic>? data,
-    dynamic error,
-    StackTrace? stackTrace,
-  }) {}
-}
 
 // ---------------------------------------------------------------------------
 // Helpers
@@ -101,7 +66,6 @@ CoachMessage _sampleMessage({
 void main() {
   late _MockCoachRepository repo;
   late _MockMessagingRepository messagingRepo;
-  late _FakeLogger logger;
 
   // We cannot easily mock AppDatabase + SupabaseClient without spinning up the
   // full infrastructure, so we test CoachService as a thin orchestration layer
@@ -115,7 +79,6 @@ void main() {
   setUp(() {
     repo = _MockCoachRepository();
     messagingRepo = _MockMessagingRepository();
-    logger = _FakeLogger();
   });
 
   // -------------------------------------------------------------------------

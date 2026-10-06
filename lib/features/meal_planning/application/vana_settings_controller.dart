@@ -3,9 +3,7 @@ import 'dart:async';
 import 'package:riverpod_annotation/riverpod_annotation.dart';
 
 import '../../../shared/providers/user_id_provider.dart';
-import '../../../shared/services/app_external_deps.dart';
 import '../../../shared/services/connectivity_checker.dart';
-import '../../../shared/services/logging_service.dart';
 import '../../../shared/services/sync/sync_coordinator.dart';
 import '../data/user_memory_repository.dart';
 import '../data/vana_action_client.dart';
@@ -16,6 +14,7 @@ import '../domain/vana_part.dart';
 import '../domain/vana_setting.dart';
 import 'meal_plan_controller.dart';
 import 'plan_reminder_service.dart';
+import '../../../shared/services/report/report.dart';
 
 part 'vana_settings_controller.g.dart';
 
@@ -59,7 +58,7 @@ class VanaSettingsState {
 @riverpod
 class VanaSettingsController extends _$VanaSettingsController {
   UserMemoryRepository get _repo => ref.read(userMemoryRepositoryProvider);
-  AppLogger get _logger => ref.read(appExternalDepsProvider).logger;
+  Report get _report => ref.read(reportProvider);
 
   static const _context = 'VANA_SETTINGS_CONTROLLER';
 
@@ -81,7 +80,9 @@ class VanaSettingsController extends _$VanaSettingsController {
     final memories = await _repo.watchMemories(userId).first;
     final initial = _fold(
       VanaSettingsState(
-        remindersEnabled: ref.read(planReminderServiceProvider).remindersEnabled,
+        remindersEnabled: ref
+            .read(planReminderServiceProvider)
+            .remindersEnabled,
       ),
       settings,
       memories,
@@ -116,10 +117,10 @@ class VanaSettingsController extends _$VanaSettingsController {
           .read(syncCoordinatorProvider.notifier)
           .ensureSynced('user_memories', userId, repository: _repo);
     } catch (e) {
-      _logger.warning(
-        'user_memories ensureSynced failed (non-fatal)',
-        context: _context,
-        error: e,
+      _report.degraded(
+        e,
+        area: 'meal_planning',
+        message: 'user_memories ensureSynced failed (non-fatal)',
       );
     }
   }
@@ -188,17 +189,17 @@ class VanaSettingsController extends _$VanaSettingsController {
             .applyServerPlan(plan);
       }
     } on VanaException catch (e) {
-      _logger.warning(
-        'set_setting action failed; local row stays dirty',
-        context: _context,
-        error: e,
+      _report.degraded(
+        e,
+        area: 'meal_planning',
+        message: 'set_setting action failed; local row stays dirty',
       );
       final upload = await _repo.uploadDirtyRecords(userId);
       if (!upload.success) {
-        _logger.warning(
-          'user_memories upload failed',
-          context: _context,
-          data: {'error': upload.error},
+        _report.degraded(
+          LoggedFault('user_memories upload failed', context: _context),
+          area: 'meal_planning',
+          extra: {'error': upload.error},
         );
       }
     }
@@ -219,10 +220,13 @@ class VanaSettingsController extends _$VanaSettingsController {
       unawaited(() async {
         final upload = await _repo.uploadDirtyRecords(userId);
         if (!upload.success) {
-          _logger.warning(
-            'user_memories upload after delete failed',
-            context: _context,
-            data: {'error': upload.error},
+          _report.degraded(
+            LoggedFault(
+              'user_memories upload after delete failed',
+              context: _context,
+            ),
+            area: 'meal_planning',
+            extra: {'error': upload.error},
           );
         }
       }());
