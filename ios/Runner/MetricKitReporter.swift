@@ -1,10 +1,12 @@
+import Flutter
 import Foundation
 import MetricKit
-import Sentry
 
-/// Forwards Apple MetricKit payloads into the Sentry pipeline the app already
-/// uses, so real-device CPU / energy / hang data lands on the dashboard we
-/// already have — with no separate backend, table, or Dart code.
+/// Forwards Apple MetricKit payloads to Dart over a method channel, where
+/// `MetricKitRelay` (lib/shared/services/report/metrickit_relay.dart) routes
+/// them through the app's `Report` service: metric payloads become Sentry
+/// structured logs, diagnostic payloads become warning events tagged
+/// `metrickit`. This file no longer talks to the Sentry SDK at all.
 ///
 /// ## Why this exists (2026-07-17)
 ///
@@ -17,24 +19,24 @@ import Sentry
 /// ## Why it doesn't cost battery
 ///
 /// MetricKit is passive. iOS already collects this data for the system battery
-/// screen whether or not we subscribe; we only *read* what already exists. There
-/// is no instrumentation, polling, or display link here — contrast the replay
-/// recorder this whole investigation was about. Metric payloads are delivered at
-/// most once per 24h; diagnostics (CPU exceptions, hangs) immediately on iOS 15+.
-/// Real devices only — the simulator never delivers payloads.
+/// screen whether or not we subscribe; we only *read* what already exists.
+/// Metric payloads are delivered at most once per 24h; diagnostics (CPU
+/// exceptions, hangs) immediately on iOS 15+. Real devices only — the
+/// simulator never delivers payloads.
 ///
-/// ## Where the data shows up
+/// ## Why it buffers (ticket 11, 2026-10-06)
 ///
-/// In Sentry, as `info` events tagged `metrickit:metric` / `metrickit:diagnostic`,
-/// each carrying the raw payload as a JSON attachment. The valuable one is
-/// `MXCPUExceptionDiagnostic` — it arrives with a device call stack of whatever
-/// burned the CPU. Filter the Sentry issue stream by the `metrickit` tag.
+/// The daily metric payload can arrive during launch, before the Dart side has
+/// installed its method-call handler. Payloads are queued here until Dart
+/// calls `ready`, then flushed in order; later payloads go straight through.
+/// Until 2026-10-06 metric payloads were captured natively as Sentry *info
+/// events*: 296 of them in 30 days, a third of the prod error quota.
 ///
 /// ## Privacy
 ///
 /// Deliberately NOT consent-gated, matching the app's existing policy that crash
 /// and performance reporting run on legitimate interest (see the `beforeSend`
-/// commentary in the entrypoints). MetricKit diagnostics are stability/perf data
+/// commentary in the bootstrap). MetricKit diagnostics are stability/perf data
 /// about our own code — CPU time, hang durations, stack traces of our frames —
 /// not user analytics. `sendDefaultPii` stays false on the shared SDK.
 @available(iOS 13.0, *)
@@ -42,10 +44,30 @@ import Sentry
 
   @objc static let shared = MetricKitReporter()
 
-  /// Subscribe to MetricKit. Safe to call before Sentry has started: payloads
-  /// arrive asynchronously much later, and `SentrySDK.capture` is a no-op while
-  /// the SDK is disabled, so nothing crashes and at worst a payload is dropped.
-  @objc func register() {
+  /// Must match `MetricKitRelay.channelName` on the Dart side.
+  private static let channelName = "com.milkman.mealvanaendurance/metrickit"
+
+  private var channel: FlutterMethodChannel?
+  private var dartReady = false
+  private var pending: [(method: String, json: String)] = []
+
+  /// Subscribe to MetricKit and open the channel. Safe to call before Dart has
+  /// started: payloads are buffered until Dart says `ready`.
+  @objc func register(messenger: FlutterBinaryMessenger) {
+    let channel = FlutterMethodChannel(
+      name: MetricKitReporter.channelName, binaryMessenger: messenger)
+    channel.setMethodCallHandler { [weak self] call, result in
+      guard let self = self else { return result(nil) }
+      switch call.method {
+      case "ready":
+        self.dartReady = true
+        self.flush()
+        result(nil)
+      default:
+        result(FlutterMethodNotImplemented)
+      }
+    }
+    self.channel = channel
     MXMetricManager.shared.add(self)
   }
 
@@ -55,9 +77,7 @@ import Sentry
   // A/B we ran on the replay fix.
   func didReceive(_ payloads: [MXMetricPayload]) {
     for payload in payloads {
-      forward(json: payload.jsonRepresentation(),
-              kind: "metric",
-              message: "MetricKit metric payload")
+      forward(method: "metric", json: payload.jsonRepresentation())
     }
   }
 
@@ -67,22 +87,29 @@ import Sentry
   @available(iOS 14.0, *)
   func didReceive(_ payloads: [MXDiagnosticPayload]) {
     for payload in payloads {
-      forward(json: payload.jsonRepresentation(),
-              kind: "diagnostic",
-              message: "MetricKit diagnostic payload")
+      forward(method: "diagnostic", json: payload.jsonRepresentation())
     }
   }
 
-  private func forward(json: Data, kind: String, message: String) {
-    let attachment = Attachment(
-      data: json,
-      filename: "metrickit-\(kind).json",
-      contentType: "application/json")
+  private func forward(method: String, json: Data) {
+    let text = String(data: json, encoding: .utf8) ?? "{}"
+    // MetricKit delivers on a background queue; the channel is main-thread only.
+    DispatchQueue.main.async { [weak self] in
+      guard let self = self else { return }
+      if self.dartReady, let channel = self.channel {
+        channel.invokeMethod(method, arguments: text)
+      } else {
+        self.pending.append((method: method, json: text))
+      }
+    }
+  }
 
-    SentrySDK.capture(message: message) { scope in
-      scope.setTag(value: kind, key: "metrickit")
-      scope.setLevel(.info)
-      scope.addAttachment(attachment)
+  private func flush() {
+    guard let channel = channel else { return }
+    let queued = pending
+    pending.removeAll()
+    for item in queued {
+      channel.invokeMethod(item.method, arguments: item.json)
     }
   }
 }

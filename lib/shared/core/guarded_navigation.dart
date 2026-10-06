@@ -1,7 +1,7 @@
 import 'package:flutter/widgets.dart';
 import 'package:go_router/go_router.dart';
 
-import '../services/performance_telemetry.dart';
+import '../services/report/performance_telemetry.dart';
 
 /// Duplicate-push protection for taps that arrive while the UI is stalled.
 ///

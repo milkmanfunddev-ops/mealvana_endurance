@@ -52,18 +52,19 @@ bool _isErrorOrUnset(SentryLevel? level) =>
 /// Returns `true` when [event] is a device diagnostic that must survive the
 /// `beforeSend` level filter.
 ///
-/// MetricKit payloads are captured at *info* level on purpose — see
-/// `MetricKitReporter.forward` in `ios/Runner/MetricKitReporter.swift`, which
-/// calls `scope.setLevel(.info)` so hang reports never page anyone. But every
-/// flavour's `beforeSend` drops all info events in release builds, so the
-/// highest-value real-device signal we have — `MXDiagnosticPayload` hang and
-/// CPU-exception reports, carrying native call stacks — was captured and then
-/// silently thrown away in production. Diagnostics are therefore exempt from
-/// the level drop.
+/// MetricKit diagnostic payloads (`MXDiagnosticPayload` hang and
+/// CPU-exception reports, carrying native call stacks) arrive through
+/// `MetricKitRelay` as `Report.degraded` warning events tagged `metrickit`
+/// (ticket 11). Until 2026-10-06 they were captured natively at *info* level
+/// and every flavour's `beforeSend` dropped them in release builds, so the
+/// highest-value real-device signal we have was captured and then silently
+/// thrown away in production. The exemption stays so the tag, not the level,
+/// decides. Metric payloads are structured logs now and never reach this
+/// filter.
 ///
-/// Keyed on the `metrickit` tag that `MetricKitReporter` sets on every payload
-/// it forwards. If that tag is ever renamed, rename it here too or prod goes
-/// blind again — silently, because dropped events leave no trace.
+/// Keyed on the `metrickit` tag `MetricKitRelay` sets on every diagnostic.
+/// If that tag is ever renamed, rename it here too or prod goes blind again —
+/// silently, because dropped events leave no trace.
 bool isDiagnosticEvent(SentryEvent event) =>
     event.tags?.containsKey('metrickit') ?? false;
 

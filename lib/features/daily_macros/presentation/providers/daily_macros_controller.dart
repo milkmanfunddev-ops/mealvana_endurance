@@ -8,7 +8,7 @@ import '../../../auth/domain/user_preferences.dart';
 import '../../../calendar/presentation/providers/calendar_selected_date_provider.dart';
 import '../../../activities/domain/activity.dart';
 import '../../../activities/presentation/providers/activities_controller.dart';
-import '../../../../shared/services/performance_telemetry.dart';
+import '../../../../shared/services/report/performance_telemetry.dart';
 import '../../application/daily_macro_service.dart';
 import '../../data/daily_macro_targets_repository.dart';
 import '../../domain/daily_macro_targets.dart';

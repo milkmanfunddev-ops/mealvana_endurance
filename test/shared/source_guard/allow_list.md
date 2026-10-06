@@ -32,6 +32,10 @@ unreportedCatch lib/shared/services/report/report.dart :: } catch (_) { :: `_toS
 unreportedCatch lib/shared/services/report/report.dart :: } catch (_) { :: `_mirror` debug-log sink: the dev debug screen's log is a convenience; Report must not call itself from its own sink
 unreportedCatch lib/shared/services/report/report.dart :: } catch (_) { :: `_mirror` console sink: best effort; Report must not call itself from its own sink
 unreportedCatch lib/shared/services/report/report.dart :: } catch (analyticsError) { :: Mixpanel fan-out failed after the Sentry event already left; mirrored to console and the debug log, and a Fault here would fan out again
+unreportedCatch lib/shared/services/report/metrickit_relay.dart :: } on MissingPluginException { :: `start()` on a host without the native reporter (Android, web, tests): nothing will ever arrive, so there is nothing to report; a Fault here would fire on every non-iOS launch
+unreportedCatch lib/shared/services/report/metrickit_relay.dart :: } on FormatException { :: the catch IS the parse: an unparseable payload is still forwarded whole under `raw`, so nothing is lost
+unreportedCatch lib/shared/services/report/performance_telemetry.dart :: } catch (_) { :: `_startSpan`: span bookkeeping inside the Report layer; a Fault over a lost span would recurse into Report
+unreportedCatch lib/shared/services/report/performance_telemetry.dart :: } catch (_) { :: `_finishSpan`: same ruling, the finish side
 unreportedCatch lib/shared/services/report/report.dart :: } catch (sdkError) { :: `fault`/`degraded`: Sentry capture threw; `_captureFailed` keeps it on the debug log and as a breadcrumb. The reporter must never take the app down
 unreportedCatch lib/shared/services/report/report.dart :: } catch (sdkError) { :: `note` promotion: same as above, the captureMessage side
 
@@ -97,9 +101,7 @@ sentryImport lib/features/formula_kit/data/formula_pins_repository.dart :: impor
 sentryImport lib/features/formula_kit/data/personal_formulas_repository.dart :: import 'package:sentry_flutter/sentry_flutter.dart';
 sentryImport lib/features/integrations/application/raw_retention_dead_man_check.dart :: import 'package:sentry_flutter/sentry_flutter.dart' show SentryLevel;
 sentryImport lib/features/integrations/application/tp_writeback_service.dart :: import 'package:sentry_flutter/sentry_flutter.dart';
-sentryImport lib/features/macro_dashboard/application/dashboard_transient_telemetry.dart :: import 'package:sentry_flutter/sentry_flutter.dart';
 sentryImport lib/features/nutrition_plan/presentation/providers/macro_targets_controller.dart :: import 'package:sentry_flutter/sentry_flutter.dart';
-sentryImport lib/shared/services/performance_telemetry.dart :: import 'package:sentry_flutter/sentry_flutter.dart';
 sentryImport lib/shared/services/sentry/sentry_reporter.dart :: import 'package:sentry_flutter/sentry_flutter.dart' show SentryLevel;
 unreportedCatch lib/features/activities/data/activities_repository.dart :: } catch (_) {
 unreportedCatch lib/features/activities/presentation/providers/activities_controller.dart :: } catch (_) {}
