@@ -1,12 +1,12 @@
 import 'dart:async';
 
-import 'package:flutter/foundation.dart';
 import 'package:mealvana_endurance/features/integrations/domain/integration_exceptions.dart';
 
 import '../../activities/data/activities_repository.dart';
 import '../../activities/domain/activity.dart';
 import '../../../shared/domain/activity_type.dart';
 import '../../../shared/services/analytics/analytics_tracker.dart';
+import '../../../shared/services/report/report.dart';
 import 'synced_workout_analytics.dart';
 import '../data/final_surge_api_client.dart';
 import '../data/integrations_repository.dart';
@@ -43,13 +43,15 @@ class FinalSurgeSyncService {
     required ChangeDetectionService changeDetectionService,
     AnalyticsTracker? analytics,
     ProviderRawPayloadsRepository? rawPayloadsRepository,
+    Report? report,
   }) : _analytics = analytics,
        _apiClient = apiClient,
        _integrationsRepository = integrationsRepository,
        _activitiesRepository = activitiesRepository,
        _transformer = transformer,
        _changeDetectionService = changeDetectionService,
-       _rawPayloadsRepository = rawPayloadsRepository;
+       _rawPayloadsRepository = rawPayloadsRepository,
+       _report = report;
 
   final FinalSurgeApiClient _apiClient;
   final IntegrationsRepository _integrationsRepository;
@@ -58,6 +60,11 @@ class FinalSurgeSyncService {
   final ChangeDetectionService _changeDetectionService;
   final AnalyticsTracker? _analytics;
   final ProviderRawPayloadsRepository? _rawPayloadsRepository;
+  final Report? _report;
+
+  Report get _r => _report ?? SentryReport.global;
+
+  static const _area = 'final_surge';
 
   /// Raw-payload capture (real-payload-corpus@v1, lifecycle.md L-7):
   /// non-blocking offer of the fetched list to `provider_raw_payloads`.
@@ -80,7 +87,12 @@ class FinalSurgeSyncService {
   }
 
   void _trackSyncedWorkoutPlanned(Activity activity) =>
-      trackSyncedWorkoutPlanned(_analytics, activity, provider: 'final_surge');
+      trackSyncedWorkoutPlanned(
+        _analytics,
+        activity,
+        provider: 'final_surge',
+        report: _r,
+      );
 
   /// Buffer time before token expiration to trigger proactive refresh (5 min)
   static const _tokenExpirationBuffer = Duration(minutes: 5);
@@ -111,9 +123,7 @@ class FinalSurgeSyncService {
 
     var integration = integrationRecord;
 
-    if (kDebugMode) {
-      print('🔄 Starting Final Surge sync for user $userId');
-    }
+    _r.debug('Final Surge sync started', area: _area);
 
     try {
       // 2. Proactively refresh token if it's about to expire
@@ -129,9 +139,10 @@ class FinalSurgeSyncService {
           );
         } on TokenExpiredException {
           // Token expired during request - refresh and retry once
-          if (kDebugMode) {
-            print('⚠️ Token expired during request, refreshing...');
-          }
+          await _r.note(
+            'Final Surge token expired mid-request; refreshing and retrying',
+            area: _area,
+          );
           integration = await _refreshToken(integration);
           return await _apiClient.getUpcomingWorkouts(
             integration.accessToken,
@@ -152,9 +163,10 @@ class FinalSurgeSyncService {
             endDate: endDate,
           );
         } on TokenExpiredException {
-          if (kDebugMode) {
-            print('⚠️ Token expired during request, refreshing...');
-          }
+          await _r.note(
+            'Final Surge token expired mid-request; refreshing and retrying',
+            area: _area,
+          );
           integration = await _refreshToken(integration);
           return await _apiClient.getWorkoutsByDateRange(
             integration.accessToken,
@@ -198,11 +210,11 @@ class FinalSurgeSyncService {
           // Fall back to UpcomingWorkouts for the full window instead of failing the sync.
           if (e.statusCode != 404) rethrow;
 
-          if (kDebugMode) {
-            print(
-              '⚠️ Date-range endpoint unavailable (404), falling back to UpcomingWorkouts for $effectiveDays days',
-            );
-          }
+          await _r.note(
+            'Final Surge date-range endpoint 404; falling back to UpcomingWorkouts',
+            area: _area,
+            data: {'days': effectiveDays},
+          );
 
           final fallbackResponse = await fetchUpcomingChunk(effectiveDays);
           if (fallbackResponse.hasError) {
@@ -222,10 +234,6 @@ class FinalSurgeSyncService {
         if (seenIds.add(workoutId)) {
           dedupedWorkouts.add(workout);
         }
-      }
-
-      if (kDebugMode) {
-        print('   Fetched ${dedupedWorkouts.length} workouts from Final Surge');
       }
 
       _captureRawPayloads(userId, dedupedWorkouts);
@@ -251,17 +259,17 @@ class FinalSurgeSyncService {
                 integration.accessToken,
                 jsonFsV1Url,
               );
-              if (kDebugMode) {
-                print(
-                  '   📋 Fetched structured workout for ${workoutJson['WorkoutTitle']}',
-                );
-              }
             }
-          } catch (e) {
-            // Don't block sync if structured workout fetch fails
-            if (kDebugMode) {
-              print('   ⚠️ Failed to fetch structured workout: $e');
-            }
+          } catch (e, st) {
+            // Don't block sync; the workout syncs without its intensity
+            // distribution.
+            await _r.degraded(
+              e,
+              stackTrace: st,
+              area: _area,
+              message:
+                  'Final Surge structured workout fetch failed; syncing without it',
+            );
           }
         }
 
@@ -287,22 +295,16 @@ class FinalSurgeSyncService {
         }
       }
 
-      if (kDebugMode) {
-        print(
-          '   Transformed ${remoteActivities.length} workouts (filtered: $filteredCount)',
-        );
-      }
-
       final dedupedRemoteActivities = _dedupeRemoteActivities(remoteActivities);
       final remoteDuplicateCount =
           remoteActivities.length - dedupedRemoteActivities.length;
       if (remoteDuplicateCount > 0) {
         filteredCount += remoteDuplicateCount;
-        if (kDebugMode) {
-          print(
-            '   ⚠️ Removed $remoteDuplicateCount duplicate Final Surge workouts from payload',
-          );
-        }
+        await _r.note(
+          'Final Surge payload carried duplicate workouts; deduped',
+          area: _area,
+          data: {'duplicates': remoteDuplicateCount},
+        );
       }
 
       // Clean any existing local duplicates from prior buggy syncs.
@@ -311,21 +313,17 @@ class FinalSurgeSyncService {
             userId: userId,
             provider: 'final_surge',
           );
-      if (localDuplicatesRemoved > 0 && kDebugMode) {
-        print(
-          '   🧹 Removed $localDuplicatesRemoved duplicate local Final Surge activities',
+      if (localDuplicatesRemoved > 0) {
+        await _r.note(
+          'removed duplicate local Final Surge activities',
+          area: _area,
+          data: {'removed': localDuplicatesRemoved},
         );
       }
 
       // 5. Get existing activities from this provider for change detection
       final localActivities = await _activitiesRepository
           .getActivitiesByUserAndProvider(userId, 'final_surge');
-
-      if (kDebugMode) {
-        print(
-          '   Found ${localActivities.length} existing Final Surge activities',
-        );
-      }
 
       // 6. Detect changes between local and remote
       final changes = _changeDetectionService.detectChanges(
@@ -335,18 +333,11 @@ class FinalSurgeSyncService {
         completionSignalIds: completionSignalIds,
       );
 
-      if (kDebugMode) {
-        print('   Changes detected: $changes');
-      }
-
       // 7. Apply changes
       // NEW: Insert new activities
       for (final activity in changes.newActivities) {
         await _activitiesRepository.insertActivity(activity);
         _trackSyncedWorkoutPlanned(activity);
-        if (kDebugMode) {
-          print('   ✓ Inserted: ${activity.title}');
-        }
       }
 
       // UPDATED: Update existing activities (using copyWith to preserve all fields)
@@ -359,12 +350,6 @@ class FinalSurgeSyncService {
         );
 
         await _activitiesRepository.updateActivityFromProvider(updatedActivity);
-
-        if (kDebugMode) {
-          print(
-            '   ✓ Updated: ${updatedActivity.title} (scheduleChanged: ${change.scheduleChanged})',
-          );
-        }
       }
 
       // DELETED: Soft-delete activities removed from provider
@@ -384,9 +369,6 @@ class FinalSurgeSyncService {
 
       for (final activityId in changes.deletedActivityIds) {
         await _activitiesRepository.softDeleteFromProvider(activityId);
-        if (kDebugMode) {
-          print('   ✓ Soft-deleted: $activityId');
-        }
       }
 
       final raceCandidatesWithIds = _attachActivityIdsToRaceCandidates(
@@ -402,14 +384,19 @@ class FinalSurgeSyncService {
         status: 'success',
       );
 
-      if (kDebugMode) {
-        print(
-          '✅ Sync complete: ${changes.newActivities.length} new, '
-          '${changes.updatedActivities.length} updated, '
-          '${changes.deletedActivityIds.length} deleted, '
-          '$filteredCount filtered',
-        );
-      }
+      _r.debug(
+        'Final Surge sync complete',
+        area: _area,
+        data: {
+          'fetched': dedupedWorkouts.length,
+          'local': localActivities.length,
+          'new': changes.newActivities.length,
+          'updated': changes.updatedActivities.length,
+          'deleted': changes.deletedActivityIds.length,
+          'unchanged': changes.unchangedCount,
+          'filtered': filteredCount,
+        },
+      );
 
       return SyncResult(
         success: true,
@@ -421,8 +408,15 @@ class FinalSurgeSyncService {
         activities: changes.newActivities,
         raceCandidates: raceCandidatesWithIds,
       );
-    } on TokenRefreshException catch (e) {
+    } on TokenRefreshException catch (e, st) {
       // Token refresh failed - user must re-authenticate
+      await _r.degraded(
+        e,
+        stackTrace: st,
+        area: _area,
+        message: 'Final Surge token refresh failed',
+        extra: {'requiresReauth': e.requiresReauth},
+      );
       if (e.requiresReauth) {
         await _integrationsRepository.updateSyncStatus(
           userId,
@@ -433,13 +427,16 @@ class FinalSurgeSyncService {
         return SyncResult.requiresReauth();
       }
       return SyncResult.error(e.message);
-    } on NetworkException catch (e) {
+    } on NetworkException catch (e, st) {
       // Network issues - don't update status, user can retry
-      if (kDebugMode) {
-        print('❌ Sync failed (network): $e');
-      }
+      await _r.degraded(
+        e,
+        stackTrace: st,
+        area: _area,
+        message: 'Final Surge sync failed: network',
+      );
       return SyncResult.networkError(e.message);
-    } catch (e) {
+    } catch (e, st) {
       // Update sync status with error
       await _integrationsRepository.updateSyncStatus(
         userId,
@@ -448,9 +445,12 @@ class FinalSurgeSyncService {
         error: e.toString(),
       );
 
-      if (kDebugMode) {
-        print('❌ Sync failed: $e');
-      }
+      await _r.fault(
+        e,
+        stackTrace: st,
+        area: _area,
+        message: 'Final Surge sync failed',
+      );
 
       return SyncResult.error(e.toString());
     }
@@ -467,9 +467,10 @@ class FinalSurgeSyncService {
       final bufferTime = now.add(_tokenExpirationBuffer);
 
       if (expiresAt.isBefore(bufferTime)) {
-        if (kDebugMode) {
-          print('⚠️ Token expires soon, proactively refreshing...');
-        }
+        _r.debug(
+          'Final Surge token expires soon; refreshing before sync',
+          area: _area,
+        );
         return _refreshToken(integration);
       }
     }
@@ -510,9 +511,7 @@ class FinalSurgeSyncService {
 
     await _integrationsRepository.upsertIntegration(updatedIntegration);
 
-    if (kDebugMode) {
-      print('✅ Token refreshed and saved');
-    }
+    _r.debug('Final Surge token refreshed and saved', area: _area);
 
     return updatedIntegration;
   }
@@ -550,6 +549,10 @@ class FinalSurgeSyncService {
         );
       } on TokenExpiredException {
         // Token expired during request - refresh and retry once
+        await _r.note(
+          'Final Surge token expired mid-request; refreshing and retrying',
+          area: _area,
+        );
         integration = await _refreshToken(integration);
         response = await _apiClient.getWorkoutsByDateRange(
           integration.accessToken,
@@ -587,10 +590,14 @@ class FinalSurgeSyncService {
                 jsonFsV1Url,
               );
             }
-          } catch (e) {
-            if (kDebugMode) {
-              print('   ⚠️ Failed to fetch structured workout: $e');
-            }
+          } catch (e, st) {
+            await _r.degraded(
+              e,
+              stackTrace: st,
+              area: _area,
+              message:
+                  'Final Surge structured workout fetch failed; syncing without it',
+            );
           }
         }
 
@@ -700,7 +707,14 @@ class FinalSurgeSyncService {
         activities: changes.newActivities,
         raceCandidates: raceCandidatesWithIds,
       );
-    } on TokenRefreshException catch (e) {
+    } on TokenRefreshException catch (e, st) {
+      await _r.degraded(
+        e,
+        stackTrace: st,
+        area: _area,
+        message: 'Final Surge token refresh failed (date-range sync)',
+        extra: {'requiresReauth': e.requiresReauth},
+      );
       if (e.requiresReauth) {
         await _integrationsRepository.updateSyncStatus(
           userId,
@@ -711,14 +725,27 @@ class FinalSurgeSyncService {
         return SyncResult.requiresReauth();
       }
       return SyncResult.error(e.message);
-    } on NetworkException catch (e) {
+    } on NetworkException catch (e, st) {
+      await _r.degraded(
+        e,
+        stackTrace: st,
+        area: _area,
+        message: 'Final Surge date-range sync failed: network',
+      );
       return SyncResult.networkError(e.message);
-    } catch (e) {
+    } catch (e, st) {
       await _integrationsRepository.updateSyncStatus(
         userId,
         'final_surge',
         status: 'error',
         error: e.toString(),
+      );
+
+      await _r.fault(
+        e,
+        stackTrace: st,
+        area: _area,
+        message: 'Final Surge date-range sync failed',
       );
 
       return SyncResult.error(e.toString());

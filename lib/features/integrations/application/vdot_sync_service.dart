@@ -1,6 +1,5 @@
-import 'package:flutter/foundation.dart';
-
 import '../../../shared/services/analytics/analytics_tracker.dart';
+import '../../../shared/services/report/report.dart';
 import 'synced_workout_analytics.dart';
 import '../../activities/data/activities_repository.dart';
 import '../../activities/domain/activity.dart';
@@ -34,12 +33,14 @@ class VdotSyncService {
     required VdotTransformer transformer,
     required ChangeDetectionService changeDetectionService,
     AnalyticsTracker? analytics,
+    Report? report,
   }) : _apiClient = apiClient,
        _integrationsRepository = integrationsRepository,
        _activitiesRepository = activitiesRepository,
        _transformer = transformer,
        _changeDetectionService = changeDetectionService,
-       _analytics = analytics;
+       _analytics = analytics,
+       _report = report;
 
   final VdotApiClient _apiClient;
   final IntegrationsRepository _integrationsRepository;
@@ -47,9 +48,17 @@ class VdotSyncService {
   final VdotTransformer _transformer;
   final ChangeDetectionService _changeDetectionService;
   final AnalyticsTracker? _analytics;
+  final Report? _report;
+
+  Report get _r => _report ?? SentryReport.global;
 
   void _trackSyncedWorkoutPlanned(Activity activity) =>
-      trackSyncedWorkoutPlanned(_analytics, activity, provider: 'vdot');
+      trackSyncedWorkoutPlanned(
+        _analytics,
+        activity,
+        provider: _provider,
+        report: _r,
+      );
 
   static const _provider = 'vdot';
   static const _tokenExpirationBuffer = Duration(minutes: 5);
@@ -74,9 +83,7 @@ class VdotSyncService {
     }
     var integration = integrationRecord;
 
-    if (kDebugMode) {
-      print('🔄 [vdot] Starting sync for user $userId');
-    }
+    _r.debug('V.O2 sync started', area: _provider);
 
     try {
       integration = await _ensureValidToken(integration);
@@ -100,10 +107,6 @@ class VdotSyncService {
         final id = _transformer.extractWorkoutId(w);
         if (id.isEmpty) continue;
         if (seen.add(id)) deduped.add(w);
-      }
-
-      if (kDebugMode) {
-        print('   [vdot] Fetched ${deduped.length} workouts');
       }
 
       final remoteActivities = <Activity>[];
@@ -155,15 +158,18 @@ class VdotSyncService {
         status: 'success',
       );
 
-      if (kDebugMode) {
-        print(
-          '✅ [vdot] Sync complete — '
-          'new: ${changes.newActivities.length}, '
-          'updated: ${changes.updatedActivities.length}, '
-          'deleted: ${changes.deletedActivityIds.length}, '
-          'filtered: $filteredCount',
-        );
-      }
+      _r.debug(
+        'V.O2 sync complete',
+        area: _provider,
+        data: {
+          'fetched': deduped.length,
+          'new': changes.newActivities.length,
+          'updated': changes.updatedActivities.length,
+          'deleted': changes.deletedActivityIds.length,
+          'unchanged': changes.unchangedCount,
+          'filtered': filteredCount,
+        },
+      );
 
       return VdotSyncResult(
         success: true,
@@ -174,7 +180,14 @@ class VdotSyncService {
         filtered: filteredCount,
         activities: changes.newActivities,
       );
-    } on TokenRefreshException catch (e) {
+    } on TokenRefreshException catch (e, st) {
+      await _r.degraded(
+        e,
+        stackTrace: st,
+        area: _provider,
+        message: 'V.O2 token refresh failed',
+        extra: {'requiresReauth': e.requiresReauth},
+      );
       if (e.requiresReauth) {
         await _integrationsRepository.updateSyncStatus(
           userId,
@@ -185,18 +198,27 @@ class VdotSyncService {
         return VdotSyncResult.requiresReauth();
       }
       return VdotSyncResult.error(e.message);
-    } on NetworkException catch (e) {
+    } on NetworkException catch (e, st) {
+      await _r.degraded(
+        e,
+        stackTrace: st,
+        area: _provider,
+        message: 'V.O2 sync failed: network',
+      );
       return VdotSyncResult.networkError(e.message);
-    } catch (e) {
+    } catch (e, st) {
       await _integrationsRepository.updateSyncStatus(
         userId,
         _provider,
         status: 'error',
         error: e.toString(),
       );
-      if (kDebugMode) {
-        print('❌ [vdot] Sync failed: $e');
-      }
+      await _r.fault(
+        e,
+        stackTrace: st,
+        area: _provider,
+        message: 'V.O2 sync failed',
+      );
       return VdotSyncResult.error(e.toString());
     }
   }
@@ -227,9 +249,10 @@ class VdotSyncService {
         );
         results.addAll(response);
       } on TokenExpiredException {
-        if (kDebugMode) {
-          print('⚠️ [vdot] Access token expired mid-sync, refreshing…');
-        }
+        await _r.note(
+          'V.O2 token expired mid-request; refreshing and retrying',
+          area: _provider,
+        );
         workingIntegration = await _refreshToken(workingIntegration);
         onTokenRefresh(workingIntegration);
         final response = await _apiClient.getWorkoutsByDateRange(
@@ -251,9 +274,7 @@ class VdotSyncService {
     if (expiresAt == null) return integration;
     final bufferTime = DateTime.now().add(_tokenExpirationBuffer);
     if (expiresAt.isBefore(bufferTime)) {
-      if (kDebugMode) {
-        print('⚠️ [vdot] Token expires soon, proactively refreshing…');
-      }
+      _r.debug('V.O2 token expires soon; refreshing before sync', area: _provider);
       return _refreshToken(integration);
     }
     return integration;

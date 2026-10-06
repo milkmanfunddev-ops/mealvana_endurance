@@ -16,8 +16,10 @@ import 'package:mealvana_endurance/features/integrations/domain/integration.dart
 import 'package:mealvana_endurance/features/integrations/presentation/providers/connect_training_controller.dart';
 import 'package:mealvana_endurance/features/integrations/presentation/providers/integrations_providers.dart';
 import 'package:mealvana_endurance/shared/data/syncable_repository.dart';
-import 'package:mealvana_endurance/shared/services/logging_service.dart';
+import 'package:mealvana_endurance/shared/services/report/report.dart';
 import 'package:mealvana_endurance/shared/services/sync/sync_coordinator.dart';
+
+import '../../helpers/fakes/recording_report.dart';
 
 /// Regression coverage for the staleness/cooldown bookkeeping in
 /// [IntegrationSyncCoordinator].
@@ -65,11 +67,6 @@ class _FakeConnectTrainingController extends ConnectTrainingController {
   dynamic noSuchMethod(Invocation invocation) => null;
 }
 
-class _SilentLogger implements AppLogger {
-  @override
-  dynamic noSuchMethod(Invocation invocation) => null;
-}
-
 IntegrationModel _runnaIntegration() => const IntegrationModel(
   id: 'int-1',
   userId: _userId,
@@ -84,6 +81,7 @@ void main() {
   late _MockIntegrationsRepository integrationsRepo;
   late _MockActivitiesRepository activitiesRepo;
   late _MockRunnaSyncService runnaSync;
+  late RecordingReport report;
   late ProviderContainer container;
 
   setUp(() {
@@ -92,6 +90,7 @@ void main() {
     integrationsRepo = _MockIntegrationsRepository();
     activitiesRepo = _MockActivitiesRepository();
     runnaSync = _MockRunnaSyncService();
+    report = RecordingReport();
 
     when(
       () => integrationsRepo.getActiveIntegrationsForUser(any()),
@@ -105,7 +104,7 @@ void main() {
         integrationsRepositoryProvider.overrideWithValue(integrationsRepo),
         activitiesRepositoryProvider.overrideWithValue(activitiesRepo),
         runnaSyncServiceProvider.overrideWithValue(runnaSync),
-        appLoggerProvider.overrideWithValue(_SilentLogger()),
+        reportProvider.overrideWithValue(report),
         syncCoordinatorProvider.overrideWith(() => _FakeSyncCoordinator()),
         connectTrainingControllerProvider.overrideWith(
           () => _FakeConnectTrainingController(),
@@ -146,6 +145,40 @@ void main() {
       await coordinator().ensureIntegrationsSynced(_userId);
 
       expect(await storedLastSyncMillis(), isNull);
+    });
+
+    test('a reported failure is written down as a sync Note (D9), not a '
+        'Fault — the service already reported the cause', () async {
+      when(
+        () => runnaSync.syncWorkouts(any()),
+      ).thenAnswer((_) async => RunnaSyncResult.error('Bad feed'));
+
+      await coordinator().ensureIntegrationsSynced(_userId);
+
+      final note = report.notes.singleWhere(
+        (n) => n.message!.contains('reported failure'),
+      );
+      expect(note.area, 'sync');
+      expect(note.data, containsPair('provider', 'runna'));
+      expect(note.data, containsPair('error', 'Bad feed'));
+      // Only the coordinator's own area: the shared SyncCoordinator fake in
+      // this harness raises its own faults under other areas.
+      expect(report.faults.where((f) => f.area == 'sync'), isEmpty);
+    });
+
+    test('a sync service that throws is a Fault and arms the cooldown', () async {
+      when(
+        () => runnaSync.syncWorkouts(any()),
+      ).thenThrow(StateError('boom'));
+
+      final sut = coordinator();
+      await sut.ensureIntegrationsSynced(_userId);
+      await sut.ensureIntegrationsSynced(_userId);
+
+      final fault = report.faults.singleWhere((f) => f.area == 'sync');
+      expect(fault.error, isA<StateError>());
+      expect(fault.extra, containsPair('provider', 'runna'));
+      verify(() => runnaSync.syncWorkouts(_userId)).called(1);
     });
 
     test('a successful sync does stamp the staleness clock', () async {
@@ -272,7 +305,7 @@ void main() {
           activitiesRepositoryProvider.overrideWithValue(activitiesRepo),
           trainingPeaksSyncServiceProvider.overrideWith((ref) async => tpSync),
           providerEventImportServiceProvider.overrideWithValue(eventImport),
-          appLoggerProvider.overrideWithValue(_SilentLogger()),
+          reportProvider.overrideWithValue(report),
           syncCoordinatorProvider.overrideWith(() => _FakeSyncCoordinator()),
           connectTrainingControllerProvider.overrideWith(
             () => _FakeConnectTrainingController(),
