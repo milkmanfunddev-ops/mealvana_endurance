@@ -7,7 +7,7 @@ import '../../data/carb_loading_repository.dart';
 import '../../../macro_dashboard/presentation/providers/carb_dashboard_providers.dart';
 import 'carb_nudge_coordinator.dart';
 import '../../../../shared/database/app_database.dart' as db;
-import '../../../../shared/services/logging_service.dart';
+import '../../../../shared/services/report/report.dart';
 import '../../../../shared/services/sync/sync_coordinator.dart';
 import '../../../../shared/providers/user_id_provider.dart';
 
@@ -18,7 +18,7 @@ part 'carb_loading_controller.g.dart';
 @Riverpod(keepAlive: true)
 class CarbLoadingController extends _$CarbLoadingController {
   CarbLoadingService get _service => ref.read(carbLoadingServiceProvider);
-  AppLogger get _logger => ref.read(appLoggerProvider);
+  Report get _report => ref.read(reportProvider);
 
   @override
   FutureOr<void> build() async {
@@ -46,7 +46,7 @@ class CarbLoadingController extends _$CarbLoadingController {
   Future<void> _backgroundSync(String userId) async {
     final repository = ref.read(carbLoadingRepositoryProvider);
     final syncCoordinator = ref.read(syncCoordinatorProvider.notifier);
-    final logger = ref.read(appLoggerProvider);
+    final report = ref.read(reportProvider);
 
     try {
       await syncCoordinator.ensureSynced(
@@ -57,11 +57,11 @@ class CarbLoadingController extends _$CarbLoadingController {
       if (!ref.mounted) return;
       _invalidateCarbSurfaces();
     } catch (e, stackTrace) {
-      logger.error(
-        'Background sync failed',
-        context: 'CARB_LOADING_CONTROLLER',
-        error: e,
+      report.fault(
+        e,
         stackTrace: stackTrace,
+        area: 'carb_loading',
+        message: 'Background sync failed',
       );
     }
   }
@@ -99,7 +99,11 @@ class CarbLoadingController extends _$CarbLoadingController {
             .catchError((_) {}),
       );
     } catch (e) {
-      _logger.error('Error creating carb loading plan', error: e);
+      _report.fault(
+        e,
+        area: 'carb_loading',
+        message: 'Error creating carb loading plan',
+      );
       rethrow;
     }
   }
@@ -119,7 +123,11 @@ class CarbLoadingController extends _$CarbLoadingController {
       // window from plan-existence truth. Fail-soft.
       unawaited(ref.read(carbNudgeCoordinatorProvider.notifier).run());
     } catch (e) {
-      _logger.error('Error deleting carb loading plan', error: e);
+      _report.fault(
+        e,
+        area: 'carb_loading',
+        message: 'Error deleting carb loading plan',
+      );
       rethrow;
     }
   }
@@ -131,7 +139,11 @@ class CarbLoadingController extends _$CarbLoadingController {
 
       _invalidateCarbSurfaces();
     } catch (e) {
-      _logger.error('Error deleting carb loading day', error: e);
+      _report.fault(
+        e,
+        area: 'carb_loading',
+        message: 'Error deleting carb loading day',
+      );
       rethrow;
     }
   }
@@ -157,7 +169,11 @@ class CarbLoadingController extends _$CarbLoadingController {
       );
       _invalidateCarbSurfaces();
     } catch (e) {
-      _logger.error('Error updating carb day target', error: e);
+      _report.fault(
+        e,
+        area: 'carb_loading',
+        message: 'Error updating carb day target',
+      );
       rethrow;
     }
   }
@@ -200,7 +216,11 @@ class CarbLoadingController extends _$CarbLoadingController {
       ref.invalidateSelf();
       ref.invalidate(carbLoadingDaysForRangeProvider);
     } catch (e) {
-      _logger.error('Error re-picking carb loading protocol', error: e);
+      _report.fault(
+        e,
+        area: 'carb_loading',
+        message: 'Error re-picking carb loading protocol',
+      );
       rethrow;
     }
   }
@@ -225,11 +245,11 @@ class CarbLoadingController extends _$CarbLoadingController {
       // Invalidate to reload with fresh data
       _invalidateCarbSurfaces();
     } catch (e, stackTrace) {
-      _logger.error(
-        'Error during force refresh',
-        context: 'CARB_LOADING_CONTROLLER',
-        error: e,
+      _report.fault(
+        e,
         stackTrace: stackTrace,
+        area: 'carb_loading',
+        message: 'Error during force refresh',
       );
       // Still invalidate to show whatever data we have
       ref.invalidateSelf();

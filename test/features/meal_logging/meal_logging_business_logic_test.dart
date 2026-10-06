@@ -14,7 +14,7 @@
 //  - MealAiService: describeMeal / analyzePhotoBytes error mapping via mocked
 //    SupabaseClient
 //
-// Pattern: mocktail mocks for Supabase/Logger/Sentry; AppDatabase.memory() for
+// Pattern: mocktail mocks for Supabase, RecordingReport for reports; AppDatabase.memory() for
 // all Drift operations (same style as test/features/formula_kit/data/).
 
 import 'dart:convert';
@@ -38,9 +38,7 @@ import 'package:mealvana_endurance/features/meal_logging/domain/meal_slot.dart';
 import 'package:mealvana_endurance/features/meal_logging/domain/quick_assembly.dart';
 import 'package:mealvana_endurance/features/meal_logging/domain/saved_meal.dart';
 import 'package:mealvana_endurance/shared/database/app_database.dart';
-import 'package:mealvana_endurance/shared/services/logging_service.dart';
-import 'package:mealvana_endurance/shared/services/report/report.dart';
-import 'package:mealvana_endurance/shared/services/sentry/sentry_reporter.dart';
+import 'package:mealvana_endurance/shared/services/report/decode_issue_report.dart';
 import 'package:mocktail/mocktail.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 import 'package:supabase_flutter/supabase_flutter.dart';
@@ -58,10 +56,6 @@ class MockSupabaseFunctions extends Mock implements FunctionsClient {}
 class MockStorageFileApi extends Mock implements SupabaseStorageClient {}
 
 class MockBucketApi extends Mock implements StorageFileApi {}
-
-class MockAppLogger extends Mock implements AppLogger {}
-
-class MockSentryReporter extends Mock implements SentryReporter {}
 
 class MockMealLogRepository extends Mock implements MealLogRepository {}
 
@@ -126,55 +120,6 @@ MealComponent makeComponent({
     fatG: fatG,
     sodiumMg: sodiumMg,
   );
-}
-
-/// Logger/sentry stubs shared across tests that use real repositories.
-void stubLogger(MockAppLogger logger) {
-  when(
-    () => logger.info(
-      any(),
-      context: any(named: 'context'),
-      data: any(named: 'data'),
-    ),
-  ).thenReturn(null);
-  when(
-    () => logger.debug(
-      any(),
-      context: any(named: 'context'),
-      data: any(named: 'data'),
-    ),
-  ).thenReturn(null);
-  when(
-    () => logger.warning(
-      any(),
-      context: any(named: 'context'),
-      error: any(named: 'error'),
-      stackTrace: any(named: 'stackTrace'),
-      data: any(named: 'data'),
-    ),
-  ).thenReturn(null);
-  when(
-    () => logger.error(
-      any(),
-      context: any(named: 'context'),
-      error: any(named: 'error'),
-      stackTrace: any(named: 'stackTrace'),
-      data: any(named: 'data'),
-    ),
-  ).thenReturn(null);
-}
-
-void stubSentry(MockSentryReporter sentry) {
-  when(
-    () => sentry.reportNetworkError(
-      any(),
-      url: any(named: 'url'),
-      method: any(named: 'method'),
-      statusCode: any(named: 'statusCode'),
-      timeout: any(named: 'timeout'),
-      stackTrace: any(named: 'stackTrace'),
-    ),
-  ).thenAnswer((_) async {});
 }
 
 // ─────────────────────────────────────────────────────────────────────────────
@@ -1200,8 +1145,7 @@ void main() {
   group('MealLogRepository (in-memory DB)', () {
     late AppDatabase database;
     late MockSupabaseClient mockSupabase;
-    late MockAppLogger mockLogger;
-    late MockSentryReporter mockSentry;
+    late RecordingReport report;
     late MealLogRepository repository;
 
     const testUserId = 'user-abc';
@@ -1209,16 +1153,12 @@ void main() {
     setUp(() {
       database = AppDatabase.forTesting(NativeDatabase.memory());
       mockSupabase = MockSupabaseClient();
-      mockLogger = MockAppLogger();
-      mockSentry = MockSentryReporter();
-      stubLogger(mockLogger);
-      stubSentry(mockSentry);
+      report = RecordingReport();
 
       repository = MealLogRepository(
         supabase: mockSupabase,
         database: database,
-        logger: mockLogger,
-        sentry: mockSentry,
+        report: report,
       );
     });
 
@@ -1552,8 +1492,7 @@ void main() {
   group('SavedMealsRepository (in-memory DB)', () {
     late AppDatabase database;
     late MockSupabaseClient mockSupabase;
-    late MockAppLogger mockLogger;
-    late MockSentryReporter mockSentry;
+    late RecordingReport report;
     late SavedMealsRepository repository;
 
     const testUserId = 'user-abc';
@@ -1581,16 +1520,12 @@ void main() {
     setUp(() {
       database = AppDatabase.forTesting(NativeDatabase.memory());
       mockSupabase = MockSupabaseClient();
-      mockLogger = MockAppLogger();
-      mockSentry = MockSentryReporter();
-      stubLogger(mockLogger);
-      stubSentry(mockSentry);
+      report = RecordingReport();
 
       repository = SavedMealsRepository(
         supabase: mockSupabase,
         database: database,
-        logger: mockLogger,
-        sentry: mockSentry,
+        report: report,
       );
     });
 
@@ -1651,8 +1586,8 @@ void main() {
       // lastUsedAt should now be non-null; row re-dirtied.
       expect(rows.single.lastUsedAt, isNotNull);
       // Note: the dirty flag may be cleared by the fire-and-forget upsert (which
-      // throws because mockSupabase is unstubbed). The sentry stub absorbs the
-      // error so needsUpload stays true.
+      // throws because mockSupabase is unstubbed). The RecordingReport absorbs
+      // the error so needsUpload stays true.
       expect(rows.single.needsUpload, isTrue);
     });
   });
@@ -1965,9 +1900,6 @@ void main() {
 
     test('corrupted items JSON returns empty list and reports Degraded', () {
       final report = RecordingReport();
-      final previous = SentryReport.global;
-      SentryReport.global = report;
-      addTearDown(() => SentryReport.global = previous);
 
       // Build a Supabase JSON with a malformed items string (not JSONB).
       final json = {
@@ -1983,7 +1915,10 @@ void main() {
         'is_deleted': false,
       };
       // items is a String here — triggers _decodeComponents path.
-      final log = MealLog.fromSupabaseJson(json);
+      final log = MealLog.fromSupabaseJson(
+        json,
+        onIssue: report.decodeIssue('meal_logging'),
+      );
       expect(log, isNotNull);
       expect(log!.components, isEmpty);
       expect(report.degradeds, hasLength(1));

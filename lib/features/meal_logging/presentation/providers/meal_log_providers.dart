@@ -7,7 +7,6 @@ import '../../../../features/activities/domain/activity.dart';
 import '../../../../features/auth/data/user_repository.dart';
 import '../../../../features/nutrition_plan/domain/fuel_log_data.dart';
 import '../../../../shared/services/app_external_deps.dart';
-import '../../../../shared/services/logging_service.dart';
 import '../../../../shared/services/report/report.dart';
 import '../../../../shared/services/supabase/supabase_client_provider.dart';
 import '../../application/meal_logging_service.dart';
@@ -212,7 +211,7 @@ class MealLogController extends _$MealLogController {
     return null;
   }
 
-  AppLogger get _logger => ref.read(appLoggerProvider);
+  Report get _report => ref.read(reportProvider);
 
   /// Runs [action] inside [AsyncValue.guard], but only writes the result back
   /// to [state] if this provider is still mounted.
@@ -428,9 +427,9 @@ class MealLogController extends _$MealLogController {
     await _runGuarded((service) async {
       await service.updateLog(log);
 
-      _logger.info(
+      _report.info(
         'Meal log updated',
-        context: 'MEAL_LOG_CONTROLLER',
+        area: 'meal_logging',
         data: {'logId': log.id},
       );
 
@@ -453,9 +452,9 @@ class MealLogController extends _$MealLogController {
       await repo.restoreLog(id: logId, userId: userId);
 
       if (!ref.mounted) return;
-      _logger.info(
+      _report.info(
         'Meal log restored',
-        context: 'MEAL_LOG_CONTROLLER',
+        area: 'meal_logging',
         data: {'logId': logId},
       );
 
@@ -475,9 +474,9 @@ class MealLogController extends _$MealLogController {
       await repo.softDeleteLog(id: logId, userId: userId);
 
       if (!ref.mounted) return;
-      _logger.info(
+      _report.info(
         'Meal log deleted',
-        context: 'MEAL_LOG_CONTROLLER',
+        area: 'meal_logging',
         data: {'logId': logId},
       );
 

@@ -10,7 +10,6 @@ import '../../application/open_food_facts_search_service.dart';
 import '../../application/product_detail_service.dart';
 import '../../application/food_mapping_service.dart';
 import '../../../../shared/database/database_provider.dart';
-import 'package:mealvana_endurance/core/utils/debug_logger.dart';
 import '../../../../shared/widgets/content_area.dart';
 import '../../../../../../../../../shared/widgets/kyle_design/kyle_design.dart';
 import 'package:mealvana_endurance/shared/services/report/report.dart';
@@ -30,6 +29,15 @@ class _AddFoodScreenState extends ConsumerState<AddFoodScreen> {
   List<FoodSearchResult> _searchResults = [];
   bool _isSearching = false;
   String? _errorMessage;
+
+  /// Read once so narrative after an await never touches a disposed `ref`.
+  late final Report _report;
+
+  @override
+  void initState() {
+    super.initState();
+    _report = ref.read(reportProvider);
+  }
 
   @override
   void dispose() {
@@ -93,9 +101,18 @@ class _AddFoodScreenState extends ConsumerState<AddFoodScreen> {
   }
 
   Future<void> _handleSearchResultTap(FoodSearchResult result) async {
-    DebugLogger.info('🔄 Add Food Screen - Selected: ${result.displayName}');
-    DebugLogger.info('🎯 Add Food Screen - Search result ID: ${result.id}');
-    DebugLogger.info('🎯 Add Food Screen - Has valid ID: ${result.hasValidId}');
+    _report.info(
+      '🔄 Add Food Screen - Selected: ${result.displayName}',
+      area: 'barcode_scanning',
+    );
+    _report.info(
+      '🎯 Add Food Screen - Search result ID: ${result.id}',
+      area: 'barcode_scanning',
+    );
+    _report.info(
+      '🎯 Add Food Screen - Has valid ID: ${result.hasValidId}',
+      area: 'barcode_scanning',
+    );
 
     if (!result.hasValidId) {
       MealvanaSnackbar.showError(
@@ -113,8 +130,9 @@ class _AddFoodScreenState extends ConsumerState<AddFoodScreen> {
         builder: (context) => const Center(child: CircularProgressIndicator()),
       );
 
-      DebugLogger.info(
+      _report.info(
         '🚀 Add Food Screen - About to call ProductDetailService with Open Food Facts ID: ${result.id}',
+        area: 'barcode_scanning',
       );
 
       // Get product details using the unified service
@@ -123,8 +141,9 @@ class _AddFoodScreenState extends ConsumerState<AddFoodScreen> {
         openFoodFactsId: result.id,
       );
 
-      DebugLogger.info(
+      _report.info(
         '✅ Add Food Screen - ProductDetailService returned: ${apiProduct != null ? 'SUCCESS' : 'NULL'}',
+        area: 'barcode_scanning',
       );
 
       // Close loading dialog
@@ -254,32 +273,58 @@ class _AddFoodScreenState extends ConsumerState<AddFoodScreen> {
     double? sodiumMg,
     String? productType,
   }) async {
-    DebugLogger.info('🔄 _saveSearchedFood - Starting save process');
-    DebugLogger.info('📊 _saveSearchedFood - Food: ${foodItem.name}');
-    DebugLogger.info('📊 _saveSearchedFood - Category IDs: $categoryIds');
-    DebugLogger.info('📊 _saveSearchedFood - Edited nutrition values:');
-    DebugLogger.debug(
+    _report.info(
+      '🔄 _saveSearchedFood - Starting save process',
+      area: 'barcode_scanning',
+    );
+    _report.info(
+      '📊 _saveSearchedFood - Food: ${foodItem.name}',
+      area: 'barcode_scanning',
+    );
+    _report.info(
+      '📊 _saveSearchedFood - Category IDs: $categoryIds',
+      area: 'barcode_scanning',
+    );
+    _report.info(
+      '📊 _saveSearchedFood - Edited nutrition values:',
+      area: 'barcode_scanning',
+    );
+    _report.debug(
       '   - Carbs: $carbsPerServing (original: ${foodItem.carbsPerServing})',
+      area: 'barcode_scanning',
     );
-    DebugLogger.debug(
+    _report.debug(
       '   - Protein: $proteinPerServing (original: ${foodItem.proteinPerServing})',
+      area: 'barcode_scanning',
     );
-    DebugLogger.debug(
+    _report.debug(
       '   - Fat: $fatPerServing (original: ${foodItem.fatPerServing})',
+      area: 'barcode_scanning',
     );
-    DebugLogger.debug(
+    _report.debug(
       '   - Sodium: $sodiumMg (original: ${foodItem.sodiumMg})',
+      area: 'barcode_scanning',
     );
-    DebugLogger.debug(
+    _report.debug(
       '   - Fluid: $fluidMlPerServing (original: ${foodItem.fluidMlPerServing})',
+      area: 'barcode_scanning',
     );
 
     try {
-      DebugLogger.info('🔄 _saveSearchedFood - Getting database connection...');
+      _report.info(
+        '🔄 _saveSearchedFood - Getting database connection...',
+        area: 'barcode_scanning',
+      );
       final database = ref.read(appDatabaseProvider);
-      DebugLogger.info('✅ _saveSearchedFood - Database connection obtained');
+      _report.info(
+        '✅ _saveSearchedFood - Database connection obtained',
+        area: 'barcode_scanning',
+      );
 
-      DebugLogger.info('🔄 _saveSearchedFood - Getting user profile...');
+      _report.info(
+        '🔄 _saveSearchedFood - Getting user profile...',
+        area: 'barcode_scanning',
+      );
       final userProfile = await database.userDao.getCurrentUserProfile();
       // user_id is the Supabase auth UUID; device_id is the legacy device
       // identifier. Keep them separate and match UserFoodCrudService so the
@@ -287,8 +332,9 @@ class _AddFoodScreenState extends ConsumerState<AddFoodScreen> {
       // caught by the UNIQUE(device_id, client_food_id) constraint.
       final userId = userProfile?.id ?? 'unknown';
       final deviceId = userProfile?.deviceId ?? userId;
-      DebugLogger.info(
+      _report.info(
         '✅ _saveSearchedFood - User ID: $userId, Device ID: $deviceId',
+        area: 'barcode_scanning',
       );
 
       final barcode =
@@ -298,12 +344,18 @@ class _AddFoodScreenState extends ConsumerState<AddFoodScreen> {
       // text-search foods that have no barcode, and matches regardless of which
       // save path persisted the existing row, since the two paths historically
       // assigned different device_id values.
-      DebugLogger.info('🔄 _saveSearchedFood - Checking for duplicates...');
+      _report.info(
+        '🔄 _saveSearchedFood - Checking for duplicates...',
+        area: 'barcode_scanning',
+      );
       final hasDuplicate = await database.foodsDao.hasUserFoodWithClientFoodId(
         userId,
         foodItem.id,
       );
-      DebugLogger.info('📊 _saveSearchedFood - Has duplicate: $hasDuplicate');
+      _report.info(
+        '📊 _saveSearchedFood - Has duplicate: $hasDuplicate',
+        area: 'barcode_scanning',
+      );
 
       if (hasDuplicate) {
         ref
@@ -322,27 +374,35 @@ class _AddFoodScreenState extends ConsumerState<AddFoodScreen> {
       }
 
       // Save to database
-      DebugLogger.info(
+      _report.info(
         '🔄 _saveSearchedFood - Saving to database with parameters:',
+        area: 'barcode_scanning',
       );
-      DebugLogger.debug('   - deviceId: $deviceId');
-      DebugLogger.debug('   - id: ${foodItem.id}');
-      DebugLogger.debug('   - clientFoodId: ${foodItem.id}');
-      DebugLogger.debug('   - barcode: $barcode');
-      DebugLogger.debug('   - name: ${foodItem.name}');
-      DebugLogger.debug(
+      _report.debug('   - deviceId: $deviceId', area: 'barcode_scanning');
+      _report.debug('   - id: ${foodItem.id}', area: 'barcode_scanning');
+      _report.debug(
+        '   - clientFoodId: ${foodItem.id}',
+        area: 'barcode_scanning',
+      );
+      _report.debug('   - barcode: $barcode', area: 'barcode_scanning');
+      _report.debug('   - name: ${foodItem.name}', area: 'barcode_scanning');
+      _report.debug(
         '   - carbsPerServing: ${carbsPerServing ?? foodItem.carbsPerServing}',
+        area: 'barcode_scanning',
       );
-      DebugLogger.debug(
+      _report.debug(
         '   - proteinPerServing: ${proteinPerServing ?? foodItem.proteinPerServing}',
+        area: 'barcode_scanning',
       );
-      DebugLogger.debug(
+      _report.debug(
         '   - fatPerServing: ${fatPerServing ?? foodItem.fatPerServing}',
+        area: 'barcode_scanning',
       );
-      DebugLogger.debug(
+      _report.debug(
         '   - sodiumMg: ${sodiumMg?.toInt() ?? foodItem.sodiumMg}',
+        area: 'barcode_scanning',
       );
-      DebugLogger.debug('   - categoryIds: $categoryIds');
+      _report.debug('   - categoryIds: $categoryIds', area: 'barcode_scanning');
 
       // Convert category IDs to category names (array-based categories)
       final categoryNames = categoryIds.map((id) {
@@ -386,11 +446,15 @@ class _AddFoodScreenState extends ConsumerState<AddFoodScreen> {
         categories: categoryNames, // Now using string array instead of int IDs
       );
 
-      DebugLogger.info('✅ _saveSearchedFood - Successfully saved to database');
+      _report.info(
+        '✅ _saveSearchedFood - Successfully saved to database',
+        area: 'barcode_scanning',
+      );
 
       if (mounted) {
-        DebugLogger.info(
+        _report.info(
           '✅ _saveSearchedFood - Showing success message and closing screen',
+          area: 'barcode_scanning',
         );
         MealvanaSnackbar.showSuccess(
           context,
@@ -434,7 +498,10 @@ class _AddFoodScreenState extends ConsumerState<AddFoodScreen> {
   }
 
   Future<void> _handleBarcodeScan() async {
-    DebugLogger.info('🔄 Add Food Screen - Barcode scan button pressed');
+    _report.info(
+      '🔄 Add Food Screen - Barcode scan button pressed',
+      area: 'barcode_scanning',
+    );
 
     // Navigate to barcode scanner
     final result = await context.pushNamed(

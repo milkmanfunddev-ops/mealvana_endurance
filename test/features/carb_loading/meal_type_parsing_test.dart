@@ -1,5 +1,6 @@
 import 'package:flutter_test/flutter_test.dart';
 import 'package:mealvana_endurance/features/carb_loading/domain/meal_type.dart';
+import 'package:mealvana_endurance/shared/services/report/decode_issue_report.dart';
 
 import '../../helpers/fakes/recording_report.dart';
 
@@ -83,13 +84,16 @@ void main() {
       expect(parseMealTypeIds('[1,2'), isA<List<int>>());
     });
 
-    test('invalid JSON inside brackets -> [] and one Fault', () {
+    test('invalid JSON inside brackets -> [] and one Degraded', () {
       // Bracketed, so it takes the JSON branch; the trailing comma makes
       // jsonDecode throw, which is the catch under test.
       final report = RecordingReport();
-      expect(parseMealTypeIds('[1,]', report: report), <int>[]);
-      expect(report.faults, hasLength(1));
-      expect(report.faults.single.area, 'carb_loading');
+      expect(
+        parseMealTypeIds('[1,]', onIssue: report.decodeIssue('carb_loading')),
+        <int>[],
+      );
+      expect(report.degradeds, hasLength(1));
+      expect(report.degradeds.single.area, 'carb_loading');
     });
 
     test('bare single value', () {

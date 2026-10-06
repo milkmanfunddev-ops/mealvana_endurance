@@ -2,7 +2,7 @@ import 'package:drift/drift.dart';
 import 'package:riverpod_annotation/riverpod_annotation.dart';
 import '../../../shared/database/app_database.dart';
 import '../../../shared/database/database_provider.dart';
-import '../../../shared/services/logging_service.dart';
+import '../../../shared/services/report/report.dart';
 import '../../../shared/domain/write_consistency.dart';
 import '../data/carb_loading_repository.dart';
 import '../domain/carb_loading_entryway_engine.dart';
@@ -16,7 +16,7 @@ part 'carb_loading_service.g.dart';
 CarbLoadingService carbLoadingService(Ref ref) {
   return CarbLoadingService(
     ref.read(appDatabaseProvider),
-    ref.read(appLoggerProvider),
+    ref.read(reportProvider),
     ref.read(carbLoadingRepositoryProvider),
     ref.read(coachRepositoryProvider),
     ref.read(eventsRepositoryProvider),
@@ -27,14 +27,14 @@ CarbLoadingService carbLoadingService(Ref ref) {
 /// Handles creation, deletion, and updates of carb loading protocols
 class CarbLoadingService {
   final AppDatabase _database;
-  final AppLogger _logger;
+  final Report _report;
   final CarbLoadingRepository _carbLoadingRepository;
   final CoachRepository _coachRepository;
   final EventsRepository _eventsRepository;
 
   CarbLoadingService(
     this._database,
-    this._logger,
+    this._report,
     this._carbLoadingRepository,
     this._coachRepository,
     this._eventsRepository,
@@ -73,10 +73,13 @@ class CarbLoadingService {
             );
 
         if (!hasActiveRelationship) {
-          _logger.error(
-            'Coach does not have active relationship with athlete',
-            context: 'CARB_LOADING_SERVICE',
-            data: {'coachUserId': userId, 'athleteUserId': forUserId},
+          _report.fault(
+            LoggedFault(
+              'Coach does not have active relationship with athlete',
+              context: 'carb_loading',
+            ),
+            area: 'carb_loading',
+            extra: {'coachUserId': userId, 'athleteUserId': forUserId},
           );
           throw Exception(
             'Not authorized to create carb loading plans for this athlete',
@@ -94,10 +97,10 @@ class CarbLoadingService {
       if (eventId != null) {
         final existing = await getCarbLoadingPlan(eventId);
         if (existing != null) {
-          _logger.info(
+          _report.info(
             'Replacing existing carb loading plan ${existing.id} for event '
             '$eventId before creating the new one',
-            context: 'CARB_LOADING_SERVICE',
+            area: 'carb_loading',
             data: {'eventId': eventId, 'existingPlanId': existing.id},
           );
           await _carbLoadingRepository.deleteCarbLoadingPlan(
@@ -124,9 +127,9 @@ class CarbLoadingService {
             resolvedConsistency == WriteConsistency.remoteAckRequired,
       );
 
-      _logger.info(
+      _report.info(
         'Resolved write consistency',
-        context: 'CARB_LOADING_SERVICE',
+        area: 'carb_loading',
         data: {
           'entity': 'carb_loading_plan',
           'operation': 'create',
@@ -160,15 +163,20 @@ class CarbLoadingService {
         try {
           await _eventsRepository.uploadDirtyRecords(ownerId);
         } catch (e) {
-          _logger.warning(
-            'Failed to upload event after carb loading update; will retry on next sync',
-            context: 'CARB_LOADING_SERVICE',
-            error: e,
+          _report.degraded(
+            e,
+            area: 'carb_loading',
+            message:
+                'Failed to upload event after carb loading update; will retry on next sync',
           );
         }
       }
     } catch (e) {
-      _logger.error('Error creating carb loading plan', error: e);
+      _report.fault(
+        e,
+        area: 'carb_loading',
+        message: 'Error creating carb loading plan',
+      );
       rethrow;
     }
   }
@@ -204,10 +212,13 @@ class CarbLoadingService {
             );
 
         if (!hasActiveRelationship) {
-          _logger.error(
-            'Coach does not have active relationship with athlete',
-            context: 'CARB_LOADING_SERVICE',
-            data: {'coachUserId': currentUserId, 'athleteUserId': planOwnerId},
+          _report.fault(
+            LoggedFault(
+              'Coach does not have active relationship with athlete',
+              context: 'carb_loading',
+            ),
+            area: 'carb_loading',
+            extra: {'coachUserId': currentUserId, 'athleteUserId': planOwnerId},
           );
           throw Exception(
             'Not authorized to delete carb loading plans for this athlete',
@@ -215,9 +226,9 @@ class CarbLoadingService {
         }
       }
 
-      _logger.info(
+      _report.info(
         'Resolved write consistency',
-        context: 'CARB_LOADING_SERVICE',
+        area: 'carb_loading',
         data: {
           'entity': 'carb_loading_plan',
           'operation': 'delete',
@@ -239,10 +250,17 @@ class CarbLoadingService {
           requireRemoteAck:
               resolvedConsistency == WriteConsistency.remoteAckRequired,
         );
-        _logger.info('Deleted carb loading plan ${plan.id} for event $eventId');
+        _report.info(
+          'Deleted carb loading plan ${plan.id} for event $eventId',
+          area: 'carb_loading',
+        );
       } else {
-        _logger.warning(
-          'No carb loading plan found for event $eventId - nothing to delete',
+        _report.degraded(
+          LoggedFault(
+            'No carb loading plan found for event $eventId - nothing to delete',
+            context: 'carb_loading',
+          ),
+          area: 'carb_loading',
         );
       }
 
@@ -264,14 +282,19 @@ class CarbLoadingService {
       try {
         await _eventsRepository.uploadDirtyRecords(ownerUserId);
       } catch (e) {
-        _logger.warning(
-          'Failed to upload event after carb loading deletion; will retry on next sync',
-          context: 'CARB_LOADING_SERVICE',
-          error: e,
+        _report.degraded(
+          e,
+          area: 'carb_loading',
+          message:
+              'Failed to upload event after carb loading deletion; will retry on next sync',
         );
       }
     } catch (e) {
-      _logger.error('Error deleting carb loading plan', error: e);
+      _report.fault(
+        e,
+        area: 'carb_loading',
+        message: 'Error deleting carb loading plan',
+      );
       rethrow;
     }
   }
@@ -279,9 +302,9 @@ class CarbLoadingService {
   /// Delete a single carb loading day and its associated meals
   Future<void> deleteCarbLoadingDay(String carbLoadingDayId) async {
     try {
-      _logger.info(
+      _report.info(
         'Resolved write consistency',
-        context: 'CARB_LOADING_SERVICE',
+        area: 'carb_loading',
         data: {
           'entity': 'carb_loading_day',
           'operation': 'delete',
@@ -300,7 +323,11 @@ class CarbLoadingService {
         _database.carbLoadingDaysTable,
       )..where((tbl) => tbl.id.equals(carbLoadingDayId))).go();
     } catch (e) {
-      _logger.error('Error deleting carb loading day', error: e);
+      _report.fault(
+        e,
+        area: 'carb_loading',
+        message: 'Error deleting carb loading day',
+      );
       rethrow;
     }
   }
@@ -338,10 +365,13 @@ class CarbLoadingService {
             );
 
         if (!hasActiveRelationship) {
-          _logger.error(
-            'Coach does not have active relationship with athlete',
-            context: 'CARB_LOADING_SERVICE',
-            data: {'coachUserId': actorUserId, 'athleteUserId': ownerUserId},
+          _report.fault(
+            LoggedFault(
+              'Coach does not have active relationship with athlete',
+              context: 'carb_loading',
+            ),
+            area: 'carb_loading',
+            extra: {'coachUserId': actorUserId, 'athleteUserId': ownerUserId},
           );
           throw Exception(
             'Not authorized to update carb loading days for this athlete',
@@ -349,9 +379,9 @@ class CarbLoadingService {
         }
       }
 
-      _logger.info(
+      _report.info(
         'Resolved write consistency',
-        context: 'CARB_LOADING_SERVICE',
+        area: 'carb_loading',
         data: {
           'entity': 'carb_loading_day',
           'operation': 'update',
@@ -370,12 +400,12 @@ class CarbLoadingService {
             resolvedConsistency == WriteConsistency.remoteAckRequired,
       );
     } catch (e, stackTrace) {
-      _logger.error(
-        'Error updating carb loading day',
-        context: 'CARB_LOADING_SERVICE',
-        error: e,
+      _report.fault(
+        e,
         stackTrace: stackTrace,
-        data: {'carbLoadingDayId': carbLoadingDayId},
+        area: 'carb_loading',
+        extra: {'carbLoadingDayId': carbLoadingDayId},
+        message: 'Error updating carb loading day',
       );
       rethrow;
     }
@@ -435,9 +465,9 @@ class CarbLoadingService {
             actorUserId: userId,
             ownerUserId: ownerId,
           );
-      _logger.info(
+      _report.info(
         'Resolved write consistency',
-        context: 'CARB_LOADING_SERVICE',
+        area: 'carb_loading',
         data: {
           'entity': 'carb_loading_plan',
           'operation': 'repick_protocol',
@@ -475,7 +505,11 @@ class CarbLoadingService {
             resolvedConsistency == WriteConsistency.remoteAckRequired,
       );
     } catch (e) {
-      _logger.error('Error re-picking carb loading protocol', error: e);
+      _report.fault(
+        e,
+        area: 'carb_loading',
+        message: 'Error re-picking carb loading protocol',
+      );
       rethrow;
     }
   }
@@ -503,11 +537,14 @@ class CarbLoadingService {
       final keep = plans.first;
 
       if (plans.length > 1) {
-        _logger.warning(
-          'Found ${plans.length} carb loading plans for event $eventId — '
-          'keeping the newest (${keep.id}) and removing the duplicates',
-          context: 'CARB_LOADING_SERVICE',
-          data: {'eventId': eventId, 'keptPlanId': keep.id},
+        _report.degraded(
+          LoggedFault(
+            'Found ${plans.length} carb loading plans for event $eventId — '
+            'keeping the newest (${keep.id}) and removing the duplicates',
+            context: 'carb_loading',
+          ),
+          area: 'carb_loading',
+          extra: {'eventId': eventId, 'keptPlanId': keep.id},
         );
         for (final dup in plans.skip(1)) {
           // Local cleanup only. Delete each duplicate's days + meals first so no
@@ -529,10 +566,11 @@ class CarbLoadingService {
               _database.carbLoadingPlansTable,
             )..where((t) => t.id.equals(dup.id))).go();
           } catch (e) {
-            _logger.warning(
-              'Failed to clean up duplicate carb loading plan ${dup.id}',
-              context: 'CARB_LOADING_SERVICE',
-              error: e,
+            _report.degraded(
+              e,
+              area: 'carb_loading',
+              message:
+                  'Failed to clean up duplicate carb loading plan ${dup.id}',
             );
           }
         }
@@ -540,9 +578,10 @@ class CarbLoadingService {
 
       return keep;
     } catch (e) {
-      _logger.error(
-        'Error getting carb loading plan for event: $eventId',
-        error: e,
+      _report.fault(
+        e,
+        area: 'carb_loading',
+        message: 'Error getting carb loading plan for event: $eventId',
       );
       rethrow;
     }
@@ -557,9 +596,10 @@ class CarbLoadingService {
 
       return await query.get();
     } catch (e) {
-      _logger.error(
-        'Error getting carb loading days for plan: $planId',
-        error: e,
+      _report.fault(
+        e,
+        area: 'carb_loading',
+        message: 'Error getting carb loading days for plan: $planId',
       );
       rethrow;
     }
@@ -603,7 +643,11 @@ class CarbLoadingService {
           .map((row) => row.readTable(_database.carbLoadingDaysTable))
           .toList();
     } catch (e) {
-      _logger.error('Error getting carb loading days for range', error: e);
+      _report.fault(
+        e,
+        area: 'carb_loading',
+        message: 'Error getting carb loading days for range',
+      );
       rethrow;
     }
   }

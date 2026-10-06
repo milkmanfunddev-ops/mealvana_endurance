@@ -3,6 +3,8 @@ import 'package:riverpod_annotation/riverpod_annotation.dart';
 import 'package:uuid/uuid.dart';
 import '../../../shared/database/app_database.dart';
 import '../../../shared/database/database_provider.dart';
+import '../../../shared/services/report/decode_issue_report.dart';
+import '../../../shared/services/report/report.dart';
 import '../domain/carb_loading_user_food.dart' as domain;
 import '../domain/meal_type.dart' show parseMealTypeIds;
 
@@ -13,9 +15,11 @@ const _uuid = Uuid();
 /// Repository for managing user-created carb loading foods
 /// Handles CRUD operations, soft deletes, and import tracking
 class CarbLoadingUserFoodRepository {
-  const CarbLoadingUserFoodRepository(this._database);
+  const CarbLoadingUserFoodRepository(this._database, {required Report report})
+    : _report = report;
 
   final AppDatabase _database;
+  final Report _report;
 
   /// Get all user foods (excluding soft-deleted)
   Future<List<domain.CarbLoadingUserFood>> getAllUserFoods(
@@ -46,7 +50,10 @@ class CarbLoadingUserFoodRepository {
     return allFoods
         .where((food) {
           if (food.mealTypes == null) return false;
-          final mealTypes = parseMealTypeIds(food.mealTypes);
+          final mealTypes = parseMealTypeIds(
+            food.mealTypes,
+            onIssue: _report.decodeIssue('carb_loading'),
+          );
           return mealTypes.contains(mealTypeId);
         })
         .map((food) => _convertToUserFoodDomain(food))
@@ -194,7 +201,10 @@ class CarbLoadingUserFoodRepository {
   domain.CarbLoadingUserFood _convertToUserFoodDomain(
     CarbLoadingUserFood food,
   ) {
-    final mealTypeIds = parseMealTypeIds(food.mealTypes);
+    final mealTypeIds = parseMealTypeIds(
+      food.mealTypes,
+      onIssue: _report.decodeIssue('carb_loading'),
+    );
 
     return domain.CarbLoadingUserFood.fromDatabase(
       id: food.id,
@@ -240,7 +250,10 @@ class CarbLoadingUserFoodRepository {
           (foods) => foods
               .where((food) {
                 if (food.mealTypes == null) return false;
-                final mealTypes = parseMealTypeIds(food.mealTypes);
+                final mealTypes = parseMealTypeIds(
+                  food.mealTypes,
+                  onIssue: _report.decodeIssue('carb_loading'),
+                );
                 return mealTypes.contains(mealTypeId);
               })
               .map((food) => _convertToUserFoodDomain(food))
@@ -251,5 +264,8 @@ class CarbLoadingUserFoodRepository {
 
 @riverpod
 CarbLoadingUserFoodRepository carbLoadingUserFoodRepository(Ref ref) {
-  return CarbLoadingUserFoodRepository(ref.watch(appDatabaseProvider));
+  return CarbLoadingUserFoodRepository(
+    ref.watch(appDatabaseProvider),
+    report: ref.watch(reportProvider),
+  );
 }

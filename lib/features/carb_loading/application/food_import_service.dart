@@ -6,6 +6,7 @@ import '../../../shared/database/database_provider.dart';
 import '../data/carb_loading_user_food_repository.dart';
 import '../domain/carb_loading_user_food.dart' as domain;
 import '../domain/meal_type.dart' as domain;
+import '../../../shared/services/report/decode_issue_report.dart';
 import '../../../shared/services/report/report.dart';
 
 part 'food_import_service.g.dart';
@@ -344,7 +345,10 @@ class FoodImportService {
   domain.CarbLoadingUserFood _convertToUserFoodDomain(
     CarbLoadingUserFood food,
   ) {
-    final mealTypeIds = domain.parseMealTypeIds(food.mealTypes);
+    final mealTypeIds = domain.parseMealTypeIds(
+      food.mealTypes,
+      onIssue: _report.decodeIssue('carb_loading'),
+    );
 
     return domain.CarbLoadingUserFood.fromDatabase(
       id: food.id,

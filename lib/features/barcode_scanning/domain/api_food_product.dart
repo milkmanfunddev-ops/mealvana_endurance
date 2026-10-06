@@ -1,5 +1,3 @@
-import 'package:mealvana_endurance/core/utils/debug_logger.dart';
-
 /// Represents a food product returned from API lookup
 /// This is the domain model for data returned from the Edge Function
 class ApiFoodProduct {
@@ -120,21 +118,8 @@ class ApiFoodProduct {
   /// Calculate nutritional values for a specific serving size in grams.
   /// Prioritizes per-serving values when available.
   NutritionalValues calculateForServing(double servingGrams) {
-    DebugLogger.debug('🧮 DEBUG - calculateForServing:');
-    DebugLogger.debug('  Requested serving: ${servingGrams}g');
-    DebugLogger.debug('  API serving grams: ${this.servingGrams}g');
-    DebugLogger.debug(
-      '  Nutrition data per: ${nutritionDataPer ?? "100g (default)"}',
-    );
-
     // If we have per-serving data, prefer it
     if (caloriesPerServing != null) {
-      DebugLogger.debug('  Using direct per-serving values from API');
-      DebugLogger.debug('    Calories: $caloriesPerServing');
-      DebugLogger.debug('    Carbs: $carbohydratesPerServing');
-      DebugLogger.debug('    Protein: $proteinPerServing');
-      DebugLogger.debug('    Fat: $fatPerServing');
-
       // Close enough to the declared serving? Use the API's numbers as-is.
       //
       // The tolerance is RELATIVE (a fraction of the declared serving), not a
@@ -163,9 +148,6 @@ class ApiFoodProduct {
       // If serving sizes don't match, scale the per-serving values
       if (this.servingGrams != null && this.servingGrams! > 0) {
         final scaleFactor = servingGrams / this.servingGrams!;
-        DebugLogger.debug(
-          '  Scaling per-serving values by factor: $scaleFactor',
-        );
 
         return NutritionalValues(
           calories: caloriesPerServing != null
@@ -187,10 +169,6 @@ class ApiFoodProduct {
 
     // Fallback to per-100g calculation
     final factor = servingGrams / 100.0;
-    DebugLogger.debug('  Using per-100g calculation with factor: $factor');
-    DebugLogger.debug(
-      '  Calculation: $caloriesPer100g * $factor = ${caloriesPer100g != null ? (caloriesPer100g! * factor) : null}',
-    );
 
     return NutritionalValues(
       calories: caloriesPer100g != null

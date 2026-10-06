@@ -1,14 +1,19 @@
 import 'dart:convert';
 
 import 'package:http/http.dart' as http;
-import 'package:mealvana_endurance/core/utils/debug_logger.dart';
 import 'package:riverpod_annotation/riverpod_annotation.dart';
+
+import '../../../shared/services/report/report.dart';
 
 part 'open_food_facts_search_service.g.dart';
 
 /// Service for searching Open Food Facts database
 /// Uses the legacy CGI Search API due to V2 API data quality issues
 class OpenFoodFactsSearchService {
+  OpenFoodFactsSearchService({required Report report}) : _report = report;
+
+  final Report _report;
+
   static const String _baseUrl =
       'https://world.openfoodfacts.org/cgi/search.pl';
   static const String _userAgent =
@@ -21,8 +26,9 @@ class OpenFoodFactsSearchService {
       return [];
     }
 
-    DebugLogger.debug(
+    _report.debug(
       '🔍 OpenFoodFactsSearchService - Searching for: "$query"',
+      area: 'barcode_scanning',
     );
 
     try {
@@ -42,8 +48,12 @@ class OpenFoodFactsSearchService {
       );
 
       if (response.statusCode == 429) {
-        DebugLogger.warning(
-          '⚠️ OpenFoodFactsSearchService - Rate limit exceeded',
+        _report.degraded(
+          LoggedFault(
+            '⚠️ OpenFoodFactsSearchService - Rate limit exceeded',
+            context: 'barcode_scanning',
+          ),
+          area: 'barcode_scanning',
         );
         throw SearchException(
           'Search rate limit exceeded. Please wait a moment before searching again.',
@@ -51,9 +61,13 @@ class OpenFoodFactsSearchService {
       }
 
       if (response.statusCode != 200) {
-        DebugLogger.error(
-          '❌ OpenFoodFactsSearchService - HTTP error',
-          error: response.statusCode,
+        _report.fault(
+          LoggedFault(
+            '❌ OpenFoodFactsSearchService - HTTP error: status ${response.statusCode}',
+            context: 'barcode_scanning',
+          ),
+          area: 'barcode_scanning',
+          extra: {'status': response.statusCode},
         );
         throw SearchException('Search service temporarily unavailable');
       }
@@ -61,15 +75,20 @@ class OpenFoodFactsSearchService {
       final data = json.decode(response.body) as Map<String, dynamic>;
 
       if (data['products'] == null) {
-        DebugLogger.warning(
-          '❌ OpenFoodFactsSearchService - No products field in response',
+        _report.degraded(
+          LoggedFault(
+            '❌ OpenFoodFactsSearchService - No products field in response',
+            context: 'barcode_scanning',
+          ),
+          area: 'barcode_scanning',
         );
         return [];
       }
 
       final products = data['products'] as List<dynamic>;
-      DebugLogger.info(
+      _report.info(
         '✅ OpenFoodFactsSearchService - Found ${products.length} results',
+        area: 'barcode_scanning',
       );
 
       final results = products
@@ -81,11 +100,15 @@ class OpenFoodFactsSearchService {
           .toList();
 
       // Debug: Print first few results to help diagnose
-      DebugLogger.debug('🔍 OpenFoodFactsSearchService - Sample results:');
+      _report.debug(
+        '🔍 OpenFoodFactsSearchService - Sample results:',
+        area: 'barcode_scanning',
+      );
       for (int i = 0; i < results.length && i < 3; i++) {
         final result = results[i];
-        DebugLogger.debug(
+        _report.debug(
           '  ${i + 1}. ID: ${result.id}, Name: ${result.name}, Brand: ${result.brand}',
+          area: 'barcode_scanning',
         );
       }
 
@@ -94,9 +117,10 @@ class OpenFoodFactsSearchService {
       if (e is SearchException) {
         rethrow;
       }
-      DebugLogger.error(
-        '❌ OpenFoodFactsSearchService - Unexpected error',
-        error: e,
+      _report.fault(
+        e,
+        area: 'barcode_scanning',
+        message: '❌ OpenFoodFactsSearchService - Unexpected error',
       );
       throw SearchException(
         'Unable to search for products. Please check your internet connection.',
@@ -161,5 +185,5 @@ class SearchException implements Exception {
 
 @riverpod
 OpenFoodFactsSearchService openFoodFactsSearchService(Ref ref) {
-  return OpenFoodFactsSearchService();
+  return OpenFoodFactsSearchService(report: ref.read(reportProvider));
 }

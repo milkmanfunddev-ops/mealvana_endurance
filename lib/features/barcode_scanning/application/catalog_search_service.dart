@@ -4,8 +4,7 @@ import 'package:riverpod_annotation/riverpod_annotation.dart';
 import 'package:supabase_flutter/supabase_flutter.dart';
 
 import '../../../shared/services/supabase/supabase_client_provider.dart';
-import '../../../shared/services/logging_service.dart';
-import '../../../shared/services/app_external_deps.dart';
+import '../../../shared/services/report/report.dart';
 
 part 'catalog_search_service.g.dart';
 
@@ -146,10 +145,10 @@ class CatalogSearchResult {
 
 /// Service for searching the product catalog via the search-catalog edge function
 class CatalogSearchService {
-  CatalogSearchService(this._supabase, this._logger);
+  CatalogSearchService(this._supabase, this._report);
 
   final SupabaseClient _supabase;
-  final AppLogger _logger;
+  final Report _report;
 
   /// Search the product catalog. Returns empty list on failure (silent fallback).
   Future<List<CatalogSearchResult>> searchCatalog(
@@ -182,18 +181,23 @@ class CatalogSearchService {
         }
       }
 
-      _logger.warning(
-        'Catalog search returned non-success',
-        context: 'CatalogSearchService',
-        data: {'status': response.status, 'query': query},
+      _report.degraded(
+        LoggedFault(
+          'Catalog search returned non-success',
+          context: 'barcode_scanning',
+        ),
+        area: 'barcode_scanning',
+        extra: {'status': response.status, 'query': query},
       );
       return [];
-    } catch (e) {
+    } catch (e, stackTrace) {
       // Fail silently — catalog search is not critical
-      _logger.warning(
-        'Catalog search failed, returning empty results',
-        context: 'CatalogSearchService',
-        data: {'query': query, 'error': e.toString()},
+      _report.degraded(
+        e,
+        stackTrace: stackTrace,
+        area: 'barcode_scanning',
+        extra: {'query': query},
+        message: 'Catalog search failed, returning empty results',
       );
       return [];
     }
@@ -203,6 +207,5 @@ class CatalogSearchService {
 @riverpod
 CatalogSearchService catalogSearchService(Ref ref) {
   final supabase = ref.read(supabaseClientProvider);
-  final logger = ref.read(appExternalDepsProvider).logger;
-  return CatalogSearchService(supabase, logger);
+  return CatalogSearchService(supabase, ref.read(reportProvider));
 }
