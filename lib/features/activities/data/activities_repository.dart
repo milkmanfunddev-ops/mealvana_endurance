@@ -6,9 +6,6 @@ import 'package:riverpod_annotation/riverpod_annotation.dart';
 import 'package:supabase_flutter/supabase_flutter.dart';
 import '../../../shared/database/app_database.dart';
 import '../../../shared/database/database_provider.dart';
-import '../../../shared/services/logging_service.dart';
-import '../../../shared/services/sentry/sentry_reporter.dart';
-import '../../../shared/services/app_external_deps.dart';
 import '../../../shared/services/sync/sync_dependency_graph.dart';
 import '../../../shared/domain/activity_type.dart';
 import '../../../shared/data/syncable_repository.dart';
@@ -33,12 +30,9 @@ class _BatchUploadResult {
 
 @riverpod
 ActivitiesRepository activitiesRepository(Ref ref) {
-  final deps = ref.read(appExternalDepsProvider);
   return ActivitiesRepository(
     supabase: Supabase.instance.client,
     database: ref.read(appDatabaseProvider),
-    logger: ref.read(appLoggerProvider),
-    sentry: deps.sentry,
     deduplicationService: ref.read(activityDeduplicationServiceProvider),
     report: ref.read(reportProvider),
   );
@@ -50,22 +44,16 @@ class ActivitiesRepository with SyncableRepository {
   ActivitiesRepository({
     required SupabaseClient supabase,
     required AppDatabase database,
-    required AppLogger logger,
-    required SentryReporter sentry,
     required ActivityDeduplicationService deduplicationService,
     Report? report,
   }) : _supabase = supabase,
        _database = database,
-       _logger = logger,
-       _sentry = sentry,
        _reportOverride = report,
-       _mapper = ActivityMapper(logger: logger),
+       _mapper = ActivityMapper(report: report),
        _deduplicationService = deduplicationService;
 
   final SupabaseClient _supabase;
   final AppDatabase _database;
-  final AppLogger _logger;
-  final SentryReporter _sentry;
   final Report? _reportOverride;
   final ActivityMapper _mapper;
 
@@ -128,9 +116,9 @@ class ActivitiesRepository with SyncableRepository {
       final minutes = (miles * pace.minutesPerMile).round();
       if (minutes <= 0) return activity;
 
-      _logger.info(
+      _report.info(
         'Estimated duration for distance-only import',
-        context: 'ACTIVITIES_REPOSITORY',
+        area: 'activities',
         data: {
           'activityId': activity.id,
           'provider': activity.syncedFromProvider,
@@ -281,9 +269,9 @@ class ActivitiesRepository with SyncableRepository {
   @override
   Future<SyncResult> syncFromRemote(String userId) async {
     try {
-      _logger.info(
+      _report.info(
         'Syncing activities from Supabase',
-        context: 'ACTIVITIES_REPOSITORY',
+        area: 'activities',
         data: {'userId': userId},
       );
 
@@ -304,9 +292,9 @@ class ActivitiesRepository with SyncableRepository {
       // Update last sync timestamp
       await setLastSyncTime(DateTime.now());
 
-      _logger.info(
+      _report.info(
         'Activities synced successfully',
-        context: 'ACTIVITIES_REPOSITORY',
+        area: 'activities',
         data: {'userId': userId, 'count': syncedCount},
       );
 
@@ -318,12 +306,6 @@ class ActivitiesRepository with SyncableRepository {
         area: 'activities',
         message: 'Failed to sync activities from remote',
         extra: {'userId': userId},
-      );
-      await _sentry.reportNetworkError(
-        e,
-        url: 'supabase/activities',
-        method: 'SELECT',
-        stackTrace: stackTrace,
       );
       return SyncResult.failed(e.toString());
     }
@@ -372,9 +354,9 @@ class ActivitiesRepository with SyncableRepository {
     });
 
     if (dirtyIds.isNotEmpty) {
-      _logger.debug(
+      _report.debug(
         'Skipped remote activity overwrite for dirty local rows',
-        context: 'ACTIVITIES_REPOSITORY',
+        area: 'activities',
         data: {
           'skippedCount': dirtyIds.length,
           'totalRemote': remoteById.length,
@@ -401,9 +383,9 @@ class ActivitiesRepository with SyncableRepository {
         return UploadResult.nothingToUpload();
       }
 
-      _logger.info(
+      _report.info(
         'Uploading dirty activities',
-        context: 'ACTIVITIES_REPOSITORY',
+        area: 'activities',
         data: {'userId': userId, 'count': dirtyRecords.length},
       );
 
@@ -443,9 +425,9 @@ class ActivitiesRepository with SyncableRepository {
 
           if (missingParents.isNotEmpty) {
             parentBricks.addAll(missingParents);
-            _logger.info(
+            _report.info(
               'Including non-dirty parent bricks for sub-activity FK',
-              context: 'ACTIVITIES_REPOSITORY',
+              area: 'activities',
               data: {'parentIds': foundParentIds.toList()},
             );
           }
@@ -551,9 +533,9 @@ class ActivitiesRepository with SyncableRepository {
         );
       }
 
-      _logger.info(
+      _report.info(
         'Dirty activities uploaded successfully',
-        context: 'ACTIVITIES_REPOSITORY',
+        area: 'activities',
         data: {'userId': userId, 'count': uploadedIds.length},
       );
 
@@ -565,12 +547,6 @@ class ActivitiesRepository with SyncableRepository {
         area: 'activities',
         message: 'Failed to upload dirty activities',
         extra: {'userId': userId},
-      );
-      await _sentry.reportNetworkError(
-        e,
-        url: 'supabase/activities',
-        method: 'UPSERT',
-        stackTrace: stackTrace,
       );
       return UploadResult.failed(e.toString());
     }
@@ -829,9 +805,9 @@ class ActivitiesRepository with SyncableRepository {
       var activityWithId = _mapper.fromDriftRow(savedActivity);
 
       // STEP 2: Upload to Supabase SYNCHRONOUSLY
-      _logger.info(
+      _report.info(
         'Uploading new activity to Supabase (sync)',
-        context: 'ACTIVITIES_REPOSITORY',
+        area: 'activities',
         data: {
           'activityId': activityWithId.id,
           'hasNutritionPlan': activityWithId.nutritionPlanData != null,
@@ -851,12 +827,6 @@ class ActivitiesRepository with SyncableRepository {
           area: 'activities',
           message: 'Immediate upload failed; record stays dirty for retry',
           extra: {'operation': 'create', 'recordId': activityWithId.id},
-        );
-        _sentry.reportNetworkError(
-          e,
-          url: 'supabase:activities:create',
-          method: 'INSERT',
-          stackTrace: stackTrace,
         );
         if (requireRemoteAck) {
           rethrow;
@@ -909,12 +879,6 @@ class ActivitiesRepository with SyncableRepository {
               'recordId': activityWithDirtyFlag.id,
             },
           );
-          _sentry.reportNetworkError(
-            e,
-            url: 'supabase:activities:update',
-            method: 'UPSERT',
-            stackTrace: stackTrace,
-          );
           rethrow;
         }
       } else {
@@ -935,12 +899,6 @@ class ActivitiesRepository with SyncableRepository {
                 'operation': 'update',
                 'recordId': activityWithDirtyFlag.id,
               },
-            );
-            _sentry.reportNetworkError(
-              e,
-              url: 'supabase:activities:update',
-              method: 'UPSERT',
-              stackTrace: stackTrace,
             );
           }
         }());
@@ -1136,9 +1094,9 @@ class ActivitiesRepository with SyncableRepository {
           );
 
       if (unlinkedEventsCount > 0) {
-        _logger.info(
+        _report.info(
           'Unlinked events from deleted activity',
-          context: 'ACTIVITIES_REPOSITORY',
+          area: 'activities',
           data: {
             'activityId': activityId,
             'unlinkedEventsCount': unlinkedEventsCount,
@@ -1157,12 +1115,6 @@ class ActivitiesRepository with SyncableRepository {
             message: 'Immediate upload failed; record stays dirty for retry',
             extra: {'operation': 'delete', 'recordId': activityId},
           );
-          _sentry.reportNetworkError(
-            e,
-            url: 'supabase:activities:delete',
-            method: 'DELETE',
-            stackTrace: stackTrace,
-          );
           rethrow;
         }
       } else {
@@ -1177,12 +1129,6 @@ class ActivitiesRepository with SyncableRepository {
               area: 'activities',
               message: 'Immediate upload failed; record stays dirty for retry',
               extra: {'operation': 'delete', 'recordId': activityId},
-            );
-            _sentry.reportNetworkError(
-              e,
-              url: 'supabase:activities:delete',
-              method: 'DELETE',
-              stackTrace: stackTrace,
             );
           }
         }());
@@ -1206,9 +1152,9 @@ class ActivitiesRepository with SyncableRepository {
 
       await _supabase.from('activities').update(payload).eq('id', activity.id);
 
-      _logger.info(
+      _report.info(
         'Remote activity updated',
-        context: 'ACTIVITIES_REPOSITORY',
+        area: 'activities',
         data: {'activityId': activity.id},
       );
     } catch (e, stackTrace) {
@@ -1239,9 +1185,9 @@ class ActivitiesRepository with SyncableRepository {
       _database.activitiesTable,
     )..where((tbl) => tbl.id.equals(activityId))).getSingleOrNull();
     if (localRow?.needsUpload == true) {
-      _logger.debug(
+      _report.debug(
         'Skipping remote refresh for dirty local activity',
-        context: 'ACTIVITIES_REPOSITORY',
+        area: 'activities',
         data: {'activityId': activityId},
       );
       return;
@@ -1474,10 +1420,10 @@ class ActivitiesRepository with SyncableRepository {
         );
         if (fingerprintMatch != null) {
           final merged = _mergeProviderUpdate(fingerprintMatch, activity);
-          _logger.info(
+          _report.info(
             'Reconciled provider workout onto user-created activity '
             '(cross-origin dedup)',
-            context: 'ACTIVITIES_REPOSITORY',
+            area: 'activities',
             data: {
               'localActivityId': fingerprintMatch.id,
               'provider': provider,
@@ -1502,9 +1448,9 @@ class ActivitiesRepository with SyncableRepository {
         _database.activitiesTable,
       )..where((tbl) => tbl.id.equals(generatedId))).getSingle();
 
-      _logger.info(
+      _report.info(
         'Inserted activity from sync',
-        context: 'ACTIVITIES_REPOSITORY',
+        area: 'activities',
         data: {
           'activityId': generatedId,
           'provider': activity.syncedFromProvider,
@@ -1772,9 +1718,9 @@ class ActivitiesRepository with SyncableRepository {
     // Log nutrition plan data presence for debugging
     if (activity.nutritionPlanData != null) {
       final jsonString = jsonEncode(activity.nutritionPlanData);
-      _logger.info(
+      _report.info(
         'Saving activity with nutrition plan data',
-        context: 'ACTIVITIES_REPOSITORY',
+        area: 'activities',
         data: {
           'activityId': activity.id,
           'hasNutritionPlan': true,
@@ -1782,9 +1728,9 @@ class ActivitiesRepository with SyncableRepository {
         },
       );
     } else {
-      _logger.debug(
+      _report.debug(
         'Saving activity without nutrition plan data',
-        context: 'ACTIVITIES_REPOSITORY',
+        area: 'activities',
         data: {'activityId': activity.id, 'hasNutritionPlan': false},
       );
     }
@@ -1798,9 +1744,9 @@ class ActivitiesRepository with SyncableRepository {
           .into(_database.activitiesTable)
           .insertReturning(companion);
 
-      _logger.debug(
+      _report.debug(
         'Created new activity',
-        context: 'ACTIVITIES_REPOSITORY',
+        area: 'activities',
         data: {'activityId': insertedRow.id},
       );
 
@@ -1811,9 +1757,9 @@ class ActivitiesRepository with SyncableRepository {
         _database.activitiesTable,
       )..where((tbl) => tbl.id.equals(activity.id))).write(companion);
 
-      _logger.debug(
+      _report.debug(
         'Updated existing activity',
-        context: 'ACTIVITIES_REPOSITORY',
+        area: 'activities',
         data: {'activityId': activity.id},
       );
 
@@ -1878,9 +1824,9 @@ class ActivitiesRepository with SyncableRepository {
       }
     }
 
-    _logger.info(
+    _report.info(
       'Activity uploaded to Supabase with UUID',
-      context: 'ACTIVITIES_REPOSITORY',
+      area: 'activities',
       data: {'activityId': activity.id, 'operation': operation},
     );
 
@@ -1971,12 +1917,6 @@ class ActivitiesRepository with SyncableRepository {
           message: 'Immediate upload failed; record stays dirty for retry',
           extra: {'operation': operation, 'recordId': activityId},
         );
-        _sentry.reportNetworkError(
-          e,
-          url: 'supabase:activities:$operation',
-          method: 'UPSERT',
-          stackTrace: stackTrace,
-        );
       }
     }());
   }
@@ -2005,9 +1945,9 @@ class ActivitiesRepository with SyncableRepository {
       );
 
       if (activities.isEmpty) {
-        _logger.debug(
+        _report.debug(
           'No local provider activities found - attempting remote hydration',
-          context: 'ACTIVITIES_REPOSITORY',
+          area: 'activities',
           data: {
             'userId': userId,
             'provider': provider,
@@ -2045,9 +1985,9 @@ class ActivitiesRepository with SyncableRepository {
         );
       }
 
-      _logger.info(
+      _report.info(
         'Retrieved activities by provider',
-        context: 'ACTIVITIES_REPOSITORY',
+        area: 'activities',
         data: {
           'userId': userId,
           'provider': provider,
@@ -2120,9 +2060,9 @@ class ActivitiesRepository with SyncableRepository {
         }
       }
 
-      _logger.debug(
+      _report.debug(
         'Removed duplicate provider activities',
-        context: 'ACTIVITIES_REPOSITORY',
+        area: 'activities',
         data: {
           'userId': userId,
           'provider': provider,
@@ -2231,9 +2171,9 @@ class ActivitiesRepository with SyncableRepository {
       remoteById.values.toList(growable: false),
     );
 
-    _logger.info(
+    _report.info(
       'Hydrated provider activities from Supabase',
-      context: 'ACTIVITIES_REPOSITORY',
+      area: 'activities',
       data: {
         'userId': userId,
         'providerVariants': providerVariants,
@@ -2252,9 +2192,9 @@ class ActivitiesRepository with SyncableRepository {
     domain.Activity activity,
   ) async {
     try {
-      _logger.info(
+      _report.info(
         'Updating activity from provider sync',
-        context: 'ACTIVITIES_REPOSITORY',
+        area: 'activities',
         data: {
           'activityId': activity.id,
           'provider': activity.syncedFromProvider,
@@ -2314,18 +2254,12 @@ class ActivitiesRepository with SyncableRepository {
               'recordId': activityWithFlags.id,
             },
           );
-          _sentry.reportNetworkError(
-            e,
-            url: 'supabase:activities:provider_update',
-            method: 'UPSERT',
-            stackTrace: stackTrace,
-          );
         }
       }());
 
-      _logger.info(
+      _report.info(
         'Activity updated from provider',
-        context: 'ACTIVITIES_REPOSITORY',
+        area: 'activities',
         data: {'activityId': activity.id},
       );
 
@@ -2345,9 +2279,9 @@ class ActivitiesRepository with SyncableRepository {
   /// Soft-delete an activity that was removed from provider
   Future<void> softDeleteFromProvider(String activityId) async {
     try {
-      _logger.info(
+      _report.info(
         'Soft-deleting activity from provider',
-        context: 'ACTIVITIES_REPOSITORY',
+        area: 'activities',
         data: {'activityId': activityId},
       );
 
@@ -2368,9 +2302,9 @@ class ActivitiesRepository with SyncableRepository {
         operation: 'provider_soft_delete',
       );
 
-      _logger.info(
+      _report.info(
         'Activity soft-deleted from provider',
-        context: 'ACTIVITIES_REPOSITORY',
+        area: 'activities',
         data: {'activityId': activityId},
       );
     } catch (e, stackTrace) {
@@ -2396,9 +2330,9 @@ class ActivitiesRepository with SyncableRepository {
     domain.Activity incoming,
   ) async {
     try {
-      _logger.info(
+      _report.info(
         'Reviving tombstoned activity from provider completion signal',
-        context: 'ACTIVITIES_REPOSITORY',
+        area: 'activities',
         data: {
           'activityId': activityId,
           'provider': incoming.syncedFromProvider,
@@ -2466,9 +2400,9 @@ class ActivitiesRepository with SyncableRepository {
                   updatedAt: Value(now),
                 ),
               );
-      _logger.info(
+      _report.info(
         'Soft-hid provider activities on disconnect (Q-INT2)',
-        context: 'ACTIVITIES_REPOSITORY',
+        area: 'activities',
         data: {'provider': provider, 'hidden': hidden},
       );
       return hidden;
@@ -2515,9 +2449,9 @@ class ActivitiesRepository with SyncableRepository {
   /// Clear nutrition refresh flag after regeneration
   Future<void> clearNutritionRefreshFlag(String activityId) async {
     try {
-      _logger.info(
+      _report.info(
         'Clearing nutrition refresh flag',
-        context: 'ACTIVITIES_REPOSITORY',
+        area: 'activities',
         data: {'activityId': activityId},
       );
 
@@ -2538,9 +2472,9 @@ class ActivitiesRepository with SyncableRepository {
         operation: 'nutrition_refresh_cleared',
       );
 
-      _logger.info(
+      _report.info(
         'Nutrition refresh flag cleared',
-        context: 'ACTIVITIES_REPOSITORY',
+        area: 'activities',
         data: {'activityId': activityId},
       );
     } catch (e, stackTrace) {
@@ -2755,9 +2689,9 @@ class ActivitiesRepository with SyncableRepository {
         // Save brick activity and get generated ID
         final brickId = await _saveToDrift(brickActivity);
 
-        _logger.info(
+        _report.info(
           'Created brick activity',
-          context: 'ACTIVITIES_REPOSITORY',
+          area: 'activities',
           data: {
             'brickId': brickId,
             'segmentCount': segments.length,
@@ -2778,9 +2712,9 @@ class ActivitiesRepository with SyncableRepository {
           await _saveToDrift(archivedActivity);
         }
 
-        _logger.info(
+        _report.info(
           'Archived original activities for brick',
-          context: 'ACTIVITIES_REPOSITORY',
+          area: 'activities',
           data: {'brickId': brickId, 'archivedCount': activities.length},
         );
 
@@ -2944,15 +2878,15 @@ class ActivitiesRepository with SyncableRepository {
                 Duration(minutes: segment.durationMinutes),
               );
             }
-            _logger.info(
+            _report.info(
               'Decomposed fresh brick into standalone legs',
-              context: 'ACTIVITIES_REPOSITORY',
+              area: 'activities',
               data: {'brickId': brickId, 'legCount': sorted.length},
             );
           } else {
-            _logger.debug(
+            _report.debug(
               'No archived activities or segments found for brick',
-              context: 'ACTIVITIES_REPOSITORY',
+              area: 'activities',
               data: {'brickId': brickId},
             );
           }
@@ -2982,9 +2916,9 @@ class ActivitiesRepository with SyncableRepository {
             ))
             .write(const ActivitiesTableCompanion(brickId: Value(null)));
 
-        _logger.info(
+        _report.info(
           'Restored archived activities',
-          context: 'ACTIVITIES_REPOSITORY',
+          area: 'activities',
           data: {
             'brickId': brickId,
             'restoredCount': archivedActivities.length,
@@ -3009,9 +2943,9 @@ class ActivitiesRepository with SyncableRepository {
           ),
         );
 
-        _logger.info(
+        _report.info(
           'Tombstoned brick activity in Drift',
-          context: 'ACTIVITIES_REPOSITORY',
+          area: 'activities',
           data: {'brickId': brickId},
         );
       });
@@ -3028,12 +2962,6 @@ class ActivitiesRepository with SyncableRepository {
               area: 'activities',
               message: 'Immediate upload failed; record stays dirty for retry',
               extra: {'operation': 'delete', 'recordId': brickId},
-            );
-            _sentry.reportNetworkError(
-              e,
-              url: 'supabase:activities:delete',
-              method: 'DELETE',
-              stackTrace: stackTrace,
             );
           }
         }());

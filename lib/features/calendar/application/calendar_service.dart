@@ -6,16 +6,16 @@ import '../../activities/application/activities_service.dart';
 import '../../../shared/domain/activity_type.dart';
 import '../../../shared/database/app_database.dart';
 import '../../../shared/database/database_provider.dart';
-import '../../../shared/services/logging_service.dart';
+import '../../../shared/services/report/report.dart';
 
 /// Service for managing calendar views, events, and carb loading plans
 /// Delegates activity CRUD operations to ActivitiesService
 class CalendarService {
   final AppDatabase _database;
-  final AppLogger _logger;
+  final Report _report;
   final ActivitiesService _activitiesService;
 
-  CalendarService(this._database, this._logger, this._activitiesService);
+  CalendarService(this._database, this._report, this._activitiesService);
 
   /// Get activities for a specific date range - delegates to ActivitiesService
   Future<List<domain.Activity>> getActivitiesForDateRange(
@@ -104,7 +104,11 @@ class CalendarService {
         activityId: activityId,
       );
     } catch (e) {
-      _logger.error('Error deleting activity: $activityId', error: e);
+      _report.fault(
+        e,
+        area: 'calendar',
+        message: 'Error deleting activity: $activityId',
+      );
       rethrow;
     }
   }
@@ -119,10 +123,11 @@ class CalendarService {
 
       return event != null ? _mapToEventDomain(event) : null;
     } catch (e, stackTrace) {
-      _logger.error(
-        'Error getting event for activity: $activityId',
-        error: e,
+      _report.fault(
+        e,
         stackTrace: stackTrace,
+        area: 'calendar',
+        message: 'Error getting event for activity: $activityId',
       );
       rethrow;
     }
@@ -138,7 +143,11 @@ class CalendarService {
 
       return event != null ? _mapToEventDomain(event) : null;
     } catch (e) {
-      _logger.error('Error getting event by ID: $eventId', error: e);
+      _report.fault(
+        e,
+        area: 'calendar',
+        message: 'Error getting event by ID: $eventId',
+      );
       rethrow;
     }
   }
@@ -155,7 +164,7 @@ class CalendarService {
 
       return events.map(_mapToEventDomain).toList();
     } catch (e) {
-      _logger.error('Error getting all events', error: e);
+      _report.fault(e, area: 'calendar', message: 'Error getting all events');
       rethrow;
     }
   }
@@ -188,7 +197,11 @@ class CalendarService {
 
       return eventsInWeek;
     } catch (e) {
-      _logger.error('Error getting events for week', error: e);
+      _report.fault(
+        e,
+        area: 'calendar',
+        message: 'Error getting events for week',
+      );
       rethrow;
     }
   }
@@ -259,7 +272,7 @@ class CalendarService {
 
       return createdEvent;
     } catch (e) {
-      _logger.error('Error creating event', error: e);
+      _report.fault(e, area: 'calendar', message: 'Error creating event');
       rethrow;
     }
   }
@@ -293,7 +306,7 @@ class CalendarService {
         _database.eventsTable,
       )..where((tbl) => tbl.id.equals(event.id))).write(companion);
     } catch (e) {
-      _logger.error('Error updating event', error: e);
+      _report.fault(e, area: 'calendar', message: 'Error updating event');
       rethrow;
     }
   }
@@ -388,7 +401,11 @@ class CalendarService {
         );
       }
     } catch (e) {
-      _logger.error('Error creating carb loading plan', error: e);
+      _report.fault(
+        e,
+        area: 'calendar',
+        message: 'Error creating carb loading plan',
+      );
       rethrow;
     }
   }
@@ -431,7 +448,10 @@ class CalendarService {
       final plan = await planQuery.getSingleOrNull();
 
       if (plan == null) {
-        _logger.warning('No carb loading plan found for event: $eventId');
+        _report.degraded(
+          LoggedFault('No carb loading plan found for event: $eventId'),
+          area: 'calendar',
+        );
         return;
       }
 
@@ -468,7 +488,11 @@ class CalendarService {
         ),
       );
     } catch (e) {
-      _logger.error('Error deleting carb loading plan', error: e);
+      _report.fault(
+        e,
+        area: 'calendar',
+        message: 'Error deleting carb loading plan',
+      );
       rethrow;
     }
   }
@@ -486,9 +510,10 @@ class CalendarService {
         _database.carbLoadingDaysTable,
       )..where((tbl) => tbl.id.equals(carbLoadingDayId))).go();
     } catch (e) {
-      _logger.error(
-        'Error deleting carb loading day: $carbLoadingDayId',
-        error: e,
+      _report.fault(
+        e,
+        area: 'calendar',
+        message: 'Error deleting carb loading day: $carbLoadingDayId',
       );
       rethrow;
     }
@@ -503,9 +528,10 @@ class CalendarService {
 
       return await query.getSingleOrNull();
     } catch (e) {
-      _logger.error(
-        'Error getting carb loading plan for event: $eventId',
-        error: e,
+      _report.fault(
+        e,
+        area: 'calendar',
+        message: 'Error getting carb loading plan for event: $eventId',
       );
       rethrow;
     }
@@ -520,9 +546,10 @@ class CalendarService {
 
       return await query.get();
     } catch (e) {
-      _logger.error(
-        'Error getting carb loading days for plan: $planId',
-        error: e,
+      _report.fault(
+        e,
+        area: 'calendar',
+        message: 'Error getting carb loading days for plan: $planId',
       );
       rethrow;
     }
@@ -566,7 +593,11 @@ class CalendarService {
           .map((row) => row.readTable(_database.carbLoadingDaysTable))
           .toList();
     } catch (e) {
-      _logger.error('Error getting carb loading days for range', error: e);
+      _report.fault(
+        e,
+        area: 'calendar',
+        message: 'Error getting carb loading days for range',
+      );
       rethrow;
     }
   }
@@ -610,7 +641,7 @@ class CalendarService {
 /// Provider for CalendarService
 final calendarServiceProvider = Provider<CalendarService>((ref) {
   final database = ref.watch(appDatabaseProvider);
-  final appLogger = ref.watch(appLoggerProvider);
+  final report = ref.watch(reportProvider);
   final activitiesService = ref.watch(activitiesServiceProvider);
-  return CalendarService(database, appLogger, activitiesService);
+  return CalendarService(database, report, activitiesService);
 });

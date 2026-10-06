@@ -1,20 +1,19 @@
 import 'package:flutter_test/flutter_test.dart';
 import 'package:mealvana_endurance/features/food_preferences/data/food_preferences_repository.dart';
 import 'package:mealvana_endurance/shared/database/app_database.dart';
-import 'package:mealvana_endurance/shared/services/sentry/sentry_reporter.dart';
 import 'package:drift/native.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 import 'package:supabase_flutter/supabase_flutter.dart';
 import 'package:mocktail/mocktail.dart';
 
+import '../helpers/fakes/recording_report.dart';
+
 // Mocks
 class MockSupabaseClient extends Mock implements SupabaseClient {}
 
-class MockSentryReporter extends Mock implements SentryReporter {}
-
 void main() {
   late AppDatabase database;
-  late MockSentryReporter mockSentry;
+  late RecordingReport report;
 
   const testUserId = 'test-user-123';
 
@@ -26,32 +25,9 @@ void main() {
     database = AppDatabase.forTesting(NativeDatabase.memory());
 
     // Create mocks
-    mockSentry = MockSentryReporter();
+    report = RecordingReport();
 
     // Set up Sentry to not throw on method calls
-    when(
-      () => mockSentry.addBreadcrumb(
-        message: any(named: 'message'),
-        category: any(named: 'category'),
-        data: any(named: 'data'),
-      ),
-    ).thenReturn(null);
-    when(
-      () => mockSentry.reportDatabaseError(
-        any(),
-        operation: any(named: 'operation'),
-        table: any(named: 'table'),
-        stackTrace: any(named: 'stackTrace'),
-      ),
-    ).thenAnswer((_) async {});
-    when(
-      () => mockSentry.reportNetworkError(
-        any(),
-        url: any(named: 'url'),
-        method: any(named: 'method'),
-        stackTrace: any(named: 'stackTrace'),
-      ),
-    ).thenAnswer((_) async {});
   });
 
   tearDown(() async {
@@ -64,7 +40,7 @@ void main() {
       final repository = FoodPreferencesRepository(
         supabase: mockSupabase,
         database: database,
-        sentry: mockSentry,
+        report: report,
       );
 
       expect(repository.repositoryKey, 'food_preferences');
@@ -75,7 +51,7 @@ void main() {
       final repository = FoodPreferencesRepository(
         supabase: mockSupabase,
         database: database,
-        sentry: mockSentry,
+        report: report,
       );
 
       expect(repository.dependencies, ['users', 'template_foods']);
@@ -86,7 +62,7 @@ void main() {
       final repository = FoodPreferencesRepository(
         supabase: mockSupabase,
         database: database,
-        sentry: mockSentry,
+        report: report,
       );
 
       final isStale = await repository.isStale();
@@ -98,7 +74,7 @@ void main() {
       final repository = FoodPreferencesRepository(
         supabase: mockSupabase,
         database: database,
-        sentry: mockSentry,
+        report: report,
       );
 
       await repository.setLastSyncTime(DateTime.now());
@@ -113,7 +89,7 @@ void main() {
         final repository = FoodPreferencesRepository(
           supabase: mockSupabase,
           database: database,
-          sentry: mockSentry,
+          report: report,
         );
 
         final oldSync = DateTime.now().subtract(const Duration(hours: 25));
@@ -130,7 +106,7 @@ void main() {
       final repository = FoodPreferencesRepository(
         supabase: mockSupabase,
         database: database,
-        sentry: mockSentry,
+        report: report,
       );
 
       final timestamp = await repository.getLastSyncTime();
@@ -142,7 +118,7 @@ void main() {
       final repository = FoodPreferencesRepository(
         supabase: mockSupabase,
         database: database,
-        sentry: mockSentry,
+        report: report,
       );
 
       final now = DateTime.now();
@@ -160,7 +136,7 @@ void main() {
       final repository = FoodPreferencesRepository(
         supabase: mockSupabase,
         database: database,
-        sentry: mockSentry,
+        report: report,
       );
 
       // Act

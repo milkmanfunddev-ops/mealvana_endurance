@@ -4,16 +4,15 @@ import 'package:mocktail/mocktail.dart';
 import 'package:mealvana_endurance/shared/services/version_check_service.dart';
 import 'package:mealvana_endurance/shared/models/version_check_result.dart';
 import 'package:mealvana_endurance/shared/database/app_database.dart';
-import 'package:mealvana_endurance/shared/services/logging_service.dart';
 import 'package:mealvana_endurance/shared/services/dirty_record_backup_service.dart';
 import 'package:package_info_plus/package_info_plus.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 import 'package:supabase_flutter/supabase_flutter.dart';
 
+import '../helpers/fakes/recording_report.dart';
+
 // Mock classes
 class MockSupabaseClient extends Mock implements SupabaseClient {}
-
-class MockAppLogger extends Mock implements AppLogger {}
 
 class MockDirtyRecordBackupService extends Mock
     implements DirtyRecordBackupService {}
@@ -89,7 +88,7 @@ void main() {
 
       final mockSupabase = MockSupabaseClient();
       final database = FakeAppDatabase();
-      final mockLogger = MockAppLogger();
+      final report = RecordingReport();
       final mockBackupService = MockDirtyRecordBackupService();
       final container = ProviderContainer();
 
@@ -97,7 +96,7 @@ void main() {
         return VersionCheckService(
           supabase: mockSupabase,
           database: database,
-          logger: mockLogger,
+          report: report,
           backupService: mockBackupService,
           ref: ref,
         );
@@ -121,7 +120,7 @@ void main() {
       // Arrange
       final mockSupabase = MockSupabaseClient();
       final database = FakeAppDatabase();
-      final mockLogger = MockAppLogger();
+      final report = RecordingReport();
       final mockBackupService = MockDirtyRecordBackupService();
       final container = ProviderContainer();
 
@@ -130,7 +129,7 @@ void main() {
         return VersionCheckService(
           supabase: mockSupabase,
           database: database,
-          logger: mockLogger,
+          report: report,
           backupService: mockBackupService,
           ref: ref,
         );
@@ -159,7 +158,7 @@ void main() {
 
         final mockSupabase = MockSupabaseClient();
         final database = FakeAppDatabase(); // Local schema = 3
-        final mockLogger = MockAppLogger();
+        final report = RecordingReport();
         final mockBackupService = MockDirtyRecordBackupService();
         final container = ProviderContainer();
 
@@ -167,7 +166,7 @@ void main() {
           return VersionCheckService(
             supabase: mockSupabase,
             database: database,
-            logger: mockLogger,
+            report: report,
             backupService: mockBackupService,
             ref: ref,
           );
@@ -194,7 +193,7 @@ void main() {
 
         final mockSupabase = MockSupabaseClient();
         final database = FakeAppDatabase(); // Local schema = 3
-        final mockLogger = MockAppLogger();
+        final report = RecordingReport();
         final mockBackupService = MockDirtyRecordBackupService();
         final container = ProviderContainer();
 
@@ -202,7 +201,7 @@ void main() {
           return VersionCheckService(
             supabase: mockSupabase,
             database: database,
-            logger: mockLogger,
+            report: report,
             backupService: mockBackupService,
             ref: ref,
           );
@@ -228,7 +227,7 @@ void main() {
 
         final mockSupabase = MockSupabaseClient();
         final database = FakeAppDatabase(); // Local schema = 3
-        final mockLogger = MockAppLogger();
+        final report = RecordingReport();
         final mockBackupService = MockDirtyRecordBackupService();
         final container = ProviderContainer();
 
@@ -236,7 +235,7 @@ void main() {
           return VersionCheckService(
             supabase: mockSupabase,
             database: database,
-            logger: mockLogger,
+            report: report,
             backupService: mockBackupService,
             ref: ref,
           );
@@ -263,7 +262,7 @@ void main() {
 
         final mockSupabase = MockSupabaseClient();
         final database = FakeAppDatabaseV4(); // Local schema = 4
-        final mockLogger = MockAppLogger();
+        final report = RecordingReport();
         final mockBackupService = MockDirtyRecordBackupService();
         final container = ProviderContainer();
 
@@ -271,7 +270,7 @@ void main() {
           return VersionCheckService(
             supabase: mockSupabase,
             database: database,
-            logger: mockLogger,
+            report: report,
             backupService: mockBackupService,
             ref: ref,
           );

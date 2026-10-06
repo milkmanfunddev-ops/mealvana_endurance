@@ -3,10 +3,11 @@ import 'package:drift/drift.dart' show Value;
 import 'package:drift/native.dart';
 import 'package:mealvana_endurance/features/nutrition_plan/data/food_repository.dart';
 import 'package:mealvana_endurance/shared/database/app_database.dart';
-import 'package:mealvana_endurance/shared/services/logging_service.dart';
 import 'package:mocktail/mocktail.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 import 'package:supabase_flutter/supabase_flutter.dart';
+
+import '../helpers/fakes/recording_report.dart';
 
 // Mocks
 class MockSupabaseClient extends Mock implements SupabaseClient {}
@@ -14,14 +15,12 @@ class MockSupabaseClient extends Mock implements SupabaseClient {}
 class MockPostgrestFilterBuilder extends Mock
     implements PostgrestFilterBuilder {}
 
-class MockAppLogger extends Mock implements AppLogger {}
-
 void main() {
   TestWidgetsFlutterBinding.ensureInitialized();
 
   late MockSupabaseClient mockSupabase;
   late AppDatabase database;
-  late MockAppLogger mockLogger;
+  late RecordingReport report;
   late FoodRepository repository;
 
   Future<void> insertLocalFood({
@@ -39,42 +38,9 @@ void main() {
 
     mockSupabase = MockSupabaseClient();
     database = AppDatabase.forTesting(NativeDatabase.memory());
-    mockLogger = MockAppLogger();
+    report = RecordingReport();
 
-    // Setup default logger behavior to avoid null errors
-    when(
-      () => mockLogger.info(
-        any(),
-        context: any(named: 'context'),
-        data: any(named: 'data'),
-      ),
-    ).thenReturn(null);
-    when(
-      () => mockLogger.debug(
-        any(),
-        context: any(named: 'context'),
-        data: any(named: 'data'),
-      ),
-    ).thenReturn(null);
-    when(
-      () => mockLogger.error(
-        any(),
-        context: any(named: 'context'),
-        error: any(named: 'error'),
-        stackTrace: any(named: 'stackTrace'),
-        data: any(named: 'data'),
-      ),
-    ).thenReturn(null);
-    when(
-      () => mockLogger.warning(
-        any(),
-        context: any(named: 'context'),
-        error: any(named: 'error'),
-        data: any(named: 'data'),
-      ),
-    ).thenReturn(null);
-
-    repository = FoodRepository(mockSupabase, database, logger: mockLogger);
+    repository = FoodRepository(mockSupabase, database, report: report);
   });
 
   tearDown(() async {
@@ -157,15 +123,10 @@ void main() {
       expect(result.success, isFalse);
       expect(result.error, contains('Network error'));
 
-      // Verify error was logged
-      verify(
-        () => mockLogger.error(
-          any(),
-          context: 'FOOD_REPOSITORY',
-          error: any(named: 'error'),
-          stackTrace: any(named: 'stackTrace'),
-        ),
-      ).called(1);
+      // Verify the failure was reported as a Fault
+      final fault = report.faults.single;
+      expect(fault.message, 'Failed to sync foods from remote');
+      expect(fault.error.toString(), contains('Network error'));
     });
 
     test('logs info message indicating global reference data', () async {
@@ -179,13 +140,14 @@ void main() {
       await repository.syncFromRemote(userId);
 
       // Assert - verify that we log a note about global reference data
-      verify(
-        () => mockLogger.info(
-          'Syncing foods from Supabase',
-          context: 'FOOD_REPOSITORY',
-          data: {'note': 'Global reference data - userId not used'},
-        ),
-      ).called(1);
+      final infos = report.calls.where(
+        (c) =>
+            c.severity == 'info' && c.message == 'Syncing foods from Supabase',
+      );
+      expect(infos, hasLength(1));
+      expect(infos.single.data, {
+        'note': 'Global reference data - userId not used',
+      });
     });
   });
 
@@ -203,12 +165,14 @@ void main() {
       expect(result.error, isNull);
 
       // Verify debug log was called
-      verify(
-        () => mockLogger.debug(
-          'Foods are read-only - no dirty records to upload',
-          context: 'FOOD_REPOSITORY',
+      expect(
+        report.calls.where(
+          (c) =>
+              c.severity == 'debug' &&
+              c.message == 'Foods are read-only - no dirty records to upload',
         ),
-      ).called(1);
+        hasLength(1),
+      );
     });
 
     test('does not make any Supabase calls', () async {

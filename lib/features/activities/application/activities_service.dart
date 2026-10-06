@@ -7,7 +7,7 @@ import '../domain/activity.dart' as domain;
 import '../domain/brick_metadata.dart';
 import '../../../shared/database/app_database.dart';
 import '../../../shared/database/database_provider.dart';
-import '../../../shared/services/logging_service.dart';
+import '../../../shared/services/report/report.dart';
 import '../../../shared/domain/write_consistency.dart';
 import '../data/activities_repository.dart';
 import '../../coach_mode/data/coach_repository.dart';
@@ -18,7 +18,7 @@ part 'activities_service.g.dart';
 ActivitiesService activitiesService(Ref ref) {
   return ActivitiesService(
     ref.read(appDatabaseProvider),
-    ref.read(appLoggerProvider),
+    ref.read(reportProvider),
     ref.read(activitiesRepositoryProvider),
     ref.read(coachRepositoryProvider),
   );
@@ -28,13 +28,13 @@ ActivitiesService activitiesService(Ref ref) {
 /// Handles all activity-related operations including CRUD for running, cycling, and swimming activities
 class ActivitiesService {
   final AppDatabase _database;
-  final AppLogger _logger;
+  final Report _report;
   final ActivitiesRepository _activitiesRepository;
   final CoachRepository _coachRepository;
 
   ActivitiesService(
     this._database,
-    this._logger,
+    this._report,
     this._activitiesRepository,
     this._coachRepository,
   );
@@ -73,7 +73,11 @@ class ActivitiesService {
         activities: mapped,
       );
     } catch (e) {
-      _logger.error('Error getting activities for date range', error: e);
+      _report.fault(
+        e,
+        area: 'activities',
+        message: 'Error getting activities for date range',
+      );
       rethrow;
     }
   }
@@ -117,7 +121,11 @@ class ActivitiesService {
         activities: mapped,
       );
     } catch (e) {
-      _logger.error('Error getting all activities', error: e);
+      _report.fault(
+        e,
+        area: 'activities',
+        message: 'Error getting all activities',
+      );
       rethrow;
     }
   }
@@ -143,13 +151,17 @@ class ActivitiesService {
         )..where((tbl) => tbl.id.equals(draft.id))).go();
       }
 
-      _logger.info(
+      _report.info(
         'Cleaned up ${drafts.length} draft activities',
-        context: 'ACTIVITIES_SERVICE',
+        area: 'activities',
       );
       return drafts.length;
     } catch (e) {
-      _logger.error('Error cleaning up draft activities', error: e);
+      _report.fault(
+        e,
+        area: 'activities',
+        message: 'Error cleaning up draft activities',
+      );
       return 0;
     }
   }
@@ -219,9 +231,9 @@ class ActivitiesService {
       }
 
       if (segmentRows.isEmpty) {
-        _logger.debug(
+        _report.debug(
           'Orphan brick activity has no segment data; keeping visible',
-          context: 'ACTIVITIES_SERVICE',
+          area: 'activities',
           data: {'brickId': activity.id, 'title': activity.title},
         );
         hydrated.add(activity);
@@ -284,9 +296,9 @@ class ActivitiesService {
       return const [];
     }
 
-    _logger.debug(
+    _report.debug(
       'Recovered brick metadata from legacy title IDs',
-      context: 'ACTIVITIES_SERVICE',
+      area: 'activities',
       data: {
         'brickId': brick.id,
         'segmentIds': segmentIds,
@@ -351,9 +363,9 @@ class ActivitiesService {
       ordered.add(match);
     }
 
-    _logger.debug(
+    _report.debug(
       'Recovered brick metadata from archived rows missing brick_id',
-      context: 'ACTIVITIES_SERVICE',
+      area: 'activities',
       data: {
         'brickId': brick.id,
         'sports': sports,
@@ -424,11 +436,11 @@ class ActivitiesService {
           ),
         );
       } catch (e) {
-        _logger.warning(
-          'Failed to relink segment row to brick',
-          context: 'ACTIVITIES_SERVICE',
-          error: e,
-          data: {'brickId': brickId, 'segmentId': row.id},
+        _report.degraded(
+          e,
+          area: 'activities',
+          message: 'Failed to relink segment row to brick',
+          extra: {'brickId': brickId, 'segmentId': row.id},
         );
       }
     }
@@ -474,11 +486,11 @@ class ActivitiesService {
         ),
       );
     } catch (e) {
-      _logger.warning(
-        'Failed to persist reconstructed brick metadata',
-        context: 'ACTIVITIES_SERVICE',
-        error: e,
-        data: {'brickId': brickId},
+      _report.degraded(
+        e,
+        area: 'activities',
+        message: 'Failed to persist reconstructed brick metadata',
+        extra: {'brickId': brickId},
       );
     }
   }
@@ -535,9 +547,9 @@ class ActivitiesService {
     String activityId,
   ) async {
     try {
-      _logger.info(
+      _report.info(
         'Fetching activity by ID',
-        context: 'ACTIVITIES_SERVICE',
+        area: 'activities',
         data: {'userId': userId, 'activityId': activityId},
       );
 
@@ -553,10 +565,10 @@ class ActivitiesService {
       final activity = await query.getSingleOrNull();
 
       if (activity == null) {
-        _logger.warning(
-          'Activity not found in database',
-          context: 'ACTIVITIES_SERVICE',
-          data: {
+        _report.degraded(
+          LoggedFault('Activity not found in database'),
+          area: 'activities',
+          extra: {
             'userId': userId,
             'activityId': activityId,
             'searchedWithDeletedAtNull': true,
@@ -565,9 +577,9 @@ class ActivitiesService {
         return null;
       }
 
-      _logger.info(
+      _report.info(
         'Activity found successfully',
-        context: 'ACTIVITIES_SERVICE',
+        area: 'activities',
         data: {
           'activityId': activity.id,
           'title': activity.title,
@@ -582,11 +594,11 @@ class ActivitiesService {
       );
       return hydrated.isEmpty ? null : hydrated.first;
     } catch (e) {
-      _logger.error(
-        'Error getting activity by ID',
-        context: 'ACTIVITIES_SERVICE',
-        error: e,
-        data: {'userId': userId, 'activityId': activityId},
+      _report.fault(
+        e,
+        area: 'activities',
+        message: 'Error getting activity by ID',
+        extra: {'userId': userId, 'activityId': activityId},
       );
       rethrow;
     }
@@ -647,10 +659,10 @@ class ActivitiesService {
             );
 
         if (!hasActiveRelationship) {
-          _logger.error(
-            'Coach does not have active relationship with athlete',
-            context: 'ACTIVITIES_SERVICE',
-            data: {'coachUserId': userId, 'athleteUserId': forUserId},
+          _report.fault(
+            LoggedFault('Coach does not have active relationship with athlete'),
+            area: 'activities',
+            extra: {'coachUserId': userId, 'athleteUserId': forUserId},
           );
           throw Exception(
             'Not authorized to create activities for this athlete',
@@ -693,9 +705,9 @@ class ActivitiesService {
         updatedAt: now,
       );
 
-      _logger.info(
+      _report.info(
         'Resolved write consistency',
-        context: 'ACTIVITIES_SERVICE',
+        area: 'activities',
         data: {
           'entity': 'activity',
           'operation': 'create',
@@ -712,10 +724,11 @@ class ActivitiesService {
             resolvedConsistency == WriteConsistency.remoteAckRequired,
       );
     } catch (e, stackTrace) {
-      _logger.error(
-        'Error creating activity',
-        error: e,
+      _report.fault(
+        e,
         stackTrace: stackTrace,
+        area: 'activities',
+        message: 'Error creating activity',
       );
       rethrow;
     }
@@ -817,9 +830,9 @@ class ActivitiesService {
         throw ArgumentError('Segment order must match activities length');
       }
 
-      _logger.info(
+      _report.info(
         'Creating brick activity from existing activities',
-        context: 'ACTIVITIES_SERVICE',
+        area: 'activities',
         data: {
           'activityCount': activities.length,
           'segmentOrder': segmentOrder,
@@ -832,11 +845,11 @@ class ActivitiesService {
         segmentOrder: segmentOrder,
       );
     } catch (e, stackTrace) {
-      _logger.error(
-        'Error creating brick activity',
-        context: 'ACTIVITIES_SERVICE',
-        error: e,
+      _report.fault(
+        e,
         stackTrace: stackTrace,
+        area: 'activities',
+        message: 'Error creating brick activity',
       );
       rethrow;
     }
@@ -869,10 +882,10 @@ class ActivitiesService {
             );
 
         if (!hasActiveRelationship) {
-          _logger.error(
-            'Coach does not have active relationship with athlete',
-            context: 'ACTIVITIES_SERVICE',
-            data: {
+          _report.fault(
+            LoggedFault('Coach does not have active relationship with athlete'),
+            area: 'activities',
+            extra: {
               'coachUserId': currentUserId,
               'athleteUserId': activity.userId,
             },
@@ -883,9 +896,9 @@ class ActivitiesService {
         }
       }
 
-      _logger.info(
+      _report.info(
         'Resolved write consistency',
-        context: 'ACTIVITIES_SERVICE',
+        area: 'activities',
         data: {
           'entity': 'activity',
           'operation': 'update',
@@ -903,10 +916,11 @@ class ActivitiesService {
             resolvedConsistency == WriteConsistency.remoteAckRequired,
       );
     } catch (e, stackTrace) {
-      _logger.error(
-        'Error updating activity',
-        error: e,
+      _report.fault(
+        e,
         stackTrace: stackTrace,
+        area: 'activities',
+        message: 'Error updating activity',
       );
       rethrow;
     }
@@ -943,10 +957,10 @@ class ActivitiesService {
             );
 
         if (!hasActiveRelationship) {
-          _logger.error(
-            'Coach does not have active relationship with athlete',
-            context: 'ACTIVITIES_SERVICE',
-            data: {
+          _report.fault(
+            LoggedFault('Coach does not have active relationship with athlete'),
+            area: 'activities',
+            extra: {
               'coachUserId': currentUserId,
               'athleteUserId': activityOwnerId,
             },
@@ -957,9 +971,9 @@ class ActivitiesService {
         }
       }
 
-      _logger.info(
+      _report.info(
         'Resolved write consistency',
-        context: 'ACTIVITIES_SERVICE',
+        area: 'activities',
         data: {
           'entity': 'activity',
           'operation': 'delete',
@@ -978,10 +992,11 @@ class ActivitiesService {
         remoteUserId: ownerUserId,
       );
     } catch (e, stackTrace) {
-      _logger.error(
-        'Error deleting activity',
-        error: e,
+      _report.fault(
+        e,
         stackTrace: stackTrace,
+        area: 'activities',
+        message: 'Error deleting activity',
       );
       rethrow;
     }

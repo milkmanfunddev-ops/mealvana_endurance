@@ -2,8 +2,6 @@ import 'package:flutter_test/flutter_test.dart';
 import 'package:mealvana_endurance/features/activities/data/activities_repository.dart';
 import 'package:mealvana_endurance/features/activities/application/activity_deduplication_service.dart';
 import 'package:mealvana_endurance/shared/database/app_database.dart';
-import 'package:mealvana_endurance/shared/services/logging_service.dart';
-import 'package:mealvana_endurance/shared/services/sentry/sentry_reporter.dart';
 import 'package:mocktail/mocktail.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 import 'package:supabase_flutter/supabase_flutter.dart';
@@ -15,10 +13,6 @@ class MockSupabaseClient extends Mock implements SupabaseClient {}
 
 class MockAppDatabase extends Mock implements AppDatabase {}
 
-class MockAppLogger extends Mock implements AppLogger {}
-
-class MockSentryReporter extends Mock implements SentryReporter {}
-
 class MockActivityDeduplicationService extends Mock
     implements ActivityDeduplicationService {}
 
@@ -27,8 +21,6 @@ void main() {
 
   late MockSupabaseClient mockSupabase;
   late MockAppDatabase mockDatabase;
-  late MockAppLogger mockLogger;
-  late MockSentryReporter mockSentry;
   late RecordingReport report;
   late ActivitiesRepository repository;
 
@@ -40,59 +32,13 @@ void main() {
   setUp(() {
     mockSupabase = MockSupabaseClient();
     mockDatabase = MockAppDatabase();
-    mockLogger = MockAppLogger();
-    mockSentry = MockSentryReporter();
     report = RecordingReport();
 
     // Setup default logger behavior to avoid null errors
-    when(
-      () => mockLogger.info(
-        any(),
-        context: any(named: 'context'),
-        data: any(named: 'data'),
-      ),
-    ).thenReturn(null);
-    when(
-      () => mockLogger.debug(
-        any(),
-        context: any(named: 'context'),
-        data: any(named: 'data'),
-      ),
-    ).thenReturn(null);
-    when(
-      () => mockLogger.error(
-        any(),
-        context: any(named: 'context'),
-        error: any(named: 'error'),
-        stackTrace: any(named: 'stackTrace'),
-        data: any(named: 'data'),
-      ),
-    ).thenReturn(null);
-    when(
-      () => mockLogger.warning(
-        any(),
-        context: any(named: 'context'),
-        error: any(named: 'error'),
-        data: any(named: 'data'),
-      ),
-    ).thenReturn(null);
-
-    when(
-      () => mockSentry.reportNetworkError(
-        any(),
-        url: any(named: 'url'),
-        method: any(named: 'method'),
-        statusCode: any(named: 'statusCode'),
-        timeout: any(named: 'timeout'),
-        stackTrace: any(named: 'stackTrace'),
-      ),
-    ).thenAnswer((_) async {});
 
     repository = ActivitiesRepository(
       supabase: mockSupabase,
       database: mockDatabase,
-      logger: mockLogger,
-      sentry: mockSentry,
       report: report,
       deduplicationService: MockActivityDeduplicationService(),
     );

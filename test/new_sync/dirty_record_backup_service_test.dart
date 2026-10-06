@@ -3,16 +3,15 @@ import 'package:flutter_test/flutter_test.dart';
 import 'package:mealvana_endurance/shared/models/dirty_record_backup.dart';
 import 'package:mealvana_endurance/shared/models/upload_error.dart';
 import 'package:mealvana_endurance/shared/services/dirty_record_backup_service.dart';
-import 'package:mealvana_endurance/shared/services/logging_service.dart';
 import 'package:path_provider_platform_interface/path_provider_platform_interface.dart';
 
+import '../helpers/fakes/recording_report.dart';
 import '../helpers/mock_path_provider.dart';
 
 void main() {
   TestWidgetsFlutterBinding.ensureInitialized();
 
   late DirtyRecordBackupService service;
-  late AppLogger logger;
   late String tempDir;
 
   setUp(() {
@@ -20,11 +19,8 @@ void main() {
     tempDir = Directory.systemTemp.createTempSync('backup_test_').path;
     PathProviderPlatform.instance = MockPathProvider(tempDir);
 
-    // Create logger (using real implementation for testing)
-    logger = PrettyAppLogger();
-
     // Create service
-    service = DirtyRecordBackupService(logger: logger);
+    service = DirtyRecordBackupService(report: RecordingReport());
   });
 
   tearDown(() async {

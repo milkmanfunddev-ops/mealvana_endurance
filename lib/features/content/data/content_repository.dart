@@ -5,14 +5,18 @@ import 'package:shared_preferences/shared_preferences.dart';
 import 'package:supabase_flutter/supabase_flutter.dart';
 import '../domain/app_content.dart';
 import '../../../shared/services/app_external_deps.dart';
-import 'package:mealvana_endurance/core/utils/debug_logger.dart';
+import '../../../shared/services/report/report.dart';
 
 part 'content_repository.g.dart';
 
 /// Repository for managing app content with local caching and remote syncing
 /// Uses SharedPreferences for simple content caching instead of Drift database
 class ContentRepository {
-  ContentRepository({required this.supabase, required this.sharedPreferences});
+  ContentRepository({
+    required this.supabase,
+    required this.sharedPreferences,
+    Report? report,
+  }) : _reportOverride = report;
 
   static const String _contentKey = 'app_content_cache';
   static const String _defaultsAssetPath =
@@ -21,6 +25,9 @@ class ContentRepository {
 
   final SupabaseClient supabase;
   final SharedPreferences sharedPreferences;
+  final Report? _reportOverride;
+
+  Report get _report => _reportOverride ?? SentryReport.global;
 
   /// Get the current active content
   Future<AppContent?> getActiveContent({
@@ -57,8 +64,13 @@ class ContentRepository {
         final Map<String, dynamic> contentMap = json.decode(cachedJson);
         return AppContent.fromJson(contentMap);
       }
-    } catch (e) {
-      DebugLogger.error('Error reading cached content: $e');
+    } catch (e, stackTrace) {
+      _report.fault(
+        e,
+        stackTrace: stackTrace,
+        area: 'content',
+        message: 'Error reading cached content',
+      );
     }
     return null;
   }
@@ -68,8 +80,13 @@ class ContentRepository {
     try {
       final contentJson = json.encode(content.toJson());
       await sharedPreferences.setString(_contentKey, contentJson);
-    } catch (e) {
-      DebugLogger.error('Error caching content: $e');
+    } catch (e, stackTrace) {
+      _report.fault(
+        e,
+        stackTrace: stackTrace,
+        area: 'content',
+        message: 'Error caching content',
+      );
     }
   }
 
@@ -92,8 +109,13 @@ class ContentRepository {
       if (response != null) {
         return AppContent.fromJson(response);
       }
-    } catch (e) {
-      DebugLogger.error('Error fetching content from Supabase: $e');
+    } catch (e, stackTrace) {
+      _report.fault(
+        e,
+        stackTrace: stackTrace,
+        area: 'content',
+        message: 'Error fetching content from Supabase',
+      );
     }
     return null;
   }
@@ -113,8 +135,13 @@ class ContentRepository {
         lastUpdated: DateTime.now(),
         isActive: true,
       );
-    } catch (e) {
-      DebugLogger.error('Error loading default content: $e');
+    } catch (e, stackTrace) {
+      _report.fault(
+        e,
+        stackTrace: stackTrace,
+        area: 'content',
+        message: 'Error loading default content',
+      );
       // Return empty content as absolute fallback
       return AppContent(
         version: 1,
@@ -177,5 +204,6 @@ ContentRepository contentRepository(Ref ref) {
   return ContentRepository(
     supabase: deps.supabaseClient,
     sharedPreferences: deps.sharedPreferences,
+    report: ref.read(reportProvider),
   );
 }

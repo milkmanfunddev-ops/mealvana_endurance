@@ -3,7 +3,7 @@ import 'dart:convert';
 import 'package:drift/drift.dart';
 import '../../../shared/database/app_database.dart';
 import '../../../shared/domain/activity_type.dart';
-import '../../../shared/services/logging_service.dart';
+import '../../../shared/services/report/report.dart';
 import '../../nutrition_plan/domain/intensity_distribution.dart';
 import '../domain/activity_title_formatter.dart';
 import '../domain/activity.dart' as domain;
@@ -14,9 +14,11 @@ import '../domain/brick_metadata.dart';
 /// Eliminates duplication between Drift→Domain, JSON→Domain,
 /// Domain→Drift, and Domain→Supabase conversions.
 class ActivityMapper {
-  const ActivityMapper({required AppLogger logger}) : _logger = logger;
+  const ActivityMapper({Report? report}) : _reportOverride = report;
 
-  final AppLogger _logger;
+  final Report? _reportOverride;
+
+  Report get _report => _reportOverride ?? SentryReport.global;
 
   // ========================================================================
   // Core Mapping: Source → Domain
@@ -272,11 +274,11 @@ class ActivityMapper {
           allOutPct: intensityZ5Pct,
         );
       } catch (e) {
-        _logger.warning(
-          'Failed to parse intensity distribution',
-          context: 'ACTIVITY_MAPPER',
-          error: e,
-          data: {
+        _report.degraded(
+          e,
+          area: 'activities',
+          message: 'Failed to parse intensity distribution',
+          extra: {
             'activityId': id,
             'z1z2': intensityZ1Z2Pct,
             'z3z4': intensityZ3Z4Pct,
@@ -719,10 +721,10 @@ class ActivityMapper {
       }
       return null;
     } catch (e) {
-      _logger.warning(
-        'Failed to parse nutrition plan data',
-        context: 'ACTIVITY_MAPPER',
-        error: e,
+      _report.degraded(
+        e,
+        area: 'activities',
+        message: 'Failed to parse nutrition plan data',
       );
       return null;
     }
@@ -747,10 +749,10 @@ class ActivityMapper {
       }
       return null;
     } catch (e) {
-      _logger.warning(
-        'Failed to parse brick metadata',
-        context: 'ACTIVITY_MAPPER',
-        error: e,
+      _report.degraded(
+        e,
+        area: 'activities',
+        message: 'Failed to parse brick metadata',
       );
       return null;
     }
@@ -783,11 +785,11 @@ class ActivityMapper {
         }
       }
     } catch (e) {
-      _logger.warning(
-        'Failed to decode JSON object for upload - sending null',
-        context: 'ACTIVITY_MAPPER',
-        error: e,
-        data: {'fieldName': fieldName, 'activityId': activityId},
+      _report.degraded(
+        e,
+        area: 'activities',
+        message: 'Failed to decode JSON object for upload - sending null',
+        extra: {'fieldName': fieldName, 'activityId': activityId},
       );
     }
 
@@ -855,10 +857,10 @@ class ActivityMapper {
       }
       return null;
     } catch (e) {
-      _logger.error(
-        'Failed to decode JSON map',
-        context: 'ACTIVITY_MAPPER',
-        error: e,
+      _report.fault(
+        e,
+        area: 'activities',
+        message: 'Failed to decode JSON map',
       );
       return null;
     }

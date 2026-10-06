@@ -22,18 +22,15 @@ import 'package:mealvana_endurance/shared/database/app_database.dart'
     show AppDatabase, Activity;
 import 'package:mealvana_endurance/shared/database/database_provider.dart';
 import 'package:mealvana_endurance/shared/domain/activity_type.dart';
-import 'package:mealvana_endurance/shared/services/logging_service.dart';
+import 'package:mealvana_endurance/shared/services/report/report.dart';
 import 'package:mealvana_endurance/shared/services/schema_recovery_service.dart';
-import 'package:mealvana_endurance/shared/services/sentry/sentry_reporter.dart';
 import 'package:mocktail/mocktail.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 import 'package:supabase_flutter/supabase_flutter.dart';
 
+import '../../../../helpers/fakes/recording_report.dart';
+
 class MockSupabaseClient extends Mock implements SupabaseClient {}
-
-class MockAppLogger extends Mock implements AppLogger {}
-
-class MockSentryReporter extends Mock implements SentryReporter {}
 
 class MockCoachRepository extends Mock implements CoachRepository {}
 
@@ -64,51 +61,7 @@ void main() {
   setUp(() {
     SharedPreferences.setMockInitialValues({});
     database = db.AppDatabase.forTesting(NativeDatabase.memory());
-    final logger = MockAppLogger();
-    registerFallbackValue(StackTrace.empty);
-    when(
-      () => logger.info(
-        any(),
-        context: any(named: 'context'),
-        data: any(named: 'data'),
-      ),
-    ).thenReturn(null);
-    when(
-      () => logger.debug(
-        any(),
-        context: any(named: 'context'),
-        data: any(named: 'data'),
-      ),
-    ).thenReturn(null);
-    when(
-      () => logger.warning(
-        any(),
-        context: any(named: 'context'),
-        error: any(named: 'error'),
-        stackTrace: any(named: 'stackTrace'),
-        data: any(named: 'data'),
-      ),
-    ).thenReturn(null);
-    when(
-      () => logger.error(
-        any(),
-        context: any(named: 'context'),
-        error: any(named: 'error'),
-        stackTrace: any(named: 'stackTrace'),
-        data: any(named: 'data'),
-      ),
-    ).thenReturn(null);
-    final sentry = MockSentryReporter();
-    when(
-      () => sentry.reportNetworkError(
-        any(),
-        url: any(named: 'url'),
-        method: any(named: 'method'),
-        statusCode: any(named: 'statusCode'),
-        timeout: any(named: 'timeout'),
-        stackTrace: any(named: 'stackTrace'),
-      ),
-    ).thenAnswer((_) async {});
+    final report = RecordingReport();
 
     // The repository/service providers reach for Supabase.instance, which
     // does not exist under test — hand-build both against the in-memory DB
@@ -116,20 +69,19 @@ void main() {
     final repository = ActivitiesRepository(
       supabase: MockSupabaseClient(),
       database: database,
-      logger: logger,
-      sentry: sentry,
       deduplicationService: MockActivityDeduplicationService(),
+      report: report,
     );
     final service = ActivitiesService(
       database,
-      logger,
+      report,
       repository,
       MockCoachRepository(),
     );
     container = ProviderContainer(
       overrides: [
         appDatabaseProvider.overrideWithValue(database),
-        appLoggerProvider.overrideWithValue(logger),
+        reportProvider.overrideWithValue(report),
         activitiesRepositoryProvider.overrideWithValue(repository),
         activitiesServiceProvider.overrideWithValue(service),
         schemaRecoveryServiceProvider.overrideWithValue(
