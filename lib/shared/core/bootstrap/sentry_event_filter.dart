@@ -19,19 +19,19 @@ SentryEvent? filterSentryEvent(SentryEvent event, {bool? debugBuild}) {
 
   if (isTestOnlyFailure(text)) return null;
 
-  final expected =
-      classifyExpectedFailure(text) ??
-      (_isHandledWeatherRequestFailure(event)
-          ? ExpectedFailure.handledFallback
-          : null);
+  final httpFailure = classifyHandledHttpFailure(event);
+  final expected = classifyExpectedFailure(text) ?? httpFailure;
   if (expected != null && _isErrorOrUnset(event.level)) {
     // One event is never both: a downgraded event is Degraded, whatever
     // Report tagged before the SDK unwrapped an exception chain it did not see.
+    final endpoint = httpFailure == null ? null : _endpointName(event);
     event.level = SentryLevel.warning;
     event.tags = {
       ...?event.tags,
       'expected_failure': expected.tag,
       'severity': 'degraded',
+      // Names the endpoint (edge function or table) the reason is about.
+      if (endpoint != null) 'http_endpoint': endpoint,
     };
   }
 
@@ -92,31 +92,77 @@ String describeEvent(SentryEvent event) {
   return buffer.toString();
 }
 
-/// True for SDK-reported HTTP failures against `get-weather-forecast`, whose
-/// caller already substitutes a default forecast.
+/// Classifies an HTTP failure the SDK's own HTTP layer reported
+/// (`SentryHttpClientError`, `mechanism: SentryHttpClient`) as expected, or
+/// `null` when it stays a Fault.
 ///
-/// Weather is decorative and already degrades to a default forecast in
-/// `WeatherService.getWeatherForecast`'s catch. The events still reach Sentry
-/// because the SDK's HTTP integration reports the failed request itself
-/// (`mechanism: SentryHttpClient`) before app code ever sees it, which is why
-/// 546s from get-weather-forecast show up despite the graceful fallback
-/// (MEALVANA-ENDURANCE-AH / DEV-5D / DEV-5C). Scoped to this one endpoint on
-/// purpose: a blanket SentryHttpClientError downgrade would also hide the 500s
-/// and 502s from edge functions that do NOT degrade gracefully.
+/// These events are captured before app code ever sees the response, so a
+/// caller that already degrades cannot downgrade them itself. The rules are
+/// scoped per endpoint and status on purpose: a blanket SentryHttpClientError
+/// downgrade would also hide the 500s from edge functions that do NOT degrade
+/// (ticket 19).
 ///
-/// NOTE: 546 is a Supabase Edge *worker limit* — the function was killed for
-/// exceeding memory/CPU. Downgrading the client report does not fix the
-/// server; get-weather-forecast still needs a timeout on its upstream call.
-bool _isHandledWeatherRequestFailure(SentryEvent event) {
+/// - `get-weather-forecast`, any status: the caller substitutes a default
+///   forecast (MEALVANA-ENDURANCE-AH / DEV-5D / DEV-5C). Its 546 is a Supabase
+///   worker limit; the server still owes a timeout on its upstream call.
+/// - 502 from `garmin-backfill` or `kroger`: the function's upstream (Garmin's
+///   backfill API, Kroger) failed and the function said so. Since ticket 19
+///   garmin-backfill answers 502 only for a real Garmin outage (a dead token is
+///   409, a Garmin throttle 429), and the app retries the backfill next
+///   session. Kroger's `kroger_unavailable` shows its own message.
+///   (MEALVANA-ENDURANCE-AA / AB, DEV-5P / DEV-9M / DEV-8H.)
+/// - 504 from the Supabase project host: a gateway timeout. Prod logs showed
+///   Supabase's gateway (5 s blips on 2026-09-14, a row-lock pile-up on
+///   `users` on 2026-09-20) and 504s that never reached Supabase at all (an
+///   athlete's network on 2026-09-25). (B5, BM, C0, C1, C3, C4.)
+ExpectedFailure? classifyHandledHttpFailure(SentryEvent event) {
+  if (!_isSdkHttpFailure(event)) return null;
   final url = event.request?.url;
-  if (url == null || !url.contains('get-weather-forecast')) return false;
+  if (url == null) return null;
 
-  // Only the SDK's own HTTP-layer report. A real exception thrown from our
-  // code that happens to mention this endpoint should still come through.
-  return (event.throwable?.toString() ?? '').contains(
-        'SentryHttpClientError',
-      ) ||
-      (event.exceptions ?? const <SentryException>[]).any(
-        (e) => (e.type ?? '').contains('SentryHttpClientError'),
-      );
+  if (url.contains('get-weather-forecast')) {
+    return ExpectedFailure.handledFallback;
+  }
+
+  final status = _statusCode(event);
+  if (status == 502 &&
+      (url.contains('/functions/v1/garmin-backfill') ||
+          url.contains('/functions/v1/kroger'))) {
+    return ExpectedFailure.upstreamUnavailable;
+  }
+  if (status == 504 && _isSupabaseHost(url)) {
+    return ExpectedFailure.gatewayTimeout;
+  }
+  return null;
+}
+
+/// Only the SDK's own HTTP-layer report. A real exception thrown from our
+/// code that happens to mention an endpoint still comes through.
+bool _isSdkHttpFailure(SentryEvent event) =>
+    (event.throwable?.toString() ?? '').contains('SentryHttpClientError') ||
+    (event.exceptions ?? const <SentryException>[]).any(
+      (e) => (e.type ?? '').contains('SentryHttpClientError'),
+    );
+
+final RegExp _statusInMessage = RegExp(r'status code: (\d{3})');
+
+/// The response status: the response context when the SDK attached one, else
+/// the number in "HTTP Client Error with status code: NNN".
+int? _statusCode(SentryEvent event) {
+  final fromContext = event.contexts.response?.statusCode;
+  if (fromContext != null) return fromContext;
+  final match = _statusInMessage.firstMatch(describeEvent(event));
+  return match == null ? null : int.tryParse(match.group(1)!);
+}
+
+bool _isSupabaseHost(String url) =>
+    (Uri.tryParse(url)?.host ?? '').endsWith('.supabase.co');
+
+/// `garmin-backfill` for `/functions/v1/garmin-backfill`, `users` for
+/// `/rest/v1/users`, `token` for `/auth/v1/token`.
+String? _endpointName(SentryEvent event) {
+  final url = event.request?.url;
+  if (url == null) return null;
+  final segments = Uri.tryParse(url)?.pathSegments ?? const <String>[];
+  return segments.isEmpty ? null : segments.last;
 }

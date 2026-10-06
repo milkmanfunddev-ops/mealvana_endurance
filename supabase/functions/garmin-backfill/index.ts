@@ -33,6 +33,10 @@ import {
   initSentry,
   withSentry,
 } from '../_shared/sentry.ts';
+import {
+  classifyBackfillFailure,
+  RATE_LIMIT_RETRY_AFTER_SECONDS,
+} from './outcome.ts';
 
 const SUPABASE_URL = Deno.env.get('SUPABASE_URL') ?? '';
 const SUPABASE_SERVICE_ROLE_KEY =
@@ -370,15 +374,23 @@ serve(withSentry('garmin-backfill', async (req: Request) => {
       }
     }
 
-    const allFailed = Object.keys(queued).length === 0 ||
-      Object.values(queued).every((s) => s >= 400);
-
-    if (allFailed) {
-      return errorResponse(
-        'Garmin backfill request failed for all summary types',
-        502,
+    // A dead token, a Garmin throttle and a Garmin outage each get their own
+    // answer (ticket 19); only the outage stays a 502. See outcome.ts.
+    const failure = classifyBackfillFailure(queued);
+    if (failure) {
+      const response = errorResponse(
+        failure.message,
+        failure.status,
         JSON.stringify(errors),
+        { code: failure.code },
       );
+      if (failure.code === 'garmin_rate_limited') {
+        response.headers.set(
+          'Retry-After',
+          String(RATE_LIMIT_RETRY_AFTER_SECONDS),
+        );
+      }
+      return response;
     }
 
     return successResponse({

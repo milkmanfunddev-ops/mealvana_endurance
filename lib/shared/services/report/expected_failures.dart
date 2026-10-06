@@ -55,7 +55,18 @@ enum ExpectedFailure {
   /// A typed refusal the UI already shows (Vana's 429, a Code that could not
   /// be redeemed). Where it has a cause, the cause is reported at the catch
   /// site that built the refusal; the refusal itself is not a second Fault.
-  handledRefusal('handled_refusal');
+  handledRefusal('handled_refusal'),
+
+  /// An edge function answered 502 because ITS upstream failed (Garmin's
+  /// backfill API for `garmin-backfill`, Kroger for `kroger`) and said so;
+  /// the caller already degrades. Ticket 19.
+  upstreamUnavailable('upstream_unavailable'),
+
+  /// A gateway between the app and Supabase answered 504: Supabase's own
+  /// gateway during a platform blip or row-lock pile-up, or a network
+  /// middlebox on the athlete's side that never reached Supabase at all.
+  /// Never the app's code. Ticket 19.
+  gatewayTimeout('gateway_timeout');
 
   const ExpectedFailure(this.tag);
 

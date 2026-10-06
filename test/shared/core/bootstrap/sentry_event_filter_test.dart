@@ -261,6 +261,104 @@ void main() {
       expect(isDowngraded(event), isFalse);
     });
 
+    // --- Ticket 19: SDK-reported gateway failures, per endpoint ---
+    group('SDK-reported HTTP failures (ticket 19)', () {
+      /// The event `FailedRequestClient` builds, after the SDK's exception
+      /// factory has filled `exceptions` (which happens before beforeSend).
+      /// URLs and statuses are copied from the real Sentry events.
+      SentryEvent sdkHttpFailure(String url, int status) {
+        final event = SentryEvent(
+          request: SentryRequest(url: url, method: 'POST'),
+          exceptions: [
+            SentryException(
+              type: 'SentryHttpClientError',
+              value: 'Exception: HTTP Client Error with status code: $status',
+              mechanism: Mechanism(type: 'SentryHttpClient'),
+            ),
+          ],
+        );
+        event.contexts.response = SentryResponse(statusCode: status);
+        return event;
+      }
+
+      String? tag(SentryEvent event, String key) =>
+          filterSentryEvent(event, debugBuild: true)!.tags?[key];
+
+      test('garmin-backfill 502 is upstream_unavailable, named (AA/AB)', () {
+        final event = sdkHttpFailure(
+          'https://wvmvsodrvbkxfydabqed.supabase.co/functions/v1/garmin-backfill',
+          502,
+        );
+        expect(isDowngraded(event), isTrue);
+        expect(tag(event, 'expected_failure'), 'upstream_unavailable');
+        expect(tag(event, 'http_endpoint'), 'garmin-backfill');
+      });
+
+      test('kroger 502 is upstream_unavailable (DEV-8H)', () {
+        final event = sdkHttpFailure(
+          'https://vlmtsdzpnjnavdgytcmi.supabase.co/functions/v1/kroger',
+          502,
+        );
+        expect(tag(event, 'expected_failure'), 'upstream_unavailable');
+      });
+
+      test('a 504 from any Supabase endpoint is gateway_timeout (B5/C1/BM)', () {
+        for (final url in [
+          'https://wvmvsodrvbkxfydabqed.supabase.co/rest/v1/users',
+          'https://wvmvsodrvbkxfydabqed.supabase.co/auth/v1/token',
+          'https://wvmvsodrvbkxfydabqed.supabase.co/functions/v1/search-catalog',
+        ]) {
+          final event = sdkHttpFailure(url, 504);
+          expect(tag(event, 'expected_failure'), 'gateway_timeout', reason: url);
+        }
+      });
+
+      test('reads the status from the message when no response context', () {
+        final event = SentryEvent(
+          request: SentryRequest(
+            url:
+                'https://wvmvsodrvbkxfydabqed.supabase.co/rest/v1/template_foods',
+          ),
+          exceptions: [
+            SentryException(
+              type: 'SentryHttpClientError',
+              value: 'Exception: HTTP Client Error with status code: 504',
+            ),
+          ],
+        );
+        expect(isDowngraded(event), isTrue);
+      });
+
+      test('does NOT downgrade a 500 from an edge function', () {
+        final event = sdkHttpFailure(
+          'https://wvmvsodrvbkxfydabqed.supabase.co/functions/v1/garmin-backfill',
+          500,
+        );
+        expect(isDowngraded(event), isFalse);
+      });
+
+      test('does NOT downgrade a 502 from a function with no upstream rule', () {
+        final event = sdkHttpFailure(
+          'https://wvmvsodrvbkxfydabqed.supabase.co/functions/v1/generate-nutrition-plan-v3',
+          502,
+        );
+        expect(isDowngraded(event), isFalse);
+      });
+
+      test('does NOT downgrade a 504 from a non-Supabase host', () {
+        final event = sdkHttpFailure('https://api.example.org/v1/thing', 504);
+        expect(isDowngraded(event), isFalse);
+      });
+
+      test('still downgrades weather failures as handled_fallback', () {
+        final event = sdkHttpFailure(
+          'https://wvmvsodrvbkxfydabqed.supabase.co/functions/v1/get-weather-forecast',
+          546,
+        );
+        expect(tag(event, 'expected_failure'), 'handled_fallback');
+      });
+    });
+
     test(
       'returns false for an event with no throwable, message, or exceptions',
       () {

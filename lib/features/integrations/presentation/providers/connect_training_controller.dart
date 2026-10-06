@@ -3,6 +3,7 @@ import 'dart:async';
 import 'package:flutter/foundation.dart';
 import 'package:riverpod_annotation/riverpod_annotation.dart';
 import 'package:shared_preferences/shared_preferences.dart';
+import 'package:supabase_flutter/supabase_flutter.dart' show FunctionException;
 import 'package:uuid/uuid.dart';
 
 import '../../../../shared/database/database_provider.dart';
@@ -41,6 +42,16 @@ part 'connect_training_controller.g.dart';
 
 /// Key for storing temporary user ID in shared preferences during onboarding
 const _tempUserIdKey = 'onboarding_temp_user_id';
+
+/// True when garmin-backfill answered that the athlete's Garmin token is dead
+/// (409, `code: garmin_reauth_required`; see
+/// `supabase/functions/garmin-backfill/outcome.ts`). [details] is the decoded
+/// response body: a map for JSON, else the raw text.
+bool isGarminReauthRequired(int status, Object? details) {
+  if (status != 409) return false;
+  if (details is Map) return details['code'] == 'garmin_reauth_required';
+  return '$details'.contains('garmin_reauth_required');
+}
 
 /// Wrapper class for TrainingPeaks combined sync result
 /// Used internally to adapt the combined result to the generic _importWorkouts helper
@@ -973,13 +984,29 @@ class ConnectTrainingController extends _$ConnectTrainingController {
 
       return true;
     } catch (e, st) {
+      // garmin-backfill answers 409 `garmin_reauth_required` when Garmin says
+      // the stored token is dead and the refresh grant failed (ticket 19;
+      // prod logs 2026-10-01/02). Only a reconnect fixes that: an expected
+      // failure, not a code fault, and retrying soon is pointless.
+      if (e is FunctionException &&
+          isGarminReauthRequired(e.status, e.details)) {
+        _report.degraded(
+          e,
+          stackTrace: st,
+          area: 'garmin',
+          message:
+              'garmin-backfill 409: Garmin token expired, athlete must '
+              'reconnect Garmin',
+        );
+        return false;
+      }
       // Garmin's backfill API is frequently flaky: it returns 502 (Bad gateway)
-      // and 429-style "rate limit quota violation" responses that are transient
-      // and self-heal. Treat those calmly — they're expected, not a code fault —
-      // and let the next app session retry soon instead of blocking for the full
-      // cooldown (the data never got queued, so waiting 6h would needlessly delay
-      // the user's weight/body-fat backfill). Genuinely unexpected errors keep
-      // the full stack trace.
+      // and 429 "rate limit quota violation" responses that are transient and
+      // self-heal. Treat those calmly (expected, not a code fault) and let the
+      // next app session retry soon instead of blocking for the full cooldown
+      // (the data never got queued, so waiting 6h would needlessly delay the
+      // user's weight/body-fat backfill). Genuinely unexpected errors keep the
+      // full stack trace.
       final transient = _isTransientBackfillFailure(null, '$e');
       if (transient) {
         _report.degraded(
