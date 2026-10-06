@@ -31,6 +31,7 @@
 import { detectProductType } from './product_type.ts';
 import { toGtin14 } from './gtin.ts';
 import type { NutritionProductLike } from './usda_search.ts';
+import { captureEdgeError, captureEdgeMessage } from '../sentry.ts';
 
 const SEARCH_A_LICIOUS = 'https://search.openfoodfacts.org/search';
 
@@ -76,7 +77,7 @@ export async function searchOpenFoodFacts(
     }
 
     if (!resp.ok) {
-      console.error(`⚠️ Search-a-licious failed: ${resp.status} (OFF tier skipped)`);
+      captureEdgeMessage(`⚠️ Search-a-licious failed: ${resp.status} (OFF tier skipped)`, { level: 'warning', extra: { status: resp.status, query: q } });
       return [];
     }
 
@@ -86,7 +87,7 @@ export async function searchOpenFoodFacts(
     try {
       data = await resp.json();
     } catch {
-      console.error('⚠️ Search-a-licious returned non-JSON (OFF tier skipped)');
+      captureEdgeMessage('⚠️ Search-a-licious returned non-JSON (OFF tier skipped)', { level: 'warning', extra: { status: resp.status, query: q } });
       return [];
     }
 
@@ -99,7 +100,7 @@ export async function searchOpenFoodFacts(
       .filter((r) => r.calories_per_100g != null || r.carbohydrates_per_100g != null);
   } catch (e) {
     // AbortError included — a slow OFF must not stall the search.
-    console.error('⚠️ Search-a-licious error:', e instanceof Error ? e.message : e);
+    captureEdgeError(e, { message: '⚠️ Search-a-licious error', level: 'warning', extra: { query: q } });
     return [];
   }
 }

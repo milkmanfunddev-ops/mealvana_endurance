@@ -19,6 +19,7 @@
  */
 
 import type { SupabaseClient } from "https://esm.sh/@supabase/supabase-js@2.39.3";
+import { captureEdgeError } from "../sentry.ts";
 
 export interface AiUsageRow {
   /** auth.users id of the caller. */
@@ -75,12 +76,17 @@ export async function logAiUsage(
       cost_usd: row.costUsd ?? null,
     });
     if (error) {
-      console.error(
-        `[ai_usage] log error (${row.functionName}):`,
-        error.message,
-      );
+      captureEdgeError(error, {
+        message: `[ai_usage] log error (${row.functionName})`,
+        level: "warning",
+        extra: { userId: row.userId, functionName: row.functionName },
+      });
     }
   } catch (e) {
-    console.error(`[ai_usage] log exception (${row.functionName}):`, e);
+    captureEdgeError(e, {
+      message: `[ai_usage] log exception (${row.functionName})`,
+      level: "warning",
+      extra: { userId: row.userId, functionName: row.functionName },
+    });
   }
 }

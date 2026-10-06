@@ -26,7 +26,7 @@ const MAX_MESSAGE_LENGTH = 4000;
 
 initSentry();
 
-serve(withSentry(async (req: Request) => {
+serve(withSentry('vana-chat', async (req: Request) => {
   if (req.method === 'OPTIONS') return new Response('ok', { headers: { ...corsHeaders, 'Access-Control-Expose-Headers': 'x-conversation-id, x-vana-kind' } });
   if (req.method !== 'POST') return errorResponse('Method not allowed. Use POST.', 405);
   if (!Deno.env.get('AI_GATEWAY_API_KEY')) { console.error('[vana-chat] AI_GATEWAY_API_KEY secret is not set'); return errorResponse('AI service is not configured. Please contact support.', 500); }
@@ -49,7 +49,6 @@ serve(withSentry(async (req: Request) => {
     return run.response;
   } catch (e) {
     if (e instanceof RateLimitedError) return jsonResponse({ error: 'rate_limited', retry_after_seconds: e.retryAfterSeconds }, 429);
-    console.error('[vana-chat] Fatal error:', e);
     return serverError(e);
   }
 }));

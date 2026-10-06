@@ -13,6 +13,7 @@
  * the two additions over the original jade-chat envelope (`status`, `done.usage`) are backward compatible.
  */
 import { corsHeaders } from '../cors.ts';
+import { captureEdgeError } from '../sentry.ts';
 
 export type NdjsonLine =
   | { type: 'text'; delta: string }
@@ -63,12 +64,12 @@ export function ndjsonFromFullStream(fullStream: AsyncIterable<any>, opts: Ndjso
           else if (part.type === 'text-delta') push({ type: 'text', delta: part.text ?? part.textDelta ?? '' });
           else if (part.type === 'tool-input-start') push({ type: 'status', tool: part.toolName });
           else if (part.type === 'tool-result') { const out = part.output; if (out && typeof out === 'object' && 'kind' in out) { opts.onUiPart?.(out); push({ type: 'ui', part: out }); } }
-          else if (part.type === 'error') { console.error(`${tag} fullStream error part:`, errorMessage(part.error)); push({ type: 'error', message: errorMessage(part.error) }); }
+          else if (part.type === 'error') { captureEdgeError(part.error, { message: `${tag} fullStream error part` }); push({ type: 'error', message: errorMessage(part.error) }); }
           else if (part.type === 'finish') { push({ type: 'done', usage: { input_tokens: part.totalUsage?.inputTokens ?? null, output_tokens: part.totalUsage?.outputTokens ?? null } }); done = true; }
           // step-start / step-finish / tool-call / tool-input-delta carry nothing user-visible.
         }
       } catch (e) {
-        console.error(`${tag} stream consumer error:`, errorMessage(e));
+        captureEdgeError(e, { message: `${tag} stream consumer error` });
         push({ type: 'error', message: errorMessage(e) });
       }
       if (!done) push({ type: 'done' });

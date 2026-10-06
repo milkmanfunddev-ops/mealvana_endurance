@@ -21,6 +21,7 @@
  */
 
 import type { SupabaseClient } from 'https://esm.sh/@supabase/supabase-js@2.39.3';
+import { captureEdgeError } from '../sentry.ts';
 
 export const CREDITS_ENFORCED = Deno.env.get('AI_CREDITS_ENFORCED') === 'true';
 
@@ -83,13 +84,13 @@ export async function ensureAndCheckCredits(
       p_amount: FREE_MONTHLY_CREDITS,
     });
     if (error) {
-      console.error('[credits] ensure_free_credits error (fail-open):', error.message);
+      captureEdgeError(error, { message: '[credits] ensure_free_credits error (fail-open)', level: 'warning', extra: { userId, fn } });
       return { allowed: true, balance: -1, cost };
     }
     const balance = typeof data === 'number' ? data : 0;
     return { allowed: balance >= cost, balance, cost };
   } catch (e) {
-    console.error('[credits] ensureAndCheckCredits exception (fail-open):', e);
+    captureEdgeError(e, { message: '[credits] ensureAndCheckCredits exception (fail-open)', level: 'warning', extra: { userId, fn } });
     return { allowed: true, balance: -1, cost };
   }
 }
@@ -114,7 +115,7 @@ export async function debitForUsage(
       p_ref: fn,
     });
     if (error) {
-      console.error('[credits] debit_credits error:', error.message);
+      captureEdgeError(error, { message: '[credits] debit_credits error', level: 'warning', extra: { userId, fn, cost } });
       return;
     }
     // debit_credits returns { success, balance }. success:false (no error)
@@ -129,7 +130,7 @@ export async function debitForUsage(
       );
     }
   } catch (e) {
-    console.error('[credits] debit exception:', e);
+    captureEdgeError(e, { message: '[credits] debit exception', level: 'warning', extra: { userId, fn, cost } });
   }
 }
 

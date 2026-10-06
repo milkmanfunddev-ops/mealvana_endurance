@@ -40,7 +40,7 @@
 import { createClient } from 'https://esm.sh/@supabase/supabase-js@2';
 import { handleCors } from '../_shared/cors.ts';
 import { jsonResponse, errorResponse } from '../_shared/responses.ts';
-import { initSentry, withSentry } from '../_shared/sentry.ts';
+import { initSentry, withSentry, captureEdgeError } from '../_shared/sentry.ts';
 import { searchUsda, type NutritionProductLike } from '../_shared/food_sources/usda_search.ts';
 import { searchOpenFoodFacts } from '../_shared/food_sources/off_search.ts';
 import { bg } from '../_shared/food_sources/runtime.ts';
@@ -64,7 +64,7 @@ initSentry();
  */
 const FEW_CACHE_HITS = 5;
 
-Deno.serve(withSentry(async (req) => {
+Deno.serve(withSentry('search-nutrition-products', async (req) => {
   const corsResponse = handleCors(req);
   if (corsResponse) return corsResponse;
 
@@ -114,7 +114,7 @@ Deno.serve(withSentry(async (req) => {
       .limit(maxLimit);
 
     if (error) {
-      console.error('⚠️ nutrition_products cache query error:', error);
+      captureEdgeError(error, { message: '⚠️ nutrition_products cache query error', level: 'warning', extra: { query: trimmed } });
       // Not fatal — fall through to the live tier rather than fail the search.
     }
 
@@ -169,11 +169,12 @@ Deno.serve(withSentry(async (req) => {
       total: merged.length,
     });
   } catch (e) {
-    console.error('❌ search-nutrition-products unexpected error:', e);
     return errorResponse(
       'Internal server error',
       500,
       e instanceof Error ? e.message : 'Unknown error',
+      undefined,
+      e,
     );
   }
 }));

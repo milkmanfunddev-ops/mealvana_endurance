@@ -18,6 +18,7 @@
  */
 import { detectProductType } from './product_type.ts';
 import { toGtin14 } from './gtin.ts';
+import { captureEdgeError, captureEdgeMessage } from '../sentry.ts';
 
 /** The projection shape `nutrition_products` rows are returned in. */
 export interface NutritionProductLike {
@@ -91,10 +92,11 @@ export async function searchUsda(
     if (!resp.ok) {
       // 429 means the per-IP hourly budget is gone and the key is blocked for
       // an hour — worth shouting about, it is not a normal miss.
-      console.error(
+      captureEdgeMessage(
         resp.status === 429
           ? '🚨 USDA rate limit hit (1000/hr per IP) — key blocked for 1h'
           : `⚠️ USDA search failed: ${resp.status}`,
+        { level: 'warning', extra: { status: resp.status, query: q } },
       );
       return [];
     }
@@ -108,7 +110,7 @@ export async function searchUsda(
       .map((f) => mapUsdaFood(f));
   } catch (e) {
     // AbortError included: a slow USDA must never stall the whole search.
-    console.error('⚠️ USDA search error:', e instanceof Error ? e.message : e);
+    captureEdgeError(e, { message: '⚠️ USDA search error', level: 'warning', extra: { query: q } });
     return [];
   }
 }

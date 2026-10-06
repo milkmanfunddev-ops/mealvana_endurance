@@ -1,5 +1,5 @@
 import { createClient } from 'https://esm.sh/@supabase/supabase-js@2';
-import { initSentry, withSentry } from "../_shared/sentry.ts";
+import { captureEdgeError, initSentry, withSentry } from "../_shared/sentry.ts";
 
 // Shared food-source clients. These used to live inline in this file (806
 // lines); they were extracted 2026-07-16 so the barcode path and the text-search
@@ -102,7 +102,7 @@ async function lookupCatalog(barcode: string): Promise<{ product: Record<string,
 
     return { product: cleanedProduct, source: 'catalog_barcode' };
   } catch (e) {
-    console.error('⚠️ Catalog lookup error:', e);
+    captureEdgeError(e, { message: '⚠️ Catalog lookup error', level: 'warning', extra: { barcode } });
     return null;
   }
 }
@@ -110,7 +110,7 @@ async function lookupCatalog(barcode: string): Promise<{ product: Record<string,
 // Initialise Sentry once per cold-start. No-op when SENTRY_DSN is not set.
 initSentry();
 
-Deno.serve(withSentry(async (req) => {
+Deno.serve(withSentry("lookup-product", async (req) => {
   // Handle CORS preflight requests
   if (req.method === 'OPTIONS') {
     return new Response('ok', {
@@ -239,7 +239,7 @@ Deno.serve(withSentry(async (req) => {
           }
         }
       } catch (error) {
-        console.error('⚠️ Lookup Product - Open Food Facts ID lookup failed:', error);
+        captureEdgeError(error, { message: '⚠️ Lookup Product - Open Food Facts ID lookup failed', level: 'warning', extra: { open_food_facts_id: requestData.open_food_facts_id } });
       }
     }
     // If no product found with either method
@@ -320,7 +320,7 @@ Deno.serve(withSentry(async (req) => {
       }
     });
   } catch (error) {
-    console.error('❌ Lookup Product - Unexpected error:', error);
+    captureEdgeError(error, { message: '❌ Lookup Product - Unexpected error' });
     return new Response(JSON.stringify({
       success: false,
       error: 'Internal server error',

@@ -12,7 +12,7 @@
 import { serve } from 'https://deno.land/std@0.224.0/http/server.ts';
 import { corsHeaders } from '../_shared/cors.ts';
 import { jsonResponse, errorResponse } from '../_shared/responses.ts';
-import { initSentry, withSentry } from '../_shared/sentry.ts';
+import { initSentry, withSentry, captureEdgeError } from '../_shared/sentry.ts';
 import { authenticate } from '../_shared/vana/auth.ts';
 import { requirePro } from '../_shared/vana/entitlement.ts';
 import { runAction, extraAction } from '../_shared/vana/actions.ts';
@@ -21,7 +21,7 @@ import type { UiAction } from '../_shared/vana/contracts.ts';
 
 initSentry();
 
-serve(withSentry(async (req: Request) => {
+serve(withSentry('vana-action', async (req: Request) => {
   if (req.method === 'OPTIONS') return new Response('ok', { headers: corsHeaders });
   if (req.method !== 'POST') return errorResponse('Method not allowed. Use POST.', 405);
 
@@ -44,7 +44,7 @@ serve(withSentry(async (req: Request) => {
     return jsonResponse(result);
   } catch (e) {
     if (e instanceof RateLimitedError) return jsonResponse({ error: 'rate_limited', retry_after_seconds: e.retryAfterSeconds }, 429);
-    console.error(`[vana-action] ${body.type} failed:`, (e as Error).message);
+    captureEdgeError(e, { message: `[vana-action] ${body.type} failed`, level: 'warning', extra: { userId: v.userId, actionType: body.type } });
     return jsonResponse({ error: (e as Error).message }, 400);
   }
 }));

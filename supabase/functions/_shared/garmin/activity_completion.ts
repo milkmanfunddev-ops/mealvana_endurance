@@ -12,6 +12,7 @@ import {
   garminTimestampToLocalNaiveISO,
 } from "./mappers.ts";
 import { isEnduranceSportType } from "./types.ts";
+import { captureEdgeError } from "../sentry.ts";
 import type { GarminActivitySummary } from "./types.ts";
 
 /** Postgres unique-violation error code surfaced by PostgREST. */
@@ -133,7 +134,7 @@ export async function findMatchingTombstone(
     }
     return null;
   } catch (err) {
-    console.error("[garmin] Tombstone lookup error:", err);
+    captureEdgeError(err, { message: "[garmin] Tombstone lookup error", extra: { userId, summaryId } });
     return null;
   }
 }
@@ -206,7 +207,7 @@ export async function findMatchingSkippedActivity(
     }
     return null;
   } catch (err) {
-    console.error("[garmin] Skipped-row lookup error:", err);
+    captureEdgeError(err, { message: "[garmin] Skipped-row lookup error", extra: { userId, summaryId } });
     return null;
   }
 }
@@ -273,7 +274,7 @@ export async function findMatchingPlannedActivity(
       .limit(1);
 
     if (error) {
-      console.error("[garmin] Match query error:", error);
+      captureEdgeError(error, { message: "[garmin] Match query error", extra: { userId, summaryId } });
       return null;
     }
 
@@ -288,7 +289,7 @@ export async function findMatchingPlannedActivity(
     if (!id) return null;
     return { id, title };
   } catch (err) {
-    console.error("[garmin] Match lookup error:", err);
+    captureEdgeError(err, { message: "[garmin] Match lookup error", extra: { userId, summaryId } });
     return null;
   }
 }
@@ -464,7 +465,7 @@ export async function enrichCompletedGarminActivity(
       .limit(1);
 
     if (error) {
-      console.error(`${logPrefix} Enrich lookup error:`, error);
+      captureEdgeError(error, { message: `${logPrefix} Enrich lookup error`, extra: { userId, summaryId } });
       return { kind: "error", error };
     }
     if (!data || data.length === 0) {
@@ -527,7 +528,7 @@ export async function enrichCompletedGarminActivity(
       .eq("status", "completed");
 
     if (updateError) {
-      console.error(`${logPrefix} Enrich update error:`, updateError);
+      captureEdgeError(updateError, { message: `${logPrefix} Enrich update error`, extra: { userId, summaryId } });
       return { kind: "error", error: updateError };
     }
 
@@ -539,7 +540,7 @@ export async function enrichCompletedGarminActivity(
     );
     return { kind: "enriched", activityId, fields };
   } catch (err) {
-    console.error(`${logPrefix} Enrich error:`, err);
+    captureEdgeError(err, { message: `${logPrefix} Enrich error`, extra: { userId, summaryId } });
     return { kind: "error", error: err };
   }
 }
@@ -636,11 +637,11 @@ export async function insertGarminActivityIfMissing(
     // returns 200 to Garmin even on per-activity failures (their webhook
     // retry semantics), so this log line is the only durable evidence that
     // an activity import was dropped.
-    console.error(
-      `[garmin] Auto-create insert FAILED for summaryId=${summaryId} ` +
-        `sport=${sportType} user=${mappedActivity.user_id} — activity NOT imported:`,
-      error,
-    );
+    captureEdgeError(error, {
+      message: `[garmin] Auto-create insert FAILED for summaryId=${summaryId} ` +
+        `sport=${sportType} user=${mappedActivity.user_id} — activity NOT imported`,
+      extra: { summaryId, sportType, userId: mappedActivity.user_id },
+    });
     return { kind: "error", error };
   }
 

@@ -8,12 +8,12 @@ import { serve } from 'https://deno.land/std@0.224.0/http/server.ts';
 import { handleCors } from '../_shared/cors.ts';
 import { jsonResponse, errorResponse, validationError, serverError } from '../_shared/responses.ts';
 import { createServiceClient } from '../_shared/supabase-client.ts';
-import { initSentry, withSentry } from '../_shared/sentry.ts';
+import { initSentry, withSentry, captureEdgeError } from '../_shared/sentry.ts';
 
 // Initialise Sentry once per cold-start. No-op when SENTRY_DSN is not set.
 initSentry();
 
-serve(withSentry(async (req) => {
+serve(withSentry('create-user', async (req) => {
   // Handle CORS preflight
   const corsResponse = handleCors(req);
   if (corsResponse) return corsResponse;
@@ -91,8 +91,7 @@ serve(withSentry(async (req) => {
       .single();
 
     if (userError) {
-      console.error('Error creating user:', userError);
-      return errorResponse(`Failed to create user: ${userError.message}`, 500);
+      return errorResponse(`Failed to create user: ${userError.message}`, 500, undefined, undefined, userError);
     }
 
     // Create food preferences if provided
@@ -111,7 +110,7 @@ serve(withSentry(async (req) => {
         .insert(foodPreferenceRecords);
 
       if (preferencesError) {
-        console.error('Error creating food preferences:', preferencesError);
+        captureEdgeError(preferencesError, { message: 'Error creating food preferences', level: 'warning', extra: { device_id } });
         // Don't fail the entire request, just log the error
         console.log('User created successfully but food preferences failed to save');
       }
@@ -126,7 +125,6 @@ serve(withSentry(async (req) => {
       201
     );
   } catch (error) {
-    console.error('Unexpected error:', error);
     return serverError(error);
   }
 }));

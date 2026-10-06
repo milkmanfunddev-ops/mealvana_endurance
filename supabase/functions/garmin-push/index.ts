@@ -27,7 +27,12 @@
 
 import { serve } from "https://deno.land/std@0.224.0/http/server.ts";
 import { createClient } from "https://esm.sh/@supabase/supabase-js@2.39.3";
-import { initSentry, withSentry } from "../_shared/sentry.ts";
+import {
+  captureEdgeError,
+  captureEdgeMessage,
+  initSentry,
+  withSentry,
+} from "../_shared/sentry.ts";
 import { validateGarminRequest } from "../_shared/garmin/auth.ts";
 import {
   mapGarminActivityToActivity,
@@ -60,7 +65,7 @@ declare const EdgeRuntime: {
 // Initialise Sentry once per cold-start. No-op when SENTRY_DSN is not set.
 initSentry();
 
-serve(withSentry(async (req: Request) => {
+serve(withSentry("garmin-push", async (req: Request) => {
   // Validate the request is from Garmin (header-only, synchronous)
   const validationError = validateGarminRequest(req, GARMIN_CLIENT_ID);
   if (validationError) {
@@ -97,10 +102,15 @@ serve(withSentry(async (req: Request) => {
   // into dev so the same data is available in both environments).
   const processing = Promise.all([
     processPushBody(body).catch((err) => {
-      console.error("[garmin-push] Background processing error:", err);
+      captureEdgeError(err, {
+        message: "[garmin-push] Background processing error",
+      });
     }),
     forwardToFanout(rawBody, inboundClientId).catch((err) => {
-      console.error("[garmin-push] Fanout error:", err);
+      captureEdgeError(err, {
+        message: "[garmin-push] Fanout error",
+        level: "warning",
+      });
     }),
   ]);
 
@@ -144,14 +154,17 @@ async function forwardToFanout(
     });
     if (!resp.ok) {
       const text = await resp.text();
-      console.error(
-        `[garmin-push] Fanout to ${fanoutUrl} returned ${resp.status}: ${
-          text.slice(0, 200)
-        }`,
-      );
+      captureEdgeMessage(`[garmin-push] Fanout returned ${resp.status}`, {
+        level: "warning",
+        extra: { fanoutUrl, status: resp.status, body: text.slice(0, 200) },
+      });
     }
   } catch (err) {
-    console.error(`[garmin-push] Fanout to ${fanoutUrl} threw:`, err);
+    captureEdgeError(err, {
+      message: `[garmin-push] Fanout to ${fanoutUrl} threw`,
+      level: "warning",
+      extra: { fanoutUrl },
+    });
   }
 }
 
@@ -203,7 +216,11 @@ async function mirrorGarminBodyCompToUser(
     .single();
 
   if (readErr) {
-    console.error(`[garmin-push] Users read for mirror failed:`, readErr);
+    captureEdgeError(readErr, {
+      message: "[garmin-push] Users read for mirror failed",
+      level: "warning",
+      extra: { userId },
+    });
     return;
   }
 
@@ -240,7 +257,11 @@ async function mirrorGarminBodyCompToUser(
     .eq("id", userId);
 
   if (writeErr) {
-    console.error(`[garmin-push] Users mirror update failed:`, writeErr);
+    captureEdgeError(writeErr, {
+      message: "[garmin-push] Users mirror update failed",
+      level: "warning",
+      extra: { userId },
+    });
   }
 }
 
@@ -412,14 +433,24 @@ async function processPushBody(body: GarminPushNotification): Promise<void> {
             "[garmin-push]",
           );
           if (outcome.kind === "error") {
-            console.error(
-              "[garmin-push] Matcher pipeline error:",
-              outcome.error,
-            );
+            captureEdgeError(outcome.error, {
+              message: "[garmin-push] Matcher pipeline error",
+              extra: {
+                summaryId: activity.summaryId,
+                userId: mapping.user_id,
+                garminUserId: activity.userId,
+              },
+            });
           }
           tallyOutcome(outcome, stats);
         } catch (err) {
-          console.error(`[garmin-push] Activity processing error:`, err);
+          captureEdgeError(err, {
+            message: "[garmin-push] Activity processing error",
+            extra: {
+              summaryId: activity.summaryId,
+              garminUserId: activity.userId,
+            },
+          });
           stats.errors++;
         }
       }
@@ -453,13 +484,19 @@ async function processPushBody(body: GarminPushNotification): Promise<void> {
             .upsert(record, { onConflict: "summary_id" });
 
           if (error) {
-            console.error(`[garmin-push] Daily upsert error:`, error);
+            captureEdgeError(error, {
+              message: "[garmin-push] Daily upsert error",
+              extra: { summaryId: daily.summaryId, userId: mapping.user_id },
+            });
             stats.errors++;
           } else {
             stats.processed++;
           }
         } catch (err) {
-          console.error(`[garmin-push] Daily processing error:`, err);
+          captureEdgeError(err, {
+            message: "[garmin-push] Daily processing error",
+            extra: { summaryId: daily.summaryId, garminUserId: daily.userId },
+          });
           stats.errors++;
         }
       }
@@ -493,13 +530,19 @@ async function processPushBody(body: GarminPushNotification): Promise<void> {
             .upsert(record, { onConflict: "summary_id" });
 
           if (error) {
-            console.error(`[garmin-push] Sleep upsert error:`, error);
+            captureEdgeError(error, {
+              message: "[garmin-push] Sleep upsert error",
+              extra: { summaryId: sleep.summaryId, userId: mapping.user_id },
+            });
             stats.errors++;
           } else {
             stats.processed++;
           }
         } catch (err) {
-          console.error(`[garmin-push] Sleep processing error:`, err);
+          captureEdgeError(err, {
+            message: "[garmin-push] Sleep processing error",
+            extra: { summaryId: sleep.summaryId, garminUserId: sleep.userId },
+          });
           stats.errors++;
         }
       }
@@ -546,7 +589,10 @@ async function processPushBody(body: GarminPushNotification): Promise<void> {
             .upsert(record, { onConflict: "summary_id" });
 
           if (error) {
-            console.error(`[garmin-push] Body comp upsert error:`, error);
+            captureEdgeError(error, {
+              message: "[garmin-push] Body comp upsert error",
+              extra: { summaryId: bodyComp.summaryId, userId: mapping.user_id },
+            });
             stats.errors++;
             continue;
           }
@@ -562,7 +608,13 @@ async function processPushBody(body: GarminPushNotification): Promise<void> {
           // currently in `users`.
           await mirrorGarminBodyCompToUser(supabase, mapping.user_id, bodyComp);
         } catch (err) {
-          console.error(`[garmin-push] Body comp processing error:`, err);
+          captureEdgeError(err, {
+            message: "[garmin-push] Body comp processing error",
+            extra: {
+              summaryId: bodyComp.summaryId,
+              garminUserId: bodyComp.userId,
+            },
+          });
           stats.errors++;
         }
       }
@@ -603,13 +655,19 @@ async function processPushBody(body: GarminPushNotification): Promise<void> {
             .upsert(record, { onConflict: "summary_id" });
 
           if (error) {
-            console.error(`[garmin-push] Stress upsert error:`, error);
+            captureEdgeError(error, {
+              message: "[garmin-push] Stress upsert error",
+              extra: { summaryId: stress.summaryId, userId: mapping.user_id },
+            });
             stats.errors++;
           } else {
             stats.processed++;
           }
         } catch (err) {
-          console.error(`[garmin-push] Stress processing error:`, err);
+          captureEdgeError(err, {
+            message: "[garmin-push] Stress processing error",
+            extra: { summaryId: stress.summaryId, garminUserId: stress.userId },
+          });
           stats.errors++;
         }
       }
@@ -721,10 +779,14 @@ async function processPushBody(body: GarminPushNotification): Promise<void> {
             .eq("id", existing[0].id);
 
           if (error) {
-            console.error(
-              `[garmin-push] Manually updated activity error:`,
-              error,
-            );
+            captureEdgeError(error, {
+              message: "[garmin-push] Manually updated activity error",
+              extra: {
+                summaryId,
+                userId: mapping.user_id,
+                activityId: existing[0].id,
+              },
+            });
             stats.errors++;
           } else {
             console.log(
@@ -735,10 +797,13 @@ async function processPushBody(body: GarminPushNotification): Promise<void> {
             stats.processed++;
           }
         } catch (err) {
-          console.error(
-            `[garmin-push] Manually updated activity processing error:`,
-            err,
-          );
+          captureEdgeError(err, {
+            message: "[garmin-push] Manually updated activity processing error",
+            extra: {
+              summaryId: activity.summaryId,
+              garminUserId: activity.userId,
+            },
+          });
           stats.errors++;
         }
       }
@@ -867,14 +932,21 @@ async function processPushBody(body: GarminPushNotification): Promise<void> {
             "[garmin-push]",
           );
           if (outcome.kind === "error") {
-            console.error(
-              "[garmin-push] Matcher pipeline error (detail):",
-              outcome.error,
-            );
+            captureEdgeError(outcome.error, {
+              message: "[garmin-push] Matcher pipeline error (detail)",
+              extra: {
+                summaryId: String(detailSummaryId),
+                userId: mapping.user_id,
+                garminUserId: detail.userId,
+              },
+            });
           }
           tallyOutcome(outcome, stats);
         } catch (err) {
-          console.error(`[garmin-push] Activity detail processing error:`, err);
+          captureEdgeError(err, {
+            message: "[garmin-push] Activity detail processing error",
+            extra: { summaryId: detail.summaryId, garminUserId: detail.userId },
+          });
           stats.errors++;
         }
       }
@@ -930,7 +1002,10 @@ async function processPushBody(body: GarminPushNotification): Promise<void> {
             stats.processed++;
           }
         } catch (err) {
-          console.error(`[garmin-push] Epoch processing error:`, err);
+          captureEdgeError(err, {
+            message: "[garmin-push] Epoch processing error",
+            extra: { summaryId: epoch.summaryId, garminUserId: epoch.userId },
+          });
           stats.errors++;
         }
       }
@@ -970,13 +1045,19 @@ async function processPushBody(body: GarminPushNotification): Promise<void> {
             .upsert(record, { onConflict: "summary_id" });
 
           if (error) {
-            console.error(`[garmin-push] User metrics upsert error:`, error);
+            captureEdgeError(error, {
+              message: "[garmin-push] User metrics upsert error",
+              extra: { summaryId: metric.summaryId, userId: mapping.user_id },
+            });
             stats.errors++;
           } else {
             stats.processed++;
           }
         } catch (err) {
-          console.error(`[garmin-push] User metrics processing error:`, err);
+          captureEdgeError(err, {
+            message: "[garmin-push] User metrics processing error",
+            extra: { summaryId: metric.summaryId, garminUserId: metric.userId },
+          });
           stats.errors++;
         }
       }
@@ -1043,13 +1124,27 @@ async function processPushBody(body: GarminPushNotification): Promise<void> {
             .upsert(record, { onConflict: "summary_id" });
 
           if (error) {
-            console.error(`[garmin-push] ${dataType} upsert error:`, error);
+            captureEdgeError(error, {
+              message: `[garmin-push] ${dataType} upsert error`,
+              extra: {
+                dataType,
+                summaryId: summary.summaryId,
+                userId: mapping.user_id,
+              },
+            });
             stats.errors++;
           } else {
             stats.processed++;
           }
         } catch (err) {
-          console.error(`[garmin-push] ${dataType} processing error:`, err);
+          captureEdgeError(err, {
+            message: `[garmin-push] ${dataType} processing error`,
+            extra: {
+              dataType,
+              summaryId: summary.summaryId,
+              garminUserId: summary.userId,
+            },
+          });
           stats.errors++;
         }
       }
@@ -1077,7 +1172,7 @@ async function processPushBody(body: GarminPushNotification): Promise<void> {
 
     await stampIntegrationSyncHealth(supabase, body);
   } catch (err) {
-    console.error("[garmin-push] Fatal error:", err);
+    captureEdgeError(err, { message: "[garmin-push] Fatal error" });
   }
 }
 
@@ -1129,6 +1224,10 @@ async function stampIntegrationSyncHealth(
     .eq("provider", "garmin")
     .in("user_id", userIds);
   if (error) {
-    console.error("[garmin-push] Sync-health stamp failed:", error);
+    captureEdgeError(error, {
+      message: "[garmin-push] Sync-health stamp failed",
+      level: "warning",
+      extra: { userIds },
+    });
   }
 }

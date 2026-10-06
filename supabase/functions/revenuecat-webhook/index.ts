@@ -54,6 +54,7 @@ import {
   TRANSFER_EVENT_TYPE,
   transferParties,
 } from './entitlements.ts';
+import { captureEdgeError, captureEdgeMessage, edgeBreadcrumb, initSentry, withSentry } from '../_shared/sentry.ts';
 
 const SUPABASE_URL = Deno.env.get('SUPABASE_URL') ?? '';
 const SUPABASE_SERVICE_ROLE_KEY = Deno.env.get('SUPABASE_SERVICE_ROLE_KEY') ?? '';
@@ -81,7 +82,7 @@ function productCredits(): Record<string, number> {
     const parsed = JSON.parse(raw);
     if (parsed && typeof parsed === 'object') return parsed as Record<string, number>;
   } catch (e) {
-    console.error('[rc-webhook] bad RC_PRODUCT_CREDITS JSON, using defaults:', e);
+    captureEdgeError(e, { message: '[rc-webhook] bad RC_PRODUCT_CREDITS JSON, using defaults', level: 'warning' });
   }
   return DEFAULT_PRODUCT_CREDITS;
 }
@@ -110,7 +111,7 @@ async function handleProSubscription(
   appUserId: string,
 ): Promise<Response> {
   if (!appUserId || !eventId) {
-    console.error(`[rc-webhook] missing app_user_id or event id (user=${appUserId} id=${eventId})`);
+    edgeBreadcrumb('[rc-webhook] missing app_user_id or event id', { appUserId, eventId });
     return json({ error: 'Missing app_user_id or event id' }, 400);
   }
 
@@ -123,7 +124,7 @@ async function handleProSubscription(
       .eq('entitlement', PRO_ENTITLEMENT)
       .maybeSingle();
     if (readError) {
-      console.error('[rc-webhook] user_entitlements read error:', readError.message);
+      captureEdgeError(readError, { message: '[rc-webhook] user_entitlements read error', extra: { appUserId, eventId, type } });
       return json({ error: 'entitlement read failed' }, 500);
     }
 
@@ -147,7 +148,7 @@ async function handleProSubscription(
         );
         return json({ ok: true, ignored: 'user_not_in_project' });
       }
-      console.error('[rc-webhook] user_entitlements upsert error:', error.message);
+      captureEdgeError(error, { message: '[rc-webhook] user_entitlements upsert error', extra: { appUserId, eventId, type } });
       return json({ error: 'entitlement upsert failed' }, 500);
     }
     console.log(
@@ -160,7 +161,7 @@ async function handleProSubscription(
       expires_at: row.expires_at,
     });
   } catch (e) {
-    console.error('[rc-webhook] exception:', e);
+    captureEdgeError(e, { message: '[rc-webhook] exception', extra: { appUserId, eventId, type } });
     return json({ error: 'internal error' }, 500);
   }
 }
@@ -191,7 +192,7 @@ async function handleTransfer(
         .in('user_id', from)
         .eq('entitlement', PRO_ENTITLEMENT);
       if (readError) {
-        console.error('[rc-webhook] transfer read error:', readError.message);
+        captureEdgeError(readError, { message: '[rc-webhook] transfer read error', extra: { eventId, from, to } });
         return json({ error: 'entitlement read failed' }, 500);
       }
       const rows = (sourceRows ?? []) as Record<string, unknown>[];
@@ -209,7 +210,7 @@ async function handleTransfer(
         );
       // A recipient outside this project is expected (dev/prod split).
       if (error && error.code !== '23503') {
-        console.error('[rc-webhook] transfer upsert error:', error.message);
+        captureEdgeError(error, { message: '[rc-webhook] transfer upsert error', extra: { eventId, from, to } });
         return json({ error: 'entitlement upsert failed' }, 500);
       }
     }
@@ -220,7 +221,7 @@ async function handleTransfer(
         .in('user_id', from)
         .eq('entitlement', PRO_ENTITLEMENT);
       if (error) {
-        console.error('[rc-webhook] transfer deactivate error:', error.message);
+        captureEdgeError(error, { message: '[rc-webhook] transfer deactivate error', extra: { eventId, from, to } });
         return json({ error: 'entitlement update failed' }, 500);
       }
     }
@@ -229,22 +230,24 @@ async function handleTransfer(
     );
     return json({ ok: true, transferred: !!source, from, to });
   } catch (e) {
-    console.error('[rc-webhook] exception:', e);
+    captureEdgeError(e, { message: '[rc-webhook] transfer exception', extra: { eventId, from, to } });
     return json({ error: 'internal error' }, 500);
   }
 }
 
-serve(async (req: Request) => {
+initSentry();
+
+serve(withSentry('revenuecat-webhook', async (req: Request) => {
   if (req.method !== 'POST') return json({ error: 'Method not allowed' }, 405);
 
   // ── Verify shared secret ──────────────────────────────────────────────────
   if (!WEBHOOK_SECRET) {
-    console.error('[rc-webhook] REVENUECAT_WEBHOOK_SECRET not set');
+    captureEdgeMessage('[rc-webhook] REVENUECAT_WEBHOOK_SECRET not set');
     return json({ error: 'Webhook not configured' }, 500);
   }
   const auth = req.headers.get('Authorization') ?? '';
   if (auth !== WEBHOOK_SECRET) {
-    console.error('[rc-webhook] Authorization mismatch');
+    edgeBreadcrumb('[rc-webhook] Authorization mismatch');
     return json({ error: 'Unauthorized' }, 401);
   }
 
@@ -283,7 +286,7 @@ serve(async (req: Request) => {
   }
 
   if (!appUserId || !eventId) {
-    console.error(`[rc-webhook] missing app_user_id or event id (user=${appUserId} id=${eventId})`);
+    edgeBreadcrumb('[rc-webhook] missing app_user_id or event id', { appUserId, eventId });
     return json({ error: 'Missing app_user_id or event id' }, 400);
   }
 
@@ -312,13 +315,13 @@ serve(async (req: Request) => {
         );
         return json({ ok: true, ignored: 'user_not_in_project' });
       }
-      console.error('[rc-webhook] grant_credits error:', error.message);
+      captureEdgeError(error, { message: '[rc-webhook] grant_credits error', extra: { appUserId, eventId, productId, credits } });
       return json({ error: 'grant failed' }, 500);
     }
     console.log(`[rc-webhook] granted ${credits} credits to ${appUserId} (product=${productId}, balance=${data})`);
     return json({ ok: true, granted: credits, balance: data });
   } catch (e) {
-    console.error('[rc-webhook] exception:', e);
+    captureEdgeError(e, { message: '[rc-webhook] grant exception', extra: { appUserId, eventId, productId } });
     return json({ error: 'internal error' }, 500);
   }
-});
+}));

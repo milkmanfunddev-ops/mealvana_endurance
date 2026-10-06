@@ -39,7 +39,7 @@ const chatCorsHeaders: Record<string, string> = { ...corsHeaders, 'Access-Contro
 
 initSentry();
 
-serve(withSentry(async (req: Request) => {
+serve(withSentry('jade-chat', async (req: Request) => {
   if (req.method === 'OPTIONS') return new Response('ok', { headers: chatCorsHeaders });
   if (req.method !== 'POST') return errorResponse('Method not allowed. Use POST.', 405);
   if (!Deno.env.get('AI_GATEWAY_API_KEY')) { console.error('[jade-chat] AI_GATEWAY_API_KEY secret is not set'); return errorResponse('AI service is not configured. Please contact support.', 500); }
@@ -84,7 +84,6 @@ serve(withSentry(async (req: Request) => {
     return run.response;
   } catch (error) {
     if (error instanceof RateLimitedError) return jsonResponse({ error: 'rate_limited', retry_after_seconds: error.retryAfterSeconds }, 429);
-    console.error('[jade-chat] Fatal error:', error);
     return serverError(error);
   }
 }));

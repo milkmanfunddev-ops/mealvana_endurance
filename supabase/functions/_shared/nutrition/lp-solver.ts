@@ -10,6 +10,7 @@ import { type Food, type Phase, type MacroTargets, type PhaseSolution, type LPMo
 import { MACRO_CONSTRAINT_RANGES, PHASE_TIMING_LABELS } from './constants.ts';
 import type { MacroWeights } from './constants.ts';
 import { correctRoundingDrift } from './lp-solver-rounding.ts';
+import { captureEdgeError } from '../sentry.ts';
 
 /**
  * Build a Linear Programming model for food optimization
@@ -374,7 +375,7 @@ export function solveLPModel(
       needsWater: false,
     };
   } catch (error) {
-    console.error('[LP-SOLVER] Error solving model:', error);
+    captureEdgeError(error, { message: '[LP-SOLVER] Error solving model', level: 'error', extra: { foodCount: foods.length } });
     return null;
   }
 }

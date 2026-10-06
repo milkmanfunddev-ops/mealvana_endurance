@@ -48,7 +48,7 @@ const TEMPLATE_FOODS_COLUMNS = `
 // Initialise Sentry once per cold-start. No-op when SENTRY_DSN is not set.
 initSentry();
 
-serve(withSentry(async (req) => {
+serve(withSentry('get-foods', async (req) => {
   // Handle CORS preflight
   const corsResponse = handleCors(req);
   if (corsResponse) return corsResponse;
@@ -156,7 +156,6 @@ serve(withSentry(async (req) => {
 
     return jsonResponse({ foods: formattedFoods });
   } catch (error) {
-    console.error('Error fetching foods:', error);
-    return errorResponse(error instanceof Error ? error.message : 'Unknown error', 400);
+    return errorResponse(error instanceof Error ? error.message : 'Unknown error', 400, undefined, undefined, error);
   }
 }));

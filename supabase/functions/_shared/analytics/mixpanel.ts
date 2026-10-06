@@ -20,6 +20,8 @@
  * sends will not be excluded.
  */
 
+import { captureEdgeError, captureEdgeMessage } from "../sentry.ts";
+
 const MIXPANEL_TOKEN = Deno.env.get("MIXPANEL_PROJECT_TOKEN") ?? "";
 const MIXPANEL_TRACK_URL = "https://api.mixpanel.com/track";
 
@@ -71,13 +73,16 @@ export async function trackServerEvent(params: {
 
     if (!response.ok) {
       const errorBody = await response.text();
-      console.error(
-        `${prefix} track failed:`,
-        response.status,
-        errorBody,
-      );
+      captureEdgeMessage(`${prefix} track failed: ${response.status}`, {
+        level: "warning",
+        extra: { status: response.status, body: errorBody, event: params.event },
+      });
     }
   } catch (error) {
-    console.error(`${prefix} track threw:`, error);
+    captureEdgeError(error, {
+      message: `${prefix} track threw`,
+      level: "warning",
+      extra: { event: params.event },
+    });
   }
 }

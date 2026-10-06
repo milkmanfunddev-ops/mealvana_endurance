@@ -2,6 +2,7 @@
  * Edge-runtime helpers. Extracted from lookup-product/index.ts (2026-07-16).
  */
 import { createClient } from 'https://esm.sh/@supabase/supabase-js@2';
+import { captureEdgeError } from '../sentry.ts';
 
 
 /**
@@ -10,7 +11,7 @@ import { createClient } from 'https://esm.sh/@supabase/supabase-js@2';
  * to a real promise so `.catch` always exists (Supabase builders lack `.catch`).
  */
 function bg(task: Promise<unknown> | PromiseLike<unknown>): void {
-  const p = Promise.resolve(task).catch((e) => console.error('bg task failed:', e));
+  const p = Promise.resolve(task).catch((e) => captureEdgeError(e, { message: 'bg task failed', level: 'warning' }));
   try {
     // @ts-ignore EdgeRuntime is a Supabase edge-runtime global
     if (typeof EdgeRuntime !== 'undefined' && EdgeRuntime.waitUntil) {

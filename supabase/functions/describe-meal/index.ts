@@ -32,7 +32,7 @@ import {
 import { DESCRIBE_MEAL_MODEL } from "../_shared/ai/model.ts";
 import { gatewayCostUsd, logAiUsage } from "../_shared/ai/usage.ts";
 import { MealAnalysisSchema } from "../_shared/meal_analysis/schema.ts";
-import { initSentry, withSentry } from "../_shared/sentry.ts";
+import { captureEdgeError, initSentry, withSentry } from "../_shared/sentry.ts";
 import {
   debitForUsage,
   ensureAndCheckCredits,
@@ -84,7 +84,7 @@ async function requireUser(req: Request) {
 // Initialise Sentry once per cold-start. No-op when SENTRY_DSN is not set.
 initSentry();
 
-serve(withSentry(async (req: Request) => {
+serve(withSentry("describe-meal", async (req: Request) => {
   const corsResponse = handleCors(req);
   if (corsResponse) return corsResponse;
 
@@ -218,7 +218,11 @@ Return your answer as structured JSON matching the requested schema.`,
         })
         .then(({ error: logError }) => {
           if (logError) {
-            console.error("[describe-meal] Failed to log ai usage:", logError);
+            captureEdgeError(logError, {
+              message: "[describe-meal] Failed to log ai usage",
+              level: "warning",
+              extra: { userId: user.id },
+            });
           }
         }),
     );
@@ -255,7 +259,6 @@ Return your answer as structured JSON matching the requested schema.`,
       },
     });
   } catch (error) {
-    console.error("[describe-meal] Fatal error:", error);
     return serverError(error);
   }
 }));

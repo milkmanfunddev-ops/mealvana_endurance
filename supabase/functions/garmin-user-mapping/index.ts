@@ -73,7 +73,7 @@ async function verifyGarminUserId(
 // Initialise Sentry once per cold-start. No-op when SENTRY_DSN is not set.
 initSentry();
 
-serve(withSentry(async (req: Request) => {
+serve(withSentry('garmin-user-mapping', async (req: Request) => {
   const corsResponse = handleCors(req);
   if (corsResponse) return corsResponse;
 
@@ -106,8 +106,13 @@ serve(withSentry(async (req: Request) => {
 
       const { error } = await query;
       if (error) {
-        console.error('[garmin-user-mapping] Delete error:', error);
-        return errorResponse('Failed to delete Garmin mapping', 500, error.message);
+        return errorResponse(
+          'Failed to delete Garmin mapping',
+          500,
+          error.message,
+          undefined,
+          error,
+        );
       }
 
       let countQuery = supabase
@@ -121,8 +126,13 @@ serve(withSentry(async (req: Request) => {
 
       const { count, error: countError } = await countQuery;
       if (countError) {
-        console.error('[garmin-user-mapping] Delete verification error:', countError);
-        return errorResponse('Failed to verify Garmin mapping deletion', 500, countError.message);
+        return errorResponse(
+          'Failed to verify Garmin mapping deletion',
+          500,
+          countError.message,
+          undefined,
+          countError,
+        );
       }
 
       return successResponse({ action: 'delete', remaining: count ?? 0 });
@@ -161,13 +171,23 @@ serve(withSentry(async (req: Request) => {
     );
 
     if (error) {
-      console.error('[garmin-user-mapping] Upsert error:', error);
-      return errorResponse('Failed to save Garmin mapping', 500, error.message);
+      return errorResponse(
+        'Failed to save Garmin mapping',
+        500,
+        error.message,
+        undefined,
+        error,
+      );
     }
 
     return successResponse({ action: 'upsert' });
   } catch (error) {
-    console.error('[garmin-user-mapping] Fatal error:', error);
-    return errorResponse('Internal server error', 500, String(error));
+    return errorResponse(
+      'Internal server error',
+      500,
+      String(error),
+      undefined,
+      error,
+    );
   }
 }));

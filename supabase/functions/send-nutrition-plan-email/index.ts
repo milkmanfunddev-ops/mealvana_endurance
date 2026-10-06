@@ -1,5 +1,5 @@
 import { serve } from "https://deno.land/std@0.224.0/http/server.ts";
-import { initSentry, withSentry } from "../_shared/sentry.ts";
+import { initSentry, withSentry, captureEdgeError } from "../_shared/sentry.ts";
 
 // Read from the RESEND_API_KEY Supabase secret (set on dev+prod 2026-07-01;
 // value also in secrets/resend.env). No hardcoded fallback — a missing secret
@@ -11,7 +11,7 @@ const FROM_EMAIL = 'support@mealvana.io'; // Will change to support@mealvana.io 
 // Initialise Sentry once per cold-start. No-op when SENTRY_DSN is not set.
 initSentry();
 
-serve(withSentry(async (req) => {
+serve(withSentry("send-nutrition-plan-email", async (req) => {
   // CORS headers
   const corsHeaders = {
     'Access-Control-Allow-Origin': '*',
@@ -128,7 +128,7 @@ serve(withSentry(async (req) => {
     const resendData = await resendResponse.json();
     // Check if email was sent successfully
     if (!resendResponse.ok) {
-      console.error('Resend API error:', resendData);
+      captureEdgeError(resendData, { message: 'Resend API error', extra: { status: resendResponse.status } });
       return new Response(JSON.stringify({
         success: false,
         error: resendData.message || 'Failed to send email'
@@ -153,7 +153,7 @@ serve(withSentry(async (req) => {
       }
     });
   } catch (error) {
-    console.error('Error sending email:', error);
+    captureEdgeError(error, { message: 'Error sending email' });
     return new Response(JSON.stringify({
       success: false,
       error: error instanceof Error ? error.message : 'Unknown error occurred'

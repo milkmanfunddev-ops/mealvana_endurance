@@ -158,7 +158,7 @@ function stringListOrNull(v: any): string[] | null {
 // Initialise Sentry once per cold-start. No-op when SENTRY_DSN is not set.
 initSentry();
 
-serve(withSentry(async (req: Request) => {
+serve(withSentry("ai-coach", async (req: Request) => {
   const corsResponse = handleCors(req);
   if (corsResponse) return corsResponse;
 
@@ -304,7 +304,6 @@ serve(withSentry(async (req: Request) => {
     const costUsd = gatewayCostUsd(result.providerMetadata);
 
     if (insight.length === 0) {
-      console.error("[ai-coach] Model returned empty insight");
       return serverError(new Error("Empty insight returned"));
     }
 
@@ -345,7 +344,6 @@ serve(withSentry(async (req: Request) => {
       },
     });
   } catch (error) {
-    console.error("[ai-coach] Fatal error:", error);
     return serverError(error);
   }
 }));

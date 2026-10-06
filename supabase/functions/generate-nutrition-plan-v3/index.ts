@@ -97,7 +97,7 @@ async function timeAsync<T>(
 // SENTRY_DSN is not configured so this never crashes the function.
 initSentry();
 
-serve(withSentry(async (req) => {
+serve(withSentry("generate-nutrition-plan-v3", async (req) => {
   const requestStart = performance.now();
   const corsResponse = handleCors(req);
   if (corsResponse) return corsResponse;
@@ -509,7 +509,6 @@ serve(withSentry(async (req) => {
 
     return jsonResponse(response);
   } catch (error) {
-    console.error("[PLAN-V3] Error:", error);
     console.warn(
       `[PLAN-V3-TIMING] request_total failed after ${
         elapsedMs(requestStart)
