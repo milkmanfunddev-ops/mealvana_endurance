@@ -160,29 +160,34 @@ class SwapFoodController extends _$SwapFoodController {
     // Read before the first await: this auto-dispose provider can be
     // disposed mid-load.
     final authService = ref.read(authServiceProvider);
-    final syncCoordinator = ref.read(syncCoordinatorProvider.notifier);
-    final userFoodCrudService = ref.read(userFoodCrudServiceProvider);
-    final recommendationService = ref.read(foodRecommendationServiceProvider);
-    final templateFoodsRepo = ref.read(templateFoodsRepositoryProvider);
     try {
       // Get current user's ID — uses Supabase auth session to find the correct
       // local profile, matching how saveUserFood() stores the user_id.
       final currentUser = await authService.getCurrentUser();
       final userId = currentUser?.id ?? 'unknown';
 
+      // Disposed mid-load: Riverpod discards this build's result, so stop
+      // before touching `ref` again (UnmountedRefException otherwise).
+      if (!ref.mounted) {
+        return const SwapFoodState(recommendations: [], allFoodsForSearch: []);
+      }
+      // Read the heavier services only once the session answered and only
+      // while mounted; they are not needed before this point.
+      final syncCoordinator = ref.read(syncCoordinatorProvider.notifier);
+      final userFoodCrudService = ref.read(userFoodCrudServiceProvider);
+      final recommendationService = ref.read(foodRecommendationServiceProvider);
+      final templateFoodsRepo = ref.read(templateFoodsRepositoryProvider);
+
       // Ensure user_foods are synced from remote (pulls down after re-login)
       try {
-        // Disposed mid-load: the result is discarded, skip the sync.
-        if (ref.mounted) {
-          final userFoodsRepo = await ref.read(
-            userFoodsRepositoryProvider.future,
-          );
-          await syncCoordinator.ensureSynced(
-            'user_foods',
-            userId,
-            repository: userFoodsRepo,
-          );
-        }
+        final userFoodsRepo = await ref.read(
+          userFoodsRepositoryProvider.future,
+        );
+        await syncCoordinator.ensureSynced(
+          'user_foods',
+          userId,
+          repository: userFoodsRepo,
+        );
       } catch (e) {
         _report.degraded(
           LoggedFault(

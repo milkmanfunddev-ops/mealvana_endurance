@@ -33,9 +33,18 @@ bool appleSignInAvailable({
 /// offers Google / email instead of a button that always fails.
 final appleSignInAvailableProvider = Provider<bool>((ref) {
   if (kIsWeb) return true; // web uses Supabase's OAuth redirect, not the plugin
+  final String servicesId;
+  try {
+    servicesId = ref.watch(appConfigProvider).appleAuthServicesId;
+  } catch (_) {
+    // No AppConfig loaded (widget tests, a harness without an env file):
+    // keep the pre-ticket-17 behaviour and show the button. The catch is the
+    // feature test, not a swallowed failure (allow-list: reasoned).
+    return true;
+  }
   return appleSignInAvailable(
     isAndroid: defaultTargetPlatform == TargetPlatform.android,
-    servicesId: ref.watch(appConfigProvider).appleAuthServicesId,
+    servicesId: servicesId,
   );
 });
 
