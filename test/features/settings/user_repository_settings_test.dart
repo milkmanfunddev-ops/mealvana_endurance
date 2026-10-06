@@ -19,8 +19,8 @@ import 'package:mealvana_endurance/features/nutrition_plan/domain/run_parameters
 import 'package:mealvana_endurance/features/onboarding/domain/allergy.dart';
 import 'package:mealvana_endurance/features/onboarding/domain/dietary_preference.dart';
 import 'package:mealvana_endurance/shared/database/app_database.dart';
-import 'package:mealvana_endurance/shared/services/sentry/sentry_reporter.dart';
 import 'package:mocktail/mocktail.dart';
+import '../../helpers/fakes/recording_report.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 import 'package:supabase_flutter/supabase_flutter.dart';
 
@@ -31,8 +31,6 @@ import 'package:supabase_flutter/supabase_flutter.dart';
 class MockSupabaseClient extends Mock implements SupabaseClient {}
 
 class MockGoTrueClient extends Mock implements GoTrueClient {}
-
-class MockSentryReporter extends Mock implements SentryReporter {}
 
 // MockSupabaseQueryBuilder is kept for completeness but not actively used
 // since all test paths go through saveUserProfile (Drift-only) or
@@ -82,7 +80,6 @@ void main() {
   late AppDatabase database;
   late MockSupabaseClient mockSupabase;
   late MockGoTrueClient mockGoTrue;
-  late MockSentryReporter mockSentry;
   late UserRepository repository;
 
   setUp(() async {
@@ -90,7 +87,6 @@ void main() {
     database = AppDatabase.forTesting(NativeDatabase.memory());
     mockSupabase = MockSupabaseClient();
     mockGoTrue = MockGoTrueClient();
-    mockSentry = MockSentryReporter();
 
     // Supabase auth is consulted by getCurrentUser to scope the query.
     when(() => mockSupabase.auth).thenReturn(mockGoTrue);
@@ -101,37 +97,10 @@ void main() {
     // skips the immediate Supabase upsert path in the repository. Therefore no
     // Supabase from()/upsert() stubs are needed here.
 
-    // Sentry stubs
-    when(
-      () => mockSentry.reportNetworkError(
-        any(),
-        url: any(named: 'url'),
-        method: any(named: 'method'),
-        stackTrace: any(named: 'stackTrace'),
-        statusCode: any(named: 'statusCode'),
-        timeout: any(named: 'timeout'),
-      ),
-    ).thenAnswer((_) async {});
-    when(
-      () => mockSentry.reportDatabaseError(
-        any(),
-        operation: any(named: 'operation'),
-        table: any(named: 'table'),
-        stackTrace: any(named: 'stackTrace'),
-      ),
-    ).thenAnswer((_) async {});
-    when(
-      () => mockSentry.addBreadcrumb(
-        message: any(named: 'message'),
-        category: any(named: 'category'),
-        data: any(named: 'data'),
-      ),
-    ).thenReturn(null);
-
     repository = UserRepository(
       database: database,
       supabase: mockSupabase,
-      sentry: mockSentry,
+      report: RecordingReport(),
     );
   });
 

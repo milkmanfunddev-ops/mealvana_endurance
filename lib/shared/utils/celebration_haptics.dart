@@ -3,6 +3,8 @@ import 'dart:async';
 import 'package:flutter/foundation.dart';
 import 'package:flutter/services.dart';
 
+import '../services/report/report.dart';
+
 /// Shared haptic pattern played alongside celebration visuals (confetti,
 /// success overlays).
 ///
@@ -30,9 +32,14 @@ class CelebrationHaptics {
       await HapticFeedback.lightImpact();
       await Future<void>.delayed(_beat);
       await HapticFeedback.lightImpact();
-    } catch (_) {
-      // Haptics are cosmetic — a missing platform implementation is not an
-      // error worth surfacing.
+    } catch (e) {
+      // Haptics are cosmetic — a missing platform implementation is a
+      // breadcrumb, not an error.
+      await SentryReport.global.note(
+        'Celebration haptics unavailable',
+        area: 'ui',
+        data: {'error': e.toString()},
+      );
     }
   }
 

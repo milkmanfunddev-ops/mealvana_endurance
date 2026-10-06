@@ -7,6 +7,7 @@ import 'package:http/http.dart' as http;
 import 'package:shared_preferences/shared_preferences.dart';
 
 import '../prefs_provider.dart';
+import '../report/report.dart';
 import 'analytics_consent.dart';
 import 'privacy_region.dart';
 
@@ -35,11 +36,16 @@ class PrivacyRegionService {
     required SharedPreferences prefs,
     required http.Client client,
     this.onResolved,
+    Report? report,
   }) : _prefs = prefs,
-       _client = client;
+       _client = client,
+       _report = report;
 
   final SharedPreferences _prefs;
   final http.Client _client;
+  final Report? _report;
+
+  Report get _r => _report ?? SentryReport.global;
 
   /// Fired after a successful refresh so listeners can re-read the cache.
   final void Function()? onResolved;
@@ -115,8 +121,16 @@ class PrivacyRegionService {
       );
 
       onResolved?.call();
-    } catch (_) {
-      // Offline, DNS failure, timeout, malformed body — all the same to us.
+    } catch (e, stackTrace) {
+      // Offline, DNS failure, timeout, malformed body — all the same to us
+      // (the consent regime falls back to device signals); `fault` keeps
+      // the offline cases as warnings and a malformed body as an error.
+      await _r.fault(
+        e,
+        stackTrace: stackTrace,
+        area: 'privacy',
+        message: 'Region lookup failed; falling back to device signals',
+      );
       await _markDeviceFallback();
     }
   }

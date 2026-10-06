@@ -14,7 +14,6 @@ import '../../../shared/services/analytics/analytics_tracker.dart';
 import '../../../shared/services/analytics/internal_user_service.dart';
 import '../../../shared/services/privacy/analytics_consent.dart';
 import '../../../shared/services/logging_service.dart';
-import '../../../shared/services/sentry/sentry_reporter.dart';
 import '../../../shared/services/report/report.dart';
 import '../../../shared/services/report/report_identity.dart';
 import '../../../shared/services/performance_telemetry.dart';
@@ -44,7 +43,7 @@ class AppStartupService {
   /// [initializeAnalyticsAfterConsent] (consent granted just now, mid-session).
   bool _analyticsInitialized = false;
 
-  SentryReporter get _sentry => ref.read(appExternalDepsProvider).sentry;
+  Report get _report => ref.read(reportProvider);
   AppLogger get _logger => ref.read(appExternalDepsProvider).logger;
   AnalyticsTracker get _analytics =>
       ref.read(appExternalDepsProvider).analytics;
@@ -70,16 +69,27 @@ class AppStartupService {
       bool needsRecovery = false;
       try {
         await db.select(db.userProfilesTable).get();
-      } catch (e) {
-        // If we get a null check error, it means the migration didn't backfill properly
-        if (e.toString().contains('Null check operator used on a null value')) {
-          _logger.warning(
-            'Detected null values in database - will attempt recovery',
-            context: 'DATABASE',
+      } catch (e, stackTrace) {
+        // A null-check error means the migration didn't backfill properly.
+        needsRecovery = e.toString().contains(
+          'Null check operator used on a null value',
+        );
+        if (needsRecovery) {
+          await _report.degraded(
+            e,
+            stackTrace: stackTrace,
+            area: 'startup',
+            message: 'Detected null values in database - will attempt recovery',
           );
-          needsRecovery = true;
+        } else {
+          // The table should exist by now (onCreate ran on open); say so if
+          // it did not, instead of treating a failed read as a fresh install.
+          await _report.note(
+            'Profile table read failed before health check; continuing',
+            area: 'startup',
+            data: {'error': e.toString()},
+          );
         }
-        // Otherwise on fresh install, table might not exist yet - that's OK
       }
 
       // AGGRESSIVE FIX: If null values detected, fix them immediately
@@ -120,11 +130,13 @@ class AppStartupService {
 
           // Verify fix worked
           await db.select(db.userProfilesTable).get();
-        } catch (fixError) {
-          _logger.error(
-            'Failed to fix null values - will delete and recreate database',
-            context: 'DATABASE',
-            error: fixError,
+        } catch (fixError, stackTrace) {
+          await _report.fault(
+            fixError,
+            stackTrace: stackTrace,
+            area: 'startup',
+            message:
+                'Failed to fix null values - will delete and recreate database',
           );
 
           // Last resort: delete and recreate
@@ -166,9 +178,12 @@ class AppStartupService {
       }
 
       if (!isHealthy) {
-        _logger.warning(
-          'Database corruption detected during startup - initiating recovery',
-          context: 'DATABASE',
+        await _report.degraded(
+          const LoggedFault(
+            'Database corruption detected during startup - initiating recovery',
+          ),
+          area: 'startup',
+          tags: {'full_check': needsFullCheck.toString()},
         );
 
         // Best-effort: upload dirty records before deleting the database
@@ -179,11 +194,13 @@ class AppStartupService {
                 .read(syncCoordinatorProvider.notifier)
                 .uploadAllDirtyRecords(userId);
           }
-        } catch (e) {
-          _logger.warning(
-            'Could not upload dirty records before corruption recovery',
-            context: 'DATABASE',
-            data: {'error': e.toString()},
+        } catch (e, stackTrace) {
+          await _report.degraded(
+            e,
+            stackTrace: stackTrace,
+            area: 'startup',
+            message:
+                'Could not upload dirty records before corruption recovery',
           );
         }
 
@@ -212,11 +229,11 @@ class AppStartupService {
         await prefs.setInt('last_full_db_health_check', 0);
       }
     } catch (e, stackTrace) {
-      _logger.error(
-        'Database initialization failed',
-        context: 'DATABASE',
-        error: e,
+      await _report.fault(
+        e,
         stackTrace: stackTrace,
+        area: 'startup',
+        message: 'Database initialization failed',
       );
 
       // Last resort: try to recover from catastrophic failure
@@ -226,11 +243,12 @@ class AppStartupService {
           context: e.runtimeType.toString(),
         );
         ref.invalidate(appDatabaseProvider);
-      } catch (recoveryError) {
-        _logger.error(
-          'Database recovery failed - app cannot continue',
-          context: 'DATABASE',
-          error: recoveryError,
+      } catch (recoveryError, recoveryStackTrace) {
+        await _report.fault(
+          recoveryError,
+          stackTrace: recoveryStackTrace,
+          area: 'startup',
+          message: 'Database recovery failed - app cannot continue',
         );
         rethrow; // Re-throw to trigger error handling in AppStartupWidget
       }
@@ -256,11 +274,12 @@ class AppStartupService {
       await PerformanceTelemetry.measure(name, body);
     } catch (e, stackTrace) {
       if (ref.mounted) {
-        _logger.error(
-          'Deferred step failed: $name',
-          context: 'DEFERRED_INIT',
-          error: e,
+        await _report.fault(
+          e,
           stackTrace: stackTrace,
+          area: 'startup',
+          message: 'Deferred step failed: $name',
+          tags: {'step': name},
         );
       }
     }
@@ -348,14 +367,14 @@ class AppStartupService {
           ref.read(authServiceProvider).reconcileAppVersion,
         );
       } catch (e, stackTrace) {
-        // Skip logging if the scope was disposed mid-chain — `_logger` reads
-        // `ref` and would throw over the original error.
+        // Skip reporting if the scope was disposed mid-chain — `_report`
+        // reads `ref` and would throw over the original error.
         if (ref.mounted) {
-          _logger.error(
-            'Deferred initialization failed',
-            context: 'DEFERRED_INIT',
-            error: e,
+          await _report.fault(
+            e,
             stackTrace: stackTrace,
+            area: 'startup',
+            message: 'Deferred initialization failed',
           );
         }
         // Don't rethrow - app should continue even if deferred services fail
@@ -435,8 +454,14 @@ class AppStartupService {
                 .userDao
                 .getCurrentUserProfile() !=
             null;
-      } catch (_) {
-        // Lookup failure → treat as anonymous below.
+      } catch (e) {
+        // Treated as anonymous below; the identify call then uses the
+        // device id, which is the wrong distinct_id for a signed-in athlete.
+        await _report.note(
+          'Local profile lookup failed; identifying as anonymous',
+          area: 'startup',
+          data: {'error': e.toString()},
+        );
       }
       if (!hasLocalProfile) {
         await _analytics.identifyUser(deviceId);
@@ -461,11 +486,12 @@ class AppStartupService {
     } catch (e, stackTrace) {
       // Allow a later attempt (e.g. the post-consent call) to retry.
       _analyticsInitialized = false;
-      _logger.error(
-        'Analytics initialization failed',
-        context: 'ANALYTICS',
-        error: e,
+      await _report.fault(
+        e,
         stackTrace: stackTrace,
+        area: 'startup',
+        message: 'Analytics initialization failed',
+        tags: {'component': 'analytics'},
       );
       // Don't rethrow - app should continue even if analytics fails
     }
@@ -486,11 +512,12 @@ class AppStartupService {
         await revenueCat.logIn(userId);
       }
     } catch (e, stackTrace) {
-      _logger.error(
-        'RevenueCat initialization failed',
-        context: 'DEFERRED_INIT',
-        error: e,
+      await _report.fault(
+        e,
         stackTrace: stackTrace,
+        area: 'startup',
+        message: 'RevenueCat initialization failed',
+        tags: {'component': 'revenuecat'},
       );
     }
   }
@@ -508,11 +535,11 @@ class AppStartupService {
       // to ensure it picks up the latest coach status from local coaches table
       ref.invalidate(settingsControllerProvider);
     } catch (e, stackTrace) {
-      _logger.error(
-        'Coach status sync failed',
-        context: 'COACH_SYNC',
-        error: e,
+      await _report.fault(
+        e,
         stackTrace: stackTrace,
+        area: 'startup',
+        message: 'Coach status sync failed',
       );
       // Don't rethrow - app should continue even if coach sync fails
     }
@@ -571,13 +598,14 @@ class AppStartupService {
       final authUserId = _supabase.auth.currentUser?.id;
       await NotificationService.setRemotePushUserId(authUserId);
     } catch (e, stackTrace) {
-      _logger.error(
-        'Session check error',
-        context: 'AUTH',
-        error: e,
+      // A missing profile is null, not a throw: anything caught here is a
+      // real failure, and the push user id was not set.
+      await _report.fault(
+        e,
         stackTrace: stackTrace,
+        area: 'startup',
+        message: 'Session check failed',
       );
-      // Continue without user session - this is expected on fresh installs
     }
   }
 
@@ -596,13 +624,14 @@ class AppStartupService {
         // Note: Nutrition plans are now embedded in activities table
         // No initialization needed - plans are loaded with activities
       }
-    } catch (e) {
-      _logger.error(
-        'Plan initialization error',
-        context: 'NUTRITION_PLAN',
-        error: e,
+    } catch (e, stackTrace) {
+      await _report.fault(
+        e,
+        stackTrace: stackTrace,
+        area: 'startup',
+        message: 'Plan initialization failed',
       );
-      // Continue - app should work without plans (expected on fresh installs)
+      // Continue - app should work without plans
     }
   }
 
@@ -625,11 +654,11 @@ class AppStartupService {
         await foodRepository.getAllFoods();
       }
     } catch (e, stackTrace) {
-      _logger.error(
-        'Fallback food load failed - app will continue with no foods',
-        context: 'FOOD_DATA_FALLBACK',
-        error: e,
+      await _report.fault(
+        e,
         stackTrace: stackTrace,
+        area: 'startup',
+        message: 'Fallback food load failed - app will continue with no foods',
       );
       // Don't rethrow - app should continue even if fallback fails
     }
@@ -655,18 +684,20 @@ class AppStartupService {
       // Recover the backup
       final backup = await backupService.recoverBackup();
       if (backup == null) {
-        _logger.warning(
-          'Backup file exists but could not be recovered',
-          context: 'DIRTY_RECORD_RECOVERY',
+        await _report.degraded(
+          const LoggedFault('Backup file exists but could not be recovered'),
+          area: 'startup',
+          tags: {'component': 'dirty_record_recovery'},
         );
         return false;
       }
 
       // Show recovery dialog to user
       if (!context.mounted) {
-        _logger.warning(
+        await _report.note(
           'Context not mounted, cannot show recovery dialog',
-          context: 'DIRTY_RECORD_RECOVERY',
+          area: 'startup',
+          data: {'record_count': backup.totalRecordCount},
         );
         return false;
       }
@@ -675,9 +706,10 @@ class AppStartupService {
 
       if (userChoice == null) {
         // User dismissed dialog (shouldn't happen since barrierDismissible: false)
-        _logger.warning(
+        await _report.note(
           'Recovery dialog dismissed without choice',
-          context: 'DIRTY_RECORD_RECOVERY',
+          area: 'startup',
+          data: {'record_count': backup.totalRecordCount},
         );
         return false;
       }
@@ -715,17 +747,11 @@ class AppStartupService {
 
       return true;
     } catch (e, stackTrace) {
-      _logger.error(
-        'Failed to handle dirty record backup',
-        context: 'DIRTY_RECORD_RECOVERY',
-        error: e,
-        stackTrace: stackTrace,
-      );
-
-      await _sentry.reportCriticalError(
+      await _report.fault(
         e,
         stackTrace: stackTrace,
-        context: 'dirty_record_recovery_failed',
+        area: 'startup',
+        message: 'Failed to handle dirty record backup',
         tags: {
           'error_type': 'recovery_handler_failed',
           'operation': 'check_and_handle_backup',
@@ -772,18 +798,12 @@ class AppStartupService {
       } catch (e, stackTrace) {
         failureCount += records.length;
 
-        _logger.error(
-          'Failed to upload backup records',
-          context: repositoryKey.toUpperCase(),
-          error: e,
-          stackTrace: stackTrace,
-        );
-
-        // Log to Sentry but continue with other repositories
-        await _sentry.reportCriticalError(
+        // Report, then continue with the other repositories.
+        await _report.fault(
           e,
           stackTrace: stackTrace,
-          context: 'backup_upload_failed_$repositoryKey',
+          area: 'startup',
+          message: 'Failed to upload backup records',
           tags: {
             'error_type': 'backup_upload_failed',
             'repository': repositoryKey,

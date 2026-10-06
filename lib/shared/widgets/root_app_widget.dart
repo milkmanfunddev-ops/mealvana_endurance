@@ -23,6 +23,7 @@ import '../../features/app_startup/application/app_startup_provider.dart';
 import '../../features/app_startup/presentation/widgets/app_startup_widget.dart';
 import '../core/app_router.dart';
 import '../core/bootstrap/bootstrap.dart' show appNavigatorKey;
+import '../services/report/report.dart';
 import '../services/app_config.dart';
 import '../services/app_external_deps.dart';
 import '../../features/carb_loading/presentation/providers/carb_nudge_coordinator.dart';
@@ -295,8 +296,15 @@ class _RootAppWidgetState extends ConsumerState<RootAppWidget>
           distanceMiles: activity.distanceMiles,
         );
       }
-    } catch (_) {
+    } catch (e) {
       // Fall through with the bare id — see above.
+      await ref
+          .read(reportProvider)
+          .note(
+            'Activity lookup for notification deep link failed; navigating with bare id',
+            area: 'push',
+            data: {'activity_id': activityId, 'error': e.toString()},
+          );
     }
     if (!mounted) return;
     _deepLinkTo(destination.location, extra);

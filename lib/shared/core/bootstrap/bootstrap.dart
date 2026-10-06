@@ -42,6 +42,12 @@ export 'sentry_flavor_settings.dart' show AppFlavor;
 /// feedback form; app code uses it to reach a context from outside the tree.
 final GlobalKey<NavigatorState> appNavigatorKey = GlobalKey<NavigatorState>();
 
+/// Navigator observers the app router installs. The Sentry one records each
+/// screen transition as a breadcrumb and a navigation span; it is built here
+/// because the bootstrap is the only place outside `Report` allowed to touch
+/// the Sentry SDK (source guard, ticket 04).
+List<NavigatorObserver> appNavigatorObservers() => [SentryNavigatorObserver()];
+
 /// Boots the app for [flavor]. Never throws past the DSN check: a flavor
 /// with no DSN runs the app with Sentry disabled and says so on the console.
 Future<void> bootstrap(AppFlavor flavor) async {

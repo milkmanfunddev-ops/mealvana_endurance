@@ -34,7 +34,7 @@ import 'package:mealvana_endurance/shared/services/sync/sync_coordinator.dart';
 
 import '../helpers/fakes/fake_supabase_client.dart';
 import '../helpers/fakes/recording_app_logger.dart';
-import '../helpers/fakes/recording_sentry_reporter.dart';
+import '../helpers/fakes/recording_report.dart';
 
 void main() {
   late AppDatabase database;
@@ -508,7 +508,7 @@ void main() {
     UserRepository repo() => UserRepository(
       database: database,
       supabase: fakeSupabaseClient(),
-      sentry: RecordingSentryReporter(),
+      report: RecordingReport(),
     );
 
     test('false for an empty (post-sign-out) anonymous user', () async {

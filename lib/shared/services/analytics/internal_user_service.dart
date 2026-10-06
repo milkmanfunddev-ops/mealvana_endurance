@@ -4,6 +4,7 @@ import 'package:flutter_secure_storage/flutter_secure_storage.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 
 import '../device_info_service.dart';
+import '../report/report.dart';
 import '../../utils/platform_io.dart'
     if (dart.library.html) '../../utils/platform_web.dart';
 
@@ -141,9 +142,14 @@ class InternalUserService {
 
     try {
       await _storage.write(key: _internalFlagKey, value: 'true');
-    } catch (_) {
+    } catch (e) {
       // Secure storage unavailable — analytics must never crash the app. The
       // pref is deliberately left in place so we can retry on the next launch.
+      await SentryReport.global.note(
+        'Secure storage write failed; legacy exclusion migration retries next launch',
+        area: 'analytics',
+        data: {'error': e.toString()},
+      );
       return;
     }
     await prefs.remove(_legacyExcludedKey);
@@ -170,10 +176,15 @@ class InternalUserService {
 
     try {
       await _storage.write(key: _internalFlagKey, value: value.toString());
-    } catch (_) {
+    } catch (e) {
       // Secure storage is unavailable (e.g. web without a crypto context).
       // The in-memory value still applies for this session; we simply cannot
       // make it durable. Analytics must never crash the app.
+      await SentryReport.global.note(
+        'Secure storage write failed; internal flag is session-only',
+        area: 'analytics',
+        data: {'value': value, 'error': e.toString()},
+      );
     }
   }
 
@@ -188,7 +199,13 @@ class InternalUserService {
         'false' => false,
         _ => null,
       };
-    } catch (_) {
+    } catch (e) {
+      // Treated as "never set"; the forced/dart-define sources still apply.
+      await SentryReport.global.note(
+        'Secure storage read failed; internal flag unknown',
+        area: 'analytics',
+        data: {'error': e.toString()},
+      );
       return null;
     }
   }

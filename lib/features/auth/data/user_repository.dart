@@ -6,8 +6,7 @@ import '../../../shared/database/app_database.dart';
 import '../../../shared/database/database_provider.dart';
 import '../../../shared/services/app_external_deps.dart';
 import '../../../shared/services/sync/sync_dependency_graph.dart';
-import '../../../shared/services/sentry/sentry_reporter.dart';
-import '../../../core/utils/debug_logger.dart';
+import '../../../shared/services/report/report.dart';
 import '../../../shared/data/syncable_repository.dart';
 
 part 'user_repository.g.dart';
@@ -18,12 +17,14 @@ class UserRepository with SyncableRepository {
   UserRepository({
     required this.database,
     required this.supabase,
-    required this.sentry,
-  });
+    Report? report,
+  }) : _report = report;
 
   final AppDatabase database;
   final SupabaseClient supabase;
-  final SentryReporter sentry;
+  final Report? _report;
+
+  Report get _r => _report ?? SentryReport.global;
 
   // ========== SyncableRepository Implementation ==========
 
@@ -56,8 +57,8 @@ class UserRepository with SyncableRepository {
         database.userProfilesTable,
       )..where((t) => t.id.equals(userId))).getSingleOrNull();
       if (localProfile?.needsUpload == true) {
-        sentry.addBreadcrumb(
-          message: 'Skipped remote user overwrite for dirty local profile',
+        _r.breadcrumb(
+          'Skipped remote user overwrite for dirty local profile',
           category: 'sync',
           data: {'user_id': userId},
         );
@@ -70,19 +71,20 @@ class UserRepository with SyncableRepository {
       // Update last sync timestamp
       await setLastSyncTime(DateTime.now());
 
-      sentry.addBreadcrumb(
-        message: 'User profile synced from Supabase',
+      _r.breadcrumb(
+        'User profile synced from Supabase',
         category: 'sync',
         data: {'user_id': userId, 'repository': repositoryKey},
       );
 
       return SyncResult.successful(1);
     } catch (e, stackTrace) {
-      await sentry.reportNetworkError(
+      await _r.fault(
         e,
-        url: 'supabase:users:sync',
-        method: 'SELECT',
         stackTrace: stackTrace,
+        area: 'auth',
+        message: 'supabase:users:sync SELECT failed',
+        tags: {'url': 'supabase:users:sync', 'method': 'SELECT'},
       );
       return SyncResult.failed(e.toString());
     }
@@ -127,19 +129,20 @@ class UserRepository with SyncableRepository {
             ..where((t) => t.updatedAt.equals(dirtyUser.updatedAt)))
           .write(const UserProfilesTableCompanion(needsUpload: Value(false)));
 
-      sentry.addBreadcrumb(
-        message: 'Uploaded dirty user profile to Supabase',
+      _r.breadcrumb(
+        'Uploaded dirty user profile to Supabase',
         category: 'sync',
         data: {'user_id': userId, 'repository': repositoryKey},
       );
 
       return UploadResult.successful(1);
     } catch (e, stackTrace) {
-      await sentry.reportNetworkError(
+      await _r.fault(
         e,
-        url: 'supabase:users:upload',
-        method: 'UPSERT',
         stackTrace: stackTrace,
+        area: 'auth',
+        message: 'supabase:users:upload UPSERT failed',
+        tags: {'url': 'supabase:users:upload', 'method': 'UPSERT'},
       );
       return UploadResult.failed(e.toString());
     }
@@ -155,17 +158,18 @@ class UserRepository with SyncableRepository {
   }) async {
     try {
       await database.userDao.saveUserProfile(profile, needsUpload: needsUpload);
-      sentry.addBreadcrumb(
-        message: 'User profile saved successfully',
+      _r.breadcrumb(
+        'User profile saved successfully',
         category: 'database',
         data: {'user_id': profile.id, 'needsUpload': needsUpload},
       );
     } catch (e, stackTrace) {
-      await sentry.reportDatabaseError(
+      await _r.fault(
         e,
-        operation: 'saveUserProfile',
-        table: 'user_profiles',
         stackTrace: stackTrace,
+        area: 'auth',
+        message: 'saveUserProfile failed',
+        tags: {'table': 'user_profiles', 'operation': 'saveUserProfile'},
       );
       rethrow;
     }
@@ -177,11 +181,12 @@ class UserRepository with SyncableRepository {
       // For device-based approach, we just get the current user
       return await getCurrentUser();
     } catch (e, stackTrace) {
-      await sentry.reportDatabaseError(
+      await _r.fault(
         e,
-        operation: 'getUserProfile',
-        table: 'user_profiles',
         stackTrace: stackTrace,
+        area: 'auth',
+        message: 'getUserProfile failed',
+        tags: {'table': 'user_profiles', 'operation': 'getUserProfile'},
       );
       rethrow;
     }
@@ -199,11 +204,12 @@ class UserRepository with SyncableRepository {
         currentAuthUserId: currentAuthUserId,
       );
     } catch (e, stackTrace) {
-      await sentry.reportDatabaseError(
+      await _r.fault(
         e,
-        operation: 'getCurrentUser',
-        table: 'user_profiles',
         stackTrace: stackTrace,
+        area: 'auth',
+        message: 'getCurrentUser failed',
+        tags: {'table': 'user_profiles', 'operation': 'getCurrentUser'},
       );
       rethrow;
     }
@@ -237,34 +243,36 @@ class UserRepository with SyncableRepository {
             updatedProfile,
             needsUpload: true,
           );
-          sentry.addBreadcrumb(
-            message: 'Immediate upload failed; record marked dirty for retry',
+          _r.breadcrumb(
+            'Immediate upload failed; record marked dirty for retry',
             category: 'sync',
             data: {
               'operation': 'update_profile',
               'recordId': updatedProfile.id,
             },
           );
-          await sentry.reportNetworkError(
+          await _r.fault(
             e,
-            url: 'supabase:users:update_profile',
-            method: 'UPSERT',
             stackTrace: stackTrace,
+            area: 'auth',
+            message: 'supabase:users:update_profile UPSERT failed',
+            tags: {'url': 'supabase:users:update_profile', 'method': 'UPSERT'},
           );
         }
       }
 
-      sentry.addBreadcrumb(
-        message: 'User profile updated successfully',
+      _r.breadcrumb(
+        'User profile updated successfully',
         category: 'database',
         data: {'user_id': profile.id, 'needsUpload': needsUpload},
       );
     } catch (e, stackTrace) {
-      await sentry.reportDatabaseError(
+      await _r.fault(
         e,
-        operation: 'updateUserProfile',
-        table: 'user_profiles',
         stackTrace: stackTrace,
+        area: 'auth',
+        message: 'updateUserProfile failed',
+        tags: {'table': 'user_profiles', 'operation': 'updateUserProfile'},
       );
       rethrow;
     }
@@ -315,24 +323,28 @@ class UserRepository with SyncableRepository {
             .update(updateData)
             .eq('id', currentUser.id);
       } catch (e, stackTrace) {
-        sentry.addBreadcrumb(
-          message: 'Immediate upload failed; record stays dirty for retry',
+        _r.breadcrumb(
+          'Immediate upload failed; record stays dirty for retry',
           category: 'sync',
           data: {
             'operation': 'update_auth_provider',
             'recordId': currentUser.id,
           },
         );
-        await sentry.reportNetworkError(
+        await _r.fault(
           e,
-          url: 'supabase:users:update_auth_provider',
-          method: 'UPDATE',
           stackTrace: stackTrace,
+          area: 'auth',
+          message: 'supabase:users:update_auth_provider UPDATE failed',
+          tags: {
+            'url': 'supabase:users:update_auth_provider',
+            'method': 'UPDATE',
+          },
         );
       }
 
-      sentry.addBreadcrumb(
-        message: 'Auth provider updated successfully',
+      _r.breadcrumb(
+        'Auth provider updated successfully',
         category: 'auth',
         data: {
           'user_id': currentUser.id,
@@ -342,11 +354,12 @@ class UserRepository with SyncableRepository {
         },
       );
     } catch (e, stackTrace) {
-      await sentry.reportDatabaseError(
+      await _r.fault(
         e,
-        operation: 'updateAuthProvider',
-        table: 'user_profiles',
         stackTrace: stackTrace,
+        area: 'auth',
+        message: 'updateAuthProvider failed',
+        tags: {'table': 'user_profiles', 'operation': 'updateAuthProvider'},
       );
       rethrow;
     }
@@ -357,11 +370,15 @@ class UserRepository with SyncableRepository {
     try {
       return await database.userDao.getUserProfileByAuthUserId(authUserId);
     } catch (e, stackTrace) {
-      await sentry.reportDatabaseError(
+      await _r.fault(
         e,
-        operation: 'getUserProfileByAuthUserId',
-        table: 'user_profiles',
         stackTrace: stackTrace,
+        area: 'auth',
+        message: 'getUserProfileByAuthUserId failed',
+        tags: {
+          'table': 'user_profiles',
+          'operation': 'getUserProfileByAuthUserId',
+        },
       );
       rethrow;
     }
@@ -372,11 +389,12 @@ class UserRepository with SyncableRepository {
     try {
       return await database.userDao.getUserProfileById(userId);
     } catch (e, stackTrace) {
-      await sentry.reportDatabaseError(
+      await _r.fault(
         e,
-        operation: 'getUserProfileById',
-        table: 'user_profiles',
         stackTrace: stackTrace,
+        area: 'auth',
+        message: 'getUserProfileById failed',
+        tags: {'table': 'user_profiles', 'operation': 'getUserProfileById'},
       );
       rethrow;
     }
@@ -494,9 +512,15 @@ class UserRepository with SyncableRepository {
     _prefsReconciledAt[userId] = DateTime.now();
     try {
       await fetchAndCacheRemoteFoodPreferences(userId);
-    } catch (_) {
+    } catch (e) {
       _prefsReconciledAt.remove(userId);
-      // Reported by fetchAndCacheRemoteFoodPreferences via SentryReporter.
+      // fetchAndCacheRemoteFoodPreferences reports the failure itself; this
+      // records that the throttle stamp was cleared so the next read retries.
+      await _r.note(
+        'Food preference reconcile failed; stamp cleared for retry',
+        area: 'auth',
+        data: {'user_id': userId, 'error': e.toString()},
+      );
     }
   }
 
@@ -546,11 +570,12 @@ class UserRepository with SyncableRepository {
         List<Map<String, dynamic>>.from(response),
       );
     } catch (e, stackTrace) {
-      await sentry.reportNetworkError(
+      await _r.fault(
         e,
-        url: 'supabase:user_foods:select',
-        method: 'SELECT',
         stackTrace: stackTrace,
+        area: 'auth',
+        message: 'supabase:user_foods:select SELECT failed',
+        tags: {'url': 'supabase:user_foods:select', 'method': 'SELECT'},
       );
     }
   }
@@ -576,7 +601,13 @@ class UserRepository with SyncableRepository {
           foodPreferences = await getFoodPreferences(oldUserId);
           foodPreferenceLevels = await getFoodPreferenceLevels(oldUserId);
         } catch (e) {
-          // Ignore - user may not have food preferences yet
+          // A user with no preferences gets an empty map, not a throw: this
+          // is a read failure, and the new profile starts without a transfer.
+          await _r.note(
+            'Old user food preferences unreadable during reset; not transferred',
+            area: 'auth',
+            data: {'old_user_id': oldUserId, 'error': e.toString()},
+          );
           foodPreferences = null;
           foodPreferenceLevels = null;
         }
@@ -644,24 +675,28 @@ class UserRepository with SyncableRepository {
           'updated_at': newProfile.updatedAt.toIso8601String(),
         });
       } catch (e, stackTrace) {
-        sentry.addBreadcrumb(
-          message: 'Immediate upload failed; record stays dirty for retry',
+        _r.breadcrumb(
+          'Immediate upload failed; record stays dirty for retry',
           category: 'sync',
           data: {
             'operation': 'reset_anonymous_user',
             'recordId': newAnonymousUserId,
           },
         );
-        await sentry.reportNetworkError(
+        await _r.fault(
           e,
-          url: 'supabase:users:reset_anonymous_user',
-          method: 'UPSERT',
           stackTrace: stackTrace,
+          area: 'auth',
+          message: 'supabase:users:reset_anonymous_user UPSERT failed',
+          tags: {
+            'url': 'supabase:users:reset_anonymous_user',
+            'method': 'UPSERT',
+          },
         );
       }
 
-      sentry.addBreadcrumb(
-        message: 'Reset to new anonymous user after sign-out',
+      _r.breadcrumb(
+        'Reset to new anonymous user after sign-out',
         category: 'auth',
         data: {
           'new_user_id': newAnonymousUserId,
@@ -672,11 +707,15 @@ class UserRepository with SyncableRepository {
 
       return newAnonymousUserId;
     } catch (e, stackTrace) {
-      await sentry.reportDatabaseError(
+      await _r.fault(
         e,
-        operation: 'resetToAnonymousAfterSignOut',
-        table: 'user_profiles',
         stackTrace: stackTrace,
+        area: 'auth',
+        message: 'resetToAnonymousAfterSignOut failed',
+        tags: {
+          'table': 'user_profiles',
+          'operation': 'resetToAnonymousAfterSignOut',
+        },
       );
       rethrow;
     }
@@ -699,8 +738,8 @@ class UserRepository with SyncableRepository {
           database.userProfilesTable,
         )..where((t) => t.id.equals(userId))).getSingleOrNull();
         if (localProfile?.needsUpload == true) {
-          sentry.addBreadcrumb(
-            message: 'Skipped remote user overwrite for dirty local profile',
+          _r.breadcrumb(
+            'Skipped remote user overwrite for dirty local profile',
             category: 'sync',
             data: {'user_id': userId},
           );
@@ -713,11 +752,12 @@ class UserRepository with SyncableRepository {
       }
       return null;
     } catch (e, stackTrace) {
-      await sentry.reportNetworkError(
+      await _r.fault(
         e,
-        url: 'supabase:users:select',
-        method: 'SELECT',
         stackTrace: stackTrace,
+        area: 'auth',
+        message: 'supabase:users:select SELECT failed',
+        tags: {'url': 'supabase:users:select', 'method': 'SELECT'},
       );
       return null;
     }
@@ -780,8 +820,10 @@ class UserRepository with SyncableRepository {
         final localPrefs = await database.foodPreferencesDao
             .getUserFoodPreferences(userId);
         if (localPrefs.isNotEmpty) {
-          DebugLogger.warning(
-            'Server returned empty food_preferences but local has ${localPrefs.length} items - keeping local data',
+          await _r.note(
+            'Server returned empty food_preferences; keeping local data',
+            area: 'auth',
+            data: {'user_id': userId, 'local_count': localPrefs.length},
           );
           return localPrefs;
         }
@@ -804,11 +846,12 @@ class UserRepository with SyncableRepository {
       );
       return preferences;
     } catch (e, stackTrace) {
-      await sentry.reportNetworkError(
+      await _r.fault(
         e,
-        url: 'supabase:food_preferences:select',
-        method: 'SELECT',
         stackTrace: stackTrace,
+        area: 'auth',
+        message: 'supabase:food_preferences:select SELECT failed',
+        tags: {'url': 'supabase:food_preferences:select', 'method': 'SELECT'},
       );
       return {};
     }
@@ -832,11 +875,12 @@ class UserRepository with SyncableRepository {
       await saveUserProfile(userProfile);
       return userProfile;
     } catch (e, stackTrace) {
-      await sentry.reportNetworkError(
+      await _r.fault(
         e,
-        url: 'supabase:users.upsert',
-        method: 'UPSERT',
         stackTrace: stackTrace,
+        area: 'auth',
+        message: 'supabase:users.upsert UPSERT failed',
+        tags: {'url': 'supabase:users.upsert', 'method': 'UPSERT'},
       );
       // Fallback to local save so onboarding/login still completes offline.
       await saveUserProfile(userProfile);
@@ -962,11 +1006,12 @@ class UserRepository with SyncableRepository {
       // FAIL SAFE: Don't assume - let caller handle retry logic
       // Returning false on network errors could cause data loss by skipping migration
       // and triggering _handleFreshLogin, which may overwrite existing server data
-      await sentry.reportNetworkError(
+      await _r.fault(
         e,
-        url: 'supabase:checkUserHasData',
-        method: 'GET',
         stackTrace: stackTrace,
+        area: 'auth',
+        message: 'supabase:checkUserHasData GET failed',
+        tags: {'url': 'supabase:checkUserHasData', 'method': 'GET'},
       );
       rethrow; // Let caller decide how to handle this error
     }
@@ -978,8 +1023,8 @@ class UserRepository with SyncableRepository {
 Future<UserRepository> userRepository(Ref ref) async {
   // Get the database instance
   final database = ref.watch(appDatabaseProvider);
-  final sentry = ref.watch(sentryReporterProvider);
+  final report = ref.watch(reportProvider);
   final supabase = ref.watch(appExternalDepsProvider).supabaseClient;
 
-  return UserRepository(database: database, supabase: supabase, sentry: sentry);
+  return UserRepository(database: database, supabase: supabase, report: report);
 }
