@@ -4,6 +4,7 @@ import 'package:font_awesome_flutter/font_awesome_flutter.dart';
 import 'package:speech_to_text/speech_recognition_result.dart';
 import 'package:speech_to_text/speech_to_text.dart';
 
+import '../../../../shared/services/report/report.dart';
 import '../../../../theme/kyle_design/app_colors.dart';
 import 'vana_round_button.dart';
 
@@ -60,7 +61,14 @@ class _VanaMicButtonState extends State<VanaMicButton> {
           if (mounted && _listening) setState(() => _listening = false);
         },
       );
-    } catch (_) {
+    } catch (e) {
+      // Plain StatefulWidget, no ref: the global is the `Report` in reach.
+      // Speech init failing (simulator, no mic) hides the button; expected.
+      SentryReport.global.note(
+        'speech recognition unavailable; mic button hidden',
+        area: 'meal_planning',
+        data: {'error': e.toString()},
+      );
       ok = false;
     }
     if (mounted) setState(() => _available = ok);

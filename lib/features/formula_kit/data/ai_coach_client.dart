@@ -5,6 +5,7 @@ import 'package:riverpod_annotation/riverpod_annotation.dart';
 import 'package:supabase_flutter/supabase_flutter.dart';
 
 import '../../ai_credits/domain/insufficient_credits_exception.dart';
+import '../../../shared/services/report/report.dart';
 import '../../../shared/services/supabase/supabase_client_provider.dart';
 import '../domain/coach_insight.dart';
 
@@ -44,7 +45,10 @@ class AiCoachException implements Exception {
 
 @riverpod
 AiCoachClient aiCoachClient(Ref ref) {
-  return AiCoachClient(supabase: ref.watch(supabaseClientProvider));
+  return AiCoachClient(
+    supabase: ref.watch(supabaseClientProvider),
+    report: ref.watch(reportProvider),
+  );
 }
 
 /// Remote-only client for the `ai-coach` edge function.
@@ -53,9 +57,16 @@ AiCoachClient aiCoachClient(Ref ref) {
 /// [AiCoachException] so the presentation layer can branch on the kind without
 /// string-matching.
 class AiCoachClient {
-  AiCoachClient({required SupabaseClient supabase}) : _supabase = supabase;
+  AiCoachClient({required SupabaseClient supabase, Report? report})
+    : _supabase = supabase,
+      _report = report;
 
   final SupabaseClient _supabase;
+  final Report? _report;
+
+  Report get _r => _report ?? SentryReport.global;
+
+  static const _area = 'formula_kit';
 
   /// Fetch a coach insight for the supplied draft [context].
   ///
@@ -134,8 +145,18 @@ class AiCoachClient {
             'No internet connection. Please check your network and try again.',
         debugMessage: e.toString(),
       );
-    } on FunctionException catch (e) {
-      if (kDebugMode) debugPrint('[AiCoachClient] FunctionException: $e');
+    } on FunctionException catch (e, st) {
+      // 402 is the credits paywall, an expected outcome; anything else is
+      // the edge function failing on us.
+      if (e.status != 402) {
+        await _r.fault(
+          e,
+          stackTrace: st,
+          area: _area,
+          message: 'ai-coach edge function failed',
+          extra: {'status': e.status},
+        );
+      }
 
       // HTTP 402 → the user has run out of AI credits.
       // Parse the structured error body and throw a typed exception so the
@@ -160,8 +181,13 @@ class AiCoachClient {
             'Coach insight is unavailable right now. Please try again.',
         debugMessage: 'FunctionException ${e.status}: $e',
       );
-    } catch (e) {
-      if (kDebugMode) debugPrint('[AiCoachClient] unexpected error: $e');
+    } catch (e, st) {
+      await _r.fault(
+        e,
+        stackTrace: st,
+        area: _area,
+        message: 'ai-coach insight call threw outside the typed paths',
+      );
       throw AiCoachException(
         kind: AiCoachFailureKind.serverError,
         userMessage: 'Something went wrong. Please try again.',

@@ -8,6 +8,8 @@ import '../../../../shared/widgets/kyle_design/feedback/mealvana_snackbar.dart';
 import '../../../../theme/kyle_design/app_colors.dart';
 import '../../../../theme/kyle_design/app_text_styles.dart';
 import '../../application/meal_plan_controller.dart';
+import '../../../../shared/services/report/report.dart';
+import '../../application/vana_failure_report.dart';
 import '../../data/vana_exceptions.dart';
 import '../../domain/meal_ref.dart';
 import '../../domain/ui_action.dart';
@@ -128,13 +130,17 @@ class _VanaBrowseScreenState extends ConsumerState<VanaBrowseScreen> {
         duration: MealvanaSnackbar.shortDuration,
       );
     } on NeedsConnectionException {
+      final report = ref.read(reportProvider);
+      report.vanaNeedsConnection('pick_meals (browse)');
       if (mounted) {
         MealvanaSnackbar.showWarning(
           context,
           content.getValue(ContentKeys.mpNeedsConnection),
         );
       }
-    } on Exception {
+    } on Exception catch (e, st) {
+      final report = ref.read(reportProvider);
+      report.vanaFailure(e, st, operation: 'pick_meals (browse)');
       if (mounted) {
         MealvanaSnackbar.showError(
           context,

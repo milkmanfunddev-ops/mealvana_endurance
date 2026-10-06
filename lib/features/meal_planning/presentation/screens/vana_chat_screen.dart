@@ -7,7 +7,9 @@ import 'package:image_picker/image_picker.dart';
 
 import '../../../../features/content/application/content_service.dart';
 import '../../../../features/content/domain/content_keys.dart';
+import '../../../../shared/services/report/report.dart';
 import '../../../../shared/widgets/kyle_design/feedback/mealvana_snackbar.dart';
+import '../../application/vana_failure_report.dart';
 import '../../../../theme/kyle_design/app_colors.dart';
 import '../../../../theme/kyle_design/app_spacing.dart';
 import '../../../../theme/kyle_design/app_text_styles.dart';
@@ -717,7 +719,15 @@ class _VanaChatScreenState extends ConsumerState<VanaChatScreen> {
     final VanaAttachChoice? choice;
     try {
       choice = await showVanaAttachSheet(context: context);
-    } on VanaAttachPickFailed {
+    } on VanaAttachPickFailed catch (e, st) {
+      ref
+          .read(reportProvider)
+          .fault(
+            e,
+            stackTrace: st,
+            area: 'meal_planning',
+            message: 'attach sheet photo pick failed',
+          );
       if (mounted) {
         MealvanaSnackbar.showError(
           context,
@@ -779,7 +789,15 @@ class _VanaChatScreenState extends ConsumerState<VanaChatScreen> {
         imageQuality: 85,
         maxWidth: 1000,
       );
-    } catch (e) {
+    } catch (e, st) {
+      ref
+          .read(reportProvider)
+          .fault(
+            e,
+            stackTrace: st,
+            area: 'meal_planning',
+            message: 'photo-capture image pick failed',
+          );
       if (mounted) {
         MealvanaSnackbar.showError(
           context,
@@ -872,13 +890,17 @@ class _VanaChatScreenState extends ConsumerState<VanaChatScreen> {
             ),
       );
     } on NeedsConnectionException {
+      final report = ref.read(reportProvider);
+      report.vanaNeedsConnection('pick_meals (chat sheet)');
       if (mounted) {
         MealvanaSnackbar.showWarning(
           context,
           content.getValue(ContentKeys.mpNeedsConnection),
         );
       }
-    } on Exception {
+    } on Exception catch (e, st) {
+      final report = ref.read(reportProvider);
+      report.vanaFailure(e, st, operation: 'pick_meals (chat sheet)');
       if (mounted) {
         MealvanaSnackbar.showError(
           context,
@@ -898,13 +920,17 @@ class _VanaChatScreenState extends ConsumerState<VanaChatScreen> {
           .read(mealPlanControllerProvider.notifier)
           .acceptRule(part.rule, conversationId: widget.conversationId);
     } on NeedsConnectionException {
+      final report = ref.read(reportProvider);
+      report.vanaNeedsConnection('accept_rule');
       if (mounted) {
         MealvanaSnackbar.showWarning(
           context,
           content.getValue(ContentKeys.mpNeedsConnection),
         );
       }
-    } on Exception {
+    } on Exception catch (e, st) {
+      final report = ref.read(reportProvider);
+      report.vanaFailure(e, st, operation: 'accept_rule');
       if (mounted) {
         MealvanaSnackbar.showError(
           context,
@@ -920,7 +946,9 @@ class _VanaChatScreenState extends ConsumerState<VanaChatScreen> {
       await ref
           .read(mealPlanControllerProvider.notifier)
           .swapMeal(meal.id, source: replacement.source, id: replacement.id);
-    } on Exception {
+    } on Exception catch (e, st) {
+      final report = ref.read(reportProvider);
+      report.vanaFailure(e, st, operation: 'swap_meal (chat sheet)');
       if (mounted) {
         MealvanaSnackbar.showError(
           context,
@@ -956,7 +984,9 @@ class _VanaChatScreenState extends ConsumerState<VanaChatScreen> {
         try {
           await planController.confirmPlan();
           return true;
-        } on Exception {
+        } on Exception catch (e, st) {
+          final report = ref.read(reportProvider);
+          report.vanaFailure(e, st, operation: 'confirm_plan (review sheet)');
           return false;
         }
       },

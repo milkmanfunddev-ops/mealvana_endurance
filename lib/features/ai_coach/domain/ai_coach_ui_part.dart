@@ -1,3 +1,4 @@
+import '../../../shared/services/report/report.dart';
 import '../../meal_logging/domain/meal_component.dart';
 import '../../meal_logging/domain/meal_slot.dart';
 
@@ -83,7 +84,14 @@ sealed class AiCoachUiPart {
           // Unknown kind — ignore for forward-compatibility.
           return null;
       }
-    } catch (_) {
+    } catch (e, st) {
+      SentryReport.global.degraded(
+        e,
+        stackTrace: st,
+        area: 'ai_coach',
+        message: 'jade ui part of a known kind did not parse; part dropped',
+        extra: {'kind': json['kind']?.toString()},
+      );
       return null;
     }
   }

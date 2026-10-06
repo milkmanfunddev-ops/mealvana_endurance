@@ -1,11 +1,11 @@
 import 'dart:async';
 
-import 'package:flutter/foundation.dart';
 import 'package:riverpod_annotation/riverpod_annotation.dart';
 
 import '../../ai_credits/domain/insufficient_credits_exception.dart';
 import '../../ai_credits/presentation/insufficient_credits_paywall.dart';
 import '../../../shared/services/app_external_deps.dart';
+import '../../../shared/services/report/report.dart';
 import '../data/ai_coach_client.dart';
 import '../data/personal_formulas_repository.dart';
 import '../domain/coach_insight.dart';
@@ -101,10 +101,17 @@ class CoachInsightController extends _$CoachInsightController {
             insightText: insight.insight,
             marker: insight.staleMarker,
           );
-        } catch (e) {
-          if (kDebugMode) {
-            debugPrint('[CoachInsightController] auto-persist failed: $e');
-          }
+        } catch (e, st) {
+          // The insight still shows; only the saved copy is missing.
+          await ref
+              .read(reportProvider)
+              .fault(
+                e,
+                stackTrace: st,
+                area: 'formula_kit',
+                message: 'coach insight auto-persist failed',
+                extra: {'formula_id': formulaId},
+              );
         }
       }
 
@@ -140,11 +147,17 @@ class CoachInsightController extends _$CoachInsightController {
     try {
       final analytics = ref.read(appExternalDepsProvider).analytics;
       await analytics.track(event, properties: properties);
-    } catch (e) {
+    } catch (e, st) {
       // Analytics must never break the feature.
-      if (kDebugMode) {
-        debugPrint('[CoachInsightController] analytics error: $e');
-      }
+      await ref
+          .read(reportProvider)
+          .fault(
+            e,
+            stackTrace: st,
+            area: 'formula_kit',
+            message: 'coach insight analytics event failed',
+            extra: {'event': event},
+          );
     }
   }
 }

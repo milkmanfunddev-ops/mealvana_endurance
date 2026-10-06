@@ -9,6 +9,8 @@
 /// against `test/features/meal_planning/fixtures/*.json`.
 library;
 
+import '../../../shared/services/report/report.dart';
+
 /// Base class for wire records: value equality via the JSON projection.
 ///
 /// Trade-off: comparing through `toJson()` costs an allocation per `==`, but
@@ -143,8 +145,15 @@ List<T> readRecordList<T>(
   for (final map in readMapList(json, key)) {
     try {
       out.add(parse(map));
-    } on FormatException {
-      // Skip unparseable entries.
+    } on FormatException catch (e, st) {
+      // Skip unparseable entries; the server broke the contract for one row.
+      SentryReport.global.degraded(
+        e,
+        stackTrace: st,
+        area: 'meal_planning',
+        message: 'wire record in "$key" did not parse; entry dropped',
+        extra: {'key': key, 'type': T.toString()},
+      );
     }
   }
   return List.unmodifiable(out);

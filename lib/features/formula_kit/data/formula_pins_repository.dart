@@ -3,7 +3,6 @@ import 'dart:async';
 import 'package:drift/drift.dart';
 import 'package:flutter/foundation.dart';
 import 'package:riverpod_annotation/riverpod_annotation.dart';
-import 'package:sentry_flutter/sentry_flutter.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 import 'package:supabase_flutter/supabase_flutter.dart';
 import 'package:uuid/uuid.dart';
@@ -13,7 +12,7 @@ import '../../../shared/database/app_database.dart';
 import '../../../shared/database/database_provider.dart';
 import '../../../shared/services/app_external_deps.dart';
 import '../../../shared/services/logging_service.dart';
-import '../../../shared/services/sentry/sentry_reporter.dart';
+import '../../../shared/services/report/report.dart';
 import '../../../shared/services/sync/sync_dependency_graph.dart';
 import '../domain/formula_pin.dart';
 
@@ -26,7 +25,7 @@ FormulaPinsRepository formulaPinsRepository(Ref ref) {
     supabase: Supabase.instance.client,
     database: ref.read(appDatabaseProvider),
     logger: ref.read(appLoggerProvider),
-    sentry: deps.sentry,
+    report: deps.report,
   );
 }
 
@@ -48,16 +47,20 @@ class FormulaPinsRepository with SyncableRepository {
     required SupabaseClient supabase,
     required AppDatabase database,
     required AppLogger logger,
-    required SentryReporter sentry,
+    Report? report,
   }) : _supabase = supabase,
        _database = database,
        _logger = logger,
-       _sentry = sentry;
+       _report = report;
 
   final SupabaseClient _supabase;
   final AppDatabase _database;
   final AppLogger _logger;
-  final SentryReporter _sentry;
+  final Report? _report;
+
+  Report get _r => _report ?? SentryReport.global;
+
+  static const _area = 'formula_kit';
 
   /// SharedPreferences key for the "we've confirmed remote has zero pins"
   /// sentinel. When set, [isStale] falls through to time-based staleness even
@@ -174,12 +177,12 @@ class FormulaPinsRepository with SyncableRepository {
 
       return SyncResult.successful(syncedCount);
     } catch (e, stackTrace) {
-      _logger.error(
-        'Failed to sync formula pins from Supabase',
-        context: 'FORMULA_PINS_REPOSITORY',
-        error: e,
+      await _r.fault(
+        e,
         stackTrace: stackTrace,
-        data: {'userId': userId},
+        area: 'sync',
+        message: 'Failed to sync formula pins from Supabase',
+        tags: {'repository': 'formula_pins'},
       );
       return SyncResult.failed(e.toString());
     }
@@ -328,12 +331,12 @@ class FormulaPinsRepository with SyncableRepository {
 
       return UploadResult.successful(decodedPins.length);
     } catch (e, stackTrace) {
-      _logger.error(
-        'Failed to upload dirty formula pins',
-        context: 'FORMULA_PINS_REPOSITORY',
-        error: e,
+      await _r.fault(
+        e,
         stackTrace: stackTrace,
-        data: {'userId': userId},
+        area: 'sync',
+        message: 'Failed to upload dirty formula pins',
+        tags: {'repository': 'formula_pins'},
       );
       return UploadResult.failed(e.toString());
     }
@@ -522,18 +525,12 @@ class FormulaPinsRepository with SyncableRepository {
             .upsert(pin.toSupabaseJson(), onConflict: 'id');
         await _clearDirtyFlag(pin.id);
       } catch (e, stackTrace) {
-        _logger.warning(
-          'Immediate $label upload failed; pin stays dirty for retry',
-          context: 'FORMULA_PINS_REPOSITORY',
-          error: e,
-          stackTrace: stackTrace,
-          data: {'pinId': pin.id},
-        );
-        _sentry.reportNetworkError(
+        await _r.fault(
           e,
-          url: 'supabase:formula_pins:$label',
-          method: 'UPSERT',
           stackTrace: stackTrace,
+          area: _area,
+          message: 'Immediate $label upload failed; pin stays dirty for retry',
+          extra: {'pin_id': pin.id, 'label': label},
         );
       }
     }());
@@ -586,10 +583,10 @@ class FormulaPinsRepository with SyncableRepository {
       data: {'pin_id': entry.id, 'template_kind': entry.templateKind},
     );
     unawaited(
-      _sentry.captureMessage(
-        'Skipped formula pin with unknown template_kind',
-        level: SentryLevel.warning,
-        tags: {'pin_id': entry.id, 'template_kind': entry.templateKind},
+      _r.degraded(
+        const LoggedFault('Skipped formula pin with unknown template_kind'),
+        area: _area,
+        extra: {'pin_id': entry.id, 'template_kind': entry.templateKind},
       ),
     );
   }

@@ -14,6 +14,8 @@ import '../../../../theme/kyle_design/app_spacing.dart';
 import '../../../../theme/kyle_design/app_text_styles.dart';
 import '../../application/meal_detail_controller.dart';
 import '../../application/meal_plan_controller.dart';
+import '../../../../shared/services/report/report.dart';
+import '../../application/vana_failure_report.dart';
 import '../../data/vana_exceptions.dart';
 import '../../domain/directions_origin.dart';
 import '../../domain/meal_detail.dart';
@@ -81,20 +83,20 @@ class _MealDetailScreenState extends ConsumerState<MealDetailScreen> {
       backgroundColor: bg,
       body: SafeArea(
         child: detailAsync.when(
-        loading: () => const Center(
-          child: CircularProgressIndicator(color: AppColors.electrolyte),
+          loading: () => const Center(
+            child: CircularProgressIndicator(color: AppColors.electrolyte),
+          ),
+          error: (e, _) => _LoadError(
+            onRetry: () =>
+                ref.invalidate(mealDetailControllerProvider(widget.id)),
+          ),
+          data: (detail) => _DetailBody(
+            detail: detail,
+            swapPlanMealId: widget.swapPlanMealId,
+            pickConversationId: widget.pickConversationId,
+            notesController: _notesController,
+          ),
         ),
-        error: (e, _) => _LoadError(
-          onRetry: () =>
-              ref.invalidate(mealDetailControllerProvider(widget.id)),
-        ),
-        data: (detail) => _DetailBody(
-          detail: detail,
-          swapPlanMealId: widget.swapPlanMealId,
-          pickConversationId: widget.pickConversationId,
-          notesController: _notesController,
-        ),
-      ),
       ),
     );
   }
@@ -142,16 +144,15 @@ class _DetailBodyState extends ConsumerState<_DetailBody> {
     final meal = detail.meal;
     final isSaved = meal.source == MealSource.saved;
 
-    String cap(String v) =>
-        v.isEmpty ? v : v[0].toUpperCase() + v.substring(1);
+    String cap(String v) => v.isEmpty ? v : v[0].toUpperCase() + v.substring(1);
 
     // Prep falls back to prepMinutes — the library's `prep` string is
     // nullable and many rows only carry the number.
     final prep = detail.prep?.isNotEmpty == true
         ? detail.prep!
         : meal.prepMinutes != null
-              ? '${meal.prepMinutes} min'
-              : null;
+        ? '${meal.prepMinutes} min'
+        : null;
 
     return ListView(
       padding: const EdgeInsets.fromLTRB(
@@ -392,9 +393,7 @@ class _DetailBodyState extends ConsumerState<_DetailBody> {
         // ── Your directions (saved meals) ─────────────────────────────────
         if (isSaved) ...[
           const SizedBox(height: AppSpacing.md),
-          _SectionLabel(
-            content.getValue(ContentKeys.mpDetailYourDirections),
-          ),
+          _SectionLabel(content.getValue(ContentKeys.mpDetailYourDirections)),
           const SizedBox(height: AppSpacing.xs),
           _YourDirections(
             editing: _editingNotes,
@@ -465,13 +464,17 @@ class _DetailBodyState extends ConsumerState<_DetailBody> {
       );
       context.pop(true);
     } on NeedsConnectionException {
+      final report = ref.read(reportProvider);
+      report.vanaNeedsConnection('pick_meals (detail)');
       if (context.mounted) {
         MealvanaSnackbar.showWarning(
           context,
           content.getValue(ContentKeys.mpNeedsConnection),
         );
       }
-    } on Exception {
+    } on Exception catch (e, st) {
+      final report = ref.read(reportProvider);
+      report.vanaFailure(e, st, operation: 'pick_meals (detail)');
       if (context.mounted) {
         MealvanaSnackbar.showError(
           context,
@@ -508,13 +511,17 @@ class _DetailBodyState extends ConsumerState<_DetailBody> {
       }
       if (context.mounted) context.pop();
     } on NeedsConnectionException {
+      final report = ref.read(reportProvider);
+      report.vanaNeedsConnection('swap_meal (detail)');
       if (context.mounted) {
         MealvanaSnackbar.showWarning(
           context,
           content.getValue(ContentKeys.mpNeedsConnection),
         );
       }
-    } on Exception {
+    } on Exception catch (e, st) {
+      final report = ref.read(reportProvider);
+      report.vanaFailure(e, st, operation: 'swap_meal (detail)');
       if (context.mounted) {
         MealvanaSnackbar.showError(
           context,
@@ -622,7 +629,9 @@ class _SaveToMineButtonState extends ConsumerState<_SaveToMineButton> {
         context,
         content.getValue(ContentKeys.mpDetailSavedToast),
       );
-    } on Exception {
+    } on Exception catch (e, st) {
+      final report = ref.read(reportProvider);
+      report.vanaFailure(e, st, operation: 'save_to_mine');
       if (!mounted) return;
       MealvanaSnackbar.showError(
         context,
@@ -650,7 +659,8 @@ class _OriginalRecipeLink extends StatelessWidget {
     final host = Uri.tryParse(url)?.host.replaceFirst('www.', '') ?? '';
 
     return GestureDetector(
-      onTap: () => launchUrl(Uri.parse(url), mode: LaunchMode.externalApplication),
+      onTap: () =>
+          launchUrl(Uri.parse(url), mode: LaunchMode.externalApplication),
       child: Row(
         children: [
           FaIcon(
@@ -699,8 +709,9 @@ class _SwapsToggle extends StatelessWidget {
   Widget build(BuildContext context) {
     final isDark = Theme.of(context).brightness == Brightness.dark;
     final accent = isDark ? AppColors.electrolyte : AppColors.electrolyteDark;
-    final muted = (isDark ? AppColors.cream : AppColors.blackberry)
-        .withValues(alpha: 0.6);
+    final muted = (isDark ? AppColors.cream : AppColors.blackberry).withValues(
+      alpha: 0.6,
+    );
 
     return Tooltip(
       message: tooltip,
@@ -736,8 +747,9 @@ class _SectionLabel extends StatelessWidget {
     return Text(
       text.toUpperCase(),
       style: AppTextStyles.overline.copyWith(
-        color: (isDark ? AppColors.cream : AppColors.blackberry)
-            .withValues(alpha: 0.6),
+        color: (isDark ? AppColors.cream : AppColors.blackberry).withValues(
+          alpha: 0.6,
+        ),
       ),
     );
   }

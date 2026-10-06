@@ -7,6 +7,7 @@ import 'package:wakelock_plus/wakelock_plus.dart';
 
 import '../../../../features/content/application/content_service.dart';
 import '../../../../features/content/domain/content_keys.dart';
+import '../../../../shared/services/report/report.dart';
 import '../../../../theme/kyle_design/app_colors.dart';
 import '../../../../theme/kyle_design/app_spacing.dart';
 import '../../../../theme/kyle_design/app_text_styles.dart';
@@ -62,15 +63,22 @@ class _CookingModeScreenState extends ConsumerState<CookingModeScreen> {
     try {
       final canVibrate = await Vibration.hasVibrator();
       if (canVibrate) Vibration.vibrate(pattern: [400, 200, 400]);
-    } on Exception {
+    } on Exception catch (e) {
       // Vibration unsupported on this device — the visual state still shows.
+      ref
+          .read(reportProvider)
+          .note(
+            'cooking timer vibration unavailable; chip is the fallback',
+            area: 'meal_planning',
+            data: {'error': e.toString()},
+          );
     }
     try {
       await FlutterLocalNotificationsPlugin().show(
         timer.timer.hashCode & 0x7fffffff,
-        ref.read(contentServiceProvider).getValue(
-          ContentKeys.mpCookTimerNotification,
-        ),
+        ref
+            .read(contentServiceProvider)
+            .getValue(ContentKeys.mpCookTimerNotification),
         timer.timer.label,
         const NotificationDetails(
           iOS: DarwinNotificationDetails(),
@@ -80,16 +88,25 @@ class _CookingModeScreenState extends ConsumerState<CookingModeScreen> {
           ),
         ),
       );
-    } on Exception {
+    } on Exception catch (e) {
       // Notifications not initialized/permitted — the ringing chip is the
       // fallback UI.
+      ref
+          .read(reportProvider)
+          .note(
+            'cooking timer local notification not shown; chip is the fallback',
+            area: 'push',
+            data: {'error': e.toString()},
+          );
     }
   }
 
   @override
   Widget build(BuildContext context) {
     final content = ref.read(contentServiceProvider);
-    final stateAsync = ref.watch(cookingSessionControllerProvider(widget.mealId));
+    final stateAsync = ref.watch(
+      cookingSessionControllerProvider(widget.mealId),
+    );
     final isDark = Theme.of(context).brightness == Brightness.dark;
     final bg = isDark ? AppColors.blackberry : AppColors.cream;
 
@@ -102,9 +119,8 @@ class _CookingModeScreenState extends ConsumerState<CookingModeScreen> {
         ),
         error: (e, _) => Center(
           child: TextButton(
-            onPressed: () => ref.invalidate(
-              cookingSessionControllerProvider(widget.mealId),
-            ),
+            onPressed: () =>
+                ref.invalidate(cookingSessionControllerProvider(widget.mealId)),
             child: Text(content.getValue(ContentKeys.mpRetry)),
           ),
         ),
@@ -130,10 +146,7 @@ class _CookingModeScreenState extends ConsumerState<CookingModeScreen> {
                   stepLabel: state.phase == CookingPhase.cooking
                       ? ContentKeys.format(
                           content.getValue(ContentKeys.mpCookStepOf),
-                          {
-                            'n': state.stepIndex + 1,
-                            'total': state.stepCount,
-                          },
+                          {'n': state.stepIndex + 1, 'total': state.stepCount},
                         )
                       : null,
                   drawerOpen: _drawerOpen,
@@ -300,9 +313,7 @@ class _IngredientsDrawer extends StatelessWidget {
         child: Container(
           padding: const EdgeInsets.symmetric(horizontal: 16),
           decoration: BoxDecoration(
-            color: isDark
-                ? AppColors.blackberryLight
-                : AppColors.surfaceLight,
+            color: isDark ? AppColors.blackberryLight : AppColors.surfaceLight,
             borderRadius: BorderRadius.circular(15),
           ),
           child: ListView(
@@ -325,11 +336,7 @@ class _IngredientsDrawer extends StatelessWidget {
                               border: Border.all(color: accent, width: 1.5),
                             ),
                             child: state.checkedIngredients.contains(i)
-                                ? Icon(
-                                    Icons.check,
-                                    size: 12,
-                                    color: accent,
-                                  )
+                                ? Icon(Icons.check, size: 12, color: accent)
                                 : null,
                           ),
                           const SizedBox(width: 10),
@@ -338,8 +345,7 @@ class _IngredientsDrawer extends StatelessWidget {
                               ingredient.name,
                               style: AppTextStyles.bodyMedium.copyWith(
                                 color: textColor,
-                                decoration:
-                                    state.checkedIngredients.contains(i)
+                                decoration: state.checkedIngredients.contains(i)
                                     ? TextDecoration.lineThrough
                                     : null,
                               ),

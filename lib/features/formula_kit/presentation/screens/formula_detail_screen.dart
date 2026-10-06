@@ -7,6 +7,7 @@ import 'package:mealvana_endurance/shared/widgets/custom_app_bar_back_button.dar
 import 'package:mealvana_endurance/shared/widgets/adaptive/adaptive.dart';
 
 import '../../../../shared/providers/unit_system_provider.dart';
+import '../../../../shared/services/report/report.dart';
 import '../../../../shared/utils/unit_formatter.dart';
 import '../../../auth/data/user_repository.dart';
 import '../../../nutrition_plan/domain/run_parameters.dart';
@@ -122,7 +123,15 @@ class _FormulaDetailScreenState extends ConsumerState<FormulaDetailScreen> {
           if (f != null)
             await notifier.toggleAfter(formula: f, source: 'detail');
       }
-    } catch (e) {
+    } catch (e, st) {
+      ref
+          .read(reportProvider)
+          .fault(
+            e,
+            stackTrace: st,
+            area: 'formula_kit',
+            message: 'pin toggle from detail failed',
+          );
       if (mounted) {
         MealvanaSnackbar.showError(context, 'Couldn\'t update pin: $e');
       }

@@ -5,11 +5,11 @@ import 'package:mealvana_endurance/features/formula_kit/domain/formula_phase.dar
 import 'package:mealvana_endurance/features/formula_kit/domain/personal_formula.dart';
 import 'package:mealvana_endurance/shared/database/app_database.dart';
 import 'package:mealvana_endurance/shared/services/logging_service.dart';
-import 'package:mealvana_endurance/shared/services/sentry/sentry_reporter.dart';
 import 'package:mocktail/mocktail.dart';
-import 'package:sentry_flutter/sentry_flutter.dart' show SentryLevel;
 import 'package:shared_preferences/shared_preferences.dart';
 import 'package:supabase_flutter/supabase_flutter.dart';
+
+import '../../../helpers/fakes/recording_report.dart';
 
 // Regression test for bug 382e3fdb: "Formula Kit 'Coach AI insight' does not
 // persist, erased on return."
@@ -30,8 +30,6 @@ class MockSupabaseClient extends Mock implements SupabaseClient {}
 
 class MockAppLogger extends Mock implements AppLogger {}
 
-class MockSentryReporter extends Mock implements SentryReporter {}
-
 void main() {
   TestWidgetsFlutterBinding.ensureInitialized();
 
@@ -42,14 +40,13 @@ void main() {
 
   setUpAll(() {
     SharedPreferences.setMockInitialValues({});
-    registerFallbackValue(SentryLevel.warning);
   });
 
   setUp(() {
     database = AppDatabase.forTesting(NativeDatabase.memory());
     final mockSupabase = MockSupabaseClient();
     final mockLogger = MockAppLogger();
-    final mockSentry = MockSentryReporter();
+    final report = RecordingReport();
 
     when(
       () => mockLogger.info(
@@ -67,27 +64,11 @@ void main() {
         data: any(named: 'data'),
       ),
     ).thenReturn(null);
-    when(
-      () => mockSentry.reportNetworkError(
-        any(),
-        url: any(named: 'url'),
-        method: any(named: 'method'),
-        stackTrace: any(named: 'stackTrace'),
-      ),
-    ).thenAnswer((_) async {});
-    when(
-      () => mockSentry.captureMessage(
-        any(),
-        level: any(named: 'level'),
-        tags: any(named: 'tags'),
-      ),
-    ).thenAnswer((_) async {});
-
     repository = PersonalFormulasRepository(
       supabase: mockSupabase,
       database: database,
       logger: mockLogger,
-      sentry: mockSentry,
+      report: report,
     );
   });
 

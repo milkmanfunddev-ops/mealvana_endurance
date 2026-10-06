@@ -11,6 +11,7 @@ import '../../../shared/database/app_database.dart';
 import '../../../shared/database/database_provider.dart';
 import '../../../shared/services/app_external_deps.dart';
 import '../../../shared/services/logging_service.dart';
+import '../../../shared/services/report/report.dart';
 import '../../../shared/services/sync/sync_dependency_graph.dart';
 import '../domain/memory_kind.dart';
 import '../domain/user_memory.dart';
@@ -25,6 +26,7 @@ UserMemoryRepository userMemoryRepository(Ref ref) {
     database: ref.watch(appDatabaseProvider),
     logger: deps.logger,
     remote: SupabaseUserMemoryRemote(deps.supabaseClient),
+    report: deps.report,
   );
 }
 
@@ -102,13 +104,18 @@ class UserMemoryRepository with SyncableRepository {
     required AppDatabase database,
     required AppLogger logger,
     required UserMemoryRemote remote,
+    Report? report,
   }) : _database = database,
        _logger = logger,
-       _remote = remote;
+       _remote = remote,
+       _report = report;
 
   final AppDatabase _database;
   final AppLogger _logger;
   final UserMemoryRemote _remote;
+  final Report? _report;
+
+  Report get _r => _report ?? SentryReport.global;
 
   static const _context = 'USER_MEMORY_REPOSITORY';
   static const _uuid = Uuid();
@@ -179,12 +186,12 @@ class UserMemoryRepository with SyncableRepository {
       );
       return SyncResult.successful(count);
     } catch (e, st) {
-      _logger.error(
-        'Failed to sync user memories',
-        context: _context,
-        error: e,
+      await _r.fault(
+        e,
         stackTrace: st,
-        data: {'userId': userId},
+        area: 'sync',
+        message: 'Failed to sync user memories',
+        tags: {'repository': 'user_memories'},
       );
       return SyncResult.failed(e.toString());
     }
@@ -253,12 +260,12 @@ class UserMemoryRepository with SyncableRepository {
       );
       return UploadResult.successful(payload.length);
     } catch (e, st) {
-      _logger.error(
-        'Failed to upload dirty user memories',
-        context: _context,
-        error: e,
+      await _r.fault(
+        e,
         stackTrace: st,
-        data: {'userId': userId},
+        area: 'sync',
+        message: 'Failed to upload dirty user memories',
+        tags: {'repository': 'user_memories'},
       );
       return UploadResult.failed(e.toString());
     }
@@ -516,6 +523,11 @@ class UserMemoryRepository with SyncableRepository {
     try {
       return jsonDecode(raw);
     } on FormatException {
+      // Static helper: the global is the only `Report` in reach.
+      SentryReport.global.note(
+        'user memory value stored as a bare string; read as-is',
+        area: 'meal_planning',
+      );
       return raw;
     }
   }

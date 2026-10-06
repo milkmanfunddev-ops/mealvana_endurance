@@ -27,6 +27,7 @@ VanaTransport vanaTransport(Ref ref) {
     supabase: deps.supabaseClient,
     config: ref.watch(appConfigProvider),
     logger: deps.logger,
+    report: deps.report,
   );
 }
 

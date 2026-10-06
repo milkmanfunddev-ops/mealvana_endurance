@@ -1,3 +1,4 @@
+import '../../../shared/services/report/report.dart';
 import 'day_plan.dart';
 import 'meal_plan.dart';
 import 'meal_ref.dart';
@@ -55,9 +56,26 @@ sealed class VanaPart extends WireRecord {
         default:
           return null;
       }
-    } on FormatException {
+    } on FormatException catch (e, st) {
+      // A part of a KNOWN kind that did not parse (unknown kinds return null
+      // above without an exception): the server broke the wire contract; the
+      // part is dropped and the rest of the turn renders.
+      SentryReport.global.degraded(
+        e,
+        stackTrace: st,
+        area: 'meal_planning',
+        message: 'vana ui part of a known kind did not parse; part dropped',
+        extra: {'kind': json['kind']?.toString()},
+      );
       return null;
-    } on TypeError {
+    } on TypeError catch (e, st) {
+      SentryReport.global.degraded(
+        e,
+        stackTrace: st,
+        area: 'meal_planning',
+        message: 'vana ui part of a known kind had wrong types; part dropped',
+        extra: {'kind': json['kind']?.toString()},
+      );
       return null;
     }
   }

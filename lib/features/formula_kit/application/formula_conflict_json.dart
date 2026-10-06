@@ -1,5 +1,7 @@
 import 'dart:convert';
 
+import '../../../shared/services/report/report.dart';
+
 /// Decode a db JSON-array string (`'["dairy","gluten"]'`) into a string
 /// list; malformed or non-list input decodes to empty.
 List<String> decodeDbStringArray(String raw) {
@@ -8,7 +10,13 @@ List<String> decodeDbStringArray(String raw) {
     return v is List
         ? v.map((e) => e.toString()).toList(growable: false)
         : const [];
-  } catch (_) {
+  } catch (e, st) {
+    SentryReport.global.degraded(
+      e,
+      stackTrace: st,
+      area: 'formula_kit',
+      message: 'db string-array JSON malformed; decoded as empty',
+    );
     return const [];
   }
 }
