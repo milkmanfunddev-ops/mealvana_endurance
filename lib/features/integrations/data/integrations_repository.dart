@@ -157,7 +157,9 @@ class IntegrationsRepository with SyncableRepository {
     required int rows,
   }) async {
     final sessionUserId = _supabase.auth.currentUser?.id;
-    if (sessionUserId != userId) {
+    // Case-insensitive: the activities code lowercases user ids, Supabase
+    // does not, and a mismatch here would leave the row dirty forever.
+    if (sessionUserId?.toLowerCase() != userId.toLowerCase()) {
       // D9: a skipped sync step, so a promoted Note.
       await _r.note(
         'Integration upload skipped: rows belong to a user other than the session',
@@ -174,9 +176,10 @@ class IntegrationsRepository with SyncableRepository {
     }
 
     if (!await _remoteUserExists(userId)) {
-      _r.info(
-        'Deferring integration upload: user row not yet remote',
-        area: 'integrations',
+      // D9: the same skipped sync step as above, so the same promoted Note.
+      await _r.note(
+        'Integration upload deferred: user row not yet remote',
+        area: 'sync',
         data: {'userId': userId, 'path': path, 'deferred': rows},
       );
       return false;
@@ -202,7 +205,11 @@ class IntegrationsRepository with SyncableRepository {
         path: 'upload_dirty',
         rows: dirty.length,
       )) {
-        return UploadResult.nothingToUpload();
+        // Rows stay dirty; say so rather than claiming there was nothing.
+        return UploadResult.failed(
+          'deferred: ${dirty.length} integrations rows await a matching '
+          'session and a remote users row',
+        );
       }
 
       _r.info(

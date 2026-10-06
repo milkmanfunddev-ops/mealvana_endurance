@@ -111,7 +111,10 @@ String describeEvent(SentryEvent event) {
 ///   409, a Garmin throttle 429), and the app retries the backfill next
 ///   session. Kroger's `kroger_unavailable` shows its own message.
 ///   (MEALVANA-ENDURANCE-AA / AB, DEV-5P / DEV-9M / DEV-8H.)
-/// - 504 from the Supabase project host: a gateway timeout. Prod logs showed
+/// - 504 from the Supabase project host on PostgREST (`/rest/v1`) or GoTrue
+///   (`/auth/v1`): a gateway timeout. Edge functions (`/functions/v1`) are
+///   deliberately NOT covered: a 504 there is our own handler running past the
+///   platform limit, which stays a Fault. Prod logs showed
 ///   Supabase's gateway (5 s blips on 2026-09-14, a row-lock pile-up on
 ///   `users` on 2026-09-20) and 504s that never reached Supabase at all (an
 ///   athlete's network on 2026-09-25). (B5, BM, C0, C1, C3, C4.)
@@ -130,7 +133,9 @@ ExpectedFailure? classifyHandledHttpFailure(SentryEvent event) {
           url.contains('/functions/v1/kroger'))) {
     return ExpectedFailure.upstreamUnavailable;
   }
-  if (status == 504 && _isSupabaseHost(url)) {
+  if (status == 504 &&
+      _isSupabaseHost(url) &&
+      (url.contains('/rest/v1/') || url.contains('/auth/v1/'))) {
     return ExpectedFailure.gatewayTimeout;
   }
   return null;

@@ -638,8 +638,10 @@ class SettingsController extends _$SettingsController {
     final currentState = state.value;
     if (currentState == null) return;
 
-    final dailyMacroService = ref.read(dailyMacroServiceProvider);
     final result = await AsyncValue.guard(() async {
+      // Read before the first await, inside the guard so a failed read is an
+      // AsyncError like any other save failure.
+      final dailyMacroService = ref.read(dailyMacroServiceProvider);
       final userRepository = await _userRepository;
       final existingProfile = await userRepository.getCurrentUser();
 
