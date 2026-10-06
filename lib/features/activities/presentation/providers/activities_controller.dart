@@ -10,7 +10,7 @@ import '../../../../shared/services/analytics/analytics_events.dart';
 import '../../../../shared/services/app_external_deps.dart';
 import '../../../../shared/providers/user_id_provider.dart';
 import '../../../../shared/services/sync/sync_coordinator.dart';
-import '../../../../shared/services/performance_telemetry.dart';
+import '../../../../shared/services/report/performance_telemetry.dart';
 import '../../../auth/application/supabase_auth_service.dart';
 import '../../../integrations/application/integration_sync_coordinator.dart';
 import '../../domain/brick_metadata.dart';
