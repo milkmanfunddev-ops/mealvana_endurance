@@ -674,3 +674,12 @@ final Provider<Report> reportProvider = Provider<Report>((ref) {
   SentryReport.global = report;
   return report;
 });
+
+/// The app's `Report` from a provider's [Ref], safe to reach after an `await`
+/// (ticket 18). Once the provider is disposed, `ref.read` throws
+/// `UnmountedRefException`, which inside a `catch` would replace the error
+/// being reported; this falls back to [SentryReport.global], which
+/// [reportProvider] points at the same instance.
+extension ReportRef on Ref {
+  Report get report => mounted ? read(reportProvider) : SentryReport.global;
+}

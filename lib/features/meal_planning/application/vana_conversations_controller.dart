@@ -19,14 +19,15 @@ class VanaConversationsController extends _$VanaConversationsController {
 
   Future<void> refresh() async {
     state = const AsyncLoading();
-    state = await AsyncValue.guard(() => _repo.fetchConversations(kind));
+    final result = await AsyncValue.guard(() => _repo.fetchConversations(kind));
+    if (ref.mounted) state = result;
   }
 
   /// Create an empty conversation of this kind and return its id (the
   /// screen then opens it and streams the opener).
   Future<String> create() async {
     final id = await _repo.createConversation(kind);
-    unawaited(refresh());
+    if (ref.mounted) unawaited(refresh());
     return id;
   }
 }

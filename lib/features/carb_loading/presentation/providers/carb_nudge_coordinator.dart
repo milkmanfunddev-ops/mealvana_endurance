@@ -25,10 +25,13 @@ class CarbNudgeCoordinator extends _$CarbNudgeCoordinator {
   Future<void> run() async {
     if (_running) return;
     _running = true;
+    // Read before the first await: the container can be torn down while the
+    // events load (Sentry MEALVANA-ENDURANCE-DEV-A3, a Patrol teardown).
+    final report = ref.read(reportProvider);
+    final carbService = ref.read(carbLoadingServiceProvider);
+    final nudgeService = ref.read(carbLoadNudgeServiceProvider);
     try {
       final events = await ref.read(allEventsProvider.future);
-      final carbService = ref.read(carbLoadingServiceProvider);
-      final nudgeService = ref.read(carbLoadNudgeServiceProvider);
 
       final nudgeEvents = <CarbNudgeEvent>[];
       final withPlan = <String>{};
@@ -54,14 +57,12 @@ class CarbNudgeCoordinator extends _$CarbNudgeCoordinator {
         eventIdsWithPlan: withPlan,
       );
     } catch (e, stackTrace) {
-      ref
-          .read(reportProvider)
-          .fault(
-            e,
-            stackTrace: stackTrace,
-            area: 'carb_loading',
-            message: 'Carb nudge sweep failed; will retry on next resume',
-          );
+      report.fault(
+        e,
+        stackTrace: stackTrace,
+        area: 'carb_loading',
+        message: 'Carb nudge sweep failed; will retry on next resume',
+      );
     } finally {
       _running = false;
     }

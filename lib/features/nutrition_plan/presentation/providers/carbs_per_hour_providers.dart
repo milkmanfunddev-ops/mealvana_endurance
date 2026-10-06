@@ -25,8 +25,8 @@ Future<CarbsPerHourBaseline> carbsPerHourBaseline(
 ) async {
   // const service — read (not watch) to avoid needless dependency tracking.
   final service = ref.read(carbsPerHourServiceProvider);
-  final userId = await ref.watch(userIdProvider.future);
   final repo = ref.read(activitiesRepositoryProvider);
+  final userId = await ref.watch(userIdProvider.future);
 
   final recent = await repo.getRecentCompletedActivitiesBySport(
     userId,

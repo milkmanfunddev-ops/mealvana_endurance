@@ -11,7 +11,7 @@ class FoodDataTransformationService {
   final Ref ref;
 
   FoodRepository get _foodRepository => ref.read(foodRepositoryProvider);
-  Report get _report => ref.read(reportProvider);
+  Report get _report => ref.report;
 
   /// Transform edge function item response to FoodItemData
   /// Takes raw response with food_id and quantity, looks up details from database

@@ -18,7 +18,7 @@ part 'carb_loading_controller.g.dart';
 @Riverpod(keepAlive: true)
 class CarbLoadingController extends _$CarbLoadingController {
   CarbLoadingService get _service => ref.read(carbLoadingServiceProvider);
-  Report get _report => ref.read(reportProvider);
+  Report get _report => ref.report;
 
   @override
   FutureOr<void> build() async {

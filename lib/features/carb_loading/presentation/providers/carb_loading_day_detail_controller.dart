@@ -82,22 +82,29 @@ class CarbLoadingDayDetailController extends _$CarbLoadingDayDetailController {
   CarbLoadingRepository get _repository =>
       ref.read(carbLoadingRepositoryProvider);
 
-  Report get _report => ref.read(reportProvider);
+  Report get _report => ref.report;
 
   @override
   Future<CarbLoadingDayDetailState> build(String carbLoadingDayId) async {
     // Sync carb loading data from remote if stale (respects 1-hour staleness).
     // This ensures coach-created changes are visible to athletes.
+    // Dependencies are read before the first await: this auto-dispose
+    // provider can be disposed mid-build.
+    final report = _report;
+    final repository = _repository;
+    final syncCoordinator = ref.read(syncCoordinatorProvider.notifier);
+    final selectionService = _selectionService;
+    final foodService = _foodService;
+    final userIdFuture = ref.read(userIdProvider.future);
     try {
-      final userId = await ref.read(userIdProvider.future);
-      final syncCoordinator = ref.read(syncCoordinatorProvider.notifier);
+      final userId = await userIdFuture;
       await syncCoordinator.ensureSynced(
         'carb_loading_plans',
         userId,
-        repository: _repository,
+        repository: repository,
       );
     } catch (e, stackTrace) {
-      _report.degraded(
+      report.degraded(
         e,
         stackTrace: stackTrace,
         area: 'carb_loading',
@@ -106,7 +113,7 @@ class CarbLoadingDayDetailController extends _$CarbLoadingDayDetailController {
     }
 
     // Fetch fresh data from repository
-    final carbLoadingDay = await _repository.getCarbLoadingDayById(
+    final carbLoadingDay = await repository.getCarbLoadingDayById(
       carbLoadingDayId,
     );
     if (carbLoadingDay == null) {
@@ -114,18 +121,18 @@ class CarbLoadingDayDetailController extends _$CarbLoadingDayDetailController {
     }
 
     // Get device ID
-    final deviceId = await ref.read(userIdProvider.future);
+    final deviceId = await userIdFuture;
 
     // Load meals for this day
-    final meals = await _selectionService.getMealsByDay(carbLoadingDayId);
+    final meals = await selectionService.getMealsByDay(carbLoadingDayId);
 
     // Load available foods (both default and user foods)
     final defaultFoods = <CarbLoadingFood>[];
-    final userFoods = await _foodService.getAllUserFoods(deviceId);
+    final userFoods = await foodService.getAllUserFoods(deviceId);
 
     // Load default foods for each meal type
     for (final mealType in MealType.values) {
-      final foods = await _foodService.getDefaultFoodsForMealType(mealType);
+      final foods = await foodService.getDefaultFoodsForMealType(mealType);
       for (final food in foods) {
         if (!defaultFoods.any((f) => f.id == food.id)) {
           defaultFoods.add(food);
@@ -156,9 +163,10 @@ class CarbLoadingDayDetailController extends _$CarbLoadingDayDetailController {
     if (currentState == null) return;
 
     state = AsyncData(currentState.copyWith(isLoading: true));
+    final selectionService = _selectionService;
 
-    state = await AsyncValue.guard(() async {
-      await _selectionService.addDefaultFoodToMeal(
+    final result = await AsyncValue.guard(() async {
+      await selectionService.addDefaultFoodToMeal(
         carbLoadingDayId: currentState.carbLoadingDay.id,
         mealType: mealType,
         food: food,
@@ -166,12 +174,13 @@ class CarbLoadingDayDetailController extends _$CarbLoadingDayDetailController {
       );
 
       // Reload meals
-      final meals = await _selectionService.getMealsByDay(
+      final meals = await selectionService.getMealsByDay(
         currentState.carbLoadingDay.id,
       );
 
       return currentState.copyWith(meals: meals, isLoading: false);
     });
+    if (ref.mounted) state = result;
   }
 
   /// Add a user food to a meal
@@ -180,9 +189,10 @@ class CarbLoadingDayDetailController extends _$CarbLoadingDayDetailController {
     if (currentState == null) return;
 
     state = AsyncData(currentState.copyWith(isLoading: true));
+    final selectionService = _selectionService;
 
-    state = await AsyncValue.guard(() async {
-      await _selectionService.addUserFoodToMeal(
+    final result = await AsyncValue.guard(() async {
+      await selectionService.addUserFoodToMeal(
         carbLoadingDayId: currentState.carbLoadingDay.id,
         mealType: mealType,
         food: food,
@@ -190,12 +200,13 @@ class CarbLoadingDayDetailController extends _$CarbLoadingDayDetailController {
       );
 
       // Reload meals
-      final meals = await _selectionService.getMealsByDay(
+      final meals = await selectionService.getMealsByDay(
         currentState.carbLoadingDay.id,
       );
 
       return currentState.copyWith(meals: meals, isLoading: false);
     });
+    if (ref.mounted) state = result;
   }
 
   /// Update quantity for a meal
@@ -209,20 +220,22 @@ class CarbLoadingDayDetailController extends _$CarbLoadingDayDetailController {
     }
 
     state = AsyncData(currentState.copyWith(isLoading: true));
+    final selectionService = _selectionService;
 
-    state = await AsyncValue.guard(() async {
-      await _selectionService.updateMealQuantity(
+    final result = await AsyncValue.guard(() async {
+      await selectionService.updateMealQuantity(
         mealId: mealId,
         newQuantity: newQuantity,
       );
 
       // Reload meals
-      final meals = await _selectionService.getMealsByDay(
+      final meals = await selectionService.getMealsByDay(
         currentState.carbLoadingDay.id,
       );
 
       return currentState.copyWith(meals: meals, isLoading: false);
     });
+    if (ref.mounted) state = result;
   }
 
   /// Increment quantity for a meal
@@ -249,17 +262,19 @@ class CarbLoadingDayDetailController extends _$CarbLoadingDayDetailController {
     if (currentState == null) return;
 
     state = AsyncData(currentState.copyWith(isLoading: true));
+    final selectionService = _selectionService;
 
-    state = await AsyncValue.guard(() async {
-      await _selectionService.removeMeal(mealId);
+    final result = await AsyncValue.guard(() async {
+      await selectionService.removeMeal(mealId);
 
       // Reload meals
-      final meals = await _selectionService.getMealsByDay(
+      final meals = await selectionService.getMealsByDay(
         currentState.carbLoadingDay.id,
       );
 
       return currentState.copyWith(meals: meals, isLoading: false);
     });
+    if (ref.mounted) state = result;
   }
 
   /// Clear all meals for a specific meal type
@@ -268,20 +283,22 @@ class CarbLoadingDayDetailController extends _$CarbLoadingDayDetailController {
     if (currentState == null) return;
 
     state = AsyncData(currentState.copyWith(isLoading: true));
+    final selectionService = _selectionService;
 
-    state = await AsyncValue.guard(() async {
-      await _selectionService.clearMealsByMealType(
+    final result = await AsyncValue.guard(() async {
+      await selectionService.clearMealsByMealType(
         carbLoadingDayId: currentState.carbLoadingDay.id,
         mealType: mealType,
       );
 
       // Reload meals
-      final meals = await _selectionService.getMealsByDay(
+      final meals = await selectionService.getMealsByDay(
         currentState.carbLoadingDay.id,
       );
 
       return currentState.copyWith(meals: meals, isLoading: false);
     });
+    if (ref.mounted) state = result;
   }
 
   /// Reset all progress for the day
@@ -290,11 +307,12 @@ class CarbLoadingDayDetailController extends _$CarbLoadingDayDetailController {
     if (currentState == null) return;
 
     state = AsyncData(currentState.copyWith(isLoading: true));
+    final selectionService = _selectionService;
 
-    state = await AsyncValue.guard(() async {
+    final result = await AsyncValue.guard(() async {
       // Clear all meal types
       for (final mealType in MealType.values) {
-        await _selectionService.clearMealsByMealType(
+        await selectionService.clearMealsByMealType(
           carbLoadingDayId: currentState.carbLoadingDay.id,
           mealType: mealType,
         );
@@ -302,6 +320,7 @@ class CarbLoadingDayDetailController extends _$CarbLoadingDayDetailController {
 
       return currentState.copyWith(meals: [], isLoading: false);
     });
+    if (ref.mounted) state = result;
   }
 
   /// Refresh data from repository
@@ -311,22 +330,20 @@ class CarbLoadingDayDetailController extends _$CarbLoadingDayDetailController {
 
   /// Force refresh from Supabase (pull-to-refresh).
   Future<void> forceRefresh() async {
+    final report = _report;
+    final repository = _repository;
+    final syncCoordinator = ref.read(syncCoordinatorProvider.notifier);
     try {
       final userId = await ref.read(userIdProvider.future);
-      final syncCoordinator = ref.read(syncCoordinatorProvider.notifier);
       await syncCoordinator.forceSyncRepository(
         'carb_loading_plans',
         userId,
-        repository: _repository,
+        repository: repository,
       );
-      ref.invalidateSelf();
+      if (ref.mounted) ref.invalidateSelf();
     } catch (e) {
-      _report.degraded(
-        e,
-        area: 'carb_loading',
-        message: 'Force refresh failed',
-      );
-      ref.invalidateSelf();
+      report.degraded(e, area: 'carb_loading', message: 'Force refresh failed');
+      if (ref.mounted) ref.invalidateSelf();
     }
   }
 
@@ -339,14 +356,16 @@ class CarbLoadingDayDetailController extends _$CarbLoadingDayDetailController {
     if (currentState == null) return;
 
     state = AsyncData(currentState.copyWith(isLoading: true));
+    final repository = _repository;
+    final service = _service;
 
-    state = await AsyncValue.guard(() async {
+    final result = await AsyncValue.guard(() async {
       // Get device ID for the repository
       final deviceId = await ref.read(userIdProvider.future);
 
       // CRITICAL FIX: Fetch the latest day from repository to get current ID
       // (ID may have changed due to background sync rekeying)
-      final latestDay = await _repository.getCarbLoadingDayById(
+      final latestDay = await repository.getCarbLoadingDayById(
         currentState.carbLoadingDay.id,
       );
       if (latestDay == null) {
@@ -356,7 +375,7 @@ class CarbLoadingDayDetailController extends _$CarbLoadingDayDetailController {
       }
 
       // Update the carb loading day using service-level consistency resolution
-      final updatedDay = await _service.updateCarbLoadingDay(
+      final updatedDay = await service.updateCarbLoadingDay(
         deviceId: deviceId,
         currentUserId: deviceId,
         carbLoadingDayId: latestDay.id,
@@ -367,12 +386,13 @@ class CarbLoadingDayDetailController extends _$CarbLoadingDayDetailController {
       );
 
       // Invalidate calendar view to refresh and show updated target
-      ref.invalidate(carbLoadingDaysForRangeProvider);
+      if (ref.mounted) ref.invalidate(carbLoadingDaysForRangeProvider);
 
       return currentState.copyWith(
         carbLoadingDay: updatedDay,
         isLoading: false,
       );
     });
+    if (ref.mounted) state = result;
   }
 }

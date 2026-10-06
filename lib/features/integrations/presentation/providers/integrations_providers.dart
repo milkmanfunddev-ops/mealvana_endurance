@@ -387,6 +387,7 @@ Future<bool> isGarminConnected(Ref ref, String userId) async {
 @riverpod
 Future<GarminBodyCompData?> garminLastBodyComp(Ref ref, String userId) async {
   final supabase = ref.read(appExternalDepsProvider).supabaseClient;
+  final report = ref.read(reportProvider);
 
   // First confirm Garmin is actually connected for this user.
   final isConnected = await ref.watch(isGarminConnectedProvider(userId).future);
@@ -441,14 +442,12 @@ Future<GarminBodyCompData?> garminLastBodyComp(Ref ref, String userId) async {
   } catch (e, stackTrace) {
     // Consumers show "no body-comp data"; the lookup failure must not be
     // mistaken for that.
-    ref
-        .read(reportProvider)
-        .degraded(
-          e,
-          stackTrace: stackTrace,
-          area: 'garmin',
-          message: 'Garmin body-composition lookup failed; showing none',
-        );
+    report.degraded(
+      e,
+      stackTrace: stackTrace,
+      area: 'garmin',
+      message: 'Garmin body-composition lookup failed; showing none',
+    );
     return null;
   }
 }

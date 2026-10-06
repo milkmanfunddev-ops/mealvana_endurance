@@ -94,12 +94,12 @@ class ShoppingListController extends _$ShoppingListController {
         current.mealCount,
       ),
     );
-    state = await AsyncValue.guard(() async {
-      await ref
-          .read(mealPlanControllerProvider.notifier)
-          .toggleShopping(name, field, value);
-      return state.value ?? current;
+    final planController = ref.read(mealPlanControllerProvider.notifier);
+    final result = await AsyncValue.guard(() async {
+      await planController.toggleShopping(name, field, value);
+      return ref.mounted ? (state.value ?? current) : current;
     });
+    if (ref.mounted) state = result;
   }
 
   /// Plain-text export for the native share sheet, grouped by aisle.

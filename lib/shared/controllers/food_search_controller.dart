@@ -127,15 +127,6 @@ class FoodSearchController extends _$FoodSearchController {
   /// keep their legacy behavior.
   FoodSearchFilter _filter = FoodSearchFilter.all;
 
-  bool get _isMounted {
-    try {
-      state;
-      return true;
-    } catch (_) {
-      return false;
-    }
-  }
-
   @override
   FoodSearchState build(String key) {
     _report = ref.read(reportProvider);
@@ -311,7 +302,7 @@ class FoodSearchController extends _$FoodSearchController {
       try {
         final results = await searchService.searchProducts(query);
 
-        if (!_isMounted) return;
+        if (!ref.mounted) return;
         // A newer query superseded this one while we were retrying.
         if (state.searchQuery.trim() != query.trim()) return;
 
@@ -322,7 +313,7 @@ class FoodSearchController extends _$FoodSearchController {
         );
         return;
       } catch (e) {
-        if (!_isMounted) return;
+        if (!ref.mounted) return;
 
         final isLast = attempt == attempts;
         await _report.degraded(
@@ -336,11 +327,12 @@ class FoodSearchController extends _$FoodSearchController {
           // 400ms, 800ms — enough to ride out a rate-limit blip without
           // making the user wait long for a genuine outage.
           await Future<void>.delayed(Duration(milliseconds: 400 * attempt));
-          if (!_isMounted) return;
+          if (!ref.mounted) return;
           if (state.searchQuery.trim() != query.trim()) return;
           continue;
         }
 
+        if (!ref.mounted) return;
         state = state.copyWith(
           isSearchingOpenFoodFacts: false,
           openFoodFactsError:
@@ -376,7 +368,7 @@ class FoodSearchController extends _$FoodSearchController {
   Future<void> _searchCatalog(String query) async {
     final searchService = ref.read(sharedFoodSearchServiceProvider);
 
-    if (_isMounted) {
+    if (ref.mounted) {
       state = state.copyWith(isSearchingCatalog: true);
     }
 
@@ -384,7 +376,7 @@ class FoodSearchController extends _$FoodSearchController {
     try {
       final results = await searchService.searchCatalog(query);
 
-      if (!_isMounted) return;
+      if (!ref.mounted) return;
 
       // Only update if query is still current
       if (state.searchQuery.trim() != query.trim()) return;
@@ -397,7 +389,7 @@ class FoodSearchController extends _$FoodSearchController {
         totalCatalogCount: filtered.length,
       );
     } catch (e) {
-      if (!_isMounted) return;
+      if (!ref.mounted) return;
 
       await _report.degraded(
         e,
@@ -406,6 +398,7 @@ class FoodSearchController extends _$FoodSearchController {
         extra: {'query': query},
       );
 
+      if (!ref.mounted) return;
       state = state.copyWith(isSearchingCatalog: false);
     }
 
@@ -416,7 +409,7 @@ class FoodSearchController extends _$FoodSearchController {
   /// lookup automatically when local + catalog results are thin, instead of
   /// requiring a manual "Search Open Food Facts" button tap (ITEM 7).
   void _maybeAutoSearchNutritionProducts(String query, int catalogHitCount) {
-    if (!_isMounted) return;
+    if (!ref.mounted) return;
     if (state.searchQuery.trim() != query.trim()) return;
 
     final localHitCount =
@@ -433,14 +426,14 @@ class FoodSearchController extends _$FoodSearchController {
   Future<void> _searchNutritionProducts(String query) async {
     final searchService = ref.read(nutritionProductSearchServiceProvider);
 
-    if (_isMounted) {
+    if (ref.mounted) {
       state = state.copyWith(isSearchingNutritionProducts: true);
     }
 
     try {
       final results = await searchService.search(query);
 
-      if (!_isMounted) return;
+      if (!ref.mounted) return;
 
       if (state.searchQuery.trim() == query.trim()) {
         state = state.copyWith(
@@ -449,7 +442,7 @@ class FoodSearchController extends _$FoodSearchController {
         );
       }
     } catch (e) {
-      if (!_isMounted) return;
+      if (!ref.mounted) return;
 
       await _report.degraded(
         e,
@@ -458,6 +451,7 @@ class FoodSearchController extends _$FoodSearchController {
         extra: {'query': query},
       );
 
+      if (!ref.mounted) return;
       state = state.copyWith(isSearchingNutritionProducts: false);
     }
   }

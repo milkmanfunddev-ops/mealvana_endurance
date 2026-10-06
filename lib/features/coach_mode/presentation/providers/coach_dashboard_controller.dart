@@ -62,14 +62,16 @@ class CoachDashboardController extends _$CoachDashboardController {
 
   /// Load local data immediately, sync in background
   Future<CoachDashboardState> _loadDashboard() async {
+    final coachService = _coachService;
+    final report = ref.read(reportProvider);
     try {
-      var coachInfo = await _coachService.getCurrentCoachInfo();
+      var coachInfo = await coachService.getCurrentCoachInfo();
 
       if (coachInfo == null) {
-        final isCoachAfterSync = await _coachService
+        final isCoachAfterSync = await coachService
             .syncCurrentCoachDataFromSupabase();
         if (isCoachAfterSync) {
-          coachInfo = await _coachService.getCurrentCoachInfo();
+          coachInfo = await coachService.getCurrentCoachInfo();
         }
       }
 
@@ -81,11 +83,11 @@ class CoachDashboardController extends _$CoachDashboardController {
       }
 
       // 1. Load local data IMMEDIATELY
-      final activeAthletes = await _coachService.getMyAthletes();
-      final pendingRequests = await _coachService.getPendingAthleteRequests();
+      final activeAthletes = await coachService.getMyAthletes();
+      final pendingRequests = await coachService.getPendingAthleteRequests();
 
       // 2. Background sync (fire-and-forget)
-      unawaited(_backgroundSync());
+      if (ref.mounted) unawaited(_backgroundSync());
 
       return CoachDashboardState(
         coachInfo: coachInfo,
@@ -93,14 +95,12 @@ class CoachDashboardController extends _$CoachDashboardController {
         pendingRequests: pendingRequests,
       );
     } catch (e, stackTrace) {
-      ref
-          .read(reportProvider)
-          .fault(
-            e,
-            stackTrace: stackTrace,
-            area: 'coach_mode',
-            message: 'Coach dashboard load failed',
-          );
+      report.fault(
+        e,
+        stackTrace: stackTrace,
+        area: 'coach_mode',
+        message: 'Coach dashboard load failed',
+      );
       return CoachDashboardState(
         error: 'Failed to load dashboard: ${e.toString()}',
       );
@@ -137,7 +137,8 @@ class CoachDashboardController extends _$CoachDashboardController {
   /// Refresh dashboard data
   Future<void> refresh() async {
     state = const AsyncLoading();
-    state = await AsyncValue.guard(() => _loadDashboard());
+    final result = await AsyncValue.guard(() => _loadDashboard());
+    if (ref.mounted) state = result;
   }
 
   /// Accept a pending athlete request
@@ -147,13 +148,17 @@ class CoachDashboardController extends _$CoachDashboardController {
 
     state = AsyncData(currentState.copyWith(isLoading: true));
 
+    final coachService = _coachService;
+    final report = ref.read(reportProvider);
+
     try {
-      await _coachService.acceptAthleteRequest(relationshipId);
+      await coachService.acceptAthleteRequest(relationshipId);
 
       // Refresh to get updated lists
-      final activeAthletes = await _coachService.getMyAthletes();
-      final pendingRequests = await _coachService.getPendingAthleteRequests();
+      final activeAthletes = await coachService.getMyAthletes();
+      final pendingRequests = await coachService.getPendingAthleteRequests();
 
+      if (!ref.mounted) return;
       state = AsyncData(
         currentState.copyWith(
           activeAthletes: activeAthletes,
@@ -162,15 +167,14 @@ class CoachDashboardController extends _$CoachDashboardController {
         ),
       );
     } catch (e, stackTrace) {
-      ref
-          .read(reportProvider)
-          .fault(
-            e,
-            stackTrace: stackTrace,
-            area: 'coach_mode',
-            message: 'Accept athlete request failed',
-            extra: {'relationshipId': relationshipId},
-          );
+      report.fault(
+        e,
+        stackTrace: stackTrace,
+        area: 'coach_mode',
+        message: 'Accept athlete request failed',
+        extra: {'relationshipId': relationshipId},
+      );
+      if (!ref.mounted) return;
       state = AsyncData(
         currentState.copyWith(
           isLoading: false,
@@ -187,14 +191,18 @@ class CoachDashboardController extends _$CoachDashboardController {
 
     state = AsyncData(currentState.copyWith(isLoading: true));
 
+    final coachService = _coachService;
+    final report = ref.read(reportProvider);
+
     try {
-      await _coachService.declineAthleteRequest(relationshipId);
+      await coachService.declineAthleteRequest(relationshipId);
 
       // Remove from pending list
       final updatedPending = currentState.pendingRequests
           .where((r) => r.id != relationshipId)
           .toList();
 
+      if (!ref.mounted) return;
       state = AsyncData(
         currentState.copyWith(
           pendingRequests: updatedPending,
@@ -202,15 +210,14 @@ class CoachDashboardController extends _$CoachDashboardController {
         ),
       );
     } catch (e, stackTrace) {
-      ref
-          .read(reportProvider)
-          .fault(
-            e,
-            stackTrace: stackTrace,
-            area: 'coach_mode',
-            message: 'Decline athlete request failed',
-            extra: {'relationshipId': relationshipId},
-          );
+      report.fault(
+        e,
+        stackTrace: stackTrace,
+        area: 'coach_mode',
+        message: 'Decline athlete request failed',
+        extra: {'relationshipId': relationshipId},
+      );
+      if (!ref.mounted) return;
       state = AsyncData(
         currentState.copyWith(
           isLoading: false,
@@ -227,27 +234,30 @@ class CoachDashboardController extends _$CoachDashboardController {
 
     state = AsyncData(currentState.copyWith(isLoading: true));
 
+    final coachService = _coachService;
+    final report = ref.read(reportProvider);
+
     try {
-      await _coachService.archiveAthlete(relationshipId);
+      await coachService.archiveAthlete(relationshipId);
 
       // Remove from active list
       final updatedActive = currentState.activeAthletes
           .where((r) => r.id != relationshipId)
           .toList();
 
+      if (!ref.mounted) return;
       state = AsyncData(
         currentState.copyWith(activeAthletes: updatedActive, isLoading: false),
       );
     } catch (e, stackTrace) {
-      ref
-          .read(reportProvider)
-          .fault(
-            e,
-            stackTrace: stackTrace,
-            area: 'coach_mode',
-            message: 'Archive athlete failed',
-            extra: {'relationshipId': relationshipId},
-          );
+      report.fault(
+        e,
+        stackTrace: stackTrace,
+        area: 'coach_mode',
+        message: 'Archive athlete failed',
+        extra: {'relationshipId': relationshipId},
+      );
+      if (!ref.mounted) return;
       state = AsyncData(
         currentState.copyWith(
           isLoading: false,

@@ -58,7 +58,7 @@ class VanaSettingsState {
 @riverpod
 class VanaSettingsController extends _$VanaSettingsController {
   UserMemoryRepository get _repo => ref.read(userMemoryRepositoryProvider);
-  Report get _report => ref.read(reportProvider);
+  Report get _report => ref.report;
 
   static const _context = 'VANA_SETTINGS_CONTROLLER';
 
@@ -68,32 +68,33 @@ class VanaSettingsController extends _$VanaSettingsController {
 
   @override
   FutureOr<VanaSettingsState> build() async {
-    final userId = await ref.watch(userIdProvider.future);
-    _userId = userId;
+    final repo = _repo;
+    final reminderService = ref.read(planReminderServiceProvider);
     ref.onDispose(() {
       _settingsSub?.cancel();
       _memoriesSub?.cancel();
     });
+    final userId = await ref.watch(userIdProvider.future);
+    _userId = userId;
     unawaited(_ensureSynced(userId));
 
-    final settings = await _repo.watchSettings(userId).first;
-    final memories = await _repo.watchMemories(userId).first;
+    final settings = await repo.watchSettings(userId).first;
+    final memories = await repo.watchMemories(userId).first;
     final initial = _fold(
-      VanaSettingsState(
-        remindersEnabled: ref
-            .read(planReminderServiceProvider)
-            .remindersEnabled,
-      ),
+      VanaSettingsState(remindersEnabled: reminderService.remindersEnabled),
       settings,
       memories,
     );
+    // Disposed during the awaits: onDispose already ran, so subscribing now
+    // would leak the streams. The value is discarded either way.
+    if (!ref.mounted) return initial;
 
-    _settingsSub = _repo.watchSettings(userId).listen((s) {
+    _settingsSub = repo.watchSettings(userId).listen((s) {
       final current = state.value;
       if (current == null || !ref.mounted) return;
       state = AsyncData(_fold(current, s, current.memories));
     });
-    _memoriesSub = _repo.watchMemories(userId).listen((m) {
+    _memoriesSub = repo.watchMemories(userId).listen((m) {
       final current = state.value;
       if (current == null || !ref.mounted) return;
       state = AsyncData(current.copyWith(memories: m));
@@ -112,12 +113,18 @@ class VanaSettingsController extends _$VanaSettingsController {
   );
 
   Future<void> _ensureSynced(String userId) async {
+    if (!ref.mounted) return;
+    final syncCoordinator = ref.read(syncCoordinatorProvider.notifier);
+    final repo = _repo;
+    final report = _report;
     try {
-      await ref
-          .read(syncCoordinatorProvider.notifier)
-          .ensureSynced('user_memories', userId, repository: _repo);
+      await syncCoordinator.ensureSynced(
+        'user_memories',
+        userId,
+        repository: repo,
+      );
     } catch (e) {
-      _report.degraded(
+      report.degraded(
         e,
         area: 'meal_planning',
         message: 'user_memories ensureSynced failed (non-fatal)',
@@ -138,15 +145,13 @@ class VanaSettingsController extends _$VanaSettingsController {
     final current = state.value;
     if (current == null) return;
     state = AsyncData(current.copyWith(remindersEnabled: value));
-    state = await AsyncValue.guard(() async {
-      await ref
-          .read(planReminderServiceProvider)
-          .setRemindersEnabled(
-            value,
-            plan: ref.read(mealPlanControllerProvider).value,
-          );
-      return state.value ?? current;
+    final reminderService = ref.read(planReminderServiceProvider);
+    final plan = ref.read(mealPlanControllerProvider).value;
+    final result = await AsyncValue.guard(() async {
+      await reminderService.setRemindersEnabled(value, plan: plan);
+      return (ref.mounted ? state.value : null) ?? current;
     });
+    if (ref.mounted) state = result;
   }
 
   Future<void> _setSetting(VanaSetting setting, bool value) async {
@@ -158,11 +163,13 @@ class VanaSettingsController extends _$VanaSettingsController {
       VanaSetting.batchCooking => current.copyWith(batchCooking: value),
       VanaSetting.showMacros => current.copyWith(showMacros: value),
     });
-    state = await AsyncValue.guard(() async {
-      await _repo.setSetting(userId, setting, value);
+    final repo = _repo;
+    final result = await AsyncValue.guard(() async {
+      await repo.setSetting(userId, setting, value);
       unawaited(_pushSetting(userId, setting, value));
-      return state.value ?? current;
+      return (ref.mounted ? state.value : null) ?? current;
     });
+    if (ref.mounted) state = result;
   }
 
   /// Online: `set_setting` (server also updates the active plan's
@@ -172,31 +179,37 @@ class VanaSettingsController extends _$VanaSettingsController {
     VanaSetting setting,
     bool value,
   ) async {
-    if (!await ref.read(connectivityCheckerProvider).isOnline()) return;
+    // Disposed after the local write: the dirty row is replayed by the next
+    // sync, same as the offline path.
+    if (!ref.mounted) return;
+    final connectivity = ref.read(connectivityCheckerProvider);
+    final actionClient = ref.read(vanaActionClientProvider);
+    final mealPlanController = ref.read(mealPlanControllerProvider.notifier);
+    final repo = _repo;
+    final report = _report;
+    if (!await connectivity.isOnline()) return;
     try {
-      final result = await ref
-          .read(vanaActionClientProvider)
-          .run(SetSettingAction(key: setting, value: value));
+      final result = await actionClient.run(
+        SetSettingAction(key: setting, value: value),
+      );
       for (final part in result.parts) {
         if (part is VanaMemorySavedPart) {
-          await _repo.applyServerMemory(part.memory, userId: userId);
+          await repo.applyServerMemory(part.memory, userId: userId);
         }
       }
       final plan = result.plan;
       if (plan != null) {
-        await ref
-            .read(mealPlanControllerProvider.notifier)
-            .applyServerPlan(plan);
+        await mealPlanController.applyServerPlan(plan);
       }
     } on VanaException catch (e) {
-      _report.degraded(
+      report.degraded(
         e,
         area: 'meal_planning',
         message: 'set_setting action failed; local row stays dirty',
       );
-      final upload = await _repo.uploadDirtyRecords(userId);
+      final upload = await repo.uploadDirtyRecords(userId);
       if (!upload.success) {
-        _report.degraded(
+        report.degraded(
           LoggedFault('user_memories upload failed', context: _context),
           area: 'meal_planning',
           extra: {'error': upload.error},
@@ -215,12 +228,14 @@ class VanaSettingsController extends _$VanaSettingsController {
         memories: current.memories.where((m) => m.id != id).toList(),
       ),
     );
-    state = await AsyncValue.guard(() async {
-      await _repo.deleteMemory(id);
+    final repo = _repo;
+    final report = _report;
+    final result = await AsyncValue.guard(() async {
+      await repo.deleteMemory(id);
       unawaited(() async {
-        final upload = await _repo.uploadDirtyRecords(userId);
+        final upload = await repo.uploadDirtyRecords(userId);
         if (!upload.success) {
-          _report.degraded(
+          report.degraded(
             LoggedFault(
               'user_memories upload after delete failed',
               context: _context,
@@ -230,7 +245,8 @@ class VanaSettingsController extends _$VanaSettingsController {
           );
         }
       }());
-      return state.value ?? current;
+      return (ref.mounted ? state.value : null) ?? current;
     });
+    if (ref.mounted) state = result;
   }
 }

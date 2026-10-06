@@ -260,7 +260,7 @@ class ReportsDateRange {
 class CoachReportsController extends _$CoachReportsController {
   CoachService get _coachService => ref.read(coachServiceProvider);
   DataSyncService get _syncService => ref.read(dataSyncServiceProvider);
-  Report get _report => ref.read(reportProvider);
+  Report get _report => ref.report;
 
   @override
   FutureOr<CoachReportsState> build() async {
@@ -269,8 +269,12 @@ class CoachReportsController extends _$CoachReportsController {
 
   /// Load compact overview for all athletes (triage view)
   Future<CoachReportsState> _loadTriageOverview(ReportsDateRange range) async {
-    final athletes = await _coachService.getMyAthletes();
+    // Read before the first await: this auto-dispose provider can be
+    // disposed mid-load.
     final db = ref.read(appDatabaseProvider);
+    final syncService = _syncService;
+    final report = _report;
+    final athletes = await _coachService.getMyAthletes();
     final now = DateTime.now();
     final today = DateTime(now.year, now.month, now.day);
 
@@ -278,9 +282,9 @@ class CoachReportsController extends _$CoachReportsController {
     await Future.wait(
       athletes
           .where((a) => a.athleteUserId.isNotEmpty)
-          .map((a) => _syncService.syncAthleteData(a.athleteUserId)),
+          .map((a) => syncService.syncAthleteData(a.athleteUserId)),
     ).catchError((Object e, StackTrace st) {
-      _report.degraded(
+      report.degraded(
         e,
         stackTrace: st,
         area: 'coach_mode',
@@ -386,7 +390,7 @@ class CoachReportsController extends _$CoachReportsController {
           ),
         );
       } catch (e, stackTrace) {
-        _report.degraded(
+        report.degraded(
           e,
           stackTrace: stackTrace,
           area: 'coach_mode',
@@ -406,6 +410,7 @@ class CoachReportsController extends _$CoachReportsController {
     ReportsDateRange range,
   ) async {
     final db = ref.read(appDatabaseProvider);
+    final report = _report;
     final athleteId = athlete.athleteUserId;
     final now = DateTime.now();
     final today = DateTime(now.year, now.month, now.day);
@@ -415,7 +420,7 @@ class CoachReportsController extends _$CoachReportsController {
       Object e,
       StackTrace st,
     ) {
-      _report.degraded(
+      report.degraded(
         e,
         stackTrace: st,
         area: 'coach_mode',
@@ -507,7 +512,7 @@ class CoachReportsController extends _$CoachReportsController {
             nutritionRating = fuelLog.nutritionRating;
             notes = fuelLog.notes;
           } catch (e, stackTrace) {
-            _report.degraded(
+            report.degraded(
               e,
               stackTrace: stackTrace,
               area: 'coach_mode',
@@ -613,13 +618,14 @@ class CoachReportsController extends _$CoachReportsController {
     );
 
     // Load detail in background, update state when ready
-    state = await AsyncValue.guard(() async {
+    final result = await AsyncValue.guard(() async {
       final report = await _loadAthleteDetail(athlete, current.dateRange);
       return current.copyWith(
         selectedRelationshipId: relationshipId,
         selectedReport: report,
       );
     });
+    if (ref.mounted) state = result;
   }
 
   /// Go back to triage overview
@@ -637,7 +643,8 @@ class CoachReportsController extends _$CoachReportsController {
   /// Switch date range and reload
   Future<void> setDateRange(ReportsDateRange range) async {
     state = const AsyncLoading();
-    state = await AsyncValue.guard(() => _loadTriageOverview(range));
+    final result = await AsyncValue.guard(() => _loadTriageOverview(range));
+    if (ref.mounted) state = result;
   }
 
   /// Refresh current view
@@ -649,8 +656,9 @@ class CoachReportsController extends _$CoachReportsController {
         current?.selectedReport != null) {
       // Refresh the selected athlete's detail
       state = const AsyncLoading();
-      state = await AsyncValue.guard(() async {
+      final result = await AsyncValue.guard(() async {
         final overview = await _loadTriageOverview(range);
+        if (!ref.mounted) return overview;
         final report = await _loadAthleteDetail(
           current!.selectedReport!.relationship,
           range,
@@ -660,10 +668,12 @@ class CoachReportsController extends _$CoachReportsController {
           selectedReport: report,
         );
       });
+      if (ref.mounted) state = result;
     } else {
       // Refresh triage overview
       state = const AsyncLoading();
-      state = await AsyncValue.guard(() => _loadTriageOverview(range));
+      final result = await AsyncValue.guard(() => _loadTriageOverview(range));
+      if (ref.mounted) state = result;
     }
   }
 

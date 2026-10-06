@@ -135,11 +135,16 @@ class CarbLoadingFoodSelectionController
   Future<CarbLoadingFoodSelectionState> build(
     CarbLoadingFoodSelectionParams params,
   ) async {
-    // Load all food sources
-    final deviceId = await ref.read(userIdProvider.future);
+    // Read before the first await: this auto-dispose provider can be
+    // disposed mid-build.
     final database = ref.read(appDatabaseProvider);
     final syncCoordinator = ref.read(syncCoordinatorProvider.notifier);
     final carbLoadingFoodRepo = ref.read(carbLoadingFoodRepositoryProvider);
+    final carbLoadingFoodService = _carbLoadingFoodService;
+    final foodRepository = _foodRepository;
+
+    // Load all food sources
+    final deviceId = await ref.read(userIdProvider.future);
 
     // Ensure carb loading foods are synced (global table, userId ignored but required by interface)
     await syncCoordinator.ensureSynced(
@@ -149,14 +154,14 @@ class CarbLoadingFoodSelectionController
     );
 
     // Load carb loading specific foods
-    final carbLoadingFoods = await _carbLoadingFoodService
+    final carbLoadingFoods = await carbLoadingFoodService
         .getDefaultFoodsForMealType(params.mealType);
-    final carbLoadingUserFoods = await _carbLoadingFoodService.getAllUserFoods(
+    final carbLoadingUserFoods = await carbLoadingFoodService.getAllUserFoods(
       deviceId,
     );
 
     // Load nutrition plan foods (for importing) - convert FoodItems to Foods
-    final foodItems = await _foodRepository.getAllFoods();
+    final foodItems = await foodRepository.getAllFoods();
     final nutritionPlanFoods = foodItems
         .map(
           (item) => Food(
@@ -306,10 +311,11 @@ class CarbLoadingFoodSelectionController
 
     state = AsyncData(currentState.copyWith(isSearchingOpenFoodFacts: true));
 
+    final report = ref.read(reportProvider);
     try {
       final results = await _openFoodFactsService.searchProducts(query);
 
-      if (state.value != null) {
+      if (ref.mounted && state.value != null) {
         state = AsyncData(
           state.value!.copyWith(
             openFoodFactsResults: results,
@@ -318,15 +324,13 @@ class CarbLoadingFoodSelectionController
         );
       }
     } catch (e, stackTrace) {
-      ref
-          .read(reportProvider)
-          .fault(
-            e,
-            stackTrace: stackTrace,
-            area: 'carb_loading',
-            message: 'Open Food Facts search failed; results cleared',
-          );
-      if (state.value != null) {
+      report.fault(
+        e,
+        stackTrace: stackTrace,
+        area: 'carb_loading',
+        message: 'Open Food Facts search failed; results cleared',
+      );
+      if (ref.mounted && state.value != null) {
         state = AsyncData(
           state.value!.copyWith(
             openFoodFactsResults: [],
@@ -407,13 +411,19 @@ class CarbLoadingFoodSelectionController
 
     state = const AsyncLoading();
 
-    state = await AsyncValue.guard(() async {
+    // Read before the first await: the sheet can close mid-add and dispose
+    // this provider, but the add still finishes.
+    final selectionService = _selectionService;
+    final carbLoadingFoodService = _carbLoadingFoodService;
+    final importService = _importService;
+
+    final result = await AsyncValue.guard(() async {
       final deviceId = await ref.read(userIdProvider.future);
       final selectedFood = currentState.selectedFood;
       final quantity = currentState.selectedQuantity.round();
 
       // Get existing meals for this day and meal type to check for duplicates
-      final existingMeals = await _selectionService.getMealsByDayAndMealType(
+      final existingMeals = await selectionService.getMealsByDayAndMealType(
         carbLoadingDayId: currentState.carbLoadingDayId,
         mealType: currentState.mealType,
       );
@@ -430,13 +440,13 @@ class CarbLoadingFoodSelectionController
 
         if (existingMeal != null) {
           // Increment existing quantity
-          await _selectionService.updateMealQuantity(
+          await selectionService.updateMealQuantity(
             mealId: existingMeal.id,
             newQuantity: existingMeal.quantity + quantity,
           );
         } else {
           // Add new meal
-          await _selectionService.addDefaultFoodToMeal(
+          await selectionService.addDefaultFoodToMeal(
             carbLoadingDayId: currentState.carbLoadingDayId,
             mealType: currentState.mealType,
             food: selectedFood,
@@ -452,7 +462,7 @@ class CarbLoadingFoodSelectionController
             ...selectedFood.mealTypes,
             currentState.mealType,
           ];
-          foodToAdd = await _carbLoadingFoodService.updateUserFood(
+          foodToAdd = await carbLoadingFoodService.updateUserFood(
             id: selectedFood.id,
             mealTypes: updatedMealTypes,
           );
@@ -468,13 +478,13 @@ class CarbLoadingFoodSelectionController
 
         if (existingMeal != null) {
           // Increment existing quantity
-          await _selectionService.updateMealQuantity(
+          await selectionService.updateMealQuantity(
             mealId: existingMeal.id,
             newQuantity: existingMeal.quantity + quantity,
           );
         } else {
           // Add new meal
-          await _selectionService.addUserFoodToMeal(
+          await selectionService.addUserFoodToMeal(
             carbLoadingDayId: currentState.carbLoadingDayId,
             mealType: currentState.mealType,
             food: foodToAdd,
@@ -483,7 +493,7 @@ class CarbLoadingFoodSelectionController
         }
       } else if (selectedFood is Food) {
         // Check if this food is already imported
-        final alreadyImported = await _importService.isFoodAlreadyImported(
+        final alreadyImported = await importService.isFoodAlreadyImported(
           deviceId: deviceId,
           sourceFoodId: selectedFood.id,
         );
@@ -491,7 +501,7 @@ class CarbLoadingFoodSelectionController
         CarbLoadingUserFood importedFood;
         if (alreadyImported) {
           // Reuse existing imported food and update meal types if needed
-          final existingFoods = await _carbLoadingFoodService.getAllUserFoods(
+          final existingFoods = await carbLoadingFoodService.getAllUserFoods(
             deviceId,
           );
           final existingFood = existingFoods.firstWhere(
@@ -505,16 +515,16 @@ class CarbLoadingFoodSelectionController
               ...existingFood.mealTypes,
               currentState.mealType,
             ];
-            importedFood = await _carbLoadingFoodService.updateUserFood(
+            importedFood = await carbLoadingFoodService.updateUserFood(
               id: existingFood.id,
               mealTypes: updatedMealTypes,
             );
           } else {
             importedFood = existingFood;
           }
-        } else if (await _importService.existsInFoodsTable(selectedFood.id)) {
+        } else if (await importService.existsInFoodsTable(selectedFood.id)) {
           // Import from nutrition plan foods table
-          importedFood = await _importService.importFromFoodsTable(
+          importedFood = await importService.importFromFoodsTable(
             deviceId: deviceId,
             userId:
                 deviceId, // TODO: Replace with actual userId once user authentication is implemented
@@ -527,7 +537,7 @@ class CarbLoadingFoodSelectionController
           // importFromFoodsTable would throw 'Source food not found' — which is
           // why scanning a barcode here used to fail every time. Create it from
           // the scanned food's own data, which already carries real nutrition.
-          importedFood = await _importService.createCustomFood(
+          importedFood = await importService.createCustomFood(
             deviceId: deviceId,
             userId:
                 deviceId, // TODO: Replace with actual userId once user authentication is implemented
@@ -550,13 +560,13 @@ class CarbLoadingFoodSelectionController
 
         if (existingMeal != null) {
           // Increment existing quantity
-          await _selectionService.updateMealQuantity(
+          await selectionService.updateMealQuantity(
             mealId: existingMeal.id,
             newQuantity: existingMeal.quantity + quantity,
           );
         } else {
           // Add the imported food to the meal
-          await _selectionService.addUserFoodToMeal(
+          await selectionService.addUserFoodToMeal(
             carbLoadingDayId: currentState.carbLoadingDayId,
             mealType: currentState.mealType,
             food: importedFood,
@@ -565,7 +575,7 @@ class CarbLoadingFoodSelectionController
         }
       } else if (selectedFood is db.UserFood) {
         // Check if this user food is already imported
-        final alreadyImported = await _importService.isUserFoodAlreadyImported(
+        final alreadyImported = await importService.isUserFoodAlreadyImported(
           deviceId: deviceId,
           sourceUserFoodId: selectedFood.id,
         );
@@ -573,7 +583,7 @@ class CarbLoadingFoodSelectionController
         CarbLoadingUserFood importedFood;
         if (alreadyImported) {
           // Reuse existing imported food and update meal types if needed
-          final existingFoods = await _carbLoadingFoodService.getAllUserFoods(
+          final existingFoods = await carbLoadingFoodService.getAllUserFoods(
             deviceId,
           );
           final existingFood = existingFoods.firstWhere(
@@ -587,7 +597,7 @@ class CarbLoadingFoodSelectionController
               ...existingFood.mealTypes,
               currentState.mealType,
             ];
-            importedFood = await _carbLoadingFoodService.updateUserFood(
+            importedFood = await carbLoadingFoodService.updateUserFood(
               id: existingFood.id,
               mealTypes: updatedMealTypes,
             );
@@ -596,7 +606,7 @@ class CarbLoadingFoodSelectionController
           }
         } else {
           // Import from user_foods table
-          importedFood = await _importService.importFromUserFoodsTable(
+          importedFood = await importService.importFromUserFoodsTable(
             deviceId: deviceId,
             userId:
                 deviceId, // TODO: Replace with actual userId once user authentication is implemented
@@ -615,13 +625,13 @@ class CarbLoadingFoodSelectionController
 
         if (existingMeal != null) {
           // Increment existing quantity
-          await _selectionService.updateMealQuantity(
+          await selectionService.updateMealQuantity(
             mealId: existingMeal.id,
             newQuantity: existingMeal.quantity + quantity,
           );
         } else {
           // Add the imported food to the meal
-          await _selectionService.addUserFoodToMeal(
+          await selectionService.addUserFoodToMeal(
             carbLoadingDayId: currentState.carbLoadingDayId,
             mealType: currentState.mealType,
             food: importedFood,
@@ -636,6 +646,7 @@ class CarbLoadingFoodSelectionController
         selectedQuantity: 1.0,
       );
     });
+    if (ref.mounted) state = result;
   }
 
   /// Add food from Open Food Facts result
@@ -643,12 +654,17 @@ class CarbLoadingFoodSelectionController
   Future<CarbLoadingUserFood> addFromOpenFoodFacts(
     FoodSearchResult result,
   ) async {
-    final deviceId = await ref.read(userIdProvider.future);
+    // Read before the first await: this provider can be disposed mid-import.
     final currentState = state.value;
     if (currentState == null) return Future.error('State not initialized');
+    final importService = _importService;
+    final carbLoadingFoodService = _carbLoadingFoodService;
+    final productDetailService = ref.read(productDetailServiceProvider);
+    final foodMappingService = ref.read(foodMappingServiceProvider);
+    final deviceId = await ref.read(userIdProvider.future);
 
     // Check if this barcode is already imported
-    final alreadyImported = await _importService.isBarcodeAlreadyImported(
+    final alreadyImported = await importService.isBarcodeAlreadyImported(
       deviceId: deviceId,
       barcode: result.id,
     );
@@ -656,7 +672,7 @@ class CarbLoadingFoodSelectionController
     CarbLoadingUserFood importedFood;
     if (alreadyImported) {
       // Reuse existing imported food and update meal types if needed
-      final existingFoods = await _carbLoadingFoodService.getAllUserFoods(
+      final existingFoods = await carbLoadingFoodService.getAllUserFoods(
         deviceId,
       );
       final existingFood = existingFoods.firstWhere(
@@ -670,7 +686,7 @@ class CarbLoadingFoodSelectionController
           ...existingFood.mealTypes,
           currentState.mealType,
         ];
-        importedFood = await _carbLoadingFoodService.updateUserFood(
+        importedFood = await carbLoadingFoodService.updateUserFood(
           id: existingFood.id,
           mealTypes: updatedMealTypes,
         );
@@ -683,17 +699,16 @@ class CarbLoadingFoodSelectionController
       // guessing: this is the carb loading screen, so an invented carb number
       // is the one number that must not be wrong. (Previously hardcoded to 30g
       // with a "user can edit later" note.)
-      final apiProduct = await ref
-          .read(productDetailServiceProvider)
-          .getProductDetails(barcode: result.id);
+      final apiProduct = await productDetailService.getProductDetails(
+        barcode: result.id,
+      );
 
       // Reuse the same mapper the other search surfaces use, rather than
       // reading raw per-100g/per-serving fields here — it already resolves
       // serving size and unit conversion.
       final carbs = apiProduct == null
           ? null
-          : (await ref.read(foodMappingServiceProvider).mapToFood(apiProduct))
-                .carbsPerServing;
+          : (await foodMappingService.mapToFood(apiProduct)).carbsPerServing;
 
       if (carbs == null) {
         // No usable nutrition — surface it instead of inventing a number. The
@@ -704,7 +719,7 @@ class CarbLoadingFoodSelectionController
         );
       }
 
-      importedFood = await _importService.createFromBarcodeScan(
+      importedFood = await importService.createFromBarcodeScan(
         deviceId: deviceId,
         userId:
             deviceId, // TODO: Replace with actual userId once user authentication is implemented

@@ -28,9 +28,9 @@ part 'personal_formulas_controller.g.dart';
 class PersonalFormulasController extends _$PersonalFormulasController {
   @override
   FutureOr<List<PersonalFormula>> build() async {
-    final userRepo = await ref.read(userRepositoryProvider.future);
     final repo = ref.read(personalFormulasRepositoryProvider);
     final report = ref.read(reportProvider);
+    final userRepo = await ref.read(userRepositoryProvider.future);
 
     final user = await userRepo.getCurrentUser();
     final userId = user?.id;
@@ -87,20 +87,26 @@ class PersonalFormulasController extends _$PersonalFormulasController {
     int? quantityEditCount,
   }) async {
     final repo = ref.read(personalFormulasRepositoryProvider);
+    final analytics = ref.read(appExternalDepsProvider).analytics;
     final saved = await repo.create(formula);
-    ref.invalidateSelf();
-    await future;
+    if (ref.mounted) {
+      ref.invalidateSelf();
+      await future;
+    }
 
     final event = formula.provenance == FormulaProvenance.forkedFormula
         ? 'personal_formula_forked'
         : 'personal_formula_created';
-    await _track(event, {
-      'formula_id': saved.id,
-      'phase': saved.phase.analyticsValue,
-      'provenance': saved.provenance.wireValue,
-      'component_count': saved.components.length,
-      if (quantityEditCount != null) 'quantity_edit_count': quantityEditCount,
-    });
+    await analytics.track(
+      event,
+      properties: {
+        'formula_id': saved.id,
+        'phase': saved.phase.analyticsValue,
+        'provenance': saved.provenance.wireValue,
+        'component_count': saved.components.length,
+        if (quantityEditCount != null) 'quantity_edit_count': quantityEditCount,
+      },
+    );
     return saved;
   }
 
@@ -110,31 +116,38 @@ class PersonalFormulasController extends _$PersonalFormulasController {
     int? quantityEditCount,
   }) async {
     final repo = ref.read(personalFormulasRepositoryProvider);
+    final analytics = ref.read(appExternalDepsProvider).analytics;
     final saved = await repo.update(formula);
-    ref.invalidateSelf();
-    await future;
-    await _track('personal_formula_edited', {
-      'formula_id': saved.id,
-      'phase': saved.phase.analyticsValue,
-      'component_count': saved.components.length,
-      if (quantityEditCount != null) 'quantity_edit_count': quantityEditCount,
-    });
+    if (ref.mounted) {
+      ref.invalidateSelf();
+      await future;
+    }
+    await analytics.track(
+      'personal_formula_edited',
+      properties: {
+        'formula_id': saved.id,
+        'phase': saved.phase.analyticsValue,
+        'component_count': saved.components.length,
+        if (quantityEditCount != null) 'quantity_edit_count': quantityEditCount,
+      },
+    );
     return saved;
   }
 
   /// Soft-delete a formula and refresh the list.
   Future<void> deleteFormula(String id) async {
+    final repo = ref.read(personalFormulasRepositoryProvider);
+    final analytics = ref.read(appExternalDepsProvider).analytics;
     final userId = await _currentUserId();
     if (userId == null) return;
-    final repo = ref.read(personalFormulasRepositoryProvider);
     await repo.delete(id: id, userId: userId);
-    ref.invalidateSelf();
-    await future;
-    await _track('personal_formula_deleted', {'formula_id': id});
-  }
-
-  Future<void> _track(String event, Map<String, dynamic> properties) async {
-    final analytics = ref.read(appExternalDepsProvider).analytics;
-    await analytics.track(event, properties: properties);
+    if (ref.mounted) {
+      ref.invalidateSelf();
+      await future;
+    }
+    await analytics.track(
+      'personal_formula_deleted',
+      properties: {'formula_id': id},
+    );
   }
 }

@@ -52,12 +52,17 @@ class AppStartupData {
 /// This coordinates the AppStartupService and provides async state management
 @riverpod
 class AppStartup extends _$AppStartup {
-  Report get _report => ref.read(reportProvider);
+  Report get _report => ref.report;
 
   @override
   Future<AppStartupData> build() async {
     final startupStopwatch = Stopwatch()..start();
+    // Read before any await: a `ref` read after the provider is disposed
+    // throws UnmountedRefException, which would mask the real failure in the
+    // catch below.
+    final report = _report;
     try {
+      final supabaseClient = ref.read(appExternalDepsProvider).supabaseClient;
       final AppStartupService startupService = ref.read(
         appStartupServiceProvider,
       );
@@ -83,7 +88,7 @@ class AppStartup extends _$AppStartup {
       // Handle version check results
       if (versionCheckResult.isUpdateRequired) {
         final updateResult = versionCheckResult as VersionCheckUpdateRequired;
-        await _report.note(
+        await report.note(
           'Force upgrade required',
           area: 'startup',
           data: {
@@ -102,7 +107,7 @@ class AppStartup extends _$AppStartup {
 
       if (versionCheckResult.isResyncRequired) {
         final resyncResult = versionCheckResult as VersionCheckResyncRequired;
-        await _report.note(
+        await report.note(
           'Schema resync required',
           area: 'startup',
           data: {
@@ -112,7 +117,6 @@ class AppStartup extends _$AppStartup {
         );
 
         // Get user ID for dirty record upload (if logged in)
-        final supabaseClient = ref.read(appExternalDepsProvider).supabaseClient;
         final userId = supabaseClient.auth.currentUser?.id;
 
         // Perform schema resync: upload dirty records, delete database
@@ -127,13 +131,13 @@ class AppStartup extends _$AppStartup {
             // Supabase (onboarding-redesign plan §7): the database was NOT
             // deleted. Continue on the old schema; the mismatch retries next
             // launch, once the upload has had a chance to succeed.
-            await _report.note(
+            await report.note(
               'Schema resync deferred to protect anonymous local data - '
               'continuing on the old schema this launch',
               area: 'startup',
             );
           } else {
-            await _report.degraded(
+            await report.degraded(
               const LoggedFault(
                 'Schema resync failed - app may be in inconsistent state',
               ),
@@ -149,7 +153,7 @@ class AppStartup extends _$AppStartup {
             );
           }
         } else {
-          _report.info(
+          report.info(
             'Schema resync completed - reinitializing database',
             area: 'startup',
           );
@@ -163,7 +167,7 @@ class AppStartup extends _$AppStartup {
       }
 
       // Version check passed - continue with normal startup
-      _report.info(
+      report.info(
         'Version check passed - continuing with normal startup',
         area: 'startup',
       );
@@ -206,7 +210,6 @@ class AppStartup extends _$AppStartup {
       final database = ref.read(appDatabaseProvider);
 
       // Get current Supabase session to check auth state
-      final supabaseClient = ref.read(appExternalDepsProvider).supabaseClient;
       final currentSession = supabaseClient.auth.currentSession;
       final currentAuthUserId = currentSession?.user.id;
 
@@ -230,7 +233,7 @@ class AppStartup extends _$AppStartup {
       );
       final hasCompletedOnboarding = user?.onboardingCompleted ?? false;
 
-      _report.breadcrumb(
+      report.breadcrumb(
         'App startup completed successfully',
         category: 'app_lifecycle',
         data: {'startup_time': DateTime.now().toIso8601String()},
@@ -245,7 +248,7 @@ class AppStartup extends _$AppStartup {
         isLoggedOut: isLoggedOut,
       );
     } catch (e, stackTrace) {
-      await _report.fault(
+      await report.fault(
         e,
         stackTrace: stackTrace,
         area: 'startup',
@@ -269,6 +272,7 @@ class AppStartup extends _$AppStartup {
   Future<UserProfile?> _maybeRestoreOnboardingSnapshot({
     required String? currentAuthUserId,
   }) async {
+    final report = _report;
     try {
       final snapshotService = ref.read(onboardingSnapshotServiceProvider);
       final snapshot = await snapshotService.readSnapshot();
@@ -281,7 +285,7 @@ class AppStartup extends _$AppStartup {
       // pushed to Supabase as that user or bounce off RLS forever. Skip.
       if (currentAuthUserId != null &&
           currentAuthUserId != snapshot.profile.id) {
-        await _report.note(
+        await report.note(
           'Onboarding snapshot belongs to a different user than the current '
           'session - skipping restore',
           area: 'startup',
@@ -293,7 +297,7 @@ class AppStartup extends _$AppStartup {
         return null;
       }
 
-      await _report.note(
+      await report.note(
         'No local user row but an onboarding snapshot exists - restoring '
         'locally with needs_upload=true',
         area: 'startup',
@@ -312,7 +316,7 @@ class AppStartup extends _$AppStartup {
             draft: snapshot.toSurveyDraft(),
           );
 
-      _report.breadcrumb(
+      report.breadcrumb(
         'Onboarding snapshot restored after DB recreate',
         category: 'onboarding',
         data: {'userId': snapshot.profile.id},
@@ -320,7 +324,7 @@ class AppStartup extends _$AppStartup {
 
       return snapshot.profile;
     } catch (e, stackTrace) {
-      await _report.fault(
+      await report.fault(
         e,
         stackTrace: stackTrace,
         area: 'startup',

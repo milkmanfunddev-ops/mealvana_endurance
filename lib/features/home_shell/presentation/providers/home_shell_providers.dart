@@ -23,6 +23,7 @@ Stream<Set<String>> homeShellLoggedDates(
   String startDate,
   String endDate,
 ) async* {
+  final repo = ref.read(mealLogRepositoryProvider);
   final userRepo = await ref.read(userRepositoryProvider.future);
   final user = await userRepo.getCurrentUser();
   final userId = user?.id;
@@ -30,7 +31,6 @@ Stream<Set<String>> homeShellLoggedDates(
     yield const <String>{};
     return;
   }
-  final repo = ref.read(mealLogRepositoryProvider);
   yield* repo.watchLogDatesInRange(userId, startDate, endDate);
 }
 
@@ -41,14 +41,13 @@ Future<Map<int, KyleCalendarDayData>> homeShellCalendarMonth(
   Ref ref,
   DateTime month,
 ) async {
-  final activities = await ref.watch(activitiesControllerProvider.future);
   final lastDay = DateTime(month.year, month.month + 1, 0);
-  final logged = await ref.watch(
-    homeShellLoggedDatesProvider(
-      logDateKey(month),
-      logDateKey(lastDay),
-    ).future,
+  final activitiesFuture = ref.watch(activitiesControllerProvider.future);
+  final loggedFuture = ref.watch(
+    homeShellLoggedDatesProvider(logDateKey(month), logDateKey(lastDay)).future,
   );
+  final activities = await activitiesFuture;
+  final logged = await loggedFuture;
   return assembleCalendarMonth(
     month: month,
     now: DateTime.now(),

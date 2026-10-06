@@ -117,7 +117,7 @@ class VanaChatState {
 class VanaChatController extends _$VanaChatController {
   VanaChatRepository get _repo => ref.read(vanaChatRepositoryProvider);
   VanaActionClient get _actions => ref.read(vanaActionClientProvider);
-  Report get _report => ref.read(reportProvider);
+  Report get _report => ref.report;
 
   /// The client-raised `status` tool name while a fridge photo is being
   /// read (`VanaStatusCopy` maps it to copy).
@@ -135,6 +135,9 @@ class VanaChatController extends _$VanaChatController {
     }
     try {
       final messages = await _repo.fetchMessages(conversationId);
+      // `_loadDraft` reads `ref`; a build disposed while the history loaded
+      // (Sentry MEALVANA-ENDURANCE-DEV-96) has nobody waiting for it.
+      if (!ref.mounted) return VanaChatState(kind: kind, historyLoaded: true);
       MealPlan? latestPlan;
       for (final m in messages) {
         for (final p in m.parts) {
@@ -194,6 +197,7 @@ class VanaChatController extends _$VanaChatController {
   /// A conversation with no id yet has nothing to reload.
   Future<void> refreshDraft() async {
     await future;
+    if (!ref.mounted) return;
     final id = state.value?.conversationId;
     if (id == null || id.isEmpty) return;
     final plan = await _loadDraft(id);
@@ -214,6 +218,7 @@ class VanaChatController extends _$VanaChatController {
     // before this notifier's async build() has resolved — writes made before
     // initialization completes are clobbered by the initializer's return.
     await future;
+    if (!ref.mounted) return;
     final current = state.value ?? VanaChatState(kind: kind);
     if (current.isStreaming || current.messages.isNotEmpty) return;
     await _turn(current, message: null, opener: true, anchorDate: anchorDate);
@@ -347,14 +352,17 @@ class VanaChatController extends _$VanaChatController {
       ),
     );
 
+    final mealAi = ref.read(mealAiServiceProvider);
+    final actions = _actions;
     try {
       if (conversationId == null || conversationId.isEmpty) {
         conversationId = await _repo.createConversation(kind);
       }
-      final photoPath = await ref
-          .read(mealAiServiceProvider)
-          .uploadPhotoBytes(bytes, extension: extension);
-      final result = await _actions.run(
+      final photoPath = await mealAi.uploadPhotoBytes(
+        bytes,
+        extension: extension,
+      );
+      final result = await actions.run(
         PantryPhotoAction(conversationId: conversationId, photoPath: photoPath),
       );
       if (!ref.mounted) return;
@@ -600,6 +608,7 @@ class VanaChatController extends _$VanaChatController {
   }
 
   Future<void> _foldPlan(MealPlan plan) async {
+    if (!ref.mounted) return;
     try {
       await ref.read(mealPlanControllerProvider.notifier).applyServerPlan(plan);
     } catch (e, st) {
@@ -613,11 +622,11 @@ class VanaChatController extends _$VanaChatController {
   }
 
   Future<void> _foldMemory(VanaMemorySavedPart part) async {
+    if (!ref.mounted) return;
+    final memories = ref.read(userMemoryRepositoryProvider);
     try {
       final userId = await ref.read(userIdProvider.future);
-      await ref
-          .read(userMemoryRepositoryProvider)
-          .applyServerMemory(part.memory, userId: userId);
+      await memories.applyServerMemory(part.memory, userId: userId);
     } catch (e) {
       _report.degraded(
         e,

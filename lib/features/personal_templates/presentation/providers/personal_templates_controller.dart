@@ -23,12 +23,13 @@ enum SaveTemplateResult { success, limitReached, error }
 class PersonalTemplatesController extends _$PersonalTemplatesController {
   PersonalTemplatesRepository get _repository =>
       ref.read(personalTemplatesRepositoryProvider);
-  Report get _report => ref.read(reportProvider);
+  Report get _report => ref.report;
 
   @override
   FutureOr<List<PersonalTemplate>> build() async {
+    final repository = _repository;
     final userId = await ref.read(userIdProvider.future);
-    return _repository.getTemplatesForUser(userId);
+    return repository.getTemplatesForUser(userId);
   }
 
   /// Save a nutrition plan as a template from an activity

@@ -301,16 +301,15 @@ class DailyMacrosController extends _$DailyMacrosController {
     final currentState = state.value;
     if (currentState == null) return;
 
+    final repository = ref.read(dailyMacroTargetsRepositoryProvider);
     final userRepository = await ref.read(userRepositoryProvider.future);
     final profile = await userRepository.getCurrentUser();
     if (profile == null) return;
-
-    final repository = ref.read(dailyMacroTargetsRepositoryProvider);
 
     // Invalidate cache for current date
     await repository.invalidateForDate(profile.id, currentState.selectedDate);
 
     // Trigger rebuild
-    ref.invalidateSelf();
+    if (ref.mounted) ref.invalidateSelf();
   }
 }

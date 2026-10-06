@@ -242,8 +242,7 @@ class MacroTargetsController extends _$MacroTargetsController {
 
   /// Fire-and-forget pushes outlive the provider; once it is disposed the
   /// global instance (the one `reportProvider` built) takes the report.
-  Report get _report =>
-      ref.mounted ? ref.read(reportProvider) : SentryReport.global;
+  Report get _report => ref.report;
   static const String _area = 'nutrition_plan';
 
   /// Tracks the current activityId outside of state so onDispose can access it

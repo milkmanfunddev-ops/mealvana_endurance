@@ -85,6 +85,12 @@ class _BodyCompositionScreenState extends ConsumerState<BodyCompositionScreen> {
   int get _heightCm => UnitFormatter.totalInchesToCm(_totalInches);
   int get _weightKg => UnitFormatter.poundsToKg(_weightPounds).round();
 
+  /// True only while [initState] runs: a `fireImmediately` listener firing
+  /// then must not touch the draft, which notifies providers mid-build
+  /// ("Tried to modify a provider while the widget tree was building",
+  /// Sentry MEALVANA-ENDURANCE-C5 / DEV-8C).
+  bool _inInitState = true;
+
   @override
   void initState() {
     super.initState();
@@ -107,23 +113,31 @@ class _BodyCompositionScreenState extends ConsumerState<BodyCompositionScreen> {
     // Integration weight autofill — fireImmediately so an already-resolved
     // (keepAlive) provider value still lands.
     ref.listenManual(onboardingIntegrationProfileProvider, (previous, next) {
-      final lbs = next.value?.weightLbs;
-      // One-shot: applying writes back into the draft, which notifies
-      // controller listeners.
-      if (lbs == null ||
-          _userAdjustedWeight ||
-          !mounted ||
-          _weightAutofillApplied) {
-        return;
+      void apply() {
+        final lbs = next.value?.weightLbs;
+        // One-shot: applying writes back into the draft, which notifies
+        // controller listeners.
+        if (lbs == null ||
+            _userAdjustedWeight ||
+            !mounted ||
+            _weightAutofillApplied) {
+          return;
+        }
+        _weightAutofillApplied = true;
+        _controller.recordIntegrationAutofill(const {'weightPounds'});
+        setState(() {
+          _weightPounds = lbs;
+          _weightSource = next.value?.weightSource;
+          _wheelEpoch++;
+        });
+        _pushToDraft();
       }
-      _weightAutofillApplied = true;
-      _controller.recordIntegrationAutofill(const {'weightPounds'});
-      setState(() {
-        _weightPounds = lbs;
-        _weightSource = next.value?.weightSource;
-        _wheelEpoch++;
-      });
-      _pushToDraft();
+
+      if (_inInitState) {
+        WidgetsBinding.instance.addPostFrameCallback((_) => apply());
+      } else {
+        apply();
+      }
     }, fireImmediately: true);
 
     // A disconnect clears the weight this platform supplied. This screen
@@ -158,6 +172,7 @@ class _BodyCompositionScreenState extends ConsumerState<BodyCompositionScreen> {
             if (widget.stepIndex != null) 'step_index': widget.stepIndex,
           },
         );
+    _inInitState = false;
   }
 
   void _pushToDraft() {

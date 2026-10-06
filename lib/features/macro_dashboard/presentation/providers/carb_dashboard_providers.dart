@@ -19,8 +19,10 @@ part 'carb_dashboard_providers.g.dart';
 @riverpod
 Future<CarbDashboardData?> carbDashboardForDate(Ref ref, String dateStr) async {
   final date = DateTime.parse(dateStr);
-  final userId = await ref.watch(userIdProvider.future);
+  // Watched before the first await: after it, this auto-dispose family may
+  // already be disposed (Sentry MEALVANA-ENDURANCE-DEV-98).
   final repository = ref.watch(carbLoadingRepositoryProvider);
+  final userId = await ref.watch(userIdProvider.future);
 
   final days = await repository.getCarbLoadingDaysForDateRange(
     userId: userId,
@@ -34,6 +36,9 @@ Future<CarbDashboardData?> carbDashboardForDate(Ref ref, String dateStr) async {
   final planDays = await repository.getCarbLoadingDaysForPlan(
     day.carbLoadingPlanId,
   );
+  // Only loading days need the meal logs, so this watch stays down here,
+  // behind a mounted check; a disposed build's result is discarded anyway.
+  if (!ref.mounted) return null;
   final meals = await ref.watch(mealLogsForDateProvider(dateStr).future);
 
   const assembler = CarbDashboardAssembler();

@@ -109,7 +109,7 @@ Future<List<Package>> visibleCreditPackages(Ref ref) async {
 @Riverpod(keepAlive: true)
 class PurchaseController extends _$PurchaseController {
   RevenueCatService get _rcService => ref.read(revenueCatServiceProvider);
-  Report get _report => ref.read(reportProvider);
+  Report get _report => ref.report;
 
   /// Store contact and the money path report under `payments`; the wallet
   /// bookkeeping around it under `credits`.

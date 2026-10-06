@@ -28,12 +28,29 @@ Future<DashboardData> macroDashboardDay(Ref ref) async {
   final selectedDate = ref.watch(calendarSelectedDateProvider);
   final dateStr = _ymd(selectedDate);
 
-  final macrosState = await ref.watch(dailyMacrosControllerProvider.future);
-  final meals = await ref.watch(mealLogsForDateProvider(dateStr).future);
-  final consumed = await ref.watch(
+  // Every dependency is watched before the first await. A `ref.watch` after
+  // an await throws UnmountedRefException once the dashboard has been
+  // disposed mid-load (Sentry MEALVANA-ENDURANCE-CB / DEV-7T). The two
+  // futures awaited inside try blocks further down are marked `ignore()` so
+  // an early exit above them never leaves an unhandled error behind; awaiting
+  // them still delivers their error to the catch.
+  final report = ref.read(reportProvider);
+  final macrosFuture = ref.watch(dailyMacrosControllerProvider.future);
+  final mealsFuture = ref.watch(mealLogsForDateProvider(dateStr).future);
+  final consumedFuture = ref.watch(
     consumedTotalsForDateProvider(dateStr).future,
   );
-  final allActivities = await ref.watch(activitiesControllerProvider.future);
+  final activitiesFuture = ref.watch(activitiesControllerProvider.future);
+  final userIdFuture = ref.watch(userIdProvider.future);
+  final userRepositoryFuture = ref.watch(userRepositoryProvider.future)
+    ..ignore();
+  final carbFuture = ref.watch(carbDashboardForDateProvider(dateStr).future)
+    ..ignore();
+
+  final macrosState = await macrosFuture;
+  final meals = await mealsFuture;
+  final consumed = await consumedFuture;
+  final allActivities = await activitiesFuture;
 
   // S-1 "same pump" across a targets recompute: a skip / unskip / manual
   // profile edit invalidates the day's cached targets by design, and the
@@ -43,7 +60,7 @@ Future<DashboardData> macroDashboardDay(Ref ref) async {
   // flicker class fixed in 3ca2ee27. Hold the last targets this surface
   // showed for the SAME user+day while (and only while) a recompute is in
   // flight; a genuine "no targets" (error, never computed) still renders none.
-  final userId = await ref.watch(userIdProvider.future);
+  final userId = await userIdFuture;
   final targets = HeldTargets.resolve(
     userId,
     dateStr,
@@ -73,7 +90,7 @@ Future<DashboardData> macroDashboardDay(Ref ref) async {
   // dailyMacrosControllerProvider (Q-016 path), which this provider watches.
   double? profileWeightKg;
   try {
-    final userRepository = await ref.watch(userRepositoryProvider.future);
+    final userRepository = await userRepositoryFuture;
     final profile = await userRepository.getCurrentUser();
     final weightPounds = profile?.weightPounds ?? 0;
     if (weightPounds > 0) {
@@ -84,14 +101,12 @@ Future<DashboardData> macroDashboardDay(Ref ref) async {
     // Profile unreachable → leave null; the assembler's fallback chain
     // (targets.weightKg → honest absence) keeps the surface truthful, and a
     // profile read failure must not take the whole dashboard down.
-    ref
-        .read(reportProvider)
-        .fault(
-          e,
-          stackTrace: stackTrace,
-          area: 'macro_dashboard',
-          message: 'Profile weight read failed; pricing with engine weight',
-        );
+    report.fault(
+      e,
+      stackTrace: stackTrace,
+      area: 'macro_dashboard',
+      message: 'Profile weight read failed; pricing with engine weight',
+    );
   }
 
   bool onSelectedDay(DateTime d) =>
@@ -127,17 +142,15 @@ Future<DashboardData> macroDashboardDay(Ref ref) async {
   // profile-weight read above. CD-1's negative covers the degraded state.
   CarbDashboardData? carb;
   try {
-    carb = await ref.watch(carbDashboardForDateProvider(dateStr).future);
+    carb = await carbFuture;
   } catch (e, stackTrace) {
-    ref
-        .read(reportProvider)
-        .fault(
-          e,
-          stackTrace: stackTrace,
-          area: 'macro_dashboard',
-          message: 'Carb-plan lookup failed; rendering the ordinary day',
-          extra: {'date': dateStr},
-        );
+    report.fault(
+      e,
+      stackTrace: stackTrace,
+      area: 'macro_dashboard',
+      message: 'Carb-plan lookup failed; rendering the ordinary day',
+      extra: {'date': dateStr},
+    );
     carb = null;
   }
   if (carb == null) return assembled;

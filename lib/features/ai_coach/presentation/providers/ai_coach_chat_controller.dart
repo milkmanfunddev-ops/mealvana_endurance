@@ -79,15 +79,17 @@ class AiCoachChatController extends _$AiCoachChatController {
   AiCoachChatRepository get _repository =>
       ref.read(aiCoachChatRepositoryProvider);
   ContentService get _contentService => ref.read(contentServiceProvider);
-  Report get _report => ref.read(reportProvider);
+  Report get _report => ref.report;
 
   @override
   FutureOr<AiCoachChatState> build() async {
+    final repository = _repository;
+    final report = _report;
     try {
-      final conversations = await _repository.fetchConversations();
+      final conversations = await repository.fetchConversations();
       if (conversations.isNotEmpty) {
         final latest = conversations.first;
-        final messages = await _repository.fetchMessages(latest.id);
+        final messages = await repository.fetchMessages(latest.id);
         return AiCoachChatState(
           conversationId: latest.id,
           messages: messages,
@@ -95,7 +97,7 @@ class AiCoachChatController extends _$AiCoachChatController {
         );
       }
     } catch (e) {
-      _report.fault(
+      report.fault(
         e,
         area: 'ai_coach',
         message: 'AiCoachChatController.build: failed to resume conversation',

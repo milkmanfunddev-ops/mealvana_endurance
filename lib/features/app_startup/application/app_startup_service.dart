@@ -43,7 +43,7 @@ class AppStartupService {
   /// [initializeAnalyticsAfterConsent] (consent granted just now, mid-session).
   bool _analyticsInitialized = false;
 
-  Report get _report => ref.read(reportProvider);
+  Report get _report => ref.report;
   AnalyticsTracker get _analytics =>
       ref.read(appExternalDepsProvider).analytics;
   SupabaseClient get _supabase =>

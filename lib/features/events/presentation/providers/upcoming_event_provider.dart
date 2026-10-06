@@ -12,9 +12,9 @@ Future<({Event event, DateTime eventDate})?> nextUpcomingEventFromDate(
   Ref ref,
   DateTime fromDate,
 ) async {
-  final userId = await ref.read(userIdProvider.future);
   final eventsService = ref.read(eventsServiceProvider);
   final activitiesService = ref.read(activitiesServiceProvider);
+  final userId = await ref.read(userIdProvider.future);
 
   final events = await eventsService.getAllEvents(userId);
 
