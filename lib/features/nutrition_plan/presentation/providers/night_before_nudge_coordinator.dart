@@ -1,7 +1,7 @@
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 
 import '../../../../shared/services/app_external_deps.dart';
-import '../../../../shared/services/logging_service.dart';
+import '../../../../shared/services/report/report.dart';
 import '../../../activities/data/activities_repository.dart';
 import '../../application/night_before_nudge_service.dart';
 import '../../data/nutrition_plan_repository.dart';
@@ -94,13 +94,16 @@ class NightBeforeNudgeCoordinator {
       );
       await ref.read(nightBeforeNudgeServiceProvider).evaluate(candidates);
     } catch (e, stackTrace) {
-      ref
-          .read(appLoggerProvider)
-          .warning(
-            'Night-before nudge sweep failed; will retry on next resume',
-            context: 'NIGHT_BEFORE_NUDGE',
-            error: e,
+      // Swallowed on purpose (a nudge must never take the app down), so the
+      // failure has to be written down here (rule D9).
+      await ref
+          .read(reportProvider)
+          .fault(
+            e,
             stackTrace: stackTrace,
+            area: 'push',
+            message:
+                'Night-before nudge sweep failed; will retry on next resume',
           );
     } finally {
       _running = false;

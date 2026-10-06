@@ -1,6 +1,7 @@
 import 'dart:convert';
 
 import '../../../shared/domain/activity_type.dart';
+import '../../../shared/services/report/report.dart';
 
 /// User-configured default nutrition target overrides.
 /// Null fields mean "use algorithm defaults."
@@ -165,7 +166,18 @@ class NutritionTargetOverrides {
     try {
       final map = jsonDecode(jsonString) as Map<String, dynamic>;
       return NutritionTargetOverrides.fromJson(map);
-    } catch (_) {
+    } catch (e, stackTrace) {
+      // A static parser has no `ref`; the global instance is the one the
+      // provider built. Returning null silently would drop the athlete's
+      // saved overrides and fall back to algorithm defaults unnoticed.
+      SentryReport.global.degraded(
+        e,
+        stackTrace: stackTrace,
+        area: 'nutrition_plan',
+        message:
+            'Saved nutrition target overrides unreadable; algorithm defaults '
+            'used',
+      );
       return null;
     }
   }

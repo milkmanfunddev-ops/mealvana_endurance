@@ -1,6 +1,7 @@
 import 'dart:convert';
 
 import '../../../shared/database/app_database.dart';
+import '../../../shared/services/report/report.dart';
 import 'food_item_data.dart';
 import 'solver_types.dart';
 
@@ -223,7 +224,14 @@ class SolverFood {
       if (decoded is List) {
         return decoded.cast<String>();
       }
-    } catch (_) {}
+    } catch (e) {
+      // Static parser, no `ref`: the global instance is the provider-built one.
+      SentryReport.global.note(
+        'Solver food JSON list unreadable; treated as empty',
+        area: 'nutrition_plan',
+        data: {'raw': jsonStr, 'error': e.toString()},
+      );
+    }
     return [];
   }
 }

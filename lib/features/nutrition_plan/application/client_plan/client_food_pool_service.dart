@@ -7,6 +7,7 @@ import '../../../../shared/database/app_database.dart';
 import '../../../../shared/domain/activity_type.dart';
 import '../../../../shared/services/app_external_deps.dart';
 import '../../../../shared/services/logging_service.dart';
+import '../../../../shared/services/report/report.dart';
 import '../../../auth/application/auth_service.dart';
 import '../../../auth/domain/user_preferences.dart';
 import '../../../food_preferences/data/food_preferences_repository.dart';
@@ -39,6 +40,8 @@ class ClientFoodPoolService {
   TemplateFoodsRepository get _templateFoodsRepo =>
       _ref.read(templateFoodsRepositoryProvider);
   AppLogger get _logger => _ref.read(appExternalDepsProvider).logger;
+  Report get _report => _ref.read(reportProvider);
+  static const String _area = 'nutrition_plan';
 
   /// Build a scored and filtered food pool for a specific phase.
   ///
@@ -196,11 +199,13 @@ class ClientFoodPoolService {
       return (response as List<dynamic>).map((json) {
         return _mapSupabaseToTemplateFoodEntry(json as Map<String, dynamic>);
       }).toList();
-    } catch (e) {
-      _logger.warning(
-        'Failed to fetch template foods from Supabase',
-        context: 'CLIENT_FOOD_POOL',
-        error: e,
+    } catch (e, stackTrace) {
+      _report.fault(
+        e,
+        stackTrace: stackTrace,
+        area: _area,
+        message:
+            'Template foods fallback fetch from Supabase failed; pool empty',
       );
       return [];
     }
@@ -284,7 +289,14 @@ class ClientFoodPoolService {
     try {
       final decoded = jsonDecode(s);
       if (decoded is List) return decoded.map((e) => e.toString()).toList();
-    } catch (_) {}
+    } catch (e) {
+      _report.note(
+        'Food category list was neither a JSON array nor a Postgres array '
+        'literal; treated as empty',
+        area: _area,
+        data: {'raw': s, 'error': e.toString()},
+      );
+    }
     return [];
   }
 

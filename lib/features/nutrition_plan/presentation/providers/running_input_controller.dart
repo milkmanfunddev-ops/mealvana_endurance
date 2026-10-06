@@ -17,6 +17,7 @@ import '../../../weather/domain/weather_forecast.dart';
 import '../../../weather/application/weather_service.dart';
 import '../../../../core/utils/debug_logger.dart';
 import '../../../../shared/services/location_service.dart';
+import '../../../../shared/services/report/report.dart';
 import '../../../../shared/widgets/kyle_design/inputs/duration_pace_toggle.dart';
 
 part 'running_input_controller.g.dart';
@@ -281,12 +282,16 @@ class RunningInputController extends _$RunningInputController {
           '🏃 RUNNING CONTROLLER: Applied zone-based pace: ${zone2Pace.toStringAsFixed(1)} min/mi',
         );
       }
-    } catch (e) {
+    } catch (e, stackTrace) {
       // Non-blocking - keep default pace if zone fetch fails
-      DebugLogger.error(
-        '🏃 RUNNING CONTROLLER: Zone pace unavailable',
-        error: e,
-      );
+      ref
+          .read(reportProvider)
+          .degraded(
+            e,
+            stackTrace: stackTrace,
+            area: 'nutrition_plan',
+            message: 'Running form: zone pace unavailable; default pace kept',
+          );
     }
   }
 
@@ -308,12 +313,17 @@ class RunningInputController extends _$RunningInputController {
           '🏃 RUNNING CONTROLLER: Loaded user preferences - gut training: ${userProfile.gutTraining.name}, sweat rate: ${userProfile.sweatRate.name}, unitSystem: ${userProfile.unitSystem.name}',
         );
       }
-    } catch (e) {
-      DebugLogger.error(
-        '🏃 RUNNING CONTROLLER: Failed to load user preferences',
-        error: e,
-      );
+    } catch (e, stackTrace) {
       // Keep defaults on error
+      ref
+          .read(reportProvider)
+          .fault(
+            e,
+            stackTrace: stackTrace,
+            area: 'nutrition_plan',
+            message:
+                'Running form: loading user preferences failed; defaults kept',
+          );
     }
   }
 
@@ -675,7 +685,15 @@ class RunningInputController extends _$RunningInputController {
       if (location != null) {
         fetchWeatherForecast();
       }
-    } catch (e) {
+    } catch (e, stackTrace) {
+      ref
+          .read(reportProvider)
+          .degraded(
+            e,
+            stackTrace: stackTrace,
+            area: 'nutrition_plan',
+            message: 'Running form: current location unavailable',
+          );
       state = state.copyWith(isLoadingLocation: false);
     }
   }
@@ -734,7 +752,16 @@ class RunningInputController extends _$RunningInputController {
           locationFailureReason: failureReason,
         );
       }
-    } catch (e) {
+    } catch (e, stackTrace) {
+      ref
+          .read(reportProvider)
+          .degraded(
+            e,
+            stackTrace: stackTrace,
+            area: 'nutrition_plan',
+            message:
+                'Running form: weather forecast fetch failed; defaults kept',
+          );
       state = state.copyWith(isLoadingWeather: false);
     }
   }

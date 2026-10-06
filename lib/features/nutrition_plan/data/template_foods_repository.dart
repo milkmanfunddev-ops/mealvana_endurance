@@ -9,6 +9,7 @@ import '../../../shared/database/app_database.dart';
 import '../../../shared/database/database_provider.dart';
 import '../../../shared/services/app_external_deps.dart';
 import '../../../shared/services/logging_service.dart';
+import '../../../shared/services/report/report.dart';
 import '../../../shared/services/sync/sync_dependency_graph.dart';
 
 /// Repository for template food ingredients (read-only reference data).
@@ -16,12 +17,20 @@ import '../../../shared/services/sync/sync_dependency_graph.dart';
 /// Template foods are the building blocks for nutrition templates.
 /// They are synced from Supabase and cached locally in Drift.
 class TemplateFoodsRepository with SyncableRepository {
-  TemplateFoodsRepository(this._supabase, this._database, {AppLogger? logger})
-    : _logger = logger ?? const NoopAppLogger();
+  TemplateFoodsRepository(
+    this._supabase,
+    this._database, {
+    AppLogger? logger,
+    Report? report,
+  }) : _logger = logger ?? const NoopAppLogger(),
+       _report = report;
 
   final SupabaseClient _supabase;
   final AppDatabase _database;
   final AppLogger _logger;
+  final Report? _report;
+  Report get _r => _report ?? SentryReport.global;
+  static const String _area = 'nutrition_plan';
 
   // ========================================================================
   // SyncableRepository Implementation
@@ -137,7 +146,12 @@ class TemplateFoodsRepository with SyncableRepository {
       try {
         final categories = jsonDecode(food.categories) as List<dynamic>;
         return categories.contains(phaseCategory);
-      } catch (_) {
+      } catch (e) {
+        _r.note(
+          'Template food categories unreadable; excluded from swap list',
+          area: _area,
+          data: {'foodId': food.id, 'error': e.toString()},
+        );
         return false;
       }
     }).toList();
@@ -169,7 +183,12 @@ class TemplateFoodsRepository with SyncableRepository {
       try {
         final phases = jsonDecode(drink.drinkPoolPhases) as List<dynamic>;
         return phases.contains(phase);
-      } catch (_) {
+      } catch (e) {
+        _r.note(
+          'Drink pool phases unreadable; drink excluded from pool',
+          area: _area,
+          data: {'foodId': drink.id, 'error': e.toString()},
+        );
         return false;
       }
     }).toList();
@@ -285,5 +304,10 @@ final templateFoodsRepositoryProvider = Provider<TemplateFoodsRepository>((
   final database = ref.watch(appDatabaseProvider);
   final logger = ref.watch(appLoggerProvider);
   final supabase = ref.watch(appExternalDepsProvider).supabaseClient;
-  return TemplateFoodsRepository(supabase, database, logger: logger);
+  return TemplateFoodsRepository(
+    supabase,
+    database,
+    logger: logger,
+    report: ref.watch(reportProvider),
+  );
 });

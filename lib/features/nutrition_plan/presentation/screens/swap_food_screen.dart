@@ -14,6 +14,7 @@ import '../../domain/food.dart';
 import '../../domain/food_item.dart';
 import '../../../../shared/services/app_external_deps.dart';
 import '../../../../shared/services/food_management/user_food_crud_service.dart';
+import '../../../../shared/services/report/report.dart';
 import '../../../barcode_scanning/application/product_detail_service.dart';
 import '../../../barcode_scanning/application/food_mapping_service.dart';
 import '../../../barcode_scanning/application/catalog_search_service.dart';
@@ -58,6 +59,11 @@ class SwapFoodScreen extends ConsumerStatefulWidget {
 
 class _SwapFoodScreenState extends ConsumerState<SwapFoodScreen> {
   static const _searchControllerKey = 'swap_food';
+  static const String _area = 'nutrition_plan';
+
+  /// Taken in [initState]: a catch that runs after the widget unmounted
+  /// cannot touch `ref`.
+  late final Report _report;
 
   final TextEditingController _searchController = TextEditingController();
   double _selectedQuantity = 1.0;
@@ -70,6 +76,7 @@ class _SwapFoodScreenState extends ConsumerState<SwapFoodScreen> {
   @override
   void initState() {
     super.initState();
+    _report = ref.read(reportProvider);
     _params = SwapFoodParams(
       activityId: widget.activityId,
       category: widget.category,
@@ -230,7 +237,13 @@ class _SwapFoodScreenState extends ConsumerState<SwapFoodScreen> {
         if (mounted) {
           MealvanaSnackbar.showSuccess(context, 'Custom food created!');
         }
-      } catch (e) {
+      } catch (e, stackTrace) {
+        _report.fault(
+          e,
+          stackTrace: stackTrace,
+          area: _area,
+          message: 'Saving a scanned custom food failed',
+        );
         if (mounted) {
           MealvanaSnackbar.showError(context, 'Failed to save food: $e');
         }
@@ -369,7 +382,14 @@ class _SwapFoodScreenState extends ConsumerState<SwapFoodScreen> {
         navigator.pop();
       }
     } catch (e, stackTrace) {
-      debugPrint('SwapFoodScreen: confirm failed: $e\n$stackTrace');
+      _report.fault(
+        e,
+        stackTrace: stackTrace,
+        area: _area,
+        message: _isSwapping
+            ? 'Swapping a food failed'
+            : 'Adding a food failed',
+      );
       if (mounted) {
         setState(() {
           _isProcessing = false;
@@ -461,7 +481,13 @@ class _SwapFoodScreenState extends ConsumerState<SwapFoodScreen> {
         if (mounted) {
           MealvanaSnackbar.showSuccess(context, '${result.title} added!');
         }
-      } catch (e) {
+      } catch (e, stackTrace) {
+        _report.fault(
+          e,
+          stackTrace: stackTrace,
+          area: _area,
+          message: 'Saving a catalog food failed',
+        );
         if (mounted) {
           MealvanaSnackbar.showError(context, 'Failed to save food: $e');
         }
@@ -560,7 +586,13 @@ class _SwapFoodScreenState extends ConsumerState<SwapFoodScreen> {
           }
         }
       }
-    } catch (e) {
+    } catch (e, stackTrace) {
+      _report.fault(
+        e,
+        stackTrace: stackTrace,
+        area: _area,
+        message: 'Importing a product by barcode failed',
+      );
       // Close loading dialog if still showing
       if (mounted && Navigator.of(context).canPop()) {
         Navigator.of(context).pop();
@@ -691,7 +723,13 @@ class _SwapFoodScreenState extends ConsumerState<SwapFoodScreen> {
       if (mounted) {
         MealvanaSnackbar.showSuccess(context, '${foodItem.name} added!');
       }
-    } catch (e) {
+    } catch (e, stackTrace) {
+      _report.fault(
+        e,
+        stackTrace: stackTrace,
+        area: _area,
+        message: 'Saving an imported product as a user food failed',
+      );
       if (mounted) {
         MealvanaSnackbar.showError(context, 'Failed to save food: $e');
       }
@@ -1098,8 +1136,14 @@ class _SwapFoodScreenState extends ConsumerState<SwapFoodScreen> {
         if (mounted) {
           MealvanaSnackbar.showSuccess(context, '${food.name} deleted');
         }
-      } catch (e) {
-        debugPrint('Error deleting user food: $e');
+      } catch (e, stackTrace) {
+        _report.fault(
+          e,
+          stackTrace: stackTrace,
+          area: _area,
+          message: 'Deleting a user food failed',
+          extra: {'foodId': foodId},
+        );
         if (mounted) {
           MealvanaSnackbar.showError(
             context,
@@ -1135,8 +1179,14 @@ class _SwapFoodScreenState extends ConsumerState<SwapFoodScreen> {
         if (mounted) {
           MealvanaSnackbar.showSuccess(context, '${result.name} updated!');
         }
-      } catch (e) {
-        debugPrint('Error updating user food: $e');
+      } catch (e, stackTrace) {
+        _report.fault(
+          e,
+          stackTrace: stackTrace,
+          area: _area,
+          message: 'Updating a user food failed',
+          extra: {'foodId': result.foodId},
+        );
         if (mounted) {
           MealvanaSnackbar.showError(
             context,

@@ -1,7 +1,6 @@
 import 'dart:async';
 import 'package:flutter/material.dart';
 import 'package:riverpod_annotation/riverpod_annotation.dart';
-import 'package:sentry_flutter/sentry_flutter.dart';
 import '../../../content/application/content_service.dart';
 import '../../../content/domain/content_keys.dart';
 import '../../../activities/presentation/providers/activities_controller.dart';
@@ -30,6 +29,7 @@ import '../../../../shared/services/app_external_deps.dart';
 import '../../../../shared/services/analytics/analytics_tracker.dart';
 import '../../../../shared/services/analytics/analytics_events.dart';
 import '../../../../shared/services/logging_service.dart';
+import '../../../../shared/services/report/report.dart';
 import '../../../auth/application/auth_service.dart';
 import '../../../events/presentation/providers/events_controller.dart';
 import '../../../events/application/events_service.dart';
@@ -241,6 +241,12 @@ class MacroTargetsController extends _$MacroTargetsController {
   AnalyticsTracker get _analytics =>
       ref.read(appExternalDepsProvider).analytics;
   AuthService get _authService => ref.read(authServiceProvider);
+
+  /// Fire-and-forget pushes outlive the provider; once it is disposed the
+  /// global instance (the one `reportProvider` built) takes the report.
+  Report get _report =>
+      ref.mounted ? ref.read(reportProvider) : SentryReport.global;
+  static const String _area = 'nutrition_plan';
 
   /// Tracks the current activityId outside of state so onDispose can access it
   /// without reading `state` (which is forbidden inside Riverpod lifecycle callbacks).
@@ -548,7 +554,7 @@ class MacroTargetsController extends _$MacroTargetsController {
         temperatureC: temperatureC,
         humidityPct: humidityPct,
         conditionsSource: conditionsSource,
-          intensity: intensity,
+        intensity: intensity,
         activityTitle: activityTitle,
         activityId: activityId,
         eventId: eventId,
@@ -615,7 +621,14 @@ class MacroTargetsController extends _$MacroTargetsController {
             );
             eventName = event?.eventName;
           } catch (e) {
-            DebugLogger.warning('Failed to look up event name: $e');
+            _report.degraded(
+              e,
+              area: _area,
+              message:
+                  'Event name lookup failed; activity title falls back to '
+                  'the formatted one',
+              extra: {'eventId': eventId},
+            );
           }
         }
 
@@ -641,7 +654,7 @@ class MacroTargetsController extends _$MacroTargetsController {
             paceTargetMinutesPerMile: paceMinutes,
             intensityLevel: domain.IntensityLevel.moderate,
             timeBeforeMinutes: timeBeforeRunMinutes,
-              notes: 'Draft activity - nutrition plan being generated',
+            notes: 'Draft activity - nutrition plan being generated',
             status: domain.ActivityStatus.draft,
           );
           finalActivityId = createdActivity.id;
@@ -667,7 +680,7 @@ class MacroTargetsController extends _$MacroTargetsController {
                 durationMinutes: estimatedDurationMinutes,
                 paceTargetMinutesPerMile: paceMinutes,
                 timeBeforeMinutes: timeBeforeRunMinutes,
-                      // Keep whatever the user wrote. The "Draft activity…" note
+                // Keep whatever the user wrote. The "Draft activity…" note
                 // belongs to the create branch, where the row really is a
                 // placeholder; stamping it on an update overwrites real notes
                 // every time the plan is regenerated.
@@ -683,6 +696,7 @@ class MacroTargetsController extends _$MacroTargetsController {
           macroRepository: ref.read(macroRepositoryProvider),
           authService: _authService,
           analytics: _analytics,
+          report: _report,
         );
 
         // Load sport-specific overrides with 90-min gate
@@ -734,7 +748,8 @@ class MacroTargetsController extends _$MacroTargetsController {
           overrideForUserId: true,
         );
       } catch (error) {
-        DebugLogger.error('❌ DEBUG: Error generating macro targets: $error');
+        // Rethrown below; the screen owns the report.
+        _report.info('Running macro generation failed: $error', area: _area);
 
         // Track the error
         await _analytics.track(
@@ -836,7 +851,14 @@ class MacroTargetsController extends _$MacroTargetsController {
             );
             eventName = event?.eventName;
           } catch (e) {
-            DebugLogger.warning('Failed to look up event name: $e');
+            _report.degraded(
+              e,
+              area: _area,
+              message:
+                  'Event name lookup failed; activity title falls back to '
+                  'the formatted one',
+              extra: {'eventId': eventId},
+            );
           }
         }
 
@@ -877,7 +899,7 @@ class MacroTargetsController extends _$MacroTargetsController {
             intensityTarget: intensityTarget,
             intensityLevel: domain.IntensityLevel.moderate,
             timeBeforeMinutes: timeBeforeMinutes,
-              notes: 'Draft cycling activity - nutrition plan being generated',
+            notes: 'Draft cycling activity - nutrition plan being generated',
             status: domain.ActivityStatus.draft,
           );
           finalActivityId = createdActivity.id;
@@ -910,7 +932,7 @@ class MacroTargetsController extends _$MacroTargetsController {
                 cyclingSessionGoal: sessionGoal,
                 intensityTarget: intensityTarget,
                 timeBeforeMinutes: timeBeforeMinutes,
-                      // See the running branch: never clobber user notes on update.
+                // See the running branch: never clobber user notes on update.
                 notes: existingActivity.notes,
               ),
             );
@@ -923,6 +945,7 @@ class MacroTargetsController extends _$MacroTargetsController {
           macroRepository: ref.read(macroRepositoryProvider),
           authService: _authService,
           analytics: _analytics,
+          report: _report,
         );
 
         // Load sport-specific overrides with 90-min gate
@@ -976,9 +999,8 @@ class MacroTargetsController extends _$MacroTargetsController {
           overrideForUserId: true,
         );
       } catch (error) {
-        DebugLogger.error(
-          '❌ DEBUG: Error generating cycling macro targets: $error',
-        );
+        // Rethrown below; the screen owns the report.
+        _report.info('Cycling macro generation failed: $error', area: _area);
 
         // Track the error
         await _analytics.track(
@@ -1123,7 +1145,14 @@ class MacroTargetsController extends _$MacroTargetsController {
             );
             eventName = event?.eventName;
           } catch (e) {
-            DebugLogger.warning('Failed to look up event name: $e');
+            _report.degraded(
+              e,
+              area: _area,
+              message:
+                  'Event name lookup failed; activity title falls back to '
+                  'the formatted one',
+              extra: {'eventId': eventId},
+            );
           }
         }
 
@@ -1200,6 +1229,7 @@ class MacroTargetsController extends _$MacroTargetsController {
           macroRepository: ref.read(macroRepositoryProvider),
           authService: _authService,
           analytics: _analytics,
+          report: _report,
         );
 
         // Load sport-specific overrides with 90-min gate
@@ -1249,9 +1279,8 @@ class MacroTargetsController extends _$MacroTargetsController {
           overrideForUserId: true,
         );
       } catch (error) {
-        DebugLogger.error(
-          '❌ DEBUG: Error generating swimming macro targets: $error',
-        );
+        // Rethrown below; the screen owns the report.
+        _report.info('Swimming macro generation failed: $error', area: _area);
 
         // Track the error
         await _analytics.track(
@@ -1367,7 +1396,14 @@ class MacroTargetsController extends _$MacroTargetsController {
             );
             eventName = event?.eventName;
           } catch (e) {
-            DebugLogger.warning('Failed to look up event name: $e');
+            _report.degraded(
+              e,
+              area: _area,
+              message:
+                  'Event name lookup failed; activity title falls back to '
+                  'the formatted one',
+              extra: {'eventId': eventId},
+            );
           }
         }
 
@@ -1397,7 +1433,7 @@ class MacroTargetsController extends _$MacroTargetsController {
             durationMinutes: totalDurationMinutes,
             brickMetadata: brickMetadata,
             timeBeforeMinutes: preActivityMinutes,
-              notes: 'Draft brick activity - nutrition plan being generated',
+            notes: 'Draft brick activity - nutrition plan being generated',
             status: domain.ActivityStatus.draft,
           );
           finalActivityId = createdActivity.id;
@@ -1447,7 +1483,7 @@ class MacroTargetsController extends _$MacroTargetsController {
                 brickMetadata: preservedMetadata,
                 durationMinutes: totalDurationMinutes,
                 timeBeforeMinutes: preActivityMinutes,
-                      // See the running branch: never clobber user notes on update.
+                // See the running branch: never clobber user notes on update.
                 notes: existingActivity.notes,
               ),
             );
@@ -1460,6 +1496,7 @@ class MacroTargetsController extends _$MacroTargetsController {
           macroRepository: ref.read(macroRepositoryProvider),
           authService: _authService,
           analytics: _analytics,
+          report: _report,
         );
 
         final brickSports = _extractBrickSports(segments);
@@ -1509,9 +1546,8 @@ class MacroTargetsController extends _$MacroTargetsController {
           overrideForUserId: true,
         );
       } catch (error) {
-        DebugLogger.error(
-          '❌ DEBUG: Error generating brick macro targets: $error',
-        );
+        // Rethrown below; the screen owns the report.
+        _report.info('Brick macro generation failed: $error', area: _area);
 
         // Track the error
         await _analytics.track(
@@ -1826,8 +1862,10 @@ class MacroTargetsController extends _$MacroTargetsController {
     macroTargets ??= currentState?.macroTargets;
 
     if (macroTargets == null) {
-      DebugLogger.error(
-        '❌ [CREATE-PLAN] No cached macro targets found in SharedPreferences!',
+      await _report.fault(
+        const LoggedFault('No cached macro targets found when creating plan'),
+        area: _area,
+        extra: {'activityId': activityId},
       );
       return null;
     }
@@ -1993,7 +2031,6 @@ class MacroTargetsController extends _$MacroTargetsController {
         String? finalActivityId = currentStateValue?.activityId;
 
         if (finalActivityId == null || finalActivityId.isEmpty) {
-          DebugLogger.error('❌ No draft activity found - cannot finalize plan');
           throw Exception(
             'No draft activity found - cannot finalize plan. This should not happen.',
           );
@@ -2010,10 +2047,9 @@ class MacroTargetsController extends _$MacroTargetsController {
           );
 
           if (existingActivity == null) {
-            DebugLogger.error(
-              '❌ Draft activity $finalActivityId not found in database',
+            throw Exception(
+              'Draft activity $finalActivityId not found - cannot finalize plan',
             );
-            throw Exception('Draft activity not found - cannot finalize plan');
           }
 
           // Update the DRAFT activity to PLANNED status with nutrition plan
@@ -2087,7 +2123,8 @@ class MacroTargetsController extends _$MacroTargetsController {
             }
           }
         } catch (e) {
-          DebugLogger.error('❌ Failed to update draft activity: $e');
+          // Rethrown; the guard below owns the report.
+          _report.info('Updating the draft activity failed: $e', area: _area);
           rethrow;
         }
 
@@ -2142,19 +2179,16 @@ class MacroTargetsController extends _$MacroTargetsController {
           currentState.forUserId != null && currentState.forUserId!.isNotEmpty,
     );
     if (createPlanResult.hasError) {
-      appLogger.error(
-        'Create nutrition plan failed',
-        context: 'MACRO_TARGETS_CONTROLLER',
-        data: {
+      await _report.fault(
+        createPlanResult.error!,
+        stackTrace: createPlanResult.stackTrace,
+        area: _area,
+        message: 'Create nutrition plan failed; navigation blocked',
+        extra: {
           'activityId': currentState.activityId,
           'eventId': currentState.eventId,
           'forUserId': currentState.forUserId,
         },
-        error: createPlanResult.error,
-        stackTrace: createPlanResult.stackTrace,
-      );
-      DebugLogger.error(
-        '❌ [CREATE-PLAN] createNutritionPlan failed - blocking navigation. error=${createPlanResult.error}',
       );
       return null;
     }
@@ -2182,40 +2216,43 @@ class MacroTargetsController extends _$MacroTargetsController {
         ? 'plan_fallback_used'
         : 'plan_target_miss';
 
-    try {
-      await ref
-          .read(appExternalDepsProvider)
-          .sentry
-          .captureMessage(
-            'Nutrition plan generation anomaly',
-            level: operationError != null
-                ? SentryLevel.error
-                : SentryLevel.warning,
-            tags: {
-              'component': 'nutrition_plan_generation',
-              'outcome': outcome,
-              'activity_type': activityType.name,
-              'generation_source':
-                  generationResult?.source.name ?? 'unavailable',
-              'target_miss_count': targetMisses.length.toString(),
-              'targets_adjusted': targetsWereAdjusted.toString(),
-              'coach_flow': isCoachFlow.toString(),
-            },
-            extra: {
-              if (generationResult?.primaryError != null)
-                'primary_generation_error': generationResult!.primaryError,
-              if (operationError != null)
-                'operation_error': operationError.toString(),
-              if (targetMisses.isNotEmpty)
-                'target_misses': targetMisses
-                    .map((miss) => miss.toJson())
-                    .toList(),
-            },
-            fingerprint: ['nutrition-plan-generation', outcome],
-          );
-    } catch (error) {
-      DebugLogger.warning(
-        'Failed to send nutrition plan generation diagnostic: $error',
+    final tags = <String, String>{
+      'component': 'nutrition_plan_generation',
+      'outcome': outcome,
+      'activity_type': activityType.name,
+      'generation_source': generationResult?.source.name ?? 'unavailable',
+      'target_miss_count': targetMisses.length.toString(),
+      'targets_adjusted': targetsWereAdjusted.toString(),
+      'coach_flow': isCoachFlow.toString(),
+    };
+    final extra = <String, dynamic>{
+      if (generationResult?.primaryError != null)
+        'primary_generation_error': generationResult!.primaryError,
+      if (operationError != null) 'operation_error': operationError.toString(),
+      if (targetMisses.isNotEmpty)
+        'target_misses': targetMisses.map((miss) => miss.toJson()).toList(),
+    };
+    final fingerprint = ['nutrition-plan-generation', outcome];
+    const message = 'Nutrition plan generation anomaly';
+
+    // Report never throws (it swallows SDK failures itself), so no try/catch.
+    if (operationError != null) {
+      await _report.fault(
+        operationError,
+        area: _area,
+        message: message,
+        tags: tags,
+        extra: extra,
+        fingerprint: fingerprint,
+      );
+    } else {
+      await _report.degraded(
+        LoggedFault(message, context: outcome),
+        area: _area,
+        message: message,
+        tags: tags,
+        extra: extra,
+        fingerprint: fingerprint,
       );
     }
   }
@@ -2380,13 +2417,14 @@ class MacroTargetsController extends _$MacroTargetsController {
             'actualOwnerUserId': remoteActivity?.userId,
           },
         );
-      } catch (e) {
+      } catch (e, stackTrace) {
         lastError = e;
-        appLogger.warning(
-          'Coach remote activity visibility check failed',
-          context: 'MACRO_TARGETS_CONTROLLER',
-          error: e,
-          data: {'activityId': activityId, 'attempt': attempt + 1},
+        await _report.degraded(
+          e,
+          stackTrace: stackTrace,
+          area: _area,
+          message: 'Coach remote activity visibility check failed; retrying',
+          extra: {'activityId': activityId, 'attempt': attempt + 1},
         );
       }
     }
@@ -2567,6 +2605,9 @@ class MacroTargetsController extends _$MacroTargetsController {
     domain.Activity activity,
     NutritionPlan plan,
   ) async {
+    // Fire-and-forget: the provider may be disposed by the time this fails,
+    // so take the report before the first await.
+    final report = _report;
     try {
       final service = await ref.read(tpWritebackServiceProvider.future);
       await service.pushPlanToWorkout(
@@ -2574,8 +2615,14 @@ class MacroTargetsController extends _$MacroTargetsController {
         activity: activity,
         plan: plan,
       );
-    } catch (e) {
-      DebugLogger.error('TP write-back failed (non-blocking): $e');
+    } catch (e, stackTrace) {
+      await report.fault(
+        e,
+        stackTrace: stackTrace,
+        area: 'training_peaks',
+        message: 'TP write-back after plan generation failed (non-blocking)',
+        extra: {'activityId': activity.id},
+      );
     }
   }
 }

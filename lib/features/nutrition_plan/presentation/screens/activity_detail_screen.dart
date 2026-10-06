@@ -13,6 +13,7 @@ import '../../../../shared/widgets/kyle_design/kyle_design.dart';
 import '../../../../shared/widgets/app_date_picker.dart';
 import '../../../../shared/domain/activity_type.dart';
 import '../../../../shared/services/app_external_deps.dart';
+import '../../../../shared/services/report/report.dart';
 import '../providers/activity_detail_controller.dart';
 import '../../domain/carb_adjustment_level.dart';
 import '../../../activities/domain/activity.dart';
@@ -141,7 +142,15 @@ class _ActivityDetailScreenState extends ConsumerState<ActivityDetailScreen>
           _swipeHintChecked = true;
         });
       }
-    } catch (e) {
+    } catch (e, stackTrace) {
+      ref
+          .read(reportProvider)
+          .fault(
+            e,
+            stackTrace: stackTrace,
+            area: 'nutrition_plan',
+            message: 'Swipe-hint check failed; hint suppressed',
+          );
       if (mounted) {
         setState(() {
           _hasShownSwipeHint = true;
@@ -159,8 +168,15 @@ class _ActivityDetailScreenState extends ConsumerState<ActivityDetailScreen>
       final prefs = ref.read(sharedPreferencesProvider);
       final controller = _getControllerNotifier();
       controller.markSwipeHintShown(prefs);
-    } catch (e) {
-      // Silently fail
+    } catch (e, stackTrace) {
+      ref
+          .read(reportProvider)
+          .fault(
+            e,
+            stackTrace: stackTrace,
+            area: 'nutrition_plan',
+            message: 'Marking the swipe hint shown failed',
+          );
     }
     return true;
   }
@@ -1034,13 +1050,21 @@ class _ActivityDetailScreenState extends ConsumerState<ActivityDetailScreen>
 
   /// Pull-to-refresh: force sync activity data from Supabase
   Future<void> _handlePullToRefresh() async {
+    // Before the first await: a catch after unmount cannot touch `ref`.
+    final report = ref.read(reportProvider);
     try {
       final controller = _getControllerNotifier();
       if (controller is ActivityDetailController) {
         await controller.forceRefresh();
       }
-    } catch (e) {
-      // Best-effort refresh
+    } catch (e, stackTrace) {
+      // Best-effort refresh; the pull just ends.
+      report.fault(
+        e,
+        stackTrace: stackTrace,
+        area: 'nutrition_plan',
+        message: 'Pull-to-refresh of the activity failed',
+      );
     }
   }
 
