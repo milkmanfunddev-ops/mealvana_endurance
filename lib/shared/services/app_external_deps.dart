@@ -5,6 +5,7 @@ import 'package:supabase_flutter/supabase_flutter.dart';
 import 'analytics/analytics_tracker.dart';
 import 'logging_service.dart';
 import 'prefs_provider.dart';
+import 'report/report.dart';
 import 'sentry/sentry_reporter.dart';
 import 'supabase/supabase_client_provider.dart';
 
@@ -19,6 +20,7 @@ class AppExternalDeps {
     required this.sentry,
     required this.logger,
     required this.sharedPreferences,
+    this.report = const NoopReport(),
   });
 
   final AnalyticsTracker analytics;
@@ -26,6 +28,10 @@ class AppExternalDeps {
   final SentryReporter sentry;
   final AppLogger logger;
   final SharedPreferences sharedPreferences;
+
+  /// The one error service (CONTEXT.md § Error reporting). [sentry] and
+  /// [logger] are aliases onto it and go away with the migration tickets.
+  final Report report;
 }
 
 final appExternalDepsProvider = Provider<AppExternalDeps>((ref) {
@@ -34,11 +40,13 @@ final appExternalDepsProvider = Provider<AppExternalDeps>((ref) {
   final sentry = ref.watch(sentryReporterProvider);
   final logger = ref.watch(appLoggerProvider);
   final sharedPreferences = ref.watch(sharedPreferencesProvider);
+  final report = ref.watch(reportProvider);
   return AppExternalDeps(
     analytics: analytics,
     supabaseClient: supabaseClient,
     sentry: sentry,
     logger: logger,
     sharedPreferences: sharedPreferences,
+    report: report,
   );
 });

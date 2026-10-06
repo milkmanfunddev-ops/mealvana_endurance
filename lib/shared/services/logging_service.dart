@@ -1,9 +1,9 @@
-import 'package:flutter/foundation.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
-import 'package:logger/logger.dart';
-import 'debug_log_storage.dart';
 
-/// Abstraction for logging so we can swap implementations in tests.
+import 'report/report.dart';
+
+/// Legacy logging surface. Every method is a thin alias onto [Report]; see
+/// [PrettyAppLogger]. New code calls `Report` directly.
 abstract class AppLogger {
   void debug(
     String message, {
@@ -87,45 +87,18 @@ abstract class AppLogger {
   });
 }
 
-/// Default logger backed by package:logger with structured helpers.
+/// The legacy logger surface, forwarding to [Report] (glossary: CONTEXT.md
+/// § Error reporting). `error` and `fatal` are Faults, `warning` is Degraded,
+/// `info` and `debug` are structured logs; Report also writes the console and
+/// the debug screen's log, which this class used to do itself. The name is
+/// kept so the two tests that construct it compile; deleted with the last
+/// caller (ticket 10 of `.scratch/sentry/`).
 class PrettyAppLogger implements AppLogger {
-  PrettyAppLogger({
-    Level? baseLevel,
-    bool enableFileOutput = false,
-    Logger? logger,
-  }) : _logger =
-           logger ??
-           Logger(
-             level: _resolveLevel(baseLevel),
-             printer: PrettyPrinter(
-               // Keep output compact in dev: stack-frame banners for every log
-               // create excessive noise and bury real signal.
-               methodCount: 0,
-               errorMethodCount: 4,
-               lineLength: 120,
-               colors: true,
-               printEmojis: true,
-               dateTimeFormat: DateTimeFormat.onlyTimeAndSinceStart,
-             ),
-             filter: ProductionLogFilter(),
-           ),
-       _enableFileOutput = enableFileOutput;
+  PrettyAppLogger({Report? report}) : _report = report;
 
-  final Logger _logger;
-  final bool _enableFileOutput;
+  final Report? _report;
 
-  static Level _resolveLevel(Level? baseLevel) {
-    if (kDebugMode) {
-      if (baseLevel != null) return baseLevel;
-      // Opt-in verbose logging during development:
-      // flutter run --dart-define=VERBOSE_APP_LOGS=true
-      const verboseLogs = bool.fromEnvironment('VERBOSE_APP_LOGS');
-      return verboseLogs ? Level.debug : Level.warning;
-    }
-    return baseLevel != null && baseLevel.index > Level.info.index
-        ? baseLevel
-        : Level.info;
-  }
+  Report get _r => _report ?? SentryReport.global;
 
   @override
   void debug(
@@ -135,19 +108,16 @@ class PrettyAppLogger implements AppLogger {
     dynamic error,
     StackTrace? stackTrace,
   }) {
-    _logWithContext(
-      Level.debug,
+    _r.debug(
       message,
-      context: context,
-      data: data,
-      error: error,
-      stackTrace: stackTrace,
+      area: context,
+      data: error == null ? data : {...?data, 'error': error.toString()},
     );
   }
 
   @override
   void info(String message, {String? context, Map<String, dynamic>? data}) {
-    _logWithContext(Level.info, message, context: context, data: data);
+    _r.info(message, area: context, data: data);
   }
 
   @override
@@ -158,13 +128,12 @@ class PrettyAppLogger implements AppLogger {
     dynamic error,
     StackTrace? stackTrace,
   }) {
-    _logWithContext(
-      Level.warning,
-      message,
-      context: context,
-      data: data,
-      error: error,
+    _r.degraded(
+      error ?? LoggedFault(message, context: context),
       stackTrace: stackTrace,
+      area: context,
+      extra: data,
+      message: error == null ? null : message,
     );
   }
 
@@ -176,13 +145,12 @@ class PrettyAppLogger implements AppLogger {
     dynamic error,
     StackTrace? stackTrace,
   }) {
-    _logWithContext(
-      Level.error,
-      message,
-      context: context,
-      data: data,
-      error: error,
+    _r.fault(
+      error ?? LoggedFault(message, context: context),
       stackTrace: stackTrace,
+      area: context,
+      extra: data,
+      message: error == null ? null : message,
     );
   }
 
@@ -194,13 +162,13 @@ class PrettyAppLogger implements AppLogger {
     dynamic error,
     StackTrace? stackTrace,
   }) {
-    _logWithContext(
-      Level.fatal,
-      message,
-      context: context,
-      data: data,
-      error: error,
+    _r.fault(
+      error ?? LoggedFault(message, context: context),
       stackTrace: stackTrace,
+      area: context,
+      tags: const {'fatal': 'true'},
+      extra: data,
+      message: error == null ? null : message,
     );
   }
 
@@ -319,74 +287,6 @@ class PrettyAppLogger implements AppLogger {
 
     debug(message, context: 'ANALYTICS', data: data);
   }
-
-  void _logWithContext(
-    Level level,
-    String message, {
-    String? context,
-    Map<String, dynamic>? data,
-    dynamic error,
-    StackTrace? stackTrace,
-  }) {
-    final contextualMessage = context != null ? '[$context] $message' : message;
-    final payload = data == null || data.isEmpty
-        ? contextualMessage
-        : '$contextualMessage\nData: $data';
-
-    // Only include stack traces for warning, error, and fatal logs
-    // Debug and info logs should not have stack traces as they create excessive noise
-    final shouldIncludeStackTrace = level.index >= Level.warning.index;
-    final effectiveStackTrace = shouldIncludeStackTrace ? stackTrace : null;
-
-    try {
-      _logger.log(
-        level,
-        payload,
-        error: error,
-        stackTrace: effectiveStackTrace,
-      );
-    } catch (e) {
-      // Fallback if logger itself fails - silently ignore to avoid infinite recursion
-    }
-
-    // Capture to debug log storage for in-app viewing
-    try {
-      DebugLogStorage().addLog(
-        DebugLogEntry(
-          timestamp: DateTime.now(),
-          level: _convertLevel(level),
-          message: message,
-          context: context,
-          data: data,
-          error: error,
-        ),
-      );
-    } catch (e) {
-      // Don't let debug logging break the app - silently ignore
-    }
-
-    if (_enableFileOutput) {
-      // Placeholder for future file output support.
-    }
-  }
-
-  /// Convert logger Level to LogLevel enum
-  LogLevel _convertLevel(Level level) {
-    switch (level) {
-      case Level.debug:
-        return LogLevel.debug;
-      case Level.info:
-        return LogLevel.info;
-      case Level.warning:
-        return LogLevel.warning;
-      case Level.error:
-        return LogLevel.error;
-      case Level.fatal:
-        return LogLevel.fatal;
-      default:
-        return LogLevel.info;
-    }
-  }
 }
 
 /// Logger implementation that swallows all messages.
@@ -486,20 +386,7 @@ class NoopAppLogger implements AppLogger {
   }) {}
 }
 
-/// Filter to reduce logs in production builds.
-class ProductionLogFilter extends LogFilter {
-  @override
-  bool shouldLog(LogEvent event) {
-    if (kReleaseMode) {
-      return event.level.index >= Level.info.index;
-    }
-    // In debug mode, respect the Logger's configured level
-    // (default: warning unless VERBOSE_APP_LOGS=true)
-    return event.level.index >= (level ?? Level.warning).index;
-  }
-}
-
-/// Provider exposing the default logger implementation.
-final appLoggerProvider = Provider<AppLogger>((ref) {
-  return PrettyAppLogger();
+/// Provider exposing the legacy logger surface, aliased onto [Report].
+final Provider<AppLogger> appLoggerProvider = Provider<AppLogger>((ref) {
+  return PrettyAppLogger(report: ref.watch(reportProvider));
 });

@@ -1,0 +1,618 @@
+/// `Report`: the one service through which every error, warning and
+/// silent-path note leaves the app (glossary: CONTEXT.md § Error reporting;
+/// spec: `.scratch/sentry/spec.md`).
+///
+/// Severity ladder and where each rung goes:
+///
+/// | Call        | Sentry                                   | Mixpanel          | Console (debug) |
+/// |-------------|------------------------------------------|-------------------|-----------------|
+/// | `fault`     | event, level `error`                     | `error_reported`  | yes             |
+/// | `degraded`  | event, level `warning`                   | `error_reported`  | yes             |
+/// | `note`      | breadcrumb; + `warning` event in D9 areas | no                | yes             |
+/// | `info`      | structured log                           | no                | yes             |
+/// | `debug`     | structured log                           | no                | yes             |
+///
+/// `fault` downgrades itself to Degraded when the error matches the
+/// expected-failure allow-list (`expected_failures.dart`) and drops test-only
+/// exceptions outright. Nothing else in `lib/` may import the Sentry SDK except
+/// this file and the bootstrap; the source guard test enforces that.
+library;
+
+import 'dart:async';
+
+import 'package:flutter/foundation.dart';
+import 'package:flutter_riverpod/flutter_riverpod.dart';
+import 'package:logger/logger.dart';
+import 'package:sentry_flutter/sentry_flutter.dart';
+
+import '../analytics/analytics_tracker.dart';
+import '../debug_log_storage.dart';
+import 'expected_failures.dart';
+
+export 'expected_failures.dart' show ExpectedFailure;
+
+/// Areas whose Notes are promoted to a warning event (rule D9).
+const Set<String> promotedNoteAreas = <String>{
+  'startup',
+  'push',
+  'payments',
+  'sync',
+};
+
+/// The Mixpanel event name every Fault and Degraded fans out to.
+const String errorReportedEvent = 'error_reported';
+
+/// Severity of a report as it left the service. The value is the `severity`
+/// tag on the Sentry event and the `severity` property on Mixpanel.
+enum ReportSeverity {
+  fault('fault'),
+  degraded('degraded'),
+  note('note');
+
+  const ReportSeverity(this.tag);
+
+  final String tag;
+}
+
+/// A Fault raised from a message alone (legacy `logger.error(message)` with no
+/// exception object). `toString()` is the message so Sentry groups by it.
+class LoggedFault implements Exception {
+  const LoggedFault(this.message, {this.context});
+
+  final String message;
+  final String? context;
+
+  @override
+  String toString() => message;
+}
+
+/// Public interface. `SentryReport` is the real one; `NoopReport` is for tests
+/// and consent-off builds.
+abstract class Report {
+  /// Something broke that should never break. Sentry `error`, unless the
+  /// error is an expected failure (then Degraded) or test-only (dropped).
+  Future<void> fault(
+    Object error, {
+    StackTrace? stackTrace,
+    String? area,
+    Map<String, String>? tags,
+    Map<String, dynamic>? extra,
+    String? message,
+    List<String>? fingerprint,
+  });
+
+  /// An expected but bad condition the app can live with. Sentry `warning`.
+  Future<void> degraded(
+    Object error, {
+    StackTrace? stackTrace,
+    String? area,
+    Map<String, String>? tags,
+    Map<String, dynamic>? extra,
+    String? message,
+    List<String>? fingerprint,
+  });
+
+  /// A silent path took a branch. Breadcrumb on the next event; promoted to a
+  /// `warning` event when [area] is one of [promotedNoteAreas].
+  Future<void> note(String message, {String? area, Map<String, dynamic>? data});
+
+  /// Narrative. Sentry structured log, console in debug builds.
+  void info(String message, {String? area, Map<String, dynamic>? data});
+
+  /// Developer narrative. Sentry structured log, console in debug builds.
+  void debug(String message, {String? area, Map<String, dynamic>? data});
+
+  /// A plain breadcrumb with no severity meaning.
+  void breadcrumb(
+    String message, {
+    String? category,
+    Map<String, dynamic>? data,
+  });
+
+  /// Identity for every following event: Supabase user id and role
+  /// (`athlete` or `coach`). Never an email.
+  Future<void> setUser(String id, {String? role});
+
+  Future<void> clearUser();
+
+  /// Whether reports leave the device at all.
+  bool get isEnabled;
+}
+
+/// The real service. Talks to Sentry through a [Hub] (the SDK's static hub by
+/// default; an isolated one in tests), fans Faults and Degradeds out to the
+/// analytics tracker, and mirrors everything into the dev debug screen's log.
+class SentryReport implements Report {
+  SentryReport({
+    required AnalyticsTracker Function() analytics,
+    Hub? hub,
+    DebugLogStorage? logStorage,
+    bool? console,
+    Logger? consoleLogger,
+  }) : _analytics = analytics,
+       _hub = hub ?? HubAdapter(),
+       _logStorage = logStorage ?? DebugLogStorage(),
+       _console = console ?? kDebugMode,
+       _consoleLogger = consoleLogger ?? _defaultConsoleLogger();
+
+  final AnalyticsTracker Function() _analytics;
+  final Hub _hub;
+  final DebugLogStorage _logStorage;
+  final bool _console;
+  final Logger _consoleLogger;
+
+  /// Zone marker set while the Mixpanel fan-out runs. The analytics tracker
+  /// logs its own failures through the logger alias, which lands back here;
+  /// a Fault raised anywhere under that call, including after its awaits, is
+  /// still captured to Sentry but is not fanned out again, so the two can
+  /// never chase each other. A zone value survives async gaps; a flag on the
+  /// instance did not (the nested Fault reached fan-out after the flag reset).
+  static const Symbol _fanOutZone = #mealvanaReportFanOut;
+
+  /// The instance the static legacy loggers (`DebugLogger`) forward to until
+  /// their callers are migrated. Set by [reportProvider]; falls back to a
+  /// Sentry-only instance so nothing is lost before the provider builds.
+  static Report global = SentryReport(
+    analytics: () => const NoopAnalyticsTracker(),
+  );
+
+  static Logger _defaultConsoleLogger() {
+    const verboseLogs = bool.fromEnvironment('VERBOSE_APP_LOGS');
+    return Logger(
+      level: verboseLogs ? Level.debug : Level.warning,
+      printer: PrettyPrinter(
+        methodCount: 0,
+        errorMethodCount: 4,
+        lineLength: 120,
+        colors: true,
+        printEmojis: true,
+        dateTimeFormat: DateTimeFormat.onlyTimeAndSinceStart,
+      ),
+    );
+  }
+
+  @override
+  bool get isEnabled => _hub.isEnabled;
+
+  @override
+  Future<void> fault(
+    Object error, {
+    StackTrace? stackTrace,
+    String? area,
+    Map<String, String>? tags,
+    Map<String, dynamic>? extra,
+    String? message,
+    List<String>? fingerprint,
+  }) {
+    final text = describeThrowable(error);
+    if (isTestOnlyFailure(text)) return Future.value();
+
+    final expected = classifyExpectedFailure(text);
+    return _capture(
+      error,
+      severity: expected == null
+          ? ReportSeverity.fault
+          : ReportSeverity.degraded,
+      expected: expected,
+      stackTrace: stackTrace,
+      area: area,
+      tags: tags,
+      extra: extra,
+      message: message,
+      fingerprint: fingerprint,
+    );
+  }
+
+  @override
+  Future<void> degraded(
+    Object error, {
+    StackTrace? stackTrace,
+    String? area,
+    Map<String, String>? tags,
+    Map<String, dynamic>? extra,
+    String? message,
+    List<String>? fingerprint,
+  }) {
+    final text = describeThrowable(error);
+    if (isTestOnlyFailure(text)) return Future.value();
+
+    return _capture(
+      error,
+      severity: ReportSeverity.degraded,
+      expected: classifyExpectedFailure(text),
+      stackTrace: stackTrace,
+      area: area,
+      tags: tags,
+      extra: extra,
+      message: message,
+      fingerprint: fingerprint,
+    );
+  }
+
+  Future<void> _capture(
+    Object error, {
+    required ReportSeverity severity,
+    required ExpectedFailure? expected,
+    StackTrace? stackTrace,
+    String? area,
+    Map<String, String>? tags,
+    Map<String, dynamic>? extra,
+    String? message,
+    List<String>? fingerprint,
+  }) async {
+    final String? normalisedArea = _normaliseArea(area);
+    final level = severity == ReportSeverity.fault
+        ? SentryLevel.error
+        : SentryLevel.warning;
+    final exceptionType = error.runtimeType.toString();
+
+    _mirror(
+      level: level,
+      message: message ?? error.toString(),
+      area: normalisedArea,
+      data: extra,
+      error: error,
+      stackTrace: stackTrace,
+    );
+
+    SentryId eventId = SentryId.empty();
+    try {
+      eventId = await _hub.captureException(
+        error,
+        stackTrace: stackTrace,
+        message: message == null ? null : SentryMessage(message),
+        withScope: (scope) async {
+          scope.level = level;
+          await scope.setTag('severity', severity.tag);
+          if (normalisedArea != null) {
+            await scope.setTag('area', normalisedArea);
+          }
+          if (expected != null) {
+            await scope.setTag('expected_failure', expected.tag);
+          }
+          if (tags != null) {
+            for (final entry in tags.entries) {
+              await scope.setTag(entry.key, entry.value);
+            }
+          }
+          if (extra != null && extra.isNotEmpty) {
+            await scope.setContexts('diagnostic', extra);
+          }
+          if (fingerprint != null) scope.fingerprint = fingerprint;
+        },
+      );
+    } catch (sdkError) {
+      _captureFailed(sdkError);
+    }
+
+    await _fanOut(
+      severity: severity,
+      area: normalisedArea,
+      exceptionType: exceptionType,
+      eventId: eventId,
+    );
+  }
+
+  /// The reporter must never take the app down with it. When the SDK itself
+  /// throws, the breadcrumb rides the next event that does get through and
+  /// the debug log keeps it on device (rule D9: a prod-readable trail, not
+  /// only the debug console).
+  void _captureFailed(Object sdkError) {
+    _mirror(
+      level: SentryLevel.error,
+      message: 'Report: Sentry capture failed',
+      area: 'report',
+      error: sdkError,
+    );
+    try {
+      _hub.addBreadcrumb(
+        Breadcrumb(
+          message: 'Report: Sentry capture failed',
+          category: 'report',
+          level: SentryLevel.error,
+          data: {'error': sdkError.toString()},
+        ),
+      );
+    } catch (_) {
+      // Nothing left to write to.
+    }
+  }
+
+  Future<void> _fanOut({
+    required ReportSeverity severity,
+    required String? area,
+    required String exceptionType,
+    required SentryId eventId,
+  }) async {
+    if (Zone.current[_fanOutZone] == true) return;
+    try {
+      await runZoned(
+        () => _analytics().track(
+          errorReportedEvent,
+          properties: <String, dynamic>{
+            'severity': severity.tag,
+            'area': area ?? 'unknown',
+            'exception_type': exceptionType,
+            if (eventId != SentryId.empty())
+              'sentry_event_id': eventId.toString(),
+          },
+        ),
+        zoneValues: {_fanOutZone: true},
+      );
+    } catch (analyticsError) {
+      _mirror(
+        level: SentryLevel.warning,
+        message: 'Report: analytics fan-out failed',
+        area: 'report',
+        error: analyticsError,
+      );
+    }
+  }
+
+  @override
+  Future<void> note(
+    String message, {
+    String? area,
+    Map<String, dynamic>? data,
+  }) async {
+    final String? normalised = _normaliseArea(area);
+    _mirror(
+      level: SentryLevel.info,
+      message: message,
+      area: normalised,
+      data: data,
+    );
+
+    _hub.addBreadcrumb(
+      Breadcrumb(
+        message: message,
+        category: normalised == null ? 'note' : 'note.$normalised',
+        level: SentryLevel.info,
+        data: data,
+      ),
+    );
+
+    if (normalised != null && promotedNoteAreas.contains(normalised)) {
+      try {
+        await _hub.captureMessage(
+          message,
+          level: SentryLevel.warning,
+          withScope: (scope) async {
+            scope.level = SentryLevel.warning;
+            await scope.setTag('severity', ReportSeverity.note.tag);
+            await scope.setTag('area', normalised);
+            await scope.setTag('promoted', 'true');
+            if (data != null && data.isNotEmpty) {
+              await scope.setContexts('diagnostic', data);
+            }
+          },
+        );
+      } catch (sdkError) {
+        _captureFailed(sdkError);
+      }
+    }
+  }
+
+  @override
+  void info(String message, {String? area, Map<String, dynamic>? data}) {
+    final normalised = _normaliseArea(area);
+    _mirror(
+      level: SentryLevel.info,
+      message: message,
+      area: normalised,
+      data: data,
+    );
+    _toSentryLog(SentryLogLevel.info, message, normalised, data);
+  }
+
+  @override
+  void debug(String message, {String? area, Map<String, dynamic>? data}) {
+    final normalised = _normaliseArea(area);
+    _mirror(
+      level: SentryLevel.debug,
+      message: message,
+      area: normalised,
+      data: data,
+    );
+    _toSentryLog(SentryLogLevel.debug, message, normalised, data);
+  }
+
+  @override
+  void breadcrumb(
+    String message, {
+    String? category,
+    Map<String, dynamic>? data,
+  }) {
+    _hub.addBreadcrumb(
+      Breadcrumb(
+        message: message,
+        category: category,
+        level: SentryLevel.info,
+        data: data,
+      ),
+    );
+  }
+
+  @override
+  Future<void> setUser(String id, {String? role}) async {
+    await _hub.configureScope((scope) async {
+      await scope.setUser(SentryUser(id: id));
+      if (role != null) await scope.setTag('role', role);
+    });
+  }
+
+  @override
+  Future<void> clearUser() async {
+    await _hub.configureScope((scope) async {
+      await scope.setUser(null);
+      await scope.removeTag('role');
+    });
+  }
+
+  // --- sinks ---------------------------------------------------------------
+
+  void _toSentryLog(
+    SentryLogLevel level,
+    String message,
+    String? area,
+    Map<String, dynamic>? data,
+  ) {
+    if (!_hub.isEnabled) return;
+    final attributes = <String, SentryLogAttribute>{
+      if (area != null) 'area': SentryLogAttribute.string(area),
+      if (data != null)
+        for (final entry in data.entries) entry.key: _attribute(entry.value),
+    };
+    try {
+      // `Sentry.logger` is the SDK's structured-log entry point; it routes to
+      // the current hub, which in tests is the one `Sentry.init` built.
+      final logger = Sentry.logger;
+      switch (level) {
+        case SentryLogLevel.debug:
+          logger.debug(message, attributes: attributes);
+        case SentryLogLevel.info:
+          logger.info(message, attributes: attributes);
+        default:
+          logger.info(message, attributes: attributes);
+      }
+    } catch (_) {
+      // Structured logs are narrative; losing one is not worth a Fault.
+    }
+  }
+
+  static SentryLogAttribute _attribute(Object? value) => switch (value) {
+    bool v => SentryLogAttribute.bool(v),
+    int v => SentryLogAttribute.int(v),
+    double v => SentryLogAttribute.double(v),
+    _ => SentryLogAttribute.string(value.toString()),
+  };
+
+  /// Legacy callers pass `context: 'SYNC'`; the area vocabulary is lower
+  /// case (`promotedNoteAreas`), so one spelling per area in Sentry.
+  static String? _normaliseArea(String? area) => area?.toLowerCase();
+
+  /// Console in debug builds and the dev debug screen's log, together.
+  void _mirror({
+    required SentryLevel level,
+    required String message,
+    String? area,
+    Map<String, dynamic>? data,
+    Object? error,
+    StackTrace? stackTrace,
+  }) {
+    final storageLevel = switch (level) {
+      SentryLevel.fatal => LogLevel.fatal,
+      SentryLevel.error => LogLevel.error,
+      SentryLevel.warning => LogLevel.warning,
+      SentryLevel.info => LogLevel.info,
+      _ => LogLevel.debug,
+    };
+    try {
+      _logStorage.addLog(
+        DebugLogEntry(
+          timestamp: DateTime.now(),
+          level: storageLevel,
+          message: message,
+          context: area,
+          data: data,
+          error: error,
+        ),
+      );
+    } catch (_) {
+      // The debug screen's log is a dev convenience only.
+    }
+
+    if (!_console) return;
+    final body = area == null ? message : '[$area] $message';
+    final payload = data == null || data.isEmpty ? body : '$body\nData: $data';
+    final consoleLevel = switch (level) {
+      SentryLevel.fatal => Level.fatal,
+      SentryLevel.error => Level.error,
+      SentryLevel.warning => Level.warning,
+      SentryLevel.info => Level.info,
+      _ => Level.debug,
+    };
+    try {
+      _consoleLogger.log(
+        consoleLevel,
+        payload,
+        error: error,
+        stackTrace: consoleLevel.index >= Level.warning.index
+            ? stackTrace
+            : null,
+      );
+    } catch (_) {
+      // Console is best-effort; never recurse into Report from here.
+    }
+  }
+}
+
+/// Same interface, emits nothing. For tests and consent-off builds.
+class NoopReport implements Report {
+  const NoopReport();
+
+  @override
+  Future<void> fault(
+    Object error, {
+    StackTrace? stackTrace,
+    String? area,
+    Map<String, String>? tags,
+    Map<String, dynamic>? extra,
+    String? message,
+    List<String>? fingerprint,
+  }) async {}
+
+  @override
+  Future<void> degraded(
+    Object error, {
+    StackTrace? stackTrace,
+    String? area,
+    Map<String, String>? tags,
+    Map<String, dynamic>? extra,
+    String? message,
+    List<String>? fingerprint,
+  }) async {}
+
+  @override
+  Future<void> note(
+    String message, {
+    String? area,
+    Map<String, dynamic>? data,
+  }) async {}
+
+  @override
+  void info(String message, {String? area, Map<String, dynamic>? data}) {}
+
+  @override
+  void debug(String message, {String? area, Map<String, dynamic>? data}) {}
+
+  @override
+  void breadcrumb(
+    String message, {
+    String? category,
+    Map<String, dynamic>? data,
+  }) {}
+
+  @override
+  Future<void> setUser(String id, {String? role}) async {}
+
+  @override
+  Future<void> clearUser() async {}
+
+  @override
+  bool get isEnabled => false;
+}
+
+/// The app's `Report`. Analytics is looked up lazily so that the analytics
+/// tracker may itself depend on the logger alias without a provider cycle.
+///
+/// Building it also points [SentryReport.global] at this instance: the static
+/// `DebugLogger` alias has no `ref` and reads the global. That side effect
+/// goes with the alias (ticket 10 of `.scratch/sentry/`).
+final Provider<Report> reportProvider = Provider<Report>((ref) {
+  final report = SentryReport(
+    analytics: () => ref.read(analyticsTrackerProvider),
+  );
+  SentryReport.global = report;
+  return report;
+});

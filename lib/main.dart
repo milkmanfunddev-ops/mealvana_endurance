@@ -1,6 +1,7 @@
 import 'dart:async';
 import 'package:flutter/material.dart';
-import 'features/content/application/content_service.dart' show ContentDefaultsCache;
+import 'features/content/application/content_service.dart'
+    show ContentDefaultsCache;
 import 'package:flutter/foundation.dart';
 import 'package:flutter_dotenv/flutter_dotenv.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
@@ -141,26 +142,12 @@ Future<void> main() async {
         // are all simulator GC pauses), so disable it there.
         options.enableAppHangTracking = !kDebugMode;
 
-        // Filter sensitive errors
-        options.beforeSend = (event, hint) {
-          // Don't send debug/info logs in production
-          // Device diagnostics (MetricKit hangs/CPU exceptions) are captured at
-          // info level by design and must not be swept up by this drop.
-          if (!kDebugMode &&
-              !isDiagnosticEvent(event) &&
-              (event.level == SentryLevel.debug ||
-                  event.level == SentryLevel.info)) {
-            return null;
-          }
+        // One filter for every flavour: drops test-runner leaks, downgrades
+        // expected failures to warnings, drops info/debug in release builds.
+        options.beforeSend = (event, hint) => filterSentryEvent(event);
 
-          // Drop known low-signal noise (offline/DNS, transient TLS resets,
-          // cancelled sign-ins, debug assertions, test-runner failures).
-          if (isSentryNoise(event)) {
-            return null;
-          }
-
-          return event;
-        };
+        // Structured logs (Report.info / Report.debug) need this in 9.x.
+        options.enableLogs = true;
 
         // Enhanced breadcrumb filtering
         options.beforeBreadcrumb = (breadcrumb, hint) {
