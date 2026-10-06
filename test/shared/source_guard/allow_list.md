@@ -40,3 +40,4 @@ unreportedCatch lib/features/integrations/data/vdot_api_client.dart :: } catch (
 unreportedCatch lib/shared/services/report/metrickit_relay.dart :: } on FormatException { :: the catch IS the parse: an unparseable payload is still forwarded whole under `raw`, so nothing is lost
 unreportedCatch lib/shared/services/report/performance_telemetry.dart :: } catch (_) { :: `_startSpan`: span bookkeeping inside the Report layer; a Fault over a lost span would recurse into Report
 unreportedCatch lib/shared/services/report/performance_telemetry.dart :: } catch (_) { :: `_finishSpan`: same ruling, the finish side
+unreportedCatch lib/features/auth/application/apple_web_authentication.dart :: } catch (_) {  :: appConfigProvider unset (widget tests, env-less harness) means the button stays visible as before ticket 17; the catch is the feature test

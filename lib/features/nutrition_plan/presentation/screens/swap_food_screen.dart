@@ -777,39 +777,43 @@ class _SwapFoodScreenState extends ConsumerState<SwapFoodScreen> {
   }
 
   Widget _buildErrorState(Object error) {
-    return Center(
-      child: Padding(
-        padding: const EdgeInsets.all(AppSpacing.xl),
-        child: Column(
-          mainAxisAlignment: MainAxisAlignment.center,
-          children: [
-            FaIcon(
-              FontAwesomeIcons.triangleExclamation,
-              size: AppIconSizes.xl,
-              color: AppColors.dragonfruit,
-            ),
-            const SizedBox(height: AppSpacing.lg),
-            Text(
-              'Error loading foods',
-              style: AppTextStyles.sectionTitle.copyWith(
-                color: Theme.of(context).colorScheme.onSurface,
+    // Scrolls: a provider error carries its stack trace, which is taller than
+    // any phone screen (smoke test caught a 117k px overflow).
+    return SingleChildScrollView(
+      child: Center(
+        child: Padding(
+          padding: const EdgeInsets.all(AppSpacing.xl),
+          child: Column(
+            mainAxisAlignment: MainAxisAlignment.center,
+            children: [
+              FaIcon(
+                FontAwesomeIcons.triangleExclamation,
+                size: AppIconSizes.xl,
+                color: AppColors.dragonfruit,
               ),
-            ),
-            const SizedBox(height: AppSpacing.sm),
-            Text(
-              error.toString(),
-              style: AppTextStyles.bodyMedium.copyWith(
-                color: Theme.of(context).colorScheme.onSurfaceVariant,
+              const SizedBox(height: AppSpacing.lg),
+              Text(
+                'Error loading foods',
+                style: AppTextStyles.sectionTitle.copyWith(
+                  color: Theme.of(context).colorScheme.onSurface,
+                ),
               ),
-              textAlign: TextAlign.center,
-            ),
-            const SizedBox(height: AppSpacing.lg),
-            KylePrimaryButton(
-              text: 'Retry',
-              onPressed: () =>
-                  ref.invalidate(swapFoodControllerProvider(_params)),
-            ),
-          ],
+              const SizedBox(height: AppSpacing.sm),
+              Text(
+                error.toString(),
+                style: AppTextStyles.bodyMedium.copyWith(
+                  color: Theme.of(context).colorScheme.onSurfaceVariant,
+                ),
+                textAlign: TextAlign.center,
+              ),
+              const SizedBox(height: AppSpacing.lg),
+              KylePrimaryButton(
+                text: 'Retry',
+                onPressed: () =>
+                    ref.invalidate(swapFoodControllerProvider(_params)),
+              ),
+            ],
+          ),
         ),
       ),
     );
