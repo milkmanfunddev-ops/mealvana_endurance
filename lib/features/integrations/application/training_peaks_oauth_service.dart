@@ -255,7 +255,7 @@ class TrainingPeaksOAuthService {
         stackTrace: st,
         area: _area,
         message: 'TrainingPeaks token refresh failed; reconnect required',
-        extra: {'statusCode': e.statusCode},
+        extra: e.reportExtra,
       );
       // Mark integration as needing re-auth
       await _repository.updateSyncStatus(
@@ -306,7 +306,7 @@ class TrainingPeaksOAuthService {
         stackTrace: st,
         area: _area,
         message: 'TrainingPeaks token force-refresh failed; reconnect required',
-        extra: {'statusCode': e.statusCode},
+        extra: e.reportExtra,
       );
       await _repository.updateSyncStatus(
         userId,
