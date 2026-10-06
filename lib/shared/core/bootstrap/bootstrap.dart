@@ -18,12 +18,14 @@ import 'package:flutter/material.dart';
 import 'package:flutter_dotenv/flutter_dotenv.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:package_info_plus/package_info_plus.dart';
+import 'package:sentry_drift/sentry_drift.dart';
 import 'package:sentry_flutter/sentry_flutter.dart';
 import 'package:sentry_supabase/sentry_supabase.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 import 'package:shorebird_code_push/shorebird_code_push.dart';
 import 'package:supabase_flutter/supabase_flutter.dart';
 
+import '../../database/app_database.dart';
 import '../../services/app_config.dart';
 import '../../services/app_external_deps.dart';
 import '../../services/privacy/analytics_consent.dart';
@@ -180,6 +182,15 @@ Future<void> _runMealvanaApp(
   SharedPreferences sharedPreferences,
 ) async {
   await _tagShorebirdPatch();
+
+  // Drift spans (`db.sql.query` per statement, transaction, batch). The
+  // database layer may not import the Sentry SDK (source guard), so the
+  // interceptor is handed in here, before the first AppDatabase opens.
+  // Native only, as before: the web executor never carried it.
+  if (!kIsWeb) {
+    AppDatabase.queryInterceptorFactory = () =>
+        SentryQueryInterceptor(databaseName: 'mealvana_endurance');
+  }
 
   // Two layers. The inner SentryHttpClient reports failed requests
   // (`SentryHttpClientError`, which the event filter's weather rule expects),

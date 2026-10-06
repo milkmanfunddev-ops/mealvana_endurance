@@ -6,11 +6,12 @@ import 'package:path_provider/path_provider.dart';
 import 'package:path/path.dart' as p;
 import 'package:sqlite3_flutter_libs/sqlite3_flutter_libs.dart';
 import 'package:sqlite3/sqlite3.dart';
-import 'package:sentry_drift/sentry_drift.dart';
 
 /// Native platforms (iOS/Android) connection using SQLite file.
-/// Wrapped with [SentryQueryInterceptor] to add Sentry performance spans for
-/// database operations (queries, transactions, batches).
+///
+/// Sentry's Drift spans are not wired here: this file may not import the
+/// Sentry SDK (source guard). The bootstrap hands the interceptor to
+/// `AppDatabase.queryInterceptorFactory` and `_openConnection` applies it.
 QueryExecutor openNativeConnection() {
   return LazyDatabase(() async {
     // Put the database file in the documents directory
@@ -30,10 +31,8 @@ QueryExecutor openNativeConnection() {
     // This prevents blocking the main thread during database init (was causing 7+ second UI freeze)
     // NOTE: SQL logging disabled - was causing 77% of debug log volume
     // Set logStatements to true only when debugging specific database issues
-    final db = NativeDatabase.createInBackground(file);
-
-    return db;
-  }).interceptWith(SentryQueryInterceptor(databaseName: 'mealvana_endurance'));
+    return NativeDatabase.createInBackground(file);
+  });
 }
 
 /// Create in-memory native database for testing

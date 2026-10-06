@@ -1,3 +1,4 @@
+import 'dart:async';
 import 'dart:convert';
 
 import 'package:drift/drift.dart';
@@ -224,8 +225,13 @@ class FoodsDao extends DatabaseAccessor<AppDatabase> with _$FoodsDaoMixin {
 
     try {
       return _dedupeByClientFoodId(await query.get());
-    } on FormatException {
+    } on FormatException catch (e) {
       // Legacy rows may store timestamps as TEXT; normalize and retry
+      await db.report.note(
+        'Legacy TEXT timestamps in user_foods; normalizing and retrying',
+        area: 'database',
+        data: {'userId': userId, 'error': e.message},
+      );
       await normalizeUserFoodTimestamps();
       return _dedupeByClientFoodId(await query.get());
     }
@@ -376,8 +382,15 @@ class FoodsDao extends DatabaseAccessor<AppDatabase> with _$FoodsDaoMixin {
               needsUpload: const Value(false),
             ),
           );
-        } catch (_) {
+        } catch (e, stackTrace) {
           // Skip malformed rows but continue syncing others
+          await db.report.degraded(
+            e,
+            stackTrace: stackTrace,
+            area: 'database',
+            message: 'Skipped a malformed user_foods row during sync',
+            extra: {'foodId': food['id']?.toString()},
+          );
         }
       }
     });
@@ -507,8 +520,16 @@ class FoodsDao extends DatabaseAccessor<AppDatabase> with _$FoodsDaoMixin {
         if (decoded is List) {
           categoryStrings = List<String>.from(decoded);
         }
-      } catch (_) {
+      } catch (e) {
         // Fallback to comma-separated
+        unawaited(
+          db.report.note(
+            'user_foods.categories looked like JSON but did not parse; '
+            'split on commas instead',
+            area: 'database',
+            data: {'categories': trimmed, 'error': e.toString()},
+          ),
+        );
         categoryStrings = trimmed.split(',').map((s) => s.trim()).toList();
       }
     }
@@ -524,7 +545,15 @@ class FoodsDao extends DatabaseAccessor<AppDatabase> with _$FoodsDaoMixin {
         .map((str) {
           try {
             return FoodCategory.fromDbValue(str);
-          } catch (_) {
+          } catch (e) {
+            // Unknown category values are dropped from the list.
+            unawaited(
+              db.report.note(
+                'Unknown user_foods category dropped',
+                area: 'database',
+                data: {'category': str, 'error': e.toString()},
+              ),
+            );
             return null;
           }
         })

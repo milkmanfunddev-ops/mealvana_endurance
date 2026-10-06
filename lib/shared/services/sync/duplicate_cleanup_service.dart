@@ -4,6 +4,7 @@ import 'package:riverpod_annotation/riverpod_annotation.dart';
 import '../../database/app_database.dart';
 import '../../database/database_provider.dart';
 import '../logging_service.dart';
+import '../report/report.dart';
 
 part 'duplicate_cleanup_service.g.dart';
 
@@ -12,6 +13,7 @@ DuplicateCleanupService duplicateCleanupService(Ref ref) {
   return DuplicateCleanupService(
     database: ref.read(appDatabaseProvider),
     logger: ref.read(appLoggerProvider),
+    report: ref.read(reportProvider),
   );
 }
 
@@ -24,11 +26,17 @@ class DuplicateCleanupService {
   const DuplicateCleanupService({
     required AppDatabase database,
     required AppLogger logger,
+    Report? report,
   }) : _database = database,
-       _logger = logger;
+       _logger = logger,
+       _report = report;
 
   final AppDatabase _database;
   final AppLogger _logger;
+  final Report? _report;
+
+  /// Injected by the provider; tests may pass a `RecordingReport`.
+  Report get _r => _report ?? SentryReport.global;
 
   /// Clean duplicate records from all tables for a user.
   /// Returns the total number of duplicates deleted.
@@ -86,13 +94,14 @@ class DuplicateCleanupService {
 
       return totalDuplicatesDeleted;
     } catch (e, stackTrace) {
-      _logger.error(
-        'Failed to clean duplicates from Drift',
-        context: 'DUPLICATE_CLEANUP',
-        error: e,
-        stackTrace: stackTrace,
-      );
       // Don't throw - allow sync to continue even if cleanup fails
+      await _r.fault(
+        e,
+        stackTrace: stackTrace,
+        area: 'sync',
+        message: 'Duplicate cleanup failed',
+        extra: {'userId': userId},
+      );
       return 0;
     }
   }
@@ -195,14 +204,16 @@ class DuplicateCleanupService {
 
       return deletedCount;
     } catch (e, stackTrace) {
-      _logger.error(
-        'Failed to clean duplicates from $tableName',
-        context: 'DUPLICATE_CLEANUP',
-        error: e,
+      // Return 0 on error, don't block sync
+      await _r.fault(
+        e,
         stackTrace: stackTrace,
-        data: {'table': tableName},
+        area: 'sync',
+        message: 'Duplicate cleanup failed for a table',
+        tags: {'table': tableName},
+        extra: {'table': tableName, 'userId': userId},
       );
-      return 0; // Return 0 on error, don't block sync
+      return 0;
     }
   }
 
@@ -311,13 +322,15 @@ class DuplicateCleanupService {
 
       return deletedCount;
     } catch (e, stackTrace) {
-      _logger.error(
-        'Failed to clean users duplicates',
-        context: 'DUPLICATE_CLEANUP',
-        error: e,
+      // Return 0 on error, don't block sync
+      await _r.fault(
+        e,
         stackTrace: stackTrace,
+        area: 'sync',
+        message: 'Duplicate cleanup failed for users',
+        tags: {'table': 'users'},
       );
-      return 0; // Return 0 on error, don't block sync
+      return 0;
     }
   }
 }

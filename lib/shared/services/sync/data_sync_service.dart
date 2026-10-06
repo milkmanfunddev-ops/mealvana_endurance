@@ -1,11 +1,10 @@
 import 'dart:async';
 import 'package:riverpod_annotation/riverpod_annotation.dart';
-import 'package:sentry_flutter/sentry_flutter.dart';
 import 'package:supabase_flutter/supabase_flutter.dart';
 
 import '../../database/app_database.dart';
 import '../../database/database_provider.dart';
-import '../logging_service.dart';
+import '../report/report.dart';
 import '../../../features/nutrition_plan/data/food_repository.dart';
 import '../../../features/carb_loading/application/carb_loading_food_sync_service.dart';
 import '../../../shared/services/app_external_deps.dart';
@@ -21,7 +20,7 @@ DataSyncService dataSyncService(Ref ref) {
     ref: ref,
     supabase: Supabase.instance.client,
     database: ref.read(appDatabaseProvider),
-    logger: ref.read(appLoggerProvider),
+    report: ref.read(reportProvider),
     foodRepository: ref.read(foodRepositoryProvider),
     carbLoadingFoodSyncService: ref.read(carbLoadingFoodSyncServiceProvider),
     activitySyncHandler: ref.read(activitySyncHandlerProvider),
@@ -43,7 +42,7 @@ class DataSyncService {
     required Ref ref,
     required SupabaseClient supabase,
     required AppDatabase database,
-    required AppLogger logger,
+    required Report report,
     required FoodRepository foodRepository,
     required CarbLoadingFoodSyncService carbLoadingFoodSyncService,
     required ActivitySyncHandler activitySyncHandler,
@@ -55,7 +54,7 @@ class DataSyncService {
   }) : _ref = ref,
        _supabase = supabase,
        _database = database,
-       _logger = logger,
+       _report = report,
        _foodRepository = foodRepository,
        _carbLoadingFoodSyncService = carbLoadingFoodSyncService,
        _activitySyncHandler = activitySyncHandler,
@@ -68,7 +67,7 @@ class DataSyncService {
   final Ref _ref;
   final SupabaseClient _supabase;
   final AppDatabase _database;
-  final AppLogger _logger;
+  final Report _report;
   final FoodRepository _foodRepository;
   final CarbLoadingFoodSyncService _carbLoadingFoodSyncService;
 
@@ -119,23 +118,14 @@ class DataSyncService {
       _invalidateCalendarProviders();
       return true;
     } catch (e, stackTrace) {
-      _logger.error(
-        'Sync failed - app continuing with cached data',
-        context: 'DATA_SYNC',
-        error: e,
-        stackTrace: stackTrace,
-      );
-      // Report to Sentry — sync failures are swallowed here so the app can
-      // continue with cached data, but we still want visibility in the
-      // error dashboard (especially for non-timeout, non-network failures).
-      await Sentry.captureException(
+      // Swallowed so the app continues with cached data; the Fault is the
+      // record. Network and session failures downgrade themselves.
+      await _report.fault(
         e,
         stackTrace: stackTrace,
-        withScope: (scope) {
-          scope.setTag('component', 'sync');
-          scope.setTag('context', 'DATA_SYNC');
-          scope.level = SentryLevel.error;
-        },
+        area: 'sync',
+        message: 'Full data sync failed; app continuing with cached data',
+        extra: {'userId': userId},
       );
       return false;
     }
@@ -190,11 +180,12 @@ class DataSyncService {
 
       return false;
     } catch (e, stackTrace) {
-      _logger.error(
-        'Error checking fresh device status',
-        context: 'DATA_SYNC',
-        error: e,
+      await _report.fault(
+        e,
         stackTrace: stackTrace,
+        area: 'sync',
+        message: 'Fresh-device check failed; forcing a full sync',
+        extra: {'userId': userId},
       );
       return true; // Err on side of full sync
     }
@@ -258,9 +249,22 @@ class DataSyncService {
       }
 
       return true;
-    } on TimeoutException {
+    } on TimeoutException catch (e, stackTrace) {
+      // Expected on slow links; the client-side download takes over.
+      await _report.degraded(
+        e,
+        stackTrace: stackTrace,
+        area: 'sync',
+        message: 'Edge function sync timed out; falling back to client-side',
+      );
       return false;
-    } catch (e) {
+    } catch (e, stackTrace) {
+      await _report.fault(
+        e,
+        stackTrace: stackTrace,
+        area: 'sync',
+        message: 'Edge function sync failed; falling back to client-side',
+      );
       return false;
     }
   }
@@ -380,12 +384,12 @@ class DataSyncService {
           await _coachSyncHandler.syncCoachProfiles(coachProfiles);
         }
       });
-    } catch (e, stackTrace) {
-      _logger.error(
-        '[EDGE_SYNC] Failed to sync edge function data to local DB',
-        context: 'EDGE_SYNC',
-        error: e,
-        stackTrace: stackTrace,
+    } catch (e) {
+      // The transaction rolled back; the caller reports and falls back.
+      _report.breadcrumb(
+        'Applying the edge function payload to the local DB failed',
+        category: 'sync',
+        data: {'error': e.toString()},
       );
       rethrow;
     }
@@ -407,12 +411,12 @@ class DataSyncService {
         _downloadEvents(userId),
         _downloadCarbLoadingPlans(userId),
       ]);
-    } catch (e, stackTrace) {
-      _logger.error(
-        '[CLIENT_SYNC] Client-side download failed',
-        context: 'CLIENT_SYNC',
-        error: e,
-        stackTrace: stackTrace,
+    } catch (e) {
+      // Reported by syncAllData, which owns the swallow.
+      _report.breadcrumb(
+        'Client-side download failed',
+        category: 'sync',
+        data: {'error': e.toString()},
       );
       rethrow;
     }
@@ -424,11 +428,12 @@ class DataSyncService {
       final foods = response as List<dynamic>;
       await _foodRepository.syncFromDownloadedData(foods: foods);
     } catch (e, stackTrace) {
-      _logger.error(
-        'Failed to download foods',
-        context: 'FOOD_SYNC',
-        error: e,
+      await _report.fault(
+        e,
         stackTrace: stackTrace,
+        area: 'sync',
+        message: 'Failed to download foods',
+        tags: {'entity': 'foods'},
       );
     }
   }
@@ -441,11 +446,12 @@ class DataSyncService {
         carbLoadingFoods: carbFoods,
       );
     } catch (e, stackTrace) {
-      _logger.error(
-        'Failed to download carb loading foods',
-        context: 'CARB_FOOD_SYNC',
-        error: e,
+      await _report.fault(
+        e,
         stackTrace: stackTrace,
+        area: 'sync',
+        message: 'Failed to download carb loading foods',
+        tags: {'entity': 'carb_loading_foods'},
       );
     }
   }
@@ -467,11 +473,12 @@ class DataSyncService {
         await _activitySyncHandler.upsertActivity(activityData);
       }
     } catch (e, stackTrace) {
-      _logger.error(
-        'Failed to download activities',
-        context: 'ACTIVITY_SYNC',
-        error: e,
+      await _report.fault(
+        e,
         stackTrace: stackTrace,
+        area: 'sync',
+        message: 'Failed to download activities',
+        tags: {'entity': 'activities'},
       );
     }
   }
@@ -490,11 +497,12 @@ class DataSyncService {
         await _eventSyncHandler.upsertEvent(eventData, userId);
       }
     } catch (e, stackTrace) {
-      _logger.error(
-        'Failed to download events',
-        context: 'EVENT_SYNC',
-        error: e,
+      await _report.fault(
+        e,
         stackTrace: stackTrace,
+        area: 'sync',
+        message: 'Failed to download events',
+        tags: {'entity': 'events'},
       );
     }
   }
@@ -525,11 +533,12 @@ class DataSyncService {
         await _carbLoadingSyncHandler.upsertCarbLoadingDay(dayData);
       }
     } catch (e, stackTrace) {
-      _logger.error(
-        'Failed to download carb loading plans',
-        context: 'CARB_PLAN_SYNC',
-        error: e,
+      await _report.fault(
+        e,
         stackTrace: stackTrace,
+        area: 'sync',
+        message: 'Failed to download carb loading plans',
+        tags: {'entity': 'carb_loading_plans'},
       );
     }
   }

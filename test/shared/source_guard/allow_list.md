@@ -81,7 +81,6 @@ printInCatch lib/features/nutrition_plan/presentation/screens/swap_food_screen.d
 printInCatch lib/features/nutrition_plan/presentation/screens/swap_food_screen.dart :: } catch (e) {
 printInCatch lib/features/nutrition_plan/presentation/screens/swap_food_screen.dart :: } catch (e) {
 printInCatch lib/features/settings/presentation/screens/debug_screen.dart :: } catch (e, stackTrace) {
-printInCatch lib/shared/database/app_database.dart :: } catch (closeError) {
 sentryImport lib/features/daily_macros/data/daily_macro_targets_repository.dart :: import 'package:sentry_flutter/sentry_flutter.dart';
 sentryImport lib/features/formula_kit/data/formula_pins_repository.dart :: import 'package:sentry_flutter/sentry_flutter.dart';
 sentryImport lib/features/formula_kit/data/personal_formulas_repository.dart :: import 'package:sentry_flutter/sentry_flutter.dart';
@@ -90,11 +89,8 @@ sentryImport lib/features/integrations/application/tp_writeback_service.dart :: 
 sentryImport lib/features/macro_dashboard/application/dashboard_transient_telemetry.dart :: import 'package:sentry_flutter/sentry_flutter.dart';
 sentryImport lib/features/nutrition_plan/presentation/providers/macro_targets_controller.dart :: import 'package:sentry_flutter/sentry_flutter.dart';
 sentryImport lib/shared/core/app_router.dart :: import 'package:sentry_flutter/sentry_flutter.dart';
-sentryImport lib/shared/database/connection_native.dart :: import 'package:sentry_drift/sentry_drift.dart';
 sentryImport lib/shared/services/performance_telemetry.dart :: import 'package:sentry_flutter/sentry_flutter.dart';
 sentryImport lib/shared/services/sentry/sentry_reporter.dart :: import 'package:sentry_flutter/sentry_flutter.dart' show SentryLevel;
-sentryImport lib/shared/services/sync/data_sync_service.dart :: import 'package:sentry_flutter/sentry_flutter.dart';
-sentryImport lib/shared/services/sync/sync_coordinator.dart :: import 'package:sentry_flutter/sentry_flutter.dart';
 unreportedCatch lib/features/activities/data/activities_repository.dart :: } catch (_) {
 unreportedCatch lib/features/activities/presentation/providers/activities_controller.dart :: } catch (_) {}
 unreportedCatch lib/features/activities/presentation/providers/activities_controller.dart :: } catch (_) {}
@@ -435,21 +431,6 @@ unreportedCatch lib/features/sharing/presentation/providers/share_form_controlle
 unreportedCatch lib/features/user_foods/data/user_foods_repository.dart :: } catch (_) {
 unreportedCatch lib/shared/controllers/food_search_controller.dart :: } catch (_) {
 unreportedCatch lib/shared/data/syncable_repository.dart :: } catch (e) {
-unreportedCatch lib/shared/database/app_database.dart :: } catch (closeError) {
-unreportedCatch lib/shared/database/app_database.dart :: } catch (e) {
-unreportedCatch lib/shared/database/app_database.dart :: } catch (e) {
-unreportedCatch lib/shared/database/app_database.dart :: } catch (e) {
-unreportedCatch lib/shared/database/daos/diagnostic_dao.dart :: } catch (e) {
-unreportedCatch lib/shared/database/daos/diagnostic_dao.dart :: } catch (e) {
-unreportedCatch lib/shared/database/daos/foods_dao.dart :: } catch (_) {
-unreportedCatch lib/shared/database/daos/foods_dao.dart :: } catch (_) {
-unreportedCatch lib/shared/database/daos/foods_dao.dart :: } catch (_) {
-unreportedCatch lib/shared/database/daos/foods_dao.dart :: } on FormatException {
-unreportedCatch lib/shared/database/schema_manager.dart :: } catch (e, stackTrace) {
-unreportedCatch lib/shared/database/schema_manager.dart :: } catch (e) {
-unreportedCatch lib/shared/database/schema_manager.dart :: } catch (e) {
-unreportedCatch lib/shared/database/schema_manager.dart :: } catch (e) {
-unreportedCatch lib/shared/database/tables/user_profiles.dart :: } catch (e) {
 unreportedCatch lib/shared/services/analytics/analytics_tracker.dart :: } catch (_) {
 unreportedCatch lib/shared/services/analytics/internal_user_service.dart :: } catch (_) {
 unreportedCatch lib/shared/services/analytics/internal_user_service.dart :: } catch (_) {
@@ -468,10 +449,6 @@ unreportedCatch lib/shared/services/report/report.dart :: } catch (analyticsErro
 unreportedCatch lib/shared/services/report/report.dart :: } catch (sdkError) {
 unreportedCatch lib/shared/services/report/report.dart :: } catch (sdkError) {
 unreportedCatch lib/shared/services/schema_recovery_service.dart :: } on DatabaseSchemaException catch (e, stackTrace) {
-unreportedCatch lib/shared/services/sync/data_sync_service.dart :: } catch (e) {
-unreportedCatch lib/shared/services/sync/data_sync_service.dart :: } on TimeoutException {
-unreportedCatch lib/shared/services/sync/entity_sync/activity_sync_handler.dart :: } catch (_) {
-unreportedCatch lib/shared/services/sync/entity_sync/activity_sync_handler.dart :: } catch (_) {
 unreportedCatch lib/shared/services/version_check_service.dart :: } catch (e) {
 unreportedCatch lib/shared/services/version_check_service.dart :: } catch (e) {
 unreportedCatch lib/shared/utils/celebration_haptics.dart :: } catch (_) {

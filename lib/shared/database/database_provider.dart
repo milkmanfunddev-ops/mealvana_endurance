@@ -1,4 +1,5 @@
 import 'package:flutter_riverpod/flutter_riverpod.dart';
+import '../services/report/report.dart';
 import 'app_database.dart';
 
 /// Provider for the main app database
@@ -7,7 +8,7 @@ import 'app_database.dart';
 /// IMPORTANT: The database is ready immediately - Drift's LazyDatabase handles
 /// async initialization internally. No need for a FutureProvider wrapper.
 final appDatabaseProvider = Provider<AppDatabase>((ref) {
-  return AppDatabase();
+  return AppDatabase(report: ref.read(reportProvider));
 });
 
 /// DEPRECATED: Use appDatabaseProvider directly instead

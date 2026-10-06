@@ -1,5 +1,9 @@
-import 'package:drift/drift.dart';
+import 'dart:async';
 import 'dart:convert';
+
+import 'package:drift/drift.dart';
+
+import '../../services/report/report.dart';
 
 /// User profiles table definition for Drift - matches Supabase users table schema
 /// Stores user biometric data and preferences
@@ -310,7 +314,19 @@ class FoodPreferencesJsonConverter
   Map<String, dynamic> fromSql(String fromDb) {
     try {
       return Map<String, dynamic>.from(const JsonDecoder().convert(fromDb));
-    } catch (e) {
+    } catch (e, stackTrace) {
+      // A const converter has no injection point; the global Report is the
+      // one channel. The row still loads, with its preferences emptied.
+      unawaited(
+        SentryReport.global.degraded(
+          e,
+          stackTrace: stackTrace,
+          area: 'database',
+          message:
+              'users.food_preferences JSON did not parse; loaded as empty',
+          extra: {'length': fromDb.length},
+        ),
+      );
       return {};
     }
   }

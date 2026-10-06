@@ -2,9 +2,8 @@ import 'dart:async';
 import 'package:connectivity_plus/connectivity_plus.dart';
 import 'package:flutter/foundation.dart' show visibleForTesting;
 import 'package:riverpod_annotation/riverpod_annotation.dart';
-import 'package:sentry_flutter/sentry_flutter.dart';
 import '../logging_service.dart';
-import '../sentry/sentry_reporter.dart';
+import '../report/report.dart';
 import 'data_sync_service.dart';
 import 'sync_dependency_graph.dart';
 import '../../data/syncable_repository.dart';
@@ -96,7 +95,7 @@ class SyncCoordinator extends _$SyncCoordinator {
 
   AppLogger get _logger => ref.read(appLoggerProvider);
   DataSyncService get _dataSyncService => ref.read(dataSyncServiceProvider);
-  SentryReporter get _sentry => ref.read(sentryReporterProvider);
+  Report get _report => ref.read(reportProvider);
 
   /// Ensures a repository's data is fresh (synced within staleness threshold).
   ///
@@ -233,25 +232,21 @@ class SyncCoordinator extends _$SyncCoordinator {
       // Record failure for rate limiting
       _recordFailure(repoKey);
 
-      _logger.error(
-        'Repository sync failed',
-        context: 'SYNC_COORDINATOR',
-        error: e,
+      // Best-effort sync: the caller carries on with local data, so this
+      // Fault is the only record. Expected failures (offline, expired
+      // session) downgrade themselves inside `fault`.
+      await _report.fault(
+        e,
         stackTrace: stackTrace,
-        data: {
+        area: 'sync',
+        message: 'Repository sync failed',
+        tags: {'repo': repoKey},
+        extra: {
           'repoKey': repoKey,
           'userId': userId,
           'failureCount': _failureCount[repoKey] ?? 1,
         },
       );
-      unawaited(
-        _sentry.reportCriticalError(
-          e,
-          stackTrace: stackTrace,
-          context: 'sync_ensureSynced_$repoKey',
-        ),
-      );
-      // Don't rethrow - best effort sync
     } finally {
       if (markedSyncing) {
         _syncingNow.remove(repoKey);
@@ -308,11 +303,14 @@ class SyncCoordinator extends _$SyncCoordinator {
         default:
           return null;
       }
-    } catch (e) {
-      _logger.warning(
-        'Could not resolve repository for dependency sync',
-        context: 'SYNC_COORDINATOR',
-        data: {'repoKey': repoKey, 'error': e.toString()},
+    } catch (e, stackTrace) {
+      await _report.degraded(
+        e,
+        stackTrace: stackTrace,
+        area: 'sync',
+        message: 'Could not resolve repository for dependency sync',
+        tags: {'repo': repoKey},
+        extra: {'repoKey': repoKey},
       );
       return null;
     }
@@ -466,19 +464,13 @@ class SyncCoordinator extends _$SyncCoordinator {
       result = success;
       return success;
     } catch (e, stackTrace) {
-      _logger.error(
-        'Sync failed',
-        context: 'SYNC_COORDINATOR',
-        error: e,
+      await _report.fault(
+        e,
         stackTrace: stackTrace,
-        data: {'trigger': trigger.name, 'userId': userId},
-      );
-      unawaited(
-        _sentry.reportCriticalError(
-          e,
-          stackTrace: stackTrace,
-          context: 'sync_full_sync_${trigger.name}',
-        ),
+        area: 'sync',
+        message: 'Full sync failed',
+        tags: {'trigger': trigger.name},
+        extra: {'trigger': trigger.name, 'userId': userId},
       );
       return false;
     } finally {
@@ -537,7 +529,7 @@ class SyncCoordinator extends _$SyncCoordinator {
           }
 
           skipped.add(repoKey);
-          _logger.warning(
+          _logger.info(
             'Skipping dirty record upload for $repoKey - dependency failed',
             context: 'SYNC_COORDINATOR',
             data: {'repository': repoKey, 'blockedBy': blockedBy},
@@ -561,18 +553,27 @@ class SyncCoordinator extends _$SyncCoordinator {
           if (result.success) continue;
 
           failures.add(repoKey);
-          _logger.error(
-            'Dirty record upload failed for $repoKey',
-            context: 'SYNC_COORDINATOR',
-            data: {'repository': repoKey, 'error': result.error},
+          // `uploadDirtyRecords()` swallowed the exception into
+          // `UploadResult.failed()`; the rows stay dirty for the next pass
+          // and this Degraded is the only record of why (rule D9).
+          await _report.degraded(
+            LoggedFault(
+              'Dirty record upload failed for $repoKey',
+              context: result.error,
+            ),
+            area: 'sync',
+            message: 'Dirty record upload failed',
+            tags: {'repo': repoKey},
+            extra: {'repository': repoKey, 'error': result.error},
           );
         }
       }
 
       if (failures.isNotEmpty) {
-        _logger.warning(
-          'Some dirty record uploads failed before download',
-          context: 'SYNC_COORDINATOR',
+        // Promoted to a warning event (area `sync`, rule D9).
+        await _report.note(
+          'Dirty record upload failures during sync: ${failures.join(", ")}',
+          area: 'sync',
           data: {
             'failedRepos': failures,
             'skippedRepos': skipped,
@@ -580,31 +581,13 @@ class SyncCoordinator extends _$SyncCoordinator {
             'totalRepos': _syncableRepositoryKeys.length,
           },
         );
-        unawaited(
-          _sentry.captureMessage(
-            'Dirty record upload failures during sync: ${failures.join(", ")}',
-            level: SentryLevel.warning,
-            tags: {
-              'failed_repos': failures.join(','),
-              'failed_count': '${failures.length}',
-              if (skipped.isNotEmpty) 'skipped_repos': skipped.join(','),
-            },
-          ),
-        );
       }
     } catch (e, stackTrace) {
-      _logger.error(
-        'Failed to upload dirty records before download',
-        context: 'SYNC_COORDINATOR',
-        error: e,
+      await _report.fault(
+        e,
         stackTrace: stackTrace,
-      );
-      unawaited(
-        _sentry.reportCriticalError(
-          e,
-          stackTrace: stackTrace,
-          context: 'sync_upload_dirty_records',
-        ),
+        area: 'sync',
+        message: 'Dirty record upload orchestration failed before download',
       );
       // The orchestration itself blew up, so nothing can be assumed to have
       // landed. Report every repository as unsuccessful rather than handing the
@@ -703,9 +686,11 @@ class SyncCoordinator extends _$SyncCoordinator {
     // Check network connectivity
     final connectivityResult = await Connectivity().checkConnectivity();
     if (connectivityResult.contains(ConnectivityResult.none)) {
-      _logger.warning(
+      // Offline is the user's situation, not a failure: a structured log,
+      // not a Note, so pull-to-refresh on a plane does not raise an event.
+      _report.info(
         'Force sync skipped - no network',
-        context: 'SYNC_COORDINATOR',
+        area: 'sync',
         data: {'repoKey': repoKey},
       );
       return;
@@ -748,14 +733,15 @@ class SyncCoordinator extends _$SyncCoordinator {
       );
     } catch (e, stackTrace) {
       _recordFailure(repoKey);
-      _logger.error(
-        'Force sync failed',
-        context: 'SYNC_COORDINATOR',
-        error: e,
+      // Best-effort sync; the user keeps their local data.
+      await _report.fault(
+        e,
         stackTrace: stackTrace,
-        data: {'repoKey': repoKey, 'userId': userId},
+        area: 'sync',
+        message: 'Force sync failed',
+        tags: {'repo': repoKey},
+        extra: {'repoKey': repoKey, 'userId': userId},
       );
-      // Don't rethrow - best effort sync
     } finally {
       _syncingNow.remove(repoKey);
     }
