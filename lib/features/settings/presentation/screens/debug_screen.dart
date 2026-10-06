@@ -8,9 +8,14 @@ import '../../../../shared/services/report/report.dart';
 import '../../../../shared/services/sync/data_sync_service.dart';
 import '../../../../shared/database/database_provider.dart';
 import '../../../auth/data/user_repository.dart';
+import '../../application/report_pipeline_probe.dart';
 
-/// Secret debug screen accessible via triple-tap on Profile in Settings
-/// Shows logs and provides manual sync functionality
+/// Debug console, opened from Settings → Developer / Tester → Debug console
+/// (the tester section shows after seven taps on the version text, or on an
+/// internal device).
+/// Shows logs, provides manual sync, and carries the Sentry pipeline probes
+/// (one button per report class) that a device run uses to prove reporting
+/// end to end against the dev project.
 class DebugScreen extends ConsumerStatefulWidget {
   const DebugScreen({super.key});
 
@@ -23,6 +28,8 @@ class _DebugScreenState extends ConsumerState<DebugScreen> {
   String? _syncResult;
   ReportLogLevel? _filterLevel;
   final _scrollController = ScrollController();
+  bool _probeBusy = false;
+  String? _probeResult;
 
   @override
   void dispose() {
@@ -96,6 +103,47 @@ class _DebugScreenState extends ConsumerState<DebugScreen> {
     setState(() {});
   }
 
+  /// Runs one probe and shows what it did. The probe reports through
+  /// `Report`, so a failure inside it is already on its way to Sentry; the
+  /// screen only has to stay usable.
+  Future<void> _runProbe(
+    String label,
+    Future<String> Function(ReportPipelineProbe probe) run,
+  ) async {
+    setState(() {
+      _probeBusy = true;
+      _probeResult = null;
+    });
+    final probe = ref.read(reportPipelineProbeProvider);
+    final outcome = await run(probe);
+    if (!mounted) return;
+    setState(() {
+      _probeBusy = false;
+      _probeResult = '$label: $outcome';
+    });
+  }
+
+  String _describeEdge(EdgeProbeOutcome outcome) => switch (outcome.kind) {
+    EdgeProbeKind.refused =>
+      'answered ${outcome.status}. One event is due in Sentry under '
+          'environment edge-dev.',
+    EdgeProbeKind.accepted =>
+      'answered 2xx, so the function captured nothing. No edge event is due.',
+    EdgeProbeKind.unreachable =>
+      'never reached the function. A Degraded was reported from here '
+          'instead; see the log below.',
+  };
+
+  /// An unhandled throw, outside any `Report` call, so the SDK's own Flutter
+  /// error integration captures it marked `handled: false`. Thrown from the
+  /// next frame so the tap handler itself completes.
+  void _crashUnhandled() {
+    setState(() => _probeResult = 'Crash: thrown on the next frame.');
+    WidgetsBinding.instance.addPostFrameCallback((_) {
+      throw const ReportProbeFault('Debug screen: deliberate unhandled crash');
+    });
+  }
+
   void _copyLogsToClipboard() {
     final logs = ReportLog().getLogs();
     final logText = logs
@@ -146,128 +194,247 @@ class _DebugScreenState extends ConsumerState<DebugScreen> {
           ),
         ],
       ),
-      body: Column(
-        children: [
+      body: CustomScrollView(
+        controller: _scrollController,
+        slivers: [
           // Sync section
-          Container(
-            padding: EdgeInsets.all(16.w),
-            color: AppTheme.baseWhite,
-            child: Column(
-              crossAxisAlignment: CrossAxisAlignment.stretch,
-              children: [
-                Text(
-                  'Manual Sync',
-                  style: AppTheme.textStyle.copyWith(
-                    fontSize: 16.sp,
-                    fontWeight: FontWeight.bold,
+          SliverToBoxAdapter(
+            child: Container(
+              padding: EdgeInsets.all(16.w),
+              color: AppTheme.baseWhite,
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.stretch,
+                children: [
+                  Text(
+                    'Manual Sync',
+                    style: AppTheme.textStyle.copyWith(
+                      fontSize: 16.sp,
+                      fontWeight: FontWeight.bold,
+                    ),
                   ),
-                ),
-                SizedBox(height: 12.h),
-                ElevatedButton(
-                  onPressed: _isSyncing ? null : _performSync,
-                  style: ElevatedButton.styleFrom(
-                    backgroundColor: AppTheme.primary600,
-                    padding: EdgeInsets.symmetric(vertical: 12.h),
-                  ),
-                  child: _isSyncing
-                      ? SizedBox(
-                          height: 20.h,
-                          width: 20.w,
-                          child: const CircularProgressIndicator(
-                            strokeWidth: 2,
-                            valueColor: AlwaysStoppedAnimation<Color>(
-                              Colors.white,
+                  SizedBox(height: 12.h),
+                  ElevatedButton(
+                    onPressed: _isSyncing ? null : _performSync,
+                    style: ElevatedButton.styleFrom(
+                      backgroundColor: AppTheme.primary600,
+                      padding: EdgeInsets.symmetric(vertical: 12.h),
+                    ),
+                    child: _isSyncing
+                        ? SizedBox(
+                            height: 20.h,
+                            width: 20.w,
+                            child: const CircularProgressIndicator(
+                              strokeWidth: 2,
+                              valueColor: AlwaysStoppedAnimation<Color>(
+                                Colors.white,
+                              ),
+                            ),
+                          )
+                        : Text(
+                            '🔄 Force Sync Now',
+                            style: AppTheme.textStyle.copyWith(
+                              color: Colors.white,
+                              fontWeight: FontWeight.bold,
                             ),
                           ),
-                        )
-                      : Text(
-                          '🔄 Force Sync Now',
-                          style: AppTheme.textStyle.copyWith(
-                            color: Colors.white,
-                            fontWeight: FontWeight.bold,
-                          ),
-                        ),
-                ),
-                if (_syncResult != null) ...[
-                  SizedBox(height: 12.h),
-                  Container(
-                    padding: EdgeInsets.all(12.w),
-                    decoration: BoxDecoration(
-                      color: _syncResult!.startsWith('✅')
-                          ? Colors.green.shade50
-                          : Colors.red.shade50,
-                      borderRadius: BorderRadius.circular(8.r),
-                      border: Border.all(
-                        color: _syncResult!.startsWith('✅')
-                            ? Colors.green
-                            : Colors.red,
-                      ),
-                    ),
-                    child: Text(
-                      _syncResult!,
-                      style: AppTheme.noteStyle.copyWith(
-                        fontSize: 12.sp,
-                        color: AppTheme.baseBlack,
-                      ),
-                    ),
                   ),
-                ],
-              ],
-            ),
-          ),
-
-          // Filter section
-          Container(
-            padding: EdgeInsets.symmetric(horizontal: 16.w, vertical: 8.h),
-            color: AppTheme.baseWhite,
-            child: SingleChildScrollView(
-              scrollDirection: Axis.horizontal,
-              child: Row(
-                children: [
-                  _buildFilterChip('All', null),
-                  SizedBox(width: 8.w),
-                  _buildFilterChip('🔍 Debug', ReportLogLevel.debug),
-                  SizedBox(width: 8.w),
-                  _buildFilterChip('💡 Info', ReportLogLevel.info),
-                  SizedBox(width: 8.w),
-                  _buildFilterChip('⚠️ Warning', ReportLogLevel.warning),
-                  SizedBox(width: 8.w),
-                  _buildFilterChip('❌ Error', ReportLogLevel.error),
+                  if (_syncResult != null) ...[
+                    SizedBox(height: 12.h),
+                    Container(
+                      padding: EdgeInsets.all(12.w),
+                      decoration: BoxDecoration(
+                        color: _syncResult!.startsWith('✅')
+                            ? Colors.green.shade50
+                            : Colors.red.shade50,
+                        borderRadius: BorderRadius.circular(8.r),
+                        border: Border.all(
+                          color: _syncResult!.startsWith('✅')
+                              ? Colors.green
+                              : Colors.red,
+                        ),
+                      ),
+                      child: Text(
+                        _syncResult!,
+                        style: AppTheme.noteStyle.copyWith(
+                          fontSize: 12.sp,
+                          color: AppTheme.baseBlack,
+                        ),
+                      ),
+                    ),
+                  ],
                 ],
               ),
             ),
           ),
 
-          Divider(height: 1, color: AppTheme.baseGrey.withValues(alpha: 0.3)),
+          SliverToBoxAdapter(child: _buildPipelineSection()),
+
+          // Filter section
+          SliverToBoxAdapter(
+            child: Container(
+              padding: EdgeInsets.symmetric(horizontal: 16.w, vertical: 8.h),
+              color: AppTheme.baseWhite,
+              child: SingleChildScrollView(
+                scrollDirection: Axis.horizontal,
+                child: Row(
+                  children: [
+                    _buildFilterChip('All', null),
+                    SizedBox(width: 8.w),
+                    _buildFilterChip('🔍 Debug', ReportLogLevel.debug),
+                    SizedBox(width: 8.w),
+                    _buildFilterChip('💡 Info', ReportLogLevel.info),
+                    SizedBox(width: 8.w),
+                    _buildFilterChip('⚠️ Warning', ReportLogLevel.warning),
+                    SizedBox(width: 8.w),
+                    _buildFilterChip('❌ Error', ReportLogLevel.error),
+                  ],
+                ),
+              ),
+            ),
+          ),
+
+          SliverToBoxAdapter(
+            child: Divider(
+              height: 1,
+              color: AppTheme.baseGrey.withValues(alpha: 0.3),
+            ),
+          ),
 
           // Logs section
-          Expanded(
-            child: logs.isEmpty
-                ? Center(
-                    child: Text(
-                      'No logs yet.\nUse the app to generate logs.',
-                      textAlign: TextAlign.center,
-                      style: AppTheme.noteStyle.copyWith(
-                        color: AppTheme.baseGrey,
-                      ),
+          if (logs.isEmpty)
+            SliverFillRemaining(
+              hasScrollBody: false,
+              child: Center(
+                child: Padding(
+                  padding: EdgeInsets.all(24.w),
+                  child: Text(
+                    'No logs yet.\nUse the app to generate logs.',
+                    textAlign: TextAlign.center,
+                    style: AppTheme.noteStyle.copyWith(
+                      color: AppTheme.baseGrey,
                     ),
-                  )
-                : ListView.separated(
-                    controller: _scrollController,
-                    padding: EdgeInsets.all(8.w),
-                    itemCount: logs.length,
-                    separatorBuilder: (context, index) => Divider(
-                      height: 1,
-                      color: AppTheme.baseGrey.withValues(alpha: 0.2),
-                    ),
-                    itemBuilder: (context, index) {
-                      final log = logs[index];
-                      return _buildLogEntry(log);
-                    },
                   ),
-          ),
+                ),
+              ),
+            )
+          else
+            SliverPadding(
+              padding: EdgeInsets.all(8.w),
+              sliver: SliverList.separated(
+                itemCount: logs.length,
+                separatorBuilder: (context, index) => Divider(
+                  height: 1,
+                  color: AppTheme.baseGrey.withValues(alpha: 0.2),
+                ),
+                itemBuilder: (context, index) => _buildLogEntry(logs[index]),
+              ),
+            ),
         ],
       ),
+    );
+  }
+
+  /// Collapsed by default so the log view keeps its height; expand it to
+  /// fire the probes.
+  Widget _buildPipelineSection() {
+    return Material(
+      color: AppTheme.baseWhite,
+      child: Theme(
+        data: Theme.of(context).copyWith(dividerColor: Colors.transparent),
+        child: ExpansionTile(
+          key: const Key('probe_section'),
+          tilePadding: EdgeInsets.symmetric(horizontal: 16.w),
+          childrenPadding: EdgeInsets.fromLTRB(16.w, 0, 16.w, 12.h),
+          title: Text(
+            'Sentry pipeline',
+            style: AppTheme.textStyle.copyWith(
+              fontSize: 16.sp,
+              fontWeight: FontWeight.bold,
+            ),
+          ),
+          subtitle: Text(
+            'One report of each class, to the dev project.',
+            style: AppTheme.noteStyle.copyWith(
+              fontSize: 12.sp,
+              color: AppTheme.baseGrey,
+            ),
+          ),
+          expandedCrossAxisAlignment: CrossAxisAlignment.stretch,
+          children: [
+            Wrap(
+              spacing: 8.w,
+              runSpacing: 4.h,
+              children: [
+                _probeButton(
+                  key: const Key('probe_fault'),
+                  label: 'Throw a Fault',
+                  onPressed: () => _runProbe('Fault', (p) async {
+                    await p.fault();
+                    return 'sent as a Sentry error.';
+                  }),
+                ),
+                _probeButton(
+                  key: const Key('probe_degraded'),
+                  label: 'Raise a Degraded',
+                  onPressed: () => _runProbe('Degraded', (p) async {
+                    await p.degraded();
+                    return 'sent as a Sentry warning.';
+                  }),
+                ),
+                _probeButton(
+                  key: const Key('probe_note_then_fault'),
+                  label: 'Note, then throw',
+                  onPressed: () => _runProbe('Note then Fault', (p) async {
+                    await p.noteThenFault();
+                    return 'one error; its breadcrumbs carry the note.';
+                  }),
+                ),
+                _probeButton(
+                  key: const Key('probe_edge'),
+                  label: 'Edge: bad payload',
+                  onPressed: () => _runProbe('Edge', (p) async {
+                    final outcome = await p.edgeBadPayload();
+                    return _describeEdge(outcome);
+                  }),
+                ),
+                _probeButton(
+                  key: const Key('probe_crash'),
+                  label: 'Crash (unhandled)',
+                  onPressed: _crashUnhandled,
+                ),
+              ],
+            ),
+            if (_probeResult != null) ...[
+              SizedBox(height: 8.h),
+              Text(
+                _probeResult!,
+                key: const Key('probe_result'),
+                style: AppTheme.noteStyle.copyWith(
+                  fontSize: 12.sp,
+                  color: AppTheme.baseBlack,
+                ),
+              ),
+            ],
+          ],
+        ),
+      ),
+    );
+  }
+
+  Widget _probeButton({
+    required Key key,
+    required String label,
+    required VoidCallback onPressed,
+  }) {
+    return OutlinedButton(
+      key: key,
+      onPressed: _probeBusy ? null : onPressed,
+      style: OutlinedButton.styleFrom(
+        foregroundColor: AppTheme.primary600,
+        side: BorderSide(color: AppTheme.primary600),
+        padding: EdgeInsets.symmetric(horizontal: 12.w, vertical: 8.h),
+      ),
+      child: Text(label, style: AppTheme.noteStyle.copyWith(fontSize: 12.sp)),
     );
   }
 
