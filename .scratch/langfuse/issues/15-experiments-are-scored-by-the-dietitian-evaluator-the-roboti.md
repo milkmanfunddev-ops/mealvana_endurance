@@ -6,13 +6,13 @@
 
 **Owner:** `../mealvana_eval` agent. Touches no app code: evaluators live in Langfuse.
 
-**Status:** owned by the `../mealvana_eval` agent (it marks this `done` when finished)
+**Status:** built 2026-10-02 (eval agent), one box open for Lee: the score configs. Setup script: `../mealvana_eval/scripts/langfuse-evaluators.ts`. Checked on the Experiment "ticket 15 check 2026-10-02": 22 of 22 items carry all three Scores.
 
-- [ ] The Dietitian evaluator and the robotic check exist in Langfuse, target Experiments, run on Haiku 4.5 and return yes or no with a reason
-- [ ] Their Scores use the `dietitian` and `robotic` score configs
-- [ ] Tool expectations are code evaluators reading `toolCalls` on the item's output against the item's expected output
-- [ ] An Experiment on the real dataset shows all three kinds of Score on every item
-- [ ] The old Rubric's other dimensions are not carried over
+- [x] The Dietitian evaluator and the robotic check exist in Langfuse, target Experiments, run on Haiku 4.5 and return yes or no with a reason
+- [ ] Their Scores use the `dietitian` and `robotic` score configs (open: the Scores carry those names, but their `configId` is empty; the evaluator API has no field that attaches a config to an LLM judge)
+- [x] Tool expectations are code evaluators reading `toolCalls` on the item's output against the item's expected output
+- [x] An Experiment on the real dataset shows all three kinds of Score on every item
+- [x] The old Rubric's other dimensions are not carried over
 
 **Shared contracts** (fixed so tickets can be built in parallel; change one only by changing every ticket that cites it):
 
