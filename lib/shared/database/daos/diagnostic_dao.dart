@@ -474,8 +474,15 @@ class DiagnosticDao extends DatabaseAccessor<AppDatabase>
 
       final integrityCheck = result.first.data['integrity_check'] as String?;
       return integrityCheck == 'ok';
-    } catch (e) {
-      // If we can't even run the integrity check, database is unhealthy
+    } catch (e, stackTrace) {
+      // If we can't even run the integrity check, database is unhealthy.
+      // Startup acts on the `false`; this is the record of why.
+      await db.report.degraded(
+        e,
+        stackTrace: stackTrace,
+        area: 'database',
+        message: 'PRAGMA integrity_check could not run; reporting unhealthy',
+      );
       return false;
     }
   }
@@ -487,7 +494,13 @@ class DiagnosticDao extends DatabaseAccessor<AppDatabase>
       // Try to count records in users table (always exists)
       await db.customSelect('SELECT COUNT(*) FROM users').get();
       return true;
-    } catch (e) {
+    } catch (e, stackTrace) {
+      await db.report.degraded(
+        e,
+        stackTrace: stackTrace,
+        area: 'database',
+        message: 'Basic query probe failed; reporting unhealthy',
+      );
       return false;
     }
   }

@@ -41,7 +41,7 @@ import 'package:mealvana_endurance/shared/services/prefs_provider.dart';
 import 'package:mealvana_endurance/shared/services/sync/data_sync_service.dart';
 import 'package:mealvana_endurance/shared/services/sync/entity_sync/entity_sync.dart';
 
-import '../helpers/fakes/recording_app_logger.dart';
+import '../helpers/fakes/recording_report.dart';
 
 // ---------------------------------------------------------------------------
 // Mocks
@@ -142,7 +142,7 @@ class _Harness {
   late MockCoachSyncHandler coachHandler;
   late MockUserSyncHandler userHandler;
   late MockFoodPreferenceSyncHandler foodPrefHandler;
-  late RecordingAppLogger logger;
+  late RecordingReport report;
   late DataSyncService service;
 }
 
@@ -170,7 +170,7 @@ Future<_Harness> _buildHarness() async {
   h.coachHandler = MockCoachSyncHandler();
   h.userHandler = MockUserSyncHandler();
   h.foodPrefHandler = MockFoodPreferenceSyncHandler();
-  h.logger = RecordingAppLogger();
+  h.report = RecordingReport();
 
   when(() => h.supabase.functions).thenReturn(h.functions);
 
@@ -219,7 +219,7 @@ Future<_Harness> _buildHarness() async {
     ref: h.container.read(_refCaptor),
     supabase: h.supabase,
     database: h.db,
-    logger: h.logger,
+    report: h.report,
     foodRepository: h.foodRepository,
     carbLoadingFoodSyncService: h.carbFoodSync,
     activitySyncHandler: h.activityHandler,
@@ -415,11 +415,9 @@ void main() {
       verifyNever(() => h.supabase.from(any()));
       expect(h.prefs.getString(tsKey), isNull);
       expect(
-        h.logger.records.any(
-          (r) => r.level == 'error' && r.context == 'DATA_SYNC',
-        ),
-        isTrue,
-        reason: 'top-level sync failure must be logged',
+        h.report.faults.where((f) => f.area == 'sync'),
+        hasLength(1),
+        reason: 'top-level sync failure must be reported as a Fault',
       );
     });
 
@@ -459,10 +457,16 @@ void main() {
             'edge payload failed — otherwise the next delta sync would '
             'skip everything the failed apply dropped',
       );
+      // The apply's catch rethrows into _tryEdgeFunctionSync, which owns the
+      // swallow: one Fault for the edge path, one for the fallback's
+      // activities download.
       expect(
-        h.logger.records.any((r) => r.context == 'EDGE_SYNC'),
-        isTrue,
-        reason: 'edge apply failure must be logged',
+        h.report.faults.map((f) => f.message),
+        containsAll([
+          'Edge function sync failed; falling back to client-side',
+          'Failed to download activities',
+        ]),
+        reason: 'the edge apply failure must be reported where it is swallowed',
       );
     });
 
@@ -568,11 +572,9 @@ void main() {
       verify(() => h.activityHandler.upsertActivity(liveActivity)).called(1);
       verify(() => h.eventHandler.upsertEvent(event, userId)).called(1);
       expect(
-        h.logger.records.any(
-          (r) => r.level == 'error' && r.context == 'FOOD_SYNC',
-        ),
-        isTrue,
-        reason: 'the swallowed per-entity failure must at least be logged',
+        h.report.faults.where((f) => f.tags?['entity'] == 'foods'),
+        hasLength(1),
+        reason: 'the swallowed per-entity failure must be reported',
       );
     });
 
@@ -607,9 +609,11 @@ void main() {
         expect(result, isTrue);
         expect(h.prefs.getString(tsKey), isNotNull);
         expect(
-          h.logger.records.where((r) => r.level == 'error').length,
-          greaterThanOrEqualTo(5),
-          reason: 'each entity failure is logged even though all are swallowed',
+          h.report.faults.where((f) => f.tags?.containsKey('entity') ?? false),
+          hasLength(5),
+          reason:
+              'each entity download failure is a Fault even though all are '
+              'swallowed (plus one for the edge function itself)',
         );
       },
     );

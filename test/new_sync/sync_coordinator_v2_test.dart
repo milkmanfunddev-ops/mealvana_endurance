@@ -2,8 +2,25 @@ import 'package:flutter_test/flutter_test.dart';
 import 'package:mealvana_endurance/shared/data/syncable_repository.dart';
 import 'package:mealvana_endurance/shared/services/sync/sync_coordinator.dart';
 import 'package:mealvana_endurance/shared/services/sync/sync_dependency_graph.dart';
+import 'package:mealvana_endurance/shared/services/report/report.dart';
 import 'package:riverpod/riverpod.dart';
 import 'package:shared_preferences/shared_preferences.dart';
+
+import '../helpers/fakes/recording_report.dart';
+
+/// Every call to `Report` the coordinator makes in the current test.
+late RecordingReport report;
+
+/// A container whose `Report` is [report]; the real one would try to reach
+/// analytics and Sentry from a bare container.
+ProviderContainer _container() {
+  report = RecordingReport();
+  final container = ProviderContainer(
+    overrides: [reportProvider.overrideWithValue(report)],
+  );
+  addTearDown(container.dispose);
+  return container;
+}
 
 /// Mock repository for testing
 class MockRepository implements SyncableRepository {
@@ -90,8 +107,7 @@ void main() {
     });
 
     test('should return immediately if data is not stale', () async {
-      final container = ProviderContainer();
-      addTearDown(container.dispose);
+      final container = _container();
 
       final coordinator = container.read(syncCoordinatorProvider.notifier);
       final repo = MockRepository(repositoryKey: 'users');
@@ -107,8 +123,7 @@ void main() {
     });
 
     test('should sync if data is stale', () async {
-      final container = ProviderContainer();
-      addTearDown(container.dispose);
+      final container = _container();
 
       final coordinator = container.read(syncCoordinatorProvider.notifier);
       final repo = MockRepository(repositoryKey: 'users');
@@ -126,8 +141,7 @@ void main() {
     });
 
     test('should sync dependencies before syncing repository', () async {
-      final container = ProviderContainer();
-      addTearDown(container.dispose);
+      final container = _container();
 
       final coordinator = container.read(syncCoordinatorProvider.notifier);
       final usersRepo = MockRepository(repositoryKey: 'users');
@@ -164,8 +178,7 @@ void main() {
     });
 
     test('should prevent infinite loops with circular dependencies', () async {
-      final container = ProviderContainer();
-      addTearDown(container.dispose);
+      final container = _container();
 
       final coordinator = container.read(syncCoordinatorProvider.notifier);
 
@@ -179,8 +192,7 @@ void main() {
     });
 
     test('should handle sync errors gracefully', () async {
-      final container = ProviderContainer();
-      addTearDown(container.dispose);
+      final container = _container();
 
       final coordinator = container.read(syncCoordinatorProvider.notifier);
       final repo = MockRepository(repositoryKey: 'users');
@@ -192,15 +204,18 @@ void main() {
 
       repo.shouldThrowOnSync = true;
 
-      // Should not throw - errors are logged but not propagated
+      // Should not throw - errors are reported but not propagated
       await coordinator.ensureSynced('users', 'user-123', repository: repo);
 
       expect(repo.syncCallCount, 1); // Was attempted
+      expect(report.faults, hasLength(1));
+      expect(report.faults.single.area, 'sync');
+      expect(report.faults.single.message, 'Repository sync failed');
+      expect(report.faults.single.tags, {'repo': 'users'});
     });
 
     test('should handle upload errors gracefully', () async {
-      final container = ProviderContainer();
-      addTearDown(container.dispose);
+      final container = _container();
 
       final coordinator = container.read(syncCoordinatorProvider.notifier);
       final repo = MockRepository(repositoryKey: 'users');
@@ -212,15 +227,20 @@ void main() {
 
       repo.shouldThrowOnUpload = true;
 
-      // Should not throw - errors are logged but not propagated
+      // Should not throw - errors are reported but not propagated
       await coordinator.ensureSynced('users', 'user-123', repository: repo);
 
       expect(repo.uploadCallCount, 1); // Was attempted
+      expect(report.faults, hasLength(1));
+      expect(report.faults.single.area, 'sync');
+      expect(
+        report.faults.single.error.toString(),
+        contains('Mock upload failure'),
+      );
     });
 
     test('should sync if never synced before', () async {
-      final container = ProviderContainer();
-      addTearDown(container.dispose);
+      final container = _container();
 
       final coordinator = container.read(syncCoordinatorProvider.notifier);
       final repo = MockRepository(repositoryKey: 'users');
@@ -235,8 +255,7 @@ void main() {
     });
 
     test('should work without repository instance (in-memory cache)', () async {
-      final container = ProviderContainer();
-      addTearDown(container.dispose);
+      final container = _container();
 
       final coordinator = container.read(syncCoordinatorProvider.notifier);
 
@@ -251,8 +270,7 @@ void main() {
     });
 
     test('should handle complex dependency chains', () async {
-      final container = ProviderContainer();
-      addTearDown(container.dispose);
+      final container = _container();
 
       final coordinator = container.read(syncCoordinatorProvider.notifier);
 
@@ -308,8 +326,7 @@ void main() {
     });
 
     test('should update timestamp after successful sync', () async {
-      final container = ProviderContainer();
-      addTearDown(container.dispose);
+      final container = _container();
 
       final coordinator = container.read(syncCoordinatorProvider.notifier);
       final repo = MockRepository(repositoryKey: 'users');
@@ -339,8 +356,7 @@ void main() {
     });
 
     test('uploads on the first ever ensureSynced for a brand-new user', () async {
-      final container = ProviderContainer();
-      addTearDown(container.dispose);
+      final container = _container();
 
       final coordinator = container.read(syncCoordinatorProvider.notifier);
       // Never synced: exactly the state of a user who just finished onboarding.
@@ -359,8 +375,7 @@ void main() {
     test(
       'no one-shot flag can swallow the first upload of a second repository',
       () async {
-        final container = ProviderContainer();
-        addTearDown(container.dispose);
+        final container = _container();
 
         final coordinator = container.read(syncCoordinatorProvider.notifier);
         final usersRepo = MockRepository(repositoryKey: 'users');
@@ -410,8 +425,7 @@ void main() {
 
   group('SyncCoordinator.sync (legacy)', () {
     test('should still work for backwards compatibility', () async {
-      final container = ProviderContainer();
-      addTearDown(container.dispose);
+      final container = _container();
 
       final coordinator = container.read(syncCoordinatorProvider.notifier);
 

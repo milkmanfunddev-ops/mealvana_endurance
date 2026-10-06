@@ -1,3 +1,4 @@
+import 'dart:async';
 import 'dart:convert';
 
 import 'package:drift/drift.dart';
@@ -7,6 +8,7 @@ import '../../../database/app_database.dart';
 import '../../../database/database_provider.dart';
 import '../../../utils/sync_type_converters.dart';
 import '../../logging_service.dart';
+import '../../report/report.dart';
 import '../../notification_service.dart';
 
 part 'activity_sync_handler.g.dart';
@@ -16,6 +18,7 @@ ActivitySyncHandler activitySyncHandler(Ref ref) {
   return ActivitySyncHandler(
     database: ref.read(appDatabaseProvider),
     logger: ref.read(appLoggerProvider),
+    report: ref.read(reportProvider),
   );
 }
 
@@ -24,11 +27,17 @@ class ActivitySyncHandler {
   const ActivitySyncHandler({
     required AppDatabase database,
     required AppLogger logger,
+    Report? report,
   }) : _database = database,
-       _logger = logger;
+       _logger = logger,
+       _report = report;
 
   final AppDatabase _database;
   final AppLogger _logger;
+  final Report? _report;
+
+  /// Injected by the provider; tests may pass a `RecordingReport`.
+  Report get _r => _report ?? SentryReport.global;
   static const Duration _garminNotificationFreshnessWindow = Duration(
     minutes: 30,
   );
@@ -260,12 +269,14 @@ class ActivitySyncHandler {
         }
       }
     } catch (e, stackTrace) {
-      _logger.error(
-        'Failed to upsert activity',
-        context: 'ACTIVITY_SYNC',
-        error: e,
+      // One bad row must not stop the rest of the download.
+      await _r.fault(
+        e,
         stackTrace: stackTrace,
-        data: {'activityId': data['id']},
+        area: 'sync',
+        message: 'Failed to upsert activity',
+        tags: {'entity': 'activities'},
+        extra: {'activityId': data['id']?.toString()},
       );
     }
   }
@@ -339,13 +350,15 @@ class ActivitySyncHandler {
         context: 'ACTIVITY_SYNC',
       );
     } catch (e, stackTrace) {
-      _logger.error(
-        'Failed to sync athlete activities',
-        context: 'ACTIVITY_SYNC',
-        error: e,
-        stackTrace: stackTrace,
-      );
       // Don't rethrow - continue with other syncs
+      await _r.fault(
+        e,
+        stackTrace: stackTrace,
+        area: 'sync',
+        message: 'Failed to sync athlete activities',
+        tags: {'entity': 'activities'},
+        extra: {'count': activities.length},
+      );
     }
   }
 
@@ -406,7 +419,16 @@ class ActivitySyncHandler {
     if (value is String) return value;
     try {
       return jsonEncode(value);
-    } catch (_) {
+    } catch (e) {
+      // The column is stored NULL; the activity still syncs.
+      unawaited(
+        _r.degraded(
+          e,
+          area: 'sync',
+          message: 'Remote JSON value could not be re-encoded; stored as null',
+          extra: {'runtimeType': value.runtimeType.toString()},
+        ),
+      );
       return null;
     }
   }
@@ -416,7 +438,15 @@ class ActivitySyncHandler {
     if (value == null || value.isEmpty) return null;
     try {
       return jsonDecode(value);
-    } catch (_) {
+    } catch (e) {
+      // Uploaded as the raw string; Postgres decides whether it is JSON.
+      unawaited(
+        _r.note(
+          'Local JSON column did not parse; uploading the raw string',
+          area: 'sync',
+          data: {'length': value.length, 'error': e.toString()},
+        ),
+      );
       return value;
     }
   }

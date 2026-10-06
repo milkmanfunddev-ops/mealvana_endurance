@@ -6,6 +6,7 @@ import '../../../../features/auth/domain/user_preferences.dart';
 import '../../../database/app_database.dart';
 import '../../../database/database_provider.dart';
 import '../../logging_service.dart';
+import '../../report/report.dart';
 
 part 'user_sync_handler.g.dart';
 
@@ -15,6 +16,7 @@ UserSyncHandler userSyncHandler(Ref ref) {
     database: ref.read(appDatabaseProvider),
     logger: ref.read(appLoggerProvider),
     supabase: Supabase.instance.client,
+    report: ref.read(reportProvider),
   );
 }
 
@@ -24,13 +26,19 @@ class UserSyncHandler {
     required AppDatabase database,
     required AppLogger logger,
     required SupabaseClient supabase,
+    Report? report,
   }) : _database = database,
        _logger = logger,
-       _supabase = supabase;
+       _supabase = supabase,
+       _report = report;
 
   final AppDatabase _database;
   final AppLogger _logger;
   final SupabaseClient _supabase;
+  final Report? _report;
+
+  /// Injected by the provider; tests may pass a `RecordingReport`.
+  Report get _r => _report ?? SentryReport.global;
 
   /// Ensure user profile exists in Supabase before syncing dependent records.
   /// This prevents foreign key violations on activities, events, etc.
@@ -107,14 +115,14 @@ class UserSyncHandler {
             userData,
             onConflict: 'id', // Resolve on primary key
           );
-    } catch (e, stackTrace) {
-      _logger.error(
-        'Failed to sync user profile - this may cause FK violations',
-        context: 'USER_SYNC',
-        error: e,
-        stackTrace: stackTrace,
+    } catch (e) {
+      // Re-throw to prevent syncing dependent records if user sync fails;
+      // the caller reports. The breadcrumb names the FK consequence.
+      _r.breadcrumb(
+        'User profile sync failed; dependent records would violate FKs',
+        category: 'sync',
+        data: {'userId': userId, 'error': e.toString()},
       );
-      // Re-throw to prevent syncing dependent records if user sync fails
       rethrow;
     }
   }
@@ -167,12 +175,11 @@ class UserSyncHandler {
         profile.copyWith(id: userId, deviceId: userId, isAnonymous: false),
         needsUpload: false,
       );
-    } catch (e, stackTrace) {
-      _logger.error(
-        'Failed to save remote user profile locally',
-        context: 'USER_SYNC',
-        error: e,
-        stackTrace: stackTrace,
+    } catch (e) {
+      _r.breadcrumb(
+        'Saving the remote user profile locally failed',
+        category: 'sync',
+        data: {'userId': userId, 'error': e.toString()},
       );
       rethrow;
     }
@@ -200,14 +207,16 @@ class UserSyncHandler {
             ..where((tbl) => tbl.id.equals(profile.id)))
           .write(const UserProfilesTableCompanion(needsUpload: Value(false)));
     } catch (e, stackTrace) {
-      _logger.error(
-        'Failed to upload user profile',
-        context: 'USER_SYNC',
-        error: e,
+      // Don't rethrow - allow other uploads to continue. The row stays
+      // dirty for the next pass.
+      await _r.fault(
+        e,
         stackTrace: stackTrace,
-        data: {'userId': profile.id},
+        area: 'sync',
+        message: 'Failed to upload user profile',
+        tags: {'entity': 'users'},
+        extra: {'userId': profile.id},
       );
-      // Don't rethrow - allow other uploads to continue
     }
   }
 
@@ -246,14 +255,15 @@ class UserSyncHandler {
             onConflict: 'user_id,food_name', // Use composite unique key
           );
     } catch (e, stackTrace) {
-      _logger.error(
-        'Failed to upload food preferences',
-        context: 'USER_SYNC',
-        error: e,
-        stackTrace: stackTrace,
-        data: {'userId': userId},
-      );
       // Don't rethrow - allow other uploads to continue
+      await _r.fault(
+        e,
+        stackTrace: stackTrace,
+        area: 'sync',
+        message: 'Failed to upload food preferences',
+        tags: {'entity': 'food_preferences'},
+        extra: {'userId': userId},
+      );
     }
   }
 }

@@ -7,6 +7,7 @@ import 'package:path_provider/path_provider.dart';
 import 'package:uuid/uuid.dart';
 
 import '../services/performance_telemetry.dart';
+import '../services/report/report.dart';
 
 // Platform-specific connection implementations
 import 'connection_native.dart' if (dart.library.html) 'connection_web.dart';
@@ -174,21 +175,33 @@ part 'app_database.g.dart';
   ],
 )
 class AppDatabase extends _$AppDatabase {
-  AppDatabase() : super(_openConnection());
+  AppDatabase({Report? report}) : _report = report, super(_openConnection());
 
   /// Constructor for testing with in-memory database
-  factory AppDatabase.memory() {
-    return AppDatabase._internal(createNativeMemoryDatabase());
+  factory AppDatabase.memory({Report? report}) {
+    return AppDatabase._internal(createNativeMemoryDatabase(), report: report);
   }
 
   /// Constructor for migration testing with SchemaVerifier
   /// Allows injecting a custom QueryExecutor for testing migrations
-  factory AppDatabase.forTesting(QueryExecutor executor) {
-    return AppDatabase._internal(executor);
+  factory AppDatabase.forTesting(QueryExecutor executor, {Report? report}) {
+    return AppDatabase._internal(executor, report: report);
   }
 
   /// Internal constructor for factory
-  AppDatabase._internal(super.e);
+  AppDatabase._internal(super.e, {Report? report}) : _report = report;
+
+  final Report? _report;
+
+  /// Where this database and its DAOs report. Defaults to
+  /// [SentryReport.global]; tests pass a `RecordingReport`.
+  Report get report => _report ?? SentryReport.global;
+
+  /// Query interceptor the bootstrap installs before the first database opens
+  /// (Sentry's Drift spans). This file may not import the Sentry SDK (source
+  /// guard), so the bootstrap hands the interceptor in through this hook.
+  /// Test databases (`memory`, `forTesting`) never apply it.
+  static QueryInterceptor Function()? queryInterceptorFactory;
 
   @override
   /// Schema version 16: pre-workout food-composition v3 + category-based
@@ -822,18 +835,25 @@ class AppDatabase extends _$AppDatabase {
             'Table "$tableName" missing columns: ${missingColumns.join(', ')}',
           );
         }
-      } catch (e) {
+      } catch (e, stackTrace) {
         errors.add('Failed to validate table "$tableName": $e');
+        await report.fault(
+          e,
+          stackTrace: stackTrace,
+          area: 'database',
+          message: 'Schema validation query failed for table "$tableName"',
+        );
       }
     }
 
     if (errors.isNotEmpty) {
-      if (kDebugMode) {
-        for (final error in errors) {
-          print('❌ Schema validation failed: $error');
-        }
-        print('🗑️ Deleting corrupted database to force fresh sync...');
-      }
+      // The DatabaseSchemaException below carries the errors to the caller;
+      // this breadcrumb records that the database was deleted on the way.
+      await report.note(
+        'Schema validation failed; deleting database to force a fresh sync',
+        area: 'database',
+        data: {'errors': errors},
+      );
 
       await deleteAndResync(
         reason: 'schema_integrity_validation_failed',
@@ -848,9 +868,10 @@ class AppDatabase extends _$AppDatabase {
       );
     }
 
-    if (kDebugMode) {
-      print('✅ Schema validation passed (${allTables.length} tables verified)');
-    }
+    report.debug(
+      'Schema validation passed (${allTables.length} tables verified)',
+      area: 'database',
+    );
   }
 
   /// Ensure the `integrations.provider` CHECK constraint allows every
@@ -877,12 +898,11 @@ class AppDatabase extends _$AppDatabase {
       return; // already up to date
     }
 
-    if (kDebugMode) {
-      print(
-        '🔧 Rebuilding integrations table to refresh the provider CHECK '
-        '(needs: $requiredProviders)',
-      );
-    }
+    await report.note(
+      'Rebuilding integrations table to refresh the provider CHECK',
+      area: 'database',
+      data: {'requiredProviders': requiredProviders},
+    );
 
     // FK toggling must happen outside a transaction; the rebuild itself is a
     // standard SQLite table recreation (rename → create → copy → drop).
@@ -917,36 +937,6 @@ class AppDatabase extends _$AppDatabase {
   }
 
   // === Database Health & Recovery Methods ===
-
-  /// Check if database is healthy using PRAGMA integrity_check
-  /// Returns true if database passes integrity check, false otherwise
-  Future<bool> isDatabaseHealthy() async {
-    try {
-      final result = await customSelect('PRAGMA integrity_check').get();
-
-      if (result.isEmpty) {
-        return false;
-      }
-
-      final integrityCheck = result.first.data['integrity_check'] as String?;
-      return integrityCheck == 'ok';
-    } catch (e) {
-      // If we can't even run the integrity check, database is unhealthy
-      return false;
-    }
-  }
-
-  /// Quick health check - try to execute a simple query
-  /// Returns true if database can execute basic queries, false otherwise
-  Future<bool> canExecuteQueries() async {
-    try {
-      // Try to count records in users table (always exists)
-      await customSelect('SELECT COUNT(*) FROM users').get();
-      return true;
-    } catch (e) {
-      return false;
-    }
-  }
 
   /// Circuit breaker: prevents infinite loops when schema recovery fails
   ///
@@ -1003,45 +993,47 @@ class AppDatabase extends _$AppDatabase {
       return; // Not a schema error, don't handle
     }
 
-    // Circuit breaker: only attempt recovery once per app session
+    final report = database?.report ?? SentryReport.global;
+
+    // Circuit breaker: only attempt recovery once per app session. A second
+    // schema error means the Drift schema itself is wrong; the caller gets
+    // its original error back and this is the only record of the bail.
     if (_schemaRecoveryAttempted) {
-      if (kDebugMode) {
-        print(
-          '🔧 Schema error detected but recovery already attempted this session',
-        );
-        print('   Context: ${context ?? 'unknown'}');
-        print('   Error: $error');
-        print(
-          '   → Not retrying to prevent infinite loop. Please fix the Drift schema.',
-        );
-      }
-      // Don't retry, just rethrow the original error
+      await report.degraded(
+        error,
+        area: 'database',
+        message:
+            'Schema error after recovery was already attempted this session; '
+            'not retrying',
+        extra: {'context': context ?? 'unknown'},
+      );
       return;
     }
 
     // Mark that we're attempting recovery (before we actually do it)
     _schemaRecoveryAttempted = true;
 
-    if (kDebugMode) {
-      print(
-        '🔧 Schema error detected - deleting database and resyncing (one-time recovery)',
-      );
-      print('   Context: ${context ?? 'unknown'}');
-      print('   Error: $error');
-    }
+    await report.note(
+      'Schema error detected; deleting database and resyncing '
+      '(one-time recovery)',
+      area: 'database',
+      data: {'context': context ?? 'unknown', 'error': error.toString()},
+    );
 
     // CRITICAL: Close the database connection BEFORE deleting files
     // Otherwise the in-memory connection recreates the old schema
     if (database != null) {
       try {
         await database.close();
-        if (kDebugMode) {
-          print('🔧 Database connection closed');
-        }
-      } catch (closeError) {
-        if (kDebugMode) {
-          print('🔧 Warning: Error closing database: $closeError');
-        }
+      } catch (closeError, stackTrace) {
+        // The files are deleted regardless; an open handle on a deleted file
+        // is what this warning is for.
+        await report.degraded(
+          closeError,
+          stackTrace: stackTrace,
+          area: 'database',
+          message: 'Could not close the database before deleting its files',
+        );
       }
     }
 
@@ -1130,7 +1122,22 @@ class AppDatabase extends _$AppDatabase {
 
 /// Database connection setup with seed database support.
 /// Implementation is platform-specific (see connection_native.dart / connection_web.dart).
-QueryExecutor _openConnection() => openNativeConnection();
+///
+/// Applies [AppDatabase.queryInterceptorFactory] when the bootstrap set one.
+/// A missing interceptor is a silent loss of every database span, so it is
+/// written down (rule D9).
+QueryExecutor _openConnection() {
+  final executor = openNativeConnection();
+  final factory = AppDatabase.queryInterceptorFactory;
+  if (factory == null) {
+    SentryReport.global.note(
+      'Database opened without a query interceptor; no database spans',
+      area: 'database',
+    );
+    return executor;
+  }
+  return executor.interceptWith(factory());
+}
 
 /// Exception thrown when database schema validation fails.
 ///
