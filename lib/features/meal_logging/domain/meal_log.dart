@@ -3,7 +3,7 @@ import 'dart:convert';
 import 'package:drift/drift.dart';
 
 import '../../../shared/database/app_database.dart';
-import '../../../shared/services/report/report.dart';
+import '../../../shared/domain/decode_issue.dart';
 import 'consumed_totals.dart';
 import 'meal_component.dart';
 import 'meal_log_source.dart';
@@ -145,7 +145,10 @@ class MealLog {
   /// not an error). Returns `null` (skip the row) only when [source] is
   /// unrecognised, or when [slot] holds a non-null but unparseable wire value
   /// (forward-compat — an older binary skips rather than crashing).
-  static MealLog? fromDriftEntry(MealLogEntry entry) {
+  static MealLog? fromDriftEntry(
+    MealLogEntry entry, {
+    DecodeIssue onIssue = ignoreDecodeIssue,
+  }) {
     final rawSlot = entry.slot;
     final slot = rawSlot == null ? null : MealSlot.fromWireValue(rawSlot);
     if (rawSlot != null && slot == null) return null;
@@ -159,7 +162,7 @@ class MealLog {
       slot: slot,
       name: entry.name,
       source: source,
-      components: _decodeComponents(entry.items),
+      components: _decodeComponents(entry.items, onIssue),
       calories: entry.calories,
       carbsG: entry.carbsG,
       proteinG: entry.proteinG,
@@ -246,7 +249,10 @@ class MealLog {
   /// [slot] is optional (see [fromDriftEntry]). Returns `null` (skip the row)
   /// only when [source] is unrecognised, or [slot] holds a non-null but
   /// unparseable wire value.
-  static MealLog? fromSupabaseJson(Map<String, dynamic> json) {
+  static MealLog? fromSupabaseJson(
+    Map<String, dynamic> json, {
+    DecodeIssue onIssue = ignoreDecodeIssue,
+  }) {
     final rawSlot = json['slot'] as String?;
     final slot = rawSlot == null ? null : MealSlot.fromWireValue(rawSlot);
     if (rawSlot != null && slot == null) return null;
@@ -260,7 +266,7 @@ class MealLog {
       slot: slot,
       name: json['name'] as String,
       source: source,
-      components: _coerceComponents(json['items']),
+      components: _coerceComponents(json['items'], onIssue),
       calories: (json['calories'] as num?)?.toInt(),
       carbsG: (json['carbs_g'] as num?)?.toDouble(),
       proteinG: (json['protein_g'] as num?)?.toDouble(),
@@ -341,20 +347,21 @@ class MealLog {
   // ── JSON helpers ──────────────────────────────────────────────────────────
 
   /// Decode the Drift TEXT `items` column (a JSON-encoded string).
-  static List<MealComponent> _decodeComponents(String? raw) {
+  static List<MealComponent> _decodeComponents(
+    String? raw,
+    DecodeIssue onIssue,
+  ) {
     if (raw == null || raw.isEmpty || raw == '[]') return const [];
     try {
       final decoded = jsonDecode(raw);
-      return _coerceComponents(decoded);
+      return _coerceComponents(decoded, onIssue);
     } catch (e, st) {
       // A row with an unreadable items column shows as empty rather than
       // taking the diary down; the row itself is the evidence.
-      SentryReport.global.degraded(
-        e,
+      onIssue(
+        'meal_log items column did not decode (raw_length: ${raw.length})',
+        error: e,
         stackTrace: st,
-        area: 'meal_logging',
-        message: 'meal_log items column did not decode',
-        extra: {'raw_length': raw.length},
       );
       return const [];
     }
@@ -362,8 +369,11 @@ class MealLog {
 
   /// Coerce a Supabase JSONB value (already decoded as a Dart List) or a raw
   /// JSON string into a list of [MealComponent].
-  static List<MealComponent> _coerceComponents(Object? raw) {
-    if (raw is String) return _decodeComponents(raw);
+  static List<MealComponent> _coerceComponents(
+    Object? raw,
+    DecodeIssue onIssue,
+  ) {
+    if (raw is String) return _decodeComponents(raw, onIssue);
     if (raw is List) {
       return raw
           .whereType<Map>()

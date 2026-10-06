@@ -10,9 +10,9 @@ import 'package:uuid/uuid.dart';
 import '../../../shared/data/syncable_repository.dart';
 import '../../../shared/database/app_database.dart';
 import '../../../shared/database/database_provider.dart';
-import '../../../shared/services/app_external_deps.dart';
-import '../../../shared/services/logging_service.dart';
-import '../../../shared/services/sentry/sentry_reporter.dart';
+import '../../../shared/domain/decode_issue.dart';
+import '../../../shared/services/report/decode_issue_report.dart';
+import '../../../shared/services/report/report.dart';
 import '../../../shared/services/sync/sync_dependency_graph.dart';
 import '../domain/meal_log.dart';
 
@@ -20,12 +20,10 @@ part 'meal_log_repository.g.dart';
 
 @riverpod
 MealLogRepository mealLogRepository(Ref ref) {
-  final deps = ref.read(appExternalDepsProvider);
   return MealLogRepository(
     supabase: Supabase.instance.client,
     database: ref.read(appDatabaseProvider),
-    logger: ref.read(appLoggerProvider),
-    sentry: deps.sentry,
+    report: ref.read(reportProvider),
   );
 }
 
@@ -50,17 +48,18 @@ class MealLogRepository with SyncableRepository {
   MealLogRepository({
     required SupabaseClient supabase,
     required AppDatabase database,
-    required AppLogger logger,
-    required SentryReporter sentry,
+    required Report report,
   }) : _supabase = supabase,
        _database = database,
-       _logger = logger,
-       _sentry = sentry;
+       _report = report;
 
   final SupabaseClient _supabase;
   final AppDatabase _database;
-  final AppLogger _logger;
-  final SentryReporter _sentry;
+  final Report _report;
+
+  /// Where a malformed stored column is reported (the row still decodes,
+  /// with the fallback value).
+  DecodeIssue get _onIssue => _report.decodeIssue('meal_logging');
 
   static const _uuid = Uuid();
 
@@ -82,9 +81,9 @@ class MealLogRepository with SyncableRepository {
   Future<SyncResult> syncFromRemote(String userId) async {
     final inflight = _inflightSync;
     if (inflight != null) {
-      _logger.debug(
+      _report.debug(
         'syncFromRemote: coalescing into in-flight sync',
-        context: 'MEAL_LOG_REPOSITORY',
+        area: 'meal_logging',
         data: {'userId': userId},
       );
       return inflight;
@@ -100,9 +99,9 @@ class MealLogRepository with SyncableRepository {
 
   Future<SyncResult> _syncFromRemoteImpl(String userId) async {
     try {
-      _logger.info(
+      _report.info(
         'Syncing meal logs from Supabase',
-        context: 'MEAL_LOG_REPOSITORY',
+        area: 'meal_logging',
         data: {'userId': userId},
       );
 
@@ -118,20 +117,20 @@ class MealLogRepository with SyncableRepository {
 
       await setLastSyncTime(DateTime.now());
 
-      _logger.info(
+      _report.info(
         'Successfully synced meal logs from Supabase',
-        context: 'MEAL_LOG_REPOSITORY',
+        area: 'meal_logging',
         data: {'userId': userId, 'count': syncedCount},
       );
 
       return SyncResult.successful(syncedCount);
     } catch (e, stackTrace) {
-      _logger.error(
-        'Failed to sync meal logs from Supabase',
-        context: 'MEAL_LOG_REPOSITORY',
-        error: e,
+      _report.fault(
+        e,
         stackTrace: stackTrace,
-        data: {'userId': userId},
+        area: 'meal_logging',
+        extra: {'userId': userId},
+        message: 'Failed to sync meal logs from Supabase',
       );
       return SyncResult.failed(e.toString());
     }
@@ -140,9 +139,9 @@ class MealLogRepository with SyncableRepository {
   @override
   Future<UploadResult> uploadDirtyRecords(String userId) async {
     try {
-      _logger.info(
+      _report.info(
         'Uploading dirty meal logs to Supabase',
-        context: 'MEAL_LOG_REPOSITORY',
+        area: 'meal_logging',
         data: {'userId': userId},
       );
 
@@ -172,20 +171,20 @@ class MealLogRepository with SyncableRepository {
         }
       });
 
-      _logger.info(
+      _report.info(
         'Successfully uploaded dirty meal logs',
-        context: 'MEAL_LOG_REPOSITORY',
+        area: 'meal_logging',
         data: {'count': logs.length},
       );
 
       return UploadResult.successful(logs.length);
     } catch (e, stackTrace) {
-      _logger.error(
-        'Failed to upload dirty meal logs',
-        context: 'MEAL_LOG_REPOSITORY',
-        error: e,
+      _report.fault(
+        e,
         stackTrace: stackTrace,
-        data: {'userId': userId},
+        area: 'meal_logging',
+        extra: {'userId': userId},
+        message: 'Failed to upload dirty meal logs',
       );
       return UploadResult.failed(e.toString());
     }
@@ -264,8 +263,10 @@ class MealLogRepository with SyncableRepository {
       ]);
 
     return query.watch().map(
-      (entries) =>
-          entries.map(MealLog.fromDriftEntry).whereType<MealLog>().toList(),
+      (entries) => entries
+          .map((e) => MealLog.fromDriftEntry(e, onIssue: _onIssue))
+          .whereType<MealLog>()
+          .toList(),
     );
   }
 
@@ -288,7 +289,7 @@ class MealLogRepository with SyncableRepository {
     final result = <MealLog>[];
 
     for (final entry in entries) {
-      final log = MealLog.fromDriftEntry(entry);
+      final log = MealLog.fromDriftEntry(entry, onIssue: _onIssue);
       if (log == null) continue;
       final key = log.name.toLowerCase().trim();
       if (seen.add(key)) {
@@ -323,9 +324,9 @@ class MealLogRepository with SyncableRepository {
         .into(_database.mealLogsTable)
         .insert(toSave.toDriftCompanion(), mode: InsertMode.insertOrReplace);
 
-    _logger.info(
+    _report.info(
       'Inserted meal log',
-      context: 'MEAL_LOG_REPOSITORY',
+      area: 'meal_logging',
       data: {
         'logId': toSave.id,
         'slot': toSave.slot?.wireValue,
@@ -368,9 +369,9 @@ class MealLogRepository with SyncableRepository {
       );
     });
 
-    _logger.info(
+    _report.info(
       'Bulk-inserted meal logs',
-      context: 'MEAL_LOG_REPOSITORY',
+      area: 'meal_logging',
       data: {'count': toSave.length},
     );
 
@@ -391,9 +392,9 @@ class MealLogRepository with SyncableRepository {
       _database.mealLogsTable,
     )..where((t) => t.id.equals(toSave.id))).write(toSave.toDriftCompanion());
 
-    _logger.info(
+    _report.info(
       'Updated meal log',
-      context: 'MEAL_LOG_REPOSITORY',
+      area: 'meal_logging',
       data: {'logId': toSave.id},
     );
 
@@ -413,7 +414,7 @@ class MealLogRepository with SyncableRepository {
             .getSingleOrNull();
     if (row == null) return;
 
-    final log = MealLog.fromDriftEntry(row);
+    final log = MealLog.fromDriftEntry(row, onIssue: _onIssue);
     if (log == null) return;
 
     final now = DateTime.now();
@@ -428,9 +429,9 @@ class MealLogRepository with SyncableRepository {
       ),
     );
 
-    _logger.info(
+    _report.info(
       'Restored meal log',
-      context: 'MEAL_LOG_REPOSITORY',
+      area: 'meal_logging',
       data: {'logId': id},
     );
 
@@ -455,7 +456,7 @@ class MealLogRepository with SyncableRepository {
             .getSingleOrNull();
     if (row == null) return;
 
-    final log = MealLog.fromDriftEntry(row);
+    final log = MealLog.fromDriftEntry(row, onIssue: _onIssue);
     if (log == null) return;
 
     final now = DateTime.now();
@@ -470,9 +471,9 @@ class MealLogRepository with SyncableRepository {
       ),
     );
 
-    _logger.info(
+    _report.info(
       'Soft-deleted meal log',
-      context: 'MEAL_LOG_REPOSITORY',
+      area: 'meal_logging',
       data: {'logId': id},
     );
 
@@ -530,10 +531,13 @@ class MealLogRepository with SyncableRepository {
     final dirtyIds = dirtyRows.map((r) => r.id).toSet();
 
     if (dirtyIds.isNotEmpty) {
-      _logger.warning(
-        'Skipped remote meal log overwrite for dirty local rows',
-        context: 'MEAL_LOG_REPOSITORY',
-        data: {
+      _report.degraded(
+        LoggedFault(
+          'Skipped remote meal log overwrite for dirty local rows',
+          context: 'meal_logging',
+        ),
+        area: 'meal_logging',
+        extra: {
           'skippedCount': dirtyIds.length,
           'totalRemote': remoteById.length,
         },
@@ -545,7 +549,7 @@ class MealLogRepository with SyncableRepository {
       for (final entry in remoteById.entries) {
         if (dirtyIds.contains(entry.key)) continue;
 
-        final log = MealLog.fromSupabaseJson(entry.value);
+        final log = MealLog.fromSupabaseJson(entry.value, onIssue: _onIssue);
         if (log == null) continue;
 
         batch.insert(
@@ -570,20 +574,13 @@ class MealLogRepository with SyncableRepository {
             .upsert(log.toSupabaseJson(), onConflict: 'id');
         await _clearDirtyFlag(log.id);
       } catch (e, stackTrace) {
-        _logger.warning(
-          'Immediate $label upload failed; log stays dirty for retry',
-          context: 'MEAL_LOG_REPOSITORY',
-          error: e,
+        _report.degraded(
+          e,
           stackTrace: stackTrace,
-          data: {'logId': log.id},
-        );
-        unawaited(
-          _sentry.reportNetworkError(
-            e,
-            url: 'supabase:meal_logs:$label',
-            method: 'UPSERT',
-            stackTrace: stackTrace,
-          ),
+          area: 'meal_logging',
+          tags: {'method': 'UPSERT'},
+          extra: {'logId': log.id, 'url': 'supabase:meal_logs:$label'},
+          message: 'Immediate $label upload failed; log stays dirty for retry',
         );
       }
     }());
@@ -604,20 +601,17 @@ class MealLogRepository with SyncableRepository {
             );
         await _clearDirtyFlags(logs.map((l) => l.id).toList(growable: false));
       } catch (e, stackTrace) {
-        _logger.warning(
-          'Immediate bulk insert upload failed; logs stay dirty for retry',
-          context: 'MEAL_LOG_REPOSITORY',
-          error: e,
+        _report.degraded(
+          e,
           stackTrace: stackTrace,
-          data: {'count': logs.length},
-        );
-        unawaited(
-          _sentry.reportNetworkError(
-            e,
-            url: 'supabase:meal_logs:insert-bulk',
-            method: 'UPSERT',
-            stackTrace: stackTrace,
-          ),
+          area: 'meal_logging',
+          tags: {'method': 'UPSERT'},
+          extra: {
+            'count': logs.length,
+            'url': 'supabase:meal_logs:insert-bulk',
+          },
+          message:
+              'Immediate bulk insert upload failed; logs stay dirty for retry',
         );
       }
     }());
@@ -641,12 +635,15 @@ class MealLogRepository with SyncableRepository {
   List<MealLog> _decodeEntries(Iterable<MealLogEntry> entries) {
     final result = <MealLog>[];
     for (final entry in entries) {
-      final log = MealLog.fromDriftEntry(entry);
+      final log = MealLog.fromDriftEntry(entry, onIssue: _onIssue);
       if (log == null) {
-        _logger.warning(
-          'Skipping meal log with unknown slot or source',
-          context: 'MEAL_LOG_REPOSITORY',
-          data: {
+        _report.degraded(
+          LoggedFault(
+            'Skipping meal log with unknown slot or source',
+            context: 'meal_logging',
+          ),
+          area: 'meal_logging',
+          extra: {
             'log_id': entry.id,
             'slot': entry.slot,
             'source': entry.source,

@@ -5,9 +5,10 @@ import '../../../shared/database/app_database.dart';
 import '../../../shared/database/database_provider.dart';
 import '../../../shared/data/syncable_repository.dart';
 import '../../../shared/services/sync/sync_dependency_graph.dart';
-import '../../../shared/services/logging_service.dart';
+import '../../../shared/services/report/decode_issue_report.dart';
+import '../../../shared/services/report/report.dart';
 import '../domain/carb_loading_food.dart' as domain;
-import '../domain/meal_type.dart' show MealType, parseMealTypeIds;
+import '../domain/meal_type.dart' show parseMealTypeIds;
 
 part 'carb_loading_food_repository.g.dart';
 
@@ -18,14 +19,14 @@ class CarbLoadingFoodRepository with SyncableRepository {
   CarbLoadingFoodRepository({
     required AppDatabase database,
     required SupabaseClient supabase,
-    required AppLogger logger,
+    required Report report,
   }) : _database = database,
        _supabase = supabase,
-       _logger = logger;
+       _report = report;
 
   final AppDatabase _database;
   final SupabaseClient _supabase;
-  final AppLogger _logger;
+  final Report _report;
 
   // ========================================================================
   // SyncableRepository Implementation
@@ -48,9 +49,9 @@ class CarbLoadingFoodRepository with SyncableRepository {
         .select(_database.carbLoadingFoodsTable)
         .get();
     if (localFoods.isEmpty) {
-      _logger.debug(
+      _report.debug(
         'Forcing sync - no local carb loading foods found',
-        context: 'CARB_LOADING_FOOD_REPOSITORY',
+        area: 'carb_loading',
       );
       return true; // Force sync regardless of timestamp
     }
@@ -63,9 +64,9 @@ class CarbLoadingFoodRepository with SyncableRepository {
   Future<SyncResult> syncFromRemote(String userId) async {
     // Note: userId is ignored for global tables like carb_loading_foods
     try {
-      _logger.info(
+      _report.info(
         'Syncing carb loading foods from Supabase',
-        context: 'CARB_LOADING_FOOD_REPOSITORY',
+        area: 'carb_loading',
       );
 
       // Query all carb loading foods from Supabase
@@ -81,10 +82,7 @@ class CarbLoadingFoodRepository with SyncableRepository {
 
       if (foodsData.isEmpty) {
         await setLastSyncTime(DateTime.now());
-        _logger.info(
-          'No carb loading foods to sync',
-          context: 'CARB_LOADING_FOOD_REPOSITORY',
-        );
+        _report.info('No carb loading foods to sync', area: 'carb_loading');
         return SyncResult.successful(0);
       }
 
@@ -136,19 +134,19 @@ class CarbLoadingFoodRepository with SyncableRepository {
 
       await setLastSyncTime(DateTime.now());
 
-      _logger.info(
+      _report.info(
         'Successfully synced carb loading foods',
-        context: 'CARB_LOADING_FOOD_REPOSITORY',
+        area: 'carb_loading',
         data: {'count': foodsData.length},
       );
 
       return SyncResult.successful(foodsData.length);
     } catch (e, stackTrace) {
-      _logger.error(
-        'Failed to sync carb loading foods from Supabase',
-        context: 'CARB_LOADING_FOOD_REPOSITORY',
-        error: e,
+      _report.fault(
+        e,
         stackTrace: stackTrace,
+        area: 'carb_loading',
+        message: 'Failed to sync carb loading foods from Supabase',
       );
       return SyncResult.failed(e.toString());
     }
@@ -178,9 +176,9 @@ class CarbLoadingFoodRepository with SyncableRepository {
   Future<List<domain.CarbLoadingFood>> getFoodsByMealType(
     int mealTypeId,
   ) async {
-    _logger.debug(
+    _report.debug(
       'Querying foods for meal type',
-      context: 'CARB_LOADING_FOOD_REPOSITORY',
+      area: 'carb_loading',
       data: {'mealTypeId': mealTypeId},
     );
 
@@ -188,9 +186,9 @@ class CarbLoadingFoodRepository with SyncableRepository {
     final query = _database.select(_database.carbLoadingFoodsTable);
     final allFoods = await query.get();
 
-    _logger.debug(
+    _report.debug(
       'Found foods in database',
-      context: 'CARB_LOADING_FOOD_REPOSITORY',
+      area: 'carb_loading',
       data: {'count': allFoods.length},
     );
 
@@ -202,7 +200,10 @@ class CarbLoadingFoodRepository with SyncableRepository {
             return true; // Changed from false to true - more forgiving!
           }
 
-          final mealTypes = parseMealTypeIds(food.mealTypes);
+          final mealTypes = parseMealTypeIds(
+            food.mealTypes,
+            onIssue: _report.decodeIssue('carb_loading'),
+          );
           final matches = mealTypes.isEmpty || mealTypes.contains(mealTypeId);
 
           return matches;
@@ -210,17 +211,17 @@ class CarbLoadingFoodRepository with SyncableRepository {
         .map((food) => _convertToFoodDomain(food))
         .toList();
 
-    _logger.debug(
+    _report.debug(
       'After filtering foods',
-      context: 'CARB_LOADING_FOOD_REPOSITORY',
+      area: 'carb_loading',
       data: {'filtered': filteredFoods.length, 'mealTypeId': mealTypeId},
     );
 
     if (filteredFoods.isEmpty && allFoods.isNotEmpty) {
-      _logger.warning(
-        'No foods matched filter',
-        context: 'CARB_LOADING_FOOD_REPOSITORY',
-        data: {
+      _report.degraded(
+        LoggedFault('No foods matched filter', context: 'carb_loading'),
+        area: 'carb_loading',
+        extra: {
           'sampleMealTypes': allFoods.take(3).map((f) => f.mealTypes).toList(),
         },
       );
@@ -253,7 +254,10 @@ class CarbLoadingFoodRepository with SyncableRepository {
 
   /// Convert Drift entity to domain model
   domain.CarbLoadingFood _convertToFoodDomain(CarbLoadingFood food) {
-    final mealTypeIds = parseMealTypeIds(food.mealTypes);
+    final mealTypeIds = parseMealTypeIds(
+      food.mealTypes,
+      onIssue: _report.decodeIssue('carb_loading'),
+    );
 
     return domain.CarbLoadingFood.fromDatabase(
       id: food.id,
@@ -287,7 +291,10 @@ class CarbLoadingFoodRepository with SyncableRepository {
           (foods) => foods
               .where((food) {
                 if (food.mealTypes == null) return false;
-                final mealTypes = parseMealTypeIds(food.mealTypes);
+                final mealTypes = parseMealTypeIds(
+                  food.mealTypes,
+                  onIssue: _report.decodeIssue('carb_loading'),
+                );
                 return mealTypes.contains(mealTypeId);
               })
               .map((food) => _convertToFoodDomain(food))
@@ -301,6 +308,6 @@ CarbLoadingFoodRepository carbLoadingFoodRepository(Ref ref) {
   return CarbLoadingFoodRepository(
     database: ref.watch(appDatabaseProvider),
     supabase: Supabase.instance.client,
-    logger: ref.watch(appLoggerProvider),
+    report: ref.watch(reportProvider),
   );
 }

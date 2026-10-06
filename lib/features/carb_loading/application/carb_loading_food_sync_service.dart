@@ -4,7 +4,7 @@ import 'package:supabase_flutter/supabase_flutter.dart';
 import '../../../shared/database/app_database.dart';
 import '../../../shared/database/database_provider.dart';
 import '../../../shared/services/app_external_deps.dart';
-import '../../../shared/services/logging_service.dart';
+import '../../../shared/services/report/report.dart';
 
 part 'carb_loading_food_sync_service.g.dart';
 
@@ -14,14 +14,14 @@ class CarbLoadingFoodSyncService {
   const CarbLoadingFoodSyncService({
     required SupabaseClient supabase,
     required AppDatabase database,
-    required AppLogger logger,
+    required Report report,
   }) : _supabase = supabase,
        _database = database,
-       _logger = logger;
+       _report = report;
 
   final SupabaseClient _supabase;
   final AppDatabase _database;
-  final AppLogger _logger;
+  final Report _report;
 
   /// Sync carb loading foods from Supabase to local database
   /// This should be called during app startup to ensure data is available offline
@@ -43,11 +43,11 @@ class CarbLoadingFoodSyncService {
       // Sync foods with their meal type arrays
       await _syncFoodsToLocalDatabase(foodsData);
     } catch (e, stackTrace) {
-      _logger.error(
-        'Error syncing carb loading foods from Supabase',
-        context: 'CARB_LOADING_SYNC',
-        error: e,
+      _report.fault(
+        e,
         stackTrace: stackTrace,
+        area: 'carb_loading',
+        message: 'Error syncing carb loading foods from Supabase',
       );
       // Don't rethrow - app should continue even if sync fails
       // Foods might already be in local database from previous sync
@@ -72,13 +72,6 @@ class CarbLoadingFoodSyncService {
         final mealTypesArray = mealTypesFromDb.isEmpty
             ? null
             : '{${mealTypesFromDb.join(',')}}';
-
-        // Debug logging removed for performance - was logging 27 foods on every sync
-        // Uncomment if debugging specific food sync issues:
-        // _logger.debug(
-        //   'Syncing food: $displayName with meal_types: $mealTypesArray',
-        //   context: 'CARB_LOADING_SYNC',
-        // );
 
         // Insert food with meal_types array
         final food = CarbLoadingFoodsTableCompanion.insert(
@@ -112,11 +105,11 @@ class CarbLoadingFoodSyncService {
       // Sync carb loading foods with their meal type arrays
       await _syncFoodsToLocalDatabase(carbLoadingFoods);
     } catch (e, stackTrace) {
-      _logger.error(
-        'Carb loading foods sync failed',
-        context: 'CARB_LOADING_SYNC',
-        error: e,
+      _report.fault(
+        e,
         stackTrace: stackTrace,
+        area: 'carb_loading',
+        message: 'Carb loading foods sync failed',
       );
       rethrow;
     }
@@ -128,6 +121,6 @@ CarbLoadingFoodSyncService carbLoadingFoodSyncService(Ref ref) {
   return CarbLoadingFoodSyncService(
     supabase: ref.watch(appExternalDepsProvider).supabaseClient,
     database: ref.watch(appDatabaseProvider),
-    logger: ref.watch(appExternalDepsProvider).logger,
+    report: ref.watch(reportProvider),
   );
 }

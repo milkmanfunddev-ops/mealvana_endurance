@@ -38,17 +38,13 @@ import 'package:mealvana_endurance/features/nutrition_plan/data/food_repository.
 import 'package:mealvana_endurance/shared/database/app_database.dart';
 import 'package:mealvana_endurance/shared/database/database_provider.dart';
 import 'package:mealvana_endurance/shared/providers/user_id_provider.dart';
-import 'package:mealvana_endurance/shared/services/logging_service.dart';
-import 'package:mealvana_endurance/shared/services/sentry/sentry_reporter.dart';
 import 'package:supabase_flutter/supabase_flutter.dart';
 
 import 'fixtures/g25_catalog_fixtures.dart';
 
+import '../../helpers/fakes/recording_report.dart';
+
 class MockSupabaseClient extends Mock implements SupabaseClient {}
-
-class MockAppLogger extends Mock implements AppLogger {}
-
-class MockSentryReporter extends Mock implements SentryReporter {}
 
 const userId = 'user-g25';
 
@@ -121,14 +117,7 @@ void main() {
   /// Seeds the local mirror the way the app does: post-G26 WIRE rows
   /// through the REAL sync mapper — the sync pickup is part of the proof.
   Future<void> seedFoodsMirror() async {
-    final logger = MockAppLogger();
-    when(() => logger.error(any(),
-        context: any(named: 'context'),
-        error: any(named: 'error'),
-        stackTrace: any(named: 'stackTrace'),
-        data: any(named: 'data'))).thenReturn(null);
-    final foodRepository =
-        FoodRepository(MockSupabaseClient(), db, logger: logger);
+    final foodRepository = FoodRepository(MockSupabaseClient(), db);
     await foodRepository.syncFoodsToLocalDatabase(wireFoodRowsPostSeed);
   }
 
@@ -208,20 +197,7 @@ void main() {
           ),
         );
 
-    final logger = MockAppLogger();
-    when(() => logger.debug(any(),
-        context: any(named: 'context'),
-        data: any(named: 'data'))).thenReturn(null);
-    when(() => logger.warning(any(),
-        context: any(named: 'context'),
-        error: any(named: 'error'),
-        stackTrace: any(named: 'stackTrace'),
-        data: any(named: 'data'))).thenReturn(null);
-    when(() => logger.error(any(),
-        context: any(named: 'context'),
-        error: any(named: 'error'),
-        stackTrace: any(named: 'stackTrace'),
-        data: any(named: 'data'))).thenReturn(null);
+    final report = RecordingReport();
 
     await tester.pumpWidget(
       ProviderScope(
@@ -232,15 +208,14 @@ void main() {
             CarbLoadingFoodRepository(
               database: db,
               supabase: MockSupabaseClient(),
-              logger: logger,
+              report: report,
             ),
           ),
           carbLoadingRepositoryProvider.overrideWithValue(
             CarbLoadingRepository(
               supabase: MockSupabaseClient(),
               database: db,
-              logger: logger,
-              sentry: MockSentryReporter(),
+              report: report,
             ),
           ),
           mealLogControllerProvider.overrideWith(_FakeMealLogController.new),

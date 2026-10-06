@@ -5,9 +5,7 @@ import 'package:riverpod_annotation/riverpod_annotation.dart';
 import 'package:supabase_flutter/supabase_flutter.dart';
 import '../../../shared/database/app_database.dart';
 import '../../../shared/database/database_provider.dart';
-import '../../../shared/services/logging_service.dart';
-import '../../../shared/services/sentry/sentry_reporter.dart';
-import '../../../shared/services/app_external_deps.dart';
+import '../../../shared/services/report/report.dart';
 import '../../../shared/services/sync/sync_dependency_graph.dart';
 import '../../../shared/data/syncable_repository.dart';
 import '../domain/carb_loading_pace_engine.dart';
@@ -26,12 +24,10 @@ class _CarbLoadingUpsertCount {
 
 @riverpod
 CarbLoadingRepository carbLoadingRepository(Ref ref) {
-  final deps = ref.read(appExternalDepsProvider);
   return CarbLoadingRepository(
     supabase: Supabase.instance.client,
     database: ref.read(appDatabaseProvider),
-    logger: ref.read(appLoggerProvider),
-    sentry: deps.sentry,
+    report: ref.read(reportProvider),
   );
 }
 
@@ -41,17 +37,14 @@ class CarbLoadingRepository with SyncableRepository {
   const CarbLoadingRepository({
     required SupabaseClient supabase,
     required AppDatabase database,
-    required AppLogger logger,
-    required SentryReporter sentry,
+    required Report report,
   }) : _supabase = supabase,
        _database = database,
-       _logger = logger,
-       _sentry = sentry;
+       _report = report;
 
   final SupabaseClient _supabase;
   final AppDatabase _database;
-  final AppLogger _logger;
-  final SentryReporter _sentry;
+  final Report _report;
 
   // ========================================================================
   // SyncableRepository Implementation
@@ -67,9 +60,9 @@ class CarbLoadingRepository with SyncableRepository {
   @override
   Future<SyncResult> syncFromRemote(String userId) async {
     try {
-      _logger.info(
+      _report.info(
         'Syncing carb loading data from Supabase',
-        context: 'CARB_LOADING_REPOSITORY',
+        area: 'carb_loading',
         data: {'userId': userId},
       );
 
@@ -85,9 +78,9 @@ class CarbLoadingRepository with SyncableRepository {
 
       if (plans.isEmpty) {
         await setLastSyncTime(DateTime.now());
-        _logger.info(
+        _report.info(
           'No carb loading plans to sync',
-          context: 'CARB_LOADING_REPOSITORY',
+          area: 'carb_loading',
           data: {'userId': userId},
         );
         return SyncResult.successful(0);
@@ -115,9 +108,9 @@ class CarbLoadingRepository with SyncableRepository {
 
       final totalCount = upsertCount.total;
 
-      _logger.info(
+      _report.info(
         'Successfully synced carb loading data',
-        context: 'CARB_LOADING_REPOSITORY',
+        area: 'carb_loading',
         data: {
           'userId': userId,
           'plans': upsertCount.plans,
@@ -128,12 +121,12 @@ class CarbLoadingRepository with SyncableRepository {
 
       return SyncResult.successful(totalCount);
     } catch (e, stackTrace) {
-      _logger.error(
-        'Failed to sync carb loading data from Supabase',
-        context: 'CARB_LOADING_REPOSITORY',
-        error: e,
+      _report.fault(
+        e,
         stackTrace: stackTrace,
-        data: {'userId': userId},
+        area: 'carb_loading',
+        extra: {'userId': userId},
+        message: 'Failed to sync carb loading data from Supabase',
       );
       return SyncResult.failed(e.toString());
     }
@@ -212,10 +205,13 @@ class CarbLoadingRepository with SyncableRepository {
     });
 
     if (dirtyPlanIds.isNotEmpty || dirtyDayIds.isNotEmpty) {
-      _logger.warning(
-        'Skipped remote carb loading overwrite for dirty local rows',
-        context: 'CARB_LOADING_REPOSITORY',
-        data: {
+      _report.degraded(
+        LoggedFault(
+          'Skipped remote carb loading overwrite for dirty local rows',
+          context: 'carb_loading',
+        ),
+        area: 'carb_loading',
+        extra: {
           'skippedPlans': dirtyPlanIds.length,
           'skippedDays': dirtyDayIds.length,
         },
@@ -228,9 +224,9 @@ class CarbLoadingRepository with SyncableRepository {
   @override
   Future<UploadResult> uploadDirtyRecords(String userId) async {
     try {
-      _logger.info(
+      _report.info(
         'Uploading dirty carb loading records to Supabase',
-        context: 'CARB_LOADING_REPOSITORY',
+        area: 'carb_loading',
         data: {'userId': userId},
       );
 
@@ -262,9 +258,9 @@ class CarbLoadingRepository with SyncableRepository {
         return UploadResult.nothingToUpload();
       }
 
-      _logger.debug(
+      _report.debug(
         'Found dirty carb loading records to upload',
-        context: 'CARB_LOADING_REPOSITORY',
+        area: 'carb_loading',
         data: {'plans': dirtyPlans.length, 'days': dirtyDays.length},
       );
 
@@ -304,9 +300,9 @@ class CarbLoadingRepository with SyncableRepository {
 
       final totalCount = dirtyPlans.length + dirtyDays.length;
 
-      _logger.info(
+      _report.info(
         'Successfully uploaded dirty carb loading records',
-        context: 'CARB_LOADING_REPOSITORY',
+        area: 'carb_loading',
         data: {
           'plans': dirtyPlans.length,
           'days': dirtyDays.length,
@@ -316,12 +312,12 @@ class CarbLoadingRepository with SyncableRepository {
 
       return UploadResult.successful(totalCount);
     } catch (e, stackTrace) {
-      _logger.error(
-        'Failed to upload dirty carb loading records',
-        context: 'CARB_LOADING_REPOSITORY',
-        error: e,
+      _report.fault(
+        e,
         stackTrace: stackTrace,
-        data: {'userId': userId},
+        area: 'carb_loading',
+        extra: {'userId': userId},
+        message: 'Failed to upload dirty carb loading records',
       );
       return UploadResult.failed(e.toString());
     }
@@ -419,18 +415,17 @@ class CarbLoadingRepository with SyncableRepository {
         try {
           await _uploadCarbLoadingPlanToSupabase(planId: planId);
         } catch (e, stackTrace) {
-          _logger.warning(
-            'Immediate upload failed; record stays dirty for retry',
-            context: 'CARB_LOADING_REPOSITORY',
-            error: e,
-            stackTrace: stackTrace,
-            data: {'operation': 'create', 'recordId': planId},
-          );
-          _sentry.reportNetworkError(
+          _report.degraded(
             e,
-            url: 'supabase:carb_loading_plans:create',
-            method: 'UPSERT',
             stackTrace: stackTrace,
+            area: 'carb_loading',
+            tags: {'method': 'UPSERT'},
+            extra: {
+              'operation': 'create',
+              'recordId': planId,
+              'url': 'supabase:carb_loading_plans:create',
+            },
+            message: 'Immediate upload failed; record stays dirty for retry',
           );
           rethrow;
         }
@@ -440,18 +435,17 @@ class CarbLoadingRepository with SyncableRepository {
           try {
             await _uploadCarbLoadingPlanToSupabase(planId: planId);
           } catch (e, stackTrace) {
-            _logger.warning(
-              'Immediate upload failed; record stays dirty for retry',
-              context: 'CARB_LOADING_REPOSITORY',
-              error: e,
-              stackTrace: stackTrace,
-              data: {'operation': 'create', 'recordId': planId},
-            );
-            _sentry.reportNetworkError(
+            _report.degraded(
               e,
-              url: 'supabase:carb_loading_plans:create',
-              method: 'UPSERT',
               stackTrace: stackTrace,
+              area: 'carb_loading',
+              tags: {'method': 'UPSERT'},
+              extra: {
+                'operation': 'create',
+                'recordId': planId,
+                'url': 'supabase:carb_loading_plans:create',
+              },
+              message: 'Immediate upload failed; record stays dirty for retry',
             );
           }
         }());
@@ -459,11 +453,11 @@ class CarbLoadingRepository with SyncableRepository {
 
       return createdPlan;
     } catch (e, stackTrace) {
-      _logger.error(
-        'Failed to create carb loading plan',
-        context: 'CARB_LOADING_REPOSITORY',
-        error: e,
+      _report.fault(
+        e,
         stackTrace: stackTrace,
+        area: 'carb_loading',
+        message: 'Failed to create carb loading plan',
       );
       rethrow;
     }
@@ -531,18 +525,17 @@ class CarbLoadingRepository with SyncableRepository {
             carbLoadingDayId: carbLoadingDayId,
           );
         } catch (e, stackTrace) {
-          _logger.warning(
-            'Immediate upload failed; record stays dirty for retry',
-            context: 'CARB_LOADING_REPOSITORY',
-            error: e,
-            stackTrace: stackTrace,
-            data: {'operation': 'update_day', 'recordId': carbLoadingDayId},
-          );
-          _sentry.reportNetworkError(
+          _report.degraded(
             e,
-            url: 'supabase:carb_loading_days:update',
-            method: 'UPSERT',
             stackTrace: stackTrace,
+            area: 'carb_loading',
+            tags: {'method': 'UPSERT'},
+            extra: {
+              'operation': 'update_day',
+              'recordId': carbLoadingDayId,
+              'url': 'supabase:carb_loading_days:update',
+            },
+            message: 'Immediate upload failed; record stays dirty for retry',
           );
           rethrow;
         }
@@ -554,18 +547,17 @@ class CarbLoadingRepository with SyncableRepository {
               carbLoadingDayId: carbLoadingDayId,
             );
           } catch (e, stackTrace) {
-            _logger.warning(
-              'Immediate upload failed; record stays dirty for retry',
-              context: 'CARB_LOADING_REPOSITORY',
-              error: e,
-              stackTrace: stackTrace,
-              data: {'operation': 'update_day', 'recordId': carbLoadingDayId},
-            );
-            _sentry.reportNetworkError(
+            _report.degraded(
               e,
-              url: 'supabase:carb_loading_days:update',
-              method: 'UPSERT',
               stackTrace: stackTrace,
+              area: 'carb_loading',
+              tags: {'method': 'UPSERT'},
+              extra: {
+                'operation': 'update_day',
+                'recordId': carbLoadingDayId,
+                'url': 'supabase:carb_loading_days:update',
+              },
+              message: 'Immediate upload failed; record stays dirty for retry',
             );
           }
         }());
@@ -573,11 +565,11 @@ class CarbLoadingRepository with SyncableRepository {
 
       return updatedDay;
     } catch (e, stackTrace) {
-      _logger.error(
-        'Failed to update carb loading day',
-        context: 'CARB_LOADING_REPOSITORY',
-        error: e,
+      _report.fault(
+        e,
         stackTrace: stackTrace,
+        area: 'carb_loading',
+        message: 'Failed to update carb loading day',
       );
       rethrow;
     }
@@ -618,28 +610,27 @@ class CarbLoadingRepository with SyncableRepository {
           try {
             await _uploadCarbLoadingPlanDeletion(planId: planId);
           } catch (e, stackTrace) {
-            _logger.warning(
-              'Immediate upload failed; record stays dirty for retry',
-              context: 'CARB_LOADING_REPOSITORY',
-              error: e,
-              stackTrace: stackTrace,
-              data: {'operation': 'delete', 'recordId': planId},
-            );
-            _sentry.reportNetworkError(
+            _report.degraded(
               e,
-              url: 'supabase:carb_loading_plans:delete',
-              method: 'DELETE',
               stackTrace: stackTrace,
+              area: 'carb_loading',
+              tags: {'method': 'DELETE'},
+              extra: {
+                'operation': 'delete',
+                'recordId': planId,
+                'url': 'supabase:carb_loading_plans:delete',
+              },
+              message: 'Immediate upload failed; record stays dirty for retry',
             );
           }
         }());
       }
     } catch (e, stackTrace) {
-      _logger.error(
-        'Failed to delete carb loading plan',
-        context: 'CARB_LOADING_REPOSITORY',
-        error: e,
+      _report.fault(
+        e,
         stackTrace: stackTrace,
+        area: 'carb_loading',
+        message: 'Failed to delete carb loading plan',
       );
       rethrow;
     }
@@ -655,9 +646,9 @@ class CarbLoadingRepository with SyncableRepository {
       // Find the plan for this event
       final plan = await getCarbLoadingPlanForEvent(eventId);
       if (plan == null) {
-        _logger.debug(
+        _report.debug(
           'No carb loading plan found for event $eventId - nothing to delete',
-          context: 'CARB_LOADING_REPOSITORY',
+          area: 'carb_loading',
         );
         return;
       }
@@ -665,16 +656,17 @@ class CarbLoadingRepository with SyncableRepository {
       // Use the existing delete method which handles full cascade
       await deleteCarbLoadingPlan(deviceId: deviceId, planId: plan.id);
 
-      _logger.info(
+      _report.info(
         'Cascade deleted carb loading plan ${plan.id} for event $eventId',
-        context: 'CARB_LOADING_REPOSITORY',
+        area: 'carb_loading',
       );
     } catch (e, stackTrace) {
-      _logger.error(
-        'Failed to cascade delete carb loading plan for event $eventId',
-        context: 'CARB_LOADING_REPOSITORY',
-        error: e,
+      _report.fault(
+        e,
         stackTrace: stackTrace,
+        area: 'carb_loading',
+        message:
+            'Failed to cascade delete carb loading plan for event $eventId',
       );
       // Don't rethrow - event deletion should still proceed
       // The Supabase CASCADE will clean up the server side
@@ -798,28 +790,27 @@ class CarbLoadingRepository with SyncableRepository {
           try {
             await uploadAll();
           } catch (e, stackTrace) {
-            _logger.warning(
-              'Immediate upload failed; records stay dirty for retry',
-              context: 'CARB_LOADING_REPOSITORY',
-              error: e,
-              stackTrace: stackTrace,
-              data: {'operation': 'repick', 'recordId': planId},
-            );
-            _sentry.reportNetworkError(
+            _report.degraded(
               e,
-              url: 'supabase:carb_loading_plans:repick',
-              method: 'POST',
               stackTrace: stackTrace,
+              area: 'carb_loading',
+              tags: {'method': 'POST'},
+              extra: {
+                'operation': 'repick',
+                'recordId': planId,
+                'url': 'supabase:carb_loading_plans:repick',
+              },
+              message: 'Immediate upload failed; records stay dirty for retry',
             );
           }
         }());
       }
     } catch (e, stackTrace) {
-      _logger.error(
-        'Failed to re-pick carb loading protocol',
-        context: 'CARB_LOADING_REPOSITORY',
-        error: e,
+      _report.fault(
+        e,
         stackTrace: stackTrace,
+        area: 'carb_loading',
+        message: 'Failed to re-pick carb loading protocol',
       );
       rethrow;
     }
@@ -833,11 +824,11 @@ class CarbLoadingRepository with SyncableRepository {
 
       return await query.getSingleOrNull();
     } catch (e, stackTrace) {
-      _logger.error(
-        'Failed to get carb loading plan by ID',
-        context: 'CARB_LOADING_REPOSITORY',
-        error: e,
+      _report.fault(
+        e,
         stackTrace: stackTrace,
+        area: 'carb_loading',
+        message: 'Failed to get carb loading plan by ID',
       );
       rethrow;
     }
@@ -851,11 +842,11 @@ class CarbLoadingRepository with SyncableRepository {
 
       return await query.getSingleOrNull();
     } catch (e, stackTrace) {
-      _logger.error(
-        'Failed to get carb loading plan for event',
-        context: 'CARB_LOADING_REPOSITORY',
-        error: e,
+      _report.fault(
+        e,
         stackTrace: stackTrace,
+        area: 'carb_loading',
+        message: 'Failed to get carb loading plan for event',
       );
       rethrow;
     }
@@ -883,11 +874,11 @@ class CarbLoadingRepository with SyncableRepository {
           )
           .toList();
     } catch (e, stackTrace) {
-      _logger.error(
-        'Failed to get carb loading days for plan',
-        context: 'CARB_LOADING_REPOSITORY',
-        error: e,
+      _report.fault(
+        e,
         stackTrace: stackTrace,
+        area: 'carb_loading',
+        message: 'Failed to get carb loading days for plan',
       );
       rethrow;
     }
@@ -901,11 +892,11 @@ class CarbLoadingRepository with SyncableRepository {
 
       return await query.getSingleOrNull();
     } catch (e, stackTrace) {
-      _logger.error(
-        'Failed to get carb loading day by ID',
-        context: 'CARB_LOADING_REPOSITORY',
-        error: e,
+      _report.fault(
+        e,
         stackTrace: stackTrace,
+        area: 'carb_loading',
+        message: 'Failed to get carb loading day by ID',
       );
       rethrow;
     }
@@ -926,12 +917,12 @@ class CarbLoadingRepository with SyncableRepository {
       final row = await query.getSingleOrNull();
       return row?.readTable(_database.carbLoadingPlansTable).userId;
     } catch (e, stackTrace) {
-      _logger.error(
-        'Failed to get carb loading day owner user ID',
-        context: 'CARB_LOADING_REPOSITORY',
-        error: e,
+      _report.fault(
+        e,
         stackTrace: stackTrace,
-        data: {'dayId': dayId},
+        area: 'carb_loading',
+        extra: {'dayId': dayId},
+        message: 'Failed to get carb loading day owner user ID',
       );
       rethrow;
     }
@@ -993,12 +984,12 @@ class CarbLoadingRepository with SyncableRepository {
         );
       }).toList();
     } catch (e, stackTrace) {
-      _logger.error(
-        'Failed to get carb loading days for date range',
-        context: 'CARB_LOADING_REPOSITORY',
-        error: e,
+      _report.fault(
+        e,
         stackTrace: stackTrace,
-        data: {'userId': userId},
+        area: 'carb_loading',
+        extra: {'userId': userId},
+        message: 'Failed to get carb loading days for date range',
       );
       rethrow;
     }
@@ -1139,11 +1130,11 @@ class CarbLoadingRepository with SyncableRepository {
         const CarbLoadingPlansTableCompanion(needsUpload: Value(false)),
       );
     } catch (e, stackTrace) {
-      _logger.error(
-        'Failed to clear plan dirty flag',
-        context: 'CARB_LOADING_REPOSITORY',
-        error: e,
+      _report.fault(
+        e,
         stackTrace: stackTrace,
+        area: 'carb_loading',
+        message: 'Failed to clear plan dirty flag',
       );
     }
   }
@@ -1156,11 +1147,11 @@ class CarbLoadingRepository with SyncableRepository {
         const CarbLoadingDaysTableCompanion(needsUpload: Value(false)),
       );
     } catch (e, stackTrace) {
-      _logger.error(
-        'Failed to clear day dirty flag',
-        context: 'CARB_LOADING_REPOSITORY',
-        error: e,
+      _report.fault(
+        e,
         stackTrace: stackTrace,
+        area: 'carb_loading',
+        message: 'Failed to clear day dirty flag',
       );
     }
   }

@@ -43,15 +43,11 @@ import 'package:mealvana_endurance/shared/database/app_database.dart'
     hide Event;
 import 'package:mealvana_endurance/shared/domain/activity_type.dart';
 import 'package:mealvana_endurance/shared/providers/user_id_provider.dart';
-import 'package:mealvana_endurance/shared/services/logging_service.dart';
-import 'package:mealvana_endurance/shared/services/sentry/sentry_reporter.dart';
 import 'package:supabase_flutter/supabase_flutter.dart';
 
+import '../../helpers/fakes/recording_report.dart';
+
 class MockSupabaseClient extends Mock implements SupabaseClient {}
-
-class MockAppLogger extends Mock implements AppLogger {}
-
-class MockSentryReporter extends Mock implements SentryReporter {}
 
 class MockCoachRepository extends Mock implements CoachRepository {}
 
@@ -98,40 +94,18 @@ void main() {
     race = today.add(const Duration(days: 1));
     todayStr = _ymd(today);
 
-    final logger = MockAppLogger();
-    when(() => logger.info(any(),
-        context: any(named: 'context'),
-        data: any(named: 'data'))).thenReturn(null);
-    when(() => logger.debug(any(),
-        context: any(named: 'context'),
-        data: any(named: 'data'))).thenReturn(null);
-    when(() => logger.warning(any(),
-        context: any(named: 'context'),
-        error: any(named: 'error'),
-        stackTrace: any(named: 'stackTrace'),
-        data: any(named: 'data'))).thenReturn(null);
-    when(() => logger.error(any(),
-        context: any(named: 'context'),
-        error: any(named: 'error'),
-        stackTrace: any(named: 'stackTrace'),
-        data: any(named: 'data'))).thenReturn(null);
-    final sentry = MockSentryReporter();
-    when(() => sentry.reportNetworkError(any<Object>(),
-        url: any(named: 'url'),
-        method: any(named: 'method'),
-        stackTrace: any(named: 'stackTrace'))).thenAnswer((_) async {});
+    final report = RecordingReport();
     final eventsRepo = MockEventsRepository();
     when(() => eventsRepo.uploadDirtyRecords(any()))
         .thenAnswer((_) async => UploadResult.nothingToUpload());
     repository = CarbLoadingRepository(
       supabase: MockSupabaseClient(),
       database: db,
-      logger: logger,
-      sentry: sentry,
+      report: report,
     );
     service = CarbLoadingService(
       db,
-      logger,
+      report,
       repository,
       MockCoachRepository(),
       eventsRepo,

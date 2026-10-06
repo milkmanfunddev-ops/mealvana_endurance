@@ -2,7 +2,7 @@ import 'dart:async';
 import 'package:riverpod_annotation/riverpod_annotation.dart';
 import '../../../../shared/database/app_database.dart' as db;
 import '../../../../shared/providers/user_id_provider.dart';
-import '../../../../shared/services/logging_service.dart';
+import '../../../../shared/services/report/report.dart';
 import '../../../../shared/services/sync/sync_coordinator.dart';
 import '../../application/carb_loading_service.dart';
 import '../../application/carb_loading_food_service.dart';
@@ -82,7 +82,7 @@ class CarbLoadingDayDetailController extends _$CarbLoadingDayDetailController {
   CarbLoadingRepository get _repository =>
       ref.read(carbLoadingRepositoryProvider);
 
-  AppLogger get _logger => ref.read(appLoggerProvider);
+  Report get _report => ref.read(reportProvider);
 
   @override
   Future<CarbLoadingDayDetailState> build(String carbLoadingDayId) async {
@@ -96,11 +96,12 @@ class CarbLoadingDayDetailController extends _$CarbLoadingDayDetailController {
         userId,
         repository: _repository,
       );
-    } catch (e) {
-      _logger.warning(
-        'Could not sync carb loading from remote; using local data',
-        context: 'CARB_LOADING_DAY_DETAIL',
-        data: {'error': e.toString()},
+    } catch (e, stackTrace) {
+      _report.degraded(
+        e,
+        stackTrace: stackTrace,
+        area: 'carb_loading',
+        message: 'Could not sync carb loading from remote; using local data',
       );
     }
 
@@ -320,10 +321,10 @@ class CarbLoadingDayDetailController extends _$CarbLoadingDayDetailController {
       );
       ref.invalidateSelf();
     } catch (e) {
-      _logger.warning(
-        'Force refresh failed',
-        context: 'CARB_LOADING_DAY_DETAIL',
-        error: e,
+      _report.degraded(
+        e,
+        area: 'carb_loading',
+        message: 'Force refresh failed',
       );
       ref.invalidateSelf();
     }

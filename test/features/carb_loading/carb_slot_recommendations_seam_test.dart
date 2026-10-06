@@ -19,12 +19,11 @@ import 'package:mealvana_endurance/features/carb_loading/domain/meal_type.dart';
 import 'package:mealvana_endurance/features/carb_loading/presentation/screens/carb_slot_screen.dart';
 import 'package:mealvana_endurance/features/macro_dashboard/presentation/providers/carb_dashboard_providers.dart';
 import 'package:mealvana_endurance/shared/database/app_database.dart';
-import 'package:mealvana_endurance/shared/services/logging_service.dart';
 import 'package:supabase_flutter/supabase_flutter.dart';
 
-class MockSupabaseClient extends Mock implements SupabaseClient {}
+import '../../helpers/fakes/recording_report.dart';
 
-class MockAppLogger extends Mock implements AppLogger {}
+class MockSupabaseClient extends Mock implements SupabaseClient {}
 
 String _todayYmd() {
   final now = DateTime.now();
@@ -38,24 +37,11 @@ void main() {
 
   setUp(() {
     db = AppDatabase.forTesting(NativeDatabase.memory());
-    final logger = MockAppLogger();
-    when(() => logger.debug(any(),
-        context: any(named: 'context'),
-        data: any(named: 'data'))).thenReturn(null);
-    when(() => logger.warning(any(),
-        context: any(named: 'context'),
-        error: any(named: 'error'),
-        stackTrace: any(named: 'stackTrace'),
-        data: any(named: 'data'))).thenReturn(null);
-    when(() => logger.error(any(),
-        context: any(named: 'context'),
-        error: any(named: 'error'),
-        stackTrace: any(named: 'stackTrace'),
-        data: any(named: 'data'))).thenReturn(null);
+    final report = RecordingReport();
     repo = CarbLoadingFoodRepository(
       database: db,
       supabase: MockSupabaseClient(),
-      logger: logger,
+      report: report,
     );
     addTearDown(db.close);
   });
