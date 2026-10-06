@@ -1,11 +1,11 @@
 import 'dart:convert';
 import 'dart:math';
 import 'package:crypto/crypto.dart';
-import 'package:flutter/foundation.dart';
 import 'package:flutter_web_auth_2/flutter_web_auth_2.dart';
 import 'package:http/http.dart' as http;
 import 'package:supabase_flutter/supabase_flutter.dart';
 
+import '../../../shared/services/report/report.dart';
 import '../data/integrations_repository.dart';
 import '../domain/integration.dart';
 
@@ -25,12 +25,14 @@ class GarminOAuthService {
     required String clientSecret,
     required String redirectUri,
     String callbackUrlScheme = 'com.milkman.mealvanaendurance',
+    Report? report,
   }) : _repository = repository,
        _supabaseClient = supabaseClient,
        _clientId = clientId,
        _clientSecret = clientSecret,
        _redirectUri = redirectUri,
-       _callbackUrlScheme = callbackUrlScheme;
+       _callbackUrlScheme = callbackUrlScheme,
+       _report = report;
 
   final IntegrationsRepository _repository;
   final SupabaseClient _supabaseClient;
@@ -38,6 +40,11 @@ class GarminOAuthService {
   final String _clientSecret;
   final String _redirectUri;
   final String _callbackUrlScheme;
+  final Report? _report;
+
+  Report get _r => _report ?? SentryReport.global;
+
+  static const _area = 'garmin';
 
   static const _authorizeUrl = 'https://connect.garmin.com/oauth2Confirm';
   static const _tokenUrl =
@@ -80,11 +87,7 @@ class GarminOAuthService {
       },
     );
 
-    if (kDebugMode) {
-      print('🔐 Starting Garmin Connect OAuth flow...');
-      print('   Auth URL: $authUrl');
-      print('   Redirect URI: $_redirectUri');
-    }
+    _r.debug('Garmin Connect OAuth flow started', area: _area);
 
     // 4. Launch OAuth flow via flutter_web_auth_2
     final result = await FlutterWebAuth2.authenticate(
@@ -98,12 +101,12 @@ class GarminOAuthService {
     final code = callbackUri.queryParameters['code'];
     final returnedState = callbackUri.queryParameters['state'];
 
-    if (kDebugMode) {
-      print('📥 Garmin callback received:');
-      print('   Raw callback: $result');
-      print('   Code param: $code');
-      print('   Code length: ${code?.length ?? 0}');
-    }
+    // The raw callback carries the authorization code; never log it.
+    _r.debug(
+      'Garmin OAuth callback received',
+      area: _area,
+      data: {'hasCode': code != null && code.isNotEmpty},
+    );
 
     // Validate state to prevent CSRF
     if (returnedState != state) {
@@ -118,35 +121,26 @@ class GarminOAuthService {
       );
     }
 
-    if (kDebugMode) {
-      print('✅ Received Garmin authorization code');
-    }
-
     // 6. Exchange code for access token
     final tokenResponse = await _exchangeCodeForToken(code, codeVerifier);
-
-    if (kDebugMode) {
-      print('✅ Garmin token exchange successful');
-    }
+    _r.debug('Garmin token exchange succeeded', area: _area);
 
     // 7. Fetch Garmin user ID
     final garminUserId = await _fetchGarminUserId(tokenResponse.accessToken);
-
-    if (kDebugMode) {
-      print('✅ Garmin user ID fetched: $garminUserId');
-    }
+    _r.debug('Garmin user id fetched', area: _area);
 
     // 7b. Fetch latest body composition (best-effort, non-blocking)
     final bodyComp = await _fetchLatestBodyComposition(
       tokenResponse.accessToken,
     );
-
-    if (kDebugMode) {
-      print(
-        '📊 Garmin body comp: weight=${bodyComp?.weightKg}kg, '
-        'bodyFat=${bodyComp?.bodyFatPct}%',
-      );
-    }
+    _r.debug(
+      'Garmin body composition read',
+      area: _area,
+      data: {
+        'hasWeight': bodyComp?.weightKg != null,
+        'hasBodyFat': bodyComp?.bodyFatPct != null,
+      },
+    );
 
     // 8. Create and store integration
     final now = DateTime.now();
@@ -167,10 +161,7 @@ class GarminOAuthService {
     );
 
     final savedIntegration = await _repository.upsertIntegration(integration);
-
-    if (kDebugMode) {
-      print('✅ Garmin integration saved to database');
-    }
+    _r.debug('Garmin integration saved', area: _area);
 
     // 9. Upsert garmin_user_mappings so push handler can map
     //    incoming Garmin data to our user.
@@ -183,12 +174,13 @@ class GarminOAuthService {
         accessToken: tokenResponse.accessToken,
         refreshToken: tokenResponse.refreshToken,
       );
-
-      if (kDebugMode) {
-        print('✅ Garmin user mapping saved to Supabase');
-      }
-    } else if (kDebugMode) {
-      print('⏭️ Skipping Garmin user mapping upsert (onboarding mode)');
+      _r.debug('Garmin user mapping saved to Supabase', area: _area);
+    } else {
+      // Deferred to upsertUserMapping() once the profile row exists.
+      await _r.note(
+        'Garmin user mapping upsert skipped (onboarding mode)',
+        area: _area,
+      );
     }
 
     return savedIntegration;
@@ -207,21 +199,20 @@ class GarminOAuthService {
         userId: userId,
         garminUserId: integration?.providerAthleteId,
       );
-
-      if (kDebugMode) {
-        print('✅ Garmin user mapping deleted');
-      }
-    } catch (e) {
-      if (kDebugMode) {
-        print('⚠️ Failed to delete Garmin user mapping: $e');
-      }
+      _r.debug('Garmin user mapping deleted', area: _area);
+    } catch (e, st) {
+      // The local row is deactivated regardless, but an orphaned server
+      // mapping keeps routing this athlete's pushes: worth an event.
+      await _r.fault(
+        e,
+        stackTrace: st,
+        area: _area,
+        message: 'Garmin user mapping delete failed; local disconnect continues',
+      );
     }
 
     await _repository.deactivateIntegration(userId, 'garmin');
-
-    if (kDebugMode) {
-      print('✅ Garmin Connect integration disconnected');
-    }
+    _r.debug('Garmin Connect integration disconnected', area: _area);
   }
 
   /// Upsert the garmin_user_mappings row in Supabase for an existing integration.
@@ -231,9 +222,10 @@ class GarminOAuthService {
   Future<void> upsertUserMapping(String userId) async {
     final integration = await _repository.getIntegration(userId, 'garmin');
     if (integration == null || !integration.isActive) {
-      if (kDebugMode) {
-        print('ℹ️ No active Garmin integration to sync mapping for');
-      }
+      await _r.note(
+        'no active Garmin integration; user mapping sync skipped',
+        area: _area,
+      );
       return;
     }
 
@@ -243,10 +235,7 @@ class GarminOAuthService {
       accessToken: integration.accessToken,
       refreshToken: integration.refreshToken,
     );
-
-    if (kDebugMode) {
-      print('✅ Garmin user mapping upserted to Supabase (post-onboarding)');
-    }
+    _r.debug('Garmin user mapping upserted (post-onboarding)', area: _area);
   }
 
   /// Check if user has an active Garmin Connect integration
@@ -279,10 +268,6 @@ class GarminOAuthService {
     );
 
     if (response.statusCode != 200) {
-      if (kDebugMode) {
-        print('❌ Garmin token exchange failed: ${response.statusCode}');
-        print('   Body: ${response.body}');
-      }
       throw GarminOAuthException(
         'Token exchange failed: ${response.statusCode} ${response.body}',
       );
@@ -310,10 +295,6 @@ class GarminOAuthService {
     );
 
     if (response.statusCode != 200) {
-      if (kDebugMode) {
-        print('❌ Garmin user ID fetch failed: ${response.statusCode}');
-        print('   Body: ${response.body}');
-      }
       throw GarminOAuthException(
         'Failed to fetch Garmin user ID: ${response.statusCode}',
       );
@@ -359,9 +340,11 @@ class GarminOAuthService {
       );
 
       if (response.statusCode != 200) {
-        if (kDebugMode) {
-          print('⚠️ Garmin body comp fetch returned ${response.statusCode}');
-        }
+        await _r.note(
+          'Garmin body comp fetch returned non-200; skipped',
+          area: _area,
+          data: {'statusCode': response.statusCode},
+        );
         return null;
       }
 
@@ -374,22 +357,19 @@ class GarminOAuthService {
       final weightGrams = latest['weightInGrams'] as int?;
       final percentFat = (latest['percentFat'] as num?)?.toDouble();
 
-      if (kDebugMode) {
-        print(
-          '📊 Garmin body comp raw: weightGrams=$weightGrams, '
-          'percentFat=$percentFat',
-        );
-      }
-
       return _GarminBodyCompData(
         weightKg: weightGrams != null ? weightGrams / 1000.0 : null,
         bodyFatPct: percentFat,
       );
-    } catch (e) {
-      if (kDebugMode) {
-        print('⚠️ Failed to fetch Garmin body comp: $e');
-      }
-      return null; // Non-fatal — body comp is optional
+    } catch (e, st) {
+      // Body comp is optional: the athlete keeps a profile without it.
+      await _r.degraded(
+        e,
+        stackTrace: st,
+        area: _area,
+        message: 'Garmin body comp fetch failed; continuing without it',
+      );
+      return null;
     }
   }
 

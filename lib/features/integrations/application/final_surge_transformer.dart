@@ -15,6 +15,7 @@ import 'package:flutter/foundation.dart';
 import 'package:uuid/uuid.dart';
 
 import '../../../shared/domain/activity_type.dart';
+import '../../../shared/services/report/report.dart';
 import '../../activities/domain/activity.dart';
 import '../../nutrition_plan/domain/intensity_distribution.dart';
 import '../domain/final_surge_defaults.dart';
@@ -76,7 +77,11 @@ class FinalSurgeTransformResult {
 
 /// Transforms Final Surge workouts to Mealvana Activities
 class FinalSurgeTransformer {
-  const FinalSurgeTransformer();
+  const FinalSurgeTransformer({Report? report}) : _report = report;
+
+  final Report? _report;
+
+  Report get _r => _report ?? SentryReport.global;
 
   static const _uuid = Uuid();
 
@@ -1541,10 +1546,15 @@ class FinalSurgeTransformer {
         print('   📋 Structured workout parsed: $distribution');
       }
       return distribution;
-    } catch (e) {
-      if (kDebugMode) {
-        print('   ⚠️ Failed to parse structured workout: $e');
-      }
+    } catch (e, st) {
+      // Malformed structured payload: no distribution, never a guess. The
+      // athlete loses the intensity-aware plan for this workout.
+      _r.degraded(
+        e,
+        stackTrace: st,
+        area: 'final_surge',
+        message: 'structured workout unparseable; intensity distribution dropped',
+      );
       return null;
     }
   }

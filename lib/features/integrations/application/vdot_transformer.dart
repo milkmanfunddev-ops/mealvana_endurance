@@ -2,6 +2,7 @@ import 'package:flutter/foundation.dart';
 import 'package:uuid/uuid.dart';
 
 import '../../../shared/domain/activity_type.dart';
+import '../../../shared/services/report/report.dart';
 import '../../activities/domain/activity.dart';
 
 /// Result of transforming a single VDOT workout to a Mealvana Activity.
@@ -28,7 +29,11 @@ class VdotTransformResult {
 ///
 /// Schema reference: https://github.com/VDOT-O2/V.O2-API/wiki
 class VdotTransformer {
-  const VdotTransformer();
+  const VdotTransformer({Report? report}) : _report = report;
+
+  final Report? _report;
+
+  Report get _r => _report ?? SentryReport.global;
 
   static const _uuid = Uuid();
   static const _metersPerMile = 1609.344;
@@ -188,7 +193,12 @@ class VdotTransformer {
     final cleaned = raw.endsWith('Z') ? raw.substring(0, raw.length - 1) : raw;
     try {
       return DateTime.parse(cleaned);
-    } catch (_) {
+    } on FormatException catch (e) {
+      _r.note(
+        'V.O2 eventDate unparseable; workout dropped',
+        area: 'vdot',
+        data: {'raw': raw, 'error': e.message},
+      );
       return null;
     }
   }

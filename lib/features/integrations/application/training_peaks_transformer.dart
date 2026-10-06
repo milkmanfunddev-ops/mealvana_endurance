@@ -17,6 +17,7 @@ import 'package:flutter/foundation.dart';
 import 'package:uuid/uuid.dart';
 
 import '../../../shared/domain/activity_type.dart';
+import '../../../shared/services/report/report.dart';
 import '../../activities/domain/activity.dart';
 import '../../nutrition_plan/domain/intensity_distribution.dart';
 import '../domain/athlete_zones.dart';
@@ -236,7 +237,11 @@ class TrainingPeaksGoal {
 
 /// Transforms TrainingPeaks workouts and events to Mealvana models
 class TrainingPeaksTransformer {
-  const TrainingPeaksTransformer();
+  const TrainingPeaksTransformer({Report? report}) : _report = report;
+
+  final Report? _report;
+
+  Report get _r => _report ?? SentryReport.global;
 
   static const _uuid = Uuid();
 
@@ -875,10 +880,16 @@ class TrainingPeaksTransformer {
       if (segments.isEmpty) return null;
 
       return IntensityDistributionMapper.fromSegments(segments);
-    } catch (e) {
-      if (kDebugMode) {
-        print('   ⚠️ Failed to parse structure JSON: $e');
-      }
+    } catch (e, st) {
+      // DI-26: unparseable structure means no distribution, never a guess.
+      // Expected on malformed payloads, but worth a warning: the athlete
+      // loses the intensity-aware plan for this workout.
+      _r.degraded(
+        e,
+        stackTrace: st,
+        area: 'training_peaks',
+        message: 'structure JSON unparseable; intensity distribution dropped',
+      );
       return null;
     }
   }

@@ -10,7 +10,7 @@ import '../../../../shared/services/app_config.dart';
 import '../../../activities/data/activities_repository.dart';
 import '../../application/change_detection_service.dart';
 import '../../../../shared/services/app_external_deps.dart';
-import '../../../../shared/services/sentry/sentry_reporter.dart';
+import '../../../../shared/services/report/report.dart';
 import '../../application/final_surge_oauth_service.dart';
 import '../../application/final_surge_sync_service.dart';
 import '../../application/final_surge_transformer.dart';
@@ -192,7 +192,7 @@ FinalSurgeOAuthService finalSurgeOAuthService(Ref ref) {
 /// Provider for Final Surge transformer
 @Riverpod(keepAlive: true)
 FinalSurgeTransformer finalSurgeTransformer(Ref ref) {
-  return const FinalSurgeTransformer();
+  return FinalSurgeTransformer(report: ref.read(reportProvider));
 }
 
 /// Repository for the raw FS/TP payload capture side-channel
@@ -210,7 +210,7 @@ ProviderRawPayloadsRepository providerRawPayloadsRepository(Ref ref) {
 RawRetentionDeadManCheck rawRetentionDeadManCheck(Ref ref) {
   return RawRetentionDeadManCheck(
     supabase: ref.read(appExternalDepsProvider).supabaseClient,
-    sentry: ref.read(sentryReporterProvider),
+    report: ref.read(reportProvider),
   );
 }
 
@@ -231,6 +231,7 @@ FinalSurgeSyncService finalSurgeSyncService(Ref ref) {
     changeDetectionService: changeDetectionService,
     analytics: ref.watch(analyticsTrackerProvider),
     rawPayloadsRepository: ref.watch(providerRawPayloadsRepositoryProvider),
+    report: ref.read(reportProvider),
   );
 }
 
@@ -281,7 +282,7 @@ Future<TrainingPeaksApiClient> trainingPeaksApiClient(Ref ref) async {
 /// Provider for TrainingPeaks transformer
 @Riverpod(keepAlive: true)
 TrainingPeaksTransformer trainingPeaksTransformer(Ref ref) {
-  return const TrainingPeaksTransformer();
+  return TrainingPeaksTransformer(report: ref.read(reportProvider));
 }
 
 /// Provider for TrainingPeaks OAuth service
@@ -297,6 +298,7 @@ Future<TrainingPeaksOAuthService> trainingPeaksOAuthService(Ref ref) async {
     clientId: config.trainingPeaksClientId,
     useSandbox: config.trainingPeaksUseSandbox,
     callbackUrlScheme: _getTrainingPeaksCallbackScheme(config.isDevelopment),
+    report: ref.read(reportProvider),
   );
 }
 
@@ -317,6 +319,7 @@ Future<TrainingPeaksSyncService> trainingPeaksSyncService(Ref ref) async {
     changeDetectionService: changeDetectionService,
     analytics: ref.watch(analyticsTrackerProvider),
     rawPayloadsRepository: ref.watch(providerRawPayloadsRepositoryProvider),
+    report: ref.read(reportProvider),
   );
 }
 
@@ -359,6 +362,7 @@ GarminOAuthService garminOAuthService(Ref ref) {
     clientSecret: config.garminClientSecret,
     redirectUri: config.garminRedirectUri,
     callbackUrlScheme: _baseCallbackScheme,
+    report: ref.read(reportProvider),
   );
 }
 
@@ -489,6 +493,7 @@ VdotOAuthService vdotOAuthService(Ref ref) {
     authBaseUrl: config.vdotAuthBaseUrl,
     redirectUri: _vdotRedirectUri,
     callbackUrlScheme: _baseCallbackScheme,
+    report: ref.read(reportProvider),
   );
 }
 
@@ -508,7 +513,8 @@ Future<bool> isVdotConnected(Ref ref, String userId) async {
 
 /// Provider for the V.O2 transformer (workout JSON → Activity).
 @Riverpod(keepAlive: true)
-VdotTransformer vdotTransformer(Ref ref) => const VdotTransformer();
+VdotTransformer vdotTransformer(Ref ref) =>
+    VdotTransformer(report: ref.read(reportProvider));
 
 /// Provider for the V.O2 sync service.
 @Riverpod(keepAlive: true)
@@ -525,6 +531,7 @@ VdotSyncService vdotSyncService(Ref ref) {
     transformer: transformer,
     changeDetectionService: changeDetectionService,
     analytics: ref.watch(analyticsTrackerProvider),
+    report: ref.read(reportProvider),
   );
 }
 
@@ -562,6 +569,7 @@ RunnaSyncService runnaSyncService(Ref ref) {
     transformer: transformer,
     changeDetectionService: changeDetectionService,
     analytics: ref.watch(analyticsTrackerProvider),
+    report: ref.read(reportProvider),
   );
 }
 

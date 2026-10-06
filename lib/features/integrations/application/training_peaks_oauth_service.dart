@@ -2,6 +2,7 @@ import 'dart:math';
 import 'package:flutter/foundation.dart';
 import 'package:flutter_web_auth_2/flutter_web_auth_2.dart';
 
+import '../../../shared/services/report/report.dart';
 import '../data/integrations_repository.dart';
 import '../data/training_peaks_api_client.dart';
 import '../domain/integration.dart';
@@ -24,6 +25,7 @@ class TrainingPeaksOAuthService {
     bool useSandbox = true,
     String callbackUrlScheme = 'com.milkman.mealvanaendurance',
     List<String>? scopes,
+    Report? report,
   }) : _apiClient = apiClient,
        _repository = repository,
        _clientId = clientId,
@@ -31,7 +33,8 @@ class TrainingPeaksOAuthService {
            ? 'https://oauth.sandbox.trainingpeaks.com'
            : 'https://oauth.trainingpeaks.com',
        _callbackUrlScheme = callbackUrlScheme,
-       _scopes = scopes ?? defaultScopes;
+       _scopes = scopes ?? defaultScopes,
+       _report = report;
 
   final TrainingPeaksApiClient _apiClient;
   final IntegrationsRepository _repository;
@@ -39,6 +42,11 @@ class TrainingPeaksOAuthService {
   final String _oauthBaseUrl;
   final String _callbackUrlScheme;
   final List<String> _scopes;
+  final Report? _report;
+
+  Report get _r => _report ?? SentryReport.global;
+
+  static const _area = 'training_peaks';
 
   /// Default OAuth scopes for Mealvana
   static const defaultScopes = [
@@ -78,10 +86,7 @@ class TrainingPeaksOAuthService {
       },
     );
 
-    if (kDebugMode) {
-      print('🔐 Starting TrainingPeaks OAuth flow...');
-      print('   Auth URL: $authUrl');
-    }
+    _r.debug('TrainingPeaks OAuth flow started', area: _area);
 
     // 3. Launch OAuth flow via flutter_web_auth_2
     // On web, callbackUrlScheme should be the base URL (e.g., "https")
@@ -105,13 +110,12 @@ class TrainingPeaksOAuthService {
     final code = callbackUri.queryParameters['code'];
     final returnedState = callbackUri.queryParameters['state'];
 
-    if (kDebugMode) {
-      print('📥 TrainingPeaks callback received:');
-      print('   Raw callback: $result');
-      print('   Parsed URI: $callbackUri');
-      print('   Code param: $code');
-      print('   Code length: ${code?.length ?? 0}');
-    }
+    // The raw callback carries the authorization code; never log it.
+    _r.debug(
+      'TrainingPeaks OAuth callback received',
+      area: _area,
+      data: {'hasCode': code != null && code.isNotEmpty},
+    );
 
     // Validate state to prevent CSRF
     if (returnedState != state) {
@@ -128,32 +132,26 @@ class TrainingPeaksOAuthService {
       );
     }
 
-    if (kDebugMode) {
-      print('✅ Received authorization code');
-    }
-
     // 5. Exchange code for access token
     final tokenResponse = await _apiClient.exchangeCodeForToken(
       code,
       redirectUri,
     );
-
-    if (kDebugMode) {
-      print('✅ Token exchange successful');
-      print('   Expires in: ${tokenResponse.expiresIn} seconds');
-    }
+    _r.debug(
+      'TrainingPeaks token exchange succeeded',
+      area: _area,
+      data: {'expiresInSeconds': tokenResponse.expiresIn},
+    );
 
     // 6. Fetch athlete profile (TrainingPeaks doesn't include this in token response!)
     final profile = await _apiClient.getAthleteProfile(
       tokenResponse.accessToken,
     );
-
-    if (kDebugMode) {
-      print('✅ Athlete profile fetched');
-      print('   Athlete: ${profile.fullName}');
-      print('   Athlete ID: ${profile.id}');
-      print('   Premium: ${profile.isPremium}');
-    }
+    _r.debug(
+      'TrainingPeaks athlete profile fetched',
+      area: _area,
+      data: {'isPremium': profile.isPremium},
+    );
 
     // 7. Create and store integration (including profile data for auto-population)
     final now = DateTime.now();
@@ -179,18 +177,9 @@ class TrainingPeaksOAuthService {
       updatedAt: now,
     );
 
-    if (kDebugMode) {
-      print('   Weight (kg): ${profile.weight}');
-      print('   Birth month: ${profile.birthMonth}');
-      print('   Gender: ${profile.sex}');
-    }
-
     // 8. Save to database (upsert - replaces existing if present)
     final savedIntegration = await _repository.upsertIntegration(integration);
-
-    if (kDebugMode) {
-      print('✅ Integration saved to database');
-    }
+    _r.debug('TrainingPeaks integration saved', area: _area);
 
     return savedIntegration;
   }
@@ -230,11 +219,11 @@ class TrainingPeaksOAuthService {
       );
     }
 
-    if (kDebugMode) {
-      print('🔄 Refreshing TrainingPeaks token...');
-      print('   Token expires at: ${integration.tokenExpiresAt}');
-      print('   Current time: ${DateTime.now()}');
-    }
+    _r.debug(
+      'TrainingPeaks token refresh started',
+      area: _area,
+      data: {'expiresAt': integration.tokenExpiresAt?.toIso8601String()},
+    );
 
     try {
       final tokenResponse = await _apiClient.refreshToken(refreshToken);
@@ -251,18 +240,23 @@ class TrainingPeaksOAuthService {
         updatedIntegration,
       );
 
-      if (kDebugMode) {
-        print('✅ Token refreshed successfully');
-        print('   New expiration: ${tokenResponse.expiresAt}');
-      }
+      _r.debug(
+        'TrainingPeaks token refreshed',
+        area: _area,
+        data: {'expiresAt': tokenResponse.expiresAt.toIso8601String()},
+      );
 
       return savedIntegration;
-    } on TrainingPeaksApiException catch (e) {
-      if (kDebugMode) {
-        print('❌ Token refresh failed: ${e.toString()}');
-        print('   Status code: ${e.statusCode}');
-        print('   Response body: ${e.body}');
-      }
+    } on TrainingPeaksApiException catch (e, st) {
+      // Expected when TP revokes or expires the refresh token; the
+      // integration is parked in 'error' until the athlete reconnects.
+      await _r.degraded(
+        e,
+        stackTrace: st,
+        area: _area,
+        message: 'TrainingPeaks token refresh failed; reconnect required',
+        extra: {'statusCode': e.statusCode},
+      );
       // Mark integration as needing re-auth
       await _repository.updateSyncStatus(
         userId,
@@ -288,9 +282,7 @@ class TrainingPeaksOAuthService {
     final refreshToken = integration.refreshToken;
     if (refreshToken == null || refreshToken.isEmpty) return null;
 
-    if (kDebugMode) {
-      print('🔄 Force-refreshing TrainingPeaks token...');
-    }
+    _r.debug('TrainingPeaks token force-refresh started', area: _area);
 
     try {
       final tokenResponse = await _apiClient.refreshToken(refreshToken);
@@ -302,16 +294,20 @@ class TrainingPeaksOAuthService {
       );
       await _repository.upsertIntegration(updatedIntegration);
 
-      if (kDebugMode) {
-        print(
-          '✅ Force-refresh succeeded, new expiry: ${tokenResponse.expiresAt}',
-        );
-      }
+      _r.debug(
+        'TrainingPeaks token force-refresh succeeded',
+        area: _area,
+        data: {'expiresAt': tokenResponse.expiresAt.toIso8601String()},
+      );
       return tokenResponse.accessToken;
-    } on TrainingPeaksApiException catch (e) {
-      if (kDebugMode) {
-        print('❌ Force-refresh failed: $e');
-      }
+    } on TrainingPeaksApiException catch (e, st) {
+      await _r.degraded(
+        e,
+        stackTrace: st,
+        area: _area,
+        message: 'TrainingPeaks token force-refresh failed; reconnect required',
+        extra: {'statusCode': e.statusCode},
+      );
       await _repository.updateSyncStatus(
         userId,
         'training_peaks',
@@ -343,23 +339,22 @@ class TrainingPeaksOAuthService {
       if (integration != null && integration.accessToken.isNotEmpty) {
         try {
           await _apiClient.deauthorize(integration.accessToken);
-          if (kDebugMode) {
-            print('✅ TrainingPeaks access revoked');
-          }
-        } catch (e) {
-          // Log but don't fail - we'll still deactivate locally
-          if (kDebugMode) {
-            print('⚠️ Failed to revoke TrainingPeaks access: $e');
-          }
+          _r.debug('TrainingPeaks access revoked', area: _area);
+        } catch (e, st) {
+          // Best-effort revoke (the token may already be dead); the local
+          // deactivation below still happens.
+          await _r.degraded(
+            e,
+            stackTrace: st,
+            area: _area,
+            message: 'TrainingPeaks deauthorize failed; local disconnect continues',
+          );
         }
       }
     }
 
     await _repository.deactivateIntegration(userId, 'training_peaks');
-
-    if (kDebugMode) {
-      print('✅ TrainingPeaks integration disconnected');
-    }
+    _r.debug('TrainingPeaks integration disconnected', area: _area);
   }
 
   /// Check if user has an active TrainingPeaks integration
