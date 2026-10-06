@@ -7,18 +7,14 @@ import 'package:supabase_flutter/supabase_flutter.dart';
 import 'package:mealvana_endurance/features/onboarding/presentation/providers/onboarding_session_controller.dart';
 import 'package:mealvana_endurance/shared/services/analytics/analytics_tracker.dart';
 import 'package:mealvana_endurance/shared/services/app_external_deps.dart';
-import 'package:mealvana_endurance/shared/services/logging_service.dart';
-import 'package:mealvana_endurance/shared/services/sentry/sentry_reporter.dart';
+
+import '../../helpers/fakes/recording_report.dart';
 
 class MockSupabaseClient extends Mock implements SupabaseClient {}
 
 class MockGoTrueClient extends Mock implements GoTrueClient {}
 
 class MockUser extends Mock implements User {}
-
-class MockAppLogger extends Mock implements AppLogger {}
-
-class MockSentryReporter extends Mock implements SentryReporter {}
 
 class MockAnalyticsTracker extends Mock implements AnalyticsTracker {}
 
@@ -41,9 +37,8 @@ void main() {
           AppExternalDeps(
             analytics: MockAnalyticsTracker(),
             supabaseClient: supabase,
-            sentry: MockSentryReporter(),
-            logger: MockAppLogger(),
             sharedPreferences: prefs,
+            report: RecordingReport(),
           ),
         ),
       ],

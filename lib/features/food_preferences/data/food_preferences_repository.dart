@@ -5,7 +5,7 @@ import 'package:supabase_flutter/supabase_flutter.dart';
 import '../../../shared/database/app_database.dart';
 import '../../../shared/database/database_provider.dart';
 import '../../../shared/services/app_external_deps.dart';
-import '../../../shared/services/sentry/sentry_reporter.dart';
+import '../../../shared/services/report/report.dart';
 import '../../../shared/services/sync/sync_dependency_graph.dart';
 import '../../../shared/data/syncable_repository.dart';
 import '../../auth/domain/user_preferences.dart';
@@ -18,12 +18,12 @@ class FoodPreferencesRepository with SyncableRepository {
   FoodPreferencesRepository({
     required this.database,
     required this.supabase,
-    required this.sentry,
-  });
+    required Report report,
+  }) : _report = report;
 
   final AppDatabase database;
   final SupabaseClient supabase;
-  final SentryReporter sentry;
+  final Report _report;
 
   // ========== SyncableRepository Implementation ==========
 
@@ -85,8 +85,8 @@ class FoodPreferencesRepository with SyncableRepository {
       // Update last sync timestamp
       await setLastSyncTime(DateTime.now());
 
-      sentry.addBreadcrumb(
-        message: 'Food preferences synced from Supabase',
+      _report.breadcrumb(
+        'Food preferences synced from Supabase',
         category: 'sync',
         data: {
           'user_id': userId,
@@ -97,11 +97,12 @@ class FoodPreferencesRepository with SyncableRepository {
 
       return SyncResult.successful(preferences.length);
     } catch (e, stackTrace) {
-      await sentry.reportNetworkError(
+      await _report.degraded(
         e,
-        url: 'supabase:food_preferences:sync',
-        method: 'SELECT',
         stackTrace: stackTrace,
+        area: 'network',
+        tags: {'method': 'SELECT'},
+        extra: {'url': 'supabase:food_preferences:sync'},
       );
       return SyncResult.failed(e.toString());
     }
@@ -141,8 +142,8 @@ class FoodPreferencesRepository with SyncableRepository {
           .from('food_preferences')
           .upsert(preferencesToUpload, onConflict: 'user_id,food_name');
 
-      sentry.addBreadcrumb(
-        message: 'Uploaded food preferences to Supabase',
+      _report.breadcrumb(
+        'Uploaded food preferences to Supabase',
         category: 'sync',
         data: {
           'user_id': userId,
@@ -153,11 +154,12 @@ class FoodPreferencesRepository with SyncableRepository {
 
       return UploadResult.successful(allPreferences.length);
     } catch (e, stackTrace) {
-      await sentry.reportNetworkError(
+      await _report.degraded(
         e,
-        url: 'supabase:food_preferences:upload',
-        method: 'UPSERT',
         stackTrace: stackTrace,
+        area: 'network',
+        tags: {'method': 'UPSERT'},
+        extra: {'url': 'supabase:food_preferences:upload'},
       );
       return UploadResult.failed(e.toString());
     }
@@ -198,23 +200,24 @@ class FoodPreferencesRepository with SyncableRepository {
           try {
             await _uploadAllPreferencesForUser(userId);
           } catch (e, stackTrace) {
-            sentry.addBreadcrumb(
-              message: 'Immediate upload failed; record stays dirty for retry',
+            _report.breadcrumb(
+              'Immediate upload failed; record stays dirty for retry',
               category: 'sync',
               data: {'operation': 'upsert_preferences', 'recordId': userId},
             );
-            await sentry.reportNetworkError(
+            await _report.degraded(
               e,
-              url: 'supabase:food_preferences:upsert',
-              method: 'UPSERT',
               stackTrace: stackTrace,
+              area: 'network',
+              tags: {'method': 'UPSERT'},
+              extra: {'url': 'supabase:food_preferences:upsert'},
             );
           }
         }());
       }
 
-      sentry.addBreadcrumb(
-        message: 'Food preferences saved successfully',
+      _report.breadcrumb(
+        'Food preferences saved successfully',
         category: 'database',
         data: {
           'user_id': userId,
@@ -223,11 +226,14 @@ class FoodPreferencesRepository with SyncableRepository {
         },
       );
     } catch (e, stackTrace) {
-      await sentry.reportDatabaseError(
+      await _report.fault(
         e,
-        operation: 'saveFoodPreferences',
-        table: 'food_preferences_table',
         stackTrace: stackTrace,
+        area: 'database',
+        tags: {
+          'operation': 'saveFoodPreferences',
+          'table': 'food_preferences_table',
+        },
       );
       rethrow;
     }
@@ -244,19 +250,22 @@ class FoodPreferencesRepository with SyncableRepository {
       final count = await database.foodPreferencesDao
           .removeFoodPreferencesBySource(userId, source);
 
-      sentry.addBreadcrumb(
-        message: 'Removed food preferences by source',
+      _report.breadcrumb(
+        'Removed food preferences by source',
         category: 'database',
         data: {'user_id': userId, 'source': source, 'count': count},
       );
 
       return count;
     } catch (e, stackTrace) {
-      await sentry.reportDatabaseError(
+      await _report.fault(
         e,
-        operation: 'removeFoodPreferencesBySource',
-        table: 'food_preferences_table',
         stackTrace: stackTrace,
+        area: 'database',
+        tags: {
+          'operation': 'removeFoodPreferencesBySource',
+          'table': 'food_preferences_table',
+        },
       );
       rethrow;
     }
@@ -267,11 +276,14 @@ class FoodPreferencesRepository with SyncableRepository {
     try {
       return await database.foodPreferencesDao.getFoodPreferenceSources(userId);
     } catch (e, stackTrace) {
-      await sentry.reportDatabaseError(
+      await _report.fault(
         e,
-        operation: 'getFoodPreferenceSources',
-        table: 'food_preferences_table',
         stackTrace: stackTrace,
+        area: 'database',
+        tags: {
+          'operation': 'getFoodPreferenceSources',
+          'table': 'food_preferences_table',
+        },
       );
       rethrow;
     }
@@ -282,11 +294,14 @@ class FoodPreferencesRepository with SyncableRepository {
     try {
       return await database.foodPreferencesDao.getUserFoodPreferences(userId);
     } catch (e, stackTrace) {
-      await sentry.reportDatabaseError(
+      await _report.fault(
         e,
-        operation: 'getFoodPreferences',
-        table: 'food_preferences_table',
         stackTrace: stackTrace,
+        area: 'database',
+        tags: {
+          'operation': 'getFoodPreferences',
+          'table': 'food_preferences_table',
+        },
       );
       rethrow;
     }
@@ -299,11 +314,14 @@ class FoodPreferencesRepository with SyncableRepository {
         userId,
       );
     } catch (e, stackTrace) {
-      await sentry.reportDatabaseError(
+      await _report.fault(
         e,
-        operation: 'getFoodPreferenceLevels',
-        table: 'food_preferences_table',
         stackTrace: stackTrace,
+        area: 'database',
+        tags: {
+          'operation': 'getFoodPreferenceLevels',
+          'table': 'food_preferences_table',
+        },
       );
       rethrow;
     }
@@ -326,8 +344,8 @@ class FoodPreferencesRepository with SyncableRepository {
         sliderLevels: levels,
       );
 
-      sentry.addBreadcrumb(
-        message: 'Updated single food preference',
+      _report.breadcrumb(
+        'Updated single food preference',
         category: 'database',
         data: {
           'user_id': userId,
@@ -336,11 +354,14 @@ class FoodPreferencesRepository with SyncableRepository {
         },
       );
     } catch (e, stackTrace) {
-      await sentry.reportDatabaseError(
+      await _report.fault(
         e,
-        operation: 'updateFoodPreference',
-        table: 'food_preferences_table',
         stackTrace: stackTrace,
+        area: 'database',
+        tags: {
+          'operation': 'updateFoodPreference',
+          'table': 'food_preferences_table',
+        },
       );
       rethrow;
     }
@@ -351,11 +372,11 @@ class FoodPreferencesRepository with SyncableRepository {
     try {
       return await database.foodPreferencesDao.getLikedFoods(userId);
     } catch (e, stackTrace) {
-      await sentry.reportDatabaseError(
+      await _report.fault(
         e,
-        operation: 'getLikedFoods',
-        table: 'food_preferences_table',
         stackTrace: stackTrace,
+        area: 'database',
+        tags: {'operation': 'getLikedFoods', 'table': 'food_preferences_table'},
       );
       rethrow;
     }
@@ -366,11 +387,14 @@ class FoodPreferencesRepository with SyncableRepository {
     try {
       return await database.foodPreferencesDao.getDislikedFoods(userId);
     } catch (e, stackTrace) {
-      await sentry.reportDatabaseError(
+      await _report.fault(
         e,
-        operation: 'getDislikedFoods',
-        table: 'food_preferences_table',
         stackTrace: stackTrace,
+        area: 'database',
+        tags: {
+          'operation': 'getDislikedFoods',
+          'table': 'food_preferences_table',
+        },
       );
       rethrow;
     }
@@ -409,12 +433,12 @@ class FoodPreferencesRepository with SyncableRepository {
 @riverpod
 Future<FoodPreferencesRepository> foodPreferencesRepository(Ref ref) async {
   final database = ref.watch(appDatabaseProvider);
-  final sentry = ref.watch(sentryReporterProvider);
+  final report = ref.watch(reportProvider);
   final supabase = ref.watch(appExternalDepsProvider).supabaseClient;
 
   return FoodPreferencesRepository(
     database: database,
     supabase: supabase,
-    sentry: sentry,
+    report: report,
   );
 }

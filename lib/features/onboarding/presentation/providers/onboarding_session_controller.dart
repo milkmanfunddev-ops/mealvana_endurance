@@ -80,9 +80,9 @@ class OnboardingSessionController extends _$OnboardingSessionController {
         final outcome = currentUser.isAnonymous
             ? OnboardingSessionOutcome.reusedAnonymous
             : OnboardingSessionOutcome.keptAuthenticated;
-        deps.logger.info(
+        deps.report.info(
           'Onboarding session: reusing existing session',
-          context: 'AUTH',
+          area: 'onboarding',
           data: {'user_id': currentUser.id, 'outcome': outcome.name},
         );
         // Clear the temp user id from any previous onboarding attempt; the
@@ -97,9 +97,9 @@ class OnboardingSessionController extends _$OnboardingSessionController {
       if (user == null) {
         throw StateError('signInAnonymously returned no user');
       }
-      deps.logger.info(
+      deps.report.info(
         'Onboarding session: no existing session, minted anonymous session',
-        context: 'AUTH',
+        area: 'onboarding',
         data: {'user_id': user.id},
       );
       await deps.sharedPreferences.remove(_onboardingTempUserIdKey);

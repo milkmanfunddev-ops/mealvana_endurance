@@ -7,7 +7,6 @@ import '../../../shared/database/app_database.dart';
 import '../../../shared/database/database_provider.dart';
 import '../../../shared/services/app_external_deps.dart';
 import '../../../shared/services/food_management/product_type_mapper.dart';
-import '../../../shared/services/sentry/sentry_reporter.dart';
 import '../../../shared/data/syncable_repository.dart';
 import '../../../shared/services/sync/sync_dependency_graph.dart';
 import '../../../shared/services/report/report.dart';
@@ -20,13 +19,11 @@ class UserFoodsRepository with SyncableRepository {
   UserFoodsRepository({
     required this.database,
     required this.supabase,
-    required this.sentry,
     Report? report,
   }) : _reportOverride = report;
 
   final AppDatabase database;
   final SupabaseClient supabase;
-  final SentryReporter sentry;
   final Report? _reportOverride;
 
   Report get _report => _reportOverride ?? SentryReport.global;
@@ -58,8 +55,8 @@ class UserFoodsRepository with SyncableRepository {
       // Update last sync timestamp
       await setLastSyncTime(DateTime.now());
 
-      sentry.addBreadcrumb(
-        message: 'User foods synced from Supabase',
+      _report.breadcrumb(
+        'User foods synced from Supabase',
         category: 'sync',
         data: {
           'user_id': userId,
@@ -70,11 +67,12 @@ class UserFoodsRepository with SyncableRepository {
 
       return SyncResult.successful(syncedCount);
     } catch (e, stackTrace) {
-      await sentry.reportNetworkError(
+      await _report.degraded(
         e,
-        url: 'supabase:user_foods:sync',
-        method: 'SELECT',
         stackTrace: stackTrace,
+        area: 'network',
+        tags: {'method': 'SELECT'},
+        extra: {'url': 'supabase:user_foods:sync'},
       );
       return SyncResult.failed(e.toString());
     }
@@ -175,8 +173,8 @@ class UserFoodsRepository with SyncableRepository {
         }
       });
 
-      sentry.addBreadcrumb(
-        message: 'Uploaded dirty user foods to Supabase',
+      _report.breadcrumb(
+        'Uploaded dirty user foods to Supabase',
         category: 'sync',
         data: {
           'user_id': userId,
@@ -187,11 +185,12 @@ class UserFoodsRepository with SyncableRepository {
 
       return UploadResult.successful(dirtyFoods.length);
     } catch (e, stackTrace) {
-      await sentry.reportNetworkError(
+      await _report.degraded(
         e,
-        url: 'supabase:user_foods:upload',
-        method: 'UPSERT',
         stackTrace: stackTrace,
+        area: 'network',
+        tags: {'method': 'UPSERT'},
+        extra: {'url': 'supabase:user_foods:upload'},
       );
       return UploadResult.failed(e.toString());
     }
@@ -213,17 +212,18 @@ class UserFoodsRepository with SyncableRepository {
 
       await _syncRemoteRowsPreservingDirty(userId, response as List<dynamic>);
 
-      sentry.addBreadcrumb(
-        message: 'User foods synced from Supabase',
+      _report.breadcrumb(
+        'User foods synced from Supabase',
         category: 'sync',
         data: {'user_id': userId, 'count': response.length},
       );
     } catch (e, stackTrace) {
-      await sentry.reportNetworkError(
+      await _report.degraded(
         e,
-        url: 'supabase:user_foods:select',
-        method: 'SELECT',
         stackTrace: stackTrace,
+        area: 'network',
+        tags: {'method': 'SELECT'},
+        extra: {'url': 'supabase:user_foods:select'},
       );
       rethrow;
     }
@@ -274,8 +274,8 @@ class UserFoodsRepository with SyncableRepository {
     });
 
     if (dirtyIds.isNotEmpty) {
-      sentry.addBreadcrumb(
-        message: 'Skipped remote user_food overwrite for dirty local rows',
+      _report.breadcrumb(
+        'Skipped remote user_food overwrite for dirty local rows',
         category: 'sync',
         data: {
           'user_id': userId,
@@ -383,13 +383,11 @@ class UserFoodsRepository with SyncableRepository {
 @riverpod
 Future<UserFoodsRepository> userFoodsRepository(Ref ref) async {
   final database = ref.watch(appDatabaseProvider);
-  final sentry = ref.watch(sentryReporterProvider);
   final supabase = ref.watch(appExternalDepsProvider).supabaseClient;
 
   return UserFoodsRepository(
     database: database,
     supabase: supabase,
-    sentry: sentry,
     report: ref.watch(reportProvider),
   );
 }

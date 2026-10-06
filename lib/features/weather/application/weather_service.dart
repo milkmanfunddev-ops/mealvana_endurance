@@ -1,6 +1,6 @@
 import 'package:riverpod_annotation/riverpod_annotation.dart';
 import 'package:supabase_flutter/supabase_flutter.dart';
-import '../../../shared/services/logging_service.dart';
+import '../../../shared/services/report/report.dart';
 import '../../../shared/services/location_service.dart';
 import '../data/weather_repository.dart';
 import '../domain/weather_forecast.dart';
@@ -15,7 +15,7 @@ WeatherService weatherService(Ref ref) {
     supabase: Supabase.instance.client,
     weatherRepository: ref.watch(weatherRepositoryProvider),
     locationService: ref.watch(locationServiceProvider),
-    logger: ref.watch(appLoggerProvider),
+    report: ref.watch(reportProvider),
   );
 }
 
@@ -26,7 +26,7 @@ class WeatherService {
   final SupabaseClient supabase;
   final WeatherRepository weatherRepository;
   final LocationService locationService;
-  final AppLogger logger;
+  final Report _report;
 
   /// In-memory cache: Map of cacheKey to WeatherForecast
   /// Cache key format: "lat_lon_yyyy-MM-ddTHH"
@@ -36,8 +36,8 @@ class WeatherService {
     required this.supabase,
     required this.weatherRepository,
     required this.locationService,
-    required this.logger,
-  }) {
+    required Report report,
+  }) : _report = report {
     // Clear stale default weather forecasts on initialization
     weatherRepository.clearDefaultForecasts().ignore();
   }
@@ -84,9 +84,9 @@ class WeatherService {
     domain.Location? location,
     required DateTime activityDate,
   }) async {
-    logger.debug(
+    _report.debug(
       'Weather fetch requested',
-      context: 'WeatherService',
+      area: 'weather',
       data: {
         'has_location': location != null,
         'activity_date': activityDate.toIso8601String(),
@@ -98,14 +98,23 @@ class WeatherService {
       if (targetLocation == null) {
         targetLocation = await locationService.getCurrentLocation();
         if (targetLocation == null) {
-          logger.warning(
-            'No location available for weather',
-            context: 'WeatherService',
-            data: {
+          _report.degraded(
+            LoggedFault(
+              'No location available for weather',
+              context: 'weather',
+            ),
+            area: 'weather',
+            extra: {
               'failure_reason': locationService.getLastFailureReason()?.name,
             },
           );
-          logger.warning('Could not get location, using default weather');
+          _report.degraded(
+            LoggedFault(
+              'Could not get location, using default weather',
+              context: 'weather',
+            ),
+            area: 'weather',
+          );
           return WeatherForecast.defaultForecast(activityDate);
         }
       }
@@ -123,15 +132,15 @@ class WeatherService {
         if (cached.isFresh()) {
           if (_shouldBypassHistoricalCache(cached, activityDate)) {
             _memoryCache.remove(cacheKey);
-            logger.debug(
+            _report.debug(
               'Bypassing stale historical memory cache for same-day/future request',
-              context: 'WeatherService',
+              area: 'weather',
               data: {'cache_key': cacheKey},
             );
           } else {
-            logger.debug(
+            _report.debug(
               'Weather cache hit (memory)',
-              context: 'WeatherService',
+              area: 'weather',
               data: {'cache_key': cacheKey, 'source': cached.source.value},
             );
             return cached;
@@ -148,15 +157,15 @@ class WeatherService {
 
       if (dbCached != null) {
         if (_shouldBypassHistoricalCache(dbCached, activityDate)) {
-          logger.debug(
+          _report.debug(
             'Bypassing stale historical DB cache for same-day/future request',
-            context: 'WeatherService',
+            area: 'weather',
             data: {'cache_key': cacheKey},
           );
         } else {
-          logger.debug(
+          _report.debug(
             'Weather cache hit (db)',
-            context: 'WeatherService',
+            area: 'weather',
             data: {'cache_key': cacheKey, 'source': dbCached.source.value},
           );
           _memoryCache[cacheKey] = dbCached;
@@ -165,9 +174,9 @@ class WeatherService {
       }
 
       // Fetch from API (third level)
-      logger.debug(
+      _report.debug(
         'Weather cache miss, calling API',
-        context: 'WeatherService',
+        area: 'weather',
         data: {'cache_key': cacheKey},
       );
       final forecast = await _fetchWeatherFromAPI(
@@ -188,19 +197,23 @@ class WeatherService {
         // Clear expired forecasts (background cleanup)
         weatherRepository.clearExpiredForecasts().ignore();
       } else {
-        logger.warning(
-          'Weather API returned default forecast',
-          context: 'WeatherService',
-          data: {'source': forecast.source.value},
+        _report.degraded(
+          LoggedFault(
+            'Weather API returned default forecast',
+            context: 'weather',
+          ),
+          area: 'weather',
+          extra: {'source': forecast.source.value},
         );
       }
 
       return forecast;
     } catch (e, stackTrace) {
-      logger.error(
-        'Error getting weather forecast',
-        error: e,
+      _report.fault(
+        e,
         stackTrace: stackTrace,
+        area: 'weather',
+        message: 'Error getting weather forecast',
       );
       return WeatherForecast.defaultForecast(activityDate);
     }
@@ -223,35 +236,48 @@ class WeatherService {
         },
       );
 
-      logger.api(
+      _report.info(
         'Weather edge function response',
-        endpoint: 'get-weather-forecast',
-        statusCode: response.status,
-        duration: DateTime.now().difference(startTime),
-        requestData: {
-          'latitude': latitude,
-          'longitude': longitude,
-          'activity_date': activityDate.toIso8601String(),
+        area: 'api',
+        data: {
+          'endpoint': 'get-weather-forecast',
+          'status_code': response.status,
+          'duration_ms': DateTime.now().difference(startTime).inMilliseconds,
+          'request': {
+            'latitude': latitude,
+            'longitude': longitude,
+            'activity_date': activityDate.toIso8601String(),
+          },
         },
       );
 
       if (response.status != 200) {
-        logger.warning(
-          'Weather API returned non-200 status: ${response.status}',
+        _report.degraded(
+          LoggedFault(
+            'Weather API returned non-200 status: ${response.status}',
+            context: 'weather',
+          ),
+          area: 'weather',
         );
         return WeatherForecast.defaultForecast(activityDate);
       }
 
       final data = response.data;
       if (data == null || data['success'] != true || data['data'] == null) {
-        logger.warning('Weather API returned invalid response');
+        _report.degraded(
+          LoggedFault(
+            'Weather API returned invalid response',
+            context: 'weather',
+          ),
+          area: 'weather',
+        );
         return WeatherForecast.defaultForecast(activityDate);
       }
 
       final forecast = WeatherForecast.fromJson(data['data']);
-      logger.debug(
+      _report.debug(
         'Weather API parsed forecast',
-        context: 'WeatherService',
+        area: 'weather',
         data: {
           'source': forecast.source.value,
           'forecast_available': forecast.forecastAvailable,
@@ -261,10 +287,11 @@ class WeatherService {
       );
       return forecast;
     } catch (e, stackTrace) {
-      logger.error(
-        'Error fetching weather from API',
-        error: e,
+      _report.fault(
+        e,
         stackTrace: stackTrace,
+        area: 'weather',
+        message: 'Error fetching weather from API',
       );
       return WeatherForecast.defaultForecast(activityDate);
     }
