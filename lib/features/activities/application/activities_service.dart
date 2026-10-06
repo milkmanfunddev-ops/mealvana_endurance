@@ -185,10 +185,41 @@ class ActivitiesService {
     return result;
   }
 
+  /// Fills in `brickMetadata` for bricks whose segments are missing, from
+  /// their archived leg rows.
+  ///
+  /// Ticket 24 (Sentry DEV-88, N+1 on `root /`): this used to run two
+  /// queries PER brick (archived legs by `brick_id`, then legacy legs by the
+  /// ids in the title), and an orphan brick that recovers nothing repeats
+  /// them on every load. The archived and legacy lookups are now one query
+  /// each for all the bricks in the list; only the title-match fallback
+  /// (bricks whose title names sports, not ids) still queries per brick.
   Future<List<domain.Activity>> _hydrateBrickMetadataForActivities({
     required String userId,
     required List<domain.Activity> activities,
   }) async {
+    final needsHydration = [
+      for (final activity in activities)
+        if (activity.isBrick &&
+            (activity.brickMetadata?.segments ?? const []).isEmpty)
+          activity,
+    ];
+    if (needsHydration.isEmpty) return activities;
+
+    final archivedByBrick = await _archivedRowsByBrickId(
+      userId: userId,
+      brickIds: [for (final brick in needsHydration) brick.id],
+    );
+    final legacyIdsByBrick = <String, List<String>>{
+      for (final brick in needsHydration)
+        if (!archivedByBrick.containsKey(brick.id))
+          brick.id: _extractLegacySegmentIdsFromBrickTitle(brick.title),
+    }..removeWhere((_, ids) => ids.length < 2);
+    final legacyRowsById = await _legacyRowsById(
+      userId: userId,
+      segmentIds: {for (final ids in legacyIdsByBrick.values) ...ids},
+    );
+
     final hydrated = <domain.Activity>[];
 
     for (final activity in activities) {
@@ -203,24 +234,12 @@ class ActivitiesService {
         continue;
       }
 
-      final archivedRows =
-          await (_database.select(_database.activitiesTable)
-                ..where(
-                  (tbl) =>
-                      tbl.userId.lower().equals(userId.toLowerCase()) &
-                      tbl.brickId.equals(activity.id) &
-                      tbl.deletedAt.isNull() &
-                      (tbl.status.equals('archivedForBrick') |
-                          tbl.status.equals('archived_for_brick')),
-                )
-                ..orderBy([(tbl) => OrderingTerm.asc(tbl.scheduledDateTime)]))
-              .get();
-
-      var segmentRows = archivedRows;
+      var segmentRows = archivedByBrick[activity.id] ?? const <Activity>[];
       if (segmentRows.isEmpty) {
-        segmentRows = await _findLegacyBrickSegmentRows(
-          userId: userId,
+        segmentRows = _orderLegacyBrickSegmentRows(
           brick: activity,
+          segmentIds: legacyIdsByBrick[activity.id] ?? const [],
+          rowsById: legacyRowsById,
         );
       }
       if (segmentRows.isEmpty) {
@@ -258,15 +277,40 @@ class ActivitiesService {
     return hydrated;
   }
 
-  Future<List<Activity>> _findLegacyBrickSegmentRows({
+  /// Archived leg rows for every brick in [brickIds], in one query, grouped
+  /// by brick and ordered by `scheduled_date_time`. A brick with no archived
+  /// legs is absent from the map.
+  Future<Map<String, List<Activity>>> _archivedRowsByBrickId({
     required String userId,
-    required domain.Activity brick,
+    required List<String> brickIds,
   }) async {
-    final segmentIds = _extractLegacySegmentIdsFromBrickTitle(brick.title);
-    if (segmentIds.length < 2) {
-      return const [];
-    }
+    final rows =
+        await (_database.select(_database.activitiesTable)
+              ..where(
+                (tbl) =>
+                    tbl.userId.lower().equals(userId.toLowerCase()) &
+                    tbl.brickId.isIn(brickIds) &
+                    tbl.deletedAt.isNull() &
+                    (tbl.status.equals('archivedForBrick') |
+                        tbl.status.equals('archived_for_brick')),
+              )
+              ..orderBy([(tbl) => OrderingTerm.asc(tbl.scheduledDateTime)]))
+            .get();
 
+    final byBrick = <String, List<Activity>>{};
+    for (final row in rows) {
+      byBrick.putIfAbsent(row.brickId!, () => []).add(row);
+    }
+    return byBrick;
+  }
+
+  /// Leg rows of legacy bricks (whose title holds their legs' ids) for every
+  /// id in [segmentIds], in one query, keyed by lower-cased id.
+  Future<Map<String, Activity>> _legacyRowsById({
+    required String userId,
+    required Set<String> segmentIds,
+  }) async {
+    if (segmentIds.isEmpty) return const {};
     final rows =
         await (_database.select(_database.activitiesTable)..where(
               (tbl) =>
@@ -276,17 +320,21 @@ class ActivitiesService {
                   tbl.deletedAt.isNull(),
             ))
             .get();
+    return {for (final row in rows) row.id.toLowerCase(): row};
+  }
 
-    if (rows.isEmpty) {
+  List<Activity> _orderLegacyBrickSegmentRows({
+    required domain.Activity brick,
+    required List<String> segmentIds,
+    required Map<String, Activity> rowsById,
+  }) {
+    if (segmentIds.length < 2) {
       return const [];
     }
 
-    final byId = <String, Activity>{
-      for (final row in rows) row.id.toLowerCase(): row,
-    };
     final orderedRows = <Activity>[];
     for (final segmentId in segmentIds) {
-      final match = byId[segmentId.toLowerCase()];
+      final match = rowsById[segmentId.toLowerCase()];
       if (match != null) {
         orderedRows.add(match);
       }
