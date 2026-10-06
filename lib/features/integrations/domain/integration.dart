@@ -122,16 +122,9 @@ class IntegrationModel {
         providerAthleteBirthMonth!.isEmpty) {
       return null;
     }
-    try {
-      final parts = providerAthleteBirthMonth!.split('-');
-      if (parts.isNotEmpty) {
-        final year = int.parse(parts[0]);
-        return DateTime(year, 1, 1); // Year only
-      }
-    } catch (_) {
-      // Invalid format
-    }
-    return null;
+    // Only the year is used; a malformed value yields null without a throw.
+    final year = int.tryParse(providerAthleteBirthMonth!.split('-').first);
+    return year == null ? null : DateTime(year, 1, 1);
   }
 
   /// Create a copy with updated fields

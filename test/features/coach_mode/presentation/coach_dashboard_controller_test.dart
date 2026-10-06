@@ -9,6 +9,9 @@ import 'package:mealvana_endurance/features/coach_mode/domain/coach.dart';
 import 'package:mealvana_endurance/features/coach_mode/domain/coach_athlete_relationship.dart';
 import 'package:mealvana_endurance/features/coach_mode/presentation/providers/coach_dashboard_controller.dart';
 import 'package:mealvana_endurance/shared/services/logging_service.dart';
+import 'package:mealvana_endurance/shared/services/report/report.dart';
+
+import '../../../helpers/fakes/recording_report.dart';
 
 // ---------------------------------------------------------------------------
 // Mocks
@@ -88,10 +91,12 @@ CoachAthleteRelationship _makeRelationship({
 void main() {
   late _MockCoachService coachService;
   late _FakeLogger logger;
+  late RecordingReport report;
 
   setUp(() {
     coachService = _MockCoachService();
     logger = _FakeLogger();
+    report = RecordingReport();
 
     // Default stub: background sync completes silently
     when(
@@ -105,6 +110,7 @@ void main() {
       overrides: [
         coachServiceProvider.overrideWithValue(coachService),
         appLoggerProvider.overrideWithValue(logger),
+        reportProvider.overrideWithValue(report),
       ],
     );
     addTearDown(c.dispose);
@@ -282,6 +288,11 @@ void main() {
             .acceptRequest('rel-pending');
 
         final state = container.read(coachDashboardControllerProvider).value!;
+
+        // The failure also leaves the device: one Fault in the coach_mode area.
+        expect(report.faults, hasLength(1));
+        expect(report.faults.single.area, 'coach_mode');
+        expect(report.faults.single.error, isA<StateError>());
 
         // CRITICAL: pending request must NOT be removed when remote write fails
         expect(

@@ -1,8 +1,8 @@
 import 'dart:async';
 import 'dart:io';
-import 'package:flutter/foundation.dart';
 import 'package:http/http.dart' as http;
 
+import '../../../shared/services/report/report.dart';
 import 'integration_exceptions.dart';
 
 /// Configuration for HTTP retry behavior
@@ -58,70 +58,89 @@ class HttpRetryClient {
     required T Function(http.Response) onResponse,
     required String provider,
     RetryConfig config = RetryConfig.defaultConfig,
+    Report? report,
   }) async {
+    final Report r = report ?? SentryReport.global;
     int attempt = 0;
     int delayMs = config.initialDelayMs;
+
+    // Each retry leaves a breadcrumb; the final give-up is a Degraded so the
+    // exhausted budget shows up next to the exception the caller then sees.
+    void retrying(String reason, int waitMs) {
+      r.breadcrumb(
+        '[$provider] $reason; retrying in ${waitMs}ms',
+        category: 'integrations.retry',
+        data: {
+          'provider': provider,
+          'attempt': attempt,
+          'maxRetries': config.maxRetries,
+          'waitMs': waitMs,
+        },
+      );
+    }
+
+    void gaveUp(Object error, StackTrace stackTrace, String reason) {
+      r.degraded(
+        error,
+        stackTrace: stackTrace,
+        area: provider,
+        message: '[$provider] $reason after $attempt attempts; giving up',
+        extra: {'attempts': attempt, 'maxRetries': config.maxRetries},
+      );
+    }
 
     while (true) {
       try {
         final response = await request();
         return onResponse(response);
-      } on SocketException catch (e) {
+      } on SocketException catch (e, st) {
         attempt++;
         if (attempt >= config.maxRetries) {
+          gaveUp(e, st, 'network error');
           throw NetworkException(
             'No internet connection after $attempt attempts: ${e.message}',
             provider: provider,
           );
         }
-        if (kDebugMode) {
-          print(
-            '⚠️ [$provider] Network error, retrying in ${delayMs}ms (attempt $attempt/${config.maxRetries})',
-          );
-        }
+        retrying('network error', delayMs);
         await Future.delayed(Duration(milliseconds: delayMs));
         delayMs = _nextDelay(delayMs, config);
-      } on TimeoutException catch (_) {
+      } on TimeoutException catch (e, st) {
         attempt++;
         if (attempt >= config.maxRetries) {
+          gaveUp(e, st, 'timeout');
           throw NetworkException(
             'Connection timed out after $attempt attempts',
             provider: provider,
           );
         }
-        if (kDebugMode) {
-          print(
-            '⚠️ [$provider] Timeout, retrying in ${delayMs}ms (attempt $attempt/${config.maxRetries})',
-          );
-        }
+        retrying('timeout', delayMs);
         await Future.delayed(Duration(milliseconds: delayMs));
         delayMs = _nextDelay(delayMs, config);
-      } on RateLimitException catch (e) {
+      } on RateLimitException catch (e, st) {
         attempt++;
-        if (attempt >= config.maxRetries) rethrow;
+        if (attempt >= config.maxRetries) {
+          gaveUp(e, st, 'rate limited');
+          rethrow;
+        }
 
         // Use server's retry-after if provided, otherwise exponential backoff
         final waitMs = e.retryAfterSeconds != null
             ? e.retryAfterSeconds! * 1000
             : delayMs;
 
-        if (kDebugMode) {
-          print(
-            '⚠️ [$provider] Rate limited, retrying in ${waitMs}ms (attempt $attempt/${config.maxRetries})',
-          );
-        }
+        retrying('rate limited', waitMs);
         await Future.delayed(Duration(milliseconds: waitMs));
         delayMs = _nextDelay(delayMs, config);
-      } on ServerException catch (e) {
+      } on ServerException catch (e, st) {
         // Retry server errors (5xx)
         attempt++;
-        if (attempt >= config.maxRetries) rethrow;
-
-        if (kDebugMode) {
-          print(
-            '⚠️ [$provider] Server error (${e.statusCode}), retrying in ${delayMs}ms (attempt $attempt/${config.maxRetries})',
-          );
+        if (attempt >= config.maxRetries) {
+          gaveUp(e, st, 'server error ${e.statusCode}');
+          rethrow;
         }
+
+        retrying('server error ${e.statusCode}', delayMs);
         await Future.delayed(Duration(milliseconds: delayMs));
         delayMs = _nextDelay(delayMs, config);
       }

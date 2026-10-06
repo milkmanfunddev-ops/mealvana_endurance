@@ -2,7 +2,7 @@ import 'dart:async';
 
 import 'package:riverpod_annotation/riverpod_annotation.dart';
 
-import '../../../../shared/services/logging_service.dart';
+import '../../../../shared/services/report/report.dart';
 import '../../application/coach_service.dart';
 import '../../domain/coach.dart';
 import '../../domain/coach_athlete_relationship.dart';
@@ -92,7 +92,15 @@ class CoachDashboardController extends _$CoachDashboardController {
         activeAthletes: activeAthletes,
         pendingRequests: pendingRequests,
       );
-    } catch (e) {
+    } catch (e, stackTrace) {
+      ref
+          .read(reportProvider)
+          .fault(
+            e,
+            stackTrace: stackTrace,
+            area: 'coach_mode',
+            message: 'Coach dashboard load failed',
+          );
       return CoachDashboardState(
         error: 'Failed to load dashboard: ${e.toString()}',
       );
@@ -107,7 +115,7 @@ class CoachDashboardController extends _$CoachDashboardController {
   Future<void> _backgroundSync() async {
     if (_hasSynced) return;
     final coachService = ref.read(coachServiceProvider);
-    final logger = ref.read(appLoggerProvider);
+    final report = ref.read(reportProvider);
 
     try {
       await coachService.syncRelationshipsFromSupabase();
@@ -117,11 +125,11 @@ class CoachDashboardController extends _$CoachDashboardController {
       ref.invalidateSelf();
     } catch (e, stackTrace) {
       _hasSynced = true; // Don't retry on failure within same lifecycle
-      logger.error(
-        'Background sync failed',
-        context: 'COACH_DASHBOARD_CONTROLLER',
-        error: e,
+      report.fault(
+        e,
         stackTrace: stackTrace,
+        area: 'coach_mode',
+        message: 'Coach dashboard background sync failed',
       );
     }
   }
@@ -153,7 +161,16 @@ class CoachDashboardController extends _$CoachDashboardController {
           isLoading: false,
         ),
       );
-    } catch (e) {
+    } catch (e, stackTrace) {
+      ref
+          .read(reportProvider)
+          .fault(
+            e,
+            stackTrace: stackTrace,
+            area: 'coach_mode',
+            message: 'Accept athlete request failed',
+            extra: {'relationshipId': relationshipId},
+          );
       state = AsyncData(
         currentState.copyWith(
           isLoading: false,
@@ -184,7 +201,16 @@ class CoachDashboardController extends _$CoachDashboardController {
           isLoading: false,
         ),
       );
-    } catch (e) {
+    } catch (e, stackTrace) {
+      ref
+          .read(reportProvider)
+          .fault(
+            e,
+            stackTrace: stackTrace,
+            area: 'coach_mode',
+            message: 'Decline athlete request failed',
+            extra: {'relationshipId': relationshipId},
+          );
       state = AsyncData(
         currentState.copyWith(
           isLoading: false,
@@ -212,7 +238,16 @@ class CoachDashboardController extends _$CoachDashboardController {
       state = AsyncData(
         currentState.copyWith(activeAthletes: updatedActive, isLoading: false),
       );
-    } catch (e) {
+    } catch (e, stackTrace) {
+      ref
+          .read(reportProvider)
+          .fault(
+            e,
+            stackTrace: stackTrace,
+            area: 'coach_mode',
+            message: 'Archive athlete failed',
+            extra: {'relationshipId': relationshipId},
+          );
       state = AsyncData(
         currentState.copyWith(
           isLoading: false,

@@ -9,7 +9,9 @@ import '../../../../shared/database/database_provider.dart';
 import '../../../../shared/providers/user_id_provider.dart';
 import '../../../../shared/services/app_external_deps.dart';
 import '../../../../shared/services/analytics/analytics_events.dart';
+import '../../../../shared/services/analytics/analytics_tracker.dart';
 import '../../../../shared/services/preferences_service.dart';
+import '../../../../shared/services/report/report.dart';
 import '../../../activities/data/activities_repository.dart';
 import '../../../daily_macros/data/daily_macro_targets_repository.dart';
 import 'tp_writeback_providers.dart';
@@ -302,8 +304,13 @@ class ConnectTrainingController extends _$ConnectTrainingController {
         resolvedUserIdFromAuth = await ref
             .read(userIdProvider.future)
             .timeout(const Duration(seconds: 2));
-      } catch (_) {
-        // Fall back to temp ID logic below.
+      } catch (e) {
+        // Fall back to the auth id captured above.
+        _report.note(
+          'userId resolution failed; using auth id',
+          area: 'integrations',
+          data: {'error': e.toString()},
+        );
       }
     }
 
@@ -500,35 +507,29 @@ class ConnectTrainingController extends _$ConnectTrainingController {
     return tempUserId;
   }
 
-  /// Report an integration failure to Sentry in addition to the state/
-  /// snackbar surface — connect/import failures used to reach only
-  /// DebugLogger/kDebugMode prints (onboarding redesign §6: no silent
-  /// failures). Never throws; guarded against provider disposal.
-  void _reportFailureToSentry(
-    String provider,
-    String phase,
-    Object error,
-    StackTrace stackTrace,
+  /// The app's `Report`. Several paths here outlive this auto-dispose
+  /// provider (OAuth round trips, delayed invalidations); reading `ref` after
+  /// disposal throws, so a stale controller reports through the global.
+  Report get _report =>
+      ref.mounted ? ref.read(reportProvider) : SentryReport.global;
+
+  /// Analytics must never block a connect/import, but a tracker that throws
+  /// is still a bug; the one catch here reports it instead of eight silent
+  /// `catch (_) {}` blocks.
+  void _trackSafely(
+    String event,
+    void Function(AnalyticsTracker analytics) track,
   ) {
     if (!ref.mounted) return;
     try {
-      unawaited(
-        ref
-            .read(appExternalDepsProvider)
-            .sentry
-            .reportCriticalError(
-              error,
-              stackTrace: stackTrace,
-              context: 'connect_training',
-              tags: {
-                'feature': 'integrations',
-                'provider': provider,
-                'phase': phase,
-              },
-            ),
+      track(ref.read(appExternalDepsProvider).analytics);
+    } catch (e, stackTrace) {
+      _report.degraded(
+        e,
+        stackTrace: stackTrace,
+        area: 'integrations',
+        message: 'Analytics track failed: $event',
       );
-    } catch (_) {
-      // Reporting must never cascade into a second failure.
     }
   }
 
@@ -609,12 +610,7 @@ class ConnectTrainingController extends _$ConnectTrainingController {
       );
       return true;
     } catch (e, stackTrace) {
-      if (kDebugMode) {
-        print('❌ connect$providerId: Error occurred');
-        print('   Error: $e');
-        print('   Stack: $stackTrace');
-      }
-      _reportFailureToSentry(providerId, 'connect', e, stackTrace);
+      _report.integrationFailure(providerId, 'connect', e, stackTrace);
       if (ref.mounted) {
         state = AsyncData(
           state.value!.copyWith(
@@ -677,7 +673,7 @@ class ConnectTrainingController extends _$ConnectTrainingController {
         print('🧹 Disconnect $providerId: removed $removedWorkouts workouts');
       }
     } catch (e, stackTrace) {
-      _reportFailureToSentry(providerId, 'disconnect', e, stackTrace);
+      _report.integrationFailure(providerId, 'disconnect', e, stackTrace);
       if (ref.mounted) {
         state = AsyncData(
           state.value!.copyWith(errorMessage: 'Failed to disconnect: $e'),
@@ -700,7 +696,7 @@ class ConnectTrainingController extends _$ConnectTrainingController {
         provider: providerId,
       );
     } catch (e, stackTrace) {
-      _reportFailureToSentry(providerId, 'hide_workouts', e, stackTrace);
+      _report.integrationFailure(providerId, 'hide_workouts', e, stackTrace);
     }
 
     if (providerId == 'garmin') {
@@ -708,15 +704,13 @@ class ConnectTrainingController extends _$ConnectTrainingController {
       // a network failure must not fail the disconnect (the tokens are
       // already gone), and the flag is re-appliable.
       try {
-        final supabaseClient = ref
-            .read(appExternalDepsProvider)
-            .supabaseClient;
+        final supabaseClient = ref.read(appExternalDepsProvider).supabaseClient;
         await supabaseClient
             .from('garmin_health_data')
             .update({'hidden_by_disconnect': true})
             .eq('user_id', userId);
       } catch (e, stackTrace) {
-        _reportFailureToSentry(providerId, 'hide_wellness', e, stackTrace);
+        _report.integrationFailure(providerId, 'hide_wellness', e, stackTrace);
       }
     }
 
@@ -727,7 +721,7 @@ class ConnectTrainingController extends _$ConnectTrainingController {
           .read(onboardingControllerProvider.notifier)
           .clearIntegrationAutofill();
     } catch (e, stackTrace) {
-      _reportFailureToSentry(providerId, 'hide_autofill', e, stackTrace);
+      _report.integrationFailure(providerId, 'hide_autofill', e, stackTrace);
     }
 
     await _invalidateMacroWindows(userId, providerId);
@@ -742,7 +736,12 @@ class ConnectTrainingController extends _$ConnectTrainingController {
           .read(dailyMacroTargetsRepositoryProvider)
           .invalidateAllForUser(userId);
     } catch (e, stackTrace) {
-      _reportFailureToSentry(providerId, 'invalidate_macros', e, stackTrace);
+      _report.integrationFailure(
+        providerId,
+        'invalidate_macros',
+        e,
+        stackTrace,
+      );
     }
   }
 
@@ -775,16 +774,14 @@ class ConnectTrainingController extends _$ConnectTrainingController {
         removed++;
       }
     } catch (e, stackTrace) {
-      _reportFailureToSentry(providerId, 'purge_workouts', e, stackTrace);
+      _report.integrationFailure(providerId, 'purge_workouts', e, stackTrace);
     }
 
     if (providerId == 'garmin') {
       // Explicit "also delete my synced data": the wellness store and the
       // users mirrors go too (Q-INT2 hard-purge half). Best effort.
       try {
-        final supabaseClient = ref
-            .read(appExternalDepsProvider)
-            .supabaseClient;
+        final supabaseClient = ref.read(appExternalDepsProvider).supabaseClient;
         await supabaseClient
             .from('garmin_health_data')
             .delete()
@@ -794,7 +791,7 @@ class ConnectTrainingController extends _$ConnectTrainingController {
             .update({'weight_pounds': null, 'body_fat_pct': null})
             .eq('id', userId);
       } catch (e, stackTrace) {
-        _reportFailureToSentry(providerId, 'purge_wellness', e, stackTrace);
+        _report.integrationFailure(providerId, 'purge_wellness', e, stackTrace);
       }
     }
 
@@ -806,16 +803,19 @@ class ConnectTrainingController extends _$ConnectTrainingController {
       // leaves these rows: they surface nowhere and age out via the 90-day
       // TTL regardless.
       try {
-        final supabaseClient = ref
-            .read(appExternalDepsProvider)
-            .supabaseClient;
+        final supabaseClient = ref.read(appExternalDepsProvider).supabaseClient;
         await supabaseClient
             .from('provider_raw_payloads')
             .delete()
             .eq('user_id', userId)
             .eq('provider', providerId);
       } catch (e, stackTrace) {
-        _reportFailureToSentry(providerId, 'purge_raw_payloads', e, stackTrace);
+        _report.integrationFailure(
+          providerId,
+          'purge_raw_payloads',
+          e,
+          stackTrace,
+        );
       }
     }
 
@@ -829,7 +829,7 @@ class ConnectTrainingController extends _$ConnectTrainingController {
           .read(onboardingControllerProvider.notifier)
           .clearIntegrationAutofill();
     } catch (e, stackTrace) {
-      _reportFailureToSentry(providerId, 'purge_autofill', e, stackTrace);
+      _report.integrationFailure(providerId, 'purge_autofill', e, stackTrace);
     }
 
     return removed;
@@ -981,18 +981,23 @@ class ConnectTrainingController extends _$ConnectTrainingController {
       // the user's weight/body-fat backfill). Genuinely unexpected errors keep
       // the full stack trace.
       final transient = _isTransientBackfillFailure(null, '$e');
-      if (kDebugMode) {
-        if (transient) {
-          print(
-            '[syncGarmin] backfill temporarily unavailable '
-            '(Garmin 502/rate-limit) — will retry next session: $e',
-          );
-        } else {
-          print('[syncGarmin] backfill invoke failed: $e\n$st');
-        }
-      }
       if (transient) {
+        _report.degraded(
+          e,
+          stackTrace: st,
+          area: 'garmin',
+          message:
+              'Garmin backfill temporarily unavailable (502/rate limit); '
+              'retry scheduled for next session',
+        );
         await _scheduleGarminBackfillRetrySoon();
+      } else {
+        _report.fault(
+          e,
+          stackTrace: st,
+          area: 'garmin',
+          message: 'Garmin backfill invoke failed',
+        );
       }
       return false;
     }
@@ -1177,11 +1182,14 @@ class ConnectTrainingController extends _$ConnectTrainingController {
               print('⚠️ VDOT activity upload failed: ${uploadResult.error}');
             }
           }
-        } catch (e) {
+        } catch (e, stackTrace) {
           uploadFailed = true;
-          if (kDebugMode) {
-            print('⚠️ Failed to upload synced VDOT activities: $e');
-          }
+          _report.fault(
+            e,
+            stackTrace: stackTrace,
+            area: 'sync',
+            message: 'Upload of synced VDOT activities threw',
+          );
         }
       }
 
@@ -1245,7 +1253,7 @@ class ConnectTrainingController extends _$ConnectTrainingController {
           ),
         );
       }
-      _reportFailureToSentry('vdot', 'import', e, stackTrace);
+      _report.integrationFailure('vdot', 'import', e, stackTrace);
       _trackIntegrationSyncFailed(
         'vdot',
         'exception',
@@ -1331,6 +1339,12 @@ class ConnectTrainingController extends _$ConnectTrainingController {
       _trackIntegrationConnectSuccess('runna');
       return true;
     } on FormatException catch (e) {
+      // User-supplied URL rejected before any network call; shown inline.
+      _report.note(
+        'Runna feed URL rejected',
+        area: 'runna',
+        data: {'reason': 'invalid_url'},
+      );
       if (ref.mounted) {
         state = AsyncData(
           state.value!.copyWith(
@@ -1347,10 +1361,7 @@ class ConnectTrainingController extends _$ConnectTrainingController {
       );
       return false;
     } catch (e, stackTrace) {
-      if (kDebugMode) {
-        print('❌ connectRunna: $e');
-      }
-      _reportFailureToSentry('runna', 'connect', e, stackTrace);
+      _report.integrationFailure('runna', 'connect', e, stackTrace);
       if (ref.mounted) {
         state = AsyncData(
           state.value!.copyWith(
@@ -1468,11 +1479,14 @@ class ConnectTrainingController extends _$ConnectTrainingController {
               print('⚠️ Runna activity upload failed: ${uploadResult.error}');
             }
           }
-        } catch (e) {
+        } catch (e, stackTrace) {
           uploadFailed = true;
-          if (kDebugMode) {
-            print('⚠️ Failed to upload synced Runna activities: $e');
-          }
+          _report.fault(
+            e,
+            stackTrace: stackTrace,
+            area: 'sync',
+            message: 'Upload of synced Runna activities threw',
+          );
         }
       }
 
@@ -1523,7 +1537,7 @@ class ConnectTrainingController extends _$ConnectTrainingController {
           ),
         );
       }
-      _reportFailureToSentry('runna', 'import', e, stackTrace);
+      _report.integrationFailure('runna', 'import', e, stackTrace);
       _trackIntegrationSyncFailed(
         'runna',
         'exception',
@@ -1680,10 +1694,13 @@ class ConnectTrainingController extends _$ConnectTrainingController {
                 print('⚠️ Upload to Supabase failed: ${uploadResult.error}');
               }
             }
-          } catch (e) {
-            if (kDebugMode) {
-              print('⚠️ Failed to upload synced activities: $e');
-            }
+          } catch (e, stackTrace) {
+            _report.fault(
+              e,
+              stackTrace: stackTrace,
+              area: 'sync',
+              message: 'Upload of synced $providerId activities threw',
+            );
           }
         }
       }
@@ -1760,7 +1777,7 @@ class ConnectTrainingController extends _$ConnectTrainingController {
           ),
         );
       }
-      _reportFailureToSentry(providerId, 'import', e, stackTrace);
+      _report.integrationFailure(providerId, 'import', e, stackTrace);
       _trackIntegrationSyncFailed(
         providerId,
         'exception',
@@ -1856,8 +1873,14 @@ class ConnectTrainingController extends _$ConnectTrainingController {
         try {
           final writeback = await ref.read(tpWritebackServiceProvider.future);
           await writeback.handleDisconnect(userId: _currentUserId!);
-        } catch (_) {
+        } catch (e, stackTrace) {
           // handleDisconnect never throws; this guards provider resolution.
+          _report.degraded(
+            e,
+            stackTrace: stackTrace,
+            area: 'training_peaks',
+            message: 'TP write-back cleanup skipped on disconnect',
+          );
         }
         final oauthService = await _trainingPeaksOAuth;
         await oauthService.disconnect(_currentUserId!);
@@ -1933,10 +1956,13 @@ class ConnectTrainingController extends _$ConnectTrainingController {
           '🔄 Activities, calendar, events, and daily macros providers invalidated',
         );
       }
-    } catch (e) {
-      if (kDebugMode) {
-        print('⚠️ Failed to invalidate providers: $e');
-      }
+    } catch (e, stackTrace) {
+      _report.fault(
+        e,
+        stackTrace: stackTrace,
+        area: 'integrations',
+        message: 'Post-import provider invalidation failed',
+      );
     }
   }
 
@@ -1961,10 +1987,9 @@ class ConnectTrainingController extends _$ConnectTrainingController {
   }
 
   void trackNotifyMe({required String provider, required String source}) {
-    if (!ref.mounted) return;
-    try {
-      final deps = ref.read(appExternalDepsProvider);
-      deps.analytics.track(
+    _trackSafely(
+      'integration_notify_requested',
+      (analytics) => analytics.track(
         'integration_notify_requested',
         properties: {
           'provider': provider,
@@ -1972,47 +1997,44 @@ class ConnectTrainingController extends _$ConnectTrainingController {
           'device_id': _currentUserId ?? 'unknown',
           'timestamp': DateTime.now().toIso8601String(),
         },
-      );
-    } catch (_) {}
+      ),
+    );
   }
 
   void trackSkip() {
-    if (!ref.mounted) return;
-    try {
-      final deps = ref.read(appExternalDepsProvider);
-      deps.analytics.track(
+    _trackSafely(
+      'integration_connect_skipped',
+      (analytics) => analytics.track(
         'integration_connect_skipped',
         properties: {
           'device_id': _currentUserId ?? 'unknown',
           'timestamp': DateTime.now().toIso8601String(),
         },
-      );
-    } catch (_) {}
+      ),
+    );
   }
 
   /// Helper to get analytics tracker with device ID
   /// Uses _currentUserId which is set from the database user profile
   void _trackIntegrationConnectStarted(String provider) {
-    if (!ref.mounted) return;
-    try {
-      final deps = ref.read(appExternalDepsProvider);
-      deps.analytics.trackIntegrationConnectStarted(
+    _trackSafely(
+      'integration_connect_started',
+      (analytics) => analytics.trackIntegrationConnectStarted(
         provider: provider,
         deviceId: _currentUserId ?? 'unknown',
-      );
-    } catch (_) {}
+      ),
+    );
   }
 
   void _trackIntegrationConnectSuccess(String provider, {String? athleteName}) {
-    if (!ref.mounted) return;
-    try {
-      final deps = ref.read(appExternalDepsProvider);
-      deps.analytics.trackIntegrationConnectSuccess(
+    _trackSafely(
+      'integration_connect_success',
+      (analytics) => analytics.trackIntegrationConnectSuccess(
         provider: provider,
         deviceId: _currentUserId ?? 'unknown',
         athleteName: athleteName,
-      );
-    } catch (_) {}
+      ),
+    );
   }
 
   void _trackIntegrationConnectFailed(
@@ -2020,28 +2042,26 @@ class ConnectTrainingController extends _$ConnectTrainingController {
     String errorType, {
     String? errorMessage,
   }) {
-    if (!ref.mounted) return;
-    try {
-      final deps = ref.read(appExternalDepsProvider);
-      deps.analytics.trackIntegrationConnectFailed(
+    _trackSafely(
+      'integration_connect_failed',
+      (analytics) => analytics.trackIntegrationConnectFailed(
         provider: provider,
         deviceId: _currentUserId ?? 'unknown',
         errorType: errorType,
         errorMessage: errorMessage,
-      );
-    } catch (_) {}
+      ),
+    );
   }
 
   void _trackIntegrationDisconnected(String provider, {String? reason}) {
-    if (!ref.mounted) return;
-    try {
-      final deps = ref.read(appExternalDepsProvider);
-      deps.analytics.trackIntegrationDisconnected(
+    _trackSafely(
+      'integration_disconnected',
+      (analytics) => analytics.trackIntegrationDisconnected(
         provider: provider,
         deviceId: _currentUserId ?? 'unknown',
         reason: reason,
-      );
-    } catch (_) {}
+      ),
+    );
   }
 
   void _trackIntegrationSyncSuccess(
@@ -2050,17 +2070,16 @@ class ConnectTrainingController extends _$ConnectTrainingController {
     int? skippedCount,
     int? eventsCount,
   }) {
-    if (!ref.mounted) return;
-    try {
-      final deps = ref.read(appExternalDepsProvider);
-      deps.analytics.trackIntegrationSyncSuccess(
+    _trackSafely(
+      'integration_sync_success',
+      (analytics) => analytics.trackIntegrationSyncSuccess(
         provider: provider,
         deviceId: _currentUserId ?? 'unknown',
         workoutsSynced: workoutsSynced,
         skippedCount: skippedCount,
         eventsCount: eventsCount,
-      );
-    } catch (_) {}
+      ),
+    );
   }
 
   void _trackIntegrationSyncFailed(
@@ -2068,15 +2087,35 @@ class ConnectTrainingController extends _$ConnectTrainingController {
     String errorType, {
     String? errorMessage,
   }) {
-    if (!ref.mounted) return;
-    try {
-      final deps = ref.read(appExternalDepsProvider);
-      deps.analytics.trackIntegrationSyncFailed(
+    _trackSafely(
+      'integration_sync_failed',
+      (analytics) => analytics.trackIntegrationSyncFailed(
         provider: provider,
         deviceId: _currentUserId ?? 'unknown',
         errorType: errorType,
         errorMessage: errorMessage,
-      );
-    } catch (_) {}
+      ),
+    );
+  }
+}
+
+/// The Sentry side of a connect/disconnect/import failure. The state and
+/// snackbar already show the user; this makes sure the failure also leaves
+/// the device (onboarding redesign §6: no silent failures). `fault`
+/// downgrades expected network and cancelled-OAuth errors by itself.
+extension _IntegrationFailureReport on Report {
+  void integrationFailure(
+    String provider,
+    String phase,
+    Object error,
+    StackTrace stackTrace,
+  ) {
+    fault(
+      error,
+      stackTrace: stackTrace,
+      area: provider,
+      message: '$provider $phase failed',
+      tags: {'feature': 'integrations', 'provider': provider, 'phase': phase},
+    );
   }
 }

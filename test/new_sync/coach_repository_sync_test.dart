@@ -2,10 +2,11 @@ import 'package:flutter_test/flutter_test.dart';
 import 'package:mealvana_endurance/features/coach_mode/data/coach_repository.dart';
 import 'package:mealvana_endurance/shared/database/app_database.dart';
 import 'package:mealvana_endurance/shared/services/logging_service.dart';
-import 'package:mealvana_endurance/shared/services/sentry/sentry_reporter.dart';
 import 'package:mocktail/mocktail.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 import 'package:supabase_flutter/supabase_flutter.dart';
+
+import '../helpers/fakes/recording_report.dart';
 
 // Mocks
 class MockSupabaseClient extends Mock implements SupabaseClient {}
@@ -14,15 +15,13 @@ class MockAppDatabase extends Mock implements AppDatabase {}
 
 class MockAppLogger extends Mock implements AppLogger {}
 
-class MockSentryReporter extends Mock implements SentryReporter {}
-
 void main() {
   TestWidgetsFlutterBinding.ensureInitialized();
 
   late MockSupabaseClient mockSupabase;
   late MockAppDatabase mockDatabase;
   late MockAppLogger mockLogger;
-  late MockSentryReporter mockSentry;
+  late RecordingReport report;
   late CoachRepository repository;
 
   setUpAll(() async {
@@ -34,7 +33,7 @@ void main() {
     mockSupabase = MockSupabaseClient();
     mockDatabase = MockAppDatabase();
     mockLogger = MockAppLogger();
-    mockSentry = MockSentryReporter();
+    report = RecordingReport();
 
     // Setup default logger behavior
     when(
@@ -73,7 +72,7 @@ void main() {
       supabase: mockSupabase,
       database: mockDatabase,
       logger: mockLogger,
-      sentry: mockSentry,
+      report: report,
     );
   });
 

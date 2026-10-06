@@ -9,8 +9,7 @@ import 'package:uuid/uuid.dart';
 import '../../../shared/database/app_database.dart';
 import '../../../shared/database/database_provider.dart';
 import '../../../shared/services/logging_service.dart';
-import '../../../shared/services/sentry/sentry_reporter.dart';
-import '../../../shared/services/app_external_deps.dart';
+import '../../../shared/services/report/report.dart';
 import '../../../shared/services/sync/sync_dependency_graph.dart';
 import '../../../shared/data/syncable_repository.dart';
 import '../domain/coach.dart';
@@ -21,12 +20,11 @@ part 'coach_repository.g.dart';
 
 @riverpod
 CoachRepository coachRepository(Ref ref) {
-  final deps = ref.read(appExternalDepsProvider);
   return CoachRepository(
     supabase: Supabase.instance.client,
     database: ref.read(appDatabaseProvider),
     logger: ref.read(appLoggerProvider),
-    sentry: deps.sentry,
+    report: ref.read(reportProvider),
   );
 }
 
@@ -39,16 +37,17 @@ class CoachRepository with SyncableRepository {
     required SupabaseClient supabase,
     required AppDatabase database,
     required AppLogger logger,
-    required SentryReporter sentry,
+    Report? report,
   }) : _supabase = supabase,
        _database = database,
        _logger = logger,
-       _sentry = sentry;
+       _report = report;
 
   final SupabaseClient _supabase;
   final AppDatabase _database;
   final AppLogger _logger;
-  final SentryReporter _sentry;
+  final Report? _report;
+  Report get _r => _report ?? SentryReport.global;
 
   static const _uuid = Uuid();
 
@@ -205,12 +204,12 @@ class CoachRepository with SyncableRepository {
 
       return SyncResult.successful(totalSynced);
     } catch (e, stackTrace) {
-      _logger.error(
-        'Failed to sync coach data from Supabase',
-        context: 'COACH_REPOSITORY',
-        error: e,
+      _r.fault(
+        e,
         stackTrace: stackTrace,
-        data: {'userId': userId},
+        area: 'coach_mode',
+        message: 'Failed to sync coach data from Supabase',
+        extra: {'userId': userId},
       );
       return SyncResult.failed(e.toString());
     }
@@ -242,12 +241,12 @@ class CoachRepository with SyncableRepository {
 
       return UploadResult.nothingToUpload();
     } catch (e, stackTrace) {
-      _logger.error(
-        'Failed to upload dirty coach records',
-        context: 'COACH_REPOSITORY',
-        error: e,
+      _r.fault(
+        e,
         stackTrace: stackTrace,
-        data: {'userId': userId},
+        area: 'coach_mode',
+        message: 'Failed to upload dirty coach records',
+        extra: {'userId': userId},
       );
       return UploadResult.failed(e.toString());
     }
@@ -284,11 +283,11 @@ class CoachRepository with SyncableRepository {
         displayName: '${result.firstName} ${result.lastName}'.trim(),
       );
     } catch (e, stackTrace) {
-      _logger.error(
-        'Failed to get coach info by user ID',
-        context: 'COACH_REPOSITORY',
-        error: e,
+      _r.fault(
+        e,
         stackTrace: stackTrace,
+        area: 'coach_mode',
+        message: 'Failed to get coach info by user ID',
       );
       rethrow;
     }
@@ -317,11 +316,11 @@ class CoachRepository with SyncableRepository {
           )
           .toList();
     } catch (e, stackTrace) {
-      _logger.error(
-        'Failed to get active coaches',
-        context: 'COACH_REPOSITORY',
-        error: e,
+      _r.fault(
+        e,
         stackTrace: stackTrace,
+        area: 'coach_mode',
+        message: 'Failed to get active coaches',
       );
       rethrow;
     }
@@ -375,11 +374,11 @@ class CoachRepository with SyncableRepository {
         );
       }).toList();
     } catch (e, stackTrace) {
-      _logger.error(
-        'Failed to get relationships for coach',
-        context: 'COACH_REPOSITORY',
-        error: e,
+      _r.fault(
+        e,
         stackTrace: stackTrace,
+        area: 'coach_mode',
+        message: 'Failed to get relationships for coach',
       );
       rethrow;
     }
@@ -437,11 +436,11 @@ class CoachRepository with SyncableRepository {
         );
       }).toList();
     } catch (e, stackTrace) {
-      _logger.error(
-        'Failed to get relationships for athlete',
-        context: 'COACH_REPOSITORY',
-        error: e,
+      _r.fault(
+        e,
         stackTrace: stackTrace,
+        area: 'coach_mode',
+        message: 'Failed to get relationships for athlete',
       );
       rethrow;
     }
@@ -494,11 +493,11 @@ class CoachRepository with SyncableRepository {
         );
       }).toList();
     } catch (e, stackTrace) {
-      _logger.error(
-        'Failed to get active relationships for coach',
-        context: 'COACH_REPOSITORY',
-        error: e,
+      _r.fault(
+        e,
         stackTrace: stackTrace,
+        area: 'coach_mode',
+        message: 'Failed to get active relationships for coach',
       );
       rethrow;
     }
@@ -524,11 +523,11 @@ class CoachRepository with SyncableRepository {
 
       return relationship != null;
     } catch (e, stackTrace) {
-      _logger.error(
-        'Failed to check coach-athlete relationship',
-        context: 'COACH_REPOSITORY',
-        error: e,
+      _r.fault(
+        e,
         stackTrace: stackTrace,
+        area: 'coach_mode',
+        message: 'Failed to check coach-athlete relationship',
       );
       return false;
     }
@@ -562,18 +561,12 @@ class CoachRepository with SyncableRepository {
           'updated_at': now.toIso8601String(),
         });
       } catch (e, stackTrace) {
-        _logger.warning(
-          'Immediate upload failed; record stays dirty for retry',
-          context: 'COACH_REPOSITORY',
-          error: e,
-          stackTrace: stackTrace,
-          data: {'operation': 'create', 'recordId': id},
-        );
-        _sentry.reportNetworkError(
+        _r.degraded(
           e,
-          url: 'supabase:coach_athlete_relationships:create',
-          method: 'INSERT',
           stackTrace: stackTrace,
+          area: 'coach_mode',
+          message: 'Immediate upload failed; record stays dirty for retry',
+          extra: {'operation': 'create', 'recordId': id},
         );
         throw StateError(
           'Failed to create coach-athlete relationship remotely',
@@ -611,11 +604,11 @@ class CoachRepository with SyncableRepository {
         updatedAt: now,
       );
     } catch (e, stackTrace) {
-      _logger.error(
-        'Failed to create relationship',
-        context: 'COACH_REPOSITORY',
-        error: e,
+      _r.fault(
+        e,
         stackTrace: stackTrace,
+        area: 'coach_mode',
+        message: 'Failed to create relationship',
       );
       rethrow;
     }
@@ -640,18 +633,12 @@ class CoachRepository with SyncableRepository {
             })
             .eq('id', relationshipId);
       } catch (e, stackTrace) {
-        _logger.warning(
-          'Immediate upload failed; record stays dirty for retry',
-          context: 'COACH_REPOSITORY',
-          error: e,
-          stackTrace: stackTrace,
-          data: {'operation': 'accept', 'recordId': relationshipId},
-        );
-        _sentry.reportNetworkError(
+        _r.degraded(
           e,
-          url: 'supabase:coach_athlete_relationships:accept',
-          method: 'UPDATE',
           stackTrace: stackTrace,
+          area: 'coach_mode',
+          message: 'Immediate upload failed; record stays dirty for retry',
+          extra: {'operation': 'accept', 'recordId': relationshipId},
         );
         throw StateError(
           'Failed to accept coach-athlete relationship remotely',
@@ -675,11 +662,11 @@ class CoachRepository with SyncableRepository {
 
       return _mapToRelationshipDomain(result);
     } catch (e, stackTrace) {
-      _logger.error(
-        'Failed to accept relationship',
-        context: 'COACH_REPOSITORY',
-        error: e,
+      _r.fault(
+        e,
         stackTrace: stackTrace,
+        area: 'coach_mode',
+        message: 'Failed to accept relationship',
       );
       rethrow;
     }
@@ -704,18 +691,12 @@ class CoachRepository with SyncableRepository {
             })
             .eq('id', relationshipId);
       } catch (e, stackTrace) {
-        _logger.warning(
-          'Immediate upload failed; record stays dirty for retry',
-          context: 'COACH_REPOSITORY',
-          error: e,
-          stackTrace: stackTrace,
-          data: {'operation': 'decline', 'recordId': relationshipId},
-        );
-        _sentry.reportNetworkError(
+        _r.degraded(
           e,
-          url: 'supabase:coach_athlete_relationships:decline',
-          method: 'UPDATE',
           stackTrace: stackTrace,
+          area: 'coach_mode',
+          message: 'Immediate upload failed; record stays dirty for retry',
+          extra: {'operation': 'decline', 'recordId': relationshipId},
         );
         throw StateError(
           'Failed to decline coach-athlete relationship remotely',
@@ -739,11 +720,11 @@ class CoachRepository with SyncableRepository {
 
       return _mapToRelationshipDomain(result);
     } catch (e, stackTrace) {
-      _logger.error(
-        'Failed to decline relationship',
-        context: 'COACH_REPOSITORY',
-        error: e,
+      _r.fault(
+        e,
         stackTrace: stackTrace,
+        area: 'coach_mode',
+        message: 'Failed to decline relationship',
       );
       rethrow;
     }
@@ -768,18 +749,12 @@ class CoachRepository with SyncableRepository {
             })
             .eq('id', relationshipId);
       } catch (e, stackTrace) {
-        _logger.warning(
-          'Immediate upload failed; record stays dirty for retry',
-          context: 'COACH_REPOSITORY',
-          error: e,
-          stackTrace: stackTrace,
-          data: {'operation': 'archive', 'recordId': relationshipId},
-        );
-        _sentry.reportNetworkError(
+        _r.degraded(
           e,
-          url: 'supabase:coach_athlete_relationships:archive',
-          method: 'UPDATE',
           stackTrace: stackTrace,
+          area: 'coach_mode',
+          message: 'Immediate upload failed; record stays dirty for retry',
+          extra: {'operation': 'archive', 'recordId': relationshipId},
         );
         throw StateError(
           'Failed to archive coach-athlete relationship remotely',
@@ -803,11 +778,11 @@ class CoachRepository with SyncableRepository {
 
       return _mapToRelationshipDomain(result);
     } catch (e, stackTrace) {
-      _logger.error(
-        'Failed to archive relationship',
-        context: 'COACH_REPOSITORY',
-        error: e,
+      _r.fault(
+        e,
         stackTrace: stackTrace,
+        area: 'coach_mode',
+        message: 'Failed to archive relationship',
       );
       rethrow;
     }
@@ -876,11 +851,11 @@ class CoachRepository with SyncableRepository {
                 onRelationshipChanged(relationship);
               }
             } catch (e, stackTrace) {
-              _logger.error(
-                'Failed to process realtime relationship change',
-                context: 'COACH_REPOSITORY',
-                error: e,
+              _r.fault(
+                e,
                 stackTrace: stackTrace,
+                area: 'coach_mode',
+                message: 'Failed to process realtime relationship change',
               );
             }
           },
@@ -898,11 +873,11 @@ class CoachRepository with SyncableRepository {
       await channel.unsubscribe();
       await _supabase.removeChannel(channel);
     } catch (e, stackTrace) {
-      _logger.error(
-        'Failed to unsubscribe from relationship changes',
-        context: 'COACH_REPOSITORY',
-        error: e,
+      _r.fault(
+        e,
         stackTrace: stackTrace,
+        area: 'coach_mode',
+        message: 'Failed to unsubscribe from relationship changes',
       );
     }
   }
@@ -930,11 +905,11 @@ class CoachRepository with SyncableRepository {
           .into(_database.coachAthleteRelationshipsTable)
           .insertOnConflictUpdate(companion);
     } catch (e, stackTrace) {
-      _logger.error(
-        'Failed to sync relationship to local DB',
-        context: 'COACH_REPOSITORY',
-        error: e,
+      _r.fault(
+        e,
         stackTrace: stackTrace,
+        area: 'coach_mode',
+        message: 'Failed to sync relationship to local DB',
       );
     }
   }
@@ -992,11 +967,11 @@ class CoachRepository with SyncableRepository {
 
       return relationships;
     } catch (e, stackTrace) {
-      _logger.error(
-        'Failed to sync relationships from Supabase',
-        context: 'COACH_REPOSITORY',
-        error: e,
+      _r.fault(
+        e,
         stackTrace: stackTrace,
+        area: 'coach_mode',
+        message: 'Failed to sync relationships from Supabase',
       );
       // Return empty list on error - local cache may still have data
       return [];
@@ -1061,11 +1036,11 @@ class CoachRepository with SyncableRepository {
         context: 'COACH_REPOSITORY',
       );
     } catch (e, stackTrace) {
-      _logger.error(
-        'Failed to sync coaches from Supabase',
-        context: 'COACH_REPOSITORY',
-        error: e,
+      _r.fault(
+        e,
         stackTrace: stackTrace,
+        area: 'coach_mode',
+        message: 'Failed to sync coaches from Supabase',
       );
       // Don't rethrow - this is not critical for app functionality
     }
@@ -1128,11 +1103,11 @@ class CoachRepository with SyncableRepository {
         context: 'COACH_REPOSITORY',
       );
     } catch (e, stackTrace) {
-      _logger.error(
-        'Failed to sync athlete profiles from Supabase',
-        context: 'COACH_REPOSITORY',
-        error: e,
+      _r.fault(
+        e,
         stackTrace: stackTrace,
+        area: 'coach_mode',
+        message: 'Failed to sync athlete profiles from Supabase',
       );
       // Don't rethrow - this is not critical for app functionality
     }
@@ -1199,11 +1174,11 @@ class CoachRepository with SyncableRepository {
 
       return id;
     } catch (e, stackTrace) {
-      _logger.error(
-        'Failed to create activity for athlete',
-        context: 'COACH_REPOSITORY',
-        error: e,
+      _r.fault(
+        e,
         stackTrace: stackTrace,
+        area: 'coach_mode',
+        message: 'Failed to create activity for athlete',
       );
       rethrow;
     }
@@ -1272,11 +1247,11 @@ class CoachRepository with SyncableRepository {
 
       return id;
     } catch (e, stackTrace) {
-      _logger.error(
-        'Failed to create event for athlete',
-        context: 'COACH_REPOSITORY',
-        error: e,
+      _r.fault(
+        e,
         stackTrace: stackTrace,
+        area: 'coach_mode',
+        message: 'Failed to create event for athlete',
       );
       rethrow;
     }
@@ -1361,12 +1336,12 @@ class CoachRepository with SyncableRepository {
         },
       );
     } catch (e, stackTrace) {
-      _logger.error(
-        'Failed to update athlete profile',
-        context: 'COACH_REPOSITORY',
-        error: e,
+      _r.fault(
+        e,
         stackTrace: stackTrace,
-        data: {'athleteUserId': athleteUserId},
+        area: 'coach_mode',
+        message: 'Failed to update athlete profile',
+        extra: {'athleteUserId': athleteUserId},
       );
       rethrow;
     }
@@ -1410,11 +1385,11 @@ class CoachRepository with SyncableRepository {
         },
       );
     } catch (e, stackTrace) {
-      _logger.error(
-        'Failed to update athlete nutrition targets',
-        context: 'COACH_REPOSITORY',
-        error: e,
+      _r.fault(
+        e,
         stackTrace: stackTrace,
+        area: 'coach_mode',
+        message: 'Failed to update athlete nutrition targets',
       );
       rethrow;
     }
@@ -1473,11 +1448,11 @@ class CoachRepository with SyncableRepository {
         ),
       );
     } catch (e, stackTrace) {
-      _logger.error(
-        'Failed to get relationship by ID',
-        context: 'COACH_REPOSITORY',
-        error: e,
+      _r.fault(
+        e,
         stackTrace: stackTrace,
+        area: 'coach_mode',
+        message: 'Failed to get relationship by ID',
       );
       rethrow;
     }
@@ -1495,9 +1470,9 @@ class CoachRepository with SyncableRepository {
       // Validate and extract the code
       final code = athleteCode.toUpperCase().trim();
       if (!code.startsWith('ATH-') || code.length != 12) {
-        _logger.warning(
+        _r.note(
           'Invalid athlete code format',
-          context: 'COACH_REPOSITORY',
+          area: 'coach_mode',
           data: {'code': code},
         );
         return null;
@@ -1530,18 +1505,18 @@ class CoachRepository with SyncableRepository {
         }
       }
 
-      _logger.warning(
+      _r.note(
         'User not found by athlete code',
-        context: 'COACH_REPOSITORY',
+        area: 'coach_mode',
         data: {'code': code},
       );
       return null;
     } catch (e, stackTrace) {
-      _logger.error(
-        'Failed to find user by athlete code',
-        context: 'COACH_REPOSITORY',
-        error: e,
+      _r.fault(
+        e,
         stackTrace: stackTrace,
+        area: 'coach_mode',
+        message: 'Failed to find user by athlete code',
       );
       return null;
     }
@@ -1565,11 +1540,11 @@ class CoachRepository with SyncableRepository {
 
       return result != null;
     } catch (e, stackTrace) {
-      _logger.error(
-        'Failed to check if user is approved coach',
-        context: 'COACH_REPOSITORY',
-        error: e,
+      _r.fault(
+        e,
         stackTrace: stackTrace,
+        area: 'coach_mode',
+        message: 'Failed to check if user is approved coach',
       );
       return false;
     }
@@ -1599,11 +1574,11 @@ class CoachRepository with SyncableRepository {
         updatedAt: result.updatedAt,
       );
     } catch (e, stackTrace) {
-      _logger.error(
-        'Failed to get coach record for user',
-        context: 'COACH_REPOSITORY',
-        error: e,
+      _r.fault(
+        e,
         stackTrace: stackTrace,
+        area: 'coach_mode',
+        message: 'Failed to get coach record for user',
       );
       return null;
     }
@@ -1624,11 +1599,11 @@ class CoachRepository with SyncableRepository {
       // User is a coach if they have an approved record
       return response != null;
     } catch (e, stackTrace) {
-      _logger.error(
-        'Failed to fetch coach status from Supabase',
-        context: 'COACH_REPOSITORY',
-        error: e,
+      _r.fault(
+        e,
         stackTrace: stackTrace,
+        area: 'coach_mode',
+        message: 'Failed to fetch coach status from Supabase',
       );
       return null;
     }
@@ -1667,27 +1642,21 @@ class CoachRepository with SyncableRepository {
         });
         return true;
       } catch (e, stackTrace) {
-        _logger.warning(
-          'Immediate upload failed; record stays dirty for retry',
-          context: 'COACH_REPOSITORY',
-          error: e,
-          stackTrace: stackTrace,
-          data: {'operation': 'submit_application', 'recordId': id},
-        );
-        _sentry.reportNetworkError(
+        _r.degraded(
           e,
-          url: 'supabase:coaches:submit_application',
-          method: 'INSERT',
           stackTrace: stackTrace,
+          area: 'coach_mode',
+          message: 'Immediate upload failed; record stays dirty for retry',
+          extra: {'operation': 'submit_application', 'recordId': id},
         );
         return false;
       }
     } catch (e, stackTrace) {
-      _logger.error(
-        'Failed to submit coach application',
-        context: 'COACH_REPOSITORY',
-        error: e,
+      _r.fault(
+        e,
         stackTrace: stackTrace,
+        area: 'coach_mode',
+        message: 'Failed to submit coach application',
       );
       return false;
     }
@@ -1867,11 +1836,11 @@ class CoachRepository with SyncableRepository {
 
       return code;
     } catch (e, stackTrace) {
-      _logger.error(
-        'Failed to generate pairing code',
-        context: 'COACH_REPOSITORY',
-        error: e,
+      _r.fault(
+        e,
         stackTrace: stackTrace,
+        area: 'coach_mode',
+        message: 'Failed to generate pairing code',
       );
       rethrow;
     }
@@ -1987,9 +1956,9 @@ class CoachRepository with SyncableRepository {
       final message = e.message.toLowerCase();
       final isDuplicate = e.code == '23505' || message.contains('duplicate');
       if (isDuplicate) {
-        _logger.warning(
+        _r.note(
           'Coach-athlete relationship already exists during pairing connect',
-          context: 'COACH_REPOSITORY',
+          area: 'coach_mode',
           data: {'coachUserId': coachUserId, 'code': code, 'pgCode': e.code},
         );
         return PairingCodeConnectResult.failure(
@@ -1997,22 +1966,22 @@ class CoachRepository with SyncableRepository {
         );
       }
 
-      _logger.error(
-        'Postgrest error while connecting via pairing code',
-        context: 'COACH_REPOSITORY',
-        error: e,
+      _r.fault(
+        e,
         stackTrace: stackTrace,
-        data: {'coachUserId': coachUserId, 'code': code, 'pgCode': e.code},
+        area: 'coach_mode',
+        message: 'Postgrest error while connecting via pairing code',
+        extra: {'coachUserId': coachUserId, 'code': code, 'pgCode': e.code},
       );
       return PairingCodeConnectResult.failure(
         PairingCodeConnectFailureReason.unknown,
       );
     } catch (e, stackTrace) {
-      _logger.error(
-        'Failed to connect via pairing code',
-        context: 'COACH_REPOSITORY',
-        error: e,
+      _r.fault(
+        e,
         stackTrace: stackTrace,
+        area: 'coach_mode',
+        message: 'Failed to connect via pairing code',
       );
       return PairingCodeConnectResult.failure(
         PairingCodeConnectFailureReason.unknown,
@@ -2038,9 +2007,9 @@ class CoachRepository with SyncableRepository {
           .maybeSingle();
 
       if (response == null) {
-        _logger.warning(
+        _r.note(
           'Pairing code not found',
-          context: 'COACH_REPOSITORY',
+          area: 'coach_mode',
           data: {'code': normalizedCode},
         );
         return _PairingCodeValidationResult.invalid(
@@ -2052,9 +2021,9 @@ class CoachRepository with SyncableRepository {
       final usedAt = response['used_at'];
 
       if (usedAt != null) {
-        _logger.warning(
+        _r.note(
           'Pairing code already used',
-          context: 'COACH_REPOSITORY',
+          area: 'coach_mode',
           data: {'code': normalizedCode},
         );
         return _PairingCodeValidationResult.invalid(
@@ -2063,9 +2032,9 @@ class CoachRepository with SyncableRepository {
       }
 
       if (expiresAt.isBefore(DateTime.now().toUtc())) {
-        _logger.warning(
+        _r.note(
           'Pairing code expired',
-          context: 'COACH_REPOSITORY',
+          area: 'coach_mode',
           data: {
             'code': normalizedCode,
             'expiresAt': expiresAt.toIso8601String(),
@@ -2078,12 +2047,12 @@ class CoachRepository with SyncableRepository {
 
       return _PairingCodeValidationResult.valid(response['user_id'] as String);
     } catch (e, stackTrace) {
-      _logger.error(
-        'Failed to validate pairing code',
-        context: 'COACH_REPOSITORY',
-        error: e,
+      _r.fault(
+        e,
         stackTrace: stackTrace,
-        data: {'code': code},
+        area: 'coach_mode',
+        message: 'Failed to validate pairing code',
+        extra: {'code': code},
       );
       return _PairingCodeValidationResult.invalid(
         PairingCodeConnectFailureReason.unknown,
@@ -2118,11 +2087,11 @@ class CoachRepository with SyncableRepository {
         expiresAt: DateTime.parse(response['expires_at'] as String),
       );
     } catch (e, stackTrace) {
-      _logger.error(
-        'Failed to get active pairing code',
-        context: 'COACH_REPOSITORY',
-        error: e,
+      _r.fault(
+        e,
         stackTrace: stackTrace,
+        area: 'coach_mode',
+        message: 'Failed to get active pairing code',
       );
       return null;
     }
@@ -2180,8 +2149,15 @@ class CoachRepository with SyncableRepository {
             coachName = fullName.isNotEmpty ? fullName : sender;
           }
         }
-      } catch (_) {
-        // Name lookup is best-effort
+      } catch (e, stackTrace) {
+        // Name lookup is best-effort; the relationship still returns.
+        _r.degraded(
+          e,
+          stackTrace: stackTrace,
+          area: 'coach_mode',
+          message: 'Coach name lookup failed; returning relationship unnamed',
+          extra: {'coachUserId': coachUserId},
+        );
       }
 
       return (
@@ -2190,11 +2166,11 @@ class CoachRepository with SyncableRepository {
         coachName: coachName,
       );
     } catch (e, stackTrace) {
-      _logger.error(
-        'Failed to get athlete coach',
-        context: 'COACH_REPOSITORY',
-        error: e,
+      _r.fault(
+        e,
         stackTrace: stackTrace,
+        area: 'coach_mode',
+        message: 'Failed to get athlete coach',
       );
       return null;
     }
@@ -2232,11 +2208,11 @@ class CoachRepository with SyncableRepository {
 
       return true;
     } catch (e, stackTrace) {
-      _logger.error(
-        'Failed to disconnect from coach',
-        context: 'COACH_REPOSITORY',
-        error: e,
+      _r.fault(
+        e,
         stackTrace: stackTrace,
+        area: 'coach_mode',
+        message: 'Failed to disconnect from coach',
       );
       return false;
     }
@@ -2295,11 +2271,11 @@ class CoachRepository with SyncableRepository {
 
       return code;
     } catch (e, stackTrace) {
-      _logger.error(
-        'Failed to generate coach pairing code',
-        context: 'COACH_REPOSITORY',
-        error: e,
+      _r.fault(
+        e,
         stackTrace: stackTrace,
+        area: 'coach_mode',
+        message: 'Failed to generate coach pairing code',
       );
       rethrow;
     }
@@ -2328,11 +2304,11 @@ class CoachRepository with SyncableRepository {
         expiresAt: DateTime.parse(response['expires_at'] as String),
       );
     } catch (e, stackTrace) {
-      _logger.error(
-        'Failed to get active coach pairing code',
-        context: 'COACH_REPOSITORY',
-        error: e,
+      _r.fault(
+        e,
         stackTrace: stackTrace,
+        area: 'coach_mode',
+        message: 'Failed to get active coach pairing code',
       );
       return null;
     }
@@ -2447,21 +2423,21 @@ class CoachRepository with SyncableRepository {
         );
       }
 
-      _logger.error(
-        'Postgrest error while connecting via coach pairing code',
-        context: 'COACH_REPOSITORY',
-        error: e,
+      _r.fault(
+        e,
         stackTrace: stackTrace,
+        area: 'coach_mode',
+        message: 'Postgrest error while connecting via coach pairing code',
       );
       return PairingCodeConnectResult.failure(
         PairingCodeConnectFailureReason.unknown,
       );
     } catch (e, stackTrace) {
-      _logger.error(
-        'Failed to connect via coach pairing code',
-        context: 'COACH_REPOSITORY',
-        error: e,
+      _r.fault(
+        e,
         stackTrace: stackTrace,
+        area: 'coach_mode',
+        message: 'Failed to connect via coach pairing code',
       );
       return PairingCodeConnectResult.failure(
         PairingCodeConnectFailureReason.unknown,
