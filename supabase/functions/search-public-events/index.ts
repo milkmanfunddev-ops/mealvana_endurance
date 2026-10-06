@@ -1,6 +1,6 @@
 import { serve } from 'https://deno.land/std@0.224.0/http/server.ts';
 import { createClient } from 'https://esm.sh/@supabase/supabase-js@2.39.3';
-import { initSentry, withSentry } from '../_shared/sentry.ts';
+import { initSentry, withSentry, captureEdgeError } from '../_shared/sentry.ts';
 
 const corsHeaders = {
   'Access-Control-Allow-Origin': '*',
@@ -10,7 +10,7 @@ const corsHeaders = {
 // Initialise Sentry once per cold-start. No-op when SENTRY_DSN is not set.
 initSentry();
 
-serve(withSentry(async (req) => {
+serve(withSentry('search-public-events', async (req) => {
   // Handle CORS preflight
   if (req.method === 'OPTIONS') {
     return new Response('ok', {
@@ -45,7 +45,7 @@ serve(withSentry(async (req) => {
       min_similarity: 0.2
     });
     if (error) {
-      console.error('Search error:', error);
+      captureEdgeError(error, { message: 'Search error', extra: { query } });
       return new Response(JSON.stringify({
         error: 'Failed to search events',
         details: error.message
@@ -73,7 +73,7 @@ serve(withSentry(async (req) => {
       }
     });
   } catch (error) {
-    console.error('Unexpected error:', error);
+    captureEdgeError(error, { message: 'Unexpected error' });
     return new Response(JSON.stringify({
       error: 'Internal server error',
       details: error instanceof Error ? error.message : 'Unknown error'

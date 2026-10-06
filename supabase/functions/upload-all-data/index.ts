@@ -1,6 +1,6 @@
 import { serve } from 'https://deno.land/std@0.224.0/http/server.ts';
 import { createClient } from 'https://esm.sh/@supabase/supabase-js@2.39.0';
-import { initSentry, withSentry } from '../_shared/sentry.ts';
+import { captureEdgeError, initSentry, withSentry } from '../_shared/sentry.ts';
 
 const corsHeaders = {
   'Access-Control-Allow-Origin': '*',
@@ -30,7 +30,7 @@ interface TableResult {
 // Initialise Sentry once per cold-start. No-op when SENTRY_DSN is not set.
 initSentry();
 
-serve(withSentry(async (req) => {
+serve(withSentry('upload-all-data', async (req) => {
   // Handle CORS preflight
   if (req.method === 'OPTIONS') {
     return new Response('ok', { headers: corsHeaders });
@@ -98,7 +98,7 @@ serve(withSentry(async (req) => {
         };
         console.log(`✓ Uploaded ${dirty_records.activities.length} activities`);
       } catch (error) {
-        console.error(`✗ Failed to upload activities: ${error.message}`);
+        captureEdgeError(error, { message: '✗ Failed to upload activities', extra: { userId: user_id, count: dirty_records.activities.length } });
         results.activities = {
           success: false,
           uploaded: 0,
@@ -123,7 +123,7 @@ serve(withSentry(async (req) => {
         };
         console.log(`✓ Uploaded ${dirty_records.events.length} events`);
       } catch (error) {
-        console.error(`✗ Failed to upload events: ${error.message}`);
+        captureEdgeError(error, { message: '✗ Failed to upload events', extra: { userId: user_id, count: dirty_records.events.length } });
         results.events = {
           success: false,
           uploaded: 0,
@@ -148,7 +148,7 @@ serve(withSentry(async (req) => {
         };
         console.log(`✓ Uploaded ${dirty_records.carb_loading_plans.length} carb_loading_plans`);
       } catch (error) {
-        console.error(`✗ Failed to upload carb_loading_plans: ${error.message}`);
+        captureEdgeError(error, { message: '✗ Failed to upload carb_loading_plans', extra: { userId: user_id, count: dirty_records.carb_loading_plans.length } });
         results.carb_loading_plans = {
           success: false,
           uploaded: 0,
@@ -173,7 +173,7 @@ serve(withSentry(async (req) => {
         };
         console.log(`✓ Uploaded ${dirty_records.carb_loading_days.length} carb_loading_days`);
       } catch (error) {
-        console.error(`✗ Failed to upload carb_loading_days: ${error.message}`);
+        captureEdgeError(error, { message: '✗ Failed to upload carb_loading_days', extra: { userId: user_id, count: dirty_records.carb_loading_days.length } });
         results.carb_loading_days = {
           success: false,
           uploaded: 0,
@@ -198,7 +198,7 @@ serve(withSentry(async (req) => {
         };
         console.log(`✓ Uploaded ${dirty_records.carb_loading_day_meals.length} carb_loading_day_meals`);
       } catch (error) {
-        console.error(`✗ Failed to upload carb_loading_day_meals: ${error.message}`);
+        captureEdgeError(error, { message: '✗ Failed to upload carb_loading_day_meals', extra: { userId: user_id, count: dirty_records.carb_loading_day_meals.length } });
         results.carb_loading_day_meals = {
           success: false,
           uploaded: 0,
@@ -223,7 +223,7 @@ serve(withSentry(async (req) => {
         };
         console.log(`✓ Uploaded ${dirty_records.user_foods.length} user_foods`);
       } catch (error) {
-        console.error(`✗ Failed to upload user_foods: ${error.message}`);
+        captureEdgeError(error, { message: '✗ Failed to upload user_foods', extra: { userId: user_id, count: dirty_records.user_foods.length } });
         results.user_foods = {
           success: false,
           uploaded: 0,
@@ -248,7 +248,7 @@ serve(withSentry(async (req) => {
         };
         console.log(`✓ Uploaded ${dirty_records.feedback.length} feedback`);
       } catch (error) {
-        console.error(`✗ Failed to upload feedback: ${error.message}`);
+        captureEdgeError(error, { message: '✗ Failed to upload feedback', extra: { userId: user_id, count: dirty_records.feedback.length } });
         results.feedback = {
           success: false,
           uploaded: 0,
@@ -273,7 +273,7 @@ serve(withSentry(async (req) => {
         };
         console.log(`✓ Uploaded ${dirty_records.food_preferences.length} food_preferences`);
       } catch (error) {
-        console.error(`✗ Failed to upload food_preferences: ${error.message}`);
+        captureEdgeError(error, { message: '✗ Failed to upload food_preferences', extra: { userId: user_id, count: dirty_records.food_preferences.length } });
         results.food_preferences = {
           success: false,
           uploaded: 0,
@@ -305,7 +305,7 @@ serve(withSentry(async (req) => {
       },
     );
   } catch (error) {
-    console.error('Unexpected error in upload-all-data:', error);
+    captureEdgeError(error, { message: 'Unexpected error in upload-all-data' });
     return new Response(
       JSON.stringify({
         success: false,

@@ -1,8 +1,14 @@
 /**
- * Standardized response helpers for Edge Functions
+ * Standardized response helpers for Edge Functions.
+ *
+ * Error answers also report (ticket 12, .scratch/sentry/spec.md §"Edge
+ * functions"): `serverError()` captures the error it is given;
+ * `errorResponse()` captures when handed an error object or a 5xx status and
+ * leaves a breadcrumb for a 4xx without one.
  */
 
 import { corsHeaders } from './cors.ts';
+import { captureEdgeError, captureEdgeMessage, edgeBreadcrumb } from './sentry.ts';
 
 /**
  * Create a JSON response with CORS headers
@@ -22,14 +28,26 @@ export function successResponse<T extends Record<string, unknown>>(data: T): Res
 }
 
 /**
- * Create an error response
+ * Create an error response.
+ *
+ * `cause` is the underlying error, when there is one. With a cause, or with a
+ * 5xx status, the answer is reported to Sentry; a 4xx with no cause is an
+ * expected rejection and only leaves a breadcrumb.
  */
 export function errorResponse(
   message: string,
   status = 400,
   details?: string,
-  additionalData?: Record<string, unknown>
+  additionalData?: Record<string, unknown>,
+  cause?: unknown
 ): Response {
+  if (cause !== undefined && cause !== null) {
+    captureEdgeError(cause, { message, extra: { status, details } });
+  } else if (status >= 500) {
+    captureEdgeMessage(message, { extra: { status, details } });
+  } else {
+    edgeBreadcrumb(message, { status, details });
+  }
   return jsonResponse(
     {
       success: false,
@@ -56,14 +74,22 @@ export function notFoundResponse(resource: string): Response {
 }
 
 /**
- * Create an internal server error response
+ * Create an internal server error response. Captures `error`.
+ *
+ * `publicMessage` replaces `String(error)` in the body when the caller does
+ * not want the raw error text leaving the function.
  */
-export function serverError(error: unknown, fallbackToAlgorithm = false): Response {
+export function serverError(
+  error: unknown,
+  fallbackToAlgorithm = false,
+  publicMessage?: string
+): Response {
   console.error('[SERVER_ERROR]', error);
+  captureEdgeError(error, { extra: { fallback_to_algorithm: fallbackToAlgorithm } });
   return jsonResponse(
     {
       success: false,
-      error: String(error),
+      error: publicMessage ?? String(error),
       fallback_to_algorithm: fallbackToAlgorithm,
     },
     500

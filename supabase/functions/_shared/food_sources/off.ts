@@ -10,6 +10,7 @@
  * source = 'open_food_facts' so nutrition_products.resale_ok (a generated
  * column) excludes them from any resold/licensed API tier.
  */
+import { captureEdgeError } from '../sentry.ts';
 
 /**
  * Best-effort fetch of the raw Open Food Facts product by barcode. Serves two
@@ -23,7 +24,7 @@ async function fetchOffProduct(barcode: string): Promise<any | null> {
     const data = await resp.json();
     if (data.status === 1 && data.product) return data.product;
   } catch (e) {
-    console.error('⚠️ OFF fetch failed:', e);
+    captureEdgeError(e, { message: '⚠️ OFF fetch failed', level: 'warning', extra: { barcode } });
   }
   return null;
 }

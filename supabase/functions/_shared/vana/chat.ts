@@ -19,6 +19,7 @@ import { addDays, weekStartFor } from './env.ts';
 import { pickOpener, pendingDebrief, type OpenerVariant } from './opener.ts';
 import type { MealPlan } from './contracts.ts';
 import { ndjsonFromFullStream, ndjsonHeaders } from './stream.ts';
+import { captureEdgeError } from '../sentry.ts';
 
 const MAX_OUTPUT_TOKENS = 900;
 /** Runaway guard, not a style rule: a well-behaved planning turn never comes near it (PRESENTING is ≤4 sentences). */
@@ -189,14 +190,14 @@ export async function runChat(v: VanaCtx, body: ChatBody, opts: ChatRunOpts): Pr
             // plan_snapshot: the draft after this turn, so an edit-rewind can restore it (plan Phase 6.1)
             const planSnapshot = scope ? await snapshotPlan(v, scope) : null;
             const { error } = await v.db.from('vana_messages').insert({ conversation_id: convId, user_id: v.userId, role: 'assistant', content: (parts.find((p) => (p as { type: string }).type === 'text') as { text?: string } | undefined)?.text ?? clampSentences(text), parts, metadata: { ui_parts: ui, tool_calls: steps.flatMap((s) => (s.toolCalls ?? []).map((c) => c.toolName)), duration_ms: Date.now() - started, opener, opener_variant: opener ? openerVariant : undefined, kind: convKind, plan_snapshot: planSnapshot ?? undefined } });
-            if (error) console.error(`${tag} assistant message persist error:`, error.message);
+            if (error) captureEdgeError(error, { message: `${tag} assistant message persist error`, extra: { userId: v.userId, conversationId: convId } });
             await touch(v, convId, opener ? (general ? 'Quick question' : "This week's plan") : undefined);
           }
           await logCall(v.admin, { userId: v.userId, conversationId: convId || null, functionName: opener ? `vana.opener.${convKind}` : `vana.chat.${convKind}`, model: CHAT_MODEL, inputTokens, outputTokens });
           await logAiUsage(v.admin, { userId: v.userId, functionName: opts.functionName, model: CHAT_MODEL, inputTokens, outputTokens });
           await opts.afterFinish?.({ inputTokens, outputTokens });
           console.log(`${tag} onFinish user=${v.userId} conv=${convId || '(ephemeral)'} in=${inputTokens} out=${outputTokens} steps=${steps.length} ${Date.now() - started}ms`);
-        } catch (e) { console.error(`${tag} onFinish task failed:`, (e as Error).message); }
+        } catch (e) { captureEdgeError(e, { message: `${tag} onFinish task failed`, extra: { userId: v.userId, conversationId: convId } }); }
       })();
       waitUntil(task);
     },

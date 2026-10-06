@@ -16,6 +16,7 @@
  */
 import { toGtin14 } from './gtin.ts';
 import { bg, serviceClient } from './runtime.ts';
+import { captureEdgeError } from '../sentry.ts';
 
 /**
  * Priority 0.5 lookup: a product we've already fetched from USDA/OFF before.
@@ -67,7 +68,7 @@ async function lookupNutritionCache(
     };
     return { product, source: 'cache' };
   } catch (e) {
-    console.error('⚠️ nutrition_products cache lookup error:', e);
+    captureEdgeError(e, { message: '⚠️ nutrition_products cache lookup error', extra: { barcode } });
     return null;
   }
 }

@@ -50,7 +50,7 @@ import { createServiceClient } from "../_shared/supabase-client.ts";
 // Initialise Sentry once per cold-start. No-op when SENTRY_DSN is not set.
 initSentry();
 
-serve(withSentry(async (req: Request) => {
+serve(withSentry("generate-macros-v4", async (req: Request) => {
   const corsResponse = handleCors(req);
   if (corsResponse) return corsResponse;
 
@@ -266,7 +266,6 @@ serve(withSentry(async (req: Request) => {
 
     return jsonResponse({ success: true, macros });
   } catch (error) {
-    console.error("❌ Error in generate-macros-v4:", error);
     return serverError(error);
   }
 }));

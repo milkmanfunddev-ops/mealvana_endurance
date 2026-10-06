@@ -13,6 +13,7 @@
  */
 
 import { trackServerEvent } from "../analytics/mixpanel.ts";
+import { captureEdgeMessage } from "../sentry.ts";
 
 const ONESIGNAL_APP_ID = Deno.env.get("ONESIGNAL_APP_ID") ?? "";
 const ONESIGNAL_REST_API_KEY = Deno.env.get("ONESIGNAL_REST_API_KEY") ?? "";
@@ -137,11 +138,15 @@ export async function sendActivityUploadedPush(params: {
 
   if (!response.ok) {
     const errorBody = await response.text();
-    console.error(
-      `${prefix} OneSignal send failed:`,
-      response.status,
-      errorBody,
-    );
+    captureEdgeMessage(`${prefix} OneSignal send failed: ${response.status}`, {
+      level: "warning",
+      extra: {
+        status: response.status,
+        body: errorBody,
+        userId: params.userId,
+        activityId: params.activityId,
+      },
+    });
     return;
   }
 

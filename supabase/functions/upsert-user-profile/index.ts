@@ -1,6 +1,6 @@
 import { serve } from "https://deno.land/std@0.224.0/http/server.ts";
 import { createClient } from 'https://esm.sh/@supabase/supabase-js@2';
-import { initSentry, withSentry } from "../_shared/sentry.ts";
+import { captureEdgeError, initSentry, withSentry } from "../_shared/sentry.ts";
 
 const corsHeaders = {
   'Access-Control-Allow-Origin': '*',
@@ -48,7 +48,7 @@ interface UpsertUserProfileRequest {
 // Initialise Sentry once per cold-start. No-op when SENTRY_DSN is not set.
 initSentry();
 
-serve(withSentry(async (req) => {
+serve(withSentry("upsert-user-profile", async (req) => {
   // Handle CORS preflight requests
   if (req.method === 'OPTIONS') {
     return new Response('ok', { headers: corsHeaders });
@@ -281,7 +281,7 @@ serve(withSentry(async (req) => {
       .single();
 
     if (upsertError) {
-      console.error('[upsert-user-profile] Error upserting user profile:', upsertError);
+      captureEdgeError(upsertError, { message: '[upsert-user-profile] Error upserting user profile', extra: { userId: user_id } });
       return new Response(
         JSON.stringify({
           success: false,
@@ -348,7 +348,7 @@ serve(withSentry(async (req) => {
         });
 
       if (preferencesError) {
-        console.error('[upsert-user-profile] Error upserting food preferences:', preferencesError);
+        captureEdgeError(preferencesError, { message: '[upsert-user-profile] Error upserting food preferences', level: 'warning', extra: { userId: user_id, count: rows.length } });
         // Don't fail the entire request - user profile was saved successfully
         console.log('[upsert-user-profile] User profile saved but food preferences failed to save');
       } else {
@@ -383,7 +383,7 @@ serve(withSentry(async (req) => {
       }
     );
   } catch (error) {
-    console.error('[upsert-user-profile] Unexpected error:', error);
+    captureEdgeError(error, { message: '[upsert-user-profile] Unexpected error' });
     return new Response(
       JSON.stringify({
         success: false,

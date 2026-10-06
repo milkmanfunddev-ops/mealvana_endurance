@@ -15,7 +15,7 @@
  */
 import { serve } from "https://deno.land/std@0.224.0/http/server.ts";
 import { createClient } from "https://esm.sh/@supabase/supabase-js@2";
-import { initSentry, withSentry } from "../_shared/sentry.ts";
+import { initSentry, withSentry, captureEdgeError } from "../_shared/sentry.ts";
 import { selectNovelExemplars } from "../_shared/corpus/sampler.ts";
 import {
   FS_KEEP_ENUM,
@@ -101,7 +101,7 @@ function keepEnumFor(provider: string): KeepEnum {
 
 initSentry();
 
-serve(withSentry(async (req) => {
+serve(withSentry("corpus-export", async (req) => {
   if (req.method !== "POST") {
     return new Response("method not allowed", { status: 405 });
   }
@@ -125,6 +125,7 @@ serve(withSentry(async (req) => {
     .select("user_id, provider, data")
     .order("fetched_at", { ascending: true });
   if (error) {
+    captureEdgeError(error, { message: "[corpus-export] provider_raw_payloads read failed" });
     return new Response(JSON.stringify({ error: error.message }), {
       status: 500,
       headers: { "Content-Type": "application/json" },
@@ -158,6 +159,7 @@ serve(withSentry(async (req) => {
     .in("data_type", GARMIN_TYPES)
     .order("created_at", { ascending: true });
   if (gError) {
+    captureEdgeError(gError, { message: "[corpus-export] garmin_health_data read failed" });
     return new Response(JSON.stringify({ error: gError.message }), {
       status: 500,
       headers: { "Content-Type": "application/json" },

@@ -16,6 +16,7 @@ import { getPlan } from './plan.ts';
 import { logCall } from './log.ts';
 import { checkRateLimit } from './rate-limit.ts';
 import type { MealPlan } from './contracts.ts';
+import { captureEdgeError, captureEdgeMessage } from '../sentry.ts';
 
 const NotesZ = z.object({ notes: z.array(z.object({ date: z.string(), text: z.string() })).min(1).max(8) });
 const inflight = new Map<string, Promise<Record<string, string>>>();
@@ -54,14 +55,14 @@ export async function ensureDayNotes(v: VanaCtx, plan: MealPlan | null, anchorDa
   const have = !!plan.dayNotes[anchorDate];
   if (!plan.dayNotesStale && have) return { notes: plan.dayNotes, stale: false };
   if (have) { refreshDayNotesSoon(v, anchorDate, plan.id); return { notes: plan.dayNotes, stale: true }; }
-  try { return { notes: await generateDayNotes(v, plan, anchorDate), stale: false }; } catch (e) { console.error('[vana] day notes failed:', (e as Error).message); return { notes: plan.dayNotes, stale: false }; }
+  try { return { notes: await generateDayNotes(v, plan, anchorDate), stale: false }; } catch (e) { captureEdgeError(e, { message: '[vana] day notes failed', extra: { userId: v.userId, planId: plan.id, anchorDate } }); return { notes: plan.dayNotes, stale: false }; }
 }
 /** After Confirm / an edit: regenerate eagerly without holding the response — one `vana-day-notes` call under waitUntil. */
 export function refreshDayNotesSoon(v: VanaCtx, anchorDate: string, planId?: string | null) {
   const run = (async () => {
     const id = planId ?? (await getPlan(v))?.id; if (!id) return;
     const res = await fetch(`${SUPABASE_URL}/functions/v1/vana-day-notes`, { method: 'POST', signal: AbortSignal.timeout(60_000), headers: { Authorization: `Bearer ${v.token}`, 'content-type': 'application/json' }, body: JSON.stringify({ plan_id: id, anchor_date: anchorDate }) });
-    if (!res.ok) console.error(`[vana] vana-day-notes ${res.status}: ${(await res.text()).slice(0, 200)}`);
-  })().catch((e) => console.error('[vana] day notes refresh failed:', (e as Error).message));
+    if (!res.ok) captureEdgeMessage(`[vana] vana-day-notes ${res.status}`, { level: 'warning', extra: { status: res.status, body: (await res.text()).slice(0, 200), userId: v.userId, planId: id, anchorDate } });
+  })().catch((e) => captureEdgeError(e, { message: '[vana] day notes refresh failed', level: 'warning', extra: { userId: v.userId, planId, anchorDate } }));
   waitUntil(run);
 }

@@ -36,7 +36,9 @@ matrix. The decision it existed to settle shipped long ago as
 code, contained no `*.test.ts`, and was never wired into the runner or CI.
 
 All local tests run with one permission superset:
-`--allow-read --allow-write --allow-env --node-modules-dir=none`.
+`--allow-read --allow-write --allow-env --allow-sys --node-modules-dir=none`
+(`--allow-sys` because `_shared/sentry_coverage.test.ts` imports every function's
+`index.ts` and the AI SDK reads the hostname at import time).
 No local test needs `--allow-net` (AI-function tests stub `globalThis.fetch`);
 if one ever does, add it to the `NET_ALLOWED` array at the top of the script
 with a comment saying why.

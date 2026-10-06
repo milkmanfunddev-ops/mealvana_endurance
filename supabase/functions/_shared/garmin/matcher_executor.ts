@@ -37,6 +37,7 @@ import {
   getGarminLocalDayBounds,
   insertGarminActivityIfMissing,
 } from "./activity_completion.ts";
+import { captureEdgeError } from "../sentry.ts";
 import {
   garminTimestampToLocalNaiveISO,
   mapGarminActivityToActivity,
@@ -187,7 +188,7 @@ async function fetchCandidates(
     .gte("scheduled_date_time", msToNaive(fromMs).replace("T", " "))
     .lt("scheduled_date_time", msToNaive(toMs).replace("T", " "));
   if (error) {
-    console.error("[garmin-matcher] Candidate window query error:", error);
+    captureEdgeError(error, { message: "[garmin-matcher] Candidate window query error", extra: { userId, summaryId } });
   }
 
   // deno-lint-ignore no-explicit-any
@@ -241,7 +242,7 @@ export async function runGarminActivityPipeline(
   try {
     rawRows = await fetchCandidates(supabase, userId, activity, summaryId);
   } catch (err) {
-    console.error(`${logPrefix} Candidate fetch failed:`, err);
+    captureEdgeError(err, { message: `${logPrefix} Candidate fetch failed`, extra: { userId, summaryId } });
     return { kind: "error", error: err };
   }
   const byId = new Map(rawRows.map((r) => [String(r.id), r]));
@@ -391,7 +392,7 @@ async function executeCompletion(
     .select("id");
 
   if (error) {
-    console.error(`${logPrefix} Matched activity update error:`, error);
+    captureEdgeError(error, { message: `${logPrefix} Matched activity update error`, extra: { userId, summaryId, matchedRowId: decision.matchedRowId } });
     return { kind: "error", error };
   }
   if (!updatedRows || updatedRows.length === 0) {
@@ -434,7 +435,7 @@ async function executeUpgrade(
     .select("id");
 
   if (error) {
-    console.error(`${logPrefix} Upgrade update error:`, error);
+    captureEdgeError(error, { message: `${logPrefix} Upgrade update error`, extra: { summaryId, matchedRowId: decision.matchedRowId } });
     return { kind: "error", error };
   }
   if (!updatedRows || updatedRows.length === 0) {
@@ -471,7 +472,7 @@ async function executeBrickParentComplete(
     .in("status", GARMIN_COMPLETABLE_STATUSES)
     .select("id");
   if (error) {
-    console.error(`${logPrefix} Brick parent completion error:`, error);
+    captureEdgeError(error, { message: `${logPrefix} Brick parent completion error`, extra: { summaryId, matchedRowId: decision.matchedRowId } });
     return { kind: "error", error };
   }
   if (!updatedRows || updatedRows.length === 0) return { kind: "duplicate" };
@@ -551,7 +552,7 @@ async function executeBrickLegStamp(
     : await query;
 
   if (error) {
-    console.error(`${logPrefix} Brick leg stamp error:`, error);
+    captureEdgeError(error, { message: `${logPrefix} Brick leg stamp error`, extra: { matchedRowId: decision.matchedRowId } });
     return { kind: "error", error };
   }
   console.log(
@@ -623,7 +624,7 @@ async function executeTransitionFold(
     })
     .eq("id", decision.matchedRowId);
   if (error) {
-    console.error(`${logPrefix} Transition fold error:`, error);
+    captureEdgeError(error, { message: `${logPrefix} Transition fold error`, extra: { matchedRowId: decision.matchedRowId } });
     return { kind: "error", error };
   }
   console.log(

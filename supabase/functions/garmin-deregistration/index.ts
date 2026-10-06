@@ -18,7 +18,7 @@ import { serve } from 'https://deno.land/std@0.224.0/http/server.ts';
 import { createClient } from 'https://esm.sh/@supabase/supabase-js@2.39.3';
 import { validateGarminRequest } from '../_shared/garmin/auth.ts';
 import type { GarminDeregistrationNotification } from '../_shared/garmin/types.ts';
-import { initSentry, withSentry } from '../_shared/sentry.ts';
+import { captureEdgeError, initSentry, withSentry } from '../_shared/sentry.ts';
 
 const GARMIN_CLIENT_ID = Deno.env.get('GARMIN_CLIENT_ID') ?? '';
 const SUPABASE_URL = Deno.env.get('SUPABASE_URL') ?? '';
@@ -31,7 +31,7 @@ declare const EdgeRuntime: {
 // Initialise Sentry once per cold-start. No-op when SENTRY_DSN is not set.
 initSentry();
 
-serve(withSentry(async (req: Request) => {
+serve(withSentry('garmin-deregistration', async (req: Request) => {
   // Validate the request is from Garmin (header-only, synchronous)
   const validationError = validateGarminRequest(req, GARMIN_CLIENT_ID);
   if (validationError) {
@@ -57,7 +57,9 @@ serve(withSentry(async (req: Request) => {
 
   // Ack 200 immediately; delete mappings in background so Garmin never waits.
   const processing = processDeregistrationBody(body).catch((err) => {
-    console.error('[garmin-deregistration] Background processing error:', err);
+    captureEdgeError(err, {
+      message: '[garmin-deregistration] Background processing error',
+    });
   });
 
   if (typeof EdgeRuntime !== 'undefined') {
@@ -92,20 +94,26 @@ async function processDeregistrationBody(
           .eq('garmin_user_id', dereg.userId);
 
         if (error) {
-          console.error(`[garmin-deregistration] Delete error for ${dereg.userId}:`, error);
+          captureEdgeError(error, {
+            message: `[garmin-deregistration] Delete error for ${dereg.userId}`,
+            extra: { garminUserId: dereg.userId },
+          });
           errors++;
         } else {
           console.log(`[garmin-deregistration] Deregistered Garmin userId: ${dereg.userId}`);
           processed++;
         }
       } catch (err) {
-        console.error(`[garmin-deregistration] Processing error:`, err);
+        captureEdgeError(err, {
+          message: '[garmin-deregistration] Processing error',
+          extra: { garminUserId: dereg.userId },
+        });
         errors++;
       }
     }
 
     console.log(`[garmin-deregistration] Complete: ${processed} processed, ${errors} errors`);
   } catch (err) {
-    console.error('[garmin-deregistration] Fatal error:', err);
+    captureEdgeError(err, { message: '[garmin-deregistration] Fatal error' });
   }
 }

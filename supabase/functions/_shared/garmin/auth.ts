@@ -5,6 +5,8 @@
  * that we validate against our registered client ID.
  */
 
+import { edgeBreadcrumb } from '../sentry.ts';
+
 /**
  * Validate an incoming Garmin push/ping request.
  * Returns an error message string if invalid, or null if valid.
@@ -38,6 +40,7 @@ export function validateGarminRequest(
 
   if (clientIdHeader !== expectedClientId) {
     console.error(`[garmin-auth] Client ID mismatch: got "${clientIdHeader}", expected "${expectedClientId}"`);
+    edgeBreadcrumb('[garmin-auth] Client ID mismatch', { got: clientIdHeader, expected: expectedClientId });
     return 'Invalid garmin-client-id';
   }
 

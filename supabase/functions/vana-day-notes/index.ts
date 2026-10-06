@@ -10,7 +10,7 @@
 import { serve } from 'https://deno.land/std@0.224.0/http/server.ts';
 import { corsHeaders } from '../_shared/cors.ts';
 import { jsonResponse, errorResponse } from '../_shared/responses.ts';
-import { initSentry, withSentry } from '../_shared/sentry.ts';
+import { initSentry, withSentry, captureEdgeError } from '../_shared/sentry.ts';
 import { authenticate } from '../_shared/vana/auth.ts';
 import { requirePro } from '../_shared/vana/entitlement.ts';
 import { getPlanById } from '../_shared/vana/plan.ts';
@@ -19,7 +19,7 @@ import { today } from '../_shared/vana/env.ts';
 
 initSentry();
 
-serve(withSentry(async (req: Request) => {
+serve(withSentry('vana-day-notes', async (req: Request) => {
   if (req.method === 'OPTIONS') return new Response('ok', { headers: corsHeaders });
   if (req.method !== 'POST') return errorResponse('Method not allowed. Use POST.', 405);
   if (!Deno.env.get('AI_GATEWAY_API_KEY')) return errorResponse('AI service is not configured. Please contact support.', 500);
@@ -42,7 +42,7 @@ serve(withSentry(async (req: Request) => {
     const notes = await generateDayNotes(v, plan, anchorDate);
     return jsonResponse({ plan_id: plan.id, notes, stale: false });
   } catch (e) {
-    console.error('[vana-day-notes] failed:', (e as Error).message);
+    captureEdgeError(e, { message: '[vana-day-notes] failed', extra: { userId: v.userId, planId: plan.id, anchorDate } });
     return jsonResponse({ plan_id: plan.id, notes: plan.dayNotes, stale: true, error: (e as Error).message }, 500);
   }
 }));

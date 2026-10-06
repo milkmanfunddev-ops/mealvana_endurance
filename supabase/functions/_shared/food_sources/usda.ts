@@ -10,6 +10,7 @@
  */
 import { toGtin14 } from './gtin.ts';
 import { detectProductType } from './product_type.ts';
+import { captureEdgeError, captureEdgeMessage } from '../sentry.ts';
 
 /**
  * Look up a branded product by barcode in USDA FoodData Central.
@@ -52,7 +53,7 @@ async function lookupUsda(barcode: string): Promise<{ product: Record<string, un
           `&query=${encodeURIComponent(v)}&dataType=Branded&pageSize=10`,
       );
       if (!searchResp.ok) {
-        console.error('⚠️ USDA search failed:', searchResp.status);
+        captureEdgeMessage(`⚠️ USDA search failed: ${searchResp.status}`, { level: 'warning', extra: { status: searchResp.status, barcode } });
         continue;
       }
       const searchData = await searchResp.json();
@@ -119,7 +120,7 @@ async function lookupUsda(barcode: string): Promise<{ product: Record<string, un
           servingGrams = gramsFrom(food.servingSize, food.servingSizeUnit);
         }
       } catch (e) {
-        console.error('⚠️ USDA detail fallback failed:', e);
+        captureEdgeError(e, { message: '⚠️ USDA detail fallback failed', level: 'warning', extra: { barcode, fdcId: match.fdcId } });
       }
     }
     const hasServing = calS != null || carbS != null;
@@ -160,7 +161,7 @@ async function lookupUsda(barcode: string): Promise<{ product: Record<string, un
 
     return { product: cleanedProduct, source: 'usda_barcode' };
   } catch (e) {
-    console.error('⚠️ USDA lookup error:', e);
+    captureEdgeError(e, { message: '⚠️ USDA lookup error', level: 'warning', extra: { barcode } });
     return null;
   }
 }

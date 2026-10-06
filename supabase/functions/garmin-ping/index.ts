@@ -20,7 +20,7 @@ import {
   fetchGarminCallback,
   validateGarminRequest,
 } from "../_shared/garmin/auth.ts";
-import { initSentry, withSentry } from "../_shared/sentry.ts";
+import { captureEdgeError, initSentry, withSentry } from "../_shared/sentry.ts";
 import {
   mapGarminActivityToActivity,
   mapGarminDailySummary,
@@ -54,7 +54,7 @@ declare const EdgeRuntime: {
 // Initialise Sentry once per cold-start. No-op when SENTRY_DSN is not set.
 initSentry();
 
-serve(withSentry(async (req: Request) => {
+serve(withSentry("garmin-ping", async (req: Request) => {
   // Validate the request is from Garmin (header-only, synchronous)
   const validationError = validateGarminRequest(req, GARMIN_CLIENT_ID);
   if (validationError) {
@@ -80,7 +80,9 @@ serve(withSentry(async (req: Request) => {
 
   // Ack 200 immediately; fetch callbacks + DB writes happen in background.
   const processing = processPingBody(body).catch((err) => {
-    console.error("[garmin-ping] Background processing error:", err);
+    captureEdgeError(err, {
+      message: "[garmin-ping] Background processing error",
+    });
   });
 
   if (typeof EdgeRuntime !== "undefined") {
@@ -146,15 +148,22 @@ async function processPingBody(body: GarminPingNotification): Promise<void> {
               "[garmin-ping]",
             );
             if (outcome.kind === "error") {
-              console.error(
-                "[garmin-ping] Matcher pipeline error:",
-                outcome.error,
-              );
+              captureEdgeError(outcome.error, {
+                message: "[garmin-ping] Matcher pipeline error",
+                extra: {
+                  summaryId: activity.summaryId,
+                  userId: mapping.user_id,
+                  garminUserId: ping.userId,
+                },
+              });
             }
             tallyOutcome(outcome, stats);
           }
         } catch (err) {
-          console.error("[garmin-ping] Activity ping error:", err);
+          captureEdgeError(err, {
+            message: "[garmin-ping] Activity ping error",
+            extra: { garminUserId: ping.userId, callbackURL: ping.callbackURL },
+          });
           stats.errors++;
         }
       }
@@ -221,15 +230,22 @@ async function processPingBody(body: GarminPingNotification): Promise<void> {
               "[garmin-ping]",
             );
             if (outcome.kind === "error") {
-              console.error(
-                "[garmin-ping] Matcher pipeline error (detail):",
-                outcome.error,
-              );
+              captureEdgeError(outcome.error, {
+                message: "[garmin-ping] Matcher pipeline error (detail)",
+                extra: {
+                  summaryId: String(detailSummaryId),
+                  userId: mapping.user_id,
+                  garminUserId: ping.userId,
+                },
+              });
             }
             tallyOutcome(outcome, stats);
           }
         } catch (err) {
-          console.error("[garmin-ping] Activity detail ping error:", err);
+          captureEdgeError(err, {
+            message: "[garmin-ping] Activity detail ping error",
+            extra: { garminUserId: ping.userId, callbackURL: ping.callbackURL },
+          });
           stats.errors++;
         }
       }
@@ -276,7 +292,10 @@ async function processPingBody(body: GarminPingNotification): Promise<void> {
             }
           }
         } catch (err) {
-          console.error("[garmin-ping] Daily ping error:", err);
+          captureEdgeError(err, {
+            message: "[garmin-ping] Daily ping error",
+            extra: { garminUserId: ping.userId, callbackURL: ping.callbackURL },
+          });
           stats.errors++;
         }
       }
@@ -323,7 +342,10 @@ async function processPingBody(body: GarminPingNotification): Promise<void> {
             }
           }
         } catch (err) {
-          console.error("[garmin-ping] Sleep ping error:", err);
+          captureEdgeError(err, {
+            message: "[garmin-ping] Sleep ping error",
+            extra: { garminUserId: ping.userId, callbackURL: ping.callbackURL },
+          });
           stats.errors++;
         }
       }
@@ -381,14 +403,20 @@ async function processPingBody(body: GarminPingNotification): Promise<void> {
               .upsert(record, { onConflict: "summary_id" });
 
             if (error) {
-              console.error("[garmin-ping] Body comp upsert error:", error);
+              captureEdgeError(error, {
+                message: "[garmin-ping] Body comp upsert error",
+                extra: { summaryId: bodyComp.summaryId, userId: mapping.user_id },
+              });
               stats.errors++;
             } else {
               stats.processed++;
             }
           }
         } catch (err) {
-          console.error("[garmin-ping] Body comp ping error:", err);
+          captureEdgeError(err, {
+            message: "[garmin-ping] Body comp ping error",
+            extra: { garminUserId: ping.userId, callbackURL: ping.callbackURL },
+          });
           stats.errors++;
         }
       }
@@ -439,14 +467,20 @@ async function processPingBody(body: GarminPingNotification): Promise<void> {
               .upsert(record, { onConflict: "summary_id" });
 
             if (error) {
-              console.error("[garmin-ping] Stress upsert error:", error);
+              captureEdgeError(error, {
+                message: "[garmin-ping] Stress upsert error",
+                extra: { summaryId: stress.summaryId, userId: mapping.user_id },
+              });
               stats.errors++;
             } else {
               stats.processed++;
             }
           }
         } catch (err) {
-          console.error("[garmin-ping] Stress ping error:", err);
+          captureEdgeError(err, {
+            message: "[garmin-ping] Stress ping error",
+            extra: { garminUserId: ping.userId, callbackURL: ping.callbackURL },
+          });
           stats.errors++;
         }
       }
@@ -508,14 +542,20 @@ async function processPingBody(body: GarminPingNotification): Promise<void> {
               .upsert(record, { onConflict: "summary_id" });
 
             if (error) {
-              console.error("[garmin-ping] Epoch upsert error:", error);
+              captureEdgeError(error, {
+                message: "[garmin-ping] Epoch upsert error",
+                extra: { summaryId: epoch.summaryId, userId: mapping.user_id },
+              });
               stats.errors++;
             } else {
               stats.processed++;
             }
           }
         } catch (err) {
-          console.error("[garmin-ping] Epoch ping error:", err);
+          captureEdgeError(err, {
+            message: "[garmin-ping] Epoch ping error",
+            extra: { garminUserId: ping.userId, callbackURL: ping.callbackURL },
+          });
           stats.errors++;
         }
       }
@@ -565,14 +605,20 @@ async function processPingBody(body: GarminPingNotification): Promise<void> {
               .upsert(record, { onConflict: "summary_id" });
 
             if (error) {
-              console.error("[garmin-ping] User metrics upsert error:", error);
+              captureEdgeError(error, {
+                message: "[garmin-ping] User metrics upsert error",
+                extra: { summaryId: metric.summaryId, userId: mapping.user_id },
+              });
               stats.errors++;
             } else {
               stats.processed++;
             }
           }
         } catch (err) {
-          console.error("[garmin-ping] User metrics ping error:", err);
+          captureEdgeError(err, {
+            message: "[garmin-ping] User metrics ping error",
+            extra: { garminUserId: ping.userId, callbackURL: ping.callbackURL },
+          });
           stats.errors++;
         }
       }
@@ -581,6 +627,6 @@ async function processPingBody(body: GarminPingNotification): Promise<void> {
 
     console.log("[garmin-ping] Processing complete:", JSON.stringify(results));
   } catch (err) {
-    console.error("[garmin-ping] Fatal error:", err);
+    captureEdgeError(err, { message: "[garmin-ping] Fatal error" });
   }
 }

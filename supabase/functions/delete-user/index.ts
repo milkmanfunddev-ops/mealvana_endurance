@@ -1,6 +1,6 @@
 import { serve } from "https://deno.land/std@0.224.0/http/server.ts";
 import { createClient } from "https://esm.sh/@supabase/supabase-js@2";
-import { initSentry, withSentry } from "../_shared/sentry.ts";
+import { captureEdgeError, initSentry, withSentry } from "../_shared/sentry.ts";
 
 const corsHeaders = {
   "Access-Control-Allow-Origin": "*",
@@ -20,7 +20,7 @@ const corsHeaders = {
 // Initialise Sentry once per cold-start. No-op when SENTRY_DSN is not set.
 initSentry();
 
-serve(withSentry(async (req) => {
+serve(withSentry("delete-user", async (req) => {
   // Handle CORS preflight requests
   if (req.method === "OPTIONS") {
     return new Response("ok", {
@@ -77,7 +77,7 @@ serve(withSentry(async (req) => {
     // This will CASCADE delete all related data (food_preferences, activities, events, etc.)
     const { error: publicDeleteError } = await adminClient.from("users").delete().eq("id", userId);
     if (publicDeleteError) {
-      console.error("Error deleting from public.users:", publicDeleteError);
+      captureEdgeError(publicDeleteError, { message: "Error deleting from public.users", level: "warning", extra: { userId } });
     // Continue anyway - user might not have a public.users entry
     } else {
       console.log(`Deleted user from public.users: ${userId}`);
@@ -86,7 +86,7 @@ serve(withSentry(async (req) => {
     // This completely removes the authentication account
     const { error: authDeleteError } = await adminClient.auth.admin.deleteUser(userId);
     if (authDeleteError) {
-      console.error("Error deleting from auth.users:", authDeleteError);
+      captureEdgeError(authDeleteError, { message: "Error deleting from auth.users", extra: { userId } });
       return new Response(JSON.stringify({
         success: false,
         message: `Failed to delete auth account: ${authDeleteError.message}`
@@ -111,7 +111,7 @@ serve(withSentry(async (req) => {
       }
     });
   } catch (error) {
-    console.error("Unexpected error:", error);
+    captureEdgeError(error, { message: "Unexpected error" });
     return new Response(JSON.stringify({
       success: false,
       message: "Internal server error"

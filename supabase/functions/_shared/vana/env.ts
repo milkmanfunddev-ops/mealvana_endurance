@@ -12,6 +12,7 @@
  * when AI_GATEWAY_API_KEY is set (same convention as `_shared/ai/model.ts`).
  */
 import type { SupabaseClient } from 'https://esm.sh/@supabase/supabase-js@2.39.3';
+import { captureEdgeError } from '../sentry.ts';
 
 // deno-lint-ignore no-explicit-any
 export type Db = SupabaseClient<any, 'public', any>;
@@ -54,5 +55,5 @@ export function localDate(tz: string | null | undefined): string {
 export function waitUntil(p: Promise<unknown>): void {
   // deno-lint-ignore no-explicit-any
   const rt = (globalThis as any).EdgeRuntime;
-  if (rt?.waitUntil) rt.waitUntil(p); else void p.catch((e) => console.error('[vana] background task failed:', e));
+  if (rt?.waitUntil) rt.waitUntil(p); else void p.catch((e) => captureEdgeError(e, { message: '[vana] background task failed' }));
 }
