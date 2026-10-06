@@ -108,7 +108,6 @@ Two workflows in `codemagic.yaml` run these on Apple-silicon Mac runners:
 | `flows/settings_persist_flow_test.dart` | Settings persistence |
 | `flows/settings_sweep_flow_test.dart` | Settings screen sweep |
 | `flows/learn_flow_test.dart` | Learn tab |
-| `flows/paywall_render_flow_test.dart` | Paywall renders |
 | `flows/jade_chat_flow_test.dart` | Jade chat (LLM — excluded from the M1 job) |
 
 Helpers live in `helpers/` (`flow_launcher.dart`, `test_config.dart`,
@@ -132,7 +131,6 @@ Meanwhile every *healthy* flow in that same run finished in **1–11 seconds**:
 | `integrations_connect` (per case) | 1 s |
 | `auth` | 2 s |
 | `fuel_timeline`, `learn` | 3 s |
-| `paywall_render` | 7 s |
 | `settings_persist`, `formula_create_pin` | 8–9 s |
 | `meal_log_build`, `events_crud`, `settings_sweep` | 11 s |
 
