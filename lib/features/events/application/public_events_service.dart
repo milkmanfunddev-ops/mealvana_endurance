@@ -2,13 +2,17 @@ import 'package:riverpod_annotation/riverpod_annotation.dart';
 import 'package:supabase_flutter/supabase_flutter.dart';
 import '../../../shared/services/supabase/supabase_client_provider.dart';
 import '../domain/public_event.dart';
+import '../../../shared/services/report/report.dart';
 
 part 'public_events_service.g.dart';
 
 /// Provider for PublicEventsService
 @riverpod
 PublicEventsService publicEventsService(Ref ref) {
-  return PublicEventsService(supabaseClient: ref.watch(supabaseClientProvider));
+  return PublicEventsService(
+    supabaseClient: ref.watch(supabaseClientProvider),
+    report: ref.watch(reportProvider),
+  );
 }
 
 /// Service for searching public events
@@ -16,9 +20,13 @@ PublicEventsService publicEventsService(Ref ref) {
 /// Calls the search-public-events Edge Function to search the public_events table.
 class PublicEventsService {
   final SupabaseClient _supabase;
+  final Report? _reportOverride;
 
-  PublicEventsService({required SupabaseClient supabaseClient})
-    : _supabase = supabaseClient;
+  PublicEventsService({required SupabaseClient supabaseClient, Report? report})
+    : _supabase = supabaseClient,
+      _reportOverride = report;
+
+  Report get _report => _reportOverride ?? SentryReport.global;
 
   /// Search for public events
   ///
@@ -57,9 +65,15 @@ class PublicEventsService {
           .toList();
 
       return events;
-    } catch (e) {
-      // Log error and return empty list
-      // TODO: Use AppLogger for proper error tracking
+    } catch (e, stackTrace) {
+      // The picker shows no suggestions; the athlete can still type a name.
+      _report.fault(
+        e,
+        stackTrace: stackTrace,
+        area: 'events',
+        message: 'Public events search failed; returning none',
+        extra: {'query': query},
+      );
       return [];
     }
   }

@@ -5,6 +5,7 @@ import 'package:flutter/services.dart' show rootBundle;
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import '../data/content_repository.dart';
 import '../domain/app_content.dart';
+import '../../../shared/services/report/report.dart';
 
 /// Application service for managing app content
 /// Follows the Andrea Bizzotto pattern with Ref for dependency injection
@@ -46,13 +47,28 @@ class ContentService {
             // Update in-memory cache with refreshed content
             _cachedContent = latestContent;
           })
-          .catchError((error) {
-            // Silently handle errors - app continues with cached/default
-            // content. Log error but don't print in production.
+          .catchError((Object error, StackTrace stackTrace) {
+            // The app continues on cached/default content.
+            ref
+                .read(reportProvider)
+                .fault(
+                  error,
+                  stackTrace: stackTrace,
+                  area: 'content',
+                  message: 'Background content refresh failed',
+                );
           });
-    } catch (_) {
+    } catch (e, stackTrace) {
       // Same policy as the async path: the app continues on cached/default
       // content.
+      ref
+          .read(reportProvider)
+          .fault(
+            e,
+            stackTrace: stackTrace,
+            area: 'content',
+            message: 'Background content refresh threw synchronously',
+          );
     }
   }
 
@@ -72,7 +88,15 @@ class ContentService {
       final refreshedContent = await _contentRepository.refreshContent();
       _cachedContent = refreshedContent;
       return true;
-    } catch (e) {
+    } catch (e, stackTrace) {
+      ref
+          .read(reportProvider)
+          .fault(
+            e,
+            stackTrace: stackTrace,
+            area: 'content',
+            message: 'Manual content refresh failed',
+          );
       return false;
     }
   }
@@ -132,9 +156,16 @@ class ContentDefaultsCache {
 
       walk(decoded, '');
       _values = flat;
-    } catch (_) {
+    } catch (e, stackTrace) {
       // A missing/corrupt bundled asset is a build problem, not a runtime
       // one; getValue falls back to per-call defaults and the raw key.
+      // Static class, no ref: the global Report is the only handle here.
+      SentryReport.global.fault(
+        e,
+        stackTrace: stackTrace,
+        area: 'content',
+        message: 'Bundled content defaults failed to load',
+      );
       //
       // Catch-all, not `on Exception`: rootBundle throws a FlutterError (an
       // Error, not an Exception) when the asset is absent or the binding is

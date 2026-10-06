@@ -19,6 +19,7 @@ import '../../domain/event.dart';
 import '../../domain/public_event.dart';
 import '../../application/public_events_service.dart';
 import '../providers/events_controller.dart';
+import 'package:mealvana_endurance/shared/services/report/report.dart';
 
 /// Unified Event Form Screen for creating and editing events.
 ///
@@ -243,7 +244,15 @@ class _EventFormScreenState extends ConsumerState<EventFormScreen> {
           _isSearchingEvents = false;
         });
       }
-    } catch (e) {
+    } catch (e, stackTrace) {
+      ref
+          .read(reportProvider)
+          .fault(
+            e,
+            stackTrace: stackTrace,
+            area: 'events',
+            message: 'Public event search failed; suggestions cleared',
+          );
       if (mounted) {
         setState(() {
           _eventSearchResults = [];
@@ -398,7 +407,15 @@ class _EventFormScreenState extends ConsumerState<EventFormScreen> {
           _isSearchingLocation = false;
         });
       }
-    } catch (e) {
+    } catch (e, stackTrace) {
+      ref
+          .read(reportProvider)
+          .fault(
+            e,
+            stackTrace: stackTrace,
+            area: 'events',
+            message: 'Location search failed; suggestions cleared',
+          );
       if (mounted) {
         setState(() {
           _locationSearchResults = [];
@@ -612,7 +629,17 @@ class _EventFormScreenState extends ConsumerState<EventFormScreen> {
           });
         }
       }
-    } catch (e) {
+    } catch (e, stackTrace) {
+      ref
+          .read(reportProvider)
+          .fault(
+            e,
+            stackTrace: stackTrace,
+            area: 'events',
+            message: isEditMode
+                ? 'Updating an event failed'
+                : 'Creating an event failed',
+          );
       if (mounted) {
         setState(() {
           _isSaving = false;

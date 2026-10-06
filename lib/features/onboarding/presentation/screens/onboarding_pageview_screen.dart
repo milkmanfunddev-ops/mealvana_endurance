@@ -13,6 +13,7 @@ import 'nutrition_settings_screen.dart';
 import 'plan_reveal_screen.dart';
 import 'daily_plan_preview_screen.dart';
 import '../../../settings/presentation/screens/connected_apps_screen.dart';
+import '../../../../shared/services/report/report.dart';
 
 /// Onboarding PageView Screen - Wrapper for all onboarding steps
 ///
@@ -240,8 +241,16 @@ class _OnboardingPageViewScreenState
               'step_index': stepIndex,
             },
           );
-    } catch (_) {
+    } catch (e, stackTrace) {
       // Analytics must never block onboarding navigation.
+      ref
+          .read(reportProvider)
+          .fault(
+            e,
+            stackTrace: stackTrace,
+            area: 'onboarding',
+            message: 'analytics: onboarding_step_completed not tracked',
+          );
     }
   }
 
@@ -260,8 +269,16 @@ class _OnboardingPageViewScreenState
               if (durationSec != null) 'duration_sec': durationSec,
             },
           );
-    } catch (_) {
+    } catch (e, stackTrace) {
       // Analytics must never block onboarding navigation.
+      ref
+          .read(reportProvider)
+          .fault(
+            e,
+            stackTrace: stackTrace,
+            area: 'onboarding',
+            message: 'analytics: onboarding_completed not tracked',
+          );
     }
   }
 

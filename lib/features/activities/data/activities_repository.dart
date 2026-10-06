@@ -17,6 +17,7 @@ import '../domain/brick_metadata.dart';
 import '../domain/usual_pace.dart';
 import 'activity_mapper.dart';
 import '../application/activity_deduplication_service.dart';
+import '../../../shared/services/report/report.dart';
 
 part 'activities_repository.g.dart';
 
@@ -39,6 +40,7 @@ ActivitiesRepository activitiesRepository(Ref ref) {
     logger: ref.read(appLoggerProvider),
     sentry: deps.sentry,
     deduplicationService: ref.read(activityDeduplicationServiceProvider),
+    report: ref.read(reportProvider),
   );
 }
 
@@ -51,10 +53,12 @@ class ActivitiesRepository with SyncableRepository {
     required AppLogger logger,
     required SentryReporter sentry,
     required ActivityDeduplicationService deduplicationService,
+    Report? report,
   }) : _supabase = supabase,
        _database = database,
        _logger = logger,
        _sentry = sentry,
+       _reportOverride = report,
        _mapper = ActivityMapper(logger: logger),
        _deduplicationService = deduplicationService;
 
@@ -62,7 +66,10 @@ class ActivitiesRepository with SyncableRepository {
   final AppDatabase _database;
   final AppLogger _logger;
   final SentryReporter _sentry;
+  final Report? _reportOverride;
   final ActivityMapper _mapper;
+
+  Report get _report => _reportOverride ?? SentryReport.global;
   final ActivityDeduplicationService _deduplicationService;
 
   /// Expose mapper for use by ActivitiesService and other consumers.
@@ -141,12 +148,12 @@ class ActivitiesRepository with SyncableRepository {
         durationSource: 'estimated',
       );
     } catch (e, stackTrace) {
-      _logger.warning(
-        'Duration estimate failed; importing the row unchanged',
-        context: 'ACTIVITIES_REPOSITORY',
-        error: e,
+      _report.degraded(
+        e,
         stackTrace: stackTrace,
-        data: {'activityId': activity.id},
+        area: 'activities',
+        message: 'Duration estimate failed; importing the row unchanged',
+        extra: {'activityId': activity.id},
       );
       return activity;
     }
@@ -201,12 +208,13 @@ class ActivitiesRepository with SyncableRepository {
         );
         out.add(persisted);
       } catch (e, stackTrace) {
-        _logger.warning(
-          'Could not persist an estimated duration; leaving the row as it was',
-          context: 'ACTIVITIES_REPOSITORY',
-          error: e,
+        _report.degraded(
+          e,
           stackTrace: stackTrace,
-          data: {'activityId': activity.id},
+          area: 'activities',
+          message:
+              'Could not persist an estimated duration; leaving the row as it was',
+          extra: {'activityId': activity.id},
         );
         out.add(activity);
       }
@@ -304,12 +312,12 @@ class ActivitiesRepository with SyncableRepository {
 
       return SyncResult.successful(syncedCount);
     } catch (e, stackTrace) {
-      _logger.error(
-        'Failed to sync activities from remote',
-        context: 'ACTIVITIES_REPOSITORY',
-        error: e,
+      _report.fault(
+        e,
         stackTrace: stackTrace,
-        data: {'userId': userId},
+        area: 'activities',
+        message: 'Failed to sync activities from remote',
+        extra: {'userId': userId},
       );
       await _sentry.reportNetworkError(
         e,
@@ -453,11 +461,13 @@ class ActivitiesRepository with SyncableRepository {
                 .map((s) => s.id)
                 .toList();
 
-            _logger.warning(
-              'Clearing brick_id on orphaned sub-activities '
-              '(parent brick not found locally or remotely)',
-              context: 'ACTIVITIES_REPOSITORY',
-              data: {
+            _report.degraded(
+              LoggedFault(
+                'Clearing brick_id on orphaned sub-activities '
+                '(parent brick not found locally or remotely)',
+              ),
+              area: 'activities',
+              extra: {
                 'orphanedBrickIds': orphanedBrickIds.toList(),
                 'subActivityIds': orphanedSubIds,
               },
@@ -524,10 +534,10 @@ class ActivitiesRepository with SyncableRepository {
       }
 
       if (failedIds.isNotEmpty) {
-        _logger.warning(
-          'Dirty activities upload partially failed',
-          context: 'ACTIVITIES_REPOSITORY',
-          data: {
+        _report.degraded(
+          LoggedFault('Dirty activities upload partially failed'),
+          area: 'activities',
+          extra: {
             'userId': userId,
             'total': dirtyRecords.length,
             'uploaded': uploadedIds.length,
@@ -549,12 +559,12 @@ class ActivitiesRepository with SyncableRepository {
 
       return UploadResult.successful(uploadedIds.length);
     } catch (e, stackTrace) {
-      _logger.error(
-        'Failed to upload dirty activities',
-        context: 'ACTIVITIES_REPOSITORY',
-        error: e,
+      _report.fault(
+        e,
         stackTrace: stackTrace,
-        data: {'userId': userId},
+        area: 'activities',
+        message: 'Failed to upload dirty activities',
+        extra: {'userId': userId},
       );
       await _sentry.reportNetworkError(
         e,
@@ -586,12 +596,12 @@ class ActivitiesRepository with SyncableRepository {
       return _BatchUploadResult(uploadedIds: uploadedIds, failedIds: failedIds);
     } catch (e, stackTrace) {
       final missingRemoteUser = _isMissingRemoteUserForeignKeyError(e);
-      _logger.warning(
-        'Dirty activity batch failed, retrying one-by-one',
-        context: 'ACTIVITIES_REPOSITORY',
-        error: e,
+      _report.degraded(
+        e,
         stackTrace: stackTrace,
-        data: {
+        area: 'activities',
+        message: 'Dirty activity batch failed, retrying one-by-one',
+        extra: {
           'batchLabel': batchLabel,
           'count': records.length,
           'code': _postgrestErrorCode(e),
@@ -600,10 +610,12 @@ class ActivitiesRepository with SyncableRepository {
       );
 
       if (missingRemoteUser) {
-        _logger.warning(
-          'Skipping one-by-one retry because remote user row is missing',
-          context: 'ACTIVITIES_REPOSITORY',
-          data: {
+        _report.degraded(
+          LoggedFault(
+            'Skipping one-by-one retry because remote user row is missing',
+          ),
+          area: 'activities',
+          extra: {
             'batchLabel': batchLabel,
             'count': records.length,
             'reason': 'activities_user_id_fkey',
@@ -623,12 +635,12 @@ class ActivitiesRepository with SyncableRepository {
         uploadedIds.add(record.id);
       } catch (recordError, recordStackTrace) {
         failedIds.add(record.id);
-        _logger.error(
-          'Dirty activity record failed upload',
-          context: 'ACTIVITIES_REPOSITORY',
-          error: recordError,
+        _report.fault(
+          recordError,
           stackTrace: recordStackTrace,
-          data: {
+          area: 'activities',
+          message: 'Dirty activity record failed upload',
+          extra: {
             ..._dirtyRecordLogData(record),
             'batchLabel': batchLabel,
             'code': _postgrestErrorCode(recordError),
@@ -726,11 +738,12 @@ class ActivitiesRepository with SyncableRepository {
         rethrow;
       }
 
-      _logger.warning(
-        'Supabase upsert conflict mismatch, retrying with fallback target',
-        context: 'ACTIVITIES_REPOSITORY',
-        error: e,
-        data: {
+      _report.degraded(
+        e,
+        area: 'activities',
+        message:
+            'Supabase upsert conflict mismatch, retrying with fallback target',
+        extra: {
           'onConflict': onConflict,
           'fallbackOnConflict': fallbackOnConflict,
           'errorCode': _postgrestErrorCode(e),
@@ -832,12 +845,12 @@ class ActivitiesRepository with SyncableRepository {
           requireRemoteAck: requireRemoteAck,
         );
       } catch (e, stackTrace) {
-        _logger.warning(
-          'Immediate upload failed; record stays dirty for retry',
-          context: 'ACTIVITIES_REPOSITORY',
-          error: e,
+        _report.degraded(
+          e,
           stackTrace: stackTrace,
-          data: {'operation': 'create', 'recordId': activityWithId.id},
+          area: 'activities',
+          message: 'Immediate upload failed; record stays dirty for retry',
+          extra: {'operation': 'create', 'recordId': activityWithId.id},
         );
         _sentry.reportNetworkError(
           e,
@@ -852,11 +865,11 @@ class ActivitiesRepository with SyncableRepository {
 
       return activityWithId;
     } catch (e, stackTrace) {
-      _logger.error(
-        'Failed to create activity',
-        context: 'ACTIVITIES_REPOSITORY',
-        error: e,
+      _report.fault(
+        e,
         stackTrace: stackTrace,
+        area: 'activities',
+        message: 'Failed to create activity',
       );
       rethrow;
     }
@@ -886,12 +899,15 @@ class ActivitiesRepository with SyncableRepository {
             requireRemoteAck: true,
           );
         } catch (e, stackTrace) {
-          _logger.warning(
-            'Immediate upload failed; record stays dirty for retry',
-            context: 'ACTIVITIES_REPOSITORY',
-            error: e,
+          _report.degraded(
+            e,
             stackTrace: stackTrace,
-            data: {'operation': 'update', 'recordId': activityWithDirtyFlag.id},
+            area: 'activities',
+            message: 'Immediate upload failed; record stays dirty for retry',
+            extra: {
+              'operation': 'update',
+              'recordId': activityWithDirtyFlag.id,
+            },
           );
           _sentry.reportNetworkError(
             e,
@@ -910,12 +926,12 @@ class ActivitiesRepository with SyncableRepository {
               operation: 'update',
             );
           } catch (e, stackTrace) {
-            _logger.warning(
-              'Immediate upload failed; record stays dirty for retry',
-              context: 'ACTIVITIES_REPOSITORY',
-              error: e,
+            _report.degraded(
+              e,
               stackTrace: stackTrace,
-              data: {
+              area: 'activities',
+              message: 'Immediate upload failed; record stays dirty for retry',
+              extra: {
                 'operation': 'update',
                 'recordId': activityWithDirtyFlag.id,
               },
@@ -932,11 +948,11 @@ class ActivitiesRepository with SyncableRepository {
 
       return activityWithDirtyFlag;
     } catch (e, stackTrace) {
-      _logger.error(
-        'Failed to update activity',
-        context: 'ACTIVITIES_REPOSITORY',
-        error: e,
+      _report.fault(
+        e,
         stackTrace: stackTrace,
+        area: 'activities',
+        message: 'Failed to update activity',
       );
       rethrow;
     }
@@ -1066,11 +1082,11 @@ class ActivitiesRepository with SyncableRepository {
           .eq('id', activityId)
           .eq('user_id', userId);
     } catch (e) {
-      _logger.warning(
-        'Remote purge delete failed — local row already removed',
-        context: 'ACTIVITIES_REPOSITORY',
-        error: e,
-        data: {'activityId': activityId},
+      _report.degraded(
+        e,
+        area: 'activities',
+        message: 'Remote purge delete failed — local row already removed',
+        extra: {'activityId': activityId},
       );
     }
   }
@@ -1134,12 +1150,12 @@ class ActivitiesRepository with SyncableRepository {
         try {
           await _uploadActivityDeletion(userIdForRemoteDelete, activityId);
         } catch (e, stackTrace) {
-          _logger.warning(
-            'Immediate upload failed; record stays dirty for retry',
-            context: 'ACTIVITIES_REPOSITORY',
-            error: e,
+          _report.degraded(
+            e,
             stackTrace: stackTrace,
-            data: {'operation': 'delete', 'recordId': activityId},
+            area: 'activities',
+            message: 'Immediate upload failed; record stays dirty for retry',
+            extra: {'operation': 'delete', 'recordId': activityId},
           );
           _sentry.reportNetworkError(
             e,
@@ -1155,12 +1171,12 @@ class ActivitiesRepository with SyncableRepository {
           try {
             await _uploadActivityDeletion(userIdForRemoteDelete, activityId);
           } catch (e, stackTrace) {
-            _logger.warning(
-              'Immediate upload failed; record stays dirty for retry',
-              context: 'ACTIVITIES_REPOSITORY',
-              error: e,
+            _report.degraded(
+              e,
               stackTrace: stackTrace,
-              data: {'operation': 'delete', 'recordId': activityId},
+              area: 'activities',
+              message: 'Immediate upload failed; record stays dirty for retry',
+              extra: {'operation': 'delete', 'recordId': activityId},
             );
             _sentry.reportNetworkError(
               e,
@@ -1172,11 +1188,11 @@ class ActivitiesRepository with SyncableRepository {
         }());
       }
     } catch (e, stackTrace) {
-      _logger.error(
-        'Failed to delete activity',
-        context: 'ACTIVITIES_REPOSITORY',
-        error: e,
+      _report.fault(
+        e,
         stackTrace: stackTrace,
+        area: 'activities',
+        message: 'Failed to delete activity',
       );
       rethrow;
     }
@@ -1196,12 +1212,12 @@ class ActivitiesRepository with SyncableRepository {
         data: {'activityId': activity.id},
       );
     } catch (e, stackTrace) {
-      _logger.error(
-        'Failed to update remote activity',
-        context: 'ACTIVITIES_REPOSITORY',
-        error: e,
+      _report.fault(
+        e,
         stackTrace: stackTrace,
-        data: {'activityId': activity.id},
+        area: 'activities',
+        message: 'Failed to update remote activity',
+        extra: {'activityId': activity.id},
       );
       rethrow;
     }
@@ -1256,12 +1272,12 @@ class ActivitiesRepository with SyncableRepository {
 
       return _mapper.fromJson(response);
     } catch (e, stackTrace) {
-      _logger.error(
-        'Failed to get remote activity by ID',
-        context: 'ACTIVITIES_REPOSITORY',
-        error: e,
+      _report.fault(
+        e,
         stackTrace: stackTrace,
-        data: {'activityId': activityId},
+        area: 'activities',
+        message: 'Failed to get remote activity by ID',
+        extra: {'activityId': activityId},
       );
       rethrow;
     }
@@ -1287,11 +1303,11 @@ class ActivitiesRepository with SyncableRepository {
       final activity = await query.getSingleOrNull();
       return activity != null ? _mapper.fromDriftRow(activity) : null;
     } catch (e, stackTrace) {
-      _logger.error(
-        'Failed to get activity by ID',
-        context: 'ACTIVITIES_REPOSITORY',
-        error: e,
+      _report.fault(
+        e,
         stackTrace: stackTrace,
+        area: 'activities',
+        message: 'Failed to get activity by ID',
       );
       rethrow;
     }
@@ -1323,11 +1339,11 @@ class ActivitiesRepository with SyncableRepository {
       final activities = await query.get();
       return activities.map(_mapper.fromDriftRow).toList();
     } catch (e, stackTrace) {
-      _logger.error(
-        'Failed to get activities for date range',
-        context: 'ACTIVITIES_REPOSITORY',
-        error: e,
+      _report.fault(
+        e,
         stackTrace: stackTrace,
+        area: 'activities',
+        message: 'Failed to get activities for date range',
       );
       rethrow;
     }
@@ -1384,11 +1400,11 @@ class ActivitiesRepository with SyncableRepository {
           .toList();
       return activities;
     } catch (e, stackTrace) {
-      _logger.error(
-        'Failed to get recent completed activities by sport',
-        context: 'ACTIVITIES_REPOSITORY',
-        error: e,
+      _report.fault(
+        e,
         stackTrace: stackTrace,
+        area: 'activities',
+        message: 'Failed to get recent completed activities by sport',
       );
       rethrow;
     }
@@ -1514,16 +1530,24 @@ class ActivitiesRepository with SyncableRepository {
             final merged = _mergeProviderUpdate(existing, activity);
             return await updateActivityFromProvider(merged);
           }
-        } catch (_) {
-          // Fall through to logging/rethrow below
+        } catch (lookupError, lookupStack) {
+          // The original insert failure is reported and rethrown below; this
+          // is the second failure hiding behind it.
+          _report.degraded(
+            lookupError,
+            stackTrace: lookupStack,
+            area: 'activities',
+            message: 'Insert fallback: provider-key lookup failed too',
+            extra: {'activityId': activity.id, 'provider': provider},
+          );
         }
       }
 
-      _logger.error(
-        'Failed to insert activity',
-        context: 'ACTIVITIES_REPOSITORY',
-        error: e,
+      _report.fault(
+        e,
         stackTrace: stackTrace,
+        area: 'activities',
+        message: 'Failed to insert activity',
       );
       rethrow;
     }
@@ -1940,12 +1964,12 @@ class ActivitiesRepository with SyncableRepository {
       try {
         await _uploadActivityToSupabase(activity, operation: 'update');
       } catch (e, stackTrace) {
-        _logger.warning(
-          'Immediate upload failed; record stays dirty for retry',
-          context: 'ACTIVITIES_REPOSITORY',
-          error: e,
+        _report.degraded(
+          e,
           stackTrace: stackTrace,
-          data: {'operation': operation, 'recordId': activityId},
+          area: 'activities',
+          message: 'Immediate upload failed; record stays dirty for retry',
+          extra: {'operation': operation, 'recordId': activityId},
         );
         _sentry.reportNetworkError(
           e,
@@ -1997,12 +2021,12 @@ class ActivitiesRepository with SyncableRepository {
             providerVariants: providerVariants,
           );
         } catch (e, stackTrace) {
-          _logger.warning(
-            'Remote hydration for provider activities failed',
-            context: 'ACTIVITIES_REPOSITORY',
-            error: e,
+          _report.degraded(
+            e,
             stackTrace: stackTrace,
-            data: {'userId': userId, 'provider': provider},
+            area: 'activities',
+            message: 'Remote hydration for provider activities failed',
+            extra: {'userId': userId, 'provider': provider},
           );
         }
       }
@@ -2033,12 +2057,12 @@ class ActivitiesRepository with SyncableRepository {
 
       return activities.map(_mapper.fromDriftRow).toList();
     } catch (e, stackTrace) {
-      _logger.error(
-        'Failed to get activities by provider',
-        context: 'ACTIVITIES_REPOSITORY',
-        error: e,
+      _report.fault(
+        e,
         stackTrace: stackTrace,
-        data: {'userId': userId, 'provider': provider},
+        area: 'activities',
+        message: 'Failed to get activities by provider',
+        extra: {'userId': userId, 'provider': provider},
       );
       rethrow;
     }
@@ -2083,11 +2107,11 @@ class ActivitiesRepository with SyncableRepository {
               .eq('id', duplicate.id)
               .eq('user_id', duplicate.userId);
         } catch (e) {
-          _logger.warning(
-            'Failed to delete duplicate activity from Supabase',
-            context: 'ACTIVITIES_REPOSITORY',
-            error: e,
-            data: {
+          _report.degraded(
+            e,
+            area: 'activities',
+            message: 'Failed to delete duplicate activity from Supabase',
+            extra: {
               'activityId': duplicate.id,
               'userId': duplicate.userId,
               'provider': provider,
@@ -2108,12 +2132,12 @@ class ActivitiesRepository with SyncableRepository {
 
       return duplicates.length;
     } catch (e, stackTrace) {
-      _logger.error(
-        'Failed to cleanup duplicate provider activities',
-        context: 'ACTIVITIES_REPOSITORY',
-        error: e,
+      _report.fault(
+        e,
         stackTrace: stackTrace,
-        data: {'userId': userId, 'provider': provider},
+        area: 'activities',
+        message: 'Failed to cleanup duplicate provider activities',
+        extra: {'userId': userId, 'provider': provider},
       );
       return 0;
     }
@@ -2280,12 +2304,12 @@ class ActivitiesRepository with SyncableRepository {
             operation: 'update',
           );
         } catch (e, stackTrace) {
-          _logger.warning(
-            'Immediate upload failed; record stays dirty for retry',
-            context: 'ACTIVITIES_REPOSITORY',
-            error: e,
+          _report.degraded(
+            e,
             stackTrace: stackTrace,
-            data: {
+            area: 'activities',
+            message: 'Immediate upload failed; record stays dirty for retry',
+            extra: {
               'operation': 'provider_update',
               'recordId': activityWithFlags.id,
             },
@@ -2307,12 +2331,12 @@ class ActivitiesRepository with SyncableRepository {
 
       return activityWithFlags;
     } catch (e, stackTrace) {
-      _logger.error(
-        'Failed to update activity from provider',
-        context: 'ACTIVITIES_REPOSITORY',
-        error: e,
+      _report.fault(
+        e,
         stackTrace: stackTrace,
-        data: {'activityId': activity.id},
+        area: 'activities',
+        message: 'Failed to update activity from provider',
+        extra: {'activityId': activity.id},
       );
       rethrow;
     }
@@ -2350,12 +2374,12 @@ class ActivitiesRepository with SyncableRepository {
         data: {'activityId': activityId},
       );
     } catch (e, stackTrace) {
-      _logger.error(
-        'Failed to soft-delete activity from provider',
-        context: 'ACTIVITIES_REPOSITORY',
-        error: e,
+      _report.fault(
+        e,
         stackTrace: stackTrace,
-        data: {'activityId': activityId},
+        area: 'activities',
+        message: 'Failed to soft-delete activity from provider',
+        extra: {'activityId': activityId},
       );
       rethrow;
     }
@@ -2406,12 +2430,12 @@ class ActivitiesRepository with SyncableRepository {
         operation: 'tombstone_revive_completion',
       );
     } catch (e, stackTrace) {
-      _logger.error(
-        'Failed to revive tombstoned activity',
-        context: 'ACTIVITIES_REPOSITORY',
-        error: e,
+      _report.fault(
+        e,
         stackTrace: stackTrace,
-        data: {'activityId': activityId},
+        area: 'activities',
+        message: 'Failed to revive tombstoned activity',
+        extra: {'activityId': activityId},
       );
       rethrow;
     }
@@ -2449,12 +2473,12 @@ class ActivitiesRepository with SyncableRepository {
       );
       return hidden;
     } catch (e, stackTrace) {
-      _logger.error(
-        'Failed to hide provider activities on disconnect',
-        context: 'ACTIVITIES_REPOSITORY',
-        error: e,
+      _report.fault(
+        e,
         stackTrace: stackTrace,
-        data: {'provider': provider},
+        area: 'activities',
+        message: 'Failed to hide provider activities on disconnect',
+        extra: {'provider': provider},
       );
       rethrow;
     }
@@ -2520,12 +2544,12 @@ class ActivitiesRepository with SyncableRepository {
         data: {'activityId': activityId},
       );
     } catch (e, stackTrace) {
-      _logger.error(
-        'Failed to clear nutrition refresh flag',
-        context: 'ACTIVITIES_REPOSITORY',
-        error: e,
+      _report.fault(
+        e,
         stackTrace: stackTrace,
-        data: {'activityId': activityId},
+        area: 'activities',
+        message: 'Failed to clear nutrition refresh flag',
+        extra: {'activityId': activityId},
       );
       rethrow;
     }
@@ -2553,12 +2577,12 @@ class ActivitiesRepository with SyncableRepository {
       final results = await query.get();
       return results.map(_mapper.fromDriftRow).toList();
     } catch (e, stackTrace) {
-      _logger.error(
-        'Failed to get archived activities for brick',
-        context: 'ACTIVITIES_REPOSITORY',
-        error: e,
+      _report.fault(
+        e,
         stackTrace: stackTrace,
-        data: {'brickId': brickId},
+        area: 'activities',
+        message: 'Failed to get archived activities for brick',
+        extra: {'brickId': brickId},
       );
       rethrow;
     }
@@ -2768,12 +2792,12 @@ class ActivitiesRepository with SyncableRepository {
         return _mapper.fromDriftRow(savedBrick);
       });
     } catch (e, stackTrace) {
-      _logger.error(
-        'Failed to create brick from activities',
-        context: 'ACTIVITIES_REPOSITORY',
-        error: e,
+      _report.fault(
+        e,
         stackTrace: stackTrace,
-        data: {
+        area: 'activities',
+        message: 'Failed to create brick from activities',
+        extra: {
           'activityCount': activities.length,
           'segmentOrder': segmentOrder,
         },
@@ -2998,12 +3022,12 @@ class ActivitiesRepository with SyncableRepository {
           try {
             await _uploadActivityDeletion(userIdForSupabaseDelete!, brickId);
           } catch (e, stackTrace) {
-            _logger.warning(
-              'Immediate upload failed; record stays dirty for retry',
-              context: 'ACTIVITIES_REPOSITORY',
-              error: e,
+            _report.degraded(
+              e,
               stackTrace: stackTrace,
-              data: {'operation': 'delete', 'recordId': brickId},
+              area: 'activities',
+              message: 'Immediate upload failed; record stays dirty for retry',
+              extra: {'operation': 'delete', 'recordId': brickId},
             );
             _sentry.reportNetworkError(
               e,
@@ -3015,12 +3039,12 @@ class ActivitiesRepository with SyncableRepository {
         }());
       }
     } catch (e, stackTrace) {
-      _logger.error(
-        'Failed to ungroup brick',
-        context: 'ACTIVITIES_REPOSITORY',
-        error: e,
+      _report.fault(
+        e,
         stackTrace: stackTrace,
-        data: {'brickId': brickId},
+        area: 'activities',
+        message: 'Failed to ungroup brick',
+        extra: {'brickId': brickId},
       );
       rethrow;
     }

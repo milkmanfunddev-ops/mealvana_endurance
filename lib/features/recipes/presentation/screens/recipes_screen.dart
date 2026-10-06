@@ -5,6 +5,7 @@ import '../../../../shared/services/app_external_deps.dart';
 import '../../../../shared/widgets/kyle_design/kyle_design.dart';
 import '../../application/recipe_service.dart';
 import '../../domain/recipe.dart';
+import '../../../../shared/services/report/report.dart';
 
 class RecipesScreen extends ConsumerStatefulWidget {
   const RecipesScreen({super.key});
@@ -73,7 +74,15 @@ class _RecipesScreenState extends ConsumerState<RecipesScreen> {
         _filteredRecipes = recipes;
         _isLoading = false;
       });
-    } catch (e) {
+    } catch (e, stackTrace) {
+      ref
+          .read(reportProvider)
+          .fault(
+            e,
+            stackTrace: stackTrace,
+            area: 'recipes',
+            message: 'Loading recipes failed; error state shown',
+          );
       if (!mounted) return;
       setState(() {
         _isLoading = false;

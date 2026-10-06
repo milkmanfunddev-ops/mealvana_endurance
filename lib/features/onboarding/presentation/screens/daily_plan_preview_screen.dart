@@ -8,6 +8,7 @@ import '../providers/onboarding_controller.dart';
 import '../providers/onboarding_preview_providers.dart';
 import '../theme/onboarding_design_tokens.dart';
 import '../widgets/onboarding_step_scaffold.dart';
+import '../../../../shared/services/report/report.dart';
 
 /// Daily Plan Preview Screen - Step 9 (final) of Onboarding (2026-08
 /// redesign)
@@ -101,8 +102,16 @@ class _DailyPlanPreviewScreenState
             'daily_preview_tab_viewed',
             properties: {'tab': _tabName(tab)},
           );
-    } catch (_) {
+    } catch (e, stackTrace) {
       // Analytics must never block onboarding.
+      ref
+          .read(reportProvider)
+          .fault(
+            e,
+            stackTrace: stackTrace,
+            area: 'onboarding',
+            message: 'analytics: daily_preview_tab_viewed not tracked',
+          );
     }
   }
 

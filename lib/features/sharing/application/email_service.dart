@@ -4,18 +4,25 @@ import 'package:riverpod_annotation/riverpod_annotation.dart';
 import 'package:supabase_flutter/supabase_flutter.dart';
 import '../domain/share_form_data.dart';
 import '../domain/share_result.dart';
+import '../../../shared/services/report/report.dart';
 
 part 'email_service.g.dart';
 
 @riverpod
 EmailService emailService(Ref ref) {
-  return EmailService(Supabase.instance.client);
+  return EmailService(
+    Supabase.instance.client,
+    report: ref.watch(reportProvider),
+  );
 }
 
 class EmailService {
-  EmailService(this._supabase);
+  EmailService(this._supabase, {Report? report}) : _reportOverride = report;
 
   final SupabaseClient _supabase;
+  final Report? _reportOverride;
+
+  Report get _report => _reportOverride ?? SentryReport.global;
 
   Future<ShareResult> sendNutritionPlanEmail({
     required ShareFormData formData,
@@ -52,7 +59,13 @@ class EmailService {
       } else {
         return ShareResult.failure(error: 'Server error: ${response.status}');
       }
-    } catch (e) {
+    } catch (e, stackTrace) {
+      _report.fault(
+        e,
+        stackTrace: stackTrace,
+        area: 'sharing',
+        message: 'Nutrition plan email send failed',
+      );
       return ShareResult.failure(error: 'Failed to send email: $e');
     }
   }

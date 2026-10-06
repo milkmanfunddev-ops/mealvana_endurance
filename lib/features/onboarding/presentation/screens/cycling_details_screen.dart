@@ -15,6 +15,7 @@ import '../../../../shared/constants/bottle_constants.dart';
 import '../../../../shared/widgets/adaptive/adaptive.dart';
 import 'package:mealvana_endurance/features/integrations/presentation/providers/athlete_zones_provider.dart';
 import 'package:mealvana_endurance/shared/widgets/kyle_design/data/kyle_source_chip.dart';
+import 'package:mealvana_endurance/shared/services/report/report.dart';
 
 /// Cycling Details Screen - Unified for both onboarding and settings
 ///
@@ -119,7 +120,15 @@ class _CyclingDetailsScreenState extends ConsumerState<CyclingDetailsScreen> {
           _isLoading = false;
         });
       }
-    } catch (e) {
+    } catch (e, stackTrace) {
+      ref
+          .read(reportProvider)
+          .fault(
+            e,
+            stackTrace: stackTrace,
+            area: 'onboarding',
+            message: 'Loading cycling details failed; showing defaults',
+          );
       if (mounted) {
         setState(() => _isLoading = false);
       }
@@ -343,14 +352,14 @@ class _CyclingDetailsScreenState extends ConsumerState<CyclingDetailsScreen> {
                             builder: (context, ftpText, _) {
                               final manual = int.tryParse(ftpText.text.trim());
                               return KyleSourceProvenanceRow(
-                                manualValue:
-                                    (manual == null || manual == 0)
-                                        ? null
-                                        : manual,
+                                manualValue: (manual == null || manual == 0)
+                                    ? null
+                                    : manual,
                                 providerValue: ref
                                     .watch(tpFtpWattsProvider(_userId!))
                                     .value,
-                                stale: ref
+                                stale:
+                                    ref
                                         .watch(tpZonesStaleProvider(_userId!))
                                         .value ??
                                     false,

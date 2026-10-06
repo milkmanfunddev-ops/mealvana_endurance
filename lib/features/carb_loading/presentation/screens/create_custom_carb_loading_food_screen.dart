@@ -9,6 +9,7 @@ import '../../domain/meal_type.dart';
 import '../../../../shared/providers/user_id_provider.dart';
 import '../../../auth/application/auth_service.dart';
 import '../../../../../../../../../shared/widgets/kyle_design/kyle_design.dart';
+import '../../../../shared/services/report/report.dart';
 
 /// Screen for creating a custom carb loading food from scratch
 class CreateCustomCarbLoadingFoodScreen extends ConsumerStatefulWidget {
@@ -94,7 +95,15 @@ class _CreateCustomCarbLoadingFoodScreenState
         // Return the created food
         context.pop(newFood);
       }
-    } catch (e) {
+    } catch (e, stackTrace) {
+      ref
+          .read(reportProvider)
+          .fault(
+            e,
+            stackTrace: stackTrace,
+            area: 'carb_loading',
+            message: 'Creating a custom carb-loading food failed',
+          );
       if (mounted) {
         MealvanaSnackbar.showError(context, 'Failed to create food: $e');
         setState(() {

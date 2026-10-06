@@ -10,6 +10,7 @@ import '../../../shared/services/food_management/product_type_mapper.dart';
 import '../../../shared/services/sentry/sentry_reporter.dart';
 import '../../../shared/data/syncable_repository.dart';
 import '../../../shared/services/sync/sync_dependency_graph.dart';
+import '../../../shared/services/report/report.dart';
 
 part 'user_foods_repository.g.dart';
 
@@ -20,11 +21,15 @@ class UserFoodsRepository with SyncableRepository {
     required this.database,
     required this.supabase,
     required this.sentry,
-  });
+    Report? report,
+  }) : _reportOverride = report;
 
   final AppDatabase database;
   final SupabaseClient supabase;
   final SentryReporter sentry;
+  final Report? _reportOverride;
+
+  Report get _report => _reportOverride ?? SentryReport.global;
 
   // ========== SyncableRepository Implementation ==========
 
@@ -354,13 +359,21 @@ class UserFoodsRepository with SyncableRepository {
   /// Decode a JSON-encoded array string (from Drift) into a List for PostgREST.
   /// Supabase columns `categories` and `activity_types` are PostgreSQL enum arrays,
   /// so PostgREST expects a JSON array, not a JSON-encoded string.
-  static List<dynamic>? _decodeJsonArray(String? jsonString) {
+  List<dynamic>? _decodeJsonArray(String? jsonString) {
     if (jsonString == null || jsonString.isEmpty) return null;
     try {
       final decoded = jsonDecode(jsonString);
       if (decoded is List) return decoded;
       return null;
-    } catch (_) {
+    } catch (e, stackTrace) {
+      // We wrote this column; malformed JSON is a bug. The row still uploads
+      // with the array omitted.
+      _report.fault(
+        e,
+        stackTrace: stackTrace,
+        area: 'user_foods',
+        message: 'User food array column is not valid JSON; uploading without',
+      );
       return null;
     }
   }
@@ -377,5 +390,6 @@ Future<UserFoodsRepository> userFoodsRepository(Ref ref) async {
     database: database,
     supabase: supabase,
     sentry: sentry,
+    report: ref.watch(reportProvider),
   );
 }

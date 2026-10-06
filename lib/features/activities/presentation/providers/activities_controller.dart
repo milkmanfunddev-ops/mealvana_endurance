@@ -5,7 +5,7 @@ import '../../../../shared/domain/activity_type.dart';
 import '../../application/activities_service.dart';
 import '../../data/activities_repository.dart';
 import '../../domain/activity.dart';
-import '../../../../shared/services/logging_service.dart';
+
 import '../../../../shared/services/analytics/analytics_events.dart';
 import '../../../../shared/services/app_external_deps.dart';
 import '../../../../shared/providers/user_id_provider.dart';
@@ -14,6 +14,7 @@ import '../../../../shared/services/performance_telemetry.dart';
 import '../../../auth/application/supabase_auth_service.dart';
 import '../../../integrations/application/integration_sync_coordinator.dart';
 import '../../domain/brick_metadata.dart';
+import '../../../../shared/services/report/report.dart';
 
 part 'activities_controller.g.dart';
 
@@ -27,7 +28,7 @@ part 'activities_controller.g.dart';
 @riverpod
 class ActivitiesController extends _$ActivitiesController {
   ActivitiesService get _service => ref.read(activitiesServiceProvider);
-  AppLogger get _logger => ref.read(appLoggerProvider);
+  Report get _report => ref.read(reportProvider);
 
   @override
   FutureOr<List<Activity>> build() async {
@@ -116,7 +117,8 @@ class ActivitiesController extends _$ActivitiesController {
     if (!ref.mounted) return;
     final repo = ref.read(activitiesRepositoryProvider);
     final syncCoordinator = ref.read(syncCoordinatorProvider.notifier);
-    final logger = ref.read(appLoggerProvider);
+    // Cached before the awaits: the catch below may run on a disposed ref.
+    final report = ref.read(reportProvider);
 
     try {
       final wasStale = await repo.isStale();
@@ -134,11 +136,11 @@ class ActivitiesController extends _$ActivitiesController {
         await _refreshInPlace(userId);
       }
     } catch (e, stackTrace) {
-      logger.error(
-        'Background sync failed',
-        context: 'ACTIVITIES_CONTROLLER',
-        error: e,
+      report.fault(
+        e,
         stackTrace: stackTrace,
+        area: 'activities',
+        message: 'Background sync failed',
       );
     }
   }
@@ -222,7 +224,14 @@ class ActivitiesController extends _$ActivitiesController {
               activityId: createdActivity.id,
               isCoachCreated: forUserId != null,
             );
-      } catch (_) {}
+      } catch (e, stackTrace) {
+        _report.fault(
+          e,
+          stackTrace: stackTrace,
+          area: 'activities',
+          message: 'analytics: workout_planned not tracked',
+        );
+      }
 
       if (priorCount == 0) {
         try {
@@ -236,7 +245,14 @@ class ActivitiesController extends _$ActivitiesController {
                   'activity_id': createdActivity.id,
                 },
               );
-        } catch (_) {}
+        } catch (e, stackTrace) {
+          _report.fault(
+            e,
+            stackTrace: stackTrace,
+            area: 'activities',
+            message: 'analytics: first_activity_added not tracked',
+          );
+        }
       }
 
       // Refresh activities list
@@ -244,7 +260,7 @@ class ActivitiesController extends _$ActivitiesController {
 
       return createdActivity.id;
     } catch (e) {
-      _logger.error('Error creating activity', error: e);
+      _report.fault(e, area: 'activities', message: 'Error creating activity');
       rethrow;
     }
   }
@@ -262,7 +278,7 @@ class ActivitiesController extends _$ActivitiesController {
       // Refresh activities list
       ref.invalidateSelf();
     } catch (e) {
-      _logger.error('Error updating activity', error: e);
+      _report.fault(e, area: 'activities', message: 'Error updating activity');
       rethrow;
     }
   }
@@ -295,7 +311,7 @@ class ActivitiesController extends _$ActivitiesController {
         activityId: activityId,
       );
     } catch (e) {
-      _logger.error('Error deleting activity', error: e);
+      _report.fault(e, area: 'activities', message: 'Error deleting activity');
       // Roll back the optimistic removal so the card reappears on failure.
       if (ref.mounted) state = AsyncData(previous);
       rethrow;
@@ -323,7 +339,11 @@ class ActivitiesController extends _$ActivitiesController {
     try {
       await _service.markWorkoutDone(activityId: activityId);
     } catch (e) {
-      _logger.error('Error marking workout done', error: e);
+      _report.fault(
+        e,
+        area: 'activities',
+        message: 'Error marking workout done',
+      );
       if (ref.mounted) state = AsyncData(previous);
       rethrow;
     }
@@ -343,7 +363,11 @@ class ActivitiesController extends _$ActivitiesController {
     try {
       await _service.markWorkoutUndone(activityId: activityId);
     } catch (e) {
-      _logger.error('Error marking workout undone', error: e);
+      _report.fault(
+        e,
+        area: 'activities',
+        message: 'Error marking workout undone',
+      );
       if (ref.mounted) state = AsyncData(previous);
       rethrow;
     }
@@ -365,7 +389,7 @@ class ActivitiesController extends _$ActivitiesController {
     try {
       await _service.skipWorkout(activityId: activityId);
     } catch (e) {
-      _logger.error('Error skipping workout', error: e);
+      _report.fault(e, area: 'activities', message: 'Error skipping workout');
       if (ref.mounted) state = AsyncData(previous);
       rethrow;
     }
@@ -385,7 +409,7 @@ class ActivitiesController extends _$ActivitiesController {
     try {
       await _service.unskipWorkout(activityId: activityId);
     } catch (e) {
-      _logger.error('Error unskipping workout', error: e);
+      _report.fault(e, area: 'activities', message: 'Error unskipping workout');
       if (ref.mounted) state = AsyncData(previous);
       rethrow;
     }
@@ -415,7 +439,7 @@ class ActivitiesController extends _$ActivitiesController {
         activity: activity,
       );
     } catch (e) {
-      _logger.error('Error restoring activity', error: e);
+      _report.fault(e, area: 'activities', message: 'Error restoring activity');
       // Roll back the optimistic restore so the card disappears again.
       if (ref.mounted) state = AsyncData(previous);
       rethrow;
@@ -437,7 +461,11 @@ class ActivitiesController extends _$ActivitiesController {
         endOfDay,
       );
     } catch (e) {
-      _logger.error('Error getting activities for date', error: e);
+      _report.fault(
+        e,
+        area: 'activities',
+        message: 'Error getting activities for date',
+      );
       rethrow;
     }
   }
@@ -448,7 +476,11 @@ class ActivitiesController extends _$ActivitiesController {
       final userId = await ref.read(userIdProvider.future);
       return await _service.getActivityById(userId, activityId);
     } catch (e) {
-      _logger.error('Error getting activity by ID', error: e);
+      _report.fault(
+        e,
+        area: 'activities',
+        message: 'Error getting activity by ID',
+      );
       rethrow;
     }
   }
@@ -482,7 +514,11 @@ class ActivitiesController extends _$ActivitiesController {
 
       ref.invalidateSelf();
     } catch (e) {
-      _logger.error('Error during force refresh', error: e);
+      _report.fault(
+        e,
+        area: 'activities',
+        message: 'Error during force refresh',
+      );
       ref.invalidateSelf();
     }
   }

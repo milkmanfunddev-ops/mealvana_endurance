@@ -12,6 +12,7 @@ import '../widgets/edit_carb_target_dialog.dart';
 import '../providers/carb_loading_day_detail_controller.dart';
 import '../../domain/meal_type.dart';
 import '../../domain/carb_loading_day_meal.dart';
+import 'package:mealvana_endurance/shared/services/report/report.dart';
 
 /// Detail page for a single carb loading day
 /// Shows progress, meals, and food selection for one specific day
@@ -45,7 +46,16 @@ class _CarbLoadingDayDetailPageState
               'carb_target_grams': widget.carbLoadingDay.carbTargetGrams,
             },
           );
-    } catch (_) {}
+    } catch (e, stackTrace) {
+      ref
+          .read(reportProvider)
+          .fault(
+            e,
+            stackTrace: stackTrace,
+            area: 'carb_loading',
+            message: 'analytics: carb_loading_day_viewed not tracked',
+          );
+    }
   }
 
   @override

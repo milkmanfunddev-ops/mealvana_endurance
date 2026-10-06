@@ -9,6 +9,7 @@ import '../../../../shared/widgets/swipe_action_background.dart';
 import '../../../events/application/nutrition_plan_navigation.dart';
 import '../../../events/presentation/providers/events_controller.dart';
 import '../providers/checklist_controller.dart';
+import '../../../../shared/services/report/report.dart';
 
 /// Race Day Checklist Screen
 ///
@@ -635,7 +636,16 @@ class RaceChecklistScreen extends ConsumerWidget {
       if (context.mounted) {
         context.push('/distance-pace-gut-entry', extra: extras);
       }
-    } catch (e) {
+    } catch (e, stackTrace) {
+      ref
+          .read(reportProvider)
+          .fault(
+            e,
+            stackTrace: stackTrace,
+            area: 'race_checklist',
+            message: 'Loading event details for the nutrition plan failed',
+            extra: {'eventId': eventId},
+          );
       if (context.mounted) {
         MealvanaSnackbar.showError(context, 'Could not load event details: $e');
       }

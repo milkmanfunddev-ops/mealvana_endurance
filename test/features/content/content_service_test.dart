@@ -8,6 +8,9 @@ import 'package:mocktail/mocktail.dart';
 import 'package:mealvana_endurance/features/content/application/content_service.dart';
 import 'package:mealvana_endurance/features/content/data/content_repository.dart';
 import 'package:mealvana_endurance/features/content/domain/app_content.dart';
+import 'package:mealvana_endurance/shared/services/report/report.dart';
+
+import '../../helpers/fakes/recording_report.dart';
 
 // ---------------------------------------------------------------------------
 // Mocks
@@ -43,9 +46,11 @@ void main() {
   TestWidgetsFlutterBinding.ensureInitialized();
 
   late _MockContentRepository mockRepo;
+  late RecordingReport report;
 
   setUp(() {
     mockRepo = _MockContentRepository();
+    report = RecordingReport();
 
     // `contentServiceProvider` calls initialize() the moment it is first
     // read, so BOTH repository calls happen for every test — including the
@@ -72,7 +77,10 @@ void main() {
 
   ProviderContainer _container() {
     final c = ProviderContainer(
-      overrides: [contentRepositoryProvider.overrideWithValue(mockRepo)],
+      overrides: [
+        contentRepositoryProvider.overrideWithValue(mockRepo),
+        reportProvider.overrideWithValue(report),
+      ],
     );
     addTearDown(c.dispose);
     return c;
@@ -252,7 +260,7 @@ void main() {
       expect(service.getActiveContent(), equals(fresh));
     });
 
-    test('returns false when repository throws', () async {
+    test('returns false when repository throws, and reports it', () async {
       when(
         () => mockRepo.refreshContent(
           environment: any(named: 'environment'),
@@ -265,6 +273,13 @@ void main() {
       final result = await service.refreshFromBackend();
 
       expect(result, isFalse);
+      // The manual refresh path reports; the background refresh kicked by
+      // initialize() may have reported the same stub too, so look for it
+      // by message rather than counting.
+      expect(
+        report.faults.map((f) => f.message),
+        contains('Manual content refresh failed'),
+      );
     });
   });
 

@@ -116,12 +116,9 @@ class _EventsListScreenState extends ConsumerState<EventsListScreen> {
             if (activity != null) {
               eventDate = activity.scheduledDateTime;
             } else if (event.startTime != null) {
-              try {
-                eventDate = DateTime.parse(event.startTime!);
-              } catch (e) {
-                // Skip events without valid dates
-                continue;
-              }
+              eventDate = DateTime.tryParse(event.startTime!);
+              // Skip events without valid dates
+              if (eventDate == null) continue;
             } else {
               // Skip events without dates
               continue;

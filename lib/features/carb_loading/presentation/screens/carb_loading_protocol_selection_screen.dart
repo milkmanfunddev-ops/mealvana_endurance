@@ -4,6 +4,7 @@ import '../../../events/domain/event.dart';
 import '../../../../shared/services/app_external_deps.dart';
 import '../../../../shared/widgets/content_area.dart';
 import '../../domain/carb_loading_entryway_engine.dart';
+import '../../../../shared/services/report/report.dart';
 
 /// The protocol chooser (spec/fueling/carb-loading-entryway.md CE-8 + the
 /// CL-12 point-value copy rule): 3-Day Classic, 2-Day Quick and the 1-Day
@@ -243,7 +244,16 @@ class CarbLoadingProtocolSelectionScreen extends ConsumerWidget {
               if (event != null) 'event_id': event!.id,
             },
           );
-    } catch (_) {}
+    } catch (e, stackTrace) {
+      ref
+          .read(reportProvider)
+          .fault(
+            e,
+            stackTrace: stackTrace,
+            area: 'carb_loading',
+            message: 'analytics: carb_loading_protocol_selected not tracked',
+          );
+    }
 
     // TODO: Navigate to carb loading plan generation
     // This will be implemented in the next step

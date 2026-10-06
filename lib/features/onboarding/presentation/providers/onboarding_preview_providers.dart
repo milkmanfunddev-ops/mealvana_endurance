@@ -14,6 +14,7 @@ import '../../domain/onboarding_integration_profile.dart';
 import '../../domain/onboarding_plan_preview.dart';
 import '../../domain/training_insights.dart';
 import 'onboarding_controller.dart';
+import '../../../../shared/services/report/report.dart';
 
 part 'onboarding_preview_providers.g.dart';
 
@@ -66,8 +67,15 @@ Future<List<String>> _candidateDataUserIds(Ref ref) async {
         .userDao
         .getLocalUserProfile();
     add(profile?.id);
-  } catch (_) {
+  } catch (e) {
     // No local profile yet (first run) — the ids below still apply.
+    ref
+        .read(reportProvider)
+        .note(
+          'local profile unavailable; using auth and temp ids',
+          area: 'onboarding',
+          data: {'error': e.toString()},
+        );
   }
   add(deps.supabaseClient.auth.currentUser?.id);
   add(deps.sharedPreferences.getString(_onboardingTempUserIdKey));
@@ -270,8 +278,16 @@ Future<OnboardingIntegrationProfile> onboardingIntegrationProfile(
               : null),
       weightSource: weightSource?.providerDisplayName,
     );
-  } catch (_) {
+  } catch (e, stackTrace) {
     // Autofill is a convenience; the forms keep their defaults.
+    ref
+        .read(reportProvider)
+        .fault(
+          e,
+          stackTrace: stackTrace,
+          area: 'onboarding',
+          message: 'Integration autofill failed; forms keep defaults',
+        );
     return OnboardingIntegrationProfile.empty;
   }
 }

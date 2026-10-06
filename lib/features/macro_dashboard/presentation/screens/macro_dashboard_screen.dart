@@ -35,6 +35,7 @@ import '../widgets/dashboard_filter_row.dart';
 import '../widgets/energy_summary_card.dart';
 import '../widgets/meal_card.dart';
 import '../widgets/workout_card.dart';
+import '../../../../shared/services/report/report.dart';
 
 /// The macro dashboard — surface contract:
 /// docs/ssot/spec/design/surfaces/macro-dashboard.md (RATIFIED v2 — pins
@@ -512,11 +513,13 @@ class MacroDashboardScreen extends ConsumerWidget {
       // uncaught zone error, so surface it instead.
       onMarkDone: () => _guardWrite(
         context,
+        ref,
         () => activities.markWorkoutDone(data.activityId),
         'Could not mark workout done',
       ),
       onMarkUndone: () => _guardWrite(
         context,
+        ref,
         () => activities.markWorkoutUndone(data.activityId),
         'Could not undo — try again',
       ),
@@ -527,13 +530,22 @@ class MacroDashboardScreen extends ConsumerWidget {
 
   Future<void> _guardWrite(
     BuildContext context,
+    WidgetRef ref,
     Future<void> Function() write,
     String failureCopy,
   ) async {
     try {
       await write();
-    } catch (_) {
-      // The optimistic state is already rolled back by the controller.
+    } catch (e) {
+      // The controller reported the Fault and rolled back the optimistic
+      // state before rethrowing; this branch only owns the failure copy.
+      ref
+          .read(reportProvider)
+          .note(
+            'workout write failed; failure copy shown',
+            area: 'macro_dashboard',
+            data: {'copy': failureCopy, 'error': e.toString()},
+          );
       if (context.mounted) MealvanaSnackbar.showError(context, failureCopy);
     }
   }
@@ -571,8 +583,15 @@ class MacroDashboardScreen extends ConsumerWidget {
       } else {
         await notifier.unskipWorkout(data.activityId);
       }
-    } catch (_) {
-      // Rolled back by the controller — the card is already back.
+    } catch (e) {
+      // Rolled back and reported by the controller — the card is already back.
+      ref
+          .read(reportProvider)
+          .note(
+            skipping ? 'skip workout failed' : 'unskip workout failed',
+            area: 'macro_dashboard',
+            data: {'activityId': data.activityId, 'error': e.toString()},
+          );
       if (context.mounted) {
         MealvanaSnackbar.showError(
           context,
@@ -593,7 +612,15 @@ class MacroDashboardScreen extends ConsumerWidget {
           await ref
               .read(activitiesControllerProvider.notifier)
               .restoreActivity(previous);
-        } catch (_) {
+        } catch (e) {
+          // restoreActivity reported the Fault before rethrowing.
+          ref
+              .read(reportProvider)
+              .note(
+                'undo skip failed; retry copy shown',
+                area: 'macro_dashboard',
+                data: {'activityId': previous.id, 'error': e.toString()},
+              );
           if (context.mounted) {
             MealvanaSnackbar.showError(context, 'Could not undo — try again');
           }
@@ -1003,7 +1030,15 @@ class MacroDashboardScreen extends ConsumerWidget {
                 'Brick undone — legs restored',
               );
             }
-          } catch (_) {
+          } catch (e) {
+            // ungroupBrick reported the Fault before throwing.
+            ref
+                .read(reportProvider)
+                .note(
+                  'undo brick creation failed; error copy shown',
+                  area: 'macro_dashboard',
+                  data: {'brickId': createdBrick.id, 'error': e.toString()},
+                );
             if (context.mounted) {
               MealvanaSnackbar.showError(context, 'Could not undo the brick');
             }
@@ -1011,6 +1046,14 @@ class MacroDashboardScreen extends ConsumerWidget {
         },
       );
     } on BrickValidationException catch (e) {
+      // User input the controller rejected; the dialog explains it.
+      ref
+          .read(reportProvider)
+          .note(
+            'brick creation rejected by validation',
+            area: 'macro_dashboard',
+            data: {'code': e.code, 'message': e.message},
+          );
       dismiss();
       if (!context.mounted) return;
       await showDialog<bool>(
@@ -1019,6 +1062,15 @@ class MacroDashboardScreen extends ConsumerWidget {
             BrickValidationErrorDialog(exception: e, onRetry: () {}),
       );
     } on BrickCreationException catch (e) {
+      // The controller reported the underlying Fault before wrapping it;
+      // this branch owns the dialog and the retry offer.
+      ref
+          .read(reportProvider)
+          .note(
+            'brick creation failed; error dialog shown',
+            area: 'macro_dashboard',
+            data: {'code': e.code},
+          );
       dismiss();
       if (!context.mounted) return;
       final retry = await showDialog<bool>(
@@ -1028,7 +1080,15 @@ class MacroDashboardScreen extends ConsumerWidget {
       if (retry == true && e.code == 'NETWORK_ERROR' && context.mounted) {
         await _createBrickFromSelection(context, ref);
       }
-    } catch (e) {
+    } catch (e, stackTrace) {
+      ref
+          .read(reportProvider)
+          .fault(
+            e,
+            stackTrace: stackTrace,
+            area: 'macro_dashboard',
+            message: 'Unexpected error creating brick',
+          );
       dismiss();
       if (context.mounted) {
         MealvanaSnackbar.showError(
@@ -1075,6 +1135,14 @@ class MacroDashboardScreen extends ConsumerWidget {
       dismiss();
       MealvanaSnackbar.showSuccess(context, 'Brick ungrouped successfully!');
     } on BrickUngroupException catch (e) {
+      // The controller reported the underlying Fault before wrapping it.
+      ref
+          .read(reportProvider)
+          .note(
+            'brick ungroup failed; error dialog shown',
+            area: 'macro_dashboard',
+            data: {'brickId': brick.id, 'code': e.code},
+          );
       dismiss();
       if (!context.mounted) return;
       final retry = await showDialog<bool>(
@@ -1084,7 +1152,16 @@ class MacroDashboardScreen extends ConsumerWidget {
       if (retry == true && e.code == 'NETWORK_ERROR' && context.mounted) {
         await _ungroupBrick(context, ref, brick);
       }
-    } catch (e) {
+    } catch (e, stackTrace) {
+      ref
+          .read(reportProvider)
+          .fault(
+            e,
+            stackTrace: stackTrace,
+            area: 'macro_dashboard',
+            message: 'Unexpected error ungrouping brick',
+            extra: {'brickId': brick.id},
+          );
       dismiss();
       if (context.mounted) {
         MealvanaSnackbar.showError(
@@ -1165,7 +1242,24 @@ class MacroDashboardScreen extends ConsumerWidget {
       ref.invalidate(activitiesControllerProvider);
       dismiss();
       MealvanaSnackbar.showSuccess(context, 'Brick deleted · legs restored');
-    } catch (e) {
+    } catch (e, stackTrace) {
+      final report = ref.read(reportProvider);
+      if (e is BrickUngroupException) {
+        // The controller reported the underlying Fault before wrapping it.
+        report.note(
+          'brick delete failed; error copy shown',
+          area: 'macro_dashboard',
+          data: {'brickId': brick.id, 'code': e.code},
+        );
+      } else {
+        report.fault(
+          e,
+          stackTrace: stackTrace,
+          area: 'macro_dashboard',
+          message: 'Unexpected error deleting brick',
+          extra: {'brickId': brick.id},
+        );
+      }
       dismiss();
       if (context.mounted) {
         MealvanaSnackbar.showError(context, 'Error deleting brick: $e');

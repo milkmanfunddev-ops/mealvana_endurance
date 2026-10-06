@@ -9,6 +9,7 @@ import '../../../shared/domain/write_consistency.dart';
 import '../data/events_repository.dart';
 import '../../activities/application/activities_service.dart';
 import '../../coach_mode/data/coach_repository.dart';
+import '../../../shared/services/report/report.dart';
 
 part 'events_service.g.dart';
 
@@ -20,6 +21,7 @@ EventsService eventsService(Ref ref) {
     ref.read(eventsRepositoryProvider),
     ref.read(activitiesServiceProvider),
     ref.read(coachRepositoryProvider),
+    report: ref.read(reportProvider),
   );
 }
 
@@ -31,14 +33,18 @@ class EventsService {
   final EventsRepository _eventsRepository;
   final ActivitiesService _activitiesService;
   final CoachRepository _coachRepository;
+  final Report? _reportOverride;
 
   EventsService(
     this._database,
     this._logger,
     this._eventsRepository,
     this._activitiesService,
-    this._coachRepository,
-  );
+    this._coachRepository, {
+    Report? report,
+  }) : _reportOverride = report;
+
+  Report get _report => _reportOverride ?? SentryReport.global;
 
   /// The calendar `eventDate` is ALWAYS the date portion of `startTime`, so the
   /// two can never drift. Both [createEvent] and [updateEvent] derive it here —
@@ -48,12 +54,9 @@ class EventsService {
   /// (Claudia, 2026-09-10: "shows correct… but it's not saving").
   static DateTime? eventDateFromStartTime(String? startTime) {
     if (startTime == null || startTime.isEmpty) return null;
-    try {
-      final parsed = DateTime.parse(startTime);
-      return DateTime(parsed.year, parsed.month, parsed.day);
-    } catch (_) {
-      return null;
-    }
+    final parsed = DateTime.tryParse(startTime);
+    if (parsed == null) return null;
+    return DateTime(parsed.year, parsed.month, parsed.day);
   }
 
   /// Get event for a specific activity
@@ -66,11 +69,11 @@ class EventsService {
 
       return event != null ? _mapToEventDomain(event) : null;
     } catch (e, stackTrace) {
-      _logger.error(
-        'Error getting event for activity: $activityId',
-        context: 'EVENTS_SERVICE',
-        error: e,
+      _report.fault(
+        e,
         stackTrace: stackTrace,
+        area: 'events',
+        message: 'Error getting event for activity: $activityId',
       );
       rethrow;
     }
@@ -90,7 +93,11 @@ class EventsService {
 
       return event != null ? _mapToEventDomain(event) : null;
     } catch (e) {
-      _logger.error('Error getting event by ID: $eventId', error: e);
+      _report.fault(
+        e,
+        area: 'events',
+        message: 'Error getting event by ID: $eventId',
+      );
       rethrow;
     }
   }
@@ -106,7 +113,7 @@ class EventsService {
 
       return events.map(_mapToEventDomain).toList();
     } catch (e) {
-      _logger.error('Error getting all events', error: e);
+      _report.fault(e, area: 'events', message: 'Error getting all events');
       rethrow;
     }
   }
@@ -142,7 +149,11 @@ class EventsService {
 
       return eventsInWeek;
     } catch (e) {
-      _logger.error('Error getting events for week', error: e);
+      _report.fault(
+        e,
+        area: 'events',
+        message: 'Error getting events for week',
+      );
       rethrow;
     }
   }
@@ -190,10 +201,10 @@ class EventsService {
             );
 
         if (!hasActiveRelationship) {
-          _logger.error(
-            'Coach does not have active relationship with athlete',
-            context: 'EVENTS_SERVICE',
-            data: {'coachUserId': deviceId, 'athleteUserId': forUserId},
+          _report.fault(
+            LoggedFault('Coach does not have active relationship with athlete'),
+            area: 'events',
+            extra: {'coachUserId': deviceId, 'athleteUserId': forUserId},
           );
           throw Exception('Not authorized to create events for this athlete');
         }
@@ -248,7 +259,7 @@ class EventsService {
             resolvedConsistency == WriteConsistency.remoteAckRequired,
       );
     } catch (e) {
-      _logger.error('Error creating event', error: e);
+      _report.fault(e, area: 'events', message: 'Error creating event');
       rethrow;
     }
   }
@@ -280,10 +291,13 @@ class EventsService {
             );
 
         if (!hasActiveRelationship) {
-          _logger.error(
-            'Coach does not have active relationship with athlete',
-            context: 'EVENTS_SERVICE',
-            data: {'coachUserId': currentUserId, 'athleteUserId': event.userId},
+          _report.fault(
+            LoggedFault('Coach does not have active relationship with athlete'),
+            area: 'events',
+            extra: {
+              'coachUserId': currentUserId,
+              'athleteUserId': event.userId,
+            },
           );
           throw Exception('Not authorized to update events for this athlete');
         }
@@ -334,7 +348,12 @@ class EventsService {
         consistency: resolvedConsistency,
       );
     } catch (e, stackTrace) {
-      _logger.error('Error updating event', error: e, stackTrace: stackTrace);
+      _report.fault(
+        e,
+        stackTrace: stackTrace,
+        area: 'events',
+        message: 'Error updating event',
+      );
       rethrow;
     }
   }
@@ -416,12 +435,12 @@ class EventsService {
       // The event's own move already succeeded and is the athlete's edit;
       // failing the whole save because its activity could not follow would
       // lose that edit. Log loudly instead — the split is visible in the list.
-      _logger.error(
-        'Event moved but linked activity did not follow',
-        error: e,
+      _report.fault(
+        e,
         stackTrace: stackTrace,
-        context: 'EVENTS_SERVICE',
-        data: {'eventId': event.id, 'activityId': activityId},
+        area: 'events',
+        message: 'Event moved but linked activity did not follow',
+        extra: {'eventId': event.id, 'activityId': activityId},
       );
     }
   }
@@ -457,10 +476,13 @@ class EventsService {
             );
 
         if (!hasActiveRelationship) {
-          _logger.error(
-            'Coach does not have active relationship with athlete',
-            context: 'EVENTS_SERVICE',
-            data: {'coachUserId': currentUserId, 'athleteUserId': eventOwnerId},
+          _report.fault(
+            LoggedFault('Coach does not have active relationship with athlete'),
+            area: 'events',
+            extra: {
+              'coachUserId': currentUserId,
+              'athleteUserId': eventOwnerId,
+            },
           );
           throw Exception('Not authorized to delete events for this athlete');
         }
@@ -487,7 +509,12 @@ class EventsService {
         remoteUserId: ownerUserId,
       );
     } catch (e, stackTrace) {
-      _logger.error('Error deleting event', error: e, stackTrace: stackTrace);
+      _report.fault(
+        e,
+        stackTrace: stackTrace,
+        area: 'events',
+        message: 'Error deleting event',
+      );
       rethrow;
     }
   }
