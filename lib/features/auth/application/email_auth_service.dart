@@ -33,12 +33,16 @@ class EmailAuthService extends _$EmailAuthService {
     required String email,
     required String password,
   }) async {
+    // Read before the first await: this provider is auto-disposed, and
+    // touching `ref` after it is gone throws (Riverpod 3).
+    final report = _report;
+    final analytics = _analytics;
     state = const AsyncLoading();
 
     state = await AsyncValue.guard(() async {
       // Defensive check - this should never happen but adding for safety
       if (email.isEmpty || password.isEmpty) {
-        _report.fault(
+        report.fault(
           LoggedFault(
             'Empty email or password received',
             context: 'EMAIL_AUTH',
@@ -53,7 +57,7 @@ class EmailAuthService extends _$EmailAuthService {
         throw Exception('Email and password are required');
       }
 
-      _report.info(
+      report.info(
         'Starting email account linking',
         area: 'auth',
         data: {
@@ -66,7 +70,7 @@ class EmailAuthService extends _$EmailAuthService {
       // Validate inputs
       final emailValidation = validateEmail(email);
       if (emailValidation != null) {
-        _report.fault(
+        report.fault(
           LoggedFault('Email validation failed', context: 'EMAIL_AUTH'),
           area: 'auth',
           extra: {'email': email, 'validation_error': emailValidation},
@@ -76,7 +80,7 @@ class EmailAuthService extends _$EmailAuthService {
 
       final passwordValidation = validatePassword(password);
       if (passwordValidation != null) {
-        _report.fault(
+        report.fault(
           LoggedFault('Password validation failed', context: 'EMAIL_AUTH'),
           area: 'auth',
           extra: {'validation_error': passwordValidation},
@@ -91,7 +95,7 @@ class EmailAuthService extends _$EmailAuthService {
       }
 
       final anonymousUserId = currentUser.id;
-      _report.info(
+      report.info(
         'Linking email account to user',
         area: 'auth',
         data: {
@@ -112,7 +116,7 @@ class EmailAuthService extends _$EmailAuthService {
       // integrations, food_preferences, ...) stays addressable with zero
       // migration.
 
-      _report.info(
+      report.info(
         'Step 1: Setting email address',
         area: 'auth',
         data: {
@@ -125,7 +129,7 @@ class EmailAuthService extends _$EmailAuthService {
       // Create UserAttributes and log what will be sent
       final userAttributes = UserAttributes(email: email);
 
-      _report.info(
+      report.info(
         'Step 1: UserAttributes created',
         area: 'auth',
         data: {
@@ -154,7 +158,7 @@ class EmailAuthService extends _$EmailAuthService {
           (updatedUser.newEmail?.isNotEmpty ?? false) ||
           (updatedUser.email ?? '').toLowerCase() != email.toLowerCase();
 
-      _report.info(
+      report.info(
         'Step 1 complete: Email set',
         area: 'auth',
         data: {
@@ -167,7 +171,7 @@ class EmailAuthService extends _$EmailAuthService {
 
       // Verify the user ID didn't change (critical for data preservation)
       if (updatedUser.id != anonymousUserId) {
-        _report.fault(
+        report.fault(
           LoggedFault('User ID changed during linking', context: 'EMAIL_AUTH'),
           area: 'auth',
           extra: {'old_id': anonymousUserId, 'new_id': updatedUser.id},
@@ -191,12 +195,12 @@ class EmailAuthService extends _$EmailAuthService {
         // until the code is verified the session is still anonymous, so an
         // abandoned confirmation must leave a fully usable anonymous account
         // rather than a half-upgraded one.
-        _report.info(
+        report.info(
           'Email link pending verification — password deferred until verify',
           area: 'auth',
           data: {'user_id': anonymousUserId},
         );
-        await _analytics.track(
+        await analytics.track(
           'email_verification_required',
           properties: {'user_id': anonymousUserId, 'flow': 'link'},
         );
@@ -205,7 +209,7 @@ class EmailAuthService extends _$EmailAuthService {
 
       // Auto-confirm path only (no confirmation pending): the address is
       // already on the account, so the password is accepted now.
-      _report.info('Step 2: Setting password', area: 'auth');
+      report.info('Step 2: Setting password', area: 'auth');
 
       final response = await _supabase.auth.updateUser(
         UserAttributes(password: password),
@@ -215,12 +219,9 @@ class EmailAuthService extends _$EmailAuthService {
         throw Exception('Password linking failed - no user returned');
       }
 
-      _report.info(
-        'Step 2 complete: Password set successfully',
-        area: 'auth',
-      );
+      report.info('Step 2 complete: Password set successfully', area: 'auth');
 
-      _report.info(
+      report.info(
         'Email account linked successfully',
         area: 'auth',
         data: {
@@ -243,38 +244,63 @@ class EmailAuthService extends _$EmailAuthService {
       // route to the verify screen instead of showing "creation failed".
       if (error is EmailVerificationRequiredException) throw error;
 
-      _report.fault(
+      await _failAccountCreation(
         error!,
-        area: 'auth',
-        message: 'Email account linking failed',
+        state.stackTrace,
+        email: email,
+        report: report,
+        analytics: analytics,
+        reportMessage: 'Email account linking failed',
+        analyticsEvent: 'email_account_linking_failed',
       );
-
-      // Track failure in analytics
-      await _analytics.track(
-        'email_account_linking_failed',
-        properties: {'error': error.toString()},
-      );
-
-      // Check for "already registered" error - throw specific exception for UI to handle
-      if (error is AuthApiException) {
-        if (error.message.contains('already registered') ||
-            error.message.contains('already been registered') ||
-            error.message.contains('User already registered')) {
-          throw AccountAlreadyExistsException(
-            'This email is already registered',
-            email: email,
-          );
-        } else if (error.message.contains('invalid')) {
-          throw Exception('Please enter a valid email address.');
-        } else if (error.message.contains('weak password')) {
-          throw Exception(
-            'Please use a stronger password (at least 8 characters).',
-          );
-        }
-      }
-
-      throw Exception('Account creation failed. Please try again.');
     }
+  }
+
+  /// Ends a failed signup or link: reports [error] once and rethrows it, or
+  /// the [AccountAlreadyExistsException] the UI routes on.
+  ///
+  /// The cause itself is rethrown, never a generic wrapper. A wrapper like the
+  /// old `Exception('Account creation failed. Please try again.')` was a new
+  /// object, so `Report`'s identity dedupe could not match it to the cause:
+  /// it became its own Sentry issue with no cause in it
+  /// (MEALVANA-ENDURANCE-CG, DEV-8Q, DEV-8X), next to the real one (CH,
+  /// DEV-8P, DEV-8W). The user-facing text belongs to the signup screen
+  /// (`auth.post_onboarding.error_email_failed`), which never read the
+  /// wrapper's message.
+  Future<Never> _failAccountCreation(
+    Object error,
+    StackTrace? stackTrace, {
+    required String email,
+    required Report report,
+    required AnalyticsTracker analytics,
+    required String reportMessage,
+    required String analyticsEvent,
+  }) async {
+    final trace = stackTrace ?? StackTrace.current;
+
+    if (error is AuthApiException &&
+        (error.message.contains('already registered') ||
+            error.message.contains('already been registered'))) {
+      report.info('$reportMessage: email already registered', area: 'auth');
+      throw AccountAlreadyExistsException(
+        'This email is already registered',
+        email: email,
+      );
+    }
+
+    report.fault(
+      error,
+      stackTrace: trace,
+      area: 'auth',
+      message: reportMessage,
+    );
+
+    await analytics.track(
+      analyticsEvent,
+      properties: {'error': error.toString()},
+    );
+
+    Error.throwWithStackTrace(error, trace);
   }
 
   /// Finish an anonymous -> email upgrade once the uid-preserving link is real.
@@ -318,10 +344,13 @@ class EmailAuthService extends _$EmailAuthService {
     required String email,
     required String password,
   }) async {
+    // Read before the first await (see [linkEmailAccount]).
+    final report = _report;
+    final analytics = _analytics;
     state = const AsyncLoading();
 
     state = await AsyncValue.guard(() async {
-      _report.info(
+      report.info(
         'Starting email signup (new user)',
         area: 'auth',
         data: {'email_length': email.length},
@@ -358,19 +387,19 @@ class EmailAuthService extends _$EmailAuthService {
       // So stop here and tell the caller to collect the code. The rest of the
       // signup completes in [verifyEmailOtp] once a session exists.
       if (response.session == null) {
-        _report.info(
+        report.info(
           'Email signup pending verification',
           area: 'auth',
           data: {'user_id': newUserId},
         );
-        await _analytics.track(
+        await analytics.track(
           'email_verification_required',
           properties: {'user_id': newUserId},
         );
         throw const EmailVerificationRequiredException();
       }
 
-      _report.info(
+      report.info(
         'Email signup successful',
         area: 'auth',
         data: {
@@ -390,13 +419,10 @@ class EmailAuthService extends _$EmailAuthService {
 
       // CRITICAL: Invalidate userIdProvider to force re-read with new user
       ref.invalidate(userIdProvider);
-      _report.info(
-        'Invalidated userIdProvider after signup',
-        area: 'auth',
-      );
+      report.info('Invalidated userIdProvider after signup', area: 'auth');
 
       // Track successful signup in analytics
-      await _analytics.track(
+      await analytics.track(
         'email_account_created',
         properties: {
           'user_id': newUserId,
@@ -404,7 +430,7 @@ class EmailAuthService extends _$EmailAuthService {
         },
       );
 
-      _report.info('Email signup complete', area: 'auth');
+      report.info('Email signup complete', area: 'auth');
     });
 
     // Re-throw errors for UI to handle
@@ -417,33 +443,15 @@ class EmailAuthService extends _$EmailAuthService {
       // generic wrapper below would erase that distinction.
       if (error is EmailVerificationRequiredException) throw error;
 
-      _report.fault(error!, area: 'auth', message: 'Email signup failed');
-
-      // Track failure in analytics
-      await _analytics.track(
-        'email_signup_failed',
-        properties: {'error': error.toString()},
+      await _failAccountCreation(
+        error!,
+        state.stackTrace,
+        email: email,
+        report: report,
+        analytics: analytics,
+        reportMessage: 'Email signup failed',
+        analyticsEvent: 'email_signup_failed',
       );
-
-      // Check for "already registered" error - throw specific exception for UI to handle
-      if (error is AuthApiException) {
-        if (error.message.contains('already registered') ||
-            error.message.contains('already been registered') ||
-            error.message.contains('User already registered')) {
-          throw AccountAlreadyExistsException(
-            'This email is already registered',
-            email: email,
-          );
-        } else if (error.message.contains('invalid')) {
-          throw Exception('Please enter a valid email address.');
-        } else if (error.message.contains('weak password')) {
-          throw Exception(
-            'Please use a stronger password (at least 8 characters).',
-          );
-        }
-      }
-
-      throw Exception('Account creation failed. Please try again.');
     }
   }
 
@@ -586,11 +594,7 @@ class EmailAuthService extends _$EmailAuthService {
 
     if (state.hasError) {
       final error = state.error!;
-      _report.fault(
-        error,
-        area: 'auth',
-        message: 'Email verification failed',
-      );
+      _report.fault(error, area: 'auth', message: 'Email verification failed');
       throw error;
     }
   }
@@ -705,10 +709,7 @@ class EmailAuthService extends _$EmailAuthService {
 
       // CRITICAL: Invalidate userIdProvider to force re-read after auth change
       ref.invalidate(userIdProvider);
-      _report.info(
-        'Invalidated userIdProvider after sign-in',
-        area: 'auth',
-      );
+      _report.info('Invalidated userIdProvider after sign-in', area: 'auth');
 
       _report.info(
         'Sign-in completion handled',
@@ -743,11 +744,7 @@ class EmailAuthService extends _$EmailAuthService {
             .sync(userId: newUserId, trigger: SyncTrigger.oauthSignIn);
         _report.info('Post-sign-in sync completed', area: 'auth');
       } catch (e) {
-        _report.fault(
-          e,
-          area: 'auth',
-          message: 'Post-sign-in sync failed',
-        );
+        _report.fault(e, area: 'auth', message: 'Post-sign-in sync failed');
         // Don't rethrow - sign-in was successful, user can pull-to-refresh
       }
     });
