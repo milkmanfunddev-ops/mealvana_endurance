@@ -11,10 +11,9 @@ needs three entries. Line format:
 is the trimmed source line holding the `catch` / bare `on` keyword (or the
 import). Lines starting with `>` are notes.
 
-> `baseline` holds every violation on the branch the day the guard landed
-> (2026-10-06). Entries are only ever deleted, by the migration ticket that
-> fixes the site; the test fails on a stale entry, so this section can only
-> shrink. Nothing is added here.
+> The `baseline` section (every violation on the day the guard landed,
+> 2026-10-06, 549 lines) was emptied by the migration tickets and deleted with
+> ticket 10. Only reasoned entries remain; the test fails on a stale one.
 >
 > `reasoned` holds sites that stay silent on purpose, each with a one-line
 > reason. Adding one is a review decision, not a shortcut.
@@ -43,7 +42,3 @@ unreportedCatch lib/features/integrations/data/vdot_api_client.dart :: } catch (
 unreportedCatch lib/shared/services/report/metrickit_relay.dart :: } on FormatException { :: the catch IS the parse: an unparseable payload is still forwarded whole under `raw`, so nothing is lost
 unreportedCatch lib/shared/services/report/performance_telemetry.dart :: } catch (_) { :: `_startSpan`: span bookkeeping inside the Report layer; a Fault over a lost span would recurse into Report
 unreportedCatch lib/shared/services/report/performance_telemetry.dart :: } catch (_) { :: `_finishSpan`: same ruling, the finish side
-
-## baseline
-
-sentryImport lib/shared/services/sentry/sentry_reporter.dart :: import 'package:sentry_flutter/sentry_flutter.dart' show SentryLevel;

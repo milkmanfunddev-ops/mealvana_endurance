@@ -165,12 +165,25 @@ void f() {
       }
     });
 
-    test('a legacy alias is reported until ticket 10', () {
+    test('a domain decoder reporting through its DecodeIssue callback', () {
+      final findings = scan('''
+Foo decode(String raw, {DecodeIssue onIssue = ignoreDecodeIssue}) {
+  try {
+    return Foo.parse(raw);
+  } on FormatException catch (e, st) {
+    onIssue('malformed foo', error: e, stackTrace: st);
+    return Foo.empty;
+  }
+}
+''');
+      expect(findings, isEmpty);
+    });
+
+    test('legacy alias text is not a report (the shims are gone)', () {
       for (final call in [
         '_logger.error("x", error: e);',
         'logger.warning("x");',
         'DebugLogger.error("x", error: e);',
-        'DebugLogger.warning("x");',
         '_sentry.reportCriticalError(e);',
         'await sentry.captureMessage("x");',
         'Sentry.captureException(e);',
@@ -184,7 +197,8 @@ void f() {
   }
 }
 ''');
-        expect(findings, isEmpty, reason: call);
+        expect(findings, hasLength(1), reason: call);
+        expect(findings.single.kind, FindingKind.unreportedCatch, reason: call);
       }
     });
 
