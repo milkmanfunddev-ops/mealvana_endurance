@@ -18,6 +18,7 @@ import 'package:mealvana_endurance/shared/database/app_database.dart';
 import 'package:mealvana_endurance/shared/domain/activity_type.dart';
 
 import '../../helpers/fakes/fake_supabase_client.dart';
+import '../../helpers/fakes/recording_report.dart';
 import '../../helpers/widget_test_harness.dart';
 
 void main() {
@@ -106,11 +107,8 @@ void main() {
     final repository = ActivitiesRepository(
       supabase: fakeSupabaseClient(),
       database: db,
-      logger: MockAppLogger(),
-      sentry: mockSentryReporter(),
-      deduplicationService: ActivityDeduplicationService(
-        logger: MockAppLogger(),
-      ),
+      report: RecordingReport(),
+      deduplicationService: ActivityDeduplicationService(),
     );
 
     final visible = await repository.getActivitiesForDateRange(
