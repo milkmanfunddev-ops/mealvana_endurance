@@ -254,6 +254,17 @@ class _FoodPreferencesScreenState extends ConsumerState<FoodPreferencesScreen> {
           .where((f) => isFuelProductType(f.productTypeId))
           .toList();
 
+      // The user can back out while the catalog is still loading. setState on
+      // a disposed State is `_element!` on null in a release build (Sentry
+      // MEALVANA-ENDURANCE-CC, ticket 23), and `ref` is gone too.
+      if (!mounted) {
+        _report.info(
+          'Food preferences load finished after the screen closed; dropped',
+          area: _area,
+        );
+        return;
+      }
+
       setState(() {
         _allFoodPreferences = primaryFoods;
         _additionalFoodPreferences = additionalFoods;
@@ -316,11 +327,10 @@ class _FoodPreferencesScreenState extends ConsumerState<FoodPreferencesScreen> {
         area: _area,
         message: 'Loading food preferences failed',
       );
-      setState(() {
-        _isLoading = false;
-      });
-
       if (mounted) {
+        setState(() {
+          _isLoading = false;
+        });
         MealvanaSnackbar.showError(
           context,
           'Error loading food preferences: ${e.toString()}',
@@ -636,6 +646,7 @@ class _FoodPreferencesScreenState extends ConsumerState<FoodPreferencesScreen> {
 
       await userFoodCrudService.saveUserFood(food, categoryIds);
 
+      if (!mounted) return;
       setState(() {
         _sliderLevels[foodItem.name] = 2;
       });
@@ -685,6 +696,7 @@ class _FoodPreferencesScreenState extends ConsumerState<FoodPreferencesScreen> {
         );
       }
 
+      if (!mounted) return;
       setState(() {
         _userFoods.removeWhere((f) => f.id == food.id);
         _sliderLevels.remove(food.name);
@@ -788,6 +800,7 @@ class _FoodPreferencesScreenState extends ConsumerState<FoodPreferencesScreen> {
           duringRunSuitable: food.duringRunSuitable,
         );
 
+        if (!mounted) return;
         setState(() {
           _userFoods.insert(0, foodItem);
           _sliderLevels[food.name] = 2;
