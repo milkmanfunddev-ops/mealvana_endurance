@@ -4,6 +4,7 @@ import 'package:riverpod_annotation/riverpod_annotation.dart';
 
 import '../../../../features/auth/data/user_repository.dart';
 import '../../../../features/meal_logging/data/meal_log_repository.dart';
+import '../../../../shared/services/report/report.dart';
 
 part 'ai_coach_banner_providers.g.dart';
 
@@ -28,7 +29,15 @@ Future<bool> aiCoachHasBaseline(Ref ref) async {
         .read(mealLogRepositoryProvider)
         .countLogsSince(userId, since);
     return count > 0;
-  } catch (_) {
+  } catch (e, st) {
+    ref
+        .read(reportProvider)
+        .fault(
+          e,
+          stackTrace: st,
+          area: 'ai_coach',
+          message: 'baseline check failed; banner hidden',
+        );
     return false;
   }
 }

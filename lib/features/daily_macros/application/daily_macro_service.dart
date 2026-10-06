@@ -11,6 +11,7 @@ import '../../../shared/database/database_provider.dart';
 import '../../../shared/core/revisioned_single_flight.dart';
 import '../../../shared/domain/session_input_resolver.dart';
 import '../../../shared/services/performance_telemetry.dart';
+import '../../../shared/services/report/report.dart';
 import '../../activities/domain/brick_metadata.dart';
 import '../../activities/domain/brick_session_legs.dart';
 import '../../auth/domain/user_preferences.dart';
@@ -35,6 +36,7 @@ DailyMacroService dailyMacroService(Ref ref) {
     repository: ref.read(dailyMacroTargetsRepositoryProvider),
     database: ref.read(appDatabaseProvider),
     supabase: Supabase.instance.client,
+    report: ref.read(reportProvider),
   );
 }
 
@@ -43,13 +45,20 @@ class DailyMacroService {
     required DailyMacroTargetsRepository repository,
     required AppDatabase database,
     required SupabaseClient supabase,
+    Report? report,
   }) : _repository = repository,
        _database = database,
-       _supabase = supabase;
+       _supabase = supabase,
+       _report = report;
 
   final DailyMacroTargetsRepository _repository;
   final AppDatabase _database;
   final SupabaseClient _supabase;
+  final Report? _report;
+
+  Report get _r => _report ?? SentryReport.global;
+
+  static const _area = 'daily_macros';
 
   final RevisionedSingleFlight<List<DailyMacroTargets?>> _weekCalculations =
       RevisionedSingleFlight<List<DailyMacroTargets?>>();
@@ -237,10 +246,13 @@ class DailyMacroService {
       return targets;
     } on DailyMacroCalculationException {
       rethrow;
-    } catch (e) {
-      if (kDebugMode) {
-        print('Error calling calculate-daily-macros: $e');
-      }
+    } catch (e, st) {
+      await _r.fault(
+        e,
+        stackTrace: st,
+        area: _area,
+        message: 'calculate-daily-macros (day) failed',
+      );
       throw DailyMacroCalculationException(e.toString());
     }
   }
@@ -483,10 +495,13 @@ class DailyMacroService {
       return List.generate(7, (i) => cached[i]);
     } on DailyMacroCalculationException {
       rethrow;
-    } catch (e) {
-      if (kDebugMode) {
-        print('Error calling calculate-daily-macros (week): $e');
-      }
+    } catch (e, st) {
+      await _r.fault(
+        e,
+        stackTrace: st,
+        area: _area,
+        message: 'calculate-daily-macros (week) failed',
+      );
       throw DailyMacroCalculationException(e.toString());
     }
   }
@@ -688,7 +703,8 @@ class _WeekActivityInputs {
     for (final row in _allRows) {
       final activityDate = _activityDate(row);
       if (!activityDate.isBefore(monday) && activityDate.isBefore(end)) {
-        totalMinutes += row.readNullable<int>('actual_duration_minutes') ??
+        totalMinutes +=
+            row.readNullable<int>('actual_duration_minutes') ??
             row.readNullable<int>('duration_minutes') ??
             0;
       }
@@ -704,9 +720,8 @@ int _dayKey(DateTime date) =>
 /// DI-12): `actual_time ?? planned_time ?? scheduled_date_time`, the same
 /// key the workout card buckets by (Activity.displayTime), so the engine
 /// day and the card day can never disagree about a session.
-DateTime _activityDate(QueryRow row) => DateTime.fromMillisecondsSinceEpoch(
-  row.read<int>('bucket_time') * 1000,
-);
+DateTime _activityDate(QueryRow row) =>
+    DateTime.fromMillisecondsSinceEpoch(row.read<int>('bucket_time') * 1000);
 
 /// The session(s) the engine is fed for one activity row.
 ///
@@ -820,7 +835,14 @@ List<BrickSessionLeg> _brickLegsFromRow(QueryRow row) {
     final decoded = jsonDecode(raw);
     if (decoded is! Map<String, dynamic>) return const [];
     return BrickMetadata.fromJson(decoded).sessionLegs;
-  } on FormatException {
+  } on FormatException catch (e, st) {
+    SentryReport.global.degraded(
+      e,
+      stackTrace: st,
+      area: 'daily_macros',
+      message: 'brick_metadata JSON malformed; single-session pricing used',
+      extra: {'activity_id': row.readNullable<String>('id')},
+    );
     return const [];
   }
 }

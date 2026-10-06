@@ -3,6 +3,7 @@ import 'dart:convert';
 import 'package:drift/drift.dart';
 
 import '../../../shared/database/app_database.dart';
+import '../../../shared/services/report/report.dart';
 import 'formula_phase.dart';
 import 'formula_pin.dart' show TemplateKind;
 
@@ -352,7 +353,15 @@ class PersonalFormula {
     if (raw == null) return null;
     try {
       return (jsonDecode(raw) as List).map((e) => e.toString()).toList();
-    } catch (_) {
+    } catch (e, st) {
+      // The formula still loads with this field empty. Static helper: the
+      // global is the only `Report` in reach.
+      SentryReport.global.degraded(
+        e,
+        stackTrace: st,
+        area: 'formula_kit',
+        message: 'personal formula string list JSON malformed; read as empty',
+      );
       return null;
     }
   }
@@ -369,7 +378,13 @@ class PersonalFormula {
     try {
       final decoded = jsonDecode(raw);
       return _coerceComponents(decoded);
-    } catch (_) {
+    } catch (e, st) {
+      SentryReport.global.degraded(
+        e,
+        stackTrace: st,
+        area: 'formula_kit',
+        message: 'personal formula components JSON malformed; read as empty',
+      );
       return const [];
     }
   }

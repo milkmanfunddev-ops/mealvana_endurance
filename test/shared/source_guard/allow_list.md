@@ -23,30 +23,12 @@ import). Lines starting with `>` are notes.
 
 unreportedCatch lib/shared/services/sentry/sentry_provider_observer.dart :: } on ArgumentError {  :: Expando refuses primitive keys; the catch is the type test, the primitive goes to its own set
 unreportedCatch lib/shared/services/sentry/sentry_provider_observer.dart :: } on ArgumentError {  :: same as above, the mark side of the pair
-unreportedCatch lib/shared/controllers/food_search_controller.dart :: } catch (_) { :: the catch IS the mounted test: reading `state` after dispose throws; nothing failed, so there is nothing to report
-unreportedCatch lib/shared/services/launch_trail.dart :: } catch (_) { :: LaunchTrail is the tape the D9 trail is written to; a recorder that reports into what it records recurses. Lee ruled it stays as is (ticket 05): begin() falls back to memory-only
-unreportedCatch lib/shared/services/launch_trail.dart :: } catch (_) { :: same ruling, the native-key re-read: best effort, memory-only on failure
-unreportedCatch lib/shared/services/launch_trail.dart :: } catch (_) { :: same ruling, the prefs persist step: the tape stays in memory for this launch
-unreportedCatch lib/shared/services/report/report.dart :: } catch (_) { :: `_captureFailed`: the SDK failed twice (capture, then breadcrumb); the debug log already holds it and there is nothing left to write to
-unreportedCatch lib/shared/services/report/report.dart :: } catch (_) { :: `_toSentryLog`: structured logs are narrative; a lost log line is not worth a Fault, and raising one from inside Report would recurse
-unreportedCatch lib/shared/services/report/report.dart :: } catch (_) { :: `_mirror` debug-log sink: the dev debug screen's log is a convenience; Report must not call itself from its own sink
-unreportedCatch lib/shared/services/report/report.dart :: } catch (_) { :: `_mirror` console sink: best effort; Report must not call itself from its own sink
-unreportedCatch lib/shared/services/report/report.dart :: } catch (analyticsError) { :: Mixpanel fan-out failed after the Sentry event already left; mirrored to console and the debug log, and a Fault here would fan out again
-unreportedCatch lib/shared/services/report/report.dart :: } catch (sdkError) { :: `fault`/`degraded`: Sentry capture threw; `_captureFailed` keeps it on the debug log and as a breadcrumb. The reporter must never take the app down
-unreportedCatch lib/shared/services/report/report.dart :: } catch (sdkError) { :: `note` promotion: same as above, the captureMessage side
 
 ## baseline
 
-printInCatch lib/features/ai_coach/data/ai_coach_chat_repository.dart :: } catch (e) {
 printInCatch lib/features/carb_loading/presentation/screens/carb_loading_food_selection_screen.dart :: } catch (e, stackTrace) {
 printInCatch lib/features/carb_loading/presentation/screens/carb_loading_food_selection_screen.dart :: } catch (e) {
 printInCatch lib/features/carb_loading/presentation/screens/carb_loading_food_selection_screen.dart :: } catch (e) {
-printInCatch lib/features/daily_macros/application/daily_macro_service.dart :: } catch (e) {
-printInCatch lib/features/daily_macros/application/daily_macro_service.dart :: } catch (e) {
-printInCatch lib/features/formula_kit/application/coach_insight_controller.dart :: } catch (e) {
-printInCatch lib/features/formula_kit/application/coach_insight_controller.dart :: } catch (e) {
-printInCatch lib/features/formula_kit/data/ai_coach_client.dart :: } catch (e) {
-printInCatch lib/features/formula_kit/data/ai_coach_client.dart :: } on FunctionException catch (e) {
 printInCatch lib/features/integrations/application/final_surge_sync_service.dart :: } catch (e) {
 printInCatch lib/features/integrations/application/final_surge_sync_service.dart :: } catch (e) {
 printInCatch lib/features/integrations/application/final_surge_sync_service.dart :: } catch (e) {
@@ -92,9 +74,6 @@ printInCatch lib/features/nutrition_plan/presentation/screens/swap_food_screen.d
 printInCatch lib/features/nutrition_plan/presentation/screens/swap_food_screen.dart :: } catch (e) {
 printInCatch lib/features/nutrition_plan/presentation/screens/swap_food_screen.dart :: } catch (e) {
 printInCatch lib/features/settings/presentation/screens/debug_screen.dart :: } catch (e, stackTrace) {
-sentryImport lib/features/daily_macros/data/daily_macro_targets_repository.dart :: import 'package:sentry_flutter/sentry_flutter.dart';
-sentryImport lib/features/formula_kit/data/formula_pins_repository.dart :: import 'package:sentry_flutter/sentry_flutter.dart';
-sentryImport lib/features/formula_kit/data/personal_formulas_repository.dart :: import 'package:sentry_flutter/sentry_flutter.dart';
 sentryImport lib/features/integrations/application/raw_retention_dead_man_check.dart :: import 'package:sentry_flutter/sentry_flutter.dart' show SentryLevel;
 sentryImport lib/features/integrations/application/tp_writeback_service.dart :: import 'package:sentry_flutter/sentry_flutter.dart';
 sentryImport lib/features/macro_dashboard/application/dashboard_transient_telemetry.dart :: import 'package:sentry_flutter/sentry_flutter.dart';
@@ -106,10 +85,6 @@ unreportedCatch lib/features/activities/presentation/providers/activities_contro
 unreportedCatch lib/features/activities/presentation/providers/activities_controller.dart :: } catch (_) {}
 unreportedCatch lib/features/activities/presentation/widgets/activity_card.dart :: } catch (_) {
 unreportedCatch lib/features/activities/presentation/widgets/calendar_date_indicators.dart :: } catch (e) {
-unreportedCatch lib/features/ai_coach/data/ai_coach_chat_repository.dart :: } catch (e) {
-unreportedCatch lib/features/ai_coach/domain/ai_coach_message.dart :: } catch (_) {
-unreportedCatch lib/features/ai_coach/domain/ai_coach_ui_part.dart :: } catch (_) {
-unreportedCatch lib/features/ai_coach/presentation/providers/ai_coach_banner_providers.dart :: } catch (_) {
 unreportedCatch lib/features/barcode_scanning/presentation/screens/add_food_screen.dart :: } catch (e) {
 unreportedCatch lib/features/barcode_scanning/presentation/screens/add_food_screen.dart :: } catch (e) {
 unreportedCatch lib/features/barcode_scanning/presentation/screens/add_food_screen.dart :: } on ProductDetailException catch (e) {
@@ -166,10 +141,6 @@ unreportedCatch lib/features/coach_mode/presentation/widgets/portal_sidebar.dart
 unreportedCatch lib/features/content/application/content_service.dart :: } catch (_) {
 unreportedCatch lib/features/content/application/content_service.dart :: } catch (_) {
 unreportedCatch lib/features/content/application/content_service.dart :: } catch (e) {
-unreportedCatch lib/features/daily_macros/application/daily_macro_service.dart :: } on FormatException {
-unreportedCatch lib/features/daily_macros/data/daily_macro_targets_repository.dart :: } catch (_) {
-unreportedCatch lib/features/daily_macros/presentation/providers/daily_macros_controller.dart :: } catch (e) {
-unreportedCatch lib/features/daily_macros/presentation/providers/daily_macros_controller.dart :: } on DailyMacroCalculationException catch (e) {
 unreportedCatch lib/features/education/presentation/screens/education_screen.dart :: } catch (_) {}
 unreportedCatch lib/features/education/presentation/screens/video_player_screen.dart :: } catch (_) {}
 unreportedCatch lib/features/education/presentation/screens/video_player_screen.dart :: } catch (_) {}
@@ -183,19 +154,6 @@ unreportedCatch lib/features/events/presentation/screens/event_form_screen.dart 
 unreportedCatch lib/features/events/presentation/screens/event_form_screen.dart :: } catch (e) {
 unreportedCatch lib/features/events/presentation/screens/events_list_screen.dart :: } catch (e) {
 unreportedCatch lib/features/events/presentation/widgets/event_action_buttons_card.dart :: } catch (e) {
-unreportedCatch lib/features/formula_kit/application/coach_insight_controller.dart :: } catch (e) {
-unreportedCatch lib/features/formula_kit/application/coach_insight_controller.dart :: } catch (e) {
-unreportedCatch lib/features/formula_kit/application/formula_conflict_json.dart :: } catch (_) {
-unreportedCatch lib/features/formula_kit/application/formula_library_controller.dart :: } catch (_) {
-unreportedCatch lib/features/formula_kit/application/formula_library_controller.dart :: } catch (_) {}
-unreportedCatch lib/features/formula_kit/application/formula_library_controller.dart :: } catch (_) {}
-unreportedCatch lib/features/formula_kit/domain/personal_formula.dart :: } catch (_) {
-unreportedCatch lib/features/formula_kit/domain/personal_formula.dart :: } catch (_) {
-unreportedCatch lib/features/formula_kit/presentation/screens/formula_detail_screen.dart :: } catch (e) {
-unreportedCatch lib/features/formula_kit/presentation/screens/formula_editor_screen.dart :: } catch (err) {
-unreportedCatch lib/features/formula_kit/presentation/widgets/pin_conflict_card_state.dart :: } catch (e) {
-unreportedCatch lib/features/formula_kit/presentation/widgets/pin_conflict_card_state.dart :: } catch (e) {
-unreportedCatch lib/features/formula_kit/presentation/widgets/pin_toggle.dart :: } catch (e) {
 unreportedCatch lib/features/fuel_timeline/presentation/widgets/energy_breakdown_sheet.dart :: } catch (_) {}
 unreportedCatch lib/features/integrations/application/final_surge_sync_service.dart :: } catch (e) {
 unreportedCatch lib/features/integrations/application/final_surge_sync_service.dart :: } catch (e) {
@@ -311,40 +269,6 @@ unreportedCatch lib/features/macro_dashboard/presentation/screens/macro_dashboar
 unreportedCatch lib/features/macro_dashboard/presentation/screens/macro_dashboard_screen.dart :: } on BrickCreationException catch (e) {
 unreportedCatch lib/features/macro_dashboard/presentation/screens/macro_dashboard_screen.dart :: } on BrickUngroupException catch (e) {
 unreportedCatch lib/features/macro_dashboard/presentation/screens/macro_dashboard_screen.dart :: } on BrickValidationException catch (e) {
-unreportedCatch lib/features/meal_planning/application/meal_plan_controller.dart :: } on VanaException catch (e) {
-unreportedCatch lib/features/meal_planning/data/meal_plan_repository.dart :: } catch (_) {
-unreportedCatch lib/features/meal_planning/data/meal_plan_repository.dart :: } catch (_) {
-unreportedCatch lib/features/meal_planning/data/meal_plan_repository.dart :: } on FormatException {
-unreportedCatch lib/features/meal_planning/data/user_memory_repository.dart :: } on FormatException {
-unreportedCatch lib/features/meal_planning/data/vana_transport.dart :: } on FormatException {
-unreportedCatch lib/features/meal_planning/domain/day_plan.dart :: } on FormatException {
-unreportedCatch lib/features/meal_planning/domain/vana_part.dart :: } on FormatException {
-unreportedCatch lib/features/meal_planning/domain/vana_part.dart :: } on TypeError {
-unreportedCatch lib/features/meal_planning/domain/vana_stream_event.dart :: } on FormatException {
-unreportedCatch lib/features/meal_planning/domain/wire_record.dart :: } on FormatException {
-unreportedCatch lib/features/meal_planning/presentation/screens/cooking_mode_screen.dart :: } on Exception {
-unreportedCatch lib/features/meal_planning/presentation/screens/cooking_mode_screen.dart :: } on Exception {
-unreportedCatch lib/features/meal_planning/presentation/screens/meal_detail_screen.dart :: } on Exception {
-unreportedCatch lib/features/meal_planning/presentation/screens/meal_detail_screen.dart :: } on Exception {
-unreportedCatch lib/features/meal_planning/presentation/screens/meal_detail_screen.dart :: } on Exception {
-unreportedCatch lib/features/meal_planning/presentation/screens/meal_detail_screen.dart :: } on NeedsConnectionException {
-unreportedCatch lib/features/meal_planning/presentation/screens/meal_detail_screen.dart :: } on NeedsConnectionException {
-unreportedCatch lib/features/meal_planning/presentation/screens/plan_tab.dart :: } on Exception {
-unreportedCatch lib/features/meal_planning/presentation/screens/plan_tab.dart :: } on Exception {
-unreportedCatch lib/features/meal_planning/presentation/screens/plan_tab.dart :: } on NeedsConnectionException {
-unreportedCatch lib/features/meal_planning/presentation/screens/swap_meal_screen.dart :: } on Exception {
-unreportedCatch lib/features/meal_planning/presentation/screens/swap_meal_screen.dart :: } on NeedsConnectionException {
-unreportedCatch lib/features/meal_planning/presentation/screens/vana_browse_screen.dart :: } on Exception {
-unreportedCatch lib/features/meal_planning/presentation/screens/vana_browse_screen.dart :: } on NeedsConnectionException {
-unreportedCatch lib/features/meal_planning/presentation/screens/vana_chat_screen.dart :: } catch (e) {
-unreportedCatch lib/features/meal_planning/presentation/screens/vana_chat_screen.dart :: } on Exception {
-unreportedCatch lib/features/meal_planning/presentation/screens/vana_chat_screen.dart :: } on Exception {
-unreportedCatch lib/features/meal_planning/presentation/screens/vana_chat_screen.dart :: } on Exception {
-unreportedCatch lib/features/meal_planning/presentation/screens/vana_chat_screen.dart :: } on Exception {
-unreportedCatch lib/features/meal_planning/presentation/screens/vana_chat_screen.dart :: } on NeedsConnectionException {
-unreportedCatch lib/features/meal_planning/presentation/screens/vana_chat_screen.dart :: } on NeedsConnectionException {
-unreportedCatch lib/features/meal_planning/presentation/screens/vana_chat_screen.dart :: } on VanaAttachPickFailed {
-unreportedCatch lib/features/meal_planning/presentation/widgets/vana_mic_button.dart :: } catch (_) {
 unreportedCatch lib/features/nutrition_plan/application/brick_macro_service.dart :: } catch (_) {
 unreportedCatch lib/features/nutrition_plan/application/client_plan/client_food_pool_service.dart :: } catch (_) {}
 unreportedCatch lib/features/nutrition_plan/application/client_plan/client_plan_service.dart :: } catch (_) {

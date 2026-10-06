@@ -2,7 +2,6 @@ import 'dart:async';
 
 import 'package:drift/drift.dart';
 import 'package:flutter/foundation.dart';
-import 'package:sentry_flutter/sentry_flutter.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 import 'package:supabase_flutter/supabase_flutter.dart';
 import 'package:uuid/uuid.dart';
@@ -13,7 +12,7 @@ import '../../../shared/database/app_database.dart';
 import '../../../shared/database/database_provider.dart';
 import '../../../shared/services/app_external_deps.dart';
 import '../../../shared/services/logging_service.dart';
-import '../../../shared/services/sentry/sentry_reporter.dart';
+import '../../../shared/services/report/report.dart';
 import '../../../shared/services/sync/sync_dependency_graph.dart';
 import '../domain/formula_phase.dart';
 import '../domain/personal_formula.dart';
@@ -27,7 +26,7 @@ PersonalFormulasRepository personalFormulasRepository(Ref ref) {
     supabase: Supabase.instance.client,
     database: ref.read(appDatabaseProvider),
     logger: ref.read(appLoggerProvider),
-    sentry: deps.sentry,
+    report: deps.report,
   );
 }
 
@@ -48,16 +47,20 @@ class PersonalFormulasRepository with SyncableRepository {
     required SupabaseClient supabase,
     required AppDatabase database,
     required AppLogger logger,
-    required SentryReporter sentry,
+    Report? report,
   }) : _supabase = supabase,
        _database = database,
        _logger = logger,
-       _sentry = sentry;
+       _report = report;
 
   final SupabaseClient _supabase;
   final AppDatabase _database;
   final AppLogger _logger;
-  final SentryReporter _sentry;
+  final Report? _report;
+
+  Report get _r => _report ?? SentryReport.global;
+
+  static const _area = 'formula_kit';
 
   static const _uuid = Uuid();
 
@@ -157,12 +160,12 @@ class PersonalFormulasRepository with SyncableRepository {
 
       return SyncResult.successful(syncedCount);
     } catch (e, stackTrace) {
-      _logger.error(
-        'Failed to sync personal formulas from Supabase',
-        context: 'PERSONAL_FORMULAS_REPOSITORY',
-        error: e,
+      await _r.fault(
+        e,
         stackTrace: stackTrace,
-        data: {'userId': userId},
+        area: 'sync',
+        message: 'Failed to sync personal formulas from Supabase',
+        tags: {'repository': 'personal_formulas'},
       );
       return SyncResult.failed(e.toString());
     }
@@ -309,12 +312,12 @@ class PersonalFormulasRepository with SyncableRepository {
 
       return UploadResult.successful(decoded.length);
     } catch (e, stackTrace) {
-      _logger.error(
-        'Failed to upload dirty personal formulas',
-        context: 'PERSONAL_FORMULAS_REPOSITORY',
-        error: e,
+      await _r.fault(
+        e,
         stackTrace: stackTrace,
-        data: {'userId': userId},
+        area: 'sync',
+        message: 'Failed to upload dirty personal formulas',
+        tags: {'repository': 'personal_formulas'},
       );
       return UploadResult.failed(e.toString());
     }
@@ -489,18 +492,13 @@ class PersonalFormulasRepository with SyncableRepository {
             .upsert(formula.toSupabaseJson(), onConflict: 'id');
         await _clearDirtyFlag(formula.id);
       } catch (e, stackTrace) {
-        _logger.warning(
-          'Immediate $label upload failed; formula stays dirty for retry',
-          context: 'PERSONAL_FORMULAS_REPOSITORY',
-          error: e,
-          stackTrace: stackTrace,
-          data: {'formulaId': formula.id},
-        );
-        _sentry.reportNetworkError(
+        await _r.fault(
           e,
-          url: 'supabase:personal_formulas:$label',
-          method: 'UPSERT',
           stackTrace: stackTrace,
+          area: _area,
+          message:
+              'Immediate $label upload failed; formula stays dirty for retry',
+          extra: {'formula_id': formula.id, 'label': label},
         );
       }
     }());
@@ -538,10 +536,12 @@ class PersonalFormulasRepository with SyncableRepository {
       },
     );
     unawaited(
-      _sentry.captureMessage(
-        'Skipped personal formula with unknown provenance/phase',
-        level: SentryLevel.warning,
-        tags: {
+      _r.degraded(
+        const LoggedFault(
+          'Skipped personal formula with unknown provenance/phase',
+        ),
+        area: _area,
+        extra: {
           'formula_id': entry.id,
           'provenance': entry.provenance,
           'phase': entry.phase,

@@ -5,6 +5,7 @@ import 'package:riverpod_annotation/riverpod_annotation.dart';
 
 import '../../../shared/database/app_database.dart';
 import '../../../shared/services/app_external_deps.dart';
+import '../../../shared/services/report/report.dart';
 import '../../auth/data/user_repository.dart';
 import '../../nutrition_plan/data/template_foods_repository.dart';
 import '../../nutrition_plan/domain/food_item_data.dart';
@@ -819,9 +820,19 @@ class FormulaLibraryController extends _$FormulaLibraryController {
               entry.key.toString().toLowerCase(): entry.value as num,
         };
       }
-    } catch (_) {}
+    } catch (e, st) {
+      // The view falls back to empty for this field, not the whole template.
+      _r.degraded(
+        e,
+        stackTrace: st,
+        area: 'formula_kit',
+        message: 'template quantity map JSON malformed; field read as empty',
+      );
+    }
     return const {};
   }
+
+  Report get _r => ref.read(reportProvider);
 
   DuringFormulaView _mapDuring(DuringWorkoutTemplateEntry e) {
     Map<String, double>? ratios;
@@ -833,7 +844,14 @@ class FormulaLibraryController extends _$FormulaLibraryController {
             (k, v) => MapEntry(k.toString(), (v as num).toDouble()),
           );
         }
-      } catch (_) {
+      } catch (e, st) {
+        _r.degraded(
+          e,
+          stackTrace: st,
+          area: 'formula_kit',
+          message:
+              'template component_carb_ratios JSON malformed; ratios dropped',
+        );
         ratios = null;
       }
     }
@@ -929,7 +947,14 @@ class FormulaLibraryController extends _$FormulaLibraryController {
       if (decoded is List) {
         return decoded.map((e) => e.toString()).toList();
       }
-    } catch (_) {}
+    } catch (e, st) {
+      _r.degraded(
+        e,
+        stackTrace: st,
+        area: 'formula_kit',
+        message: 'template string-array JSON malformed; field read as empty',
+      );
+    }
     return const [];
   }
 

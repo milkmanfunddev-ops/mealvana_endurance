@@ -5,10 +5,11 @@ import 'package:mealvana_endurance/features/formula_kit/data/formula_pins_reposi
 import 'package:mealvana_endurance/features/formula_kit/domain/formula_pin.dart';
 import 'package:mealvana_endurance/shared/database/app_database.dart';
 import 'package:mealvana_endurance/shared/services/logging_service.dart';
-import 'package:mealvana_endurance/shared/services/sentry/sentry_reporter.dart';
 import 'package:mocktail/mocktail.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 import 'package:supabase_flutter/supabase_flutter.dart';
+
+import '../../../helpers/fakes/recording_report.dart';
 
 // PR 2 substep 3 verification — lock in the sync invariants that fall out
 // of substep 2's repository implementation before substep 4 (the algorithm
@@ -31,15 +32,13 @@ class MockSupabaseClient extends Mock implements SupabaseClient {}
 
 class MockAppLogger extends Mock implements AppLogger {}
 
-class MockSentryReporter extends Mock implements SentryReporter {}
-
 void main() {
   TestWidgetsFlutterBinding.ensureInitialized();
 
   late AppDatabase database;
   late MockSupabaseClient mockSupabase;
   late MockAppLogger mockLogger;
-  late MockSentryReporter mockSentry;
+  late RecordingReport report;
   late FormulaPinsRepository repository;
 
   const testUserId = 'user-abc';
@@ -55,7 +54,7 @@ void main() {
     database = AppDatabase.forTesting(NativeDatabase.memory());
     mockSupabase = MockSupabaseClient();
     mockLogger = MockAppLogger();
-    mockSentry = MockSentryReporter();
+    report = RecordingReport();
 
     // Permissive logger stubs — production logs are fire-and-forget noise here.
     when(
@@ -93,22 +92,13 @@ void main() {
 
     // pin()/unpin() fire-and-forget the upload to Supabase. The mock client
     // throws on any unstubbed method call, which surfaces as a rejected
-    // future inside the unawaited lambda — caught by the repo's try/catch.
-    // Stub the sentry callback so that catch path doesn't blow up.
-    when(
-      () => mockSentry.reportNetworkError(
-        any(),
-        url: any(named: 'url'),
-        method: any(named: 'method'),
-        stackTrace: any(named: 'stackTrace'),
-      ),
-    ).thenAnswer((_) async {});
-
+    // future inside the unawaited lambda — caught by the repo's try/catch,
+    // which reports a Fault through `report`.
     repository = FormulaPinsRepository(
       supabase: mockSupabase,
       database: database,
       logger: mockLogger,
-      sentry: mockSentry,
+      report: report,
     );
   });
 
@@ -334,6 +324,14 @@ void main() {
           isTrue,
           reason: 'tombstone needs to upload so other devices learn about it',
         );
+
+        // The immediate uploads hit the unstubbed mock client and failed;
+        // each failure is a Fault, not a swallowed log line.
+        final uploadFaults = report.faults.where(
+          (f) =>
+              f.area == 'formula_kit' && f.message!.contains('upload failed'),
+        );
+        expect(uploadFaults, isNotEmpty);
       },
     );
 
