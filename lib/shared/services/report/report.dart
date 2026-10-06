@@ -26,10 +26,11 @@ import 'package:logger/logger.dart';
 import 'package:sentry_flutter/sentry_flutter.dart';
 
 import '../analytics/analytics_tracker.dart';
-import '../debug_log_storage.dart';
+import 'report_log.dart';
 import 'expected_failures.dart';
 
 export 'expected_failures.dart' show ExpectedFailure;
+export 'report_log.dart';
 
 /// Areas whose Notes are promoted to a warning event (rule D9).
 const Set<String> promotedNoteAreas = <String>{
@@ -127,18 +128,18 @@ class SentryReport implements Report {
   SentryReport({
     required AnalyticsTracker Function() analytics,
     Hub? hub,
-    DebugLogStorage? logStorage,
+    ReportLog? logStorage,
     bool? console,
     Logger? consoleLogger,
   }) : _analytics = analytics,
        _hub = hub ?? HubAdapter(),
-       _logStorage = logStorage ?? DebugLogStorage(),
+       _logStorage = logStorage ?? ReportLog(),
        _console = console ?? kDebugMode,
        _consoleLogger = consoleLogger ?? _defaultConsoleLogger();
 
   final AnalyticsTracker Function() _analytics;
   final Hub _hub;
-  final DebugLogStorage _logStorage;
+  final ReportLog _logStorage;
   final bool _console;
   final Logger _consoleLogger;
 
@@ -540,15 +541,15 @@ class SentryReport implements Report {
     StackTrace? stackTrace,
   }) {
     final storageLevel = switch (level) {
-      SentryLevel.fatal => LogLevel.fatal,
-      SentryLevel.error => LogLevel.error,
-      SentryLevel.warning => LogLevel.warning,
-      SentryLevel.info => LogLevel.info,
-      _ => LogLevel.debug,
+      SentryLevel.fatal => ReportLogLevel.fatal,
+      SentryLevel.error => ReportLogLevel.error,
+      SentryLevel.warning => ReportLogLevel.warning,
+      SentryLevel.info => ReportLogLevel.info,
+      _ => ReportLogLevel.debug,
     };
     try {
       _logStorage.addLog(
-        DebugLogEntry(
+        ReportLogEntry(
           timestamp: DateTime.now(),
           level: storageLevel,
           message: message,

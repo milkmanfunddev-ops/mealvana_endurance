@@ -146,8 +146,9 @@ open issue in both projects is fixed, as its own ticket, against the new visibil
 
 ### Telemetry that is not an error
 
-- MetricKit: diagnostic payloads stay events (level info, tagged); metric payloads become
-  structured logs.
+- MetricKit: diagnostic payloads stay events, as Degraded warnings tagged `metrickit` (Lee,
+  2026-10-06: the ladder has no info-event rung and a diagnostic is a real bad condition); metric
+  payloads become structured logs.
 - Slow-operation thresholds in the performance telemetry become span measurements on the
   existing startup and dashboard transactions. One warning event remains for any step over a
   hard ceiling of 10 seconds. A Sentry dashboard widget shows p95 per step.

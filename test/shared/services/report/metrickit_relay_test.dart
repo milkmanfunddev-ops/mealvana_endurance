@@ -11,7 +11,7 @@ import 'package:flutter/services.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:logger/logger.dart';
 import 'package:mealvana_endurance/shared/services/analytics/analytics_tracker.dart';
-import 'package:mealvana_endurance/shared/services/debug_log_storage.dart';
+import 'package:mealvana_endurance/shared/services/report/report_log.dart';
 import 'package:mealvana_endurance/shared/services/report/metrickit_relay.dart';
 import 'package:mealvana_endurance/shared/services/report/report.dart';
 import 'package:sentry_flutter/sentry_flutter.dart';
@@ -161,7 +161,7 @@ void main() {
       relay = MetricKitRelay(
         report: SentryReport(
           analytics: () => const NoopAnalyticsTracker(),
-          logStorage: DebugLogStorage(),
+          logStorage: ReportLog(),
           console: false,
           consoleLogger: Logger(
             level: Level.off,

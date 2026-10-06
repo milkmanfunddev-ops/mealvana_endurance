@@ -4,7 +4,6 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:flutter_screenutil/flutter_screenutil.dart';
 import '../../../../theme/app_theme.dart';
 import '../../../../shared/widgets/kyle_design/kyle_design.dart';
-import '../../../../shared/services/debug_log_storage.dart';
 import '../../../../shared/services/report/report.dart';
 import '../../../../shared/services/sync/data_sync_service.dart';
 import '../../../../shared/database/database_provider.dart';
@@ -22,7 +21,7 @@ class DebugScreen extends ConsumerStatefulWidget {
 class _DebugScreenState extends ConsumerState<DebugScreen> {
   bool _isSyncing = false;
   String? _syncResult;
-  LogLevel? _filterLevel;
+  ReportLogLevel? _filterLevel;
   final _scrollController = ScrollController();
 
   @override
@@ -93,12 +92,12 @@ class _DebugScreenState extends ConsumerState<DebugScreen> {
   }
 
   void _clearLogs() {
-    DebugLogStorage().clear();
+    ReportLog().clear();
     setState(() {});
   }
 
   void _copyLogsToClipboard() {
-    final logs = DebugLogStorage().getLogs();
+    final logs = ReportLog().getLogs();
     final logText = logs
         .map(
           (log) =>
@@ -118,8 +117,8 @@ class _DebugScreenState extends ConsumerState<DebugScreen> {
   @override
   Widget build(BuildContext context) {
     final logs = _filterLevel != null
-        ? DebugLogStorage().getLogsByLevel(_filterLevel!)
-        : DebugLogStorage().getLogs();
+        ? ReportLog().getLogsByLevel(_filterLevel!)
+        : ReportLog().getLogs();
 
     return Scaffold(
       backgroundColor: AppTheme.baseCream,
@@ -227,13 +226,13 @@ class _DebugScreenState extends ConsumerState<DebugScreen> {
                 children: [
                   _buildFilterChip('All', null),
                   SizedBox(width: 8.w),
-                  _buildFilterChip('🔍 Debug', LogLevel.debug),
+                  _buildFilterChip('🔍 Debug', ReportLogLevel.debug),
                   SizedBox(width: 8.w),
-                  _buildFilterChip('💡 Info', LogLevel.info),
+                  _buildFilterChip('💡 Info', ReportLogLevel.info),
                   SizedBox(width: 8.w),
-                  _buildFilterChip('⚠️ Warning', LogLevel.warning),
+                  _buildFilterChip('⚠️ Warning', ReportLogLevel.warning),
                   SizedBox(width: 8.w),
-                  _buildFilterChip('❌ Error', LogLevel.error),
+                  _buildFilterChip('❌ Error', ReportLogLevel.error),
                 ],
               ),
             ),
@@ -272,7 +271,7 @@ class _DebugScreenState extends ConsumerState<DebugScreen> {
     );
   }
 
-  Widget _buildFilterChip(String label, LogLevel? level) {
+  Widget _buildFilterChip(String label, ReportLogLevel? level) {
     final isSelected = _filterLevel == level;
     return FilterChip(
       label: Text(label),
@@ -295,20 +294,20 @@ class _DebugScreenState extends ConsumerState<DebugScreen> {
     );
   }
 
-  Widget _buildLogEntry(DebugLogEntry log) {
+  Widget _buildLogEntry(ReportLogEntry log) {
     Color backgroundColor;
     switch (log.level) {
-      case LogLevel.error:
-      case LogLevel.fatal:
+      case ReportLogLevel.error:
+      case ReportLogLevel.fatal:
         backgroundColor = Colors.red.shade50;
         break;
-      case LogLevel.warning:
+      case ReportLogLevel.warning:
         backgroundColor = Colors.orange.shade50;
         break;
-      case LogLevel.info:
+      case ReportLogLevel.info:
         backgroundColor = Colors.blue.shade50;
         break;
-      case LogLevel.debug:
+      case ReportLogLevel.debug:
         backgroundColor = Colors.grey.shade50;
         break;
     }
