@@ -4,6 +4,7 @@ import 'package:go_router/go_router.dart';
 
 import '../../../../shared/widgets/kyle_design/kyle_design.dart';
 import '../../../../shared/services/app_external_deps.dart';
+import '../../../../shared/services/report/report.dart';
 import '../../../ai_credits/domain/insufficient_credits_exception.dart';
 import '../../../ai_credits/presentation/insufficient_credits_paywall.dart';
 import '../../../ai_coach/presentation/widgets/ai_thinking_status.dart';
@@ -106,6 +107,13 @@ class _DescribeMealScreenState extends ConsumerState<DescribeMealScreen> {
           'latency_ms': stopwatch.elapsedMilliseconds,
         },
       );
+      ref
+          .read(reportProvider)
+          .note(
+            'describe meal: out of credits, paywall shown',
+            area: 'meal_logging',
+            data: {'method': 'text'},
+          );
       maybeShowInsufficientCreditsPaywall(e);
     } on MealAiException catch (e) {
       stopwatch.stop();
@@ -117,9 +125,26 @@ class _DescribeMealScreenState extends ConsumerState<DescribeMealScreen> {
           'latency_ms': stopwatch.elapsedMilliseconds,
         },
       );
+      // The service already reports the underlying failure; this is the
+      // user-facing branch.
+      ref
+          .read(reportProvider)
+          .note(
+            'describe meal failed: ${e.kind.name}',
+            area: 'meal_logging',
+            data: {'method': 'text', 'debug': e.debugMessage},
+          );
       if (!mounted) return;
       MealvanaSnackbar.showError(context, e.userMessage);
-    } catch (_) {
+    } catch (e, st) {
+      ref
+          .read(reportProvider)
+          .fault(
+            e,
+            stackTrace: st,
+            area: 'meal_logging',
+            message: 'describe meal: unexpected failure',
+          );
       stopwatch.stop();
       analytics.track(
         'meal_ai_failed',

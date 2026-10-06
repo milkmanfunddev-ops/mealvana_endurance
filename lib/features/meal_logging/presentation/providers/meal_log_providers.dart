@@ -8,6 +8,7 @@ import '../../../../features/auth/data/user_repository.dart';
 import '../../../../features/nutrition_plan/domain/fuel_log_data.dart';
 import '../../../../shared/services/app_external_deps.dart';
 import '../../../../shared/services/logging_service.dart';
+import '../../../../shared/services/report/report.dart';
 import '../../../../shared/services/supabase/supabase_client_provider.dart';
 import '../../application/meal_logging_service.dart';
 import '../../data/meal_log_repository.dart';
@@ -87,15 +88,26 @@ Stream<List<Activity>> completedActivitiesForDate(Ref ref, String date) async* {
 /// log, so counting them here would double-count the day. Uses
 /// [FuelLogItem.actualNutritionalInfo] so skipped items (actual quantity 0)
 /// contribute nothing.
-ConsumedTotals duringFuelTotalsForActivity(Activity activity) {
+ConsumedTotals duringFuelTotalsForActivity(
+  Activity activity, {
+  Report? report,
+}) {
   final raw = activity.fuelLogData;
   if (raw == null) return ConsumedTotals.zero;
 
   final FuelLogData fuelLog;
   try {
     fuelLog = FuelLogData.fromJson(raw);
-  } catch (_) {
-    // A malformed blob must never take down the Daily Macros tab.
+  } catch (e, st) {
+    // A malformed blob must never take down the Daily Macros tab; it is
+    // still a data fault worth seeing.
+    (report ?? SentryReport.global).degraded(
+      e,
+      stackTrace: st,
+      area: 'meal_logging',
+      message: 'activity fuel_log_data did not decode',
+      extra: {'activity_id': activity.id},
+    );
     return ConsumedTotals.zero;
   }
 
@@ -531,7 +543,16 @@ Future<String?> mealPhotoSignedUrl(Ref ref, String? photoPath) async {
         .from('meal-photos')
         .createSignedUrl(photoPath, 3600);
     return url;
-  } catch (_) {
+  } catch (e, st) {
+    ref
+        .read(reportProvider)
+        .fault(
+          e,
+          stackTrace: st,
+          area: 'meal_logging',
+          message: 'meal photo signed URL failed',
+          extra: {'photo_path': photoPath},
+        );
     return null;
   }
 }

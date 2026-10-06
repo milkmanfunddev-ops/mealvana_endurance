@@ -7,6 +7,7 @@ import '../../../../shared/controllers/food_search_controller.dart';
 import '../../../../shared/database/database_provider.dart';
 import '../../../../shared/services/app_external_deps.dart';
 import '../../../../shared/services/food_management/nutrition_product_search_service.dart';
+import '../../../../shared/services/report/report.dart';
 import '../../../../shared/widgets/custom_app_bar_back_button.dart';
 import '../../../../shared/widgets/food_selection/food_search_bar.dart';
 import '../../../../shared/widgets/kyle_design/kyle_design.dart';
@@ -660,7 +661,15 @@ class _AddFoodScreenState extends ConsumerState<_AddFoodScreen> {
         _recipes = all;
         _recipesLoading = false;
       });
-    } catch (_) {
+    } catch (e, st) {
+      ref
+          .read(reportProvider)
+          .fault(
+            e,
+            stackTrace: st,
+            area: 'meal_logging',
+            message: 'build meal: recipes failed to load',
+          );
       if (mounted) setState(() => _recipesLoading = false);
     }
   }
@@ -694,8 +703,16 @@ class _AddFoodScreenState extends ConsumerState<_AddFoodScreen> {
         allFoods: [...primary, ...additional, ...userFoods],
         userFoods: userFoods,
       );
-    } catch (_) {
+    } catch (e, st) {
       // Non-fatal — search bar still works via catalog + OpenFoodFacts.
+      ref
+          .read(reportProvider)
+          .fault(
+            e,
+            stackTrace: st,
+            area: 'meal_logging',
+            message: 'build meal: food pool seed failed',
+          );
     }
   }
 
@@ -802,7 +819,15 @@ class _AddFoodScreenState extends ConsumerState<_AddFoodScreen> {
       final food = await mappingService.mapToFood(apiProduct);
       if (!mounted) return;
       _addFood(food, food.displayName ?? food.name);
-    } catch (_) {
+    } catch (e, st) {
+      ref
+          .read(reportProvider)
+          .fault(
+            e,
+            stackTrace: st,
+            area: 'meal_logging',
+            message: 'build meal: barcode product details failed',
+          );
       if (mounted && Navigator.of(context).canPop()) {
         Navigator.of(context).pop();
       }
@@ -842,7 +867,15 @@ class _AddFoodScreenState extends ConsumerState<_AddFoodScreen> {
       final food = await mappingService.mapToFood(apiProduct);
       if (!mounted) return;
       _addFood(food, food.displayName ?? food.name);
-    } catch (_) {
+    } catch (e, st) {
+      ref
+          .read(reportProvider)
+          .fault(
+            e,
+            stackTrace: st,
+            area: 'meal_logging',
+            message: 'build meal: OpenFoodFacts product details failed',
+          );
       if (mounted && Navigator.of(context).canPop()) {
         Navigator.of(context).pop();
       }

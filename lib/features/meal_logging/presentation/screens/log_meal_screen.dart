@@ -12,6 +12,7 @@ import '../../../../shared/database/database_provider.dart';
 import '../../../../shared/services/analytics/analytics_tracker.dart';
 import '../../../../shared/services/app_external_deps.dart';
 import '../../../../shared/services/app_config.dart';
+import '../../../../shared/services/report/report.dart';
 import '../../../../shared/services/food_management/nutrition_product_search_service.dart';
 import '../../../../shared/widgets/custom_app_bar_back_button.dart';
 import '../../../../shared/widgets/food_selection/food_search_bar.dart';
@@ -171,9 +172,13 @@ class _LogMealScreenState extends ConsumerState<LogMealScreen> {
   /// Resolved in [initState] — `ref` is not safe to touch from [dispose],
   /// where `diary_closed` fires.
   AnalyticsTracker? _analytics;
+  Report? _report;
 
   /// Start of the dwell window for `diary_closed`.
   DateTime? _openedAt;
+
+  /// `widget.logDate` parsed once; null when the route handed us garbage.
+  DateTime? get _parsedLogDate => DateTime.tryParse(widget.logDate);
 
   /// Counts only *successful* quick-logs (see [_afterQuickLog]), so a failed
   /// log doesn't inflate the diary's productivity.
@@ -183,7 +188,15 @@ class _LogMealScreenState extends ConsumerState<LogMealScreen> {
   void initState() {
     super.initState();
     _analytics = ref.read(appExternalDepsProvider).analytics;
+    _report = ref.read(reportProvider);
     _openedAt = DateTime.now();
+    if (_parsedLogDate == null) {
+      _report?.fault(
+        LoggedFault('log meal: logDate did not parse'),
+        area: 'meal_logging',
+        extra: {'log_date': widget.logDate, 'source': widget.source},
+      );
+    }
 
     _analytics?.track(
       'log_meal_opened',
@@ -221,15 +234,12 @@ class _LogMealScreenState extends ConsumerState<LogMealScreen> {
   }
 
   bool _isToday() {
-    try {
-      final date = DateTime.parse(widget.logDate);
-      final now = DateTime.now();
-      return date.year == now.year &&
-          date.month == now.month &&
-          date.day == now.day;
-    } catch (_) {
-      return false;
-    }
+    final date = _parsedLogDate;
+    if (date == null) return false;
+    final now = DateTime.now();
+    return date.year == now.year &&
+        date.month == now.month &&
+        date.day == now.day;
   }
 
   /// Fire the funnel's method-selection step. [method] is the clean method
@@ -257,7 +267,14 @@ class _LogMealScreenState extends ConsumerState<LogMealScreen> {
             'log_date': widget.logDate,
           },
         );
-      } catch (_) {}
+      } catch (e, st) {
+        _report?.fault(
+          e,
+          stackTrace: st,
+          area: 'meal_logging',
+          message: 'log meal: diary_closed track threw in dispose',
+        );
+      }
     }
 
     _searchCtrl.dispose();
@@ -464,7 +481,15 @@ class _LogMealScreenState extends ConsumerState<LogMealScreen> {
         _recipes = all;
         _recipesLoading = false;
       });
-    } catch (_) {
+    } catch (e, st) {
+      ref
+          .read(reportProvider)
+          .fault(
+            e,
+            stackTrace: st,
+            area: 'meal_logging',
+            message: 'log meal: recipes failed to load',
+          );
       if (mounted) setState(() => _recipesLoading = false);
     }
   }
@@ -505,8 +530,16 @@ class _LogMealScreenState extends ConsumerState<LogMealScreen> {
         allFoods: [...primary, ...additional, ...userFoods],
         userFoods: userFoods,
       );
-    } catch (_) {
+    } catch (e, st) {
       // Non-fatal — search bar still works via catalog + OpenFoodFacts.
+      ref
+          .read(reportProvider)
+          .fault(
+            e,
+            stackTrace: st,
+            area: 'meal_logging',
+            message: 'log meal: food pool seed failed',
+          );
     }
   }
 
@@ -654,7 +687,15 @@ class _LogMealScreenState extends ConsumerState<LogMealScreen> {
         title: food.displayName ?? food.name,
         buildComponents: (servings) => [_foodComponent(food, servings)],
       );
-    } catch (e) {
+    } catch (e, st) {
+      ref
+          .read(reportProvider)
+          .fault(
+            e,
+            stackTrace: st,
+            area: 'meal_logging',
+            message: 'log meal: barcode product details failed',
+          );
       if (mounted) {
         Navigator.of(context).pop(); // close loading dialog
         MealvanaSnackbar.showError(context, 'Unable to load product details');
@@ -698,7 +739,15 @@ class _LogMealScreenState extends ConsumerState<LogMealScreen> {
 
       if (!mounted) return;
       _onFoodTap(food);
-    } catch (_) {
+    } catch (e, st) {
+      ref
+          .read(reportProvider)
+          .fault(
+            e,
+            stackTrace: st,
+            area: 'meal_logging',
+            message: 'log meal: OpenFoodFacts product details failed',
+          );
       if (mounted && Navigator.of(context).canPop()) {
         Navigator.of(context).pop();
       }
@@ -748,19 +797,9 @@ class _LogMealScreenState extends ConsumerState<LogMealScreen> {
   // --------------------------------------------------------------------------
 
   String _screenTitle() {
-    try {
-      final date = DateTime.parse(widget.logDate);
-      final today = DateTime.now();
-      final isToday =
-          date.year == today.year &&
-          date.month == today.month &&
-          date.day == today.day;
-      return isToday
-          ? 'Log a Meal'
-          : 'Log — ${DateFormat('MMM d').format(date)}';
-    } catch (_) {
-      return 'Log a Meal';
-    }
+    final date = _parsedLogDate;
+    if (date == null || _isToday()) return 'Log a Meal';
+    return 'Log — ${DateFormat('MMM d').format(date)}';
   }
 
   /// Re-log a recent meal (single synthetic component reconstructed from the
@@ -1713,6 +1752,13 @@ class _AiTabState extends ConsumerState<_AiTab> {
           'latency_ms': stopwatch.elapsedMilliseconds,
         },
       );
+      ref
+          .read(reportProvider)
+          .note(
+            'log meal AI: out of credits, paywall shown',
+            area: 'meal_logging',
+            data: {'method': method},
+          );
       maybeShowInsufficientCreditsPaywall(e);
     } on MealAiException catch (e) {
       stopwatch.stop();
@@ -1724,8 +1770,26 @@ class _AiTabState extends ConsumerState<_AiTab> {
           'latency_ms': stopwatch.elapsedMilliseconds,
         },
       );
+      // The service already reports the underlying failure; this is the
+      // user-facing branch.
+      ref
+          .read(reportProvider)
+          .note(
+            'log meal AI failed: ${e.kind.name}',
+            area: 'meal_logging',
+            data: {'method': method, 'debug': e.debugMessage},
+          );
       if (mounted) MealvanaSnackbar.showError(context, e.userMessage);
-    } catch (_) {
+    } catch (e, st) {
+      ref
+          .read(reportProvider)
+          .fault(
+            e,
+            stackTrace: st,
+            area: 'meal_logging',
+            message: 'log meal AI: unexpected failure',
+            extra: {'method': method},
+          );
       stopwatch.stop();
       analytics.track(
         'meal_ai_failed',
@@ -1765,7 +1829,17 @@ class _AiTabState extends ConsumerState<_AiTab> {
         imageQuality: 85,
         maxWidth: 1000,
       );
-    } catch (_) {
+    } catch (e, st) {
+      // Permission denied or no camera: the app lives with it.
+      ref
+          .read(reportProvider)
+          .degraded(
+            e,
+            stackTrace: st,
+            area: 'meal_logging',
+            message: 'log meal: image picker failed',
+            extra: {'method': method},
+          );
       if (mounted) {
         MealvanaSnackbar.showError(
           context,
