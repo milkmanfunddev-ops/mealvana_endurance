@@ -1,3 +1,5 @@
+import 'dart:async';
+
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
@@ -242,12 +244,16 @@ class WelcomeScreen extends ConsumerWidget {
       await ref
           .read(onboardingSessionControllerProvider.notifier)
           .ensureOnboardingSession();
-    } catch (e) {
-      externalDeps.logger.error(
-        'Onboarding session establishment failed — continuing into '
-        'onboarding regardless',
-        context: 'AUTH',
-        error: e,
+    } catch (e, stackTrace) {
+      unawaited(
+        externalDeps.report.fault(
+          e,
+          stackTrace: stackTrace,
+          area: 'onboarding',
+          message:
+              'Onboarding session establishment failed — continuing into '
+              'onboarding regardless',
+        ),
       );
     }
 

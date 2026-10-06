@@ -2,7 +2,7 @@ import 'package:drift/drift.dart';
 import 'package:riverpod_annotation/riverpod_annotation.dart';
 import '../../../shared/database/app_database.dart';
 import '../../../shared/database/database_provider.dart';
-import '../../../shared/services/logging_service.dart';
+import '../../../shared/services/report/report.dart';
 import '../domain/weather_forecast.dart';
 
 part 'weather_repository.g.dart';
@@ -12,7 +12,7 @@ part 'weather_repository.g.dart';
 WeatherRepository weatherRepository(Ref ref) {
   return WeatherRepository(
     database: ref.watch(appDatabaseProvider),
-    logger: ref.watch(appLoggerProvider),
+    report: ref.watch(reportProvider),
   );
 }
 
@@ -20,9 +20,10 @@ WeatherRepository weatherRepository(Ref ref) {
 /// Handles caching weather forecasts in Drift database with 1-hour expiry
 class WeatherRepository {
   final AppDatabase database;
-  final AppLogger logger;
+  final Report _report;
 
-  WeatherRepository({required this.database, required this.logger});
+  WeatherRepository({required this.database, required Report report})
+    : _report = report;
 
   /// Normalize a datetime to the top of the hour for cache bucketing.
   DateTime _normalizeToHour(DateTime date) {
@@ -72,10 +73,11 @@ class WeatherRepository {
         precipitationMm: cached.precipitationMm,
       );
     } catch (e, stackTrace) {
-      logger.error(
-        'Error getting cached forecast',
-        error: e,
+      _report.fault(
+        e,
         stackTrace: stackTrace,
+        area: 'weather',
+        message: 'Error getting cached forecast',
       );
       return null;
     }
@@ -122,7 +124,12 @@ class WeatherRepository {
             mode: InsertMode.insertOrReplace,
           );
     } catch (e, stackTrace) {
-      logger.error('Error caching forecast', error: e, stackTrace: stackTrace);
+      _report.fault(
+        e,
+        stackTrace: stackTrace,
+        area: 'weather',
+        message: 'Error caching forecast',
+      );
     }
   }
 
@@ -137,10 +144,11 @@ class WeatherRepository {
 
       if (deleted > 0) {}
     } catch (e, stackTrace) {
-      logger.error(
-        'Error clearing expired forecasts',
-        error: e,
+      _report.fault(
+        e,
         stackTrace: stackTrace,
+        area: 'weather',
+        message: 'Error clearing expired forecasts',
       );
     }
   }
@@ -150,10 +158,11 @@ class WeatherRepository {
     try {
       await database.delete(database.weatherForecastsTable).go();
     } catch (e, stackTrace) {
-      logger.error(
-        'Error clearing all forecasts',
-        error: e,
+      _report.fault(
+        e,
         stackTrace: stackTrace,
+        area: 'weather',
+        message: 'Error clearing all forecasts',
       );
     }
   }
@@ -167,10 +176,11 @@ class WeatherRepository {
 
       if (deleted > 0) {}
     } catch (e, stackTrace) {
-      logger.error(
-        'Error clearing default forecasts',
-        error: e,
+      _report.fault(
+        e,
         stackTrace: stackTrace,
+        area: 'weather',
+        message: 'Error clearing default forecasts',
       );
     }
   }

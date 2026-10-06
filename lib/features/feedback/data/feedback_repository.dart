@@ -5,8 +5,7 @@ import 'package:uuid/uuid.dart';
 import 'package:mealvana_endurance/shared/database/database_provider.dart';
 import '../../../shared/database/app_database.dart';
 import '../../../shared/services/app_external_deps.dart';
-import '../../../shared/services/logging_service.dart';
-import '../../../shared/services/sentry/sentry_reporter.dart';
+import '../../../shared/services/report/report.dart';
 import '../../../shared/services/sync/sync_dependency_graph.dart';
 import '../../../shared/data/syncable_repository.dart';
 import '../domain/feedback_data.dart';
@@ -15,28 +14,17 @@ import '../domain/feedback_data.dart';
 final feedbackRepositoryProvider = Provider<FeedbackRepository>((ref) {
   final database = ref.read(appDatabaseProvider);
   final deps = ref.read(appExternalDepsProvider);
-  return FeedbackRepository(
-    database,
-    deps.logger,
-    deps.supabaseClient,
-    deps.sentry,
-  );
+  return FeedbackRepository(database, deps.supabaseClient, deps.report);
 });
 
 /// Repository for handling feedback data persistence
 /// Manages survey responses and notification preferences in local database and Supabase
 class FeedbackRepository with SyncableRepository {
-  FeedbackRepository(
-    this._database,
-    this._logger,
-    this._supabase,
-    this._sentry,
-  );
+  FeedbackRepository(this._database, this._supabase, this._report);
 
   final AppDatabase _database;
-  final AppLogger _logger;
   final SupabaseClient _supabase;
-  final SentryReporter _sentry;
+  final Report _report;
 
   // ========================================================================
   // SyncableRepository Implementation
@@ -52,9 +40,9 @@ class FeedbackRepository with SyncableRepository {
   @override
   Future<SyncResult> syncFromRemote(String userId) async {
     try {
-      _logger.info(
+      _report.info(
         'Syncing feedback from Supabase',
-        context: 'FEEDBACK_REPOSITORY',
+        area: 'feedback',
         data: {'userId': userId},
       );
 
@@ -74,20 +62,20 @@ class FeedbackRepository with SyncableRepository {
 
       await setLastSyncTime(DateTime.now());
 
-      _logger.info(
+      _report.info(
         'Successfully synced feedback from Supabase',
-        context: 'FEEDBACK_REPOSITORY',
+        area: 'feedback',
         data: {'userId': userId, 'count': syncedCount},
       );
 
       return SyncResult.successful(syncedCount);
     } catch (e, stackTrace) {
-      _logger.error(
-        'Failed to sync feedback from Supabase',
-        context: 'FEEDBACK_REPOSITORY',
-        error: e,
+      await _report.fault(
+        e,
         stackTrace: stackTrace,
-        data: {'userId': userId},
+        area: 'feedback',
+        extra: {'userId': userId},
+        message: 'Failed to sync feedback from Supabase',
       );
       return SyncResult.failed(e.toString());
     }
@@ -96,9 +84,9 @@ class FeedbackRepository with SyncableRepository {
   @override
   Future<UploadResult> uploadDirtyRecords(String userId) async {
     try {
-      _logger.info(
+      _report.info(
         'Uploading dirty feedback to Supabase',
-        context: 'FEEDBACK_REPOSITORY',
+        area: 'feedback',
         data: {'userId': userId},
       );
 
@@ -113,9 +101,9 @@ class FeedbackRepository with SyncableRepository {
         return UploadResult.nothingToUpload();
       }
 
-      _logger.debug(
+      _report.debug(
         'Found dirty feedback to upload',
-        context: 'FEEDBACK_REPOSITORY',
+        area: 'feedback',
         data: {'count': dirtyRecords.length},
       );
 
@@ -137,20 +125,20 @@ class FeedbackRepository with SyncableRepository {
         }
       });
 
-      _logger.info(
+      _report.info(
         'Successfully uploaded dirty feedback',
-        context: 'FEEDBACK_REPOSITORY',
+        area: 'feedback',
         data: {'count': dirtyRecords.length},
       );
 
       return UploadResult.successful(dirtyRecords.length);
     } catch (e, stackTrace) {
-      _logger.error(
-        'Failed to upload dirty feedback',
-        context: 'FEEDBACK_REPOSITORY',
-        error: e,
+      await _report.fault(
+        e,
         stackTrace: stackTrace,
-        data: {'userId': userId},
+        area: 'feedback',
+        extra: {'userId': userId},
+        message: 'Failed to upload dirty feedback',
       );
       return UploadResult.failed(e.toString());
     }
@@ -196,10 +184,13 @@ class FeedbackRepository with SyncableRepository {
     });
 
     if (dirtyIds.isNotEmpty) {
-      _logger.warning(
-        'Skipped remote feedback overwrite for dirty local rows',
-        context: 'FEEDBACK_REPOSITORY',
-        data: {
+      await _report.degraded(
+        const LoggedFault(
+          'Skipped remote feedback overwrite for dirty local rows',
+          context: 'feedback',
+        ),
+        area: 'feedback',
+        extra: {
           'skippedCount': dirtyIds.length,
           'totalRemote': remoteById.length,
         },
@@ -243,18 +234,17 @@ class FeedbackRepository with SyncableRepository {
         [localId],
       );
     } catch (e, stackTrace) {
-      _logger.warning(
-        'Immediate upload failed; record stays dirty for retry',
-        context: 'FEEDBACK_REPOSITORY',
-        error: e,
-        stackTrace: stackTrace,
-        data: {'operation': 'create', 'recordId': localId},
-      );
-      _sentry.reportNetworkError(
+      await _report.degraded(
         e,
-        url: 'supabase:feedback:create',
-        method: 'INSERT',
         stackTrace: stackTrace,
+        area: 'feedback',
+        tags: {'method': 'INSERT'},
+        extra: {
+          'operation': 'create',
+          'recordId': localId,
+          'url': 'supabase:feedback:create',
+        },
+        message: 'Immediate upload failed; record stays dirty for retry',
       );
     }
   }
@@ -287,11 +277,12 @@ class FeedbackRepository with SyncableRepository {
 
     try {
       await _supabase.from('feedback').insert(feedbackData).select();
-    } catch (e) {
-      _logger.error(
-        'Supabase insert failed for survey feedback',
-        context: 'FEEDBACK',
-        error: e,
+    } catch (e, stackTrace) {
+      await _report.fault(
+        e,
+        stackTrace: stackTrace,
+        area: 'feedback',
+        message: 'Supabase insert failed for survey feedback',
       );
       rethrow; // Let the caller handle the error
     }

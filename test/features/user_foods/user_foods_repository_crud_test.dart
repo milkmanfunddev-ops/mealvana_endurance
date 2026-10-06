@@ -5,17 +5,16 @@ import 'package:drift/native.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:mealvana_endurance/features/user_foods/data/user_foods_repository.dart';
 import 'package:mealvana_endurance/shared/database/app_database.dart';
-import 'package:mealvana_endurance/shared/services/sentry/sentry_reporter.dart';
 import 'package:mocktail/mocktail.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 import 'package:supabase_flutter/supabase_flutter.dart';
+
+import '../../helpers/fakes/recording_report.dart';
 
 // ============================================================
 // Mocks
 // ============================================================
 class MockSupabaseClient extends Mock implements SupabaseClient {}
-
-class MockSentryReporter extends Mock implements SentryReporter {}
 
 // ============================================================
 // Helpers
@@ -27,7 +26,7 @@ const _otherUserId = 'user-xyz';
 int _idSeq = 0;
 
 String _uid() => 'food-${++_idSeq}'.padLeft(36, '0').substring(0, 36);
-String _cid() => 'cid-${_idSeq}'.padLeft(36, '0').substring(0, 36);
+String _cid() => 'cid-$_idSeq'.padLeft(36, '0').substring(0, 36);
 
 /// Insert a UserFood row directly via Drift (simulates a synced row from Supabase).
 Future<UserFood> _insertFood(
@@ -130,7 +129,7 @@ void main() {
 
   late AppDatabase database;
   late MockSupabaseClient mockSupabase;
-  late MockSentryReporter mockSentry;
+  late RecordingReport report;
   late UserFoodsRepository repository;
 
   setUpAll(() {
@@ -142,28 +141,12 @@ void main() {
     _idSeq = 0;
     database = AppDatabase.forTesting(NativeDatabase.memory());
     mockSupabase = MockSupabaseClient();
-    mockSentry = MockSentryReporter();
-
-    when(
-      () => mockSentry.addBreadcrumb(
-        message: any(named: 'message'),
-        category: any(named: 'category'),
-        data: any(named: 'data'),
-      ),
-    ).thenReturn(null);
-    when(
-      () => mockSentry.reportNetworkError(
-        any(),
-        url: any(named: 'url'),
-        method: any(named: 'method'),
-        stackTrace: any(named: 'stackTrace'),
-      ),
-    ).thenAnswer((_) async {});
+    report = RecordingReport();
 
     repository = UserFoodsRepository(
       database: database,
       supabase: mockSupabase,
-      sentry: mockSentry,
+      report: report,
     );
   });
 
@@ -847,7 +830,7 @@ void main() {
       () async {
         // The real mapper does: jsonEncode(list) if List, else as String?
         // We test the invariant by manually applying the same logic.
-        final remoteCategories = ['before_run', 'during_run'];
+        final Object remoteCategories = ['before_run', 'during_run'];
         final stored = remoteCategories is List
             ? jsonEncode(remoteCategories)
             : remoteCategories as String?;

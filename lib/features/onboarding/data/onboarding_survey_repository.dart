@@ -9,9 +9,7 @@ import 'package:supabase_flutter/supabase_flutter.dart';
 import '../../../shared/data/syncable_repository.dart';
 import '../../../shared/database/app_database.dart';
 import '../../../shared/database/database_provider.dart';
-import '../../../shared/services/app_external_deps.dart';
-import '../../../shared/services/logging_service.dart';
-import '../../../shared/services/sentry/sentry_reporter.dart';
+import '../../../shared/services/report/report.dart';
 import '../../../shared/services/sync/sync_dependency_graph.dart';
 import '../domain/onboarding_draft.dart';
 
@@ -19,12 +17,10 @@ part 'onboarding_survey_repository.g.dart';
 
 @riverpod
 OnboardingSurveyRepository onboardingSurveyRepository(Ref ref) {
-  final deps = ref.read(appExternalDepsProvider);
   return OnboardingSurveyRepository(
     supabase: Supabase.instance.client,
     database: ref.read(appDatabaseProvider),
-    logger: ref.read(appLoggerProvider),
-    sentry: deps.sentry,
+    report: ref.read(reportProvider),
   );
 }
 
@@ -44,19 +40,14 @@ class OnboardingSurveyRepository with SyncableRepository {
   OnboardingSurveyRepository({
     required SupabaseClient supabase,
     required AppDatabase database,
-    required AppLogger logger,
-    required SentryReporter sentry,
+    required Report report,
   }) : _supabase = supabase,
        _database = database,
-       _logger = logger,
-       _sentry = sentry;
+       _report = report;
 
   final SupabaseClient _supabase;
   final AppDatabase _database;
-  final AppLogger _logger;
-  final SentryReporter _sentry;
-
-  static const _context = 'ONBOARDING_SURVEY_REPOSITORY';
+  final Report _report;
 
   // ========================================================================
   // SyncableRepository Implementation
@@ -86,10 +77,13 @@ class OnboardingSurveyRepository with SyncableRepository {
       // Dirty-preserve: never clobber a local row awaiting upload.
       final local = await getSurveyRow(userId);
       if (local?.needsUpload == true) {
-        _logger.warning(
-          'Skipped remote survey overwrite for dirty local row',
-          context: _context,
-          data: {'userId': userId},
+        _report.degraded(
+          LoggedFault(
+            'Skipped remote survey overwrite for dirty local row',
+            context: 'onboarding',
+          ),
+          area: 'onboarding',
+          extra: {'userId': userId},
         );
         await setLastSyncTime(DateTime.now());
         return SyncResult.successful(0);
@@ -105,12 +99,12 @@ class OnboardingSurveyRepository with SyncableRepository {
       await setLastSyncTime(DateTime.now());
       return SyncResult.successful(1);
     } catch (e, stackTrace) {
-      _logger.error(
-        'Failed to sync onboarding survey from Supabase',
-        context: _context,
-        error: e,
+      _report.fault(
+        e,
         stackTrace: stackTrace,
-        data: {'userId': userId},
+        area: 'onboarding',
+        extra: {'userId': userId},
+        message: 'Failed to sync onboarding survey from Supabase',
       );
       return SyncResult.failed(e.toString());
     }
@@ -137,19 +131,19 @@ class OnboardingSurveyRepository with SyncableRepository {
         const OnboardingSurveysTableCompanion(needsUpload: Value(false)),
       );
 
-      _logger.info(
+      _report.info(
         'Uploaded onboarding survey',
-        context: _context,
+        area: 'onboarding',
         data: {'userId': userId},
       );
       return UploadResult.successful(dirty.length);
     } catch (e, stackTrace) {
-      _logger.error(
-        'Failed to upload onboarding survey',
-        context: _context,
-        error: e,
+      _report.fault(
+        e,
         stackTrace: stackTrace,
-        data: {'userId': userId},
+        area: 'onboarding',
+        extra: {'userId': userId},
+        message: 'Failed to upload onboarding survey',
       );
       return UploadResult.failed(e.toString());
     }
@@ -197,18 +191,16 @@ class OnboardingSurveyRepository with SyncableRepository {
     } catch (e, stackTrace) {
       // FK/constraint SqliteExceptions land here — report loudly, then
       // rethrow so the controller's save step fails visibly.
-      _logger.error(
-        'Failed to write onboarding survey to Drift',
-        context: _context,
-        error: e,
-        stackTrace: stackTrace,
-        data: {'userId': userId},
-      );
-      await _sentry.reportDatabaseError(
+      await _report.fault(
         e,
-        operation: 'onboarding_survey_write',
-        table: 'onboarding_surveys',
         stackTrace: stackTrace,
+        area: 'onboarding',
+        tags: {
+          'operation': 'onboarding_survey_write',
+          'table': 'onboarding_surveys',
+        },
+        extra: {'userId': userId},
+        message: 'Failed to write onboarding survey to Drift',
       );
       rethrow;
     }
@@ -280,19 +272,22 @@ class OnboardingSurveyRepository with SyncableRepository {
         if (!result.success) {
           // uploadDirtyRecords swallows exceptions into UploadResult.failed —
           // per the repo-wide rule, always check and report the result.
-          _sentry.reportNetworkError(
-            Exception(result.error ?? 'unknown upload failure'),
-            url: 'supabase:onboarding_surveys:immediate',
-            method: 'UPSERT',
+          unawaited(
+            _report.degraded(
+              Exception(result.error ?? 'unknown upload failure'),
+              area: 'network',
+              tags: {'method': 'UPSERT'},
+              extra: {'url': 'supabase:onboarding_surveys:immediate'},
+            ),
           );
         }
       } catch (e, stackTrace) {
-        _logger.warning(
-          'Immediate survey upload failed; row stays dirty for retry',
-          context: _context,
-          error: e,
+        _report.degraded(
+          e,
           stackTrace: stackTrace,
-          data: {'userId': userId},
+          area: 'onboarding',
+          extra: {'userId': userId},
+          message: 'Immediate survey upload failed; row stays dirty for retry',
         );
       }
     }());

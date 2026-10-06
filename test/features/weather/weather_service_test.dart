@@ -1,14 +1,14 @@
 import 'package:flutter_test/flutter_test.dart';
-import 'package:functions_client/functions_client.dart';
 import 'package:mealvana_endurance/features/weather/application/weather_service.dart';
 import 'package:mealvana_endurance/features/weather/data/weather_repository.dart';
 import 'package:mealvana_endurance/features/weather/domain/location.dart'
     as domain;
 import 'package:mealvana_endurance/features/weather/domain/weather_forecast.dart';
 import 'package:mealvana_endurance/shared/services/location_service.dart';
-import 'package:mealvana_endurance/shared/services/logging_service.dart';
 import 'package:mocktail/mocktail.dart';
 import 'package:supabase_flutter/supabase_flutter.dart';
+
+import '../../helpers/fakes/recording_report.dart';
 
 // ---------------------------------------------------------------------------
 // Mocks
@@ -21,8 +21,6 @@ class MockFunctionsClient extends Mock implements FunctionsClient {}
 class MockWeatherRepository extends Mock implements WeatherRepository {}
 
 class MockLocationService extends Mock implements LocationService {}
-
-class MockAppLogger extends Mock implements AppLogger {}
 
 // ---------------------------------------------------------------------------
 // Helpers
@@ -82,57 +80,6 @@ Map<String, dynamic> _apiJson({
 }
 
 // ---------------------------------------------------------------------------
-// Shared logger stub — silences all log calls
-// ---------------------------------------------------------------------------
-void _stubLogger(MockAppLogger logger) {
-  when(
-    () => logger.debug(
-      any(),
-      context: any(named: 'context'),
-      data: any(named: 'data'),
-      error: any(named: 'error'),
-      stackTrace: any(named: 'stackTrace'),
-    ),
-  ).thenReturn(null);
-  when(
-    () => logger.info(
-      any(),
-      context: any(named: 'context'),
-      data: any(named: 'data'),
-    ),
-  ).thenReturn(null);
-  when(
-    () => logger.warning(
-      any(),
-      context: any(named: 'context'),
-      data: any(named: 'data'),
-      error: any(named: 'error'),
-      stackTrace: any(named: 'stackTrace'),
-    ),
-  ).thenReturn(null);
-  when(
-    () => logger.error(
-      any(),
-      context: any(named: 'context'),
-      data: any(named: 'data'),
-      error: any(named: 'error'),
-      stackTrace: any(named: 'stackTrace'),
-    ),
-  ).thenReturn(null);
-  when(
-    () => logger.api(
-      any(),
-      endpoint: any(named: 'endpoint'),
-      statusCode: any(named: 'statusCode'),
-      requestData: any(named: 'requestData'),
-      responseData: any(named: 'responseData'),
-      duration: any(named: 'duration'),
-      error: any(named: 'error'),
-    ),
-  ).thenReturn(null);
-}
-
-// ---------------------------------------------------------------------------
 // Shared edge-function stub helpers
 // ---------------------------------------------------------------------------
 
@@ -189,7 +136,7 @@ void main() {
   late MockFunctionsClient mockFunctions;
   late MockWeatherRepository mockRepository;
   late MockLocationService mockLocationService;
-  late MockAppLogger mockLogger;
+  late RecordingReport report;
   late WeatherService service;
 
   setUp(() {
@@ -197,9 +144,7 @@ void main() {
     mockFunctions = MockFunctionsClient();
     mockRepository = MockWeatherRepository();
     mockLocationService = MockLocationService();
-    mockLogger = MockAppLogger();
-
-    _stubLogger(mockLogger);
+    report = RecordingReport();
 
     // WeatherService constructor calls clearDefaultForecasts on the repository.
     when(() => mockRepository.clearDefaultForecasts()).thenAnswer((_) async {});
@@ -211,7 +156,7 @@ void main() {
       supabase: mockSupabase,
       weatherRepository: mockRepository,
       locationService: mockLocationService,
-      logger: mockLogger,
+      report: report,
     );
   });
 

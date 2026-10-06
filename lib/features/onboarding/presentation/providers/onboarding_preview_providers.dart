@@ -114,7 +114,7 @@ Future<TrainingInsights> onboardingTrainingInsights(Ref ref) async {
   final connectedProvider = ref.watch(onboardingConnectedProviderNameProvider);
   if (connectedProvider == null) return TrainingInsights.none;
 
-  final sentry = ref.read(appExternalDepsProvider).sentry;
+  final report = ref.read(reportProvider);
   try {
     return await _digestImportedActivities(
       ref,
@@ -123,10 +123,10 @@ Future<TrainingInsights> onboardingTrainingInsights(Ref ref) async {
     // No silent failures — but also never a blocked/blank reveal: capture
     // and degrade to the generic preview.
     unawaited(
-      sentry.reportCriticalError(
+      report.fault(
         e,
         stackTrace: stackTrace,
-        context: 'onboarding_training_insights',
+        area: 'onboarding',
         tags: {'feature': 'onboarding', 'step': 'plan_reveal'},
       ),
     );
