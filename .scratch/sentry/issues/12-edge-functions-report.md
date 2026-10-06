@@ -89,3 +89,11 @@ Dev secrets set: `SENTRY_ENVIRONMENT=edge-dev` (digest verified), `SENTRY_PROBE_
 - The probe issue MEALVANA-ENDURANCE-DEV-A4 is left open as the proof record; resolve when read.
 - The `function` → `edge_function` tag name is a deviation from the spec's wording ("tags function
   name"); the name is still tagged, under a key Sentry keeps.
+
+## Prod rollout (2026-10-06, Lee's instruction, lead session)
+
+- Prod secrets set: `SENTRY_ENVIRONMENT=edge-prod`, `SENTRY_CRON_MONITORS=1` (digests verified). `SENTRY_PROBE_TOKEN` NOT set on prod; a probe header against prod ensure-credits answers 401.
+- Migration `20261006120000_raw_retention_sweep_checkin.sql` applied to prod via the Management API; `raw_retention_sweep_and_notify` body verified to carry `sweep_status`; pg_cron job `raw-retention-sweep` (`17 3 * * *`) still calls it. First check-in expected 03:17 UTC; the monitor is created by that run.
+- All 32 non-frozen functions deployed to prod with `scripts/deploy_prod.sh` (counters bumped; `calculate-daily-macros` FROZEN untouched). Note: `vana-action`, `vana-chat`, `vana-day-notes` reached prod for the first time (version 1); they require a user JWT and the app does not call them in prod yet.
+- Smoke: raw-retention-alert bad token 401, get-weather-forecast unauthenticated 401, ensure-credits with the probe header 401.
+- Codemagic already carried `SENTRY_AUTH_TOKEN` in `mealvana_dev` and `mealvana_prod`. Vercel now has `SENTRY_AUTH_TOKEN` + `SENTRY_PROJECT` for Production (`mealvana-endurance`) and Preview (`mealvana-endurance-dev`); the token is the personal sentry-cli token from `~/.sentryclirc` because org auth tokens cannot be minted via the API with a user token.
