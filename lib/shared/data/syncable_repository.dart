@@ -1,5 +1,7 @@
 import 'package:shared_preferences/shared_preferences.dart';
 
+import '../services/report/report.dart';
+
 /// Result of a sync operation
 class SyncResult {
   final bool success;
@@ -91,7 +93,12 @@ mixin SyncableRepository {
     try {
       return DateTime.parse(timestamp);
     } catch (e) {
-      // Invalid timestamp - treat as never synced
+      // Invalid timestamp - treat as never synced, which forces a resync.
+      await SentryReport.global.note(
+        'Stored last-sync timestamp unparseable; treating as never synced',
+        area: 'sync',
+        data: {'repository': repositoryKey, 'value': timestamp},
+      );
       return null;
     }
   }

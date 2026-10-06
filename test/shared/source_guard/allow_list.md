@@ -23,6 +23,17 @@ import). Lines starting with `>` are notes.
 
 unreportedCatch lib/shared/services/sentry/sentry_provider_observer.dart :: } on ArgumentError {  :: Expando refuses primitive keys; the catch is the type test, the primitive goes to its own set
 unreportedCatch lib/shared/services/sentry/sentry_provider_observer.dart :: } on ArgumentError {  :: same as above, the mark side of the pair
+unreportedCatch lib/shared/controllers/food_search_controller.dart :: } catch (_) { :: the catch IS the mounted test: reading `state` after dispose throws; nothing failed, so there is nothing to report
+unreportedCatch lib/shared/services/launch_trail.dart :: } catch (_) { :: LaunchTrail is the tape the D9 trail is written to; a recorder that reports into what it records recurses. Lee ruled it stays as is (ticket 05): begin() falls back to memory-only
+unreportedCatch lib/shared/services/launch_trail.dart :: } catch (_) { :: same ruling, the native-key re-read: best effort, memory-only on failure
+unreportedCatch lib/shared/services/launch_trail.dart :: } catch (_) { :: same ruling, the prefs persist step: the tape stays in memory for this launch
+unreportedCatch lib/shared/services/report/report.dart :: } catch (_) { :: `_captureFailed`: the SDK failed twice (capture, then breadcrumb); the debug log already holds it and there is nothing left to write to
+unreportedCatch lib/shared/services/report/report.dart :: } catch (_) { :: `_toSentryLog`: structured logs are narrative; a lost log line is not worth a Fault, and raising one from inside Report would recurse
+unreportedCatch lib/shared/services/report/report.dart :: } catch (_) { :: `_mirror` debug-log sink: the dev debug screen's log is a convenience; Report must not call itself from its own sink
+unreportedCatch lib/shared/services/report/report.dart :: } catch (_) { :: `_mirror` console sink: best effort; Report must not call itself from its own sink
+unreportedCatch lib/shared/services/report/report.dart :: } catch (analyticsError) { :: Mixpanel fan-out failed after the Sentry event already left; mirrored to console and the debug log, and a Fault here would fan out again
+unreportedCatch lib/shared/services/report/report.dart :: } catch (sdkError) { :: `fault`/`degraded`: Sentry capture threw; `_captureFailed` keeps it on the debug log and as a breadcrumb. The reporter must never take the app down
+unreportedCatch lib/shared/services/report/report.dart :: } catch (sdkError) { :: `note` promotion: same as above, the captureMessage side
 
 ## baseline
 
@@ -104,7 +115,6 @@ sentryImport lib/features/integrations/application/raw_retention_dead_man_check.
 sentryImport lib/features/integrations/application/tp_writeback_service.dart :: import 'package:sentry_flutter/sentry_flutter.dart';
 sentryImport lib/features/macro_dashboard/application/dashboard_transient_telemetry.dart :: import 'package:sentry_flutter/sentry_flutter.dart';
 sentryImport lib/features/nutrition_plan/presentation/providers/macro_targets_controller.dart :: import 'package:sentry_flutter/sentry_flutter.dart';
-sentryImport lib/shared/core/app_router.dart :: import 'package:sentry_flutter/sentry_flutter.dart';
 sentryImport lib/shared/database/connection_native.dart :: import 'package:sentry_drift/sentry_drift.dart';
 sentryImport lib/shared/services/performance_telemetry.dart :: import 'package:sentry_flutter/sentry_flutter.dart';
 sentryImport lib/shared/services/sentry/sentry_reporter.dart :: import 'package:sentry_flutter/sentry_flutter.dart' show SentryLevel;
@@ -132,19 +142,6 @@ unreportedCatch lib/features/ai_credits/data/revenuecat_service.dart :: } catch 
 unreportedCatch lib/features/ai_credits/data/revenuecat_service.dart :: } catch (e, st) {
 unreportedCatch lib/features/ai_credits/data/revenuecat_service.dart :: } catch (e, st) {
 unreportedCatch lib/features/ai_credits/data/revenuecat_service.dart :: } on PurchasesError catch (e, st) {
-unreportedCatch lib/features/app_startup/application/app_startup_service.dart :: } catch (_) {
-unreportedCatch lib/features/app_startup/presentation/screens/force_upgrade_screen.dart :: } catch (_) {
-unreportedCatch lib/features/auth/application/auth_service.dart :: } catch (e) {
-unreportedCatch lib/features/auth/application/auth_service.dart :: } catch (e) {
-unreportedCatch lib/features/auth/application/auth_service.dart :: } catch (e) {
-unreportedCatch lib/features/auth/application/auth_service.dart :: } catch (e) {
-unreportedCatch lib/features/auth/data/user_repository.dart :: } catch (_) {
-unreportedCatch lib/features/auth/data/user_repository.dart :: } catch (e) {
-unreportedCatch lib/features/auth/presentation/screens/email_login_screen.dart :: } catch (_) {
-unreportedCatch lib/features/auth/presentation/screens/post_onboarding_auth_screen.dart :: } catch (_) {
-unreportedCatch lib/features/auth/presentation/screens/verify_email_screen.dart :: } catch (_) {
-unreportedCatch lib/features/auth/presentation/screens/verify_email_screen.dart :: } on InvalidVerificationCodeException catch (e) {
-unreportedCatch lib/features/auth/presentation/screens/verify_email_screen.dart :: } on InvalidVerificationCodeException catch (e) {
 unreportedCatch lib/features/barcode_scanning/presentation/screens/add_food_screen.dart :: } catch (e) {
 unreportedCatch lib/features/barcode_scanning/presentation/screens/add_food_screen.dart :: } catch (e) {
 unreportedCatch lib/features/barcode_scanning/presentation/screens/add_food_screen.dart :: } on ProductDetailException catch (e) {
@@ -496,8 +493,6 @@ unreportedCatch lib/features/subscription/application/subscription_status_provid
 unreportedCatch lib/features/subscription/data/subscription_service.dart :: } catch (e, st) {
 unreportedCatch lib/features/subscription/data/subscription_service.dart :: } catch (e, st) {
 unreportedCatch lib/features/user_foods/data/user_foods_repository.dart :: } catch (_) {
-unreportedCatch lib/shared/controllers/food_search_controller.dart :: } catch (_) {
-unreportedCatch lib/shared/data/syncable_repository.dart :: } catch (e) {
 unreportedCatch lib/shared/database/app_database.dart :: } catch (closeError) {
 unreportedCatch lib/shared/database/app_database.dart :: } catch (e) {
 unreportedCatch lib/shared/database/app_database.dart :: } catch (e) {
@@ -513,37 +508,13 @@ unreportedCatch lib/shared/database/schema_manager.dart :: } catch (e) {
 unreportedCatch lib/shared/database/schema_manager.dart :: } catch (e) {
 unreportedCatch lib/shared/database/schema_manager.dart :: } catch (e) {
 unreportedCatch lib/shared/database/tables/user_profiles.dart :: } catch (e) {
-unreportedCatch lib/shared/services/analytics/analytics_tracker.dart :: } catch (_) {
-unreportedCatch lib/shared/services/analytics/internal_user_service.dart :: } catch (_) {
-unreportedCatch lib/shared/services/analytics/internal_user_service.dart :: } catch (_) {
-unreportedCatch lib/shared/services/analytics/internal_user_service.dart :: } catch (_) {
-unreportedCatch lib/shared/services/device_info_service.dart :: } catch (e) {
-unreportedCatch lib/shared/services/launch_trail.dart :: } catch (_) {
-unreportedCatch lib/shared/services/launch_trail.dart :: } catch (_) {
-unreportedCatch lib/shared/services/launch_trail.dart :: } catch (_) {
 unreportedCatch lib/shared/services/notification_service.dart :: } catch (e) {
 unreportedCatch lib/shared/services/notification_service.dart :: } catch (e) {
 unreportedCatch lib/shared/services/notification_service.dart :: } catch (e) {
 unreportedCatch lib/shared/services/notification_service.dart :: } catch (e) {
 unreportedCatch lib/shared/services/notification_service.dart :: } catch (e) {
 unreportedCatch lib/shared/services/notification_service.dart :: } catch (e) {
-unreportedCatch lib/shared/services/privacy/privacy_links.dart :: } catch (_) {
-unreportedCatch lib/shared/services/privacy/privacy_region_service.dart :: } catch (_) {
-unreportedCatch lib/shared/services/report/report.dart :: } catch (_) {
-unreportedCatch lib/shared/services/report/report.dart :: } catch (_) {
-unreportedCatch lib/shared/services/report/report.dart :: } catch (_) {
-unreportedCatch lib/shared/services/report/report.dart :: } catch (_) {
-unreportedCatch lib/shared/services/report/report.dart :: } catch (analyticsError) {
-unreportedCatch lib/shared/services/report/report.dart :: } catch (sdkError) {
-unreportedCatch lib/shared/services/report/report.dart :: } catch (sdkError) {
-unreportedCatch lib/shared/services/schema_recovery_service.dart :: } on DatabaseSchemaException catch (e, stackTrace) {
 unreportedCatch lib/shared/services/sync/data_sync_service.dart :: } catch (e) {
 unreportedCatch lib/shared/services/sync/data_sync_service.dart :: } on TimeoutException {
 unreportedCatch lib/shared/services/sync/entity_sync/activity_sync_handler.dart :: } catch (_) {
 unreportedCatch lib/shared/services/sync/entity_sync/activity_sync_handler.dart :: } catch (_) {
-unreportedCatch lib/shared/services/version_check_service.dart :: } catch (e) {
-unreportedCatch lib/shared/services/version_check_service.dart :: } catch (e) {
-unreportedCatch lib/shared/utils/celebration_haptics.dart :: } catch (_) {
-unreportedCatch lib/shared/widgets/location_search_field.dart :: } catch (_) {
-unreportedCatch lib/shared/widgets/root_app_widget.dart :: } catch (_) {
-unreportedCatch lib/shared/widgets/tabs_screen.dart :: } catch (_) {

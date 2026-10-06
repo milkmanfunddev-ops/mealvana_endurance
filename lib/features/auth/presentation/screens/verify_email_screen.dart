@@ -5,6 +5,7 @@ import 'package:flutter/services.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:supabase_flutter/supabase_flutter.dart' show OtpType;
 
+import '../../../../shared/services/report/report.dart';
 import '../../../../shared/widgets/kyle_design/kyle_design.dart';
 import '../../../content/application/content_service.dart';
 import '../../application/email_auth_service.dart';
@@ -96,12 +97,27 @@ class _VerifyEmailScreenState extends ConsumerState<VerifyEmailScreen> {
       if (!mounted) return;
       Navigator.of(context).pop(true);
     } on InvalidVerificationCodeException catch (e) {
+      await ref
+          .read(reportProvider)
+          .note(
+            'Verification code rejected',
+            area: 'auth',
+            data: {'type': widget.otpType.name},
+          );
       if (!mounted) return;
       setState(() {
         _verifying = false;
         _error = e.message;
       });
-    } catch (_) {
+    } catch (e, stackTrace) {
+      await ref
+          .read(reportProvider)
+          .fault(
+            e,
+            stackTrace: stackTrace,
+            area: 'auth',
+            message: 'Email OTP verification failed',
+          );
       if (!mounted) return;
       setState(() {
         _verifying = false;
@@ -120,6 +136,13 @@ class _VerifyEmailScreenState extends ConsumerState<VerifyEmailScreen> {
       _startResendCooldown();
       MealvanaSnackbar.showSuccess(context, 'New code sent to ${widget.email}');
     } on InvalidVerificationCodeException catch (e) {
+      await ref
+          .read(reportProvider)
+          .note(
+            'Verification code resend rejected',
+            area: 'auth',
+            data: {'type': widget.otpType.name},
+          );
       if (!mounted) return;
       setState(() => _error = e.message);
     }

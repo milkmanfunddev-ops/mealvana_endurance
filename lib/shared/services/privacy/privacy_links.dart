@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:url_launcher/url_launcher.dart';
 
 import '../../widgets/kyle_design/feedback/mealvana_snackbar.dart';
+import '../report/report.dart';
 
 /// The live policy, and the same URL registered as the Privacy Policy in App
 /// Store Connect. Apple Guideline 5.1.1(i) expects the policy to be reachable
@@ -38,8 +39,15 @@ Future<void> _openExternal(
       Uri.parse(url),
       mode: LaunchMode.externalApplication,
     );
-  } catch (_) {
+  } catch (e, stackTrace) {
     launched = false;
+    await SentryReport.global.degraded(
+      e,
+      stackTrace: stackTrace,
+      area: 'privacy',
+      message: 'Could not open the $label',
+      extra: {'url': url},
+    );
   }
 
   if (!launched && context.mounted) {

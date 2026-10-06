@@ -6,7 +6,7 @@ import 'package:shared_preferences/shared_preferences.dart';
 
 import '../app_config.dart';
 import '../device_info_service.dart';
-import '../logging_service.dart';
+import '../report/report.dart';
 import '../privacy/analytics_consent.dart';
 import 'internal_user_service.dart';
 
@@ -40,12 +40,17 @@ abstract class AnalyticsTracker {
 
 /// Default tracker that talks to Mixpanel.
 class MixpanelAnalyticsTracker implements AnalyticsTracker {
-  MixpanelAnalyticsTracker({required AppConfig config, AppLogger? logger})
+  MixpanelAnalyticsTracker({required AppConfig config, Report? report})
     : _config = config,
-      _logger = logger ?? const NoopAppLogger();
+      _report = report;
 
   final AppConfig _config;
-  final AppLogger _logger;
+  final Report? _report;
+
+  /// `Report` fans Faults out to this tracker; a failure raised in here
+  /// under that fan-out is captured but not fanned out again (zone guard
+  /// in `SentryReport`), so reporting from the tracker cannot loop.
+  Report get _r => _report ?? SentryReport.global;
 
   Mixpanel? _mixpanel;
   bool _isInitialized = false;
@@ -58,12 +63,14 @@ class MixpanelAnalyticsTracker implements AnalyticsTracker {
     if (_prefs != null) return _prefs;
     try {
       _prefs = await SharedPreferences.getInstance();
-    } catch (error) {
+    } catch (error, stackTrace) {
       // Prefs unavailable (e.g. platform channel not ready): degrade to
       // un-gated behavior rather than dropping analytics.
-      _logger.warning(
-        'SharedPreferences unavailable for analytics gating: $error',
-        context: 'ANALYTICS',
+      await _r.degraded(
+        error,
+        stackTrace: stackTrace,
+        area: 'analytics',
+        message: 'SharedPreferences unavailable for analytics gating',
       );
     }
     return _prefs;
@@ -84,11 +91,11 @@ class MixpanelAnalyticsTracker implements AnalyticsTracker {
 
       _isInitialized = true;
     } catch (error, stackTrace) {
-      _logger.error(
-        'Failed to initialize Mixpanel',
-        context: 'ANALYTICS',
-        error: error,
+      await _r.fault(
+        error,
         stackTrace: stackTrace,
+        area: 'analytics',
+        message: 'Failed to initialize Mixpanel',
       );
     }
   }
@@ -157,11 +164,11 @@ class MixpanelAnalyticsTracker implements AnalyticsTracker {
         }
       }
     } catch (error, stackTrace) {
-      _logger.error(
-        'Failed to identify user',
-        context: 'ANALYTICS',
-        error: error,
+      await _r.fault(
+        error,
         stackTrace: stackTrace,
+        area: 'analytics',
+        message: 'Failed to identify user',
       );
     }
   }
@@ -179,11 +186,11 @@ class MixpanelAnalyticsTracker implements AnalyticsTracker {
       final prefs = await _preferences();
       await prefs?.remove(_anonIdentifiedKey);
     } catch (error, stackTrace) {
-      _logger.error(
-        'Failed to reset analytics user',
-        context: 'ANALYTICS',
-        error: error,
+      await _r.fault(
+        error,
         stackTrace: stackTrace,
+        area: 'analytics',
+        message: 'Failed to reset analytics user',
       );
     }
   }
@@ -197,7 +204,7 @@ class MixpanelAnalyticsTracker implements AnalyticsTracker {
     // simulator console without needing Mixpanel access. Stripped in prod
     // so we don't add log volume to release builds.
     if (_config.devModeEnabled) {
-      _logger.info('📊 $eventName', context: 'ANALYTICS', data: properties);
+      _r.info('📊 $eventName', area: 'analytics', data: properties);
     }
 
     final mixpanel = _mixpanel;
@@ -206,11 +213,11 @@ class MixpanelAnalyticsTracker implements AnalyticsTracker {
     try {
       mixpanel.track(eventName, properties: properties);
     } catch (error, stackTrace) {
-      _logger.error(
-        'Failed to track event $eventName',
-        context: 'ANALYTICS',
-        error: error,
+      await _r.fault(
+        error,
         stackTrace: stackTrace,
+        area: 'analytics',
+        message: 'Failed to track event $eventName',
       );
     }
   }
@@ -223,11 +230,11 @@ class MixpanelAnalyticsTracker implements AnalyticsTracker {
     try {
       mixpanel.timeEvent(eventName);
     } catch (error, stackTrace) {
-      _logger.error(
-        'Failed to time event $eventName',
-        context: 'ANALYTICS',
-        error: error,
+      await _r.fault(
+        error,
         stackTrace: stackTrace,
+        area: 'analytics',
+        message: 'Failed to time event $eventName',
       );
     }
   }
@@ -240,11 +247,11 @@ class MixpanelAnalyticsTracker implements AnalyticsTracker {
     try {
       mixpanel.flush();
     } catch (error, stackTrace) {
-      _logger.error(
-        'Failed to flush analytics events',
-        context: 'ANALYTICS',
-        error: error,
+      await _r.fault(
+        error,
         stackTrace: stackTrace,
+        area: 'analytics',
+        message: 'Failed to flush analytics events',
       );
     }
   }
@@ -265,11 +272,11 @@ class MixpanelAnalyticsTracker implements AnalyticsTracker {
       people.set('is_internal', true);
       mixpanel.flush();
     } catch (error, stackTrace) {
-      _logger.error(
-        'Failed to mark device as internal in Mixpanel',
-        context: 'ANALYTICS',
-        error: error,
+      await _r.fault(
+        error,
         stackTrace: stackTrace,
+        area: 'analytics',
+        message: 'Failed to mark device as internal in Mixpanel',
       );
     }
   }
@@ -291,8 +298,13 @@ class MixpanelAnalyticsTracker implements AnalyticsTracker {
       try {
         final packageInfo = await PackageInfo.fromPlatform();
         appVersion = packageInfo.version;
-      } catch (_) {
-        // Fallback handled above; analytics should not crash the app.
+      } catch (e) {
+        // 'unknown' stays as the app_version super property.
+        await _r.note(
+          'PackageInfo unavailable; app_version super property unknown',
+          area: 'analytics',
+          data: {'error': e.toString()},
+        );
       }
 
       // Registered as a SUPER property (not just a People property) so it is
@@ -323,11 +335,11 @@ class MixpanelAnalyticsTracker implements AnalyticsTracker {
         mixpanel.getPeople().set('is_internal', true);
       }
     } catch (error, stackTrace) {
-      _logger.error(
-        'Failed to set analytics super properties',
-        context: 'ANALYTICS',
-        error: error,
+      await _r.fault(
+        error,
         stackTrace: stackTrace,
+        area: 'analytics',
+        message: 'Failed to set analytics super properties',
       );
     }
   }
@@ -406,22 +418,24 @@ class NoopAnalyticsTracker implements AnalyticsTracker {
 /// lands on the consent gate above.
 final Provider<AnalyticsTracker> analyticsTrackerProvider =
     Provider<AnalyticsTracker>((ref) {
-  final config = ref.watch(appConfigProvider);
-  final consent = ref.watch(analyticsConsentProvider);
+      final config = ref.watch(appConfigProvider);
+      final consent = ref.watch(analyticsConsentProvider);
 
-  // Consent gate. Withdrawal flows through here too: flipping the Settings
-  // toggle off rebuilds this provider, and every consumer reads the tracker
-  // through `appExternalDepsProvider`, so subsequent events are dropped.
-  if (!consent.allowsAnalytics) {
-    return const NoopAnalyticsTracker();
-  }
+      // Consent gate. Withdrawal flows through here too: flipping the Settings
+      // toggle off rebuilds this provider, and every consumer reads the tracker
+      // through `appExternalDepsProvider`, so subsequent events are dropped.
+      if (!consent.allowsAnalytics) {
+        return const NoopAnalyticsTracker();
+      }
 
-  // No-op in dev unless the dev-sandbox flag is set.
-  if (config.devModeEnabled && !config.analyticsDevEnabled) {
-    return const NoopAnalyticsTracker();
-  }
+      // No-op in dev unless the dev-sandbox flag is set.
+      if (config.devModeEnabled && !config.analyticsDevEnabled) {
+        return const NoopAnalyticsTracker();
+      }
 
-  // Enable analytics in production environment.
-  final logger = ref.watch(appLoggerProvider);
-  return MixpanelAnalyticsTracker(config: config, logger: logger);
-});
+      // Enable analytics in production environment.
+      return MixpanelAnalyticsTracker(
+        config: config,
+        report: ref.watch(reportProvider),
+      );
+    });

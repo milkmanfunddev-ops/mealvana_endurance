@@ -10,12 +10,15 @@ import 'package:mealvana_endurance/shared/services/version_check_service.dart';
 import 'package:mealvana_endurance/shared/services/app_external_deps.dart';
 import 'package:mealvana_endurance/shared/services/privacy/privacy_region_service.dart';
 import 'package:mealvana_endurance/shared/services/logging_service.dart';
+import 'package:mealvana_endurance/shared/services/report/report.dart';
 import 'package:mealvana_endurance/shared/services/sentry/sentry_reporter.dart';
 import 'package:mealvana_endurance/shared/services/analytics/analytics_tracker.dart';
 import 'package:mealvana_endurance/shared/models/version_check_result.dart';
 import 'package:mealvana_endurance/shared/database/app_database.dart';
 import 'package:mealvana_endurance/shared/database/daos/user_dao.dart';
 import 'package:mealvana_endurance/shared/database/database_provider.dart';
+
+import '../helpers/fakes/recording_report.dart';
 
 // Mock classes
 class MockVersionCheckService extends Mock implements VersionCheckService {}
@@ -53,6 +56,7 @@ void main() {
     late MockSupabaseClient mockSupabaseClient;
     late MockGoTrueClient mockGoTrueClient;
     late MockAppLogger mockLogger;
+    late RecordingReport report;
     late MockSentryReporter mockSentry;
     late MockAnalyticsTracker mockAnalytics;
     late MockAppDatabase mockDatabase;
@@ -67,6 +71,7 @@ void main() {
       mockSupabaseClient = MockSupabaseClient();
       mockGoTrueClient = MockGoTrueClient();
       mockLogger = MockAppLogger();
+      report = RecordingReport();
       mockSentry = MockSentryReporter();
       mockAnalytics = MockAnalyticsTracker();
       mockDatabase = MockAppDatabase();
@@ -136,6 +141,7 @@ void main() {
           ),
           appStartupServiceProvider.overrideWithValue(mockAppStartupService),
           appExternalDepsProvider.overrideWithValue(mockAppExternalDeps),
+          reportProvider.overrideWithValue(report),
           privacyRegionServiceProvider.overrideWithValue(
             mockPrivacyRegionService,
           ),
@@ -227,12 +233,11 @@ void main() {
 
       // Verify version check was called
       verify(() => mockVersionCheckService.checkVersion()).called(1);
-      verify(
-        () => mockLogger.warning(
-          'Force upgrade required: current=1.0.0, required=2.0.0',
-          context: 'VERSION_CHECK',
-        ),
-      ).called(1);
+      // The early return is on the tape (rule D9): a startup Note.
+      final note = report.notes.single;
+      expect(note.message, 'Force upgrade required');
+      expect(note.area, 'startup');
+      expect(note.data, {'current': '1.0.0', 'required': '2.0.0'});
 
       // Verify database initialization was NOT called (startup stopped early)
       verifyNever(() => mockAppStartupService.initializeDatabase());
@@ -271,12 +276,9 @@ void main() {
 
         // Verify version check was called
         verify(() => mockVersionCheckService.checkVersion()).called(1);
-        verify(
-          () => mockLogger.warning(
-            'Schema resync required: local=1, remote=2',
-            context: 'VERSION_CHECK',
-          ),
-        ).called(1);
+        final notes = report.notes.map((n) => n.message).toList();
+        expect(notes, contains('Schema resync required'));
+        expect(report.notes.first.data, {'local': 1, 'remote': 2});
 
         // Verify database initialization was NOT called (startup stopped early)
         verifyNever(() => mockAppStartupService.initializeDatabase());

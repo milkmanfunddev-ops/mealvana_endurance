@@ -7,6 +7,7 @@ import '../../theme/kyle_design/app_colors.dart';
 import '../../theme/kyle_design/app_spacing.dart';
 import '../../theme/kyle_design/app_text_styles.dart';
 import '../services/location_service.dart';
+import '../services/report/report.dart';
 import '../utils/location_formatter.dart';
 
 /// Self-contained location search field with debounced LocationIQ autocomplete.
@@ -103,7 +104,16 @@ class _LocationSearchFieldState extends ConsumerState<LocationSearchField> {
           _isSearching = false;
         });
       }
-    } catch (_) {
+    } catch (e, stackTrace) {
+      await ref
+          .read(reportProvider)
+          .degraded(
+            e,
+            stackTrace: stackTrace,
+            area: 'location_search',
+            message: 'Location search failed; showing no results',
+            extra: {'query': query},
+          );
       if (mounted) {
         setState(() {
           _results = [];

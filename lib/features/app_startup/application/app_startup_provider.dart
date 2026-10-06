@@ -4,6 +4,7 @@ import 'app_startup_service.dart';
 import '../../../shared/database/database_provider.dart';
 import '../../../shared/services/app_external_deps.dart';
 import '../../../shared/services/logging_service.dart';
+import '../../../shared/services/report/report.dart';
 import '../../../shared/services/version_check_service.dart';
 import '../../../shared/services/privacy/analytics_consent.dart';
 import '../../../shared/services/privacy/privacy_region_service.dart';
@@ -53,6 +54,7 @@ class AppStartupData {
 @riverpod
 class AppStartup extends _$AppStartup {
   AppLogger get _logger => ref.read(appExternalDepsProvider).logger;
+  Report get _report => ref.read(reportProvider);
 
   @override
   Future<AppStartupData> build() async {
@@ -83,9 +85,13 @@ class AppStartup extends _$AppStartup {
       // Handle version check results
       if (versionCheckResult.isUpdateRequired) {
         final updateResult = versionCheckResult as VersionCheckUpdateRequired;
-        _logger.warning(
-          'Force upgrade required: current=${updateResult.currentVersion}, required=${updateResult.requiredVersion}',
-          context: 'VERSION_CHECK',
+        await _report.note(
+          'Force upgrade required',
+          area: 'startup',
+          data: {
+            'current': updateResult.currentVersion,
+            'required': updateResult.requiredVersion,
+          },
         );
         return AppStartupData(
           user: null,
@@ -98,9 +104,13 @@ class AppStartup extends _$AppStartup {
 
       if (versionCheckResult.isResyncRequired) {
         final resyncResult = versionCheckResult as VersionCheckResyncRequired;
-        _logger.warning(
-          'Schema resync required: local=${resyncResult.localSchemaVersion}, remote=${resyncResult.remoteSchemaVersion}',
-          context: 'VERSION_CHECK',
+        await _report.note(
+          'Schema resync required',
+          area: 'startup',
+          data: {
+            'local': resyncResult.localSchemaVersion,
+            'remote': resyncResult.remoteSchemaVersion,
+          },
         );
 
         // Get user ID for dirty record upload (if logged in)
@@ -119,15 +129,17 @@ class AppStartup extends _$AppStartup {
             // Supabase (onboarding-redesign plan §7): the database was NOT
             // deleted. Continue on the old schema; the mismatch retries next
             // launch, once the upload has had a chance to succeed.
-            _logger.warning(
+            await _report.note(
               'Schema resync deferred to protect anonymous local data - '
               'continuing on the old schema this launch',
-              context: 'VERSION_CHECK',
+              area: 'startup',
             );
           } else {
-            _logger.error(
-              'Schema resync failed - app may be in inconsistent state',
-              context: 'VERSION_CHECK',
+            await _report.degraded(
+              const LoggedFault(
+                'Schema resync failed - app may be in inconsistent state',
+              ),
+              area: 'startup',
             );
             // Return resyncRequired to show error state
             return AppStartupData(
@@ -220,10 +232,8 @@ class AppStartup extends _$AppStartup {
       );
       final hasCompletedOnboarding = user?.onboardingCompleted ?? false;
 
-      // Track startup completion in Sentry
-      final sentry = ref.read(appExternalDepsProvider).sentry;
-      sentry.addBreadcrumb(
-        message: 'App startup completed successfully',
+      _report.breadcrumb(
+        'App startup completed successfully',
         category: 'app_lifecycle',
         data: {'startup_time': DateTime.now().toIso8601String()},
       );
@@ -237,11 +247,11 @@ class AppStartup extends _$AppStartup {
         isLoggedOut: isLoggedOut,
       );
     } catch (e, stackTrace) {
-      _logger.error(
-        'App startup initialization failed',
-        context: 'APP_STARTUP',
-        error: e,
+      await _report.fault(
+        e,
         stackTrace: stackTrace,
+        area: 'startup',
+        message: 'App startup initialization failed',
       );
       rethrow; // Re-throw to trigger error state in AsyncNotifier
     } finally {
@@ -273,10 +283,10 @@ class AppStartup extends _$AppStartup {
       // pushed to Supabase as that user or bounce off RLS forever. Skip.
       if (currentAuthUserId != null &&
           currentAuthUserId != snapshot.profile.id) {
-        _logger.warning(
+        await _report.note(
           'Onboarding snapshot belongs to a different user than the current '
           'session - skipping restore',
-          context: 'ONBOARDING_SNAPSHOT',
+          area: 'startup',
           data: {
             'snapshotUserId': snapshot.profile.id,
             'currentAuthUserId': currentAuthUserId,
@@ -285,10 +295,10 @@ class AppStartup extends _$AppStartup {
         return null;
       }
 
-      _logger.warning(
+      await _report.note(
         'No local user row but an onboarding snapshot exists - restoring '
         'locally with needs_upload=true',
-        context: 'ONBOARDING_SNAPSHOT',
+        area: 'startup',
         data: {
           'snapshotUserId': snapshot.profile.id,
           'writtenAt': snapshot.writtenAt.toIso8601String(),
@@ -304,20 +314,20 @@ class AppStartup extends _$AppStartup {
             draft: snapshot.toSurveyDraft(),
           );
 
-      final sentry = ref.read(appExternalDepsProvider).sentry;
-      sentry.addBreadcrumb(
-        message: 'Onboarding snapshot restored after DB recreate',
+      _report.breadcrumb(
+        'Onboarding snapshot restored after DB recreate',
         category: 'onboarding',
         data: {'userId': snapshot.profile.id},
       );
 
       return snapshot.profile;
     } catch (e, stackTrace) {
-      _logger.error(
-        'Onboarding snapshot restore failed - continuing as fresh install',
-        context: 'ONBOARDING_SNAPSHOT',
-        error: e,
+      await _report.fault(
+        e,
         stackTrace: stackTrace,
+        area: 'startup',
+        message:
+            'Onboarding snapshot restore failed - continuing as fresh install',
       );
       return null;
     }
