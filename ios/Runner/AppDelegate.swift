@@ -141,13 +141,15 @@ import MetricKit
       )
     }
 
-    // Subscribe to Apple MetricKit and forward payloads into Sentry. Passive
-    // (iOS already collects this) — see MetricKitReporter.swift. Registered here
-    // so we're subscribed before iOS delivers the launch-time daily payload;
-    // Sentry itself is started later from Dart, which is fine (capture no-ops
-    // until then).
-    if #available(iOS 13.0, *) {
-      MetricKitReporter.shared.register()
+    // Subscribe to Apple MetricKit and forward payloads to Dart over a method
+    // channel, where `Report` turns them into logs (metrics) or warning events
+    // (diagnostics). Passive (iOS already collects this) — see
+    // MetricKitReporter.swift. Registered here so we're subscribed before iOS
+    // delivers the launch-time daily payload; payloads are buffered until the
+    // Dart relay calls `ready`.
+    if #available(iOS 13.0, *),
+      let controller = window?.rootViewController as? FlutterViewController {
+      MetricKitReporter.shared.register(messenger: controller.binaryMessenger)
     }
 
     return super.application(application, didFinishLaunchingWithOptions: launchOptions)

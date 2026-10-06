@@ -10,7 +10,7 @@ import '../../../shared/database/app_database.dart';
 import '../../../shared/database/database_provider.dart';
 import '../../../shared/core/revisioned_single_flight.dart';
 import '../../../shared/domain/session_input_resolver.dart';
-import '../../../shared/services/performance_telemetry.dart';
+import '../../../shared/services/report/performance_telemetry.dart';
 import '../../../shared/services/report/report.dart';
 import '../../activities/domain/brick_metadata.dart';
 import '../../activities/domain/brick_session_legs.dart';

@@ -1,8 +1,7 @@
 import 'dart:async';
 
-import 'package:sentry_flutter/sentry_flutter.dart';
-
-import '../../../shared/services/performance_telemetry.dart';
+import '../../../shared/services/report/performance_telemetry.dart';
+import '../../../shared/services/report/report.dart';
 
 /// Records when the macro dashboard is shown WITHOUT targets — the
 /// "transient disabled dashboard" (QA intake
@@ -12,16 +11,16 @@ import '../../../shared/services/performance_telemetry.dart';
 /// that intake, shipped ahead of the design half.
 ///
 /// An *episode* opens the first time a user+day assembles with no targets and
-/// closes when the same user+day next assembles WITH targets. Two Sentry
-/// signals per episode:
-///  - `Dashboard shown without targets` (warning) when it opens — countable
+/// closes when the same user+day next assembles WITH targets. Two signals per
+/// episode, both `Report.degraded` warning events (spec: these are real
+/// findings and stay events, ticket 11):
+///  - `Dashboard shown without targets` when it opens — countable
 ///    per-user frequency without waiting for a crash;
-///  - `Dashboard targets transient resolved` (warning; release `beforeSend`
-///    drops info-level events) when it closes — carries `duration_ms`, i.e.
-///    how long the user could have been staring at the placeholder. If the
-///    app dies while stuck, the open event still shipped. Episodes live in
-///    process memory: a restart between open and close loses the duration
-///    (the open event survives — it already shipped).
+///  - `Dashboard targets transient resolved` when it closes — carries
+///    `duration_ms`, i.e. how long the user could have been staring at the
+///    placeholder. If the app dies while stuck, the open event still shipped.
+///    Episodes live in process memory: a restart between open and close
+///    loses the duration (the open event survives — it already shipped).
 ///
 /// Pure Dart on plugins already in the shipped binary — Shorebird-patchable.
 abstract final class DashboardTransientTelemetry {
@@ -32,13 +31,10 @@ abstract final class DashboardTransientTelemetry {
   /// spam one event per frame. Keyed `userId:dateKey:reason`.
   static final Set<String> _reportedShown = {};
 
-  /// Test seam: capture calls instead of sending to Sentry.
-  static void Function(
-    String message,
-    SentryLevel level,
-    Map<String, Object?> data,
-  )?
-  debugCaptureOverride;
+  /// Tests inject a `RecordingReport`; production reads the global.
+  static Report? reportOverride;
+
+  static Report get _report => reportOverride ?? SentryReport.global;
 
   /// Call on every dashboard-day assembly with what the surface will render.
   static void observe({
@@ -54,12 +50,7 @@ abstract final class DashboardTransientTelemetry {
       final startedAt = _openEpisodes.remove(key);
       if (startedAt != null) {
         final duration = DateTime.now().difference(startedAt);
-        // WARNING, not info: every flavour's release `beforeSend` drops
-        // info-level events (sentry_event_filter.dart documents MetricKit
-        // being silently thrown away on the same path) — patch #1 shipped
-        // this at info and prod never saw a single duration. Volume is one
-        // event per healed episode, so warning costs nothing.
-        _capture('Dashboard targets transient resolved', SentryLevel.warning, {
+        _capture('Dashboard targets transient resolved', {
           'date_key': dateKey,
           'duration_ms': duration.inMilliseconds,
         });
@@ -76,7 +67,7 @@ abstract final class DashboardTransientTelemetry {
 
     _openEpisodes.putIfAbsent(key, DateTime.now);
     if (_reportedShown.add('$key:$reason')) {
-      _capture('Dashboard shown without targets', SentryLevel.warning, {
+      _capture('Dashboard shown without targets', {
         'date_key': dateKey,
         'reason': reason,
         if (calculationError != null) 'calculation_error': calculationError,
@@ -84,36 +75,28 @@ abstract final class DashboardTransientTelemetry {
     }
   }
 
-  static void _capture(
-    String message,
-    SentryLevel level,
-    Map<String, Object?> data,
-  ) {
-    final override = debugCaptureOverride;
-    if (override != null) {
-      override(message, level, data);
-      return;
-    }
+  static void _capture(String message, Map<String, Object?> data) {
     // Breadcrumb so any later crash carries the dashboard state trail…
     PerformanceTelemetry.record(
       message,
       category: 'macro_dashboard.targets',
-      level: level,
+      warning: true,
       data: data,
     );
-    // …and a standalone grouped event so frequency/duration are visible in
-    // Sentry without waiting for a crash (same pattern as the slow-operation
-    // events in PerformanceTelemetry).
+    // …and a grouped warning event so frequency/duration are visible in
+    // Sentry without waiting for a crash.
+    final reason = data['reason'];
     unawaited(
-      Sentry.captureMessage(
-        message,
-        level: level,
-        withScope: (scope) {
-          scope.setTag('component', 'macro_dashboard');
-          final reason = data['reason'];
-          if (reason is String) scope.setTag('reason', reason);
-          scope.setContexts('dashboard_targets', data);
+      _report.degraded(
+        DashboardTargetsAnomaly(message),
+        area: 'macro_dashboard',
+        message: message,
+        tags: {
+          'component': 'macro_dashboard',
+          if (reason is String) 'reason': reason,
         },
+        extra: data,
+        fingerprint: ['dashboard-targets', message],
       ),
     );
   }
@@ -122,6 +105,16 @@ abstract final class DashboardTransientTelemetry {
   static void debugReset() {
     _openEpisodes.clear();
     _reportedShown.clear();
-    debugCaptureOverride = null;
+    reportOverride = null;
   }
+}
+
+/// The macro dashboard rendered without targets, or recovered from it.
+class DashboardTargetsAnomaly implements Exception {
+  const DashboardTargetsAnomaly(this.message);
+
+  final String message;
+
+  @override
+  String toString() => message;
 }

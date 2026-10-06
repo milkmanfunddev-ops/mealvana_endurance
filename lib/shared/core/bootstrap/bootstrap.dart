@@ -29,6 +29,7 @@ import '../../database/app_database.dart';
 import '../../services/app_config.dart';
 import '../../services/app_external_deps.dart';
 import '../../services/privacy/analytics_consent.dart';
+import '../../services/report/metrickit_relay.dart';
 import '../../services/report/report.dart';
 import '../../services/sentry/sentry_provider_observer.dart';
 import '../../widgets/root_app_widget.dart';
@@ -221,6 +222,15 @@ Future<void> _runMealvanaApp(
   //    breadcrumb, not an event (spec § Riverpod).
   // 3. RootAppWidget: MaterialApp.router with Wiredash and AppStartupWidget
   final providerNet = SentryProviderObserver();
+
+  // iOS MetricKit payloads (buffered natively since launch) come in through
+  // the relay and leave through Report: metrics as logs, diagnostics as
+  // warning events. The handler is installed before the first frame so the
+  // native side's `ready` flush has somewhere to land.
+  if (!kIsWeb && defaultTargetPlatform == TargetPlatform.iOS) {
+    await MetricKitRelay(report: SentryReport.global).start();
+  }
+
   runApp(
     SentryWidget(
       child: ProviderScope(

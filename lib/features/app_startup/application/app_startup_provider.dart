@@ -8,7 +8,7 @@ import '../../../shared/services/report/report.dart';
 import '../../../shared/services/version_check_service.dart';
 import '../../../shared/services/privacy/analytics_consent.dart';
 import '../../../shared/services/privacy/privacy_region_service.dart';
-import '../../../shared/services/performance_telemetry.dart';
+import '../../../shared/services/report/performance_telemetry.dart';
 import '../../../shared/models/version_check_result.dart';
 import '../../../features/auth/data/user_repository.dart';
 import '../../../features/auth/domain/user_preferences.dart';

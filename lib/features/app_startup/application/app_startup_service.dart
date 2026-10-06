@@ -16,7 +16,7 @@ import '../../../shared/services/privacy/analytics_consent.dart';
 import '../../../shared/services/logging_service.dart';
 import '../../../shared/services/report/report.dart';
 import '../../../shared/services/report/report_identity.dart';
-import '../../../shared/services/performance_telemetry.dart';
+import '../../../shared/services/report/performance_telemetry.dart';
 import '../../../shared/services/notification_service.dart';
 import '../../../shared/database/database_provider.dart';
 import '../../../shared/database/app_database.dart';
