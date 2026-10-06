@@ -2,11 +2,11 @@ import 'dart:async';
 
 import 'package:riverpod_annotation/riverpod_annotation.dart';
 
-import '../../../../shared/services/logging_service.dart';
 import '../../../events/domain/event.dart';
 import '../../../events/presentation/providers/events_controller.dart';
 import '../../application/carb_load_nudge_service.dart';
 import '../../application/carb_loading_service.dart';
+import '../../../../shared/services/report/report.dart';
 
 part 'carb_nudge_coordinator.g.dart';
 
@@ -33,7 +33,8 @@ class CarbNudgeCoordinator extends _$CarbNudgeCoordinator {
       final nudgeEvents = <CarbNudgeEvent>[];
       final withPlan = <String>{};
       for (final Event event in events) {
-        final raceDate = event.eventDate ??
+        final raceDate =
+            event.eventDate ??
             (event.startTime != null
                 ? DateTime.tryParse(event.startTime!)
                 : null);
@@ -54,12 +55,12 @@ class CarbNudgeCoordinator extends _$CarbNudgeCoordinator {
       );
     } catch (e, stackTrace) {
       ref
-          .read(appLoggerProvider)
-          .warning(
-            'Carb nudge sweep failed; will retry on next resume',
-            context: 'CARB_NUDGE',
-            error: e,
+          .read(reportProvider)
+          .fault(
+            e,
             stackTrace: stackTrace,
+            area: 'carb_loading',
+            message: 'Carb nudge sweep failed; will retry on next resume',
           );
     } finally {
       _running = false;

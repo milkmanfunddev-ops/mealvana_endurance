@@ -33,9 +33,6 @@ printInCatch lib/features/ai_credits/data/credits_repository.dart :: } catch (e)
 printInCatch lib/features/ai_credits/data/credits_repository.dart :: } catch (e) {
 printInCatch lib/features/ai_credits/data/credits_repository.dart :: } catch (e) {
 printInCatch lib/features/ai_credits/data/credits_repository.dart :: } catch (e) {
-printInCatch lib/features/carb_loading/presentation/screens/carb_loading_food_selection_screen.dart :: } catch (e, stackTrace) {
-printInCatch lib/features/carb_loading/presentation/screens/carb_loading_food_selection_screen.dart :: } catch (e) {
-printInCatch lib/features/carb_loading/presentation/screens/carb_loading_food_selection_screen.dart :: } catch (e) {
 printInCatch lib/features/daily_macros/application/daily_macro_service.dart :: } catch (e) {
 printInCatch lib/features/daily_macros/application/daily_macro_service.dart :: } catch (e) {
 printInCatch lib/features/formula_kit/application/coach_insight_controller.dart :: } catch (e) {
@@ -110,11 +107,6 @@ sentryImport lib/shared/services/performance_telemetry.dart :: import 'package:s
 sentryImport lib/shared/services/sentry/sentry_reporter.dart :: import 'package:sentry_flutter/sentry_flutter.dart' show SentryLevel;
 sentryImport lib/shared/services/sync/data_sync_service.dart :: import 'package:sentry_flutter/sentry_flutter.dart';
 sentryImport lib/shared/services/sync/sync_coordinator.dart :: import 'package:sentry_flutter/sentry_flutter.dart';
-unreportedCatch lib/features/activities/data/activities_repository.dart :: } catch (_) {
-unreportedCatch lib/features/activities/presentation/providers/activities_controller.dart :: } catch (_) {}
-unreportedCatch lib/features/activities/presentation/providers/activities_controller.dart :: } catch (_) {}
-unreportedCatch lib/features/activities/presentation/widgets/activity_card.dart :: } catch (_) {
-unreportedCatch lib/features/activities/presentation/widgets/calendar_date_indicators.dart :: } catch (e) {
 unreportedCatch lib/features/ai_coach/data/ai_coach_chat_repository.dart :: } catch (e) {
 unreportedCatch lib/features/ai_coach/domain/ai_coach_message.dart :: } catch (_) {
 unreportedCatch lib/features/ai_coach/domain/ai_coach_ui_part.dart :: } catch (_) {
@@ -145,28 +137,6 @@ unreportedCatch lib/features/auth/presentation/screens/post_onboarding_auth_scre
 unreportedCatch lib/features/auth/presentation/screens/verify_email_screen.dart :: } catch (_) {
 unreportedCatch lib/features/auth/presentation/screens/verify_email_screen.dart :: } on InvalidVerificationCodeException catch (e) {
 unreportedCatch lib/features/auth/presentation/screens/verify_email_screen.dart :: } on InvalidVerificationCodeException catch (e) {
-unreportedCatch lib/features/barcode_scanning/presentation/screens/add_food_screen.dart :: } catch (e) {
-unreportedCatch lib/features/barcode_scanning/presentation/screens/add_food_screen.dart :: } catch (e) {
-unreportedCatch lib/features/barcode_scanning/presentation/screens/add_food_screen.dart :: } on ProductDetailException catch (e) {
-unreportedCatch lib/features/barcode_scanning/presentation/screens/add_food_screen.dart :: } on SearchException catch (e) {
-unreportedCatch lib/features/barcode_scanning/presentation/screens/barcode_scanner_screen.dart :: } catch (e) {
-unreportedCatch lib/features/barcode_scanning/presentation/screens/barcode_scanner_screen.dart :: } on MobileScannerException catch (_) {
-unreportedCatch lib/features/barcode_scanning/presentation/screens/barcode_scanner_screen.dart :: } on MobileScannerException catch (_) {
-unreportedCatch lib/features/calendar/domain/event_subtype.dart :: } catch (e) {
-unreportedCatch lib/features/carb_loading/application/food_import_service.dart :: } catch (e) {
-unreportedCatch lib/features/carb_loading/application/food_selection_service.dart :: } catch (_) {}
-unreportedCatch lib/features/carb_loading/domain/carb_foods_list.dart :: } catch (e) {
-unreportedCatch lib/features/carb_loading/domain/meal_type.dart :: } catch (_) {
-unreportedCatch lib/features/carb_loading/presentation/providers/carb_loading_food_selection_controller.dart :: } catch (e) {
-unreportedCatch lib/features/carb_loading/presentation/providers/carb_nudge_coordinator.dart :: } catch (e, stackTrace) {
-unreportedCatch lib/features/carb_loading/presentation/screens/carb_loading_day_detail_page.dart :: } catch (_) {}
-unreportedCatch lib/features/carb_loading/presentation/screens/carb_loading_food_selection_screen.dart :: } catch (e, stackTrace) {
-unreportedCatch lib/features/carb_loading/presentation/screens/carb_loading_food_selection_screen.dart :: } catch (e) {
-unreportedCatch lib/features/carb_loading/presentation/screens/carb_loading_food_selection_screen.dart :: } catch (e) {
-unreportedCatch lib/features/carb_loading/presentation/screens/carb_loading_food_selection_screen.dart :: } catch (e) {
-unreportedCatch lib/features/carb_loading/presentation/screens/carb_loading_food_selection_screen.dart :: } catch (e) {
-unreportedCatch lib/features/carb_loading/presentation/screens/carb_loading_protocol_selection_screen.dart :: } catch (_) {}
-unreportedCatch lib/features/carb_loading/presentation/screens/create_custom_carb_loading_food_screen.dart :: } catch (e) {
 unreportedCatch lib/features/coach_mode/data/coach_repository.dart :: } catch (_) {
 unreportedCatch lib/features/coach_mode/presentation/providers/athlete_detail_controller.dart :: } catch (e) {
 unreportedCatch lib/features/coach_mode/presentation/providers/athlete_detail_controller.dart :: } catch (e) {
@@ -198,26 +168,10 @@ unreportedCatch lib/features/coach_mode/presentation/widgets/portal_nutrition_ta
 unreportedCatch lib/features/coach_mode/presentation/widgets/portal_nutrition_targets_form.dart :: } catch (e) {
 unreportedCatch lib/features/coach_mode/presentation/widgets/portal_sidebar.dart :: } catch (_) {
 unreportedCatch lib/features/coach_mode/presentation/widgets/portal_sidebar.dart :: } catch (_) {
-unreportedCatch lib/features/content/application/content_service.dart :: } catch (_) {
-unreportedCatch lib/features/content/application/content_service.dart :: } catch (_) {
-unreportedCatch lib/features/content/application/content_service.dart :: } catch (e) {
 unreportedCatch lib/features/daily_macros/application/daily_macro_service.dart :: } on FormatException {
 unreportedCatch lib/features/daily_macros/data/daily_macro_targets_repository.dart :: } catch (_) {
 unreportedCatch lib/features/daily_macros/presentation/providers/daily_macros_controller.dart :: } catch (e) {
 unreportedCatch lib/features/daily_macros/presentation/providers/daily_macros_controller.dart :: } on DailyMacroCalculationException catch (e) {
-unreportedCatch lib/features/education/presentation/screens/education_screen.dart :: } catch (_) {}
-unreportedCatch lib/features/education/presentation/screens/video_player_screen.dart :: } catch (_) {}
-unreportedCatch lib/features/education/presentation/screens/video_player_screen.dart :: } catch (_) {}
-unreportedCatch lib/features/education/presentation/screens/video_player_screen.dart :: } catch (e) {
-unreportedCatch lib/features/events/application/events_service.dart :: } catch (_) {
-unreportedCatch lib/features/events/application/public_events_service.dart :: } catch (e) {
-unreportedCatch lib/features/events/presentation/providers/events_controller.dart :: } catch (_) {
-unreportedCatch lib/features/events/presentation/screens/event_detail_screen.dart :: } catch (e) {
-unreportedCatch lib/features/events/presentation/screens/event_form_screen.dart :: } catch (e) {
-unreportedCatch lib/features/events/presentation/screens/event_form_screen.dart :: } catch (e) {
-unreportedCatch lib/features/events/presentation/screens/event_form_screen.dart :: } catch (e) {
-unreportedCatch lib/features/events/presentation/screens/events_list_screen.dart :: } catch (e) {
-unreportedCatch lib/features/events/presentation/widgets/event_action_buttons_card.dart :: } catch (e) {
 unreportedCatch lib/features/formula_kit/application/coach_insight_controller.dart :: } catch (e) {
 unreportedCatch lib/features/formula_kit/application/coach_insight_controller.dart :: } catch (e) {
 unreportedCatch lib/features/formula_kit/application/formula_conflict_json.dart :: } catch (_) {
@@ -231,7 +185,6 @@ unreportedCatch lib/features/formula_kit/presentation/screens/formula_editor_scr
 unreportedCatch lib/features/formula_kit/presentation/widgets/pin_conflict_card_state.dart :: } catch (e) {
 unreportedCatch lib/features/formula_kit/presentation/widgets/pin_conflict_card_state.dart :: } catch (e) {
 unreportedCatch lib/features/formula_kit/presentation/widgets/pin_toggle.dart :: } catch (e) {
-unreportedCatch lib/features/fuel_timeline/presentation/widgets/energy_breakdown_sheet.dart :: } catch (_) {}
 unreportedCatch lib/features/integrations/application/final_surge_sync_service.dart :: } catch (e) {
 unreportedCatch lib/features/integrations/application/final_surge_sync_service.dart :: } catch (e) {
 unreportedCatch lib/features/integrations/application/final_surge_sync_service.dart :: } catch (e) {
@@ -334,18 +287,6 @@ unreportedCatch lib/features/integrations/presentation/providers/connect_trainin
 unreportedCatch lib/features/integrations/presentation/providers/connect_training_controller.dart :: } catch (e) {
 unreportedCatch lib/features/integrations/presentation/providers/connect_training_controller.dart :: } on FormatException catch (e) {
 unreportedCatch lib/features/integrations/presentation/providers/integrations_providers.dart :: } catch (_) {
-unreportedCatch lib/features/macro_dashboard/presentation/providers/macro_dashboard_providers.dart :: } catch (_) {
-unreportedCatch lib/features/macro_dashboard/presentation/providers/macro_dashboard_providers.dart :: } catch (_) {
-unreportedCatch lib/features/macro_dashboard/presentation/screens/macro_dashboard_screen.dart :: } catch (_) {
-unreportedCatch lib/features/macro_dashboard/presentation/screens/macro_dashboard_screen.dart :: } catch (_) {
-unreportedCatch lib/features/macro_dashboard/presentation/screens/macro_dashboard_screen.dart :: } catch (_) {
-unreportedCatch lib/features/macro_dashboard/presentation/screens/macro_dashboard_screen.dart :: } catch (_) {
-unreportedCatch lib/features/macro_dashboard/presentation/screens/macro_dashboard_screen.dart :: } catch (e) {
-unreportedCatch lib/features/macro_dashboard/presentation/screens/macro_dashboard_screen.dart :: } catch (e) {
-unreportedCatch lib/features/macro_dashboard/presentation/screens/macro_dashboard_screen.dart :: } catch (e) {
-unreportedCatch lib/features/macro_dashboard/presentation/screens/macro_dashboard_screen.dart :: } on BrickCreationException catch (e) {
-unreportedCatch lib/features/macro_dashboard/presentation/screens/macro_dashboard_screen.dart :: } on BrickUngroupException catch (e) {
-unreportedCatch lib/features/macro_dashboard/presentation/screens/macro_dashboard_screen.dart :: } on BrickValidationException catch (e) {
 unreportedCatch lib/features/meal_logging/domain/meal_log.dart :: } catch (_) {
 unreportedCatch lib/features/meal_logging/domain/saved_meal.dart :: } catch (_) {
 unreportedCatch lib/features/meal_logging/domain/saved_meal.dart :: } catch (_) {
@@ -451,28 +392,6 @@ unreportedCatch lib/features/nutrition_plan/presentation/screens/swap_food_scree
 unreportedCatch lib/features/nutrition_plan/presentation/screens/swap_food_screen.dart :: } catch (e) {
 unreportedCatch lib/features/nutrition_plan/presentation/widgets/activity_detail/nutrient_full_story_section.dart :: } catch (_) {}
 unreportedCatch lib/features/nutrition_plan/presentation/widgets/adjust_macros/edit_macros_dialog_widget.dart :: } catch (e) {
-unreportedCatch lib/features/onboarding/application/onboarding_snapshot_service.dart :: } catch (_) {
-unreportedCatch lib/features/onboarding/application/onboarding_snapshot_service.dart :: } catch (e, stackTrace) {
-unreportedCatch lib/features/onboarding/presentation/providers/onboarding_preview_providers.dart :: } catch (_) {
-unreportedCatch lib/features/onboarding/presentation/providers/onboarding_preview_providers.dart :: } catch (_) {
-unreportedCatch lib/features/onboarding/presentation/screens/allergies_screen.dart :: } catch (e) {
-unreportedCatch lib/features/onboarding/presentation/screens/cycling_details_screen.dart :: } catch (e) {
-unreportedCatch lib/features/onboarding/presentation/screens/daily_plan_preview_screen.dart :: } catch (_) {
-unreportedCatch lib/features/onboarding/presentation/screens/dietary_preference_screen.dart :: } catch (e) {
-unreportedCatch lib/features/onboarding/presentation/screens/goals_screen.dart :: } catch (_) {
-unreportedCatch lib/features/onboarding/presentation/screens/onboarding_pageview_screen.dart :: } catch (_) {
-unreportedCatch lib/features/onboarding/presentation/screens/onboarding_pageview_screen.dart :: } catch (_) {
-unreportedCatch lib/features/onboarding/presentation/screens/pitfalls_screen.dart :: } catch (_) {
-unreportedCatch lib/features/onboarding/presentation/screens/plan_reveal_screen.dart :: } catch (_) {
-unreportedCatch lib/features/onboarding/presentation/screens/plan_reveal_screen.dart :: } catch (_) {
-unreportedCatch lib/features/onboarding/presentation/screens/running_details_screen.dart :: } catch (e) {
-unreportedCatch lib/features/onboarding/presentation/screens/sports_selection_screen.dart :: } catch (_) {
-unreportedCatch lib/features/onboarding/presentation/screens/swimming_details_screen.dart :: } catch (e) {
-unreportedCatch lib/features/personal_templates/domain/personal_template.dart :: } catch (_) {
-unreportedCatch lib/features/personal_templates/domain/personal_template.dart :: } catch (_) {
-unreportedCatch lib/features/race_checklist/presentation/screens/race_checklist_screen.dart :: } catch (e) {
-unreportedCatch lib/features/recipes/data/repositories/recipe_repository.dart :: } catch (_) {
-unreportedCatch lib/features/recipes/presentation/screens/recipes_screen.dart :: } catch (e) {
 unreportedCatch lib/features/settings/presentation/providers/settings_controller.dart :: } catch (e) {
 unreportedCatch lib/features/settings/presentation/screens/coach_connection_screen.dart :: } catch (_) {
 unreportedCatch lib/features/settings/presentation/screens/coach_connection_screen.dart :: } catch (_) {
@@ -490,12 +409,9 @@ unreportedCatch lib/features/settings/presentation/screens/nutrition_profile_scr
 unreportedCatch lib/features/settings/presentation/screens/nutrition_targets_screen.dart :: } catch (_) {
 unreportedCatch lib/features/settings/presentation/screens/nutrition_targets_screen.dart :: } catch (e) {
 unreportedCatch lib/features/settings/presentation/screens/preferences_screen.dart :: } catch (e) {
-unreportedCatch lib/features/sharing/application/email_service.dart :: } catch (e) {
-unreportedCatch lib/features/sharing/presentation/providers/share_form_controller.dart :: } catch (e) {
 unreportedCatch lib/features/subscription/application/subscription_status_provider.dart :: } catch (e) {
 unreportedCatch lib/features/subscription/data/subscription_service.dart :: } catch (e, st) {
 unreportedCatch lib/features/subscription/data/subscription_service.dart :: } catch (e, st) {
-unreportedCatch lib/features/user_foods/data/user_foods_repository.dart :: } catch (_) {
 unreportedCatch lib/shared/controllers/food_search_controller.dart :: } catch (_) {
 unreportedCatch lib/shared/data/syncable_repository.dart :: } catch (e) {
 unreportedCatch lib/shared/database/app_database.dart :: } catch (closeError) {

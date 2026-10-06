@@ -16,6 +16,7 @@ import '../../../../shared/widgets/swipe_action_background.dart';
 import '../../../integrations/presentation/widgets/garmin_attribution.dart';
 import '../navigation/open_activity_fuel.dart';
 import '../providers/activities_controller.dart';
+import '../../../../shared/services/report/report.dart';
 
 /// Reusable activity card widget matching Kyle's design.
 ///
@@ -273,7 +274,15 @@ class ActivityCard extends ConsumerWidget {
           await ref
               .read(activitiesControllerProvider.notifier)
               .restoreActivity(activity);
-        } catch (_) {
+        } catch (e) {
+          // restoreActivity reported the Fault before rethrowing.
+          ref
+              .read(reportProvider)
+              .note(
+                'undo delete failed; error copy shown',
+                area: 'activities',
+                data: {'activityId': activity.id, 'error': e.toString()},
+              );
           if (context.mounted) {
             MealvanaSnackbar.showError(context, 'Could not restore activity');
           }

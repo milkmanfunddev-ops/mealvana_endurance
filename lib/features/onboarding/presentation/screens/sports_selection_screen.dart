@@ -5,6 +5,7 @@ import '../../domain/onboarding_draft.dart';
 import '../widgets/onboarding_multi_select_step.dart';
 import '../../../../shared/services/app_external_deps.dart';
 import '../../../../shared/widgets/kyle_design/feedback/mealvana_snackbar.dart';
+import 'package:mealvana_endurance/shared/services/report/report.dart';
 
 /// Sports Selection Screen - Step 1 of Onboarding (2026-08 redesign)
 ///
@@ -94,8 +95,16 @@ class _SportsSelectionScreenState extends ConsumerState<SportsSelectionScreen> {
           'count': _selected.length,
         },
       );
-    } catch (_) {
+    } catch (e, stackTrace) {
       // Analytics must never block onboarding.
+      ref
+          .read(reportProvider)
+          .fault(
+            e,
+            stackTrace: stackTrace,
+            area: 'onboarding',
+            message: 'analytics: sports_selected not tracked',
+          );
     }
 
     if (!mounted) return;

@@ -15,6 +15,7 @@ import '../../../../../../../../../shared/widgets/kyle_design/kyle_design.dart';
 import '../../../../shared/widgets/adaptive/adaptive.dart';
 import 'package:mealvana_endurance/features/integrations/presentation/providers/athlete_zones_provider.dart';
 import 'package:mealvana_endurance/shared/widgets/kyle_design/data/kyle_source_chip.dart';
+import 'package:mealvana_endurance/shared/services/report/report.dart';
 
 /// Swimming Details Screen - Unified for both onboarding and settings
 ///
@@ -125,7 +126,15 @@ class _SwimmingDetailsScreenState extends ConsumerState<SwimmingDetailsScreen> {
           _isLoading = false;
         });
       }
-    } catch (e) {
+    } catch (e, stackTrace) {
+      ref
+          .read(reportProvider)
+          .fault(
+            e,
+            stackTrace: stackTrace,
+            area: 'onboarding',
+            message: 'Loading swimming details failed; showing defaults',
+          );
       if (mounted) {
         setState(() => _isLoading = false);
       }
@@ -360,16 +369,17 @@ class _SwimmingDetailsScreenState extends ConsumerState<SwimmingDetailsScreen> {
                                       tpCssSecondsPer100mProvider(_userId!),
                                     )
                                     .value,
-                                stale: ref
+                                stale:
+                                    ref
                                         .watch(tpZonesStaleProvider(_userId!))
                                         .value ??
                                     false,
                                 unit: 's/100m',
                                 onAdoptProvider: (v) => setState(() {
-                                  _cssMinutesController.text =
-                                      (v ~/ 60).toString();
-                                  _cssSecondsController.text =
-                                      (v % 60).toString();
+                                  _cssMinutesController.text = (v ~/ 60)
+                                      .toString();
+                                  _cssSecondsController.text = (v % 60)
+                                      .toString();
                                 }),
                               );
                             },

@@ -264,11 +264,10 @@ class EventSubtype {
   /// Find an EventSubtype by name
   static EventSubtype? findByName(String eventTypeDbValue, String subtypeName) {
     final subtypes = getSubtypesForEventType(eventTypeDbValue);
-    try {
-      return subtypes.firstWhere((s) => s.name == subtypeName);
-    } catch (e) {
-      return null;
+    for (final subtype in subtypes) {
+      if (subtype.name == subtypeName) return subtype;
     }
+    return null;
   }
 
   /// Get total distance in miles for the event (handles multi-sport)

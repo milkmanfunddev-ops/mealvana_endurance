@@ -13,6 +13,7 @@ import '../../../../shared/database/database_provider.dart';
 import 'package:mealvana_endurance/core/utils/debug_logger.dart';
 import '../../../../shared/widgets/content_area.dart';
 import '../../../../../../../../../shared/widgets/kyle_design/kyle_design.dart';
+import 'package:mealvana_endurance/shared/services/report/report.dart';
 
 /// Full-screen modal for adding foods via search or barcode scan
 class AddFoodScreen extends ConsumerStatefulWidget {
@@ -62,12 +63,28 @@ class _AddFoodScreenState extends ConsumerState<AddFoodScreen> {
               'No products found for "$query". Try different keywords.';
         });
       }
-    } on SearchException catch (e) {
+    } on SearchException catch (e, stackTrace) {
+      ref
+          .read(reportProvider)
+          .degraded(
+            e,
+            stackTrace: stackTrace,
+            area: 'barcode_scanning',
+            message: 'Open Food Facts search returned an error',
+          );
       setState(() {
         _errorMessage = e.message;
         _isSearching = false;
       });
-    } catch (e) {
+    } catch (e, stackTrace) {
+      ref
+          .read(reportProvider)
+          .fault(
+            e,
+            stackTrace: stackTrace,
+            area: 'barcode_scanning',
+            message: 'Open Food Facts search failed',
+          );
       setState(() {
         _errorMessage = 'Search failed. Please try again.';
         _isSearching = false;
@@ -152,7 +169,15 @@ class _AddFoodScreenState extends ConsumerState<AddFoodScreen> {
           );
         }
       }
-    } on ProductDetailException catch (e) {
+    } on ProductDetailException catch (e, stackTrace) {
+      ref
+          .read(reportProvider)
+          .degraded(
+            e,
+            stackTrace: stackTrace,
+            area: 'barcode_scanning',
+            message: 'Product detail lookup returned an error',
+          );
       // Close loading dialog if still open
       if (mounted && Navigator.of(context).canPop()) {
         Navigator.of(context).pop();
@@ -161,7 +186,15 @@ class _AddFoodScreenState extends ConsumerState<AddFoodScreen> {
       if (mounted) {
         MealvanaSnackbar.showError(context, e.message);
       }
-    } catch (e) {
+    } catch (e, stackTrace) {
+      ref
+          .read(reportProvider)
+          .fault(
+            e,
+            stackTrace: stackTrace,
+            area: 'barcode_scanning',
+            message: 'Product detail lookup failed',
+          );
       // Close loading dialog if still open
       if (mounted && Navigator.of(context).canPop()) {
         Navigator.of(context).pop();
@@ -273,9 +306,12 @@ class _AddFoodScreenState extends ConsumerState<AddFoodScreen> {
       DebugLogger.info('📊 _saveSearchedFood - Has duplicate: $hasDuplicate');
 
       if (hasDuplicate) {
-        DebugLogger.warning(
-          '⚠️ _saveSearchedFood - Food already exists, showing duplicate message',
-        );
+        ref
+            .read(reportProvider)
+            .note(
+              '_saveSearchedFood: food already exists, showing duplicate message',
+              area: 'barcode_scanning',
+            );
         if (mounted) {
           MealvanaSnackbar.showWarning(
             context,
@@ -364,15 +400,22 @@ class _AddFoodScreenState extends ConsumerState<AddFoodScreen> {
         // Close the screen
         Navigator.of(context).pop();
       } else {
-        DebugLogger.warning(
-          '⚠️ _saveSearchedFood - Widget not mounted, skipping UI updates',
-        );
+        ref
+            .read(reportProvider)
+            .note(
+              '_saveSearchedFood: widget not mounted, skipping UI updates',
+              area: 'barcode_scanning',
+            );
       }
     } catch (e, stackTrace) {
-      DebugLogger.error('❌ _saveSearchedFood - ERROR occurred:');
-      DebugLogger.error('   Error: $e');
-      DebugLogger.debug('   Type: ${e.runtimeType}');
-      DebugLogger.debug('   Stack trace: $stackTrace');
+      ref
+          .read(reportProvider)
+          .fault(
+            e,
+            stackTrace: stackTrace,
+            area: 'barcode_scanning',
+            message: '_saveSearchedFood failed',
+          );
 
       if (mounted) {
         MealvanaSnackbar.showError(
@@ -380,9 +423,12 @@ class _AddFoodScreenState extends ConsumerState<AddFoodScreen> {
           'Failed to save food: ${e.toString()}. Please try again.',
         );
       } else {
-        DebugLogger.warning(
-          '⚠️ _saveSearchedFood - Widget not mounted, cannot show error message',
-        );
+        ref
+            .read(reportProvider)
+            .note(
+              '_saveSearchedFood: widget not mounted, cannot show error message',
+              area: 'barcode_scanning',
+            );
       }
     }
   }

@@ -10,6 +10,7 @@ import '../../../daily_macros/presentation/widgets/energy_source_breakdown.dart'
 import '../../../daily_macros/presentation/widgets/macro_palette.dart';
 import '../fuel_timeline_type.dart';
 import 'weekly_fuel_chart.dart';
+import '../../../../shared/services/report/report.dart';
 
 /// Opens the "Today's Fueling" energy breakdown sheet (the Full Breakdown
 /// destination from the dashboard). Daily reuses the existing
@@ -207,7 +208,16 @@ class _EnergyBreakdownSheetState extends ConsumerState<EnergyBreakdownSheet> {
           .read(appExternalDepsProvider)
           .analytics
           .track('weekly_overview_viewed');
-    } catch (_) {}
+    } catch (e, stackTrace) {
+      ref
+          .read(reportProvider)
+          .fault(
+            e,
+            stackTrace: stackTrace,
+            area: 'fuel_timeline',
+            message: 'analytics: weekly_overview_viewed not tracked',
+          );
+    }
   }
 
   Widget _toggle(Color onSurface, Color surfaceBg) {

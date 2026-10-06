@@ -6,6 +6,7 @@ import '../domain/carb_loading_food.dart';
 import '../domain/carb_loading_user_food.dart';
 import '../domain/meal_type.dart';
 import 'carb_loading_food_service.dart';
+import '../../../shared/services/report/report.dart';
 
 part 'food_selection_service.g.dart';
 
@@ -16,13 +17,18 @@ class FoodSelectionService {
     required CarbLoadingDayMealRepository dayMealRepository,
     required CarbLoadingFoodService foodService,
     required AnalyticsTracker analytics,
+    Report? report,
   }) : _dayMealRepository = dayMealRepository,
        _foodService = foodService,
-       _analytics = analytics;
+       _analytics = analytics,
+       _reportOverride = report;
 
   final CarbLoadingDayMealRepository _dayMealRepository;
   final CarbLoadingFoodService _foodService;
   final AnalyticsTracker _analytics;
+  final Report? _reportOverride;
+
+  Report get _report => _reportOverride ?? SentryReport.global;
 
   /// `carb_loading_food_added` fires here, in the service, rather than in a
   /// controller. There are two independent add paths — the day-detail
@@ -51,7 +57,14 @@ class FoodSelectionService {
           'is_user_food': isUserFood,
         },
       );
-    } catch (_) {}
+    } catch (e, stackTrace) {
+      _report.fault(
+        e,
+        stackTrace: stackTrace,
+        area: 'carb_loading',
+        message: 'analytics: carb_loading_food_added not tracked',
+      );
+    }
   }
 
   /// Add a default food to a meal
@@ -368,5 +381,6 @@ FoodSelectionService foodSelectionService(Ref ref) {
     // is withdrawn, and this service must be rebuilt with the new instance
     // rather than holding the old Mixpanel-backed one.
     analytics: ref.watch(analyticsTrackerProvider),
+    report: ref.watch(reportProvider),
   );
 }

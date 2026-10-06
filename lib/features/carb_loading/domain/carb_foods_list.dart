@@ -135,11 +135,10 @@ class CarbFoodsList {
 
   /// Get food by name
   static CarbFood? getFoodByName(String name) {
-    try {
-      return foods.firstWhere((food) => food.name == name);
-    } catch (e) {
-      return null;
+    for (final food in foods) {
+      if (food.name == name) return food;
     }
+    return null;
   }
 
   /// Get foods suitable for quick add buttons (most popular/common)

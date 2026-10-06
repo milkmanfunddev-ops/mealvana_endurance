@@ -12,6 +12,7 @@ import '../widgets/event_details_card.dart';
 import '../widgets/event_action_buttons_card.dart';
 import '../widgets/event_footer_links.dart';
 import 'event_form_screen.dart';
+import 'package:mealvana_endurance/shared/services/report/report.dart';
 
 /// Event Detail Screen showing event information and action buttons.
 ///
@@ -313,7 +314,16 @@ class EventDetailScreen extends ConsumerWidget {
           // Navigate back to events list
           context.go('/main');
         }
-      } catch (e) {
+      } catch (e, stackTrace) {
+        ref
+            .read(reportProvider)
+            .fault(
+              e,
+              stackTrace: stackTrace,
+              area: 'events',
+              message: 'Deleting an event failed',
+              extra: {'eventId': eventId},
+            );
         if (context.mounted) {
           MealvanaSnackbar.showError(context, 'Failed to delete event: $e');
         }

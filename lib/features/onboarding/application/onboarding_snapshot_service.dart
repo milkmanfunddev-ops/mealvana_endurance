@@ -3,16 +3,16 @@ import 'dart:convert';
 import 'package:riverpod_annotation/riverpod_annotation.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 
-import '../../../shared/services/logging_service.dart';
 import '../../auth/domain/user_preferences.dart';
 import '../data/onboarding_survey_repository.dart';
 import '../domain/onboarding_draft.dart';
+import '../../../shared/services/report/report.dart';
 
 part 'onboarding_snapshot_service.g.dart';
 
 @riverpod
 OnboardingSnapshotService onboardingSnapshotService(Ref ref) {
-  return OnboardingSnapshotService();
+  return OnboardingSnapshotService(report: ref.read(reportProvider));
 }
 
 /// Local safety net for the anonymous-user data-loss hazard
@@ -32,15 +32,20 @@ OnboardingSnapshotService onboardingSnapshotService(Ref ref) {
 /// not a general backup system — broader anonymous upgrade safety is its own
 /// future workstream.
 class OnboardingSnapshotService {
+  OnboardingSnapshotService({Report? report}) : _reportOverride = report;
+
   static const prefsKey = 'onboarding_snapshot_v1';
 
-  /// Persist the snapshot. Failures are swallowed after logging — the
-  /// snapshot is a best-effort net under an already-successful save and must
-  /// never fail onboarding itself.
+  final Report? _reportOverride;
+
+  Report get _report => _reportOverride ?? SentryReport.global;
+
+  /// Persist the snapshot. Failures are reported, not thrown — the snapshot
+  /// is a best-effort net under an already-successful save and must never
+  /// fail onboarding itself.
   Future<void> writeSnapshot({
     required UserProfile profile,
     required OnboardingDraft draft,
-    AppLogger? logger,
   }) async {
     try {
       final prefs = await SharedPreferences.getInstance();
@@ -58,11 +63,11 @@ class OnboardingSnapshotService {
         }),
       );
     } catch (e, stackTrace) {
-      logger?.warning(
-        'Failed to write onboarding snapshot (non-fatal)',
-        context: 'ONBOARDING_SNAPSHOT',
-        error: e,
+      _report.fault(
+        e,
         stackTrace: stackTrace,
+        area: 'onboarding',
+        message: 'Failed to write onboarding snapshot (non-fatal)',
       );
     }
   }
@@ -89,8 +94,14 @@ class OnboardingSnapshotService {
             DateTime.tryParse(json['written_at'] as String? ?? '') ??
             DateTime.fromMillisecondsSinceEpoch(0),
       );
-    } catch (_) {
+    } catch (e, stackTrace) {
       // Corrupt snapshot: drop it rather than crash startup.
+      _report.fault(
+        e,
+        stackTrace: stackTrace,
+        area: 'onboarding',
+        message: 'Onboarding snapshot corrupt; dropped',
+      );
       await prefs.remove(prefsKey);
       return null;
     }

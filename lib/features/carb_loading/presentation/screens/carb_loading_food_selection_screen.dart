@@ -23,6 +23,7 @@ import '../../../../shared/database/database_provider.dart';
 import '../../../../shared/providers/user_id_provider.dart';
 import '../../../../shared/services/food_management/user_food_crud_service.dart';
 import '../../../../../../../../../shared/widgets/kyle_design/kyle_design.dart';
+import 'package:mealvana_endurance/shared/services/report/report.dart';
 
 /// Screen for selecting foods to add to a carb loading meal
 /// Searches across all food sources and handles importing from nutrition plan
@@ -829,7 +830,15 @@ class _CarbLoadingFoodSelectionScreenState
         _selectFood(importedFood);
         ref.invalidate(carbLoadingFoodSelectionControllerProvider(_params));
       }
-    } catch (e) {
+    } catch (e, stackTrace) {
+      ref
+          .read(reportProvider)
+          .fault(
+            e,
+            stackTrace: stackTrace,
+            area: 'carb_loading',
+            message: 'Open Food Facts import failed',
+          );
       if (mounted) {
         MealvanaSnackbar.showError(context, 'Failed to import food: $e');
       }
@@ -887,7 +896,15 @@ class _CarbLoadingFoodSelectionScreenState
       ref.invalidate(carbLoadingFoodSelectionControllerProvider(_params));
       _selectFood(selectedFood);
       MealvanaSnackbar.showSuccess(context, '${result.displayName} added');
-    } catch (e) {
+    } catch (e, stackTrace) {
+      ref
+          .read(reportProvider)
+          .fault(
+            e,
+            stackTrace: stackTrace,
+            area: 'carb_loading',
+            message: 'Catalog food import failed',
+          );
       if (mounted) {
         MealvanaSnackbar.showError(context, 'Failed to import food: $e');
       }
@@ -1071,8 +1088,15 @@ class _CarbLoadingFoodSelectionScreenState
       if (mounted) {
         await _showUserFoodEditSheet(customFood);
       }
-    } catch (e) {
-      debugPrint('❌ Error duplicating food: $e');
+    } catch (e, stackTrace) {
+      ref
+          .read(reportProvider)
+          .fault(
+            e,
+            stackTrace: stackTrace,
+            area: 'carb_loading',
+            message: 'Duplicating a food into a custom food failed',
+          );
       if (mounted) {
         MealvanaSnackbar.showError(
           context,
@@ -1202,8 +1226,16 @@ class _CarbLoadingFoodSelectionScreenState
         if (mounted) {
           MealvanaSnackbar.showSuccess(context, '$foodName deleted');
         }
-      } catch (e) {
-        debugPrint('Error deleting user food: $e');
+      } catch (e, stackTrace) {
+        ref
+            .read(reportProvider)
+            .fault(
+              e,
+              stackTrace: stackTrace,
+              area: 'carb_loading',
+              message: 'Deleting a user food failed',
+              extra: {'foodId': deletedFoodId},
+            );
         if (mounted) {
           MealvanaSnackbar.showError(
             context,
@@ -1260,8 +1292,15 @@ class _CarbLoadingFoodSelectionScreenState
           MealvanaSnackbar.showSuccess(context, message);
         }
       } catch (e, stackTrace) {
-        debugPrint('❌ Error updating user food: $e');
-        debugPrint('Stack trace: $stackTrace');
+        ref
+            .read(reportProvider)
+            .fault(
+              e,
+              stackTrace: stackTrace,
+              area: 'carb_loading',
+              message: 'Updating a user food failed',
+              extra: {'foodId': result.foodId},
+            );
         if (mounted) {
           MealvanaSnackbar.showError(
             context,

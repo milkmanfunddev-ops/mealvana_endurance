@@ -7,6 +7,7 @@ import '../../domain/education_content.dart';
 import '../providers/education_controller.dart';
 import '../widgets/coming_soon_section_widget.dart';
 import '../screens/video_player_screen.dart';
+import '../../../../shared/services/report/report.dart';
 
 /// Main education tab screen with free videos, pro videos, and courses
 class EducationScreen extends ConsumerWidget {
@@ -247,7 +248,17 @@ class _HorizontalVideoList extends ConsumerWidget {
                           'lesson_number': index + 1,
                         },
                       );
-                } catch (_) {}
+                } catch (e, stackTrace) {
+                  ref
+                      .read(reportProvider)
+                      .fault(
+                        e,
+                        stackTrace: stackTrace,
+                        area: 'education',
+                        message:
+                            'analytics: education_video_opened not tracked',
+                      );
+                }
                 Navigator.of(context).push(
                   MaterialPageRoute(
                     builder: (_) => VideoPlayerScreen(

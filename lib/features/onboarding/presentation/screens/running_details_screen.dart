@@ -12,6 +12,7 @@ import '../../../../shared/core/screen_mode.dart';
 import '../../../auth/application/auth_service.dart';
 import '../../../../../../../../../shared/widgets/kyle_design/kyle_design.dart';
 import '../../../../shared/widgets/adaptive/adaptive.dart';
+import '../../../../shared/services/report/report.dart';
 
 /// Running Details Screen - Unified for both onboarding and settings
 ///
@@ -87,7 +88,15 @@ class _RunningDetailsScreenState extends ConsumerState<RunningDetailsScreen> {
           _isLoading = false;
         });
       }
-    } catch (e) {
+    } catch (e, stackTrace) {
+      ref
+          .read(reportProvider)
+          .fault(
+            e,
+            stackTrace: stackTrace,
+            area: 'onboarding',
+            message: 'Loading running details failed; showing defaults',
+          );
       if (mounted) {
         setState(() => _isLoading = false);
       }

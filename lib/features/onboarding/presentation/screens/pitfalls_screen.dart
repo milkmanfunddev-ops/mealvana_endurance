@@ -4,6 +4,7 @@ import 'package:mealvana_endurance/features/onboarding/presentation/providers/on
 import '../../domain/onboarding_draft.dart';
 import '../widgets/onboarding_multi_select_step.dart';
 import '../../../../shared/services/app_external_deps.dart';
+import 'package:mealvana_endurance/shared/services/report/report.dart';
 
 /// Pitfalls Screen - Step 3 of Onboarding (2026-08 redesign)
 ///
@@ -77,8 +78,16 @@ class _PitfallsScreenState extends ConsumerState<PitfallsScreen> {
           'count': _selected.length,
         },
       );
-    } catch (_) {
+    } catch (e, stackTrace) {
       // Analytics must never block onboarding.
+      ref
+          .read(reportProvider)
+          .fault(
+            e,
+            stackTrace: stackTrace,
+            area: 'onboarding',
+            message: 'analytics: pitfalls_selected not tracked',
+          );
     }
 
     if (!mounted) return;
