@@ -5,6 +5,7 @@ import '../../../database/app_database.dart';
 import '../../../database/database_provider.dart';
 import '../../../utils/sync_type_converters.dart';
 import '../../logging_service.dart';
+import '../../report/report.dart';
 
 part 'event_sync_handler.g.dart';
 
@@ -13,6 +14,7 @@ EventSyncHandler eventSyncHandler(Ref ref) {
   return EventSyncHandler(
     database: ref.read(appDatabaseProvider),
     logger: ref.read(appLoggerProvider),
+    report: ref.read(reportProvider),
   );
 }
 
@@ -21,11 +23,17 @@ class EventSyncHandler {
   const EventSyncHandler({
     required AppDatabase database,
     required AppLogger logger,
+    Report? report,
   }) : _database = database,
-       _logger = logger;
+       _logger = logger,
+       _report = report;
 
   final AppDatabase _database;
   final AppLogger _logger;
+  final Report? _report;
+
+  /// Injected by the provider; tests may pass a `RecordingReport`.
+  Report get _r => _report ?? SentryReport.global;
 
   /// Upsert an event from remote data.
   Future<void> upsertEvent(Map<String, dynamic> data, String userId) async {
@@ -98,12 +106,14 @@ class EventSyncHandler {
             .insert(companion, mode: InsertMode.insertOrReplace);
       }
     } catch (e, stackTrace) {
-      _logger.error(
-        'Failed to upsert event',
-        context: 'EVENT_SYNC',
-        error: e,
+      // One bad row must not stop the rest of the download.
+      await _r.fault(
+        e,
         stackTrace: stackTrace,
-        data: {'eventId': data['id']},
+        area: 'sync',
+        message: 'Failed to upsert event',
+        tags: {'entity': 'events'},
+        extra: {'eventId': data['id']?.toString()},
       );
     }
   }
@@ -121,13 +131,15 @@ class EventSyncHandler {
         context: 'EVENT_SYNC',
       );
     } catch (e, stackTrace) {
-      _logger.error(
-        'Failed to sync athlete events',
-        context: 'EVENT_SYNC',
-        error: e,
-        stackTrace: stackTrace,
-      );
       // Don't rethrow - continue with other syncs
+      await _r.fault(
+        e,
+        stackTrace: stackTrace,
+        area: 'sync',
+        message: 'Failed to sync athlete events',
+        tags: {'entity': 'events'},
+        extra: {'count': events.length},
+      );
     }
   }
 

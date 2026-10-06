@@ -6,6 +6,7 @@ import '../../../database/app_database.dart';
 import '../../../database/database_provider.dart';
 import '../../../utils/sync_type_converters.dart';
 import '../../logging_service.dart';
+import '../../report/report.dart';
 import 'activity_sync_handler.dart';
 import 'event_sync_handler.dart';
 import 'carb_loading_sync_handler.dart';
@@ -23,6 +24,7 @@ CoachSyncHandler coachSyncHandler(Ref ref) {
     eventSyncHandler: ref.read(eventSyncHandlerProvider),
     carbLoadingSyncHandler: ref.read(carbLoadingSyncHandlerProvider),
     userSyncHandler: ref.read(userSyncHandlerProvider),
+    report: ref.read(reportProvider),
   );
 }
 
@@ -37,13 +39,15 @@ class CoachSyncHandler {
     required EventSyncHandler eventSyncHandler,
     required CarbLoadingSyncHandler carbLoadingSyncHandler,
     required UserSyncHandler userSyncHandler,
+    Report? report,
   }) : _database = database,
        _logger = logger,
        _supabase = supabase,
        _activitySyncHandler = activitySyncHandler,
        _eventSyncHandler = eventSyncHandler,
        _carbLoadingSyncHandler = carbLoadingSyncHandler,
-       _userSyncHandler = userSyncHandler;
+       _userSyncHandler = userSyncHandler,
+       _report = report;
 
   final AppDatabase _database;
   final AppLogger _logger;
@@ -52,6 +56,10 @@ class CoachSyncHandler {
   final EventSyncHandler _eventSyncHandler;
   final CarbLoadingSyncHandler _carbLoadingSyncHandler;
   final UserSyncHandler _userSyncHandler;
+  final Report? _report;
+
+  /// Injected by the provider; tests may pass a `RecordingReport`.
+  Report get _r => _report ?? SentryReport.global;
 
   /// Sync coach messages for a specific activity from Supabase.
   /// Lightweight, focused sync triggered when viewing an activity's feedback.
@@ -84,12 +92,12 @@ class CoachSyncHandler {
           context: 'COACH_SYNC',
         );
       }
-    } catch (e, stackTrace) {
-      _logger.error(
-        'Failed to sync coach messages for activity $activityId',
-        context: 'COACH_SYNC',
-        error: e,
-        stackTrace: stackTrace,
+    } catch (e) {
+      // The caller (activity feedback screen) owns the error.
+      _r.breadcrumb(
+        'Coach message sync failed for activity',
+        category: 'sync',
+        data: {'activityId': activityId, 'error': e.toString()},
       );
       rethrow;
     }
@@ -178,12 +186,11 @@ class CoachSyncHandler {
         '${carbLoadingData.length} carb loading plans',
         context: 'COACH_SYNC',
       );
-    } catch (e, stackTrace) {
-      _logger.error(
-        'Failed to sync athlete data for $athleteUserId',
-        context: 'COACH_SYNC',
-        error: e,
-        stackTrace: stackTrace,
+    } catch (e) {
+      _r.breadcrumb(
+        'Athlete data sync failed',
+        category: 'sync',
+        data: {'athleteUserId': athleteUserId, 'error': e.toString()},
       );
       rethrow;
     }
@@ -245,13 +252,14 @@ class CoachSyncHandler {
         },
       );
     } catch (e, stackTrace) {
-      _logger.error(
-        'Failed to sync coach record from edge function',
-        context: 'COACH_SYNC',
-        error: e,
-        stackTrace: stackTrace,
-      );
       // Don't rethrow - continue with other syncs
+      await _r.fault(
+        e,
+        stackTrace: stackTrace,
+        area: 'sync',
+        message: 'Failed to sync coach record from edge function',
+        tags: {'entity': 'coaches'},
+      );
     }
   }
 
@@ -313,13 +321,15 @@ class CoachSyncHandler {
         context: 'COACH_SYNC',
       );
     } catch (e, stackTrace) {
-      _logger.error(
-        'Failed to sync coach-athlete relationships',
-        context: 'COACH_SYNC',
-        error: e,
-        stackTrace: stackTrace,
-      );
       // Don't rethrow - continue with other syncs
+      await _r.fault(
+        e,
+        stackTrace: stackTrace,
+        area: 'sync',
+        message: 'Failed to sync coach-athlete relationships',
+        tags: {'entity': 'coach_athlete_relationships'},
+        extra: {'count': relationships.length},
+      );
     }
   }
 
@@ -362,13 +372,15 @@ class CoachSyncHandler {
         context: 'COACH_SYNC',
       );
     } catch (e, stackTrace) {
-      _logger.error(
-        'Failed to sync coach messages',
-        context: 'COACH_SYNC',
-        error: e,
-        stackTrace: stackTrace,
-      );
       // Don't rethrow - continue with other syncs
+      await _r.fault(
+        e,
+        stackTrace: stackTrace,
+        area: 'sync',
+        message: 'Failed to sync coach messages',
+        tags: {'entity': 'coach_messages'},
+        extra: {'count': messages.length},
+      );
     }
   }
 
@@ -410,13 +422,15 @@ class CoachSyncHandler {
         context: 'COACH_SYNC',
       );
     } catch (e, stackTrace) {
-      _logger.error(
-        'Failed to sync athlete profiles',
-        context: 'COACH_SYNC',
-        error: e,
-        stackTrace: stackTrace,
-      );
       // Don't rethrow - continue with other syncs
+      await _r.fault(
+        e,
+        stackTrace: stackTrace,
+        area: 'sync',
+        message: 'Failed to sync athlete profiles',
+        tags: {'entity': 'users'},
+        extra: {'count': profiles.length},
+      );
     }
   }
 
@@ -447,13 +461,15 @@ class CoachSyncHandler {
         context: 'COACH_SYNC',
       );
     } catch (e, stackTrace) {
-      _logger.error(
-        'Failed to sync coach profiles',
-        context: 'COACH_SYNC',
-        error: e,
-        stackTrace: stackTrace,
-      );
       // Don't rethrow - continue with other syncs
+      await _r.fault(
+        e,
+        stackTrace: stackTrace,
+        area: 'sync',
+        message: 'Failed to sync coach profiles',
+        tags: {'entity': 'users'},
+        extra: {'count': profiles.length},
+      );
     }
   }
 }

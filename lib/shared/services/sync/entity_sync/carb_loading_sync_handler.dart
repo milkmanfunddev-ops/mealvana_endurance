@@ -5,6 +5,7 @@ import '../../../database/app_database.dart';
 import '../../../database/database_provider.dart';
 import '../../../utils/sync_type_converters.dart';
 import '../../logging_service.dart';
+import '../../report/report.dart';
 
 part 'carb_loading_sync_handler.g.dart';
 
@@ -13,6 +14,7 @@ CarbLoadingSyncHandler carbLoadingSyncHandler(Ref ref) {
   return CarbLoadingSyncHandler(
     database: ref.read(appDatabaseProvider),
     logger: ref.read(appLoggerProvider),
+    report: ref.read(reportProvider),
   );
 }
 
@@ -21,11 +23,17 @@ class CarbLoadingSyncHandler {
   const CarbLoadingSyncHandler({
     required AppDatabase database,
     required AppLogger logger,
+    Report? report,
   }) : _database = database,
-       _logger = logger;
+       _logger = logger,
+       _report = report;
 
   final AppDatabase _database;
   final AppLogger _logger;
+  final Report? _report;
+
+  /// Injected by the provider; tests may pass a `RecordingReport`.
+  Report get _r => _report ?? SentryReport.global;
 
   /// Upsert a carb loading plan from remote data.
   Future<void> upsertCarbLoadingPlan(Map<String, dynamic> data) async {
@@ -99,12 +107,14 @@ class CarbLoadingSyncHandler {
         }
       }
     } catch (e, stackTrace) {
-      _logger.error(
-        'Failed to upsert carb loading plan',
-        context: 'CARB_LOADING_SYNC',
-        error: e,
+      // One bad row must not stop the rest of the download.
+      await _r.fault(
+        e,
         stackTrace: stackTrace,
-        data: {'planId': data['id']},
+        area: 'sync',
+        message: 'Failed to upsert carb loading plan',
+        tags: {'entity': 'carb_loading_plans'},
+        extra: {'planId': data['id']?.toString()},
       );
     }
   }
@@ -174,12 +184,13 @@ class CarbLoadingSyncHandler {
             .insert(companion, mode: InsertMode.insertOrReplace);
       }
     } catch (e, stackTrace) {
-      _logger.error(
-        'Failed to upsert carb loading day',
-        context: 'CARB_LOADING_SYNC',
-        error: e,
+      await _r.fault(
+        e,
         stackTrace: stackTrace,
-        data: {'dayId': data['id']},
+        area: 'sync',
+        message: 'Failed to upsert carb loading day',
+        tags: {'entity': 'carb_loading_days'},
+        extra: {'dayId': data['id']?.toString()},
       );
     }
   }
@@ -197,13 +208,15 @@ class CarbLoadingSyncHandler {
         context: 'CARB_LOADING_SYNC',
       );
     } catch (e, stackTrace) {
-      _logger.error(
-        'Failed to sync athlete carb loading plans',
-        context: 'CARB_LOADING_SYNC',
-        error: e,
-        stackTrace: stackTrace,
-      );
       // Don't rethrow - continue with other syncs
+      await _r.fault(
+        e,
+        stackTrace: stackTrace,
+        area: 'sync',
+        message: 'Failed to sync athlete carb loading plans',
+        tags: {'entity': 'carb_loading_plans'},
+        extra: {'count': plans.length},
+      );
     }
   }
 

@@ -4,6 +4,7 @@ import '../../../database/app_database.dart';
 import '../../../database/database_provider.dart';
 import '../../../../features/auth/domain/user_preferences.dart';
 import '../../logging_service.dart';
+import '../../report/report.dart';
 
 part 'food_preference_sync_handler.g.dart';
 
@@ -12,6 +13,7 @@ FoodPreferenceSyncHandler foodPreferenceSyncHandler(Ref ref) {
   return FoodPreferenceSyncHandler(
     database: ref.read(appDatabaseProvider),
     logger: ref.read(appLoggerProvider),
+    report: ref.read(reportProvider),
   );
 }
 
@@ -20,11 +22,17 @@ class FoodPreferenceSyncHandler {
   const FoodPreferenceSyncHandler({
     required AppDatabase database,
     required AppLogger logger,
+    Report? report,
   }) : _database = database,
-       _logger = logger;
+       _logger = logger,
+       _report = report;
 
   final AppDatabase _database;
   final AppLogger _logger;
+  final Report? _report;
+
+  /// Injected by the provider; tests may pass a `RecordingReport`.
+  Report get _r => _report ?? SentryReport.global;
 
   /// Sync food preferences from edge function response.
   /// Uses merge mode to preserve local preferences not in server response.
@@ -92,13 +100,15 @@ class FoodPreferenceSyncHandler {
         mergeMode: true,
       );
     } catch (e, stackTrace) {
-      _logger.error(
-        'Failed to sync food preferences from edge function',
-        context: 'FOOD_PREF_SYNC',
-        error: e,
-        stackTrace: stackTrace,
-      );
       // Don't rethrow - continue with other syncs
+      await _r.fault(
+        e,
+        stackTrace: stackTrace,
+        area: 'sync',
+        message: 'Failed to sync food preferences from edge function',
+        tags: {'entity': 'food_preferences'},
+        extra: {'count': foodPreferences.length},
+      );
     }
   }
 }
