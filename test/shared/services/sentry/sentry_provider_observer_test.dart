@@ -11,7 +11,7 @@ import 'package:logger/logger.dart';
 import 'package:sentry_flutter/sentry_flutter.dart';
 
 import 'package:mealvana_endurance/shared/services/analytics/analytics_tracker.dart';
-import 'package:mealvana_endurance/shared/services/debug_log_storage.dart';
+import 'package:mealvana_endurance/shared/services/report/report_log.dart';
 import 'package:mealvana_endurance/shared/services/report/report.dart';
 import 'package:mealvana_endurance/shared/services/sentry/sentry_provider_observer.dart';
 
@@ -93,7 +93,7 @@ void main() {
     });
     report = SentryReport(
       analytics: () => const NoopAnalyticsTracker(),
-      logStorage: DebugLogStorage()..clear(),
+      logStorage: ReportLog()..clear(),
       console: false,
       consoleLogger: Logger(
         level: Level.off,

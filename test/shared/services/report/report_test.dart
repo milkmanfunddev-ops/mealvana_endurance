@@ -16,7 +16,7 @@ import 'package:sentry_flutter/sentry_flutter.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:mealvana_endurance/core/utils/debug_logger.dart';
 import 'package:mealvana_endurance/shared/services/analytics/analytics_tracker.dart';
-import 'package:mealvana_endurance/shared/services/debug_log_storage.dart';
+import 'package:mealvana_endurance/shared/services/report/report_log.dart';
 import 'package:mealvana_endurance/shared/services/logging_service.dart';
 import 'package:mealvana_endurance/shared/services/report/report.dart';
 import 'package:mealvana_endurance/shared/services/sentry/sentry_reporter.dart';
@@ -98,7 +98,7 @@ class _ExpiredSession implements Exception {
 void main() {
   late CapturingTransport transport;
   late List<({String name, Map<String, dynamic> properties})> tracked;
-  late DebugLogStorage storage;
+  late ReportLog storage;
   late SentryReport report;
 
   Logger quietConsole() =>
@@ -107,7 +107,7 @@ void main() {
   setUp(() async {
     transport = CapturingTransport();
     tracked = [];
-    storage = DebugLogStorage()..clear();
+    storage = ReportLog()..clear();
     await Sentry.init((options) {
       options.dsn = 'https://public@sentry.example.com/1';
       options.transport = transport;
@@ -267,7 +267,7 @@ void main() {
     test('mirrors into the debug screen log at error level', () async {
       await report.fault(StateError('boom'), area: 'startup');
       final entry = storage.getLogs().single;
-      expect(entry.level, LogLevel.error);
+      expect(entry.level, ReportLogLevel.error);
       expect(entry.context, 'startup');
       expect(entry.error, isA<StateError>());
     });
@@ -385,7 +385,7 @@ void main() {
       report.info('a', area: 'x');
       report.debug('b');
       final levels = storage.getLogs().map((e) => e.level).toList();
-      expect(levels, containsAll([LogLevel.info, LogLevel.debug]));
+      expect(levels, containsAll([ReportLogLevel.info, ReportLogLevel.debug]));
     });
   });
 

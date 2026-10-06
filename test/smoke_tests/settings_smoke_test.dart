@@ -320,7 +320,7 @@ void main() {
     // ── 14. DebugScreen ───────────────────────────────────────────────────
     //
     // ConsumerStatefulWidget. initState has no async work. build() reads
-    // DebugLogStorage() (a singleton — empty in test) and renders a log list.
+    // ReportLog() (a singleton — empty in test) and renders a log list.
     // Heavy providers (appDatabaseProvider, etc.) are accessed only in the
     // manual "_performSync" button handler.
     //

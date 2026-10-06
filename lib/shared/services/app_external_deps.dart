@@ -17,21 +17,22 @@ class AppExternalDeps {
   const AppExternalDeps({
     required this.analytics,
     required this.supabaseClient,
-    required this.sentry,
-    required this.logger,
     required this.sharedPreferences,
     this.report = const NoopReport(),
+    @Deprecated('alias onto report; deleted by ticket 10') this.sentry,
+    @Deprecated('alias onto report; deleted by ticket 10') this.logger,
   });
 
   final AnalyticsTracker analytics;
   final SupabaseClient supabaseClient;
-  final SentryReporter sentry;
-  final AppLogger logger;
   final SharedPreferences sharedPreferences;
 
-  /// The one error service (CONTEXT.md § Error reporting). [sentry] and
-  /// [logger] are aliases onto it and go away with the migration tickets.
+  /// The one error service (CONTEXT.md § Error reporting).
   final Report report;
+
+  /// Legacy aliases, optional so callers can stop passing them one by one.
+  final SentryReporter? sentry;
+  final AppLogger? logger;
 }
 
 final appExternalDepsProvider = Provider<AppExternalDeps>((ref) {

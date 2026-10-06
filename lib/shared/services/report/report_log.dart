@@ -1,17 +1,18 @@
 import 'dart:collection';
 
-/// In-memory log storage for debugging
-/// Stores the last 500 log entries for display in debug screen
-class DebugLogStorage {
-  static final DebugLogStorage _instance = DebugLogStorage._internal();
-  factory DebugLogStorage() => _instance;
-  DebugLogStorage._internal();
+/// The last 500 lines `Report` mirrored, for the dev debug screen. Every
+/// fault, degraded, note, info and debug call lands here; nothing writes to
+/// it but `Report`.
+class ReportLog {
+  static final ReportLog _instance = ReportLog._internal();
+  factory ReportLog() => _instance;
+  ReportLog._internal();
 
-  final _logs = Queue<DebugLogEntry>();
+  final _logs = Queue<ReportLogEntry>();
   static const _maxLogs = 500;
 
   /// Add a log entry
-  void addLog(DebugLogEntry entry) {
+  void addLog(ReportLogEntry entry) {
     _logs.add(entry);
     if (_logs.length > _maxLogs) {
       _logs.removeFirst();
@@ -19,7 +20,7 @@ class DebugLogStorage {
   }
 
   /// Get all logs (most recent first)
-  List<DebugLogEntry> getLogs() {
+  List<ReportLogEntry> getLogs() {
     return _logs.toList().reversed.toList();
   }
 
@@ -29,12 +30,12 @@ class DebugLogStorage {
   }
 
   /// Get logs filtered by level
-  List<DebugLogEntry> getLogsByLevel(LogLevel level) {
+  List<ReportLogEntry> getLogsByLevel(ReportLogLevel level) {
     return _logs.where((log) => log.level == level).toList().reversed.toList();
   }
 
   /// Get logs filtered by context
-  List<DebugLogEntry> getLogsByContext(String context) {
+  List<ReportLogEntry> getLogsByContext(String context) {
     return _logs
         .where((log) => log.context?.contains(context) ?? false)
         .toList()
@@ -44,15 +45,15 @@ class DebugLogStorage {
 }
 
 /// Log entry for debug display
-class DebugLogEntry {
+class ReportLogEntry {
   final DateTime timestamp;
-  final LogLevel level;
+  final ReportLogLevel level;
   final String message;
   final String? context;
   final Map<String, dynamic>? data;
   final Object? error;
 
-  DebugLogEntry({
+  ReportLogEntry({
     required this.timestamp,
     required this.level,
     required this.message,
@@ -63,15 +64,15 @@ class DebugLogEntry {
 
   String get levelEmoji {
     switch (level) {
-      case LogLevel.debug:
+      case ReportLogLevel.debug:
         return '🔍';
-      case LogLevel.info:
+      case ReportLogLevel.info:
         return '💡';
-      case LogLevel.warning:
+      case ReportLogLevel.warning:
         return '⚠️';
-      case LogLevel.error:
+      case ReportLogLevel.error:
         return '❌';
-      case LogLevel.fatal:
+      case ReportLogLevel.fatal:
         return '💥';
     }
   }
@@ -83,4 +84,4 @@ class DebugLogEntry {
   }
 }
 
-enum LogLevel { debug, info, warning, error, fatal }
+enum ReportLogLevel { debug, info, warning, error, fatal }
