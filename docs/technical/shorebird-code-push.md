@@ -220,6 +220,31 @@ your iOS patch shipped fine.
 
 Patches apply on the **next app restart**, not immediately.
 
+## Upload the patch's symbols to Sentry (every patch, both routes)
+
+A patch is a new Dart snapshot, so its frames do not match the release's
+uploaded dSYM. Without this step every crash on the patched build reads as
+hex. Run it from the tree the patch was built in (the backport worktree, after
+`shorebird patch` finished; `build/ios/archive` holds the fresh dSYM). Details
+and the dev variant: `docs/technical/sentry-integration.md` § Debug symbols.
+
+```bash
+cd /tmp/wt-126                                   # the worktree the patch was built from
+export SENTRY_AUTH_TOKEN=<token>                 # ~/.sentryclirc [auth] token
+export SENTRY_PROJECT=mealvana-endurance         # dev patch: mealvana-endurance-dev
+export SENTRY_RELEASE=mealvana_endurance@1.26.0+109   # the --release-version you patched
+export SENTRY_DIST=109
+dart run sentry_dart_plugin
+```
+
+The release name is the patched release's own version (the SDK reports the
+base build's version; the `shorebird_patch` tag tells patches apart). The
+Codemagic patch workflows (`prod-ios-patch`, `prod-android-patch`) have no
+upload step and their `build/` directory is not an artefact, so a Codemagic
+patch's symbols cannot be uploaded after the fact: patch iOS locally when the
+symbols matter, and treat Android patch frames as unreadable until the patch
+workflow grows the step (owed, ticket 14).
+
 > **"Hasn't arrived" and "didn't work" look identical from the user's chair.**
 > This recurs on EVERY patch, so rule it out first before debugging anything.
 > A device download-then-applies across two cold starts, and Mission Control's
