@@ -759,7 +759,7 @@ class SettingsController extends _$SettingsController {
         await _uploadDirtyBeforeLogout(currentUser.id);
       } catch (e) {
         // Log error but continue with sign-out
-        report.fault(e, area: 'SETTINGS', message: 'Pre-logout upload failed');
+        report.fault(e, area: 'settings', message: 'Pre-logout upload failed');
       }
     }
 
@@ -816,7 +816,7 @@ class SettingsController extends _$SettingsController {
           'Pre-logout upload failed for ${repos[i].repositoryKey}',
           context: 'SETTINGS',
         ),
-        area: 'SETTINGS',
+        area: 'settings',
         extra: {'repository': repos[i].repositoryKey, 'error': result.error},
       );
     }
@@ -845,7 +845,7 @@ class SettingsController extends _$SettingsController {
       // If authenticated, call the delete-user Edge Function
       // This deletes from both auth.users and public.users (with CASCADE)
       try {
-        report.info('Calling delete-user Edge Function', area: 'SETTINGS');
+        report.info('Calling delete-user Edge Function', area: 'settings');
 
         final response = await supabaseClient.functions.invoke(
           'delete-user',
@@ -861,20 +861,20 @@ class SettingsController extends _$SettingsController {
               'delete-user Edge Function failed',
               context: 'SETTINGS',
             ),
-            area: 'SETTINGS',
+            area: 'settings',
             extra: {'status': response.status, 'message': errorMessage},
           );
           // Continue with local cleanup even if server deletion fails
         } else {
           report.info(
             'User deleted from Supabase successfully',
-            area: 'SETTINGS',
+            area: 'settings',
           );
         }
       } catch (e) {
         report.fault(
           e,
-          area: 'SETTINGS',
+          area: 'settings',
           message: 'Error calling delete-user Edge Function',
         );
         // Continue with local cleanup even if edge function call fails

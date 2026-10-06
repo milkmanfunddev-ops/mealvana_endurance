@@ -84,7 +84,7 @@ class ActivityDetailController extends _$ActivityDetailController {
     final authUser = await _authService.getCurrentUser();
     _report.info(
       'Loading activity detail',
-      area: 'ACTIVITY_DETAIL_CONTROLLER',
+      area: 'nutrition_plan',
       data: {
         'activityId': activityId,
         'userIdFromProvider': userId,
@@ -110,7 +110,7 @@ class ActivityDetailController extends _$ActivityDetailController {
         // Non-fatal: fall back to local data if network unavailable
         _report.degraded(
           e,
-          area: 'ACTIVITY_DETAIL_CONTROLLER',
+          area: 'nutrition_plan',
           message: 'Could not sync activity from remote; using local data',
         );
       }
@@ -127,7 +127,7 @@ class ActivityDetailController extends _$ActivityDetailController {
           'Activity not found in database',
           context: 'ACTIVITY_DETAIL_CONTROLLER',
         ),
-        area: 'ACTIVITY_DETAIL_CONTROLLER',
+        area: 'nutrition_plan',
         extra: {
           'activityId': activityId,
           'userId': userId,
@@ -305,7 +305,7 @@ class ActivityDetailController extends _$ActivityDetailController {
     } catch (e) {
       _report.degraded(
         e,
-        area: 'ACTIVITY_DETAIL_CONTROLLER',
+        area: 'nutrition_plan',
         message: 'Force refresh failed',
       );
       ref.invalidateSelf();
@@ -419,7 +419,7 @@ class ActivityDetailController extends _$ActivityDetailController {
         await macroRepo.saveMacroTargetsForActivity(activityId, freshTargets);
         _report.info(
           'regeneratePlan: fresh MacroTargets saved for activity',
-          area: 'ACTIVITY_DETAIL_CONTROLLER',
+          area: 'nutrition_plan',
           data: {
             'activityId': activityId,
             'activityType': activity.activityType.name,
@@ -429,7 +429,7 @@ class ActivityDetailController extends _$ActivityDetailController {
     } catch (e) {
       _report.degraded(
         e,
-        area: 'ACTIVITY_DETAIL_CONTROLLER',
+        area: 'nutrition_plan',
         message: 'regeneratePlan failed; falling back to forceRefresh',
       );
     }
@@ -1087,7 +1087,7 @@ class ActivityDetailController extends _$ActivityDetailController {
 
       _report.info(
         'Carb feedback applied',
-        area: 'ACTIVITY_DETAIL_CONTROLLER',
+        area: 'nutrition_plan',
         data: {
           'level': level.name,
           'baseRate': baseRate,
@@ -1354,7 +1354,7 @@ class ActivityDetailController extends _$ActivityDetailController {
 
       _report.info(
         'Schedule updated and saved',
-        area: 'ACTIVITY_DETAIL_CONTROLLER',
+        area: 'nutrition_plan',
         data: {
           'activityId': activityId,
           'newDateTime': newDateTime.toIso8601String(),
@@ -1806,7 +1806,7 @@ class ActivityDetailController extends _$ActivityDetailController {
 
       _report.info(
         '$operationName SUCCESS',
-        area: 'ActivityDetailController',
+        area: 'nutrition_plan',
         data: {'category': category, 'updatedPlanId': updatedPlan.id},
       );
     } catch (error, stackTrace) {
@@ -1829,7 +1829,7 @@ class ActivityDetailController extends _$ActivityDetailController {
   }) async {
     _report.info(
       'swapFoodItem ENTRY',
-      area: 'ActivityDetailController',
+      area: 'nutrition_plan',
       data: {
         'oldFoodId': oldFoodId,
         'newFoodName': newFood?.name ?? 'null',
@@ -1858,7 +1858,7 @@ class ActivityDetailController extends _$ActivityDetailController {
   }) async {
     _report.info(
       'addFoodItem ENTRY',
-      area: 'ActivityDetailController',
+      area: 'nutrition_plan',
       data: {
         'foodName': food?.name ?? 'null',
         'category': category,
@@ -1887,7 +1887,7 @@ class ActivityDetailController extends _$ActivityDetailController {
   Future<void> deleteFoodItem(String foodId, String category) async {
     _report.info(
       'deleteFoodItem ENTRY',
-      area: 'ActivityDetailController',
+      area: 'nutrition_plan',
       data: {'foodId': foodId, 'category': category},
     );
 
@@ -1906,7 +1906,7 @@ class ActivityDetailController extends _$ActivityDetailController {
   ) async {
     _report.info(
       'updateFoodQuantity ENTRY',
-      area: 'ActivityDetailController',
+      area: 'nutrition_plan',
       data: {
         'foodId': foodId,
         'category': category,
@@ -2057,7 +2057,7 @@ class ActivityDetailController extends _$ActivityDetailController {
 
       _report.info(
         'updateSubPhaseQuantityWithScaling SUCCESS',
-        area: 'ActivityDetailController',
+        area: 'nutrition_plan',
         data: {
           'subPhaseIndex': subPhaseIndex,
           'foodIndex': foodIndex,
@@ -2133,7 +2133,7 @@ class ActivityDetailController extends _$ActivityDetailController {
 
     _report.info(
       'initializeByHourData SUCCESS',
-      area: 'ActivityDetailController',
+      area: 'nutrition_plan',
       data: {
         'category': category,
         'durationMinutes': durationMinutes,
@@ -2532,7 +2532,7 @@ class ActivityDetailController extends _$ActivityDetailController {
       _report.fault(
         e,
         stackTrace: stackTrace,
-        area: 'ACTIVITY_DETAIL_CONTROLLER',
+        area: 'nutrition_plan',
         extra: {'activityId': activityId},
         message: 'Failed to delete activity',
       );
@@ -2939,7 +2939,7 @@ class ActivityDetailController extends _$ActivityDetailController {
     } catch (e) {
       _report.degraded(
         e,
-        area: 'ACTIVITY_DETAIL_CONTROLLER',
+        area: 'nutrition_plan',
         message:
             'Failed to parse saved fuel log; falling back to plan defaults',
       );

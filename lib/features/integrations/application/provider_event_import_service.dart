@@ -91,7 +91,7 @@ class ProviderEventImportService {
         _report.degraded(
           e,
           stackTrace: stackTrace,
-          area: 'EVENT_IMPORT',
+          area: 'integrations',
           extra: {'eventName': event.eventName},
           message: 'Failed to save TrainingPeaks event',
         );
@@ -169,7 +169,7 @@ class ProviderEventImportService {
         _report.degraded(
           e,
           stackTrace: stackTrace,
-          area: 'EVENT_IMPORT',
+          area: 'integrations',
           extra: {'eventName': eventName},
           message: 'Failed to save Final Surge race event',
         );

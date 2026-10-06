@@ -52,8 +52,8 @@ final analyticsTrackerProvider = Provider<AnalyticsTracker>((ref) {
   }
 
   // Enable analytics in production environment
-  final logger = ref.watch(appLoggerProvider);
-  return MixpanelAnalyticsTracker(config: config, logger: logger);
+  final report = ref.watch(reportProvider);
+  return MixpanelAnalyticsTracker(config: config, report: report);
 });
 ```
 

@@ -78,7 +78,7 @@ class ClientFoodPoolService {
     if (templateFoods.isEmpty) {
       _report.info(
         'No local template foods, fetching from Supabase',
-        area: 'CLIENT_FOOD_POOL',
+        area: 'nutrition_plan',
       );
       templateFoods = await _fetchTemplateFoodsFromSupabase();
     }
@@ -132,7 +132,7 @@ class ClientFoodPoolService {
           tf,
           phase: phase,
           preferenceScore: score,
-          onIssue: _report.decodeIssue('nutrition_plan'),
+          onIssue: _report.decodeIssue('nutrition_plan', severity: ReportSeverity.note),
         ),
       );
     }
@@ -141,7 +141,7 @@ class ClientFoodPoolService {
       'Food pool for $phase: ${result.length} foods '
       '(${templateFoods.length} curated template foods checked; '
       'user_foods excluded by policy)',
-      area: 'CLIENT_FOOD_POOL',
+      area: 'nutrition_plan',
     );
 
     return result;

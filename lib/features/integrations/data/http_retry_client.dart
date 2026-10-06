@@ -3,7 +3,7 @@ import 'dart:io';
 import 'package:http/http.dart' as http;
 
 import '../../../shared/services/report/report.dart';
-import 'integration_exceptions.dart';
+import '../domain/integration_exceptions.dart';
 
 /// Configuration for HTTP retry behavior
 class RetryConfig {

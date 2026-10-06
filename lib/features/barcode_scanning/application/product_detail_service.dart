@@ -82,13 +82,7 @@ class ProductDetailService {
       final data = response.data;
       if (data == null || !data['success']) {
         final errorMessage = data?['message'] ?? 'Product not found';
-        _report.degraded(
-          LoggedFault(
-            '❌ ProductDetailService - Product not found: $errorMessage',
-            context: 'barcode_scanning',
-          ),
-          area: 'barcode_scanning',
-        );
+        // Reported once by the caller that catches ProductDetailException.
         throw ProductDetailException(errorMessage);
       }
 

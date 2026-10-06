@@ -3,7 +3,7 @@ import 'package:flutter/foundation.dart';
 import 'package:http/http.dart' as http;
 
 import '../../../shared/services/report/report.dart';
-import '../domain/http_retry_client.dart';
+import 'http_retry_client.dart';
 import '../domain/integration_exceptions.dart';
 
 /// API client for TrainingPeaks workout and event data

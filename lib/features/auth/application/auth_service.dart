@@ -62,7 +62,7 @@ class AuthService {
       if (authUser == null) {
         _report.info(
           'No auth session found, creating anonymous session for new user',
-          area: 'AUTH',
+          area: 'auth',
         );
         final response = await _supabase.auth.signInAnonymously();
         authUser = response.user;
@@ -82,7 +82,7 @@ class AuthService {
 
       _report.info(
         'Creating new user with Supabase auth ID',
-        area: 'AUTH',
+        area: 'auth',
         data: {'device_id': deviceId, 'user_id': effectiveUserId},
       );
 
@@ -136,7 +136,7 @@ class AuthService {
 
       _report.info(
         'User profile saved locally and marked for background upload',
-        area: 'AUTH',
+        area: 'auth',
         data: {'userId': effectiveUserId},
       );
 
@@ -285,7 +285,7 @@ class AuthService {
 
     _report.info(
       'Sport preferences saved locally and marked for background upload',
-      area: 'AUTH',
+      area: 'auth',
       data: {'userId': userId},
     );
   }
@@ -314,7 +314,7 @@ class AuthService {
 
     _report.info(
       'Dietary preference saved locally and marked for background upload',
-      area: 'AUTH',
+      area: 'auth',
       data: {'userId': userId},
     );
   }
@@ -340,7 +340,7 @@ class AuthService {
 
     _report.info(
       'Allergies saved locally and marked for background upload',
-      area: 'AUTH',
+      area: 'auth',
       data: {'userId': userId},
     );
   }
@@ -380,7 +380,7 @@ class AuthService {
     try {
       _report.info(
         'Saving food preferences via consolidated edge function',
-        area: 'AUTH',
+        area: 'auth',
         data: {'userId': userId, 'count': preferences.length},
       );
 
@@ -402,7 +402,7 @@ class AuthService {
 
         _report.info(
           'Food preferences saved locally and marked for background upload',
-          area: 'AUTH',
+          area: 'auth',
           data: {'userId': userId, 'foodPreferencesCount': preferences.length},
         );
 
@@ -493,7 +493,7 @@ class AuthService {
       );
       _report.info(
         'Removed $removedCount food preferences with source: $source',
-        area: 'AUTH',
+        area: 'auth',
         data: {
           'userId': userId,
           'source': source,
@@ -646,7 +646,7 @@ class AuthService {
 
       _report.info(
         'app_version reconciled',
-        area: 'AUTH',
+        area: 'auth',
         data: {'was': profile.appVersion, 'now': running},
       );
     } catch (e, stackTrace) {

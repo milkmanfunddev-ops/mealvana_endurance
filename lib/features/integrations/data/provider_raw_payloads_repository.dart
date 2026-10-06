@@ -70,7 +70,7 @@ class ProviderRawPayloadsRepository {
           .upsert(rows, onConflict: _conflictTarget, ignoreDuplicates: true);
       _r.info(
         'Raw payload capture uploaded',
-        area: 'RAW_PAYLOAD_CAPTURE',
+        area: 'integrations',
         data: {'provider': provider, 'offered': rows.length},
       );
     } catch (e, stackTrace) {
@@ -80,7 +80,7 @@ class ProviderRawPayloadsRepository {
       _r.degraded(
         e,
         stackTrace: stackTrace,
-        area: 'RAW_PAYLOAD_CAPTURE',
+        area: 'integrations',
         message: 'Raw payload capture failed (will retry next sync)',
         extra: {'provider': provider, 'offered': rows.length},
       );

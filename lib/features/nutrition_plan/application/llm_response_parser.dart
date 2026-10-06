@@ -179,7 +179,7 @@ class LLMResponseParser {
         'LLM Response Validation: Food Items vs Macro Targets Comparison',
         context: 'LLMResponseParser',
       ),
-      area: 'LLMResponseParser',
+      area: 'nutrition_plan',
       extra: {
         'macro_targets': {
           'total_sodium_mg': totalTargetSodium,

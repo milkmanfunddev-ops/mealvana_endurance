@@ -49,7 +49,7 @@ class IntegrationsRepository with SyncableRepository {
     try {
       _r.info(
         'Syncing integrations from Supabase',
-        area: 'INTEGRATIONS_REPOSITORY',
+        area: 'integrations',
         data: {'userId': userId},
       );
 
@@ -86,7 +86,7 @@ class IntegrationsRepository with SyncableRepository {
 
       _r.info(
         'Integrations sync complete',
-        area: 'INTEGRATIONS_REPOSITORY',
+        area: 'integrations',
         data: {
           'userId': userId,
           'remoteCount': remoteRows.length,
@@ -163,7 +163,7 @@ class IntegrationsRepository with SyncableRepository {
       if (!await _remoteUserExists(userId)) {
         _r.info(
           'Deferring integration upload: user row not yet remote',
-          area: 'INTEGRATIONS_REPOSITORY',
+          area: 'integrations',
           data: {'userId': userId, 'deferred': dirty.length},
         );
         return UploadResult.nothingToUpload();
@@ -171,7 +171,7 @@ class IntegrationsRepository with SyncableRepository {
 
       _r.info(
         'Uploading dirty integrations to Supabase',
-        area: 'INTEGRATIONS_REPOSITORY',
+        area: 'integrations',
         data: {'userId': userId, 'count': dirty.length},
       );
 
@@ -195,7 +195,7 @@ class IntegrationsRepository with SyncableRepository {
 
       _r.info(
         'Dirty integrations uploaded',
-        area: 'INTEGRATIONS_REPOSITORY',
+        area: 'integrations',
         data: {'userId': userId, 'count': ids.length},
       );
 

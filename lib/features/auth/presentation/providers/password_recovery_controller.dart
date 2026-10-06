@@ -24,17 +24,17 @@ class PasswordRecoveryController extends _$PasswordRecoveryController {
     state = await AsyncValue.guard(() async {
       _report.info(
         'Sending password reset code',
-        area: 'PASSWORD_RECOVERY',
+        area: 'auth',
         data: {'email_length': email.length},
       );
       await _authService.resetPassword(email: email);
-      _report.info('Password reset code sent', area: 'PASSWORD_RECOVERY');
+      _report.info('Password reset code sent', area: 'auth');
     });
 
     if (state.hasError) {
       _report.fault(
         state.error!,
-        area: 'PASSWORD_RECOVERY',
+        area: 'auth',
         message: 'Failed to send reset code',
       );
     }
@@ -47,15 +47,15 @@ class PasswordRecoveryController extends _$PasswordRecoveryController {
     state = const AsyncLoading();
 
     state = await AsyncValue.guard(() async {
-      _report.info('Verifying reset code', area: 'PASSWORD_RECOVERY');
+      _report.info('Verifying reset code', area: 'auth');
       await _authService.verifyOtp(email: email, token: token);
-      _report.info('Reset code verified', area: 'PASSWORD_RECOVERY');
+      _report.info('Reset code verified', area: 'auth');
     });
 
     if (state.hasError) {
       _report.fault(
         state.error!,
-        area: 'PASSWORD_RECOVERY',
+        area: 'auth',
         message: 'Reset code verification failed',
       );
     }
@@ -68,15 +68,15 @@ class PasswordRecoveryController extends _$PasswordRecoveryController {
     state = const AsyncLoading();
 
     state = await AsyncValue.guard(() async {
-      _report.info('Setting new password', area: 'PASSWORD_RECOVERY');
+      _report.info('Setting new password', area: 'auth');
       await _authService.updatePassword(newPassword: password);
-      _report.info('Password updated successfully', area: 'PASSWORD_RECOVERY');
+      _report.info('Password updated successfully', area: 'auth');
     });
 
     if (state.hasError) {
       _report.fault(
         state.error!,
-        area: 'PASSWORD_RECOVERY',
+        area: 'auth',
         message: 'Failed to set new password',
       );
     }

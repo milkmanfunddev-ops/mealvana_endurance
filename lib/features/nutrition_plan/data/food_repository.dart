@@ -48,7 +48,7 @@ class FoodRepository with SyncableRepository {
     if (localFoods.isEmpty) {
       _report.debug(
         'Forcing sync - no local foods found',
-        area: 'FOOD_REPOSITORY',
+        area: 'nutrition_plan',
       );
       return true; // Force sync regardless of timestamp
     }
@@ -62,7 +62,7 @@ class FoodRepository with SyncableRepository {
     try {
       _report.info(
         'Syncing foods from Supabase',
-        area: 'FOOD_REPOSITORY',
+        area: 'nutrition_plan',
         data: {'note': 'Global reference data - userId not used'},
       );
 
@@ -80,7 +80,7 @@ class FoodRepository with SyncableRepository {
 
       _report.info(
         'Foods synced successfully',
-        area: 'FOOD_REPOSITORY',
+        area: 'nutrition_plan',
         data: {'count': response.length},
       );
 
@@ -89,7 +89,7 @@ class FoodRepository with SyncableRepository {
       _report.fault(
         e,
         stackTrace: stackTrace,
-        area: 'FOOD_REPOSITORY',
+        area: 'nutrition_plan',
         message: 'Failed to sync foods from remote',
       );
       return SyncResult.failed(e.toString());
@@ -102,7 +102,7 @@ class FoodRepository with SyncableRepository {
     // No dirty records to upload
     _report.debug(
       'Foods are read-only - no dirty records to upload',
-      area: 'FOOD_REPOSITORY',
+      area: 'nutrition_plan',
     );
     return UploadResult.nothingToUpload();
   }
@@ -150,7 +150,7 @@ class FoodRepository with SyncableRepository {
     } catch (e) {
       _report.fault(
         e,
-        area: 'FoodRepository',
+        area: 'nutrition_plan',
         message: 'Error fetching generic foods from get-foods Edge Function',
       );
       // Fallback to empty list - app should still work without foods
@@ -207,7 +207,7 @@ class FoodRepository with SyncableRepository {
     } catch (e) {
       _report.fault(
         e,
-        area: 'FoodRepository',
+        area: 'nutrition_plan',
         message: 'Error fetching primary preference foods from template_foods',
       );
       // Fallback to empty list
@@ -266,7 +266,7 @@ class FoodRepository with SyncableRepository {
     } catch (e) {
       _report.fault(
         e,
-        area: 'FoodRepository',
+        area: 'nutrition_plan',
         message:
             'Error fetching additional preference foods from template_foods',
       );
@@ -303,7 +303,7 @@ class FoodRepository with SyncableRepository {
     } catch (e) {
       _report.fault(
         e,
-        area: 'FoodRepository',
+        area: 'nutrition_plan',
         extra: {'category': category.name},
         message: 'Error fetching foods by category',
       );
@@ -337,7 +337,7 @@ class FoodRepository with SyncableRepository {
     } catch (e) {
       _report.fault(
         e,
-        area: 'FoodRepository',
+        area: 'nutrition_plan',
         extra: {'foodId': id},
         message: 'Error fetching food by ID from local database',
       );
@@ -361,7 +361,7 @@ class FoodRepository with SyncableRepository {
     } catch (e) {
       _report.fault(
         e,
-        area: 'FoodRepository',
+        area: 'nutrition_plan',
         extra: {'foodName': name},
         message: 'Error fetching food by name from local database',
       );
@@ -385,7 +385,7 @@ class FoodRepository with SyncableRepository {
     } catch (e) {
       _report.fault(
         e,
-        area: 'FoodRepository',
+        area: 'nutrition_plan',
         extra: {'category': category.name},
         message: 'Error fetching preferred foods',
       );
@@ -412,7 +412,7 @@ class FoodRepository with SyncableRepository {
     } catch (e) {
       _report.fault(
         e,
-        area: 'FoodRepository',
+        area: 'nutrition_plan',
         extra: {'searchQuery': query},
         message: 'Error searching foods',
       );
@@ -473,7 +473,7 @@ class FoodRepository with SyncableRepository {
 
       _report.info(
         'Found ${foodsToAvoid.length} foods to avoid based on diet/allergies',
-        area: 'FoodRepository',
+        area: 'nutrition_plan',
         data: {
           'dietaryPreference': dietaryPreference?.name,
           'allergiesCount': allergies.length,
@@ -485,7 +485,7 @@ class FoodRepository with SyncableRepository {
     } catch (e) {
       _report.fault(
         e,
-        area: 'FoodRepository',
+        area: 'nutrition_plan',
         extra: {
           'dietaryPreference': dietaryPreference?.name,
           'allergiesCount': allergies.length,
@@ -844,7 +844,7 @@ class FoodRepository with SyncableRepository {
     } catch (e) {
       _report.fault(
         e,
-        area: 'FoodRepository',
+        area: 'nutrition_plan',
         extra: {'barcode': barcode},
         message: 'Error fetching food by barcode',
       );
@@ -867,7 +867,7 @@ class FoodRepository with SyncableRepository {
     } catch (e) {
       _report.fault(
         e,
-        area: 'FoodRepository',
+        area: 'nutrition_plan',
         extra: {'foodId': foodId},
         message: 'Error fetching food categories',
       );
@@ -890,7 +890,7 @@ class FoodRepository with SyncableRepository {
     } catch (e) {
       _report.fault(
         e,
-        area: 'FoodRepository',
+        area: 'nutrition_plan',
         extra: {'userFoodId': userFoodId},
         message: 'Error fetching user food categories',
       );
@@ -975,7 +975,7 @@ class FoodRepository with SyncableRepository {
     } catch (e) {
       _report.fault(
         e,
-        area: 'FoodRepository',
+        area: 'nutrition_plan',
         extra: {'categoriesStr': categoriesStr},
         message: 'Error parsing categories array',
       );
@@ -1063,7 +1063,7 @@ class FoodRepository with SyncableRepository {
     } catch (e) {
       _report.fault(
         e,
-        area: 'FoodRepository',
+        area: 'nutrition_plan',
         message: 'Error syncing foods to local database',
       );
       // Don't rethrow - app should continue even if sync fails
@@ -1081,7 +1081,7 @@ class FoodRepository with SyncableRepository {
       _report.fault(
         e,
         stackTrace: stackTrace,
-        area: 'FOOD_REPOSITORY',
+        area: 'nutrition_plan',
         message: 'Nutrition foods sync failed',
       );
       rethrow;

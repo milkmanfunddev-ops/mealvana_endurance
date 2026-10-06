@@ -1878,13 +1878,10 @@ class MacroTargetsController extends _$MacroTargetsController {
     final resolvedMacroTargets = macroTargets;
 
     if (currentState == null) return null;
-    _report.degraded(
-      LoggedFault(
-        'Create nutrition plan started',
-        context: 'MACRO_TARGETS_CONTROLLER',
-      ),
-      area: 'MACRO_TARGETS_CONTROLLER',
-      extra: {
+    _report.info(
+      'Create nutrition plan started',
+      area: 'nutrition_plan',
+      data: {
         'activityId': currentState.activityId,
         'eventId': currentState.eventId,
         'forUserId': currentState.forUserId,
@@ -2400,13 +2397,10 @@ class MacroTargetsController extends _$MacroTargetsController {
         final ownerMatches = remoteActivity?.userId == expectedOwnerUserId;
 
         if (remoteActivity != null && ownerMatches && hasPlan) {
-          _report.degraded(
-            LoggedFault(
-              'Coach remote activity plan visibility confirmed',
-              context: 'MACRO_TARGETS_CONTROLLER',
-            ),
-            area: 'MACRO_TARGETS_CONTROLLER',
-            extra: {
+          _report.info(
+            'Coach remote activity plan visibility confirmed',
+            area: 'nutrition_plan',
+            data: {
               'activityId': activityId,
               'ownerUserId': remoteActivity.userId,
               'attempt': attempt + 1,
@@ -2421,7 +2415,7 @@ class MacroTargetsController extends _$MacroTargetsController {
             'Coach remote activity plan visibility pending',
             context: 'MACRO_TARGETS_CONTROLLER',
           ),
-          area: 'MACRO_TARGETS_CONTROLLER',
+          area: 'nutrition_plan',
           extra: {
             'activityId': activityId,
             'attempt': attempt + 1,

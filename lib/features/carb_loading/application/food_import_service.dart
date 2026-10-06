@@ -347,7 +347,7 @@ class FoodImportService {
   ) {
     final mealTypeIds = domain.parseMealTypeIds(
       food.mealTypes,
-      onIssue: _report.decodeIssue('carb_loading'),
+      onIssue: _report.decodeIssue('carb_loading', severity: ReportSeverity.fault),
     );
 
     return domain.CarbLoadingUserFood.fromDatabase(

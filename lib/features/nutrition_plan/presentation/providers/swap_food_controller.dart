@@ -190,7 +190,7 @@ class SwapFoodController extends _$SwapFoodController {
             'User foods sync failed, continuing with cached data',
             context: 'SwapFoodController',
           ),
-          area: 'SwapFoodController',
+          area: 'nutrition_plan',
           extra: {'error': e.toString()},
         );
       }
@@ -242,7 +242,7 @@ class SwapFoodController extends _$SwapFoodController {
     } catch (e) {
       _report.fault(
         e,
-        area: 'SwapFoodController',
+        area: 'nutrition_plan',
         message: 'Error loading foods for swapping',
       );
 
@@ -338,7 +338,7 @@ class SwapFoodController extends _$SwapFoodController {
     } catch (e) {
       _report.fault(
         e,
-        area: 'SwapFoodController',
+        area: 'nutrition_plan',
         extra: {'foodId': foodId},
         message: 'Error getting product type ID',
       );
@@ -431,7 +431,7 @@ class SwapFoodController extends _$SwapFoodController {
   }) async {
     _report.info(
       'Waiting for ActivityDetailController to initialize',
-      area: 'SwapFoodController',
+      area: 'nutrition_plan',
       data: {
         'activityId': params.activityId,
         'isCoachView': params.isCoachView,
@@ -461,7 +461,7 @@ class SwapFoodController extends _$SwapFoodController {
           'Cannot swap food: nutrition plan not loaded after waiting',
           context: 'SwapFoodController',
         ),
-        area: 'SwapFoodController',
+        area: 'nutrition_plan',
         extra: {'activityId': params.activityId},
       );
       throw Exception('Nutrition plan not available. Please try again.');
@@ -469,7 +469,7 @@ class SwapFoodController extends _$SwapFoodController {
 
     _report.info(
       'ActivityDetailController ready, performing swap',
-      area: 'SwapFoodController',
+      area: 'nutrition_plan',
       data: {
         'activityId': params.activityId,
         'oldFoodId': oldFoodId,
@@ -495,7 +495,7 @@ class SwapFoodController extends _$SwapFoodController {
   }) async {
     _report.info(
       'Waiting for ActivityDetailController to initialize',
-      area: 'SwapFoodController',
+      area: 'nutrition_plan',
       data: {
         'activityId': params.activityId,
         'isCoachView': params.isCoachView,
@@ -525,7 +525,7 @@ class SwapFoodController extends _$SwapFoodController {
           'Cannot add food: nutrition plan not loaded after waiting',
           context: 'SwapFoodController',
         ),
-        area: 'SwapFoodController',
+        area: 'nutrition_plan',
         extra: {'activityId': params.activityId},
       );
       throw Exception('Nutrition plan not available. Please try again.');
@@ -533,7 +533,7 @@ class SwapFoodController extends _$SwapFoodController {
 
     _report.info(
       'ActivityDetailController ready, performing add',
-      area: 'SwapFoodController',
+      area: 'nutrition_plan',
       data: {
         'activityId': params.activityId,
         'foodName': food.name,

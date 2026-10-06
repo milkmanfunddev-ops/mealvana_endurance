@@ -238,7 +238,7 @@ class EventsService {
 
       _report.info(
         'Resolved write consistency',
-        area: 'EVENTS_SERVICE',
+        area: 'events',
         data: {
           'entity': 'event',
           'operation': 'create',
@@ -319,7 +319,7 @@ class EventsService {
 
       _report.info(
         'Resolved write consistency',
-        area: 'EVENTS_SERVICE',
+        area: 'events',
         data: {
           'entity': 'event',
           'operation': 'update',
@@ -396,7 +396,7 @@ class EventsService {
       if (activity.syncedFromProvider != null) {
         _report.info(
           'Linked activity left in place: provider-synced (unruled)',
-          area: 'EVENTS_SERVICE',
+          area: 'events',
           data: {
             'eventId': event.id,
             'activityId': activityId,
@@ -408,7 +408,7 @@ class EventsService {
       if (activity.actualTime != null) {
         _report.info(
           'Linked activity left in place: already performed',
-          area: 'EVENTS_SERVICE',
+          area: 'events',
           data: {'eventId': event.id, 'activityId': activityId},
         );
         return;
@@ -486,7 +486,7 @@ class EventsService {
 
       _report.info(
         'Resolved write consistency',
-        area: 'EVENTS_SERVICE',
+        area: 'events',
         data: {
           'entity': 'event',
           'operation': 'delete',

@@ -371,12 +371,12 @@ class _PostOnboardingAuthScreenState
     final report = ref.read(reportProvider);
 
     // Navigate to email signup screen
-    report.info('Navigating to email signup screen', area: 'NAV');
+    report.info('Navigating to email signup screen', area: 'auth');
     final result = await context.push('/auth/email-signup');
 
     report.info(
       'Email signup returned',
-      area: 'NAV',
+      area: 'auth',
       data: {'result': result, 'mounted': mounted},
     );
 
@@ -384,7 +384,7 @@ class _PostOnboardingAuthScreenState
     if (result == true && mounted) {
       report.info(
         'Email signup successful, saving onboarding data',
-        area: 'NAV',
+        area: 'auth',
       );
       await _saveOnboardingDataAndNavigate(
         authProvider: 'email',
@@ -393,7 +393,7 @@ class _PostOnboardingAuthScreenState
     } else {
       report.info(
         'Email signup did not return true or widget unmounted',
-        area: 'NAV',
+        area: 'auth',
         data: {'result': result, 'mounted': mounted},
       );
     }
@@ -495,7 +495,7 @@ class _PostOnboardingAuthScreenState
       if (existingUser != null) {
         report.info(
           'Upgrading an already-onboarded account — skipping onboarding save',
-          area: 'NAV',
+          area: 'auth',
           data: {'authProvider': authProvider, 'userId': existingUser.id},
         );
 
@@ -520,7 +520,7 @@ class _PostOnboardingAuthScreenState
 
     report.info(
       'Starting saveAllOnboardingData',
-      area: 'NAV',
+      area: 'auth',
       data: {'authProvider': authProvider, 'isAnonymous': isAnonymous},
     );
 
@@ -532,14 +532,14 @@ class _PostOnboardingAuthScreenState
 
     report.info(
       'saveAllOnboardingData completed',
-      area: 'NAV',
+      area: 'auth',
       data: {'success': success, 'mounted': mounted},
     );
 
     if (!mounted) {
       report.info(
         'Widget unmounted after save, aborting navigation',
-        area: 'NAV',
+        area: 'auth',
       );
       return;
     }
@@ -550,7 +550,7 @@ class _PostOnboardingAuthScreenState
 
       report.info(
         'Navigating to /main',
-        area: 'NAV',
+        area: 'auth',
         data: {'hasUser': currentUser != null, 'userId': currentUser?.id},
       );
 

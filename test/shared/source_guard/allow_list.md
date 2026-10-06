@@ -4,8 +4,7 @@ Read by `report_source_guard_test.dart` (rules in `source_guard.dart`). One
 entry per line, counted: a file with three identical unreported catch lines
 needs three entries. Line format:
 
-    <kind> <path> :: <signature>              (baseline)
-    <kind> <path> :: <signature> :: <reason>  (reasoned)
+    <kind> <path> :: <signature> :: <reason>
 
 `<kind>` is `unreportedCatch`, `printInCatch` or `sentryImport`; `<signature>`
 is the trimmed source line holding the `catch` / bare `on` keyword (or the
