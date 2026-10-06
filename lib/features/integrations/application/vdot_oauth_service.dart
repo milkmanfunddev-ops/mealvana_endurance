@@ -1,7 +1,7 @@
 import 'dart:math';
-import 'package:flutter/foundation.dart';
 import 'package:flutter_web_auth_2/flutter_web_auth_2.dart';
 
+import '../../../shared/services/report/report.dart';
 import '../data/integrations_repository.dart';
 import '../data/vdot_api_client.dart';
 import '../domain/integration.dart';
@@ -24,13 +24,15 @@ class VdotOAuthService {
     required String redirectUri,
     String callbackUrlScheme = 'com.milkman.mealvanaendurance',
     String scope = 'read:workouts',
+    Report? report,
   }) : _apiClient = apiClient,
        _repository = repository,
        _clientId = clientId,
        _authBaseUrl = authBaseUrl,
        _redirectUri = redirectUri,
        _callbackUrlScheme = callbackUrlScheme,
-       _scope = scope;
+       _scope = scope,
+       _report = report;
 
   final VdotApiClient _apiClient;
   final IntegrationsRepository _repository;
@@ -39,6 +41,11 @@ class VdotOAuthService {
   final String _redirectUri;
   final String _callbackUrlScheme;
   final String _scope;
+  final Report? _report;
+
+  Report get _r => _report ?? SentryReport.global;
+
+  static const _area = 'vdot';
 
   /// Run the full authorization-code flow and persist the resulting tokens.
   Future<IntegrationModel> authenticate(String userId) async {
@@ -54,11 +61,7 @@ class VdotOAuthService {
       },
     );
 
-    if (kDebugMode) {
-      print('🔐 [vdot] Starting OAuth flow');
-      print('   Auth URL: $authUrl');
-      print('   Redirect URI: $_redirectUri');
-    }
+    _r.debug('V.O2 OAuth flow started', area: _area);
 
     final result = await FlutterWebAuth2.authenticate(
       url: authUrl.toString(),
@@ -78,13 +81,15 @@ class VdotOAuthService {
     final returnedState = params['state'];
     final code = params['code'];
 
-    if (kDebugMode) {
-      print('📥 [vdot] Callback received');
-      print('   Raw: $result');
-      print('   Parsed params: $params');
-      print('   Sent state:     $state');
-      print('   Returned state: ${returnedState ?? "(omitted)"}');
-    }
+    // The raw callback carries the authorization code; never log it.
+    _r.debug(
+      'V.O2 OAuth callback received',
+      area: _area,
+      data: {
+        'hasCode': code != null && code.isNotEmpty,
+        'stateEchoed': returnedState != null,
+      },
+    );
 
     // VDOT's OAuth docs don't mention `state` echo-back and their example
     // URL omits the param entirely (verified against their wiki). Only enforce
@@ -161,7 +166,7 @@ class VdotOAuthService {
   /// component is decoded with `Uri.decodeComponent`, which resolves %XX
   /// escapes but leaves '+' untouched. OAuth codes never contain real spaces,
   /// so preserving '+' is strictly safer.
-  static Map<String, String> _parseCallbackParams(String redirectUrl) {
+  Map<String, String> _parseCallbackParams(String redirectUrl) {
     final params = <String, String>{};
     final queryStart = redirectUrl.indexOf('?');
     if (queryStart == -1) return params;
@@ -175,8 +180,14 @@ class VdotOAuthService {
       final rawValue = eq == -1 ? '' : pair.substring(eq + 1);
       try {
         params[Uri.decodeComponent(rawKey)] = Uri.decodeComponent(rawValue);
-      } catch (_) {
+      } on ArgumentError {
         // Malformed percent-encoding — keep the raw text rather than throwing.
+        // Only the key is safe to record; the value may be the auth code.
+        _r.note(
+          'V.O2 callback param had malformed percent-encoding; kept raw',
+          area: _area,
+          data: {'key': rawKey},
+        );
         params[rawKey] = rawValue;
       }
     }

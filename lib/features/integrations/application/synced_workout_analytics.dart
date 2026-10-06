@@ -1,5 +1,6 @@
 import '../../../shared/services/analytics/analytics_events.dart';
 import '../../../shared/services/analytics/analytics_tracker.dart';
+import '../../../shared/services/report/report.dart';
 import '../../activities/domain/activity.dart';
 
 /// Fires `workout_planned` for a workout that arrived from a training platform
@@ -11,11 +12,13 @@ import '../../activities/domain/activity.dart';
 /// unmeasurable. Shared by the TrainingPeaks, Final Surge and V.O2 services so
 /// the three cannot drift apart.
 ///
-/// Analytics is never allowed to break a sync: all failures are swallowed.
+/// Analytics is never allowed to break a sync: a throwing tracker is reported
+/// as a Fault and the sync carries on.
 void trackSyncedWorkoutPlanned(
   AnalyticsTracker? analytics,
   Activity activity, {
   required String provider,
+  Report? report,
 }) {
   try {
     analytics?.trackWorkoutPlanned(
@@ -25,5 +28,13 @@ void trackSyncedWorkoutPlanned(
       activityId: activity.id,
       provider: provider,
     );
-  } catch (_) {}
+  } catch (e, st) {
+    (report ?? SentryReport.global).fault(
+      e,
+      stackTrace: st,
+      area: provider,
+      message: 'workout_planned analytics threw for a synced workout',
+      extra: {'activityId': activity.id},
+    );
+  }
 }

@@ -1,6 +1,5 @@
-import 'package:flutter/foundation.dart';
-
 import '../../../shared/services/analytics/analytics_tracker.dart';
+import '../../../shared/services/report/report.dart';
 import '../../activities/data/activities_repository.dart';
 import '../../activities/domain/activity.dart';
 import '../data/integrations_repository.dart';
@@ -44,13 +43,15 @@ class RunnaSyncService {
     required RunnaTransformer transformer,
     required ChangeDetectionService changeDetectionService,
     AnalyticsTracker? analytics,
+    Report? report,
   }) : _icsClient = icsClient,
        _parser = parser,
        _integrationsRepository = integrationsRepository,
        _activitiesRepository = activitiesRepository,
        _transformer = transformer,
        _changeDetectionService = changeDetectionService,
-       _analytics = analytics;
+       _analytics = analytics,
+       _report = report;
 
   final RunnaIcsClient _icsClient;
   final RunnaIcsParser _parser;
@@ -59,11 +60,19 @@ class RunnaSyncService {
   final RunnaTransformer _transformer;
   final ChangeDetectionService _changeDetectionService;
   final AnalyticsTracker? _analytics;
+  final Report? _report;
+
+  Report get _r => _report ?? SentryReport.global;
 
   static const _provider = 'runna';
 
   void _trackSyncedWorkoutPlanned(Activity activity) =>
-      trackSyncedWorkoutPlanned(_analytics, activity, provider: _provider);
+      trackSyncedWorkoutPlanned(
+        _analytics,
+        activity,
+        provider: _provider,
+        report: _r,
+      );
 
   /// Short stable fingerprint of the feed URL (FNV-1a 32-bit, hex). Used as
   /// the `providerAthleteId` for the integration row — Runna's feed carries
@@ -96,9 +105,7 @@ class RunnaSyncService {
       return RunnaSyncResult.notConnected();
     }
 
-    if (kDebugMode) {
-      print('🔄 [runna] Starting sync for user $userId');
-    }
+    _r.debug('Runna sync started', area: _provider);
 
     try {
       // The feed URL lives in accessToken (see class docs).
@@ -117,14 +124,16 @@ class RunnaSyncService {
         }
       }
 
-      if (kDebugMode) {
-        print(
-          '   [runna] Parsed ${events.length} events '
-          '(malformed: ${parsed.skippedMalformed}, '
-          'cancelled: ${parsed.skippedCancelled}, '
-          'recurring: ${parsed.skippedRecurring})',
-        );
-      }
+      _r.debug(
+        'Runna feed parsed',
+        area: _provider,
+        data: {
+          'events': events.length,
+          'malformed': parsed.skippedMalformed,
+          'cancelled': parsed.skippedCancelled,
+          'recurring': parsed.skippedRecurring,
+        },
+      );
 
       // Transform. Nulls are non-running sessions (strength/mobility/...)
       // deliberately skipped in MVP.
@@ -217,15 +226,17 @@ class RunnaSyncService {
         status: 'success',
       );
 
-      if (kDebugMode) {
-        print(
-          '✅ [runna] Sync complete — '
-          'new: ${changes.newActivities.length}, '
-          'updated: $updatedCount, '
-          'deleted: $deletedCount, '
-          'filtered: $filteredCount',
-        );
-      }
+      _r.debug(
+        'Runna sync complete',
+        area: _provider,
+        data: {
+          'new': changes.newActivities.length,
+          'updated': updatedCount,
+          'deleted': deletedCount,
+          'unchanged': changes.unchangedCount,
+          'filtered': filteredCount,
+        },
+      );
 
       return RunnaSyncResult(
         success: true,
@@ -236,13 +247,24 @@ class RunnaSyncService {
         filtered: filteredCount,
         activities: changes.newActivities,
       );
-    } on NetworkException catch (e) {
+    } on NetworkException catch (e, st) {
       // Transient — don't stamp an error status, the user can just retry.
-      if (kDebugMode) {
-        print('❌ [runna] Sync failed (network): $e');
-      }
+      await _r.degraded(
+        e,
+        stackTrace: st,
+        area: _provider,
+        message: 'Runna sync failed: network',
+      );
       return RunnaSyncResult.networkError(e.message);
-    } on IntegrationApiException catch (e) {
+    } on IntegrationApiException catch (e, st) {
+      // The feed answered but not with a calendar (revoked URL, 4xx/5xx).
+      await _r.degraded(
+        e,
+        stackTrace: st,
+        area: _provider,
+        message: 'Runna feed rejected; integration marked error',
+        extra: {'statusCode': e.statusCode},
+      );
       await _integrationsRepository.updateSyncStatus(
         userId,
         _provider,
@@ -250,16 +272,19 @@ class RunnaSyncService {
         error: e.message,
       );
       return RunnaSyncResult.error(e.message);
-    } catch (e) {
+    } catch (e, st) {
       await _integrationsRepository.updateSyncStatus(
         userId,
         _provider,
         status: 'error',
         error: e.toString(),
       );
-      if (kDebugMode) {
-        print('❌ [runna] Sync failed: $e');
-      }
+      await _r.fault(
+        e,
+        stackTrace: st,
+        area: _provider,
+        message: 'Runna sync failed',
+      );
       return RunnaSyncResult.error(e.toString());
     }
   }
@@ -314,12 +339,11 @@ class RunnaSyncService {
       if (match != null) {
         adoptedLocalIdByUid[uid] = match.id;
         newUidByLocalId[match.id] = uid;
-        if (kDebugMode) {
-          print(
-            '   🔗 [runna] UID adoption: "${match.title}" '
-            '(${match.providerWorkoutId} → $uid)',
-          );
-        }
+        _r.debug(
+          'Runna UID adoption: same-day title match re-keyed',
+          area: _provider,
+          data: {'from': match.providerWorkoutId, 'to': uid},
+        );
       }
     }
 

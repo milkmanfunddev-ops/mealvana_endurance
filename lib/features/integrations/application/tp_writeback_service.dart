@@ -1,10 +1,10 @@
 import 'package:drift/drift.dart';
-import 'package:flutter/foundation.dart';
-import 'package:sentry_flutter/sentry_flutter.dart';
+import 'package:flutter/foundation.dart' show visibleForTesting;
 import 'package:supabase_flutter/supabase_flutter.dart' show SupabaseClient;
 
 import '../../../shared/database/app_database.dart' hide Activity;
 import '../../../shared/services/preferences_service.dart';
+import '../../../shared/services/report/report.dart';
 import '../../activities/domain/activity.dart';
 import '../../nutrition_plan/domain/fuel_log_data.dart';
 import '../../nutrition_plan/domain/nutrition_plan.dart';
@@ -15,7 +15,7 @@ import 'training_peaks_oauth_service.dart';
 
 /// Orchestrates pushing/removing nutrition plan summaries to/from TP workout
 /// descriptions. All public methods are safe to call fire-and-forget — they
-/// catch all exceptions, log to Sentry, and never throw.
+/// catch all exceptions, report them through [Report], and never throw.
 class TpWritebackService {
   TpWritebackService({
     required TrainingPeaksApiClient apiClient,
@@ -23,16 +23,23 @@ class TpWritebackService {
     required PreferencesService preferencesService,
     required AppDatabase database,
     SupabaseClient? supabase,
+    Report? report,
   }) : _apiClient = apiClient,
        _oauthService = oauthService,
        _preferencesService = preferencesService,
        _db = database,
-       _supabase = supabase;
+       _supabase = supabase,
+       _report = report;
 
   final TrainingPeaksApiClient _apiClient;
   final TrainingPeaksOAuthService _oauthService;
   final PreferencesService _preferencesService;
   final AppDatabase _db;
+  final Report? _report;
+
+  Report get _r => _report ?? SentryReport.global;
+
+  static const _area = 'training_peaks';
 
   /// Server-side ledger custodian (TP-5/Q-INT16 as amended 2026-09-11):
   /// NO push happens without its ledger row. Nullable only for legacy
@@ -51,9 +58,11 @@ class TpWritebackService {
   }) async {
     final supabase = _supabase;
     if (supabase == null) {
-      if (kDebugMode) {
-        print('⛔ TP Write-back: no ledger client — push refused (TP-5)');
-      }
+      await _r.note(
+        'TP write-back refused: no ledger client (TP-5)',
+        area: _area,
+        data: {'blockKind': blockKind},
+      );
       return null;
     }
     try {
@@ -71,7 +80,14 @@ class TpWritebackService {
           .single();
       return row['id'] as String?;
     } catch (e, st) {
-      _logError('openLedgerRow', e, st);
+      // No ledger row means no push (TP-5): the athlete's plan never reaches
+      // TP and nothing else would say so.
+      await _r.fault(
+        e,
+        stackTrace: st,
+        area: _area,
+        message: 'TP write-back: ledger row open failed; push refused',
+      );
       return null;
     }
   }
@@ -89,7 +105,12 @@ class TpWritebackService {
           .update({'status': success ? 'success' : 'failure', 'error': error})
           .eq('id', ledgerId);
     } catch (e, st) {
-      _logError('closeLedgerRow', e, st);
+      await _r.fault(
+        e,
+        stackTrace: st,
+        area: _area,
+        message: 'TP write-back: ledger row close failed; row left as attempt',
+      );
     }
   }
 
@@ -141,11 +162,11 @@ class TpWritebackService {
 
       // Guard 5: Concurrency — skip if already in flight for this workout
       if (!_inFlightWorkouts.add(workoutIdStr)) {
-        if (kDebugMode) {
-          print(
-            '⏭️ TP Write-back: skipped — already in flight for $workoutIdStr',
-          );
-        }
+        _r.debug(
+          'TP write-back skipped: push already in flight',
+          area: _area,
+          data: {'workoutId': workoutIdStr},
+        );
         return;
       }
 
@@ -161,7 +182,12 @@ class TpWritebackService {
         _inFlightWorkouts.remove(workoutIdStr);
       }
     } catch (e, st) {
-      _logError('pushPlanToWorkout', e, st);
+      await _r.fault(
+        e,
+        stackTrace: st,
+        area: _area,
+        message: 'TP write-back: pushPlanToWorkout failed',
+      );
     }
   }
 
@@ -177,9 +203,11 @@ class TpWritebackService {
     // Get a valid access token (refreshes if close to expiry)
     final accessToken = await _oauthService.getValidAccessToken(userId);
     if (accessToken == null) {
-      if (kDebugMode) {
-        print('⏭️ TP Write-back: skipped — no valid access token');
-      }
+      await _r.note(
+        'TP write-back skipped: no valid access token',
+        area: _area,
+        data: {'workoutId': workoutIdStr},
+      );
       return;
     }
 
@@ -200,15 +228,15 @@ class TpWritebackService {
     // Guard: Has the plan actually changed?
     final existing = await _getWritebackEntry(userId, workoutIdStr);
     if (existing != null && existing.planHash == hash) {
-      if (kDebugMode) print('⏭️ TP Write-back: skipped — plan hash unchanged');
+      _r.debug('TP write-back skipped: plan hash unchanged', area: _area);
       return;
     }
 
-    if (kDebugMode) {
-      print(
-        '📤 TP Write-back: GET+PUT workout $workoutIdStr${isRetry ? ' (retry)' : ''}',
-      );
-    }
+    _r.debug(
+      'TP write-back: pushing plan block',
+      area: _area,
+      data: {'workoutId': workoutIdStr, 'retry': isRetry},
+    );
 
     // TP-5/Q-INT16: no push without a ledger row.
     final ledgerId = await _openLedgerRow(
@@ -254,27 +282,32 @@ class TpWritebackService {
 
       await onPushSucceeded();
 
-      if (kDebugMode) {
-        print('✅ TP Write-back: pushed plan to workout $workoutIdStr');
-      }
-    } on TokenExpiredException {
+      _r.debug(
+        'TP write-back: plan block pushed',
+        area: _area,
+        data: {'workoutId': workoutIdStr},
+      );
+    } on TokenExpiredException catch (e, st) {
       await _closeLedgerRow(
         ledgerId,
         success: false,
         error: 'token_expired${isRetry ? '_after_refresh' : ''}',
       );
       if (!isRetry) {
-        if (kDebugMode) {
-          print(
-            '🔄 TP Write-back: 401 — forcing token refresh and retrying...',
-          );
-        }
+        await _r.note(
+          'TP write-back: 401; forcing token refresh and retrying',
+          area: _area,
+          data: {'workoutId': workoutIdStr},
+        );
         // Force refresh bypasses the local expiry check
         final freshToken = await _oauthService.forceRefreshToken(userId);
         if (freshToken == null) {
-          if (kDebugMode) {
-            print('❌ TP Write-back: force refresh failed — giving up');
-          }
+          // The refresh failure itself was reported by the OAuth service.
+          await _r.note(
+            'TP write-back: force refresh failed; push abandoned',
+            area: _area,
+            data: {'workoutId': workoutIdStr},
+          );
           return;
         }
         await _doPush(
@@ -286,11 +319,14 @@ class TpWritebackService {
           isRetry: true,
         );
       } else {
-        if (kDebugMode) {
-          print(
-            '❌ TP Write-back: token still expired after refresh — giving up',
-          );
-        }
+        // A fresh token was still refused: the account, not the token.
+        await _r.degraded(
+          e,
+          stackTrace: st,
+          area: _area,
+          message: 'TP write-back: token still expired after refresh; push abandoned',
+          extra: {'workoutId': workoutIdStr},
+        );
       }
     } on IntegrationApiException catch (e) {
       await _closeLedgerRow(
@@ -332,7 +368,12 @@ class TpWritebackService {
         _inFlightWorkouts.remove('fb_$workoutIdStr');
       }
     } catch (e, st) {
-      _logError('pushCompletionFeedback', e, st);
+      await _r.fault(
+        e,
+        stackTrace: st,
+        area: _area,
+        message: 'TP write-back: pushCompletionFeedback failed',
+      );
     }
   }
 
@@ -351,11 +392,11 @@ class TpWritebackService {
       notes: notes,
     );
 
-    if (kDebugMode) {
-      print(
-        '📤 TP Feedback: pushing to workout $workoutIdStr${isRetry ? ' (retry)' : ''}',
-      );
-    }
+    _r.debug(
+      'TP write-back: pushing feedback block',
+      area: _area,
+      data: {'workoutId': workoutIdStr, 'retry': isRetry},
+    );
 
     // TP-5/Q-INT16: no push without a ledger row (feedback included).
     final ledgerId = await _openLedgerRow(
@@ -388,13 +429,18 @@ class TpWritebackService {
       );
 
       await _closeLedgerRow(ledgerId, success: true);
-      if (kDebugMode) {
-        print(
-          '✅ TP Feedback: pushed rating $rating/5 to workout $workoutIdStr',
-        );
-      }
+      _r.debug(
+        'TP write-back: feedback block pushed',
+        area: _area,
+        data: {'workoutId': workoutIdStr, 'rating': rating},
+      );
     } on TokenExpiredException {
       await _closeLedgerRow(ledgerId, success: false, error: 'token_expired');
+      await _r.note(
+        'TP feedback write-back: 401; ${isRetry ? 'abandoned after refresh' : 'forcing token refresh and retrying'}',
+        area: _area,
+        data: {'workoutId': workoutIdStr},
+      );
       if (!isRetry) {
         final freshToken = await _oauthService.forceRefreshToken(userId);
         if (freshToken == null) return;
@@ -460,11 +506,18 @@ class TpWritebackService {
         // Remove tracking entry
         await _deleteWritebackEntry(userId, workoutIdStr);
 
-        if (kDebugMode) {
-          print('✅ TP Write-back: removed plan from workout $workoutIdStr');
-        }
+        _r.debug(
+          'TP write-back: plan block removed',
+          area: _area,
+          data: {'workoutId': workoutIdStr},
+        );
       } on TokenExpiredException {
         // Try once more with force-refreshed token
+        await _r.note(
+          'TP write-back removal: 401; forcing token refresh and retrying',
+          area: _area,
+          data: {'workoutId': workoutIdStr},
+        );
         final freshToken = await _oauthService.forceRefreshToken(userId);
         if (freshToken == null) return;
 
@@ -492,7 +545,12 @@ class TpWritebackService {
     } on IntegrationApiException catch (e) {
       await handleApiException(e, userId, activity.providerWorkoutId);
     } catch (e, st) {
-      _logError('removePlanFromWorkout', e, st);
+      await _r.fault(
+        e,
+        stackTrace: st,
+        area: _area,
+        message: 'TP write-back: removePlanFromWorkout failed',
+      );
     }
   }
 
@@ -534,8 +592,15 @@ class TpWritebackService {
               );
             }
           } catch (e, st) {
-            // Per-workout best effort — keep stripping the rest.
-            _logError('handleDisconnect.strip', e, st);
+            // Per-workout best effort — keep stripping the rest. The athlete
+            // may already have revoked API access, so this is expected-bad.
+            await _r.degraded(
+              e,
+              stackTrace: st,
+              area: _area,
+              message: 'TP write-back: disconnect strip failed for one workout',
+              extra: {'workoutId': entry.tpWorkoutId.toString()},
+            );
           }
         }
       }
@@ -554,11 +619,21 @@ class TpWritebackService {
               .delete()
               .eq('user_id', userId);
         } catch (e, st) {
-          _logError('handleDisconnect.ledger', e, st);
+          await _r.fault(
+            e,
+            stackTrace: st,
+            area: _area,
+            message: 'TP write-back: server ledger purge on disconnect failed',
+          );
         }
       }
     } catch (e, st) {
-      _logError('handleDisconnect', e, st);
+      await _r.fault(
+        e,
+        stackTrace: st,
+        area: _area,
+        message: 'TP write-back: handleDisconnect failed',
+      );
     }
   }
 
@@ -588,21 +663,30 @@ class TpWritebackService {
       // consulted (connect-time snapshot, false-negative on trials). The
       // block clears the same way it was set: by a later successful push.
       await _preferencesService.setTpWritebackPremiumBlocked(true);
-      if (kDebugMode) {
-        print(
-          '⚠️ TP Write-back: 403 — TP refused the push, blocking future attempts',
-        );
-      }
+      await _r.degraded(
+        e,
+        area: _area,
+        message: 'TP write-back: 403; TP refused the push, future attempts blocked',
+        extra: {'workoutId': workoutId},
+      );
     } else if (status == 404) {
       // Workout deleted from TP — clean up tracking
       if (workoutId != null) {
         await _deleteWritebackEntry(userId, workoutId);
       }
-      if (kDebugMode) {
-        print('⚠️ TP Write-back: 404 — workout deleted from TP');
-      }
+      await _r.note(
+        'TP write-back: 404; workout deleted from TP, tracking entry removed',
+        area: _area,
+        data: {'workoutId': workoutId},
+      );
     } else {
-      _logError('_handleApiException', e, StackTrace.current);
+      await _r.degraded(
+        e,
+        stackTrace: StackTrace.current,
+        area: _area,
+        message: 'TP write-back: push rejected by TP API',
+        extra: {'statusCode': status, 'workoutId': workoutId},
+      );
     }
   }
 
@@ -616,20 +700,15 @@ class TpWritebackService {
       if (token == null) return null;
       final profile = await _apiClient.getAthleteProfile(token);
       return profile.isPremium;
-    } catch (_) {
+    } catch (e) {
+      // Informational only (A1): the caller shows "unknown".
+      await _r.note(
+        'TP premium status unreadable',
+        area: _area,
+        data: {'error': e.toString()},
+      );
       return null;
     }
-  }
-
-  void _logError(String method, Object error, StackTrace stackTrace) {
-    if (kDebugMode) {
-      print('❌ TP Write-back ($method): $error');
-    }
-    Sentry.captureException(
-      error,
-      stackTrace: stackTrace,
-      hint: Hint.withMap({'method': 'TpWritebackService.$method'}),
-    );
   }
 
   // ─── Drift helpers ───

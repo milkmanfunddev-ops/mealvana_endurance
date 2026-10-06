@@ -23,6 +23,9 @@ import). Lines starting with `>` are notes.
 
 unreportedCatch lib/shared/services/sentry/sentry_provider_observer.dart :: } on ArgumentError {  :: Expando refuses primitive keys; the catch is the type test, the primitive goes to its own set
 unreportedCatch lib/shared/services/sentry/sentry_provider_observer.dart :: } on ArgumentError {  :: same as above, the mark side of the pair
+unreportedCatch lib/features/integrations/application/tp_writeback_service.dart :: } on IntegrationApiException catch (e) {  :: delegates to handleApiException, which classifies every status through Report (403 degraded, 404 note, else degraded); the guard only sees the block text
+unreportedCatch lib/features/integrations/application/tp_writeback_service.dart :: } on IntegrationApiException catch (e) {  :: same as above (feedback push)
+unreportedCatch lib/features/integrations/application/tp_writeback_service.dart :: } on IntegrationApiException catch (e) {  :: same as above (plan removal)
 
 ## baseline
 
@@ -42,35 +45,6 @@ printInCatch lib/features/formula_kit/application/coach_insight_controller.dart 
 printInCatch lib/features/formula_kit/application/coach_insight_controller.dart :: } catch (e) {
 printInCatch lib/features/formula_kit/data/ai_coach_client.dart :: } catch (e) {
 printInCatch lib/features/formula_kit/data/ai_coach_client.dart :: } on FunctionException catch (e) {
-printInCatch lib/features/integrations/application/final_surge_sync_service.dart :: } catch (e) {
-printInCatch lib/features/integrations/application/final_surge_sync_service.dart :: } catch (e) {
-printInCatch lib/features/integrations/application/final_surge_sync_service.dart :: } catch (e) {
-printInCatch lib/features/integrations/application/final_surge_sync_service.dart :: } on IntegrationApiException catch (e) {
-printInCatch lib/features/integrations/application/final_surge_sync_service.dart :: } on NetworkException catch (e) {
-printInCatch lib/features/integrations/application/final_surge_sync_service.dart :: } on TokenExpiredException {
-printInCatch lib/features/integrations/application/final_surge_sync_service.dart :: } on TokenExpiredException {
-printInCatch lib/features/integrations/application/final_surge_transformer.dart :: } catch (e) {
-printInCatch lib/features/integrations/application/garmin_oauth_service.dart :: } catch (e) {
-printInCatch lib/features/integrations/application/garmin_oauth_service.dart :: } catch (e) {
-printInCatch lib/features/integrations/application/integration_sync_coordinator.dart :: } catch (e, stackTrace) {
-printInCatch lib/features/integrations/application/integration_sync_coordinator.dart :: } catch (e, stackTrace) {
-printInCatch lib/features/integrations/application/runna_sync_service.dart :: } catch (e) {
-printInCatch lib/features/integrations/application/runna_sync_service.dart :: } on NetworkException catch (e) {
-printInCatch lib/features/integrations/application/tp_writeback_service.dart :: } on TokenExpiredException {
-printInCatch lib/features/integrations/application/training_peaks_oauth_service.dart :: } catch (e) {
-printInCatch lib/features/integrations/application/training_peaks_oauth_service.dart :: } on TrainingPeaksApiException catch (e) {
-printInCatch lib/features/integrations/application/training_peaks_oauth_service.dart :: } on TrainingPeaksApiException catch (e) {
-printInCatch lib/features/integrations/application/training_peaks_sync_service.dart :: } catch (e) {
-printInCatch lib/features/integrations/application/training_peaks_sync_service.dart :: } catch (e) {
-printInCatch lib/features/integrations/application/training_peaks_sync_service.dart :: } catch (e) {
-printInCatch lib/features/integrations/application/training_peaks_sync_service.dart :: } catch (e) {
-printInCatch lib/features/integrations/application/training_peaks_sync_service.dart :: } catch (e) {
-printInCatch lib/features/integrations/application/training_peaks_sync_service.dart :: } catch (e) {
-printInCatch lib/features/integrations/application/training_peaks_sync_service.dart :: } catch (e) {
-printInCatch lib/features/integrations/application/training_peaks_sync_service.dart :: } on TrainingPeaksApiException catch (e) {
-printInCatch lib/features/integrations/application/training_peaks_transformer.dart :: } catch (e) {
-printInCatch lib/features/integrations/application/vdot_sync_service.dart :: } catch (e) {
-printInCatch lib/features/integrations/application/vdot_sync_service.dart :: } on TokenExpiredException {
 printInCatch lib/features/integrations/data/training_peaks_api_client.dart :: } catch (e) {
 printInCatch lib/features/integrations/domain/http_retry_client.dart :: } on RateLimitException catch (e) {
 printInCatch lib/features/integrations/domain/http_retry_client.dart :: } on ServerException catch (e) {
@@ -100,8 +74,6 @@ printInCatch lib/shared/services/notification_service.dart :: } catch (e) {
 sentryImport lib/features/daily_macros/data/daily_macro_targets_repository.dart :: import 'package:sentry_flutter/sentry_flutter.dart';
 sentryImport lib/features/formula_kit/data/formula_pins_repository.dart :: import 'package:sentry_flutter/sentry_flutter.dart';
 sentryImport lib/features/formula_kit/data/personal_formulas_repository.dart :: import 'package:sentry_flutter/sentry_flutter.dart';
-sentryImport lib/features/integrations/application/raw_retention_dead_man_check.dart :: import 'package:sentry_flutter/sentry_flutter.dart' show SentryLevel;
-sentryImport lib/features/integrations/application/tp_writeback_service.dart :: import 'package:sentry_flutter/sentry_flutter.dart';
 sentryImport lib/features/macro_dashboard/application/dashboard_transient_telemetry.dart :: import 'package:sentry_flutter/sentry_flutter.dart';
 sentryImport lib/features/nutrition_plan/presentation/providers/macro_targets_controller.dart :: import 'package:sentry_flutter/sentry_flutter.dart';
 sentryImport lib/shared/core/app_router.dart :: import 'package:sentry_flutter/sentry_flutter.dart';
@@ -232,69 +204,6 @@ unreportedCatch lib/features/formula_kit/presentation/widgets/pin_conflict_card_
 unreportedCatch lib/features/formula_kit/presentation/widgets/pin_conflict_card_state.dart :: } catch (e) {
 unreportedCatch lib/features/formula_kit/presentation/widgets/pin_toggle.dart :: } catch (e) {
 unreportedCatch lib/features/fuel_timeline/presentation/widgets/energy_breakdown_sheet.dart :: } catch (_) {}
-unreportedCatch lib/features/integrations/application/final_surge_sync_service.dart :: } catch (e) {
-unreportedCatch lib/features/integrations/application/final_surge_sync_service.dart :: } catch (e) {
-unreportedCatch lib/features/integrations/application/final_surge_sync_service.dart :: } catch (e) {
-unreportedCatch lib/features/integrations/application/final_surge_sync_service.dart :: } catch (e) {
-unreportedCatch lib/features/integrations/application/final_surge_sync_service.dart :: } on NetworkException catch (e) {
-unreportedCatch lib/features/integrations/application/final_surge_sync_service.dart :: } on NetworkException catch (e) {
-unreportedCatch lib/features/integrations/application/final_surge_sync_service.dart :: } on TokenExpiredException {
-unreportedCatch lib/features/integrations/application/final_surge_sync_service.dart :: } on TokenExpiredException {
-unreportedCatch lib/features/integrations/application/final_surge_sync_service.dart :: } on TokenExpiredException {
-unreportedCatch lib/features/integrations/application/final_surge_sync_service.dart :: } on TokenRefreshException catch (e) {
-unreportedCatch lib/features/integrations/application/final_surge_sync_service.dart :: } on TokenRefreshException catch (e) {
-unreportedCatch lib/features/integrations/application/final_surge_transformer.dart :: } catch (e) {
-unreportedCatch lib/features/integrations/application/garmin_oauth_service.dart :: } catch (e) {
-unreportedCatch lib/features/integrations/application/garmin_oauth_service.dart :: } catch (e) {
-unreportedCatch lib/features/integrations/application/integration_sync_coordinator.dart :: } catch (_) {
-unreportedCatch lib/features/integrations/application/integration_sync_coordinator.dart :: } catch (_) {
-unreportedCatch lib/features/integrations/application/raw_retention_dead_man_check.dart :: } catch (_) {
-unreportedCatch lib/features/integrations/application/runna_sync_service.dart :: } catch (e) {
-unreportedCatch lib/features/integrations/application/runna_sync_service.dart :: } on IntegrationApiException catch (e) {
-unreportedCatch lib/features/integrations/application/runna_sync_service.dart :: } on NetworkException catch (e) {
-unreportedCatch lib/features/integrations/application/synced_workout_analytics.dart :: } catch (_) {}
-unreportedCatch lib/features/integrations/application/tp_writeback_service.dart :: } catch (_) {
-unreportedCatch lib/features/integrations/application/tp_writeback_service.dart :: } catch (e, st) {
-unreportedCatch lib/features/integrations/application/tp_writeback_service.dart :: } catch (e, st) {
-unreportedCatch lib/features/integrations/application/tp_writeback_service.dart :: } catch (e, st) {
-unreportedCatch lib/features/integrations/application/tp_writeback_service.dart :: } catch (e, st) {
-unreportedCatch lib/features/integrations/application/tp_writeback_service.dart :: } catch (e, st) {
-unreportedCatch lib/features/integrations/application/tp_writeback_service.dart :: } catch (e, st) {
-unreportedCatch lib/features/integrations/application/tp_writeback_service.dart :: } catch (e, st) {
-unreportedCatch lib/features/integrations/application/tp_writeback_service.dart :: } catch (e, st) {
-unreportedCatch lib/features/integrations/application/tp_writeback_service.dart :: } on IntegrationApiException catch (e) {
-unreportedCatch lib/features/integrations/application/tp_writeback_service.dart :: } on IntegrationApiException catch (e) {
-unreportedCatch lib/features/integrations/application/tp_writeback_service.dart :: } on IntegrationApiException catch (e) {
-unreportedCatch lib/features/integrations/application/tp_writeback_service.dart :: } on TokenExpiredException {
-unreportedCatch lib/features/integrations/application/tp_writeback_service.dart :: } on TokenExpiredException {
-unreportedCatch lib/features/integrations/application/tp_writeback_service.dart :: } on TokenExpiredException {
-unreportedCatch lib/features/integrations/application/training_peaks_oauth_service.dart :: } catch (e) {
-unreportedCatch lib/features/integrations/application/training_peaks_oauth_service.dart :: } on TrainingPeaksApiException catch (e) {
-unreportedCatch lib/features/integrations/application/training_peaks_oauth_service.dart :: } on TrainingPeaksApiException catch (e) {
-unreportedCatch lib/features/integrations/application/training_peaks_sync_service.dart :: } catch (_) {
-unreportedCatch lib/features/integrations/application/training_peaks_sync_service.dart :: } catch (e) {
-unreportedCatch lib/features/integrations/application/training_peaks_sync_service.dart :: } catch (e) {
-unreportedCatch lib/features/integrations/application/training_peaks_sync_service.dart :: } catch (e) {
-unreportedCatch lib/features/integrations/application/training_peaks_sync_service.dart :: } catch (e) {
-unreportedCatch lib/features/integrations/application/training_peaks_sync_service.dart :: } catch (e) {
-unreportedCatch lib/features/integrations/application/training_peaks_sync_service.dart :: } catch (e) {
-unreportedCatch lib/features/integrations/application/training_peaks_sync_service.dart :: } catch (e) {
-unreportedCatch lib/features/integrations/application/training_peaks_sync_service.dart :: } catch (e) {
-unreportedCatch lib/features/integrations/application/training_peaks_sync_service.dart :: } on TrainingPeaksTokenExpiredException {
-unreportedCatch lib/features/integrations/application/training_peaks_sync_service.dart :: } on TrainingPeaksTokenExpiredException {
-unreportedCatch lib/features/integrations/application/training_peaks_sync_service.dart :: } on TrainingPeaksTokenExpiredException {
-unreportedCatch lib/features/integrations/application/training_peaks_sync_service.dart :: } on TrainingPeaksTokenExpiredException {
-unreportedCatch lib/features/integrations/application/training_peaks_sync_service.dart :: } on TrainingPeaksTokenExpiredException {
-unreportedCatch lib/features/integrations/application/training_peaks_sync_service.dart :: } on TrainingPeaksTokenExpiredException {
-unreportedCatch lib/features/integrations/application/training_peaks_sync_service.dart :: } on TrainingPeaksTokenExpiredException {
-unreportedCatch lib/features/integrations/application/training_peaks_sync_service.dart :: } on TrainingPeaksTokenExpiredException {
-unreportedCatch lib/features/integrations/application/training_peaks_transformer.dart :: } catch (e) {
-unreportedCatch lib/features/integrations/application/vdot_oauth_service.dart :: } catch (_) {
-unreportedCatch lib/features/integrations/application/vdot_sync_service.dart :: } catch (e) {
-unreportedCatch lib/features/integrations/application/vdot_sync_service.dart :: } on NetworkException catch (e) {
-unreportedCatch lib/features/integrations/application/vdot_sync_service.dart :: } on TokenExpiredException {
-unreportedCatch lib/features/integrations/application/vdot_sync_service.dart :: } on TokenRefreshException catch (e) {
-unreportedCatch lib/features/integrations/application/vdot_transformer.dart :: } catch (_) {
 unreportedCatch lib/features/integrations/data/integrations_repository.dart :: } catch (_) {
 unreportedCatch lib/features/integrations/data/integrations_repository.dart :: } catch (_) {
 unreportedCatch lib/features/integrations/data/integrations_repository.dart :: } catch (e) {

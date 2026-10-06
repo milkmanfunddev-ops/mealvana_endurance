@@ -1,11 +1,10 @@
 import 'dart:async';
 
-import 'package:flutter/foundation.dart';
 import 'package:riverpod_annotation/riverpod_annotation.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 
 import '../../activities/data/activities_repository.dart';
-import '../../../shared/services/logging_service.dart';
+import '../../../shared/services/report/report.dart';
 import '../../../shared/services/sync/sync_coordinator.dart';
 import '../../calendar/presentation/providers/calendar_controller.dart'
     show allEventsControllerProvider, nextUpcomingEventProvider;
@@ -14,7 +13,6 @@ import '../../events/presentation/providers/events_controller.dart'
 import '../presentation/providers/connect_training_controller.dart';
 import 'final_surge_sync_service.dart';
 import 'provider_event_import_service.dart';
-import 'raw_retention_dead_man_check.dart';
 import 'training_peaks_transformer.dart';
 import '../presentation/providers/integrations_providers.dart';
 
@@ -54,7 +52,11 @@ class IntegrationSyncCoordinator extends _$IntegrationSyncCoordinator {
     // No state to initialize
   }
 
-  AppLogger get _logger => ref.read(appLoggerProvider);
+  /// Area `sync`: this coordinator's own steps are pipeline steps, so its
+  /// Notes are promoted to warnings (rule D9) — intended.
+  static const _area = 'sync';
+
+  Report get _r => ref.read(reportProvider);
 
   /// Called from ActivitiesController.build() - respects staleness.
   ///
@@ -89,8 +91,13 @@ class IntegrationSyncCoordinator extends _$IntegrationSyncCoordinator {
     // sync.
     try {
       unawaited(ref.read(rawRetentionDeadManCheckProvider).checkDuringSync());
-    } catch (_) {
+    } catch (e) {
       // best-effort by contract
+      await _r.note(
+        'raw-retention dead-man check could not be wired; skipped',
+        area: _area,
+        data: {'error': e.toString()},
+      );
     }
 
     return anySynced;
@@ -106,12 +113,11 @@ class IntegrationSyncCoordinator extends _$IntegrationSyncCoordinator {
           .read(syncCoordinatorProvider.notifier)
           .ensureSynced('integrations', userId, repository: repo);
     } catch (e, stackTrace) {
-      _logger.warning(
-        'Integration row sync failed; continuing with local data',
-        context: 'INTEGRATION_SYNC',
-        error: e,
+      await _r.degraded(
+        e,
         stackTrace: stackTrace,
-        data: {'userId': userId},
+        area: _area,
+        message: 'integration row sync failed; continuing with local data',
       );
     }
   }
@@ -137,9 +143,11 @@ class IntegrationSyncCoordinator extends _$IntegrationSyncCoordinator {
   Future<bool> _syncProviderIfStale(String userId, String provider) async {
     // Dedup: skip if already syncing
     if (_syncingNow.contains(provider)) {
-      if (kDebugMode) {
-        print('🔄 Integration sync skipped ($provider) - already in progress');
-      }
+      _r.debug(
+        'integration sync skipped: already in progress',
+        area: _area,
+        data: {'provider': provider},
+      );
       return false;
     }
 
@@ -147,9 +155,11 @@ class IntegrationSyncCoordinator extends _$IntegrationSyncCoordinator {
     final lastFailed = _lastFailedAttempt[provider];
     if (lastFailed != null &&
         DateTime.now().difference(lastFailed) < _failureCooldown) {
-      if (kDebugMode) {
-        print('🔄 Integration sync skipped ($provider) - in failure cooldown');
-      }
+      _r.debug(
+        'integration sync skipped: in failure cooldown',
+        area: _area,
+        data: {'provider': provider},
+      );
       return false;
     }
 
@@ -157,9 +167,11 @@ class IntegrationSyncCoordinator extends _$IntegrationSyncCoordinator {
     final lastSync = await _getLastSyncTime(provider);
     if (lastSync != null &&
         DateTime.now().difference(lastSync) < _stalenessThreshold) {
-      if (kDebugMode) {
-        print('🔄 Integration sync skipped ($provider) - data is fresh');
-      }
+      _r.debug(
+        'integration sync skipped: data is fresh',
+        area: _area,
+        data: {'provider': provider},
+      );
       return false;
     }
 
@@ -171,9 +183,11 @@ class IntegrationSyncCoordinator extends _$IntegrationSyncCoordinator {
   Future<void> _syncProvider(String userId, String provider) async {
     // Dedup: skip if already syncing in this coordinator
     if (_syncingNow.contains(provider)) {
-      if (kDebugMode) {
-        print('🔄 Integration sync skipped ($provider) - already in progress');
-      }
+      _r.debug(
+        'integration sync skipped: already in progress',
+        area: _area,
+        data: {'provider': provider},
+      );
       return;
     }
 
@@ -181,23 +195,30 @@ class IntegrationSyncCoordinator extends _$IntegrationSyncCoordinator {
     try {
       final controller = ref.read(connectTrainingControllerProvider.notifier);
       if (controller.isSyncingProvider(provider)) {
-        if (kDebugMode) {
-          print(
-            '🔄 Integration sync skipped ($provider) - manual sync in progress',
-          );
-        }
+        _r.debug(
+          'integration sync skipped: manual sync in progress',
+          area: _area,
+          data: {'provider': provider},
+        );
         return;
       }
-    } catch (_) {
+    } catch (e) {
       // Controller may not be initialized yet - safe to proceed
+      await _r.note(
+        'connect-training controller unavailable; sync proceeds without the manual-sync dedup',
+        area: _area,
+        data: {'provider': provider, 'error': e.toString()},
+      );
     }
 
     _syncingNow.add(provider);
 
     try {
-      if (kDebugMode) {
-        print('🔄 Starting integration sync for $provider...');
-      }
+      _r.debug(
+        'integration sync started',
+        area: _area,
+        data: {'provider': provider},
+      );
 
       // Every sync service catches its own errors and reports the outcome in
       // its result object rather than throwing, so the catch block below never
@@ -242,16 +263,16 @@ class IntegrationSyncCoordinator extends _$IntegrationSyncCoordinator {
           // Garmin is push-only — no client-side sync needed.
           // Activities arrive via server-side push when the user syncs
           // their Garmin device.
-          if (kDebugMode) {
-            print('🔄 Garmin is push-only - no sync needed');
-          }
+          _r.debug('Garmin is push-only; no client sync', area: _area);
           succeeded = true;
           failure = null;
           break;
         default:
-          _logger.warning(
-            'Unknown integration provider: $provider',
-            context: 'INTEGRATION_SYNC',
+          await _r.degraded(
+            LoggedFault('unknown integration provider: $provider'),
+            area: _area,
+            message: 'integration sync skipped: unknown provider',
+            extra: {'provider': provider},
           );
           return;
       }
@@ -260,14 +281,13 @@ class IntegrationSyncCoordinator extends _$IntegrationSyncCoordinator {
         // Arm the cooldown and leave the staleness clock untouched so the next
         // ensureIntegrationsSynced retries instead of reporting "data is fresh".
         _lastFailedAttempt[provider] = DateTime.now();
-        _logger.warning(
-          'Integration sync reported failure for $provider',
-          context: 'INTEGRATION_SYNC',
-          data: {'userId': userId, 'provider': provider, 'error': failure},
+        // The service already reported the cause at its own severity; this
+        // records the coordinator's decision (cooldown armed, clock untouched).
+        await _r.note(
+          'integration sync reported failure; cooldown armed',
+          area: _area,
+          data: {'provider': provider, 'error': failure},
         );
-        if (kDebugMode) {
-          print('❌ Integration sync failed for $provider: $failure');
-        }
         return;
       }
 
@@ -304,12 +324,14 @@ class IntegrationSyncCoordinator extends _$IntegrationSyncCoordinator {
             ref.invalidate(nextUpcomingEventProvider);
           }
         } catch (e, stackTrace) {
-          _logger.warning(
-            'Post-sync event import failed for $provider (best-effort)',
-            context: 'INTEGRATION_SYNC',
-            error: e,
+          // Best-effort, but a fetched race that never lands is exactly the
+          // 2026-09-13 bug this block exists to prevent.
+          await _r.fault(
+            e,
             stackTrace: stackTrace,
-            data: {'userId': userId, 'provider': provider},
+            area: _area,
+            message: 'post-sync provider event import failed',
+            extra: {'provider': provider},
           );
         }
       }
@@ -325,50 +347,50 @@ class IntegrationSyncCoordinator extends _$IntegrationSyncCoordinator {
           final uploadResult = await ref
               .read(activitiesRepositoryProvider)
               .uploadDirtyRecords(userId);
-          if (kDebugMode) {
-            if (uploadResult.success) {
-              print(
-                '☁️  Integration sync uploaded ${uploadResult.count} dirty records for $provider',
-              );
-            } else {
-              print(
-                '⚠️  Integration sync upload had no records or failed for $provider: ${uploadResult.error}',
-              );
-            }
-          }
-        } catch (e, stackTrace) {
-          _logger.warning(
-            'Post-sync upload of dirty activities failed for $provider (best-effort)',
-            context: 'INTEGRATION_SYNC',
-            error: e,
-            stackTrace: stackTrace,
-            data: {'userId': userId, 'provider': provider},
-          );
-          if (kDebugMode) {
-            print(
-              '⚠️  Integration sync upload failed for $provider (best-effort): $e',
+          if (uploadResult.success) {
+            _r.debug(
+              'post-sync upload of dirty activities done',
+              area: _area,
+              data: {'provider': provider, 'count': uploadResult.count},
+            );
+          } else {
+            // uploadDirtyRecords swallows its exceptions into this result;
+            // the result is the only place the failure surfaces.
+            await _r.note(
+              'post-sync upload of dirty activities reported failure',
+              area: _area,
+              data: {'provider': provider, 'error': uploadResult.error},
             );
           }
+        } catch (e, stackTrace) {
+          await _r.fault(
+            e,
+            stackTrace: stackTrace,
+            area: _area,
+            message: 'post-sync upload of dirty activities threw',
+            extra: {'provider': provider},
+          );
         }
       }
 
-      if (kDebugMode) {
-        print('✅ Integration sync complete for $provider');
-      }
+      _r.debug(
+        'integration sync complete',
+        area: _area,
+        data: {'provider': provider},
+      );
     } catch (e, stackTrace) {
       // Record failure for cooldown
       _lastFailedAttempt[provider] = DateTime.now();
 
-      _logger.error(
-        'Integration sync failed for $provider',
-        context: 'INTEGRATION_SYNC',
-        error: e,
+      // Sync services report their own failures in result objects, so an
+      // exception here is one that escaped that handling.
+      await _r.fault(
+        e,
         stackTrace: stackTrace,
+        area: _area,
+        message: 'integration sync threw',
+        extra: {'provider': provider},
       );
-
-      if (kDebugMode) {
-        print('❌ Integration sync failed for $provider: $e');
-      }
       // Don't rethrow - silent failure
     } finally {
       _syncingNow.remove(provider);

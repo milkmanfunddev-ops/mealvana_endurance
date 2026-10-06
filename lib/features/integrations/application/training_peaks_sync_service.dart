@@ -1,9 +1,8 @@
 import 'dart:async';
 import 'dart:convert';
 
-import 'package:flutter/foundation.dart';
-
 import '../../../shared/services/analytics/analytics_tracker.dart';
+import '../../../shared/services/report/report.dart';
 import 'synced_workout_analytics.dart';
 import '../../activities/data/activities_repository.dart';
 import '../../activities/domain/activity.dart';
@@ -42,13 +41,15 @@ class TrainingPeaksSyncService {
     required ChangeDetectionService changeDetectionService,
     AnalyticsTracker? analytics,
     ProviderRawPayloadsRepository? rawPayloadsRepository,
+    Report? report,
   }) : _apiClient = apiClient,
        _integrationsRepository = integrationsRepository,
        _activitiesRepository = activitiesRepository,
        _transformer = transformer,
        _changeDetectionService = changeDetectionService,
        _analytics = analytics,
-       _rawPayloadsRepository = rawPayloadsRepository;
+       _rawPayloadsRepository = rawPayloadsRepository,
+       _report = report;
 
   final TrainingPeaksApiClient _apiClient;
   final IntegrationsRepository _integrationsRepository;
@@ -57,6 +58,11 @@ class TrainingPeaksSyncService {
   final ChangeDetectionService _changeDetectionService;
   final AnalyticsTracker? _analytics;
   final ProviderRawPayloadsRepository? _rawPayloadsRepository;
+  final Report? _report;
+
+  Report get _r => _report ?? SentryReport.global;
+
+  static const _area = 'training_peaks';
 
   /// Raw-payload capture (real-payload-corpus@v1, lifecycle.md L-7): offers
   /// the whole fetched list to `provider_raw_payloads`, non-blocking — the
@@ -83,6 +89,7 @@ class TrainingPeaksSyncService {
         _analytics,
         activity,
         provider: 'training_peaks',
+        report: _r,
       );
 
   /// Buffer time before token expiration to trigger proactive refresh (5 min)
@@ -126,33 +133,43 @@ class TrainingPeaksSyncService {
     try {
       integration = await _ensureValidToken(integration);
     } on TrainingPeaksTokenExpiredException {
+      // The refresh failure was reported where it happened (_refreshToken).
+      await _r.note(
+        'TrainingPeaks token expired; workout sync skipped',
+        area: _area,
+      );
       return TrainingPeaksSyncResult.tokenExpired();
     }
 
     final accessToken = integration.accessToken;
 
-    if (kDebugMode) {
-      print('🔄 Starting TrainingPeaks workout sync for user $userId');
-    }
+    _r.debug('TrainingPeaks workout sync started', area: _area);
 
     // 3. Fetch athlete zones if stale (non-blocking - failure doesn't stop sync)
     AthleteZones? athleteZones;
     try {
       athleteZones = await _fetchZonesIfStale(integration);
-    } catch (e) {
-      if (kDebugMode) {
-        print('⚠️ Zone fetch failed (non-blocking): $e');
-      }
+    } catch (e, st) {
+      // Zones are optional: the transformer falls back to defaults.
+      await _r.degraded(
+        e,
+        stackTrace: st,
+        area: _area,
+        message: 'TrainingPeaks zone fetch failed; syncing with default zones',
+      );
     }
 
     // 3b. Fetch body metrics if stale (non-blocking; A1: attempt-and-observe,
     // never gated on the IsPremium snapshot — a 401/403 lands here harmlessly)
     try {
       await _fetchMetricsIfStale(integration);
-    } catch (e) {
-      if (kDebugMode) {
-        print('⚠️ Metrics fetch failed (non-blocking): $e');
-      }
+    } catch (e, st) {
+      await _r.degraded(
+        e,
+        stackTrace: st,
+        area: _area,
+        message: 'TrainingPeaks metrics fetch failed; sync continues',
+      );
     }
 
     try {
@@ -166,10 +183,6 @@ class TrainingPeaksSyncService {
         days: effectiveDays,
         includeDescription: true,
       );
-
-      if (kDebugMode) {
-        print('   Fetched ${workoutsJson.length} workouts from TrainingPeaks');
-      }
 
       _captureRawPayloads(userId, workoutsJson);
 
@@ -199,22 +212,16 @@ class TrainingPeaksSyncService {
         }
       }
 
-      if (kDebugMode) {
-        print(
-          '   Transformed ${remoteActivities.length} workouts (filtered $filteredCount)',
-        );
-      }
-
       final dedupedRemoteActivities = _dedupeRemoteActivities(remoteActivities);
       final remoteDuplicateCount =
           remoteActivities.length - dedupedRemoteActivities.length;
       if (remoteDuplicateCount > 0) {
         filteredCount += remoteDuplicateCount;
-        if (kDebugMode) {
-          print(
-            '   ⚠️ Removed $remoteDuplicateCount duplicate TrainingPeaks workouts from payload',
-          );
-        }
+        await _r.note(
+          'TrainingPeaks payload carried duplicate workouts; deduped',
+          area: _area,
+          data: {'duplicates': remoteDuplicateCount},
+        );
       }
 
       // 4. Clean any existing local duplicates from prior buggy syncs.
@@ -223,21 +230,17 @@ class TrainingPeaksSyncService {
             userId: userId,
             provider: 'training_peaks',
           );
-      if (localDuplicatesRemoved > 0 && kDebugMode) {
-        print(
-          '   🧹 Removed $localDuplicatesRemoved duplicate local TrainingPeaks activities',
+      if (localDuplicatesRemoved > 0) {
+        await _r.note(
+          'removed duplicate local TrainingPeaks activities',
+          area: _area,
+          data: {'removed': localDuplicatesRemoved},
         );
       }
 
       // 5. Get existing activities synced from TrainingPeaks
       final localActivities = await _activitiesRepository
           .getActivitiesByUserAndProvider(userId, 'training_peaks');
-
-      if (kDebugMode) {
-        print(
-          '   Found ${localActivities.length} local TrainingPeaks activities',
-        );
-      }
 
       // 5. Detect changes using ChangeDetectionService
       final changeResult = _changeDetectionService.detectChanges(
@@ -246,10 +249,6 @@ class TrainingPeaksSyncService {
         provider: 'training_peaks',
         completionSignalIds: completionSignalIds,
       );
-
-      if (kDebugMode) {
-        print('   Change detection: ${changeResult.toString()}');
-      }
 
       // 6. Apply changes to local database
       final insertedActivities = <Activity>[];
@@ -261,10 +260,6 @@ class TrainingPeaksSyncService {
         await _activitiesRepository.insertActivity(activity);
         insertedActivities.add(activity);
         _trackSyncedWorkoutPlanned(activity);
-
-        if (kDebugMode) {
-          print('   ✓ Inserted: ${activity.title}');
-        }
       }
 
       // Update CHANGED activities
@@ -277,12 +272,6 @@ class TrainingPeaksSyncService {
 
         await _activitiesRepository.updateActivityFromProvider(updatedActivity);
         updatedActivities.add(updatedActivity);
-
-        if (kDebugMode) {
-          print(
-            '   ↻ Updated: ${updatedActivity.title} (needsRefresh: ${change.scheduleChanged})',
-          );
-        }
       }
 
       // M-1.3: keyed completion signals revive their tombstones.
@@ -291,11 +280,6 @@ class TrainingPeaksSyncService {
           revive.activityId,
           revive.updatedActivity,
         );
-        if (kDebugMode) {
-          print(
-            '   ⚡ Revived tombstone ${revive.activityId} from completion signal',
-          );
-        }
       }
 
       // Q-INT2: hidden-by-disconnect rows matched by this re-sync unhide.
@@ -310,10 +294,6 @@ class TrainingPeaksSyncService {
       for (final activityId in changeResult.deletedActivityIds) {
         await _activitiesRepository.softDeleteFromProvider(activityId);
         deletedActivityIds.add(activityId);
-
-        if (kDebugMode) {
-          print('   🗑️ Soft-deleted: $activityId');
-        }
       }
 
       // 7. Update sync status
@@ -323,16 +303,20 @@ class TrainingPeaksSyncService {
         status: 'success',
       );
 
-      if (kDebugMode) {
-        print(
-          '✅ Workout sync complete: '
-          '${insertedActivities.length} new, '
-          '${updatedActivities.length} updated, '
-          '${deletedActivityIds.length} deleted, '
-          '${changeResult.unchangedCount} unchanged, '
-          '$filteredCount filtered',
-        );
-      }
+      _r.debug(
+        'TrainingPeaks workout sync complete',
+        area: _area,
+        data: {
+          'fetched': workoutsJson.length,
+          'local': localActivities.length,
+          'new': insertedActivities.length,
+          'updated': updatedActivities.length,
+          'revived': changeResult.revivedActivities.length,
+          'deleted': deletedActivityIds.length,
+          'unchanged': changeResult.unchangedCount,
+          'filtered': filteredCount,
+        },
+      );
 
       return TrainingPeaksSyncResult(
         success: true,
@@ -344,8 +328,14 @@ class TrainingPeaksSyncService {
         activities: insertedActivities,
         changeResult: changeResult,
       );
-    } on TrainingPeaksTokenExpiredException {
-      // Token expired during request - this shouldn't happen if OAuth service works
+    } on TrainingPeaksTokenExpiredException catch (e, st) {
+      // Token expired mid-request although the pre-flight refresh passed.
+      await _r.degraded(
+        e,
+        stackTrace: st,
+        area: _area,
+        message: 'TrainingPeaks token expired mid-sync; reconnect required',
+      );
       await _integrationsRepository.updateSyncStatus(
         userId,
         'training_peaks',
@@ -353,7 +343,7 @@ class TrainingPeaksSyncService {
         error: 'Token expired. Please reconnect.',
       );
       return TrainingPeaksSyncResult.tokenExpired();
-    } catch (e) {
+    } catch (e, st) {
       // Update sync status with error
       await _integrationsRepository.updateSyncStatus(
         userId,
@@ -362,9 +352,12 @@ class TrainingPeaksSyncService {
         error: e.toString(),
       );
 
-      if (kDebugMode) {
-        print('❌ Workout sync failed: $e');
-      }
+      await _r.fault(
+        e,
+        stackTrace: st,
+        area: _area,
+        message: 'TrainingPeaks workout sync failed',
+      );
 
       return TrainingPeaksSyncResult.error(e.toString());
     }
@@ -400,6 +393,10 @@ class TrainingPeaksSyncService {
     try {
       integration = await _ensureValidToken(integration);
     } on TrainingPeaksTokenExpiredException {
+      await _r.note(
+        'TrainingPeaks token expired; date-range sync skipped',
+        area: _area,
+      );
       return TrainingPeaksSyncResult.tokenExpired();
     }
 
@@ -409,10 +406,13 @@ class TrainingPeaksSyncService {
     AthleteZones? athleteZones;
     try {
       athleteZones = await _fetchZonesIfStale(integration);
-    } catch (e) {
-      if (kDebugMode) {
-        print('⚠️ Zone fetch failed (non-blocking): $e');
-      }
+    } catch (e, st) {
+      await _r.degraded(
+        e,
+        stackTrace: st,
+        area: _area,
+        message: 'TrainingPeaks zone fetch failed; syncing with default zones',
+      );
     }
 
     try {
@@ -536,7 +536,13 @@ class TrainingPeaksSyncService {
         activities: insertedActivities,
         changeResult: changeResult,
       );
-    } on TrainingPeaksTokenExpiredException {
+    } on TrainingPeaksTokenExpiredException catch (e, st) {
+      await _r.degraded(
+        e,
+        stackTrace: st,
+        area: _area,
+        message: 'TrainingPeaks token expired mid date-range sync',
+      );
       await _integrationsRepository.updateSyncStatus(
         userId,
         'training_peaks',
@@ -544,12 +550,18 @@ class TrainingPeaksSyncService {
         error: 'Token expired. Please reconnect.',
       );
       return TrainingPeaksSyncResult.tokenExpired();
-    } catch (e) {
+    } catch (e, st) {
       await _integrationsRepository.updateSyncStatus(
         userId,
         'training_peaks',
         status: 'error',
         error: e.toString(),
+      );
+      await _r.fault(
+        e,
+        stackTrace: st,
+        area: _area,
+        message: 'TrainingPeaks date-range sync failed',
       );
       return TrainingPeaksSyncResult.error(e.toString());
     }
@@ -581,14 +593,20 @@ class TrainingPeaksSyncService {
     try {
       integration = await _ensureValidToken(integration);
     } on TrainingPeaksTokenExpiredException {
+      await _r.note(
+        'TrainingPeaks token expired; event sync skipped',
+        area: _area,
+      );
       return TrainingPeaksEventSyncResult.tokenExpired();
     }
 
     final accessToken = integration.accessToken;
 
-    if (kDebugMode) {
-      print('🔄 Fetching all events from TrainingPeaks ($days day range)...');
-    }
+    _r.debug(
+      'TrainingPeaks event sync started',
+      area: _area,
+      data: {'days': days},
+    );
 
     try {
       final eventsJson = await _apiClient.getEventsInRange(
@@ -597,9 +615,7 @@ class TrainingPeaksSyncService {
       );
 
       if (eventsJson.isEmpty) {
-        if (kDebugMode) {
-          print('   No upcoming events found');
-        }
+        _r.debug('TrainingPeaks event sync: no upcoming events', area: _area);
         return TrainingPeaksEventSyncResult.noEvents();
       }
 
@@ -607,27 +623,31 @@ class TrainingPeaksSyncService {
       final events = <TrainingPeaksEventResult>[];
       for (final eventJson in eventsJson) {
         final event = _transformer.transformEvent(eventJson);
-        if (event != null) {
-          events.add(event);
-          if (kDebugMode) {
-            print('✅ Found event: ${event.eventName}');
-            print('   Type: ${event.eventType}');
-            print('   Date: ${event.eventDate}');
-          }
-        }
+        if (event != null) events.add(event);
       }
 
-      if (kDebugMode) {
-        print('✅ Total events found: ${events.length}');
-      }
+      _r.debug(
+        'TrainingPeaks event sync complete',
+        area: _area,
+        data: {'fetched': eventsJson.length, 'events': events.length},
+      );
 
       return TrainingPeaksEventSyncResult(success: true, events: events);
-    } on TrainingPeaksTokenExpiredException {
+    } on TrainingPeaksTokenExpiredException catch (e, st) {
+      await _r.degraded(
+        e,
+        stackTrace: st,
+        area: _area,
+        message: 'TrainingPeaks token expired mid event sync',
+      );
       return TrainingPeaksEventSyncResult.tokenExpired();
-    } catch (e) {
-      if (kDebugMode) {
-        print('❌ Event sync failed: $e');
-      }
+    } catch (e, st) {
+      await _r.fault(
+        e,
+        stackTrace: st,
+        area: _area,
+        message: 'TrainingPeaks event sync failed',
+      );
       return TrainingPeaksEventSyncResult.error(e.toString());
     }
   }
@@ -650,22 +670,22 @@ class TrainingPeaksSyncService {
     try {
       integration = await _ensureValidToken(integration);
     } on TrainingPeaksTokenExpiredException {
+      await _r.note(
+        'TrainingPeaks token expired; next-event sync skipped',
+        area: _area,
+      );
       return TrainingPeaksEventSyncResult.tokenExpired();
     }
 
     final accessToken = integration.accessToken;
 
-    if (kDebugMode) {
-      print('🔄 Fetching next event from TrainingPeaks...');
-    }
+    _r.debug('TrainingPeaks next-event sync started', area: _area);
 
     try {
       final eventJson = await _apiClient.getNextEvent(accessToken);
 
       if (eventJson == null) {
-        if (kDebugMode) {
-          print('   No upcoming events found');
-        }
+        _r.debug('TrainingPeaks next-event sync: none upcoming', area: _area);
         return TrainingPeaksEventSyncResult.noEvents();
       }
 
@@ -674,22 +694,28 @@ class TrainingPeaksSyncService {
         return TrainingPeaksEventSyncResult.noEvents();
       }
 
-      if (kDebugMode) {
-        print('✅ Found event: ${event.eventName}');
-        print('   Type: ${event.eventType}');
-        print('   Date: ${event.eventDate}');
-        if (event.goalDistanceMiles != null) {
-          print('   Distance: ${event.goalDistanceMiles} miles');
-        }
-      }
+      _r.debug(
+        'TrainingPeaks next-event sync complete',
+        area: _area,
+        data: {'eventType': event.eventType},
+      );
 
       return TrainingPeaksEventSyncResult(success: true, events: [event]);
-    } on TrainingPeaksTokenExpiredException {
+    } on TrainingPeaksTokenExpiredException catch (e, st) {
+      await _r.degraded(
+        e,
+        stackTrace: st,
+        area: _area,
+        message: 'TrainingPeaks token expired mid next-event sync',
+      );
       return TrainingPeaksEventSyncResult.tokenExpired();
-    } catch (e) {
-      if (kDebugMode) {
-        print('❌ Event sync failed: $e');
-      }
+    } catch (e, st) {
+      await _r.fault(
+        e,
+        stackTrace: st,
+        area: _area,
+        message: 'TrainingPeaks next-event sync failed',
+      );
       return TrainingPeaksEventSyncResult.error(e.toString());
     }
   }
@@ -703,9 +729,7 @@ class TrainingPeaksSyncService {
     int workoutDays = 45,
     int eventDays = 90,
   }) async {
-    if (kDebugMode) {
-      print('🔄 Starting full TrainingPeaks sync...');
-    }
+    _r.debug('TrainingPeaks full sync started', area: _area);
 
     // Sync workouts
     final workoutResult = await syncWorkouts(userId, numDays: workoutDays);
@@ -714,10 +738,15 @@ class TrainingPeaksSyncService {
     TrainingPeaksEventSyncResult? eventResult;
     try {
       eventResult = await syncEvents(userId, days: eventDays);
-    } catch (e) {
-      if (kDebugMode) {
-        print('⚠️ Event sync failed, continuing: $e');
-      }
+    } catch (e, st) {
+      // syncEvents reports its own failures in its result; reaching this
+      // catch means something threw past that handling.
+      await _r.fault(
+        e,
+        stackTrace: st,
+        area: _area,
+        message: 'TrainingPeaks event sync threw; full sync continues',
+      );
     }
 
     return TrainingPeaksFullSyncResult(
@@ -742,18 +771,13 @@ class TrainingPeaksSyncService {
         if (integration.updatedAt != null) {
           final age = DateTime.now().difference(integration.updatedAt!);
           if (age < _zonesStalenessThreshold) {
-            if (kDebugMode) {
-              print('   ✅ Athlete zones are fresh (${age.inHours}h old)');
-            }
             return existingZones;
           }
         }
       }
     }
 
-    if (kDebugMode) {
-      print('   🔄 Fetching athlete zones from Training Peaks...');
-    }
+    _r.debug('TrainingPeaks athlete zones stale; fetching', area: _area);
 
     final zonesJson = await _apiClient.getAthleteZones(integration.accessToken);
     final zones = AthleteZones.fromTrainingPeaksResponse(zonesJson);
@@ -766,9 +790,7 @@ class TrainingPeaksSyncService {
       zonesJson: serialized,
     );
 
-    if (kDebugMode) {
-      print('   ✅ Athlete zones fetched and stored: $zones');
-    }
+    _r.debug('TrainingPeaks athlete zones fetched and stored', area: _area);
 
     return zones;
   }
@@ -797,13 +819,15 @@ class TrainingPeaksSyncService {
         if (fetchedAt != null &&
             DateTime.now().difference(fetchedAt) <
                 _metricsStalenessThreshold) {
-          if (kDebugMode) {
-            print('   ✅ Athlete metrics are fresh');
-          }
           return;
         }
-      } catch (_) {
+      } catch (e) {
         // Malformed cache — fall through and refetch.
+        await _r.note(
+          'TrainingPeaks athlete metrics cache malformed; refetching',
+          area: _area,
+          data: {'error': e.toString()},
+        );
       }
     }
 
@@ -839,12 +863,11 @@ class TrainingPeaksSyncService {
       weightKg: weightKg,
     );
 
-    if (kDebugMode) {
-      print(
-        '   ✅ Athlete metrics fetched (${metrics.length} days'
-        '${weightKg != null ? ', weight ${weightKg.toStringAsFixed(1)} kg' : ''})',
-      );
-    }
+    _r.debug(
+      'TrainingPeaks athlete metrics fetched',
+      area: _area,
+      data: {'days': metrics.length, 'hasWeight': weightKg != null},
+    );
   }
 
   /// Ensure the token is valid, refreshing if needed
@@ -862,11 +885,10 @@ class TrainingPeaksSyncService {
       final bufferTime = now.add(_tokenExpirationBuffer);
 
       if (expiresAt.isBefore(bufferTime)) {
-        if (kDebugMode) {
-          print(
-            '⚠️ TrainingPeaks token expires soon, proactively refreshing...',
-          );
-        }
+        _r.debug(
+          'TrainingPeaks token expires soon; refreshing before sync',
+          area: _area,
+        );
         return _refreshToken(integration);
       }
     }
@@ -876,15 +898,16 @@ class TrainingPeaksSyncService {
   /// Refresh the access token and update the stored integration
   Future<IntegrationModel> _refreshToken(IntegrationModel integration) async {
     if (integration.refreshToken == null) {
-      if (kDebugMode) {
-        print('❌ No refresh token available. User must re-authenticate.');
-      }
-      throw const TrainingPeaksTokenExpiredException();
+      const expired = TrainingPeaksTokenExpiredException();
+      await _r.degraded(
+        expired,
+        area: _area,
+        message: 'TrainingPeaks integration has no refresh token; reconnect required',
+      );
+      throw expired;
     }
 
-    if (kDebugMode) {
-      print('🔄 Refreshing TrainingPeaks token...');
-    }
+    _r.debug('TrainingPeaks token refresh started', area: _area);
 
     try {
       final tokenResponse = await _apiClient.refreshToken(
@@ -915,15 +938,19 @@ class TrainingPeaksSyncService {
 
       await _integrationsRepository.upsertIntegration(updatedIntegration);
 
-      if (kDebugMode) {
-        print('✅ TrainingPeaks token refreshed and saved');
-      }
+      _r.debug('TrainingPeaks token refreshed and saved', area: _area);
 
       return updatedIntegration;
-    } on TrainingPeaksApiException catch (e) {
-      if (kDebugMode) {
-        print('❌ Token refresh failed: ${e.toString()}');
-      }
+    } on TrainingPeaksApiException catch (e, st) {
+      // Expected when TP has revoked the refresh token; callers turn the
+      // rethrown TokenExpired into a `tokenExpired` result.
+      await _r.degraded(
+        e,
+        stackTrace: st,
+        area: _area,
+        message: 'TrainingPeaks token refresh failed; reconnect required',
+        extra: {'statusCode': e.statusCode},
+      );
       throw const TrainingPeaksTokenExpiredException();
     }
   }
